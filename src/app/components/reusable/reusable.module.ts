@@ -33,6 +33,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MomentDateModule } from '@angular/material-moment-adapter'; /*npm install moment --save | npm i @angular/material-moment-adapter*/
+import { MatTabsModule } from '@angular/material/tabs';
 
 
 
@@ -59,7 +60,7 @@ import { MomentDateModule } from '@angular/material-moment-adapter'; /*npm insta
     MatSidenavModule,
     MatListModule,
     MatTooltipModule,
-
+    MatTabsModule,
     MatTableModule,
     MatPaginatorModule,
     MatDialogModule,
@@ -67,7 +68,8 @@ import { MomentDateModule } from '@angular/material-moment-adapter'; /*npm insta
     MatAutocompleteModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MomentDateModule
+    MomentDateModule,
+    
   ],
   exports: [
     HttpClientModule,
@@ -89,7 +91,7 @@ import { MomentDateModule } from '@angular/material-moment-adapter'; /*npm insta
     MatSidenavModule,
     MatListModule,
     MatTooltipModule,
-
+    MatTabsModule,
     MatTableModule,
     MatPaginatorModule,
     MatDialogModule,

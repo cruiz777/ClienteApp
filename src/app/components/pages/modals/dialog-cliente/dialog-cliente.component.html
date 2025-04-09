@@ -1,0 +1,43 @@
+
+
+<mat-dialog-content>
+  <form [formGroup]="formCliente">
+    <div style="width: 1200px; height: 450px;">
+      <mat-grid-list cols="1" rowHeight="950px">
+        <mat-tab-group>
+          <mat-tab label="Informacion General">
+            <mat-tab-group style="height: 70px; font-size: 12px;">
+              <mat-tab label="Categorizacion">
+                <p>Contenido de la pestaña Perfil</p>
+              </mat-tab>
+              <mat-tab label="Datos de la Empresa">
+                <p>Contenido de la pestaña Permisos</p>
+              </mat-tab>
+              <mat-tab label="Contactos">
+                <p>Contenido de la pestaña Historial</p>
+              </mat-tab>
+              <mat-tab label="Observaciones">
+                <p>Contenido de la pestaña Historial</p>
+              </mat-tab>
+            </mat-tab-group>
+          </mat-tab>
+
+    
+          <mat-tab label="Historico del Cliente">
+            <p>Contenido de la pestaña Clientes</p>
+          </mat-tab>
+    
+          <mat-tab label="Prefijos">
+            <p>Contenido de la pestaña Productos</p>
+          </mat-tab>
+        </mat-tab-group>
+      </mat-grid-list>
+    </div>
+    
+  </form>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-raised-button mat-dialog-close>Guardar</button>
+  <button mat-raised-button mat-dialog-close>Salir</button>
+  
+</mat-dialog-actions>

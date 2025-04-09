@@ -5,41 +5,33 @@
                [opened]="(isHandset$ | async) === false">
 
     <mat-toolbar>
-      <img src="assets/GS1-logo.png" alt="Logo"  height="55">
+      <img src="assets/GS1-logo.png" alt="Logo" height="65" [routerLink]="'/menus'" style="cursor: pointer;">
     </mat-toolbar>
 
     <mat-nav-list>
 
       <mat-list-item routerLink="/pages/dashboard">
-        <mat-icon mat-list-icon>dashboard</mat-icon>
-        <div mat-line>DashBoard</div>
+        <img src="assets/ecop-nuevo-cliente.png" width="17px" mat-list-icon>
+        <div mat-line style="font-size: 12px;">Nuevo Cliente</div>
       </mat-list-item>
+      
 
       <mat-list-item routerLink="/pages/usuarios">
-        <mat-icon mat-list-icon>group</mat-icon>
-        <div mat-line>Usuarios</div>
+        <img src="assets/Ecop-explorador-clientes.png" width="17px" mat-list-icon>
+        <div mat-line style="font-size: 12px;">Explorador Cliente</div>
       </mat-list-item>
 
       <mat-list-item routerLink="/pages/productos">
-        <mat-icon mat-list-icon>collections_bookmark</mat-icon>
-        <div mat-line>Productos</div>
+        <img src="assets/Ecop-envio-veried.png" width="17px" mat-list-icon>
+        <div mat-line style="font-size: 12px;">Envió Verified by GS1</div>
       </mat-list-item>
 
       <mat-list-item routerLink="/pages/vender">
-        <mat-icon mat-list-icon>currency_exchange</mat-icon>
-        <div mat-line>Vender</div>
+        <img src="assets/ecop-.png" width="17px" mat-list-icon>
+        <div mat-line style="font-size: 12px;">Verified</div>
       </mat-list-item>
 
-      <mat-list-item routerLink="/pages/historialventas">
-        <mat-icon mat-list-icon>edit_note</mat-icon>
-        <div mat-line>Historial Ventas</div>
-      </mat-list-item>
-
-      <mat-list-item routerLink="/pages/reportes">
-        <mat-icon mat-list-icon>receipt</mat-icon>
-        <div mat-line>Reportes</div>
-      </mat-list-item>
-
+      
     </mat-nav-list>
     
 
