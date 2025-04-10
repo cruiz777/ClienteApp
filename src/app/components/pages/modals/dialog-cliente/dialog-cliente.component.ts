@@ -1,9 +1,5 @@
-import { Component, Inject, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { MatSnackBar } from '@angular/material/snack-bar';
-import { MatTabsModule } from '@angular/material/tabs';
-import { Cliente } from '../../../../interfaces/cliente';
 
 @Component({
   selector: 'app-dialog-cliente',
@@ -11,39 +7,48 @@ import { Cliente } from '../../../../interfaces/cliente';
   styleUrls: ['./dialog-cliente.component.css']
 })
 export class DialogClienteComponent implements OnInit {
-  formCliente: FormGroup;
-  accion: string = "Agregar";
-  accionBoton: string = "Guardar";
+  formCliente!: FormGroup;
 
-  constructor(
-    private dialogoReferencia: MatDialogRef<DialogClienteComponent>,
-    @Inject(MAT_DIALOG_DATA) public clienteEditar: Cliente,
-    private fb: FormBuilder,
-    private _snackBar: MatSnackBar
-  ) {
-    this.formCliente = this.fb.group({
-      nombre: ['', Validators.required],
-    });
-
-    // Si estamos editando un cliente, cambiamos la acción y el botón
-    if (this.clienteEditar) {
-      this.accion = "Editar";
-      this.accionBoton = "Actualizar";
-    }
-  }
+  constructor(private fb: FormBuilder) {}
 
   ngOnInit(): void {
-    // Si estamos editando, cargamos los valores del cliente
-    
-  }
-
- 
-
-  mostrarAlerta(mensaje: string, tipo: string): void {
-    this._snackBar.open(mensaje, tipo, {
-      horizontalPosition: "end",
-      verticalPosition: "top",
-      duration: 3000,
+    this.formCliente = this.fb.group({
+      paso1: this.fb.group({
+        codigo: ['', Validators.required],
+        nombre: ['', Validators.required],
+        ruc: [''],
+        categoriaIndividual: [false],
+        categoriaIndustrial: [false],
+        grupo: [''],
+        subgrupo: ['']
+      }),
+      paso2: this.fb.group({
+        email: ['', [Validators.email]],
+        direccion: [''],
+        p_emision: [''],
+        caja: ['']
+      }),
+      paso3: this.fb.group({
+        contactoNombre: ['', Validators.required],
+        contactoTelefono: [''],
+        contactoCorreo: ['', [Validators.email]]
+      }),
+      paso4: this.fb.group({
+        observaciones: ['']
+      })
     });
+  }
+  
+  get paso1Form(): FormGroup {
+    return this.formCliente.get('paso1') as FormGroup;
+  }
+  get paso2Form(): FormGroup {
+    return this.formCliente.get('paso2') as FormGroup;
+  }
+  get paso3Form(): FormGroup {
+    return this.formCliente.get('paso3') as FormGroup;
+  }
+  get paso4Form(): FormGroup {
+    return this.formCliente.get('paso4') as FormGroup;
   }
 }

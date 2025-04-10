@@ -1,8 +1,11 @@
-mat-form-field {
+.full-width {
   width: 100%;
-  margin: 10px 0px;
+  margin-bottom: 16px;
 }
 
-form {
-  width: 350px;
+.step-buttons {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
 }

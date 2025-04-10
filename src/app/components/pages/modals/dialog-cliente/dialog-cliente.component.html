@@ -1,43 +1,146 @@
+<h2 mat-dialog-title>Registro de Cliente</h2>
 
+<mat-dialog-content style="min-width: 800px;">
+  <mat-horizontal-stepper linear #stepper>
+    
+    <!-- Paso 1: Información General -->
+    <mat-step [stepControl]="paso1Form">
+      <form [formGroup]="paso1Form">
+        <ng-template matStepLabel>Información General</ng-template>
 
-<mat-dialog-content>
-  <form [formGroup]="formCliente">
-    <div style="width: 1200px; height: 450px;">
-      <mat-grid-list cols="1" rowHeight="950px">
-        <mat-tab-group>
-          <mat-tab label="Informacion General">
-            <mat-tab-group style="height: 70px; font-size: 12px;">
-              <mat-tab label="Categorizacion">
-                <p>Contenido de la pestaña Perfil</p>
-              </mat-tab>
-              <mat-tab label="Datos de la Empresa">
-                <p>Contenido de la pestaña Permisos</p>
-              </mat-tab>
-              <mat-tab label="Contactos">
-                <p>Contenido de la pestaña Historial</p>
-              </mat-tab>
-              <mat-tab label="Observaciones">
-                <p>Contenido de la pestaña Historial</p>
-              </mat-tab>
-            </mat-tab-group>
-          </mat-tab>
+        <!-- Formulario dentro del paso (formGroup ya debería estar en el <form>) -->
+<div fxLayout="column" fxLayoutGap="16px">
 
-    
-          <mat-tab label="Historico del Cliente">
-            <p>Contenido de la pestaña Clientes</p>
-          </mat-tab>
-    
-          <mat-tab label="Prefijos">
-            <p>Contenido de la pestaña Productos</p>
-          </mat-tab>
-        </mat-tab-group>
-      </mat-grid-list>
-    </div>
-    
-  </form>
+  <!-- Código Cliente -->
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Código Cliente</mat-label>
+    <input matInput formControlName="codigo" />
+    <mat-error *ngIf="paso1Form.get('codigo')?.hasError('required') && paso1Form.get('codigo')?.touched">
+      El código es obligatorio.
+    </mat-error>
+  </mat-form-field>
+
+  <!-- Nombre -->
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Nombre</mat-label>
+    <input matInput formControlName="nombre" />
+    <mat-error *ngIf="paso1Form.get('nombre')?.hasError('required') && paso1Form.get('nombre')?.touched">
+      El nombre es obligatorio.
+    </mat-error>
+  </mat-form-field>
+
+  <!-- RUC/CI/Pasaporte -->
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>RUC/CI/Pasaporte</mat-label>
+    <input matInput formControlName="ruc" />
+  </mat-form-field>
+
+  <!-- Categoría Cliente -->
+  <label style="margin-bottom: 4px;">Categoría Cliente:</label>
+  <div>
+    <mat-checkbox formControlName="categoriaIndividual">Individual</mat-checkbox>
+    <mat-checkbox formControlName="categoriaIndustrial" style="margin-left: 12px;">Industrial</mat-checkbox>
+  </div>
+
+  <!-- Grupo -->
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Grupo</mat-label>
+    <input matInput formControlName="grupo" />
+  </mat-form-field>
+
+  <!-- Subgrupo -->
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Subgrupo</mat-label>
+    <input matInput formControlName="subgrupo" />
+  </mat-form-field>
+
+  <!-- Botón siguiente -->
+  <div class="step-buttons" style="text-align: right;">
+    <button mat-raised-button color="primary" matStepperNext [disabled]="paso1Form.invalid">
+      Siguiente
+    </button>
+  </div>
+
+</div>
+
+      </form>
+    </mat-step>
+
+    <!-- Paso 2: Datos de la Empresa -->
+    <mat-step [stepControl]="paso2Form">
+      <form [formGroup]="paso2Form">
+        <ng-template matStepLabel>Datos de la Empresa</ng-template>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email</mat-label>
+          <input matInput formControlName="email" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Dirección</mat-label>
+          <input matInput formControlName="direccion" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Punto de Emisión</mat-label>
+          <input matInput type="number" formControlName="p_emision" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Caja</mat-label>
+          <input matInput type="number" formControlName="caja" />
+        </mat-form-field>
+
+        <div class="step-buttons">
+          <button mat-button matStepperPrevious>Anterior</button>
+          <button mat-button matStepperNext>Siguiente</button>
+        </div>
+      </form>
+    </mat-step>
+
+    <!-- Paso 3: Contactos -->
+    <mat-step [stepControl]="paso3Form">
+      <form [formGroup]="paso3Form">
+        <ng-template matStepLabel>Contactos</ng-template>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Nombre del Contacto</mat-label>
+          <input matInput formControlName="contactoNombre" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Teléfono</mat-label>
+          <input matInput formControlName="contactoTelefono" />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Correo Electrónico</mat-label>
+          <input matInput formControlName="contactoCorreo" />
+        </mat-form-field>
+
+        <div class="step-buttons">
+          <button mat-button matStepperPrevious>Anterior</button>
+          <button mat-button matStepperNext>Siguiente</button>
+        </div>
+      </form>
+    </mat-step>
+
+    <!-- Paso 4: Observaciones -->
+    <mat-step [stepControl]="paso4Form">
+      <form [formGroup]="paso4Form">
+        <ng-template matStepLabel>Observaciones</ng-template>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Observaciones</mat-label>
+          <textarea matInput formControlName="observaciones"></textarea>
+        </mat-form-field>
+
+        <div class="step-buttons">
+          <button mat-button matStepperPrevious>Anterior</button>
+          <button mat-raised-button color="primary" >Guardar</button>
+        </div>
+      </form>
+    </mat-step>
+
+  </mat-horizontal-stepper>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-raised-button mat-dialog-close>Guardar</button>
-  <button mat-raised-button mat-dialog-close>Salir</button>
-  
-</mat-dialog-actions>
