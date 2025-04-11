@@ -1,146 +1,829 @@
-<h2 mat-dialog-title>Registro de Cliente</h2>
+<h2 style="margin-bottom: 0px;">Registro de Cliente</h2>
 
-<mat-dialog-content style="min-width: 800px;">
-  <mat-horizontal-stepper linear #stepper>
-    
-    <!-- Paso 1: Información General -->
-    <mat-step [stepControl]="paso1Form">
-      <form [formGroup]="paso1Form">
-        <ng-template matStepLabel>Información General</ng-template>
+<mat-dialog-content >
+  <mat-tab-group [(selectedIndex)]="selectedTab" dynamicHeight>
 
-        <!-- Formulario dentro del paso (formGroup ya debería estar en el <form>) -->
-<div fxLayout="column" fxLayoutGap="16px">
+    <!-- TAB 1: Información General -->
+    <mat-tab label="Información General" >
+      <ng-template matTabContent >
+        <div >
+          <mat-horizontal-stepper linear #stepper>
 
-  <!-- Código Cliente -->
-  <mat-form-field appearance="outline" class="full-width">
-    <mat-label>Código Cliente</mat-label>
-    <input matInput formControlName="codigo" />
-    <mat-error *ngIf="paso1Form.get('codigo')?.hasError('required') && paso1Form.get('codigo')?.touched">
-      El código es obligatorio.
-    </mat-error>
-  </mat-form-field>
+            <!-- Subpaso 1.1: Categorización -->
+            <mat-step [stepControl]="paso1Form" >
+              <form [formGroup]="paso1Form">
+                <ng-template matStepLabel>1 Categorización</ng-template>
 
-  <!-- Nombre -->
-  <mat-form-field appearance="outline" class="full-width">
-    <mat-label>Nombre</mat-label>
-    <input matInput formControlName="nombre" />
-    <mat-error *ngIf="paso1Form.get('nombre')?.hasError('required') && paso1Form.get('nombre')?.touched">
-      El nombre es obligatorio.
-    </mat-error>
-  </mat-form-field>
+                <div class="form-container">
+                  <div class="form-row">
+                    <label class="form-label">Código del Cliente:</label>
+                    <div class="input-container">
+                      <input type="text" placeholder="texto" class="text-input" />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">RUC/CI/Pasaporte:</label>
+                    <div class="input-container">
+                      <input type="text" placeholder="texto" class="text-input" />
+                    </div>
+                  </div>
+                  <div class="form-row category-row">
+                    <label class="form-label">Categoria Cliente:</label>
+                    <div class="checkbox-group">
+                      <div class="checkbox-container">
+                        <input type="checkbox" id="individual" class="checkbox-input" />
+                        <label for="individual" class="checkbox-label">Individual</label>
+                      </div>
+                      <div class="checkbox-container">
+                        <input type="checkbox" id="industrial" class="checkbox-input" />
+                        <label for="industrial" class="checkbox-label">Industrial</label>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">Grupo:</label>
+                    <div class="dual-input-container">
+                      <input type="text" placeholder="texto" class="text-input" />
+                      <input type="text" placeholder="texto" class="text-input" />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">Categoría Producto:</label>
+                    <div class="dual-input-container">
+                      <input type="text" placeholder="texto" class="text-input" />
+                      <input type="text" placeholder="texto" class="text-input" />
+                    </div>
+                  </div>
+                  <div class="offset-input">
+                    <input type="text" placeholder="texto" class="text-input" />
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">Asignación de Prefijo:</label>
+                    <div class="prefix-checkbox-group">
+                      <div class="checkbox-container">
+                        <input type="checkbox" id="prefix-5" class="checkbox-input" />
+                        <label for="prefix-5" class="checkbox-label">5</label>
+                      </div>
+                      <div class="checkbox-container">
+                        <input type="checkbox" id="prefix-6" class="checkbox-input" />
+                        <label for="prefix-6" class="checkbox-label">6</label>
+                      </div>
+                      <div class="checkbox-container">
+                        <input type="checkbox" id="prefix-7" class="checkbox-input" />
+                        <label for="prefix-7" class="checkbox-label">7</label>
+                      </div>
+                      <div class="checkbox-container">
+                        <input type="checkbox" id="prefix-8" class="checkbox-input" />
+                        <label for="prefix-8" class="checkbox-label">8</label>
+                      </div>
+                      <div class="checkbox-container">
+                        <input type="checkbox" id="prefix-usa" class="checkbox-input" />
+                        <label for="prefix-usa" class="checkbox-label">USA</label>
+                      </div>
+                      <div class="checkbox-container">
+                        <input type="checkbox" id="prefix-msv" class="checkbox-input" />
+                        <label for="prefix-msv" class="checkbox-label">MSV</label>
+                      </div>
+                      <div class="checkbox-container">
+                        <input type="checkbox" id="prefix-modify" class="checkbox-input" />
+                        <label for="prefix-modify" class="checkbox-label"
+                          >Modificar Secuencia</label
+                        >
+                      </div>
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">Prefijo:</label>
+                    <div class="input-container">
+                      <input type="text" placeholder="texto" class="text-input" />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">Prefijo GS1:</label>
+                    <div class="input-container">
+                      <input type="text" placeholder="texto" class="text-input" />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">GLN:</label>
+                    <div class="input-container">
+                      <input type="text" placeholder="texto" class="text-input" />
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">Origen Prefijo:</label>
+                    <div class="input-container">
+                      <input type="text" placeholder="texto" class="text-input" />
+                    </div>
+                  </div>
+                </div>
+                <section class="date-info-section">
+                  <div class="date-container">
+                    <!-- First row with dates and user info -->
+                    <div class="info-row">
+                      <div class="info-group date-group">
+                        <div class="info-item">
+                          <label class="form-label">Fecha de ingreso:</label>
+                          <div class="input-field">
+                            <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                            <span class="field-text">Fecha</span>
+                          </div>
+                        </div>
+                        <div class="info-item">
+                          <label class="form-label">Fecha modificada:</label>
+                          <div class="input-field">
+                            <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                            <span class="field-text">Fecha</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="info-group user-group">
+                        <div class="info-item">
+                          <label class="form-label">Usuario modificado:</label>
+                          <div class="input-field">
+                            <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                            <span class="field-text">Fecha</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+        
+                    <!-- Second row with status and zone info -->
+                    <div class="info-row">
+                      <div class="info-group status-group">
+                        <label class="form-label">Estado:</label>
+                        <div class="status-fields">
+                          <div class="input-field">
+                            <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                            <span class="field-text">Estado</span>
+                          </div>
+                          <div class="input-field">
+                            <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                            <span class="field-text">Afiliado</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="info-group zone-group">
+                        <label class="form-label">Zona:</label>
+                        <div class="zone-fields">
+                          <div class="input-field">
+                            <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                            <span class="field-text">Z01</span>
+                          </div>
+                          <div class="input-field">
+                            <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                            <span class="field-text">Zona 1</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+                <div style="text-align: right;">
+                  <button mat-button color="primary" matStepperNext [disabled]="paso1Form.invalid">Siguiente</button>
+                  <button mat-button mat-dialog-close>Cancelar</button>
+                </div>
+              </form>
+            </mat-step>
 
-  <!-- RUC/CI/Pasaporte -->
-  <mat-form-field appearance="outline" class="full-width">
-    <mat-label>RUC/CI/Pasaporte</mat-label>
-    <input matInput formControlName="ruc" />
-  </mat-form-field>
-
-  <!-- Categoría Cliente -->
-  <label style="margin-bottom: 4px;">Categoría Cliente:</label>
-  <div>
-    <mat-checkbox formControlName="categoriaIndividual">Individual</mat-checkbox>
-    <mat-checkbox formControlName="categoriaIndustrial" style="margin-left: 12px;">Industrial</mat-checkbox>
-  </div>
-
-  <!-- Grupo -->
-  <mat-form-field appearance="outline" class="full-width">
-    <mat-label>Grupo</mat-label>
-    <input matInput formControlName="grupo" />
-  </mat-form-field>
-
-  <!-- Subgrupo -->
-  <mat-form-field appearance="outline" class="full-width">
-    <mat-label>Subgrupo</mat-label>
-    <input matInput formControlName="subgrupo" />
-  </mat-form-field>
-
-  <!-- Botón siguiente -->
-  <div class="step-buttons" style="text-align: right;">
-    <button mat-raised-button color="primary" matStepperNext [disabled]="paso1Form.invalid">
-      Siguiente
-    </button>
-  </div>
-
-</div>
-
-      </form>
-    </mat-step>
-
-    <!-- Paso 2: Datos de la Empresa -->
-    <mat-step [stepControl]="paso2Form">
-      <form [formGroup]="paso2Form">
-        <ng-template matStepLabel>Datos de la Empresa</ng-template>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Email</mat-label>
-          <input matInput formControlName="email" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Dirección</mat-label>
-          <input matInput formControlName="direccion" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Punto de Emisión</mat-label>
-          <input matInput type="number" formControlName="p_emision" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Caja</mat-label>
-          <input matInput type="number" formControlName="caja" />
-        </mat-form-field>
-
-        <div class="step-buttons">
-          <button mat-button matStepperPrevious>Anterior</button>
-          <button mat-button matStepperNext>Siguiente</button>
+            <!-- Subpaso 1.2: Datos de la Empresa -->
+<mat-step [stepControl]="paso2Form">
+  <form [formGroup]="paso2Form">
+    <ng-template matStepLabel>2 Datos de la Empresa</ng-template>
+    <section class="client-info-container">
+      <div class="client-name-row">
+        <label class="field-label client-name-label">
+          Nombre del Cliente:
+        </label>
+        <p class="field-value client-name-value">texto</p>
+      </div>
+      <div class="representative-row">
+        <label class="field-label representative-label"> Representante: </label>
+        <p class="field-value representative-value">texto</p>
+      </div>
+      <div class="location-row">
+        <label class="field-label city-label">Ciudad:</label>
+        <p class="field-value city-value">texto</p>
+        <label class="field-label canton-label">Cantón</label>
+        <p class="field-value canton-value">texto</p>
+        <label class="field-label province-label">Provincia:</label>
+        <p class="field-value province-value">texto</p>
+      </div>
+      <div class="address-row">
+        <label class="field-label address-label"> Dirección Principal: </label>
+        <p class="field-value address-value">texto</p>
+      </div>
+      <div class="postal-mobile-row">
+        <label class="field-label postal-label"> Código Postal: </label>
+        <div class="postal-mobile-container">
+          <p class="field-value postal-value">texto</p>
+          <label class="field-label mobile-label">Celular:</label>
+          <div class="phone-container">
+            <span class="country-code">(+593)</span>
+            <span class="phone-number">número</span>
+          </div>
         </div>
-      </form>
-    </mat-step>
-
-    <!-- Paso 3: Contactos -->
-    <mat-step [stepControl]="paso3Form">
-      <form [formGroup]="paso3Form">
-        <ng-template matStepLabel>Contactos</ng-template>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Nombre del Contacto</mat-label>
-          <input matInput formControlName="contactoNombre" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Teléfono</mat-label>
-          <input matInput formControlName="contactoTelefono" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Correo Electrónico</mat-label>
-          <input matInput formControlName="contactoCorreo" />
-        </mat-form-field>
-
-        <div class="step-buttons">
-          <button mat-button matStepperPrevious>Anterior</button>
-          <button mat-button matStepperNext>Siguiente</button>
+      </div>
+      <div class="web-user-row">
+        <div class="labels-column">
+          <label class="field-label website-label">Sitio Web:</label>
+          <label class="field-label user-label">Usuario:</label>
         </div>
-      </form>
-    </mat-step>
-
-    <!-- Paso 4: Observaciones -->
-    <mat-step [stepControl]="paso4Form">
-      <form [formGroup]="paso4Form">
-        <ng-template matStepLabel>Observaciones</ng-template>
-
-        <mat-form-field appearance="outline" class="full-width">
-          <mat-label>Observaciones</mat-label>
-          <textarea matInput formControlName="observaciones"></textarea>
-        </mat-form-field>
-
-        <div class="step-buttons">
-          <button mat-button matStepperPrevious>Anterior</button>
-          <button mat-raised-button color="primary" >Guardar</button>
+        <div class="values-column">
+          <div class="website-phone-container">
+            <p class="field-value website-value">texto</p>
+            <div class="phone2-container">
+              <label class="field-label phone2-label">Teléfono 2:</label>
+              <div class="phone-container">
+                <span class="country-code">(+593)</span>
+                <span class="phone-number">número</span>
+              </div>
+            </div>
+          </div>
+          <p class="field-value user-value">texto</p>
         </div>
-      </form>
-    </mat-step>
+      </div>
+      <div class="observation-row">
+        <label class="field-label observation-label"> Observación 1: </label>
+        <p class="field-value observation-value">texto</p>
+      </div>
+    </section>
+    <section class="date-info-section">
+      <div class="date-container">
+        <!-- First row with dates and user info -->
+        <div class="info-row">
+          <div class="info-group date-group">
+            <div class="info-item">
+              <label class="form-label">Fecha de ingreso:</label>
+              <div class="input-field">
+                <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                <span class="field-text">Fecha</span>
+              </div>
+            </div>
+            <div class="info-item">
+              <label class="form-label">Fecha modificada:</label>
+              <div class="input-field">
+                <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                <span class="field-text">Fecha</span>
+              </div>
+            </div>
+          </div>
+          <div class="info-group user-group">
+            <div class="info-item">
+              <label class="form-label">Usuario modificado:</label>
+              <div class="input-field">
+                <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                <span class="field-text">Fecha</span>
+              </div>
+            </div>
+          </div>
+        </div>
 
-  </mat-horizontal-stepper>
+        <!-- Second row with status and zone info -->
+        <div class="info-row">
+          <div class="info-group status-group">
+            <label class="form-label">Estado:</label>
+            <div class="status-fields">
+              <div class="input-field">
+                <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                <span class="field-text">Estado</span>
+              </div>
+              <div class="input-field">
+                <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                <span class="field-text">Afiliado</span>
+              </div>
+            </div>
+          </div>
+          <div class="info-group zone-group">
+            <label class="form-label">Zona:</label>
+            <div class="zone-fields">
+              <div class="input-field">
+                <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                <span class="field-text">Z01</span>
+              </div>
+              <div class="input-field">
+                <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                <span class="field-text">Zona 1</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <div style="text-align: right;">
+      <button mat-button matStepperPrevious>Anterior</button>
+      <button mat-button color="primary" matStepperNext>Siguiente</button>
+    </div>
+  </form>
+</mat-step>
+
+<!-- Subpaso 1.3: Contactos -->
+<mat-step [stepControl]="paso3Form">
+  <form [formGroup]="paso3Form">
+    <ng-template matStepLabel>3 Contactos</ng-template>
+
+    <div class="container">
+      <div class="content-wrapper">
+        <section class="representative-legal-section">
+          <div class="website-field">
+            <label class="form-label">
+              Nombre:
+              <span class="text-blue-light"> (Representante Legal) </span>
+            </label>
+            <div class="input-field">
+              <img
+                src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                class="field-icon"
+              />
+              <span class="field-text">texto</span>
+            </div>
+          </div>
+        </section>
+        <section class="email-phone-section">
+          <div class="website-field email-field">
+            <label class="form-label"> E-mail: </label>
+            <div class="input-field">
+              <img
+                src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                class="field-icon"
+              />
+              <span class="field-text">E-mail</span>
+            </div>
+          </div>
+          <div class="phone-field">
+            <label class="form-label"> Telf. o Cel.: </label>
+            <div class="input-field">
+              <img
+                src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                class="field-icon"
+              />
+              <span class="field-text">(+593)</span>
+            </div>
+          </div>
+          <div class="input-field area-code">
+            <img
+              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+              class="field-icon"
+            />
+            <span class="field-text">(02)</span>
+          </div>
+          <div class="input-field phone-number">
+            <img
+              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+              class="field-icon"
+            />
+            <span class="field-text">(número)</span>
+          </div>
+        </section>
+        <section class="codification-name-section">
+          <div class="website-field">
+            <label class="form-label">
+              Nombre:
+              <span class="text-blue-light">(Codificación)</span>
+            </label>
+            <div class="input-field">
+              <img
+                src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                class="field-icon"
+              />
+              <span class="field-text">texto</span>
+            </div>
+          </div>
+        </section>
+        <section class="codification-contact-section">
+          <div class="website-field email-field">
+            <label class="form-label"> E-mail: </label>
+            <div class="input-field">
+              <img
+                src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                class="field-icon"
+              />
+              <span class="field-text">E-mail</span>
+            </div>
+          </div>
+          <div class="phone-field">
+            <label class="form-label"> Telf. o Cel.: </label>
+            <div class="input-field">
+              <img
+                src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                class="field-icon"
+              />
+              <span class="field-text">(+593)</span>
+            </div>
+          </div>
+          <div class="input-field area-code">
+            <img
+              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+              class="field-icon"
+            />
+            <span class="field-text">(02)</span>
+          </div>
+          <div class="input-field phone-number">
+            <img
+              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+              class="field-icon"
+            />
+            <span class="field-text">(número)</span>
+          </div>
+        </section>
+        <section class="financial-name-section">
+          <div class="website-field">
+            <label class="form-label">
+              Nombre:
+              <span class="text-blue-light">(Financiero)</span>
+            </label>
+            <div class="input-field">
+              <img
+                src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                class="field-icon"
+              />
+              <span class="field-text">texto</span>
+            </div>
+          </div>
+        </section>
+        <section class="email-group-section">
+          <div class="website-field">
+            <label class="form-label"> E-mail 1: </label>
+            <div class="input-field">
+              <img
+                src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                class="field-icon"
+              />
+              <span class="field-text">E-mail</span>
+            </div>
+          </div>
+          <div class="phone-field">
+            <label class="form-label"> E-mail 2: </label>
+            <div class="input-field">
+              <img
+                src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                class="field-icon"
+              />
+              <span class="field-text">E-mail</span>
+            </div>
+          </div>
+        </section>
+        <section class="email-phone-group-section">
+          <div class="website-field">
+            <label class="form-label"> E-mail 3: </label>
+            <div class="input-field">
+              <img
+                src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                class="field-icon"
+              />
+              <span class="field-text">E-mail</span>
+            </div>
+          </div>
+          <div class="phone-field">
+            <label class="form-label"> Telf. o Cel.: </label>
+            <div class="input-field">
+              <img
+                src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                class="field-icon"
+              />
+              <span class="field-text">(+593)</span>
+            </div>
+          </div>
+          <div class="input-field area-code">
+            <img
+              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+              class="field-icon"
+            />
+            <span class="field-text">(02)</span>
+          </div>
+          <div class="input-field phone-number">
+            <img
+              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+              class="field-icon"
+            />
+            <span class="field-text">(número)</span>
+          </div>
+        </section>
+        <section class="export-questions-section">
+          <div class="questions-container">
+            <div class="question-row">
+              <div class="checkbox"></div>
+              <label class="form-label">
+                ¿Se va a exportar sus productos?
+              </label>
+            </div>
+            <div class="question-row">
+              <div class="checkbox"></div>
+              <label class="form-label">
+                ¿Se vende o se venderá su producto en el mercado estadounidense?
+              </label>
+            </div>
+            <div class="question-row">
+              <div class="checkbox"></div>
+              <label class="form-label">
+                ¿Se clasificará su producto como dispositivo médico sesgún las
+                reglas de la FDA?
+              </label>
+            </div>
+            <div class="source-question">
+              <label class="form-label">
+                ¿Cómo se entero de GS1 Ecuador?
+              </label>
+              <div class="source-options">
+                <div class="checkbox"></div>
+                <label class="form-label"> Página Web </label>
+                <div class="checkbox"></div>
+                <label class="form-label"> Instagram </label>
+                <div class="checkbox"></div>
+                <label class="form-label"> Facebook </label>
+                <div class="checkbox"></div>
+                <label class="form-label"> Un conocido </label>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section class="date-info-section">
+          <div class="date-container">
+            <!-- First row with dates and user info -->
+            <div class="info-row">
+              <div class="info-group date-group">
+                <div class="info-item">
+                  <label class="form-label">Fecha de ingreso:</label>
+                  <div class="input-field">
+                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                    <span class="field-text">Fecha</span>
+                  </div>
+                </div>
+                <div class="info-item">
+                  <label class="form-label">Fecha modificada:</label>
+                  <div class="input-field">
+                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                    <span class="field-text">Fecha</span>
+                  </div>
+                </div>
+              </div>
+              <div class="info-group user-group">
+                <div class="info-item">
+                  <label class="form-label">Usuario modificado:</label>
+                  <div class="input-field">
+                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                    <span class="field-text">Fecha</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Second row with status and zone info -->
+            <div class="info-row">
+              <div class="info-group status-group">
+                <label class="form-label">Estado:</label>
+                <div class="status-fields">
+                  <div class="input-field">
+                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                    <span class="field-text">Estado</span>
+                  </div>
+                  <div class="input-field">
+                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                    <span class="field-text">Afiliado</span>
+                  </div>
+                </div>
+              </div>
+              <div class="info-group zone-group">
+                <label class="form-label">Zona:</label>
+                <div class="zone-fields">
+                  <div class="input-field">
+                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                    <span class="field-text">Z01</span>
+                  </div>
+                  <div class="input-field">
+                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                    <span class="field-text">Zona 1</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <div style="text-align: right;">
+      <button mat-button matStepperPrevious>Anterior</button>
+      <button mat-button color="primary" matStepperNext>Siguiente</button>
+      <button mat-button mat-dialog-close>Cancelar</button>
+    </div>
+  </form>
+</mat-step>
+
+<!-- Subpaso 1.4: Observaciones -->
+<mat-step [stepControl]="paso4Form">
+  <form [formGroup]="paso4Form">
+    <ng-template matStepLabel>4 Observaciones</ng-template>
+
+    <section class="input-container">
+      <!-- First Section -->
+      <article class="section-container">
+        <div class="user-date-row">
+          <div class="field-group">
+            <label class="field-label">Usuario:</label>
+            <div class="input-field">
+              <span class="input-cursor"></span>
+              <span class="placeholder-text">texto</span>
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Fecha:</label>
+            <div class="input-field">
+              <span class="input-cursor"></span>
+              <span class="placeholder-text">Fecha</span>
+            </div>
+          </div>
+        </div>
+        <div class="observation-row">
+          <div class="field-group">
+            <label class="field-label">Observaciones 2:</label>
+            <div class="input-field full-width">
+              <span class="input-cursor"></span>
+              <span class="placeholder-text">texto</span>
+            </div>
+          </div>
+        </div>
+        <div class="additional-row">
+          <div class="field-group">
+            <span class="empty-label"></span>
+            <div class="input-field full-width">
+              <span class="input-cursor"></span>
+              <span class="placeholder-text">texto</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Second Section -->
+      <article class="section-container">
+        <div class="user-date-row">
+          <div class="field-group">
+            <label class="field-label">Usuario:</label>
+            <div class="input-field">
+              <span class="input-cursor"></span>
+              <span class="placeholder-text">texto</span>
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Fecha:</label>
+            <div class="input-field">
+              <span class="input-cursor"></span>
+              <span class="placeholder-text">Fecha</span>
+            </div>
+          </div>
+        </div>
+        <div class="observation-row">
+          <div class="field-group">
+            <label class="field-label">Observaciones 3:</label>
+            <div class="input-field full-width">
+              <span class="input-cursor"></span>
+              <span class="placeholder-text">texto</span>
+            </div>
+          </div>
+        </div>
+        <div class="additional-row">
+          <div class="field-group">
+            <span class="empty-label"></span>
+            <div class="input-field full-width">
+              <span class="input-cursor"></span>
+              <span class="placeholder-text">texto</span>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <!-- Third Section -->
+      <article class="section-container">
+        <div class="user-date-row">
+          <div class="field-group">
+            <label class="field-label">Usuario:</label>
+            <div class="input-field">
+              <span class="input-cursor"></span>
+              <span class="placeholder-text">texto</span>
+            </div>
+          </div>
+          <div class="field-group">
+            <label class="field-label">Fecha:</label>
+            <div class="input-field">
+              <span class="input-cursor"></span>
+              <span class="placeholder-text">Fecha</span>
+            </div>
+          </div>
+        </div>
+        <div class="observation-row">
+          <div class="field-group">
+            <label class="field-label">Observaciones 4:</label>
+            <div class="input-field full-width">
+              <span class="input-cursor"></span>
+              <span class="placeholder-text">texto</span>
+            </div>
+          </div>
+        </div>
+        <div class="additional-row">
+          <div class="field-group">
+            <span class="empty-label"></span>
+            <div class="input-field full-width">
+              <span class="input-cursor"></span>
+              <span class="placeholder-text">texto</span>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+    <section class="date-info-section">
+      <div class="date-container">
+        <!-- First row with dates and user info -->
+        <div class="info-row">
+          <div class="info-group date-group">
+            <div class="info-item">
+              <label class="form-label">Fecha de ingreso:</label>
+              <div class="input-field">
+                <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                <span class="field-text">Fecha</span>
+              </div>
+            </div>
+            <div class="info-item">
+              <label class="form-label">Fecha modificada:</label>
+              <div class="input-field">
+                <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                <span class="field-text">Fecha</span>
+              </div>
+            </div>
+          </div>
+          <div class="info-group user-group">
+            <div class="info-item">
+              <label class="form-label">Usuario modificado:</label>
+              <div class="input-field">
+                <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                <span class="field-text">Fecha</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Second row with status and zone info -->
+        <div class="info-row">
+          <div class="info-group status-group">
+            <label class="form-label">Estado:</label>
+            <div class="status-fields">
+              <div class="input-field">
+                <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                <span class="field-text">Estado</span>
+              </div>
+              <div class="input-field">
+                <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                <span class="field-text">Afiliado</span>
+              </div>
+            </div>
+          </div>
+          <div class="info-group zone-group">
+            <label class="form-label">Zona:</label>
+            <div class="zone-fields">
+              <div class="input-field">
+                <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                <span class="field-text">Z01</span>
+              </div>
+              <div class="input-field">
+                <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true" class="field-icon" />
+                <span class="field-text">Zona 1</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    <div style="text-align: right;">
+      <button mat-button matStepperPrevious>Anterior</button>
+      <button mat-raised-button color="primary" (click)="guardar()">Guardar</button>
+      <button mat-button mat-dialog-close>Cancelar</button>
+    </div>
+  </form>
+</mat-step>
+
+
+          </mat-horizontal-stepper>
+        </div>
+      </ng-template>
+    </mat-tab>
+
+    <!-- TAB 2: Histórico -->
+    <mat-tab label="Histórico del Cliente">
+      <ng-template matTabContent>
+        <div *ngIf="selectedTab === 1">
+          <p>Contenido histórico aquí.</p>
+        </div>
+      </ng-template>
+    </mat-tab>
+
+    <!-- TAB 3: Prefijos -->
+    <mat-tab label="Prefijos">
+      <ng-template matTabContent>
+        <div *ngIf="selectedTab === 2">
+          <p>Contenido de prefijos aquí.</p>
+        </div>
+      </ng-template>
+    </mat-tab>
+
+  </mat-tab-group>
 </mat-dialog-content>
+

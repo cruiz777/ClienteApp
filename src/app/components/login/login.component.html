@@ -1,47 +1,53 @@
 <body>
   <div class="login-container">
-    
-    <!-- LOGO -->
-    <div class="logo">
-      <img src="assets/GS1-logo.png" alt="GS1 Logo">
-    </div>
-
-    <!-- TÍTULO -->
-    <h3>Bienvenido</h3>
-
-    <!-- INPUT USUARIO -->
-    <div class="form-group">
-      <div class="input-group">
-        <label for="usuario">Usuario:</label>
-        <img src="assets/person-icon.png" alt="Usuario">
-        <input type="email" id="usuario" placeholder="gs1@gs1.com">
+    <div class="login-card">
+      <div class="header-container">
+        <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/9bdfc84877b25ff7466c5ed532fbb34900f384f3?placeholderIfAbsent=true" class="logo-image" alt="Logo" />
+        <h1 class="welcome-text">Bienvenido</h1>
       </div>
-    </div>
-    
-    <!-- INPUT CLAVE -->
-    <div class="form-group">
-      <div class="input-group">
-        <label for="clave">Clave:</label>
-        <img src="assets/hidden-icon.png" alt="Mostrar/Ocultar" id="toggleClave" style="cursor: pointer;">
-        <input type="password" id="clave" placeholder="**************">
+      <div class="username-container">
+        <label for="username" class="field-label">Usuario:</label>
+        <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/beca865165e85063b993b53856f20615b8f22625?placeholderIfAbsent=true" class="user-icon" alt="Usuario icono" />
+        <div class="input-container">
+          <input
+            type="email"
+            id="username"
+            class="input-field"
+            placeholder="tucorreo@gmail.com"
+            aria-label="Correo electrónico"
+          />
+          <div class="input-underline"></div>
+        </div>
       </div>
-    </div>
-    
-    
-
-    <!-- OLVIDÓ CLAVE -->
-    <div class="forgot">¿Has olvidado su contraseña?</div>
-
-    <!-- BOTONES -->
-    <div class="btn-group">
-      <button class="btn siguiente" routerLink="/menus/">Iniciar Sesión</button>
-      
-    </div>
-
-    <!-- PIE -->
-    <div class="footer">
-      Copyright © 2025
-      <img src="assets/logo-tipo-3.png" alt="GAP System">
+      <div class="password-container">
+        <label for="password" class="field-label">Clave:</label>
+        <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/5b91013826418209be19746c5486e4c8269379fb?placeholderIfAbsent=true" class="password-icon" alt="Clave icono" />
+        <div class="input-container">
+          <input
+            type="password"
+            id="password"
+            class="input-field"
+            placeholder="***************"
+            aria-label="Contraseña"
+          />
+          <div class="input-underline"></div>
+        </div>
+      </div>
+      <div class="forgot-password-container">
+        <div class="spacer"></div>
+        <a href="#" class="forgot-password-link">
+          ¿Has olvidado su contraseña?
+        </a>
+      </div>
+      <div class="login-button-container">
+        <button class="login-button" routerLink="/menus/">
+          <span class="button-text">Iniciar Sesión</span>
+        </button>
+      </div>
+      <div class="footer-container">
+        <span class="footer-text">Hecho por</span>
+        <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/ec03916b8cd48bd5e895e9b9aecf4f14ad22fa24?placeholderIfAbsent=true" class="footer-logo" alt="Logo de la empresa" />
+      </div>
     </div>
   </div>
 </body>

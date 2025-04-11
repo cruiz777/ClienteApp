@@ -26,6 +26,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatRadioModule } from '@angular/material/radio';
 // Fechas
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
@@ -69,6 +70,7 @@ import { LayoutModule } from '@angular/cdk/layout';
     MomentDateModule,
     MatButtonToggleModule,
     MatStepperModule,
+    MatRadioModule,
     // CDK
     LayoutModule
   ],
@@ -105,6 +107,7 @@ import { LayoutModule } from '@angular/cdk/layout';
     MomentDateModule,
     MatButtonToggleModule,
     MatStepperModule,
+    MatRadioModule,
     // CDK
     LayoutModule
   ]
