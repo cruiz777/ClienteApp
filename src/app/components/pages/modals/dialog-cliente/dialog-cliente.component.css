@@ -27,11 +27,11 @@
 .form-row {
   display: flex;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 2px;
 }
 
 .form-row label {
-  min-width: 120px;
+  min-width: 25px;
   margin-right: 8px;
   font-weight: 500;
 }
@@ -129,8 +129,8 @@
   }
 }
 .form-label {
-  padding-top: 6px;
-  padding-bottom: 6px;
+  padding-top: 1px;
+  padding-bottom: 1px;
   gap: 10px;
   font-size: 12px;
   color: #002c6c;
@@ -581,7 +581,7 @@
   }
 }
 .form-label {
-  padding: 6px 0;
+  padding: 0px 0;
   gap: 10px;
   color: rgba(0, 44, 108, 1);
   white-space: nowrap;
@@ -614,15 +614,10 @@
 :host {
         display: contents;
       }
-      .form-container {
-        font-family: "Inter", sans-serif;
-        padding: 20px;
-        max-width: 800px;
-        margin: 0 auto;
-      }
+      
       .form-row {
         display: flex;
-        margin-bottom: 12px;
+        margin-bottom: 2px;
         align-items: center;
       }
       @media (max-width: 640px) {
@@ -656,7 +651,7 @@
         padding: 3px 8px;
         font-size: 10px;
         border: none;
-        box-shadow: 0 1px 0 0 var(--gs-1-blue-20, #ccd5e2);
+        
         color: #ccd5e2;
         background-color: #fff;
       }
@@ -690,6 +685,7 @@
       .checkbox-label {
         color: #002c6c;
         font-size: 12px;
+        width: 4px;
       }
       .dual-input-container {
         display: flex;
@@ -732,13 +728,13 @@
       }
       .form-container {
         font-family: "Inter", sans-serif;
-        padding: 20px;
+        padding: 0px;
         max-width: 800px;
         margin: 0 auto;
       }
       .form-row {
         display: flex;
-        margin-bottom: 12px;
+        margin-bottom: 2px;
         align-items: center;
       }
       @media (max-width: 640px) {
@@ -772,7 +768,7 @@
         padding: 3px 8px;
         font-size: 10px;
         border: none;
-        box-shadow: 0 1px 0 0 var(--gs-1-blue-20, #ccd5e2);
+        
         color: #ccd5e2;
         background-color: #fff;
       }
@@ -885,7 +881,7 @@
         color: #002c6c;
         font-size: 12px;
         font-weight: 400;
-        padding: 6px 0;
+        padding: 0px 0;
         width: 122px;
       }
       @media (max-width: 640px) {
@@ -897,7 +893,7 @@
       .input-field {
         display: flex;
         align-items: center;
-        box-shadow: 0 1px 0 0 var(--gs-1-blue-20, #ccd5e2);
+        
         padding: 3px 4px;
         gap: 6px;
         height: 19px;
@@ -993,7 +989,7 @@
         flex-grow: 1;
       }
       .input-container {
-        padding: 2px 0;
+        padding: 0px 0;
         font-size: 10px;
         color: rgba(204, 213, 226, 1);
         white-space: nowrap;
@@ -1059,9 +1055,8 @@
       }
       .input-field {
         background-color: rgba(255, 255, 255, 1);
-        box-shadow: 0px 1px 0px rgba(204, 213, 226, 1);
+        box-shadow: 0px 1px 0px rgba(204, 226, 217, 0.349);
         align-self: stretch;
-        display: flex;
         margin: auto 0;
         padding: 3px 4px;
         align-items: center;
@@ -1069,7 +1064,7 @@
         font-size: 10px;
         color: rgba(204, 213, 226, 1);
         justify-content: start;
-        width: 165px;
+        width: 85px;
       }
       @media (max-width: 991px) {
         .input-field {
@@ -1406,3 +1401,27 @@
       .observation-label {
         flex-grow: 1;
       }
+
+      ::ng-deep mat-tab-body {
+  padding-top: 8px !important; /* reduce el espacio interno */
+}
+
+::ng-deep .mat-horizontal-stepper-header-container {
+  margin-top: 0px !important;
+  padding-top: 0px !important;
+}
+
+.underline-input {
+  border: none;
+  border-bottom: 1px solid #002c6c; /* línea azul o gris */
+  outline: none;
+  background: transparent;
+  width: 100%;
+  padding: 3px 6px;
+  font-size: 12px;
+}
+
+
+.underline-input:focus {
+  border-bottom: 2px solid #3f51b5; /* color azul de foco */
+}

@@ -16,6 +16,7 @@ import { CodbarComponent } from './codbar/codbar.component';
 import { MenusRoutingModule } from './menus-routing.module';
 
 
+
 @NgModule({
   declarations: [
     MenusComponent,
@@ -26,7 +27,8 @@ import { MenusRoutingModule } from './menus-routing.module';
     DialogDeleteUsuarioComponent,
     DialogDeleteProductoComponent,
     DialogDetalleVentaComponent,
-    DialogResultadoVentaComponent,
+    DialogResultadoVentaComponent
+
   ],
   imports: [
     CommonModule,
