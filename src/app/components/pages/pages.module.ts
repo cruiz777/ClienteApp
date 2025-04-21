@@ -39,7 +39,8 @@ import { DialogClienteComponent } from './modals/dialog-cliente/dialog-cliente.c
     DialogDetalleVentaComponent,
     DialogResultadoVentaComponent,
     ClientesComponent,
-    DialogClienteComponent
+    DialogClienteComponent,
+    
   ],
   imports: [
     CommonModule,

@@ -1,43 +1,747 @@
+<mat-dialog-content style="max-height: 105vh;">
+  <mat-tab-group [(selectedIndex)]="selectedTab" dynamicHeight>
+
+    <!-- TAB 1: Información General -->
+    <mat-tab label="Información General">
+      <ng-template matTabContent>
+        <div>
+          <mat-horizontal-stepper linear #stepper>
+
+            <!-- Subpaso 1.1: Categorización -->
+            <mat-step [stepControl]="paso1Form">
+              <form [formGroup]="paso1Form">
+                <ng-template matStepLabel>1 Categorización</ng-template>
+
+                <div class="container">
+
+                  <div class="form-row">
+                    <label class="form-label">Código del Cliente:</label>
+                    <input type="text" readonly />
+                  </div>
+                  <div>
+                    <label class="form-label">RUC/CI/Pasaporte:</label>
+                    <mat-checkbox [(ngModel)]="esPasaporte" (change)="actualizarValidacionRuc()">
+                      Es Pasaporte
+                    </mat-checkbox>
+                    <input type="text" [formControl]="rucControl" (blur)="onRucBlur()"
+                      placeholder="Ingrese número o pasaporte" class="underline-input" />
 
 
-<mat-dialog-content>
-  <form [formGroup]="formCliente">
-    <div style="width: 1200px; height: 450px;">
-      <mat-grid-list cols="1" rowHeight="950px">
-        <mat-tab-group>
-          <mat-tab label="Informacion General">
-            <mat-tab-group style="height: 70px; font-size: 12px;">
-              <mat-tab label="Categorizacion">
-                <p>Contenido de la pestaña Perfil</p>
-              </mat-tab>
-              <mat-tab label="Datos de la Empresa">
-                <p>Contenido de la pestaña Permisos</p>
-              </mat-tab>
-              <mat-tab label="Contactos">
-                <p>Contenido de la pestaña Historial</p>
-              </mat-tab>
-              <mat-tab label="Observaciones">
-                <p>Contenido de la pestaña Historial</p>
-              </mat-tab>
-            </mat-tab-group>
-          </mat-tab>
+                    <span>{{ razonSocial }}</span>
+                    <!-- Mostrar error solo si NO es pasaporte -->
+                    <div *ngIf="!esPasaporte && rucControl.invalid && rucControl.touched"
+                      style="color: red; font-size: 12px;">
+                      Ingrese 10 dígitos para cédula o 13 dígitos para RUC.
+                    </div>
+                  </div>
 
-    
-          <mat-tab label="Historico del Cliente">
-            <p>Contenido de la pestaña Clientes</p>
-          </mat-tab>
-    
-          <mat-tab label="Prefijos">
-            <p>Contenido de la pestaña Productos</p>
-          </mat-tab>
-        </mat-tab-group>
-      </mat-grid-list>
-    </div>
-    
-  </form>
+
+
+
+                  <div class="form-row category-row">
+                    <label class="form-label">Categoria Cliente:</label>
+                    <div class="checkbox-group">
+                      <div class="checkbox-container">
+                        <input type="checkbox" id="individual" class="checkbox-input" />
+                        <label for="individual" class="checkbox-label">Individual</label>
+                      </div>
+                      <div class="checkbox-container">
+                        <input type="checkbox" id="industrial" class="checkbox-input" />
+                        <label for="industrial" class="checkbox-label">Industrial</label>
+                      </div>
+                    </div>
+                  </div>
+                  <div>
+                    <label class="form-label">Grupo:</label>
+
+                    <mat-form-field style="font-size: 12px;">
+
+                      <mat-select [(ngModel)]="grupoSeleccionado" name="grupo" placeholder="Seleccione Grupo">
+                        <mat-option *ngFor="let grupo of grupos" [value]="grupo.id_grupo_empresa">
+                          {{ grupo.codigo }} - {{ grupo.nombre }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+
+
+                    <label class="form-label">Categoría Producto:</label>
+                    <mat-form-field class="full-width" style="font-size: 12px;">
+                      <input matInput [formControl]="grupoProductoCtrl" [matAutocomplete]="autoGrupoProducto"
+                        placeholder="Seleccione Categoria Producto">
+                      <button matSuffix mat-icon-button aria-label="Clear" *ngIf="grupoProductoCtrl.value"
+                        (click)="limpiarGrupoProducto()">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                      <mat-autocomplete #autoGrupoProducto="matAutocomplete"
+                        (optionSelected)="seleccionarGrupoProducto($event.option.value)">
+                        <mat-option *ngFor="let grupo of gruposProductoFiltrados$ | async"
+                          [value]="grupo.codigo + ' - ' + grupo.brick + ' - ' + grupo.desBrick">
+                          {{ grupo.codigo }} - {{ grupo.brick }} - {{ grupo.desBrick }}
+                        </mat-option>
+                      </mat-autocomplete>
+                    </mat-form-field>
+
+
+
+                  </div>
+                  <div class="form-row">
+
+                    <div class="prefix-checkbox-group">
+                      <label class="form-label">Asignación de Prefijo:</label>
+                      <div class="checkbox-container">
+                        <input type="radio" id="prefix-5" name="prefix" value="5" class="checkbox-input" />
+                        <label for="prefix-5" class="checkbox-label">5</label>
+
+                        <input type="radio" id="prefix-6" name="prefix" value="6" class="checkbox-input" />
+                        <label for="prefix-6" class="checkbox-label">6</label>
+
+                        <input type="radio" id="prefix-7" name="prefix" value="7" class="checkbox-input" />
+                        <label for="prefix-7" class="checkbox-label">7</label>
+
+                        <input type="radio" id="prefix-8" name="prefix" value="8" class="checkbox-input" />
+                        <label for="prefix-8" class="checkbox-label">8</label>
+
+                        <input type="radio" id="prefix-usa" name="prefix" value="USA" class="checkbox-input" />
+                        <label for="prefix-usa" class="checkbox-label">USA</label>
+
+                        <input type="radio" id="prefix-msv" name="prefix" value="MSV" class="checkbox-input" />
+                        <label for="prefix-msv" class="checkbox-label">MSV</label>
+
+                        <input type="radio" id="prefix-modify" name="prefix" value="MODIFY" class="checkbox-input" />
+                        <label for="prefix-modify" class="form-label">Modificar Secuencia</label>
+
+
+                      </div>
+                      <input type="text" placeholder="texto" />
+
+                    </div>
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">Prefijo:</label>
+
+                    <input type="text" class="underline-input" readonly />
+                    <label class="form-label">Prefijo GS1:</label>
+
+                    <input type="text" class="underline-input" readonly />
+                  </div>
+                  <div class="form-row">
+
+
+                  </div>
+                  <div class="form-row">
+                    <label class="form-label">GLN:</label>
+
+                    <input type="text" class="text-input" class="underline-input" readonly />
+                    <label class="form-label">Origen Prefijo:</label>
+
+                    <input type="text" class="text-input" class="underline-input" readonly />
+                  </div>
+                  <div class="form-row">
+
+
+                  </div>
+                </div>
+                <section class="date-info-section">
+                  <div class="date-container">
+                    <!-- First row with dates and user info -->
+                    <div class="info-row">
+                      <div class="info-group date-group">
+                        <div class="info-item">
+                          <label class="form-label">Fecha de ingreso:</label>
+                          <div class="input-field">
+                            {{ fechaIngreso | date:'dd/MM/yyyy' }}
+                          </div>
+                        </div>
+                        <div class="info-item">
+                          <label class="form-label">Fecha modificada:</label>
+                          <div class="input-field">
+
+
+                          </div>
+                        </div>
+                      </div>
+                      <div class="info-group user-group">
+                        <div class="info-item">
+                          <label class="form-label">Usuario modificado:</label>
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Fecha</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Second row with status and zone info -->
+                    <div class="info-row">
+                      <div class="info-group status-group">
+                        <label class="form-label">Estado:</label>
+                        <div class="status-fields">
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Estado</span>
+                          </div>
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Afiliado</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="info-group zone-group">
+                        <label class="form-label">Zona:</label>
+                        <div class="zone-fields">
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Z01</span>
+                          </div>
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Zona 1</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+                <div style="text-align: right;">
+                  <button mat-button color="primary" matStepperNext [disabled]="paso1Form.invalid">Siguiente</button>
+
+                </div>
+              </form>
+            </mat-step>
+
+            <!-- Subpaso 1.2: Datos de la Empresa -->
+            <mat-step [stepControl]="paso2Form">
+              <form [formGroup]="paso2Form">
+                <ng-template matStepLabel>2 Datos de la Empresa</ng-template>
+                <div class="container">
+                  <div>
+                    <div class="form-row">
+                      <label class="form-label">Razón Social:</label>
+                      <input type="text" formControlName="razonSocial" value="{{ razonSocial }}"
+                        class="underline-input" />
+
+                    </div>
+                  </div>
+                  <div>
+                    <div class="form-row">
+                      <label style="color: #002c6c;font-size: 12px;"> Representante:</label>
+                      <input type="text" formControlName="nombreRepresentante" value="{{ nombreRepresentante }}"
+                        class="underline-input" />
+                    </div>
+                  </div>
+                  <div style="padding-top: 0px; padding-bottom: 0px;">
+                    <label style="color: #002c6c;font-size: 13px;">Ciudad : </label>
+                    <mat-form-field class="full-width" style="font-size: 12px;">
+                      <input matInput [formControl]="ciudadCtrl" [matAutocomplete]="autoCiudad"
+                        placeholder="Seleccione Ciudad">
+                      <button matSuffix mat-icon-button aria-label="Limpiar" *ngIf="ciudadCtrl.value"
+                        (click)="limpiarCiudad()">
+                        <mat-icon>close</mat-icon>
+                      </button>
+                      <mat-autocomplete #autoCiudad="matAutocomplete"
+                        (optionSelected)="seleccionarCiudad($event.option.value)">
+                        <mat-option *ngFor="let ciudad of ciudadFiltrados$ | async"
+                          [value]="ciudad.ciudad + ' - ' + ciudad.canton + ' - ' + ciudad.provincia">
+                          {{ ciudad.ciudad }} - {{ ciudad.canton }} - {{ ciudad.provincia }}
+                        </mat-option>
+                      </mat-autocomplete>
+                    </mat-form-field>
+                  </div>
+                  <div class="form-row">
+                    <label style="color: #002c6c;font-size: 12px;"> Dirección Principal: </label>
+                    <input class="underline-input" />
+                  </div>
+                  <div class="form-row">
+                    <label style="color: #002c6c;font-size: 12px;"> Código Postal: </label>
+                    <input type="text" class="underline-input" />
+                    <label style="color: #002c6c;font-size: 12px;">Celular:</label>
+                    <input type="text" class="underline-input" />
+                  </div>
+                  <div class="form-row">
+                    <label style="color: #002c6c;font-size: 12px;"> Sitio Web: </label>
+                    <input type="text" class="underline-input" />
+                    <label style="color: #002c6c;font-size: 12px;">Teléfono 2:</label>
+                    <input type="text" class="underline-input" readonly />
+                  </div>
+
+
+                  <div class="form-row">
+                    <label style="color: #002c6c;font-size: 12px;">Usuario:</label>
+                    <input type="text" class="underline-input" readonly />
+                  </div>
+
+
+                  <div class="form-row">
+                    <label style="color: #002c6c;font-size: 12px;"> Observación 1: </label>
+                    <input type="text" class="underline-input" />
+                  </div>
+                </div>
+                <section class="date-info-section">
+                  <div class="date-container">
+                    <!-- First row with dates and user info -->
+                    <div class="info-row">
+                      <div class="info-group date-group">
+                        <div class="info-item">
+                          <label class="form-label">Fecha de ingreso:</label>
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Fecha</span>
+                          </div>
+                        </div>
+                        <div class="info-item">
+                          <label class="form-label">Fecha modificada:</label>
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Fecha</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="info-group user-group">
+                        <div class="info-item">
+                          <label class="form-label">Usuario modificado:</label>
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Fecha</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Second row with status and zone info -->
+                    <div class="info-row">
+                      <div class="info-group status-group">
+                        <label class="form-label">Estado:</label>
+                        <div class="status-fields">
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Estado</span>
+                          </div>
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Afiliado</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="info-group zone-group">
+                        <label class="form-label">Zona:</label>
+                        <div class="zone-fields">
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Z01</span>
+                          </div>
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Zona 1</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+                <div style="text-align: right;">
+                  <button mat-button matStepperPrevious>Anterior</button>
+                  <button mat-button color="primary" matStepperNext>Siguiente</button>
+                </div>
+              </form>
+            </mat-step>
+
+            <!-- Subpaso 1.3: Contactos -->
+            <mat-step [stepControl]="paso3Form">
+              <form [formGroup]="paso3Form">
+                <ng-template matStepLabel>3 Contactos</ng-template>
+
+                <div class="container">
+                  <div>
+                    <div class="form-row">
+
+
+                      <label class="form-label">
+                        Nombre: (Representante Legal)
+                      </label>
+                      <input type="text" class="underline-input" />
+                    </div>
+                    <div class="form-row">
+                      <label style="color: #002c6c;font-size: 12px;">E-mail: </label>
+                      <input type="text" class="underline-input" />
+                      <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
+                      <input type="text" class="underline-input" />
+                    </div>
+                    <div class="form-row">
+
+
+                      <label class="form-label">
+                        Nombre: (Codificación)
+                      </label>
+                      <input type="text" class="underline-input" />
+                    </div>
+                    <div class="form-row">
+                      <label style="color: #002c6c;font-size: 12px;">E-mail: </label>
+                      <input type="text" class="underline-input" />
+                      <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
+                      <input type="text" class="underline-input" />
+                    </div>
+                    <div class="form-row">
+
+
+                      <label class="form-label">
+                        Nombre: (Financiero)
+                      </label>
+                      <input type="text" class="underline-input" />
+                    </div>
+                    <div class="form-row">
+                      <label style="color: #002c6c;font-size: 12px;">E-mail 1: </label>
+                      <input type="text" class="underline-input" />
+                      <label style="color: #002c6c;font-size: 12px;">E-mail 2:</label>
+                      <input type="text" class="underline-input" />
+                    </div>
+                    <div class="form-row">
+                      <label style="color: #002c6c;font-size: 12px;">E-mail 3: </label>
+                      <input type="text" class="underline-input" />
+                      <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
+                      <input type="text" class="underline-input" />
+                    </div>
+
+
+                    <section class="export-questions-section">
+                      <div class="questions-container">
+                        <div class="form-label">
+                          <div>
+                            <input type="checkbox" />
+
+                            <label for="prefix-5">¿Se va a exportar sus productos?</label>
+                          </div>
+                          <div>
+                            <input type="checkbox" />
+                            <label for="prefix-5">¿Se vende o se venderá su producto en el mercado
+                              estadounidense?</label>
+                          </div>
+                          <div>
+                            <input type="checkbox" />
+                            <label for="prefix-5">¿Se clasificará su producto como dispositivo médico sesgún las reglas
+                              de
+                              la FDA?</label>
+                          </div>
+
+
+                        </div>
+
+                        <div>
+                          <label class="form-label">
+                            ¿Cómo se entero de GS1 Ecuador?
+                          </label>
+
+                          <input type="checkbox" />
+                          <label for="prefix-5">Página Web</label>
+                          <input type="checkbox" />
+                          <label for="prefix-5" class="checkbox-label">Instagram</label>
+                          <input type="checkbox" />
+                          <label for="prefix-5" class="checkbox-label">Facebook</label>
+                          <input type="checkbox" />
+                          <label for="prefix-5">Un conocido</label>
+
+
+                        </div>
+                      </div>
+                    </section>
+                    <section class="date-info-section">
+                      <div class="date-container">
+                        <!-- First row with dates and user info -->
+                        <div class="info-row">
+                          <div class="info-group date-group">
+                            <div class="info-item">
+                              <label class="form-label">Fecha de ingreso:</label>
+                              <div class="input-field">
+                                <img
+                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                                  class="field-icon" />
+                                <span class="field-text">Fecha</span>
+                              </div>
+                            </div>
+                            <div class="info-item">
+                              <label class="form-label">Fecha modificada:</label>
+                              <div class="input-field">
+                                <img
+                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                                  class="field-icon" />
+                                <span class="field-text">Fecha</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="info-group user-group">
+                            <div class="info-item">
+                              <label class="form-label">Usuario modificado:</label>
+                              <div class="input-field">
+                                <img
+                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                                  class="field-icon" />
+                                <span class="field-text">Fecha</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <!-- Second row with status and zone info -->
+                        <div class="info-row">
+                          <div class="info-group status-group">
+                            <label class="form-label">Estado:</label>
+                            <div class="status-fields">
+                              <div class="input-field">
+                                <img
+                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                                  class="field-icon" />
+                                <span class="field-text">Estado</span>
+                              </div>
+                              <div class="input-field">
+                                <img
+                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                                  class="field-icon" />
+                                <span class="field-text">Afiliado</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div class="info-group zone-group">
+                            <label class="form-label">Zona:</label>
+                            <div class="zone-fields">
+                              <div class="input-field">
+                                <img
+                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                                  class="field-icon" />
+                                <span class="field-text">Z01</span>
+                              </div>
+                              <div class="input-field">
+                                <img
+                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                                  class="field-icon" />
+                                <span class="field-text">Zona 1</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+                  </div>
+
+                </div>
+
+                <div style="text-align: right;">
+                  <button mat-button matStepperPrevious>Anterior</button>
+                  <button mat-button color="primary" matStepperNext>Siguiente</button>
+
+                </div>
+              </form>
+            </mat-step>
+
+            <!-- Subpaso 1.4: Observaciones -->
+            <mat-step [stepControl]="paso4Form">
+              <form [formGroup]="paso4Form">
+                <ng-template matStepLabel>4 Observaciones</ng-template>
+                <div>
+
+                  <!-- First Section -->
+                  <article class="section-container">
+                    <div class="form-row">
+                      <label class="form-label">Usuario:</label>
+
+                      <input type="text" class="underline-input" readonly />
+                      <label class="form-label">Fecha:</label>
+
+                      <input type="text" class="underline-input" readonly />
+                    </div>
+                    <div class="form-row">
+                      <label style="color: #002c6c;font-size: 12px;">Observaciones 2:</label>
+                      <input type="text" class="underline-input" />
+                    </div>
+
+                  </article>
+
+                  <!-- Second Section -->
+                  <article class="section-container">
+                    <div class="form-row">
+                      <label class="form-label">Usuario:</label>
+
+                      <input type="text" class="underline-input" readonly />
+                      <label class="form-label">Fecha:</label>
+
+                      <input type="text" class="underline-input" readonly />
+                    </div>
+
+
+                    <div class="form-row">
+                      <label style="color: #002c6c;font-size: 12px;">Observaciones 3:</label>
+                      <input type="text" class="underline-input" />
+                    </div>
+
+                  </article>
+
+                  <!-- Third Section -->
+                  <article class="section-container">
+
+                    <div class="form-row">
+                      <label class="form-label">Usuario:</label>
+
+                      <input type="text" class="underline-input" readonly />
+                      <label class="form-label">Fecha:</label>
+
+                      <input type="text" class="underline-input" readonly />
+                    </div>
+
+                    <div class="form-row">
+                      <label style="color: #002c6c;font-size: 12px;">Observaciones 4:</label>
+                      <input type="text" class="underline-input" />
+                    </div>
+
+
+                  </article>
+                </div>
+                <section class="date-info-section">
+                  <div class="date-container">
+                    <!-- First row with dates and user info -->
+                    <div class="info-row">
+                      <div class="info-group date-group">
+                        <div class="info-item">
+                          <label class="form-label">Fecha de ingreso:</label>
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Fecha</span>
+                          </div>
+                        </div>
+                        <div class="info-item">
+                          <label class="form-label">Fecha modificada:</label>
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Fecha</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="info-group user-group">
+                        <div class="info-item">
+                          <label class="form-label">Usuario modificado:</label>
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Fecha</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Second row with status and zone info -->
+                    <div class="info-row">
+                      <div class="info-group status-group">
+                        <label class="form-label">Estado:</label>
+                        <div class="status-fields">
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Estado</span>
+                          </div>
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Afiliado</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="info-group zone-group">
+                        <label class="form-label">Zona:</label>
+                        <div class="zone-fields">
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Z01</span>
+                          </div>
+                          <div class="input-field">
+                            <img
+                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
+                              class="field-icon" />
+                            <span class="field-text">Zona 1</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+                <div style="text-align: right;">
+                  <button mat-button matStepperPrevious>Anterior</button>
+
+
+                </div>
+              </form>
+            </mat-step>
+
+
+          </mat-horizontal-stepper>
+        </div>
+      </ng-template>
+    </mat-tab>
+
+    <!-- TAB 2: Histórico -->
+    <mat-tab label="Histórico del Cliente">
+      <ng-template matTabContent>
+        <div *ngIf="selectedTab === 1">
+          <p>Contenido histórico aquí.</p>
+        </div>
+      </ng-template>
+    </mat-tab>
+
+    <!-- TAB 3: Prefijos -->
+    <mat-tab label="Prefijos">
+      <ng-template matTabContent>
+        <div *ngIf="selectedTab === 2">
+          <p>Contenido de prefijos aquí.</p>
+        </div>
+      </ng-template>
+    </mat-tab>
+
+  </mat-tab-group>
 </mat-dialog-content>
-<mat-dialog-actions align="end">
-  <button mat-raised-button mat-dialog-close>Guardar</button>
-  <button mat-raised-button mat-dialog-close>Salir</button>
-  
-</mat-dialog-actions>
+<div style="text-align: center;">
+  <button mat-button mat-dialog-close>
+    <img src="assets/icon-grabar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
+    Grabar
+  </button>
+  <button mat-button mat-dialog-close>
+    <img src="assets/icon-modificar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
+    Modificar
+  </button>
+  <button mat-button mat-dialog-close>
+    <img src="assets/icon-imprimir.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
+    Imprimir
+  </button>
+  <button mat-button mat-dialog-close>
+    <img src="assets/icon-cancelar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
+    Cancelar
+  </button>
+</div>

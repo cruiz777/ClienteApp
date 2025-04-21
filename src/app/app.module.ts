@@ -8,7 +8,9 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { LoginComponent } from './components/login/login.component';
 import { NotFoundComponent } from './components/not-found/not-found.component';
 import { ReusableModule } from './components/reusable/reusable.module';
-import { NgxMaskModule, IConfig } from 'ngx-mask'
+import { NgxMaskModule, IConfig } from 'ngx-mask';
+import { InicioComponent } from './components/inicio/inicio.component';
+
 
 export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
 
@@ -17,7 +19,9 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
   declarations: [
     AppComponent,
     LoginComponent,
-    NotFoundComponent
+    NotFoundComponent,
+    InicioComponent,
+    
   ],
   imports: [
     BrowserModule,
