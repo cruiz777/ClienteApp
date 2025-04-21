@@ -40,6 +40,7 @@ export class ClientesComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargarClientes();
+    
   }
 
   ngAfterViewInit() {
@@ -81,7 +82,18 @@ export class ClientesComponent implements OnInit {
     });
   }
   
-
+  nuevoCliente() {
+    this.dialog.open(DialogClienteComponent, {
+      width: '1200px', // Aumenta el ancho del diálogo
+     
+      height: '100vh', // ✅ que use casi toda la pantalla
+      maxHeight: '100vh',
+      disableClose: true
+    }).afterClosed().subscribe(result => {
+      if (result === "editado")
+        result = "editado";
+    });
+  }
 
 
     
