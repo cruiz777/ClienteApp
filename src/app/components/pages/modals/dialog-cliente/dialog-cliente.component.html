@@ -10,7 +10,7 @@
             <!-- Subpaso 1.1: Categorización -->
             <mat-step [stepControl]="paso1Form">
               <form [formGroup]="paso1Form">
-                <ng-template matStepLabel>1 Categorización</ng-template>
+                <ng-template matStepLabel>Categorización</ng-template>
 
                 <div class="container">
 
@@ -155,7 +155,7 @@
                         <div class="info-item">
                           <label class="form-label">Fecha modificada:</label>
                           <div class="input-field">
-
+                            {{ fechaIngreso | date:'dd/MM/yyyy' }}
 
                           </div>
                         </div>
@@ -164,10 +164,8 @@
                         <div class="info-item">
                           <label class="form-label">Usuario modificado:</label>
                           <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Fecha</span>
+                            <div>{{ usuarioActual?.usr }}</div>
+                            
                           </div>
                         </div>
                       </div>
@@ -182,32 +180,22 @@
                             <img
                               src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
                               class="field-icon" />
-                            <span class="field-text">Estado</span>
+                            <span class="field-text">1 Afiliada</span>
                           </div>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Afiliado</span>
-                          </div>
+                          
                         </div>
                       </div>
                       <div class="info-group zone-group">
                         <label class="form-label">Zona:</label>
-                        <div class="zone-fields">
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Z01</span>
-                          </div>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Zona 1</span>
-                          </div>
-                        </div>
+                        <mat-form-field style="font-size: 12px;">
+                          <mat-select formControlName="zona" placeholder="Seleccione Zona">
+                            <mat-option *ngFor="let zona of zona" [value]="zona.id">
+                              {{ zona.referencia }} - {{ zona.nombre }}
+                            </mat-option>
+                          </mat-select>
+                        </mat-form-field>
+                        
+                        
                       </div>
                     </div>
                   </div>
@@ -222,7 +210,7 @@
             <!-- Subpaso 1.2: Datos de la Empresa -->
             <mat-step [stepControl]="paso2Form">
               <form [formGroup]="paso2Form">
-                <ng-template matStepLabel>2 Datos de la Empresa</ng-template>
+                <ng-template matStepLabel>Datos de la Empresa</ng-template>
                 <div class="container">
                   <div>
                     <div class="form-row">
@@ -372,7 +360,7 @@
             <!-- Subpaso 1.3: Contactos -->
             <mat-step [stepControl]="paso3Form">
               <form [formGroup]="paso3Form">
-                <ng-template matStepLabel>3 Contactos</ng-template>
+                <ng-template matStepLabel>Contactos</ng-template>
 
                 <div class="container">
                   <div>
@@ -558,7 +546,7 @@
             <!-- Subpaso 1.4: Observaciones -->
             <mat-step [stepControl]="paso4Form">
               <form [formGroup]="paso4Form">
-                <ng-template matStepLabel>4 Observaciones</ng-template>
+                <ng-template matStepLabel>Observaciones</ng-template>
                 <div>
 
                   <!-- First Section -->
@@ -740,7 +728,7 @@
     <img src="assets/icon-imprimir.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
     Imprimir
   </button>
-  <button mat-button mat-dialog-close>
+  <button mat-button mat-dialog-close (click)="cancelar()">
     <img src="assets/icon-cancelar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
     Cancelar
   </button>

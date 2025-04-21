@@ -4,8 +4,12 @@ import { GrupoEmpresaService, GrupoEmpresa } from '../../../../services/grupo-em
 import { GrupoProductoService, GrupoProducto } from '../../../../services/grupo-producto.service';
 import { RucService } from '../../../../services/ruc.service';
 import { Ciudad, CiudadService } from '../../../../services/ciudad.service';
+import { UsuarioService } from '../../../../services/usuario.service';
+import { ZonaService,Zona } from '../../../../services/zona.service';
 import { map, startWith } from 'rxjs/operators';
 import { Observable } from 'rxjs';
+import { Router } from '@angular/router';
+import { MatDialogRef } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-dialog-cliente',
@@ -33,19 +37,33 @@ export class DialogClienteComponent implements OnInit {
   ciudadFiltrados$!: Observable<Ciudad[]>;
   ciudadSeleccionado!: number;
   esPasaporte = false;
+  usuarioActual: { id: number; usr: string } | null = null;
+
+  zona: Zona[] = [];
+  zonaCtrl = new FormControl('');
+  zonaFiltrados$!: Observable<Zona[]>;
+  ZonaSeleccionado!: number;
+
   constructor(
     private fb: FormBuilder,
     private grupoService: GrupoEmpresaService,
     private grupoProductoService: GrupoProductoService,
     private rucService: RucService,
-    private ciudadService: CiudadService
+    private ciudadService: CiudadService,
+    private usuarioService:UsuarioService,
+    private zonaService:ZonaService,
+    private router: Router,
+    private dialogRef: MatDialogRef<DialogClienteComponent>
   ) { }
 
   ngOnInit(): void {
     this.initFormulario();
+    
+    this.obtenerUsuarioActual();
     this.cargarGrupos();
     this.cargarGruposProducto();
     this.cargarCiudad();
+    this.cargarZona();
   }
 
   initFormulario(): void {
@@ -251,5 +269,39 @@ export class DialogClienteComponent implements OnInit {
     // llamada al servicio
   }
 
-
+  obtenerUsuarioActual(): void {
+    this.usuarioService.currentUser$.subscribe(user => {
+      this.usuarioActual = user;
+      
+      console.log('Usuario Actual:', this.usuarioActual);
+      
+    });
+  }
+  cargarZona(): void {
+    this.zonaService.obtenerZona().subscribe(data => {
+      this.zona = data;
+      this.zonaFiltrados$ = this.zonaCtrl.valueChanges.pipe(
+        startWith(''),
+        map(valor => this.filtrarZona(valor || ''))
+      );
+    });
+  }
+  
+  filtrarZona(valor: string): Zona[] {
+    const filtro = valor.toLowerCase();
+    return this.zona.filter(zona =>
+      `${zona.referencia} - ${zona.nombre}`.toLowerCase().includes(filtro)
+    );
+  }
+  
+  seleccionarZona(nombre: string): void {
+    const zona = this.zona.find(g => `${g.referencia} - ${g.nombre}` === nombre);
+    if (zona) {
+      this.paso1Form.get('zona')?.setValue(zona.id);
+    }
+  }
+  cancelar(): void {
+    this.dialogRef.close(); // Cierra el diálogo
+    this.router.navigate(['/pages/clientes']); // Redirecciona a /pages/clientes
+  }
 }

@@ -8,6 +8,7 @@ import { ReportesComponent } from './reportes/reportes.component';
 import { UsuariosComponent } from './usuarios/usuarios.component';
 import { VenderComponent } from './vender/vender.component';
 import { ClientesComponent } from './clientes/clientes.component';
+import { NuevoClienteComponent } from './nuevo-cliente/nuevo-cliente.component';
 
 const routes: Routes = [
   {
@@ -19,6 +20,7 @@ const routes: Routes = [
       {path:'historialventas',component:HistorialventaComponent},
       {path:'reportes',component:ReportesComponent},
       {path:'clientes',component:ClientesComponent},
+      {path:'nclientes',component:NuevoClienteComponent},
     ]
   }
   ];

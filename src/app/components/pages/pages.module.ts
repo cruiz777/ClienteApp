@@ -20,6 +20,7 @@ import { DialogDetalleVentaComponent } from './modals/dialog-detalle-venta/dialo
 import { DialogResultadoVentaComponent } from './modals/dialog-resultado-venta/dialog-resultado-venta.component';
 import { ClientesComponent } from './clientes/clientes.component';
 import { DialogClienteComponent } from './modals/dialog-cliente/dialog-cliente.component';
+import { NuevoClienteComponent } from './nuevo-cliente/nuevo-cliente.component';
 
 
 @NgModule({
@@ -40,6 +41,7 @@ import { DialogClienteComponent } from './modals/dialog-cliente/dialog-cliente.c
     DialogResultadoVentaComponent,
     ClientesComponent,
     DialogClienteComponent,
+    NuevoClienteComponent,
     
   ],
   imports: [
