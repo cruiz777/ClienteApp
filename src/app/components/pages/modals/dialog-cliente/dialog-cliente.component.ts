@@ -9,7 +9,7 @@ import { ZonaService,Zona } from '../../../../services/zona.service';
 import { map, startWith } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { Router } from '@angular/router';
-import { MatLegacyDialogRef as MatDialogRef } from '@angular/material/legacy-dialog';
+import { MatDialogRef } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-dialog-cliente',

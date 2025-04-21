@@ -9,10 +9,12 @@
   justify-content: flex-end;
   gap: 12px;
 }
+/* TODO(mdc-migration): The following rule targets internal classes of form-field that may no longer apply for the MDC version. */
 .compact-field .mat-form-field-wrapper {
   padding-bottom: 0 !important;
 }
 
+/* TODO(mdc-migration): The following rule targets internal classes of form-field that may no longer apply for the MDC version. */
 .compact-field .mat-form-field-infix {
   padding: 0 8px !important;
   height: 10px !important; /* o 28px para más delgado */

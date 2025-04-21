@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
+import { MatDialog } from '@angular/material/dialog';
 import { DialogClienteComponent } from '../modals/dialog-cliente/dialog-cliente.component';
 @Component({
   selector: 'app-nuevo-cliente',

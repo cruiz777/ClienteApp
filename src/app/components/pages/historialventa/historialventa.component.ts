@@ -1,13 +1,13 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
-import { MatLegacyTableDataSource as MatTableDataSource } from '@angular/material/legacy-table';
-import { MatLegacyPaginator as MatPaginator } from '@angular/material/legacy-paginator';
-import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatDialog } from '@angular/material/dialog';
 import { MAT_DATE_FORMATS } from '@angular/material/core';
 import { Venta } from '../../../interfaces/venta';
 import { DialogDetalleVentaComponent } from '../modals/dialog-detalle-venta/dialog-detalle-venta.component';
 import { VentaService } from '../../../services/venta.service';
-import { MatLegacySnackBar as MatSnackBar } from '@angular/material/legacy-snack-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import * as moment from 'moment';
 
 export const MY_DATE_FORMATS = {

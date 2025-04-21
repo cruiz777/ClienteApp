@@ -1,10 +1,10 @@
 import { Component, OnInit, ViewChild} from '@angular/core';
 
-import { MatLegacyTableDataSource as MatTableDataSource } from '@angular/material/legacy-table';
-import { MatLegacyPaginator as MatPaginator } from '@angular/material/legacy-paginator';
-import { MatLegacyDialog as MatDialog } from '@angular/material/legacy-dialog';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatDialog } from '@angular/material/dialog';
 
-import { MatLegacySnackBar as MatSnackBar } from '@angular/material/legacy-snack-bar';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import { Cliente } from '../../../interfaces/cliente';
 import { DialogClienteComponent } from '../modals/dialog-cliente/dialog-cliente.component';
 import { ClienteService } from '../../../services/cliente.service';
