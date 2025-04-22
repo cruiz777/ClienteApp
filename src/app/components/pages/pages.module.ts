@@ -9,11 +9,6 @@ import { LayoutModule } from '@angular/cdk/layout';
 
 import { ReusableModule } from '../reusable/reusable.module';
 import { DashboardComponent } from './dashboard/dashboard.component';
-import { UsuariosComponent } from './usuarios/usuarios.component';
-import { ProductosComponent } from './productos/productos.component';
-import { VenderComponent } from './vender/vender.component';
-import { HistorialventaComponent } from './historialventa/historialventa.component';
-import { ReportesComponent } from './reportes/reportes.component';
 import { DialogUsuarioComponent } from './modals/dialog-usuario/dialog-usuario.component';
 import { DialogProductoComponent } from './modals/dialog-producto/dialog-producto.component';
 import { DialogDeleteUsuarioComponent } from './modals/dialog-delete-usuario/dialog-delete-usuario.component';
@@ -33,11 +28,6 @@ import { MatIconModule } from '@angular/material/icon';
     PagesComponent,
     NavigationComponent,
     DashboardComponent,
-    UsuariosComponent,
-    ProductosComponent,
-    VenderComponent,
-    HistorialventaComponent,
-    ReportesComponent,
     DialogUsuarioComponent,
     DialogProductoComponent,
     DialogDeleteUsuarioComponent,
