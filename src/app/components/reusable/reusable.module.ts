@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { RouterModule } from '@angular/router';
 import { HttpClientModule } from '@angular/common/http';
 
 // Angular Material Core
@@ -41,6 +42,7 @@ import { LayoutModule } from '@angular/cdk/layout';
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
+    RouterModule,
     HttpClientModule,
 
     // Material

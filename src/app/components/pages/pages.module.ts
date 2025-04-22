@@ -4,6 +4,8 @@ import { CommonModule } from '@angular/common';
 import { PagesRoutingModule } from './pages-routing.module';
 import { NavigationComponent } from './navigation/navigation.component';
 import { PagesComponent } from './pages.component';
+import { RouterModule } from '@angular/router';
+import { LayoutModule } from '@angular/cdk/layout';
 
 import { ReusableModule } from '../reusable/reusable.module';
 import { DashboardComponent } from './dashboard/dashboard.component';
@@ -21,7 +23,10 @@ import { DialogResultadoVentaComponent } from './modals/dialog-resultado-venta/d
 import { ClientesComponent } from './clientes/clientes.component';
 import { DialogClienteComponent } from './modals/dialog-cliente/dialog-cliente.component';
 import { NuevoClienteComponent } from './nuevo-cliente/nuevo-cliente.component';
-
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatListModule } from '@angular/material/list';
+import { MatIconModule } from '@angular/material/icon';
 
 @NgModule({
   declarations: [
@@ -42,11 +47,17 @@ import { NuevoClienteComponent } from './nuevo-cliente/nuevo-cliente.component';
     ClientesComponent,
     DialogClienteComponent,
     NuevoClienteComponent,
-    
+
   ],
   imports: [
     CommonModule,
     PagesRoutingModule,
+    RouterModule,
+    LayoutModule,
+    MatSidenavModule,
+    MatToolbarModule,
+    MatListModule,
+    MatIconModule,
 
     ReusableModule
   ]

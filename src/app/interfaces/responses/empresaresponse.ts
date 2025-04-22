@@ -19,6 +19,6 @@ export interface empresaresponse {
   empresaDirectorio?: string;
   status: boolean;
   idCiudad: number;
-  gerentes?: IGerenteEmpresa[];
-  contadores?: IContadorEmpresa[];
+  // gerentes?: IGerenteEmpresa[];
+  // contadores?: IContadorEmpresa[];
 }
