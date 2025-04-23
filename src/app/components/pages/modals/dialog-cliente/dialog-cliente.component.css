@@ -1,6 +1,7 @@
 .full-width {
   width: 100%;
-  margin-bottom: 16px;
+  margin-bottom: 1px;
+  
 }
 
 .step-buttons {
@@ -9,12 +10,10 @@
   justify-content: flex-end;
   gap: 12px;
 }
-/* TODO(mdc-migration): The following rule targets internal classes of form-field that may no longer apply for the MDC version. */
 .compact-field .mat-form-field-wrapper {
   padding-bottom: 0 !important;
 }
 
-/* TODO(mdc-migration): The following rule targets internal classes of form-field that may no longer apply for the MDC version. */
 .compact-field .mat-form-field-infix {
   padding: 0 8px !important;
   height: 10px !important; /* o 28px para más delgado */
@@ -523,6 +522,8 @@
   align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 12px;
+  padding: 0px 0px;
+  height: 30px;
 }
 .info-row:last-child {
   margin-bottom: 0;
@@ -674,7 +675,8 @@
       .checkbox-container {
         display: flex;
         align-items: center;
-        gap: 7px;
+        gap: 10px;
+        
       }
       .checkbox-input {
         width: 15px;
@@ -927,7 +929,7 @@
         margin-bottom: 10px;
       }
       .full-width {
-        width: 592px;
+        width: 552px;
       }
       @media (max-width: 991px) {
         .full-width {
@@ -1418,7 +1420,7 @@
   border-bottom: 1px solid #002c6c; /* línea azul o gris */
   outline: none;
   background: transparent;
-  width: 100%;
+  width: 21%;
   padding: 3px 6px;
   font-size: 12px;
 }
@@ -1426,4 +1428,104 @@
 
 .underline-input:focus {
   border-bottom: 2px solid #3f51b5; /* color azul de foco */
+}
+.compacto-form-field {
+  font-size: 12px;
+  margin: 5px;
+}
+
+/* 🔥 Ajuste del wrapper principal */
+.compacto-form-field .mat-mdc-form-field-flex {
+  min-height: 36px !important;
+  height: 36px !important;
+  align-items: center;
+}
+
+/* 🔥 Ajuste del contenedor del fondo */
+.compacto-form-field .mat-mdc-text-field-wrapper {
+  padding: 0px !important;
+  height: 36px !important;
+}
+
+/* 🔥 Ajuste del área de contenido */
+.compacto-form-field .mat-mdc-form-field-infix {
+  padding: 0px !important;
+  min-height: 36px !important;
+}
+
+/* 🔥 Ajuste del input y select */
+.compacto-form-field .mat-mdc-input-element,
+.compacto-form-field .mat-mdc-select-value {
+  height: 26px !important;
+  font-size: 12px !important;
+  padding: 0 8px !important;
+}
+
+/* 🔥 Ajuste del label */
+.compacto-form-field .mat-mdc-floating-label {
+  top: 8px !important;
+  font-size: 12px !important;
+}
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin: 5px 0;
+}
+
+.form-label {
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.autocomplete-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.custom-input {
+  width: 100%;
+  height: 36px;
+  font-size: 12px;
+  padding: 4px 8px;
+  border: none;
+  border-bottom: 1px solid #ccc;
+  background-color: transparent;
+  outline: none;
+}
+
+.custom-input:focus {
+  border-bottom: 2px solid #1976d2;
+}
+
+.clear-button {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #999;
+}
+
+.autocomplete-list {
+  position: absolute;
+  top: 38px;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ccc;
+  max-height: 150px;
+  overflow-y: auto;
+  z-index: 10;
+  font-size: 12px;
+}
+
+.autocomplete-list li {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.autocomplete-list li:hover {
+  background: #f1f1f1;
 }

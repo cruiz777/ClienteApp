@@ -17,7 +17,7 @@ interface ClienteResponse {
 })
 export class ClienteService {
   private apiBaseUrl = environment.applicationUrl;
-  private apiUrl = `${this.apiBaseUrl}/Clientes/`;
+  private apiUrl = `${this.apiBaseUrl}/resumen/`;
 
   constructor(private http: HttpClient) {}
 
@@ -26,4 +26,9 @@ export class ClienteService {
       map(response => response.data)
     );
   }
+  guardarCliente(data: any): Observable<any> {
+    return this.http.post(`${this.apiBaseUrl}/Clientes`, data);
+
+  }
+  
 }

@@ -15,7 +15,9 @@ const ELEMENT_DATA: Cliente[] = [
     nomcli: "Juan Pérez", 
     dircli: "Av. Principal 123, Lima", 
     ruc: "20456123456", 
-    fecing: "2021-05-15"
+    fecing: "2021-05-15",
+    zonaReferencia:"Z01",
+    estadoNombre:"Afiliada"
   }
 ];
 
@@ -26,7 +28,7 @@ const ELEMENT_DATA: Cliente[] = [
   styleUrls: ['./clientes.component.css']
 })
 export class ClientesComponent implements OnInit {
-  displayedColumns: string[] = ['clientes_codigo',  'nomcli','dircli','ruc','fecing','acciones'];
+  displayedColumns: string[] = ['clientes_codigo',  'nomcli','dircli','ruc','fecing','zonaReferencia','estadoNombre','acciones'];
   dataSource = new MatTableDataSource(ELEMENT_DATA);
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
@@ -104,5 +106,12 @@ export class ClientesComponent implements OnInit {
       duration: 3000
     });
   }
+  seleccionarFila(cliente: Cliente) {
+    console.log('Fila seleccionada:', cliente.clientes_codigo);
+  
+    // Ejemplo acción: abrir el modal de editar
+    alert("hola"+cliente.clientes_codigo);
+  }
+  
 
 }

@@ -15,16 +15,17 @@
                 <div class="container">
 
                   <div class="form-row">
-                    <label class="form-label">Código del Cliente:</label>
-                    <input type="text" readonly />
+                    <label class="form-label" >Código del Cliente:</label>
+                    <input type="text" readonly formControlName="codigoCliente" style="min-width: 80px;" />
                   </div>
                   <div>
                     <label class="form-label">RUC/CI/Pasaporte:</label>
                     <mat-checkbox [(ngModel)]="esPasaporte" (change)="actualizarValidacionRuc()">
                       Es Pasaporte
                     </mat-checkbox>
-                    <input type="text" [formControl]="rucControl" (blur)="onRucBlur()"
+                    <input type="text" formControlName="ruc" (blur)="onRucBlur()"
                       placeholder="Ingrese número o pasaporte" class="underline-input" />
+
 
 
                     <span>{{ razonSocial }}</span>
@@ -38,80 +39,91 @@
 
 
 
-                  <div class="form-row category-row">
-                    <label class="form-label">Categoria Cliente:</label>
+                  <div class="form-row category-row" [formGroup]="paso1Form">
+                    <label class="form-label">Categoría Cliente:</label>
                     <div class="checkbox-group">
                       <div class="checkbox-container">
-                        <input type="checkbox" id="individual" class="checkbox-input" />
+                        <input type="radio" formControlName="categoriaCliente" id="individual" [value]="2"
+                          class="checkbox-input" />
                         <label for="individual" class="checkbox-label">Individual</label>
                       </div>
                       <div class="checkbox-container">
-                        <input type="checkbox" id="industrial" class="checkbox-input" />
+                        <input type="radio" formControlName="categoriaCliente" id="industrial" [value]="1"
+                          class="checkbox-input" />
                         <label for="industrial" class="checkbox-label">Industrial</label>
                       </div>
                     </div>
                   </div>
+
                   <div>
                     <label class="form-label">Grupo:</label>
 
-                    <mat-form-field style="font-size: 12px;">
-
-                      <mat-select [(ngModel)]="grupoSeleccionado" name="grupo" placeholder="Seleccione Grupo">
+                    <mat-form-field  style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;" appearance="fill">
+                      <mat-select formControlName="grupo" placeholder="Seleccione Grupo" style="font-size: 12px;">
                         <mat-option *ngFor="let grupo of grupos" [value]="grupo.id_grupo_empresa">
                           {{ grupo.codigo }} - {{ grupo.nombre }}
                         </mat-option>
                       </mat-select>
                     </mat-form-field>
-
-
                     <label class="form-label">Categoría Producto:</label>
-                    <mat-form-field class="full-width" style="font-size: 12px;">
-                      <input matInput [formControl]="grupoProductoCtrl" [matAutocomplete]="autoGrupoProducto"
-                        placeholder="Seleccione Categoria Producto">
-                      <button matSuffix mat-icon-button aria-label="Clear" *ngIf="grupoProductoCtrl.value"
-                        (click)="limpiarGrupoProducto()">
+                    <mat-form-field class="full-width" style="font-size: 12px; height: 60px;">
+                      <input matInput formControlName="grupoProducto" [matAutocomplete]="autoGrupoProducto"
+                        placeholder="Seleccione Categoría Producto">
+
+                      <button matSuffix mat-icon-button aria-label="Limpiar"
+                        *ngIf="paso1Form.get('grupoProducto')?.value" (click)="limpiarGrupoProducto()">
                         <mat-icon>close</mat-icon>
                       </button>
-                      <mat-autocomplete #autoGrupoProducto="matAutocomplete"
+
+                      <mat-autocomplete #autoGrupoProducto="matAutocomplete" [displayWith]="displayWithGrupoProducto"
                         (optionSelected)="seleccionarGrupoProducto($event.option.value)">
-                        <mat-option *ngFor="let grupo of gruposProductoFiltrados$ | async"
-                          [value]="grupo.codigo + ' - ' + grupo.brick + ' - ' + grupo.desBrick">
+                        <mat-option *ngFor="let grupo of grupoProductoFiltrados" [value]="grupo">
                           {{ grupo.codigo }} - {{ grupo.brick }} - {{ grupo.desBrick }}
                         </mat-option>
                       </mat-autocomplete>
                     </mat-form-field>
-
-
 
                   </div>
                   <div class="form-row">
 
                     <div class="prefix-checkbox-group">
                       <label class="form-label">Asignación de Prefijo:</label>
-                      <div class="checkbox-container">
-                        <input type="radio" id="prefix-5" name="prefix" value="5" class="checkbox-input" />
-                        <label for="prefix-5" class="checkbox-label">5</label>
+                      <div class="checkbox-group">
+                        <div class="checkbox-container">
+                          <input type="radio" formControlName="prefix" id="prefix-5" value="5" class="checkbox-input" />
+                          <label for="prefix-5" class="checkbox-label">5</label>
+                        </div>
 
-                        <input type="radio" id="prefix-6" name="prefix" value="6" class="checkbox-input" />
-                        <label for="prefix-6" class="checkbox-label">6</label>
+                        <div class="checkbox-container">
+                          <input type="radio" formControlName="prefix" id="prefix-6" value="6" class="checkbox-input" />
+                          <label for="prefix-6" class="checkbox-label">6</label>
+                        </div>
 
-                        <input type="radio" id="prefix-7" name="prefix" value="7" class="checkbox-input" />
-                        <label for="prefix-7" class="checkbox-label">7</label>
+                        <div class="checkbox-container">
+                          <input type="radio" formControlName="prefix" id="prefix-7" value="7" class="checkbox-input" />
+                          <label for="prefix-7" class="checkbox-label">7</label>
+                        </div>
 
-                        <input type="radio" id="prefix-8" name="prefix" value="8" class="checkbox-input" />
-                        <label for="prefix-8" class="checkbox-label">8</label>
+                        <div class="checkbox-container">
+                          <input type="radio" formControlName="prefix" id="prefix-8" value="8" class="checkbox-input" />
+                          <label for="prefix-8" class="checkbox-label">8</label>
+                        </div>
 
-                        <input type="radio" id="prefix-usa" name="prefix" value="USA" class="checkbox-input" />
-                        <label for="prefix-usa" class="checkbox-label">USA</label>
+                        <div class="checkbox-container">
+                          <input type="radio" formControlName="prefix" id="prefix-usa" value="USA"
+                            class="checkbox-input" />
+                          <label for="prefix-usa" class="checkbox-label">USA</label>
+                        </div>
 
-                        <input type="radio" id="prefix-msv" name="prefix" value="MSV" class="checkbox-input" />
-                        <label for="prefix-msv" class="checkbox-label">MSV</label>
-
-                        <input type="radio" id="prefix-modify" name="prefix" value="MODIFY" class="checkbox-input" />
-                        <label for="prefix-modify" class="form-label">Modificar Secuencia</label>
-
-
+                        <div class="checkbox-container">
+                          <input type="radio" formControlName="prefix" id="prefix-msv" value="MSV"
+                            class="checkbox-input" />
+                          <label for="prefix-msv" class="checkbox-label">MSV</label>
+                        </div>
                       </div>
+
+                      <input type="checkbox" id="prefix-modify" name="prefix" value="MODIFY" class="checkbox-input" />
+                      <label for="prefix-modify" class="form-label">Modificar Secuencia</label>
                       <input type="text" placeholder="texto" />
 
                     </div>
@@ -165,7 +177,7 @@
                           <label class="form-label">Usuario modificado:</label>
                           <div class="input-field">
                             <div>{{ usuarioActual?.usr }}</div>
-                            
+
                           </div>
                         </div>
                       </div>
@@ -182,20 +194,18 @@
                               class="field-icon" />
                             <span class="field-text">1 Afiliada</span>
                           </div>
-                          
+
                         </div>
                       </div>
-                      <div class="info-group zone-group">
+                      <div>
                         <label class="form-label">Zona:</label>
-                        <mat-form-field style="font-size: 12px;">
-                          <mat-select formControlName="zona" placeholder="Seleccione Zona">
-                            <mat-option *ngFor="let zona of zona" [value]="zona.id">
+                        <mat-form-field style="height: 60px;">
+                          <mat-select formControlName="zona" placeholder="Seleccione Zona" style="font-size: 12px;">
+                            <mat-option *ngFor="let zona of zona" [value]="zona">
                               {{ zona.referencia }} - {{ zona.nombre }}
                             </mat-option>
                           </mat-select>
                         </mat-form-field>
-                        
-                        
                       </div>
                     </div>
                   </div>
@@ -215,8 +225,7 @@
                   <div>
                     <div class="form-row">
                       <label class="form-label">Razón Social:</label>
-                      <input type="text" formControlName="razonSocial" value="{{ razonSocial }}"
-                        class="underline-input" />
+                      <input type="text" formControlName="razonSocial"     class="underline-input" />
 
                     </div>
                   </div>
@@ -229,127 +238,58 @@
                   </div>
                   <div style="padding-top: 0px; padding-bottom: 0px;">
                     <label style="color: #002c6c;font-size: 13px;">Ciudad : </label>
-                    <mat-form-field class="full-width" style="font-size: 12px;">
-                      <input matInput [formControl]="ciudadCtrl" [matAutocomplete]="autoCiudad"
+                    <mat-form-field class="full-width" style="font-size: 12px; height: 60px;">
+                      <input matInput formControlName="ciudad" [matAutocomplete]="autoCiudad"
                         placeholder="Seleccione Ciudad">
-                      <button matSuffix mat-icon-button aria-label="Limpiar" *ngIf="ciudadCtrl.value"
+
+                      <button matSuffix mat-icon-button aria-label="Limpiar" *ngIf="paso2Form.get('ciudad')?.value"
                         (click)="limpiarCiudad()">
                         <mat-icon>close</mat-icon>
                       </button>
-                      <mat-autocomplete #autoCiudad="matAutocomplete"
+
+                      <mat-autocomplete #autoCiudad="matAutocomplete" [displayWith]="displayCiudad"
                         (optionSelected)="seleccionarCiudad($event.option.value)">
-                        <mat-option *ngFor="let ciudad of ciudadFiltrados$ | async"
-                          [value]="ciudad.ciudad + ' - ' + ciudad.canton + ' - ' + ciudad.provincia">
+                        <mat-option *ngFor="let ciudad of ciudadFiltrados" [value]="ciudad">
                           {{ ciudad.ciudad }} - {{ ciudad.canton }} - {{ ciudad.provincia }}
                         </mat-option>
                       </mat-autocomplete>
                     </mat-form-field>
-                  </div>
-                  <div class="form-row">
-                    <label style="color: #002c6c;font-size: 12px;"> Dirección Principal: </label>
-                    <input class="underline-input" />
-                  </div>
-                  <div class="form-row">
-                    <label style="color: #002c6c;font-size: 12px;"> Código Postal: </label>
-                    <input type="text" class="underline-input" />
-                    <label style="color: #002c6c;font-size: 12px;">Celular:</label>
-                    <input type="text" class="underline-input" />
-                  </div>
-                  <div class="form-row">
-                    <label style="color: #002c6c;font-size: 12px;"> Sitio Web: </label>
-                    <input type="text" class="underline-input" />
-                    <label style="color: #002c6c;font-size: 12px;">Teléfono 2:</label>
-                    <input type="text" class="underline-input" readonly />
-                  </div>
 
 
-                  <div class="form-row">
-                    <label style="color: #002c6c;font-size: 12px;">Usuario:</label>
-                    <input type="text" class="underline-input" readonly />
                   </div>
-
-
                   <div class="form-row">
-                    <label style="color: #002c6c;font-size: 12px;"> Observación 1: </label>
-                    <input type="text" class="underline-input" />
+                    <label style="color: #002c6c; font-size: 12px;">Dirección Principal:</label>
+                    <input class="underline-input" formControlName="direccionPrincipal" />
                   </div>
+                  
+                  <div class="form-row">
+                    <label style="color: #002c6c; font-size: 12px;">Código Postal:</label>
+                    <input type="text" class="underline-input" formControlName="codigoPostal" />
+                  
+                    <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">Celular:</label>
+                    <input type="text" class="underline-input" formControlName="celular" />
+                  </div>
+                  
+                  <div class="form-row">
+                    <label style="color: #002c6c; font-size: 12px;">Sitio Web:</label>
+                    <input type="text" class="underline-input" formControlName="sitioWeb" />
+                  
+                    <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">Teléfono 2:</label>
+                    <input type="text" class="underline-input" formControlName="telefono2" />
+                  </div>
+                  
+                  <div class="form-row">
+                    <label style="color: #002c6c; font-size: 12px;">Usuario:</label>
+                    <input type="text" class="underline-input" formControlName="usuario" readonly />
+                  </div>
+                  
+                  <div class="form-row">
+                    <label style="color: #002c6c; font-size: 12px;">Observación 1:</label>
+                    <input type="text" class="underline-input" formControlName="observacion1" />
+                  </div>
+                  
                 </div>
-                <section class="date-info-section">
-                  <div class="date-container">
-                    <!-- First row with dates and user info -->
-                    <div class="info-row">
-                      <div class="info-group date-group">
-                        <div class="info-item">
-                          <label class="form-label">Fecha de ingreso:</label>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Fecha</span>
-                          </div>
-                        </div>
-                        <div class="info-item">
-                          <label class="form-label">Fecha modificada:</label>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Fecha</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="info-group user-group">
-                        <div class="info-item">
-                          <label class="form-label">Usuario modificado:</label>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Fecha</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
 
-                    <!-- Second row with status and zone info -->
-                    <div class="info-row">
-                      <div class="info-group status-group">
-                        <label class="form-label">Estado:</label>
-                        <div class="status-fields">
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Estado</span>
-                          </div>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Afiliado</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="info-group zone-group">
-                        <label class="form-label">Zona:</label>
-                        <div class="zone-fields">
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Z01</span>
-                          </div>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Zona 1</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
                 <div style="text-align: right;">
                   <button mat-button matStepperPrevious>Anterior</button>
                   <button mat-button color="primary" matStepperNext>Siguiente</button>
@@ -365,18 +305,20 @@
                 <div class="container">
                   <div>
                     <div class="form-row">
-
-
-                      <label class="form-label">
-                        Nombre: (Representante Legal)
-                      </label>
-                      <input type="text" class="underline-input" />
+                      
+                        <label class="form-label">Nombre: (Representante Legal)</label>
+                        <input type="text" class="underline-input" formControlName="nombreRepresentante"  />
+                      
                     </div>
-                    <div class="form-row">
-                      <label style="color: #002c6c;font-size: 12px;">E-mail: </label>
-                      <input type="text" class="underline-input" />
-                      <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
-                      <input type="text" class="underline-input" />
+                    <div>
+                      <div class="form-row">
+                        <label style="color: #002c6c; font-size: 12px;">E-mail:</label>
+                        <input type="text" class="underline-input" formControlName="emailRepresentante" />
+                    
+                        <label style="color: #002c6c; font-size: 12px;">Tel.o Cel:</label>
+                        <input type="text" class="underline-input" formControlName="telefonoRepresentante" />
+                      </div>
+
                     </div>
                     <div class="form-row">
 
@@ -384,13 +326,13 @@
                       <label class="form-label">
                         Nombre: (Codificación)
                       </label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="nombreCodificacion"/>
                     </div>
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">E-mail: </label>
-                      <input type="text" class="underline-input" />
-                      <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="email" />
+                      <label style="color: #002c6c;font-size: 12px;" >Tel.o Cel:</label>
+                      <input type="text" class="underline-input" formControlName="telefono" />
                     </div>
                     <div class="form-row">
 
@@ -398,19 +340,19 @@
                       <label class="form-label">
                         Nombre: (Financiero)
                       </label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="nombreFinanciero" />
                     </div>
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">E-mail 1: </label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="email1" />
                       <label style="color: #002c6c;font-size: 12px;">E-mail 2:</label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input"  formControlName="email2" />
                     </div>
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">E-mail 3: </label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="email3"  />
                       <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="telefono2" />
                     </div>
 
 
@@ -418,20 +360,18 @@
                       <div class="questions-container">
                         <div class="form-label">
                           <div>
-                            <input type="checkbox" />
+                            <input type="checkbox" formControlName="pregunta1" />
 
                             <label for="prefix-5">¿Se va a exportar sus productos?</label>
                           </div>
                           <div>
-                            <input type="checkbox" />
+                            <input type="checkbox" formControlName="pregunta2"  />
                             <label for="prefix-5">¿Se vende o se venderá su producto en el mercado
                               estadounidense?</label>
                           </div>
                           <div>
-                            <input type="checkbox" />
-                            <label for="prefix-5">¿Se clasificará su producto como dispositivo médico sesgún las reglas
-                              de
-                              la FDA?</label>
+                            <input type="checkbox" formControlName="pregunta3"  />
+                            <label for="prefix-5">¿Se clasificará su producto como dispositivo médico sesgún las reglas de la FDA?</label>
                           </div>
 
 
@@ -444,93 +384,18 @@
 
                           <input type="checkbox" />
                           <label for="prefix-5">Página Web</label>
-                          <input type="checkbox" />
+                          <input type="checkbox" formControlName="pregunta4"  />
                           <label for="prefix-5" class="checkbox-label">Instagram</label>
-                          <input type="checkbox" />
+                          <input type="checkbox" formControlName="pregunta5" />
                           <label for="prefix-5" class="checkbox-label">Facebook</label>
-                          <input type="checkbox" />
+                          <input type="checkbox" formControlName="pregunta6"/>
                           <label for="prefix-5">Un conocido</label>
 
 
                         </div>
                       </div>
                     </section>
-                    <section class="date-info-section">
-                      <div class="date-container">
-                        <!-- First row with dates and user info -->
-                        <div class="info-row">
-                          <div class="info-group date-group">
-                            <div class="info-item">
-                              <label class="form-label">Fecha de ingreso:</label>
-                              <div class="input-field">
-                                <img
-                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                                  class="field-icon" />
-                                <span class="field-text">Fecha</span>
-                              </div>
-                            </div>
-                            <div class="info-item">
-                              <label class="form-label">Fecha modificada:</label>
-                              <div class="input-field">
-                                <img
-                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                                  class="field-icon" />
-                                <span class="field-text">Fecha</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div class="info-group user-group">
-                            <div class="info-item">
-                              <label class="form-label">Usuario modificado:</label>
-                              <div class="input-field">
-                                <img
-                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                                  class="field-icon" />
-                                <span class="field-text">Fecha</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
 
-                        <!-- Second row with status and zone info -->
-                        <div class="info-row">
-                          <div class="info-group status-group">
-                            <label class="form-label">Estado:</label>
-                            <div class="status-fields">
-                              <div class="input-field">
-                                <img
-                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                                  class="field-icon" />
-                                <span class="field-text">Estado</span>
-                              </div>
-                              <div class="input-field">
-                                <img
-                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                                  class="field-icon" />
-                                <span class="field-text">Afiliado</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div class="info-group zone-group">
-                            <label class="form-label">Zona:</label>
-                            <div class="zone-fields">
-                              <div class="input-field">
-                                <img
-                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                                  class="field-icon" />
-                                <span class="field-text">Z01</span>
-                              </div>
-                              <div class="input-field">
-                                <img
-                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                                  class="field-icon" />
-                                <span class="field-text">Zona 1</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </section>
                   </div>
 
                 </div>
@@ -561,7 +426,7 @@
                     </div>
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">Observaciones 2:</label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="observacion2" />
                     </div>
 
                   </article>
@@ -580,7 +445,7 @@
 
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">Observaciones 3:</label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="observacion3" />
                     </div>
 
                   </article>
@@ -599,88 +464,13 @@
 
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">Observaciones 4:</label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="observacion4" />
                     </div>
 
 
                   </article>
                 </div>
-                <section class="date-info-section">
-                  <div class="date-container">
-                    <!-- First row with dates and user info -->
-                    <div class="info-row">
-                      <div class="info-group date-group">
-                        <div class="info-item">
-                          <label class="form-label">Fecha de ingreso:</label>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Fecha</span>
-                          </div>
-                        </div>
-                        <div class="info-item">
-                          <label class="form-label">Fecha modificada:</label>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Fecha</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="info-group user-group">
-                        <div class="info-item">
-                          <label class="form-label">Usuario modificado:</label>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Fecha</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
 
-                    <!-- Second row with status and zone info -->
-                    <div class="info-row">
-                      <div class="info-group status-group">
-                        <label class="form-label">Estado:</label>
-                        <div class="status-fields">
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Estado</span>
-                          </div>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Afiliado</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="info-group zone-group">
-                        <label class="form-label">Zona:</label>
-                        <div class="zone-fields">
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Z01</span>
-                          </div>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Zona 1</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
                 <div style="text-align: right;">
                   <button mat-button matStepperPrevious>Anterior</button>
 
@@ -716,10 +506,11 @@
   </mat-tab-group>
 </mat-dialog-content>
 <div style="text-align: center;">
-  <button mat-button mat-dialog-close>
-    <img src="assets/icon-grabar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
+  <button mat-button color="primary" (click)="guardar()">
+    <img src="assets/icon-grabar.png" alt="Grabar" width="18" height="18" style="margin-right: 6px;" />
     Grabar
   </button>
+  
   <button mat-button mat-dialog-close>
     <img src="assets/icon-modificar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
     Modificar

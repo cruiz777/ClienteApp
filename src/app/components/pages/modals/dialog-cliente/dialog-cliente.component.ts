@@ -1,16 +1,18 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, FormControl } from '@angular/forms';
+import { FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
 import { GrupoEmpresaService, GrupoEmpresa } from '../../../../services/grupo-empresa.service';
 import { GrupoProductoService, GrupoProducto } from '../../../../services/grupo-producto.service';
 import { RucService } from '../../../../services/ruc.service';
 import { Ciudad, CiudadService } from '../../../../services/ciudad.service';
 import { UsuarioService } from '../../../../services/usuario.service';
-import { ZonaService,Zona } from '../../../../services/zona.service';
+import { ZonaService, Zona } from '../../../../services/zona.service';
 import { map, startWith } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { Router } from '@angular/router';
 import { MatDialogRef } from '@angular/material/dialog';
-
+import { BehaviorSubject } from 'rxjs';
+import { ClienteService } from 'src/app/services/cliente.service';
+import { MatSnackBar } from '@angular/material/snack-bar';
 @Component({
   selector: 'app-dialog-cliente',
   templateUrl: './dialog-cliente.component.html',
@@ -28,6 +30,7 @@ export class DialogClienteComponent implements OnInit {
   gruposProducto: GrupoProducto[] = [];
   grupoProductoCtrl = new FormControl('');
   gruposProductoFiltrados$!: Observable<GrupoProducto[]>;
+  grupoProductoFiltrados: GrupoProducto[] = [];
   grupoProductoSeleccionado!: number;
   fechaIngreso: Date = new Date();
   razonSocial = '';
@@ -36,6 +39,9 @@ export class DialogClienteComponent implements OnInit {
   ciudadCtrl = new FormControl('');
   ciudadFiltrados$!: Observable<Ciudad[]>;
   ciudadSeleccionado!: number;
+  ciudadFiltrados: Ciudad[] = [];
+
+  nombreCiudadSeleccionada: string = '';
   esPasaporte = false;
   usuarioActual: { id: number; usr: string } | null = null;
 
@@ -50,15 +56,17 @@ export class DialogClienteComponent implements OnInit {
     private grupoProductoService: GrupoProductoService,
     private rucService: RucService,
     private ciudadService: CiudadService,
-    private usuarioService:UsuarioService,
-    private zonaService:ZonaService,
+    private usuarioService: UsuarioService,
+    private zonaService: ZonaService,
     private router: Router,
-    private dialogRef: MatDialogRef<DialogClienteComponent>
+    private dialogRef: MatDialogRef<DialogClienteComponent>,
+    private clienteService: ClienteService,
+    private _snackBar: MatSnackBar
   ) { }
 
   ngOnInit(): void {
     this.initFormulario();
-    
+
     this.obtenerUsuarioActual();
     this.cargarGrupos();
     this.cargarGruposProducto();
@@ -69,27 +77,51 @@ export class DialogClienteComponent implements OnInit {
   initFormulario(): void {
     this.formCliente = this.fb.group({
       paso1: this.fb.group({
-        codigo: [''],
-        nombre: [''],
-        ruc: [''],
-        categoriaIndividual: [false],
-        categoriaIndustrial: [false],
-        grupo: [''],
-        subgrupo: ['']
+        ruc: ['', Validators.required],
+        categoriaCliente: [null, Validators.required],
+        grupo: [null, Validators.required],
+        grupoProducto: [null, Validators.required],
+        prefix: ['', Validators.required],
+        zona:[null]
       }),
       paso2: this.fb.group({
         direccion: [''],
         p_emision: [''],
-        caja: [''],
-        razonSocial: ['']
+        ciudad: ['', Validators.required],
+        razonSocial: [null],
+        nombreRepresentante: [null,Validators.required],
+        direccionPrincipal: ['',Validators.required],
+        codigoPostal: [''],
+        celular: ['', Validators.required],
+        sitioWeb: [''],
+        telefono2: [''], 
+        usuario: [{ value: '', disabled: true }],
+        observacion1: ['']
+
       }),
       paso3: this.fb.group({
-        contactoNombre: [''],
-        contactoTelefono: [''],
-        contactoCorreo: ['']
+        nombreRepresentante: [null,Validators.required],
+        emailRepresentante: ['',Validators.required],
+        telefonoRepresentante: ['',Validators.required],
+        nombreCodificacion: [''],
+        email: [''],
+        telefono: [''],
+        nombreFinanciero: [''],
+        email1: [''],
+        email2: [''],
+        email3: [''],
+        telefono2: [''],
+        pregunta1: [false],
+        pregunta2: [false],
+        pregunta3: [false],
+        pregunta4: [false],
+        pregunta5: [false],
+        pregunta6: [false],
       }),
       paso4: this.fb.group({
-        observaciones: ['']
+        observacion2: [''],
+        observacion3: [''],
+        observacion4: [''],
       })
     });
   }
@@ -110,15 +142,7 @@ export class DialogClienteComponent implements OnInit {
     return this.formCliente.get('paso4') as FormGroup;
   }
 
-  guardar(): void {
-    const datos = {
-      ...this.paso1Form.value,
-      ...this.paso2Form.value,
-      ...this.paso3Form.value,
-      ...this.paso4Form.value
-    };
-    console.log('Datos del cliente:', datos);
-  }
+
 
   cargarGrupos(): void {
     this.grupoService.obtenerGrupos().subscribe(data => {
@@ -144,18 +168,23 @@ export class DialogClienteComponent implements OnInit {
     }
   }
 
+
+
   cargarGruposProducto(): void {
     this.grupoProductoService.obtenerGrupos().subscribe(data => {
       this.gruposProducto = data;
-      this.gruposProductoFiltrados$ = this.grupoProductoCtrl.valueChanges.pipe(
-        startWith(''),
-        map(valor => {
-          console.log('Filtrando subgrupo por:', valor);
-          return this.filtrarGruposProducto(valor || '');
-        })
-      );
+
+      this.paso1Form.get('grupoProducto')?.valueChanges
+        .pipe(startWith(''))
+        .subscribe(valor => {
+          const filtro = typeof valor === 'string' ? valor.toLowerCase() : '';
+          this.grupoProductoFiltrados = this.gruposProducto.filter(g =>
+            (g.codigo + ' ' + g.brick + ' ' + g.desBrick).toLowerCase().includes(filtro)
+          );
+        });
     });
   }
+
 
   filtrarGruposProducto(valor: string | GrupoProducto): GrupoProducto[] {
     const filtro = typeof valor === 'string' ? valor.toLowerCase() : valor?.desBrick?.toLowerCase() || '';
@@ -168,20 +197,20 @@ export class DialogClienteComponent implements OnInit {
   }
 
 
-  displayWithGrupoProducto(grupo: GrupoProducto): string {
+  displayWithGrupoProducto(grupo: GrupoProducto | string): string {
+    if (typeof grupo === 'string') return grupo;
     return grupo ? `${grupo.codigo} - ${grupo.brick} - ${grupo.desBrick}` : '';
   }
 
-  seleccionarGrupoProducto(valor: string): void {
-    const grupoProducto = this.gruposProducto.find(g => `${g.codigo} - ${g.desBrick}` === valor);
-    if (grupoProducto) {
-      this.paso1Form.get('subgrupo')?.setValue(grupoProducto.id_grupo_producto);
-    }
+
+  seleccionarGrupoProducto(grupo: GrupoProducto): void {
+    this.paso1Form.get('grupoProducto')?.setValue(grupo);
   }
+
   limpiarGrupoProducto(): void {
-    this.grupoProductoCtrl.setValue('');
-    this.paso1Form.get('subgrupo')?.reset();
+    this.paso1Form.get('grupoProducto')?.reset();
   }
+
   soloNumeros(event: KeyboardEvent) {
     const charCode = event.which ?? event.keyCode;
     if (charCode < 48 || charCode > 57) {
@@ -192,47 +221,61 @@ export class DialogClienteComponent implements OnInit {
     this.rucService.obtenerDatosRuc(ruc).subscribe(data => {
       this.razonSocial = data.razonSocial;
       this.nombreRepresentante = data.nombre;
-      console.log(`✅ Hola`, data, this.razonSocial);
+  
+      this.paso2Form.patchValue({
+        razonSocial: this.razonSocial,
+        nombreRepresentante: this.nombreRepresentante
+      });
+  
+      this.paso3Form.patchValue({
+        nombreRepresentante: this.nombreRepresentante
+      });
+  
+      console.log(`✅ Datos RUC`, data);
     });
   }
+  
+  
   get rucControl(): FormControl {
     return this.paso1Form.get('ruc') as FormControl;
   }
   cargarCiudad(): void {
     this.ciudadService.obtenerCiudad().subscribe(data => {
       this.ciudad = data;
-      this.ciudadFiltrados$ = this.ciudadCtrl.valueChanges.pipe(
-        startWith(''),
-        map(valor => {
-          console.log('Filtrando ciudad por:', valor);
-          return this.filtrarCiudad(valor || '');
-        })
-      );
+
+      this.paso2Form.get('ciudad')?.valueChanges
+        .pipe(startWith(''))
+        .subscribe(valor => {
+          const texto = typeof valor === 'string' ? valor.toLowerCase() : '';
+          this.ciudadFiltrados = this.ciudad.filter(c =>
+            (c.ciudad + ' ' + c.canton + ' ' + c.provincia).toLowerCase().includes(texto)
+          );
+        });
     });
   }
 
-  filtrarCiudad(valor: string | Ciudad): Ciudad[] {
-    const filtro = typeof valor === 'string' ? valor.toLowerCase() : valor?.ciudad.toLowerCase() || '';
-
-    return this.ciudad.filter(g =>
-      g.ciudad.toLowerCase().includes(filtro)
-    );
-
-  }
 
 
 
-  displayWithciudad(ciudad: Ciudad): string {
+
+
+
+
+  displayCiudad(ciudad: Ciudad | string): string {
+    if (typeof ciudad === 'string') return ciudad;
     return ciudad ? `${ciudad.ciudad} - ${ciudad.canton} - ${ciudad.provincia}` : '';
   }
 
+
   seleccionarCiudad(ciudad: Ciudad): void {
-    this.paso2Form.get('ciudad')?.setValue(ciudad.id_ciudad);
+    this.paso2Form.get('ciudad')?.setValue(ciudad); // guardamos el objeto completo
   }
+
+
   limpiarCiudad(): void {
-    this.ciudadCtrl.setValue('');
     this.paso2Form.get('ciudad')?.reset();
   }
+
 
 
 
@@ -272,9 +315,9 @@ export class DialogClienteComponent implements OnInit {
   obtenerUsuarioActual(): void {
     this.usuarioService.currentUser$.subscribe(user => {
       this.usuarioActual = user;
-      
+
       console.log('Usuario Actual:', this.usuarioActual);
-      
+
     });
   }
   cargarZona(): void {
@@ -286,22 +329,117 @@ export class DialogClienteComponent implements OnInit {
       );
     });
   }
-  
+
   filtrarZona(valor: string): Zona[] {
     const filtro = valor.toLowerCase();
     return this.zona.filter(zona =>
       `${zona.referencia} - ${zona.nombre}`.toLowerCase().includes(filtro)
     );
   }
-  
-  seleccionarZona(nombre: string): void {
-    const zona = this.zona.find(g => `${g.referencia} - ${g.nombre}` === nombre);
-    if (zona) {
-      this.paso1Form.get('zona')?.setValue(zona.id);
-    }
+
+  seleccionarZona(zona: Zona): void {
+    // const zona = this.zona.find(g => `${g.referencia} - ${g.nombre}` === nombre);
+    // if (zona) {
+    //   this.paso1Form.get('zona')?.setValue(zona.id);
+    // }
+    this.paso2Form.get('zona')?.setValue(zona);
   }
+
   cancelar(): void {
     this.dialogRef.close(); // Cierra el diálogo
     this.router.navigate(['/pages/clientes']); // Redirecciona a /pages/clientes
   }
+  guardar(): void {
+    const paso1 = this.paso1Form.value;
+    const paso2 = this.paso2Form.value;
+    const paso3 = this.paso3Form.value;
+    const paso4 = this.paso4Form.value;
+
+
+
+
+    const ciudadObj = paso2.ciudad;
+    const ciudadNombre = typeof ciudadObj === 'object' ? ciudadObj.ciudad : ciudadObj;
+    const idCiudad = typeof ciudadObj === 'object' ? ciudadObj.id_ciudad : 0;
+    const grupoProductoObj = paso1.grupoProducto;
+    const idGrupoProducto = typeof grupoProductoObj === 'object' ? grupoProductoObj.id : grupoProductoObj || 0;
+    const zonaObj = paso1.zona;
+    const idZona = typeof zonaObj === 'object' ? zonaObj.id_zona : 0;
+
+    const jsonCliente = {
+
+      nomcli: paso2.razonSocial || '',
+      dircli: paso2.direccionPrincipal || '',
+      concli: paso2.nombreRepresentante || '',
+      email: paso3.email || '',
+      telefono: paso3.telefono || '',
+      telefono1: paso2.telefono2 || '',
+      razonSocial: paso2.razonSocial || '',
+      fax: '',
+      ruc: paso1.ruc || '',
+      fecing: this.fechaIngreso.toISOString().split('T')[0],
+      fecnac: '2025-04-23',
+      fecfac1: '2025-04-23',
+      fecfac2: '2025-04-23',
+      fecfac3: '2025-04-23',
+      fecfac4: '2025-04-23',
+      fecfac5: '2025-04-23',
+      marca1: '',
+      marca2: '',
+      marca3: '',
+      marca4: '',
+      marca5: '',
+      codcue: '',
+      hello: '',
+      desde: 0,
+      fechtre: new Date().toISOString(),
+      ncomercial: '',
+      saldo: 0,
+      fecfac: '',
+      ciudad: ciudadNombre || '',
+      obs: paso2.observacion1 || '',
+      delestado: 0,
+      genero: '',
+      infcamahabitacion: '',
+      empresaCodigo: 1,
+      seguimiento: 0,
+      fechaactinact: '2025-04-23',
+      idEstadoEmpresa: 1,
+      formatodocumento: 0,
+      imprimeobstramite: 0,
+      idTipoCliente: paso1.categoriaCliente,// aqui llego en blanco 
+      idGrupoProducto: paso1.grupoProducto.id_grupo_producto,
+      idPersona: 8,
+      codigoPostal: paso2.codigoPostal || '',
+      codigoPostal2: '',
+      idVendedor: 1,
+      idCiudad: idCiudad,
+      idZona: paso1.zona.id,
+      idGrupoEmpresa: paso1.grupo || 1,
+      representante: paso2.nombreRepresentante || ''
+    };
+
+    console.log('📤 Enviando cliente:', jsonCliente);
+
+    this.clienteService.guardarCliente(jsonCliente).subscribe({
+      next: (res) => {
+        this.mostrarAlerta('Informacion Guardada','OK');
+      this.dialogRef.close(); // Cierra el modal
+      this.router.navigate(['/pages/clientes']); // Redirecciona
+      },
+      error: (err) => {
+        console.error('❌ Error al guardar el cliente:', err);
+        this.mostrarAlerta('No se pudieron cargar los clientes', 'Error');
+      }
+    });
+  }
+
+  mostrarAlerta(mensaje: string, tipo: string) {
+    this._snackBar.open(mensaje, tipo, {
+      horizontalPosition: "end",
+      verticalPosition: "top",
+      duration: 5000
+    });
+  }
+
 }
