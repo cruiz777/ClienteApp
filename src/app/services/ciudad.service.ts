@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
+import { ApiResponseCiudad } from '../interfaces/responses/ciudad-response';
 import { environment } from 'src/environments/environment';
 
 export interface Ciudad {
@@ -16,8 +17,9 @@ export class CiudadService {
 
   private apiBaseUrl = environment.applicationUrl;
     private apiUrl = `${this.apiBaseUrl}/Ciudades`;
+    private ciudadesUrl = `${environment.applicationUrl}/Ciudades/resume`;
     constructor(private http: HttpClient) {}
-  
+
     obtenerCiudad(): Observable<Ciudad[]> {
       return this.http.get<any>(this.apiUrl).pipe(
         map(response => {
@@ -32,6 +34,10 @@ export class CiudadService {
         })
       );
     }
-    
-    
+
+    getCiudades(): Observable<ApiResponseCiudad> {
+        return this.http.get<ApiResponseCiudad>(this.ciudadesUrl);
+      }
+
+
 }

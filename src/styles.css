@@ -1,5 +1,20 @@
-/* You can add global styles to this file, and also import other style files */
+/* Importar primero la fuente */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+/* Asegurar altura */
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+}
 
+/* Aplicar globalmente */
+* {
+  font-family: 'Inter', sans-serif;
+  box-sizing: border-box;  /* Buenas prácticas */
+}
+
+/* Opcional: Forzar Angular Material */
+.mat-typography, .mat-button, .mat-input-element, .mat-list-item {
+  font-family: 'Inter', sans-serif !important;
+}

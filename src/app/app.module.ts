@@ -19,6 +19,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { CustomMessageBoxComponent } from './components/utils/messages/custom-message-box.component';
 
 export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
 
@@ -27,10 +28,12 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     AppComponent,
     LoginComponent,
     NotFoundComponent,
-    InicioComponent
+    InicioComponent,
+    CustomMessageBoxComponent
   ],
   imports: [
     BrowserModule,
+    MatIconModule,
     CommonModule,
     RouterModule,
     AppRoutingModule,

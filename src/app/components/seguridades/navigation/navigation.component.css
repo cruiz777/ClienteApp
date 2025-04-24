@@ -1,0 +1,142 @@
+/* =========================
+   CONTENEDOR GENERAL
+========================= */
+.sidenav-container {
+  height: 100vh;     /* Ocupa toda la altura de la pantalla */
+  width: 100%;       /* Asegura el ancho completo */
+}
+
+/* =========================
+   SIDENAV (MENÚ LATERAL)
+========================= */
+.sidenav {
+  width: 220px;                 /* Ancho por defecto (expandido) */
+  transition: width 0.3s ease;  /* Animación al colapsar */
+}
+
+.sidenav.collapsed {
+  width: 60px;   /* Mantiene visible los íconos */
+}
+.sidenav .mat-toolbar {
+  background: inherit;          /* Hereda fondo */
+}
+
+/* =========================
+   CONTENIDO PRINCIPAL
+========================= */
+mat-sidenav-content {
+  padding: 16px;
+  transition: margin-left 0.3s ease, padding 0.3s ease;
+}
+
+/* En móvil: sin margen */
+@media (max-width: 768px) {
+  mat-sidenav-content {
+    margin-left: 60px !important;
+  }
+}
+
+/* Cuando el sidebar está colapsado (se aplica vía ngClass) */
+.content-collapsed {
+  margin-left: 60px !important;
+}
+
+/* =========================
+   RESPONSIVE - MÓVIL
+========================= */
+@media (max-width: 768px) {
+  mat-sidenav-content {
+    margin-left: 60px !important;   /* En móvil, sin margen */
+  }
+
+  .btn-nueva-empresa {
+    width: 100%;
+    text-align: center;
+    margin-top: 10px;
+  }
+}
+
+/* =========================
+   TOOLBAR SUPERIOR
+========================= */
+.toolbar-gris {
+  background-color: #e0e0e0 !important;
+  color: #000 !important;
+  height: 48px;
+  min-height: 48px;
+}
+
+/* =========================
+   MENÚ ITEMS
+========================= */
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.menu-icon {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+}
+
+.menu-text {
+  font-size: 14px;
+}
+
+mat-list-item {
+  padding: 4px 16px;
+}
+
+mat-list-item .mat-list-item-content {
+  padding: 0 !important;
+}
+
+/* =========================
+   LOGOS
+========================= */
+.logo-seguridad {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.logo-seguridad img {
+  width: 150px;
+  height: auto;
+  display: block;
+}
+
+/* =========================
+   BOTÓN SALIR
+========================= */
+.salir-text {
+  color: #F27046;
+  font-weight:bold;
+}
+
+/* =========================
+   BOTÓN NUEVA EMPRESA
+========================= */
+.btn-nueva-empresa {
+  width: 100%;
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* Ajustes para Expansion Panel */
+mat-expansion-panel {
+  background: transparent;
+  box-shadow: none;
+}
+
+mat-expansion-panel-header {
+  padding: 0 16px;
+  min-height: 48px;
+}
+
+a.mat-list-item {
+  padding-left: 40px;
+  font-size: 13px;
+}

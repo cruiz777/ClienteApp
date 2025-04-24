@@ -73,6 +73,7 @@ import { LayoutModule } from '@angular/cdk/layout';
     MatButtonToggleModule,
     MatStepperModule,
     MatRadioModule,
+    MatExpansionModule,
     // CDK
     LayoutModule
   ],

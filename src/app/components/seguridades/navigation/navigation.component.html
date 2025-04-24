@@ -1,0 +1,114 @@
+<mat-sidenav-container class="sidenav-container" [ngClass]="{
+  'collapsed': !isExpanded && !isHandset,
+  'mobile': isHandset
+}">
+
+  <!-- SIDEBAR -->
+  <mat-sidenav #drawer
+              class="sidenav"
+              [mode]="isHandset ? 'over' : 'side'"
+              [opened]="!isHandset || isExpanded"
+              [class.collapsed]="!isExpanded && !isHandset"
+              [fixedInViewport]="true"
+              (backdropClick)="isExpanded = false">
+
+    <!-- Logos -->
+    <div class="logo-seguridad" *ngIf="isExpanded">
+      <img src="assets/GS1-logo.png" alt="Logo" routerLink="/inicio" style="cursor: pointer;">
+    </div>
+    <div class="logo-seguridad" *ngIf="isExpanded">
+      <img src="assets/seguridad.png" alt="Logo">
+    </div>
+
+    <!-- Menú Principal -->
+    <mat-nav-list>
+
+      <!-- Toggle Sidebar -->
+      <mat-list-item (click)="toggleSidebar()" class="menu-toggle">
+        <mat-icon>menu</mat-icon>
+        <span *ngIf="isExpanded" class="menu-text">Menú</span>
+      </mat-list-item>
+
+      <!-- Acordeón -->
+      <mat-accordion [multi]="false">
+
+        <!-- SEGURIDAD -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icon-seguridad.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Usuarios/Perfiles</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <a mat-list-item routerLink="/seguridades/productos">
+            <img src="assets/icon-usuario.png" class="menu-icon">
+            <span *ngIf="isExpanded" class="menu-text">Usuarios</span>
+          </a>
+
+          <a mat-list-item routerLink="/seguridades/perfil">
+            <img src="assets/icon-perfil.png" class="menu-icon">
+            <span *ngIf="isExpanded" class="menu-text">Perfil</span>
+          </a>
+        </mat-expansion-panel>
+
+        <!-- ENTIDADES -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icon-personas.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Entidades</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <a mat-list-item routerLink="/seguridades/entidades">
+            <img src="assets/icon-personas.png" class="menu-icon">
+            <span *ngIf="isExpanded" class="menu-text">Entidades</span>
+          </a>
+        </mat-expansion-panel>
+
+        <!-- MANTENIMIENTO GENERAL -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icon-mantenimiento.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Mantenimiento</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <a mat-list-item routerLink="/seguridades/empresas">
+            <img src="assets/icon-empresa.png" class="menu-icon">
+            <span *ngIf="isExpanded" class="menu-text">Empresas</span>
+          </a>
+
+          <a mat-list-item routerLink="/seguridades/localizacion">
+            <img src="assets/icon-localizacion.png" class="menu-icon">
+            <span *ngIf="isExpanded" class="menu-text">Localización</span>
+          </a>
+
+          <a mat-list-item routerLink="/seguridades/parametrosfactura">
+            <img src="assets/icon-facturacion.png" class="menu-icon">
+            <span *ngIf="isExpanded" class="menu-text">Parámetros Factura</span>
+          </a>
+        </mat-expansion-panel>
+
+      </mat-accordion>
+
+      <!-- Salir -->
+      <mat-list-item routerLink="/login" class="salir-item">
+        <div class="menu-item">
+          <img src="assets/ecop-salir.png" class="menu-icon">
+          <span *ngIf="isExpanded" class="menu-text salir-text">Salir</span>
+        </div>
+      </mat-list-item>
+
+    </mat-nav-list>
+
+  </mat-sidenav>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <mat-sidenav-content [ngClass]="isExpanded ? 'content-default' : 'content-collapsed'">
+    <router-outlet></router-outlet>
+  </mat-sidenav-content>
+
+</mat-sidenav-container>

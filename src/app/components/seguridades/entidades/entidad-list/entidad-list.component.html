@@ -1,0 +1,104 @@
+<div class="main-content">
+  <span class="content-title">Registro de Entidades</span>
+
+  <!-- Barra de acciones -->
+  <div class="action-bar">
+    <div class="action-left">
+      <mat-form-field appearance="outline" class="status-select">
+        <mat-label>Estado</mat-label>
+        <mat-select (selectionChange)="applyStatusFilter($event.value)">
+          <mat-option value="">Todos</mat-option>
+          <mat-option value="activo">Activo</mat-option>
+          <mat-option value="inactivo">Inactivo</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" style="width: 250px;">
+        <mat-label>Buscar persona</mat-label>
+        <input matInput (keyup)="applyFilter($event)" placeholder="Nombre o Identificación">
+      </mat-form-field>
+
+      <button mat-button class="search-button">Buscar</button>
+    </div>
+
+    <div class="action-right">
+      <button mat-button class="new-person-button" [routerLink]="['/seguridades/entidades/crear']">Nueva Persona</button>
+    </div>
+  </div>
+
+
+  <!-- Indicadores -->
+  <mat-progress-bar *ngIf="isLoading" mode="indeterminate"></mat-progress-bar>
+  <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+
+  <!-- Tabla -->
+  <table mat-table [dataSource]="dataSource" class="persons-table mat-elevation-z8">
+
+    <ng-container matColumnDef="identificacion">
+      <th mat-header-cell *matHeaderCellDef> Identificación </th>
+      <td mat-cell *matCellDef="let persona"> {{ persona.identificacion }} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="nombresCompletos">
+      <th mat-header-cell *matHeaderCellDef> Nombres </th>
+      <td mat-cell *matCellDef="let persona"> {{ persona.nombresCompletos }} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="tipoPersona">
+      <th mat-header-cell *matHeaderCellDef> Tipo </th>
+      <td mat-cell *matCellDef="let persona"> {{ persona.tipoPersona }} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="ciudad">
+      <th mat-header-cell *matHeaderCellDef> Ciudad </th>
+      <td mat-cell *matCellDef="let persona"> {{ persona.ciudad }} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="correos">
+      <th mat-header-cell *matHeaderCellDef> Correos </th>
+      <td mat-cell *matCellDef="let persona">
+        <ul>
+          <li *ngFor="let correo of persona.correos">{{ correo }}</li>
+        </ul>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="telefonos">
+      <th mat-header-cell *matHeaderCellDef> Teléfonos </th>
+      <td mat-cell *matCellDef="let persona">
+        <ul>
+          <li *ngFor="let telefono of persona.telefonos">{{ telefono }}</li>
+        </ul>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="status">
+      <th mat-header-cell *matHeaderCellDef> Estado </th>
+      <td mat-cell *matCellDef="let persona">
+        <span [ngClass]="persona.status ? 'activo' : 'inactivo'">
+          {{ persona.status ? 'Activo' : 'Inactivo' }}
+        </span>
+      </td>
+    </ng-container>
+
+    <ng-container matColumnDef="acciones">
+      <th mat-header-cell *matHeaderCellDef> Opciones </th>
+      <td mat-cell *matCellDef="let persona">
+        <div class="acciones-btns">
+          <button mat-icon-button color="primary" (click)="editarPersona(persona.personaCodigo)">
+            <img src="assets/icon-modificar-3.png" alt="Editar" class="icon-btn">
+          </button>
+          <button mat-icon-button color="warn" (click)="eliminarPersona(persona.personaCodigo)">
+            <img src="assets/icon-basurero.png" alt="Eliminar" class="icon-btn">
+          </button>
+        </div>
+      </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+  </table>
+
+  <!-- Paginador -->
+  <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+</div>
