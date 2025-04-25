@@ -1,18 +1,36 @@
+// Angular Core
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, FormControl, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+
+
+// Angular Forms
+import { FormBuilder, FormGroup, FormControl, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+// Angular Material
+import { MatDialogRef } from '@angular/material/dialog';
+import { MatSnackBar } from '@angular/material/snack-bar';
+
+
+// RxJS
+import { BehaviorSubject, Observable } from 'rxjs';
+import { map, startWith } from 'rxjs/operators';
+
+// Servicios personalizados
 import { GrupoEmpresaService, GrupoEmpresa } from '../../../../services/grupo-empresa.service';
 import { GrupoProductoService, GrupoProducto } from '../../../../services/grupo-producto.service';
 import { RucService } from '../../../../services/ruc.service';
-import { Ciudad, CiudadService } from '../../../../services/ciudad.service';
+import { CiudadService, Ciudad } from '../../../../services/ciudad.service';
 import { UsuarioService } from '../../../../services/usuario.service';
 import { ZonaService, Zona } from '../../../../services/zona.service';
-import { map, startWith } from 'rxjs/operators';
-import { Observable } from 'rxjs';
-import { Router } from '@angular/router';
-import { MatDialogRef } from '@angular/material/dialog';
-import { BehaviorSubject } from 'rxjs';
 import { ClienteService } from 'src/app/services/cliente.service';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { NcontrolService, NumeroControlMinDto } from 'src/app/services/ncontrol.service';
+import { PrefijoService } from 'src/app/services/prefijo.service';
+import { CedulaService } from 'src/app/services/cedula.service';
+
+// Interfaces o modelos
+import { ClienteRuc } from '../../../../interfaces/clienteRuc';
+import { emailValidoValidator } from '../../../../util/validators';
+
+
 @Component({
   selector: 'app-dialog-cliente',
   templateUrl: './dialog-cliente.component.html',
@@ -43,12 +61,18 @@ export class DialogClienteComponent implements OnInit {
 
   nombreCiudadSeleccionada: string = '';
   esPasaporte = false;
+  tipoIdentificacion: 'CEDULA' | 'RUC' | 'PASAPORTE' | null = null;
   usuarioActual: { id: number; usr: string } | null = null;
 
   zona: Zona[] = [];
   zonaCtrl = new FormControl('');
   zonaFiltrados$!: Observable<Zona[]>;
   ZonaSeleccionado!: number;
+
+  clienteEncontrado?: ClienteRuc;
+  error?: string;
+
+  numeroControl?: NumeroControlMinDto;
 
   constructor(
     private fb: FormBuilder,
@@ -61,10 +85,15 @@ export class DialogClienteComponent implements OnInit {
     private router: Router,
     private dialogRef: MatDialogRef<DialogClienteComponent>,
     private clienteService: ClienteService,
-    private _snackBar: MatSnackBar
+    private _snackBar: MatSnackBar,
+    private ncontrolService: NcontrolService,
+    private prefijoService: PrefijoService,
+    private cedulaService:CedulaService
+
   ) { }
 
   ngOnInit(): void {
+
     this.initFormulario();
 
     this.obtenerUsuarioActual();
@@ -78,53 +107,64 @@ export class DialogClienteComponent implements OnInit {
     this.formCliente = this.fb.group({
       paso1: this.fb.group({
         ruc: ['', Validators.required],
+        esPasaporte: [false],
         categoriaCliente: [null, Validators.required],
         grupo: [null, Validators.required],
         grupoProducto: [null, Validators.required],
         prefix: ['', Validators.required],
-        zona:[null]
+        zona: [null],
+        codigoCliente: [{ value: '', disabled: false }],
+        prefijo: [''],
+        prefijogs1: [''],
+        origen: [''],
+        gln: ['']
       }),
+
       paso2: this.fb.group({
-        direccion: [''],
-        p_emision: [''],
         ciudad: ['', Validators.required],
-        razonSocial: [null],
-        nombreRepresentante: [null,Validators.required],
-        direccionPrincipal: ['',Validators.required],
+        razonSocial: [null, [
+          Validators.required,
+          this.soloLetrasMayusculasValidator()
+        ]],
+        nombreRepresentante: [null, Validators.required],
+        direccionPrincipal: ['', Validators.required],
         codigoPostal: [''],
         celular: ['', Validators.required],
         sitioWeb: [''],
-        telefono2: [''], 
+        telefono2: [''],
         usuario: [{ value: '', disabled: true }],
         observacion1: ['']
-
       }),
+
       paso3: this.fb.group({
-        nombreRepresentante: [null,Validators.required],
-        emailRepresentante: ['',Validators.required],
-        telefonoRepresentante: ['',Validators.required],
+        nombreRepresentante: [null, Validators.required],
+        emailRepresentante: ['', [Validators.required,emailValidoValidator()]],
+        telefonoRepresentante: ['', Validators.required],
         nombreCodificacion: [''],
-        email: [''],
+        email: ['', [emailValidoValidator()]],
+        email1: ['', [emailValidoValidator()]],
+        email2: ['', [emailValidoValidator()]],
+        email3: ['', [emailValidoValidator()]],
         telefono: [''],
         nombreFinanciero: [''],
-        email1: [''],
-        email2: [''],
-        email3: [''],
+
         telefono2: [''],
         pregunta1: [false],
         pregunta2: [false],
         pregunta3: [false],
         pregunta4: [false],
         pregunta5: [false],
-        pregunta6: [false],
+        pregunta6: [false]
       }),
+
       paso4: this.fb.group({
         observacion2: [''],
         observacion3: [''],
-        observacion4: [''],
+        observacion4: ['']
       })
     });
   }
+
 
   get paso1Form(): FormGroup {
     return this.formCliente.get('paso1') as FormGroup;
@@ -218,24 +258,34 @@ export class DialogClienteComponent implements OnInit {
     }
   }
   buscarRuc(ruc: string): void {
-    this.rucService.obtenerDatosRuc(ruc).subscribe(data => {
-      this.razonSocial = data.razonSocial;
-      this.nombreRepresentante = data.nombre;
-  
-      this.paso2Form.patchValue({
-        razonSocial: this.razonSocial,
-        nombreRepresentante: this.nombreRepresentante
-      });
-  
-      this.paso3Form.patchValue({
-        nombreRepresentante: this.nombreRepresentante
-      });
-  
-      console.log(`✅ Datos RUC`, data);
+    this.rucService.obtenerDatosRuc(ruc).subscribe({
+      next: data => {
+        this.tipoIdentificacion = 'RUC'; // ✅ importante
+        this.razonSocial = data.razonSocial;
+        this.nombreRepresentante = data.nombre;
+
+        this.paso2Form.patchValue({
+          razonSocial: data.razonSocial,
+          nombreRepresentante: data.nombre
+        });
+
+        this.paso3Form.patchValue({
+          nombreRepresentante: data.nombre
+        });
+
+        this.error = undefined;
+        console.log('✅ Datos RUC:', data);
+      },
+      error: err => {
+        this.error = 'No se encontraron datos para el RUC ingresado.';
+        console.error('❌ Error buscando RUC:', err);
+        this.tipoIdentificacion = null;
+      }
     });
   }
-  
-  
+
+
+
   get rucControl(): FormControl {
     return this.paso1Form.get('ruc') as FormControl;
   }
@@ -248,7 +298,7 @@ export class DialogClienteComponent implements OnInit {
         .subscribe(valor => {
           const texto = typeof valor === 'string' ? valor.toLowerCase() : '';
           this.ciudadFiltrados = this.ciudad.filter(c =>
-            (c.ciudad + ' ' + c.canton + ' ' + c.provincia).toLowerCase().includes(texto)
+            (c.ciudad).toLowerCase().includes(texto)
           );
         });
     });
@@ -280,9 +330,12 @@ export class DialogClienteComponent implements OnInit {
 
 
   actualizarValidacionRuc(): void {
-
-    if (this.esPasaporte) {
+    const esPasaporte = this.paso1Form.get('esPasaporte')?.value;
+    if (esPasaporte) {
+      this.tipoIdentificacion = 'PASAPORTE';
+      this.error = undefined; // limpia el error
       this.rucControl.clearValidators();
+      this.rucControl.setErrors(null);
     } else {
       this.rucControl.setValidators([
         control => {
@@ -292,26 +345,101 @@ export class DialogClienteComponent implements OnInit {
         }
       ]);
     }
+  
     this.rucControl.updateValueAndValidity();
   }
+  
+  
+  
 
   // Evento para buscar RUC o cédula automáticamente
   onRucBlur(): void {
     const valor = this.rucControl.value;
-    if (!this.esPasaporte && /^\d{13}$/.test(valor)) {
-      this.buscarRuc(valor);
-    } else if (!this.esPasaporte && /^\d{10}$/.test(valor)) {
-      this.buscarCedula(valor);
+    const esPasaporte = this.paso1Form.get('esPasaporte')?.value;
+    console.log('Valor esPasaporte:', this.paso1Form.get('esPasaporte')?.value);
+  console.log('Form válido:', this.paso1Form.valid);
+  console.log('Error:', this.error);
+    if (!valor) {
+      this.tipoIdentificacion = null;
+      return;
     }
+  
+    if (esPasaporte) {
+      this.tipoIdentificacion = 'PASAPORTE';
+      this.error = undefined;
+      return;
+    }
+  
+    this.clienteService.getClientePorRuc(valor).subscribe({
+      next: cliente => {
+        if (cliente) {
+          this.error = '⚠️ El cliente ya existe.';
+          this.razonSocial = '';
+          this.nombreRepresentante = '';
+          this.paso2Form.patchValue({ razonSocial: '', nombreRepresentante: '' });
+          this.paso3Form.patchValue({ nombreRepresentante: '' });
+        } else {
+          if (/^\d{13}$/.test(valor)) {
+            this.buscarRuc(valor);
+          } else if (/^\d{10}$/.test(valor)) {
+            this.buscarCedula(valor);
+          } else {
+            // ❗ solo si NO es pasaporte
+            if (!esPasaporte) {
+              this.error = '❌ Número inválido. Ingrese 10 dígitos para cédula o 13 dígitos para RUC.';
+            }
+          }
+        }
+      },
+      error: () => {
+        if (/^\d{13}$/.test(valor)) {
+          this.buscarRuc(valor);
+        } else if (/^\d{10}$/.test(valor)) {
+          this.buscarCedula(valor);
+        } else {
+          if (!esPasaporte) {
+            this.error = '❌ Número inválido. Ingrese 10 dígitos para cédula o 13 dígitos para RUC.';
+          }
+        }
+      }
+    });
   }
+  
+  
+  
+
+
 
 
 
   buscarCedula(cedula: string): void {
     console.log('🔎 Buscando Cédula:', cedula);
-    // llamada al servicio
+
+    this.cedulaService.obtenerDatosCedula(cedula).subscribe({
+      next: (data) => {
+        this.tipoIdentificacion = 'CEDULA'; // ✅ importante
+        this.razonSocial = data.nombreCompleto;
+
+        this.paso2Form.patchValue({
+          nombreRepresentante: data.nombreCompleto,
+          razonSocial: data.nombreCompleto
+        });
+
+        this.paso3Form.patchValue({
+          nombreRepresentante: data.nombreCompleto
+        });
+
+        this.error = undefined;
+      },
+      error: (err) => {
+        console.error('❌ Error consultando cédula:', err);
+        this.error = 'No se encontraron datos para la cédula ingresada.';
+        this.tipoIdentificacion = null;
+      }
+    });
   }
 
+  
   obtenerUsuarioActual(): void {
     this.usuarioService.currentUser$.subscribe(user => {
       this.usuarioActual = user;
@@ -350,24 +478,25 @@ export class DialogClienteComponent implements OnInit {
     this.router.navigate(['/pages/clientes']); // Redirecciona a /pages/clientes
   }
   guardar(): void {
+    if (this.formCliente.invalid) {
+      this.formCliente.markAllAsTouched(); // muestra errores en pantalla
+      this.mostrarAlerta('Faltan campos obligatorios por llenar', 'Formulario Incompleto');
+      return; // ⛔ no continúa si el formulario es inválido
+    }
     const paso1 = this.paso1Form.value;
     const paso2 = this.paso2Form.value;
     const paso3 = this.paso3Form.value;
     const paso4 = this.paso4Form.value;
 
-
-
-
     const ciudadObj = paso2.ciudad;
     const ciudadNombre = typeof ciudadObj === 'object' ? ciudadObj.ciudad : ciudadObj;
     const idCiudad = typeof ciudadObj === 'object' ? ciudadObj.id_ciudad : 0;
     const grupoProductoObj = paso1.grupoProducto;
-    const idGrupoProducto = typeof grupoProductoObj === 'object' ? grupoProductoObj.id : grupoProductoObj || 0;
-    const zonaObj = paso1.zona;
-    const idZona = typeof zonaObj === 'object' ? zonaObj.id_zona : 0;
-
+    const idGrupoProducto = typeof grupoProductoObj === 'object' ? grupoProductoObj.id_grupo_producto : grupoProductoObj || 0;
+    // const zonaObj = paso1.zona;
+    // const idZona = typeof zonaObj === 'object' ? zonaObj.id_zona : 0;
+    const ruc = this.rucControl.value;
     const jsonCliente = {
-
       nomcli: paso2.razonSocial || '',
       dircli: paso2.direccionPrincipal || '',
       concli: paso2.nombreRepresentante || '',
@@ -414,7 +543,8 @@ export class DialogClienteComponent implements OnInit {
       codigoPostal2: '',
       idVendedor: 1,
       idCiudad: idCiudad,
-      idZona: paso1.zona.id,
+      idZona: '1',
+      //idZona: paso1.zona.id,  por el momento hasta enlazar con la ciudad
       idGrupoEmpresa: paso1.grupo || 1,
       representante: paso2.nombreRepresentante || ''
     };
@@ -423,9 +553,31 @@ export class DialogClienteComponent implements OnInit {
 
     this.clienteService.guardarCliente(jsonCliente).subscribe({
       next: (res) => {
-        this.mostrarAlerta('Informacion Guardada','OK');
-      this.dialogRef.close(); // Cierra el modal
-      this.router.navigate(['/pages/clientes']); // Redirecciona
+        console.log('✅ Cliente guardado:', res);
+
+        this.clienteService.getClientePorRuc(ruc).subscribe({
+          next: (cliente) => {
+            if (cliente) {
+              console.log('✅ Código recibido:', cliente.clientes_codigo);
+              this.paso1Form.patchValue({
+                codigoCliente: cliente.clientes_codigo
+
+              });
+
+              this.guardarPrefijo();
+            }
+          },
+          error: (err) => {
+            console.error('❌ No se pudo obtener el cliente por RUC:', err);
+          }
+        });
+        // Opcional: deshabilitar campo si deseas que sea solo lectura luego
+        // this.paso1Form.get('codigoCliente')?.disable();
+
+        //this.mostrarAlerta('Información Guardada', 'OK');
+
+        //this.dialogRef.close(); // Cierra el modal (opcional)
+        //this.router.navigate(['/pages/clientes']); // Redirecciona (opcional)
       },
       error: (err) => {
         console.error('❌ Error al guardar el cliente:', err);
@@ -433,6 +585,93 @@ export class DialogClienteComponent implements OnInit {
       }
     });
   }
+  guardarPrefijo(): void {
+    const prefix = this.paso1Form.get('prefix')?.value;
+    let idControl: number;
+  
+    switch (prefix) {
+      case '5':
+        idControl = 70;
+        break;
+      case '6':
+        idControl = 71;
+        break;
+      case '7':
+        idControl = 73;
+        break;
+      case '8':
+        idControl = 72;
+        break;
+      case 'USA':
+        idControl = 74;
+        break;
+      case 'MSV':
+        idControl = 75;
+        break;
+      default:
+        this.mostrarAlerta('Prefijo no válido seleccionado', 'Error');
+        return;
+    }
+  
+    this.ncontrolService.obtenerNumeroControlMinPorId(idControl).subscribe({
+      next: (data) => {
+        const siguienteNum = (parseInt(data.numcon, 10) + 1).toString().padStart(data.numcon.length, '0');
+  
+        this.paso1Form.patchValue({
+          prefijo: data.numcon,
+          gln: '786' + data.numcon,
+          prefijogs1: '786',
+          origen: 'EC'
+        });
+  
+        const paso1 = this.paso1Form.value;
+        const codigoCliente = paso1.codigoCliente || 0;
+        const prefijo = paso1.prefijo || '0';
+  
+        const prefijoData = {
+          codpre: prefijo,
+          fecha: new Date().toISOString().split('T')[0],
+          fechaCierre: new Date().toISOString().split('T')[0],
+          observacion: 'Prefijo generado automáticamente',
+          digitos: prefijo.length.toString(),
+          estado: false,
+          control: 0,
+          ngln: 0,
+          bandera: 0,
+          facturar: 'C',
+          codpro: '1174',
+          nombre: `PREFIJO:`,
+          fecfac: 'C',
+          referenciaInterna: prefijo,
+          prefijosgs1: `786${prefijo}`,
+          origenPrefijo: 'EC',
+          orden: 0,
+          clientesCodigo: codigoCliente
+        };
+  
+        console.log('📦 Enviando prefijo con número de control:', prefijoData);
+  
+        this.prefijoService.guardarPrefijo(prefijoData).subscribe({
+          next: () => {
+            this.mostrarAlerta('Se guardó correctamente', 'OK');
+  
+            // 🔁 Actualizar el número de control (incrementado)
+            this.actualizarNumeroControl(idControl, siguienteNum, false);
+          },
+          error: () => {
+            this.mostrarAlerta('Error al guardar el prefijo', 'Error');
+          }
+        });
+      },
+      error: (err) => {
+        console.error('❌ Error al obtener el número de control:', err);
+        this.mostrarAlerta('Error al obtener el número de control', 'Error');
+      }
+    });
+  }
+  
+
+
 
   mostrarAlerta(mensaje: string, tipo: string) {
     this._snackBar.open(mensaje, tipo, {
@@ -441,5 +680,85 @@ export class DialogClienteComponent implements OnInit {
       duration: 5000
     });
   }
+  buscarCliente() {
+    const ruc = this.rucControl.value;
+
+    if (!ruc) return;
+
+    this.clienteService.getClientePorRuc(ruc).subscribe({
+      next: (cliente) => {
+        if (cliente) {
+          this.clienteEncontrado = cliente;
+          this.error = undefined;
+        } else {
+          // No se encontró el cliente
+          this.clienteEncontrado = undefined;
+          this.error = 'Cliente no encontrado';
+          this.actualizarValidacionRuc();
+        }
+      },
+      error: (err) => {
+        console.error('Error al buscar cliente:', err);
+        this.clienteEncontrado = undefined;
+        this.error = 'Error al buscar el cliente';
+        this.actualizarValidacionRuc(); // Aquí también puedes validar
+      }
+    });
+  }
+  forzarMayusculas(controlName: string, formGroup: FormGroup, event: any): void {
+    const input = event.target;
+    const valorTransformado = input.value.toUpperCase(); // ⚠️ Solo transforma a mayúsculas
+    input.value = valorTransformado;
+    formGroup.get(controlName)?.setValue(valorTransformado, { emitEvent: false });
+  }
+
+
+
+  soloLetrasMayusculasValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const valor = control.value;
+      const regex = /^[A-Z\s]+$/; // solo mayúsculas y espacios
+      if (!valor || regex.test(valor)) {
+        return null;
+      }
+      return { soloMayusculas: true };
+    };
+  }
+  obtenerNumeroControl(id: number): void {
+    this.ncontrolService.obtenerNumeroControlMinPorId(id).subscribe({
+      next: (data) => {
+        this.numeroControl = data;
+
+        this.paso1Form.patchValue({
+          prefijo: data.numcon,
+          gln: '786' + data.numcon,
+          prefijogs1: '786',
+          origen: 'EC'
+        });
+
+
+        // Mostrar alerta con los datos recibidos
+        //alert(`Número de control recibido:\nID: ${data.id}\nNumcon: ${data.numcon}`);
+      },
+      error: (err) => {
+        console.error('Error al consultar el número de control:', err);
+        alert('Error al obtener el número de control');
+      }
+    });
+  }
+  actualizarNumeroControl(id: number, numcon: string, ocupado: boolean): void {
+    this.ncontrolService.actualizarNumeroControl(id, {
+      numcon,
+      ocupado
+    }).subscribe({
+      next: res => {
+        console.log('✅ Número actualizado:', res);
+      },
+      error: err => {
+        console.error('❌ Error actualizando número de control:', err);
+      }
+    });
+  }
+  
 
 }

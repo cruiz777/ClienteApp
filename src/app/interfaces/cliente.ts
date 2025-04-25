@@ -5,5 +5,6 @@ export interface Cliente {
   ruc:string,
   fecing:string,
   zonaReferencia:string,
-  estadoNombre:string
+  estadoNombre:string,
+  prefijo:string
 }

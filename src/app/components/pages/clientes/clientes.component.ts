@@ -17,7 +17,8 @@ const ELEMENT_DATA: Cliente[] = [
     ruc: "20456123456", 
     fecing: "2021-05-15",
     zonaReferencia:"Z01",
-    estadoNombre:"Afiliada"
+    estadoNombre:"Afiliada",
+    prefijo:'7777'
   }
 ];
 
@@ -28,7 +29,7 @@ const ELEMENT_DATA: Cliente[] = [
   styleUrls: ['./clientes.component.css']
 })
 export class ClientesComponent implements OnInit {
-  displayedColumns: string[] = ['clientes_codigo',  'nomcli','dircli','ruc','fecing','zonaReferencia','estadoNombre','acciones'];
+  displayedColumns: string[] = ['clientes_codigo',  'nomcli','dircli','ruc','fecing','zonaReferencia','estadoNombre','prefijo','acciones'];
   dataSource = new MatTableDataSource(ELEMENT_DATA);
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 

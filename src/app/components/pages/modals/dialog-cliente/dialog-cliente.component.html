@@ -1,4 +1,4 @@
-<mat-dialog-content style="max-height: 105vh;">
+<mat-dialog-content style="max-height: 100vh;">
   <mat-tab-group [(selectedIndex)]="selectedTab" dynamicHeight>
 
     <!-- TAB 1: Información General -->
@@ -15,57 +15,66 @@
                 <div class="container">
 
                   <div class="form-row">
-                    <label class="form-label" >Código del Cliente:</label>
-                    <input type="text" readonly formControlName="codigoCliente" style="min-width: 80px;" />
+                    <label class="form-label">Código del Cliente:</label>
+                    <input type="text" formControlName="codigoCliente" style="min-width: 80px;" readonly />
                   </div>
                   <div>
-                    <label class="form-label">RUC/CI/Pasaporte:</label>
-                    <mat-checkbox [(ngModel)]="esPasaporte" (change)="actualizarValidacionRuc()">
-                      Es Pasaporte
-                    </mat-checkbox>
-                    <input type="text" formControlName="ruc" (blur)="onRucBlur()"
+                    <label class="form-label"><span style="color: red;">*</span>RUC/CI/Pasaporte:</label>
+                    <input type="text" [formControl]="rucControl" (blur)="onRucBlur()"
                       placeholder="Ingrese número o pasaporte" class="underline-input" />
 
-
-
-                    <span>{{ razonSocial }}</span>
                     <!-- Mostrar error solo si NO es pasaporte -->
-                    <div *ngIf="!esPasaporte && rucControl.invalid && rucControl.touched"
-                      style="color: red; font-size: 12px;">
-                      Ingrese 10 dígitos para cédula o 13 dígitos para RUC.
+                    <div *ngIf="error && !esPasaporte" class="error-message" style="color: red; font-size: 12px;">
+                      {{ error }}
                     </div>
+                    <mat-checkbox formControlName="esPasaporte" (change)="actualizarValidacionRuc()">
+                      Es Pasaporte
+                    </mat-checkbox>
+                    <div  >
+                    <span *ngIf="(tipoIdentificacion === 'CEDULA' || tipoIdentificacion === 'RUC') && razonSocial">
+                      {{ razonSocial }}
+                    </span>
                   </div>
 
-
-
-
+                    <!-- Mostrar error solo si NO es pasaporte -->
+                    <div *ngIf="!paso1Form.get('esPasaporte')?.value && rucControl.invalid && rucControl.touched" style="color: red; font-size: 12px;">
+                      Ingrese 10 dígitos para cédula o 13 dígitos para RUC.
+                    </div>
+                    
+                  </div>
                   <div class="form-row category-row" [formGroup]="paso1Form">
-                    <label class="form-label">Categoría Cliente:</label>
-                    <div class="checkbox-group">
-                      <div class="checkbox-container">
-                        <input type="radio" formControlName="categoriaCliente" id="individual" [value]="2"
-                          class="checkbox-input" />
-                        <label for="individual" class="checkbox-label">Individual</label>
-                      </div>
-                      <div class="checkbox-container">
-                        <input type="radio" formControlName="categoriaCliente" id="industrial" [value]="1"
-                          class="checkbox-input" />
-                        <label for="industrial" class="checkbox-label">Industrial</label>
+                    <div class="form-row">
+                      <label class="form-label">
+                        <span style="color: red;">*</span>Categoría Cliente:
+                      </label>
+
+                      <div class="categoria-cliente-group">
+                        <label>
+                          <input type="radio" formControlName="categoriaCliente" id="individual" [value]="2" />
+                          Individual
+                        </label>
+                        <label>
+                          <input type="radio" formControlName="categoriaCliente" id="industrial" [value]="1" />
+                          Industrial
+                        </label>
                       </div>
                     </div>
+
                   </div>
 
                   <div>
-                    <label class="form-label">Grupo:</label>
+                    <label class="form-label"><span style="color: red;">*</span>Grupo:</label>
 
-                    <mat-form-field  style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;" appearance="fill">
+                    <mat-form-field
+                      style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                      appearance="fill">
                       <mat-select formControlName="grupo" placeholder="Seleccione Grupo" style="font-size: 12px;">
                         <mat-option *ngFor="let grupo of grupos" [value]="grupo.id_grupo_empresa">
                           {{ grupo.codigo }} - {{ grupo.nombre }}
                         </mat-option>
                       </mat-select>
                     </mat-form-field>
-                    <label class="form-label">Categoría Producto:</label>
+                    <label class="form-label"> <span style="color: red;">*</span>Categoría Producto:</label>
                     <mat-form-field class="full-width" style="font-size: 12px; height: 60px;">
                       <input matInput formControlName="grupoProducto" [matAutocomplete]="autoGrupoProducto"
                         placeholder="Seleccione Categoría Producto">
@@ -85,56 +94,39 @@
 
                   </div>
                   <div class="form-row">
+                    <label class="form-label">
+                      <span style="color: red;">*</span>Asignación de Prefijo:
+                    </label>
 
-                    <div class="prefix-checkbox-group">
-                      <label class="form-label">Asignación de Prefijo:</label>
-                      <div class="checkbox-group">
-                        <div class="checkbox-container">
-                          <input type="radio" formControlName="prefix" id="prefix-5" value="5" class="checkbox-input" />
-                          <label for="prefix-5" class="checkbox-label">5</label>
-                        </div>
+                    <div class="prefix-inline-group">
+                      <mat-form-field style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                      appearance="fill">
+                        <mat-select  formControlName="prefix" placeholder="Seleccione prefijo" style="font-size: 12px;">
+                          <mat-option [value]="'5'">5</mat-option>
+                          <mat-option [value]="'6'">6</mat-option>
+                          <mat-option [value]="'7'">7</mat-option>
+                          <mat-option [value]="'8'">8</mat-option>
+                          <mat-option [value]="'USA'">USA</mat-option>
+                          <mat-option [value]="'MSV'">MSV</mat-option>
+                        </mat-select>
+                      </mat-form-field>
 
-                        <div class="checkbox-container">
-                          <input type="radio" formControlName="prefix" id="prefix-6" value="6" class="checkbox-input" />
-                          <label for="prefix-6" class="checkbox-label">6</label>
-                        </div>
+                      <label class="modificar-label">
+                        <input type="checkbox" id="prefix-modify" value="MODIFY" />
+                        Modificar Secuencia
+                      </label>
 
-                        <div class="checkbox-container">
-                          <input type="radio" formControlName="prefix" id="prefix-7" value="7" class="checkbox-input" />
-                          <label for="prefix-7" class="checkbox-label">7</label>
-                        </div>
-
-                        <div class="checkbox-container">
-                          <input type="radio" formControlName="prefix" id="prefix-8" value="8" class="checkbox-input" />
-                          <label for="prefix-8" class="checkbox-label">8</label>
-                        </div>
-
-                        <div class="checkbox-container">
-                          <input type="radio" formControlName="prefix" id="prefix-usa" value="USA"
-                            class="checkbox-input" />
-                          <label for="prefix-usa" class="checkbox-label">USA</label>
-                        </div>
-
-                        <div class="checkbox-container">
-                          <input type="radio" formControlName="prefix" id="prefix-msv" value="MSV"
-                            class="checkbox-input" />
-                          <label for="prefix-msv" class="checkbox-label">MSV</label>
-                        </div>
-                      </div>
-
-                      <input type="checkbox" id="prefix-modify" name="prefix" value="MODIFY" class="checkbox-input" />
-                      <label for="prefix-modify" class="form-label">Modificar Secuencia</label>
-                      <input type="text" placeholder="texto" />
-
+                      <input type="text" placeholder="texto" class="prefix-text" />
                     </div>
                   </div>
+
                   <div class="form-row">
                     <label class="form-label">Prefijo:</label>
 
-                    <input type="text" class="underline-input" readonly />
+                    <input type="text" class="underline-input" readonly formControlName="prefijo" />
                     <label class="form-label">Prefijo GS1:</label>
 
-                    <input type="text" class="underline-input" readonly />
+                    <input type="text" class="underline-input" readonly formControlName="prefijogs1" />
                   </div>
                   <div class="form-row">
 
@@ -143,17 +135,17 @@
                   <div class="form-row">
                     <label class="form-label">GLN:</label>
 
-                    <input type="text" class="text-input" class="underline-input" readonly />
+                    <input type="text" class="text-input" class="underline-input" readonly formControlName="gln" />
                     <label class="form-label">Origen Prefijo:</label>
 
-                    <input type="text" class="text-input" class="underline-input" readonly />
+                    <input type="text" class="text-input" class="underline-input" readonly formControlName="origen" />
                   </div>
                   <div class="form-row">
 
 
                   </div>
                 </div>
-                <section class="date-info-section">
+                <section class="date-info-section" style="visibility: hidden;">
                   <div class="date-container">
                     <!-- First row with dates and user info -->
                     <div class="info-row">
@@ -184,7 +176,7 @@
                     </div>
 
                     <!-- Second row with status and zone info -->
-                    <div class="info-row">
+                    <div class="info-row" >
                       <div class="info-group status-group">
                         <label class="form-label">Estado:</label>
                         <div class="status-fields">
@@ -211,7 +203,12 @@
                   </div>
                 </section>
                 <div style="text-align: right;">
-                  <button mat-button color="primary" matStepperNext [disabled]="paso1Form.invalid">Siguiente</button>
+                  <button mat-button color="primary" matStepperNext
+                  [disabled]="paso1Form.invalid || (error && !paso1Form.get('esPasaporte')?.value)"
+                  >
+                    Siguiente
+                  </button>
+
 
                 </div>
               </form>
@@ -224,20 +221,23 @@
                 <div class="container">
                   <div>
                     <div class="form-row">
-                      <label class="form-label">Razón Social:</label>
-                      <input type="text" formControlName="razonSocial"     class="underline-input" />
+                      <label class="form-label"><span style="color: red;">*</span>Razón Social:</label>
+                      <input type="text" formControlName="razonSocial" class="underline-input"
+                        (input)="forzarMayusculas('razonSocial', paso2Form, $event)" maxlength="300" />
 
                     </div>
                   </div>
                   <div>
                     <div class="form-row">
-                      <label style="color: #002c6c;font-size: 12px;"> Representante:</label>
+                      <label style="color: #002c6c;font-size: 12px;"><span
+                          style="color: red;">*</span>Representante:</label>
                       <input type="text" formControlName="nombreRepresentante" value="{{ nombreRepresentante }}"
-                        class="underline-input" />
+                        class="underline-input" (input)="forzarMayusculas('nombreRepresentante', paso2Form, $event)"
+                        maxlength="200" />
                     </div>
                   </div>
                   <div style="padding-top: 0px; padding-bottom: 0px;">
-                    <label style="color: #002c6c;font-size: 13px;">Ciudad : </label>
+                    <label style="color: #002c6c;font-size: 13px;"><span style="color: red;">*</span>Ciudad : </label>
                     <mat-form-field class="full-width" style="font-size: 12px; height: 60px;">
                       <input matInput formControlName="ciudad" [matAutocomplete]="autoCiudad"
                         placeholder="Seleccione Ciudad">
@@ -258,36 +258,40 @@
 
                   </div>
                   <div class="form-row">
-                    <label style="color: #002c6c; font-size: 12px;">Dirección Principal:</label>
-                    <input class="underline-input" formControlName="direccionPrincipal" />
+                    <label style="color: #002c6c; font-size: 12px;"><span style="color: red;">*</span>Dirección
+                      Principal:</label>
+                    <input class="underline-input" formControlName="direccionPrincipal"
+                      (input)="forzarMayusculas('direccionPrincipal', paso2Form, $event)" maxlength="200" />
                   </div>
-                  
+
                   <div class="form-row">
                     <label style="color: #002c6c; font-size: 12px;">Código Postal:</label>
-                    <input type="text" class="underline-input" formControlName="codigoPostal" />
-                  
-                    <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">Celular:</label>
-                    <input type="text" class="underline-input" formControlName="celular" />
+                    <input type="text" class="underline-input" formControlName="codigoPostal" maxlength="10" />
+
+                    <label style="color: #002c6c; font-size: 12px; margin-left: 10px;"><span
+                        style="color: red;">*</span>Celular:</label>
+                    <input type="text" class="underline-input" formControlName="celular" maxlength="20" />
                   </div>
-                  
+
                   <div class="form-row">
                     <label style="color: #002c6c; font-size: 12px;">Sitio Web:</label>
-                    <input type="text" class="underline-input" formControlName="sitioWeb" />
-                  
+                    <input type="text" class="underline-input" formControlName="sitioWeb" maxlength="150" />
+
                     <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">Teléfono 2:</label>
-                    <input type="text" class="underline-input" formControlName="telefono2" />
+                    <input type="text" class="underline-input" formControlName="telefono2" maxlength="20" />
                   </div>
-                  
+
                   <div class="form-row">
                     <label style="color: #002c6c; font-size: 12px;">Usuario:</label>
                     <input type="text" class="underline-input" formControlName="usuario" readonly />
                   </div>
-                  
+
                   <div class="form-row">
                     <label style="color: #002c6c; font-size: 12px;">Observación 1:</label>
-                    <input type="text" class="underline-input" formControlName="observacion1" />
+                    <input type="text" class="underline-input" formControlName="observacion1"
+                      (input)="forzarMayusculas('observacion1', paso2Form, $event)" maxlength="450" />
                   </div>
-                  
+
                 </div>
 
                 <div style="text-align: right;">
@@ -305,18 +309,26 @@
                 <div class="container">
                   <div>
                     <div class="form-row">
-                      
-                        <label class="form-label">Nombre: (Representante Legal)</label>
-                        <input type="text" class="underline-input" formControlName="nombreRepresentante"  />
-                      
+
+                      <label class="form-label"><span style="color: red;">*</span>Nombre: (Representante Legal)</label>
+                      <input type="text" class="underline-input" formControlName="nombreRepresentante"
+                        (input)="forzarMayusculas('nombreRepresentante', paso3Form, $event)" maxlength="200" />
+
                     </div>
                     <div>
                       <div class="form-row">
-                        <label style="color: #002c6c; font-size: 12px;">E-mail:</label>
-                        <input type="text" class="underline-input" formControlName="emailRepresentante" />
-                    
-                        <label style="color: #002c6c; font-size: 12px;">Tel.o Cel:</label>
-                        <input type="text" class="underline-input" formControlName="telefonoRepresentante" />
+                        <label style="color: #002c6c; font-size: 12px;"><span
+                            style="color: red;">*</span>E-mail:</label>
+                        <input type="text" class="underline-input" formControlName="emailRepresentante"
+                          maxlength="200" />
+                        <div
+                          *ngIf="paso3Form.get('emailRepresentante')?.hasError('emailInvalido') && paso3Form.get('emailRepresentante')?.touched">
+                          <small style="color: red;">Ingrese un correo válido</small>
+                        </div>
+                        <label style="color: #002c6c; font-size: 12px;"><span style="color: red;">*</span>Tel.o
+                          Cel:</label>
+                        <input type="text" class="underline-input" formControlName="telefonoRepresentante"
+                          maxlength="20" />
                       </div>
 
                     </div>
@@ -326,13 +338,17 @@
                       <label class="form-label">
                         Nombre: (Codificación)
                       </label>
-                      <input type="text" class="underline-input" formControlName="nombreCodificacion"/>
+                      <input type="text" class="underline-input" formControlName="nombreCodificacion"
+                        (input)="forzarMayusculas('nombreCodificacion', paso3Form, $event)" maxlength="200" />
                     </div>
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">E-mail: </label>
-                      <input type="text" class="underline-input" formControlName="email" />
-                      <label style="color: #002c6c;font-size: 12px;" >Tel.o Cel:</label>
-                      <input type="text" class="underline-input" formControlName="telefono" />
+                      <input type="text" class="underline-input" formControlName="email" maxlength="200" />
+                      <div *ngIf="paso3Form.get('email')?.hasError('emailInvalido') && paso3Form.get('email')?.touched">
+                        <small style="color: red;">Ingrese un correo válido</small>
+                      </div>
+                      <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
+                      <input type="text" class="underline-input" formControlName="telefono" maxlength="20" />
                     </div>
                     <div class="form-row">
 
@@ -340,19 +356,32 @@
                       <label class="form-label">
                         Nombre: (Financiero)
                       </label>
-                      <input type="text" class="underline-input" formControlName="nombreFinanciero" />
+                      <input type="text" class="underline-input" formControlName="nombreFinanciero"
+                        (input)="forzarMayusculas('nombreFinanciero', paso3Form, $event)" maxlength="200" />
                     </div>
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">E-mail 1: </label>
-                      <input type="text" class="underline-input" formControlName="email1" />
+                      <input type="text" class="underline-input" formControlName="email1" maxlength="200" />
+                      <div
+                        *ngIf="paso3Form.get('email1')?.hasError('emailInvalido') && paso3Form.get('email1')?.touched">
+                        <small style="color: red;">Ingrese un correo válido</small>
+                      </div>
                       <label style="color: #002c6c;font-size: 12px;">E-mail 2:</label>
-                      <input type="text" class="underline-input"  formControlName="email2" />
+                      <input type="text" class="underline-input" formControlName="email2" maxlength="200" />
+                      <div
+                        *ngIf="paso3Form.get('email2')?.hasError('emailInvalido') && paso3Form.get('email2')?.touched">
+                        <small style="color: red;">Ingrese un correo válido</small>
+                      </div>
                     </div>
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">E-mail 3: </label>
-                      <input type="text" class="underline-input" formControlName="email3"  />
+                      <input type="text" class="underline-input" formControlName="email3" maxlength="200" />
+                      <div
+                        *ngIf="paso3Form.get('email3')?.hasError('emailInvalido') && paso3Form.get('email3')?.touched">
+                        <small style="color: red;">Ingrese un correo válido</small>
+                      </div>
                       <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
-                      <input type="text" class="underline-input" formControlName="telefono2" />
+                      <input type="text" class="underline-input" formControlName="telefono2" maxlength="20" />
                     </div>
 
 
@@ -365,13 +394,14 @@
                             <label for="prefix-5">¿Se va a exportar sus productos?</label>
                           </div>
                           <div>
-                            <input type="checkbox" formControlName="pregunta2"  />
+                            <input type="checkbox" formControlName="pregunta2" />
                             <label for="prefix-5">¿Se vende o se venderá su producto en el mercado
                               estadounidense?</label>
                           </div>
                           <div>
-                            <input type="checkbox" formControlName="pregunta3"  />
-                            <label for="prefix-5">¿Se clasificará su producto como dispositivo médico sesgún las reglas de la FDA?</label>
+                            <input type="checkbox" formControlName="pregunta3" />
+                            <label for="prefix-5">¿Se clasificará su producto como dispositivo médico sesgún las reglas
+                              de la FDA?</label>
                           </div>
 
 
@@ -384,11 +414,11 @@
 
                           <input type="checkbox" />
                           <label for="prefix-5">Página Web</label>
-                          <input type="checkbox" formControlName="pregunta4"  />
+                          <input type="checkbox" formControlName="pregunta4" />
                           <label for="prefix-5" class="checkbox-label">Instagram</label>
                           <input type="checkbox" formControlName="pregunta5" />
                           <label for="prefix-5" class="checkbox-label">Facebook</label>
-                          <input type="checkbox" formControlName="pregunta6"/>
+                          <input type="checkbox" formControlName="pregunta6" />
                           <label for="prefix-5">Un conocido</label>
 
 
@@ -426,7 +456,8 @@
                     </div>
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">Observaciones 2:</label>
-                      <input type="text" class="underline-input" formControlName="observacion2" />
+                      <input type="text" class="underline-input" formControlName="observacion2"
+                        (input)="forzarMayusculas('observacion2', paso4Form, $event)" maxlength="400" />
                     </div>
 
                   </article>
@@ -445,7 +476,8 @@
 
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">Observaciones 3:</label>
-                      <input type="text" class="underline-input" formControlName="observacion3" />
+                      <input type="text" class="underline-input" formControlName="observacion3"
+                        (input)="forzarMayusculas('observacion3', paso4Form, $event)" maxlength="400" />
                     </div>
 
                   </article>
@@ -464,7 +496,8 @@
 
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">Observaciones 4:</label>
-                      <input type="text" class="underline-input" formControlName="observacion4" />
+                      <input type="text" class="underline-input" formControlName="observacion4"
+                        (input)="forzarMayusculas('observacion4', paso4Form, $event)" maxlength="400" />
                     </div>
 
 
@@ -485,23 +518,7 @@
       </ng-template>
     </mat-tab>
 
-    <!-- TAB 2: Histórico -->
-    <mat-tab label="Histórico del Cliente">
-      <ng-template matTabContent>
-        <div *ngIf="selectedTab === 1">
-          <p>Contenido histórico aquí.</p>
-        </div>
-      </ng-template>
-    </mat-tab>
-
-    <!-- TAB 3: Prefijos -->
-    <mat-tab label="Prefijos">
-      <ng-template matTabContent>
-        <div *ngIf="selectedTab === 2">
-          <p>Contenido de prefijos aquí.</p>
-        </div>
-      </ng-template>
-    </mat-tab>
+    
 
   </mat-tab-group>
 </mat-dialog-content>
@@ -510,7 +527,7 @@
     <img src="assets/icon-grabar.png" alt="Grabar" width="18" height="18" style="margin-right: 6px;" />
     Grabar
   </button>
-  
+
   <button mat-button mat-dialog-close>
     <img src="assets/icon-modificar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
     Modificar

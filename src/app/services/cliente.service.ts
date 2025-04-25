@@ -30,5 +30,13 @@ export class ClienteService {
     return this.http.post(`${this.apiBaseUrl}/Clientes`, data);
 
   }
+  getClientePorRuc(ruc: string): Observable<Cliente> {
+    const url = `${this.apiBaseUrl}/ruc?ruc=${ruc}`;
+    return this.http.get<ClienteResponse>(url).pipe(
+      map(response => response.data[0]) // toma el primero
+    );
+  }
+  
+
   
 }
