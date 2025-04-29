@@ -245,7 +245,7 @@
   flex-shrink: 0;
 }
 body {
-  background-image: url('src/assets/fondo_login.png'); /* Ruta a tu imagen */
+  background-image: url('src/assets/images/fondo_login.png'); /* Ruta a tu imagen */
   background-size: cover; /* Que cubra toda la pantalla */
   background-position: center; /* Centrada */
   background-repeat: no-repeat;

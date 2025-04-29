@@ -30,17 +30,18 @@
                     <mat-checkbox formControlName="esPasaporte" (change)="actualizarValidacionRuc()">
                       Es Pasaporte
                     </mat-checkbox>
-                    <div  >
-                    <span *ngIf="(tipoIdentificacion === 'CEDULA' || tipoIdentificacion === 'RUC') && razonSocial">
-                      {{ razonSocial }}
-                    </span>
-                  </div>
+                    <div>
+                      <span *ngIf="(tipoIdentificacion === 'CEDULA' || tipoIdentificacion === 'RUC') && razonSocial">
+                        {{ razonSocial }}
+                      </span>
+                    </div>
 
                     <!-- Mostrar error solo si NO es pasaporte -->
-                    <div *ngIf="!paso1Form.get('esPasaporte')?.value && rucControl.invalid && rucControl.touched" style="color: red; font-size: 12px;">
+                    <div *ngIf="!paso1Form.get('esPasaporte')?.value && rucControl.invalid && rucControl.touched"
+                      style="color: red; font-size: 12px;">
                       Ingrese 10 dígitos para cédula o 13 dígitos para RUC.
                     </div>
-                    
+
                   </div>
                   <div class="form-row category-row" [formGroup]="paso1Form">
                     <div class="form-row">
@@ -99,9 +100,10 @@
                     </label>
 
                     <div class="prefix-inline-group">
-                      <mat-form-field style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
-                      appearance="fill">
-                        <mat-select  formControlName="prefix" placeholder="Seleccione prefijo" style="font-size: 12px;">
+                      <mat-form-field
+                        style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                        appearance="fill">
+                        <mat-select formControlName="prefix" placeholder="Seleccione prefijo" style="font-size: 12px;">
                           <mat-option [value]="'5'">5</mat-option>
                           <mat-option [value]="'6'">6</mat-option>
                           <mat-option [value]="'7'">7</mat-option>
@@ -112,18 +114,37 @@
                       </mat-form-field>
 
                       <label class="modificar-label">
-                        <input type="checkbox" id="prefix-modify" value="MODIFY" />
+                        <input type="checkbox" id="prefix-modify" value="MODIFY"
+                          (change)="onModificarSecuenciaChange($event)" />
                         Modificar Secuencia
                       </label>
-
-                      <input type="text" placeholder="texto" class="prefix-text" />
                     </div>
                   </div>
 
                   <div class="form-row">
                     <label class="form-label">Prefijo:</label>
 
-                    <input type="text" class="underline-input" readonly formControlName="prefijo" />
+                                          <input 
+                      matInput 
+                      formControlName="prefijo"
+                      [readonly]="!modificarSecuencia"
+                      (input)="onPrefijoInput()" 
+                      (blur)="onPrefijoInput()" 
+                      maxlength="10" />
+                  
+                    <mat-error *ngIf="paso1Form.get('prefijo')?.hasError('required')">
+                      Prefijo es requerido.
+                    </mat-error>
+                    <mat-error *ngIf="paso1Form.get('prefijo')?.hasError('pattern')">
+                      Solo se permiten números.
+                    </mat-error>
+                    <mat-error *ngIf="paso1Form.get('prefijo')?.hasError('minLengthError')">
+                      El prefijo debe tener mínimo {{ longitudPrefijoMin }} dígitos.
+                    </mat-error>
+                    <mat-error *ngIf="paso1Form.get('prefijo')?.hasError('maxLengthError')">
+                      El prefijo debe tener máximo {{ longitudPrefijoMax }} dígitos.
+                    </mat-error>
+
                     <label class="form-label">Prefijo GS1:</label>
 
                     <input type="text" class="underline-input" readonly formControlName="prefijogs1" />
@@ -176,7 +197,7 @@
                     </div>
 
                     <!-- Second row with status and zone info -->
-                    <div class="info-row" >
+                    <div class="info-row">
                       <div class="info-group status-group">
                         <label class="form-label">Estado:</label>
                         <div class="status-fields">
@@ -204,8 +225,7 @@
                 </section>
                 <div style="text-align: right;">
                   <button mat-button color="primary" matStepperNext
-                  [disabled]="paso1Form.invalid || (error && !paso1Form.get('esPasaporte')?.value)"
-                  >
+                    [disabled]="paso1Form.invalid || (error && !paso1Form.get('esPasaporte')?.value)">
                     Siguiente
                   </button>
 
@@ -223,7 +243,8 @@
                     <div class="form-row">
                       <label class="form-label"><span style="color: red;">*</span>Razón Social:</label>
                       <input type="text" formControlName="razonSocial" class="underline-input"
-                        (input)="forzarMayusculas('razonSocial', paso2Form, $event)" maxlength="300" />
+                        (input)="forzarMayusculas('razonSocial', paso2Form, $event)" maxlength="300"
+                        (blur)="forzarGuardarValor('razonSocial', paso2Form, $event)" />
 
                     </div>
                   </div>
@@ -233,7 +254,7 @@
                           style="color: red;">*</span>Representante:</label>
                       <input type="text" formControlName="nombreRepresentante" value="{{ nombreRepresentante }}"
                         class="underline-input" (input)="forzarMayusculas('nombreRepresentante', paso2Form, $event)"
-                        maxlength="200" />
+                        maxlength="200" (blur)="forzarGuardarValor('nombreRepresentante', paso2Form, $event)" />
                     </div>
                   </div>
                   <div style="padding-top: 0px; padding-bottom: 0px;">
@@ -312,7 +333,8 @@
 
                       <label class="form-label"><span style="color: red;">*</span>Nombre: (Representante Legal)</label>
                       <input type="text" class="underline-input" formControlName="nombreRepresentante"
-                        (input)="forzarMayusculas('nombreRepresentante', paso3Form, $event)" maxlength="200" />
+                        (input)="forzarMayusculas('nombreRepresentante', paso3Form, $event)" maxlength="200"
+                        (blur)="forzarGuardarValor('nombreRepresentante', paso3Form, $event)" />
 
                     </div>
                     <div>
@@ -518,26 +540,53 @@
       </ng-template>
     </mat-tab>
 
-    
+
 
   </mat-tab-group>
 </mat-dialog-content>
 <div style="text-align: center;">
-  <button mat-button color="primary" (click)="guardar()">
-    <img src="assets/icon-grabar.png" alt="Grabar" width="18" height="18" style="margin-right: 6px;" />
+  <button mat-button color="primary" (click)="guardar()" [disabled]="botonGuardarDeshabilitado">
+    <img src="assets/icons/icon-grabar.png" alt="Grabar" width="18" height="18" style="margin-right: 6px;" />
     Grabar
   </button>
 
-  <button mat-button mat-dialog-close>
-    <img src="assets/icon-modificar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
-    Modificar
-  </button>
-  <button mat-button mat-dialog-close>
-    <img src="assets/icon-imprimir.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
+  <button mat-button (click)="generarPDF()">
+    <img src="assets/icons/icon-imprimir.png" alt="Imprimir" width="18" height="18" style="margin-right: 6px;" />
     Imprimir
   </button>
-  <button mat-button mat-dialog-close (click)="cancelar()">
-    <img src="assets/icon-cancelar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
+  <button mat-button (click)="limpiarFormulario()">
+    <img src="assets/icons/icon-cancelar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
     Cancelar
   </button>
+  
+  <button mat-button mat-dialog-close (click)="cancelar()">
+    <img src="assets/icons/icon-salir.png" alt="Salir" width="18" height="18" style="margin-right: 6px;" />
+    Salir
+  </button>
+</div>
+
+<div id="contenidoReporte" style="padding: 20px; background-color: white; color: black; display: none;">
+
+  <h2 style="text-align: center;">Sistema de Control de Códigos</h2>
+  <h4 style="text-align: center;">Informe General de Empresa</h4>
+
+  <p><strong>Emisor:</strong> GS1 Ecuador</p>
+  <p><strong>Fecha emisión:</strong> {{ datosReporte.fechaHoy | date:'dd/MM/yyyy' }}</p>
+
+  <hr>
+
+  <h4>Datos del Cliente</h4>
+  <table border="1" cellpadding="5" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+    <tr><td><strong>Prefijo:</strong></td><td>{{ datosReporte.prefijo }}</td></tr>
+    <tr><td><strong>Fecha Ingreso:</strong></td><td>{{ datosReporte.fechaIngreso | date:'dd/MM/yyyy' }}</td></tr>
+    <tr><td><strong>RUC:</strong></td><td>{{ datosReporte.ruc }}</td></tr>
+    <tr><td><strong>Razón Social:</strong></td><td>{{ datosReporte.razonSocial }}</td></tr>
+    <tr><td><strong>Ciudad:</strong></td><td>{{ datosReporte.ciudad }}</td></tr>
+    <tr><td><strong>Representante:</strong></td><td>{{ datosReporte.representante }}</td></tr>
+  </table>
+
+  <br>
+
+  <h4>Observaciones</h4>
+  <p>{{ datosReporte.observacion }}</p>
 </div>

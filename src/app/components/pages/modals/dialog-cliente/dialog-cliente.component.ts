@@ -13,6 +13,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 // RxJS
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
+const html2pdf: any = require('html2pdf.js');
 
 // Servicios personalizados
 import { GrupoEmpresaService, GrupoEmpresa } from '../../../../services/grupo-empresa.service';
@@ -23,9 +24,10 @@ import { UsuarioService } from '../../../../services/usuario.service';
 import { ZonaService, Zona } from '../../../../services/zona.service';
 import { ClienteService } from 'src/app/services/cliente.service';
 import { NcontrolService, NumeroControlMinDto } from 'src/app/services/ncontrol.service';
-import { PrefijoService } from 'src/app/services/prefijo.service';
+import { PrefijoService,Prefijo } from 'src/app/services/prefijo.service';
 import { CedulaService } from 'src/app/services/cedula.service';
-
+import { GenerarglnService } from 'src/app/services/generargln.service';  
+import { GlnService,GlnRequest } from 'src/app/services/gln.service';
 // Interfaces o modelos
 import { ClienteRuc } from '../../../../interfaces/clienteRuc';
 import { emailValidoValidator } from '../../../../util/validators';
@@ -74,6 +76,14 @@ export class DialogClienteComponent implements OnInit {
 
   numeroControl?: NumeroControlMinDto;
 
+  modificarSecuencia = false;
+  longitudPrefijo = 6; // Se puede cambiar dinámicamente si quieres
+  longitudPrefijoMin = 0;
+  longitudPrefijoMax = 0;
+  botonGuardarDeshabilitado: boolean = false;
+  fechaHoy = new Date().toISOString().split('T')[0];
+  datosReporte: any = {};
+  resultados: Prefijo[] = [];
   constructor(
     private fb: FormBuilder,
     private grupoService: GrupoEmpresaService,
@@ -88,12 +98,15 @@ export class DialogClienteComponent implements OnInit {
     private _snackBar: MatSnackBar,
     private ncontrolService: NcontrolService,
     private prefijoService: PrefijoService,
-    private cedulaService:CedulaService
+    private cedulaService: CedulaService,
+    private generarglnService:GenerarglnService,
+    private glnService:GlnService
 
   ) { }
 
   ngOnInit(): void {
-
+    
+    
     this.initFormulario();
 
     this.obtenerUsuarioActual();
@@ -101,6 +114,9 @@ export class DialogClienteComponent implements OnInit {
     this.cargarGruposProducto();
     this.cargarCiudad();
     this.cargarZona();
+    this.paso1Form.get('prefix')?.valueChanges.subscribe(prefix => {
+      this.actualizarValidacionPrefijo(prefix);
+    });
   }
 
   initFormulario(): void {
@@ -114,7 +130,8 @@ export class DialogClienteComponent implements OnInit {
         prefix: ['', Validators.required],
         zona: [null],
         codigoCliente: [{ value: '', disabled: false }],
-        prefijo: [''],
+        //prefijo: [''], antes 
+        prefijo: [{ value: '', disabled: true }],
         prefijogs1: [''],
         origen: [''],
         gln: ['']
@@ -138,7 +155,7 @@ export class DialogClienteComponent implements OnInit {
 
       paso3: this.fb.group({
         nombreRepresentante: [null, Validators.required],
-        emailRepresentante: ['', [Validators.required,emailValidoValidator()]],
+        emailRepresentante: ['', [Validators.required, emailValidoValidator()]],
         telefonoRepresentante: ['', Validators.required],
         nombreCodificacion: [''],
         email: ['', [emailValidoValidator()]],
@@ -345,31 +362,31 @@ export class DialogClienteComponent implements OnInit {
         }
       ]);
     }
-  
+
     this.rucControl.updateValueAndValidity();
   }
-  
-  
-  
+
+
+
 
   // Evento para buscar RUC o cédula automáticamente
   onRucBlur(): void {
     const valor = this.rucControl.value;
     const esPasaporte = this.paso1Form.get('esPasaporte')?.value;
     console.log('Valor esPasaporte:', this.paso1Form.get('esPasaporte')?.value);
-  console.log('Form válido:', this.paso1Form.valid);
-  console.log('Error:', this.error);
+    console.log('Form válido:', this.paso1Form.valid);
+    console.log('Error:', this.error);
     if (!valor) {
       this.tipoIdentificacion = null;
       return;
     }
-  
+
     if (esPasaporte) {
       this.tipoIdentificacion = 'PASAPORTE';
       this.error = undefined;
       return;
     }
-  
+
     this.clienteService.getClientePorRuc(valor).subscribe({
       next: cliente => {
         if (cliente) {
@@ -404,9 +421,9 @@ export class DialogClienteComponent implements OnInit {
       }
     });
   }
-  
-  
-  
+
+
+
 
 
 
@@ -439,7 +456,7 @@ export class DialogClienteComponent implements OnInit {
     });
   }
 
-  
+
   obtenerUsuarioActual(): void {
     this.usuarioService.currentUser$.subscribe(user => {
       this.usuarioActual = user;
@@ -588,88 +605,157 @@ export class DialogClienteComponent implements OnInit {
   guardarPrefijo(): void {
     const prefix = this.paso1Form.get('prefix')?.value;
     let idControl: number;
+    let pais:string='';
+    let codigogs1:string=''
+    
   
     switch (prefix) {
       case '5':
         idControl = 70;
+        pais='EC';
+        codigogs1='786'
         break;
       case '6':
         idControl = 71;
+        pais='EC';
+        codigogs1='786'
         break;
       case '7':
         idControl = 73;
+        pais='EC';
+        codigogs1='786'
         break;
       case '8':
         idControl = 72;
-        break;
-      case 'USA':
-        idControl = 74;
+        pais='EC';
+        codigogs1='786'
         break;
       case 'MSV':
         idControl = 75;
+        pais='EC';
+        codigogs1='786'
         break;
+        case 'USA':
+          idControl = 0;
+          pais='US';
+          codigogs1=''
+          break;
       default:
         this.mostrarAlerta('Prefijo no válido seleccionado', 'Error');
         return;
     }
   
-    this.ncontrolService.obtenerNumeroControlMinPorId(idControl).subscribe({
-      next: (data) => {
-        const siguienteNum = (parseInt(data.numcon, 10) + 1).toString().padStart(data.numcon.length, '0');
+    if (this.modificarSecuencia) {
+      // Si se modifica la secuencia manualmente
+      const paso1 = this.paso1Form.getRawValue();
+      const codigoCliente = paso1.codigoCliente || 0;
+      const prefijo = paso1.prefijo || '0';
   
-        this.paso1Form.patchValue({
-          prefijo: data.numcon,
-          gln: '786' + data.numcon,
-          prefijogs1: '786',
-          origen: 'EC'
-        });
+      const prefijoData = {
+        codpre: prefijo,
+        fecha: new Date().toISOString().split('T')[0],
+        fechaCierre: new Date().toISOString().split('T')[0],
+        observacion: 'Prefijo generado manualmente',
+        digitos: prefijo.length.toString(),
+        estado: false,
+        control: 0,
+        ngln: 0,
+        bandera: 0,
+        facturar: 'C',
+        codpro: '1174',
+        nombre: `PREFIJO:`,
+        fecfac: 'C',
+        referenciaInterna: prefijo,
+        prefijosgs1: `${codigogs1}${prefijo}`,
+        origenPrefijo: pais,
+        orden: 0,
+        clientesCodigo: codigoCliente
+      };
   
-        const paso1 = this.paso1Form.value;
-        const codigoCliente = paso1.codigoCliente || 0;
-        const prefijo = paso1.prefijo || '0';
+      console.log('✍️ Guardando prefijo ingresado manualmente:', prefijoData);
   
-        const prefijoData = {
-          codpre: prefijo,
-          fecha: new Date().toISOString().split('T')[0],
-          fechaCierre: new Date().toISOString().split('T')[0],
-          observacion: 'Prefijo generado automáticamente',
-          digitos: prefijo.length.toString(),
-          estado: false,
-          control: 0,
-          ngln: 0,
-          bandera: 0,
-          facturar: 'C',
-          codpro: '1174',
-          nombre: `PREFIJO:`,
-          fecfac: 'C',
-          referenciaInterna: prefijo,
-          prefijosgs1: `786${prefijo}`,
-          origenPrefijo: 'EC',
-          orden: 0,
-          clientesCodigo: codigoCliente
-        };
+      this.prefijoService.guardarPrefijo(prefijoData).subscribe({
+        next: () => {
+          this.mostrarAlerta('Se guardó correctamente', 'OK');
+          this.botonGuardarDeshabilitado = true;
+        },
+        error: () => {
+          this.mostrarAlerta('Error al guardar el prefijo modificado', 'Error');
+        }
+      });
   
-        console.log('📦 Enviando prefijo con número de control:', prefijoData);
+    } else {
+      // Flujo automático
+      this.ncontrolService.obtenerNumeroControlMinPorId(idControl).subscribe({
+        next: (data) => {
+          const siguienteNum = (parseInt(data.numcon, 10) + 1).toString().padStart(data.numcon.length, '0');
   
-        this.prefijoService.guardarPrefijo(prefijoData).subscribe({
-          next: () => {
-            this.mostrarAlerta('Se guardó correctamente', 'OK');
+          // Primero actualizamos prefijo, prefijoGS1 y origen
+          this.paso1Form.get('prefijogs1')?.enable(); // ✅ Habilita temporalmente
+          this.paso1Form.patchValue({
+            prefijo: data.numcon,
+            prefijogs1: `${codigogs1}${data.numcon}`,
+            origen: pais
+          });
   
-            // 🔁 Actualizar el número de control (incrementado)
-            this.actualizarNumeroControl(idControl, siguienteNum, false);
-          },
-          error: () => {
-            this.mostrarAlerta('Error al guardar el prefijo', 'Error');
-          }
-        });
-      },
-      error: (err) => {
-        console.error('❌ Error al obtener el número de control:', err);
-        this.mostrarAlerta('Error al obtener el número de control', 'Error');
-      }
-    });
+          // Luego generamos el GLN
+          const glnGenerado = this.generarGLN();
+          this.paso1Form.patchValue({
+            gln: glnGenerado
+          });
+          console.log('⚠️ Valores en form paso1:', this.paso1Form.getRawValue());
+          console.log('✅ Prefijo actualizado:', this.paso1Form.get('prefijo')?.value);
+          console.log('✅ Prefijo gs1 actualizado:', this.paso1Form.get('prefijogs1')?.value);
+          console.log('✅ GLN generado:', glnGenerado);
+  
+          const paso1 = this.paso1Form.getRawValue();
+          const codigoCliente = paso1.codigoCliente || 0;
+          const prefijo = paso1.prefijo || '0';
+  
+          const prefijoData = {
+            codpre: prefijo,
+            fecha: new Date().toISOString().split('T')[0],
+            fechaCierre: new Date().toISOString().split('T')[0],
+            observacion: 'Prefijo generado automáticamente',
+            digitos: prefijo.length.toString(),
+            estado: false,
+            control: 0,
+            ngln: 0,
+            bandera: 0,
+            facturar: 'C',
+            codpro: '1174',
+            nombre: `PREFIJO:`,
+            fecfac: 'C',
+            referenciaInterna: prefijo,
+            prefijosgs1: `${codigogs1}${prefijo}`,
+            origenPrefijo: pais,
+            orden: 0,
+            clientesCodigo: codigoCliente
+          };
+  
+          console.log('📦 Enviando prefijo a guardar:', prefijoData);
+  
+          this.prefijoService.guardarPrefijo(prefijoData).subscribe({
+            next: () => {
+              this.mostrarAlerta('Se guardó correctamente', 'OK');
+              this.guardarNuevoGln();
+              this.actualizarNumeroControl(idControl, siguienteNum, false);
+              this.botonGuardarDeshabilitado = true;
+            },
+            error: () => {
+              this.mostrarAlerta('Error al guardar el prefijo', 'Error');
+            }
+          });
+        },
+        error: (err) => {
+          console.error('❌ Error al obtener el número de control:', err);
+          this.mostrarAlerta('Error al obtener el número de control', 'Error');
+        }
+      });
+    }
   }
   
+
 
 
 
@@ -728,17 +814,24 @@ export class DialogClienteComponent implements OnInit {
     this.ncontrolService.obtenerNumeroControlMinPorId(id).subscribe({
       next: (data) => {
         this.numeroControl = data;
-
+  
+        // Primero actualizas prefijo y prefijogs1
         this.paso1Form.patchValue({
           prefijo: data.numcon,
-          gln: '786' + data.numcon,
-          prefijogs1: '786',
-          origen: 'EC'
+          prefijogs1: '786' + data.numcon
         });
-
-
-        // Mostrar alerta con los datos recibidos
-        //alert(`Número de control recibido:\nID: ${data.id}\nNumcon: ${data.numcon}`);
+  
+        // Luego generas el GLN usando el nuevo prefijo
+        const glnGenerado = this.generarGLN();  // 🔥 tu función que genera el GLN
+  
+        this.paso1Form.patchValue({
+          gln: glnGenerado
+        });
+  
+        console.log('✅ Prefijo actualizado:', data.numcon);
+        console.log('✅ Prefijo GS1 actualizado:', '786' + data.numcon);
+        console.log('✅ GLN generado:', glnGenerado);
+  
       },
       error: (err) => {
         console.error('Error al consultar el número de control:', err);
@@ -746,6 +839,7 @@ export class DialogClienteComponent implements OnInit {
       }
     });
   }
+  
   actualizarNumeroControl(id: number, numcon: string, ocupado: boolean): void {
     this.ncontrolService.actualizarNumeroControl(id, {
       numcon,
@@ -759,6 +853,349 @@ export class DialogClienteComponent implements OnInit {
       }
     });
   }
+  onModificarSecuenciaChange(event: any): void {
+    this.modificarSecuencia = event.target.checked;
+
+    const prefijoControl = this.paso1Form.get('prefijo');
+    const asignacionPrefix = this.paso1Form.get('prefix')?.value;
+
+    if (this.modificarSecuencia) {
+      prefijoControl?.enable();
+
+      // Configurar límites dinámicamente
+      if (asignacionPrefix === '5') {
+        this.longitudPrefijoMin = 5;
+        this.longitudPrefijoMax = 5;
+      } else if (asignacionPrefix === '6') {
+        this.longitudPrefijoMin = 6;
+        this.longitudPrefijoMax = 6;
+      } else if (asignacionPrefix === 'USA') {
+        this.longitudPrefijoMin = 4;
+        this.longitudPrefijoMax = 10;
+      } else if (asignacionPrefix === 'MSV') {
+        this.longitudPrefijoMin = 8;
+        this.longitudPrefijoMax = 8;
+      } else {
+        this.longitudPrefijoMin = 0;
+        this.longitudPrefijoMax = 0;
+      }
+
+      // 🔥 Aplicar validadores nuevos
+      prefijoControl?.setValidators([
+        Validators.required,
+        Validators.pattern(/^\d+$/),
+        this.prefijoValidator(this.longitudPrefijoMin, this.longitudPrefijoMax)
+      ]);
+
+    } else {
+      prefijoControl?.disable();
+      prefijoControl?.clearValidators();
+      prefijoControl?.setValue('');
+    }
+
+    prefijoControl?.updateValueAndValidity();
+  }
+  actualizarValidacionPrefijo(prefix: string): void {
+    const prefijoControl = this.paso1Form.get('prefijo');
+
+    if (!prefijoControl) return;
+
+    if (prefix === '5') {
+      this.longitudPrefijoMin = 5;
+      this.longitudPrefijoMax = 5;
+    } else if (prefix === '6') {
+      this.longitudPrefijoMin = 6;
+      this.longitudPrefijoMax = 6;
+    } else if (prefix === '7') {
+      this.longitudPrefijoMin = 7;
+      this.longitudPrefijoMax = 7;
+    } else if (prefix === '8') {
+      this.longitudPrefijoMin = 8;
+      this.longitudPrefijoMax = 8;
+    } else if (prefix === 'USA') {
+      this.longitudPrefijoMin = 4;
+      this.longitudPrefijoMax = 10;
+    } else if (prefix === 'MSV') {
+      this.longitudPrefijoMin = 8;
+      this.longitudPrefijoMax = 8;
+    } else {
+      this.longitudPrefijoMin = 0;
+      this.longitudPrefijoMax = 0;
+    }
+
+    // 🔥 APLICAR NUEVOS VALIDADORES
+    prefijoControl.setValidators([
+      Validators.required,
+      Validators.pattern(/^\d+$/),
+      this.prefijoValidator(this.longitudPrefijoMin, this.longitudPrefijoMax)
+    ]);
+
+    prefijoControl.updateValueAndValidity();
+  }
+
+
+  onPrefijoInput(): void {
+    const prefijoControl = this.paso1Form.get('prefijo');
+    let value = prefijoControl?.value || '';
+
+    // Limpiar todo lo que no sea dígito
+    value = value.replace(/\D/g, '');
+
+    // Limitar al máximo permitido
+    if (this.longitudPrefijoMax > 0 && value.length > this.longitudPrefijoMax) {
+      value = value.substring(0, this.longitudPrefijoMax);
+    }
+
+    prefijoControl?.setValue(value, { emitEvent: false });
+
+    // Marcar como tocado
+    prefijoControl?.markAsTouched();
+    prefijoControl?.updateValueAndValidity();
+  }
+
+  prefijoValidator(min: number, max: number): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value = control.value || '';
+
+      if (!value) return { required: true };
+      if (value.length < min) return { minLengthError: true };
+      if (value.length > max) return { maxLengthError: true };
+
+      return null;
+    };
+  }
+
+
+  forzarGuardarValor(controlName: string, formGroup: FormGroup, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const control = formGroup.get(controlName);
+
+    if (control) {
+      const valorActual = input.value || '';
+      control.setValue(valorActual); // 🔥 Guarda el valor exactamente como está en el input
+      control.markAsTouched();       // 🔥 Marca el campo como "tocado"
+      control.updateValueAndValidity(); // 🔥 Le indica a Angular que revalide el control
+    }
+  }
+
+  limpiarFormulario(): void {
+    this.formCliente.reset(); // 🔥 Limpia todo el formulario
+
+    // Valores predeterminados que quieres reiniciar
+    this.paso1Form.patchValue({
+      esPasaporte: false,
+      codigoCliente: '',
+      prefijo: '',
+      prefijogs1: '',
+      origen: '',
+      gln: ''
+    });
+
+    this.paso2Form.patchValue({
+      usuario: ''
+    });
+
+    this.paso3Form.patchValue({
+      pregunta1: false,
+      pregunta2: false,
+      pregunta3: false,
+      pregunta4: false,
+      pregunta5: false,
+      pregunta6: false
+    });
+
+    this.selectedTab = 0; // Opcional: vuelve al primer tab
+    this.tipoIdentificacion = null;
+    this.error = undefined;
+    this.razonSocial = '';
+    this.nombreRepresentante = '';
+    this.ciudadSeleccionado = 0;
+    this.zonaCtrl.reset();
+    this.ciudadCtrl.reset();
+    this.grupoCtrl.reset();
+    this.grupoProductoCtrl.reset();
+  }
+
+  generarPDF(): void {
+    this.datosReporte = {
+      fechaHoy: new Date(),
+      prefijo: this.paso1Form.get('prefijo')?.value,
+      fechaIngreso: this.fechaIngreso,
+      ruc: this.paso1Form.get('ruc')?.value,
+      razonSocial: this.paso2Form.get('razonSocial')?.value,
+      ciudad: this.paso2Form.get('ciudad')?.value?.ciudad || '',
+      representante: this.paso2Form.get('nombreRepresentante')?.value,
+      observacion: this.paso2Form.get('observacion1')?.value
+    };
   
+    const contenido = document.getElementById('contenidoReporte');
+  
+    if (contenido) {
+      // 👇 Mostrar el contenido temporalmente
+      contenido.style.display = 'block';
+  
+      setTimeout(() => {
+        const opciones = {
+          margin: 10,
+          filename: 'Informe_General_Cliente.pdf',
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        };
+  
+        html2pdf().from(contenido).set(opciones).save()
+          .then(() => {
+            // 👇 Luego ocultarlo de nuevo
+            contenido.style.display = 'none';
+          });
+      }, 500); // Espera 500ms para asegurarse que DOM se actualice
+    } else {
+      this.mostrarAlerta('No se encontró el contenido para imprimir', 'Error');
+    }
+  }
+  
+  generarGLN(): string {
+    const n = this.paso1Form.get('prefijo')?.value;
+    const prefix = this.paso1Form.get('prefix')?.value;
+    debugger
+    if (!n || !prefix) {
+      console.error('Prefijo o prefix inválido.');
+      return '';
+    }
+  
+    let idControl: number;
+  
+    switch (prefix) {
+      case '5':
+        idControl = 5;
+        break;
+      case '6':
+        idControl = 6;
+        break;
+      case '7':
+        idControl = 7;
+        break;
+      case '8':
+        idControl = 8;
+        break;
+      case 'MSV':
+        idControl = 8;
+        break;
+      default:
+        console.error('Prefijo no válido.');
+        return '';
+    }
+  
+    const resultado = this.generarglnService.generarGln(idControl, n);
+    return resultado[0]; // devuelves el GLN generado
+  }
+  
+  buscarPrefijos(codpre: string): void {
+    this.prefijoService.buscarPorCodpre(codpre).subscribe({
+      next: (data) => {
+        this.resultados = data;
+        console.log('📦 Resultado del servicio:', data);
+      },
+      error: (err) => {
+        console.error('❌ Error al buscar prefijos:', err);
+      }
+    });
+  }
+
+  guardarNuevoGln(): void {
+    const prefijo = this.paso1Form.get('prefijo')?.value;
+    const codigoCliente = this.paso1Form.get('codigoCliente')?.value;
+    const gln = this.paso1Form.get('gln')?.value;
+  
+    if (!prefijo || !codigoCliente || !gln) {
+      console.warn('⚠️ Faltan datos necesarios para guardar el GLN.');
+      return;
+    }
+  
+    this.prefijoService.buscarPorCodpre(prefijo).subscribe({
+      next: (resultado) => {
+        if (!resultado || resultado.length === 0) {
+          console.warn('⚠️ No se encontró ningún prefijo con ese código.');
+          return;
+        }
+  
+        const id_prefijos = resultado[0].id_prefijos;
+  
+        const nuevoGln: GlnRequest = {
+          id_prefijos: id_prefijos,
+          clientesCodigo: codigoCliente,
+          gln1: gln,
+          idTipoLocalizacion: 12,
+          glnLatitud: '0.0000',
+          glnLongitud: '0.0000',
+          paisCodigo: 1,
+          direccion: 'Calle Ejemplo 123',
+          telefono: '12345678',
+          fax: '',
+          contacto: 'Juan Pérez',
+          contactoTel: '12345678',
+          email: 'correo@ejemplo.com',
+          web: 'http://example.com',
+          fda: '',
+          europa: '',
+          glnGlobal: '',
+          glnFecha: '2025-04-29',
+          idCiudad: 1,
+          glnCodigopostal: '170515',
+          glnCelular: '0999999999',
+          glnContacto2: '',
+          glnEmail2: '',
+          glnTel2: '',
+          glnContacto3: '',
+          glnEmail3: '',
+          glnTel3: '',
+          glnFacturar: 'S',
+          glnCodpro: 'PROD01',
+          glnNombre: 'Sucursal Principal',
+          glnOtro1: '',
+          glnOtro2: '',
+          glnObs1: '',
+          glnObs2: '',
+          glnOrigenprefijo: 'EC',
+          glnPrefijogs1: gln,
+          glnGlnp: '',
+          glnGlne: '',
+          nombreLocalizacion: 'Matriz',
+          observ: '',
+          expprod: 1,
+          gs1ec: 1,
+          gs1latam: 0,
+          gas1org: 0,
+          google: 1,
+          gs1otros: '',
+          longG: '',
+          longM: '',
+          longS: '',
+          longE: '',
+          latiG: '',
+          latiM: '',
+          latiS: '',
+          latiE: '',
+          idUsuario: 2
+        };
+  
+        this.glnService.insertarGln({ request: nuevoGln }).subscribe({
+          next: () => {
+            console.log('✅ GLN guardado exitosamente:', nuevoGln);
+          },
+          error: (error) => {
+            console.error('❌ Error al guardar GLN:', error);
+          }
+        });
+        
+      },
+      error: (err) => {
+        console.error('❌ Error al buscar prefijos:', err);
+      }
+    });
+  }
+  
+  
+
 
 }

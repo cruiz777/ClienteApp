@@ -23,6 +23,7 @@
     "@angular/router": "^18.2.13",
     "chart.js": "^3.9.1",
     "exceljs": "^4.4.0",
+    "html2pdf.js": "^0.10.3",
     "moment": "^2.29.4",
     "ngx-mask": "^14.2.4",
     "rxjs": "~7.5.0",

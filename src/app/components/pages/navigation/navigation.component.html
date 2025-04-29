@@ -5,14 +5,14 @@
                [opened]="(isHandset$ | async) === false">
 
     <mat-toolbar>
-      <img src="assets/GS1-logo.png" alt="Logo" height="65" [routerLink]="'/inicio'" style="cursor: pointer;">
+      <img src="assets/logo/GS1-logo.png" alt="Logo" height="65" [routerLink]="'/inicio'" style="cursor: pointer;">
     </mat-toolbar>
     
     <mat-nav-list>
 
       <mat-list-item routerLink="/pages/nclientes">
         <div style="display: flex; align-items: center;">
-          <img src="assets/ecop-nuevo-cliente.png" width="17px" style="margin-right: 8px;">
+          <img src="assets/icons/ecop-nuevo-cliente.png" width="17px" style="margin-right: 8px;">
           <span style="font-size: 12px;">Nuevo Cliente</span>
         </div>
       </mat-list-item>
@@ -21,21 +21,21 @@
 
       <mat-list-item routerLink="/pages/usuarios">
         <div style="display: flex; align-items: center;">
-          <img src="assets/Ecop-explorador-clientes.png" width="17px" style="margin-right: 8px;">
+          <img src="assets/icons/Ecop-explorador-clientes.png" width="17px" style="margin-right: 8px;">
           <span style="font-size: 12px;">Explorador Cliente</span>
         </div>
       </mat-list-item>
       
       <mat-list-item routerLink="/pages/productos">
         <div style="display: flex; align-items: center;">
-          <img src="assets/Ecop-envio-veried.png" width="17px" style="margin-right: 8px;">
+          <img src="assets/icons/Ecop-envio-veried.png" width="17px" style="margin-right: 8px;">
           <span style="font-size: 12px;">Envío Verified by GS1</span>
         </div>
       </mat-list-item>
       
       <mat-list-item routerLink="/pages/vender">
         <div style="display: flex; align-items: center;">
-          <img src="assets/ecop-.png" width="17px" style="margin-right: 8px;">
+          <img src="assets/icons/ecop-.png" width="17px" style="margin-right: 8px;">
           <span style="font-size: 12px;">Verified</span>
         </div>
       </mat-list-item>
