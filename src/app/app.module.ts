@@ -21,6 +21,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { CustomMessageBoxComponent } from './components/utils/messages/custom-message-box.component';
 
+import { MatDialogModule } from '@angular/material/dialog';
+import { ConfirmDialogComponent } from './components/reusable/confirm-dialog/confirm-dialog.component';
+
+
 export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
 
 @NgModule({
@@ -29,7 +33,8 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     LoginComponent,
     NotFoundComponent,
     InicioComponent,
-    CustomMessageBoxComponent
+    CustomMessageBoxComponent,
+    ConfirmDialogComponent
   ],
   imports: [
     BrowserModule,
@@ -43,8 +48,9 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     MatListModule,
     MatIconModule,
     MatButtonModule,
+    MatDialogModule,
     ReusableModule,
-    NgxMaskModule.forRoot()
+    NgxMaskModule.forRoot(),
   ],
   providers: [],
   bootstrap: [AppComponent]
