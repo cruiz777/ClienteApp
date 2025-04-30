@@ -5,10 +5,16 @@ import { NavigationComponent } from './navigation/navigation.component';
 import { SeguridadesComponent } from './seguridades.component';
 import { ReusableModule } from '../reusable/reusable.module';
 import { SeguridadesRoutingModule } from './seguridades-routing.module';
+import { CorreoDialogComponent } from './dialogs/correo/correo-dialog.component';
+import { TelefonoDialogComponent } from './dialogs/telefono/telefono-dialog.component';
+import { DireccionDialogComponent } from './dialogs/direccion/direccion-dialog.component';
 @NgModule({
   declarations: [
     NavigationComponent,
-    SeguridadesComponent
+    SeguridadesComponent,
+    CorreoDialogComponent,
+    TelefonoDialogComponent,
+    DireccionDialogComponent
   ],
   imports: [
     CommonModule,

@@ -7,11 +7,11 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 })
 export class InicioComponent implements OnInit, OnDestroy {
   images: string[] = [
-    'assets/carrusel-inicio-gs1-8.jpg',
-    'assets/carrusel-inicio-gs1-2.jpg',
-    'assets/carrusel-inicio-gs1-3.jpg',
-    'assets/carrusel-inicio-gs1-4.jpg',
-    'assets/carrusel-inicio-gs1-5.jpg'
+    'assets/images/carrusel-inicio-gs1-8.jpg',
+    'assets/images/carrusel-inicio-gs1-2.jpg',
+    'assets/images/carrusel-inicio-gs1-3.jpg',
+    'assets/images/carrusel-inicio-gs1-4.jpg',
+    'assets/images/carrusel-inicio-gs1-5.jpg'
   ];
 
   currentIndex = 0;

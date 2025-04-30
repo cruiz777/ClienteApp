@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-import { ApiResponseCiudad } from '../interfaces/responses/ciudad-response';
 import { environment } from 'src/environments/environment';
+import { CiudadResumen } from '../interfaces/responses/ciudad-response';
+import { ApiListResponse } from '../interfaces/responses/ApiListResponse';
 
 export interface Ciudad {
   id_ciudad: number;
@@ -35,9 +36,9 @@ export class CiudadService {
       );
     }
 
-    getCiudades(): Observable<ApiResponseCiudad> {
-        return this.http.get<ApiResponseCiudad>(this.ciudadesUrl);
-      }
-
-
+    getCiudades(): Observable<CiudadResumen[]> {
+      return this.http.get<ApiListResponse<CiudadResumen[]>>(this.ciudadesUrl).pipe(
+        map(response => response.data)  // Extraemos solo el array de ciudades
+      );
+    }
 }

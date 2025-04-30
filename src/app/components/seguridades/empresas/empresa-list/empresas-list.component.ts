@@ -55,7 +55,7 @@ export class EmpresasListComponent implements OnInit {
       width: '400px',
       data: {
         title: '¿Está seguro?',
-        message: 'Esta acción eliminará la empresa seleccionada.',
+        message: 'Esta acción desactivará la empresa seleccionada.',
         type: 'warning',
         confirmText: 'Sí, eliminar',
         cancelText: 'Cancelar',
