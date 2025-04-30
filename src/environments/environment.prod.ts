@@ -7,5 +7,7 @@ export const environment = {
 //nuevo api
   //applicationUrl: 'http://localhost:5002/clients/api'
 
-  
+ // clientsUrl: 'http://localhost:5002/clients/api'
+
+  clientsUrl: 'https://localhost:8001/clients/api',
 };

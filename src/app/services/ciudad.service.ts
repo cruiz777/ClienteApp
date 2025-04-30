@@ -14,7 +14,7 @@ export interface Ciudad {
 })
 export class CiudadService {
 
-  private apiBaseUrl = environment.applicationUrl;
+  private apiBaseUrl = environment.clientsUrl;
     private apiUrl = `${this.apiBaseUrl}/Ciudades`;
     constructor(private http: HttpClient) {}
   

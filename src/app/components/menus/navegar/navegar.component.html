@@ -1,0 +1,178 @@
+<mat-sidenav-container class="sidenav-container" [ngClass]="{
+  'collapsed': !isExpanded && !isHandset,
+  'mobile': isHandset
+}">
+
+  <!-- SIDEBAR -->
+  <mat-sidenav #drawer
+              class="sidenav"
+              [mode]="isHandset ? 'over' : 'side'"
+              [opened]="!isHandset || isExpanded"
+              [class.collapsed]="!isExpanded && !isHandset"
+              [fixedInViewport]="true"
+              (backdropClick)="isExpanded = false">
+
+    <!-- Logos -->
+    
+    <div class="logo-seguridad" *ngIf="isExpanded">
+      <img src="assets/logo/CODBAR-GS1.png" alt="Logo">
+    </div>
+
+    <!-- Menú Principal -->
+    <mat-nav-list>
+
+      <!-- Toggle Sidebar -->
+      <mat-list-item (click)="toggleSidebar()" class="menu-toggle">
+        <mat-icon>menu</mat-icon>
+        <span *ngIf="isExpanded" class="menu-text">Menú</span>
+      </mat-list-item>
+
+      <!-- Acordeón -->
+      <mat-accordion [multi]="false">
+
+        <!-- SEGURIDAD -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-ficha-cliente.png" class="menu-icon" >
+              <span *ngIf="isExpanded" class="menu-text">Cliente</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+          <a mat-list-item routerLink="/pages/clientes">
+            <span *ngIf="isExpanded" class="menu-text">Ficha Cliente</span>
+          </a>
+          <a mat-list-item routerLink="/pages/clientes">
+            <span *ngIf="isExpanded" class="menu-text">Tipo Cliente</span>
+          </a>
+          <a mat-list-item routerLink="/pages/clientes">
+            <span *ngIf="isExpanded" class="menu-text">Grupo Cliente</span>
+          </a>
+          <a mat-list-item routerLink="/pages/clientes">
+            <span *ngIf="isExpanded" class="menu-text">Responsable de Guias</span>
+          </a>
+                    
+        </mat-expansion-panel>
+
+        <!-- ENTIDADES -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-personas.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Prefijos</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+          <a mat-list-item routerLink="/seguridades/entidades">
+            <span *ngIf="isExpanded" class="menu-text">Transferencia de Prefijos</span>
+          </a>
+          <a mat-list-item routerLink="/seguridades/entidades">
+            <span *ngIf="isExpanded" class="menu-text">Transferencia Individual</span>
+          </a>
+          <a mat-list-item routerLink="/seguridades/entidades">
+            <span *ngIf="isExpanded" class="menu-text">Borrar Prefijos</span>
+          </a>
+        </mat-expansion-panel>
+
+        
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-mantenimiento.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Validación</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <a mat-list-item routerLink="/seguridades/empresas">
+            
+            <span *ngIf="isExpanded" class="menu-text">Validador RUC en SRI</span>
+          </a>
+
+          <a mat-list-item routerLink="/seguridades/localizacion">
+            
+            <span *ngIf="isExpanded" class="menu-text">Validador Lic.Prod.Verify</span>
+          </a>
+
+        </mat-expansion-panel>
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-mantenimiento.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Reporte Clientes</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <a mat-list-item routerLink="/seguridades/empresas">
+            
+            <span *ngIf="isExpanded" class="menu-text">Empresas</span>
+          </a>
+
+          <a mat-list-item routerLink="/seguridades/localizacion">
+           
+            <span *ngIf="isExpanded" class="menu-text">Localización</span>
+          </a>
+
+        </mat-expansion-panel>
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-mantenimiento.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Configuración</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <a mat-list-item routerLink="/seguridades/empresas">
+           
+            <span *ngIf="isExpanded" class="menu-text">Empresas</span>
+          </a>
+
+          <a mat-list-item routerLink="/seguridades/localizacion">
+            
+            <span *ngIf="isExpanded" class="menu-text">Localización</span>
+          </a>
+
+        </mat-expansion-panel>
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-mantenimiento.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Integración Verify</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <a mat-list-item routerLink="/seguridades/empresas">
+            
+            <span *ngIf="isExpanded" class="menu-text">Empresas</span>
+          </a>
+
+          <a mat-list-item routerLink="/seguridades/localizacion">
+           
+            <span *ngIf="isExpanded" class="menu-text">Localización</span>
+          </a>
+
+        </mat-expansion-panel>
+      </mat-accordion>
+
+      <!-- Salir -->
+      <mat-list-item routerLink="/inicio" class="salir-item">
+        <div class="menu-item">
+          <img src="assets/icons/icon-salir.png" class="menu-icon">
+          <span *ngIf="isExpanded" class="menu-text salir-text">Salir</span>
+        </div>
+      </mat-list-item>
+
+    </mat-nav-list>
+
+  </mat-sidenav>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <mat-sidenav-content [ngClass]="isExpanded ? 'content-default' : 'content-collapsed'">
+    <router-outlet></router-outlet>
+    <footer class="app-footer" [ngClass]="{ 'footer-collapsed': !isExpanded && !isHandset }">
+      <div class="footer-left">{{ currentDateTime }}</div>
+      <div class="footer-center">
+        <img src="assets/logo/logo-gap.png" alt="GAP System" class="footer-logo">
+        <span class="footer-phone">Telf: 022 453 846 / 022 464 951</span>
+      </div>
+    </footer>
+  </mat-sidenav-content>
+
+</mat-sidenav-container>

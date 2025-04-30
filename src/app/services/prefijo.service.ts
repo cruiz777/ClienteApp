@@ -15,7 +15,7 @@ export interface Prefijo {
 })
 export class PrefijoService {
 
-  private apiBaseUrl = environment.applicationUrl;
+  private apiBaseUrl = environment.clientsUrl;
 
   // ✅ Inyección de HttpClient
   constructor(private http: HttpClient) {}

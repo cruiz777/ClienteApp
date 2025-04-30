@@ -11,17 +11,31 @@ export class GenerarglnService {
 
   /**
    * Método principal para generar GLN
+   * @param N longitud del prefijo
+   * @param prefi el prefijo
+   * @param modificarSecuencia si está activada la opción de modificar
    */
-  generarGln(N: number, prefi: string): string[] {
+  generarGln(N: number, prefi: string, modificarSecuencia: boolean = false): string[] {
     const codigos: string[] = [];
 
-    // Primera generación
+    // CASO ESPECIAL: modificar secuencia + prefijo de 6 a 10 dígitos
+    if (modificarSecuencia && prefi.length >= 6 && prefi.length <= 10) {
+      let eanBase = '0' + prefi;
+      while (eanBase.length < 12) {
+        eanBase += '0'; // completa hasta 12 dígitos antes del dígito verificador
+      }
+      const codigoEspecial = this.generarCodigoEAN(eanBase); // añade dígito verificador
+      codigos.push(codigoEspecial);
+      return codigos;
+    }
+
+    // Primera generación normal
     let pro = this.obtenerProDefault(N);
     let ean = this.pais + prefi + pro;
     let codigo = this.generarCodigoEAN(ean);
     codigos.push(codigo);
 
-    // Segunda generación si corresponde (N entre 6-10)
+    // Segunda generación si corresponde
     if (N >= 6 && N <= 10) {
       pro = this.obtenerProCompleto(N);
       ean = '0' + prefi + pro;

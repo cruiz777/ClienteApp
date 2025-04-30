@@ -16,7 +16,7 @@ interface ClienteResponse {
   providedIn: 'root'
 })
 export class ClienteService {
-  private apiBaseUrl = environment.applicationUrl;
+  private apiBaseUrl = environment.clientsUrl;
   private apiUrl = `${this.apiBaseUrl}/resumen/`;
 
   constructor(private http: HttpClient) {}

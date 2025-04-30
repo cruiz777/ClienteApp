@@ -14,7 +14,7 @@ export interface NumeroControlMinDto {
 })
 export class NcontrolService {
 
-  private apiBaseUrl = environment.applicationUrl;
+  private apiBaseUrl = environment.clientsUrl;
   private apiUrl = `${this.apiBaseUrl}/NumeroControl`;
 
   constructor(private http: HttpClient) {}

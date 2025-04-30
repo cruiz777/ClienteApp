@@ -65,7 +65,7 @@ export interface GlnRequest {
   providedIn: 'root'
 })
 export class GlnService {
-  private apiBaseUrl = environment.applicationUrl;
+  private apiBaseUrl = environment.clientsUrl;
   constructor(private http: HttpClient) { }
 
   // insertarGln(data: GlnRequest): Observable<any> {

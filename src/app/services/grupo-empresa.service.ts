@@ -13,7 +13,7 @@ export interface GrupoEmpresa {
   providedIn: 'root'
 })
 export class GrupoEmpresaService {
-  private apiBaseUrl = environment.applicationUrl;
+  private apiBaseUrl = environment.clientsUrl;
   private apiUrl = `${this.apiBaseUrl}/GrupoEmpresa/`;
   constructor(private http: HttpClient) {}
 
