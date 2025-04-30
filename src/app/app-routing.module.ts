@@ -10,7 +10,7 @@ const routes: Routes = [
   {path: 'login', component: LoginComponent },
   {path:'inicio',component:InicioComponent, canActivate:[AuthGuard]},
   {path: 'pages', loadChildren: () => import('./components/pages/pages.module').then(x => x.PagesModule) , canActivate:[AuthGuard]},
-  {path: 'seguridades', loadChildren: () => import('./components/seguridades/seguridades.module').then(m => m.SeguridadesModule), canActivate:[AuthGuard] },
+  {path: 'seguridades', loadChildren: () => import('./components/seguridades/seguridades.module').then(m => m.SeguridadesModule)/*, canActivate:[AuthGuard] */},
   {path:'**',component:NotFoundComponent,pathMatch:'full'}
 ];
 
