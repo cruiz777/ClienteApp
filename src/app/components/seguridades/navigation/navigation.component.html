@@ -14,10 +14,10 @@
 
     <!-- Logos -->
     <div class="logo-seguridad" *ngIf="isExpanded">
-      <img src="assets/GS1-logo.png" alt="Logo" routerLink="/inicio" style="cursor: pointer;">
+      <img src="assets/logo/GS1-logo.png" alt="Logo" routerLink="/inicio" style="cursor: pointer;">
     </div>
     <div class="logo-seguridad" *ngIf="isExpanded">
-      <img src="assets/seguridad.png" alt="Logo">
+      <img src="assets/logo/seguridad.png" alt="Logo">
     </div>
 
     <!-- Menú Principal -->
@@ -36,18 +36,18 @@
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
-              <img src="assets/icon-seguridad.png" class="menu-icon">
+              <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
               <span *ngIf="isExpanded" class="menu-text">Usuarios/Perfiles</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
 
           <a mat-list-item routerLink="/seguridades/productos">
-            <img src="assets/icon-usuario.png" class="menu-icon">
+            <img src="assets/icons/icon-usuario.png" class="menu-icon">
             <span *ngIf="isExpanded" class="menu-text">Usuarios</span>
           </a>
 
-          <a mat-list-item routerLink="/seguridades/perfiles">
-            <img src="assets/icon-perfil.png" class="menu-icon">
+          <a mat-list-item routerLink="/seguridades/perfil">
+            <img src="assets/icons/icon-perfil.png" class="menu-icon">
             <span *ngIf="isExpanded" class="menu-text">Perfil</span>
           </a>
         </mat-expansion-panel>
@@ -56,13 +56,13 @@
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
-              <img src="assets/icon-personas.png" class="menu-icon">
+              <img src="assets/icons/icon-entidad-1.png" class="menu-icon">
               <span *ngIf="isExpanded" class="menu-text">Entidades</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
 
           <a mat-list-item routerLink="/seguridades/entidades">
-            <img src="assets/icon-personas.png" class="menu-icon">
+            <img src="assets/icons/icon-personas.png" class="menu-icon">
             <span *ngIf="isExpanded" class="menu-text">Entidades</span>
           </a>
         </mat-expansion-panel>
@@ -71,33 +71,29 @@
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
-              <img src="assets/icon-mantenimiento.png" class="menu-icon">
+              <img src="assets/icons/icon-mantenimiento.png" class="menu-icon">
               <span *ngIf="isExpanded" class="menu-text">Mantenimiento</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
 
           <a mat-list-item routerLink="/seguridades/empresas">
-            <img src="assets/icon-empresa.png" class="menu-icon">
+            <img src="assets/icons/icon-empresa.png" class="menu-icon">
             <span *ngIf="isExpanded" class="menu-text">Empresas</span>
           </a>
 
           <a mat-list-item routerLink="/seguridades/localizacion">
-            <img src="assets/icon-localizacion.png" class="menu-icon">
+            <img src="assets/icons/icon-localizacion.png" class="menu-icon">
             <span *ngIf="isExpanded" class="menu-text">Localización</span>
           </a>
 
-          <a mat-list-item routerLink="/seguridades/parametrosfactura">
-            <img src="assets/icon-facturacion.png" class="menu-icon">
-            <span *ngIf="isExpanded" class="menu-text">Parámetros Factura</span>
-          </a>
         </mat-expansion-panel>
 
       </mat-accordion>
 
       <!-- Salir -->
-      <mat-list-item routerLink="/login" class="salir-item">
+      <mat-list-item routerLink="/inicio" class="salir-item">
         <div class="menu-item">
-          <img src="assets/ecop-salir.png" class="menu-icon">
+          <img src="assets/icons/icon-salir.png" class="menu-icon">
           <span *ngIf="isExpanded" class="menu-text salir-text">Salir</span>
         </div>
       </mat-list-item>
@@ -109,6 +105,13 @@
   <!-- CONTENIDO PRINCIPAL -->
   <mat-sidenav-content [ngClass]="isExpanded ? 'content-default' : 'content-collapsed'">
     <router-outlet></router-outlet>
+    <footer class="app-footer" [ngClass]="{ 'footer-collapsed': !isExpanded && !isHandset }">
+      <div class="footer-left">{{ currentDateTime }}</div>
+      <div class="footer-center">
+        <img src="assets/logo/logo-gap.png" alt="GAP System" class="footer-logo">
+        <span class="footer-phone">Telf: 022 453 846 / 022 464 951</span>
+      </div>
+    </footer>
   </mat-sidenav-content>
 
 </mat-sidenav-container>

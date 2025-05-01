@@ -5,9 +5,3 @@ export interface CiudadResumen {
   provincia: string;
   pais: string;
 }
-
-export interface ApiResponseCiudad {
-  id: string;
-  type: string;
-  data: CiudadResumen[];
-}

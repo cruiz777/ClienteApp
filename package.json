@@ -25,6 +25,7 @@
     "exceljs": "^4.4.0",
     "moment": "^2.29.4",
     "ngx-mask": "^14.2.4",
+    "ngx-mat-select-search": "^8.0.0",
     "rxjs": "~7.5.0",
     "sistemaventaangular": "file:",
     "tslib": "^2.3.0",

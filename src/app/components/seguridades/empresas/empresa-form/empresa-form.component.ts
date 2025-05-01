@@ -26,7 +26,7 @@ export class EmpresaFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForm();
-    this.loadCiudades();
+    // this.loadCiudades();
     this.loadPersonas();
   }
 
@@ -43,11 +43,11 @@ export class EmpresaFormComponent implements OnInit {
     });
   }
 
-  loadCiudades(): void {
-    this.ciudadService.getCiudades().subscribe(data => {
-      this.ciudades = data.data;
-    });
-  }
+  // loadCiudades(): void {
+  //   this.ciudadService.getCiudades().subscribe(data => {
+  //     this.ciudades = data.data;
+  //   });
+  // }
 
   loadPersonas(): void {
     this.personaService.getPersonas().subscribe((data: any) => {

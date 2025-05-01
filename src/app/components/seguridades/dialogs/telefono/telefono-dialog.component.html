@@ -1,0 +1,26 @@
+<h2 mat-dialog-title>Agregar Teléfono</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="telefonoForm">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Tipo</mat-label>
+      <mat-select formControlName="tipo">
+        <mat-option value="Otro">Otro</mat-option>
+        <mat-option value="Trabajo">Fax</mat-option>
+        <mat-option value="Casa">Trabajo</mat-option>
+        <mat-option value="Casa">Casa</mat-option>
+        <mat-option value="Casa">Móvil</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Número</mat-label>
+      <input matInput formControlName="numero">
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cerrar()">Cancelar</button>
+  <button mat-raised-button color="primary" (click)="guardar()">Guardar</button>
+</mat-dialog-actions>

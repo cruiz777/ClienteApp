@@ -14,7 +14,7 @@ import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/cus
 })
 export class EntidadListComponent implements OnInit {
   dataSource = new MatTableDataSource<PersonaResponse>([]);
-  displayedColumns: string[] = ['identificacion', 'nombresCompletos', 'tipoPersona', 'ciudad', 'correos', 'telefonos', 'status', 'acciones'];
+  displayedColumns: string[] = ['identificacion', 'nombresCompletos', 'tipoPersona', 'ciudad', 'correos', 'telefonos', 'direcciones','status', 'acciones'];
   isLoading = false;
   errorMessage = '';
 
@@ -101,7 +101,7 @@ export class EntidadListComponent implements OnInit {
 
       dialogRef.afterClosed().subscribe(result => {
         if (result) {
-          this.personaService.softDeleteEmpresa(id).subscribe(() => this.loadPersonas());
+          this.personaService.softDeletePersona(id).subscribe(() => this.loadPersonas());
         }
       });
     }

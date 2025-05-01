@@ -1,7 +1,5 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -12,13 +10,6 @@ import { NotFoundComponent } from './components/not-found/not-found.component';
 import { ReusableModule } from './components/reusable/reusable.module';
 import { NgxMaskModule, IConfig } from 'ngx-mask';
 import { InicioComponent } from './components/inicio/inicio.component';
-
-// Angular Material Modules
-import { MatSidenavModule } from '@angular/material/sidenav';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatListModule } from '@angular/material/list';
-import { MatIconModule } from '@angular/material/icon';
-import { MatButtonModule } from '@angular/material/button';
 import { CustomMessageBoxComponent } from './components/utils/messages/custom-message-box.component';
 
 import { MatDialogModule } from '@angular/material/dialog';
@@ -38,10 +29,6 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
   ],
   imports: [
     BrowserModule,
-    MatIconModule,
-    CommonModule,
-    RouterModule,
-    AppRoutingModule,
     BrowserAnimationsModule,
     MatSidenavModule,
     MatToolbarModule,
@@ -49,10 +36,11 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     MatIconModule,
     MatButtonModule,
     MatDialogModule,
+    AppRoutingModule,
     ReusableModule,
     NgxMaskModule.forRoot(),
   ],
-  providers: [],
   bootstrap: [AppComponent]
 })
 export class AppModule { }
+
