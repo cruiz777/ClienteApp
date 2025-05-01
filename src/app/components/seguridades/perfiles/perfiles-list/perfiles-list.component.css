@@ -1,0 +1,111 @@
+/* perfiles-list.component.css - Estilo moderno tipo UltraTab con distribución en columnas */
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 8px;
+  background-color: #f4f6f8;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid #ccc;
+}
+
+.tabs button {
+  background-color: #e0e7ef;
+  border: none;
+  padding: 10px 20px;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
+  color: #1f2937;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.tabs button:hover {
+  background-color: #cbd5e1;
+}
+
+.tabs button.active {
+  background-color: #002c6c;
+  color: #ffffff;
+}
+
+.contenido-tablas {
+  padding: 16px;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 0 0 8px 8px;
+}
+
+h2 {
+  font-size: 18px;
+  margin-bottom: 12px;
+  color: #002c6c;
+  font-weight: 700;
+}
+
+h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #002c6c;
+}
+
+.tabla-estilo {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+}
+
+.tabla-estilo th,
+.tabla-estilo td {
+  border: 1px solid #d1d5db;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.tabla-estilo th {
+  background-color: #f0f4f8;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+input[type='checkbox'] {
+  transform: scale(1.2);
+  cursor: pointer;
+}
+
+/* Panel con columnas distribuidas */
+.tablas-panel {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.panel-col {
+  flex: 1;
+  min-width: 300px;
+}
+
+.panel-col h3 {
+  font-size: 16px;
+  color: #002c6c;
+  margin-bottom: 8px;
+}
+
+@media screen and (max-width: 768px) {
+  .tabs {
+    flex-direction: column;
+  }
+
+  .tabla-estilo th,
+  .tabla-estilo td {
+    font-size: 12px;
+  }
+
+  .tablas-panel {
+    flex-direction: column;
+  }
+}

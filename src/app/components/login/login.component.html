@@ -1,5 +1,8 @@
 <body>
   <div class="login-container">
+
+    <form [formGroup]="formLogin" (ngSubmit)="onLogin()">
+
     <div class="login-card">
       <div class="header-container">
         <img src="assets/logo/GS1-logo.png" class="logo-image" alt="Logo" />
@@ -15,6 +18,7 @@
             class="input-field"
             placeholder="tucorreo@gmail.com"
             aria-label="Correo electrónico"
+            formControlName="email"
           />
           <div class="input-underline"></div>
         </div>
@@ -29,6 +33,7 @@
             class="input-field"
             placeholder="***************"
             aria-label="Contraseña"
+            formControlName="password"
           />
           <div class="input-underline"></div>
         </div>
@@ -40,7 +45,7 @@
         </a>
       </div>
       <div class="login-button-container">
-        <button class="login-button" routerLink="/inicio/">
+        <button class="login-button" type="submit">
           <span class="button-text">Iniciar Sesión</span>
         </button>
       </div>
@@ -49,5 +54,7 @@
         <img src="assets/logo/logo-gap.png" class="footer-logo" alt="Logo de la empresa" />
       </div>
     </div>
+
+  </form>
   </div>
 </body>

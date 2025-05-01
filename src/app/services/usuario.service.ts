@@ -1,24 +1,42 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { BehaviorSubject, Observable, map } from 'rxjs';
+import { environment } from 'src/environments/environment';
+import { Usuario } from '../interfaces/responses/usuario-response'; // Ajusta si tu ruta es distinta
 
 @Injectable({
   providedIn: 'root'
 })
 export class UsuarioService {
-  private currentUserSubject = new BehaviorSubject<{ id: number; usr: string }>({ id: 1, usr: 'admin' });
+  private apiUrl = `${environment.applicationUrl}/Usuarios/login`;
 
-  // Observable para que otros componentes puedan suscribirse y recibir actualizaciones
-  currentUser$ = this.currentUserSubject.asObservable();
+  private currentUserSubject = new BehaviorSubject<Usuario | null>(null);
+  public currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor() {}
+  constructor(private http: HttpClient) {}
 
-  // Método para actualizar el estado del usuario
-  setCurrentUser(user: { id: number; usr: string }): void {
-    this.currentUserSubject.next(user);
+  login(nombreUsuario: string, contrasenia: string): Observable<Usuario> {
+    const body = {
+      email: nombreUsuario,
+      password: contrasenia
+    };
+
+    return this.http.post<{ type: string; data: Usuario; message: string }>(this.apiUrl, body).pipe(
+      map(response => {
+        console.log('Respuesta cruda del backend:', response);
+        if (response.type && response.type.toUpperCase() === "OK" && response.data) {
+          const user: Usuario = response.data;
+          localStorage.setItem('currentUser', JSON.stringify(user)); // opcional si quieres guardar sesión
+          this.currentUserSubject.next(user);
+          return user;
+        } else {
+          throw new Error(response.message || 'Error al iniciar sesión.');
+        }
+      })
+    );
   }
 
-  // Método para limpiar el estado del usuario (por ejemplo, al cerrar sesión)
-  clearCurrentUser(): void {
-    this.currentUserSubject.next({ id: 1, usr: 'admin' }); // También podrías restaurar al usuario por defecto si quieres
+  logout(): void {
+    this.currentUserSubject.next(null);
   }
 }

@@ -10,6 +10,7 @@ import { map, startWith } from 'rxjs/operators';
 import { Observable } from 'rxjs';
 import { Router } from '@angular/router';
 import { MatDialogRef } from '@angular/material/dialog';
+import { Usuario } from 'src/app/interfaces/responses/usuario-response';
 
 @Component({
   selector: 'app-dialog-cliente',
@@ -37,7 +38,8 @@ export class DialogClienteComponent implements OnInit {
   ciudadFiltrados$!: Observable<Ciudad[]>;
   ciudadSeleccionado!: number;
   esPasaporte = false;
-  usuarioActual: { id: number; usr: string } | null = null;
+  // usuarioActual: { id: number; usr: string } | null = null;
+  usuarioActual: Usuario| null = null;
 
   zona: Zona[] = [];
   zonaCtrl = new FormControl('');
@@ -58,7 +60,7 @@ export class DialogClienteComponent implements OnInit {
 
   ngOnInit(): void {
     this.initFormulario();
-    
+
     this.obtenerUsuarioActual();
     this.cargarGrupos();
     this.cargarGruposProducto();
@@ -272,9 +274,9 @@ export class DialogClienteComponent implements OnInit {
   obtenerUsuarioActual(): void {
     this.usuarioService.currentUser$.subscribe(user => {
       this.usuarioActual = user;
-      
+
       console.log('Usuario Actual:', this.usuarioActual);
-      
+
     });
   }
   cargarZona(): void {
@@ -286,14 +288,14 @@ export class DialogClienteComponent implements OnInit {
       );
     });
   }
-  
+
   filtrarZona(valor: string): Zona[] {
     const filtro = valor.toLowerCase();
     return this.zona.filter(zona =>
       `${zona.referencia} - ${zona.nombre}`.toLowerCase().includes(filtro)
     );
   }
-  
+
   seleccionarZona(nombre: string): void {
     const zona = this.zona.find(g => `${g.referencia} - ${g.nombre}` === nombre);
     if (zona) {

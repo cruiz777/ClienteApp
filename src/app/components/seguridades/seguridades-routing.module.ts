@@ -17,6 +17,10 @@ const routes: Routes = [
         loadChildren: () => import('./entidades/entidad.module').then(m => m.EntidadModule)
       },
       {
+        path:'perfiles',
+        loadChildren:()=>import('./perfiles/perfiles.module').then(m=>m.PerfilesModule)
+      },
+      {
         path: '',
         redirectTo: 'empresas',
         pathMatch: 'full'

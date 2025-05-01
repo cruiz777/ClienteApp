@@ -1,0 +1,19 @@
+import { Injectable } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { Observable } from 'rxjs';
+import { PerfilResponse } from '../interfaces/responses/perfil-response';
+import { ApiResponse } from '../interfaces/responses/api-response';
+import { environment } from 'src/environments/environment';
+
+@Injectable({
+  providedIn: 'root'
+})
+export class PerfilesService {
+  private apiUrl = `${environment.applicationUrl}/Perfiles`;
+
+  constructor(private http: HttpClient) {}
+
+  getPerfiles(): Observable<ApiResponse<PerfilResponse[]>> {
+    return this.http.get<ApiResponse<PerfilResponse[]>>(this.apiUrl);
+  }
+}
