@@ -1,0 +1,171 @@
+/* Contenedor principal del contenido */
+.main-content {
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 30px;
+  border: 1px solid #ccd5e2;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Título del módulo */
+.content-title {
+  color: #002c6c;
+  font: 700 22px Inter, sans-serif;
+  margin-bottom: 20px;
+}
+
+/* Barra de acciones */
+.action-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.action-left {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.action-right {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.status-select {
+  min-width: 150px;
+}
+
+.search-button,
+.new-person-button {
+  border-radius: 4px;
+  color: #fff;
+  padding: 6px 20px;
+  font: 500 13px Inter, sans-serif;
+  transition: background-color 0.3s ease;
+}
+
+.search-button {
+  background-color: #002c6c;
+  color: #fff !important;
+}
+
+.search-button:hover {
+  background-color: #001f4d;
+}
+
+.new-person-button {
+  background-color: #f26334;
+  color: #fff !important;
+}
+
+.new-person-button:hover {
+  background-color: #d95428;
+}
+
+/* Tabla de personas */
+.persons-table {
+  margin-top: 10px;
+  border-collapse: separate;
+  border-spacing: 0;
+  width: 100%;
+  border: 1px solid #ccd5e2;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
+}
+
+.persons-table th {
+  background-color: #e3edf7;
+  padding: 12px;
+  font: 600 12px Inter, sans-serif;
+  color: #333;
+  text-align: center;
+}
+
+.persons-table td {
+  padding: 12px;
+  font: 400 12px Inter, sans-serif;
+  background-color: #fff;
+  vertical-align: middle;
+  text-align: center;
+}
+
+/* Ajuste específico para listas dentro de celdas */
+.persons-table td ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  text-align: left;
+  display: inline-block;
+}
+
+.persons-table td ul li {
+  margin-bottom: 4px;
+}
+
+/* Alternancia de filas */
+.persons-table tr:nth-child(even) td {
+  background-color: #f9fbfd;
+}
+
+.error-message {
+  color: #f44336;
+  margin: 15px 0;
+  font-weight: bold;
+  text-align: center;
+}
+
+/* Estado */
+.activo {
+  color: #4caf50;
+  font-weight: bold;
+}
+
+.inactivo {
+  color: #f44336;
+  font-weight: bold;
+}
+
+/* Botones de acciones */
+.acciones-btns {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.icon-btn {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.2s ease;
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  transform: scale(1.2);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .action-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .action-left, .action-right {
+    width: 100%;
+    justify-content: center;
+    margin-top: 10px;
+  }
+
+  .search-button,
+  .new-person-button {
+    width: 100%;
+    text-align: center;
+  }
+}

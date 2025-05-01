@@ -1,0 +1,27 @@
+.full-width {
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+mat-dialog-content {
+  max-height: 70vh;
+  overflow: auto;
+  padding: 0;
+}
+
+.dialog-form-container {
+  width: 100%;
+  max-width: 600px;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+mat-form-field.full-width {
+  width: 100%;
+}
+
+
+mat-dialog-actions {
+  padding: 16px;
+}
+

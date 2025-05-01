@@ -1,8 +1,7 @@
 export interface Cliente {
-  codigo: number,
-  estado: string,
-  nombre: string,
-  direccion: string,
+  clientes_codigo: number,
+  nomcli: string,
+  dircli: string,
   ruc:string,
-  fingreso:string
+  fecing:string
 }

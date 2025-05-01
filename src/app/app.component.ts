@@ -1,4 +1,5 @@
 import { Component } from '@angular/core';
+import { IdleService } from './services/idle.service';
 
 @Component({
   selector: 'app-root',
@@ -7,4 +8,8 @@ import { Component } from '@angular/core';
 })
 export class AppComponent {
   title = 'ClientApp';
+  constructor(private idleService: IdleService) {
+    // Al inyectarlo, el servicio empieza a escuchar inactividad automáticamente
+  }
 }
+

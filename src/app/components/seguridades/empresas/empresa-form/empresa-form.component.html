@@ -1,0 +1,47 @@
+<form [formGroup]="empresaForm" (ngSubmit)="onSubmit()">
+  <div>
+    <label>Nombre Empresa</label>
+    <input type="text" formControlName="empresaNombre" />
+  </div>
+
+  <div>
+    <label>RUC</label>
+    <input type="text" formControlName="empresaRuc" />
+  </div>
+
+  <div>
+    <label>Ciudad</label>
+    <select formControlName="idCiudad">
+      <option *ngFor="let ciudad of ciudades" [value]="ciudad.idCiudad">
+        {{ ciudad.nombre }}
+      </option>
+    </select>
+  </div>
+
+  <div>
+    <label>Gerente</label>
+    <select formControlName="idGerente">
+      <option *ngFor="let persona of personas" [value]="persona.personaCodigo">
+        {{ persona.nombresCompletos }}
+      </option>
+    </select>
+  </div>
+
+  <div>
+    <label>Contador</label>
+    <select formControlName="idContador">
+      <option *ngFor="let persona of personas" [value]="persona.personaCodigo">
+        {{ persona.nombresCompletos }}
+      </option>
+    </select>
+  </div>
+
+  <div>
+    <label>Obligado Contabilidad</label>
+    <input type="text" formControlName="empresaObligadoContabilidad" />
+  </div>
+
+
+  <button type="submit" [disabled]="empresaForm.invalid">Grabar</button>
+  <button type="button" (click)="cancelar()">Cancelar</button>
+</form>
