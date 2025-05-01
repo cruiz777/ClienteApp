@@ -8,7 +8,7 @@ import { ApiListResponse } from '../interfaces/responses/ApiListResponse';
 
 @Injectable({ providedIn: 'root' })
 export class GeneroService {
-  private apiUrl = `${environment.applicationUrl}/Generos`;
+  private apiUrl = `${environment.securityApiUrl}/Generos`;
 
   constructor(private http: HttpClient) {}
 

@@ -19,7 +19,9 @@
 
       <div class="form-field">
         <label class="field-label">Número Documento*</label>
-        <input class="field-input" formControlName="numeroDocumento" />
+        <input class="field-input" formControlName="numeroDocumento"
+               (keypress)="onKeyPressNumbers($event)"
+               (blur)="onBlurDocumento()" />
         <div class="error" *ngIf="personaForm.get('numeroDocumento')?.hasError('required') && personaForm.get('numeroDocumento')?.touched">
           Campo obligatorio
         </div>
@@ -32,7 +34,7 @@
     <div class="form-row">
       <div class="form-field">
         <label class="field-label">Primer Nombre*</label>
-        <input class="field-input" formControlName="primerNombre" />
+        <input class="field-input" formControlName="primerNombre" (keypress)="onKeyPressLetters($event)"/>
         <div class="error" *ngIf="personaForm.get('primerNombre')?.invalid && personaForm.get('primerNombre')?.touched">
           Campo obligatorio
         </div>
@@ -40,14 +42,14 @@
 
       <div class="form-field">
         <label class="field-label">Segundo Nombre</label>
-        <input class="field-input" formControlName="segundoNombre" />
+        <input class="field-input" formControlName="segundoNombre" (keypress)="onKeyPressLetters($event)" />
       </div>
     </div>
 
     <div class="form-row">
       <div class="form-field">
         <label class="field-label">Primer Apellido*</label>
-        <input class="field-input" formControlName="primerApellido" />
+        <input class="field-input" formControlName="primerApellido" (keypress)="onKeyPressLetters($event)" />
         <div class="error" *ngIf="personaForm.get('primerApellido')?.invalid && personaForm.get('primerApellido')?.touched">
           Campo obligatorio
         </div>
@@ -55,7 +57,7 @@
 
       <div class="form-field">
         <label class="field-label">Segundo Apellido</label>
-        <input class="field-input" formControlName="segundoApellido" />
+        <input class="field-input" formControlName="segundoApellido" (keypress)="onKeyPressLetters($event)" />
       </div>
     </div>
 
@@ -118,6 +120,7 @@
             type="text"
             [formControl]="ciudadFiltroCtrl"
             placeholder="Buscar ciudad..."
+            (keypress)="onKeyPressLetters($event)"
           />
         </div>
       </div>
