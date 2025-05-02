@@ -21,12 +21,16 @@
                   <div>
                     <label class="form-label"><span style="color: red;">*</span>RUC/CI/Pasaporte:</label>
                     <input type="text" [formControl]="rucControl" (blur)="onRucBlur()"
-                      placeholder="Ingrese número o pasaporte" class="underline-input" />
+                      placeholder="Ingrese número o pasaporte" class="underline-input" autocomplete="off" />
 
                     <!-- Mostrar error solo si NO es pasaporte -->
                     <div *ngIf="error && !esPasaporte" class="error-message" style="color: red; font-size: 12px;">
                       {{ error }}
                     </div>
+                    <mat-error *ngIf="rucControl.hasError('required') && rucControl.touched"
+                      style="color: red; font-size: 12px;">
+                      Este campo es obligatorio.
+                    </mat-error>
                     <mat-checkbox formControlName="esPasaporte" (change)="actualizarValidacionRuc()">
                       Es Pasaporte
                     </mat-checkbox>
@@ -50,15 +54,20 @@
                       </label>
 
                       <div class="categoria-cliente-group">
-                        <label>
+                        <label style="font-size: 11;">
                           <input type="radio" formControlName="categoriaCliente" id="individual" [value]="2" />
                           Individual
                         </label>
-                        <label>
+                        <label style="font-size: 11;">
                           <input type="radio" formControlName="categoriaCliente" id="industrial" [value]="1" />
                           Industrial
                         </label>
                       </div>
+                      <mat-error
+                        *ngIf="paso1Form.get('categoriaCliente')?.hasError('required') && paso1Form.get('categoriaCliente')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </div>
 
                   </div>
@@ -68,12 +77,17 @@
 
                     <mat-form-field
                       style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
-                      appearance="fill">
+                      appearance="fill" class="compacto-form-field">
                       <mat-select formControlName="grupo" placeholder="Seleccione Grupo" style="font-size: 12px;">
-                        <mat-option *ngFor="let grupo of grupos" [value]="grupo.id_grupo_empresa">
+                        <mat-option *ngFor="let grupo of grupos" [value]="grupo.id_grupo_empresa"
+                          style="font-size: 11px;">
                           {{ grupo.codigo }} - {{ grupo.nombre }}
                         </mat-option>
                       </mat-select>
+                      <mat-error *ngIf="paso1Form.get('grupo')?.hasError('required') && paso1Form.get('grupo')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </mat-form-field>
                     <label class="form-label"> <span style="color: red;">*</span>Categoría Producto:</label>
                     <mat-form-field class="full-width" style="font-size: 12px; height: 60px;">
@@ -86,11 +100,17 @@
                       </button>
 
                       <mat-autocomplete #autoGrupoProducto="matAutocomplete" [displayWith]="displayWithGrupoProducto"
-                        (optionSelected)="seleccionarGrupoProducto($event.option.value)">
-                        <mat-option *ngFor="let grupo of grupoProductoFiltrados" [value]="grupo">
+                        (optionSelected)="seleccionarGrupoProducto($event.option.value)" autocomplete="off">
+                        <mat-option *ngFor="let grupo of grupoProductoFiltrados" [value]="grupo"
+                          style="font-size: 11px">
                           {{ grupo.codigo }} - {{ grupo.brick }} - {{ grupo.desBrick }}
                         </mat-option>
                       </mat-autocomplete>
+                      <mat-error
+                        *ngIf="paso1Form.get('grupoProducto')?.hasError('required') && paso1Form.get('grupoProducto')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </mat-form-field>
 
                   </div>
@@ -104,16 +124,21 @@
                         style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
                         appearance="fill">
                         <mat-select formControlName="prefix" placeholder="Seleccione prefijo" style="font-size: 12px;">
-                          <mat-option [value]="'5'">5</mat-option>
-                          <mat-option [value]="'6'">6</mat-option>
-                          <mat-option [value]="'7'">7</mat-option>
-                          <mat-option [value]="'8'">8</mat-option>
-                          <mat-option [value]="'USA'">USA</mat-option>
-                          <mat-option [value]="'MSV'">MSV</mat-option>
+                          <mat-option [value]="'5'" style="font-size: 12px;">5</mat-option>
+                          <mat-option [value]="'6'" style="font-size: 12px;">6</mat-option>
+                          <mat-option [value]="'7'" style="font-size: 12px;">7</mat-option>
+                          <mat-option [value]="'8'" style="font-size: 12px;">8</mat-option>
+                          <mat-option [value]="'USA'" style="font-size: 12px;">USA</mat-option>
+                          <mat-option [value]="'MSV'" style="font-size: 12px;">MSV</mat-option>
                         </mat-select>
+                        <mat-error
+                          *ngIf="paso1Form.get('prefix')?.hasError('required') && paso1Form.get('prefix')?.touched"
+                          style="color: red; font-size: 12px;">
+                          Este campo es obligatorio.
+                        </mat-error>
                       </mat-form-field>
 
-                      <label class="modificar-label">
+                      <label style="font-size: 13px;">
                         <input type="checkbox" id="prefix-modify" value="MODIFY"
                           (change)="onModificarSecuenciaChange($event)" />
                         Modificar Secuencia
@@ -126,7 +151,7 @@
 
                     <!-- Campo de prefijo con limpieza y validación -->
                     <input matInput formControlName="prefijo" [readonly]="!modificarSecuencia"
-                      (input)="limpiarPrefijo()" (blur)="validarPrefijoExistente()" maxlength="10" />
+                      (input)="limpiarPrefijo()" (blur)="validarPrefijoExistente()" maxlength="10" autocomplete="off" />
 
 
 
@@ -165,7 +190,7 @@
 
                   </div>
                 </div>
-                <section class="date-info-section" style="visibility: hidden;">
+                <section class="date-info-section" style="display: none;">
                   <div class="date-container">
                     <!-- First row with dates and user info -->
                     <div class="info-row">
@@ -223,8 +248,7 @@
                   </div>
                 </section>
                 <div style="text-align: right;">
-                  <button mat-button color="primary" matStepperNext
-                    [disabled]="paso1Form.invalid || (error && !paso1Form.get('esPasaporte')?.value)">
+                  <button mat-button color="primary" matStepperNext (click)="verificarYAvanzar(paso1Form, stepper)">
                     Siguiente
                   </button>
 
@@ -241,10 +265,16 @@
                   <div>
                     <div class="form-row">
                       <label class="form-label"><span style="color: red;">*</span>Razón Social:</label>
-                      <input type="text" formControlName="razonSocial" class="underline-input"
-                        (input)="forzarMayusculas('razonSocial', paso2Form, $event)" maxlength="300"
-                        (blur)="forzarGuardarValor('razonSocial', paso2Form, $event)" />
-
+                      <input type="text" formControlName="razonSocial"
+                        (input)="forzarMayusculas('razonSocial', paso2Form, $event)"
+                        (blur)="forzarGuardarValor('razonSocial', paso2Form, $event)"
+                        (focus)="alEntrarCampo('razonSocial', paso2Form)" class="underline-input" maxlength="300"
+                        autocomplete="off" />
+                      <mat-error
+                        *ngIf="paso2Form.get('razonSocial')?.hasError('required') && paso2Form.get('razonSocial')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </div>
                   </div>
                   <div>
@@ -253,14 +283,20 @@
                           style="color: red;">*</span>Representante:</label>
                       <input type="text" formControlName="nombreRepresentante" value="{{ nombreRepresentante }}"
                         class="underline-input" (input)="forzarMayusculas('nombreRepresentante', paso2Form, $event)"
-                        maxlength="200" (blur)="forzarGuardarValor('nombreRepresentante', paso2Form, $event)" />
+                        maxlength="200" (blur)="forzarGuardarValor('nombreRepresentante', paso2Form, $event)"
+                        autocomplete="off" />
+                      <mat-error
+                        *ngIf="paso2Form.get('nombreRepresentante')?.hasError('required') && paso2Form.get('nombreRepresentante')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </div>
                   </div>
                   <div style="padding-top: 0px; padding-bottom: 0px;">
                     <label style="color: #002c6c;font-size: 13px;"><span style="color: red;">*</span>Ciudad : </label>
                     <mat-form-field class="full-width" style="font-size: 12px; height: 60px;">
                       <input matInput formControlName="ciudad" [matAutocomplete]="autoCiudad"
-                        placeholder="Seleccione Ciudad">
+                        placeholder="Seleccione Ciudad" autocomplete="off">
 
                       <button matSuffix mat-icon-button aria-label="Limpiar" *ngIf="paso2Form.get('ciudad')?.value"
                         (click)="limpiarCiudad()">
@@ -269,10 +305,15 @@
 
                       <mat-autocomplete #autoCiudad="matAutocomplete" [displayWith]="displayCiudad"
                         (optionSelected)="seleccionarCiudad($event.option.value)">
-                        <mat-option *ngFor="let ciudad of ciudadFiltrados" [value]="ciudad">
+                        <mat-option *ngFor="let ciudad of ciudadFiltrados" [value]="ciudad" style="font-size: 11px;">
                           {{ ciudad.ciudad }} - {{ ciudad.canton }} - {{ ciudad.provincia }}
                         </mat-option>
                       </mat-autocomplete>
+                      <mat-error
+                        *ngIf="paso2Form.get('ciudad')?.hasError('required') && paso2Form.get('ciudad')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </mat-form-field>
 
 
@@ -281,42 +322,60 @@
                     <label style="color: #002c6c; font-size: 12px;"><span style="color: red;">*</span>Dirección
                       Principal:</label>
                     <input class="underline-input" formControlName="direccionPrincipal"
-                      (input)="forzarMayusculas('direccionPrincipal', paso2Form, $event)" maxlength="200" />
+                      (input)="forzarMayusculas('direccionPrincipal', paso2Form, $event)" maxlength="200"
+                      autocomplete="new-dp" />
+                    <mat-error
+                      *ngIf="paso2Form.get('direccionPrincipal')?.hasError('required') && paso2Form.get('direccionPrincipal')?.touched"
+                      style="color: red; font-size: 12px;">
+                      Este campo es obligatorio.
+                    </mat-error>
                   </div>
 
                   <div class="form-row">
                     <label style="color: #002c6c; font-size: 12px;">Código Postal:</label>
-                    <input type="text" class="underline-input" formControlName="codigoPostal" maxlength="10" />
+                    <input type="text" class="underline-input" formControlName="codigoPostal" maxlength="10"
+                      placeholder="170521" autocomplete="new-dp" />
 
                     <label style="color: #002c6c; font-size: 12px; margin-left: 10px;"><span
                         style="color: red;">*</span>Celular:</label>
-                    <input type="text" class="underline-input" formControlName="celular" maxlength="20" />
+                    <input type="text" class="underline-input" formControlName="celular" maxlength="10"
+                      autocomplete="off" placeholder="0999999999" />
+                    <mat-error
+                      *ngIf="paso2Form.get('celular')?.hasError('required') && paso2Form.get('celular')?.touched"
+                      style="color: red; font-size: 12px;">
+                      Este campo es obligatorio.
+                    </mat-error>
                   </div>
 
                   <div class="form-row">
                     <label style="color: #002c6c; font-size: 12px;">Sitio Web:</label>
-                    <input type="text" class="underline-input" formControlName="sitioWeb" maxlength="150" />
+                    <input type="text" class="underline-input" formControlName="sitioWeb" maxlength="150"
+                      placeholder="https://gs1ec.org" autocomplete="off" />
 
                     <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">Teléfono 2:</label>
-                    <input type="text" class="underline-input" formControlName="telefono2" maxlength="20" />
+                    <input type="text" class="underline-input" formControlName="telefono2" maxlength="10"
+                      placeholder="0999999999" autocomplete="off" />
                   </div>
 
                   <div class="form-row">
                     <label style="color: #002c6c; font-size: 12px;">Usuario:</label>
-                    <input type="text" class="underline-input" formControlName="usuario" readonly />
+                    <input type="text" class="underline-input" formControlName="usuario" readonly
+                      value="{{ usuarioActual?.usr }}" />
                   </div>
 
                   <div class="form-row">
                     <label style="color: #002c6c; font-size: 12px;">Observación 1:</label>
                     <input type="text" class="underline-input" formControlName="observacion1"
-                      (input)="forzarMayusculas('observacion1', paso2Form, $event)" maxlength="450" />
+                      (input)="forzarMayusculas('observacion1', paso2Form, $event)" maxlength="450"
+                      autocomplete="off" />
                   </div>
 
                 </div>
 
                 <div style="text-align: right;">
                   <button mat-button matStepperPrevious>Anterior</button>
-                  <button mat-button color="primary" matStepperNext>Siguiente</button>
+                  <button mat-button color="primary" matStepperNext
+                    (click)="forzarSyncYAvanzar('razonSocial', paso2Form); verificarYAvanzar(paso2Form, stepper)">Siguiente</button>
                 </div>
               </form>
             </mat-step>
@@ -333,15 +392,24 @@
                       <label class="form-label"><span style="color: red;">*</span>Nombre: (Representante Legal)</label>
                       <input type="text" class="underline-input" formControlName="nombreRepresentante"
                         (input)="forzarMayusculas('nombreRepresentante', paso3Form, $event)" maxlength="200"
-                        (blur)="forzarGuardarValor('nombreRepresentante', paso3Form, $event)" />
-
+                        (blur)="forzarGuardarValor('nombreRepresentante', paso3Form, $event)" autocomplete="off" />
+                      <mat-error
+                        *ngIf="paso3Form.get('nombreRepresentante')?.hasError('required') && paso3Form.get('nombreRepresentante')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </div>
                     <div>
                       <div class="form-row">
                         <label style="color: #002c6c; font-size: 12px;"><span
                             style="color: red;">*</span>E-mail:</label>
-                        <input type="text" class="underline-input" formControlName="emailRepresentante"
-                          maxlength="200" />
+                        <input type="text" class="underline-input" formControlName="emailRepresentante" maxlength="200"
+                          autocomplete="new-dp" placeholder="gs1@gs1.org" />
+                        <mat-error
+                          *ngIf="paso3Form.get('emailRepresentante')?.hasError('required') && paso3Form.get('emailRepresentante')?.touched"
+                          style="color: red; font-size: 12px;">
+                          Este campo es obligatorio.
+                        </mat-error>
                         <div
                           *ngIf="paso3Form.get('emailRepresentante')?.hasError('emailInvalido') && paso3Form.get('emailRepresentante')?.touched">
                           <small style="color: red;">Ingrese un correo válido</small>
@@ -349,7 +417,12 @@
                         <label style="color: #002c6c; font-size: 12px;"><span style="color: red;">*</span>Tel.o
                           Cel:</label>
                         <input type="text" class="underline-input" formControlName="telefonoRepresentante"
-                          maxlength="20" />
+                          maxlength="10" placeholder="0999999999" autocomplete="off" />
+                        <mat-error
+                          *ngIf="paso3Form.get('telefonoRepresentante')?.hasError('required') && paso3Form.get('telefonoRepresentante')?.touched"
+                          style="color: red; font-size: 12px;">
+                          Este campo es obligatorio.
+                        </mat-error>
                       </div>
 
                     </div>
@@ -360,16 +433,19 @@
                         Nombre: (Codificación)
                       </label>
                       <input type="text" class="underline-input" formControlName="nombreCodificacion"
-                        (input)="forzarMayusculas('nombreCodificacion', paso3Form, $event)" maxlength="200" />
+                        (input)="forzarMayusculas('nombreCodificacion', paso3Form, $event)" maxlength="200"
+                        autocomplete="off" />
                     </div>
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">E-mail: </label>
-                      <input type="text" class="underline-input" formControlName="email" maxlength="200" />
+                      <input type="text" class="underline-input" formControlName="email" maxlength="200"
+                        autocomplete="new-dp" placeholder="gs1@gs1.org" />
                       <div *ngIf="paso3Form.get('email')?.hasError('emailInvalido') && paso3Form.get('email')?.touched">
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
                       <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
-                      <input type="text" class="underline-input" formControlName="telefono" maxlength="20" />
+                      <input type="text" class="underline-input" formControlName="telefono" maxlength="10"
+                        autocomplete="off" placeholder="0999999999" />
                     </div>
                     <div class="form-row">
 
@@ -378,17 +454,20 @@
                         Nombre: (Financiero)
                       </label>
                       <input type="text" class="underline-input" formControlName="nombreFinanciero"
-                        (input)="forzarMayusculas('nombreFinanciero', paso3Form, $event)" maxlength="200" />
+                        (input)="forzarMayusculas('nombreFinanciero', paso3Form, $event)" maxlength="200"
+                        autocomplete="off" />
                     </div>
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">E-mail 1: </label>
-                      <input type="text" class="underline-input" formControlName="email1" maxlength="200" />
+                      <input type="text" class="underline-input" formControlName="email1" maxlength="200"
+                        autocomplete="new-dp" placeholder="gs1@gs1.org" />
                       <div
                         *ngIf="paso3Form.get('email1')?.hasError('emailInvalido') && paso3Form.get('email1')?.touched">
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
                       <label style="color: #002c6c;font-size: 12px;">E-mail 2:</label>
-                      <input type="text" class="underline-input" formControlName="email2" maxlength="200" />
+                      <input type="text" class="underline-input" formControlName="email2" maxlength="200"
+                        autocomplete="new-dp" placeholder="gs1@gs1.org" />
                       <div
                         *ngIf="paso3Form.get('email2')?.hasError('emailInvalido') && paso3Form.get('email2')?.touched">
                         <small style="color: red;">Ingrese un correo válido</small>
@@ -396,13 +475,15 @@
                     </div>
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">E-mail 3: </label>
-                      <input type="text" class="underline-input" formControlName="email3" maxlength="200" />
+                      <input type="text" class="underline-input" formControlName="email3" maxlength="200"
+                        autocomplete="new-dp" placeholder="gs1@gs1.org" />
                       <div
                         *ngIf="paso3Form.get('email3')?.hasError('emailInvalido') && paso3Form.get('email3')?.touched">
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
                       <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
-                      <input type="text" class="underline-input" formControlName="telefono2" maxlength="20" />
+                      <input type="text" class="underline-input" formControlName="telefono2" maxlength="10"
+                        placeholder="0999999999" autocomplete="off" />
                     </div>
 
 
@@ -453,7 +534,8 @@
 
                 <div style="text-align: right;">
                   <button mat-button matStepperPrevious>Anterior</button>
-                  <button mat-button color="primary" matStepperNext>Siguiente</button>
+                  <button mat-button color="primary" matStepperNext
+                    (click)="verificarYAvanzar(paso3Form, stepper)">Siguiente</button>
 
                 </div>
               </form>
@@ -470,15 +552,16 @@
                     <div class="form-row">
                       <label class="form-label">Usuario:</label>
 
-                      <input type="text" class="underline-input" readonly />
+                      <input type="text" class="underline-input" readonly value="{{ usuarioActual?.usr }}" />
                       <label class="form-label">Fecha:</label>
 
-                      <input type="text" class="underline-input" readonly />
+                      <input type="text" class="underline-input" readonly [value]="fecha | date:'dd/MM/yyyy'" />
                     </div>
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">Observaciones 2:</label>
                       <input type="text" class="underline-input" formControlName="observacion2"
-                        (input)="forzarMayusculas('observacion2', paso4Form, $event)" maxlength="400" />
+                        (input)="forzarMayusculas('observacion2', paso4Form, $event)" maxlength="400"
+                        autocomplete="off" />
                     </div>
 
                   </article>
@@ -488,17 +571,18 @@
                     <div class="form-row">
                       <label class="form-label">Usuario:</label>
 
-                      <input type="text" class="underline-input" readonly />
+                      <input type="text" class="underline-input" readonly value="{{ usuarioActual?.usr }}" />
                       <label class="form-label">Fecha:</label>
 
-                      <input type="text" class="underline-input" readonly />
+                      <input type="text" class="underline-input" readonly [value]="fecha | date:'dd/MM/yyyy'" />
                     </div>
 
 
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">Observaciones 3:</label>
                       <input type="text" class="underline-input" formControlName="observacion3"
-                        (input)="forzarMayusculas('observacion3', paso4Form, $event)" maxlength="400" />
+                        (input)="forzarMayusculas('observacion3', paso4Form, $event)" maxlength="400"
+                        autocomplete="off" />
                     </div>
 
                   </article>
@@ -509,16 +593,17 @@
                     <div class="form-row">
                       <label class="form-label">Usuario:</label>
 
-                      <input type="text" class="underline-input" readonly />
+                      <input type="text" class="underline-input" readonly value="{{ usuarioActual?.usr }}" />
                       <label class="form-label">Fecha:</label>
 
-                      <input type="text" class="underline-input" readonly />
+                      <input type="text" class="underline-input" readonly [value]="fecha | date:'dd/MM/yyyy'" />
                     </div>
 
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">Observaciones 4:</label>
                       <input type="text" class="underline-input" formControlName="observacion4"
-                        (input)="forzarMayusculas('observacion4', paso4Form, $event)" maxlength="400" />
+                        (input)="forzarMayusculas('observacion4', paso4Form, $event)" maxlength="400"
+                        autocomplete="off" />
                     </div>
 
 
@@ -549,7 +634,7 @@
     Grabar
   </button>
 
-  <button mat-button (click)="generarPDF()">
+  <button mat-button (click)="generarPDF()" [disabled]="!impresionHabilitada">
     <img src="assets/icons/icon-imprimir.png" alt="Imprimir" width="18" height="18" style="margin-right: 6px;" />
     Imprimir
   </button>

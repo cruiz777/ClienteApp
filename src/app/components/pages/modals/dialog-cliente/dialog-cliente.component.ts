@@ -14,6 +14,8 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 const html2pdf: any = require('html2pdf.js');
+import { MatStepper } from '@angular/material/stepper';
+
 
 // Servicios personalizados
 import { GrupoEmpresaService, GrupoEmpresa } from '../../../../services/grupo-empresa.service';
@@ -85,6 +87,8 @@ export class DialogClienteComponent implements OnInit {
   datosReporte: any = {};
   resultados: Prefijo[] = [];
   prefijoExistente = false;
+  impresionHabilitada = false;
+  fecha: Date = new Date();
   constructor(
     private fb: FormBuilder,
     private grupoService: GrupoEmpresaService,
@@ -140,10 +144,13 @@ export class DialogClienteComponent implements OnInit {
 
       paso2: this.fb.group({
         ciudad: ['', Validators.required],
-        razonSocial: [null, [
-          Validators.required,
-          this.soloLetrasMayusculasValidator()
-        ]],
+        razonSocial: this.fb.control(null, {
+          validators: [
+            Validators.required
+          ],
+          updateOn: 'change'
+        }),
+        
         nombreRepresentante: [null, Validators.required],
         direccionPrincipal: ['', Validators.required],
         codigoPostal: [''],
@@ -566,7 +573,7 @@ export class DialogClienteComponent implements OnInit {
       idGrupoEmpresa: paso1.grupo || 1,
       representante: paso2.nombreRepresentante || ''
     };
-
+    this.impresionHabilitada = true;
     console.log('📤 Enviando cliente:', jsonCliente);
 
     this.clienteService.guardarCliente(jsonCliente).subscribe({
@@ -691,6 +698,7 @@ export class DialogClienteComponent implements OnInit {
       this.prefijoService.guardarPrefijo(prefijoData).subscribe({
         next: () => {
           this.mostrarAlerta('Se guardó correctamente', 'OK');
+          this.paso1Form.get('prefijo')?.disable();
           this.botonGuardarDeshabilitado = true;
 
           this.guardarNuevoGln();
@@ -1287,6 +1295,115 @@ export class DialogClienteComponent implements OnInit {
       }
     });
   }
-
+  verificarYAvanzar(form: FormGroup, stepper: MatStepper): void {
+    console.log('🚦 Ejecutando verificarYAvanzar...');
+    console.log('📋 Estado del formulario:', form.valid, form.value);
+  
+    form.markAllAsTouched();
+  
+    if (form.valid) {
+      console.log('✅ Formulario válido. Avanzando...');
+      stepper.next();
+    } else {
+      console.warn('❌ Formulario inválido. Verifica los siguientes errores:');
+      for (const key in form.controls) {
+        const ctrl = form.get(key);
+        if (ctrl && ctrl.invalid) {
+          console.warn(`🛑 Campo inválido: ${key}`, ctrl.errors);
+        }
+      }
+    }
+  }
+  
+  
+  forzarGuardarRazonSocial(): void {
+    const control = this.paso2Form.get('razonSocial');
+    const input = document.querySelector<HTMLInputElement>('input[formcontrolname="razonSocial"]');
+    const valor = input?.value?.trim();
+  
+    if (valor !== undefined && valor !== null) {
+      // 🔄 1. Borrar temporalmente sin emitir evento
+      control?.setValue('', { emitEvent: false });
+  
+      // 🔁 2. Reasignar el valor original después de un tick
+      setTimeout(() => {
+        control?.setValue(valor, { emitEvent: true });
+        control?.markAsTouched();
+        control?.markAsDirty();
+        control?.updateValueAndValidity({ emitEvent: true });
+  
+        // 🔁 3. Disparar manualmente el evento input por si algún validador depende de él
+        input?.dispatchEvent(new Event('input', { bubbles: true }));
+      }, 0);
+    }
+  }
+  
+  forzarSyncYAvanzar(campo: string, form: FormGroup): void {
+    const control = form.get(campo);
+    const input = document.querySelector<HTMLInputElement>(`input[formcontrolname="${campo}"]`);
+    const valor = input?.value?.trim();
+  
+    console.log(`🔁 forzarSyncYAvanzar ejecutado para '${campo}' con valor actual:`, valor);
+  
+    if (valor !== undefined && valor !== null) {
+      control?.setValue('', { emitEvent: false });
+  
+      setTimeout(() => {
+        control?.setValue(valor, { emitEvent: true });
+        control?.markAsTouched();
+        control?.markAsDirty();
+        control?.updateValueAndValidity({ onlySelf: true, emitEvent: true });
+  
+        input?.dispatchEvent(new Event('input', { bubbles: true }));
+  
+        // 🔥 Trigger manualmente ChangeDetector si es necesario
+        setTimeout(() => {
+          console.log(`✅ Valor restablecido en '${campo}':`, control?.value);
+        }, 50);
+      }, 0);
+    }
+  }
+  
+  
+  
+  verificarPaso2YAvanzar(stepper: MatStepper): void {
+    this.forzarSyncYAvanzar('razonSocial', this.paso2Form);
+    this.forzarSyncYAvanzar('nombreRepresentante', this.paso2Form);
+  
+    this.paso2Form.markAllAsTouched();
+  
+    if (this.paso2Form.valid) {
+      stepper.next();
+    }
+  }
+  
+  alEntrarCampo(nombreCampo: string, formGroup: FormGroup): void {
+    const control = formGroup.get(nombreCampo);
+    if (!control) return;
+  
+    const original = control.value || '';
+  
+    // Simula un Backspace borrando el último carácter
+    const simulado = original.slice(0, -1);
+  
+    // Aplica el cambio
+    control.setValue(simulado, { emitEvent: false });
+  
+    setTimeout(() => {
+      control.setValue(original, { emitEvent: true });
+      control.markAsTouched();
+      control.markAsDirty();
+      control.updateValueAndValidity({ emitEvent: true });
+  
+      const inputEl = document.querySelector<HTMLInputElement>(`input[formcontrolname="${nombreCampo}"]`);
+      if (inputEl) {
+        const event = new Event('input', { bubbles: true });
+        inputEl.dispatchEvent(event);
+      }
+    }, 50);
+  }
+  
+  
+  
 
 }
