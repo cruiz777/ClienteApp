@@ -8,7 +8,7 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Cliente } from '../../../interfaces/cliente';
 import { DialogClienteComponent } from '../modals/dialog-cliente/dialog-cliente.component';
 import { ClienteService } from '../../../services/cliente.service';
-
+import { DialogClienteEditarComponent } from '../modals/dialog-cliente-editar/dialog-cliente-editar.component'; 
 const ELEMENT_DATA: Cliente[] = [
   { 
     clientes_codigo: 101, 
@@ -36,7 +36,8 @@ export class ClientesComponent implements OnInit {
   constructor(
     private dialog: MatDialog,
     private _snackBar: MatSnackBar,
-    private clienteService:ClienteService   
+    private clienteService:ClienteService,
+       
   ) {
 
   }
@@ -71,14 +72,14 @@ export class ClientesComponent implements OnInit {
     this.dataSource.filter = filterValue.trim().toLowerCase();
   }
 
-  editarCliente(cliente: Cliente) {
-    this.dialog.open(DialogClienteComponent, {
+  editarCliente(cliente:Cliente) {
+    this.dialog.open(DialogClienteEditarComponent, {
       width: '1200px', // Aumenta el ancho del diálogo
      
       height: '100vh', // ✅ que use casi toda la pantalla
       maxHeight: '100vh',
       disableClose: true,
-      data: cliente
+      data: cliente.clientes_codigo
     }).afterClosed().subscribe(result => {
       if (result === "editado")
         result = "editado";

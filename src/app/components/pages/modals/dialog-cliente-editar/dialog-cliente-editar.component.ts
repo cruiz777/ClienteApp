@@ -2,6 +2,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { forkJoin } from 'rxjs';
 
 // Angular Forms
 import { FormBuilder, FormGroup, FormControl, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
@@ -24,7 +25,7 @@ import { RucService } from '../../../../services/ruc.service';
 import { CiudadService, Ciudad } from '../../../../services/ciudad.service';
 import { UsuarioService } from '../../../../services/usuario.service';
 import { ZonaService, Zona } from '../../../../services/zona.service';
-import { ClienteService } from 'src/app/services/cliente.service';
+import { ClienteIndividual, ClienteService } from 'src/app/services/cliente.service';
 import { NcontrolService, NumeroControlMinDto } from 'src/app/services/ncontrol.service';
 import { PrefijoService, Prefijo } from 'src/app/services/prefijo.service';
 import { CedulaService } from 'src/app/services/cedula.service';
@@ -34,13 +35,19 @@ import { GlnService, GlnRequest } from 'src/app/services/gln.service';
 import { ClienteRuc } from '../../../../interfaces/clienteRuc';
 import { emailValidoValidator } from '../../../../util/validators';
 
+import { Inject } from '@angular/core';
+import { MAT_DIALOG_DATA } from '@angular/material/dialog';
+
 
 @Component({
-  selector: 'app-dialog-cliente',
-  templateUrl: './dialog-cliente.component.html',
-  styleUrls: ['./dialog-cliente.component.css']
+  selector: 'app-dialog-cliente-editar',
+  templateUrl: './dialog-cliente-editar.component.html',
+  styleUrl: './dialog-cliente-editar.component.css'
 })
-export class DialogClienteComponent implements OnInit {
+
+
+
+export class DialogClienteEditarComponent implements OnInit {
   formCliente!: FormGroup;
   selectedTab: number = 0;
 
@@ -89,6 +96,7 @@ export class DialogClienteComponent implements OnInit {
   prefijoExistente = false;
   impresionHabilitada = false;
   fecha: Date = new Date();
+  clienteE!:ClienteIndividual;
   constructor(
     private fb: FormBuilder,
     private grupoService: GrupoEmpresaService,
@@ -98,14 +106,15 @@ export class DialogClienteComponent implements OnInit {
     private usuarioService: UsuarioService,
     private zonaService: ZonaService,
     private router: Router,
-    private dialogRef: MatDialogRef<DialogClienteComponent>,
+    private dialogRef: MatDialogRef<DialogClienteEditarComponent>,
     private clienteService: ClienteService,
     private _snackBar: MatSnackBar,
     private ncontrolService: NcontrolService,
     private prefijoService: PrefijoService,
     private cedulaService: CedulaService,
     private generarglnService: GenerarglnService,
-    private glnService: GlnService
+    private glnService: GlnService,
+    @Inject(MAT_DIALOG_DATA) public idCliente: number, 
 
   ) { }
 
@@ -122,6 +131,9 @@ export class DialogClienteComponent implements OnInit {
     this.paso1Form.get('prefix')?.valueChanges.subscribe(prefix => {
       this.actualizarValidacionPrefijo(prefix);
     });
+    
+    console.log(this.idCliente);
+    this.cargarClienteYGrupos(this.idCliente);
   }
 
   initFormulario(): void {
@@ -132,7 +144,7 @@ export class DialogClienteComponent implements OnInit {
         categoriaCliente: [null, Validators.required],
         grupo: [null, Validators.required],
         grupoProducto: [null, Validators.required],
-        prefix: ['', Validators.required],
+        prefix: [''],
         zona: [null],
         codigoCliente: [{ value: '', disabled: false }],
         //prefijo: [''], antes 
@@ -495,7 +507,7 @@ export class DialogClienteComponent implements OnInit {
     // if (zona) {
     //   this.paso1Form.get('zona')?.setValue(zona.id);
     // }
-    this.paso2Form.get('zona')?.setValue(zona);
+    this.paso1Form.get('zona')?.setValue(zona);
   }
 
   cancelar(): void {
@@ -526,8 +538,8 @@ export class DialogClienteComponent implements OnInit {
       dircli: paso2.direccionPrincipal || '',
       concli: paso2.nombreRepresentante || '',
       email: paso3.email || '',
-      telefono: paso3.telefono || '',
-      telefono1: paso2.telefono2 || '',
+      telefono: paso2.telefono || '',
+      telefono1: paso3.telefono2 || '',
       razonSocial: paso2.razonSocial || '',
       fax: '',
       ruc: paso1.ruc || '',
@@ -547,7 +559,7 @@ export class DialogClienteComponent implements OnInit {
       hello: '',
       desde: 0,
       fechtre: new Date().toISOString(),
-      web: paso2.web,
+      ncomercial: '',
       saldo: 0,
       fecfac: '',
       ciudad: ciudadNombre || '',
@@ -616,7 +628,7 @@ export class DialogClienteComponent implements OnInit {
     let pais: string = '';
     let codigogs1: string = ''
 
-    debugger
+    
     switch (prefix) {
       case '5':
         idControl = 70;
@@ -1109,7 +1121,7 @@ export class DialogClienteComponent implements OnInit {
     const prefix = this.paso1Form.get('prefix')?.value;
     const modificarSecuencia = this.modificarSecuencia; // Asegúrate de tener esta propiedad en tu componente
 
-    debugger;
+  
     if (!n || !prefix) {
       console.error('Prefijo o prefix inválido.');
       return '';
@@ -1160,7 +1172,7 @@ export class DialogClienteComponent implements OnInit {
   }
 
   guardarNuevoGln(): void {
-    debugger
+  
     const prefijo = this.paso1Form.get('prefijo')?.value;
     const codigoCliente = this.paso1Form.get('codigoCliente')?.value;
     const gln = this.paso1Form.get('gln')?.value;
@@ -1403,7 +1415,140 @@ export class DialogClienteComponent implements OnInit {
     }, 50);
   }
   
+  cargarClientePorId(id: number): void {
+    this.clienteService.getClienteById(id).subscribe({
+      next: (cliente) => {
+        this.clienteE = cliente;
+        this.llenarFormularioConCliente(cliente);
+        console.log('Cliente:', this.clienteE);
+      },
+      error: (err) => {
+        console.error('Error al obtener cliente:', err);
+      }
+    });
+  }
+  llenarFormularioConCliente(cliente: ClienteIndividual): void {
+    // Paso 1
+    this.paso1Form.patchValue({
+      ruc: cliente.ruc || '',
+      codigoCliente: cliente.clientes_codigo || '',
+      categoriaCliente: cliente.idTipoCliente || null,
+      grupo: cliente.idGrupoEmpresa || null,
+      prefix: cliente.prefijo || '',
+      zona: this.zona.find(z => z.id === cliente.idZona) || null, // ← aquí el cambio
+      prefijo: cliente.prefijo || '',
+      prefijogs1: `${cliente.prefijo}`,
+      origen: cliente.zonaReferencia || '',
+      gln: ''
+    });
+  
+    
+  
+    // Paso 2
+    this.paso2Form.patchValue({
+      ciudad: cliente.ciudad || '',
+      razonSocial: cliente.razonSocial || '',
+      nombreRepresentante: cliente.representante || '',
+      direccionPrincipal: cliente.dircli || '',
+      codigoPostal: cliente.codigoPostal || '',
+      celular: cliente.telefono || '',
+      sitioWeb: cliente.web,
+      telefono2: cliente.telefono1 || '',
+      usuario: '',
+      observacion1: cliente.obs || ''
+    });
+  
+    // Paso 3
+    this.paso3Form.patchValue({
+      nombreRepresentante: cliente.representante || '',
+      emailRepresentante: cliente.email || '',
+      telefonoRepresentante: cliente.telefono || '',
+      email: cliente.email || '',
+      telefono: cliente.telefono || '',
+      email1: '',
+      email2: '',
+      email3: '',
+      nombreCodificacion: '',
+      nombreFinanciero: '',
+      pregunta1: false,
+      pregunta2: false,
+      pregunta3: false,
+      pregunta4: false,
+      pregunta5: false,
+      pregunta6: false
+    });
+  
+    // Paso 4
+    this.paso4Form.patchValue({
+      observacion2: '',
+      observacion3: '',
+      observacion4: ''
+    });
+  
+    this.formCliente.markAllAsTouched();
+  }
   
   
-
+  cargarClienteYGrupos(idCliente: number): void {
+    forkJoin({
+      cliente: this.clienteService.getClienteById(idCliente),
+      gruposProducto: this.grupoProductoService.obtenerGrupos(),
+      gruposEmpresa: this.grupoService.obtenerGrupos(),
+      zona: this.zonaService.obtenerZona(),
+      ciudad: this.ciudadService.obtenerCiudad() // 👈 agregar esto
+    }).subscribe(({ cliente, gruposProducto, gruposEmpresa, zona, ciudad }) => {
+      this.clienteE = cliente;
+      this.gruposProducto = gruposProducto;
+      this.grupos = gruposEmpresa;
+      this.zona = zona;
+      this.ciudad = ciudad; // 👈 guardar ciudades en this.ciudad
+    
+      this.llenarFormularioConCliente(this.clienteE);
+      this.setGrupoProductoPorId(this.clienteE.idGrupoProducto);
+      this.setGrupoEmpresaPorId(this.clienteE.idGrupoEmpresa);
+      this.setZonaPorId(this.clienteE.idZona);
+      this.setCiudadPorId(this.clienteE.idCiudad); // 👈 nuevo llamado
+    });
+    
+    
+  }
+    
+  
+  setGrupoProductoPorId(id: number): void {
+    const grupo = this.gruposProducto.find(g => g.id_grupo_producto === id);
+    if (grupo) {
+      this.paso1Form.get('grupoProducto')?.setValue(grupo);
+    } else {
+      console.warn('❌ No se encontró el grupo producto con ID:', id);
+    }
+  }
+  setGrupoEmpresaPorId(id: number): void {
+    
+    const grupo = this.grupos.find(g => g.id_grupo_empresa === id);
+    if (grupo) {
+      this.paso1Form.get('grupo')?.setValue(grupo.id_grupo_empresa); // ✅ setea el ID
+    } else {
+      console.warn('❌ No se encontró el grupo empresa con ID:', id);
+    }
+  }
+  setZonaPorId(id: number): void {
+    debugger
+    console.log(id);
+    const zona = this.zona.find(z => z.id === id);
+    if (zona) {
+      this.paso1Form.get('zona')?.setValue(zona); // ✅ pasa el objeto completo
+    } else {
+      console.warn('❌ No se encontró la zona con ID:', id);
+    }
+  }
+  
+  setCiudadPorId(id: number): void {
+    const ciudad = this.ciudad.find(c => c.id_ciudad === id);
+    if (ciudad) {
+      this.paso2Form.get('ciudad')?.setValue(ciudad); // ✅ setea el objeto completo
+    } else {
+      console.warn('❌ No se encontró la ciudad con ID:', id);
+    }
+  }
+  
 }
