@@ -19,13 +19,17 @@ import { OpcionResponse } from 'src/app/interfaces/responses/opcion-response';
   templateUrl: './perfiles-list.component.html',
   styleUrls: ['./perfiles-list.component.css']
 })
-export class PerfilesListComponent implements OnInit {
 
+export class PerfilesListComponent implements OnInit {
   perfiles: PerfilResponse[] = [];
   sistemas: SistemaResponse[] = [];
   modulos: ModuloResponse[] = [];
   menus: MenuResponse[] = [];
-  opcionnes:OpcionResponse[]=[];
+  opcionnes: OpcionResponse[] = [];
+
+  perfilSeleccionado: number | null = null;
+  moduloSeleccionado: number | null = null;
+  menuSeleccionado: number | null = null;
 
   sistemaActivo: string = '';
 
@@ -34,16 +38,14 @@ export class PerfilesListComponent implements OnInit {
     private sistemaService: SistemaService,
     private moduloService: ModuloService,
     private menuService: MenuService,
-    private opcionesService:OpcionService
+    private opcionesService: OpcionService
   ) {}
 
   ngOnInit(): void {
-    // Carga los perfiles
     this.perfilesService.getPerfiles().subscribe(response => {
       this.perfiles = response.data;
     });
 
-    // Carga los sistemas y define el sistema activo por defecto
     this.sistemaService.getSistemas().subscribe(response => {
       this.sistemas = response.data;
 
@@ -56,38 +58,40 @@ export class PerfilesListComponent implements OnInit {
         });
       }
     });
-
   }
 
-  /**
-   * Marca un sistema como activo al hacer clic en su pestaña.
-   * (Actualmente solo cambia visualmente; no filtra perfiles).
-   */
   seleccionarSistema(nombre: string, idSistema: number): void {
     this.sistemaActivo = nombre;
+    this.menus = [];
+    this.opcionnes = [];
 
-    this.menus = [];// limpia los menus cuando se cambia de sistema
-    this.opcionnes=[];//limpia las opciones cuando se cambia de sistema
-
-    // 🔥 Llama al servicio para obtener los módulos por ID de sistema
     this.moduloService.getModulosPorSistema(idSistema).subscribe(response => {
       this.modulos = response.data;
       console.log('Módulos cargados:', this.modulos);
     });
   }
 
+  seleccionarPerfil(idPerfil: number): void {
+    this.perfilSeleccionado = idPerfil;
+    console.log('Perfil seleccionado:', idPerfil);
+  }
+
   seleccionarModulo(idModulo: number): void {
+    this.moduloSeleccionado = idModulo;
+    this.menuSeleccionado = null;
+
     this.menuService.getMenusPorModulo(idModulo).subscribe(response => {
       this.menus = response.data;
-      this.opcionnes=[];//limpia las opciones cuando cambio de modulo
+      this.opcionnes = [];
     });
   }
 
-  seleccionarMenu(idMenu:number):void{
-    this.opcionesService.getOpcionesPorMenu(idMenu).subscribe(respose=>{
-      this.opcionnes=respose.data;
-    })
-  }
+  seleccionarMenu(idMenu: number): void {
+    this.menuSeleccionado = idMenu;
 
+    this.opcionesService.getOpcionesPorMenu(idMenu).subscribe(response => {
+      this.opcionnes = response.data;
+    });
+  }
 
 }
