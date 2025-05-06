@@ -3,7 +3,8 @@ export const environment = {
 //apiUrl: 'http://pichincha.gapsystem.net:4913/api'  // URL de la API en desarrollo
  // apiUrl: 'http://10.10.7.17:3000/api'  // URL de la API en desarrollo
  //applicationUrl: 'http://10.10.7.11:8000/security/api'  // URL de la API en desarrollo
- applicationUrl: 'http://localhost:5001/security/api'  // URL de la API en desarrollo
+ securityApiUrl: 'http://localhost:5001/security/api',  // URL de la API en desarrollo
+ applicationUrl: 'http://localhost:5001/security/api'  //Cambiar por la url de clientes en el merge
 };
 
 

@@ -24,6 +24,8 @@ import { CiudadResumen } from 'src/app/interfaces/responses/ciudad-response';
 import { EstadoCivil } from 'src/app/interfaces/catalogs/estado-civil.interface';
 import { Genero } from 'src/app/interfaces/catalogs/genero.interface';
 import { TipoDocumento } from 'src/app/interfaces/catalogs/tipo-documento.interface';
+import { CustomValidators } from 'src/app/components/utils/validators/validator.util';
+import { RegistroCivilService } from 'src/app/services/registro-civil.service';
 
 @Component({
   selector: 'app-entidad-form',
@@ -59,6 +61,7 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
     private tipoDocumentoService: TipoDocumentoService,
     private estadoCivilService: EstadoCivilService,
     private generoService: GeneroService,
+    private registroCivilService: RegistroCivilService,
     private router: Router,
     private route: ActivatedRoute
   ) {}
@@ -82,21 +85,26 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
 
   private initForm() {
     this.personaForm = this.fb.group({
-      primerNombre: ['', Validators.required],
-      segundoNombre: [''],
-      primerApellido: ['', Validators.required],
-      segundoApellido: [''],
-      numeroDocumento: [{ value: '', disabled: false }, [Validators.required, Validators.minLength(10)]],
-      idTipoDocumento: [{ value: null, disabled: false }, Validators.required],
-      idEstadoCivil: [null, Validators.required],
-      idGenero: [null, Validators.required],
-      idCiudad: [null, Validators.required],
-      fechaNacimiento: ['', Validators.required],
-      tipoPersona: ['Natural', Validators.required],
+      primerNombre: ['', [Validators.required, CustomValidators.onlyLetters, CustomValidators.onlyLettersKeyPress]],
+      segundoNombre: ['', [CustomValidators.onlyLetters]],
+      primerApellido: ['', [Validators.required, CustomValidators.onlyLetters]],
+      segundoApellido: ['', [CustomValidators.onlyLetters]],
+      numeroDocumento: [
+        { value: '', disabled: false },
+        [Validators.required, Validators.minLength(10), CustomValidators.onlyNumbers]
+      ],
+      idTipoDocumento: [{ value: null, disabled: false }, [Validators.required]],
+      idEstadoCivil: [null, [Validators.required]],
+      idGenero: [null, [Validators.required]],
+      idCiudad: [null, [Validators.required]],
+      fechaNacimiento: ['', [Validators.required]],
+      tipoPersona: ['Natural', [Validators.required]],
       status: [true]
     });
-  }
 
+  }
+  onKeyPressLetters = CustomValidators.onlyLettersKeyPress;
+  onKeyPressNumbers = CustomValidators.onlyNumbersKeyPress;
   private cargarCatalogos() {
     this.ciudadService.getCiudades().subscribe({
       next: (data) => {
@@ -203,7 +211,50 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
       if (result) callback(result);
     });
   }
-
+  //Metodo para validar cédula en el registro civil
+  onBlurDocumento() {
+    const cedula = this.personaForm.get('numeroDocumento')?.value;
+  
+    if (!cedula || cedula.length < 10) return;
+  
+    this.registroCivilService.consultarCedula(cedula).subscribe({
+      next: (data) => {
+        const partes = data.nombre?.trim().split(' ') ?? [];
+  
+        this.personaForm.patchValue({
+          primerApellido: partes[0] || '',
+          segundoApellido: partes[1] || '',
+          primerNombre: partes[2] || '',
+          segundoNombre: partes[3] || '',
+          fechaNacimiento: this.convertirFecha(data.fechaNacimiento),
+          tipoPersona: 'Natural',
+          idGenero: this.mapGenero(data.genero),
+          idEstadoCivil: this.mapEstadoCivil(data.estadoCivil)
+        });
+      },
+      error: () => {
+        console.error('❌ Error al consultar cédula');
+      }
+    });
+  }
+  
+  // Convierte "dd/MM/yyyy" → "yyyy-MM-dd"
+  private convertirFecha(fecha: string): string {
+    const [dia, mes, anio] = fecha.split('/');
+    return `${anio}-${mes}-${dia}`;
+  }
+  
+  // Mapear string a id de catálogo (esto es un ejemplo; reemplaza con tu lógica real)
+  private mapGenero(valor: string): number | null {
+    const genero = this.generos.find(g => g.generoDescripcion.toLowerCase() === valor.toLowerCase());
+    return genero?.generoCodigo ?? null;
+  }
+  
+  private mapEstadoCivil(valor: string): number | null {
+    const estado = this.estadosCiviles.find(e => e.estadoCivilNombre.toLowerCase() === valor.toLowerCase());
+    return estado?.estadoCivilCodigo ?? null;
+  }
+  
   guardar() {
     if (this.personaForm.valid) {
       // Habilitar temporalmente campos deshabilitados para obtener sus valores
