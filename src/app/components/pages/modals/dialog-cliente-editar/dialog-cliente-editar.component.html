@@ -1,4 +1,4 @@
-<mat-dialog-content style="max-height: 105vh;">
+<mat-dialog-content style="max-height: 105vh;"  [class.disabled-content]="!modoEdicion" >
     <mat-tab-group [(selectedIndex)]="selectedTab" dynamicHeight>
   
       <!-- TAB 1: Información General -->
@@ -581,8 +581,8 @@
       Grabar
     </button>
   
-    <button mat-button mat-dialog-close>
-      <img src="assets/icons/icon-modificar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
+    <button mat-button  (click)="activarModoEdicion()" >
+      <img src="assets/icons/icon-modificar.png" alt="Modificar" width="18" height="18" style="margin-right: 6px;" />
       Modificar
     </button>
     <button mat-button mat-dialog-close>

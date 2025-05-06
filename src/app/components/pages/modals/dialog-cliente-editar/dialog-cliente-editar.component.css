@@ -1568,4 +1568,8 @@
   .mat-error {
     font-size: 8px;
   }
+  .disabled-content {
+    pointer-events: none;   /* Desactiva clics y foco */
+    opacity: 0.6;           /* Visualmente más tenue (opcional) */
+  }
   
