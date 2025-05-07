@@ -9,6 +9,7 @@ import { MenuService } from 'src/app/services/menu.service';
 import { MenuResponse } from 'src/app/interfaces/responses/menu-response';
 import { OpcionService } from 'src/app/services/opcion.service';
 import { OpcionResponse } from 'src/app/interfaces/responses/opcion-response';
+import {PerfilOpcionService} from 'src/app/services/perfilOpcion.service';
 
 /**
  * Componente encargado de mostrar pestañas con los sistemas y
@@ -26,6 +27,7 @@ export class PerfilesListComponent implements OnInit {
   modulos: ModuloResponse[] = [];
   menus: MenuResponse[] = [];
   opcionnes: OpcionResponse[] = [];
+  opcionesAsignadas: number[] = [];
 
   perfilSeleccionado: number | null = null;
   moduloSeleccionado: number | null = null;
@@ -38,7 +40,8 @@ export class PerfilesListComponent implements OnInit {
     private sistemaService: SistemaService,
     private moduloService: ModuloService,
     private menuService: MenuService,
-    private opcionesService: OpcionService
+    private opcionesService: OpcionService,
+    private perfilesOpcionesService:PerfilOpcionService
   ) {}
 
   ngOnInit(): void {
@@ -73,6 +76,8 @@ export class PerfilesListComponent implements OnInit {
 
   seleccionarPerfil(idPerfil: number): void {
     this.perfilSeleccionado = idPerfil;
+    this.menus = [];
+    this.opcionnes = [];
     console.log('Perfil seleccionado:', idPerfil);
   }
 
@@ -89,9 +94,26 @@ export class PerfilesListComponent implements OnInit {
   seleccionarMenu(idMenu: number): void {
     this.menuSeleccionado = idMenu;
 
-    this.opcionesService.getOpcionesPorMenu(idMenu).subscribe(response => {
-      this.opcionnes = response.data;
+    if (this.perfilSeleccionado === null) return;
+
+    // 1. Cargar todas las opciones del menú
+    this.opcionesService.getOpcionesPorMenu(idMenu).subscribe(opcionesResponse => {
+      const todasLasOpciones = opcionesResponse.data;
+
+      // 2. Cargar las opciones asignadas al perfil
+      this.perfilesOpcionesService.getOpcionesPorPerfilYMenu(this.perfilSeleccionado!, idMenu).subscribe(asignadasResponse => {
+        this.opcionesAsignadas = asignadasResponse.data.map((op: any) => op.id_opcion);
+
+        // 3. Marcar opciones
+        this.opcionnes = todasLasOpciones.map((op: any) => ({
+          ...op,
+          status: this.opcionesAsignadas.includes(op.id_opcion)
+        }));
+
+        console.log('Opciones marcadas:', this.opcionnes);
+      });
     });
   }
+
 
 }
