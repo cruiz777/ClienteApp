@@ -10,7 +10,7 @@ import { ApiListResponse } from '../interfaces/responses/ApiListResponse';
 
 @Injectable({ providedIn: 'root' })
 export class PersonasService {
-  private apiUrl = `${environment.applicationUrl}/Personas`;
+  private apiUrl = `${environment.securityApiUrl}/Personas`;
 
   constructor(private http: HttpClient) {}
 

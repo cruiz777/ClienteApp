@@ -12,37 +12,35 @@ import { ApiListResponse } from '../interfaces/responses/ApiListResponse';
   providedIn: 'root'
 })
 export class EmpresaService {
-  private apiUrl = `${environment.applicationUrl}/Empresa`;
-  private asignarUrl = `${environment.applicationUrl}/GerenteContador`;
+  private apiUrl = `${environment.securityApiUrl}/Empresa`;
+  private asignarUrl = `${environment.securityApiUrl}/GerenteContador`;
 
   constructor(private http: HttpClient) {}
 
   // Obtener listado de empresas
   getEmpresas(): Observable<EmpresaResponse[]> {
     return this.http.get<ApiListResponse<EmpresaResponse[]>>(this.apiUrl).pipe(
-      map(response => response.data.map(empresa => ({
-        ...empresa,
-        gerentes: empresa.gerentes?.map(g => ({
-          empresaCodigo: empresa.empresaCodigo,
-          nombreEmpresa: empresa.empresaNombre,
-          idPersona: g.idPersona,
-          nombreCompleto: g.nombreCompleto,
-          fechaInicio: g.fechaInicio,
-          fechaFin: undefined,
-          status: true
-        })),
-        contadores: empresa.contadores?.map(c => ({
-          empresaCodigo: empresa.empresaCodigo,
-          nombreEmpresa: empresa.empresaNombre,
-          idPersona: c.idPersona,
-          nombreCompleto: c.nombreCompleto,
-          fechaInicio: c.fechaInicio,
-          fechaFin: undefined,
-          status: true
+      map(response =>
+        response.data.map(empresa => ({
+          ...empresa,
+          gerentes: empresa.gerentes?.map(g => ({
+            ...g,
+            status: true,
+            empresaCodigo: empresa.empresaCodigo,
+            nombreEmpresa: empresa.empresaNombre
+          })),
+          contadores: empresa.contadores?.map(c => ({
+            ...c,
+            status: true,
+            empresaCodigo: empresa.empresaCodigo,
+            nombreEmpresa: empresa.empresaNombre
+          }))
         }))
-      })))
+      )
     );
   }
+
+
 
 
   // Obtener empresa por ID

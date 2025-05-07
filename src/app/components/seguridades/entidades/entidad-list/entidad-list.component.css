@@ -250,3 +250,20 @@
     white-space: nowrap;
   }
 }
+.desplegable-btn {
+  min-width: 170px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between; /* esto mueve la flecha a la derecha */
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.arrow-icon {
+  font-size: 18px;
+  margin-left: 8px;
+}
+
+
+

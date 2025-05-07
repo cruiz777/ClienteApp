@@ -1,106 +1,187 @@
-<mat-toolbar class="header">
-  <span>Registro de Empresas</span>
-  <span class="spacer"></span>
-</mat-toolbar>
+<div class="empresa-wrapper">
+  <div class="empresa-header">
+    <h2 class="empresa-titulo">Registro de Empresa</h2>
+    <p class="empresa-nombre">Empresa: <strong>{{ empresaForm.get('nombre')?.value || '' }}</strong></p>
+  </div>
 
-<mat-form-field appearance="outline">
-  <mat-label>Buscar empresa</mat-label>
-  <input matInput (keyup)="applyFilter($event)" placeholder="Buscar por nombre, RUC, etc.">
-</mat-form-field>
+  <form [formGroup]="empresaForm" (ngSubmit)="guardar()" class="empresa-form">
+    <div class="form-row">
+      <div class="form-group">
+        <label>Razón Social:</label>
+        <input type="text" formControlName="nombre" placeholder="Ingrese razón social" [value]="empresaForm.get('nombre')?.value" />
+      </div>
+      <div class="form-group">
+        <label>Sistema:</label>
+        <input type="text" formControlName="sistema" placeholder="Ingrese sistema" [value]="empresaForm.get('sistema')?.value" />
+      </div>
+    </div>
 
-<div class="acciones-header">
-  <button mat-button class="btn-nueva-empresa" [routerLink]="['/seguridades/empresas/crear']">
-    Nueva Empresa
-  </button>
-</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>RUC:</label>
+        <input type="text" formControlName="ruc" placeholder="Ingrese RUC" [value]="empresaForm.get('ruc')?.value" />
+      </div>
+      <div class="form-group">
+        <label>Fax:</label>
+        <input type="text" formControlName="fax" [value]="empresaForm.get('fax')?.value" />
+      </div>
+    </div>
 
-<mat-progress-bar *ngIf="isLoading" mode="indeterminate"></mat-progress-bar>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Teléfono 1:</label>
+        <input type="text" formControlName="telefono1" placeholder="Ej: (+593) 02 000 0000" [value]="empresaForm.get('telefono1')?.value" />
+      </div>
+      <div class="form-group">
+        <label>Teléfono 2:</label>
+        <input type="text" formControlName="telefono2" [value]="empresaForm.get('telefono2')?.value" />
+      </div>
+    </div>
 
-<div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Dirección:</label>
+        <input type="text" formControlName="direccion" placeholder="Ingrese dirección" [value]="empresaForm.get('direccion')?.value" />
+      </div>
+      <div class="form-group">
+        <label>Logo:</label>
 
-<div class="table-container" *ngIf="!isLoading">
+        <div class="logo-container">
+          <div class="logo-preview" *ngIf="previewUrl || empresaForm.get('logo')?.value; else sinLogo">
+            <img
+              [src]="previewUrl || empresaForm.get('logo')?.value"
+              alt="Logo de la empresa"
+              class="preview-img"
+            />
+          </div>
 
-  <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+          <ng-template #sinLogo>
+            <p class="logo-placeholder">No hay logo cargado</p>
+          </ng-template>
 
-    <!-- Columnas -->
+          <input
+            type="file"
+            id="logoInput"
+            accept="image/*"
+            (change)="onLogoSelected($event)"
+            hidden
+          />
 
-    <ng-container matColumnDef="empresaRuc">
-      <th mat-header-cell *matHeaderCellDef> RUC </th>
-      <td mat-cell *matCellDef="let empresa"> {{ empresa.empresaRuc }} </td>
-    </ng-container>
-
-    <ng-container matColumnDef="empresaNombre">
-      <th mat-header-cell *matHeaderCellDef> Nombre </th>
-      <td mat-cell *matCellDef="let empresa"> {{ empresa.empresaNombre }} </td>
-    </ng-container>
-
-    <ng-container matColumnDef="empresaDireccion">
-      <th mat-header-cell *matHeaderCellDef> Dirección </th>
-      <td mat-cell *matCellDef="let empresa"> {{ empresa.empresaDireccion }} </td>
-    </ng-container>
-
-    <ng-container matColumnDef="telefonos">
-      <th mat-header-cell *matHeaderCellDef> Teléfonos </th>
-      <td mat-cell *matCellDef="let empresa">
-        {{ empresa.empresaTelefono1 }} / {{ empresa.empresaTelefono2 }}
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="empresaEmail">
-      <th mat-header-cell *matHeaderCellDef> Email </th>
-      <td mat-cell *matCellDef="let empresa"> {{ empresa.empresaEmail }} </td>
-    </ng-container>
-
-    <ng-container matColumnDef="status">
-      <th mat-header-cell *matHeaderCellDef> Estado </th>
-      <td mat-cell *matCellDef="let empresa">
-        <span [ngClass]="empresa.status ? 'activo' : 'inactivo'">
-          {{ empresa.status ? 'Activo' : 'Inactivo' }}
-        </span>
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="gerentes">
-      <th mat-header-cell *matHeaderCellDef> Gerente </th>
-      <td mat-cell *matCellDef="let empresa">
-        <ul>
-          <li *ngFor="let gerente of empresa.gerentes">
-            {{ gerente.nombreCompleto }}
-          </li>
-        </ul>
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="contadores">
-      <th mat-header-cell *matHeaderCellDef> Contador </th>
-      <td mat-cell *matCellDef="let empresa">
-        <ul>
-          <li *ngFor="let contador of empresa.contadores">
-            {{ contador.nombreCompleto }}
-          </li>
-        </ul>
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="acciones">
-      <th mat-header-cell *matHeaderCellDef> Opciones </th>
-      <td mat-cell *matCellDef="let empresa">
-        <div class="acciones-btns">
-          <button mat-icon-button (click)="editarEmpresa(empresa.empresaCodigo)">
-            <img src="assets/icons/icon-modificar-3.png" alt="Editar" class="icon-btn">
-          </button>
-          <button mat-icon-button (click)="eliminarEmpresa(empresa.empresaCodigo)">
-            <img src="assets/icons/icon-basurero.png" alt="Eliminar" class="icon-btn">
+          <button type="button" (click)="triggerLogoInput()" class="logo-btn">
+            Seleccionar Logo
           </button>
         </div>
-      </td>
-    </ng-container>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Correo:</label>
+        <input type="email" formControlName="email" placeholder="ejemplo@dominio.com" [value]="empresaForm.get('email')?.value" />
+      </div>
+      <div class="form-group">
+        <label>Ciudad:</label>
+        <select formControlName="id_ciudad">
+          <option value="">Seleccione ciudad</option>
+          <option *ngFor="let ciudad of ciudades" [value]="ciudad.id">
+            {{ ciudad.ciudad }}
+          </option>
+        </select>
+      </div>
+
+    </div>
+
+    <!-- <div class="form-row">
+      <div class="form-group">
+        <label>Moneda:</label>
+        <input type="text" formControlName="moneda" [value]="empresaForm.get('moneda')?.value" />
+      </div>
+      <div class="form-group">
+        <label>Tipo de Cambio:</label>
+        <input type="text" formControlName="tipo_cambio" [value]="empresaForm.get('tipo_cambio')?.value" />
+      </div>
+    </div> -->
+
+    <!-- <div class="form-row">
+      <div class="form-group">
+        <label>Establecimiento:</label>
+        <input type="text" formControlName="establecimiento" [value]="empresaForm.get('establecimiento')?.value" />
+      </div>
+      <div class="form-group">
+        <label>Tipo Facturación:</label>
+        <input type="text" formControlName="tipo_facturacion" [value]="empresaForm.get('tipo_facturacion')?.value" />
+      </div>
+    </div> -->
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Contribuyente Especial:</label>
+        <select formControlName="contribuyente_especial">
+          <option value="">Seleccione</option>
+          <option value="SI">Sí</option>
+          <option value="NO">No</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Obligado a Contabilidad:</label>
+        <select formControlName="obligado_contabilidad">
+          <option value="">Seleccione</option>
+          <option value="SI">Sí</option>
+          <option value="NO">No</option>
+        </select>
+      </div>
+    </div>
 
 
+    <!-- <div class="form-row">
+      <div class="form-group">
+        <label>Código Entidad:</label>
+        <input type="text" formControlName="codigo_entidad" [value]="empresaForm.get('codigo_entidad')?.value" />
+      </div>
+      <div class="form-group">
+        <label>Directorio:</label>
+        <input type="text" formControlName="directorio" [value]="empresaForm.get('directorio')?.value" />
+      </div>
+    </div> -->
 
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr> <!-- Header -->
-    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr> <!-- Data rows -->
-  </table>
+    <!-- <div class="form-row">
+      <div class="form-group">
+        <label>Status:</label>
+        <select formControlName="status">
+          <option value="">Seleccione estado</option>
+          <option [selected]="empresaForm.get('status')?.value === true" value="true">Activo</option>
+          <option [selected]="empresaForm.get('status')?.value === false" value="false">Inactivo</option>
+        </select>
+      </div>
+    </div> -->
 
-  <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+    <!-- Gerente -->
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nombre del Gerente:</label>
+        <input type="text" [value]="empresaForm.get('gerenteNombreCompleto')?.value" disabled />
+      </div>
+      <div class="form-group">
+        <label>Documento del Gerente:</label>
+        <input type="text" [value]="empresaForm.get('gerenteDocumento')?.value" disabled />
+      </div>
+    </div>
+
+    <!-- Contador -->
+    <div class="form-row">
+      <div class="form-group">
+        <label>Nombre del Contador:</label>
+        <input type="text" [value]="empresaForm.get('contadorNombreCompleto')?.value" disabled />
+      </div>
+      <div class="form-group">
+        <label>Documento del Contador:</label>
+        <input type="text" [value]="empresaForm.get('contadorDocumento')?.value" disabled />
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button type="submit">Grabar</button>
+      <button type="button" (click)="cancelar()">Cancelar</button>
+    </div>
+  </form>
 </div>

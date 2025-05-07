@@ -6,12 +6,23 @@
     <div class="action-left">
       <mat-form-field appearance="outline" class="status-select">
         <mat-label>Estado</mat-label>
-        <mat-select (selectionChange)="applyStatusFilter($event.value)">
-          <mat-option value="">Todos</mat-option>
+        <mat-select [(ngModel)]="selectedStatus" (selectionChange)="applyStatusFilter($event.value)">
+          <mat-option [value]="''">Todos</mat-option>
           <mat-option value="activo">Activo</mat-option>
           <mat-option value="inactivo">Inactivo</mat-option>
         </mat-select>
       </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Tipo de Identificación</mat-label>
+        <mat-select [(ngModel)]="selectedTipoDocumento" (selectionChange)="applyTipoDocumentoFilter($event.value)">
+          <mat-option [value]="''">Todos</mat-option>
+          <mat-option *ngFor="let tipo of tiposDocumento" [value]="tipo.idTipoDocumento">
+            {{ tipo.descripcion }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
 
       <mat-form-field appearance="outline" style="width: 250px;">
         <mat-label>Buscar entidad</mat-label>
@@ -19,9 +30,26 @@
       </mat-form-field>
     </div>
 
-    <div class="action-right">
-      <button mat-button class="new-person-button" [routerLink]="['/seguridades/entidades/crear']">Nueva entidad</button>
-    </div>
+    <!-- Botón con menú desplegable -->
+    <button mat-button [matMenuTriggerFor]="tipoEntidadMenu" class="new-person-button desplegable-btn">
+      <span>Nueva entidad</span>
+      <mat-icon class="arrow-icon">expand_more</mat-icon>
+    </button>
+    <mat-menu #tipoEntidadMenu="matMenu">
+      <button mat-menu-item (click)="nuevaEntidad('CÉDULA')">
+        <mat-icon>badge</mat-icon>
+        <span>CÉDULA</span>
+      </button>
+      <button mat-menu-item (click)="nuevaEntidad('RUC')">
+        <mat-icon>apartment</mat-icon>
+        <span>RUC</span>
+      </button>
+      <button mat-menu-item (click)="nuevaEntidad('PASAPORTE')">
+        <mat-icon>flight</mat-icon>
+        <span>PASAPORTE</span>
+      </button>
+    </mat-menu>
+
   </div>
 
 
@@ -69,7 +97,7 @@
       <td mat-cell *matCellDef="let persona">
         <ul>
           <li *ngFor="let direccion of persona.direcciones">
-            {{ direccion.tipo }} - {{ direccion.calle }}
+            {{ direccion.calle }}
           </li>
         </ul>
       </td>
@@ -98,7 +126,7 @@
     </ng-container>
 
     <ng-container matColumnDef="acciones">
-      <th mat-header-cell *matHeaderCellDef> Opciones </th>
+      <th mat-header-cell *matHeaderCellDef> Acción </th>
       <td mat-cell *matCellDef="let persona">
         <div class="acciones-btns">
           <button mat-icon-button color="primary" (click)="editarPersona(persona.personaCodigo)">

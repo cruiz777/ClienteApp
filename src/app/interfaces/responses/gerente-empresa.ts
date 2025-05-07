@@ -1,9 +1,6 @@
 export interface GerenteEmpresa {
-  empresaCodigo: number;
-  nombreEmpresa?: string;
   idPersona: number;
-  nombreCompleto?: string;
+  nombresCompletos: string;
+  documento: string;
   fechaInicio: string;
-  fechaFin?: string;
-  status: boolean;
 }

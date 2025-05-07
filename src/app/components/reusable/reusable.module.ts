@@ -28,6 +28,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatRadioModule } from '@angular/material/radio';
+import { MatMenuModule } from '@angular/material/menu';
 // Fechas
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
@@ -38,6 +39,7 @@ import { LayoutModule } from '@angular/cdk/layout';
 import { MatDividerModule } from '@angular/material/divider';
 import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
 import { MatChipsModule } from '@angular/material/chips';
+import { UppercaseDirective } from 'src/app/directives/uppercase.directive';
 
 @NgModule({
   imports: [
@@ -77,7 +79,7 @@ import { MatChipsModule } from '@angular/material/chips';
     MatRadioModule,
     MatDividerModule,
     MatChipsModule,
-
+    MatMenuModule,
     // CDK y terceros
     LayoutModule,
     NgxMatSelectSearchModule
@@ -119,7 +121,7 @@ import { MatChipsModule } from '@angular/material/chips';
     MatRadioModule,
     MatDividerModule,
     MatChipsModule,
-
+    MatMenuModule,
     LayoutModule,
     NgxMatSelectSearchModule
   ]

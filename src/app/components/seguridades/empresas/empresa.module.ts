@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { EmpresasRoutingModule } from 'src/app/components/seguridades/empresas/empresa-routing.module';
 import { EmpresasListComponent } from 'src/app/components/seguridades/empresas/empresa-list/empresas-list.component';
-import { EmpresaFormComponent } from 'src/app/components/seguridades/empresas/empresa-form/empresa-form.component';
+//import { EmpresaFormComponent } from 'src/app/components/seguridades/empresas/empresa-form/empresa-form.component';
 import { HttpClientModule } from '@angular/common/http';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
@@ -16,8 +16,8 @@ import { MatInputModule } from '@angular/material/input';
 
 @NgModule({
   declarations: [
-    EmpresasListComponent,
-    EmpresaFormComponent
+    EmpresasListComponent
+    // EmpresaFormComponent
   ],
   imports: [
     CommonModule,
