@@ -1,5 +1,8 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
+
+import { LocationStrategy, HashLocationStrategy } from '@angular/common';
+
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -26,6 +29,7 @@ import { ReusableModule } from './components/reusable/reusable.module';
 import { InicioComponent } from './components/inicio/inicio.component';
 import { CustomMessageBoxComponent } from './components/utils/messages/custom-message-box.component';
 import { ConfirmDialogComponent } from './components/reusable/confirm-dialog/confirm-dialog.component';
+import { UppercaseDirective } from './directives/uppercase.directive';
 
 export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
 
@@ -54,6 +58,10 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     AppRoutingModule,
     ReusableModule,
     NgxMaskModule.forRoot(),
+  ],
+
+  providers: [
+    { provide: LocationStrategy, useClass: HashLocationStrategy }
   ],
   bootstrap: [AppComponent]
 })

@@ -6,6 +6,7 @@ import { MatPaginator } from '@angular/material/paginator';
 import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
+import { TipoDocumentoService } from 'src/app/services/tipo-documento.service';
 
 @Component({
   selector: 'app-entidad-list',
@@ -20,13 +21,16 @@ export class EntidadListComponent implements OnInit {
 
   allPersonas: PersonaResponse[] = [];  // Guardamos todas las personas aquí
   currentFilterText: string = '';       // Para combinar filtros
+  selectedTipoDocumento: string = '';
 
+  tiposDocumento: { idTipoDocumento: number; descripcion: string }[] = [];
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
-  constructor(private personaService: PersonasService, private router: Router, private dialog: MatDialog) {}
+  constructor(private personaService: PersonasService, private router: Router, private dialog: MatDialog, private tipoDocumentoService: TipoDocumentoService) {}
 
   ngOnInit(): void {
     this.loadPersonas();
+    this.loadTiposDocumento();
   }
 
   loadPersonas() {
@@ -44,13 +48,21 @@ export class EntidadListComponent implements OnInit {
       }
     });
   }
-
+  nuevaEntidad(tipo: 'CÉDULA' | 'RUC' | 'PASAPORTE') {
+    this.router.navigate(['/seguridades/entidades/crear'], {
+      queryParams: { tipoIdentificacion: tipo }
+    });
+  }
   // Filtro por texto (Nombre o Identificación)
   applyFilter(event: Event) {
     this.currentFilterText = (event.target as HTMLInputElement).value.trim().toLowerCase();
     this.applyCombinedFilters();
   }
-
+  // Método para aplicar filtro por tipo de documento
+  applyTipoDocumentoFilter(tipo: string) {
+    this.selectedTipoDocumento = tipo;
+    this.applyCombinedFilters();
+  }
   // Nuevo método para filtrar por estado
   applyStatusFilter(status: string) {
     this.selectedStatus = status;
@@ -58,7 +70,7 @@ export class EntidadListComponent implements OnInit {
   }
 
   // Variables internas para manejar estado
-  private selectedStatus: string = '';
+  selectedStatus: string = '';
 
   // Aplicar ambos filtros combinados
   private applyCombinedFilters() {
@@ -69,7 +81,12 @@ export class EntidadListComponent implements OnInit {
       const isActive = this.selectedStatus === 'activo';
       filteredData = filteredData.filter(persona => persona.status === isActive);
     }
-
+    // Filtrar por tipo de documento si corresponde
+    if (this.selectedTipoDocumento) {
+      filteredData = filteredData.filter(persona =>
+        persona.idTipoDocumento === +this.selectedTipoDocumento
+      );
+    }
     // Filtrar por texto si corresponde
     if (this.currentFilterText) {
       filteredData = filteredData.filter(persona =>
@@ -82,6 +99,16 @@ export class EntidadListComponent implements OnInit {
     this.dataSource.data = filteredData;
   }
 
+  private loadTiposDocumento() {
+    this.tipoDocumentoService.getTiposDocumento().subscribe({
+      next: (data) => {
+        this.tiposDocumento = data;
+      },
+      error: () => {
+        console.error('❌ Error al cargar tipos de documento');
+      }
+    });
+  }
   editarPersona(id: number) {
     this.router.navigate(['/seguridades/entidades/editar', id]);
   }

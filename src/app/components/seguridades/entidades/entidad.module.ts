@@ -6,11 +6,13 @@ import { EntidadFormComponent } from './entidad-form/entidad-form.component';
 
 import { ReusableModule } from '../../reusable/reusable.module';
 import { MatChipsModule } from '@angular/material/chips';
+import { UppercaseDirective } from 'src/app/directives/uppercase.directive';
 
 @NgModule({
   declarations: [
     EntidadListComponent,
-    EntidadFormComponent
+    EntidadFormComponent,
+    UppercaseDirective
   ],
   imports: [
     ReusableModule,

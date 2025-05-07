@@ -8,6 +8,7 @@ import { SeguridadesRoutingModule } from './seguridades-routing.module';
 import { CorreoDialogComponent } from './dialogs/correo/correo-dialog.component';
 import { TelefonoDialogComponent } from './dialogs/telefono/telefono-dialog.component';
 import { DireccionDialogComponent } from './dialogs/direccion/direccion-dialog.component';
+import { UppercaseDirective } from 'src/app/directives/uppercase.directive';
 @NgModule({
   declarations: [
     NavigationComponent,

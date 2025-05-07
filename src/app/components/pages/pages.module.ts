@@ -16,7 +16,8 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
-
+import { DialogClienteEditarComponent } from './modals/dialog-cliente-editar/dialog-cliente-editar.component';
+import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
 @NgModule({
   declarations: [
     PagesComponent,
@@ -24,7 +25,9 @@ import { MatIconModule } from '@angular/material/icon';
     DashboardComponent,
     ClientesComponent,
     DialogClienteComponent,
+    DialogClienteEditarComponent,
     NuevoClienteComponent,
+    CustomMessageBoxComponent 
 
   ],
   imports: [
@@ -36,7 +39,6 @@ import { MatIconModule } from '@angular/material/icon';
     MatToolbarModule,
     MatListModule,
     MatIconModule,
-
     ReusableModule
   ]
 })

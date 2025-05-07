@@ -13,7 +13,7 @@ export interface Zona {
   providedIn: 'root'
 })
 export class ZonaService {
-  private apiBaseUrl = environment.applicationUrl;
+  private apiBaseUrl = environment.clientsUrl;
   private apiUrl = `${this.apiBaseUrl}/Zona/`;
   constructor(private http: HttpClient) {}
 

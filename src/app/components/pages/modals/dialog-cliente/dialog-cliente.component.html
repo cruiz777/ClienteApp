@@ -1,4 +1,4 @@
-<mat-dialog-content style="max-height: 105vh;">
+<mat-dialog-content style="max-height: 100vh;">
   <mat-tab-group [(selectedIndex)]="selectedTab" dynamicHeight>
 
     <!-- TAB 1: Información General -->
@@ -16,113 +16,162 @@
 
                   <div class="form-row">
                     <label class="form-label">Código del Cliente:</label>
-                    <input type="text" readonly />
+                    <input type="text" formControlName="codigoCliente" style="min-width: 80px;" readonly />
                   </div>
                   <div>
-                    <label class="form-label">RUC/CI/Pasaporte:</label>
-                    <mat-checkbox [(ngModel)]="esPasaporte" (change)="actualizarValidacionRuc()">
+                    <label class="form-label"><span style="color: red;">*</span>RUC/CI/Pasaporte:</label>
+                    <input type="text" [formControl]="rucControl" (blur)="onRucBlur()"
+                      placeholder="Ingrese número o pasaporte" class="underline-input" autocomplete="off" />
+
+                    <!-- Mostrar error solo si NO es pasaporte -->
+                    <div *ngIf="error && !esPasaporte" class="error-message" style="color: red; font-size: 12px;">
+                      {{ error }}
+                    </div>
+                    <mat-error *ngIf="rucControl.hasError('required') && rucControl.touched"
+                      style="color: red; font-size: 12px;">
+                      Este campo es obligatorio.
+                    </mat-error>
+                    <mat-checkbox formControlName="esPasaporte" (change)="actualizarValidacionRuc()">
                       Es Pasaporte
                     </mat-checkbox>
-                    <input type="text" [formControl]="rucControl" (blur)="onRucBlur()"
-                      placeholder="Ingrese número o pasaporte" class="underline-input" />
+                    <div>
+                      <span *ngIf="(tipoIdentificacion === 'CEDULA' || tipoIdentificacion === 'RUC') && razonSocial">
+                        {{ razonSocial }}
+                      </span>
+                    </div>
 
-
-                    <span>{{ razonSocial }}</span>
                     <!-- Mostrar error solo si NO es pasaporte -->
-                    <div *ngIf="!esPasaporte && rucControl.invalid && rucControl.touched"
+                    <div *ngIf="!paso1Form.get('esPasaporte')?.value && rucControl.invalid && rucControl.touched"
                       style="color: red; font-size: 12px;">
                       Ingrese 10 dígitos para cédula o 13 dígitos para RUC.
                     </div>
+
                   </div>
+                  <div class="form-row category-row" [formGroup]="paso1Form">
+                    <div class="form-row">
+                      <label class="form-label">
+                        <span style="color: red;">*</span>Categoría Cliente:
+                      </label>
 
-
-
-
-                  <div class="form-row category-row">
-                    <label class="form-label">Categoria Cliente:</label>
-                    <div class="checkbox-group">
-                      <div class="checkbox-container">
-                        <input type="checkbox" id="individual" class="checkbox-input" />
-                        <label for="individual" class="checkbox-label">Individual</label>
+                      <div class="categoria-cliente-group">
+                        <label style="font-size: 11;">
+                          <input type="radio" formControlName="categoriaCliente" id="individual" [value]="2" />
+                          Individual
+                        </label>
+                        <label style="font-size: 11;">
+                          <input type="radio" formControlName="categoriaCliente" id="industrial" [value]="1" />
+                          Industrial
+                        </label>
                       </div>
-                      <div class="checkbox-container">
-                        <input type="checkbox" id="industrial" class="checkbox-input" />
-                        <label for="industrial" class="checkbox-label">Industrial</label>
-                      </div>
+                      <mat-error
+                        *ngIf="paso1Form.get('categoriaCliente')?.hasError('required') && paso1Form.get('categoriaCliente')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </div>
+
                   </div>
+
                   <div>
-                    <label class="form-label">Grupo:</label>
+                    <label class="form-label"><span style="color: red;">*</span>Grupo:</label>
 
-                    <mat-form-field style="font-size: 12px;">
-
-                      <mat-select [(ngModel)]="grupoSeleccionado" name="grupo" placeholder="Seleccione Grupo">
-                        <mat-option *ngFor="let grupo of grupos" [value]="grupo.id_grupo_empresa">
+                    <mat-form-field
+                      style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                      appearance="fill" class="compacto-form-field">
+                      <mat-select formControlName="grupo" placeholder="Seleccione Grupo" style="font-size: 12px;">
+                        <mat-option *ngFor="let grupo of grupos" [value]="grupo.id_grupo_empresa"
+                          style="font-size: 11px;">
                           {{ grupo.codigo }} - {{ grupo.nombre }}
                         </mat-option>
                       </mat-select>
+                      <mat-error *ngIf="paso1Form.get('grupo')?.hasError('required') && paso1Form.get('grupo')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </mat-form-field>
+                    <label class="form-label"> <span style="color: red;">*</span>Categoría Producto:</label>
+                    <mat-form-field class="full-width" style="font-size: 12px; height: 60px;">
+                      <input matInput formControlName="grupoProducto" [matAutocomplete]="autoGrupoProducto"
+                        placeholder="Seleccione Categoría Producto">
 
-
-                    <label class="form-label">Categoría Producto:</label>
-                    <mat-form-field class="full-width" style="font-size: 12px;">
-                      <input matInput [formControl]="grupoProductoCtrl" [matAutocomplete]="autoGrupoProducto"
-                        placeholder="Seleccione Categoria Producto">
-                      <button matSuffix mat-icon-button aria-label="Clear" *ngIf="grupoProductoCtrl.value"
-                        (click)="limpiarGrupoProducto()">
+                      <button matSuffix mat-icon-button aria-label="Limpiar"
+                        *ngIf="paso1Form.get('grupoProducto')?.value" (click)="limpiarGrupoProducto()">
                         <mat-icon>close</mat-icon>
                       </button>
-                      <mat-autocomplete #autoGrupoProducto="matAutocomplete"
-                        (optionSelected)="seleccionarGrupoProducto($event.option.value)">
-                        <mat-option *ngFor="let grupo of gruposProductoFiltrados$ | async"
-                          [value]="grupo.codigo + ' - ' + grupo.brick + ' - ' + grupo.desBrick">
+
+                      <mat-autocomplete #autoGrupoProducto="matAutocomplete" [displayWith]="displayWithGrupoProducto"
+                        (optionSelected)="seleccionarGrupoProducto($event.option.value)" autocomplete="off">
+                        <mat-option *ngFor="let grupo of grupoProductoFiltrados" [value]="grupo"
+                          style="font-size: 11px">
                           {{ grupo.codigo }} - {{ grupo.brick }} - {{ grupo.desBrick }}
                         </mat-option>
                       </mat-autocomplete>
+                      <mat-error
+                        *ngIf="paso1Form.get('grupoProducto')?.hasError('required') && paso1Form.get('grupoProducto')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </mat-form-field>
-
-
 
                   </div>
                   <div class="form-row">
+                    <label class="form-label">
+                      <span style="color: red;">*</span>Asignación de Prefijo:
+                    </label>
 
-                    <div class="prefix-checkbox-group">
-                      <label class="form-label">Asignación de Prefijo:</label>
-                      <div class="checkbox-container">
-                        <input type="radio" id="prefix-5" name="prefix" value="5" class="checkbox-input" />
-                        <label for="prefix-5" class="checkbox-label">5</label>
+                    <div class="prefix-inline-group">
+                      <mat-form-field
+                        style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                        appearance="fill">
+                        <mat-select formControlName="prefix" placeholder="Seleccione prefijo" style="font-size: 12px;">
+                          <mat-option [value]="'5'" style="font-size: 12px;">5</mat-option>
+                          <mat-option [value]="'6'" style="font-size: 12px;">6</mat-option>
+                          <mat-option [value]="'7'" style="font-size: 12px;">7</mat-option>
+                          <mat-option [value]="'8'" style="font-size: 12px;">8</mat-option>
+                          <mat-option [value]="'USA'" style="font-size: 12px;">USA</mat-option>
+                          <mat-option [value]="'MSV'" style="font-size: 12px;">MSV</mat-option>
+                        </mat-select>
+                        <mat-error
+                          *ngIf="paso1Form.get('prefix')?.hasError('required') && paso1Form.get('prefix')?.touched"
+                          style="color: red; font-size: 12px;">
+                          Este campo es obligatorio.
+                        </mat-error>
+                      </mat-form-field>
 
-                        <input type="radio" id="prefix-6" name="prefix" value="6" class="checkbox-input" />
-                        <label for="prefix-6" class="checkbox-label">6</label>
-
-                        <input type="radio" id="prefix-7" name="prefix" value="7" class="checkbox-input" />
-                        <label for="prefix-7" class="checkbox-label">7</label>
-
-                        <input type="radio" id="prefix-8" name="prefix" value="8" class="checkbox-input" />
-                        <label for="prefix-8" class="checkbox-label">8</label>
-
-                        <input type="radio" id="prefix-usa" name="prefix" value="USA" class="checkbox-input" />
-                        <label for="prefix-usa" class="checkbox-label">USA</label>
-
-                        <input type="radio" id="prefix-msv" name="prefix" value="MSV" class="checkbox-input" />
-                        <label for="prefix-msv" class="checkbox-label">MSV</label>
-
-                        <input type="radio" id="prefix-modify" name="prefix" value="MODIFY" class="checkbox-input" />
-                        <label for="prefix-modify" class="form-label">Modificar Secuencia</label>
-
-
-                      </div>
-                      <input type="text" placeholder="texto" />
-
+                      <label style="font-size: 13px;">
+                        <input type="checkbox" id="prefix-modify" value="MODIFY"
+                          (change)="onModificarSecuenciaChange($event)" />
+                        Modificar Secuencia
+                      </label>
                     </div>
                   </div>
+
                   <div class="form-row">
                     <label class="form-label">Prefijo:</label>
 
-                    <input type="text" class="underline-input" readonly />
+                    <!-- Campo de prefijo con limpieza y validación -->
+                    <input matInput formControlName="prefijo" [readonly]="!modificarSecuencia"
+                      (input)="limpiarPrefijo()" (blur)="validarPrefijoExistente()" maxlength="10" autocomplete="off" />
+
+
+
+
+                    <mat-error *ngIf="paso1Form.get('prefijo')?.hasError('required')">
+                      Prefijo es requerido.
+                    </mat-error>
+                    <mat-error *ngIf="paso1Form.get('prefijo')?.hasError('pattern')">
+                      Solo se permiten números.
+                    </mat-error>
+                    <mat-error *ngIf="paso1Form.get('prefijo')?.hasError('minLengthError')">
+                      El prefijo debe tener mínimo {{ longitudPrefijoMin }} dígitos.
+                    </mat-error>
+                    <mat-error *ngIf="paso1Form.get('prefijo')?.hasError('maxLengthError')">
+                      El prefijo debe tener máximo {{ longitudPrefijoMax }} dígitos.
+                    </mat-error>
+
                     <label class="form-label">Prefijo GS1:</label>
 
-                    <input type="text" class="underline-input" readonly />
+                    <input type="text" class="underline-input" readonly formControlName="prefijogs1" />
                   </div>
                   <div class="form-row">
 
@@ -131,17 +180,17 @@
                   <div class="form-row">
                     <label class="form-label">GLN:</label>
 
-                    <input type="text" class="text-input" class="underline-input" readonly />
+                    <input type="text" class="text-input" class="underline-input" readonly formControlName="gln" />
                     <label class="form-label">Origen Prefijo:</label>
 
-                    <input type="text" class="text-input" class="underline-input" readonly />
+                    <input type="text" class="text-input" class="underline-input" readonly formControlName="origen" />
                   </div>
                   <div class="form-row">
 
 
                   </div>
                 </div>
-                <section class="date-info-section">
+                <section class="date-info-section" style="display: none;">
                   <div class="date-container">
                     <!-- First row with dates and user info -->
                     <div class="info-row">
@@ -165,7 +214,6 @@
                           <label class="form-label">Usuario modificado:</label>
                           <div class="input-field">
                             <div>{{ usuarioActual?.NombreUsuario }}</div>
-
                           </div>
                         </div>
                       </div>
@@ -185,23 +233,24 @@
 
                         </div>
                       </div>
-                      <div class="info-group zone-group">
+                      <div>
                         <label class="form-label">Zona:</label>
-                        <mat-form-field style="font-size: 12px;">
-                          <mat-select formControlName="zona" placeholder="Seleccione Zona">
-                            <mat-option *ngFor="let zona of zona" [value]="zona.id">
+                        <mat-form-field style="height: 60px;">
+                          <mat-select formControlName="zona" placeholder="Seleccione Zona" style="font-size: 12px;">
+                            <mat-option *ngFor="let zona of zona" [value]="zona">
                               {{ zona.referencia }} - {{ zona.nombre }}
                             </mat-option>
                           </mat-select>
                         </mat-form-field>
-
-
                       </div>
                     </div>
                   </div>
                 </section>
                 <div style="text-align: right;">
-                  <button mat-button color="primary" matStepperNext [disabled]="paso1Form.invalid">Siguiente</button>
+                  <button mat-button color="primary" matStepperNext (click)="verificarYAvanzar(paso1Form, stepper)">
+                    Siguiente
+                  </button>
+
 
                 </div>
               </form>
@@ -214,145 +263,118 @@
                 <div class="container">
                   <div>
                     <div class="form-row">
-                      <label class="form-label">Razón Social:</label>
-                      <input type="text" formControlName="razonSocial" value="{{ razonSocial }}"
-                        class="underline-input" />
-
+                      <label class="form-label"><span style="color: red;">*</span>Razón Social:</label>
+                      <input type="text" formControlName="razonSocial"
+                        (input)="forzarMayusculas('razonSocial', paso2Form, $event)"
+                        (blur)="forzarGuardarValor('razonSocial', paso2Form, $event)"
+                        (focus)="alEntrarCampo('razonSocial', paso2Form)" class="underline-input" maxlength="300"
+                        autocomplete="off" />
+                      <mat-error
+                        *ngIf="paso2Form.get('razonSocial')?.hasError('required') && paso2Form.get('razonSocial')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </div>
                   </div>
                   <div>
                     <div class="form-row">
-                      <label style="color: #002c6c;font-size: 12px;"> Representante:</label>
+                      <label style="color: #002c6c;font-size: 12px;"><span
+                          style="color: red;">*</span>Representante:</label>
                       <input type="text" formControlName="nombreRepresentante" value="{{ nombreRepresentante }}"
-                        class="underline-input" />
+                        class="underline-input" (input)="forzarMayusculas('nombreRepresentante', paso2Form, $event)"
+                        maxlength="200" (blur)="forzarGuardarValor('nombreRepresentante', paso2Form, $event)"
+                        autocomplete="off" />
+                      <mat-error
+                        *ngIf="paso2Form.get('nombreRepresentante')?.hasError('required') && paso2Form.get('nombreRepresentante')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </div>
                   </div>
                   <div style="padding-top: 0px; padding-bottom: 0px;">
-                    <label style="color: #002c6c;font-size: 13px;">Ciudad : </label>
-                    <mat-form-field class="full-width" style="font-size: 12px;">
-                      <input matInput [formControl]="ciudadCtrl" [matAutocomplete]="autoCiudad"
-                        placeholder="Seleccione Ciudad">
-                      <button matSuffix mat-icon-button aria-label="Limpiar" *ngIf="ciudadCtrl.value"
+                    <label style="color: #002c6c;font-size: 13px;"><span style="color: red;">*</span>Ciudad : </label>
+                    <mat-form-field class="full-width" style="font-size: 12px; height: 60px;">
+                      <input matInput formControlName="ciudad" [matAutocomplete]="autoCiudad"
+                        placeholder="Seleccione Ciudad" autocomplete="off">
+
+                      <button matSuffix mat-icon-button aria-label="Limpiar" *ngIf="paso2Form.get('ciudad')?.value"
                         (click)="limpiarCiudad()">
                         <mat-icon>close</mat-icon>
                       </button>
-                      <mat-autocomplete #autoCiudad="matAutocomplete"
+
+                      <mat-autocomplete #autoCiudad="matAutocomplete" [displayWith]="displayCiudad"
                         (optionSelected)="seleccionarCiudad($event.option.value)">
-                        <mat-option *ngFor="let ciudad of ciudadFiltrados$ | async"
-                          [value]="ciudad.ciudad + ' - ' + ciudad.canton + ' - ' + ciudad.provincia">
+                        <mat-option *ngFor="let ciudad of ciudadFiltrados" [value]="ciudad" style="font-size: 11px;">
                           {{ ciudad.ciudad }} - {{ ciudad.canton }} - {{ ciudad.provincia }}
                         </mat-option>
                       </mat-autocomplete>
+                      <mat-error
+                        *ngIf="paso2Form.get('ciudad')?.hasError('required') && paso2Form.get('ciudad')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </mat-form-field>
-                  </div>
-                  <div class="form-row">
-                    <label style="color: #002c6c;font-size: 12px;"> Dirección Principal: </label>
-                    <input class="underline-input" />
-                  </div>
-                  <div class="form-row">
-                    <label style="color: #002c6c;font-size: 12px;"> Código Postal: </label>
-                    <input type="text" class="underline-input" />
-                    <label style="color: #002c6c;font-size: 12px;">Celular:</label>
-                    <input type="text" class="underline-input" />
-                  </div>
-                  <div class="form-row">
-                    <label style="color: #002c6c;font-size: 12px;"> Sitio Web: </label>
-                    <input type="text" class="underline-input" />
-                    <label style="color: #002c6c;font-size: 12px;">Teléfono 2:</label>
-                    <input type="text" class="underline-input" readonly />
-                  </div>
 
 
+                  </div>
                   <div class="form-row">
-                    <label style="color: #002c6c;font-size: 12px;">Usuario:</label>
-                    <input type="text" class="underline-input" readonly />
+                    <label style="color: #002c6c; font-size: 12px;"><span style="color: red;">*</span>Dirección
+                      Principal:</label>
+                    <input class="underline-input" formControlName="direccionPrincipal"
+                      (input)="forzarMayusculas('direccionPrincipal', paso2Form, $event)" maxlength="200"
+                      autocomplete="new-dp" />
+                    <mat-error
+                      *ngIf="paso2Form.get('direccionPrincipal')?.hasError('required') && paso2Form.get('direccionPrincipal')?.touched"
+                      style="color: red; font-size: 12px;">
+                      Este campo es obligatorio.
+                    </mat-error>
                   </div>
 
+                  <div class="form-row">
+                    <label style="color: #002c6c; font-size: 12px;">Código Postal:</label>
+                    <input type="text" class="underline-input" formControlName="codigoPostal" maxlength="10"
+                      placeholder="170521" autocomplete="new-dp" />
+
+                    <label style="color: #002c6c; font-size: 12px; margin-left: 10px;"><span
+                        style="color: red;">*</span>Celular:</label>
+                    <input type="text" class="underline-input" formControlName="celular" maxlength="10"
+                      autocomplete="off" placeholder="0999999999" />
+                    <mat-error
+                      *ngIf="paso2Form.get('celular')?.hasError('required') && paso2Form.get('celular')?.touched"
+                      style="color: red; font-size: 12px;">
+                      Este campo es obligatorio.
+                    </mat-error>
+                  </div>
 
                   <div class="form-row">
-                    <label style="color: #002c6c;font-size: 12px;"> Observación 1: </label>
-                    <input type="text" class="underline-input" />
+                    <label style="color: #002c6c; font-size: 12px;">Sitio Web:</label>
+                    <input type="text" class="underline-input" formControlName="sitioWeb" maxlength="150"
+                      placeholder="https://gs1ec.org" autocomplete="off" />
+
+                    <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">Teléfono 2:</label>
+                    <input type="text" class="underline-input" formControlName="telefono2" maxlength="10"
+                      placeholder="0999999999" autocomplete="off" />
                   </div>
+
+                  <div class="form-row">
+                    <label style="color: #002c6c; font-size: 12px;">Usuario:</label>
+                    <input type="text" class="underline-input" formControlName="usuario" readonly
+                      value="{{ usuarioActual?.usr }}" />
+                  </div>
+
+                  <div class="form-row">
+                    <label style="color: #002c6c; font-size: 12px;">Observación 1:</label>
+                    <input type="text" class="underline-input" formControlName="observacion1"
+                      (input)="forzarMayusculas('observacion1', paso2Form, $event)" maxlength="450"
+                      autocomplete="off" />
+                  </div>
+
                 </div>
-                <section class="date-info-section">
-                  <div class="date-container">
-                    <!-- First row with dates and user info -->
-                    <div class="info-row">
-                      <div class="info-group date-group">
-                        <div class="info-item">
-                          <label class="form-label">Fecha de ingreso:</label>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Fecha</span>
-                          </div>
-                        </div>
-                        <div class="info-item">
-                          <label class="form-label">Fecha modificada:</label>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Fecha</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="info-group user-group">
-                        <div class="info-item">
-                          <label class="form-label">Usuario modificado:</label>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Fecha</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
 
-                    <!-- Second row with status and zone info -->
-                    <div class="info-row">
-                      <div class="info-group status-group">
-                        <label class="form-label">Estado:</label>
-                        <div class="status-fields">
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Estado</span>
-                          </div>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Afiliado</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="info-group zone-group">
-                        <label class="form-label">Zona:</label>
-                        <div class="zone-fields">
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Z01</span>
-                          </div>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Zona 1</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
                 <div style="text-align: right;">
                   <button mat-button matStepperPrevious>Anterior</button>
-                  <button mat-button color="primary" matStepperNext>Siguiente</button>
+                  <button mat-button color="primary" matStepperNext
+                    (click)="forzarSyncYAvanzar('razonSocial', paso2Form); verificarYAvanzar(paso2Form, stepper)">Siguiente</button>
                 </div>
               </form>
             </mat-step>
@@ -366,17 +388,42 @@
                   <div>
                     <div class="form-row">
 
-
-                      <label class="form-label">
-                        Nombre: (Representante Legal)
-                      </label>
-                      <input type="text" class="underline-input" />
+                      <label class="form-label"><span style="color: red;">*</span>Nombre: (Representante Legal)</label>
+                      <input type="text" class="underline-input" formControlName="nombreRepresentante"
+                        (input)="forzarMayusculas('nombreRepresentante', paso3Form, $event)" maxlength="200"
+                        (blur)="forzarGuardarValor('nombreRepresentante', paso3Form, $event)" autocomplete="off" />
+                      <mat-error
+                        *ngIf="paso3Form.get('nombreRepresentante')?.hasError('required') && paso3Form.get('nombreRepresentante')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </div>
-                    <div class="form-row">
-                      <label style="color: #002c6c;font-size: 12px;">E-mail: </label>
-                      <input type="text" class="underline-input" />
-                      <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
-                      <input type="text" class="underline-input" />
+                    <div>
+                      <div class="form-row">
+                        <label style="color: #002c6c; font-size: 12px;"><span
+                            style="color: red;">*</span>E-mail:</label>
+                        <input type="text" class="underline-input" formControlName="emailRepresentante" maxlength="200"
+                          autocomplete="new-dp" placeholder="gs1@gs1.org" />
+                        <mat-error
+                          *ngIf="paso3Form.get('emailRepresentante')?.hasError('required') && paso3Form.get('emailRepresentante')?.touched"
+                          style="color: red; font-size: 12px;">
+                          Este campo es obligatorio.
+                        </mat-error>
+                        <div
+                          *ngIf="paso3Form.get('emailRepresentante')?.hasError('emailInvalido') && paso3Form.get('emailRepresentante')?.touched">
+                          <small style="color: red;">Ingrese un correo válido</small>
+                        </div>
+                        <label style="color: #002c6c; font-size: 12px;"><span style="color: red;">*</span>Tel.o
+                          Cel:</label>
+                        <input type="text" class="underline-input" formControlName="telefonoRepresentante"
+                          maxlength="10" placeholder="0999999999" autocomplete="off" />
+                        <mat-error
+                          *ngIf="paso3Form.get('telefonoRepresentante')?.hasError('required') && paso3Form.get('telefonoRepresentante')?.touched"
+                          style="color: red; font-size: 12px;">
+                          Este campo es obligatorio.
+                        </mat-error>
+                      </div>
+
                     </div>
                     <div class="form-row">
 
@@ -384,13 +431,20 @@
                       <label class="form-label">
                         Nombre: (Codificación)
                       </label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="nombreCodificacion"
+                        (input)="forzarMayusculas('nombreCodificacion', paso3Form, $event)" maxlength="200"
+                        autocomplete="off" />
                     </div>
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">E-mail: </label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="email" maxlength="200"
+                        autocomplete="new-dp" placeholder="gs1@gs1.org" />
+                      <div *ngIf="paso3Form.get('email')?.hasError('emailInvalido') && paso3Form.get('email')?.touched">
+                        <small style="color: red;">Ingrese un correo válido</small>
+                      </div>
                       <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="telefono" maxlength="10"
+                        autocomplete="off" placeholder="0999999999" />
                     </div>
                     <div class="form-row">
 
@@ -398,19 +452,37 @@
                       <label class="form-label">
                         Nombre: (Financiero)
                       </label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="nombreFinanciero"
+                        (input)="forzarMayusculas('nombreFinanciero', paso3Form, $event)" maxlength="200"
+                        autocomplete="off" />
                     </div>
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">E-mail 1: </label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="email1" maxlength="200"
+                        autocomplete="new-dp" placeholder="gs1@gs1.org" />
+                      <div
+                        *ngIf="paso3Form.get('email1')?.hasError('emailInvalido') && paso3Form.get('email1')?.touched">
+                        <small style="color: red;">Ingrese un correo válido</small>
+                      </div>
                       <label style="color: #002c6c;font-size: 12px;">E-mail 2:</label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="email2" maxlength="200"
+                        autocomplete="new-dp" placeholder="gs1@gs1.org" />
+                      <div
+                        *ngIf="paso3Form.get('email2')?.hasError('emailInvalido') && paso3Form.get('email2')?.touched">
+                        <small style="color: red;">Ingrese un correo válido</small>
+                      </div>
                     </div>
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">E-mail 3: </label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="email3" maxlength="200"
+                        autocomplete="new-dp" placeholder="gs1@gs1.org" />
+                      <div
+                        *ngIf="paso3Form.get('email3')?.hasError('emailInvalido') && paso3Form.get('email3')?.touched">
+                        <small style="color: red;">Ingrese un correo válido</small>
+                      </div>
                       <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="telefono2" maxlength="10"
+                        placeholder="0999999999" autocomplete="off" />
                     </div>
 
 
@@ -418,20 +490,19 @@
                       <div class="questions-container">
                         <div class="form-label">
                           <div>
-                            <input type="checkbox" />
+                            <input type="checkbox" formControlName="pregunta1" />
 
                             <label for="prefix-5">¿Se va a exportar sus productos?</label>
                           </div>
                           <div>
-                            <input type="checkbox" />
+                            <input type="checkbox" formControlName="pregunta2" />
                             <label for="prefix-5">¿Se vende o se venderá su producto en el mercado
                               estadounidense?</label>
                           </div>
                           <div>
-                            <input type="checkbox" />
+                            <input type="checkbox" formControlName="pregunta3" />
                             <label for="prefix-5">¿Se clasificará su producto como dispositivo médico sesgún las reglas
-                              de
-                              la FDA?</label>
+                              de la FDA?</label>
                           </div>
 
 
@@ -444,100 +515,26 @@
 
                           <input type="checkbox" />
                           <label for="prefix-5">Página Web</label>
-                          <input type="checkbox" />
+                          <input type="checkbox" formControlName="pregunta4" />
                           <label for="prefix-5" class="checkbox-label">Instagram</label>
-                          <input type="checkbox" />
+                          <input type="checkbox" formControlName="pregunta5" />
                           <label for="prefix-5" class="checkbox-label">Facebook</label>
-                          <input type="checkbox" />
+                          <input type="checkbox" formControlName="pregunta6" />
                           <label for="prefix-5">Un conocido</label>
 
 
                         </div>
                       </div>
                     </section>
-                    <section class="date-info-section">
-                      <div class="date-container">
-                        <!-- First row with dates and user info -->
-                        <div class="info-row">
-                          <div class="info-group date-group">
-                            <div class="info-item">
-                              <label class="form-label">Fecha de ingreso:</label>
-                              <div class="input-field">
-                                <img
-                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                                  class="field-icon" />
-                                <span class="field-text">Fecha</span>
-                              </div>
-                            </div>
-                            <div class="info-item">
-                              <label class="form-label">Fecha modificada:</label>
-                              <div class="input-field">
-                                <img
-                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                                  class="field-icon" />
-                                <span class="field-text">Fecha</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div class="info-group user-group">
-                            <div class="info-item">
-                              <label class="form-label">Usuario modificado:</label>
-                              <div class="input-field">
-                                <img
-                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                                  class="field-icon" />
-                                <span class="field-text">Fecha</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
 
-                        <!-- Second row with status and zone info -->
-                        <div class="info-row">
-                          <div class="info-group status-group">
-                            <label class="form-label">Estado:</label>
-                            <div class="status-fields">
-                              <div class="input-field">
-                                <img
-                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                                  class="field-icon" />
-                                <span class="field-text">Estado</span>
-                              </div>
-                              <div class="input-field">
-                                <img
-                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                                  class="field-icon" />
-                                <span class="field-text">Afiliado</span>
-                              </div>
-                            </div>
-                          </div>
-                          <div class="info-group zone-group">
-                            <label class="form-label">Zona:</label>
-                            <div class="zone-fields">
-                              <div class="input-field">
-                                <img
-                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                                  class="field-icon" />
-                                <span class="field-text">Z01</span>
-                              </div>
-                              <div class="input-field">
-                                <img
-                                  src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                                  class="field-icon" />
-                                <span class="field-text">Zona 1</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </section>
                   </div>
 
                 </div>
 
                 <div style="text-align: right;">
                   <button mat-button matStepperPrevious>Anterior</button>
-                  <button mat-button color="primary" matStepperNext>Siguiente</button>
+                  <button mat-button color="primary" matStepperNext
+                    (click)="verificarYAvanzar(paso3Form, stepper)">Siguiente</button>
 
                 </div>
               </form>
@@ -554,14 +551,16 @@
                     <div class="form-row">
                       <label class="form-label">Usuario:</label>
 
-                      <input type="text" class="underline-input" readonly />
+                      <input type="text" class="underline-input" readonly value="{{ usuarioActual?.usr }}" />
                       <label class="form-label">Fecha:</label>
 
-                      <input type="text" class="underline-input" readonly />
+                      <input type="text" class="underline-input" readonly [value]="fecha | date:'dd/MM/yyyy'" />
                     </div>
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">Observaciones 2:</label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="observacion2"
+                        (input)="forzarMayusculas('observacion2', paso4Form, $event)" maxlength="400"
+                        autocomplete="off" />
                     </div>
 
                   </article>
@@ -571,16 +570,18 @@
                     <div class="form-row">
                       <label class="form-label">Usuario:</label>
 
-                      <input type="text" class="underline-input" readonly />
+                      <input type="text" class="underline-input" readonly value="{{ usuarioActual?.usr }}" />
                       <label class="form-label">Fecha:</label>
 
-                      <input type="text" class="underline-input" readonly />
+                      <input type="text" class="underline-input" readonly [value]="fecha | date:'dd/MM/yyyy'" />
                     </div>
 
 
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">Observaciones 3:</label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="observacion3"
+                        (input)="forzarMayusculas('observacion3', paso4Form, $event)" maxlength="400"
+                        autocomplete="off" />
                     </div>
 
                   </article>
@@ -591,96 +592,23 @@
                     <div class="form-row">
                       <label class="form-label">Usuario:</label>
 
-                      <input type="text" class="underline-input" readonly />
+                      <input type="text" class="underline-input" readonly value="{{ usuarioActual?.usr }}" />
                       <label class="form-label">Fecha:</label>
 
-                      <input type="text" class="underline-input" readonly />
+                      <input type="text" class="underline-input" readonly [value]="fecha | date:'dd/MM/yyyy'" />
                     </div>
 
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">Observaciones 4:</label>
-                      <input type="text" class="underline-input" />
+                      <input type="text" class="underline-input" formControlName="observacion4"
+                        (input)="forzarMayusculas('observacion4', paso4Form, $event)" maxlength="400"
+                        autocomplete="off" />
                     </div>
 
 
                   </article>
                 </div>
-                <section class="date-info-section">
-                  <div class="date-container">
-                    <!-- First row with dates and user info -->
-                    <div class="info-row">
-                      <div class="info-group date-group">
-                        <div class="info-item">
-                          <label class="form-label">Fecha de ingreso:</label>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Fecha</span>
-                          </div>
-                        </div>
-                        <div class="info-item">
-                          <label class="form-label">Fecha modificada:</label>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Fecha</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="info-group user-group">
-                        <div class="info-item">
-                          <label class="form-label">Usuario modificado:</label>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Fecha</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
 
-                    <!-- Second row with status and zone info -->
-                    <div class="info-row">
-                      <div class="info-group status-group">
-                        <label class="form-label">Estado:</label>
-                        <div class="status-fields">
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Estado</span>
-                          </div>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Afiliado</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div class="info-group zone-group">
-                        <label class="form-label">Zona:</label>
-                        <div class="zone-fields">
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Z01</span>
-                          </div>
-                          <div class="input-field">
-                            <img
-                              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/cf6742e23d07c8100f97c041f98bb9e9aed3f666?placeholderIfAbsent=true"
-                              class="field-icon" />
-                            <span class="field-text">Zona 1</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </section>
                 <div style="text-align: right;">
                   <button mat-button matStepperPrevious>Anterior</button>
 
@@ -695,41 +623,71 @@
       </ng-template>
     </mat-tab>
 
-    <!-- TAB 2: Histórico -->
-    <mat-tab label="Histórico del Cliente">
-      <ng-template matTabContent>
-        <div *ngIf="selectedTab === 1">
-          <p>Contenido histórico aquí.</p>
-        </div>
-      </ng-template>
-    </mat-tab>
 
-    <!-- TAB 3: Prefijos -->
-    <mat-tab label="Prefijos">
-      <ng-template matTabContent>
-        <div *ngIf="selectedTab === 2">
-          <p>Contenido de prefijos aquí.</p>
-        </div>
-      </ng-template>
-    </mat-tab>
 
   </mat-tab-group>
 </mat-dialog-content>
 <div style="text-align: center;">
-  <button mat-button mat-dialog-close>
-    <img src="assets/icon-grabar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
+  <button mat-button color="primary" (click)="guardar()" [disabled]="botonGuardarDeshabilitado">
+    <img src="assets/icons/icon-grabar.png" alt="Grabar" width="18" height="18" style="margin-right: 6px;" />
     Grabar
   </button>
-  <button mat-button mat-dialog-close>
-    <img src="assets/icon-modificar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
-    Modificar
-  </button>
-  <button mat-button mat-dialog-close>
-    <img src="assets/icon-imprimir.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
+
+  <button mat-button (click)="generarPDF()" [disabled]="!impresionHabilitada">
+    <img src="assets/icons/icon-imprimir.png" alt="Imprimir" width="18" height="18" style="margin-right: 6px;" />
     Imprimir
   </button>
-  <button mat-button mat-dialog-close (click)="cancelar()">
-    <img src="assets/icon-cancelar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
+  <button mat-button (click)="limpiarFormulario()">
+    <img src="assets/icons/icon-cancelar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
     Cancelar
   </button>
+
+  <button mat-button mat-dialog-close (click)="cancelar()">
+    <img src="assets/icons/icon-salir.png" alt="Salir" width="18" height="18" style="margin-right: 6px;" />
+    Salir
+  </button>
+</div>
+
+<div id="contenidoReporte" style="padding: 20px; background-color: white; color: black; display: none;">
+
+  <h2 style="text-align: center;">Sistema de Control de Códigos</h2>
+  <h4 style="text-align: center;">Informe General de Empresa</h4>
+
+  <p><strong>Emisor:</strong> GS1 Ecuador</p>
+  <p><strong>Fecha emisión:</strong> {{ datosReporte.fechaHoy | date:'dd/MM/yyyy' }}</p>
+
+  <hr>
+
+  <h4>Datos del Cliente</h4>
+  <table border="1" cellpadding="5" cellspacing="0" style="width: 100%; border-collapse: collapse;">
+    <tr>
+      <td><strong>Prefijo:</strong></td>
+      <td>{{ datosReporte.prefijo }}</td>
+    </tr>
+    <tr>
+      <td><strong>Fecha Ingreso:</strong></td>
+      <td>{{ datosReporte.fechaIngreso | date:'dd/MM/yyyy' }}</td>
+    </tr>
+    <tr>
+      <td><strong>RUC:</strong></td>
+      <td>{{ datosReporte.ruc }}</td>
+    </tr>
+    <tr>
+      <td><strong>Razón Social:</strong></td>
+      <td>{{ datosReporte.razonSocial }}</td>
+    </tr>
+    <tr>
+      <td><strong>Ciudad:</strong></td>
+      <td>{{ datosReporte.ciudad }}</td>
+    </tr>
+    <tr>
+      <td><strong>Representante:</strong></td>
+      <td>{{ datosReporte.representante }}</td>
+    </tr>
+  </table>
+
+  <br>
+
+  <h4>Observaciones</h4>
+  <p>{{ datosReporte.observacion }}</p>
 </div>

@@ -14,7 +14,7 @@ export interface GrupoProducto {
 })
 export class GrupoProductoService {
 
-  private apiBaseUrl = environment.applicationUrl;
+  private apiBaseUrl = environment.clientsUrl;
     private apiUrl = `${this.apiBaseUrl}/GrupoProducto`;
     constructor(private http: HttpClient) {}
   
