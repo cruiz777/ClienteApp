@@ -12,7 +12,8 @@ export const environment = {
  
 //nuevo apigateway
   clientsUrl: 'https://localhost:8001/clients/api',
-  securityUrl: 'https://10.10.7.11:8001/security/api'
+  securityUrl: 'http://10.10.7.11:8000/security/api'
+
 };
 
 

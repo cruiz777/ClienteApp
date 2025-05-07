@@ -11,7 +11,6 @@ const routes: Routes = [
       {path:'dashboard',component:DashboardComponent},
       {path:'clientes',component:ClientesComponent},
       {path:'nclientes',component:NuevoClienteComponent}
-      
     ]
   }
   ];

@@ -1,4 +1,7 @@
-export interface empresaresponse {
+import { ContadorEmpresa } from "./contador-empresa";
+import { GerenteEmpresa } from "./gerente-empresa";
+
+export interface EmpresaResponse {
   empresaCodigo: number;
   empresaNombre?: string;
   empresaSistema?: string;
@@ -19,6 +22,6 @@ export interface empresaresponse {
   empresaDirectorio?: string;
   status: boolean;
   idCiudad: number;
-  // gerentes?: IGerenteEmpresa[];
-  // contadores?: IContadorEmpresa[];
+  gerentes?: GerenteEmpresa[];
+  contadores?: ContadorEmpresa[];
 }

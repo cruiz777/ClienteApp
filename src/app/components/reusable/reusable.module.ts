@@ -35,9 +35,11 @@ import { MomentDateModule } from '@angular/material-moment-adapter';
 import { MatStepperModule } from '@angular/material/stepper';
 // CDK
 import { LayoutModule } from '@angular/cdk/layout';
+import { MatDividerModule } from '@angular/material/divider';
+import { NgxMatSelectSearchModule } from 'ngx-mat-select-search';
+import { MatChipsModule } from '@angular/material/chips';
 
 @NgModule({
-  declarations: [],
   imports: [
     CommonModule,
     ReactiveFormsModule,
@@ -45,7 +47,7 @@ import { LayoutModule } from '@angular/cdk/layout';
     RouterModule,
     HttpClientModule,
 
-    // Material
+    // Angular Material Centralizado
     MatFormFieldModule,
     MatInputModule,
     MatCheckboxModule,
@@ -73,16 +75,21 @@ import { LayoutModule } from '@angular/cdk/layout';
     MatButtonToggleModule,
     MatStepperModule,
     MatRadioModule,
-    // CDK
-    LayoutModule
+    MatDividerModule,
+    MatChipsModule,
+
+    // CDK y terceros
+    LayoutModule,
+    NgxMatSelectSearchModule
   ],
   exports: [
     CommonModule,
     ReactiveFormsModule,
     FormsModule,
+    RouterModule,
     HttpClientModule,
 
-    // Material
+    // Exporta todos los módulos Material y terceros
     MatFormFieldModule,
     MatInputModule,
     MatCheckboxModule,
@@ -110,8 +117,12 @@ import { LayoutModule } from '@angular/cdk/layout';
     MatButtonToggleModule,
     MatStepperModule,
     MatRadioModule,
-    // CDK
-    LayoutModule
+    MatDividerModule,
+    MatChipsModule,
+
+    LayoutModule,
+    NgxMatSelectSearchModule
   ]
 })
-export class ReusableModule {}
+export class ReusableModule { }
+
