@@ -13,12 +13,12 @@ export interface GrupoEmpresa {
   providedIn: 'root'
 })
 export class GrupoEmpresaService {
-  private apiBaseUrl = environment.applicationUrl;
+  private apiBaseUrl = environment.clientsUrl;
   private apiUrl = `${this.apiBaseUrl}/GrupoEmpresa/`;
   constructor(private http: HttpClient) {}
 
   obtenerGrupos(): Observable<GrupoEmpresa[]> {
-    debugger
+    
     return this.http.get<any>(this.apiUrl).pipe(
       map(response => response.data.map((item: any) => ({
         id_grupo_empresa: item.id_grupo_empresa,

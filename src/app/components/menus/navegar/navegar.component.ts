@@ -1,12 +1,14 @@
 import { Component, OnInit } from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { Observable } from 'rxjs';
+import { map, shareReplay } from 'rxjs/operators';
 
 @Component({
-  selector: 'app-navigation',
-  templateUrl: './navigation.component.html',
-  styleUrls: ['./navigation.component.css']
+  selector: 'app-navegar',
+  templateUrl: './navegar.component.html',
+  styleUrls: ['./navegar.component.css']
 })
-export class NavigationComponent implements OnInit {
+export class NavegarComponent implements OnInit {
   currentDateTime: string = '';
   isHandset: boolean = false;
   isExpanded: boolean = true;
@@ -21,14 +23,23 @@ export class NavigationComponent implements OnInit {
 
   ngOnInit(): void {
     this.updateDateTime();
-    setInterval(() => this.updateDateTime(), 1000);  // Actualiza cada segundo
+    setInterval(() => this.updateDateTime(), 1000);
   }
 
   updateDateTime(): void {
     const now = new Date();
-    const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    };
     const formattedDate = now.toLocaleDateString('es-EC', options);
-    const formattedTime = now.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const formattedTime = now.toLocaleTimeString('es-EC', {
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
 
     this.currentDateTime = `${this.capitalizeFirstLetter(formattedDate)}, ${formattedTime}`;
   }
