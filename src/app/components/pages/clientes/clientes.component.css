@@ -1,9 +1,83 @@
-
+/* General para toda la tabla */
 table {
+  width: 100%;
+  border-collapse: collapse; /* Opcional, para que las celdas no tengan espacios raros */
+}
+
+/* Solo aplica tamaño compacto a campos de formulario */
+.mat-form-field {
+  font-size: 13px; /* tamaño de letra normal y legible */
   width: 100%;
 }
 
-.mat-mdc-form-field {
+/* Estilo compacto específico */
+.mat-form-field-compact {
+  height: 40px; /* Altura razonable */
+  margin: 8px 0 16px 8px;
+  width: 280px; /* Controlado, no tan angosto como 10px */
+}
+
+/* Input interno dentro del campo compacto */
+.mat-form-field-compact input {
+  padding: 4px 8px;
+  height: 28px;
+  font-size: 13px;
+}
+.compact-form-field {
+  width: 300px;
+  margin: 10px 0 20px 10px;
+  height: 40px; /* Altura más pequeña */
+}
+
+/* Ajustar internamente el input */
+.compact-form-field .mat-mdc-text-field-wrapper {
+  padding-top: 0px;
+  padding-bottom: 0px;
+  height: 40px; /* El contenedor principal */
+}
+
+.compact-form-field .mat-mdc-form-field-flex {
+  align-items: center; /* Centra el input verticalmente */
+  height: 40px;
+}
+
+.compact-form-field .mat-mdc-input-element {
+  padding: 0 8px;
+  height: 30px;
   font-size: 14px;
-  width: 100%;
+}
+.mini-form-field {
+  width: 250px;
+  margin: 10px 0 20px 10px;
+}
+
+/* Forzar campo compacto */
+.mini-form-field .mat-mdc-form-field-infix {
+  padding: 0px 0px; /* Quitar padding */
+  min-height: 0px !important; /* 🔥 ESTE es el que rompe el inflado */
+}
+
+/* Reducir altura del wrapper */
+.mini-form-field .mat-mdc-text-field-wrapper {
+  height: 36px; /* Más bajo */
+}
+
+/* Flex de la caja */
+.mini-form-field .mat-mdc-form-field-flex {
+  height: 36px;
+  min-height: 36px;
+  align-items: center;
+}
+
+/* Ajustar el input */
+.mini-form-field .mat-mdc-input-element {
+  height: 26px;
+  font-size: 13px;
+  padding: 0 8px;
+}
+
+/* Bajar el label */
+.mini-form-field .mat-mdc-floating-label {
+  top: 8px;
+  font-size: 13px;
 }

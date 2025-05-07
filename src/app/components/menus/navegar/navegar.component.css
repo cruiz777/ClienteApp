@@ -124,6 +124,7 @@ mat-expansion-panel {
 mat-expansion-panel-header {
   padding: 0 16px;
   min-height: 48px;
+  
 }
 a.mat-list-item {
   padding-left: 40px;

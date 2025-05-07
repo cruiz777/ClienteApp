@@ -8,14 +8,17 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { Cliente } from '../../../interfaces/cliente';
 import { DialogClienteComponent } from '../modals/dialog-cliente/dialog-cliente.component';
 import { ClienteService } from '../../../services/cliente.service';
-
+import { DialogClienteEditarComponent } from '../modals/dialog-cliente-editar/dialog-cliente-editar.component'; 
 const ELEMENT_DATA: Cliente[] = [
   { 
     clientes_codigo: 101, 
     nomcli: "Juan Pérez", 
     dircli: "Av. Principal 123, Lima", 
     ruc: "20456123456", 
-    fecing: "2021-05-15"
+    fecing: "2021-05-15",
+    zonaReferencia:"Z01",
+    estadoNombre:"Afiliada",
+    prefijo:'7777'
   }
 ];
 
@@ -26,14 +29,15 @@ const ELEMENT_DATA: Cliente[] = [
   styleUrls: ['./clientes.component.css']
 })
 export class ClientesComponent implements OnInit {
-  displayedColumns: string[] = ['clientes_codigo',  'nomcli','dircli','ruc','fecing','acciones'];
+  displayedColumns: string[] = ['clientes_codigo',  'nomcli','dircli','ruc','fecing','zonaReferencia','estadoNombre','prefijo','acciones'];
   dataSource = new MatTableDataSource(ELEMENT_DATA);
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   constructor(
     private dialog: MatDialog,
     private _snackBar: MatSnackBar,
-    private clienteService:ClienteService   
+    private clienteService:ClienteService,
+       
   ) {
 
   }
@@ -48,12 +52,15 @@ export class ClientesComponent implements OnInit {
   }
 
   cargarClientes(): void {
+    
+    // Limpia primero la tabla visualmente
+    this.dataSource = new MatTableDataSource<Cliente>([]);
+this.dataSource.paginator = this.paginator;
+  
     this.clienteService.getClientes().subscribe({
       next: (resp) => {
-        debugger
         this.dataSource = new MatTableDataSource(resp);
         this.dataSource.paginator = this.paginator;
-        console.log('Clientes:', this.dataSource);
       },
       error: (err) => {
         console.error('Error al obtener clientes', err);
@@ -63,22 +70,24 @@ export class ClientesComponent implements OnInit {
   }
   
   
+  
   applyFilter(event: Event) {
     const filterValue = (event.target as HTMLInputElement).value;
     this.dataSource.filter = filterValue.trim().toLowerCase();
   }
 
-  editarCliente(cliente: Cliente) {
-    this.dialog.open(DialogClienteComponent, {
+  editarCliente(cliente:Cliente) {
+    this.dialog.open(DialogClienteEditarComponent, {
       width: '1200px', // Aumenta el ancho del diálogo
      
       height: '100vh', // ✅ que use casi toda la pantalla
       maxHeight: '100vh',
       disableClose: true,
-      data: cliente
+      data: cliente.clientes_codigo
     }).afterClosed().subscribe(result => {
       if (result === "editado")
-        result = "editado";
+        this.cargarClientes(); // ✅ recarga la tabla
+       // this.mostrarAlerta('Cliente actualizado correctamente', 'Éxito');
     });
   }
   
@@ -104,5 +113,12 @@ export class ClientesComponent implements OnInit {
       duration: 3000
     });
   }
+  seleccionarFila(cliente: Cliente) {
+    console.log('Fila seleccionada:', cliente.clientes_codigo);
+  
+    // Ejemplo acción: abrir el modal de editar
+    alert("hola"+cliente.clientes_codigo);
+  }
+  
 
 }

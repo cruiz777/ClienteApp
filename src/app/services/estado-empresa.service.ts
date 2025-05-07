@@ -3,28 +3,29 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
-export interface Zona {
+export interface EstadoEmpresa {
   id: number;
-  referencia:string;
-  nombre: string;
+  Nombre: string;
 }
 
 @Injectable({
   providedIn: 'root'
 })
-export class ZonaService {
+export class EstadoEmpresaService {
   private apiBaseUrl = environment.clientsUrl;
-  private apiUrl = `${this.apiBaseUrl}/Zona/`;
+  private apiUrl = `${this.apiBaseUrl}/EstadoEmpresa/`;
+
   constructor(private http: HttpClient) {}
 
-  obtenerZona(): Observable<Zona[]> {
+  obtenerEstadosEmpresa(): Observable<EstadoEmpresa[]> {
     debugger
     return this.http.get<any>(this.apiUrl).pipe(
-      map(response => response.data.map((item: any) => ({
-        id: item.id,
-        referencia:item.referencia,
-        nombre: item.nombre
-      })))
+      map(response =>
+        response.data.map((item: any) => ({
+          id: item.id,
+          Nombre: item.Nombre
+        }))
+      )
     );
   }
 }
