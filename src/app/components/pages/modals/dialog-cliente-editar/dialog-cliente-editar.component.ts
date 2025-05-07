@@ -9,14 +9,14 @@ import { FormBuilder, FormGroup, FormControl, Validators, AbstractControl, Valid
 // Angular Material
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-
+import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
 
 // RxJS
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
 const html2pdf: any = require('html2pdf.js');
 import { MatStepper } from '@angular/material/stepper';
-
+import { MatDialog } from '@angular/material/dialog';
 
 // Servicios personalizados
 import { GrupoEmpresaService, GrupoEmpresa } from '../../../../services/grupo-empresa.service';
@@ -25,6 +25,7 @@ import { RucService } from '../../../../services/ruc.service';
 import { CiudadService, Ciudad } from '../../../../services/ciudad.service';
 import { UsuarioService } from '../../../../services/usuario.service';
 import { ZonaService, Zona } from '../../../../services/zona.service';
+import { EstadoEmpresa, EstadoEmpresaService } from 'src/app/services/estado-empresa.service';
 import { ClienteIndividual, ClienteService } from 'src/app/services/cliente.service';
 import { NcontrolService, NumeroControlMinDto } from 'src/app/services/ncontrol.service';
 import { PrefijoService, Prefijo } from 'src/app/services/prefijo.service';
@@ -98,6 +99,11 @@ export class DialogClienteEditarComponent implements OnInit {
   fecha: Date = new Date();
   clienteE!:ClienteIndividual;
   modoEdicion = false;
+
+  estadoEmpresa: EstadoEmpresa[] = [];
+estadoEmpresaFiltrados$!: Observable<EstadoEmpresa[]>;
+estadoEmpresaCtrl = new FormControl('');
+
   constructor(
     private fb: FormBuilder,
     private grupoService: GrupoEmpresaService,
@@ -115,13 +121,16 @@ export class DialogClienteEditarComponent implements OnInit {
     private cedulaService: CedulaService,
     private generarglnService: GenerarglnService,
     private glnService: GlnService,
+    private dialog: MatDialog,
+    private estadoempresaService: EstadoEmpresaService,
     @Inject(MAT_DIALOG_DATA) public idCliente: number, 
 
   ) { }
 
   ngOnInit(): void {
 
-
+    
+    
     this.initFormulario();
 
     this.obtenerUsuarioActual();
@@ -129,10 +138,22 @@ export class DialogClienteEditarComponent implements OnInit {
     this.cargarGruposProducto();
     this.cargarCiudad();
     this.cargarZona();
+    this.cargarEstadoEmpresa();
   
     
     console.log(this.idCliente);
     this.cargarClienteYGrupos(this.idCliente);
+    this.paso1Form.get('estadoEmpresa')?.valueChanges.subscribe(value => {
+      this.paso2Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
+      this.paso3Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
+      this.paso4Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
+    });
+  
+    this.paso1Form.get('zona')?.valueChanges.subscribe(value => {
+      this.paso2Form.get('zona')?.setValue(value, { emitEvent: false });
+      this.paso3Form.get('zona')?.setValue(value, { emitEvent: false });
+      this.paso4Form.get('zona')?.setValue(value, { emitEvent: false });
+    });
   }
 
   initFormulario(): void {
@@ -145,12 +166,14 @@ export class DialogClienteEditarComponent implements OnInit {
         grupoProducto: [null, Validators.required],
         prefix: [''],
         zona: [null],
+        estadoEmpresa:[null],
         codigoCliente: [{ value: '', disabled: false }],
         //prefijo: [''], antes 
         prefijo: [{ value: '', disabled: true }],
         prefijogs1: [''],
         origen: [''],
-        gln: ['']
+        gln: [''],
+        fechaIng:['']
       }),
 
       paso2: this.fb.group({
@@ -170,6 +193,7 @@ export class DialogClienteEditarComponent implements OnInit {
         telefono2: [''],
         usuario: [{ value: '', disabled: true }],
         observacion1: ['']
+        
       }),
 
       paso3: this.fb.group({
@@ -510,118 +534,75 @@ export class DialogClienteEditarComponent implements OnInit {
   }
 
   cancelar(): void {
-    this.dialogRef.close(); // Cierra el diálogo
+    this.dialogRef.close("editado");
     this.router.navigate(['/pages/clientes']); // Redirecciona a /pages/clientes
   }
-  guardar(): void {
+  actualizar(): void {
+    
     if (this.formCliente.invalid) {
-      this.formCliente.markAllAsTouched(); // muestra errores en pantalla
+      this.formCliente.markAllAsTouched();
       this.mostrarAlerta('Faltan campos obligatorios por llenar', 'Formulario Incompleto');
-      return; // ⛔ no continúa si el formulario es inválido
+      return;
     }
+  
     const paso1 = this.paso1Form.value;
     const paso2 = this.paso2Form.value;
     const paso3 = this.paso3Form.value;
-    const paso4 = this.paso4Form.value;
-
+    const clienteId = paso1.codigoCliente; // o donde tengas almacenado el ID
+    const zonaObj = paso1.zona;
+    const estadoObj = paso1.estadoEmpresa;
     const ciudadObj = paso2.ciudad;
-    const ciudadNombre = typeof ciudadObj === 'object' ? ciudadObj.ciudad : ciudadObj;
-    const idCiudad = typeof ciudadObj === 'object' ? ciudadObj.id_ciudad : 0;
-    const grupoProductoObj = paso1.grupoProducto;
-    const idGrupoProducto = typeof grupoProductoObj === 'object' ? grupoProductoObj.id_grupo_producto : grupoProductoObj || 0;
-    // const zonaObj = paso1.zona;
-    // const idZona = typeof zonaObj === 'object' ? zonaObj.id_zona : 0;
-    const ruc = this.rucControl.value;
-    const jsonCliente = {
+    const idCiudad = typeof ciudadObj === 'object' ? ciudadObj.id_ciudad : ciudadObj;
+    const idZona = (typeof zonaObj === 'object' && zonaObj !== null) ? zonaObj.id : zonaObj;
+    const idEstadoEmpresa = (typeof estadoObj === 'object' && estadoObj !== null) ? estadoObj.id : estadoObj;
+    const jsonActualizar = {
+      clientesCodigo: clienteId, // ✅ aquí pasas el código del cliente (ID)
       nomcli: paso2.razonSocial || '',
       dircli: paso2.direccionPrincipal || '',
       concli: paso2.nombreRepresentante || '',
-      email: paso3.email || '',
-      telefono: paso2.telefono || '',
-      telefono1: paso3.telefono2 || '',
+      email: paso3.emailRepresentante || '',
+      telefono: paso3.telefonoRepresentante || '',
+      telefono1: paso2.telefono || '',
       razonSocial: paso2.razonSocial || '',
-      fax: '',
-      ruc: paso1.ruc || '',
-      fecing: this.fechaIngreso.toISOString().split('T')[0],
-      fecnac: '2025-04-23',
-      fecfac1: '2025-04-23',
-      fecfac2: '2025-04-23',
-      fecfac3: '2025-04-23',
-      fecfac4: '2025-04-23',
-      fecfac5: '2025-04-23',
-      marca1: '',
-      marca2: '',
-      marca3: '',
-      marca4: '',
-      marca5: '',
-      codcue: '',
-      hello: '',
-      desde: 0,
-      fechtre: new Date().toISOString(),
-      ncomercial: '',
-      saldo: 0,
-      fecfac: '',
-      ciudad: ciudadNombre || '',
-      obs: paso2.observacion1 || '',
-      delestado: 0,
-      genero: '',
-      infcamahabitacion: '',
-      empresaCodigo: 1,
-      seguimiento: 0,
-      fechaactinact: '2025-04-23',
-      idEstadoEmpresa: 1,
-      formatodocumento: 0,
-      imprimeobstramite: 0,
-      idTipoCliente: paso1.categoriaCliente,// aqui llego en blanco 
-      idGrupoProducto: paso1.grupoProducto.id_grupo_producto,
-      idPersona: 8,
+      fax: paso2.celular,
+      web: paso2.sitioWeb || '',
+      idEstadoEmpresa: idEstadoEmpresa,
+      idTipoCliente: paso1.categoriaCliente,
+      idGrupoProducto: paso1.grupoProducto?.id_grupo_producto || 0,
       codigoPostal: paso2.codigoPostal || '',
-      codigoPostal2: '',
-      idVendedor: 1,
-      idCiudad: idCiudad,
-      idZona: '1',
-      //idZona: paso1.zona.id,  por el momento hasta enlazar con la ciudad
+      idCiudad: idCiudad || 0,
+      idZona: idZona,
       idGrupoEmpresa: paso1.grupo || 1,
       representante: paso2.nombreRepresentante || ''
     };
-    this.impresionHabilitada = true;
-    console.log('📤 Enviando cliente:', jsonCliente);
+    
+  
+    console.log('📤 Enviando actualización:', jsonActualizar);
 
-    this.clienteService.guardarCliente(jsonCliente).subscribe({
-      next: (res) => {
-        console.log('✅ Cliente guardado:', res);
+this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
+  next: (res) => {
+    console.log('✅ Cliente actualizado:', res);
+    //this.mostrarAlerta('Cliente actualizado correctamente', 'Éxito');
+    const msg = this.modoEdicion ? 'actualizada' : 'creada';
 
-        this.clienteService.getClientePorRuc(ruc).subscribe({
-          next: (cliente) => {
-            if (cliente) {
-              console.log('✅ Código recibido:', cliente.clientes_codigo);
-              this.paso1Form.patchValue({
-                codigoCliente: cliente.clientes_codigo
-
-              });
-
-              
-            }
-          },
-          error: (err) => {
-            console.error('❌ No se pudo obtener el cliente por RUC:', err);
-          }
-        });
-        // Opcional: deshabilitar campo si deseas que sea solo lectura luego
-        // this.paso1Form.get('codigoCliente')?.disable();
-
-        //this.mostrarAlerta('Información Guardada', 'OK');
-
-        //this.dialogRef.close(); // Cierra el modal (opcional)
-        //this.router.navigate(['/pages/clientes']); // Redirecciona (opcional)
-      },
-      error: (err) => {
-        console.error('❌ Error al guardar el cliente:', err);
-        this.mostrarAlerta('No se pudieron cargar los clientes', 'Error');
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: 'Éxito',
+        message: `El Cliente fue ${msg} correctamente.`,
+        type: 'success',
+        confirmText: '',
+        showCancel: false
       }
-    });
+    }); // 🔴 este paréntesis estaba faltando
+  },
+  error: (err) => {
+    console.error('❌ Error al actualizar cliente:', err);
+    this.mostrarAlerta('No se pudo actualizar el cliente', 'Error');
   }
- 
+});
+  }
+  
 
 
 
@@ -902,7 +883,9 @@ export class DialogClienteEditarComponent implements OnInit {
       prefijo: cliente.prefijo || '',
       prefijogs1: `${cliente.prefijo}`,
       origen: cliente.zonaReferencia || '',
-      gln: ''
+      gln: '',
+      fechaIng:cliente.fecing
+      
     });
   
     
@@ -914,7 +897,7 @@ export class DialogClienteEditarComponent implements OnInit {
       nombreRepresentante: cliente.representante || '',
       direccionPrincipal: cliente.dircli || '',
       codigoPostal: cliente.codigoPostal || '',
-      celular: cliente.telefono || '',
+      celular: cliente.fax || '',
       sitioWeb: cliente.web,
       telefono2: cliente.telefono1 || '',
       usuario: '',
@@ -927,7 +910,7 @@ export class DialogClienteEditarComponent implements OnInit {
       emailRepresentante: cliente.email || '',
       telefonoRepresentante: cliente.telefono || '',
       email: cliente.email || '',
-      telefono: cliente.telefono || '',
+      telefono:  '',
       email1: '',
       email2: '',
       email3: '',
@@ -958,20 +941,24 @@ export class DialogClienteEditarComponent implements OnInit {
       gruposProducto: this.grupoProductoService.obtenerGrupos(),
       gruposEmpresa: this.grupoService.obtenerGrupos(),
       zona: this.zonaService.obtenerZona(),
-      ciudad: this.ciudadService.obtenerCiudad() // 👈 agregar esto
-    }).subscribe(({ cliente, gruposProducto, gruposEmpresa, zona, ciudad }) => {
+      ciudad: this.ciudadService.obtenerCiudad(),
+      estado: this.estadoempresaService.obtenerEstadosEmpresa(),
+    }).subscribe(({ cliente, gruposProducto, gruposEmpresa, zona, ciudad, estado }) => {
       this.clienteE = cliente;
       this.gruposProducto = gruposProducto;
       this.grupos = gruposEmpresa;
       this.zona = zona;
-      this.ciudad = ciudad; // 👈 guardar ciudades en this.ciudad
+      this.ciudad = ciudad;
+      this.estadoEmpresa = estado; // 👈 asegúrate de tener this.estado declarado
     
       this.llenarFormularioConCliente(this.clienteE);
       this.setGrupoProductoPorId(this.clienteE.idGrupoProducto);
       this.setGrupoEmpresaPorId(this.clienteE.idGrupoEmpresa);
       this.setZonaPorId(this.clienteE.idZona);
-      this.setCiudadPorId(this.clienteE.idCiudad); // 👈 nuevo llamado
+      this.setCiudadPorId(this.clienteE.idCiudad);
+      this.setEstadoEmpresaPorId(this.clienteE.idEstadoEmpresa); // 👈 corrijo el método si es necesario
     });
+    
     
     
   }
@@ -995,7 +982,7 @@ export class DialogClienteEditarComponent implements OnInit {
     }
   }
   setZonaPorId(id: number): void {
-    debugger
+    
     console.log(id);
     const zona = this.zona.find(z => z.id === id);
     if (zona) {
@@ -1004,6 +991,25 @@ export class DialogClienteEditarComponent implements OnInit {
       console.warn('❌ No se encontró la zona con ID:', id);
     }
   }
+  setEstadoEmpresaPorId(id: number): void {
+    const estado = this.estadoEmpresa.find(e => e.id === id);
+    console.log(estado + ' hola');
+  
+    if (estado) {
+        const formularios = [this.paso1Form, this.paso2Form, this.paso3Form, this.paso4Form];
+      formularios.forEach((form, index) => {
+        if (form.contains('estadoEmpresa')) {
+          form.get('estadoEmpresa')?.setValue(estado);
+        } else {
+          console.warn(`El control "estadoEmpresa" no existe en el formulario paso${index + 1}.`);
+        }
+      });
+    } else {
+      console.warn('❌ No se encontró el estado de empresa con ID:', id);
+    }
+  }
+  
+  
   
   setCiudadPorId(id: number): void {
     const ciudad = this.ciudad.find(c => c.id_ciudad === id);
@@ -1017,11 +1023,35 @@ export class DialogClienteEditarComponent implements OnInit {
     debugger
     this.modoEdicion = true;
     this.formCliente.enable(); // habilita todo el formulario
+    this.formCliente.get('paso1.ruc')?.disable();
+    this.formCliente.get('paso1.esPasaporte')?.disable();
+    
   }
   
   desactivarModoEdicion() {
     this.modoEdicion = false;
     this.formCliente.disable(); // deshabilita todo el formulario
+  }
+  cargarEstadoEmpresa(): void {
+    this.estadoempresaService.obtenerEstadosEmpresa().subscribe(data => {
+      this.estadoEmpresa = data;
+      this.estadoEmpresaFiltrados$ = this.estadoEmpresaCtrl.valueChanges.pipe(
+        startWith(''),
+        map(valor => this.filtrarEstadoEmpresa(valor || ''))
+      );
+    });
+  }
+  
+  
+  filtrarEstadoEmpresa(valor: string): EstadoEmpresa[] {
+    const filtro = valor.toLowerCase();
+    return this.estadoEmpresa.filter(e =>
+      e.Nombre.toLowerCase().includes(filtro)
+    );
+  }
+  
+  seleccionarEstadoEmpresa(estado: EstadoEmpresa): void {
+    this.paso1Form.get('estadoEmpresa')?.setValue(estado);
   }
   
 }

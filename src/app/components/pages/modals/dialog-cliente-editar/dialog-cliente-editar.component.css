@@ -1065,10 +1065,11 @@
           padding: 3px 4px;
           align-items: center;
           gap: 6px;
-          font-size: 10px;
+          font-size: 14px;
           color: rgba(204, 213, 226, 1);
           justify-content: start;
           width: 85px;
+          
         }
         @media (max-width: 991px) {
           .input-field {

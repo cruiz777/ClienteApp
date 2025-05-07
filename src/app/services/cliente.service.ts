@@ -73,6 +73,25 @@ export interface ClienteIndividual {
   prefijo: string;
 }
 
+export interface ClienteUpdateRequest {
+  nomcli?: string;
+  dircli?: string;
+  concli?: string;
+  email?: string;
+  telefono?: string;
+  telefono1?: string;
+  razonSocial?: string;
+  fax?: string;
+  web?: string;
+  idEstadoEmpresa?: number;
+  idTipoCliente?: number;
+  idGrupoProducto?: number;
+  codigoPostal?: string;
+  idCiudad?: number;
+  idZona?: number;
+  idGrupoEmpresa?: number;
+  representante?: string;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -106,5 +125,9 @@ export class ClienteService {
     );
   }
 
+  actualizarCliente(id: number, request: ClienteUpdateRequest): Observable<any> {
+    return this.http.put(`${this.apiBaseUrl}/Clientes/${id}`, request);
+  }
+  
   
 }

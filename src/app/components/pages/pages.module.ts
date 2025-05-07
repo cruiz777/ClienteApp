@@ -17,7 +17,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { DialogClienteEditarComponent } from './modals/dialog-cliente-editar/dialog-cliente-editar.component';
-
+import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
 @NgModule({
   declarations: [
     PagesComponent,
@@ -26,7 +26,8 @@ import { DialogClienteEditarComponent } from './modals/dialog-cliente-editar/dia
     ClientesComponent,
     DialogClienteComponent,
     DialogClienteEditarComponent,
-    NuevoClienteComponent
+    NuevoClienteComponent,
+    CustomMessageBoxComponent 
 
   ],
   imports: [
