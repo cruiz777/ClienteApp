@@ -17,6 +17,8 @@ import { map, startWith } from 'rxjs/operators';
 const html2pdf: any = require('html2pdf.js');
 import { MatStepper } from '@angular/material/stepper';
 import { MatDialog } from '@angular/material/dialog';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
 
 // Servicios personalizados
 import { GrupoEmpresaService, GrupoEmpresa } from '../../../../services/grupo-empresa.service';
@@ -39,6 +41,7 @@ import { emailValidoValidator } from '../../../../util/validators';
 import { Inject } from '@angular/core';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 
+import { ModalImpresionComponent } from 'src/app/components/shared/modal-impresion/modal-impresion.component';
 
 @Component({
   selector: 'app-dialog-cliente-editar',
@@ -133,7 +136,7 @@ estadoEmpresaCtrl = new FormControl('');
     
     this.initFormulario();
 
-    // this.obtenerUsuarioActual();
+    //this.obtenerUsuarioActual();
     this.cargarGrupos();
     this.cargarGruposProducto();
     this.cargarCiudad();
@@ -192,7 +195,9 @@ estadoEmpresaCtrl = new FormControl('');
         sitioWeb: [''],
         telefono2: [''],
         usuario: [{ value: '', disabled: true }],
-        observacion1: ['']
+        observacion1: [''],
+        zona: [null],
+        estadoEmpresa:[null]
         
       }),
 
@@ -214,13 +219,17 @@ estadoEmpresaCtrl = new FormControl('');
         pregunta3: [false],
         pregunta4: [false],
         pregunta5: [false],
-        pregunta6: [false]
+        pregunta6: [false],
+        zona: [null],
+        estadoEmpresa:[null]
       }),
 
       paso4: this.fb.group({
         observacion2: [''],
         observacion3: [''],
-        observacion4: ['']
+        observacion4: [''],
+        zona: [null],
+        estadoEmpresa:[null]
       })
     });
   }
@@ -1053,5 +1062,20 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
   seleccionarEstadoEmpresa(estado: EstadoEmpresa): void {
     this.paso1Form.get('estadoEmpresa')?.setValue(estado);
   }
-  
+ abrirModalImpresion(): void {
+  this.dialog.open(ModalImpresionComponent, {
+    width: '400px',
+    disableClose: true, // opcional
+    data: {
+      prefijos: [
+        { valor: '123', descripcion: 'debo seleccionar uno de los dos' },
+        { valor: '113', descripcion: 'puede haber más' }
+      ]
+    },
+    panelClass: 'modal-superpuesto' // opcional para estilos
+  });
+}
+
+
+
 }

@@ -37,6 +37,13 @@
                     <div>
                       <span *ngIf="(tipoIdentificacion === 'CEDULA' || tipoIdentificacion === 'RUC') && razonSocial">
                         {{ razonSocial }}
+                        --
+                        <span [ngClass]="{
+    'estado-activo': estadoContribuyenteRuc === 'ACTIVO',
+  'estado-inactivo': estadoContribuyenteRuc !== 'ACTIVO'
+  }">
+                          {{ estadoContribuyenteRuc }}
+                        </span>
                       </span>
                     </div>
 
@@ -151,7 +158,7 @@
 
                     <!-- Campo de prefijo con limpieza y validación -->
                     <input matInput formControlName="prefijo" [readonly]="!modificarSecuencia"
-                      (input)="limpiarPrefijo()" (blur)="validarPrefijoExistente()" maxlength="10" autocomplete="off" />
+                      (input)="limpiarPrefijo()" (blur)="validarPrefijoExistente()" maxlength="10" autocomplete="off" [ngClass]="{ 'input-verde': campoGlnVerde }" />
 
 
 
@@ -171,7 +178,7 @@
 
                     <label class="form-label">Prefijo GS1:</label>
 
-                    <input type="text" class="underline-input" readonly formControlName="prefijogs1" />
+                    <input type="text" class="underline-input" readonly formControlName="prefijogs1" [ngClass]="{ 'input-verde': campoGlnVerde }" />
                   </div>
                   <div class="form-row">
 
@@ -180,10 +187,11 @@
                   <div class="form-row">
                     <label class="form-label">GLN:</label>
 
-                    <input type="text" class="text-input" class="underline-input" readonly formControlName="gln" />
+                    <input type="text" class="text-input" class="underline-input" readonly formControlName="gln"
+                      [ngClass]="{ 'input-verde': campoGlnVerde }" />
                     <label class="form-label">Origen Prefijo:</label>
 
-                    <input type="text" class="text-input" class="underline-input" readonly formControlName="origen" />
+                    <input type="text" class="text-input" class="underline-input" readonly formControlName="origen" [ngClass]="{ 'input-verde': campoGlnVerde }" />
                   </div>
                   <div class="form-row">
 
@@ -213,7 +221,8 @@
                         <div class="info-item">
                           <label class="form-label">Usuario modificado:</label>
                           <div class="input-field">
-                            <div>admin</div>
+                            <div>{{ usuarioActual?.usr }}</div>
+
                           </div>
                         </div>
                       </div>
@@ -628,7 +637,7 @@
   </mat-tab-group>
 </mat-dialog-content>
 <div style="text-align: center;">
-  <button mat-button color="primary" (click)="guardar()" [disabled]="botonGuardarDeshabilitado">
+  <button mat-button color="primary" (click)="guardar(stepper)" [disabled]="botonGuardarDeshabilitado">
     <img src="assets/icons/icon-grabar.png" alt="Grabar" width="18" height="18" style="margin-right: 6px;" />
     Grabar
   </button>

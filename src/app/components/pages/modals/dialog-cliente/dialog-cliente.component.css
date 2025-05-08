@@ -1568,3 +1568,15 @@
 .mat-error {
   font-size: 8px;
 }
+.input-verde {
+  background-color: #3df067 !important; /* verde claro */
+}
+.estado-activo {
+  color: #3df067;
+  font-weight: bold;
+}
+
+.estado-inactivo {
+  color: red;
+  font-weight: bold;
+}

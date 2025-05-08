@@ -1,38 +1,53 @@
 // Angular Core
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { Inject } from '@angular/core';
 
-import { MatDialog } from '@angular/material/dialog';
 // Angular Forms
-import { FormBuilder, FormGroup, FormControl, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
+import {
+  FormBuilder,
+  FormGroup,
+  FormControl,
+  Validators,
+  AbstractControl,
+  ValidationErrors,
+  ValidatorFn
+} from '@angular/forms';
+
 // Angular Material
-import { MatDialogRef } from '@angular/material/dialog';
+import { MatDialogRef, MAT_DIALOG_DATA, MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
-
-// RxJS
-import { BehaviorSubject, Observable } from 'rxjs';
-import { map, startWith } from 'rxjs/operators';
-const html2pdf: any = require('html2pdf.js');
 import { MatStepper } from '@angular/material/stepper';
+import { ViewChild } from '@angular/core';
+// RxJS
+import { forkJoin, BehaviorSubject, Observable } from 'rxjs';
+import { map, startWith } from 'rxjs/operators';
 
+// Librerías externas
+const html2pdf: any = require('html2pdf.js');
+
+// Utilidades y validadores
+import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
+import { emailValidoValidator } from 'src/app/util/validators';
+
+// Interfaces y modelos
+import { ClienteRuc } from 'src/app/interfaces/clienteRuc';
 
 // Servicios personalizados
-import { GrupoEmpresaService, GrupoEmpresa } from '../../../../services/grupo-empresa.service';
-import { GrupoProductoService, GrupoProducto } from '../../../../services/grupo-producto.service';
-import { RucService } from '../../../../services/ruc.service';
-import { CiudadService, Ciudad } from '../../../../services/ciudad.service';
-import { UsuarioService } from '../../../../services/usuario.service';
-import { ZonaService, Zona } from '../../../../services/zona.service';
-import { ClienteService } from 'src/app/services/cliente.service';
+import { GrupoEmpresaService, GrupoEmpresa } from 'src/app/services/grupo-empresa.service';
+import { GrupoProductoService, GrupoProducto } from 'src/app/services/grupo-producto.service';
+import { RucService } from 'src/app/services/ruc.service';
+import { CiudadService, Ciudad } from 'src/app/services/ciudad.service';
+import { UsuarioService } from 'src/app/services/usuario.service';
+import { ZonaService, Zona } from 'src/app/services/zona.service';
+import { ClienteService, ClienteIndividual } from 'src/app/services/cliente.service';
+import { EstadoEmpresa, EstadoEmpresaService } from 'src/app/services/estado-empresa.service';
 import { NcontrolService, NumeroControlMinDto } from 'src/app/services/ncontrol.service';
 import { PrefijoService, Prefijo } from 'src/app/services/prefijo.service';
 import { CedulaService } from 'src/app/services/cedula.service';
 import { GenerarglnService } from 'src/app/services/generargln.service';
 import { GlnService, GlnRequest } from 'src/app/services/gln.service';
-// Interfaces o modelos
-import { ClienteRuc } from '../../../../interfaces/clienteRuc';
-import { emailValidoValidator } from '../../../../util/validators';
+
 
 
 @Component({
@@ -43,6 +58,7 @@ import { emailValidoValidator } from '../../../../util/validators';
 export class DialogClienteComponent implements OnInit {
   formCliente!: FormGroup;
   selectedTab: number = 0;
+  @ViewChild('stepper') stepper!: MatStepper;
 
   grupos: GrupoEmpresa[] = [];
   grupoCtrl = new FormControl('');
@@ -90,6 +106,8 @@ export class DialogClienteComponent implements OnInit {
   impresionHabilitada = false;
   fecha: Date = new Date();
   modoEdicion = false;
+  campoGlnVerde = false;
+  estadoContribuyenteRuc:string=''
   constructor(
     private fb: FormBuilder,
     private grupoService: GrupoEmpresaService,
@@ -115,7 +133,7 @@ export class DialogClienteComponent implements OnInit {
 
     this.initFormulario();
 
-    // this.obtenerUsuarioActual();
+    //this.obtenerUsuarioActual();
     this.cargarGrupos();
     this.cargarGruposProducto();
     this.cargarCiudad();
@@ -289,7 +307,7 @@ export class DialogClienteComponent implements OnInit {
         this.tipoIdentificacion = 'RUC'; // ✅ importante
         this.razonSocial = data.razonSocial;
         this.nombreRepresentante = data.nombre;
-
+        this.estadoContribuyenteRuc=data.estadoContribuyenteRuc;
         this.paso2Form.patchValue({
           razonSocial: data.razonSocial,
           nombreRepresentante: data.nombre
@@ -503,7 +521,7 @@ export class DialogClienteComponent implements OnInit {
     this.dialogRef.close(); // Cierra el diálogo
     this.router.navigate(['/pages/clientes']); // Redirecciona a /pages/clientes
   }
-  guardar(): void {
+  guardar(stepper: MatStepper): void {
     if (this.formCliente.invalid) {
       this.formCliente.markAllAsTouched(); // muestra errores en pantalla
       this.mostrarAlerta('Faltan campos obligatorios por llenar', 'Formulario Incompleto');
@@ -575,6 +593,7 @@ export class DialogClienteComponent implements OnInit {
       representante: paso2.nombreRepresentante || ''
     };
     this.impresionHabilitada = true;
+
     console.log('📤 Enviando cliente:', jsonCliente);
 
     this.clienteService.guardarCliente(jsonCliente).subscribe({
@@ -591,6 +610,7 @@ export class DialogClienteComponent implements OnInit {
               });
 
               this.guardarPrefijo();
+              stepper.selectedIndex = 0;
             }
           },
           error: (err) => {
@@ -669,6 +689,7 @@ export class DialogClienteComponent implements OnInit {
 
       // Luego generamos el GLN
       const glnGenerado = this.generarGLN();
+      this.campoGlnVerde = true;
       this.paso1Form.patchValue({
         gln: glnGenerado
       });
@@ -738,6 +759,7 @@ this.prefijoService.guardarPrefijo(prefijoData).subscribe({
 
           // Luego generamos el GLN
           const glnGenerado = this.generarGLN();
+          this.campoGlnVerde = true;
           this.paso1Form.patchValue({
             gln: glnGenerado
           });
