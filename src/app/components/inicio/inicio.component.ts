@@ -1,4 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { EmpresaResponse } from 'src/app/interfaces/responses/empresa-response';
+import { EmpresaService } from 'src/app/services/empresa.service';
+import { LogoService } from 'src/app/services/logo.service';
 
 @Component({
   selector: 'app-inicio',
@@ -13,12 +16,38 @@ export class InicioComponent implements OnInit, OnDestroy {
     'assets/images/carrusel-inicio-gs1-4.jpg',
     'assets/images/carrusel-inicio-gs1-5.jpg'
   ];
-
+  constructor(
+    private logoService: LogoService,
+    private empresaService: EmpresaService
+  ) {}
   currentIndex = 0;
   intervalId: any;
-
+  logoUrl: string = '';
   ngOnInit() {
     this.startCarousel();
+     // Cargar logo inicial desde la base
+  this.empresaService.getEmpresas().subscribe({
+    next: (empresas: EmpresaResponse[]) => {
+      if (empresas.length > 0) {
+        const logoFileName = empresas[0].empresaLogo;
+        if (logoFileName) {
+          const url = this.logoService.getLogoUrl(logoFileName);
+          this.logoUrl = url;
+          this.logoService.updateLogo(logoFileName); // Notifica a los suscriptores
+        }
+      }
+    },
+    error: (err) => {
+      console.error('Error al cargar la empresa para el logo:', err);
+    }
+  });
+
+  // Suscribirse a cambios en el logo (en tiempo real)
+  this.logoService.logoUrl$.subscribe((url: string | null) => {
+    if (url) {
+      this.logoUrl = url;
+    }
+  });  
   }
 
   startCarousel() {

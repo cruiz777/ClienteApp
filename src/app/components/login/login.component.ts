@@ -5,6 +5,9 @@ import { UsuarioService } from 'src/app/services/usuario.service';
 import { Usuario } from 'src/app/interfaces/responses/usuario-response';
 import { MatDialog } from '@angular/material/dialog';
 import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/components/utils/messages/custom-message-box.component';
+import { LogoService } from 'src/app/services/logo.service';
+import { EmpresaService } from 'src/app/services/empresa.service';
+import { EmpresaResponse } from 'src/app/interfaces/responses/empresa-response';
 
 @Component({
   selector: 'app-login',
@@ -15,12 +18,14 @@ export class LoginComponent implements OnInit {
   formLogin: FormGroup;
   hidePassword: boolean = true;
   loading: boolean = false;
-
+  logoUrl: string = '';
   constructor(
     private fb: FormBuilder,
     private router: Router,
     private usuarioService: UsuarioService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private logoService: LogoService,
+    private empresaService: EmpresaService
   ) {
     this.formLogin = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -28,7 +33,21 @@ export class LoginComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.empresaService.getEmpresas().subscribe({
+          next: (empresas: EmpresaResponse[]) => {
+            if (empresas.length > 0) {
+              const logoFileName = empresas[0].empresaLogo;
+              if (logoFileName) {
+                this.logoUrl = this.logoService.getLogoUrl(logoFileName);
+              }
+            }
+          },
+          error: (err) => {
+            console.error('Error al cargar la empresa para el logo:', err);
+          }
+        });
+  }
 
   onLogin(): void {
     this.loading = true;

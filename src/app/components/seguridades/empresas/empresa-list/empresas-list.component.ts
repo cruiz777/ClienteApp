@@ -209,6 +209,8 @@ export class EmpresasListComponent implements OnInit {
         next: (res) => {
           this.empresaForm.get('logo')?.setValue(res.nombreArchivo);
           this.previewUrl = this.logoService.getLogoUrl(res.nombreArchivo);
+          this.logoService.updateLogo(res.nombreArchivo); // ← ACTUALIZACIÓN GLOBAL
+          empresaData.empresaLogo = res.nombreArchivo; // ← AÑADIDO
           realizarGuardar();
         },
         error: (err) => {
@@ -216,7 +218,8 @@ export class EmpresasListComponent implements OnInit {
           mostrarMensaje('Error al subir el logo. No se guardaron los datos.', 'error');
         }
       });
-    } else {
+    }
+     else {
       realizarGuardar();
     }
   }

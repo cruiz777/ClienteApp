@@ -10,7 +10,7 @@
     </div>
 
     <div class="logo-container">
-      <img src="https://cdn.builder.io/api/v1/image/assets/TEMP/3e2f893b9908f72a9d09f77ede119d331e0f16a2" alt="GS1 Logo" class="gs1-logo" />
+      <img *ngIf="logoUrl" [src]="logoUrl" alt="Logo de la empresa" class="gs1-logo" />
     </div>
 
     <div class="product-icons">
