@@ -11,7 +11,7 @@ const routes: Routes = [
   {path:'inicio',component:InicioComponent, canActivate:[AuthGuard]},
   {path: 'menus', loadChildren: () => import('./components/menus/menus.module').then(x => x.MenusModule) },
   {path: 'pages', loadChildren: () => import('./components/pages/pages.module').then(x => x.PagesModule) , canActivate:[AuthGuard]},
-  {path: 'seguridades', loadChildren: () => import('./components/seguridades/seguridades.module').then(m => m.SeguridadesModule)/*, canActivate:[AuthGuard] */},
+  {path: 'seguridades', loadChildren: () => import('./components/seguridades/seguridades.module').then(m => m.SeguridadesModule), canActivate:[AuthGuard] },
   {path:'**',component:NotFoundComponent,pathMatch:'full'}
 ];
 
