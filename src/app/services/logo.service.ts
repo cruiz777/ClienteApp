@@ -1,5 +1,6 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { BehaviorSubject } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
 @Injectable({
@@ -7,7 +8,8 @@ import { environment } from 'src/environments/environment';
 })
 export class LogoService {
   private baseUrl = `${environment.securityApiUrl}/logo`; // Ajusta a tu dominio real
-
+  private logoSubject = new BehaviorSubject<string | null>(null);
+  logoUrl$ = this.logoSubject.asObservable();
   constructor(private http: HttpClient) {}
 
   /**
@@ -18,7 +20,10 @@ export class LogoService {
     formData.append('file', file);
     return this.http.post<{ nombreArchivo: string }>(`${this.baseUrl}/upload`, formData);
   }
-
+  updateLogo(fileName: string) {
+    const url = this.getLogoUrl(fileName);
+    this.logoSubject.next(url);
+  }
   /**
    * Devuelve la URL absoluta para mostrar un logo
    */
