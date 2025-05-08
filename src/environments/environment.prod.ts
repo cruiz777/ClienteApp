@@ -9,5 +9,7 @@ export const environment = {
 
  // clientsUrl: 'http://localhost:5002/clients/api'
 
-  clientsUrl: 'https://localhost:8001/clients/api',
+ securityApiUrl: 'http://10.10.7.11:8000/security/api',  // URL de la API en desarrollo
+ applicationUrl: 'http://10.10.7.11:8000/security/api',  //Cambiar por la url de clientes en el merge
+ clientsUrl: 'http://10.10.7.11:8000/clients/api'
 };

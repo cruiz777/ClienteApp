@@ -30,12 +30,57 @@ export class LoginComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    
   }
-
   onLogin() {
     this.loading = true;
 
+    const correo = this.formLogin.value.email;
+    const clave = this.formLogin.value.password;
+
+    //this._usuarioServicio.getIniciarSesion(correo, clave).subscribe({
+    //   next: (data) => {
     const { email, password } = this.formLogin.value;
     console.log('Intentando login con:', email);
+
+    //     if (data.status) {
+    //       this.router.navigate(['pages'])
+    //     } else {
+    //       this._snackBar.open("No se encontraron coincidencias", 'Oops!', { duration: 3000 });
+    //     }
+
+    //   },
+    //   error: (e) => {
+    //     this._snackBar.open("Hubo un error", 'Oops!', { duration:3000 });
+    //   },
+    //   complete: () => {
+    //     this.loading = false;
+    //   }
+    // })
+    this.usuarioService.login(email, password).subscribe({
+      next: (user: Usuario) => {
+        console.log('Login exitoso. Usuario:', user);
+        this._snackBar.open('Inicio de sesión exitoso', 'Bienvenido', { duration: 3000 });
+
+        this.router.navigateByUrl('/inicio').then(success => {
+          if (success) {
+            console.log('Navegación exitosa a /inicio');
+          } else {
+            console.error('Error: Navegación a /inicio fallida.');
+            this._snackBar.open('Error al navegar a inicio', 'Error', { duration: 3000 });
+          }
+        }).catch(err => {
+          console.error('Excepción en navegación:', err);
+          this._snackBar.open('Error crítico de navegación', 'Error', { duration: 3000 });
+        });
+      },
+      error: (error: any) => {
+        console.error('Error en login:', error);
+        this._snackBar.open(error.message || 'Credenciales incorrectas', 'Error', { duration: 3000 });
+        this.loading = false;
+      }
+    });
   }
+
+
 }

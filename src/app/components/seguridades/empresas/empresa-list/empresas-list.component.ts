@@ -196,6 +196,9 @@ export class EmpresasListComponent implements OnInit {
 
   cancelar(): void {
     this.empresaForm.reset();
-    this.router.navigate(['/seguridades/empresas']);
+    this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+      this.router.navigate(['/seguridades/empresas']);
+    });
   }
+  
 }
