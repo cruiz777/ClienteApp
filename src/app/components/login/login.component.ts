@@ -1,9 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
-import { MatSnackBar } from '@angular/material/snack-bar';
 import { UsuarioService } from 'src/app/services/usuario.service';
 import { Usuario } from 'src/app/interfaces/responses/usuario-response';
+import { MatDialog } from '@angular/material/dialog';
+import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/components/utils/messages/custom-message-box.component';
 
 @Component({
   selector: 'app-login',
@@ -12,16 +13,14 @@ import { Usuario } from 'src/app/interfaces/responses/usuario-response';
 })
 export class LoginComponent implements OnInit {
   formLogin: FormGroup;
-  hidePassword:boolean   = true;
+  hidePassword: boolean = true;
   loading: boolean = false;
-
 
   constructor(
     private fb: FormBuilder,
     private router: Router,
-    private _snackBar: MatSnackBar,
-    private usuarioService: UsuarioService
-
+    private usuarioService: UsuarioService,
+    private dialog: MatDialog
   ) {
     this.formLogin = this.fb.group({
       email: ['', [Validators.required, Validators.email]],
@@ -29,58 +28,49 @@ export class LoginComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-    
-  }
-  onLogin() {
+  ngOnInit(): void {}
+
+  onLogin(): void {
     this.loading = true;
-
-    const correo = this.formLogin.value.email;
-    const clave = this.formLogin.value.password;
-
-    //this._usuarioServicio.getIniciarSesion(correo, clave).subscribe({
-    //   next: (data) => {
     const { email, password } = this.formLogin.value;
-    console.log('Intentando login con:', email);
 
-    //     if (data.status) {
-    //       this.router.navigate(['pages'])
-    //     } else {
-    //       this._snackBar.open("No se encontraron coincidencias", 'Oops!', { duration: 3000 });
-    //     }
-
-    //   },
-    //   error: (e) => {
-    //     this._snackBar.open("Hubo un error", 'Oops!', { duration:3000 });
-    //   },
-    //   complete: () => {
-    //     this.loading = false;
-    //   }
-    // })
     this.usuarioService.login(email, password).subscribe({
       next: (user: Usuario) => {
         console.log('Login exitoso. Usuario:', user);
-        this._snackBar.open('Inicio de sesión exitoso', 'Bienvenido', { duration: 3000 });
 
-        this.router.navigateByUrl('/inicio').then(success => {
-          if (success) {
-            console.log('Navegación exitosa a /inicio');
-          } else {
-            console.error('Error: Navegación a /inicio fallida.');
-            this._snackBar.open('Error al navegar a inicio', 'Error', { duration: 3000 });
-          }
-        }).catch(err => {
-          console.error('Excepción en navegación:', err);
-          this._snackBar.open('Error crítico de navegación', 'Error', { duration: 3000 });
+        const data: MessageBoxData = {
+          title: 'Inicio de sesión exitoso',
+          message: `Bienvenido`,
+          type: 'success',
+          confirmText: 'Continuar',
+          showCancel: false
+        };
+
+        this.dialog.open(CustomMessageBoxComponent, {
+          width: '400px',
+          data
+        }).afterClosed().subscribe(() => {
+          this.router.navigateByUrl('/inicio');
         });
       },
       error: (error: any) => {
         console.error('Error en login:', error);
-        this._snackBar.open(error.message || 'Credenciales incorrectas', 'Error', { duration: 3000 });
+
+        const data: MessageBoxData = {
+          title: 'Error de inicio de sesión',
+          message: error?.message || 'Credenciales incorrectas. Intenta de nuevo.',
+          type: 'error',
+          confirmText: 'Aceptar',
+          showCancel: false
+        };
+
+        this.dialog.open(CustomMessageBoxComponent, {
+          width: '400px',
+          data
+        });
+
         this.loading = false;
       }
     });
   }
-
-
 }

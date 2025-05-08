@@ -1,11 +1,13 @@
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { EmpresaService } from 'src/app/services/empresa.service';
 import { EmpresaResponse } from 'src/app/interfaces/responses/empresa-response';
 import { Router } from '@angular/router';
 import { CiudadResumen } from 'src/app/interfaces/responses/ciudad-response';
 import { CiudadService } from 'src/app/services/ciudad.service';
 import { LogoService } from 'src/app/services/logo.service';
+import { MatDialog } from '@angular/material/dialog';
+import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/components/utils/messages/custom-message-box.component';
 
 @Component({
   selector: 'app-empresa-list',
@@ -24,7 +26,8 @@ export class EmpresasListComponent implements OnInit {
     private empresaService: EmpresaService,
     private router: Router,
     private ciudadService: CiudadService,
-    private logoService: LogoService
+    private logoService: LogoService,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -35,9 +38,9 @@ export class EmpresasListComponent implements OnInit {
 
   initForm(): void {
     this.empresaForm = this.fb.group({
-      nombre: [''],
+      nombre: ['', Validators.required],
       sistema: [''],
-      ruc: [''],
+      ruc: ['', Validators.required],
       direccion: [''],
       telefono1: [''],
       telefono2: [''],
@@ -49,7 +52,7 @@ export class EmpresasListComponent implements OnInit {
       establecimiento: [''],
       tipo_facturacion: [''],
       contribuyente_especial: [''],
-      obligado_contabilidad: [''],
+      obligado_contabilidad: ['', Validators.required],
       codigo_entidad: [''],
       directorio: [''],
       status: [''],
@@ -137,8 +140,19 @@ export class EmpresasListComponent implements OnInit {
   }
 
   guardar(): void {
-    const empresaDataRaw = this.empresaForm.value;
+    if (this.empresaForm.invalid) {
+      const data: MessageBoxData = {
+        title: 'Campos obligatorios',
+        message: 'Debe completar los campos: nombre, RUC y obligado a contabilidad.',
+        type: 'warning',
+        confirmText: 'Entendido',
+        showCancel: false
+      };
+      this.dialog.open(CustomMessageBoxComponent, { width: '400px', data });
+      return;
+    }
 
+    const empresaDataRaw = this.empresaForm.value;
     const empresaData = {
       empresaCodigo: this.idEmpresa ?? 0,
       empresaNombre: empresaDataRaw.nombre,
@@ -162,15 +176,30 @@ export class EmpresasListComponent implements OnInit {
       idCiudad: empresaDataRaw.id_ciudad
     };
 
+    const mostrarMensaje = (message: string, type: 'success' | 'error') => {
+      const data: MessageBoxData = {
+        title: type === 'success' ? 'Operación exitosa' : 'Error',
+        message,
+        type,
+        confirmText: 'Aceptar',
+        showCancel: false
+      };
+      this.dialog.open(CustomMessageBoxComponent, { width: '400px', data }).afterClosed().subscribe(() => {
+        this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+          this.router.navigate(['/seguridades/empresas']);
+        });
+      });
+      
+    };
 
     const realizarGuardar = () => {
       if (this.idEmpresa) {
         this.empresaService.updateEmpresa(this.idEmpresa, empresaData).subscribe(() => {
-          alert('Empresa actualizada correctamente');
+          mostrarMensaje('Empresa actualizada correctamente.', 'success');
         });
       } else {
         this.empresaService.createEmpresa(empresaData).subscribe(() => {
-          alert('Empresa registrada correctamente');
+          mostrarMensaje('Empresa registrada correctamente.', 'success');
         });
       }
     };
@@ -184,7 +213,7 @@ export class EmpresasListComponent implements OnInit {
         },
         error: (err) => {
           console.error('Error al subir logo:', err);
-          alert('Error al subir el logo. No se guardaron los datos.');
+          mostrarMensaje('Error al subir el logo. No se guardaron los datos.', 'error');
         }
       });
     } else {
@@ -192,13 +221,10 @@ export class EmpresasListComponent implements OnInit {
     }
   }
 
-
-
   cancelar(): void {
     this.empresaForm.reset();
     this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
       this.router.navigate(['/seguridades/empresas']);
     });
   }
-  
 }
