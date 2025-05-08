@@ -130,3 +130,8 @@ input[type='checkbox'] {
   font-weight: bold;
   color: #002c6c;
 }
+
+.menu-con-opciones {
+  background-color: #e0f7fa; /* celeste suave */
+  font-weight: bold;
+}
