@@ -10,6 +10,7 @@ import { MenuResponse } from 'src/app/interfaces/responses/menu-response';
 import { OpcionService } from 'src/app/services/opcion.service';
 import { OpcionResponse } from 'src/app/interfaces/responses/opcion-response';
 import {PerfilOpcionService} from 'src/app/services/perfilOpcion.service';
+import {PerfilOpcion}from'src/app/interfaces/requests/perfil-opcion-request';
 
 /**
  * Componente encargado de mostrar pestañas con los sistemas y
@@ -114,6 +115,28 @@ export class PerfilesListComponent implements OnInit {
       });
     });
   }
+
+  onToggleOpcion(opcion: OpcionResponse): void {
+    if (this.perfilSeleccionado === null) return;
+
+    const request: PerfilOpcion = {
+      id_perfil: this.perfilSeleccionado,
+      id_opcion: opcion.id_opcion,
+      status: opcion.status
+    };
+
+    this.perfilesOpcionesService.actualizarOpcion(request).subscribe({
+      next: (resp) => {
+        console.log(`✔ Opción actualizada: ID ${request.id_opcion} - Estado: ${request.status}`);
+      },
+      error: (err) => {
+        console.error('❌ Error al actualizar la opción:', err);
+      }
+    });
+  }
+
+
+
 
 
 }
