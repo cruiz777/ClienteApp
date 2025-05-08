@@ -36,7 +36,7 @@
           <tr *ngFor="let modulo of modulos" [class.fila-activa]="modulo.id_modulo === moduloSeleccionado" (click)="seleccionarModulo(modulo.id_modulo)" style="cursor: pointer;">
             <td class="ocultar-id">{{ modulo.id_modulo }}</td>
             <td>{{ modulo.nombre }}</td>
-            <td class="col-reducida"><input type="checkbox" [(ngModel)]="modulo.status" /></td>
+            <td class="col-reducida"><input type="checkbox" /></td>
           </tr>
         </tbody>
       </table>
@@ -53,7 +53,7 @@
           <tr *ngFor="let menu of menus" [class.fila-activa]="menu.id_menu === menuSeleccionado" (click)="seleccionarMenu(menu.id_menu)" style="cursor: pointer;">
             <td class="ocultar-id">{{ menu.id_menu }}</td>
             <td>{{ menu.nombre }}</td>
-            <td class="col-reducida"><input type="checkbox" [(ngModel)]="menu.status" /></td>
+            <td class="col-reducida"><input type="checkbox" /></td>
           </tr>
         </tbody>
       </table>
@@ -70,7 +70,7 @@
           <tr *ngFor="let opcion of opcionnes">
             <td class="ocultar-id">{{ opcion.id_opcion }}</td>
             <td>{{ opcion.nombre }}</td>
-            <td class="col-reducida"><input type="checkbox" [(ngModel)]="opcion.status" /></td>
+            <td class="col-reducida"><input type="checkbox" [(ngModel)]="opcion.status" (change)="onToggleOpcion(opcion)" /></td>
           </tr>
         </tbody>
       </table>
