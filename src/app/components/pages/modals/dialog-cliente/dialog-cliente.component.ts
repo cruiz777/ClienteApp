@@ -2,13 +2,13 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
-
+import { MatDialog } from '@angular/material/dialog';
 // Angular Forms
 import { FormBuilder, FormGroup, FormControl, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 // Angular Material
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
-
+import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
 
 // RxJS
 import { BehaviorSubject, Observable } from 'rxjs';
@@ -89,6 +89,7 @@ export class DialogClienteComponent implements OnInit {
   prefijoExistente = false;
   impresionHabilitada = false;
   fecha: Date = new Date();
+  modoEdicion = false;
   constructor(
     private fb: FormBuilder,
     private grupoService: GrupoEmpresaService,
@@ -105,8 +106,8 @@ export class DialogClienteComponent implements OnInit {
     private prefijoService: PrefijoService,
     private cedulaService: CedulaService,
     private generarglnService: GenerarglnService,
-    private glnService: GlnService
-
+    private glnService: GlnService,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
@@ -114,7 +115,7 @@ export class DialogClienteComponent implements OnInit {
 
     this.initFormulario();
 
-    this.obtenerUsuarioActual();
+    // this.obtenerUsuarioActual();
     this.cargarGrupos();
     this.cargarGruposProducto();
     this.cargarCiudad();
@@ -465,14 +466,14 @@ export class DialogClienteComponent implements OnInit {
   }
 
 
-  obtenerUsuarioActual(): void {
-    this.usuarioService.currentUser$.subscribe(user => {
-      this.usuarioActual = user;
+  // obtenerUsuarioActual(): void {
+  //   this.usuarioService.currentUser$.subscribe(user => {
+  //     this.usuarioActual = user;
 
-      console.log('Usuario Actual:', this.usuarioActual);
+  //     console.log('Usuario Actual:', this.usuarioActual);
 
-    });
-  }
+  //   });
+  // }
   cargarZona(): void {
     this.zonaService.obtenerZona().subscribe(data => {
       this.zona = data;
@@ -525,11 +526,11 @@ export class DialogClienteComponent implements OnInit {
       nomcli: paso2.razonSocial || '',
       dircli: paso2.direccionPrincipal || '',
       concli: paso2.nombreRepresentante || '',
-      email: paso3.email || '',
-      telefono: paso3.telefono || '',
-      telefono1: paso2.telefono2 || '',
+      email: paso3.emailRepresentante || '',
+      telefono: paso3.telefonoRepresentante || '',
+      telefono1: paso2.telefono || '',
       razonSocial: paso2.razonSocial || '',
-      fax: '',
+      fax: paso2.celular,
       ruc: paso1.ruc || '',
       fecing: this.fechaIngreso.toISOString().split('T')[0],
       fecnac: '2025-04-23',
@@ -695,19 +696,31 @@ export class DialogClienteComponent implements OnInit {
 
       console.log('✍️ Guardando prefijo ingresado manualmente:', prefijoData);
 
-      this.prefijoService.guardarPrefijo(prefijoData).subscribe({
-        next: () => {
-          this.mostrarAlerta('Se guardó correctamente', 'OK');
-          this.paso1Form.get('prefijo')?.disable();
-          this.botonGuardarDeshabilitado = true;
+this.prefijoService.guardarPrefijo(prefijoData).subscribe({
+  next: () => {
+    const msg = this.modoEdicion ? 'Creado' : 'creado';
 
-          this.guardarNuevoGln();
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: 'Éxito',
+        message: `El Cliente fue ${msg} correctamente.`,
+        type: 'success',
+        confirmText: '',
+        showCancel: false
+      }
+    });
 
-        },
-        error: () => {
-          this.mostrarAlerta('Error al guardar el prefijo modificado', 'Error');
-        }
-      });
+    this.paso1Form.get('prefijo')?.disable();
+    this.botonGuardarDeshabilitado = true;
+    this.guardarNuevoGln(); // ✅ estas van dentro del next
+  },
+  error: (err) => {
+    console.error('❌ Error al actualizar cliente:', err);
+    this.mostrarAlerta('No se pudo actualizar el cliente', 'Error');
+  }
+});
+
 
     } else {
       // Flujo automático
@@ -762,15 +775,29 @@ export class DialogClienteComponent implements OnInit {
 
           this.prefijoService.guardarPrefijo(prefijoData).subscribe({
             next: () => {
-              this.mostrarAlerta('Se guardó correctamente', 'OK');
-              this.guardarNuevoGln();
-              this.actualizarNumeroControl(idControl, siguienteNum, false);
-              this.botonGuardarDeshabilitado = true;
+              const msg = this.modoEdicion ? 'Creado' : 'creado';
+          
+              this.dialog.open(CustomMessageBoxComponent, {
+                width: '400px',
+                data: {
+                  title: 'Éxito',
+                  message: `El Cliente fue ${msg} correctamente.`,
+                  type: 'success',
+                  confirmText: '',
+                  showCancel: false
+                }
+              });
+          
+              this.guardarNuevoGln(); // ✅ llamada adicional
+              this.actualizarNumeroControl(idControl, siguienteNum, false); // ✅ nueva lógica
+              this.botonGuardarDeshabilitado = true; // ✅ se desactiva el botón luego de guardar
             },
             error: () => {
               this.mostrarAlerta('Error al guardar el prefijo', 'Error');
             }
           });
+          
+          
         },
         error: (err) => {
           console.error('❌ Error al obtener el número de control:', err);

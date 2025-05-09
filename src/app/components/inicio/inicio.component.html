@@ -8,21 +8,20 @@
         alt="Imagen carrusel"
       />
     </div>
-  
+
     <div class="logo-container">
-      <img src="https://cdn.builder.io/api/v1/image/assets/TEMP/3e2f893b9908f72a9d09f77ede119d331e0f16a2" alt="GS1 Logo" class="gs1-logo" />
+      <img *ngIf="logoUrl" [src]="logoUrl" alt="Logo de la empresa" class="gs1-logo" />
     </div>
-  
+
     <div class="product-icons">
       <img src="/assets/logo/CODBAR-GS1-2.png" alt="CODBAR GS1" class="codbar-gs1" [routerLink]="'/menus/codbar'" style="cursor: pointer" />
       <img src="/assets/logo/SIC-3000-2.png" alt="ROL 3000" class="rol3000" />
       <img src="/assets/logo/CG-3000-2.png" alt="CG 3000" class="cg3000" />
       <img src="/assets/logo/ROL-3000-2.png" alt="ROL 3000" class="rol3000" />
-      <img src="/assets/logo/seguridad-2.png" alt="Seguridad" class="seguridad" />
+      <img src="/assets/logo/seguridad-2.png" alt="Seguridad" class="seguridad" [routerLink]="'/seguridades/empresas'" style="cursor: pointer" />
     </div>
-  
+
     <div class="user-icon-container">
       <img src="https://cdn.builder.io/api/v1/image/assets/TEMP/462c3d503ae1a130bc69acd82f5ad008cacd1ce6" alt="User Icon" class="user-icon" [routerLink]="'/login'" style="cursor: pointer" />
     </div>
   </section>
-  

@@ -52,12 +52,15 @@ export class ClientesComponent implements OnInit {
   }
 
   cargarClientes(): void {
+    
+    // Limpia primero la tabla visualmente
+    this.dataSource = new MatTableDataSource<Cliente>([]);
+this.dataSource.paginator = this.paginator;
+  
     this.clienteService.getClientes().subscribe({
       next: (resp) => {
-        debugger
         this.dataSource = new MatTableDataSource(resp);
         this.dataSource.paginator = this.paginator;
-        console.log('Clientes:', this.dataSource);
       },
       error: (err) => {
         console.error('Error al obtener clientes', err);
@@ -65,6 +68,7 @@ export class ClientesComponent implements OnInit {
       }
     });
   }
+  
   
   
   applyFilter(event: Event) {
@@ -82,7 +86,8 @@ export class ClientesComponent implements OnInit {
       data: cliente.clientes_codigo
     }).afterClosed().subscribe(result => {
       if (result === "editado")
-        result = "editado";
+        this.cargarClientes(); // ✅ recarga la tabla
+       // this.mostrarAlerta('Cliente actualizado correctamente', 'Éxito');
     });
   }
   

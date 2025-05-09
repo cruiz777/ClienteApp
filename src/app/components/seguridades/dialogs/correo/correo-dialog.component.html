@@ -1,0 +1,24 @@
+<h2 mat-dialog-title>Agregar Correo</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="correoForm">
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Tipo</mat-label>
+        <mat-select formControlName="tipo">
+          <mat-option value="Otro">Otro</mat-option>
+          <mat-option value="Trabajo">Trabajo</mat-option>
+          <mat-option value="Casa">Personal</mat-option>
+        </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Email</mat-label>
+      <input matInput formControlName="email">
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="cerrar()">Cancelar</button>
+  <button mat-raised-button color="primary" (click)="guardar()">Guardar</button>
+</mat-dialog-actions>

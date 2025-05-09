@@ -1,4 +1,4 @@
-export interface empresarequest {
+export interface EmpresaRequest {
   empresaCodigo: number;
   empresaNombre?: string;
   empresaSistema?: string;
@@ -19,6 +19,4 @@ export interface empresarequest {
   empresaDirectorio?: string;
   status: boolean;
   idCiudad: number;
-  idPersonaGerente: number;
-  idPersonaContador: number;
 }

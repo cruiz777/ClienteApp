@@ -1,0 +1,56 @@
+.message-box {
+    text-align: center;
+    padding: 25px;
+    border-radius: 8px;
+    background: #fff;
+    min-width: 320px;
+  
+    .icon-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 15px;
+  
+      mat-icon {
+        font-size: 48px;
+        width: 48px;
+        height: 48px;
+        line-height: 48px;
+      }
+    }
+  
+    h2 {
+      margin-bottom: 10px;
+      font-size: 22px;
+      font-weight: bold;
+    }
+  
+    p {
+      margin: 0 0 20px;
+      font-size: 16px;
+    }
+  
+    .actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 20px;
+    }
+    .search-button {
+      background-color: #002c6c;
+      border-radius: 4px;
+      color: #fff;
+      padding: 6px 20px;
+      font: 500 13px Inter, sans-serif;
+      transition: background-color 0.3s ease;
+    }
+  
+    .search-button:hover {
+      background-color: #001f4d;
+    }
+  
+    &.success mat-icon { color: #4caf50; }
+    &.error mat-icon { color: #f44336; }
+    &.warning mat-icon { color: #ff9800; }
+    &.info mat-icon { color: #2196f3; }
+  }

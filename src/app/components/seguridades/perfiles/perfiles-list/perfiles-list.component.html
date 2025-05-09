@@ -1,0 +1,124 @@
+<!-- perfiles-list.component.html -->
+<div class="tabs">
+  <button *ngFor="let sistema of sistemas" [class.active]="sistema.nombre === sistemaActivo"
+    (click)="seleccionarSistema(sistema.nombre,sistema.id_sistema)">
+    {{ sistema.nombre }}
+  </button>
+</div>
+
+<div class="contenido-tablas">
+  <h2>Tabla de Perfiles</h2>
+  <table class="tabla-estilo">
+    <thead>
+      <tr>
+        <th class="col-reducida">Código</th>
+        <th>Perfil</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let perfil of perfiles" [class.fila-activa]="perfil.id_perfil === perfilSeleccionado"
+        (click)="seleccionarPerfil(perfil.id_perfil)" style="cursor: pointer;">
+        <td>{{ perfil.id_perfil }}</td>
+        <td>{{ perfil.nombre }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="tablas-panel">
+    <!-- Módulos -->
+    <div class="panel-col">
+      <h3>Módulos</h3>
+      <table class="tabla-estilo">
+        <thead>
+          <tr>
+            <th class="ocultar-id">ID</th>
+            <th>Módulo</th>
+            <th>Todo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let modulo of modulos" [class.fila-activa]="modulo.id_modulo === moduloSeleccionado"
+            (click)="seleccionarModulo(modulo.id_modulo)" style="cursor: pointer;">
+            <td class="ocultar-id">{{ modulo.id_modulo }}</td>
+            <td>{{ modulo.nombre }}</td>
+            <td class="col-reducida"><input type="checkbox" /></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Menús -->
+    <div class="panel-col">
+      <h3>Menús</h3>
+      <table class="tabla-estilo">
+        <thead>
+          <tr>
+            <th class="ocultar-id">ID</th>
+            <th>Menú</th>
+            <th>Tiene_Acceso</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let menu of menus" [ngClass]="{
+            'fila-activa': menu.id_menu === menuSeleccionado,
+            'menu-con-opciones': menu.tieneOpciones
+          }" (click)="seleccionarMenu(menu.id_menu)" style="cursor: pointer;">
+            <td class="ocultar-id">{{ menu.id_menu }}</td>
+            <td>{{ menu.nombre }}</td>
+            <td class="col-reducida">
+              <input type="checkbox" [checked]="menu.todasAsignadas" (click)="$event.stopPropagation()"
+                (change)="onToggleTodoOpciones(menu)" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Opciones -->
+    <div class="panel-col">
+      <h3>Opciones</h3>
+      <table class="tabla-estilo">
+        <thead>
+          <tr>
+            <th class="ocultar-id">ID</th>
+            <th>Opción</th>
+            <th>Tiene_Acceso</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let opcion of opcionnes">
+            <td class="ocultar-id">{{ opcion.id_opcion }}</td>
+            <td>{{ opcion.nombre }}</td>
+            <td class="col-reducida">
+              <input type="checkbox" [(ngModel)]="opcion.status" (change)="onToggleOpcion(opcion)" />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+
+    <!-- Opciones -->
+    <div class="panel-col">
+      <h3>Opciónes</h3>
+      <table class="tabla-estilo">
+        <thead>
+          <tr>
+            <th class="ocultar-id">ID</th>
+            <th>Opción</th>
+            <th>Tiene_Acceso</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let opcion of opcionnes">
+            <td class="ocultar-id">{{ opcion.id_opcion }}</td>
+            <td>{{ opcion.nombre }}</td>
+            <td class="col-reducida"><input type="checkbox" [(ngModel)]="opcion.status"
+                (change)="onToggleOpcion(opcion)" /></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>

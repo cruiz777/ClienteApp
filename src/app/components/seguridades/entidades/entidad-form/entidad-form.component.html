@@ -1,0 +1,236 @@
+<section class="person-form-container">
+  <h1 class="form-title">{{ tituloFormulario }}</h1>
+
+  <form [formGroup]="personaForm">
+    <div class="form-row">
+      <div class="form-field">
+        <label class="field-label">Tipo de Identificación*</label>
+        <div class="dropdown-field">
+          <select class="field-input" formControlName="idTipoDocumento">
+            <option *ngFor="let tipo of tiposDocumento" [value]="tipo.idTipoDocumento" disabled>
+              {{ tipo.descripcion }}
+            </option>
+          </select>
+        </div>
+        <div class="error" *ngIf="personaForm.get('idTipoDocumento')?.invalid && personaForm.get('idTipoDocumento')?.touched">
+          Campo obligatorio
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label class="field-label">Número Documento*</label>
+        <input
+            class="field-input"
+            formControlName="numeroDocumento"
+            (keypress)="onKeyPressNumbers($event)"
+            (keydown)="onKeyDownDocumento($event)"
+            (blur)="onBlurDocumento()" />
+
+        <div class="error" *ngIf="personaForm.get('numeroDocumento')?.hasError('required') && personaForm.get('numeroDocumento')?.touched">
+          Campo obligatorio
+        </div>
+
+        <div class="error" *ngIf="personaForm.get('numeroDocumento')?.hasError('exactLengthByTipo') && personaForm.get('numeroDocumento')?.touched">
+          Debe contener exactamente {{
+            personaForm.get('numeroDocumento')?.getError('exactLengthByTipo')?.expected
+          }} caracteres.
+        </div>
+      </div>
+
+    </div>
+
+    <div class="form-row">
+      <div class="form-field">
+        <label class="field-label">{{ labelNombre }}*</label>
+        <input class="field-input" formControlName="primerNombre" appUppercase (keypress)="onKeyPressLetters($event)"  />
+        <div class="error" *ngIf="personaForm.get('primerNombre')?.invalid && personaForm.get('primerNombre')?.touched">
+          Campo obligatorio
+        </div>
+      </div>
+
+      <div class="form-field" *ngIf="mostrarGenero">
+        <label class="field-label">Segundo Nombre</label>
+        <input class="field-input" formControlName="segundoNombre" (keypress)="onKeyPressLetters($event)" appUppercase/>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-field">
+        <label class="field-label">{{ labelApellido }}*</label>
+        <input class="field-input" formControlName="primerApellido" (keypress)="onKeyPressLetters($event)" appUppercase/>
+        <div class="error" *ngIf="personaForm.get('primerApellido')?.invalid && personaForm.get('primerApellido')?.touched">
+          Campo obligatorio
+        </div>
+      </div>
+
+      <div class="form-field" *ngIf="mostrarGenero">
+        <label class="field-label">Segundo Apellido</label>
+        <input class="field-input" formControlName="segundoApellido" (keypress)="onKeyPressLetters($event)"  appUppercase/>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-field">
+        <label class="field-label">Estado Civil*</label>
+        <div class="dropdown-field">
+          <select class="field-input" formControlName="idEstadoCivil">
+            <option *ngFor="let estado of estadosCiviles" [ngValue]="estado.estadoCivilCodigo">
+              {{ estado.estadoCivilNombre }}
+            </option>
+          </select>
+        </div>
+        <div class="error" *ngIf="personaForm.get('idEstadoCivil')?.invalid && personaForm.get('idEstadoCivil')?.touched">
+          Campo obligatorio
+        </div>
+      </div>
+      <div class="form-field" *ngIf="modoEdicion">
+        <label class="field-label">Estado*</label>
+        <div class="dropdown-field">
+          <select class="field-input" formControlName="status">
+            <option [ngValue]="true">ACTIVO</option>
+            <option [ngValue]="false">INACTIVO</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-field" *ngIf="mostrarGenero">
+        <label class="field-label">Género*</label>
+        <div class="dropdown-field">
+          <select class="field-input" formControlName="idGenero">
+            <option *ngFor="let genero of generos" [value]="genero.generoCodigo">
+              {{ genero.generoDescripcion }}
+            </option>
+          </select>
+        </div>
+        <div class="error" *ngIf="personaForm.get('idGenero')?.invalid && personaForm.get('idGenero')?.touched">
+          Campo obligatorio
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Campo Ciudad con filtro y estilo personalizado -->
+    <div class="form-field" style="flex-direction: column; align-items: flex-start; width: 100%;">
+      <div style="display: flex; align-items: center; width: 100%;">
+        <label class="field-label" style="min-width: 130px;">Ciudad*</label>
+        <div style="flex-grow: 1; position: relative;">
+
+          <select class="field-input" formControlName="idCiudad">
+            <option value="">Seleccione...</option>
+            <ng-container *ngFor="let ciudad of filteredCiudades$ | async">
+              <option [value]="ciudad.id">
+                {{ ciudad.ciudad }} - {{ ciudad.canton }}, {{ ciudad.provincia }}
+              </option>
+            </ng-container>
+          </select>
+          <input
+            class="field-input"
+            style="margin-top: 6px;"
+            type="text"
+            [formControl]="ciudadFiltroCtrl"
+            placeholder="Buscar ciudad..."
+            (keypress)="onKeyPressLetters($event)"
+          />
+        </div>
+      </div>
+      <div class="error" *ngIf="personaForm.get('idCiudad')?.invalid && personaForm.get('idCiudad')?.touched">
+        Campo obligatorio
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-field">
+        <label class="field-label">{{ labelFecha }}*</label>
+        <input type="date" class="field-input" formControlName="fechaNacimiento" [max]="today | date:'yyyy-MM-dd'" />
+        <div class="error" *ngIf="personaForm.get('fechaNacimiento')?.invalid && personaForm.get('fechaNacimiento')?.touched">
+          Campo obligatorio
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label class="field-label">Tipo Persona*</label>
+        <div class="dropdown-field">
+          <select class="field-input" formControlName="tipoPersona">
+            <option value="NATURAL">NATURAL</option>
+            <option value="JURÍDICA">JURÍDICA</option>
+          </select>
+        </div>
+        <div class="error" *ngIf="personaForm.get('tipoPersona')?.invalid && personaForm.get('tipoPersona')?.touched">
+          Campo obligatorio
+        </div>
+      </div>
+    </div>
+
+
+  <!-- Correos -->
+<!-- Correos -->
+<div class="form-row">
+  <label class="field-label">Correo:</label>
+  <div class="form-content">
+    <div class="add-button" (click)="openCorreoDialog()">
+      <svg class="add-icon" viewBox="0 0 13 13">
+        <path d="M6.5 1L6.5 12" stroke="#F26334" stroke-width="2" stroke-linecap="round" />
+        <path d="M12 6.5L1 6.5" stroke="#F26334" stroke-width="2" stroke-linecap="round" />
+      </svg>
+    </div>
+    <div class="item-container">
+      <div *ngFor="let correo of correos; let i = index" class="item-tag">
+        {{ correo.tipo }} - {{ correo.email }}
+        <button class="delete-btn" (click)="eliminarCorreo(i)">
+          <i class="material-icons">delete</i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Teléfonos -->
+<div class="form-row">
+  <label class="field-label">Teléfono:</label>
+  <div class="form-content">
+    <div class="add-button" (click)="openTelefonoDialog()">
+      <svg class="add-icon" viewBox="0 0 13 13">
+        <path d="M6.5 1L6.5 12" stroke="#F26334" stroke-width="2" stroke-linecap="round" />
+        <path d="M12 6.5L1 6.5" stroke="#F26334" stroke-width="2" stroke-linecap="round" />
+      </svg>
+    </div>
+    <div class="item-container">
+      <div *ngFor="let tel of telefonos; let i = index" class="item-tag">
+        {{ tel.tipo }} - {{ tel.numero }}
+        <button class="delete-btn" (click)="eliminarTelefono(i)">
+          <i class="material-icons">delete</i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Direcciones -->
+<div class="form-row">
+  <label class="field-label">Dirección:</label>
+  <div class="form-content">
+    <div class="add-button" (click)="openDireccionDialog()">
+      <svg class="add-icon" viewBox="0 0 13 13">
+        <path d="M6.5 1L6.5 12" stroke="#F26334" stroke-width="2" stroke-linecap="round" />
+        <path d="M12 6.5L1 6.5" stroke="#F26334" stroke-width="2" stroke-linecap="round" />
+      </svg>
+    </div>
+    <div class="item-container">
+      <div *ngFor="let dir of direcciones; let i = index" class="item-tag">
+        {{ dir.tipo }} - {{ dir.calle }}
+        <button class="delete-btn" (click)="eliminarDireccion(i)">
+          <i class="material-icons">delete</i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+  <div class="action-buttons">
+    <button type="button" class="action-button" (click)="guardar()">Grabar</button>
+    <button type="button" class="action-button" (click)="cancelar()">Cancelar</button>
+  </div>
+  </form>
+</section>
