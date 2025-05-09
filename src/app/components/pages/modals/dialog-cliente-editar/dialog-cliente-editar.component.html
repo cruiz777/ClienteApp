@@ -140,7 +140,7 @@
  <div class="estado-zona-compacto">
   <div class="campo">
     <label class="form-label">Estado:</label>
-    <mat-form-field appearance="outline" class="campo-form compacto-form-field">
+    <mat-form-field >
       <mat-select formControlName="estadoEmpresa">
         <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
           {{ estado.id }} - {{ estado.Nombre }}
@@ -150,8 +150,8 @@
   </div>
 
   <div class="campo">
-    <label class="form-label">Zona:</label>
-    <mat-form-field appearance="outline" class="campo-form compacto-form-field">
+    <label >Zona:</label>
+    <mat-form-field >
       <mat-select formControlName="zona">
         <mat-option *ngFor="let zona of zona" [value]="zona">
           {{ zona.referencia }} - {{ zona.nombre }}
