@@ -13,7 +13,7 @@
               (backdropClick)="isExpanded = false">
 
     <!-- Logos -->
-    
+
     <div class="logo-seguridad" *ngIf="isExpanded">
       <img src="assets/logo/CODBAR-GS1.png" alt="Logo">
     </div>
@@ -30,7 +30,7 @@
       <!-- Acordeón -->
       <mat-accordion [multi]="false">
 
-        <!-- SEGURIDAD -->
+        <!-- CLIENTES-->
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
@@ -50,10 +50,10 @@
           <a mat-list-item routerLink="/pages/clientes">
             <span *ngIf="isExpanded" class="menu-text">Responsable de Guias</span>
           </a>
-                    
+
         </mat-expansion-panel>
 
-        <!-- ENTIDADES -->
+        <!-- PREFIJOS -->
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
@@ -61,7 +61,7 @@
               <span *ngIf="isExpanded" class="menu-text">Prefijos</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
-          <a mat-list-item routerLink="/seguridades/entidades">
+          <a mat-list-item routerLink="/tras-prefijo">
             <span *ngIf="isExpanded" class="menu-text">Transferencia de Prefijos</span>
           </a>
           <a mat-list-item routerLink="/seguridades/entidades">
@@ -72,7 +72,7 @@
           </a>
         </mat-expansion-panel>
 
-        
+
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
@@ -82,12 +82,12 @@
           </mat-expansion-panel-header>
 
           <a mat-list-item routerLink="/seguridades/empresas">
-            
+
             <span *ngIf="isExpanded" class="menu-text">Validador RUC en SRI</span>
           </a>
 
           <a mat-list-item routerLink="/seguridades/localizacion">
-            
+
             <span *ngIf="isExpanded" class="menu-text">Validador Lic.Prod.Verify</span>
           </a>
 
@@ -101,16 +101,16 @@
           </mat-expansion-panel-header>
 
           <a mat-list-item routerLink="/seguridades/empresas">
-            
+
             <span *ngIf="isExpanded" class="menu-text">Reporte Gerencia Cliente</span>
           </a>
 
           <a mat-list-item routerLink="/seguridades/localizacion">
-           
+
             <span *ngIf="isExpanded" class="menu-text">Reporte Clientes</span>
           </a>
           <a mat-list-item routerLink="/seguridades/localizacion">
-           
+
             <span *ngIf="isExpanded" class="menu-text">Explorador Clientes</span>
           </a>
 
@@ -124,12 +124,12 @@
           </mat-expansion-panel-header>
 
           <a mat-list-item routerLink="/seguridades/empresas">
-           
+
             <span *ngIf="isExpanded" class="menu-text">Servicios Productos</span>
           </a>
 
           <a mat-list-item routerLink="/seguridades/localizacion">
-            
+
             <span *ngIf="isExpanded" class="menu-text">Localización Establecimientos</span>
           </a>
 
@@ -142,10 +142,10 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-        
+
 
           <a mat-list-item routerLink="/seguridades/localizacion">
-           
+
             <span *ngIf="isExpanded" class="menu-text">Localización</span>
           </a>
 
