@@ -301,8 +301,30 @@
                     </div>
                   </div>
                   <div style="padding-top: 0px; padding-bottom: 0px;">
+                    <label style="color: #002c6c;font-size: 13px;"><span style="color: red;">*</span>País : </label>
+                    <mat-form-field class="full-width" style="font-size: 12px; height: 60px;width:210px;">
+                      <input matInput formControlName="pais" [matAutocomplete]="autoPais"
+                        placeholder="Seleccione Pais" autocomplete="off">
+
+                      <button matSuffix mat-icon-button aria-label="Limpiar" *ngIf="paso2Form.get('pais')?.value"
+                        (click)="limpiarPais()">
+                        <mat-icon>close</mat-icon>
+                      </button>
+
+                      <mat-autocomplete #autoPais="matAutocomplete" [displayWith]="displayPais"
+                        (optionSelected)="seleccionarPais($event.option.value)">
+                        <mat-option *ngFor="let pais of paisFiltrados" [value]="pais" style="font-size: 11px;">
+                          {{ pais.codigoArea }} - {{ pais.nombre }}
+                        </mat-option>
+                      </mat-autocomplete>
+                      <mat-error
+                        *ngIf="paso2Form.get('pais')?.hasError('required') && paso2Form.get('pais')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
+                    </mat-form-field>
                     <label style="color: #002c6c;font-size: 13px;"><span style="color: red;">*</span>Ciudad : </label>
-                    <mat-form-field class="full-width" style="font-size: 12px; height: 60px;">
+                    <mat-form-field class="full-width" style="font-size: 12px; height: 60px;width:650px;">
                       <input matInput formControlName="ciudad" [matAutocomplete]="autoCiudad"
                         placeholder="Seleccione Ciudad" autocomplete="off">
 
@@ -323,7 +345,6 @@
                         Este campo es obligatorio.
                       </mat-error>
                     </mat-form-field>
-
 
                   </div>
                   <div class="form-row">
@@ -346,8 +367,8 @@
 
                     <label style="color: #002c6c; font-size: 12px; margin-left: 10px;"><span
                         style="color: red;">*</span>Celular:</label>
-                    <input type="text" class="underline-input" formControlName="celular" maxlength="10"
-                      autocomplete="off" placeholder="0999999999" />
+                    {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="celular" maxlength="9"
+                      autocomplete="off" placeholder="999999999" />
                     <mat-error
                       *ngIf="paso2Form.get('celular')?.hasError('required') && paso2Form.get('celular')?.touched"
                       style="color: red; font-size: 12px;">
@@ -361,8 +382,8 @@
                       placeholder="https://gs1ec.org" autocomplete="off" />
 
                     <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">Teléfono 2:</label>
-                    <input type="text" class="underline-input" formControlName="telefono2" maxlength="10"
-                      placeholder="0999999999" autocomplete="off" />
+                    {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2" maxlength="9"
+                      placeholder="999999999" autocomplete="off" />
                   </div>
 
                   <div class="form-row">
@@ -424,8 +445,8 @@
                         </div>
                         <label style="color: #002c6c; font-size: 12px;"><span style="color: red;">*</span>Tel.o
                           Cel:</label>
-                        <input type="text" class="underline-input" formControlName="telefonoRepresentante"
-                          maxlength="10" placeholder="0999999999" autocomplete="off" />
+                        {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefonoRepresentante"
+                          maxlength="9" placeholder="999999999" autocomplete="off" />
                         <mat-error
                           *ngIf="paso3Form.get('telefonoRepresentante')?.hasError('required') && paso3Form.get('telefonoRepresentante')?.touched"
                           style="color: red; font-size: 12px;">
@@ -452,8 +473,8 @@
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
                       <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
-                      <input type="text" class="underline-input" formControlName="telefono" maxlength="10"
-                        autocomplete="off" placeholder="0999999999" />
+                      {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono" maxlength="9"
+                        autocomplete="off" placeholder="999999999" />
                     </div>
                     <div class="form-row">
 
@@ -490,8 +511,8 @@
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
                       <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
-                      <input type="text" class="underline-input" formControlName="telefono2" maxlength="10"
-                        placeholder="0999999999" autocomplete="off" />
+                      {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2" maxlength="9"
+                        placeholder="999999999" autocomplete="off" />
                     </div>
 
 

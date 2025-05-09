@@ -47,6 +47,7 @@ import { PrefijoService, Prefijo } from 'src/app/services/prefijo.service';
 import { CedulaService } from 'src/app/services/cedula.service';
 import { GenerarglnService } from 'src/app/services/generargln.service';
 import { GlnService, GlnRequest } from 'src/app/services/gln.service';
+import { PaisService, Pais } from 'src/app/services/pais.service';
 
 
 
@@ -78,6 +79,11 @@ export class DialogClienteComponent implements OnInit {
   ciudadFiltrados$!: Observable<Ciudad[]>;
   ciudadSeleccionado!: number;
   ciudadFiltrados: Ciudad[] = [];
+  pais: Pais[] = [];
+  paisCtrl = new FormControl('');
+  paisFiltrados$!: Observable<Pais[]>;
+  paisSeleccionado!: number;
+  paisFiltrados: Pais[] = [];
 
   nombreCiudadSeleccionada: string = '';
   esPasaporte = false;
@@ -107,7 +113,8 @@ export class DialogClienteComponent implements OnInit {
   fecha: Date = new Date();
   modoEdicion = false;
   campoGlnVerde = false;
-  estadoContribuyenteRuc:string=''
+  estadoContribuyenteRuc: string = '';
+ codigoAreaE: number | null = null;
   constructor(
     private fb: FormBuilder,
     private grupoService: GrupoEmpresaService,
@@ -125,7 +132,8 @@ export class DialogClienteComponent implements OnInit {
     private cedulaService: CedulaService,
     private generarglnService: GenerarglnService,
     private glnService: GlnService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private paisService: PaisService
   ) { }
 
   ngOnInit(): void {
@@ -136,6 +144,7 @@ export class DialogClienteComponent implements OnInit {
     //this.obtenerUsuarioActual();
     this.cargarGrupos();
     this.cargarGruposProducto();
+    this.cargarPais();
     this.cargarCiudad();
     this.cargarZona();
     this.paso1Form.get('prefix')?.valueChanges.subscribe(prefix => {
@@ -163,13 +172,14 @@ export class DialogClienteComponent implements OnInit {
 
       paso2: this.fb.group({
         ciudad: ['', Validators.required],
+        pais: [''],
         razonSocial: this.fb.control(null, {
           validators: [
             Validators.required
           ],
           updateOn: 'change'
         }),
-        
+
         nombreRepresentante: [null, Validators.required],
         direccionPrincipal: ['', Validators.required],
         codigoPostal: [''],
@@ -307,7 +317,7 @@ export class DialogClienteComponent implements OnInit {
         this.tipoIdentificacion = 'RUC'; // ✅ importante
         this.razonSocial = data.razonSocial;
         this.nombreRepresentante = data.nombre;
-        this.estadoContribuyenteRuc=data.estadoContribuyenteRuc;
+        this.estadoContribuyenteRuc = data.estadoContribuyenteRuc;
         this.paso2Form.patchValue({
           razonSocial: data.razonSocial,
           nombreRepresentante: data.nombre
@@ -365,11 +375,57 @@ export class DialogClienteComponent implements OnInit {
     this.paso2Form.get('ciudad')?.setValue(ciudad); // guardamos el objeto completo
   }
 
-
   limpiarCiudad(): void {
     this.paso2Form.get('ciudad')?.reset();
   }
 
+ cargarPais(): void {
+  this.paisService.obtenerPaises().subscribe(data => {
+    this.pais = data;
+
+    // ✅ Autocompletar Ecuador al inicio si está disponible
+    const ecuador = this.pais.find(p => p.nombre.toLowerCase() === 'ecuador');
+    if (ecuador) {
+      this.paso2Form.get('pais')?.setValue(ecuador);
+      this.codigoAreaE = ecuador.codigoArea; // <-- se asigna 593 aquí
+    }
+
+    // 🔍 Reacciona a cambios en el campo país
+    this.paso2Form.get('pais')?.valueChanges
+      .pipe(startWith(''))
+      .subscribe(valor => {
+        const texto = typeof valor === 'string' ? valor.toLowerCase() : '';
+        this.paisFiltrados = this.pais.filter(p =>
+          p.nombre.toLowerCase().includes(texto)
+        );
+
+        // 🎯 Asignar código de área si se seleccionó un país válido
+        if (typeof valor === 'object' && valor?.codigoArea) {
+          this.codigoAreaE = valor.codigoArea;
+        } else {
+          this.codigoAreaE = 593;
+        }
+      });
+  });
+}
+
+
+
+
+  
+
+  limpiarPais(): void {
+    this.paso2Form.get('pais')?.reset();
+  }
+ displayPais(pais: Pais | string): string {
+  return typeof pais === 'string' ? pais : pais?.nombre || '';
+}
+
+
+
+  seleccionarPais(pais: Pais): void {
+    this.paso2Form.get('pais')?.setValue(pais); // guardamos el objeto completo
+  }
 
 
 
@@ -717,30 +773,30 @@ export class DialogClienteComponent implements OnInit {
 
       console.log('✍️ Guardando prefijo ingresado manualmente:', prefijoData);
 
-this.prefijoService.guardarPrefijo(prefijoData).subscribe({
-  next: () => {
-    const msg = this.modoEdicion ? 'Creado' : 'creado';
+      this.prefijoService.guardarPrefijo(prefijoData).subscribe({
+        next: () => {
+          const msg = this.modoEdicion ? 'Creado' : 'creado';
 
-    this.dialog.open(CustomMessageBoxComponent, {
-      width: '400px',
-      data: {
-        title: 'Éxito',
-        message: `El Cliente fue ${msg} correctamente.`,
-        type: 'success',
-        confirmText: '',
-        showCancel: false
-      }
-    });
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '400px',
+            data: {
+              title: 'Éxito',
+              message: `El Cliente fue ${msg} correctamente.`,
+              type: 'success',
+              confirmText: '',
+              showCancel: false
+            }
+          });
 
-    this.paso1Form.get('prefijo')?.disable();
-    this.botonGuardarDeshabilitado = true;
-    this.guardarNuevoGln(); // ✅ estas van dentro del next
-  },
-  error: (err) => {
-    console.error('❌ Error al actualizar cliente:', err);
-    this.mostrarAlerta('No se pudo actualizar el cliente', 'Error');
-  }
-});
+          this.paso1Form.get('prefijo')?.disable();
+          this.botonGuardarDeshabilitado = true;
+          this.guardarNuevoGln(); // ✅ estas van dentro del next
+        },
+        error: (err) => {
+          console.error('❌ Error al actualizar cliente:', err);
+          this.mostrarAlerta('No se pudo actualizar el cliente', 'Error');
+        }
+      });
 
 
     } else {
@@ -798,7 +854,7 @@ this.prefijoService.guardarPrefijo(prefijoData).subscribe({
           this.prefijoService.guardarPrefijo(prefijoData).subscribe({
             next: () => {
               const msg = this.modoEdicion ? 'Creado' : 'creado';
-          
+
               this.dialog.open(CustomMessageBoxComponent, {
                 width: '400px',
                 data: {
@@ -809,7 +865,7 @@ this.prefijoService.guardarPrefijo(prefijoData).subscribe({
                   showCancel: false
                 }
               });
-          
+
               this.guardarNuevoGln(); // ✅ llamada adicional
               this.actualizarNumeroControl(idControl, siguienteNum, false); // ✅ nueva lógica
               this.botonGuardarDeshabilitado = true; // ✅ se desactiva el botón luego de guardar
@@ -818,8 +874,8 @@ this.prefijoService.guardarPrefijo(prefijoData).subscribe({
               this.mostrarAlerta('Error al guardar el prefijo', 'Error');
             }
           });
-          
-          
+
+
         },
         error: (err) => {
           console.error('❌ Error al obtener el número de control:', err);
@@ -1347,9 +1403,9 @@ this.prefijoService.guardarPrefijo(prefijoData).subscribe({
   verificarYAvanzar(form: FormGroup, stepper: MatStepper): void {
     console.log('🚦 Ejecutando verificarYAvanzar...');
     console.log('📋 Estado del formulario:', form.valid, form.value);
-  
+
     form.markAllAsTouched();
-  
+
     if (form.valid) {
       console.log('✅ Formulario válido. Avanzando...');
       stepper.next();
@@ -1363,48 +1419,48 @@ this.prefijoService.guardarPrefijo(prefijoData).subscribe({
       }
     }
   }
-  
-  
+
+
   forzarGuardarRazonSocial(): void {
     const control = this.paso2Form.get('razonSocial');
     const input = document.querySelector<HTMLInputElement>('input[formcontrolname="razonSocial"]');
     const valor = input?.value?.trim();
-  
+
     if (valor !== undefined && valor !== null) {
       // 🔄 1. Borrar temporalmente sin emitir evento
       control?.setValue('', { emitEvent: false });
-  
+
       // 🔁 2. Reasignar el valor original después de un tick
       setTimeout(() => {
         control?.setValue(valor, { emitEvent: true });
         control?.markAsTouched();
         control?.markAsDirty();
         control?.updateValueAndValidity({ emitEvent: true });
-  
+
         // 🔁 3. Disparar manualmente el evento input por si algún validador depende de él
         input?.dispatchEvent(new Event('input', { bubbles: true }));
       }, 0);
     }
   }
-  
+
   forzarSyncYAvanzar(campo: string, form: FormGroup): void {
     const control = form.get(campo);
     const input = document.querySelector<HTMLInputElement>(`input[formcontrolname="${campo}"]`);
     const valor = input?.value?.trim();
-  
+
     console.log(`🔁 forzarSyncYAvanzar ejecutado para '${campo}' con valor actual:`, valor);
-  
+
     if (valor !== undefined && valor !== null) {
       control?.setValue('', { emitEvent: false });
-  
+
       setTimeout(() => {
         control?.setValue(valor, { emitEvent: true });
         control?.markAsTouched();
         control?.markAsDirty();
         control?.updateValueAndValidity({ onlySelf: true, emitEvent: true });
-  
+
         input?.dispatchEvent(new Event('input', { bubbles: true }));
-  
+
         // 🔥 Trigger manualmente ChangeDetector si es necesario
         setTimeout(() => {
           console.log(`✅ Valor restablecido en '${campo}':`, control?.value);
@@ -1412,38 +1468,38 @@ this.prefijoService.guardarPrefijo(prefijoData).subscribe({
       }, 0);
     }
   }
-  
-  
-  
+
+
+
   verificarPaso2YAvanzar(stepper: MatStepper): void {
     this.forzarSyncYAvanzar('razonSocial', this.paso2Form);
     this.forzarSyncYAvanzar('nombreRepresentante', this.paso2Form);
-  
+
     this.paso2Form.markAllAsTouched();
-  
+
     if (this.paso2Form.valid) {
       stepper.next();
     }
   }
-  
+
   alEntrarCampo(nombreCampo: string, formGroup: FormGroup): void {
     const control = formGroup.get(nombreCampo);
     if (!control) return;
-  
+
     const original = control.value || '';
-  
+
     // Simula un Backspace borrando el último carácter
     const simulado = original.slice(0, -1);
-  
+
     // Aplica el cambio
     control.setValue(simulado, { emitEvent: false });
-  
+
     setTimeout(() => {
       control.setValue(original, { emitEvent: true });
       control.markAsTouched();
       control.markAsDirty();
       control.updateValueAndValidity({ emitEvent: true });
-  
+
       const inputEl = document.querySelector<HTMLInputElement>(`input[formcontrolname="${nombreCampo}"]`);
       if (inputEl) {
         const event = new Event('input', { bubbles: true });
@@ -1451,8 +1507,8 @@ this.prefijoService.guardarPrefijo(prefijoData).subscribe({
       }
     }, 50);
   }
-  
-  
-  
+
+
+
 
 }
