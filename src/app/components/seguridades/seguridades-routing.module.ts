@@ -21,6 +21,10 @@ const routes: Routes = [
         loadChildren:()=>import('./perfiles/perfiles.module').then(m=>m.PerfilesModule)
       },
       {
+        path:'departamentos',
+        loadChildren:()=>import('./departamentos/departamentos.module').then(m=>m.DepartamentosModule)
+      },
+      {
         path: '',
         redirectTo: 'empresas',
         pathMatch: 'full'
