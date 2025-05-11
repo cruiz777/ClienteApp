@@ -18,6 +18,12 @@ import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { DialogClienteEditarComponent } from './modals/dialog-cliente-editar/dialog-cliente-editar.component';
 import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
+import { TipoClienteListComponent } from './clientes/tipo-clientes/tipo-cliente-list/tipo-cliente-list.component';
+import { TipoClienteFormComponent } from './clientes/tipo-clientes/tipo-cliente-form/tipo-cliente-form.component';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { GrupoClienteListComponent } from './clientes/grupo-clientes/grupo-cliente-list/grupo-cliente-list.component';
+import { GrupoClienteFormComponent } from './clientes/grupo-clientes/grupo-cliente-form/grupo-cliente-form.component';
+import { TipoLocalizacionListComponent } from './configuracion/localizacion-establecimiento/localizacion-est-list/localizacion-est-list.component';
 @NgModule({
   declarations: [
     PagesComponent,
@@ -27,7 +33,12 @@ import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-
     DialogClienteComponent,
     DialogClienteEditarComponent,
     NuevoClienteComponent,
-    CustomMessageBoxComponent 
+    TipoClienteListComponent,
+    TipoClienteFormComponent,
+    GrupoClienteListComponent,
+    GrupoClienteFormComponent,
+    TipoLocalizacionListComponent,
+    CustomMessageBoxComponent
 
   ],
   imports: [
@@ -39,7 +50,9 @@ import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-
     MatToolbarModule,
     MatListModule,
     MatIconModule,
-    ReusableModule
+    ReusableModule,
+    ReactiveFormsModule,
+    FormsModule
   ]
 })
 export class PagesModule { }

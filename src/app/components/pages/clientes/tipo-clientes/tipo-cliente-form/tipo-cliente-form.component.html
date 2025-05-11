@@ -1,0 +1,62 @@
+<div class="client-type-data-screen">
+    <main class="main-content">
+      <h2 class="section-title">Datos Generales</h2>
+  
+      <form [formGroup]="form" (ngSubmit)="grabar()" class="data-container">
+        <h3 class="client-type-heading">{{ tituloFormulario }}</h3>
+  
+        <div class="form-row">
+          <div class="form-group full-width">
+            <label class="form-label">Descripción:</label>
+            <div class="form-input">
+              <input type="text" formControlName="descripcion" class="input-text" appUppercase />
+            </div>
+            <div class="error-message" *ngIf="form.get('descripcion')?.invalid && form.get('descripcion')?.touched">
+              Campo obligatorio.
+            </div>
+          </div>
+          <div class="form-group half-width">
+            <label class="form-label">Empresa:</label>
+            <div class="form-input">
+              <input type="text" formControlName="empresa" class="input-text" />
+            </div>
+            <div class="error-message" *ngIf="form.get('empresa')?.invalid && form.get('empresa')?.touched">
+              Campo obligatorio.
+            </div>
+          </div>
+        </div>
+  
+        <div class="form-row form-row-spaced">
+          <div class="form-group half-width">
+            <label class="form-label">Cuenta:</label>
+            <div class="form-input">
+              <input type="text" formControlName="cuenta" class="input-text" />
+            </div>
+            <div class="error-message" *ngIf="form.get('cuenta')?.invalid && form.get('cuenta')?.touched">
+              Campo obligatorio.
+            </div>
+          </div>
+  
+          <div class="form-group half-width">
+            <label class="form-label">Estado:</label>
+            <div class="form-input form-input-dropdown">
+                <select formControlName="estado" class="input-text">
+                    <option [ngValue]="true">ACTIVO</option>
+                    <option [ngValue]="false">INACTIVO</option>
+                  </select>
+                  
+            </div>
+            <div class="error-message" *ngIf="form.get('estado')?.invalid && form.get('estado')?.touched">
+              Campo obligatorio.
+            </div>
+          </div>
+        </div>
+  
+        <div class="button-container">
+          <button  class="action-button save-button" (click)="grabar()">Grabar</button>
+          <button type="button" class="action-button cancel-button" (click)="cancelar()">Cancelar</button>
+        </div>
+      </form>
+    </main>
+  </div>
+  

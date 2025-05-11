@@ -1,0 +1,81 @@
+<div class="form-wrapper">
+    <h1 class="form-title">{{ modoEdicion ? 'Edición' : 'Creación' }} Grupo de Cliente</h1>
+  
+    <form [formGroup]="formulario" (ngSubmit)="guardar()">
+      <div class="form-grid">
+        <div class="form-column">
+          <div class="form-field">
+            <label class="field-label">Código:</label>
+            <input type="text" formControlName="codigo" class="field-input" />
+          </div>
+          <div class="form-field">
+            <label class="field-label">Inscripción:</label>
+            <input type="number" formControlName="inscripcion" class="field-input" />
+          </div>
+          <div class="form-field">
+            <label class="field-label">Mantenimiento:</label>
+            <input type="number" formControlName="mantenimiento" class="field-input" />
+          </div>
+          <div class="form-field">
+            <label class="field-label">Asignación:</label>
+            <input type="number" formControlName="asignacion" class="field-input" />
+          </div>
+          <div class="form-field">
+            <label class="field-label">Valor Anual:</label>
+            <input type="number" formControlName="valorAnual" class="field-input" />
+          </div>
+          <div class="form-field">
+            <label class="field-label">Fecha:</label>
+            <input type="date" formControlName="fecha" class="field-input" />
+          </div>
+        </div>
+  
+        <div class="form-column">
+          <div class="form-field">
+            <label class="field-label">Grupo:</label>
+            <input type="text" formControlName="nombre" class="field-input" />
+          </div>
+          <div class="form-field">
+            <label class="field-label">Producto Inscripción:</label>
+            <input type="text" formControlName="productoInscripcion" class="field-input" />
+          </div>
+          <div class="form-field">
+            <label class="field-label">Producto Mantenimiento:</label>
+            <input type="text" formControlName="productoMantenimiento" class="field-input" />
+          </div>
+          <div class="form-field">
+            <label class="field-label">Producto Asignación:</label>
+            <input type="text" formControlName="productoAsignacion" class="field-input" />
+          </div>
+          <div class="form-field">
+            <label class="field-label">Inscripción $Dólar:</label>
+            <input type="number" formControlName="inscripcionDolar" class="field-input" />
+          </div>
+          <div class="form-field">
+            <label class="field-label">Mantenimiento $Dólar:</label>
+            <input type="number" formControlName="mantenimientoDolar" class="field-input" />
+          </div>
+          <div class="form-field">
+            <label class="field-label">Asignación $Dólar:</label>
+            <input type="number" formControlName="asignacionDolar" class="field-input" />
+          </div>
+          <!-- NUEVO CAMPO DE ESTADO -->
+          <div class="field-select">
+            <label class="field-label">Estado:</label>
+            <select formControlName="estado">
+                <option [ngValue]="true">ACTIVO</option>
+                <option [ngValue]="false">INACTIVO</option>
+              </select>
+          </div>
+          
+        </div>
+        
+      </div>
+  
+      <div class="button-container">
+        <button type="submit" class="action-button">Grabar</button>
+        <button type="button" class="action-button" (click)="cancelar()">Cancelar</button>
+      </div>
+    </form>
+  </div>
+  
