@@ -30,6 +30,7 @@ import { InicioComponent } from './components/inicio/inicio.component';
 import { CustomMessageBoxComponent } from './components/utils/messages/custom-message-box.component';
 import { ConfirmDialogComponent } from './components/reusable/confirm-dialog/confirm-dialog.component';
 import { UppercaseDirective } from './directives/uppercase.directive';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 
 export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
 
@@ -61,7 +62,8 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
   ],
 
   providers: [
-    { provide: LocationStrategy, useClass: HashLocationStrategy }
+    { provide: LocationStrategy, useClass: HashLocationStrategy },
+    provideAnimationsAsync()
   ],
   bootstrap: [AppComponent]
 })

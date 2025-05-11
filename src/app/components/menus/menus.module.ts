@@ -16,7 +16,7 @@ import { MenusRoutingModule } from './menus-routing.module';
     MenusComponent,
     CodbarComponent,
     NavegarComponent,
-    
+
 
   ],
   imports: [

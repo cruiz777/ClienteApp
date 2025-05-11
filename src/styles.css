@@ -18,3 +18,6 @@ html, body {
 .mat-typography, .mat-button, .mat-input-element, .mat-list-item {
   font-family: 'Inter', sans-serif !important;
 }
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
