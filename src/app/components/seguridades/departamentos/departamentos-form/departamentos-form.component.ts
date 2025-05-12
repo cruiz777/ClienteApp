@@ -6,6 +6,9 @@ import { DepartamentoRequest } from 'src/app/interfaces/requests/departamento-re
 import { DepartamentoResponse } from 'src/app/interfaces/responses/departamentos-response';
 import { MatDialog } from '@angular/material/dialog';
 import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
+import { EmpresaService } from 'src/app/services/empresa.service';
+import { EmpresaResponse } from 'src/app/interfaces/responses/empresa-response';
+import { CustomValidators } from 'src/app/components/utils/validators/validator.util';
 
 @Component({
   selector: 'app-departamentos-form',
@@ -16,10 +19,13 @@ export class DepartamentosFormComponent implements OnInit {
   departamentoForm!: FormGroup;
   modoEdicion = false;
   idDepartamento!: number;
+  empresas: EmpresaResponse[] = [];
+  public CustomValidators = CustomValidators;
 
   constructor(
     private fb: FormBuilder,
     private departamentoService: DepartamentosService,
+    private empresaService: EmpresaService,
     private route: ActivatedRoute,
     private router: Router,
     private dialog: MatDialog
@@ -28,8 +34,12 @@ export class DepartamentosFormComponent implements OnInit {
   ngOnInit(): void {
     this.departamentoForm = this.fb.group({
       nombre: ['', [Validators.required, Validators.maxLength(100)]],
+      cuenta: ['', Validators.required, CustomValidators.cuentaFormato],
+      id_empresa: [null, Validators.required],
       estado: [true]
     });
+
+    this.cargarEmpresas();
 
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
@@ -39,33 +49,42 @@ export class DepartamentosFormComponent implements OnInit {
         next: (data: DepartamentoResponse) => {
           this.departamentoForm.patchValue({
             nombre: data.nombre,
+            cuenta: data.cuenta,
+            id_empresa: data.id_empresa,
             estado: data.estado
           });
         },
-        error: () => {
-          this.dialog.open(CustomMessageBoxComponent, {
-            width: '400px',
-            data: {
-              title: 'Error',
-              message: 'No se pudo cargar el departamento.',
-              type: 'error',
-              confirmText: 'Cerrar',
-              showCancel: false
-            }
-          });
-        }
+        error: () => this.mostrarMensajeError('No se pudo cargar el departamento.')
       });
     }
+  }
+
+  cargarEmpresas(): void {
+    this.empresaService.getEmpresas().subscribe({
+      next: (data) => (this.empresas = data),
+      error: () => this.mostrarMensajeError('No se pudieron cargar las empresas.')
+    });
   }
 
   guardar(): void {
     if (this.departamentoForm.invalid) {
       this.departamentoForm.markAllAsTouched();
+
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '400px',
+        data: {
+          title: 'Campos obligatorios',
+          message: 'Debe completar correctamente todos los campos requeridos.',
+          type: 'warning',
+          confirmText: 'Entendido',
+          showCancel: false
+        }
+      });
+
       return;
     }
 
     const formValue: DepartamentoRequest = this.departamentoForm.getRawValue();
-
     const request$ = this.modoEdicion
       ? this.departamentoService.updateDepartamento(this.idDepartamento, formValue)
       : this.departamentoService.createDepartamento(formValue);
@@ -84,23 +103,26 @@ export class DepartamentosFormComponent implements OnInit {
           }
         }).afterClosed().subscribe(() => this.router.navigate(['/seguridades/departamentos']));
       },
-      error: () => {
-        this.dialog.open(CustomMessageBoxComponent, {
-          width: '400px',
-          data: {
-            title: 'Error',
-            message: 'Ocurrió un error al guardar el departamento.',
-            type: 'error',
-            confirmText: 'Cerrar',
-            showCancel: false
-          }
-        });
-      }
+      error: () => this.mostrarMensajeError('Ocurrió un error al guardar el departamento.')
     });
   }
+
 
   cancelar(): void {
     this.departamentoForm.reset({ estado: true });
     this.router.navigate(['/seguridades/departamentos']);
+  }
+
+  private mostrarMensajeError(mensaje: string): void {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: 'Error',
+        message: mensaje,
+        type: 'error',
+        confirmText: 'Cerrar',
+        showCancel: false
+      }
+    });
   }
 }

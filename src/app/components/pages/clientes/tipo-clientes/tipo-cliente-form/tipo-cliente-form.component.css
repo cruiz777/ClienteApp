@@ -1,112 +1,165 @@
 :host {
-    display: flex;
-    justify-content: center;
-    background-color: #f9f9f9;
+  display: flex;
+  justify-content: center;
+  background-color: #f9f9f9;
+  box-sizing: border-box;
+  padding: 40px 20px;
+}
+
+.form-wrapper {
+  padding: 30px 40px;
+  font-family: Inter, sans-serif;
+  background-color: #fff;
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  border-radius: 6px;
+  box-shadow: none;
+  border: 1px solid #e1e5ea;
+}
+
+.form-title {
+  font-size: 20px;
+  color: #002c6c;
+  font-weight: 700;
+  margin-bottom: 30px;
+  text-align: left;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: 50px;
+  row-gap: 20px;
+  align-items: start;
+  width: 100%;
+}
+
+.form-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.field-label {
+  width: 160px;
+  font-size: 13px;
+  color: #002c6c;
+  text-align: right;
+}
+
+.field-label.required::after {
+  content: ' *';
+  color: #d32f2f;
+  font-weight: bold;
+}
+
+.field-input,
+.field-select {
+  flex: 1;
+  padding: 6px;
+  font-size: 13px;
+  background-color: transparent;
+  border: 1px solid #ccd5e2;
+  border-radius: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.field-input:focus,
+.field-select:focus {
+  outline: none;
+  border-color: #002c6c;
+  background-color: #fff;
+}
+
+input[disabled],
+.field-input[disabled] {
+  background-color: #f9fbfd;
+  color: #333;
+  border: 1px solid #ccd5e2;
+  border-radius: 4px;
+  padding: 8px 12px;
+  font-size: 13px;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.field-select {
+  max-width: 100%;
+}
+
+.error-message,
+.error {
+  color: #d32f2f;
+  font-size: 12px;
+  margin-left: 170px;
+  margin-top: -10px;
+}
+
+/* Validación visual */
+.field-input.ng-invalid.ng-touched,
+.field-select.ng-invalid.ng-touched {
+  border-color: #d32f2f;
+  background-color: #fff0f0;
+}
+
+.button-container {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 40px;
+}
+
+.action-button {
+  padding: 8px 30px;
+  background-color: #eef4f7;
+  color: #002c6c;
+  font-size: 13px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+
+.action-button:hover {
+  background-color: #dce9f2;
+}
+
+@media (max-width: 991px) {
+  .form-grid {
+    grid-template-columns: 1fr;
   }
-  
-  .client-type-data-screen {
-    background-color: #fff;
-    width: 100%;
-    max-width: 100%;
-    font-family: Inter, -apple-system, Roboto, Helvetica, sans-serif;
-    padding-top: 20px;
+
+  .field-label {
+    width: 130px;
+    text-align: left;
   }
-  
-  .main-content {
-    margin-top: 20px;
-    width: 100%;
-    padding: 0 40px;
-  }
-  
-  .section-title {
-    background-color: #002c6c;
-    color: white;
-    padding: 12px 30px;
-    font-weight: 500;
-    border-radius: 10px 10px 0 0;
-    font-size: 14px;
-  }
-  
-  .data-container {
-    width: 100%;
-    background-color: #fff;
-    padding: 40px 50px 60px;
-    border: 1px solid #ccd5e2;
-  }
-  
-  .client-type-heading {
-    color: #002c6c;
-    font-size: 20px;
-    font-weight: 700;
-    margin-bottom: 20px;
-  }
-  
-  .form-row,
-  .form-row-spaced {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 30px;
-    justify-content: space-between;
-    margin-bottom: 20px;
-  }
-  
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    flex: 1 1 48%;
-  }
-  
-  .form-label {
-    font-size: 13px;
-    color: #002c6c;
-    margin-bottom: 6px;
-  }
-  
-  .form-input input,
-  .form-input select {
-    padding: 8px 12px;
-    border: 1px solid #ccd5e2;
-    border-radius: 4px;
-    font-size: 13px;
-    color: #333;
-    background-color: #fff;
-    width: 100%;
-  }
-  
-  .input-text {
-    width: 100%;
-    padding: 8px 12px;
-  }
-  
-  .input-text.ng-invalid.ng-touched {
-    border-color: red;
-  }
-  
+
+  .error,
   .error-message {
-    color: red;
-    font-size: 12px;
-    margin-top: 4px;
+    margin-left: 0;
+    padding-left: 10px;
   }
-  
-  .button-container {
-    display: flex;
-    justify-content: center;
-    margin-top: 30px;
-    gap: 20px;
+}
+.error-message {
+  margin-left: 170px;
+  color: #d32f2f;
+  font-size: 12px;
+  margin-top: -10px;
+}
+@media (max-width: 991px) {
+  .error-message {
+    margin-left: 0;
+    padding-left: 10px;
   }
-  
-  .action-button {
-    background-color: #eef4f7;
-    color: #002c6c;
-    padding: 8px 24px;
-    border: none;
-    border-radius: 5px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.3s ease;
-  }
-  
-  .action-button:hover {
-    background-color: #dce9f2;
-  }
-  
+}

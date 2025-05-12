@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { EmpresasListComponent } from '../seguridades/empresas/empresa-list/empresas-list.component';
 import { SeguridadesComponent } from './seguridades.component';
+import { SeguridadesInicioComponent } from './inicio/inicio.component';
 
 const routes: Routes = [
   {
@@ -28,7 +29,8 @@ const routes: Routes = [
         path: '',
         redirectTo: 'empresas',
         pathMatch: 'full'
-      }
+      },
+      {path:'inicio',component:SeguridadesInicioComponent},
     ]
   }
 ];

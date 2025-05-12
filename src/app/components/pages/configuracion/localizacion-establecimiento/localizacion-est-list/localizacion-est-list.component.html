@@ -1,6 +1,6 @@
 <section class="main-section">
     <h1 class="section-title">Localización Establecimiento</h1>
-  
+
     <div class="action-bar">
       <div class="search-container">
         <label for="search" class="search-label">Buscar:</label>
@@ -22,12 +22,12 @@
           </div>
         </div>
       </div>
-  
+
       <div class="action-buttons">
         <button class="new-button" (click)="crearLocalizacion()">Nuevo</button>
       </div>
     </div>
-  
+
     <div class="table-container">
       <div class="table-wrapper">
         <div class="table-content">
@@ -49,8 +49,8 @@
                 <td class="table-cell">{{ local.descripcion }}</td>
                 <td class="table-cell">{{ local.estado ? 'ACTIVO' : 'INACTIVO' }}</td>
                 <td class="table-cell">
-                  <button (click)="editarLocalizacion(local.id_tipo_cliente)">
-                    <img src="assets/icons/icon-modificar-3.png" class="modify-icon" alt="Editar" />
+                  <button class="edit-button"  (click)="editarLocalizacion(local.id_tipo_cliente)">
+                    <img src="assets/icons/icon-modificar-3.png" alt="Editar" />
                   </button>
                 </td>
               </tr>
@@ -60,7 +60,7 @@
             </tbody>
           </table>
         </div>
-  
+
         <!-- Paginador Angular Material -->
         <mat-paginator [length]="filteredLength" [pageSize]="pageSize" [pageSizeOptions]="[5, 10, 20]"
                        (page)="onPageChange($event)" showFirstLastButtons>

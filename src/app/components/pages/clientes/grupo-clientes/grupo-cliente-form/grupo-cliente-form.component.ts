@@ -6,6 +6,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { GrupoClienteService } from 'src/app/services/grupo-cliente.service';
 import { GrupoCliente } from 'src/app/interfaces/responses/grupo-cliente-response';
 import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
+import { CustomValidators } from 'src/app/components/utils/validators/validator.util';
 
 @Component({
   selector: 'app-grupo-cliente-form',
@@ -38,20 +39,20 @@ export class GrupoClienteFormComponent implements OnInit {
 
   initForm(): void {
     this.formulario = this.fb.group({
-      codigo: ['', Validators.required],
-      nombre: ['', Validators.required],
-      inscripcion: [0, Validators.required],
-      asignacion: [0, Validators.required],
-      mantenimiento: [0, Validators.required],
-      valorAnual: [0, Validators.required],
+      codigo: ['', [Validators.required, CustomValidators.onlyLetters]],
+      nombre: ['', [Validators.required]],
+      inscripcion: [0, [Validators.required, CustomValidators.onlyNumbers]],
+      asignacion: [0, [Validators.required, CustomValidators.onlyNumbers]],
+      mantenimiento: [0, [Validators.required, CustomValidators.onlyNumbers]],
+      valorAnual: [0, [Validators.required, CustomValidators.onlyNumbers]],
       estado: [true, Validators.required],
       fecha: [new Date().toISOString().substring(0, 10), Validators.required],
       productoInscripcion: [''],
       productoMantenimiento: [''],
       productoAsignacion: [''],
-      asignacionDolar: [0],
-      mantenimientoDolar: [0],
-      inscripcionDolar: [0]
+      asignacionDolar: [0, CustomValidators.onlyNumbers],
+      mantenimientoDolar: [0, CustomValidators.onlyNumbers],
+      inscripcionDolar: [0, CustomValidators.onlyNumbers]
     });
   }
 
@@ -66,16 +67,7 @@ export class GrupoClienteFormComponent implements OnInit {
         });
       },
       error: () => {
-        this.dialog.open(CustomMessageBoxComponent, {
-          width: '400px',
-          data: {
-            title: 'Error',
-            message: 'No se pudo cargar el grupo de cliente.',
-            type: 'error',
-            confirmText: 'Cerrar',
-            showCancel: false
-          }
-        });
+        this.mostrarMensaje('Error', 'No se pudo cargar el grupo de cliente.', 'error');
       }
     });
   }
@@ -86,6 +78,50 @@ export class GrupoClienteFormComponent implements OnInit {
       return;
     }
 
+    if (!this.modoEdicion) {
+      const valoresCero = this.camposConValorCero();
+
+      if (valoresCero.length > 0) {
+        const mensaje = `Está guardando los siguientes campos en cero: <b>${valoresCero.join(', ')}</b>. ¿Desea continuar?`;
+
+        this.dialog.open(CustomMessageBoxComponent, {
+          width: '400px',
+          data: {
+            title: 'Advertencia',
+            message: mensaje,
+            type: 'warning',
+            confirmText: 'Sí, continuar',
+            cancelText: 'Cancelar',
+            showCancel: true
+          }
+        }).afterClosed().subscribe((confirmado: boolean) => {
+          if (confirmado) {
+            this.procesarGuardado();
+          }
+        });
+
+        return;
+      }
+    }
+
+    this.procesarGuardado(); // En modo edición o sin campos en cero
+  }
+
+  private camposConValorCero(): string[] {
+    const camposNumericos = ['inscripcion', 'asignacion', 'mantenimiento', 'valorAnual'];
+    const nombresVisibles: { [key: string]: string } = {
+      inscripcion: 'Inscripción',
+      asignacion: 'Asignación',
+      mantenimiento: 'Mantenimiento',
+      valorAnual: 'Valor Anual'
+    };
+
+    return camposNumericos
+      .filter(campo => this.formulario.get(campo)?.value === 0)
+      .map(campo => nombresVisibles[campo]);
+  }
+
+  private procesarGuardado(): void {
     const grupoData = this.formulario.getRawValue();
 
     const request$ = this.modoEdicion
@@ -98,35 +134,38 @@ export class GrupoClienteFormComponent implements OnInit {
           ? 'Grupo de cliente actualizado correctamente.'
           : 'Grupo de cliente creado exitosamente.';
 
-        this.dialog.open(CustomMessageBoxComponent, {
-          width: '400px',
-          data: {
-            title: 'Éxito',
-            message: mensaje,
-            type: 'success',
-            confirmText: 'Aceptar',
-            showCancel: false
-          }
-        }).afterClosed().subscribe(() => {
-          this.router.navigate(['/menus/grupocliente']);
-        });
+        this.mostrarMensaje('Éxito', mensaje, 'success', false, 'Aceptar');
       },
       error: () => {
-        this.dialog.open(CustomMessageBoxComponent, {
-          width: '400px',
-          data: {
-            title: 'Error',
-            message: 'Ocurrió un error al guardar el grupo de cliente.',
-            type: 'error',
-            confirmText: 'Cerrar',
-            showCancel: false
-          }
-        });
+        this.mostrarMensaje('Error', 'Ocurrió un error al guardar el grupo de cliente.', 'error');
       }
     });
   }
 
   cancelar(): void {
     this.router.navigate(['/menus/grupocliente']);
+  }
+
+  private mostrarMensaje(
+    titulo: string,
+    mensaje: string,
+    tipo: 'success' | 'error' | 'warning' | 'info',
+    showCancel: boolean = false,
+    confirmText: string = 'Cerrar'
+  ): void {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: titulo,
+        message: mensaje,
+        type: tipo,
+        confirmText,
+        showCancel
+      }
+    }).afterClosed().subscribe(() => {
+      if (tipo === 'success') {
+        this.router.navigate(['/menus/grupocliente']);
+      }
+    });
   }
 }

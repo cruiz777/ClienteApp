@@ -7,12 +7,13 @@ import { TipoClienteFormComponent } from '../pages/clientes/tipo-clientes/tipo-c
 import { GrupoClienteListComponent } from '../pages/clientes/grupo-clientes/grupo-cliente-list/grupo-cliente-list.component';
 import { GrupoClienteFormComponent } from '../pages/clientes/grupo-clientes/grupo-cliente-form/grupo-cliente-form.component';
 import { TipoLocalizacionListComponent } from '../pages/configuracion/localizacion-establecimiento/localizacion-est-list/localizacion-est-list.component';
+import { TipoLocalizacionFormComponent } from '../pages/configuracion/localizacion-establecimiento/localizacion-est-form/localizacion-est-form.component';
 
 const routes: Routes = [
   {
     path: '', component: MenusComponent, children: [
       {path:'codbar',component:CodbarComponent},
-      
+
       {
         path: 'tipocliente',
         children: [
@@ -33,10 +34,10 @@ const routes: Routes = [
         path: 'localizacion-establecimiento',
         children: [
           { path: '', component: TipoLocalizacionListComponent },
-          // { path: 'crear', component: GrupoClienteFormComponent },
-          // { path: 'editar/:id', component: GrupoClienteFormComponent }
+          { path: 'crear', component: TipoLocalizacionFormComponent },
+          { path: 'editar/:id', component: TipoLocalizacionFormComponent }
         ]
-      }      
+      }
       // {path:'usuarios',component:UsuariosComponent},
       // {path:'productos',component:ProductosComponent},
       // {path:'vender',component:VenderComponent},

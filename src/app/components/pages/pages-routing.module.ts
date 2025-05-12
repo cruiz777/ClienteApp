@@ -20,9 +20,10 @@ const routes: Routes = [
       {path:'editar/:id',component:TipoClienteFormComponent},
       {path:'grupocliente',component:GrupoClienteListComponent},
       {path:'crear',component:GrupoClienteFormComponent},
-      {path:'editar/:id',component:GrupoClienteFormComponent}
+      {path:'editar/:id',component:GrupoClienteFormComponent},
 
-      
+
+
 
     ]
   }

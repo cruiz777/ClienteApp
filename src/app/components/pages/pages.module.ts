@@ -24,6 +24,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { GrupoClienteListComponent } from './clientes/grupo-clientes/grupo-cliente-list/grupo-cliente-list.component';
 import { GrupoClienteFormComponent } from './clientes/grupo-clientes/grupo-cliente-form/grupo-cliente-form.component';
 import { TipoLocalizacionListComponent } from './configuracion/localizacion-establecimiento/localizacion-est-list/localizacion-est-list.component';
+import { TipoLocalizacionFormComponent } from './configuracion/localizacion-establecimiento/localizacion-est-form/localizacion-est-form.component';
 @NgModule({
   declarations: [
     PagesComponent,
@@ -38,6 +39,7 @@ import { TipoLocalizacionListComponent } from './configuracion/localizacion-esta
     GrupoClienteListComponent,
     GrupoClienteFormComponent,
     TipoLocalizacionListComponent,
+    TipoLocalizacionFormComponent,
     CustomMessageBoxComponent
 
   ],

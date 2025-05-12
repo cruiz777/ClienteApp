@@ -4,9 +4,12 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 
 import { TipoClienteService } from 'src/app/services/tipo-cliente.service';
+import { EmpresaService } from 'src/app/services/empresa.service';
 import { TipoClienteRequest } from 'src/app/interfaces/requests/tipo-cliente-request';
 import { TipoClienteResponse } from 'src/app/interfaces/responses/tipo-cliente-response';
+import { EmpresaResponse } from 'src/app/interfaces/responses/empresa-response';
 import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
+import { CustomValidators } from 'src/app/components/utils/validators/validator.util';
 
 @Component({
   selector: 'app-tipo-cliente-form',
@@ -18,10 +21,13 @@ export class TipoClienteFormComponent implements OnInit {
   modoEdicion = false;
   tipoClienteId!: number;
   tituloFormulario = 'Creación Tipo de Cliente';
+  empresas: EmpresaResponse[] = [];
+  public CustomValidators = CustomValidators;
 
   constructor(
     private fb: FormBuilder,
     private tipoClienteService: TipoClienteService,
+    private empresaService: EmpresaService,
     private router: Router,
     private route: ActivatedRoute,
     private dialog: MatDialog
@@ -29,6 +35,7 @@ export class TipoClienteFormComponent implements OnInit {
 
   ngOnInit(): void {
     this.initForm();
+    this.cargarEmpresas();
 
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -41,11 +48,26 @@ export class TipoClienteFormComponent implements OnInit {
 
   private initForm(): void {
     this.form = this.fb.group({
-      descripcion: ['', [Validators.required, Validators.maxLength(100)]],
-      cuenta: ['', [Validators.required, Validators.maxLength(50)]],
+      descripcion: ['', [Validators.required, Validators.maxLength(25), CustomValidators.onlyLetters]],
+      cuenta: ['', [Validators.required, Validators.maxLength(10), CustomValidators.cuentaFormato]],
       estado: [true, Validators.required],
-      empresa: ['SIN EMPRESA', Validators.required],
-      empresaCodigo: [1, Validators.required]
+      empresa: ['', Validators.required],
+      empresaCodigo: [null, Validators.required]
+    });
+  }
+
+  private cargarEmpresas(): void {
+    this.empresaService.getEmpresas().subscribe({
+      next: (data) => {
+        this.empresas = data;
+        if (!this.modoEdicion && data.length > 0) {
+          this.form.patchValue({
+            empresaCodigo: data[0].empresaCodigo,
+            empresa: data[0].empresaNombre
+          });
+        }
+      },
+      error: () => this.mostrarMensajeError('No se pudieron cargar las empresas.')
     });
   }
 
@@ -53,50 +75,24 @@ export class TipoClienteFormComponent implements OnInit {
     this.tipoClienteService.getById(id).subscribe({
       next: (response: { data: TipoClienteResponse }) => {
         const data = response.data;
-        console.log('✅ Datos recibidos del backend:', data);
-
         if (!data) return;
 
         this.form.patchValue({
           descripcion: data.descripcion ?? '',
           cuenta: data.cuenta ?? '',
-          empresaCodigo: data.id_empresa ?? 1,
-          empresa: data.empresa ?? 'SIN EMPRESA',
-          estado: data.estado ?? true //booleano
+          empresaCodigo: data.id_empresa ?? null,
+          empresa: data.empresa ?? '',
+          estado: data.estado ?? true
         });
-
-        console.log('📋 Formulario después del patchValue:', this.form.value);
       },
-      error: () => {
-        this.dialog.open(CustomMessageBoxComponent, {
-          width: '400px',
-          data: {
-            title: 'Error',
-            message: 'No se pudo cargar el tipo de cliente.',
-            type: 'error',
-            confirmText: 'Cerrar',
-            showCancel: false
-          }
-        });
-      }
+      error: () => this.mostrarMensajeError('No se pudo cargar el tipo de cliente.')
     });
   }
 
   grabar(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
-      if (!this.dialog.openDialogs.find(d => d.componentInstance instanceof CustomMessageBoxComponent)) {
-        this.dialog.open(CustomMessageBoxComponent, {
-          width: '400px',
-          data: {
-            title: 'Campos obligatorios',
-            message: 'Por favor complete todos los campos antes de grabar.',
-            type: 'warning',
-            confirmText: 'Entendido',
-            showCancel: false
-          }
-        });
-      }
+      this.mostrarMensajeAdvertencia('Por favor complete todos los campos antes de grabar.');
       return;
     }
 
@@ -104,7 +100,7 @@ export class TipoClienteFormComponent implements OnInit {
     const payload: TipoClienteRequest = {
       descripcion: formValues.descripcion,
       cuenta: formValues.cuenta,
-      estado: formValues.estado,      
+      estado: formValues.estado,
       idEmpresa: formValues.empresaCodigo
     };
 
@@ -128,22 +124,37 @@ export class TipoClienteFormComponent implements OnInit {
           this.router.navigate(['/menus/tipocliente']);
         });
       },
-      error: () => {
-        this.dialog.open(CustomMessageBoxComponent, {
-          width: '400px',
-          data: {
-            title: 'Error',
-            message: 'Ocurrió un error al guardar el tipo de cliente.',
-            type: 'error',
-            confirmText: 'Cerrar',
-            showCancel: false
-          }
-        });
-      }
+      error: () => this.mostrarMensajeError('Ocurrió un error al guardar el tipo de cliente.')
     });
   }
 
   cancelar(): void {
     this.router.navigate(['/menus/tipocliente']);
+  }
+
+  private mostrarMensajeError(mensaje: string): void {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: 'Error',
+        message: mensaje,
+        type: 'error',
+        confirmText: 'Cerrar',
+        showCancel: false
+      }
+    });
+  }
+
+  private mostrarMensajeAdvertencia(mensaje: string): void {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: 'Campos obligatorios',
+        message: mensaje,
+        type: 'warning',
+        confirmText: 'Entendido',
+        showCancel: false
+      }
+    });
   }
 }

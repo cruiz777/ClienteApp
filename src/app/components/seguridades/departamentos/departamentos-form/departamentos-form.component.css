@@ -2,107 +2,124 @@
   display: block;
   padding: 40px 20px;
   background-color: #f5f6fa;
+  height: 100vh;
+  box-sizing: border-box;
 }
 
-.departamento-form-container {
-  display: flex;
-  justify-content: center;
-}
-
-.form-card {
+.form-wrapper {
+  padding: 30px 40px;
+  font-family: Inter, sans-serif;
   background-color: #fff;
-  padding: 40px;
-  border-radius: 12px;
-  max-width: 800px;
   width: 100%;
+  max-width: 100%;
+  margin: 0 auto;
+  border-radius: 6px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e1e5ea;
 }
 
 .form-title {
-  font-size: 24px;
-  font-weight: 700;
+  font-size: 20px;
   color: #002c6c;
+  font-weight: 700;
   margin-bottom: 30px;
-  text-align: center;
+  text-align: left;
 }
 
-.form-row {
-  display: flex;
-  gap: 30px;
-  margin-bottom: 25px;
-  flex-wrap: wrap;
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  column-gap: 50px;
+  row-gap: 20px;
+  align-items: start;
+  width: 100%;
 }
 
-.form-group {
-  flex: 1;
+.form-column {
   display: flex;
   flex-direction: column;
+  gap: 16px;
+}
+
+.form-field {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
 }
 
 .field-label {
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 6px;
+  width: 200px;
+  font-size: 13px;
   color: #002c6c;
+  text-align: right;
 }
 
 .field-input {
-  padding: 10px 12px;
-  font-size: 14px;
-  border: 1px solid #ccd5e2;
-  border-radius: 6px;
-  background-color: #fff;
-  color: #002c6c;
+  flex: 1;
+  padding: 6px;
+  border: none;
+  border-bottom: 1px solid #ccd5e2;
+  font-size: 13px;
+  background-color: transparent;
 }
 
 .field-input:focus {
   outline: none;
-  border-color: #0066cc;
+  border-bottom: 1px solid #002c6c;
 }
 
-.error {
-  color: #d32f2f;
-  font-size: 12px;
-  margin-top: 4px;
+.field-select {
+  flex: 1;
+  padding: 6px;
+  font-size: 13px;
+  border: 1px solid #ccd5e2;
+  border-radius: 4px;
+  background-color: #fff;
+  max-width: 100%;
 }
 
-.form-actions {
+.button-container {
   display: flex;
   justify-content: center;
-  margin-top: 30px;
-  gap: 20px;
+  gap: 30px;
+  margin-top: 40px;
 }
 
-.btn {
-  padding: 10px 30px;
-  border: none;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-}
-
-.btn-save {
-  background-color: #002c6c;
-  color: white;
-}
-
-.btn-save:hover {
-  background-color: #004ea2;
-}
-
-.btn-cancel {
-  background-color: #ccc;
+.action-button {
+  padding: 8px 30px;
+  background-color: #eef4f7;
   color: #002c6c;
+  font-size: 13px;
+  border-radius: 5px;
+  border: none;
+  cursor: pointer;
+  transition: background 0.3s ease;
 }
 
-.btn-cancel:hover {
-  background-color: #bbb;
+.action-button:hover {
+  background-color: #dce9f2;
 }
 
-@media (max-width: 768px) {
-  .form-row {
-    flex-direction: column;
+@media (max-width: 991px) {
+  .form-grid {
+    grid-template-columns: 1fr;
   }
+
+  .field-label {
+    width: 130px;
+  }
+}
+/* Estilo general cuando el campo es inválido */
+.field-input.ng-invalid.ng-touched,
+.field-select.ng-invalid.ng-touched {
+  border-color: #d32f2f !important;
+  background-color: #fff0f0;
+}
+
+/* Etiqueta del campo obligatorio en rojo */
+.field-label.required::after {
+  content: ' *';
+  color: #d32f2f;
+  font-weight: bold;
 }

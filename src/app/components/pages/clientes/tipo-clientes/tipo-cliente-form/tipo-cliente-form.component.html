@@ -1,62 +1,67 @@
-<div class="client-type-data-screen">
-    <main class="main-content">
-      <h2 class="section-title">Datos Generales</h2>
-  
-      <form [formGroup]="form" (ngSubmit)="grabar()" class="data-container">
-        <h3 class="client-type-heading">{{ tituloFormulario }}</h3>
-  
-        <div class="form-row">
-          <div class="form-group full-width">
-            <label class="form-label">Descripción:</label>
-            <div class="form-input">
-              <input type="text" formControlName="descripcion" class="input-text" appUppercase />
-            </div>
-            <div class="error-message" *ngIf="form.get('descripcion')?.invalid && form.get('descripcion')?.touched">
-              Campo obligatorio.
-            </div>
-          </div>
-          <div class="form-group half-width">
-            <label class="form-label">Empresa:</label>
-            <div class="form-input">
-              <input type="text" formControlName="empresa" class="input-text" />
-            </div>
-            <div class="error-message" *ngIf="form.get('empresa')?.invalid && form.get('empresa')?.touched">
-              Campo obligatorio.
-            </div>
-          </div>
+<div class="form-wrapper">
+  <h1 class="form-title">{{ tituloFormulario }}</h1>
+
+  <form [formGroup]="form" (ngSubmit)="grabar()">
+    <div class="form-grid">
+      <!-- Columna izquierda -->
+      <div class="form-column">
+        <!-- Descripción -->
+        <div class="form-field">
+          <label class="field-label required">Descripción</label>
+          <input
+            class="field-input"
+            formControlName="descripcion"
+            appUppercase
+            (keypress)="CustomValidators.onlyLettersKeyPress($event)"
+          />
+
         </div>
-  
-        <div class="form-row form-row-spaced">
-          <div class="form-group half-width">
-            <label class="form-label">Cuenta:</label>
-            <div class="form-input">
-              <input type="text" formControlName="cuenta" class="input-text" />
-            </div>
-            <div class="error-message" *ngIf="form.get('cuenta')?.invalid && form.get('cuenta')?.touched">
-              Campo obligatorio.
-            </div>
-          </div>
-  
-          <div class="form-group half-width">
-            <label class="form-label">Estado:</label>
-            <div class="form-input form-input-dropdown">
-                <select formControlName="estado" class="input-text">
-                    <option [ngValue]="true">ACTIVO</option>
-                    <option [ngValue]="false">INACTIVO</option>
-                  </select>
-                  
-            </div>
-            <div class="error-message" *ngIf="form.get('estado')?.invalid && form.get('estado')?.touched">
-              Campo obligatorio.
-            </div>
-          </div>
+        <div class="error-message" *ngIf="form.get('descripcion')?.touched && form.get('descripcion')?.invalid">
+          <small *ngIf="form.get('descripcion')?.errors?.['required']">Campo obligatorio.</small>
+          <small *ngIf="form.get('descripcion')?.errors?.['onlyLetters']">Solo se permiten letras.</small>
         </div>
-  
-        <div class="button-container">
-          <button  class="action-button save-button" (click)="grabar()">Grabar</button>
-          <button type="button" class="action-button cancel-button" (click)="cancelar()">Cancelar</button>
+
+
+        <!-- Cuenta -->
+        <div class="form-field">
+          <label class="field-label required">Cuenta</label>
+          <input
+            class="field-input"
+            formControlName="cuenta"
+            placeholder="000000-000"
+            (keypress)="CustomValidators.cuentaKeyPress($event)"
+          />
+
         </div>
-      </form>
-    </main>
-  </div>
-  
+        <div class="error-message" *ngIf="form.get('cuenta')?.touched && form.get('cuenta')?.invalid">
+          <small *ngIf="form.get('cuenta')?.errors?.['required']">Campo obligatorio.</small>
+          <small *ngIf="form.get('cuenta')?.errors?.['cuentaFormato']">Formato inválido. Use 000000-000.</small>
+        </div>
+
+      </div>
+
+      <!-- Columna derecha -->
+      <div class="form-column">
+        <!-- Empresa -->
+        <div class="form-field">
+          <label class="field-label required">Empresa</label>
+          <input class="field-input" [value]="form.get('empresa')?.value || 'SIN EMPRESA'" disabled />
+        </div>
+
+        <!-- Estado -->
+        <div class="form-field">
+          <label class="field-label required">Estado</label>
+          <select class="field-select" formControlName="estado">
+            <option [ngValue]="true">ACTIVO</option>
+            <option [ngValue]="false">INACTIVO</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="button-container">
+      <button type="submit" class="action-button">Grabar</button>
+      <button type="button" class="action-button" (click)="cancelar()">Cancelar</button>
+    </div>
+  </form>
+</div>

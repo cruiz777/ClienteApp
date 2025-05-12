@@ -18,8 +18,7 @@ import { UppercaseDirective } from 'src/app/directives/uppercase.directive';
   declarations: [
     MenusComponent,
     CodbarComponent,
-    NavegarComponent,
-    UppercaseDirective
+    NavegarComponent
     //TipoClienteListComponent
 
   ],

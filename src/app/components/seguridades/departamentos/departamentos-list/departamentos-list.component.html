@@ -4,7 +4,7 @@
   <div class="action-bar">
     <div class="action-left"></div>
     <div class="action-right">
-      <button mat-button (click)="abrirDialogoNuevoDepartamento()" class="new-button">
+      <button mat-button (click)="abrirNuevoDepartamento()" class="new-button">
         Nuevo Departamento
       </button>
     </div>
@@ -17,6 +17,16 @@
     <ng-container matColumnDef="nombre">
       <th mat-header-cell *matHeaderCellDef> Nombre </th>
       <td mat-cell *matCellDef="let d"> {{ d.nombre }} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="cuenta">
+      <th mat-header-cell *matHeaderCellDef> Cuenta </th>
+      <td mat-cell *matCellDef="let d"> {{ d.cuenta ?? '-' }} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="empresa">
+      <th mat-header-cell *matHeaderCellDef> Empresa </th>
+      <td mat-cell *matCellDef="let d"> {{ d.empresa }} </td>
     </ng-container>
 
     <ng-container matColumnDef="estado">
@@ -32,8 +42,8 @@
       <th mat-header-cell *matHeaderCellDef> Acciones </th>
       <td mat-cell *matCellDef="let d">
         <div class="acciones-btns">
-          <button mat-icon-button color="primary" (click)="abrirDialogoEditarDepartamento(d)">
-            <img src="assets/icons/icon-modificar-3.png" alt="Editar" class="icon-btn">
+          <button mat-icon-button color="primary" (click)="editarDepartamento(d)">
+            <img src="assets/icons/icon-modificar-3.png" alt="Editar" class="icon-btn" />
           </button>
         </div>
       </td>
