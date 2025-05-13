@@ -183,7 +183,6 @@ export class DialogClienteEditarComponent implements OnInit {
 
     console.log(this.idCliente);
     this.cargarHistorial(this.idCliente);
-    alert(this.idCliente);
     this.cargarClienteYGrupos(this.idCliente);
     this.paso1Form.get('estadoEmpresa')?.valueChanges.subscribe(value => {
       this.paso2Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
