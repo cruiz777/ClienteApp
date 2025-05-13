@@ -129,18 +129,30 @@ export class GrupoClienteFormComponent implements OnInit {
       : this.grupoClienteService.create(grupoData);
 
     request$.subscribe({
-      next: () => {
+      next: (res) => {
+        // Validación: si la respuesta trae false, mostrar mensaje del backend
+        if (!res.data) {
+          this.mostrarMensaje('Error', res.message, 'error', false, 'Cerrar');
+          return;
+        }
+
         const mensaje = this.modoEdicion
           ? 'Grupo de cliente actualizado correctamente.'
           : 'Grupo de cliente creado exitosamente.';
 
         this.mostrarMensaje('Éxito', mensaje, 'success', false, 'Aceptar');
       },
-      error: () => {
+/*************  ✨ Windsurf Command ⭐  *************/
+  /**
+   * Cancela el guardado del grupo de cliente y navega de vuelta a la lista de grupos de clientes.
+   */
+/*******  5c1eb8fa-5ca5-4fc9-b88a-35c82b742bdc  *******/      error: () => {
         this.mostrarMensaje('Error', 'Ocurrió un error al guardar el grupo de cliente.', 'error');
       }
     });
   }
+
+
 
   cancelar(): void {
     this.router.navigate(['/menus/grupocliente']);
