@@ -1175,7 +1175,7 @@ export class DialogClienteEditarComponent implements OnInit {
   comparar('Celular', original.telefono1, this.paso2Form.get('celular')?.value);
 comparar('Telefono 2', original.telefono, this.paso2Form.get('telefono2')?.value);
 comparar('Telefono Representante', original.fax, this.paso3Form.get('telefonoRepresentante')?.value);
-
+comparar('Email Representante', original.email, this.paso3Form.get('emailRepresentante')?.value);
   if (this.cambios.length) {
     console.log('⚠️ Cambios detectados:\n' + this.cambios.join('\n'));
     // this.mostrarAlerta('Cambios detectados:\n' + this.cambios.join('\n'), 'Advertencia');
