@@ -9,13 +9,17 @@ import { CorreoDialogComponent } from './dialogs/correo/correo-dialog.component'
 import { TelefonoDialogComponent } from './dialogs/telefono/telefono-dialog.component';
 import { DireccionDialogComponent } from './dialogs/direccion/direccion-dialog.component';
 import { UppercaseDirective } from 'src/app/directives/uppercase.directive';
+import { DepartamentoDialogComponent } from './dialogs/departamento/departamento-dialog.component';
+import { SeguridadesInicioComponent } from './inicio/inicio.component';
 @NgModule({
   declarations: [
     NavigationComponent,
     SeguridadesComponent,
     CorreoDialogComponent,
     TelefonoDialogComponent,
-    DireccionDialogComponent
+    DireccionDialogComponent,
+    SeguridadesInicioComponent,
+    DepartamentoDialogComponent
   ],
   imports: [
     CommonModule,

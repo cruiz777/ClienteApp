@@ -17,6 +17,8 @@ import { map, startWith } from 'rxjs/operators';
 const html2pdf: any = require('html2pdf.js');
 import { MatStepper } from '@angular/material/stepper';
 import { MatDialog } from '@angular/material/dialog';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatButtonModule } from '@angular/material/button';
 
 // Servicios personalizados
 import { GrupoEmpresaService, GrupoEmpresa } from '../../../../services/grupo-empresa.service';
@@ -32,6 +34,8 @@ import { PrefijoService, Prefijo } from 'src/app/services/prefijo.service';
 import { CedulaService } from 'src/app/services/cedula.service';
 import { GenerarglnService } from 'src/app/services/generargln.service';
 import { GlnService, GlnRequest } from 'src/app/services/gln.service';
+import { PaisService, Pais } from 'src/app/services/pais.service';
+import { HistorialClienteService, HistorialClienteRequest } from 'src/app/services/historial-cliente.service';
 // Interfaces o modelos
 import { ClienteRuc } from '../../../../interfaces/clienteRuc';
 import { emailValidoValidator } from '../../../../util/validators';
@@ -39,6 +43,7 @@ import { emailValidoValidator } from '../../../../util/validators';
 import { Inject } from '@angular/core';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 
+import { ModalImpresionComponent } from 'src/app/components/shared/modal-impresion/modal-impresion.component';
 
 @Component({
   selector: 'app-dialog-cliente-editar',
@@ -70,7 +75,11 @@ export class DialogClienteEditarComponent implements OnInit {
   ciudadFiltrados$!: Observable<Ciudad[]>;
   ciudadSeleccionado!: number;
   ciudadFiltrados: Ciudad[] = [];
-
+  pais: Pais[] = [];
+  paisCtrl = new FormControl('');
+  paisFiltrados$!: Observable<Pais[]>;
+  paisSeleccionado!: number;
+  paisFiltrados: Pais[] = [];
   nombreCiudadSeleccionada: string = '';
   esPasaporte = false;
   tipoIdentificacion: 'CEDULA' | 'RUC' | 'PASAPORTE' | null = null;
@@ -97,12 +106,15 @@ export class DialogClienteEditarComponent implements OnInit {
   prefijoExistente = false;
   impresionHabilitada = false;
   fecha: Date = new Date();
-  clienteE!:ClienteIndividual;
+  clienteE!: ClienteIndividual;
   modoEdicion = false;
 
   estadoEmpresa: EstadoEmpresa[] = [];
-estadoEmpresaFiltrados$!: Observable<EstadoEmpresa[]>;
-estadoEmpresaCtrl = new FormControl('');
+  estadoEmpresaFiltrados$!: Observable<EstadoEmpresa[]>;
+  estadoEmpresaCtrl = new FormControl('');
+  codigoAreaE: number | null = null;
+  cambios: string[] = [];
+  private clienteOriginal!: ClienteIndividual;
 
   constructor(
     private fb: FormBuilder,
@@ -123,24 +135,27 @@ estadoEmpresaCtrl = new FormControl('');
     private glnService: GlnService,
     private dialog: MatDialog,
     private estadoempresaService: EstadoEmpresaService,
-    @Inject(MAT_DIALOG_DATA) public idCliente: number, 
-
+    @Inject(MAT_DIALOG_DATA) public idCliente: number,
+    private paisService: PaisService,
+    private historialClienteService: HistorialClienteService
   ) { }
 
   ngOnInit(): void {
 
-    
-    
+
+
     this.initFormulario();
 
-    // this.obtenerUsuarioActual();
+    //this.obtenerUsuarioActual();
     this.cargarGrupos();
     this.cargarGruposProducto();
+
     this.cargarCiudad();
+    this.cargarPais();
     this.cargarZona();
     this.cargarEstadoEmpresa();
-  
-    
+
+
     console.log(this.idCliente);
     this.cargarClienteYGrupos(this.idCliente);
     this.paso1Form.get('estadoEmpresa')?.valueChanges.subscribe(value => {
@@ -148,7 +163,7 @@ estadoEmpresaCtrl = new FormControl('');
       this.paso3Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
       this.paso4Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
     });
-  
+
     this.paso1Form.get('zona')?.valueChanges.subscribe(value => {
       this.paso2Form.get('zona')?.setValue(value, { emitEvent: false });
       this.paso3Form.get('zona')?.setValue(value, { emitEvent: false });
@@ -166,14 +181,14 @@ estadoEmpresaCtrl = new FormControl('');
         grupoProducto: [null, Validators.required],
         prefix: [''],
         zona: [null],
-        estadoEmpresa:[null],
+        estadoEmpresa: [null],
         codigoCliente: [{ value: '', disabled: false }],
         //prefijo: [''], antes 
         prefijo: [{ value: '', disabled: true }],
         prefijogs1: [''],
         origen: [''],
         gln: [''],
-        fechaIng:['']
+        fechaIng: ['']
       }),
 
       paso2: this.fb.group({
@@ -184,7 +199,6 @@ estadoEmpresaCtrl = new FormControl('');
           ],
           updateOn: 'change'
         }),
-        
         nombreRepresentante: [null, Validators.required],
         direccionPrincipal: ['', Validators.required],
         codigoPostal: [''],
@@ -192,8 +206,11 @@ estadoEmpresaCtrl = new FormControl('');
         sitioWeb: [''],
         telefono2: [''],
         usuario: [{ value: '', disabled: true }],
-        observacion1: ['']
-        
+        observacion1: [''],
+        zona: [null],
+        estadoEmpresa: [null],
+        pais: ['']
+
       }),
 
       paso3: this.fb.group({
@@ -214,13 +231,17 @@ estadoEmpresaCtrl = new FormControl('');
         pregunta3: [false],
         pregunta4: [false],
         pregunta5: [false],
-        pregunta6: [false]
+        pregunta6: [false],
+        zona: [null],
+        estadoEmpresa: [null]
       }),
 
       paso4: this.fb.group({
         observacion2: [''],
         observacion3: [''],
-        observacion4: ['']
+        observacion4: [''],
+        zona: [null],
+        estadoEmpresa: [null]
       })
     });
   }
@@ -386,6 +407,53 @@ estadoEmpresaCtrl = new FormControl('');
     this.paso2Form.get('ciudad')?.reset();
   }
 
+  cargarPais(): void {
+    this.paisService.obtenerPaises().subscribe(data => {
+      this.pais = data;
+
+      // ✅ Autocompletar Ecuador al inicio si está disponible
+      const ecuador = this.pais.find(p => p.nombre.toLowerCase() === 'ecuador');
+      if (ecuador) {
+        this.paso2Form.get('pais')?.setValue(ecuador);
+        this.codigoAreaE = ecuador.codigoArea; // <-- se asigna 593 aquí
+      }
+
+      // 🔍 Reacciona a cambios en el campo país
+      this.paso2Form.get('pais')?.valueChanges
+        .pipe(startWith(''))
+        .subscribe(valor => {
+          const texto = typeof valor === 'string' ? valor.toLowerCase() : '';
+          this.paisFiltrados = this.pais.filter(p =>
+            p.nombre.toLowerCase().includes(texto)
+          );
+
+          const ecuador = this.pais.find(p => p.nombre.toLowerCase() === 'ecuador');
+          if (ecuador) {
+            console.log('🇪🇨 Ecuador encontrado y seleccionado automáticamente:', ecuador);
+            this.paso2Form.get('pais')?.setValue(ecuador);
+            this.codigoAreaE = ecuador.codigoArea;
+          }
+        });
+    });
+  }
+
+
+
+
+
+
+  limpiarPais(): void {
+    this.paso2Form.get('pais')?.reset();
+  }
+  displayPais(pais: Pais | string): string {
+    return typeof pais === 'string' ? pais : pais?.nombre || '';
+  }
+
+
+
+  seleccionarPais(pais: Pais): void {
+    this.paso2Form.get('pais')?.setValue(pais); // guardamos el objeto completo
+  }
 
 
 
@@ -538,13 +606,13 @@ estadoEmpresaCtrl = new FormControl('');
     this.router.navigate(['/pages/clientes']); // Redirecciona a /pages/clientes
   }
   actualizar(): void {
-    
+
     if (this.formCliente.invalid) {
       this.formCliente.markAllAsTouched();
       this.mostrarAlerta('Faltan campos obligatorios por llenar', 'Formulario Incompleto');
       return;
     }
-  
+
     const paso1 = this.paso1Form.value;
     const paso2 = this.paso2Form.value;
     const paso3 = this.paso3Form.value;
@@ -560,12 +628,12 @@ estadoEmpresaCtrl = new FormControl('');
       nomcli: paso2.razonSocial || '',
       dircli: paso2.direccionPrincipal || '',
       concli: paso2.nombreRepresentante || '',
-      email: paso3.emailRepresentante || '',
-      telefono: paso3.telefonoRepresentante || '',
-      telefono1: paso2.telefono || '',
       razonSocial: paso2.razonSocial || '',
-      fax: paso2.celular,
+      telefono1: paso2.celular,
+      fax: paso3.telefonoRepresentante || '',
       web: paso2.sitioWeb || '',
+      email: paso3.emailRepresentante || '',
+      telefono: paso2.telefono2 || '',
       idEstadoEmpresa: idEstadoEmpresa,
       idTipoCliente: paso1.categoriaCliente,
       idGrupoProducto: paso1.grupoProducto?.id_grupo_producto || 0,
@@ -575,34 +643,35 @@ estadoEmpresaCtrl = new FormControl('');
       idGrupoEmpresa: paso1.grupo || 1,
       representante: paso2.nombreRepresentante || ''
     };
-    
-  
+
+
     console.log('📤 Enviando actualización:', jsonActualizar);
 
-this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
-  next: (res) => {
-    console.log('✅ Cliente actualizado:', res);
-    //this.mostrarAlerta('Cliente actualizado correctamente', 'Éxito');
-    const msg = this.modoEdicion ? 'actualizada' : 'creada';
+    this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
+      next: (res) => {
+        console.log('✅ Cliente actualizado:', res);
+        this.guardarHistorial();        
+        //this.mostrarAlerta('Cliente actualizado correctamente', 'Éxito');
+        const msg = this.modoEdicion ? 'actualizada' : 'creada';
 
-    this.dialog.open(CustomMessageBoxComponent, {
-      width: '400px',
-      data: {
-        title: 'Éxito',
-        message: `El Cliente fue ${msg} correctamente.`,
-        type: 'success',
-        confirmText: '',
-        showCancel: false
+        this.dialog.open(CustomMessageBoxComponent, {
+          width: '400px',
+          data: {
+            title: 'Éxito',
+            message: `El Cliente fue ${msg} correctamente.`,
+            type: 'success',
+            confirmText: '',
+            showCancel: false
+          }
+        }); // 🔴 este paréntesis estaba faltando
+      },
+      error: (err) => {
+        console.error('❌ Error al actualizar cliente:', err);
+        this.mostrarAlerta('No se pudo actualizar el cliente', 'Error');
       }
-    }); // 🔴 este paréntesis estaba faltando
-  },
-  error: (err) => {
-    console.error('❌ Error al actualizar cliente:', err);
-    this.mostrarAlerta('No se pudo actualizar el cliente', 'Error');
+    });
   }
-});
-  }
-  
+
 
 
 
@@ -659,7 +728,7 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
       return { soloMayusculas: true };
     };
   }
-  
+
   forzarGuardarValor(controlName: string, formGroup: FormGroup, event: Event): void {
     const input = event.target as HTMLInputElement;
     const control = formGroup.get(controlName);
@@ -715,7 +784,7 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
   generarPDF(): void {
     this.datosReporte = {
       fechaHoy: new Date(),
-     // prefijo: this.paso1Form.get('prefijo')?.value,
+      // prefijo: this.paso1Form.get('prefijo')?.value,
       fechaIngreso: this.fechaIngreso,
       ruc: this.paso1Form.get('ruc')?.value,
       razonSocial: this.paso2Form.get('razonSocial')?.value,
@@ -750,13 +819,13 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
     }
   }
 
- 
+
   verificarYAvanzar(form: FormGroup, stepper: MatStepper): void {
     console.log('🚦 Ejecutando verificarYAvanzar...');
     console.log('📋 Estado del formulario:', form.valid, form.value);
-  
+
     form.markAllAsTouched();
-  
+
     if (form.valid) {
       console.log('✅ Formulario válido. Avanzando...');
       stepper.next();
@@ -770,48 +839,48 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
       }
     }
   }
-  
-  
+
+
   forzarGuardarRazonSocial(): void {
     const control = this.paso2Form.get('razonSocial');
     const input = document.querySelector<HTMLInputElement>('input[formcontrolname="razonSocial"]');
     const valor = input?.value?.trim();
-  
+
     if (valor !== undefined && valor !== null) {
       // 🔄 1. Borrar temporalmente sin emitir evento
       control?.setValue('', { emitEvent: false });
-  
+
       // 🔁 2. Reasignar el valor original después de un tick
       setTimeout(() => {
         control?.setValue(valor, { emitEvent: true });
         control?.markAsTouched();
         control?.markAsDirty();
         control?.updateValueAndValidity({ emitEvent: true });
-  
+
         // 🔁 3. Disparar manualmente el evento input por si algún validador depende de él
         input?.dispatchEvent(new Event('input', { bubbles: true }));
       }, 0);
     }
   }
-  
+
   forzarSyncYAvanzar(campo: string, form: FormGroup): void {
     const control = form.get(campo);
     const input = document.querySelector<HTMLInputElement>(`input[formcontrolname="${campo}"]`);
     const valor = input?.value?.trim();
-  
+
     console.log(`🔁 forzarSyncYAvanzar ejecutado para '${campo}' con valor actual:`, valor);
-  
+
     if (valor !== undefined && valor !== null) {
       control?.setValue('', { emitEvent: false });
-  
+
       setTimeout(() => {
         control?.setValue(valor, { emitEvent: true });
         control?.markAsTouched();
         control?.markAsDirty();
         control?.updateValueAndValidity({ onlySelf: true, emitEvent: true });
-  
+
         input?.dispatchEvent(new Event('input', { bubbles: true }));
-  
+
         // 🔥 Trigger manualmente ChangeDetector si es necesario
         setTimeout(() => {
           console.log(`✅ Valor restablecido en '${campo}':`, control?.value);
@@ -819,38 +888,38 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
       }, 0);
     }
   }
-  
-  
-  
+
+
+
   verificarPaso2YAvanzar(stepper: MatStepper): void {
     this.forzarSyncYAvanzar('razonSocial', this.paso2Form);
     this.forzarSyncYAvanzar('nombreRepresentante', this.paso2Form);
-  
+
     this.paso2Form.markAllAsTouched();
-  
+
     if (this.paso2Form.valid) {
       stepper.next();
     }
   }
-  
+
   alEntrarCampo(nombreCampo: string, formGroup: FormGroup): void {
     const control = formGroup.get(nombreCampo);
     if (!control) return;
-  
+
     const original = control.value || '';
-  
+
     // Simula un Backspace borrando el último carácter
     const simulado = original.slice(0, -1);
-  
+
     // Aplica el cambio
     control.setValue(simulado, { emitEvent: false });
-  
+
     setTimeout(() => {
       control.setValue(original, { emitEvent: true });
       control.markAsTouched();
       control.markAsDirty();
       control.updateValueAndValidity({ emitEvent: true });
-  
+
       const inputEl = document.querySelector<HTMLInputElement>(`input[formcontrolname="${nombreCampo}"]`);
       if (inputEl) {
         const event = new Event('input', { bubbles: true });
@@ -858,7 +927,7 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
       }
     }, 50);
   }
-  
+
   cargarClientePorId(id: number): void {
     this.clienteService.getClienteById(id).subscribe({
       next: (cliente) => {
@@ -872,6 +941,7 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
     });
   }
   llenarFormularioConCliente(cliente: ClienteIndividual): void {
+    this.clienteOriginal = JSON.parse(JSON.stringify(cliente));
     // Paso 1
     this.paso1Form.patchValue({
       ruc: cliente.ruc || '',
@@ -884,12 +954,12 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
       prefijogs1: `${cliente.prefijo}`,
       origen: cliente.zonaReferencia || '',
       gln: '',
-      fechaIng:cliente.fecing
-      
+      fechaIng: cliente.fecing
+
     });
-  
-    
-  
+
+
+
     // Paso 2
     this.paso2Form.patchValue({
       ciudad: cliente.ciudad || '',
@@ -897,20 +967,20 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
       nombreRepresentante: cliente.representante || '',
       direccionPrincipal: cliente.dircli || '',
       codigoPostal: cliente.codigoPostal || '',
-      celular: cliente.fax || '',
+      celular: cliente.telefono1 || '',
       sitioWeb: cliente.web,
-      telefono2: cliente.telefono1 || '',
+      telefono2: cliente.telefono || '',
       usuario: '',
       observacion1: cliente.obs || ''
     });
-  
+
     // Paso 3
     this.paso3Form.patchValue({
       nombreRepresentante: cliente.representante || '',
       emailRepresentante: cliente.email || '',
-      telefonoRepresentante: cliente.telefono || '',
+      telefonoRepresentante: cliente.fax || '',
       email: cliente.email || '',
-      telefono:  '',
+      telefono: '',
       email1: '',
       email2: '',
       email3: '',
@@ -923,18 +993,18 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
       pregunta5: false,
       pregunta6: false
     });
-  
+
     // Paso 4
     this.paso4Form.patchValue({
       observacion2: '',
       observacion3: '',
       observacion4: ''
     });
-  
+
     this.formCliente.markAllAsTouched();
   }
-  
-  
+
+
   cargarClienteYGrupos(idCliente: number): void {
     forkJoin({
       cliente: this.clienteService.getClienteById(idCliente),
@@ -950,7 +1020,7 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
       this.zona = zona;
       this.ciudad = ciudad;
       this.estadoEmpresa = estado; // 👈 asegúrate de tener this.estado declarado
-    
+
       this.llenarFormularioConCliente(this.clienteE);
       this.setGrupoProductoPorId(this.clienteE.idGrupoProducto);
       this.setGrupoEmpresaPorId(this.clienteE.idGrupoEmpresa);
@@ -958,12 +1028,12 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
       this.setCiudadPorId(this.clienteE.idCiudad);
       this.setEstadoEmpresaPorId(this.clienteE.idEstadoEmpresa); // 👈 corrijo el método si es necesario
     });
-    
-    
-    
+
+
+
   }
-    
-  
+
+
   setGrupoProductoPorId(id: number): void {
     const grupo = this.gruposProducto.find(g => g.id_grupo_producto === id);
     if (grupo) {
@@ -973,7 +1043,7 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
     }
   }
   setGrupoEmpresaPorId(id: number): void {
-    
+
     const grupo = this.grupos.find(g => g.id_grupo_empresa === id);
     if (grupo) {
       this.paso1Form.get('grupo')?.setValue(grupo.id_grupo_empresa); // ✅ setea el ID
@@ -982,7 +1052,7 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
     }
   }
   setZonaPorId(id: number): void {
-    
+
     console.log(id);
     const zona = this.zona.find(z => z.id === id);
     if (zona) {
@@ -994,9 +1064,9 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
   setEstadoEmpresaPorId(id: number): void {
     const estado = this.estadoEmpresa.find(e => e.id === id);
     console.log(estado + ' hola');
-  
+
     if (estado) {
-        const formularios = [this.paso1Form, this.paso2Form, this.paso3Form, this.paso4Form];
+      const formularios = [this.paso1Form, this.paso2Form, this.paso3Form, this.paso4Form];
       formularios.forEach((form, index) => {
         if (form.contains('estadoEmpresa')) {
           form.get('estadoEmpresa')?.setValue(estado);
@@ -1008,9 +1078,9 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
       console.warn('❌ No se encontró el estado de empresa con ID:', id);
     }
   }
-  
-  
-  
+
+
+
   setCiudadPorId(id: number): void {
     const ciudad = this.ciudad.find(c => c.id_ciudad === id);
     if (ciudad) {
@@ -1025,9 +1095,9 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
     this.formCliente.enable(); // habilita todo el formulario
     this.formCliente.get('paso1.ruc')?.disable();
     this.formCliente.get('paso1.esPasaporte')?.disable();
-    
+
   }
-  
+
   desactivarModoEdicion() {
     this.modoEdicion = false;
     this.formCliente.disable(); // deshabilita todo el formulario
@@ -1041,17 +1111,122 @@ this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
       );
     });
   }
-  
-  
+
+
   filtrarEstadoEmpresa(valor: string): EstadoEmpresa[] {
     const filtro = valor.toLowerCase();
     return this.estadoEmpresa.filter(e =>
       e.Nombre.toLowerCase().includes(filtro)
     );
   }
-  
+
   seleccionarEstadoEmpresa(estado: EstadoEmpresa): void {
     this.paso1Form.get('estadoEmpresa')?.setValue(estado);
   }
-  
+  abrirModalImpresion(): void {
+    this.dialog.open(ModalImpresionComponent, {
+      width: '400px',
+      disableClose: true, // opcional
+      data: {
+        prefijos: [
+          { valor: '123', descripcion: 'debo seleccionar uno de los dos' },
+          { valor: '113', descripcion: 'puede haber más' }
+        ]
+      },
+      panelClass: 'modal-superpuesto' // opcional para estilos
+    });
+  }
+
+  verificarCambiosCliente(): void {
+  this.cambios = [];
+
+  const actual = {
+    ...this.paso1Form.value,
+    ...this.paso2Form.value,
+    ...this.paso3Form.value,
+    ...this.paso4Form.value
+  };
+
+  const original = this.clienteOriginal;
+  console.log('Valor original:', original);
+
+  const comparar = (clave: string, originalVal: any, actualVal: any) => {
+    if (JSON.stringify(originalVal) !== JSON.stringify(actualVal)) {
+      this.cambios.push(`${clave}: "${originalVal}" -> "${actualVal}"`);
+    }
+  };
+
+  const categoriaTexto: Record<number, string> = {
+    1: 'Individual',
+    2: 'Industrial'
+  };
+
+  comparar('Categoría Cliente', categoriaTexto[original.idTipoCliente], categoriaTexto[actual.categoriaCliente]);
+  comparar('Grupo', this.obtenerDescripcionGrupo(original.idGrupoEmpresa), this.obtenerDescripcionGrupo(actual.grupo));
+  comparar('Categoría Producto', this.obtenerDescripcionGrupoProducto(original.idGrupoProducto), this.obtenerDescripcionGrupoProducto(actual.grupoProducto?.id_grupo_producto || 0));
+  comparar('Estado Empresa', this.obtenerDescripcionEstadoEmpresa(original.idEstadoEmpresa), this.obtenerDescripcionEstadoEmpresa(actual.estadoEmpresa?.id || 0));
+  comparar('Zona', this.obtenerDescripcionZona(original.idZona), this.obtenerDescripcionZona(actual.zona?.id || 0));
+  comparar('Ciudad', this.obtenerDescripcionCiudad(original.idCiudad), this.obtenerDescripcionCiudad(actual.ciudad?.id_ciudad || 0));
+  comparar('Razón Social', original.razonSocial, actual.razonSocial);
+  comparar('Representante Legal', original.representante, this.paso2Form.get('nombreRepresentante')?.value);
+  comparar('Direccion', original.dircli, this.paso2Form.get('direccionPrincipal')?.value);
+  comparar('CodigoPostal', original.codigoPostal, this.paso2Form.get('codigoPostal')?.value);
+  comparar('Web', original.web, this.paso2Form.get('sitioWeb')?.value); // CORREGIDO: antes comparabas con 'codigoPostal'
+  comparar('Celular', original.telefono1, this.paso2Form.get('celular')?.value);
+comparar('Telefono 2', original.telefono, this.paso2Form.get('telefono2')?.value);
+comparar('Telefono Representante', original.fax, this.paso3Form.get('telefonoRepresentante')?.value);
+comparar('Email Representante', original.email, this.paso3Form.get('emailRepresentante')?.value);
+  if (this.cambios.length) {
+    console.log('⚠️ Cambios detectados:\n' + this.cambios.join('\n'));
+    // this.mostrarAlerta('Cambios detectados:\n' + this.cambios.join('\n'), 'Advertencia');
+  } else {
+    console.log('No se detectaron cambios', 'Sin Cambios');
+  }
+}
+
+
+  private obtenerDescripcionGrupo(id: number): string {
+    const grupo = this.grupos.find(g => g.id_grupo_empresa === id);
+    return grupo ? `${grupo.codigo} - ${grupo.nombre}` : `ID ${id}`;
+  }
+
+  private obtenerDescripcionGrupoProducto(id: number): string {
+    const grupo = this.gruposProducto.find(g => g.id_grupo_producto === id);
+    return grupo ? `${grupo.codigo} - ${grupo.brick} - ${grupo.desBrick}` : `ID ${id}`;
+  }
+
+  private obtenerDescripcionEstadoEmpresa(id: number): string {
+    const estado = this.estadoEmpresa.find(e => e.id === id);
+    return estado ? estado.Nombre : `ID ${id}`;
+  }
+
+  private obtenerDescripcionZona(id: number): string {
+    const zona = this.zona.find(z => z.id === id);
+    return zona ? `${zona.referencia} - ${zona.nombre}` : `ID ${id}`;
+  }
+
+
+private obtenerDescripcionCiudad(id: number): string {
+  const ciudad = this.ciudad.find(c => c.id_ciudad === id);
+  return ciudad ? `${ciudad.ciudad} - ${ciudad.canton} - ${ciudad.provincia}` : `ID ${id}`;
+}
+
+guardarHistorial(): void {
+   this.verificarCambiosCliente();
+  const historial: HistorialClienteRequest = {
+    id_historial_cliente: 0,
+    id_usuario: 2,//this.usuarioActual?.id || 0, // asegúrate de tener el usuario actual
+    nombre_usuario: 'mario',//this.usuarioActual?.usr || 'Desconocido',
+    fecha: new Date().toISOString(),
+    descripcion: this.cambios.join('\n'),
+    clientes_codigo: this.paso1Form.get('codigoCliente')?.value
+  };
+
+  this.historialClienteService.insertarHistorialCliente(historial).subscribe({
+    next: (res) => console.log('✅ Historial guardado:', res),
+    error: (err) => console.error('❌ Error al guardar historial:', err)
+  });
+}
+
+
 }

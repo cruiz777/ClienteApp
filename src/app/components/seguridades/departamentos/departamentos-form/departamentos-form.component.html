@@ -1,0 +1,63 @@
+<div class="form-wrapper">
+  <h1 class="form-title">{{ modoEdicion ? 'Editar Departamento' : 'Crear Departamento' }}</h1>
+
+  <form *ngIf="departamentoForm" [formGroup]="departamentoForm">
+    <div class="form-grid">
+      <div class="form-column">
+        <!-- Nombre -->
+        <div class="form-field">
+          <label class="field-label required">Nombre del Departamento</label>
+          <input class="field-input" formControlName="nombre" appUppercase />
+          <div class="error" *ngIf="departamentoForm.get('nombre')?.hasError('required') && departamentoForm.get('nombre')?.touched">
+            Campo obligatorio
+          </div>
+        </div>
+
+        <!-- Cuenta -->
+        <div class="form-field">
+          <label class="field-label required">Cuenta</label>
+          <input
+            class="field-input"
+            formControlName="cuenta"
+            placeholder="000000-000"
+            (keypress)="CustomValidators.cuentaKeyPress($event)"
+          />
+          <div class="error" *ngIf="departamentoForm.get('cuenta')?.hasError('required') && departamentoForm.get('cuenta')?.touched">
+            Campo obligatorio
+          </div>
+          <div class="error" *ngIf="departamentoForm.get('cuenta')?.hasError('cuentaFormato') && departamentoForm.get('cuenta')?.touched">
+            Formato inválido. Debe ser 000000-000
+          </div>
+        </div>
+
+        <!-- Empresa -->
+        <div class="form-field">
+          <label class="field-label required">Empresa</label>
+          <select class="field-select" formControlName="id_empresa">
+            <option value="">-- Seleccione --</option>
+            <option *ngFor="let empresa of empresas" [value]="empresa.empresaCodigo">
+              {{ empresa.empresaNombre }}
+            </option>
+          </select>
+          <div class="error" *ngIf="departamentoForm.get('id_empresa')?.hasError('required') && departamentoForm.get('id_empresa')?.touched">
+            Campo obligatorio
+          </div>
+        </div>
+
+        <!-- Estado (solo en edición) -->
+        <div class="form-field" *ngIf="modoEdicion">
+          <label class="field-label required">Estado</label>
+          <select class="field-select" formControlName="estado">
+            <option [ngValue]="true">ACTIVO</option>
+            <option [ngValue]="false">INACTIVO</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="button-container">
+      <button type="button" class="action-button" (click)="guardar()">Grabar</button>
+      <button type="button" class="action-button" (click)="cancelar()">Cancelar</button>
+    </div>
+  </form>
+</div>

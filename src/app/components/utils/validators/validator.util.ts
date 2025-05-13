@@ -98,4 +98,43 @@ export class CustomValidators {
       event.preventDefault();
     }
   }
+  // Formato 000000-000
+  static cuentaFormato(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+    if (!value) return null;
+
+    // Solo permitir el formato 000000-000
+    const regex = /^\d{6}-\d{3}$/;
+    if (!regex.test(value)) {
+      return { cuentaFormato: true };
+    }
+
+    return null;
+  }
+
+static cuentaKeyPress(event: KeyboardEvent): void {
+  const input = event.target as HTMLInputElement;
+  const key = event.key;
+
+  // Permitir teclas especiales
+  if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(key)) return;
+
+  const currentValue = input.value;
+
+  // Prevenir letras o símbolos
+  if (!/^\d$/.test(key)) {
+    event.preventDefault();
+    return;
+  }
+
+  // Agregar guion automáticamente en la posición 6
+  if (currentValue.length === 6) {
+    input.value += '-';
+  }
+
+  // Limitar longitud total a 10 caracteres (000000-000)
+  if (currentValue.length >= 10) {
+    event.preventDefault();
+  }
+}
 }

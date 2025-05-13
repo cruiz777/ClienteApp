@@ -130,7 +130,7 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
 
 
   private actualizarFormularioPorTipo(tipo: string) {
-    const prefijo = this.modoEdicion ? 'Edición de' : 'Creación de';
+    const prefijo = this.modoEdicion ? 'Edición' : 'Creación';
     switch (tipo) {
       case 'RUC':
         this.tituloFormulario = `${prefijo} de Empresa`;
