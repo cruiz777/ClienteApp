@@ -10,13 +10,14 @@ export class RucService {
 
   constructor(private http: HttpClient) {}
 
-  obtenerDatosRuc(ruc: string): Observable<{ numeroRuc: string, razonSocial: string, nombre: string }> {
+  obtenerDatosRuc(ruc: string): Observable<{ numeroRuc: string, razonSocial: string, nombre: string ,estadoContribuyenteRuc:string}> {
     return this.http.get<any>(`${this.apiUrl}${ruc}`).pipe(
       map(res => {
         const data = res.consulta?.[0];
         return {
           numeroRuc: data.numeroRuc,
           razonSocial: data.razonSocial,
+          estadoContribuyenteRuc: data.estadoContribuyenteRuc, //
           nombre: data.representantesLegales?.[0]?.nombre || ''
         };
       })

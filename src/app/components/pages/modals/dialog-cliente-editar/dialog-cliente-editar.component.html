@@ -1,8 +1,8 @@
-<mat-dialog-content style="max-height: 105vh;"  [class.disabled-content]="!modoEdicion" >
-    <mat-tab-group [(selectedIndex)]="selectedTab" dynamicHeight>
-  
-      <!-- TAB 1: Información General -->
-      <!-- TAB 1: Información General -->
+<mat-dialog-content style="max-height: 105vh;" [class.disabled-content]="!modoEdicion">
+  <mat-tab-group [(selectedIndex)]="selectedTab" dynamicHeight>
+
+    <!-- TAB 1: Información General -->
+    <!-- TAB 1: Información General -->
     <mat-tab label="Información General">
       <ng-template matTabContent>
         <div>
@@ -115,70 +115,50 @@
                     </mat-form-field>
 
                   </div>
-                  
 
-                  
-                  
+
+
+
                 </div>
-                <section class="date-info-section" >
-                  <div class="date-container">
-                    <!-- First row with dates and user info -->
-                    <div class="info-row">
-                      <div class="info-group date-group">
-                        <div class="info-item">
-                          <label class="form-label">Fecha de ingreso:</label>
-                          <div class="input-field">
-                            <input class="input-field" style="border: none;" matInput formControlName="fechaIng"  type="date" readonly />
+                <div style="background-color: #eef4f7;">
+                <label class="form-label">Fecha Ingreso:</label>
+                <input  style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                <label class="form-label">Fecha Modificación:</label>
+                <input  style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                <label class="form-label">Usuario Modificado:</label>
+                <input  style="border: none;" matInput formControlName="fechaIng" type="text" readonly />
 
-                          </div>
-                        </div>
-                        <div class="info-item">
-                          <label class="form-label">Fecha modificada:</label>
-                          <div class="input-field">
-                            {{ fechaIngreso | date:'dd/MM/yyyy' }}
 
-                          </div>
-                        </div>
-                      </div>
-                      <div class="info-group user-group">
-                        <div class="info-item">
-                          <label class="form-label">Usuario modificado:</label>
-                          <div class="input-field">
-                            <div>admin</div>
+                <div>
+                  <div>
 
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Second row with status and zone info -->
-                    <div class="info-row">
-                      <div>
-                        <label class="form-label">Estado:</label>
-                        <mat-form-field style="height: 60px;">
-                           <mat-select formControlName="estadoEmpresa" placeholder="Seleccione Zona" style="font-size: 12px;">
-                            <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
-                              {{ estado.id }} - {{ estado.Nombre }}
-                            </mat-option>
-                          </mat-select>
-                        </mat-form-field>
-                        
-                        
-                      </div>
-                      <div>
-                        <label class="form-label">Zona:</label>
-                        <mat-form-field style="height: 60px;">
-                          <mat-select formControlName="zona" placeholder="Seleccione Zona" style="font-size: 12px;">
-                            <mat-option *ngFor="let zona of zona" [value]="zona">
-                              {{ zona.referencia }} - {{ zona.nombre }}
-                            </mat-option>
-                          </mat-select>
-                        </mat-form-field>
-                        
-                      </div>
-                    </div>
                   </div>
-                </section>
+                  <div >
+                    <label class="form-label">Estado:</label>
+                    <mat-form-field style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                      appearance="fill" class="compacto-form-field">
+                      <mat-select formControlName="estadoEmpresa" style="font-size: 12px;">
+                        <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
+                          {{ estado.id }} - {{ estado.Nombre }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                 
+                    <label>Zona:</label>
+                    <mat-form-field style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                      appearance="fill" class="compacto-form-field">
+                      <mat-select formControlName="zona"  style="font-size: 12px;">
+                        <mat-option *ngFor="let zona of zona" [value]="zona">
+                          {{ zona.referencia }} - {{ zona.nombre }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
+                </div>
+
+
+
                 <div style="text-align: right;">
                   <button mat-button color="primary" matStepperNext (click)="verificarYAvanzar(paso1Form, stepper)">
                     Siguiente
@@ -225,8 +205,30 @@
                     </div>
                   </div>
                   <div style="padding-top: 0px; padding-bottom: 0px;">
+                    <label style="color: #002c6c;font-size: 13px;"><span style="color: red;">*</span>País : </label>
+                    <mat-form-field class="full-width" style="font-size: 12px; height: 60px;width:210px;">
+                      <input matInput formControlName="pais" [matAutocomplete]="autoPais"
+                        placeholder="Seleccione Pais" autocomplete="off">
+
+                      <button matSuffix mat-icon-button aria-label="Limpiar" *ngIf="paso2Form.get('pais')?.value"
+                        (click)="limpiarPais()">
+                        <mat-icon>close</mat-icon>
+                      </button>
+
+                      <mat-autocomplete #autoPais="matAutocomplete" [displayWith]="displayPais"
+                        (optionSelected)="seleccionarPais($event.option.value)">
+                        <mat-option *ngFor="let pais of paisFiltrados" [value]="pais" style="font-size: 11px;">
+                          {{ pais.codigoArea }} - {{ pais.nombre }}
+                        </mat-option>
+                      </mat-autocomplete>
+                      <mat-error
+                        *ngIf="paso2Form.get('pais')?.hasError('required') && paso2Form.get('pais')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
+                    </mat-form-field>
                     <label style="color: #002c6c;font-size: 13px;"><span style="color: red;">*</span>Ciudad : </label>
-                    <mat-form-field class="full-width" style="font-size: 12px; height: 60px;">
+                    <mat-form-field class="full-width" style="font-size: 12px; height: 60px;width:650px;">
                       <input matInput formControlName="ciudad" [matAutocomplete]="autoCiudad"
                         placeholder="Seleccione Ciudad" autocomplete="off">
 
@@ -270,8 +272,8 @@
 
                     <label style="color: #002c6c; font-size: 12px; margin-left: 10px;"><span
                         style="color: red;">*</span>Celular:</label>
-                    <input type="text" class="underline-input" formControlName="celular" maxlength="10"
-                      autocomplete="off" placeholder="0999999999" />
+                    {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="celular" maxlength="9"
+                      autocomplete="off" placeholder="999999999" />
                     <mat-error
                       *ngIf="paso2Form.get('celular')?.hasError('required') && paso2Form.get('celular')?.touched"
                       style="color: red; font-size: 12px;">
@@ -285,8 +287,8 @@
                       placeholder="https://gs1ec.org" autocomplete="off" />
 
                     <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">Teléfono 2:</label>
-                    <input type="text" class="underline-input" formControlName="telefono2" maxlength="10"
-                      placeholder="0999999999" autocomplete="off" />
+                    {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2" maxlength="9"
+                      placeholder="999999999" autocomplete="off" />
                   </div>
 
                   <div class="form-row">
@@ -301,68 +303,45 @@
                       (input)="forzarMayusculas('observacion1', paso2Form, $event)" maxlength="450"
                       autocomplete="off" />
                   </div>
-                  
+
 
                 </div>
-                <section class="date-info-section" >
-                  <div class="date-container">
-                    <!-- First row with dates and user info -->
-                    <div class="info-row">
-                      <div class="info-group date-group">
-                        <div class="info-item">
-                          <label class="form-label">Fecha de ingreso:</label>
-                          <div class="input-field">
-                            <input class="input-field" style="border: none;" matInput formControlName="fechaIng"  type="date" readonly />
+                <div style="background-color: #eef4f7;">
+                <label class="form-label">Fecha Ingreso:</label>
+                <input  style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                <label class="form-label">Fecha Modificación:</label>
+                <input  style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                <label class="form-label">Usuario Modificado:</label>
+                <input  style="border: none;" matInput formControlName="fechaIng" type="text" readonly />
 
-                          </div>
-                        </div>
-                        <div class="info-item">
-                          <label class="form-label">Fecha modificada:</label>
-                          <div class="input-field">
-                            {{ fechaIngreso | date:'dd/MM/yyyy' }}
 
-                          </div>
-                        </div>
-                      </div>
-                      <div class="info-group user-group">
-                        <div class="info-item">
-                          <label class="form-label">Usuario modificado:</label>
-                          <div class="input-field">
-                            <div>{{ usuarioActual?.usr }}</div>
+                <div>
+                  <div>
 
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Second row with status and zone info -->
-                    <div class="info-row">
-                      <div>
-                        <label class="form-label">Estado:</label>
-                        <mat-form-field style="height: 60px;">
-                           <mat-select formControlName="estadoEmpresa" placeholder="Seleccione Zona" style="font-size: 12px;">
-                            <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
-                              {{ estado.id }} - {{ estado.Nombre }}
-                            </mat-option>
-                          </mat-select>
-                        </mat-form-field>
-                        
-                        
-                      </div>
-                      <div>
-                        <label class="form-label">Zona:</label>
-                        <mat-form-field style="height: 60px;">
-                          <mat-select formControlName="zona" placeholder="Seleccione Zona" style="font-size: 12px;">
-                            <mat-option *ngFor="let zona of zona" [value]="zona">
-                              {{ zona.referencia }} - {{ zona.nombre }}
-                            </mat-option>
-                          </mat-select>
-                        </mat-form-field>
-                        
-                      </div>
-                    </div>
                   </div>
-                </section>
+                  <div >
+                    <label class="form-label">Estado:</label>
+                    <mat-form-field style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                      appearance="fill" class="compacto-form-field">
+                      <mat-select formControlName="estadoEmpresa" style="font-size: 12px;">
+                        <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
+                          {{ estado.id }} - {{ estado.Nombre }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                 
+                    <label>Zona:</label>
+                    <mat-form-field style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                      appearance="fill" class="compacto-form-field">
+                      <mat-select formControlName="zona"  style="font-size: 12px;">
+                        <mat-option *ngFor="let zona of zona" [value]="zona">
+                          {{ zona.referencia }} - {{ zona.nombre }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
+                </div>
                 <div style="text-align: right;">
                   <button mat-button matStepperPrevious>Anterior</button>
                   <button mat-button color="primary" matStepperNext
@@ -407,8 +386,8 @@
                         </div>
                         <label style="color: #002c6c; font-size: 12px;"><span style="color: red;">*</span>Tel.o
                           Cel:</label>
-                        <input type="text" class="underline-input" formControlName="telefonoRepresentante"
-                          maxlength="10" placeholder="0999999999" autocomplete="off" />
+                        {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefonoRepresentante"
+                          maxlength="9" placeholder="999999999" autocomplete="off" />
                         <mat-error
                           *ngIf="paso3Form.get('telefonoRepresentante')?.hasError('required') && paso3Form.get('telefonoRepresentante')?.touched"
                           style="color: red; font-size: 12px;">
@@ -435,8 +414,8 @@
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
                       <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
-                      <input type="text" class="underline-input" formControlName="telefono" maxlength="10"
-                        autocomplete="off" placeholder="0999999999" />
+                      {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono" maxlength="9"
+                        autocomplete="off" placeholder="999999999" />
                     </div>
                     <div class="form-row">
 
@@ -473,8 +452,8 @@
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
                       <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
-                      <input type="text" class="underline-input" formControlName="telefono2" maxlength="10"
-                        placeholder="0999999999" autocomplete="off" />
+                      {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2" maxlength="9"
+                        placeholder="999999999" autocomplete="off" />
                     </div>
 
 
@@ -518,65 +497,42 @@
                         </div>
                       </div>
                     </section>
-                    <section class="date-info-section" >
-                      <div class="date-container">
-                        <!-- First row with dates and user info -->
-                        <div class="info-row">
-                          <div class="info-group date-group">
-                            <div class="info-item">
-                              <label class="form-label">Fecha de ingreso:</label>
-                              <div class="input-field">
-                                <input class="input-field" style="border: none;" matInput formControlName="fechaIng"  type="date" readonly />
-    
-                              </div>
-                            </div>
-                            <div class="info-item">
-                              <label class="form-label">Fecha modificada:</label>
-                              <div class="input-field">
-                                {{ fechaIngreso | date:'dd/MM/yyyy' }}
-    
-                              </div>
-                            </div>
-                          </div>
-                          <div class="info-group user-group">
-                            <div class="info-item">
-                              <label class="form-label">Usuario modificado:</label>
-                              <div class="input-field">
-                                <div>{{ usuarioActual?.usr }}</div>
-    
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-    
-                        <!-- Second row with status and zone info -->
-                        <div class="info-row">
-                          <div>
-                            <label class="form-label">Estado:</label>
-                            <mat-form-field style="height: 60px;">
-                               <mat-select formControlName="estadoEmpresa" placeholder="Seleccione Zona" style="font-size: 12px;">
-                                <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
-                                  {{ estado.id }} - {{ estado.Nombre }}
-                                </mat-option>
-                              </mat-select>
-                            </mat-form-field>
-                            
-                            
-                          </div>
-                          <div>
-                            <label class="form-label">Zona:</label>
-                            <mat-form-field style="height: 60px;">
-                              <mat-select formControlName="zona" placeholder="Seleccione Zona" style="font-size: 12px;">
-                                <mat-option *ngFor="let zona of zona" [value]="zona">
-                                  {{ zona.referencia }} - {{ zona.nombre }}
-                                </mat-option>
-                              </mat-select>
-                            </mat-form-field>
-                            
-                          </div>
-                        </div>
-                      </div>
-                    </section>
+                    <div style="background-color: #eef4f7;">
+                <label class="form-label">Fecha Ingreso:</label>
+                <input  style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                <label class="form-label">Fecha Modificación:</label>
+                <input  style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                <label class="form-label">Usuario Modificado:</label>
+                <input  style="border: none;" matInput formControlName="fechaIng" type="text" readonly />
+
+
+                <div>
+                  <div>
+
+                  </div>
+                  <div >
+                    <label class="form-label">Estado:</label>
+                    <mat-form-field style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                      appearance="fill" class="compacto-form-field">
+                      <mat-select formControlName="estadoEmpresa" style="font-size: 12px;">
+                        <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
+                          {{ estado.id }} - {{ estado.Nombre }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                 
+                    <label>Zona:</label>
+                    <mat-form-field style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                      appearance="fill" class="compacto-form-field">
+                      <mat-select formControlName="zona"  style="font-size: 12px;">
+                        <mat-option *ngFor="let zona of zona" [value]="zona">
+                          {{ zona.referencia }} - {{ zona.nombre }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
+                </div>
                   </div>
 
                 </div>
@@ -658,65 +614,42 @@
 
                   </article>
                 </div>
-                <section class="date-info-section" >
-                  <div class="date-container">
-                    <!-- First row with dates and user info -->
-                    <div class="info-row">
-                      <div class="info-group date-group">
-                        <div class="info-item">
-                          <label class="form-label">Fecha de ingreso:</label>
-                          <div class="input-field">
-                            <input class="input-field" style="border: none;" matInput formControlName="fechaIng"  type="date" readonly />
+                <div style="background-color: #eef4f7;">
+                <label class="form-label">Fecha Ingreso:</label>
+                <input  style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                <label class="form-label">Fecha Modificación:</label>
+                <input  style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                <label class="form-label">Usuario Modificado:</label>
+                <input  style="border: none;" matInput formControlName="fechaIng" type="text" readonly />
 
-                          </div>
-                        </div>
-                        <div class="info-item">
-                          <label class="form-label">Fecha modificada:</label>
-                          <div class="input-field">
-                            {{ fechaIngreso | date:'dd/MM/yyyy' }}
 
-                          </div>
-                        </div>
-                      </div>
-                      <div class="info-group user-group">
-                        <div class="info-item">
-                          <label class="form-label">Usuario modificado:</label>
-                          <div class="input-field">
-                            <div>{{ usuarioActual?.usr }}</div>
+                <div>
+                  <div>
 
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Second row with status and zone info -->
-                    <div class="info-row">
-                      <div>
-                        <label class="form-label">Estado:</label>
-                        <mat-form-field style="height: 60px;">
-                           <mat-select formControlName="estadoEmpresa" placeholder="Seleccione Zona" style="font-size: 12px;">
-                            <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
-                              {{ estado.id }} - {{ estado.Nombre }}
-                            </mat-option>
-                          </mat-select>
-                        </mat-form-field>
-                        
-                        
-                      </div>
-                      <div>
-                        <label class="form-label">Zona:</label>
-                        <mat-form-field style="height: 60px;">
-                          <mat-select formControlName="zona" placeholder="Seleccione Zona" style="font-size: 12px;">
-                            <mat-option *ngFor="let zona of zona" [value]="zona">
-                              {{ zona.referencia }} - {{ zona.nombre }}
-                            </mat-option>
-                          </mat-select>
-                        </mat-form-field>
-                        
-                      </div>
-                    </div>
                   </div>
-                </section>
+                  <div >
+                    <label class="form-label">Estado:</label>
+                    <mat-form-field style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                      appearance="fill" class="compacto-form-field">
+                      <mat-select formControlName="estadoEmpresa" style="font-size: 12px;">
+                        <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
+                          {{ estado.id }} - {{ estado.Nombre }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                 
+                    <label>Zona:</label>
+                    <mat-form-field style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                      appearance="fill" class="compacto-form-field">
+                      <mat-select formControlName="zona"  style="font-size: 12px;">
+                        <mat-option *ngFor="let zona of zona" [value]="zona">
+                          {{ zona.referencia }} - {{ zona.nombre }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
+                </div>
                 <div style="text-align: right;">
                   <button mat-button matStepperPrevious>Anterior</button>
 
@@ -730,43 +663,47 @@
         </div>
       </ng-template>
     </mat-tab>
-  
-      <!-- TAB 2: Histórico -->
-      <mat-tab label="Histórico del Cliente">
-        <ng-template matTabContent>
-          <div *ngIf="selectedTab === 1">
-            <p>Contenido histórico aquí.</p>
-          </div>
-        </ng-template>
-      </mat-tab>
-  
-      <!-- TAB 3: Prefijos -->
-      <mat-tab label="Prefijos">
-        <ng-template matTabContent>
-          <div *ngIf="selectedTab === 2">
-            <p>Contenido de prefijos aquí.</p>
-          </div>
-        </ng-template>
-      </mat-tab>
-  
-    </mat-tab-group>
-  </mat-dialog-content>
-  <div style="text-align: center;">
-    <button mat-button color="primary" (click)="actualizar()">
-      <img src="assets/icons/icon-grabar.png" alt="Grabar" width="18" height="18" style="margin-right: 6px;" />
-      Grabar
-    </button>
-  
-    <button mat-button  (click)="activarModoEdicion()" >
-      <img src="assets/icons/icon-modificar.png" alt="Modificar" width="18" height="18" style="margin-right: 6px;" />
-      Modificar
-    </button>
-    <button mat-button mat-dialog-close>
-      <img src="assets/icons/icon-imprimir.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
-      Imprimir
-    </button>
-    <button mat-button mat-dialog-close (click)="cancelar()">
-      <img src="assets/icons/icon-cancelar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
-      Cancelar
-    </button>
-  </div>
+
+    <!-- TAB 2: Histórico -->
+    <mat-tab label="Histórico del Cliente">
+      <ng-template matTabContent>
+        <div *ngIf="selectedTab === 1">
+          <p>Contenido histórico aquí.</p>
+        </div>
+      </ng-template>
+    </mat-tab>
+
+    <!-- TAB 3: Prefijos -->
+    <mat-tab label="Prefijos">
+      <ng-template matTabContent>
+        <div *ngIf="selectedTab === 2">
+          <p>Contenido de prefijos aquí.</p>
+        </div>
+      </ng-template>
+    </mat-tab>
+
+  </mat-tab-group>
+</mat-dialog-content>
+<div style="text-align: center;">
+  <button mat-button color="primary" (click)="actualizar()">
+    <img src="assets/icons/icon-grabar.png" alt="Grabar" width="18" height="18" style="margin-right: 6px;" />
+    Grabar
+  </button>
+
+  <button mat-button (click)="activarModoEdicion()">
+    <img src="assets/icons/icon-modificar.png" alt="Modificar" width="18" height="18" style="margin-right: 6px;" />
+    Modificar
+  </button>
+  <button mat-button (click)="abrirModalImpresion()">
+    <img src="assets/icons/icon-imprimir.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
+    Imprimir
+  </button>
+  <button mat-button mat-dialog-close (click)="cancelar()">
+    <img src="assets/icons/icon-cancelar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
+    Cancelar
+  </button>
+<button mat-button (click)="verificarCambiosCliente()">
+    <img src="assets/icons/icon-modificar.png" alt="Modificar" width="18" height="18" style="margin-right: 6px;" />
+    verificar
+  </button>
+</div>
