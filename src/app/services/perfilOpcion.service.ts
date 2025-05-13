@@ -24,4 +24,8 @@ export class PerfilOpcionService {
     return this.http.post<ApiResponse<boolean>>(this.apiUrl,perfilOpcion);
   }
 
+  createOpcionesPerfilByMenu(idPerfil: number, idMenu: number): Observable<ApiResponse<boolean>> {
+    return this.http.get<ApiResponse<boolean>>(`${this.apiUrl}/asignar-todas/${idPerfil}/menu/${idMenu}`);
+  }
+
 }

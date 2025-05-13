@@ -61,7 +61,8 @@
         <tbody>
           <tr *ngFor="let menu of menus" [ngClass]="{
             'fila-activa': menu.id_menu === menuSeleccionado,
-            'menu-con-opciones': menu.tieneOpciones
+            'menu-con-opciones': menu.tieneOpciones,
+            'menu-con-opciones-completo': menu.todasAsignadas
           }" (click)="seleccionarMenu(menu.id_menu)" style="cursor: pointer;">
             <td class="ocultar-id">{{ menu.id_menu }}</td>
             <td>{{ menu.nombre }}</td>
@@ -98,27 +99,6 @@
     </div>
 
 
-    <!-- Opciones -->
-    <div class="panel-col">
-      <h3>Opciónes</h3>
-      <table class="tabla-estilo">
-        <thead>
-          <tr>
-            <th class="ocultar-id">ID</th>
-            <th>Opción</th>
-            <th>Tiene_Acceso</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let opcion of opcionnes">
-            <td class="ocultar-id">{{ opcion.id_opcion }}</td>
-            <td>{{ opcion.nombre }}</td>
-            <td class="col-reducida"><input type="checkbox" [(ngModel)]="opcion.status"
-                (change)="onToggleOpcion(opcion)" /></td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
   </div>
 
 </div>

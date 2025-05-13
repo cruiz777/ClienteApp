@@ -194,6 +194,17 @@ export class PerfilesListComponent implements OnInit {
 
     const marcar = !menu.todasAsignadas;
     console.log(`🔄 ${marcar ? 'Asignar' : 'Quitar'} todas las opciones del menú: ${menu.nombre}`);
-    // Aquí se implementará el proceso de asignación masiva
+
+    if (marcar) {
+      this.perfilesOpcionesService.createOpcionesPerfilByMenu(this.perfilSeleccionado!, this.menuSeleccionado!)
+        .subscribe(response => {
+          console.log(response);
+        });
+    } else {
+      // Aquí podrías llamar a un método para quitar todas las opciones del menú si lo necesitas.
+      console.log('🗑️ Eliminando opciones del menú');
+    }
   }
+
+
 }
