@@ -11,6 +11,7 @@ import { OpcionService } from 'src/app/services/opcion.service';
 import { OpcionResponse } from 'src/app/interfaces/responses/opcion-response';
 import { PerfilOpcionService } from 'src/app/services/perfilOpcion.service';
 import { PerfilOpcion } from 'src/app/interfaces/requests/perfil-opcion-request';
+import { PerfilMenu } from 'src/app/interfaces/requests/perfil-menu-request';
 
 interface MenuExtendido extends MenuResponse {
   tieneOpciones: boolean;
@@ -196,7 +197,12 @@ export class PerfilesListComponent implements OnInit {
     console.log(`🔄 ${marcar ? 'Asignar' : 'Quitar'} todas las opciones del menú: ${menu.nombre}`);
 
     if (marcar) {
-      this.perfilesOpcionesService.createOpcionesPerfilByMenu(this.perfilSeleccionado!, this.menuSeleccionado!)
+      const request: PerfilMenu = {
+        id_perfil: this.perfilSeleccionado,
+        id_menu: menu.id_menu,
+        status: true
+      };
+      this.perfilesOpcionesService.createOpcionesPerfilByMenu(request)
         .subscribe(response => {
           console.log(response);
         });

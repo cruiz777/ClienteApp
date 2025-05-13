@@ -7,6 +7,7 @@ import { PerfilOpciones } from '../interfaces/responses/perfil-opcion-response';
 import { ApiResponse } from '../interfaces/responses/api-response';
 import { environment } from 'src/environments/environment';
 import {PerfilOpcion}from'../interfaces/requests/perfil-opcion-request';
+import {PerfilMenu}from'../interfaces/requests/perfil-menu-request';
 
 @Injectable({
   providedIn: 'root'
@@ -24,8 +25,8 @@ export class PerfilOpcionService {
     return this.http.post<ApiResponse<boolean>>(this.apiUrl,perfilOpcion);
   }
 
-  createOpcionesPerfilByMenu(idPerfil: number, idMenu: number): Observable<ApiResponse<boolean>> {
-    return this.http.get<ApiResponse<boolean>>(`${this.apiUrl}/asignar-todas/${idPerfil}/menu/${idMenu}`);
-  }
+  createOpcionesPerfilByMenu(perfilMenu: PerfilMenu): Observable<ApiResponse<boolean>> {
+  return this.http.post<ApiResponse<boolean>>(`${this.apiUrl}/asignar-todas`, perfilMenu);
+}
 
 }
