@@ -12,7 +12,7 @@ import { DepartamentoResponse } from 'src/app/interfaces/responses/departamentos
 })
 export class DepartamentosListComponent implements OnInit {
   dataSource = new MatTableDataSource<DepartamentoResponse>();
-  displayedColumns: string[] = ['nombre', 'cuenta', 'empresa', 'estado', 'acciones'];
+  displayedColumns: string[] = ['nombre', 'cuenta', 'estado', 'acciones'];
   isLoading = false;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;

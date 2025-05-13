@@ -20,6 +20,7 @@ export class DepartamentosFormComponent implements OnInit {
   modoEdicion = false;
   idDepartamento!: number;
   empresas: EmpresaResponse[] = [];
+  departamentos: DepartamentoResponse[] = []; // <-- necesario para validación
   public CustomValidators = CustomValidators;
 
   constructor(
@@ -34,12 +35,13 @@ export class DepartamentosFormComponent implements OnInit {
   ngOnInit(): void {
     this.departamentoForm = this.fb.group({
       nombre: ['', [Validators.required, Validators.maxLength(100)]],
-      cuenta: ['', Validators.required, CustomValidators.cuentaFormato],
-      id_empresa: [null, Validators.required],
+      cuenta: ['', [Validators.required, CustomValidators.cuentaFormato]],
+      id_empresa: [1],
       estado: [true]
     });
 
     this.cargarEmpresas();
+    this.cargarDepartamentos();
 
     const idParam = this.route.snapshot.paramMap.get('id');
     if (idParam) {
@@ -50,7 +52,7 @@ export class DepartamentosFormComponent implements OnInit {
           this.departamentoForm.patchValue({
             nombre: data.nombre,
             cuenta: data.cuenta,
-            id_empresa: data.id_empresa,
+            id_empresa: data.id_empresa ?? 1,
             estado: data.estado
           });
         },
@@ -66,7 +68,35 @@ export class DepartamentosFormComponent implements OnInit {
     });
   }
 
+  cargarDepartamentos(): void {
+    this.departamentoService.getDepartamentos().subscribe({
+      next: (data) => (this.departamentos = data),
+      error: () => this.mostrarMensajeError('No se pudieron cargar los departamentos.')
+    });
+  }
+
   guardar(): void {
+    const nombreIngresado = this.departamentoForm.get('nombre')?.value.trim().toUpperCase();
+
+    const duplicado = this.departamentos.find(dep =>
+      dep.nombre?.trim().toUpperCase() === nombreIngresado &&
+      (!this.modoEdicion || dep.id_departamento !== this.idDepartamento)
+    );
+
+    if (duplicado) {
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '400px',
+        data: {
+          title: 'Duplicado',
+          message: `Ya existe un departamento llamado "${duplicado.nombre}".`,
+          type: 'warning',
+          confirmText: 'Aceptar',
+          showCancel: false
+        }
+      });
+      return;
+    }
+
     if (this.departamentoForm.invalid) {
       this.departamentoForm.markAllAsTouched();
 
@@ -83,6 +113,9 @@ export class DepartamentosFormComponent implements OnInit {
 
       return;
     }
+
+    // Forzar id_empresa = 1
+    this.departamentoForm.get('id_empresa')?.setValue(1);
 
     const formValue: DepartamentoRequest = this.departamentoForm.getRawValue();
     const request$ = this.modoEdicion
@@ -106,7 +139,6 @@ export class DepartamentosFormComponent implements OnInit {
       error: () => this.mostrarMensajeError('Ocurrió un error al guardar el departamento.')
     });
   }
-
 
   cancelar(): void {
     this.departamentoForm.reset({ estado: true });
