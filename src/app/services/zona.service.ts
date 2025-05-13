@@ -18,7 +18,7 @@ export class ZonaService {
   constructor(private http: HttpClient) {}
 
   obtenerZona(): Observable<Zona[]> {
-    debugger
+   
     return this.http.get<any>(this.apiUrl).pipe(
       map(response => response.data.map((item: any) => ({
         id: item.id,

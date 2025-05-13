@@ -18,7 +18,7 @@ export class EstadoEmpresaService {
   constructor(private http: HttpClient) {}
 
   obtenerEstadosEmpresa(): Observable<EstadoEmpresa[]> {
-    debugger
+
     return this.http.get<any>(this.apiUrl).pipe(
       map(response =>
         response.data.map((item: any) => ({
