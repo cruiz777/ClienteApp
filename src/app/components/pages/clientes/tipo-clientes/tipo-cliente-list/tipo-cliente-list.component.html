@@ -34,7 +34,7 @@
         <th>Código</th>
         <th>Descripción</th>
         <th>Cuenta</th>
-        <th>Empresa</th>
+        <!-- <th>Empresa</th> -->
         <th>Estado</th>
         <th>Opciones</th>
       </tr>
@@ -45,7 +45,7 @@
         <td>{{ tipo.id_tipo_cliente }}</td>
         <td>{{ tipo.descripcion }}</td>
         <td>{{ tipo.cuenta }}</td>
-        <td>{{ tipo.empresa }}</td>
+        <!-- <td>{{ tipo.empresa }}</td> -->
         <td>{{ tipo.estado ? 'ACTIVO' : 'INACTIVO' }}</td>
         <td>
           <button class="edit-button" (click)="editarTipoCliente(tipo.id_tipo_cliente)">
