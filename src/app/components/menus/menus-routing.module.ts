@@ -8,6 +8,10 @@ import { GrupoClienteListComponent } from '../pages/clientes/grupo-clientes/grup
 import { GrupoClienteFormComponent } from '../pages/clientes/grupo-clientes/grupo-cliente-form/grupo-cliente-form.component';
 import { TipoLocalizacionListComponent } from '../pages/configuracion/localizacion-establecimiento/localizacion-est-list/localizacion-est-list.component';
 import { TipoLocalizacionFormComponent } from '../pages/configuracion/localizacion-establecimiento/localizacion-est-form/localizacion-est-form.component';
+import { TraspasoPrefijosComponent } from './prefijos/traspaso-prefijos/traspaso-prefijos.component';
+import { BorrarPrefijoComponent } from './prefijos/borrar-prefijo/borrar-prefijo.component';
+import { TraspasoGtinComponent } from './prefijos/traspaso-gtin/traspaso-gtin.component';
+
 
 const routes: Routes = [
   {
@@ -37,7 +41,10 @@ const routes: Routes = [
           { path: 'crear', component: TipoLocalizacionFormComponent },
           { path: 'editar/:id', component: TipoLocalizacionFormComponent }
         ]
-      }
+      },
+      {path:'tras-prefijo',component:TraspasoPrefijosComponent},
+      {path:'tras-gtin',component:TraspasoGtinComponent},
+      {path:'eliminar-prefijo',component:BorrarPrefijoComponent},
       // {path:'usuarios',component:UsuariosComponent},
       // {path:'productos',component:ProductosComponent},
       // {path:'vender',component:VenderComponent},

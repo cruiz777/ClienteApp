@@ -1,0 +1,159 @@
+<div class="tabs">
+  <button [class.active]="activeTab === 'Transferir'" (click)="cambiarTab('Transferir')">Transferir</button>
+  <button [class.active]="activeTab === 'Listado'" (click)="cambiarTab('Listado')">Listado</button>
+  <button [class.active]="activeTab === 'Asignar'" (click)="cambiarTab('Asignar')">Asignar GLN Entidad</button>
+</div>
+
+<div class="contenido-tablas">
+  <!-- TAB TRANSFERIR -->
+  <ng-container *ngIf="activeTab === 'Transferir'">
+    <h2>Transferencia de Prefijos</h2>
+
+    <div class="form-row">
+      <div class="form-group">
+        <div class="form-row">
+          <label>Origen:</label>
+          <input type="text" placeholder="Cliente Origen" />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <div class="form-row">
+          <label>Destino:</label>
+          <input type="text" placeholder="Cliente Destino" />
+        </div>
+      </div>
+
+    </div>
+
+    <table class="tabla-estilo">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Prefijo</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th>Tipo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of transferencias; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ item.prefijo }}</td>
+          <td>{{ item.fecha }}</td>
+          <td>{{ item.estado }}</td>
+          <td>{{ item.tipo }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="form-actions">
+      <button>Nueva Búsqueda</button>
+      <button>Transferir</button>
+    </div>
+  </ng-container>
+
+
+  <!-- TAB LISTADO -->
+  <ng-container *ngIf="activeTab === 'Listado'">
+
+    <div class="encabezado-acciones">
+      <div class="titulo-y-busqueda">
+        <h2>Listado de Prefijos</h2>
+        <div class="form-group">
+          <div class="form-row">
+            <label>Buscar:</label>
+            <input type="text" placeholder="Buscar prefijo..." [(ngModel)]="filtroBusqueda" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button mat-button [matMenuTriggerFor]="menuExportar">Exportar</button>
+        <mat-menu #menuExportar="matMenu">
+          <button mat-menu-item (click)="exportarPDF()">PDF</button>
+          <button mat-menu-item (click)="exportarExcel()">Excel</button>
+        </mat-menu>
+      </div>
+    </div>
+
+    <table class="tabla-estilo">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Prefijo</th>
+          <th>Empresa Anterior</th>
+          <th>RUC Anterior</th>
+          <th>Empresa Actual</th>
+          <th>RUC Actual</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listado; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ item.prefijo }}</td>
+          <td>{{ item.empresaAnterior }}</td>
+          <td>{{ item.rucAnterior }}</td>
+          <td>{{ item.empresaActual }}</td>
+          <td>{{ item.rucActual }}</td>
+          <td>{{ item.fecha }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </ng-container>
+
+  <!-- TAB ASIGNAR -->
+  <ng-container *ngIf="activeTab === 'Asignar'">
+    <div class="encabezado-acciones">
+      <div class="titulo-y-busqueda">
+        <h2>Asignación de GLN Entidad</h2>
+
+        <div class="form-row">
+          <div class="form-group">
+            <div class="form-row">
+              <label>Prefijo:</label>
+              <input type="text" placeholder="Buscar Prefijo..." [(ngModel)]="filtroBusqueda" />
+            </div>
+          </div>
+          <div class="form-group">
+            <div class="form-row">
+              <label>Cliente:</label>
+              <input type="text" placeholder="Cliente" [(ngModel)]="filtroCliente" />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <div class="form-row">
+              <button class="btn-naranja">Nueva búsqueda</button>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+    <table class="tabla-estilo">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Prefijo</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th>Seleccionar</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of asignaciones; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ item.prefijo }}</td>
+          <td>{{ item.fecha }}</td>
+          <td>{{ item.estado }}</td>
+          <td><input type="checkbox" /></td>
+        </tr>
+      </tbody>
+    </table>
+  </ng-container>
+</div>

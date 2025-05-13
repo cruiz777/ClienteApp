@@ -31,6 +31,8 @@ import { CustomMessageBoxComponent } from './components/utils/messages/custom-me
 import { ConfirmDialogComponent } from './components/reusable/confirm-dialog/confirm-dialog.component';
 import { UppercaseDirective } from './directives/uppercase.directive';
 import { ModalImpresionComponent } from './components/shared/modal-impresion/modal-impresion.component';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+
 
 export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
 
@@ -42,7 +44,7 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     InicioComponent,
     CustomMessageBoxComponent,
     ConfirmDialogComponent,
-     ModalImpresionComponent 
+     ModalImpresionComponent
   ],
   imports: [
     BrowserModule,
@@ -63,7 +65,8 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
   ],
 
   providers: [
-    { provide: LocationStrategy, useClass: HashLocationStrategy }
+    { provide: LocationStrategy, useClass: HashLocationStrategy },
+    provideAnimationsAsync()
   ],
   bootstrap: [AppComponent]
 })

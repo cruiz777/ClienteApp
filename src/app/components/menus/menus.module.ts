@@ -20,7 +20,6 @@ import { UppercaseDirective } from 'src/app/directives/uppercase.directive';
     CodbarComponent,
     NavegarComponent
     //TipoClienteListComponent
-
   ],
   imports: [
     CommonModule,
