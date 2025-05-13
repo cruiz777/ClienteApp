@@ -7,9 +7,10 @@
       <ng-template matTabContent>
         <div>
           <mat-horizontal-stepper linear #stepper>
-
+            
             <!-- Subpaso 1.1: Categorización -->
             <mat-step [stepControl]="paso1Form">
+              
               <form [formGroup]="paso1Form">
                 <ng-template matStepLabel>Categorización</ng-template>
 
@@ -121,40 +122,42 @@
 
                 </div>
                 <div style="background-color: #eef4f7;">
-                <label class="form-label">Fecha Ingreso:</label>
-                <input  style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
-                <label class="form-label">Fecha Modificación:</label>
-                <input  style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
-                <label class="form-label">Usuario Modificado:</label>
-                <input  style="border: none;" matInput formControlName="fechaIng" type="text" readonly />
+                  <label class="form-label">Fecha Ingreso:</label>
+                  <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                  <label class="form-label">Fecha Modificación:</label>
+                  <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                  <label class="form-label">Usuario Modificado:</label>
+                  <input style="border: none;" matInput formControlName="fechaIng" type="text" readonly />
 
 
-                <div>
                   <div>
+                    <div>
 
+                    </div>
+                    <div>
+                      <label class="form-label">Estado:</label>
+                      <mat-form-field
+                        style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                        appearance="fill" class="compacto-form-field">
+                        <mat-select formControlName="estadoEmpresa" style="font-size: 12px;">
+                          <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
+                            {{ estado.id }} - {{ estado.Nombre }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+
+                      <label>Zona:</label>
+                      <mat-form-field
+                        style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                        appearance="fill" class="compacto-form-field">
+                        <mat-select formControlName="zona" style="font-size: 12px;">
+                          <mat-option *ngFor="let zona of zona" [value]="zona">
+                            {{ zona.referencia }} - {{ zona.nombre }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
                   </div>
-                  <div >
-                    <label class="form-label">Estado:</label>
-                    <mat-form-field style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
-                      appearance="fill" class="compacto-form-field">
-                      <mat-select formControlName="estadoEmpresa" style="font-size: 12px;">
-                        <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
-                          {{ estado.id }} - {{ estado.Nombre }}
-                        </mat-option>
-                      </mat-select>
-                    </mat-form-field>
-                 
-                    <label>Zona:</label>
-                    <mat-form-field style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
-                      appearance="fill" class="compacto-form-field">
-                      <mat-select formControlName="zona"  style="font-size: 12px;">
-                        <mat-option *ngFor="let zona of zona" [value]="zona">
-                          {{ zona.referencia }} - {{ zona.nombre }}
-                        </mat-option>
-                      </mat-select>
-                    </mat-form-field>
-                  </div>
-                </div>
                 </div>
 
 
@@ -207,8 +210,8 @@
                   <div style="padding-top: 0px; padding-bottom: 0px;">
                     <label style="color: #002c6c;font-size: 13px;"><span style="color: red;">*</span>País : </label>
                     <mat-form-field class="full-width" style="font-size: 12px; height: 60px;width:210px;">
-                      <input matInput formControlName="pais" [matAutocomplete]="autoPais"
-                        placeholder="Seleccione Pais" autocomplete="off">
+                      <input matInput formControlName="pais" [matAutocomplete]="autoPais" placeholder="Seleccione Pais"
+                        autocomplete="off">
 
                       <button matSuffix mat-icon-button aria-label="Limpiar" *ngIf="paso2Form.get('pais')?.value"
                         (click)="limpiarPais()">
@@ -221,8 +224,7 @@
                           {{ pais.codigoArea }} - {{ pais.nombre }}
                         </mat-option>
                       </mat-autocomplete>
-                      <mat-error
-                        *ngIf="paso2Form.get('pais')?.hasError('required') && paso2Form.get('pais')?.touched"
+                      <mat-error *ngIf="paso2Form.get('pais')?.hasError('required') && paso2Form.get('pais')?.touched"
                         style="color: red; font-size: 12px;">
                         Este campo es obligatorio.
                       </mat-error>
@@ -287,8 +289,8 @@
                       placeholder="https://gs1ec.org" autocomplete="off" />
 
                     <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">Teléfono 2:</label>
-                    {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2" maxlength="9"
-                      placeholder="999999999" autocomplete="off" />
+                    {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2"
+                      maxlength="9" placeholder="999999999" autocomplete="off" />
                   </div>
 
                   <div class="form-row">
@@ -307,40 +309,42 @@
 
                 </div>
                 <div style="background-color: #eef4f7;">
-                <label class="form-label">Fecha Ingreso:</label>
-                <input  style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
-                <label class="form-label">Fecha Modificación:</label>
-                <input  style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
-                <label class="form-label">Usuario Modificado:</label>
-                <input  style="border: none;" matInput formControlName="fechaIng" type="text" readonly />
+                  <label class="form-label">Fecha Ingreso:</label>
+                  <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                  <label class="form-label">Fecha Modificación:</label>
+                  <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                  <label class="form-label">Usuario Modificado:</label>
+                  <input style="border: none;" matInput formControlName="fechaIng" type="text" readonly />
 
 
-                <div>
                   <div>
+                    <div>
 
+                    </div>
+                    <div>
+                      <label class="form-label">Estado:</label>
+                      <mat-form-field
+                        style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                        appearance="fill" class="compacto-form-field">
+                        <mat-select formControlName="estadoEmpresa" style="font-size: 12px;">
+                          <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
+                            {{ estado.id }} - {{ estado.Nombre }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+
+                      <label>Zona:</label>
+                      <mat-form-field
+                        style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                        appearance="fill" class="compacto-form-field">
+                        <mat-select formControlName="zona" style="font-size: 12px;">
+                          <mat-option *ngFor="let zona of zona" [value]="zona">
+                            {{ zona.referencia }} - {{ zona.nombre }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
                   </div>
-                  <div >
-                    <label class="form-label">Estado:</label>
-                    <mat-form-field style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
-                      appearance="fill" class="compacto-form-field">
-                      <mat-select formControlName="estadoEmpresa" style="font-size: 12px;">
-                        <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
-                          {{ estado.id }} - {{ estado.Nombre }}
-                        </mat-option>
-                      </mat-select>
-                    </mat-form-field>
-                 
-                    <label>Zona:</label>
-                    <mat-form-field style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
-                      appearance="fill" class="compacto-form-field">
-                      <mat-select formControlName="zona"  style="font-size: 12px;">
-                        <mat-option *ngFor="let zona of zona" [value]="zona">
-                          {{ zona.referencia }} - {{ zona.nombre }}
-                        </mat-option>
-                      </mat-select>
-                    </mat-form-field>
-                  </div>
-                </div>
                 </div>
                 <div style="text-align: right;">
                   <button mat-button matStepperPrevious>Anterior</button>
@@ -386,8 +390,9 @@
                         </div>
                         <label style="color: #002c6c; font-size: 12px;"><span style="color: red;">*</span>Tel.o
                           Cel:</label>
-                        {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefonoRepresentante"
-                          maxlength="9" placeholder="999999999" autocomplete="off" />
+                        {{ codigoAreaE }}<input type="text" class="underline-input"
+                          formControlName="telefonoRepresentante" maxlength="9" placeholder="999999999"
+                          autocomplete="off" />
                         <mat-error
                           *ngIf="paso3Form.get('telefonoRepresentante')?.hasError('required') && paso3Form.get('telefonoRepresentante')?.touched"
                           style="color: red; font-size: 12px;">
@@ -414,8 +419,8 @@
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
                       <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
-                      {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono" maxlength="9"
-                        autocomplete="off" placeholder="999999999" />
+                      {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono"
+                        maxlength="9" autocomplete="off" placeholder="999999999" />
                     </div>
                     <div class="form-row">
 
@@ -452,8 +457,8 @@
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
                       <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
-                      {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2" maxlength="9"
-                        placeholder="999999999" autocomplete="off" />
+                      {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2"
+                        maxlength="9" placeholder="999999999" autocomplete="off" />
                     </div>
 
 
@@ -498,41 +503,43 @@
                       </div>
                     </section>
                     <div style="background-color: #eef4f7;">
-                <label class="form-label">Fecha Ingreso:</label>
-                <input  style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
-                <label class="form-label">Fecha Modificación:</label>
-                <input  style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
-                <label class="form-label">Usuario Modificado:</label>
-                <input  style="border: none;" matInput formControlName="fechaIng" type="text" readonly />
+                      <label class="form-label">Fecha Ingreso:</label>
+                      <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                      <label class="form-label">Fecha Modificación:</label>
+                      <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                      <label class="form-label">Usuario Modificado:</label>
+                      <input style="border: none;" matInput formControlName="fechaIng" type="text" readonly />
 
 
-                <div>
-                  <div>
+                      <div>
+                        <div>
 
-                  </div>
-                  <div >
-                    <label class="form-label">Estado:</label>
-                    <mat-form-field style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
-                      appearance="fill" class="compacto-form-field">
-                      <mat-select formControlName="estadoEmpresa" style="font-size: 12px;">
-                        <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
-                          {{ estado.id }} - {{ estado.Nombre }}
-                        </mat-option>
-                      </mat-select>
-                    </mat-form-field>
-                 
-                    <label>Zona:</label>
-                    <mat-form-field style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
-                      appearance="fill" class="compacto-form-field">
-                      <mat-select formControlName="zona"  style="font-size: 12px;">
-                        <mat-option *ngFor="let zona of zona" [value]="zona">
-                          {{ zona.referencia }} - {{ zona.nombre }}
-                        </mat-option>
-                      </mat-select>
-                    </mat-form-field>
-                  </div>
-                </div>
-                </div>
+                        </div>
+                        <div>
+                          <label class="form-label">Estado:</label>
+                          <mat-form-field
+                            style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                            appearance="fill" class="compacto-form-field">
+                            <mat-select formControlName="estadoEmpresa" style="font-size: 12px;">
+                              <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
+                                {{ estado.id }} - {{ estado.Nombre }}
+                              </mat-option>
+                            </mat-select>
+                          </mat-form-field>
+
+                          <label>Zona:</label>
+                          <mat-form-field
+                            style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                            appearance="fill" class="compacto-form-field">
+                            <mat-select formControlName="zona" style="font-size: 12px;">
+                              <mat-option *ngFor="let zona of zona" [value]="zona">
+                                {{ zona.referencia }} - {{ zona.nombre }}
+                              </mat-option>
+                            </mat-select>
+                          </mat-form-field>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                 </div>
@@ -615,40 +622,42 @@
                   </article>
                 </div>
                 <div style="background-color: #eef4f7;">
-                <label class="form-label">Fecha Ingreso:</label>
-                <input  style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
-                <label class="form-label">Fecha Modificación:</label>
-                <input  style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
-                <label class="form-label">Usuario Modificado:</label>
-                <input  style="border: none;" matInput formControlName="fechaIng" type="text" readonly />
+                  <label class="form-label">Fecha Ingreso:</label>
+                  <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                  <label class="form-label">Fecha Modificación:</label>
+                  <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                  <label class="form-label">Usuario Modificado:</label>
+                  <input style="border: none;" matInput formControlName="fechaIng" type="text" readonly />
 
 
-                <div>
                   <div>
+                    <div>
 
+                    </div>
+                    <div>
+                      <label class="form-label">Estado:</label>
+                      <mat-form-field
+                        style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                        appearance="fill" class="compacto-form-field">
+                        <mat-select formControlName="estadoEmpresa" style="font-size: 12px;">
+                          <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
+                            {{ estado.id }} - {{ estado.Nombre }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+
+                      <label>Zona:</label>
+                      <mat-form-field
+                        style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
+                        appearance="fill" class="compacto-form-field">
+                        <mat-select formControlName="zona" style="font-size: 12px;">
+                          <mat-option *ngFor="let zona of zona" [value]="zona">
+                            {{ zona.referencia }} - {{ zona.nombre }}
+                          </mat-option>
+                        </mat-select>
+                      </mat-form-field>
+                    </div>
                   </div>
-                  <div >
-                    <label class="form-label">Estado:</label>
-                    <mat-form-field style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
-                      appearance="fill" class="compacto-form-field">
-                      <mat-select formControlName="estadoEmpresa" style="font-size: 12px;">
-                        <mat-option *ngFor="let estado of estadoEmpresa" [value]="estado">
-                          {{ estado.id }} - {{ estado.Nombre }}
-                        </mat-option>
-                      </mat-select>
-                    </mat-form-field>
-                 
-                    <label>Zona:</label>
-                    <mat-form-field style="font-size: 12px;height: 60px;background-color: transparent;box-shadow: none; border-radius: 0;"
-                      appearance="fill" class="compacto-form-field">
-                      <mat-select formControlName="zona"  style="font-size: 12px;">
-                        <mat-option *ngFor="let zona of zona" [value]="zona">
-                          {{ zona.referencia }} - {{ zona.nombre }}
-                        </mat-option>
-                      </mat-select>
-                    </mat-form-field>
-                  </div>
-                </div>
                 </div>
                 <div style="text-align: right;">
                   <button mat-button matStepperPrevious>Anterior</button>
@@ -662,16 +671,59 @@
           </mat-horizontal-stepper>
         </div>
       </ng-template>
+      
     </mat-tab>
 
     <!-- TAB 2: Histórico -->
     <mat-tab label="Histórico del Cliente">
-      <ng-template matTabContent>
-        <div *ngIf="selectedTab === 1">
-          <p>Contenido histórico aquí.</p>
-        </div>
-      </ng-template>
+      <mat-form-field appearance="outline" style="padding: 0px 0px;width: 450px;padding-top: 6px;">
+      <mat-label>Buscar</mat-label>
+      <input matInput #input (keyup)="aplicarFiltro(input.value)" placeholder="Buscar">
+
+    </mat-form-field>
+    
+    
+    
+    
+
+    <div class="mat-elevation-z2">
+
+      <ng-container *ngIf="tieneHistorial(); else sinHistorial">
+
+
+  <table mat-table [dataSource]="dataSourceHistorial">
+
+    <ng-container matColumnDef="nombre_usuario">
+      <th mat-header-cell *matHeaderCellDef> Usuario </th>
+      <td mat-cell *matCellDef="let element" style="font-size: 11px;"> {{element.nombre_usuario}} </td>
+    </ng-container>
+    <ng-container matColumnDef="fecha">
+      <th mat-header-cell *matHeaderCellDef> Fecha </th>
+      <td mat-cell *matCellDef="let element" style="font-size: 11px;"> {{element.fecha | date:'dd/MM/yyyy'}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="descripcion">
+      <th mat-header-cell *matHeaderCellDef > Descripción </th>
+      <td mat-cell *matCellDef="let element" style="font-size: 11px;"> {{element.descripcion}} </td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="displayedHistorialColumns"></tr>
+    <tr mat-row *matRowDef="let row; columns: displayedHistorialColumns;"></tr>
+
+  </table>
+
+</ng-container>
+
+<ng-template #sinHistorial>
+  <p>No hay historial disponible.</p>
+</ng-template>
+
+
+      <mat-paginator [pageSizeOptions]="[5, 10]" showFirstLastButtons aria-label="Select page of periodic elements">
+      </mat-paginator>
+    </div>
     </mat-tab>
+
 
     <!-- TAB 3: Prefijos -->
     <mat-tab label="Prefijos">
@@ -702,7 +754,7 @@
     <img src="assets/icons/icon-cancelar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
     Cancelar
   </button>
-<button mat-button (click)="verificarCambiosCliente()">
+  <button mat-button (click)="verificarCambiosCliente()">
     <img src="assets/icons/icon-modificar.png" alt="Modificar" width="18" height="18" style="margin-right: 6px;" />
     verificar
   </button>

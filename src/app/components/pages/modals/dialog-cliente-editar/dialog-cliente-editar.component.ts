@@ -10,7 +10,10 @@ import { FormBuilder, FormGroup, FormControl, Validators, AbstractControl, Valid
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
-
+import { MatTableDataSource } from '@angular/material/table';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
+import { ViewChild } from '@angular/core';
 // RxJS
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
@@ -44,6 +47,17 @@ import { Inject } from '@angular/core';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 
 import { ModalImpresionComponent } from 'src/app/components/shared/modal-impresion/modal-impresion.component';
+
+const ELEMENT_DATA: HistorialClienteRequest[] = [
+  { 
+    id_historial_cliente: 1,
+    id_usuario: 1,
+    nombre_usuario: 'admin',
+    fecha: '2025-05-12T14:00:00.000Z',
+    descripcion: 'Cambio de razón social',
+    clientes_codigo: 12345
+  }
+];
 
 @Component({
   selector: 'app-dialog-cliente-editar',
@@ -114,8 +128,19 @@ export class DialogClienteEditarComponent implements OnInit {
   estadoEmpresaCtrl = new FormControl('');
   codigoAreaE: number | null = null;
   cambios: string[] = [];
+  historial: HistorialClienteRequest[] = [];
+  displayedHistorialColumns: string[] = [ 'nombre_usuario','fecha', 'descripcion'];
+  dataSourceHistorial = new MatTableDataSource(ELEMENT_DATA);
+  
+
+
   private clienteOriginal!: ClienteIndividual;
 
+  
+
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild(MatSort) sort!: MatSort;
+  
   constructor(
     private fb: FormBuilder,
     private grupoService: GrupoEmpresaService,
@@ -157,6 +182,8 @@ export class DialogClienteEditarComponent implements OnInit {
 
 
     console.log(this.idCliente);
+    this.cargarHistorial(this.idCliente);
+    alert(this.idCliente);
     this.cargarClienteYGrupos(this.idCliente);
     this.paso1Form.get('estadoEmpresa')?.valueChanges.subscribe(value => {
       this.paso2Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
@@ -169,6 +196,7 @@ export class DialogClienteEditarComponent implements OnInit {
       this.paso3Form.get('zona')?.setValue(value, { emitEvent: false });
       this.paso4Form.get('zona')?.setValue(value, { emitEvent: false });
     });
+    
   }
 
   initFormulario(): void {
@@ -245,7 +273,10 @@ export class DialogClienteEditarComponent implements OnInit {
       })
     });
   }
-
+ngAfterViewInit(): void {
+  this.dataSourceHistorial.paginator = this.paginator;
+  this.dataSourceHistorial.sort = this.sort;
+}
 
   get paso1Form(): FormGroup {
     return this.formCliente.get('paso1') as FormGroup;
@@ -648,28 +679,35 @@ export class DialogClienteEditarComponent implements OnInit {
     console.log('📤 Enviando actualización:', jsonActualizar);
 
     this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
-      next: (res) => {
-        console.log('✅ Cliente actualizado:', res);
-        this.guardarHistorial();        
-        //this.mostrarAlerta('Cliente actualizado correctamente', 'Éxito');
-        const msg = this.modoEdicion ? 'actualizada' : 'creada';
+  next: (res) => {
+    console.log('✅ Cliente actualizado:', res);
 
-        this.dialog.open(CustomMessageBoxComponent, {
-          width: '400px',
-          data: {
-            title: 'Éxito',
-            message: `El Cliente fue ${msg} correctamente.`,
-            type: 'success',
-            confirmText: '',
-            showCancel: false
-          }
-        }); // 🔴 este paréntesis estaba faltando
-      },
-      error: (err) => {
-        console.error('❌ Error al actualizar cliente:', err);
-        this.mostrarAlerta('No se pudo actualizar el cliente', 'Error');
+    this.guardarHistorial();
+
+    // ✅ Esperar un poco y recargar el historial
+    setTimeout(() => {
+      this.cargarHistorial(this.idCliente);
+    }, 300); // 🔁 Espera 300ms para que se guarde el historial antes de recargarlo
+
+    const msg = this.modoEdicion ? 'actualizada' : 'creada';
+
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: 'Éxito',
+        message: `El Cliente fue ${msg} correctamente.`,
+        type: 'success',
+        confirmText: '',
+        showCancel: false
       }
     });
+  },
+  error: (err) => {
+    console.error('❌ Error al actualizar cliente:', err);
+    this.mostrarAlerta('No se pudo actualizar el cliente', 'Error');
+  }
+});
+
   }
 
 
@@ -1138,51 +1176,51 @@ export class DialogClienteEditarComponent implements OnInit {
   }
 
   verificarCambiosCliente(): void {
-  this.cambios = [];
+    this.cambios = [];
 
-  const actual = {
-    ...this.paso1Form.value,
-    ...this.paso2Form.value,
-    ...this.paso3Form.value,
-    ...this.paso4Form.value
-  };
+    const actual = {
+      ...this.paso1Form.value,
+      ...this.paso2Form.value,
+      ...this.paso3Form.value,
+      ...this.paso4Form.value
+    };
 
-  const original = this.clienteOriginal;
-  console.log('Valor original:', original);
+    const original = this.clienteOriginal;
+    console.log('Valor original:', original);
 
-  const comparar = (clave: string, originalVal: any, actualVal: any) => {
-    if (JSON.stringify(originalVal) !== JSON.stringify(actualVal)) {
-      this.cambios.push(`${clave}: "${originalVal}" -> "${actualVal}"`);
+    const comparar = (clave: string, originalVal: any, actualVal: any) => {
+      if (JSON.stringify(originalVal) !== JSON.stringify(actualVal)) {
+        this.cambios.push(`${clave}: "${originalVal}" -> "${actualVal}"`);
+      }
+    };
+
+    const categoriaTexto: Record<number, string> = {
+      1: 'Individual',
+      2: 'Industrial'
+    };
+
+    comparar('Categoría Cliente', categoriaTexto[original.idTipoCliente], categoriaTexto[actual.categoriaCliente]);
+    comparar('Grupo', this.obtenerDescripcionGrupo(original.idGrupoEmpresa), this.obtenerDescripcionGrupo(actual.grupo));
+    comparar('Categoría Producto', this.obtenerDescripcionGrupoProducto(original.idGrupoProducto), this.obtenerDescripcionGrupoProducto(actual.grupoProducto?.id_grupo_producto || 0));
+    comparar('Estado Empresa', this.obtenerDescripcionEstadoEmpresa(original.idEstadoEmpresa), this.obtenerDescripcionEstadoEmpresa(actual.estadoEmpresa?.id || 0));
+    comparar('Zona', this.obtenerDescripcionZona(original.idZona), this.obtenerDescripcionZona(actual.zona?.id || 0));
+    comparar('Ciudad', this.obtenerDescripcionCiudad(original.idCiudad), this.obtenerDescripcionCiudad(actual.ciudad?.id_ciudad || 0));
+    comparar('Razón Social', original.razonSocial, actual.razonSocial);
+    comparar('Representante Legal', original.representante, this.paso2Form.get('nombreRepresentante')?.value);
+    comparar('Direccion', original.dircli, this.paso2Form.get('direccionPrincipal')?.value);
+    comparar('CodigoPostal', original.codigoPostal, this.paso2Form.get('codigoPostal')?.value);
+    comparar('Web', original.web, this.paso2Form.get('sitioWeb')?.value); // CORREGIDO: antes comparabas con 'codigoPostal'
+    comparar('Celular', original.telefono1, this.paso2Form.get('celular')?.value);
+    comparar('Telefono 2', original.telefono, this.paso2Form.get('telefono2')?.value);
+    comparar('Telefono Representante', original.fax, this.paso3Form.get('telefonoRepresentante')?.value);
+    comparar('Email Representante', original.email, this.paso3Form.get('emailRepresentante')?.value);
+    if (this.cambios.length) {
+      console.log('⚠️ Cambios detectados:\n' + this.cambios.join('\n'));
+      // this.mostrarAlerta('Cambios detectados:\n' + this.cambios.join('\n'), 'Advertencia');
+    } else {
+      console.log('No se detectaron cambios', 'Sin Cambios');
     }
-  };
-
-  const categoriaTexto: Record<number, string> = {
-    1: 'Individual',
-    2: 'Industrial'
-  };
-
-  comparar('Categoría Cliente', categoriaTexto[original.idTipoCliente], categoriaTexto[actual.categoriaCliente]);
-  comparar('Grupo', this.obtenerDescripcionGrupo(original.idGrupoEmpresa), this.obtenerDescripcionGrupo(actual.grupo));
-  comparar('Categoría Producto', this.obtenerDescripcionGrupoProducto(original.idGrupoProducto), this.obtenerDescripcionGrupoProducto(actual.grupoProducto?.id_grupo_producto || 0));
-  comparar('Estado Empresa', this.obtenerDescripcionEstadoEmpresa(original.idEstadoEmpresa), this.obtenerDescripcionEstadoEmpresa(actual.estadoEmpresa?.id || 0));
-  comparar('Zona', this.obtenerDescripcionZona(original.idZona), this.obtenerDescripcionZona(actual.zona?.id || 0));
-  comparar('Ciudad', this.obtenerDescripcionCiudad(original.idCiudad), this.obtenerDescripcionCiudad(actual.ciudad?.id_ciudad || 0));
-  comparar('Razón Social', original.razonSocial, actual.razonSocial);
-  comparar('Representante Legal', original.representante, this.paso2Form.get('nombreRepresentante')?.value);
-  comparar('Direccion', original.dircli, this.paso2Form.get('direccionPrincipal')?.value);
-  comparar('CodigoPostal', original.codigoPostal, this.paso2Form.get('codigoPostal')?.value);
-  comparar('Web', original.web, this.paso2Form.get('sitioWeb')?.value); // CORREGIDO: antes comparabas con 'codigoPostal'
-  comparar('Celular', original.telefono1, this.paso2Form.get('celular')?.value);
-comparar('Telefono 2', original.telefono, this.paso2Form.get('telefono2')?.value);
-comparar('Telefono Representante', original.fax, this.paso3Form.get('telefonoRepresentante')?.value);
-comparar('Email Representante', original.email, this.paso3Form.get('emailRepresentante')?.value);
-  if (this.cambios.length) {
-    console.log('⚠️ Cambios detectados:\n' + this.cambios.join('\n'));
-    // this.mostrarAlerta('Cambios detectados:\n' + this.cambios.join('\n'), 'Advertencia');
-  } else {
-    console.log('No se detectaron cambios', 'Sin Cambios');
   }
-}
 
 
   private obtenerDescripcionGrupo(id: number): string {
@@ -1206,26 +1244,61 @@ comparar('Email Representante', original.email, this.paso3Form.get('emailReprese
   }
 
 
-private obtenerDescripcionCiudad(id: number): string {
-  const ciudad = this.ciudad.find(c => c.id_ciudad === id);
-  return ciudad ? `${ciudad.ciudad} - ${ciudad.canton} - ${ciudad.provincia}` : `ID ${id}`;
+  private obtenerDescripcionCiudad(id: number): string {
+    const ciudad = this.ciudad.find(c => c.id_ciudad === id);
+    return ciudad ? `${ciudad.ciudad} - ${ciudad.canton} - ${ciudad.provincia}` : `ID ${id}`;
+  }
+
+  guardarHistorial(): void {
+    this.verificarCambiosCliente();
+    const historial: HistorialClienteRequest = {
+      id_historial_cliente: 0,
+      id_usuario: 2,//this.usuarioActual?.id || 0, // asegúrate de tener el usuario actual
+      nombre_usuario: 'mario',//this.usuarioActual?.usr || 'Desconocido',
+      fecha: new Date().toISOString(),
+      descripcion: this.cambios.join('\n'),
+      clientes_codigo: this.paso1Form.get('codigoCliente')?.value
+    };
+
+    this.historialClienteService.insertarHistorialCliente(historial).subscribe({
+      next: (res) => console.log('✅ Historial guardado:', res),
+      error: (err) => console.error('❌ Error al guardar historial:', err)
+    });
+  }
+
+cargarHistorial(clientesCodigo: number): void {
+  this.historialClienteService.obtenerHistorialPorCliente(clientesCodigo).subscribe({
+    next: (data) => {
+      console.log('📦 Historial recibido desde API:', data);
+
+      this.dataSourceHistorial = new MatTableDataSource(data);
+
+      // 🔍 AQUI colocas el filtro personalizado
+      this.dataSourceHistorial.filterPredicate = (data: HistorialClienteRequest, filter: string) => {
+        const fechaFormateada = new Date(data.fecha).toLocaleDateString('es-EC');
+        const dataStr = `${fechaFormateada} ${data.nombre_usuario} ${data.descripcion}`.toLowerCase();
+        return dataStr.includes(filter.trim().toLowerCase());
+      };
+
+      this.dataSourceHistorial.paginator = this.paginator;
+      this.dataSourceHistorial.sort = this.sort;
+
+      console.log('🧾 Datos en dataSourceHistorial:', this.dataSourceHistorial.data);
+    },
+    error: (err) => {
+      console.error('❌ Error al obtener historial:', err);
+    }
+  });
 }
 
-guardarHistorial(): void {
-   this.verificarCambiosCliente();
-  const historial: HistorialClienteRequest = {
-    id_historial_cliente: 0,
-    id_usuario: 2,//this.usuarioActual?.id || 0, // asegúrate de tener el usuario actual
-    nombre_usuario: 'mario',//this.usuarioActual?.usr || 'Desconocido',
-    fecha: new Date().toISOString(),
-    descripcion: this.cambios.join('\n'),
-    clientes_codigo: this.paso1Form.get('codigoCliente')?.value
-  };
 
-  this.historialClienteService.insertarHistorialCliente(historial).subscribe({
-    next: (res) => console.log('✅ Historial guardado:', res),
-    error: (err) => console.error('❌ Error al guardar historial:', err)
-  });
+
+tieneHistorial(): boolean {
+  return !!this.dataSourceHistorial?.data && this.dataSourceHistorial.data.length > 0;
+}
+
+ aplicarFiltro(valor: string): void {
+  this.dataSourceHistorial.filter = valor.trim().toLowerCase();
 }
 
 
