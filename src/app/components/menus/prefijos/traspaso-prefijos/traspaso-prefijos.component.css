@@ -1,3 +1,78 @@
+.encabezado-acciones {
+  display: flex;
+  justify-content: space-between;
+  /* Título a la izquierda, botones a la derecha */
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.titulo-y-busqueda {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+/* Fila horizontal con inputs y botón */
+.form-row-horizontal {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+/* Campo de formulario: input + label */
+.campo-formulario {
+  display: flex;
+  flex-direction: column;
+}
+
+.campo-formulario label {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #002c6c;
+}
+
+.campo-formulario input {
+  padding: 6px 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-width: 200px;
+}
+
+/* Estilo del botón "Nueva búsqueda" */
+.btn-naranja {
+  background-color: #f58220;
+  /* Naranja GS1 */
+  color: white;
+  padding: 6px 12px;
+  /* Reducido */
+  font-size: 14px;
+  /* Tamaño de fuente más pequeño */
+  border: none;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  height: 36px;
+  /* Igual alto que el input */
+}
+
+.btn-naranja:hover {
+  background-color: #002c6c;
+  /* Azul marino GS1 */
+}
+
+/* Espaciado entre botones en otras acciones */
+.form-actions button {
+  margin-left: 8px;
+}
+
+/*CSS MARIO Y ANDRES */
 /* Estilo moderno distribución en columnas */
 .tabs {
   display: flex;
@@ -124,10 +199,6 @@ h3 {
   color: #002c6c;
 }
 
-.menu-con-opciones {
-  background-color: #e0f7fa; /* celeste suave */
-  font-weight: bold;
-}
 /* ------------------------------------------------------------------------------------ */
 
 /* Barra de acciones */

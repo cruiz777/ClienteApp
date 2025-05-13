@@ -3,17 +3,27 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-
+import { MatMenuModule } from '@angular/material/menu';
+import { MatButtonModule } from '@angular/material/button';
 
 @Component({
   selector: 'app-traspaso-prefijos',
   standalone: true,
-  imports: [CommonModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatMenuModule,
+    MatButtonModule
+  ],
   templateUrl: './traspaso-prefijos.component.html',
   styleUrls: ['./traspaso-prefijos.component.css']
 })
 export class TraspasoPrefijosComponent {
   activeTab: string = 'Transferir';
+  filtroBusqueda: string = '';
+  filtroCliente: string = '';
 
   transferencias = [
     { prefijo: '12062', fecha: '22/05/2017', estado: 'Activo', tipo: 'Nacional' },
@@ -49,12 +59,24 @@ export class TraspasoPrefijosComponent {
   ];
 
   asignaciones = [
-    { prefijo: '12062', fecha: '22/05/2017', estado: 'Activo' },
-    { prefijo: '12212', fecha: '14/10/2022', estado: 'Activo' },
-    { prefijo: '212441', fecha: '10/05/2017', estado: 'Activo' }
+    { prefijo: '12062', fecha: '22/05/2017', estado: 'Activo', seleccionar: 'Activo' },
+    { prefijo: '12212', fecha: '14/10/2022', estado: 'Activo', seleccionar: 'Activo' },
+    { prefijo: '212441', fecha: '10/05/2017', estado: 'Activo', seleccionar: 'Activo' }
   ];
 
   cambiarTab(tab: string) {
     this.activeTab = tab;
   }
+
+  exportarPDF() {
+    console.log('Exportar a PDF');
+    // lógica de exportación con jsPDF
+  }
+
+  exportarExcel() {
+    console.log('Exportar a Excel');
+    // lógica de exportación con XLSX
+  }
 }
+
+
