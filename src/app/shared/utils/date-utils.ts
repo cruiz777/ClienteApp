@@ -22,4 +22,25 @@ export class DateUtils {
 
     return `${year}-${month}-${day}`;
   }
+
+    /**
+   * Convierte fecha desde string tipo 'yyyy-MM-dd hh:mm:ss' o 'dd/MM/yyyy' a 'yyyy-MM-dd'
+   */
+  static normalizeDateString(input?: string): string | null {
+    if (!input) return null;
+
+    // Caso: yyyy-MM-dd hh:mm:ss
+    if (input.includes('-') && input.includes(':')) {
+      return input.split(' ')[0]; // solo la parte yyyy-MM-dd
+    }
+
+    // Caso: dd/MM/yyyy
+    if (input.includes('/')) {
+      const [dd, mm, yyyy] = input.split('/');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    return null;
+  }
+
 }

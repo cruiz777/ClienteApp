@@ -1,4 +1,4 @@
-/* perfiles-list.component.css - Estilo moderno tipo UltraTab con distribución en columnas */
+/* Estilo moderno tipo UltraTab con distribución en columnas */
 
 .tabs {
   display: flex;
@@ -11,6 +11,7 @@
 }
 
 .tabs button {
+  flex: 1;
   background-color: #e0e7ef;
   border: none;
   padding: 10px 20px;
@@ -19,6 +20,7 @@
   color: #1f2937;
   cursor: pointer;
   transition: background-color 0.3s;
+  text-align: center;
 }
 
 .tabs button:hover {
@@ -70,6 +72,7 @@ h3 {
   font-weight: 600;
 }
 
+/* Estilo para checkboxes */
 input[type='checkbox'] {
   transform: scale(1.2);
   cursor: pointer;
@@ -95,6 +98,7 @@ input[type='checkbox'] {
   margin-bottom: 8px;
 }
 
+/* Responsive */
 @media screen and (max-width: 768px) {
   .tabs {
     flex-direction: column;
@@ -108,4 +112,31 @@ input[type='checkbox'] {
   .tablas-panel {
     flex-direction: column;
   }
+}
+
+/* Ocultar columnas de ID */
+.ocultar-id {
+  display: none;
+}
+
+/* Columnas con ancho personalizado */
+.col-reducida {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.fila-activa {
+  background-color: #cbd5e1 !important;
+  font-weight: bold;
+  color: #002c6c;
+}
+
+.menu-con-opciones {
+  background-color: #e0f7fa; /* celeste suave */
+  font-weight: bold;
+}
+
+.menu-con-opciones-completo {
+  background-color: #83FA9D; /* celeste suave */
+  font-weight: bold;
 }

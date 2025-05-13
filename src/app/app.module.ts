@@ -29,6 +29,10 @@ import { ReusableModule } from './components/reusable/reusable.module';
 import { InicioComponent } from './components/inicio/inicio.component';
 import { CustomMessageBoxComponent } from './components/utils/messages/custom-message-box.component';
 import { ConfirmDialogComponent } from './components/reusable/confirm-dialog/confirm-dialog.component';
+import { UppercaseDirective } from './directives/uppercase.directive';
+import { ModalImpresionComponent } from './components/shared/modal-impresion/modal-impresion.component';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+
 
 export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
 
@@ -39,7 +43,8 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     NotFoundComponent,
     InicioComponent,
     CustomMessageBoxComponent,
-    ConfirmDialogComponent
+    ConfirmDialogComponent,
+     ModalImpresionComponent
   ],
   imports: [
     BrowserModule,
@@ -60,7 +65,8 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
   ],
 
   providers: [
-    { provide: LocationStrategy, useClass: HashLocationStrategy }
+    { provide: LocationStrategy, useClass: HashLocationStrategy },
+    provideAnimationsAsync()
   ],
   bootstrap: [AppComponent]
 })

@@ -13,7 +13,7 @@
               (backdropClick)="isExpanded = false">
 
     <!-- Logos -->
-    
+
     <div class="logo-seguridad" *ngIf="isExpanded">
       <img src="assets/logo/CODBAR-GS1.png" alt="Logo">
     </div>
@@ -30,7 +30,7 @@
       <!-- Acordeón -->
       <mat-accordion [multi]="false">
 
-        <!-- SEGURIDAD -->
+        <!-- CLIENTES-->
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
@@ -41,19 +41,20 @@
           <a mat-list-item routerLink="/pages/clientes">
             <span *ngIf="isExpanded" class="menu-text">Ficha Cliente</span>
           </a>
-          <a mat-list-item routerLink="/pages/clientes">
+          <a mat-list-item routerLink="/menus/tipocliente">
             <span *ngIf="isExpanded" class="menu-text">Tipo Cliente</span>
           </a>
-          <a mat-list-item routerLink="/pages/clientes">
+          <a mat-list-item routerLink="/menus/grupocliente">
             <span *ngIf="isExpanded" class="menu-text">Grupo Cliente</span>
           </a>
-          <a mat-list-item routerLink="/pages/clientes">
+          <!-- <a mat-list-item routerLink="/pages/clientes">
             <span *ngIf="isExpanded" class="menu-text">Responsable de Guias</span>
-          </a>
-                    
+          </a> -->
+
+
         </mat-expansion-panel>
 
-        <!-- ENTIDADES -->
+        <!-- PREFIJOS -->
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
@@ -61,18 +62,18 @@
               <span *ngIf="isExpanded" class="menu-text">Prefijos</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
-          <a mat-list-item routerLink="/seguridades/entidades">
+          <a mat-list-item routerLink="tras-prefijo">
             <span *ngIf="isExpanded" class="menu-text">Transferencia de Prefijos</span>
           </a>
-          <a mat-list-item routerLink="/seguridades/entidades">
-            <span *ngIf="isExpanded" class="menu-text">Transferencia Individual</span>
+          <a mat-list-item routerLink="tras-gtin">
+            <span *ngIf="isExpanded" class="menu-text">Transferencia Gtin</span>
           </a>
-          <a mat-list-item routerLink="/seguridades/entidades">
+          <a mat-list-item routerLink="eliminar-prefijo">
             <span *ngIf="isExpanded" class="menu-text">Borrar Prefijos</span>
           </a>
         </mat-expansion-panel>
 
-        
+
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
@@ -82,12 +83,12 @@
           </mat-expansion-panel-header>
 
           <a mat-list-item routerLink="/seguridades/empresas">
-            
+
             <span *ngIf="isExpanded" class="menu-text">Validador RUC en SRI</span>
           </a>
 
           <a mat-list-item routerLink="/seguridades/localizacion">
-            
+
             <span *ngIf="isExpanded" class="menu-text">Validador Lic.Prod.Verify</span>
           </a>
 
@@ -101,16 +102,16 @@
           </mat-expansion-panel-header>
 
           <a mat-list-item routerLink="/seguridades/empresas">
-            
+
             <span *ngIf="isExpanded" class="menu-text">Reporte Gerencia Cliente</span>
           </a>
 
           <a mat-list-item routerLink="/seguridades/localizacion">
-           
+
             <span *ngIf="isExpanded" class="menu-text">Reporte Clientes</span>
           </a>
           <a mat-list-item routerLink="/seguridades/localizacion">
-           
+
             <span *ngIf="isExpanded" class="menu-text">Explorador Clientes</span>
           </a>
 
@@ -124,12 +125,12 @@
           </mat-expansion-panel-header>
 
           <a mat-list-item routerLink="/seguridades/empresas">
-           
+
             <span *ngIf="isExpanded" class="menu-text">Servicios Productos</span>
           </a>
 
-          <a mat-list-item routerLink="/seguridades/localizacion">
-            
+          <a mat-list-item routerLink="/menus/localizacion-establecimiento">
+
             <span *ngIf="isExpanded" class="menu-text">Localización Establecimientos</span>
           </a>
 
@@ -142,10 +143,10 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-        
+
 
           <a mat-list-item routerLink="/seguridades/localizacion">
-           
+
             <span *ngIf="isExpanded" class="menu-text">Localización</span>
           </a>
 
@@ -171,7 +172,7 @@
       <div class="footer-left">{{ currentDateTime }}</div>
       <div class="footer-center">
         <img src="assets/logo/logo-gap.png" alt="GAP System" class="footer-logo">
-        <span class="footer-phone">Telf: 022 453 846 / 022 464 951</span>
+        <span class="footer-phone">Telf: 099 970 0288 / 022 464 951</span>
       </div>
     </footer>
   </mat-sidenav-content>

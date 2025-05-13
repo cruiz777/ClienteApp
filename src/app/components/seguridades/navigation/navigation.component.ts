@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-navigation',
@@ -11,7 +12,9 @@ export class NavigationComponent implements OnInit {
   isHandset: boolean = false;
   isExpanded: boolean = true;
 
-  constructor(private breakpointObserver: BreakpointObserver) {
+  constructor(private breakpointObserver: BreakpointObserver
+    ,private router: Router
+  ) {
     this.breakpointObserver.observe([Breakpoints.Handset])
       .subscribe(result => {
         this.isHandset = result.matches;
@@ -40,4 +43,15 @@ export class NavigationComponent implements OnInit {
   toggleSidebar(): void {
     this.isExpanded = !this.isExpanded;
   }
+
+  salir(): void {
+    // Opcional: limpiar localStorage o estados
+    // localStorage.removeItem('someKey');
+  
+    // Navega a /inicio y recarga la vista
+    this.router.navigate(['/inicio']).then(() => {
+      window.location.reload(); // fuerza la recarga de la pantalla inicio
+    });
+  }
+  
 }

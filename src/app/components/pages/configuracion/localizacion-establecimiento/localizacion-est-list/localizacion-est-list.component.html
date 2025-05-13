@@ -1,0 +1,70 @@
+<section class="main-section">
+    <h1 class="section-title">Localización Establecimiento</h1>
+
+    <div class="action-bar">
+      <div class="search-container">
+        <label for="search" class="search-label">Buscar:</label>
+        <div class="search-input-wrapper">
+          <div class="search-icon-container">
+            <img
+              src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/ab2d235e1a254e5c350c0a713cb8b7a11eb36381?placeholderIfAbsent=true"
+              alt="Search icon"
+              class="search-icon"
+            />
+            <input
+              id="search"
+              type="text"
+              [(ngModel)]="searchTerm"
+              (input)="applyFilter()"
+              placeholder="Buscar localización"
+              class="search-input"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="action-buttons">
+        <button class="new-button" (click)="crearLocalizacion()">Nuevo</button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <div class="table-wrapper">
+        <div class="table-content">
+          <table class="data-table">
+            <thead>
+              <tr class="table-row">
+                <th class="table-cell header-cell">#</th>
+                <th class="table-cell header-cell">Código</th>
+                <th class="table-cell header-cell">Localización</th>
+                <th class="table-cell header-cell">Estado</th>
+                <th class="table-cell header-cell">Opción</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="table-row" *ngFor="let local of paginatedLocalizaciones; let i = index">
+                <td class="table-cell">{{ (paginator.pageIndex * pageSize) + i + 1 }}</td>
+
+                <td class="table-cell">{{ local.id_tipo_cliente }}</td>
+                <td class="table-cell">{{ local.descripcion }}</td>
+                <td class="table-cell">{{ local.estado ? 'ACTIVO' : 'INACTIVO' }}</td>
+                <td class="table-cell">
+                  <button class="edit-button"  (click)="editarLocalizacion(local.id_tipo_cliente)">
+                    <img src="assets/icons/icon-modificar-3.png" alt="Editar" />
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="paginatedLocalizaciones.length === 0">
+                <td colspan="5" class="table-cell">No hay datos disponibles.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Paginador Angular Material -->
+        <mat-paginator [length]="filteredLength" [pageSize]="pageSize" [pageSizeOptions]="[5, 10, 20]"
+                       (page)="onPageChange($event)" showFirstLastButtons>
+        </mat-paginator>
+      </div>
+    </div>
+  </section>

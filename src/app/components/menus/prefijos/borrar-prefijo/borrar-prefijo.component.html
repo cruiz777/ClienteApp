@@ -1,0 +1,98 @@
+<div class="tabs">
+  <button [class.active]="activeTab === 'eliminar'" (click)="cambiarTab('eliminar')">Borra Prefijo</button>
+  <button [class.active]="activeTab === 'Listado'" (click)="cambiarTab('Listado')">Listado</button>
+</div>
+<div class="contenido-tablas">
+
+<!-- TAB ELIMINAR -->
+   <ng-container *ngIf="activeTab === 'eliminar'">
+
+    <div class="encabezado-acciones">
+      <div class="titulo-y-busqueda">
+        <h2>Eliminacion de Prefijos</h2>
+        <div class="form-group">
+          <div class="form-row">
+            <label>Buscar Prefijo:</label>
+            <input type="text" placeholder="Buscar prefijo..." [(ngModel)]="filtroBusqueda" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button>Nueva Busqueda</button>
+      </div>
+
+    </div>
+
+
+    <table class="tabla-estilo">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Prefijo</th>
+          <th>Cliente</th>
+          <th>Ruc</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of eliminar; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ item.prefijo }}</td>
+          <td>{{ item.cliente }}</td>
+          <td>{{ item.ruc }}</td>
+          <td>{{ item.fecha }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </ng-container>
+
+<!-- TAB LISTADO-->
+<ng-container *ngIf="activeTab === 'Listado'">
+
+    <div class="encabezado-acciones">
+      <div class="titulo-y-busqueda">
+        <h2>Listado de Prefijos Eliminados</h2>
+        <div class="form-group">
+          <div class="form-row">
+            <label>Buscar Prefijo:</label>
+            <input type="text" placeholder="Buscar prefijo..." [(ngModel)]="filtroBusqueda" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button mat-button [matMenuTriggerFor]="menuExportar">Exportar</button>
+        <mat-menu #menuExportar="matMenu">
+          <button mat-menu-item (click)="exportarPDF()">PDF</button>
+          <button mat-menu-item (click)="exportarExcel()">Excel</button>
+        </mat-menu>
+      </div>
+    </div>
+
+    <table class="tabla-estilo">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Prefijo</th>
+          <th>Cliente</th>
+          <th>Ruc</th>
+          <th>Usuario</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listado; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ item.prefijo }}</td>
+          <td>{{ item.cliente }}</td>
+          <td>{{ item.ruc }}</td>
+          <td>{{ item.usuario}}</td>
+          <td>{{ item.fecha }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </ng-container>
+
+</div>

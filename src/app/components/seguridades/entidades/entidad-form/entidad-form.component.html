@@ -1,5 +1,5 @@
 <section class="person-form-container">
-  <h1 class="form-title">Creación de Entidades</h1>
+  <h1 class="form-title">{{ tituloFormulario }}</h1>
 
   <form [formGroup]="personaForm">
     <div class="form-row">
@@ -7,7 +7,7 @@
         <label class="field-label">Tipo de Identificación*</label>
         <div class="dropdown-field">
           <select class="field-input" formControlName="idTipoDocumento">
-            <option *ngFor="let tipo of tiposDocumento" [value]="tipo.idTipoDocumento">
+            <option *ngFor="let tipo of tiposDocumento" [value]="tipo.idTipoDocumento" disabled>
               {{ tipo.descripcion }}
             </option>
           </select>
@@ -19,43 +19,53 @@
 
       <div class="form-field">
         <label class="field-label">Número Documento*</label>
-        <input class="field-input" formControlName="numeroDocumento" />
+        <input
+            class="field-input"
+            formControlName="numeroDocumento"
+            (keypress)="onKeyPressNumbers($event)"
+            (keydown)="onKeyDownDocumento($event)"
+            (blur)="onBlurDocumento()" />
+
         <div class="error" *ngIf="personaForm.get('numeroDocumento')?.hasError('required') && personaForm.get('numeroDocumento')?.touched">
           Campo obligatorio
         </div>
-        <div class="error" *ngIf="personaForm.get('numeroDocumento')?.hasError('minlength') && personaForm.get('numeroDocumento')?.touched">
-          Mínimo 10 caracteres
+
+        <div class="error" *ngIf="personaForm.get('numeroDocumento')?.hasError('exactLengthByTipo') && personaForm.get('numeroDocumento')?.touched">
+          Debe contener exactamente {{
+            personaForm.get('numeroDocumento')?.getError('exactLengthByTipo')?.expected
+          }} caracteres.
         </div>
       </div>
+
     </div>
 
     <div class="form-row">
       <div class="form-field">
-        <label class="field-label">Primer Nombre*</label>
-        <input class="field-input" formControlName="primerNombre" />
+        <label class="field-label">{{ labelNombre }}*</label>
+        <input class="field-input" formControlName="primerNombre" appUppercase (keypress)="onKeyPressLetters($event)"  />
         <div class="error" *ngIf="personaForm.get('primerNombre')?.invalid && personaForm.get('primerNombre')?.touched">
           Campo obligatorio
         </div>
       </div>
 
-      <div class="form-field">
+      <div class="form-field" *ngIf="mostrarGenero">
         <label class="field-label">Segundo Nombre</label>
-        <input class="field-input" formControlName="segundoNombre" />
+        <input class="field-input" formControlName="segundoNombre" (keypress)="onKeyPressLetters($event)" appUppercase/>
       </div>
     </div>
 
     <div class="form-row">
       <div class="form-field">
-        <label class="field-label">Primer Apellido*</label>
-        <input class="field-input" formControlName="primerApellido" />
+        <label class="field-label">{{ labelApellido }}*</label>
+        <input class="field-input" formControlName="primerApellido" (keypress)="onKeyPressLetters($event)" appUppercase/>
         <div class="error" *ngIf="personaForm.get('primerApellido')?.invalid && personaForm.get('primerApellido')?.touched">
           Campo obligatorio
         </div>
       </div>
 
-      <div class="form-field">
+      <div class="form-field" *ngIf="mostrarGenero">
         <label class="field-label">Segundo Apellido</label>
-        <input class="field-input" formControlName="segundoApellido" />
+        <input class="field-input" formControlName="segundoApellido" (keypress)="onKeyPressLetters($event)"  appUppercase/>
       </div>
     </div>
 
@@ -64,7 +74,7 @@
         <label class="field-label">Estado Civil*</label>
         <div class="dropdown-field">
           <select class="field-input" formControlName="idEstadoCivil">
-            <option *ngFor="let estado of estadosCiviles" [value]="estado.estadoCivilCodigo">
+            <option *ngFor="let estado of estadosCiviles" [ngValue]="estado.estadoCivilCodigo">
               {{ estado.estadoCivilNombre }}
             </option>
           </select>
@@ -83,7 +93,7 @@
         </div>
       </div>
 
-      <div class="form-field">
+      <div class="form-field" *ngIf="mostrarGenero">
         <label class="field-label">Género*</label>
         <div class="dropdown-field">
           <select class="field-input" formControlName="idGenero">
@@ -96,6 +106,7 @@
           Campo obligatorio
         </div>
       </div>
+
     </div>
 
     <!-- Campo Ciudad con filtro y estilo personalizado -->
@@ -118,6 +129,7 @@
             type="text"
             [formControl]="ciudadFiltroCtrl"
             placeholder="Buscar ciudad..."
+            (keypress)="onKeyPressLetters($event)"
           />
         </div>
       </div>
@@ -128,7 +140,7 @@
 
     <div class="form-row">
       <div class="form-field">
-        <label class="field-label">Fecha de Nacimiento*</label>
+        <label class="field-label">{{ labelFecha }}*</label>
         <input type="date" class="field-input" formControlName="fechaNacimiento" [max]="today | date:'yyyy-MM-dd'" />
         <div class="error" *ngIf="personaForm.get('fechaNacimiento')?.invalid && personaForm.get('fechaNacimiento')?.touched">
           Campo obligatorio
@@ -139,8 +151,8 @@
         <label class="field-label">Tipo Persona*</label>
         <div class="dropdown-field">
           <select class="field-input" formControlName="tipoPersona">
-            <option value="Natural">Natural</option>
-            <option value="Jurídica">Jurídica</option>
+            <option value="NATURAL">NATURAL</option>
+            <option value="JURÍDICA">JURÍDICA</option>
           </select>
         </div>
         <div class="error" *ngIf="personaForm.get('tipoPersona')?.invalid && personaForm.get('tipoPersona')?.touched">
@@ -217,8 +229,8 @@
 
 
   <div class="action-buttons">
-    <button class="action-button" (click)="guardar()">Grabar</button>
-    <button class="action-button" (click)="cancelar()">Cancelar</button>
+    <button type="button" class="action-button" (click)="guardar()">Grabar</button>
+    <button type="button" class="action-button" (click)="cancelar()">Cancelar</button>
   </div>
   </form>
 </section>

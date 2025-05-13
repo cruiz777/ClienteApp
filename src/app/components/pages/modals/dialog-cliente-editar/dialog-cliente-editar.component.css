@@ -494,9 +494,9 @@
     border-radius: 10px;
     background-color: rgba(238, 244, 247, 1);
     display: flex;
-    margin-top: 12px;
+    margin-top: 1px;
     width: 100%;
-    padding: 14px 11px;
+    padding: 1px 1px;
     flex-direction: column;
     align-items: stretch;
     font-size: 10px;
@@ -1432,7 +1432,7 @@
   }
   .compacto-form-field {
     font-size: 12px;
-    margin: 5px;
+    margin: 1px;
   }
   
   /* 🔥 Ajuste del wrapper principal */
@@ -1574,3 +1574,79 @@
     opacity: 0.6;           /* Visualmente más tenue (opcional) */
   }
   
+
+  .info-container {
+  background: #f3f7fa;
+  padding: 10px 16px;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.info-fechas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.campo-fecha {
+  
+ 
+  font-size: 11px;
+  color: #002c6c;
+  width: 160px;
+}
+
+.input-fecha {
+  height: 30px;
+  font-size: 12px;
+  padding: 4px 6px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+}
+.estado-zona-compacto {
+  display: flex;
+  gap: 12px;
+  
+  background-color: #f9f9f9;
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.estado-zona-compacto .campo {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 220px;
+}
+
+.campo-form {
+  width: 100%;
+}
+
+.compacto-form-field .mat-mdc-form-field-flex {
+  min-height: 36px !important;
+  height: 36px !important;
+  align-items: center;
+}
+
+.compacto-form-field .mat-mdc-text-field-wrapper {
+  padding: 0 !important;
+  height: 36px !important;
+}
+
+.compacto-form-field .mat-mdc-form-field-infix {
+  padding: 0 8px !important;
+  min-height: 36px !important;
+}
+
+.compacto-form-field .mat-mdc-select-value {
+  font-size: 11px !important;
+  line-height: 6px;
+}
+
+.compacto-form-field .mat-mdc-floating-label {
+  font-size: 11px !important;
+  top: 6px !important;
+}
