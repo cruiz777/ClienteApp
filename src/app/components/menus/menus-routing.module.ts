@@ -11,6 +11,7 @@ import { TipoLocalizacionFormComponent } from '../pages/configuracion/localizaci
 import { TraspasoPrefijosComponent } from './prefijos/traspaso-prefijos/traspaso-prefijos.component';
 import { BorrarPrefijoComponent } from './prefijos/borrar-prefijo/borrar-prefijo.component';
 import { TraspasoGtinComponent } from './prefijos/traspaso-gtin/traspaso-gtin.component';
+import { TipoPrefijoComponent } from './prefijos/tipo-prefijo/tipo-prefijo.component';
 
 
 const routes: Routes = [
@@ -45,11 +46,8 @@ const routes: Routes = [
       {path:'tras-prefijo',component:TraspasoPrefijosComponent},
       {path:'tras-gtin',component:TraspasoGtinComponent},
       {path:'eliminar-prefijo',component:BorrarPrefijoComponent},
-      // {path:'usuarios',component:UsuariosComponent},
-      // {path:'productos',component:ProductosComponent},
-      // {path:'vender',component:VenderComponent},
-      // {path:'historialventas',component:HistorialventaComponent},
-      // {path:'reportes',component:ReportesComponent}
+      {path:'tipo-prefijo',component:TipoPrefijoComponent},
+      
     ]
   }
   ];
