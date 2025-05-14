@@ -33,7 +33,7 @@ import { ZonaService, Zona } from '../../../../services/zona.service';
 import { EstadoEmpresa, EstadoEmpresaService } from 'src/app/services/estado-empresa.service';
 import { ClienteIndividual, ClienteService } from 'src/app/services/cliente.service';
 import { NcontrolService, NumeroControlMinDto } from 'src/app/services/ncontrol.service';
-import { PrefijoService, Prefijo } from 'src/app/services/prefijo.service';
+import { PrefijoService, Prefijo,PrefijoClienteResponse } from 'src/app/services/prefijo.service';
 import { CedulaService } from 'src/app/services/cedula.service';
 import { GenerarglnService } from 'src/app/services/generargln.service';
 import { GlnService, GlnRequest } from 'src/app/services/gln.service';
@@ -49,7 +49,7 @@ import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { ModalImpresionComponent } from 'src/app/components/shared/modal-impresion/modal-impresion.component';
 
 const ELEMENT_DATA: HistorialClienteRequest[] = [
-  { 
+  {
     id_historial_cliente: 1,
     id_usuario: 1,
     nombre_usuario: 'admin',
@@ -129,18 +129,35 @@ export class DialogClienteEditarComponent implements OnInit {
   codigoAreaE: number | null = null;
   cambios: string[] = [];
   historial: HistorialClienteRequest[] = [];
-  displayedHistorialColumns: string[] = [ 'nombre_usuario','fecha', 'descripcion'];
+  displayedHistorialColumns: string[] = ['nombre_usuario', 'fecha', 'descripcion'];
   dataSourceHistorial = new MatTableDataSource(ELEMENT_DATA);
-  
+  dataSourcePrefijo = new MatTableDataSource<PrefijoClienteResponse>();
+  displayedPrefijoColumns: string[] = [
+  'clientesCodigo',
+  'nomcli',
+  'ruccli',
+  'codpre',
+  'gln',
+  'fecha',
+  'estado',
+  'fechaCierre',
+  'tipoLocalizacion'
+];
 
+
+
+  prefijoCliente!: PrefijoClienteResponse;
 
   private clienteOriginal!: ClienteIndividual;
 
-  
+
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
-  
+@ViewChild('paginatorPrefijo', { static: false }) paginatorPrefijo!: MatPaginator;
+
+  @ViewChild(MatSort) sortPrefijo!: MatSort;
+
   constructor(
     private fb: FormBuilder,
     private grupoService: GrupoEmpresaService,
@@ -183,6 +200,7 @@ export class DialogClienteEditarComponent implements OnInit {
 
     console.log(this.idCliente);
     this.cargarHistorial(this.idCliente);
+    this.cargarPrefijoCliente(this.idCliente);
     this.cargarClienteYGrupos(this.idCliente);
     this.paso1Form.get('estadoEmpresa')?.valueChanges.subscribe(value => {
       this.paso2Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
@@ -195,7 +213,7 @@ export class DialogClienteEditarComponent implements OnInit {
       this.paso3Form.get('zona')?.setValue(value, { emitEvent: false });
       this.paso4Form.get('zona')?.setValue(value, { emitEvent: false });
     });
-    
+
   }
 
   initFormulario(): void {
@@ -215,7 +233,9 @@ export class DialogClienteEditarComponent implements OnInit {
         prefijogs1: [''],
         origen: [''],
         gln: [''],
-        fechaIng: ['']
+        fechaIng: [''],
+        fechaMod: [''],
+        usuarioMod: ['']
       }),
 
       paso2: this.fb.group({
@@ -272,10 +292,12 @@ export class DialogClienteEditarComponent implements OnInit {
       })
     });
   }
-ngAfterViewInit(): void {
-  this.dataSourceHistorial.paginator = this.paginator;
-  this.dataSourceHistorial.sort = this.sort;
-}
+  ngAfterViewInit(): void {
+    this.dataSourceHistorial.paginator = this.paginator;
+    this.dataSourceHistorial.sort = this.sort;
+ 
+  
+  }
 
   get paso1Form(): FormGroup {
     return this.formCliente.get('paso1') as FormGroup;
@@ -671,41 +693,43 @@ ngAfterViewInit(): void {
       idCiudad: idCiudad || 0,
       idZona: idZona,
       idGrupoEmpresa: paso1.grupo || 1,
-      representante: paso2.nombreRepresentante || ''
+      representante: paso2.nombreRepresentante || '',
+      fechamod: '20/05/2025',
+      usumod: 'Cprl'
     };
 
 
     console.log('📤 Enviando actualización:', jsonActualizar);
 
     this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
-  next: (res) => {
-    console.log('✅ Cliente actualizado:', res);
+      next: (res) => {
+        console.log('✅ Cliente actualizado:', res);
 
-    this.guardarHistorial();
+        this.guardarHistorial();
 
-    // ✅ Esperar un poco y recargar el historial
-    setTimeout(() => {
-      this.cargarHistorial(this.idCliente);
-    }, 300); // 🔁 Espera 300ms para que se guarde el historial antes de recargarlo
+        // ✅ Esperar un poco y recargar el historial
+        setTimeout(() => {
+          this.cargarHistorial(this.idCliente);
+        }, 300); // 🔁 Espera 300ms para que se guarde el historial antes de recargarlo
 
-    const msg = this.modoEdicion ? 'actualizada' : 'creada';
+        const msg = this.modoEdicion ? 'actualizada' : 'creada';
 
-    this.dialog.open(CustomMessageBoxComponent, {
-      width: '400px',
-      data: {
-        title: 'Éxito',
-        message: `El Cliente fue ${msg} correctamente.`,
-        type: 'success',
-        confirmText: '',
-        showCancel: false
+        this.dialog.open(CustomMessageBoxComponent, {
+          width: '400px',
+          data: {
+            title: 'Éxito',
+            message: `El Cliente fue ${msg} correctamente.`,
+            type: 'success',
+            confirmText: '',
+            showCancel: false
+          }
+        });
+      },
+      error: (err) => {
+        console.error('❌ Error al actualizar cliente:', err);
+        this.mostrarAlerta('No se pudo actualizar el cliente', 'Error');
       }
     });
-  },
-  error: (err) => {
-    console.error('❌ Error al actualizar cliente:', err);
-    this.mostrarAlerta('No se pudo actualizar el cliente', 'Error');
-  }
-});
 
   }
 
@@ -991,7 +1015,10 @@ ngAfterViewInit(): void {
       prefijogs1: `${cliente.prefijo}`,
       origen: cliente.zonaReferencia || '',
       gln: '',
-      fechaIng: cliente.fecing
+      fechaIng: cliente.fecing,
+      fechaMod: cliente.fecmod,
+      usuarioMod: cliente.usumod
+
 
     });
 
@@ -1248,57 +1275,109 @@ ngAfterViewInit(): void {
     return ciudad ? `${ciudad.ciudad} - ${ciudad.canton} - ${ciudad.provincia}` : `ID ${id}`;
   }
 
-  guardarHistorial(): void {
-    this.verificarCambiosCliente();
-    const historial: HistorialClienteRequest = {
-      id_historial_cliente: 0,
-      id_usuario: 2,//this.usuarioActual?.id || 0, // asegúrate de tener el usuario actual
-      nombre_usuario: 'mario',//this.usuarioActual?.usr || 'Desconocido',
-      fecha: new Date().toISOString(),
-      descripcion: this.cambios.join('\n'),
-      clientes_codigo: this.paso1Form.get('codigoCliente')?.value
-    };
+guardarHistorial(): void {
+  this.verificarCambiosCliente(); // ← esta función debe llenar this.cambios
 
-    this.historialClienteService.insertarHistorialCliente(historial).subscribe({
-      next: (res) => console.log('✅ Historial guardado:', res),
-      error: (err) => console.error('❌ Error al guardar historial:', err)
+  if (!this.cambios || this.cambios.length === 0) {
+    console.log('⚠️ No hay cambios, no se guarda historial.');
+    return;
+  }
+
+  const historial: HistorialClienteRequest = {
+    id_historial_cliente: 0,
+    id_usuario: 2, // TODO: usar this.usuarioActual?.id || 0
+    nombre_usuario: 'mario', // TODO: usar this.usuarioActual?.usr || 'Desconocido'
+    fecha: new Date().toISOString(),
+    descripcion: this.cambios.join('\n'),
+    clientes_codigo: this.paso1Form.get('codigoCliente')?.value
+  };
+
+  this.historialClienteService.insertarHistorialCliente(historial).subscribe({
+    next: (res) => console.log('✅ Historial guardado:', res),
+    error: (err) => console.error('❌ Error al guardar historial:', err)
+  });
+}
+
+
+  cargarHistorial(clientesCodigo: number): void {
+    this.historialClienteService.obtenerHistorialPorCliente(clientesCodigo).subscribe({
+      next: (data) => {
+        console.log('📦 Historial recibido desde API:', data);
+
+        this.dataSourceHistorial = new MatTableDataSource(data);
+
+        // 🔍 AQUI colocas el filtro personalizado
+        this.dataSourceHistorial.filterPredicate = (data: HistorialClienteRequest, filter: string) => {
+          const fechaFormateada = new Date(data.fecha).toLocaleDateString('es-EC');
+          const dataStr = `${fechaFormateada} ${data.nombre_usuario} ${data.descripcion}`.toLowerCase();
+          return dataStr.includes(filter.trim().toLowerCase());
+        };
+
+        this.dataSourceHistorial.paginator = this.paginator;
+        this.dataSourceHistorial.sort = this.sort;
+
+        console.log('🧾 Datos en dataSourceHistorial:', this.dataSourceHistorial.data);
+      },
+      error: (err) => {
+        console.error('❌ Error al obtener historial:', err);
+      }
     });
   }
 
-cargarHistorial(clientesCodigo: number): void {
-  this.historialClienteService.obtenerHistorialPorCliente(clientesCodigo).subscribe({
+  
+
+
+
+  tieneHistorial(): boolean {
+    return !!this.dataSourceHistorial?.data && this.dataSourceHistorial.data.length > 0;
+  }
+
+  aplicarFiltro(valor: string): void {
+    this.dataSourceHistorial.filter = valor.trim().toLowerCase();
+  }
+
+cargarPrefijoCliente(codigoCliente: number): void {
+  this.prefijoService.obtenerPorClienteCodigo(codigoCliente).subscribe({
     next: (data) => {
-      console.log('📦 Historial recibido desde API:', data);
+      console.log('📦 Datos del cliente con prefijo:', data);
 
-      this.dataSourceHistorial = new MatTableDataSource(data);
+      // Asegurar que data es un arreglo
+      const datos = Array.isArray(data) ? data : [];
 
-      // 🔍 AQUI colocas el filtro personalizado
-      this.dataSourceHistorial.filterPredicate = (data: HistorialClienteRequest, filter: string) => {
-        const fechaFormateada = new Date(data.fecha).toLocaleDateString('es-EC');
-        const dataStr = `${fechaFormateada} ${data.nombre_usuario} ${data.descripcion}`.toLowerCase();
+      this.dataSourcePrefijo = new MatTableDataSource(datos);
+
+      // Filtro opcional
+      this.dataSourcePrefijo.filterPredicate = (item: PrefijoClienteResponse, filter: string) => {
+        const dataStr = `${item.nomcli} ${item.ruccli} ${item.gln} ${item.codpre}`.toLowerCase();
         return dataStr.includes(filter.trim().toLowerCase());
       };
 
-      this.dataSourceHistorial.paginator = this.paginator;
-      this.dataSourceHistorial.sort = this.sort;
-
-      console.log('🧾 Datos en dataSourceHistorial:', this.dataSourceHistorial.data);
+      // 👇 Aquí el setTimeout para asegurar que el paginador ya está disponible
+      setTimeout(() => {
+        if (this.paginatorPrefijo && this.sortPrefijo) {
+          this.dataSourcePrefijo.paginator = this.paginatorPrefijo;
+          this.dataSourcePrefijo.sort = this.sortPrefijo;
+        }
+      }, 0);
     },
     error: (err) => {
-      console.error('❌ Error al obtener historial:', err);
+      console.error('❌ Error al obtener prefijo del cliente:', err);
     }
   });
 }
 
 
-
-tieneHistorial(): boolean {
-  return !!this.dataSourceHistorial?.data && this.dataSourceHistorial.data.length > 0;
+onTabChange(event: any): void {
+  if (event.index === 2) { // Índice del tab "Prefijos"
+    setTimeout(() => {
+      if (this.paginatorPrefijo && this.sortPrefijo) {
+        this.dataSourcePrefijo.paginator = this.paginatorPrefijo;
+        this.dataSourcePrefijo.sort = this.sortPrefijo;
+      }
+    }, 0);
+  }
 }
 
- aplicarFiltro(valor: string): void {
-  this.dataSourceHistorial.filter = valor.trim().toLowerCase();
-}
 
 
 }

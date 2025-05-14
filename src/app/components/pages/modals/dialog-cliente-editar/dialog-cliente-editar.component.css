@@ -1650,3 +1650,12 @@
   font-size: 11px !important;
   top: 6px !important;
 }
+.new-button {
+  border-radius: 4px;
+  color: #fff;
+  padding: 6px 20px;
+  font: 500 13px Inter, sans-serif;
+  transition: background-color 0.3s ease;
+  background-color: #f26334;
+  color: #fff !important;
+}

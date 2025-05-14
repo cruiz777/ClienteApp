@@ -1,5 +1,6 @@
 <mat-dialog-content style="max-height: 105vh;" [class.disabled-content]="!modoEdicion">
-  <mat-tab-group [(selectedIndex)]="selectedTab" dynamicHeight>
+  <mat-tab-group [(selectedIndex)]="selectedTab" dynamicHeight (selectedTabChange)="onTabChange($event)">
+
 
     <!-- TAB 1: Información General -->
     <!-- TAB 1: Información General -->
@@ -7,10 +8,10 @@
       <ng-template matTabContent>
         <div>
           <mat-horizontal-stepper linear #stepper>
-            
+
             <!-- Subpaso 1.1: Categorización -->
             <mat-step [stepControl]="paso1Form">
-              
+
               <form [formGroup]="paso1Form">
                 <ng-template matStepLabel>Categorización</ng-template>
 
@@ -125,9 +126,9 @@
                   <label class="form-label">Fecha Ingreso:</label>
                   <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
                   <label class="form-label">Fecha Modificación:</label>
-                  <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                  <input style="border: none;" matInput formControlName="fechaMod" type="date" readonly />
                   <label class="form-label">Usuario Modificado:</label>
-                  <input style="border: none;" matInput formControlName="fechaIng" type="text" readonly />
+                  <input style="border: none;" matInput formControlName="usuarioMod" type="text" readonly />
 
 
                   <div>
@@ -671,57 +672,58 @@
           </mat-horizontal-stepper>
         </div>
       </ng-template>
-      
+
     </mat-tab>
 
     <!-- TAB 2: Histórico -->
     <mat-tab label="Histórico del Cliente">
       <mat-form-field appearance="outline" style="padding: 0px 0px;width: 450px;padding-top: 6px;">
-      <mat-label>Buscar</mat-label>
-      <input matInput #input (keyup)="aplicarFiltro(input.value)" placeholder="Buscar">
+        <mat-label>Buscar</mat-label>
+        <input matInput #input (keyup)="aplicarFiltro(input.value)" placeholder="Buscar">
 
-    </mat-form-field>
-    
-    
-    
-    
-
-    <div class="mat-elevation-z2">
-
-      <ng-container *ngIf="tieneHistorial(); else sinHistorial">
+      </mat-form-field>
 
 
-  <table mat-table [dataSource]="dataSourceHistorial">
-
-    <ng-container matColumnDef="nombre_usuario">
-      <th mat-header-cell *matHeaderCellDef> Usuario </th>
-      <td mat-cell *matCellDef="let element" style="font-size: 11px;"> {{element.nombre_usuario}} </td>
-    </ng-container>
-    <ng-container matColumnDef="fecha">
-      <th mat-header-cell *matHeaderCellDef> Fecha </th>
-      <td mat-cell *matCellDef="let element" style="font-size: 11px;"> {{element.fecha | date:'dd/MM/yyyy'}} </td>
-    </ng-container>
-
-    <ng-container matColumnDef="descripcion">
-      <th mat-header-cell *matHeaderCellDef > Descripción </th>
-      <td mat-cell *matCellDef="let element" style="font-size: 11px;"> {{element.descripcion}} </td>
-    </ng-container>
-
-    <tr mat-header-row *matHeaderRowDef="displayedHistorialColumns"></tr>
-    <tr mat-row *matRowDef="let row; columns: displayedHistorialColumns;"></tr>
-
-  </table>
-
-</ng-container>
-
-<ng-template #sinHistorial>
-  <p>No hay historial disponible.</p>
-</ng-template>
 
 
-      <mat-paginator [pageSizeOptions]="[5, 10]" showFirstLastButtons aria-label="Select page of periodic elements">
-      </mat-paginator>
-    </div>
+
+      <div class="mat-elevation-z2">
+
+        <ng-container *ngIf="tieneHistorial(); else sinHistorial">
+
+
+          <table mat-table [dataSource]="dataSourceHistorial">
+
+            <ng-container matColumnDef="nombre_usuario">
+              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Usuario </th>
+              <td mat-cell *matCellDef="let element" style="font-size: 11px;"> {{element.nombre_usuario}} </td>
+            </ng-container>
+            <ng-container matColumnDef="fecha">
+              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Fecha </th>
+              <td mat-cell *matCellDef="let element" style="font-size: 11px;"> {{element.fecha | date:'dd/MM/yyyy'}}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="descripcion">
+              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Descripción </th>
+              <td mat-cell *matCellDef="let element" style="font-size: 11px;"> {{element.descripcion}} </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedHistorialColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedHistorialColumns;"></tr>
+
+          </table>
+
+        </ng-container>
+
+        <ng-template #sinHistorial>
+          <p>No hay historial disponible.</p>
+        </ng-template>
+
+
+        <mat-paginator [pageSizeOptions]="[5, 10]" showFirstLastButtons aria-label="Select page of periodic elements">
+        </mat-paginator>
+      </div>
     </mat-tab>
 
 
@@ -729,7 +731,66 @@
     <mat-tab label="Prefijos">
       <ng-template matTabContent>
         <div *ngIf="selectedTab === 2">
-          <p>Contenido de prefijos aquí.</p>
+
+          <div style="text-align: right; margin-bottom: 10px;">
+            <button mat-button (click)="abrirModalImpresion()" class="new-button">
+              Nuevo
+            </button>
+          </div>
+
+          <table mat-table [dataSource]="dataSourcePrefijo" class="mat-elevation-z8"
+            *ngIf="dataSourcePrefijo.data.length">
+
+            <ng-container matColumnDef="clientesCodigo">
+              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;display: none;"> Código </th>
+              <td mat-cell *matCellDef="let el" style="display: none;"> {{ el.clientesCodigo }} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="nomcli">
+              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Cliente </th>
+              <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.nomcli }} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="ruccli">
+              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> RUC </th>
+              <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.ruccli }} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="codpre">
+              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;">Prefijo </th>
+              <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.codpre }} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="gln">
+              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> GLN </th>
+              <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.gln }} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="fecha">
+              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Fecha </th>
+              <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.fecha | date: 'dd/MM/yyyy' }} </td>
+            </ng-container>
+            <ng-container matColumnDef="estado">
+              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> ESTADO </th>
+              <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.estado ? 'Inactivo' : 'Activo' }} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="fechaCierre">
+              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Cierre </th>
+              <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.fechaCierre | date: 'dd/MM/yyyy' }}
+              </td>
+            </ng-container>
+
+            <ng-container matColumnDef="tipoLocalizacion">
+              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> OBSERVACION </th>
+              <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.tipoLocalizacion }} </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="displayedPrefijoColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedPrefijoColumns;"></tr>
+
+          </table>
+
         </div>
       </ng-template>
     </mat-tab>
@@ -751,8 +812,8 @@
     Imprimir
   </button>
   <button mat-button mat-dialog-close (click)="cancelar()">
-    <img src="assets/icons/icon-salir.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
+    <img src="assets/icons/icon-cancelar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
     Salir
   </button>
- 
+
 </div>

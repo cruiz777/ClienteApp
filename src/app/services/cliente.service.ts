@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Cliente } from '../interfaces/cliente';
 import { environment } from 'src/environments/environment';
+import { stream } from 'exceljs';
 
 interface ClienteResponse {
   id: string;
@@ -71,6 +72,8 @@ export interface ClienteIndividual {
   zonaReferencia: string;
   estadoNombre: string;
   prefijo: string;
+  fecmod:Date;
+  usumod:string;
 }
 
 export interface ClienteUpdateRequest {
