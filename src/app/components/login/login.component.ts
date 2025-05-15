@@ -19,6 +19,12 @@ export class LoginComponent implements OnInit {
   hidePassword: boolean = true;
   loading: boolean = false;
   logoUrl: string = '';
+  showPassword = false;
+
+togglePasswordVisibility(): void {
+  this.showPassword = !this.showPassword;
+}
+  /* MARIO */
   constructor(
     private fb: FormBuilder,
     private router: Router,
