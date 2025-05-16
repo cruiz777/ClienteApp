@@ -24,6 +24,7 @@ export class ValidacionSriListComponent implements OnInit {
   ciudades: CiudadResumen[] = [];
 
   seleccionados: { [codigo: number]: boolean } = {};
+  actualizarSeleccionados: { [codigo: number]: boolean } = {};
   marcarTodos: boolean = false;
   numeroRegistros = 0;
 
@@ -61,19 +62,20 @@ export class ValidacionSriListComponent implements OnInit {
                 provincia: ciudadInfo?.provincia ?? ''
               };
             });
+            this.seleccionados = {}; // ← limpia selección
+            this.actualizarSeleccionados = {}; // ← limpia checkboxes de actualización
+            this.marcarTodos = false; // ← reinicia estado del checkbox global
 
             this.aplicarFiltros();
             dialogRef.close();
           },
           error: () => {
-            console.error('❌ Error al cargar clientes');
             dialogRef.close();
             this.mostrarError('Error de carga', 'Ocurrió un error al cargar los clientes.');
           }
         });
       },
       error: () => {
-        console.error('❌ Error al cargar ciudades');
         dialogRef.close();
         this.mostrarError('Error de carga', 'Ocurrió un error al cargar las ciudades.');
       }
@@ -96,7 +98,8 @@ export class ValidacionSriListComponent implements OnInit {
         cliente.representante?.toLowerCase().includes(texto)
       );
 
-      return coincideLetra && coincideEstado && coincideZona && coincideBusqueda;
+      const rucValido = /^\d{13}$/.test(cliente.ruc ?? '');
+      return coincideLetra && coincideEstado && coincideZona && coincideBusqueda && rucValido;
     });
 
     this.numeroRegistros = this.clientesFiltrados.length;
@@ -114,6 +117,20 @@ export class ValidacionSriListComponent implements OnInit {
     const checked = (event.target as HTMLInputElement).checked;
     this.seleccionados[clienteId] = checked;
     this.marcarTodos = this.clientesFiltrados.every(cliente => this.seleccionados[cliente.clientes_codigo]);
+  }
+
+  toggleActualizarTodos(event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.clientesFiltrados.forEach(cliente => {
+      if (cliente.validacionSRI) {
+        this.actualizarSeleccionados[cliente.clientes_codigo] = checked;
+      }
+    });
+  }
+
+  toggleActualizarUno(clienteId: number, event: Event): void {
+    const checked = (event.target as HTMLInputElement).checked;
+    this.actualizarSeleccionados[clienteId] = checked;
   }
 
   validarSeleccionados(): void {
@@ -162,6 +179,56 @@ export class ValidacionSriListComponent implements OnInit {
     });
   }
 
+  actualizarSeleccionadosMasivo(): void {
+    const seleccionadosIds = Object.keys(this.actualizarSeleccionados)
+      .filter(id => this.actualizarSeleccionados[+id])
+      .map(id => +id);
+
+    const clientesActualizar = this.clientes.filter(
+      c => seleccionadosIds.includes(c.clientes_codigo) && c.validacionSRI
+    );
+
+    if (clientesActualizar.length === 0) {
+      this.mostrarError('Actualización no válida', 'No hay clientes seleccionados con datos validados.');
+      return;
+    }
+
+    const dialogRef = this.mostrarCargando('Actualizando registros', 'Espere mientras se actualizan los clientes...');
+    let actualizados = 0;
+
+    const peticiones = clientesActualizar.map(cliente => {
+      const request = {
+        razonSocial: cliente.validacionSRI?.razonSocial,
+        representante: cliente.validacionSRI?.representante,
+        idEstadoEmpresa: (() => {
+          const estado = cliente.validacionSRI?.estadoContribuyente?.toUpperCase();
+          if (estado === 'ACTIVO') return 1;
+          if (estado === 'SUSPENDIDO' || estado === 'PASIVO') return 2;
+          return undefined;
+        })(),
+
+        fecCeseAct: this.limpiarCampoFecha(cliente.validacionSRI?.fechaCeseActividad),
+        motivoCeseAct: this.limpiarCampoTexto(cliente.validacionSRI?.motivoCese),
+        fecnac: cliente.validacionSRI?.fechaInicioActividad || undefined
+      };
+
+      return this.clienteService.actualizarCliente(cliente.clientes_codigo, request).toPromise().then(() => {
+        actualizados++;
+      });
+    });
+
+    Promise.all(peticiones)
+      .then(() => {
+        dialogRef.close();
+        this.mostrarExito('Actualización completa', `${actualizados} clientes actualizados correctamente.`);
+        this.cargarDatos();
+      })
+      .catch(() => {
+        dialogRef.close();
+        this.mostrarError('Error', 'Ocurrió un error durante la actualización masiva.');
+      });
+  }
+
   onBuscar(): void {
     this.aplicarFiltros();
   }
@@ -174,7 +241,6 @@ export class ValidacionSriListComponent implements OnInit {
     this.aplicarFiltros();
   }
 
-  // ✅ Utilidades para mensajes
   mostrarCargando(title: string, message: string) {
     return this.dialog.open(CustomMessageBoxComponent, {
       disableClose: true,
@@ -211,4 +277,13 @@ export class ValidacionSriListComponent implements OnInit {
       }
     });
   }
+
+  private limpiarCampoFecha(fecha: string | null | undefined): string | null {
+    if (!fecha || fecha.trim() === '' || fecha.startsWith('0001')) return null;
+    return fecha; // se envía como string ISO, el backend lo convierte a DateOnly
+  }
+  private limpiarCampoTexto(texto: string | null | undefined): string {
+    return (!texto || texto.trim() === '') ? '' : texto.trim();
+  }
+
 }

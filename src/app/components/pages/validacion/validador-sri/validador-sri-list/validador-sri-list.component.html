@@ -19,10 +19,15 @@
 
         <button (click)="onBuscar()">Buscar</button>
         <button (click)="validarSeleccionados()">Validar</button>
+        <button (click)="actualizarSeleccionadosMasivo()">Actualizar</button>
 
         <label>
           <input type="checkbox" [checked]="marcarTodos" (change)="toggleSeleccionTodos($event)" />
-          Marcar todo
+          Marcar validación
+        </label>
+        <label>
+          <input type="checkbox" (change)="toggleActualizarTodos($event)" />
+          Marcar actualización
         </label>
       </div>
 
@@ -36,6 +41,7 @@
             <th>#</th>
             <th>✓</th>
             <th>Validar</th>
+            <th>Actualizar</th>
             <th>Código</th>
             <th>RUC</th>
             <th>Razón Social</th>
@@ -51,7 +57,6 @@
         </thead>
         <tbody>
           <ng-container *ngFor="let cliente of clientesFiltrados; let i = index">
-            <!-- Fila base -->
             <tr class="fila-original">
               <td>{{ i + 1 }}</td>
               <td>
@@ -59,33 +64,39 @@
                        (change)="toggleSeleccionUno(cliente.clientes_codigo, $event)" />
               </td>
               <td><button (click)="validarUno(cliente.clientes_codigo)">✔</button></td>
-              <td>{{ cliente.clientes_codigo }}</td>
-              <td>{{ cliente.ruc }}</td>
-              <td>{{ cliente.nomcli }}</td>
-              <td>{{ cliente.representante }}</td>
-              <td>{{ cliente.idEstadoEmpresa === 1 ? 'ACTIVO' : (cliente.idEstadoEmpresa === 2 ? 'SUSPENDIDO' : cliente.idEstadoEmpresa) }}</td>
-              <td>{{ cliente.ciudad }}</td>
-              <td>{{ cliente.canton }}</td>
-              <td>{{ cliente.provincia }}</td>
-              <td>{{ cliente.fecing }}</td>
-              <td>{{ cliente.fechaactinact }}</td>
-              <td>N/A</td>
+              <td>
+                <input type="checkbox"
+                       [checked]="actualizarSeleccionados[cliente.clientes_codigo] || false"
+                       [disabled]="!cliente.validacionSRI"
+                       (change)="toggleActualizarUno(cliente.clientes_codigo, $event)" />
+              </td>
+              <!--Datos originales-->
+                    <td>{{ cliente.clientes_codigo }}</td>
+                    <td>{{ cliente.ruc }}</td>
+                    <td>{{ cliente.nomcli }}</td>
+                    <td>{{ cliente.representante }}</td>
+                    <td>{{ cliente.idEstadoEmpresa === 1 ? 'AFILIADO' : (cliente.idEstadoEmpresa === 2 ? 'DESAFILIADO' : cliente.idEstadoEmpresa) }}</td>
+                    <td>{{ cliente.ciudad }}</td>
+                    <td>{{ cliente.canton }}</td>
+                    <td>{{ cliente.provincia }}</td>
+                    <td>{{ cliente.fecnac || '' }}</td>
+                    <td>{{ cliente.fechaCeseAct  || '' }}</td>
+                    <td>{{ cliente.motivoCeseAct  || '' }}</td>
             </tr>
-
-            <!-- Fila validada adicional -->
+            <!--Datos validados-->
             <tr *ngIf="cliente.validacionSRI" class="fila-validada">
-              <td colspan="3" class="validado-label">Validado</td>
+              <td colspan="4" class="validado-label">Validado</td>
               <td>{{ cliente.clientes_codigo }}</td>
               <td>{{ cliente.validacionSRI.numeroRuc }}</td>
               <td>{{ cliente.validacionSRI.razonSocial }}</td>
-              <td>{{ cliente.validacionSRI.representante }}</td>
+              <td>{{ cliente.validacionSRI.representante || cliente.validacionSRI.razonSocial }}</td>
               <td>{{ cliente.validacionSRI.estadoContribuyente }}</td>
               <td>{{ cliente.validacionSRI.ciudad }}</td>
               <td>{{ cliente.validacionSRI.canton }}</td>
               <td>{{ cliente.validacionSRI.provincia }}</td>
-              <td>{{ cliente.validacionSRI.fechaInicioActividad }}</td>
-              <td>{{ cliente.validacionSRI.fechaCeseActividad }}</td>
-              <td>{{ cliente.validacionSRI.motivoCese || 'N/A' }}</td>
+              <td>{{ cliente.validacionSRI.fechaInicioActividad || '' }}</td>
+              <td>{{ cliente.validacionSRI.fechaCeseActividad || '' }}</td>
+              <td>{{ cliente.validacionSRI.motivoCese || '' }}</td>
             </tr>
           </ng-container>
         </tbody>

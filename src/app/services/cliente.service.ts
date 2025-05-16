@@ -73,6 +73,8 @@ export interface ClienteIndividual {
   zonaReferencia: string;
   estadoNombre: string;
   prefijo: string;
+  fechaCeseAct: string;
+  motivoCeseAct: string;
 }
 
 export interface ClienteUpdateRequest {
@@ -93,6 +95,8 @@ export interface ClienteUpdateRequest {
   idZona?: number;
   idGrupoEmpresa?: number;
   representante?: string;
+  fechaCeseAct?: string;
+  motivoCeseAct?: string;
 }
 
 @Injectable({
