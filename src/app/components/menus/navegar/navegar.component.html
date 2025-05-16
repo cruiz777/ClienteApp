@@ -47,10 +47,6 @@
           <a mat-list-item routerLink="/menus/grupocliente">
             <span *ngIf="isExpanded" class="menu-text">Grupo Cliente</span>
           </a>
-          <!-- <a mat-list-item routerLink="/pages/clientes">
-            <span *ngIf="isExpanded" class="menu-text">Responsable de Guias</span>
-          </a> -->
-
 
         </mat-expansion-panel>
 
@@ -68,11 +64,13 @@
           <a mat-list-item routerLink="tras-gtin">
             <span *ngIf="isExpanded" class="menu-text">Transferencia Gtin</span>
           </a>
+          <a mat-list-item routerLink="tipo-prefijo">
+            <span *ngIf="isExpanded" class="menu-text">Tipo Prefijo</span>
+          </a>
           <a mat-list-item routerLink="eliminar-prefijo">
-            <span *ngIf="isExpanded" class="menu-text">Borrar Prefijos</span>
+            <span *ngIf="isExpanded" class="menu-text">Eliminar Prefijo</span>
           </a>
         </mat-expansion-panel>
-
 
         <mat-expansion-panel>
           <mat-expansion-panel-header>
@@ -82,14 +80,18 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item routerLink="/seguridades/empresas">
+          <a mat-list-item routerLink="">
 
-            <span *ngIf="isExpanded" class="menu-text">Validador RUC en SRI</span>
+            <span *ngIf="isExpanded" class="menu-text">Validar RUC en SRI</span>
           </a>
 
-          <a mat-list-item routerLink="/seguridades/localizacion">
+          <a mat-list-item routerLink="">
 
-            <span *ngIf="isExpanded" class="menu-text">Validador Lic.Prod.Verify</span>
+            <span *ngIf="isExpanded" class="menu-text">Validar Licencia Verified</span>
+          </a>
+          <a mat-list-item routerLink="">
+
+            <span *ngIf="isExpanded" class="menu-text">Validar Productos Verified</span>
           </a>
 
         </mat-expansion-panel>
