@@ -22,6 +22,7 @@ import { MatStepper } from '@angular/material/stepper';
 import { MatDialog } from '@angular/material/dialog';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { DialogPrefijoComponent } from '../dialog-prefijo/dialog-prefijo.component';
 
 // Servicios personalizados
 import { GrupoEmpresaService, GrupoEmpresa } from '../../../../services/grupo-empresa.service';
@@ -199,7 +200,7 @@ export class DialogClienteEditarComponent implements OnInit {
 
 
     console.log(this.idCliente);
-    this.cargarHistorial(this.idCliente);
+    this.cargarHistorial(this.idCliente,'update','Clientes',1);
     this.cargarPrefijoCliente(this.idCliente);
     this.cargarClienteYGrupos(this.idCliente);
     this.paso1Form.get('estadoEmpresa')?.valueChanges.subscribe(value => {
@@ -1154,12 +1155,12 @@ export class DialogClienteEditarComponent implements OnInit {
     }
   }
   activarModoEdicion() {
-    debugger
+    
     this.modoEdicion = true;
     this.formCliente.enable(); // habilita todo el formulario
     this.formCliente.get('paso1.ruc')?.disable();
     this.formCliente.get('paso1.esPasaporte')?.disable();
-
+    
   }
 
   desactivarModoEdicion() {
@@ -1289,7 +1290,10 @@ guardarHistorial(): void {
     nombre_usuario: 'mario', // TODO: usar this.usuarioActual?.usr || 'Desconocido'
     fecha: new Date().toISOString(),
     descripcion: this.cambios.join('\n'),
-    clientes_codigo: this.paso1Form.get('codigoCliente')?.value
+    clientes_codigo: this.paso1Form.get('codigoCliente')?.value,
+    tabla: 'Clientes',
+    tipo_accion: 'update',
+    id_empresa: 1
   };
 
   this.historialClienteService.insertarHistorialCliente(historial).subscribe({
@@ -1299,15 +1303,27 @@ guardarHistorial(): void {
 }
 
 
-  cargarHistorial(clientesCodigo: number): void {
-    this.historialClienteService.obtenerHistorialPorCliente(clientesCodigo).subscribe({
+cargarHistorial(
+  clientesCodigo: number,
+  tipo_accion?: string,
+  tabla?: string,
+  id_empresa?: number
+
+
+): void {
+  this.historialClienteService
+    .obtenerHistorialPorCliente(clientesCodigo, tipo_accion, tabla, id_empresa)
+    .subscribe({
       next: (data) => {
         console.log('📦 Historial recibido desde API:', data);
 
         this.dataSourceHistorial = new MatTableDataSource(data);
 
-        // 🔍 AQUI colocas el filtro personalizado
-        this.dataSourceHistorial.filterPredicate = (data: HistorialClienteRequest, filter: string) => {
+        // 🔍 Filtro personalizado
+        this.dataSourceHistorial.filterPredicate = (
+          data: HistorialClienteRequest,
+          filter: string
+        ) => {
           const fechaFormateada = new Date(data.fecha).toLocaleDateString('es-EC');
           const dataStr = `${fechaFormateada} ${data.nombre_usuario} ${data.descripcion}`.toLowerCase();
           return dataStr.includes(filter.trim().toLowerCase());
@@ -1322,7 +1338,7 @@ guardarHistorial(): void {
         console.error('❌ Error al obtener historial:', err);
       }
     });
-  }
+}
 
   
 
@@ -1377,6 +1393,29 @@ onTabChange(event: any): void {
     }, 0);
   }
 }
+
+abrirModalPrefijo(): void {
+  const dialogRef = this.dialog.open(DialogPrefijoComponent, {
+     width: '1200px', // Aumenta el ancho del diálogo
+     
+      height: '100vh', // ✅ que use casi toda la pantalla
+      maxHeight: '100vh',
+    disableClose: true,
+    data: {
+      idCliente: this.idCliente, // ✅ aquí va tu parámetro
+      
+    },
+    panelClass: 'modal-superpuesto'
+  });
+
+  dialogRef.afterClosed().subscribe(resultado => {
+    if (resultado) {
+      console.log('Prefijo seleccionado:', resultado);
+      // puedes usar resultado para otra lógica
+    }
+  });
+}
+
 
 
 

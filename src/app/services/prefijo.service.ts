@@ -48,6 +48,11 @@ export interface PrefijoClienteResponse {
   canton: string;
   ciudad: string;
 }
+export interface ActualizarPrefijoPayload {
+  fechaCierre: string | null;
+  observacion: string;
+  estado: boolean;
+}
 
 
 @Injectable({
@@ -78,7 +83,12 @@ obtenerPorClienteCodigo(clientesCodigo: number): Observable<PrefijoClienteRespon
   );
 }
 
+ actualizarPrefijo(
+  id: number,
+  data: { fechaCierre: string | null; observacion: string; estado: boolean }
+): Observable<any> {
+  return this.http.put(`${this.apiBaseUrl}/Prefijos/${id}`, data);
+}
 
-  
 
 }

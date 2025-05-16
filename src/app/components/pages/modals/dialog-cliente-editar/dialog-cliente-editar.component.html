@@ -687,7 +687,7 @@
 
 
 
-      <div class="mat-elevation-z2">
+      <div class="tabla-con-borde">
 
         <ng-container *ngIf="tieneHistorial(); else sinHistorial">
 
@@ -733,64 +733,69 @@
         <div *ngIf="selectedTab === 2">
 
           <div style="text-align: right; margin-bottom: 10px;">
-            <button mat-button (click)="abrirModalImpresion()" class="new-button">
+            <button mat-button (click)="abrirModalPrefijo()" class="new-button">
               Nuevo
             </button>
           </div>
+          <div class="tabla-con-borde">
+            <table mat-table [dataSource]="dataSourcePrefijo" class="mat-elevation-z8"
+              *ngIf="dataSourcePrefijo.data.length">
 
-          <table mat-table [dataSource]="dataSourcePrefijo" class="mat-elevation-z8"
-            *ngIf="dataSourcePrefijo.data.length">
+              <ng-container matColumnDef="clientesCodigo">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;display: none;"> Código </th>
+                <td mat-cell *matCellDef="let el" style="display: none;"> {{ el.clientesCodigo }} </td>
+              </ng-container>
 
-            <ng-container matColumnDef="clientesCodigo">
-              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;display: none;"> Código </th>
-              <td mat-cell *matCellDef="let el" style="display: none;"> {{ el.clientesCodigo }} </td>
-            </ng-container>
+              <ng-container matColumnDef="nomcli">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Cliente </th>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.nomcli }} </td>
+              </ng-container>
 
-            <ng-container matColumnDef="nomcli">
-              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Cliente </th>
-              <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.nomcli }} </td>
-            </ng-container>
+              <ng-container matColumnDef="ruccli">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> RUC </th>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.ruccli }} </td>
+              </ng-container>
 
-            <ng-container matColumnDef="ruccli">
-              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> RUC </th>
-              <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.ruccli }} </td>
-            </ng-container>
+              <ng-container matColumnDef="codpre">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;">Prefijo </th>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.codpre }} </td>
+              </ng-container>
 
-            <ng-container matColumnDef="codpre">
-              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;">Prefijo </th>
-              <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.codpre }} </td>
-            </ng-container>
+              <ng-container matColumnDef="gln">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> GLN </th>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.gln }} </td>
+              </ng-container>
 
-            <ng-container matColumnDef="gln">
-              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> GLN </th>
-              <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.gln }} </td>
-            </ng-container>
+              <ng-container matColumnDef="fecha">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Fecha </th>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.fecha | date: 'dd/MM/yyyy' }} </td>
+              </ng-container>
+              <ng-container matColumnDef="estado">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> ESTADO </th>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.estado ? 'Inactivo' : 'Activo' }}
+                </td>
+              </ng-container>
 
-            <ng-container matColumnDef="fecha">
-              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Fecha </th>
-              <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.fecha | date: 'dd/MM/yyyy' }} </td>
-            </ng-container>
-            <ng-container matColumnDef="estado">
-              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> ESTADO </th>
-              <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.estado ? 'Inactivo' : 'Activo' }} </td>
-            </ng-container>
+              <ng-container matColumnDef="fechaCierre">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Cierre </th>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;">
+                  <ng-container *ngIf="el.fechaCierre && el.fechaCierre !== '0001-01-01T00:00:00'">
+                    {{ el.fechaCierre | date: 'dd/MM/yyyy' }}
+                  </ng-container>
+                </td>
+              </ng-container>
 
-            <ng-container matColumnDef="fechaCierre">
-              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Cierre </th>
-              <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.fechaCierre | date: 'dd/MM/yyyy' }}
-              </td>
-            </ng-container>
 
-            <ng-container matColumnDef="tipoLocalizacion">
-              <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> OBSERVACION </th>
-              <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.tipoLocalizacion }} </td>
-            </ng-container>
+              <ng-container matColumnDef="tipoLocalizacion">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> OBSERVACION </th>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.tipoLocalizacion }} </td>
+              </ng-container>
 
-            <tr mat-header-row *matHeaderRowDef="displayedPrefijoColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: displayedPrefijoColumns;"></tr>
+              <tr mat-header-row *matHeaderRowDef="displayedPrefijoColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedPrefijoColumns;"></tr>
 
-          </table>
-
+            </table>
+          </div>
         </div>
       </ng-template>
     </mat-tab>
@@ -798,7 +803,7 @@
   </mat-tab-group>
 </mat-dialog-content>
 <div style="text-align: center;">
-  <button mat-button color="primary" (click)="actualizar()">
+  <button mat-button color="primary" (click)="actualizar()" format control="actualizar">
     <img src="assets/icons/icon-grabar.png" alt="Grabar" width="18" height="18" style="margin-right: 6px;" />
     Grabar
   </button>
