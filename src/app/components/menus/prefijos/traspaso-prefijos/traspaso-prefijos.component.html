@@ -111,12 +111,14 @@
         <h2>Asignación de GLN Entidad</h2>
 
         <div class="form-row">
+
           <div class="form-group">
             <div class="form-row">
               <label>Prefijo:</label>
               <input type="text" placeholder="Buscar Prefijo..." [(ngModel)]="filtroBusqueda" />
             </div>
           </div>
+
           <div class="form-group">
             <div class="form-row">
               <label>Cliente:</label>
@@ -124,36 +126,39 @@
             </div>
           </div>
 
-          <div class="form-group">
-            <div class="form-row">
-              <button class="btn-naranja">Nueva búsqueda</button>
-            </div>
+            <div class="form-actions form-actions-horizontal alineado-derecha">
+            <button (click)="onBuscar()" [class.activo]="botonActivo === 'buscar'"
+              (click)="seleccionarBoton('buscar')">Buscar</button>
+            <button (click)="onNuevaBusqueda()" [class.activo]="botonActivo === 'nueva'"
+              (click)="seleccionarBoton('nueva')">Nueva Búsqueda</button>
+            <button (click)="onAsignar()" [class.activo]="botonActivo === 'asignar'"
+              (click)="seleccionarBoton('asignar')">Asignar</button>
           </div>
-
+          
         </div>
 
       </div>
-    </div>
+</div>
 
-    <table class="tabla-estilo">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Prefijo</th>
-          <th>Fecha</th>
-          <th>Estado</th>
-          <th>Seleccionar</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of asignaciones; let i = index">
-          <td>{{ i + 1 }}</td>
-          <td>{{ item.prefijo }}</td>
-          <td>{{ item.fecha }}</td>
-          <td>{{ item.estado }}</td>
-          <td><input type="checkbox" /></td>
-        </tr>
-      </tbody>
-    </table>
-  </ng-container>
+<table class="tabla-estilo">
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>Prefijo</th>
+      <th>Fecha</th>
+      <th>Estado</th>
+      <th>Seleccionar</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let item of asignaciones; let i = index">
+      <td>{{ i + 1 }}</td>
+      <td>{{ item.prefijo }}</td>
+      <td>{{ item.fecha }}</td>
+      <td>{{ item.estado }}</td>
+      <td><input type="checkbox" /></td>
+    </tr>
+  </tbody>
+</table>
+</ng-container>
 </div>

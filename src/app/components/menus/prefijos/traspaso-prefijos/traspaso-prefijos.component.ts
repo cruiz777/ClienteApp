@@ -24,6 +24,7 @@ export class TraspasoPrefijosComponent {
   activeTab: string = 'Transferir';
   filtroBusqueda: string = '';
   filtroCliente: string = '';
+  botonActivo: string = '';
 
   transferencias = [
     { prefijo: '12062', fecha: '22/05/2017', estado: 'Activo', tipo: 'Nacional' },
@@ -77,6 +78,23 @@ export class TraspasoPrefijosComponent {
     console.log('Exportar a Excel');
     // lógica de exportación con XLSX
   }
+seleccionarBoton(nombre: string): void {
+  this.botonActivo = nombre;
+}
+
+// Ejemplo de métodos
+onBuscar(): void {
+  // lógica de búsqueda
+}
+
+onNuevaBusqueda(): void {
+  // lógica para limpiar filtros
+}
+
+onAsignar(): void {
+  // lógica para asignar
+}
+
 }
 
 

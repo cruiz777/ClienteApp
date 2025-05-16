@@ -13,10 +13,11 @@
               (backdropClick)="isExpanded = false">
 
     <!-- Logos -->
-    <div class="logo-seguridad" *ngIf="isExpanded">
+   <div class="logo-seguridad" *ngIf="isExpanded">
+    <a [routerLink]="['/menus/codbar']">
       <img src="assets/logo/CODBAR-GS1.png" alt="Logo">
-    </div>
-
+    </a>
+  </div>
     <!-- Menú Principal -->
     <mat-nav-list>
 
@@ -29,7 +30,6 @@
       <!-- Acordeón -->
       <mat-accordion [multi]="false">
 
-       
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title routerLink="/pages/nclientes">
@@ -46,28 +46,19 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
         </mat-expansion-panel>
-        <mat-expansion-panel>
-          <mat-expansion-panel-header>
-            <mat-panel-title routerLink="/pages/nclientes">
-              <img src="assets/icons/Ecop-envio-veried.png" class="menu-icon">
-              <span *ngIf="isExpanded" class="menu-text">Envío Verified GS1</span>
-            </mat-panel-title>
-          </mat-expansion-panel-header>
-        </mat-expansion-panel>
+
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title routerLink="/pages/nclientes">
               <img src="assets/icons/ecop-.png" class="menu-icon">
-              <span *ngIf="isExpanded" class="menu-text">Verified</span>
+              <span *ngIf="isExpanded" class="menu-text">Consulta Verified</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
         </mat-expansion-panel>
-        
 
-       
       </mat-accordion>
-
       <!-- Salir -->
+
       <mat-list-item routerLink="/menus/codbar" class="salir-item">
         <div class="menu-item">
           <img src="assets/icons/icon-salir.png" class="menu-icon">
