@@ -4,6 +4,8 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Cliente } from '../interfaces/cliente';
 import { environment } from 'src/environments/environment';
+import { ApiResponse } from '../interfaces/responses/api-response';
+import { ClienteValidadoDTO, ClienteValidadoResultadoDTO } from '../interfaces/requests/cliente-validado';
 
 interface ClienteResponse {
   id: string;
@@ -118,7 +120,7 @@ export class ClienteService {
       map(response => response.data[0]) // toma el primero
     );
   }
-  
+
   getClienteById(id: number): Observable<ClienteIndividual> {
     const url = `${this.apiBaseUrl}/Clientes/${id}`;
     return this.http.get<ClienteDetalleResponse>(url).pipe(
@@ -129,6 +131,29 @@ export class ClienteService {
   actualizarCliente(id: number, request: ClienteUpdateRequest): Observable<any> {
     return this.http.put(`${this.apiBaseUrl}/Clientes/${id}`, request);
   }
-  
-  
+
+  // ✅ Validación Masiva
+  validarMasivo(clienteIds: number[]): Observable<ApiResponse<ClienteValidadoResultadoDTO[]>> {
+    return this.http.post<ApiResponse<ClienteValidadoResultadoDTO[]>>(`${this.apiBaseUrl}/Clientes/validar-masivo`, clienteIds);
+  }
+
+  // ✅ Validación Unitaria
+  validarUno(clienteId: number): Observable<ApiResponse<ClienteValidadoDTO>> {
+    return this.http.post<ApiResponse<ClienteValidadoDTO>>(
+      `${this.apiBaseUrl}/Clientes/validar`,
+      clienteId, // ✅ pasar el número directamente
+      {
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+  }
+
+
+  // Método adicional para obtener todos los clientes con datos completos
+  getClientesDetalles(): Observable<ClienteIndividual[]> {
+    const url = `${this.apiBaseUrl}/Clientes`;
+    return this.http.get<ClienteResponse>(url).pipe(
+      map(response => response.data as ClienteIndividual[])
+    );
+  }
 }

@@ -1,0 +1,95 @@
+<div class="pant-valid-inicio">
+  <div class="content-box">
+    <div class="box-content">
+      <h2 class="validator-title">Validador RUC en el SRI</h2>
+
+      <!-- Filtros -->
+      <div class="form-group">
+        <label for="letra">Letra:</label>
+        <input type="text" id="letra" [(ngModel)]="letraFiltro" />
+
+        <label for="estado">Estado:</label>
+        <input type="text" id="estado" [(ngModel)]="estadoFiltro" />
+
+        <label for="zona">Zona:</label>
+        <input type="text" id="zona" [(ngModel)]="zonaFiltro" />
+
+        <label for="busqueda">Buscar:</label>
+        <input type="text" id="busqueda" [(ngModel)]="textoBusqueda" />
+
+        <button (click)="onBuscar()">Buscar</button>
+        <button (click)="validarSeleccionados()">Validar</button>
+
+        <label>
+          <input type="checkbox" [checked]="marcarTodos" (change)="toggleSeleccionTodos($event)" />
+          Marcar todo
+        </label>
+      </div>
+
+      <!-- Número de registros -->
+      <p>Número de Registros: {{ numeroRegistros }}</p>
+
+      <!-- Tabla de clientes -->
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>✓</th>
+            <th>Validar</th>
+            <th>Código</th>
+            <th>RUC</th>
+            <th>Razón Social</th>
+            <th>Representante</th>
+            <th>Estado SRI</th>
+            <th>Ciudad</th>
+            <th>Cantón</th>
+            <th>Provincia</th>
+            <th>Fecha Inicio</th>
+            <th>Fecha Cese</th>
+            <th>Motivo Cese</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let cliente of clientesFiltrados; let i = index">
+            <!-- Fila base -->
+            <tr class="fila-original">
+              <td>{{ i + 1 }}</td>
+              <td>
+                <input type="checkbox" [checked]="seleccionados[cliente.clientes_codigo] || false"
+                       (change)="toggleSeleccionUno(cliente.clientes_codigo, $event)" />
+              </td>
+              <td><button (click)="validarUno(cliente.clientes_codigo)">✔</button></td>
+              <td>{{ cliente.clientes_codigo }}</td>
+              <td>{{ cliente.ruc }}</td>
+              <td>{{ cliente.nomcli }}</td>
+              <td>{{ cliente.representante }}</td>
+              <td>{{ cliente.idEstadoEmpresa === 1 ? 'ACTIVO' : (cliente.idEstadoEmpresa === 2 ? 'SUSPENDIDO' : cliente.idEstadoEmpresa) }}</td>
+              <td>{{ cliente.ciudad }}</td>
+              <td>{{ cliente.canton }}</td>
+              <td>{{ cliente.provincia }}</td>
+              <td>{{ cliente.fecing }}</td>
+              <td>{{ cliente.fechaactinact }}</td>
+              <td>N/A</td>
+            </tr>
+
+            <!-- Fila validada adicional -->
+            <tr *ngIf="cliente.validacionSRI" class="fila-validada">
+              <td colspan="3" class="validado-label">Validado</td>
+              <td>{{ cliente.clientes_codigo }}</td>
+              <td>{{ cliente.validacionSRI.numeroRuc }}</td>
+              <td>{{ cliente.validacionSRI.razonSocial }}</td>
+              <td>{{ cliente.validacionSRI.representante }}</td>
+              <td>{{ cliente.validacionSRI.estadoContribuyente }}</td>
+              <td>{{ cliente.validacionSRI.ciudad }}</td>
+              <td>{{ cliente.validacionSRI.canton }}</td>
+              <td>{{ cliente.validacionSRI.provincia }}</td>
+              <td>{{ cliente.validacionSRI.fechaInicioActividad }}</td>
+              <td>{{ cliente.validacionSRI.fechaCeseActividad }}</td>
+              <td>{{ cliente.validacionSRI.motivoCese || 'N/A' }}</td>
+            </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -25,6 +25,8 @@ import { GrupoClienteListComponent } from './clientes/grupo-clientes/grupo-clien
 import { GrupoClienteFormComponent } from './clientes/grupo-clientes/grupo-cliente-form/grupo-cliente-form.component';
 import { TipoLocalizacionListComponent } from './configuracion/localizacion-establecimiento/localizacion-est-list/localizacion-est-list.component';
 import { TipoLocalizacionFormComponent } from './configuracion/localizacion-establecimiento/localizacion-est-form/localizacion-est-form.component';
+import { ValidacionSriListComponent } from './validacion/validador-sri/validador-sri-list/validador-sri-list.component';
+import { MatMenuModule } from '@angular/material/menu';
 @NgModule({
   declarations: [
     PagesComponent,
@@ -40,6 +42,7 @@ import { TipoLocalizacionFormComponent } from './configuracion/localizacion-esta
     GrupoClienteFormComponent,
     TipoLocalizacionListComponent,
     TipoLocalizacionFormComponent,
+    ValidacionSriListComponent,
     CustomMessageBoxComponent
 
   ],
@@ -50,6 +53,7 @@ import { TipoLocalizacionFormComponent } from './configuracion/localizacion-esta
     LayoutModule,
     MatSidenavModule,
     MatToolbarModule,
+    MatMenuModule,
     MatListModule,
     MatIconModule,
     ReusableModule,

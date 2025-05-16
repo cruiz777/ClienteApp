@@ -1,0 +1,81 @@
+.pant-valid-inicio {
+  font-family: 'Inter', sans-serif;
+  padding: 20px;
+  background: white;
+}
+
+.content-box {
+  border: 1px solid #ccd5e2;
+  background: #fff;
+  padding: 20px;
+}
+
+.box-content {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.validator-title {
+  font-size: 20px;
+  color: #002c6c;
+  font-weight: 700;
+}
+
+.form-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+input[type='text'] {
+  padding: 4px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button {
+  padding: 6px 12px;
+  background-color: #eef4f7;
+  border: none;
+  color: #002c6c;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table thead {
+  background-color: #eef4f7;
+}
+
+.data-table th,
+.data-table td {
+  border: 1px solid #ccd5e2;
+  padding: 8px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.data-table tbody tr:nth-child(odd) {
+  background-color: #e9f8f8;
+}
+.fila-original {
+  background-color: #e6f7ff; /* azul muy claro */
+}
+
+.fila-validada {
+  background-color: #ffffff !important; /* blanca */
+  font-style: italic;
+}
+
+.validado-label {
+  font-weight: bold;
+  color: green;
+  text-align: center;
+}
+
