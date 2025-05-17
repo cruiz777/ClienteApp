@@ -1,4 +1,128 @@
 <div class="tabs">
-  <button [class.active]="activeTab === 'eliminar'" (click)="cambiarTab('eliminar')">Trasferir</button>
+  <button [class.active]="activeTab === 'Transferir'" (click)="cambiarTab('Transferir')">Transferir</button>
   <button [class.active]="activeTab === 'Listado'" (click)="cambiarTab('Listado')">Listado</button>
 </div>
+
+<!-- TAB TRANSFERIR -->
+  <div class="contenido-tablas">
+  <ng-container *ngIf="activeTab === 'Transferir'">
+    <h2>Transferencia de Gtin</h2>
+
+    <div class="form-transferencia">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Origen:</label>
+          <input type="text" placeholder="Cliente Origen" />
+        </div>
+        <div class="form-group">
+          <label>Destino:</label>
+          <input type="text" placeholder="Cliente Destino" />
+        </div>
+        <div class="form-group">
+          <label>Prefijo Receptor:</label>
+          <input type="text" placeholder="Prefijo Receptor" />
+        </div>
+        <div class="form-group">
+          <label>Mostrar:</label>
+          <input type="text" placeholder="Mostrar" />
+        </div>
+      </div>
+
+       <div class="form-actions form-actions-horizontal alineado-derecha">
+            <button (click)="onBuscar()" [class.activo]="botonActivo === 'buscar'"
+              (click)="seleccionarBoton('buscar')">Buscar</button>
+            <button (click)="onNuevaBusqueda()" [class.activo]="botonActivo === 'nueva'"
+              (click)="seleccionarBoton('nueva')">Nueva Búsqueda</button>
+            <button (click)="ontransferir()" [class.activo]="botonActivo === 'transferir'"
+              (click)="seleccionarBoton('transferir')">Asignar</button>
+          </div>
+
+    </div>
+
+
+  <table class="tabla-estilo">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Unidad Venta</th>
+          <th>Descripcion</th>
+          <th>Prefijo</th>
+          <th>Gtin</th>
+          <th>Marca</th>
+          <th>Contenido</th>
+          <th>U.Medida</th>
+          <th>Estado</th>
+          <th>Fecha Creacion</th>
+          <th>Presentacion</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of transferir; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ item.UnidadVenta}}</td>
+          <td>{{ item.Descripcion}}</td>
+          <td>{{ item.Prefijo}}</td>
+          <td>{{ item.Gtin}}</td>
+          <td>{{ item.Marca}}</td>
+          <td>{{ item.Contenido }}</td>
+          <td>{{ item.UMedida }}</td>
+          <td>{{ item.Estado }}</td>
+          <td>{{ item.FechaCreacion }}</td>
+          <td>{{ item.Presentacion}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </ng-container>
+
+
+  <!-- TAB LISTADO -->
+  <ng-container *ngIf="activeTab === 'Listado'">
+
+    <div class="encabezado-acciones">
+      <div class="titulo-y-busqueda">
+        <h2>Listado de Gtin Transferidos</h2>
+        <div class="form-group">
+          <div class="form-row">
+            <label>Buscar:</label>
+            <input type="text" placeholder="Buscar prefijo..." [(ngModel)]="filtroBusqueda" />
+          </div>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button mat-button [matMenuTriggerFor]="menuExportar">Exportar</button>
+        <mat-menu #menuExportar="matMenu">
+          <button mat-menu-item (click)="exportarPDF()">PDF</button>
+          <button mat-menu-item (click)="exportarExcel()">Excel</button>
+        </mat-menu>
+      </div>
+    </div>
+
+    <table class="tabla-estilo">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Prefijo</th>
+          <th>Empresa Anterior</th>
+          <th>RUC Anterior</th>
+          <th>Empresa Actual</th>
+          <th>RUC Actual</th>
+          <th>Fecha</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of listado; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ item.prefijo }}</td>
+          <td>{{ item.empresaAnterior }}</td>
+          <td>{{ item.rucAnterior }}</td>
+          <td>{{ item.empresaActual }}</td>
+          <td>{{ item.rucActual }}</td>
+          <td>{{ item.fecha }}</td>
+        </tr>
+      </tbody>
+    </table>
+
+  </ng-container>
+
+
