@@ -5,11 +5,17 @@ import { CiudadResumen } from 'src/app/interfaces/responses/ciudad-response';
 import { ClienteValidadoDTO } from 'src/app/interfaces/requests/cliente-validado';
 import { MatDialog } from '@angular/material/dialog';
 import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/components/utils/messages/custom-message-box.component';
+import { LogoService } from 'src/app/services/logo.service';
+import { EmpresaService } from 'src/app/services/empresa.service';
+import { ExportOptions } from 'src/app/interfaces/export-options';
+import { ExportService } from 'src/app/services/export.service';
+import * as moment from 'moment';
 
 type ClienteValidacionExtendido = ClienteIndividual & {
   ciudad: string;
   canton: string;
   provincia: string;
+  zonaNombre: string;
   validacionSRI?: ClienteValidadoDTO;
 };
 
@@ -32,17 +38,65 @@ export class ValidacionSriListComponent implements OnInit {
   estadoFiltro: string = '';
   zonaFiltro: string = '';
   textoBusqueda: string = '';
-
+  logoUrl: string = '';
   constructor(
     private clienteService: ClienteService,
     private ciudadService: CiudadService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private logoService: LogoService,
+    private empresaService: EmpresaService,
+    private exportService: ExportService
   ) {}
 
   ngOnInit(): void {
     this.cargarDatos();
+        this.empresaService.getEmpresas().subscribe({
+      next: (empresas) => {
+        if (empresas.length > 0 && empresas[0].empresaLogo) {
+          this.logoUrl = this.logoService.getLogoUrl(empresas[0].empresaLogo);
+        }
+      }
+    });
   }
+  exportar(tipo: 'excel' | 'pdf'): void {
+    const headers = [
+      'Código', 'RUC', 'Razón Social', 'Representante', 'Estado',
+      'Ciudad', 'Cantón', 'Provincia', 'Zona', 'Fecha Inicio', 'Fecha Cese', 'Motivo Cese'
+    ];
 
+    const columns = [
+      'clientes_codigo', 'ruc', 'nomcli', 'representante', 'estadoTexto',
+      'ciudad', 'canton', 'provincia', 'zonaNombre', 'fecnac', 'fechaCeseAct', 'motivoCeseAct'
+    ];
+
+    const data = this.clientesFiltrados.map(c => ({
+      clientes_codigo: c.clientes_codigo,
+      ruc: c.ruc,
+      nomcli: c.nomcli,
+      representante: c.representante,
+      estadoTexto: c.idEstadoEmpresa === 1 ? 'AFILIADO' : (c.idEstadoEmpresa === 2 ? 'DESAFILIADO' : ''),
+      ciudad: c.ciudad,
+      canton: c.canton,
+      provincia: c.provincia,
+      zonaNombre: c.zonaNombre,
+      fecnac: c.fecnac ? moment(c.fecnac).format('DD/MM/YYYY') : '',
+      fechaCeseAct: c.fechaCeseAct ? moment(c.fechaCeseAct).format('DD/MM/YYYY') : '',
+      motivoCeseAct: c.motivoCeseAct || ''
+    }));
+
+    const options: ExportOptions = {
+      data,
+      columns,
+      headers,
+      filename: 'Clientes_Validados_SRI',
+      title: 'Listado de Clientes Validados en el SRI',
+      logoUrl: this.logoUrl
+    };
+
+    tipo === 'excel'
+      ? this.exportService.exportarExcel(options)
+      : this.exportService.exportarPDF(options);
+  }
   cargarDatos(): void {
     const dialogRef = this.mostrarCargando('Cargando datos', 'Espere mientras se cargan los datos de clientes y ciudades...');
 
@@ -52,19 +106,22 @@ export class ValidacionSriListComponent implements OnInit {
 
         this.clienteService.getClientesDetalles().subscribe({
           next: (clientes) => {
-            this.clientes = clientes.map(cliente => {
+            this.clientes = clientes
+              .filter(c => Number(c.idEstadoEmpresa) === 1)
+              .map(cliente => {
               const ciudadInfo = this.ciudades.find(c => c.id === cliente.idCiudad);
-
+              const zonaNombre = cliente.idZona ? `ZONA ${cliente.idZona}` : '';
               return {
                 ...cliente,
                 ciudad: ciudadInfo?.ciudad ?? '',
                 canton: ciudadInfo?.canton ?? '',
-                provincia: ciudadInfo?.provincia ?? ''
+                provincia: ciudadInfo?.provincia ?? '',
+                zonaNombre
               };
             });
-            this.seleccionados = {}; // ← limpia selección
-            this.actualizarSeleccionados = {}; // ← limpia checkboxes de actualización
-            this.marcarTodos = false; // ← reinicia estado del checkbox global
+            this.seleccionados = {};
+            this.actualizarSeleccionados = {};
+            this.marcarTodos = false;
 
             this.aplicarFiltros();
             dialogRef.close();
@@ -83,23 +140,25 @@ export class ValidacionSriListComponent implements OnInit {
   }
 
   aplicarFiltros(): void {
-    this.clientesFiltrados = this.clientes.filter(cliente => {
-      const letra = this.letraFiltro.trim().toLowerCase();
-      const estado = this.estadoFiltro.trim().toLowerCase();
-      const zona = this.zonaFiltro.trim().toLowerCase();
-      const texto = this.textoBusqueda.trim().toLowerCase();
+    const letra = this.letraFiltro.trim().toLowerCase();
+    // const estado = this.estadoFiltro.trim().toUpperCase(); // Comparar como texto fijo
+    const zona = this.zonaFiltro.trim().toUpperCase();
+    const texto = this.textoBusqueda.trim().toLowerCase();
 
+    this.clientesFiltrados = this.clientes.filter(cliente => {
       const coincideLetra = !letra || cliente.nomcli?.toLowerCase().startsWith(letra);
-      const coincideEstado = !estado || cliente.estadoNombre?.toLowerCase().includes(estado);
-      const coincideZona = !zona || cliente.zonaReferencia?.toLowerCase().includes(zona);
+      // const coincideEstado =
+      //   !estado ||
+      //   (estado === 'AFILIADO' && cliente.idEstadoEmpresa === 1) ||
+      //   (estado === 'DESAFILIADO' && cliente.idEstadoEmpresa === 2);
+      const coincideZona = !zona || cliente.zonaNombre.toUpperCase() === zona;
       const coincideBusqueda = !texto || (
         cliente.nomcli?.toLowerCase().includes(texto) ||
         cliente.ruc?.toLowerCase().includes(texto) ||
         cliente.representante?.toLowerCase().includes(texto)
       );
-
       const rucValido = /^\d{13}$/.test(cliente.ruc ?? '');
-      return coincideLetra && coincideEstado && coincideZona && coincideBusqueda && rucValido;
+      return coincideLetra  && coincideZona && coincideBusqueda && rucValido;
     });
 
     this.numeroRegistros = this.clientesFiltrados.length;
@@ -152,6 +211,7 @@ export class ValidacionSriListComponent implements OnInit {
         });
         loadingRef.close();
         this.mostrarExito('Validación completada', 'Los registros seleccionados fueron validados correctamente.');
+        this.aplicarFiltros(); // refresca visibilidad
       },
       error: () => {
         loadingRef.close();
@@ -171,6 +231,7 @@ export class ValidacionSriListComponent implements OnInit {
         }
         loadingRef.close();
         this.mostrarExito('Validación exitosa', `El cliente ${clienteId} fue validado correctamente.`);
+        this.aplicarFiltros(); // actualiza si cambian los datos
       },
       error: () => {
         loadingRef.close();
@@ -208,7 +269,16 @@ export class ValidacionSriListComponent implements OnInit {
         })(),
 
         fecCeseAct: this.limpiarCampoFecha(cliente.validacionSRI?.fechaCeseActividad),
-        motivoCeseAct: this.limpiarCampoTexto(cliente.validacionSRI?.motivoCese),
+        motivoCeseAct: (() => {
+          const estado = cliente.validacionSRI?.estadoContribuyente?.toUpperCase();
+          const motivo = cliente.validacionSRI?.motivoCese?.toUpperCase();
+          if (estado === 'SUSPENDIDO' || estado === 'PASIVO') {
+            return this.limpiarCampoTexto(`${estado} - ${motivo ?? ''}`);
+          }
+          return '';
+        })(),
+
+
         fecnac: cliente.validacionSRI?.fechaInicioActividad || undefined
       };
 
@@ -221,16 +291,12 @@ export class ValidacionSriListComponent implements OnInit {
       .then(() => {
         dialogRef.close();
         this.mostrarExito('Actualización completa', `${actualizados} clientes actualizados correctamente.`);
-        this.cargarDatos();
+        this.cargarDatos(); // recargar todo
       })
       .catch(() => {
         dialogRef.close();
         this.mostrarError('Error', 'Ocurrió un error durante la actualización masiva.');
       });
-  }
-
-  onBuscar(): void {
-    this.aplicarFiltros();
   }
 
   limpiarFiltros(): void {
@@ -280,10 +346,15 @@ export class ValidacionSriListComponent implements OnInit {
 
   private limpiarCampoFecha(fecha: string | null | undefined): string | null {
     if (!fecha || fecha.trim() === '' || fecha.startsWith('0001')) return null;
-    return fecha; // se envía como string ISO, el backend lo convierte a DateOnly
+    return fecha;
   }
+
   private limpiarCampoTexto(texto: string | null | undefined): string {
     return (!texto || texto.trim() === '') ? '' : texto.trim();
   }
+
+  refrescarPagina(): void {
+  window.location.reload();
+}
 
 }

@@ -3,104 +3,167 @@
     <div class="box-content">
       <h2 class="validator-title">Validador RUC en el SRI</h2>
 
-      <!-- Filtros -->
-      <div class="form-group">
-        <label for="letra">Letra:</label>
-        <input type="text" id="letra" [(ngModel)]="letraFiltro" />
+      <!-- Sección de Filtros y Acciones -->
+      <div class="form-group filtros-grid">
+        <!-- Filtro por letra -->
+        <div class="filtro-item">
+          <label for="letra">Letra:</label>
+          <input type="text" id="letra" [(ngModel)]="letraFiltro" (ngModelChange)="aplicarFiltros()" />
+        </div>
 
-        <label for="estado">Estado:</label>
-        <input type="text" id="estado" [(ngModel)]="estadoFiltro" />
+        <!-- Filtro por zona -->
+        <div class="filtro-item">
+          <label for="zona">Zona:</label>
+          <select id="zona" [(ngModel)]="zonaFiltro" (ngModelChange)="aplicarFiltros()">
+            <option value="">Todas</option>
+            <option value="ZONA 1">ZONA 1</option>
+            <option value="ZONA 2">ZONA 2</option>
+            <option value="ZONA 3">ZONA 3</option>
+          </select>
+        </div>
 
-        <label for="zona">Zona:</label>
-        <input type="text" id="zona" [(ngModel)]="zonaFiltro" />
+        <!-- Filtro por búsqueda libre -->
+        <div class="filtro-item">
+          <label for="busqueda">Buscar:</label>
+          <input type="text" id="busqueda" [(ngModel)]="textoBusqueda" (ngModelChange)="aplicarFiltros()" />
+        </div>
 
-        <label for="busqueda">Buscar:</label>
-        <input type="text" id="busqueda" [(ngModel)]="textoBusqueda" />
+        <!-- Grupo de acciones principales -->
+        <div class="acciones-principales">
+          <div class="grupo-botones">
+            <!-- Botón Validar -->
+            <button class="btn-accion" (click)="validarSeleccionados()">
+              <mat-icon>check_circle</mat-icon> Validar
+            </button>
 
-        <button (click)="onBuscar()">Buscar</button>
-        <button (click)="validarSeleccionados()">Validar</button>
-        <button (click)="actualizarSeleccionadosMasivo()">Actualizar</button>
+            <!-- Botón Actualizar -->
+            <button class="btn-accion" (click)="actualizarSeleccionadosMasivo()">
+              <mat-icon>autorenew</mat-icon> Actualizar
+            </button>
 
-        <label>
-          <input type="checkbox" [checked]="marcarTodos" (change)="toggleSeleccionTodos($event)" />
-          Marcar validación
-        </label>
-        <label>
-          <input type="checkbox" (change)="toggleActualizarTodos($event)" />
-          Marcar actualización
-        </label>
+            <!-- Botón Cancelar -->
+            <button class="btn-accion cancelar" (click)="refrescarPagina()">
+              <mat-icon>cancel</mat-icon> Cancelar
+            </button>
+          </div>
+
+          <!-- Botón Exportar con menú -->
+          <div class="grupo-exportar">
+            <button mat-button [matMenuTriggerFor]="menuExportar" class="btn-accion exportar">
+              <mat-icon>download</mat-icon> Exportar
+            </button>
+
+            <mat-menu #menuExportar="matMenu">
+              <button mat-menu-item (click)="exportar('excel')">
+                <mat-icon>table_view</mat-icon> Excel
+              </button>
+              <button mat-menu-item (click)="exportar('pdf')">
+                <mat-icon>picture_as_pdf</mat-icon> PDF
+              </button>
+            </mat-menu>
+          </div>
+        </div>
+
+        <!-- Checkboxes de acciones masivas -->
+        <div class="filtro-checkboxes">
+          <label>
+            <input type="checkbox" [checked]="marcarTodos" (change)="toggleSeleccionTodos($event)" />
+            Marcar validación
+          </label>
+          <label>
+            <input type="checkbox" (change)="toggleActualizarTodos($event)" />
+            Marcar actualización
+          </label>
+        </div>
       </div>
 
-      <!-- Número de registros -->
+      <!-- Contador de registros -->
       <p>Número de Registros: {{ numeroRegistros }}</p>
 
-      <!-- Tabla de clientes -->
-      <table class="data-table">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>✓</th>
-            <th>Validar</th>
-            <th>Actualizar</th>
-            <th>Código</th>
-            <th>RUC</th>
-            <th>Razón Social</th>
-            <th>Representante</th>
-            <th>Estado SRI</th>
-            <th>Ciudad</th>
-            <th>Cantón</th>
-            <th>Provincia</th>
-            <th>Fecha Inicio</th>
-            <th>Fecha Cese</th>
-            <th>Motivo Cese</th>
-          </tr>
-        </thead>
-        <tbody>
-          <ng-container *ngFor="let cliente of clientesFiltrados; let i = index">
-            <tr class="fila-original">
-              <td>{{ i + 1 }}</td>
-              <td>
-                <input type="checkbox" [checked]="seleccionados[cliente.clientes_codigo] || false"
-                       (change)="toggleSeleccionUno(cliente.clientes_codigo, $event)" />
-              </td>
-              <td><button (click)="validarUno(cliente.clientes_codigo)">✔</button></td>
-              <td>
-                <input type="checkbox"
-                       [checked]="actualizarSeleccionados[cliente.clientes_codigo] || false"
-                       [disabled]="!cliente.validacionSRI"
-                       (change)="toggleActualizarUno(cliente.clientes_codigo, $event)" />
-              </td>
-              <!--Datos originales-->
-                    <td>{{ cliente.clientes_codigo }}</td>
-                    <td>{{ cliente.ruc }}</td>
-                    <td>{{ cliente.nomcli }}</td>
-                    <td>{{ cliente.representante }}</td>
-                    <td>{{ cliente.idEstadoEmpresa === 1 ? 'AFILIADO' : (cliente.idEstadoEmpresa === 2 ? 'DESAFILIADO' : cliente.idEstadoEmpresa) }}</td>
-                    <td>{{ cliente.ciudad }}</td>
-                    <td>{{ cliente.canton }}</td>
-                    <td>{{ cliente.provincia }}</td>
-                    <td>{{ cliente.fecnac || '' }}</td>
-                    <td>{{ cliente.fechaCeseAct  || '' }}</td>
-                    <td>{{ cliente.motivoCeseAct  || '' }}</td>
+      <!-- Mensaje informativo -->
+      <div class="info-box">
+        <strong>INFO:</strong> Solo se permite la validación de clientes que se encuentren <span class="afiliado">AFILIADOS</span>.
+      </div>
+
+      <!-- Tabla de datos -->
+      <div class="table-responsive table-scroll-vertical">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>✓</th>
+              <th>Validar</th>
+              <th>Actualizar</th>
+              <th>Código</th>
+              <th>RUC</th>
+              <th>Razón Social</th>
+              <th>Representante</th>
+              <th>Estado</th>
+              <th>Ciudad</th>
+              <th>Cantón</th>
+              <th>Provincia</th>
+              <th>Zona</th>
+              <th>Fecha Inicio</th>
+              <th>Fecha Cese</th>
+              <th>Motivo Cese</th>
             </tr>
-            <!--Datos validados-->
-            <tr *ngIf="cliente.validacionSRI" class="fila-validada">
-              <td colspan="4" class="validado-label">Validado</td>
-              <td>{{ cliente.clientes_codigo }}</td>
-              <td>{{ cliente.validacionSRI.numeroRuc }}</td>
-              <td>{{ cliente.validacionSRI.razonSocial }}</td>
-              <td>{{ cliente.validacionSRI.representante || cliente.validacionSRI.razonSocial }}</td>
-              <td>{{ cliente.validacionSRI.estadoContribuyente }}</td>
-              <td>{{ cliente.validacionSRI.ciudad }}</td>
-              <td>{{ cliente.validacionSRI.canton }}</td>
-              <td>{{ cliente.validacionSRI.provincia }}</td>
-              <td>{{ cliente.validacionSRI.fechaInicioActividad || '' }}</td>
-              <td>{{ cliente.validacionSRI.fechaCeseActividad || '' }}</td>
-              <td>{{ cliente.validacionSRI.motivoCese || '' }}</td>
-            </tr>
-          </ng-container>
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let cliente of clientesFiltrados; let i = index">
+              <!-- Fila principal -->
+              <tr class="fila-original">
+                <td>{{ i + 1 }}</td>
+                <td>
+                  <input type="checkbox"
+                         [checked]="seleccionados[cliente.clientes_codigo] || false"
+                         (change)="toggleSeleccionUno(cliente.clientes_codigo, $event)" />
+                </td>
+                <td>
+                  <button (click)="validarUno(cliente.clientes_codigo)">✓</button>
+                </td>
+                <td>
+                  <input type="checkbox"
+                         [checked]="actualizarSeleccionados[cliente.clientes_codigo] || false"
+                         [disabled]="!cliente.validacionSRI"
+                         (change)="toggleActualizarUno(cliente.clientes_codigo, $event)" />
+                </td>
+                <td>{{ cliente.clientes_codigo }}</td>
+                <td>{{ cliente.ruc }}</td>
+                <td>{{ cliente.nomcli }}</td>
+                <td>{{ cliente.representante }}</td>
+                <td>
+                  {{ cliente.idEstadoEmpresa === 1 ? 'AFILIADO' :
+                     (cliente.idEstadoEmpresa === 2 ? 'DESAFILIADO' : cliente.idEstadoEmpresa) }}
+                </td>
+                <td>{{ cliente.ciudad }}</td>
+                <td>{{ cliente.canton }}</td>
+                <td>{{ cliente.provincia }}</td>
+                <td>{{ cliente.idZona ? ('ZONA ' + cliente.idZona) : '' }}</td>
+                <td>{{ cliente.fecnac || '' }}</td>
+                <td>{{ cliente.fechaCeseAct || '' }}</td>
+                <td>{{ cliente.motivoCeseAct || '' }}</td>
+              </tr>
+
+              <!-- Fila validada opcional -->
+              <tr *ngIf="cliente.validacionSRI" class="fila-validada">
+                <td colspan="4" class="validado-label">Validado</td>
+                <td>{{ cliente.clientes_codigo }}</td>
+                <td>{{ cliente.validacionSRI.numeroRuc }}</td>
+                <td>{{ cliente.validacionSRI.razonSocial }}</td>
+                <td>{{ cliente.validacionSRI.representante || cliente.validacionSRI.razonSocial }}</td>
+                <td>{{ cliente.validacionSRI.estadoContribuyente }}</td>
+                <td>{{ cliente.validacionSRI.ciudad }}</td>
+                <td>{{ cliente.validacionSRI.canton }}</td>
+                <td>{{ cliente.validacionSRI.provincia }}</td>
+                <td></td>
+                <td>{{ cliente.validacionSRI.fechaInicioActividad || '' }}</td>
+                <td>{{ cliente.validacionSRI.fechaCeseActividad || '' }}</td>
+                <td>{{ cliente.validacionSRI.motivoCese || '' }}</td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
 </div>
