@@ -11,6 +11,9 @@ import { TipoLocalizacionFormComponent } from '../pages/configuracion/localizaci
 import { TraspasoPrefijosComponent } from './prefijos/traspaso-prefijos/traspaso-prefijos.component';
 import { BorrarPrefijoComponent } from './prefijos/borrar-prefijo/borrar-prefijo.component';
 import { TraspasoGtinComponent } from './prefijos/traspaso-gtin/traspaso-gtin.component';
+import { TipoPrefijoComponent } from './prefijos/tipo-prefijo/tipo-prefijo.component';
+import { ValidacionSriListComponent } from '../pages/validacion/validador-sri/validador-sri-list/validador-sri-list.component';
+
 
 
 const routes: Routes = [
@@ -45,11 +48,22 @@ const routes: Routes = [
       {path:'tras-prefijo',component:TraspasoPrefijosComponent},
       {path:'tras-gtin',component:TraspasoGtinComponent},
       {path:'eliminar-prefijo',component:BorrarPrefijoComponent},
+      {path:'tipo-prefijo',component:TipoPrefijoComponent},
+
+      {
+        path: 'validacionsri',
+        children: [
+          { path: '', component: ValidacionSriListComponent },
+          // { path: 'crear', component: TipoLocalizacionFormComponent },
+          // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
+        ]
+      },
       // {path:'usuarios',component:UsuariosComponent},
       // {path:'productos',component:ProductosComponent},
       // {path:'vender',component:VenderComponent},
       // {path:'historialventas',component:HistorialventaComponent},
       // {path:'reportes',component:ReportesComponent}
+
     ]
   }
   ];

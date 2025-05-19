@@ -6,7 +6,9 @@ import { map } from 'rxjs/operators';
 import { PerfilOpciones } from '../interfaces/responses/perfil-opcion-response';
 import { ApiResponse } from '../interfaces/responses/api-response';
 import { environment } from 'src/environments/environment';
-import {PerfilOpcion}from'../interfaces/requests/perfil-opcion-request';
+import { PerfilOpcion } from '../interfaces/requests/perfil-opcion-request';
+import { PerfilMenu } from '../interfaces/requests/perfil-menu-request';
+import { CreateBulkPerfilOption } from '../interfaces/requests/create-bulk-perfil-options-request';
 
 @Injectable({
   providedIn: 'root'
@@ -14,18 +16,18 @@ import {PerfilOpcion}from'../interfaces/requests/perfil-opcion-request';
 export class PerfilOpcionService {
   private apiUrl = `${environment.applicationUrl}/PerfilesOpciones`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
-  getOpcionesPorPerfilYMenu(idPerfil: number, idMenu: number):Observable<ApiResponse<PerfilOpciones[]>>{
+  getOpcionesPorPerfilYMenu(idPerfil: number, idMenu: number): Observable<ApiResponse<PerfilOpciones[]>> {
     return this.http.get<ApiResponse<PerfilOpciones[]>>(`${this.apiUrl}/perfil/${idPerfil}/menu/${idMenu}`)
   }
 
-  actualizarOpcion(perfilOpcion:PerfilOpcion): Observable<ApiResponse<boolean>> {
-    return this.http.post<ApiResponse<boolean>>(this.apiUrl,perfilOpcion);
+  actualizarOpcion(perfilOpcion: PerfilOpcion): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(this.apiUrl, perfilOpcion);
   }
 
-  createOpcionesPerfilByMenu(idPerfil: number, idMenu: number): Observable<ApiResponse<boolean>> {
-    return this.http.get<ApiResponse<boolean>>(`${this.apiUrl}/asignar-todas/${idPerfil}/menu/${idMenu}`);
+  CreateBulkPerfilOptions(createBulkPerfilOption: CreateBulkPerfilOption): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(`${this.apiUrl}/asignar-todas`, createBulkPerfilOption);
   }
 
 }

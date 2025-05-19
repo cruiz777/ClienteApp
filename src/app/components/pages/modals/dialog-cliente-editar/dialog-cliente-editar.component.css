@@ -1650,3 +1650,19 @@
   font-size: 11px !important;
   top: 6px !important;
 }
+.new-button {
+  border-radius: 4px;
+  color: #363974;
+  padding: 6px 20px;
+  font: 500 13px Inter, sans-serif;
+  transition: background-color 0.3s ease;
+  background-color: #e3edf7;
+  color: #363974 !important;
+}
+
+.tabla-con-borde {
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  padding: 1px;
+  margin-top: 10px;
+}

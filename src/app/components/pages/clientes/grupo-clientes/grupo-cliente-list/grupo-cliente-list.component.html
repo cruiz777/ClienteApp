@@ -4,7 +4,7 @@
         <h1 class="section-title">Mantenimiento Grupo Cliente</h1>
       </div>
     </header>
-  
+
     <section class="content-container">
       <div class="actions-container">
         <div class="search-container">
@@ -16,15 +16,25 @@
           <label class="search-label">Buscar:</label>
           <input type="text" [(ngModel)]="filtro" class="search-input" placeholder="Buscar grupo..." (input)="aplicarFiltro()" />
         </div>
-  
+
         <div class="buttons-container">
           <button class="new-button" (click)="nuevo()">Nuevo</button>
-          <button class="export-button" (click)="exportar()">
+          <button mat-button [matMenuTriggerFor]="menuExportar" class="export-button">
             <span class="export-text">Exportar</span>
           </button>
+
+          <mat-menu #menuExportar="matMenu">
+            <button mat-menu-item (click)="exportar('excel')">
+              <mat-icon>table_view</mat-icon> Excel
+            </button>
+            <button mat-menu-item (click)="exportar('pdf')">
+              <mat-icon>picture_as_pdf</mat-icon> PDF
+            </button>
+          </mat-menu>
+
         </div>
       </div>
-  
+
       <div class="table-wrapper">
         <table class="data-table">
           <thead>
@@ -63,7 +73,7 @@
             </tr>
           </tbody>
         </table>
-  
+
         <mat-paginator
             [length]="gruposFiltrados.length"
             [pageSize]="5"
@@ -74,4 +84,3 @@
       </div>
     </section>
   </div>
-  

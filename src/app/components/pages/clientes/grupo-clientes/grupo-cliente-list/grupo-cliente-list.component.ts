@@ -3,6 +3,11 @@ import { GrupoClienteService } from 'src/app/services/grupo-cliente.service';
 import { Router } from '@angular/router';
 import { GrupoCliente } from 'src/app/interfaces/responses/grupo-cliente-response';
 import { MatPaginator } from '@angular/material/paginator';
+import { LogoService } from 'src/app/services/logo.service';
+import { EmpresaService } from 'src/app/services/empresa.service';
+import { ExportService } from 'src/app/services/export.service';
+import { ExportOptions } from 'src/app/interfaces/export-options';
+import * as moment from 'moment';
 
 @Component({
   selector: 'app-grupo-cliente-list',
@@ -13,16 +18,35 @@ export class GrupoClienteListComponent implements OnInit {
   grupos: GrupoCliente[] = [];
   gruposFiltrados: GrupoCliente[] = [];
   filtro: string = '';
+  logoUrl: string = '';
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   constructor(
     private grupoClienteService: GrupoClienteService,
-    private router: Router
+    private router: Router,
+    private logoService: LogoService,
+    private empresaService: EmpresaService,
+    private exportService: ExportService
   ) {}
 
   ngOnInit(): void {
     this.cargarGrupos();
+
+    // Obtener logo dinámicamente
+    this.empresaService.getEmpresas().subscribe({
+      next: (empresas) => {
+        if (empresas.length > 0 && empresas[0].empresaLogo) {
+          this.logoUrl = this.logoService.getLogoUrl(empresas[0].empresaLogo);
+          console.log('Logo cargado desde empresa:', this.logoUrl);
+        } else {
+          console.warn('No se encontró empresa o logo.');
+        }
+      },
+      error: (err) => {
+        console.error('Error al cargar empresa para obtener logo:', err);
+      }
+    });
   }
 
   cargarGrupos(): void {
@@ -63,7 +87,55 @@ export class GrupoClienteListComponent implements OnInit {
     this.router.navigate(['/menus/grupocliente/editar', id]);
   }
 
-  exportar(): void {
-    alert('Exportación no implementada aún.');
+  // Método para exportar los datos filtrados en formato Excel o PDF
+  exportar(tipo: 'excel' | 'pdf'): void {
+    // Encabezados que se mostrarán en el archivo exportado
+    // Estos son los títulos visibles en el Excel/PDF
+    const headers = [
+      'Código', 'Grupo', 'Inscripción', 'Asignación',
+      'Mantenimiento', 'Valor Anual', 'Estado', 'Fecha'
+    ];
+
+    // Claves del objeto que corresponden a cada columna
+    // Sirve para mapear los valores reales que se exportarán por campo
+    const columns = [
+      'codigo', 'nombre', 'inscripcion', 'asignacion',
+      'mantenimiento', 'valorAnual', 'estadoTexto', 'fechaTexto'
+    ];
+
+    // Transformamos los datos filtrados (gruposFiltrados) para exportar
+    // Se genera un nuevo arreglo con los datos listos para impresión
+    const data = this.gruposFiltrados.map((g) => ({
+      codigo: g.codigo,
+      nombre: g.nombre,
+      inscripcion: g.inscripcion,
+      asignacion: g.asignacion,
+      mantenimiento: g.mantenimiento,
+      valorAnual: g.valorAnual,
+      // Campo transformado: 'ACTIVO' o 'INACTIVO'
+      estadoTexto: g.estado ? 'ACTIVO' : 'INACTIVO',
+      // Fecha formateada a 'DD/MM/YYYY'
+      fechaTexto: moment(g.fecha).format('DD/MM/YYYY')
+    }));
+
+    // Objeto de opciones que se enviará al servicio ExportService
+    // Contiene: datos, columnas, headers, título, nombre del archivo y logo
+    const options: ExportOptions = {
+      data,
+      columns,
+      headers,
+      filename: 'GruposCliente',
+      title: 'Mantenimiento Grupo Cliente',
+      logoUrl: this.logoUrl
+    };
+
+    // Dependiendo del tipo de exportación (Excel o PDF),
+    // se llama al método correspondiente del servicio
+    if (tipo === 'excel') {
+      this.exportService.exportarExcel(options); // Exportar a Excel
+    } else {
+      this.exportService.exportarPDF(options); // Exportar a PDF
+    }
   }
+
 }

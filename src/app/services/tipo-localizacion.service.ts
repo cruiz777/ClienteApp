@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { TipoLocalizacionResponse } from '../interfaces/responses/tipo-localizacion-response';
 import { TipoLocalizacionRequest } from '../interfaces/requests/tipo-localizacion-request';
 import { environment } from 'src/environments/environment';
+import { ApiResponse } from '../interfaces/responses/api-response';
 
 @Injectable({
   providedIn: 'root'
@@ -21,12 +22,12 @@ export class TipoLocalizacionService {
     return this.http.get<{ data: TipoLocalizacionResponse }>(`${this.apiUrl}/${id}`);
   }
 
-  create(payload: TipoLocalizacionRequest): Observable<any> {
-    return this.http.post(this.apiUrl, payload);
+  create(data: TipoLocalizacionRequest): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(this.apiUrl, data);
   }
 
-  update(id: number, payload: TipoLocalizacionRequest): Observable<any> {
-    return this.http.put(`${this.apiUrl}/${id}`, payload);
+  update(id: number, data: TipoLocalizacionRequest): Observable<ApiResponse<boolean>> {
+    return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/${id}`, data);
   }
 
   delete(id: number): Observable<any> {

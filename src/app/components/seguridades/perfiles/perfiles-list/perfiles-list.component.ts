@@ -1,16 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { PerfilesService } from 'src/app/services/perfil.service';
 import { SistemaService } from 'src/app/services/sistema.service';
+import { ModuloService } from 'src/app/services/modulo.service';
+import { MenuService } from 'src/app/services/menu.service';
+import { OpcionService } from 'src/app/services/opcion.service';
+import { PerfilOpcionService } from 'src/app/services/perfilOpcion.service';
+
 import { PerfilResponse } from 'src/app/interfaces/responses/perfil-response';
 import { SistemaResponse } from 'src/app/interfaces/responses/sistema-response';
-import { ModuloService } from 'src/app/services/modulo.service';
 import { ModuloResponse } from 'src/app/interfaces/responses/modulo-response';
-import { MenuService } from 'src/app/services/menu.service';
 import { MenuResponse } from 'src/app/interfaces/responses/menu-response';
-import { OpcionService } from 'src/app/services/opcion.service';
 import { OpcionResponse } from 'src/app/interfaces/responses/opcion-response';
-import { PerfilOpcionService } from 'src/app/services/perfilOpcion.service';
+
 import { PerfilOpcion } from 'src/app/interfaces/requests/perfil-opcion-request';
+import { CreateBulkPerfilOption } from 'src/app/interfaces/requests/create-bulk-perfil-options-request';
 
 interface MenuExtendido extends MenuResponse {
   tieneOpciones: boolean;
@@ -28,13 +31,13 @@ export class PerfilesListComponent implements OnInit {
   modulos: ModuloResponse[] = [];
   menus: MenuExtendido[] = [];
   opcionnes: OpcionResponse[] = [];
-  opcionesAsignadas: number[] = [];
 
   perfilSeleccionado: number | null = null;
   moduloSeleccionado: number | null = null;
   menuSeleccionado: number | null = null;
-
   sistemaActivo: string = '';
+
+  opcionesAsignadas: number[] = [];
 
   constructor(
     private perfilesService: PerfilesService,
@@ -43,7 +46,7 @@ export class PerfilesListComponent implements OnInit {
     private menuService: MenuService,
     private opcionesService: OpcionService,
     private perfilesOpcionesService: PerfilOpcionService
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     this.perfilesService.getPerfiles().subscribe(response => {
@@ -52,13 +55,11 @@ export class PerfilesListComponent implements OnInit {
 
     this.sistemaService.getSistemas().subscribe(response => {
       this.sistemas = response.data;
-
       if (this.sistemas.length > 0) {
         const sistema = this.sistemas[0];
         this.sistemaActivo = sistema.nombre;
-
-        this.moduloService.getModulosPorSistema(sistema.id_sistema).subscribe(response => {
-          this.modulos = response.data;
+        this.moduloService.getModulosPorSistema(sistema.id_sistema).subscribe(resp => {
+          this.modulos = resp.data;
         });
       }
     });
@@ -68,9 +69,8 @@ export class PerfilesListComponent implements OnInit {
     this.sistemaActivo = nombre;
     this.menus = [];
     this.opcionnes = [];
-
-    this.moduloService.getModulosPorSistema(idSistema).subscribe(response => {
-      this.modulos = response.data;
+    this.moduloService.getModulosPorSistema(idSistema).subscribe(resp => {
+      this.modulos = resp.data;
     });
   }
 
@@ -78,12 +78,9 @@ export class PerfilesListComponent implements OnInit {
     this.perfilSeleccionado = idPerfil;
     this.menus = [];
     this.opcionnes = [];
+
   }
 
-  /**
-   * Carga los menús del módulo seleccionado y verifica si ya tienen opciones asignadas al perfil
-   * para marcar visualmente el estado (color e icono)
-   */
   seleccionarModulo(idModulo: number): void {
     this.moduloSeleccionado = idModulo;
     this.menuSeleccionado = null;
@@ -91,7 +88,6 @@ export class PerfilesListComponent implements OnInit {
 
     this.menuService.getMenusPorModulo(idModulo).subscribe(response => {
       const menusOriginales = response.data;
-
       const menuesExtendidos: MenuExtendido[] = menusOriginales.map(menu => ({
         ...menu,
         tieneOpciones: false,
@@ -103,15 +99,13 @@ export class PerfilesListComponent implements OnInit {
         return;
       }
 
-      // Evaluamos para cada menú si tiene opciones y si todas están asignadas
       const solicitudes = menuesExtendidos.map(menu =>
         Promise.all([
           this.perfilesOpcionesService.getOpcionesPorPerfilYMenu(this.perfilSeleccionado!, menu.id_menu).toPromise(),
           this.opcionesService.getOpcionesPorMenu(menu.id_menu).toPromise()
-        ]).then(([asignadasResponse, todasResponse]) => {
-          const asignadas = asignadasResponse?.data ?? [];
-          const todas = todasResponse?.data ?? [];
-
+        ]).then(([asignadasResp, todasResp]) => {
+          const asignadas = asignadasResp?.data ?? [];
+          const todas = todasResp?.data ?? [];
           menu.tieneOpciones = asignadas.length > 0;
           menu.todasAsignadas = todas.length > 0 && asignadas.length === todas.length;
         })
@@ -123,23 +117,20 @@ export class PerfilesListComponent implements OnInit {
     });
   }
 
-  /**
-   * Carga las opciones del menú y marca las que ya han sido asignadas al perfil
-   */
   seleccionarMenu(idMenu: number): void {
     this.menuSeleccionado = idMenu;
     if (this.perfilSeleccionado === null) return;
 
-    this.opcionesService.getOpcionesPorMenu(idMenu).subscribe(opcionesResponse => {
-      const todasLasOpciones = opcionesResponse.data;
+    this.opcionesService.getOpcionesPorMenu(idMenu).subscribe(opcionesResp => {
+      const todasLasOpciones = opcionesResp.data;
 
-      this.perfilesOpcionesService.getOpcionesPorPerfilYMenu(this.perfilSeleccionado!, idMenu).subscribe(asignadasResponse => {
-        const opcionesAsignadasIds = asignadasResponse.data.map((op: any) => op.id_opcion);
-        this.opcionesAsignadas = opcionesAsignadasIds;
+      this.perfilesOpcionesService.getOpcionesPorPerfilYMenu(this.perfilSeleccionado!, idMenu).subscribe(asignadasResp => {
+        const asignadasIds = asignadasResp.data.map(op => op.id_opcion);
+        this.opcionesAsignadas = asignadasIds;
 
-        this.opcionnes = todasLasOpciones.map((op: any) => ({
+        this.opcionnes = todasLasOpciones.map(op => ({
           ...op,
-          status: opcionesAsignadasIds.includes(op.id_opcion)
+          status: asignadasIds.includes(op.id_opcion)
         }));
 
         this.actualizarEstadoDelMenu();
@@ -147,9 +138,6 @@ export class PerfilesListComponent implements OnInit {
     });
   }
 
-  /**
-   * Marca o desmarca una opción individual
-   */
   onToggleOpcion(opcion: OpcionResponse): void {
     if (this.perfilSeleccionado === null) return;
 
@@ -160,19 +148,11 @@ export class PerfilesListComponent implements OnInit {
     };
 
     this.perfilesOpcionesService.actualizarOpcion(request).subscribe({
-      next: () => {
-        console.log(`✔ Opción actualizada: ID ${request.id_opcion} - Estado: ${request.status}`);
-        this.actualizarEstadoDelMenu();
-      },
-      error: (err) => {
-        console.error('❌ Error al actualizar la opción:', err);
-      }
+      next: () => this.actualizarEstadoDelMenu(),
+      error: (err) => console.error('❌ Error al actualizar la opción:', err)
     });
   }
 
-  /**
-   * Verifica si el menú tiene todas sus opciones marcadas o solo algunas
-   */
   actualizarEstadoDelMenu(): void {
     if (this.menuSeleccionado === null) return;
 
@@ -186,25 +166,58 @@ export class PerfilesListComponent implements OnInit {
     }
   }
 
-  /**
-   * Acción futura: Marcar o desmarcar todas las opciones del menú (en construcción)
-   */
   onToggleTodoOpciones(menu: MenuExtendido): void {
     if (this.perfilSeleccionado === null) return;
 
     const marcar = !menu.todasAsignadas;
-    console.log(`🔄 ${marcar ? 'Asignar' : 'Quitar'} todas las opciones del menú: ${menu.nombre}`);
+    const accion = marcar ? 'Asignar' : 'Quitar';
 
-    if (marcar) {
-      this.perfilesOpcionesService.createOpcionesPerfilByMenu(this.perfilSeleccionado!, this.menuSeleccionado!)
-        .subscribe(response => {
-          console.log(response);
-        });
-    } else {
-      // Aquí podrías llamar a un método para quitar todas las opciones del menú si lo necesitas.
-      console.log('🗑️ Eliminando opciones del menú');
-    }
+    const request: CreateBulkPerfilOption = {
+      id_perfil: this.perfilSeleccionado,
+      id: menu.id_menu,
+      status: marcar,
+      nivel: 'menu'
+    };
+
+    this.perfilesOpcionesService.CreateBulkPerfilOptions(request).subscribe({
+      next: () => {
+        this.opcionnes = [];
+        this.seleccionarMenu(menu.id_menu);
+      },
+      error: (err) => console.error(`❌ Error al ${accion.toLowerCase()} opciones del menú:`, err)
+    });
   }
 
+  onToggleTodoOpcionesModulo(moduloId: number, marcar: boolean): void {
+    if (this.perfilSeleccionado === null) return;
 
+    const accion = marcar ? 'Asignar' : 'Quitar';
+
+    const request: CreateBulkPerfilOption = {
+      id_perfil: this.perfilSeleccionado,
+      id: moduloId,
+      status: marcar,
+      nivel: 'modulo'
+    };
+
+    this.perfilesOpcionesService.CreateBulkPerfilOptions(request).subscribe({
+      next: () => this.seleccionarModulo(moduloId),
+      error: (err) => console.error(`❌ Error al ${accion.toLowerCase()} opciones del módulo:`, err)
+    });
+  }
+
+  esModuloCompletamenteAsignado(moduloId: number): boolean {
+    const menusDelModulo = this.menus.filter(m => m.id_modulo === moduloId);
+    return menusDelModulo.length > 0 && menusDelModulo.every(m => m.todasAsignadas);
+  }
+
+  obtenerEstadoCheckBox(event: Event): boolean {
+    return (event.target as HTMLInputElement).checked;
+  }
+
+  detenerYAplicarCambioModulo(event: Event, moduloId: number): void {
+    event.stopPropagation();
+    const marcar = (event.target as HTMLInputElement).checked;
+    this.onToggleTodoOpcionesModulo(moduloId, marcar);
+  }
 }

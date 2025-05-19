@@ -109,7 +109,21 @@ export class TipoClienteFormComponent implements OnInit {
       : this.tipoClienteService.create(payload);
 
     request$.subscribe({
-      next: () => {
+      next: (res) => {
+        if (!res.data) {
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '400px',
+            data: {
+              title: 'Error',
+              message: res.message,
+              type: 'error',
+              confirmText: 'Aceptar',
+              showCancel: false
+            }
+          });
+          return;
+        }
+
         const message = this.modoEdicion ? 'actualizado' : 'creado';
         this.dialog.open(CustomMessageBoxComponent, {
           width: '400px',

@@ -13,6 +13,9 @@ export interface HistorialClienteRequest {
   descripcion: string;
   clientes_codigo: number;
   cliente?: string;
+  tabla?: string,
+  tipo_accion?: string,
+  id_empresa?: number
 }
 
 @Injectable({
@@ -28,13 +31,31 @@ export class HistorialClienteService {
     return this.http.post<any>(`${this.apiUrl}/HistorialCliente`, request);
   }
 
-obtenerHistorialPorCliente(clientes_codigo: number): Observable<HistorialClienteRequest[]> {
-  const params = new HttpParams().set('clientesCodigo', clientes_codigo.toString());
+obtenerHistorialPorCliente(
+  clientes_codigo: number,
+  tipo_accion?: string,
+  tabla?: string,
+  id_empresa?: number
+): Observable<HistorialClienteRequest[]> {
+  let params = new HttpParams().set('clientesCodigo', clientes_codigo.toString());
+
+  if (tipo_accion) {
+    params = params.set('tipoAccion', tipo_accion);
+  }
+
+  if (tabla) {
+    params = params.set('tabla', tabla);
+  }
+
+  if (id_empresa && id_empresa > 0) {
+    params = params.set('idEmpresa', id_empresa.toString());
+  }
 
   return this.http.get<any>(`${this.apiUrl}/listadoHistorialcliente`, { params }).pipe(
-    map(response => response.data) // 👈 accede a solo el array
+    map(response => response.data)
   );
 }
+
 
 
 }
