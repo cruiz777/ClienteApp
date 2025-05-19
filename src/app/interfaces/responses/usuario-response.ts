@@ -5,6 +5,7 @@ export interface Usuario {
   Departamento: string;
   IdPerfil: number;
   Perfil: string;
+  IdEmpresa: number;
   Empresa: string;
   Estado: boolean;
 }
