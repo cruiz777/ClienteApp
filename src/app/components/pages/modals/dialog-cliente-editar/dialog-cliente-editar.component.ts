@@ -10,7 +10,10 @@ import { FormBuilder, FormGroup, FormControl, Validators, AbstractControl, Valid
 import { MatDialogRef } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
-
+import { MatTableDataSource } from '@angular/material/table';
+import { MatPaginator } from '@angular/material/paginator';
+import { MatSort } from '@angular/material/sort';
+import { ViewChild } from '@angular/core';
 // RxJS
 import { BehaviorSubject, Observable } from 'rxjs';
 import { map, startWith } from 'rxjs/operators';
@@ -19,6 +22,7 @@ import { MatStepper } from '@angular/material/stepper';
 import { MatDialog } from '@angular/material/dialog';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
+import { DialogPrefijoComponent } from '../dialog-prefijo/dialog-prefijo.component';
 
 // Servicios personalizados
 import { GrupoEmpresaService, GrupoEmpresa } from '../../../../services/grupo-empresa.service';
@@ -30,7 +34,7 @@ import { ZonaService, Zona } from '../../../../services/zona.service';
 import { EstadoEmpresa, EstadoEmpresaService } from 'src/app/services/estado-empresa.service';
 import { ClienteIndividual, ClienteService } from 'src/app/services/cliente.service';
 import { NcontrolService, NumeroControlMinDto } from 'src/app/services/ncontrol.service';
-import { PrefijoService, Prefijo } from 'src/app/services/prefijo.service';
+import { PrefijoService, Prefijo,PrefijoClienteResponse } from 'src/app/services/prefijo.service';
 import { CedulaService } from 'src/app/services/cedula.service';
 import { GenerarglnService } from 'src/app/services/generargln.service';
 import { GlnService, GlnRequest } from 'src/app/services/gln.service';
@@ -44,6 +48,17 @@ import { Inject } from '@angular/core';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 
 import { ModalImpresionComponent } from 'src/app/components/shared/modal-impresion/modal-impresion.component';
+import { DialogPrefijoEditarComponent } from '../dialog-prefijo-editar/dialog-prefijo-editar.component';
+const ELEMENT_DATA: HistorialClienteRequest[] = [
+  {
+    id_historial_cliente: 1,
+    id_usuario: 1,
+    nombre_usuario: 'admin',
+    fecha: '2025-05-12T14:00:00.000Z',
+    descripcion: 'Cambio de razón social',
+    clientes_codigo: 12345
+  }
+];
 
 @Component({
   selector: 'app-dialog-cliente-editar',
@@ -114,7 +129,35 @@ export class DialogClienteEditarComponent implements OnInit {
   estadoEmpresaCtrl = new FormControl('');
   codigoAreaE: number | null = null;
   cambios: string[] = [];
+  historial: HistorialClienteRequest[] = [];
+  displayedHistorialColumns: string[] = ['nombre_usuario', 'fecha', 'descripcion'];
+  dataSourceHistorial = new MatTableDataSource(ELEMENT_DATA);
+  dataSourcePrefijo = new MatTableDataSource<PrefijoClienteResponse>();
+  displayedPrefijoColumns: string[] = [
+  'clientesCodigo',
+   'codpre',
+  'gln',
+  'fecha',
+  'estado',
+  'fechaCierre',
+  'tipoLocalizacion',
+  'observacion',
+  'accion'
+];
+
+nombrecli:string='';
+
+  prefijoCliente!: PrefijoClienteResponse;
+
   private clienteOriginal!: ClienteIndividual;
+
+
+
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
+  @ViewChild(MatSort) sort!: MatSort;
+@ViewChild('paginatorPrefijo', { static: false }) paginatorPrefijo!: MatPaginator;
+
+  @ViewChild(MatSort) sortPrefijo!: MatSort;
 
   constructor(
     private fb: FormBuilder,
@@ -157,7 +200,15 @@ export class DialogClienteEditarComponent implements OnInit {
 
 
     console.log(this.idCliente);
+    this.cargarHistorial(this.idCliente,'update','Clientes',1);
+    this.cargarPrefijoCliente(this.idCliente);
     this.cargarClienteYGrupos(this.idCliente);
+    this.paso2Form.get('razonSocial')?.valueChanges.subscribe(valor => {
+  this.nombrecli = valor;
+});
+
+
+
     this.paso1Form.get('estadoEmpresa')?.valueChanges.subscribe(value => {
       this.paso2Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
       this.paso3Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
@@ -169,6 +220,7 @@ export class DialogClienteEditarComponent implements OnInit {
       this.paso3Form.get('zona')?.setValue(value, { emitEvent: false });
       this.paso4Form.get('zona')?.setValue(value, { emitEvent: false });
     });
+
   }
 
   initFormulario(): void {
@@ -188,7 +240,9 @@ export class DialogClienteEditarComponent implements OnInit {
         prefijogs1: [''],
         origen: [''],
         gln: [''],
-        fechaIng: ['']
+        fechaIng: [''],
+        fechaMod: [''],
+        usuarioMod: ['']
       }),
 
       paso2: this.fb.group({
@@ -245,7 +299,12 @@ export class DialogClienteEditarComponent implements OnInit {
       })
     });
   }
-
+  ngAfterViewInit(): void {
+    this.dataSourceHistorial.paginator = this.paginator;
+    this.dataSourceHistorial.sort = this.sort;
+ 
+  
+  }
 
   get paso1Form(): FormGroup {
     return this.formCliente.get('paso1') as FormGroup;
@@ -641,7 +700,9 @@ export class DialogClienteEditarComponent implements OnInit {
       idCiudad: idCiudad || 0,
       idZona: idZona,
       idGrupoEmpresa: paso1.grupo || 1,
-      representante: paso2.nombreRepresentante || ''
+      representante: paso2.nombreRepresentante || '',
+      fechamod: '20/05/2025',
+      usumod: 'Cprl'
     };
 
 
@@ -650,8 +711,14 @@ export class DialogClienteEditarComponent implements OnInit {
     this.clienteService.actualizarCliente(clienteId, jsonActualizar).subscribe({
       next: (res) => {
         console.log('✅ Cliente actualizado:', res);
-        this.guardarHistorial();        
-        //this.mostrarAlerta('Cliente actualizado correctamente', 'Éxito');
+
+        this.guardarHistorial();
+
+        // ✅ Esperar un poco y recargar el historial
+        setTimeout(() => {
+          this.cargarHistorial(this.idCliente);
+        }, 300); // 🔁 Espera 300ms para que se guarde el historial antes de recargarlo
+
         const msg = this.modoEdicion ? 'actualizada' : 'creada';
 
         this.dialog.open(CustomMessageBoxComponent, {
@@ -663,13 +730,14 @@ export class DialogClienteEditarComponent implements OnInit {
             confirmText: '',
             showCancel: false
           }
-        }); // 🔴 este paréntesis estaba faltando
+        });
       },
       error: (err) => {
         console.error('❌ Error al actualizar cliente:', err);
         this.mostrarAlerta('No se pudo actualizar el cliente', 'Error');
       }
     });
+
   }
 
 
@@ -954,7 +1022,10 @@ export class DialogClienteEditarComponent implements OnInit {
       prefijogs1: `${cliente.prefijo}`,
       origen: cliente.zonaReferencia || '',
       gln: '',
-      fechaIng: cliente.fecing
+      fechaIng: cliente.fecing,
+      fechaMod: cliente.fecmod,
+      usuarioMod: cliente.usumod
+
 
     });
 
@@ -1090,12 +1161,12 @@ export class DialogClienteEditarComponent implements OnInit {
     }
   }
   activarModoEdicion() {
-    debugger
+    
     this.modoEdicion = true;
     this.formCliente.enable(); // habilita todo el formulario
     this.formCliente.get('paso1.ruc')?.disable();
     this.formCliente.get('paso1.esPasaporte')?.disable();
-
+    
   }
 
   desactivarModoEdicion() {
@@ -1138,51 +1209,51 @@ export class DialogClienteEditarComponent implements OnInit {
   }
 
   verificarCambiosCliente(): void {
-  this.cambios = [];
+    this.cambios = [];
 
-  const actual = {
-    ...this.paso1Form.value,
-    ...this.paso2Form.value,
-    ...this.paso3Form.value,
-    ...this.paso4Form.value
-  };
+    const actual = {
+      ...this.paso1Form.value,
+      ...this.paso2Form.value,
+      ...this.paso3Form.value,
+      ...this.paso4Form.value
+    };
 
-  const original = this.clienteOriginal;
-  console.log('Valor original:', original);
+    const original = this.clienteOriginal;
+    console.log('Valor original:', original);
 
-  const comparar = (clave: string, originalVal: any, actualVal: any) => {
-    if (JSON.stringify(originalVal) !== JSON.stringify(actualVal)) {
-      this.cambios.push(`${clave}: "${originalVal}" -> "${actualVal}"`);
+    const comparar = (clave: string, originalVal: any, actualVal: any) => {
+      if (JSON.stringify(originalVal) !== JSON.stringify(actualVal)) {
+        this.cambios.push(`${clave}: "${originalVal}" -> "${actualVal}"`);
+      }
+    };
+
+    const categoriaTexto: Record<number, string> = {
+      1: 'Individual',
+      2: 'Industrial'
+    };
+
+    comparar('Categoría Cliente', categoriaTexto[original.idTipoCliente], categoriaTexto[actual.categoriaCliente]);
+    comparar('Grupo', this.obtenerDescripcionGrupo(original.idGrupoEmpresa), this.obtenerDescripcionGrupo(actual.grupo));
+    comparar('Categoría Producto', this.obtenerDescripcionGrupoProducto(original.idGrupoProducto), this.obtenerDescripcionGrupoProducto(actual.grupoProducto?.id_grupo_producto || 0));
+    comparar('Estado Empresa', this.obtenerDescripcionEstadoEmpresa(original.idEstadoEmpresa), this.obtenerDescripcionEstadoEmpresa(actual.estadoEmpresa?.id || 0));
+    comparar('Zona', this.obtenerDescripcionZona(original.idZona), this.obtenerDescripcionZona(actual.zona?.id || 0));
+    comparar('Ciudad', this.obtenerDescripcionCiudad(original.idCiudad), this.obtenerDescripcionCiudad(actual.ciudad?.id_ciudad || 0));
+    comparar('Razón Social', original.razonSocial, actual.razonSocial);
+    comparar('Representante Legal', original.representante, this.paso2Form.get('nombreRepresentante')?.value);
+    comparar('Direccion', original.dircli, this.paso2Form.get('direccionPrincipal')?.value);
+    comparar('CodigoPostal', original.codigoPostal, this.paso2Form.get('codigoPostal')?.value);
+    comparar('Web', original.web, this.paso2Form.get('sitioWeb')?.value); // CORREGIDO: antes comparabas con 'codigoPostal'
+    comparar('Celular', original.telefono1, this.paso2Form.get('celular')?.value);
+    comparar('Telefono 2', original.telefono, this.paso2Form.get('telefono2')?.value);
+    comparar('Telefono Representante', original.fax, this.paso3Form.get('telefonoRepresentante')?.value);
+    comparar('Email Representante', original.email, this.paso3Form.get('emailRepresentante')?.value);
+    if (this.cambios.length) {
+      console.log('⚠️ Cambios detectados:\n' + this.cambios.join('\n'));
+      // this.mostrarAlerta('Cambios detectados:\n' + this.cambios.join('\n'), 'Advertencia');
+    } else {
+      console.log('No se detectaron cambios', 'Sin Cambios');
     }
-  };
-
-  const categoriaTexto: Record<number, string> = {
-    1: 'Individual',
-    2: 'Industrial'
-  };
-
-  comparar('Categoría Cliente', categoriaTexto[original.idTipoCliente], categoriaTexto[actual.categoriaCliente]);
-  comparar('Grupo', this.obtenerDescripcionGrupo(original.idGrupoEmpresa), this.obtenerDescripcionGrupo(actual.grupo));
-  comparar('Categoría Producto', this.obtenerDescripcionGrupoProducto(original.idGrupoProducto), this.obtenerDescripcionGrupoProducto(actual.grupoProducto?.id_grupo_producto || 0));
-  comparar('Estado Empresa', this.obtenerDescripcionEstadoEmpresa(original.idEstadoEmpresa), this.obtenerDescripcionEstadoEmpresa(actual.estadoEmpresa?.id || 0));
-  comparar('Zona', this.obtenerDescripcionZona(original.idZona), this.obtenerDescripcionZona(actual.zona?.id || 0));
-  comparar('Ciudad', this.obtenerDescripcionCiudad(original.idCiudad), this.obtenerDescripcionCiudad(actual.ciudad?.id_ciudad || 0));
-  comparar('Razón Social', original.razonSocial, actual.razonSocial);
-  comparar('Representante Legal', original.representante, this.paso2Form.get('nombreRepresentante')?.value);
-  comparar('Direccion', original.dircli, this.paso2Form.get('direccionPrincipal')?.value);
-  comparar('CodigoPostal', original.codigoPostal, this.paso2Form.get('codigoPostal')?.value);
-  comparar('Web', original.web, this.paso2Form.get('sitioWeb')?.value); // CORREGIDO: antes comparabas con 'codigoPostal'
-  comparar('Celular', original.telefono1, this.paso2Form.get('celular')?.value);
-comparar('Telefono 2', original.telefono, this.paso2Form.get('telefono2')?.value);
-comparar('Telefono Representante', original.fax, this.paso3Form.get('telefonoRepresentante')?.value);
-comparar('Email Representante', original.email, this.paso3Form.get('emailRepresentante')?.value);
-  if (this.cambios.length) {
-    console.log('⚠️ Cambios detectados:\n' + this.cambios.join('\n'));
-    // this.mostrarAlerta('Cambios detectados:\n' + this.cambios.join('\n'), 'Advertencia');
-  } else {
-    console.log('No se detectaron cambios', 'Sin Cambios');
   }
-}
 
 
   private obtenerDescripcionGrupo(id: number): string {
@@ -1206,20 +1277,29 @@ comparar('Email Representante', original.email, this.paso3Form.get('emailReprese
   }
 
 
-private obtenerDescripcionCiudad(id: number): string {
-  const ciudad = this.ciudad.find(c => c.id_ciudad === id);
-  return ciudad ? `${ciudad.ciudad} - ${ciudad.canton} - ${ciudad.provincia}` : `ID ${id}`;
-}
+  private obtenerDescripcionCiudad(id: number): string {
+    const ciudad = this.ciudad.find(c => c.id_ciudad === id);
+    return ciudad ? `${ciudad.ciudad} - ${ciudad.canton} - ${ciudad.provincia}` : `ID ${id}`;
+  }
 
 guardarHistorial(): void {
-   this.verificarCambiosCliente();
+  this.verificarCambiosCliente(); // ← esta función debe llenar this.cambios
+
+  if (!this.cambios || this.cambios.length === 0) {
+    console.log('⚠️ No hay cambios, no se guarda historial.');
+    return;
+  }
+
   const historial: HistorialClienteRequest = {
     id_historial_cliente: 0,
-    id_usuario: 2,//this.usuarioActual?.id || 0, // asegúrate de tener el usuario actual
-    nombre_usuario: 'mario',//this.usuarioActual?.usr || 'Desconocido',
+    id_usuario: 2, // TODO: usar this.usuarioActual?.id || 0
+    nombre_usuario: 'mario', // TODO: usar this.usuarioActual?.usr || 'Desconocido'
     fecha: new Date().toISOString(),
     descripcion: this.cambios.join('\n'),
-    clientes_codigo: this.paso1Form.get('codigoCliente')?.value
+    clientes_codigo: this.paso1Form.get('codigoCliente')?.value,
+    tabla: 'Clientes',
+    tipo_accion: 'update',
+    id_empresa: 1
   };
 
   this.historialClienteService.insertarHistorialCliente(historial).subscribe({
@@ -1227,6 +1307,143 @@ guardarHistorial(): void {
     error: (err) => console.error('❌ Error al guardar historial:', err)
   });
 }
+
+
+cargarHistorial(
+  clientesCodigo: number,
+  tipo_accion?: string,
+  tabla?: string,
+  id_empresa?: number
+
+
+): void {
+  this.historialClienteService
+    .obtenerHistorialPorCliente(clientesCodigo, tipo_accion, tabla, id_empresa)
+    .subscribe({
+      next: (data) => {
+        console.log('📦 Historial recibido desde API:', data);
+
+        this.dataSourceHistorial = new MatTableDataSource(data);
+
+        // 🔍 Filtro personalizado
+        this.dataSourceHistorial.filterPredicate = (
+          data: HistorialClienteRequest,
+          filter: string
+        ) => {
+          const fechaFormateada = new Date(data.fecha).toLocaleDateString('es-EC');
+          const dataStr = `${fechaFormateada} ${data.nombre_usuario} ${data.descripcion}`.toLowerCase();
+          return dataStr.includes(filter.trim().toLowerCase());
+        };
+
+        this.dataSourceHistorial.paginator = this.paginator;
+        this.dataSourceHistorial.sort = this.sort;
+
+        console.log('🧾 Datos en dataSourceHistorial:', this.dataSourceHistorial.data);
+      },
+      error: (err) => {
+        console.error('❌ Error al obtener historial:', err);
+      }
+    });
+}
+
+  
+
+
+
+  tieneHistorial(): boolean {
+    return !!this.dataSourceHistorial?.data && this.dataSourceHistorial.data.length > 0;
+  }
+
+  aplicarFiltro(valor: string): void {
+    this.dataSourceHistorial.filter = valor.trim().toLowerCase();
+  }
+
+cargarPrefijoCliente(codigoCliente: number): void {
+  this.prefijoService.obtenerPorClienteCodigo(codigoCliente).subscribe({
+    next: (data) => {
+      console.log('📦 Datos del cliente con prefijo:', data);
+
+      // Asegurar que data es un arreglo
+      const datos = Array.isArray(data) ? data : [];
+
+      this.dataSourcePrefijo = new MatTableDataSource(datos);
+
+      // Filtro opcional
+      this.dataSourcePrefijo.filterPredicate = (item: PrefijoClienteResponse, filter: string) => {
+        const dataStr = `${item.nomcli} ${item.ruccli} ${item.gln} ${item.codpre}`.toLowerCase();
+        return dataStr.includes(filter.trim().toLowerCase());
+      };
+
+      // 👇 Aquí el setTimeout para asegurar que el paginador ya está disponible
+      setTimeout(() => {
+        if (this.paginatorPrefijo && this.sortPrefijo) {
+          this.dataSourcePrefijo.paginator = this.paginatorPrefijo;
+          this.dataSourcePrefijo.sort = this.sortPrefijo;
+        }
+      }, 0);
+    },
+    error: (err) => {
+      console.error('❌ Error al obtener prefijo del cliente:', err);
+    }
+  });
+}
+
+
+onTabChange(event: any): void {
+  if (event.index === 2) { // Índice del tab "Prefijos"
+    setTimeout(() => {
+      if (this.paginatorPrefijo && this.sortPrefijo) {
+        this.dataSourcePrefijo.paginator = this.paginatorPrefijo;
+        this.dataSourcePrefijo.sort = this.sortPrefijo;
+      }
+    }, 0);
+  }
+}
+
+abrirModalPrefijo(): void {
+  const dialogRef = this.dialog.open(DialogPrefijoComponent, {
+     width: '920px', // Aumenta el ancho del diálogo
+     
+      height: '60vh', // ✅ que use casi toda la pantalla
+      maxHeight: '60vh',
+    disableClose: true,
+    data: {
+      idCliente: this.idCliente, // ✅ aquí va tu parámetro
+      
+    },
+    panelClass: 'modal-superpuesto'
+  });
+
+  dialogRef.afterClosed().subscribe(resultado => {
+    if (resultado) {
+      console.log('Prefijo seleccionado:', resultado);
+      this.cargarPrefijoCliente(this.idCliente);// puedes usar resultado para otra lógica
+    }
+  });
+}
+
+abrirModalPrefijoEditar(codpre: string): void {
+  const dialogRef = this.dialog.open(DialogPrefijoEditarComponent, {
+    width: '800px',
+    height: '55vh',
+    maxHeight: '55vh',
+    disableClose: true,
+    data: {
+      codpre: codpre, // ✅ aquí va el valor correcto
+    },
+    panelClass: 'modal-superpuesto'
+  });
+
+  dialogRef.afterClosed().subscribe(resultado => {
+    if (resultado) {
+      console.log('Prefijo seleccionado:', resultado);
+      this.cargarPrefijoCliente(this.idCliente);
+    }
+  });
+}
+
+
+
 
 
 }

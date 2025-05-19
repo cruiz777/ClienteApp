@@ -1660,9 +1660,37 @@
   color: #363974 !important;
 }
 
+::ng-deep .mat-tab-group .mat-tab-label.mat-tab-label-active {
+  background-color: #4664b8; /* Cambia este color al que desees */
+}
+.mat-tab-group .mat-tab-header {
+  background-color: #e3edf7 !important;
+}
+
+.mat-tab-group .mat-tab-label.mat-tab-label-active {
+  background-color: #d6e4f5 !important;
+  color: #002c6c;
+  font-weight: bold;
+}
 .tabla-con-borde {
   border: 1px solid #dcdcdc;
   border-radius: 8px;
   padding: 1px;
   margin-top: 10px;
+}
+.navegacion-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding: 8px 0;
+  border-top: 1px solid #ccc;
+}
+
+.navegacion-controles button {
+  margin: 0 4px;
+}
+
+.botones-acciones button {
+  margin: 0 8px;
 }
