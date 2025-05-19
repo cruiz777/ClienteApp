@@ -90,5 +90,13 @@ obtenerPorClienteCodigo(clientesCodigo: number): Observable<PrefijoClienteRespon
   return this.http.put(`${this.apiBaseUrl}/Prefijos/${id}`, data);
 }
 
+obtenerDetallePrefijo(codpre: string): Observable<PrefijoClienteResponse[]> {
+  const url = `${this.apiBaseUrl}/Codpre?Codpre=${encodeURIComponent(codpre)}`;
+  return this.http.get<any>(url).pipe(
+    map(res => res.data as PrefijoClienteResponse[])
+  );
+}
+
+
 
 }

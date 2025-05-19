@@ -48,7 +48,7 @@ import { Inject } from '@angular/core';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 
 import { ModalImpresionComponent } from 'src/app/components/shared/modal-impresion/modal-impresion.component';
-
+import { DialogPrefijoEditarComponent } from '../dialog-prefijo-editar/dialog-prefijo-editar.component';
 const ELEMENT_DATA: HistorialClienteRequest[] = [
   {
     id_historial_cliente: 1,
@@ -135,17 +135,17 @@ export class DialogClienteEditarComponent implements OnInit {
   dataSourcePrefijo = new MatTableDataSource<PrefijoClienteResponse>();
   displayedPrefijoColumns: string[] = [
   'clientesCodigo',
-  'nomcli',
-  'ruccli',
-  'codpre',
+   'codpre',
   'gln',
   'fecha',
   'estado',
   'fechaCierre',
-  'tipoLocalizacion'
+  'tipoLocalizacion',
+  'observacion',
+  'accion'
 ];
 
-
+nombrecli:string='';
 
   prefijoCliente!: PrefijoClienteResponse;
 
@@ -203,6 +203,12 @@ export class DialogClienteEditarComponent implements OnInit {
     this.cargarHistorial(this.idCliente,'update','Clientes',1);
     this.cargarPrefijoCliente(this.idCliente);
     this.cargarClienteYGrupos(this.idCliente);
+    this.paso2Form.get('razonSocial')?.valueChanges.subscribe(valor => {
+  this.nombrecli = valor;
+});
+
+
+
     this.paso1Form.get('estadoEmpresa')?.valueChanges.subscribe(value => {
       this.paso2Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
       this.paso3Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
@@ -1396,10 +1402,10 @@ onTabChange(event: any): void {
 
 abrirModalPrefijo(): void {
   const dialogRef = this.dialog.open(DialogPrefijoComponent, {
-     width: '1200px', // Aumenta el ancho del diálogo
+     width: '920px', // Aumenta el ancho del diálogo
      
-      height: '100vh', // ✅ que use casi toda la pantalla
-      maxHeight: '100vh',
+      height: '60vh', // ✅ que use casi toda la pantalla
+      maxHeight: '60vh',
     disableClose: true,
     data: {
       idCliente: this.idCliente, // ✅ aquí va tu parámetro
@@ -1411,10 +1417,31 @@ abrirModalPrefijo(): void {
   dialogRef.afterClosed().subscribe(resultado => {
     if (resultado) {
       console.log('Prefijo seleccionado:', resultado);
-      // puedes usar resultado para otra lógica
+      this.cargarPrefijoCliente(this.idCliente);// puedes usar resultado para otra lógica
     }
   });
 }
+
+abrirModalPrefijoEditar(codpre: string): void {
+  const dialogRef = this.dialog.open(DialogPrefijoEditarComponent, {
+    width: '800px',
+    height: '55vh',
+    maxHeight: '55vh',
+    disableClose: true,
+    data: {
+      codpre: codpre, // ✅ aquí va el valor correcto
+    },
+    panelClass: 'modal-superpuesto'
+  });
+
+  dialogRef.afterClosed().subscribe(resultado => {
+    if (resultado) {
+      console.log('Prefijo seleccionado:', resultado);
+      this.cargarPrefijoCliente(this.idCliente);
+    }
+  });
+}
+
 
 
 

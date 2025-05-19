@@ -26,6 +26,7 @@ import { GrupoClienteFormComponent } from './clientes/grupo-clientes/grupo-clien
 import { TipoLocalizacionListComponent } from './configuracion/localizacion-establecimiento/localizacion-est-list/localizacion-est-list.component';
 import { TipoLocalizacionFormComponent } from './configuracion/localizacion-establecimiento/localizacion-est-form/localizacion-est-form.component';
 import { DialogPrefijoComponent } from './modals/dialog-prefijo/dialog-prefijo.component';
+import { DialogPrefijoEditarComponent } from './modals/dialog-prefijo-editar/dialog-prefijo-editar.component';
 @NgModule({
   declarations: [
     PagesComponent,
@@ -42,7 +43,8 @@ import { DialogPrefijoComponent } from './modals/dialog-prefijo/dialog-prefijo.c
     TipoLocalizacionListComponent,
     TipoLocalizacionFormComponent,
     CustomMessageBoxComponent,
-    DialogPrefijoComponent
+    DialogPrefijoComponent,
+    DialogPrefijoEditarComponent
 
   ],
   imports: [

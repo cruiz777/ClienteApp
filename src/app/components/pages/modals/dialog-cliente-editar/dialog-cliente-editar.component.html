@@ -1,3 +1,5 @@
+<h1 style="margin: 0; padding: 4px 0 0 10px; color: #002C6C;">{{ nombrecli }}</h1>
+
 <mat-dialog-content style="max-height: 105vh;" [class.disabled-content]="!modoEdicion">
   <mat-tab-group [(selectedIndex)]="selectedTab" dynamicHeight (selectedTabChange)="onTabChange($event)">
 
@@ -736,6 +738,9 @@
             <button mat-button (click)="abrirModalPrefijo()" class="new-button">
               Nuevo
             </button>
+            <button mat-button class="new-button">
+              Imprimir
+            </button>
           </div>
           <div class="tabla-con-borde">
             <table mat-table [dataSource]="dataSourcePrefijo" class="mat-elevation-z8"
@@ -746,15 +751,7 @@
                 <td mat-cell *matCellDef="let el" style="display: none;"> {{ el.clientesCodigo }} </td>
               </ng-container>
 
-              <ng-container matColumnDef="nomcli">
-                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Cliente </th>
-                <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.nomcli }} </td>
-              </ng-container>
-
-              <ng-container matColumnDef="ruccli">
-                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> RUC </th>
-                <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.ruccli }} </td>
-              </ng-container>
+              
 
               <ng-container matColumnDef="codpre">
                 <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;">Prefijo </th>
@@ -777,7 +774,7 @@
               </ng-container>
 
               <ng-container matColumnDef="fechaCierre">
-                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Cierre </th>
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;">F.Cierre </th>
                 <td mat-cell *matCellDef="let el" style="font-size: 11px;">
                   <ng-container *ngIf="el.fechaCierre && el.fechaCierre !== '0001-01-01T00:00:00'">
                     {{ el.fechaCierre | date: 'dd/MM/yyyy' }}
@@ -787,10 +784,22 @@
 
 
               <ng-container matColumnDef="tipoLocalizacion">
-                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> OBSERVACION </th>
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Tipo </th>
                 <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.tipoLocalizacion }} </td>
               </ng-container>
+              <ng-container matColumnDef="observacion">
+                <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Observación</th>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;"> {{ el.observacion }} </td>
+              </ng-container>
+              <ng-container matColumnDef="accion">
+          <th mat-header-cell *matHeaderCellDef style="width: 60px;background-color: #e3edf7;"> Acción </th>
+          <td mat-cell *matCellDef="let element">
+  <button mat-icon-button color="primary" (click)="abrirModalPrefijoEditar(element.codpre)">
+    <mat-icon>visibility</mat-icon>
+  </button>
+</td>
 
+        </ng-container>
               <tr mat-header-row *matHeaderRowDef="displayedPrefijoColumns"></tr>
               <tr mat-row *matRowDef="let row; columns: displayedPrefijoColumns;"></tr>
 
