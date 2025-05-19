@@ -9,6 +9,7 @@ export const environment = {
  applicationUrl: 'http://localhost:5001/security/api',  //Cambiar por la url de clientes en el merge
  clientsUrl: 'http://localhost:5001/clients/api'
 
+
 //nuevo apigateway
 
 

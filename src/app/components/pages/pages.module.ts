@@ -27,6 +27,9 @@ import { TipoLocalizacionListComponent } from './configuracion/localizacion-esta
 import { TipoLocalizacionFormComponent } from './configuracion/localizacion-establecimiento/localizacion-est-form/localizacion-est-form.component';
 import { DialogPrefijoComponent } from './modals/dialog-prefijo/dialog-prefijo.component';
 import { DialogPrefijoEditarComponent } from './modals/dialog-prefijo-editar/dialog-prefijo-editar.component';
+import { ValidacionSriListComponent } from './validacion/validador-sri/validador-sri-list/validador-sri-list.component';
+import { MatMenuModule } from '@angular/material/menu';
+
 @NgModule({
   declarations: [
     PagesComponent,
@@ -42,9 +45,10 @@ import { DialogPrefijoEditarComponent } from './modals/dialog-prefijo-editar/dia
     GrupoClienteFormComponent,
     TipoLocalizacionListComponent,
     TipoLocalizacionFormComponent,
-    CustomMessageBoxComponent,
     DialogPrefijoComponent,
     DialogPrefijoEditarComponent
+    ValidacionSriListComponent,
+    CustomMessageBoxComponent
 
   ],
   imports: [
@@ -54,6 +58,7 @@ import { DialogPrefijoEditarComponent } from './modals/dialog-prefijo-editar/dia
     LayoutModule,
     MatSidenavModule,
     MatToolbarModule,
+    MatMenuModule,
     MatListModule,
     MatIconModule,
     ReusableModule,

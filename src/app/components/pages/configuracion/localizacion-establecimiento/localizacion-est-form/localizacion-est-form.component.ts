@@ -73,7 +73,7 @@ export class TipoLocalizacionFormComponent implements OnInit {
 
     const payload: TipoLocalizacionRequest = {
       id_tipo_cliente: this.idTipoCliente ?? 0,
-      descripcion: this.form.value.descripcion,
+      descripcion: this.form.value.descripcion.trim(),
       estado: this.form.value.estado
     };
 
@@ -82,7 +82,19 @@ export class TipoLocalizacionFormComponent implements OnInit {
       : this.tipoLocalizacionService.create(payload);
 
     request$.subscribe({
-      next: () => {
+      next: (res) => {
+        // Validaciones de negocio del backend
+        if (!res.data) {
+          this.mostrarMensaje({
+            title: 'Advertencia',
+            message: res.message,
+            type: 'warning',
+            confirmText: 'Entendido',
+            showCancel: false
+          });
+          return;
+        }
+
         this.mostrarMensaje({
           title: 'Éxito',
           message: `Localización ${this.esEdicion ? 'actualizada' : 'creada'} correctamente.`,
@@ -102,6 +114,7 @@ export class TipoLocalizacionFormComponent implements OnInit {
       }
     });
   }
+
 
   cancelar(): void {
     this.router.navigate(['/menus/localizacion-establecimiento']);

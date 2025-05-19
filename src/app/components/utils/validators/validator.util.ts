@@ -18,6 +18,53 @@ export class CustomValidators {
     }
     return null;
   }
+  static onlyFormattedNumber(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+
+    if (value == null || value === '') return null;
+
+    const stringValue = value.toString().trim();
+
+    // Aceptar números con:
+    // - decimales (coma o punto)
+    // - separador de miles opcional
+    // Ejemplos válidos: 1,000.25 - 1.000,25 - 1234.56 - 1234,56 - 1234
+    const regex = /^(\d{1,3}([.,]?\d{3})*|\d+)([.,]\d{1,10})?$/;
+
+    if (!regex.test(stringValue)) {
+      return { onlyFormattedNumber: true };
+    }
+
+    // Normalización: quitar separadores de miles, usar punto como decimal
+    const normalized = stringValue
+      .replace(/\.(?=\d{3}(?:[.,]|$))/g, '') // elimina puntos de miles
+      .replace(/,(?=\d{3}(?:[.,]|$))/g, '')  // elimina comas de miles
+      .replace(',', '.'); // reemplaza coma decimal por punto
+
+    const parsed = parseFloat(normalized);
+
+    return isNaN(parsed) ? { onlyFormattedNumber: true } : null;
+  }
+
+  static alphanumericMaxLength(maxLength: number): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value = control.value;
+      if (!value) return null;
+
+      const regex = /^[a-zA-Z0-9]*$/;
+
+      if (!regex.test(value)) {
+        return { alphanumeric: true };
+      }
+
+      if (value.length > maxLength) {
+        return { maxLength: true };
+      }
+
+      return null;
+    };
+  }
+
   static onlyLettersKeyPress(event: KeyboardEvent): void {
     const regex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]*$/;
     const inputChar = event.key;
