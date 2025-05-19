@@ -78,6 +78,7 @@ export class PerfilesListComponent implements OnInit {
     this.perfilSeleccionado = idPerfil;
     this.menus = [];
     this.opcionnes = [];
+
   }
 
   seleccionarModulo(idModulo: number): void {

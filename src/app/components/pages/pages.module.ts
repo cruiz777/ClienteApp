@@ -46,10 +46,9 @@ import { MatMenuModule } from '@angular/material/menu';
     TipoLocalizacionListComponent,
     TipoLocalizacionFormComponent,
     DialogPrefijoComponent,
-    DialogPrefijoEditarComponent
+    DialogPrefijoEditarComponent,
     ValidacionSriListComponent,
     CustomMessageBoxComponent
-
   ],
   imports: [
     CommonModule,
