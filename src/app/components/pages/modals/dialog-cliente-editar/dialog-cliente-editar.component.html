@@ -128,9 +128,9 @@
                   <label class="form-label">Fecha Ingreso:</label>
                   <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
                   <label class="form-label">Fecha Modificación:</label>
-                  <input style="border: none;" matInput formControlName="fechaMod" type="date" readonly />
+                  <input style="border: none;" matInput formControlName="fechaMod" type="date" readonly [disabled]="!paso1Form.get('fechaMod')?.value" />
                   <label class="form-label">Usuario Modificado:</label>
-                  <input style="border: none;" matInput formControlName="usuarioMod" type="text" readonly />
+                  <input style="border: none;" matInput formControlName="usuarioMod" type="text" readonly [disabled]="!paso1Form.get('usuarioMod')?.value" />
 
 
                   <div>
@@ -233,7 +233,7 @@
                       </mat-error>
                     </mat-form-field>
                     <label style="color: #002c6c;font-size: 13px;"><span style="color: red;">*</span>Ciudad : </label>
-                    <mat-form-field class="full-width" style="font-size: 12px; height: 60px;width:650px;">
+                    <mat-form-field class="full-width" style="font-size: 12px; height: 60px;width:640px;">
                       <input matInput formControlName="ciudad" [matAutocomplete]="autoCiudad"
                         placeholder="Seleccione Ciudad" autocomplete="off">
 
@@ -298,8 +298,8 @@
 
                   <div class="form-row">
                     <label style="color: #002c6c; font-size: 12px;">Usuario:</label>
-                    <input type="text" class="underline-input" formControlName="usuario" readonly
-                      value="{{ usuarioActual?.usr }}" />
+                    <input type="text" class="underline-input" formControlName="usuario1" readonly
+                       />
                   </div>
 
                   <div class="form-row">
@@ -311,15 +311,28 @@
 
 
                 </div>
+                <section class="export-questions-section" style="padding-bottom: 16px;">
+                    <div class="questions-container">
+                      <div class="form-label">
+                        <div>
+                          <label style="color: #002c6c; font-size: 13px;">Facturación en Bloque:  </label> 
+                          <input type="checkbox" id="chk-compra" formControlName="compra" />
+                          <label for="chk-compra">Orden de Compra</label>
+                          <input type="checkbox" id="chk-prefijo" formControlName="nprefijo" />
+                          <label for="chk-prefijo">Prefijos</label>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
                 <div style="background-color: #eef4f7;">
                   <label class="form-label">Fecha Ingreso:</label>
                   <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
                   <label class="form-label">Fecha Modificación:</label>
-                  <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                 <input style="border: none;" matInput formControlName="fechaMod" type="date" readonly [disabled]="!paso1Form.get('fechaMod')?.value" />
                   <label class="form-label">Usuario Modificado:</label>
-                  <input style="border: none;" matInput formControlName="fechaIng" type="text" readonly />
+                  <input style="border: none;" matInput formControlName="usuarioMod" type="text" readonly [disabled]="!paso1Form.get('usuarioMod')?.value" />
 
-
+                  
                   <div>
                     <div>
 
@@ -492,15 +505,15 @@
                             ¿Cómo se entero de GS1 Ecuador?
                           </label>
 
-                          <input type="checkbox" />
-                          <label for="prefix-5">Página Web</label>
                           <input type="checkbox" formControlName="pregunta4" />
-                          <label for="prefix-5" class="checkbox-label">Instagram</label>
+                          <label for="prefix-5">Página Web</label>
                           <input type="checkbox" formControlName="pregunta5" />
-                          <label for="prefix-5" class="checkbox-label">Facebook</label>
+                          <label for="prefix-5" class="checkbox-label">Instagram</label>
                           <input type="checkbox" formControlName="pregunta6" />
+                          <label for="prefix-5" class="checkbox-label">Facebook</label>
+                          <input type="checkbox" formControlName="pregunta7" />
                           <label for="prefix-5">Un conocido</label>
-
+                          
 
                         </div>
                       </div>
@@ -508,10 +521,9 @@
                     <div style="background-color: #eef4f7;">
                       <label class="form-label">Fecha Ingreso:</label>
                       <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
-                      <label class="form-label">Fecha Modificación:</label>
-                      <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
-                      <label class="form-label">Usuario Modificado:</label>
-                      <input style="border: none;" matInput formControlName="fechaIng" type="text" readonly />
+                      <input style="border: none;" matInput formControlName="fechaMod" type="date" readonly [disabled]="!paso1Form.get('fechaMod')?.value" />
+                  <label class="form-label">Usuario Modificado:</label>
+                  <input style="border: none;" matInput formControlName="usuarioMod" type="text" readonly [disabled]="!paso1Form.get('usuarioMod')?.value" />
 
 
                       <div>
@@ -567,10 +579,10 @@
                     <div class="form-row">
                       <label class="form-label">Usuario:</label>
 
-                      <input type="text" class="underline-input" readonly value="{{ usuarioActual?.usr }}" />
+                      <input type="text" class="underline-input" readonly formControlName="usuario2" />
                       <label class="form-label">Fecha:</label>
 
-                      <input type="text" class="underline-input" readonly [value]="fecha | date:'dd/MM/yyyy'" />
+                      <input type="text" class="underline-input" readonly formControlName="fecha2" />
                     </div>
                     <div class="form-row">
                       <label style="color: #002c6c;font-size: 12px;">Observaciones 2:</label>
@@ -586,10 +598,10 @@
                     <div class="form-row">
                       <label class="form-label">Usuario:</label>
 
-                      <input type="text" class="underline-input" readonly value="{{ usuarioActual?.usr }}" />
+                      <input type="text" class="underline-input" readonly formControlName="usuario3"/>
                       <label class="form-label">Fecha:</label>
 
-                      <input type="text" class="underline-input" readonly [value]="fecha | date:'dd/MM/yyyy'" />
+                      <input type="text" class="underline-input" readonly formControlName="fecha3" />
                     </div>
 
 
@@ -608,10 +620,10 @@
                     <div class="form-row">
                       <label class="form-label">Usuario:</label>
 
-                      <input type="text" class="underline-input" readonly value="{{ usuarioActual?.usr }}" />
+                      <input type="text" class="underline-input" readonly formControlName="usuario4" />
                       <label class="form-label">Fecha:</label>
 
-                      <input type="text" class="underline-input" readonly [value]="fecha | date:'dd/MM/yyyy'" />
+                      <input type="text" class="underline-input" readonly formControlName="fecha4" />
                     </div>
 
                     <div class="form-row">
@@ -628,9 +640,9 @@
                   <label class="form-label">Fecha Ingreso:</label>
                   <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
                   <label class="form-label">Fecha Modificación:</label>
-                  <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
+                  <input style="border: none;" matInput formControlName="fechaMod" type="date" readonly [disabled]="!paso1Form.get('fechaMod')?.value" />
                   <label class="form-label">Usuario Modificado:</label>
-                  <input style="border: none;" matInput formControlName="fechaIng" type="text" readonly />
+                  <input style="border: none;" matInput formControlName="usuarioMod" type="text" readonly [disabled]="!paso1Form.get('usuarioMod')?.value" />
 
 
                   <div>
@@ -821,7 +833,7 @@
     <img src="assets/icons/icon-modificar.png" alt="Modificar" width="18" height="18" style="margin-right: 6px;" />
     Modificar
   </button>
-  <button mat-button (click)="abrirModalImpresion()">
+  <button mat-button >
     <img src="assets/icons/icon-imprimir.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
     Imprimir
   </button>

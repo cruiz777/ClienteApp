@@ -48,9 +48,8 @@ import { CedulaService } from 'src/app/services/cedula.service';
 import { GenerarglnService } from 'src/app/services/generargln.service';
 import { GlnService, GlnRequest } from 'src/app/services/gln.service';
 import { PaisService, Pais } from 'src/app/services/pais.service';
-
-
-
+import { ClienteObservacionService,ClienteObservacion } from 'src/app/services/cliente-observacion.service';
+import { ClienteDatosAdicionalesService,ClienteDatosAdicionales } from 'src/app/services/cliente-datos-adicionales.service';
 @Component({
   selector: 'app-dialog-cliente',
   templateUrl: './dialog-cliente.component.html',
@@ -60,6 +59,7 @@ export class DialogClienteComponent implements OnInit {
   formCliente!: FormGroup;
   selectedTab: number = 0;
   @ViewChild('stepper') stepper!: MatStepper;
+ 
 
   grupos: GrupoEmpresa[] = [];
   grupoCtrl = new FormControl('');
@@ -88,7 +88,8 @@ export class DialogClienteComponent implements OnInit {
   nombreCiudadSeleccionada: string = '';
   esPasaporte = false;
   tipoIdentificacion: 'CEDULA' | 'RUC' | 'PASAPORTE' | null = null;
-  usuarioActual: { id: number; usr: string } | null = null;
+  usuarioActual = this.usuarioService.getUsuarioActual();
+
 
   zona: Zona[] = [];
   zonaCtrl = new FormControl('');
@@ -133,12 +134,17 @@ export class DialogClienteComponent implements OnInit {
     private generarglnService: GenerarglnService,
     private glnService: GlnService,
     private dialog: MatDialog,
-    private paisService: PaisService
+    private paisService: PaisService,
+    private clienteObservacionService: ClienteObservacionService,
+    private clienteDatosAdicionalesService: ClienteDatosAdicionalesService
   ) { }
 
   ngOnInit(): void {
+    console.log('----Usuario---');
+    this.usuarioActual = this.usuarioService.getUsuarioActual();
 
-
+    
+    
     this.initFormulario();
 
     //this.obtenerUsuarioActual();
@@ -187,7 +193,9 @@ export class DialogClienteComponent implements OnInit {
         sitioWeb: [''],
         telefono2: [''],
         usuario: [{ value: '', disabled: true }],
-        observacion1: ['']
+        observacion1: [''],
+        nprefijo:[false],
+        compra:[false]
       }),
 
       paso3: this.fb.group({
@@ -208,7 +216,8 @@ export class DialogClienteComponent implements OnInit {
         pregunta3: [false],
         pregunta4: [false],
         pregunta5: [false],
-        pregunta6: [false]
+        pregunta6: [false],
+        pregunta7: [false]
       }),
 
       paso4: this.fb.group({
@@ -626,11 +635,11 @@ export class DialogClienteComponent implements OnInit {
       saldo: 0,
       fecfac: '',
       ciudad: ciudadNombre || '',
-      obs: paso2.observacion1 || '',
+      obs:  '', ///obs: paso2.observacion1 || '',
       delestado: 0,
       genero: '',
       infcamahabitacion: '',
-      empresaCodigo: 1,
+      empresaCodigo: this.usuarioActual?.IdEmpresa,
       seguimiento: 0,
       fechaactinact: '2025-04-23',
       idEstadoEmpresa: 1,
@@ -666,6 +675,8 @@ export class DialogClienteComponent implements OnInit {
               });
 
               this.guardarPrefijo();
+              this.guardarTodasLasObservaciones();
+              this.guardarDatosAdicionales();
               stepper.selectedIndex = 0;
             }
           },
@@ -832,7 +843,7 @@ export class DialogClienteComponent implements OnInit {
             codpre: prefijo,
             fecha: new Date().toISOString().split('T')[0],
             fechaCierre: new Date().toISOString().split('T')[0],
-            observacion: 'Prefijo generado automáticamente',
+            observacion: '',
             digitos: prefijo.length.toString(),
             estado: false,
             control: 0,
@@ -1339,7 +1350,8 @@ export class DialogClienteComponent implements OnInit {
           latiM: '',
           latiS: '',
           latiE: '',
-          idUsuario: 2
+          idUsuario: this.usuarioActual!.IdUsuario
+
         };
 
         this.glnService.insertarGln({ request: nuevoGln }).subscribe({
@@ -1509,6 +1521,90 @@ export class DialogClienteComponent implements OnInit {
   }
 
 
+guardarTodasLasObservaciones(): void {
+  const paso1 = this.paso1Form.value;
+  const paso2 = this.paso2Form.value;
+  const paso4 = this.paso4Form.value;
+
+  const fechaActual = new Date().toISOString();
+
+  const idUsuario = this.usuarioActual?.IdUsuario || 0;
+  const nombreUsuario = this.usuarioActual?.NombreUsuario || '';
+  const clientesCodigo = paso1.codigoCliente || 0;
+
+  const observaciones: ClienteObservacion[] = [
+    {
+      id_ClienteObservacion: 0,
+      Detalle: (paso2.observacion1 || '').trim(),
+      fecha: fechaActual,
+      idUsuario,
+      clientesCodigo,
+      nombreUsuario,
+      linea: 1
+    },
+    {
+      id_ClienteObservacion: 0,
+      Detalle: (paso4.observacion2 || '').trim(),
+      fecha: fechaActual,
+      idUsuario,
+      clientesCodigo,
+      nombreUsuario,
+      linea: 2
+    },
+    {
+      id_ClienteObservacion: 0,
+      Detalle: (paso4.observacion3 || '').trim(),
+      fecha: fechaActual,
+      idUsuario,
+      clientesCodigo,
+      nombreUsuario,
+      linea: 3
+    },
+    {
+      id_ClienteObservacion: 0,
+      Detalle: (paso4.observacion4 || '').trim(),
+      fecha: fechaActual,
+      idUsuario,
+      clientesCodigo,
+      nombreUsuario,
+      linea: 4
+    }
+  ];
+
+  observaciones.forEach(obs => {
+    this.clienteObservacionService.enviarObservacion(obs).subscribe({
+      next: () => console.log(`✅ Observación línea ${obs.linea} enviada`),
+      error: err => console.error(`❌ Error en línea ${obs.linea}:`, err)
+    });
+  });
+}
+
+guardarDatosAdicionales(): void {
+  const paso1 = this.paso1Form.value;
+  const paso2 = this.paso2Form.value;
+  const paso3 = this.paso3Form.value;
+  const clientesCodigo = paso1.codigoCliente || 0;
+  const datosAdicionales = {
+    idDatosAdicionales: 0,
+    expprod: paso3.pregunta1 || false,
+    vendeus: paso3.pregunta2 || false,
+    medico: paso3.pregunta3 || false,
+    gs1ec: paso3.pregunta4 || false,
+    instagram: paso3.pregunta5 || false,
+    facebook: paso3.pregunta6 || false,
+    web: paso3.pregunta7 || false,
+    clientes_codigo: clientesCodigo,
+    prefijo: paso2.nprefijo || false,
+    guia: paso2.compra || false,
+    estado: true
+  };
+  debugger
+  console.log(datosAdicionales);
+  this.clienteDatosAdicionalesService.crear(datosAdicionales).subscribe({
+    next: () => console.log('✅ Datos creados correctamente'),
+    error: (err) => console.error('❌ Error al crear datos adicionales:', err)
+  });
+}
 
 
 }

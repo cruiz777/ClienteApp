@@ -61,23 +61,32 @@ togglePasswordVisibility(): void {
 
     this.usuarioService.login(email, password).subscribe({
       next: (user: Usuario) => {
-        console.log('Login exitoso. Usuario:', user);
+  console.log('Login exitoso. Usuario:', user);
 
-        const data: MessageBoxData = {
-          title: 'Inicio de sesión exitoso',
-          message: `Bienvenido`,
-          type: 'success',
-          confirmText: 'Continuar',
-          showCancel: false
-        };
+  // ⬇ Recuperar desde localStorage (opcional, ya tienes "user" directamente)
+  const storedUser = localStorage.getItem('currentUser');
+  if (storedUser) {
+    const usuarioLocal: Usuario = JSON.parse(storedUser);
+    console.log('Usuario desde localStorage:', usuarioLocal);
+    // Puedes acceder: usuarioLocal.id_usuario, usuarioLocal.nombre_usuario, etc.
+  }
 
-        this.dialog.open(CustomMessageBoxComponent, {
-          width: '400px',
-          data
-        }).afterClosed().subscribe(() => {
-          this.router.navigateByUrl('/inicio');
-        });
-      },
+  const data: MessageBoxData = {
+    title: 'Inicio de sesión exitoso',
+    message: `Bienvenido`,
+    type: 'success',
+    confirmText: 'Continuar',
+    showCancel: false
+  };
+
+  this.dialog.open(CustomMessageBoxComponent, {
+    width: '400px',
+    data
+  }).afterClosed().subscribe(() => {
+    this.router.navigateByUrl('/inicio');
+  });
+}
+,
       error: (error: any) => {
         console.error('Error en login:', error);
 

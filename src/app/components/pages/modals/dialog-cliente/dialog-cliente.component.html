@@ -158,7 +158,8 @@
 
                     <!-- Campo de prefijo con limpieza y validación -->
                     <input matInput formControlName="prefijo" [readonly]="!modificarSecuencia"
-                      (input)="limpiarPrefijo()" (blur)="validarPrefijoExistente()" maxlength="10" autocomplete="off" [ngClass]="{ 'input-verde': campoGlnVerde }" />
+                      (input)="limpiarPrefijo()" (blur)="validarPrefijoExistente()" maxlength="10" autocomplete="off"
+                      [ngClass]="{ 'input-verde': campoGlnVerde }" />
 
 
 
@@ -177,7 +178,8 @@
 
                     <label class="form-label">Prefijo GS1:</label>
 
-                    <input type="text" class="underline-input" readonly formControlName="prefijogs1" [ngClass]="{ 'input-verde': campoGlnVerde }" />
+                    <input type="text" class="underline-input" readonly formControlName="prefijogs1"
+                      [ngClass]="{ 'input-verde': campoGlnVerde }" />
                   </div>
                   <div class="form-row">
 
@@ -190,7 +192,8 @@
                       [ngClass]="{ 'input-verde': campoGlnVerde }" />
                     <label class="form-label">Origen Prefijo:</label>
 
-                    <input type="text" class="text-input" class="underline-input" readonly formControlName="origen" [ngClass]="{ 'input-verde': campoGlnVerde }" />
+                    <input type="text" class="text-input" class="underline-input" readonly formControlName="origen"
+                      [ngClass]="{ 'input-verde': campoGlnVerde }" />
                   </div>
                   <div class="form-row">
 
@@ -220,7 +223,7 @@
                         <div class="info-item">
                           <label class="form-label">Usuario modificado:</label>
                           <div class="input-field">
-                            <div>{{ usuarioActual?.usr }}</div>
+                            <div>{{ this.usuarioActual?.NombreUsuario }}</div>
 
                           </div>
                         </div>
@@ -302,8 +305,8 @@
                   <div style="padding-top: 0px; padding-bottom: 0px;">
                     <label style="color: #002c6c;font-size: 13px;"><span style="color: red;">*</span>País : </label>
                     <mat-form-field class="full-width" style="font-size: 12px; height: 60px;width:210px;">
-                      <input matInput formControlName="pais" [matAutocomplete]="autoPais"
-                        placeholder="Seleccione Pais" autocomplete="off">
+                      <input matInput formControlName="pais" [matAutocomplete]="autoPais" placeholder="Seleccione Pais"
+                        autocomplete="off">
 
                       <button matSuffix mat-icon-button aria-label="Limpiar" *ngIf="paso2Form.get('pais')?.value"
                         (click)="limpiarPais()">
@@ -316,8 +319,7 @@
                           {{ pais.codigoArea }} - {{ pais.nombre }}
                         </mat-option>
                       </mat-autocomplete>
-                      <mat-error
-                        *ngIf="paso2Form.get('pais')?.hasError('required') && paso2Form.get('pais')?.touched"
+                      <mat-error *ngIf="paso2Form.get('pais')?.hasError('required') && paso2Form.get('pais')?.touched"
                         style="color: red; font-size: 12px;">
                         Este campo es obligatorio.
                       </mat-error>
@@ -381,14 +383,27 @@
                       placeholder="https://gs1ec.org" autocomplete="off" />
 
                     <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">Teléfono 2:</label>
-                    {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2" maxlength="9"
-                      placeholder="999999999" autocomplete="off" />
+                    {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2"
+                      maxlength="9" placeholder="999999999" autocomplete="off" />
                   </div>
+                  <section class="export-questions-section" style="padding-bottom: 16px;">
+                    <div class="questions-container">
+                      <div class="form-label">
+                        <div>
+                          <label style="color: #002c6c; font-size: 13px;">Facturación en Bloque:  </label> 
+                          <input type="checkbox" id="chk-compra" formControlName="compra" />
+                          <label for="chk-compra">Orden de Compra</label>
+                          <input type="checkbox" id="chk-prefijo" formControlName="nprefijo" />
+                          <label for="chk-prefijo">Prefijos</label>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
 
                   <div class="form-row">
                     <label style="color: #002c6c; font-size: 12px;">Usuario:</label>
                     <input type="text" class="underline-input" formControlName="usuario" readonly
-                      value="{{ usuarioActual?.usr }}" />
+                      value=" {{ this.usuarioActual?.NombreUsuario }}" />
                   </div>
 
                   <div class="form-row">
@@ -444,8 +459,9 @@
                         </div>
                         <label style="color: #002c6c; font-size: 12px;"><span style="color: red;">*</span>Tel.o
                           Cel:</label>
-                        {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefonoRepresentante"
-                          maxlength="9" placeholder="999999999" autocomplete="off" />
+                        {{ codigoAreaE }}<input type="text" class="underline-input"
+                          formControlName="telefonoRepresentante" maxlength="9" placeholder="999999999"
+                          autocomplete="off" />
                         <mat-error
                           *ngIf="paso3Form.get('telefonoRepresentante')?.hasError('required') && paso3Form.get('telefonoRepresentante')?.touched"
                           style="color: red; font-size: 12px;">
@@ -472,8 +488,8 @@
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
                       <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
-                      {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono" maxlength="9"
-                        autocomplete="off" placeholder="999999999" />
+                      {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono"
+                        maxlength="9" autocomplete="off" placeholder="999999999" />
                     </div>
                     <div class="form-row">
 
@@ -510,8 +526,8 @@
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
                       <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
-                      {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2" maxlength="9"
-                        placeholder="999999999" autocomplete="off" />
+                      {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2"
+                        maxlength="9" placeholder="999999999" autocomplete="off" />
                     </div>
 
 
@@ -542,13 +558,13 @@
                             ¿Cómo se entero de GS1 Ecuador?
                           </label>
 
-                          <input type="checkbox" />
+                          <input type="checkbox" formControlName="pregunta4"/>
                           <label for="prefix-5">Página Web</label>
-                          <input type="checkbox" formControlName="pregunta4" />
-                          <label for="prefix-5" class="checkbox-label">Instagram</label>
                           <input type="checkbox" formControlName="pregunta5" />
-                          <label for="prefix-5" class="checkbox-label">Facebook</label>
+                          <label for="prefix-5" class="checkbox-label">Instagram</label>
                           <input type="checkbox" formControlName="pregunta6" />
+                          <label for="prefix-5" class="checkbox-label">Facebook</label>
+                          <input type="checkbox" formControlName="pregunta7" />
                           <label for="prefix-5">Un conocido</label>
 
 
@@ -580,7 +596,8 @@
                     <div class="form-row">
                       <label class="form-label">Usuario:</label>
 
-                      <input type="text" class="underline-input" readonly value="{{ usuarioActual?.usr }}" />
+                      <input type="text" class="underline-input" readonly
+                        value="{{ this.usuarioActual?.NombreUsuario }}" />
                       <label class="form-label">Fecha:</label>
 
                       <input type="text" class="underline-input" readonly [value]="fecha | date:'dd/MM/yyyy'" />
@@ -599,7 +616,8 @@
                     <div class="form-row">
                       <label class="form-label">Usuario:</label>
 
-                      <input type="text" class="underline-input" readonly value="{{ usuarioActual?.usr }}" />
+                      <input type="text" class="underline-input" readonly
+                        value="{{ this.usuarioActual?.NombreUsuario }}" />
                       <label class="form-label">Fecha:</label>
 
                       <input type="text" class="underline-input" readonly [value]="fecha | date:'dd/MM/yyyy'" />
@@ -621,7 +639,7 @@
                     <div class="form-row">
                       <label class="form-label">Usuario:</label>
 
-                      <input type="text" class="underline-input" readonly value="{{ usuarioActual?.usr }}" />
+                      <input type="text" class="underline-input" readonly />
                       <label class="form-label">Fecha:</label>
 
                       <input type="text" class="underline-input" readonly [value]="fecha | date:'dd/MM/yyyy'" />
