@@ -123,7 +123,22 @@ export class DepartamentosFormComponent implements OnInit {
       : this.departamentoService.createDepartamento(formValue);
 
     request$.subscribe({
-      next: () => {
+      next: (res) => {
+        // Validación desde backend: status false
+        if (!res.data) {
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '400px',
+            data: {
+              title: 'Error',
+              message: res.message,
+              type: 'error',
+              confirmText: 'Aceptar',
+              showCancel: false
+            }
+          });
+          return;
+        }
+        // Éxito
         const msg = this.modoEdicion ? 'actualizado' : 'creado';
         this.dialog.open(CustomMessageBoxComponent, {
           width: '400px',
@@ -139,6 +154,7 @@ export class DepartamentosFormComponent implements OnInit {
       error: () => this.mostrarMensajeError('Ocurrió un error al guardar el departamento.')
     });
   }
+
 
   cancelar(): void {
     this.departamentoForm.reset({ estado: true });

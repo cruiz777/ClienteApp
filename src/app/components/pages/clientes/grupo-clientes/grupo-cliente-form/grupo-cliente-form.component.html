@@ -12,47 +12,48 @@
         </div>
         <div *ngIf="formulario.get('codigo')?.touched && formulario.get('codigo')?.invalid" class="error-message">
           <small *ngIf="formulario.get('codigo')?.errors?.['required']">El código es obligatorio.</small>
-          <small *ngIf="formulario.get('codigo')?.errors?.['onlyLetters']">Solo se permiten letras.</small>
+          <small *ngIf="formulario.get('codigo')?.errors?.['alphanumeric']">Solo se permiten letras y números.</small>
+          <small *ngIf="formulario.get('codigo')?.errors?.['maxLength']">Máximo 4 caracteres.</small>
         </div>
 
         <!-- Inscripción -->
         <div class="form-field">
           <label class="field-label required">Inscripción:</label>
-          <input type="number" formControlName="inscripcion" class="field-input" />
+          <input type="text" formControlName="inscripcion" class="field-input" />
         </div>
         <div *ngIf="formulario.get('inscripcion')?.touched && formulario.get('inscripcion')?.invalid" class="error-message">
           <small *ngIf="formulario.get('inscripcion')?.errors?.['required']">La inscripción es obligatoria.</small>
-          <small *ngIf="formulario.get('inscripcion')?.errors?.['onlyNumbers']">Solo se permiten números.</small>
+          <small *ngIf="formulario.get('inscripcion')?.errors?.['onlyFormattedNumber']">Formato inválido (usa punto o coma para decimales).</small>
         </div>
 
         <!-- Mantenimiento -->
         <div class="form-field">
           <label class="field-label required">Mantenimiento:</label>
-          <input type="number" formControlName="mantenimiento" class="field-input" />
+          <input type="text" formControlName="mantenimiento" class="field-input" />
         </div>
         <div *ngIf="formulario.get('mantenimiento')?.touched && formulario.get('mantenimiento')?.invalid" class="error-message">
           <small *ngIf="formulario.get('mantenimiento')?.errors?.['required']">El mantenimiento es obligatorio.</small>
-          <small *ngIf="formulario.get('mantenimiento')?.errors?.['onlyNumbers']">Solo se permiten números.</small>
+          <small *ngIf="formulario.get('mantenimiento')?.errors?.['onlyFormattedNumber']">Número inválido.</small>
         </div>
 
         <!-- Asignación -->
         <div class="form-field">
           <label class="field-label required">Asignación:</label>
-          <input type="number" formControlName="asignacion" class="field-input" />
+          <input type="text" formControlName="asignacion" class="field-input" />
         </div>
         <div *ngIf="formulario.get('asignacion')?.touched && formulario.get('asignacion')?.invalid" class="error-message">
           <small *ngIf="formulario.get('asignacion')?.errors?.['required']">La asignación es obligatoria.</small>
-          <small *ngIf="formulario.get('asignacion')?.errors?.['onlyNumbers']">Solo se permiten números.</small>
+          <small *ngIf="formulario.get('asignacion')?.errors?.['onlyFormattedNumber']">Número inválido.</small>
         </div>
 
         <!-- Valor Anual -->
         <div class="form-field">
           <label class="field-label required">Valor Anual:</label>
-          <input type="number" formControlName="valorAnual" class="field-input" />
+          <input type="text" formControlName="valorAnual" class="field-input" />
         </div>
         <div *ngIf="formulario.get('valorAnual')?.touched && formulario.get('valorAnual')?.invalid" class="error-message">
           <small *ngIf="formulario.get('valorAnual')?.errors?.['required']">El valor anual es obligatorio.</small>
-          <small *ngIf="formulario.get('valorAnual')?.errors?.['onlyNumbers']">Solo se permiten números.</small>
+          <small *ngIf="formulario.get('valorAnual')?.errors?.['onlyFormattedNumber']">Número inválido.</small>
         </div>
 
         <!-- Fecha -->

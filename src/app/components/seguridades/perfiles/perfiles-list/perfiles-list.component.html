@@ -37,13 +37,18 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let modulo of modulos" [class.fila-activa]="modulo.id_modulo === moduloSeleccionado"
-            (click)="seleccionarModulo(modulo.id_modulo)" style="cursor: pointer;">
+          <tr *ngFor="let modulo of modulos" [class.fila-activa]="modulo.id_modulo === moduloSeleccionado">
             <td class="ocultar-id">{{ modulo.id_modulo }}</td>
-            <td>{{ modulo.nombre }}</td>
-            <td class="col-reducida"><input type="checkbox" /></td>
+            <td (click)="seleccionarModulo(modulo.id_modulo)" style="cursor: pointer;">
+              {{ modulo.nombre }}
+            </td>
+            <td class="col-reducida">
+              <input type="checkbox" [checked]="esModuloCompletamenteAsignado(modulo.id_modulo)"
+                (change)="detenerYAplicarCambioModulo($event, modulo.id_modulo)" />
+            </td>
           </tr>
         </tbody>
+
       </table>
     </div>
 

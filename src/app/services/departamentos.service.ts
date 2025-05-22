@@ -4,6 +4,7 @@ import { DepartamentoResponse } from '../interfaces/responses/departamentos-resp
 import { Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { DepartamentoRequest } from '../interfaces/requests/departamento-request';
+import { ApiResponse } from '../interfaces/responses/api-response';
 
 @Injectable({ providedIn: 'root' })
 export class DepartamentosService {
@@ -20,12 +21,12 @@ export class DepartamentosService {
   softDeleteDepartamento(id: number): Observable<void> {
     return this.http.delete<void>(`${this.url}/${id}`);
   }
-  createDepartamento(payload: DepartamentoRequest): Observable<DepartamentoResponse> {
-    return this.http.post<DepartamentoResponse>(this.url, payload);
+  createDepartamento(payload: DepartamentoRequest): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(this.url, payload);
   }
 
-  updateDepartamento(id: number, payload: DepartamentoRequest): Observable<DepartamentoResponse> {
-    return this.http.put<DepartamentoResponse>(`${this.url}/${id}`, payload);
+  updateDepartamento(id: number, payload: DepartamentoRequest): Observable<ApiResponse<boolean>> {
+    return this.http.put<ApiResponse<boolean>>(`${this.url}/${id}`, payload);
   }
 
   getDepartamentoById(id: number): Observable<DepartamentoResponse> {

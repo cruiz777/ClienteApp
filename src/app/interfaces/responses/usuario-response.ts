@@ -1,7 +1,11 @@
-export interface Usuario{
-  IdUsuario:number;
-  NombreUsuario:string;
-  ContraseniaHash:string;
-  IdDepartamento:number;
-  Deparatemento:string;
+export interface Usuario {
+  IdUsuario: number;
+  NombreUsuario: string;
+  IdDepartamento: number;
+  Departamento: string;
+  IdPerfil: number;
+  Perfil: string;
+  IdEmpresa: number;
+  Empresa: string;
+  Estado: boolean;
 }
