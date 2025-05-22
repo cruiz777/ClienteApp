@@ -47,7 +47,7 @@ const routes: Routes = [
       {path:'tras-gtin',component:TraspasoGtinComponent},
       {path:'eliminar-prefijo',component:BorrarPrefijoComponent},
       {path:'tipo-prefijo',component:TipoPrefijoComponent},
-      
+
     ]
   }
   ];
