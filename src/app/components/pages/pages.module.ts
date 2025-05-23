@@ -1,4 +1,4 @@
-import { NgModule } from '@angular/core';
+import { NgModule, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { PagesRoutingModule } from './pages-routing.module';
@@ -34,6 +34,7 @@ import { MatMenuModule } from '@angular/material/menu';
   declarations: [
     PagesComponent,
     NavigationComponent,
+
     DashboardComponent,
     ClientesComponent,
     DialogClienteComponent,
