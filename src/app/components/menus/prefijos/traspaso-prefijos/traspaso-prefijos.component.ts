@@ -2,11 +2,17 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { ClienteService } from 'src/app/services/cliente.service';
 import { ClienteSummary } from 'src/app/interfaces/responses/cliente-summary-response';
+import { FormControl } from '@angular/forms';
+import { ReactiveFormsModule } from '@angular/forms';
+import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
+import { of } from 'rxjs';
+
 
 @Component({
   selector: 'app-traspaso-prefijos',
@@ -14,10 +20,12 @@ import { ClienteSummary } from 'src/app/interfaces/responses/cliente-summary-res
   imports: [
     CommonModule,
     FormsModule,
+    ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
     MatMenuModule,
     MatButtonModule,
+    MatAutocompleteModule
 
   ],
   templateUrl: './traspaso-prefijos.component.html',
@@ -25,15 +33,13 @@ import { ClienteSummary } from 'src/app/interfaces/responses/cliente-summary-res
 })
 export class TraspasoPrefijosComponent {
 
-
-
   activeTab: string = 'Transferir';
   filtroBusqueda: string = '';
   filtroCliente: string = '';
   botonActivo: string = '';
 
-  clienteSummaryRespose: ClienteSummary[] = [];
-
+  clienteControl = new FormControl('');
+  clientesFiltrados: ClienteSummary[] = [];
 
   constructor(
     private clienteService: ClienteService
@@ -77,7 +83,23 @@ export class TraspasoPrefijosComponent {
     { prefijo: '12212', fecha: '14/10/2022', estado: 'Activo', seleccionar: 'Activo' },
     { prefijo: '212441', fecha: '10/05/2017', estado: 'Activo', seleccionar: 'Activo' }
   ];
-
+ngOnInit(): void {
+  this.clienteControl.valueChanges
+    .pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(valor => {
+        const filtro = (valor || '').trim();
+        if (!filtro) {
+          return of({ data: [] }); // evita llamada si el filtro está vacío
+        }
+        return this.clienteService.getClientesSummary(filtro);
+      })
+    )
+    .subscribe(resp => {
+      this.clientesFiltrados = resp.data || [];
+    });
+}
   cambiarTab(tab: string) {
     this.activeTab = tab;
   }
@@ -95,10 +117,15 @@ export class TraspasoPrefijosComponent {
     this.botonActivo = nombre;
   }
 
-  // Ejemplo de métodos
-  onBuscar(nomcli: string): void {
-    this.clienteService.getClientesSummary(nomcli).subscribe(resp => { this.clienteSummaryRespose = resp.data; });
+   onBuscar(nomcli: string): void {
+    //this.clienteService.getClientesSummary(nomcli).subscribe(resp => { this.clientesFiltrados = resp.data; });
   }
+
+  seleccionarCliente(nombre: string): void {
+  console.log('Cliente seleccionado:', nombre);
+
+  const clienteSeleccionado = this.clientesFiltrados.find(c => c.nomcli === nombre);
+}
 
   onNuevaBusqueda(): void {
     // lógica para limpiar filtros

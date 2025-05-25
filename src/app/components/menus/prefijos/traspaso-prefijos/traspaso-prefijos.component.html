@@ -10,22 +10,45 @@
   <ng-container *ngIf="activeTab === 'Transferir'">
     <h2>Transferencia de Prefijos</h2>
 
-    <div class="form-row">
-      <div class="form-group">
-        <div class="form-row">
-          <label>Origen:</label>
-          <input type="text" placeholder="Cliente Origen" />
-        </div>
-      </div>
+    <div class="form-row alineado-horizontal">
+  <!-- Campo ORIGEN -->
+  <mat-form-field appearance="outline" class="form-campo-largo">
+    <mat-label>Origen</mat-label>
+    <input
+      type="text"
+      matInput
+      [formControl]="clienteControl"
+      [matAutocomplete]="auto"
+      placeholder="Buscar cliente..."
+    />
+    <mat-autocomplete #auto="matAutocomplete" (optionSelected)="seleccionarCliente($event.option.value)">
+      <mat-option *ngFor="let cliente of clientesFiltrados" [value]="cliente.nomcli">
+       <!-- <span class="opcion-autocomplete">{{ cliente.nomcli }} — {{ cliente.ruc }}</span>-->
+        <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
+      </mat-option>
+    </mat-autocomplete>
+  </mat-form-field>
 
-      <div class="form-group">
-        <div class="form-row">
-          <label>Destino:</label>
-          <input type="text" placeholder="Cliente Destino" />
-        </div>
-      </div>
+  <!-- Campo DESTINO -->
+  <mat-form-field appearance="outline" class="form-campo-largo">
+    <mat-label>Destino</mat-label>
+    <input
+      type="text"
+      matInput
+      [formControl]="clienteControl"
+      [matAutocomplete]="auto"
+      placeholder="Buscar cliente..."
+    />
+    <mat-autocomplete #auto="matAutocomplete" (optionSelected)="seleccionarCliente($event.option.value)">
+      <mat-option *ngFor="let cliente of clientesFiltrados" [value]="cliente.nomcli">
+       <!-- <span class="opcion-autocomplete">{{ cliente.nomcli }} — {{ cliente.ruc }}</span>-->
+        <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
+      </mat-option>
+    </mat-autocomplete>
+  </mat-form-field>
 
-    </div>
+</div>
+
 
     <table class="tabla-estilo">
       <thead>
@@ -49,8 +72,14 @@
     </table>
 
     <div class="form-actions">
-      <button>Nueva Búsqueda</button>
-      <button>Transferir</button>
+      <div class="form-actions form-actions-horizontal alineado-derecha">
+            <button (click)="onBuscar('llive')" [class.activo]="botonActivo === 'buscar'"
+              (click)="seleccionarBoton('buscar')">Buscar</button>
+            <button (click)="onNuevaBusqueda()" [class.activo]="botonActivo === 'nueva'"
+              (click)="seleccionarBoton('nueva')">Nueva Búsqueda</button>
+            <button (click)="onAsignar()" [class.activo]="botonActivo === 'asignar'"
+              (click)="seleccionarBoton('asignar')">Asignar</button>
+          </div>
     </div>
   </ng-container>
 
