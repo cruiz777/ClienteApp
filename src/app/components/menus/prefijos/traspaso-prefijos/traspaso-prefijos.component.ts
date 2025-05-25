@@ -1,10 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
+import { ClienteService } from 'src/app/services/cliente.service';
+import { ClienteSummary } from 'src/app/interfaces/responses/cliente-summary-response';
 
 @Component({
   selector: 'app-traspaso-prefijos',
@@ -15,16 +17,27 @@ import { MatButtonModule } from '@angular/material/button';
     MatFormFieldModule,
     MatInputModule,
     MatMenuModule,
-    MatButtonModule
+    MatButtonModule,
+
   ],
   templateUrl: './traspaso-prefijos.component.html',
   styleUrls: ['./traspaso-prefijos.component.css']
 })
 export class TraspasoPrefijosComponent {
+
+
+
   activeTab: string = 'Transferir';
   filtroBusqueda: string = '';
   filtroCliente: string = '';
   botonActivo: string = '';
+
+  clienteSummaryRespose: ClienteSummary[] = [];
+
+
+  constructor(
+    private clienteService: ClienteService
+  ) { }
 
   transferencias = [
     { prefijo: '12062', fecha: '22/05/2017', estado: 'Activo', tipo: 'Nacional' },
@@ -78,22 +91,22 @@ export class TraspasoPrefijosComponent {
     console.log('Exportar a Excel');
     // lógica de exportación con XLSX
   }
-seleccionarBoton(nombre: string): void {
-  this.botonActivo = nombre;
-}
+  seleccionarBoton(nombre: string): void {
+    this.botonActivo = nombre;
+  }
 
-// Ejemplo de métodos
-onBuscar(): void {
-  // lógica de búsqueda
-}
+  // Ejemplo de métodos
+  onBuscar(nomcli: string): void {
+    this.clienteService.getClientesSummary(nomcli).subscribe(resp => { this.clienteSummaryRespose = resp.data; });
+  }
 
-onNuevaBusqueda(): void {
-  // lógica para limpiar filtros
-}
+  onNuevaBusqueda(): void {
+    // lógica para limpiar filtros
+  }
 
-onAsignar(): void {
-  // lógica para asignar
-}
+  onAsignar(): void {
+    // lógica para asignar
+  }
 
 }
 
