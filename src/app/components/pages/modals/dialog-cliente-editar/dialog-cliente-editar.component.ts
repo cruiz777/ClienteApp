@@ -50,6 +50,7 @@ import { ClienteObservacionService, ClienteObservacion } from 'src/app/services/
 import { ModalImpresionComponent } from 'src/app/components/shared/modal-impresion/modal-impresion.component';
 import { DialogPrefijoEditarComponent } from '../dialog-prefijo-editar/dialog-prefijo-editar.component';
 import { ClienteDatosAdicionalesService,ClienteDatosAdicionales } from 'src/app/services/cliente-datos-adicionales.service';
+import  { ClienteContacto,ClienteContactoService   } from 'src/app/services/cliente-contacto.service';
 const ELEMENT_DATA: HistorialClienteRequest[] = [
   {
     id_historial_cliente: 1,
@@ -154,8 +155,8 @@ export class DialogClienteEditarComponent implements OnInit {
   observaciones: ClienteObservacion[] = [];
   clienteOriginalObservacion: ClienteObservacion[] = [];
  usuarioActual = this.usuarioService.getUsuarioActual();
-
-
+  contactoCliente:ClienteContacto[]=[];
+ 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild('paginatorPrefijo', { static: false }) paginatorPrefijo!: MatPaginator;
@@ -185,7 +186,8 @@ export class DialogClienteEditarComponent implements OnInit {
     private paisService: PaisService,
     private historialClienteService: HistorialClienteService,
     private clienteObservacionService: ClienteObservacionService,
-    private clienteDatosAdicionalesService: ClienteDatosAdicionalesService
+    private clienteDatosAdicionalesService: ClienteDatosAdicionalesService,
+    private clienteContactoService:ClienteContactoService
   ) { }
 
   ngOnInit(): void {
@@ -210,6 +212,7 @@ export class DialogClienteEditarComponent implements OnInit {
     this.cargarClienteYGrupos(this.idCliente);
     this.obtenerObservaciones(this.idCliente);
     this.cargarDatosAdicionales(this.idCliente);
+    this.cargarContactosClientes(this.idCliente);
     this.paso2Form.get('razonSocial')?.valueChanges.subscribe(valor => {
       this.nombrecli = valor;
     });
@@ -274,7 +277,10 @@ export class DialogClienteEditarComponent implements OnInit {
         estadoEmpresa: [null],
         pais: [''],
         nprefijo:[false],
-        compra:[false]
+        compra:[false],
+        fechaIng: [''],
+        fechaMod: [''],
+        usuarioMod: ['']
 
       }),
 
@@ -282,13 +288,14 @@ export class DialogClienteEditarComponent implements OnInit {
         nombreRepresentante: [null, Validators.required],
         emailRepresentante: ['', [Validators.required, emailValidoValidator()]],
         telefonoRepresentante: ['', Validators.required],
-        nombreCodificacion: [''],
+        
         email: ['', [emailValidoValidator()]],
         email1: ['', [emailValidoValidator()]],
         email2: ['', [emailValidoValidator()]],
         email3: ['', [emailValidoValidator()]],
         telefono: [''],
-        nombreFinanciero: [''],
+        nombreCodificacion:[''],
+        nombreFinanciero:[''],
 
         telefono2: [''],
         pregunta1: [false],
@@ -299,7 +306,10 @@ export class DialogClienteEditarComponent implements OnInit {
         pregunta6: [false],
         pregunta7:[false],
         zona: [null],
-        estadoEmpresa: [null]
+        estadoEmpresa: [null],
+        fechaIng: [''],
+        fechaMod: [''],
+        usuarioMod: ['']
       }),
 
       paso4: this.fb.group({
@@ -313,7 +323,10 @@ export class DialogClienteEditarComponent implements OnInit {
         usuario4: [''],
         fecha4: [''],
         zona: [null],
-        estadoEmpresa: [null]
+        estadoEmpresa: [null],
+        fechaIng: [''],
+        fechaMod: [''],
+        usuarioMod: ['']
       })
     });
   }
@@ -719,7 +732,7 @@ export class DialogClienteEditarComponent implements OnInit {
       idZona: idZona,
       idGrupoEmpresa: paso1.grupo || 1,
       representante: paso2.nombreRepresentante || '',
-      fechamod: '20/05/2025',
+      fechamod:this.fechaIngreso.toISOString().split('T')[0],
       usumod:this.usuarioActual?.NombreUsuario || ''
     };
 
@@ -733,6 +746,7 @@ export class DialogClienteEditarComponent implements OnInit {
         this.guardarHistorial();
         this.guardarTodasLasObservaciones();
         this.guardarOActualizarDatosAdicionales();
+        this.verificarYGuardarContactosCliente();
         // ✅ Esperar un poco y recargar el historial
         setTimeout(() => {
           this.cargarHistorial(this.idCliente);
@@ -1042,7 +1056,7 @@ export class DialogClienteEditarComponent implements OnInit {
       origen: cliente.zonaReferencia || '',
       gln: '',
       fechaIng: cliente.fecing,
-      fechaMod: cliente.fecmod,
+      fechaMod: cliente.fecmod && new Date(cliente.fecmod).getFullYear() === 1 ? '' : cliente.fecmod,
       usuarioMod: cliente.usumod
 
 
@@ -1061,6 +1075,9 @@ export class DialogClienteEditarComponent implements OnInit {
       sitioWeb: cliente.web,
       telefono2: cliente.telefono || '',
       usuario: '',
+      fechaIng: cliente.fecing,
+      fechaMod: cliente.fecmod,
+      usuarioMod: cliente.usumod
 
     });
 
@@ -1069,18 +1086,24 @@ export class DialogClienteEditarComponent implements OnInit {
       nombreRepresentante: cliente.representante || '',
       emailRepresentante: cliente.email || '',
       telefonoRepresentante: cliente.fax || '',
-      email: cliente.email || '',
-      telefono: '',
-      email1: '',
-      email2: '',
-      email3: '',
-      nombreCodificacion: '',
-      nombreFinanciero: ''
+      // email: cliente.email || '',
+      // telefonoc: '',
+      // email1: '',
+      // email2: '',
+      // email3: '',
+      // nombreCodificacion: '',
+      // nombreFinanciero: '',
+      fechaIng: cliente.fecing,
+      fechaMod: cliente.fecmod,
+      usuarioMod: cliente.usumod
       
     });
 
     // Paso 4
     this.paso4Form.patchValue({
+      fechaIng: cliente.fecing,
+      fechaMod: cliente.fecmod,
+      usuarioMod: cliente.usumod
 
     });
 
@@ -1714,6 +1737,118 @@ private crearDatos(datos: ClienteDatosAdicionales): void {
   });
 }
 
+ cargarContactosClientes(clientesCodigo: number): void {
+  this.clienteContactoService.getByClienteCodigo(clientesCodigo).subscribe({
+    next: (data) => {
+      this.contactoCliente = data;
+      console.log('✅ Contactos recibidos:', data);
+
+      const paso3Patch: any = {};
+      
+      data.forEach(contacto => {
+        switch (contacto.linea) {
+          case 1:
+            paso3Patch.email = contacto.email;
+            paso3Patch.nombreCodificacion=contacto.Nombre;
+            paso3Patch.telefono=contacto.telefono;
+            break;
+          case 2:
+            paso3Patch.email1 = contacto.email;
+            paso3Patch.nombreFinanciero=contacto.Nombre;
+            break;
+          case 3:
+            paso3Patch.email2 = contacto.email;
+            paso3Patch.telefono2=contacto.telefono;
+            break;
+          case 4:
+            paso3Patch.email3 = contacto.email;
+            break;
+        }
+      });
+
+      // Aplicar al formulario reactivo
+      this.paso3Form.patchValue(paso3Patch);
+    },
+    error: (err) => {
+      console.error('❌ Error al obtener contactos del cliente:', err);
+    }
+  });
+}
+
+verificarYGuardarContactosCliente(): void {
+  const paso1 = this.paso1Form.value;
+  const paso3 = this.paso3Form.value;
+  const clientesCodigo = paso1.codigoCliente || 0;
+
+  const contactosCliente: ClienteContacto[] = [
+    {
+      id_ContactosClientes: 0,
+      Nombre: paso3.nombreCodificacion || '',
+      telefono: paso3.telefono || '',
+      email: paso3.email || '',
+      cargo: 'Codificación',
+      clientesCodigo: clientesCodigo,
+      linea: 1
+    },
+    {
+      id_ContactosClientes: 0,
+      Nombre: paso3.nombreFinanciero || '',
+      telefono: paso3.telefono2 || '',
+      email: paso3.email1 || '',
+      cargo: 'Facturación',
+      clientesCodigo: clientesCodigo,
+      linea: 2
+    },
+    {
+      id_ContactosClientes: 0,
+      Nombre: paso3.nombreFinanciero || '',
+      telefono: paso3.telefono2 || '',
+      email: paso3.email2 || '',
+      cargo: 'Facturación',
+      clientesCodigo: clientesCodigo,
+      linea: 3
+    },
+    {
+      id_ContactosClientes: 0,
+      Nombre: paso3.nombreFinanciero || '',
+      telefono: paso3.telefono2 || '',
+      email: paso3.email3 || '',
+      cargo: 'Facturación',
+      clientesCodigo: clientesCodigo,
+      linea: 4
+    }
+  ];
+
+  this.clienteContactoService.getByClienteCodigo(clientesCodigo).subscribe({
+    next: (existentes) => {
+      contactosCliente.forEach(contacto => {
+        const existe = existentes.find(c =>
+          c.clientesCodigo === contacto.clientesCodigo &&
+          c.linea === contacto.linea
+        );
+
+        if (contacto.Nombre || contacto.email || contacto.telefono) {
+          if (existe) {
+            // Si existe, actualizar
+            this.clienteContactoService.update(contacto).subscribe({
+              next: () => console.log(`🔁 Contacto línea ${contacto.linea} actualizado`),
+              error: (err) => console.error(`❌ Error al actualizar contacto línea ${contacto.linea}:`, err)
+            });
+          } else {
+            // Si no existe, crear
+            this.clienteContactoService.crear(contacto).subscribe({
+              next: () => console.log(`✅ Contacto línea ${contacto.linea} creado`),
+              error: (err) => console.error(`❌ Error al crear contacto línea ${contacto.linea}:`, err)
+            });
+          }
+        }
+      });
+    },
+    error: (err) => {
+      console.error('❌ Error al obtener contactos existentes:', err);
+    }
+  });
+}
 
 
 

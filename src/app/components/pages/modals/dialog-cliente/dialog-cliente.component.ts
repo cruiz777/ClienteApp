@@ -50,6 +50,7 @@ import { GlnService, GlnRequest } from 'src/app/services/gln.service';
 import { PaisService, Pais } from 'src/app/services/pais.service';
 import { ClienteObservacionService,ClienteObservacion } from 'src/app/services/cliente-observacion.service';
 import { ClienteDatosAdicionalesService,ClienteDatosAdicionales } from 'src/app/services/cliente-datos-adicionales.service';
+import { ClienteContacto,ClienteContactoService } from 'src/app/services/cliente-contacto.service';
 @Component({
   selector: 'app-dialog-cliente',
   templateUrl: './dialog-cliente.component.html',
@@ -136,7 +137,8 @@ export class DialogClienteComponent implements OnInit {
     private dialog: MatDialog,
     private paisService: PaisService,
     private clienteObservacionService: ClienteObservacionService,
-    private clienteDatosAdicionalesService: ClienteDatosAdicionalesService
+    private clienteDatosAdicionalesService: ClienteDatosAdicionalesService,
+    private clienteContactoService:ClienteContactoService
   ) { }
 
   ngOnInit(): void {
@@ -207,7 +209,7 @@ export class DialogClienteComponent implements OnInit {
         email1: ['', [emailValidoValidator()]],
         email2: ['', [emailValidoValidator()]],
         email3: ['', [emailValidoValidator()]],
-        telefono: [''],
+        telefonoc: [''],
         nombreFinanciero: [''],
 
         telefono2: [''],
@@ -677,6 +679,7 @@ export class DialogClienteComponent implements OnInit {
               this.guardarPrefijo();
               this.guardarTodasLasObservaciones();
               this.guardarDatosAdicionales();
+              this.guardarContactosCliente();
               stepper.selectedIndex = 0;
             }
           },
@@ -1605,6 +1608,62 @@ guardarDatosAdicionales(): void {
     error: (err) => console.error('❌ Error al crear datos adicionales:', err)
   });
 }
+
+guardarContactosCliente(): void {
+  const paso1 = this.paso1Form.value;
+  const paso3 = this.paso3Form.value;
+  const clientesCodigo = paso1.codigoCliente || 0;
+
+  const contactosCliente = [
+    {
+      id_ContactosClientes: 0,
+      Nombre: paso3.nombreCodificacion || '',
+      telefono: paso3.telefonoc || '',
+      email: paso3.email || '',
+      cargo: 'Codificación',
+      clientesCodigo: clientesCodigo,
+      linea: 1
+    },
+    {
+      id_ContactosClientes: 0,
+      Nombre: paso3.nombreFinanciero || '',
+      telefono: paso3.telefono2 || '',
+      email: paso3.email1 || '',
+      cargo: 'Facturación',
+      clientesCodigo: clientesCodigo,
+      linea: 2
+    },
+    {
+      id_ContactosClientes: 0,
+      Nombre: paso3.nombreFinanciero || '',
+      telefono: paso3.telefono2 || '',
+      email: paso3.email2 || '',
+      cargo: 'Facturación',
+      clientesCodigo: clientesCodigo,
+      linea: 3
+    },
+    {
+      id_ContactosClientes: 0,
+      Nombre: paso3.nombreFinanciero || '',
+      telefono: paso3.telefono2 || '',
+      email: paso3.email3 || '',
+      cargo: 'Facturación',
+      clientesCodigo: clientesCodigo,
+      linea: 4
+    }
+  ];
+
+  // Enviar cada contacto individualmente
+  contactosCliente.forEach(contacto => {
+    if (contacto.Nombre || contacto.email || contacto.telefono) { // Validar si al menos hay un dato útil
+      this.clienteContactoService.crear(contacto).subscribe({
+        next: () => console.log(`✅ Contacto línea ${contacto.linea} creado correctamente`),
+        error: (err) => console.error(`❌ Error al crear contacto línea ${contacto.linea}:`, err)
+      });
+    }
+  });
+}
+
 
 
 }
