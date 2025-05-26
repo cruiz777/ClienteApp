@@ -16,8 +16,6 @@ import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
 
 
-
-
 @Component({
   selector: 'app-traspaso-prefijos',
   standalone: true,
@@ -42,7 +40,6 @@ export class TraspasoPrefijosComponent {
   filtroCliente: string = '';
   botonActivo: string = '';
 
-  //clienteControl = new FormControl('');
   clientesFiltrados: ClienteSummary[] = [];
   clienteOrigenControl = new FormControl('');
   clienteDestinoControl = new FormControl('');
@@ -169,7 +166,16 @@ export class TraspasoPrefijosComponent {
     return cliente ? cliente.nomcli : '';
   }
   onNuevaBusqueda(): void {
-    // lógica para limpiar filtros
+    // Limpiar campos de entrada
+  this.clienteOrigenControl.setValue('');
+  this.clienteDestinoControl.setValue('');
+
+  // Limpiar resultados y prefijos
+  this.clientesFiltrados = [];
+  this.prefijosClienteOrigen = [];
+  this.prefijosClienteDestino = [];
+
+  console.log('Campos limpiados y tablas vacías');
   }
 
   onAsignar(): void {

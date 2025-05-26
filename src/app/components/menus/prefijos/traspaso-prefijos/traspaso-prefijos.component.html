@@ -29,7 +29,7 @@
         <mat-label>Destino</mat-label>
         <input type="text" matInput [formControl]="clienteDestinoControl" [matAutocomplete]="autoDestino"
           placeholder="Buscar cliente..." />
-       <mat-autocomplete #autoDestino="matAutocomplete" [displayWith]="mostrarNombreCliente"
+        <mat-autocomplete #autoDestino="matAutocomplete" [displayWith]="mostrarNombreCliente"
           (optionSelected)="seleccionarClienteDestino($event.option.value)">
           <mat-option *ngFor="let cliente of clientesFiltrados" [value]="cliente">
             <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
@@ -65,11 +65,12 @@
 
     <div class="form-actions">
       <div class="form-actions form-actions-horizontal alineado-derecha">
-
         <button (click)="onNuevaBusqueda()" [class.activo]="botonActivo === 'nueva'"
-          (click)="seleccionarBoton('nueva')">Nueva Búsqueda</button>
+          (click)="seleccionarBoton('nueva')">
+          Nueva Búsqueda
+        </button>
         <button (click)="onAsignar()" [class.activo]="botonActivo === 'asignar'"
-          (click)="seleccionarBoton('asignar')">Asignar</button>
+          (click)="seleccionarBoton('asignar')">Transferir</button>
       </div>
     </div>
 
