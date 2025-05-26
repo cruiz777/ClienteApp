@@ -1,12 +1,36 @@
-import { Component } from '@angular/core';
+import { Component, Inject } from '@angular/core';
+import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { CommonModule } from '@angular/common';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-perfiles-form',
   standalone: true,
-  imports: [],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatButtonModule
+  ],
   templateUrl: './perfiles-form.component.html',
   styleUrl: './perfiles-form.component.css'
 })
 export class PerfilesFormComponent {
+  nombrePerfil: string = '';
+
+  constructor(
+    public dialogRef: MatDialogRef<PerfilesFormComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: any
+  ) { }
+
+  cerrar(): void {
+    this.dialogRef.close();
+  }
 
 }
+
+
