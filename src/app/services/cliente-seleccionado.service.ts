@@ -9,6 +9,7 @@ export class ClienteSeleccionadoService {
   private clienteSubject = new BehaviorSubject<Cliente | null>(null);
   clienteSeleccionado$ = this.clienteSubject.asObservable();
 
+
   seleccionar(cliente: Cliente): void {
     this.clienteSubject.next(cliente);
   }

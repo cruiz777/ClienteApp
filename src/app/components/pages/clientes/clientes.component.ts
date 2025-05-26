@@ -1,7 +1,6 @@
 import { Component, OnInit, ViewChild} from '@angular/core';
 import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
 import { Router } from '@angular/router';
-import { NavigationComponentProducto } from '../../productos/navigation/navigation.component'
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { MatDialog } from '@angular/material/dialog';

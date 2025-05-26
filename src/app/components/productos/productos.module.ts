@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterModule } from '@angular/router'; 
+import { RouterModule } from '@angular/router';
 
-import { NavigationComponentProducto } from './navigation/navigation.component';
+import { NavigationProductoComponent } from './navigation-producto/navigation-producto.component';
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,7 +12,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 
 @NgModule({
   declarations: [
-    NavigationComponentProducto
+    NavigationProductoComponent
   ],
   imports: [
     CommonModule,
@@ -24,6 +24,6 @@ import { MatToolbarModule } from '@angular/material/toolbar';
     MatButtonModule,
     MatToolbarModule
   ],
-  exports: [NavigationComponentProducto]
+  exports: [NavigationProductoComponent]
 })
 export class ProductosModule {}
