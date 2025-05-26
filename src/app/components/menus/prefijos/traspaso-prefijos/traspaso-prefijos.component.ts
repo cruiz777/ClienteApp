@@ -7,11 +7,15 @@ import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { ClienteService } from 'src/app/services/cliente.service';
+import { PrefijoService } from 'src/app/services/prefijo.service';
 import { ClienteSummary } from 'src/app/interfaces/responses/cliente-summary-response';
+import { PrefijoClienteResponse } from 'src/app/interfaces/responses/PrefijoClienteResponse';
 import { FormControl } from '@angular/forms';
 import { ReactiveFormsModule } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { of } from 'rxjs';
+
+
 
 
 @Component({
@@ -38,18 +42,17 @@ export class TraspasoPrefijosComponent {
   filtroCliente: string = '';
   botonActivo: string = '';
 
-  clienteControl = new FormControl('');
+  //clienteControl = new FormControl('');
   clientesFiltrados: ClienteSummary[] = [];
+  clienteOrigenControl = new FormControl('');
+  clienteDestinoControl = new FormControl('');
+  prefijosClienteOrigen: PrefijoClienteResponse[] = [];
+  prefijosClienteDestino: PrefijoClienteResponse[] = [];
 
   constructor(
-    private clienteService: ClienteService
+    private clienteService: ClienteService,
+    private prefijoService: PrefijoService
   ) { }
-
-  transferencias = [
-    { prefijo: '12062', fecha: '22/05/2017', estado: 'Activo', tipo: 'Nacional' },
-    { prefijo: '12212', fecha: '14/10/2022', estado: 'Activo', tipo: 'Nacional' },
-    { prefijo: '212441', fecha: '10/05/2017', estado: 'Activo', tipo: 'Nacional' }
-  ];
 
   listado = [
     {
@@ -83,23 +86,40 @@ export class TraspasoPrefijosComponent {
     { prefijo: '12212', fecha: '14/10/2022', estado: 'Activo', seleccionar: 'Activo' },
     { prefijo: '212441', fecha: '10/05/2017', estado: 'Activo', seleccionar: 'Activo' }
   ];
-ngOnInit(): void {
-  this.clienteControl.valueChanges
-    .pipe(
-      debounceTime(300),
-      distinctUntilChanged(),
-      switchMap(valor => {
-        const filtro = (valor || '').trim();
-        if (!filtro) {
-          return of({ data: [] }); // evita llamada si el filtro está vacío
-        }
-        return this.clienteService.getClientesSummary(filtro);
-      })
-    )
-    .subscribe(resp => {
-      this.clientesFiltrados = resp.data || [];
-    });
-}
+
+  ngOnInit(): void {
+    // --BUSQUEDA ORIGEN
+    this.clienteOrigenControl.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap(valor => {
+          const filtro = (valor || '').trim();
+          if (!filtro) return of({ data: [] });
+          return this.clienteService.getClientesSummary(filtro);
+        })
+      )
+      .subscribe(resp => {
+        this.clientesFiltrados = resp.data || [];
+      });
+
+    // --BUSQUEDA DESTINO
+    this.clienteDestinoControl.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap(valor => {
+          const filtro = (valor || '').trim();
+          if (!filtro) return of({ data: [] });
+          return this.clienteService.getClientesSummary(filtro);
+        })
+      )
+      .subscribe(resp => {
+        this.clientesFiltrados = resp.data || [];
+      });
+  }
+
+
   cambiarTab(tab: string) {
     this.activeTab = tab;
   }
@@ -117,16 +137,37 @@ ngOnInit(): void {
     this.botonActivo = nombre;
   }
 
-   onBuscar(nomcli: string): void {
+  onBuscar(nomcli: string): void {
     //this.clienteService.getClientesSummary(nomcli).subscribe(resp => { this.clientesFiltrados = resp.data; });
   }
 
   seleccionarCliente(nombre: string): void {
-  console.log('Cliente seleccionado:', nombre);
+    console.log('Cliente seleccionado:', nombre);
 
-  const clienteSeleccionado = this.clientesFiltrados.find(c => c.nomcli === nombre);
-}
+    const clienteSeleccionado = this.clientesFiltrados.find(c => c.nomcli === nombre);
+  }
 
+  seleccionarClienteOrigen(cliente: ClienteSummary): void {
+    if (!cliente || !cliente.clientes_codigo) return;
+
+    this.prefijoService.obtenerPorClienteCodigo(cliente.clientes_codigo)
+      .subscribe(prefijos => {
+        this.prefijosClienteOrigen = prefijos;
+        console.log('Prefijos de cliente origen:', this.prefijosClienteOrigen);
+      });
+  }
+  seleccionarClienteDestino(cliente: ClienteSummary): void {
+    if (!cliente || !cliente.clientes_codigo) return;
+
+    this.prefijoService.obtenerPorClienteCodigo(cliente.clientes_codigo)
+      .subscribe(prefijos => {
+        this.prefijosClienteDestino = prefijos;
+        console.log('Prefijos de cliente destino:', prefijos);
+      });
+  }
+  mostrarNombreCliente(cliente: any): string {
+    return cliente ? cliente.nomcli : '';
+  }
   onNuevaBusqueda(): void {
     // lógica para limpiar filtros
   }
