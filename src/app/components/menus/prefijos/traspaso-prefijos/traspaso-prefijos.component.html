@@ -10,48 +10,70 @@
   <ng-container *ngIf="activeTab === 'Transferir'">
     <h2>Transferencia de Prefijos</h2>
 
-    <div class="form-row">
-      <div class="form-group">
-        <div class="form-row">
-          <label>Origen:</label>
-          <input type="text" placeholder="Cliente Origen" />
-        </div>
-      </div>
+    <div class="form-row alineado-horizontal">
+      <!-- Campo ORIGEN -->
+      <mat-form-field appearance="outline" class="form-campo-largo">
+        <mat-label>Origen</mat-label>
+        <input type="text" matInput [formControl]="clienteOrigenControl" [matAutocomplete]="autoOrigen"
+          placeholder="Buscar cliente..." />
+        <mat-autocomplete #autoOrigen="matAutocomplete" [displayWith]="mostrarNombreCliente"
+          (optionSelected)="seleccionarClienteOrigen($event.option.value)">
+          <mat-option *ngFor="let cliente of clientesFiltrados" [value]="cliente">
+            <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
 
-      <div class="form-group">
-        <div class="form-row">
-          <label>Destino:</label>
-          <input type="text" placeholder="Cliente Destino" />
-        </div>
-      </div>
+      <!-- Campo DESTINO -->
+      <mat-form-field appearance="outline" class="form-campo-largo">
+        <mat-label>Destino</mat-label>
+        <input type="text" matInput [formControl]="clienteDestinoControl" [matAutocomplete]="autoDestino"
+          placeholder="Buscar cliente..." />
+        <mat-autocomplete #autoDestino="matAutocomplete" [displayWith]="mostrarNombreCliente"
+          (optionSelected)="seleccionarClienteDestino($event.option.value)">
+          <mat-option *ngFor="let cliente of clientesFiltrados" [value]="cliente">
+            <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
 
     </div>
 
-    <table class="tabla-estilo">
+    <h3>Prefijos del Cliente Origen</h3>
+    <table class="tabla-estilo" *ngIf="prefijosClienteOrigen.length > 0">
       <thead>
         <tr>
           <th>#</th>
+          <th>Seleccionar</th>
           <th>Prefijo</th>
           <th>Fecha</th>
+          <th>Fecha Cierre</th>
           <th>Estado</th>
-          <th>Tipo</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of transferencias; let i = index">
+        <tr *ngFor="let item of prefijosClienteOrigen; let i = index">
           <td>{{ i + 1 }}</td>
-          <td>{{ item.prefijo }}</td>
+          <td><input type="checkbox" /></td>
+          <td>{{ item.codpre }}</td>
           <td>{{ item.fecha }}</td>
-          <td>{{ item.estado }}</td>
-          <td>{{ item.tipo }}</td>
+          <td>{{ item.fechaCierre || '—' }}</td>
+          <td>{{ item.estado ? 'Activo' : 'Inactivo' }}</td>
         </tr>
       </tbody>
     </table>
 
     <div class="form-actions">
-      <button>Nueva Búsqueda</button>
-      <button>Transferir</button>
+      <div class="form-actions form-actions-horizontal alineado-derecha">
+        <button (click)="onNuevaBusqueda()" [class.activo]="botonActivo === 'nueva'"
+          (click)="seleccionarBoton('nueva')">
+          Nueva Búsqueda
+        </button>
+        <button (click)="onAsignar()" [class.activo]="botonActivo === 'asignar'"
+          (click)="seleccionarBoton('asignar')">Transferir</button>
+      </div>
     </div>
+
   </ng-container>
 
   <!-- TAB LISTADO -->
@@ -126,8 +148,8 @@
             </div>
           </div>
 
-            <div class="form-actions form-actions-horizontal alineado-derecha">
-            <button (click)="onBuscar()" [class.activo]="botonActivo === 'buscar'"
+          <div class="form-actions form-actions-horizontal alineado-derecha">
+            <button (click)="onBuscar('llive')" [class.activo]="botonActivo === 'buscar'"
               (click)="seleccionarBoton('buscar')">Buscar</button>
             <button (click)="onNuevaBusqueda()" [class.activo]="botonActivo === 'nueva'"
               (click)="seleccionarBoton('nueva')">Nueva Búsqueda</button>
@@ -138,28 +160,28 @@
         </div>
 
       </div>
-</div>
+    </div>
 
-<table class="tabla-estilo">
-  <thead>
-    <tr>
-      <th>#</th>
-      <th>Prefijo</th>
-      <th>Fecha</th>
-      <th>Estado</th>
-      <th>Seleccionar</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let item of asignaciones; let i = index">
-      <td>{{ i + 1 }}</td>
-      <td>{{ item.prefijo }}</td>
-      <td>{{ item.fecha }}</td>
-      <td>{{ item.estado }}</td>
-      <td><input type="checkbox" /></td>
-    </tr>
-  </tbody>
-</table>
-</ng-container>
+    <table class="tabla-estilo">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Prefijo</th>
+          <th>Fecha</th>
+          <th>Estado</th>
+          <th>Seleccionar</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of asignaciones; let i = index">
+          <td>{{ i + 1 }}</td>
+          <td>{{ item.prefijo }}</td>
+          <td>{{ item.fecha }}</td>
+          <td>{{ item.estado }}</td>
+          <td><input type="checkbox" /></td>
+        </tr>
+      </tbody>
+    </table>
+  </ng-container>
 
 </div>

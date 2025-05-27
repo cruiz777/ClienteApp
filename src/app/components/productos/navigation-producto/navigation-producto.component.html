@@ -1,0 +1,119 @@
+<mat-sidenav-container class="sidenav-container" [ngClass]="{
+  'collapsed': !isExpanded && !isHandset,
+  'mobile': isHandset
+}">
+<div *ngIf="clienteSeleccionado" class="cliente-info">
+  <p><strong>Cliente:</strong> {{ clienteSeleccionado.nomcli }}</p>
+  <p><strong>RUC:</strong> {{ clienteSeleccionado.ruc }}</p>
+</div>
+
+  <!-- SIDEBAR -->
+  <mat-sidenav #drawer
+              class="sidenav"
+              [mode]="isHandset ? 'over' : 'side'"
+              [opened]="!isHandset || isExpanded"
+              [class.collapsed]="!isExpanded && !isHandset"
+              [fixedInViewport]="true"
+              (backdropClick)="isExpanded = false">
+
+
+    <div class="logo-seguridad" *ngIf="isExpanded">
+      <img src="assets/logo/CODBAR-GS1.png" alt="Logo">
+    </div>
+
+    <!-- Menú Principal -->
+    <mat-nav-list>
+<!-- Botón para colapsar menú -->
+  <mat-list-item (click)="toggleSidebar()" class="menu-toggle">
+    <mat-icon>menu</mat-icon>
+    <span *ngIf="isExpanded" class="menu-text">Menú</span>
+  </mat-list-item>
+
+  <!-- Cliente seleccionado -->
+  <mat-list-item disabled>
+    <div class="menu-item">
+      <mat-icon>person</mat-icon>
+      <span *ngIf="isExpanded" class="menu-text">
+        {{ clienteSeleccionado?.nomcli }} ({{ clienteSeleccionado?.clientes_codigo }})
+      </span>
+    </div>
+  </mat-list-item>
+
+  <!-- Ítem de menú: Nuevo Producto -->
+ <mat-list-item routerLink="/productos/NuevoProducto" routerLinkActive="active">
+  <div class="menu-item">
+    <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
+    <span *ngIf="isExpanded" class="menu-text">Nuevo Producto</span>
+  </div>
+</mat-list-item>
+  <!-- Ítem de menú: Nuevo GLN -->
+   <mat-list-item [routerLink]="'/NuevoProducto'" routerLinkActive="active">
+    <div class="menu-item">
+      <img src="assets/icons/icon-nuevo-GLN.png" class="menu-icon">
+      <span *ngIf="isExpanded" class="menu-text">Nuevo GLN</span>
+    </div>
+  </mat-list-item>
+   <!-- Ítem de menú: Cupones -->
+   <mat-list-item [routerLink]="'/NuevoProducto'" routerLinkActive="active">
+    <div class="menu-item">
+      <img src="assets/icons/icon-cupones.png" class="menu-icon">
+      <span *ngIf="isExpanded" class="menu-text">Cupones</span>
+    </div>
+  </mat-list-item>
+  <!-- Ítem de menú: Cuentas X Cobrar -->
+   <mat-list-item [routerLink]="'/NuevoProducto'" routerLinkActive="active">
+    <div class="menu-item">
+      <img src="assets/icons/icon-cuentas-x-cobrar.png" class="menu-icon">
+      <span *ngIf="isExpanded" class="menu-text">Cuentas X Cobrar</span>
+    </div>
+  </mat-list-item>
+  <!-- Ítem de menú: Estados de Cuenta -->
+   <mat-list-item [routerLink]="'/NuevoProducto'" routerLinkActive="active">
+    <div class="menu-item">
+      <img src="assets/icons/icon-estado-cuenta.png" class="menu-icon">
+      <span *ngIf="isExpanded" class="menu-text">Cuentas X Cobrar</span>
+    </div>
+  </mat-list-item>
+
+  <!-- Botón salir (volver a lista de clientes) -->
+  <mat-list-item routerLink="/pages/clientes" class="salir-item">
+    <div class="menu-item">
+      <img src="assets/icons/icon-salir.png" class="menu-icon">
+      <span *ngIf="isExpanded" class="menu-text salir-text">Salir</span>
+    </div>
+  </mat-list-item>
+
+    </mat-nav-list>
+
+  </mat-sidenav>
+
+  <!-- CONTENIDO PRINCIPAL -->
+
+  <ng-container *ngIf="clienteSeleccionado; else noCliente">
+  <table style="font-size: 14px; margin: 20px;">
+    <tr><td><strong>Nombre:</strong></td><td>{{ clienteSeleccionado.nomcli }}</td></tr>
+    <tr><td><strong>Código:</strong></td><td>{{ clienteSeleccionado.clientes_codigo }}</td></tr>
+    <tr><td><strong>RUC:</strong></td><td>{{ clienteSeleccionado.ruc }}</td></tr>
+    <tr><td><strong>Dirección:</strong></td><td>{{ clienteSeleccionado.dircli }}</td></tr>
+    <tr><td><strong>Zona:</strong></td><td>{{ clienteSeleccionado.zonaReferencia }}</td></tr>
+    <tr><td><strong>Estado:</strong></td><td>{{ clienteSeleccionado.estadoNombre }}</td></tr>
+    <tr><td><strong>Fecha Ingreso:</strong></td><td>{{ clienteSeleccionado.fecing | date:'dd/MM/yyyy' }}</td></tr>
+  </table>
+</ng-container>
+
+<ng-template #noCliente>
+  <p style="margin: 20px;">No hay cliente seleccionado.</p>
+</ng-template>
+
+  <mat-sidenav-content [ngClass]="isExpanded ? 'content-default' : 'content-collapsed'">
+    <router-outlet></router-outlet>
+    <footer class="app-footer" [ngClass]="{ 'footer-collapsed': !isExpanded && !isHandset }">
+      <div class="footer-left">{{ currentDateTime }}</div>
+      <div class="footer-center">
+        <img src="assets/logo/logo-gap.png" alt="GAP System" class="footer-logo">
+        <span class="footer-phone">Telf: 099 970 0288 / 022 464 951</span>
+      </div>
+    </footer>
+  </mat-sidenav-content>
+
+</mat-sidenav-container>

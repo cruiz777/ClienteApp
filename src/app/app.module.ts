@@ -1,3 +1,4 @@
+
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
@@ -44,7 +45,8 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     InicioComponent,
     CustomMessageBoxComponent,
     ConfirmDialogComponent,
-     ModalImpresionComponent
+    ModalImpresionComponent,
+
   ],
   imports: [
     BrowserModule,
