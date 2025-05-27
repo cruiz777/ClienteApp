@@ -163,7 +163,7 @@ export class DialogClienteComponent implements OnInit {
         prefix: ['', Validators.required],
         zona: [null],
         codigoCliente: [{ value: '', disabled: false }],
-        //prefijo: [''], antes 
+        //prefijo: [''], antes
         prefijo: [{ value: '', disabled: true }],
         prefijogs1: [''],
         origen: [''],
@@ -412,7 +412,7 @@ export class DialogClienteComponent implements OnInit {
 
 
 
-  
+
 
   limpiarPais(): void {
     this.paso2Form.get('pais')?.reset();
@@ -636,9 +636,9 @@ export class DialogClienteComponent implements OnInit {
       idEstadoEmpresa: 1,
       formatodocumento: 0,
       imprimeobstramite: 0,
-      idTipoCliente: paso1.categoriaCliente,// aqui llego en blanco 
+      idTipoCliente: paso1.categoriaCliente,// aqui llego en blanco
       idGrupoProducto: paso1.grupoProducto.id_grupo_producto,
-      idPersona: 8,
+      idPersona: 0, //Siempre al crear una persona esta en 0
       codigoPostal: paso2.codigoPostal || '',
       codigoPostal2: '',
       idVendedor: 1,
