@@ -81,3 +81,6 @@ table {
   top: 8px;
   font-size: 13px;
 }
+.selected-row {
+  background-color: #cde4ff !important;
+}

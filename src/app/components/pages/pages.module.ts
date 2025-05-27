@@ -1,11 +1,11 @@
-import { NgModule } from '@angular/core';
+import { NgModule, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-
 import { PagesRoutingModule } from './pages-routing.module';
 import { NavigationComponent } from './navigation/navigation.component';
 import { PagesComponent } from './pages.component';
 import { RouterModule } from '@angular/router';
 import { LayoutModule } from '@angular/cdk/layout';
+import { ProductosModule } from 'src/app/components/productos/productos.module';
 
 import { ReusableModule } from '../reusable/reusable.module';
 import { DashboardComponent } from './dashboard/dashboard.component';
@@ -34,6 +34,7 @@ import { MatMenuModule } from '@angular/material/menu';
   declarations: [
     PagesComponent,
     NavigationComponent,
+
     DashboardComponent,
     ClientesComponent,
     DialogClienteComponent,
@@ -62,7 +63,8 @@ import { MatMenuModule } from '@angular/material/menu';
     MatIconModule,
     ReusableModule,
     ReactiveFormsModule,
-    FormsModule
+    FormsModule,
+    ProductosModule
   ]
 })
 export class PagesModule { }
