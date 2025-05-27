@@ -1,1 +1,16 @@
-<p>perfiles-form works!</p>
+<h2 mat-dialog-title>Nuevo Perfil</h2>
+
+<div mat-dialog-content style="padding-top: 12px;">
+  <mat-form-field appearance="outline" style="width: 100%;">
+    <mat-label>Nombre del perfil</mat-label>
+    <input matInput placeholder="Ej: Administrador" [(ngModel)]="nombrePerfil" />
+  </mat-form-field>
+</div>
+
+<div mat-dialog-actions style="justify-content: flex-end; padding-top: 12px;">
+  <button mat-stroked-button (click)="cerrar()">Cancelar</button>
+  <button mat-flat-button color="primary">
+    Grabar
+    <!-- TODO: guardar el perfil -->
+  </button>
+</div>

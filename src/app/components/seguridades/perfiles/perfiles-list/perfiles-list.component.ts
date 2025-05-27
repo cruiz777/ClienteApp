@@ -1,4 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+
+// Servicios
 import { PerfilesService } from 'src/app/services/perfil.service';
 import { SistemaService } from 'src/app/services/sistema.service';
 import { ModuloService } from 'src/app/services/modulo.service';
@@ -6,6 +9,7 @@ import { MenuService } from 'src/app/services/menu.service';
 import { OpcionService } from 'src/app/services/opcion.service';
 import { PerfilOpcionService } from 'src/app/services/perfilOpcion.service';
 
+// Interfaces de datos
 import { PerfilResponse } from 'src/app/interfaces/responses/perfil-response';
 import { SistemaResponse } from 'src/app/interfaces/responses/sistema-response';
 import { ModuloResponse } from 'src/app/interfaces/responses/modulo-response';
@@ -14,6 +18,12 @@ import { OpcionResponse } from 'src/app/interfaces/responses/opcion-response';
 
 import { PerfilOpcion } from 'src/app/interfaces/requests/perfil-opcion-request';
 import { CreateBulkPerfilOption } from 'src/app/interfaces/requests/create-bulk-perfil-options-request';
+
+// Diálogo de mensajes
+import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/components/utils/messages/custom-message-box.component';
+
+//Ruta del modal
+import { PerfilesFormComponent } from '../perfiles-form/perfiles-form.component';
 
 interface MenuExtendido extends MenuResponse {
   tieneOpciones: boolean;
@@ -26,28 +36,34 @@ interface MenuExtendido extends MenuResponse {
   styleUrls: ['./perfiles-list.component.css']
 })
 export class PerfilesListComponent implements OnInit {
+  // ==================== Variables de datos ====================
   perfiles: PerfilResponse[] = [];
   sistemas: SistemaResponse[] = [];
   modulos: ModuloResponse[] = [];
   menus: MenuExtendido[] = [];
   opcionnes: OpcionResponse[] = [];
 
+  // ==================== Selección actual ====================
   perfilSeleccionado: number | null = null;
   moduloSeleccionado: number | null = null;
   menuSeleccionado: number | null = null;
   sistemaActivo: string = '';
 
   opcionesAsignadas: number[] = [];
+  botonActivo: string = '';
 
+  // ==================== Constructor ====================
   constructor(
     private perfilesService: PerfilesService,
     private sistemaService: SistemaService,
     private moduloService: ModuloService,
     private menuService: MenuService,
     private opcionesService: OpcionService,
+    private dialog: MatDialog,
     private perfilesOpcionesService: PerfilOpcionService
-  ) {}
+  ) { }
 
+  // ==================== Inicialización ====================
   ngOnInit(): void {
     this.perfilesService.getPerfiles().subscribe(response => {
       this.perfiles = response.data;
@@ -65,6 +81,7 @@ export class PerfilesListComponent implements OnInit {
     });
   }
 
+  // ==================== Métodos de selección ====================
   seleccionarSistema(nombre: string, idSistema: number): void {
     this.sistemaActivo = nombre;
     this.menus = [];
@@ -78,7 +95,6 @@ export class PerfilesListComponent implements OnInit {
     this.perfilSeleccionado = idPerfil;
     this.menus = [];
     this.opcionnes = [];
-
   }
 
   seleccionarModulo(idModulo: number): void {
@@ -87,8 +103,7 @@ export class PerfilesListComponent implements OnInit {
     this.opcionnes = [];
 
     this.menuService.getMenusPorModulo(idModulo).subscribe(response => {
-      const menusOriginales = response.data;
-      const menuesExtendidos: MenuExtendido[] = menusOriginales.map(menu => ({
+      const menuesExtendidos: MenuExtendido[] = response.data.map(menu => ({
         ...menu,
         tieneOpciones: false,
         todasAsignadas: false
@@ -138,6 +153,57 @@ export class PerfilesListComponent implements OnInit {
     });
   }
 
+  seleccionarBoton(nombre: string): void {
+    this.botonActivo = nombre;
+  }
+
+  // ==================== Acciones ====================
+  onNuevoPerfil(): void {
+    this.dialog.open(PerfilesFormComponent, {
+      width: '400px'
+      // TODO: manejar resultado del modal si se desea
+    });
+  }
+
+
+  editarPerfil(perfil: PerfilResponse): void {
+    console.log('Editar perfil:', perfil);
+    // Acción al presionar "Editar"
+  }
+
+  eliminarPerfil(idPerfil: number): void {
+    const data: MessageBoxData = {
+      title: '¿Eliminar perfil?',
+      message: '¿Estás seguro de que deseas eliminar este perfil?',
+      type: 'warning',
+      confirmText: 'Sí, eliminar',
+      cancelText: 'Cancelar',
+      showCancel: true
+    };
+
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data
+    }).afterClosed().subscribe((confirmado: boolean) => {
+      if (confirmado) {
+        // Aquí irá la lógica real de eliminación
+        console.log(`Eliminar perfil con ID: ${idPerfil}`);
+
+        this.dialog.open(CustomMessageBoxComponent, {
+          width: '400px',
+          data: {
+            title: 'Eliminado',
+            message: 'El perfil fue eliminado correctamente (simulado).',
+            type: 'success',
+            confirmText: 'Aceptar',
+            showCancel: false
+          }
+        });
+      }
+    });
+  }
+
+  // ==================== Acciones sobre opciones ====================
   onToggleOpcion(opcion: OpcionResponse): void {
     if (this.perfilSeleccionado === null) return;
 
@@ -153,24 +219,10 @@ export class PerfilesListComponent implements OnInit {
     });
   }
 
-  actualizarEstadoDelMenu(): void {
-    if (this.menuSeleccionado === null) return;
-
-    const total = this.opcionnes.length;
-    const asignadas = this.opcionnes.filter(op => op.status).length;
-
-    const menu = this.menus.find(m => m.id_menu === this.menuSeleccionado);
-    if (menu) {
-      menu.tieneOpciones = asignadas > 0;
-      menu.todasAsignadas = asignadas === total;
-    }
-  }
-
   onToggleTodoOpciones(menu: MenuExtendido): void {
     if (this.perfilSeleccionado === null) return;
 
     const marcar = !menu.todasAsignadas;
-    const accion = marcar ? 'Asignar' : 'Quitar';
 
     const request: CreateBulkPerfilOption = {
       id_perfil: this.perfilSeleccionado,
@@ -184,14 +236,12 @@ export class PerfilesListComponent implements OnInit {
         this.opcionnes = [];
         this.seleccionarMenu(menu.id_menu);
       },
-      error: (err) => console.error(`❌ Error al ${accion.toLowerCase()} opciones del menú:`, err)
+      error: (err) => console.error('❌ Error en cambio masivo de opciones de menú:', err)
     });
   }
 
   onToggleTodoOpcionesModulo(moduloId: number, marcar: boolean): void {
     if (this.perfilSeleccionado === null) return;
-
-    const accion = marcar ? 'Asignar' : 'Quitar';
 
     const request: CreateBulkPerfilOption = {
       id_perfil: this.perfilSeleccionado,
@@ -202,8 +252,24 @@ export class PerfilesListComponent implements OnInit {
 
     this.perfilesOpcionesService.CreateBulkPerfilOptions(request).subscribe({
       next: () => this.seleccionarModulo(moduloId),
-      error: (err) => console.error(`❌ Error al ${accion.toLowerCase()} opciones del módulo:`, err)
+      error: (err) => console.error('❌ Error en cambio masivo de opciones de módulo:', err)
     });
+  }
+
+
+
+  // ==================== Utilitarios ====================
+  actualizarEstadoDelMenu(): void {
+    if (this.menuSeleccionado === null) return;
+
+    const total = this.opcionnes.length;
+    const asignadas = this.opcionnes.filter(op => op.status).length;
+
+    const menu = this.menus.find(m => m.id_menu === this.menuSeleccionado);
+    if (menu) {
+      menu.tieneOpciones = asignadas > 0;
+      menu.todasAsignadas = asignadas === total;
+    }
   }
 
   esModuloCompletamenteAsignado(moduloId: number): boolean {
