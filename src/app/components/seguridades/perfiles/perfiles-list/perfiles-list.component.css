@@ -234,6 +234,17 @@ input[type='checkbox'] {
   border: 1px solid #d1d5db;
 }
 
+/* ===================== DISEÑO DEL FILTRO DE BUSQUEDA ===================== */
+.input-filtro {
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 300px;
+  /* ← Aumenta este valor según tu necesidad */
+  max-width: 100%;
+}
+
 
 /* ===================== RESPONSIVE ===================== */
 @media screen and (max-width: 768px) {

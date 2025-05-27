@@ -23,4 +23,9 @@ export class PerfilesService {
     return this.http.post<ApiResponse<boolean>>(`${this.apiUrl}`, perfil);
   }
 
+  updatePerfiles(id: number, perfil: PerfilesRequest): Observable<ApiResponse<boolean>> {
+    return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/${id}`, perfil);
+  }
+
+
 }

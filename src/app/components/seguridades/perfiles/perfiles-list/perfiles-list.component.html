@@ -10,13 +10,17 @@
 
   <div class="encabezado-acciones">
     <h2>Tabla de Perfiles</h2>
+
+    <div>
+      <input type="text" placeholder="🔍 Buscar por código o nombre" [(ngModel)]="filtroPerfil" class="input-filtro" />
+    </div>
+
     <div class="form-actions form-actions-horizontal alineado-derecha">
       <button (click)="seleccionarBoton('nuevo'); onNuevoPerfil()" [class.activo]="botonActivo === 'nuevo'">
         Nuevo Perfil
       </button>
     </div>
   </div>
-
 
 
   <div class="tabla-scrollable">
@@ -29,7 +33,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let perfil of perfiles" [class.fila-activa]="perfil.id_perfil === perfilSeleccionado"
+        <tr *ngFor="let perfil of perfilesFiltrados" [class.fila-activa]="perfil.id_perfil === perfilSeleccionado"
           (click)="seleccionarPerfil(perfil.id_perfil)" style="cursor: pointer;">
           <td>{{ perfil.id_perfil }}</td>
           <td>{{ perfil.nombre }}</td>
