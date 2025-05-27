@@ -1,0 +1,98 @@
+.zona-container {
+  background: white;
+  padding: 2rem;
+  font-family: 'Inter', sans-serif;
+}
+
+.zona-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.zona-header h2 {
+  color: #002c6c;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.btn-nueva-zona {
+  background-color: #eef4f7;
+  color: #002c6c;
+  padding: 0.5rem 1.2rem;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.btn-nueva-zona:hover {
+  background-color: #d4e6ed;
+}
+
+.zona-busqueda {
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  gap: 0.5rem;
+}
+
+.zona-busqueda label {
+  font-size: 0.9rem;
+  color: #002c6c;
+}
+
+.input-wrapper {
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #ccd5e2;
+  padding: 0.2rem 0.5rem;
+  background-color: #fff;
+}
+
+.input-wrapper input {
+  border: none;
+  outline: none;
+  font-size: 0.9rem;
+  padding: 0.2rem;
+}
+
+.input-wrapper img {
+  width: 16px;
+  height: 16px;
+  margin-left: 0.5rem;
+}
+
+.zona-tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.zona-tabla th {
+  background-color: #eef4f7;
+  border: 1px solid #ccd5e2;
+  padding: 0.75rem;
+  text-align: left;
+  color: #000;
+}
+
+.zona-tabla td {
+  border: 1px solid #ccd5e2;
+  padding: 0.75rem;
+  color: #333;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem;
+}
+
+.icon-btn img {
+  width: 16px;
+  height: 16px;
+}

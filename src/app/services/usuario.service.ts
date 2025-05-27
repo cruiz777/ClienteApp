@@ -4,14 +4,11 @@ import { BehaviorSubject, Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { Usuario } from '../interfaces/responses/usuario-response'; // Ajusta si tu ruta es distinta
 
-
-
 @Injectable({
   providedIn: 'root'
 })
 export class UsuarioService {
-  
-  private apiUrl = `${environment.applicationUrl}/Usuarios/login`;
+  private apiUrl = `${environment.securityApiUrl}/Usuarios/login`;
 
   private currentUserSubject = new BehaviorSubject<Usuario | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();

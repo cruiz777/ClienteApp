@@ -26,8 +26,12 @@ const routes: Routes = [
         loadChildren:()=>import('./departamentos/departamentos.module').then(m=>m.DepartamentosModule)
       },
       {
+        path:'zonas',
+        loadChildren:()=>import('./zona/zona.module').then(m=>m.ZonaModule)
+      },
+      {
         path: '',
-        redirectTo: 'empresas',
+        redirectTo: 'inicio',
         pathMatch: 'full'
       },
       {path:'inicio',component:SeguridadesInicioComponent},

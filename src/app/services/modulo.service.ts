@@ -9,7 +9,7 @@ import { environment } from 'src/environments/environment';
   providedIn: 'root'
 })
 export class ModuloService {
-  private apiUrl = `${environment.applicationUrl}/Modulos`;
+  private apiUrl = `${environment.securityApiUrl}/Modulos`;
 
   constructor(private http: HttpClient) {}
 
