@@ -5,15 +5,15 @@ import { LoginComponent } from './components/login/login.component';
 import { NotFoundComponent } from './components/not-found/not-found.component';
 import { InicioComponent } from './components/inicio/inicio.component';
 import { NavigationProductoComponent} from './components/productos/navigation-producto/navigation-producto.component';
-
-
+import { ClientesComponent } from './components/pages/clientes/clientes.component';
+import { NuevoProductoComponent } from './components/productos/nuevo-producto/nuevo-producto.component';
 import { AuthGuard } from './guards/auth.guard';
 
 const routes: Routes = [
   {path:'',redirectTo:'login',pathMatch:'full'},
   {path: 'login', component: LoginComponent },
   {path:'inicio',component:InicioComponent},
-  {path: 'menuProductos', component: NavigationProductoComponent },
+  //{path: 'menuProductos', component: NavigationProductoComponent },
   {path: 'menus', loadChildren: () => import('./components/menus/menus.module').then(x => x.MenusModule) },
   {path: 'pages', loadChildren: () => import('./components/pages/pages.module').then(x => x.PagesModule) , canActivate:[AuthGuard]},
 
@@ -21,6 +21,15 @@ const routes: Routes = [
   {
   path: 'productos',
   loadChildren: () => import('./components/productos/productos-routing.module').then(m => m.ProductosRoutingModule)
+},
+{
+  path: 'menuProductos',
+  component: NavigationProductoComponent,
+  children: [
+    { path: '', redirectTo: 'nuevoProducto', pathMatch: 'full' },
+    //{ path: 'nuevoProducto', component: NuevoProductoComponent },
+    { path: 'clientes', component: ClientesComponent },
+   ]
 },
 
   {path:'**',component:NotFoundComponent,pathMatch:'full'}

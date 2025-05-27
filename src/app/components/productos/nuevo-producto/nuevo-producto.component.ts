@@ -9,6 +9,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
 import { Cliente } from 'src/app/interfaces/cliente';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-nuevo-producto',
@@ -98,7 +99,10 @@ export class NuevoProductoComponent implements OnInit {
     }
   ];
 
-  constructor(private clienteSeleccionadoService: ClienteSeleccionadoService) {}
+  constructor(
+  private clienteSeleccionadoService: ClienteSeleccionadoService,
+  private router: Router
+) {}
 
   ngOnInit(): void {
     this.clienteSeleccionadoService.clienteSeleccionado$.subscribe(cliente => {
@@ -121,5 +125,8 @@ export class NuevoProductoComponent implements OnInit {
   seleccionarRegistro(registro: any) {
     this.registroSeleccionado = registro;
   }
+  salir(): void {
+  this.router.navigate(['/pages/clientes']);
+}
 }
 

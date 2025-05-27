@@ -116,10 +116,10 @@ this.dataSource.paginator = this.paginator;
       duration: 3000
     });
   }
-  seleccionarFila(cliente: Cliente) {
+seleccionarFila(cliente: Cliente) {
   this.selectedCliente = cliente;
   this.clienteSeleccionadoService.seleccionar(cliente);
-  this.router.navigate(['/menuProductos']);
+  this.router.navigate(['/menuProductos/clientes']);
 }
 
 }

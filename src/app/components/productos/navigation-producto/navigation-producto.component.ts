@@ -29,26 +29,6 @@ export class NavigationProductoComponent implements OnInit {
     });
   }
 
-  //constructor(private breakpointObserver: BreakpointObserver,
-    //private router: Router,
-    //private clienteSeleccionadoService: ClienteSeleccionadoService) {
-
-    //this.breakpointObserver.observe([Breakpoints.Handset])
-      //.subscribe(result => {
-      //  this.isHandset = result.matches;
-     //   this.isExpanded = !this.isHandset;
-      //});
-
- // }
- // ngOnInit(): void {
- //   this.updateDateTime();
-//    setInterval(()=> this.updateDateTime(), 1000); // Actualiza cada segundo
- //   this.clienteSeleccionadoService.clienteSeleccionado$.subscribe(cliente => {
-//this.clienteSeleccionado = cliente;
- //     console.log('🧭 Menú recibió cliente:', cliente);
- //   });
- // }
-
   updateDateTime(): void {
     const now = new Date();
     const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
