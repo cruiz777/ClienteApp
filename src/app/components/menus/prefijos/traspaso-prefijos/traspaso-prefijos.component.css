@@ -79,12 +79,6 @@
   border-radius: 4px;
   cursor: pointer;
 }
-/*.form-actions-horizontal {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-start;
-  margin-top: 8px;
-}*/
 
 .form-actions-horizontal.alineado-derecha {
   margin-left: auto; /* empuja la botonera hacia la derecha */

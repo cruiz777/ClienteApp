@@ -174,30 +174,12 @@ h3 {
   min-width: 200px;
 }
 
-/* Estilo del botón "Nueva búsqueda" */
-.btn-naranja {
-  background-color: #f58220;
-  /* Naranja GS1 */
-  color: white;
-  padding: 6px 12px;
-  /* Reducido */
-  font-size: 14px;
-  /* Tamaño de fuente más pequeño */
-  border: none;
-  font-weight: 600;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  height: 36px;
-  /* Igual alto que el input */
-}
+
 
 .btn-naranja:hover {
   background-color: #002c6c;
   /* Azul marino GS1 */
 }
-
-/* formato botone */
 
 .form-actions {
   margin-top: 40px;
@@ -292,4 +274,64 @@ h3 {
   color: #002c6c;
   border-radius: 4px;
   cursor: pointer;
+}
+/*--BOTONERA TRANSFERIR---------------------------*/
+.form-transferencia {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.form-actions-right {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+/* Grupo de acciones con botones */
+.form-actions {
+  margin-top: 24px;
+  display: flex;
+  gap: 20px;
+  justify-content: flex-end;
+}
+.form-actions button {
+  background-color: #eef4f7;
+  border: 1px solid #ccd5e2;
+  padding: 8px 20px;
+  font-size: 14px;
+  color: #002c6c;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.form-actions-horizontal.alineado-derecha {
+  margin-left: auto; /* empuja la botonera hacia la derecha */
+  display: flex;
+  gap: 12px;
+}
+
+/* Estilo activo */
+.form-actions-horizontal button.activo {
+  background-color: #002c6c;
+  color: white;
+  border: 1px solid #002c6c;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 8px;
+  background-color: #f4f6f8;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid #ccc;
 }
