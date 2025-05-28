@@ -1,8 +1,8 @@
+import { LoginUsuarioResponse } from './../../interfaces/responses/usuario-log-response';
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { UsuarioService } from 'src/app/services/usuario.service';
-import { Usuario } from 'src/app/interfaces/responses/usuario-response';
 import { MatDialog } from '@angular/material/dialog';
 import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/components/utils/messages/custom-message-box.component';
 import { LogoService } from 'src/app/services/logo.service';
@@ -60,13 +60,13 @@ togglePasswordVisibility(): void {
     const { email, password } = this.formLogin.value;
 
     this.usuarioService.login(email, password).subscribe({
-      next: (user: Usuario) => {
+      next: (user: LoginUsuarioResponse) => {
   console.log('Login exitoso. Usuario:', user);
 
   // ⬇ Recuperar desde localStorage (opcional, ya tienes "user" directamente)
   const storedUser = localStorage.getItem('currentUser');
   if (storedUser) {
-    const usuarioLocal: Usuario = JSON.parse(storedUser);
+    const usuarioLocal: LoginUsuarioResponse = JSON.parse(storedUser);
     console.log('Usuario desde localStorage:', usuarioLocal);
     // Puedes acceder: usuarioLocal.id_usuario, usuarioLocal.nombre_usuario, etc.
   }

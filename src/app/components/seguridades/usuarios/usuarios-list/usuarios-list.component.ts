@@ -1,8 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-import { UsuariosFormComponent } from '../usuarios-form/usuarios-form.component'; // ajusta el path si es necesario
+import { UsuarioService } from 'src/app/services/usuario.service';
+import { UsuariosResponse } from 'src/app/interfaces/responses/usuario-response';
+import { UsuariosFormComponent } from '../usuarios-form/usuarios-form.component';
 
 @Component({
   selector: 'app-usuarios-list',
@@ -11,40 +13,69 @@ import { UsuariosFormComponent } from '../usuarios-form/usuarios-form.component'
   templateUrl: './usuarios-list.component.html',
   styleUrl: './usuarios-list.component.css'
 })
-export class UsuariosListComponent {
-  constructor(private dialog: MatDialog) {}
+export class UsuariosListComponent implements OnInit {
 
+  usuarios: UsuariosResponse[] = [];
   filtroUsuario = '';
-  usuarios = [
-    { id: 1, nombre: 'Juan Pérez', correo: 'juan@example.com', rol: 'Administrador' },
-    { id: 2, nombre: 'Ana Torres', correo: 'ana@example.com', rol: 'Usuario' }
-  ];
   usuarioSeleccionado: number | null = null;
   botonActivo = '';
 
+  constructor(
+    private dialog: MatDialog,
+    private usuarioService: UsuarioService
+  ) { }
+
+  ngOnInit(): void {
+    this.cargarUsuarios();
+  }
+
+  /**
+   * Filtra usuarios por nombre o correo usando el campo de búsqueda.
+   */
   get usuariosFiltrados() {
     return this.usuarios.filter(u =>
-      u.nombre.toLowerCase().includes(this.filtroUsuario.toLowerCase()) ||
-      u.correo.toLowerCase().includes(this.filtroUsuario.toLowerCase())
+      u.nombre_usuario.toLowerCase().includes(this.filtroUsuario.toLowerCase()) ||
+      (u.correo || '').toLowerCase().includes(this.filtroUsuario.toLowerCase())
     );
   }
 
+  /**
+   * Establece el usuario seleccionado por su ID.
+   */
   seleccionarUsuario(id: number) {
     this.usuarioSeleccionado = id;
   }
 
-  editarUsuario(usuario: any) {
+  /**
+   * Muestra en consola los datos del usuario que se desea editar.
+   */
+  editarUsuario(usuario: UsuariosResponse) {
     console.log('Editar usuario:', usuario);
   }
 
+  /**
+   * Muestra en consola el ID del usuario a eliminar.
+   */
   eliminarUsuario(id: number) {
     console.log('Eliminar usuario:', id);
   }
 
+  /**
+   * Abre el diálogo para crear un nuevo usuario.
+   */
   onNuevoUsuario() {
     this.botonActivo = 'nuevo';
     this.dialog.open(UsuariosFormComponent, {
       width: '800px'
+    });
+  }
+
+  /**
+   * Llama al servicio para cargar la lista de usuarios.
+   */
+  cargarUsuarios() {
+    this.usuarioService.getUsuarios().subscribe(response => {
+      this.usuarios = response.data;
     });
   }
 }

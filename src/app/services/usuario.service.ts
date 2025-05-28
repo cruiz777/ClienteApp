@@ -2,21 +2,25 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { Usuario } from '../interfaces/responses/usuario-response';
+import { UsuariosResponse } from '../interfaces/responses/usuario-response';
+import { ApiListResponse } from '../interfaces/responses/ApiListResponse';
+import { ApiResponse } from './producto.service';
+import { UvIndividualComponent } from '../components/productos/uv-individual/uv-individual.component';
+import { IdleService } from './idle.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UsuarioService {
-  
+
   private apiUrl = `${environment.applicationUrl}/Usuarios/login`;
 
-  private currentUserSubject = new BehaviorSubject<Usuario | null>(null);
+  private currentUserSubject = new BehaviorSubject<UsuariosResponse | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
   constructor(private http: HttpClient) {}
 
-  login(nombreUsuario: string, contrasenia: string): Observable<Usuario> {
+  login(nombreUsuario: string, contrasenia: string): Observable<UsuariosResponse> {
     const body = {
       email: nombreUsuario,
       password: contrasenia
@@ -29,16 +33,16 @@ export class UsuarioService {
           const raw = response.data;
 
           // 🔁 Mapear propiedades snake_case a PascalCase para que coincidan con la interfaz Usuario
-          const user: Usuario = {
-            IdUsuario: raw.id_usuario,
-            NombreUsuario: raw.nombre_usuario,
-            IdDepartamento: raw.id_departamento,
-            Departamento: raw.departamento,
-            IdPerfil: raw.id_perfil,
-            Perfil: raw.perfil,
-            IdEmpresa: raw.id_empresa,
-            Empresa: raw.empresa,
-            Estado: raw.estado
+          const user: UsuariosResponse = {
+            id_usuario: raw.id_usuario,
+            nombre_usuario: raw.nombre_usuario,
+            id_departamento: raw.id_departamento,
+            nombre_departamento: raw.departamento,
+            id_persona: raw.id_perfil,
+            nombre_perfil: raw.perfil,
+            id_empresa: raw.id_empresa,
+            nombre_empresa: raw.empresa,
+            estado: raw.estado
           };
 
           localStorage.setItem('currentUser', JSON.stringify(user));
@@ -56,8 +60,12 @@ export class UsuarioService {
     this.currentUserSubject.next(null);
   }
 
-  getUsuarioActual(): Usuario | null {
+  getUsuarioActual(): UsuariosResponse | null {
     const stored = localStorage.getItem('currentUser');
     return stored ? JSON.parse(stored) : null;
+  }
+
+  getUsuarios():Observable<ApiResponse<UsuariosResponse[]>>{
+    return this.http.get<ApiResponse<UsuariosResponse[]>>(this.apiUrl);
   }
 }
