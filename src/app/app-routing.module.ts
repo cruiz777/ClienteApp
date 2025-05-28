@@ -27,7 +27,7 @@ const routes: Routes = [
   component: NavigationProductoComponent,
   children: [
     { path: '', redirectTo: 'nuevoProducto', pathMatch: 'full' },
-    //{ path: 'nuevoProducto', component: NuevoProductoComponent },
+    { path: 'nuevoProducto', component: NuevoProductoComponent },
     { path: 'clientes', component: ClientesComponent },
    ]
 },
