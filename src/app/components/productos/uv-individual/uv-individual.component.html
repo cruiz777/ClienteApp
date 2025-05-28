@@ -7,20 +7,43 @@
       <input type="text" placeholder="Código del cliente:" formControlName="codigoCliente" />
       <input type="text" placeholder="Cliente:" formControlName="cliente" />
       <input type="text" placeholder="RUC:" formControlName="ruc" />
-      <input type="text" placeholder="GCP®:" formControlName="gcp" />
+      <mat-form-field appearance="fill">
+        <mat-label>Prefijo</mat-label>
+        <mat-select formControlName="gcp" (blur)="onPrefijoBlur()">
+          <mat-option *ngFor="let prefijo of prefijos" [value]="prefijo.id_prefijos">
+            {{ prefijo.codpre }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
       <input type="text" placeholder="GLN®:" formControlName="gln" />
 
-      <div class="grupo-checkbox" formGroupName="gtinNacionales">
+      <!-- Nacionales -->
+      <div class="grupo-checkbox">
         <label>Nacionales</label>
-        <label><input type="checkbox" formControlName="gtin13" /> GTIN-13</label>
-        <label><input type="checkbox" formControlName="gtin8" /> GTIN-8</label>
+        <label>
+          <input type="radio" formControlName="gtinNacionalSeleccionado" value="gtin13" /> GTIN-13
+        </label>
+        <label>
+          <input type="radio" formControlName="gtinNacionalSeleccionado" value="gtin8" /> GTIN-8
+        </label>
+        <label>
+          <input type="radio" formControlName="gtinNacionalSeleccionado" value="gtin12" /> GTIN-12
+        </label>
       </div>
 
-      <div class="grupo-checkbox" formGroupName="gtinInternacionales">
+      <!-- Internacionales -->
+      <div class="grupo-checkbox">
         <label>Internacionales</label>
-        <label><input type="checkbox" formControlName="gtin13" /> GTIN-13</label>
-        <label><input type="checkbox" formControlName="gtin8" /> GTIN-8</label>
-        <label><input type="checkbox" formControlName="gtin12" /> GTIN-12</label>
+        <label>
+          <input type="radio" formControlName="gtinInternacionalSeleccionado" value="gtin13" /> GTIN-13
+        </label>
+        <label>
+          <input type="radio" formControlName="gtinInternacionalSeleccionado" value="gtin8" /> GTIN-8
+        </label>
+        <label>
+          <input type="radio" formControlName="gtinInternacionalSeleccionado" value="gtin12" /> GTIN-12
+        </label>
       </div>
 
       <input type="text" placeholder="Serie:" formControlName="serie" />
@@ -30,7 +53,29 @@
       <input type="text" placeholder="Marca:" formControlName="marca" />
       <input type="text" placeholder="Contenido:" formControlName="contenido" />
       <input type="text" placeholder="Unidad de medida:" formControlName="unidadMedida" />
-      <input type="text" placeholder="Categoría:" formControlName="categoria" />
+
+      <mat-form-field  style="font-size: 12px; height: 75px;width: 240px;">
+        <input matInput formControlName="categoria" [matAutocomplete]="autoCategoria"
+          placeholder="Seleccione Categoría">
+
+        <button matSuffix mat-icon-button aria-label="Limpiar"
+          *ngIf="formUV.get('categoria')?.value" (click)="limpiarCategoria()">
+          <mat-icon>close</mat-icon>
+        </button>
+
+        <mat-autocomplete #autoCategoria="matAutocomplete" [displayWith]="displayWithCategoria"
+          (optionSelected)="seleccionarCategoria($event.option.value)" autocomplete="off">
+          <mat-option *ngFor="let cat of categoriasFiltradas" [value]="cat" style="font-size: 11px">
+             {{ cat.desBrick }}
+          </mat-option>
+        </mat-autocomplete>
+
+        <mat-error *ngIf="formUV.get('categoria')?.hasError('required') && formUV.get('categoria')?.touched"
+          style="color: red; font-size: 12px;">
+          Este campo es obligatorio.
+        </mat-error>
+      </mat-form-field>
+
       <input type="text" placeholder="GCP® BRICK:" formControlName="brick" />
       <input type="text" placeholder="País de venta:" formControlName="pais" />
       <input type="text" placeholder="Sector:" formControlName="sector" />
@@ -49,8 +94,8 @@
     </div>
 
     <div class="botones">
-      <button class="btn" type="button">Nuevo</button>
-      <button class="btn" type="button">Generar</button>
+      <button class="btn" type="button" (click)="limpiarCampos()">Nuevo</button>
+      <button class="btn" type="button" (click)="generar()" >Generar</button>
       <button class="btn btn-azul" type="button" (click)="grabarTodo()">Grabar</button>
       <button class="btn btn-rojo" type="button">Ingresar UL</button>
     </div>
@@ -87,7 +132,7 @@
 
     <div class="botones">
       <button class="btn" type="button">Nuevo</button>
-      <button class="btn" type="button">Generar</button>
+      <button class="btn" type="button" (click)="generar()">Generar</button>
       <button class="btn btn-azul" type="button" (click)="grabarTodo()">Grabar</button>
       <button class="btn btn-rojo" type="button" (click)="salir()">Salir</button>
     </div>
