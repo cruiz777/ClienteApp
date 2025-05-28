@@ -9,6 +9,9 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Cliente } from 'src/app/interfaces/cliente';
+import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
+
 
 @Component({
   selector: 'app-uv-individual',
@@ -32,9 +35,14 @@ export class UvIndividualComponent implements OnInit {
   formUV!: FormGroup;
   formUL!: FormGroup;
 
-  constructor(private fb: FormBuilder) {}
+  clienteSeleccionado: Cliente | null = null;
+  constructor(private fb: FormBuilder,
+    private clienteSeleccionadoService: ClienteSeleccionadoService,
+
+  ) {}
 
   ngOnInit(): void {
+
     this.formUV = this.fb.group({
       codigoCliente: [''],
       cliente: [''],
@@ -94,6 +102,9 @@ export class UvIndividualComponent implements OnInit {
       tipoGtin: [''],
       observacion: ['']
     });
+
+    this.cargarCliente();
+
   }
 
   grabarTodo() {
@@ -107,4 +118,18 @@ export class UvIndividualComponent implements OnInit {
   salir(): void {
     //this.router.navigate(['/pages/clientes']);
   }
+
+  cargarCliente(): void {
+  const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+  if (cliente) {
+    this.clienteSeleccionado = cliente;
+
+    this.formUV.patchValue({
+      codigoCliente: cliente.clientes_codigo || '',
+      cliente: cliente.nomcli || '',
+      ruc: cliente.ruc || '',
+    });
+  }
+}
+
 }
