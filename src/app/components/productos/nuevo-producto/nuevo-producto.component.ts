@@ -110,6 +110,10 @@ export class NuevoProductoComponent implements OnInit {
   
 }
 
+  irAUvIndividual(): void {
+  this.router.navigate(['/menuProductos/uvIndividual']);
+}
+
   salir(): void {
     this.router.navigate(['/pages/clientes']);
   }
