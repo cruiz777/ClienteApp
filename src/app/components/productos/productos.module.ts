@@ -10,7 +10,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatTableModule } from '@angular/material/table'; // ✅ Asegúrate de incluir esto
+import { MatTableModule } from '@angular/material/table'; 
 
 @NgModule({
   declarations: [
@@ -25,7 +25,7 @@ import { MatTableModule } from '@angular/material/table'; // ✅ Asegúrate de i
     MatExpansionModule,
     MatButtonModule,
     MatToolbarModule,
-    MatTableModule 
+    MatTableModule
   ],
   exports: [NavigationProductoComponent]
 })

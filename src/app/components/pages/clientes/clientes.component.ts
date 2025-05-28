@@ -119,7 +119,7 @@ this.dataSource.paginator = this.paginator;
 seleccionarFila(cliente: Cliente) {
   this.selectedCliente = cliente;
   this.clienteSeleccionadoService.seleccionar(cliente);
-  this.router.navigate(['/menuProductos/clientes']);
+  this.router.navigate(['/menuProductos/clienteSeleccion']);
 }
 
 }

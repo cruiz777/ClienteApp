@@ -32,11 +32,17 @@ export class NavigationProductoComponent implements OnInit {
   }
 
 
-  updateDateTime(): void {
+ updateDateTime(): void {
     const now = new Date();
-    const options: Intl.DateTimeFormatOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+    const options: Intl.DateTimeFormatOptions = {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    };
     const formattedDate = now.toLocaleDateString('es-EC', options);
-    const formattedTime = now.toLocaleTimeString('es-EC', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const formattedTime = now.toLocaleTimeString('es-EC',
+      {hour: '2-digit', minute: '2-digit', second: '2-digit'});
 
     this.currentDateTime = `${this.capitalizeFirstLetter(formattedDate)}, ${formattedTime}`;
   }
