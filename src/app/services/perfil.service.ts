@@ -27,5 +27,8 @@ export class PerfilesService {
     return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/${id}`, perfil);
   }
 
+  softDeletePerfiles(id: number): Observable<ApiResponse<boolean>> {
+    return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/softDelete/${id}`,{});
+  }
 
 }

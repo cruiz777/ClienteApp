@@ -208,19 +208,37 @@ export class PerfilesListComponent implements OnInit {
       data
     }).afterClosed().subscribe((confirmado: boolean) => {
       if (confirmado) {
-        // Aquí irá la lógica real de eliminación
-        console.log(`Eliminar perfil con ID: ${idPerfil}`);
 
-        this.dialog.open(CustomMessageBoxComponent, {
-          width: '400px',
-          data: {
-            title: 'Eliminado',
-            message: 'El perfil fue eliminado correctamente (simulado).',
-            type: 'success',
-            confirmText: 'Aceptar',
-            showCancel: false
+        this.perfilesService.softDeletePerfiles(idPerfil).subscribe({
+          next: (resp) => {
+            if (resp.data === true) {
+              this.dialog.open(CustomMessageBoxComponent, {
+                width: '400px',
+                data: {
+                  title: 'Eliminado',
+                  message: 'El perfil fue eliminado correctamente.',
+                  type: 'success',
+                  confirmText: 'Aceptar',
+                  showCancel: false
+                }
+              });
+              this.cargarPerfiles();
+            }
+            else {
+              this.dialog.open(CustomMessageBoxComponent, {
+                width: '400px',
+                data: {
+                  title: 'No se puede eliminar',
+                  message: 'El perfil no puede ser eliminado porque existen usuarios asociados a él.',
+                  type: 'info',
+                  confirmText: 'Aceptar',
+                  showCancel: false
+                }
+              });
+            }
           }
-        });
+        })
+
       }
     });
   }
@@ -322,7 +340,7 @@ export class PerfilesListComponent implements OnInit {
 
   cargarPerfiles(): void {
     this.perfilesService.getPerfiles().subscribe(response => {
-      this.perfiles = response.data;
+      this.perfiles = response.data.filter(p => p.estado === true);
     });
   }
 
