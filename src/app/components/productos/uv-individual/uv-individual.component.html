@@ -2,97 +2,94 @@
   <h2>Asignación Nuevo GTIN - Ingreso Único de Venta</h2>
 
   <!-- Sección UV -->
-  <form class="formulario">
+  <form class="formulario" [formGroup]="formUV">
     <div class="form-grid">
-      <input type="text" placeholder="Código del cliente:" />
-      <input type="text" placeholder="Cliente:" />
-      <input type="text" placeholder="RUC:" />
-      <input type="text" placeholder="GCP®:" />
-      <input type="text" placeholder="GLN®:" />
+      <input type="text" placeholder="Código del cliente:" formControlName="codigoCliente" />
+      <input type="text" placeholder="Cliente:" formControlName="cliente" />
+      <input type="text" placeholder="RUC:" formControlName="ruc" />
+      <input type="text" placeholder="GCP®:" formControlName="gcp" />
+      <input type="text" placeholder="GLN®:" formControlName="gln" />
 
-      <div class="grupo-checkbox">
+      <div class="grupo-checkbox" formGroupName="gtinNacionales">
         <label>Nacionales</label>
-        <label><input type="checkbox" /> GTIN-13</label>
-        <label><input type="checkbox" /> GTIN-8</label>
+        <label><input type="checkbox" formControlName="gtin13" /> GTIN-13</label>
+        <label><input type="checkbox" formControlName="gtin8" /> GTIN-8</label>
       </div>
 
-      <div class="grupo-checkbox">
+      <div class="grupo-checkbox" formGroupName="gtinInternacionales">
         <label>Internacionales</label>
-        <label><input type="checkbox" /> GTIN-13</label>
-        <label><input type="checkbox" /> GTIN-8</label>
-        <label><input type="checkbox" /> GTIN-12</label>
+        <label><input type="checkbox" formControlName="gtin13" /> GTIN-13</label>
+        <label><input type="checkbox" formControlName="gtin8" /> GTIN-8</label>
+        <label><input type="checkbox" formControlName="gtin12" /> GTIN-12</label>
       </div>
 
-      <input type="text" placeholder="Serie:" />
-      <input type="text" placeholder="GCP®:" />
-      <input type="text" placeholder="GTIN UV®:" />
-      <input type="text" placeholder="TIPO GTIN®:" />
-      <input type="text" placeholder="Descripción:" />
-      <input type="text" placeholder="Marca:" />
-      <input type="text" placeholder="Contenido:" />
-      <input type="text" placeholder="Unidad de medida:" />
-      <input type="text" placeholder="Categoría:" />
-      <input type="text" placeholder="GCP® BRICK:" />
-      <input type="text" placeholder="País de venta:" />
-      <input type="text" placeholder="Sector:" />
-      <input type="text" placeholder="URL foto:" />
+      <input type="text" placeholder="Serie:" formControlName="serie" />
+      <input type="text" placeholder="GTIN UV®:" formControlName="gtinUv" />
+      <input type="text" placeholder="TIPO GTIN®:" formControlName="tipoGtin" />
+      <input type="text" placeholder="Descripción:" formControlName="descripcion" />
+      <input type="text" placeholder="Marca:" formControlName="marca" />
+      <input type="text" placeholder="Contenido:" formControlName="contenido" />
+      <input type="text" placeholder="Unidad de medida:" formControlName="unidadMedida" />
+      <input type="text" placeholder="Categoría:" formControlName="categoria" />
+      <input type="text" placeholder="GCP® BRICK:" formControlName="brick" />
+      <input type="text" placeholder="País de venta:" formControlName="pais" />
+      <input type="text" placeholder="Sector:" formControlName="sector" />
+      <input type="text" placeholder="URL foto:" formControlName="urlFoto" />
+      <textarea placeholder="Observación:" formControlName="observacion"></textarea>
 
-      <textarea placeholder="Observación:"></textarea>
-
-      <div class="checkbox-grid full-width">
-        <label><input type="checkbox" /> La Favorita</label>
-        <label><input type="checkbox" /> Mega Santa María</label>
-        <label><input type="checkbox" /> Amazon</label>
-        <label><input type="checkbox" /> El Rosario</label>
-        <label><input type="checkbox" /> TIA</label>
-        <label><input type="checkbox" /> Google</label>
-        <input type="text" placeholder="Otros:" />
+      <div class="checkbox-grid full-width" formGroupName="empresas">
+        <label><input type="checkbox" formControlName="favorita" /> La Favorita</label>
+        <label><input type="checkbox" formControlName="mega" /> Mega Santa María</label>
+        <label><input type="checkbox" formControlName="amazon" /> Amazon</label>
+        <label><input type="checkbox" formControlName="rosario" /> El Rosario</label>
+        <label><input type="checkbox" formControlName="tia" /> TIA</label>
+        <label><input type="checkbox" formControlName="google" /> Google</label>
+        <input type="text" placeholder="Otros:" formControlName="otrosSolicitantes" />
       </div>
     </div>
 
     <div class="botones">
-      <button class="btn">Nuevo</button>
-      <button class="btn">Generar</button>
-      <button class="btn btn-azul">Grabar</button>
-      <button class="btn btn-rojo">Ingresar UL</button>
+      <button class="btn" type="button">Nuevo</button>
+      <button class="btn" type="button">Generar</button>
+      <button class="btn btn-azul" type="button" (click)="grabarTodo()">Grabar</button>
+      <button class="btn btn-rojo" type="button">Ingresar UL</button>
     </div>
   </form>
 
   <!-- Sección UL -->
   <h2 class="separador">UNIDAD LOGISTICA GTIN-14</h2>
 
-  <form class="formulario">
+  <form class="formulario" [formGroup]="formUL">
     <div class="form-grid">
-      <div class="grupo-checkbox">
+      <div class="grupo-checkbox" formGroupName="gtinNacionalesUL">
         <label>Nacionales</label>
-        <label><input type="checkbox" /> GTIN-14</label>
-        <label><input type="checkbox" /> GTIN-13</label>
-        <label><input type="checkbox" /> GTIN-12</label>
+        <label><input type="checkbox" formControlName="gtin14" /> GTIN-14</label>
+        <label><input type="checkbox" formControlName="gtin13" /> GTIN-13</label>
+        <label><input type="checkbox" formControlName="gtin12" /> GTIN-12</label>
       </div>
 
-      <div class="grupo-checkbox">
+      <div class="grupo-checkbox" formGroupName="gtinInternacionalesUL">
         <label>Internacionales</label>
-        <label><input type="checkbox" /> GTIN-14</label>
-        <label><input type="checkbox" /> GTIN-13</label>
-        <label><input type="checkbox" /> GTIN-12</label>
+        <label><input type="checkbox" formControlName="gtin14" /> GTIN-14</label>
+        <label><input type="checkbox" formControlName="gtin13" /> GTIN-13</label>
+        <label><input type="checkbox" formControlName="gtin12" /> GTIN-12</label>
       </div>
 
-      <input type="text" placeholder="Serie:" />
-      <input type="text" placeholder="Tipo de empaque:" />
-      <input type="text" placeholder="Unidad:" />
-      <input type="text" placeholder="Indicador:" />
-      <input type="text" placeholder="Factor:" />
-      <input type="text" placeholder="GTIN® UL:" />
-      <input type="text" placeholder="Tipo GTIN®:" />
-      <textarea placeholder="Observación:"></textarea>
+      <input type="text" placeholder="Serie:" formControlName="serie" />
+      <input type="text" placeholder="Tipo de empaque:" formControlName="tipoEmpaque" />
+      <input type="text" placeholder="Unidad:" formControlName="unidad" />
+      <input type="text" placeholder="Indicador:" formControlName="indicador" />
+      <input type="text" placeholder="Factor:" formControlName="factor" />
+      <input type="text" placeholder="GTIN® UL:" formControlName="gtinUl" />
+      <input type="text" placeholder="Tipo GTIN®:" formControlName="tipoGtin" />
+      <textarea placeholder="Observación:" formControlName="observacion"></textarea>
     </div>
 
     <div class="botones">
-      <button class="btn">Nuevo</button>
-      <button class="btn">Generar</button>
-      <button class="btn btn-azul">Grabar</button>
-      <button class="btn btn-rojo">Salir</button>
+      <button class="btn" type="button">Nuevo</button>
+      <button class="btn" type="button">Generar</button>
+      <button class="btn btn-azul" type="button" (click)="grabarTodo()">Grabar</button>
+      <button class="btn btn-rojo" type="button" (click)="salir()">Salir</button>
     </div>
   </form>
 </div>
-
