@@ -30,6 +30,10 @@ const routes: Routes = [
         loadChildren:()=>import('./zona/zona.module').then(m=>m.ZonaModule)
       },
       {
+        path:'proyectos',
+        loadChildren:()=>import('./configuracion/proyecto/proyecto.module').then(m=>m.ProyectoModule)
+      },
+      {
         path: '',
         redirectTo: 'inicio',
         pathMatch: 'full'
