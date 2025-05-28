@@ -125,6 +125,10 @@ export class NuevoProductoComponent implements OnInit {
   seleccionarRegistro(registro: any) {
     this.registroSeleccionado = registro;
   }
+
+  irAUvIndividual(): void {
+  this.router.navigate(['/menuProductos/uvIndividual']);
+}
   salir(): void {
   this.router.navigate(['/pages/clientes']);
 }

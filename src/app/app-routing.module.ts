@@ -1,3 +1,4 @@
+import { UvIndividualComponent } from './components/productos/uv-individual/uv-individual.component';
 import { NavigationComponent } from './components/seguridades/navigation/navigation.component';
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
@@ -29,6 +30,7 @@ const routes: Routes = [
     { path: '', redirectTo: 'nuevoProducto', pathMatch: 'full' },
     { path: 'nuevoProducto', component: NuevoProductoComponent },
     { path: 'clienteSeleccion', component: ClienteSeleccionadoComponent},
+    { path: 'uvIndividual', component: UvIndividualComponent }
 
    ]
 },
