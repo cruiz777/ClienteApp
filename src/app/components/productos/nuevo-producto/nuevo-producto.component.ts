@@ -58,7 +58,7 @@ export class NuevoProductoComponent implements OnInit {
 
   registros: any[] = [];
   registrosGtin14: any[] = [];
-
+  bandera:number=0;
 
   columnasGTIN14: string[] = [
     'id',

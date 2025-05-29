@@ -46,8 +46,7 @@ export class UvIndividualComponent implements OnInit {
   grupoProductoCtrl = new FormControl('');
   categoriasFiltradas: GrupoProducto[] = [];
   grupoProductoSeleccionado!: number;
-
-
+  bandera: number = 0;
   constructor(
     private fb: FormBuilder,
     private clienteSeleccionadoService: ClienteSeleccionadoService,
@@ -159,6 +158,7 @@ export class UvIndividualComponent implements OnInit {
     const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
     if (objeto?.gln) {
       this.formUV.patchValue({ gln: objeto.gln });
+      this.bandera = objeto.bandera;
     }
   }
 
@@ -208,7 +208,7 @@ export class UvIndividualComponent implements OnInit {
     const datosUL = this.formUL.value;
     console.log('Datos UV:', datosUV);
     console.log('Datos UL:', datosUL);
-    
+
   }
 
   salir(): void {
@@ -216,31 +216,63 @@ export class UvIndividualComponent implements OnInit {
   }
 
 
-generar() {
- 
+  generar() {
 
-  console.log('✅ Entrando a generar()');
 
-  const gcpId = this.formUV.get('gcp')?.value;
-  if (!gcpId) {
-    console.warn('⚠️ Prefijo (gcp) no seleccionado');
-    return;
+    console.log('✅ Entrando a generar()');
+
+    const gcpId = this.formUV.get('gcp')?.value;
+    if (!gcpId) {
+      console.warn('⚠️ Prefijo (gcp) no seleccionado');
+      return;
+    }
+
+    const prefijo = this.prefijos.find(p => p.id_prefijos === gcpId);
+    if (!prefijo) {
+      console.error('❌ Prefijo no encontrado en la lista');
+      return;
+    }
+    const secuencia = 1; // valor simulado
+    const gtinNacionalSeleccionado = this.formUV.get('gtinNacionalSeleccionado')?.value;
+    const gtinInternacionalSeleccionado = this.formUV.get('gtinInternacionalSeleccionado')?.value;
+    debugger
+    ///////GENERA GTIN13 NACIONAL SIEMPRE QUE EL PREFIJO SEA NACIONAL Y TENGA BANDERA=0
+    if (gtinNacionalSeleccionado === 'gtin13' && this.bandera === 0) {
+      const codigoGenerado13N = this.generacionCodigosService.generarCodigo13(prefijo.codpre, secuencia);
+      console.log('🎯 GTIN generado:', codigoGenerado13N);
+      this.formUV.get('gtinUv')?.setValue(codigoGenerado13N);
+    }
+     ///////GENERA GTIN8 NACIONAL SIEMPRE QUE EL PREFIJO SEA NACIONAL Y TENGA BANDERA=0
+    if (gtinNacionalSeleccionado === 'gtin8' && this.bandera === 0) {
+      const codigoGenerado8N = this.generacionCodigosService.generarCodigo8('0817');
+      console.log('🎯 GTIN generado:', codigoGenerado8N);
+      this.formUV.get('gtinUv')?.setValue(codigoGenerado8N);
+    }
+     ///////GENERA GTIN12 UPC SIEMPRE QUE EL PREFIJO SEA NACIONAL Y TENGA BANDERA=2
+
+    
+    if (gtinNacionalSeleccionado === 'gtin12' && this.bandera === 2) {
+      const codigoGenerado12N = this.generacionCodigosService.generarCodigo12N('055817',secuencia,6);
+      console.log('🎯 GTIN generado:', codigoGenerado12N);
+      this.formUV.get('gtinUv')?.setValue(codigoGenerado12N);
+    }
+
+     ///////REGISTRO GTIN13I UPC SIEMPRE QUE EL PREFIJO SEA NACIONAL 
+
+   const numero=this.formUV.get('gtinUv');
+   const gtin = this.formUV.get('gtinUv')?.value || '';
+   const longitud = gtin.length;
+    if (gtinInternacionalSeleccionado === 'gtin13') {
+
+      const codigoGenerado13I = this.generacionCodigosService.generarCodigo12N('055817',secuencia,6);
+      console.log('🎯 GTIN generado:', codigoGenerado13I);
+      this.formUV.get('gtinUv')?.setValue(codigoGenerado13I);
+    }
+
+
   }
 
-  const prefijo = this.prefijos.find(p => p.id_prefijos === gcpId);
-  if (!prefijo) {
-    console.error('❌ Prefijo no encontrado en la lista');
-    return;
-  }
-
-  const secuencia = 1; // valor simulado
-  const codigoGenerado = this.generacionCodigosService.generarCodigo13(prefijo.codpre, secuencia);
-  console.log('🎯 GTIN generado:', codigoGenerado);
-
-  this.formUV.get('gtinUv')?.setValue(codigoGenerado);
-}
-
-limpiarCampos(): void {
+  limpiarCampos(): void {
     this.formUV.reset();
     this.formUL.reset();
 
