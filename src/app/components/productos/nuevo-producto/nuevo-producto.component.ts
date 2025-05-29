@@ -11,7 +11,7 @@ import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionad
 import { Cliente } from 'src/app/interfaces/cliente';
 import { Router } from '@angular/router';
 import { ProductoService, Producto } from 'src/app/services/producto.service';
-import { Codigos14Service,Codigos14Response } from 'src/app/services/codigos14.service';
+import { Codigos14Service, Codigos14Response } from 'src/app/services/codigos14.service';
 
 @Component({
   selector: 'app-nuevo-producto',
@@ -37,22 +37,22 @@ export class NuevoProductoComponent implements OnInit {
   busqueda: string = '';
   cantidadMostrar: number = 10;
   registroSeleccionado: any = null;
-  codigoSeleccionado:string='';
+  codigoSeleccionado: string = '';
   columnasUV: string[] = [
     'id',
     'empresa',
     'prefijo',
     'tipogtin',
     'estado',
-     'codbar',
-     'presentacion',
-     'descripcion',
-     'fecha',
-     'marca',
-     'contenido',
-     'unidad',
-     'categoria',
-     'gcp_brick',
+    'codbar',
+    'presentacion',
+    'descripcion',
+    'fecha',
+    'marca',
+    'contenido',
+    'unidad',
+    'categoria',
+    'gcp_brick',
     'pais',
   ];
 
@@ -67,10 +67,10 @@ export class NuevoProductoComponent implements OnInit {
     'prefijo',
     'presentacion',
     'factor',
-     'descripcion',
-     'fecha',
-     'estado'
-  
+    'descripcion',
+    'fecha',
+    'estado'
+
   ];
 
 
@@ -79,8 +79,8 @@ export class NuevoProductoComponent implements OnInit {
     private clienteSeleccionadoService: ClienteSeleccionadoService,
     private router: Router,
     private productoService: ProductoService,
-    private codigos14Service:Codigos14Service
-  ) {}
+    private codigos14Service: Codigos14Service
+  ) { }
 
   ngOnInit(): void {
     this.clienteSeleccionadoService.clienteSeleccionado$.subscribe(cliente => {
@@ -104,47 +104,46 @@ export class NuevoProductoComponent implements OnInit {
   }
 
   seleccionarRegistro(registro: any) {
-  this.registroSeleccionado = registro;
-  this.codigoSeleccionado=registro.codbar;
-  this.cargarCodigos14PorGtin(registro.codbar);  // <- campo correcto
-  
-}
+    this.registroSeleccionado = registro;
+    this.codigoSeleccionado = registro.codbar;
+    this.cargarCodigos14PorGtin(registro.codbar);  // <- campo correcto
+  }
 
   irAUvIndividual(): void {
-  this.router.navigate(['/menuProductos/uvIndividual']);
-}
+    this.router.navigate(['/menuProductos/uvIndividual']);
+  }
 
   salir(): void {
     this.router.navigate(['/pages/clientes']);
   }
 
   cargarProductos(codigoCliente: number): void {
-  
+
     this.productoService.getProductosPorCliente(codigoCliente).subscribe({
       next: (productos: Producto[]) => {
         this.registros = productos.map(p => ({
-          id:p.IdProducto,
+          id: p.IdProducto,
           empresa: p.clienteNombres || '',
           prefijo: p.codpre || '',
-          tipogtin:p.tgin || '',
-           estado: p.Activo ? 'ACTIVO' : 'INACTIVO',
-          codbar:p.codbar || '',
-           presentacion: p.p || '',
-           descripcion:p.Despro || '',
-           fecha: (() => {
-          const fecha = new Date(p.Fecing);
-          const dia = String(fecha.getDate()).padStart(2, '0');
-          const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-          const anio = fecha.getFullYear();
-          return `${dia}/${mes}/${anio}`;
-        })(),
+          tipogtin: p.tgin || '',
+          estado: p.Activo ? 'ACTIVO' : 'INACTIVO',
+          codbar: p.codbar || '',
+          presentacion: p.p || '',
+          descripcion: p.Despro || '',
+          fecha: (() => {
+            const fecha = new Date(p.Fecing);
+            const dia = String(fecha.getDate()).padStart(2, '0');
+            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            const anio = fecha.getFullYear();
+            return `${dia}/${mes}/${anio}`;
+          })(),
 
-          marca:p.marca || '',
+          marca: p.marca || '',
           contenido: p.contenido || '',
           unidad: p.unidad || '',
           categoria: p.dbrick || '',
-          gcp_brick:p.brick|| '',
-           pais:p.pais || '',
+          gcp_brick: p.brick || '',
+          pais: p.pais || '',
 
         }));
       },
@@ -154,32 +153,32 @@ export class NuevoProductoComponent implements OnInit {
     });
   }
 
-cargarCodigos14PorGtin(gtin: string): void {
-  this.codigos14Service.getPorGtin(gtin).subscribe({
-    next: (codigos) => {
-      this.registrosGtin14 = codigos.map(c => ({
-        id: c.id_codigos14,
-        g14: c.g14 || '',
-        codbar: c.codbar || '',
-        prefijo: c.codpre || '',
-        presentacion:c.presentacion  || '',
-        factor: c.unidad || '',
-        descripcion: c.descripcion || '',
-        fecha: (() => {
-          const fecha = new Date(c.fecha);
-          const dia = String(fecha.getDate()).padStart(2, '0');
-          const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-          const anio = fecha.getFullYear();
-          return `${dia}/${mes}/${anio}`;
-        })(),
-        estado: c.activo ? 'ACTIVO' : 'INACTIVO'
-      }));
-    },
-    error: err => {
-      console.error('Error al cargar códigos14:', err);
-    }
-  });
-}
+  cargarCodigos14PorGtin(gtin: string): void {
+    this.codigos14Service.getPorGtin(gtin).subscribe({
+      next: (codigos) => {
+        this.registrosGtin14 = codigos.map(c => ({
+          id: c.id_codigos14,
+          g14: c.g14 || '',
+          codbar: c.codbar || '',
+          prefijo: c.codpre || '',
+          presentacion: c.presentacion || '',
+          factor: c.unidad || '',
+          descripcion: c.descripcion || '',
+          fecha: (() => {
+            const fecha = new Date(c.fecha);
+            const dia = String(fecha.getDate()).padStart(2, '0');
+            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+            const anio = fecha.getFullYear();
+            return `${dia}/${mes}/${anio}`;
+          })(),
+          estado: c.activo ? 'ACTIVO' : 'INACTIVO'
+        }));
+      },
+      error: err => {
+        console.error('Error al cargar códigos14:', err);
+      }
+    });
+  }
 
 
 

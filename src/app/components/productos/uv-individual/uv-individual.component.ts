@@ -16,6 +16,7 @@ import { Observable, of } from 'rxjs';
 import { startWith, map } from 'rxjs/operators';
 import { MatIconModule } from '@angular/material/icon';
 import { GeneracionCodigosService } from 'src/app/services/generacion-codigos.service';
+
 @Component({
   selector: 'app-uv-individual',
   standalone: true,
@@ -30,7 +31,7 @@ import { GeneracionCodigosService } from 'src/app/services/generacion-codigos.se
     MatAutocompleteModule,
     MatTableModule,
     MatSelectModule,
-    MatIconModule,
+    MatIconModule
   ],
   templateUrl: './uv-individual.component.html',
   styleUrl: './uv-individual.component.css'
@@ -38,6 +39,7 @@ import { GeneracionCodigosService } from 'src/app/services/generacion-codigos.se
 export class UvIndividualComponent implements OnInit {
   formUV!: FormGroup;
   formUL!: FormGroup;
+
   clienteSeleccionado: Cliente | null = null;
   prefijos: any[] = [];
   gtinNacionalActivo = false;
@@ -46,7 +48,18 @@ export class UvIndividualComponent implements OnInit {
   grupoProductoCtrl = new FormControl('');
   categoriasFiltradas: GrupoProducto[] = [];
   grupoProductoSeleccionado!: number;
+
   bandera: number = 0;
+
+
+  serieEditable: boolean = false;
+
+  unidades: string[] = ['Unidad', 'Litro', 'Kilogramo', 'Caja', 'Pack'];
+  paises: string[] = ['Ecuador', 'Colombia', 'Perú', 'Chile'];
+  sectores: string[] = ['Alimentos', 'Salud', 'Higiene', 'Bebidas'];
+
+
+
   constructor(
     private fb: FormBuilder,
     private clienteSeleccionadoService: ClienteSeleccionadoService,
@@ -128,6 +141,10 @@ export class UvIndividualComponent implements OnInit {
       }
     });
   }
+  habilitarSerie(event: any): void {
+    this.serieEditable = event.target.checked;
+  }
+
 
   cargarCliente(): void {
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
@@ -151,6 +168,12 @@ export class UvIndividualComponent implements OnInit {
         console.error('Error al cargar prefijos:', err);
       }
     });
+  }
+
+  mostrarCodigoPrefijo(): string {
+    const id = this.formUV.get('gcp')?.value;
+    const p = this.prefijos.find(p => p.id_prefijos === id);
+    return p?.codpre || '';
   }
 
   onPrefijoBlur(): void {
@@ -203,16 +226,14 @@ export class UvIndividualComponent implements OnInit {
     }
   }
 
+
+
   grabarTodo() {
     const datosUV = this.formUV.value;
     const datosUL = this.formUL.value;
     console.log('Datos UV:', datosUV);
     console.log('Datos UL:', datosUL);
 
-  }
-
-  salir(): void {
-    // Navegación si aplica
   }
 
 
@@ -272,22 +293,25 @@ export class UvIndividualComponent implements OnInit {
 
   }
 
-  limpiarCampos(): void {
+
+ limpiarCampos(): void {
+
     this.formUV.reset();
     this.formUL.reset();
 
-    // Restablecer valores específicos si es necesario
     if (this.clienteSeleccionado) {
       this.formUV.patchValue({
         codigoCliente: this.clienteSeleccionado.clientes_codigo || '',
         cliente: this.clienteSeleccionado.nomcli || '',
-        ruc: this.clienteSeleccionado.ruc || '',
+        ruc: this.clienteSeleccionado.ruc || ''
       });
       this.cargarPrefijos(this.clienteSeleccionado.clientes_codigo);
     }
 
-    this.gtinNacionalActivo = false;
-    this.gtinInternacionalActivo = false;
+    this.serieEditable = false;
+  }
+  salir(): void {
+    // Navegación si aplica
   }
 
 }
