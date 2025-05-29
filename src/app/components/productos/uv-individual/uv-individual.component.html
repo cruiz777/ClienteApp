@@ -1,12 +1,24 @@
 <div class="contenedor-formulario">
   <h2>Asignación Nuevo GTIN - Ingreso Único de Venta</h2>
 
-  <!-- Sección UV -->
   <form class="formulario" [formGroup]="formUV">
     <div class="form-grid">
-      <input type="text" placeholder="Código del cliente:" formControlName="codigoCliente" />
-      <input type="text" placeholder="Cliente:" formControlName="cliente" />
-      <input type="text" placeholder="RUC:" formControlName="ruc" />
+
+      <div>
+        <label for="codigoCliente">Código del cliente:</label>
+        <input id="codigoCliente" type="text" formControlName="codigoCliente" />
+      </div>
+
+      <div>
+        <label for="cliente">Cliente:</label>
+        <input id="cliente" type="text" formControlName="cliente" />
+      </div>
+
+      <div>
+        <label for="ruc">RUC:</label>
+        <input id="ruc" type="text" formControlName="ruc" />
+      </div>
+
       <mat-form-field appearance="fill">
         <mat-label>Prefijo</mat-label>
         <mat-select formControlName="gcp" (blur)="onPrefijoBlur()">
@@ -16,118 +28,118 @@
         </mat-select>
       </mat-form-field>
 
-      <input type="text" placeholder="GLN®:" formControlName="gln" />
-
-      <!-- Nacionales -->
-      <div class="grupo-checkbox">
-        <label>Nacionales</label>
-        <label>
-          <input type="radio" formControlName="gtinNacionalSeleccionado" value="gtin13" /> GTIN-13
-        </label>
-        <label>
-          <input type="radio" formControlName="gtinNacionalSeleccionado" value="gtin8" /> GTIN-8
-        </label>
-        <label>
-          <input type="radio" formControlName="gtinNacionalSeleccionado" value="gtin12" /> GTIN-12
-        </label>
+      <div>
+        <label for="gln">GLN®:</label>
+        <input id="gln" type="text" formControlName="gln" />
       </div>
 
-      <!-- Internacionales -->
-      <div class="grupo-checkbox">
-        <label>Internacionales</label>
-        <label>
-          <input type="radio" formControlName="gtinInternacionalSeleccionado" value="gtin13" /> GTIN-13
-        </label>
-        <label>
-          <input type="radio" formControlName="gtinInternacionalSeleccionado" value="gtin8" /> GTIN-8
-        </label>
-        <label>
-          <input type="radio" formControlName="gtinInternacionalSeleccionado" value="gtin12" /> GTIN-12
-        </label>
+      <div class="contenedor-radios">
+        <div class="grupo-etiqueta">
+          <label class="titulo-grupo">Nacionales</label>
+          <div class="checkbox-contenedor radio">
+            <label><input type="radio" formControlName="gtinNacionalSeleccionado" value="gtin13" />
+              <span>GTIN-13</span></label>
+            <label><input type="radio" formControlName="gtinNacionalSeleccionado" value="gtin8" />
+              <span>GTIN-8</span></label>
+            <label><input type="radio" formControlName="gtinNacionalSeleccionado" value="gtin12" />
+              <span>GTIN-12</span></label>
+          </div>
+        </div>
+
+        <div class="grupo-etiqueta">
+          <label class="titulo-grupo">Internacionales</label>
+          <div class="checkbox-contenedor radio">
+            <label><input type="radio" formControlName="gtinInternacionalSeleccionado" value="gtin13" />
+              <span>GTIN-13</span></label>
+            <label><input type="radio" formControlName="gtinInternacionalSeleccionado" value="gtin8" />
+              <span>GTIN-8</span></label>
+            <label><input type="radio" formControlName="gtinInternacionalSeleccionado" value="gtin12" />
+              <span>GTIN-12</span></label>
+          </div>
+        </div>
       </div>
 
-      <input type="text" placeholder="Serie:" formControlName="serie" />
-      <input type="text" placeholder="GTIN UV®:" formControlName="gtinUv" />
-      <input type="text" placeholder="TIPO GTIN®:" formControlName="tipoGtin" />
-      <input type="text" placeholder="Descripción:" formControlName="descripcion" />
-      <input type="text" placeholder="Marca:" formControlName="marca" />
-      <input type="text" placeholder="Contenido:" formControlName="contenido" />
-      <input type="text" placeholder="Unidad de medida:" formControlName="unidadMedida" />
 
-      <mat-form-field  style="font-size: 12px; height: 75px;width: 240px;">
+      <!-- Otros campos -->
+      <div><label>Serie:</label><input type="text" formControlName="serie" /></div>
+      <div><label>GTIN UV®:</label><input type="text" formControlName="gtinUv" /></div>
+      <div><label>TIPO GTIN®:</label><input type="text" formControlName="tipoGtin" /></div>
+      <div><label>Descripción:</label><input type="text" formControlName="descripcion" /></div>
+      <div><label>Marca:</label><input type="text" formControlName="marca" /></div>
+      <div><label>Contenido:</label><input type="text" formControlName="contenido" /></div>
+      <div><label>Unidad de medida:</label><input type="text" formControlName="unidadMedida" /></div>
+
+      <mat-form-field>
         <input matInput formControlName="categoria" [matAutocomplete]="autoCategoria"
-          placeholder="Seleccione Categoría">
-
-        <button matSuffix mat-icon-button aria-label="Limpiar"
-          *ngIf="formUV.get('categoria')?.value" (click)="limpiarCategoria()">
+          placeholder="Seleccione Categoría" />
+        <button matSuffix mat-icon-button *ngIf="formUV.get('categoria')?.value" (click)="limpiarCategoria()">
           <mat-icon>close</mat-icon>
         </button>
-
         <mat-autocomplete #autoCategoria="matAutocomplete" [displayWith]="displayWithCategoria"
-          (optionSelected)="seleccionarCategoria($event.option.value)" autocomplete="off">
-          <mat-option *ngFor="let cat of categoriasFiltradas" [value]="cat" style="font-size: 11px">
-             {{ cat.desBrick }}
+          (optionSelected)="seleccionarCategoria($event.option.value)">
+          <mat-option *ngFor="let cat of categoriasFiltradas" [value]="cat">
+            {{ cat.desBrick }}
           </mat-option>
         </mat-autocomplete>
-
-        <mat-error *ngIf="formUV.get('categoria')?.hasError('required') && formUV.get('categoria')?.touched"
-          style="color: red; font-size: 12px;">
-          Este campo es obligatorio.
-        </mat-error>
       </mat-form-field>
 
-      <input type="text" placeholder="GCP® BRICK:" formControlName="brick" />
-      <input type="text" placeholder="País de venta:" formControlName="pais" />
-      <input type="text" placeholder="Sector:" formControlName="sector" />
-      <input type="text" placeholder="URL foto:" formControlName="urlFoto" />
-      <textarea placeholder="Observación:" formControlName="observacion"></textarea>
+      <div><label>GCP® BRICK:</label><input type="text" formControlName="brick" /></div>
+      <div><label>País de venta:</label><input type="text" formControlName="pais" /></div>
+      <div><label>Sector:</label><input type="text" formControlName="sector" /></div>
+      <div><label>URL foto:</label><input type="text" formControlName="urlFoto" /></div>
+      <div><label>Observación:</label><textarea formControlName="observacion"></textarea></div>
 
-      <div class="checkbox-grid full-width" formGroupName="empresas">
+      <!-- Empresas -->
+      <div class="checkbox-contenedor full-width" formGroupName="empresas">
         <label><input type="checkbox" formControlName="favorita" /> La Favorita</label>
         <label><input type="checkbox" formControlName="mega" /> Mega Santa María</label>
         <label><input type="checkbox" formControlName="amazon" /> Amazon</label>
         <label><input type="checkbox" formControlName="rosario" /> El Rosario</label>
         <label><input type="checkbox" formControlName="tia" /> TIA</label>
         <label><input type="checkbox" formControlName="google" /> Google</label>
-        <input type="text" placeholder="Otros:" formControlName="otrosSolicitantes" />
+        <label><input type="text" placeholder="Otros:" formControlName="otrosSolicitantes" /></label>
       </div>
     </div>
 
     <div class="botones">
       <button class="btn" type="button" (click)="limpiarCampos()">Nuevo</button>
-      <button class="btn" type="button" (click)="generar()" >Generar</button>
+      <button class="btn" type="button" (click)="generar()">Generar</button>
       <button class="btn btn-azul" type="button" (click)="grabarTodo()">Grabar</button>
       <button class="btn btn-rojo" type="button">Ingresar UL</button>
     </div>
   </form>
-
   <!-- Sección UL -->
-  <h2 class="separador">UNIDAD LOGISTICA GTIN-14</h2>
+  <h2 class="separador">UNIDAD LOGÍSTICA GTIN-14</h2>
 
   <form class="formulario" [formGroup]="formUL">
     <div class="form-grid">
-      <div class="grupo-checkbox" formGroupName="gtinNacionalesUL">
-        <label>Nacionales</label>
-        <label><input type="checkbox" formControlName="gtin14" /> GTIN-14</label>
-        <label><input type="checkbox" formControlName="gtin13" /> GTIN-13</label>
-        <label><input type="checkbox" formControlName="gtin12" /> GTIN-12</label>
+
+      <div class="grupo-etiqueta full-width">
+        <label class="titulo-grupo">Nacionales</label>
+        <div class="checkbox-contenedor radio">
+          <label><input type="checkbox" formControlName="gtin14" /> <span>GTIN-14</span></label>
+          <label><input type="checkbox" formControlName="gtin13" /> <span>GTIN-13</span></label>
+          <label><input type="checkbox" formControlName="gtin12" /> <span>GTIN-12</span></label>
+        </div>
       </div>
 
-      <div class="grupo-checkbox" formGroupName="gtinInternacionalesUL">
-        <label>Internacionales</label>
-        <label><input type="checkbox" formControlName="gtin14" /> GTIN-14</label>
-        <label><input type="checkbox" formControlName="gtin13" /> GTIN-13</label>
-        <label><input type="checkbox" formControlName="gtin12" /> GTIN-12</label>
+      <div class="grupo-etiqueta full-width">
+        <label class="titulo-grupo">Internacionales</label>
+        <div class="checkbox-contenedor radio">
+          <label><input type="checkbox" formControlName="gtin14" /> <span>GTIN-14</span></label>
+          <label><input type="checkbox" formControlName="gtin13" /> <span>GTIN-13</span></label>
+          <label><input type="checkbox" formControlName="gtin12" /> <span>GTIN-12</span></label>
+        </div>
       </div>
 
-      <input type="text" placeholder="Serie:" formControlName="serie" />
-      <input type="text" placeholder="Tipo de empaque:" formControlName="tipoEmpaque" />
-      <input type="text" placeholder="Unidad:" formControlName="unidad" />
-      <input type="text" placeholder="Indicador:" formControlName="indicador" />
-      <input type="text" placeholder="Factor:" formControlName="factor" />
-      <input type="text" placeholder="GTIN® UL:" formControlName="gtinUl" />
-      <input type="text" placeholder="Tipo GTIN®:" formControlName="tipoGtin" />
-      <textarea placeholder="Observación:" formControlName="observacion"></textarea>
+      <div><label>Serie:</label><input type="text" formControlName="serie" /></div>
+      <div><label>Tipo de empaque:</label><input type="text" formControlName="tipoEmpaque" /></div>
+      <div><label>Unidad:</label><input type="text" formControlName="unidad" /></div>
+      <div><label>Indicador:</label><input type="text" formControlName="indicador" /></div>
+      <div><label>Factor:</label><input type="text" formControlName="factor" /></div>
+      <div><label>GTIN® UL:</label><input type="text" formControlName="gtinUl" /></div>
+      <div><label>Tipo GTIN®:</label><input type="text" formControlName="tipoGtin" /></div>
+      <div><label>Observación:</label><textarea formControlName="observacion"></textarea></div>
     </div>
 
     <div class="botones">
