@@ -11,5 +11,6 @@ export const environment = {
 
  securityApiUrl: 'http://localhost:5001/security/api',  // URL de la API en desarrollo
  applicationUrl: 'http://localhost:5001/security/api',  //Cambiar por la url de clientes en el merge
- clientsUrl: 'http://localhost:5001/clients/api'
+ clientsUrl: 'http://localhost:5001/clients/api',
+ invoicesUrl: 'http://localhost:5003/security/api'
 };
