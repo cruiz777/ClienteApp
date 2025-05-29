@@ -65,7 +65,7 @@ textarea {
 /* Grupo de radios */
 .contenedor-radios {
   display: flex;
-  gap: 16px;
+  gap: 6px;
   flex-wrap: wrap;
   justify-content: space-between;
 }
@@ -85,11 +85,11 @@ textarea {
   display: flex;
   flex-direction: row;
   align-items: center;
-  font-size: 14px;
+  font-size: 12px; /* más pequeño */
   color: #1e3a8a;
-  gap: 8px;
+  gap: 6px;
+  white-space: nowrap; /* evita saltos de línea */
 }
-
 /* Etiquetas para agrupaciones */
 .grupo-etiqueta {
   flex: 1 1 48%;
@@ -168,4 +168,11 @@ textarea {
   margin-top: 48px;
   border-top: 2px solid #cbd5e1;
   padding-top: 24px;
+}
+/* Fila combinada para GTIN y controles */
+.fila-gtin {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
 }

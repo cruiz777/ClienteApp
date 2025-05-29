@@ -19,18 +19,22 @@
         <input id="ruc" type="text" formControlName="ruc" readonly />
       </div>
 
-      <div>
-        <label>Prefijo:</label>
-        <input type="text" [value]="mostrarCodigoPrefijo()" readonly />
-      </div>
+      <mat-form-field appearance="fill">
+        <mat-label>Prefijo</mat-label>
+        <mat-select formControlName="gcp" (selectionChange)="onPrefijoBlur()">
+          <mat-option *ngFor="let prefijo of prefijos" [value]="prefijo.id_prefijos">
+            {{ prefijo.codpre }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
 
       <div>
         <label for="gln">GLN®:</label>
         <input id="gln" type="text" formControlName="gln" readonly />
       </div>
-
-      <!-- Radios alineados -->
-      <div class="contenedor-radios">
+      <!-- Fila completa con radios, serie, GTIN y tipo GTIN -->
+      <div class="fila-gtin full-width">
+        <!-- Nacionales -->
         <div class="grupo-etiqueta">
           <label class="titulo-grupo">Nacionales</label>
           <div class="checkbox-contenedor radio">
@@ -43,6 +47,7 @@
           </div>
         </div>
 
+        <!-- Internacionales -->
         <div class="grupo-etiqueta">
           <label class="titulo-grupo">Internacionales</label>
           <div class="checkbox-contenedor radio">
@@ -54,15 +59,27 @@
               <span>GTIN-12</span></label>
           </div>
         </div>
+
+        <!-- Editar serie -->
+        <div>
+          <label><input type="checkbox" (change)="habilitarSerie($event)" /> Serie</label>
+          <input type="text" formControlName="serie" [readonly]="!serieEditable" />
+        </div>
+
+        <!-- GTIN UV -->
+        <div>
+          <label>GTIN UV®:</label>
+          <input type="text" formControlName="gtinUv" readonly />
+        </div>
+
+        <!-- Tipo GTIN -->
+        <div>
+          <label>TIPO GTIN®:</label>
+          <input type="text" formControlName="tipoGtin" readonly />
+        </div>
       </div>
 
-      <div>
-        <label><input type="checkbox" (change)="habilitarSerie($event)" /> Editar Serie</label>
-        <input type="text" formControlName="serie" [readonly]="!serieEditable" />
-      </div>
 
-      <div><label>GTIN UV®:</label><input type="text" formControlName="gtinUv" readonly /></div>
-      <div><label>TIPO GTIN®:</label><input type="text" formControlName="tipoGtin" readonly /></div>
 
       <!-- Campos editables -->
       <div><label>Descripción:</label><input type="text" formControlName="descripcion" /></div>
