@@ -1,6 +1,9 @@
-export interface Usuario{
-  IdUsuario:number;
-  NombreUsuario:string;
-  ContraseniaHash:string;
-  IdDepartamento:number;
+export interface UsuariosRequest {
+  nombre_usuario: string;
+  contrasenia_hash: string;
+  estado: boolean;
+  correo?: string;
+  fecha_creacion?: string; // o Date, si deseas manejarlo con objeto
+  id_empresa: number;
+  id_departamento: number;
 }

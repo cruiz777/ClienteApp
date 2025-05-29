@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { UsuariosResponse } from '../interfaces/responses/usuario-response';
+import { UsuariosRequest } from '../interfaces/requests/usuario-request';
 import { LoginUsuarioResponse } from '../interfaces/responses/usuario-log-response';
 import { ApiResponse } from './producto.service';
 
@@ -16,7 +17,7 @@ export class UsuarioService {
   private currentUserSubject = new BehaviorSubject<LoginUsuarioResponse | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   login(nombreUsuario: string, contrasenia: string): Observable<LoginUsuarioResponse> {
     const body = {
@@ -62,7 +63,15 @@ export class UsuarioService {
     return stored ? JSON.parse(stored) : null;
   }
 
-  getUsuarios():Observable<ApiResponse<UsuariosResponse[]>>{
+  getUsuarios(): Observable<ApiResponse<UsuariosResponse[]>> {
     return this.http.get<ApiResponse<UsuariosResponse[]>>(this.apiUrl);
+  }
+
+  createUsuario(usuario: UsuariosRequest): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(this.apiUrl, usuario);
+  }
+
+  updateUsuario(idUsuario: number, usuario: UsuariosRequest): Observable<ApiResponse<boolean>> {
+    return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/${idUsuario}`, usuario);
   }
 }

@@ -15,7 +15,12 @@
 
       <div class="form-field">
         <label>Correo:</label>
-        <input formControlName="correo" type="email" />
+        <input formControlName="correo" type="email" placeholder="ejemplo@correo.com" />
+        <div *ngIf="usuarioForm.get('correo')?.invalid && usuarioForm.get('correo')?.touched"
+          style="color: red; font-size: 12px;">
+          Ingrese un correo válido.
+        </div>
+
       </div>
     </div>
 
@@ -23,10 +28,12 @@
       <div class="form-field">
         <label>Clave*:</label>
         <div class="input-con-icono">
-          <img src="assets/icons/icon-clave-2.png" />
-          <input formControlName="clave" type="password" />
+          <img [src]="mostrarClave ? 'assets/icons/icon-clave.png' : 'assets/icons/icon-clave-2.png'"
+            (click)="toggleClave()" style="cursor: pointer;" />
+          <input formControlName="clave" [type]="mostrarClave ? 'text' : 'password'" placeholder="Ingrese su clave" />
         </div>
       </div>
+
 
       <div class="form-field">
         <label>Estado*:</label>
@@ -44,8 +51,7 @@
         <label>Perfil*:</label>
         <select formControlName="perfil">
           <option value="">Seleccione</option>
-          <option value="admin">Administrador</option>
-          <option value="user">Usuario</option>
+          <option *ngFor="let p of perfiles" [value]="p.id_perfil">{{ p.nombre }}</option>
         </select>
       </div>
 
@@ -53,8 +59,7 @@
         <label>Departamento*:</label>
         <select formControlName="departamento">
           <option value="">Seleccione</option>
-          <option value="TI">TI</option>
-          <option value="Administración">Administración</option>
+          <option *ngFor="let d of departamentos" [value]="d.id_departamento">{{ d.nombre }}</option>
         </select>
       </div>
     </div>

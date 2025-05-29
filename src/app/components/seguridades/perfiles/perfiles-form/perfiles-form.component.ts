@@ -53,15 +53,16 @@ export class PerfilesFormComponent implements OnInit {
 
     const request: PerfilesRequest = {
       nombre: this.nombrePerfil.trim(),
-      descripcion: '',
+      descripcion: this.nombrePerfil.trim(),
       id_empresa: this.idEmpresa,
-      fecha_creacion: new Date().toISOString()
+      fecha_creacion: new Date().toISOString(),
+      estado: true,
     };
 
     if (this.idPerfil) {
       console.log('Actualizar perfil con ID:', this.idPerfil, request);
-      this.perfilService.updatePerfiles(this.idPerfil,request).subscribe({
-        next:()=> this.dialogRef.close(true),
+      this.perfilService.updatePerfiles(this.idPerfil, request).subscribe({
+        next: () => this.dialogRef.close(true),
         error: () => alert('❌ Error al crear el perfil.')
       })
     } else {

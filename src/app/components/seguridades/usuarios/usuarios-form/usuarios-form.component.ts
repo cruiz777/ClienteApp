@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MAT_DATE_FORMATS, MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -7,6 +8,20 @@ import { MatInputModule } from '@angular/material/input';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+
+// Servicios
+import { PerfilesService } from 'src/app/services/perfil.service';
+import { DepartamentosService } from 'src/app/services/departamentos.service';
+import { UsuarioService } from 'src/app/services/usuario.service'
+
+// Interfaces de datos
+import { PerfilResponse } from 'src/app/interfaces/responses/perfil-response';
+import { DepartamentoResponse } from 'src/app/interfaces/responses/departamentos-response';
+import { UsuariosRequest } from 'src/app/interfaces/requests/usuario-request'
+
+// Diálogo de mensajes
+import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/components/utils/messages/custom-message-box.component';
+import { publishFacade } from '@angular/compiler';
 
 export const MY_DATE_FORMATS = {
   parse: {
@@ -38,36 +53,105 @@ export const MY_DATE_FORMATS = {
 })
 export class UsuariosFormComponent implements OnInit {
   usuarioForm!: FormGroup;
+  perfiles: PerfilResponse[] = [];
+  departamentos: DepartamentoResponse[] = [];
+  mostrarClave: boolean = false;
+  esEdicion: boolean = false;
+  usuarioIdEditar: number | null = null;
 
   constructor(
     private fb: FormBuilder,
-    public dialogRef: MatDialogRef<UsuariosFormComponent>
-  ) {}
+    public dialogRef: MatDialogRef<UsuariosFormComponent>,
+    public perfilService: PerfilesService,
+    public departamentoService: DepartamentosService,
+    private dialog: MatDialog,
+    private usuario: UsuarioService
+  ) { }
 
   ngOnInit(): void {
     this.usuarioForm = this.fb.group({
       usuario: ['', [Validators.required, Validators.email]],
       clave: ['', Validators.required],
-      correo: [''],
+      correo: ['', [Validators.email]],
       perfil: ['', Validators.required],
       fechaCaducidad: ['', Validators.required],
-      estado: ['', Validators.required],
+      estado: [{ value: 'activo', disabled: true }, Validators.required],
       departamento: ['', Validators.required],
     });
+    this.cargarPerfiles();
+    this.cargarDepartamentos();
   }
 
   grabar(): void {
     if (this.usuarioForm.invalid) {
-      alert('Por favor complete todos los campos obligatorios.');
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '400px',
+        data: {
+          title: 'Completado',
+          message: 'Por favor complete todos los campos obligatorios.',
+          type: 'info',
+          confirmText: 'Aceptar',
+          showCancel: false
+        }
+      });
       return;
     }
 
-    const formData = this.usuarioForm.value;
+    const formData = this.usuarioForm.getRawValue();
+
     console.log('Formulario válido, datos:', formData);
-    // Aquí iría tu lógica de grabado real
+    const request: UsuariosRequest = {
+      nombre_usuario: formData.usuario,
+      contrasenia_hash: formData.clave,
+      estado: formData.estado === 'activo',
+      correo: formData.correo,
+      fecha_creacion: new Date().toISOString(),
+      id_empresa: 1,
+      id_departamento: formData.departamento
+    };
+
+    this.usuario.createUsuario(request).subscribe({
+      next: () => this.dialogRef.close(true),
+      error: () => alert('❌ Error al crear el perfil.')
+    })
+
   }
 
-    cerrar(): void {
+  cerrar(): void {
     this.dialogRef.close();
   }
+
+  cargarPerfiles(): void {
+    this.perfilService.getPerfiles().subscribe({
+      next: (resp) => {
+        this.perfiles = resp.data;
+      },
+      error: () => {
+        alert('Error al cargar perfiles');
+      }
+    });
+  }
+
+  cargarDepartamentos(): void {
+    this.departamentoService.getDepartamentos().subscribe({
+      next: (resp) => {
+        this.departamentos = resp;
+      },
+      error: () => {
+        alert('Error al cargar departamentos');
+      }
+    });
+  }
+
+  editar(): void {
+    this.usuarioForm.get('estado')?.enable();
+
+  }
+
+  toggleClave(): void {
+    this.mostrarClave = !this.mostrarClave;
+  }
+
+
+
 }

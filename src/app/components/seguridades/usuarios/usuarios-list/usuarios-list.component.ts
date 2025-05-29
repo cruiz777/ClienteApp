@@ -50,7 +50,14 @@ export class UsuariosListComponent implements OnInit {
    * Muestra en consola los datos del usuario que se desea editar.
    */
   editarUsuario(usuario: UsuariosResponse) {
-    console.log('Editar usuario:', usuario);
+    this.botonActivo = 'editar';
+    this.dialog.open(UsuariosFormComponent, {
+      width: '800px',
+      data: {
+        modo: 'editar',
+        usuario: usuario
+      }
+    });
   }
 
   /**
