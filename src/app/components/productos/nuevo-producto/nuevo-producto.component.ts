@@ -154,7 +154,7 @@ export class NuevoProductoComponent implements OnInit {
   }
 
   cargarCodigos14PorGtin(gtin: string): void {
-    this.codigos14Service.getPorGtin(gtin).subscribe({
+     this.codigos14Service.getPorGtin(gtin).subscribe({
       next: (codigos) => {
         this.registrosGtin14 = codigos.map(c => ({
           id: c.id_codigos14,

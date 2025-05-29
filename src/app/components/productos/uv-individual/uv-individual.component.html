@@ -62,14 +62,26 @@
 
         <!-- Editar serie -->
         <div>
-          <label><input type="checkbox" (change)="habilitarSerie($event)" /> Serie</label>
-          <input type="text" formControlName="serie" [readonly]="!serieEditable" />
+          <label><input type="checkbox" (change)="habilitarSerie()" formControlName="usarSerie" /> Serie</label>
+          <input type="text" formControlName="serie" [readonly]="!formUV.get('usarSerie')?.value"  />
         </div>
 
         <!-- GTIN UV -->
         <div>
-          <label>GTIN UV®:</label>
-          <input type="text" formControlName="gtinUv" readonly />
+          
+         <mat-form-field appearance="outline">
+  <mat-label>GTIN UV®:</mat-label>
+  <input
+    matInput
+    formControlName="gtinUv"
+    type="text"
+    maxlength="12"
+    (keypress)="permitirSoloNumeros($event)"
+  />
+  <mat-error *ngIf="formUV.get('gtinUv')?.hasError('pattern')">Solo se permiten números</mat-error>
+  <mat-error *ngIf="formUV.get('gtinUv')?.hasError('maxlength')">Longitud máxima excedida</mat-error>
+</mat-form-field>
+
         </div>
 
         <!-- Tipo GTIN -->
