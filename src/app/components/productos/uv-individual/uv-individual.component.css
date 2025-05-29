@@ -1,16 +1,12 @@
+/* Contenedor general */
 .contenedor-formulario {
   padding: 24px;
   background-color: #f8fafc;
   font-family: 'Segoe UI', sans-serif;
   color: #1e293b;
 }
-.contenedor-radios {
-  display: flex;
-  gap: 24px;
-  align-items: flex-start;
-  flex-wrap: wrap;
-}
 
+/* Título principal */
 h2 {
   text-align: center;
   color: #1e3a8a;
@@ -20,38 +16,44 @@ h2 {
   text-transform: uppercase;
 }
 
-.separador {
-  margin-top: 48px;
-  border-top: 2px solid #cbd5e1;
-  padding-top: 24px;
-}
-
+/* Tarjeta del formulario */
 .formulario {
   background-color: #ffffff;
   padding: 16px;
   border-radius: 12px;
   margin-bottom: 32px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
+/* Grilla adaptable para campos */
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 20px;
 }
 
-input, textarea, select {
+/* Autocompletado, selects, inputs, textarea */
+input,
+textarea,
+select,
+mat-form-field {
+  width: 100%;
+}
+
+input,
+textarea,
+select {
   background-color: transparent;
   border: none;
   border-bottom: 1px solid #94a3b8;
   font-size: 14px;
   padding: 6px 4px;
-  width: 100%;
   outline: none;
   color: #1e293b;
 }
 
-input::placeholder, textarea::placeholder {
+input::placeholder,
+textarea::placeholder {
   color: #94a3b8;
 }
 
@@ -60,32 +62,14 @@ textarea {
   min-height: 60px;
 }
 
-mat-form-field {
-  width: 100%;
-}
-
-.full-width {
-  grid-column: 1 / -1;
-}
-
-.checkbox-contenedor {
+/* Grupo de radios */
+.contenedor-radios {
   display: flex;
   gap: 16px;
-  padding: 10px 14px;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  background-color: #f1f5f9;
-  align-items: center;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
+  justify-content: space-between;
 }
 
-.checkbox-contenedor label {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-weight: 500;
-  color: #1e3a8a;
-}
 .checkbox-contenedor.radio {
   padding: 10px 14px;
   border: 1px solid #cbd5e1;
@@ -93,18 +77,20 @@ mat-form-field {
   background-color: #f1f5f9;
   display: flex;
   gap: 20px;
-  justify-content: space-around;
-  min-height: 50px;
+  justify-content: flex-start;
+  align-items: center;
 }
 
 .checkbox-contenedor.radio label {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   font-size: 14px;
   color: #1e3a8a;
+  gap: 8px;
 }
 
+/* Etiquetas para agrupaciones */
 .grupo-etiqueta {
   flex: 1 1 48%;
   min-width: 240px;
@@ -114,8 +100,34 @@ mat-form-field {
   font-weight: bold;
   color: #1e3a8a;
   font-size: 14px;
+  margin-bottom: 6px;
 }
 
+/* Checkboxes en caja (empresas, país, sector) */
+.checkbox-contenedor {
+  display: flex;
+  gap: 16px;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background-color: #f1f5f9;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.checkbox-contenedor label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  color: #1e3a8a;
+}
+
+.full-width {
+  grid-column: 1 / -1;
+}
+
+/* Botonera final */
 .botones {
   display: flex;
   justify-content: flex-end;
@@ -124,6 +136,7 @@ mat-form-field {
   flex-wrap: wrap;
 }
 
+/* Botones base */
 .btn {
   padding: 10px 20px;
   background-color: #e5e7eb;
@@ -139,6 +152,7 @@ mat-form-field {
   background-color: #cbd5e1;
 }
 
+/* Estilos especiales */
 .btn-azul {
   background-color: #3b82f6;
   color: white;
@@ -147,4 +161,11 @@ mat-form-field {
 .btn-rojo {
   background-color: #ef4444;
   color: white;
+}
+
+/* Separador de secciones */
+.separador {
+  margin-top: 48px;
+  border-top: 2px solid #cbd5e1;
+  padding-top: 24px;
 }

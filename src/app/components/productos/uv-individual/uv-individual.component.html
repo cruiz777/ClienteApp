@@ -6,33 +6,30 @@
 
       <div>
         <label for="codigoCliente">Código del cliente:</label>
-        <input id="codigoCliente" type="text" formControlName="codigoCliente" />
+        <input id="codigoCliente" type="text" formControlName="codigoCliente" readonly />
       </div>
 
       <div>
         <label for="cliente">Cliente:</label>
-        <input id="cliente" type="text" formControlName="cliente" />
+        <input id="cliente" type="text" formControlName="cliente" readonly />
       </div>
 
       <div>
         <label for="ruc">RUC:</label>
-        <input id="ruc" type="text" formControlName="ruc" />
+        <input id="ruc" type="text" formControlName="ruc" readonly />
       </div>
 
-      <mat-form-field appearance="fill">
-        <mat-label>Prefijo</mat-label>
-        <mat-select formControlName="gcp" (blur)="onPrefijoBlur()">
-          <mat-option *ngFor="let prefijo of prefijos" [value]="prefijo.id_prefijos">
-            {{ prefijo.codpre }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
+      <div>
+        <label>Prefijo:</label>
+        <input type="text" [value]="mostrarCodigoPrefijo()" readonly />
+      </div>
 
       <div>
         <label for="gln">GLN®:</label>
-        <input id="gln" type="text" formControlName="gln" />
+        <input id="gln" type="text" formControlName="gln" readonly />
       </div>
 
+      <!-- Radios alineados -->
       <div class="contenedor-radios">
         <div class="grupo-etiqueta">
           <label class="titulo-grupo">Nacionales</label>
@@ -59,16 +56,28 @@
         </div>
       </div>
 
+      <div>
+        <label><input type="checkbox" (change)="habilitarSerie($event)" /> Editar Serie</label>
+        <input type="text" formControlName="serie" [readonly]="!serieEditable" />
+      </div>
 
-      <!-- Otros campos -->
-      <div><label>Serie:</label><input type="text" formControlName="serie" /></div>
-      <div><label>GTIN UV®:</label><input type="text" formControlName="gtinUv" /></div>
-      <div><label>TIPO GTIN®:</label><input type="text" formControlName="tipoGtin" /></div>
+      <div><label>GTIN UV®:</label><input type="text" formControlName="gtinUv" readonly /></div>
+      <div><label>TIPO GTIN®:</label><input type="text" formControlName="tipoGtin" readonly /></div>
+
+      <!-- Campos editables -->
       <div><label>Descripción:</label><input type="text" formControlName="descripcion" /></div>
       <div><label>Marca:</label><input type="text" formControlName="marca" /></div>
       <div><label>Contenido:</label><input type="text" formControlName="contenido" /></div>
-      <div><label>Unidad de medida:</label><input type="text" formControlName="unidadMedida" /></div>
 
+      <!-- ComboBox unidad medida -->
+      <mat-form-field>
+        <mat-label>Unidad de medida</mat-label>
+        <mat-select formControlName="unidadMedida">
+          <mat-option *ngFor="let unidad of unidades" [value]="unidad">{{ unidad }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Categoría -->
       <mat-form-field>
         <input matInput formControlName="categoria" [matAutocomplete]="autoCategoria"
           placeholder="Seleccione Categoría" />
@@ -83,9 +92,25 @@
         </mat-autocomplete>
       </mat-form-field>
 
-      <div><label>GCP® BRICK:</label><input type="text" formControlName="brick" /></div>
-      <div><label>País de venta:</label><input type="text" formControlName="pais" /></div>
-      <div><label>Sector:</label><input type="text" formControlName="sector" /></div>
+      <!-- Brick solo visualización -->
+      <div><label>GCP® BRICK:</label><input type="text" formControlName="brick" readonly /></div>
+
+      <!-- ComboBox país y sector -->
+      <mat-form-field>
+        <mat-label>País de venta</mat-label>
+        <mat-select formControlName="pais">
+          <mat-option *ngFor="let pais of paises" [value]="pais">{{ pais }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Sector</mat-label>
+        <mat-select formControlName="sector">
+          <mat-option *ngFor="let sector of sectores" [value]="sector">{{ sector }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <!-- Editables -->
       <div><label>URL foto:</label><input type="text" formControlName="urlFoto" /></div>
       <div><label>Observación:</label><textarea formControlName="observacion"></textarea></div>
 
@@ -108,6 +133,8 @@
       <button class="btn btn-rojo" type="button">Ingresar UL</button>
     </div>
   </form>
+
+
   <!-- Sección UL -->
   <h2 class="separador">UNIDAD LOGÍSTICA GTIN-14</h2>
 
