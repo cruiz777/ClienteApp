@@ -21,12 +21,26 @@ export class UsuarioService {
       password: contrasenia
     };
 
-    return this.http.post<{ type: string; data: Usuario; message: string }>(this.apiUrl, body).pipe(
+    return this.http.post<{ type: string; data: any; message: string }>(this.apiUrl, body).pipe(
       map(response => {
         console.log('Respuesta cruda del backend:', response);
         if (response.type && response.type.toUpperCase() === "OK" && response.data) {
-          const user: Usuario = response.data;
-          localStorage.setItem('currentUser', JSON.stringify(user)); // opcional si quieres guardar sesión
+          const raw = response.data;
+
+          // 🔁 Mapear propiedades snake_case a PascalCase para que coincidan con la interfaz Usuario
+          const user: Usuario = {
+            IdUsuario: raw.id_usuario,
+            NombreUsuario: raw.nombre_usuario,
+            IdDepartamento: raw.id_departamento,
+            Departamento: raw.departamento,
+            IdPerfil: raw.id_perfil,
+            Perfil: raw.perfil,
+            IdEmpresa: raw.id_empresa,
+            Empresa: raw.empresa,
+            Estado: raw.estado
+          };
+
+          localStorage.setItem('currentUser', JSON.stringify(user));
           this.currentUserSubject.next(user);
           return user;
         } else {
@@ -37,6 +51,12 @@ export class UsuarioService {
   }
 
   logout(): void {
+    localStorage.removeItem('currentUser'); // también limpia el almacenamiento
     this.currentUserSubject.next(null);
+  }
+
+  getUsuarioActual(): Usuario | null {
+    const stored = localStorage.getItem('currentUser');
+    return stored ? JSON.parse(stored) : null;
   }
 }

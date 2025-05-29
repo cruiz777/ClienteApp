@@ -1,0 +1,26 @@
+<div class="form-container">
+  <h2>{{ isEditMode ? 'Editar Tipo de Negocio' : 'Nuevo Tipo de Negocio' }}</h2>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <div class="form-group">
+      <label for="descripcion">Descripción:</label>
+      <input id="descripcion" type="text" formControlName="descripcion" />
+      <div class="error" *ngIf="form.get('descripcion')?.invalid && form.get('descripcion')?.touched">
+        Campo obligatorio.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="estado">Estado:</label>
+      <select id="estado" formControlName="estado">
+        <option [value]="true">Activo</option>
+        <option [value]="false">Inactivo</option>
+      </select>
+    </div>
+
+    <div class="button-group">
+      <button type="submit" [disabled]="form.invalid">Guardar</button>
+      <button type="button" class="cancel-button" (click)="cancelar()">Cancelar</button>
+    </div>
+  </form>
+</div>

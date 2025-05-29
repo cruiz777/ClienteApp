@@ -34,6 +34,10 @@ const routes: Routes = [
         loadChildren:()=>import('./configuracion/proyecto/proyecto.module').then(m=>m.ProyectoModule)
       },
       {
+        path: 'segmento-negocio',
+        loadChildren: () => import('./configuracion/segment-negocio/segmento-negocio.module').then(m => m.SegmentoNegocioModule)
+      },
+      {
         path: '',
         redirectTo: 'inicio',
         pathMatch: 'full'
