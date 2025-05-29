@@ -79,12 +79,6 @@
   border-radius: 4px;
   cursor: pointer;
 }
-/*.form-actions-horizontal {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-start;
-  margin-top: 8px;
-}*/
 
 .form-actions-horizontal.alineado-derecha {
   margin-left: auto; /* empuja la botonera hacia la derecha */
@@ -249,4 +243,22 @@ h3 {
   .tablas-panel {
     flex-direction: column;
   }
+}
+
+.form-row.alineado-horizontal {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.form-campo-largo {
+  flex: 1;
+  min-width: 300px;
+}
+
+.opcion-autocomplete {
+  font-size: 12px;
+  white-space: normal;
 }

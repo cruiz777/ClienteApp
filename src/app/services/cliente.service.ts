@@ -7,6 +7,7 @@ import { environment } from 'src/environments/environment';
 import { stream } from 'exceljs';
 import { ApiResponse } from '../interfaces/responses/api-response';
 import { ClienteValidadoDTO, ClienteValidadoResultadoDTO } from '../interfaces/requests/cliente-validado';
+import { ClienteSummary } from '../interfaces/responses/cliente-summary-response';
 
 interface ClienteResponse {
   id: string;
@@ -74,8 +75,8 @@ export interface ClienteIndividual {
   zonaReferencia: string;
   estadoNombre: string;
   prefijo: string;
-  fecmod:Date;
-  usumod:string;
+  fecmod: Date;
+  usumod: string;
   fechaCeseAct: string;
   motivoCeseAct: string;
 }
@@ -108,8 +109,9 @@ export interface ClienteUpdateRequest {
 export class ClienteService {
   private apiBaseUrl = environment.clientsUrl;
   private apiUrl = `${this.apiBaseUrl}/resumen/`;
+  private apiUrlA = `${this.apiBaseUrl}/Clientes/`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getClientes(): Observable<Cliente[]> {
     debugger
@@ -154,8 +156,6 @@ export class ClienteService {
       }
     );
   }
-
-
   // Método adicional para obtener todos los clientes con datos completos
   getClientesDetalles(): Observable<ClienteIndividual[]> {
     const url = `${this.apiBaseUrl}/Clientes`;
@@ -163,4 +163,12 @@ export class ClienteService {
       map(response => response.data as ClienteIndividual[])
     );
   }
+
+  getClientesSummary(filtro: string): Observable<ApiResponse<ClienteSummary[]>> {
+    return this.http.get<ApiResponse<ClienteSummary[]>>(
+      `${this.apiUrlA}buscar?filtro=${encodeURIComponent(filtro)}`
+    );
+  }
+
+
 }

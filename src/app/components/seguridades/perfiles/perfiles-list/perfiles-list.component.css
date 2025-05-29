@@ -1,5 +1,4 @@
-/* Estilo moderno tipo UltraTab con distribución en columnas */
-
+/* ===================== TABS ===================== */
 .tabs {
   display: flex;
   gap: 4px;
@@ -32,6 +31,7 @@
   color: #ffffff;
 }
 
+/* ===================== CONTENEDOR ===================== */
 .contenido-tablas {
   padding: 16px;
   background-color: white;
@@ -39,6 +39,7 @@
   border-radius: 0 0 8px 8px;
 }
 
+/* ===================== ENCABEZADOS ===================== */
 h2 {
   font-size: 18px;
   margin-bottom: 12px;
@@ -52,15 +53,19 @@ h3 {
   color: #002c6c;
 }
 
+/* ===================== TABLA ESTILO ===================== */
 .tabla-estilo {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  /* CAMBIAR DE collapse A separate */
+  border-spacing: 0;
   margin-bottom: 24px;
 }
 
+
 .tabla-estilo th,
 .tabla-estilo td {
-  border: 1px solid #d1d5db;
+  border: 1px solid #e5e7eb;
   padding: 8px 12px;
   text-align: left;
   font-size: 14px;
@@ -72,13 +77,25 @@ h3 {
   font-weight: 600;
 }
 
-/* Estilo para checkboxes */
+/* ===================== BOTONES DE TABLA ===================== */
+.tabla-estilo td button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-right: 4px;
+}
+
+.tabla-estilo td button img {
+  vertical-align: middle;
+}
+
+/* ===================== CHECKBOXES ===================== */
 input[type='checkbox'] {
   transform: scale(1.2);
   cursor: pointer;
 }
 
-/* Panel con columnas distribuidas */
+/* ===================== PANEL MULTICOLUMNAS ===================== */
 .tablas-panel {
   display: flex;
   justify-content: space-between;
@@ -98,7 +115,127 @@ input[type='checkbox'] {
   margin-bottom: 8px;
 }
 
-/* Responsive */
+/* ===================== COLORES SEGUN ESTADO ===================== */
+.fila-activa {
+  background-color: #cbd5e1 !important;
+  font-weight: bold;
+  color: #002c6c;
+}
+
+.menu-con-opciones {
+  background-color: #e0f7fa;
+  font-weight: bold;
+}
+
+.menu-con-opciones-completo {
+  background-color: #DBEAFE;
+  /* Tailwind: blue-100 */
+  color: #1E3A8A;
+  /* azul fuerte para texto */
+  font-weight: bold;
+}
+
+/* ===================== CLASES UTILITARIAS ===================== */
+.ocultar-id {
+  display: none;
+}
+
+.col-reducida {
+  width: 1%;
+  white-space: nowrap;
+}
+
+/* ===================== FILA DE ACCIONES Y BOTONES ===================== */
+/* .encabezado-acciones: Contenedor flexible para agrupar campos o botones en una sola línea */
+.encabezado-acciones {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* .form-actions-horizontal.alineado-derecha:
+   Alinea a la derecha el contenido dentro de un contenedor .form-row */
+
+.form-actions-horizontal.alineado-derecha {
+  margin-left: auto;
+  display: flex;
+  gap: 12px;
+}
+
+.form-actions button {
+  background-color: #eef4f7;
+  border: 1px solid #ccd5e2;
+  padding: 8px 20px;
+  font-size: 14px;
+  color: #002c6c;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.form-actions-horizontal button.activo {
+  background-color: #002c6c;
+  color: white;
+  border: 1px solid #002c6c;
+}
+
+/* ===================== SCROLL PARA TABLA DE PERFILES ===================== */
+.tabla-scrollable {
+  max-height: 170px;
+  /* Ajusta según lo que necesites visible */
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Para mantener encabezados visibles si deseas */
+.tabla-scrollable thead {
+  position: sticky;
+  top: 0;
+  background-color: #f0f4f8;
+  z-index: 1;
+}
+
+.tabla-scrollable thead th {
+  border-bottom: 1px solid #d1d5db;
+  background-color: #f0f4f8;
+  box-shadow: inset 0 -1px 0 #d1d5db;
+}
+
+/* ===================== FIX SCROLL Y LÍNEAS DEL ENCABEZADO ===================== */
+.tabla-scrollable {
+  max-height: 170px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Hace que el thead se mantenga fijo arriba */
+.tabla-scrollable table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* Aplicar fondo y bordes a cada th del thead */
+.tabla-scrollable table thead th {
+  background-color: #f0f4f8;
+  border-bottom: 1px solid #d1d5db;
+  border-top: 1px solid #d1d5db;
+  box-shadow: inset 0 -1px 0 #d1d5db;
+}
+
+/* Mantener bordes entre celdas también cuando se hace scroll */
+.tabla-scrollable table th,
+.tabla-scrollable table td {
+  border: 1px solid #d1d5db;
+}
+
+
+/* ===================== RESPONSIVE ===================== */
 @media screen and (max-width: 768px) {
   .tabs {
     flex-direction: column;
@@ -112,31 +249,4 @@ input[type='checkbox'] {
   .tablas-panel {
     flex-direction: column;
   }
-}
-
-/* Ocultar columnas de ID */
-.ocultar-id {
-  display: none;
-}
-
-/* Columnas con ancho personalizado */
-.col-reducida {
-  width: 1%;
-  white-space: nowrap;
-}
-
-.fila-activa {
-  background-color: #cbd5e1 !important;
-  font-weight: bold;
-  color: #002c6c;
-}
-
-.menu-con-opciones {
-  background-color: #e0f7fa; /* celeste suave */
-  font-weight: bold;
-}
-
-.menu-con-opciones-completo {
-  background-color: #83FA9D; /* celeste suave */
-  font-weight: bold;
 }
