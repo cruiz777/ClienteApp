@@ -3,45 +3,42 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { UsuariosResponse } from '../interfaces/responses/usuario-response';
-import { ApiListResponse } from '../interfaces/responses/ApiListResponse';
+import { LoginUsuarioResponse } from '../interfaces/responses/usuario-log-response';
 import { ApiResponse } from './producto.service';
-import { UvIndividualComponent } from '../components/productos/uv-individual/uv-individual.component';
-import { IdleService } from './idle.service';
 
 @Injectable({
   providedIn: 'root'
 })
 export class UsuarioService {
 
-  private apiUrl = `${environment.applicationUrl}/Usuarios/login`;
+  private apiUrl = `${environment.applicationUrl}/Usuarios`;
 
-  private currentUserSubject = new BehaviorSubject<UsuariosResponse | null>(null);
+  private currentUserSubject = new BehaviorSubject<LoginUsuarioResponse | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
   constructor(private http: HttpClient) {}
 
-  login(nombreUsuario: string, contrasenia: string): Observable<UsuariosResponse> {
+  login(nombreUsuario: string, contrasenia: string): Observable<LoginUsuarioResponse> {
     const body = {
       email: nombreUsuario,
       password: contrasenia
     };
 
-    return this.http.post<{ type: string; data: any; message: string }>(this.apiUrl, body).pipe(
+    return this.http.post<{ type: string; data: any; message: string }>(`${this.apiUrl}/login`, body).pipe(
       map(response => {
         console.log('Respuesta cruda del backend:', response);
         if (response.type && response.type.toUpperCase() === "OK" && response.data) {
           const raw = response.data;
 
           // 🔁 Mapear propiedades snake_case a PascalCase para que coincidan con la interfaz Usuario
-          const user: UsuariosResponse = {
+          const user: LoginUsuarioResponse = {
             id_usuario: raw.id_usuario,
             nombre_usuario: raw.nombre_usuario,
-            id_departamento: raw.id_departamento,
-            nombre_departamento: raw.departamento,
-            id_persona: raw.id_perfil,
-            nombre_perfil: raw.perfil,
+            nombreD: raw.nombreD,
+            id_perfil: raw.id_perfil,
+            perfil: raw.perfil,
             id_empresa: raw.id_empresa,
-            nombre_empresa: raw.empresa,
+            nombreE: raw.nombreE,
             estado: raw.estado
           };
 
@@ -60,7 +57,7 @@ export class UsuarioService {
     this.currentUserSubject.next(null);
   }
 
-  getUsuarioActual(): UsuariosResponse | null {
+  getUsuarioActual(): LoginUsuarioResponse | null {
     const stored = localStorage.getItem('currentUser');
     return stored ? JSON.parse(stored) : null;
   }

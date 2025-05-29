@@ -21,9 +21,9 @@ export class LoginComponent implements OnInit {
   logoUrl: string = '';
   showPassword = false;
 
-togglePasswordVisibility(): void {
-  this.showPassword = !this.showPassword;
-}
+  togglePasswordVisibility(): void {
+    this.showPassword = !this.showPassword;
+  }
   /* MARIO */
   constructor(
     private fb: FormBuilder,
@@ -41,18 +41,18 @@ togglePasswordVisibility(): void {
 
   ngOnInit(): void {
     this.empresaService.getEmpresas().subscribe({
-          next: (empresas: EmpresaResponse[]) => {
-            if (empresas.length > 0) {
-              const logoFileName = empresas[0].empresaLogo;
-              if (logoFileName) {
-                this.logoUrl = this.logoService.getLogoUrl(logoFileName);
-              }
-            }
-          },
-          error: (err) => {
-            console.error('Error al cargar la empresa para el logo:', err);
+      next: (empresas: EmpresaResponse[]) => {
+        if (empresas.length > 0) {
+          const logoFileName = empresas[0].empresaLogo;
+          if (logoFileName) {
+            this.logoUrl = this.logoService.getLogoUrl(logoFileName);
           }
-        });
+        }
+      },
+      error: (err) => {
+        console.error('Error al cargar la empresa para el logo:', err);
+      }
+    });
   }
 
   onLogin(): void {
@@ -61,32 +61,32 @@ togglePasswordVisibility(): void {
 
     this.usuarioService.login(email, password).subscribe({
       next: (user: LoginUsuarioResponse) => {
-  console.log('Login exitoso. Usuario:', user);
+        console.log('Login exitoso. Usuario:', user);
 
-  // ⬇ Recuperar desde localStorage (opcional, ya tienes "user" directamente)
-  const storedUser = localStorage.getItem('currentUser');
-  if (storedUser) {
-    const usuarioLocal: LoginUsuarioResponse = JSON.parse(storedUser);
-    console.log('Usuario desde localStorage:', usuarioLocal);
-    // Puedes acceder: usuarioLocal.id_usuario, usuarioLocal.nombre_usuario, etc.
-  }
+        // ⬇ Recuperar desde localStorage (opcional, ya tienes "user" directamente)
+        const storedUser = localStorage.getItem('currentUser');
+        if (storedUser) {
+          const usuarioLocal: LoginUsuarioResponse = JSON.parse(storedUser);
+          console.log('Usuario desde localStorage:', usuarioLocal);
+          // Puedes acceder: usuarioLocal.id_usuario, usuarioLocal.nombre_usuario, etc.
+        }
 
-  const data: MessageBoxData = {
-    title: 'Inicio de sesión exitoso',
-    message: `Bienvenido`,
-    type: 'success',
-    confirmText: 'Continuar',
-    showCancel: false
-  };
+        const data: MessageBoxData = {
+          title: 'Inicio de sesión exitoso',
+          message: `Bienvenido`,
+          type: 'success',
+          confirmText: 'Continuar',
+          showCancel: false
+        };
 
-  this.dialog.open(CustomMessageBoxComponent, {
-    width: '400px',
-    data
-  }).afterClosed().subscribe(() => {
-    this.router.navigateByUrl('/inicio');
-  });
-}
-,
+        this.dialog.open(CustomMessageBoxComponent, {
+          width: '400px',
+          data
+        }).afterClosed().subscribe(() => {
+          this.router.navigateByUrl('/inicio');
+        });
+      }
+      ,
       error: (error: any) => {
         console.error('Error en login:', error);
 
