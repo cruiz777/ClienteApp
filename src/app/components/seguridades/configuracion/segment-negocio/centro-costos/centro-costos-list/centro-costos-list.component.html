@@ -1,7 +1,7 @@
 <div class="zona-container">
   <div class="zona-header">
-    <h2>Registro de Tipo de Negocio</h2>
-    <button mat-raised-button class="nuevo-btn" (click)="abrirCrear()">Nuevo</button>
+    <h2>Registro de Centro de Costos</h2>
+    <button mat-raised-button class="btn-nueva-zona" (click)="abrirCrear()">Nuevo</button>
   </div>
 
   <div class="zona-busqueda">
@@ -24,15 +24,17 @@
         <th>#</th>
         <th>Id</th>
         <th>Descripción</th>
+        <th>Cuenta</th>
         <th>Estado</th>
         <th>Opción</th>
       </tr>
     </thead>
     <tbody>
-      <tr *ngFor="let item of tipoNegociosFiltrados; let i = index">
+      <tr *ngFor="let item of centroCostosFiltrados; let i = index">
         <td>{{ i + 1 }}</td>
         <td>{{ item.id }}</td>
         <td>{{ item.descripcion }}</td>
+        <td>{{ item.cuenta }}</td>        
         <td>{{ item.estado ? 'ACTIVO' : 'INACTIVO' }}</td>
         <td>
           <button class="icon-btn" (click)="abrirEditar(item.id)">

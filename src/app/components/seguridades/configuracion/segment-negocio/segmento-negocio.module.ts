@@ -4,8 +4,10 @@ import { SegmentoNegocioComponent } from './segmento-negocio.component';
 import { MatTabsModule } from '@angular/material/tabs';
 import { SegmentoNegocioRoutingModule } from './segmento-negocio.routing.module';
 import { TipoNegocioListComponent } from './tipo-negocio/tipo-negocio-list/tipo-negocio-list.component';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { TipoNegocioModule } from './tipo-negocio/tipo-negocio.module';
+import { CentroCostosModule } from './centro-costos/centro-costos.module';
+import { LocalModule } from './local/local.module';
 
 
 @NgModule({
@@ -20,7 +22,9 @@ import { TipoNegocioModule } from './tipo-negocio/tipo-negocio.module';
     SegmentoNegocioRoutingModule,
     MatTabsModule,
     FormsModule,
-    TipoNegocioModule
+    TipoNegocioModule,
+    CentroCostosModule,
+    LocalModule
   ]
 })
 export class SegmentoNegocioModule { }

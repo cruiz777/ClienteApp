@@ -1,7 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { MatDialog } from '@angular/material/dialog';
 import { TipoNegocioResponse } from 'src/app/interfaces/responses/tipo-negocio-response';
 import { TipoNegocioService } from 'src/app/services/tipo-negocio.service';
+import { TipoNegocioFormComponent } from '../tipo-negocio-form/tipo-negocio-form.component';
 
 @Component({
   selector: 'app-tipo-negocio-list',
@@ -15,7 +16,7 @@ export class TipoNegocioListComponent implements OnInit {
 
   constructor(
     private tipoNegocioService: TipoNegocioService,
-    private router: Router
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -41,11 +42,29 @@ export class TipoNegocioListComponent implements OnInit {
     );
   }
 
-  nuevoTipoNegocio(): void {
-    this.router.navigate(['/seguridades/tipo-negocio/crear']);
+  abrirCrear(): void {
+    const dialogRef = this.dialog.open(TipoNegocioFormComponent, {
+      width: '600px',
+      data: {}
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.obtenerTipoNegocios();
+      }
+    });
   }
 
-  editarTipoNegocio(id: number): void {
-    this.router.navigate(['/seguridades/tipo-negocio/editar', id]);
+  abrirEditar(id: number): void {
+    const dialogRef = this.dialog.open(TipoNegocioFormComponent, {
+      width: '600px',
+      data: { id }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.obtenerTipoNegocios();
+      }
+    });
   }
 }
