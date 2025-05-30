@@ -65,6 +65,7 @@ export class GeneracionCodigosService {
   }
 
   generarCodigo8(prefijo: string): string {
+    debugger
   const pais = '786';
   let ean = pais + prefijo;
   let suma = 0;

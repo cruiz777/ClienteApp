@@ -63,24 +63,19 @@
         <!-- Editar serie -->
         <div>
           <label><input type="checkbox" (change)="habilitarSerie()" formControlName="usarSerie" /> Serie</label>
-          <input type="text" formControlName="serie" [readonly]="!formUV.get('usarSerie')?.value"  />
+          <input type="text" formControlName="serie" [readonly]="!formUV.get('usarSerie')?.value" />
         </div>
 
         <!-- GTIN UV -->
         <div>
-          
-         <mat-form-field appearance="outline">
-  <mat-label>GTIN UV®:</mat-label>
-  <input
-    matInput
-    formControlName="gtinUv"
-    type="text"
-    maxlength="12"
-    (keypress)="permitirSoloNumeros($event)"
-  />
-  <mat-error *ngIf="formUV.get('gtinUv')?.hasError('pattern')">Solo se permiten números</mat-error>
-  <mat-error *ngIf="formUV.get('gtinUv')?.hasError('maxlength')">Longitud máxima excedida</mat-error>
-</mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>GTIN UV®:</mat-label>
+            <input matInput formControlName="gtinUv" type="text" maxlength="13" (keypress)="permitirSoloNumeros($event)"
+              [ngClass]="{ 'input-verde': campoGtin }" />
+            <mat-error *ngIf="formUV.get('gtinUv')?.hasError('pattern')">Solo se permiten números</mat-error>
+            <mat-error *ngIf="formUV.get('gtinUv')?.hasError('maxlength')">Longitud máxima excedida</mat-error>
+          </mat-form-field>
 
         </div>
 
@@ -99,12 +94,20 @@
       <div><label>Contenido:</label><input type="text" formControlName="contenido" /></div>
 
       <!-- ComboBox unidad medida -->
-      <mat-form-field>
-        <mat-label>Unidad de medida</mat-label>
-        <mat-select formControlName="unidadMedida">
-          <mat-option *ngFor="let unidad of unidades" [value]="unidad">{{ unidad }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+     <mat-form-field>
+  <input matInput formControlName="unidadMedida" [matAutocomplete]="autoUnidad" placeholder="Seleccione Unidad" />
+  <button matSuffix mat-icon-button *ngIf="formUV.get('unidadMedida')?.value" (click)="limpiarUnidadMedida()">
+    <mat-icon>close</mat-icon>
+  </button>
+  <mat-autocomplete #autoUnidad="matAutocomplete" [displayWith]="displayWithUnidadMedida"
+    (optionSelected)="seleccionarUnidadMedida($event.option.value)">
+    <mat-option *ngFor="let u of unidadesMedidaFiltradas" [value]="u">
+      {{ u.descripcion }}
+    </mat-option>
+  </mat-autocomplete>
+</mat-form-field>
+
+
 
       <!-- Categoría -->
       <mat-form-field>
@@ -126,18 +129,31 @@
 
       <!-- ComboBox país y sector -->
       <mat-form-field>
-        <mat-label>País de venta</mat-label>
-        <mat-select formControlName="pais">
-          <mat-option *ngFor="let pais of paises" [value]="pais">{{ pais }}</mat-option>
-        </mat-select>
-      </mat-form-field>
+  <input matInput formControlName="pais" [matAutocomplete]="autoPais" placeholder="Seleccione País" />
+  <button matSuffix mat-icon-button *ngIf="formUV.get('pais')?.value" (click)="formUV.get('pais')?.reset()">
+    <mat-icon>close</mat-icon>
+  </button>
+  <mat-autocomplete #autoPais="matAutocomplete" [displayWith]="displayWithPais">
+    <mat-option *ngFor="let p of paisFiltrados" [value]="p">
+      {{ p.nombre }}
+    </mat-option>
+  </mat-autocomplete>
+</mat-form-field>
+
 
       <mat-form-field>
-        <mat-label>Sector</mat-label>
-        <mat-select formControlName="sector">
-          <mat-option *ngFor="let sector of sectores" [value]="sector">{{ sector }}</mat-option>
-        </mat-select>
+        <input matInput formControlName="sector" [matAutocomplete]="autoSector" placeholder="Seleccione Sector" />
+        <button matSuffix mat-icon-button *ngIf="formUV.get('sector')?.value" (click)="limpiarSector()">
+          <mat-icon>close</mat-icon>
+        </button>
+        <mat-autocomplete #autoSector="matAutocomplete" [displayWith]="displayWithSector"
+          (optionSelected)="seleccionarSector($event.option.value)">
+          <mat-option *ngFor="let s of sectoresFiltrados" [value]="s">
+            {{ s.descripcion }}
+          </mat-option>
+        </mat-autocomplete>
       </mat-form-field>
+
 
       <!-- Editables -->
       <div><label>URL foto:</label><input type="text" formControlName="urlFoto" /></div>
