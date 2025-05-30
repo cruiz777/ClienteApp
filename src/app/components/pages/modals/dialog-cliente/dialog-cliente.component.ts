@@ -60,7 +60,7 @@ export class DialogClienteComponent implements OnInit {
   formCliente!: FormGroup;
   selectedTab: number = 0;
   @ViewChild('stepper') stepper!: MatStepper;
- 
+
 
   grupos: GrupoEmpresa[] = [];
   grupoCtrl = new FormControl('');
@@ -145,8 +145,8 @@ export class DialogClienteComponent implements OnInit {
     console.log('----Usuario---');
     this.usuarioActual = this.usuarioService.getUsuarioActual();
 
-    
-    
+
+
     this.initFormulario();
 
     //this.obtenerUsuarioActual();
@@ -1299,13 +1299,13 @@ export class DialogClienteComponent implements OnInit {
         const id_prefijos = resultado[0].id_prefijos;
 
         const nuevoGln: GlnRequest = {
-          id_prefijos: id_prefijos,
+          idPrefijos: id_prefijos,
           clientesCodigo: codigoCliente,
           gln1: gln,
           idTipoLocalizacion: 12,
           glnLatitud: '0.0000',
           glnLongitud: '0.0000',
-          paisCodigo: 1,
+          idPais: 1,
           direccion: 'Calle Ejemplo 123',
           telefono: '12345678',
           fax: '',

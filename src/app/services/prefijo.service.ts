@@ -60,4 +60,10 @@ obtenerDetallePrefijo(codpre: string): Observable<PrefijoClienteResponse[]> {
     map(res => res.data as PrefijoClienteResponse[])
   );
 }
+obtenerPrefijosPorClienteCodigo(clientesCodigo: number): Observable<PrefijoClienteResponse[]> {
+  return this.http.get<any>(`${this.apiBaseUrl}/CodpreCliente`, {
+    params: { clientesCodigo }
+  }).pipe(map(response => response.data as PrefijoClienteResponse[]));
+}
+
 }

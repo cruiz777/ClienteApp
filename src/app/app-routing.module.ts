@@ -9,6 +9,7 @@ import { NavigationProductoComponent} from './components/productos/navigation-pr
 import { NuevoProductoComponent } from './components/productos/nuevo-producto/nuevo-producto.component';
 import { AuthGuard } from './guards/auth.guard';
 import { ClienteSeleccionadoComponent } from './components/productos/cliente-seleccionado/cliente-seleccionado.component';
+import { GlnComponent } from './components/productos/glns/gln-list/nuevo-gln.component';
 
 const routes: Routes = [
   {path:'',redirectTo:'login',pathMatch:'full'},
@@ -30,8 +31,8 @@ const routes: Routes = [
     { path: '', redirectTo: 'nuevoProducto', pathMatch: 'full' },
     { path: 'nuevoProducto', component: NuevoProductoComponent },
     { path: 'clienteSeleccion', component: ClienteSeleccionadoComponent},
-    { path: 'uvIndividual', component: UvIndividualComponent }
-
+    { path: 'uvIndividual', component: UvIndividualComponent },
+    { path: 'nuevoGln', component: GlnComponent }
    ]
 },
 
