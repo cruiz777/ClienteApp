@@ -71,7 +71,7 @@ export class UsuarioService {
     return this.http.post<ApiResponse<boolean>>(this.apiUrl, usuario);
   }
 
-  updateUsuario(idUsuario: number, usuario: UsuariosRequest): Observable<ApiResponse<boolean>> {
-    return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/${idUsuario}`, usuario);
+  updateUsuario(idPerfil: number, usuario: UsuariosRequest): Observable<ApiResponse<boolean>> {
+    return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/${idPerfil}`, usuario);
   }
 }

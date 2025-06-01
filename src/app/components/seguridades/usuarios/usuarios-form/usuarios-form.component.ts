@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit, Inject, numberAttribute } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MAT_DATE_FORMATS, MatNativeDateModule } from '@angular/material/core';
@@ -19,6 +19,7 @@ import { UsuarioService } from 'src/app/services/usuario.service'
 import { PerfilResponse } from 'src/app/interfaces/responses/perfil-response';
 import { DepartamentoResponse } from 'src/app/interfaces/responses/departamentos-response';
 import { UsuariosRequest } from 'src/app/interfaces/requests/usuario-request'
+import { UsuariosEditRequest } from 'src/app/interfaces/requests/usuario-request'
 
 // Diálogo de mensajes
 import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/components/utils/messages/custom-message-box.component';
@@ -71,6 +72,7 @@ export class UsuariosFormComponent implements OnInit {
   ) { }
   ngOnInit(): void {
     this.usuarioForm = this.fb.group({
+      id:numberAttribute,
       usuario: ['', [Validators.required, Validators.email]],
       clave: ['', Validators.required],
       correo: ['', [Validators.email]],
@@ -110,7 +112,8 @@ export class UsuariosFormComponent implements OnInit {
     const formData = this.usuarioForm.getRawValue();
 
     console.log('Formulario válido, datos:', formData);
-    const request: UsuariosRequest = {
+    const request: UsuariosEditRequest = {
+      id_usuario:formData.id,
       nombre_usuario: formData.usuario,
       contrasenia_hash: formData.clave || '', // opcional en edición
       estado: formData.estado === 'activo',
