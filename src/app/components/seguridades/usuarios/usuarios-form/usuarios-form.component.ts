@@ -13,6 +13,7 @@ import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { PerfilesService } from 'src/app/services/perfil.service';
 import { DepartamentosService } from 'src/app/services/departamentos.service';
 import { UsuarioService } from 'src/app/services/usuario.service';
+import { PersonasService } from 'src/app/services/personas.service';
 
 // Interfaces de datos
 import { PerfilResponse } from 'src/app/interfaces/responses/perfil-response';
@@ -57,6 +58,11 @@ export class UsuariosFormComponent implements OnInit {
   mostrarClave = false;
   esEdicion = false;
   usuarioIdEditar: number | null = null;
+  entidadSeleccionada: any = null;
+  busquedaEntidad = '';
+  resultadosEntidad: any[] = [];
+  mostrarFormulario = false;
+
 
   constructor(
     private fb: FormBuilder,
@@ -65,7 +71,8 @@ export class UsuariosFormComponent implements OnInit {
     public perfilService: PerfilesService,
     public departamentoService: DepartamentosService,
     private dialog: MatDialog,
-    private usuario: UsuarioService
+    private usuario: UsuarioService,
+    private persona: PersonasService
   ) { }
 
   ngOnInit(): void {
@@ -213,4 +220,34 @@ export class UsuariosFormComponent implements OnInit {
     this.usuarioForm.get('clave')?.clearValidators(); // clave opcional
     this.usuarioForm.get('clave')?.updateValueAndValidity();
   }
+
+  buscarEntidad(): void {
+    const valor = this.busquedaEntidad.trim();
+    if (!valor) return;
+
+    const esNumerico = /^[0-9]+$/.test(valor);
+
+    if (esNumerico) {
+      this.persona.buscarPersonaPorDocumento(valor).subscribe({
+        next: (res) => {
+          this.resultadosEntidad = res ? [res] : [];
+        },
+        error: () => alert('❌ Error al buscar por RUC o cédula.')
+      });
+    } else {
+      this.persona.buscarPersonasPorNombre(valor).subscribe({
+        next: (res) => {
+          this.resultadosEntidad = res;
+        },
+        error: () => alert('❌ Error al buscar por nombre.')
+      });
+    }
+  }
+
+  seleccionarEntidad(entidad: any): void {
+    this.entidadSeleccionada = entidad;
+    this.resultadosEntidad = [];
+  }
+
+
 }

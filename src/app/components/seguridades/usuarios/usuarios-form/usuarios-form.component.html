@@ -1,7 +1,47 @@
 <div class="form-contenedor">
   <h2>Creación de Usuario</h2>
 
-  <form [formGroup]="usuarioForm" class="form-grid" (ngSubmit)="grabar()">
+  <!-- SECCIÓN DE BÚSQUEDA DE ENTIDAD -->
+  <div *ngIf="!esEdicion && !entidadSeleccionada" class="form-grid">
+    <h3 style="text-align:center;">Buscar Entidad</h3>
+    <div class="form-row">
+      <div class="form-field">
+        <label>Buscar por Nombre o Cédula/RUC:</label>
+        <input [(ngModel)]="busquedaEntidad" placeholder="Ej: Clínica Pasteur o 0991234567001" />
+      </div>
+      <div class="form-field" style="align-items: end;">
+        <button (click)="buscarEntidad()" class="btn-grabar">Buscar</button>
+      </div>
+    </div>
+
+    <div *ngIf="resultadosEntidad.length > 0" style="margin-top: 16px;">
+      <table class="tabla-estilo">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>RUC / Cédula</th>
+            <th>Seleccionar</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let entidad of resultadosEntidad">
+            <td>{{ entidad.nombresCompletos }}</td>
+            <td>{{ entidad.identificacion  }}</td>
+            <td>
+              <button (click)="seleccionarEntidad(entidad)" class="btn-grabar">Usar</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div *ngIf="entidadSeleccionada" style="text-align:center; margin-bottom: 20px;">
+    <strong>Creando usuario para:</strong>
+    {{ entidadSeleccionada.nombre }} - RUC {{ entidadSeleccionada.ruc }}
+  </div>
+
+  <form *ngIf="esEdicion || entidadSeleccionada" [formGroup]="usuarioForm" class="form-grid" (ngSubmit)="grabar()">
 
     <!-- Sección 1: Datos de Usuario -->
     <div class="form-row">
