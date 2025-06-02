@@ -51,14 +51,20 @@ export class UsuariosListComponent implements OnInit {
    */
   editarUsuario(usuario: UsuariosResponse) {
     this.botonActivo = 'editar';
-    this.dialog.open(UsuariosFormComponent, {
-      width: '800px',
-      data: {
-        modo: 'editar',
-        usuario: usuario
-      }
+
+    this.usuarioService.getUsuarioById(usuario.id_usuario).subscribe(response => {
+      const detalle = response.data; // ← aquí accedes al objeto real
+
+      this.dialog.open(UsuariosFormComponent, {
+        width: '800px',
+        data: {
+          modo: 'editar',
+          usuario: detalle
+        }
+      });
     });
   }
+
 
   /**
    * Muestra en consola el ID del usuario a eliminar.

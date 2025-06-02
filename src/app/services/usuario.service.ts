@@ -3,7 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { UsuariosResponse } from '../interfaces/responses/usuario-response';
-import { UsuariosRequest } from '../interfaces/requests/usuario-request';
+import { UsuariosEditRequest, UsuariosRequest } from '../interfaces/requests/usuario-request';
 import { LoginUsuarioResponse } from '../interfaces/responses/usuario-log-response';
 import { ApiResponse } from './producto.service';
 
@@ -73,5 +73,9 @@ export class UsuarioService {
 
   updateUsuario(idPerfil: number, usuario: UsuariosRequest): Observable<ApiResponse<boolean>> {
     return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/${idPerfil}`, usuario);
+  }
+
+  getUsuarioById(idUsuario: number): Observable<ApiResponse<UsuariosResponse>> {
+    return this.http.get<ApiResponse<UsuariosResponse>>(`${this.apiUrl}/${idUsuario}`);
   }
 }

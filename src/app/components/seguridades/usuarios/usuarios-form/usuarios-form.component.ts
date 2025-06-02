@@ -70,11 +70,16 @@ export class UsuariosFormComponent implements OnInit {
     private dialog: MatDialog,
     private usuario: UsuarioService
   ) { }
+
   ngOnInit(): void {
+    if (!this.esEdicion) {
+      this.usuarioForm.get('clave')?.setValidators([Validators.required, Validators.minLength(6)]);
+    }
+
     this.usuarioForm = this.fb.group({
-      id:numberAttribute,
+      id: numberAttribute,
       usuario: ['', [Validators.required, Validators.email]],
-      clave: ['', Validators.required],
+      clave: [''],
       correo: ['', [Validators.email]],
       perfil: ['', Validators.required],
       fechaCaducidad: ['', Validators.required],
@@ -111,11 +116,9 @@ export class UsuariosFormComponent implements OnInit {
 
     const formData = this.usuarioForm.getRawValue();
 
-    console.log('Formulario válido, datos:', formData);
     const request: UsuariosEditRequest = {
-      id_usuario:formData.id,
+      id_usuario: this.usuarioIdEditar ?? 0,
       nombre_usuario: formData.usuario,
-      contrasenia_hash: formData.clave || '', // opcional en edición
       estado: formData.estado === 'activo',
       correo: formData.correo,
       fecha_creacion: new Date().toISOString(),
@@ -123,20 +126,35 @@ export class UsuariosFormComponent implements OnInit {
       id_departamento: formData.departamento
     };
 
+    const nuevaClave = formData.clave?.trim();
+    if (nuevaClave) {
+      request.nueva_contrasenia = nuevaClave;
+    }
+
     if (this.esEdicion && this.usuarioIdEditar) {
-      this.usuario.updateUsuario(this.usuarioIdEditar, request).subscribe({
+      this.usuario.updateUsuario(formData.perfil, request).subscribe({
         next: () => this.dialogRef.close(true),
         error: () => alert('❌ Error al actualizar el usuario.')
       });
     } else {
-      this.usuario.createUsuario(request).subscribe({
+      // Usar UsuariosRequest al crear
+      const requestNuevo: UsuariosRequest = {
+        nombre_usuario: formData.usuario,
+        nueva_contrasenia: nuevaClave,
+        estado: formData.estado === 'activo',
+        correo: formData.correo,
+        fecha_creacion: new Date().toISOString(),
+        id_empresa: 1,
+        id_departamento: formData.departamento
+      };
+
+      this.usuario.createUsuario(requestNuevo).subscribe({
         next: () => this.dialogRef.close(true),
         error: () => alert('❌ Error al crear el usuario.')
       });
     }
-
-
   }
+
 
   cerrar(): void {
     this.dialogRef.close();

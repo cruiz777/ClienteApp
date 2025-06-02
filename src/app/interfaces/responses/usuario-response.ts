@@ -8,4 +8,5 @@ export interface UsuariosResponse {
   id_departamento: number;
   nombre_departamento?: string;
   nombre_perfil?: string;
+  id_perfil?: number;
 }
