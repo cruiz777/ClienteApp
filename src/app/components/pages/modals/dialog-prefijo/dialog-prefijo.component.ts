@@ -59,7 +59,7 @@ prefijoExistente = false;
 
   @ViewChild('paginatorPrefijo', { static: false }) paginatorPrefijo!: MatPaginator;
   @ViewChild(MatSort) sortPrefijo!: MatSort;
- 
+
   constructor(
     public dialogRef: MatDialogRef<DialogPrefijoComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any,
@@ -72,14 +72,14 @@ prefijoExistente = false;
        private ncontrolService: NcontrolService,
            private glnService: GlnService,
            private clienteService: ClienteService,
-           
+
   ) {
     this.idCliente = data.idCliente;
   }
 
   ngOnInit(): void {
-    
-   
+
+
     this.formPrefijo = this.fb.group({
     prefix: ['', Validators.required],
      codigoCliente: [{ value: '', disabled: false }],
@@ -89,7 +89,7 @@ prefijoExistente = false;
         gln: [''],
         nomcli:[''],
         ruccli:['']
-  
+
   });
   this.cargarCliente(this.idCliente);
   }
@@ -98,7 +98,7 @@ prefijoExistente = false;
     this.dialogRef.close(this.prefijoSeleccionado);
   }
 
-  
+
 
 
  onModificarSecuenciaChange(event: any): void {
@@ -442,8 +442,8 @@ guardarPrefijo(): void {
     }
   }
  guardarNuevoGln(): void {
-    
-    
+
+
     const { prefijo, codigoCliente, gln } = this.formPrefijo.getRawValue();
 console.log('✅ Prefijo leído con getRawValue():', prefijo);
 
@@ -462,13 +462,13 @@ console.log('✅ Prefijo leído con getRawValue():', prefijo);
         const id_prefijos = resultado[0].id_prefijos;
 
         const nuevoGln: GlnRequest = {
-          id_prefijos: id_prefijos,
+          idPrefijos: id_prefijos,
           clientesCodigo: codigoCliente,
           gln1: gln,
           idTipoLocalizacion: 12,
           glnLatitud: '0.0000',
           glnLongitud: '0.0000',
-          paisCodigo: 1,
+          idPais: 1,
           direccion: 'Calle Ejemplo 123',
           telefono: '12345678',
           fax: '',
@@ -587,7 +587,7 @@ console.log('✅ Prefijo leído con getRawValue():', prefijo);
       }
     });
 
- 
+
   }
  limpiarPrefijo(): void {
     const prefijoControl = this.formPrefijo.get('prefijo');

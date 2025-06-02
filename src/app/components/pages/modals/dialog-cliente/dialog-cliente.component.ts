@@ -649,7 +649,7 @@ export class DialogClienteComponent implements OnInit {
       imprimeobstramite: 0,
       idTipoCliente: paso1.categoriaCliente,// aqui llego en blanco
       idGrupoProducto: paso1.grupoProducto.id_grupo_producto,
-      idPersona: 8,
+      idPersona: 0, //Siempre al crear una persona esta en 0
       codigoPostal: paso2.codigoPostal || '',
       codigoPostal2: '',
       idVendedor: 1,
@@ -1299,13 +1299,13 @@ export class DialogClienteComponent implements OnInit {
         const id_prefijos = resultado[0].id_prefijos;
 
         const nuevoGln: GlnRequest = {
-          id_prefijos: id_prefijos,
+          idPrefijos: id_prefijos,
           clientesCodigo: codigoCliente,
           gln1: gln,
           idTipoLocalizacion: 12,
           glnLatitud: '0.0000',
           glnLongitud: '0.0000',
-          paisCodigo: 1,
+          idPais: 1,
           direccion: 'Calle Ejemplo 123',
           telefono: '12345678',
           fax: '',

@@ -1,0 +1,45 @@
+<div class="zona-container">
+  <div class="zona-header">
+    <h2>Registro de Tipo de Negocio</h2>
+    <button mat-raised-button class="nuevo-btn" (click)="abrirCrear()">Nuevo</button>
+  </div>
+
+  <div class="zona-busqueda">
+    <label for="search">Buscar:</label>
+    <div class="input-wrapper">
+      <input
+        id="search"
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="buscar()"
+        placeholder="Buscar por descripción"
+      />
+      <img src="assets/icons/icon-buscar.png" alt="Buscar" />
+    </div>
+  </div>
+
+  <table class="zona-tabla">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Id</th>
+        <th>Descripción</th>
+        <th>Estado</th>
+        <th>Opción</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of tipoNegociosFiltrados; let i = index">
+        <td>{{ i + 1 }}</td>
+        <td>{{ item.id }}</td>
+        <td>{{ item.descripcion }}</td>
+        <td>{{ item.estado ? 'ACTIVO' : 'INACTIVO' }}</td>
+        <td>
+          <button class="icon-btn" (click)="abrirEditar(item.id)">
+            <img src="assets/icons/icon-modificar-3.png" alt="Editar" />
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

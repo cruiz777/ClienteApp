@@ -1,0 +1,167 @@
+<div class="pant-new-gln-info-gen-inicio">
+
+  <main class="main-content">
+    <div class="content-wrapper">
+      <section class="main-section">
+        <div class="content-container">
+          <!-- Tabs -->
+          <div class="tabs">
+            <button class="tab-active">Información General</button>
+            <button class="tab-inactive" (click)="goTo('contactos')">GLN´s</button>
+          </div>
+
+          <!-- Formulario principal -->
+          <div class="form-container">
+            <!-- Pasos -->
+            <div class="progress-steps">
+              <div class="step active">
+                <div class="step-number">1</div>
+                <div class="step-label">Datos Generales</div>
+              </div>
+              <div class="step inactive">
+                <div class="step-number">2</div>
+                <div class="step-label">Contactos</div>
+              </div>
+              <div class="step inactive">
+                <div class="step-number">3</div>
+                <div class="step-label">Certificados</div>
+              </div>
+            </div>
+
+            <!-- Sección: Datos Generales -->
+            <h3 class="form-section-title">Datos Generales</h3>
+
+            <form [formGroup]="formGln">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Código del Cliente:</label>
+                  <input matInput formControlName="clientesCodigo" placeholder="Ej: 1001" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">RUC/CI/Pasaporte:</label>
+                  <input matInput formControlName="documentoIdentidad" placeholder="Ej: 1712345678" />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Cliente:</label>
+                  <input matInput formControlName="clienteNombre" placeholder="Ej: Empresa XYZ" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">GLN:</label>
+                  <input matInput formControlName="gln1" placeholder="Ej: 7861234000000" />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Origen de Prefijo:</label>
+                  <input matInput formControlName="glnOrigenprefijo" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Prefijo GS1:</label>
+                  <input matInput formControlName="glnPrefijogs1" />
+                </div>
+                <div class="form-group">
+                  <mat-checkbox formControlName="serie">Serie</mat-checkbox>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Prefijo:</label>
+                  <mat-select formControlName="idPrefijos">
+                    <mat-option *ngFor="let prefijo of prefijos" [value]="prefijo.id_prefijos">
+                      {{ prefijo.codpre }}
+                    </mat-option>
+                  </mat-select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Tipo Localización:</label>
+                  <mat-select formControlName="idTipoLocalizacion">
+                    <mat-option *ngFor="let tipo of tiposLocalizacion" [value]="tipo.id_tipo_cliente">
+                      {{ tipo.descripcion }}
+                    </mat-option>
+                  </mat-select>
+                </div>
+              </div>
+
+              <!-- Sección: Ubicación -->
+              <h3 class="form-section-title">Ubicación</h3>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">País:</label>
+                  <mat-select formControlName="paisCodigo">
+                    <mat-option *ngFor="let pais of paises" [value]="pais.id">
+                      {{ pais.nombre }}
+                    </mat-option>
+                  </mat-select>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Provincia:</label>
+                  <mat-select formControlName="provinciaCodigo">
+                    <mat-option *ngFor="let provincia of provincias" [value]="provincia.id">
+                      {{ provincia.nombre }}
+                    </mat-option>
+                  </mat-select>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Ciudad:</label>
+                  <input matInput formControlName="ciudad" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Código Postal:</label>
+                  <input matInput formControlName="glnCodigopostal" />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">Latitud (GPS):</label>
+                  <input matInput formControlName="glnLatitud" />
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Longitud (GPS):</label>
+                  <input matInput formControlName="glnLongitud" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Dirección:</label>
+                <input matInput formControlName="direccion" />
+              </div>
+
+              <!-- Navegación entre pantallas -->
+              <div class="navigation-buttons">
+                <button mat-button class="back-button" (click)="onBack()">Regresar</button>
+                <button mat-button class="next-button" (click)="onNext()">Siguiente</button>
+              </div>
+
+              <!-- Botones CRUD -->
+              <div class="action-buttons-container">
+                <button mat-button (click)="nuevo()">Nuevo</button>
+                <button mat-raised-button color="primary" (click)="guardar()">Grabar</button>
+                <button mat-button (click)="modificar()">Modificar</button>
+                <button mat-button (click)="cancelar()">Cancelar</button>
+              </div>
+
+              <!-- Paginación -->
+              <div class="pagination-buttons">
+                <button mat-button (click)="irAlPrimero()" [disabled]="indiceActual === 0">&laquo;</button>
+                <button mat-button (click)="onBack()" [disabled]="indiceActual === 0">&lt;</button>
+                <span>{{ indiceActual + 1 }} / {{ glns.length }}</span>
+                <button mat-button (click)="onNext()" [disabled]="indiceActual >= glns.length - 1">&gt;</button>
+                <button mat-button (click)="irAlUltimo()" [disabled]="indiceActual >= glns.length - 1">&raquo;</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
