@@ -55,13 +55,22 @@ export class UsuariosListComponent implements OnInit {
     this.usuarioService.getUsuarioById(usuario.id_usuario).subscribe(response => {
       const detalle = response.data; // ← aquí accedes al objeto real
 
-      this.dialog.open(UsuariosFormComponent, {
+      console.log('🧪 Detalle recibido para edición:', detalle);
+
+      const dialogRef = this.dialog.open(UsuariosFormComponent, {
         width: '800px',
         data: {
           modo: 'editar',
           usuario: detalle
         }
       });
+
+      dialogRef.afterClosed().subscribe(result => {
+        if (result === true) {
+          this.cargarUsuarios(); // ← recarga lista después de editar
+        }
+      });
+
     });
   }
 

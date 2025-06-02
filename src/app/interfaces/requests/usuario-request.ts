@@ -9,5 +9,5 @@ export interface UsuariosRequest {
 }
 
 export interface UsuariosEditRequest extends UsuariosRequest {
-  id_usuario: number;
+  id?: number;
 }

@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, numberAttribute } from '@angular/core';
+import { Component, OnInit, Inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MAT_DATE_FORMATS, MatNativeDateModule } from '@angular/material/core';
@@ -9,21 +9,18 @@ import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 
-
 // Servicios
 import { PerfilesService } from 'src/app/services/perfil.service';
 import { DepartamentosService } from 'src/app/services/departamentos.service';
-import { UsuarioService } from 'src/app/services/usuario.service'
+import { UsuarioService } from 'src/app/services/usuario.service';
 
 // Interfaces de datos
 import { PerfilResponse } from 'src/app/interfaces/responses/perfil-response';
 import { DepartamentoResponse } from 'src/app/interfaces/responses/departamentos-response';
-import { UsuariosRequest } from 'src/app/interfaces/requests/usuario-request'
-import { UsuariosEditRequest } from 'src/app/interfaces/requests/usuario-request'
+import { UsuariosRequest, UsuariosEditRequest } from 'src/app/interfaces/requests/usuario-request';
 
 // Diálogo de mensajes
-import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/components/utils/messages/custom-message-box.component';
-import { publishFacade } from '@angular/compiler';
+import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
 
 export const MY_DATE_FORMATS = {
   parse: {
@@ -57,8 +54,8 @@ export class UsuariosFormComponent implements OnInit {
   usuarioForm!: FormGroup;
   perfiles: PerfilResponse[] = [];
   departamentos: DepartamentoResponse[] = [];
-  mostrarClave: boolean = false;
-  esEdicion: boolean = false;
+  mostrarClave = false;
+  esEdicion = false;
   usuarioIdEditar: number | null = null;
 
   constructor(
@@ -72,20 +69,16 @@ export class UsuariosFormComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-    if (!this.esEdicion) {
-      this.usuarioForm.get('clave')?.setValidators([Validators.required, Validators.minLength(6)]);
-    }
-
     this.usuarioForm = this.fb.group({
-      id: numberAttribute,
-      usuario: ['', [Validators.required, Validators.email]],
-      clave: [''],
+      usuario: ['', [Validators.required]],
+      clave: ['', Validators.required],
       correo: ['', [Validators.email]],
       perfil: ['', Validators.required],
       fechaCaducidad: ['', Validators.required],
       estado: [{ value: 'activo', disabled: true }, Validators.required],
       departamento: ['', Validators.required],
     });
+
     this.cargarPerfiles();
     this.cargarDepartamentos();
 
@@ -96,11 +89,27 @@ export class UsuariosFormComponent implements OnInit {
     } else {
       this.usuarioForm.get('estado')?.disable(); // en modo creación
     }
-
   }
 
   grabar(): void {
+    // Forzar validación
+    this.usuarioForm.markAllAsTouched();
+
+    console.log('🧪 Validando formulario...');
+    Object.entries(this.usuarioForm.controls).forEach(([name, control]) => {
+      console.log(`🧾 ${name}: value=${control.value}, valid=${control.valid}, errors=`, control.errors);
+    });
+
+
     if (this.usuarioForm.invalid) {
+      console.warn('⚠️ Formulario inválido:', this.usuarioForm.value);
+      for (const controlName in this.usuarioForm.controls) {
+        const control = this.usuarioForm.get(controlName);
+        if (control && control.invalid) {
+          console.warn(`Campo inválido: ${controlName}`, control.errors);
+        }
+      }
+
       this.dialog.open(CustomMessageBoxComponent, {
         width: '400px',
         data: {
@@ -116,31 +125,11 @@ export class UsuariosFormComponent implements OnInit {
 
     const formData = this.usuarioForm.getRawValue();
 
-    const request: UsuariosEditRequest = {
-      id_usuario: this.usuarioIdEditar ?? 0,
-      nombre_usuario: formData.usuario,
-      estado: formData.estado === 'activo',
-      correo: formData.correo,
-      fecha_creacion: new Date().toISOString(),
-      id_empresa: 1,
-      id_departamento: formData.departamento
-    };
-
-    const nuevaClave = formData.clave?.trim();
-    if (nuevaClave) {
-      request.nueva_contrasenia = nuevaClave;
-    }
-
-    if (this.esEdicion && this.usuarioIdEditar) {
-      this.usuario.updateUsuario(formData.perfil, request).subscribe({
-        next: () => this.dialogRef.close(true),
-        error: () => alert('❌ Error al actualizar el usuario.')
-      });
-    } else {
-      // Usar UsuariosRequest al crear
-      const requestNuevo: UsuariosRequest = {
+    if (this.esEdicion && this.usuarioIdEditar != null && this.usuarioIdEditar > 0) {
+      const requestEdit: UsuariosEditRequest = {
+        id: this.usuarioIdEditar,
         nombre_usuario: formData.usuario,
-        nueva_contrasenia: nuevaClave,
+        nueva_contrasenia: formData.clave || '',
         estado: formData.estado === 'activo',
         correo: formData.correo,
         fecha_creacion: new Date().toISOString(),
@@ -148,13 +137,33 @@ export class UsuariosFormComponent implements OnInit {
         id_departamento: formData.departamento
       };
 
-      this.usuario.createUsuario(requestNuevo).subscribe({
+      console.log('📦 Enviando requestEdit:', requestEdit);
+
+      this.usuario.updateUsuario(formData.perfil, requestEdit).subscribe({
+        next: () => this.dialogRef.close(true),
+        error: (err) => {
+          console.error('❌ Error recibido del backend:', err);
+          alert('❌ Error al actualizar el usuario.');
+        }
+      });
+    }
+    else {
+      const request: UsuariosRequest = {
+        nombre_usuario: formData.usuario,
+        nueva_contrasenia: formData.clave || '',
+        estado: formData.estado === 'activo',
+        correo: formData.correo,
+        fecha_creacion: new Date().toISOString(),
+        id_empresa: 1,
+        id_departamento: formData.departamento
+      };
+
+      this.usuario.createUsuario(request).subscribe({
         next: () => this.dialogRef.close(true),
         error: () => alert('❌ Error al crear el usuario.')
       });
     }
   }
-
 
   cerrar(): void {
     this.dialogRef.close();
@@ -184,7 +193,6 @@ export class UsuariosFormComponent implements OnInit {
 
   editar(): void {
     this.usuarioForm.get('estado')?.enable();
-
   }
 
   toggleClave(): void {
@@ -196,15 +204,13 @@ export class UsuariosFormComponent implements OnInit {
       usuario: usuario.nombre_usuario,
       correo: usuario.correo,
       perfil: usuario.id_perfil,
-      fechaCaducidad: new Date(), // ajustar si hay una fecha real
+      fechaCaducidad: new Date(), // Puedes ajustar si tienes fecha real
       estado: usuario.estado ? 'activo' : 'inactivo',
       departamento: usuario.id_departamento
     });
 
-    this.usuarioForm.get('estado')?.enable(); // solo editable en modo edición
-    this.usuarioForm.get('clave')?.clearValidators(); // quitar validación de clave en edición
+    this.usuarioForm.get('estado')?.enable(); // editable en modo edición
+    this.usuarioForm.get('clave')?.clearValidators(); // clave opcional
     this.usuarioForm.get('clave')?.updateValueAndValidity();
   }
-
-
 }
