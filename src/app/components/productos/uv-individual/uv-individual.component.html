@@ -187,37 +187,56 @@
     <div class="form-grid">
 
       <div class="grupo-etiqueta full-width">
-        <label class="titulo-grupo">Nacionales</label>
-        <div class="checkbox-contenedor radio">
-          <label><input type="checkbox" formControlName="gtin14" /> <span>GTIN-14</span></label>
-          <label><input type="checkbox" formControlName="gtin13" /> <span>GTIN-13</span></label>
-          <label><input type="checkbox" formControlName="gtin12" /> <span>GTIN-12</span></label>
-        </div>
-      </div>
+  <label class="titulo-grupo">Nacionales</label>
+  <div class="checkbox-contenedor radio">
+    <label>
+      <input type="radio" formControlName="gtinNacionalULSeleccionado" value="gtin14u" />
+      <span>GTIN-14</span>
+    </label>
+    <label>
+      <input type="radio" formControlName="gtinNacionalULSeleccionado" value="gtin13u" />
+      <span>GTIN-13</span>
+    </label>
+    <label>
+      <input type="radio" formControlName="gtinNacionalULSeleccionado" value="gtin12u" />
+      <span>GTIN-12</span>
+    </label>
+  </div>
+</div>
 
-      <div class="grupo-etiqueta full-width">
-        <label class="titulo-grupo">Internacionales</label>
-        <div class="checkbox-contenedor radio">
-          <label><input type="checkbox" formControlName="gtin14" /> <span>GTIN-14</span></label>
-          <label><input type="checkbox" formControlName="gtin13" /> <span>GTIN-13</span></label>
-          <label><input type="checkbox" formControlName="gtin12" /> <span>GTIN-12</span></label>
-        </div>
-      </div>
+
+    <div class="grupo-etiqueta full-width">
+  <label class="titulo-grupo">Internacionales</label>
+  <div class="checkbox-contenedor radio">
+    <label>
+      <input type="radio" formControlName="gtinInternacionalULSeleccionado" value="gtin14ui" />
+      <span>GTIN-14</span>
+    </label>
+    <label>
+      <input type="radio" formControlName="gtinInternacionalULSeleccionado" value="gtin13ui" />
+      <span>GTIN-13</span>
+    </label>
+    <label>
+      <input type="radio" formControlName="gtinInternacionalULSeleccionado" value="gtin12ui" />
+      <span>GTIN-12</span>
+    </label>
+  </div>
+</div>
 
       <div><label>Serie:</label><input type="text" formControlName="serie" /></div>
       <div><label>Tipo de empaque:</label><input type="text" formControlName="tipoEmpaque" /></div>
       <div><label>Unidad:</label><input type="text" formControlName="unidad" /></div>
       <div><label>Indicador:</label><input type="text" formControlName="indicador" /></div>
-      <div><label>Factor:</label><input type="text" formControlName="factor" /></div>
-      <div><label>GTIN® UL:</label><input type="text" formControlName="gtinUl" /></div>
+      <div><label>Factor:</label><input type="text" formControlName="factor" (blur)="actualizarDescripcionUL()" /></div>
+      <div><label>GTIN® UL:</label><input type="text" formControlName="gtinUl" [ngClass]="{ 'input-verde': campoGtinU }"  /></div>
       <div><label>Tipo GTIN®:</label><input type="text" formControlName="tipoGtin" /></div>
-      <div><label>Observación:</label><textarea formControlName="observacion"></textarea></div>
+      <div><label>Descripción:</label><textarea formControlName="descripcionu"></textarea></div>
     </div>
 
     <div class="botones">
       <button class="btn" type="button">Nuevo</button>
-      <button class="btn" type="button" (click)="generar()">Generar</button>
-      <button class="btn btn-azul" type="button" (click)="grabarTodo()">Grabar</button>
+      <button class="btn" type="button" (click)="generarUL()">Generar</button>
+      <button class="btn btn-azul" type="button" (click)="grabarTodoUL()">Grabar</button>
       <button class="btn btn-rojo" type="button" (click)="salir()">Salir</button>
     </div>
   </form>

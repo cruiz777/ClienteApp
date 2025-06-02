@@ -3,6 +3,36 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
+export interface Codigos14Request {
+  id_codigos14: number;
+  codbar: string;
+  id_prefijos: number;
+  clientes_codigo: number;
+  presentacion: number;
+  unidad: any;
+  descripcion: string;
+  g14: string;
+  largo: number;
+  ancho: number;
+  profundidad: number;
+  peso: number;
+  fecha: string;
+  foto: string;
+  activo: boolean;
+  id_usuario: number;
+  codpro: string;
+  facturar: string;
+  nombre: string;
+  gtin: string;
+  target: string;
+  marca: string;
+  sector: string;
+  referencia: string;
+  abrevia: string;
+  id_producto: number;
+}
+
+
 export interface Codigos14Response {
   id_codigos14: number;
   codbar: string;
@@ -58,4 +88,10 @@ export class Codigos14Service {
         map(response => response.data ?? [])
       );
   }
+createCodigo14(data: Codigos14Request): Observable<ApiResponse<number>> {
+  return this.http.post<ApiResponse<number>>(`${this.baseUrl}/Codigos14`, data);
+}
+
+
+
 }

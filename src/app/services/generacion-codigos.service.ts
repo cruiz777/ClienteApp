@@ -212,5 +212,24 @@ obtenerSecuencia(prefijo: string, pais?: string): Observable<SecuenciaResponse> 
     return this.http.get<SecuenciaResponse>(this.apiUrl, { params });
   }
 
+generarCodigo14(pais: string, prefijo: string): string {
+  let codigoBase = pais + prefijo.substring(0, 12); // Concatena país + prefijo (máx 12 dígitos)
+  let suma = 0;
+
+  for (let i = 0; i < codigoBase.length; i++) {
+    const digito = parseInt(codigoBase.charAt(i), 10);
+
+    if ((codigoBase.length % 2 === 0 && i % 2 === 0) || (codigoBase.length % 2 !== 0 && i % 2 !== 0)) {
+      suma += digito;
+    } else {
+      suma += digito * 3;
+    }
+  }
+
+  const checksum = (10 - (suma % 10)) % 10;
+  const codigoCompleto = codigoBase + checksum;
+
+  return codigoCompleto;
+}
 
 }

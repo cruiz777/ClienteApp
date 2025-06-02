@@ -251,9 +251,13 @@ export class ProductoService {
         map(response => response.data ?? []) // puedes transformar más si deseas
       );
   }
-crearProducto(request: ProductoRequest): Observable<any> {
-  return this.http.post<any>(`${this.apiBaseUrl}/Producto`, request);
+crearProducto(request: ProductoRequest): Observable<ApiResponse<number>> {
+  return this.http.post<ApiResponse<number>>(
+    `${this.apiBaseUrl}/Producto`, 
+    request
+  );
 }
+
 
 
 }
