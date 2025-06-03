@@ -16,6 +16,12 @@ export interface SecuenciaResponse {
   count: number | null;
 }
 
+export interface ApiResponse<T> {
+  id: string;
+  type: string;
+  data: T;
+  message: string;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -32,6 +38,17 @@ export class GeneracionCodigosService {
       map(res => res?.numerover ?? 0)
     );
   }
+getUltimoRestoPresentacion(codpre: string,codbar:string, inicio: number, largo: number, longitudCodbar: number): Observable<ApiResponse<number>> {
+  const params = new HttpParams()
+    .set('codpre', codpre)
+    .set('codbarPrefix', codbar)
+    .set('inicio', inicio.toString())
+    .set('largo', largo.toString())
+    .set('longitudCodbar', longitudCodbar.toString());
+
+  return this.http.get<ApiResponse<number>>(`${this.baseUrl}/Producto/ultimo-resto-presentacion`, { params });
+}
+
 
   // Genera el código EAN-13 completo en base al prefijo y el secuencial
   generarCodigo13(prefijo: string, resto: number): string {

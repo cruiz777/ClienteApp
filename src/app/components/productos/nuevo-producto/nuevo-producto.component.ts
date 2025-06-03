@@ -161,7 +161,7 @@ export class NuevoProductoComponent implements OnInit {
           g14: c.g14 || '',
           codbar: c.codbar || '',
           prefijo: c.codpre || '',
-          presentacion: c.presentacion || '',
+          presentacion: c.presentacion || 0,
           factor: c.unidad || '',
           descripcion: c.descripcion || '',
           fecha: (() => {
@@ -179,6 +179,7 @@ export class NuevoProductoComponent implements OnInit {
       }
     });
   }
+
 
 
 
