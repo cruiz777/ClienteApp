@@ -5,12 +5,7 @@
     <h2 style="margin-right: auto;">Tabla de Usuarios</h2>
 
     <div class="form-actions form-actions-horizontal alineado-derecha">
-      <input
-        type="text"
-        placeholder="🔍 Buscar por nombre o correo"
-        [(ngModel)]="filtroUsuario"
-        class="input-filtro"
-      />
+      <input type="text" placeholder="🔍 Buscar por nombre o correo" [(ngModel)]="filtroUsuario" class="input-filtro" />
       <button (click)="onNuevoUsuario()" [class.activo]="botonActivo === 'nuevo'">
         Nuevo Usuario
       </button>
@@ -22,6 +17,7 @@
       <thead>
         <tr>
           <th class="ocultar-id">ID</th>
+          <th>Fecha Creacion</th>
           <th>Usuario</th>
           <th>Correo</th>
           <th>Perfil</th>
@@ -30,11 +26,10 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let usuario of usuariosFiltrados"
-            [class.fila-activa]="usuario.id_usuario === usuarioSeleccionado"
-            (click)="seleccionarUsuario(usuario.id_usuario)"
-            style="cursor: pointer;">
+        <tr *ngFor="let usuario of usuariosFiltrados" [class.fila-activa]="usuario.id_usuario === usuarioSeleccionado"
+          (click)="seleccionarUsuario(usuario.id_usuario)" style="cursor: pointer;">
           <td class="ocultar-id">{{ usuario.id_usuario }}</td>
+          <td>{{ usuario.fecha_creacion }}</td>
           <td>{{ usuario.nombre_usuario }}</td>
           <td>{{ usuario.correo }}</td>
           <td>{{ usuario.nombre_perfil || 'N/A' }}</td>

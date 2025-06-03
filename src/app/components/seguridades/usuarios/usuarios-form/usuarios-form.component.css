@@ -115,3 +115,106 @@ select {
 .btn-cancelar:hover {
   background-color: #ccc;
 }
+
+/* ===================== TABLA ESTILO ===================== */
+.tabla-estilo {
+  width: 100%;
+  border-collapse: separate;
+  /* CAMBIAR DE collapse A separate */
+  border-spacing: 0;
+  margin-bottom: 24px;
+}
+
+
+.tabla-estilo th,
+.tabla-estilo td {
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.tabla-estilo th {
+  background-color: #f0f4f8;
+  color: #1f2937;
+  font-weight: 600;
+}
+
+/* ===================== BOTONES DE TABLA ===================== */
+.tabla-estilo td button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-right: 4px;
+}
+
+.tabla-estilo td button img {
+  vertical-align: middle;
+}
+
+
+/* ===================== PANEL MULTICOLUMNAS ===================== */
+.tablas-panel {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.panel-col {
+  flex: 1;
+  min-width: 300px;
+}
+
+.panel-col h3 {
+  font-size: 16px;
+  color: #002c6c;
+  margin-bottom: 8px;
+}
+
+/* ===================== CLASES UTILITARIAS ===================== */
+.ocultar-id {
+  display: none;
+}
+
+.col-reducida {
+  width: 1%;
+  white-space: nowrap;
+}
+
+/* ===================== SCROLL PARA TABLA DE PERFILES ===================== */
+.tabla-scrollable {
+  max-height: 170px;
+  /* Ajusta según lo que necesites visible */
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* .form-actions-horizontal.alineado-derecha:
+   Alinea a la derecha el contenido dentro de un contenedor .form-row */
+
+.form-actions-horizontal.alineado-derecha {
+  margin-left: auto;
+  display: flex;
+  gap: 12px;
+}
+
+.form-actions button {
+  background-color: #eef4f7;
+  border: 1px solid #ccd5e2;
+  padding: 8px 20px;
+  font-size: 14px;
+  color: #002c6c;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.form-actions-horizontal button.activo {
+  background-color: #002c6c;
+  color: white;
+  border: 1px solid #002c6c;
+}
+
