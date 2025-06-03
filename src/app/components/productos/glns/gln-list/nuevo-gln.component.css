@@ -178,3 +178,15 @@ button[disabled] {
   grid-template-columns: 200px 1fr;
   gap: 10px 30px;
 }
+.gln-navigation-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 12px 0;
+
+  .gln-navigation-label {
+    font-weight: 500;
+    font-size: 16px;
+    margin: 0 16px;
+  }
+}

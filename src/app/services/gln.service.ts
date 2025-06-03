@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
 // ✅ Interfaces externas
 import { GlnRequest } from '../interfaces/requests/gln-request';
 import { GlnResponse } from '../interfaces/responses/gln-response';
+import { ApiResponse } from '../interfaces/responses/api-response';
 
 @Injectable({
   providedIn: 'root'
@@ -44,6 +45,11 @@ export class GlnService {
   obtenerTodos(): Observable<GlnResponse[]> {
     return this.http.get<GlnResponse[]>(`${this.apiBaseUrl}/Gln`);
   }
+
+obtenerGlnPorIdPrefijo(idPrefijos: number): Observable<GlnResponse> {
+  return this.http.get<ApiResponse<GlnResponse>>(`${this.apiBaseUrl}/Gln/prefijo/${idPrefijos}`)
+    .pipe(map(({ data }: ApiResponse<GlnResponse>) => data));
+}
 }
 
 // ✅ Reexportar para que puedan importarse desde aquí

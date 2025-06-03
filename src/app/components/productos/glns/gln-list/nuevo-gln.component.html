@@ -25,6 +25,20 @@
     <!-- Paso 1: Datos Generales -->
     <div *ngIf="pasoActual === 1" class="form-section">
       <h3>Datos Generales</h3>
+
+      <!-- GLN Navegación -->
+      <div class="gln-navigation-bar">
+        <button mat-icon-button color="primary" (click)="anteriorGln()" [disabled]="glnIndex === 0">
+          <mat-icon>chevron_left</mat-icon>
+        </button>
+        <span class="gln-navigation-label">
+          GLN {{ glnIndex + 1 }} de {{ glnsDelPrefijo.length || 1 }}
+        </span>
+        <button mat-icon-button color="primary" (click)="siguienteGln()" [disabled]="glnIndex >= glnsDelPrefijo.length - 1">
+          <mat-icon>chevron_right</mat-icon>
+        </button>
+      </div>
+
       <div class="form-grid">
         <div class="form-group">
           <label>Código del Cliente:</label>
@@ -37,12 +51,14 @@
 
         <div class="form-group">
           <label>Cliente:</label>
-          <input matInput formControlName="glnNombre">
+          <input matInput formControlName="nomCli">
         </div>
         <div class="form-group">
           <label>GLN:</label>
           <input matInput formControlName="gln1">
+          <small *ngIf="alertaGln" style="color: red;">{{ alertaGln }}</small>
         </div>
+
 
         <div class="form-group">
           <label>Origen de Prefijo:</label>
@@ -95,8 +111,10 @@
 
         <div class="form-group">
           <label>Ciudad:</label>
-          <mat-select formControlName="idCiudad">
-            <mat-option *ngFor="let ciudad of ciudades" [value]="ciudad.id">{{ ciudad.ciudad }}</mat-option>
+          <mat-select formControlName="idCiudad" [compareWith]="compareCiudad">
+            <mat-option *ngFor="let ciudad of ciudadesFiltradas" [value]="ciudad.id">
+              {{ ciudad.ciudad }}
+            </mat-option>
           </mat-select>
         </div>
         <div class="form-group">
@@ -118,9 +136,6 @@
         <div class="form-group">
           <label>Longitud (GPS):</label>
           <input matInput formControlName="glnLongitud">
-        </div>
-        <div class="form-group" style="display: flex; align-items: center;">
-          <mat-checkbox formControlName="serie">Serie</mat-checkbox>
         </div>
       </div>
     </div>
