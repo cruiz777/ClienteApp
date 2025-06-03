@@ -8,7 +8,7 @@
 
         <input type="text" [(ngModel)]="busquedaEntidad" placeholder="🔍 Ej: GS1 o 1791234567001"
           class="input-filtro" />
-          <button (click)="buscarEntidad()" class="btn-grabar">Buscar</button>
+        <button (click)="buscarEntidad()" class="btn-grabar">Buscar</button>
       </div>
     </div>
 
@@ -38,7 +38,7 @@
   <div *ngIf="entidadSeleccionada" style="text-align:center; margin-bottom: 20px;">
     <h2>Creación de Usuario</h2>
     <strong>Creando usuario para:</strong>
-    {{ entidadSeleccionada.nombre }}
+    {{ entidadSeleccionada.nombresCompletos }}
   </div>
 
   <form *ngIf="esEdicion || entidadSeleccionada" [formGroup]="usuarioForm" class="form-grid" (ngSubmit)="grabar()">
@@ -49,7 +49,7 @@
         <label>Usuario*:</label>
         <div class="input-con-icono">
           <img src="assets/icons/icon-usuario.png" />
-          <input formControlName="usuario" type="email" placeholder="ejemplo" />
+          <input formControlName="usuario" type="text" placeholder="ejemplo" autocomplete="off" />
         </div>
       </div>
 
@@ -70,7 +70,8 @@
         <div class="input-con-icono">
           <img [src]="mostrarClave ? 'assets/icons/icon-clave.png' : 'assets/icons/icon-clave-2.png'"
             (click)="toggleClave()" style="cursor: pointer;" />
-          <input formControlName="clave" [type]="mostrarClave ? 'text' : 'password'" placeholder="Ingrese su clave" />
+          <input formControlName="clave" [type]="mostrarClave ? 'text' : 'password'" placeholder="Ingrese su clave"
+            autocomplete="new-password" />
         </div>
       </div>
 

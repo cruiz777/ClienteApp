@@ -63,7 +63,6 @@ export class UsuariosFormComponent implements OnInit {
   resultadosEntidad: any[] = [];
   mostrarFormulario = false;
 
-
   constructor(
     private fb: FormBuilder,
     public dialogRef: MatDialogRef<UsuariosFormComponent>,
@@ -82,7 +81,7 @@ export class UsuariosFormComponent implements OnInit {
       correo: ['', [Validators.email]],
       perfil: ['', Validators.required],
       fechaCaducidad: ['', Validators.required],
-      estado: [{ value: 'activo', disabled: true }, Validators.required],
+      estado: [{ value: 'activo', disabled: true }],
       departamento: ['', Validators.required],
     });
 
@@ -94,19 +93,16 @@ export class UsuariosFormComponent implements OnInit {
       this.usuarioIdEditar = this.data.usuario.id_usuario;
       this.cargarFormularioParaEdicion(this.data.usuario);
     } else {
-      this.usuarioForm.get('estado')?.disable(); // en modo creación
+      this.usuarioForm.get('estado')?.disable();
     }
   }
 
   grabar(): void {
-    // Forzar validación
-    this.usuarioForm.markAllAsTouched();
-
-    console.log('🧪 Validando formulario...');
-    Object.entries(this.usuarioForm.controls).forEach(([name, control]) => {
-      console.log(`🧾 ${name}: value=${control.value}, valid=${control.valid}, errors=`, control.errors);
+    Object.keys(this.usuarioForm.controls).forEach(key => {
+      if (key !== 'estado') {
+        this.usuarioForm.get(key)?.markAsTouched();
+      }
     });
-
 
     if (this.usuarioForm.invalid) {
       console.warn('⚠️ Formulario inválido:', this.usuarioForm.value);
@@ -135,16 +131,15 @@ export class UsuariosFormComponent implements OnInit {
     if (this.esEdicion && this.usuarioIdEditar != null && this.usuarioIdEditar > 0) {
       const requestEdit: UsuariosEditRequest = {
         id: this.usuarioIdEditar,
+        id_persona: this.entidadSeleccionada?.personaCodigo || 0,
         nombre_usuario: formData.usuario,
-        nueva_contrasenia: formData.clave || '',
+        contrasena_hash: formData.clave || '',
         estado: formData.estado === 'activo',
         correo: formData.correo,
         fecha_creacion: new Date().toISOString(),
         id_empresa: 1,
         id_departamento: formData.departamento
       };
-
-      console.log('📦 Enviando requestEdit:', requestEdit);
 
       this.usuario.updateUsuario(formData.perfil, requestEdit).subscribe({
         next: () => this.dialogRef.close(true),
@@ -153,11 +148,11 @@ export class UsuariosFormComponent implements OnInit {
           alert('❌ Error al actualizar el usuario.');
         }
       });
-    }
-    else {
+    } else {
       const request: UsuariosRequest = {
+        id_persona: this.entidadSeleccionada.personaCodigo,
         nombre_usuario: formData.usuario,
-        nueva_contrasenia: formData.clave || '',
+        contrasena_hash: formData.clave || '',
         estado: formData.estado === 'activo',
         correo: formData.correo,
         fecha_creacion: new Date().toISOString(),
@@ -165,10 +160,14 @@ export class UsuariosFormComponent implements OnInit {
         id_departamento: formData.departamento
       };
 
-      this.usuario.createUsuario(request).subscribe({
+      this.usuario.createUsuario(formData.perfil, request).subscribe({
         next: () => this.dialogRef.close(true),
-        error: () => alert('❌ Error al crear el usuario.')
+        error: (err) => {
+          console.error('❌ Error del backend al crear el usuario:', err);
+          alert(`❌ Error al crear el usuario: ${err.error?.message || 'Error desconocido'}`);
+        }
       });
+
     }
   }
 
@@ -211,13 +210,13 @@ export class UsuariosFormComponent implements OnInit {
       usuario: usuario.nombre_usuario,
       correo: usuario.correo,
       perfil: usuario.id_perfil,
-      fechaCaducidad: new Date(), // Puedes ajustar si tienes fecha real
+      fechaCaducidad: new Date(),
       estado: usuario.estado ? 'activo' : 'inactivo',
       departamento: usuario.id_departamento
     });
 
-    this.usuarioForm.get('estado')?.enable(); // editable en modo edición
-    this.usuarioForm.get('clave')?.clearValidators(); // clave opcional
+    this.usuarioForm.get('estado')?.enable();
+    this.usuarioForm.get('clave')?.clearValidators();
     this.usuarioForm.get('clave')?.updateValueAndValidity();
   }
 
@@ -245,9 +244,37 @@ export class UsuariosFormComponent implements OnInit {
   }
 
   seleccionarEntidad(entidad: any): void {
-    this.entidadSeleccionada = entidad;
-    this.resultadosEntidad = [];
+    this.validarEntidadYaTieneUsuario(entidad.personaCodigo);
   }
+
+  validarEntidadYaTieneUsuario(personaCodigo: number): void {
+    this.usuario.getUsuarioByIdPersona(personaCodigo).subscribe({
+      next: (res) => {
+        if (res.data) {
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '400px',
+            data: {
+              title: 'Entidad ya registrada',
+              message: `❌ La entidad seleccionada ya tiene un usuario registrado: ${res.data.nombre_usuario}`,
+              type: 'info',
+              confirmText: 'Aceptar',
+              showCancel: false
+            }
+          });
+          // Limpia la selección para evitar avanzar
+          this.entidadSeleccionada = null;
+        } else {
+          // No tiene usuario asociado, permite continuar
+          this.entidadSeleccionada = { personaCodigo };
+          this.resultadosEntidad = [];
+        }
+      },
+      error: () => {
+        alert('❌ Error al validar existencia de usuario para la entidad seleccionada.');
+      }
+    });
+  }
+
 
 
 }

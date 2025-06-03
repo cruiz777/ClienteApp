@@ -1,6 +1,7 @@
 export interface UsuariosRequest {
+  id_persona: number;
   nombre_usuario: string;
-  nueva_contrasenia?: string; // ← Agrega esto
+  contrasena_hash?: string; // ← Agrega esto
   estado: boolean;
   correo?: string;
   fecha_creacion?: string;

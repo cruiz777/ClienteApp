@@ -68,8 +68,8 @@ export class UsuarioService {
     return this.http.get<ApiResponse<UsuariosResponse[]>>(this.apiUrl);
   }
 
-  createUsuario(usuario: UsuariosRequest): Observable<ApiResponse<boolean>> {
-    return this.http.post<ApiResponse<boolean>>(this.apiUrl, usuario);
+  createUsuario(idPerfil: number, request: UsuariosRequest): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(`${this.apiUrl}/${idPerfil}`, request);
   }
 
   updateUsuario(idPerfil: number, usuario: UsuariosRequest): Observable<ApiResponse<boolean>> {
@@ -78,6 +78,10 @@ export class UsuarioService {
 
   getUsuarioById(idUsuario: number): Observable<ApiResponse<UsuariosResponse>> {
     return this.http.get<ApiResponse<UsuariosResponse>>(`${this.apiUrl}/${idUsuario}`);
+  }
+
+  getUsuarioByIdPersona(idUsuario: number): Observable<ApiResponse<UsuariosResponse>> {
+    return this.http.get<ApiResponse<UsuariosResponse>>(`${this.apiUrl}/persona/${idUsuario}`);
   }
 
   buscarEntidadPorRuc(idUsuario: string): Observable<ApiResponse<any>> {
