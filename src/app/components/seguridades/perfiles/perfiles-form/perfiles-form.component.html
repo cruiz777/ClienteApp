@@ -1,18 +1,16 @@
 <h2 mat-dialog-title>
-  {{ tipo === 'modulo' ? 'Nuevo Módulo' : tipo === 'menu' ? 'Nuevo Menú' : tipo === 'opcion' ? 'Nueva Opción' : 'Nuevo Perfil' }}
+  {{ tipo === 'sistema' ? 'Nuevo Sistema' : tipo === 'modulo' ? 'Nuevo Módulo' : tipo === 'menu' ? 'Nuevo Menú' : tipo
+  === 'opcion' ? 'Nueva Opción' : 'Nuevo Perfil' }}
 </h2>
 
 <div mat-dialog-content style="padding-top: 12px;">
   <form [formGroup]="form">
     <mat-form-field appearance="outline" style="width: 100%;">
       <mat-label>
-        {{ tipo === 'modulo' ? 'Nombre del módulo' : tipo === 'menu' ? 'Nombre del menú' : tipo === 'opcion' ? 'Nombre de la opción' : 'Nombre del perfil' }}
+        {{tipo === 'sistema' ? 'Nombre del sistema' : tipo === 'modulo' ? 'Nombre del módulo' : tipo === 'menu' ?
+        'Nombre del menú' : tipo === 'opcion' ? 'Nombre de la opción' : 'Nombre del perfil' }}
       </mat-label>
-      <input
-        matInput
-        placeholder="Ingrese el nombre"
-        formControlName="nombre"
-      />
+      <input matInput placeholder="Ingrese el nombre" formControlName="nombre" />
       <mat-error *ngIf="form.get('nombre')?.hasError('required')">
         El nombre es obligatorio.
       </mat-error>

@@ -98,6 +98,7 @@ export class UsuariosFormComponent implements OnInit {
   }
 
   grabar(): void {
+    // Marcar todos los campos como tocados (menos estado que está deshabilitado inicialmente)
     Object.keys(this.usuarioForm.controls).forEach(key => {
       if (key !== 'estado') {
         this.usuarioForm.get(key)?.markAsTouched();
@@ -106,13 +107,6 @@ export class UsuariosFormComponent implements OnInit {
 
     if (this.usuarioForm.invalid) {
       console.warn('⚠️ Formulario inválido:', this.usuarioForm.value);
-      for (const controlName in this.usuarioForm.controls) {
-        const control = this.usuarioForm.get(controlName);
-        if (control && control.invalid) {
-          console.warn(`Campo inválido: ${controlName}`, control.errors);
-        }
-      }
-
       this.dialog.open(CustomMessageBoxComponent, {
         width: '400px',
         data: {
@@ -128,6 +122,19 @@ export class UsuariosFormComponent implements OnInit {
 
     const formData = this.usuarioForm.getRawValue();
 
+    // Convertir perfil a número de forma explícita
+    formData.perfil = parseInt(formData.perfil, 10);
+    if (!formData.perfil || isNaN(formData.perfil) || formData.perfil <= 0) {
+      alert('❌ Debe seleccionar un perfil válido.');
+      return;
+    }
+
+    // También puedes validar aquí si el departamento es válido (opcional)
+    if (!formData.departamento || isNaN(formData.departamento)) {
+      alert('❌ Debe seleccionar un departamento válido.');
+      return;
+    }
+
     if (this.esEdicion && this.usuarioIdEditar != null && this.usuarioIdEditar > 0) {
       const requestEdit: UsuariosEditRequest = {
         id: this.usuarioIdEditar,
@@ -136,7 +143,7 @@ export class UsuariosFormComponent implements OnInit {
         contrasena_hash: formData.clave || '',
         estado: formData.estado === 'activo',
         correo: formData.correo,
-        fecha_creacion: new Date().toISOString(),
+        fecha_creacion: undefined,
         id_empresa: 1,
         id_departamento: formData.departamento
       };
@@ -160,8 +167,25 @@ export class UsuariosFormComponent implements OnInit {
         id_departamento: formData.departamento
       };
 
+      console.log('📤 Enviando request:', request);
+      console.log('📌 ID Perfil:', formData.perfil);
+
       this.usuario.createUsuario(formData.perfil, request).subscribe({
-        next: () => this.dialogRef.close(true),
+        next: () => {
+          // Mostrar mensaje antes de cerrar
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '400px',
+            data: {
+              title: 'Éxito',
+              message: '✅ Usuario creado correctamente.',
+              type: 'success',
+              confirmText: 'Aceptar',
+              showCancel: false
+            }
+          }).afterClosed().subscribe(() => {
+            this.dialogRef.close(true); // Solo cerrar luego del mensaje
+          });
+        },
         error: (err) => {
           console.error('❌ Error del backend al crear el usuario:', err);
           alert(`❌ Error al crear el usuario: ${err.error?.message || 'Error desconocido'}`);
@@ -171,6 +195,7 @@ export class UsuariosFormComponent implements OnInit {
     }
   }
 
+
   cerrar(): void {
     this.dialogRef.close();
   }
@@ -179,6 +204,7 @@ export class UsuariosFormComponent implements OnInit {
     this.perfilService.getPerfiles().subscribe({
       next: (resp) => {
         this.perfiles = resp.data;
+        console.log(this.perfiles)
       },
       error: () => {
         alert('Error al cargar perfiles');
@@ -224,31 +250,33 @@ export class UsuariosFormComponent implements OnInit {
     const valor = this.busquedaEntidad.trim();
     if (!valor) return;
 
-    const esNumerico = /^[0-9]+$/.test(valor);
+    const soloLetras = /^[a-zA-Z\s]+$/.test(valor);
 
-    if (esNumerico) {
-      this.persona.buscarPersonaPorDocumento(valor).subscribe({
-        next: (res) => {
-          this.resultadosEntidad = res ? [res] : [];
-        },
-        error: () => alert('❌ Error al buscar por RUC o cédula.')
-      });
-    } else {
+    // Si solo son letras, se asume nombre
+    if (soloLetras) {
       this.persona.buscarPersonasPorNombre(valor).subscribe({
         next: (res) => {
           this.resultadosEntidad = res;
         },
         error: () => alert('❌ Error al buscar por nombre.')
       });
+    } else {
+      // Alfanumérico o numérico, se asume documento (RUC, cédula, pasaporte)
+      this.persona.buscarPersonaPorDocumento(valor).subscribe({
+        next: (res) => {
+          this.resultadosEntidad = res;
+        },
+        error: () => alert('❌ Error al buscar por documento.')
+      });
     }
   }
 
   seleccionarEntidad(entidad: any): void {
-    this.validarEntidadYaTieneUsuario(entidad.personaCodigo);
+    this.validarEntidadYaTieneUsuario(entidad);
   }
 
-  validarEntidadYaTieneUsuario(personaCodigo: number): void {
-    this.usuario.getUsuarioByIdPersona(personaCodigo).subscribe({
+  validarEntidadYaTieneUsuario(entidad: any): void {
+    this.usuario.getUsuarioByIdPersona(entidad.personaCodigo).subscribe({
       next: (res) => {
         if (res.data) {
           this.dialog.open(CustomMessageBoxComponent, {
@@ -261,11 +289,9 @@ export class UsuariosFormComponent implements OnInit {
               showCancel: false
             }
           });
-          // Limpia la selección para evitar avanzar
           this.entidadSeleccionada = null;
         } else {
-          // No tiene usuario asociado, permite continuar
-          this.entidadSeleccionada = { personaCodigo };
+          this.entidadSeleccionada = entidad; // ✅ conserva nombresCompletos
           this.resultadosEntidad = [];
         }
       },

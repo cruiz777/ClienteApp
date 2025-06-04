@@ -1,50 +1,53 @@
-<!-- usuarios-list.component.html -->
-<div class="contenido-tablas">
+<div class="contenedor-principal">
 
-  <div class="encabezado-acciones">
-    <h2 style="margin-right: auto;">Tabla de Usuarios</h2>
+  <div class="contenido-tablas">
 
-    <div class="form-actions form-actions-horizontal alineado-derecha">
-      <input type="text" placeholder="🔍 Buscar por nombre o correo" [(ngModel)]="filtroUsuario" class="input-filtro" />
-      <button (click)="onNuevoUsuario()" [class.activo]="botonActivo === 'nuevo'">
-        Nuevo Usuario
-      </button>
+    <div class="encabezado-acciones">
+      <h2 style="margin-right: auto;">Tabla de Usuarios</h2>
+
+      <div class="form-actions form-actions-horizontal alineado-derecha">
+        <input type="text" placeholder="🔍 Buscar por nombre o correo" [(ngModel)]="filtroUsuario"
+          class="input-filtro" />
+        <button (click)="onNuevoUsuario()" [class.activo]="botonActivo === 'nuevo'">
+          Nuevo Usuario
+        </button>
+      </div>
     </div>
-  </div>
 
-  <div class="tabla-scrollable">
-    <table class="tabla-estilo">
-      <thead>
-        <tr>
-          <th class="ocultar-id">ID</th>
-          <th>Fecha Creacion</th>
-          <th>Usuario</th>
-          <th>Correo</th>
-          <th>Perfil</th>
-          <th>Departamento</th>
-          <th class="col-reducida">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let usuario of usuariosFiltrados" [class.fila-activa]="usuario.id_usuario === usuarioSeleccionado"
-          (click)="seleccionarUsuario(usuario.id_usuario)" style="cursor: pointer;">
-          <td class="ocultar-id">{{ usuario.id_usuario }}</td>
-          <td>{{ usuario.fecha_creacion }}</td>
-          <td>{{ usuario.nombre_usuario }}</td>
-          <td>{{ usuario.correo }}</td>
-          <td>{{ usuario.nombre_perfil || 'N/A' }}</td>
-          <td>{{ usuario.nombre_departamento || 'N/A' }}</td>
-          <td>
-            <button (click)="editarUsuario(usuario); $event.stopPropagation()" title="Editar">
-              <img src="assets/icons/icon-modificar-3.png" width="20" />
-            </button>
-            <button (click)="eliminarUsuario(usuario.id_usuario); $event.stopPropagation()" title="Eliminar">
-              <img src="assets/icons/icon-basurero.png" width="20" />
-            </button>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
+    <div class="tabla-scrollable">
+      <table class="tabla-estilo">
+        <thead>
+          <tr>
+            <th class="ocultar-id">ID</th>
+            <th class="col-reducida">Fecha Creacion</th>
+            <th>Usuario</th>
+            <th>Correo</th>
+            <th>Perfil</th>
+            <th>Departamento</th>
+            <th class="col-reducida">Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let usuario of usuariosFiltrados" [class.fila-activa]="usuario.id_usuario === usuarioSeleccionado"
+            (click)="seleccionarUsuario(usuario.id_usuario)" style="cursor: pointer;">
+            <td class="ocultar-id">{{ usuario.id_usuario }}</td>
+            <td>{{ usuario.fecha_creacion | date: 'yyyy-MM-dd' }}</td>
+            <td>{{ usuario.nombre_usuario }}</td>
+            <td>{{ usuario.correo }}</td>
+            <td>{{ usuario.nombre_perfil || 'N/A' }}</td>
+            <td>{{ usuario.nombre_departamento || 'N/A' }}</td>
+            <td>
+              <button (click)="editarUsuario(usuario); $event.stopPropagation()" title="Editar">
+                <img src="assets/icons/icon-modificar-3.png" width="20" />
+              </button>
+              <button (click)="eliminarUsuario(usuario.id_usuario); $event.stopPropagation()" title="Eliminar">
+                <img src="assets/icons/icon-basurero.png" width="20" />
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
+  </div>
 </div>

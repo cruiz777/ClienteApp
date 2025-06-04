@@ -344,7 +344,7 @@ export class PerfilesListComponent implements OnInit {
     });
   }
 
-  crearEntidad(tipo: 'modulo' | 'menu' | 'opcion'): void {
+  crearEntidad(tipo: 'sistema' | 'modulo' | 'menu' | 'opcion'): void {
     let idRelacionado: number | null = null;
 
     if (tipo === 'modulo') {
@@ -373,6 +373,12 @@ export class PerfilesListComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((resultado) => {
       if (resultado === true) {
+        if (tipo === 'sistema') {
+          this.sistemaService.getSistemas().subscribe(response => {
+            this.sistemas = response.data;
+          });
+        }
+
         if (tipo === 'modulo') {
           const sistema = this.sistemas.find(s => s.nombre === this.sistemaActivo);
           if (sistema) {
@@ -392,6 +398,7 @@ export class PerfilesListComponent implements OnInit {
       }
     });
   }
+
 
 
 }

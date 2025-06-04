@@ -87,8 +87,14 @@ export class UsuariosListComponent implements OnInit {
    */
   onNuevoUsuario() {
     this.botonActivo = 'nuevo';
-    this.dialog.open(UsuariosFormComponent, {
+    const dialogRef = this.dialog.open(UsuariosFormComponent, {
       width: '800px'
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        this.cargarUsuarios(); // ✅ solo después de guardar
+      }
     });
   }
 

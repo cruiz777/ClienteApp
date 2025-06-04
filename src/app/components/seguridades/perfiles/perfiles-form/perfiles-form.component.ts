@@ -10,11 +10,13 @@ import { PerfilesRequest } from 'src/app/interfaces/requests/perfil-request';
 import { OpcionesRequest } from 'src/app/interfaces/requests/opcion-request'
 import { MenusRequest } from 'src/app/interfaces/requests/menu-request'
 import { ModulosRequest } from 'src/app/interfaces/requests/modulo-request'
+import { SistemasRequest } from 'src/app/interfaces/requests/sistema-request'
 
 import { PerfilesService } from 'src/app/services/perfil.service';
 import { ModuloService } from 'src/app/services/modulo.service';
 import { MenuService } from 'src/app/services/menu.service';
 import { OpcionService } from 'src/app/services/opcion.service';
+import { SistemaService } from 'src/app/services/sistema.service';
 
 @Component({
   selector: 'app-perfiles-form',
@@ -34,8 +36,9 @@ export class PerfilesFormComponent implements OnInit {
   form!: FormGroup;
   idEmpresa: number = 1;
   idPerfil?: number;
-  tipo!: 'modulo' | 'menu' | 'opcion' | 'perfil';
+  tipo!: 'sistema' | 'modulo' | 'menu' | 'opcion' | 'perfil';
   idRelacionado!: number;
+  cargando = false;
 
   constructor(
     private fb: FormBuilder,
@@ -43,6 +46,7 @@ export class PerfilesFormComponent implements OnInit {
     private moduloService: ModuloService,
     private menuService: MenuService,
     private opcionService: OpcionService,
+    private sistemaService: SistemaService,
     public dialogRef: MatDialogRef<PerfilesFormComponent>,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {
@@ -69,6 +73,7 @@ export class PerfilesFormComponent implements OnInit {
 
   grabar(): void {
     if (this.form.invalid) return;
+    this.cargando = true;
 
     const nombre = this.form.value.nombre.trim();
 
@@ -102,8 +107,8 @@ export class PerfilesFormComponent implements OnInit {
           status: true
         };
         this.moduloService.createModulo(moduloRequest).subscribe({
-          next: () => this.dialogRef.close(true),
-          error: () => alert('❌ Error al crear el módulo.')
+          next: () => { this.cargando = false; this.dialogRef.close(true); },
+          error: () => { this.cargando = false; alert('❌ Error al crear el módulo.'); }
         });
         break;
 
@@ -115,8 +120,8 @@ export class PerfilesFormComponent implements OnInit {
           status: true
         };
         this.menuService.createMenu(menuRequest).subscribe({
-          next: () => this.dialogRef.close(true),
-          error: () => alert('❌ Error al crear el menú.')
+          next: () => { this.cargando = false; this.dialogRef.close(true); },
+          error: () => { this.cargando = false; alert('❌ Error al crear el menú.'); }
         });
         break;
 
@@ -128,8 +133,21 @@ export class PerfilesFormComponent implements OnInit {
           status: true
         };
         this.opcionService.createOpcion(opcionRequest).subscribe({
-          next: () => this.dialogRef.close(true),
-          error: () => alert('❌ Error al crear la opción.')
+          next: () => { this.cargando = false; this.dialogRef.close(true); },
+          error: () => { this.cargando = false; alert('❌ Error al crear el opción.'); }
+        });
+        break;
+
+      case 'sistema':
+        const sistemaRequest: SistemasRequest = {
+          id_empresa: this.idRelacionado,
+          nombre,
+          descripcion: nombre,
+          status: true
+        };
+        this.sistemaService.createSistema(sistemaRequest).subscribe({
+          next: () => { this.cargando = false; this.dialogRef.close(true); },
+          error: () => { this.cargando = false; alert('❌ Error al crear el sistema.'); }
         });
         break;
     }

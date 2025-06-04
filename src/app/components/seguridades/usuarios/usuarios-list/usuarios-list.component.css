@@ -1,4 +1,26 @@
-/* ===================== TABS ===================== */
+/* ====================================================
+   🎛️  LAYOUT GENERAL
+==================================================== */
+.contenedor-principal {
+  height: 90vh;
+   display: flex;
+  flex-direction: column;
+}
+
+.contenido-tablas {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden; /* evita scroll doble */
+}
+
+/* ====================================================
+   🗂️  TABS DE NAVEGACIÓN (si existen)
+==================================================== */
 .tabs {
   display: flex;
   gap: 4px;
@@ -31,15 +53,9 @@
   color: #ffffff;
 }
 
-/* ===================== CONTENEDOR ===================== */
-.contenido-tablas {
-  padding: 16px;
-  background-color: white;
-  border: 1px solid #ccc;
-  border-radius: 0 0 8px 8px;
-}
-
-/* ===================== ENCABEZADOS ===================== */
+/* ====================================================
+   🧭 ENCABEZADOS Y TITULOS
+==================================================== */
 h2 {
   font-size: 18px;
   margin-bottom: 12px;
@@ -53,100 +69,9 @@ h3 {
   color: #002c6c;
 }
 
-/* ===================== TABLA ESTILO ===================== */
-.tabla-estilo {
-  width: 100%;
-  border-collapse: separate;
-  /* CAMBIAR DE collapse A separate */
-  border-spacing: 0;
-  margin-bottom: 24px;
-}
-
-
-.tabla-estilo th,
-.tabla-estilo td {
-  border: 1px solid #e5e7eb;
-  padding: 8px 12px;
-  text-align: left;
-  font-size: 14px;
-}
-
-.tabla-estilo th {
-  background-color: #f0f4f8;
-  color: #1f2937;
-  font-weight: 600;
-}
-
-/* ===================== BOTONES DE TABLA ===================== */
-.tabla-estilo td button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  margin-right: 4px;
-}
-
-.tabla-estilo td button img {
-  vertical-align: middle;
-}
-
-/* ===================== CHECKBOXES ===================== */
-input[type='checkbox'] {
-  transform: scale(1.2);
-  cursor: pointer;
-}
-
-/* ===================== PANEL MULTICOLUMNAS ===================== */
-.tablas-panel {
-  display: flex;
-  justify-content: space-between;
-  gap: 20px;
-  margin-top: 24px;
-  flex-wrap: wrap;
-}
-
-.panel-col {
-  flex: 1;
-  min-width: 300px;
-}
-
-.panel-col h3 {
-  font-size: 16px;
-  color: #002c6c;
-  margin-bottom: 8px;
-}
-
-/* ===================== COLORES SEGUN ESTADO ===================== */
-.fila-activa {
-  background-color: #cbd5e1 !important;
-  font-weight: bold;
-  color: #002c6c;
-}
-
-.menu-con-opciones {
-  background-color: #e0f7fa;
-  font-weight: bold;
-}
-
-.menu-con-opciones-completo {
-  background-color: #DBEAFE;
-  /* Tailwind: blue-100 */
-  color: #1E3A8A;
-  /* azul fuerte para texto */
-  font-weight: bold;
-}
-
-/* ===================== CLASES UTILITARIAS ===================== */
-.ocultar-id {
-  display: none;
-}
-
-.col-reducida {
-  width: 1%;
-  white-space: nowrap;
-}
-
-/* ===================== FILA DE ACCIONES Y BOTONES ===================== */
-/* .encabezado-acciones: Contenedor flexible para agrupar campos o botones en una sola línea */
+/* ====================================================
+   🧾 FILTRO Y BOTONES DE ACCIÓN SUPERIORES
+==================================================== */
 .encabezado-acciones {
   display: flex;
   justify-content: space-between;
@@ -156,8 +81,14 @@ input[type='checkbox'] {
   flex-wrap: wrap;
 }
 
-/* .form-actions-horizontal.alineado-derecha:
-   Alinea a la derecha el contenido dentro de un contenedor .form-row */
+.input-filtro {
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 300px;
+  max-width: 100%;
+}
 
 .form-actions-horizontal.alineado-derecha {
   margin-left: auto;
@@ -182,45 +113,44 @@ input[type='checkbox'] {
   border: 1px solid #002c6c;
 }
 
-/* ===================== SCROLL PARA TABLA DE PERFILES ===================== */
+/* ====================================================
+   📊 TABLA DE USUARIOS
+==================================================== */
 .tabla-scrollable {
-  max-height: 170px;
-  /* Ajusta según lo que necesites visible */
+  flex: 1;
   overflow-y: auto;
+  overflow-x: auto;
   border: 1px solid #ccc;
   border-radius: 4px;
 }
 
-/* Para mantener encabezados visibles si deseas */
-.tabla-scrollable thead {
-  position: sticky;
-  top: 0;
+.tabla-estilo {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  margin-bottom: 24px;
+}
+
+.tabla-estilo th,
+.tabla-estilo td {
+  border: 1px solid #e5e7eb;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.tabla-estilo th {
   background-color: #f0f4f8;
-  z-index: 1;
+  color: #1f2937;
+  font-weight: 600;
 }
 
-.tabla-scrollable thead th {
-  border-bottom: 1px solid #d1d5db;
-  background-color: #f0f4f8;
-  box-shadow: inset 0 -1px 0 #d1d5db;
-}
-
-/* ===================== FIX SCROLL Y LÍNEAS DEL ENCABEZADO ===================== */
-.tabla-scrollable {
-  max-height: 170px;
-  overflow-y: auto;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-/* Hace que el thead se mantenga fijo arriba */
 .tabla-scrollable table thead {
   position: sticky;
   top: 0;
   z-index: 2;
 }
 
-/* Aplicar fondo y bordes a cada th del thead */
 .tabla-scrollable table thead th {
   background-color: #f0f4f8;
   border-bottom: 1px solid #d1d5db;
@@ -228,25 +158,87 @@ input[type='checkbox'] {
   box-shadow: inset 0 -1px 0 #d1d5db;
 }
 
-/* Mantener bordes entre celdas también cuando se hace scroll */
 .tabla-scrollable table th,
 .tabla-scrollable table td {
   border: 1px solid #d1d5db;
 }
 
-/* ===================== DISEÑO DEL FILTRO DE BUSQUEDA ===================== */
-.input-filtro {
-  padding: 8px 16px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 14px;
-  width: 300px;
-  /* ← Aumenta este valor según tu necesidad */
-  max-width: 100%;
+/* ====================================================
+   🖱️ BOTONES DENTRO DE LA TABLA
+==================================================== */
+.tabla-estilo td button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-right: 4px;
 }
 
+.tabla-estilo td button img {
+  vertical-align: middle;
+}
 
-/* ===================== RESPONSIVE ===================== */
+/* ====================================================
+   🧩 COMPORTAMIENTO DINÁMICO / COLORES
+==================================================== */
+.fila-activa {
+  background-color: #cbd5e1 !important;
+  font-weight: bold;
+  color: #002c6c;
+}
+
+.menu-con-opciones {
+  background-color: #e0f7fa;
+  font-weight: bold;
+}
+
+.menu-con-opciones-completo {
+  background-color: #DBEAFE;
+  color: #1E3A8A;
+  font-weight: bold;
+}
+
+/* ====================================================
+   📦 ESTRUCTURA MULTICOLUMNAS
+==================================================== */
+.tablas-panel {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.panel-col {
+  flex: 1;
+  min-width: 300px;
+}
+
+.panel-col h3 {
+  font-size: 16px;
+  color: #002c6c;
+  margin-bottom: 8px;
+}
+
+/* ====================================================
+   🔧 UTILIDADES Y AJUSTES
+==================================================== */
+.ocultar-id {
+  display: none;
+}
+
+.col-reducida {
+  width: 1%;
+  white-space: nowrap;
+}
+
+input[type='checkbox'] {
+  transform: scale(1.2);
+  cursor: pointer;
+}
+
+/* ====================================================
+   📱 RESPONSIVE
+==================================================== */
 @media screen and (max-width: 768px) {
   .tabs {
     flex-direction: column;

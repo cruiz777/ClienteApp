@@ -91,15 +91,15 @@
       <div class="form-field">
         <label>Perfil*:</label>
         <select formControlName="perfil">
-          <option value="">Seleccione</option>
-          <option *ngFor="let p of perfiles" [value]="p.id_perfil">{{ p.nombre }}</option>
+          <option [ngValue]="null">Seleccione</option>
+          <option *ngFor="let p of perfiles" [ngValue]="p.id_perfil">{{ p.nombre }}</option>
         </select>
       </div>
 
       <div class="form-field">
         <label>Departamento*:</label>
         <select formControlName="departamento">
-          <option value="">Seleccione</option>
+          <option [ngValue]="null">Seleccione</option>
           <option *ngFor="let d of departamentos" [value]="d.id_departamento">{{ d.nombre }}</option>
         </select>
       </div>

@@ -39,8 +39,8 @@ export class PersonasService {
   /**
  * Buscar persona por número de documento (cédula o RUC)
  */
-  buscarPersonaPorDocumento(numero: string): Observable<PersonaResponse> {
-    return this.http.get<ApiListResponse<PersonaResponse>>(`${this.apiUrl}/documento/${numero}`).pipe(
+  buscarPersonaPorDocumento(numero: string): Observable<PersonaResponse[]> {
+    return this.http.get<ApiListResponse<PersonaResponse[]>>(`${this.apiUrl}/documento/${numero}`).pipe(
       map(response => response.data)
     );
   }
