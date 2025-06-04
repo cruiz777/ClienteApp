@@ -707,7 +707,7 @@ export class DialogClienteComponent implements OnInit {
     let pais: string = '';
     let codigogs1: string = ''
 
-    debugger
+    
     switch (prefix) {
       case '5':
         idControl = 70;

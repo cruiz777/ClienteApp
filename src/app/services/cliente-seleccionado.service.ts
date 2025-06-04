@@ -6,15 +6,14 @@ import { BehaviorSubject } from 'rxjs';
   providedIn: 'root'
 })
 export class ClienteSeleccionadoService {
-  private clienteSubject = new BehaviorSubject<Cliente | null>(null);
-  clienteSeleccionado$ = this.clienteSubject.asObservable();
-
+  private clienteSeleccionadoSubject = new BehaviorSubject<Cliente | null>(null);
+  clienteSeleccionado$ = this.clienteSeleccionadoSubject.asObservable();
 
   seleccionar(cliente: Cliente): void {
-    this.clienteSubject.next(cliente);
+    this.clienteSeleccionadoSubject.next(cliente);
   }
 
   obtenerClienteActual(): Cliente | null {
-    return this.clienteSubject.value;
+    return this.clienteSeleccionadoSubject.value;
   }
 }

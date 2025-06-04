@@ -3,6 +3,112 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { stream } from 'exceljs';
+export interface ProductoRequest {
+  IdProducto: number;
+  Codpro: string;
+  Despro: string;
+  Tippro: string;
+  Codgru: number;
+  Codsec: number;
+  Coddep: number;
+  Codsub: number;
+  Coddiv: number;
+  Codmar: number;
+  Despro2: string;
+  Uniman: string;
+  Feccre: string;
+  Colsab: string;
+  Talla: string;
+  Preven: number;
+  Preven2: number;
+  Precos: number;
+  Cospro: number;
+  Exiqty: number;
+  Exipdc: number;
+  Exipdv: number;
+  Exisic: number;
+  Fecsic: string;
+  Refer: string;
+  Codcuedeb: string;
+  Codcuehab: string;
+  Codcuedes: string;
+  Codcuedev: string;
+  Iva: string;
+  Tipo: string;
+  Preuni: string;
+  Regalia: string;
+  Inv: boolean;
+  PrevenSinIva: number;
+  PagaIva: boolean;
+  PagaRegalia: boolean;
+  Desind: string;
+  Codorigen: string;
+  Codcol: number;
+  StockMax: number;
+  StockMin: number;
+  Espesor: number;
+  Largo: number;
+  Ancho: number;
+  Fechacad: string;
+  Fechacad1: number;
+  Fabricante: number;
+  Obs: string;
+  Peso: boolean;
+  Fecing: string;
+  ValorUnidad: number;
+  Codsab: string;
+  Fechamod: string;
+  Tamanio: string;
+  Modelo: string;
+  Numserie: string;
+  Coleccion: string;
+  Temporada: string;
+  Prepormayor: number;
+  PreAnterior: number;
+  CosAnterior: number;
+  DescCosto1: number;
+  DescCosto2: number;
+  DescCosto3: number;
+  DescCosto4: number;
+  Descuento: number;
+  PreRebaja: number;
+  PreRebajaAntes: number;
+  FecIniPro: string;
+  FecFinPro: string;
+  FecIniPro1: string;
+  Codubi: string;
+  FecFinPro1: string;
+  FecPreAct: string;
+  FecPreMod: string;
+  FecCosAct: string;
+  FecCosMod: string;
+  CodNiv: string;
+  CodColUbi: string;
+  MargenUtilidad: number;
+  PvpSinIva: number;
+  PorcenRecepcion: number;
+  Stocks: boolean;
+  Abrevia: string;
+  Referencia: string;
+  MargenAntes: number;
+  FecMarAntes: string;
+  CantDecimal: boolean;
+  CostSuminis: number;
+  CantConv: number;
+  CostHelado: number;
+  Receta: boolean;
+  Activo: boolean;
+  ClasProd: string;
+  Foto: string;
+  AltoRiesgo: boolean;
+  PGasto: boolean;
+  CtaProdGasto: string;
+  RegSanitario: string;
+  IdEmpresa: number;
+  Codbar: string;
+}
+
+
 export interface Producto {
   IdProducto: number;
   Codpro: string;
@@ -145,4 +251,13 @@ export class ProductoService {
         map(response => response.data ?? []) // puedes transformar más si deseas
       );
   }
+crearProducto(request: ProductoRequest): Observable<ApiResponse<number>> {
+  return this.http.post<ApiResponse<number>>(
+    `${this.apiBaseUrl}/Producto`, 
+    request
+  );
+}
+
+
+
 }

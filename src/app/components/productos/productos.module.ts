@@ -5,7 +5,9 @@ import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 
 import { NavigationProductoComponent } from './navigation-producto/navigation-producto.component';
 
+
 // Angular Material modules necesarios
+
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,6 +21,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatOptionModule } from '@angular/material/core';
 
 import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
+import { MatTableModule } from '@angular/material/table';
+
 
 @NgModule({
   declarations: [
@@ -42,7 +46,9 @@ import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
     MatCheckboxModule,
     MatSelectModule,
     MatFormFieldModule,
-    MatOptionModule
+    MatOptionModule,
+    MatTableModule
+
   ],
   exports: [NavigationProductoComponent]
 })
