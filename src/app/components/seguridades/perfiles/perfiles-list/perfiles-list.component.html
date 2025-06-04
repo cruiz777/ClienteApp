@@ -54,7 +54,10 @@
   <div class="tablas-panel">
     <!-- Módulos -->
     <div class="panel-col">
-      <h3>Módulos</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>Módulos</h3>
+        <button title="Nuevo módulo" (click)="crearEntidad('modulo')" class="btn-accion">+</button>
+      </div>
       <table class="tabla-estilo">
         <thead>
           <tr>
@@ -81,7 +84,10 @@
 
     <!-- Menús -->
     <div class="panel-col">
-      <h3>Menús</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>Menús</h3>
+        <button title="Nuevo menú" (click)="crearEntidad('menu')" class="btn-accion">+</button>
+      </div>
       <table class="tabla-estilo">
         <thead>
           <tr>
@@ -109,7 +115,10 @@
 
     <!-- Opciones -->
     <div class="panel-col">
-      <h3>Opciones</h3>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>Opciones</h3>
+        <button title="Nueva opción" (click)="crearEntidad('opcion')" class="btn-accion">+</button>
+      </div>
       <table class="tabla-estilo">
         <thead>
           <tr>

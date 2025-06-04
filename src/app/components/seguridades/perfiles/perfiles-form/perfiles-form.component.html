@@ -1,16 +1,28 @@
-<h2 mat-dialog-title>{{ idPerfil ? 'Editar Perfil' : 'Nuevo Perfil' }}</h2>
-
+<h2 mat-dialog-title>
+  {{ tipo === 'modulo' ? 'Nuevo Módulo' : tipo === 'menu' ? 'Nuevo Menú' : tipo === 'opcion' ? 'Nueva Opción' : 'Nuevo Perfil' }}
+</h2>
 
 <div mat-dialog-content style="padding-top: 12px;">
-  <mat-form-field appearance="outline" style="width: 100%;">
-    <mat-label>Nombre del perfil</mat-label>
-    <input matInput placeholder="Ej: Administrador" [(ngModel)]="nombrePerfil" />
-  </mat-form-field>
+  <form [formGroup]="form">
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>
+        {{ tipo === 'modulo' ? 'Nombre del módulo' : tipo === 'menu' ? 'Nombre del menú' : tipo === 'opcion' ? 'Nombre de la opción' : 'Nombre del perfil' }}
+      </mat-label>
+      <input
+        matInput
+        placeholder="Ingrese el nombre"
+        formControlName="nombre"
+      />
+      <mat-error *ngIf="form.get('nombre')?.hasError('required')">
+        El nombre es obligatorio.
+      </mat-error>
+    </mat-form-field>
+  </form>
 </div>
 
 <div mat-dialog-actions style="justify-content: flex-end; padding-top: 12px;">
-  <button mat-stroked-button (click)="cerrar()">Cancelar</button>
-  <button mat-flat-button color="primary" (click)="createPerfil()">
+  <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="grabar()" [disabled]="form.invalid">
     Grabar
   </button>
 </div>
