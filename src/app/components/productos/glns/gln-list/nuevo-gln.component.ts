@@ -36,6 +36,7 @@ export class GlnComponent implements OnInit {
   glnIndex: number = 0;
   alertaGln: string | null = null;
   modoEdicion: boolean = false;
+  ciudadesCargadas = false;
 
   constructor(
     private fb: FormBuilder,
@@ -86,7 +87,16 @@ export class GlnComponent implements OnInit {
         if (!idPrefijo) return;
 
         this.alertaGln = null;
+        if (this.ciudadesCargadas) {
         this.cargarGlnDesdeBackendPorPrefijo(idPrefijo);
+        } else {
+          const interval = setInterval(() => {
+            if (this.ciudadesCargadas) {
+              clearInterval(interval);
+              this.cargarGlnDesdeBackendPorPrefijo(idPrefijo);
+            }
+          }, 100); // verifica cada 100ms
+        }
       });
 
     }
@@ -94,9 +104,13 @@ export class GlnComponent implements OnInit {
     this.ciudadService.getCiudades().subscribe({
       next: (res) => {
         this.ciudades = res.map(c => ({ ...c, id: +c.id }));
-        this.paises = Array.from(new Map(this.ciudades.map(c => [c.pais, { id: c.id, nombre: c.pais }])).values());
-        this.provincias = Array.from(new Map(this.ciudades.map(c => [c.provincia, { id: c.id, nombre: c.provincia }])).values());
-
+        console.log('Ciudades cargadas:', this.ciudades);
+        this.paises = Array.from(
+          new Map(this.ciudades.map(c => [c.pais, c.pais])).values()
+        ).map((nombre, idx) => ({ id: idx + 1, nombre }));
+        this.provincias = Array.from(new Set(this.ciudades.map(c => c.provincia)))
+          .map((nombre, idx) => ({ id: idx + 1, nombre }));
+        this.ciudadesCargadas = true;
         this.formGln.patchValue({ idPais: 'ECUADOR', provinciaCodigo: 'PICHINCHA', cantonCodigo: 'QUITO' });
         this.procesarFiltrosIniciales();
       },
@@ -152,6 +166,7 @@ export class GlnComponent implements OnInit {
   }
   cargarDatosDesdeGlnResponse(gln: GlnResponse): void {
     this.formGln.patchValue({
+      idGln: gln.id_gln,
       localizacion: gln.nombreLocalizacion,
       idPais: gln.idPais,
       idCiudad: gln.idCiudad,
@@ -194,20 +209,140 @@ export class GlnComponent implements OnInit {
   cargarGlnDesdeBackendPorPrefijo(idPrefijos: number): void {
   this.glnService.obtenerGlnPorIdPrefijo(idPrefijos).subscribe({
     next: (gln: GlnResponse) => {
+      console.log('GLN recibido desde backend:', gln);
+
+      const ciudad = this.ciudades.find(c => c.id === gln.idCiudad);
+
+      if (ciudad) {
+        console.log('📍 Ciudad encontrada por ID:', ciudad);
+        this.setUbicacionDesdeCiudad(ciudad);
+      } else {
+        console.warn('⚠️ No se encontró la ciudad con ID:', gln.idCiudad);
+      }
+
+      // Patch de datos generales
       this.formGln.patchValue({
-        ...gln,
-        provinciaCodigo: this.obtenerProvinciaPorCiudad(gln.idCiudad),
-        cantonCodigo: this.obtenerCantonPorCiudad(gln.idCiudad),
-        localizacion: gln.nombreLocalizacion,
+        idGln: gln.id_gln, //Se asigna explícitamente el id de gln
+        idPrefijos: gln.id_prefijos,
+        clientesCodigo: gln.clientesCodigo,
+        gln1: gln.gln1,
+        idTipoLocalizacion: gln.idTipoLocalizacion,
+        glnLatitud: gln.glnLatitud,
+        glnLongitud: gln.glnLongitud,
+        idPais: gln.idPais,
+        direccion: gln.direccion,
+        telefono: gln.telefono,
+        fax: gln.fax,
+        contacto: gln.contacto,
+        contactoTel: gln.contactoTel,
+        email: gln.email,
+        web: gln.web,
+        fda: gln.fda,
+        europa: gln.europa,
+        glnGlobal: gln.glnGlobal,
+        glnFecha: gln.glnFecha,
+        idCiudad: gln.idCiudad,
+        glnCodigopostal: gln.glnCodigopostal,
+        glnCelular: gln.glnCelular,
+        glnContacto2: gln.glnContacto2,
+        glnEmail2: gln.glnEmail2,
+        glnTel2: gln.glnTel2,
+        glnContacto3: gln.glnContacto3,
+        glnEmail3: gln.glnEmail3,
+        glnTel3: gln.glnTel3,
+        glnFacturar: gln.glnFacturar,
+        glnCodpro: gln.glnCodpro,
+        glnNombre: gln.glnNombre,
+        glnOtro1: gln.glnOtro1,
+        glnOtro2: gln.glnOtro2,
+        glnObs1: gln.glnObs1,
+        glnObs2: gln.glnObs2,
+        glnOrigenprefijo: gln.glnOrigenprefijo,
+        glnPrefijogs1: gln.glnPrefijogs1,
+        glnGlnp: gln.glnGlnp,
+        glnGlne: gln.glnGlne,
+        nombreLocalizacion: gln.nombreLocalizacion,
+        observ: gln.observ,
+        expprod: gln.expprod,
+        gs1ec: gln.gs1ec,
+        gs1latam: gln.gs1latam,
+        gas1org: gln.gas1org,
+        google: gln.google,
+        gs1otros: gln.gs1otros,
+        longG: gln.longG,
+        longM: gln.longM,
+        longS: gln.longS,
+        longE: gln.longE,
+        latiG: gln.latiG,
+        latiM: gln.latiM,
+        latiS: gln.latiS,
+        latiE: gln.latiE,
+        idUsuario: gln.idUsuario,
+        localizacion: gln.nombreLocalizacion
       });
-      this.setCamposUbicacionHabilitados(true); // Solo ubicación editable
-      this.setCamposGeneralesSoloLectura();     // Datos Generales bloqueados
+
+      // Esperar brevemente para asegurar render de ciudades
+      setTimeout(() => {
+        if (gln.idCiudad) {
+          this.setUbicacionDesdeCiudadId(gln.idCiudad);
+        }
+      }, 100); // o incluso 200 si sigue fallando
+      this.setCamposUbicacionHabilitados(true);
+      this.setCamposGeneralesSoloLectura();
     },
-    error: () => {
+    error: (err) => {
+      console.error('❌ Error al obtener GLN por prefijo:', err);
       this.alertaGln = '⚠️ No se pudo obtener el GLN del prefijo seleccionado.';
     }
   });
 }
+
+private setUbicacionDesdeCiudad(ciudad: CiudadResumen): void {
+  console.log('🔍 Ejecutando setUbicacionDesdeCiudad con:', ciudad);
+
+  // Provincias filtradas
+  this.provinciasFiltradas = this.ciudades
+    .filter(c => c.pais === ciudad.pais)
+    .map(c => c.provincia)
+    .filter((v, i, a) => a.indexOf(v) === i)
+    .map((nombre, idx) => ({ id: idx + 1, nombre }));
+
+  // Cantones filtrados
+  this.cantones = this.ciudades
+    .filter(c => c.provincia === ciudad.provincia)
+    .map(c => c.canton)
+    .filter((v, i, a) => a.indexOf(v) === i)
+    .map((nombre, idx) => ({ id: idx + 1, nombre }));
+
+  // Ciudades filtradas
+  this.ciudadesFiltradas = this.ciudades.filter(
+    c => c.provincia === ciudad.provincia && c.canton === ciudad.canton
+  );
+
+  // Si la ciudad no está en ciudadesFiltradas, se agrega
+  if (!this.ciudadesFiltradas.some(c => c.id === ciudad.id)) {
+    this.ciudadesFiltradas.unshift(ciudad);
+  }
+
+  this.formGln.patchValue({
+    idPais: ciudad.pais,
+    provinciaCodigo: ciudad.provincia,
+    cantonCodigo: ciudad.canton,
+    idCiudad: ciudad.id
+  }, { emitEvent: false });
+
+  console.log('✅ Formulario actualizado con ubicación:', {
+    idPais: ciudad.pais,
+    provincia: ciudad.provincia,
+    canton: ciudad.canton,
+    ciudad: ciudad.ciudad,
+    ciudadId: ciudad.id
+  });
+}
+
+
+
+
   obtenerProvinciaPorCiudad(idCiudad: number | null): string {
   const ciudad = this.ciudades.find(c => c.id === idCiudad);
   return ciudad?.provincia ?? '';
@@ -222,24 +357,27 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
   const ciudad = this.ciudades.find(c => c.id === +idCiudad);
   if (!ciudad) return;
 
-  // Llenar provincias filtradas
   this.provinciasFiltradas = this.ciudades
     .filter(c => c.pais === ciudad.pais)
     .map(c => c.provincia)
     .filter((v, i, a) => a.indexOf(v) === i)
     .map((nombre, idx) => ({ id: idx + 1, nombre }));
 
-  // Llenar cantones filtrados
   this.cantones = this.ciudades
     .filter(c => c.provincia === ciudad.provincia)
     .map(c => c.canton)
     .filter((v, i, a) => a.indexOf(v) === i)
     .map((nombre, idx) => ({ id: idx + 1, nombre }));
 
-  // Llenar ciudades filtradas
-  this.ciudadesFiltradas = this.ciudades.filter(c => c.provincia === ciudad.provincia && c.canton === ciudad.canton);
+  this.ciudadesFiltradas = this.ciudades.filter(
+    c => c.provincia === ciudad.provincia && c.canton === ciudad.canton
+  );
 
-  // Setear valores en cascada
+  // Garantizar que la ciudad esté incluida
+  if (!this.ciudadesFiltradas.some(c => c.id === ciudad.id)) {
+    this.ciudadesFiltradas.unshift(ciudad);
+  }
+
   this.formGln.patchValue({
     idPais: ciudad.pais,
     provinciaCodigo: ciudad.provincia,
@@ -247,6 +385,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     idCiudad: ciudad.id
   }, { emitEvent: false });
 }
+
 
   setCamposGeneralesSoloLectura(): void {
     const campos = [
@@ -349,87 +488,118 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
   }
 
   cargarGlnActual(): void {
-    const gln = this.glnsDelPrefijo[this.glnIndex];
-    if (!gln) return;
+  const gln = this.glnsDelPrefijo[this.glnIndex];
+  if (!gln) return;
+
+  const ciudad = this.ciudades.find(c => c.ciudad.toLowerCase() === gln.ciudad.toLowerCase());
+  if (ciudad) {
+    this.provinciasFiltradas = this.ciudades
+      .filter(c => c.pais === ciudad.pais)
+      .map(c => c.provincia)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .map((nombre, idx) => ({ id: idx + 1, nombre }));
+
+    this.cantones = this.ciudades
+      .filter(c => c.provincia === ciudad.provincia)
+      .map(c => c.canton)
+      .filter((v, i, a) => a.indexOf(v) === i)
+      .map((nombre, idx) => ({ id: idx + 1, nombre }));
+
+    this.ciudadesFiltradas = this.ciudades.filter(
+      c => c.provincia === ciudad.provincia && c.canton === ciudad.canton
+    );
+    if (!this.ciudadesFiltradas.some(c => c.id === ciudad.id)) {
+      this.ciudadesFiltradas.unshift(ciudad);
+    }
+
     this.formGln.patchValue({
-      gln1: gln.gln,
-      glnPrefijogs1: gln.codpre,
-      glnOrigenprefijo: gln.origenPrefijo,
-      direccion: gln.direccion,
-      telefono: gln.telefono,
-      provinciaCodigo: gln.provincia,
-      cantonCodigo: gln.canton,
-      nomCli: gln.nomcli,
-      documentoIdentidad: gln.ruccli
-    });
-    this.setCamposUbicacionHabilitados(false);
+      idPais: ciudad.pais,
+      provinciaCodigo: ciudad.provincia,
+      cantonCodigo: ciudad.canton,
+      idCiudad: ciudad.id
+    }, { emitEvent: false });
   }
 
-  guardar(): void {
+  // Patch de campos generales
+  this.formGln.patchValue({
+    gln1: gln.gln,
+    glnPrefijogs1: gln.codpre,
+    glnOrigenprefijo: gln.origenPrefijo,
+    direccion: gln.direccion,
+    telefono: gln.telefono,
+    nomCli: gln.nomcli,
+    documentoIdentidad: gln.ruccli
+  });
+
+  this.setCamposUbicacionHabilitados(false);
+}
+
+guardar(): void {
   if (this.formGln.invalid) {
-    // Marca todos los campos como tocados para mostrar errores
     this.formGln.markAllAsTouched();
     alert('❌ Por favor, completa todos los campos requeridos antes de guardar.');
     return;
   }
 
+  const raw = this.formGln.getRawValue();
+
   const data: GlnRequest = {
-    idGln: this.formGln.value.idGln,
-    idPrefijos: this.formGln.value.idPrefijos,
-    clientesCodigo: this.formGln.value.clientesCodigo,
-    gln1: this.formGln.value.gln1,
-    idTipoLocalizacion: this.formGln.value.idTipoLocalizacion,
-    idPais: this.formGln.value.idPais,
-    idCiudad: this.formGln.value.idCiudad,
-    direccion: this.formGln.value.direccion,
-    glnCodigopostal: this.formGln.value.glnCodigopostal,
-    glnLatitud: this.formGln.value.glnLatitud,
-    glnLongitud: this.formGln.value.glnLongitud,
-    contacto: this.formGln.value.contacto,
-    contactoTel: this.formGln.value.contactoTel,
-    email: this.formGln.value.email,
-    web: this.formGln.value.web,
-    fax: this.formGln.value.fax,
-    telefono: this.formGln.value.telefono, 
-    glnObs1: this.formGln.value.glnObs1,           
-    glnObs2: this.formGln.value.glnObs2,      
-    glnCelular: this.formGln.value.glnCelular,
-    glnContacto2: this.formGln.value.glnContacto2,
-    glnEmail2: this.formGln.value.glnEmail2,
-    glnTel2: this.formGln.value.glnTel2,
-    glnContacto3: this.formGln.value.glnContacto3,
-    glnEmail3: this.formGln.value.glnEmail3,
-    glnTel3: this.formGln.value.glnTel3,
-    fda: this.formGln.value.fda,
-    europa: this.formGln.value.europa,
-    glnGlobal: this.formGln.value.glnGlobal,
-    glnOtro1: this.formGln.value.glnOtro1,
-    glnOtro2: this.formGln.value.glnOtro2,
-    glnGlnp: this.formGln.value.glnGlnp,
-    glnGlne: this.formGln.value.glnGlne,
-    observ: this.formGln.value.observ,
-    nombreLocalizacion: this.formGln.value.nombreLocalizacion,
-    glnOrigenprefijo: this.formGln.value.glnOrigenprefijo,
-    glnPrefijogs1: this.formGln.value.glnPrefijogs1,
-    glnFacturar: this.formGln.value.glnFacturar,
-    glnCodpro: this.formGln.value.glnCodpro,
-    glnNombre: this.formGln.value.glnNombre,
-    glnFecha: this.formGln.value.glnFecha,
-    expprod: this.formGln.value.expprod,
-    gs1ec: this.formGln.value.gs1ec,
-    gs1latam: this.formGln.value.gs1latam,
-    gas1org: this.formGln.value.gas1org,
-    google: this.formGln.value.google,
-    gs1otros: this.formGln.value.gs1otros,
-    longG: this.formGln.value.longG,
-    longM: this.formGln.value.longM,
-    longS: this.formGln.value.longS,
-    longE: this.formGln.value.longE,
-    latiG: this.formGln.value.latiG,
-    latiM: this.formGln.value.latiM,
-    latiS: this.formGln.value.latiS,
-    latiE: this.formGln.value.latiE,
-    idUsuario: this.formGln.value.idUsuario
+    id_gln: raw.idGln,  // <- ¡esto sí está llegando desde el backend!
+    id_prefijos: raw.idPrefijos,
+    clientesCodigo: raw.clientesCodigo,
+    gln1: raw.gln1,
+    idTipoLocalizacion: raw.idTipoLocalizacion,
+    glnLatitud: raw.glnLatitud,
+    glnLongitud: raw.glnLongitud,
+    idPais: raw.idPais,
+    direccion: raw.direccion,
+    telefono: raw.telefono,
+    fax: raw.fax,
+    contacto: raw.contacto,
+    contactoTel: raw.contactoTel,
+    email: raw.email,
+    web: raw.web,
+    fda: raw.fda,
+    europa: raw.europa,
+    glnGlobal: raw.glnGlobal,
+    glnFecha: raw.glnFecha,
+    idCiudad: raw.idCiudad,
+    glnCodigopostal: raw.glnCodigopostal,
+    glnCelular: raw.glnCelular,
+    glnContacto2: raw.glnContacto2,
+    glnEmail2: raw.glnEmail2,
+    glnTel2: raw.glnTel2,
+    glnContacto3: raw.glnContacto3,
+    glnEmail3: raw.glnEmail3,
+    glnTel3: raw.glnTel3,
+    glnFacturar: raw.glnFacturar,
+    glnCodpro: raw.glnCodpro,
+    glnNombre: raw.glnNombre,
+    glnOtro1: raw.glnOtro1,
+    glnOtro2: raw.glnOtro2,
+    glnObs1: raw.glnObs1,
+    glnObs2: raw.glnObs2,
+    glnOrigenprefijo: raw.glnOrigenprefijo,
+    glnPrefijogs1: raw.glnPrefijogs1,
+    glnGlnp: raw.glnGlnp,
+    glnGlne: raw.glnGlne,
+    nombreLocalizacion: raw.nombreLocalizacion,
+    observ: raw.observ,
+    expprod: raw.expprod,
+    gs1ec: raw.gs1ec,
+    gs1latam: raw.gs1latam,
+    gas1org: raw.gas1org,
+    google: raw.google,
+    gs1otros: raw.gs1otros,
+    longG: raw.longG,
+    longM: raw.longM,
+    longS: raw.longS,
+    longE: raw.longE,
+    latiG: raw.latiG,
+    latiM: raw.latiM,
+    latiS: raw.latiS,
+    latiE: raw.latiE,
+    idUsuario: raw.idUsuario
   };
 
   const callback = () => {
@@ -449,28 +619,35 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
 
     this.pasoActual = 1;
   };
-
-  if (data.idGln && data.idGln !== 0) {
-    // Actualizar
-    this.glnService.actualizarGln(data.idGln, data).subscribe({
+  console.log('🛰️ Payload que se va a enviar:', data);
+console.log('📌 idGln en el payload:', data.id_gln);
+  // ✅ Diferenciar POST vs PUT correctamente
+  if (data.id_gln && data.id_gln !== 0) {
+    // PUT
+    this.glnService.actualizarGln(data.id_gln, data).subscribe({
       next: () => {
         alert('✅ GLN actualizado correctamente.');
         callback();
       },
-      error: () => alert('❌ Error al actualizar el GLN.')
+      error: (err) => {
+        console.error('❌ Error al actualizar GLN', err);
+        alert('❌ Error al actualizar el GLN.');
+      }
     });
   } else {
-    // Insertar
+    // POST
     this.glnService.insertarGln({ request: data }).subscribe({
       next: () => {
         alert('✅ GLN creado correctamente.');
         callback();
       },
-      error: () => alert('❌ Error al crear el GLN.')
+      error: (err) => {
+        console.error('❌ Error al crear GLN', err);
+        alert('❌ Error al crear el GLN.');
+      }
     });
   }
 }
-
 
   modificar(): void {
     this.modoEdicion = true;

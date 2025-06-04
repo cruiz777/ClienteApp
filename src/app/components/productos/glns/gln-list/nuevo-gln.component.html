@@ -99,13 +99,17 @@
         <div class="form-group">
           <label>Provincia:</label>
           <mat-select formControlName="provinciaCodigo">
-            <mat-option *ngFor="let provincia of provincias" [value]="provincia.nombre">{{ provincia.nombre }}</mat-option>
+            <mat-option *ngFor="let provincia of provinciasFiltradas" [value]="provincia.nombre">
+              {{ provincia.nombre }}
+            </mat-option>
           </mat-select>
         </div>
         <div class="form-group">
           <label>Cantón:</label>
           <mat-select formControlName="cantonCodigo">
-            <mat-option *ngFor="let canton of cantones" [value]="canton.nombre">{{ canton.nombre }}</mat-option>
+            <mat-option *ngFor="let canton of cantones" [value]="canton.nombre">
+              {{ canton.nombre }}
+            </mat-option>
           </mat-select>
         </div>
 
