@@ -33,8 +33,8 @@ import { ConfirmDialogComponent } from './components/reusable/confirm-dialog/con
 import { UppercaseDirective } from './directives/uppercase.directive';
 import { ModalImpresionComponent } from './components/shared/modal-impresion/modal-impresion.component';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-
-
+import { HotTableModule } from '@handsontable/angular';
+import { AgGridModule } from 'ag-grid-angular';
 export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
 
 @NgModule({
@@ -64,6 +64,8 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     AppRoutingModule,
     ReusableModule,
     NgxMaskModule.forRoot(),
+    HotTableModule,
+      AgGridModule,
   ],
 
   providers: [
