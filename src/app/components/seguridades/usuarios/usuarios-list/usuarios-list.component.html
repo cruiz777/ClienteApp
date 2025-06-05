@@ -8,7 +8,7 @@
       <div class="form-actions form-actions-horizontal alineado-derecha">
         <input type="text" placeholder="🔍 Buscar por nombre o correo" [(ngModel)]="filtroUsuario"
           class="input-filtro" />
-        <button (click)="onNuevoUsuario()" [class.activo]="botonActivo === 'nuevo'">
+        <button mat-stroked-button (click)="onNuevoUsuario()">
           Nuevo Usuario
         </button>
       </div>

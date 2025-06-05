@@ -17,7 +17,8 @@
     </div>
 
     <div class="form-actions form-actions-horizontal alineado-derecha">
-      <button (click)="seleccionarBoton('nuevo'); onNuevoPerfil()" [class.activo]="botonActivo === 'nuevo'">
+      <button mat-stroked-button (click)="seleccionarBoton('nuevo'); onNuevoPerfil()"
+        [class.activo]="botonActivo === 'nuevo'">
         Nuevo Perfil
       </button>
     </div>

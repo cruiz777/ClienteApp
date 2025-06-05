@@ -236,6 +236,17 @@ input[type='checkbox'] {
   cursor: pointer;
 }
 
+/* =====================
+DISEÑO DE BOTON
+===================== */
+
+button[mat-stroked-button]:hover {
+  background-color: #002c6c;
+  color: white;
+  border-color: #002c6c;
+  transition: background-color 0.3s ease;
+}
+
 /* ====================================================
    📱 RESPONSIVE
 ==================================================== */
