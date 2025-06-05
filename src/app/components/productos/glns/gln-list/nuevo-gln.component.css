@@ -190,3 +190,12 @@ button[disabled] {
     margin: 0 16px;
   }
 }
+.contacto-header {
+  font-weight: bold;
+  font-size: 16px;
+  margin-top: 2rem;
+  margin-bottom: 0.5rem;
+  color: #002c6c;
+  border-left: 4px solid #002c6c;
+  padding-left: 10px;
+}

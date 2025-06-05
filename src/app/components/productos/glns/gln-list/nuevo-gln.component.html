@@ -66,13 +66,15 @@
         </div>
         <div class="form-group">
           <label>Prefijo GS1:</label>
-          <input matInput formControlName="glnPrefijogs1">
+          <input matInput formControlName="prefijoGs1" readonly>
         </div>
 
         <div class="form-group">
           <label>Prefijo:</label>
           <mat-select formControlName="idPrefijos">
-            <mat-option *ngFor="let p of prefijos" [value]="p.id_prefijos">{{ p.codpre }}</mat-option>
+            <mat-option *ngFor="let p of prefijos" [value]="p.id_prefijos">
+              {{ p.codpre }}
+            </mat-option>
           </mat-select>
         </div>
         <div class="form-group">
@@ -92,7 +94,9 @@
         <div class="form-group">
           <label>País:</label>
           <mat-select formControlName="idPais">
-            <mat-option *ngFor="let pais of paises" [value]="pais.nombre">{{ pais.nombre }}</mat-option>
+            <mat-option *ngFor="let pais of paises" [value]="pais.idPais">
+              {{ pais.nombre }}
+            </mat-option>
           </mat-select>
         </div>
 
@@ -147,14 +151,55 @@
     <!-- Paso 2: Contactos -->
     <div *ngIf="pasoActual === 2" class="form-section">
       <h3>Contactos</h3>
+
+      <!-- Contacto 1 -->
+      <div class="contacto-header">Contacto 1</div>
       <div class="form-grid">
-        <div class="form-group" *ngFor="let field of [
-          'telefono', 'glnCelular', 'fax', 'email', 'web',
-          'contacto', 'contactoTel', 'glnContacto2', 'glnEmail2',
-          'glnTel2', 'glnContacto3', 'glnEmail3', 'glnTel3'
-        ]">
-          <label>{{ field | titlecase }}:</label>
-          <input matInput [formControlName]="field">
+        <div class="form-group">
+          <label>Nombre:</label>
+          <input matInput formControlName="contacto">
+        </div>
+        <div class="form-group">
+          <label>E-mail:</label>
+          <input matInput formControlName="email">
+        </div>
+        <div class="form-group">
+          <label>Telf. o Cel.:</label>
+          <input matInput formControlName="contactoTel">
+        </div>
+      </div>
+
+      <!-- Contacto 2 -->
+      <div class="contacto-header">Contacto 2</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nombre:</label>
+          <input matInput formControlName="glnContacto2">
+        </div>
+        <div class="form-group">
+          <label>E-mail:</label>
+          <input matInput formControlName="glnEmail2">
+        </div>
+        <div class="form-group">
+          <label>Telf. o Cel.:</label>
+          <input matInput formControlName="glnTel2">
+        </div>
+      </div>
+
+      <!-- Contacto 3 -->
+      <div class="contacto-header">Contacto 3</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Nombre:</label>
+          <input matInput formControlName="glnContacto3">
+        </div>
+        <div class="form-group">
+          <label>E-mail:</label>
+          <input matInput formControlName="glnEmail3">
+        </div>
+        <div class="form-group">
+          <label>Telf. o Cel.:</label>
+          <input matInput formControlName="glnTel3">
         </div>
       </div>
     </div>

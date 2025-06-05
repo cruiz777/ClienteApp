@@ -46,9 +46,10 @@ export class GlnService {
     return this.http.get<GlnResponse[]>(`${this.apiBaseUrl}/Gln`);
   }
 
-obtenerGlnPorIdPrefijo(idPrefijos: number): Observable<GlnResponse> {
-  return this.http.get<ApiResponse<GlnResponse>>(`${this.apiBaseUrl}/Gln/prefijo/${idPrefijos}`)
-    .pipe(map(({ data }: ApiResponse<GlnResponse>) => data));
+obtenerGlnPorIdPrefijo(idPrefijos: number): Observable<GlnResponse[]> {
+  return this.http
+    .get<ApiResponse<GlnResponse[]>>(`${this.apiBaseUrl}/Gln/prefijo/${idPrefijos}`)
+    .pipe(map((resp: ApiResponse<GlnResponse[]>) => resp.data || []));
 }
 }
 

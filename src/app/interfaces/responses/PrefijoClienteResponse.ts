@@ -1,3 +1,5 @@
+import { GlnResponse } from "./gln-response";
+
 export interface PrefijoClienteResponse {
   id_prefijos: number;
   codpre: string;
@@ -36,4 +38,5 @@ export interface PrefijoClienteResponse {
   provincia: string;
   canton: string;
   ciudad: string;
+  glns: GlnResponse[];
 }
