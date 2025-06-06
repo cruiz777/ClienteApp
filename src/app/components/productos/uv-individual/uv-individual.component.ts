@@ -2094,6 +2094,35 @@ convertirAMayusculas(controlName: string): void {
   }
 }
 
+verificarExistenciaCodbar(): void {
+  const codbar = this.formUV.get('gtinUv')?.value;
+
+  if (!codbar) {
+    console.warn('⚠️ No hay código de barras en el formulario.');
+    return;
+  }
+
+  this.codigos14Service.contarPorCodbar(codbar).subscribe({
+    next: (conteo) => {
+      if (conteo > 0) {
+        const total = conteo + 1;
+        if (total >= 9) {
+          alert(`❌ Solo puede existir hasta 8 presentaciones del producto.`);
+          return;
+        } else {
+          // Suponiendo que tienes un campo llamado "indicador" en el form
+          this.formUV.get('indicador')?.setValue(total);
+        }
+      } else {
+        console.log(`✅ Código de barras ${codbar} no existe, puedes continuar.`);
+      }
+    },
+    error: (err) => {
+      console.error('❌ Error al verificar el código de barras:', err);
+    }
+  });
+}
+
 
 
 }

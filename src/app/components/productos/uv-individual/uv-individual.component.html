@@ -98,6 +98,7 @@
 
       <!-- Unidad de medida -->
       <mat-form-field>
+        <mat-label>Unidad</mat-label>
         <input matInput formControlName="unidadMedida" [matAutocomplete]="autoUnidad" placeholder="Seleccione Unidad" />
         <button matSuffix mat-icon-button *ngIf="formUV.get('unidadMedida')?.value" (click)="limpiarUnidadMedida()">
           <mat-icon>close</mat-icon>
@@ -112,6 +113,7 @@
 
       <!-- Categoría -->
       <mat-form-field>
+        <mat-label>Categoría</mat-label>
         <input matInput formControlName="categoria" [matAutocomplete]="autoCategoria"
           placeholder="Seleccione Categoría" />
         <button matSuffix mat-icon-button *ngIf="formUV.get('categoria')?.value" (click)="limpiarCategoria()">
@@ -133,6 +135,7 @@
 
       <!-- País y Sector -->
       <mat-form-field>
+        <mat-label>Pais </mat-label>
         <input matInput formControlName="pais" [matAutocomplete]="autoPais" placeholder="Seleccione País" />
         <button matSuffix mat-icon-button *ngIf="formUV.get('pais')?.value" (click)="formUV.get('pais')?.reset()">
           <mat-icon>close</mat-icon>
@@ -145,6 +148,7 @@
       </mat-form-field>
 
       <mat-form-field>
+        <mat-label>Pais</mat-label>
         <input matInput formControlName="sector" [matAutocomplete]="autoSector" placeholder="Seleccione Sector" />
         <button matSuffix mat-icon-button *ngIf="formUV.get('sector')?.value" (click)="limpiarSector()">
           <mat-icon>close</mat-icon>

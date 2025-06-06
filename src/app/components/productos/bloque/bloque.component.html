@@ -1,58 +1,109 @@
-<form [formGroup]="formUV" class="form-grid">
-  <div class="form-row">
-    <!-- Prefijo -->
-    <mat-form-field appearance="outline">
-      <mat-label>Prefijo (5 dígitos)</mat-label>
-      <input matInput formControlName="prefijo" maxlength="5" />
-    </mat-form-field>
+<form [formGroup]="formUV">
+  <div>
+    <!-- 🔹 Fila 1: Datos del cliente -->
+    <div class="fila-horizontal">
+      <div class="corto">
+        <label for="codigoCliente">Código del cliente:</label>
+        <input id="codigoCliente" type="text" formControlName="codigoCliente" readonly />
+      </div>
 
-    <!-- Serie -->
-    <mat-form-field appearance="outline">
-      <mat-label>Serie (opcional)</mat-label>
-      <input matInput formControlName="serie" />
-    </mat-form-field>
+      <div class="largo">
+        <label for="cliente">Cliente:</label>
+        <input id="cliente" type="text" formControlName="cliente" readonly />
+      </div>
 
-    <!-- GTIN generado -->
-    <mat-form-field appearance="outline">
-      <mat-label>GTIN UV generado</mat-label>
-      <input matInput formControlName="gtinUv" readonly />
-    </mat-form-field>
+      <div class="corto">
+        <label for="ruc">RUC:</label>
+        <input id="ruc" type="text" formControlName="ruc" readonly />
+      </div>
+    </div>
 
-    <button mat-flat-button color="primary" (click)="generar()">Generar GTIN</button>
+
+    <!-- 🔹 Fila 2: Nacional / Internacional / Prefijo / Serie -->
+    <div class="fila-horizontal">
+      <div>
+        <label>Nacional</label>
+        <mat-form-field appearance="fill" class="select-pequeno">
+          <mat-select formControlName="gtinNacionalSeleccionado"
+            (selectionChange)="formUV.get('gtinInternacionalSeleccionado')?.reset()">
+            <mat-option value="gtin13">GTIN-13</mat-option>
+            <mat-option value="gtin12">GTIN-12</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div>
+        <label>Internacional</label>
+        <mat-form-field appearance="fill" class="select-pequeno">
+          <mat-select formControlName="gtinInternacionalSeleccionado"
+            (selectionChange)="formUV.get('gtinNacionalSeleccionado')?.reset()">
+            <mat-option value="gtin13i">GTIN-13</mat-option>
+            <mat-option value="gtin12i">GTIN-12</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field appearance="fill" class="select-pequeno">
+        <mat-label>Prefijo</mat-label>
+        <mat-select formControlName="gcp" (selectionChange)="onPrefijoBlur()">
+          <mat-option *ngFor="let prefijo of prefijos" [value]="prefijo.id_prefijos">
+            {{ prefijo.codpre }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+      <div class="corto">
+        <label for="gln">GLN®:</label>
+        <input id="gln" type="text" formControlName="gln" readonly />
+      </div>
+      <div class="serie-checkbox">
+        <label>
+          <input type="checkbox" formControlName="usarSerie" (change)="habilitarSerie()" /> Serie
+        </label>
+        <input type="text" formControlName="serie" [readonly]="!formUV.get('usarSerie')?.value" />
+      </div>
+
+    </div>
+
+    <!-- 🔹 Fila 3: GTIN generado y botón -->
+    <div>
+      <mat-form-field appearance="outline" class="hidden-column">
+        <mat-label>GTIN UV generado</mat-label>
+        <input matInput formControlName="gtinUv" readonly class="hidden-column" />
+      </mat-form-field>
+
+
+    </div>
   </div>
 </form>
-<div style="margin-top: 16px;">
+
+<div style="margin-top: 0px;">
   <label>Cantidad de filas:</label>
   <input type="number" [(ngModel)]="cantidadFilas" style="width: 60px;" />
-  <button mat-raised-button color="accent" (click)="generarFilas()">Agregar Filas</button>
+  <button mat-raised-button color="accent" (click)="generarFilas()">Ok</button>
   <button mat-button color="warn" (click)="limpiarTabla()">Limpiar</button>
+
+
+  <!-- Pegar datos -->
+  <mat-form-field appearance="fill" class="textarea" style="margin-top: 0px; width: 10%;height: 60px;font-size: 12px;">
+    <mat-label>Pegar datos desde Excel</mat-label>
+    <textarea matInput [(ngModel)]="textoPegado" ></textarea>
+  </mat-form-field>
+
+  <mat-checkbox [(ngModel)]="copiarDesdeColumna2" class="hidden-column">
+    Pegar desde columna 2
+  </mat-checkbox>
+  <button mat-stroked-button color="primary" (click)="pegarColumnaGtinUv()">Pegar en tabla</button>
+
+  <!-- Mensaje -->
+  <div *ngIf="mensaje" style="margin-top: 12px; color: green;">
+    {{ mensaje }}
+  </div>
+
+  <button mat-flat-button color="primary" (click)="generar()">Generar</button>
 </div>
-
-<!-- Pegar datos -->
-<mat-form-field appearance="fill" class="textarea" style="margin-top: 16px; width: 100%;">
-  <mat-label>Pegar datos desde Excel (columnas separadas por tabulador)</mat-label>
-  <textarea matInput [(ngModel)]="textoPegado" rows="3"></textarea>
-</mat-form-field>
-
-<mat-checkbox [(ngModel)]="copiarDesdeColumna2">
-  Pegar desde columna 2
-</mat-checkbox>
-<button mat-stroked-button color="primary" (click)="pegarColumnaGtinUv()">Pegar en tabla</button>
-
-<!-- Mensaje -->
-<div *ngIf="mensaje" style="margin-top: 12px; color: green;">
-  {{ mensaje }}
-</div>
-
-
 <!-- Tabla AG-Grid -->
-<ag-grid-angular
-  class="ag-theme-alpine"
-  style="width: 100%; height: 300px; margin-top: 10px;"
-  [rowData]="rowData"
-  [columnDefs]="columnDefs"
-  [defaultColDef]="defaultColDef"
-  (gridReady)="onGridReady($event)">
+<ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 300px; margin-top: 10px;" [rowData]="rowData"
+  [columnDefs]="columnDefs" [defaultColDef]="defaultColDef" (gridReady)="onGridReady($event)">
 </ag-grid-angular>
 
 <!-- Controles de la tabla -->

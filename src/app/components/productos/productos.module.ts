@@ -6,6 +6,7 @@ import { RouterModule } from '@angular/router';
 // Componentes
 import { NavigationProductoComponent } from './navigation-producto/navigation-producto.component';
 import { BloqueComponent } from './bloque/bloque.component';
+import { MatOptionModule } from '@angular/material/core';
 
 // Angular Material
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -20,6 +21,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSelectModule } from '@angular/material/select';
+
+
 
 // Formularios
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -51,7 +55,9 @@ import { AgGridModule } from 'ag-grid-angular';
     MatInputModule,
     MatCheckboxModule,
     MatDialogModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatOptionModule,
+    MatSelectModule
   ],
   exports: [
     NavigationProductoComponent,
