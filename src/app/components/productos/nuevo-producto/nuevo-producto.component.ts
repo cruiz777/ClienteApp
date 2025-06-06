@@ -112,6 +112,9 @@ export class NuevoProductoComponent implements OnInit {
   irAUvIndividual(): void {
     this.router.navigate(['/menuProductos/uvIndividual']);
   }
+   irBloque(): void {
+    this.router.navigate(['/menuProductos/bloque']);
+  }
 
   salir(): void {
     this.router.navigate(['/pages/clientes']);

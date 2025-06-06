@@ -1,6 +1,6 @@
 <div class="tabs">
   <button [class.active]="activeTab === 'Listado'" (click)="cambiarTab('Listado')">Lista GTIN'S por empresa</button>
-  <button [class.active]="activeTab === 'Generar'" (click)="cambiarTab('Generar')">Generación GTIN'S</button>
+  <!-- <button [class.active]="activeTab === 'Generar'" (click)="cambiarTab('Generar')">Generación GTIN'S</button> -->
   <button [class.active]="activeTab === 'Reportes'" (click)="cambiarTab('Reportes')">Reportes</button>
 </div>
 <!-- TAB LISTADO DE PRODUCTOS -->
@@ -26,6 +26,7 @@
 
     <button mat-raised-button color="primary" (click)="irAUvIndividual()">Ingresar UV</button>
     <button mat-raised-button color="accent">Ingresar UL</button>
+    <button mat-raised-button color="accent" (click)="irBloque()">Bloque</button>
     <button mat-raised-button color="warn" (click)="salir()">Salir</button>
 
   </div>
