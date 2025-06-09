@@ -1,6 +1,6 @@
 // GLNComponent unificado con navegación, paso a paso y GLNs por prefijo
 import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { FormBuilder, FormControl, FormGroup } from '@angular/forms';
 import { PrefijoService } from 'src/app/services/prefijo.service';
 import { TipoLocalizacionService } from 'src/app/services/tipo-localizacion.service';
 import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
@@ -12,6 +12,9 @@ import { CiudadResumen } from 'src/app/interfaces/responses/ciudad-response';
 import { combineLatest, distinctUntilChanged, startWith } from 'rxjs';
 import { GlnRequest, GlnResponse, GlnService } from 'src/app/services/gln.service';
 import { PaisService, Pais } from 'src/app/services/pais.service';
+import { CustomValidators } from 'src/app/components/utils/validators/validator.util';
+import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
+import { MatDialog } from '@angular/material/dialog';
 
 @Component({
   selector: 'app-nuevo-gln',
@@ -39,7 +42,10 @@ export class GlnComponent implements OnInit {
   alertaGln: string | null = null;
   modoEdicion: boolean = false;
   ciudadesCargadas = false;
-
+  evitandoEventos = false;
+  evitandoEventosUbicacion = false;
+  ciudadAutocompleteControl = new FormControl<CiudadResumen | string>(''); 
+  
   constructor(
     private fb: FormBuilder,
     private prefijoService: PrefijoService,
@@ -48,11 +54,16 @@ export class GlnComponent implements OnInit {
     private ciudadService: CiudadService,
     private glnService: GlnService,
     private paisService: PaisService,
+    private dialog: MatDialog
   ) {}
 
   compareCiudad(a: any, b: any): boolean {
     return a != null && b != null && +a === +b;
   }
+  compareProvincia = (a: string, b: string) => 
+    a?.trim().toUpperCase() === b?.trim().toUpperCase();
+  compareCanton: (a: string, b: string) => boolean = (a, b) =>
+    a?.trim().toUpperCase() === b?.trim().toUpperCase();
 
   ngOnInit(): void {
     this.inicializarFormulario();
@@ -77,7 +88,7 @@ export class GlnComponent implements OnInit {
           this.prefijos = res;
           if (res.length > 0) {
             this.formGln.patchValue({
-              glnPrefijogs1: res[0].prefijosgs1,
+              glnPrefijogs1: res[0].codpre,
               glnOrigenprefijo: res[0].origenPrefijo,
               idPrefijos: +res[0].id_prefijos
             });
@@ -102,6 +113,34 @@ export class GlnComponent implements OnInit {
     this.ciudadService.getCiudades().subscribe({
       next: (res) => {
         this.ciudades = res.map(c => ({ ...c, id: +c.id }));
+        const idCiudadInicial = +this.formGln.get('idCiudad')?.value;
+        if (idCiudadInicial && this.ciudades.length > 0) {
+          const ciudadSeleccionada = this.ciudades.find(c => c.id === idCiudadInicial);
+          if (ciudadSeleccionada) {
+            this.setUbicacionDesdeCiudad(ciudadSeleccionada);
+            this.ciudadAutocompleteControl.setValue(ciudadSeleccionada, { emitEvent: false });
+
+            this.ciudadesFiltradas = this.ciudades.filter(c =>
+              c.provincia === ciudadSeleccionada.provincia &&
+              c.canton === ciudadSeleccionada.canton
+            );
+          }
+        }
+
+
+        this.ciudadAutocompleteControl.valueChanges
+        .pipe(distinctUntilChanged())
+        .subscribe(valor => {
+          if (typeof valor === 'string') {
+            const filtro = valor.toLowerCase();
+            this.ciudadesFiltradas = this.ciudades.filter(c =>
+              (c.ciudad + c.canton + c.provincia).toLowerCase().includes(filtro)
+            );
+          } else if (valor && typeof valor === 'object' && 'id' in valor) {
+            this.formGln.patchValue({ idCiudad: valor.id });
+          }
+        });
+
         this.ciudadesCargadas = true;
 
         this.paisService.obtenerPaises().subscribe({
@@ -126,9 +165,18 @@ export class GlnComponent implements OnInit {
       error: (err) => console.error('❌ Error al cargar ciudades', err)
     });
 
+    this.formGln.get('glnLatitud')?.valueChanges
+      .pipe(distinctUntilChanged())
+      .subscribe(value => this.convertirALatitudGMS(value));
+
+    this.formGln.get('glnLongitud')?.valueChanges
+      .pipe(distinctUntilChanged())
+      .subscribe(value => this.convertirALongitudGMS(value));
+
 
     this.formGln.get('idPais')?.valueChanges.subscribe(paisSeleccionado => {
-    const pais = this.paises.find(p => p.idPais === +paisSeleccionado);
+      if (this.evitandoEventosUbicacion) return; 
+      const pais = this.paises.find(p => p.idPais === +paisSeleccionado);
 
       this.provinciasFiltradas = this.ciudades
         .filter(c => pais && c.pais.toUpperCase().trim() === pais.nombre.toUpperCase().trim()) // 🔥 normalizado
@@ -143,6 +191,7 @@ export class GlnComponent implements OnInit {
 
 
     this.formGln.get('provinciaCodigo')?.valueChanges.subscribe(provinciaSeleccionada => {
+      if (this.evitandoEventosUbicacion) return; 
       this.cantones = this.ciudades
         .filter(c => c.provincia === provinciaSeleccionada)
         .map(c => c.canton)
@@ -157,6 +206,7 @@ export class GlnComponent implements OnInit {
       this.formGln.get('provinciaCodigo')!.valueChanges.pipe(startWith(this.formGln.get('provinciaCodigo')!.value), distinctUntilChanged()),
       this.formGln.get('cantonCodigo')!.valueChanges.pipe(startWith(this.formGln.get('cantonCodigo')!.value), distinctUntilChanged())
     ]).subscribe(([provincia, canton]) => {
+      if (this.evitandoEventosUbicacion) return; 
       this.ciudadesFiltradas = this.ciudades.filter(c => c.provincia === provincia && c.canton === canton);
       const ciudadActual = this.formGln.get('idCiudad')?.value;
       const ciudadValida = this.ciudadesFiltradas.some(c => c.id === +ciudadActual);
@@ -165,19 +215,48 @@ export class GlnComponent implements OnInit {
       }
     });
 
-    this.formGln.get('idCiudad')?.valueChanges.subscribe(ciudadId => {
-      const ciudad = this.ciudades.find(c => c.id === +ciudadId);
-      if (ciudad) {
+    this.formGln.get('idCiudad')?.valueChanges
+      .pipe(distinctUntilChanged())
+      .subscribe(ciudadId => {
+        if (this.evitandoEventosUbicacion) return;
+        // Validar ciudad y que ya no esté cargada
+        if (!ciudadId || ciudadId === 0 || !this.ciudadesCargadas) return;
+
+        const ciudad = this.ciudades.find(c => c.id === +ciudadId);
+        if (!ciudad) return;
+
+        // 🚫 Solo actúa si cambia manualmente, no cuando fue seteada por patchValue con emitEvent: false
+        if (
+          this.formGln.get('provinciaCodigo')?.value === ciudad.provincia &&
+          this.formGln.get('cantonCodigo')?.value === ciudad.canton
+        ) return;
+
         const paisObj = this.paises.find(p => p.nombre.toUpperCase() === ciudad.pais.toUpperCase());
         this.formGln.patchValue({
           idPais: paisObj?.idPais ?? null,
           provinciaCodigo: ciudad.provincia,
           cantonCodigo: ciudad.canton
         }, { emitEvent: false });
-      }
     });
+    setTimeout(() => {
+      const idPrefijo = this.formGln.get('idPrefijos')?.value;
+      if (idPrefijo) this.cargarGlnDesdePrefijos(idPrefijo);
+    }, 0);
 
   }
+  mostrarCiudad = (ciudad: CiudadResumen | string | null): string =>
+    typeof ciudad === 'string'
+      ? ciudad
+      : ciudad
+        ? `${ciudad.ciudad} - ${ciudad.canton} - ${ciudad.provincia}`
+        : '';
+
+  seleccionarCiudadAutocomplete(ciudad: CiudadResumen): void {
+    if (!ciudad) return;
+    this.setUbicacionDesdeCiudad(ciudad);
+    this.formGln.patchValue({ idCiudad: ciudad.id });
+  }
+
   cargarDatosDesdeGlnResponse(gln: GlnResponse): void {
     this.formGln.patchValue({
       idGln: gln.id_gln,
@@ -212,12 +291,54 @@ export class GlnComponent implements OnInit {
       glnObs2: gln.glnObs2,
       observ: gln.observ,
     });
+    if (!this.modoEdicion) {
+      this.formGln.patchValue({
+        latiG: gln.latiG,
+        latiM: gln.latiM,
+        latiS: gln.latiS,
+        latiE: gln.latiE,
+        longG: gln.longG,
+        longM: gln.longM,
+        longS: gln.longS,
+        longE: gln.longE,
+      });
+    }
+
     if (gln.idCiudad) {
-      this.setUbicacionDesdeCiudadId(gln.idCiudad);
+      const ciudad = this.ciudades.find(c => c.id === gln.idCiudad);
+      if (ciudad) this.sincronizarCiudad(ciudad);
     }
 
     this.setCamposUbicacionHabilitados(false);
     this.setCamposGeneralesSoloLectura();
+  }
+
+  generarGlnCompleto(prefijo: string, secuencia: number): string {
+    const codigoPais = '786';
+    const secuenciaTexto = secuencia.toString().padStart(4, '0'); // 0001 - 9999
+    const glnSinVerificador = `${codigoPais}${prefijo}${secuenciaTexto}`; // 12 dígitos
+
+    const digitoVerificador = this.calcularDigitoVerificador(glnSinVerificador);
+    return `${glnSinVerificador}${digitoVerificador}`;
+  }
+
+  private calcularDigitoVerificador(numero: string): number {
+    let suma = 0;
+    const longitud = numero.length;
+
+    for (let i = 0; i < longitud; i++) {
+      const digito = +numero.charAt(longitud - 1 - i);
+      suma += i % 2 === 0 ? digito * 3 : digito;
+    }
+
+    const modulo = suma % 10;
+    return modulo === 0 ? 0 : 10 - modulo;
+  }
+
+  private sincronizarCiudad(ciudad: CiudadResumen): void {
+    this.setUbicacionDesdeCiudad(ciudad);
+    this.ciudadAutocompleteControl.setValue(ciudad, { emitEvent: false });
+    this.formGln.patchValue({ idCiudad: ciudad.id });
   }
 
   private cargarGlnDesdePrefijos(idPrefijos: number): void {
@@ -247,42 +368,60 @@ export class GlnComponent implements OnInit {
     this.setCamposGeneralesSoloLectura();
   }
 
+actualizarCoordenadas(event: { lat: number, lng: number }): void {
+  this.formGln.patchValue({
+    glnLatitud: event.lat.toFixed(5),
+    glnLongitud: event.lng.toFixed(5)
+  });
+}
 
 
 
 private setUbicacionDesdeCiudad(ciudad: CiudadResumen): void {
+  this.evitandoEventosUbicacion = true; 
   console.log('🔍 Ejecutando setUbicacionDesdeCiudad con:', ciudad);
 
-  // Provincias filtradas
+  this.formGln.get('idPais')?.enable({ emitEvent: false });
+  this.formGln.get('provinciaCodigo')?.enable({ emitEvent: false });
+  this.formGln.get('cantonCodigo')?.enable({ emitEvent: false });
+  this.formGln.get('idCiudad')?.enable({ emitEvent: false });
+
   this.provinciasFiltradas = this.ciudades
     .filter(c => c.pais === ciudad.pais)
     .map(c => c.provincia)
     .filter((v, i, a) => a.indexOf(v) === i)
     .map((nombre, idx) => ({ id: idx + 1, nombre }));
 
-  // Cantones filtrados
   this.cantones = this.ciudades
     .filter(c => c.provincia === ciudad.provincia)
     .map(c => c.canton)
     .filter((v, i, a) => a.indexOf(v) === i)
     .map((nombre, idx) => ({ id: idx + 1, nombre }));
 
-  // Ciudades filtradas
   this.ciudadesFiltradas = this.ciudades.filter(
     c => c.provincia === ciudad.provincia && c.canton === ciudad.canton
   );
 
-  // Si la ciudad no está en ciudadesFiltradas, se agrega
   if (!this.ciudadesFiltradas.some(c => c.id === ciudad.id)) {
     this.ciudadesFiltradas.unshift(ciudad);
   }
+  ['idPais', 'provinciaCodigo', 'cantonCodigo', 'idCiudad'].forEach(campo => {
+    this.formGln.get(campo)?.enable({ emitEvent: false });
+  });
+
   const paisEncontrado = this.paises.find(p => p.nombre.toUpperCase() === ciudad.pais.toUpperCase());
+
   this.formGln.patchValue({
     idPais: paisEncontrado?.idPais ?? null,
     provinciaCodigo: ciudad.provincia,
     cantonCodigo: ciudad.canton,
     idCiudad: ciudad.id
   }, { emitEvent: false });
+  this.evitandoEventosUbicacion = false; 
+  // Opcional: re-deshabilitar si no estás en modo edición
+  if (!this.modoEdicion) {
+    this.setCamposUbicacionHabilitados(false);
+  }
 
   console.log('✅ Formulario actualizado con ubicación:', {
     idPais: ciudad.pais,
@@ -295,16 +434,15 @@ private setUbicacionDesdeCiudad(ciudad: CiudadResumen): void {
 
 
 
-
   obtenerProvinciaPorCiudad(idCiudad: number | null): string {
-  const ciudad = this.ciudades.find(c => c.id === idCiudad);
-  return ciudad?.provincia ?? '';
-}
+    const ciudad = this.ciudades.find(c => c.id === idCiudad);
+    return ciudad?.provincia ?? '';
+  }
 
-obtenerCantonPorCiudad(idCiudad: number | null): string {
-  const ciudad = this.ciudades.find(c => c.id === idCiudad);
-  return ciudad?.canton ?? '';
-}
+  obtenerCantonPorCiudad(idCiudad: number | null): string {
+    const ciudad = this.ciudades.find(c => c.id === idCiudad);
+    return ciudad?.canton ?? '';
+  }
 
 setUbicacionDesdeCiudadId(idCiudad: number): void {
   const ciudad = this.ciudades.find(c => c.id === +idCiudad);
@@ -356,8 +494,8 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       documentoIdentidad: [''],
       nomCli: [''],
       idTipoLocalizacion: [null],
-      glnLatitud: [''],
-      glnLongitud: [''],
+      glnLatitud: ['', [CustomValidators.onlyFormattedNumber]],
+      glnLongitud: ['', [CustomValidators.onlyFormattedNumber]],
       idPais: [''],
       direccion: [''],
       telefono: [''],
@@ -439,50 +577,35 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       this.cargarGlnActual();
     }
   }
+  mostrarMensajeBox(
+    title: string,
+    message: string,
+    type: 'success' | 'error' | 'info' | 'warning' = 'info'
+  ): void {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title,
+        message,
+        type,
+        confirmText: 'Aceptar',
+        showCancel: false
+      }
+    });
+  }
 
   cargarGlnActual(): void {
     const gln = this.glnsPorPrefijo[this.glnIndex]; // ← Cambia aquí
     if (!gln) return;
 
-      if (this.ciudadesCargadas && gln.idCiudad) {
-    const ciudad = this.ciudades.find(c => c.id === gln.idCiudad);
-    if (ciudad) {
-      // 🧠 Asegura que paisObj exista y sea válido
-      const paisObj = this.paises.find(p => p.nombre.toUpperCase() === ciudad.pais.toUpperCase());
-
-      // 🔄 Actualiza provinciasFiltradas
-      this.provinciasFiltradas = this.ciudades
-        .filter(c => c.pais === ciudad.pais)
-        .map(c => c.provincia)
-        .filter((v, i, a) => a.indexOf(v) === i)
-        .map((nombre, idx) => ({ id: idx + 1, nombre }));
-
-      // 🔄 Actualiza cantones
-      this.cantones = this.ciudades
-        .filter(c => c.provincia === ciudad.provincia)
-        .map(c => c.canton)
-        .filter((v, i, a) => a.indexOf(v) === i)
-        .map((nombre, idx) => ({ id: idx + 1, nombre }));
-
-      // 🔄 Actualiza ciudadesFiltradas
-      this.ciudadesFiltradas = this.ciudades.filter(
-        c => c.provincia === ciudad.provincia && c.canton === ciudad.canton
-      );
-
-      // ✅ Asegura que la ciudad actual esté en la lista
-      if (!this.ciudadesFiltradas.some(c => c.id === ciudad.id)) {
-        this.ciudadesFiltradas.unshift(ciudad);
+    if (this.ciudadesCargadas && gln.idCiudad) {
+      const ciudad = this.ciudades.find(c => c.id === gln.idCiudad);
+      if (ciudad) {
+        this.setUbicacionDesdeCiudad(ciudad);
+        this.ciudadAutocompleteControl.setValue(ciudad, { emitEvent: false }); // 👈 línea clave
       }
-
-      // 🧩 Pone todos los datos de ubicación
-      this.formGln.patchValue({
-        idPais: paisObj?.idPais ?? null,
-        provinciaCodigo: ciudad.provincia,
-        cantonCodigo: ciudad.canton,
-        idCiudad: ciudad.id
-      }, { emitEvent: false });
     }
-  }
+
     // Patch de campos generales desde GlnResponse
     this.formGln.patchValue({
       idGln: gln.id_gln,
@@ -541,9 +664,6 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       idUsuario: gln.idUsuario,
       localizacion: gln.nombreLocalizacion
     });
-    if (this.ciudadesCargadas && gln.idCiudad) {
-      this.setUbicacionDesdeCiudadId(gln.idCiudad);
-    }
     this.setCamposUbicacionHabilitados(false);
   }
 
@@ -552,8 +672,11 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       this.formGln.markAllAsTouched();
       alert('❌ Por favor, completa todos los campos requeridos antes de guardar.');
       return;
+    } 
+    const ciudadCtrlValor = this.ciudadAutocompleteControl.value;
+    if (ciudadCtrlValor && typeof ciudadCtrlValor === 'object' && 'id' in ciudadCtrlValor) {
+      this.formGln.patchValue({ idCiudad: ciudadCtrlValor.id });
     }
-
     const raw = this.formGln.getRawValue();
     let fechaConvertida: string | null = null;
     if (raw.glnFecha) {
@@ -566,7 +689,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       }
     }
     const data: GlnRequest = {
-      id_gln: raw.idGln,  // <- ¡esto sí está llegando desde el backend!
+      id_gln: raw.idGln ?? 0,  //Enviar 0 en vez de null
       id_prefijos: raw.idPrefijos,
       clientesCodigo: raw.clientesCodigo,
       gln1: raw.gln1,
@@ -605,13 +728,13 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       glnPrefijogs1: raw.glnPrefijogs1,
       glnGlnp: raw.glnGlnp,
       glnGlne: raw.glnGlne,
-      nombreLocalizacion: raw.nombreLocalizacion,
+      nombreLocalizacion: raw.localizacion,
       observ: raw.observ,
-      expprod: raw.expprod,
-      gs1ec: raw.gs1ec,
-      gs1latam: raw.gs1latam,
-      gas1org: raw.gas1org,
-      google: raw.google,
+      expprod: raw.expprod ?? 0,
+      gs1ec: raw.gs1ec ?? 0,
+      gs1latam: raw.gs1latam ?? 0,
+      gas1org: raw.gas1org ?? 0,
+      google: raw.google ?? 0,
       gs1otros: raw.gs1otros,
       longG: raw.longG,
       longM: raw.longM,
@@ -646,28 +769,81 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     // PUT
     this.glnService.actualizarGln(data.id_gln, data).subscribe({
       next: () => {
-        alert('✅ GLN actualizado correctamente.');
+        this.mostrarMensajeBox('GLN actualizado', 'El GLN fue actualizado correctamente.', 'success');
         callback();
       },
       error: (err) => {
         console.error('❌ Error al actualizar GLN', err);
-        alert('❌ Error al actualizar el GLN.');
+        this.mostrarMensajeBox('Error', 'No se pudo actualizar el GLN.', 'error');
       }
     });
   } else {
     // POST
+    console.log('🚀 Enviando a /Gln:', { request: data });
     this.glnService.insertarGln({ request: data }).subscribe({
       next: () => {
-        alert('✅ GLN creado correctamente.');
+        this.mostrarMensajeBox('GLN creado', 'El GLN fue creado correctamente.', 'success');
         callback();
       },
       error: (err) => {
         console.error('❌ Error al crear GLN', err);
-        alert('❌ Error al crear el GLN.');
+        this.mostrarMensajeBox('Error', 'Ocurrió un error al crear el GLN.', 'error');
       }
     });
   }
 }
+  convertirALatitudGMS(valor: string): void {
+    if (!this.modoEdicion || !valor || isNaN(+valor)) return;
+
+    const decimal = parseFloat(valor);
+    const dms = this.convertDecimalToDMS(decimal, true);
+
+    this.formGln.patchValue({
+      latiG: dms.grados,
+      latiM: dms.minutos,
+      latiS: dms.segundos,
+      latiE: dms.direccion
+    }, { emitEvent: false });
+  }
+
+  convertirALongitudGMS(valor: string): void {
+    if (!this.modoEdicion || !valor || isNaN(+valor)) return;
+
+    const decimal = parseFloat(valor);
+    const dms = this.convertDecimalToDMS(decimal, false);
+
+    this.formGln.patchValue({
+      longG: dms.grados,
+      longM: dms.minutos,
+      longS: dms.segundos,
+      longE: dms.direccion
+    }, { emitEvent: false });
+  }
+
+  convertDecimalToDMS(decimal: number, isLatitude: boolean): { grados: string, minutos: string, segundos: string, direccion: 'N' | 'S' | 'E' | 'O' } {
+    const dir = isLatitude
+      ? (decimal >= 0 ? 'N' : 'S')
+      : (decimal >= 0 ? 'E' : 'O');
+
+    const abs = Math.abs(decimal);
+    const grados = Math.floor(abs);
+    const minutosFloat = (abs - grados) * 60;
+    const minutos = Math.floor(minutosFloat);
+    const segundos = ((minutosFloat - minutos) * 60);
+
+    return {
+      grados: grados.toString().padStart(2, '0'),
+      minutos: minutos.toString().padStart(2, '0'),
+      segundos: segundos.toFixed(2).padStart(5, '0'), // 2 decimales
+      direccion: dir
+    };
+  }
+
+  limpiarCiudad(): void {
+    this.ciudadAutocompleteControl.setValue('', { emitEvent: true });
+    this.formGln.patchValue({ idCiudad: null });
+    // this.ciudadesFiltradas = []; // opcional, si deseas limpiar la lista también
+  }
 
   modificar(): void {
     this.modoEdicion = true;
@@ -681,24 +857,65 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
   }
 
   nuevo(): void {
+    const datosGenerales = {
+      clientesCodigo: this.formGln.get('clientesCodigo')?.value,
+      documentoIdentidad: this.formGln.get('documentoIdentidad')?.value,
+      nomCli: this.formGln.get('nomCli')?.value,
+      glnOrigenprefijo: this.formGln.get('glnOrigenprefijo')?.value,
+      glnPrefijogs1: this.formGln.get('glnPrefijogs1')?.value,
+      idPrefijos: this.formGln.get('idPrefijos')?.value
+    };
+
     this.formGln.reset();
+
+    // Restaurar solo los campos deseados
+    this.formGln.patchValue({
+      ...datosGenerales,
+      idTipoLocalizacion: null // este se limpia
+    });
+
     this.pasoActual = 1;
     this.setCamposUbicacionHabilitados(true);
     this.modoEdicion = true;
+
+    const prefijo = this.prefijos.find(p => p.id_prefijos === datosGenerales.idPrefijos);
+
+    if (prefijo) {
+      const codigoPais = '786';
+      this.glnService.obtenerUltimaSecuenciaGln(codigoPais, prefijo.codpre).subscribe({
+        next: (secuencia: number) => {
+          const nuevaSecuencia = secuencia + 1;
+          const gln = this.generarGlnCompleto(prefijo.codpre, nuevaSecuencia);
+          this.formGln.patchValue({ gln1: gln });
+        },
+        error: (err) => {
+          console.error('❌ Error al obtener la secuencia de GLN', err);
+          this.alertaGln = 'No se pudo generar el GLN automáticamente.';
+        }
+      });
+    } else {
+      this.alertaGln = 'Debe seleccionar un prefijo válido antes de generar un nuevo GLN.';
+    }
   }
+
+
+
 
   setCamposUbicacionHabilitados(habilitado: boolean): void {
     const campos = [
       'localizacion', 'idPais', 'provinciaCodigo', 'cantonCodigo', 'idCiudad',
-      'direccion', 'glnCodigopostal', 'glnLatitud', 'glnLongitud'
+      'direccion', 'glnCodigopostal', 'glnLatitud', 'glnLongitud',
+      'longG', 'longM', 'longS', 'longE',
+      'latiG', 'latiM', 'latiS', 'latiE'
     ];
-
     campos.forEach(campo => {
       const control = this.formGln.get(campo);
       if (control) {
         habilitado ? control.enable() : control.disable();
       }
     });
+
+      habilitado ? this.ciudadAutocompleteControl.enable() : this.ciudadAutocompleteControl.disable();
   }
 
   procesarFiltrosIniciales(): void {

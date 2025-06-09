@@ -51,6 +51,11 @@ obtenerGlnPorIdPrefijo(idPrefijos: number): Observable<GlnResponse[]> {
     .get<ApiResponse<GlnResponse[]>>(`${this.apiBaseUrl}/Gln/prefijo/${idPrefijos}`)
     .pipe(map((resp: ApiResponse<GlnResponse[]>) => resp.data || []));
 }
+obtenerUltimaSecuenciaGln(codigoPais: string, prefijo: string): Observable<number> {
+  const url = `${this.apiBaseUrl}/Gln/ultima-secuencia?codigoPais=${codigoPais}&prefijo=${prefijo}`;
+  return this.http.get<number>(url);
+}
+
 }
 
 // ✅ Reexportar para que puedan importarse desde aquí

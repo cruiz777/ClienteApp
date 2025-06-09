@@ -66,9 +66,8 @@
         </div>
         <div class="form-group">
           <label>Prefijo GS1:</label>
-          <input matInput formControlName="prefijoGs1" readonly>
+          <input matInput formControlName="glnPrefijogs1">
         </div>
-
         <div class="form-group">
           <label>Prefijo:</label>
           <mat-select formControlName="idPrefijos">
@@ -92,39 +91,36 @@
           <input matInput formControlName="localizacion">
         </div>
         <div class="form-group">
-          <label>País:</label>
-          <mat-select formControlName="idPais">
-            <mat-option *ngFor="let pais of paises" [value]="pais.idPais">
-              {{ pais.nombre }}
-            </mat-option>
-          </mat-select>
-        </div>
-
-        <div class="form-group">
-          <label>Provincia:</label>
-          <mat-select formControlName="provinciaCodigo">
-            <mat-option *ngFor="let provincia of provinciasFiltradas" [value]="provincia.nombre">
-              {{ provincia.nombre }}
-            </mat-option>
-          </mat-select>
-        </div>
-        <div class="form-group">
-          <label>Cantón:</label>
-          <mat-select formControlName="cantonCodigo">
-            <mat-option *ngFor="let canton of cantones" [value]="canton.nombre">
-              {{ canton.nombre }}
-            </mat-option>
-          </mat-select>
-        </div>
-
-        <div class="form-group">
           <label>Ciudad:</label>
-          <mat-select formControlName="idCiudad" [compareWith]="compareCiudad">
-            <mat-option *ngFor="let ciudad of ciudadesFiltradas" [value]="ciudad.id">
-              {{ ciudad.ciudad }}
-            </mat-option>
-          </mat-select>
+          <mat-form-field appearance="fill" class="w-full">
+            <mat-label>Ciudad</mat-label>
+            <input
+              type="text"
+              matInput
+              [formControl]="ciudadAutocompleteControl"
+              [matAutocomplete]="auto"
+              [readonly]="!modoEdicion"
+              [value]="mostrarCiudad(ciudadAutocompleteControl.value)"
+            />
+            <button matSuffix mat-icon-button aria-label="Limpiar"
+                    *ngIf="ciudadAutocompleteControl.value"
+                    (click)="limpiarCiudad()"
+                    [disabled]="!modoEdicion">
+              <mat-icon>close</mat-icon>
+            </button>
+            <mat-autocomplete
+              #auto="matAutocomplete"
+              [displayWith]="mostrarCiudad"
+              (optionSelected)="seleccionarCiudadAutocomplete($event.option.value)"
+            >
+              <mat-option *ngFor="let ciudad of ciudadesFiltradas" [value]="ciudad">
+                {{ mostrarCiudad(ciudad) }}
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+
         </div>
+
         <div class="form-group">
           <label>Código Postal:</label>
           <input matInput formControlName="glnCodigopostal">
@@ -140,12 +136,35 @@
         <div class="form-group">
           <label>Latitud (GPS):</label>
           <input matInput formControlName="glnLatitud">
+          <small *ngIf="modoEdicion && formGln.get('glnLatitud')?.valid">
+            Latitud GMS: {{ formGln.get('latiG')?.value }}° {{ formGln.get('latiM')?.value }}' {{ formGln.get('latiS')?.value }}'' {{ formGln.get('latiE')?.value }}
+          </small>
+          <mat-error *ngIf="formGln.get('glnLatitud')?.hasError('onlyFormattedNumber')">
+            Formato no válido. Ejemplo: -0.1807
+          </mat-error>
         </div>
         <div class="form-group">
           <label>Longitud (GPS):</label>
           <input matInput formControlName="glnLongitud">
+          <small *ngIf="modoEdicion && formGln.get('glnLongitud')?.valid">
+            Longitud GMS: {{ formGln.get('longG')?.value }}° {{ formGln.get('longM')?.value }}' {{ formGln.get('longS')?.value }}'' {{ formGln.get('longE')?.value }}
+          </small>
+          <mat-error *ngIf="formGln.get('glnLongitud')?.hasError('onlyFormattedNumber')">
+            Formato no válido. Ejemplo: -78.4678
+          </mat-error>
         </div>
+        
       </div>
+      <!-- Mapa interactivo -->
+        <div class="form-group full-width map-container">
+          <label>Ubicación en el mapa:</label>
+          <app-map
+            [lat]="formGln.get('glnLatitud')?.value"
+            [lng]="formGln.get('glnLongitud')?.value"
+            [editable]="modoEdicion"
+            (coordenadasCambio)="actualizarCoordenadas($event)">
+          </app-map>
+        </div>
     </div>
 
     <!-- Paso 2: Contactos -->

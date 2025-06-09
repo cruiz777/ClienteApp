@@ -19,6 +19,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatOptionModule } from '@angular/material/core';
 
 import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { SharedModule } from 'src/app/shared/shared.module';
 
 @NgModule({
   declarations: [
@@ -30,7 +32,7 @@ import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
     RouterModule,
     ReactiveFormsModule,
     FormsModule,
-
+    
     // Angular Material necesarios
     MatSidenavModule,
     MatListModule,
@@ -42,7 +44,9 @@ import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
     MatCheckboxModule,
     MatSelectModule,
     MatFormFieldModule,
-    MatOptionModule
+    MatOptionModule,
+    MatAutocompleteModule,
+    SharedModule
   ],
   exports: [NavigationProductoComponent]
 })

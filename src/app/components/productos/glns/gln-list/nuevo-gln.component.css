@@ -199,3 +199,13 @@ button[disabled] {
   border-left: 4px solid #002c6c;
   padding-left: 10px;
 }
+.map-container {
+  width: 70%;
+  height: 300px;
+  margin-top: 1rem;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    height: 250px;
+  }
+}

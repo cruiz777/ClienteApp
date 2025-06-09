@@ -29,8 +29,7 @@ export class CustomValidators {
     // - decimales (coma o punto)
     // - separador de miles opcional
     // Ejemplos válidos: 1,000.25 - 1.000,25 - 1234.56 - 1234,56 - 1234
-    const regex = /^(\d{1,3}([.,]?\d{3})*|\d+)([.,]\d{1,10})?$/;
-
+    const regex = /^-?\d{1,3}([.,]\d{1,10})?$/;
     if (!regex.test(stringValue)) {
       return { onlyFormattedNumber: true };
     }
