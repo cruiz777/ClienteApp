@@ -23,7 +23,7 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSelectModule } from '@angular/material/select';
 
-
+import { CheckboxRendererComponent } from './checkbox-renderer/checkbox-renderer.component';
 
 // Formularios
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -31,11 +31,14 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 // Ag-Grid y Handsontable
 import { HotTableModule } from '@handsontable/angular';
 import { AgGridModule } from 'ag-grid-angular';
+import { AgGridAngular } from 'ag-grid-angular';
+
 
 @NgModule({
   declarations: [
     NavigationProductoComponent,
-    BloqueComponent
+    BloqueComponent,
+    CheckboxRendererComponent
   ],
   imports: [
     CommonModule,

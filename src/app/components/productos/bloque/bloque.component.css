@@ -396,3 +396,18 @@ textarea {
 mat-form-field {
   max-width: 150px;
 }
+::ng-deep .ag-cell .ag-checkbox-input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+::ng-deep .centered-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+::ng-deep .ag-cell .ag-checkbox-input:checked {
+  accent-color: #3f51b5; /* Material Indigo */
+  box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.3);
+}

@@ -43,7 +43,7 @@
         </mat-form-field>
       </div>
 
-      <mat-form-field appearance="fill" class="select-pequeno">
+      <mat-form-field class="select-pequeno">
         <mat-label>Prefijo</mat-label>
         <mat-select formControlName="gcp" (selectionChange)="onPrefijoBlur()">
           <mat-option *ngFor="let prefijo of prefijos" [value]="prefijo.id_prefijos">
@@ -51,7 +51,7 @@
           </mat-option>
         </mat-select>
       </mat-form-field>
-      <div class="corto">
+      <div class="corto" style="padding: auto;">
         <label for="gln">GLN®:</label>
         <input id="gln" type="text" formControlName="gln" readonly />
       </div>
@@ -75,35 +75,57 @@
     </div>
   </div>
 </form>
+<div style="display: flex; align-items: center; gap: 12px; margin-top: 0px; flex-wrap: wrap;">
+  <label>Productos a Codificar:</label>
 
-<div style="margin-top: 0px;">
-  <label>Cantidad de filas:</label>
-  <input type="number" [(ngModel)]="cantidadFilas" style="width: 60px;" />
-  <button mat-raised-button color="accent" (click)="generarFilas()">Ok</button>
-  <button mat-button color="warn" (click)="limpiarTabla()">Limpiar</button>
+  <input type="number" [(ngModel)]="cantidadFilas" style="width: 60px;" min="1" step="1"
+    oninput="this.value = this.value.replace(/[^0-9]/g, '')" (blur)="generarFilas()" />
 
 
-  <!-- Pegar datos -->
-  <mat-form-field appearance="fill" class="textarea" style="margin-top: 0px; width: 10%;height: 60px;font-size: 12px;">
-    <mat-label>Pegar datos desde Excel</mat-label>
-    <textarea matInput [(ngModel)]="textoPegado" ></textarea>
+  <mat-form-field class="textarea" style="width: 120px; height: 60px; font-size: 12px; margin: 0;">
+    <!-- visible -->
+
+    <textarea matInput [(ngModel)]="textoPegado" placeholder="CTRL+V para pegar" (focus)="simularPegado()"
+      (blur)="pegarColumnaGtinUv()"
+      style="border: none; height: 50px; padding: 0px; outline: none; resize: none; box-shadow: none;"></textarea>
+
+
+
+    <!-- invisible, funcional -->
+    <textarea #pasteCatcher style="position: absolute; left: -9999px; opacity: 0;"></textarea>
+
   </mat-form-field>
 
   <mat-checkbox [(ngModel)]="copiarDesdeColumna2" class="hidden-column">
     Pegar desde columna 2
   </mat-checkbox>
-  <button mat-stroked-button color="primary" (click)="pegarColumnaGtinUv()">Pegar en tabla</button>
 
-  <!-- Mensaje -->
-  <div *ngIf="mensaje" style="margin-top: 12px; color: green;">
+  <div *ngIf="mensaje" style="color: green;">
     {{ mensaje }}
   </div>
-
-  <button mat-flat-button color="primary" (click)="generar()">Generar</button>
 </div>
+
+<button mat-raised-button color="primary" (click)="limpiarTabla()">Nuevo</button>
+<button mat-raised-button color="primary" (click)="generar()">Generar</button>
+<button mat-raised-button color="primary" (click)="generar()">Grabar</button>
+<mat-checkbox [(ngModel)]="checkMaestro" (change)="marcarTodosDesdeMaestro()">
+  Activar todos
+</mat-checkbox>
+<button mat-raised-button color="primary" (click)="generar()">Generar GTIN 14</button>
+<button mat-raised-button color="primary" (click)="generar()">Grabar GTIN 14</button>
 <!-- Tabla AG-Grid -->
-<ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 300px; margin-top: 10px;" [rowData]="rowData"
-  [columnDefs]="columnDefs" [defaultColDef]="defaultColDef" (gridReady)="onGridReady($event)">
+<!-- Campo oculto para capturar Ctrl+V -->
+
+
+<ag-grid-angular style="width: 100%; height: 400px;" class="ag-theme-alpine" [rowData]="rowData"
+  [columnDefs]="columnDefs" [defaultColDef]="defaultColDef" [gridOptions]="gridOptions"
+  (gridReady)="onGridReady($event)">
 </ag-grid-angular>
+
+
+
+
+
+
 
 <!-- Controles de la tabla -->
