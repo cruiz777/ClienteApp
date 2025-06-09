@@ -52,6 +52,7 @@ export class PerfilesListComponent implements OnInit {
   opcionesAsignadas: number[] = [];
   botonActivo: string = '';
   filtroPerfil: string = '';
+  sistemaAccionesVisible: SistemaResponse | null = null;
 
   // ==================== Constructor ====================
   constructor(
@@ -74,7 +75,7 @@ export class PerfilesListComponent implements OnInit {
         const sistema = this.sistemas[0];
         this.sistemaActivo = sistema.nombre;
         this.moduloService.getModulosPorSistema(sistema.id_sistema).subscribe(resp => {
-          this.modulos = resp.data;
+          this.modulos = resp.data.filter(m => m.status === true);
         });
       }
     });
@@ -86,7 +87,7 @@ export class PerfilesListComponent implements OnInit {
     this.menus = [];
     this.opcionnes = [];
     this.moduloService.getModulosPorSistema(idSistema).subscribe(resp => {
-      this.modulos = resp.data;
+      this.modulos = resp.data.filter(m => m.status === true);
     });
   }
 
@@ -102,7 +103,7 @@ export class PerfilesListComponent implements OnInit {
     this.opcionnes = [];
 
     this.menuService.getMenusPorModulo(idModulo).subscribe(response => {
-      const menuesExtendidos: MenuExtendido[] = response.data.map(menu => ({
+      const menuesExtendidos: MenuExtendido[] = response.data.filter(m => m.status === true).map(menu => ({
         ...menu,
         tieneOpciones: false,
         todasAsignadas: false
@@ -136,7 +137,7 @@ export class PerfilesListComponent implements OnInit {
     if (this.perfilSeleccionado === null) return;
 
     this.opcionesService.getOpcionesPorMenu(idMenu).subscribe(opcionesResp => {
-      const todasLasOpciones = opcionesResp.data;
+      const todasLasOpciones = opcionesResp.data.filter(o => o.status === true);
 
       this.perfilesOpcionesService.getOpcionesPorPerfilYMenu(this.perfilSeleccionado!, idMenu).subscribe(asignadasResp => {
         const asignadasIds = asignadasResp.data.map(op => op.id_opcion);
@@ -399,6 +400,102 @@ export class PerfilesListComponent implements OnInit {
     });
   }
 
+  editarGeneral(tipo: 'sistema' | 'modulo' | 'menu' | 'opcion', id: number): void {
+    const dialogRef = this.dialog.open(PerfilesFormComponent, {
+      width: '400px',
+      data: { tipo, id }
+    });
 
+    dialogRef.afterClosed().subscribe(resultado => {
+      if (resultado === true) {
+        this.recargarEntidad(tipo);
+      }
+    });
+  }
+
+  eliminarGeneral(tipo: 'sistema' | 'modulo' | 'menu' | 'opcion', id: number): void {
+    const data: MessageBoxData = {
+      title: `¿Eliminar ${tipo}?`,
+      message: `¿Estás seguro de que deseas eliminar este ${tipo}?`,
+      type: 'warning',
+      confirmText: 'Sí, eliminar',
+      cancelText: 'Cancelar',
+      showCancel: true
+    };
+
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data
+    }).afterClosed().subscribe(confirmado => {
+      if (!confirmado) return;
+
+      // Lógica de eliminación condicional basada en tipo
+      let servicio;
+      switch (tipo) {
+        case 'sistema': servicio = this.sistemaService; break;
+        case 'modulo': servicio = this.moduloService; break;
+        case 'menu': servicio = this.menuService; break;
+        case 'opcion': servicio = this.opcionesService; break;
+      }
+
+      servicio.softDelete(id).subscribe({
+        next: (resp) => {
+          if (resp.data === true) {
+            this.dialog.open(CustomMessageBoxComponent, {
+              width: '400px',
+              data: {
+                title: 'Eliminado',
+                message: `El ${tipo} fue eliminado correctamente.`,
+                type: 'success',
+                confirmText: 'Aceptar',
+                showCancel: false
+              }
+            });
+            this.recargarEntidad(tipo);
+          } else {
+            this.dialog.open(CustomMessageBoxComponent, {
+              width: '400px',
+              data: {
+                title: 'No se puede eliminar',
+                message: `No se puede eliminar el ${tipo} porque está en uso.`,
+                type: 'info',
+                confirmText: 'Aceptar',
+                showCancel: false
+              }
+            });
+          }
+        },
+        error: (err) => {
+          console.error(`❌ Error al eliminar ${tipo}:`, err);
+        }
+      });
+    });
+  }
+
+  recargarEntidad(tipo: string): void {
+    switch (tipo) {
+      case 'sistema':
+        this.sistemaService.getSistemas().subscribe(r => this.sistemas = r.data);
+        break;
+      case 'modulo':
+        const sistema = this.sistemas.find(s => s.nombre === this.sistemaActivo);
+        if (sistema) {
+          this.moduloService.getModulosPorSistema(sistema.id_sistema).subscribe(resp => {
+            this.modulos = resp.data.filter(m => m.status === true);
+          });
+        }
+        break;
+      case 'menu':
+        if (this.moduloSeleccionado) this.seleccionarModulo(this.moduloSeleccionado);
+        break;
+      case 'opcion':
+        if (this.menuSeleccionado) this.seleccionarMenu(this.menuSeleccionado);
+        break;
+    }
+  }
+
+  abrirMenuAcciones(sistema: SistemaResponse): void {
+    this.sistemaAccionesVisible = (this.sistemaAccionesVisible === sistema) ? null : sistema;
+  }
 
 }

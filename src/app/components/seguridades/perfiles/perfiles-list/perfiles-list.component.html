@@ -1,11 +1,28 @@
 <!-- perfiles-list.component.html -->
-<div class="tabs">
-  <button *ngFor="let sistema of sistemas" [class.active]="sistema.nombre === sistemaActivo"
-    (click)="seleccionarSistema(sistema.nombre,sistema.id_sistema)">
-    {{ sistema.nombre }}
-  </button>
-  <button class="btn-accion" title="Nuevo sistema" (click)="crearEntidad('sistema')">+</button>
+<div class="tabs-limpias">
+  <div *ngFor="let sistema of sistemas"
+       class="tab-sistema"
+       [class.activo]="sistema.nombre === sistemaActivo">
+
+    <div class="contenido-tab" (click)="seleccionarSistema(sistema.nombre, sistema.id_sistema)">
+      {{ sistema.nombre }}
+    </div>
+
+    <div class="acciones-tab">
+      <button (click)="abrirMenuAcciones(sistema)" title="Más acciones">⋮</button>
+      <div class="dropdown" *ngIf="sistema === sistemaAccionesVisible">
+        <button (click)="editarGeneral('sistema', sistema.id_sistema)">✏️ Editar</button>
+        <button (click)="eliminarGeneral('sistema', sistema.id_sistema)">🗑️ Eliminar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-sistema nuevo">
+    <button (click)="crearEntidad('sistema')" title="Nuevo sistema">+</button>
+  </div>
 </div>
+
+
 
 <div class="contenido-tablas">
 
@@ -66,6 +83,7 @@
             <th class="ocultar-id">ID</th>
             <th>Módulo</th>
             <th>Todo</th>
+            <th class="col-reducida">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -77,6 +95,14 @@
             <td class="col-reducida">
               <input type="checkbox" [checked]="esModuloCompletamenteAsignado(modulo.id_modulo)"
                 (change)="detenerYAplicarCambioModulo($event, modulo.id_modulo)" />
+            </td>
+            <td>
+              <button (click)="editarGeneral('modulo', modulo.id_modulo)" title="Editar">
+                <img src="assets/icons/icon-modificar-3.png" width="16" />
+              </button>
+              <button (click)="eliminarGeneral('modulo', modulo.id_modulo)" title="Eliminar">
+                <img src="assets/icons/icon-basurero.png" width="16" />
+              </button>
             </td>
           </tr>
         </tbody>
@@ -96,6 +122,7 @@
             <th class="ocultar-id">ID</th>
             <th>Menú</th>
             <th>Tiene_Acceso</th>
+            <th class="col-reducida">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -109,6 +136,14 @@
             <td class="col-reducida">
               <input type="checkbox" [checked]="menu.todasAsignadas" (click)="$event.stopPropagation()"
                 (change)="onToggleTodoOpciones(menu)" />
+            </td>
+            <td>
+              <button (click)="editarGeneral('menu', menu.id_menu)" title="Editar">
+                <img src="assets/icons/icon-modificar-3.png" width="16" />
+              </button>
+              <button (click)="eliminarGeneral('menu', menu.id_menu)" title="Eliminar">
+                <img src="assets/icons/icon-basurero.png" width="16" />
+              </button>
             </td>
           </tr>
         </tbody>
@@ -127,6 +162,7 @@
             <th class="ocultar-id">ID</th>
             <th>Opción</th>
             <th>Tiene_Acceso</th>
+            <th class="col-reducida">Acciones</th>
           </tr>
         </thead>
         <tbody>
@@ -135,6 +171,14 @@
             <td>{{ opcion.nombre }}</td>
             <td class="col-reducida">
               <input type="checkbox" [(ngModel)]="opcion.status" (change)="onToggleOpcion(opcion)" />
+            </td>
+            <td>
+              <button (click)="editarGeneral('opcion', opcion.id_opcion)" title="Editar">
+                <img src="assets/icons/icon-modificar-3.png" width="16" />
+              </button>
+              <button (click)="eliminarGeneral('opcion', opcion.id_opcion)" title="Eliminar">
+                <img src="assets/icons/icon-basurero.png" width="16" />
+              </button>
             </td>
           </tr>
         </tbody>

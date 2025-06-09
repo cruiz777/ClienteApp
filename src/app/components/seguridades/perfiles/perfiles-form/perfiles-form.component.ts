@@ -35,7 +35,7 @@ export class PerfilesFormComponent implements OnInit {
 
   form!: FormGroup;
   idEmpresa: number = 1;
-  idPerfil?: number;
+  idGeneral?: number;
   tipo!: 'sistema' | 'modulo' | 'menu' | 'opcion' | 'perfil';
   idRelacionado!: number;
   cargando = false;
@@ -62,7 +62,7 @@ export class PerfilesFormComponent implements OnInit {
     });
 
     if (this.data?.id) {
-      this.idPerfil = this.data.id;
+      this.idGeneral = this.data.id;
       this.form.patchValue({ nombre: this.data.nombre || '' });
     }
   }
@@ -86,8 +86,8 @@ export class PerfilesFormComponent implements OnInit {
           fecha_creacion: new Date().toISOString(),
           estado: true,
         };
-        if (this.idPerfil) {
-          this.perfilService.updatePerfiles(this.idPerfil, perfilRequest).subscribe({
+        if (this.idGeneral) {
+          this.perfilService.updatePerfiles(this.idGeneral, perfilRequest).subscribe({
             next: () => this.dialogRef.close(true),
             error: () => alert('❌ Error al actualizar el perfil.')
           });
@@ -106,10 +106,17 @@ export class PerfilesFormComponent implements OnInit {
           descripcion: nombre,
           status: true
         };
-        this.moduloService.createModulo(moduloRequest).subscribe({
-          next: () => { this.cargando = false; this.dialogRef.close(true); },
-          error: () => { this.cargando = false; alert('❌ Error al crear el módulo.'); }
-        });
+        if (this.idGeneral) {
+          this.moduloService.updateModulo(this.idGeneral).subscribe({
+            next: () => this.dialogRef.close(true),
+            error: () => alert('❌ Error al actualizar el módulo.')
+          });
+        } else {
+          this.moduloService.createModulo(moduloRequest).subscribe({
+            next: () => this.dialogRef.close(true),
+            error: () => alert('❌ Error al crear el módulo.')
+          });
+        }
         break;
 
       case 'menu':
@@ -119,10 +126,17 @@ export class PerfilesFormComponent implements OnInit {
           descripcion: nombre,
           status: true
         };
-        this.menuService.createMenu(menuRequest).subscribe({
-          next: () => { this.cargando = false; this.dialogRef.close(true); },
-          error: () => { this.cargando = false; alert('❌ Error al crear el menú.'); }
-        });
+        if (this.idGeneral) {
+          this.menuService.updateMenu(this.idGeneral).subscribe({
+            next: () => this.dialogRef.close(true),
+            error: () => alert('❌ Error al actualizar el menú.')
+          });
+        } else {
+          this.menuService.createMenu(menuRequest).subscribe({
+            next: () => this.dialogRef.close(true),
+            error: () => alert('❌ Error al crear el menú.')
+          });
+        }
         break;
 
       case 'opcion':
@@ -132,10 +146,17 @@ export class PerfilesFormComponent implements OnInit {
           descripcion: nombre,
           status: true
         };
-        this.opcionService.createOpcion(opcionRequest).subscribe({
-          next: () => { this.cargando = false; this.dialogRef.close(true); },
-          error: () => { this.cargando = false; alert('❌ Error al crear el opción.'); }
-        });
+        if (this.idGeneral) {
+          this.opcionService.updateOpcion(this.idGeneral).subscribe({
+            next: () => this.dialogRef.close(true),
+            error: () => alert('❌ Error al actualizar la opción.')
+          });
+        } else {
+          this.opcionService.createOpcion(opcionRequest).subscribe({
+            next: () => this.dialogRef.close(true),
+            error: () => alert('❌ Error al crear la opción.')
+          });
+        }
         break;
 
       case 'sistema':
@@ -145,10 +166,17 @@ export class PerfilesFormComponent implements OnInit {
           descripcion: nombre,
           status: true
         };
-        this.sistemaService.createSistema(sistemaRequest).subscribe({
-          next: () => { this.cargando = false; this.dialogRef.close(true); },
-          error: () => { this.cargando = false; alert('❌ Error al crear el sistema.'); }
-        });
+        if (this.idGeneral) {
+          this.sistemaService.updateSistema(this.idGeneral).subscribe({
+            next: () => this.dialogRef.close(true),
+            error: () => alert('❌ Error al actualizar el sistema.')
+          });
+        } else {
+          this.sistemaService.createSistema(sistemaRequest).subscribe({
+            next: () => this.dialogRef.close(true),
+            error: () => alert('❌ Error al crear el sistema.')
+          });
+        }
         break;
     }
   }

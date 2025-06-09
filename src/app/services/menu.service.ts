@@ -29,4 +29,12 @@ export class MenuService {
   createMenu(data: MenusRequest): Observable<any> {
     return this.http.post(this.apiUrl, data);
   }
+
+  softDelete(id: number): Observable<ApiResponse<boolean>> {
+    return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/softDelete/${id}`,{});
+  }
+
+  updateMenu(id: number): Observable<ApiResponse<boolean>> {
+    return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/${id}`, {});
+  }
 }
