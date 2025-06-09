@@ -54,6 +54,14 @@
         </div>
       </mat-list-item>
 
+       <mat-list-item [routerLink]="['nuevoSscc']" routerLinkActive="active">
+
+        <div class="menu-item">
+          <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
+          <span *ngIf="isExpanded" class="menu-text">Nuevo SSCC</span>
+        </div>
+      </mat-list-item>
+
       <mat-list-item [routerLink]="'/NuevoProducto'" routerLinkActive="active">
         <div class="menu-item">
           <img src="assets/icons/icon-cuentas-x-cobrar.png" class="menu-icon">
