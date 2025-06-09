@@ -1,3 +1,20 @@
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+mat-form-field {
+  min-width: 200px;
+  flex: 1;
+}
+
+button[mat-flat-button] {
+  height: 56px;
+  align-self: flex-end;
+}
 /* Contenedor general */
 .contenedor-formulario {
   padding: 24px;
@@ -25,13 +42,13 @@ h2 {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
-/* Grilla adaptable para campos */
 .form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
   align-items: flex-start;
 }
+/* Grilla adaptable para campos */
 
 /* Etiquetas y campos */
 label {
@@ -235,7 +252,7 @@ mat-form-field {
 
 /* Tamaños personalizados */
 .corto {
-  max-width: 120px;
+  max-width: 150px;
 }
 
 .largo {
@@ -313,3 +330,69 @@ textarea {
   flex-direction: column;
 }
 
+.form-layout {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fila-1 {
+  width: 600px;
+}
+
+.fila-2 {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+  flex-grow: 1;
+}
+
+.fila-3 {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.select-pequeno {
+  width: 120px;
+}
+
+.campo-prefijo {
+  width: 40px;
+}
+
+.serie-checkbox {
+  display: flex;
+  flex-direction: column;
+  min-width: 100px;
+}
+
+.campo-gtin {
+  width: 240px;
+}
+.hidden-column {
+  display: none;
+}
+.fila-horizontal {
+  display: flex;
+  gap: 16px; /* opcional, espacio entre los campos */
+  align-items: end; /* alinea verticalmente los inputs y labels */
+  flex-wrap: wrap; /* permite que se acomode bien en pantallas pequeñas */
+}
+.select-pequeno {
+  width: 150px; /* ajusta según lo que necesites */
+  min-width: auto;
+}
+mat-form-field {
+  max-width: 150px;
+}

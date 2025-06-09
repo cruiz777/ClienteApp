@@ -11,6 +11,7 @@ import { AuthGuard } from './guards/auth.guard';
 import { ClienteSeleccionadoComponent } from './components/productos/cliente-seleccionado/cliente-seleccionado.component';
 import { NuevoSsccComponent} from './components/productos/nuevo-sscc/nuevo-sscc.component'
 import { GlnComponent } from './components/productos/glns/gln-list/nuevo-gln.component';
+import { BloqueComponent } from './components/productos/bloque/bloque.component';
 
 
 const routes: Routes = [
@@ -35,8 +36,8 @@ const routes: Routes = [
     { path: 'clienteSeleccion', component: ClienteSeleccionadoComponent},
     { path: 'uvIndividual', component: UvIndividualComponent },
     { path: 'nuevoSscc', component: NuevoSsccComponent },
-    { path: 'nuevoGln', component: GlnComponent }
-
+    { path: 'nuevoGln', component: GlnComponent },
+    { path: 'bloque', component: BloqueComponent }
    ]
 },
 

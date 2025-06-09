@@ -1,9 +1,13 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+
 import { RouterModule } from '@angular/router';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 
+// Componentes
 import { NavigationProductoComponent } from './navigation-producto/navigation-producto.component';
+import { BloqueComponent } from './bloque/bloque.component';
+import { MatOptionModule } from '@angular/material/core';
 
 
 // Angular Material modules necesarios
@@ -14,28 +18,32 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatInputModule } from '@angular/material/input';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatOptionModule } from '@angular/material/core';
 
-import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
-import { MatTableModule } from '@angular/material/table';
+import { MatDialogModule } from '@angular/material/dialog';
+import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatSelectModule } from '@angular/material/select';
+
+
+// Ag-Grid y Handsontable
+import { HotTableModule } from '@handsontable/angular';
+import { AgGridModule } from 'ag-grid-angular';
 
 
 @NgModule({
   declarations: [
     NavigationProductoComponent,
-    GlnComponent
+    GlnComponent,
+    BloqueComponent
   ],
   imports: [
     CommonModule,
     RouterModule,
     ReactiveFormsModule,
     FormsModule,
-
-    // Angular Material necesarios
+    HotTableModule,
+    AgGridModule,
+    FormsModule,
+    ReactiveFormsModule,
     MatSidenavModule,
     MatListModule,
     MatIconModule,
@@ -47,9 +55,15 @@ import { MatTableModule } from '@angular/material/table';
     MatSelectModule,
     MatFormFieldModule,
     MatOptionModule,
-    MatTableModule
-
+    MatTableModule,
+    MatDialogModule,
+    MatSnackBarModule,
+    MatOptionModule,
+    MatSelectModule
   ],
-  exports: [NavigationProductoComponent]
+  exports: [
+    NavigationProductoComponent,
+    BloqueComponent
+  ]
 })
 export class ProductosModule {}

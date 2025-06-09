@@ -2,17 +2,15 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatInputModule } from '@angular/material/input';
-import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
-
 import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
 import { Cliente } from 'src/app/interfaces/cliente';
+import { AgGridModule } from 'ag-grid-angular';
 import { Router } from '@angular/router';
 import { ProductoService, Producto } from 'src/app/services/producto.service';
 import { Codigos14Service } from 'src/app/services/codigos14.service';
@@ -25,17 +23,17 @@ import { Codigos14Service } from 'src/app/services/codigos14.service';
   imports: [
     CommonModule,
     FormsModule,
-    ReactiveFormsModule,
     MatFormFieldModule,
     MatInputModule,
-    MatMenuModule,
     MatButtonModule,
+    AgGridModule,
     MatAutocompleteModule,
     MatTableModule,
     MatCheckboxModule,
     MatRadioModule,
     MatSelectModule
-  ]
+  ],
+
 })
 export class NuevoProductoComponent implements OnInit {
   // Tab activo
@@ -53,7 +51,6 @@ export class NuevoProductoComponent implements OnInit {
   // Registro seleccionado para mostrar GTIN-14
   registroSeleccionado: any = null;
   codigoSeleccionado: string = '';
-
   // Datos auxiliares
   prefijos: string[] = ['750', '754', '760'];
   empaques: string[] = ['Caja', 'Unidad', 'Paquete'];
@@ -82,6 +79,54 @@ export class NuevoProductoComponent implements OnInit {
   registrosGtin14: any[] = [];
   bandera: number = 0;
   dataSource: any[] = [];
+  columnDefsUV = [
+    {
+      headerName: '#',
+      valueGetter: 'node.rowIndex + 1',
+      width: 60,
+      sortable: false,
+      filter: false
+    },
+    { field: 'empresa', headerName: 'Empresa', width: 160 },
+    { field: 'prefijo', headerName: 'Prefijo', width: 90 },
+    { field: 'tipogtin', headerName: 'Tipo GTIN', width: 100 },
+    { field: 'estado', headerName: 'Estado', width: 100 },
+    { field: 'codbar', headerName: 'GTIN UV', width: 140 },
+    { field: 'presentacion', headerName: 'P', width: 50 },
+    { field: 'descripcion', headerName: 'Descripción', width: 180 },
+    { field: 'fecha', headerName: 'Fecha', width: 100 },
+    { field: 'marca', headerName: 'Marca', width: 120 },
+    { field: 'contenido', headerName: 'Contenido', width: 100 },
+    { field: 'unidad', headerName: 'Unidad', width: 90 },
+    { field: 'categoria', headerName: 'Categoría', width: 120 },
+    { field: 'gcp_brick', headerName: 'Brick', width: 100 },
+    { field: 'pais', headerName: 'País', width: 80 }
+  ];
+
+
+  columnDefsGtin14 = [
+    {
+      headerName: '#',
+      valueGetter: 'node.rowIndex + 1',
+      width: 60,
+      sortable: false,
+      filter: false
+    },
+    { field: 'g14', headerName: 'Unidad Logística' },
+    { field: 'codbar', headerName: 'Código' },
+    { field: 'prefijo', headerName: 'Prefijo' },
+    { field: 'factor', headerName: 'Factor' },
+    { field: 'presentacion', headerName: 'Presentación' },
+    { field: 'descripcion', headerName: 'Descripción' },
+    { field: 'fecha', headerName: 'Fecha' },
+    { field: 'estado', headerName: 'Estado' }
+  ];
+
+  defaultColDef = {
+    sortable: true,
+    filter: true,
+    resizable: true
+  };
 
   constructor(
     private fb: FormBuilder,
@@ -135,6 +180,7 @@ export class NuevoProductoComponent implements OnInit {
     this.registroSeleccionado = registro;
     this.codigoSeleccionado = registro.codbar;
     this.cargarCodigos14PorGtin(registro.codbar);
+
   }
 
   // Navegar a pantalla de UV individual
@@ -145,6 +191,7 @@ export class NuevoProductoComponent implements OnInit {
   // Salir a página de clientes
   salir(): void {
     this.router.navigate(['/pages/clientes']);
+
   }
 
   // Cargar productos por cliente
@@ -160,6 +207,7 @@ export class NuevoProductoComponent implements OnInit {
           codbar: p.codbar || '',
           presentacion: p.p || '',
           descripcion: p.Despro || '',
+
           fecha: (() => {
             const fecha = new Date(p.Fecing);
             const dia = String(fecha.getDate()).padStart(2, '0');
@@ -167,6 +215,8 @@ export class NuevoProductoComponent implements OnInit {
             const anio = fecha.getFullYear();
             return `${dia}/${mes}/${anio}`;
           })(),
+
+          _fecha: this.formatearFecha(p.Fecing),
           marca: p.marca || '',
           contenido: p.contenido || '',
           unidad: p.unidad || '',
@@ -175,40 +225,41 @@ export class NuevoProductoComponent implements OnInit {
           pais: p.pais || ''
         }));
       },
-      error: err => {
-        console.error('Error al cargar productos:', err);
-      }
+      error: err => console.error('Error al cargar productos:', err)
     });
   }
 
   // Cargar GTIN-14 relacionados al código seleccionado
   cargarCodigos14PorGtin(gtin: string): void {
     this.codigos14Service.getPorGtin(gtin).subscribe({
+
       next: (codigos) => {
         this.registrosGtin14 = codigos.map(c => ({
           id: c.id_codigos14,
           g14: c.g14 || '',
           codbar: c.codbar || '',
           prefijo: c.codpre || '',
-          presentacion: c.presentacion || 0,
           factor: c.unidad || '',
+          presentacion: c.presentacion || '',
           descripcion: c.descripcion || '',
-          fecha: (() => {
-            const fecha = new Date(c.fecha);
-            const dia = String(fecha.getDate()).padStart(2, '0');
-            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-            const anio = fecha.getFullYear();
-            return `${dia}/${mes}/${anio}`;
-          })(),
+          fecha: this.formatearFecha(c.fecha),
           estado: c.activo ? 'ACTIVO' : 'INACTIVO'
         }));
       },
-      error: err => {
-        console.error('Error al cargar códigos14:', err);
-      }
+      error: err => console.error('Error al cargar códigos14:', err)
     });
   }
 
+  formatearFecha(fechaStr: string): string {
+    const fecha = new Date(fechaStr);
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const anio = fecha.getFullYear();
+    return `${dia}/${mes}/${anio}`;
+  }
+  irBloque(): void {
+    this.router.navigate(['/menuProductos/bloque']);
+  }
 
-}
+ }
 
