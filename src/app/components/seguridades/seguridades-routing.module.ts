@@ -26,6 +26,10 @@ const routes: Routes = [
         loadChildren:()=>import('./departamentos/departamentos.module').then(m=>m.DepartamentosModule)
       },
       {
+        path:'usuarios',
+        loadChildren:()=>import('./usuarios/usuarios.module').then(m=>m.UsuariosModule)
+      },
+      {
         path: '',
         redirectTo: 'empresas',
         pathMatch: 'full'

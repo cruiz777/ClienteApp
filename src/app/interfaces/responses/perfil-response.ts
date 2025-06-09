@@ -3,4 +3,5 @@ export interface PerfilResponse {
   nombre: string;
   descripcion?: string;
   fecha_creacion: Date;
+  estado: boolean;
 }

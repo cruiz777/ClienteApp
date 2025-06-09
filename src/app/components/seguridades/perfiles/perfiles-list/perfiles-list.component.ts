@@ -51,6 +51,7 @@ export class PerfilesListComponent implements OnInit {
 
   opcionesAsignadas: number[] = [];
   botonActivo: string = '';
+  filtroPerfil: string = '';
 
   // ==================== Constructor ====================
   constructor(
@@ -65,9 +66,7 @@ export class PerfilesListComponent implements OnInit {
 
   // ==================== Inicialización ====================
   ngOnInit(): void {
-    this.perfilesService.getPerfiles().subscribe(response => {
-      this.perfiles = response.data;
-    });
+    this.cargarPerfiles();
 
     this.sistemaService.getSistemas().subscribe(response => {
       this.sistemas = response.data;
@@ -155,21 +154,44 @@ export class PerfilesListComponent implements OnInit {
 
   seleccionarBoton(nombre: string): void {
     this.botonActivo = nombre;
+
+    // Remover el estado "activo" después de un corto tiempo
+    setTimeout(() => {
+      this.botonActivo = '';
+    }, 200); // 300 milisegundos (puedes ajustar el tiempo)
   }
+
 
   // ==================== Acciones ====================
   onNuevoPerfil(): void {
-    this.dialog.open(PerfilesFormComponent, {
+    const dialogRef = this.dialog.open(PerfilesFormComponent, {
       width: '400px'
-      // TODO: manejar resultado del modal si se desea
+    });
+
+    dialogRef.afterClosed().subscribe((resultado) => {
+      if (resultado === true) {
+        this.cargarPerfiles(); // ← recarga la tabla
+      }
+    });
+  }
+
+  editarPerfil(perfil: PerfilResponse): void {
+    const dialogRef = this.dialog.open(PerfilesFormComponent, {
+      width: '400px',
+      data: {
+        id: perfil.id_perfil,
+        nombre: perfil.nombre
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((resultado) => {
+      if (resultado === true) {
+        this.cargarPerfiles(); // recargar tabla si se editó correctamente
+      }
     });
   }
 
 
-  editarPerfil(perfil: PerfilResponse): void {
-    console.log('Editar perfil:', perfil);
-    // Acción al presionar "Editar"
-  }
 
   eliminarPerfil(idPerfil: number): void {
     const data: MessageBoxData = {
@@ -186,19 +208,37 @@ export class PerfilesListComponent implements OnInit {
       data
     }).afterClosed().subscribe((confirmado: boolean) => {
       if (confirmado) {
-        // Aquí irá la lógica real de eliminación
-        console.log(`Eliminar perfil con ID: ${idPerfil}`);
 
-        this.dialog.open(CustomMessageBoxComponent, {
-          width: '400px',
-          data: {
-            title: 'Eliminado',
-            message: 'El perfil fue eliminado correctamente (simulado).',
-            type: 'success',
-            confirmText: 'Aceptar',
-            showCancel: false
+        this.perfilesService.softDeletePerfiles(idPerfil).subscribe({
+          next: (resp) => {
+            if (resp.data === true) {
+              this.dialog.open(CustomMessageBoxComponent, {
+                width: '400px',
+                data: {
+                  title: 'Eliminado',
+                  message: 'El perfil fue eliminado correctamente.',
+                  type: 'success',
+                  confirmText: 'Aceptar',
+                  showCancel: false
+                }
+              });
+              this.cargarPerfiles();
+            }
+            else {
+              this.dialog.open(CustomMessageBoxComponent, {
+                width: '400px',
+                data: {
+                  title: 'No se puede eliminar',
+                  message: 'El perfil no puede ser eliminado porque existen usuarios asociados a él.',
+                  type: 'info',
+                  confirmText: 'Aceptar',
+                  showCancel: false
+                }
+              });
+            }
           }
-        });
+        })
+
       }
     });
   }
@@ -256,7 +296,18 @@ export class PerfilesListComponent implements OnInit {
     });
   }
 
+  get perfilesFiltrados(): PerfilResponse[] {
+    if (!this.filtroPerfil.trim()) {
+      return this.perfiles;
+    }
 
+    const termino = this.filtroPerfil.trim().toLowerCase();
+
+    return this.perfiles.filter(perfil =>
+      perfil.nombre.toLowerCase().includes(termino) ||
+      perfil.id_perfil.toString().includes(termino)
+    );
+  }
 
   // ==================== Utilitarios ====================
   actualizarEstadoDelMenu(): void {
@@ -286,4 +337,11 @@ export class PerfilesListComponent implements OnInit {
     const marcar = (event.target as HTMLInputElement).checked;
     this.onToggleTodoOpcionesModulo(moduloId, marcar);
   }
+
+  cargarPerfiles(): void {
+    this.perfilesService.getPerfiles().subscribe(response => {
+      this.perfiles = response.data.filter(p => p.estado === true);
+    });
+  }
+
 }
