@@ -1,0 +1,45 @@
+<div class="zona-container">
+  <div class="zona-header">
+    <h2>Registro de Zonas</h2>
+    <button class="btn-nueva-zona" (click)="nuevaZona()">Nueva Zona</button>
+  </div>
+
+  <div class="zona-busqueda">
+    <label for="search">Buscar:</label>
+    <div class="input-wrapper">
+      <input
+        id="search"
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="search()"
+        placeholder="Referencia o nombre"
+      />
+      <img src="assets/icons/icon-buscar.png" alt="Buscar" />
+    </div>
+  </div>
+
+  <table class="zona-tabla">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Id Zona</th>
+        <th>Código Zona</th>
+        <th>Descripción</th>
+        <th>Opción</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let zona of filteredZonas; let i = index">
+        <td>{{ i + 1 }}</td>
+        <td>{{ zona.idZona }}</td>
+        <td>{{ zona.referencia }}</td>
+        <td>{{ zona.nombre }}</td>
+        <td>
+          <button class="icon-btn" (click)="editarZona(zona.idZona)">
+            <img src="assets/icons/icon-modificar-3.png" alt="Editar" />
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

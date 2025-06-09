@@ -1,9 +1,27 @@
-// Servicio Angular que incluye el llamado al backend y la generación del código EAN-13
-
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient,HttpParams } from '@angular/common/http';
 import { Observable, map, of } from 'rxjs';
 import { environment } from 'src/environments/environment';
+
+export interface SecuenciaRequest {
+  prefijo: string;
+  pais?: string; // opcional
+}
+
+export interface SecuenciaResponse {
+  id: string;
+  type: string;
+  data: number;
+  message: string;
+  count: number | null;
+}
+
+export interface ApiResponse<T> {
+  id: string;
+  type: string;
+  data: T;
+  message: string;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -20,6 +38,17 @@ export class GeneracionCodigosService {
       map(res => res?.numerover ?? 0)
     );
   }
+getUltimoRestoPresentacion(codpre: string,codbar:string, inicio: number, largo: number, longitudCodbar: number): Observable<ApiResponse<number>> {
+  const params = new HttpParams()
+    .set('codpre', codpre)
+    .set('codbarPrefix', codbar)
+    .set('inicio', inicio.toString())
+    .set('largo', largo.toString())
+    .set('longitudCodbar', longitudCodbar.toString());
+
+  return this.http.get<ApiResponse<number>>(`${this.baseUrl}/Producto/ultimo-resto-presentacion`, { params });
+}
+
 
   // Genera el código EAN-13 completo en base al prefijo y el secuencial
   generarCodigo13(prefijo: string, resto: number): string {
@@ -53,6 +82,7 @@ export class GeneracionCodigosService {
   }
 
   generarCodigo8(prefijo: string): string {
+    debugger
   const pais = '786';
   let ean = pais + prefijo;
   let suma = 0;
@@ -143,70 +173,80 @@ validarYGenerarCodigo8(baseCodigo: string): string | null {
 
 validarYGenerarCodigo12(input: string): string | null {
   if (input.length !== 11) {
-    alert("Ingrese solo 11 Números!!!");
+    alert("Ingrese solo 11 números!!!");
     return null;
   }
 
-  let iSum = 0;
-  let iDigit = 0;
-  let dg = 0;
-  const EAN = input.substring(0, 11);
+  let sum = 0;
 
-  const isEvenLength = EAN.length % 2 === 0;
-
-  for (let i = 0; i < EAN.length; i++) {
-    iDigit = parseInt(EAN.charAt(i), 10);
-
-    if ((i + 1) % 2 === (isEvenLength ? 0 : 1)) {
-      iSum += iDigit;
-    } else {
-      dg = iDigit * 3;
-      iSum += dg;
-    }
+  for (let i = 0; i < 11; i++) {
+    const digit = parseInt(input.charAt(i), 10);
+    // POSICIÓN desde la IZQUIERDA:
+    sum += (i % 2 === 0) ? digit * 3 : digit;
   }
 
-  const iCheckSum = (10 - (iSum % 10)) % 10;
-  const codigoFinal = EAN + iCheckSum.toString();
-  return codigoFinal;
+  const checkDigit = (10 - (sum % 10)) % 10;
+  return input + checkDigit.toString();
 }
+
+
 
 generarCodigo12N(prefijo: string, resto: number, longitud: number): string {
   let pro = '';
-  const pais = ''; // Puedes ajustar esto si necesitas incluir un prefijo de país
+  const pais = ''; // No se usa para GTIN-12 (UPC-A), así que queda vacío
 
-  const restoStr = resto.toString();
-  const lresto = restoStr.length;
+  // Calcular la parte restante con padding para que prefijo + pro = 11 caracteres
+  const longitudTotal = 11;
+  const padding = longitudTotal - prefijo.length;
 
-  // Padding basado en la longitud esperada
-  if (longitud === 6) {
-    pro = resto.toString().padStart(5, '0');
-  } else if (longitud === 7) {
-    pro = resto.toString().padStart(4, '0');
-  } else if (longitud === 8) {
-    pro = resto.toString().padStart(3, '0');
-  } else if (longitud === 9) {
-    pro = resto.toString().padStart(2, '0');
-  } else if (longitud === 10) {
-    pro = resto.toString();
-  }
+  pro = resto.toString().padStart(padding, '0');
 
-  const ean = pais + prefijo + pro;
+  const ean = prefijo + pro; // 11 dígitos
+  let sum = 0;
 
-  let iSum = 0;
   for (let i = 0; i < ean.length; i++) {
     const digit = parseInt(ean[i], 10);
-    if (ean.length % 2 === 0) {
-      iSum += (i % 2 === 0) ? digit : digit * 3;
+    // En GTIN-12 (UPC-A), las posiciones impares (0,2,4...) se multiplican por 3
+    sum += (i % 2 === 0) ? digit * 3 : digit;
+  }
+
+  const checkDigit = (10 - (sum % 10)) % 10;
+  return ean + checkDigit.toString(); // 12 dígitos
+}
+
+private apiBaseUrl = environment.invoicesUrl;
+
+ private apiUrl = this.apiBaseUrl + '/Producto/ultimo-resto';
+
+ 
+
+obtenerSecuencia(prefijo: string, pais?: string): Observable<SecuenciaResponse> {
+    let params = new HttpParams().set('prefijo', prefijo);
+    if (pais) {
+      params = params.set('pais', pais);
+    }
+
+    return this.http.get<SecuenciaResponse>(this.apiUrl, { params });
+  }
+
+generarCodigo14(pais: string, prefijo: string): string {
+  let codigoBase = pais + prefijo.substring(0, 12); // Concatena país + prefijo (máx 12 dígitos)
+  let suma = 0;
+
+  for (let i = 0; i < codigoBase.length; i++) {
+    const digito = parseInt(codigoBase.charAt(i), 10);
+
+    if ((codigoBase.length % 2 === 0 && i % 2 === 0) || (codigoBase.length % 2 !== 0 && i % 2 !== 0)) {
+      suma += digito;
     } else {
-      iSum += (i % 2 === 0) ? digit * 3 : digit;
+      suma += digito * 3;
     }
   }
 
-  const iCheckSum = (10 - (iSum % 10)) % 10;
-  const codigoFinal = ean + iCheckSum.toString();
+  const checksum = (10 - (suma % 10)) % 10;
+  const codigoCompleto = codigoBase + checksum;
 
-  return codigoFinal;
+  return codigoCompleto;
 }
-
 
 }

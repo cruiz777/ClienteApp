@@ -8,7 +8,7 @@ import { ApiListResponse } from '../interfaces/responses/ApiListResponse';
 
 @Injectable({ providedIn: 'root' })
 export class TipoDocumentoService {
-  private apiUrl = `${environment.applicationUrl}/TipoDocumento`;
+  private apiUrl = `${environment.securityApiUrl}/TipoDocumento`;
 
   constructor(private http: HttpClient) {}
 

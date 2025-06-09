@@ -60,7 +60,7 @@ export class DialogClienteComponent implements OnInit {
   formCliente!: FormGroup;
   selectedTab: number = 0;
   @ViewChild('stepper') stepper!: MatStepper;
- 
+
 
   grupos: GrupoEmpresa[] = [];
   grupoCtrl = new FormControl('');
@@ -145,8 +145,8 @@ export class DialogClienteComponent implements OnInit {
     console.log('----Usuario---');
     this.usuarioActual = this.usuarioService.getUsuarioActual();
 
-    
-    
+
+
     this.initFormulario();
 
     //this.obtenerUsuarioActual();
@@ -171,7 +171,7 @@ export class DialogClienteComponent implements OnInit {
         prefix: ['', Validators.required],
         zona: [null],
         codigoCliente: [{ value: '', disabled: false }],
-        //prefijo: [''], antes 
+        //prefijo: [''], antes
         prefijo: [{ value: '', disabled: true }],
         prefijogs1: [''],
         origen: [''],
@@ -423,7 +423,7 @@ export class DialogClienteComponent implements OnInit {
 
 
 
-  
+
 
   limpiarPais(): void {
     this.paso2Form.get('pais')?.reset();
@@ -641,15 +641,15 @@ export class DialogClienteComponent implements OnInit {
       delestado: 0,
       genero: '',
       infcamahabitacion: '',
-      empresaCodigo: this.usuarioActual?.IdEmpresa,
+      empresaCodigo: this.usuarioActual?.id_empresa,
       seguimiento: 0,
       fechaactinact: '2025-04-23',
       idEstadoEmpresa: 1,
       formatodocumento: 0,
       imprimeobstramite: 0,
-      idTipoCliente: paso1.categoriaCliente,// aqui llego en blanco 
+      idTipoCliente: paso1.categoriaCliente,// aqui llego en blanco
       idGrupoProducto: paso1.grupoProducto.id_grupo_producto,
-      idPersona: 8,
+      idPersona: 0, //Siempre al crear una persona esta en 0
       codigoPostal: paso2.codigoPostal || '',
       codigoPostal2: '',
       idVendedor: 1,
@@ -707,7 +707,7 @@ export class DialogClienteComponent implements OnInit {
     let pais: string = '';
     let codigogs1: string = ''
 
-    debugger
+    
     switch (prefix) {
       case '5':
         idControl = 70;
@@ -1299,13 +1299,13 @@ export class DialogClienteComponent implements OnInit {
         const id_prefijos = resultado[0].id_prefijos;
 
         const nuevoGln: GlnRequest = {
-          id_prefijos: id_prefijos,
+          idPrefijos: id_prefijos,
           clientesCodigo: codigoCliente,
           gln1: gln,
           idTipoLocalizacion: 12,
           glnLatitud: '0.0000',
           glnLongitud: '0.0000',
-          paisCodigo: 1,
+          idPais: 1,
           direccion: 'Calle Ejemplo 123',
           telefono: '12345678',
           fax: '',
@@ -1353,7 +1353,7 @@ export class DialogClienteComponent implements OnInit {
           latiM: '',
           latiS: '',
           latiE: '',
-          idUsuario: this.usuarioActual!.IdUsuario
+          idUsuario: this.usuarioActual!.id_usuario
 
         };
 
@@ -1531,8 +1531,8 @@ guardarTodasLasObservaciones(): void {
 
   const fechaActual = new Date().toISOString();
 
-  const idUsuario = this.usuarioActual?.IdUsuario || 0;
-  const nombreUsuario = this.usuarioActual?.NombreUsuario || '';
+  const idUsuario = this.usuarioActual?.id_usuario || 0;
+  const nombreUsuario = this.usuarioActual?.nombre_usuario || '';
   const clientesCodigo = paso1.codigoCliente || 0;
 
   const observaciones: ClienteObservacion[] = [

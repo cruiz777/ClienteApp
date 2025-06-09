@@ -176,3 +176,6 @@ textarea {
   gap: 16px;
   margin-top: 16px;
 }
+.input-verde {
+  background-color: #3df067 !important; /* verde claro */
+}

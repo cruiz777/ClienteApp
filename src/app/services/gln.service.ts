@@ -1,79 +1,57 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
-export interface GlnRequest {
-  id_prefijos: number;
-  clientesCodigo: number;
-  gln1: string;
-  idTipoLocalizacion: number;
-  glnLatitud: string;
-  glnLongitud: string;
-  paisCodigo: number;
-  direccion: string;
-  telefono: string;
-  fax: string;
-  contacto: string;
-  contactoTel: string;
-  email: string;
-  web: string;
-  fda: string;
-  europa: string;
-  glnGlobal: string;
-  glnFecha: string; // tipo string en formato "YYYY-MM-DD"
-  idCiudad: number;
-  glnCodigopostal: string;
-  glnCelular: string;
-  glnContacto2: string;
-  glnEmail2: string;
-  glnTel2: string;
-  glnContacto3: string;
-  glnEmail3: string;
-  glnTel3: string;
-  glnFacturar: string;
-  glnCodpro: string;
-  glnNombre: string;
-  glnOtro1: string;
-  glnOtro2: string;
-  glnObs1: string;
-  glnObs2: string;
-  glnOrigenprefijo: string;
-  glnPrefijogs1: string;
-  glnGlnp: string;
-  glnGlne: string;
-  nombreLocalizacion: string;
-  observ: string;
-  expprod: number;
-  gs1ec: number;
-  gs1latam: number;
-  gas1org: number;
-  google: number;
-  gs1otros: string;
-  longG: string;
-  longM: string;
-  longS: string;
-  longE: string;
-  latiG: string;
-  latiM: string;
-  latiS: string;
-  latiE: string;
-  idUsuario: number;
-}
+// ✅ Interfaces externas
+import { GlnRequest } from '../interfaces/requests/gln-request';
+import { GlnResponse } from '../interfaces/responses/gln-response';
+import { ApiResponse } from '../interfaces/responses/api-response';
 
 @Injectable({
   providedIn: 'root'
 })
 export class GlnService {
   private apiBaseUrl = environment.clientsUrl;
-  constructor(private http: HttpClient) { }
 
-  // insertarGln(data: GlnRequest): Observable<any> {
-  //   return this.http.post(`${this.apiBaseUrl}/Gln`, { request: data });
-  // }
-  
+  constructor(private http: HttpClient) {}
+
+  // ✅ POST /Gln
   insertarGln(data: { request: GlnRequest }): Observable<any> {
     return this.http.post(`${this.apiBaseUrl}/Gln`, data);
   }
 
+  // ✅ PUT /Gln/{id}
+  actualizarGln(id: number, data: GlnRequest): Observable<any> {
+    return this.http.put(`${this.apiBaseUrl}/Gln/${id}`, data);
+  }
+
+  // ✅ GET /Gln/{id}
+  obtenerGlnPorId(id: number): Observable<GlnResponse> {
+    return this.http.get<GlnResponse>(`${this.apiBaseUrl}/Gln/${id}`);
+  }
+
+  // ✅ DELETE /Gln/{id}
+  eliminarGln(id: number): Observable<any> {
+    return this.http.delete(`${this.apiBaseUrl}/Gln/${id}`);
+  }
+
+  // ✅ GET /Gln/cliente/{clienteCodigo}
+  obtenerGlnPorClienteCodigo(clienteCodigo: number): Observable<GlnResponse[]> {
+    return this.http.get<GlnResponse[]>(`${this.apiBaseUrl}/Gln/cliente/${clienteCodigo}`);
+  }
+
+  // ✅ GET /Gln
+  obtenerTodos(): Observable<GlnResponse[]> {
+    return this.http.get<GlnResponse[]>(`${this.apiBaseUrl}/Gln`);
+  }
+
+obtenerGlnPorIdPrefijo(idPrefijos: number): Observable<GlnResponse> {
+  return this.http.get<ApiResponse<GlnResponse>>(`${this.apiBaseUrl}/Gln/prefijo/${idPrefijos}`)
+    .pipe(map(({ data }: ApiResponse<GlnResponse>) => data));
 }
+}
+
+// ✅ Reexportar para que puedan importarse desde aquí
+export { GlnRequest } from '../interfaces/requests/gln-request';
+export { GlnResponse } from '../interfaces/responses/gln-response';

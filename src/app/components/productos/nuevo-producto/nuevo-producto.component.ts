@@ -70,6 +70,8 @@ export class NuevoProductoComponent implements OnInit {
     'contenidoUM', 'gcpBrick', 'pais', 'urlFoto'
   ];
 
+
+
   columnasGTIN14: string[] = [
     'id', 'g14', 'codbar', 'prefijo', 'presentacion', 'factor',
     'descripcion', 'fecha', 'estado'
@@ -78,6 +80,7 @@ export class NuevoProductoComponent implements OnInit {
   // Datos cargados
   registros: any[] = [];
   registrosGtin14: any[] = [];
+  bandera: number = 0;
   dataSource: any[] = [];
 
   constructor(
@@ -187,7 +190,7 @@ export class NuevoProductoComponent implements OnInit {
           g14: c.g14 || '',
           codbar: c.codbar || '',
           prefijo: c.codpre || '',
-          presentacion: c.presentacion || '',
+          presentacion: c.presentacion || 0,
           factor: c.unidad || '',
           descripcion: c.descripcion || '',
           fecha: (() => {
@@ -205,5 +208,7 @@ export class NuevoProductoComponent implements OnInit {
       }
     });
   }
+
+
 }
 

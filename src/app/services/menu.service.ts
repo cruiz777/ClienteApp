@@ -1,9 +1,11 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { MenuResponse } from '../interfaces/responses/menu-response';
 import { ApiResponse } from '../interfaces/responses/api-response';
 import { environment } from 'src/environments/environment';
+
+import { MenuResponse } from '../interfaces/responses/menu-response';
+import { MenusRequest } from '../interfaces/requests/menu-request'
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +13,7 @@ import { environment } from 'src/environments/environment';
 export class MenuService {
   private apiUrl = `${environment.applicationUrl}/Menus`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getPerfiles(): Observable<ApiResponse<MenuResponse[]>> {
     return this.http.get<ApiResponse<MenuResponse[]>>(this.apiUrl);
@@ -22,5 +24,9 @@ export class MenuService {
    */
   getMenusPorModulo(idModulo: number): Observable<ApiResponse<MenuResponse[]>> {
     return this.http.get<ApiResponse<MenuResponse[]>>(`${this.apiUrl}/modulo/${idModulo}`);
+  }
+
+  createMenu(data: MenusRequest): Observable<any> {
+    return this.http.post(this.apiUrl, data);
   }
 }

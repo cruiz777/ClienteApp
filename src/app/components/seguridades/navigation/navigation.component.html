@@ -77,7 +77,7 @@
           <mat-expansion-panel-header>
             <mat-panel-title>
               <img src="assets/icons/icon-mantenimiento.png" class="menu-icon">
-              <span *ngIf="isExpanded" class="menu-text">Mantenimiento</span>
+              <span *ngIf="isExpanded" class="menu-text">Configuración</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
 
@@ -86,11 +86,20 @@
             <span *ngIf="isExpanded" class="menu-text">Empresas</span>
           </a>
 
-          <a mat-list-item routerLink="/seguridades/localizacion">
+          <a mat-list-item routerLink="/seguridades/zonas">
             <!-- <img src="assets/icons/icon-localizacion.png" class="menu-icon"> -->
-            <span *ngIf="isExpanded" class="menu-text">Localización</span>
+            <span *ngIf="isExpanded" class="menu-text">Zona</span>
           </a>
 
+          <a mat-list-item routerLink="/seguridades/segmento-negocio">
+            <!-- <img src="assets/icons/icon-localizacion.png" class="menu-icon"> -->
+            <span *ngIf="isExpanded" class="menu-text">Segmento de Negocio</span>
+          </a>
+
+          <a mat-list-item routerLink="/seguridades/proyectos">
+            <!-- <img src="assets/icons/icon-localizacion.png" class="menu-icon"> -->
+            <span *ngIf="isExpanded" class="menu-text">Proyectos</span>
+          </a>
         </mat-expansion-panel>
 
       </mat-accordion>

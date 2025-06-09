@@ -344,4 +344,61 @@ export class PerfilesListComponent implements OnInit {
     });
   }
 
+  crearEntidad(tipo: 'sistema' | 'modulo' | 'menu' | 'opcion'): void {
+    let idRelacionado: number | null = null;
+
+    if (tipo === 'modulo') {
+      const sistema = this.sistemas.find(s => s.nombre === this.sistemaActivo);
+      idRelacionado = sistema?.id_sistema ?? null;
+      if (!idRelacionado) return alert('❌ No hay sistema activo seleccionado.');
+    }
+
+    if (tipo === 'menu') {
+      if (!this.moduloSeleccionado) return alert('❌ Selecciona un módulo primero.');
+      idRelacionado = this.moduloSeleccionado;
+    }
+
+    if (tipo === 'opcion') {
+      if (!this.menuSeleccionado) return alert('❌ Selecciona un menú primero.');
+      idRelacionado = this.menuSeleccionado;
+    }
+
+    const dialogRef = this.dialog.open(PerfilesFormComponent, {
+      width: '400px',
+      data: {
+        tipo,
+        idRelacionado
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((resultado) => {
+      if (resultado === true) {
+        if (tipo === 'sistema') {
+          this.sistemaService.getSistemas().subscribe(response => {
+            this.sistemas = response.data;
+          });
+        }
+
+        if (tipo === 'modulo') {
+          const sistema = this.sistemas.find(s => s.nombre === this.sistemaActivo);
+          if (sistema) {
+            this.moduloService.getModulosPorSistema(sistema.id_sistema).subscribe(resp => {
+              this.modulos = resp.data;
+            });
+          }
+        }
+
+        if (tipo === 'menu' && this.moduloSeleccionado) {
+          this.seleccionarModulo(this.moduloSeleccionado);
+        }
+
+        if (tipo === 'opcion' && this.menuSeleccionado) {
+          this.seleccionarMenu(this.menuSeleccionado);
+        }
+      }
+    });
+  }
+
+
+
 }

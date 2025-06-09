@@ -12,7 +12,7 @@ import { ApiListResponse } from '../interfaces/responses/ApiListResponse';
 export class PersonasService {
   private apiUrl = `${environment.securityApiUrl}/Personas`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   /**
    * Obtener todas las personas
@@ -33,6 +33,26 @@ export class PersonasService {
         console.log('Persona cargada:', response.data);
         return response.data;
       })
+    );
+  }
+
+  /**
+ * Buscar persona por número de documento (cédula o RUC)
+ */
+  buscarPersonaPorDocumento(numero: string): Observable<PersonaResponse[]> {
+    return this.http.get<ApiListResponse<PersonaResponse[]>>(`${this.apiUrl}/documento/${numero}`).pipe(
+      map(response => response.data)
+    );
+  }
+
+  /**
+   * Buscar personas por nombre
+   */
+  buscarPersonasPorNombre(nombre: string): Observable<PersonaResponse[]> {
+    return this.http.get<ApiListResponse<PersonaResponse[]>>(`${this.apiUrl}/buscar`, {
+      params: { nombre }
+    }).pipe(
+      map(response => response.data)
     );
   }
 
