@@ -158,29 +158,99 @@ export class CustomValidators {
     return null;
   }
 
-static cuentaKeyPress(event: KeyboardEvent): void {
-  const input = event.target as HTMLInputElement;
-  const key = event.key;
+  static cuentaKeyPress(event: KeyboardEvent): void {
+    const input = event.target as HTMLInputElement;
+    const key = event.key;
 
-  // Permitir teclas especiales
-  if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(key)) return;
+    // Permitir teclas especiales
+    if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(key)) return;
 
-  const currentValue = input.value;
+    const currentValue = input.value;
 
-  // Prevenir letras o símbolos
-  if (!/^\d$/.test(key)) {
-    event.preventDefault();
-    return;
+    // Prevenir letras o símbolos
+    if (!/^\d$/.test(key)) {
+      event.preventDefault();
+      return;
+    }
+
+    // Agregar guion automáticamente en la posición 6
+    if (currentValue.length === 6) {
+      input.value += '-';
+    }
+
+    // Limitar longitud total a 10 caracteres (000000-000)
+    if (currentValue.length >= 10) {
+      event.preventDefault();
+    }
   }
 
-  // Agregar guion automáticamente en la posición 6
-  if (currentValue.length === 6) {
-    input.value += '-';
+  static onlyFormattedLatLng(control: AbstractControl): ValidationErrors | null {
+    const value = control.value;
+    if (value == null || value === '') return null;
+
+    const stringValue = value.toString().trim();
+
+    // Permitir hasta 3 dígitos enteros + decimales opcionales (punto o coma)
+    const regex = /^-?\d{1,4}([.,]\d{1,15})?$/;
+    if (!regex.test(stringValue)) {
+      return { onlyFormattedLatLng: true };
+    }
+
+    // Normalizar: eliminar separadores de miles y unificar el decimal
+    const normalized = stringValue
+      .replace(/\.(?=\d{3}(?:[.,]|$))/g, '') // elimina puntos de miles
+      .replace(/,(?=\d{3}(?:[.,]|$))/g, '')  // elimina comas de miles
+      .replace(',', '.'); // unifica a punto decimal
+
+    const parsed = parseFloat(normalized);
+
+    // Validar rango de coordenadas
+    if (isNaN(parsed)) return { onlyFormattedLatLng: true };
+    if (parsed < -180 || parsed > 180) return { outOfBounds: true };
+
+    return null;
+  }
+  static validarLatitud(control: AbstractControl): ValidationErrors | null {
+    const valor = control.value;
+    if (valor == null || valor === '') return null;
+
+    const stringValue = valor.toString().trim();
+    const regex = /^-?\d{1,3}([.,]\d{1,15})?$/;
+    if (!regex.test(stringValue)) {
+      return { formatoInvalido: true };
+    }
+
+    const normalizado = stringValue
+      .replace(/\.(?=\d{3}(?:[.,]|$))/g, '')
+      .replace(/,(?=\d{3}(?:[.,]|$))/g, '')
+      .replace(',', '.');
+
+    const numero = parseFloat(normalizado);
+    if (isNaN(numero)) return { formatoInvalido: true };
+    if (numero < -90 || numero > 90) return { fueraDeRango: true };
+
+    return null;
   }
 
-  // Limitar longitud total a 10 caracteres (000000-000)
-  if (currentValue.length >= 10) {
-    event.preventDefault();
+  static validarLongitud(control: AbstractControl): ValidationErrors | null {
+    const valor = control.value;
+    if (valor == null || valor === '') return null;
+
+    const stringValue = valor.toString().trim();
+    const regex = /^-?\d{1,3}([.,]\d{1,15})?$/;
+    if (!regex.test(stringValue)) {
+      return { formatoInvalido: true };
+    }
+
+    const normalizado = stringValue
+      .replace(/\.(?=\d{3}(?:[.,]|$))/g, '')
+      .replace(/,(?=\d{3}(?:[.,]|$))/g, '')
+      .replace(',', '.');
+
+    const numero = parseFloat(normalizado);
+    if (isNaN(numero)) return { formatoInvalido: true };
+    if (numero < -180 || numero > 180) return { fueraDeRango: true };
+
+    return null;
   }
-}
 }

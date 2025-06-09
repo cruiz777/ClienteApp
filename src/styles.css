@@ -20,4 +20,30 @@ html, body {
 }
 
 html, body { height: 100%; }
-body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+}
+
+/*PopUps para mensajes*/
+.toast-container {
+  z-index: 9999 !important;
+}
+
+:host {
+  overflow: visible !important;
+}
+.toast-top-right {
+  top: 75px !important; /* Para que no se pegue al header */
+  right: 20px !important;
+}
+
+.toast-container .ngx-toastr {
+  margin-bottom: 12px; /* Espacio entre cada toast */
+  box-shadow: 0px 2px 12px rgba(0,0,0,0.3);
+  border-left: 4px solid #ffc107; /* Amarillo tipo advertencia */
+  background-color: #002c6c !important; /* Azul corporativo */
+  color: #fff !important;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+}

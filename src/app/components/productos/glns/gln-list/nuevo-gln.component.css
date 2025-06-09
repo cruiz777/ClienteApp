@@ -113,10 +113,10 @@
 
 .form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px 30px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 15px 20px;
+  align-items: end;
   margin-bottom: 25px;
-  align-items: center;
 }
 
 .form-grid-3col {
@@ -207,5 +207,29 @@ button[disabled] {
 
   @media (max-width: 768px) {
     height: 250px;
+  }
+}
+::ng-deep .toast-warning {
+  background-color: #ffffff !important; 
+  border-left: 5px solid #ffc107;
+  color: #003366;
+  font-weight: bold;
+}
+.btn-corporativo {
+  background-color: #005aa7 !important; /* Azul corporativo */
+  color: white !important;
+  font-weight: 500;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+  &:hover:not(:disabled) {
+    background-color: #004b8d !important; /* Azul más oscuro */
+  }
+
+  &:disabled {
+    background-color: #a0a0a0 !important;
+    color: #eeeeee !important;
+    cursor: not-allowed;
+    box-shadow: none;
   }
 }
