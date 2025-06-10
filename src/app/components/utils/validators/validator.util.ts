@@ -215,7 +215,7 @@ export class CustomValidators {
     if (valor == null || valor === '') return null;
 
     const stringValue = valor.toString().trim();
-    const regex = /^-?\d{1,3}([.,]\d{1,15})?$/;
+    const regex = /^-?\d{1,3}([.,]\d{1,20})?$/;
     if (!regex.test(stringValue)) {
       return { formatoInvalido: true };
     }
@@ -230,6 +230,37 @@ export class CustomValidators {
     if (numero < -90 || numero > 90) return { fueraDeRango: true };
 
     return null;
+  }
+  static latLngKeyPress(event: KeyboardEvent): void {
+    const input = event.target as HTMLInputElement;
+    const char = event.key;
+
+    const valor = input.value;
+    const isSelection = input.selectionStart !== input.selectionEnd;
+
+    // Permitir teclas especiales
+    if (['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(char)) return;
+
+    // Permitir solo un '-' al inicio
+    if (char === '-') {
+      if (valor.includes('-') || input.selectionStart !== 0) {
+        event.preventDefault();
+      }
+      return;
+    }
+
+    // Permitir solo un punto o coma
+    if (char === '.' || char === ',') {
+      if (valor.includes('.') || valor.includes(',') || isSelection) {
+        event.preventDefault();
+      }
+      return;
+    }
+
+    // Permitir solo números
+    if (!/[0-9]/.test(char)) {
+      event.preventDefault();
+    }
   }
 
   static validarLongitud(control: AbstractControl): ValidationErrors | null {

@@ -18,6 +18,9 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ToastrService } from 'ngx-toastr';
 import { RequiredFieldsToastService } from 'src/app/components/utils/messages/required-fields-toast.service';
+import * as moment from 'moment';
+import * as html2pdf from 'html2pdf.js';
+import { ExportService } from 'src/app/services/export.service';
 
 @Component({
   selector: 'app-nuevo-gln',
@@ -27,7 +30,7 @@ import { RequiredFieldsToastService } from 'src/app/components/utils/messages/re
 export class GlnComponent implements OnInit {
   formGln!: FormGroup;
   pasoActual: number = 1;
-
+  public CustomValidators = CustomValidators;
   tiposLocalizacion: TipoLocalizacionResponse[] = [];
   prefijos: PrefijoClienteResponse[] = [];
   ciudades: CiudadResumen[] = [];
@@ -38,6 +41,7 @@ export class GlnComponent implements OnInit {
   cantones: { id: number; nombre: string }[] = [];
 
   clienteActual: Cliente | null = null;
+  activeTab: string = 'Informacion'; // valores posibles: 'Informacion' | 'GLNs'
 
   glnsDelPrefijo: GlnResponse[] = [];   
   glnsPorPrefijo: GlnResponse[] = [];   
@@ -48,7 +52,10 @@ export class GlnComponent implements OnInit {
   evitandoEventos = false;
   evitandoEventosUbicacion = false;
   ciudadAutocompleteControl = new FormControl<CiudadResumen | string>(''); 
-  
+  filtroGLN: string = '';
+  glnsFiltrados: GlnResponse[] = [];
+  glnsPorCliente: GlnResponse[] = [];
+
   constructor(
     private fb: FormBuilder,
     private prefijoService: PrefijoService,
@@ -60,7 +67,8 @@ export class GlnComponent implements OnInit {
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private toastr: ToastrService,
-    private toastCampos: RequiredFieldsToastService
+    private toastCampos: RequiredFieldsToastService,
+    private exportService: ExportService
   ) {}
 
   compareCiudad(a: any, b: any): boolean {
@@ -173,8 +181,27 @@ export class GlnComponent implements OnInit {
     });
 
     this.formGln.get('glnLatitud')?.valueChanges
-      .pipe(distinctUntilChanged())
-      .subscribe(value => this.convertirALatitudGMS(value));
+    .pipe(distinctUntilChanged())
+    .subscribe(value => {
+      if (typeof value === 'string' && value.includes(',')) {
+        const partes = value.split(',').map(p => p.trim());
+        const lat = partes[0];
+        const lng = partes[1];
+
+        if (!isNaN(+lat) && !isNaN(+lng)) {
+          this.formGln.patchValue({
+            glnLatitud: lat,
+            glnLongitud: lng
+          });
+          this.convertirALatitudGMS(lat);
+          this.convertirALongitudGMS(lng);
+          return;
+        }
+      }
+
+      // Si no hay coma, procesa como latitud sola
+      this.convertirALatitudGMS(value);
+    });
 
     this.formGln.get('glnLongitud')?.valueChanges
       .pipe(distinctUntilChanged())
@@ -221,7 +248,23 @@ export class GlnComponent implements OnInit {
         this.formGln.patchValue({ idCiudad: this.ciudadesFiltradas[0].id });
       }
     });
-
+    combineLatest([
+      this.formGln.get('latiG')!.valueChanges,
+      this.formGln.get('latiM')!.valueChanges,
+      this.formGln.get('latiS')!.valueChanges,
+      this.formGln.get('latiE')!.valueChanges,
+      this.formGln.get('longG')!.valueChanges,
+      this.formGln.get('longM')!.valueChanges,
+      this.formGln.get('longS')!.valueChanges,
+      this.formGln.get('longE')!.valueChanges
+    ]).subscribe(() => {
+      if (this.modoEdicion) {
+        this.convertirGMSaCoordenadas();
+      }
+    });
+    if (this.activeTab === 'GLNs') {
+      this.cargarGlnsPorCliente();
+    }
     this.formGln.get('idCiudad')?.valueChanges
       .pipe(distinctUntilChanged())
       .subscribe(ciudadId => {
@@ -360,47 +403,55 @@ export class GlnComponent implements OnInit {
     this.formGln.patchValue({ idCiudad: ciudad.id });
   }
 
-  private cargarGlnDesdePrefijos(idPrefijos: number): void {
+private cargarGlnDesdePrefijos(idPrefijos: number): void {
   const prefijo = this.prefijos.find(p => p.id_prefijos === idPrefijos);
 
-    if (!prefijo) {
-      this.alertaGln = '❌ Prefijo no encontrado.';
-      this.glnsPorPrefijo = [];
-      return;
-    }
+  if (!prefijo) {
+    this.alertaGln = '❌ Prefijo no encontrado.';
+    this.glnsPorPrefijo = [];
+    return;
+  }
 
-    const glns = prefijo.glns || [];
+  const glns = prefijo.glns || [];
 
-    if (glns.length === 0) {
-      this.alertaGln = '⚠️ No se encontraron GLNs para el prefijo seleccionado.';
-      this.glnsPorPrefijo = [];
-      return;
-    }
-
-    this.alertaGln = null;
-    this.glnsPorPrefijo = glns;
-    this.glnsDelPrefijo = glns;
+  if (glns.length === 0) {
+    this.alertaGln = '⚠️ No se encontraron GLNs para el prefijo seleccionado.';
+    this.glnsDelPrefijo = [];
+    this.glnsPorPrefijo = [];
     this.glnIndex = 0;
 
-    this.cargarGlnActual();
-    this.setCamposUbicacionHabilitados(false);
-    this.setCamposGeneralesSoloLectura();
+    // ✅ Limpieza segura y controlada
+    const datosGenerales = {
+      clientesCodigo: this.formGln.get('clientesCodigo')?.value,
+      documentoIdentidad: this.formGln.get('documentoIdentidad')?.value,
+      nomCli: this.formGln.get('nomCli')?.value,
+      glnOrigenprefijo: prefijo.origenPrefijo,
+      glnPrefijogs1: prefijo.codpre,
+      idPrefijos: prefijo.id_prefijos
+    };
+
+    this.formGln.reset();
+    this.formGln.patchValue(datosGenerales);
+    this.ciudadAutocompleteControl.reset();
+
+    // Bloqueamos pasos opcionales si no hay GLN
+    this.setCamposUbicacionHabilitados(true);
+    this.bloquearCamposPaso(2, true);
+    this.bloquearCamposPaso(3, true);
+
+    return;
   }
-  mostrarToast(mensaje: string): void {
-    this.snackBar.open(mensaje, 'Cerrar', {
-      duration: 5000,
-      verticalPosition: 'top',
-      horizontalPosition: 'right',
-      panelClass: ['custom-snackbar']
-    });
-  }
-  mostrarToastPorCampos(campos: string[]): void {
-    campos.forEach((campo, i) => {
-      setTimeout(() => {
-        this.toastr.warning(`Campo requerido: ${campo}`, 'Atención');
-      }, i * 300);
-    });
-  }
+
+  // En caso de que sí haya GLNs
+  this.alertaGln = null;
+  this.glnsDelPrefijo = glns;
+  this.glnsPorPrefijo = glns;
+  this.glnIndex = 0;
+
+  this.cargarGlnActual();
+  this.setCamposUbicacionHabilitados(false);
+  this.setCamposGeneralesSoloLectura();
+}
 
 actualizarCoordenadas(event: { lat: number, lng: number }): void {
   this.formGln.patchValue({
@@ -757,7 +808,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
   guardar(): void {
     if (this.formGln.invalid) {
       this.formGln.markAllAsTouched();
-      alert('❌ Por favor, completa todos los campos requeridos antes de guardar.');
+      alert('Por favor, completa todos los campos requeridos antes de guardar.');
       return;
     } 
     const ciudadCtrlValor = this.ciudadAutocompleteControl.value;
@@ -835,19 +886,44 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     };
 
     const callback = () => {
-    const clienteCodigo = this.formGln.value.clientesCodigo;
+       console.log('📥 Ejecutando callback de actualización...');
+      const idGln = this.formGln.get('idGln')?.value;
 
-    if (clienteCodigo) {
-      this.prefijoService.obtenerPrefijosPorClienteCodigo(clienteCodigo).subscribe(res => {
-        this.prefijos = res;
-        const idPrefijo = this.formGln.value.idPrefijos;
-        this.cargarGlnDesdePrefijos(idPrefijo);
-        this.modoEdicion = false;
-      });
-    }
+      if (idGln && idGln > 0) {
+        this.glnService.obtenerGlnPorId(idGln).subscribe({
+          next: (glnActualizadoResponse) => {
+            console.log('🔄 GLN actualizado recibido del backend:', glnActualizadoResponse);
 
-    this.pasoActual = 1;
-  };
+            const glnData = glnActualizadoResponse.data;
+            this.cargarDatosDesdeGlnResponse(glnData); // ✅ ahora es del tipo correcto
+            this.modoEdicion = false;
+            this.pasoActual = 1;
+
+            // Opcional: recargar prefijos si también deseas que la navegación GLN se actualice
+            const clienteCodigo = this.formGln.value.clientesCodigo;
+            if (clienteCodigo) {
+              this.prefijoService.obtenerPrefijosPorClienteCodigo(clienteCodigo).subscribe(prefijos => {
+                this.prefijos = prefijos;
+                const idPrefijo = this.formGln.value.idPrefijos;
+
+                this.cargarGlnDesdePrefijos(idPrefijo);
+
+                // Restaurar índice del GLN actualizado
+                const index = this.glnsPorPrefijo.findIndex(g => g.id_gln === idGln);
+                if (index !== -1) {
+                  this.glnIndex = index;
+                  this.cargarGlnActual();
+                }
+              });
+            }
+          },
+          error: (err) => {
+            console.error('❌ Error al recargar GLN después de guardar', err);
+            this.mostrarMensajeBox('Error', 'El GLN se guardó, pero no se pudo recargar los datos.', 'warning');
+          }
+        });
+      }
+    };
 
   console.log('🛰️ Payload que se va a enviar:', data);
   console.log('📌 idGln en el payload:', data.id_gln);
@@ -879,6 +955,41 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     });
   }
 }
+  private convertirGMSaDecimal(grados: string, minutos: string, segundos: string, hemisferio: 'N' | 'S' | 'E' | 'O'): number {
+    const g = parseFloat(grados);
+    const m = parseFloat(minutos);
+    const s = parseFloat(segundos);
+    if (isNaN(g) || isNaN(m) || isNaN(s)) return 0;
+
+    let decimal = g + m / 60 + s / 3600;
+    if (hemisferio === 'S' || hemisferio === 'O') {
+      decimal *= -1;
+    }
+    return decimal;
+  }
+  
+  convertirGMSaCoordenadas(): void {
+    const latiG = this.formGln.get('latiG')?.value;
+    const latiM = this.formGln.get('latiM')?.value;
+    const latiS = this.formGln.get('latiS')?.value;
+    const latiE = (this.formGln.get('latiE')?.value || '').toUpperCase();
+
+    const longG = this.formGln.get('longG')?.value;
+    const longM = this.formGln.get('longM')?.value;
+    const longS = this.formGln.get('longS')?.value;
+    const longE = (this.formGln.get('longE')?.value || '').toUpperCase();
+
+    if (!latiG || !latiM || !latiS || !latiE || !longG || !longM || !longS || !longE) return;
+
+    const latDecimal = this.convertirGMSaDecimal(latiG, latiM, latiS, latiE);
+    const longDecimal = this.convertirGMSaDecimal(longG, longM, longS, longE);
+
+    this.formGln.patchValue({
+      glnLatitud: latDecimal.toFixed(7),
+      glnLongitud: longDecimal.toFixed(7)
+    }, { emitEvent: false });
+  }
+
   convertirALatitudGMS(valor: string): void {
     if (!this.modoEdicion || !valor || isNaN(+valor)) return;
 
@@ -973,7 +1084,67 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     this.ciudadAutocompleteControl.reset();
   }
 
+  cambiarTab(tab: string): void {
+    this.activeTab = tab;
+    if (tab === 'GLNs') {
+      if (!this.glnsPorCliente || this.glnsPorCliente.length === 0) {
+        this.cargarGlnsPorCliente();
+      } else {
+        this.aplicarFiltroGLN();
+      }
+    }
+  }
 
+  aplicarFiltroGLN(): void {
+    const filtro = this.filtroGLN.toLowerCase().trim();
+    if (!filtro) {
+      this.glnsFiltrados = [...this.glnsPorCliente];
+      console.log('🔍 Filtro vacío, mostrando todos:', this.glnsFiltrados.length);
+      return;
+    }
+    
+    this.glnsFiltrados = this.glnsPorCliente.filter(gln =>
+      (gln.gln1 || '').toLowerCase().includes(filtro) ||
+      (gln.nombreLocalizacion || '').toLowerCase().includes(filtro) ||
+      (gln.contacto || '').toLowerCase().includes(filtro) ||
+      (gln.direccion || '').toLowerCase().includes(filtro) ||
+      (this.obtenerNombreCiudad(gln.idCiudad) || '').toLowerCase().includes(filtro) ||
+      (this.obtenerNombrePais(gln.idPais) || '').toLowerCase().includes(filtro)
+    );
+    
+    console.log('🔎 Resultados filtrados:', this.glnsFiltrados.length);
+  }
+
+
+  obtenerNombreCiudad(idCiudad: number): string {
+    const ciudad = this.ciudades.find(c => c.id === idCiudad);
+    return ciudad ? `${ciudad.ciudad}, ${ciudad.provincia}` : '';
+  }
+
+  obtenerNombrePais(idPais: number): string {
+    const pais = this.paises.find(p => p.idPais === idPais);
+    return pais ? pais.nombre : '';
+  }
+
+  cargarGlnsPorCliente(): void {
+    const clienteCodigo = this.clienteActual?.clientes_codigo;
+
+    if (!clienteCodigo) {
+      this.alertaGln = '⚠️ No hay cliente seleccionado.';
+      return;
+    }
+
+    this.glnService.obtenerGlnsPorCliente(clienteCodigo).subscribe({
+      next: (res) => {
+        this.glnsPorCliente = res.data ?? [];
+        this.glnsFiltrados = [...this.glnsPorCliente]; // Inicializar la vista sin filtro
+      },
+      error: (err) => {
+        console.error('❌ Error al cargar GLNs por cliente', err);
+        this.alertaGln = 'No se pudo cargar los GLNs.';
+      }
+    });
+  }
 
   bloquearCamposPaso(paso: number, bloquear: boolean): void {
     if (paso === 2) {
@@ -997,22 +1168,30 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
 
     this.formGln.reset();
 
-    // Restaurar solo los campos deseados
     this.formGln.patchValue({
-      ...datosGenerales,
-      idTipoLocalizacion: null // este se limpia
+      clientesCodigo: datosGenerales.clientesCodigo,
+      documentoIdentidad: datosGenerales.documentoIdentidad,
+      nomCli: datosGenerales.nomCli,
+      glnOrigenprefijo: datosGenerales.glnOrigenprefijo,
+      glnPrefijogs1: datosGenerales.glnPrefijogs1,
+      idTipoLocalizacion: null
     });
 
+    // Este lo seteas *aparte* sin emitir evento
+    this.formGln.get('idPrefijos')?.patchValue(datosGenerales.idPrefijos, { emitEvent: false });
+
     this.pasoActual = 1;
-
     this.setCamposUbicacionHabilitados(true);
-    this.bloquearCamposPaso(2, false); // contactos
-    this.bloquearCamposPaso(3, false); // certificados
-
+    this.bloquearCamposPaso(2, false);
+    this.bloquearCamposPaso(3, false);
     this.modoEdicion = true;
+    this.glnsDelPrefijo = [];
+    this.glnsPorPrefijo = [];
+    this.glnIndex = 0;
+    this.ciudadAutocompleteControl.reset();
 
+    // Aquí sí puedes consultar prefijo y generar GLN como ya lo haces
     const prefijo = this.prefijos.find(p => p.id_prefijos === datosGenerales.idPrefijos);
-
     if (prefijo) {
       const codigoPais = '786';
       this.glnService.obtenerUltimaSecuenciaGln(codigoPais, prefijo.codpre).subscribe({
@@ -1038,9 +1217,6 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       this.alertaGln = 'Debe seleccionar un prefijo válido antes de generar un nuevo GLN.';
     }
   }
-
-
-
 
   setCamposUbicacionHabilitados(habilitado: boolean): void {
     const campos = [
@@ -1071,5 +1247,124 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     if (this.ciudadesFiltradas.length > 0) {
       this.formGln.patchValue({ idCiudad: this.ciudadesFiltradas[0].id });
     }
+  }
+
+  //Exportar a PDF
+  async exportarPDF(): Promise<void> {
+    const raw = this.formGln.getRawValue();
+    const ciudad = this.ciudades.find(c => c.id === raw.idCiudad);
+    const pais = this.paises.find(p => p.idPais === raw.idPais);
+    const tipoLoc = this.tiposLocalizacion.find(t => t.id_tipo_cliente === raw.idTipoLocalizacion);
+
+    const latGMS = `${raw.latiG || '00'}°${raw.latiM || '00'}'${raw.latiS || '00'}" ${raw.latiE || ''}`;
+    const longGMS = `${raw.longG || '00'}°${raw.longM || '00'}'${raw.longS || '00'}" ${raw.longE || ''}`;
+
+    const logoUrl = 'assets/img/codbar-logo.png'; // ← asegúrate que este logo exista en tu proyecto
+    const firmaUrl = 'assets/img/firma-gs1.png';  // ← firma opcional
+
+    const logoBase64 = await this.exportService['obtenerLogoBase64'](logoUrl);
+    // const firmaBase64 = await this.exportService['obtenerLogoBase64'](firmaUrl);
+
+    const contenido = `
+      <div style="font-family: Arial; font-size: 11px; padding: 20px;">
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <img src="${logoBase64}" style="height: 60px;" />
+          <div style="text-align: right;">
+            <strong>Emisor:</strong> GS1 Ecuador<br>
+            <strong>Fecha emisión:</strong> ${moment().format('DD/MM/YYYY')}<br>
+            <strong>Pág:</strong> 1
+          </div>
+        </div>
+
+        <h3 style="text-align: center; margin-bottom: 5px;">Sistema de Control de Códigos</h3>
+        <h4 style="text-align: center; margin-top: 0;">Informe Global Location Number</h4>
+
+        <table border="1" cellpadding="6" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
+          <tr><td colspan="2"><strong>GLOBAL LOCATION NUMBER (GLN)</strong></td></tr>
+          <tr><td colspan="2" style="text-align: center;"><strong>${raw.gln1}</strong></td></tr>
+
+          <tr><td colspan="2"><strong>LOCALIZACIÓN / LOCATION</strong></td></tr>
+          <tr>
+            <td>LOCALIZACIÓN / LOCATION:</td><td>${raw.localizacion}</td>
+          </tr>
+          <tr>
+            <td>RUC / IDENTIFICACIÓN NUMBER:</td><td>${this.clienteActual?.ruc ?? ''}</td>
+          </tr>
+          <tr>
+            <td>EMPRESA / COMPANY:</td><td>${this.clienteActual?.nomcli ?? ''}</td>
+          </tr>
+          <tr>
+            <td>REPRESENTANTE LEGAL / LEGAL REPRESENTATIVE:</td><td>${this.clienteActual?.nomcli ?? ''}</td>
+          </tr>
+
+          <tr><td colspan="2"><strong>LOCALIZACIÓN / LOCATION</strong></td></tr>
+          <tr><td>TIPO DE LOCALIZACIÓN / LOCATION TYPE:</td><td>${tipoLoc?.descripcion ?? ''}</td></tr>
+          <tr><td>LATITUD / LATITUDE:</td><td>${latGMS}</td></tr>
+          <tr><td>LONGITUD / LENGTH:</td><td>${longGMS}</td></tr>
+          <tr><td>PAÍS / COUNTRY:</td><td>${pais?.nombre ?? ''}</td></tr>
+          <tr><td>PROVINCIA / STATE:</td><td>${ciudad?.provincia ?? ''}</td></tr>
+          <tr><td>CIUDAD / CITY:</td><td>${ciudad?.ciudad ?? ''}</td></tr>
+          <tr><td>DIRECCIÓN / ADDRESS:</td><td>${raw.direccion}</td></tr>
+          <tr><td>TELÉFONO / PHONE:</td><td>${raw.telefono}</td></tr>
+          <tr><td>CÓDIGO POSTAL:</td><td>${raw.glnCodigopostal}</td></tr>
+          <tr><td>EMAIL:</td><td>${raw.email}</td></tr>
+          <tr><td>PÁGINA WEB / WEBSITE:</td><td>${raw.web}</td></tr>
+
+          <tr><td colspan="2"><strong>CERTIFICADOS / CERTIFICATES</strong></td></tr>
+          <tr><td>FDA:</td><td>${raw.fda ?? ''}</td></tr>
+          <tr><td>EUROPA U:</td><td>${raw.europa ?? ''}</td></tr>
+          <tr><td>GLOBAL GAP:</td><td>${raw.glnGlobal ?? ''}</td></tr>
+          <tr><td>OTRO 1:</td><td>${raw.glnOtro1 ?? ''}</td></tr>
+          <tr><td>OTRO 2:</td><td>${raw.glnOtro2 ?? ''}</td></tr>
+
+          <tr><td colspan="2"><strong>CONTACTO / CONTACT</strong></td></tr>
+          <tr><td>NOMBRE / NAME:</td><td>${raw.contacto ?? ''}</td></tr>
+          <tr><td>EMAIL:</td><td>${raw.email ?? ''}</td></tr>
+          <tr><td>TELÉFONO / PHONE:</td><td>${raw.contactoTel ?? ''}</td></tr>
+        </table>
+
+        <div style="margin-top: 30px; text-align: center;">
+        
+          <span style="font-size: 11px;">Firma Autorizada GS1 Ecuador</span>
+        </div>
+      </div>
+    `;
+
+    const opt = {
+      margin: 0.5,
+      filename: `GLN_${raw.gln1 || 'informe'}_${moment().format('YYYYMMDD_HHmmss')}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2 },
+      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+
+    html2pdf().from(contenido).set(opt).save();
+  }
+
+  //Exportar a Excel
+  async exportarGLNsExcel(): Promise<void> {
+    const headers = ['GLN', 'Localización', 'Dirección', 'Teléfono', 'Contacto', 'Email', 'Ciudad', 'País'];
+    const columns = ['gln1', 'nombreLocalizacion', 'direccion', 'telefono', 'contacto', 'email', 'ciudad', 'pais'];
+
+    const data = this.glnsFiltrados.map(gln => ({
+      gln1: gln.gln1,
+      nombreLocalizacion: gln.nombreLocalizacion,
+      direccion: gln.direccion,
+      telefono: gln.telefono,
+      contacto: gln.contacto,
+      email: gln.email,
+      ciudad: this.obtenerNombreCiudad(gln.idCiudad),
+      pais: this.obtenerNombrePais(gln.idPais)
+    }));
+
+    await this.exportService.exportarExcel({
+      data,
+      columns,
+      headers,
+      filename: 'GLNs',
+      title: 'Listado de GLNs por Prefijo',
+      logoUrl: 'assets/img/codbar-logo.png'
+    });
   }
 }

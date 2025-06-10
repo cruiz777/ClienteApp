@@ -22,6 +22,7 @@ import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatMenuModule } from '@angular/material/menu';
 
 @NgModule({
   declarations: [
@@ -48,7 +49,8 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
     MatOptionModule,
     MatAutocompleteModule,
     SharedModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    MatMenuModule
   ],
   exports: [NavigationProductoComponent]
 })

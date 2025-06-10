@@ -4,6 +4,7 @@ import { ToastrService } from 'ngx-toastr';
 @Injectable({
   providedIn: 'root'
 })
+//Servicio para POPUPS generico
 export class RequiredFieldsToastService {
   constructor(private toastr: ToastrService) {}
 
@@ -12,12 +13,15 @@ export class RequiredFieldsToastService {
 
     const mensajeHTML = campos.map(campo => `• ${campo}`).join('<br>');
 
-    this.toastr.warning(mensajeHTML, '⚠️ Campos requeridos', {
+    this.toastr.warning(mensajeHTML, 'Campos requeridos', {
       disableTimeOut: true,
       closeButton: true,
       enableHtml: true,
       tapToDismiss: false,
       positionClass: 'toast-top-right'
     });
+  }
+  cerrar(): void {
+    this.toastr.clear();
   }
 }

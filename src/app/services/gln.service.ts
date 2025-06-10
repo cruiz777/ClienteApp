@@ -27,8 +27,8 @@ export class GlnService {
   }
 
   // ✅ GET /Gln/{id}
-  obtenerGlnPorId(id: number): Observable<GlnResponse> {
-    return this.http.get<GlnResponse>(`${this.apiBaseUrl}/Gln/${id}`);
+  obtenerGlnPorId(id: number): Observable<ApiResponse<GlnResponse>> {
+    return this.http.get<ApiResponse<GlnResponse>>(`${this.apiBaseUrl}/Gln/${id}`);
   }
 
   // ✅ DELETE /Gln/{id}
@@ -55,7 +55,9 @@ obtenerUltimaSecuenciaGln(codigoPais: string, prefijo: string): Observable<numbe
   const url = `${this.apiBaseUrl}/Gln/ultima-secuencia?codigoPais=${codigoPais}&prefijo=${prefijo}`;
   return this.http.get<number>(url);
 }
-
+  obtenerGlnsPorCliente(clienteCodigo: number): Observable<ApiResponse<GlnResponse[]>> {
+    return this.http.get<ApiResponse<GlnResponse[]>>(`${this.apiBaseUrl}/Gln/cliente/${clienteCodigo}`);
+  }
 }
 
 // ✅ Reexportar para que puedan importarse desde aquí
