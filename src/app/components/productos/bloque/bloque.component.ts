@@ -7,8 +7,11 @@ import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionad
 import { Cliente } from 'src/app/interfaces/cliente';
 import { GeneracionCodigosService, SecuenciaResponse } from 'src/app/services/generacion-codigos.service';
 import { CheckboxRendererComponent } from '../checkbox-renderer/checkbox-renderer.component';
-
+import { GcpBrickAutocompleteEditorComponent } from '../gcp-brick-autocomplete-editor/gcp-brick-autocomplete-editor.component';
+import { UmedidaService } from 'src/app/services/umedida.service';
+import { GrupoProductoService } from 'src/app/services/grupo-producto.service';
 ModuleRegistry.registerModules([AllCommunityModule]);
+import { MatSnackBar } from '@angular/material/snack-bar';
 
 @Component({
   selector: 'app-bloque',
@@ -33,16 +36,26 @@ export class BloqueComponent implements OnInit {
   bandera = 0;
   selectedColKey: string | null = null;
   checkMaestro: boolean = false;
+  unidadesDisponibles: string[] = [];
+  mapaUnidades: { [unidad: string]: string } = {};  // código → descripción
+
+  gcpBricksDisponibles: { codigo: string, descripcion: string }[] = [];
+
 
   private gridApi!: GridApi;
   gridOptions: GridOptions = {
     components: {
-      checkboxRenderer: CheckboxRendererComponent
+      checkboxRenderer: CheckboxRendererComponent,
+      gcpBrickAutocompleteEditor: GcpBrickAutocompleteEditorComponent
     }
   };
 
+
+
+
   public frameworkComponents = {
-    checkboxRenderer: CheckboxRendererComponent
+    checkboxRenderer: CheckboxRendererComponent,
+    gcpBrickAutocompleteEditor: GcpBrickAutocompleteEditorComponent
   };
 
   prefijos: any[] = [];
@@ -55,7 +68,10 @@ export class BloqueComponent implements OnInit {
     private fb: FormBuilder,
     private generacionCodigosService: GeneracionCodigosService,
     private prefijoService: PrefijoService,
-    private clienteSeleccionadoService: ClienteSeleccionadoService
+    private clienteSeleccionadoService: ClienteSeleccionadoService,
+    private umedidaService: UmedidaService,
+    private grupoProductoService: GrupoProductoService,
+    private _snackBar: MatSnackBar,
   ) {
     this.formUV = this.fb.group({
       gcp: ['', Validators.required],
@@ -72,37 +88,68 @@ export class BloqueComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.gridOptions.context = {
+      componentParent: this
+    };
     this.cargarCliente();
+    this.cargarUnidades();
+    this.cargarGrupos();
     this.columnDefs = [
       { headerName: '#', valueGetter: 'node.rowIndex + 1', width: 60 },
-      { field: 'gtinUv', headerName: 'GTIN UV', editable: true, cellStyle: { backgroundColor: 'yellow' } },
+      { field: 'gtinUv', headerName: 'GTIN UV', editable: true, cellStyle: { backgroundColor: 'yellow' }, width: 150, minWidth: 150 },
       {
         field: 'descripcion',
         headerName: 'Descripción',
         editable: true,
-        cellStyle: this.estiloDescripcionVacia
+        cellStyle: this.estiloDescripcionVacia, width: 300, minWidth: 300
       },
-      { field: 'categoria', headerName: 'Categoría', cellStyle: this.estiloDescripcionVacia },
-      { field: 'marca', headerName: 'Marca', editable: true, cellStyle: this.estiloDescripcionVacia },
-      { field: 'contenidoNeto', headerName: 'Contenido Neto', editable: true, cellStyle: this.estiloDescripcionVacia,valueParser: this.validarNumeroConUnPunto },
-      { field: 'contenidoUM', headerName: 'Contenido UM', editable: true, cellStyle: this.estiloDescripcionVacia },
-      { field: 'gcpBrick', headerName: 'GCP Brick', cellStyle: this.estiloDescripcionVacia },
-      { field: 'pais', headerName: 'País', cellStyle: this.estiloDescripcionVacia },
+      {
+        field: 'categoria',
+        headerName: 'Categoría',
+        editable: true,
+        cellEditor: 'gcpBrickAutocompleteEditor',
+        cellEditorPopup: true, // ✅ Este es el más importante
+        cellStyle: this.estiloDescripcionVacia,width: 100,  minWidth: 100
+       
+      },
+      { field: 'marca', headerName: 'Marca', editable: true, cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100 },
+      { field: 'contenidoNeto', headerName: 'C.Neto', editable: true, cellStyle: this.estiloDescripcionVacia, valueParser: this.validarNumeroConUnPunto, width: 90, minWidth: 90 },
+      {
+        field: 'contenidoUM',
+        headerName: 'UM',
+        editable: true,
+        cellEditor: 'agSelectCellEditor',
+        cellEditorParams: () => ({
+          values: this.unidadesDisponibles
+        }),
+        cellStyle: this.estiloDescripcionVacia, width: 95, minWidth:95
+      },
+
+      {
+        field: 'gcpBrick',
+        headerName: 'GCP Brick',
+        editable: false,
+        cellStyle: this.estiloDescripcionVacia,width: 100,  minWidth: 100
+       
+      }
+
+
+      ,
+      { field: 'pais', headerName: 'País', cellStyle: this.estiloDescripcionVacia,width: 70, minWidth: 70 },
       {
         field: 'activo',
         headerName: 'GTIN 14',
         cellRenderer: 'checkboxRenderer',
-        editable: false,
-        width: 100
+        editable: false
+        , width: 80, minWidth: 80
       },
-      { field: 'factor', headerName: 'Factor', cellStyle: this.estiloDescripcionVacia },
-      { field: 'indicador', headerName: 'Indicador', cellStyle: this.estiloDescripcionVacia },
-      { field: 'descripciong', headerName: 'Descripción', cellStyle: this.estiloDescripcionVacia },
-      { field: 'gtin14', headerName: 'CODIGO GTIN 14', cellStyle: this.estiloDescripcionVacia },
+      { field: 'factor', headerName: 'Factor', cellStyle: this.estiloDescripcionVacia, width: 80, minWidth: 80 },
+      { field: 'indicador', headerName: 'Indicador', cellStyle: this.estiloDescripcionVacia , width: 100, minWidth: 100},
+      { field: 'descripciong', headerName: 'Descripción', cellStyle: this.estiloDescripcionVacia , width: 200, minWidth: 200},
+      { field: 'gtin14', headerName: 'CODIGO GTIN 14', cellStyle: this.estiloDescripcionVacia, width: 150, minWidth: 150 },
     ];
 
   }
-
   onGridReady(params: any) {
     this.gridApi = params.api;
 
@@ -115,6 +162,8 @@ export class BloqueComponent implements OnInit {
     });
   }
 
+
+
   @HostListener('paste', ['$event'])
   manejarPegado(event: ClipboardEvent) {
     const data = event.clipboardData?.getData('text/plain');
@@ -125,6 +174,7 @@ export class BloqueComponent implements OnInit {
 
 
   generarFilas(): void {
+    debugger
     if (!this.cantidadFilas || this.cantidadFilas <= 0) return;
 
     const nuevasFilas = [];
@@ -134,8 +184,8 @@ export class BloqueComponent implements OnInit {
         descripcion: '',
         categoria: 'AL_CONF',
         marca: '',
-        contenidoNeto: '9',
-        contenidoUM: '',
+        contenidoNeto: '0',
+        contenidoUM: 'g',
         gcpBrick: '10006848',
         pais: 'EC',
         activo: false
@@ -152,6 +202,7 @@ export class BloqueComponent implements OnInit {
     this.cantidadFilas = 0;
     this.textoPegado = '';
     this.mensaje = '';
+     this.formUV.get('gtinNacionalSeleccionado')?.setValue('gtin13');
   }
 
 
@@ -168,7 +219,7 @@ export class BloqueComponent implements OnInit {
   generarGtin13() {
     const prefijo = this.formUV.get('gcp')?.value;
     if (!prefijo) {
-      alert('⚠️ Ingresa un prefijo de 5 dígitos');
+      alert('⚠️ Ingresa un prefijo ');
       return;
     }
 
@@ -238,52 +289,71 @@ export class BloqueComponent implements OnInit {
     }
   }
 
-  generar(): void {
-    const idSeleccionado = this.formUV.value.gcp;
-    let prefijo: string = '';
-    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
-    if (objeto?.gln) {
-      prefijo = objeto.codpre;
-    }
-
-    const serie = this.formUV.get('serie')?.value || '';
-    if (!prefijo || prefijo.length !== 5) {
-      alert('⚠️ Ingresa un prefijo válido de 5 dígitos');
-      return;
-    }
-
-    this.npais = '786';
-
-    this.generacionCodigosService.obtenerSecuencia(prefijo, this.npais).subscribe({
-      next: (resp: SecuenciaResponse) => {
-        this.secuencia = serie !== '' ? parseInt(serie, 10) : resp.data;
-        if (!this.validarAfiliacion(this.secuencia)) return;
-
-        this.mensaje = resp.message;
-
-        for (let i = 0; i < this.rowData.length; i++) {
-          const secuenciaActual = (this.secuencia + i).toString().padStart(4, '0');
-          const gtin13 = '786' + prefijo + secuenciaActual;
-          const dv = this.calcularDigitoVerificador(gtin13);
-          this.rowData[i].gtinUv = gtin13 + dv;
-        }
-
-        const primerGtin = '786' + prefijo + this.secuencia.toString().padStart(4, '0');
-        const primerDv = this.calcularDigitoVerificador(primerGtin);
-        this.formUV.get('gtinUv')?.setValue(primerGtin + primerDv);
-
-        this.rowData = [...this.rowData];
-      },
-      error: (err) => {
-        console.error('❌ Error al obtener secuencia', err);
-        this.mensaje = 'Error al generar la secuencia';
-      }
-    });
+generar(): void {
+  const idSeleccionado = this.formUV.value.gcp;
+  let prefijo: string = '';
+  const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+  if (objeto?.gln) {
+    prefijo = objeto.codpre;
   }
+
+  const serie = this.formUV.get('serie')?.value || '';
+  if (!prefijo) {
+    alert('⚠️ Ingresa un prefijo válido');
+    return;
+  }
+
+  this.verificarUnidad();
+  this.npais = '786';
+
+  this.generacionCodigosService.obtenerSecuencia(prefijo, this.npais).subscribe({
+    next: (resp: SecuenciaResponse) => {
+      this.secuencia = serie !== '' ? parseInt(serie, 10) : resp.data;
+      if (!this.validarAfiliacion(this.secuencia)) return;
+
+      this.mensaje = resp.message;
+
+      const longitudPrefijo = prefijo.length;
+      const longitudSecuencia = 12 - this.npais.length - longitudPrefijo;
+
+      if (longitudSecuencia <= 0) {
+        alert(`⚠️ Prefijo demasiado largo (${longitudPrefijo} dígitos). No se puede generar GTIN-13 válido.`);
+        return;
+      }
+
+      const maxCodigos = Math.pow(10, longitudSecuencia); // Ej: 10, 100, 1000...
+      if (this.rowData.length > maxCodigos) {
+        alert(`⚠️ Solo se pueden generar ${maxCodigos} códigos con prefijo de ${longitudPrefijo} dígitos. Se recortarán automáticamente.`);
+        this.rowData = this.rowData.slice(0, maxCodigos);
+      }
+
+      for (let i = 0; i < this.rowData.length; i++) {
+        const secuenciaActual = (this.secuencia + i).toString().padStart(longitudSecuencia, '0');
+        const gtin12 = this.npais + prefijo + secuenciaActual;
+        const dv = this.calcularDigitoVerificador(gtin12);
+        this.rowData[i].gtinUv = gtin12 + dv;
+      }
+
+      const secuenciaActual = this.secuencia.toString().padStart(longitudSecuencia, '0');
+      const primerGtin = this.npais + prefijo + secuenciaActual;
+      const primerDv = this.calcularDigitoVerificador(primerGtin);
+      this.formUV.get('gtinUv')?.setValue(primerGtin + primerDv);
+
+      this.rowData = [...this.rowData];
+    },
+    error: (err) => {
+      console.error('❌ Error al obtener secuencia', err);
+      this.mensaje = 'Error al generar la secuencia';
+    }
+  });
+}
+
+
 
   pegarColumnaGtinUv(): void {
     if (!this.textoPegado.trim()) {
-      alert('⚠️ No hay datos para pegar.');
+      this.mostrarAlerta('⚠️ No hay datos para pegar.', 'Error');
+      
       return;
     }
 
@@ -358,18 +428,85 @@ export class BloqueComponent implements OnInit {
     }
   }
   validarNumeroConUnPunto(params: any): number | null {
-  const value = String(params.newValue).trim();
+    const value = String(params.newValue).trim();
 
-  // Solo números con un punto
-  const regex = /^\d*\.?\d*$/;
+    // Solo números con un punto
+    const regex = /^\d*\.?\d*$/;
 
-  if (regex.test(value)) {
-    // Acepta solo un punto y dígitos
-    const parsed = parseFloat(value);
-    return isNaN(parsed) ? null : parsed;
-  } else {
-    return params.oldValue; // mantiene el valor anterior si no es válido
+    if (regex.test(value)) {
+      // Acepta solo un punto y dígitos
+      const parsed = parseFloat(value);
+      return isNaN(parsed) ? null : parsed;
+    } else {
+      return params.oldValue; // mantiene el valor anterior si no es válido
+    }
   }
-}
+  verificarUnidad(): void {
+    const promesas: Promise<void>[] = [];
+
+    this.gridApi.forEachNode((node, index) => {
+      const unidad = node.data['contenidoUM'];
+
+      if (unidad) {
+        const p = new Promise<void>((resolve) => {
+          this.umedidaService.obtenerUnidadPorNombre(unidad).subscribe({
+            next: () => {
+              console.log(`✅ Fila ${index}: Unidad válida → ${unidad}`);
+            },
+            error: () => {
+              console.warn(`⛔ Fila ${index}: Unidad inválida → "${unidad}"`);
+              node.setDataValue('contenidoUM', '');
+            }
+          });
+
+        });
+
+        promesas.push(p);
+      }
+    });
+
+    Promise.all(promesas).then(() => {
+      this.gridApi.refreshCells({ force: true });
+    });
+  }
+
+  cargarUnidades(): void {
+    this.umedidaService.obtenerUnidades().subscribe({
+      next: (data) => {
+        this.unidadesDisponibles = data.map(u => u.unidad);
+        this.mapaUnidades = Object.fromEntries(data.map(u => [u.unidad, u.descripcion]));
+      },
+      error: (err) => {
+        console.error('Error al cargar unidades de medida:', err);
+        this.unidadesDisponibles = [];
+        this.mapaUnidades = {};
+      }
+    });
+
+  }
+
+  cargarGrupos(): void {
+    this.grupoProductoService.obtenerGrupos().subscribe({
+      next: (grupos) => {
+        this.gcpBricksDisponibles = grupos.map(g => ({
+          codigo: g.codigo,
+          descripcion: g.desBrick,
+          brick:g.brick
+        }));
+      },
+      error: (err) => {
+        console.error('Error al cargar GCP Bricks:', err);
+        this.gcpBricksDisponibles = [];
+      }
+    });
+  }
+
+mostrarAlerta(mensaje: string, tipo: string) {
+    this._snackBar.open(mensaje, tipo, {
+      horizontalPosition: "end",
+      verticalPosition: "top",
+      duration: 3000
+    });
+  }
 
 }

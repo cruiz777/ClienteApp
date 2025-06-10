@@ -24,6 +24,7 @@ import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSelectModule } from '@angular/material/select';
 
 import { CheckboxRendererComponent } from './checkbox-renderer/checkbox-renderer.component';
+import { GcpBrickAutocompleteEditorComponent } from './gcp-brick-autocomplete-editor/gcp-brick-autocomplete-editor.component';
 
 // Formularios
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -38,7 +39,8 @@ import { AgGridAngular } from 'ag-grid-angular';
   declarations: [
     NavigationProductoComponent,
     BloqueComponent,
-    CheckboxRendererComponent
+    CheckboxRendererComponent,
+    GcpBrickAutocompleteEditorComponent
   ],
   imports: [
     CommonModule,
@@ -60,7 +62,8 @@ import { AgGridAngular } from 'ag-grid-angular';
     MatDialogModule,
     MatSnackBarModule,
     MatOptionModule,
-    MatSelectModule
+    MatSelectModule,
+    AgGridAngular
   ],
   exports: [
     NavigationProductoComponent,

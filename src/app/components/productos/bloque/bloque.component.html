@@ -105,22 +105,33 @@
   </div>
 </div>
 
-<button mat-raised-button color="primary" (click)="limpiarTabla()">Nuevo</button>
-<button mat-raised-button color="primary" (click)="generar()">Generar</button>
-<button mat-raised-button color="primary" (click)="generar()">Grabar</button>
-<mat-checkbox [(ngModel)]="checkMaestro" (change)="marcarTodosDesdeMaestro()">
-  Activar todos
-</mat-checkbox>
-<button mat-raised-button color="primary" (click)="generar()">Generar GTIN 14</button>
-<button mat-raised-button color="primary" (click)="generar()">Grabar GTIN 14</button>
+<div style="display: flex; flex-wrap: wrap; gap: 8px;">
+  <button mat-raised-button color="primary" (click)="limpiarTabla()">Nuevo</button>
+  <button mat-raised-button color="primary" (click)="generar()">Generar</button>
+  <button mat-raised-button color="primary" (click)="generar()">Grabar</button>
+  <mat-checkbox [(ngModel)]="checkMaestro" (change)="marcarTodosDesdeMaestro()">Activar todos</mat-checkbox>
+  <button mat-raised-button color="primary" (click)="generar()">Generar GTIN 14</button>
+  <button mat-raised-button color="primary" (click)="generar()">Grabar GTIN 14</button>
+</div>
+
 <!-- Tabla AG-Grid -->
 <!-- Campo oculto para capturar Ctrl+V -->
 
 
-<ag-grid-angular style="width: 100%; height: 400px;" class="ag-theme-alpine" [rowData]="rowData"
-  [columnDefs]="columnDefs" [defaultColDef]="defaultColDef" [gridOptions]="gridOptions"
-  (gridReady)="onGridReady($event)">
-</ag-grid-angular>
+<div class="contenedor-grid">
+  <ag-grid-angular
+    class="ag-theme-alpine"
+    style="width: 100%; height: 400px;"
+    [rowData]="rowData"
+    [columnDefs]="columnDefs"
+    [defaultColDef]="defaultColDef"
+    [gridOptions]="gridOptions"
+    [domLayout]="'normal'"
+    (gridReady)="onGridReady($event)">
+  </ag-grid-angular>
+</div>
+
+
 
 
 

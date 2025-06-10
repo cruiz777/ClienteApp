@@ -411,3 +411,7 @@ mat-form-field {
   accent-color: #3f51b5; /* Material Indigo */
   box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.3);
 }
+.contenedor-grid {
+  overflow-x: auto; /* Habilita scroll horizontal */
+  max-width: 100%;
+}
