@@ -6,7 +6,6 @@ import { ApiResponse } from '../interfaces/responses/api-response';
 
 import { SistemaResponse } from '../interfaces/responses/sistema-response';
 import { SistemasRequest } from '../interfaces/requests/sistema-request';
-import { ApiListResponse } from '../interfaces/responses/ApiListResponse';
 
 @Injectable({
   providedIn: 'root'
@@ -24,11 +23,11 @@ export class SistemaService {
   }
 
   softDelete(id: number): Observable<ApiResponse<boolean>> {
-    return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/softDelete/${id}`,{});
+    return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/softDelete/${id}`, {});
   }
 
-  updateSistema(id: number): Observable<ApiResponse<boolean>> {
-    return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/${id}`, {});
+  updateSistema(id: number, data: SistemasRequest): Observable<ApiResponse<boolean>> {
+    return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/${id}`, data);
   }
 
 }

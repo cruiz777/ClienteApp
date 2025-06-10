@@ -19,6 +19,7 @@ import { PersonasService } from 'src/app/services/personas.service';
 import { PerfilResponse } from 'src/app/interfaces/responses/perfil-response';
 import { DepartamentoResponse } from 'src/app/interfaces/responses/departamentos-response';
 import { UsuariosRequest, UsuariosEditRequest } from 'src/app/interfaces/requests/usuario-request';
+import { LoginUsuarioResponse } from 'src/app/interfaces/responses/usuario-log-response';
 
 // Diálogo de mensajes
 import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
@@ -62,6 +63,7 @@ export class UsuariosFormComponent implements OnInit {
   busquedaEntidad = '';
   resultadosEntidad: any[] = [];
   mostrarFormulario = false;
+  usuarioActual: LoginUsuarioResponse[] = [];
 
   constructor(
     private fb: FormBuilder,
@@ -70,7 +72,7 @@ export class UsuariosFormComponent implements OnInit {
     public perfilService: PerfilesService,
     public departamentoService: DepartamentosService,
     private dialog: MatDialog,
-    private usuario: UsuarioService,
+    private usuarioservice: UsuarioService,
     private persona: PersonasService
   ) { }
 
@@ -84,6 +86,8 @@ export class UsuariosFormComponent implements OnInit {
       estado: [{ value: 'activo', disabled: true }],
       departamento: ['', Validators.required],
     });
+
+    this.usuarioActual = this.usuarioservice.getUsuarioActual();
 
     this.cargarPerfiles();
     this.cargarDepartamentos();
@@ -148,7 +152,7 @@ export class UsuariosFormComponent implements OnInit {
         id_departamento: formData.departamento
       };
 
-      this.usuario.updateUsuario(formData.perfil, requestEdit).subscribe({
+      this.usuarioservice.updateUsuario(formData.perfil, requestEdit).subscribe({
         next: () => this.dialogRef.close(true),
         error: (err) => {
           console.error('❌ Error recibido del backend:', err);
@@ -170,7 +174,7 @@ export class UsuariosFormComponent implements OnInit {
       console.log('📤 Enviando request:', request);
       console.log('📌 ID Perfil:', formData.perfil);
 
-      this.usuario.createUsuario(formData.perfil, request).subscribe({
+      this.usuarioservice.createUsuario(formData.perfil, request).subscribe({
         next: () => {
           // Mostrar mensaje antes de cerrar
           this.dialog.open(CustomMessageBoxComponent, {
@@ -276,7 +280,7 @@ export class UsuariosFormComponent implements OnInit {
   }
 
   validarEntidadYaTieneUsuario(entidad: any): void {
-    this.usuario.getUsuarioByIdPersona(entidad.personaCodigo).subscribe({
+    this.usuarioservice.getUsuarioByIdPersona(entidad.personaCodigo,).subscribe({
       next: (res) => {
         if (res.data) {
           this.dialog.open(CustomMessageBoxComponent, {

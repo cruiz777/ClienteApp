@@ -80,8 +80,8 @@ export class UsuarioService {
     return this.http.get<ApiResponse<UsuariosResponse>>(`${this.apiUrl}/${idUsuario}`);
   }
 
-  getUsuarioByIdPersona(idUsuario: number): Observable<ApiResponse<UsuariosResponse>> {
-    return this.http.get<ApiResponse<UsuariosResponse>>(`${this.apiUrl}/persona/${idUsuario}`);
+  getUsuarioByIdPersona(idPersona: number, idEmpresa: number): Observable<ApiResponse<UsuariosResponse>> {
+    return this.http.get<ApiResponse<UsuariosResponse>>(`${this.apiUrl}/persona/${idPersona}/empresa/${idEmpresa}`);
   }
 
   buscarEntidadPorRuc(idUsuario: string): Observable<ApiResponse<any>> {

@@ -70,7 +70,7 @@ export class PerfilesListComponent implements OnInit {
     this.cargarPerfiles();
 
     this.sistemaService.getSistemas().subscribe(response => {
-      this.sistemas = response.data;
+      this.sistemas = response.data.filter(s => s.status === true);
       if (this.sistemas.length > 0) {
         const sistema = this.sistemas[0];
         this.sistemaActivo = sistema.nombre;
@@ -376,7 +376,7 @@ export class PerfilesListComponent implements OnInit {
       if (resultado === true) {
         if (tipo === 'sistema') {
           this.sistemaService.getSistemas().subscribe(response => {
-            this.sistemas = response.data;
+            this.sistemas = response.data.filter(s => s.status === true);
           });
         }
 
@@ -475,7 +475,7 @@ export class PerfilesListComponent implements OnInit {
   recargarEntidad(tipo: string): void {
     switch (tipo) {
       case 'sistema':
-        this.sistemaService.getSistemas().subscribe(r => this.sistemas = r.data);
+        this.sistemaService.getSistemas().subscribe(r => this.sistemas = r.data.filter(s => s.status === true));
         break;
       case 'modulo':
         const sistema = this.sistemas.find(s => s.nombre === this.sistemaActivo);

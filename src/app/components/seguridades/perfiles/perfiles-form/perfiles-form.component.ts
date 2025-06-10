@@ -107,7 +107,7 @@ export class PerfilesFormComponent implements OnInit {
           status: true
         };
         if (this.idGeneral) {
-          this.moduloService.updateModulo(this.idGeneral).subscribe({
+          this.moduloService.updateModulo(this.idGeneral, moduloRequest).subscribe({
             next: () => this.dialogRef.close(true),
             error: () => alert('❌ Error al actualizar el módulo.')
           });
@@ -127,7 +127,7 @@ export class PerfilesFormComponent implements OnInit {
           status: true
         };
         if (this.idGeneral) {
-          this.menuService.updateMenu(this.idGeneral).subscribe({
+          this.menuService.updateMenu(this.idGeneral, menuRequest).subscribe({
             next: () => this.dialogRef.close(true),
             error: () => alert('❌ Error al actualizar el menú.')
           });
@@ -147,7 +147,7 @@ export class PerfilesFormComponent implements OnInit {
           status: true
         };
         if (this.idGeneral) {
-          this.opcionService.updateOpcion(this.idGeneral).subscribe({
+          this.opcionService.updateOpcion(this.idGeneral, opcionRequest).subscribe({
             next: () => this.dialogRef.close(true),
             error: () => alert('❌ Error al actualizar la opción.')
           });
@@ -167,7 +167,7 @@ export class PerfilesFormComponent implements OnInit {
           status: true
         };
         if (this.idGeneral) {
-          this.sistemaService.updateSistema(this.idGeneral).subscribe({
+          this.sistemaService.updateSistema(this.idGeneral, sistemaRequest).subscribe({
             next: () => this.dialogRef.close(true),
             error: () => alert('❌ Error al actualizar el sistema.')
           });
