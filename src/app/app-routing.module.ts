@@ -33,7 +33,7 @@ const routes: Routes = [
     { path: 'nuevoProducto', component: NuevoProductoComponent },
     { path: 'clienteSeleccion', component: ClienteSeleccionadoComponent},
     { path: 'uvIndividual', component: UvIndividualComponent },
-    { path: 'nuevoGln', component: GlnComponent }
+    { path: 'nuevoGln', component: GlnComponent },
     { path: 'bloque', component: BloqueComponent }
    ]
 },

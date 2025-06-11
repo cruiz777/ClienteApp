@@ -72,9 +72,9 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
       timeOut: 5000,
       closeButton: true,
       progressBar: true
-    })
+    }),
     HotTableModule,
-      AgGridModule,
+    AgGridModule,
   ],
 
   providers: [

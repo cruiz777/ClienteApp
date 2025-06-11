@@ -63,7 +63,7 @@ export class UsuariosFormComponent implements OnInit {
   busquedaEntidad = '';
   resultadosEntidad: any[] = [];
   mostrarFormulario = false;
-  usuarioActual: LoginUsuarioResponse[] = [];
+  usuarioActual = this.usuarioservice.getUsuarioActual();
 
   constructor(
     private fb: FormBuilder,
@@ -76,6 +76,7 @@ export class UsuariosFormComponent implements OnInit {
     private persona: PersonasService
   ) { }
 
+
   ngOnInit(): void {
     this.usuarioForm = this.fb.group({
       usuario: ['', [Validators.required]],
@@ -86,8 +87,6 @@ export class UsuariosFormComponent implements OnInit {
       estado: [{ value: 'activo', disabled: true }],
       departamento: ['', Validators.required],
     });
-
-    this.usuarioActual = this.usuarioservice.getUsuarioActual();
 
     this.cargarPerfiles();
     this.cargarDepartamentos();
@@ -280,7 +279,7 @@ export class UsuariosFormComponent implements OnInit {
   }
 
   validarEntidadYaTieneUsuario(entidad: any): void {
-    this.usuarioservice.getUsuarioByIdPersona(entidad.personaCodigo,).subscribe({
+    this.usuarioservice.getUsuarioByIdPersona(entidad.personaCodigo,this.usuarioActual!.id_empresa).subscribe({
       next: (res) => {
         if (res.data) {
           this.dialog.open(CustomMessageBoxComponent, {
