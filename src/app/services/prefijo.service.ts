@@ -65,5 +65,9 @@ obtenerPrefijosPorClienteCodigo(clientesCodigo: number): Observable<PrefijoClien
     params: { clientesCodigo }
   }).pipe(map(response => response.data as PrefijoClienteResponse[]));
 }
-
+obtenerPrefijosGlnPorClienteCodigo(clientesCodigo: number): Observable<PrefijoClienteResponse[]> {
+  return this.http.get<any>(`${this.apiBaseUrl}/prefijo-gln/CodpreCliente`, {
+    params: { clientesCodigo }
+  }).pipe(map(response => response.data as PrefijoClienteResponse[]));
+}
 }

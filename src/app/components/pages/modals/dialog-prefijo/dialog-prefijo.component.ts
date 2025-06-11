@@ -462,7 +462,7 @@ console.log('✅ Prefijo leído con getRawValue():', prefijo);
         const id_prefijos = resultado[0].id_prefijos;
 
         const nuevoGln: GlnRequest = {
-          idPrefijos: id_prefijos,
+          id_prefijos: id_prefijos,
           clientesCodigo: codigoCliente,
           gln1: gln,
           idTipoLocalizacion: 12,

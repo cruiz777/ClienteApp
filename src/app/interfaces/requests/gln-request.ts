@@ -1,6 +1,6 @@
 export interface GlnRequest {
-  idGln?: number;
-  idPrefijos: number;
+  id_gln?: number;
+  id_prefijos: number;
   clientesCodigo: number;
   gln1: string;
   idTipoLocalizacion: number;

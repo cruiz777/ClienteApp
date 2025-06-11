@@ -33,6 +33,7 @@ import { ConfirmDialogComponent } from './components/reusable/confirm-dialog/con
 import { UppercaseDirective } from './directives/uppercase.directive';
 import { ModalImpresionComponent } from './components/shared/modal-impresion/modal-impresion.component';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { ToastrModule } from 'ngx-toastr';
 
 
 export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
@@ -64,6 +65,13 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     AppRoutingModule,
     ReusableModule,
     NgxMaskModule.forRoot(),
+    ToastrModule.forRoot({
+      positionClass: 'toast-top-right',
+      preventDuplicates: false,   // << permite mostrar varios
+      timeOut: 5000,
+      closeButton: true,
+      progressBar: true
+    })
   ],
 
   providers: [
