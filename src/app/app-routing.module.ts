@@ -10,6 +10,7 @@ import { NuevoProductoComponent } from './components/productos/nuevo-producto/nu
 import { AuthGuard } from './guards/auth.guard';
 import { ClienteSeleccionadoComponent } from './components/productos/cliente-seleccionado/cliente-seleccionado.component';
 import { GlnComponent } from './components/productos/glns/gln-list/nuevo-gln.component';
+import { BloqueComponent } from './components/productos/bloque/bloque.component';
 
 const routes: Routes = [
   {path:'',redirectTo:'login',pathMatch:'full'},
@@ -33,6 +34,7 @@ const routes: Routes = [
     { path: 'clienteSeleccion', component: ClienteSeleccionadoComponent},
     { path: 'uvIndividual', component: UvIndividualComponent },
     { path: 'nuevoGln', component: GlnComponent }
+    { path: 'bloque', component: BloqueComponent }
    ]
 },
 

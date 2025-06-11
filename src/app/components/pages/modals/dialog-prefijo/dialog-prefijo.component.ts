@@ -306,7 +306,7 @@ guardarPrefijo(): void {
       this.formPrefijo.patchValue({
         gln: glnGenerado
       });
-
+      const bandera = prefix === 'USA' ? 2 : 0;
       const prefijoData = {
         codpre: prefijo,
         fecha: new Date().toISOString().split('T')[0],
@@ -316,7 +316,7 @@ guardarPrefijo(): void {
         estado: false,
         control: 0,
         ngln: 0,
-        bandera: 0,
+        bandera: bandera,
         facturar: 'C',
         codpro: '1174',
         nombre: `PREFIJO:`,

@@ -92,6 +92,12 @@ createCodigo14(data: Codigos14Request): Observable<ApiResponse<number>> {
   return this.http.post<ApiResponse<number>>(`${this.baseUrl}/Codigos14`, data);
 }
 
+contarPorCodbar(codbar: string): Observable<number> {
+  const url = `${this.baseUrl}/Codigos14/contar?codbar=${encodeURIComponent(codbar)}`;
+  return this.http.get<ApiResponse<number>>(url).pipe(
+    map(response => response.data ?? 0)
+  );
+}
 
 
 }

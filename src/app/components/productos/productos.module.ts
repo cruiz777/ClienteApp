@@ -1,13 +1,14 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule } from '@angular/common'; 
+
 import { RouterModule } from '@angular/router';
-import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 
+// Componentes
 import { NavigationProductoComponent } from './navigation-producto/navigation-producto.component';
-
+import { BloqueComponent } from './bloque/bloque.component';
+import { MatOptionModule } from '@angular/material/core';
 
 // Angular Material modules necesarios
-
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,27 +19,44 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatOptionModule } from '@angular/material/core';
-
 import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
 import { MatTableModule } from '@angular/material/table';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatMenuModule } from '@angular/material/menu';
+import { MatDialogModule } from '@angular/material/dialog';
+
+
+import { CheckboxRendererComponent } from './checkbox-renderer/checkbox-renderer.component';
+import { GcpBrickAutocompleteEditorComponent } from './gcp-brick-autocomplete-editor/gcp-brick-autocomplete-editor.component';
+
+// Formularios
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+
+// Ag-Grid y Handsontable
+import { HotTableModule } from '@handsontable/angular';
+import { AgGridModule } from 'ag-grid-angular';
+import { AgGridAngular } from 'ag-grid-angular';
 
 @NgModule({
   declarations: [
     NavigationProductoComponent,
-    GlnComponent
+    GlnComponent,
+    BloqueComponent,
+    CheckboxRendererComponent,
+    GcpBrickAutocompleteEditorComponent,
   ],
   imports: [
     CommonModule,
     RouterModule,
     ReactiveFormsModule,
     FormsModule,
-
     // Angular Material necesarios
+    HotTableModule,
+    AgGridModule,
+    FormsModule,
+    ReactiveFormsModule,
     MatSidenavModule,
     MatListModule,
     MatIconModule,
@@ -54,9 +72,20 @@ import { MatMenuModule } from '@angular/material/menu';
     MatAutocompleteModule,
     SharedModule,
     MatSnackBarModule,
-    MatMenuModule
-
+    MatMenuModule,
+    MatTableModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatCheckboxModule,
+    MatDialogModule,
+    MatSnackBarModule,
+    MatOptionModule,
+    MatSelectModule,
+    AgGridAngular
   ],
-  exports: [NavigationProductoComponent]
+  exports: [
+    NavigationProductoComponent,
+    BloqueComponent
+  ]
 })
 export class ProductosModule {}

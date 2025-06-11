@@ -34,7 +34,8 @@ import { UppercaseDirective } from './directives/uppercase.directive';
 import { ModalImpresionComponent } from './components/shared/modal-impresion/modal-impresion.component';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { ToastrModule } from 'ngx-toastr';
-
+import { HotTableModule } from '@handsontable/angular';
+import { AgGridModule } from 'ag-grid-angular';
 
 export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
 
@@ -72,6 +73,8 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
       closeButton: true,
       progressBar: true
     })
+    HotTableModule,
+      AgGridModule,
   ],
 
   providers: [

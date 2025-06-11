@@ -235,6 +235,7 @@ export interface ApiResponse<T> {
 }
 
 
+
 @Injectable({
   providedIn: 'root'
 })
@@ -258,6 +259,9 @@ crearProducto(request: ProductoRequest): Observable<ApiResponse<number>> {
   );
 }
 
+ verificarCodbar(codbar: string): Observable<ApiResponse<boolean>> {
+  return this.http.get<ApiResponse<boolean>>(`${this.apiBaseUrl}/Producto/verificar-codbar/${codbar}`);
+}
 
 
 }

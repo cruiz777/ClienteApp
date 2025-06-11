@@ -1,0 +1,142 @@
+<form [formGroup]="formUV">
+  <div>
+    <!-- 🔹 Fila 1: Datos del cliente -->
+    <div class="fila-horizontal">
+      <div class="corto">
+        <label for="codigoCliente">Código del cliente:</label>
+        <input id="codigoCliente" type="text" formControlName="codigoCliente" readonly />
+      </div>
+
+      <div class="largo">
+        <label for="cliente">Cliente:</label>
+        <input id="cliente" type="text" formControlName="cliente" readonly />
+      </div>
+
+      <div class="corto">
+        <label for="ruc">RUC:</label>
+        <input id="ruc" type="text" formControlName="ruc" readonly />
+      </div>
+    </div>
+
+
+    <!-- 🔹 Fila 2: Nacional / Internacional / Prefijo / Serie -->
+    <div class="fila-horizontal">
+      <div>
+        <label>Nacional</label>
+        <mat-form-field appearance="fill" class="select-pequeno">
+          <mat-select formControlName="gtinNacionalSeleccionado"
+            (selectionChange)="formUV.get('gtinInternacionalSeleccionado')?.reset()">
+            <mat-option value="gtin13">GTIN-13</mat-option>
+            <mat-option value="gtin12">GTIN-12</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div>
+        <label>Internacional</label>
+        <mat-form-field appearance="fill" class="select-pequeno">
+          <mat-select formControlName="gtinInternacionalSeleccionado"
+            (selectionChange)="formUV.get('gtinNacionalSeleccionado')?.reset()">
+            <mat-option value="gtin13i">GTIN-13</mat-option>
+            <mat-option value="gtin12i">GTIN-12</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <mat-form-field class="select-pequeno">
+        <mat-label>Prefijo</mat-label>
+        <mat-select formControlName="gcp" (selectionChange)="onPrefijoBlur()">
+          <mat-option *ngFor="let prefijo of prefijos" [value]="prefijo.id_prefijos">
+            {{ prefijo.codpre }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+      <div class="corto" style="padding: auto;">
+        <label for="gln">GLN®:</label>
+        <input id="gln" type="text" formControlName="gln" readonly />
+      </div>
+      <div class="serie-checkbox">
+        <label>
+          <input type="checkbox" formControlName="usarSerie" (change)="habilitarSerie()" /> Serie
+        </label>
+        <input type="text" formControlName="serie" [readonly]="!formUV.get('usarSerie')?.value" />
+      </div>
+
+    </div>
+
+    <!-- 🔹 Fila 3: GTIN generado y botón -->
+    <div>
+      <mat-form-field appearance="outline" class="hidden-column">
+        <mat-label>GTIN UV generado</mat-label>
+        <input matInput formControlName="gtinUv" readonly class="hidden-column" />
+      </mat-form-field>
+
+
+    </div>
+  </div>
+</form>
+<div style="display: flex; align-items: center; gap: 12px; margin-top: 0px; flex-wrap: wrap;">
+  <label>Productos a Codificar:</label>
+
+  <input type="number" [(ngModel)]="cantidadFilas" style="width: 60px;" min="1" step="1"
+    oninput="this.value = this.value.replace(/[^0-9]/g, '')" (blur)="generarFilas()" />
+
+
+  <mat-form-field class="textarea" style="width: 120px; height: 60px; font-size: 12px; margin: 0;">
+    <!-- visible -->
+
+    <textarea matInput [(ngModel)]="textoPegado" placeholder="CTRL+V para pegar" (focus)="simularPegado()"
+      (blur)="pegarColumnaGtinUv()"
+      style="border: none; height: 50px; padding: 0px; outline: none; resize: none; box-shadow: none;"></textarea>
+
+
+
+    <!-- invisible, funcional -->
+    <textarea #pasteCatcher style="position: absolute; left: -9999px; opacity: 0;"></textarea>
+
+  </mat-form-field>
+
+  <mat-checkbox [(ngModel)]="copiarDesdeColumna2" class="hidden-column">
+    Pegar desde columna 2
+  </mat-checkbox>
+
+  <div *ngIf="mensaje" style="color: green;">
+    {{ mensaje }}
+  </div>
+</div>
+
+<div style="display: flex; flex-wrap: wrap; gap: 8px;">
+  <button mat-raised-button color="primary" (click)="limpiarTabla()">Nuevo</button>
+  <button mat-raised-button color="primary" (click)="generar()">Generar</button>
+  <button mat-raised-button color="primary" (click)="generar()">Grabar</button>
+  <mat-checkbox [(ngModel)]="checkMaestro" (change)="marcarTodosDesdeMaestro()">Activar todos</mat-checkbox>
+  <button mat-raised-button color="primary" (click)="generar()">Generar GTIN 14</button>
+  <button mat-raised-button color="primary" (click)="generar()">Grabar GTIN 14</button>
+</div>
+
+<!-- Tabla AG-Grid -->
+<!-- Campo oculto para capturar Ctrl+V -->
+
+
+<div class="contenedor-grid">
+  <ag-grid-angular
+    class="ag-theme-alpine"
+    style="width: 100%; height: 400px;"
+    [rowData]="rowData"
+    [columnDefs]="columnDefs"
+    [defaultColDef]="defaultColDef"
+    [gridOptions]="gridOptions"
+    [domLayout]="'normal'"
+    (gridReady)="onGridReady($event)">
+  </ag-grid-angular>
+</div>
+
+
+
+
+
+
+
+
+
+<!-- Controles de la tabla -->
