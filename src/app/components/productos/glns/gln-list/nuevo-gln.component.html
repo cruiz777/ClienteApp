@@ -126,7 +126,7 @@
         <div class="form-row">
           <div class="form-group">
             <label>Código Postal:</label>
-            <input matInput formControlName="glnCodigopostal" placeholder="Ej. 170029">
+            <input matInput formControlName="glnCodigopostal" placeholder="Ej. 170029" (keypress)="CustomValidators.onlyNumbersKeyPress($event)" >
           </div>
           <div class="form-group">
             <label>Dirección:</label>
@@ -353,6 +353,7 @@
                 <tr>
                   <th>#</th>
                   <th>GLN</th>
+                  <th>Prefijo</th>
                   <th>Localización</th>
                   <th>Dirección</th>
                   <th>Teléfono</th>
@@ -366,9 +367,10 @@
                 <tr *ngFor="let gln of glnsFiltrados; let i = index">
                   <td>{{ i + 1 }}</td>
                   <td>{{ gln.gln1 }}</td>
+                  <td>{{ obtenerCodigoPrefijo(gln.id_prefijos) }}</td>
                   <td>{{ gln.nombreLocalizacion }}</td>
                   <td>{{ gln.direccion }}</td>
-                  <td>{{ gln.telefono }}</td>
+                  <td>{{ gln.contactoTel }}</td>
                   <td>{{ gln.contacto }}</td>
                   <td>{{ gln.email }}</td>
                   <td>{{ obtenerNombreCiudad(gln.idCiudad) }}</td>

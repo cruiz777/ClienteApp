@@ -18,7 +18,7 @@ const routes: Routes = [
   {path:'inicio',component:InicioComponent},
 
   {path: 'menus', loadChildren: () => import('./components/menus/menus.module').then(x => x.MenusModule) },
-  {path: 'pages', loadChildren: () => import('./components/pages/pages.module').then(x => x.PagesModule) , canActivate:[AuthGuard]},
+  {path: 'pages', loadChildren: () => import('./components/pages/pages.module').then(x => x.PagesModule) },
 
   {path: 'seguridades', loadChildren: () => import('./components/seguridades/seguridades.module').then(m => m.SeguridadesModule) },
   {
