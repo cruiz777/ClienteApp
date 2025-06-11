@@ -1305,8 +1305,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
           <tr><td>PAÍS / COUNTRY:</td><td>${pais?.nombre ?? ''}</td></tr>
           <tr><td>PROVINCIA / STATE:</td><td>${ciudad?.provincia ?? ''}</td></tr>
           <tr><td>CIUDAD / CITY:</td><td>${ciudad?.ciudad ?? ''}</td></tr>
-          <tr><td>DIRECCIÓN / ADDRESS:</td><td>${raw.direccion}</td></tr>
-          <tr><td>TELÉFONO / PHONE:</td><td>${raw.telefono}</td></tr>
+          <tr><td>DIRECCIÓN / ADDRESS:</td><td>${raw.direccion}</td></tr>          
           <tr><td>CÓDIGO POSTAL:</td><td>${raw.glnCodigopostal}</td></tr>
           <tr><td>EMAIL:</td><td>${raw.email}</td></tr>
           <tr><td>PÁGINA WEB / WEBSITE:</td><td>${raw.web}</td></tr>
