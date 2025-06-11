@@ -11,6 +11,7 @@ export interface Prefijo {
   id_prefijos: number;
   codpre: string;
   clientesCodigo: number;
+  bandera?: number;
 }
 
 export interface ActualizarPrefijoPayload {

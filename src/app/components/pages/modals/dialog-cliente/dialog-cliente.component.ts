@@ -641,7 +641,7 @@ export class DialogClienteComponent implements OnInit {
       delestado: 0,
       genero: '',
       infcamahabitacion: '',
-      empresaCodigo: this.usuarioActual?.IdEmpresa,
+      empresaCodigo: this.usuarioActual?.id_empresa,
       seguimiento: 0,
       fechaactinact: '2025-04-23',
       idEstadoEmpresa: 1,
@@ -707,7 +707,7 @@ export class DialogClienteComponent implements OnInit {
     let pais: string = '';
     let codigogs1: string = ''
 
-    debugger
+    
     switch (prefix) {
       case '5':
         idControl = 70;
@@ -763,17 +763,17 @@ export class DialogClienteComponent implements OnInit {
       this.paso1Form.patchValue({
         gln: glnGenerado
       });
-
+      const bandera = prefix === 'USA' ? 2 : 0;
       const prefijoData = {
         codpre: prefijo,
         fecha: new Date().toISOString().split('T')[0],
-        fechaCierre: new Date().toISOString().split('T')[0],
+        fechaCierre: null,
         observacion: 'Prefijo generado manualmente',
         digitos: prefijo.length.toString(),
         estado: false,
         control: 0,
         ngln: 0,
-        bandera: 0,
+        bandera: bandera,
         facturar: 'C',
         codpro: '1174',
         nombre: `PREFIJO:`,
@@ -1353,7 +1353,7 @@ export class DialogClienteComponent implements OnInit {
           latiM: '',
           latiS: '',
           latiE: '',
-          idUsuario: this.usuarioActual!.IdUsuario
+          idUsuario: this.usuarioActual!.id_usuario
 
         };
 
@@ -1531,8 +1531,8 @@ guardarTodasLasObservaciones(): void {
 
   const fechaActual = new Date().toISOString();
 
-  const idUsuario = this.usuarioActual?.IdUsuario || 0;
-  const nombreUsuario = this.usuarioActual?.NombreUsuario || '';
+  const idUsuario = this.usuarioActual?.id_usuario || 0;
+  const nombreUsuario = this.usuarioActual?.nombre_usuario || '';
   const clientesCodigo = paso1.codigoCliente || 0;
 
   const observaciones: ClienteObservacion[] = [

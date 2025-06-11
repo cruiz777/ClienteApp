@@ -1,139 +1,280 @@
 <div class="contenedor-formulario">
   <h2>Asignación Nuevo GTIN - Ingreso Único de Venta</h2>
 
-  <!-- Sección UV -->
   <form class="formulario" [formGroup]="formUV">
     <div class="form-grid">
-      <input type="text" placeholder="Código del cliente:" formControlName="codigoCliente" />
-      <input type="text" placeholder="Cliente:" formControlName="cliente" />
-      <input type="text" placeholder="RUC:" formControlName="ruc" />
+
+      <!-- Datos del cliente -->
+      <div class="corto">
+        <label for="codigoCliente">Código del cliente:</label>
+        <input id="codigoCliente" type="text" formControlName="codigoCliente" readonly />
+      </div>
+
+      <div class="col-2">
+        <label for="cliente">Cliente:</label>
+        <input id="cliente" type="text" formControlName="cliente" readonly />
+      </div>
+
+      <div>
+        <label for="ruc">RUC:</label>
+        <input id="ruc" type="text" formControlName="ruc" readonly />
+      </div>
+
       <mat-form-field appearance="fill">
         <mat-label>Prefijo</mat-label>
-        <mat-select formControlName="gcp" (blur)="onPrefijoBlur()">
+        <mat-select formControlName="gcp" (selectionChange)="onPrefijoBlur()">
           <mat-option *ngFor="let prefijo of prefijos" [value]="prefijo.id_prefijos">
             {{ prefijo.codpre }}
           </mat-option>
         </mat-select>
       </mat-form-field>
 
-      <input type="text" placeholder="GLN®:" formControlName="gln" />
-
-      <!-- Nacionales -->
-      <div class="grupo-checkbox">
-        <label>Nacionales</label>
-        <label>
-          <input type="radio" formControlName="gtinNacionalSeleccionado" value="gtin13" /> GTIN-13
-        </label>
-        <label>
-          <input type="radio" formControlName="gtinNacionalSeleccionado" value="gtin8" /> GTIN-8
-        </label>
-        <label>
-          <input type="radio" formControlName="gtinNacionalSeleccionado" value="gtin12" /> GTIN-12
-        </label>
+      <div>
+        <label for="gln">GLN®:</label>
+        <input id="gln" type="text" formControlName="gln" readonly />
       </div>
 
-      <!-- Internacionales -->
-      <div class="grupo-checkbox">
-        <label>Internacionales</label>
-        <label>
-          <input type="radio" formControlName="gtinInternacionalSeleccionado" value="gtin13" /> GTIN-13
-        </label>
-        <label>
-          <input type="radio" formControlName="gtinInternacionalSeleccionado" value="gtin8" /> GTIN-8
-        </label>
-        <label>
-          <input type="radio" formControlName="gtinInternacionalSeleccionado" value="gtin12" /> GTIN-12
-        </label>
+      <!-- GTIN: Nacional, Internacional, Serie, UV, Tipo -->
+      <div class="full-width fila-gtin-combo">
+        <div class="combo-gtin">
+          <label>Nacional</label>
+          <mat-form-field appearance="fill" class="select-pequeno">
+            <mat-select formControlName="gtinNacionalSeleccionado"
+              (selectionChange)="formUV.get('gtinInternacionalSeleccionado')?.reset()">
+              <mat-option value="gtin13">GTIN-13</mat-option>
+              <mat-option value="gtin8">GTIN-8</mat-option>
+              <mat-option value="gtin12">GTIN-12</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="combo-gtin">
+          <label>Internacional</label>
+          <mat-form-field appearance="fill" class="select-pequeno">
+            <mat-select formControlName="gtinInternacionalSeleccionado"
+              (selectionChange)="formUV.get('gtinNacionalSeleccionado')?.reset()">
+              <mat-option value="gtin13i">GTIN-13</mat-option>
+              <mat-option value="gtin8i">GTIN-8</mat-option>
+              <mat-option value="gtin12i">GTIN-12</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="combo-gtin serie-inline">
+          <label class="checkbox-serie">
+            <input type="checkbox" formControlName="usarSerie" (change)="habilitarSerie()" /> Serie
+          </label>
+          <input type="text" formControlName="serie" [readonly]="!formUV.get('usarSerie')?.value" />
+        </div>
+        <div class="combo-gtin">
+          <label>GTIN® UV:</label>
+          <input type="text" formControlName="gtinUv" [readonly]="formUV.get('gtinUv')?.disabled || false"
+            [attr.maxLength]="longitudMaxima" (keypress)="permitirSoloNumeros($event)"
+            [ngClass]="{ 'input-verde': campoGtin }" />
+
+
+          <div *ngIf="formUV.get('gtinUv')?.hasError('codbarExistente')" class="mensaje-error">⚠️ Ya registrado.</div>
+        </div>
+        <div class="combo-gtin">
+          <label>Tipo GTIN®:</label>
+          <input type="text" formControlName="tipoGtin" readonly />
+        </div>
       </div>
 
-      <input type="text" placeholder="Serie:" formControlName="serie" />
-      <input type="text" placeholder="GTIN UV®:" formControlName="gtinUv" />
-      <input type="text" placeholder="TIPO GTIN®:" formControlName="tipoGtin" />
-      <input type="text" placeholder="Descripción:" formControlName="descripcion" />
-      <input type="text" placeholder="Marca:" formControlName="marca" />
-      <input type="text" placeholder="Contenido:" formControlName="contenido" />
-      <input type="text" placeholder="Unidad de medida:" formControlName="unidadMedida" />
+      <!-- Campos editables principales -->
+      <div class="col-2">
+        <label>Descripción:</label>
+        <input type="text" formControlName="descripcion" (blur)="convertirAMayusculas('descripcion')" />
+      </div>
 
-      <mat-form-field  style="font-size: 12px; height: 75px;width: 240px;">
-        <input matInput formControlName="categoria" [matAutocomplete]="autoCategoria"
-          placeholder="Seleccione Categoría">
+      <div>
+        <label>Marca:</label>
+        <input type="text" formControlName="marca"  (blur)="convertirAMayusculas('marca')"/>
+      </div>
 
-        <button matSuffix mat-icon-button aria-label="Limpiar"
-          *ngIf="formUV.get('categoria')?.value" (click)="limpiarCategoria()">
+      <div>
+        <label>Contenido:</label>
+        <input type="text" formControlName="contenido" (keypress)="validarNumeroDecimal($event)" />
+      </div>
+
+
+      <!-- Unidad de medida -->
+      <mat-form-field>
+        <mat-label>Unidad</mat-label>
+        <input matInput formControlName="unidadMedida" [matAutocomplete]="autoUnidad" placeholder="Seleccione Unidad" />
+        <button matSuffix mat-icon-button *ngIf="formUV.get('unidadMedida')?.value" (click)="limpiarUnidadMedida()">
           <mat-icon>close</mat-icon>
         </button>
-
-        <mat-autocomplete #autoCategoria="matAutocomplete" [displayWith]="displayWithCategoria"
-          (optionSelected)="seleccionarCategoria($event.option.value)" autocomplete="off">
-          <mat-option *ngFor="let cat of categoriasFiltradas" [value]="cat" style="font-size: 11px">
-             {{ cat.desBrick }}
+        <mat-autocomplete #autoUnidad="matAutocomplete" [displayWith]="displayWithUnidadMedida"
+          (optionSelected)="seleccionarUnidadMedida($event.option.value)">
+          <mat-option *ngFor="let u of unidadesMedidaFiltradas" [value]="u">
+            {{ u.descripcion }} - {{ u.unidad }}
           </mat-option>
         </mat-autocomplete>
-
-        <mat-error *ngIf="formUV.get('categoria')?.hasError('required') && formUV.get('categoria')?.touched"
-          style="color: red; font-size: 12px;">
-          Este campo es obligatorio.
-        </mat-error>
       </mat-form-field>
 
-      <input type="text" placeholder="GCP® BRICK:" formControlName="brick" />
-      <input type="text" placeholder="País de venta:" formControlName="pais" />
-      <input type="text" placeholder="Sector:" formControlName="sector" />
-      <input type="text" placeholder="URL foto:" formControlName="urlFoto" />
-      <textarea placeholder="Observación:" formControlName="observacion"></textarea>
+      <!-- Categoría -->
+      <mat-form-field>
+        <mat-label>Categoría</mat-label>
+        <input matInput formControlName="categoria" [matAutocomplete]="autoCategoria"
+          placeholder="Seleccione Categoría" />
+        <button matSuffix mat-icon-button *ngIf="formUV.get('categoria')?.value" (click)="limpiarCategoria()">
+          <mat-icon>close</mat-icon>
+        </button>
+        <mat-autocomplete #autoCategoria="matAutocomplete" [displayWith]="displayWithCategoria"
+          (optionSelected)="seleccionarCategoria($event.option.value)">
+          <mat-option *ngFor="let cat of categoriasFiltradas" [value]="cat">
+            {{ cat.desBrick }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
 
-      <div class="checkbox-grid full-width" formGroupName="empresas">
+      <!-- Brick -->
+      <div>
+        <label>GCP® BRICK:</label>
+        <input type="text" formControlName="brick" readonly />
+      </div>
+
+      <!-- País y Sector -->
+      <mat-form-field>
+        <mat-label>Pais </mat-label>
+        <input matInput formControlName="pais" [matAutocomplete]="autoPais" placeholder="Seleccione País" />
+        <button matSuffix mat-icon-button *ngIf="formUV.get('pais')?.value" (click)="formUV.get('pais')?.reset()">
+          <mat-icon>close</mat-icon>
+        </button>
+        <mat-autocomplete #autoPais="matAutocomplete" [displayWith]="displayWithPais">
+          <mat-option *ngFor="let p of paisFiltrados" [value]="p">
+            {{ p.nombre }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Pais</mat-label>
+        <input matInput formControlName="sector" [matAutocomplete]="autoSector" placeholder="Seleccione Sector" />
+        <button matSuffix mat-icon-button *ngIf="formUV.get('sector')?.value" (click)="limpiarSector()">
+          <mat-icon>close</mat-icon>
+        </button>
+        <mat-autocomplete #autoSector="matAutocomplete" [displayWith]="displayWithSector"
+          (optionSelected)="seleccionarSector($event.option.value)">
+          <mat-option *ngFor="let s of sectoresFiltrados" [value]="s">
+            {{ s.descripcion }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <!-- URL y Observación alineados -->
+      <div class="fila-inline full-width">
+        <div class="campo-url">
+          <label>URL foto:</label>
+          <input type="text" formControlName="urlFoto" />
+        </div>
+
+        <div class="campo-observacion">
+          <label>Observación:</label>
+          <textarea formControlName="observacion" rows="1" (blur)="convertirAMayusculas('observacion')"></textarea>
+        </div>
+      </div>
+
+
+
+      <!-- Empresas -->
+      <div class="checkbox-contenedor full-width" formGroupName="empresas">
         <label><input type="checkbox" formControlName="favorita" /> La Favorita</label>
         <label><input type="checkbox" formControlName="mega" /> Mega Santa María</label>
         <label><input type="checkbox" formControlName="amazon" /> Amazon</label>
         <label><input type="checkbox" formControlName="rosario" /> El Rosario</label>
         <label><input type="checkbox" formControlName="tia" /> TIA</label>
         <label><input type="checkbox" formControlName="google" /> Google</label>
-        <input type="text" placeholder="Otros:" formControlName="otrosSolicitantes" />
+        <label><input type="text" placeholder="Otros:" formControlName="otrosSolicitantes" /></label>
       </div>
+
     </div>
 
     <div class="botones">
       <button class="btn" type="button" (click)="limpiarCampos()">Nuevo</button>
-      <button class="btn" type="button" (click)="generar()" >Generar</button>
-      <button class="btn btn-azul" type="button" (click)="grabarTodo()">Grabar</button>
-      <button class="btn btn-rojo" type="button">Ingresar UL</button>
+      <button class="btn" type="button" (click)="generar()" [disabled]="botonGenerarDeshabilitado">
+        Generar
+      </button>
+
+      <button class="btn btn-azul" type="button" (click)="grabarTodo()" [disabled]="botonGrabarDeshabilitado">
+        Grabar
+      </button>
+
+      <button class="btn btn-azul" type="button" (click)="activarUL()" [disabled]="botonIngresarULDeshabilitado">
+        Ingresar UL
+      </button>
+
     </div>
   </form>
 
+
   <!-- Sección UL -->
-  <h2 class="separador">UNIDAD LOGISTICA GTIN-14</h2>
+  <h2 class="separador">UNIDAD LOGÍSTICA GTIN-14</h2>
 
   <form class="formulario" [formGroup]="formUL">
     <div class="form-grid">
-      <div class="grupo-checkbox" formGroupName="gtinNacionalesUL">
-        <label>Nacionales</label>
-        <label><input type="checkbox" formControlName="gtin14" /> GTIN-14</label>
-        <label><input type="checkbox" formControlName="gtin13" /> GTIN-13</label>
-        <label><input type="checkbox" formControlName="gtin12" /> GTIN-12</label>
+
+      <!-- GTIN Nacional e Internacional como combo -->
+      <div class="full-width fila-inline">
+        <div class="campo-select">
+          <label>GTIN Nacional</label>
+          <mat-form-field appearance="fill">
+            <mat-select formControlName="gtinNacionalULSeleccionado">
+              <mat-option [value]="'gtin14u'">GTIN-14</mat-option>
+              <mat-option [value]="'gtin13u'">GTIN-13</mat-option>
+              <mat-option [value]="'gtin12u'">GTIN-12</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="campo-select">
+          <label>GTIN Internacional</label>
+          <mat-form-field appearance="fill">
+            <mat-select formControlName="gtinInternacionalULSeleccionado">
+              <mat-option [value]="'gtin14ui'">GTIN-14</mat-option>
+              <mat-option [value]="'gtin13ui'">GTIN-13</mat-option>
+              <mat-option [value]="'gtin12ui'">GTIN-12</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
       </div>
 
-      <div class="grupo-checkbox" formGroupName="gtinInternacionalesUL">
-        <label>Internacionales</label>
-        <label><input type="checkbox" formControlName="gtin14" /> GTIN-14</label>
-        <label><input type="checkbox" formControlName="gtin13" /> GTIN-13</label>
-        <label><input type="checkbox" formControlName="gtin12" /> GTIN-12</label>
+      <div>
+        <div class="combo-gtin serie-inline">
+          <label class="checkbox-serie">
+            <input type="checkbox" formControlName="usarSerie2" (change)="habilitarSerie2()" /> Serie
+          </label>
+          <input type="text" formControlName="serie2" [readonly]="!formUL.get('usarSerie2')?.value" />
+        </div>
+      </div>
+      <div><label>Tipo de empaque:</label><input type="text" formControlName="tipoEmpaque" /></div>
+      <div><label>Unidad:</label><input type="text" formControlName="unidad" (keypress)="permitirSoloNumeros($event)" /></div>
+      <div><label>Indicador:</label><input type="text" formControlName="indicador" (keypress)="permitirSoloNumeros($event)" maxlength="1" /></div>
+      <div><label>Factor:</label><input type="text" formControlName="factor" (blur)="actualizarDescripcionUL()" /></div>
+
+      <div class="col-2">
+        <label>GTIN® UL:</label>
+        <input type="text" formControlName="gtinUl" [ngClass]="{ 'input-verde': campoGtinU }" />
+        <div *ngIf="formUL.get('gtinUl')?.hasError('codbarExistente')" class="mensaje-error">
+          ⚠️ El código de barras ya está registrado.
+        </div>
       </div>
 
-      <input type="text" placeholder="Serie:" formControlName="serie" />
-      <input type="text" placeholder="Tipo de empaque:" formControlName="tipoEmpaque" />
-      <input type="text" placeholder="Unidad:" formControlName="unidad" />
-      <input type="text" placeholder="Indicador:" formControlName="indicador" />
-      <input type="text" placeholder="Factor:" formControlName="factor" />
-      <input type="text" placeholder="GTIN® UL:" formControlName="gtinUl" />
-      <input type="text" placeholder="Tipo GTIN®:" formControlName="tipoGtin" />
-      <textarea placeholder="Observación:" formControlName="observacion"></textarea>
+      <div><label>Tipo GTIN®:</label><input type="text" formControlName="tipoGtin" /></div>
+      <div class="col-2"><label>Descripción:</label><textarea formControlName="descripcionu" (blur)="convertirAMayusculas('descripcionu')"></textarea></div>
+
     </div>
 
     <div class="botones">
-      <button class="btn" type="button">Nuevo</button>
-      <button class="btn" type="button" (click)="generar()">Generar</button>
-      <button class="btn btn-azul" type="button" (click)="grabarTodo()">Grabar</button>
+      <button class="btn" type="button" (click)="limpiarUl()" [disabled]="botonNuevoDeshabilitado">Nuevo</button>
+
+      <button class="btn" type="button" (click)="generarUL()" [disabled]="botonGenerarULDeshabilitado">
+        Generar
+      </button>
+
+      <button class="btn btn-azul" type="button" (click)="grabarTodoUL()" [disabled]="botonGrabarULDeshabilitado">
+        Grabar
+      </button>
+
       <button class="btn btn-rojo" type="button" (click)="salir()">Salir</button>
     </div>
   </form>

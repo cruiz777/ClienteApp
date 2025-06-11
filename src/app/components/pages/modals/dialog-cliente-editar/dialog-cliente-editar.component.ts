@@ -49,8 +49,8 @@ import { MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { ClienteObservacionService, ClienteObservacion } from 'src/app/services/cliente-observacion.service';
 import { ModalImpresionComponent } from 'src/app/components/shared/modal-impresion/modal-impresion.component';
 import { DialogPrefijoEditarComponent } from '../dialog-prefijo-editar/dialog-prefijo-editar.component';
-import { ClienteDatosAdicionalesService,ClienteDatosAdicionales } from 'src/app/services/cliente-datos-adicionales.service';
-import  { ClienteContacto,ClienteContactoService   } from 'src/app/services/cliente-contacto.service';
+import { ClienteDatosAdicionalesService, ClienteDatosAdicionales } from 'src/app/services/cliente-datos-adicionales.service';
+import { ClienteContacto, ClienteContactoService } from 'src/app/services/cliente-contacto.service';
 const ELEMENT_DATA: HistorialClienteRequest[] = [
   {
     id_historial_cliente: 1,
@@ -100,7 +100,7 @@ export class DialogClienteEditarComponent implements OnInit {
   nombreCiudadSeleccionada: string = '';
   esPasaporte = false;
   tipoIdentificacion: 'CEDULA' | 'RUC' | 'PASAPORTE' | null = null;
- 
+
 
   zona: Zona[] = [];
   zonaCtrl = new FormControl('');
@@ -146,7 +146,7 @@ export class DialogClienteEditarComponent implements OnInit {
     'observacion',
     'accion'
   ];
- 
+
   nombrecli: string = '';
 
   prefijoCliente!: PrefijoClienteResponse;
@@ -154,9 +154,9 @@ export class DialogClienteEditarComponent implements OnInit {
   private clienteOriginal!: ClienteIndividual;
   observaciones: ClienteObservacion[] = [];
   clienteOriginalObservacion: ClienteObservacion[] = [];
- usuarioActual = this.usuarioService.getUsuarioActual();
-  contactoCliente:ClienteContacto[]=[];
- 
+  usuarioActual = this.usuarioService.getUsuarioActual();
+  contactoCliente: ClienteContacto[] = [];
+
   @ViewChild(MatPaginator) paginator!: MatPaginator;
   @ViewChild(MatSort) sort!: MatSort;
   @ViewChild('paginatorPrefijo', { static: false }) paginatorPrefijo!: MatPaginator;
@@ -187,7 +187,7 @@ export class DialogClienteEditarComponent implements OnInit {
     private historialClienteService: HistorialClienteService,
     private clienteObservacionService: ClienteObservacionService,
     private clienteDatosAdicionalesService: ClienteDatosAdicionalesService,
-    private clienteContactoService:ClienteContactoService
+    private clienteContactoService: ClienteContactoService
   ) { }
 
   ngOnInit(): void {
@@ -245,7 +245,7 @@ export class DialogClienteEditarComponent implements OnInit {
         zona: [null],
         estadoEmpresa: [null],
         codigoCliente: [{ value: '', disabled: false }],
-        //prefijo: [''], antes 
+        //prefijo: [''], antes
         prefijo: [{ value: '', disabled: true }],
         prefijogs1: [''],
         origen: [''],
@@ -276,8 +276,8 @@ export class DialogClienteEditarComponent implements OnInit {
         zona: [null],
         estadoEmpresa: [null],
         pais: [''],
-        nprefijo:[false],
-        compra:[false],
+        nprefijo: [false],
+        compra: [false],
         fechaIng: [''],
         fechaMod: [''],
         usuarioMod: ['']
@@ -288,14 +288,14 @@ export class DialogClienteEditarComponent implements OnInit {
         nombreRepresentante: [null, Validators.required],
         emailRepresentante: ['', [Validators.required, emailValidoValidator()]],
         telefonoRepresentante: ['', Validators.required],
-        
+
         email: ['', [emailValidoValidator()]],
         email1: ['', [emailValidoValidator()]],
         email2: ['', [emailValidoValidator()]],
         email3: ['', [emailValidoValidator()]],
         telefono: [''],
-        nombreCodificacion:[''],
-        nombreFinanciero:[''],
+        nombreCodificacion: [''],
+        nombreFinanciero: [''],
 
         telefono2: [''],
         pregunta1: [false],
@@ -304,7 +304,7 @@ export class DialogClienteEditarComponent implements OnInit {
         pregunta4: [false],
         pregunta5: [false],
         pregunta6: [false],
-        pregunta7:[false],
+        pregunta7: [false],
         zona: [null],
         estadoEmpresa: [null],
         fechaIng: [''],
@@ -732,8 +732,8 @@ export class DialogClienteEditarComponent implements OnInit {
       idZona: idZona,
       idGrupoEmpresa: paso1.grupo || 1,
       representante: paso2.nombreRepresentante || '',
-      fechamod:this.fechaIngreso.toISOString().split('T')[0],
-      usumod:this.usuarioActual?.NombreUsuario || ''
+      fechamod: this.fechaIngreso.toISOString().split('T')[0],
+      usumod: this.usuarioActual?.nombre_usuario || ''
     };
 
 
@@ -1096,7 +1096,7 @@ export class DialogClienteEditarComponent implements OnInit {
       fechaIng: cliente.fecing,
       fechaMod: cliente.fecmod,
       usuarioMod: cliente.usumod
-      
+
     });
 
     // Paso 4
@@ -1563,292 +1563,292 @@ export class DialogClienteEditarComponent implements OnInit {
     }
   }
 
-guardarTodasLasObservaciones(): void {
-  const paso1 = this.paso1Form.value;
-  const paso2 = this.paso2Form.value;
-  const paso4 = this.paso4Form.value;
+  guardarTodasLasObservaciones(): void {
+    const paso1 = this.paso1Form.value;
+    const paso2 = this.paso2Form.value;
+    const paso4 = this.paso4Form.value;
 
-  const fechaActual = new Date().toISOString();
-  const idUsuario = this.usuarioActual?.IdUsuario || 0;
-  const nombreUsuario = this.usuarioActual?.NombreUsuario || '';
-  const clientesCodigo = paso1.codigoCliente || 0;
+    const fechaActual = new Date().toISOString();
+    const idUsuario = this.usuarioActual?.id_usuario || 0;
+    const nombreUsuario = this.usuarioActual?.nombre_usuario || '';
+    const clientesCodigo = paso1.codigoCliente || 0;
 
-  const observaciones: ClienteObservacion[] = [
-    {
-      id_ClienteObservacion: 0,
-      Detalle: (paso2.observacion1 || '').trim(),
-      fecha: fechaActual,
-      idUsuario,
-      clientesCodigo,
-      nombreUsuario,
-      linea: 1
-    },
-    {
-      id_ClienteObservacion: 0,
-      Detalle: (paso4.observacion2 || '').trim(),
-      fecha: fechaActual,
-      idUsuario,
-      clientesCodigo,
-      nombreUsuario,
-      linea: 2
-    },
-    {
-      id_ClienteObservacion: 0,
-      Detalle: (paso4.observacion3 || '').trim(),
-      fecha: fechaActual,
-      idUsuario,
-      clientesCodigo,
-      nombreUsuario,
-      linea: 3
-    },
-    {
-      id_ClienteObservacion: 0,
-      Detalle: (paso4.observacion4 || '').trim(),
-      fecha: fechaActual,
-      idUsuario,
-      clientesCodigo,
-      nombreUsuario,
-      linea: 4
-    }
-  ];
-
-  observaciones.forEach(obs => {
-    this.clienteObservacionService.getObservacionesPorClienteCodigo(clientesCodigo).subscribe({
-      next: lista => {
-        const existe = lista.find(o => o.linea === obs.linea);
-
-        if (existe) {
-          // ✅ Actualizar si existe
-          const body = {
-            Detalle: obs.Detalle,
-            Fecha: obs.fecha,
-            IdUsuario: obs.idUsuario,
-            NombreUsuario: obs.nombreUsuario
-          };
-
-          this.clienteObservacionService.actualizarObservacion(clientesCodigo, obs.linea, body).subscribe({
-            next: () => console.log(`🔄 Línea ${obs.linea} actualizada`),
-            error: err => console.error(`❌ Error al actualizar línea ${obs.linea}`, err)
-          });
-        } else {
-          // ✅ Insertar si no existe
-          this.clienteObservacionService.enviarObservacion(obs).subscribe({
-            next: () => console.log(`➕ Línea ${obs.linea} creada`),
-            error: err => console.error(`❌ Error al crear línea ${obs.linea}`, err)
-          });
-        }
+    const observaciones: ClienteObservacion[] = [
+      {
+        id_ClienteObservacion: 0,
+        Detalle: (paso2.observacion1 || '').trim(),
+        fecha: fechaActual,
+        idUsuario,
+        clientesCodigo,
+        nombreUsuario,
+        linea: 1
       },
-      error: err => {
-        console.error(`❌ Error al verificar existencia de línea ${obs.linea}`, err);
+      {
+        id_ClienteObservacion: 0,
+        Detalle: (paso4.observacion2 || '').trim(),
+        fecha: fechaActual,
+        idUsuario,
+        clientesCodigo,
+        nombreUsuario,
+        linea: 2
+      },
+      {
+        id_ClienteObservacion: 0,
+        Detalle: (paso4.observacion3 || '').trim(),
+        fecha: fechaActual,
+        idUsuario,
+        clientesCodigo,
+        nombreUsuario,
+        linea: 3
+      },
+      {
+        id_ClienteObservacion: 0,
+        Detalle: (paso4.observacion4 || '').trim(),
+        fecha: fechaActual,
+        idUsuario,
+        clientesCodigo,
+        nombreUsuario,
+        linea: 4
       }
-    });
-  });
-}
+    ];
 
-cargarDatosAdicionales(clientesCodigo: number): void {
-  if (!clientesCodigo) {
-    console.warn('⚠️ No hay código de cliente definido.');
-    return;
-  }
+    observaciones.forEach(obs => {
+      this.clienteObservacionService.getObservacionesPorClienteCodigo(clientesCodigo).subscribe({
+        next: lista => {
+          const existe = lista.find(o => o.linea === obs.linea);
 
-  this.clienteDatosAdicionalesService.obtenerPorClienteCodigo(clientesCodigo).subscribe({
-    next: (datos) => {
-      console.log('✅ Datos adicionales cargados:', datos);
-
-      // ✅ Asegurar valores booleanos para checkboxes
-      const paso3Patch = {
-        pregunta1: datos.expprod===true,
-        pregunta2: datos.vendeus===true,
-        pregunta3: datos.medico ===true,
-        pregunta4: datos.gs1ec ===true,
-        pregunta5: datos.instagram===true,
-        pregunta6: datos.facebook ===true,
-        pregunta7: datos.web  ===true// <-- o puedes omitirlo si `web` no es binario
-      };
-      debugger
-      const paso2Patch = {
-        nprefijo: !!datos.prefijo,
-        compra: !!datos.guia
-      };
-
-      // ✅ Usar setTimeout por si los formularios aún no se renderizan completamente
-      setTimeout(() => {
-        this.paso3Form.patchValue(paso3Patch);
-        this.paso2Form.patchValue(paso2Patch);
-      }, 0);
-    },
-    error: (err) => {
-      console.error('❌ Error al cargar datos adicionales:', err);
-    }
-  });
-}
-
-guardarOActualizarDatosAdicionales(): void {
-  const paso1 = this.paso1Form.value;
-  const paso2 = this.paso2Form.value;
-  const paso3 = this.paso3Form.value;
-  const clientesCodigo = paso1.codigoCliente || 0;
-
-  const datosAdicionales: ClienteDatosAdicionales = {
-    idDatosAdicionales: 0, // se ignora en update por código
-    expprod: paso3.pregunta1 || false,
-    vendeus: paso3.pregunta2 || false,
-    medico: paso3.pregunta3 || false,
-    gs1ec: paso3.pregunta4 || false,
-    instagram: paso3.pregunta5 || false,
-    facebook: paso3.pregunta6 || false,
-    web: paso3.pregunta7 || false,
-    clientes_codigo: clientesCodigo,
-    prefijo: paso2.nprefijo || false,
-    guia: paso2.compra || false,
-    estado: true
-  };
-
-  // 1️⃣ Primero intentamos obtener por código
-  this.clienteDatosAdicionalesService.obtenerPorClienteCodigo(clientesCodigo).subscribe({
-    next: (existente) => {
-      if (existente) {
-        // ✅ Si ya existe, actualizamos
-        this.clienteDatosAdicionalesService.actualizarPorClienteCodigo(clientesCodigo, datosAdicionales).subscribe({
-          next: () => console.log('🔄 Datos actualizados correctamente'),
-          error: (err) => console.error('❌ Error al actualizar:', err)
-        });
-      } else {
-        // ⚠️ Nunca debería pasar si existe pero just in case
-        this.crearDatos(datosAdicionales);
-      }
-    },
-    error: (err) => {
-      if (err.status === 404) {
-        // ✅ No existe → crear
-        this.crearDatos(datosAdicionales);
-      } else {
-        console.error('❌ Error al verificar existencia:', err);
-      }
-    }
-  });
-}
-
-// 🔧 Método de apoyo para crear
-private crearDatos(datos: ClienteDatosAdicionales): void {
-  this.clienteDatosAdicionalesService.crear(datos).subscribe({
-    next: () => console.log('🆕 Datos creados correctamente'),
-    error: (err) => console.error('❌ Error al crear datos adicionales:', err)
-  });
-}
-
- cargarContactosClientes(clientesCodigo: number): void {
-  this.clienteContactoService.getByClienteCodigo(clientesCodigo).subscribe({
-    next: (data) => {
-      this.contactoCliente = data;
-      console.log('✅ Contactos recibidos:', data);
-
-      const paso3Patch: any = {};
-      
-      data.forEach(contacto => {
-        switch (contacto.linea) {
-          case 1:
-            paso3Patch.email = contacto.email;
-            paso3Patch.nombreCodificacion=contacto.Nombre;
-            paso3Patch.telefono=contacto.telefono;
-            break;
-          case 2:
-            paso3Patch.email1 = contacto.email;
-            paso3Patch.nombreFinanciero=contacto.Nombre;
-            break;
-          case 3:
-            paso3Patch.email2 = contacto.email;
-            paso3Patch.telefono2=contacto.telefono;
-            break;
-          case 4:
-            paso3Patch.email3 = contacto.email;
-            break;
-        }
-      });
-
-      // Aplicar al formulario reactivo
-      this.paso3Form.patchValue(paso3Patch);
-    },
-    error: (err) => {
-      console.error('❌ Error al obtener contactos del cliente:', err);
-    }
-  });
-}
-
-verificarYGuardarContactosCliente(): void {
-  const paso1 = this.paso1Form.value;
-  const paso3 = this.paso3Form.value;
-  const clientesCodigo = paso1.codigoCliente || 0;
-
-  const contactosCliente: ClienteContacto[] = [
-    {
-      id_ContactosClientes: 0,
-      Nombre: paso3.nombreCodificacion || '',
-      telefono: paso3.telefono || '',
-      email: paso3.email || '',
-      cargo: 'Codificación',
-      clientesCodigo: clientesCodigo,
-      linea: 1
-    },
-    {
-      id_ContactosClientes: 0,
-      Nombre: paso3.nombreFinanciero || '',
-      telefono: paso3.telefono2 || '',
-      email: paso3.email1 || '',
-      cargo: 'Facturación',
-      clientesCodigo: clientesCodigo,
-      linea: 2
-    },
-    {
-      id_ContactosClientes: 0,
-      Nombre: paso3.nombreFinanciero || '',
-      telefono: paso3.telefono2 || '',
-      email: paso3.email2 || '',
-      cargo: 'Facturación',
-      clientesCodigo: clientesCodigo,
-      linea: 3
-    },
-    {
-      id_ContactosClientes: 0,
-      Nombre: paso3.nombreFinanciero || '',
-      telefono: paso3.telefono2 || '',
-      email: paso3.email3 || '',
-      cargo: 'Facturación',
-      clientesCodigo: clientesCodigo,
-      linea: 4
-    }
-  ];
-
-  this.clienteContactoService.getByClienteCodigo(clientesCodigo).subscribe({
-    next: (existentes) => {
-      contactosCliente.forEach(contacto => {
-        const existe = existentes.find(c =>
-          c.clientesCodigo === contacto.clientesCodigo &&
-          c.linea === contacto.linea
-        );
-
-        if (contacto.Nombre || contacto.email || contacto.telefono) {
           if (existe) {
-            // Si existe, actualizar
-            this.clienteContactoService.update(contacto).subscribe({
-              next: () => console.log(`🔁 Contacto línea ${contacto.linea} actualizado`),
-              error: (err) => console.error(`❌ Error al actualizar contacto línea ${contacto.linea}:`, err)
+            // ✅ Actualizar si existe
+            const body = {
+              Detalle: obs.Detalle,
+              Fecha: obs.fecha,
+              IdUsuario: obs.idUsuario,
+              NombreUsuario: obs.nombreUsuario
+            };
+
+            this.clienteObservacionService.actualizarObservacion(clientesCodigo, obs.linea, body).subscribe({
+              next: () => console.log(`🔄 Línea ${obs.linea} actualizada`),
+              error: err => console.error(`❌ Error al actualizar línea ${obs.linea}`, err)
             });
           } else {
-            // Si no existe, crear
-            this.clienteContactoService.crear(contacto).subscribe({
-              next: () => console.log(`✅ Contacto línea ${contacto.linea} creado`),
-              error: (err) => console.error(`❌ Error al crear contacto línea ${contacto.linea}:`, err)
+            // ✅ Insertar si no existe
+            this.clienteObservacionService.enviarObservacion(obs).subscribe({
+              next: () => console.log(`➕ Línea ${obs.linea} creada`),
+              error: err => console.error(`❌ Error al crear línea ${obs.linea}`, err)
             });
           }
+        },
+        error: err => {
+          console.error(`❌ Error al verificar existencia de línea ${obs.linea}`, err);
         }
       });
-    },
-    error: (err) => {
-      console.error('❌ Error al obtener contactos existentes:', err);
+    });
+  }
+
+  cargarDatosAdicionales(clientesCodigo: number): void {
+    if (!clientesCodigo) {
+      console.warn('⚠️ No hay código de cliente definido.');
+      return;
     }
-  });
-}
+
+    this.clienteDatosAdicionalesService.obtenerPorClienteCodigo(clientesCodigo).subscribe({
+      next: (datos) => {
+        console.log('✅ Datos adicionales cargados:', datos);
+
+        // ✅ Asegurar valores booleanos para checkboxes
+        const paso3Patch = {
+          pregunta1: datos.expprod === true,
+          pregunta2: datos.vendeus === true,
+          pregunta3: datos.medico === true,
+          pregunta4: datos.gs1ec === true,
+          pregunta5: datos.instagram === true,
+          pregunta6: datos.facebook === true,
+          pregunta7: datos.web === true// <-- o puedes omitirlo si `web` no es binario
+        };
+        debugger
+        const paso2Patch = {
+          nprefijo: !!datos.prefijo,
+          compra: !!datos.guia
+        };
+
+        // ✅ Usar setTimeout por si los formularios aún no se renderizan completamente
+        setTimeout(() => {
+          this.paso3Form.patchValue(paso3Patch);
+          this.paso2Form.patchValue(paso2Patch);
+        }, 0);
+      },
+      error: (err) => {
+        console.error('❌ Error al cargar datos adicionales:', err);
+      }
+    });
+  }
+
+  guardarOActualizarDatosAdicionales(): void {
+    const paso1 = this.paso1Form.value;
+    const paso2 = this.paso2Form.value;
+    const paso3 = this.paso3Form.value;
+    const clientesCodigo = paso1.codigoCliente || 0;
+
+    const datosAdicionales: ClienteDatosAdicionales = {
+      idDatosAdicionales: 0, // se ignora en update por código
+      expprod: paso3.pregunta1 || false,
+      vendeus: paso3.pregunta2 || false,
+      medico: paso3.pregunta3 || false,
+      gs1ec: paso3.pregunta4 || false,
+      instagram: paso3.pregunta5 || false,
+      facebook: paso3.pregunta6 || false,
+      web: paso3.pregunta7 || false,
+      clientes_codigo: clientesCodigo,
+      prefijo: paso2.nprefijo || false,
+      guia: paso2.compra || false,
+      estado: true
+    };
+
+    // 1️⃣ Primero intentamos obtener por código
+    this.clienteDatosAdicionalesService.obtenerPorClienteCodigo(clientesCodigo).subscribe({
+      next: (existente) => {
+        if (existente) {
+          // ✅ Si ya existe, actualizamos
+          this.clienteDatosAdicionalesService.actualizarPorClienteCodigo(clientesCodigo, datosAdicionales).subscribe({
+            next: () => console.log('🔄 Datos actualizados correctamente'),
+            error: (err) => console.error('❌ Error al actualizar:', err)
+          });
+        } else {
+          // ⚠️ Nunca debería pasar si existe pero just in case
+          this.crearDatos(datosAdicionales);
+        }
+      },
+      error: (err) => {
+        if (err.status === 404) {
+          // ✅ No existe → crear
+          this.crearDatos(datosAdicionales);
+        } else {
+          console.error('❌ Error al verificar existencia:', err);
+        }
+      }
+    });
+  }
+
+  // 🔧 Método de apoyo para crear
+  private crearDatos(datos: ClienteDatosAdicionales): void {
+    this.clienteDatosAdicionalesService.crear(datos).subscribe({
+      next: () => console.log('🆕 Datos creados correctamente'),
+      error: (err) => console.error('❌ Error al crear datos adicionales:', err)
+    });
+  }
+
+  cargarContactosClientes(clientesCodigo: number): void {
+    this.clienteContactoService.getByClienteCodigo(clientesCodigo).subscribe({
+      next: (data) => {
+        this.contactoCliente = data;
+        console.log('✅ Contactos recibidos:', data);
+
+        const paso3Patch: any = {};
+
+        data.forEach(contacto => {
+          switch (contacto.linea) {
+            case 1:
+              paso3Patch.email = contacto.email;
+              paso3Patch.nombreCodificacion = contacto.Nombre;
+              paso3Patch.telefono = contacto.telefono;
+              break;
+            case 2:
+              paso3Patch.email1 = contacto.email;
+              paso3Patch.nombreFinanciero = contacto.Nombre;
+              break;
+            case 3:
+              paso3Patch.email2 = contacto.email;
+              paso3Patch.telefono2 = contacto.telefono;
+              break;
+            case 4:
+              paso3Patch.email3 = contacto.email;
+              break;
+          }
+        });
+
+        // Aplicar al formulario reactivo
+        this.paso3Form.patchValue(paso3Patch);
+      },
+      error: (err) => {
+        console.error('❌ Error al obtener contactos del cliente:', err);
+      }
+    });
+  }
+
+  verificarYGuardarContactosCliente(): void {
+    const paso1 = this.paso1Form.value;
+    const paso3 = this.paso3Form.value;
+    const clientesCodigo = paso1.codigoCliente || 0;
+
+    const contactosCliente: ClienteContacto[] = [
+      {
+        id_ContactosClientes: 0,
+        Nombre: paso3.nombreCodificacion || '',
+        telefono: paso3.telefono || '',
+        email: paso3.email || '',
+        cargo: 'Codificación',
+        clientesCodigo: clientesCodigo,
+        linea: 1
+      },
+      {
+        id_ContactosClientes: 0,
+        Nombre: paso3.nombreFinanciero || '',
+        telefono: paso3.telefono2 || '',
+        email: paso3.email1 || '',
+        cargo: 'Facturación',
+        clientesCodigo: clientesCodigo,
+        linea: 2
+      },
+      {
+        id_ContactosClientes: 0,
+        Nombre: paso3.nombreFinanciero || '',
+        telefono: paso3.telefono2 || '',
+        email: paso3.email2 || '',
+        cargo: 'Facturación',
+        clientesCodigo: clientesCodigo,
+        linea: 3
+      },
+      {
+        id_ContactosClientes: 0,
+        Nombre: paso3.nombreFinanciero || '',
+        telefono: paso3.telefono2 || '',
+        email: paso3.email3 || '',
+        cargo: 'Facturación',
+        clientesCodigo: clientesCodigo,
+        linea: 4
+      }
+    ];
+
+    this.clienteContactoService.getByClienteCodigo(clientesCodigo).subscribe({
+      next: (existentes) => {
+        contactosCliente.forEach(contacto => {
+          const existe = existentes.find(c =>
+            c.clientesCodigo === contacto.clientesCodigo &&
+            c.linea === contacto.linea
+          );
+
+          if (contacto.Nombre || contacto.email || contacto.telefono) {
+            if (existe) {
+              // Si existe, actualizar
+              this.clienteContactoService.update(contacto).subscribe({
+                next: () => console.log(`🔁 Contacto línea ${contacto.linea} actualizado`),
+                error: (err) => console.error(`❌ Error al actualizar contacto línea ${contacto.linea}:`, err)
+              });
+            } else {
+              // Si no existe, crear
+              this.clienteContactoService.crear(contacto).subscribe({
+                next: () => console.log(`✅ Contacto línea ${contacto.linea} creado`),
+                error: (err) => console.error(`❌ Error al crear contacto línea ${contacto.linea}:`, err)
+              });
+            }
+          }
+        });
+      },
+      error: (err) => {
+        console.error('❌ Error al obtener contactos existentes:', err);
+      }
+    });
+  }
 
 
 

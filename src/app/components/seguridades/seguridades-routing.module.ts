@@ -18,20 +18,24 @@ const routes: Routes = [
         loadChildren: () => import('./entidades/entidad.module').then(m => m.EntidadModule)
       },
       {
-        path:'perfiles',
-        loadChildren:()=>import('./perfiles/perfiles.module').then(m=>m.PerfilesModule)
+        path: 'perfiles',
+        loadChildren: () => import('./perfiles/perfiles.module').then(m => m.PerfilesModule)
       },
       {
-        path:'departamentos',
-        loadChildren:()=>import('./departamentos/departamentos.module').then(m=>m.DepartamentosModule)
+        path: 'departamentos',
+        loadChildren: () => import('./departamentos/departamentos.module').then(m => m.DepartamentosModule)
       },
       {
-        path:'zonas',
-        loadChildren:()=>import('./zona/zona.module').then(m=>m.ZonaModule)
+        path: 'usuarios',
+        loadChildren: () => import('./usuarios/usuarios.module').then(m => m.UsuariosModule)
       },
       {
-        path:'proyectos',
-        loadChildren:()=>import('./configuracion/proyecto/proyecto.module').then(m=>m.ProyectoModule)
+        path: 'zonas',
+        loadChildren: () => import('./zona/zona.module').then(m => m.ZonaModule)
+      },
+      {
+        path: 'proyectos',
+        loadChildren: () => import('./configuracion/proyecto/proyecto.module').then(m => m.ProyectoModule)
       },
       {
         path: 'segmento-negocio',
@@ -42,7 +46,7 @@ const routes: Routes = [
         redirectTo: 'inicio',
         pathMatch: 'full'
       },
-      {path:'inicio',component:SeguridadesInicioComponent},
+      { path: 'inicio', component: SeguridadesInicioComponent },
     ]
   }
 ];
