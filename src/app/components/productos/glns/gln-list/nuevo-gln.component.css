@@ -503,3 +503,11 @@ app-map {
   background-color: #f26334 !important;
   color: white !important;
 }
+
+.progress-steps .step {
+  cursor: pointer;
+  transition: background 0.3s ease;
+}
+.progress-steps .step:hover {
+  background: #e6f0ff;
+}

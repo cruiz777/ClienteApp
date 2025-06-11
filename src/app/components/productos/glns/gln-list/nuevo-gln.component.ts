@@ -588,7 +588,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
   setCamposGeneralesSoloLectura(): void {
     const campos = [
       'clientesCodigo', 'documentoIdentidad', 'glnNombre', 'nomCli',
-      'gln1', 'glnOrigenprefijo', 'glnPrefijogs1'
+      'gln1', 'glnOrigenprefijo', 'glnPrefijogs1', 'idTipoLocalizacion'
     ];
     campos.forEach(c => this.formGln.get(c)?.disable());
   }
@@ -724,6 +724,19 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
   pasoCompletado(paso: number): boolean { return this.pasoActual > paso; }
   pasoPendiente(paso: number): boolean { return this.pasoActual < paso; }
 
+  irAlPaso(paso: number): void {
+    // Validar si es permitido avanzar directamente
+    if (paso > this.pasoActual) {
+      // Simula avanzar paso a paso hasta llegar al deseado
+      while (this.pasoActual < paso) {
+        this.siguientePaso();
+        if (this.pasoActual !== paso) return; // Detener si falló una validación
+      }
+    } else {
+      this.pasoActual = paso;
+    }
+  }
+
   siguienteGln(): void {
     if (this.glnIndex < this.glnsDelPrefijo.length - 1) {
       this.glnIndex++;
@@ -825,6 +838,11 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       localizacion: gln.nombreLocalizacion
     });
     this.setCamposUbicacionHabilitados(false);
+    this.setCamposGeneralesSoloLectura(); 
+    this.bloquearCamposPaso(2, true); // Contactos
+    this.bloquearCamposPaso(3, true); // Certificados
+    this.ciudadAutocompleteControl.disable(); // también bloquear autocomplete
+    this.modoEdicion = false; // ✅ para que el mapa esté en modo lectura
   }
 
   guardar(): void {
@@ -972,6 +990,9 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       next: () => {
         this.mostrarMensajeBox('GLN creado', 'El GLN fue creado correctamente.', 'success');
         callback();
+        this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+          this.router.navigate(['/menuProductos/nuevoGln']);
+        });
       },
       error: (err) => {
         console.error('❌ Error al crear GLN', err);
@@ -1078,40 +1099,29 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     this.setCamposUbicacionHabilitados(true);
     this.bloquearCamposPaso(2, false);
     this.bloquearCamposPaso(3, false);
+    this.formGln.get('idTipoLocalizacion')?.enable(); //Permite editar el campo de Tipo Localizacion
   }
 
   cancelar(): void {
-    const camposUbicacion = [
-      'localizacion', 'idCiudad', 'glnCodigopostal', 'direccion', 'gln1',
-      'glnLatitud', 'glnLongitud',
-      'latiG', 'latiM', 'latiS', 'latiE',
-      'longG', 'longM', 'longS', 'longE'
-    ];
-
-    const camposContacto = [
-      'contacto', 'email', 'contactoTel',
-      'glnContacto2', 'glnEmail2', 'glnTel2',
-      'glnContacto3', 'glnEmail3', 'glnTel3'
-    ];
-
-    const camposCertificados = [
-      'fda', 'europa', 'glnGlobal',
-      'glnOtro1', 'glnOtro2',
-      'glnGlnp', 'glnGlne'
-    ];
-
-    [...camposUbicacion, ...camposContacto, ...camposCertificados].forEach(campo => {
-      this.formGln.get(campo)?.reset();
+    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: '¿Cancelar cambios?',
+        message: 'Se perderán todos los cambios no guardados. ¿Desea continuar?',
+        type: 'warning',
+        confirmText: 'Sí, cancelar',
+        cancelText: 'No',
+        showCancel: true
+      }
     });
 
-    // Reset de pasos y bloqueo
-    this.pasoActual = 1;
-    this.setCamposUbicacionHabilitados(false);
-    this.bloquearCamposPaso(2, true);
-    this.bloquearCamposPaso(3, true);
-
-    // Si usas un autocomplete externo, limpia también su control:
-    this.ciudadAutocompleteControl.reset();
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+          this.router.navigate(['/menuProductos/nuevoGln']);
+        });
+      }
+    });
   }
 
   cambiarTab(tab: string): void {
@@ -1246,6 +1256,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     } else {
       this.alertaGln = 'Debe seleccionar un prefijo válido antes de generar un nuevo GLN.';
     }
+    this.formGln.get('idTipoLocalizacion')?.enable(); //Habilitar al crear
   }
 
   setCamposUbicacionHabilitados(habilitado: boolean): void {

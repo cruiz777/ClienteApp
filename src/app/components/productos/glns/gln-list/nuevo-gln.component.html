@@ -23,15 +23,24 @@
     <ng-container *ngIf="activeTab === 'Informacion'">
     <!-- Indicador de pasos -->
       <div class="progress-steps">
-        <div class="step" [ngClass]="{ 'active': pasoActual === 1, 'completed': pasoActual > 1 }">
+        <div
+          class="step"
+          [ngClass]="{ 'active': pasoActual === 1, 'completed': pasoActual > 1 }"
+          (click)="irAlPaso(1)">
           <div class="step-number">1</div>
           <div class="step-label">Datos Generales</div>
         </div>
-        <div class="step" [ngClass]="{ 'active': pasoActual === 2, 'completed': pasoActual > 2 }">
+        <div
+          class="step"
+          [ngClass]="{ 'active': pasoActual === 2, 'completed': pasoActual > 2 }"
+          (click)="irAlPaso(2)">
           <div class="step-number">2</div>
           <div class="step-label">Contactos</div>
         </div>
-        <div class="step" [ngClass]="{ 'active': pasoActual === 3 }">
+        <div
+          class="step"
+          [ngClass]="{ 'active': pasoActual === 3 }"
+          (click)="irAlPaso(3)">
           <div class="step-number">3</div>
           <div class="step-label">Certificados</div>
         </div>
@@ -311,7 +320,7 @@
 
       <div class="form-actions">
         <button mat-button class="btn-nuevo" (click)="nuevo()">Nuevo</button>
-        <button mat-button (click)="modificar()">Modificar</button>
+        <button mat-button (click)="modificar()" [disabled]="modoEdicion">Modificar</button>
         <button mat-button (click)="exportarPDF()" [disabled]="!modoEdicion">Imprimir</button>
         <button mat-button (click)="cancelar()" [disabled]="!modoEdicion">Cancelar</button>
       </div>

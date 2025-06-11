@@ -25,12 +25,37 @@ export class MapaComponent implements AfterViewInit, OnChanges {
             this.mapa.setView([this.lat, this.lng], 15);
             this.marcador.setLatLng([this.lat, this.lng]);
         }
+        if (changes['editable'] && !changes['editable'].firstChange && this.mapa && this.marcador) {
+          if (this.editable) {
+            this.marcador.dragging?.enable();
+            this.mapa.dragging.enable();
+            this.mapa.scrollWheelZoom.enable();
+
+            this.marcador.on('dragend', () => {
+              const { lat, lng } = this.marcador.getLatLng();
+              this.coordenadasCambio.emit({ lat, lng });
+            });
+
+          } else {
+            this.marcador.dragging?.disable();
+            this.mapa.dragging.disable();
+            this.mapa.scrollWheelZoom.disable();
+
+            this.marcador.off('dragend'); // evita múltiples listeners
+          }
+        }
     }
 
   private inicializarMapa(): void {
     this.mapa = L.map('map', {
       center: [this.lat, this.lng],
-      zoom: 15
+      zoom: 15,
+      dragging: this.editable,
+      scrollWheelZoom: this.editable,
+      zoomControl: this.editable,
+      doubleClickZoom: this.editable,
+      boxZoom: this.editable,
+      touchZoom: this.editable
     });
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -38,18 +63,15 @@ export class MapaComponent implements AfterViewInit, OnChanges {
     }).addTo(this.mapa);
 
     const martIcon = L.icon({
-    iconUrl: 'assets/icons/location-marker.png',
-    iconSize: [30, 41],       // Ajusta al tamaño real del ícono
-    iconAnchor: [15, 41],     // Punto donde se ancla el ícono al mapa
-    popupAnchor: [0, -41],    // Dónde aparece el popup relativo al ícono
-    // shadowUrl: 'assets/icons/location-marker-shadow.png', // (opcional)
-    // shadowSize: [41, 41],     // (opcional)
-    // shadowAnchor: [15, 41]    // (opcional)
+      iconUrl: 'assets/icons/location-marker.png',
+      iconSize: [30, 41],
+      iconAnchor: [15, 41],
+      popupAnchor: [0, -41],
     });
 
     this.marcador = L.marker([this.lat, this.lng], {
-    icon: martIcon,
-    draggable: this.editable
+      icon: martIcon,
+      draggable: this.editable
     }).addTo(this.mapa);
 
     if (this.editable) {
