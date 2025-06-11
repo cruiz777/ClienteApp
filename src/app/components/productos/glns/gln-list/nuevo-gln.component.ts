@@ -97,7 +97,7 @@ export class GlnComponent implements OnInit {
         error: (err) => console.error('❌ Error al cargar tipos de localización', err)
       });
 
-      this.prefijoService.obtenerPrefijosPorClienteCodigo(clienteCodigo).subscribe({
+      this.prefijoService.obtenerPrefijosGlnPorClienteCodigo(clienteCodigo).subscribe({
         next: (res) => {
           this.prefijos = res;
           if (res.length > 0) {
@@ -902,7 +902,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
             // Opcional: recargar prefijos si también deseas que la navegación GLN se actualice
             const clienteCodigo = this.formGln.value.clientesCodigo;
             if (clienteCodigo) {
-              this.prefijoService.obtenerPrefijosPorClienteCodigo(clienteCodigo).subscribe(prefijos => {
+              this.prefijoService.obtenerPrefijosGlnPorClienteCodigo(clienteCodigo).subscribe(prefijos => {
                 this.prefijos = prefijos;
                 const idPrefijo = this.formGln.value.idPrefijos;
 
