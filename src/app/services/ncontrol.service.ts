@@ -28,6 +28,7 @@ export class NcontrolService {
     );
   }
   actualizarNumeroControl(id: number, data: { numcon: string; ocupado: boolean }): Observable<any> {
+   
     return this.http.put(`${this.apiUrl}/${id}`, data);
   }
 }

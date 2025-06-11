@@ -1,0 +1,387 @@
+<div class="empresa-wrapper">
+  <div class="empresa-header">
+    <h2 class="empresa-titulo">Formulario GLN</h2>
+  </div>
+
+  <form [formGroup]="formGln">
+    <!-- Tabs superiores -->
+    <div class="tabs">
+      <button 
+        [class.tab-active]="activeTab === 'Informacion'" 
+        [class.tab-inactive]="activeTab !== 'Informacion'" 
+        (click)="cambiarTab('Informacion')">
+        Información General
+      </button>
+      <button 
+        [class.tab-active]="activeTab === 'GLNs'" 
+        [class.tab-inactive]="activeTab !== 'GLNs'" 
+        (click)="cambiarTab('GLNs')">
+        GLN´s
+      </button>
+    </div>
+
+    <ng-container *ngIf="activeTab === 'Informacion'">
+    <!-- Indicador de pasos -->
+      <div class="progress-steps">
+        <div class="step" [ngClass]="{ 'active': pasoActual === 1, 'completed': pasoActual > 1 }">
+          <div class="step-number">1</div>
+          <div class="step-label">Datos Generales</div>
+        </div>
+        <div class="step" [ngClass]="{ 'active': pasoActual === 2, 'completed': pasoActual > 2 }">
+          <div class="step-number">2</div>
+          <div class="step-label">Contactos</div>
+        </div>
+        <div class="step" [ngClass]="{ 'active': pasoActual === 3 }">
+          <div class="step-number">3</div>
+          <div class="step-label">Certificados</div>
+        </div>
+      </div>
+
+      <!-- Paso 1 -->
+      <div *ngIf="pasoActual === 1" class="form-section">
+        <h3>Datos Generales</h3>
+
+        <!-- <div class="gln-navigation-bar">
+          <button mat-icon-button color="primary" (click)="anteriorGln()" [disabled]="glnIndex === 0">
+            <mat-icon>chevron_left</mat-icon>
+          </button>
+          <span class="gln-navigation-label">GLN {{ glnIndex + 1 }} de {{ glnsDelPrefijo.length || 1 }}</span>
+          <button mat-icon-button color="primary" (click)="siguienteGln()" [disabled]="glnIndex >= glnsDelPrefijo.length - 1">
+            <mat-icon>chevron_right</mat-icon>
+          </button>
+        </div> -->
+
+        <div class="form-row">
+          <div class="form-group">
+              <label>Código del Cliente</label>
+              <input matInput formControlName="clientesCodigo">
+          </div>
+          <div class="form-group">
+            <label>RUC/CI/Pasaporte:</label>
+            <input matInput formControlName="documentoIdentidad">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Cliente:</label>
+            <input matInput formControlName="nomCli">
+          </div>
+          <div class="form-group">
+            <label>GLN:</label>
+            <input matInput formControlName="gln1">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Origen de Prefijo:</label>
+            <input matInput formControlName="glnOrigenprefijo">
+          </div>
+          <div class="form-group">
+            <label>Prefijo GS1:</label>
+            <input matInput formControlName="glnPrefijogs1">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Prefijo:</label>
+            <mat-select formControlName="idPrefijos">
+              <mat-option *ngFor="let p of prefijos" [value]="p.id_prefijos">{{ p.codpre }}</mat-option>
+            </mat-select>
+          </div>
+          <div class="form-group">
+            <label>Tipo Localización:</label>
+            <mat-select formControlName="idTipoLocalizacion">
+              <mat-option *ngFor="let tipo of tiposLocalizacion" [value]="tipo.id_tipo_cliente">{{ tipo.descripcion }}</mat-option>
+            </mat-select>
+            <mat-error *ngIf="pasoActual === 1 && formGln.get('idTipoLocalizacion')?.hasError('required')">Campo obligatorio</mat-error>
+          </div>
+        </div>
+
+        <h3>Ubicación</h3>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Localización:</label>
+            <input matInput formControlName="localizacion" [class.invalid]="pasoActual === 1 && formGln.get('localizacion')?.invalid && formGln.get('localizacion')?.touched" placeholder="Ej. Matriz">
+            <mat-error *ngIf="pasoActual === 1 && formGln.get('localizacion')?.hasError('required')">Campo obligatorio</mat-error>
+          </div>
+          <div class="form-group">
+            <label>Ciudad:</label>
+            <mat-form-field appearance="fill" class="w-full">
+              <input type="text" matInput [formControl]="ciudadAutocompleteControl" [matAutocomplete]="auto" [readonly]="!modoEdicion" [value]="mostrarCiudad(ciudadAutocompleteControl.value)" />
+              <button matSuffix mat-icon-button aria-label="Limpiar" *ngIf="ciudadAutocompleteControl.value" (click)="limpiarCiudad()" [disabled]="!modoEdicion">
+                <mat-icon>close</mat-icon>
+              </button>
+              <mat-autocomplete #auto="matAutocomplete" [displayWith]="mostrarCiudad" (optionSelected)="seleccionarCiudadAutocomplete($event.option.value)">
+                <mat-option *ngFor="let ciudad of ciudadesFiltradas" [value]="ciudad">{{ mostrarCiudad(ciudad) }}</mat-option>
+              </mat-autocomplete>
+              <mat-error *ngIf="pasoActual === 1 && formGln.get('idCiudad')?.hasError('required') && formGln.get('idCiudad')?.touched">Campo obligatorio</mat-error>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Código Postal:</label>
+            <input matInput formControlName="glnCodigopostal" placeholder="Ej. 170029">
+          </div>
+          <div class="form-group">
+            <label>Dirección:</label>
+            <input matInput formControlName="direccion" placeholder="Ej. Av. 10 de Agosto y Av. NNUU">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>Latitud (GPS):</label>
+            <input matInput formControlName="glnLatitud" (keypress)="CustomValidators.latLngKeyPress($event)">
+            <small *ngIf="modoEdicion && formGln.get('glnLatitud')?.valid">Latitud GMS: {{ formGln.get('latiG')?.value }}° {{ formGln.get('latiM')?.value }}' {{ formGln.get('latiS')?.value }}'' {{ formGln.get('latiE')?.value }}</small>
+            <mat-error *ngIf="formGln.get('glnLatitud')?.hasError('required')">Campo obligatorio</mat-error>
+          </div>
+          <div class="form-group">
+            <label>Longitud (GPS):</label>
+            <input matInput formControlName="glnLongitud" (keypress)="CustomValidators.latLngKeyPress($event)">
+            <small *ngIf="modoEdicion && formGln.get('glnLongitud')?.valid">Longitud GMS: {{ formGln.get('longG')?.value }}° {{ formGln.get('longM')?.value }}' {{ formGln.get('longS')?.value }}'' {{ formGln.get('longE')?.value }}</small>
+            <mat-error *ngIf="formGln.get('glnLongitud')?.hasError('required')">Campo obligatorio</mat-error>
+          </div>
+        </div>
+        <div class="form-row" *ngIf="modoEdicion">
+        <div class="form-group">
+          <label>Latitud GMS:</label>
+          <div class="gms-group">
+            <input matInput placeholder="Grados" formControlName="latiG" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+            <input matInput placeholder="Minutos" formControlName="latiM" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+            <input matInput placeholder="Segundos" formControlName="latiS" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+            <mat-select formControlName="latiE" placeholder="Hemisferio">
+              <mat-option value="N">N</mat-option>
+              <mat-option value="S">S</mat-option>
+            </mat-select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Longitud GMS:</label>
+          <div class="gms-group">
+            <input matInput placeholder="Grados" formControlName="longG" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+            <input matInput placeholder="Minutos" formControlName="longM" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+            <input matInput placeholder="Segundos" formControlName="longS" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+            <mat-select formControlName="longE" placeholder="Hemisferio">
+              <mat-option value="E">E</mat-option>
+              <mat-option value="O">O</mat-option>
+            </mat-select>
+          </div>
+        </div>
+      </div>
+
+        <div class="form-row">
+          <div class="form-group map-container">
+            <label>Ubicación en el mapa:</label>
+            <app-map [lat]="formGln.get('glnLatitud')?.value" [lng]="formGln.get('glnLongitud')?.value" [editable]="modoEdicion" (coordenadasCambio)="actualizarCoordenadas($event)"></app-map>
+          </div>
+        </div>
+      </div>
+
+      <!-- Paso 2, 3 y navegación los completamos luego si todo va bien con el estilo base -->
+      <div *ngIf="pasoActual === 2" class="form-section">
+        <h3>Contactos</h3>
+
+        <div class="form-row">
+          <div class="form-group full-width">
+            <div class="contacto-header">Contacto 1</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre:</label>
+            <input matInput formControlName="contacto">
+          </div>
+          <div class="form-group">
+            <label>E-mail:</label>
+            <input matInput formControlName="email">
+          </div>
+          <div class="form-group">
+            <label>Telf. o Cel.:</label>
+            <input matInput formControlName="contactoTel" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group full-width">
+            <div class="contacto-header">Contacto 2</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre:</label>
+            <input matInput formControlName="glnContacto2">
+          </div>
+          <div class="form-group">
+            <label>E-mail:</label>
+            <input matInput formControlName="glnEmail2">
+          </div>
+          <div class="form-group">
+            <label>Telf. o Cel.:</label>
+            <input matInput formControlName="glnTel2" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group full-width">
+            <div class="contacto-header">Contacto 3</div>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Nombre:</label>
+            <input matInput formControlName="glnContacto3">
+          </div>
+          <div class="form-group">
+            <label>E-mail:</label>
+            <input matInput formControlName="glnEmail3">
+          </div>
+          <div class="form-group">
+            <label>Telf. o Cel.:</label>
+            <input matInput formControlName="glnTel3" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+          </div>
+        </div>
+      </div>
+
+      <!-- Paso 3-->
+      <div *ngIf="pasoActual === 3" class="form-section">
+        <h3>Datos Generales</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>FDA (Registros):</label>
+            <input matInput formControlName="fda">
+          </div>
+          <div class="form-group">
+            <label>Europa U:</label>
+            <input matInput formControlName="europa">
+          </div>
+          <div class="form-group">
+            <label>Global Gap:</label>
+            <input matInput formControlName="glnGlobal">
+          </div>
+        </div>
+
+        <h3>Otros</h3>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Otros 1:</label>
+            <input matInput formControlName="glnOtro1">
+          </div>
+          <div class="form-group">
+            <label>Otros 2:</label>
+            <input matInput formControlName="glnOtro2">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label>País que solicita GLN:</label>
+            <input matInput formControlName="glnGlnp">
+          </div>
+          <div class="form-group">
+            <label>Empresa que solicita GLN:</label>
+            <input matInput formControlName="glnGlne">
+          </div>
+        </div>
+      </div>
+
+      <div class="form-navigation">
+        <button type="button" (click)="pasoAnterior()" [disabled]="pasoActual === 1">Regresar</button>
+        
+        <!-- GLN Navegación -->
+        <div class="gln-navigation-bar">
+          <button type="button" class="nav-button" (click)="anteriorGln()" [disabled]="glnIndex === 0">‹</button>
+          <span class="gln-navigation-label">
+            GLN {{ glnIndex + 1 }} de {{ glnsDelPrefijo.length || 1 }}
+          </span>
+          <button type="button" class="nav-button" (click)="siguienteGln()" [disabled]="glnIndex >= glnsDelPrefijo.length - 1">›</button>
+        </div>
+
+        <button type="button" *ngIf="pasoActual < 3" (click)="siguientePaso()">Siguiente</button>
+        <button type="button" *ngIf="pasoActual === 3" [disabled]="!modoEdicion" (click)="guardar()" class="btn-primary">
+          Grabar
+        </button>
+      </div>
+
+      <div class="form-actions">
+        <button mat-button class="btn-nuevo" (click)="nuevo()">Nuevo</button>
+        <button mat-button (click)="modificar()">Modificar</button>
+        <button mat-button (click)="exportarPDF()" [disabled]="!modoEdicion">Imprimir</button>
+        <button mat-button (click)="cancelar()" [disabled]="!modoEdicion">Cancelar</button>
+      </div>
+    </ng-container>
+    <!-- GLN's -->
+    <ng-container *ngIf="activeTab === 'GLNs'">
+      <div class="grupo-cliente-screen">
+        <section class="content-container">
+          <div class="actions-container">
+            <div class="search-container">
+              <img src="assets/icons/icon-buscar.png" class="search-icon" />
+              <label class="search-label">Buscar:</label>
+              <input
+                type="text"
+                [(ngModel)]="filtroGLN"
+                [ngModelOptions]="{ standalone: true }"
+                class="search-input"
+                placeholder="Buscar GLN..."
+                (input)="aplicarFiltroGLN()" />
+
+            </div>
+
+            <div class="buttons-container">
+              <button mat-button [matMenuTriggerFor]="menuExportarGLN" class="export-button">
+                <mat-icon class="export-icon">file_download</mat-icon>
+                <span class="export-text">Exportar</span>
+              </button>
+              <mat-menu #menuExportarGLN="matMenu">
+                <button mat-menu-item (click)="exportarGLNsExcel()">
+                  <mat-icon>table_view</mat-icon> Excel
+                </button>
+              </mat-menu>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>GLN</th>
+                  <th>Localización</th>
+                  <th>Dirección</th>
+                  <th>Teléfono</th>
+                  <th>Contacto</th>
+                  <th>Email</th>
+                  <th>Ciudad</th>
+                  <th>País</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let gln of glnsFiltrados; let i = index">
+                  <td>{{ i + 1 }}</td>
+                  <td>{{ gln.gln1 }}</td>
+                  <td>{{ gln.nombreLocalizacion }}</td>
+                  <td>{{ gln.direccion }}</td>
+                  <td>{{ gln.telefono }}</td>
+                  <td>{{ gln.contacto }}</td>
+                  <td>{{ gln.email }}</td>
+                  <td>{{ obtenerNombreCiudad(gln.idCiudad) }}</td>
+                  <td>{{ obtenerNombrePais(gln.idPais) }}</td>                  
+                </tr>
+                <tr *ngIf="glnsFiltrados.length === 0">
+                  <td colspan="10">No hay GLNs disponibles.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </ng-container>
+  </form>
+</div>

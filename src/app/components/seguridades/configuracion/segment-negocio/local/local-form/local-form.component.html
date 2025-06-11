@@ -1,0 +1,127 @@
+<div class="dialog-scroll-container">
+  <h2>{{ isEditMode ? 'Editar Local' : 'Nuevo Local' }}</h2>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+    <div class="form-grid">
+      <!-- Columna izquierda -->
+      <div class="form-column">
+        <div class="form-group">
+          <label>Nombre <span class="required">*</span></label>
+          <input type="text" formControlName="nombre" />
+        </div>
+
+        <div class="form-group">
+          <label>Dirección <span class="required">*</span></label>
+          <input type="text" formControlName="direccion" />
+        </div>
+
+        <div class="form-group">
+          <label>Teléfono 1 <span class="required">*</span></label>
+          <input type="text" formControlName="telefono1" />
+        </div>
+
+        <div class="form-group">
+          <label>Teléfono 2</label>
+          <input type="text" formControlName="telefono2" />
+        </div>
+
+        <div class="form-group">
+          <label>Teléfono 3</label>
+          <input type="text" formControlName="telefono3" />
+        </div>
+
+        <div class="form-group">
+          <label>Área (m²)</label>
+          <input type="number" formControlName="area" />
+        </div>
+
+        <div class="form-group">
+          <label>RUC</label>
+          <input type="text" formControlName="localRuc" />
+        </div>
+
+        <div class="form-group">
+          <label>Administrador</label>
+          <input type="text" formControlName="administrador" />
+        </div>
+      </div>
+
+      <!-- Columna derecha -->
+      <div class="form-column">
+        <div class="form-group">
+          <label>Fax</label>
+          <input type="text" formControlName="fax" />
+        </div>
+
+        <div class="form-group">
+          <label>Número de empleados</label>
+          <input type="number" formControlName="numeroEmpleados" />
+        </div>
+
+        <div class="form-group">
+          <label>Porcentaje distribución</label>
+          <input type="number" formControlName="procentejeDis" />
+        </div>
+
+        <div class="form-group">
+          <label>Centro de Costos <span class="required">*</span></label>
+          <select formControlName="idCentroCostos">
+            <option [value]="null" disabled>Seleccione...</option>
+            <option *ngFor="let c of centrosCostos" [value]="c.id">
+              {{ c.descripcion }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Tipo de Negocio <span class="required">*</span></label>
+          <select formControlName="idTipoNegocio">
+            <option [value]="null" disabled>Seleccione...</option>
+            <option *ngFor="let t of tiposNegocio" [value]="t.id">
+              {{ t.descripcion }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Ciudad</label>
+          <select formControlName="idCiudad">
+            <option [value]="null" disabled>Seleccione...</option>
+            <option *ngFor="let c of ciudades" [value]="c.id">
+              {{ c.ciudad }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Empresa <span class="required">*</span></label>
+          <select formControlName="idEmpresa">
+            <option [value]="null" disabled>Seleccione...</option>
+            <option *ngFor="let e of empresas" [value]="e.empresaCodigo">
+              {{ e.empresaNombre }}
+            </option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Zona</label>
+          <input type="number" formControlName="idZona" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Switches -->
+    <div class="switches">
+      <label><input type="checkbox" formControlName="localBodega" /> ¿Es bodega?</label>
+      <label><input type="checkbox" formControlName="principal" /> ¿Es principal?</label>
+      <label><input type="checkbox" formControlName="priopridad" /> ¿Tiene prioridad?</label>
+      <!-- <label><input type="checkbox" formControlName="localHis" /> ¿Pertenece al HIS?</label> -->
+      <label><input type="checkbox" formControlName="estado" /> Activo</label>
+    </div>
+
+    <div class="button-group">
+      <button type="submit" class="primary-button" [disabled]="form.invalid">Guardar</button>
+      <button type="button" class="cancel-button" (click)="cancelar()">Cancelar</button>
+    </div>
+  </form>
+</div>

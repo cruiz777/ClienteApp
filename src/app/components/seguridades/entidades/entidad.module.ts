@@ -11,8 +11,7 @@ import { UppercaseDirective } from 'src/app/directives/uppercase.directive';
 @NgModule({
   declarations: [
     EntidadListComponent,
-    EntidadFormComponent,
-    UppercaseDirective
+    EntidadFormComponent
   ],
   imports: [
     ReusableModule,

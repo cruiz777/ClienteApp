@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { UsuarioService } from './usuario.service';
 import { ConfirmDialogComponent } from '../components/reusable/confirm-dialog/confirm-dialog.component';
-import { Usuario } from '../interfaces/responses/usuario-response';
+import { LoginUsuarioResponse } from '../interfaces/responses/usuario-log-response';
 
 @Injectable({
   providedIn: 'root'
@@ -13,7 +13,7 @@ export class IdleService {
   private warningInMs: number = 9 * 60 * 1000; // Mostrar advertencia a los 9 minutos
   private warningTimer: any;
   private logoutTimer: any;
-  private usuarioActual: Usuario | null = null;
+  private usuarioActual: LoginUsuarioResponse | null = null;
   private isWatching = false;
 
   constructor(

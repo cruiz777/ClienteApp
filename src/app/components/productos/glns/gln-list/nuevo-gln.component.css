@@ -1,0 +1,505 @@
+/* === CONTENEDOR PRINCIPAL BASADO EN EMPRESA === */
+.gln-wrapper {
+  padding: 30px 60px;
+  font-family: 'Inter', sans-serif;
+  background: #fff;
+  color: #002c6c;
+}
+.empresa-titulo {
+  font-size: 20px;
+  color: #001f4d !important;
+  font-weight: 700;
+  margin: 0;
+}
+.gln-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 20px;
+}
+
+.gln-titulo {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.gln-info {
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* === FORMULARIO === */
+.gln-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-row {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 250px;
+}
+
+.form-group label {
+  font-size: 12px;
+  margin-bottom: 4px;
+  color: #002c6c;
+  font-weight: 600;
+}
+
+.form-group input,
+.form-group select {
+  padding: 5px 10px;
+  border: none;
+  border-bottom: 1px solid #ccd5e2;
+  font-size: 12px;
+  color: #333;
+  outline: none;
+  background: #fff;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-bottom-color: #002c6c;
+}
+
+.form-group input:disabled,
+.form-group input[readonly] {
+  background-color: #f5f5f5;
+  color: #666;
+}
+
+.form-group.invalid input {
+  border-bottom-color: #dc3545;
+}
+
+/* === NAVEGACIÓN DE TABS === */
+/* === TABS REESTILIZADOS COMO PRODUCTO === */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  padding: 8px;
+  background-color: #f4f6f8;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid #ccc;
+}
+
+.tabs button {
+  flex: 1;
+  background-color: #e0e7ef;
+  border: none;
+  padding: 10px 20px;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
+  color: #1f2937;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-align: center;
+}
+
+.tabs button:hover {
+  background-color: #cbd5e1;
+}
+
+.tabs button.tab-active {
+  background-color: #002c6c;
+  color: #ffffff;
+}
+
+.tabs button.tab-inactive {
+  background-color: #e0e7ef;
+  color: #1f2937;
+}
+
+/* === INDICADOR DE PASOS === */
+.progress-steps {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  margin: 20px auto 30px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #ccd5e2;
+  max-width: 600px;
+}
+
+.step {
+  text-align: center;
+  flex: 1;
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: bold;
+  font-size: 14px;
+  margin: 0 auto 4px;
+}
+
+.step-label {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.step.completed .step-number {
+  background-color: #28a745;
+  color: white;
+}
+
+.step.active .step-number {
+  background-color: #f26334;
+  color: white;
+}
+
+.step.inactive .step-number {
+  background-color: white;
+  border: 1px solid #ccd5e2;
+  color: #ccd5e2;
+}
+
+.step.active .step-label,
+.step.completed .step-label {
+  color: #002c6c;
+}
+
+.step.inactive .step-label {
+  color: #ccd5e2;
+}
+
+/* === SECCIONES === */
+.form-section h3 {
+  font-size: 16px;
+  font-weight: 700;
+  margin: 30px 0 15px;
+  color: #002c6c;
+  border-bottom: 2px solid #002c6c;
+  padding-bottom: 5px;
+  width: fit-content;
+}
+
+/* === CONTACTOS === */
+.contacto-header {
+  font-weight: 700;
+  font-size: 14px;
+  margin: 20px 0 10px;
+  color: #002c6c;
+  border-left: 4px solid #002c6c;
+  padding: 8px 0 8px 14px;
+  background-color: #f8f9fa;
+  border-radius: 0 4px 4px 0;
+}
+
+/* === MAPA === */
+.map-group {
+  flex: 2;
+}
+
+.map-container {
+  height: 400px;
+  margin-top: 1rem;
+  border-radius: 8px;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.gms-group { display: flex; gap: 6px; } 
+app-map {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+
+@media (max-width: 768px) {
+  .map-container {
+    height: 180px;
+    width: 100%; 
+  }
+}
+
+
+/* === NAVEGACIÓN DE PASOS CON GLN === */
+.form-navigation {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 30px;
+  padding-top: 15px;
+  border-top: 1px solid #ccd5e2;
+}
+
+.gln-navigation-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 1px solid #ccd5e2;
+}
+
+.gln-navigation-label {
+  font-weight: 600;
+  font-size: 12px;
+  margin: 0 12px;
+  color: #002c6c;
+}
+
+.nav-button {
+  background-color: #002c6c;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: bold;
+}
+
+.nav-button:disabled {
+  background-color: #ccd5e2;
+  cursor: not-allowed;
+}
+
+.nav-button:hover:not(:disabled) {
+  background-color: #001f4d;
+}
+
+/* === ACCIONES === */
+.form-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+  padding-top: 15px;
+  border-top: 1px solid #ccd5e2;
+}
+
+.form-actions button,
+.form-navigation > button {
+  background-color: #eef4f7;
+  border: none;
+  padding: 8px 30px;
+  font-size: 12px;
+  color: #002c6c;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.form-actions button:hover,
+.form-navigation > button:hover {
+  background-color: #dde7ef;
+}
+
+.form-actions button:disabled,
+.form-navigation > button:disabled {
+  background-color: #f5f5f5;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background-color: #002c6c !important;
+  color: white !important;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #001f4d !important;
+}
+
+/* === VALIDACIONES Y MENSAJES === */
+.form-group small {
+  font-size: 10px;
+  color: #666;
+  margin-top: 2px;
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+.alert-message {
+  color: #dc3545;
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+/* === TOAST WARNING === */
+::ng-deep .toast-warning {
+  background-color: #ffffff !important; 
+  border-left: 5px solid #ffc107;
+  color: #003366;
+  font-weight: bold;
+}
+
+/* === RESPONSIVE === */
+@media (max-width: 768px) {
+  .gln-wrapper {
+    padding: 20px;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .form-group {
+    min-width: auto;
+  }
+  
+  .progress-steps {
+    gap: 20px;
+  }
+  
+  .form-navigation {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .gln-navigation-bar {
+    order: 2;
+  }
+  
+  .form-navigation > button {
+    order: 1;
+  }
+}.gms-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.gms-group input {
+  width: 60px;
+}
+
+.gms-group mat-select {
+  width: 80px;
+}
+/* TABLA GLNS*/
+
+.grupo-cliente-screen {
+  padding: 20px;
+  font-family: 'Inter', sans-serif;
+  background-color: #fff;
+}
+
+.content-container {
+  border: 1px solid #ccd5e2;
+  background-color: #fff;
+  padding: 30px;
+  margin-top: 20px;
+}
+
+.actions-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.search-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.search-label {
+  font-size: 14px;
+  color: #002c6c;
+}
+
+.search-input {
+  padding: 6px 10px;
+  border: 1px solid #ccd5e2;
+  border-radius: 4px;
+}
+
+.buttons-container {
+  display: flex;
+  gap: 15px;
+}
+
+.export-button {
+  background-color: #eef4f7;
+  color: #002c6c;
+  border: none;
+  padding: 6px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.export-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  text-align: center;
+  border: 1px solid #ccd5e2;
+  background-color: #fff;
+}
+
+.data-table th,
+.data-table td {
+  padding: 8px 12px;
+  border: 1px solid #ccd5e2;
+  text-align: center;
+}
+
+.data-table th {
+  background-color: #eef4f7;
+  color: #002c6c;
+  font-weight: 500;
+}
+/* Estilo base */
+.btn-nuevo {
+  background-color: #eef4f7;
+  color: #002c6c;
+  border: none;
+  padding: 8px 30px;
+  font-size: 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s ease;
+}
+
+/* Hover opcional */
+.btn-nuevo:hover {
+  background-color: #ffd2c0; /* tono claro del naranja */
+}
+
+/* Efecto al hacer clic */
+.btn-nuevo:active {
+  background-color: #f26334 !important;
+  color: white !important;
+}

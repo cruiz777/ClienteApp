@@ -1,1 +1,37 @@
-<p>perfiles-form works!</p>
+<h2 mat-dialog-title>
+  {{
+  data?.id
+  ? (tipo === 'sistema' ? 'Editar Sistema'
+  : tipo === 'modulo' ? 'Editar Módulo'
+  : tipo === 'menu' ? 'Editar Menú'
+  : tipo === 'opcion' ? 'Editar Opción'
+  : 'Editar Perfil')
+  : (tipo === 'sistema' ? 'Nuevo Sistema'
+  : tipo === 'modulo' ? 'Nuevo Módulo'
+  : tipo === 'menu' ? 'Nuevo Menú'
+  : tipo === 'opcion' ? 'Nueva Opción'
+  : 'Nuevo Perfil')
+  }}
+</h2>
+
+<div mat-dialog-content style="padding-top: 12px;">
+  <form [formGroup]="form">
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>
+        {{tipo === 'sistema' ? 'Nombre del sistema' : tipo === 'modulo' ? 'Nombre del módulo' : tipo === 'menu' ?
+        'Nombre del menú' : tipo === 'opcion' ? 'Nombre de la opción' : 'Nombre del perfil' }}
+      </mat-label>
+      <input matInput placeholder="Ingrese el nombre" formControlName="nombre" />
+      <mat-error *ngIf="form.get('nombre')?.hasError('required')">
+        El nombre es obligatorio.
+      </mat-error>
+    </mat-form-field>
+  </form>
+</div>
+
+<div mat-dialog-actions style="justify-content: flex-end; padding-top: 12px;">
+  <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="grabar()" [disabled]="form.invalid">
+    {{ data?.id ? 'Actualizar' : 'Grabar' }}
+  </button>
+</div>

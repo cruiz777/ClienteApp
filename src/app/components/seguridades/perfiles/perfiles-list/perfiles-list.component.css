@@ -1,37 +1,90 @@
-/* Estilo moderno tipo UltraTab con distribución en columnas */
-
-.tabs {
+/* ===================== TABS ===================== */
+.tabs-limpias {
   display: flex;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 8px;
   margin-bottom: 16px;
-  padding: 8px;
-  background-color: #f4f6f8;
-  border-radius: 8px 8px 0 0;
-  border-bottom: 2px solid #ccc;
 }
 
-.tabs button {
+.tab-sistema {
   flex: 1;
-  background-color: #e0e7ef;
-  border: none;
-  padding: 10px 20px;
+  min-width: 120px;
+  background-color: #e5ecf3;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  position: relative;
   font-weight: 600;
-  border-radius: 8px 8px 0 0;
-  color: #1f2937;
+  color: #002c6c;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s ease;
+}
+
+.tab-sistema.activo {
+  background-color: #002c6c;
+  color: white;
+}
+
+.tab-sistema .contenido-tab {
+  flex: 1;
   text-align: center;
 }
 
-.tabs button:hover {
-  background-color: #cbd5e1;
+.tab-sistema.nuevo {
+  max-width: 50px;
+  justify-content: center;
+  align-items: center;
 }
 
-.tabs button.active {
-  background-color: #002c6c;
-  color: #ffffff;
+.tab-sistema.nuevo button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #002c6c;
+  cursor: pointer;
 }
 
+.acciones-tab {
+  margin-left: 8px;
+}
+
+.acciones-tab button {
+  background: none;
+  border: none;
+  color: #475569;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  padding: 4px 0;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  z-index: 5;
+}
+
+.dropdown button {
+  width: 100%;
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dropdown button:hover {
+  background-color: #f3f4f6;
+}
+
+/* ===================== CONTENEDOR ===================== */
 .contenido-tablas {
   padding: 16px;
   background-color: white;
@@ -39,6 +92,7 @@
   border-radius: 0 0 8px 8px;
 }
 
+/* ===================== ENCABEZADOS ===================== */
 h2 {
   font-size: 18px;
   margin-bottom: 12px;
@@ -52,15 +106,19 @@ h3 {
   color: #002c6c;
 }
 
+/* ===================== TABLA ESTILO ===================== */
 .tabla-estilo {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  /* CAMBIAR DE collapse A separate */
+  border-spacing: 0;
   margin-bottom: 24px;
 }
 
+
 .tabla-estilo th,
 .tabla-estilo td {
-  border: 1px solid #d1d5db;
+  border: 1px solid #e5e7eb;
   padding: 8px 12px;
   text-align: left;
   font-size: 14px;
@@ -72,13 +130,45 @@ h3 {
   font-weight: 600;
 }
 
-/* Estilo para checkboxes */
+/* ===================== BOTONES DE TABLA ===================== */
+.tabla-estilo td button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin-right: 4px;
+}
+
+.tabla-estilo td button img {
+  vertical-align: middle;
+}
+
+.btn-accion {
+  background-color: #002c6c;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-accion:hover {
+  background-color: #1e40af;
+}
+
+/* ===================== CHECKBOXES ===================== */
 input[type='checkbox'] {
   transform: scale(1.2);
   cursor: pointer;
 }
 
-/* Panel con columnas distribuidas */
+/* ===================== PANEL MULTICOLUMNAS ===================== */
 .tablas-panel {
   display: flex;
   justify-content: space-between;
@@ -98,7 +188,146 @@ input[type='checkbox'] {
   margin-bottom: 8px;
 }
 
-/* Responsive */
+/* ===================== COLORES SEGUN ESTADO ===================== */
+.fila-activa {
+  background-color: #cbd5e1 !important;
+  font-weight: bold;
+  color: #002c6c;
+}
+
+.menu-con-opciones {
+  background-color: #e0f7fa;
+  font-weight: bold;
+}
+
+.menu-con-opciones-completo {
+  background-color: #DBEAFE;
+  /* Tailwind: blue-100 */
+  color: #1E3A8A;
+  /* azul fuerte para texto */
+  font-weight: bold;
+}
+
+/* ===================== CLASES UTILITARIAS ===================== */
+.ocultar-id {
+  display: none;
+}
+
+.col-reducida {
+  width: 1%;
+  white-space: nowrap;
+}
+
+/* ===================== FILA DE ACCIONES Y BOTONES ===================== */
+/* .encabezado-acciones: Contenedor flexible para agrupar campos o botones en una sola línea */
+.encabezado-acciones {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* .form-actions-horizontal.alineado-derecha:
+   Alinea a la derecha el contenido dentro de un contenedor .form-row */
+
+.form-actions-horizontal.alineado-derecha {
+  margin-left: auto;
+  display: flex;
+  gap: 12px;
+}
+
+.form-actions button {
+  background-color: #eef4f7;
+  border: 1px solid #ccd5e2;
+  padding: 8px 20px;
+  font-size: 14px;
+  color: #002c6c;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.form-actions-horizontal button.activo {
+  background-color: #002c6c;
+  color: white;
+  border: 1px solid #002c6c;
+}
+
+/* ===================== SCROLL PARA TABLA DE PERFILES ===================== */
+.tabla-scrollable {
+  max-height: 170px;
+  /* Ajusta según lo que necesites visible */
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Para mantener encabezados visibles si deseas */
+.tabla-scrollable thead {
+  position: sticky;
+  top: 0;
+  background-color: #f0f4f8;
+  z-index: 1;
+}
+
+.tabla-scrollable thead th {
+  border-bottom: 1px solid #d1d5db;
+  background-color: #f0f4f8;
+  box-shadow: inset 0 -1px 0 #d1d5db;
+}
+
+/* ===================== FIX SCROLL Y LÍNEAS DEL ENCABEZADO ===================== */
+.tabla-scrollable {
+  max-height: 170px;
+  overflow-y: auto;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Hace que el thead se mantenga fijo arriba */
+.tabla-scrollable table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* Aplicar fondo y bordes a cada th del thead */
+.tabla-scrollable table thead th {
+  background-color: #f0f4f8;
+  border-bottom: 1px solid #d1d5db;
+  border-top: 1px solid #d1d5db;
+  box-shadow: inset 0 -1px 0 #d1d5db;
+}
+
+/* Mantener bordes entre celdas también cuando se hace scroll */
+.tabla-scrollable table th,
+.tabla-scrollable table td {
+  border: 1px solid #d1d5db;
+}
+
+/* ===================== DISEÑO DEL FILTRO DE BUSQUEDA ===================== */
+.input-filtro {
+  padding: 8px 16px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 300px;
+  /* ← Aumenta este valor según tu necesidad */
+  max-width: 100%;
+}
+
+/* ===================== DISEÑO DE BOTON ===================== */
+
+button[mat-stroked-button]:hover {
+  background-color: #002c6c;
+  color: white;
+  border-color: #002c6c;
+  transition: background-color 0.3s ease;
+}
+
+/* ===================== RESPONSIVE ===================== */
 @media screen and (max-width: 768px) {
   .tabs {
     flex-direction: column;
@@ -112,31 +341,4 @@ input[type='checkbox'] {
   .tablas-panel {
     flex-direction: column;
   }
-}
-
-/* Ocultar columnas de ID */
-.ocultar-id {
-  display: none;
-}
-
-/* Columnas con ancho personalizado */
-.col-reducida {
-  width: 1%;
-  white-space: nowrap;
-}
-
-.fila-activa {
-  background-color: #cbd5e1 !important;
-  font-weight: bold;
-  color: #002c6c;
-}
-
-.menu-con-opciones {
-  background-color: #e0f7fa; /* celeste suave */
-  font-weight: bold;
-}
-
-.menu-con-opciones-completo {
-  background-color: #83FA9D; /* celeste suave */
-  font-weight: bold;
 }

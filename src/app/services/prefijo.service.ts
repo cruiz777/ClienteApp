@@ -1,59 +1,24 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { map } from 'rxjs/operators'; 
+import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
+import { PrefijoClienteResponse} from '../interfaces/responses/PrefijoClienteResponse';
+
+export { PrefijoClienteResponse };
 
 export interface Prefijo {
   id_prefijos: number;
   codpre: string;
   clientesCodigo: number;
+  bandera?: number;
 }
-export interface PrefijoClienteResponse {
-  id_prefijos: number;
-  codpre: string;
-  fecha: string;
-  fechaCierre: string;
-  observacion: string;
-  digitos: string;
-  estado: boolean;
-  control: number;
-  ngln: number;
-  bandera: number;
-  facturar: string;
-  codpro: string;
-  nombre: string;
-  fecfac: string;
-  referenciaInterna: string;
-  prefijosgs1: string;
-  origenPrefijo: string;
-  orden: number;
-  clientesCodigo: number;
-  nomcli: string;
-  gln: string;
-  tipoLocalizacion: string;
-  estadoEmpresa: string;
-  ruccli: string;
-  fecing: string;
-  zona: string;
-  tipoCliente: string;
-  grupoEmpresa: string;
-  grupoProducto: string;
-  representante: string;
-  direccion: string;
-  telefono: string;
-  web: string;
-  postal: string;
-  provincia: string;
-  canton: string;
-  ciudad: string;
-}
+
 export interface ActualizarPrefijoPayload {
   fechaCierre: string | null;
   observacion: string;
   estado: boolean;
 }
-
 
 @Injectable({
   providedIn: 'root'
@@ -79,7 +44,7 @@ obtenerPorClienteCodigo(clientesCodigo: number): Observable<PrefijoClienteRespon
   const params = new HttpParams().set('clientesCodigo', clientesCodigo.toString());
 
   return this.http.get<any>(`${this.apiBaseUrl}/CodpreCliente`, { params }).pipe(
-    map(response => response.data as PrefijoClienteResponse[]) // ✅ arreglo
+    map(response => response.data as PrefijoClienteResponse[])
   );
 }
 
@@ -96,7 +61,14 @@ obtenerDetallePrefijo(codpre: string): Observable<PrefijoClienteResponse[]> {
     map(res => res.data as PrefijoClienteResponse[])
   );
 }
-
-
-
+obtenerPrefijosPorClienteCodigo(clientesCodigo: number): Observable<PrefijoClienteResponse[]> {
+  return this.http.get<any>(`${this.apiBaseUrl}/CodpreCliente`, {
+    params: { clientesCodigo }
+  }).pipe(map(response => response.data as PrefijoClienteResponse[]));
+}
+obtenerPrefijosGlnPorClienteCodigo(clientesCodigo: number): Observable<PrefijoClienteResponse[]> {
+  return this.http.get<any>(`${this.apiBaseUrl}/prefijo-gln/CodpreCliente`, {
+    params: { clientesCodigo }
+  }).pipe(map(response => response.data as PrefijoClienteResponse[]));
+}
 }

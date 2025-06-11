@@ -64,6 +64,7 @@ const routes: Routes = [
       // {path:'historialventas',component:HistorialventaComponent},
       // {path:'reportes',component:ReportesComponent}
 
+
     ]
   }
   ];

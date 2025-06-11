@@ -48,9 +48,9 @@ import { CedulaService } from 'src/app/services/cedula.service';
 import { GenerarglnService } from 'src/app/services/generargln.service';
 import { GlnService, GlnRequest } from 'src/app/services/gln.service';
 import { PaisService, Pais } from 'src/app/services/pais.service';
-
-
-
+import { ClienteObservacionService,ClienteObservacion } from 'src/app/services/cliente-observacion.service';
+import { ClienteDatosAdicionalesService,ClienteDatosAdicionales } from 'src/app/services/cliente-datos-adicionales.service';
+import { ClienteContacto,ClienteContactoService } from 'src/app/services/cliente-contacto.service';
 @Component({
   selector: 'app-dialog-cliente',
   templateUrl: './dialog-cliente.component.html',
@@ -60,6 +60,7 @@ export class DialogClienteComponent implements OnInit {
   formCliente!: FormGroup;
   selectedTab: number = 0;
   @ViewChild('stepper') stepper!: MatStepper;
+
 
   grupos: GrupoEmpresa[] = [];
   grupoCtrl = new FormControl('');
@@ -88,7 +89,8 @@ export class DialogClienteComponent implements OnInit {
   nombreCiudadSeleccionada: string = '';
   esPasaporte = false;
   tipoIdentificacion: 'CEDULA' | 'RUC' | 'PASAPORTE' | null = null;
-  usuarioActual: { id: number; usr: string } | null = null;
+  usuarioActual = this.usuarioService.getUsuarioActual();
+
 
   zona: Zona[] = [];
   zonaCtrl = new FormControl('');
@@ -133,10 +135,16 @@ export class DialogClienteComponent implements OnInit {
     private generarglnService: GenerarglnService,
     private glnService: GlnService,
     private dialog: MatDialog,
-    private paisService: PaisService
+    private paisService: PaisService,
+    private clienteObservacionService: ClienteObservacionService,
+    private clienteDatosAdicionalesService: ClienteDatosAdicionalesService,
+    private clienteContactoService:ClienteContactoService
   ) { }
 
   ngOnInit(): void {
+    console.log('----Usuario---');
+    this.usuarioActual = this.usuarioService.getUsuarioActual();
+
 
 
     this.initFormulario();
@@ -163,7 +171,7 @@ export class DialogClienteComponent implements OnInit {
         prefix: ['', Validators.required],
         zona: [null],
         codigoCliente: [{ value: '', disabled: false }],
-        //prefijo: [''], antes 
+        //prefijo: [''], antes
         prefijo: [{ value: '', disabled: true }],
         prefijogs1: [''],
         origen: [''],
@@ -187,7 +195,9 @@ export class DialogClienteComponent implements OnInit {
         sitioWeb: [''],
         telefono2: [''],
         usuario: [{ value: '', disabled: true }],
-        observacion1: ['']
+        observacion1: [''],
+        nprefijo:[false],
+        compra:[false]
       }),
 
       paso3: this.fb.group({
@@ -199,7 +209,7 @@ export class DialogClienteComponent implements OnInit {
         email1: ['', [emailValidoValidator()]],
         email2: ['', [emailValidoValidator()]],
         email3: ['', [emailValidoValidator()]],
-        telefono: [''],
+        telefonoc: [''],
         nombreFinanciero: [''],
 
         telefono2: [''],
@@ -208,7 +218,8 @@ export class DialogClienteComponent implements OnInit {
         pregunta3: [false],
         pregunta4: [false],
         pregunta5: [false],
-        pregunta6: [false]
+        pregunta6: [false],
+        pregunta7: [false]
       }),
 
       paso4: this.fb.group({
@@ -412,7 +423,7 @@ export class DialogClienteComponent implements OnInit {
 
 
 
-  
+
 
   limpiarPais(): void {
     this.paso2Form.get('pais')?.reset();
@@ -626,19 +637,19 @@ export class DialogClienteComponent implements OnInit {
       saldo: 0,
       fecfac: '',
       ciudad: ciudadNombre || '',
-      obs: paso2.observacion1 || '',
+      obs:  '', ///obs: paso2.observacion1 || '',
       delestado: 0,
       genero: '',
       infcamahabitacion: '',
-      empresaCodigo: 1,
+      empresaCodigo: this.usuarioActual?.id_empresa,
       seguimiento: 0,
       fechaactinact: '2025-04-23',
       idEstadoEmpresa: 1,
       formatodocumento: 0,
       imprimeobstramite: 0,
-      idTipoCliente: paso1.categoriaCliente,// aqui llego en blanco 
+      idTipoCliente: paso1.categoriaCliente,// aqui llego en blanco
       idGrupoProducto: paso1.grupoProducto.id_grupo_producto,
-      idPersona: 8,
+      idPersona: 0, //Siempre al crear una persona esta en 0
       codigoPostal: paso2.codigoPostal || '',
       codigoPostal2: '',
       idVendedor: 1,
@@ -666,6 +677,9 @@ export class DialogClienteComponent implements OnInit {
               });
 
               this.guardarPrefijo();
+              this.guardarTodasLasObservaciones();
+              this.guardarDatosAdicionales();
+              this.guardarContactosCliente();
               stepper.selectedIndex = 0;
             }
           },
@@ -693,7 +707,7 @@ export class DialogClienteComponent implements OnInit {
     let pais: string = '';
     let codigogs1: string = ''
 
-    debugger
+    
     switch (prefix) {
       case '5':
         idControl = 70;
@@ -749,17 +763,17 @@ export class DialogClienteComponent implements OnInit {
       this.paso1Form.patchValue({
         gln: glnGenerado
       });
-
+      const bandera = prefix === 'USA' ? 2 : 0;
       const prefijoData = {
         codpre: prefijo,
         fecha: new Date().toISOString().split('T')[0],
-        fechaCierre: new Date().toISOString().split('T')[0],
+        fechaCierre: null,
         observacion: 'Prefijo generado manualmente',
         digitos: prefijo.length.toString(),
         estado: false,
         control: 0,
         ngln: 0,
-        bandera: 0,
+        bandera: bandera,
         facturar: 'C',
         codpro: '1174',
         nombre: `PREFIJO:`,
@@ -832,7 +846,7 @@ export class DialogClienteComponent implements OnInit {
             codpre: prefijo,
             fecha: new Date().toISOString().split('T')[0],
             fechaCierre: new Date().toISOString().split('T')[0],
-            observacion: 'Prefijo generado automáticamente',
+            observacion: '',
             digitos: prefijo.length.toString(),
             estado: false,
             control: 0,
@@ -1291,7 +1305,7 @@ export class DialogClienteComponent implements OnInit {
           idTipoLocalizacion: 12,
           glnLatitud: '0.0000',
           glnLongitud: '0.0000',
-          paisCodigo: 1,
+          idPais: 1,
           direccion: 'Calle Ejemplo 123',
           telefono: '12345678',
           fax: '',
@@ -1339,7 +1353,8 @@ export class DialogClienteComponent implements OnInit {
           latiM: '',
           latiS: '',
           latiE: '',
-          idUsuario: 2
+          idUsuario: this.usuarioActual!.id_usuario
+
         };
 
         this.glnService.insertarGln({ request: nuevoGln }).subscribe({
@@ -1508,6 +1523,146 @@ export class DialogClienteComponent implements OnInit {
     }, 50);
   }
 
+
+guardarTodasLasObservaciones(): void {
+  const paso1 = this.paso1Form.value;
+  const paso2 = this.paso2Form.value;
+  const paso4 = this.paso4Form.value;
+
+  const fechaActual = new Date().toISOString();
+
+  const idUsuario = this.usuarioActual?.id_usuario || 0;
+  const nombreUsuario = this.usuarioActual?.nombre_usuario || '';
+  const clientesCodigo = paso1.codigoCliente || 0;
+
+  const observaciones: ClienteObservacion[] = [
+    {
+      id_ClienteObservacion: 0,
+      Detalle: (paso2.observacion1 || '').trim(),
+      fecha: fechaActual,
+      idUsuario,
+      clientesCodigo,
+      nombreUsuario,
+      linea: 1
+    },
+    {
+      id_ClienteObservacion: 0,
+      Detalle: (paso4.observacion2 || '').trim(),
+      fecha: fechaActual,
+      idUsuario,
+      clientesCodigo,
+      nombreUsuario,
+      linea: 2
+    },
+    {
+      id_ClienteObservacion: 0,
+      Detalle: (paso4.observacion3 || '').trim(),
+      fecha: fechaActual,
+      idUsuario,
+      clientesCodigo,
+      nombreUsuario,
+      linea: 3
+    },
+    {
+      id_ClienteObservacion: 0,
+      Detalle: (paso4.observacion4 || '').trim(),
+      fecha: fechaActual,
+      idUsuario,
+      clientesCodigo,
+      nombreUsuario,
+      linea: 4
+    }
+  ];
+
+  observaciones.forEach(obs => {
+    this.clienteObservacionService.enviarObservacion(obs).subscribe({
+      next: () => console.log(`✅ Observación línea ${obs.linea} enviada`),
+      error: err => console.error(`❌ Error en línea ${obs.linea}:`, err)
+    });
+  });
+}
+
+guardarDatosAdicionales(): void {
+  const paso1 = this.paso1Form.value;
+  const paso2 = this.paso2Form.value;
+  const paso3 = this.paso3Form.value;
+  const clientesCodigo = paso1.codigoCliente || 0;
+  const datosAdicionales = {
+    idDatosAdicionales: 0,
+    expprod: paso3.pregunta1 || false,
+    vendeus: paso3.pregunta2 || false,
+    medico: paso3.pregunta3 || false,
+    gs1ec: paso3.pregunta4 || false,
+    instagram: paso3.pregunta5 || false,
+    facebook: paso3.pregunta6 || false,
+    web: paso3.pregunta7 || false,
+    clientes_codigo: clientesCodigo,
+    prefijo: paso2.nprefijo || false,
+    guia: paso2.compra || false,
+    estado: true
+  };
+  debugger
+  console.log(datosAdicionales);
+  this.clienteDatosAdicionalesService.crear(datosAdicionales).subscribe({
+    next: () => console.log('✅ Datos creados correctamente'),
+    error: (err) => console.error('❌ Error al crear datos adicionales:', err)
+  });
+}
+
+guardarContactosCliente(): void {
+  const paso1 = this.paso1Form.value;
+  const paso3 = this.paso3Form.value;
+  const clientesCodigo = paso1.codigoCliente || 0;
+
+  const contactosCliente = [
+    {
+      id_ContactosClientes: 0,
+      Nombre: paso3.nombreCodificacion || '',
+      telefono: paso3.telefonoc || '',
+      email: paso3.email || '',
+      cargo: 'Codificación',
+      clientesCodigo: clientesCodigo,
+      linea: 1
+    },
+    {
+      id_ContactosClientes: 0,
+      Nombre: paso3.nombreFinanciero || '',
+      telefono: paso3.telefono2 || '',
+      email: paso3.email1 || '',
+      cargo: 'Facturación',
+      clientesCodigo: clientesCodigo,
+      linea: 2
+    },
+    {
+      id_ContactosClientes: 0,
+      Nombre: paso3.nombreFinanciero || '',
+      telefono: paso3.telefono2 || '',
+      email: paso3.email2 || '',
+      cargo: 'Facturación',
+      clientesCodigo: clientesCodigo,
+      linea: 3
+    },
+    {
+      id_ContactosClientes: 0,
+      Nombre: paso3.nombreFinanciero || '',
+      telefono: paso3.telefono2 || '',
+      email: paso3.email3 || '',
+      cargo: 'Facturación',
+      clientesCodigo: clientesCodigo,
+      linea: 4
+    }
+  ];
+
+  // Enviar cada contacto individualmente
+  contactosCliente.forEach(contacto => {
+    if (contacto.Nombre || contacto.email || contacto.telefono) { // Validar si al menos hay un dato útil
+      this.clienteContactoService.crear(contacto).subscribe({
+        next: () => console.log(`✅ Contacto línea ${contacto.linea} creado correctamente`),
+        error: (err) => console.error(`❌ Error al crear contacto línea ${contacto.linea}:`, err)
+      });
+    }
+  });
+}
 
 
 

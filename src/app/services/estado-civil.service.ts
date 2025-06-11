@@ -7,7 +7,7 @@ import { ApiListResponse } from '../interfaces/responses/ApiListResponse';
 
 @Injectable({ providedIn: 'root' })
 export class EstadoCivilService {
-  private apiUrl = `${environment.applicationUrl}/EstadoCivil`;
+  private apiUrl = `${environment.securityApiUrl}/EstadoCivil`;
 
   constructor(private http: HttpClient) {}
 
