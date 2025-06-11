@@ -21,6 +21,9 @@ import { RequiredFieldsToastService } from 'src/app/components/utils/messages/re
 import * as moment from 'moment';
 import * as html2pdf from 'html2pdf.js';
 import { ExportService } from 'src/app/services/export.service';
+import { LogoService } from 'src/app/services/logo.service';
+import { EmpresaService } from 'src/app/services/empresa.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-nuevo-gln',
@@ -55,7 +58,7 @@ export class GlnComponent implements OnInit {
   filtroGLN: string = '';
   glnsFiltrados: GlnResponse[] = [];
   glnsPorCliente: GlnResponse[] = [];
-
+  logoUrl: string = '';
   constructor(
     private fb: FormBuilder,
     private prefijoService: PrefijoService,
@@ -64,11 +67,14 @@ export class GlnComponent implements OnInit {
     private ciudadService: CiudadService,
     private glnService: GlnService,
     private paisService: PaisService,
+    private empresaService: EmpresaService,
+    private logoService: LogoService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private toastr: ToastrService,
     private toastCampos: RequiredFieldsToastService,
-    private exportService: ExportService
+    private exportService: ExportService,
+    private router: Router
   ) {}
 
   compareCiudad(a: any, b: any): boolean {
@@ -235,6 +241,20 @@ export class GlnComponent implements OnInit {
       this.formGln.patchValue({ cantonCodigo: '', idCiudad: null });
       this.ciudadesFiltradas = [];
     });
+    this.empresaService.getEmpresas().subscribe({
+      next: (empresas) => {
+        if (empresas.length > 0 && empresas[0].empresaLogo) {
+          const logo = this.logoService.getLogoUrl(empresas[0].empresaLogo);
+          this.formGln.patchValue({ glnLogo: logo }); // opcional si quieres guardarlo
+          this.logoUrl = logo; // << almacénalo para usar al exportar
+        } else {
+          console.warn('No se encontró empresa o logo');
+        }
+      },
+      error: (err) => {
+        console.error('❌ Error al cargar logo dinámico:', err);
+      }
+    });
 
     combineLatest([
       this.formGln.get('provinciaCodigo')!.valueChanges.pipe(startWith(this.formGln.get('provinciaCodigo')!.value), distinctUntilChanged()),
@@ -295,6 +315,8 @@ export class GlnComponent implements OnInit {
     this.bloquearCamposPaso(2, true); // bloquear contactos
     this.bloquearCamposPaso(3, true); // bloquear certificados
   }
+
+  
   mostrarCiudad = (ciudad: CiudadResumen | string | null): string =>
     typeof ciudad === 'string'
       ? ciudad
@@ -307,7 +329,7 @@ export class GlnComponent implements OnInit {
     this.setUbicacionDesdeCiudad(ciudad);
     this.formGln.patchValue({ idCiudad: ciudad.id });
   }
-
+  
   cargarDatosDesdeGlnResponse(gln: GlnResponse): void {
     this.formGln.patchValue({
       idGln: gln.id_gln,
@@ -934,6 +956,9 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       next: () => {
         this.mostrarMensajeBox('GLN actualizado', 'El GLN fue actualizado correctamente.', 'success');
         callback();
+        this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+          this.router.navigate(['/menuProductos/nuevoGln']);
+        });
       },
       error: (err) => {
         console.error('❌ Error al actualizar GLN', err);
@@ -955,6 +980,11 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     });
   }
 }
+  obtenerCodigoPrefijo(idPrefijo: number): string {
+    const prefijo = this.prefijos.find(p => p.id_prefijos === idPrefijo);
+    return prefijo?.codpre ?? 'N/A';
+  }
+
   private convertirGMSaDecimal(grados: string, minutos: string, segundos: string, hemisferio: 'N' | 'S' | 'E' | 'O'): number {
     const g = parseFloat(grados);
     const m = parseFloat(minutos);
@@ -1259,10 +1289,9 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     const latGMS = `${raw.latiG || '00'}°${raw.latiM || '00'}'${raw.latiS || '00'}" ${raw.latiE || ''}`;
     const longGMS = `${raw.longG || '00'}°${raw.longM || '00'}'${raw.longS || '00'}" ${raw.longE || ''}`;
 
-    const logoUrl = 'assets/img/codbar-logo.png'; // ← asegúrate que este logo exista en tu proyecto
-    const firmaUrl = 'assets/img/firma-gs1.png';  // ← firma opcional
-
-    const logoBase64 = await this.exportService['obtenerLogoBase64'](logoUrl);
+    const logoBase64 = this.logoUrl
+      ? await this.exportService['obtenerLogoBase64'](this.logoUrl)
+      : '';
     // const firmaBase64 = await this.exportService['obtenerLogoBase64'](firmaUrl);
 
     const contenido = `
@@ -1363,7 +1392,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       headers,
       filename: 'GLNs',
       title: 'Listado de GLNs por Prefijo',
-      logoUrl: 'assets/img/codbar-logo.png'
+      logoUrl: this.logoUrl
     });
   }
 }
