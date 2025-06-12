@@ -10,18 +10,10 @@
         <!-- Email -->
         <div class="form-group">
           <label for="email" class="field-label">Correo electrónico:</label>
-          <input
-            type="email"
-            id="email"
-            class="input-field"
-            formControlName="email"
-            placeholder="Ingresa tu correo electrónico"
-            required
-          />
-          <div
-            *ngIf="formRecuperacion.get('email')?.invalid && formRecuperacion.get('email')?.touched"
-            style="color: red; font-size: 13px;"
-          >
+          <input type="email" id="email" class="input-field" formControlName="email"
+            placeholder="Ingresa tu correo electrónico" required />
+          <div *ngIf="formRecuperacion.get('email')?.invalid && formRecuperacion.get('email')?.touched"
+            style="color: red; font-size: 13px;">
             Ingresa un correo válido.
           </div>
         </div>
@@ -34,9 +26,10 @@
         </div>
 
         <!-- Footer -->
-        <div class="footer-container">
-          <a routerLink="/login" class="footer-text">← Volver al login</a>
+        <div class="forgot-password">
+          <a routerLink="/login">← Volver al login</a>
         </div>
+
       </div>
     </form>
   </div>

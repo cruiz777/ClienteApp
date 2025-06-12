@@ -17,13 +17,11 @@ import { LoginFormComponent } from './components/login-form/login-form.component
 const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
-  { path: 'inicio', component: InicioComponent },
-  { path: 'reset-password', component: ResetPasswordComponent },
-  { path: 'recuperar-clave', component: LoginFormComponent },
-
-  { path: 'menus', loadChildren: () => import('./components/menus/menus.module').then(x => x.MenusModule) },
+  { path: 'inicio', component: InicioComponent, canActivate: [AuthGuard] },
+  { path: 'reset-password', component: ResetPasswordComponent, canActivate: [AuthGuard] },
+  { path: 'recuperar-clave', component: LoginFormComponent, canActivate: [AuthGuard] },
+  { path: 'menus', loadChildren: () => import('./components/menus/menus.module').then(x => x.MenusModule), canActivate: [AuthGuard] },
   { path: 'pages', loadChildren: () => import('./components/pages/pages.module').then(x => x.PagesModule), canActivate: [AuthGuard] },
-
   { path: 'seguridades', loadChildren: () => import('./components/seguridades/seguridades.module').then(m => m.SeguridadesModule) },
   {
     path: 'productos',

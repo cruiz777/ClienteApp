@@ -1,96 +1,243 @@
 .gs1-section {
-    position: relative;
-    width: 100%;
-    height: 900vh;
-    overflow: hidden;
-    background-color: #fff;
-  }
-  
-  .carousel-container {
-    width: 100%;
-    height: 100vh;
-    position: relative;
-  }
-  
-  .carousel-image {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    position: absolute;
-    top: 0;
-    left: 0;
-    opacity: 0;
-    transition: opacity 1s ease-in-out;
-  }
-  
+  position: relative;
+  width: 100%;
+  height: 900vh;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+.carousel-container {
+  width: 100%;
+  height: 100vh;
+  position: relative;
+}
+
+.carousel-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0;
+  transition: opacity 1s ease-in-out;
+}
+
+.logo-container {
+  position: absolute;
+  left: 123px;
+  top: 60px;
+}
+
+.gs1-logo {
+  width: 172px;
+  height: 95px;
+}
+
+.product-icons {
+  position: absolute;
+  left: 78px;
+  top: 170px;
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.codbar-gs1 {
+  width: 288px;
+  height: 51px;
+  cursor: pointer;
+}
+
+.cg3000 {
+  width: 165px;
+  height: 59px;
+  margin-left: 123px;
+}
+
+.rol3000 {
+  width: 180px;
+  height: 54px;
+  margin-left: 111px;
+}
+
+.seguridad {
+  width: 290px;
+  height: 53px;
+}
+
+.user-icon-container {
+  position: absolute;
+  right: 60px;
+  top: 60px;
+}
+
+.user-icon {
+  width: 90px;
+  height: 51px;
+}
+
+/* Responsivos */
+
+@media (max-width: 991px) {
   .logo-container {
-    position: absolute;
-    left: 123px;
-    top: 60px;
+    left: 60px;
+    top: 40px;
   }
-  
+
   .gs1-logo {
-    width: 172px;
-    height: 95px;
+    width: 140px;
+    height: 77px;
   }
-  
+
   .product-icons {
-    position: absolute;
-    left: 78px;
-    top: 170px;
-    display: flex;
-    flex-direction: column;
-    gap: 25px;
+    left: 40px;
+    top: 250px;
+    gap: 30px;
   }
-  
-  .codbar-gs1 {
-    width: 288px;
-    height: 51px;
-    cursor: pointer;
+}
+
+@media (max-width: 640px) {
+  .logo-container {
+    left: 20px;
+    top: 20px;
   }
-  
-  .cg3000 {
-    width: 165px;
-    height: 59px;
-    margin-left: 123px;
+
+  .gs1-logo {
+    width: 100px;
+    height: 55px;
   }
-  
-  .rol3000 {
-    width: 180px;
-    height: 54px;
-    margin-left: 111px;
+
+  .product-icons {
+    left: 20px;
+    top: 200px;
+    gap: 20px;
   }
-  
+
+  .codbar-gs1,
+  .cg3000,
+  .rol3000,
   .seguridad {
-    width: 290px;
-    height: 53px;
+    width: 200px;
+    height: auto;
   }
-  
-  .user-icon-container {
-    position: absolute;
-    right: 60px;
-    top: 60px;
-  }
-  
+
   .user-icon {
-    width: 90px;
-    height: 51px;
+    width: 60px;
+    height: 34px;
   }
-  
-  /* Responsivos */
-  
-  @media (max-width: 991px) {
-    .logo-container { left: 60px; top: 40px; }
-    .gs1-logo { width: 140px; height: 77px; }
-    .product-icons { left: 40px; top: 250px; gap: 30px; }
+
+  .user-icon-container {
+    right: 20px;
+    top: 20px;
   }
-  
-  @media (max-width: 640px) {
-    .logo-container { left: 20px; top: 20px; }
-    .gs1-logo { width: 100px; height: 55px; }
-    .product-icons { left: 20px; top: 200px; gap: 20px; }
-    .codbar-gs1, .cg3000, .rol3000, .seguridad { width: 200px; height: auto; }
-    .user-icon { width: 60px; height: 34px; }
-    .user-icon-container { right: 20px; top: 20px; }
-  }
-  
+}
+
+/* =============================
+🎯 PANEL DE USUARIO MODERNO
+============================= */
+
+/* Avatar fijo arriba a la derecha */
+.user-avatar-toggle {
+  position: absolute;
+  top: 40px;
+  right: 60px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background-color: #001f4f;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 16px;
+  cursor: pointer;
+  font-family: 'Poppins', sans-serif;
+  z-index: 200;
+}
+
+/* Panel flotante desplegable */
+.user-panel {
+  position: absolute;
+  top: 90px;
+  right: 40px;
+  width: 220px;
+  background: rgba(255, 255, 255, 0.85); /* Fondo translúcido */
+  backdrop-filter: blur(10px); /* Glass effect */
+  border-radius: 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  padding: 24px 20px;
+  z-index: 199;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* Contenedor superior: avatar + datos */
+.user-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+/* Avatar grande dentro del panel */
+.user-avatar-large {
+  width: 64px;
+  height: 64px;
+  aspect-ratio: 1 / 1;
+  background-color: #001f4f;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Texto del usuario */
+.user-data {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.user-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #001f4f;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-info {
+  font-size: 13px;
+  color: #444;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.user-info span {
+  font-weight: 500;
+  color: #001f4f;
+}
+
+/* Botón de cerrar sesión */
+.logout-button {
+  background-color: #cd3c0d;
+  color: white;
+  border: none;
+  width: 100%;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.logout-button:hover {
+  background-color: #a9280a;
+}

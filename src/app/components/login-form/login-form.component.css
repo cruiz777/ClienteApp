@@ -84,7 +84,7 @@ body {
   height: 22px;
 }
 
-/* ENLACE PARA OLVIDO DE CONTRASEÑA */
+/* ENLACE PARA LOGIN */
 .forgot-password {
   text-align: right;
   margin-bottom: 20px;
@@ -94,6 +94,7 @@ body {
   color: #001f4f;
   text-decoration: none;
   transition: color 0.3s;
+  cursor: pointer;
 }
 .forgot-password a:hover {
   color: #cd3c0d;

@@ -32,8 +32,14 @@
 
         <!-- Botón Login -->
         <div class="login-button-container">
-          <button class="login-button" type="submit">Iniciar Sesión</button>
+          <button class="login-button" type="submit" [disabled]="loading">
+            <ng-container *ngIf="!loading">Iniciar Sesión</ng-container>
+            <ng-container *ngIf="loading">
+              <span class="spinner"></span> Validando...
+            </ng-container>
+          </button>
         </div>
+
 
         <!-- Footer -->
         <div class="footer-container">
