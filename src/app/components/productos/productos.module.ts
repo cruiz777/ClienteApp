@@ -2,44 +2,45 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { RouterModule } from '@angular/router';
-import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 
 // Componentes
 import { NavigationProductoComponent } from './navigation-producto/navigation-producto.component';
 import { BloqueComponent } from './bloque/bloque.component';
 import { MatOptionModule } from '@angular/material/core';
 
-
-// Angular Material modules necesarios
-
+// Angular Material
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { MatButtonModule } from '@angular/material/button';
 import { MatToolbarModule } from '@angular/material/toolbar';
-
+import { MatTableModule } from '@angular/material/table';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSelectModule } from '@angular/material/select';
 
+// Formularios
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 // Ag-Grid y Handsontable
 import { HotTableModule } from '@handsontable/angular';
 import { AgGridModule } from 'ag-grid-angular';
-
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
 
 @NgModule({
   declarations: [
     NavigationProductoComponent,
-    GlnComponent,
-    BloqueComponent
+    BloqueComponent,
+    GlnComponent //Cuidado esta linea
   ],
   imports: [
     CommonModule,
     RouterModule,
-    ReactiveFormsModule,
-    FormsModule,
     HotTableModule,
     AgGridModule,
     FormsModule,
@@ -50,16 +51,15 @@ import { AgGridModule } from 'ag-grid-angular';
     MatExpansionModule,
     MatButtonModule,
     MatToolbarModule,
+    MatTableModule,
+    MatFormFieldModule,
     MatInputModule,
     MatCheckboxModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    MatOptionModule,
-    MatTableModule,
     MatDialogModule,
     MatSnackBarModule,
     MatOptionModule,
-    MatSelectModule
+    MatSelectModule,
+    MatAutocompleteModule
   ],
   exports: [
     NavigationProductoComponent,

@@ -1,84 +1,41 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-import { MatTableModule } from '@angular/material/table';
-import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatRadioModule } from '@angular/material/radio';
-import { MatSelectModule } from '@angular/material/select';
-import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
-import { Cliente } from 'src/app/interfaces/cliente';
 import { AgGridModule } from 'ag-grid-angular';
 import { Router } from '@angular/router';
+import { Cliente } from 'src/app/interfaces/cliente';
+import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
 import { ProductoService, Producto } from 'src/app/services/producto.service';
 import { Codigos14Service } from 'src/app/services/codigos14.service';
 
 @Component({
   selector: 'app-nuevo-producto',
   standalone: true,
-  templateUrl: './nuevo-producto.component.html',
-  styleUrl: './nuevo-producto.component.css',
   imports: [
     CommonModule,
     FormsModule,
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    AgGridModule,
-    MatAutocompleteModule,
-    MatTableModule,
-    MatCheckboxModule,
-    MatRadioModule,
-    MatSelectModule
+    AgGridModule
   ],
-
+  templateUrl: './nuevo-producto.component.html',
+  styleUrl: './nuevo-producto.component.css'
 })
 export class NuevoProductoComponent implements OnInit {
-  // Tab activo
-  activeTab: string = 'Generar';
-
-  // Formulario de GTIN
-  gtinForm: FormGroup;
-
-  // Datos del cliente y filtros
+  activeTab: string = 'Listado';
   clienteSeleccionado: Cliente | null = null;
   filtroPrefijo: string = '';
   busqueda: string = '';
   cantidadMostrar: number = 10;
-
-  // Registro seleccionado para mostrar GTIN-14
   registroSeleccionado: any = null;
   codigoSeleccionado: string = '';
-  // Datos auxiliares
-  prefijos: string[] = ['750', '754', '760'];
-  empaques: string[] = ['Caja', 'Unidad', 'Paquete'];
-
-  // Columnas para tablas
-  columnasUV: string[] = [
-    'id', 'empresa', 'prefijo', 'tipogtin', 'estado', 'codbar',
-    'presentacion', 'descripcion', 'fecha', 'marca', 'contenido',
-    'unidad', 'categoria', 'gcp_brick', 'pais'
-  ];
-
-  columnas: string[] = [
-    'gtin', 'descripcion', 'categoria', 'marca', 'contenidoNeto',
-    'contenidoUM', 'gcpBrick', 'pais', 'urlFoto'
-  ];
-
-
-
-  columnasGTIN14: string[] = [
-    'id', 'g14', 'codbar', 'prefijo', 'presentacion', 'factor',
-    'descripcion', 'fecha', 'estado'
-  ];
-
-  // Datos cargados
   registros: any[] = [];
   registrosGtin14: any[] = [];
-  bandera: number = 0;
-  dataSource: any[] = [];
+
   columnDefsUV = [
     {
       headerName: '#',
@@ -129,31 +86,13 @@ export class NuevoProductoComponent implements OnInit {
   };
 
   constructor(
-    private fb: FormBuilder,
     private clienteSeleccionadoService: ClienteSeleccionadoService,
     private router: Router,
     private productoService: ProductoService,
     private codigos14Service: Codigos14Service
-  ) {
-    // Inicializar formulario reactivo
-    this.gtinForm = this.fb.group({
-      cliente: [''],
-      ruc: [''],
-      prefijo: [''],
-      gln: [''],
-      gtin12Nac: [false],
-      gtin13Nac: [false],
-      gtin12Int: [false],
-      gtin13Int: [false],
-      usarUnidadVenta: [false],
-      producto: [''],
-      categoria: [''],
-      tipoEmpaque: ['']
-    });
-  }
+  ) { }
 
   ngOnInit(): void {
-    // Escuchar cambio de cliente
     this.clienteSeleccionadoService.clienteSeleccionado$.subscribe(cliente => {
       this.clienteSeleccionado = cliente;
       if (cliente?.clientes_codigo) {
@@ -162,12 +101,10 @@ export class NuevoProductoComponent implements OnInit {
     });
   }
 
-  // Cambiar pestaña activa
   cambiarTab(tab: string) {
     this.activeTab = tab;
   }
 
-  // Filtrar registros por prefijo y búsqueda
   filtrarRegistros() {
     return this.registros.filter(r =>
       (!this.filtroPrefijo || r.prefijo.includes(this.filtroPrefijo)) &&
@@ -175,26 +112,12 @@ export class NuevoProductoComponent implements OnInit {
     );
   }
 
-  // Seleccionar producto UV y cargar su GTIN-14
   seleccionarRegistro(registro: any) {
     this.registroSeleccionado = registro;
     this.codigoSeleccionado = registro.codbar;
     this.cargarCodigos14PorGtin(registro.codbar);
-
   }
 
-  // Navegar a pantalla de UV individual
-  irAUvIndividual(): void {
-    this.router.navigate(['/menuProductos/uvIndividual']);
-  }
-
-  // Salir a página de clientes
-  salir(): void {
-    this.router.navigate(['/pages/clientes']);
-
-  }
-
-  // Cargar productos por cliente
   cargarProductos(codigoCliente: number): void {
     this.productoService.getProductosPorCliente(codigoCliente).subscribe({
       next: (productos: Producto[]) => {
@@ -207,16 +130,7 @@ export class NuevoProductoComponent implements OnInit {
           codbar: p.codbar || '',
           presentacion: p.p || '',
           descripcion: p.Despro || '',
-
-          fecha: (() => {
-            const fecha = new Date(p.Fecing);
-            const dia = String(fecha.getDate()).padStart(2, '0');
-            const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-            const anio = fecha.getFullYear();
-            return `${dia}/${mes}/${anio}`;
-          })(),
-
-          _fecha: this.formatearFecha(p.Fecing),
+          fecha: this.formatearFecha(p.Fecing),
           marca: p.marca || '',
           contenido: p.contenido || '',
           unidad: p.unidad || '',
@@ -229,11 +143,9 @@ export class NuevoProductoComponent implements OnInit {
     });
   }
 
-  // Cargar GTIN-14 relacionados al código seleccionado
   cargarCodigos14PorGtin(gtin: string): void {
     this.codigos14Service.getPorGtin(gtin).subscribe({
-
-      next: (codigos) => {
+      next: codigos => {
         this.registrosGtin14 = codigos.map(c => ({
           id: c.id_codigos14,
           g14: c.g14 || '',
@@ -257,9 +169,16 @@ export class NuevoProductoComponent implements OnInit {
     const anio = fecha.getFullYear();
     return `${dia}/${mes}/${anio}`;
   }
+
+  irAUvIndividual(): void {
+    this.router.navigate(['/menuProductos/uvIndividual']);
+  }
+
   irBloque(): void {
     this.router.navigate(['/menuProductos/bloque']);
   }
 
- }
-
+  salir(): void {
+    this.router.navigate(['/pages/clientes']);
+  }
+}
