@@ -263,5 +263,9 @@ crearProducto(request: ProductoRequest): Observable<ApiResponse<number>> {
   return this.http.get<ApiResponse<boolean>>(`${this.apiBaseUrl}/Producto/verificar-codbar/${codbar}`);
 }
 
+eliminarProducto(id: number): Observable<any> {
+  return this.http.delete(`${this.apiBaseUrl}/Producto/${id}`);
+}
+
 
 }

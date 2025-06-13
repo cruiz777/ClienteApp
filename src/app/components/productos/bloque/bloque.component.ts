@@ -17,9 +17,9 @@ import { MatDialogRef, MAT_DIALOG_DATA, MatDialog } from '@angular/material/dial
 import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
 import { UsuarioService } from 'src/app/services/usuario.service';
 import { ProductoService, ProductoRequest } from 'src/app/services/producto.service';
-import { ProductoAdicionalService } from 'src/app/services/producto-adicional.service';
+import { ProductoAdicionalService, ProductoDatosAdicionalesRequest } from 'src/app/services/producto-adicional.service';
 import { Router } from '@angular/router';
-
+import { DialogProcesoComponent } from '../dialog-proceso/dialog-proceso.component';
 @Component({
   selector: 'app-bloque',
   templateUrl: './bloque.component.html',
@@ -50,7 +50,7 @@ export class BloqueComponent implements OnInit {
   clienteE!: ClienteIndividual;
   gruposProducto: GrupoProducto[] = [];
   id_grupo_producto: number = 0;
-  idgrupo:number=0;
+  idgrupo: number = 0;
   codigoGrupo: string = '';
   desGrugo: string = '';
   brick: string = '';
@@ -89,8 +89,12 @@ export class BloqueComponent implements OnInit {
   idProductoNuevo: number = 0;
   procesandoMasivo: boolean = false;
   totalAProcesar: number = 0;
+  // Al inicio del componente
   procesadosExitosos: number = 0;
   procesadosFallidos: number = 0;
+  totalRegistros: number = 0;
+
+
 
   constructor(
     private fb: FormBuilder,
@@ -106,6 +110,7 @@ export class BloqueComponent implements OnInit {
     private productoService: ProductoService,
     private productoAdicionalService: ProductoAdicionalService,
     private router: Router,
+
 
   ) {
     this.formUV = this.fb.group({
@@ -126,9 +131,9 @@ export class BloqueComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    window.onerror = function(message, source, lineno, colno, error) {
-  console.error("🔴 Uncaught Error:", message, "at", source + ':' + lineno + ':' + colno);
-};
+    window.onerror = function (message, source, lineno, colno, error) {
+      console.error("🔴 Uncaught Error:", message, "at", source + ':' + lineno + ':' + colno);
+    };
 
     this.gridOptions.context = {
       componentParent: this
@@ -235,7 +240,7 @@ export class BloqueComponent implements OnInit {
         gcpBrick: this.brick,
         pais: 'EC',
         activo: false,
-        grupo:this.id_grupo_producto,
+        grupo: this.id_grupo_producto,
       });
     }
 
@@ -344,77 +349,77 @@ export class BloqueComponent implements OnInit {
     }
   }
 
-generar(): void {
-  this.rowData = [...this.rowData]; // Refrescar AG-Grid visualmente
-  this.gridApi.setFocusedCell(0, 'gtinUv');
+  generar(): void {
+    this.rowData = [...this.rowData]; // Refrescar AG-Grid visualmente
+    this.gridApi.setFocusedCell(0, 'gtinUv');
 
-  const idSeleccionado = this.formUV.value.gcp;
-  const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
-  const prefijo = objeto?.codpre || '';
+    const idSeleccionado = this.formUV.value.gcp;
+    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+    const prefijo = objeto?.codpre || '';
 
-  if (!prefijo) {
-    this.mostrarAlerta('⚠️ Seleccione Prefijo', 'Error');
-    return;
-  }
-
-  if (this.rowData.length === 0) {
-    this.mostrarAlerta('⚠️ Productos a codificar en Cero', 'Error');
-    return;
-  }
-
-  const serie = this.formUV.get('serie')?.value || '';
-
-  if (!this.validarCeldasObligatorias()) return;
-
-  
-  this.npais = '786';
-
-  this.generacionCodigosService.obtenerSecuencia(prefijo, this.npais).subscribe({
-    next: (resp: SecuenciaResponse) => {
-      const longitudPrefijo = prefijo.length;
-      const longitudSecuencia = 12 - this.npais.length - longitudPrefijo;
-
-      if (longitudSecuencia <= 0) {
-        alert(`⚠️ Prefijo demasiado largo (${longitudPrefijo} dígitos). No se puede generar GTIN-13 válido.`);
-        return;
-      }
-
-      const secuenciaInicial = serie !== '' ? parseInt(serie, 10) : resp.data;
-
-      if (!this.validarAfiliacion(secuenciaInicial)) return;
-
-      const maxCodigos = Math.pow(10, longitudSecuencia);
-      if (this.rowData.length > maxCodigos) {
-        alert(`⚠️ Solo se pueden generar ${maxCodigos} códigos con prefijo de ${longitudPrefijo} dígitos. Se recortarán automáticamente.`);
-        this.rowData = this.rowData.slice(0, maxCodigos);
-      }
-
-      for (let i = 0; i < this.rowData.length; i++) {
-        const secuenciaActual = (secuenciaInicial + i).toString().padStart(longitudSecuencia, '0');
-        const gtin12 = this.npais + prefijo + secuenciaActual;
-        const dv = this.calcularDigitoVerificador(gtin12);
-        this.rowData[i].gtinUv = gtin12 + dv;
-      }
-
-      // Asignar el primer GTIN generado al formulario
-      const primerSecuencia = secuenciaInicial.toString().padStart(longitudSecuencia, '0');
-      const primerGtin = this.npais + prefijo + primerSecuencia;
-      const primerDv = this.calcularDigitoVerificador(primerGtin);
-      this.formUV.get('gtinUv')?.setValue(primerGtin + primerDv);
-
-      this.mensaje = resp.message;
-      this.secuencia = secuenciaInicial; // Guardar para referencia futura
-      this.rowData = [...this.rowData];
-
-      this.botonGenerarDeshabilitado = true;
-      this.botonGrabarDeshabilitado = false;
-    },
-    error: (err) => {
-      console.error('❌ Error al obtener secuencia', err);
-      this.mensaje = 'Error al generar la secuencia';
+    if (!prefijo) {
+      this.mostrarAlerta('⚠️ Seleccione Prefijo', 'Error');
+      return;
     }
-  });
-}
+
+    if (this.rowData.length === 0) {
+      this.mostrarAlerta('⚠️ Productos a codificar en Cero', 'Error');
+      return;
+    }
+
+    const serie = this.formUV.get('serie')?.value || '';
+
+    if (!this.validarCeldasObligatorias()) return;
+
+
+    this.npais = '786';
+
+    this.generacionCodigosService.obtenerSecuencia(prefijo, this.npais).subscribe({
+      next: (resp: SecuenciaResponse) => {
+        const longitudPrefijo = prefijo.length;
+        const longitudSecuencia = 12 - this.npais.length - longitudPrefijo;
+
+        if (longitudSecuencia <= 0) {
+          alert(`⚠️ Prefijo demasiado largo (${longitudPrefijo} dígitos). No se puede generar GTIN-13 válido.`);
+          return;
+        }
+
+        const secuenciaInicial = serie !== '' ? parseInt(serie, 10) : resp.data;
+
+        if (!this.validarAfiliacion(secuenciaInicial)) return;
+
+        const maxCodigos = Math.pow(10, longitudSecuencia);
+        if (this.rowData.length > maxCodigos) {
+          alert(`⚠️ Solo se pueden generar ${maxCodigos} códigos con prefijo de ${longitudPrefijo} dígitos. Se recortarán automáticamente.`);
+          this.rowData = this.rowData.slice(0, maxCodigos);
+        }
+
+        for (let i = 0; i < this.rowData.length; i++) {
+          const secuenciaActual = (secuenciaInicial + i).toString().padStart(longitudSecuencia, '0');
+          const gtin12 = this.npais + prefijo + secuenciaActual;
+          const dv = this.calcularDigitoVerificador(gtin12);
+          this.rowData[i].gtinUv = gtin12 + dv;
+        }
+
+        // Asignar el primer GTIN generado al formulario
+        const primerSecuencia = secuenciaInicial.toString().padStart(longitudSecuencia, '0');
+        const primerGtin = this.npais + prefijo + primerSecuencia;
+        const primerDv = this.calcularDigitoVerificador(primerGtin);
+        this.formUV.get('gtinUv')?.setValue(primerGtin + primerDv);
+
+        this.mensaje = resp.message;
+        this.secuencia = secuenciaInicial; // Guardar para referencia futura
+        this.rowData = [...this.rowData];
+
+        this.botonGenerarDeshabilitado = true;
+        this.botonGrabarDeshabilitado = false;
+      },
+      error: (err) => {
+        console.error('❌ Error al obtener secuencia', err);
+        this.mensaje = 'Error al generar la secuencia';
+      }
+    });
+  }
 
 
 
@@ -445,7 +450,7 @@ generar(): void {
       fila.categoria = this.codigoGrupo;
       fila.gcpBrick = this.brick;
       fila.pais = 'EC';
-      fila.grupo=this.id_grupo_producto;
+      fila.grupo = this.id_grupo_producto;
     }
 
     this.rowData = [...this.rowData];
@@ -468,7 +473,7 @@ generar(): void {
 
 
   simularPegado(): void {
-  
+
     setTimeout(() => {
       const texto = this.textoPegado.trim();
       if (texto) {
@@ -507,7 +512,7 @@ generar(): void {
       return params.oldValue; // mantiene el valor anterior si no es válido
     }
   }
-  
+
 
   cargarUnidades(): void {
     this.umedidaService.obtenerUnidades().subscribe({
@@ -574,7 +579,7 @@ generar(): void {
   }
 
   validarCeldasObligatorias(): boolean {
-  
+
     let errorEncontrado = false;
 
     for (let i = 0; i < this.rowData.length; i++) {
@@ -657,26 +662,36 @@ generar(): void {
   }
 
 
-  procesarGrabado(): void {
+ procesarGrabado(): void {
   const filas = this.rowData;
   const total = filas.length;
 
   if (total === 0) return;
 
-  this.mensaje = ''; // Limpia mensaje
   this.totalAProcesar = total;
   this.procesadosExitosos = 0;
   this.procesadosFallidos = 0;
   this.loadingMasivo = true;
 
+  const dialogRef = this.dialog.open(DialogProcesoComponent, {
+    disableClose: true,
+    width: '400px',
+    data: {
+      procesados: 0,
+      total: total
+    }
+  });
+
   const tareas: Promise<void>[] = filas.map(fila => {
     return new Promise<void>((resolve) => {
-      this.guardarProducto(fila, resolve); // ejecuta con callback
+      this.guardarProducto(fila, resolve, dialogRef);
     });
   });
 
   Promise.all(tareas).then(() => {
     this.loadingMasivo = false;
+
+    dialogRef.close(); // ✅ Cerrar el dialogo de progreso al finalizar
 
     const msg = this.modoEdicion ? 'actualizados' : 'generar';
 
@@ -716,181 +731,197 @@ generar(): void {
 
   }
 
-guardarProducto(fila: any, onFinish: () => void): void {
-  const cliente = this.clienteSeleccionado;
+guardarProducto(fila: any, onFinish: () => void, dialogRef: MatDialogRef<DialogProcesoComponent>): void {
 
-  const nuevoProducto: ProductoRequest = {
-    IdProducto: 0,
-    Codpro: fila.gtinUv || '',
-    Despro: fila.descripcion || '',
-    Tippro: 'S',
-    Codgru: 0,
-    Codsec: 0,
-    Coddep: 0,
-    Codsub: 0,
-    Coddiv: 0,
-    Codmar: 0,
-    Despro2: '',
-    Uniman: fila.contenidoUM || '',
-    Feccre: new Date().toISOString(),
-    Colsab: '',
-    Talla: '',
-    Preven: 0,
-    Preven2: 0,
-    Precos: 0,
-    Cospro: 0,
-    Exiqty: 0,
-    Exipdc: 0,
-    Exipdv: 0,
-    Exisic: 0,
-    Fecsic: new Date().toISOString(),
-    Refer: '',
-    Codcuedeb: '',
-    Codcuehab: '',
-    Codcuedes: '',
-    Codcuedev: '',
-    Iva: '',
-    Tipo: '',
-    Preuni: '',
-    Regalia: '',
-    Inv: true,
-    PrevenSinIva: 0,
-    PagaIva: true,
-    PagaRegalia: true,
-    Desind: '',
-    Codorigen: '',
-    Codcol: 0,
-    StockMax: 0,
-    StockMin: 0,
-    Espesor: 0,
-    Largo: 0,
-    Ancho: 0,
-    Fechacad: '',
-    Fechacad1: 0,
-    Fabricante: 0,
-    Obs: fila.observacion || '',
-    Peso: false,
-    Fecing: new Date().toISOString(),
-    ValorUnidad: 0,
-    Codsab: '',
-    Fechamod: new Date().toISOString(),
-    Tamanio: '',
-    Modelo: '',
-    Numserie: fila.serie || '',
-    Coleccion: '',
-    Temporada: '',
-    Prepormayor: 0,
-    PreAnterior: 0,
-    CosAnterior: 0,
-    DescCosto1: 0,
-    DescCosto2: 0,
-    DescCosto3: 0,
-    DescCosto4: 0,
-    Descuento: 0,
-    PreRebaja: 0,
-    PreRebajaAntes: 0,
-    FecIniPro: new Date().toISOString(),
-    FecFinPro: new Date().toISOString(),
-    FecIniPro1: new Date().toISOString(),
-    Codubi: '',
-    FecFinPro1: new Date().toISOString(),
-    FecPreAct: new Date().toISOString(),
-    FecPreMod: new Date().toISOString(),
-    FecCosAct: new Date().toISOString(),
-    FecCosMod: new Date().toISOString(),
-    CodNiv: '',
-    CodColUbi: '',
-    MargenUtilidad: 0,
-    PvpSinIva: 0,
-    PorcenRecepcion: 0,
-    Stocks: true,
-    Abrevia: '',
-    Referencia: '',
-    MargenAntes: 0,
-    FecMarAntes: new Date().toISOString(),
-    CantDecimal: true,
-    CostSuminis: 0,
-    CantConv: 0,
-    CostHelado: 0,
-    Receta: false,
-    Activo: true,
-    ClasProd: '',
-    Foto: fila.urlFoto || '',
-    AltoRiesgo: false,
-    PGasto: false,
-    CtaProdGasto: '',
-    RegSanitario: '',
-    IdEmpresa: this.usuarioActual?.id_empresa ?? 1,
-    Codbar: fila.gtinUv || ''
-  };
+    const cliente = this.clienteSeleccionado;
 
-  this.productoService.crearProducto(nuevoProducto).subscribe({
-    next: (productoCreado) => {
-      const nuevoId = productoCreado.data;
-      const idSeleccionado = this.formUV.value.gcp;
-      const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+    const nuevoProducto: ProductoRequest = {
+      IdProducto: 0,
+      Codpro: fila.gtinUv || '',
+      Despro: fila.descripcion || '',
+      Tippro: 'S',
+      Codgru: 0,
+      Codsec: 0,
+      Coddep: 0,
+      Codsub: 0,
+      Coddiv: 0,
+      Codmar: 0,
+      Despro2: '',
+      Uniman: fila.contenidoUM || '',
+      Feccre: new Date().toISOString(),
+      Colsab: '',
+      Talla: '',
+      Preven: 0,
+      Preven2: 0,
+      Precos: 0,
+      Cospro: 0,
+      Exiqty: 0,
+      Exipdc: 0,
+      Exipdv: 0,
+      Exisic: 0,
+      Fecsic: new Date().toISOString(),
+      Refer: '',
+      Codcuedeb: '',
+      Codcuehab: '',
+      Codcuedes: '',
+      Codcuedev: '',
+      Iva: '',
+      Tipo: '',
+      Preuni: '',
+      Regalia: '',
+      Inv: true,
+      PrevenSinIva: 0,
+      PagaIva: true,
+      PagaRegalia: true,
+      Desind: '',
+      Codorigen: '',
+      Codcol: 0,
+      StockMax: 0,
+      StockMin: 0,
+      Espesor: 0,
+      Largo: 0,
+      Ancho: 0,
+      Fechacad: '',
+      Fechacad1: 0,
+      Fabricante: 0,
+      Obs: fila.observacion || '',
+      Peso: false,
+      Fecing: new Date().toISOString(),
+      ValorUnidad: 0,
+      Codsab: '',
+      Fechamod: new Date().toISOString(),
+      Tamanio: '',
+      Modelo: '',
+      Numserie: fila.serie || '',
+      Coleccion: '',
+      Temporada: '',
+      Prepormayor: 0,
+      PreAnterior: 0,
+      CosAnterior: 0,
+      DescCosto1: 0,
+      DescCosto2: 0,
+      DescCosto3: 0,
+      DescCosto4: 0,
+      Descuento: 0,
+      PreRebaja: 0,
+      PreRebajaAntes: 0,
+      FecIniPro: new Date().toISOString(),
+      FecFinPro: new Date().toISOString(),
+      FecIniPro1: new Date().toISOString(),
+      Codubi: '',
+      FecFinPro1: new Date().toISOString(),
+      FecPreAct: new Date().toISOString(),
+      FecPreMod: new Date().toISOString(),
+      FecCosAct: new Date().toISOString(),
+      FecCosMod: new Date().toISOString(),
+      CodNiv: '',
+      CodColUbi: '',
+      MargenUtilidad: 0,
+      PvpSinIva: 0,
+      PorcenRecepcion: 0,
+      Stocks: true,
+      Abrevia: '',
+      Referencia: '',
+      MargenAntes: 0,
+      FecMarAntes: new Date().toISOString(),
+      CantDecimal: true,
+      CostSuminis: 0,
+      CantConv: 0,
+      CostHelado: 0,
+      Receta: false,
+      Activo: true,
+      ClasProd: '',
+      Foto: fila.urlFoto || '',
+      AltoRiesgo: false,
+      PGasto: false,
+      CtaProdGasto: '',
+      RegSanitario: '',
+      IdEmpresa: this.usuarioActual?.id_empresa ?? 1,
+      Codbar: fila.gtinUv || ''
+    };
 
-      const adicionales = {
-        IdProductoDatosAdicionales: 0,
-        ClientesCodigo: cliente?.clientes_codigo || 0,
-        IdPrefijos: objeto?.id_prefijos || 0,
-        IdTipoCodigoGs1: 1,
-        IdGrupoProducto: fila.grupo,
-        Peso1: 0,
-        IdUsuario: this.usuarioActual?.id_usuario ?? 1,
-        Facturar: '',
-        Nombre: fila.descripcion || '',
-        Gtin: 'GTIN 13',
-        Target: '',
-        Marca: fila.marca || '',
-        Autfuncion: '',
-        Registros: '',
-        Obsc: '',
-        IdSector: 2,
-        Contenido: fila.contenidoNeto || '',
-        Um: fila.contenidoUM || '',
-        Brick: fila.brick || '',
-        Pais: fila.pais || '',
-        Url: '',
-        Pum: '',
-        Lum: '',
-        Aum: '',
-        Url2: '',
-        Pais2: '',
-        Pais3: '',
-        Codint: '',
-        Secto2: '',
-        Sector3: '',
-        SolFavorita: 0,
-        SolRosado: 0,
-        SolSantamaria: 0,
-        SolTia: 0,
-        SolAmazon: 0,
-        SolGoogle: 0,
-        SolEbay: 0,
-        SolOtros: '',
-        id_producto: nuevoId
-      };
+    this.productoService.crearProducto(nuevoProducto).subscribe({
+      next: (productoCreado) => {
+        const nuevoId = productoCreado.data;
+        const idSeleccionado = this.formUV.value.gcp;
+        const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
 
-      this.productoAdicionalService.crearProductoDatosAdicionales(adicionales).subscribe({
-    next: () => {
-      this.procesadosExitosos++;
-      this.verificarFinalizacionProceso();
-      onFinish(); // ← importante
-    },
-    error: (err) => {
-      this.procesadosFallidos++;
-      this.verificarFinalizacionProceso();
-      onFinish(); // ← importante
-    }
-  });
-    },
-    error: (err) => {
-      console.error('❌ Error al crear producto:', err);
-      this.mostrarAlerta('Error al guardar producto', '❌');
-    }
-  });
-}
+        const adicionales: ProductoDatosAdicionalesRequest = {
+          IdProductoDatosAdicionales: 0,
+          ClientesCodigo: cliente?.clientes_codigo || 0,
+          IdPrefijos: objeto?.id_prefijos || 0,
+          IdTipoCodigoGs1: 1,
+          IdGrupoProducto: fila.grupo || 0,
+          Peso1: fila.peso || 0,
+          IdUsuario: this.usuarioActual?.id_usuario ?? 1,
+          Facturar: '',
+          Nombre: fila.descripcion || '',
+          Gtin: fila.gtinUv || '',
+          Target: '',
+          Marca: fila.marca || '',
+          Autfuncion: '',
+          Registros: '',
+          Obsc: '',
+          IdSector: 2,
+          Contenido: fila.contenidoNeto || '',
+          Um: fila.contenidoUM || '',
+          Brick: fila.brick || '',
+          Pais: fila.pais || '',
+          Url: '',
+          Pum: '',
+          Lum: '',
+          Aum: '',
+          Url2: '',
+          Pais2: '',
+          Pais3: '',
+          Codint: '',
+          Secto2: '',
+          Sector3: '',
+          SolFavorita: 0,
+          SolRosado: 0,
+          SolSantamaria: 0,
+          SolTia: 0,
+          SolAmazon: 0,
+          SolGoogle: 0,
+          SolEbay: 0,
+          SolOtros: '',
+          id_producto: nuevoId
+        };
+
+        this.productoAdicionalService.crearProductoDatosAdicionales(adicionales).subscribe({
+          next: () => {
+            this.procesadosExitosos++;
+            dialogRef.componentInstance.data.procesados = this.procesadosExitosos + this.procesadosFallidos;
+            this.verificarFinalizacionProceso();
+            onFinish();
+
+          },
+          error: (err) => {
+            // ❌ Falla en datos adicionales → eliminar producto base
+            this.productoService.eliminarProducto(nuevoId).subscribe({
+              next: () => {
+                console.warn(`🧹 Producto ${nuevoId} eliminado por error en datos adicionales.`);
+              },
+              error: () => {
+                console.error(`❌ Falló intento de eliminar producto ${nuevoId} luego del error.`);
+              },
+              complete: () => {
+                this.procesadosFallidos++;
+                this.verificarFinalizacionProceso();
+                onFinish();
+              }
+            });
+          }
+        });
+      },
+      error: (err) => {
+        console.error('❌ Error al crear producto:', err);
+        this.procesadosFallidos++;
+        this.verificarFinalizacionProceso();
+        onFinish();
+      }
+    });
+  }
 
   salir(): void {
     this.router.navigate(['/menuProductos/nuevoProducto']);
@@ -903,7 +934,7 @@ guardarProducto(fila: any, onFinish: () => void): void {
       this.mostrarAlerta('Proceso masivo finalizado', '✔️');
     }
   }
- 
+
 
 
 }
