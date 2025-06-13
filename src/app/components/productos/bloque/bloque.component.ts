@@ -1,5 +1,5 @@
 import { Component, HostListener, OnInit, ViewChild, ElementRef } from '@angular/core';
-import { ColDef, GridApi, ModuleRegistry, GridOptions } from 'ag-grid-community';
+import { ColDef, GridApi, ModuleRegistry, GridOptions, GridReadyEvent } from 'ag-grid-community';
 import { AllCommunityModule } from 'ag-grid-community';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { PrefijoService } from 'src/app/services/prefijo.service';
@@ -9,9 +9,16 @@ import { GeneracionCodigosService, SecuenciaResponse } from 'src/app/services/ge
 import { CheckboxRendererComponent } from '../checkbox-renderer/checkbox-renderer.component';
 import { GcpBrickAutocompleteEditorComponent } from '../gcp-brick-autocomplete-editor/gcp-brick-autocomplete-editor.component';
 import { UmedidaService } from 'src/app/services/umedida.service';
-import { GrupoProductoService } from 'src/app/services/grupo-producto.service';
+import { GrupoProductoService, GrupoProducto } from 'src/app/services/grupo-producto.service';
 ModuleRegistry.registerModules([AllCommunityModule]);
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { ClienteService, ClienteIndividual } from 'src/app/services/cliente.service';
+import { MatDialogRef, MAT_DIALOG_DATA, MatDialog } from '@angular/material/dialog';
+import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
+import { UsuarioService } from 'src/app/services/usuario.service';
+import { ProductoService, ProductoRequest } from 'src/app/services/producto.service';
+import { ProductoAdicionalService } from 'src/app/services/producto-adicional.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-bloque',
@@ -40,9 +47,25 @@ export class BloqueComponent implements OnInit {
   mapaUnidades: { [unidad: string]: string } = {};  // código → descripción
 
   gcpBricksDisponibles: { codigo: string, descripcion: string }[] = [];
-
+  clienteE!: ClienteIndividual;
+  gruposProducto: GrupoProducto[] = [];
+  id_grupo_producto: number = 0;
+  idgrupo:number=0;
+  codigoGrupo: string = '';
+  desGrugo: string = '';
+  brick: string = '';
+  botonGenerarDeshabilitado = false;
+  botonGrabarDeshabilitado = true;
+  botonGenerar14Deshabilitado: boolean = true;
+  botonGrabar14Deshabilitado: boolean = true;
+  modoEdicion = false;
+  checkboxMaestroDeshabilitado = true;
+  usuarioActual = this.usuarioService.getUsuarioActual();
+  loadingMasivo: boolean = false;
 
   private gridApi!: GridApi;
+
+
   gridOptions: GridOptions = {
     components: {
       checkboxRenderer: CheckboxRendererComponent,
@@ -63,6 +86,11 @@ export class BloqueComponent implements OnInit {
   formUV: FormGroup;
   gtinNacionalActivo = false;
   gtinInternacionalActivo = false;
+  idProductoNuevo: number = 0;
+  procesandoMasivo: boolean = false;
+  totalAProcesar: number = 0;
+  procesadosExitosos: number = 0;
+  procesadosFallidos: number = 0;
 
   constructor(
     private fb: FormBuilder,
@@ -72,6 +100,13 @@ export class BloqueComponent implements OnInit {
     private umedidaService: UmedidaService,
     private grupoProductoService: GrupoProductoService,
     private _snackBar: MatSnackBar,
+    private clienteService: ClienteService,
+    private dialog: MatDialog,
+    private usuarioService: UsuarioService,
+    private productoService: ProductoService,
+    private productoAdicionalService: ProductoAdicionalService,
+    private router: Router,
+
   ) {
     this.formUV = this.fb.group({
       gcp: ['', Validators.required],
@@ -83,11 +118,18 @@ export class BloqueComponent implements OnInit {
       gtinNacionalSeleccionado: ['gtin13'],
       gtinInternacionalSeleccionado: [''],
       usarSerie: [false],
-      gln: ['']
+      gln: [''],
+      categoria: [''],
+      t: ['CAJA'],
+      u: ['UNIDADES']
     });
   }
 
   ngOnInit(): void {
+    window.onerror = function(message, source, lineno, colno, error) {
+  console.error("🔴 Uncaught Error:", message, "at", source + ':' + lineno + ':' + colno);
+};
+
     this.gridOptions.context = {
       componentParent: this
     };
@@ -109,8 +151,8 @@ export class BloqueComponent implements OnInit {
         editable: true,
         cellEditor: 'gcpBrickAutocompleteEditor',
         cellEditorPopup: true, // ✅ Este es el más importante
-        cellStyle: this.estiloDescripcionVacia,width: 100,  minWidth: 100
-       
+        cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100
+
       },
       { field: 'marca', headerName: 'Marca', editable: true, cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100 },
       { field: 'contenidoNeto', headerName: 'C.Neto', editable: true, cellStyle: this.estiloDescripcionVacia, valueParser: this.validarNumeroConUnPunto, width: 90, minWidth: 90 },
@@ -122,36 +164,40 @@ export class BloqueComponent implements OnInit {
         cellEditorParams: () => ({
           values: this.unidadesDisponibles
         }),
-        cellStyle: this.estiloDescripcionVacia, width: 95, minWidth:95
+        cellStyle: this.estiloDescripcionVacia, width: 95, minWidth: 95
       },
 
       {
         field: 'gcpBrick',
         headerName: 'GCP Brick',
         editable: false,
-        cellStyle: this.estiloDescripcionVacia,width: 100,  minWidth: 100
-       
+        cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100
+
       }
 
 
       ,
-      { field: 'pais', headerName: 'País', cellStyle: this.estiloDescripcionVacia,width: 70, minWidth: 70 },
+      { field: 'pais', headerName: 'País', cellStyle: this.estiloDescripcionVacia, width: 70, minWidth: 70 },
       {
         field: 'activo',
         headerName: 'GTIN 14',
         cellRenderer: 'checkboxRenderer',
         editable: false
-        , width: 80, minWidth: 80
+        , width: 80, minWidth: 80,
+        colId: 'activo'
       },
-      { field: 'factor', headerName: 'Factor', cellStyle: this.estiloDescripcionVacia, width: 80, minWidth: 80 },
-      { field: 'indicador', headerName: 'Indicador', cellStyle: this.estiloDescripcionVacia , width: 100, minWidth: 100},
-      { field: 'descripciong', headerName: 'Descripción', cellStyle: this.estiloDescripcionVacia , width: 200, minWidth: 200},
-      { field: 'gtin14', headerName: 'CODIGO GTIN 14', cellStyle: this.estiloDescripcionVacia, width: 150, minWidth: 150 },
+      { field: 'factor', headerName: 'Factor', cellStyle: this.estiloDescripcionVacia, width: 80, minWidth: 80, colId: 'factor' },
+      { field: 'indicador', headerName: 'Indicador', cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100, colId: 'indicador' },
+      { field: 'descripciong', headerName: 'Descripción', cellStyle: this.estiloDescripcionVacia, width: 200, minWidth: 200, colId: 'descripciong' },
+      { field: 'grupo', headerName: 'grupo', cellStyle: this.estiloDescripcionVacia, width: 150, minWidth: 150, colId: 'grupo' },
+
     ];
 
   }
   onGridReady(params: any) {
     this.gridApi = params.api;
+
+
 
     params.api.addEventListener('cellClicked', (event: any) => {
       if (event.rowIndex == null) {
@@ -174,7 +220,7 @@ export class BloqueComponent implements OnInit {
 
 
   generarFilas(): void {
-    debugger
+
     if (!this.cantidadFilas || this.cantidadFilas <= 0) return;
 
     const nuevasFilas = [];
@@ -182,13 +228,14 @@ export class BloqueComponent implements OnInit {
       nuevasFilas.push({
         gtinUv: '',
         descripcion: '',
-        categoria: 'AL_CONF',
+        categoria: this.codigoGrupo,
         marca: '',
         contenidoNeto: '0',
         contenidoUM: 'g',
-        gcpBrick: '10006848',
+        gcpBrick: this.brick,
         pais: 'EC',
-        activo: false
+        activo: false,
+        grupo:this.id_grupo_producto,
       });
     }
 
@@ -202,7 +249,12 @@ export class BloqueComponent implements OnInit {
     this.cantidadFilas = 0;
     this.textoPegado = '';
     this.mensaje = '';
-     this.formUV.get('gtinNacionalSeleccionado')?.setValue('gtin13');
+    this.formUV.get('gtinNacionalSeleccionado')?.setValue('gtin13');
+    this.botonGenerarDeshabilitado = false;
+    this.botonGrabarDeshabilitado = true;
+    this.botonGenerar14Deshabilitado = true;
+    this.botonGrabar14Deshabilitado = true;
+    this.checkboxMaestroDeshabilitado = true;
   }
 
 
@@ -235,13 +287,16 @@ export class BloqueComponent implements OnInit {
 
   cargarCliente(): void {
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+    console.log(cliente);
     if (cliente) {
       this.clienteSeleccionado = cliente;
       this.formUV.patchValue({
         codigoCliente: cliente.clientes_codigo || '',
         cliente: cliente.nomcli || '',
         ruc: cliente.ruc || '',
+
       });
+      this.cargarClientePorId(cliente.clientes_codigo);
       this.cargarPrefijos(cliente.clientes_codigo);
     }
   }
@@ -290,29 +345,32 @@ export class BloqueComponent implements OnInit {
   }
 
 generar(): void {
-  const idSeleccionado = this.formUV.value.gcp;
-  let prefijo: string = '';
-  const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
-  if (objeto?.gln) {
-    prefijo = objeto.codpre;
-  }
+  this.rowData = [...this.rowData]; // Refrescar AG-Grid visualmente
+  this.gridApi.setFocusedCell(0, 'gtinUv');
 
-  const serie = this.formUV.get('serie')?.value || '';
+  const idSeleccionado = this.formUV.value.gcp;
+  const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+  const prefijo = objeto?.codpre || '';
+
   if (!prefijo) {
-    alert('⚠️ Ingresa un prefijo válido');
+    this.mostrarAlerta('⚠️ Seleccione Prefijo', 'Error');
     return;
   }
 
-  this.verificarUnidad();
+  if (this.rowData.length === 0) {
+    this.mostrarAlerta('⚠️ Productos a codificar en Cero', 'Error');
+    return;
+  }
+
+  const serie = this.formUV.get('serie')?.value || '';
+
+  if (!this.validarCeldasObligatorias()) return;
+
+  
   this.npais = '786';
 
   this.generacionCodigosService.obtenerSecuencia(prefijo, this.npais).subscribe({
     next: (resp: SecuenciaResponse) => {
-      this.secuencia = serie !== '' ? parseInt(serie, 10) : resp.data;
-      if (!this.validarAfiliacion(this.secuencia)) return;
-
-      this.mensaje = resp.message;
-
       const longitudPrefijo = prefijo.length;
       const longitudSecuencia = 12 - this.npais.length - longitudPrefijo;
 
@@ -321,25 +379,35 @@ generar(): void {
         return;
       }
 
-      const maxCodigos = Math.pow(10, longitudSecuencia); // Ej: 10, 100, 1000...
+      const secuenciaInicial = serie !== '' ? parseInt(serie, 10) : resp.data;
+
+      if (!this.validarAfiliacion(secuenciaInicial)) return;
+
+      const maxCodigos = Math.pow(10, longitudSecuencia);
       if (this.rowData.length > maxCodigos) {
         alert(`⚠️ Solo se pueden generar ${maxCodigos} códigos con prefijo de ${longitudPrefijo} dígitos. Se recortarán automáticamente.`);
         this.rowData = this.rowData.slice(0, maxCodigos);
       }
 
       for (let i = 0; i < this.rowData.length; i++) {
-        const secuenciaActual = (this.secuencia + i).toString().padStart(longitudSecuencia, '0');
+        const secuenciaActual = (secuenciaInicial + i).toString().padStart(longitudSecuencia, '0');
         const gtin12 = this.npais + prefijo + secuenciaActual;
         const dv = this.calcularDigitoVerificador(gtin12);
         this.rowData[i].gtinUv = gtin12 + dv;
       }
 
-      const secuenciaActual = this.secuencia.toString().padStart(longitudSecuencia, '0');
-      const primerGtin = this.npais + prefijo + secuenciaActual;
+      // Asignar el primer GTIN generado al formulario
+      const primerSecuencia = secuenciaInicial.toString().padStart(longitudSecuencia, '0');
+      const primerGtin = this.npais + prefijo + primerSecuencia;
       const primerDv = this.calcularDigitoVerificador(primerGtin);
       this.formUV.get('gtinUv')?.setValue(primerGtin + primerDv);
 
+      this.mensaje = resp.message;
+      this.secuencia = secuenciaInicial; // Guardar para referencia futura
       this.rowData = [...this.rowData];
+
+      this.botonGenerarDeshabilitado = true;
+      this.botonGrabarDeshabilitado = false;
     },
     error: (err) => {
       console.error('❌ Error al obtener secuencia', err);
@@ -350,10 +418,11 @@ generar(): void {
 
 
 
+
   pegarColumnaGtinUv(): void {
     if (!this.textoPegado.trim()) {
       this.mostrarAlerta('⚠️ No hay datos para pegar.', 'Error');
-      
+
       return;
     }
 
@@ -373,9 +442,10 @@ generar(): void {
       fila.marca = columnas[idx++] || '';
       fila.contenidoNeto = columnas[idx++] || '';
       fila.contenidoUM = columnas[idx++] || 'g';
-      fila.categoria = 'AL_CONF';
-      fila.gcpBrick = '10006848';
+      fila.categoria = this.codigoGrupo;
+      fila.gcpBrick = this.brick;
       fila.pais = 'EC';
+      fila.grupo=this.id_grupo_producto;
     }
 
     this.rowData = [...this.rowData];
@@ -395,14 +465,10 @@ generar(): void {
     console.log('🟢 Columna seleccionada:', this.selectedColKey);
   }
 
-  onCellValueChanged(event: any): void {
-    if (event.colDef.field === 'activo') {
-      console.log(`Checkbox cambiado en fila ${event.rowIndex}:`, event.newValue);
-    }
-  }
+
 
   simularPegado(): void {
-    debugger
+  
     setTimeout(() => {
       const texto = this.textoPegado.trim();
       if (texto) {
@@ -441,34 +507,7 @@ generar(): void {
       return params.oldValue; // mantiene el valor anterior si no es válido
     }
   }
-  verificarUnidad(): void {
-    const promesas: Promise<void>[] = [];
-
-    this.gridApi.forEachNode((node, index) => {
-      const unidad = node.data['contenidoUM'];
-
-      if (unidad) {
-        const p = new Promise<void>((resolve) => {
-          this.umedidaService.obtenerUnidadPorNombre(unidad).subscribe({
-            next: () => {
-              console.log(`✅ Fila ${index}: Unidad válida → ${unidad}`);
-            },
-            error: () => {
-              console.warn(`⛔ Fila ${index}: Unidad inválida → "${unidad}"`);
-              node.setDataValue('contenidoUM', '');
-            }
-          });
-
-        });
-
-        promesas.push(p);
-      }
-    });
-
-    Promise.all(promesas).then(() => {
-      this.gridApi.refreshCells({ force: true });
-    });
-  }
+  
 
   cargarUnidades(): void {
     this.umedidaService.obtenerUnidades().subscribe({
@@ -491,7 +530,8 @@ generar(): void {
         this.gcpBricksDisponibles = grupos.map(g => ({
           codigo: g.codigo,
           descripcion: g.desBrick,
-          brick:g.brick
+          brick: g.brick,
+          id_grupo_producto: g.id_grupo_producto
         }));
       },
       error: (err) => {
@@ -501,12 +541,369 @@ generar(): void {
     });
   }
 
-mostrarAlerta(mensaje: string, tipo: string) {
+  mostrarAlerta(mensaje: string, tipo: string) {
     this._snackBar.open(mensaje, tipo, {
       horizontalPosition: "end",
       verticalPosition: "top",
       duration: 3000
     });
   }
+
+  cargarClientePorId(id: number): void {
+    this.clienteService.getClienteById(id).subscribe({
+      next: (cliente) => {
+        this.clienteE = cliente;
+        this.id_grupo_producto = cliente.idGrupoProducto;
+        console.log(this.id_grupo_producto);
+
+        this.grupoProductoService.obtenerGrupoPorId(this.id_grupo_producto).subscribe(grupo => {
+          this.codigoGrupo = grupo.codigo;
+          this.desGrugo = grupo.desBrick;
+          this.brick = grupo.brick;
+
+          // ✅ Asignar al form correctamente
+          this.formUV.get('categoria')?.setValue(this.desGrugo);
+
+          console.log('Grupo producto:', grupo);
+        });
+      },
+      error: (err) => {
+        console.error('Error al obtener cliente:', err);
+      }
+    });
+  }
+
+  validarCeldasObligatorias(): boolean {
+  
+    let errorEncontrado = false;
+
+    for (let i = 0; i < this.rowData.length; i++) {
+      const fila = this.rowData[i];
+      if (!fila) continue;
+
+      const campos = ['descripcion', 'categoria', 'marca', 'contenidoNeto', 'contenidoUM', 'gcpBrick', 'pais'];
+
+
+      for (const campo of campos) {
+        const valor = fila[campo];
+
+        if (!valor || valor.toString().trim() === '') {
+          // Marca la celda como inválida (puedes usar una bandera en el objeto fila)
+          fila[`_error_${campo}`] = true;
+
+          if (!errorEncontrado) {
+            this.botonGenerarDeshabilitado = false;
+            this.botonGrabarDeshabilitado = true;
+            this.mostrarAlerta('⚠️ Verifique, Campos en Blanco', 'Error');
+            errorEncontrado = true;
+          }
+
+          break;
+        } else {
+          // Limpia errores anteriores si el valor es válido
+          fila[`_error_${campo}`] = false;
+        }
+      }
+    }
+
+    this.rowData = [...this.rowData]; // Forzar refresco en la tabla si usas AG-Grid
+
+    return !errorEncontrado;
+  }
+
+  onCellValueChanged(event: any): void {
+    const field = event.colDef.field;
+    const newValue = event.newValue;
+    if (event.colDef.field === 'activo') {
+      console.log(`Checkbox cambiado en fila ${event.rowIndex}:`, event.newValue);
+    }
+    // Si hay error y se corrige
+    if (event.data[`_error_${field}`]) {
+      if (newValue !== null && newValue !== undefined && newValue.toString().trim() !== '') {
+        event.data[`_error_${field}`] = false;
+      }
+    }
+
+    // Actualiza visual
+    this.gridApi?.refreshCells({ rowNodes: [event.node], columns: [field] });
+  }
+
+  grabar(): void {
+    this.mensaje = ''; // Limpia mensaje
+
+    const msg = this.modoEdicion ? 'actualizado' : 'creados';
+
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: '¿Desea confirmar?',
+        message: `Los códigos seran ${msg}. ¿Está seguro?`,
+        type: 'question',
+        confirmText: 'Sí, confirmar',
+        cancelText: 'Cancelar',
+        showCancel: true
+      }
+    }).afterClosed().subscribe(resultado => {
+      if (resultado === true) {
+        // Aquí ejecutas el proceso real de grabado
+        this.procesarGrabado();
+        this.botonGrabarDeshabilitado = true;
+
+
+      } else {
+        console.log('❌ Usuario canceló grabado');
+      }
+    });
+  }
+
+
+  procesarGrabado(): void {
+  const filas = this.rowData;
+  const total = filas.length;
+
+  if (total === 0) return;
+
+  this.mensaje = ''; // Limpia mensaje
+  this.totalAProcesar = total;
+  this.procesadosExitosos = 0;
+  this.procesadosFallidos = 0;
+  this.loadingMasivo = true;
+
+  const tareas: Promise<void>[] = filas.map(fila => {
+    return new Promise<void>((resolve) => {
+      this.guardarProducto(fila, resolve); // ejecuta con callback
+    });
+  });
+
+  Promise.all(tareas).then(() => {
+    this.loadingMasivo = false;
+
+    const msg = this.modoEdicion ? 'actualizados' : 'generar';
+
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: '¿Desea confirmar?',
+        message: `Quiere ${msg} GTIN 14. ¿Está seguro?`,
+        type: 'question',
+        confirmText: 'Sí, confirmar',
+        cancelText: 'Cancelar',
+        showCancel: true
+      }
+    }).afterClosed().subscribe(resultado => {
+      if (resultado === true) {
+        this.botonGenerarDeshabilitado = true;
+        this.botonGrabarDeshabilitado = true;
+        this.botonGenerar14Deshabilitado = false;
+        this.botonGrabar14Deshabilitado = true;
+
+        this.gridApi.ensureIndexVisible(0);
+        this.gridApi.ensureColumnVisible('factor');
+        this.gridApi.setFocusedCell(0, 'factor');
+        this.checkboxMaestroDeshabilitado = false;
+      } else {
+        console.log('❌ Usuario canceló generación GTIN-14');
+      }
+    });
+  });
+}
+
+
+  generar14() {
+
+  }
+  grabar14() {
+
+  }
+
+guardarProducto(fila: any, onFinish: () => void): void {
+  const cliente = this.clienteSeleccionado;
+
+  const nuevoProducto: ProductoRequest = {
+    IdProducto: 0,
+    Codpro: fila.gtinUv || '',
+    Despro: fila.descripcion || '',
+    Tippro: 'S',
+    Codgru: 0,
+    Codsec: 0,
+    Coddep: 0,
+    Codsub: 0,
+    Coddiv: 0,
+    Codmar: 0,
+    Despro2: '',
+    Uniman: fila.contenidoUM || '',
+    Feccre: new Date().toISOString(),
+    Colsab: '',
+    Talla: '',
+    Preven: 0,
+    Preven2: 0,
+    Precos: 0,
+    Cospro: 0,
+    Exiqty: 0,
+    Exipdc: 0,
+    Exipdv: 0,
+    Exisic: 0,
+    Fecsic: new Date().toISOString(),
+    Refer: '',
+    Codcuedeb: '',
+    Codcuehab: '',
+    Codcuedes: '',
+    Codcuedev: '',
+    Iva: '',
+    Tipo: '',
+    Preuni: '',
+    Regalia: '',
+    Inv: true,
+    PrevenSinIva: 0,
+    PagaIva: true,
+    PagaRegalia: true,
+    Desind: '',
+    Codorigen: '',
+    Codcol: 0,
+    StockMax: 0,
+    StockMin: 0,
+    Espesor: 0,
+    Largo: 0,
+    Ancho: 0,
+    Fechacad: '',
+    Fechacad1: 0,
+    Fabricante: 0,
+    Obs: fila.observacion || '',
+    Peso: false,
+    Fecing: new Date().toISOString(),
+    ValorUnidad: 0,
+    Codsab: '',
+    Fechamod: new Date().toISOString(),
+    Tamanio: '',
+    Modelo: '',
+    Numserie: fila.serie || '',
+    Coleccion: '',
+    Temporada: '',
+    Prepormayor: 0,
+    PreAnterior: 0,
+    CosAnterior: 0,
+    DescCosto1: 0,
+    DescCosto2: 0,
+    DescCosto3: 0,
+    DescCosto4: 0,
+    Descuento: 0,
+    PreRebaja: 0,
+    PreRebajaAntes: 0,
+    FecIniPro: new Date().toISOString(),
+    FecFinPro: new Date().toISOString(),
+    FecIniPro1: new Date().toISOString(),
+    Codubi: '',
+    FecFinPro1: new Date().toISOString(),
+    FecPreAct: new Date().toISOString(),
+    FecPreMod: new Date().toISOString(),
+    FecCosAct: new Date().toISOString(),
+    FecCosMod: new Date().toISOString(),
+    CodNiv: '',
+    CodColUbi: '',
+    MargenUtilidad: 0,
+    PvpSinIva: 0,
+    PorcenRecepcion: 0,
+    Stocks: true,
+    Abrevia: '',
+    Referencia: '',
+    MargenAntes: 0,
+    FecMarAntes: new Date().toISOString(),
+    CantDecimal: true,
+    CostSuminis: 0,
+    CantConv: 0,
+    CostHelado: 0,
+    Receta: false,
+    Activo: true,
+    ClasProd: '',
+    Foto: fila.urlFoto || '',
+    AltoRiesgo: false,
+    PGasto: false,
+    CtaProdGasto: '',
+    RegSanitario: '',
+    IdEmpresa: this.usuarioActual?.id_empresa ?? 1,
+    Codbar: fila.gtinUv || ''
+  };
+
+  this.productoService.crearProducto(nuevoProducto).subscribe({
+    next: (productoCreado) => {
+      const nuevoId = productoCreado.data;
+      const idSeleccionado = this.formUV.value.gcp;
+      const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+
+      const adicionales = {
+        IdProductoDatosAdicionales: 0,
+        ClientesCodigo: cliente?.clientes_codigo || 0,
+        IdPrefijos: objeto?.id_prefijos || 0,
+        IdTipoCodigoGs1: 1,
+        IdGrupoProducto: fila.grupo,
+        Peso1: 0,
+        IdUsuario: this.usuarioActual?.id_usuario ?? 1,
+        Facturar: '',
+        Nombre: fila.descripcion || '',
+        Gtin: 'GTIN 13',
+        Target: '',
+        Marca: fila.marca || '',
+        Autfuncion: '',
+        Registros: '',
+        Obsc: '',
+        IdSector: 2,
+        Contenido: fila.contenidoNeto || '',
+        Um: fila.contenidoUM || '',
+        Brick: fila.brick || '',
+        Pais: fila.pais || '',
+        Url: '',
+        Pum: '',
+        Lum: '',
+        Aum: '',
+        Url2: '',
+        Pais2: '',
+        Pais3: '',
+        Codint: '',
+        Secto2: '',
+        Sector3: '',
+        SolFavorita: 0,
+        SolRosado: 0,
+        SolSantamaria: 0,
+        SolTia: 0,
+        SolAmazon: 0,
+        SolGoogle: 0,
+        SolEbay: 0,
+        SolOtros: '',
+        id_producto: nuevoId
+      };
+
+      this.productoAdicionalService.crearProductoDatosAdicionales(adicionales).subscribe({
+    next: () => {
+      this.procesadosExitosos++;
+      this.verificarFinalizacionProceso();
+      onFinish(); // ← importante
+    },
+    error: (err) => {
+      this.procesadosFallidos++;
+      this.verificarFinalizacionProceso();
+      onFinish(); // ← importante
+    }
+  });
+    },
+    error: (err) => {
+      console.error('❌ Error al crear producto:', err);
+      this.mostrarAlerta('Error al guardar producto', '❌');
+    }
+  });
+}
+
+  salir(): void {
+    this.router.navigate(['/menuProductos/nuevoProducto']);
+  }
+  verificarFinalizacionProceso(): void {
+    const total = this.procesadosExitosos + this.procesadosFallidos;
+    if (total >= this.totalAProcesar) {
+      this.procesandoMasivo = false;
+      console.log(`✅ Proceso completado: ${this.procesadosExitosos} exitosos, ${this.procesadosFallidos} fallidos`);
+      this.mostrarAlerta('Proceso masivo finalizado', '✔️');
+    }
+  }
+ 
+
 
 }

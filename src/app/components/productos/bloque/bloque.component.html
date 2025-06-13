@@ -61,7 +61,10 @@
         </label>
         <input type="text" formControlName="serie" [readonly]="!formUV.get('usarSerie')?.value" />
       </div>
-
+      <div class="largo">
+        <label for="categoria">Categoría</label>
+        <input id="categoria" type="text" formControlName="categoria" readonly />
+      </div>
     </div>
 
     <!-- 🔹 Fila 3: GTIN generado y botón -->
@@ -73,6 +76,13 @@
 
 
     </div>
+  </div>
+  <div>
+    <label for="t" style="display: inline;">T:</label>
+    <input id="t" type="text" formControlName="t"  style="display: inline; width: 80px;">
+
+    <label for="u" style="display: inline; margin-left: 10px;">U:</label>
+    <input id="u" type="text" formControlName="u"  style="display: inline; width: 80px;">
   </div>
 </form>
 <div style="display: flex; align-items: center; gap: 12px; margin-top: 0px; flex-wrap: wrap;">
@@ -95,6 +105,7 @@
     <textarea #pasteCatcher style="position: absolute; left: -9999px; opacity: 0;"></textarea>
 
   </mat-form-field>
+  
 
   <mat-checkbox [(ngModel)]="copiarDesdeColumna2" class="hidden-column">
     Pegar desde columna 2
@@ -103,15 +114,34 @@
   <div *ngIf="mensaje" style="color: green;">
     {{ mensaje }}
   </div>
+
+
 </div>
 
 <div style="display: flex; flex-wrap: wrap; gap: 8px;">
   <button mat-raised-button color="primary" (click)="limpiarTabla()">Nuevo</button>
-  <button mat-raised-button color="primary" (click)="generar()">Generar</button>
-  <button mat-raised-button color="primary" (click)="generar()">Grabar</button>
-  <mat-checkbox [(ngModel)]="checkMaestro" (change)="marcarTodosDesdeMaestro()">Activar todos</mat-checkbox>
-  <button mat-raised-button color="primary" (click)="generar()">Generar GTIN 14</button>
-  <button mat-raised-button color="primary" (click)="generar()">Grabar GTIN 14</button>
+  <button mat-raised-button color="primary" (click)="generar()" [disabled]="botonGenerarDeshabilitado">
+    Generar
+  </button>
+
+  <button mat-raised-button color="primary" (click)="grabar()" [disabled]="botonGrabarDeshabilitado">
+    Grabar
+  </button>
+
+
+  <mat-checkbox [(ngModel)]="checkMaestro" (change)="marcarTodosDesdeMaestro()"
+    [disabled]="checkboxMaestroDeshabilitado">
+    Marcar todos
+  </mat-checkbox>
+
+  <button mat-raised-button color="primary" (click)="generar14()" [disabled]="botonGenerar14Deshabilitado">
+    Generar GTIN 14
+  </button>
+
+  <button mat-raised-button color="primary" (click)="grabar14()" [disabled]="botonGrabar14Deshabilitado">
+    Grabar GTIN 14
+  </button>
+  <button mat-raised-button color="warn" (click)="salir()">Salir</button>
 </div>
 
 <!-- Tabla AG-Grid -->
@@ -119,15 +149,9 @@
 
 
 <div class="contenedor-grid">
-  <ag-grid-angular
-    class="ag-theme-alpine"
-    style="width: 100%; height: 400px;"
-    [rowData]="rowData"
-    [columnDefs]="columnDefs"
-    [defaultColDef]="defaultColDef"
-    [gridOptions]="gridOptions"
-    [domLayout]="'normal'"
-    (gridReady)="onGridReady($event)">
+  <ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 400px;" [rowData]="rowData"
+    (cellValueChanged)="onCellValueChanged($event)" [columnDefs]="columnDefs" [defaultColDef]="defaultColDef"
+    [gridOptions]="gridOptions" [domLayout]="'normal'" (gridReady)="onGridReady($event)">
   </ag-grid-angular>
 </div>
 

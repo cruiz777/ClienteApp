@@ -415,3 +415,6 @@ mat-form-field {
   overflow-x: auto; /* Habilita scroll horizontal */
   max-width: 100%;
 }
+.celda-vacia {
+  background-color: #fbb;
+}
