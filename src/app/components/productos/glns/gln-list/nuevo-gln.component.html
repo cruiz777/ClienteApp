@@ -205,15 +205,26 @@
         <div class="form-row">
           <div class="form-group">
             <label>Nombre:</label>
-            <input matInput formControlName="contacto">
+            <input matInput formControlName="contacto" placeholder="José Perez">
           </div>
           <div class="form-group">
             <label>E-mail:</label>
-            <input matInput formControlName="email">
+            <input matInput formControlName="email" placeholder="ejemplo@mail.com">
           </div>
           <div class="form-group">
             <label>Telf. o Cel.:</label>
-            <input matInput formControlName="contactoTel" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+           <app-intl-phone-input
+            formControlName="glnCelular"
+            [preferredCountries]="['ec', 'us', 'co']"
+            [defaultCountry]="'ec'"
+            >
+          </app-intl-phone-input>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Página Web:</label>
+              <input matInput formControlName="web" placeholder="www.ejemplo.com">
+            </div>
           </div>
         </div>
 
@@ -233,7 +244,12 @@
           </div>
           <div class="form-group">
             <label>Telf. o Cel.:</label>
-            <input matInput formControlName="glnTel2" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+            <app-intl-phone-input
+              formControlName="glnTel2"
+              [preferredCountries]="['ec', 'us', 'co']"
+              (valueChange)="formGln.get('glnTel2')?.setValue($event)"
+              >
+            </app-intl-phone-input>
           </div>
         </div>
 
@@ -253,7 +269,12 @@
           </div>
           <div class="form-group">
             <label>Telf. o Cel.:</label>
-            <input matInput formControlName="glnTel3" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+            <app-intl-phone-input
+              formControlName="glnTel3"
+              [preferredCountries]="['ec', 'us', 'co']"
+              (valueChange)="formGln.get('glnTel3')?.setValue($event)"
+              >
+            </app-intl-phone-input>
           </div>
         </div>
       </div>
@@ -320,7 +341,7 @@
 
       <div class="form-actions">
         <button mat-button class="btn-nuevo" (click)="nuevo()">Nuevo</button>
-        <button mat-button (click)="modificar()" [disabled]="modoEdicion">Modificar</button>
+        <button mat-button  (click)="modificar()" [disabled]="modoEdicion">Modificar</button>
         <button mat-button (click)="exportarPDF()" [disabled]="!modoEdicion">Imprimir</button>
         <button mat-button (click)="cancelar()" [disabled]="!modoEdicion">Cancelar</button>
       </div>

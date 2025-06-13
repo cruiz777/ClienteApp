@@ -36,6 +36,8 @@ import { provideAnimationsAsync } from '@angular/platform-browser/animations/asy
 import { ToastrModule } from 'ngx-toastr';
 import { HotTableModule } from '@handsontable/angular';
 import { AgGridModule } from 'ag-grid-angular';
+import { IntlPhoneInputComponent } from './shared/phone/intl-phone-input.component';
+import { SharedModule } from './shared/shared.module';
 
 export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
 
@@ -68,12 +70,13 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     NgxMaskModule.forRoot(),
     ToastrModule.forRoot({
       positionClass: 'toast-top-right',
-      preventDuplicates: false,   // << permite mostrar varios
+      preventDuplicates: false,   // << permite mostrar varios pop ups
       timeOut: 5000,
       closeButton: true,
       progressBar: true
     }),
     HotTableModule,
+    SharedModule,
     AgGridModule,
   ],
 

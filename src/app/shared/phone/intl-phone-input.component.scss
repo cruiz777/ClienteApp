@@ -1,0 +1,16 @@
+.intl-tel-input input {
+  padding: 5px 10px;
+  border: none;
+  border-bottom: 1px solid #ccd5e2;
+  font-size: 12px;
+  color: #333;
+  outline: none;
+  background: #fff;
+  width: 100%;
+}
+
+.intl-tel-input input:disabled {
+  background-color: #f5f5f5;
+  color: #666;
+  border-bottom: 1px solid #ccd5e2;
+}
