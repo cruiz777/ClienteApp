@@ -21,6 +21,9 @@ import { RequiredFieldsToastService } from 'src/app/components/utils/messages/re
 import * as moment from 'moment';
 import * as html2pdf from 'html2pdf.js';
 import { ExportService } from 'src/app/services/export.service';
+import { LogoService } from 'src/app/services/logo.service';
+import { EmpresaService } from 'src/app/services/empresa.service';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-nuevo-gln',
@@ -55,7 +58,7 @@ export class GlnComponent implements OnInit {
   filtroGLN: string = '';
   glnsFiltrados: GlnResponse[] = [];
   glnsPorCliente: GlnResponse[] = [];
-
+  logoUrl: string = '';
   constructor(
     private fb: FormBuilder,
     private prefijoService: PrefijoService,
@@ -64,11 +67,14 @@ export class GlnComponent implements OnInit {
     private ciudadService: CiudadService,
     private glnService: GlnService,
     private paisService: PaisService,
+    private empresaService: EmpresaService,
+    private logoService: LogoService,
     private dialog: MatDialog,
     private snackBar: MatSnackBar,
     private toastr: ToastrService,
     private toastCampos: RequiredFieldsToastService,
-    private exportService: ExportService
+    private exportService: ExportService,
+    private router: Router
   ) {}
 
   compareCiudad(a: any, b: any): boolean {
@@ -235,6 +241,20 @@ export class GlnComponent implements OnInit {
       this.formGln.patchValue({ cantonCodigo: '', idCiudad: null });
       this.ciudadesFiltradas = [];
     });
+    this.empresaService.getEmpresas().subscribe({
+      next: (empresas) => {
+        if (empresas.length > 0 && empresas[0].empresaLogo) {
+          const logo = this.logoService.getLogoUrl(empresas[0].empresaLogo);
+          this.formGln.patchValue({ glnLogo: logo }); // opcional si quieres guardarlo
+          this.logoUrl = logo; // << almacénalo para usar al exportar
+        } else {
+          console.warn('No se encontró empresa o logo');
+        }
+      },
+      error: (err) => {
+        console.error('❌ Error al cargar logo dinámico:', err);
+      }
+    });
 
     combineLatest([
       this.formGln.get('provinciaCodigo')!.valueChanges.pipe(startWith(this.formGln.get('provinciaCodigo')!.value), distinctUntilChanged()),
@@ -295,6 +315,8 @@ export class GlnComponent implements OnInit {
     this.bloquearCamposPaso(2, true); // bloquear contactos
     this.bloquearCamposPaso(3, true); // bloquear certificados
   }
+
+  
   mostrarCiudad = (ciudad: CiudadResumen | string | null): string =>
     typeof ciudad === 'string'
       ? ciudad
@@ -307,7 +329,7 @@ export class GlnComponent implements OnInit {
     this.setUbicacionDesdeCiudad(ciudad);
     this.formGln.patchValue({ idCiudad: ciudad.id });
   }
-
+  
   cargarDatosDesdeGlnResponse(gln: GlnResponse): void {
     this.formGln.patchValue({
       idGln: gln.id_gln,
@@ -566,7 +588,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
   setCamposGeneralesSoloLectura(): void {
     const campos = [
       'clientesCodigo', 'documentoIdentidad', 'glnNombre', 'nomCli',
-      'gln1', 'glnOrigenprefijo', 'glnPrefijogs1'
+      'gln1', 'glnOrigenprefijo', 'glnPrefijogs1', 'idTipoLocalizacion'
     ];
     campos.forEach(c => this.formGln.get(c)?.disable());
   }
@@ -702,6 +724,19 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
   pasoCompletado(paso: number): boolean { return this.pasoActual > paso; }
   pasoPendiente(paso: number): boolean { return this.pasoActual < paso; }
 
+  irAlPaso(paso: number): void {
+    // Validar si es permitido avanzar directamente
+    if (paso > this.pasoActual) {
+      // Simula avanzar paso a paso hasta llegar al deseado
+      while (this.pasoActual < paso) {
+        this.siguientePaso();
+        if (this.pasoActual !== paso) return; // Detener si falló una validación
+      }
+    } else {
+      this.pasoActual = paso;
+    }
+  }
+
   siguienteGln(): void {
     if (this.glnIndex < this.glnsDelPrefijo.length - 1) {
       this.glnIndex++;
@@ -803,6 +838,11 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       localizacion: gln.nombreLocalizacion
     });
     this.setCamposUbicacionHabilitados(false);
+    this.setCamposGeneralesSoloLectura(); 
+    this.bloquearCamposPaso(2, true); // Contactos
+    this.bloquearCamposPaso(3, true); // Certificados
+    this.ciudadAutocompleteControl.disable(); // también bloquear autocomplete
+    this.modoEdicion = false; // ✅ para que el mapa esté en modo lectura
   }
 
   guardar(): void {
@@ -934,6 +974,9 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       next: () => {
         this.mostrarMensajeBox('GLN actualizado', 'El GLN fue actualizado correctamente.', 'success');
         callback();
+        this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+          this.router.navigate(['/menuProductos/nuevoGln']);
+        });
       },
       error: (err) => {
         console.error('❌ Error al actualizar GLN', err);
@@ -947,6 +990,9 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       next: () => {
         this.mostrarMensajeBox('GLN creado', 'El GLN fue creado correctamente.', 'success');
         callback();
+        this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+          this.router.navigate(['/menuProductos/nuevoGln']);
+        });
       },
       error: (err) => {
         console.error('❌ Error al crear GLN', err);
@@ -955,6 +1001,11 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     });
   }
 }
+  obtenerCodigoPrefijo(idPrefijo: number): string {
+    const prefijo = this.prefijos.find(p => p.id_prefijos === idPrefijo);
+    return prefijo?.codpre ?? 'N/A';
+  }
+
   private convertirGMSaDecimal(grados: string, minutos: string, segundos: string, hemisferio: 'N' | 'S' | 'E' | 'O'): number {
     const g = parseFloat(grados);
     const m = parseFloat(minutos);
@@ -1048,40 +1099,29 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     this.setCamposUbicacionHabilitados(true);
     this.bloquearCamposPaso(2, false);
     this.bloquearCamposPaso(3, false);
+    this.formGln.get('idTipoLocalizacion')?.enable(); //Permite editar el campo de Tipo Localizacion
   }
 
   cancelar(): void {
-    const camposUbicacion = [
-      'localizacion', 'idCiudad', 'glnCodigopostal', 'direccion', 'gln1',
-      'glnLatitud', 'glnLongitud',
-      'latiG', 'latiM', 'latiS', 'latiE',
-      'longG', 'longM', 'longS', 'longE'
-    ];
-
-    const camposContacto = [
-      'contacto', 'email', 'contactoTel',
-      'glnContacto2', 'glnEmail2', 'glnTel2',
-      'glnContacto3', 'glnEmail3', 'glnTel3'
-    ];
-
-    const camposCertificados = [
-      'fda', 'europa', 'glnGlobal',
-      'glnOtro1', 'glnOtro2',
-      'glnGlnp', 'glnGlne'
-    ];
-
-    [...camposUbicacion, ...camposContacto, ...camposCertificados].forEach(campo => {
-      this.formGln.get(campo)?.reset();
+    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: '¿Cancelar cambios?',
+        message: 'Se perderán todos los cambios no guardados. ¿Desea continuar?',
+        type: 'warning',
+        confirmText: 'Sí, cancelar',
+        cancelText: 'No',
+        showCancel: true
+      }
     });
 
-    // Reset de pasos y bloqueo
-    this.pasoActual = 1;
-    this.setCamposUbicacionHabilitados(false);
-    this.bloquearCamposPaso(2, true);
-    this.bloquearCamposPaso(3, true);
-
-    // Si usas un autocomplete externo, limpia también su control:
-    this.ciudadAutocompleteControl.reset();
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+          this.router.navigate(['/menuProductos/nuevoGln']);
+        });
+      }
+    });
   }
 
   cambiarTab(tab: string): void {
@@ -1216,6 +1256,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     } else {
       this.alertaGln = 'Debe seleccionar un prefijo válido antes de generar un nuevo GLN.';
     }
+    this.formGln.get('idTipoLocalizacion')?.enable(); //Habilitar al crear
   }
 
   setCamposUbicacionHabilitados(habilitado: boolean): void {
@@ -1259,10 +1300,9 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     const latGMS = `${raw.latiG || '00'}°${raw.latiM || '00'}'${raw.latiS || '00'}" ${raw.latiE || ''}`;
     const longGMS = `${raw.longG || '00'}°${raw.longM || '00'}'${raw.longS || '00'}" ${raw.longE || ''}`;
 
-    const logoUrl = 'assets/img/codbar-logo.png'; // ← asegúrate que este logo exista en tu proyecto
-    const firmaUrl = 'assets/img/firma-gs1.png';  // ← firma opcional
-
-    const logoBase64 = await this.exportService['obtenerLogoBase64'](logoUrl);
+    const logoBase64 = this.logoUrl
+      ? await this.exportService['obtenerLogoBase64'](this.logoUrl)
+      : '';
     // const firmaBase64 = await this.exportService['obtenerLogoBase64'](firmaUrl);
 
     const contenido = `
@@ -1305,8 +1345,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
           <tr><td>PAÍS / COUNTRY:</td><td>${pais?.nombre ?? ''}</td></tr>
           <tr><td>PROVINCIA / STATE:</td><td>${ciudad?.provincia ?? ''}</td></tr>
           <tr><td>CIUDAD / CITY:</td><td>${ciudad?.ciudad ?? ''}</td></tr>
-          <tr><td>DIRECCIÓN / ADDRESS:</td><td>${raw.direccion}</td></tr>
-          <tr><td>TELÉFONO / PHONE:</td><td>${raw.telefono}</td></tr>
+          <tr><td>DIRECCIÓN / ADDRESS:</td><td>${raw.direccion}</td></tr>          
           <tr><td>CÓDIGO POSTAL:</td><td>${raw.glnCodigopostal}</td></tr>
           <tr><td>EMAIL:</td><td>${raw.email}</td></tr>
           <tr><td>PÁGINA WEB / WEBSITE:</td><td>${raw.web}</td></tr>
@@ -1364,7 +1403,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       headers,
       filename: 'GLNs',
       title: 'Listado de GLNs por Prefijo',
-      logoUrl: 'assets/img/codbar-logo.png'
+      logoUrl: this.logoUrl
     });
   }
 }

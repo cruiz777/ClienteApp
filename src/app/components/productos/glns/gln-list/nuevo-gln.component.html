@@ -23,15 +23,24 @@
     <ng-container *ngIf="activeTab === 'Informacion'">
     <!-- Indicador de pasos -->
       <div class="progress-steps">
-        <div class="step" [ngClass]="{ 'active': pasoActual === 1, 'completed': pasoActual > 1 }">
+        <div
+          class="step"
+          [ngClass]="{ 'active': pasoActual === 1, 'completed': pasoActual > 1 }"
+          (click)="irAlPaso(1)">
           <div class="step-number">1</div>
           <div class="step-label">Datos Generales</div>
         </div>
-        <div class="step" [ngClass]="{ 'active': pasoActual === 2, 'completed': pasoActual > 2 }">
+        <div
+          class="step"
+          [ngClass]="{ 'active': pasoActual === 2, 'completed': pasoActual > 2 }"
+          (click)="irAlPaso(2)">
           <div class="step-number">2</div>
           <div class="step-label">Contactos</div>
         </div>
-        <div class="step" [ngClass]="{ 'active': pasoActual === 3 }">
+        <div
+          class="step"
+          [ngClass]="{ 'active': pasoActual === 3 }"
+          (click)="irAlPaso(3)">
           <div class="step-number">3</div>
           <div class="step-label">Certificados</div>
         </div>
@@ -126,7 +135,7 @@
         <div class="form-row">
           <div class="form-group">
             <label>Código Postal:</label>
-            <input matInput formControlName="glnCodigopostal" placeholder="Ej. 170029">
+            <input matInput formControlName="glnCodigopostal" placeholder="Ej. 170029" (keypress)="CustomValidators.onlyNumbersKeyPress($event)" >
           </div>
           <div class="form-group">
             <label>Dirección:</label>
@@ -311,7 +320,7 @@
 
       <div class="form-actions">
         <button mat-button class="btn-nuevo" (click)="nuevo()">Nuevo</button>
-        <button mat-button (click)="modificar()">Modificar</button>
+        <button mat-button (click)="modificar()" [disabled]="modoEdicion">Modificar</button>
         <button mat-button (click)="exportarPDF()" [disabled]="!modoEdicion">Imprimir</button>
         <button mat-button (click)="cancelar()" [disabled]="!modoEdicion">Cancelar</button>
       </div>
@@ -353,6 +362,7 @@
                 <tr>
                   <th>#</th>
                   <th>GLN</th>
+                  <th>Prefijo</th>
                   <th>Localización</th>
                   <th>Dirección</th>
                   <th>Teléfono</th>
@@ -366,9 +376,10 @@
                 <tr *ngFor="let gln of glnsFiltrados; let i = index">
                   <td>{{ i + 1 }}</td>
                   <td>{{ gln.gln1 }}</td>
+                  <td>{{ obtenerCodigoPrefijo(gln.id_prefijos) }}</td>
                   <td>{{ gln.nombreLocalizacion }}</td>
                   <td>{{ gln.direccion }}</td>
-                  <td>{{ gln.telefono }}</td>
+                  <td>{{ gln.contactoTel }}</td>
                   <td>{{ gln.contacto }}</td>
                   <td>{{ gln.email }}</td>
                   <td>{{ obtenerNombreCiudad(gln.idCiudad) }}</td>
