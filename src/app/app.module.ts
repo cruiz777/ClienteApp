@@ -36,6 +36,9 @@ import { ModalImpresionComponent } from './components/shared/modal-impresion/mod
 import { UppercaseDirective } from './directives/uppercase.directive';
 import { LoginFormComponent } from './components/login-form/login-form.component';
 import { ResetPasswordComponent } from './components/reset-password/reset-password.component';
+import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
+import { IntlPhoneInputComponent } from './shared/phone/intl-phone-input.component';
+import { SharedModule } from './shared/shared.module';
 
 export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
 
@@ -68,13 +71,14 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     NgxMaskModule.forRoot(),
     ToastrModule.forRoot({
       positionClass: 'toast-top-right',
-      preventDuplicates: false,
+      preventDuplicates: false,   // << permite mostrar varios pop ups
       timeOut: 5000,
       closeButton: true,
       progressBar: true
     }),
     HotTableModule,
-    AgGridModule
+    SharedModule,
+    AgGridModule,
   ],
   providers: [
     { provide: LocationStrategy, useClass: HashLocationStrategy }

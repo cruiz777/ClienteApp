@@ -965,42 +965,44 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       }
     };
 
-  console.log('🛰️ Payload que se va a enviar:', data);
-  console.log('📌 idGln en el payload:', data.id_gln);
-  // ✅ Diferenciar POST vs PUT correctamente
-  if (data.id_gln && data.id_gln !== 0) {
-    // PUT
-    this.glnService.actualizarGln(data.id_gln, data).subscribe({
-      next: () => {
-        this.mostrarMensajeBox('GLN actualizado', 'El GLN fue actualizado correctamente.', 'success');
-        callback();
-        this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
-          this.router.navigate(['/menuProductos/nuevoGln']);
-        });
-      },
-      error: (err) => {
-        console.error('❌ Error al actualizar GLN', err);
-        this.mostrarMensajeBox('Error', 'No se pudo actualizar el GLN.', 'error');
-      }
-    });
-  } else {
-    // POST
-    console.log('🚀 Enviando a /Gln:', { request: data });
-    this.glnService.insertarGln({ request: data }).subscribe({
-      next: () => {
-        this.mostrarMensajeBox('GLN creado', 'El GLN fue creado correctamente.', 'success');
-        callback();
-        this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
-          this.router.navigate(['/menuProductos/nuevoGln']);
-        });
-      },
-      error: (err) => {
-        console.error('❌ Error al crear GLN', err);
-        this.mostrarMensajeBox('Error', 'Ocurrió un error al crear el GLN.', 'error');
-      }
-    });
+    console.log('🛰️ Payload que se va a enviar:', data);
+    console.log('📌 idGln en el payload:', data.id_gln);
+    console.log('🧾 Teléfono con prefijo:', this.formGln.get('telefono')?.value);
+
+    // ✅ Diferenciar POST vs PUT correctamente
+    if (data.id_gln && data.id_gln !== 0) {
+      // PUT
+      this.glnService.actualizarGln(data.id_gln, data).subscribe({
+        next: () => {
+          this.mostrarMensajeBox('GLN actualizado', 'El GLN fue actualizado correctamente.', 'success');
+          callback();
+          this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+            this.router.navigate(['/menuProductos/nuevoGln']);
+          });
+        },
+        error: (err) => {
+          console.error('❌ Error al actualizar GLN', err);
+          this.mostrarMensajeBox('Error', 'No se pudo actualizar el GLN.', 'error');
+        }
+      });
+    } else {
+      // POST
+      console.log('🚀 Enviando a /Gln:', { request: data });
+      this.glnService.insertarGln({ request: data }).subscribe({
+        next: () => {
+          this.mostrarMensajeBox('GLN creado', 'El GLN fue creado correctamente.', 'success');
+          callback();
+          this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+            this.router.navigate(['/menuProductos/nuevoGln']);
+          });
+        },
+        error: (err) => {
+          console.error('❌ Error al crear GLN', err);
+          this.mostrarMensajeBox('Error', 'Ocurrió un error al crear el GLN.', 'error');
+        }
+      });
+    }
   }
-}
   obtenerCodigoPrefijo(idPrefijo: number): string {
     const prefijo = this.prefijos.find(p => p.id_prefijos === idPrefijo);
     return prefijo?.codpre ?? 'N/A';
@@ -1188,7 +1190,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
 
   bloquearCamposPaso(paso: number, bloquear: boolean): void {
     if (paso === 2) {
-      const campos = ['contacto', 'email', 'contactoTel', 'glnContacto2', 'glnEmail2', 'glnTel2', 'glnContacto3', 'glnEmail3', 'glnTel3'];
+      const campos = ['contacto', 'email', 'contactoTel', 'glnContacto2', 'glnEmail2', 'glnTel2', 'web','glnContacto3', 'glnEmail3', 'glnTel3'];
       campos.forEach(c => this.formGln.get(c)?.[bloquear ? 'disable' : 'enable']());
     } else if (paso === 3) {
       const campos = ['fda', 'europa', 'glnGlobal', 'glnOtro1', 'glnOtro2', 'glnGlnp', 'glnGlne'];
@@ -1214,23 +1216,27 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       nomCli: datosGenerales.nomCli,
       glnOrigenprefijo: datosGenerales.glnOrigenprefijo,
       glnPrefijogs1: datosGenerales.glnPrefijogs1,
-      idTipoLocalizacion: null
+      idTipoLocalizacion: null,
+      glnLatitud: -0.22985,
+      glnLongitud: -78.52495
     });
 
     // Este lo seteas *aparte* sin emitir evento
     this.formGln.get('idPrefijos')?.patchValue(datosGenerales.idPrefijos, { emitEvent: false });
-
+    
     this.pasoActual = 1;
     this.setCamposUbicacionHabilitados(true);
     this.bloquearCamposPaso(2, false);
     this.bloquearCamposPaso(3, false);
+
     this.modoEdicion = true;
+
     this.glnsDelPrefijo = [];
     this.glnsPorPrefijo = [];
     this.glnIndex = 0;
     this.ciudadAutocompleteControl.reset();
 
-    // Aquí sí puedes consultar prefijo y generar GLN como ya lo haces
+    // Aqui arma el prefijo y verifica su longitud
     const prefijo = this.prefijos.find(p => p.id_prefijos === datosGenerales.idPrefijos);
     if (prefijo) {
       const codigoPais = '786';
