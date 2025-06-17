@@ -95,15 +95,149 @@
 </div>
 
 </ng-container>
+<!-- TAB GENERAR -->
+ <ng-container *ngIf="activeTab === 'Generar'">
+  <div class="contenedor">
+  <h2 class="titulo">Creación SSCC</h2>
 
- <!-- CONTENIDO PRINCIPAL -->
-  <mat-sidenav-content [ngClass]="isExpanded ? 'content-default' : 'content-collapsed'">
-    <router-outlet></router-outlet>
-    <footer class="app-footer" [ngClass]="{ 'footer-collapsed': !isExpanded && !isHandset }">
-      <div class="footer-left">{{ currentDateTime }}</div>
-      <div class="footer-center">
-        <img src="assets/logo/logo-gap.png" alt="GAP System" class="footer-logo">
-        <span class="footer-phone">Telf: 099 970 0288 / 022 464 951</span>
-      </div>
-    </footer>
-  </mat-sidenav-content>
+  <form class="formulario" [formGroup]="formSSCC">
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Código del Cliente</mat-label>
+        <input matInput formControlName="codigoCliente" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Cliente</mat-label>
+        <input matInput formControlName="cliente" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>RUC</mat-label>
+        <input matInput formControlName="ruc" />
+      </mat-form-field>
+    </div>
+
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Prefijo</mat-label>
+        <mat-select formControlName="prefijo">
+          <mat-option *ngFor="let p of prefijosDisponibles" [value]="p">{{ p }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Productos a Codificar</mat-label>
+        <input matInput formControlName="producto" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Identificador empaque</mat-label>
+        <mat-select formControlName="empaque">
+          <mat-option *ngFor="let e of empaques" [value]="e">{{ e }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="fila">
+      <mat-checkbox formControlName="serie">Serie:</mat-checkbox>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Secuencia inicia en:</mat-label>
+        <input matInput formControlName="inicio" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Secuencia termina en:</mat-label>
+        <input matInput formControlName="fin" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Códigos generados:</mat-label>
+        <input matInput formControlName="codigosGenerados" />
+      </mat-form-field>
+    </div>
+
+    <div class="botones">
+      <button mat-stroked-button (click)="nuevo()">Nuevo</button>
+      <button mat-stroked-button color="primary" (click)="generar()">Generar</button>
+      <button mat-stroked-button color="accent" (click)="grabar()">Grabar</button>
+      <button mat-stroked-button color="warn" (click)="salir()">Cancelar</button> <!-- analizar esta linea -->
+    </div>
+  </form>
+<table *ngIf="dataGenerada.data.length > 0" mat-table [dataSource]="dataGenerada" class="tabla" matSort>
+      <ng-container matColumnDef="ia">
+        <th mat-header-cell *matHeaderCellDef>IA</th>
+        <td mat-cell *matCellDef="let row">{{ row.ia }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="sscc">
+        <th mat-header-cell *matHeaderCellDef>SSCC</th>
+        <td mat-cell *matCellDef="let row">{{ row.sscc }}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="columnasGeneradas"></tr>
+      <tr mat-row *matRowDef="let row; columns: columnasGeneradas;"></tr>
+    </table>
+  </div>
+</ng-container>
+<!-- TAB REPORTES -->
+ <ng-container *ngIf="activeTab === 'Reportes'">
+  <div class="contenedor">
+  <h2 class="titulo">Reportes</h2>
+
+  <form [formGroup]="formReporte" class="formulario">
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Prefijo</mat-label>
+        <mat-select formControlName="prefijo">
+          <mat-option *ngFor="let p of prefijosDisponibles" [value]="p">{{ p }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Estado</mat-label>
+        <mat-select formControlName="estado">
+          <mat-option *ngFor="let e of estados" [value]="e">{{ e }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="fila">
+      <mat-form-field appearance="outline">
+        <mat-label>Fecha</mat-label>
+        <mat-select formControlName="fecha">
+          <mat-option value="creacion">Creación</mat-option>
+          <mat-option value="modificacion">Modificación</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Desde</mat-label>
+        <input matInput [matDatepicker]="dpDesde" formControlName="desde">
+        <mat-datepicker-toggle matSuffix [for]="dpDesde"></mat-datepicker-toggle>
+        <mat-datepicker #dpDesde></mat-datepicker>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Hasta</mat-label>
+        <input matInput [matDatepicker]="dpHasta" formControlName="hasta">
+        <mat-datepicker-toggle matSuffix [for]="dpHasta"></mat-datepicker-toggle>
+        <mat-datepicker #dpHasta></mat-datepicker>
+      </mat-form-field>
+    </div>
+
+    <div class="fila operadores">
+      <mat-checkbox *ngFor="let op of operadores" formControlName="{{ op.control }}">
+        {{ op.simbolo }}
+      </mat-checkbox>
+    </div>
+
+    <div class="botones">
+      <button mat-stroked-button color="primary" (click)="nuevo()">Nuevo</button>
+      <button mat-stroked-button color="accent" (click)="exportar()">Exportar</button>
+    </div>
+  </form>
+</div>
+
+</ng-container>

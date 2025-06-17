@@ -102,3 +102,70 @@ mat-form-field {
     font-size: 13px;
   }
 }
+/* ============ CSS GENERAR ============ */
+.contenedor {
+  padding: 24px;
+  background-color: #fff;
+}
+
+.titulo {
+  font-size: 22px;
+  color: #002c6c;
+  margin-bottom: 24px;
+}
+
+.filtros, .formulario {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  width: 100%;
+}
+
+mat-form-field {
+  flex: 1 1 200px;
+  min-width: 150px;
+}
+
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.tabla, .tabla-mat {
+  width: 100%;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  margin-top: 16px;
+}
+
+.tabla th, .tabla td,
+.tabla-mat th, .tabla-mat td {
+  text-align: center;
+  word-break: break-word;
+}
+
+@media (max-width: 768px) {
+  .fila,
+  .filtros,
+  .botones {
+    flex-direction: column;
+  }
+
+  mat-form-field {
+    width: 100%;
+  }
+
+  .titulo {
+    font-size: 18px;
+  }
+}
+
