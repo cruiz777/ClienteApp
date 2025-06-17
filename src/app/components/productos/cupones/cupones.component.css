@@ -1,0 +1,109 @@
+/* ============ TABS ============ */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 8px;
+  background-color: #f4f6f8;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid #ccc;
+}
+
+.tabs button {
+  flex: 1 1 auto;
+  min-width: 120px;
+  background-color: #e0e7ef;
+  border: none;
+  padding: 10px 20px;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
+  color: #1f2937;
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+  text-align: center;
+}
+
+.tabs button:hover {
+  background-color: #cbd5e1;
+}
+
+.tabs button.active {
+  background-color: #002c6c !important;
+  color: #ffffff !important;
+  border-bottom: 4px solid #f4f4f4;
+}
+
+/* ============ CONTENEDOR GENERAL ============ */
+.contenedor {
+  padding: 24px;
+  background: #ffffff;
+  border-radius: 0 0 8px 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* ============ TÍTULO ============ */
+.titulo {
+  font-size: 22px;
+  font-weight: 600;
+  color: #002c6c;
+  margin-bottom: 16px;
+}
+
+/* ============ BARRA DE BÚSQUEDA ============ */
+.campo-busqueda {
+  width: 100%;
+  max-width: 400px;
+  margin-bottom: 16px;
+}
+
+/* ============ TABLA ============ */
+.tabla {
+  width: 100%;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 14px;
+  background-color: #fefefe;
+  overflow: auto;
+}
+
+.tabla th,
+.tabla td {
+  text-align: center;
+  padding: 8px;
+}
+
+.tabla th {
+  background-color: #f4f6f8;
+  color: #333;
+  font-weight: 600;
+  border-bottom: 1px solid #ccc;
+}
+
+/* ============ PAGINADOR ============ */
+mat-paginator {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* ============ RESPONSIVE ============ */
+@media (max-width: 768px) {
+  .tabs {
+    flex-direction: column;
+  }
+
+  .campo-busqueda {
+    width: 100%;
+  }
+
+  .tabla {
+    font-size: 12px;
+  }
+
+  mat-paginator {
+    justify-content: center;
+  }
+}
+
+
