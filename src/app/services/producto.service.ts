@@ -225,6 +225,8 @@ export interface Producto {
   pais:string;
   p:string;
   codbar:string;
+  idgrupoproducto:string;
+  codigoproducto:string;
 }
 export interface ApiResponse<T> {
   id: string;
@@ -265,6 +267,14 @@ crearProducto(request: ProductoRequest): Observable<ApiResponse<number>> {
 
 eliminarProducto(id: number): Observable<any> {
   return this.http.delete(`${this.apiBaseUrl}/Producto/${id}`);
+}
+
+buscarPorCodbar(codbar: string): Observable<Producto> {
+  return this.http
+    .get<ApiResponse<Producto>>(`${this.apiBaseUrl}/Producto/por-codbar/${codbar}`)
+    .pipe(
+      map(response => response.data)
+    );
 }
 
 

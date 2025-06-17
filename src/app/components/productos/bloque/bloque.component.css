@@ -251,12 +251,14 @@ mat-form-field {
 }
 
 /* Tamaños personalizados */
-.corto {
+.cortocli {
   max-width: 150px;
 }
-
+.corto {
+  max-width: 110px;
+}
 .largo {
-  min-width: 280px;
+  min-width: 300px;
   flex: 1;
 }
 
@@ -373,9 +375,16 @@ textarea {
 
 .serie-checkbox {
   display: flex;
-  flex-direction: column;
-  min-width: 100px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px; /* separa visualmente de categoría */
 }
+
+.largo {
+  display: block;
+  margin-top: 8px;
+}
+
 
 .campo-gtin {
   width: 240px;
@@ -443,4 +452,63 @@ mat-form-field {
   width: 64px;
   height: 64px;
   margin-bottom: 10px;
+}
+::ng-deep .fila-repetida {
+  background-color: #ffe5e5 !important;
+}
+
+.alinear-campos {
+  display: flex;
+  align-items: center;
+  gap: 20px; /* espacio entre GLN y Serie */
+}
+
+.campo {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.campo input[type="text"] {
+  height: 24px;
+}
+.contenedor-pegar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.campo-label-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.label-codificar {
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.input-cantidad {
+  width: 60px;
+  height: 36px;
+  padding: 4px 6px;
+  font-size: 14px;
+}
+
+.campo-textarea {
+  width: 140px;
+  height: 60px;
+  margin: 0;
+}
+
+mat-form-field textarea {
+  height: 50px !important;
+  padding-top: 6px !important;
+  font-size: 13px;
+}
+::ng-deep .cell-error {
+  background-color: #ffe0e0 !important;
+  border: 1px solid red !important;
 }
