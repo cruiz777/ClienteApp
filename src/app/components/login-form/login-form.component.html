@@ -1,6 +1,6 @@
 <body>
   <div class="login-container">
-    <form [formGroup]="formRecuperacion" (ngSubmit)="enviarCorreo()" class="login-form">
+    <form [formGroup]="formRecuperacion" (ngSubmit)="enviarCorreo()" class="login-form" autocomplete="off">
       <div class="login-card">
         <div class="header-container">
           <img src="assets/logo/logo-gap.png" alt="Logo GAP" class="logo-image" />
@@ -11,7 +11,7 @@
         <div class="form-group">
           <label for="email" class="field-label">Correo electrónico:</label>
           <input type="email" id="email" class="input-field" formControlName="email"
-            placeholder="Ingresa tu correo electrónico" required />
+            placeholder="Ingresa tu correo electrónico" required autocomplete="off" />
           <div *ngIf="formRecuperacion.get('email')?.invalid && formRecuperacion.get('email')?.touched"
             style="color: red; font-size: 13px;">
             Ingresa un correo válido.
