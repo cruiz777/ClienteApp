@@ -50,7 +50,7 @@ export class CuponesComponent implements OnInit {
   activeTab: string = 'Listado';
 
   columnas: string[] = ['index', 'cupon', 'prefijo', 'descripcion', 'categoria', 'fecha'];
-  columnasGenerar: string[] = ['index', 'cupon', 'prefijo', 'descripcion'];
+  columnasGenerar: string[] = ['index', 'cupon', 'prefijo', 'descripcion','fecha'];
 
   cupones: Cupon[] = [
     {
@@ -75,7 +75,7 @@ export class CuponesComponent implements OnInit {
   busqueda = '';
   prefijos: string[] = ['10032', '123456', '80001234'];
 
-  // Generar
+  // Formulario "Generar"
   codigoCliente = '';
   cliente = '';
   ruc = '';
@@ -85,7 +85,7 @@ export class CuponesComponent implements OnInit {
   secuenciaInicial = 1;
   prefijoSeleccionado = '';
 
-  // Reportes
+  // Filtros de Reportes
   filtroPrefijo = '';
   filtroCodigo = '';
   filtroComparacionFecha: '=' | '<' | '>' | 'entre' = '=';
@@ -121,7 +121,7 @@ export class CuponesComponent implements OnInit {
   generarCupones(): void {
     const total = this.cantidadProductos;
     const largoPrefijo = this.prefijoSeleccionado.length;
-    const largoSecuencia = 13 - (2 + largoPrefijo); // 2 por "99"
+    const largoSecuencia = 13 - (2 + largoPrefijo);
     const inicio = this.usarSecuenciaManual ? this.secuenciaInicial : 1;
 
     this.cuponesGenerados = [];
@@ -130,13 +130,14 @@ export class CuponesComponent implements OnInit {
       const secuenciaNum = inicio + i;
       const secuenciaStr = secuenciaNum.toString().padStart(largoSecuencia, '0');
       const codigo = `99${this.prefijoSeleccionado}${secuenciaStr}`;
+      const fechaHoy = new Date().toISOString().substring(0, 10);
 
       this.cuponesGenerados.push({
         cupon: codigo,
         prefijo: this.prefijoSeleccionado,
         descripcion: this.descripcionProducto,
         categoria: '',
-        fecha: new Date().toISOString().substring(0, 10)
+        fecha: fechaHoy
       });
     }
   }
@@ -172,8 +173,16 @@ export class CuponesComponent implements OnInit {
     console.log(`📤 Exportando como ${formato.toUpperCase()}`);
   }
 
+  nuevoReporte(): void {
+    this.filtroPrefijo = '';
+    this.filtroCodigo = '';
+    this.filtroComparacionFecha = '=';
+    this.fechaDesde = null;
+    this.fechaHasta = null;
+    console.log('🆕 Filtros de reporte reiniciados');
+  }
+
   generar(): void {
     console.log('🛠️ Acción generar (sin uso actual)');
   }
 }
-

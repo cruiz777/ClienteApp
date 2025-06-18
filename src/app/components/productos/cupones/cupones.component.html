@@ -118,6 +118,10 @@
       <ng-container matColumnDef="index">
         <th mat-header-cell *matHeaderCellDef>#</th>
         <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
+        <ng-container matColumnDef="fecha">
+  <th mat-header-cell *matHeaderCellDef>Fecha</th>
+  <td mat-cell *matCellDef="let row">{{ row.fecha | date: 'dd/MM/yyyy' }}</td>
+</ng-container>
       </ng-container>
 
       <ng-container matColumnDef="cupon">
@@ -194,6 +198,7 @@
       </div>
 
       <div class="acciones">
+        <button mat-stroked-button color="primary" (click)="nuevoReporte()">Nuevo</button>
         <button mat-stroked-button [matMenuTriggerFor]="exportarMenu">Exportar</button>
         <mat-menu #exportarMenu="matMenu">
           <button mat-menu-item (click)="exportar('excel')">Excel</button>
