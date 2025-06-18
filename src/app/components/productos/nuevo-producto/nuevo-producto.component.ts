@@ -6,7 +6,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { AgGridModule } from 'ag-grid-angular';
 import { Router } from '@angular/router';
-
 import { Cliente } from 'src/app/interfaces/cliente';
 import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
 import { ProductoService, Producto } from 'src/app/services/producto.service';
@@ -106,12 +105,17 @@ export class NuevoProductoComponent implements OnInit {
     this.activeTab = tab;
   }
 
-  filtrarRegistros() {
-    return this.registros.filter(r =>
-      (!this.filtroPrefijo || r.prefijo.includes(this.filtroPrefijo)) &&
-      (!this.busqueda || r.descripcion?.toLowerCase().includes(this.busqueda.toLowerCase()))
-    );
-  }
+ filtrarRegistros() {
+  const texto = this.busqueda.trim().toLowerCase();
+
+  return this.registros.filter(r =>
+    (!this.filtroPrefijo || r.prefijo.includes(this.filtroPrefijo)) &&
+    (!texto || Object.values(r).some(valor =>
+      valor && valor.toString().toLowerCase().includes(texto)
+    ))
+  );
+}
+
 
   seleccionarRegistro(registro: any) {
     this.registroSeleccionado = registro;

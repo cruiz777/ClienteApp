@@ -1,4 +1,3 @@
-
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
@@ -22,6 +21,9 @@ import { MatDialogModule } from '@angular/material/dialog';
 
 // Terceros
 import { NgxMaskModule, IConfig } from 'ngx-mask';
+import { ToastrModule } from 'ngx-toastr';
+import { HotTableModule } from '@handsontable/angular';
+import { AgGridModule } from 'ag-grid-angular';
 
 // Componentes
 import { LoginComponent } from './components/login/login.component';
@@ -30,12 +32,13 @@ import { ReusableModule } from './components/reusable/reusable.module';
 import { InicioComponent } from './components/inicio/inicio.component';
 import { CustomMessageBoxComponent } from './components/utils/messages/custom-message-box.component';
 import { ConfirmDialogComponent } from './components/reusable/confirm-dialog/confirm-dialog.component';
-import { UppercaseDirective } from './directives/uppercase.directive';
 import { ModalImpresionComponent } from './components/shared/modal-impresion/modal-impresion.component';
+import { UppercaseDirective } from './directives/uppercase.directive';
+import { LoginFormComponent } from './components/login-form/login-form.component';
+import { ResetPasswordComponent } from './components/reset-password/reset-password.component';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { ToastrModule } from 'ngx-toastr';
-import { HotTableModule } from '@handsontable/angular';
-import { AgGridModule } from 'ag-grid-angular';
+import { IntlPhoneInputComponent } from './shared/phone/intl-phone-input.component';
+import { SharedModule } from './shared/shared.module';
 
 export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
 
@@ -48,7 +51,7 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     CustomMessageBoxComponent,
     ConfirmDialogComponent,
     ModalImpresionComponent,
-
+    ResetPasswordComponent
   ],
   imports: [
     BrowserModule,
@@ -68,18 +71,17 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     NgxMaskModule.forRoot(),
     ToastrModule.forRoot({
       positionClass: 'toast-top-right',
-      preventDuplicates: false,   // << permite mostrar varios
+      preventDuplicates: false,   // << permite mostrar varios pop ups
       timeOut: 5000,
       closeButton: true,
       progressBar: true
     }),
     HotTableModule,
+    SharedModule,
     AgGridModule,
   ],
-
   providers: [
-    { provide: LocationStrategy, useClass: HashLocationStrategy },
-    provideAnimationsAsync()
+    { provide: LocationStrategy, useClass: HashLocationStrategy }
   ],
   bootstrap: [AppComponent]
 })

@@ -73,7 +73,22 @@
           <input formControlName="clave" [type]="mostrarClave ? 'text' : 'password'" placeholder="Ingrese su clave"
             autocomplete="new-password" />
         </div>
+
+        <!-- Barra de seguridad -->
+        <div *ngIf="usuarioForm.get('clave')?.value">
+          <div class="security-bar-container">
+            <div class="security-bar-fill" [ngClass]="{
+          'security-weak': nivelSeguridad === 'Débil',
+          'security-medium': nivelSeguridad === 'Media',
+          'security-strong': nivelSeguridad === 'Alta'
+        }"></div>
+          </div>
+          <div class="security-label">
+            Seguridad: {{ nivelSeguridad }}
+          </div>
+        </div>
       </div>
+
 
 
       <div class="form-field">

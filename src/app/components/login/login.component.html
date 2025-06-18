@@ -4,50 +4,42 @@
       <div class="login-card">
         <div class="header-container">
           <img *ngIf="logoUrl" [src]="logoUrl" alt="Logo" class="logo-image" />
-           <h1 class="welcome-text">Bienvenido</h1>
+          <h1 class="welcome-text">Bienvenido</h1>
         </div>
 
         <!-- Usuario -->
         <div class="form-group">
           <label for="username" class="field-label">Usuario:</label>
-          <input
-            type="email"
-            id="username"
-            class="input-field"
-            placeholder="Correo o nombre de usuario"
-            formControlName="email"
-            required
-          />
+          <input type="email" id="username" class="input-field" placeholder="Correo o nombre de usuario"
+            formControlName="email" required />
         </div>
 
         <!-- Contraseña -->
         <div class="form-group password-group">
           <label for="password" class="field-label">Contraseña:</label>
-          <input
-            [type]="showPassword ? 'text' : 'password'"
-            id="password"
-            class="input-field"
-            placeholder="Contraseña"
-            formControlName="password"
-            required
-          />
+          <input [type]="showPassword ? 'text' : 'password'" id="password" class="input-field" placeholder="Contraseña"
+            formControlName="password" required />
           <button type="button" class="toggle-password" (click)="togglePasswordVisibility()">
-            <img
-              [src]="showPassword ? 'assets/icons/eye-open.png' : 'assets/icons/eye-closed.png'"
-              alt="Mostrar/ocultar contraseña"
-            />
+            <img [src]="showPassword ? 'assets/icons/eye-open.png' : 'assets/icons/eye-closed.png'"
+              alt="Mostrar/ocultar contraseña" />
           </button>
         </div>
 
         <!-- Olvidaste contraseña -->
         <div class="forgot-password">
-          <a href="#">¿Olvidaste tu contraseña?</a>
+          <a routerLink="/recuperar-clave">¿Olvidaste tu contraseña?</a>
         </div>
 
         <!-- Botón Login -->
         <div class="login-button-container">
-          <button class="login-button" type="submit">Iniciar Sesión</button>
+          <button class="login-button" type="submit" [disabled]="loading">
+            <ng-container *ngIf="!loading">Iniciar Sesión</ng-container>
+            <ng-container *ngIf="loading">
+              <span class="spinner"></span> Validando...
+            </ng-container>
+          </button>
         </div>
+
 
         <!-- Footer -->
         <div class="footer-container">

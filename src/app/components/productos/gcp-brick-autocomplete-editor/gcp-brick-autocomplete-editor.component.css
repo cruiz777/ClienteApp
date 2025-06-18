@@ -17,3 +17,20 @@
 .autocomplete-list li:hover {
   background-color: #f0f0f0;
 }
+.clear-button {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  color: #999;
+}
+
+.clear-button:hover {
+  color: #333;
+}

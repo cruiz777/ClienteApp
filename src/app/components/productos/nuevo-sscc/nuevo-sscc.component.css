@@ -1,0 +1,171 @@
+/* ============ TABS ============ */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 8px;
+  background-color: #f4f6f8;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid #ccc;
+}
+
+.tabs button {
+  flex: 1 1 auto;
+  min-width: 100px;
+  background-color: #e0e7ef;
+  border: none;
+  padding: 10px 20px;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
+  color: #1f2937;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-align: center;
+}
+
+.tabs button:hover {
+  background-color: #cbd5e1;
+}
+
+.tabs button.active {
+  background-color: #002c6c !important;
+  color: #ffffff !important;
+  border-bottom: 4px solid #f4f4f4;
+}
+
+/* ============ CONTENEDOR PRINCIPAL ============ */
+.contenedor {
+  padding: 20px;
+  background-color: #fff;
+}
+
+.titulo {
+  font-size: 22px;
+  color: #002c6c;
+  margin-bottom: 16px;
+}
+
+.contador {
+  font-weight: bold;
+  color: #002c6c;
+}
+
+/* ============ FILTROS ============ */
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+mat-form-field {
+  width: 200px;
+  min-width: 150px;
+  flex: 1 1 auto;
+}
+
+/* ============ TABLA ============ */
+.tabla-mat {
+  width: 100%;
+  border: 1px solid #ccd5e2;
+  font-size: 14px;
+  overflow-x: auto;
+}
+
+.tabla-mat th, .tabla-mat td {
+  text-align: center;
+  word-break: break-word;
+}
+
+/* ============ RESPONSIVE EXTRAS ============ */
+@media (max-width: 768px) {
+  .titulo {
+    font-size: 18px;
+  }
+
+  .tabs button {
+    font-size: 14px;
+    padding: 8px;
+  }
+
+  .filtros {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  mat-form-field {
+    width: 100%;
+  }
+
+  .tabla-mat {
+    font-size: 13px;
+  }
+}
+/* ============ CSS GENERAR ============ */
+.contenedor {
+  padding: 24px;
+  background-color: #fff;
+}
+
+.titulo {
+  font-size: 22px;
+  color: #002c6c;
+  margin-bottom: 24px;
+}
+
+.filtros, .formulario {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.fila {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  width: 100%;
+}
+
+mat-form-field {
+  flex: 1 1 200px;
+  min-width: 150px;
+}
+
+.botones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.tabla, .tabla-mat {
+  width: 100%;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  margin-top: 16px;
+}
+
+.tabla th, .tabla td,
+.tabla-mat th, .tabla-mat td {
+  text-align: center;
+  word-break: break-word;
+}
+
+@media (max-width: 768px) {
+  .fila,
+  .filtros,
+  .botones {
+    flex-direction: column;
+  }
+
+  mat-form-field {
+    width: 100%;
+  }
+
+  .titulo {
+    font-size: 18px;
+  }
+}
+

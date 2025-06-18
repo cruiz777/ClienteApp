@@ -218,3 +218,39 @@ select {
   border: 1px solid #002c6c;
 }
 
+/* ===================== BARRA EN SEGURIDADES ===================== */
+
+.security-bar-container {
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+
+.security-bar-fill {
+  height: 100%;
+  transition: width 0.3s ease-in-out;
+}
+
+.security-weak {
+  width: 33%;
+  background-color: red;
+}
+
+.security-medium {
+  width: 66%;
+  background-color: orange;
+}
+
+.security-strong {
+  width: 100%;
+  background-color: green;
+}
+
+.security-label {
+  font-size: 12px;
+  margin-top: 4px;
+  font-weight: bold;
+  color: #333;
+}

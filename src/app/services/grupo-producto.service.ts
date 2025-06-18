@@ -32,5 +32,34 @@ export class GrupoProductoService {
       );
     }
     
-    
+    obtenerGrupoPorId(id: number): Observable<GrupoProducto> {
+  const url = `${this.apiUrl}/${id}`;
+  return this.http.get<any>(url).pipe(
+    map(response => {
+      const item = response.data;
+      return {
+        id_grupo_producto: item.id_grupo_producto,
+        codigo: item.codigo,
+        brick: item.brick,
+        desBrick: item.desBrick
+      };
+    })
+  );
+}
+obtenerGrupoPorCodigo(codigo: string): Observable<GrupoProducto> {
+  const url = `${this.apiUrl}/codigo/${encodeURIComponent(codigo)}`;
+  return this.http.get<any>(url).pipe(
+    map(response => {
+      const item = response.data;
+      return {
+        id_grupo_producto: item.idGrupoProducto,
+        codigo: item.codigo,
+        brick: item.brick,
+        desBrick: item.desBrick
+      };
+    })
+  );
+}
+
+
 }

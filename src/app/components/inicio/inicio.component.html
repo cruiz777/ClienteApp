@@ -1,27 +1,41 @@
 <section class="gs1-section">
-    <div class="carousel-container">
-      <img
-        *ngFor="let img of images; let i = index"
-        [src]="img"
-        class="carousel-image"
-        [ngStyle]="{ opacity: currentIndex === i ? '1' : '0' }"
-        alt="Imagen carrusel"
-      />
-    </div>
+  <div class="carousel-container">
+    <img *ngFor="let img of images; let i = index" [src]="img" class="carousel-image"
+      [ngStyle]="{ opacity: currentIndex === i ? '1' : '0' }" alt="Imagen carrusel" />
+  </div>
 
-    <div class="logo-container">
-      <img *ngIf="logoUrl" [src]="logoUrl" alt="Logo de la empresa" class="gs1-logo" />
-    </div>
+  <div class="logo-container">
+    <img *ngIf="logoUrl" [src]="logoUrl" alt="Logo de la empresa" class="gs1-logo" />
+  </div>
 
-    <div class="product-icons">
-      <img src="/assets/logo/CODBAR-GS1-2.png" alt="CODBAR GS1" class="codbar-gs1" [routerLink]="'/menus/codbar'" style="cursor: pointer" />
-      <img src="/assets/logo/SIC-3000-2.png" alt="ROL 3000" class="rol3000" />
-      <img src="/assets/logo/CG-3000-2.png" alt="CG 3000" class="cg3000" />
-      <img src="/assets/logo/ROL-3000-2.png" alt="ROL 3000" class="rol3000" />
-      <img src="/assets/logo/seguridad-2.png" alt="Seguridad" class="seguridad" [routerLink]="'/seguridades/inicio'" style="cursor: pointer" />
-    </div>
+  <div class="product-icons">
+    <img src="/assets/logo/CODBAR-GS1-2.png" alt="CODBAR GS1" class="codbar-gs1" [routerLink]="'/menus/codbar'"
+      style="cursor: pointer" />
+    <img src="/assets/logo/SIC-3000-2.png" alt="ROL 3000" class="rol3000" />
+    <img src="/assets/logo/CG-3000-2.png" alt="CG 3000" class="cg3000" />
+    <img src="/assets/logo/ROL-3000-2.png" alt="ROL 3000" class="rol3000" />
+    <img src="/assets/logo/seguridad-2.png" alt="Seguridad" class="seguridad" [routerLink]="'/seguridades/inicio'"
+      style="cursor: pointer" />
+  </div>
 
-    <div class="user-icon-container">
-      <img src="https://cdn.builder.io/api/v1/image/assets/TEMP/462c3d503ae1a130bc69acd82f5ad008cacd1ce6" alt="User Icon" class="user-icon" [routerLink]="'/login'" style="cursor: pointer" />
+  <!-- Botón avatar fijo -->
+  <div class="user-avatar-toggle" *ngIf="usuario" (click)="togglePanel()">
+    {{ usuario.nombre_usuario[0] | uppercase }}
+  </div>
+
+  <!-- Panel desplegable de usuario -->
+  <div class="user-panel" *ngIf="showPanel && usuario">
+    <div class="user-header">
+      <div class="user-avatar-large">
+        {{ usuario.nombre_usuario[0] | uppercase }}
+      </div>
+      <div class="user-data">
+        <div class="user-name">{{ usuario.nombre_usuario }}</div>
+        <div class="user-info"><span>Perfil:</span> {{ usuario.perfil }}</div>
+      </div>
     </div>
-  </section>
+    <button class="logout-button" (click)="logout()">Cerrar sesión</button>
+  </div>
+
+
+</section>

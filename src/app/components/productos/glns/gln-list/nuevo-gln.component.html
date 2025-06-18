@@ -23,15 +23,24 @@
     <ng-container *ngIf="activeTab === 'Informacion'">
     <!-- Indicador de pasos -->
       <div class="progress-steps">
-        <div class="step" [ngClass]="{ 'active': pasoActual === 1, 'completed': pasoActual > 1 }">
+        <div
+          class="step"
+          [ngClass]="{ 'active': pasoActual === 1, 'completed': pasoActual > 1 }"
+          (click)="irAlPaso(1)">
           <div class="step-number">1</div>
           <div class="step-label">Datos Generales</div>
         </div>
-        <div class="step" [ngClass]="{ 'active': pasoActual === 2, 'completed': pasoActual > 2 }">
+        <div
+          class="step"
+          [ngClass]="{ 'active': pasoActual === 2, 'completed': pasoActual > 2 }"
+          (click)="irAlPaso(2)">
           <div class="step-number">2</div>
           <div class="step-label">Contactos</div>
         </div>
-        <div class="step" [ngClass]="{ 'active': pasoActual === 3 }">
+        <div
+          class="step"
+          [ngClass]="{ 'active': pasoActual === 3 }"
+          (click)="irAlPaso(3)">
           <div class="step-number">3</div>
           <div class="step-label">Certificados</div>
         </div>
@@ -196,15 +205,26 @@
         <div class="form-row">
           <div class="form-group">
             <label>Nombre:</label>
-            <input matInput formControlName="contacto">
+            <input matInput formControlName="contacto" placeholder="José Perez">
           </div>
           <div class="form-group">
             <label>E-mail:</label>
-            <input matInput formControlName="email">
+            <input matInput formControlName="email" placeholder="ejemplo@mail.com">
           </div>
           <div class="form-group">
             <label>Telf. o Cel.:</label>
-            <input matInput formControlName="contactoTel" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+           <app-intl-phone-input
+            formControlName="glnCelular"
+            [preferredCountries]="['ec', 'us', 'co']"
+            [defaultCountry]="'ec'"
+            >
+          </app-intl-phone-input>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Página Web:</label>
+              <input matInput formControlName="web" placeholder="www.ejemplo.com">
+            </div>
           </div>
         </div>
 
@@ -224,7 +244,12 @@
           </div>
           <div class="form-group">
             <label>Telf. o Cel.:</label>
-            <input matInput formControlName="glnTel2" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+            <app-intl-phone-input
+              formControlName="glnTel2"
+              [preferredCountries]="['ec', 'us', 'co']"
+              (valueChange)="formGln.get('glnTel2')?.setValue($event)"
+              >
+            </app-intl-phone-input>
           </div>
         </div>
 
@@ -244,7 +269,12 @@
           </div>
           <div class="form-group">
             <label>Telf. o Cel.:</label>
-            <input matInput formControlName="glnTel3" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+            <app-intl-phone-input
+              formControlName="glnTel3"
+              [preferredCountries]="['ec', 'us', 'co']"
+              (valueChange)="formGln.get('glnTel3')?.setValue($event)"
+              >
+            </app-intl-phone-input>
           </div>
         </div>
       </div>
@@ -311,7 +341,7 @@
 
       <div class="form-actions">
         <button mat-button class="btn-nuevo" (click)="nuevo()">Nuevo</button>
-        <button mat-button (click)="modificar()">Modificar</button>
+        <button mat-button  (click)="modificar()" [disabled]="modoEdicion">Modificar</button>
         <button mat-button (click)="exportarPDF()" [disabled]="!modoEdicion">Imprimir</button>
         <button mat-button (click)="cancelar()" [disabled]="!modoEdicion">Cancelar</button>
       </div>

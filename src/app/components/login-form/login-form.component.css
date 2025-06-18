@@ -4,8 +4,10 @@
 body {
   margin: 0;
   height: 100vh;
-  background-image: linear-gradient(rgba(0, 0, 0, 0.35),
-      rgba(0, 0, 0, 0.35)), url('src/assets/images/fondo_login.png');
+  background-image: linear-gradient(
+      rgba(0, 0, 0, 0.35),
+      rgba(0, 0, 0, 0.35)
+    ), url('src/assets/images/fondo_login.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -32,12 +34,10 @@ body {
   align-items: center;
   margin-bottom: 30px;
 }
-
 .logo-image {
   width: 150px;
   margin-bottom: 12px;
 }
-
 .welcome-text {
   font-size: 24px;
   font-weight: 600;
@@ -48,14 +48,12 @@ body {
 .form-group {
   margin-bottom: 20px;
 }
-
 .field-label {
   font-size: 15px;
   font-weight: 500;
   color: #001f4f;
   margin-bottom: 5px;
 }
-
 .input-field {
   width: 100%;
   padding: 14px;
@@ -65,7 +63,6 @@ body {
   outline: none;
   transition: border 0.3s;
 }
-
 .input-field:focus {
   border-color: #001f4f;
 }
@@ -74,36 +71,31 @@ body {
 .password-group {
   position: relative;
 }
-
 .toggle-password {
   position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-2%);
+  right: 10px;
+  top: 41px;
   background: none;
   border: none;
   cursor: pointer;
-  padding: 0;
 }
-
 .toggle-password img {
   width: 22px;
   height: 22px;
 }
 
-/* ENLACE PARA OLVIDO DE CONTRASEÑA */
+/* ENLACE PARA LOGIN */
 .forgot-password {
   text-align: right;
   margin-bottom: 20px;
 }
-
 .forgot-password a {
   font-size: 14px;
   color: #001f4f;
   text-decoration: none;
   transition: color 0.3s;
+  cursor: pointer;
 }
-
 .forgot-password a:hover {
   color: #cd3c0d;
   text-decoration: underline;
@@ -114,7 +106,6 @@ body {
   display: flex;
   justify-content: center;
 }
-
 .login-button {
   background-color: #001f4f;
   color: #fff;
@@ -127,7 +118,6 @@ body {
   cursor: pointer;
   transition: background-color 0.3s;
 }
-
 .login-button:hover {
   background-color: #cd3c0d;
 }
@@ -142,29 +132,6 @@ body {
   color: #888;
   gap: 10px;
 }
-
 .footer-logo {
   width: 75px;
-}
-
-.spinner {
-  border: 3px solid #f3f3f3;
-  border-top: 3px solid #fff;
-  border-radius: 50%;
-  width: 16px;
-  height: 16px;
-  animation: spin 0.8s linear infinite;
-  display: inline-block;
-  vertical-align: middle;
-  margin-right: 8px;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
 }

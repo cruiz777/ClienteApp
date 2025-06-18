@@ -6,7 +6,7 @@ import { ToastrService } from 'ngx-toastr';
 })
 //Servicio para POPUPS generico
 export class RequiredFieldsToastService {
-  constructor(private toastr: ToastrService) {}
+  constructor(private toastr: ToastrService) { }
 
   mostrar(campos: string[]): void {
     if (!campos || campos.length === 0) return;
@@ -24,4 +24,20 @@ export class RequiredFieldsToastService {
   cerrar(): void {
     this.toastr.clear();
   }
+  exito(mensaje: string): void {
+    this.toastr.success(mensaje, 'Éxito', {
+      closeButton: true,
+      timeOut: 3000,
+      positionClass: 'toast-top-right'
+    });
+  }
+
+  error(mensaje: string): void {
+    this.toastr.error(mensaje, 'Error', {
+      closeButton: true,
+      timeOut: 4000,
+      positionClass: 'toast-top-right'
+    });
+  }
+
 }
