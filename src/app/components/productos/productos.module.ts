@@ -38,6 +38,8 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { HotTableModule } from '@handsontable/angular';
 import { AgGridModule } from 'ag-grid-angular';
 import { AgGridAngular } from 'ag-grid-angular';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { DialogProcesoComponent } from './dialog-proceso/dialog-proceso.component';
 
 @NgModule({
   declarations: [
@@ -46,6 +48,7 @@ import { AgGridAngular } from 'ag-grid-angular';
     BloqueComponent,
     CheckboxRendererComponent,
     GcpBrickAutocompleteEditorComponent,
+    DialogProcesoComponent
   ],
   imports: [
     CommonModule,
@@ -81,7 +84,8 @@ import { AgGridAngular } from 'ag-grid-angular';
     MatSnackBarModule,
     MatOptionModule,
     MatSelectModule,
-    AgGridAngular
+    AgGridAngular,
+    MatProgressBarModule
   ],
   exports: [
     NavigationProductoComponent,

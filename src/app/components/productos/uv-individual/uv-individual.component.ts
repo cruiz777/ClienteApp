@@ -32,7 +32,8 @@ import { MatDialogRef, MAT_DIALOG_DATA, MatDialog } from '@angular/material/dial
 import { GenerarPresentacionesService } from 'src/app/services/generar-presentaciones.service';
 import { switchMap } from 'rxjs/operators';
 import { ChangeDetectorRef } from '@angular/core';
-
+import { ClienteService, ClienteIndividual } from 'src/app/services/cliente.service';
+import { UsuarioService } from 'src/app/services/usuario.service';
 @Component({
   selector: 'app-uv-individual',
   standalone: true,
@@ -102,6 +103,8 @@ export class UvIndividualComponent implements OnInit {
   gtin13UIEnable = false;
   gtin12UIEnable = false;
   longitudMaxima = 0;
+  id_grupo_producto: number = 0;
+  usuarioActual = this.usuarioService.getUsuarioActual();
   constructor(
     private fb: FormBuilder,
     private clienteSeleccionadoService: ClienteSeleccionadoService,
@@ -119,7 +122,9 @@ export class UvIndividualComponent implements OnInit {
     private codigos14Service: Codigos14Service,
     private dialog: MatDialog,
     private generarPresentacionesService: GenerarPresentacionesService,
-    private cd: ChangeDetectorRef
+    private cd: ChangeDetectorRef,
+    private clienteService: ClienteService,
+    private usuarioService: UsuarioService,
   ) { }
 
 
@@ -253,6 +258,7 @@ export class UvIndividualComponent implements OnInit {
     this.botonIngresarULDeshabilitado = true;
     this.botonNuevoDeshabilitado = false;
     this.botonGenerarULDeshabilitado = false;
+    
   }
 
 
@@ -369,6 +375,7 @@ export class UvIndividualComponent implements OnInit {
         cliente: cliente.nomcli || '',
         ruc: cliente.ruc || '',
       });
+      this.cargarClientePorId(cliente.clientes_codigo);
       this.cargarPrefijos(cliente.clientes_codigo);
     }
   }
@@ -391,31 +398,31 @@ export class UvIndividualComponent implements OnInit {
   }
 
   onPrefijoBlur(): void {
-  const idSeleccionado = this.formUV.value.gcp;
-  const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+    const idSeleccionado = this.formUV.value.gcp;
+    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
 
-  if (objeto?.gln) {
-    this.formUV.patchValue({ gln: objeto.gln });
+    if (objeto?.gln) {
+      this.formUV.patchValue({ gln: objeto.gln });
 
-    const codpre = objeto.codpre || objeto.Codpre;
+      const codpre = objeto.codpre || objeto.Codpre;
 
-    if (!codpre) {
-      console.warn('⚠️ codpre no disponible en el objeto');
-      return;
-    }
-
-    this.prefijoService.buscarPorCodpre(codpre).subscribe({
-      next: (respuesta) => {
-        const bandera = respuesta[0]?.bandera ?? 0;
-        this.bandera = bandera;
-        console.log('✅ Bandera actualizada:', this.bandera);
-      },
-      error: (err) => {
-        console.error('❌ Error al buscar bandera por codpre:', err);
+      if (!codpre) {
+        console.warn('⚠️ codpre no disponible en el objeto');
+        return;
       }
-    });
+
+      this.prefijoService.buscarPorCodpre(codpre).subscribe({
+        next: (respuesta) => {
+          const bandera = respuesta[0]?.bandera ?? 0;
+          this.bandera = bandera;
+          console.log('✅ Bandera actualizada:', this.bandera);
+        },
+        error: (err) => {
+          console.error('❌ Error al buscar bandera por codpre:', err);
+        }
+      });
+    }
   }
-}
 
 
   cargarGrupoProductos(): void {
@@ -433,11 +440,18 @@ export class UvIndividualComponent implements OnInit {
           );
         });
     });
+    this.formUV.get('categoria')?.valueChanges.subscribe(valor => {
+      if (valor && typeof valor === 'object') {
+        this.formUV.get('brick')?.setValue(valor.brick);
+      }
+    });
+
   }
 
   displayWithCategoria(categoria: GrupoProducto): string {
-    return categoria ? ` ${categoria.desBrick}` : '';
+    return categoria?.desBrick || '';
   }
+
 
   limpiarCategoria(): void {
     this.formUV.get('categoria')?.reset();
@@ -468,24 +482,33 @@ export class UvIndividualComponent implements OnInit {
     const codbar = this.formUV.get('gtinUv')?.value;
 
     if (!codbar) {
-      this.mensaje = '⚠️ No ingresó Unidad de Venta';
+      this.mostrarAlerta('⚠️ No ingresó Unidad de Venta', 'Error');
+
+      return;
+    }
+     if (!this.formUV.get('descripcion')?.value) {
+      this.mostrarAlerta('⚠️ No ingresó Descripcion', 'Error');
+
       return;
     }
     if (!this.formUV.get('marca')?.value) {
-      this.mensaje = '⚠️ No ingresó Marca';
+      this.mostrarAlerta('⚠️ No ingresó Marca', 'Error');
+
       return;
     }
     if (!this.formUV.get('contenido')?.value) {
-      this.mensaje = '⚠️ No ingresó Contenido';
+      this.mostrarAlerta('⚠️ No ingresó Contenido', 'Error');
+
       return;
     }
     if (!this.formUV.get('gcp')?.value) {
-      this.mensaje = '⚠️ No seleccionó Prefijo';
+      this.mostrarAlerta('⚠️ No seleccionó Prefijo', 'Error');
+
       return;
     }
     if (!this.formUV.get('categoria')?.value) {
-      this.mensaje = '⚠️ No seleccionó Categoría';
-      return;
+      this.mostrarAlerta('⚠️ No seleccionó Categoría', 'Error');
+            return;
     }
     debugger
     this.productoService.verificarCodbar(codbar).pipe(
@@ -693,10 +716,10 @@ export class UvIndividualComponent implements OnInit {
       console.log('🎯 GTIN generado:', codigoGenerado12I);
       this.formUV.get('gtinUv')?.setValue(codigoGenerado12I);
     }
-     if (gtinNacionalSeleccionado === 'gtin13' && this.bandera === 2) {
-         this.mostrarAlerta('No se puede generar este tipo de codigo', 'Error');
+    if (gtinNacionalSeleccionado === 'gtin13' && this.bandera === 2) {
+      this.mostrarAlerta('No se puede generar este tipo de codigo', 'Error');
       return;
-     }
+    }
 
     this.campoGtin = true;
     this.botonGenerarDeshabilitado = true;
@@ -729,18 +752,32 @@ export class UvIndividualComponent implements OnInit {
   }
 
   limpiarUl(): void {
-    this.formUL.patchValue({
-      tipoGtin: 'GTIN-14',
-      descripcionu: '',
-      factor: '',
-      tipoEmpaque: 'CAJA',
-      unidad: 'UNIDADES',
-      indicador: '',
-      gtinUl: ''
-    });
-    this.botonGenerarULDeshabilitado = false;
-    this.botonGrabarULDeshabilitado = true;
+  // Limpiar todos los campos de UL
+  this.formUL.patchValue({
+    tipoGtin: 'GTIN-14',
+    descripcionu: '',
+    factor: '',
+    tipoEmpaque: 'CAJA',
+    unidad: 'UNIDADES',
+    indicador: '',
+    gtinUl: ''
+  });
+
+  // Resetear botones
+  this.botonGenerarULDeshabilitado = false;
+  this.botonGrabarULDeshabilitado = true;
+
+  // Obtener GTIN del formulario UV
+  const gtin = this.formUV.get('gtinUv')?.value;
+
+  // Verificar si existe el GTIN antes de continuar
+  if (gtin) {
+    this.verificarExistenciaCodbar();
+  } else {
+    console.warn('⚠️ No se encontró GTIN UV al limpiar UL.');
   }
+}
+
 
   salir(): void {
     this.router.navigate(['/menuProductos/nuevoProducto']); // Redirecciona a /pages/clientes
@@ -926,6 +963,7 @@ export class UvIndividualComponent implements OnInit {
 
 
   cargarPais(): void {
+    debugger
     this.paisService.obtenerPaises().subscribe(data => {
       this.pais = data;
 
@@ -1113,7 +1151,7 @@ export class UvIndividualComponent implements OnInit {
       PGasto: false,
       CtaProdGasto: '',
       RegSanitario: '',
-      IdEmpresa: 1,
+      IdEmpresa: this.usuarioActual?.id_empresa ?? 1,
       Codbar: datos.gtinUv || ''
     };
 
@@ -1130,7 +1168,7 @@ export class UvIndividualComponent implements OnInit {
           IdTipoCodigoGs1: 1 || 0,
           IdGrupoProducto: categoriaId,
           Peso1: datos.Peso,
-          IdUsuario: 2, // o el id de usuario actual
+         IdUsuario: this.usuarioActual?.id_usuario?? 1,
           Facturar: '',
           Nombre: datos.descripcion || '',
           Gtin: datos.tipoGtin,
@@ -1397,7 +1435,8 @@ export class UvIndividualComponent implements OnInit {
     const codbarUL = this.formUL.get('gtinUl')?.value;
 
     if (!codbarUL) {
-      this.mensaje = '⚠️ No ingresó Unidad Logística';
+      this.mostrarAlerta('⚠️ No ingresó Unidad Logística', 'Error');
+
       return;
     }
 
@@ -1861,7 +1900,7 @@ export class UvIndividualComponent implements OnInit {
       PGasto: false,
       CtaProdGasto: '',
       RegSanitario: '',
-      IdEmpresa: 1,
+      IdEmpresa: this.usuarioActual?.id_empresa ?? 1,
       Codbar: gtinForzado || ''
     };
 
@@ -1878,7 +1917,7 @@ export class UvIndividualComponent implements OnInit {
           IdTipoCodigoGs1: 1 || 0,
           IdGrupoProducto: categoriaId,
           Peso1: datos.Peso,
-          IdUsuario: 2, // o el id de usuario actual
+          IdUsuario: this.usuarioActual?.id_usuario?? 1,
           Facturar: '',
           Nombre: datos.descripcion || '',
           Gtin: datos.tipoGtin,
@@ -2131,7 +2170,7 @@ export class UvIndividualComponent implements OnInit {
             return;
           } else {
             // Suponiendo que tienes un campo llamado "indicador" en el form
-            this.formUV.get('indicador')?.setValue(total);
+            this.formUL.get('indicador')?.setValue(total);
           }
         } else {
           console.log(`✅ Código de barras ${codbar} no existe, puedes continuar.`);
@@ -2139,6 +2178,33 @@ export class UvIndividualComponent implements OnInit {
       },
       error: (err) => {
         console.error('❌ Error al verificar el código de barras:', err);
+      }
+    });
+  }
+
+  cargarClientePorId(id: number): void {
+    debugger
+    console.log('🔍 ID recibido en cargarClientePorId:', id); // 👈 AÑADE ESTO
+
+    this.clienteService.getClienteById(id).subscribe({
+      next: (cliente) => {
+        this.id_grupo_producto = cliente.idGrupoProducto;
+
+        this.grupoProductoService.obtenerGrupoPorId(this.id_grupo_producto).subscribe(grupo => {
+          if (!this.gruposProducto || this.gruposProducto.length === 0) {
+            this.grupoProductoService.obtenerGrupos().subscribe(data => {
+              this.gruposProducto = data;
+              this.seleccionarCategoria(grupo);
+            });
+          } else {
+            this.seleccionarCategoria(grupo);
+          }
+
+          console.log('✅ Grupo producto obtenido:', grupo);
+        });
+      },
+      error: (err) => {
+        console.error('❌ Error al obtener cliente:', err);
       }
     });
   }

@@ -11,8 +11,16 @@ import { ICellEditorAngularComp } from 'ag-grid-angular';
         (input)="filterOptions()"
         (keydown.enter)="onEnter()"
         class="ag-input"
-        style="width: 100%;"
+        style="width: 100%; padding-right: 24px;"
       />
+      <button
+        *ngIf="inputValue"
+        (click)="clearInput()"
+        class="clear-button"
+        aria-label="Clear"
+      >
+        ×
+      </button>
       <ul *ngIf="filteredOptions.length > 0" class="autocomplete-list">
         <li
           *ngFor="let option of filteredOptions"
@@ -43,12 +51,28 @@ import { ICellEditorAngularComp } from 'ag-grid-angular';
     .autocomplete-list li:hover {
       background-color: #ccc;
     }
+    .clear-button {
+      position: absolute;
+      right: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      color: #888;
+      line-height: 1;
+      padding: 0;
+    }
+    .clear-button:hover {
+      color: #333;
+    }
   `]
 })
 export class GcpBrickAutocompleteEditorComponent implements ICellEditorAngularComp {
   inputValue: string = '';
-  fullOptions: { codigo: string, descripcion: string, brick: string }[] = [];
-  filteredOptions: { codigo: string, descripcion: string, brick: string }[] = [];
+  fullOptions: { codigo: string, descripcion: string, brick: string, id_grupo_producto: number }[] = [];
+  filteredOptions: { codigo: string, descripcion: string, brick: string, id_grupo_producto: number }[] = [];
 
   private params: any;
 
@@ -56,7 +80,9 @@ export class GcpBrickAutocompleteEditorComponent implements ICellEditorAngularCo
     this.params = params;
     this.fullOptions = params.context?.componentParent?.gcpBricksDisponibles || [];
     const current = this.fullOptions.find(opt => opt.codigo === params.value);
-    this.inputValue = current ? `${current.codigo} - ${current.descripcion} - ${current.brick}` : params.value || '';
+    this.inputValue = current
+      ? `${current.codigo} - ${current.descripcion} - ${current.brick}`
+      : params.value || '';
     this.filterOptions();
   }
 
@@ -75,11 +101,12 @@ export class GcpBrickAutocompleteEditorComponent implements ICellEditorAngularCo
   }
 
   selectOption(option: any): void {
-    this.inputValue = `${option.codigo} - ${option.descripcion} - ${option.brick}`;
+    this.inputValue = `${option.codigo} - ${option.descripcion} - ${option.brick} - ${option.id_grupo_producto}`;
     this.filteredOptions = [];
-    if (this.params.node && this.params.column) {
-    this.params.node.setDataValue('gcpBrick', option.brick);
-  }
+    if (this.params.node) {
+      this.params.node.setDataValue('gcpBrick', option.brick);
+      this.params.node.setDataValue('grupo', option.id_grupo_producto); // 👈 asigna grupo
+    }
     this.params.api.stopEditing();
   }
 
@@ -87,4 +114,14 @@ export class GcpBrickAutocompleteEditorComponent implements ICellEditorAngularCo
     this.filteredOptions = [];
     this.params.api.stopEditing();
   }
+
+  clearInput(): void {
+    this.inputValue = '';
+    this.filteredOptions = [];
+    if (this.params.node) {
+      this.params.node.setDataValue('gcpBrick', '');
+      this.params.node.setDataValue('grupo', null);
+    }
+  }
 }
+

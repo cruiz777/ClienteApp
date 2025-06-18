@@ -2,7 +2,7 @@
   <div>
     <!-- 🔹 Fila 1: Datos del cliente -->
     <div class="fila-horizontal">
-      <div class="corto">
+      <div class="cortocli">
         <label for="codigoCliente">Código del cliente:</label>
         <input id="codigoCliente" type="text" formControlName="codigoCliente" readonly />
       </div>
@@ -25,9 +25,9 @@
         <label>Nacional</label>
         <mat-form-field appearance="fill" class="select-pequeno">
           <mat-select formControlName="gtinNacionalSeleccionado"
-            (selectionChange)="formUV.get('gtinInternacionalSeleccionado')?.reset()">
-            <mat-option value="gtin13">GTIN-13</mat-option>
-            <mat-option value="gtin12">GTIN-12</mat-option>
+            (selectionChange)="actualizarTipoGtin($event.value, 'nacional')">
+            <mat-option value="gtin-13">GTIN-13</mat-option>
+            <mat-option value="gtin-12">GTIN-12</mat-option>
           </mat-select>
         </mat-form-field>
       </div>
@@ -36,11 +36,14 @@
         <label>Internacional</label>
         <mat-form-field appearance="fill" class="select-pequeno">
           <mat-select formControlName="gtinInternacionalSeleccionado"
-            (selectionChange)="formUV.get('gtinNacionalSeleccionado')?.reset()">
-            <mat-option value="gtin13i">GTIN-13</mat-option>
-            <mat-option value="gtin12i">GTIN-12</mat-option>
+            (selectionChange)="actualizarTipoGtin($event.value, 'internacional')">
+            <mat-option value="gtin-13i">GTIN-13</mat-option>
+            <mat-option value="gtin-12i">GTIN-12</mat-option>
           </mat-select>
         </mat-form-field>
+        <mat-checkbox formControlName="checkExiste">
+          UV.Existen Generar GTIN 14
+        </mat-checkbox>
       </div>
 
       <mat-form-field class="select-pequeno">
@@ -51,18 +54,33 @@
           </mat-option>
         </mat-select>
       </mat-form-field>
-      <div class="corto" style="padding: auto;">
-        <label for="gln">GLN®:</label>
-        <input id="gln" type="text" formControlName="gln" readonly />
-      </div>
-      <div class="serie-checkbox">
-        <label>
-          <input type="checkbox" formControlName="usarSerie" (change)="habilitarSerie()" /> Serie
-        </label>
-        <input type="text" formControlName="serie" [readonly]="!formUV.get('usarSerie')?.value" />
+      <div class="alinear-campos">
+        <div class="campo">
+          <label for="gln">GLN®:</label>
+          <input id="gln" type="text" formControlName="gln" readonly />
+        </div>
+
+        <div class="campo serie-checkbox">
+          <label>
+            <input type="checkbox" formControlName="usarSerie" (change)="habilitarSerie()" /> Serie
+          </label>
+          <input type="text" formControlName="serie" [readonly]="!formUV.get('usarSerie')?.value" />
+        </div>
       </div>
 
+      <div class="largo">
+        <label for="categoria">Categoría</label>
+        <input id="categoria" type="text" formControlName="categoria" readonly />
+      </div>
+      <div>
+        <label for="t" style="display: inline;">T:</label>
+        <input id="t" type="text" formControlName="t" style="display: inline; width: 80px;">
+
+        <label for="u" style="display: inline; margin-left: 10px;">U:</label>
+        <input id="u" type="text" formControlName="u" style="display: inline; width: 80px;">
+      </div>
     </div>
+
 
     <!-- 🔹 Fila 3: GTIN generado y botón -->
     <div>
@@ -74,60 +92,81 @@
 
     </div>
   </div>
+
 </form>
-<div style="display: flex; align-items: center; gap: 12px; margin-top: 0px; flex-wrap: wrap;">
-  <label>Productos a Codificar:</label>
+<div class="contenedor-pegar">
+  <!-- Input cantidad -->
+  <div class="campo">
+    <label>Productos a Codificar:</label>
+    <input type="number" [(ngModel)]="cantidadFilas"
+           min="1" step="1"
+           (blur)="generarFilas()" />
+  </div>
 
-  <input type="number" [(ngModel)]="cantidadFilas" style="width: 60px;" min="1" step="1"
-    oninput="this.value = this.value.replace(/[^0-9]/g, '')" (blur)="generarFilas()" />
-
-
-  <mat-form-field class="textarea" style="width: 120px; height: 60px; font-size: 12px; margin: 0;">
-    <!-- visible -->
-
-    <textarea matInput [(ngModel)]="textoPegado" placeholder="CTRL+V para pegar" (focus)="simularPegado()"
-      (blur)="pegarColumnaGtinUv()"
-      style="border: none; height: 50px; padding: 0px; outline: none; resize: none; box-shadow: none;"></textarea>
-
-
-
-    <!-- invisible, funcional -->
-    <textarea #pasteCatcher style="position: absolute; left: -9999px; opacity: 0;"></textarea>
-
+  <!-- Pegado GTIN UV -->
+  <mat-form-field class="campo">
+    <textarea matInput [(ngModel)]="textoPegado"
+              placeholder="Pegar GTIN UV"
+              (blur)="pegarColumnaGtinUv()">
+    </textarea>
   </mat-form-field>
 
-  <mat-checkbox [(ngModel)]="copiarDesdeColumna2" class="hidden-column">
-    Pegar desde columna 2
-  </mat-checkbox>
-
-  <div *ngIf="mensaje" style="color: green;">
-    {{ mensaje }}
-  </div>
+  <!-- Pegado Factor -->
+  <mat-form-field class="campo">
+    <textarea matInput [(ngModel)]="textoPegadoF"
+              placeholder="Pegar Factor"
+              (blur)="pegarColumnaFactor()"
+              [disabled]="factorDeshabilitado">
+    </textarea>
+  </mat-form-field>
 </div>
+
+
 
 <div style="display: flex; flex-wrap: wrap; gap: 8px;">
   <button mat-raised-button color="primary" (click)="limpiarTabla()">Nuevo</button>
-  <button mat-raised-button color="primary" (click)="generar()">Generar</button>
-  <button mat-raised-button color="primary" (click)="generar()">Grabar</button>
-  <mat-checkbox [(ngModel)]="checkMaestro" (change)="marcarTodosDesdeMaestro()">Activar todos</mat-checkbox>
-  <button mat-raised-button color="primary" (click)="generar()">Generar GTIN 14</button>
-  <button mat-raised-button color="primary" (click)="generar()">Grabar GTIN 14</button>
+  <button mat-raised-button color="primary" (click)="generar()" [disabled]="botonGenerarDeshabilitado">
+    Generar
+  </button>
+
+  <button mat-raised-button color="primary" (click)="grabar()" [disabled]="botonGrabarDeshabilitado">
+    Grabar
+  </button>
+
+
+  <mat-checkbox [(ngModel)]="checkMaestro" (change)="marcarTodosDesdeMaestro()"
+    [disabled]="checkboxMaestroDeshabilitado">
+    Marcar todos
+  </mat-checkbox>
+
+  <button mat-raised-button color="primary" (click)="generar14()" [disabled]="botonGenerar14Deshabilitado">
+    Generar GTIN 14
+  </button>
+
+  <button mat-raised-button color="primary" (click)="grabar14()" [disabled]="botonGrabar14Deshabilitado">
+    Grabar GTIN 14
+  </button>
+  <button mat-raised-button color="warn" (click)="salir()">Salir</button>
 </div>
 
 <!-- Tabla AG-Grid -->
 <!-- Campo oculto para capturar Ctrl+V -->
 
+<div *ngIf="procesandoMasivo" class="proceso-overlay">
+  <div class="proceso-contenedor">
+    <img src="assets/icons/reloj.gif" alt="Procesando..." class="reloj" />
+    <p>{{ procesadosExitosos + procesadosFallidos }}/{{ totalRegistros }} registros procesados</p>
+  </div>
+</div>
+<div *ngIf="mensajeRepetidos" class="alert alert-warning">
+  <pre>{{ mensajeRepetidos }}</pre>
+</div>
+
 
 <div class="contenedor-grid">
-  <ag-grid-angular
-    class="ag-theme-alpine"
-    style="width: 100%; height: 400px;"
-    [rowData]="rowData"
-    [columnDefs]="columnDefs"
-    [defaultColDef]="defaultColDef"
-    [gridOptions]="gridOptions"
-    [domLayout]="'normal'"
-    (gridReady)="onGridReady($event)">
+  <ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 400px;" [rowData]="rowData"
+    (cellValueChanged)="onCellValueChanged($event)" [columnDefs]="columnDefs" [defaultColDef]="defaultColDef"
+    [gridOptions]="gridOptions" [domLayout]="'normal'" (gridReady)="onGridReady($event)">
   </ag-grid-angular>
 </div>
 

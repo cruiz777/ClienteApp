@@ -1,0 +1,10 @@
+<div class="contenedor-dialogo">
+  <img src="assets/loading-clock.gif" alt="Procesando..." class="icono-reloj" />
+  <h2>Guardando productos...</h2>
+  <p>{{ data.procesados }}/{{ data.total }} registros guardados</p>
+
+  <mat-progress-bar
+    mode="determinate"
+    [value]="(data.procesados / data.total) * 100"
+  ></mat-progress-bar>
+</div>
