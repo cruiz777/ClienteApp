@@ -40,6 +40,8 @@
   background: #ffffff;
   border-radius: 0 0 8px 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  max-width: 1200px;
+  margin: auto;
 }
 
 /* ============ TÍTULO ============ */
@@ -50,34 +52,61 @@
   margin-bottom: 16px;
 }
 
-/* ============ BARRA DE BÚSQUEDA ============ */
+/* ============ BÚSQUEDA ============ */
 .campo-busqueda {
   width: 100%;
   max-width: 400px;
   margin-bottom: 16px;
 }
 
-/* ============ TABLA ============ */
+/* ============ FORMULARIO GENERAR ============ */
+.formulario-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+}
+
+.ancho-completo {
+  grid-column: span 2;
+}
+
+/* ============ BOTONES GENERALES ============ */
+.botones {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
+/* ============ TABLA GENERAL ============ */
 .tabla {
   width: 100%;
+  margin-top: 16px;
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 14px;
   background-color: #fefefe;
   overflow: auto;
+  border-collapse: collapse;
 }
 
 .tabla th,
 .tabla td {
   text-align: center;
   padding: 8px;
+  border: 1px solid #ddd;
 }
 
 .tabla th {
   background-color: #f4f6f8;
   color: #333;
   font-weight: 600;
-  border-bottom: 1px solid #ccc;
 }
 
 /* ============ PAGINADOR ============ */
@@ -85,6 +114,31 @@ mat-paginator {
   margin-top: 12px;
   display: flex;
   justify-content: flex-end;
+}
+
+/* ============ REPORTES: FILTROS Y ACCIONES ============ */
+.filtros-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  align-items: end;
+  margin-bottom: 24px;
+}
+
+.filtro {
+  display: flex;
+  flex-direction: column;
+}
+
+.acciones {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ============ FORM FIELD WIDTH ============ */
+mat-form-field {
+  width: 100%;
 }
 
 /* ============ RESPONSIVE ============ */
@@ -105,49 +159,4 @@ mat-paginator {
     justify-content: center;
   }
 }
-/* ============ generar cupon ============ */
-
-.titulo {
-  font-size: 20px;
-  font-weight: bold;
-  color: #002c6c;
-  margin-bottom: 24px;
-}
-
-.formulario-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
-}
-
-.campo {
-  display: flex;
-  flex-direction: column;
-}
-
-.ancho-completo {
-  grid-column: span 2;
-}
-
-.tabla {
-  width: 100%;
-  margin-top: 16px;
-  border: 1px solid #ccc;
-}
-
-.tabla th,
-.tabla td {
-  text-align: center;
-  padding: 8px;
-}
-
-.botones {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin-top: 24px;
-}
-
-
 

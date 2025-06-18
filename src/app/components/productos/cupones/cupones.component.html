@@ -144,7 +144,62 @@
 <!-- TAB REPORTES -->
 <ng-container *ngIf="activeTab === 'Reportes'">
   <div class="contenedor">
-    <h2 class="titulo">Reportes</h2>
-    <p>Sección en desarrollo...</p>
+    <h2 class="titulo">Reporte Cupones</h2>
+
+    <div class="filtros-grid">
+      <div class="filtro">
+        <label>Prefijo:</label>
+        <mat-form-field appearance="fill">
+          <mat-select [(ngModel)]="filtroPrefijo">
+            <mat-option *ngFor="let p of prefijos" [value]="p">{{ p }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="filtro">
+        <label>Código:</label>
+        <mat-form-field appearance="outline">
+          <input matInput [(ngModel)]="filtroCodigo" />
+        </mat-form-field>
+      </div>
+
+      <div class="filtro">
+        <label>Fecha:</label>
+        <mat-form-field appearance="fill">
+          <mat-select [(ngModel)]="filtroComparacionFecha">
+            <mat-option value="=">=</mat-option>
+            <mat-option value="<"><</mat-option>
+            <mat-option value=">">></mat-option>
+            <mat-option value="entre">Entre</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="filtro">
+        <label>Desde:</label>
+        <mat-form-field appearance="outline">
+          <input matInput [matDatepicker]="pickerDesde" [(ngModel)]="fechaDesde" />
+          <mat-datepicker-toggle matSuffix [for]="pickerDesde"></mat-datepicker-toggle>
+          <mat-datepicker #pickerDesde></mat-datepicker>
+        </mat-form-field>
+      </div>
+
+      <div class="filtro">
+        <label>Hasta:</label>
+        <mat-form-field appearance="outline">
+          <input matInput [matDatepicker]="pickerHasta" [(ngModel)]="fechaHasta" />
+          <mat-datepicker-toggle matSuffix [for]="pickerHasta"></mat-datepicker-toggle>
+          <mat-datepicker #pickerHasta></mat-datepicker>
+        </mat-form-field>
+      </div>
+
+      <div class="acciones">
+        <button mat-stroked-button [matMenuTriggerFor]="exportarMenu">Exportar</button>
+        <mat-menu #exportarMenu="matMenu">
+          <button mat-menu-item (click)="exportar('excel')">Excel</button>
+          <button mat-menu-item (click)="exportar('pdf')">PDF</button>
+        </mat-menu>
+      </div>
+    </div>
   </div>
 </ng-container>

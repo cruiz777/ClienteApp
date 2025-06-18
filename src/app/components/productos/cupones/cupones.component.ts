@@ -5,12 +5,15 @@ import { MatTableDataSource, MatTableModule } from '@angular/material/table';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatMenuModule } from '@angular/material/menu';
 import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSortModule } from '@angular/material/sort';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 
 interface Cupon {
   cupon: string;
@@ -32,10 +35,13 @@ interface Cupon {
     MatButtonModule,
     MatSelectModule,
     MatOptionModule,
+    MatMenuModule,
     MatCheckboxModule,
     MatIconModule,
     MatSortModule,
-    MatPaginatorModule
+    MatPaginatorModule,
+    MatDatepickerModule,
+    MatNativeDateModule
   ],
   templateUrl: './cupones.component.html',
   styleUrl: './cupones.component.css'
@@ -69,7 +75,7 @@ export class CuponesComponent implements OnInit {
   busqueda = '';
   prefijos: string[] = ['10032', '123456', '80001234'];
 
-  // Formulario "Generar"
+  // Generar
   codigoCliente = '';
   cliente = '';
   ruc = '';
@@ -78,6 +84,13 @@ export class CuponesComponent implements OnInit {
   usarSecuenciaManual = false;
   secuenciaInicial = 1;
   prefijoSeleccionado = '';
+
+  // Reportes
+  filtroPrefijo = '';
+  filtroCodigo = '';
+  filtroComparacionFecha: '=' | '<' | '>' | 'entre' = '=';
+  fechaDesde: Date | null = null;
+  fechaHasta: Date | null = null;
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
@@ -145,10 +158,22 @@ export class CuponesComponent implements OnInit {
   }
 
   grabar(): void {
-    console.log('📦 Datos a grabar (Listado):', this.cupones);
+    console.log('💾 Grabar acción con filtros: ', {
+      busqueda: this.busqueda,
+      prefijo: this.filtroPrefijo,
+      codigo: this.filtroCodigo,
+      fechaDesde: this.fechaDesde,
+      fechaHasta: this.fechaHasta,
+      comparacion: this.filtroComparacionFecha
+    });
+  }
+
+  exportar(formato: 'excel' | 'pdf') {
+    console.log(`📤 Exportando como ${formato.toUpperCase()}`);
   }
 
   generar(): void {
     console.log('🛠️ Acción generar (sin uso actual)');
   }
 }
+
