@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common'; 
+import { CommonModule } from '@angular/common';
 
 import { RouterModule } from '@angular/router';
 
@@ -9,6 +9,7 @@ import { BloqueComponent } from './bloque/bloque.component';
 import { MatOptionModule } from '@angular/material/core';
 
 // Angular Material modules necesarios
+
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,15 +20,11 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
-import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
 import { MatTableModule } from '@angular/material/table';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { SharedModule } from 'src/app/shared/shared.module';
+import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatMenuModule } from '@angular/material/menu';
-import { MatDialogModule } from '@angular/material/dialog';
-
-
 import { CheckboxRendererComponent } from './checkbox-renderer/checkbox-renderer.component';
 import { GcpBrickAutocompleteEditorComponent } from './gcp-brick-autocomplete-editor/gcp-brick-autocomplete-editor.component';
 
@@ -40,6 +37,9 @@ import { AgGridModule } from 'ag-grid-angular';
 import { AgGridAngular } from 'ag-grid-angular';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { DialogProcesoComponent } from './dialog-proceso/dialog-proceso.component';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
+
 
 @NgModule({
   declarations: [
@@ -85,7 +85,8 @@ import { DialogProcesoComponent } from './dialog-proceso/dialog-proceso.componen
     MatOptionModule,
     MatSelectModule,
     AgGridAngular,
-    MatProgressBarModule
+    MatProgressBarModule,
+    MatAutocompleteModule
   ],
   exports: [
     NavigationProductoComponent,

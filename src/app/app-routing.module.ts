@@ -13,6 +13,9 @@ import { GlnComponent } from './components/productos/glns/gln-list/nuevo-gln.com
 import { BloqueComponent } from './components/productos/bloque/bloque.component';
 import { ResetPasswordComponent } from './components/reset-password/reset-password.component';
 import { LoginFormComponent } from './components/login-form/login-form.component';
+import { NuevoSsccComponent } from './components/productos/nuevo-sscc/nuevo-sscc.component'
+import { CuponesComponent } from './components/productos/cupones/cupones.component';
+
 
 const routes: Routes = [
 
@@ -31,6 +34,7 @@ const routes: Routes = [
   { path: 'pages', loadChildren: () => import('./components/pages/pages.module').then(x => x.PagesModule) },
   { path: 'seguridades', loadChildren: () => import('./components/seguridades/seguridades.module').then(m => m.SeguridadesModule) },
   {
+
     path: 'productos',
     loadChildren: () => import('./components/productos/productos-routing.module').then(m => m.ProductosRoutingModule)
   },
@@ -42,13 +46,14 @@ const routes: Routes = [
       { path: 'nuevoProducto', component: NuevoProductoComponent },
       { path: 'clienteSeleccion', component: ClienteSeleccionadoComponent },
       { path: 'uvIndividual', component: UvIndividualComponent },
+      { path: 'nuevoSscc', component: NuevoSsccComponent },
+      { path: 'cupones', component: CuponesComponent },
       { path: 'nuevoGln', component: GlnComponent },
       { path: 'bloque', component: BloqueComponent }
     ]
   },
 
   { path: '**', component: NotFoundComponent, pathMatch: 'full' }
-
 ];
 
 @NgModule({

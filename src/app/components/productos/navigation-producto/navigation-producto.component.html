@@ -47,10 +47,18 @@
         </div>
       </mat-list-item>
 
-      <mat-list-item [routerLink]="'/NuevoProducto'" routerLinkActive="active">
+      <mat-list-item [routerLink]="['cupones']" routerLinkActive="active">
         <div class="menu-item">
           <img src="assets/icons/icon-cupones.png" class="menu-icon">
           <span *ngIf="isExpanded" class="menu-text">Cupones</span>
+        </div>
+      </mat-list-item>
+
+       <mat-list-item [routerLink]="['nuevoSscc']" routerLinkActive="active">
+
+        <div class="menu-item">
+          <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
+          <span *ngIf="isExpanded" class="menu-text">Nuevo SSCC</span>
         </div>
       </mat-list-item>
 

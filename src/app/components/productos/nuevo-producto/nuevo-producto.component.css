@@ -29,18 +29,20 @@
 }
 
 .tabs button.active {
-  background-color: #002c6c;
-  color: #ffffff;
+  background-color: #002c6c !important;
+  color: #ffffff !important;
+  border-bottom: 4px solid #f4f4f4;
 }
-
 /* =========================
    CONTENEDOR PRINCIPAL
    ========================= */
-.container {
-  padding: 20px;
-  background-color: #fff;
+.container,
+.gtin-container {
+  padding: 24px;
+  background-color: #fafafa;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
-
 /* =====================================
    SECCIÓN DE FILTROS Y BOTONES (TOOLBAR)
    ===================================== */
@@ -60,7 +62,6 @@
 .toolbar button {
   min-width: 120px;
 }
-
 /* =========================
    TABLAS Y ESTRUCTURA VISUAL
    ========================= */
@@ -69,11 +70,18 @@ table {
   margin-bottom: 20px;
 }
 
-.mat-elevation-z8 {
+.mat-elevation-z8, .mat-elevation-z2 {
   border-radius: 8px;
   overflow: hidden;
 }
 
+.mat-elevation-z8 th,
+.mat-elevation-z8 td,
+.mat-elevation-z2 th,
+.mat-elevation-z2 td {
+  padding: 8px;
+  text-align: center;
+}
 /* ==========================
    TÍTULO PARA GTIN-14
    ========================== */
@@ -93,16 +101,13 @@ table {
 /* ==========================
    SCROLL PARA TABLA DE PERFILES
    ========================== */
-
 .tabla-scrollable {
   max-height: 170px;
-  /* Ajusta según lo que necesites visible */
   overflow-y: auto;
   border: 1px solid #ccc;
   border-radius: 4px;
 }
 
-/* Para mantener encabezados visibles si deseas */
 .tabla-scrollable thead {
   position: sticky;
   top: 0;
@@ -116,41 +121,28 @@ table {
   box-shadow: inset 0 -1px 0 #d1d5db;
 }
 
-
 /* ====================
-   PIE DE PÁGINA (FOOTER)
+   BOTONES DE ACCIÓN
    ==================== */
-.footer-container {
-  margin-top: 30px;
-  padding: 16px;
+.botones {
+  margin-top: 16px;
+}
+
+.botones button {
+  margin-right: 10px;
+  border-radius: 20px;
+  padding: 6px 16px;
+}
+/* ====================
+   OPCIONES DE GTIN
+   ==================== */
+.gtin-options {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   background-color: #f4f4f4;
-  border-top: 1px solid #ccc;
-}
-
-.footer-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.date-container {
-  font-weight: bold;
-  color: #333;
-}
-
-.contact-info {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.phone-icon {
-  width: 20px;
-  height: 20px;
-}
-
-.phone-number {
-  font-size: 14px;
-  color: #333;
+  padding: 8px 12px;
+  margin: 8px 0;
+  border-radius: 8px;
+  border: 1px solid #ccc;
 }
