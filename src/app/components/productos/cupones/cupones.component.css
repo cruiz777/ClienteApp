@@ -105,5 +105,49 @@ mat-paginator {
     justify-content: center;
   }
 }
+/* ============ generar cupon ============ */
+
+.titulo {
+  font-size: 20px;
+  font-weight: bold;
+  color: #002c6c;
+  margin-bottom: 24px;
+}
+
+.formulario-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+}
+
+.ancho-completo {
+  grid-column: span 2;
+}
+
+.tabla {
+  width: 100%;
+  margin-top: 16px;
+  border: 1px solid #ccc;
+}
+
+.tabla th,
+.tabla td {
+  text-align: center;
+  padding: 8px;
+}
+
+.botones {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 24px;
+}
+
 
 
