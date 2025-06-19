@@ -582,7 +582,7 @@ export class UvIndividualComponent implements OnInit {
 
 
   generar() {
-    debugger
+   
     const gcpId = this.formUV.get('gcp')?.value;
     if (!gcpId) {
       this.mostrarAlerta('No se selecciono Prefijo', 'Error');
@@ -661,7 +661,7 @@ export class UvIndividualComponent implements OnInit {
 
     if (gtinNacionalSeleccionado === 'gtin12' && this.bandera === 2) {
       this.npais = '';
-      this.generacionCodigosService.obtenerSecuencia(prefijo.codpre, this.npais).subscribe({
+      this.generacionCodigosService.obtenerSecuenciaUpc(prefijo.codpre, this.npais).subscribe({
         next: (resp: SecuenciaResponse) => {
           this.secuencia = resp.data;
           this.mensaje = resp.message;
@@ -728,28 +728,50 @@ export class UvIndividualComponent implements OnInit {
 
 
   limpiarCampos(): void {
-    this.botonGenerarDeshabilitado = false;
-    this.botonGrabarDeshabilitado = true;
-    this.botonIngresarULDeshabilitado = true;
-    this.formUV.reset();
-    this.getSectores();
-    this.cargarPais();
-    this.getUnidadesMedida();
+  this.botonGenerarDeshabilitado = false;
+  this.botonGrabarDeshabilitado = true;
+  this.botonIngresarULDeshabilitado = true;
+  this.formUV.reset();
+  this.getSectores();
+  this.cargarPais();
+  this.getUnidadesMedida();
 
-    if (this.clienteSeleccionado) {
-      this.formUV.patchValue({
-        codigoCliente: this.clienteSeleccionado.clientes_codigo || '',
-        cliente: this.clienteSeleccionado.nomcli || '',
-        ruc: this.clienteSeleccionado.ruc || ''
-      });
-      this.cargarPrefijos(this.clienteSeleccionado.clientes_codigo);
-    }
-
-    this.serieEditable = false;
-    this.campoGtin = false;
-
-
+  if (this.clienteSeleccionado) {
+    this.formUV.patchValue({
+      codigoCliente: this.clienteSeleccionado.clientes_codigo || '',
+      cliente: this.clienteSeleccionado.nomcli || '',
+      ruc: this.clienteSeleccionado.ruc || ''
+    });
+    this.cargarPrefijos(this.clienteSeleccionado.clientes_codigo);
   }
+
+  this.serieEditable = false;
+  this.campoGtin = false;
+  this.cargarCliente();
+  this.cargarGrupoProductos();
+  this.getSectores();
+  this.cargarPais();
+  this.getUnidadesMedida();
+  this.formUV.get('tipoGtin')?.setValue(['GTIN-13']);
+  this.formUV.get('gtinNacionalSeleccionado')?.setValue(['gtin13']);
+
+  this.formUV.get('gtinNacionalSeleccionado')?.valueChanges.subscribe(valor => {
+    this.gtinInternacionalActivo = !!valor;
+    if (valor) {
+      this.formUV.get('gtinInternacionalSeleccionado')?.reset();
+      this.formUV.patchValue({ tipoGtin: this.obtenerNombreGTIN(valor) });
+    }
+  });
+
+  this.formUV.get('gtinInternacionalSeleccionado')?.valueChanges.subscribe(valor => {
+    this.gtinNacionalActivo = !!valor;
+    if (valor) {
+      this.formUV.get('gtinNacionalSeleccionado')?.reset();
+      this.formUV.patchValue({ tipoGtin: this.obtenerNombreGTIN(valor) });
+    }
+  });
+}
+ 
 
   limpiarUl(): void {
   // Limpiar todos los campos de UL
@@ -1178,7 +1200,7 @@ export class UvIndividualComponent implements OnInit {
           Registros: '',
           Obsc: datos.observacion || '',
           IdSector: sectorR,
-          Contenido: datos.contenido || '',
+          Contenido: (datos.contenido ?? '').toString(),
           Um: datos.unidadMedida?.unidad || '',
           Brick: datos.brick || '',
           Pais: datos.pais?.nombre || '',
@@ -1927,7 +1949,7 @@ export class UvIndividualComponent implements OnInit {
           Registros: '',
           Obsc: datos.observacion || '',
           IdSector: sectorR,
-          Contenido: datos.contenido || '',
+          Contenido: (datos.contenido ?? '').toString(),
           Um: datos.unidadMedida?.unidad || '',
           Brick: datos.brick || '',
           Pais: datos.pais?.nombre || '',

@@ -1,4 +1,5 @@
 import { UvIndividualComponent } from './components/productos/uv-individual/uv-individual.component';
+import { UvIndividualEditComponent } from './components/productos/uv-individual-edit/uv-individual-edit.component';
 import { NavigationComponent } from './components/seguridades/navigation/navigation.component';
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
@@ -46,6 +47,7 @@ const routes: Routes = [
       { path: 'nuevoProducto', component: NuevoProductoComponent },
       { path: 'clienteSeleccion', component: ClienteSeleccionadoComponent },
       { path: 'uvIndividual', component: UvIndividualComponent },
+      { path:'uvIndividualEdit',component:UvIndividualEditComponent},
       { path: 'nuevoSscc', component: NuevoSsccComponent },
       { path: 'cupones', component: CuponesComponent },
       { path: 'nuevoGln', component: GlnComponent },
