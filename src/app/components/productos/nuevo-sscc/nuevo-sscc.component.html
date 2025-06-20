@@ -7,7 +7,7 @@
 <!-- TAB LISTADO -->
 <ng-container *ngIf="activeTab === 'Listado'">
   <div class="contenedor">
-  <h2 class="titulo">Total de registros: <span class="contador">{{ registros.length }}</span></h2>
+  <h2 class="titulo">Total de registros: <span class="contador">{{ totalItems }}</span></h2>
 
   <div class="filtros">
     <mat-form-field appearance="outline">
@@ -15,10 +15,12 @@
       <input matInput [(ngModel)]="filtroTexto" (input)="filtrar()">
     </mat-form-field>
 
-    <mat-form-field appearance="outline">
+    <mat-form-field appearance="fill">
       <mat-label>Prefijo</mat-label>
-      <mat-select [(value)]="filtroPrefijo" (selectionChange)="filtrar()">
-        <mat-option *ngFor="let prefijo of prefijosDisponibles" [value]="prefijo">{{ prefijo }}</mat-option>
+      <mat-select formControlName="prefijo">
+        <mat-option *ngFor="let p of prefijosDisponibles" [value]="p.id">
+          {{ p.codpre }}
+        </mat-option>
       </mat-select>
     </mat-form-field>
 
@@ -92,6 +94,13 @@
     <tr mat-header-row *matHeaderRowDef="columnas"></tr>
     <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
   </table>
+  <mat-paginator
+    [length]="totalItems"
+    [pageIndex]="pageIndex"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="pageSizeOptions"
+    (page)="onPageChange($event)">
+  </mat-paginator>
 </div>
 
 </ng-container>
@@ -119,16 +128,17 @@
     </div>
 
     <div class="fila">
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="fill">
         <mat-label>Prefijo</mat-label>
         <mat-select formControlName="prefijo">
-          <mat-option *ngFor="let p of prefijosDisponibles" [value]="p">{{ p }}</mat-option>
+          <mat-option *ngFor="let p of prefijosDisponibles" [value]="p.id">
+            {{ p.codpre }}
+          </mat-option>
         </mat-select>
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Productos a Codificar</mat-label>
-        <input matInput formControlName="producto" />
+      <mat-form-field>
+        <input matInput formControlName="producto" type="number" min="1" placeholder="Productos a Codificar">
       </mat-form-field>
 
       <mat-form-field appearance="outline">
@@ -188,10 +198,12 @@
 
   <form [formGroup]="formReporte" class="formulario">
     <div class="fila">
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="fill">
         <mat-label>Prefijo</mat-label>
         <mat-select formControlName="prefijo">
-          <mat-option *ngFor="let p of prefijosDisponibles" [value]="p">{{ p }}</mat-option>
+          <mat-option *ngFor="let p of prefijosDisponibles" [value]="p.id">
+            {{ p.codpre }}
+          </mat-option>
         </mat-select>
       </mat-form-field>
 

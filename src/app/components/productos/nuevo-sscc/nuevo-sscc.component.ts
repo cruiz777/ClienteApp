@@ -16,6 +16,15 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+import { SsccResponse } from 'src/app/interfaces/responses/sscc-response';
+import { SsccService } from 'src/app/services/sscc.service';
+import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
+import { PrefijoService } from 'src/app/services/prefijo.service';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { GenerateSsccRequest } from 'src/app/interfaces/requests/generate-sscc-request';
+import { UsuarioService } from 'src/app/services/usuario.service';
+import { MatDialog } from '@angular/material/dialog';
+import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/util/messages/custom-message-box.component';
 
 @Component({
   selector: 'app-nuevo-sscc',
@@ -36,7 +45,8 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
     MatTableModule,
     MatSortModule,
     MatOptionModule,
-    MatDatepickerModule
+    MatDatepickerModule,
+    MatPaginatorModule
   ]
 })
 export class NuevoSsccComponent implements OnInit {
@@ -51,11 +61,17 @@ export class NuevoSsccComponent implements OnInit {
     { empresa: 'Empresa A', prefijo: '12345', identificadorEmpaque: 'EMPK001', sscc: 'SSCC001', fecha: new Date(), estado: 'Activo', usuario: 'admin', seleccionado: false },
     { empresa: 'Empresa B', prefijo: '67890', identificadorEmpaque: 'EMPK002', sscc: 'SSCC002', fecha: new Date(), estado: 'Inactivo', usuario: 'usuario1', seleccionado: false }
   ];
-  dataFiltrada = new MatTableDataSource(this.registros);
-  prefijosDisponibles = ['12345', '67890'];
+  // dataFiltrada = new MatTableDataSource(this.registros);
+  prefijosDisponibles: { id: number, codpre: string }[] = [];
   filtroTexto = '';
   filtroPrefijo = '';
   filtroBusqueda = '';
+  ssccsData: SsccResponse[] = [];
+  dataFiltrada = new MatTableDataSource<SsccResponse>([]);
+  totalItems = 0;
+  pageIndex = 0;
+  pageSize = 10;
+  pageSizeOptions = [5, 10, 20, 50, 100];
 
   // GENERAR
   formSSCC: FormGroup;
@@ -76,8 +92,13 @@ export class NuevoSsccComponent implements OnInit {
   constructor(
     private router: Router,
     private breakpointObserver: BreakpointObserver,
-    private fb: FormBuilder
-  ) {
+    private fb: FormBuilder,
+    private ssccService: SsccService,
+    private clienteSeleccionadoService: ClienteSeleccionadoService,
+    private prefijoService: PrefijoService,
+    private usuarioService: UsuarioService,
+    private dialog: MatDialog
+    ) {
     // FORM GENERAR
     this.formSSCC = this.fb.group({
       codigoCliente: [''],
@@ -114,21 +135,87 @@ export class NuevoSsccComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+
+    if (!cliente) {
+      this.mostrarMensaje({
+        title: 'Cliente no seleccionado',
+        message: 'Debes seleccionar al menos un cliente para continuar.',
+        type: 'warning'
+      });
+      this.router.navigate(['/pages/clientes']);
+      return;
+    }
+
+
+    // Setea campos cliente en el formulario de generación
+    this.formSSCC.patchValue({
+      codigoCliente: cliente.clientes_codigo,
+      cliente: cliente.nomcli,
+      ruc: cliente.ruc
+    });
+
+    // Cargar SSCCs y prefijos de ese cliente
+    this.cargarSSCCs();
+    this.cargarPrefijosPorCliente();
+
+    // Filtro inicial del listado (mock interno)
     this.filtrar();
   }
 
   // ========== LISTADO ==========
   filtrar(): void {
-    this.dataFiltrada.data = this.registros.filter(r => {
+    this.dataFiltrada.data = this.ssccsData.filter(r => {
       const coincideTexto = this.filtroTexto ? JSON.stringify(r).toLowerCase().includes(this.filtroTexto.toLowerCase()) : true;
-      const coincidePrefijo = this.filtroPrefijo ? r.prefijo === this.filtroPrefijo : true;
+      const coincidePrefijo = this.filtroPrefijo ? r.id_prefijo === Number(this.filtroPrefijo) : true;
       const coincideBusqueda = this.filtroBusqueda ? JSON.stringify(r).toLowerCase().includes(this.filtroBusqueda.toLowerCase()) : true;
       return coincideTexto && coincidePrefijo && coincideBusqueda;
     });
   }
 
+
+  //Carga todos los datos desde el backend
+  cargarSSCCs(page: number = 0, size: number = 10): void {
+    const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+
+    if (!cliente) return;
+
+    this.ssccService.getByCliente(cliente.clientes_codigo, page + 1, size).subscribe({
+      next: (response) => {
+        this.ssccsData = response.data.items;
+        this.totalItems = response.data.totalItems;
+        this.pageIndex = response.data.page - 1;
+        this.pageSize = response.data.pageSize;
+        this.dataFiltrada.data = this.ssccsData;
+      },
+      error: (err) => console.error('❌ Error al cargar SSCCs:', err)
+    });
+  }
+  
+  cargarPrefijosPorCliente(): void {
+    const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+    if (!cliente) return;
+
+    this.prefijoService.obtenerPrefijosPorClienteCodigo(cliente.clientes_codigo).subscribe({
+      next: (res) => {
+        //Siempre limpiar antes de asignar
+        this.prefijosDisponibles = []; 
+        this.prefijosDisponibles = res.map(p => ({
+          id: p.id_prefijos,
+          codpre: p.codpre
+        }));
+      },
+      error: (err) => console.error('❌ Error al cargar prefijos:', err)
+    });
+  }
+
   verDetalle(row: any): void {
-    alert(`Mostrando detalle para: ${row.empresa}`);
+    this.mostrarMensaje({
+      title: 'Detalle',
+      message: `Mostrando detalle para: ${row.empresa}`,
+      type: 'info'
+    });
+
   }
 
   eliminarSeleccionados(): void {
@@ -152,15 +239,63 @@ export class NuevoSsccComponent implements OnInit {
 
   generar(): void {
     const inicio = parseInt(this.formSSCC.get('inicio')?.value || '1', 10);
-    const fin = parseInt(this.formSSCC.get('fin')?.value || '2', 10);
-    const lista = [];
+    const cantidad = parseInt(this.formSSCC.get('producto')?.value || '0', 10); // default en 0
 
-    for (let i = inicio; i <= fin; i++) {
-      lista.push({ ia: i, sscc: `SSCC${i.toString().padStart(5, '0')}` });
+    if (isNaN(cantidad) || cantidad <= 0) {
+      this.mostrarMensaje({
+        title: 'Cantidad inválida',
+        message: '⚠️ Debes ingresar un número válido de productos a codificar.',
+        type: 'warning'
+      });
+      return;
     }
 
-    this.dataGenerada.data = lista;
-    this.formSSCC.patchValue({ codigosGenerados: lista.length });
+    const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+    const usuario = this.usuarioService.getUsuarioActual();
+
+    if (!cliente || !usuario) {
+      this.mostrarMensaje({
+        title: 'Error de sesión',
+        message: 'Cliente o usuario no disponible.',
+        type: 'error'
+      });
+      return;
+    }
+
+    const payload: GenerateSsccRequest = {
+      id_prefijo: this.formSSCC.get('prefijo')?.value,
+      id_cliente: cliente.clientes_codigo,
+      indicador: 1,
+      producto_codificado: this.formSSCC.get('producto')?.value.toString(),
+      serie: this.formSSCC.get('serie')?.value || false,
+      secuencia_inicio: inicio,
+      cantidad_codigos: cantidad,
+      usuario: usuario.nombre_usuario
+    };
+
+    this.ssccService.generate(payload).subscribe({
+      next: (res) => {
+        const lista = res.data.map((codigo: string, index: number) => ({
+          ia: index + 1,
+          sscc: codigo
+        }));
+        this.dataGenerada.data = lista;
+        this.formSSCC.patchValue({ codigosGenerados: lista.length });
+        this.mostrarMensaje({
+          title: 'Códigos generados',
+          message: `✅ Se generaron ${lista.length} códigos correctamente.`,
+          type: 'success'
+        });
+      },
+      error: (err) => {
+        console.error('Error al generar SSCCs:', err);
+        this.mostrarMensaje({
+          title: 'Error inesperado',
+          message: 'Error al generar los códigos.',
+          type: 'error'
+        });
+      }
+    });
   }
 
   grabar(): void {
@@ -172,6 +307,11 @@ export class NuevoSsccComponent implements OnInit {
     const filtros = this.formReporte.value;
     console.log('📤 Exportando con filtros:', filtros);
     // Aquí se integraría exportación a Excel/PDF o consulta a backend.
+  }
+
+  //Paginador
+  onPageChange(event: any): void {
+    this.cargarSSCCs(event.pageIndex, event.pageSize);
   }
 
   // ========== UTILIDADES ==========
@@ -195,4 +335,12 @@ export class NuevoSsccComponent implements OnInit {
 
     this.currentDateTime = `${this.capitalizeFirstLetter(formattedDate)}, ${formattedTime}`;
   }
+
+  mostrarMensaje(data: MessageBoxData): void {
+  this.dialog.open(CustomMessageBoxComponent, {
+      width: '420px',
+      data
+    });
+  }
+
 }
