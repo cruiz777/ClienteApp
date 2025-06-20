@@ -149,14 +149,15 @@ export class UvIndividualComponent implements OnInit {
       sector: [''],
       urlFoto: [''],
       observacion: [''],
-      otrosSolicitantes: [''],
+      
       empresas: this.fb.group({
         favorita: [false],
         mega: [false],
         amazon: [false],
         rosario: [false],
         tia: [false],
-        google: [false]
+        google: [false],
+        otrosSolicitantes: [''],
       }),
       gtinNacionalSeleccionado: ['gtin13'],
       gtinInternacionalSeleccionado: [''],

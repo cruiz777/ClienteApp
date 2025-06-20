@@ -10,7 +10,7 @@ import { Cliente } from 'src/app/interfaces/cliente';
 import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
 import { ProductoService, Producto } from 'src/app/services/producto.service';
 import { Codigos14Service } from 'src/app/services/codigos14.service';
-
+import { GridApi, GridReadyEvent } from 'ag-grid-community';
 @Component({
   selector: 'app-nuevo-producto',
   standalone: true,
@@ -35,7 +35,7 @@ export class NuevoProductoComponent implements OnInit {
   codigoSeleccionado: string = '';
   registros: any[] = [];
   registrosGtin14: any[] = [];
-
+  gridApi!: GridApi;
   columnDefsUV = [
     {
       headerName: '#',
@@ -105,16 +105,16 @@ export class NuevoProductoComponent implements OnInit {
     this.activeTab = tab;
   }
 
- filtrarRegistros() {
-  const texto = this.busqueda.trim().toLowerCase();
+  filtrarRegistros() {
+    const texto = this.busqueda.trim().toLowerCase();
 
-  return this.registros.filter(r =>
-    (!this.filtroPrefijo || r.prefijo.includes(this.filtroPrefijo)) &&
-    (!texto || Object.values(r).some(valor =>
-      valor && valor.toString().toLowerCase().includes(texto)
-    ))
-  );
-}
+    return this.registros.filter(r =>
+      (!this.filtroPrefijo || r.prefijo.includes(this.filtroPrefijo)) &&
+      (!texto || Object.values(r).some(valor =>
+        valor && valor.toString().toLowerCase().includes(texto)
+      ))
+    );
+  }
 
 
   seleccionarRegistro(registro: any) {
@@ -186,4 +186,20 @@ export class NuevoProductoComponent implements OnInit {
   salir(): void {
     this.router.navigate(['/pages/clientes']);
   }
+
+ seleccionarRegistroU(registro: any) {
+  console.log('➡️ Doble clic sobre:', registro); // ✅ Verificación
+  if (registro?.codbar) {
+    this.router.navigate(['/menuProductos/uvIndividualEdit', registro.codbar]);
+  } else {
+    console.warn('⚠️ codbar no disponible en el registro', registro);
+  }
+}
+
+
+onGridReady(params: GridReadyEvent): void {
+  this.gridApi = params.api;
+}
+
+
 }

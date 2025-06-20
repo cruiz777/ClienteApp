@@ -47,7 +47,7 @@ const routes: Routes = [
       { path: 'nuevoProducto', component: NuevoProductoComponent },
       { path: 'clienteSeleccion', component: ClienteSeleccionadoComponent },
       { path: 'uvIndividual', component: UvIndividualComponent },
-      { path:'uvIndividualEdit',component:UvIndividualEditComponent},
+      { path:'uvIndividualEdit/:codbar',component:UvIndividualEditComponent},
       { path: 'nuevoSscc', component: NuevoSsccComponent },
       { path: 'cupones', component: CuponesComponent },
       { path: 'nuevoGln', component: GlnComponent },

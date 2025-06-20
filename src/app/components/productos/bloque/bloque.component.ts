@@ -317,7 +317,7 @@ export class BloqueComponent implements OnInit {
         contenidoNeto: '0',
         contenidoUM: 'g',
         gcpBrick: this.brick,
-        pais: 'EC',
+        pais: 'ECUADOR',
         activo: false,
         grupo: this.id_grupo_producto,
       });
@@ -574,7 +574,7 @@ export class BloqueComponent implements OnInit {
             fila.contenidoUM = fila.contenidoUM?.trim() || producto.unidad || 'g';
             fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
-            fila.pais = fila.pais?.trim() || producto.pais || 'EC';
+            fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
             fila.grupo = fila.grupo || (isNaN(Number(producto.idgrupoproducto)) ? 0 : Number(producto.idgrupoproducto));
             fila.idProducto = fila.idProducto || producto.IdProducto;
           } else {
@@ -585,7 +585,7 @@ export class BloqueComponent implements OnInit {
             fila.contenidoUM = fila.contenidoUM || 'g';
             fila.categoria = fila.categoria || '';
             fila.gcpBrick = fila.gcpBrick || '';
-            fila.pais = fila.pais || 'EC';
+            fila.pais = fila.pais || 'ECUADOR';
             fila.grupo = fila.grupo || 0;
             fila.idProducto = fila.idProducto || null;
           }
@@ -599,7 +599,7 @@ export class BloqueComponent implements OnInit {
           fila.contenidoUM = fila.contenidoUM || 'g';
           fila.categoria = fila.categoria || '';
           fila.gcpBrick = fila.gcpBrick || '';
-          fila.pais = fila.pais || 'EC';
+          fila.pais = fila.pais || 'ECUADOR';
           fila.grupo = fila.grupo || 0;
           fila.idProducto = fila.idProducto || null;
           return of(false);
@@ -749,7 +749,7 @@ export class BloqueComponent implements OnInit {
             fila.contenidoUM = fila.contenidoUM?.trim() || producto.unidad || 'g';
             fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
-            fila.pais = fila.pais?.trim() || producto.pais || 'EC';
+            fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
             fila.grupo = fila.grupo || (isNaN(Number(producto.idgrupoproducto)) ? 0 : Number(producto.idgrupoproducto));
             fila.idProducto = fila.idProducto || producto.IdProducto;
           } else {
@@ -760,7 +760,7 @@ export class BloqueComponent implements OnInit {
             fila.contenidoUM = fila.contenidoUM || 'g';
             fila.categoria = fila.categoria || '';
             fila.gcpBrick = fila.gcpBrick || '';
-            fila.pais = fila.pais || 'EC';
+            fila.pais = fila.pais || 'ECUADOR';
             fila.grupo = fila.grupo || 0;
             fila.idProducto = fila.idProducto || null;
           }
@@ -774,7 +774,7 @@ export class BloqueComponent implements OnInit {
           fila.contenidoUM = fila.contenidoUM || 'g';
           fila.categoria = fila.categoria || '';
           fila.gcpBrick = fila.gcpBrick || '';
-          fila.pais = fila.pais || 'EC';
+          fila.pais = fila.pais || 'ECUADOR';
           fila.grupo = fila.grupo || 0;
           fila.idProducto = fila.idProducto || null;
           return of(false);
@@ -852,7 +852,7 @@ recuperar12i(): void {
           fila.contenidoUM = fila.contenidoUM?.trim() || producto.unidad || 'g';
           fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
           fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
-          fila.pais = fila.pais?.trim() || producto.pais || 'EC';
+          fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
           fila.grupo = fila.grupo || (isNaN(Number(producto.idgrupoproducto)) ? 0 : Number(producto.idgrupoproducto));
           fila.idProducto = fila.idProducto || producto.IdProducto;
         } else {
@@ -862,7 +862,7 @@ recuperar12i(): void {
           fila.contenidoUM = fila.contenidoUM || 'g';
           fila.categoria = fila.categoria || '';
           fila.gcpBrick = fila.gcpBrick || '';
-          fila.pais = fila.pais || 'EC';
+          fila.pais = fila.pais || 'ECUADOR';
           fila.grupo = fila.grupo || 0;
           fila.idProducto = fila.idProducto || null;
         }
@@ -876,7 +876,7 @@ recuperar12i(): void {
         fila.contenidoUM = fila.contenidoUM || 'g';
         fila.categoria = fila.categoria || '';
         fila.gcpBrick = fila.gcpBrick || '';
-        fila.pais = fila.pais || 'EC';
+        fila.pais = fila.pais || 'ECUADOR';
         fila.grupo = fila.grupo || 0;
         fila.idProducto = fila.idProducto || null;
         return of(false);
@@ -973,7 +973,7 @@ recuperar12i(): void {
       fila.contenidoUM = columnas[idx++] || 'g';
       fila.categoria = this.codigoGrupo;
       fila.gcpBrick = this.brick;
-      fila.pais = 'EC';
+      fila.pais = 'ECUADOR';
       fila.grupo = this.id_grupo_producto;
     }
 
@@ -2002,7 +2002,7 @@ generar14(): void {
             fila.contenidoUM = fila.contenidoUM?.trim() || producto.unidad || 'g';
             fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
-            fila.pais = fila.pais?.trim() || producto.pais || 'EC';
+            fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
             fila.grupo = fila.grupo || (isNaN(Number(producto.idgrupoproducto)) ? 0 : Number(producto.idgrupoproducto));
             fila.idProducto = fila.idProducto || producto.IdProducto;
           } else {
@@ -2013,7 +2013,7 @@ generar14(): void {
             fila.contenidoUM = fila.contenidoUM || 'g';
             fila.categoria = fila.categoria || '';
             fila.gcpBrick = fila.gcpBrick || '';
-            fila.pais = fila.pais || 'EC';
+            fila.pais = fila.pais || 'ECUADOR';
             fila.grupo = fila.grupo || 0;
             fila.idProducto = fila.idProducto || null;
           }
@@ -2027,7 +2027,7 @@ generar14(): void {
           fila.contenidoUM = fila.contenidoUM || 'g';
           fila.categoria = fila.categoria || '';
           fila.gcpBrick = fila.gcpBrick || '';
-          fila.pais = fila.pais || 'EC';
+          fila.pais = fila.pais || 'ECUADOR';
           fila.grupo = fila.grupo || 0;
           fila.idProducto = fila.idProducto || null;
           return of(false);

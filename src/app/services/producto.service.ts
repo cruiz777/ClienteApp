@@ -227,6 +227,16 @@ export interface Producto {
   codbar:string;
   idgrupoproducto:string;
   codigoproducto:string;
+  sector:string;
+  url:string;
+  p1:number;
+  p2:number;
+  p3:number;
+  p4:number;
+  p5:number;
+  p6:number;
+  po:string;
+
 }
 export interface ApiResponse<T> {
   id: string;

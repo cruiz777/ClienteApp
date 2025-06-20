@@ -1,398 +1,222 @@
-<div class="product-maintenance-container">
-  <!-- Header Section -->
-  
-  <!-- Main Content Area -->
-  <main class="main-content" [attr.space]="0">
-    <div class="content-wrapper">
-      <div class="layout-container">
+<div class="contenedor-formulario">
+  <h2>Editar GTIN - Ingreso Único de Venta</h2>
 
-        <!-- Sidebar Navigation -->
-        
+  <form class="formulario" [formGroup]="formUV">
+    <div class="form-grid">
 
-        <!-- Main Content Panel -->
-        <section class="main-panel">
-          <div class="panel-content">
-
-            <!-- Page Header -->
-            <header class="page-header">
-              <h2 class="page-main-title">Mantenimiento de Productos</h2>
-              <div class="product-description">
-                <label class="description-label">Descripción:</label>
-                <input type="text" class="description-input" value="Aceite Randon 46-HD" readonly />
-              </div>
-            </header>
-
-            <!-- Tab Navigation -->
-            <nav class="tab-navigation" role="tablist">
-              <button class="tab-button active" role="tab" aria-selected="true"
-                      (click)="onTabClick('datos-generales')">
-                Datos Generales
-              </button>
-              <button class="tab-button" role="tab" aria-selected="false"
-                      (click)="onTabClick('datos-adicionales')">
-                Datos Adicionales
-              </button>
-              <button class="tab-button" role="tab" aria-selected="false"
-                      (click)="onTabClick('precio-costo')">
-                Precio / Costo
-              </button>
-              <button class="tab-button" role="tab" aria-selected="false"
-                      (click)="onTabClick('estructura-stock')">
-                Estructura y Stock
-              </button>
-            </nav>
-
-            <!-- Form Content -->
-            <form class="product-form" role="tabpanel" aria-labelledby="datos-generales">
-
-              <!-- First Row -->
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="codigo-interno" class="form-label">Código Interno:</label>
-                  <div class="input-wrapper">
-                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/d23aa82dbd96518066db945d57d4f1f17e23e046?placeholderIfAbsent=true" alt="" class="input-icon" />
-                    <input type="text" id="codigo-interno" class="form-input" placeholder="texto"
-                           (input)="onInputChange('codigo-interno', $event)" />
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="codigo-barras" class="form-label">Código de Barras:</label>
-                  <div class="input-wrapper">
-                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/d23aa82dbd96518066db945d57d4f1f17e23e046?placeholderIfAbsent=true" alt="" class="input-icon" />
-                    <input type="text" id="codigo-barras" class="form-input" placeholder="texto"
-                           (input)="onInputChange('codigo-barras', $event)" />
-                  </div>
-                </div>
-
-                <div class="form-group checkbox-group">
-                  <span class="checkbox-label">Generar</span>
-                  <div class="checkbox-wrapper">
-                    <input type="checkbox" id="generar" class="checkbox-input"
-                           (change)="onCheckboxChange('generar', $event)" />
-                    <label for="generar" class="checkbox-visual" aria-label="Generar código de barras"></label>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Second Row -->
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="descripcion-1" class="form-label">Descripción 1:</label>
-                  <div class="input-wrapper">
-                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/d23aa82dbd96518066db945d57d4f1f17e23e046?placeholderIfAbsent=true" alt="" class="input-icon" />
-                    <input type="text" id="descripcion-1" class="form-input" placeholder="texto"
-                           (input)="onInputChange('descripcion-1', $event)" />
-                  </div>
-                </div>
-
-                <div class="form-group wide-group">
-                  <label for="descripcion-punto-venta" class="form-label">
-                    Descripción en el punto de venta:
-                  </label>
-                  <div class="input-wrapper wide-input">
-                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/d23aa82dbd96518066db945d57d4f1f17e23e046?placeholderIfAbsent=true" alt="" class="input-icon" />
-                    <input type="text" id="descripcion-punto-venta" class="form-input" placeholder="texto"
-                           (input)="onInputChange('descripcion-punto-venta', $event)" />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Third Row -->
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="unidad-venta" class="form-label">Unidad de Venta:</label>
-                  <div class="input-wrapper dropdown-wrapper">
-                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/d23aa82dbd96518066db945d57d4f1f17e23e046?placeholderIfAbsent=true" alt="" class="input-icon" />
-                    <select id="unidad-venta" class="form-input dropdown-input"
-                            (change)="onInputChange('unidad-venta', $event)">
-                      <option value="">texto</option>
-                    </select>
-                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/53011593984060d6532a4ab3f6e01f4c4bf6f4d4?placeholderIfAbsent=true" alt="Dropdown Arrow" class="dropdown-arrow" />
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="cantidad" class="form-label">Cantidad:</label>
-                  <div class="input-wrapper">
-                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/d23aa82dbd96518066db945d57d4f1f17e23e046?placeholderIfAbsent=true" alt="" class="input-icon" />
-                    <input type="number" id="cantidad" class="form-input" placeholder="texto"
-                           (input)="onInputChange('cantidad', $event)" />
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="tipo-producto" class="form-label">Tipo Producto:</label>
-                  <div class="input-wrapper dropdown-wrapper">
-                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/d23aa82dbd96518066db945d57d4f1f17e23e046?placeholderIfAbsent=true" alt="" class="input-icon" />
-                    <select id="tipo-producto" class="form-input dropdown-input"
-                            (change)="onInputChange('tipo-producto', $event)">
-                      <option value="">texto</option>
-                    </select>
-                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/4507fa339085bf014e097a6236ee1844a4ebaa2a?placeholderIfAbsent=true" alt="Dropdown Arrow" class="dropdown-arrow" />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Fourth Row -->
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="existencia-global" class="form-label">Existencia Global:</label>
-                  <div class="input-wrapper">
-                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/d23aa82dbd96518066db945d57d4f1f17e23e046?placeholderIfAbsent=true" alt="" class="input-icon" />
-                    <input type="text" id="existencia-global" class="form-input" placeholder="texto" readonly />
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="can-cov" class="form-label">Can. Cov.:</label>
-                  <div class="input-wrapper">
-                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/d23aa82dbd96518066db945d57d4f1f17e23e046?placeholderIfAbsent=true" alt="" class="input-icon" />
-                    <input type="text" id="can-cov" class="form-input" placeholder="texto" readonly />
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="presentacion" class="form-label">Presentación:</label>
-                  <div class="input-wrapper">
-                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/d23aa82dbd96518066db945d57d4f1f17e23e046?placeholderIfAbsent=true" alt="" class="input-icon" />
-                    <input type="text" id="presentacion" class="form-input" placeholder="texto"
-                           (input)="onInputChange('presentacion', $event)" />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Fifth Row -->
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="abreviacion" class="form-label">Abreviación:</label>
-                  <div class="input-wrapper">
-                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/d23aa82dbd96518066db945d57d4f1f17e23e046?placeholderIfAbsent=true" alt="" class="input-icon" />
-                    <input type="text" id="abreviacion" class="form-input" placeholder="texto"
-                           (input)="onInputChange('abreviacion', $event)" />
-                  </div>
-                </div>
-
-                <div class="form-group">
-                  <label for="referencia" class="form-label">Referencia:</label>
-                  <div class="input-wrapper">
-                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/d23aa82dbd96518066db945d57d4f1f17e23e046?placeholderIfAbsent=true" alt="" class="input-icon" />
-                    <input type="text" id="referencia" class="form-input" placeholder="texto"
-                           (input)="onInputChange('referencia', $event)" />
-                  </div>
-                </div>
-              </div>
-
-              <!-- Options Section -->
-              <fieldset class="options-section">
-                <legend class="options-title">Opciones:</legend>
-
-                <div class="options-row">
-                  <div class="option-group">
-                    <div class="checkbox-wrapper">
-                      <input type="checkbox" id="paga-iva" class="checkbox-input"
-                             (change)="onCheckboxChange('paga-iva', $event)" />
-                      <label for="paga-iva" class="checkbox-visual"></label>
-                    </div>
-                    <label for="paga-iva" class="option-label">Paga IVA:</label>
-                  </div>
-                  <div class="input-wrapper">
-                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/d23aa82dbd96518066db945d57d4f1f17e23e046?placeholderIfAbsent=true" alt="" class="input-icon" />
-                    <input type="text" class="form-input" placeholder="texto" />
-                  </div>
-                </div>
-
-                <div class="options-grid">
-                  <div class="options-column">
-                    <div class="option-item">
-                      <div class="checkbox-wrapper">
-                        <input type="checkbox" id="producto-venta" class="checkbox-input"
-                               (change)="onCheckboxChange('producto-venta', $event)" />
-                        <label for="producto-venta" class="checkbox-visual"></label>
-                      </div>
-                      <label for="producto-venta" class="option-label">Producto en Venta</label>
-                    </div>
-
-                    <div class="option-item">
-                      <div class="checkbox-wrapper">
-                        <input type="checkbox" id="cargar-inventarios" class="checkbox-input"
-                               (change)="onCheckboxChange('cargar-inventarios', $event)" />
-                        <label for="cargar-inventarios" class="checkbox-visual"></label>
-                      </div>
-                      <label for="cargar-inventarios" class="option-label">Cargar a inventarios</label>
-                    </div>
-
-                    <div class="option-item">
-                      <div class="checkbox-wrapper">
-                        <input type="checkbox" id="producto-peso" class="checkbox-input"
-                               (change)="onCheckboxChange('producto-peso', $event)" />
-                        <label for="producto-peso" class="checkbox-visual"></label>
-                      </div>
-                      <label for="producto-peso" class="option-label">Producto con Peso</label>
-                    </div>
-
-                    <div class="option-item">
-                      <div class="checkbox-wrapper">
-                        <input type="checkbox" id="consumo-interno" class="checkbox-input"
-                               (change)="onCheckboxChange('consumo-interno', $event)" />
-                        <label for="consumo-interno" class="checkbox-visual"></label>
-                      </div>
-                      <label for="consumo-interno" class="option-label">Producto consumo Interno</label>
-                    </div>
-                  </div>
-
-                  <div class="product-class-section">
-                    <h4 class="product-class-title">Clase de Producto:</h4>
-                    <div class="radio-group">
-                      <div class="radio-item">
-                        <div class="checkbox-wrapper">
-                          <input type="radio" id="bien" name="clase-producto" class="checkbox-input"
-                                 (change)="onCheckboxChange('bien', $event)" />
-                          <label for="bien" class="checkbox-visual"></label>
-                        </div>
-                        <label for="bien" class="option-label">Bien</label>
-                      </div>
-
-                      <div class="radio-item">
-                        <div class="checkbox-wrapper">
-                          <input type="radio" id="servicio" name="clase-producto" class="checkbox-input"
-                                 (change)="onCheckboxChange('servicio', $event)" />
-                          <label for="servicio" class="checkbox-visual"></label>
-                        </div>
-                        <label for="servicio" class="option-label">Servicio</label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="options-divider"></div>
-
-                <div class="additional-options">
-                  <div class="option-item">
-                    <div class="checkbox-wrapper">
-                      <input type="checkbox" id="cantidad-decimales" class="checkbox-input"
-                             (change)="onCheckboxChange('cantidad-decimales', $event)" />
-                      <label for="cantidad-decimales" class="checkbox-visual"></label>
-                    </div>
-                    <label for="cantidad-decimales" class="option-label">Maneja Cantidad con Decimales</label>
-                  </div>
-
-                  <div class="option-row">
-                    <div class="option-item">
-                      <div class="checkbox-wrapper">
-                        <input type="checkbox" id="psicotropico" class="checkbox-input"
-                               (change)="onCheckboxChange('psicotropico', $event)" />
-                        <label for="psicotropico" class="checkbox-visual"></label>
-                      </div>
-                      <label for="psicotropico" class="option-label">Psicotrópico</label>
-                    </div>
-
-                    <div class="option-item">
-                      <div class="checkbox-wrapper">
-                        <input type="checkbox" id="estupefaciente" class="checkbox-input"
-                               (change)="onCheckboxChange('estupefaciente', $event)" />
-                        <label for="estupefaciente" class="checkbox-visual"></label>
-                      </div>
-                      <label for="estupefaciente" class="option-label">Estupefaciente</label>
-                    </div>
-                  </div>
-
-                  <div class="option-row">
-                    <div class="option-item">
-                      <div class="checkbox-wrapper">
-                        <input type="checkbox" id="activo" class="checkbox-input"
-                               (change)="onCheckboxChange('activo', $event)" />
-                        <label for="activo" class="checkbox-visual"></label>
-                      </div>
-                      <label for="activo" class="option-label">Activo</label>
-                    </div>
-
-                    <div class="option-item">
-                      <div class="checkbox-wrapper">
-                        <input type="checkbox" id="alto-riesgo" class="checkbox-input"
-                               (change)="onCheckboxChange('alto-riesgo', $event)" />
-                        <label for="alto-riesgo" class="checkbox-visual"></label>
-                      </div>
-                      <label for="alto-riesgo" class="option-label">Alto Riesgo</label>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="options-divider"></div>
-
-                <div class="date-section">
-                  <div class="date-group">
-                    <label for="fecha-creacion" class="form-label">Fecha de Creación:</label>
-                    <div class="input-wrapper">
-                      <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/d23aa82dbd96518066db945d57d4f1f17e23e046?placeholderIfAbsent=true" alt="" class="input-icon" />
-                      <input type="date" id="fecha-creacion" class="form-input date-input"
-                             placeholder="dd/mm/aaaa" readonly />
-                    </div>
-                  </div>
-
-                  <div class="date-group">
-                    <label for="fecha-modificacion" class="form-label">Fecha Modificación:</label>
-                    <div class="input-wrapper">
-                      <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/d23aa82dbd96518066db945d57d4f1f17e23e046?placeholderIfAbsent=true" alt="" class="input-icon" />
-                      <input type="date" id="fecha-modificacion" class="form-input date-input"
-                             placeholder="dd/mm/aaaa" readonly />
-                    </div>
-                  </div>
-                </div>
-              </fieldset>
-
-              <!-- Action Buttons -->
-              <div class="action-section">
-                <div class="active-checkbox">
-                  <span class="checkbox-label">Activo</span>
-                  <div class="checkbox-wrapper">
-                    <input type="checkbox" id="activo-general" class="checkbox-input"
-                           (change)="onCheckboxChange('activo-general', $event)" />
-                    <label for="activo-general" class="checkbox-visual"></label>
-                  </div>
-                </div>
-
-                <div class="button-group">
-                  <button type="button" class="action-button" (click)="onButtonClick('nuevo')">
-                    Nuevo
-                  </button>
-                  <button type="submit" class="action-button" (click)="onButtonClick('grabar')">
-                    Grabar
-                  </button>
-                  <button type="button" class="action-button" (click)="onButtonClick('imprimir')">
-                    Imprimir
-                  </button>
-                  <button type="button" class="icon-button" (click)="onButtonClick('adjuntar')"
-                          aria-label="Adjuntar archivo">
-                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/a6753f62008067b58bebdad519d5eda9397755f2?placeholderIfAbsent=true" alt="Attach Icon" class="button-icon" />
-                    <span>Adjuntar</span>
-                  </button>
-                  <button type="button" class="icon-button" (click)="onButtonClick('proveedor')"
-                          aria-label="Gestionar proveedor">
-                    <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/53eed27e7493a5346d501e32c9165e18e123392e?placeholderIfAbsent=true" alt="Provider Icon" class="button-icon" />
-                    <span>Proveedor</span>
-                  </button>
-                </div>
-              </div>
-            </form>
-          </div>
-        </section>
+      <!-- Datos del cliente -->
+      <div class="corto">
+        <label for="codigoCliente">Código del cliente:</label>
+        <input id="codigoCliente" type="text" formControlName="codigoCliente" readonly />
       </div>
-    </div>
-  </main>
 
-  <!-- Footer -->
-  <footer class="main-footer">
-    <div class="footer-content">
-      <div class="footer-info">
-        <time class="footer-date">Martes,08 de Abril de 2025</time>
-        <div class="contact-info">
-          <div class="contact-item">
-            <img src="https://cdn.builder.io/api/v1/image/assets/deda0b23bea74a6aa3a468b7b4b32e73/dccde67bef9024a246badff3b05ba53667717150?placeholderIfAbsent=true" alt="Phone Icon" class="contact-icon" />
-            <span class="contact-text">Telf: 022 453 846 / 022 464 951</span>
-          </div>
+      <div class="col-2">
+        <label for="cliente">Cliente:</label>
+        <input id="cliente" type="text" formControlName="cliente" readonly />
+      </div>
+
+      <div>
+        <label for="ruc">RUC:</label>
+        <input id="ruc" type="text" formControlName="ruc" readonly />
+      </div>
+
+      <mat-form-field appearance="fill" readonly>
+        <mat-label>Prefijo</mat-label>
+        <mat-select formControlName="gcp" (selectionChange)="onPrefijoBlur()">
+          <mat-option *ngFor="let prefijo of prefijos" [value]="prefijo.id_prefijos">
+            {{ prefijo.codpre }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div>
+        <label for="gln">GLN®:</label>
+        <input id="gln" type="text" formControlName="gln" readonly />
+      </div>
+
+      <!-- GTIN: Nacional, Internacional, Serie, UV, Tipo -->
+      <div class="full-width fila-gtin-combo">
+        <div class="combo-gtin">
+          <label>Nacional</label>
+          <mat-form-field appearance="fill" class="select-pequeno">
+            <mat-select formControlName="gtinNacionalSeleccionado"
+              (selectionChange)="formUV.get('gtinInternacionalSeleccionado')?.reset()">
+              <mat-option value="gtin13">GTIN-13</mat-option>
+              <mat-option value="gtin8">GTIN-8</mat-option>
+              <mat-option value="upc">GTIN-12</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="combo-gtin">
+          <label>Internacional</label>
+          <mat-form-field appearance="fill" class="select-pequeno">
+            <mat-select formControlName="gtinInternacionalSeleccionado"
+              (selectionChange)="formUV.get('gtinNacionalSeleccionado')?.reset()">
+              <mat-option value="gtin-13i">GTIN-13</mat-option>
+              <mat-option value="gtin-8i">GTIN-8</mat-option>
+              <mat-option value="gtin-12i">GTIN-12</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+        <div class="combo-gtin serie-inline" style="visibility: hidden;">
+          <label class="checkbox-serie" readonly>
+            <input type="checkbox" formControlName="usarSerie" (change)="habilitarSerie()" readonly /> Serie
+          </label>
+          <input type="text" formControlName="serie" [readonly]="!formUV.get('usarSerie')?.value" readonly />
+        </div>
+        <div class="combo-gtin">
+          <label>GTIN® UV:</label>
+          <input type="text" formControlName="gtinUv" [readonly]="formUV.get('gtinUv')?.disabled || false"
+            [attr.maxLength]="longitudMaxima" (keypress)="permitirSoloNumeros($event)"
+            [ngClass]="{ 'input-verde': campoGtin }" readonly/>
+
+
+          <div *ngIf="formUV.get('gtinUv')?.hasError('codbarExistente')" class="mensaje-error">⚠️ Ya registrado.</div>
+        </div>
+        <div class="combo-gtin">
+          <label>Tipo GTIN®:</label>
+          <input type="text" formControlName="tipoGtin" readonly />
         </div>
       </div>
+
+      <!-- Campos editables principales -->
+      <div class="col-2">
+        <label>Descripción:</label>
+        <input type="text" formControlName="descripcion" (blur)="convertirAMayusculas('descripcion')" />
+      </div>
+
+      <div>
+        <label>Marca:</label>
+        <input type="text" formControlName="marca"  (blur)="convertirAMayusculas('marca')"/>
+      </div>
+
+      <div>
+        <label>Contenido:</label>
+        <input type="text" formControlName="contenido" (keypress)="validarNumeroDecimal($event)" />
+      </div>
+
+
+      <!-- Unidad de medida -->
+      <mat-form-field>
+        <mat-label>Unidad</mat-label>
+        <input matInput formControlName="unidadMedida" [matAutocomplete]="autoUnidad" placeholder="Seleccione Unidad" />
+        <button matSuffix mat-icon-button *ngIf="formUV.get('unidadMedida')?.value" (click)="limpiarUnidadMedida()">
+          <mat-icon>close</mat-icon>
+        </button>
+        <mat-autocomplete #autoUnidad="matAutocomplete" [displayWith]="displayWithUnidadMedida"
+          (optionSelected)="seleccionarUnidadMedida($event.option.value)">
+          <mat-option *ngFor="let u of unidadesMedidaFiltradas" [value]="u">
+            {{ u.descripcion }} - {{ u.unidad }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <!-- Categoría -->
+      <mat-form-field>
+        <mat-label>Categoría</mat-label>
+        <input matInput formControlName="categoria" [matAutocomplete]="autoCategoria"
+          placeholder="Seleccione Categoría" />
+        <button matSuffix mat-icon-button *ngIf="formUV.get('categoria')?.value" (click)="limpiarCategoria()">
+          <mat-icon>close</mat-icon>
+        </button>
+        <mat-autocomplete #autoCategoria="matAutocomplete" [displayWith]="displayWithCategoria"
+          (optionSelected)="seleccionarCategoria($event.option.value)">
+          <mat-option *ngFor="let cat of categoriasFiltradas" [value]="cat">
+            {{ cat.desBrick }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <!-- Brick -->
+      <div>
+        <label>GCP® BRICK:</label>
+        <input type="text" formControlName="brick" readonly />
+      </div>
+
+      <!-- País y Sector -->
+      <mat-form-field>
+        <mat-label>Pais </mat-label>
+        <input matInput formControlName="pais" [matAutocomplete]="autoPais" placeholder="Seleccione País" />
+        <button matSuffix mat-icon-button *ngIf="formUV.get('pais')?.value" (click)="formUV.get('pais')?.reset()">
+          <mat-icon>close</mat-icon>
+        </button>
+        <mat-autocomplete #autoPais="matAutocomplete" [displayWith]="displayWithPais">
+          <mat-option *ngFor="let p of paisFiltrados" [value]="p">
+            {{ p.nombre }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <mat-form-field>
+        <mat-label>Sector</mat-label>
+        <input matInput formControlName="sector" [matAutocomplete]="autoSector" placeholder="Seleccione Sector" />
+        <button matSuffix mat-icon-button *ngIf="formUV.get('sector')?.value" (click)="limpiarSector()">
+          <mat-icon>close</mat-icon>
+        </button>
+        <mat-autocomplete #autoSector="matAutocomplete" [displayWith]="displayWithSector"
+          (optionSelected)="seleccionarSector($event.option.value)">
+          <mat-option *ngFor="let s of sectoresFiltrados" [value]="s">
+            {{ s.descripcion }}
+          </mat-option>
+        </mat-autocomplete>
+      </mat-form-field>
+
+      <!-- URL y Observación alineados -->
+      <div class="fila-inline full-width">
+        <div class="campo-url">
+          <label>URL foto:</label>
+          <input type="text" formControlName="urlFoto" />
+        </div>
+
+        <div class="campo-observacion">
+          <label>Observación:</label>
+          <textarea formControlName="observacion" rows="1" (blur)="convertirAMayusculas('observacion')"></textarea>
+        </div>
+      </div>
+
+
+
+      <!-- Empresas -->
+      <div class="checkbox-contenedor full-width" formGroupName="empresas">
+        <label><input type="checkbox" formControlName="favorita" /> La Favorita</label>
+        <label><input type="checkbox" formControlName="mega" /> Mega Santa María</label>
+        <label><input type="checkbox" formControlName="amazon" /> Amazon</label>
+        <label><input type="checkbox" formControlName="rosario" /> El Rosario</label>
+        <label><input type="checkbox" formControlName="tia" /> TIA</label>
+        <label><input type="checkbox" formControlName="google" /> Google</label>
+        <label><input type="text" placeholder="Otros:" formControlName="otrosSolicitantes" /></label>
+      </div>
+
     </div>
-  </footer>
+
+    <div class="botones">
+      
+      <button class="btn" type="button" (click)="generar()" [disabled]="botonGenerarDeshabilitado">
+        Modificar
+      </button>
+
+      <button class="btn btn-azul" type="button" (click)="grabarTodo()" [disabled]="botonGrabarDeshabilitado">
+        Grabar
+      </button>
+
+      <button class="btn btn-rojo" type="button" (click)="salir()">Salir</button>
+
+    </div>
+  </form>
+
+
+  <!-- Sección UL -->
+  <h2 class="separador">UNIDAD LOGÍSTICA GTIN-14</h2>
+<ng-container >
+    
+
+    <ag-grid-angular
+      class="ag-theme-alpine"
+      style="width: 100%; height: 300px;"
+      [rowData]="registrosGtin14"
+      [columnDefs]="columnDefsGtin14"
+      [defaultColDef]="defaultColDef">
+    </ag-grid-angular>
+  </ng-container>
+ 
 </div>
