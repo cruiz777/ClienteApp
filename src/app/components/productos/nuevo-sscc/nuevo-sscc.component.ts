@@ -25,7 +25,16 @@ import { GenerateSsccRequest } from 'src/app/interfaces/requests/generate-sscc-r
 import { UsuarioService } from 'src/app/services/usuario.service';
 import { MatDialog } from '@angular/material/dialog';
 import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/util/messages/custom-message-box.component';
-
+interface SsccTablaView { //Interfaz auxiliar para poder mapear solamente lo que se requiere
+  empresa: string;
+  prefijo: string;
+  identificadorEmpaque: string;
+  sscc: string;
+  fecha: string;
+  estado: string;
+  usuario: string;
+  seleccionado: boolean;
+}
 @Component({
   selector: 'app-nuevo-sscc',
   standalone: true,
@@ -66,8 +75,8 @@ export class NuevoSsccComponent implements OnInit {
   filtroTexto = '';
   filtroPrefijo = '';
   filtroBusqueda = '';
-  ssccsData: SsccResponse[] = [];
-  dataFiltrada = new MatTableDataSource<SsccResponse>([]);
+  ssccsData: SsccTablaView[] = [];
+  dataFiltrada = new MatTableDataSource<SsccTablaView>([]);
   totalItems = 0;
   pageIndex = 0;
   pageSize = 10;
@@ -157,40 +166,69 @@ export class NuevoSsccComponent implements OnInit {
 
     // Cargar SSCCs y prefijos de ese cliente
     this.cargarSSCCs();
-    this.cargarPrefijosPorCliente();
-
-    // Filtro inicial del listado (mock interno)
-    this.filtrar();
   }
 
   // ========== LISTADO ==========
   filtrar(): void {
     this.dataFiltrada.data = this.ssccsData.filter(r => {
       const coincideTexto = this.filtroTexto ? JSON.stringify(r).toLowerCase().includes(this.filtroTexto.toLowerCase()) : true;
-      const coincidePrefijo = this.filtroPrefijo ? r.id_prefijo === Number(this.filtroPrefijo) : true;
+      const coincidePrefijo = this.filtroPrefijo ? r.prefijo === this.filtroPrefijo : true;
       const coincideBusqueda = this.filtroBusqueda ? JSON.stringify(r).toLowerCase().includes(this.filtroBusqueda.toLowerCase()) : true;
       return coincideTexto && coincidePrefijo && coincideBusqueda;
     });
   }
 
 
+
   //Carga todos los datos desde el backend
   cargarSSCCs(page: number = 0, size: number = 10): void {
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
-
     if (!cliente) return;
 
-    this.ssccService.getByCliente(cliente.clientes_codigo, page + 1, size).subscribe({
-      next: (response) => {
-        this.ssccsData = response.data.items;
-        this.totalItems = response.data.totalItems;
-        this.pageIndex = response.data.page - 1;
-        this.pageSize = response.data.pageSize;
-        this.dataFiltrada.data = this.ssccsData;
+    this.prefijoService.obtenerPrefijosPorClienteCodigo(cliente.clientes_codigo).subscribe({
+      next: (prefijos) => {
+        
+        const codigosUnicos = new Map();
+        for (const p of prefijos) {
+          if (!codigosUnicos.has(p.codpre)) {
+            codigosUnicos.set(p.codpre, { id: p.id_prefijos, codpre: p.codpre });
+          }
+        }
+        this.prefijosDisponibles = Array.from(codigosUnicos.values());
+        this.prefijosDisponibles = prefijos.map(p => ({
+          id: p.id_prefijos,
+          codpre: p.codpre
+        }));
+
+        this.ssccService.getByCliente(cliente.clientes_codigo, page + 1, size).subscribe({
+          next: (response) => {
+            this.ssccsData = response.data.items.map((item: any) => {
+              const codpre = this.prefijosDisponibles.find(p => p.id === item.id_prefijo)?.codpre || 'N/A';
+
+              return {
+                empresa: cliente?.nomcli || 'ECOP', // Cliente siempre viene de servicio
+                prefijo: codpre,
+                identificadorEmpaque: item.indicador,
+                sscc: item.sscc_completo,
+                fecha: item.fecha_creacion,
+                estado: item.estado ? 'Activo' : 'Inactivo',
+                usuario: item.usuario,
+                seleccionado: false
+              };
+            });
+
+            this.totalItems = response.data.totalItems;
+            this.pageIndex = response.data.page - 1;
+            this.pageSize = response.data.pageSize;
+            this.filtrar();
+          },
+          error: (err) => console.error('❌ Error al cargar SSCCs:', err)
+        });
       },
-      error: (err) => console.error('❌ Error al cargar SSCCs:', err)
+      error: (err) => console.error('❌ Error al cargar prefijos:', err)
     });
   }
+
   
   cargarPrefijosPorCliente(): void {
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
@@ -265,7 +303,7 @@ export class NuevoSsccComponent implements OnInit {
     const payload: GenerateSsccRequest = {
       id_prefijo: this.formSSCC.get('prefijo')?.value,
       id_cliente: cliente.clientes_codigo,
-      indicador: 1,
+      indicador: this.formSSCC.get('empaque')?.value,
       producto_codificado: this.formSSCC.get('producto')?.value.toString(),
       serie: this.formSSCC.get('serie')?.value || false,
       secuencia_inicio: inicio,

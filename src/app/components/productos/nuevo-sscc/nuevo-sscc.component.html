@@ -200,7 +200,7 @@
     <div class="fila">
       <mat-form-field appearance="fill">
         <mat-label>Prefijo</mat-label>
-        <mat-select formControlName="prefijo">
+        <mat-select [(ngModel)]="filtroPrefijo" name="filtroPrefijo" (selectionChange)="filtrar()">
           <mat-option *ngFor="let p of prefijosDisponibles" [value]="p.id">
             {{ p.codpre }}
           </mat-option>
