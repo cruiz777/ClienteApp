@@ -1,15 +1,19 @@
-import { NgModule } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { NgModule, LOCALE_ID } from '@angular/core';
+import { CommonModule, registerLocaleData } from '@angular/common';
+import localeEs from '@angular/common/locales/es';
 
 import { RouterModule } from '@angular/router';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
-// Componentes
+// Componentes personalizados
 import { NavigationProductoComponent } from './navigation-producto/navigation-producto.component';
 import { BloqueComponent } from './bloque/bloque.component';
-import { MatOptionModule } from '@angular/material/core';
+import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
+import { CheckboxRendererComponent } from './checkbox-renderer/checkbox-renderer.component';
+import { GcpBrickAutocompleteEditorComponent } from './gcp-brick-autocomplete-editor/gcp-brick-autocomplete-editor.component';
+import { DialogProcesoComponent } from './dialog-proceso/dialog-proceso.component';
 
-// Angular Material modules necesarios
-
+// Angular Material
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
@@ -21,25 +25,40 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSelectModule } from '@angular/material/select';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatTableModule } from '@angular/material/table';
-import { SharedModule } from 'src/app/shared/shared.module';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatMenuModule } from '@angular/material/menu';
-import { CheckboxRendererComponent } from './checkbox-renderer/checkbox-renderer.component';
-import { GcpBrickAutocompleteEditorComponent } from './gcp-brick-autocomplete-editor/gcp-brick-autocomplete-editor.component';
+import { MatOptionModule } from '@angular/material/core';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 
-// Formularios
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+// Formato fecha personalizado
+import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
+import { MomentDateAdapter } from '@angular/material-moment-adapter';
 
 // Ag-Grid y Handsontable
-import { HotTableModule } from '@handsontable/angular';
 import { AgGridModule } from 'ag-grid-angular';
 import { AgGridAngular } from 'ag-grid-angular';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { DialogProcesoComponent } from './dialog-proceso/dialog-proceso.component';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
-import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
+import { HotTableModule } from '@handsontable/angular';
 
+// Módulo compartido
+import { SharedModule } from 'src/app/shared/shared.module';
+
+// 📌 Registrar locale español
+registerLocaleData(localeEs);
+
+// 📆 Formato personalizado DD/MM/YYYY
+export const MY_DATE_FORMATS = {
+  parse: { dateInput: 'DD/MM/YYYY' },
+  display: {
+    dateInput: 'DD/MM/YYYY',
+    monthYearLabel: 'MMMM YYYY',
+    dateA11yLabel: 'LL',
+    monthYearA11yLabel: 'MMMM YYYY'
+  }
+};
 
 @NgModule({
   declarations: [
@@ -53,13 +72,10 @@ import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
   imports: [
     CommonModule,
     RouterModule,
-    ReactiveFormsModule,
-    FormsModule,
-    // Angular Material necesarios
-    HotTableModule,
-    AgGridModule,
     FormsModule,
     ReactiveFormsModule,
+
+    // Angular Material
     MatSidenavModule,
     MatListModule,
     MatIconModule,
@@ -70,27 +86,33 @@ import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
     MatCheckboxModule,
     MatSelectModule,
     MatFormFieldModule,
-    MatOptionModule,
     MatTableModule,
-    MatAutocompleteModule,
-    SharedModule,
-    MatSnackBarModule,
-    MatMenuModule,
-    MatTableModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatCheckboxModule,
     MatDialogModule,
     MatSnackBarModule,
+    MatMenuModule,
     MatOptionModule,
-    MatSelectModule,
-    AgGridAngular,
+    MatAutocompleteModule,
     MatProgressBarModule,
-    MatAutocompleteModule
+    MatDatepickerModule,
+    MatNativeDateModule,
+
+    // AgGrid y Handsontable
+    AgGridModule,
+    AgGridAngular,
+    HotTableModule,
+
+    // Shared
+    SharedModule
   ],
   exports: [
     NavigationProductoComponent,
     BloqueComponent
+  ],
+  providers: [
+    { provide: LOCALE_ID, useValue: 'es' },
+    { provide: MAT_DATE_LOCALE, useValue: 'es-ES' },
+    { provide: DateAdapter, useClass: MomentDateAdapter, deps: [MAT_DATE_LOCALE] },
+    { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS }
   ]
 })
 export class ProductosModule {}

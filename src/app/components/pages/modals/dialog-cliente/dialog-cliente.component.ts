@@ -845,7 +845,7 @@ export class DialogClienteComponent implements OnInit {
           const prefijoData = {
             codpre: prefijo,
             fecha: new Date().toISOString().split('T')[0],
-            fechaCierre: new Date().toISOString().split('T')[0],
+            fechaCierre: null,
             observacion: '',
             digitos: prefijo.length.toString(),
             estado: false,

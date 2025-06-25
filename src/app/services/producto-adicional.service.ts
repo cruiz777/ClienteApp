@@ -52,7 +52,7 @@ export class ProductoAdicionalService {
 
   private apiBaseUrl = environment.invoicesUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   crearProductoDatosAdicionales(request: ProductoDatosAdicionalesRequest): Observable<ApiResponse<number>> {
     return this.http.post<ApiResponse<number>>(
@@ -60,4 +60,13 @@ export class ProductoAdicionalService {
       request
     );
   }
+actualizarProductoDatosAdicionales(payload: {
+  idProducto: number,
+  request: ProductoDatosAdicionalesRequest
+}): Observable<any> {
+  const url = `${this.apiBaseUrl}/ProductoDatosAdicionales/por-producto/${payload.idProducto}`;
+  return this.http.put(url, payload.request);
+}
+
+
 }

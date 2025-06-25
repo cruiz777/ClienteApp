@@ -110,7 +110,7 @@ export class BloqueComponent implements OnInit {
 
   descripcionesRepetidas = new Set<string>();
   repetidosDetectados = false;
-  tipoGtin: string = 'gtin-13';
+  tipoGtin: string = 'GTIN-13';
   factorDeshabilitado: boolean = true; // o false, según tu lógica
   idsProductosCreados: number[] = [];
   huboError: boolean = false;
@@ -139,7 +139,7 @@ export class BloqueComponent implements OnInit {
       codigoCliente: [''],
       cliente: [''],
       ruc: [''],
-      gtinNacionalSeleccionado: ['gtin-13'],
+      gtinNacionalSeleccionado: ['GTIN-13'],
       gtinInternacionalSeleccionado: [''],
       usarSerie: [false],
       gln: [''],
@@ -334,7 +334,7 @@ export class BloqueComponent implements OnInit {
     this.textoPegado = '';
     this.textoPegadoF = '';
     this.mensaje = '';
-    this.formUV.get('gtinNacionalSeleccionado')?.setValue('gtin-13');
+    this.formUV.get('gtinNacionalSeleccionado')?.setValue('GTIN-13');
     this.botonGenerarDeshabilitado = false;
     this.botonGrabarDeshabilitado = true;
     this.botonGenerar14Deshabilitado = true;
@@ -422,7 +422,7 @@ export class BloqueComponent implements OnInit {
     const prefijo = this.prefijos.find(p => p.id_prefijos === gcpId);
     if (!prefijo) return;
 
-    const pais = gtin === 'gtin-13' ? '786' : '';
+    const pais = gtin === 'GTIN-13' ? '786' : '';
 
     if (usarSerie) {
       this.generacionCodigosService.obtenerSecuencia(prefijo.codpre, pais).subscribe({
@@ -459,31 +459,31 @@ export class BloqueComponent implements OnInit {
     }
     const checkExiste = this.formUV.get('checkExiste')?.value;
 
-    if (this.tipoGtin === 'gtin-13' && checkExiste === false && this.bandera===0) {
+    if (this.tipoGtin === 'GTIN-13' && checkExiste === false && this.bandera===0) {
       console.log('➡️ GTIN-13 y checkExiste es falso');
       this.generar13();
-    } else if (this.tipoGtin === 'gtin-13' && checkExiste === true) {
+    } else if (this.tipoGtin === 'GTIN-13' && checkExiste === true) {
       console.log('✅ GTIN-13 y checkExiste es verdadero');
       this.recupera13();
-    } else if (this.tipoGtin === 'gtin-13i' && checkExiste === false) {
+    } else if (this.tipoGtin === 'GTIN-13I' && checkExiste === false) {
       console.log('✅ GTIN-13 y checkExiste es verdadero');
       this.generar13i();
-    } else if (this.tipoGtin === 'gtin-13i' && checkExiste === true) {
+    } else if (this.tipoGtin === 'GTIN-13I' && checkExiste === true) {
       console.log('✅ GTIN-13 y checkExiste es verdadero');
       this.recuperar13i();
-    } else if (this.tipoGtin === 'gtin-12i' && checkExiste === true) {
+    } else if (this.tipoGtin === 'GTIN-12I' && checkExiste === true) {
       console.log('✅ GTIN-13 y checkExiste es verdadero');
       this.recuperar12i();
-    } else if (this.tipoGtin === 'upc' && checkExiste === false && this.bandera === 2) {
+    } else if (this.tipoGtin === 'UPC' && checkExiste === false && this.bandera === 2) {
       console.log('✅ GTIN-12 y checkExiste es verdadero');
       this.generar12();
-    } else if (this.tipoGtin === 'upc' && checkExiste === true && this.bandera === 2) {
+    } else if (this.tipoGtin === 'UPC' && checkExiste === true && this.bandera === 2) {
       console.log('✅ GTIN-12 y checkExiste es verdadero');
       this.recupera12();
-    }else if (this.tipoGtin === 'gtin-12i' && checkExiste === false) {
+    }else if (this.tipoGtin === 'GTIN-12I' && checkExiste === false) {
       console.log('✅ GTIN-12 y checkExiste es verdadero');
       this.generar12i();
-    }else if (this.tipoGtin === 'gtin-13' && checkExiste === false && this.bandera===2) {
+    }else if (this.tipoGtin === 'GTIN-13' && checkExiste === false && this.bandera===2) {
       this.mostrarAlerta('⚠️ No se puede generar este tipo de Codigo.', 'Error');
       return;
     }
@@ -554,7 +554,7 @@ export class BloqueComponent implements OnInit {
     });
   }
   recupera13() {
-    const soloCopiarGtin = this.tipoGtin === 'gtin-13' && this.formUV.get('checkExiste')?.value;
+    const soloCopiarGtin = this.tipoGtin === 'GTIN-13' && this.formUV.get('checkExiste')?.value;
     if (!soloCopiarGtin) return;
 
     const observables = [];
@@ -729,7 +729,7 @@ export class BloqueComponent implements OnInit {
   recuperar13i() {
 
 
-    const soloCopiarGtin = this.tipoGtin === 'gtin-13i' && this.formUV.get('checkExiste')?.value;
+    const soloCopiarGtin = this.tipoGtin === 'GTIN-13I' && this.formUV.get('checkExiste')?.value;
     if (!soloCopiarGtin) return;
 
     const observables = [];
@@ -832,7 +832,7 @@ export class BloqueComponent implements OnInit {
 
   }
 recuperar12i(): void {
-  const soloCopiarGtin = this.tipoGtin === 'gtin-12i' && this.formUV.get('checkExiste')?.value;
+  const soloCopiarGtin = this.tipoGtin === 'GTIN-12I' && this.formUV.get('checkExiste')?.value;
   if (!soloCopiarGtin) return;
 
   const observables = [];
@@ -949,18 +949,18 @@ recuperar12i(): void {
       let idx = 0;
 
       // 🔷 GTIN internacionales con cálculo de DV (cuando checkExiste = true)
-      if ((tipo === 'gtin-13i' || tipo === 'gtin-12i') && checkExiste === true) {
-        const longitudEsperada = tipo === 'gtin-13i' ? 12 : 11;
+      if ((tipo === 'GTIN-13I' || tipo === 'GTIN-12I') && checkExiste === true) {
+        const longitudEsperada = tipo === 'GTIN-13I' ? 12 : 11;
         const base = columnas[idx++]?.substring(0, longitudEsperada) || '';
         fila.gtinUv = base.length === longitudEsperada ? base + this.calcularDigitoVerificador(base) : '';
       }
 
       // 🔷 Casos donde se debe llenar desde la columna gtinUv
       const llenarDesdeGtin =
-        (tipo === 'gtin-13' && checkExiste === true) ||
-        (tipo === 'upc' && checkExiste === true) ||
-        (tipo === 'gtin-13i' && checkExiste === false) ||
-        (tipo === 'gtin-12i' && checkExiste === false);
+        (tipo === 'GTIN-13' && checkExiste === true) ||
+        (tipo === 'UPC' && checkExiste === true) ||
+        (tipo === 'GTIN-13I' && checkExiste === false) ||
+        (tipo === 'GTIN-12I' && checkExiste === false);
 
       if (llenarDesdeGtin) {
         fila.gtinUv = columnas[idx++] || '';

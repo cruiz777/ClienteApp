@@ -16,7 +16,8 @@ import { ResetPasswordComponent } from './components/reset-password/reset-passwo
 import { LoginFormComponent } from './components/login-form/login-form.component';
 import { NuevoSsccComponent } from './components/productos/nuevo-sscc/nuevo-sscc.component'
 import { CuponesComponent } from './components/productos/cupones/cupones.component';
-
+import { UlEditComponent } from './components/productos/ul-edit/ul-edit.component';
+import { UlComponent } from './components/productos/ul/ul.component';
 
 const routes: Routes = [
 
@@ -48,6 +49,8 @@ const routes: Routes = [
       { path: 'clienteSeleccion', component: ClienteSeleccionadoComponent },
       { path: 'uvIndividual', component: UvIndividualComponent },
       { path:'uvIndividualEdit/:codbar',component:UvIndividualEditComponent},
+      { path:'ul/:codbar',component:UlComponent},
+      { path:'ulEdit/:g14',component:UlEditComponent},
       { path: 'nuevoSscc', component: NuevoSsccComponent },
       { path: 'cupones', component: CuponesComponent },
       { path: 'nuevoGln', component: GlnComponent },

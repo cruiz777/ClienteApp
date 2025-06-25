@@ -10,7 +10,10 @@ import { Cliente } from 'src/app/interfaces/cliente';
 import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
 import { ProductoService, Producto } from 'src/app/services/producto.service';
 import { Codigos14Service } from 'src/app/services/codigos14.service';
-import { GridApi, GridReadyEvent } from 'ag-grid-community';
+import { GridApi, GridReadyEvent, GridOptions } from 'ag-grid-community';
+import { MatSnackBar } from '@angular/material/snack-bar';
+
+
 @Component({
   selector: 'app-nuevo-producto',
   standalone: true,
@@ -26,6 +29,9 @@ import { GridApi, GridReadyEvent } from 'ag-grid-community';
   styleUrl: './nuevo-producto.component.css'
 })
 export class NuevoProductoComponent implements OnInit {
+  gridOptions: GridOptions = {
+    getRowId: (params: any) => params.data.codbar
+  };
   activeTab: string = 'Listado';
   clienteSeleccionado: Cliente | null = null;
   filtroPrefijo: string = '';
@@ -36,6 +42,13 @@ export class NuevoProductoComponent implements OnInit {
   registros: any[] = [];
   registrosGtin14: any[] = [];
   gridApi!: GridApi;
+  ultimoClick = 0;
+  dobleClickDelay = 480;
+  getRowNodeId = (data: any) => data.codbar; // o data.id si prefieres
+
+
+
+
   columnDefsUV = [
     {
       headerName: '#',
@@ -89,7 +102,8 @@ export class NuevoProductoComponent implements OnInit {
     private clienteSeleccionadoService: ClienteSeleccionadoService,
     private router: Router,
     private productoService: ProductoService,
-    private codigos14Service: Codigos14Service
+    private codigos14Service: Codigos14Service,
+    private _snackBar: MatSnackBar,
   ) { }
 
   ngOnInit(): void {
@@ -116,12 +130,31 @@ export class NuevoProductoComponent implements OnInit {
     );
   }
 
+seleccionarRegistro(registro: any): void {
+  this.registroSeleccionado = registro;
+  this.codigoSeleccionado = registro.codbar;
+  this.cargarCodigos14PorGtin(registro.codbar);
 
-  seleccionarRegistro(registro: any) {
-    this.registroSeleccionado = registro;
-    this.codigoSeleccionado = registro.codbar;
-    this.cargarCodigos14PorGtin(registro.codbar);
+  // Mejor: usa el ID directamente
+  if (this.gridApi) {
+    const node = this.gridApi.getRowNode(registro.codbar); // ← gracias a getRowNodeId
+    if (node) {
+      this.gridApi.deselectAll();
+      node.setSelected(true);
+    }
   }
+}
+
+abrirVentanaUl(): void {
+  if (!this.codigoSeleccionado) {
+    this.mostrarAlerta('⚠️ Debe seleccionar un código GTIN primero.', 'Advertencia');
+    return;
+  }
+
+  // Redirige usando el codbar como parte del path
+  this.router.navigateByUrl(`/menuProductos/ul/${this.codigoSeleccionado}`);
+}
+
 
   cargarProductos(codigoCliente: number): void {
     this.productoService.getProductosPorCliente(codigoCliente).subscribe({
@@ -130,12 +163,12 @@ export class NuevoProductoComponent implements OnInit {
           id: p.IdProducto,
           empresa: p.clienteNombres || '',
           prefijo: p.codpre || '',
-          tipogtin: p.tgin || '',
+          tipogtin: p.gtin || '',
           estado: p.Activo ? 'ACTIVO' : 'INACTIVO',
           codbar: p.codbar || '',
           presentacion: p.p || '',
           descripcion: p.Despro || '',
-          fecha: this.formatearFecha(p.Fecing),
+          fecha: this.formatearFecha(p.Feccre),
           marca: p.marca || '',
           contenido: p.contenido || '',
           unidad: p.unidad || '',
@@ -157,7 +190,7 @@ export class NuevoProductoComponent implements OnInit {
           codbar: c.codbar || '',
           prefijo: c.codpre || '',
           factor: c.unidad || '',
-          presentacion: c.presentacion || '',
+          presentacion: c.presentacion || 0,
           descripcion: c.descripcion || '',
           fecha: this.formatearFecha(c.fecha),
           estado: c.activo ? 'ACTIVO' : 'INACTIVO'
@@ -187,19 +220,42 @@ export class NuevoProductoComponent implements OnInit {
     this.router.navigate(['/pages/clientes']);
   }
 
- seleccionarRegistroU(registro: any) {
-  console.log('➡️ Doble clic sobre:', registro); // ✅ Verificación
-  if (registro?.codbar) {
-    this.router.navigate(['/menuProductos/uvIndividualEdit', registro.codbar]);
-  } else {
-    console.warn('⚠️ codbar no disponible en el registro', registro);
+  seleccionarRegistroU(registro: any) {
+    console.log('➡️ Doble clic sobre:', registro); // ✅ Verificación
+    if (registro?.codbar) {
+      this.router.navigate(['/menuProductos/uvIndividualEdit', registro.codbar]);
+    } else {
+      console.log('⚠️ codbar no disponible en el registro', registro);
+    }
   }
-}
 
 
-onGridReady(params: GridReadyEvent): void {
-  this.gridApi = params.api;
-}
+  onGridReady(params: GridReadyEvent): void {
+    this.gridApi = params.api;
+  }
 
+
+
+  manejarClic(data: any): void {
+    const ahora = Date.now();
+    const diferencia = ahora - this.ultimoClick;
+
+    if (diferencia < this.dobleClickDelay) {
+      // 🚀 Doble clic
+      this.seleccionarRegistroU(data);
+    } else {
+      // 👆 Clic normal
+      this.seleccionarRegistro(data);
+    }
+
+    this.ultimoClick = ahora;
+  }
+ mostrarAlerta(mensaje: string, tipo: string) {
+    this._snackBar.open(mensaje, tipo, {
+      horizontalPosition: "end",
+      verticalPosition: "top",
+      duration: 3000
+    });
+  }
 
 }
