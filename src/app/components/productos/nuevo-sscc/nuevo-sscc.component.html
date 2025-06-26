@@ -57,6 +57,13 @@
 
     <button mat-flat-button color="warn" (click)="eliminarSeleccionados()" [disabled]="!tieneSeleccion">Eliminar</button>
   </div>
+    <div class="busqueda-sscc" style="margin-bottom: 1rem;">
+    <mat-form-field appearance="outline" style="width: 300px;">
+      <mat-label>Buscar SSCC por número</mat-label>
+      <input matInput [formControl]="buscarSsccControl" placeholder="Ej: 178670000030010337" />
+    </mat-form-field>
+    <button mat-flat-button color="primary" (click)="buscarSSCC()">Buscar</button>
+  </div>
 
   <ag-grid-angular
     style="width: 100%; height: 500px;"

@@ -129,12 +129,18 @@ export class NuevoSsccComponent implements OnInit {
       width: 120,
       cellClass: 'text-center font-mono bg-blue-50'
     },
-    { 
-      field: 'identificadorEmpaque', 
-      headerName: 'ID Empaque', 
+    {
+      field: 'identificadorEmpaque',
+      headerName: 'ID Empaque',
       filter: 'agTextColumnFilter',
       width: 140,
-      cellClass: 'text-center font-mono'
+      cellClass: 'text-center font-mono',
+      valueFormatter: (params) => {
+        const value = params.value;
+        return (value !== null && value !== undefined && !isNaN(Number(value)))
+          ? String(value)
+          : 'N/A';
+      }
     },
     { 
       field: 'sscc', 
@@ -262,6 +268,7 @@ export class NuevoSsccComponent implements OnInit {
   filtroEmpaque: string | null = null;
   filtroSerialDesde: string = '';
   filtroSerialHasta: string = '';
+  buscarSsccControl = new FormControl('');
 
   ssccsData: SsccTablaView[] = [];
   dataFiltrada = new MatTableDataSource<SsccTablaView>([]);
@@ -355,7 +362,8 @@ export class NuevoSsccComponent implements OnInit {
       this.router.navigate(['/pages/clientes']);
       return;
     }
-    
+    //Busca por filtro y muestra en la pagina encontrada
+    this.initFiltroBusquedaListener();
     this.filtroBusquedaControl.valueChanges.pipe(
       debounceTime(400),
       distinctUntilChanged()
@@ -423,7 +431,9 @@ export class NuevoSsccComponent implements OnInit {
         coincideEmpaque &&
         coincideRango;
     });
-    
+    // Reinicia a la primera página para que el resultado filtrado se muestre
+    this.pageIndex = 0;
+    this.dataFiltrada.paginator?.firstPage();
   }
   
   //Carga todos los datos desde el backend
@@ -718,6 +728,60 @@ export class NuevoSsccComponent implements OnInit {
       this.router.navigate(['/menuProductos/nuevoSscc']);
     });
   }
+  buscarSSCC(): void {
+    const numeroSscc = this.buscarSsccControl.value?.trim();
+    const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+
+    if (!numeroSscc) {
+      this.mostrarMensaje({
+        title: 'Campo vacío',
+        message: 'Por favor, ingresa un número SSCC.',
+        type: 'warning'
+      });
+      return;
+    }
+
+    this.ssccService.getByNumeroSscc(numeroSscc).subscribe({
+      next: (res) => {
+        if (res.type === 'ERROR' || !res.data) {
+          this.mostrarMensaje({
+            title: 'No encontrado',
+            message: res.message || 'El número SSCC no existe.',
+            type: 'warning'
+          });
+          return;
+        }
+
+        const item = res.data;
+        const codpre = this.prefijosDisponibles.find(p => Number(p.id) === Number(item.id_prefijo))?.codpre || 'N/A';
+
+        const nuevoRegistro: SsccTablaView = {
+          id: item.id_sscc,
+          empresa: cliente?.nomcli || 'ECOP',
+          idPrefijo: item.id_prefijo,
+          prefijo: codpre,
+          identificadorEmpaque: (item.indicador != null && !isNaN(item.indicador)) ? String(item.indicador) : 'N/A',
+          sscc: item.sscc_completo,
+          fecha: item.fecha_creacion ?? '',
+          estado: item.estado ? 'Activo' : 'Inactivo',
+          usuario: item.usuario ?? '',
+          seleccionado: false
+        };
+
+        // Mostrar solo ese SSCC en la grilla
+        this.dataFiltrada.data = [nuevoRegistro];
+        this.pageIndex = 0;
+        this.totalItems = 1;
+      },
+      error: (err) => {
+        this.mostrarMensaje({
+          title: 'Error',
+          message: err?.error?.message || 'Error al buscar el SSCC.',
+          type: 'error'
+        });
+      }
+    });
+  }
 
   // ========== REPORTES ==========
   exportar(): void {
@@ -926,6 +990,20 @@ export class NuevoSsccComponent implements OnInit {
     // Implementar exportación
     console.log('Exportando:', this.selectedRows);
   }
+  private initFiltroBusquedaListener(): void {
+    this.filtroBusquedaControl.valueChanges.pipe(
+      debounceTime(400),
+      distinctUntilChanged()
+    ).subscribe(value => {
+      this.filtroBusqueda = value ?? '';
+      this.cargarSSCCs(); // ya llama a filtrar() internamente
+
+      // Espera un poco a que los datos se filtren antes de moverte de página
+      setTimeout(() => {
+        this.goToPageForFilteredResult();
+      }, 100);
+    });
+  }
 
   private aplicarEstilosGrid(): void {
     // Aplicar estilos personalizados al grid
@@ -949,4 +1027,25 @@ export class NuevoSsccComponent implements OnInit {
   onQuickFilterChanged(event: any): void {
     (this.gridApi as any).setQuickFilter(event.target.value);
   }
+  goToPageForFilteredResult(): void {
+    const allData = this.dataFiltrada.data;
+    const filtro = this.filtroBusqueda.toLowerCase();
+
+    // Encuentra el índice del primer resultado coincidente
+    const index = allData.findIndex(item =>
+      JSON.stringify(item).toLowerCase().includes(filtro)
+    );
+
+    if (index !== -1) {
+      // Calcula a qué página pertenece ese índice
+      const pageNumber = Math.floor(index / this.pageSize);
+      this.pageIndex = pageNumber;
+
+      // Recarga los datos visibles para esa página
+      setTimeout(() => {
+        this.gridApi.paginationGoToPage(pageNumber);
+      }, 0);
+    }
+  }
+
 }

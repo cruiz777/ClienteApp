@@ -60,4 +60,9 @@ export class SsccService {
       body: payload
     });
   }
+
+  getByNumeroSscc(numeroSscc: string): Observable<ApiResponse<SsccResponse>> {
+    const params = new HttpParams().set('numeroSscc', numeroSscc);
+    return this.http.get<ApiResponse<SsccResponse>>(`${this.apiUrl}/por-numero`, { params });
+  }
 }
