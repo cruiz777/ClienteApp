@@ -15,7 +15,9 @@ export class UsuarioService {
 
   private apiUrl = `${environment.applicationUrl}/Usuarios`;
 
-  private currentUserSubject = new BehaviorSubject<LoginUsuarioResponse | null>(null);
+  private currentUserSubject = new BehaviorSubject<LoginUsuarioResponse | null>(
+    JSON.parse(localStorage.getItem('currentUser') || 'null')
+  );
   public currentUser$ = this.currentUserSubject.asObservable();
 
   constructor(private http: HttpClient) { }

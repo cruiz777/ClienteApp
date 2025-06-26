@@ -3,7 +3,7 @@ export interface SsccRequest {
   id_prefijo: number;
   id_cliente: number;
   indicador: number;
-  serial: string;
+  serial?: string;
   producto_codificado?: string;
   serie?: boolean;
   cantidad_codigos?: number;

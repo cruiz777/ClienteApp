@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { PrefijoClienteResponse} from '../interfaces/responses/PrefijoClienteResponse';
+import { SimplePrefijoResponse } from '../interfaces/responses/prefijo-simple';
 
 export { PrefijoClienteResponse };
 
@@ -27,7 +28,7 @@ export class PrefijoService {
 
   private apiBaseUrl = environment.clientsUrl;
 
-  // ✅ Inyección de HttpClient
+  // Inyección de HttpClient
   constructor(private http: HttpClient) {}
 
   guardarPrefijo(data: any): Observable<any> {
@@ -71,4 +72,9 @@ obtenerPrefijosGlnPorClienteCodigo(clientesCodigo: number): Observable<PrefijoCl
     params: { clientesCodigo }
   }).pipe(map(response => response.data as PrefijoClienteResponse[]));
 }
+obtenerPrefijosUnicosPorCliente(clientesCodigo: number): Observable<SimplePrefijoResponse[]> {
+  return this.http.get<any>(`${this.apiBaseUrl}/prefijos/unicos/${clientesCodigo}`)
+    .pipe(map(response => response.data as SimplePrefijoResponse[]));
+}
+
 }

@@ -39,6 +39,9 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { DialogProcesoComponent } from './dialog-proceso/dialog-proceso.component';
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
+import { ButtonRendererComponent } from '../utils/grid/button-renderer.component';
+import { CheckboxRendererComponents } from '../utils/grid/checkbox-renderer.component';
+import { ObservacionDialogComponent } from './nuevo-sscc/observacion-dialog.component';
 
 
 @NgModule({
@@ -48,7 +51,8 @@ import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
     BloqueComponent,
     CheckboxRendererComponent,
     GcpBrickAutocompleteEditorComponent,
-    DialogProcesoComponent
+    DialogProcesoComponent,
+    ObservacionDialogComponent
   ],
   imports: [
     CommonModule,
@@ -86,7 +90,8 @@ import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
     MatSelectModule,
     AgGridAngular,
     MatProgressBarModule,
-    MatAutocompleteModule
+    MatAutocompleteModule,
+    AgGridModule
   ],
   exports: [
     NavigationProductoComponent,

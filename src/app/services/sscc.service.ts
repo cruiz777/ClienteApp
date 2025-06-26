@@ -54,4 +54,10 @@ export class SsccService {
   generate(request: GenerateSsccRequest): Observable<ApiResponse<string[]>> {
     return this.http.post<ApiResponse<string[]>>(`${this.apiUrl}/generar`, request);
   }
+
+  deleteMultiple(payload: { ids: number[]; observacion: string; usuario: number }): Observable<ApiResponse<any>> {
+    return this.http.request<ApiResponse<any>>('DELETE', `${this.apiUrl}/eliminar`, {
+      body: payload
+    });
+  }
 }
