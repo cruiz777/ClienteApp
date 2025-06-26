@@ -276,7 +276,7 @@ textarea {
 }
 
 .campo-url {
-  flex: 0 0 200px; /* Puedes ajustar este ancho */
+  flex: 0 0 260px; /* Puedes ajustar este ancho */
   display: flex;
   flex-direction: column;
 }

@@ -114,7 +114,7 @@ export class ClienteService {
   constructor(private http: HttpClient) { }
 
   getClientes(): Observable<Cliente[]> {
-    debugger
+   
     return this.http.get<ClienteResponse>(this.apiUrl).pipe(
       map(response => response.data)
     );

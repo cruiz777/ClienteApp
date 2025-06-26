@@ -825,12 +825,12 @@
   </mat-tab-group>
 </mat-dialog-content>
 <div style="text-align: center;">
-  <button mat-button color="primary" (click)="actualizar()" format control="actualizar">
+  <button mat-button color="primary" (click)="actualizar()" format control="actualizar" [disabled]="botonActualizarDeshabilitado"  >
     <img src="assets/icons/icon-grabar.png" alt="Grabar" width="18" height="18" style="margin-right: 6px;" />
     Grabar
   </button>
 
-  <button mat-button (click)="activarModoEdicion()">
+  <button mat-button (click)="habilitarActualizar()" [disabled]="botonModificarDeshabilitado"  >
     <img src="assets/icons/icon-modificar.png" alt="Modificar" width="18" height="18" style="margin-right: 6px;" />
     Modificar
   </button>
@@ -842,5 +842,15 @@
     <img src="assets/icons/icon-cancelar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
     Salir
   </button>
+<!-- Muestra mientras se carga -->
 
+<div *ngIf="cargando" class="overlay-cargando">
+  <mat-spinner></mat-spinner>
+  <p>Espere, cargando información...</p>
+</div>
+
+<!-- Muestra el formulario solo cuando ya no está cargando -->
+<div *ngIf="!cargando">
+  <!-- tu formulario aquí -->
+</div>
 </div>

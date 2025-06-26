@@ -251,17 +251,21 @@
       <div><label>Indicador:</label><input type="text" formControlName="indicador" (keypress)="permitirSoloNumeros($event)" maxlength="1" /></div>
       <div><label>Factor:</label><input type="text" formControlName="factor" (blur)="actualizarDescripcionUL()" /></div>
 
-      <div class="col-2">
+      <div class="corto1">
         <label>GTIN® UL:</label>
         <input type="text" formControlName="gtinUl" [ngClass]="{ 'input-verde': campoGtinU }" />
         <div *ngIf="formUL.get('gtinUl')?.hasError('codbarExistente')" class="mensaje-error">
           ⚠️ El código de barras ya está registrado.
         </div>
       </div>
-
-      <div><label>Tipo GTIN®:</label><input type="text" formControlName="tipoGtin" /></div>
-      <div class="col-2"><label>Descripción:</label><textarea formControlName="descripcionu" (blur)="convertirAMayusculas('descripcionu')"></textarea></div>
-
+      <div class="fila-inline full-width">
+        <div class="corto1">
+          <label>Tipo GTIN®:</label><input type="text" formControlName="tipoGtinl" />
+        </div>
+        <div class="campo-observacion">
+          <label>Descripción:</label><textarea formControlName="descripcionu"
+            (blur)="convertirAMayusculas('descripcionu')"></textarea></div>
+      </div>
     </div>
 
     <div class="botones">

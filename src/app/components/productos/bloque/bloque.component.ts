@@ -491,7 +491,6 @@ export class BloqueComponent implements OnInit {
 
 
 
-
   }
 
   generar13() {
@@ -1862,7 +1861,7 @@ generar14(): void {
     const serie = this.formUV.get('serie')?.value || '';
     this.npais = ''; // nacional, sin prefijo país
 
-    if (this.tipoGtin !== 'upc' || this.bandera !== 2) return;
+    if (this.tipoGtin !== 'UPC' || this.bandera !== 2) return;
     if (!this.validarCeldasObligatorias()) return;
 
     const sinRepetidos = this.validarDescripcionRepetida();
@@ -1982,7 +1981,7 @@ generar14(): void {
   }
 
   recupera12() {
-    const soloCopiarGtin = this.tipoGtin === 'upc' && this.formUV.get('checkExiste')?.value;
+    const soloCopiarGtin = this.tipoGtin === 'UPC' && this.formUV.get('checkExiste')?.value;
     if (!soloCopiarGtin) return;
 
     const observables = [];
@@ -2151,5 +2150,6 @@ generar12i(): void {
     }
   });
 }
+
 
 }

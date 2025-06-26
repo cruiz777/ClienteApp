@@ -380,6 +380,8 @@ actualizarCodigo14(): void {
         this.mostrarAlerta('❌ Ocurrió un error al actualizar.', 'Error');
       }
     });
+    this.botonGenerarDeshabilitado=false;
+          this.botonGrabarDeshabilitado=true;
   });
 }
 

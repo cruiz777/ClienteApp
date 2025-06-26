@@ -60,7 +60,7 @@
         </div>
         <div class="combo-gtin serie-inline">
           <label class="checkbox-serie">
-            <input type="checkbox" formControlName="usarSerie" (change)="habilitarSerie()"  /> Serie
+            <input type="checkbox" formControlName="usarSerie" (change)="habilitarSerie()" /> Serie
           </label>
           <input type="text" formControlName="serie" [readonly]="!formUV.get('usarSerie')?.value" />
         </div>
@@ -68,7 +68,7 @@
           <label>GTIN® UV:</label>
           <input type="text" formControlName="gtinUv" [readonly]="formUV.get('gtinUv')?.disabled || false"
             [attr.maxLength]="longitudMaxima" (keypress)="permitirSoloNumeros($event)"
-            [ngClass]="{ 'input-verde': campoGtin }" readonly/>
+            [ngClass]="{ 'input-verde': campoGtin }" readonly />
 
 
           <div *ngIf="formUV.get('gtinUv')?.hasError('codbarExistente')" class="mensaje-error">⚠️ Ya registrado.</div>
@@ -87,12 +87,12 @@
 
       <div>
         <label>Marca:</label>
-        <input type="text" formControlName="marca"  (blur)="convertirAMayusculas('marca')" readonly />
+        <input type="text" formControlName="marca" (blur)="convertirAMayusculas('marca')" readonly />
       </div>
 
       <div>
         <label>Contenido:</label>
-        <input type="text" formControlName="contenido" (keypress)="validarNumeroDecimal($event)" readonly/>
+        <input type="text" formControlName="contenido" (keypress)="validarNumeroDecimal($event)" readonly />
       </div>
 
 
@@ -100,8 +100,8 @@
       <mat-form-field>
         <mat-label>Unidad</mat-label>
         <input matInput formControlName="unidadMedida" [matAutocomplete]="autoUnidad" placeholder="Seleccione Unidad" />
-        <button matSuffix mat-icon-button *ngIf="formUV.get('unidadMedida')?.value" (click)="limpiarUnidadMedida()">
-         
+        <button matSuffix mat-icon-button *ngIf="formUV.get('unidadMedida')?.value">
+
         </button>
         <mat-autocomplete #autoUnidad="matAutocomplete" [displayWith]="displayWithUnidadMedida"
           (optionSelected)="seleccionarUnidadMedida($event.option.value)">
@@ -116,8 +116,8 @@
         <mat-label>Categoría</mat-label>
         <input matInput formControlName="categoria" [matAutocomplete]="autoCategoria"
           placeholder="Seleccione Categoría" />
-        <button matSuffix mat-icon-button *ngIf="formUV.get('categoria')?.value" (click)="limpiarCategoria()">
-         
+        <button matSuffix mat-icon-button *ngIf="formUV.get('categoria')?.value">
+
         </button>
         <mat-autocomplete #autoCategoria="matAutocomplete" [displayWith]="displayWithCategoria"
           (optionSelected)="seleccionarCategoria($event.option.value)">
@@ -137,8 +137,8 @@
       <mat-form-field>
         <mat-label>Pais </mat-label>
         <input matInput formControlName="pais" [matAutocomplete]="autoPais" placeholder="Seleccione País" />
-        <button matSuffix mat-icon-button *ngIf="formUV.get('pais')?.value" (click)="formUV.get('pais')?.reset()">
-          
+        <button matSuffix mat-icon-button *ngIf="formUV.get('pais')?.value">
+
         </button>
         <mat-autocomplete #autoPais="matAutocomplete" [displayWith]="displayWithPais">
           <mat-option *ngFor="let p of paisFiltrados" [value]="p">
@@ -150,8 +150,8 @@
       <mat-form-field>
         <mat-label>Sector</mat-label>
         <input matInput formControlName="sector" [matAutocomplete]="autoSector" placeholder="Seleccione Sector" />
-        <button matSuffix mat-icon-button *ngIf="formUV.get('sector')?.value" (click)="limpiarSector()">
-         
+        <button matSuffix mat-icon-button *ngIf="formUV.get('sector')?.value">
+
         </button>
         <mat-autocomplete #autoSector="matAutocomplete" [displayWith]="displayWithSector"
           (optionSelected)="seleccionarSector($event.option.value)">
@@ -170,7 +170,8 @@
 
         <div class="campo-observacion">
           <label>Observación:</label>
-          <textarea formControlName="observacion" rows="1" (blur)="convertirAMayusculas('observacion')" readonly></textarea>
+          <textarea formControlName="observacion" rows="1" (blur)="convertirAMayusculas('observacion')"
+            readonly></textarea>
         </div>
       </div>
 
@@ -179,17 +180,17 @@
       <!-- Empresas -->
       <div class="checkbox-contenedor full-width" formGroupName="empresas">
         <label><input type="checkbox" formControlName="favorita" /> La Favorita</label>
-        <label><input type="checkbox" formControlName="mega"  /> Mega Santa María</label>
+        <label><input type="checkbox" formControlName="mega" /> Mega Santa María</label>
         <label><input type="checkbox" formControlName="amazon" /> Amazon</label>
-        <label><input type="checkbox" formControlName="rosario"  /> El Rosario</label>
+        <label><input type="checkbox" formControlName="rosario" /> El Rosario</label>
         <label><input type="checkbox" formControlName="tia" /> TIA</label>
-        <label><input type="checkbox" formControlName="google"  /> Google</label>
-        <label><input type="text" placeholder="Otros:" formControlName="otrosSolicitantes" readonly/></label>
+        <label><input type="checkbox" formControlName="google" /> Google</label>
+        <label><input type="text" placeholder="Otros:" formControlName="otrosSolicitantes" readonly /></label>
       </div>
 
     </div>
 
-    
+
   </form>
 
 
@@ -233,21 +234,28 @@
         </div>
       </div>
       <div><label>Tipo de empaque:</label><input type="text" formControlName="tipoEmpaque" /></div>
-      <div><label>Unidad:</label><input type="text" formControlName="unidad" (keypress)="permitirSoloNumeros($event)" /></div>
-      <div><label>Indicador:</label><input type="text" formControlName="indicador" (keypress)="permitirSoloNumeros($event)" maxlength="1" /></div>
-      <div><label>Factor:</label><input type="text" formControlName="factor" (blur)="actualizarDescripcionUL()" /></div>
+      <div><label>Unidad:</label><input type="text" formControlName="unidad" (keypress)="permitirSoloNumeros($event)" />
+      </div>
+      <div><label>Indicador:</label><input type="text" formControlName="indicador"
+          (keypress)="permitirSoloNumeros($event)" maxlength="1" /></div>
+      <div><label>Factor:</label><input type="text" formControlName="factor" (blur)="actualizarDescripcionUL()"
+          (keypress)="permitirSoloNumeros($event)" /></div>
 
-      <div class="corto">
+      <div class="corto1">
         <label>GTIN® UL:</label>
         <input type="text" formControlName="gtinUl" [ngClass]="{ 'input-verde': campoGtinU }" />
         <div *ngIf="formUL.get('gtinUl')?.hasError('codbarExistente')" class="mensaje-error">
           ⚠️ El código de barras ya está registrado.
         </div>
       </div>
-
-      <div><label>Tipo GTIN®:</label><input type="text" formControlName="tipoGtin" /></div>
-      <div class="col-2"><label>Descripción:</label><textarea formControlName="descripcionu" (blur)="convertirAMayusculas('descripcionu')"></textarea></div>
-
+      <div class="fila-inline full-width">
+        <div class="corto1">
+          <label>Tipo GTIN®:</label><input type="text" formControlName="tipoGtinl" />
+        </div>
+        <div class="campo-observacion">
+          <label>Descripción:</label><textarea formControlName="descripcionu"
+            (blur)="convertirAMayusculas('descripcionu')"></textarea></div>
+      </div>
     </div>
 
     <div class="botones">

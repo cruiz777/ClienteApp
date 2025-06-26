@@ -100,8 +100,9 @@ export class DialogClienteEditarComponent implements OnInit {
   nombreCiudadSeleccionada: string = '';
   esPasaporte = false;
   tipoIdentificacion: 'CEDULA' | 'RUC' | 'PASAPORTE' | null = null;
-
-
+  botonActualizarDeshabilitado = true;
+  botonModificarDeshabilitado = false;
+  cargando: boolean = true;
   zona: Zona[] = [];
   zonaCtrl = new FormControl('');
   zonaFiltrados$!: Observable<Zona[]>;
@@ -192,7 +193,7 @@ export class DialogClienteEditarComponent implements OnInit {
 
   ngOnInit(): void {
 
-
+    this.cargando = true;
     this.usuarioActual = this.usuarioService.getUsuarioActual();
     this.initFormulario();
 
@@ -204,7 +205,7 @@ export class DialogClienteEditarComponent implements OnInit {
     this.cargarPais();
     this.cargarZona();
     this.cargarEstadoEmpresa();
-
+    this.activarModoEdicion();
 
     console.log(this.idCliente);
     this.cargarHistorial(this.idCliente, 'update', 'Clientes', 1);
@@ -230,7 +231,7 @@ export class DialogClienteEditarComponent implements OnInit {
       this.paso3Form.get('zona')?.setValue(value, { emitEvent: false });
       this.paso4Form.get('zona')?.setValue(value, { emitEvent: false });
     });
-
+    this.cargando = false;
   }
 
   initFormulario(): void {
@@ -381,20 +382,26 @@ export class DialogClienteEditarComponent implements OnInit {
 
 
 
-  cargarGruposProducto(): void {
-    this.grupoProductoService.obtenerGrupos().subscribe(data => {
-      this.gruposProducto = data;
+ cargarGruposProducto(): void {
+  this.grupoProductoService.obtenerGrupos().subscribe(data => {
+    this.gruposProducto = data;
 
-      this.paso1Form.get('grupoProducto')?.valueChanges
-        .pipe(startWith(''))
-        .subscribe(valor => {
-          const filtro = typeof valor === 'string' ? valor.toLowerCase() : '';
-          this.grupoProductoFiltrados = this.gruposProducto.filter(g =>
-            (g.codigo + ' ' + g.brick + ' ' + g.desBrick).toLowerCase().includes(filtro)
-          );
-        });
-    });
-  }
+    this.paso1Form.get('grupoProducto')?.valueChanges
+      .pipe(startWith(''))
+      .subscribe(valor => {
+        const filtro = typeof valor === 'string' ? valor.toLowerCase() : '';
+        this.grupoProductoFiltrados = this.gruposProducto.filter(g =>
+          (g.codigo + ' ' + g.brick + ' ' + g.desBrick).toLowerCase().includes(filtro)
+        );
+      });
+
+    this.cargando = false; // ✅ Se coloca dentro del subscribe
+  }, error => {
+    console.error('❌ Error al cargar grupoProducto', error);
+    this.cargando = false; // en caso de error también
+  });
+}
+
 
 
   filtrarGruposProducto(valor: string | GrupoProducto): GrupoProducto[] {
@@ -764,12 +771,15 @@ export class DialogClienteEditarComponent implements OnInit {
             showCancel: false
           }
         });
+        this.botonActualizarDeshabilitado = true;
+        this.botonModificarDeshabilitado = false;
       },
       error: (err) => {
         console.error('❌ Error al actualizar cliente:', err);
         this.mostrarAlerta('No se pudo actualizar el cliente', 'Error');
       }
     });
+
 
   }
 
@@ -1042,6 +1052,7 @@ export class DialogClienteEditarComponent implements OnInit {
     });
   }
   llenarFormularioConCliente(cliente: ClienteIndividual): void {
+    debugger
     this.clienteOriginal = JSON.parse(JSON.stringify(cliente));
     // Paso 1
     this.paso1Form.patchValue({
@@ -1112,6 +1123,7 @@ export class DialogClienteEditarComponent implements OnInit {
 
 
   cargarClienteYGrupos(idCliente: number): void {
+    
     forkJoin({
       cliente: this.clienteService.getClienteById(idCliente),
       gruposProducto: this.grupoProductoService.obtenerGrupos(),
@@ -1133,6 +1145,7 @@ export class DialogClienteEditarComponent implements OnInit {
       this.setZonaPorId(this.clienteE.idZona);
       this.setCiudadPorId(this.clienteE.idCiudad);
       this.setEstadoEmpresaPorId(this.clienteE.idEstadoEmpresa); // 👈 corrijo el método si es necesario
+      
     });
 
 
@@ -1201,12 +1214,12 @@ export class DialogClienteEditarComponent implements OnInit {
     this.formCliente.enable(); // habilita todo el formulario
     this.formCliente.get('paso1.ruc')?.disable();
     this.formCliente.get('paso1.esPasaporte')?.disable();
-
+    
   }
 
   desactivarModoEdicion() {
     this.modoEdicion = false;
-    this.formCliente.disable(); // deshabilita todo el formulario
+    //this.formCliente.disable(); // deshabilita todo el formulario
   }
   cargarEstadoEmpresa(): void {
     this.estadoempresaService.obtenerEstadosEmpresa().subscribe(data => {
@@ -1665,7 +1678,7 @@ export class DialogClienteEditarComponent implements OnInit {
           pregunta6: datos.facebook === true,
           pregunta7: datos.web === true// <-- o puedes omitirlo si `web` no es binario
         };
-        debugger
+
         const paso2Patch = {
           nprefijo: !!datos.prefijo,
           compra: !!datos.guia
@@ -1850,6 +1863,10 @@ export class DialogClienteEditarComponent implements OnInit {
     });
   }
 
+  habilitarActualizar() {
+    this.botonActualizarDeshabilitado = false;
+    this.botonModificarDeshabilitado = true;
+  }
 
 
 }

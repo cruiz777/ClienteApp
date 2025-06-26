@@ -899,11 +899,13 @@ modificarProducto(): void {
           request: adicionalesActualizados
         }).subscribe({
           next: () => this.mostrarAlerta('Producto modificado correctamente', '✔'),
-          error: (err) => {
+           error: (err) => {
             console.error('❌ Error al actualizar datos adicionales:', err);
-            this.mostrarAlerta('Error al actualizar datos adicionales', 'Error');
+            this.mostrarAlerta('Error al  datos adicionales', 'Error');
           }
         });
+        this.botonGenerarDeshabilitado=false;
+          this.botonGrabarDeshabilitado=true;
       },
       error: (err) => {
         console.error('❌ Error al actualizar producto:', err);
