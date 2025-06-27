@@ -65,4 +65,95 @@ export class SsccService {
     const params = new HttpParams().set('numeroSscc', numeroSscc);
     return this.http.get<ApiResponse<SsccResponse>>(`${this.apiUrl}/por-numero`, { params });
   }
+
+  //Servicio para filtrar todos los sscc con el filtro especifico en vez de hacerlo en el front
+  getByClienteConFiltros(
+    idCliente: number,
+    filtros: {
+      page: number;
+      pageSize: number;
+      idPrefijo?: number;
+      busqueda?: string;
+      empaque?: string;
+      serialDesde?: number;
+      serialHasta?: number;
+      estado?: boolean;
+      fechaDesde?: string;
+      fechaHasta?: string;
+    }
+  ): Observable<ApiResponse<PaginationResponse<SsccResponse>>> {
+    let params = new HttpParams()
+      .set('page', filtros.page.toString())
+      .set('pageSize', filtros.pageSize.toString());
+
+    if (filtros.idPrefijo !== undefined) {
+      params = params.set('idPrefijo', filtros.idPrefijo.toString());
+    }
+
+    if (filtros.busqueda) {
+      params = params.set('busqueda', filtros.busqueda);
+    }
+
+    if (filtros.empaque) {
+      params = params.set('empaque', filtros.empaque);
+    }
+
+    if (filtros.serialDesde !== undefined) {
+      params = params.set('serialDesde', filtros.serialDesde.toString());
+    }
+
+    if (filtros.serialHasta !== undefined) {
+      params = params.set('serialHasta', filtros.serialHasta.toString());
+    }
+
+    if (filtros.estado !== undefined) {
+      params = params.set('estado', filtros.estado.toString());
+    }
+
+    if (filtros.fechaDesde) {
+      params = params.set('fechaDesde', filtros.fechaDesde);
+    }
+
+    if (filtros.fechaHasta) {
+      params = params.set('fechaHasta', filtros.fechaHasta);
+    }
+
+    return this.http.get<ApiResponse<PaginationResponse<SsccResponse>>>(
+      `${this.apiUrl}/cliente/${idCliente}/filtros`,
+      { params }
+    );
+  }
+
+  getReporte(filtros: {
+    idPrefijo?: number;
+    estado?: boolean;
+    operadorFecha?: string;
+    fechaDesde?: string;
+    fechaHasta?: string;
+  }): Observable<ApiResponse<SsccResponse[]>> {
+    let params = new HttpParams();
+
+    if (filtros.idPrefijo !== undefined) {
+      params = params.set('idPrefijo', filtros.idPrefijo.toString());
+    }
+
+    if (filtros.estado !== undefined) {
+      params = params.set('estado', filtros.estado.toString());
+    }
+
+    if (filtros.operadorFecha) {
+      params = params.set('operadorFecha', filtros.operadorFecha);
+    }
+
+    if (filtros.fechaDesde) {
+      params = params.set('fechaDesde', filtros.fechaDesde);
+    }
+
+    if (filtros.fechaHasta) {
+      params = params.set('fechaHasta', filtros.fechaHasta);
+    }
+
+    return this.http.get<ApiResponse<SsccResponse[]>>(`${this.apiUrl}/reporte`, { params });
+  }
+
 }

@@ -26,6 +26,7 @@
     "ag-grid-angular": "^33.3.2",
     "ag-grid-community": "^33.3.2",
     "chart.js": "^3.9.1",
+    "date-fns": "^4.1.0",
     "exceljs": "^4.4.0",
     "handsontable": "^15.3.0",
     "html2pdf.js": "^0.10.3",

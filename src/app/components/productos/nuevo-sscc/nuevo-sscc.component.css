@@ -234,3 +234,19 @@ mat-form-field {
 .cdk-overlay-pane {
   pointer-events: auto;
 }
+.boton-azul-oscuro {
+  background-color: #002c6c !important;
+  color: white;
+}
+
+.boton-azul-oscuro:hover {
+  background-color: #001f4d !important;
+}
+
+.boton-azul-oscuro:disabled,
+.boton-azul-oscuro[disabled] {
+  background-color: #a0a0a0 !important; /* o puedes usar #d3d3d3 */
+  color: #fff !important;
+  opacity: 0.6;
+}
+

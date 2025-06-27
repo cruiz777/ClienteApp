@@ -16,28 +16,24 @@
     </mat-form-field> -->
 
     <mat-form-field appearance="outline">
-      <mat-label>Buscar</mat-label>
-      <input matInput [(ngModel)]="filtroBusqueda" (input)="filtrar()">
+      <mat-label>Buscar en registros actuales</mat-label>
+      <input matInput [(ngModel)]="filtroBusqueda" (input)="cargarSSCCsActual()">
     </mat-form-field>
     
-    <mat-form-field appearance="fill">
+    <mat-form-field appearance="outline">
       <mat-label>Prefijo</mat-label>
-      <mat-select
-          [(ngModel)]="filtroPrefijo"
-          name="filtroPrefijo"
-          (selectionChange)="filtrar()"
-        >
-          <mat-option [value]="null">Todos</mat-option>
-          <mat-option *ngFor="let p of prefijosDisponibles" [value]="p.id">
-            {{ p.codpre }}
-          </mat-option>
+      <mat-select [(ngModel)]="filtroPrefijo">
+        <mat-option *ngFor="let p of prefijosDisponibles" [value]="p.id">
+          {{ p.codpre }}
+        </mat-option>
+        <mat-option [value]="null">Todos</mat-option>
       </mat-select>
     </mat-form-field>
 
     <!-- Filtro por ID Empaque -->
     <mat-form-field appearance="fill">
       <mat-label>Empaque</mat-label>
-      <mat-select [(ngModel)]="filtroEmpaque" (selectionChange)="filtrar()">
+      <mat-select [(ngModel)]="filtroEmpaque" (input)="cargarSSCCsActual()">
         <mat-option value="">Todos</mat-option>
         <mat-option *ngFor="let e of empaques" [value]="e">{{ e }}</mat-option>
       </mat-select>
@@ -46,23 +42,25 @@
     <!-- Filtro por Serial Desde -->
     <mat-form-field appearance="outline">
       <mat-label>Desde Serial</mat-label>
-      <input matInput [(ngModel)]="filtroSerialDesde" (input)="filtrar()" placeholder="Ej: 2786...">
+      <input matInput [(ngModel)]="filtroSerialDesde" (input)="cargarSSCCsActual()" placeholder="Ej: 2786...">
     </mat-form-field>
 
     <!-- Filtro por Serial Hasta -->
     <mat-form-field appearance="outline">
       <mat-label>Hasta Serial</mat-label>
-      <input matInput [(ngModel)]="filtroSerialHasta" (input)="filtrar()" placeholder="Ej: 2786...">
+      <input matInput [(ngModel)]="filtroSerialHasta" (input)="cargarSSCCsActual()" placeholder="Ej: 2786...">
     </mat-form-field>
-
+    <button mat-raised-button color="primary" (click)="buscarConFiltros()" class="boton-azul-oscuro" [disabled]="!puedeBuscar">Buscar</button>
     <button mat-flat-button color="warn" (click)="eliminarSeleccionados()" [disabled]="!tieneSeleccion">Eliminar</button>
+    
+
   </div>
     <div class="busqueda-sscc" style="margin-bottom: 1rem;">
     <mat-form-field appearance="outline" style="width: 300px;">
       <mat-label>Buscar SSCC por número</mat-label>
       <input matInput [formControl]="buscarSsccControl" placeholder="Ej: 178670000030010337" />
     </mat-form-field>
-    <button mat-flat-button color="primary" (click)="buscarSSCC()">Buscar</button>
+    <button mat-flat-button color="primary" class="boton-azul-oscuro" (click)="buscarSSCC()">Buscar</button>
   </div>
 
   <ag-grid-angular
@@ -200,7 +198,7 @@
   </div>
 </ng-container>
 <!-- TAB REPORTES -->
- <ng-container *ngIf="activeTab === 'Reportes'">
+ <ng-container *ngIf="activeTab === 'Reportes' && formReporte?.get('operadorFecha')">
   <div class="contenedor">
   <h2 class="titulo">Reportes</h2>
 
@@ -242,13 +240,17 @@
 
     <div class="fila operadores">
       <label style="margin-right: 1rem;">Operador de fecha:</label>
-      <mat-radio-group formControlName="operadorFecha" class="grupo-operadores" aria-label="Selecciona un operador de fecha">
-        <mat-radio-button value="igual">=</mat-radio-button>
-        <mat-radio-button value="menor"><=</mat-radio-button>
-        <mat-radio-button value="mayor">></mat-radio-button>
-        <mat-radio-button value="entre">Entre</mat-radio-button>
-      </mat-radio-group>
+      <mat-form-field appearance="fill" style="min-width: 150px;">
+        <mat-label>Operador de fecha</mat-label>
+        <mat-select formControlName="operadorFecha">
+          <mat-option value="=">=</mat-option>
+          <mat-option value="<=">&le;</mat-option>
+          <mat-option value=">">&gt;</mat-option>
+          <mat-option value="entre">Entre</mat-option>
+        </mat-select>
+      </mat-form-field>
     </div>
+
 
     <div class="botones">
       <button mat-stroked-button color="primary" (click)="nuevo()">Nuevo</button>

@@ -42,6 +42,9 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatRadioButton } from '@angular/material/radio';
 import { MomentDateAdapter } from '@angular/material-moment-adapter';
 import { MY_DATE_FORMATS } from '../../seguridades/usuarios/usuarios-form/usuarios-form.component';
+import { Cliente } from 'src/app/interfaces/cliente';
+import { MatTooltip } from '@angular/material/tooltip';
+import { isValid, parse, setHours, setMilliseconds, setMinutes, setSeconds } from 'date-fns';
 
 interface SsccTablaView { //Interfaz auxiliar para poder mapear solamente lo que se requiere
   id: number;
@@ -52,7 +55,7 @@ interface SsccTablaView { //Interfaz auxiliar para poder mapear solamente lo que
   sscc: string;
   fecha: string;
   estado: string;
-  usuario: string;
+  usuario?: string;
   seleccionado: boolean;
 }
 
@@ -81,7 +84,8 @@ interface SsccTablaView { //Interfaz auxiliar para poder mapear solamente lo que
     MatPaginatorModule,
     AgGridModule,
     ButtonRendererComponent,
-    CheckboxRendererComponents
+    CheckboxRendererComponents,
+    MatTooltip
   ],
   providers: [
     { provide: DateAdapter, useClass: MomentDateAdapter, deps: [MAT_DATE_LOCALE] },
@@ -263,12 +267,13 @@ export class NuevoSsccComponent implements OnInit {
   // dataFiltrada = new MatTableDataSource(this.registros);
   prefijosDisponibles: { id: number, codpre: string }[] = [];
   filtroTexto = '';
-  filtroPrefijo: number | null = null;
+ filtroPrefijo: number | null = null;
   filtroBusqueda = '';
   filtroEmpaque: string | null = null;
   filtroSerialDesde: string = '';
   filtroSerialHasta: string = '';
   buscarSsccControl = new FormControl('');
+  clienteSeleccionadoObj: Cliente | null = null;
 
   ssccsData: SsccTablaView[] = [];
   dataFiltrada = new MatTableDataSource<SsccTablaView>([]);
@@ -290,9 +295,9 @@ export class NuevoSsccComponent implements OnInit {
   estados = ['Activo', 'Inactivo'];
   operadores = [
     { simbolo: '=', control: 'opIgual' },
-    { simbolo: '=<', control: 'opMenorIgual' },
+    { simbolo: '<=', control: 'opMenorIgual' },
     { simbolo: '>', control: 'opMayor' },
-    { simbolo: 'Entre', control: 'opEntre' }
+    { simbolo: 'entre', control: 'opEntre' }
   ];
 
   constructor(
@@ -333,7 +338,7 @@ export class NuevoSsccComponent implements OnInit {
       estado: [''],
       desde: [null],
       hasta: [null],
-      operadorFecha: ['entre'] // valores: 'igual', 'menor', 'mayor', 'entre'
+      operadorFecha: ['='] // valores: 'igual', 'menor', 'mayor', 'entre'
     });
 
     // RESPONSIVE
@@ -351,8 +356,11 @@ export class NuevoSsccComponent implements OnInit {
       
     });
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
-     console.warn('Usuario no encontrado');
-
+    console.warn('Usuario no encontrado');
+    this.clienteSeleccionadoObj = cliente;
+    this.formReporte.get('operadorFecha')?.valueChanges.subscribe(valor => {
+      console.log('📻 operadorFecha cambiado a:', valor);
+    });
     if (!cliente) {
       this.mostrarMensaje({
         title: 'Cliente no seleccionado',
@@ -362,6 +370,7 @@ export class NuevoSsccComponent implements OnInit {
       this.router.navigate(['/pages/clientes']);
       return;
     }
+    this.cargarPrefijosPorCliente();
     //Busca por filtro y muestra en la pagina encontrada
     this.initFiltroBusquedaListener();
     this.filtroBusquedaControl.valueChanges.pipe(
@@ -369,7 +378,7 @@ export class NuevoSsccComponent implements OnInit {
       distinctUntilChanged()
     ).subscribe(value => {
       this.filtroBusqueda = value ?? '';
-      this.cargarSSCCs();
+      this.cargarSSCCsActual();
     });
 
     // Setea campos cliente en el formulario de generación
@@ -395,115 +404,66 @@ export class NuevoSsccComponent implements OnInit {
     this.formSSCC.get('inicio')?.disable();
     this.formSSCC.get('fin')?.disable();
     // Cargar SSCCs y prefijos de ese cliente
-    this.cargarSSCCs();
+    this.cargarSSCCsActual();
   }
 
   // ========== LISTADO ==========
-  filtrar(): void {
-    this.dataFiltrada.data = this.ssccsData.filter(r => {
-      const coincideTexto = this.filtroTexto
-        ? JSON.stringify(r).toLowerCase().includes(this.filtroTexto.toLowerCase())
-        : true;
 
-      const coincidePrefijo = this.filtroPrefijo !== null
-        ? Number(r.idPrefijo) === Number(this.filtroPrefijo)
-        : true;
-
-      const coincideBusqueda = this.filtroBusqueda
-        ? JSON.stringify(r).toLowerCase().includes(this.filtroBusqueda.toLowerCase())
-        : true;
-
-      const coincideEmpaque = this.filtroEmpaque
-        ? String(r.identificadorEmpaque) === this.filtroEmpaque
-        : true;
-
-      const serial = extraerSerialDinamico(r.sscc, r.prefijo);
-      const desde = this.filtroSerialDesde ? parseInt(this.filtroSerialDesde) : null;
-      const hasta = this.filtroSerialHasta ? parseInt(this.filtroSerialHasta) : null;
-
-      const coincideRango = (desde !== null && hasta !== null && serial !== null)
-        ? serial >= desde && serial <= hasta
-        : true;
-
-      return coincideTexto &&
-        coincidePrefijo &&
-        coincideBusqueda &&
-        coincideEmpaque &&
-        coincideRango;
-    });
-    // Reinicia a la primera página para que el resultado filtrado se muestre
-    this.pageIndex = 0;
-    this.dataFiltrada.paginator?.firstPage();
-  }
-  
   //Carga todos los datos desde el backend
-  cargarSSCCs(page: number = 0, size: number = 500): void {
+  cargarSSCCs(page: number = 0, size: number = 10): void {
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
     if (!cliente) return;
-    // Generar clave de caché con estado actual de filtros
-    const key = this.getCacheKey(page, size, this.filtroPrefijo, this.filtroBusqueda);
+    console.log('📌 Prefijos disponibles:', this.prefijosDisponibles);
+    console.log('🎯 Valor seleccionado en filtroPrefijo:', this.filtroPrefijo);
 
-    // Si ya existe en cache, lo usamos directamente
-    if (this.ssccCache.has(key)) {
-      console.log('✅ Usando datos de caché para:', key);
-      this.ssccsData = this.ssccCache.get(key)!;
-      this.pageIndex = page;
-      this.pageSize = size;
-      this.filtrar(); // si quieres aplicar algún filtro adicional visual
-      return;
-    }
+    const idPrefijoSeleccionado = this.filtroPrefijo;
 
-    // Paso 1: cargar prefijos
-    this.prefijoService.obtenerPrefijosUnicosPorCliente(cliente.clientes_codigo).subscribe({
-      next: (prefijos) => {
-        this.prefijosDisponibles = prefijos.map(p => ({
-          id: p.idPrefijos,
-          codpre: p.codpre
-        }));
+    const filtros = {
+      page: page + 1,
+      pageSize: size,
+      idPrefijo: idPrefijoSeleccionado ?? undefined,
+      busqueda: this.filtroBusqueda?.trim() || undefined,
+      empaque: this.filtroEmpaque || undefined,
+      serialDesde: this.filtroSerialDesde ? parseInt(this.filtroSerialDesde) : undefined,
+      serialHasta: this.filtroSerialHasta ? parseInt(this.filtroSerialHasta) : undefined,
+      estado: this.formReporte.value.estado || undefined,
+      fechaDesde: this.formReporte.value.desde || undefined,
+      fechaHasta: this.formReporte.value.hasta || undefined
+    };
 
-        // Si no se ha seleccionado prefijo aún, seleccionamos el primero por defecto
-        // if (!this.filtroPrefijo && this.prefijosDisponibles.length > 0) {
-        //   this.filtroPrefijo = this.prefijosDisponibles[0].id;
-        // }
-        this.filtroPrefijo = null;
+    console.log('🔍 Filtros enviados:', filtros);
+    this.ssccService.getByClienteConFiltros(cliente.clientes_codigo, filtros).subscribe({
+      next: (response) => {
+        const mappedData = response.data.items.map((item: any) => {
+   
+          const codpre = this.prefijosDisponibles.find(p => p.id === item.id_prefijo)?.codpre || 'N/A';
 
-        // Paso 2: cargar SSCCs desde backend
-        this.ssccService.getByCliente(cliente.clientes_codigo, page + 1, size).subscribe({
-          next: (response) => {
-            const mappedData = response.data.items.map((item: any) => {
-              const codpre = this.prefijosDisponibles.find(p => Number(p.id) === Number(item.id_prefijo))?.codpre || 'N/A';
-
-              return {
-                id: item.id_sscc,
-                empresa: cliente?.nomcli || 'ECOP',
-                idPrefijo: item.id_prefijo,
-                prefijo: codpre,
-                identificadorEmpaque: item.indicador,
-                sscc: item.sscc_completo,
-                fecha: item.fecha_creacion,
-                estado: item.estado ? 'Activo' : 'Inactivo',
-                usuario: item.usuario,
-                seleccionado: false
-              };
-            });
-
-            // Guardar en caché
-            this.ssccCache.set(key, mappedData);
-            console.log('📦 Datos guardados en caché para:', key);
-
-            // Actualizar la tabla
-            this.ssccsData = mappedData;
-            this.totalItems = response.data.totalItems;
-            this.pageIndex = response.data.page - 1;
-            this.pageSize = response.data.pageSize;
-            this.filtrar();
-          },
-          error: (err) => console.error('❌ Error al cargar SSCCs:', err)
+          return {
+            id: item.id_sscc,
+            idPrefijo: item.id_prefijo,
+            empresa: cliente?.nomcli || 'ECOP',
+            prefijo: codpre,
+            identificadorEmpaque: item.indicador,
+            sscc: item.sscc_completo,
+            fecha: item.fecha_creacion,
+            estado: item.estado ? 'Activo' : 'Inactivo',
+            usuario: item.usuario,
+            seleccionado: false
+          };
         });
+
+        this.ssccsData = mappedData;
+        this.dataFiltrada.data = mappedData;
+
+        this.totalItems = response.data.totalItems;
+        this.pageIndex = response.data.page - 1;
+        this.pageSize = response.data.pageSize;
       },
-      error: (err) => console.error('❌ Error al cargar prefijos:', err)
+      error: (err) => console.error('❌ Error al cargar SSCCs:', err)
     });
   }
+
+
 
   cargarPrefijosPorCliente(): void {
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
@@ -529,15 +489,21 @@ export class NuevoSsccComponent implements OnInit {
     });
 
   }
-
+  private operadorFechaSuscrito = false;
   cambiarTab(tab: string): void {
-    this.activeTab = tab;
-    // Resetear selección del grid
-    this.selectedRows = [];
+      this.activeTab = tab;
+      // Resetear selección del grid
+      this.selectedRows = [];
 
-    // Se limpia el grid completamente
-    if (this.gridApi) {
-      this.gridApi.deselectAll();
+      // Se limpia el grid completamente
+      if (this.gridApi) {
+        this.gridApi.deselectAll();
+      }
+      if (tab === 'Reportes' && !this.operadorFechaSuscrito) {
+      this.formReporte.get('operadorFecha')?.valueChanges.subscribe(valor => {
+        console.log('📻 operadorFecha cambiado a:', valor);
+      });
+      this.operadorFechaSuscrito = true;
     }
   }
 
@@ -728,6 +694,8 @@ export class NuevoSsccComponent implements OnInit {
       this.router.navigate(['/menuProductos/nuevoSscc']);
     });
   }
+
+  //====== BUSQUEDAS AL BACKEND ============//
   buscarSSCC(): void {
     const numeroSscc = this.buscarSsccControl.value?.trim();
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
@@ -783,69 +751,122 @@ export class NuevoSsccComponent implements OnInit {
     });
   }
 
+  buscarConFiltros(): void {
+    this.pageIndex = 0;
+    this.cargarSSCCs(0, this.pageSize);
+  }
+
+
   // ========== REPORTES ==========
   exportar(): void {
     const filtros = this.formReporte.value;
     console.log('Exportando con filtros:', filtros);
   }
+
   reportes(formato: 'excel' | 'pdf' = 'excel'): void {
     const { prefijo, estado, desde, hasta, operadorFecha } = this.formReporte.value;
 
-    const datosFiltrados = this.ssccsData.filter(item => {
-      const fechaItem = new Date(item.fecha);
+    const parseFecha = (valor: any, finDelDia: boolean = false): Date | undefined => {
+      if (!valor) return undefined;
 
-      const cumplePrefijo = prefijo ? item.idPrefijo == prefijo : true;
-      const cumpleEstado = estado ? item.estado === estado : true;
+      let fecha: Date | undefined;
 
-      const fechaDesde = desde ? new Date(desde) : null;
-      const fechaHasta = hasta ? new Date(hasta) : null;
-
-      let cumpleFecha = true;
-      switch (operadorFecha) {
-        case 'igual':
-          cumpleFecha = fechaDesde ? fechaItem.toDateString() === fechaDesde.toDateString() : true;
-          break;
-        case 'menor':
-          cumpleFecha = fechaDesde ? fechaItem <= fechaDesde : true;
-          break;
-        case 'mayor':
-          cumpleFecha = fechaDesde ? fechaItem > fechaDesde : true;
-          break;
-        case 'entre':
-          cumpleFecha = (fechaDesde && fechaHasta) ? fechaItem >= fechaDesde && fechaItem <= fechaHasta : true;
-          break;
+      if (valor instanceof Date && isValid(valor)) {
+        fecha = valor;
+      } else if (typeof valor === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(valor)) {
+        // Parse formato dd/MM/yyyy
+        fecha = parse(valor, 'dd/MM/yyyy', new Date());
+      } else {
+        const temp = new Date(valor);
+        if (isValid(temp)) fecha = temp;
       }
 
-      return cumplePrefijo && cumpleEstado && cumpleFecha;
-    });
+      if (fecha && isValid(fecha)) {
+        fecha = setHours(fecha, finDelDia ? 23 : 0);
+        fecha = setMinutes(fecha, finDelDia ? 59 : 0);
+        fecha = setSeconds(fecha, finDelDia ? 59 : 0);
+        fecha = setMilliseconds(fecha, finDelDia ? 999 : 0);
+        return fecha;
+      }
 
-    if (datosFiltrados.length === 0) {
-      this.mostrarMensaje({
-        title: 'Sin resultados',
-        message: 'No se encontraron registros que coincidan con los filtros.',
-        type: 'warning'
-      });
-      return;
-    }
-
-    const headers = ['Empresa', 'Prefijo', 'ID Empaque', 'SSCC', 'Fecha', 'Estado', 'Usuario'];
-    const columns: (keyof SsccTablaView)[] = ['empresa', 'prefijo', 'identificadorEmpaque', 'sscc', 'fecha', 'estado', 'usuario'];
-
-    const options = {
-      data: datosFiltrados,
-      columns,
-      headers,
-      filename: 'reporte_sscc',
-      title: 'Reporte de SSCC',
-      logoUrl: '/assets/logo.png'
+      return undefined;
     };
 
-    if (formato === 'excel') {
-      this.exportService.exportarExcel(options);
-    } else {
-      this.exportService.exportarPDF(options);
-    }
+    const fechaDesde = parseFecha(desde);
+    const fechaHasta = parseFecha(hasta, true);
+
+    const filtros = {
+      idPrefijo: prefijo ? Number(prefijo) : undefined,
+      estado: estado === 'Activo' ? true : estado === 'Inactivo' ? false : undefined,
+      operadorFecha: operadorFecha || undefined,
+      fechaDesde: fechaDesde?.toISOString(),
+      fechaHasta: fechaHasta?.toISOString()
+    };
+
+    console.log('Filtros enviados:', filtros);
+
+    this.ssccService.getReporte(filtros).subscribe({
+      next: (res) => {
+        const cliente = this.clienteSeleccionadoObj;
+
+        if (!res.data || res.data.length === 0) {
+          this.mostrarMensaje({
+            title: 'Sin resultados',
+            message: 'No se encontraron registros que coincidan con los filtros.',
+            type: 'warning'
+          });
+          return;
+        }
+
+        const data = res.data.map((item): SsccTablaView => {
+          const codpre = this.prefijosDisponibles.find(p => p.id === item.id_prefijo)?.codpre || 'N/A';
+
+          return {
+            id: item.id_sscc,
+            idPrefijo: item.id_prefijo,
+            empresa: cliente?.nomcli || 'ECOP',
+            prefijo: codpre,
+            identificadorEmpaque: item.indicador?.toString() ?? '',
+            sscc: item.sscc_completo,
+            fecha: item.fecha_creacion ?? '',
+            estado: item.estado ? 'Activo' : 'Inactivo',
+            usuario: item.usuario,
+            seleccionado: false
+          };
+        });
+
+        const headers = ['ID Empaque', 'SSCC', 'Fecha'];
+        const columns: (keyof SsccTablaView)[] = ['identificadorEmpaque', 'sscc', 'fecha'];
+
+        const options = {
+          data,
+          columns,
+          headers,
+          filename: 'reporte_sscc',
+          title: 'Reporte de SSCC',
+          logoUrl: '/assets/logo.png'
+        };
+        console.log('Exportando con headers:', headers);
+        console.log('Exportando con columns:', columns);
+        console.log('Primer objeto en data:', data[0]);
+
+        if (formato === 'excel') {
+          this.exportService.exportarExcel(options);
+        } else {
+          this.exportService.exportarPDF(options);
+        }
+      },
+      error: (err) => {
+        this.mostrarMensaje({
+          title: 'Error al generar reporte',
+          message: err?.error?.message || 'Ocurrió un error al generar el reporte.',
+          type: 'error'
+        });
+        console.error('❌ Error en reporte:', err);
+      }
+    });
   }
+
 
   //Paginador
   onPageChange(event: any): void {
@@ -950,7 +971,7 @@ export class NuevoSsccComponent implements OnInit {
             message: response.message || 'Registros eliminados correctamente.',
             type: 'success'
           });
-          this.cargarSSCCs();
+          this.cargarSSCCsActual();
           this.selectedRows = [];
           this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
             this.router.navigate(['/menuProductos/nuevoSscc']);
@@ -990,20 +1011,19 @@ export class NuevoSsccComponent implements OnInit {
     // Implementar exportación
     console.log('Exportando:', this.selectedRows);
   }
+
+  //============METODOS AUXILIARES ================
+
   private initFiltroBusquedaListener(): void {
     this.filtroBusquedaControl.valueChanges.pipe(
       debounceTime(400),
       distinctUntilChanged()
     ).subscribe(value => {
       this.filtroBusqueda = value ?? '';
-      this.cargarSSCCs(); // ya llama a filtrar() internamente
-
-      // Espera un poco a que los datos se filtren antes de moverte de página
-      setTimeout(() => {
-        this.goToPageForFilteredResult();
-      }, 100);
+      this.cargarSSCCsActual(); // ahora filtra directamente desde el backend
     });
   }
+
 
   private aplicarEstilosGrid(): void {
     // Aplicar estilos personalizados al grid
@@ -1012,6 +1032,29 @@ export class NuevoSsccComponent implements OnInit {
       gridElement.classList.add('custom-grid-styles');
     }
   }
+  //Método auxiliar para poder parametrizar una sola vez el metodo cargarSSCCs
+  public cargarSSCCsActual(): void {
+    this.pageIndex = 0;
+    this.cargarSSCCs(0, this.pageSize);
+  }
+
+
+  clienteSeleccionado(cliente: Cliente): void {
+    this.clienteSeleccionadoObj = cliente;
+    this.ssccsData = [];
+    this.cargarSSCCsActual();
+  }
+
+  get puedeBuscar(): boolean {
+    return !!(
+      this.filtroBusqueda?.trim() ||
+      this.filtroPrefijo !== null ||
+      this.filtroEmpaque ||
+      this.filtroSerialDesde?.trim() ||
+      this.filtroSerialHasta?.trim()
+    );
+  }
+
   get tieneSeleccion(): boolean {
     return this.selectedRows.length > 0;
   }
@@ -1026,26 +1069,6 @@ export class NuevoSsccComponent implements OnInit {
   }
   onQuickFilterChanged(event: any): void {
     (this.gridApi as any).setQuickFilter(event.target.value);
-  }
-  goToPageForFilteredResult(): void {
-    const allData = this.dataFiltrada.data;
-    const filtro = this.filtroBusqueda.toLowerCase();
-
-    // Encuentra el índice del primer resultado coincidente
-    const index = allData.findIndex(item =>
-      JSON.stringify(item).toLowerCase().includes(filtro)
-    );
-
-    if (index !== -1) {
-      // Calcula a qué página pertenece ese índice
-      const pageNumber = Math.floor(index / this.pageSize);
-      this.pageIndex = pageNumber;
-
-      // Recarga los datos visibles para esa página
-      setTimeout(() => {
-        this.gridApi.paginationGoToPage(pageNumber);
-      }, 0);
-    }
   }
 
 }
