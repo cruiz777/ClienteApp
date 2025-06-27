@@ -17,28 +17,42 @@ export interface Umedida {
 export class UmedidaService {
   private apiBaseUrl = environment.invoicesUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   obtenerUnidades(): Observable<Umedida[]> {
-    
+
     return this.http.get<{ data: Umedida[] }>(`${this.apiBaseUrl}/UnidadMedida`).pipe(
       map(response => response.data)
     );
   }
 
   obtenerUnidadPorNombre(nombre: string): Observable<Umedida> {
-  return this.http
-    .get<{ data: Umedida | null }>(`${this.apiBaseUrl}/UnidadMedida/por-nombre`, {
-      params: { nombre }
-    })
-    .pipe(
-      map(response => {
-        if (!response.data) {
-          throw new Error(`Unidad no encontrada: ${nombre}`);
-        }
-        return response.data;
+    return this.http
+      .get<{ data: Umedida | null }>(`${this.apiBaseUrl}/UnidadMedida/por-nombre`, {
+        params: { nombre }
       })
-    );
-}
+      .pipe(
+        map(response => {
+          if (!response.data) {
+            throw new Error(`Unidad no encontrada: ${nombre}`);
+          }
+          return response.data;
+        })
+      );
+  }
+  obtenerUnidadPorUnidad(unidad: string): Observable<Umedida> {
+    return this.http
+      .get<{ data: Umedida | null }>(`${this.apiBaseUrl}/UnidadMedida/por-unidad`, {
+        params: { unidad }
+      })
+      .pipe(
+        map(response => {
+          if (!response.data) {
+            throw new Error(`Unidad no encontrada: ${unidad}`);
+          }
+          return response.data;
+        })
+      );
+  }
 
 }

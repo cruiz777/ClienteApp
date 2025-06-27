@@ -2,7 +2,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Inject } from '@angular/core';
-
+import { JsonEmpresaService } from 'src/app/services/json-empresa.service';
 // Angular Forms
 import {
   FormBuilder,
@@ -138,7 +138,8 @@ export class DialogClienteComponent implements OnInit {
     private paisService: PaisService,
     private clienteObservacionService: ClienteObservacionService,
     private clienteDatosAdicionalesService: ClienteDatosAdicionalesService,
-    private clienteContactoService:ClienteContactoService
+    private clienteContactoService:ClienteContactoService,
+    private jsonEmpresaService:JsonEmpresaService
   ) { }
 
   ngOnInit(): void {
@@ -680,6 +681,7 @@ export class DialogClienteComponent implements OnInit {
               this.guardarTodasLasObservaciones();
               this.guardarDatosAdicionales();
               this.guardarContactosCliente();
+              
               stepper.selectedIndex = 0;
             }
           },
@@ -1306,20 +1308,20 @@ export class DialogClienteComponent implements OnInit {
           glnLatitud: '0.0000',
           glnLongitud: '0.0000',
           idPais: 1,
-          direccion: 'Calle Ejemplo 123',
-          telefono: '12345678',
+          direccion: '',
+          telefono: '',
           fax: '',
-          contacto: 'Juan Pérez',
-          contactoTel: '12345678',
-          email: 'correo@ejemplo.com',
-          web: 'http://example.com',
+          contacto: '',
+          contactoTel: '',
+          email: '',
+          web: '',
           fda: '',
           europa: '',
           glnGlobal: '',
           glnFecha: '2025-04-29',
           idCiudad: 1,
-          glnCodigopostal: '170515',
-          glnCelular: '0999999999',
+          glnCodigopostal: '',
+          glnCelular: '',
           glnContacto2: '',
           glnEmail2: '',
           glnTel2: '',
@@ -1327,8 +1329,8 @@ export class DialogClienteComponent implements OnInit {
           glnEmail3: '',
           glnTel3: '',
           glnFacturar: 'S',
-          glnCodpro: 'PROD01',
-          glnNombre: 'Sucursal Principal',
+          glnCodpro: '',
+          glnNombre: '',
           glnOtro1: '',
           glnOtro2: '',
           glnObs1: '',
@@ -1337,7 +1339,7 @@ export class DialogClienteComponent implements OnInit {
           glnPrefijogs1: gln,
           glnGlnp: '',
           glnGlne: '',
-          nombreLocalizacion: 'Matriz',
+          nombreLocalizacion: '',
           observ: '',
           expprod: 1,
           gs1ec: 1,
@@ -1360,6 +1362,12 @@ export class DialogClienteComponent implements OnInit {
         this.glnService.insertarGln({ request: nuevoGln }).subscribe({
           next: () => {
             console.log('✅ GLN guardado exitosamente:', nuevoGln);
+            const prefix = this.paso1Form.get('prefix')?.value;  // funciona aunque esté deshabilitado
+            if (prefix !== 'MSV') {
+              this.enviarEmpresaAJson();
+            }
+
+            
           },
           error: (error) => {
             console.error('❌ Error al guardar GLN:', error);
@@ -1664,6 +1672,28 @@ guardarContactosCliente(): void {
   });
 }
 
+enviarEmpresaAJson(): void {
+  const ciudadObj = this.paso2Form.get('ciudad')?.value;
+  const data = {
+    status: 'ACTIVE',
+    licenceKey: this.paso1Form.get('prefijo')?.value || '',
+    licenseeName: this.paso2Form.get('razonSocial')?.value || '',
+    licenseeGLN: this.paso1Form.get('gln')?.value || '',
+    streetAddress: this.paso2Form.get('direccionPrincipal')?.value || '',
+    canton: ciudadObj.canton || '',
+    postalName: this.paso2Form.get('codigoPostal')?.value || '',
+    ciudad: ciudadObj.ciudad || '',
+    provincia: ciudadObj.provincia || '',
+    postalCode: this.paso2Form.get('codigoPostal')?.value || '',
+    email: this.paso3Form.get('emailRepresentante')?.value || '',
+    telefono: this.paso2Form.get('telefono2')?.value || '',
+    website: this.paso2Form.get('sitioWeb')?.value || '',
+    dapi: 'https://api.tuservicio.com/post/empresa',  // reemplaza con tu endpoint real
+    capi: 'TU_API_KEY_AQUI' // reemplaza con tu clave real
+  };
+  console.log(data);
+  this.jsonEmpresaService.generarJsonEmpresa(data);
+}
 
 
 }

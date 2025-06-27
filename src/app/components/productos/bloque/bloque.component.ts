@@ -28,7 +28,7 @@ import { of, forkJoin } from 'rxjs';
 import { timeout } from 'rxjs/operators';
 import { from } from 'rxjs';
 import { mergeMap, toArray } from 'rxjs/operators';
-
+import { JsonBloqueService } from 'src/app/services/json-bloque.service';
 @Component({
   selector: 'app-bloque',
   templateUrl: './bloque.component.html',
@@ -129,7 +129,7 @@ export class BloqueComponent implements OnInit {
     private productoAdicionalService: ProductoAdicionalService,
     private router: Router,
     private codigos14Service: Codigos14Service,
-
+    private jsonBloqueService: JsonBloqueService
 
   ) {
     this.formUV = this.fb.group({
@@ -459,7 +459,7 @@ export class BloqueComponent implements OnInit {
     }
     const checkExiste = this.formUV.get('checkExiste')?.value;
 
-    if (this.tipoGtin === 'GTIN-13' && checkExiste === false && this.bandera===0) {
+    if (this.tipoGtin === 'GTIN-13' && checkExiste === false && this.bandera === 0) {
       console.log('➡️ GTIN-13 y checkExiste es falso');
       this.generar13();
     } else if (this.tipoGtin === 'GTIN-13' && checkExiste === true) {
@@ -480,10 +480,10 @@ export class BloqueComponent implements OnInit {
     } else if (this.tipoGtin === 'UPC' && checkExiste === true && this.bandera === 2) {
       console.log('✅ GTIN-12 y checkExiste es verdadero');
       this.recupera12();
-    }else if (this.tipoGtin === 'GTIN-12I' && checkExiste === false) {
+    } else if (this.tipoGtin === 'GTIN-12I' && checkExiste === false) {
       console.log('✅ GTIN-12 y checkExiste es verdadero');
       this.generar12i();
-    }else if (this.tipoGtin === 'GTIN-13' && checkExiste === false && this.bandera===2) {
+    } else if (this.tipoGtin === 'GTIN-13' && checkExiste === false && this.bandera === 2) {
       this.mostrarAlerta('⚠️ No se puede generar este tipo de Codigo.', 'Error');
       return;
     }
@@ -830,31 +830,45 @@ export class BloqueComponent implements OnInit {
 
 
   }
-recuperar12i(): void {
-  const soloCopiarGtin = this.tipoGtin === 'GTIN-12I' && this.formUV.get('checkExiste')?.value;
-  if (!soloCopiarGtin) return;
+  recuperar12i(): void {
+    const soloCopiarGtin = this.tipoGtin === 'GTIN-12I' && this.formUV.get('checkExiste')?.value;
+    if (!soloCopiarGtin) return;
 
-  const observables = [];
-  const filaLimite = this.rowData.length;
+    const observables = [];
+    const filaLimite = this.rowData.length;
 
-  for (let i = 0; i < filaLimite; i++) {
-    const fila = this.rowData[i];
-    const codbar = fila.gtinUv?.trim();
-    if (!codbar) continue;
+    for (let i = 0; i < filaLimite; i++) {
+      const fila = this.rowData[i];
+      const codbar = fila.gtinUv?.trim();
+      if (!codbar) continue;
 
-    const obs$ = this.productoService.buscarPorCodbar(codbar).pipe(
-      map((producto) => {
-        if (producto) {
-          fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
-          fila.marca = fila.marca?.trim() || producto.marca || '';
-          fila.contenidoNeto = fila.contenidoNeto?.toString().trim() || producto.contenido || '';
-          fila.contenidoUM = fila.contenidoUM?.trim() || producto.unidad || 'g';
-          fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
-          fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
-          fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
-          fila.grupo = fila.grupo || (isNaN(Number(producto.idgrupoproducto)) ? 0 : Number(producto.idgrupoproducto));
-          fila.idProducto = fila.idProducto || producto.IdProducto;
-        } else {
+      const obs$ = this.productoService.buscarPorCodbar(codbar).pipe(
+        map((producto) => {
+          if (producto) {
+            fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
+            fila.marca = fila.marca?.trim() || producto.marca || '';
+            fila.contenidoNeto = fila.contenidoNeto?.toString().trim() || producto.contenido || '';
+            fila.contenidoUM = fila.contenidoUM?.trim() || producto.unidad || 'g';
+            fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
+            fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
+            fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
+            fila.grupo = fila.grupo || (isNaN(Number(producto.idgrupoproducto)) ? 0 : Number(producto.idgrupoproducto));
+            fila.idProducto = fila.idProducto || producto.IdProducto;
+          } else {
+            fila.descripcion = fila.descripcion?.trim() || 'NO EXISTE';
+            fila.marca = fila.marca?.trim() || 'NO EXISTE';
+            fila.contenidoNeto = fila.contenidoNeto || '';
+            fila.contenidoUM = fila.contenidoUM || 'g';
+            fila.categoria = fila.categoria || '';
+            fila.gcpBrick = fila.gcpBrick || '';
+            fila.pais = fila.pais || 'ECUADOR';
+            fila.grupo = fila.grupo || 0;
+            fila.idProducto = fila.idProducto || null;
+          }
+          return true;
+        }),
+        catchError((err) => {
+          console.warn(`⚠️ Error con codbar ${codbar}`, err);
           fila.descripcion = fila.descripcion?.trim() || 'NO EXISTE';
           fila.marca = fila.marca?.trim() || 'NO EXISTE';
           fila.contenidoNeto = fila.contenidoNeto || '';
@@ -864,69 +878,55 @@ recuperar12i(): void {
           fila.pais = fila.pais || 'ECUADOR';
           fila.grupo = fila.grupo || 0;
           fila.idProducto = fila.idProducto || null;
-        }
-        return true;
-      }),
-      catchError((err) => {
-        console.warn(`⚠️ Error con codbar ${codbar}`, err);
-        fila.descripcion = fila.descripcion?.trim() || 'NO EXISTE';
-        fila.marca = fila.marca?.trim() || 'NO EXISTE';
-        fila.contenidoNeto = fila.contenidoNeto || '';
-        fila.contenidoUM = fila.contenidoUM || 'g';
-        fila.categoria = fila.categoria || '';
-        fila.gcpBrick = fila.gcpBrick || '';
-        fila.pais = fila.pais || 'ECUADOR';
-        fila.grupo = fila.grupo || 0;
-        fila.idProducto = fila.idProducto || null;
-        return of(false);
-      })
-    );
+          return of(false);
+        })
+      );
 
-    observables.push(obs$);
-  }
-
-  forkJoin(observables).subscribe(() => {
-    this.rowData = [...this.rowData]; // Refrescar AG Grid
-
-    const camposIncompletos = this.rowData.some(fila =>
-      !fila.descripcion || !fila.marca || !fila.contenidoNeto || !fila.categoria
-    );
-
-    if (camposIncompletos) {
-      this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
-      return;
+      observables.push(obs$);
     }
 
-    const msg = this.modoEdicion ? 'actualizados' : 'generar';
+    forkJoin(observables).subscribe(() => {
+      this.rowData = [...this.rowData]; // Refrescar AG Grid
 
-    this.dialog.open(CustomMessageBoxComponent, {
-      width: '400px',
-      data: {
-        title: '¿Desea confirmar?',
-        message: `Quiere ${msg} GTIN 14. ¿Está seguro?`,
-        type: 'info',
-        confirmText: 'Sí, confirmar',
-        cancelText: 'Cancelar',
-        showCancel: true
-      }
-    }).afterClosed().subscribe(resultado => {
-      if (resultado === true) {
-        this.botonGenerarDeshabilitado = true;
-        this.botonGrabarDeshabilitado = true;
-        this.botonGenerar14Deshabilitado = false;
-        this.botonGrabar14Deshabilitado = true;
+      const camposIncompletos = this.rowData.some(fila =>
+        !fila.descripcion || !fila.marca || !fila.contenidoNeto || !fila.categoria
+      );
 
-        this.gridApi.ensureIndexVisible(0);
-        this.gridApi.ensureColumnVisible('factor');
-        this.gridApi.setFocusedCell(0, 'factor');
-        this.checkboxMaestroDeshabilitado = false;
-        this.factorDeshabilitado = false;
-      } else {
-        console.log('❌ Usuario canceló generación GTIN-14');
+      if (camposIncompletos) {
+        this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
+        return;
       }
+
+      const msg = this.modoEdicion ? 'actualizados' : 'generar';
+
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '400px',
+        data: {
+          title: '¿Desea confirmar?',
+          message: `Quiere ${msg} GTIN 14. ¿Está seguro?`,
+          type: 'info',
+          confirmText: 'Sí, confirmar',
+          cancelText: 'Cancelar',
+          showCancel: true
+        }
+      }).afterClosed().subscribe(resultado => {
+        if (resultado === true) {
+          this.botonGenerarDeshabilitado = true;
+          this.botonGrabarDeshabilitado = true;
+          this.botonGenerar14Deshabilitado = false;
+          this.botonGrabar14Deshabilitado = true;
+
+          this.gridApi.ensureIndexVisible(0);
+          this.gridApi.ensureColumnVisible('factor');
+          this.gridApi.setFocusedCell(0, 'factor');
+          this.checkboxMaestroDeshabilitado = false;
+          this.factorDeshabilitado = false;
+        } else {
+          console.log('❌ Usuario canceló generación GTIN-14');
+        }
+      });
     });
-  });
-}
+  }
 
 
 
@@ -1232,7 +1232,7 @@ recuperar12i(): void {
     });
 
     from(filas).pipe(
-      mergeMap(fila => this.guardarProductoPromise(fila, dialogRef), 5), // ← máximo 5 procesos en paralelo
+      mergeMap(fila => this.guardarProductoPromise(fila, dialogRef), 5), // hasta 5 en paralelo
       toArray()
     ).subscribe({
       next: () => {
@@ -1263,7 +1263,7 @@ recuperar12i(): void {
           return;
         }
 
-        // Si todo fue exitoso, preparar para GTIN-14
+        // ✅ Productos grabados exitosamente
         this.botonGenerarDeshabilitado = true;
         this.botonGrabarDeshabilitado = true;
         this.botonGenerar14Deshabilitado = false;
@@ -1275,24 +1275,44 @@ recuperar12i(): void {
         this.gridApi.setFocusedCell(0, 'factor');
 
         this.mostrarAlerta('✅ Todos los productos fueron grabados correctamente.', 'Éxito');
+
+        // ❓ Preguntar si desea enviar a Verified
         this.dialog.open(CustomMessageBoxComponent, {
           width: '400px',
           data: {
-            title: '¿Desea continuar?',
-            message: 'Todos los productos fueron grabados. ¿Desea generar los códigos GTIN-14 ahora?',
-            type: 'info',
-            confirmText: 'Sí, generar',
-            cancelText: 'Cancelar',
+            title: '¿Desea enviar a Verified?',
+            message: 'Todos los productos fueron grabados. ¿Desea generar y enviar el JSON a Verified ahora mismo?',
+            type: 'question',
+            confirmText: 'Sí, enviar',
+            cancelText: 'No, luego',
             showCancel: true
           }
-        }).afterClosed().subscribe(resultado => {
-          if (resultado === true) {
-            this.botonGenerar14Deshabilitado = false;
-            this.botonGrabar14Deshabilitado = true;
-            this.mostrarAlerta('✅ Puede continuar con GTIN-14.', 'Información');
-          } else {
-            this.mostrarAlerta('⚠️ Puede generar GTIN-14 luego desde el botón correspondiente.', 'Info');
+        }).afterClosed().subscribe(enviar => {
+          if (enviar && (this.tipoGtin === 'GTIN-13' || this.tipoGtin === 'UPC')) {
+            this.enviarAJsonVerified();
           }
+
+
+          // ❓ Luego preguntar por GTIN-14
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '400px',
+            data: {
+              title: '¿Desea continuar?',
+              message: '¿Desea generar los códigos GTIN-14 ahora?',
+              type: 'info',
+              confirmText: 'Sí, generar',
+              cancelText: 'Cancelar',
+              showCancel: true
+            }
+          }).afterClosed().subscribe(generar14 => {
+            if (generar14) {
+              this.botonGenerar14Deshabilitado = false;
+              this.botonGrabar14Deshabilitado = true;
+              this.mostrarAlerta('✅ Puede continuar con GTIN-14.', 'Información');
+            } else {
+              this.mostrarAlerta('⚠️ Puede generar GTIN-14 luego desde el botón correspondiente.', 'Info');
+            }
+          });
         });
       },
       error: () => {
@@ -1302,6 +1322,7 @@ recuperar12i(): void {
       }
     });
   }
+
 
 
 
@@ -1317,53 +1338,53 @@ recuperar12i(): void {
 
 
 
-generar14(): void {
-  this.rowData = [...this.rowData];
-  this.gridApi.setFocusedCell(0, 'factor');
+  generar14(): void {
+    this.rowData = [...this.rowData];
+    this.gridApi.setFocusedCell(0, 'factor');
 
-  const algunSeleccionado = this.rowData.some(fila => fila.activo === true);
-  if (!algunSeleccionado) {
-    this.mostrarAlerta('⚠️ Debe seleccionar al menos un producto (checkbox).', 'Error');
-    return;
-  }
-
-  if (!this.verificarFactor()) {
-    return;
-  }
-
-  // 🕓 Mostrar cuadro de espera
-  const dialogRef = this.dialog.open(DialogProcesoComponent, {
-    disableClose: true,
-    width: '400px',
-    data: {
-      procesados: 0,
-      total: this.rowData.filter(f => f.activo).length
-    }
-  });
-
-  this.verificarExistenciaCodbar().then(() => {
-    dialogRef.close(); // ✅ Cerrar cuadro de espera
-
-    const hayIndicadoresVacios = this.rowData.some(f =>
-      f.activo === true && (!f.indicador || f.indicador.toString().trim() === '')
-    );
-
-    if (hayIndicadoresVacios) {
-      this.mostrarAlerta('❌ Existen productos marcados sin indicador. Verifique antes de continuar.', 'Error');
+    const algunSeleccionado = this.rowData.some(fila => fila.activo === true);
+    if (!algunSeleccionado) {
+      this.mostrarAlerta('⚠️ Debe seleccionar al menos un producto (checkbox).', 'Error');
       return;
     }
 
-    this.generarDescripcionCompuesta();
-    this.generarGtin14();
+    if (!this.verificarFactor()) {
+      return;
+    }
 
-    this.botonGenerar14Deshabilitado = false;
-    this.botonGrabar14Deshabilitado = false;
-  }).catch(err => {
-    dialogRef.close();
-    console.error('❌ Error en verificarExistenciaCodbar', err);
-    this.mostrarAlerta('Ocurrió un error durante la validación.', 'Error');
-  });
-}
+    // 🕓 Mostrar cuadro de espera
+    const dialogRef = this.dialog.open(DialogProcesoComponent, {
+      disableClose: true,
+      width: '400px',
+      data: {
+        procesados: 0,
+        total: this.rowData.filter(f => f.activo).length
+      }
+    });
+
+    this.verificarExistenciaCodbar().then(() => {
+      dialogRef.close(); // ✅ Cerrar cuadro de espera
+
+      const hayIndicadoresVacios = this.rowData.some(f =>
+        f.activo === true && (!f.indicador || f.indicador.toString().trim() === '')
+      );
+
+      if (hayIndicadoresVacios) {
+        this.mostrarAlerta('❌ Existen productos marcados sin indicador. Verifique antes de continuar.', 'Error');
+        return;
+      }
+
+      this.generarDescripcionCompuesta();
+      this.generarGtin14();
+
+      this.botonGenerar14Deshabilitado = false;
+      this.botonGrabar14Deshabilitado = false;
+    }).catch(err => {
+      dialogRef.close();
+      console.error('❌ Error en verificarExistenciaCodbar', err);
+      this.mostrarAlerta('Ocurrió un error durante la validación.', 'Error');
+    });
+  }
 
 
 
@@ -2078,78 +2099,105 @@ generar14(): void {
       });
     });
   }
-generar12i(): void {
-  const filasValidas = this.rowData.map((fila, index) => {
-    const gtinBase = (fila.gtinUv || '').toString().substring(0, 11).padStart(11, '0');
+  generar12i(): void {
+    const filasValidas = this.rowData.map((fila, index) => {
+      const gtinBase = (fila.gtinUv || '').toString().substring(0, 11).padStart(11, '0');
 
-    if (gtinBase.length === 11 && /^\d{11}$/.test(gtinBase)) {
-      const dv = this.calcularDigitoVerificadorGtin12(gtinBase);
-      const gtinCompleto = gtinBase + dv;
-      fila.gtinUv = gtinCompleto;
-      return { index, gtin: gtinCompleto };
-    } else {
-      console.warn(`❌ Fila ${index + 1}: GTIN-12 base inválido →`, fila.gtinUv);
-      return null;
+      if (gtinBase.length === 11 && /^\d{11}$/.test(gtinBase)) {
+        const dv = this.calcularDigitoVerificadorGtin12(gtinBase);
+        const gtinCompleto = gtinBase + dv;
+        fila.gtinUv = gtinCompleto;
+        return { index, gtin: gtinCompleto };
+      } else {
+        console.warn(`❌ Fila ${index + 1}: GTIN-12 base inválido →`, fila.gtinUv);
+        return null;
+      }
+    }).filter(Boolean) as { index: number; gtin: string }[];
+
+    if (filasValidas.length === 0) {
+      this.mostrarAlerta('⚠️ No hay GTIN-12 válidos para procesar.', 'Validación');
+      return;
     }
-  }).filter(Boolean) as { index: number; gtin: string }[];
 
-  if (filasValidas.length === 0) {
-    this.mostrarAlerta('⚠️ No hay GTIN-12 válidos para procesar.', 'Validación');
-    return;
+    const dialogRef = this.dialog.open(DialogProcesoComponent, {
+      disableClose: true,
+      width: '400px',
+      data: {
+        procesados: 0,
+        total: filasValidas.length
+      }
+    });
+
+    let existeRepetido = false;
+    const repetidos: string[] = [];
+
+    from(filasValidas).pipe(
+      concatMap((fila, i) =>
+        this.productoService.buscarPorCodbar(fila.gtin).pipe(
+          map(producto => {
+            if (producto) {
+              existeRepetido = true;
+              repetidos.push(fila.gtin);
+              this.rowData[fila.index]._duplicadoGtinUv = true;
+            } else {
+              this.rowData[fila.index]._duplicadoGtinUv = false;
+            }
+
+            dialogRef.componentInstance.data.procesados = i + 1;
+          })
+        )
+      )
+    ).subscribe({
+      complete: () => {
+        dialogRef.close();
+
+        if (existeRepetido) {
+          const lista = repetidos.map(r => `🔴 ${r}`).join('\n');
+          this.mostrarAlerta(`⚠️ Los siguientes GTIN-12 ya existen en la base de datos:\n\n${lista}`, 'Duplicados encontrados');
+          this.botonGenerarDeshabilitado = false;
+          this.botonGrabarDeshabilitado = true;
+        } else {
+          this.botonGenerarDeshabilitado = true;
+          this.botonGrabarDeshabilitado = false;
+        }
+
+        this.rowData = [...this.rowData];
+        this.gridApi.refreshCells({ force: true, columns: ['gtinUv'] });
+      },
+      error: (err) => {
+        dialogRef.close();
+        console.error('❌ Error durante validación en base', err);
+        this.mostrarAlerta('Error al validar GTIN-12 en la base de datos.', 'Error');
+      }
+    });
   }
 
-  const dialogRef = this.dialog.open(DialogProcesoComponent, {
-    disableClose: true,
-    width: '400px',
-    data: {
-      procesados: 0,
-      total: filasValidas.length
+  enviarAJsonVerified(): void {
+    const datos = this.rowData;
+
+    if (!datos.length) {
+      this.mostrarAlerta('⚠️ No hay productos para enviar a Verified.', 'Advertencia');
+      return;
     }
-  });
 
-  let existeRepetido = false;
-  const repetidos: string[] = [];
+    const prefijoSeleccionado = this.prefijos.find(p => p.id_prefijos === this.formUV.value.gcp);
+    const dapiP = prefijoSeleccionado?.dapi || '';
+    const capiP = prefijoSeleccionado?.capi || '';
+    const prefijo = prefijoSeleccionado?.codpre || '';
 
-  from(filasValidas).pipe(
-    concatMap((fila, i) =>
-      this.productoService.buscarPorCodbar(fila.gtin).pipe(
-        map(producto => {
-          if (producto) {
-            existeRepetido = true;
-            repetidos.push(fila.gtin);
-            this.rowData[fila.index]._duplicadoGtinUv = true;
-          } else {
-            this.rowData[fila.index]._duplicadoGtinUv = false;
-          }
+    // if (!dapiP || !capiP) {
+    //   this.mostrarAlerta('❌ No se encontraron los parámetros de API para el envío.', 'Error');
+    //   return;
+    // }
 
-          dialogRef.componentInstance.data.procesados = i + 1;
-        })
-      )
-    )
-  ).subscribe({
-    complete: () => {
-      dialogRef.close();
+    this.jsonBloqueService.inicializarUnidades().then(() => {
+      this.jsonBloqueService.generarJsonLote(this.rowData, prefijo, dapiP, capiP);
+    });
 
-      if (existeRepetido) {
-        const lista = repetidos.map(r => `🔴 ${r}`).join('\n');
-        this.mostrarAlerta(`⚠️ Los siguientes GTIN-12 ya existen en la base de datos:\n\n${lista}`, 'Duplicados encontrados');
-        this.botonGenerarDeshabilitado = false;
-        this.botonGrabarDeshabilitado = true;
-      } else {
-        this.botonGenerarDeshabilitado = true;
-        this.botonGrabarDeshabilitado = false;
-      }
 
-      this.rowData = [...this.rowData];
-      this.gridApi.refreshCells({ force: true, columns: ['gtinUv'] });
-    },
-    error: (err) => {
-      dialogRef.close();
-      console.error('❌ Error durante validación en base', err);
-      this.mostrarAlerta('Error al validar GTIN-12 en la base de datos.', 'Error');
-    }
-  });
-}
+    this.mostrarAlerta('📦 JSON generado y enviado en lote a Verified.', 'Información');
+  }
+
 
 
 }

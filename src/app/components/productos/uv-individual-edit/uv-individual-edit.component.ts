@@ -26,7 +26,7 @@ import { SectorService, Sector } from 'src/app/services/sector.service';
 import { PaisService, Pais } from 'src/app/services/pais.service';
 import { UmedidaService, Umedida } from 'src/app/services/umedida.service';
 import { ProductoService, ProductoRequest } from 'src/app/services/producto.service';
-import { ProductoAdicionalService,ProductoDatosAdicionalesRequest } from 'src/app/services/producto-adicional.service';
+import { ProductoAdicionalService, ProductoDatosAdicionalesRequest } from 'src/app/services/producto-adicional.service';
 import { Codigos14Service, Codigos14Request } from 'src/app/services/codigos14.service';
 import { MatDialogRef, MAT_DIALOG_DATA, MatDialog } from '@angular/material/dialog';
 import { GenerarPresentacionesService } from 'src/app/services/generar-presentaciones.service';
@@ -46,6 +46,7 @@ registerLocaleData(localeEs);
 
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core';
 import { MomentDateAdapter } from '@angular/material-moment-adapter';
+import { JsonProductoService } from 'src/app/services/json-producto.service';
 export const MY_DATE_FORMATS = {
   parse: {
     dateInput: 'DD/MM/YYYY'
@@ -101,7 +102,7 @@ export class UvIndividualEditComponent implements OnInit {
   grupoProductoCtrl = new FormControl('');
   categoriasFiltradas: GrupoProducto[] = [];
   grupoProductoSeleccionado!: number;
-   registrosGtin14: any[] = [];
+  registrosGtin14: any[] = [];
   bandera: number = 0;
   npais: string = ''
   codigoprefijos: string = '';
@@ -123,7 +124,7 @@ export class UvIndividualEditComponent implements OnInit {
 
   unidadesMedida: Umedida[] = [];
   unidadesMedidaFiltradas: Umedida[] = [];
-
+  abrevia: string = '';
   pais: Pais[] = [];
   paisCtrl = new FormControl('');
   paisFiltrados$!: Observable<Pais[]>;
@@ -140,9 +141,10 @@ export class UvIndividualEditComponent implements OnInit {
   gtin12UIEnable = false;
   longitudMaxima = 0;
   id_grupo_producto: number = 0;
-  idProducto:number=0;
-  idProductoDatosAdicionles:number=0;
+  idProducto: number = 0;
+  idProductoDatosAdicionles: number = 0;
   usuarioActual = this.usuarioService.getUsuarioActual();
+  numeroPrefijo: string = '';
   columnDefsGtin14 = [
     {
       headerName: '#',
@@ -187,7 +189,8 @@ export class UvIndividualEditComponent implements OnInit {
     private clienteService: ClienteService,
     private usuarioService: UsuarioService,
     private route: ActivatedRoute,
-   
+    private jsonProductoService: JsonProductoService
+
   ) { }
 
 
@@ -212,8 +215,8 @@ export class UvIndividualEditComponent implements OnInit {
       sector: [''],
       urlFoto: [''],
       observacion: [''],
-      feccre: [moment()] ,
-      
+      feccre: [moment()],
+
       empresas: this.fb.group({
         favorita: [false],
         mega: [false],
@@ -223,12 +226,12 @@ export class UvIndividualEditComponent implements OnInit {
         google: [false],
         otrosSolicitantes: ['']
       }),
-      gtinNacionalSeleccionado:[{ value: null, disabled: true }],
-      gtinInternacionalSeleccionado:[{ value: null, disabled: true }],
+      gtinNacionalSeleccionado: [{ value: null, disabled: true }],
+      gtinInternacionalSeleccionado: [{ value: null, disabled: true }],
       usarSerie: [false]
     });
 
-    
+
 
     this.cargarCliente();
     this.cargarGrupoProductos();
@@ -278,12 +281,12 @@ export class UvIndividualEditComponent implements OnInit {
     });
 
     // Nacional - UL
-   
 
-    
+
+
   }
 
- 
+
 
 
 
@@ -320,7 +323,7 @@ export class UvIndividualEditComponent implements OnInit {
   }
 
   onPrefijoBlur(): void {
-    
+
     const idSeleccionado = this.formUV.value.gcp;
     const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
 
@@ -387,7 +390,7 @@ export class UvIndividualEditComponent implements OnInit {
 
 
   obtenerNombreGTIN(valor: string): string {
-    
+
     switch (valor) {
       case 'GTIN-13': return 'GTIN-13';
       case 'GTIN-8': return 'GTIN-8';
@@ -455,7 +458,7 @@ export class UvIndividualEditComponent implements OnInit {
           data: {
             title: '¿Desea confirmar?',
             message: `El código será ${msg}. ¿Está seguro?`,
-            type: 'question',
+            type: 'info',
             confirmText: 'Sí, confirmar',
             cancelText: 'Cancelar',
             showCancel: true
@@ -497,7 +500,7 @@ export class UvIndividualEditComponent implements OnInit {
 
   continuarGrabado() {
 
-   
+
     const datosUV = this.formUV.value;
     const datosUL = this.formUL.value;
     console.log('Datos UV:', datosUV);
@@ -505,7 +508,7 @@ export class UvIndividualEditComponent implements OnInit {
   }
 
 
- 
+
 
   limpiarCampos(): void {
     this.botonGenerarDeshabilitado = false;
@@ -553,7 +556,7 @@ export class UvIndividualEditComponent implements OnInit {
   }
 
 
-  
+
 
   salir(): void {
     this.router.navigate(['/menuProductos/nuevoProducto']); // Redirecciona a /pages/clientes
@@ -561,7 +564,7 @@ export class UvIndividualEditComponent implements OnInit {
   }
 
 
- 
+
   mostrarAlerta(mensaje: string, tipo: string) {
     this._snackBar.open(mensaje, tipo, {
       horizontalPosition: "end",
@@ -599,7 +602,7 @@ export class UvIndividualEditComponent implements OnInit {
     }
   }
 
-  
+
 
   filtrarSectores(): void {
     this.formUV.get('sector')?.valueChanges
@@ -640,7 +643,7 @@ export class UvIndividualEditComponent implements OnInit {
 
 
   cargarPais(): void {
-    
+
     this.paisService.obtenerPaises().subscribe(data => {
       this.pais = data;
 
@@ -715,208 +718,237 @@ export class UvIndividualEditComponent implements OnInit {
     this.formUV.get('unidadMedida')?.reset();
   }
 
-modificarProducto(): void {
-  const msg = this.formUV.get('gtinUv')?.value || 'sin GTIN';
+  modificarProducto(): void {
+    const msg = this.formUV.get('gtinUv')?.value || 'sin GTIN';
 
-  this.dialog.open(CustomMessageBoxComponent, {
-    width: '400px',
-    data: {
-      title: '¿Desea guardar los cambios?',
-      message: `Se guardarán los cambios para el código ${msg}. ¿Está seguro?`,
-      type: 'info',
-      confirmText: 'Sí, guardar',
-      cancelText: 'Cancelar',
-      showCancel: true
-    }
-  }).afterClosed().subscribe(confirmado => {
-    if (!confirmado) {
-      console.log('❌ Modificación cancelada por el usuario');
-      return;
-    }
-
-    const datos = this.formUV.getRawValue();
-    const cliente = this.clienteSeleccionado;
-    const categoriaId = datos.categoria?.id_grupo_producto || 0;
-    const sectorId = datos.sector?.id_sector || 0;
-    
-    const productoActualizado: ProductoRequest = {
-      IdProducto: this.idProducto,
-      Codpro: datos.gtinUv || '',
-      Despro: datos.descripcion || '',
-      Tippro: 'S',
-      Codgru: categoriaId,
-      Codsec: 0,
-      Coddep: 0,
-      Codsub: 0,
-      Coddiv: 0,
-      Codmar: 0,
-      Despro2: '',
-      Uniman: datos.unidadMedida?.unidad || '',
-      Feccre: datos.feccre,
-      Colsab: '',
-      Talla: '',
-      Preven: 0,
-      Preven2: 0,
-      Precos: 0,
-      Cospro: 0,
-      Exiqty: 0,
-      Exipdc: 0,
-      Exipdv: 0,
-      Exisic: 0,
-      Fecsic: new Date().toISOString(),
-      Refer: '',
-      Codcuedeb: '',
-      Codcuehab: '',
-      Codcuedes: '',
-      Codcuedev: '',
-      Iva: '',
-      Tipo: '',
-      Preuni: '',
-      Regalia: '',
-      Inv: true,
-      PrevenSinIva: 0,
-      PagaIva: true,
-      PagaRegalia: true,
-      Desind: '',
-      Codorigen: '',
-      Codcol: 0,
-      StockMax: 0,
-      StockMin: 0,
-      Espesor: 0,
-      Largo: 0,
-      Ancho: 0,
-      Fechacad: '',
-      Fechacad1: 0,
-      Fabricante: 0,
-      Obs: datos.observacion || '',
-      Peso: false,
-      Fecing: new Date().toISOString(),
-      ValorUnidad: 0,
-      Codsab: '',
-      Fechamod: new Date().toISOString(),
-      Tamanio: '',
-      Modelo: '',
-      Numserie: datos.serie || '',
-      Coleccion: '',
-      Temporada: '',
-      Prepormayor: 0,
-      PreAnterior: 0,
-      CosAnterior: 0,
-      DescCosto1: 0,
-      DescCosto2: 0,
-      DescCosto3: 0,
-      DescCosto4: 0,
-      Descuento: 0,
-      PreRebaja: 0,
-      PreRebajaAntes: 0,
-      FecIniPro: new Date().toISOString(),
-      FecFinPro: new Date().toISOString(),
-      FecIniPro1: new Date().toISOString(),
-      Codubi: '',
-      FecFinPro1: new Date().toISOString(),
-      FecPreAct: new Date().toISOString(),
-      FecPreMod: new Date().toISOString(),
-      FecCosAct: new Date().toISOString(),
-      FecCosMod: new Date().toISOString(),
-      CodNiv: '',
-      CodColUbi: '',
-      MargenUtilidad: 0,
-      PvpSinIva: 0,
-      PorcenRecepcion: 0,
-      Stocks: true,
-      Abrevia: '',
-      Referencia: '',
-      MargenAntes: 0,
-      FecMarAntes: new Date().toISOString(),
-      CantDecimal: true,
-      CostSuminis: 0,
-      CantConv: 0,
-      CostHelado: 0,
-      Receta: false,
-      Activo: datos.activo,
-      ClasProd: '',
-      Foto: datos.urlFoto || '',
-      AltoRiesgo: false,
-      PGasto: false,
-      CtaProdGasto: '',
-      RegSanitario: '',
-      IdEmpresa: this.usuarioActual?.id_empresa ?? 1,
-      Codbar: datos.gtinUv || ''
-    };
-
-    const adicionalesActualizados: ProductoDatosAdicionalesRequest = {
-      IdProductoDatosAdicionales: this.idProductoDatosAdicionles,
-      ClientesCodigo: cliente?.clientes_codigo || 0,
-      IdPrefijos: datos.gcp,
-      IdTipoCodigoGs1: 1,
-      IdGrupoProducto: categoriaId,
-      Peso1: datos.Peso,
-      IdUsuario: this.usuarioActual?.id_usuario ?? 1,
-      Facturar: '',
-      Nombre: '',
-      Gtin: datos.tipoGtin || '',
-      Target: '',
-      Marca: datos.marca || '',
-      Autfuncion: '',
-      Registros: '',
-      Obsc: datos.observacion || '',
-      IdSector: sectorId,
-      Contenido: (datos.contenido ?? '').toString(),
-      Um: datos.unidadMedida?.unidad || '',
-      Brick: datos.brick || '',
-      Pais: datos.pais?.nombre || '',
-      Url: datos.urlFoto || '',
-      Pum: '',
-      Lum: '',
-      Aum: '',
-      Url2: '',
-      Pais2: '',
-      Pais3: '',
-      Codint: '',
-      Secto2: '',
-      Sector3: '',
-      SolFavorita: datos.empresas?.favorita ? 1 : 0,
-      SolRosado: datos.empresas?.rosario ? 1 : 0,
-      SolSantamaria: datos.empresas?.mega? 1 : 0,
-      SolTia: datos.empresas?.tia ? 1 : 0,
-      SolAmazon: datos.empresas?.amazon ? 1 : 0,
-      SolGoogle: datos.empresas?.google ? 1 : 0,
-      SolEbay: 0,
-      SolOtros: datos.empresas.otrosSolicitantes || '',
-      id_producto: this.idProducto
-    };
-
-    // Primero actualiza el producto base
-    this.productoService.actualizarProducto({
-      idProducto: this.idProducto,
-      request: productoActualizado
-    }).subscribe({
-      next: () => {
-        console.log('✅ Producto base actualizado');
-        // Luego los datos adicionales, por IdProducto
-        this.productoAdicionalService.actualizarProductoDatosAdicionales({
-          idProducto: this.idProducto,
-          request: adicionalesActualizados
-        }).subscribe({
-          next: () => this.mostrarAlerta('Producto modificado correctamente', '✔'),
-           error: (err) => {
-            console.error('❌ Error al actualizar datos adicionales:', err);
-            this.mostrarAlerta('Error al  datos adicionales', 'Error');
-          }
-        });
-        this.botonGenerarDeshabilitado=false;
-          this.botonGrabarDeshabilitado=true;
-      },
-      error: (err) => {
-        console.error('❌ Error al actualizar producto:', err);
-        this.mostrarAlerta('Error al actualizar producto', 'Error');
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: '¿Desea guardar los cambios?',
+        message: `Se guardarán los cambios para el código ${msg}. ¿Está seguro?`,
+        type: 'info',
+        confirmText: 'Sí, guardar',
+        cancelText: 'Cancelar',
+        showCancel: true
       }
-    });
-  });
-}
+    }).afterClosed().subscribe(confirmado => {
+      if (!confirmado) {
+        console.log('❌ Modificación cancelada por el usuario');
+        return;
+      }
 
-  
- 
+      const datos = this.formUV.getRawValue();
+      const cliente = this.clienteSeleccionado;
+      const categoriaId = datos.categoria?.id_grupo_producto || 0;
+      const sectorId = datos.sector?.id_sector || 0;
+
+      const productoActualizado: ProductoRequest = {
+        IdProducto: this.idProducto,
+        Codpro: datos.gtinUv || '',
+        Despro: datos.descripcion || '',
+        Tippro: 'S',
+        Codgru: categoriaId,
+        Codsec: 0,
+        Coddep: 0,
+        Codsub: 0,
+        Coddiv: 0,
+        Codmar: 0,
+        Despro2: '',
+        Uniman: datos.unidadMedida?.unidad || '',
+        Feccre: datos.feccre,
+        Colsab: '',
+        Talla: '',
+        Preven: 0,
+        Preven2: 0,
+        Precos: 0,
+        Cospro: 0,
+        Exiqty: 0,
+        Exipdc: 0,
+        Exipdv: 0,
+        Exisic: 0,
+        Fecsic: new Date().toISOString(),
+        Refer: '',
+        Codcuedeb: '',
+        Codcuehab: '',
+        Codcuedes: '',
+        Codcuedev: '',
+        Iva: '',
+        Tipo: '',
+        Preuni: '',
+        Regalia: '',
+        Inv: true,
+        PrevenSinIva: 0,
+        PagaIva: true,
+        PagaRegalia: true,
+        Desind: '',
+        Codorigen: '',
+        Codcol: 0,
+        StockMax: 0,
+        StockMin: 0,
+        Espesor: 0,
+        Largo: 0,
+        Ancho: 0,
+        Fechacad: '',
+        Fechacad1: 0,
+        Fabricante: 0,
+        Obs: datos.observacion || '',
+        Peso: false,
+        Fecing: new Date().toISOString(),
+        ValorUnidad: 0,
+        Codsab: '',
+        Fechamod: new Date().toISOString(),
+        Tamanio: '',
+        Modelo: '',
+        Numserie: datos.serie || '',
+        Coleccion: '',
+        Temporada: '',
+        Prepormayor: 0,
+        PreAnterior: 0,
+        CosAnterior: 0,
+        DescCosto1: 0,
+        DescCosto2: 0,
+        DescCosto3: 0,
+        DescCosto4: 0,
+        Descuento: 0,
+        PreRebaja: 0,
+        PreRebajaAntes: 0,
+        FecIniPro: new Date().toISOString(),
+        FecFinPro: new Date().toISOString(),
+        FecIniPro1: new Date().toISOString(),
+        Codubi: '',
+        FecFinPro1: new Date().toISOString(),
+        FecPreAct: new Date().toISOString(),
+        FecPreMod: new Date().toISOString(),
+        FecCosAct: new Date().toISOString(),
+        FecCosMod: new Date().toISOString(),
+        CodNiv: '',
+        CodColUbi: '',
+        MargenUtilidad: 0,
+        PvpSinIva: 0,
+        PorcenRecepcion: 0,
+        Stocks: true,
+        Abrevia: '',
+        Referencia: '',
+        MargenAntes: 0,
+        FecMarAntes: new Date().toISOString(),
+        CantDecimal: true,
+        CostSuminis: 0,
+        CantConv: 0,
+        CostHelado: 0,
+        Receta: false,
+        Activo: datos.activo,
+        ClasProd: '',
+        Foto: datos.urlFoto || '',
+        AltoRiesgo: false,
+        PGasto: false,
+        CtaProdGasto: '',
+        RegSanitario: '',
+        IdEmpresa: this.usuarioActual?.id_empresa ?? 1,
+        Codbar: datos.gtinUv || ''
+      };
+
+      const adicionalesActualizados: ProductoDatosAdicionalesRequest = {
+        IdProductoDatosAdicionales: this.idProductoDatosAdicionles,
+        ClientesCodigo: cliente?.clientes_codigo || 0,
+        IdPrefijos: datos.gcp,
+        IdTipoCodigoGs1: 1,
+        IdGrupoProducto: categoriaId,
+        Peso1: datos.Peso,
+        IdUsuario: this.usuarioActual?.id_usuario ?? 1,
+        Facturar: '',
+        Nombre: '',
+        Gtin: datos.tipoGtin || '',
+        Target: '',
+        Marca: datos.marca || '',
+        Autfuncion: '',
+        Registros: '',
+        Obsc: datos.observacion || '',
+        IdSector: sectorId,
+        Contenido: (datos.contenido ?? '').toString(),
+        Um: datos.unidadMedida?.unidad || '',
+        Brick: datos.brick?.brick || '',
+        Pais: datos.pais?.nombre || '',
+        Url: datos.urlFoto || '',
+        Pum: '',
+        Lum: '',
+        Aum: '',
+        Url2: '',
+        Pais2: '',
+        Pais3: '',
+        Codint: '',
+        Secto2: '',
+        Sector3: '',
+        SolFavorita: datos.empresas?.favorita ? 1 : 0,
+        SolRosado: datos.empresas?.rosario ? 1 : 0,
+        SolSantamaria: datos.empresas?.mega ? 1 : 0,
+        SolTia: datos.empresas?.tia ? 1 : 0,
+        SolAmazon: datos.empresas?.amazon ? 1 : 0,
+        SolGoogle: datos.empresas?.google ? 1 : 0,
+        SolEbay: 0,
+        SolOtros: datos.empresas.otrosSolicitantes || '',
+        id_producto: this.idProducto
+      };
+
+      this.productoService.actualizarProducto({
+        idProducto: this.idProducto,
+        request: productoActualizado
+      }).subscribe({
+        next: () => {
+          console.log('✅ Producto base actualizado');
+
+          this.productoAdicionalService.actualizarProductoDatosAdicionales({
+            idProducto: this.idProducto,
+            request: adicionalesActualizados
+          }).subscribe({
+            next: () => {
+              console.log('✅ Producto adicional actualizado');
+              this.mostrarAlerta('Producto modificado correctamente', '✔');
+
+              const tipoGtin =
+                this.formUV.getRawValue().gtinNacionalSeleccionado ||
+                this.formUV.getRawValue().gtinInternacionalSeleccionado || '';
+
+              const gtinUv = this.formUV.get('gtinUv')?.value || '';
+
+              if ((tipoGtin === 'GTIN-13' || tipoGtin === 'UPC') && this.abrevia !== 'T') {
+                this.dialog.open(CustomMessageBoxComponent, {
+                  width: '400px',
+                  data: {
+                    title: '¿Enviar a Verified?',
+                    message: '¿Desea generar el JSON para este producto?',
+                    type: 'info',
+                    confirmText: 'Sí, generar',
+                    cancelText: 'No',
+                    showCancel: true
+                  }
+                }).afterClosed().subscribe(confirmado => {
+                  if (confirmado && !gtinUv.includes('7861000')) {
+                    this.enviarAJsonVerified();
+                  }
+                });
+              } else {
+                console.log('✅ No aplica envío a Verified');
+              }
+
+              this.botonGenerarDeshabilitado = false;
+              this.botonGrabarDeshabilitado = true;
+            },
+            error: (err) => {
+              console.error('❌ Error al actualizar datos adicionales:', err);
+              this.mostrarAlerta('Error al actualizar datos adicionales', 'Error');
+            }
+          });
+        },
+        error: (err) => {
+          console.error('❌ Error al actualizar producto:', err);
+          this.mostrarAlerta('Error al actualizar producto', 'Error');
+        }
+      });
+    });
+  }
+
+
+
 
 
   verificar() {
@@ -1009,12 +1041,13 @@ modificarProducto(): void {
           return;
         }
         console.log(producto);
-        this.idProducto=producto.IdProducto;
+        this.idProducto = producto.IdProducto;
         this.cargarTipoGtin(producto);
         this.cargarUnidadesMedida(producto);
         this.cargarSector(producto);
         this.cargarPaisDesdeProducto(producto);
         this.cargarCodigos14PorGtin(codbar);
+        this.abrevia = producto.Abrevia !== null && producto.Abrevia !== undefined ? producto.Abrevia : '';
         // Cargar prefijos por cliente
         const codigoCliente: number = Number(producto.clienteCodigo || producto.clienteCodigo);
         this.prefijoService.obtenerPorClienteCodigo(codigoCliente).pipe(take(1)).subscribe({
@@ -1058,7 +1091,7 @@ modificarProducto(): void {
                   gtinUv: producto.codbar || '',
                   observacion: producto.Obs || '',
                   urlFoto: producto.url || '',
-                  activo:producto.Activo,
+                  activo: producto.Activo,
                   feccre: moment(producto.Feccre, 'YYYY-MM-DD'),
                   empresas: {
                     otrosSolicitantes: producto.po || '',
@@ -1070,7 +1103,7 @@ modificarProducto(): void {
                     google: producto.p6 === 1,
                   }
                 });
-                this.botonGrabarDeshabilitado=true;
+                this.botonGrabarDeshabilitado = true;
 
               },
               error: (err) => {
@@ -1090,7 +1123,7 @@ modificarProducto(): void {
   }
 
   cargarTipoGtin(producto: any): void {
-    
+
     const gtin = (producto.gtin || '').toUpperCase();
 
     // Restablecer ambos selectores por defecto
@@ -1170,40 +1203,40 @@ modificarProducto(): void {
     });
   }
 
-cargarPaisDesdeProducto(producto: any): void {
-  
-  this.paisService.obtenerPaises().subscribe(data => {
-    this.pais = data;
+  cargarPaisDesdeProducto(producto: any): void {
 
-    // ✅ Buscar el país por nombre (ej. "ECUADOR")
-    const paisProducto = this.pais.find(p =>
-      p.nombre.toLowerCase() === (producto.pais || '').toLowerCase()
-    );
+    this.paisService.obtenerPaises().subscribe(data => {
+      this.pais = data;
 
-    if (paisProducto) {
-      this.formUV.get('pais')?.setValue(paisProducto);
-    } else {
-      console.log('⚠️ País no encontrado:', producto.pais);
-    }
+      // ✅ Buscar el país por nombre (ej. "ECUADOR")
+      const paisProducto = this.pais.find(p =>
+        p.nombre.toLowerCase() === (producto.pais || '').toLowerCase()
+      );
 
-    // 🔍 Filtro dinámico al escribir en el autocompletado
-    this.formUV.get('pais')?.valueChanges
-      .pipe(startWith(''))
-      .subscribe(valor => {
-        const texto = typeof valor === 'string' ? valor.toLowerCase() : '';
-        this.paisFiltrados = this.pais.filter(p =>
-          p.nombre.toLowerCase().includes(texto)
-        );
-      });
-  });
-}
+      if (paisProducto) {
+        this.formUV.get('pais')?.setValue(paisProducto);
+      } else {
+        console.log('⚠️ País no encontrado:', producto.pais);
+      }
+
+      // 🔍 Filtro dinámico al escribir en el autocompletado
+      this.formUV.get('pais')?.valueChanges
+        .pipe(startWith(''))
+        .subscribe(valor => {
+          const texto = typeof valor === 'string' ? valor.toLowerCase() : '';
+          this.paisFiltrados = this.pais.filter(p =>
+            p.nombre.toLowerCase().includes(texto)
+          );
+        });
+    });
+  }
 
 
   cargarCodigos14PorGtin(gtin: string): void {
-    console.log('📦 Ejecutando cargarCodigos14PorGtin con GTIN:', gtin); 
+    console.log('📦 Ejecutando cargarCodigos14PorGtin con GTIN:', gtin);
     this.codigos14Service.getPorGtin(gtin).subscribe({
       next: codigos => {
-        console.log('✅ Códigos recibidos:', codigos); 
+        console.log('✅ Códigos recibidos:', codigos);
         this.registrosGtin14 = codigos.map(c => ({
           id: c.id_codigos14,
           g14: c.g14 || '',
@@ -1220,52 +1253,76 @@ cargarPaisDesdeProducto(producto: any): void {
     });
   }
 
-formatearFecha(fechaStr: string): string {
-  const fecha = new Date(fechaStr);
-  const dia = String(fecha.getDate()).padStart(2, '0');
-  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-  const anio = fecha.getFullYear();
-  return `${dia}/${mes}/${anio}`;
-}
+  formatearFecha(fechaStr: string): string {
+    const fecha = new Date(fechaStr);
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const anio = fecha.getFullYear();
+    return `${dia}/${mes}/${anio}`;
+  }
 
 
- habilitarModificar()
- {
-  this.botonGrabarDeshabilitado=false;
- }
+  habilitarModificar() {
+    this.botonGrabarDeshabilitado = false;
+  }
 
   parseFechaLatina(fechaStr: string): Date {
-  const [dd, mm, yyyy] = fechaStr.split('/');
-  return new Date(Number(yyyy), Number(mm) - 1, Number(dd));
-}
-formatearFechaGuardado(fecha: Date): string {
-  const dia = String(fecha.getDate()).padStart(2, '0');
-  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-  const anio = fecha.getFullYear();
-  return `${dia}/${mes}/${anio}`;
-}
-convertirAFecha(fechaStr: string): Date | null {
-  if (!fechaStr) return null;
+    const [dd, mm, yyyy] = fechaStr.split('/');
+    return new Date(Number(yyyy), Number(mm) - 1, Number(dd));
+  }
+  formatearFechaGuardado(fecha: Date): string {
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const anio = fecha.getFullYear();
+    return `${dia}/${mes}/${anio}`;
+  }
+  convertirAFecha(fechaStr: string): Date | null {
+    if (!fechaStr) return null;
 
-  const partes = fechaStr.includes('/') ? fechaStr.split('/') : fechaStr.split('-');
+    const partes = fechaStr.includes('/') ? fechaStr.split('/') : fechaStr.split('-');
 
-  if (partes.length === 3) {
-    const [d, m, y] = partes.map(Number);
-    return new Date(y, m - 1, d); // dd/mm/yyyy
+    if (partes.length === 3) {
+      const [d, m, y] = partes.map(Number);
+      return new Date(y, m - 1, d); // dd/mm/yyyy
+    }
+
+    return null;
   }
 
-  return null;
-}
+  seleccionarRegistroU(registro: any): void {
+    console.log('➡️ Doble clic sobre:', registro);
 
-seleccionarRegistroU(registro: any): void {
-  console.log('➡️ Doble clic sobre:', registro);
-  
-  if (registro?.g14) {
-    this.router.navigate(['/menuProductos/ulEdit', registro.g14]);
-  } else {
-    console.warn('⚠️ g14 no disponible en el registro:', registro);
+    if (registro?.g14) {
+      this.router.navigate(['/menuProductos/ulEdit', registro.g14]);
+    } else {
+      console.warn('⚠️ g14 no disponible en el registro:', registro);
+    }
   }
-}
+
+
+  enviarAJsonVerified(): void {
+    debugger
+    const uv = this.formUV.getRawValue(); // ✅ trae todo, incluso campos deshabilitados
+    const idSeleccionado = uv.gcp; // 👈 accede directamente al campo "gcp"
+    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+    this.numeroPrefijo = objeto?.codpre;
+    console.log('📋 Formulario JSON:', JSON.stringify(uv, null, 2));
+
+    const data = {
+      gtin: uv.gtinUv,
+      brick: uv.brick,
+      prefijo: this.numeroPrefijo,
+      marca: uv.marca,
+      descripcion: uv.descripcion,
+      url: uv.urlFoto,
+      unidad: uv.unidadMedida.net_content_uom,
+      contenido: uv.contenido,
+      dapiP: 'TU_URL_VERIFIED_AQUI', // puedes también leerlo de parámetros
+      capiP: 'TU_API_KEY_AQUI'
+    };
+
+    this.jsonProductoService.generarJson(data);
+  }
 
 
 }
