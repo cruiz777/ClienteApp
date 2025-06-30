@@ -29,6 +29,7 @@ import { timeout } from 'rxjs/operators';
 import { from } from 'rxjs';
 import { mergeMap, toArray } from 'rxjs/operators';
 import { JsonBloqueService } from 'src/app/services/json-bloque.service';
+import { ParametrosFacturaService } from 'src/app/services/parametros-factura.service';
 @Component({
   selector: 'app-bloque',
   templateUrl: './bloque.component.html',
@@ -113,6 +114,8 @@ export class BloqueComponent implements OnInit {
   tipoGtin: string = 'GTIN-13';
   factorDeshabilitado: boolean = true; // o false, según tu lógica
   idsProductosCreados: number[] = [];
+   api: string = '';
+  claveApi: string = '';
   huboError: boolean = false;
   constructor(
     private fb: FormBuilder,
@@ -129,7 +132,8 @@ export class BloqueComponent implements OnInit {
     private productoAdicionalService: ProductoAdicionalService,
     private router: Router,
     private codigos14Service: Codigos14Service,
-    private jsonBloqueService: JsonBloqueService
+    private jsonBloqueService: JsonBloqueService,
+    private parametrosFacturaService:ParametrosFacturaService
 
   ) {
     this.formUV = this.fb.group({
@@ -167,6 +171,7 @@ export class BloqueComponent implements OnInit {
     this.cargarCliente();
     this.cargarUnidades();
     this.cargarGrupos();
+    this.cargarParametroFacturaPorId(98);
     this.columnDefs = [
       {
         headerName: '#',
@@ -2181,8 +2186,8 @@ export class BloqueComponent implements OnInit {
     }
 
     const prefijoSeleccionado = this.prefijos.find(p => p.id_prefijos === this.formUV.value.gcp);
-    const dapiP = prefijoSeleccionado?.dapi || '';
-    const capiP = prefijoSeleccionado?.capi || '';
+    const dapiP = this.api ||'';
+    const capiP = this.claveApi ||'';
     const prefijo = prefijoSeleccionado?.codpre || '';
 
     // if (!dapiP || !capiP) {
@@ -2198,6 +2203,21 @@ export class BloqueComponent implements OnInit {
     this.mostrarAlerta('📦 JSON generado y enviado en lote a Verified.', 'Información');
   }
 
+ cargarParametroFacturaPorId(id: number): void {
+    this.parametrosFacturaService.getById(id).subscribe({
+      next: (parametro) => {
+        // Aquí asignas el resultado a una variable del componente
+        this.api = parametro.texto ?? '';
+        this.claveApi = parametro.obs ?? ''; // si `valor` puede ser undefined
+
+        console.log('✅ Parámetro cargado:', parametro);
+      },
+      error: (error) => {
+        console.error('❌ Error al obtener el parámetro:', error);
+        // Puedes mostrar un mensaje de error si deseas
+      }
+    });
+  }
 
 
 }

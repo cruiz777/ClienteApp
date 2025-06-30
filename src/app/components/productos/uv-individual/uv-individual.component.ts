@@ -36,6 +36,7 @@ import { ClienteService, ClienteIndividual } from 'src/app/services/cliente.serv
 import { UsuarioService } from 'src/app/services/usuario.service';
 import { ViewChild, ElementRef } from '@angular/core';
 import { JsonProductoService } from 'src/app/services/json-producto.service';
+import { ParametrosFacturaService, ParametrosFactura } from 'src/app/services/parametros-factura.service';
 @Component({
   selector: 'app-uv-individual',
   standalone: true,
@@ -89,7 +90,8 @@ export class UvIndividualComponent implements OnInit {
 
   unidadesMedida: Umedida[] = [];
   unidadesMedidaFiltradas: Umedida[] = [];
-
+  api: string = '';
+  claveApi: string = '';
 
   pais: Pais[] = [];
   paisCtrl = new FormControl('');
@@ -129,7 +131,8 @@ export class UvIndividualComponent implements OnInit {
     private cd: ChangeDetectorRef,
     private clienteService: ClienteService,
     private usuarioService: UsuarioService,
-    private jsonProductoService: JsonProductoService
+    private jsonProductoService: JsonProductoService,
+    private parametrosFacturaService: ParametrosFacturaService
   ) { }
 
 
@@ -265,6 +268,7 @@ export class UvIndividualComponent implements OnInit {
       }
     });
     this.formUL.disable();
+    this.cargarParametroFacturaPorId(98);
   }
 
   activarUL(): void {
@@ -649,8 +653,8 @@ export class UvIndividualComponent implements OnInit {
       url: uv.urlFoto,
       unidad: uv.unidadMedida,
       contenido: uv.contenido,
-      dapiP: 'TU_URL_VERIFIED_AQUI', // puedes también leerlo de parámetros
-      capiP: 'TU_API_KEY_AQUI'
+      dapiP: this.api,
+      capiP: this.claveApi
     };
 
     this.jsonProductoService.generarJson(data);
@@ -2597,6 +2601,20 @@ export class UvIndividualComponent implements OnInit {
     this.campoGtinU = true;
   }
 
+  cargarParametroFacturaPorId(id: number): void {
+    this.parametrosFacturaService.getById(id).subscribe({
+      next: (parametro) => {
+        // Aquí asignas el resultado a una variable del componente
+        this.api = parametro.texto ?? '';
+        this.claveApi = parametro.obs ?? ''; // si `valor` puede ser undefined
 
+        console.log('✅ Parámetro cargado:', parametro);
+      },
+      error: (error) => {
+        console.error('❌ Error al obtener el parámetro:', error);
+        // Puedes mostrar un mensaje de error si deseas
+      }
+    });
+  }
 
 }

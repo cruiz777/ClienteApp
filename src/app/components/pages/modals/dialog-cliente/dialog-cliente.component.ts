@@ -51,6 +51,7 @@ import { PaisService, Pais } from 'src/app/services/pais.service';
 import { ClienteObservacionService,ClienteObservacion } from 'src/app/services/cliente-observacion.service';
 import { ClienteDatosAdicionalesService,ClienteDatosAdicionales } from 'src/app/services/cliente-datos-adicionales.service';
 import { ClienteContacto,ClienteContactoService } from 'src/app/services/cliente-contacto.service';
+import { ParametrosFacturaService } from 'src/app/services/parametros-factura.service';
 @Component({
   selector: 'app-dialog-cliente',
   templateUrl: './dialog-cliente.component.html',
@@ -117,6 +118,8 @@ export class DialogClienteComponent implements OnInit {
   campoGlnVerde = false;
   estadoContribuyenteRuc: string = '';
  codigoAreaE: number | null = null;
+   api: string = '';
+  claveApi: string = '';
   constructor(
     private fb: FormBuilder,
     private grupoService: GrupoEmpresaService,
@@ -139,7 +142,8 @@ export class DialogClienteComponent implements OnInit {
     private clienteObservacionService: ClienteObservacionService,
     private clienteDatosAdicionalesService: ClienteDatosAdicionalesService,
     private clienteContactoService:ClienteContactoService,
-    private jsonEmpresaService:JsonEmpresaService
+    private jsonEmpresaService:JsonEmpresaService,
+    private parametrosFacturaService:ParametrosFacturaService
   ) { }
 
   ngOnInit(): void {
@@ -156,6 +160,7 @@ export class DialogClienteComponent implements OnInit {
     this.cargarPais();
     this.cargarCiudad();
     this.cargarZona();
+    this.cargarParametroFacturaPorId(97);
     this.paso1Form.get('prefix')?.valueChanges.subscribe(prefix => {
       this.actualizarValidacionPrefijo(prefix);
     });
@@ -1686,14 +1691,30 @@ enviarEmpresaAJson(): void {
     provincia: ciudadObj.provincia || '',
     postalCode: this.paso2Form.get('codigoPostal')?.value || '',
     email: this.paso3Form.get('emailRepresentante')?.value || '',
-    telefono: this.paso2Form.get('telefono2')?.value || '',
+    telefono: '593' + (this.paso2Form.get('telefono2')?.value ?? ''),
     website: this.paso2Form.get('sitioWeb')?.value || '',
-    dapi: 'https://api.tuservicio.com/post/empresa',  // reemplaza con tu endpoint real
-    capi: 'TU_API_KEY_AQUI' // reemplaza con tu clave real
+    dapi: this.api,  // reemplaza con tu endpoint real
+    capi: this.claveApi
   };
   console.log(data);
   this.jsonEmpresaService.generarJsonEmpresa(data);
 }
+
+cargarParametroFacturaPorId(id: number): void {
+    this.parametrosFacturaService.getById(id).subscribe({
+      next: (parametro) => {
+        // Aquí asignas el resultado a una variable del componente
+        this.api = parametro.texto ?? '';
+        this.claveApi = parametro.obs ?? ''; // si `valor` puede ser undefined
+
+        console.log('✅ Parámetro cargado:', parametro);
+      },
+      error: (error) => {
+        console.error('❌ Error al obtener el parámetro:', error);
+        // Puedes mostrar un mensaje de error si deseas
+      }
+    });
+  }
 
 
 }
