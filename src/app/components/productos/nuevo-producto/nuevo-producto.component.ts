@@ -12,7 +12,11 @@ import { ProductoService, Producto } from 'src/app/services/producto.service';
 import { Codigos14Service } from 'src/app/services/codigos14.service';
 import { GridApi, GridReadyEvent, GridOptions } from 'ag-grid-community';
 import { MatSnackBar } from '@angular/material/snack-bar';
-
+import { ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup } from '@angular/forms';
+import { PrefijoService } from 'src/app/services/prefijo.service';
+import { ClienteService ,ClienteIndividual } from 'src/app/services/cliente.service';
+import { MatSelectModule } from '@angular/material/select';
 
 @Component({
   selector: 'app-nuevo-producto',
@@ -23,12 +27,15 @@ import { MatSnackBar } from '@angular/material/snack-bar';
     MatFormFieldModule,
     MatInputModule,
     MatButtonModule,
-    AgGridModule
+    AgGridModule,
+    ReactiveFormsModule,
+    MatSelectModule
   ],
   templateUrl: './nuevo-producto.component.html',
   styleUrl: './nuevo-producto.component.css'
 })
 export class NuevoProductoComponent implements OnInit {
+  formReporte!: FormGroup; // ✅ declara la propiedad correctamente
   gridOptions: GridOptions = {
     getRowId: (params: any) => params.data.codbar
   };
@@ -45,8 +52,9 @@ export class NuevoProductoComponent implements OnInit {
   ultimoClick = 0;
   dobleClickDelay = 480;
   getRowNodeId = (data: any) => data.codbar; // o data.id si prefieres
+    prefijos: any[] = [];
 
-
+    clienteE!: ClienteIndividual;
 
 
   columnDefsUV = [
@@ -104,15 +112,27 @@ export class NuevoProductoComponent implements OnInit {
     private productoService: ProductoService,
     private codigos14Service: Codigos14Service,
     private _snackBar: MatSnackBar,
+    private fb: FormBuilder,
+    private prefijoService:PrefijoService,
+    private clienteService:ClienteService
   ) { }
 
   ngOnInit(): void {
+
+     this.formReporte = this.fb.group({
+      reporte: [''],
+      certificado: [''],
+      gcp: [null],
+      codigoCliente: [''],
+    });
     this.clienteSeleccionadoService.clienteSeleccionado$.subscribe(cliente => {
       this.clienteSeleccionado = cliente;
       if (cliente?.clientes_codigo) {
         this.cargarProductos(cliente.clientes_codigo);
       }
     });
+    this.cargarCliente();
+   
   }
 
   cambiarTab(tab: string) {
@@ -258,4 +278,47 @@ abrirVentanaUl(): void {
     });
   }
 
+    onPrefijoBlur(): void {
+    const idSeleccionado = this.formReporte.value.gcp;
+    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+    
+  }
+
+  cargarPrefijos(codigoCliente: number): void {
+    this.prefijoService.obtenerPorClienteCodigo(codigoCliente).subscribe({
+      next: (data) => {
+        this.prefijos = data;
+      },
+      error: (err) => {
+        console.error('Error al cargar prefijos:', err);
+      }
+    });
+  }
+
+  cargarCliente(): void {
+    const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+    console.log(cliente);
+    if (cliente) {
+      this.clienteSeleccionado = cliente;
+      this.formReporte.patchValue({
+        codigoCliente: cliente.clientes_codigo || '',
+        cliente: cliente.nomcli || '',
+        ruc: cliente.ruc || '',
+
+      });
+      this.cargarClientePorId(cliente.clientes_codigo);
+      this.cargarPrefijos(cliente.clientes_codigo);
+    }
+  }
+   cargarClientePorId(id: number): void {
+    this.clienteService.getClienteById(id).subscribe({
+      next: (cliente) => {
+        this.clienteE = cliente;
+        
+      },
+      error: (err) => {
+        console.error('Error al obtener cliente:', err);
+      }
+    });
+  }
 }

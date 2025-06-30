@@ -363,7 +363,6 @@ export class DialogClienteComponent implements OnInit {
   cargarCiudad(): void {
     this.ciudadService.obtenerCiudad().subscribe(data => {
       this.ciudad = data;
-
       this.paso2Form.get('ciudad')?.valueChanges
         .pipe(startWith(''))
         .subscribe(valor => {
@@ -384,7 +383,7 @@ export class DialogClienteComponent implements OnInit {
 
   displayCiudad(ciudad: Ciudad | string): string {
     if (typeof ciudad === 'string') return ciudad;
-    return ciudad ? `${ciudad.ciudad} - ${ciudad.canton} - ${ciudad.provincia}` : '';
+    return ciudad ? `${ciudad.ciudad} - ${ciudad.canton} - ${ciudad.provincia} - ${ciudad.idzona} ` : '';
   }
 
 
@@ -611,7 +610,8 @@ export class DialogClienteComponent implements OnInit {
     const grupoProductoObj = paso1.grupoProducto;
     const idGrupoProducto = typeof grupoProductoObj === 'object' ? grupoProductoObj.id_grupo_producto : grupoProductoObj || 0;
     // const zonaObj = paso1.zona;
-    // const idZona = typeof zonaObj === 'object' ? zonaObj.id_zona : 0;
+     const idZona = typeof ciudadObj === 'object' ? ciudadObj.idzona : 0;
+     debugger
     const ruc = this.rucControl.value;
     const jsonCliente = {
       nomcli: paso2.razonSocial || '',
@@ -660,7 +660,7 @@ export class DialogClienteComponent implements OnInit {
       codigoPostal2: '',
       idVendedor: 1,
       idCiudad: idCiudad,
-      idZona: '1',
+      idZona:idZona,
       //idZona: paso1.zona.id,  por el momento hasta enlazar con la ciudad
       idGrupoEmpresa: paso1.grupo || 1,
       representante: paso2.nombreRepresentante || ''
