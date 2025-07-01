@@ -2,7 +2,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Inject } from '@angular/core';
-
+import { JsonEmpresaService } from 'src/app/services/json-empresa.service';
 // Angular Forms
 import {
   FormBuilder,
@@ -51,6 +51,7 @@ import { PaisService, Pais } from 'src/app/services/pais.service';
 import { ClienteObservacionService,ClienteObservacion } from 'src/app/services/cliente-observacion.service';
 import { ClienteDatosAdicionalesService,ClienteDatosAdicionales } from 'src/app/services/cliente-datos-adicionales.service';
 import { ClienteContacto,ClienteContactoService } from 'src/app/services/cliente-contacto.service';
+import { ParametrosFacturaService } from 'src/app/services/parametros-factura.service';
 @Component({
   selector: 'app-dialog-cliente',
   templateUrl: './dialog-cliente.component.html',
@@ -117,6 +118,8 @@ export class DialogClienteComponent implements OnInit {
   campoGlnVerde = false;
   estadoContribuyenteRuc: string = '';
  codigoAreaE: number | null = null;
+   api: string = '';
+  claveApi: string = '';
   constructor(
     private fb: FormBuilder,
     private grupoService: GrupoEmpresaService,
@@ -138,7 +141,9 @@ export class DialogClienteComponent implements OnInit {
     private paisService: PaisService,
     private clienteObservacionService: ClienteObservacionService,
     private clienteDatosAdicionalesService: ClienteDatosAdicionalesService,
-    private clienteContactoService:ClienteContactoService
+    private clienteContactoService:ClienteContactoService,
+    private jsonEmpresaService:JsonEmpresaService,
+    private parametrosFacturaService:ParametrosFacturaService
   ) { }
 
   ngOnInit(): void {
@@ -155,6 +160,7 @@ export class DialogClienteComponent implements OnInit {
     this.cargarPais();
     this.cargarCiudad();
     this.cargarZona();
+    this.cargarParametroFacturaPorId(97);
     this.paso1Form.get('prefix')?.valueChanges.subscribe(prefix => {
       this.actualizarValidacionPrefijo(prefix);
     });
@@ -357,7 +363,6 @@ export class DialogClienteComponent implements OnInit {
   cargarCiudad(): void {
     this.ciudadService.obtenerCiudad().subscribe(data => {
       this.ciudad = data;
-
       this.paso2Form.get('ciudad')?.valueChanges
         .pipe(startWith(''))
         .subscribe(valor => {
@@ -378,7 +383,7 @@ export class DialogClienteComponent implements OnInit {
 
   displayCiudad(ciudad: Ciudad | string): string {
     if (typeof ciudad === 'string') return ciudad;
-    return ciudad ? `${ciudad.ciudad} - ${ciudad.canton} - ${ciudad.provincia}` : '';
+    return ciudad ? `${ciudad.ciudad} - ${ciudad.canton} - ${ciudad.provincia} - ${ciudad.idzona} ` : '';
   }
 
 
@@ -605,7 +610,8 @@ export class DialogClienteComponent implements OnInit {
     const grupoProductoObj = paso1.grupoProducto;
     const idGrupoProducto = typeof grupoProductoObj === 'object' ? grupoProductoObj.id_grupo_producto : grupoProductoObj || 0;
     // const zonaObj = paso1.zona;
-    // const idZona = typeof zonaObj === 'object' ? zonaObj.id_zona : 0;
+     const idZona = typeof ciudadObj === 'object' ? ciudadObj.idzona : 0;
+     debugger
     const ruc = this.rucControl.value;
     const jsonCliente = {
       nomcli: paso2.razonSocial || '',
@@ -654,7 +660,7 @@ export class DialogClienteComponent implements OnInit {
       codigoPostal2: '',
       idVendedor: 1,
       idCiudad: idCiudad,
-      idZona: '1',
+      idZona:idZona,
       //idZona: paso1.zona.id,  por el momento hasta enlazar con la ciudad
       idGrupoEmpresa: paso1.grupo || 1,
       representante: paso2.nombreRepresentante || ''
@@ -680,6 +686,7 @@ export class DialogClienteComponent implements OnInit {
               this.guardarTodasLasObservaciones();
               this.guardarDatosAdicionales();
               this.guardarContactosCliente();
+              
               stepper.selectedIndex = 0;
             }
           },
@@ -845,7 +852,7 @@ export class DialogClienteComponent implements OnInit {
           const prefijoData = {
             codpre: prefijo,
             fecha: new Date().toISOString().split('T')[0],
-            fechaCierre: new Date().toISOString().split('T')[0],
+            fechaCierre: null,
             observacion: '',
             digitos: prefijo.length.toString(),
             estado: false,
@@ -1306,20 +1313,20 @@ export class DialogClienteComponent implements OnInit {
           glnLatitud: '0.0000',
           glnLongitud: '0.0000',
           idPais: 1,
-          direccion: 'Calle Ejemplo 123',
-          telefono: '12345678',
+          direccion: '',
+          telefono: '',
           fax: '',
-          contacto: 'Juan Pérez',
-          contactoTel: '12345678',
-          email: 'correo@ejemplo.com',
-          web: 'http://example.com',
+          contacto: '',
+          contactoTel: '',
+          email: '',
+          web: '',
           fda: '',
           europa: '',
           glnGlobal: '',
           glnFecha: '2025-04-29',
           idCiudad: 1,
-          glnCodigopostal: '170515',
-          glnCelular: '0999999999',
+          glnCodigopostal: '',
+          glnCelular: '',
           glnContacto2: '',
           glnEmail2: '',
           glnTel2: '',
@@ -1327,8 +1334,8 @@ export class DialogClienteComponent implements OnInit {
           glnEmail3: '',
           glnTel3: '',
           glnFacturar: 'S',
-          glnCodpro: 'PROD01',
-          glnNombre: 'Sucursal Principal',
+          glnCodpro: '',
+          glnNombre: '',
           glnOtro1: '',
           glnOtro2: '',
           glnObs1: '',
@@ -1337,7 +1344,7 @@ export class DialogClienteComponent implements OnInit {
           glnPrefijogs1: gln,
           glnGlnp: '',
           glnGlne: '',
-          nombreLocalizacion: 'Matriz',
+          nombreLocalizacion: '',
           observ: '',
           expprod: 1,
           gs1ec: 1,
@@ -1360,6 +1367,12 @@ export class DialogClienteComponent implements OnInit {
         this.glnService.insertarGln({ request: nuevoGln }).subscribe({
           next: () => {
             console.log('✅ GLN guardado exitosamente:', nuevoGln);
+            const prefix = this.paso1Form.get('prefix')?.value;  // funciona aunque esté deshabilitado
+            if (prefix !== 'MSV') {
+              this.enviarEmpresaAJson();
+            }
+
+            
           },
           error: (error) => {
             console.error('❌ Error al guardar GLN:', error);
@@ -1664,6 +1677,44 @@ guardarContactosCliente(): void {
   });
 }
 
+enviarEmpresaAJson(): void {
+  const ciudadObj = this.paso2Form.get('ciudad')?.value;
+  const data = {
+    status: 'ACTIVE',
+    licenceKey: this.paso1Form.get('prefijo')?.value || '',
+    licenseeName: this.paso2Form.get('razonSocial')?.value || '',
+    licenseeGLN: this.paso1Form.get('gln')?.value || '',
+    streetAddress: this.paso2Form.get('direccionPrincipal')?.value || '',
+    canton: ciudadObj.canton || '',
+    postalName: this.paso2Form.get('codigoPostal')?.value || '',
+    ciudad: ciudadObj.ciudad || '',
+    provincia: ciudadObj.provincia || '',
+    postalCode: this.paso2Form.get('codigoPostal')?.value || '',
+    email: this.paso3Form.get('emailRepresentante')?.value || '',
+    telefono: '593' + (this.paso2Form.get('telefono2')?.value ?? ''),
+    website: this.paso2Form.get('sitioWeb')?.value || '',
+    dapi: this.api,  // reemplaza con tu endpoint real
+    capi: this.claveApi
+  };
+  console.log(data);
+  this.jsonEmpresaService.generarJsonEmpresa(data);
+}
+
+cargarParametroFacturaPorId(id: number): void {
+    this.parametrosFacturaService.getById(id).subscribe({
+      next: (parametro) => {
+        // Aquí asignas el resultado a una variable del componente
+        this.api = parametro.texto ?? '';
+        this.claveApi = parametro.obs ?? ''; // si `valor` puede ser undefined
+
+        console.log('✅ Parámetro cargado:', parametro);
+      },
+      error: (error) => {
+        console.error('❌ Error al obtener el parámetro:', error);
+        // Puedes mostrar un mensaje de error si deseas
+      }
+    });
+  }
 
 
 }

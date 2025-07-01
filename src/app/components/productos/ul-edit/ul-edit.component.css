@@ -237,10 +237,6 @@ mat-form-field {
 .corto {
   max-width: 120px;
 }
-.corto1 {
-  max-width: 260px;
-}
-
 
 .largo {
   min-width: 280px;
@@ -317,3 +313,9 @@ textarea {
   flex-direction: column;
 }
 
+.oculto {
+  display: none !important;
+}
+.corto1 {
+  max-width: 260px;
+}

@@ -1,5 +1,5 @@
 <div class="contenedor-formulario">
-  <h2>Asignación Nuevo GTIN - Ingreso Único de Venta</h2>
+  <h2>Editar GTIN - Ingreso Único de Venta</h2>
 
   <form class="formulario" [formGroup]="formUV">
     <div class="form-grid">
@@ -22,7 +22,7 @@
 
       <mat-form-field appearance="fill">
         <mat-label>Prefijo</mat-label>
-        <mat-select formControlName="gcp" (selectionChange)="onPrefijoBlur()">
+        <mat-select formControlName="gcp" (selectionChange)="onPrefijoBlur()" [disabled]="true">
           <mat-option *ngFor="let prefijo of prefijos" [value]="prefijo.id_prefijos">
             {{ prefijo.codpre }}
           </mat-option>
@@ -59,16 +59,16 @@
           </mat-form-field>
         </div>
         <div class="combo-gtin serie-inline">
-          <label class="checkbox-serie">
-            <input type="checkbox" formControlName="usarSerie" (change)="habilitarSerie()" /> Serie
+          <label class="checkbox-serie" readonly>
+            <input type="checkbox" formControlName="activo" /> Activo
           </label>
-          <input type="text" formControlName="serie" [readonly]="!formUV.get('usarSerie')?.value" />
+
         </div>
         <div class="combo-gtin">
           <label>GTIN® UV:</label>
           <input type="text" formControlName="gtinUv" [readonly]="formUV.get('gtinUv')?.disabled || false"
             [attr.maxLength]="longitudMaxima" (keypress)="permitirSoloNumeros($event)"
-            [ngClass]="{ 'input-verde': campoGtin }" #gtinInput />
+            [ngClass]="{ 'input-verde': campoGtin }" readonly />
 
 
           <div *ngIf="formUV.get('gtinUv')?.hasError('codbarExistente')" class="mensaje-error">⚠️ Ya registrado.</div>
@@ -87,7 +87,7 @@
 
       <div>
         <label>Marca:</label>
-        <input type="text" formControlName="marca"  (blur)="convertirAMayusculas('marca')"/>
+        <input type="text" formControlName="marca" (blur)="convertirAMayusculas('marca')" />
       </div>
 
       <div>
@@ -160,6 +160,17 @@
           </mat-option>
         </mat-autocomplete>
       </mat-form-field>
+      <mat-form-field appearance="fill" floatLabel="always">
+        <mat-label>Fecha</mat-label>
+        <input matInput [matDatepicker]="picker" formControlName="feccre" readonly />
+        <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+
+
+
+
+
 
       <!-- URL y Observación alineados -->
       <div class="fila-inline full-width">
@@ -190,18 +201,16 @@
     </div>
 
     <div class="botones">
-      <button class="btn" type="button" (click)="limpiarCampos()">Nuevo</button>
-      <button class="btn" type="button" (click)="generar()" [disabled]="botonGenerarDeshabilitado">
-        Generar
+
+      <button class="btn" type="button" (click)="habilitarModificar()" [disabled]="botonGenerarDeshabilitado">
+        Modificar
       </button>
 
-      <button class="btn btn-azul" type="button" (click)="grabarTodo()" [disabled]="botonGrabarDeshabilitado">
+      <button class="btn btn-azul" type="button" (click)="modificarProducto()" [disabled]="botonGrabarDeshabilitado">
         Grabar
       </button>
 
-      <button class="btn btn-azul" type="button" (click)="activarUL()" [disabled]="botonIngresarULDeshabilitado">
-        Ingresar UL
-      </button>
+      <button class="btn btn-rojo" type="button" (click)="salir()">Salir</button>
 
     </div>
   </form>
@@ -209,77 +218,20 @@
 
   <!-- Sección UL -->
   <h2 class="separador">UNIDAD LOGÍSTICA GTIN-14</h2>
+  <ng-container>
 
-  <form class="formulario" [formGroup]="formUL">
-    <div class="form-grid">
 
-      <!-- GTIN Nacional e Internacional como combo -->
-      <div class="full-width fila-inline">
-        <div class="campo-select">
-          <label>GTIN Nacional</label>
-          <mat-form-field appearance="fill">
-            <mat-select formControlName="gtinNacionalULSeleccionado">
-              <mat-option [value]="'gtin14u'">GTIN-14</mat-option>
-              <mat-option [value]="'gtin13u'">GTIN-13</mat-option>
-              <mat-option [value]="'gtin12u'">GTIN-12</mat-option>
-            </mat-select>
-          </mat-form-field>
-        </div>
+   <ag-grid-angular
+  class="ag-theme-alpine"
+  style="width: 100%; height: 300px;"
+  [rowData]="registrosGtin14"
+  [columnDefs]="columnDefsGtin14"
+  [defaultColDef]="defaultColDef"
+  rowSelection="single"
+  (rowDoubleClicked)="seleccionarRegistroU($event.data)">
+</ag-grid-angular>
 
-        <div class="campo-select">
-          <label>GTIN Internacional</label>
-          <mat-form-field appearance="fill">
-            <mat-select formControlName="gtinInternacionalULSeleccionado">
-              <mat-option [value]="'gtin14ui'">GTIN-14I</mat-option>
-              <mat-option [value]="'gtin13ui'">GTIN-13I</mat-option>
-              <mat-option [value]="'gtin12ui'">GTIN-12I</mat-option>
-            </mat-select>
-          </mat-form-field>
-        </div>
-      </div>
 
-      <div>
-        <div class="combo-gtin serie-inline">
-          <label class="checkbox-serie">
-            <input type="checkbox" formControlName="usarSerie2" (change)="habilitarSerie2()" /> Serie
-          </label>
-          <input type="text" formControlName="serie2" [readonly]="!formUL.get('usarSerie2')?.value" />
-        </div>
-      </div>
-      <div><label>Tipo de empaque:</label><input type="text" formControlName="tipoEmpaque" /></div>
-      <div><label>Unidad:</label><input type="text" formControlName="unidad" (keypress)="permitirSoloNumeros($event)" /></div>
-      <div><label>Indicador:</label><input type="text" formControlName="indicador" (keypress)="permitirSoloNumeros($event)" maxlength="1" /></div>
-      <div><label>Factor:</label><input type="text" formControlName="factor" (blur)="actualizarDescripcionUL()" /></div>
+  </ng-container>
 
-      <div class="corto1">
-        <label>GTIN® UL:</label>
-        <input type="text" formControlName="gtinUl" [ngClass]="{ 'input-verde': campoGtinU }" />
-        <div *ngIf="formUL.get('gtinUl')?.hasError('codbarExistente')" class="mensaje-error">
-          ⚠️ El código de barras ya está registrado.
-        </div>
-      </div>
-      <div class="fila-inline full-width">
-        <div class="corto1">
-          <label>Tipo GTIN®:</label><input type="text" formControlName="tipoGtinl" />
-        </div>
-        <div class="campo-observacion">
-          <label>Descripción:</label><textarea formControlName="descripcionu"
-            (blur)="convertirAMayusculas('descripcionu')"></textarea></div>
-      </div>
-    </div>
-
-    <div class="botones">
-      <button class="btn" type="button" (click)="limpiarUl()" [disabled]="botonNuevoDeshabilitado">Nuevo</button>
-
-      <button class="btn" type="button" (click)="generarUL()" [disabled]="botonGenerarULDeshabilitado">
-        Generar
-      </button>
-
-      <button class="btn btn-azul" type="button" (click)="grabarTodoUL()" [disabled]="botonGrabarULDeshabilitado">
-        Grabar
-      </button>
-
-      <button class="btn btn-rojo" type="button" (click)="salir()">Salir</button>
-    </div>
-  </form>
 </div>

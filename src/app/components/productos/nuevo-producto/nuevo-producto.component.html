@@ -24,20 +24,21 @@
     </mat-form-field>
 
     <button mat-raised-button color="primary" (click)="irAUvIndividual()">Ingresar UV</button>
-    <button mat-raised-button color="accent">Ingresar UL</button>
+    <button mat-raised-button color="accent" (click)="abrirVentanaUl()">Ingresar UL</button>
     <button mat-raised-button color="accent" (click)="irBloque()">Bloque</button>
     <button mat-raised-button color="warn" (click)="salir()">Salir</button>
   </div>
 
   <!-- Tabla AG-Grid para UV -->
-  <ag-grid-angular
-    class="ag-theme-alpine"
-    style="width: 100%; height: 400px; margin-top: 10px;"
-    [rowData]="filtrarRegistros().slice(0, cantidadMostrar)"
-    [columnDefs]="columnDefsUV"
-    [defaultColDef]="defaultColDef"
-    (rowClicked)="seleccionarRegistro($event.data)">
+  <ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 400px; margin-top: 10px;"
+    [gridOptions]="gridOptions" [rowData]="filtrarRegistros().slice(0, cantidadMostrar)" [columnDefs]="columnDefsUV"
+    [defaultColDef]="defaultColDef" rowSelection="single" (gridReady)="onGridReady($event)"
+    (rowClicked)="manejarClic($event.data)">
   </ag-grid-angular>
+
+
+
+
 
   <!-- GTIN-14 si hay selección -->
   <ng-container *ngIf="registroSeleccionado?.presentacion">
@@ -45,17 +46,99 @@
       Asignación de GTIN-14: <span class="gtin14">{{ codigoSeleccionado || '00000000' }}</span>
     </h3>
 
-    <ag-grid-angular
-      class="ag-theme-alpine"
-      style="width: 100%; height: 300px;"
-      [rowData]="registrosGtin14"
-      [columnDefs]="columnDefsGtin14"
-      [defaultColDef]="defaultColDef">
+    <ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 300px;" [rowData]="registrosGtin14"
+      [columnDefs]="columnDefsGtin14" [defaultColDef]="defaultColDef" rowSelection="single"> <!-- ✅ ESTA LÍNEA -->
     </ag-grid-angular>
+
   </ng-container>
 </ng-container>
 
 <!-- TAB REPORTES -->
 <ng-container *ngIf="activeTab === 'Reportes'">
-  <p>Contenido de reportes próximamente...</p>
+  <form [formGroup]="formReporte" class="form-reporte">
+    <main class="main-content">
+      <div class="content-container">
+
+        <div class="subtabs">
+          <button class="subtab-button active">Reportes</button>
+          <button class="subtab-button">Certificados</button>
+        </div>
+
+        <div class="reports-section">
+          <div class="report-options">
+            <label class="form-label">Tipo de Reporte:</label>
+            <div class="report-options-row">
+              <label class="report-option">
+                <input type="radio" formControlName="reporte" value="gtinVenta" />
+                <span class="option-text">GTIN Unidad de Venta</span>
+              </label>
+              <label class="report-option">
+                <input type="radio" formControlName="reporte" value="general" />
+                <span class="option-text">General</span>
+              </label>
+            </div>
+            <div class="report-options-row">
+              <label class="report-option">
+                <input type="radio" formControlName="reporte" value="logistica" />
+                <span class="option-text">Unidad Logística</span>
+              </label>
+              <label class="report-option">
+                <input type="radio" formControlName="reporte" value="completo" />
+                <span class="option-text">Completo</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="certificates-section">
+            <label class="form-label">Certificados:</label>
+            <div class="certificate-options">
+              <label class="certificate-option">
+                <input type="radio" formControlName="certificado" value="producto" />
+                <span class="option-text">Por Producto</span>
+              </label>
+              <label class="certificate-option">
+                <input type="radio" formControlName="certificado" value="gps" />
+                <span class="option-text">GPS</span>
+              </label>
+            </div>
+            <!-- 
+            <mat-form-field appearance="fill" class="select-pequeno">
+              <mat-label>Prefijo</mat-label>
+              <mat-select formControlName="gcp" (selectionChange)="onPrefijoBlur()">
+                <mat-option *ngFor="let prefijo of prefijos" [value]="prefijo.id_prefijos">
+                  {{ prefijo.codpre }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field> -->
+
+            <div class="certificate-actions">
+              <div class="letter-selection">
+                <label class="form-label">Carta:</label>
+                <div class="input-field">
+                  <span class="input-text">Carta</span>
+                </div>
+              </div>
+              <button mat-raised-button color="primary" type="submit">Imprimir</button>
+            </div>
+          </div>
+
+        </div>
+        <mat-form-field class="select-pequeno">
+          <mat-label>Prefijo</mat-label>
+          <mat-select formControlName="gcp" (selectionChange)="onPrefijoBlur()">
+            <mat-option *ngFor="let prefijo of prefijos" [value]="prefijo.id_prefijos">
+              {{ prefijo.codpre }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+        <label class="form-label">Código:</label>
+        <div class="input-field">
+          <span class="input-text">Código</span>
+        </div>
+      </div>
+      
+    </main>
+  </form>
 </ng-container>

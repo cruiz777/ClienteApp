@@ -337,7 +337,7 @@
                       <mat-autocomplete #autoCiudad="matAutocomplete" [displayWith]="displayCiudad"
                         (optionSelected)="seleccionarCiudad($event.option.value)">
                         <mat-option *ngFor="let ciudad of ciudadFiltrados" [value]="ciudad" style="font-size: 11px;">
-                          {{ ciudad.ciudad }} - {{ ciudad.canton }} - {{ ciudad.provincia }}
+                          {{ ciudad.ciudad }} - {{ ciudad.canton }} - {{ ciudad.provincia }}  - Z0{{ ciudad.idzona }}
                         </mat-option>
                       </mat-autocomplete>
                       <mat-error
