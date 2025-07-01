@@ -35,7 +35,6 @@ import { AgGridModule } from 'ag-grid-angular';
 import { ConfirmDialogComponent } from '../../reusable/confirm-dialog/confirm-dialog.component';
 import { StatusRendererComponent } from '../../utils/grid/status-renderer.component';
 import type { GridApi, GridReadyEvent } from 'ag-grid-community';
-import { ObservacionDialogComponent } from './observacion-dialog.component';
 import { extraerSerialDinamico } from '../../utils/filters/extraer-serial.function';
 import { ExportService } from 'src/app/services/export.service';
 import { MatMenuModule } from '@angular/material/menu';
@@ -45,6 +44,7 @@ import { MY_DATE_FORMATS } from '../../seguridades/usuarios/usuarios-form/usuari
 import { Cliente } from 'src/app/interfaces/cliente';
 import { MatTooltip } from '@angular/material/tooltip';
 import { isValid, parse, setHours, setMilliseconds, setMinutes, setSeconds } from 'date-fns';
+import { ObservacionDialogComponent } from './observacion-dialog.component';
 
 interface SsccTablaView { //Interfaz auxiliar para poder mapear solamente lo que se requiere
   id: number;
@@ -253,6 +253,7 @@ export class NuevoSsccComponent implements OnInit {
     onSelectionChanged: (event: SelectionChangedEvent) => this.onSelectionChanged(event)
   };
 
+  codigoGenerado: boolean = false;
   activeTab: string = 'Listado';
   isHandset: boolean = false;
   isExpanded: boolean = true;
@@ -530,6 +531,9 @@ export class NuevoSsccComponent implements OnInit {
 
     // Limpiar la tabla de códigos generados
     this.dataGenerada.data = [];
+
+    //Permite generar los codigos nuevamente
+    this.codigoGenerado = false;
   }
 
   generar(): void {
@@ -539,7 +543,7 @@ export class NuevoSsccComponent implements OnInit {
     if (isNaN(cantidad) || cantidad <= 0) {
       this.mostrarMensaje({
         title: 'Cantidad inválida',
-        message: '⚠️ Debes ingresar un número válido de productos a codificar.',
+        message: ' Debes ingresar un número válido de productos a codificar.',
         type: 'warning'
       });
       return;
@@ -563,11 +567,13 @@ export class NuevoSsccComponent implements OnInit {
       indicador: this.formSSCC.get('empaque')?.value,
       producto_codificado: this.formSSCC.get('producto')?.value.toString(),
       serie: this.formSSCC.get('serie')?.value || false,
-      secuencia_inicio: inicio,
       cantidad_codigos: cantidad,
       usuario: usuario.nombre_usuario
     };
-
+    // Solo incluir secuencia_inicio si la casilla "serie" está marcada
+    if (payload.serie) {
+      payload.secuencia_inicio = inicio;
+    }
     this.ssccService.generate(payload).subscribe({
        next: (res) => {
           const lista = res.data.map((codigo: string, index: number) => ({
@@ -577,7 +583,7 @@ export class NuevoSsccComponent implements OnInit {
 
           this.dataGenerada.data = lista;
           this.formSSCC.patchValue({ codigosGenerados: lista.length });
-
+          this.codigoGenerado = true;
           const cantidadSolicitada = payload.cantidad_codigos;
           const cantidadGenerada = lista.length;
 
@@ -615,8 +621,17 @@ export class NuevoSsccComponent implements OnInit {
     if (!codigos || codigos.length === 0) {
       this.mostrarMensaje({
         title: 'Sin códigos',
-        message: '⚠️ No hay códigos generados para guardar.',
+        message: ' No hay códigos generados para guardar.',
         type: 'warning'
+      });
+      return;
+    }
+    const codigosUnicos = new Set(codigos.map(c => c.sscc));
+    if (codigosUnicos.size < codigos.length) {
+      this.mostrarMensaje({
+        title: 'Códigos duplicados',
+        message: 'Hay códigos SSCC duplicados. Revisa la generación.',
+        type: 'error'
       });
       return;
     }
@@ -632,20 +647,36 @@ export class NuevoSsccComponent implements OnInit {
       });
       return;
     }
+    const serie = this.formSSCC.get('serie')?.value;
+    const inicio = serie ? parseInt(this.formSSCC.get('inicio')?.value || '1', 10) : undefined;
 
     const request: SsccRequest = {
       id_prefijo: Number(this.formSSCC.get('prefijo')?.value),
       id_cliente: cliente.clientes_codigo,
       indicador: Number(this.formSSCC.get('empaque')?.value),
-      serie: this.formSSCC.get('serie')?.value || false,
+      serie: serie,
       cantidad_codigos: codigos.length,
-      secuencia_inicio: parseInt(this.formSSCC.get('inicio')?.value || '1', 10),
+      secuencia_inicio: inicio,
       usuario: usuario.nombre_usuario
     };
 
+    // Mostrar message-box de carga
+    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      disableClose: true,
+      data: {
+        title: 'Guardando códigos...',
+        message: 'Por favor espere mientras se procesan los códigos.',
+        type: 'info',
+        isLoading: true,
+        showCancel: false
+        
+      }
+    });
+
     this.ssccService.create(request).subscribe({
       next: (res) => {
-        // Mostrar el mensaje del backend tal como viene
+        dialogRef.close(); // Cierra el modal de carga
+
         const mensajeDelBackend = res?.message || 'Los códigos se generaron y guardaron correctamente.';
 
         this.mostrarMensaje({
@@ -654,18 +685,20 @@ export class NuevoSsccComponent implements OnInit {
           type: 'success'
         });
 
-        // Limpiar después del guardado
+        // Limpiar
         this.dataGenerada.data = [];
         this.formSSCC.patchValue({ codigosGenerados: 0 });
         this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
-            this.router.navigate(['/menuProductos/nuevoSscc']);
+          this.router.navigate(['/menuProductos/nuevoSscc']);
         });
       },
       error: (err) => {
+        dialogRef.close(); // Cierra el modal también en error
+
         const backendMsg = err?.error?.message || 'Error al guardar los códigos.';
         this.mostrarMensaje({
           title: 'Error al guardar',
-          message: `${backendMsg}`,
+          message: backendMsg,
           type: 'error'
         });
       }
@@ -693,6 +726,9 @@ export class NuevoSsccComponent implements OnInit {
     this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
       this.router.navigate(['/menuProductos/nuevoSscc']);
     });
+
+    //Permite generar codigos nuevamente
+    this.codigoGenerado = false;
   }
 
   //====== BUSQUEDAS AL BACKEND ============//

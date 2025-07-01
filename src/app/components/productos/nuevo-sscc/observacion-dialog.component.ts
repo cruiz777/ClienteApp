@@ -16,6 +16,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
       <button mat-button color="primary" (click)="confirmar()" cdkFocusInitial>Aceptar</button>
     </mat-dialog-actions>
   `
+  
 })
 export class ObservacionDialogComponent {
   constructor(

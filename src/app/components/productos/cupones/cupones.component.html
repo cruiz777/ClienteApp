@@ -7,204 +7,232 @@
 <!-- TAB LISTADO -->
 <ng-container *ngIf="activeTab === 'Listado'">
   <div class="contenedor">
-    <h2 class="titulo">Lista de Cupones</h2>
+    <h2 class="titulo">Total de registros: <span class="contador">{{ totalItems }}</span></h2>
 
-    <mat-form-field appearance="outline" class="campo-busqueda">
-      <mat-label>Buscar:</mat-label>
-      <input matInput [(ngModel)]="busqueda" (input)="filtrarCupones()" />
-      <button mat-icon-button matSuffix>
-        <mat-icon>search</mat-icon>
-      </button>
-    </mat-form-field>
+    <div class="filtros grid-3-cols">
+      <mat-form-field appearance="outline">
+        <mat-label>Buscar</mat-label>
+        <input matInput [formControl]="buscarCuponControl" placeholder="Código de cupón">
+      </mat-form-field>
+      
+      <mat-form-field appearance="outline">
+        <mat-label>Prefijo</mat-label>
+        <mat-select [(ngModel)]="filtroPrefijo" [compareWith]="compararIds">
+          <mat-option *ngFor="let p of prefijosDisponibles" [value]="p.id">{{ p.codpre }}</mat-option>
+          <mat-option [value]="null">Todos</mat-option>
+        </mat-select>
+      </mat-form-field>
 
-    <table mat-table [dataSource]="cuponesFiltrados" class="tabla" matSort>
-      <ng-container matColumnDef="index">
-        <th mat-header-cell *matHeaderCellDef>#</th>
-        <td mat-cell *matCellDef="let element; let i = index">
-          {{ i + 1 + (cuponesFiltrados.paginator?.pageIndex || 0) * (cuponesFiltrados.paginator?.pageSize || 20) }}
-        </td>
-      </ng-container>
+      <mat-form-field appearance="outline">
+        <mat-label>Desde Serial</mat-label>
+        <input matInput [(ngModel)]="filtroSerialDesde" placeholder="Ej: 1000">
+      </mat-form-field>
 
-      <ng-container matColumnDef="cupon">
-        <th mat-header-cell *matHeaderCellDef>Cupón</th>
-        <td mat-cell *matCellDef="let row">{{ row.cupon }}</td>
-      </ng-container>
+      <mat-form-field appearance="outline">
+        <mat-label>Hasta Serial</mat-label>
+        <input matInput [(ngModel)]="filtroSerialHasta" placeholder="Ej: 2000">
+      </mat-form-field>
 
-      <ng-container matColumnDef="prefijo">
-        <th mat-header-cell *matHeaderCellDef>Prefijo</th>
-        <td mat-cell *matCellDef="let row">{{ row.prefijo }}</td>
-      </ng-container>
+      <button mat-raised-button color="primary" (click)="buscarConFiltros()" class="boton-azul-oscuro" [disabled]="!puedeBuscar">Buscar</button>
+      <button mat-flat-button color="warn" (click)="eliminarSeleccionados()" [disabled]="!tieneSeleccion">Eliminar</button>
+    </div>
 
-      <ng-container matColumnDef="descripcion">
-        <th mat-header-cell *matHeaderCellDef>Descripción</th>
-        <td mat-cell *matCellDef="let row">{{ row.descripcion }}</td>
-      </ng-container>
+    <ag-grid-angular
+      class="ag-theme-alpine"
+      style="width: 100%; height: 500px;"
+      [rowData]="cuponesData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [gridOptions]="gridOptions"
+      (gridReady)="onGridReady($event)">
+    </ag-grid-angular>
 
-      <ng-container matColumnDef="categoria">
-        <th mat-header-cell *matHeaderCellDef>Categoría de Producto</th>
-        <td mat-cell *matCellDef="let row">{{ row.categoria }}</td>
-      </ng-container>
+    <div class="paginacion-resumen">
+      Mostrando {{ (pageIndex + 1) * pageSize > totalItems ? totalItems : (pageIndex + 1) * pageSize }} 
+      de {{ totalItems }} registros
+    </div>
 
-      <ng-container matColumnDef="fecha">
-        <th mat-header-cell *matHeaderCellDef>Fecha</th>
-        <td mat-cell *matCellDef="let row">{{ row.fecha | date: 'dd/MM/yyyy' }}</td>
-      </ng-container>
-
-      <tr mat-header-row *matHeaderRowDef="columnas"></tr>
-      <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
-    </table>
-
-    <mat-paginator [pageSize]="20" [pageSizeOptions]="[10, 20, 50]" showFirstLastButtons></mat-paginator>
+    <mat-paginator
+      [length]="totalItems"
+      [pageIndex]="pageIndex"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="pageSizeOptions"
+      (page)="onPageChange($event)"
+      [showFirstLastButtons]="true">
+    </mat-paginator>
   </div>
 </ng-container>
 
 <!-- TAB GENERAR -->
 <ng-container *ngIf="activeTab === 'Generar'">
   <div class="contenedor">
-    <h2 class="titulo">Nuevos Cupones</h2>
+    <h2 class="titulo">Creación de Cupones</h2>
 
-    <div class="formulario-grid">
-      <div class="campo">
-        <label>Código de Cliente:</label>
-        <input matInput [(ngModel)]="codigoCliente" />
-      </div>
+    <form class="formulario" [formGroup]="formCupon">
+      <div class="fila">
+        <mat-form-field appearance="outline">
+          <mat-label>Código Cliente</mat-label>
+          <input matInput formControlName="codigoCliente" readonly />
+        </mat-form-field>
 
-      <div class="campo">
-        <label>Cliente:</label>
-        <input matInput [(ngModel)]="cliente" />
-      </div>
+        <mat-form-field appearance="outline">
+          <mat-label>Cliente</mat-label>
+          <input matInput formControlName="cliente" readonly />
+        </mat-form-field>
 
-      <div class="campo">
-        <label>RUC:</label>
-        <input matInput [(ngModel)]="ruc" />
-      </div>
-
-      <div class="campo">
-        <label>Prefijo:</label>
-        <mat-form-field appearance="fill">
-          <mat-select [(ngModel)]="prefijoSeleccionado">
-            <mat-option *ngFor="let p of prefijos" [value]="p">{{ p }}</mat-option>
-          </mat-select>
+        <mat-form-field appearance="outline">
+          <mat-label>RUC</mat-label>
+          <input matInput formControlName="ruc" readonly />
         </mat-form-field>
       </div>
 
-      <div class="campo ancho-completo">
-        <label>Descripción del Producto:</label>
-        <input matInput [(ngModel)]="descripcionProducto" />
+      <div class="fila">
+        <mat-form-field appearance="fill">
+          <mat-label>Prefijo</mat-label>
+          <mat-select formControlName="prefijo" [compareWith]="compararIds">
+            <mat-option *ngFor="let p of prefijosDisponibles" [value]="p.id">{{ p.codpre }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Cantidad</mat-label>
+          <input matInput type="number" formControlName="cantidad" min="1">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Descripción</mat-label>
+          <input matInput formControlName="descripcion">
+        </mat-form-field>
       </div>
 
-      <div class="campo">
-        <label>Productos a Codificar:</label>
-        <input matInput type="number" [(ngModel)]="cantidadProductos" />
+      <div class="fila">
+        <mat-checkbox formControlName="serie">Serie</mat-checkbox>
+        
+        <mat-form-field appearance="outline">
+          <mat-label>Secuencia inicio</mat-label>
+          <input matInput type="number" formControlName="inicio" [disabled]="!formCupon.get('serie')?.value">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Códigos generados</mat-label>
+          <input matInput formControlName="codigosGenerados" readonly />
+        </mat-form-field>
       </div>
 
-      <div class="campo">
-        <mat-checkbox [(ngModel)]="usarSecuenciaManual">Cambiar secuencia</mat-checkbox>
+      <div class="botones">
+        <button mat-stroked-button (click)="nuevo()">Nuevo</button>
+        <button mat-stroked-button color="primary"
+                (click)="generarCupones()"
+                [disabled]="codigoGenerado || !formCupon.valid">
+          Generar
+        </button>
+
+        <button mat-stroked-button color="accent"
+                (click)="grabar()"
+                [disabled]="cuponesGenerados.length === 0">
+          Grabar
+        </button>
+        <button mat-stroked-button color="warn" (click)="cancelar()">Cancelar</button>
       </div>
+    </form>
 
-      <div class="campo" *ngIf="usarSecuenciaManual">
-        <label>Secuencia inicial:</label>
-        <input matInput type="number" [(ngModel)]="secuenciaInicial" />
-      </div>
-    </div>
+    <div class="tabla-scroll" *ngIf="cuponesGenerados.length > 0">
+      <table mat-table [dataSource]="cuponesGenerados" class="tabla">
+        <ng-container matColumnDef="ia">
+          <th mat-header-cell *matHeaderCellDef>#</th>
+          <td mat-cell *matCellDef="let row">{{ row.ia }}</td>
+        </ng-container>
 
-    <div class="botones">
-      <button mat-stroked-button color="primary" (click)="generarCupones()">Generar</button>
-      <button mat-stroked-button color="accent" (click)="guardarCupones()">Guardar</button>
-      <button mat-stroked-button color="warn" (click)="cancelarFormulario()">Cancelar</button>
-    </div>
+        <ng-container matColumnDef="cupon">
+          <th mat-header-cell *matHeaderCellDef>Cupón</th>
+          <td mat-cell *matCellDef="let row">{{ row.cupon }}</td>
+        </ng-container>
 
-    <table mat-table [dataSource]="cuponesGenerados" class="tabla">
-      <ng-container matColumnDef="index">
-        <th mat-header-cell *matHeaderCellDef>#</th>
-        <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
+        <ng-container matColumnDef="prefijo">
+          <th mat-header-cell *matHeaderCellDef>Prefijo</th>
+          <td mat-cell *matCellDef="let row">{{ row.prefijo }}</td>
+        </ng-container>
+
         <ng-container matColumnDef="fecha">
-  <th mat-header-cell *matHeaderCellDef>Fecha</th>
-  <td mat-cell *matCellDef="let row">{{ row.fecha | date: 'dd/MM/yyyy' }}</td>
-</ng-container>
-      </ng-container>
+          <th mat-header-cell *matHeaderCellDef>Fecha</th>
+          <td mat-cell *matCellDef="let row">{{ row.fecha | date: 'dd/MM/yyyy' }}</td>
+        </ng-container>
 
-      <ng-container matColumnDef="cupon">
-        <th mat-header-cell *matHeaderCellDef>Cupón</th>
-        <td mat-cell *matCellDef="let row">{{ row.cupon }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="prefijo">
-        <th mat-header-cell *matHeaderCellDef>Prefijo</th>
-        <td mat-cell *matCellDef="let row">{{ row.prefijo }}</td>
-      </ng-container>
-
-      <ng-container matColumnDef="descripcion">
-        <th mat-header-cell *matHeaderCellDef>Descripción</th>
-        <td mat-cell *matCellDef="let row">{{ row.descripcion }}</td>
-      </ng-container>
-
-      <tr mat-header-row *matHeaderRowDef="columnasGenerar"></tr>
-      <tr mat-row *matRowDef="let row; columns: columnasGenerar;"></tr>
-    </table>
+        <tr mat-header-row *matHeaderRowDef="['ia', 'cupon', 'prefijo', 'fecha']"></tr>
+        <tr mat-row *matRowDef="let row; columns: ['ia', 'cupon', 'prefijo', 'fecha'];"></tr>
+      </table>
+    </div>
   </div>
 </ng-container>
 
 <!-- TAB REPORTES -->
 <ng-container *ngIf="activeTab === 'Reportes'">
   <div class="contenedor">
-    <h2 class="titulo">Reporte Cupones</h2>
+    <h2 class="titulo">Reportes de Cupones</h2>
 
-    <div class="filtros-grid">
-      <div class="filtro">
-        <label>Prefijo:</label>
+    <form [formGroup]="formReporte" class="formulario">
+      <div class="fila">
         <mat-form-field appearance="fill">
-          <mat-select [(ngModel)]="filtroPrefijo">
-            <mat-option *ngFor="let p of prefijos" [value]="p">{{ p }}</mat-option>
+          <mat-label>Prefijo</mat-label>
+          <mat-select formControlName="prefijo">
+            <mat-option *ngFor="let p of prefijosDisponibles" [value]="p.id">{{ p.codpre }}</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Estado</mat-label>
+          <mat-select formControlName="estado">
+            <mat-option *ngFor="let e of estados" [value]="e">{{ e }}</mat-option>
           </mat-select>
         </mat-form-field>
       </div>
 
-      <div class="filtro">
-        <label>Código:</label>
+      <div class="fila">
         <mat-form-field appearance="outline">
-          <input matInput [(ngModel)]="filtroCodigo" />
+          <mat-label>Desde</mat-label>
+          <input matInput [matDatepicker]="dpDesde" formControlName="desde">
+          <mat-datepicker-toggle matSuffix [for]="dpDesde"></mat-datepicker-toggle>
+          <mat-datepicker #dpDesde></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Hasta</mat-label>
+          <input matInput [matDatepicker]="dpHasta" formControlName="hasta">
+          <mat-datepicker-toggle matSuffix [for]="dpHasta"></mat-datepicker-toggle>
+          <mat-datepicker #dpHasta></mat-datepicker>
         </mat-form-field>
       </div>
 
-      <div class="filtro">
-        <label>Fecha:</label>
+      <div class="fila operadores">
+        <label>Operador:</label>
         <mat-form-field appearance="fill">
-          <mat-select [(ngModel)]="filtroComparacionFecha">
+          <mat-label>Operador de fecha</mat-label>
+          <mat-select formControlName="operadorFecha">
             <mat-option value="=">=</mat-option>
-            <mat-option value="<"><</mat-option>
-            <mat-option value=">">></mat-option>
+            <mat-option value="<=">&le;</mat-option>
+            <mat-option value=">">&gt;</mat-option>
             <mat-option value="entre">Entre</mat-option>
           </mat-select>
         </mat-form-field>
       </div>
 
-      <div class="filtro">
-        <label>Desde:</label>
-        <mat-form-field appearance="outline">
-          <input matInput [matDatepicker]="pickerDesde" [(ngModel)]="fechaDesde" />
-          <mat-datepicker-toggle matSuffix [for]="pickerDesde"></mat-datepicker-toggle>
-          <mat-datepicker #pickerDesde></mat-datepicker>
-        </mat-form-field>
-      </div>
+      <div class="botones">
+        <button mat-stroked-button (click)="nuevo()">Nuevo</button>
+        <button mat-stroked-button [matMenuTriggerFor]="menuExportar" color="accent">
+          Exportar <mat-icon>arrow_drop_down</mat-icon>
+        </button>
 
-      <div class="filtro">
-        <label>Hasta:</label>
-        <mat-form-field appearance="outline">
-          <input matInput [matDatepicker]="pickerHasta" [(ngModel)]="fechaHasta" />
-          <mat-datepicker-toggle matSuffix [for]="pickerHasta"></mat-datepicker-toggle>
-          <mat-datepicker #pickerHasta></mat-datepicker>
-        </mat-form-field>
-      </div>
-
-      <div class="acciones">
-        <button mat-stroked-button color="primary" (click)="nuevoReporte()">Nuevo</button>
-        <button mat-stroked-button [matMenuTriggerFor]="exportarMenu">Exportar</button>
-        <mat-menu #exportarMenu="matMenu">
-          <button mat-menu-item (click)="exportar('excel')">Excel</button>
-          <button mat-menu-item (click)="exportar('pdf')">PDF</button>
+        <mat-menu #menuExportar="matMenu">
+          <button mat-menu-item (click)="reportes('excel')">
+            <mat-icon>table_view</mat-icon>
+            <span>Exportar a Excel</span>
+          </button>
+          <button mat-menu-item (click)="reportes('pdf')">
+            <mat-icon>picture_as_pdf</mat-icon>
+            <span>Exportar a PDF</span>
+          </button>
         </mat-menu>
       </div>
-    </div>
+    </form>
   </div>
 </ng-container>

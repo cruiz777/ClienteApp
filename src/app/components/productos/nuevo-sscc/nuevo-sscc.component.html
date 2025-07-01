@@ -174,7 +174,7 @@
 
     <div class="botones">
       <button mat-stroked-button (click)="nuevo()">Nuevo</button>
-      <button mat-stroked-button color="primary" (click)="generar()">Generar</button>
+      <button mat-stroked-button color="primary" (click)="generar()" [disabled]="codigoGenerado || !formSSCC.valid">Generar</button>
       <button mat-stroked-button color="accent" (click)="grabar()" [disabled]="!puedeGrabar">Grabar</button>
       <button mat-stroked-button color="warn" (click)="cancelar()">Cancelar</button> <!-- analizar esta linea -->
     </div>

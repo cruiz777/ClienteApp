@@ -41,6 +41,7 @@ import { IntlPhoneInputComponent } from './shared/phone/intl-phone-input.compone
 import { SharedModule } from './shared/shared.module';
 import { ButtonRendererComponent } from './components/utils/grid/button-renderer.component';
 import { CheckboxRendererComponents } from './components/utils/grid/checkbox-renderer.component';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
 
@@ -81,6 +82,7 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     HotTableModule,
     SharedModule,
     AgGridModule,
+    MatProgressSpinnerModule
   ],
   providers: [
     { provide: LocationStrategy, useClass: HashLocationStrategy }
