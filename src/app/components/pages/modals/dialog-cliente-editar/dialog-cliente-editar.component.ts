@@ -51,6 +51,10 @@ import { ModalImpresionComponent } from 'src/app/components/shared/modal-impresi
 import { DialogPrefijoEditarComponent } from '../dialog-prefijo-editar/dialog-prefijo-editar.component';
 import { ClienteDatosAdicionalesService, ClienteDatosAdicionales } from 'src/app/services/cliente-datos-adicionales.service';
 import { ClienteContacto, ClienteContactoService } from 'src/app/services/cliente-contacto.service';
+import { ExportService } from 'src/app/services/export.service';
+import { ExportOptions } from 'src/app/interfaces/export-options';
+import { EmpresaService } from 'src/app/services/empresa.service';
+import { LogoService } from 'src/app/services/logo.service';
 const ELEMENT_DATA: HistorialClienteRequest[] = [
   {
     id_historial_cliente: 1,
@@ -149,7 +153,7 @@ export class DialogClienteEditarComponent implements OnInit {
   ];
 
   nombrecli: string = '';
-
+ logoUrl: string = '';
   prefijoCliente!: PrefijoClienteResponse;
 
   private clienteOriginal!: ClienteIndividual;
@@ -188,7 +192,10 @@ export class DialogClienteEditarComponent implements OnInit {
     private historialClienteService: HistorialClienteService,
     private clienteObservacionService: ClienteObservacionService,
     private clienteDatosAdicionalesService: ClienteDatosAdicionalesService,
-    private clienteContactoService: ClienteContactoService
+    private clienteContactoService: ClienteContactoService,
+    private exportService: ExportService,
+    private empresaService: EmpresaService,
+    private logoService: LogoService,
   ) { }
 
   ngOnInit(): void {
@@ -1867,6 +1874,80 @@ export class DialogClienteEditarComponent implements OnInit {
     this.botonActualizarDeshabilitado = false;
     this.botonModificarDeshabilitado = true;
   }
+
+logo()
+  {
+      this.empresaService.getEmpresas().subscribe({
+      next: (empresas) => {
+        if (empresas.length > 0 && empresas[0].empresaLogo) {
+          this.logoUrl = this.logoService.getLogoUrl(empresas[0].empresaLogo);
+          console.log('Logo cargado desde empresa:', this.logoUrl);
+        } else {
+          console.warn('No se encontró empresa o logo.');
+        }
+      },
+      error: (err) => {
+        console.error('Error al cargar empresa para obtener logo:', err);
+      }
+    });
+  }
+  exportar(tipo: 'excel' | 'pdf'): void {
+  const headers = [
+    'Prefijo',
+    'GLN',
+    'Fecha',
+    'Estado',
+    'Fecha Cierre',
+    'Tipo',
+    'Observación'
+  ];
+
+  const columns = [
+    'codpre',
+    'gln',
+    'fecha',
+    'estadoTexto',
+    'fechaCierreTexto',
+    'tipoLocalizacion',
+    'observacion'
+  ];
+
+  const data = this.dataSourcePrefijo.data.map((el: any) => ({
+    codpre: el.codpre,
+    gln: el.gln,
+    fecha: this.formatearFecha(el.fecha),
+    estadoTexto: el.estado ? 'Inactivo' : 'Activo',
+    fechaCierreTexto: this.formatearFecha(el.fechaCierre),
+    tipoLocalizacion: el.tipoLocalizacion,
+    observacion: el.observacion
+  }));
+
+  const options: ExportOptions = {
+    data,
+    columns,
+    headers,
+    filename: 'ListadoPrefijos',
+    title: 'Listado de Prefijos',
+    logoUrl: this.logoUrl || ''
+  };
+
+  if (tipo === 'excel') {
+    this.exportService.exportarExcel(options);
+  } else {
+    this.exportService.exportarPDF(options);
+  }
+}
+
+// Utilidad para formatear fecha a dd/MM/yyyy
+private formatearFecha(fecha: string | Date): string {
+  if (!fecha || fecha === '0001-01-01T00:00:00') return '';
+  const d = new Date(fecha);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
+
 
 
 }

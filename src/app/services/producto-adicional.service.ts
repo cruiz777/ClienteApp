@@ -60,13 +60,18 @@ export class ProductoAdicionalService {
       request
     );
   }
-actualizarProductoDatosAdicionales(payload: {
-  idProducto: number,
-  request: ProductoDatosAdicionalesRequest
-}): Observable<any> {
-  const url = `${this.apiBaseUrl}/ProductoDatosAdicionales/por-producto/${payload.idProducto}`;
-  return this.http.put(url, payload.request);
-}
+  actualizarProductoDatosAdicionales(payload: {
+    idProducto: number,
+    request: ProductoDatosAdicionalesRequest
+  }): Observable<any> {
+    const url = `${this.apiBaseUrl}/ProductoDatosAdicionales/por-producto/${payload.idProducto}`;
+    return this.http.put(url, payload.request);
+  }
+
+  obtenerProductoDatosAdicionalesPorIdPrefijos(idPrefijos: number): Observable<ApiResponse<ProductoDatosAdicionalesRequest>> {
+    const url = `${this.apiBaseUrl}/ProductoDatosAdicionales/por-idprefijos/${idPrefijos}`;
+    return this.http.get<ApiResponse<ProductoDatosAdicionalesRequest>>(url);
+  }
 
 
 }
