@@ -2,12 +2,13 @@ export interface CuponRequest {
   idCliente: number;
   idPrefijo: number;
   serie: boolean;
-  serialInicio?: number;
-  descripcion?: string;
-//   categoria_producto?: string;
+  serialInicio?: number; // era 'serie: boolean' => esto está mal
   cantidad: number;
   previsualizar: boolean;
-  fechaInicio: string; // ISO format YYYY-MM-DD
-  fechaCaducidad?: string; // ISO format
+  fechaInicio: string; // formato ISO 'YYYY-MM-DD'
+  fechaCaducidad?: string; // formato ISO
   estado: boolean;
+  idGrupoProducto?: number;
+  descripcion?: string;
+  usuario?: number;
 }

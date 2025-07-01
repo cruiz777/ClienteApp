@@ -45,6 +45,7 @@ import { Cliente } from 'src/app/interfaces/cliente';
 import { MatTooltip } from '@angular/material/tooltip';
 import { isValid, parse, setHours, setMilliseconds, setMinutes, setSeconds } from 'date-fns';
 import { ObservacionDialogComponent } from './observacion-dialog.component';
+import * as moment from 'moment';
 
 interface SsccTablaView { //Interfaz auxiliar para poder mapear solamente lo que se requiere
   id: number;
@@ -864,7 +865,7 @@ export class NuevoSsccComponent implements OnInit {
             prefijo: codpre,
             identificadorEmpaque: item.indicador?.toString() ?? '',
             sscc: item.sscc_completo,
-            fecha: item.fecha_creacion ?? '',
+            fecha: item.fecha_creacion ? moment(item.fecha_creacion).format('DD/MM/YYYY') : '',
             estado: item.estado ? 'Activo' : 'Inactivo',
             usuario: item.usuario,
             seleccionado: false
@@ -880,7 +881,16 @@ export class NuevoSsccComponent implements OnInit {
           headers,
           filename: 'reporte_sscc',
           title: 'Reporte de SSCC',
-          logoUrl: '/assets/logo.png'
+          logoUrl: '/assets/logo/GS1-logo.png',
+          // Headers del encabezado de los reportes
+          headerInfo: {
+            codigoEmpresa: this.prefijosDisponibles.find(p => p.id === Number(prefijo))?.codpre || 'SIN PREFIJO',
+            nombreEmpresa: cliente?.nomcli || 'NOMBRE DE LA EMPRESA',
+            emisor: 'GS1 Ecuador',
+            fechaEmision: moment().format('DD/MM/YYYY'),
+            pagina: '1',
+            ruc: cliente?.ruc || '1234567890123',
+          }
         };
         console.log('Exportando con headers:', headers);
         console.log('Exportando con columns:', columns);

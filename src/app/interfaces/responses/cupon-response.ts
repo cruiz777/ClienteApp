@@ -1,10 +1,13 @@
 export interface CuponResponse {
-  id_cupon: number;
+  idCupon: number;
   codigoCupon: string;
-  id_cliente: number;
+  idCliente: number;
   idPrefijo: number;
-  serial: number;
-  fechaInicio?: string;
+  serial?: number;
+  fechaInicio: string; // formato ISO 'YYYY-MM-DD'
   fechaCaducidad?: string;
   estado?: boolean;
+  idGrupoProducto?: number;
+  descripcion?: string;
+  usuario?: number;
 }

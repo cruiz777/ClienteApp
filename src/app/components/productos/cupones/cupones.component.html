@@ -93,6 +93,18 @@
             <mat-option *ngFor="let p of prefijosDisponibles" [value]="p.id">{{ p.codpre }}</mat-option>
           </mat-select>
         </mat-form-field>
+        
+        <mat-form-field appearance="outline" class="w-full">
+          <mat-label>Grupo de producto</mat-label>
+          <mat-select formControlName="idGrupoProducto">
+            <mat-option *ngFor="let grupo of gruposProducto" [value]="grupo.id_grupo_producto">
+              {{ grupo.codigo }} - {{ grupo.desBrick }}
+            </mat-option>
+          </mat-select>
+          <mat-error *ngIf="formCupon.get('idGrupoProducto')?.hasError('required')">
+            El grupo de producto es obligatorio.
+          </mat-error>
+        </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Cantidad</mat-label>
@@ -102,6 +114,25 @@
         <mat-form-field appearance="outline">
           <mat-label>Descripción</mat-label>
           <input matInput formControlName="descripcion">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de Vigencia</mat-label>
+          <input matInput [matDatepicker]="dpInicio" formControlName="fechaInicio">
+          <mat-datepicker-toggle matSuffix [for]="dpInicio"></mat-datepicker-toggle>
+          <mat-datepicker #dpInicio></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de Caducidad*</mat-label>
+          <input matInput [matDatepicker]="dpCaducidad"
+                formControlName="fechaCaducidad"
+                [min]="formCupon.get('fechaInicio')?.value">
+          <mat-datepicker-toggle matSuffix [for]="dpCaducidad"></mat-datepicker-toggle>
+          <mat-datepicker #dpCaducidad></mat-datepicker>
+          <mat-error *ngIf="formCupon.hasError('fechaInvalida')">
+            La fecha de caducidad no puede ser anterior a la de vigencia.
+          </mat-error>
         </mat-form-field>
       </div>
 

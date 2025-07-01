@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -15,15 +15,15 @@ import { MatDialog, MatDialogContent, MatDialogModule } from '@angular/material/
 import { MatMenuModule } from '@angular/material/menu';
 import { RouterModule } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 
 import { AgGridModule } from 'ag-grid-angular';
 import { ColDef, GridApi, GridOptions, GridReadyEvent, SelectionChangedEvent } from 'ag-grid-community';
 
-
 import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
 import { PrefijoService } from 'src/app/services/prefijo.service';
 import { UsuarioService } from 'src/app/services/usuario.service';
+import { GrupoProductoService, GrupoProducto } from 'src/app/services/grupo-producto.service';
 import { ExportService } from 'src/app/services/export.service';
 
 import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/util/messages/custom-message-box.component';
@@ -31,31 +31,45 @@ import { ButtonRendererComponent } from '../../utils/grid/button-renderer.compon
 import { StatusRendererComponent } from '../../utils/grid/status-renderer.component';
 import { ConfirmDialogComponent } from '../../reusable/confirm-dialog/confirm-dialog.component';
 
-
 import { CuponResponse } from 'src/app/interfaces/responses/cupon-response';
 import { CuponRequest } from 'src/app/interfaces/requests/cupon-request';
 import { DeleteCuponRequest } from 'src/app/interfaces/requests/delete-cupon-request';
 import { SimplePrefijoResponse } from 'src/app/interfaces/responses/prefijo-simple';
 import { Cliente } from 'src/app/interfaces/cliente';
+import { LoginUsuarioResponse } from 'src/app/interfaces/responses/usuario-log-response';
 import { CuponService } from 'src/app/services/cupones.service';
 import { ObservacionDialogComponent } from '../nuevo-sscc/observacion-dialog.component';
+import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
+import { MomentDateAdapter } from '@angular/material-moment-adapter';
 
 interface CuponTablaView {
   id: number;
   empresa: string;
   idPrefijo: number;
   prefijo: string;
-  serial: number;
+  serial: number | undefined;
   cupon: string;
-  descripcion?: string;  // Hacer opcional
-  categoria?: string;    // Hacer opcional
+  descripcion?: string;
+  categoria?: number;
+  categoriaNombre?: string; // Nuevo campo para mostrar el nombre del grupo
   fecha?: string;
-  fecha_creacion?: string; // Hacer opcional
+  fecha_creacion?: string;
   estado: string;
   usuario?: number | string;
+  usuarioNombre?: string; // Nuevo campo para mostrar el nombre del usuario
   seleccionado: boolean;
 }
-
+export const MY_DATE_FORMATS = {
+  parse: {
+    dateInput: 'DD/MM/YYYY',
+  },
+  display: {
+    dateInput: 'DD/MM/YYYY',
+    monthYearLabel: 'MMMM YYYY',
+    dateA11yLabel: 'LL',
+    monthYearA11yLabel: 'MMMM YYYY'
+  }
+};
 @Component({
   selector: 'app-cupones',
   standalone: true,
@@ -80,14 +94,28 @@ interface CuponTablaView {
     AgGridModule,
     ButtonRendererComponent,
     MatDialogModule
+  ],
+    providers: [
+    { provide: DateAdapter, useClass: MomentDateAdapter, deps: [MAT_DATE_LOCALE] },
+    { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS }
   ]
+
 })
-export class CuponesComponent implements OnInit {
+export class CuponesComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
   private gridApi!: GridApi<CuponTablaView>;
-  selectedRows: CuponTablaView[] = [];
-  usuario: any;
   
-  // Configuración del grid
+  selectedRows: CuponTablaView[] = [];
+  
+  // Usuario actual
+  usuarioActual: LoginUsuarioResponse | null = null;
+  
+  // Datos para selects
+  prefijosDisponibles: { id: number, codpre: string }[] = [];
+  gruposProducto: GrupoProducto[] = [];
+  clienteSeleccionadoObj: Cliente | null = null;
+
+  // Configuración del grid con columna de grupo de producto mejorada
   columnDefs: ColDef[] = [
     {
       headerName: '',
@@ -147,11 +175,23 @@ export class CuponesComponent implements OnInit {
       cellClass: 'text-gray-600'
     },
     { 
-      field: 'categoria', 
-      headerName: 'Categoría', 
+      field: 'categoriaNombre', 
+      headerName: 'Grupo Producto', 
       filter: 'agTextColumnFilter',
-      width: 150,
-      cellClass: 'text-gray-600'
+      width: 180,
+      cellClass: 'text-gray-600',
+      tooltipField: 'categoriaNombre',
+      valueGetter: (params) => {
+        // Si no hay categoriaNombre, buscar por categoria
+        if (params.data.categoriaNombre) {
+          return params.data.categoriaNombre;
+        }
+        if (params.data.categoria) {
+          const grupo = this.gruposProducto.find(g => g.id_grupo_producto === params.data.categoria);
+          return grupo ? `${grupo.codigo} - ${grupo.desBrick}` : 'Sin asignar';
+        }
+        return 'Sin asignar';
+      }
     },
     { 
       field: 'fecha', 
@@ -181,11 +221,14 @@ export class CuponesComponent implements OnInit {
       cellClass: 'text-center'
     },
     { 
-      field: 'usuario', 
+      field: 'usuarioNombre', 
       headerName: 'Usuario', 
       filter: 'agTextColumnFilter',
       width: 140,
-      cellClass: 'text-gray-700'
+      cellClass: 'text-gray-700',
+      valueGetter: (params) => {
+        return params.data.usuarioNombre || params.data.usuario || 'N/A';
+      }
     },
     {
       headerName: 'Acciones',
@@ -222,7 +265,7 @@ export class CuponesComponent implements OnInit {
     cellClass: 'ag-cell-focus'
   };
 
-  gridOptions: GridOptions =  {
+  gridOptions: GridOptions = {
     animateRows: true,
     enableRangeSelection: true,
     suppressRowClickSelection: true,
@@ -241,8 +284,6 @@ export class CuponesComponent implements OnInit {
   };
 
   activeTab: string = 'Listado';
-  prefijosDisponibles: { id: number, codpre: string }[] = [];
-  clienteSeleccionadoObj: Cliente | null = null;
   
   // Filtros
   filtroBusqueda = '';
@@ -258,13 +299,12 @@ export class CuponesComponent implements OnInit {
   pageSize = 50;
   pageSizeOptions = [50, 100, 200, 500];
 
-  // Formulario Generar
+  // Formularios
   formCupon: FormGroup;
+  formReporte: FormGroup;
+  
   codigoGenerado = false;
   cuponesGenerados: any[] = [];
-  
-  // Formulario Reportes
-  formReporte: FormGroup;
   estados = ['Activo', 'Inactivo'];
 
   constructor(
@@ -273,17 +313,55 @@ export class CuponesComponent implements OnInit {
     private clienteSeleccionadoService: ClienteSeleccionadoService,
     private prefijoService: PrefijoService,
     private usuarioService: UsuarioService,
+    private grupoProductoService: GrupoProductoService,
     private dialog: MatDialog,
     private exportService: ExportService
-  ) {
-    // Formulario Generar
+  ) {this.formCupon = this.fb.group({
+      codigoCliente: [''],
+      cliente: [''],
+      ruc: [''],
+      prefijo: [null, Validators.required],
+      descripcion: ['', Validators.required],
+      categoria: [''], 
+      idGrupoProducto: [null],
+      cantidad: [1, [Validators.required, Validators.min(1)]],
+      serie: [false],
+      inicio: [1],
+      codigosGenerados: [''],
+      fechaInicio: [null, Validators.required],    
+      fechaCaducidad: [null, Validators.required]
+    });
+
+    // Formulario Reportes
+    this.formReporte = this.fb.group({
+      prefijo: [''],
+      estado: [''],
+      desde: [null],
+      hasta: [null],
+      operadorFecha: ['=']
+    });
+  }
+
+  ngOnInit(): void {
+    this.initializeComponent();
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // ========== INICIALIZACIÓN ==========
+  private initializeForms(): void {
+    // Formulario Generar con campo de grupo de producto
     this.formCupon = this.fb.group({
       codigoCliente: [''],
       cliente: [''],
       ruc: [''],
       prefijo: [null, Validators.required],
       descripcion: ['', Validators.required],
-      categoria: [''],
+      categoria: [''], // Campo legacy mantenido por compatibilidad
+      idGrupoProducto: [null], // Nuevo campo principal para grupo de producto
       cantidad: [1, [Validators.required, Validators.min(1)]],
       serie: [false],
       inicio: [1],
@@ -300,11 +378,16 @@ export class CuponesComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {
-    this.usuarioService.currentUser$.subscribe(usuario => {
-      this.usuario = usuario;
-    });
+  private initializeComponent(): void {
+    // Suscribirse a cambios del usuario actual de manera reactiva
+    this.usuarioService.currentUser$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(usuario => {
+        this.usuarioActual = usuario;
+        console.log('👤 Usuario actual actualizado:', this.usuarioActual);
+      });
 
+    // Validar cliente seleccionado
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
     this.clienteSeleccionadoObj = cliente;
 
@@ -317,8 +400,23 @@ export class CuponesComponent implements OnInit {
       return;
     }
 
-    this.cargarPrefijosPorCliente();
+    // Cargar datos iniciales
+    this.cargarDatosIniciales();
     this.initFiltroBusquedaListener();
+    this.setupFormControls();
+  }
+
+  private cargarDatosIniciales(): void {
+    const cliente = this.clienteSeleccionadoObj;
+    if (!cliente) return;
+
+    // Cargar grupos de producto
+    this.cargarGruposProducto();
+    
+    // Cargar prefijos
+    this.cargarPrefijosPorCliente();
+    
+    // Cargar cupones
     this.cargarCuponesActual();
 
     // Setear datos del cliente en el formulario
@@ -327,143 +425,141 @@ export class CuponesComponent implements OnInit {
       cliente: cliente.nomcli,
       ruc: cliente.ruc
     });
+  }
 
+  private cargarGruposProducto(): void {
+    this.grupoProductoService.obtenerGrupos()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (grupos) => {
+          this.gruposProducto = grupos;
+          console.log('📦 Grupos de producto cargados:', grupos.length);
+        },
+        error: (err) => {
+          console.error('❌ Error al cargar grupos de producto:', err);
+          this.mostrarMensaje({
+            title: 'Error al cargar grupos',
+            message: 'No se pudieron cargar los grupos de producto.',
+            type: 'warning'
+          });
+        }
+      });
+  }
+
+  private setupFormControls(): void {
     // Controlar campos de secuencia
-    this.formCupon.get('serie')?.valueChanges.subscribe((checked: boolean) => {
-      const inicioControl = this.formCupon.get('inicio');
-      checked ? inicioControl?.enable() : inicioControl?.disable();
-    });
+    this.formCupon.get('serie')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((checked: boolean) => {
+        const inicioControl = this.formCupon.get('inicio');
+        checked ? inicioControl?.enable() : inicioControl?.disable();
+      });
 
     this.formCupon.get('inicio')?.disable();
   }
 
-  // ========== LISTADO ==========
-  cargarCupones(page: number = 0, size: number = 10): void {
+  // ========== MÉTODOS DE CARGA DE DATOS ==========
+  cargarCupones(page: number = 0, size: number = 50): void {
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
-    if (!cliente) return;
+    if (!cliente) {
+      this.mostrarMensaje({
+        title: 'Cliente no seleccionado',
+        message: 'Debes seleccionar al menos un cliente para continuar.',
+        type: 'warning'
+      });
+      return;
+    }
 
-    const idPrefijoSeleccionado = this.filtroPrefijo;
+    this.cuponService.getByCliente(cliente.clientes_codigo, page + 1, size)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.type === 'ERROR' || !response.data) {
+            this.mostrarMensaje({
+              title: 'Error al cargar',
+              message: response.message || 'Error al cargar los cupones.',
+              type: 'error'
+            });
+            return;
+          }
 
-    const filtros = {
-      page: page + 1,
-      pageSize: size,
-      idCliente: cliente.clientes_codigo,
-      idPrefijo: idPrefijoSeleccionado ?? undefined,
-      codigoCupon: this.filtroBusqueda?.trim() || undefined,
-      serial: this.filtroSerialDesde ? parseInt(this.filtroSerialDesde) : undefined,
-      estado: this.formReporte.value.estado === 'Activo' ? true : 
-              this.formReporte.value.estado === 'Inactivo' ? false : undefined,
-      fechaDesde: this.formReporte.value.desde || undefined,
-      fechaHasta: this.formReporte.value.hasta || undefined
-    };
+          const mappedData = this.mapearDatosCupones(response.data.items, cliente);
+          this.cuponesData = mappedData;
+          this.totalItems = response.data.totalItems;
+          this.pageIndex = response.data.page - 1;
+          this.pageSize = response.data.pageSize;
+        },
+        error: (err) => {
+          console.error('Error al cargar cupones:', err);
+          this.mostrarMensaje({
+            title: 'Error de conexión',
+            message: 'No se pudieron cargar los cupones. Intenta nuevamente.',
+            type: 'error'
+          });
+        }
+      });
+  }
 
-    this.cuponService.buscarCupones(filtros).subscribe({
-      next: (response) => {
-        const mappedData = response.data.items.map((item: CuponResponse) => {
-          const codpre = this.prefijosDisponibles.find(p => p.id === item.idPrefijo)?.codpre || 'N/A';
+  private mapearDatosCupones(items: CuponResponse[], cliente: Cliente): CuponTablaView[] {
+    return items.map((item: CuponResponse) => {
+      const codpre = this.prefijosDisponibles.find(p => p.id === item.idPrefijo)?.codpre || 'N/A';
+      
+      // Buscar información del grupo de producto
+      const grupoProducto = this.gruposProducto.find(g => g.id_grupo_producto === item.idGrupoProducto);
+      const categoriaNombre = grupoProducto 
+        ? `${grupoProducto.codigo} - ${grupoProducto.desBrick}` 
+        : undefined;
 
-          return {
-            id: item.id_cupon,
-            idPrefijo: item.idPrefijo,
-            empresa: cliente?.nomcli || 'ECOP',
-            prefijo: codpre,
-            serial: item.serial,
-            cupon: item.codigoCupon,
-            // descripcion: item.descripcion,
-            // categoria: item.categoria_producto,
-            // fecha: item.fechaInicio,
-            estado: item.estado ? 'Activo' : 'Inactivo',
-            usuario: 1,
-            seleccionado: false
-          };
-        });
-
-        this.cuponesData = mappedData;
-        this.totalItems = response.data.totalItems;
-        this.pageIndex = response.data.page - 1;
-        this.pageSize = response.data.pageSize;
-      },
-      error: (err) => console.error('Error al cargar cupones:', err)
+      return {
+        id: item.idCupon,
+        idPrefijo: item.idPrefijo,
+        empresa: cliente?.nomcli || 'ECOP',
+        prefijo: codpre,
+        serial: item.serial,
+        cupon: item.codigoCupon,
+        descripcion: item.descripcion,
+        categoria: item.idGrupoProducto,
+        categoriaNombre: categoriaNombre,
+        fecha: item.fechaInicio,
+        estado: item.estado ? 'Activo' : 'Inactivo',
+        usuario: item.usuario,
+        usuarioNombre: this.obtenerNombreUsuario(item.usuario),
+        seleccionado: false
+      } as CuponTablaView;
     });
+  }
+
+  private obtenerNombreUsuario(idUsuario?: number): string {
+    // Por ahora retornamos el ID, pero podrías implementar un cache de usuarios
+    // o hacer una llamada al servicio para obtener el nombre
+    if (!idUsuario) return 'N/A';
+    
+    // Si es el usuario actual, mostrar su nombre
+    if (this.usuarioActual && idUsuario === this.usuarioActual.id_usuario) {
+      return this.usuarioActual.nombreD || this.usuarioActual.nombre_usuario;
+    }
+    
+    return `Usuario ${idUsuario}`;
   }
 
   cargarPrefijosPorCliente(): void {
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
     if (!cliente) return;
          
-    this.prefijoService.obtenerPrefijosUnicosPorCliente(cliente.clientes_codigo).subscribe({
-      next: (res) => {
-        this.prefijosDisponibles = res.map(p => ({
-          id: p.idPrefijos,
-          codpre: p.codpre
-        }));
-      },
-      error: (err) => console.error('Error al cargar prefijos:', err)
-    });
-  }
-
-  buscarConFiltros(): void {
-    this.pageIndex = 0;
-    this.cargarCupones(0, this.pageSize);
-  }
-
-  buscarCupon(): void {
-    const codigoCupon = this.buscarCuponControl.value?.trim();
-    const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
-
-    if (!codigoCupon) {
-      this.mostrarMensaje({
-        title: 'Campo vacío',
-        message: 'Por favor, ingresa un código de cupón.',
-        type: 'warning'
+    this.prefijoService.obtenerPrefijosUnicosPorCliente(cliente.clientes_codigo)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          this.prefijosDisponibles = res.map(p => ({
+            id: p.idPrefijos,
+            codpre: p.codpre
+          }));
+        },
+        error: (err) => console.error('Error al cargar prefijos:', err)
       });
-      return;
-    }
-
-    this.cuponService.buscarCupones({ codigoCupon }).subscribe({
-      next: (res) => {
-        if (res.type === 'ERROR' || !res.data || res.data.items.length === 0) {
-          this.mostrarMensaje({
-            title: 'No encontrado',
-            message: 'El código de cupón no existe.',
-            type: 'warning'
-          });
-          return;
-        }
-
-        const item = res.data.items[0];
-        const codpre = this.prefijosDisponibles.find(p => Number(p.id) === Number(item.idPrefijo))?.codpre || 'N/A';
-        const formatFecha = (fecha: Date): string =>
-           fecha.toISOString().split('T')[0]; // "2025-06-30"
-        const registro: CuponTablaView = {
-          id: item.id_cupon,
-          empresa: cliente?.nomcli || 'ECOP',
-          idPrefijo: item.idPrefijo,
-          prefijo: codpre,
-          serial: item.serial,
-          cupon: item.codigoCupon,
-          // descripcion: item.descripcion,
-          // categoria: item.categoria_producto,
-          fecha: item.fechaInicio ?? '',
-          estado: item.estado ? 'Activo' : 'Inactivo',
-          usuario: '1',
-          seleccionado: false
-        };
-
-        this.cuponesData = [registro];
-        this.totalItems = 1;
-      },
-      error: (err) => {
-        this.mostrarMensaje({
-          title: 'Error',
-          message: err?.error?.message || 'Error al buscar el cupón.',
-          type: 'error'
-        });
-      }
-    });
   }
 
-  // ========== GENERAR ==========
+  // ========== MÉTODOS DE GENERACIÓN ==========
   generarCupones(): void {
     if (!this.formCupon.valid) {
       this.mostrarMensaje({
@@ -477,9 +573,8 @@ export class CuponesComponent implements OnInit {
     const cantidad = this.formCupon.get('cantidad')?.value;
     const inicio = this.formCupon.get('inicio')?.value || 1;
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
-    const usuario = this.usuarioService.getUsuarioActual();
 
-    if (!cliente || !usuario) {
+    if (!cliente || !this.usuarioActual) {
       this.mostrarMensaje({
         title: 'Error de sesión',
         message: 'Cliente o usuario no disponible.',
@@ -493,43 +588,47 @@ export class CuponesComponent implements OnInit {
       idCliente: cliente.clientes_codigo,
       cantidad: cantidad,
       serie: this.formCupon.get('serie')?.value || false,
-      serialInicio: inicio,
+      serialInicio: this.formCupon.get('serie')?.value ? inicio : undefined,
       previsualizar: true,
-      fechaInicio: this.formatFecha(new Date()),
-      fechaCaducidad: this.formatFecha(new Date()),
+      fechaInicio: this.formatFecha(this.formCupon.get('fechaInicio')?.value),
+      fechaCaducidad: this.formatFecha(this.formCupon.get('fechaCaducidad')?.value),
+      descripcion: this.formCupon.get('descripcion')?.value,
+      idGrupoProducto: this.formCupon.get('idGrupoProducto')?.value,
       estado: true
     };
 
-    this.cuponService.create(payload).subscribe({
-      next: (res) => {
-        const lista = res.data.map((codigo: string, index: number) => ({
-          ia: index + 1,
-          cupon: codigo,
-          prefijo: this.prefijosDisponibles.find(p => p.id === Number(this.formCupon.get('prefijo')?.value))?.codpre || 'N/A',
-          fecha: this.formatFecha(new Date())
-        }));
+    this.cuponService.create(payload)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          const lista = res.data.map((codigo: string, index: number) => ({
+            ia: index + 1,
+            cupon: codigo,
+            prefijo: this.prefijosDisponibles.find(p => p.id === Number(this.formCupon.get('prefijo')?.value))?.codpre || 'N/A',
+            fecha: this.formatFecha(new Date())
+          }));
 
+          this.cuponesGenerados = lista;
+          this.formCupon.patchValue({ codigosGenerados: lista.length });
+          this.codigoGenerado = true;
 
-        this.cuponesGenerados = lista;
-        this.formCupon.patchValue({ codigosGenerados: lista.length });
-        this.codigoGenerado = true;
-
-        this.mostrarMensaje({
-          title: 'Previsualización completa',
-          message: `Se generaron ${lista.length} cupones. Presiona "Grabar" para guardar.`,
-          type: 'info'
-        });
-      },
-      error: (err) => {
-        console.error('Error al previsualizar cupones:', err);
-        this.mostrarMensaje({
-          title: 'Error al generar',
-          message: err?.error?.message || 'Error al generar los cupones.',
-          type: 'error'
-        });
-      }
-    });
+          this.mostrarMensaje({
+            title: 'Previsualización completa',
+            message: `Se generaron ${lista.length} cupones. Presiona "Grabar" para guardar.`,
+            type: 'info'
+          });
+        },
+        error: (err) => {
+          console.error('Error al previsualizar cupones:', err);
+          this.mostrarMensaje({
+            title: 'Error al generar',
+            message: err?.error?.message || 'Error al generar los cupones.',
+            type: 'error'
+          });
+        }
+      });
   }
+
   grabar(): void {
     if (!this.formCupon.valid || this.cuponesGenerados.length === 0) {
       this.mostrarMensaje({
@@ -543,9 +642,8 @@ export class CuponesComponent implements OnInit {
     const cantidad = this.formCupon.get('cantidad')?.value;
     const inicio = this.formCupon.get('inicio')?.value || 1;
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
-    const usuario = this.usuarioService.getUsuarioActual();
 
-    if (!cliente || !usuario) {
+    if (!cliente || !this.usuarioActual) {
       this.mostrarMensaje({
         title: 'Error de sesión',
         message: 'Cliente o usuario no disponible.',
@@ -559,54 +657,171 @@ export class CuponesComponent implements OnInit {
       idCliente: cliente.clientes_codigo,
       cantidad: cantidad,
       serie: this.formCupon.get('serie')?.value || false,
-      serialInicio: inicio,
-      previsualizar: false, // ¡Este es el cambio clave!
+      serialInicio: this.formCupon.get('serie')?.value ? inicio : undefined,
+      previsualizar: false,
       fechaInicio: this.formatFecha(new Date()),
       fechaCaducidad: this.formatFecha(new Date()),
+      descripcion: this.formCupon.get('descripcion')?.value,
+      idGrupoProducto: this.formCupon.get('idGrupoProducto')?.value,
       estado: true
     };
 
-    this.cuponService.create(payload).subscribe({
-      next: () => {
+    this.cuponService.create(payload)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: () => {
+          this.mostrarMensaje({
+            title: 'Cupones guardados',
+            message: 'Se grabaron correctamente los cupones generados.',
+            type: 'success'
+          });
+          this.nuevo();
+          this.cargarCuponesActual();
+        },
+        error: (err) => {
+          console.error('Error al grabar cupones:', err);
+          this.mostrarMensaje({
+            title: 'Error al grabar',
+            message: err?.error?.message || 'No se pudieron guardar los cupones.',
+            type: 'error'
+          });
+        }
+      });
+  }
+
+  // ========== MÉTODOS DE BÚSQUEDA Y FILTROS ==========
+  buscarConFiltros(): void {
+    this.pageIndex = 0;
+    this.buscarCuponesConFiltros(0, this.pageSize);
+  }
+
+  buscarCuponesConFiltros(page: number = 0, size: number = 50): void {
+    const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+    if (!cliente) {
+      this.mostrarMensaje({
+        title: 'Cliente no seleccionado',
+        message: 'Debes seleccionar al menos un cliente para continuar.',
+        type: 'warning'
+      });
+      return;
+    }
+
+    const filtros = {
+      page: page + 1,
+      pageSize: size,
+      idCliente: cliente.clientes_codigo,
+      ...(this.filtroPrefijo && { idPrefijo: this.filtroPrefijo }),
+      ...(this.filtroBusqueda?.trim() && { codigoCupon: this.filtroBusqueda.trim() }),
+      ...(this.filtroSerialDesde?.trim() && { serial: parseInt(this.filtroSerialDesde) }),
+      ...(this.formReporte.value.estado === 'Activo' && { estado: true }),
+      ...(this.formReporte.value.estado === 'Inactivo' && { estado: false }),
+      ...(this.formReporte.value.desde && { fechaDesde: this.formReporte.value.desde }),
+      ...(this.formReporte.value.hasta && { fechaHasta: this.formReporte.value.hasta })
+    };
+
+    this.cuponService.buscarCupones(filtros)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          if (response.type === 'ERROR' || !response.data) {
+            this.mostrarMensaje({
+              title: 'Error en búsqueda',
+              message: response.message || 'Error al buscar los cupones.',
+              type: 'error'
+            });
+            return;
+          }
+
+          if (response.data.items.length === 0) {
+            this.mostrarMensaje({
+              title: 'Sin resultados',
+              message: 'No se encontraron cupones que coincidan con los filtros aplicados.',
+              type: 'info'
+            });
+            this.cuponesData = [];
+            this.totalItems = 0;
+            return;
+          }
+
+          const mappedData = this.mapearDatosCupones(response.data.items, cliente);
+          this.cuponesData = mappedData;
+          this.totalItems = response.data.totalItems;
+          this.pageIndex = response.data.page - 1;
+          this.pageSize = response.data.pageSize;
+        },
+        error: (err) => {
+          console.error('Error al buscar cupones:', err);
+          this.mostrarMensaje({
+            title: 'Error de búsqueda',
+            message: err?.error?.message || 'Error al realizar la búsqueda de cupones.',
+            type: 'error'
+          });
+        }
+      });
+  }
+
+  buscarCuponPorCodigo(): void {
+    const codigoCupon = this.buscarCuponControl.value?.trim();
+    const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+
+    if (!codigoCupon) {
+      this.mostrarMensaje({
+        title: 'Campo vacío',
+        message: 'Por favor, ingresa un código de cupón.',
+        type: 'warning'
+      });
+      return;
+    }
+
+    if (!cliente) {
+      this.mostrarMensaje({
+        title: 'Cliente no seleccionado',
+        message: 'Debes seleccionar un cliente para buscar cupones.',
+        type: 'warning'
+      });
+      return;
+    }
+
+    this.cuponService.buscarCupones({ 
+      codigoCupon,
+      idCliente: cliente.clientes_codigo 
+    })
+    .pipe(takeUntil(this.destroy$))
+    .subscribe({
+      next: (response) => {
+        if (response.type === 'ERROR' || !response.data || response.data.items.length === 0) {
+          this.mostrarMensaje({
+            title: 'No encontrado',
+            message: 'El código de cupón no existe o no pertenece al cliente seleccionado.',
+            type: 'warning'
+          });
+          return;
+        }
+
+        const mappedData = this.mapearDatosCupones(response.data.items, cliente);
+        this.cuponesData = mappedData;
+        this.totalItems = 1;
+        this.pageIndex = 0;
+        this.pageSize = 1;
+
         this.mostrarMensaje({
-          title: 'Cupones guardados',
-          message: 'Se grabaron correctamente los cupones generados.',
+          title: 'Cupón encontrado',
+          message: `Se encontró el cupón: ${response.data.items[0].codigoCupon}`,
           type: 'success'
         });
-        this.nuevo();
-        this.cargarCuponesActual();
       },
       error: (err) => {
-        console.error('Error al grabar cupones:', err);
+        console.error('Error al buscar cupón:', err);
         this.mostrarMensaje({
-          title: 'Error al grabar',
-          message: err?.error?.message || 'No se pudieron guardar los cupones.',
+          title: 'Error',
+          message: err?.error?.message || 'Error al buscar el cupón.',
           type: 'error'
         });
       }
     });
   }
 
-  nuevo(): void {
-    this.formCupon.patchValue({
-      prefijo: null,
-      descripcion: '',
-      categoria: '',
-      cantidad: 1,
-      serie: false,
-      inicio: 1,
-      codigosGenerados: ''
-    });
-    this.formCupon.get('inicio')?.disable();
-    this.cuponesGenerados = [];
-    this.codigoGenerado = false;
-  }
-
-  cancelar(): void {
-    this.nuevo();
-  }
-
-  // ========== ELIMINACIÓN ==========
+  // ========== MÉTODOS DE ELIMINACIÓN ==========
   eliminarSeleccionados(): void {
     if (this.selectedRows.length === 0) {
       this.mostrarMensaje({
@@ -625,10 +840,19 @@ export class CuponesComponent implements OnInit {
     dialogRef.afterClosed().subscribe((observacion: string | undefined) => {
       if (!observacion) return;
 
+      if (!this.usuarioActual) {
+        this.mostrarMensaje({
+          title: 'Error de sesión',
+          message: 'Usuario no disponible.',
+          type: 'error'
+        });
+        return;
+      }
+
       const payload: DeleteCuponRequest = {
         ids: this.selectedRows.map(row => row.id).filter(id => id != null) as number[],
         observacion,
-        usuario: this.usuario.id_usuario
+        usuario: this.usuarioActual.id_usuario
       };
 
       if (payload.ids.length === 0) {
@@ -640,29 +864,31 @@ export class CuponesComponent implements OnInit {
         return;
       }
 
-      this.cuponService.deleteMultiple(payload).subscribe({
-        next: (response) => {
-          this.mostrarMensaje({
-            title: 'Eliminación exitosa',
-            message: response.message || 'Registros eliminados correctamente.',
-            type: 'success'
-          });
-          this.cargarCuponesActual();
-          this.selectedRows = [];
-        },
-        error: (err) => {
-          this.mostrarMensaje({
-            title: 'Error al eliminar',
-            message: 'Ocurrió un error al intentar eliminar los registros.',
-            type: 'error'
-          });
-          console.error(err);
-        }
-      });
+      this.cuponService.deleteMultiple(payload)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (response) => {
+            this.mostrarMensaje({
+              title: 'Eliminación exitosa',
+              message: response.message || 'Registros eliminados correctamente.',
+              type: 'success'
+            });
+            this.cargarCuponesActual();
+            this.selectedRows = [];
+          },
+          error: (err) => {
+            this.mostrarMensaje({
+              title: 'Error al eliminar',
+              message: 'Ocurrió un error al intentar eliminar los registros.',
+              type: 'error'
+            });
+            console.error(err);
+          }
+        });
     });
   }
 
-  // ========== REPORTES ==========
+  // ========== MÉTODOS DE REPORTES ==========
   reportes(formato: 'excel' | 'pdf' = 'excel'): void {
     const { prefijo, estado, desde, hasta } = this.formReporte.value;
 
@@ -673,67 +899,75 @@ export class CuponesComponent implements OnInit {
       fechaHasta: hasta || undefined
     };
 
-    this.cuponService.buscarCupones(filtros).subscribe({
-      next: (res) => {
-        const cliente = this.clienteSeleccionadoObj;
+    this.cuponService.buscarCupones(filtros)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res) => {
+          const cliente = this.clienteSeleccionadoObj;
 
-        if (!res.data || res.data.items.length === 0) {
-          this.mostrarMensaje({
-            title: 'Sin resultados',
-            message: 'No se encontraron registros que coincidan con los filtros.',
-            type: 'warning'
+          if (!res.data || res.data.items.length === 0) {
+            this.mostrarMensaje({
+              title: 'Sin resultados',
+              message: 'No se encontraron registros que coincidan con los filtros.',
+              type: 'warning'
+            });
+            return;
+          }
+
+          const data = res.data.items.map((item: CuponResponse): CuponTablaView => {
+            const codpre = this.prefijosDisponibles.find(p => p.id === item.idPrefijo)?.codpre || 'N/A';
+            const grupoProducto = this.gruposProducto.find(g => g.id_grupo_producto === item.idGrupoProducto);
+            const categoriaNombre = grupoProducto 
+              ? `${grupoProducto.codigo} - ${grupoProducto.desBrick}` 
+              : 'Sin asignar';
+
+            return {
+              id: item.idCupon,
+              idPrefijo: item.idPrefijo,
+              empresa: cliente?.nomcli || 'ECOP',
+              prefijo: codpre,
+              serial: item.serial,
+              cupon: item.codigoCupon,
+              descripcion: item.descripcion,
+              categoria: item.idGrupoProducto,
+              categoriaNombre: categoriaNombre,
+              fecha: item.fechaInicio ?? '',
+              estado: item.estado ? 'Activo' : 'Inactivo',
+              usuario: item.usuario,
+              usuarioNombre: this.obtenerNombreUsuario(item.usuario),
+              seleccionado: false
+            };
           });
-          return;
-        }
 
-        const data = res.data.items.map((item: CuponResponse): CuponTablaView => {
-          const codpre = this.prefijosDisponibles.find(p => p.id === item.idPrefijo)?.codpre || 'N/A';
+          const headers = ['Cupón', 'Prefijo', 'Descripción', 'Grupo Producto', 'Fecha', 'Usuario'];
+          const columns: (keyof CuponTablaView)[] = ['cupon', 'prefijo', 'descripcion', 'categoriaNombre', 'fecha', 'usuarioNombre'];
 
-          return {
-            id: item.id_cupon,
-            idPrefijo: item.idPrefijo,
-            empresa: cliente?.nomcli || 'ECOP',
-            prefijo: codpre,
-            serial: item.serial,
-            cupon: item.codigoCupon,
-            // descripcion: item.descripcion,
-            // categoria: item.categoria_producto,
-            fecha: item.fechaInicio ?? '',
-            estado: item.estado ? 'Activo' : 'Inactivo',
-            // usuario: item.usuario,
-            seleccionado: false
+          const options = {
+            data,
+            columns,
+            headers,
+            filename: 'reporte_cupones',
+            title: 'Reporte de Cupones',
+            logoUrl: '/assets/logo.png'
           };
-        });
 
-        const headers = ['Cupón', 'Prefijo', 'Descripción', 'Categoría', 'Fecha'];
-        const columns: (keyof CuponTablaView)[] = ['cupon', 'prefijo', 'descripcion', 'categoria', 'fecha'];
-
-        const options = {
-          data,
-          columns,
-          headers,
-          filename: 'reporte_cupones',
-          title: 'Reporte de Cupones',
-          logoUrl: '/assets/logo.png'
-        };
-
-        if (formato === 'excel') {
-          this.exportService.exportarExcel(options);
-        } else {
-          this.exportService.exportarPDF(options);
+          if (formato === 'excel') {
+            this.exportService.exportarExcel(options);
+          } else {
+            this.exportService.exportarPDF(options);
+          }
+        },
+        error: (err) => {
+          this.mostrarMensaje({
+            title: 'Error al generar reporte',
+            message: err?.error?.message || 'Ocurrió un error al generar el reporte.',
+            type: 'error'
+          });
         }
-      },
-      error: (err) => {
-        this.mostrarMensaje({
-          title: 'Error al generar reporte',
-          message: err?.error?.message || 'Ocurrió un error al generar el reporte.',
-          type: 'error'
-        });
-      }
-    });
+      });
   }
 
-  // ========== UTILIDADES ==========
+  // ========== MÉTODOS DE UTILIDAD ==========
   onGridReady(params: GridReadyEvent): void {
     this.gridApi = params.api;
   }
@@ -751,9 +985,12 @@ export class CuponesComponent implements OnInit {
   }
 
   verDetalle(row: any): void {
+    const grupoInfo = row.categoriaNombre ? ` - Grupo: ${row.categoriaNombre}` : '';
+    const usuarioInfo = row.usuarioNombre ? ` - Usuario: ${row.usuarioNombre}` : '';
+    
     this.mostrarMensaje({
-      title: 'Detalle',
-      message: `Mostrando detalle para: ${row.cupon}`,
+      title: 'Detalle del Cupón',
+      message: `Cupón: ${row.cupon}${grupoInfo}${usuarioInfo}`,
       type: 'info'
     });
   }
@@ -773,17 +1010,60 @@ export class CuponesComponent implements OnInit {
     });
   }
 
+  nuevo(): void {
+    this.formCupon.patchValue({
+      prefijo: null,
+      descripcion: '',
+      categoria: '',
+      idGrupoProducto: null,
+      cantidad: 1,
+      serie: false,
+      inicio: 1,
+      codigosGenerados: ''
+    });
+    this.formCupon.get('inicio')?.disable();
+    this.cuponesGenerados = [];
+    this.codigoGenerado = false;
+  }
+
+  cancelar(): void {
+    this.nuevo();
+  }
+
   compararIds = (o1: any, o2: any): boolean => Number(o1) === Number(o2);
   
   private initFiltroBusquedaListener(): void {
     this.buscarCuponControl.valueChanges.pipe(
       debounceTime(400),
-      distinctUntilChanged()
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
     ).subscribe(value => {
       this.filtroBusqueda = value ?? '';
-      this.cargarCuponesActual();
+      
+      // Si hay texto de búsqueda, usar filtros; si no, cargar todos
+      if (this.filtroBusqueda.trim()) {
+        this.buscarCuponesConFiltros(0, this.pageSize);
+      } else {
+        this.cargarCuponesActual();
+      }
     });
   }
+
+  /**
+   * Método para verificar si hay filtros activos
+   */
+  private tieneFiltrosActivos(): boolean {
+    return !!(
+      this.filtroBusqueda?.trim() ||
+      this.filtroPrefijo !== null ||
+      this.filtroSerialDesde?.trim() ||
+      this.filtroSerialHasta?.trim() ||
+      this.formReporte.value.estado ||
+      this.formReporte.value.desde ||
+      this.formReporte.value.hasta
+    );
+  }
+
   private formatFecha(fecha: Date): string {
     return fecha.toISOString().split('T')[0]; // "2025-06-30"
   }
@@ -793,10 +1073,35 @@ export class CuponesComponent implements OnInit {
     this.cargarCupones(0, this.pageSize);
   }
 
+  /**
+   * Método para manejar cambios de página
+   */
   onPageChange(event: any): void {
-    this.cargarCupones(event.pageIndex, event.pageSize);
+    // Decidir si usar filtros o cargar todos según el estado actual
+    if (this.tieneFiltrosActivos()) {
+      this.buscarCuponesConFiltros(event.pageIndex, event.pageSize);
+    } else {
+      this.cargarCupones(event.pageIndex, event.pageSize);
+    }
   }
 
+  /**
+   * Método para limpiar filtros y cargar todos los cupones
+   */
+  limpiarFiltros(): void {
+    // Resetear todos los filtros
+    this.filtroBusqueda = '';
+    this.filtroPrefijo = null;
+    this.filtroSerialDesde = '';
+    this.filtroSerialHasta = '';
+    this.buscarCuponControl.setValue('');
+    this.formReporte.reset();
+    
+    // Cargar todos los cupones sin filtros
+    this.cargarCuponesActual();
+  }
+
+  // ========== GETTERS PARA EL TEMPLATE ==========
   get puedeBuscar(): boolean {
     return !!(
       this.filtroBusqueda?.trim() ||
@@ -812,5 +1117,21 @@ export class CuponesComponent implements OnInit {
 
   get textoSeleccion(): string {
     return `${this.selectedRows.length} registro(s) seleccionado(s)`;
+  }
+
+  get usuarioNombre(): string {
+    return this.usuarioActual?.nombreD || this.usuarioActual?.nombre_usuario || '';
+  }
+
+  get gruposProductoDisponibles(): GrupoProducto[] {
+    return this.gruposProducto;
+  }
+
+  /**
+   * Método helper para obtener el nombre completo del grupo de producto
+   */
+  obtenerNombreGrupoProducto(idGrupo: number): string {
+    const grupo = this.gruposProducto.find(g => g.id_grupo_producto === idGrupo);
+    return grupo ? `${grupo.codigo} - ${grupo.desBrick}` : 'Grupo no encontrado';
   }
 }
