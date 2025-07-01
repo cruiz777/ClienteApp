@@ -6,6 +6,7 @@ export interface CuponResponse {
   serial?: number;
   fechaInicio: string; // formato ISO 'YYYY-MM-DD'
   fechaCaducidad?: string;
+  fechaCreacion?: string;
   estado?: boolean;
   idGrupoProducto?: number;
   descripcion?: string;

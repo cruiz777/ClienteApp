@@ -62,4 +62,41 @@ export class CuponService {
   deleteMultiple(request: DeleteCuponRequest): Observable<ApiResponse<any>> {
     return this.http.request<ApiResponse<any>>('DELETE', `${this.apiUrl}/eliminar`, { body: request });
   }
+  getReporte(filtros: {
+  idPrefijo?: number;
+  estado?: boolean;
+  operadorFecha?: string;
+  fechaDesde?: string;
+  fechaHasta?: string;
+}): Observable<ApiResponse<CuponResponse[]>> {
+  let params = new HttpParams();
+
+  // ✅ Orden exacto que funciona en Swagger
+  if (filtros.idPrefijo !== undefined) {
+    params = params.set('idPrefijo', filtros.idPrefijo.toString());
+  }
+
+  if (filtros.estado !== undefined) {
+    params = params.set('estado', filtros.estado.toString());
+  }
+
+  // ✅ operadorFecha ANTES de las fechas
+  if (filtros.operadorFecha) {
+    params = params.set('operadorFecha', filtros.operadorFecha);
+  }
+
+  if (filtros.fechaDesde) {
+    params = params.set('fechaDesde', filtros.fechaDesde);
+  }
+
+  if (filtros.fechaHasta) {
+    params = params.set('fechaHasta', filtros.fechaHasta);
+  }
+
+  // ✅ Debug: mostrar la URL final
+  const finalUrl = `${this.apiUrl}/reporte?${params.toString()}`;
+  console.log('URL generada por el frontend:', finalUrl);
+
+  return this.http.get<ApiResponse<CuponResponse[]>>(`${this.apiUrl}/reporte`, { params });
+}
 }

@@ -41,6 +41,8 @@ import { CuponService } from 'src/app/services/cupones.service';
 import { ObservacionDialogComponent } from '../nuevo-sscc/observacion-dialog.component';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MomentDateAdapter } from '@angular/material-moment-adapter';
+import { isValid, parse, setHours, setMilliseconds, setMinutes, setSeconds } from 'date-fns';
+import * as moment from 'moment';
 
 interface CuponTablaView {
   id: number;
@@ -54,6 +56,8 @@ interface CuponTablaView {
   categoriaNombre?: string; // Nuevo campo para mostrar el nombre del grupo
   fecha?: string;
   fecha_creacion?: string;
+  fechaInicio?: string;     // ✅ Agregar este campo
+  fechaCaducidad?: string;  
   estado: string;
   usuario?: number | string;
   usuarioNombre?: string; // Nuevo campo para mostrar el nombre del usuario
@@ -195,21 +199,39 @@ export class CuponesComponent implements OnInit, OnDestroy {
     },
     { 
       field: 'fecha', 
-      headerName: 'Fecha', 
+      headerName: 'Fecha Creación', 
       filter: 'agDateColumnFilter',
       width: 160,
       cellClass: 'text-gray-600',
-      valueFormatter: (params) => {
-        if (params.value) {
-          return new Date(params.value).toLocaleDateString('es-EC', {
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-          });
+        valueFormatter: (params) => {
+          if (!params.value) return '';
+          // Si la fecha viene como string ISO, formatear correctamente
+          const fecha = new Date(params.value);
+          return fecha.toLocaleDateString('es-ES') || params.value.split('T')[0];
         }
-        return '';
+    },
+    { 
+      field: 'fechaInicio', 
+      headerName: 'Fecha Inicio',  
+      filter: 'agDateColumnFilter',
+      width: 140,
+      cellClass: 'text-blue-600',
+      valueFormatter: (params) => {
+        if (!params.value) return '';
+        const fecha = new Date(params.value);
+        return fecha.toLocaleDateString('es-ES') || params.value.split('T')[0];
+      }
+    },
+    { 
+      field: 'fechaCaducidad', 
+      headerName: 'Fecha Caducidad',
+      filter: 'agDateColumnFilter',
+      width: 150,
+      cellClass: 'text-red-600',
+      valueFormatter: (params) => {
+        if (!params.value) return '';
+        const fecha = new Date(params.value);
+        return fecha.toLocaleDateString('es-ES') || params.value.split('T')[0];
       }
     },
     { 
@@ -316,7 +338,8 @@ export class CuponesComponent implements OnInit, OnDestroy {
     private grupoProductoService: GrupoProductoService,
     private dialog: MatDialog,
     private exportService: ExportService
-  ) {this.formCupon = this.fb.group({
+  ) {
+    this.formCupon = this.fb.group({
       codigoCliente: [''],
       cliente: [''],
       ruc: [''],
@@ -324,7 +347,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
       descripcion: ['', Validators.required],
       categoria: [''], 
       idGrupoProducto: [null],
-      cantidad: [1, [Validators.required, Validators.min(1)]],
+      cantidad: [1, [Validators.required, Validators.min(1), Validators.max(5000)]],
       serie: [false],
       inicio: [1],
       codigosGenerados: [''],
@@ -502,6 +525,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
 
   private mapearDatosCupones(items: CuponResponse[], cliente: Cliente): CuponTablaView[] {
     return items.map((item: CuponResponse) => {
+      console.log('Fecha original desde el backend:', item.fechaCreacion); 
       const codpre = this.prefijosDisponibles.find(p => p.id === item.idPrefijo)?.codpre || 'N/A';
       
       // Buscar información del grupo de producto
@@ -520,7 +544,9 @@ export class CuponesComponent implements OnInit, OnDestroy {
         descripcion: item.descripcion,
         categoria: item.idGrupoProducto,
         categoriaNombre: categoriaNombre,
-        fecha: item.fechaInicio,
+        fecha: item.fechaCreacion,
+        fechaInicio: item.fechaInicio,     
+        fechaCaducidad: item.fechaCaducidad,
         estado: item.estado ? 'Activo' : 'Inactivo',
         usuario: item.usuario,
         usuarioNombre: this.obtenerNombreUsuario(item.usuario),
@@ -594,7 +620,8 @@ export class CuponesComponent implements OnInit, OnDestroy {
       fechaCaducidad: this.formatFecha(this.formCupon.get('fechaCaducidad')?.value),
       descripcion: this.formCupon.get('descripcion')?.value,
       idGrupoProducto: this.formCupon.get('idGrupoProducto')?.value,
-      estado: true
+      estado: true,
+      usuario: this.usuarioActual.id_usuario
     };
 
     this.cuponService.create(payload)
@@ -659,11 +686,12 @@ export class CuponesComponent implements OnInit, OnDestroy {
       serie: this.formCupon.get('serie')?.value || false,
       serialInicio: this.formCupon.get('serie')?.value ? inicio : undefined,
       previsualizar: false,
-      fechaInicio: this.formatFecha(new Date()),
-      fechaCaducidad: this.formatFecha(new Date()),
+      fechaInicio: this.formatFecha(this.formCupon.get('fechaInicio')?.value),
+      fechaCaducidad: this.formatFecha(this.formCupon.get('fechaCaducidad')?.value),
       descripcion: this.formCupon.get('descripcion')?.value,
       idGrupoProducto: this.formCupon.get('idGrupoProducto')?.value,
-      estado: true
+      estado: true,
+      usuario: this.usuarioActual.id_usuario
     };
 
     this.cuponService.create(payload)
@@ -890,22 +918,89 @@ export class CuponesComponent implements OnInit, OnDestroy {
 
   // ========== MÉTODOS DE REPORTES ==========
   reportes(formato: 'excel' | 'pdf' = 'excel'): void {
-    const { prefijo, estado, desde, hasta } = this.formReporte.value;
+    const { prefijo, estado, desde, hasta, operadorFecha } = this.formReporte.value;
 
-    const filtros = {
-      idPrefijo: prefijo ? Number(prefijo) : undefined,
-      estado: estado === 'Activo' ? true : estado === 'Inactivo' ? false : undefined,
-      fechaDesde: desde || undefined,
-      fechaHasta: hasta || undefined
+    console.log('📋 Valores del formulario:', {
+      prefijo, estado, desde, hasta, operadorFecha
+    });
+
+    const parseFecha = (valor: any, finDelDia: boolean = false): Date | undefined => {
+      if (!valor) return undefined;
+
+      let fecha: Date | undefined;
+
+      if (valor instanceof Date && isValid(valor)) {
+        fecha = valor;
+      } else if (typeof valor === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(valor)) {
+        // Parse formato dd/MM/yyyy
+        fecha = parse(valor, 'dd/MM/yyyy', new Date());
+      } else {
+        const temp = new Date(valor);
+        if (isValid(temp)) fecha = temp;
+      }
+
+      if (fecha && isValid(fecha)) {
+        fecha = setHours(fecha, finDelDia ? 23 : 0);
+        fecha = setMinutes(fecha, finDelDia ? 59 : 0);
+        fecha = setSeconds(fecha, finDelDia ? 59 : 0);
+        fecha = setMilliseconds(fecha, finDelDia ? 999 : 0);
+        return fecha;
+      }
+
+      return undefined;
     };
 
-    this.cuponService.buscarCupones(filtros)
+    const fechaDesde = parseFecha(desde);
+    const fechaHasta = parseFecha(hasta, true);
+
+    console.log('📅 Fechas procesadas:', {
+      fechaDesde: fechaDesde?.toISOString(),
+      fechaHasta: fechaHasta?.toISOString()
+    });
+
+    // CAMBIO CRÍTICO: Solo incluir filtros con valores válidos
+    const filtros: any = {};
+    
+    // Solo agregar si tiene valor válido
+    if (prefijo && prefijo !== '' && prefijo !== 'todos') {
+      filtros.idPrefijo = Number(prefijo);
+    }
+    
+    if (estado && estado !== '' && estado !== 'todos') {
+      filtros.estado = estado === 'Activo' ? true : false;
+    }
+    
+    if (operadorFecha && operadorFecha !== '') {
+      filtros.operadorFecha = operadorFecha;
+    }
+    
+    if (fechaDesde) {
+      filtros.fechaDesde = fechaDesde.toISOString();
+    }
+    
+    if (fechaHasta) {
+      filtros.fechaHasta = fechaHasta.toISOString();
+    }
+
+    console.log('🔍 Filtros finales enviados:', filtros);
+    console.log('🔢 Cantidad de filtros:', Object.keys(filtros).length);
+
+    // 🚨 VALIDACIÓN: Si no hay filtros, hacer consulta general
+    if (Object.keys(filtros).length === 0) {
+      console.log('⚠️ No hay filtros específicos, consultando todos los registros...');
+    }
+
+    this.cuponService.getReporte(filtros)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
+          console.log('📦 Respuesta del servicio:', res);
+          console.log('📊 Cantidad de registros:', res.data?.length || 0);
+          
           const cliente = this.clienteSeleccionadoObj;
 
-          if (!res.data || res.data.items.length === 0) {
+          if (!res.data || res.data.length === 0) {
+            console.log('❌ No se encontraron registros');
             this.mostrarMensaje({
               title: 'Sin resultados',
               message: 'No se encontraron registros que coincidan con los filtros.',
@@ -914,7 +1009,8 @@ export class CuponesComponent implements OnInit, OnDestroy {
             return;
           }
 
-          const data = res.data.items.map((item: CuponResponse): CuponTablaView => {
+          // Resto del código igual...
+          const data = res.data.map((item): CuponTablaView => {
             const codpre = this.prefijosDisponibles.find(p => p.id === item.idPrefijo)?.codpre || 'N/A';
             const grupoProducto = this.gruposProducto.find(g => g.id_grupo_producto === item.idGrupoProducto);
             const categoriaNombre = grupoProducto 
@@ -931,7 +1027,9 @@ export class CuponesComponent implements OnInit, OnDestroy {
               descripcion: item.descripcion,
               categoria: item.idGrupoProducto,
               categoriaNombre: categoriaNombre,
-              fecha: item.fechaInicio ?? '',
+              fecha: item.fechaCreacion ? moment(item.fechaCreacion).format('DD/MM/YYYY') : '',
+              fechaInicio: item.fechaInicio ? moment(item.fechaInicio).format('DD/MM/YYYY') : '',
+              fechaCaducidad: item.fechaCaducidad ? moment(item.fechaCaducidad).format('DD/MM/YYYY') : '',
               estado: item.estado ? 'Activo' : 'Inactivo',
               usuario: item.usuario,
               usuarioNombre: this.obtenerNombreUsuario(item.usuario),
@@ -939,8 +1037,8 @@ export class CuponesComponent implements OnInit, OnDestroy {
             };
           });
 
-          const headers = ['Cupón', 'Prefijo', 'Descripción', 'Grupo Producto', 'Fecha', 'Usuario'];
-          const columns: (keyof CuponTablaView)[] = ['cupon', 'prefijo', 'descripcion', 'categoriaNombre', 'fecha', 'usuarioNombre'];
+          const headers = ['Cupón', 'Prefijo', 'Descripción', 'Grupo Producto', 'Fecha Creación', 'Fecha Inicio', 'Fecha Caducidad', 'Usuario'];
+          const columns: (keyof CuponTablaView)[] = ['cupon', 'prefijo', 'descripcion', 'categoriaNombre', 'fecha', 'fechaInicio', 'fechaCaducidad', 'usuarioNombre'];
 
           const options = {
             data,
@@ -948,7 +1046,15 @@ export class CuponesComponent implements OnInit, OnDestroy {
             headers,
             filename: 'reporte_cupones',
             title: 'Reporte de Cupones',
-            logoUrl: '/assets/logo.png'
+            logoUrl: '/assets/logo/GS1-logo.png',
+            headerInfo: {
+              codigoEmpresa: this.prefijosDisponibles.find(p => p.id === Number(prefijo))?.codpre || 'SIN PREFIJO',
+              nombreEmpresa: cliente?.nomcli || 'NOMBRE DE LA EMPRESA',
+              emisor: 'GS1 Ecuador',
+              fechaEmision: moment().format('DD/MM/YYYY'),
+              pagina: '1',
+              ruc: cliente?.ruc || '1234567890123',
+            }
           };
 
           if (formato === 'excel') {
@@ -958,6 +1064,10 @@ export class CuponesComponent implements OnInit, OnDestroy {
           }
         },
         error: (err) => {
+          console.error('❌ Error completo:', err);
+          console.error('❌ Status:', err.status);
+          console.error('❌ Error body:', err.error);
+          
           this.mostrarMensaje({
             title: 'Error al generar reporte',
             message: err?.error?.message || 'Ocurrió un error al generar el reporte.',
@@ -1019,7 +1129,9 @@ export class CuponesComponent implements OnInit, OnDestroy {
       cantidad: 1,
       serie: false,
       inicio: 1,
-      codigosGenerados: ''
+      codigosGenerados: '',
+      fechaInicio: null,
+       fechaCaducidad: null
     });
     this.formCupon.get('inicio')?.disable();
     this.cuponesGenerados = [];
