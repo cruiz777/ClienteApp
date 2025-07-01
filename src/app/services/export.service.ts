@@ -1,63 +1,149 @@
-import { Injectable } from '@angular/core';
 import * as ExcelJS from 'exceljs';
-import * as html2pdf from 'html2pdf.js';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import * as moment from 'moment';
 import { ExportOptions } from '../interfaces/export-options';
+import { Injectable } from '@angular/core';
+
+// Extendemos jsPDF para incluir autoTable
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => jsPDF;
+  }
+}
 
 @Injectable({ providedIn: 'root' })
 export class ExportService {
 
   async exportarExcel(options: ExportOptions): Promise<void> {
-    const { data, columns, headers, filename, title, logoUrl } = options;
+    const { data, columns, headers, filename, title, logoUrl, headerInfo } = options;
     const workbook = new ExcelJS.Workbook();
     const worksheet = workbook.addWorksheet(title || 'Reporte');
 
     let currentRow = 1;
 
-    // Logo y encabezado superior
-    if (logoUrl) {
-      try {
-        const base64 = await this.obtenerLogoBase64(logoUrl);
-        const imageId = workbook.addImage({ base64, extension: 'png' });
-
-        worksheet.addImage(imageId, {
-          tl: { col: 0, row: 0 },
-          ext: { width: 150, height: 60 }
-        });
-
-        worksheet.mergeCells('D1:H1');
-        const titleCell = worksheet.getCell('D1');
-        titleCell.value = title;
-        titleCell.font = { bold: true, size: 14 };
-        titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
-
-        worksheet.mergeCells('D2:H2');
-        const fechaCell = worksheet.getCell('D2');
-        fechaCell.value = 'Exportado el: ' + moment().format('YYYY-MM-DD HH:mm:ss');
-        fechaCell.font = { italic: true };
-        fechaCell.alignment = { horizontal: 'center' };
-
-        currentRow = 5;
-      } catch (error) {
-        console.warn('⚠️ No se pudo cargar el logo:', error);
+    // ✅ NUEVO ENCABEZADO PERSONALIZADO
+    if (headerInfo) {
+      // Logo
+      if (logoUrl) {
+        try {
+          const base64 = await this.obtenerLogoBase64(logoUrl);
+          const imageId = workbook.addImage({ base64, extension: 'png' });
+          worksheet.addImage(imageId, {
+            tl: { col: 0, row: 0 },
+            ext: { width: 120, height: 50 }
+          });
+        } catch (error) {
+          console.warn('⚠️ No se pudo cargar el logo:', error);
+        }
       }
+
+      // Título principal centrado
+      worksheet.mergeCells('D1:G2');
+      const mainTitleCell = worksheet.getCell('D1');
+      mainTitleCell.value = 'Sistema de Control de Códigos';
+      mainTitleCell.font = { bold: true, size: 16 };
+      mainTitleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      // Subtítulo
+      worksheet.mergeCells('D3:G3');
+      const subTitleCell = worksheet.getCell('D3');
+      subTitleCell.value = title || 'Reporte de Productos';
+      subTitleCell.font = { bold: true, size: 14 };
+      subTitleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      // Información de la empresa (lado izquierdo)
+      currentRow = 5;
+      if (headerInfo.codigoEmpresa) {
+        const codigoRow = worksheet.getRow(currentRow++);
+        codigoRow.getCell(1).value = headerInfo.codigoEmpresa;
+        codigoRow.getCell(1).font = { bold: true, size: 12 };
+      }
+
+      if (headerInfo.nombreEmpresa) {
+        const empresaRow = worksheet.getRow(currentRow++);
+        empresaRow.getCell(1).value = headerInfo.nombreEmpresa;
+        empresaRow.getCell(1).font = { bold: true, size: 12 };
+      }
+
+      // Información lateral derecha
+      const infoRow = 5;
+      if (headerInfo.emisor) {
+        worksheet.getCell(`H${infoRow}`).value = 'Emisor:';
+        worksheet.getCell(`I${infoRow}`).value = headerInfo.emisor;
+        worksheet.getCell(`H${infoRow}`).font = { bold: true };
+      }
+
+      if (headerInfo.fechaEmision) {
+        worksheet.getCell(`H${infoRow + 1}`).value = 'Fecha emisión:';
+        worksheet.getCell(`I${infoRow + 1}`).value = headerInfo.fechaEmision;
+        worksheet.getCell(`H${infoRow + 1}`).font = { bold: true };
+      }
+
+      if (headerInfo.pagina) {
+        worksheet.getCell(`H${infoRow + 2}`).value = 'Pág:';
+        worksheet.getCell(`I${infoRow + 2}`).value = headerInfo.pagina;
+        worksheet.getCell(`H${infoRow + 2}`).font = { bold: true };
+      }
+
+      if (headerInfo.ruc) {
+        worksheet.getCell(`H${infoRow + 3}`).value = 'RUC:';
+        worksheet.getCell(`I${infoRow + 3}`).value = headerInfo.ruc;
+        worksheet.getCell(`H${infoRow + 3}`).font = { bold: true };
+      }
+
+      if (headerInfo.gln) {
+        worksheet.getCell(`H${infoRow + 4}`).value = 'GLN:';
+        worksheet.getCell(`I${infoRow + 4}`).value = headerInfo.gln;
+        worksheet.getCell(`H${infoRow + 4}`).font = { bold: true };
+      }
+
+      currentRow = 8;
     } else {
-      if (title) {
-        const titleRow = worksheet.getRow(currentRow++);
-        titleRow.getCell(1).value = title;
-        titleRow.getCell(1).font = { bold: true, size: 14 };
-      }
+      // Encabezado original (fallback)
+      if (logoUrl) {
+        try {
+          const base64 = await this.obtenerLogoBase64(logoUrl);
+          const imageId = workbook.addImage({ base64, extension: 'png' });
 
-      const fechaRow = worksheet.getRow(currentRow++);
-      fechaRow.getCell(1).value = 'Exportado el:';
-      fechaRow.getCell(2).value = moment().format('YYYY-MM-DD HH:mm:ss');
-      fechaRow.getCell(1).font = { italic: true };
-      fechaRow.getCell(2).font = { italic: true };
+          worksheet.addImage(imageId, {
+            tl: { col: 0, row: 0 },
+            ext: { width: 150, height: 60 }
+          });
+
+          worksheet.mergeCells('D1:H1');
+          const titleCell = worksheet.getCell('D1');
+          titleCell.value = title;
+          titleCell.font = { bold: true, size: 14 };
+          titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+          worksheet.mergeCells('D2:H2');
+          const fechaCell = worksheet.getCell('D2');
+          fechaCell.value = 'Exportado el: ' + moment().format('YYYY-MM-DD HH:mm:ss');
+          fechaCell.font = { italic: true };
+          fechaCell.alignment = { horizontal: 'center' };
+
+          currentRow = 5;
+        } catch (error) {
+          console.warn('⚠️ No se pudo cargar el logo:', error);
+        }
+      } else {
+        if (title) {
+          const titleRow = worksheet.getRow(currentRow++);
+          titleRow.getCell(1).value = title;
+          titleRow.getCell(1).font = { bold: true, size: 14 };
+        }
+
+        const fechaRow = worksheet.getRow(currentRow++);
+        fechaRow.getCell(1).value = 'Exportado el:';
+        fechaRow.getCell(2).value = moment().format('YYYY-MM-DD HH:mm:ss');
+        fechaRow.getCell(1).font = { italic: true };
+        fechaRow.getCell(2).font = { italic: true };
+      }
     }
 
-    currentRow++; // espacio en blanco
+    currentRow++;
 
-    // ✅ Agregamos columna "#"
     const fullHeaders = ['#', ...headers];
     const headerRow = worksheet.getRow(currentRow++);
     fullHeaders.forEach((h, i) => {
@@ -68,7 +154,6 @@ export class ExportService {
       worksheet.getColumn(i + 1).width = 16;
     });
 
-    // ✅ Agregar datos
     data.forEach((item, i) => {
       const row = worksheet.getRow(currentRow++);
       row.getCell(1).value = i + 1;
@@ -95,60 +180,367 @@ export class ExportService {
     link.click();
   }
 
-
+  // 🚀 NUEVA IMPLEMENTACIÓN CON jsPDF + autoTable (MUY RÁPIDA)
   async exportarPDF(options: ExportOptions): Promise<void> {
-    const { data, columns, headers, filename, title, logoUrl } = options;
+    const { data, columns, headers, filename, title, logoUrl, headerInfo } = options;
 
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    let yPosition = 20;
+
+    // ✅ NUEVO ENCABEZADO PERSONALIZADO PARA PDF
+    if (headerInfo) {
+      // Logo (lado izquierdo)
+      if (logoUrl) {
+        try {
+          const base64Logo = await this.obtenerLogoBase64(logoUrl);
+          doc.addImage(base64Logo, 'PNG', 15, 15, 40, 20);
+          console.log('✅ Logo cargado correctamente');
+        } catch (error) {
+          console.warn('⚠️ Error al cargar logo, continuando sin logo:', error);
+        }
+      }
+
+      // Título principal centrado
+      doc.setFontSize(18);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Sistema de Control de Códigos', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+
+      // Subtítulo
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text(title || 'Reporte de Productos', doc.internal.pageSize.width / 2, 28, { align: 'center' });
+
+      // Información de la empresa (lado izquierdo)
+      doc.setFontSize(12);
+      doc.setFont('helvetica', 'bold');
+      let leftY = 45;
+      if (headerInfo.codigoEmpresa) {
+        doc.text(headerInfo.codigoEmpresa, 15, leftY);
+        leftY += 6;
+      }
+      if (headerInfo.nombreEmpresa) {
+        doc.text(headerInfo.nombreEmpresa, 15, leftY);
+      }
+
+      // Información lateral derecha
+      doc.setFontSize(10);
+      const rightX = doc.internal.pageSize.width - 15;
+      let rightY = 20;
+
+      if (headerInfo.emisor) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Emisor:', rightX - 60, rightY, { align: 'left' });
+        doc.setFont('helvetica', 'normal');
+        doc.text(headerInfo.emisor, rightX, rightY, { align: 'right' });
+        rightY += 5;
+      }
+
+      if (headerInfo.fechaEmision) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Fecha emisión:', rightX - 60, rightY, { align: 'left' });
+        doc.setFont('helvetica', 'normal');
+        doc.text(headerInfo.fechaEmision, rightX, rightY, { align: 'right' });
+        rightY += 5;
+      }
+
+      if (headerInfo.pagina) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Pág:', rightX - 60, rightY, { align: 'left' });
+        doc.setFont('helvetica', 'normal');
+        doc.text(headerInfo.pagina, rightX, rightY, { align: 'right' });
+        rightY += 5;
+      }
+
+      if (headerInfo.ruc) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('RUC:', rightX - 60, rightY, { align: 'left' });
+        doc.setFont('helvetica', 'normal');
+        doc.text(headerInfo.ruc, rightX, rightY, { align: 'right' });
+        rightY += 5;
+      }
+
+      if (headerInfo.gln) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('GLN:', rightX - 60, rightY, { align: 'left' });
+        doc.setFont('helvetica', 'normal');
+        doc.text(headerInfo.gln, rightX, rightY, { align: 'right' });
+      }
+
+      yPosition = 60;
+    } else {
+      // Encabezado original (fallback)
+      if (logoUrl) {
+        try {
+          const base64Logo = await this.obtenerLogoBase64(logoUrl);
+          doc.addImage(base64Logo, 'PNG', 20, 10, 40, 16);
+          console.log('✅ Logo cargado correctamente');
+        } catch (error) {
+          console.warn('⚠️ Error al cargar logo, continuando sin logo:', error);
+        }
+      }
+
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(title || 'Reporte', logoUrl ? 80 : 20, 20);
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Exportado el: ${moment().format('YYYY-MM-DD HH:mm:ss')}`, logoUrl ? 80 : 20, 28);
+
+      yPosition = 40;
+    }
+
+    // Preparar datos para autoTable
+    const tableData = data.map((item, index) => [
+      index + 1,
+      ...columns.map(key => {
+        const value = item[key];
+        return value instanceof Date 
+          ? moment(value).format('DD/MM/YYYY') 
+          : String(value ?? '');
+      })
+    ]);
+
+    // Crear tabla con autoTable
+    autoTable(doc, {
+      startY: yPosition,
+      head: [['#', ...headers]],
+      body: tableData,
+      theme: 'grid',
+      styles: {
+        fontSize: 8,
+        cellPadding: 2,
+        overflow: 'linebreak',
+        halign: 'left'
+      },
+      headStyles: {
+        fillColor: [240, 240, 240],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold'
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 15 } // Columna de números centrada
+      },
+      margin: { top: 10, right: 10, bottom: 10, left: 10 },
+      didDrawPage: (data: any) => {
+        // Pie de página con número de página
+        const pageNumber = doc.getNumberOfPages();
+        doc.setFontSize(8);
+        doc.text(
+          `Página ${data.pageNumber} de ${pageNumber}`,
+          doc.internal.pageSize.width - 30,
+          doc.internal.pageSize.height - 10
+        );
+      }
+    });
+
+    // Guardar el archivo
+    doc.save(`${filename}_${moment().format('YYYYMMDD_HHmmss')}.pdf`);
+  }
+
+  // 📄 ALTERNATIVA: Exportar PDF con paginación manual (para casos extremos)
+  async exportarPDFPaginado(options: ExportOptions, registrosPorPagina: number = 50): Promise<void> {
+    const { data, columns, headers, filename, title, logoUrl } = options;
+    
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    const totalPaginas = Math.ceil(data.length / registrosPorPagina);
+    
+    for (let pagina = 0; pagina < totalPaginas; pagina++) {
+      if (pagina > 0) {
+        doc.addPage();
+      }
+
+      const inicio = pagina * registrosPorPagina;
+      const fin = Math.min(inicio + registrosPorPagina, data.length);
+      const datosHoja = data.slice(inicio, fin);
+
+      let yPosition = 20;
+
+      // Logo y encabezado en cada página
+      if (logoUrl) {
+        try {
+          const base64Logo = await this.obtenerLogoBase64(logoUrl);
+          doc.addImage(base64Logo, 'PNG', 20, 10, 40, 16);
+        } catch (error) {
+          console.warn('⚠️ Error al cargar logo:', error);
+        }
+      }
+
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(title || 'Reporte', logoUrl ? 80 : 20, 20);
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Exportado el: ${moment().format('YYYY-MM-DD HH:mm:ss')}`, logoUrl ? 80 : 20, 28);
+      doc.text(`Página ${pagina + 1} de ${totalPaginas}`, logoUrl ? 200 : 160, 28);
+
+      yPosition = 40;
+
+      // Datos de esta página
+      const tableData = datosHoja.map((item, index) => [
+        inicio + index + 1,
+        ...columns.map(key => {
+          const value = item[key];
+          return value instanceof Date 
+            ? moment(value).format('DD/MM/YYYY') 
+            : String(value ?? '');
+        })
+      ]);
+
+      doc.autoTable({
+        startY: yPosition,
+        head: [['#', ...headers]],
+        body: tableData,
+        theme: 'grid',
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+          overflow: 'linebreak'
+        },
+        headStyles: {
+          fillColor: [240, 240, 240],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold'
+        },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 15 }
+        },
+        margin: { top: 10, right: 10, bottom: 10, left: 10 }
+      });
+    }
+
+    doc.save(`${filename}_${moment().format('YYYYMMDD_HHmmss')}.pdf`);
+  }
+
+  // 🔄 Método con indicador de progreso
+  async exportarPDFConProgreso(
+    options: ExportOptions, 
+    onProgreso?: (progreso: number) => void
+  ): Promise<void> {
+    const { data, columns, headers, filename, title, logoUrl } = options;
+    
+    // Procesar en chunks para evitar bloqueo del navegador
+    const CHUNK_SIZE = 500;
+    const chunks = this.dividirEnChunks(data, CHUNK_SIZE);
+    
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    let yPosition = 20;
+    let isFirstPage = true;
+
+    // Logo base64 una sola vez
     let base64Logo = '';
     if (logoUrl) {
       try {
         base64Logo = await this.obtenerLogoBase64(logoUrl);
-      } catch (err) {
-        console.warn('⚠️ Error al obtener logo PDF:', err);
+      } catch (error) {
+        console.warn('⚠️ Error al cargar logo:', error);
       }
     }
 
-    const contenido = `
-      <div style="font-family: Arial; padding: 20px;">
-        <div style="display: flex; align-items: center; justify-content: space-between;">
-          ${base64Logo ? `<img src="${base64Logo}" style="height: 60px;" />` : ''}
-          <div style="text-align: right;">
-            <h2 style="margin: 0;">${title || 'Reporte'}</h2>
-            <p style="margin: 0;">Exportado el: ${moment().format('YYYY-MM-DD HH:mm:ss')}</p>
-          </div>
-        </div>
+    for (let i = 0; i < chunks.length; i++) {
+      const chunk = chunks[i];
+      
+      // Reportar progreso
+      if (onProgreso) {
+        onProgreso((i / chunks.length) * 100);
+      }
 
-        <table border="1" cellpadding="4" cellspacing="0" style="width: 100%; margin-top: 15px; border-collapse: collapse; font-size: 12px;">
-          <thead style="background-color: #f0f0f0;">
-            <tr>
-              <th>#</th>
-              ${headers.map(h => `<th>${h}</th>`).join('')}
-            </tr>
-          </thead>
-          <tbody>
-            ${data.map((item, index) => `
-              <tr>
-                <td>${index + 1}</td>
-                ${columns.map(key => `<td>${item[key] ?? ''}</td>`).join('')}
-              </tr>`).join('')}
-          </tbody>
-        </table>
-      </div>
-    `;
+      // Agregar página si no es la primera
+      if (!isFirstPage) {
+        doc.addPage();
+      }
 
-    const opt = {
-      margin: 0.5,
-      filename: `${filename}_${moment().format('YYYYMMDD_HHmmss')}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'landscape' }
-    };
+      // Encabezado
+      if (base64Logo) {
+        doc.addImage(base64Logo, 'PNG', 20, 10, 40, 16);
+      }
 
-    html2pdf().from(contenido).set(opt).save();
+      doc.setFontSize(16);
+      doc.setFont('helvetica', 'bold');
+      doc.text(title || 'Reporte', base64Logo ? 80 : 20, 20);
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Exportado el: ${moment().format('YYYY-MM-DD HH:mm:ss')}`, base64Logo ? 80 : 20, 28);
+
+      yPosition = 40;
+
+      // Datos del chunk
+      const tableData = chunk.map((item, index) => [
+        (i * CHUNK_SIZE) + index + 1,
+        ...columns.map(key => {
+          const value = item[key];
+          return value instanceof Date 
+            ? moment(value).format('DD/MM/YYYY') 
+            : String(value ?? '');
+        })
+      ]);
+
+      doc.autoTable({
+        startY: yPosition,
+        head: isFirstPage ? [['#', ...headers]] : undefined,
+        body: tableData,
+        theme: 'grid',
+        styles: {
+          fontSize: 8,
+          cellPadding: 2,
+          overflow: 'linebreak'
+        },
+        headStyles: {
+          fillColor: [240, 240, 240],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold'
+        },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 15 }
+        },
+        margin: { top: 10, right: 10, bottom: 10, left: 10 }
+      });
+
+      isFirstPage = false;
+
+      // Pausa para no bloquear el navegador
+      await this.delay(10);
+    }
+
+    if (onProgreso) {
+      onProgreso(100);
+    }
+
+    doc.save(`${filename}_${moment().format('YYYYMMDD_HHmmss')}.pdf`);
+  }
+
+  // Métodos auxiliares
+  private dividirEnChunks<T>(array: T[], size: number): T[][] {
+    const chunks: T[][] = [];
+    for (let i = 0; i < array.length; i += size) {
+      chunks.push(array.slice(i, i + size));
+    }
+    return chunks;
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   private bordeFino(): Partial<ExcelJS.Borders> {
-    const style: ExcelJS.BorderStyle = 'hair'; // O 'thin' si prefieres más grueso
+    const style: ExcelJS.BorderStyle = 'hair';
 
     return {
       top: { style },
@@ -157,7 +549,6 @@ export class ExportService {
       right: { style }
     };
   }
-
 
   private obtenerLogoBase64(url: string): Promise<string> {
     return fetch(url)

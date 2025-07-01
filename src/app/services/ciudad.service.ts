@@ -10,6 +10,7 @@ export interface Ciudad {
   ciudad:string;
   canton: string;
   provincia: string;
+  idzona:number;
 }
 @Injectable({
   providedIn: 'root'
@@ -24,13 +25,14 @@ export class CiudadService {
     obtenerCiudad(): Observable<Ciudad[]> {
       return this.http.get<any>(this.apiUrl).pipe(
         map(response => {
-          console.log('✅ Respuesta del backend:', response); // Verifica que llega al método
+          console.log('✅ Respuesta del backend->:', response); // Verifica que llega al método
+          debugger
           return response.data.map((item: any) => ({
             id_ciudad: item.id_ciudad,
-            codigo: item.codigo,
             ciudad: item.ciudad,
             canton: item.canton,
-            provincia:item.provincia
+            provincia:item.provincia,
+            idzona:item.idzona
           }));
         })
       );

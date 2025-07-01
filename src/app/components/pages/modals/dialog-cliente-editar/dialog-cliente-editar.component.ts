@@ -51,6 +51,10 @@ import { ModalImpresionComponent } from 'src/app/components/shared/modal-impresi
 import { DialogPrefijoEditarComponent } from '../dialog-prefijo-editar/dialog-prefijo-editar.component';
 import { ClienteDatosAdicionalesService, ClienteDatosAdicionales } from 'src/app/services/cliente-datos-adicionales.service';
 import { ClienteContacto, ClienteContactoService } from 'src/app/services/cliente-contacto.service';
+import { ExportService } from 'src/app/services/export.service';
+import { ExportOptions } from 'src/app/interfaces/export-options';
+import { EmpresaService } from 'src/app/services/empresa.service';
+import { LogoService } from 'src/app/services/logo.service';
 const ELEMENT_DATA: HistorialClienteRequest[] = [
   {
     id_historial_cliente: 1,
@@ -100,8 +104,9 @@ export class DialogClienteEditarComponent implements OnInit {
   nombreCiudadSeleccionada: string = '';
   esPasaporte = false;
   tipoIdentificacion: 'CEDULA' | 'RUC' | 'PASAPORTE' | null = null;
-
-
+  botonActualizarDeshabilitado = true;
+  botonModificarDeshabilitado = false;
+  cargando: boolean = true;
   zona: Zona[] = [];
   zonaCtrl = new FormControl('');
   zonaFiltrados$!: Observable<Zona[]>;
@@ -148,7 +153,7 @@ export class DialogClienteEditarComponent implements OnInit {
   ];
 
   nombrecli: string = '';
-
+ logoUrl: string = '';
   prefijoCliente!: PrefijoClienteResponse;
 
   private clienteOriginal!: ClienteIndividual;
@@ -187,12 +192,15 @@ export class DialogClienteEditarComponent implements OnInit {
     private historialClienteService: HistorialClienteService,
     private clienteObservacionService: ClienteObservacionService,
     private clienteDatosAdicionalesService: ClienteDatosAdicionalesService,
-    private clienteContactoService: ClienteContactoService
+    private clienteContactoService: ClienteContactoService,
+    private exportService: ExportService,
+    private empresaService: EmpresaService,
+    private logoService: LogoService,
   ) { }
 
   ngOnInit(): void {
 
-
+    this.cargando = true;
     this.usuarioActual = this.usuarioService.getUsuarioActual();
     this.initFormulario();
 
@@ -204,7 +212,7 @@ export class DialogClienteEditarComponent implements OnInit {
     this.cargarPais();
     this.cargarZona();
     this.cargarEstadoEmpresa();
-
+    this.activarModoEdicion();
 
     console.log(this.idCliente);
     this.cargarHistorial(this.idCliente, 'update', 'Clientes', 1);
@@ -230,7 +238,7 @@ export class DialogClienteEditarComponent implements OnInit {
       this.paso3Form.get('zona')?.setValue(value, { emitEvent: false });
       this.paso4Form.get('zona')?.setValue(value, { emitEvent: false });
     });
-
+    this.cargando = false;
   }
 
   initFormulario(): void {
@@ -381,20 +389,26 @@ export class DialogClienteEditarComponent implements OnInit {
 
 
 
-  cargarGruposProducto(): void {
-    this.grupoProductoService.obtenerGrupos().subscribe(data => {
-      this.gruposProducto = data;
+ cargarGruposProducto(): void {
+  this.grupoProductoService.obtenerGrupos().subscribe(data => {
+    this.gruposProducto = data;
 
-      this.paso1Form.get('grupoProducto')?.valueChanges
-        .pipe(startWith(''))
-        .subscribe(valor => {
-          const filtro = typeof valor === 'string' ? valor.toLowerCase() : '';
-          this.grupoProductoFiltrados = this.gruposProducto.filter(g =>
-            (g.codigo + ' ' + g.brick + ' ' + g.desBrick).toLowerCase().includes(filtro)
-          );
-        });
-    });
-  }
+    this.paso1Form.get('grupoProducto')?.valueChanges
+      .pipe(startWith(''))
+      .subscribe(valor => {
+        const filtro = typeof valor === 'string' ? valor.toLowerCase() : '';
+        this.grupoProductoFiltrados = this.gruposProducto.filter(g =>
+          (g.codigo + ' ' + g.brick + ' ' + g.desBrick).toLowerCase().includes(filtro)
+        );
+      });
+
+    this.cargando = false; // ✅ Se coloca dentro del subscribe
+  }, error => {
+    console.error('❌ Error al cargar grupoProducto', error);
+    this.cargando = false; // en caso de error también
+  });
+}
+
 
 
   filtrarGruposProducto(valor: string | GrupoProducto): GrupoProducto[] {
@@ -764,12 +778,15 @@ export class DialogClienteEditarComponent implements OnInit {
             showCancel: false
           }
         });
+        this.botonActualizarDeshabilitado = true;
+        this.botonModificarDeshabilitado = false;
       },
       error: (err) => {
         console.error('❌ Error al actualizar cliente:', err);
         this.mostrarAlerta('No se pudo actualizar el cliente', 'Error');
       }
     });
+
 
   }
 
@@ -1042,6 +1059,7 @@ export class DialogClienteEditarComponent implements OnInit {
     });
   }
   llenarFormularioConCliente(cliente: ClienteIndividual): void {
+    debugger
     this.clienteOriginal = JSON.parse(JSON.stringify(cliente));
     // Paso 1
     this.paso1Form.patchValue({
@@ -1112,6 +1130,7 @@ export class DialogClienteEditarComponent implements OnInit {
 
 
   cargarClienteYGrupos(idCliente: number): void {
+    
     forkJoin({
       cliente: this.clienteService.getClienteById(idCliente),
       gruposProducto: this.grupoProductoService.obtenerGrupos(),
@@ -1133,6 +1152,7 @@ export class DialogClienteEditarComponent implements OnInit {
       this.setZonaPorId(this.clienteE.idZona);
       this.setCiudadPorId(this.clienteE.idCiudad);
       this.setEstadoEmpresaPorId(this.clienteE.idEstadoEmpresa); // 👈 corrijo el método si es necesario
+      
     });
 
 
@@ -1201,12 +1221,12 @@ export class DialogClienteEditarComponent implements OnInit {
     this.formCliente.enable(); // habilita todo el formulario
     this.formCliente.get('paso1.ruc')?.disable();
     this.formCliente.get('paso1.esPasaporte')?.disable();
-
+    
   }
 
   desactivarModoEdicion() {
     this.modoEdicion = false;
-    this.formCliente.disable(); // deshabilita todo el formulario
+    //this.formCliente.disable(); // deshabilita todo el formulario
   }
   cargarEstadoEmpresa(): void {
     this.estadoempresaService.obtenerEstadosEmpresa().subscribe(data => {
@@ -1665,7 +1685,7 @@ export class DialogClienteEditarComponent implements OnInit {
           pregunta6: datos.facebook === true,
           pregunta7: datos.web === true// <-- o puedes omitirlo si `web` no es binario
         };
-        debugger
+
         const paso2Patch = {
           nprefijo: !!datos.prefijo,
           compra: !!datos.guia
@@ -1849,6 +1869,84 @@ export class DialogClienteEditarComponent implements OnInit {
       }
     });
   }
+
+  habilitarActualizar() {
+    this.botonActualizarDeshabilitado = false;
+    this.botonModificarDeshabilitado = true;
+  }
+
+logo()
+  {
+      this.empresaService.getEmpresas().subscribe({
+      next: (empresas) => {
+        if (empresas.length > 0 && empresas[0].empresaLogo) {
+          this.logoUrl = this.logoService.getLogoUrl(empresas[0].empresaLogo);
+          console.log('Logo cargado desde empresa:', this.logoUrl);
+        } else {
+          console.warn('No se encontró empresa o logo.');
+        }
+      },
+      error: (err) => {
+        console.error('Error al cargar empresa para obtener logo:', err);
+      }
+    });
+  }
+  exportar(tipo: 'excel' | 'pdf'): void {
+  const headers = [
+    'Prefijo',
+    'GLN',
+    'Fecha',
+    'Estado',
+    'Fecha Cierre',
+    'Tipo',
+    'Observación'
+  ];
+
+  const columns = [
+    'codpre',
+    'gln',
+    'fecha',
+    'estadoTexto',
+    'fechaCierreTexto',
+    'tipoLocalizacion',
+    'observacion'
+  ];
+
+  const data = this.dataSourcePrefijo.data.map((el: any) => ({
+    codpre: el.codpre,
+    gln: el.gln,
+    fecha: this.formatearFecha(el.fecha),
+    estadoTexto: el.estado ? 'Inactivo' : 'Activo',
+    fechaCierreTexto: this.formatearFecha(el.fechaCierre),
+    tipoLocalizacion: el.tipoLocalizacion,
+    observacion: el.observacion
+  }));
+
+  const options: ExportOptions = {
+    data,
+    columns,
+    headers,
+    filename: 'ListadoPrefijos',
+    title: 'Listado de Prefijos',
+    logoUrl: this.logoUrl || ''
+  };
+
+  if (tipo === 'excel') {
+    this.exportService.exportarExcel(options);
+  } else {
+    this.exportService.exportarPDF(options);
+  }
+}
+
+// Utilidad para formatear fecha a dd/MM/yyyy
+private formatearFecha(fecha: string | Date): string {
+  if (!fecha || fecha === '0001-01-01T00:00:00') return '';
+  const d = new Date(fecha);
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
+}
 
 
 

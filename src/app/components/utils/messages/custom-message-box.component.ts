@@ -9,6 +9,7 @@ export interface MessageBoxData {
   confirmText?: string;
   cancelText?: string;
   showCancel?: boolean;
+  isLoading?: boolean;
 }
 
 @Component({

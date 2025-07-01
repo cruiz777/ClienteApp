@@ -254,3 +254,9 @@ select {
   font-weight: bold;
   color: #333;
 }
+
+.security-help {
+  font-size: 12px;
+  margin-top: 4px;
+  color: #d32f2f;
+}

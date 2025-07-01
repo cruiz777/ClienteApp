@@ -26,8 +26,8 @@
         <mat-form-field appearance="fill" class="select-pequeno">
           <mat-select formControlName="gtinNacionalSeleccionado"
             (selectionChange)="actualizarTipoGtin($event.value, 'nacional')">
-            <mat-option value="gtin-13">GTIN-13</mat-option>
-            <mat-option value="gtin-12">GTIN-12</mat-option>
+            <mat-option value="GTIN-13">GTIN-13</mat-option>
+            <mat-option value="UPC">GTIN-12</mat-option>
           </mat-select>
         </mat-form-field>
       </div>
@@ -37,8 +37,8 @@
         <mat-form-field appearance="fill" class="select-pequeno">
           <mat-select formControlName="gtinInternacionalSeleccionado"
             (selectionChange)="actualizarTipoGtin($event.value, 'internacional')">
-            <mat-option value="gtin-13i">GTIN-13</mat-option>
-            <mat-option value="gtin-12i">GTIN-12</mat-option>
+            <mat-option value="GTIN-13I">GTIN-13I</mat-option>
+            <mat-option value="GTIN-12I">GTIN-12I</mat-option>
           </mat-select>
         </mat-form-field>
         <mat-checkbox formControlName="checkExiste">

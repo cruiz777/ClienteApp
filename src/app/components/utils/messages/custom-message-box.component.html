@@ -1,19 +1,36 @@
 <div class="message-box" [ngClass]="data.type || 'info'">
-  <div class="icon-container">
+  <div class="icon-container" *ngIf="!data.isLoading">
     <mat-icon *ngIf="data.type === 'success'">check_circle</mat-icon>
     <mat-icon *ngIf="data.type === 'error'">error</mat-icon>
     <mat-icon *ngIf="data.type === 'warning'">warning</mat-icon>
     <mat-icon *ngIf="data.type === 'info'">info</mat-icon>
   </div>
-
+  
   <h2>{{ data.title }}</h2>
   <p [innerHTML]="data.message"></p>
-
-  <div class="actions">
-    <button *ngIf="data.showCancel !== false" mat-button (click)="onCancel()">
+  
+  <!-- Contenedor de loading mejorado -->
+  <div class="loading-container" *ngIf="data.isLoading">
+    <mat-progress-spinner
+      mode="indeterminate"
+      diameter="50"
+      strokeWidth="5"
+      color="primary">
+    </mat-progress-spinner>
+    <p class="loading-text">Procesando...</p>
+  </div>
+  
+  <!-- Botones solo si NO está cargando -->
+  <div class="actions" *ngIf="!data.isLoading">
+    <button *ngIf="data.showCancel !== false" 
+            mat-button 
+            (click)="onCancel()"
+            class="cancel-button">
       {{ data.cancelText || 'Cancelar' }}
     </button>
-    <button mat-raised-button class="search-button" (click)="onConfirm()">
+    <button mat-raised-button 
+            class="search-button" 
+            (click)="onConfirm()">
       {{ data.confirmText || 'Aceptar' }}
     </button>
   </div>

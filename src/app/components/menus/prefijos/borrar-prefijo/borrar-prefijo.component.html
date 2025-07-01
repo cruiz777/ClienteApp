@@ -4,8 +4,8 @@
 </div>
 <div class="contenido-tablas">
 
-<!-- TAB ELIMINAR -->
-   <ng-container *ngIf="activeTab === 'eliminar'">
+  <!-- TAB ELIMINAR -->
+  <ng-container *ngIf="activeTab === 'eliminar'">
 
     <div class="encabezado-acciones">
       <div class="titulo-y-busqueda">
@@ -13,14 +13,15 @@
         <div class="form-group">
           <div class="form-row">
             <label>Buscar Prefijo:</label>
-            <input type="text" placeholder="Buscar prefijo..." [(ngModel)]="filtroBusqueda" />
+            <input type="text" placeholder="Buscar prefijo..." [(ngModel)]="filtroBusqueda" placeholder="Ej. 12062"
+              (keyup.enter)="buscarPrefijos(filtroBusqueda)" (keypress)="CustomValidators.permitirSoloNumeros($event)" />
           </div>
         </div>
       </div>
 
       <div class="form-actions">
-        <button>Nueva Busqueda</button>
-        <button>Eliminar</button>
+        <button (click)="limpiarBusqueda()">Nueva Busqueda</button>
+        <button (click)="eliminarPrefijo()">Eliminar</button>
       </div>
 
     </div>
@@ -30,6 +31,7 @@
       <thead>
         <tr>
           <th>#</th>
+          <th style="display: none;">Id</th>
           <th>Prefijo</th>
           <th>Cliente</th>
           <th>Ruc</th>
@@ -39,17 +41,19 @@
       <tbody>
         <tr *ngFor="let item of eliminar; let i = index">
           <td>{{ i + 1 }}</td>
+          <td style="display: none;">{{ item.id }}</td>
           <td>{{ item.prefijo }}</td>
           <td>{{ item.cliente }}</td>
           <td>{{ item.ruc }}</td>
           <td>{{ item.fecha }}</td>
+
         </tr>
       </tbody>
     </table>
   </ng-container>
 
-<!-- TAB LISTADO-->
-<ng-container *ngIf="activeTab === 'Listado'">
+  <!-- TAB LISTADO-->
+  <ng-container *ngIf="activeTab === 'Listado'">
 
     <div class="encabezado-acciones">
       <div class="titulo-y-busqueda">
@@ -66,7 +70,7 @@
         <button mat-button [matMenuTriggerFor]="menuExportar">Exportar</button>
         <mat-menu #menuExportar="matMenu">
           <button mat-menu-item (click)="exportarPDF()">PDF</button>
-          <button mat-menu-item (click)="exportarExcel()">Excel</button>
+          <button mat-menu-item (click)="exportar('excel')">Excel</button>
         </mat-menu>
       </div>
     </div>

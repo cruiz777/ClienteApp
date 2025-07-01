@@ -66,6 +66,7 @@ export class UsuariosFormComponent implements OnInit {
   mostrarFormulario = false;
   usuarioActual = this.usuarioservice.getUsuarioActual();
   nivelSeguridad: string = '';
+  mensajesSeguridad: string = '';
 
   constructor(
     private fb: FormBuilder,
@@ -108,7 +109,6 @@ export class UsuariosFormComponent implements OnInit {
   }
 
   grabar(): void {
-    // Marcar todos los campos como tocados (menos estado que está deshabilitado inicialmente)
     Object.keys(this.usuarioForm.controls).forEach(key => {
       if (key !== 'estado') {
         this.usuarioForm.get(key)?.markAsTouched();
@@ -117,7 +117,6 @@ export class UsuariosFormComponent implements OnInit {
 
     if (this.usuarioForm.invalid) {
       const errores: string[] = [];
-
       const controles = this.usuarioForm.controls;
 
       if (controles['usuario'].invalid) errores.push('Usuario es requerido');
@@ -125,18 +124,18 @@ export class UsuariosFormComponent implements OnInit {
       if (controles['perfil'].invalid) errores.push('Perfil es requerido');
       if (controles['fechaCaducidad'].invalid) errores.push('Fecha de caducidad es requerida');
       if (controles['departamento'].invalid) errores.push('Departamento es requerido');
-
-      // Si quieres validar formato del correo:
       if (controles['correo'].value && controles['correo'].invalid) errores.push('Correo inválido');
 
       this.toast.mostrar(errores);
       return;
     }
 
+    if (this.usuarioForm.get('clave')?.value && this.nivelSeguridad === 'Débil') {
+      this.toast.error(this.mensajesSeguridad || '❌ Contraseña débil. Mejore la seguridad antes de continuar.');
+      return;
+    }
 
     const formData = this.usuarioForm.getRawValue();
-
-    // Convertir perfil a número de forma explícita
     formData.perfil = parseInt(formData.perfil, 10);
     if (!formData.perfil || isNaN(formData.perfil) || formData.perfil <= 0) {
       this.toast.mostrar(['Debe seleccionar un perfil válido.']);
@@ -164,7 +163,6 @@ export class UsuariosFormComponent implements OnInit {
       this.usuarioservice.updateUsuario(formData.perfil, requestEdit).subscribe({
         next: () => this.dialogRef.close(true),
         error: (err) => {
-          console.error('❌ Error recibido del backend:', err);
           const mensaje = err.error?.message || 'Error al actualizar el usuario.';
           this.toast.error(mensaje);
         }
@@ -181,12 +179,8 @@ export class UsuariosFormComponent implements OnInit {
         id_departamento: formData.departamento
       };
 
-      console.log('📤 Enviando request:', request);
-      console.log('📌 ID Perfil:', formData.perfil);
-
       this.usuarioservice.createUsuario(formData.perfil, request).subscribe({
         next: () => {
-          // Mostrar mensaje antes de cerrar
           this.dialog.open(CustomMessageBoxComponent, {
             width: '400px',
             data: {
@@ -197,16 +191,14 @@ export class UsuariosFormComponent implements OnInit {
               showCancel: false
             }
           }).afterClosed().subscribe(() => {
-            this.dialogRef.close(true); // Solo cerrar luego del mensaje
+            this.dialogRef.close(true);
           });
         },
         error: (err) => {
-          console.error('❌ Error del backend al crear el usuario:', err);
           const mensaje = err.error?.message || 'Error al crear el usuario.';
           this.toast.error(mensaje);
         }
       });
-
     }
   }
 
@@ -317,17 +309,24 @@ export class UsuariosFormComponent implements OnInit {
   }
 
   verificarSeguridad(password: string): void {
-    const puntos = [
-      /[a-z]/.test(password),
-      /[A-Z]/.test(password),
-      /\d/.test(password),
-      /[\W_]/.test(password),
-      password.length >= 8
-    ].filter(Boolean).length;
+    const requisitos = [
+      { test: /[a-z]/, mensaje: 'una letra minúscula' },
+      { test: /[A-Z]/, mensaje: 'una letra mayúscula' },
+      { test: /\d/, mensaje: 'un número' },
+      { test: /[\W_]/, mensaje: 'un carácter especial (!, @, #, etc.)' },
+      { test: /.{8,}/, mensaje: 'al menos 8 caracteres' }
+    ];
 
+    const faltantes = requisitos.filter(r => !r.test.test(password)).map(r => r.mensaje);
+
+    const puntos = 5 - faltantes.length;
     if (puntos <= 2) this.nivelSeguridad = 'Débil';
     else if (puntos <= 4) this.nivelSeguridad = 'Media';
     else this.nivelSeguridad = 'Alta';
+
+    this.mensajesSeguridad = faltantes.length > 0
+      ? `⚠️ Para mejorar tu contraseña, añade: ${faltantes.join(', ')}.`
+      : '✅ Contraseña segura.';
   }
 
 
