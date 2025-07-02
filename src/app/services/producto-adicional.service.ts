@@ -2,7 +2,19 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { ApiResponse } from './producto.service'; // si ya tienes esta interfaz
+
+export interface ApiResponse<T> {
+  id: string;
+  code: string;
+  data: T;
+  message: string;
+}
+
+export interface UpdateCodigosClienteRequest {
+  idPrefijos: number;
+  codigosCliente: number;
+}
+
 export interface ProductoDatosAdicionalesRequest {
   IdProductoDatosAdicionales: number;
   ClientesCodigo: number;
@@ -49,10 +61,9 @@ export interface ProductoDatosAdicionalesRequest {
   providedIn: 'root'
 })
 export class ProductoAdicionalService {
-
   private apiBaseUrl = environment.invoicesUrl;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   crearProductoDatosAdicionales(request: ProductoDatosAdicionalesRequest): Observable<ApiResponse<number>> {
     return this.http.post<ApiResponse<number>>(
@@ -60,6 +71,7 @@ export class ProductoAdicionalService {
       request
     );
   }
+
   actualizarProductoDatosAdicionales(payload: {
     idProducto: number,
     request: ProductoDatosAdicionalesRequest
@@ -73,5 +85,15 @@ export class ProductoAdicionalService {
     return this.http.get<ApiResponse<ProductoDatosAdicionalesRequest>>(url);
   }
 
+  actualizarCodigosClientePorIdPrefijos(idPrefijos: number, codigosCliente: number): Observable<ApiResponse<boolean>> {
+    const payload = {
+      idPrefijos,
+      codigosCliente
+    };
 
+    return this.http.put<ApiResponse<boolean>>(
+      `${this.apiBaseUrl}/ProductoDatosAdicionales/actualizar-codigoscliente-por-idprefijos`,
+      payload
+    );
+  }
 }
