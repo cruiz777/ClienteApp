@@ -13,7 +13,7 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatDialog, MatDialogContent, MatDialogModule } from '@angular/material/dialog';
 import { MatMenuModule } from '@angular/material/menu';
-import { RouterModule } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 
@@ -26,7 +26,7 @@ import { UsuarioService } from 'src/app/services/usuario.service';
 import { GrupoProductoService, GrupoProducto } from 'src/app/services/grupo-producto.service';
 import { ExportService } from 'src/app/services/export.service';
 
-import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/util/messages/custom-message-box.component';
+import { CustomMessageBoxComponent, MessageBoxData } from '../../utils/messages/custom-message-box.component';
 import { ButtonRendererComponent } from '../../utils/grid/button-renderer.component';
 import { StatusRendererComponent } from '../../utils/grid/status-renderer.component';
 import { ConfirmDialogComponent } from '../../reusable/confirm-dialog/confirm-dialog.component';
@@ -141,13 +141,13 @@ export class CuponesComponent implements OnInit, OnDestroy {
       filter: false,
       cellClass: 'text-center font-medium text-gray-600'
     },
-    { 
-      field: 'empresa', 
-      headerName: 'Empresa', 
-      filter: 'agTextColumnFilter',
-      width: 200,
-      cellClass: 'font-medium text-gray-800'
-    },
+    // { 
+    //   field: 'empresa', 
+    //   headerName: 'Empresa', 
+    //   filter: 'agTextColumnFilter',
+    //   width: 200,
+    //   cellClass: 'font-medium text-gray-800'
+    // },
     { 
       field: 'prefijo', 
       headerName: 'Prefijo', 
@@ -205,9 +205,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
       cellClass: 'text-gray-600',
         valueFormatter: (params) => {
           if (!params.value) return '';
-          // Si la fecha viene como string ISO, formatear correctamente
-          const fecha = new Date(params.value);
-          return fecha.toLocaleDateString('es-ES') || params.value.split('T')[0];
+          return moment(params.value).format('DD/MM/YYYY');
         }
     },
     { 
@@ -218,8 +216,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
       cellClass: 'text-blue-600',
       valueFormatter: (params) => {
         if (!params.value) return '';
-        const fecha = new Date(params.value);
-        return fecha.toLocaleDateString('es-ES') || params.value.split('T')[0];
+        return moment(params.value).format('DD/MM/YYYY');
       }
     },
     { 
@@ -230,8 +227,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
       cellClass: 'text-red-600',
       valueFormatter: (params) => {
         if (!params.value) return '';
-        const fecha = new Date(params.value);
-        return fecha.toLocaleDateString('es-ES') || params.value.split('T')[0];
+        return moment(params.value).format('DD/MM/YYYY');
       }
     },
     { 
@@ -239,8 +235,17 @@ export class CuponesComponent implements OnInit, OnDestroy {
       headerName: 'Estado', 
       filter: 'agSetColumnFilter',
       width: 120,
+      pinned: 'right',
       cellRenderer: StatusRendererComponent,
-      cellClass: 'text-center'
+      cellClass: 'text-center',
+      // Hacer la columna editable
+      editable: true,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: {
+        values: ['Activo', 'Inactivo']
+      },
+      // ✅ Manejar el cambio de valor
+      onCellValueChanged: (params: any) => this.onEstadoChangedConConfirmacion(params)
     },
     { 
       field: 'usuarioNombre', 
@@ -252,30 +257,30 @@ export class CuponesComponent implements OnInit, OnDestroy {
         return params.data.usuarioNombre || params.data.usuario || 'N/A';
       }
     },
-    {
-      headerName: 'Acciones',
-      cellRenderer: ButtonRendererComponent,
-      width: 120,
-      pinned: 'right',
-      sortable: false,
-      filter: false,
-      cellRendererParams: {
-        buttons: [
-          {
-            icon: 'visibility',
-            tooltip: 'Ver detalle',
-            color: 'primary',
-            onClick: (params: any) => this.verDetalle(params.data)
-          },
-          {
-            icon: 'edit',
-            tooltip: 'Editar',
-            color: 'accent',
-            onClick: (params: any) => this.editarRegistro(params.data)
-          }
-        ]
-      }
-    }
+    // {
+    //   headerName: 'Acciones',
+    //   cellRenderer: ButtonRendererComponent,
+    //   width: 120,
+    //   pinned: 'right',
+    //   sortable: false,
+    //   filter: false,
+    //   cellRendererParams: {
+    //     buttons: [
+    //       {
+    //         icon: 'visibility',
+    //         tooltip: 'Ver detalle',
+    //         color: 'primary',
+    //         onClick: (params: any) => this.verDetalle(params.data)
+    //       },
+    //       {
+    //         icon: 'edit',
+    //         tooltip: 'Editar',
+    //         color: 'accent',
+    //         onClick: (params: any) => this.editarRegistro(params.data)
+    //       }
+    //     ]
+    //   }
+    // }
   ];
 
   defaultColDef: ColDef = {
@@ -302,6 +307,8 @@ export class CuponesComponent implements OnInit, OnDestroy {
     rowHeight: 48,
     headerHeight: 50,
     floatingFiltersHeight: 35,
+    singleClickEdit: true, // Permitir edición por clic simple (opcional)
+    stopEditingWhenCellsLoseFocus: true, // Detener edición al hacer clic fuera
     onSelectionChanged: (event: SelectionChangedEvent) => this.onSelectionChanged(event)
   };
 
@@ -337,7 +344,8 @@ export class CuponesComponent implements OnInit, OnDestroy {
     private usuarioService: UsuarioService,
     private grupoProductoService: GrupoProductoService,
     private dialog: MatDialog,
-    private exportService: ExportService
+    private exportService: ExportService,
+    private router: Router
   ) {
     this.formCupon = this.fb.group({
       codigoCliente: [''],
@@ -493,10 +501,26 @@ export class CuponesComponent implements OnInit, OnDestroy {
       return;
     }
 
+    // ✅ Mostrar loading antes de la petición
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      disableClose: true,
+      data: {
+        title: 'Cargando cupones...',
+        message: 'Por favor espere mientras se cargan los cupones del cliente.',
+        type: 'info',
+        isLoading: true,
+        loadingText: `Cargando página ${page + 1}...`,
+        showCancel: false
+      }
+    });
+
     this.cuponService.getByCliente(cliente.clientes_codigo, page + 1, size)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
+          // ✅ Cerrar loading en éxito
+          loadingDialog.close();
+
           if (response.type === 'ERROR' || !response.data) {
             this.mostrarMensaje({
               title: 'Error al cargar',
@@ -513,10 +537,13 @@ export class CuponesComponent implements OnInit, OnDestroy {
           this.pageSize = response.data.pageSize;
         },
         error: (err) => {
+          // ✅ Cerrar loading en error
+          loadingDialog.close();
+          
           console.error('Error al cargar cupones:', err);
           this.mostrarMensaje({
             title: 'Error de conexión',
-            message: 'No se pudieron cargar los cupones. Intenta nuevamente.',
+            message: err?.error?.message || 'No se pudieron cargar los cupones. Intenta nuevamente.',
             type: 'error'
           });
         }
@@ -694,19 +721,42 @@ export class CuponesComponent implements OnInit, OnDestroy {
       usuario: this.usuarioActual.id_usuario
     };
 
+    // ✅ Mostrar loading antes de la petición
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      disableClose: true,
+      data: {
+        title: 'Guardando cupones...',
+        message: 'Por favor espere mientras se procesan los cupones generados.',
+        type: 'info',
+        isLoading: true,
+        loadingText: `Guardando ${this.cuponesGenerados.length} cupones...`,
+        showCancel: false
+      }
+    });
+
     this.cuponService.create(payload)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: () => {
+          // ✅ Cerrar loading en éxito
+          loadingDialog.close();
+          
           this.mostrarMensaje({
             title: 'Cupones guardados',
             message: 'Se grabaron correctamente los cupones generados.',
             type: 'success'
           });
+          
           this.nuevo();
           this.cargarCuponesActual();
+          this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+            this.router.navigate(['/menuProductos/nuevoSscc']);
+          });
         },
         error: (err) => {
+          // ✅ Cerrar loading en error
+          loadingDialog.close();
+          
           console.error('Error al grabar cupones:', err);
           this.mostrarMensaje({
             title: 'Error al grabar',
@@ -958,7 +1008,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
       fechaHasta: fechaHasta?.toISOString()
     });
 
-    // CAMBIO CRÍTICO: Solo incluir filtros con valores válidos
+    //Solo se incluyen filtros con valores válidos
     const filtros: any = {};
     
     // Solo agregar si tiene valor válido
@@ -985,10 +1035,23 @@ export class CuponesComponent implements OnInit, OnDestroy {
     console.log('🔍 Filtros finales enviados:', filtros);
     console.log('🔢 Cantidad de filtros:', Object.keys(filtros).length);
 
-    // 🚨 VALIDACIÓN: Si no hay filtros, hacer consulta general
+    // VALIDACIÓN: Si no hay filtros, hacer consulta general
     if (Object.keys(filtros).length === 0) {
-      console.log('⚠️ No hay filtros específicos, consultando todos los registros...');
+      console.log('No hay filtros específicos, consultando todos los registros...');
     }
+
+    // ✅ Mostrar loading durante la generación del reporte
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      disableClose: true,
+      data: {
+        title: 'Generando reporte...',
+        message: `Preparando reporte de cupones en formato ${formato.toUpperCase()}.`,
+        type: 'info',
+        isLoading: true,
+        loadingText: 'Obteniendo datos y procesando archivo...',
+        showCancel: false
+      }
+    });
 
     this.cuponService.getReporte(filtros)
       .pipe(takeUntil(this.destroy$))
@@ -1000,6 +1063,9 @@ export class CuponesComponent implements OnInit, OnDestroy {
           const cliente = this.clienteSeleccionadoObj;
 
           if (!res.data || res.data.length === 0) {
+            // ✅ Cerrar loading antes de mostrar mensaje
+            loadingDialog.close();
+            
             console.log('❌ No se encontraron registros');
             this.mostrarMensaje({
               title: 'Sin resultados',
@@ -1009,7 +1075,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
             return;
           }
 
-          // Resto del código igual...
+          // Mapear los datos
           const data = res.data.map((item): CuponTablaView => {
             const codpre = this.prefijosDisponibles.find(p => p.id === item.idPrefijo)?.codpre || 'N/A';
             const grupoProducto = this.gruposProducto.find(g => g.id_grupo_producto === item.idGrupoProducto);
@@ -1037,8 +1103,8 @@ export class CuponesComponent implements OnInit, OnDestroy {
             };
           });
 
-          const headers = ['Cupón', 'Prefijo', 'Descripción', 'Grupo Producto', 'Fecha Creación', 'Fecha Inicio', 'Fecha Caducidad', 'Usuario'];
-          const columns: (keyof CuponTablaView)[] = ['cupon', 'prefijo', 'descripcion', 'categoriaNombre', 'fecha', 'fechaInicio', 'fechaCaducidad', 'usuarioNombre'];
+          const headers = ['Cupón', 'Prefijo', 'Descripción', 'Grupo Producto', 'Fecha Inicio', 'Fecha Caducidad'];
+          const columns: (keyof CuponTablaView)[] = ['cupon', 'prefijo', 'descripcion', 'categoriaNombre', 'fechaInicio', 'fechaCaducidad'];
 
           const options = {
             data,
@@ -1057,13 +1123,40 @@ export class CuponesComponent implements OnInit, OnDestroy {
             }
           };
 
-          if (formato === 'excel') {
-            this.exportService.exportarExcel(options);
-          } else {
-            this.exportService.exportarPDF(options);
+          try {
+            // Exportar según el formato solicitado
+            if (formato === 'excel') {
+              this.exportService.exportarExcel(options);
+            } else {
+              this.exportService.exportarPDF(options);
+            }
+
+            // ✅ Cerrar loading después de la exportación exitosa
+            loadingDialog.close();
+
+            // Mostrar mensaje de éxito
+            this.mostrarMensaje({
+              title: 'Reporte generado',
+              message: `El reporte en formato ${formato.toUpperCase()} se ha generado exitosamente.`,
+              type: 'success'
+            });
+
+          } catch (exportError) {
+            // ✅ Cerrar loading en error de exportación
+            loadingDialog.close();
+            
+            console.error('Error al exportar:', exportError);
+            this.mostrarMensaje({
+              title: 'Error al exportar',
+              message: 'Se obtuvieron los datos pero ocurrió un error al generar el archivo.',
+              type: 'error'
+            });
           }
         },
         error: (err) => {
+          // ✅ Cerrar loading en error de servicio
+          loadingDialog.close();
+          
           console.error('❌ Error completo:', err);
           console.error('❌ Status:', err.status);
           console.error('❌ Error body:', err.error);
@@ -1089,8 +1182,18 @@ export class CuponesComponent implements OnInit, OnDestroy {
   cambiarTab(tab: string): void {
     this.activeTab = tab;
     this.selectedRows = [];
+    
+    // Limpiar selección del grid
     if (this.gridApi) {
       this.gridApi.deselectAll();
+    }
+
+    // Limpiar todos los filtros al cambiar de tab
+    this.limpiarFiltrosSinMensaje();
+    
+    // Si cambiamos al tab de "Listado", recargar los cupones
+    if (tab === 'Listado') {
+      this.cargarCuponesActual();
     }
   }
 
@@ -1121,6 +1224,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
   }
 
   nuevo(): void {
+    // Limpiar formulario de generación
     this.formCupon.patchValue({
       prefijo: null,
       descripcion: '',
@@ -1131,12 +1235,17 @@ export class CuponesComponent implements OnInit, OnDestroy {
       inicio: 1,
       codigosGenerados: '',
       fechaInicio: null,
-       fechaCaducidad: null
+      fechaCaducidad: null
     });
+    
     this.formCupon.get('inicio')?.disable();
     this.cuponesGenerados = [];
     this.codigoGenerado = false;
+    
+    // Limpiar también los filtros de reportes
+    this.limpiarFiltros();
   }
+
 
   cancelar(): void {
     this.nuevo();
@@ -1144,6 +1253,71 @@ export class CuponesComponent implements OnInit, OnDestroy {
 
   compararIds = (o1: any, o2: any): boolean => Number(o1) === Number(o2);
   
+  onEstadoChangedConConfirmacion(params: any): void {
+    const { data, newValue, oldValue } = params;
+    
+    if (newValue === oldValue) return;
+    
+    // Mostrar diálogo de confirmación
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Confirmar cambio de estado',
+        message: `¿Estás seguro de cambiar el estado del cupón ${data.cupon} a ${newValue}?`,
+        confirmText: 'Confirmar',
+        cancelText: 'Cancelar'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        // Proceder con el cambio
+        const nuevoEstado = newValue === 'Activo';
+        
+        this.cuponService.updateEstado(data.id, nuevoEstado)
+          .pipe(takeUntil(this.destroy$))
+          .subscribe({
+            next: (response) => {
+              if (response.type === 'SUCCESS') {
+                this.mostrarMensaje({
+                  title: 'Estado actualizado',
+                  message: `El cupón ${data.cupon} ahora está ${newValue}`,
+                  type: 'success'
+                });
+                data.estado = newValue;
+              } else {
+                this.revertirCambioEstado(params, oldValue);
+              }
+            },
+            error: () => {
+              this.mostrarMensaje({
+                title: 'Error',
+                message: 'No se pudo actualizar el estado',
+                type: 'error'
+              });
+              this.revertirCambioEstado(params, oldValue);
+            }
+          });
+      } else {
+        // Usuario canceló - revertir
+        this.revertirCambioEstado(params, oldValue);
+      }
+    });
+  }
+
+
+  //  Método auxiliar para revertir cambios en caso de error
+  private revertirCambioEstado(params: any, valorAnterior: string): void {
+    // Revertir el valor en el grid
+    params.node.setDataValue('estado', valorAnterior);
+    
+    // Refrescar la celda
+    this.gridApi.refreshCells({ 
+      rowNodes: [params.node], 
+      columns: ['estado'],
+      force: true 
+    });
+  }
   private initFiltroBusquedaListener(): void {
     this.buscarCuponControl.valueChanges.pipe(
       debounceTime(400),
@@ -1176,8 +1350,9 @@ export class CuponesComponent implements OnInit, OnDestroy {
     );
   }
 
-  private formatFecha(fecha: Date): string {
-    return fecha.toISOString().split('T')[0]; // "2025-06-30"
+  private formatFecha(fecha: Date | string): string {
+    if (!fecha) return '';
+    return moment(fecha).format('YYYY-MM-DD');
   }
 
   public cargarCuponesActual(): void {
@@ -1201,16 +1376,86 @@ export class CuponesComponent implements OnInit, OnDestroy {
    * Método para limpiar filtros y cargar todos los cupones
    */
   limpiarFiltros(): void {
-    // Resetear todos los filtros
+    // Resetear filtros de búsqueda
     this.filtroBusqueda = '';
     this.filtroPrefijo = null;
     this.filtroSerialDesde = '';
     this.filtroSerialHasta = '';
     this.buscarCuponControl.setValue('');
-    this.formReporte.reset();
+    
+    // Resetear formulario de reportes completamente
+    this.formReporte.reset({
+      prefijo: '',
+      estado: '',
+      desde: null,
+      hasta: null,
+      operadorFecha: '='
+    });
+    this.limpiarFiltrosSinMensaje();
+    // Limpiar selección del grid
+    this.selectedRows = [];
+    if (this.gridApi) {
+      this.gridApi.deselectAll();
+    }
     
     // Cargar todos los cupones sin filtros
     this.cargarCuponesActual();
+    
+    this.mostrarMensaje({
+      title: 'Filtros limpiados',
+      message: 'Se han eliminado todos los filtros aplicados.',
+      type: 'info'
+    });
+  }
+
+  /**
+ * Método para limpiar filtros sin mostrar mensaje
+ * (útil para cuando se cambia de tab)
+ */
+  private limpiarFiltrosSinMensaje(): void {
+    // Resetear filtros de búsqueda
+    this.filtroBusqueda = '';
+    this.filtroPrefijo = null;
+    this.filtroSerialDesde = '';
+    this.filtroSerialHasta = '';
+    this.buscarCuponControl.setValue('', { emitEvent: false }); // emitEvent: false para evitar trigger del listener
+    
+    // Resetear formulario de reportes completamente
+    this.formReporte.reset({
+      prefijo: '',
+      estado: '',
+      desde: null,
+      hasta: null,
+      operadorFecha: '='
+    });
+    
+    // Limpiar selección del grid
+    this.selectedRows = [];
+    if (this.gridApi) {
+      this.gridApi.deselectAll();
+    }
+  }
+
+
+  /**
+ * Verifica si hay al menos un filtro activo en el formulario de reportes
+ */
+  get tieneFiltrosReporte(): boolean {
+    const valores = this.formReporte.value;
+    return !!(
+      valores.prefijo && valores.prefijo !== '' && valores.prefijo !== 'todos' ||
+      valores.estado && valores.estado !== '' && valores.estado !== 'todos' ||
+      valores.desde ||
+      valores.hasta ||
+      valores.operadorFecha && valores.operadorFecha !== '='
+    );
+  }
+
+  /**
+   * Getter para habilitar/deshabilitar el botón de exportar
+   */
+  get puedeExportar(): boolean {
+    return this.tieneFiltrosReporte;
   }
 
   // ========== GETTERS PARA EL TEMPLATE ==========

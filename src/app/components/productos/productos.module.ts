@@ -42,10 +42,6 @@ import { MomentDateAdapter } from '@angular/material-moment-adapter';
 import { AgGridModule } from 'ag-grid-angular';
 import { AgGridAngular } from 'ag-grid-angular';
 
-import { MatProgressBarModule } from '@angular/material/progress-bar';
-import { DialogProcesoComponent } from './dialog-proceso/dialog-proceso.component';
-import { MatAutocompleteModule } from '@angular/material/autocomplete';
-import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
 import { ButtonRendererComponent } from '../utils/grid/button-renderer.component';
 import { CheckboxRendererComponents } from '../utils/grid/checkbox-renderer.component';
 import { ObservacionDialogComponent } from './nuevo-sscc/observacion-dialog.component';

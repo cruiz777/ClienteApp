@@ -59,6 +59,11 @@ export class CuponService {
   return this.http.post<ApiResponse<string[]>>(`${this.apiUrl}`, request);
 }
 
+updateEstado(id: number, estado: boolean): Observable<ApiResponse<boolean>> {
+  const body = { estado };
+  return this.http.patch<ApiResponse<boolean>>(`${this.apiUrl}/${id}/estado`, body);
+}
+
   deleteMultiple(request: DeleteCuponRequest): Observable<ApiResponse<any>> {
     return this.http.request<ApiResponse<any>>('DELETE', `${this.apiUrl}/eliminar`, { body: request });
   }
