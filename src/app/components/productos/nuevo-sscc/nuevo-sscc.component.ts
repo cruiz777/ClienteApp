@@ -308,7 +308,7 @@ export class NuevoSsccComponent implements OnInit, OnDestroy {
       cliente: [''],
       ruc: [''],
       prefijo: [null],
-      producto: [''],
+      producto: [1, [Validators.required, Validators.min(1), Validators.max(5000)]],
       empaque: [''],
       serie: [false],
       inicio: [''],

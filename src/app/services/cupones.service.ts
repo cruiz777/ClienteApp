@@ -8,6 +8,7 @@ import { PaginationResponse } from '../interfaces/responses/pagination-response'
 import { CuponResponse } from '../interfaces/responses/cupon-response';
 import { CuponRequest } from '../interfaces/requests/cupon-request';
 import { DeleteCuponRequest } from '../interfaces/requests/delete-cupon-request';
+import { CreateCuponResponse } from '../interfaces/responses/create-cupon.response';
 
 @Injectable({ providedIn: 'root' })
 export class CuponService {
@@ -55,8 +56,8 @@ export class CuponService {
     return this.http.get<ApiResponse<PaginationResponse<CuponResponse>>>(`${this.apiUrl}/buscar`, { params });
   }
 
- create(request: CuponRequest): Observable<ApiResponse<string[]>> {
-  return this.http.post<ApiResponse<string[]>>(`${this.apiUrl}`, request);
+create(request: CuponRequest): Observable<ApiResponse<CreateCuponResponse>> {
+  return this.http.post<ApiResponse<CreateCuponResponse>>(`${this.apiUrl}`, request);
 }
 
 updateEstado(id: number, estado: boolean): Observable<ApiResponse<boolean>> {

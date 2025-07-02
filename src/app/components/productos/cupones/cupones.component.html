@@ -223,9 +223,18 @@
           <th mat-header-cell *matHeaderCellDef>Fecha</th>
           <td mat-cell *matCellDef="let row">{{ row.fecha | date: 'dd/MM/yyyy' }}</td>
         </ng-container>
+        
+        <ng-container matColumnDef="duplicado">
+          <th mat-header-cell *matHeaderCellDef>Duplicado</th>
+          <td mat-cell *matCellDef="let row">
+            <mat-icon *ngIf="row.duplicado" color="warn" matTooltip="Ya existe y no será guardado">report</mat-icon>
+          </td>
+        </ng-container>
 
-        <tr mat-header-row *matHeaderRowDef="['ia', 'cupon', 'prefijo', 'fecha']"></tr>
-        <tr mat-row *matRowDef="let row; columns: ['ia', 'cupon', 'prefijo', 'fecha'];"></tr>
+
+        <tr mat-header-row *matHeaderRowDef="['ia', 'cupon', 'prefijo', 'fecha', 'duplicado']"></tr>
+        <tr mat-row *matRowDef="let row; columns: ['ia', 'cupon', 'prefijo', 'fecha', 'duplicado']"
+            [ngClass]="{ 'duplicado-row': row.duplicado }"></tr>
       </table>
     </div>
   </div>

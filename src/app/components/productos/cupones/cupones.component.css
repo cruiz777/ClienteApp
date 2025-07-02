@@ -269,3 +269,7 @@ mat-form-field {
   color: #fff !important;
   opacity: 0.6;
 }
+.duplicado-row {
+  background-color: #fff3e0; /* naranja suave */
+  font-style: italic;
+}

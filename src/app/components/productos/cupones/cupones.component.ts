@@ -15,7 +15,7 @@ import { MatDialog, MatDialogContent, MatDialogModule } from '@angular/material/
 import { MatMenuModule } from '@angular/material/menu';
 import { Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, Subject, takeUntil, throwError, timeout } from 'rxjs';
 
 import { AgGridModule } from 'ag-grid-angular';
 import { ColDef, GridApi, GridOptions, GridReadyEvent, SelectionChangedEvent } from 'ag-grid-community';
@@ -655,21 +655,43 @@ export class CuponesComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res) => {
-          const lista = res.data.map((codigo: string, index: number) => ({
+          const generados = res.data?.cuponesGenerados || [];
+          const duplicados = res.data?.cuponesDuplicados || [];
+
+          // ✅ MEJORA: Mapear correctamente los duplicados
+          const lista = generados.map((codigo: string, index: number) => ({
             ia: index + 1,
             cupon: codigo,
             prefijo: this.prefijosDisponibles.find(p => p.id === Number(this.formCupon.get('prefijo')?.value))?.codpre || 'N/A',
-            fecha: this.formatFecha(new Date())
+            fecha: this.formatFecha(new Date()),
+            duplicado: duplicados.includes(codigo) // ✅ Marcar si es duplicado
           }));
 
-          this.cuponesGenerados = lista;
-          this.formCupon.patchValue({ codigosGenerados: lista.length });
+          // ✅ MEJORA: Agregar duplicados a la lista para mostrarlos
+          const duplicadosParaMostrar = duplicados.map((codigo: string, index: number) => ({
+            ia: generados.length + index + 1,
+            cupon: codigo,
+            prefijo: this.prefijosDisponibles.find(p => p.id === Number(this.formCupon.get('prefijo')?.value))?.codpre || 'N/A',
+            fecha: this.formatFecha(new Date()),
+            duplicado: true // ✅ Marcar como duplicado
+          }));
+
+          // ✅ Combinar generados y duplicados en una sola lista
+          this.cuponesGenerados = [...lista, ...duplicadosParaMostrar];
+          
+          this.formCupon.patchValue({ codigosGenerados: generados.length }); // Solo contar los nuevos
           this.codigoGenerado = true;
+
+          // ✅ MEJORA: Mensaje más claro sobre el estado
+          let mensaje = `Se generaron ${generados.length} cupones nuevos.`;
+          if (duplicados.length > 0) {
+            mensaje += ` Se encontraron ${duplicados.length} duplicados que no serán guardados`;
+          }
 
           this.mostrarMensaje({
             title: 'Previsualización completa',
-            message: `Se generaron ${lista.length} cupones. Presiona "Grabar" para guardar.`,
-            type: 'info'
+            message: mensaje,
+            type: duplicados.length > 0 ? 'warning' : 'info'
           });
         },
         error: (err) => {
@@ -712,7 +734,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
       cantidad: cantidad,
       serie: this.formCupon.get('serie')?.value || false,
       serialInicio: this.formCupon.get('serie')?.value ? inicio : undefined,
-      previsualizar: false,
+      previsualizar: false, // ✅ Importante: false para grabar realmente
       fechaInicio: this.formatFecha(this.formCupon.get('fechaInicio')?.value),
       fechaCaducidad: this.formatFecha(this.formCupon.get('fechaCaducidad')?.value),
       descripcion: this.formCupon.get('descripcion')?.value,
@@ -721,7 +743,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
       usuario: this.usuarioActual.id_usuario
     };
 
-    // ✅ Mostrar loading antes de la petición
+    // ✅ Mostrar loading
     const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
       disableClose: true,
       data: {
@@ -735,34 +757,56 @@ export class CuponesComponent implements OnInit, OnDestroy {
     });
 
     this.cuponService.create(payload)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: () => {
-          // ✅ Cerrar loading en éxito
+      .pipe(
+        takeUntil(this.destroy$),
+        // ✅ Agregar timeout para evitar loading infinito
+        timeout(30000), // 30 segundos timeout
+        // ✅ Agregar manejo de errores más robusto
+        catchError(error => {
+          console.error('Error en grabar():', error);
           loadingDialog.close();
           
           this.mostrarMensaje({
+            title: 'Error al grabar',
+            message: error?.error?.message || 'No se pudieron guardar los cupones. Intenta nuevamente.',
+            type: 'error'
+          });
+          
+          return throwError(() => error);
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          // ✅ Cerrar loading inmediatamente
+          loadingDialog.close();
+          
+          console.log('✅ Cupones guardados exitosamente:', response);
+          
+          // ✅ Mostrar mensaje de éxito
+          this.mostrarMensaje({
             title: 'Cupones guardados',
-            message: 'Se grabaron correctamente los cupones generados.',
+            message: `Se grabaron correctamente ${this.cuponesGenerados.length} cupones.`,
             type: 'success'
           });
           
+          // ✅ Limpiar formulario ANTES de recargar datos
           this.nuevo();
-          this.cargarCuponesActual();
-          this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
-            this.router.navigate(['/menuProductos/nuevoSscc']);
-          });
+          
+          // ✅ Cambiar a tab de listado para ver los resultados
+          this.activeTab = 'Listado';
+          
+          // ✅ Recargar cupones de forma más simple (sin navegación compleja)
+          setTimeout(() => {
+            this.cargarCuponesActual();
+          }, 500); // Pequeño delay para que se complete el cambio de tab
         },
         error: (err) => {
-          // ✅ Cerrar loading en error
-          loadingDialog.close();
-          
-          console.error('Error al grabar cupones:', err);
-          this.mostrarMensaje({
-            title: 'Error al grabar',
-            message: err?.error?.message || 'No se pudieron guardar los cupones.',
-            type: 'error'
-          });
+          // Este bloque puede que no se ejecute debido al catchError arriba
+          // pero lo mantenemos por seguridad
+          console.error('Error final en grabar():', err);
+          if (loadingDialog && loadingDialog.getState() === 0) {//Verifica si está abierto 
+            loadingDialog.close();
+          }
         }
       });
   }
