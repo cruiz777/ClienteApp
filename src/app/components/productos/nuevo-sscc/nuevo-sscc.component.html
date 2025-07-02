@@ -7,8 +7,14 @@
 <!-- TAB LISTADO -->
 <ng-container *ngIf="activeTab === 'Listado'">
   <div class="contenedor">
-  <h2 class="titulo">Total de registros: <span class="contador">{{ totalItems }}</span></h2>
-
+  <!-- Header con título y nombre del cliente -->
+    <div class="header-listado">
+      <h2 class="titulo">Total de registros: <span class="contador">{{ totalItems }}</span></h2>
+      <div class="cliente-info" *ngIf="clienteSeleccionadoObj">
+        <span class="cliente-label">Empresa:</span>
+        <span class="cliente-nombre">{{ clienteSeleccionadoObj.nomcli }}</span>
+      </div>
+    </div>
   <div class="filtros grid-3-cols">
     <!-- <mat-form-field appearance="outline">
       <mat-label>Mostrar</mat-label>
@@ -133,6 +139,9 @@
       <mat-form-field>
         <mat-label>Productos a Codificar</mat-label>
         <input matInput formControlName="producto" type="number" min="1">
+        <mat-error *ngIf="formSSCC.get('producto')?.hasError('max')">
+           Solo se permiten 5000 códigos a generar.
+        </mat-error>          
       </mat-form-field>
 
       <mat-form-field appearance="outline">
@@ -253,9 +262,9 @@
 
 
     <div class="botones">
-      <button mat-stroked-button color="primary" (click)="nuevo()">Nuevo</button>
+      <button mat-stroked-button color="primary" (click)="nuevo()" [disabled]="!tieneFiltrosReporte">Nuevo</button>
       <!-- Botón desplegable de exportación -->
-      <button mat-stroked-button [matMenuTriggerFor]="menuExportar" color="accent">
+      <button mat-stroked-button [matMenuTriggerFor]="menuExportar"  [disabled]="!puedeExportar" color="accent">
         Exportar <mat-icon>arrow_drop_down</mat-icon>
       </button>
 

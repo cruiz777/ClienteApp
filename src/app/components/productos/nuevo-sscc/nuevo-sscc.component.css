@@ -250,3 +250,40 @@ mat-form-field {
   opacity: 0.6;
 }
 
+/* ============ HEADER LISTADO ============ */
+.header-listado {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.titulo {
+  font-size: 22px;
+  font-weight: 600;
+  color: #002c6c;
+  margin: 0;
+}
+
+.cliente-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #f0f7ff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #002c6c;
+}
+
+.cliente-label {
+  font-weight: 600;
+  color: #002c6c;
+  font-size: 14px;
+}
+
+.cliente-nombre {
+  color: #1f2937;
+  font-weight: 500;
+  font-size: 14px;
+}

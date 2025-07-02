@@ -179,13 +179,9 @@ export class BorrarPrefijoComponent implements OnInit {
     });
   }
 
-  exportarPDF() {
-    console.log('Exportar a PDF');
-  }
+  
 
-  exportarExcel() {
-    console.log('Exportar a Excel');
-  }
+  
 
   limpiarBusqueda(): void {
     this.filtroBusqueda = '';
@@ -230,37 +226,40 @@ export class BorrarPrefijoComponent implements OnInit {
     });
   }
 
-  exportar(tipo: 'excel' | 'pdf'): void {
-    // Encabezados visibles en el archivo
-    const headers = ['Prefijo', 'Cliente', 'RUC', 'Usuario', 'Fecha'];
+ exportar(tipo: 'excel' | 'pdf'): void {
+  const headers = ['Prefijo', 'Cliente', 'RUC', 'Usuario', 'Fecha'];
+  const columns = ['prefijo', 'cliente', 'ruc', 'usuario', 'fecha'];
 
-    // Claves de los objetos en `this.listado`
-    const columns = ['prefijo', 'cliente', 'ruc', 'usuario', 'fecha'];
+  const data = this.listado.map((item) => ({
+    prefijo: item.prefijo,
+    cliente: item.cliente,
+    ruc: item.ruc,
+    usuario: item.usuario,
+    fecha: item.fecha
+      ? new Date(item.fecha).toLocaleDateString('es-EC', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        })
+      : ''
+  }));
 
-    // Mapeamos los datos del listado para exportar
-    const data = this.listado.map((item) => ({
-      prefijo: item.prefijo,
-      cliente: item.cliente,
-      ruc: item.ruc,
-      usuario: item.usuario,
-      fecha: item.fecha // Ya viene formateada con .toLocaleDateString()
-    }));
+  const options: ExportOptions = {
+    data,
+    columns,
+    headers,
+    filename: 'ListadoPrefijosEliminados',
+    title: 'Auditoría de Prefijos Eliminados',
+    logoUrl: this.logoUrl
+  };
 
-    const options: ExportOptions = {
-      data,
-      columns,
-      headers,
-      filename: 'ListadoPrefijosEliminados',
-      title: 'Auditoría de Prefijos Eliminados',
-      logoUrl: this.logoUrl // Asegúrate de que esté definida
-    };
-
-    if (tipo === 'excel') {
-      this.exportService.exportarExcel(options);
-    } else {
-      this.exportService.exportarPDF(options);
-    }
+  if (tipo === 'excel') {
+    this.exportService.exportarExcel(options);
+  } else {
+    this.exportService.exportarPDF(options);
   }
+}
+
 
   logo()
   {

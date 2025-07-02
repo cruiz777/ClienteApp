@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormControl, FormGroup, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -24,9 +24,8 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { GenerateSsccRequest } from 'src/app/interfaces/requests/generate-sscc-request';
 import { UsuarioService } from 'src/app/services/usuario.service';
 import { MatDialog } from '@angular/material/dialog';
-import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/util/messages/custom-message-box.component';
 import { SimplePrefijoResponse } from 'src/app/interfaces/responses/prefijo-simple';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { debounceTime, distinctUntilChanged, Subject, takeUntil } from 'rxjs';
 import { SsccRequest } from 'src/app/interfaces/requests/sscc-request';
 import { ColDef, SelectionChangedEvent } from 'ag-grid-community';
 import { ButtonRendererComponent } from '../../utils/grid/button-renderer.component';
@@ -46,6 +45,7 @@ import { MatTooltip } from '@angular/material/tooltip';
 import { isValid, parse, setHours, setMilliseconds, setMinutes, setSeconds } from 'date-fns';
 import { ObservacionDialogComponent } from './observacion-dialog.component';
 import * as moment from 'moment';
+import { CustomMessageBoxComponent, MessageBoxData } from '../../utils/messages/custom-message-box.component';
 
 interface SsccTablaView { //Interfaz auxiliar para poder mapear solamente lo que se requiere
   id: number;
@@ -93,10 +93,12 @@ interface SsccTablaView { //Interfaz auxiliar para poder mapear solamente lo que
     { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS }
   ]
 })
-export class NuevoSsccComponent implements OnInit {
+export class NuevoSsccComponent implements OnInit, OnDestroy {
   // Variables del grid
   private gridApi!: GridApi<SsccTablaView>; // define con tipo explícito
-  
+  private destroy$ = new Subject<void>();
+  private updatingStatus = false; // Esta ya la tienes
+
   selectedRows: SsccTablaView[] = [];
   usuario: any;
   columnDefs: ColDef[] = [
@@ -119,13 +121,6 @@ export class NuevoSsccComponent implements OnInit {
       sortable: false,
       filter: false,
       cellClass: 'text-center font-medium text-gray-600'
-    },
-    { 
-      field: 'empresa', 
-      headerName: 'Empresa', 
-      filter: 'agTextColumnFilter',
-      width: 200,
-      cellClass: 'font-medium text-gray-800'
     },
     { 
       field: 'prefijo', 
@@ -174,47 +169,39 @@ export class NuevoSsccComponent implements OnInit {
         return '';
       }
     },
-    { 
+    {
       field: 'estado', 
       headerName: 'Estado', 
       filter: 'agSetColumnFilter',
       width: 120,
-      cellRenderer: StatusRendererComponent, // Componente personalizado para estado
-      cellClass: 'text-center'
+      pinned: 'right', //Mantener fija a la derecha como en cupones
+      cellRenderer: StatusRendererComponent, // USAR EL COMPONENT RENDERER
+      cellClass: 'text-center',
+      
+      // Configuración para edición
+      editable: true,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: {
+        values: ['Activo', 'Inactivo']
+      },
+      
+      //Se manejan los cambios con confirmación
+      onCellValueChanged: (params) => this.onEstadoChangedConConfirmacion(params)
+    
     },
+
     { 
       field: 'usuario', 
       headerName: 'Usuario', 
       filter: 'agTextColumnFilter',
       width: 140,
       cellClass: 'text-gray-700'
-    },
-    {
-      headerName: 'Acciones',
-      cellRenderer: ButtonRendererComponent,
-      width: 120,
-      pinned: 'right',
-      sortable: false,
-      filter: false,
-      cellRendererParams: {
-        buttons: [
-          {
-            icon: 'visibility',
-            tooltip: 'Ver detalle',
-            color: 'primary',
-            onClick: (params: any) => this.verDetalle(params.data)
-          },
-          {
-            icon: 'edit',
-            tooltip: 'Editar',
-            color: 'accent',
-            onClick: (params: any) => this.editarRegistro(params.data)
-          }
-        ]
-      }
     }
   ];
-
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
   defaultColDef: ColDef = {
     sortable: true,
     resizable: true,
@@ -250,6 +237,8 @@ export class NuevoSsccComponent implements OnInit {
     overlayNoRowsTemplate: '<span class="ag-overlay-no-rows-center">No hay datos para mostrar</span>',
     rowHeight: 48, // Altura de fila más cómoda
     headerHeight: 50,
+    singleClickEdit: true, 
+    stopEditingWhenCellsLoseFocus: true,
     floatingFiltersHeight: 35,
     onSelectionChanged: (event: SelectionChangedEvent) => this.onSelectionChanged(event)
   };
@@ -319,7 +308,7 @@ export class NuevoSsccComponent implements OnInit {
       cliente: [''],
       ruc: [''],
       prefijo: [null],
-      producto: [''],
+      producto: [1, [Validators.required, Validators.min(1), Validators.max(5000)]],
       empaque: [''],
       serie: [false],
       inicio: [''],
@@ -412,9 +401,11 @@ export class NuevoSsccComponent implements OnInit {
   // ========== LISTADO ==========
 
   //Carga todos los datos desde el backend
+  //Carga todos los datos desde el backend
   cargarSSCCs(page: number = 0, size: number = 10): void {
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
     if (!cliente) return;
+
     console.log('📌 Prefijos disponibles:', this.prefijosDisponibles);
     console.log('🎯 Valor seleccionado en filtroPrefijo:', this.filtroPrefijo);
 
@@ -433,11 +424,27 @@ export class NuevoSsccComponent implements OnInit {
       fechaHasta: this.formReporte.value.hasta || undefined
     };
 
-    console.log('🔍 Filtros enviados:', filtros);
+    console.log('Filtros enviados:', filtros);
+
+    //Mostrar loading antes de la petición
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      disableClose: true,
+      data: {
+        title: 'Cargando datos...',
+        message: 'Por favor espere mientras se cargan los códigos SSCC.',
+        type: 'info',
+        isLoading: true,
+        loadingText: 'Obteniendo registros...',
+        showCancel: false
+      }
+    });
+
     this.ssccService.getByClienteConFiltros(cliente.clientes_codigo, filtros).subscribe({
       next: (response) => {
+        //Cerrar loading en éxito
+        loadingDialog.close();
+
         const mappedData = response.data.items.map((item: any) => {
-   
           const codpre = this.prefijosDisponibles.find(p => p.id === item.id_prefijo)?.codpre || 'N/A';
 
           return {
@@ -461,11 +468,24 @@ export class NuevoSsccComponent implements OnInit {
         this.pageIndex = response.data.page - 1;
         this.pageSize = response.data.pageSize;
       },
-      error: (err) => console.error('❌ Error al cargar SSCCs:', err)
+      error: (err) => {
+        //Cerrar loading en error
+        loadingDialog.close();
+        
+        console.error('❌ Error al cargar SSCCs:', err);
+        
+        // Mostrar mensaje de error
+        this.dialog.open(CustomMessageBoxComponent, {
+          width: '420px',
+          data: {
+            title: 'Error al cargar datos',
+            message: err?.error?.message || 'No se pudieron cargar los códigos SSCC. Intente nuevamente.',
+            type: 'error'
+          }
+        });
+      }
     });
   }
-
-
 
   cargarPrefijosPorCliente(): void {
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
@@ -493,15 +513,26 @@ export class NuevoSsccComponent implements OnInit {
   }
   private operadorFechaSuscrito = false;
   cambiarTab(tab: string): void {
-      this.activeTab = tab;
-      // Resetear selección del grid
-      this.selectedRows = [];
+    this.activeTab = tab;
+    
+    // Resetear selección del grid
+    this.selectedRows = [];
 
-      // Se limpia el grid completamente
-      if (this.gridApi) {
-        this.gridApi.deselectAll();
-      }
-      if (tab === 'Reportes' && !this.operadorFechaSuscrito) {
+    // Limpiar selección del grid
+    if (this.gridApi) {
+      this.gridApi.deselectAll();
+    }
+
+    // Limpiar todos los filtros al cambiar de tab
+    this.limpiarFiltrosSinMensaje();
+    
+    // Si cambiamos al tab de "Listado", recargar los SSCCs
+    if (tab === 'Listado') {
+      this.cargarSSCCsActual();
+    }
+
+    // Configurar suscripción para operador de fecha solo una vez
+    if (tab === 'Reportes' && !this.operadorFechaSuscrito) {
       this.formReporte.get('operadorFecha')?.valueChanges.subscribe(valor => {
         console.log('📻 operadorFecha cambiado a:', valor);
       });
@@ -509,32 +540,48 @@ export class NuevoSsccComponent implements OnInit {
     }
   }
 
+
   salir(): void {
     this.router.navigate(['/pages/clientes']);
   }
 
   // ========== GENERAR ==========
   nuevo(): void {
-    // Limpiar campos específicos
-    this.formSSCC.patchValue({
-      prefijo: null,
-      producto: '',
-      empaque: '',
-      serie: false,
-      inicio: '',
-      fin: '',
-      codigosGenerados: ''
-    });
+    // Dependiendo del tab activo, limpiar diferentes elementos
+    if (this.activeTab === 'Generar') {
+      // Limpiar campos específicos del formulario de generación
+      this.formSSCC.patchValue({
+        prefijo: null,
+        producto: '',
+        empaque: '',
+        serie: false,
+        inicio: '',
+        fin: '',
+        codigosGenerados: ''
+      });
 
-    // Asegurarse de desactivar los campos de secuencia
-    this.formSSCC.get('inicio')?.disable();
-    this.formSSCC.get('fin')?.disable();
+      // Asegurarse de desactivar los campos de secuencia
+      this.formSSCC.get('inicio')?.disable();
+      this.formSSCC.get('fin')?.disable();
 
-    // Limpiar la tabla de códigos generados
-    this.dataGenerada.data = [];
+      // Limpiar la tabla de códigos generados
+      this.dataGenerada.data = [];
 
-    //Permite generar los codigos nuevamente
-    this.codigoGenerado = false;
+      // Permite generar los códigos nuevamente
+      this.codigoGenerado = false;
+    } else if (this.activeTab === 'Reportes') {
+      // Limpiar solo los filtros de reportes
+      this.formReporte.reset({
+        prefijo: '',
+        estado: '',
+        desde: null,
+        hasta: null,
+        operadorFecha: '='
+      });
+    } else if (this.activeTab === 'Listado') {
+      // Limpiar filtros de listado
+      this.limpiarFiltros();
+    }
   }
 
   generar(): void {
@@ -670,7 +717,6 @@ export class NuevoSsccComponent implements OnInit {
         type: 'info',
         isLoading: true,
         showCancel: false
-        
       }
     });
 
@@ -800,6 +846,7 @@ export class NuevoSsccComponent implements OnInit {
     console.log('Exportando con filtros:', filtros);
   }
 
+  // Para tu componente de SSCC (nuevo-sscc.component.ts)
   reportes(formato: 'excel' | 'pdf' = 'excel'): void {
     const { prefijo, estado, desde, hasta, operadorFecha } = this.formReporte.value;
 
@@ -842,11 +889,27 @@ export class NuevoSsccComponent implements OnInit {
 
     console.log('Filtros enviados:', filtros);
 
+    // ✅ Mostrar loading durante la generación del reporte
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      disableClose: true,
+      data: {
+        title: 'Generando reporte...',
+        message: `Preparando reporte de códigos SSCC en formato ${formato.toUpperCase()}.`,
+        type: 'info',
+        isLoading: true,
+        loadingText: 'Consultando base de datos y procesando archivo...',
+        showCancel: false
+      }
+    });
+
     this.ssccService.getReporte(filtros).subscribe({
       next: (res) => {
         const cliente = this.clienteSeleccionadoObj;
 
         if (!res.data || res.data.length === 0) {
+          // ✅ Cerrar loading antes de mostrar mensaje
+          loadingDialog.close();
+          
           this.mostrarMensaje({
             title: 'Sin resultados',
             message: 'No se encontraron registros que coincidan con los filtros.',
@@ -892,17 +955,45 @@ export class NuevoSsccComponent implements OnInit {
             ruc: cliente?.ruc || '1234567890123',
           }
         };
+        
         console.log('Exportando con headers:', headers);
         console.log('Exportando con columns:', columns);
         console.log('Primer objeto en data:', data[0]);
 
-        if (formato === 'excel') {
-          this.exportService.exportarExcel(options);
-        } else {
-          this.exportService.exportarPDF(options);
+        try {
+          // Exportar según el formato solicitado
+          if (formato === 'excel') {
+            this.exportService.exportarExcel(options);
+          } else {
+            this.exportService.exportarPDF(options);
+          }
+
+          // ✅ Cerrar loading después de la exportación exitosa
+          loadingDialog.close();
+
+          // Mostrar mensaje de éxito
+          this.mostrarMensaje({
+            title: 'Reporte generado',
+            message: `El reporte de SSCC en formato ${formato.toUpperCase()} se ha generado exitosamente.`,
+            type: 'success'
+          });
+
+        } catch (exportError) {
+          // ✅ Cerrar loading en error de exportación
+          loadingDialog.close();
+          
+          console.error('Error al exportar:', exportError);
+          this.mostrarMensaje({
+            title: 'Error al exportar',
+            message: 'Se obtuvieron los datos pero ocurrió un error al generar el archivo.',
+            type: 'error'
+          });
         }
       },
       error: (err) => {
+        // ✅ Cerrar loading en error de servicio
+        loadingDialog.close();
+        
         this.mostrarMensaje({
           title: 'Error al generar reporte',
           message: err?.error?.message || 'Ocurrió un error al generar el reporte.',
@@ -916,7 +1007,14 @@ export class NuevoSsccComponent implements OnInit {
 
   //Paginador
   onPageChange(event: any): void {
-    this.cargarSSCCs(event.pageIndex, event.pageSize);
+    // Decidir si usar filtros o cargar todos según el estado actual
+    if (this.tieneFiltrosActivos()) {
+      // Si hay filtros activos, usar el método con filtros
+      this.cargarSSCCs(event.pageIndex, event.pageSize);
+    } else {
+      // Si no hay filtros, cargar todos
+      this.cargarSSCCs(event.pageIndex, event.pageSize);
+    }
   }
 
   // ========== UTILIDADES ==========
@@ -1059,7 +1157,101 @@ export class NuevoSsccComponent implements OnInit {
   }
 
   //============METODOS AUXILIARES ================
+  onEstadoChangedConConfirmacion(params: any): void {
+    const { data, newValue, oldValue } = params;
+    
+    // Evitar cambios innecesarios
+    if (newValue === oldValue) return;
+    
+    // Prevenir múltiples actualizaciones simultáneas
+    if (this.updatingStatus) {
+      this.revertirCambioEstado(params, oldValue);
+      return;
+    }
+    
+    // Mostrar diálogo de confirmación
+    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
+      width: '400px',
+      data: {
+        title: 'Confirmar cambio de estado',
+        message: `¿Estás seguro de cambiar el estado del SSCC ${data.sscc} a ${newValue}?`,
+        confirmText: 'Confirmar',
+        cancelText: 'Cancelar'
+      }
+    });
 
+    dialogRef.afterClosed().subscribe(confirmed => {
+      if (confirmed) {
+        this.ejecutarCambioEstado(params, data, newValue, oldValue);
+      } else {
+        // Usuario canceló - revertir
+        this.revertirCambioEstado(params, oldValue);
+      }
+    });
+  }
+
+  private ejecutarCambioEstado(params: any, data: any, newValue: string, oldValue: string): void {
+    this.updatingStatus = true;
+    const nuevoEstado = newValue === 'Activo';
+    
+    // Aquí debes crear o usar un método en tu SsccService para actualizar el estado
+    // Asumiendo que tienes un método updateEstado en tu servicio
+    this.ssccService.updateStatus(data.id, nuevoEstado)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.updatingStatus = false;
+          
+          if (response.type === 'SUCCESS') {
+            this.mostrarMensaje({
+              title: 'Estado actualizado',
+              message: `El SSCC ${data.sscc} ahora está ${newValue}`,
+              type: 'success'
+            });
+            
+            // Actualizar el dato local
+            data.estado = newValue;
+            
+            // Opcional: Refrescar la fila en el grid
+            this.gridApi.refreshCells({ 
+              rowNodes: [params.node], 
+              columns: ['estado'],
+              force: true 
+            });
+          } else {
+            this.mostrarMensaje({
+              title: 'Error',
+              message: response.message || 'No se pudo actualizar el estado',
+              type: 'error'
+            });
+            this.revertirCambioEstado(params, oldValue);
+          }
+        },
+        error: (err) => {
+          this.updatingStatus = false;
+          console.error('Error al actualizar estado SSCC:', err);
+          
+          this.mostrarMensaje({
+            title: 'Error al actualizar',
+            message: err?.error?.message || 'No se pudo actualizar el estado del SSCC',
+            type: 'error'
+          });
+          
+          this.revertirCambioEstado(params, oldValue);
+        }
+      });
+  }
+  private revertirCambioEstado(params: any, valorAnterior: string): void {
+    // Revertir el valor en el grid
+    params.node.setDataValue('estado', valorAnterior);
+    
+    // Refrescar la celda para asegurar que se muestre el valor correcto
+    this.gridApi.refreshCells({ 
+      rowNodes: [params.node], 
+      columns: ['estado'],
+      force: true 
+    });
+  }
   private initFiltroBusquedaListener(): void {
     this.filtroBusquedaControl.valueChanges.pipe(
       debounceTime(400),
@@ -1069,7 +1261,6 @@ export class NuevoSsccComponent implements OnInit {
       this.cargarSSCCsActual(); // ahora filtra directamente desde el backend
     });
   }
-
 
   private aplicarEstilosGrid(): void {
     // Aplicar estilos personalizados al grid
@@ -1083,14 +1274,84 @@ export class NuevoSsccComponent implements OnInit {
     this.pageIndex = 0;
     this.cargarSSCCs(0, this.pageSize);
   }
-
+  
+  limpiarFiltros(): void {
+    // Usar el método privado para limpiar
+    this.limpiarFiltrosSinMensaje();
+    
+    // Cargar todos los SSCCs sin filtros
+    this.cargarSSCCsActual();
+    
+    this.mostrarMensaje({
+      title: 'Filtros limpiados',
+      message: 'Se han eliminado todos los filtros aplicados.',
+      type: 'info'
+    });
+  }
+  private limpiarFiltrosSinMensaje(): void {
+    // Resetear filtros de búsqueda del listado
+    this.filtroBusqueda = '';
+    this.filtroPrefijo = null;
+    this.filtroEmpaque = null;
+    this.filtroSerialDesde = '';
+    this.filtroSerialHasta = '';
+    this.buscarSsccControl.setValue('', { emitEvent: false }); // emitEvent: false para evitar trigger del listener
+    this.filtroBusquedaControl.setValue('', { emitEvent: false });
+    
+    // Resetear formulario de reportes completamente
+    this.formReporte.reset({
+      prefijo: '',
+      estado: '',
+      desde: null,
+      hasta: null,
+      operadorFecha: '='
+    });
+    
+    // Limpiar selección del grid
+    this.selectedRows = [];
+    if (this.gridApi) {
+      this.gridApi.deselectAll();
+    }
+  }
+  private tieneFiltrosActivos(): boolean {
+    return !!(
+      this.filtroBusqueda?.trim() ||
+      this.filtroPrefijo !== null ||
+      this.filtroEmpaque ||
+      this.filtroSerialDesde?.trim() ||
+      this.filtroSerialHasta?.trim() ||
+      this.formReporte.value.estado ||
+      this.formReporte.value.desde ||
+      this.formReporte.value.hasta
+    );
+  }
 
   clienteSeleccionado(cliente: Cliente): void {
     this.clienteSeleccionadoObj = cliente;
     this.ssccsData = [];
     this.cargarSSCCsActual();
   }
+    /**
+   * Verifica si hay al menos un filtro activo en el formulario de reportes
+   */
+  get tieneFiltrosReporte(): boolean {
+    const valores = this.formReporte.value;
+    return !!(
+      valores.prefijo && valores.prefijo !== '' && valores.prefijo !== 'todos' ||
+      valores.estado && valores.estado !== '' && valores.estado !== 'todos' ||
+      valores.desde ||
+      valores.hasta ||
+      valores.operadorFecha && valores.operadorFecha !== '='
+    );
+  }
 
+  /**
+   * Getter para habilitar/deshabilitar el botón de exportar
+   */
+  get puedeExportar(): boolean {
+    return this.tieneFiltrosReporte;
+  }
+  
   get puedeBuscar(): boolean {
     return !!(
       this.filtroBusqueda?.trim() ||

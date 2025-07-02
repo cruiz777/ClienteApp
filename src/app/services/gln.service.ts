@@ -8,13 +8,18 @@ import { GlnRequest } from '../interfaces/requests/gln-request';
 import { GlnResponse } from '../interfaces/responses/gln-response';
 import { ApiResponse } from '../interfaces/responses/api-response';
 
+export interface UpdateGlnClientesCodigoRequest {
+  idPrefijos: number;
+  clientesCodigo: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class GlnService {
   private apiBaseUrl = environment.clientsUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   insertarGln(data: { request: GlnRequest }): Observable<any> {
     return this.http.post(`${this.apiBaseUrl}/Gln`, data);
@@ -59,6 +64,17 @@ export class GlnService {
   eliminarGlnPorIdPrefijos(idPrefijos: number): Observable<ApiResponse<boolean>> {
     return this.http.delete<ApiResponse<boolean>>(`${this.apiBaseUrl}/Gln/por-idprefijos/${idPrefijos}`);
   }
+
+  actualizarGlnClientesCodigoPorIdPrefijo(
+    payload: UpdateGlnClientesCodigoRequest
+  ): Observable<ApiResponse<boolean>> {
+    return this.http.put<ApiResponse<boolean>>(
+      `${this.apiBaseUrl}/Gln/actualizar-clientecodigo-por-idprefijo`,
+      payload
+    );
+  }
+
+
 }
 
 export { GlnRequest } from '../interfaces/requests/gln-request';

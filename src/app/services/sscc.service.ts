@@ -46,11 +46,13 @@ export class SsccService {
   create(request: SsccRequest): Observable<ApiResponse<SsccResponse>> {
     return this.http.post<ApiResponse<SsccResponse>>(`${this.apiUrl}`, request);
   }
-
-  update(id: number, request: SsccRequest): Observable<ApiResponse<SsccResponse>> {
-    return this.http.put<ApiResponse<SsccResponse>>(`${this.apiUrl}/${id}`, request);
+  /**
+   * Actualizar solo el estado de un SSCC
+   */
+  updateStatus(id: number, estado: boolean): Observable<ApiResponse<boolean>> {
+    return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/${id}/status`, estado);
   }
-
+  
   generate(request: GenerateSsccRequest): Observable<ApiResponse<string[]>> {
     return this.http.post<ApiResponse<string[]>>(`${this.apiUrl}/generar`, request);
   }
