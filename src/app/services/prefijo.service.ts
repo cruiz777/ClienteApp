@@ -20,6 +20,11 @@ export interface ActualizarPrefijoPayload {
   observacion: string;
   estado: boolean;
 }
+export interface UpdateClientesCodigoRequest {
+  idPrefijos: number;
+  clientesCodigo: number;
+}
+
 
 @Injectable({
   providedIn: 'root'
@@ -75,8 +80,13 @@ export class PrefijoService {
     return this.http.delete(`${this.apiBaseUrl}/Prefijos/${id}`);
   }
 
-obtenerPrefijosUnicosPorCliente(clientesCodigo: number): Observable<SimplePrefijoResponse[]> {
-  return this.http.get<any>(`${this.apiBaseUrl}/prefijos/unicos/${clientesCodigo}`)
-    .pipe(map(response => response.data as SimplePrefijoResponse[]));
+  obtenerPrefijosUnicosPorCliente(clientesCodigo: number): Observable<SimplePrefijoResponse[]> {
+    return this.http.get<any>(`${this.apiBaseUrl}/prefijos/unicos/${clientesCodigo}`)
+      .pipe(map(response => response.data as SimplePrefijoResponse[]));
+  }
+  actualizarClientesCodigoDePrefijo(idPrefijos: number, clientesCodigo: number): Observable<any> {
+  return this.http.patch(`${this.apiBaseUrl}/prefijos/${idPrefijos}/cliente/${clientesCodigo}`, {});
 }
+
+
 }

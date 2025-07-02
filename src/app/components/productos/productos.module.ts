@@ -41,7 +41,6 @@ import { MomentDateAdapter } from '@angular/material-moment-adapter';
 // Ag-Grid y Handsontable
 import { AgGridModule } from 'ag-grid-angular';
 import { AgGridAngular } from 'ag-grid-angular';
-
 import { ButtonRendererComponent } from '../utils/grid/button-renderer.component';
 import { CheckboxRendererComponents } from '../utils/grid/checkbox-renderer.component';
 import { ObservacionDialogComponent } from './nuevo-sscc/observacion-dialog.component';

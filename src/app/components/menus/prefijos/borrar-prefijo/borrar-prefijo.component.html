@@ -69,7 +69,7 @@
       <div class="form-actions">
         <button mat-button [matMenuTriggerFor]="menuExportar">Exportar</button>
         <mat-menu #menuExportar="matMenu">
-          <button mat-menu-item (click)="exportarPDF()">PDF</button>
+          <button mat-menu-item (click)="exportar('pdf')">PDF</button>
           <button mat-menu-item (click)="exportar('excel')">Excel</button>
         </mat-menu>
       </div>

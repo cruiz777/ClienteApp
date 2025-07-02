@@ -3,6 +3,12 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
+export interface UpdateClientesCodigoByIdPrefijosRequest {
+  idPrefijos: number;
+  clientesCodigo: number;
+}
+
+
 export interface Codigos14Request {
   id_codigos14: number;
   codbar: string;
@@ -120,6 +126,12 @@ actualizarCamposBasicos(data: Partial<Codigos14Request>): Observable<ApiResponse
   return this.http.put<ApiResponse<boolean>>(url, body);
 }
 
+actualizarClientesCodigo14PorIdPrefijos(
+  data: UpdateClientesCodigoByIdPrefijosRequest
+): Observable<ApiResponse<boolean>> {
+  const url = `${this.baseUrl}/Codigos14/actualizar-clientescodigo-por-idprefijos`;
+  return this.http.put<ApiResponse<boolean>>(url, data);
+}
 
 
 
