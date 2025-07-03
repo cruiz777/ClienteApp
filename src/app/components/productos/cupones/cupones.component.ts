@@ -517,7 +517,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // ✅ Mostrar loading antes de la petición
+    // Mostrar loading antes de la petición
     const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
       disableClose: true,
       data: {
@@ -534,7 +534,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (response) => {
-          // ✅ Cerrar loading en éxito
+          // Cerrar loading en éxito
           loadingDialog.close();
 
           if (response.type === 'ERROR' || !response.data) {
@@ -553,7 +553,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
           this.pageSize = response.data.pageSize;
         },
         error: (err) => {
-          // ✅ Cerrar loading en error
+          // Cerrar loading en error
           loadingDialog.close();
           
           console.error('Error al cargar cupones:', err);

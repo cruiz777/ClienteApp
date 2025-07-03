@@ -17,7 +17,7 @@
       strokeWidth="5"
       color="primary">
     </mat-progress-spinner>
-    <p class="loading-text">Procesando...</p>
+    <p class="loading-text">{{ data.loadingText || 'Procesando...' }}</p>
   </div>
   
   <!-- Botones solo si NO está cargando -->
@@ -25,11 +25,13 @@
     <button *ngIf="data.showCancel !== false" 
             mat-button 
             (click)="onCancel()"
+            [disabled]="data.isLoading"
             class="cancel-button">
       {{ data.cancelText || 'Cancelar' }}
     </button>
     <button mat-raised-button 
             class="search-button" 
+            [disabled]="data.isLoading"
             (click)="onConfirm()">
       {{ data.confirmText || 'Aceptar' }}
     </button>
