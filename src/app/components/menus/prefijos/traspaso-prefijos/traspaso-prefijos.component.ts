@@ -29,7 +29,8 @@ import { MatMenuModule } from '@angular/material/menu';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AuditoriaTransferenciaService } from 'src/app/services/auditoria-transferencia.service';
-
+import { CuponService } from 'src/app/services/cupones.service';
+import { SsccService } from 'src/app/services/sscc.service';
 @Component({
   selector: 'app-traspaso-prefijos',
   standalone: true,
@@ -82,6 +83,8 @@ export class TraspasoPrefijosComponent implements OnInit {
     private dialog: MatDialog,
     private _snackBar: MatSnackBar,
     private auditoriaTransferenciaService: AuditoriaTransferenciaService,
+    private cuponService:CuponService,
+    private ssccService:SsccService
 
   ) { }
 
@@ -150,7 +153,6 @@ export class TraspasoPrefijosComponent implements OnInit {
   }
 
 onAsignar(): void {
-  
   const seleccionados = this.prefijosClienteOrigen.filter(p => p.seleccionado);
 
   if (seleccionados.length === 0) {
@@ -231,11 +233,29 @@ onAsignar(): void {
           idPrefijos: prefijo.id_prefijos,
           clientesCodigo: this.codcliD
         }).toPromise();
-       
+
         if (!cod14Resp?.data) {
           errores.push(`⚠ Codigos14 no actualizado para prefijo ${prefijo.id_prefijos}`);
         } else {
           console.log(`✔ Codigos14 actualizado para prefijo ${prefijo.id_prefijos}`);
+        }
+
+        // 6. Actualizar Cupones
+        const cuponResp = await this.cuponService.actualizarClientePorPrefijo(prefijo.id_prefijos, this.codcliD).toPromise();
+
+        if (!cuponResp?.data) {
+          errores.push(`⚠ Cupones no actualizados para prefijo ${prefijo.id_prefijos}`);
+        } else {
+          console.log(`✔ Cupones actualizados para prefijo ${prefijo.id_prefijos}`);
+        }
+
+        // 7. Actualizar SSCC
+        const ssccResp = await this.ssccService.actualizarClientePorPrefijo(prefijo.id_prefijos, this.codcliD).toPromise();
+
+        if (!ssccResp?.data) {
+          errores.push(`⚠ SSCC no actualizado para prefijo ${prefijo.id_prefijos}`);
+        } else {
+          console.log(`✔ SSCC actualizado para prefijo ${prefijo.id_prefijos}`);
         }
 
       } catch (err: any) {
@@ -250,6 +270,7 @@ onAsignar(): void {
     }
   });
 }
+
 
 
   exportarPDF(): void {

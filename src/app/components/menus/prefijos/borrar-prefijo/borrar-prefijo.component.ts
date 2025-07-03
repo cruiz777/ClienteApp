@@ -19,6 +19,8 @@ import { ExportService } from 'src/app/services/export.service';
 import { ExportOptions } from 'src/app/interfaces/export-options';
 import { EmpresaService } from 'src/app/services/empresa.service';
 import { LogoService } from 'src/app/services/logo.service';
+import { CuponService } from 'src/app/services/cupones.service';
+import { SsccService } from 'src/app/services/sscc.service';
 @Component({
   selector: 'app-borrar-prefijo',
   standalone: true,
@@ -54,6 +56,8 @@ export class BorrarPrefijoComponent implements OnInit {
     private exportService: ExportService,
     private empresaService: EmpresaService,
     private logoService: LogoService,
+    private cuponService:CuponService,
+    private ssccService:SsccService
   ) { }
 
   ngOnInit(): void {
@@ -96,88 +100,119 @@ export class BorrarPrefijoComponent implements OnInit {
     });
   }
 
-  eliminarPrefijo(): void {
-    if (this.eliminar.length === 0) {
-      console.warn('⚠️ No hay datos cargados para eliminar.');
-      return;
-    }
-
-    const id = this.eliminar[0].id;
-    const datosAuditoria: AuditoriaPrefijo = {
-      codpre: this.eliminar[0].prefijo,
-      usuario: this.usuarioActual?.nombre_usuario || '',
-      fecha: new Date().toISOString(),
-      empresa: this.eliminar[0].cliente,
-      ruc: this.eliminar[0].ruc
-    };
-
-    this.productoAdicionalService.obtenerProductoDatosAdicionalesPorIdPrefijos(id).subscribe({
-      next: (resp) => {
-        if (resp.data) {
-          this.mostrarAlerta('⚠️ No se puede eliminar el prefijo porque tiene productos asociados.', 'Advertencia');
-          return;
-        }
-
-        const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
-          width: '400px',
-          data: {
-            title: '¿Desea confirmar?',
-            message: `¿Está seguro que desea eliminar el prefijo con ID ${id}?`,
-            type: 'info',
-            confirmText: 'Sí, eliminar',
-            cancelText: 'Cancelar',
-            showCancel: true
-          }
-        });
-
-        dialogRef.afterClosed().subscribe(result => {
-          if (result === true) {
-            console.log('✅ Confirmado, registrando auditoría y eliminando...');
-
-            // Registrar en auditoría antes de eliminar
-            this.auditoriaService.insertarAuditoriaPrefijo(datosAuditoria).subscribe({
-              next: () => {
-                console.log('📝 Auditoría registrada.');
-
-                // Eliminar GLNs asociados
-                this.glnService.eliminarGlnPorIdPrefijos(id).subscribe({
-                  next: () => {
-                    console.log('🗑️ GLNs eliminados.');
-
-                    // Eliminar prefijo
-                    this.prefijoService.eliminarPrefijo(id).subscribe({
-                      next: () => {
-                        this.mostrarAlerta('✅ Prefijo eliminado exitosamente.', 'OK');
-                        this.limpiarBusqueda();
-                      },
-                      error: (err) => {
-                        console.error('❌ Error al eliminar prefijo', err);
-                        this.mostrarAlerta('❌ Error al eliminar prefijo', 'Error');
-                      }
-                    });
-                  },
-                  error: (err) => {
-                    console.error('❌ Error al eliminar GLNs', err);
-                    this.mostrarAlerta('❌ No se pudo eliminar los GLN asociados.', 'Error');
-                  }
-                });
-              },
-              error: (err) => {
-                console.error('❌ Error al registrar en auditoría', err);
-                this.mostrarAlerta('❌ Error al registrar auditoría.', 'Error');
-              }
-            });
-          } else {
-            console.log('❎ Eliminación cancelada por el usuario');
-          }
-        });
-      },
-      error: (err) => {
-        console.error('❌ Error al consultar productos adicionales', err);
-        this.mostrarAlerta('❌ Error al verificar productos adicionales.', 'Error');
-      }
-    });
+eliminarPrefijo(): void {
+  if (this.eliminar.length === 0) {
+    console.warn('⚠️ No hay datos cargados para eliminar.');
+    return;
   }
+
+  const id = this.eliminar[0].id;
+  const datosAuditoria: AuditoriaPrefijo = {
+    codpre: this.eliminar[0].prefijo,
+    usuario: this.usuarioActual?.nombre_usuario || '',
+    fecha: new Date().toISOString(),
+    empresa: this.eliminar[0].cliente,
+    ruc: this.eliminar[0].ruc
+  };
+
+  // Paso 1: Verificar si existen productos adicionales asociados
+  this.productoAdicionalService.obtenerProductoDatosAdicionalesPorIdPrefijos(id).subscribe({
+    next: (resp) => {
+      if (resp.data) {
+        this.mostrarAlerta('⚠️ No se puede eliminar el prefijo porque tiene productos asociados.', 'Advertencia');
+        return;
+      }
+
+      // Paso 2: Verificar si existen cupones asociados al prefijo
+      this.cuponService.getByPrefijo(id).subscribe({
+        next: (cuponResp) => {
+          if (cuponResp.data && cuponResp.data.length > 0) {
+            this.mostrarAlerta('⚠️ No se puede eliminar el prefijo porque tiene cupones asociados.', 'Advertencia');
+            return;
+          }
+
+          // ✅ Paso 3: Verificar si existen SSCC asociados
+          this.ssccService.getTodosPorIdPrefijo(id).subscribe({
+            next: (ssccResp) => {
+              if (ssccResp.data && ssccResp.data.length > 0) {
+                this.mostrarAlerta('⚠️ No se puede eliminar el prefijo porque tiene SSCC asociados.', 'Advertencia');
+                return;
+              }
+
+              // Paso 4: Confirmación por parte del usuario
+              const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+                width: '400px',
+                data: {
+                  title: '¿Desea confirmar?',
+                  message: `¿Está seguro que desea eliminar el prefijo con ID ${id}?`,
+                  type: 'info',
+                  confirmText: 'Sí, eliminar',
+                  cancelText: 'Cancelar',
+                  showCancel: true
+                }
+              });
+
+              dialogRef.afterClosed().subscribe(result => {
+                if (result === true) {
+                  console.log('✅ Confirmado, registrando auditoría y eliminando...');
+
+                  // Registrar en auditoría
+                  this.auditoriaService.insertarAuditoriaPrefijo(datosAuditoria).subscribe({
+                    next: () => {
+                      console.log('📝 Auditoría registrada.');
+
+                      // Eliminar GLNs
+                      this.glnService.eliminarGlnPorIdPrefijos(id).subscribe({
+                        next: () => {
+                          console.log('🗑️ GLNs eliminados.');
+
+                          // Eliminar prefijo
+                          this.prefijoService.eliminarPrefijo(id).subscribe({
+                            next: () => {
+                              this.mostrarAlerta('✅ Prefijo eliminado exitosamente.', 'OK');
+                              this.limpiarBusqueda();
+                            },
+                            error: (err) => {
+                              console.error('❌ Error al eliminar prefijo', err);
+                              this.mostrarAlerta('❌ Error al eliminar prefijo', 'Error');
+                            }
+                          });
+                        },
+                        error: (err) => {
+                          console.error('❌ Error al eliminar GLNs', err);
+                          this.mostrarAlerta('❌ No se pudo eliminar los GLN asociados.', 'Error');
+                        }
+                      });
+                    },
+                    error: (err) => {
+                      console.error('❌ Error al registrar en auditoría', err);
+                      this.mostrarAlerta('❌ Error al registrar auditoría.', 'Error');
+                    }
+                  });
+                } else {
+                  console.log('❎ Eliminación cancelada por el usuario');
+                }
+              });
+            },
+            error: (err) => {
+              console.error('❌ Error al consultar SSCC asociados', err);
+              this.mostrarAlerta('❌ Error al verificar SSCC asociados.', 'Error');
+            }
+          });
+        },
+        error: (err) => {
+          console.error('❌ Error al consultar cupones asociados', err);
+          this.mostrarAlerta('❌ Error al verificar cupones asociados.', 'Error');
+        }
+      });
+    },
+    error: (err) => {
+      console.error('❌ Error al consultar productos adicionales', err);
+      this.mostrarAlerta('❌ Error al verificar productos adicionales.', 'Error');
+    }
+  });
+}
+
 
   
 
