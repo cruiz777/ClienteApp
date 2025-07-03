@@ -15,7 +15,7 @@ import { MatDialog, MatDialogContent, MatDialogModule } from '@angular/material/
 import { MatMenuModule } from '@angular/material/menu';
 import { Router, RouterModule } from '@angular/router';
 import { FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
-import { catchError, debounceTime, distinctUntilChanged, Subject, takeUntil, throwError, timeout } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, filter, firstValueFrom, Subject, takeUntil, throwError, timeout } from 'rxjs';
 
 import { AgGridModule } from 'ag-grid-angular';
 import { ColDef, GridApi, GridOptions, GridReadyEvent, SelectionChangedEvent } from 'ag-grid-community';
@@ -43,6 +43,7 @@ import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/materia
 import { MomentDateAdapter } from '@angular/material-moment-adapter';
 import { isValid, parse, setHours, setMilliseconds, setMinutes, setSeconds } from 'date-fns';
 import * as moment from 'moment';
+import { CustomValidators } from '../../utils/validators/validator.util';
 
 interface CuponTablaView {
   id: number;
@@ -110,7 +111,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
   private gridApi!: GridApi<CuponTablaView>;
   
   selectedRows: CuponTablaView[] = [];
-  
+  public CustomValidators = CustomValidators;
   // Usuario actual
   usuarioActual: LoginUsuarioResponse | null = null;
   
@@ -335,6 +336,9 @@ export class CuponesComponent implements OnInit, OnDestroy {
   codigoGenerado = false;
   cuponesGenerados: any[] = [];
   estados = ['Activo', 'Inactivo'];
+  // Cache
+  private ultimaCarga: number = 0;
+  private readonly CACHE_DURATION = 30000; // 30 segundos
 
   constructor(
     private fb: FormBuilder,
@@ -415,7 +419,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
       .pipe(takeUntil(this.destroy$))
       .subscribe(usuario => {
         this.usuarioActual = usuario;
-        console.log('👤 Usuario actual actualizado:', this.usuarioActual);
+        console.log(' Usuario actual actualizado:', this.usuarioActual);
       });
 
     // Validar cliente seleccionado
@@ -437,46 +441,58 @@ export class CuponesComponent implements OnInit, OnDestroy {
     this.setupFormControls();
   }
 
-  private cargarDatosIniciales(): void {
+  private async cargarDatosIniciales(): Promise<void> {
     const cliente = this.clienteSeleccionadoObj;
     if (!cliente) return;
 
-    // Cargar grupos de producto
-    this.cargarGruposProducto();
-    
-    // Cargar prefijos
-    this.cargarPrefijosPorCliente();
-    
-    // Cargar cupones
-    this.cargarCuponesActual();
+    try {
+      // Cargar grupos y prefijos en paralelo
+      const [grupos] = await Promise.all([
+        firstValueFrom(this.grupoProductoService.obtenerGrupos().pipe(takeUntil(this.destroy$))),
+        // Cargar prefijos sin esperar
+        this.cargarPrefijosPorClienteAsync()
+      ]);
 
-    // Setear datos del cliente en el formulario
-    this.formCupon.patchValue({
-      codigoCliente: cliente.clientes_codigo,
-      cliente: cliente.nomcli,
-      ruc: cliente.ruc
+      this.gruposProducto = grupos;
+
+      // Solo cargar cupones si estamos en el tab de Listado
+      if (this.activeTab === 'Listado') {
+        this.cargarCuponesActual();
+      }
+
+      // Configurar formulario
+      this.formCupon.patchValue({
+        codigoCliente: cliente.clientes_codigo,
+        cliente: cliente.nomcli,
+        ruc: cliente.ruc
+      });
+
+    } catch (err) {
+      console.error('Error al cargar datos iniciales:', err);
+      this.mostrarMensaje({
+        title: 'Error al cargar datos',
+        message: 'No se pudieron cargar algunos datos iniciales.',
+        type: 'error'
+      });
+    }
+  }
+
+  private cargarPrefijosPorClienteAsync(): Promise<void> {
+    const cliente = this.clienteSeleccionadoObj;
+    if (!cliente) return Promise.resolve();
+
+    return firstValueFrom(
+      this.prefijoService.obtenerPrefijosUnicosPorCliente(cliente.clientes_codigo)
+        .pipe(takeUntil(this.destroy$))
+    ).then(res => {
+      this.prefijosDisponibles = res.map(p => ({
+        id: p.idPrefijos,
+        codpre: p.codpre
+      }));
+    }).catch(err => {
+      console.error('Error al cargar prefijos:', err);
     });
   }
-
-  private cargarGruposProducto(): void {
-    this.grupoProductoService.obtenerGrupos()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (grupos) => {
-          this.gruposProducto = grupos;
-          console.log('📦 Grupos de producto cargados:', grupos.length);
-        },
-        error: (err) => {
-          console.error('❌ Error al cargar grupos de producto:', err);
-          this.mostrarMensaje({
-            title: 'Error al cargar grupos',
-            message: 'No se pudieron cargar los grupos de producto.',
-            type: 'warning'
-          });
-        }
-      });
-  }
-
   private setupFormControls(): void {
     // Controlar campos de secuencia
     this.formCupon.get('serie')?.valueChanges
@@ -833,7 +849,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
       pageSize: size,
       idCliente: cliente.clientes_codigo,
       ...(this.filtroPrefijo && { idPrefijo: this.filtroPrefijo }),
-      ...(this.filtroBusqueda?.trim() && { codigoCupon: this.filtroBusqueda.trim() }),
+      ...(this.filtroBusqueda?.trim() && { busqueda: this.filtroBusqueda.trim() }),
       ...(this.filtroSerialDesde?.trim() && { serial: parseInt(this.filtroSerialDesde) }),
       ...(this.formReporte.value.estado === 'Activo' && { estado: true }),
       ...(this.formReporte.value.estado === 'Inactivo' && { estado: false }),
@@ -883,10 +899,10 @@ export class CuponesComponent implements OnInit, OnDestroy {
   }
 
   buscarCuponPorCodigo(): void {
-    const codigoCupon = this.buscarCuponControl.value?.trim();
+    const busqueda = this.buscarCuponControl.value?.trim();
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
 
-    if (!codigoCupon) {
+    if (!busqueda) {
       this.mostrarMensaje({
         title: 'Campo vacío',
         message: 'Por favor, ingresa un código de cupón.',
@@ -905,8 +921,10 @@ export class CuponesComponent implements OnInit, OnDestroy {
     }
 
     this.cuponService.buscarCupones({ 
-      codigoCupon,
-      idCliente: cliente.clientes_codigo 
+      busqueda : busqueda,
+      idCliente: cliente.clientes_codigo ,
+      page: 1,
+      pageSize: 50
     })
     .pipe(takeUntil(this.destroy$))
     .subscribe({
@@ -1224,6 +1242,10 @@ export class CuponesComponent implements OnInit, OnDestroy {
   }
 
   cambiarTab(tab: string): void {
+    // Evitar recarga si ya estamos en el mismo tab
+    if (this.activeTab === tab) {
+      return;
+    }
     this.activeTab = tab;
     this.selectedRows = [];
     
@@ -1232,12 +1254,16 @@ export class CuponesComponent implements OnInit, OnDestroy {
       this.gridApi.deselectAll();
     }
 
-    // Limpiar todos los filtros al cambiar de tab
-    this.limpiarFiltrosSinMensaje();
-    
-    // Si cambiamos al tab de "Listado", recargar los cupones
+    //Solo limpiar filtros y recargar si es necesario
     if (tab === 'Listado') {
-      this.cargarCuponesActual();
+      this.limpiarFiltrosSinMensaje();
+      // Solo cargar si no hay datos o los datos están desactualizados
+      if (this.cuponesData.length === 0) {
+        this.cargarCuponesActual();
+      }
+    } else {
+      // Solo limpiar filtros al salir del tab de Listado
+      this.limpiarFiltrosSinMensaje();
     }
   }
 
@@ -1364,12 +1390,20 @@ export class CuponesComponent implements OnInit, OnDestroy {
   }
   private initFiltroBusquedaListener(): void {
     this.buscarCuponControl.valueChanges.pipe(
-      debounceTime(400),
+      debounceTime(800),
       distinctUntilChanged(),
-      takeUntil(this.destroy$)
+      takeUntil(this.destroy$),
+      // Agregar filtro para evitar búsquedas con valores vacíos muy seguidos
+      filter(value => {
+        const trimmed = (value || '').trim();
+        return trimmed.length === 0 || trimmed.length >= 3; // Solo buscar si hay 3+ caracteres o está vacío
+    })
     ).subscribe(value => {
       this.filtroBusqueda = value ?? '';
-      
+      // Evitar llamada si ya estamos en otra tab
+      if (this.activeTab !== 'Listado') {
+        return;
+      }
       // Si hay texto de búsqueda, usar filtros; si no, cargar todos
       if (this.filtroBusqueda.trim()) {
         this.buscarCuponesConFiltros(0, this.pageSize);
@@ -1383,14 +1417,17 @@ export class CuponesComponent implements OnInit, OnDestroy {
    * Método para verificar si hay filtros activos
    */
   private tieneFiltrosActivos(): boolean {
+    const formValues = this.formReporte.value;
+    
     return !!(
       this.filtroBusqueda?.trim() ||
       this.filtroPrefijo !== null ||
       this.filtroSerialDesde?.trim() ||
       this.filtroSerialHasta?.trim() ||
-      this.formReporte.value.estado ||
-      this.formReporte.value.desde ||
-      this.formReporte.value.hasta
+      (formValues.estado && formValues.estado !== '') ||
+      formValues.desde ||
+      formValues.hasta ||
+      (formValues.operadorFecha && formValues.operadorFecha !== '=')
     );
   }
 
@@ -1400,6 +1437,15 @@ export class CuponesComponent implements OnInit, OnDestroy {
   }
 
   public cargarCuponesActual(): void {
+     const ahora = Date.now();
+  
+    // Evitar recargas muy frecuentes de la página
+    if (ahora - this.ultimaCarga < this.CACHE_DURATION && this.cuponesData.length > 0) {
+      console.log('🚫 Evitando recarga innecesaria - datos recientes');
+      return;
+    }
+
+    this.ultimaCarga = ahora;
     this.pageIndex = 0;
     this.cargarCupones(0, this.pageSize);
   }
@@ -1420,12 +1466,22 @@ export class CuponesComponent implements OnInit, OnDestroy {
    * Método para limpiar filtros y cargar todos los cupones
    */
   limpiarFiltros(): void {
+    //Verificar si realmente hay filtros que limpiar
+    if (!this.tieneFiltrosActivos()) {
+      this.mostrarMensaje({
+        title: 'Sin filtros',
+        message: 'No hay filtros activos para limpiar.',
+        type: 'info',
+        showCancel: false
+      });
+      return;
+    }
     // Resetear filtros de búsqueda
     this.filtroBusqueda = '';
     this.filtroPrefijo = null;
     this.filtroSerialDesde = '';
     this.filtroSerialHasta = '';
-    this.buscarCuponControl.setValue('');
+    this.buscarCuponControl.setValue('', { emitEvent: false });
     
     // Resetear formulario de reportes completamente
     this.formReporte.reset({
@@ -1435,21 +1491,19 @@ export class CuponesComponent implements OnInit, OnDestroy {
       hasta: null,
       operadorFecha: '='
     });
+
     this.limpiarFiltrosSinMensaje();
+
     // Limpiar selección del grid
     this.selectedRows = [];
     if (this.gridApi) {
       this.gridApi.deselectAll();
     }
     
-    // Cargar todos los cupones sin filtros
-    this.cargarCuponesActual();
-    
-    this.mostrarMensaje({
-      title: 'Filtros limpiados',
-      message: 'Se han eliminado todos los filtros aplicados.',
-      type: 'info'
-    });
+    //Solo recargar si estamos en el tab correcto
+    if (this.activeTab === 'Listado') {
+      this.cargarCuponesActual();
+    }
   }
 
   /**

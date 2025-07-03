@@ -38,7 +38,7 @@ export class CuponService {
     idCliente?: number;
     idPrefijo?: number;
     serial?: number;
-    codigoCupon?: string;
+    busqueda?: string;
     estado?: boolean;
     page?: number;
     pageSize?: number;
@@ -48,7 +48,7 @@ export class CuponService {
     if (filtros.idCliente !== undefined) params = params.set('idCliente', filtros.idCliente);
     if (filtros.idPrefijo !== undefined) params = params.set('idPrefijo', filtros.idPrefijo);
     if (filtros.serial !== undefined) params = params.set('serial', filtros.serial);
-    if (filtros.codigoCupon) params = params.set('codigoCupon', filtros.codigoCupon);
+    if (filtros.busqueda) params = params.set('busqueda', filtros.busqueda);
     if (filtros.estado !== undefined) params = params.set('estado', filtros.estado);
     if (filtros.page !== undefined) params = params.set('page', filtros.page);
     if (filtros.pageSize !== undefined) params = params.set('pageSize', filtros.pageSize);
