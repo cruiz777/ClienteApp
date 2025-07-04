@@ -46,6 +46,7 @@ import { isValid, parse, setHours, setMilliseconds, setMinutes, setSeconds } fro
 import { ObservacionDialogComponent } from './observacion-dialog.component';
 import * as moment from 'moment';
 import { CustomMessageBoxComponent, MessageBoxData } from '../../utils/messages/custom-message-box.component';
+import { CustomValidators } from '../../utils/validators/validator.util';
 
 interface SsccTablaView { //Interfaz auxiliar para poder mapear solamente lo que se requiere
   id: number;
@@ -94,11 +95,12 @@ interface SsccTablaView { //Interfaz auxiliar para poder mapear solamente lo que
   ]
 })
 export class NuevoSsccComponent implements OnInit, OnDestroy {
+  public CustomValidators = CustomValidators;
   // Variables del grid
   private gridApi!: GridApi<SsccTablaView>; // define con tipo explícito
   private destroy$ = new Subject<void>();
   private updatingStatus = false; // Esta ya la tienes
-
+  isSearching = false;
   selectedRows: SsccTablaView[] = [];
   usuario: any;
   columnDefs: ColDef[] = [
@@ -363,14 +365,14 @@ export class NuevoSsccComponent implements OnInit, OnDestroy {
     }
     this.cargarPrefijosPorCliente();
     //Busca por filtro y muestra en la pagina encontrada
-    this.initFiltroBusquedaListener();
-    this.filtroBusquedaControl.valueChanges.pipe(
-      debounceTime(400),
-      distinctUntilChanged()
-    ).subscribe(value => {
-      this.filtroBusqueda = value ?? '';
-      this.cargarSSCCsActual();
-    });
+    // this.initFiltroBusquedaListener();
+    // this.filtroBusquedaControl.valueChanges.pipe(
+    //   debounceTime(400),
+    //   distinctUntilChanged()
+    // ).subscribe(value => {
+    //   this.filtroBusqueda = value ?? '';
+    //   this.cargarSSCCsActual();
+    // });
 
     // Setea campos cliente en el formulario de generación
     this.formSSCC.patchValue({
@@ -405,12 +407,12 @@ export class NuevoSsccComponent implements OnInit, OnDestroy {
   cargarSSCCs(page: number = 0, size: number = 10): void {
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
     if (!cliente) return;
-
+    this.isSearching = true;
     console.log('📌 Prefijos disponibles:', this.prefijosDisponibles);
     console.log('🎯 Valor seleccionado en filtroPrefijo:', this.filtroPrefijo);
 
     const idPrefijoSeleccionado = this.filtroPrefijo;
-
+    
     const filtros = {
       page: page + 1,
       pageSize: size,
@@ -441,6 +443,7 @@ export class NuevoSsccComponent implements OnInit, OnDestroy {
 
     this.ssccService.getByClienteConFiltros(cliente.clientes_codigo, filtros).subscribe({
       next: (response) => {
+        this.isSearching = false;
         //Cerrar loading en éxito
         loadingDialog.close();
 
@@ -471,7 +474,7 @@ export class NuevoSsccComponent implements OnInit, OnDestroy {
       error: (err) => {
         //Cerrar loading en error
         loadingDialog.close();
-        
+        this.isSearching = false;
         console.error('❌ Error al cargar SSCCs:', err);
         
         // Mostrar mensaje de error
@@ -791,9 +794,19 @@ export class NuevoSsccComponent implements OnInit, OnDestroy {
       });
       return;
     }
-
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      disableClose: true,
+      data: {
+        title: 'Buscando SSCC...',
+        message: 'Consultando código específico.',
+        type: 'info',
+        isLoading: true,
+        showCancel: false
+      }
+    });
     this.ssccService.getByNumeroSscc(numeroSscc).subscribe({
       next: (res) => {
+        loadingDialog.close();
         if (res.type === 'ERROR' || !res.data) {
           this.mostrarMensaje({
             title: 'No encontrado',
@@ -825,6 +838,7 @@ export class NuevoSsccComponent implements OnInit, OnDestroy {
         this.totalItems = 1;
       },
       error: (err) => {
+        loadingDialog.close();
         this.mostrarMensaje({
           title: 'Error',
           message: err?.error?.message || 'Error al buscar el SSCC.',
@@ -835,6 +849,9 @@ export class NuevoSsccComponent implements OnInit, OnDestroy {
   }
 
   buscarConFiltros(): void {
+    // Obtener valores actuales de los controles antes de buscar
+    this.filtroBusqueda = this.filtroBusquedaControl.value?.trim() || '';
+  
     this.pageIndex = 0;
     this.cargarSSCCs(0, this.pageSize);
   }
@@ -1252,15 +1269,15 @@ export class NuevoSsccComponent implements OnInit, OnDestroy {
       force: true 
     });
   }
-  private initFiltroBusquedaListener(): void {
-    this.filtroBusquedaControl.valueChanges.pipe(
-      debounceTime(400),
-      distinctUntilChanged()
-    ).subscribe(value => {
-      this.filtroBusqueda = value ?? '';
-      this.cargarSSCCsActual(); // ahora filtra directamente desde el backend
-    });
-  }
+  // private initFiltroBusquedaListener(): void {
+  //   this.filtroBusquedaControl.valueChanges.pipe(
+  //     debounceTime(400),
+  //     distinctUntilChanged()
+  //   ).subscribe(value => {
+  //     this.filtroBusqueda = value ?? '';
+  //     this.cargarSSCCsActual(); // ahora filtra directamente desde el backend
+  //   });
+  // }
 
   private aplicarEstilosGrid(): void {
     // Aplicar estilos personalizados al grid
@@ -1276,17 +1293,23 @@ export class NuevoSsccComponent implements OnInit, OnDestroy {
   }
   
   limpiarFiltros(): void {
+    //Verificar si realmente hay filtros que limpiar
+    if (!this.tieneFiltrosActivos()) {
+      this.mostrarMensaje({
+        title: 'Sin filtros',
+        message: 'No hay filtros activos para limpiar.',
+        type: 'info',
+        showCancel: false
+      });
+      return;
+    }
     // Usar el método privado para limpiar
     this.limpiarFiltrosSinMensaje();
     
-    // Cargar todos los SSCCs sin filtros
-    this.cargarSSCCsActual();
-    
-    this.mostrarMensaje({
-      title: 'Filtros limpiados',
-      message: 'Se han eliminado todos los filtros aplicados.',
-      type: 'info'
-    });
+    //Solo recargar si estamos en el tab correcto
+    if (this.activeTab === 'Listado') {
+      this.cargarSSCCsActual();
+    }
   }
   private limpiarFiltrosSinMensaje(): void {
     // Resetear filtros de búsqueda del listado

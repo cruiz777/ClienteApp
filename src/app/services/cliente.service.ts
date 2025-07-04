@@ -108,8 +108,9 @@ export interface ClienteUpdateRequest {
 })
 export class ClienteService {
   private apiBaseUrl = environment.clientsUrl;
+  private apiValid = environment.validationUrl; 
   private apiUrl = `${this.apiBaseUrl}/resumen/`;
-  private apiUrlA = `${this.apiBaseUrl}/Clientes/`;
+  private apiUrlA = `${this.apiValid}/Clientes/`;
 
   constructor(private http: HttpClient) { }
 

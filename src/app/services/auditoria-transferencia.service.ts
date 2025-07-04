@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable,map } from 'rxjs';
 import { environment } from 'src/environments/environment';
+
 
 export interface ApiResponse<T> {
   id: string;
@@ -17,6 +18,22 @@ export interface AuditoriaTransferenciaRequest {
   idPrefijos: number; // ahora es solo un ID (no arreglo)
   idUsuario: number;
   tipo: string;
+}
+
+export interface AuditoriaTransferenciaResponse {
+  id_traferencia_prefijo: number;
+  clientesCodigoOrigen: number;
+  clientesCodigoDestino: number;
+  fecha: string;
+  idPrefijos: number;
+  tipo: string;
+  idUsuario: number;
+  origen: string;
+  rucOrigen: string;
+  destino: string;
+  rucDestino: string;
+  usuario: string;
+  prefijo: string;
 }
 
 
@@ -35,5 +52,11 @@ export class AuditoriaTransferenciaService {
     request // ⛔ sin el wrapper { request }
   );
 }
+
+  getAuditoriasTransferencia(): Observable<AuditoriaTransferenciaResponse[]> {
+    return this.http
+      .get<ApiResponse<AuditoriaTransferenciaResponse[]>>(`${this.apiBaseUrl}/AuditoriaTransferencia`)
+      .pipe(map(resp => resp.data));
+  }
 
 }
