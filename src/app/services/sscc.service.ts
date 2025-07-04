@@ -158,4 +158,25 @@ export class SsccService {
     return this.http.get<ApiResponse<SsccResponse[]>>(`${this.apiUrl}/reporte`, { params });
   }
 
+  /**
+ * Obtener todos los SSCC por ID de prefijo (sin paginación)
+ */
+getTodosPorIdPrefijo(idPrefijo: number): Observable<ApiResponse<SsccResponse[]>> {
+  const params = new HttpParams().set('idPrefijo', idPrefijo.toString());
+  return this.http.get<ApiResponse<SsccResponse[]>>(`${this.apiUrl}/id-prefijo`, { params });
+}
+
+/**
+ * Actualiza el ID del cliente en todos los SSCC relacionados con un ID de prefijo
+ */
+actualizarClientePorPrefijo(idPrefijo: number, nuevoIdCliente: number): Observable<ApiResponse<boolean>> {
+  const payload = {
+    idPrefijo,
+    nuevoIdCliente
+  };
+
+  return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/actualizar-idprefijo`, payload);
+}
+
+
 }

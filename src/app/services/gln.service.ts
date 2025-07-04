@@ -69,7 +69,7 @@ export class GlnService {
     payload: UpdateGlnClientesCodigoRequest
   ): Observable<ApiResponse<boolean>> {
     return this.http.put<ApiResponse<boolean>>(
-      `${this.apiBaseUrl}/Gln/actualizar-clientecodigo-por-idprefijo`,
+      `${this.apiBaseUrl}/Gln/actualizar-idprefijo`,
       payload
     );
   }

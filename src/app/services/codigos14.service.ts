@@ -129,7 +129,7 @@ actualizarCamposBasicos(data: Partial<Codigos14Request>): Observable<ApiResponse
 actualizarClientesCodigo14PorIdPrefijos(
   data: UpdateClientesCodigoByIdPrefijosRequest
 ): Observable<ApiResponse<boolean>> {
-  const url = `${this.baseUrl}/Codigos14/actualizar-clientescodigo-por-idprefijos`;
+  const url = `${this.baseUrl}/Codigos14/actualizar-idprefijos`;
   return this.http.put<ApiResponse<boolean>>(url, data);
 }
 

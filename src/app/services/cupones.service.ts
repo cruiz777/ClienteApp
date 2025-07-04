@@ -14,7 +14,7 @@ import { CreateCuponResponse } from '../interfaces/responses/create-cupon.respon
 export class CuponService {
   private apiUrl = `${environment.clientsUrl}/Cupones`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   getByCliente(idCliente: number, page = 1, pageSize = 50): Observable<ApiResponse<PaginationResponse<CuponResponse>>> {
     const params = new HttpParams()
@@ -56,53 +56,70 @@ export class CuponService {
     return this.http.get<ApiResponse<PaginationResponse<CuponResponse>>>(`${this.apiUrl}/buscar`, { params });
   }
 
-create(request: CuponRequest): Observable<ApiResponse<CreateCuponResponse>> {
-  return this.http.post<ApiResponse<CreateCuponResponse>>(`${this.apiUrl}`, request);
-}
+  create(request: CuponRequest): Observable<ApiResponse<CreateCuponResponse>> {
+    return this.http.post<ApiResponse<CreateCuponResponse>>(`${this.apiUrl}`, request);
+  }
 
-updateEstado(id: number, estado: boolean): Observable<ApiResponse<boolean>> {
-  const body = { estado };
-  return this.http.patch<ApiResponse<boolean>>(`${this.apiUrl}/${id}/estado`, body);
-}
+  updateEstado(id: number, estado: boolean): Observable<ApiResponse<boolean>> {
+    const body = { estado };
+    return this.http.patch<ApiResponse<boolean>>(`${this.apiUrl}/${id}/estado`, body);
+  }
 
   deleteMultiple(request: DeleteCuponRequest): Observable<ApiResponse<any>> {
     return this.http.request<ApiResponse<any>>('DELETE', `${this.apiUrl}/eliminar`, { body: request });
   }
   getReporte(filtros: {
-  idPrefijo?: number;
-  estado?: boolean;
-  operadorFecha?: string;
-  fechaDesde?: string;
-  fechaHasta?: string;
-}): Observable<ApiResponse<CuponResponse[]>> {
-  let params = new HttpParams();
+    idPrefijo?: number;
+    estado?: boolean;
+    operadorFecha?: string;
+    fechaDesde?: string;
+    fechaHasta?: string;
+  }): Observable<ApiResponse<CuponResponse[]>> {
+    let params = new HttpParams();
 
-  // ✅ Orden exacto que funciona en Swagger
-  if (filtros.idPrefijo !== undefined) {
-    params = params.set('idPrefijo', filtros.idPrefijo.toString());
+    // ✅ Orden exacto que funciona en Swagger
+    if (filtros.idPrefijo !== undefined) {
+      params = params.set('idPrefijo', filtros.idPrefijo.toString());
+    }
+
+    if (filtros.estado !== undefined) {
+      params = params.set('estado', filtros.estado.toString());
+    }
+
+    // ✅ operadorFecha ANTES de las fechas
+    if (filtros.operadorFecha) {
+      params = params.set('operadorFecha', filtros.operadorFecha);
+    }
+
+    if (filtros.fechaDesde) {
+      params = params.set('fechaDesde', filtros.fechaDesde);
+    }
+
+    if (filtros.fechaHasta) {
+      params = params.set('fechaHasta', filtros.fechaHasta);
+    }
+
+    // ✅ Debug: mostrar la URL final
+    const finalUrl = `${this.apiUrl}/reporte?${params.toString()}`;
+    console.log('URL generada por el frontend:', finalUrl);
+
+    return this.http.get<ApiResponse<CuponResponse[]>>(`${this.apiUrl}/reporte`, { params });
+  }
+  getByPrefijo(idPrefijo: number): Observable<ApiResponse<CuponResponse[]>> {
+    const params = new HttpParams().set('idPrefijo', idPrefijo.toString());
+    return this.http.get<ApiResponse<CuponResponse[]>>(`${this.apiUrl}/por-prefijo`, { params });
   }
 
-  if (filtros.estado !== undefined) {
-    params = params.set('estado', filtros.estado.toString());
+  /**
+   * Actualiza el ID del cliente en todos los cupones relacionados con un ID de prefijo
+   */
+  actualizarClientePorPrefijo(idPrefijo: number, nuevoIdCliente: number): Observable<ApiResponse<boolean>> {
+    const payload = {
+      idPrefijo,
+      nuevoIdCliente
+    };
+
+    return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/actualizar-idcliente-por-idprefijo`, payload);
   }
 
-  // ✅ operadorFecha ANTES de las fechas
-  if (filtros.operadorFecha) {
-    params = params.set('operadorFecha', filtros.operadorFecha);
-  }
-
-  if (filtros.fechaDesde) {
-    params = params.set('fechaDesde', filtros.fechaDesde);
-  }
-
-  if (filtros.fechaHasta) {
-    params = params.set('fechaHasta', filtros.fechaHasta);
-  }
-
-  // ✅ Debug: mostrar la URL final
-  const finalUrl = `${this.apiUrl}/reporte?${params.toString()}`;
-  console.log('URL generada por el frontend:', finalUrl);
-
-  return this.http.get<ApiResponse<CuponResponse[]>>(`${this.apiUrl}/reporte`, { params });
-}
 }

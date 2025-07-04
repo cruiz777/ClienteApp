@@ -1304,7 +1304,12 @@ export class DialogClienteComponent implements OnInit {
         }
 
         const id_prefijos = resultado[0].id_prefijos;
-
+        ///
+        const paso2 = this.paso2Form.value;
+        const ciudadObj = paso2.ciudad;
+        
+        const idCiudad = typeof ciudadObj === 'object' ? ciudadObj.id_ciudad : 0;
+        //
         const nuevoGln: GlnRequest = {
           id_prefijos: id_prefijos,
           clientesCodigo: codigoCliente,
@@ -1312,7 +1317,7 @@ export class DialogClienteComponent implements OnInit {
           idTipoLocalizacion: 12,
           glnLatitud: '0.0000',
           glnLongitud: '0.0000',
-          idPais: 1,
+          idPais: 211,
           direccion: '',
           telefono: '',
           fax: '',
@@ -1323,8 +1328,8 @@ export class DialogClienteComponent implements OnInit {
           fda: '',
           europa: '',
           glnGlobal: '',
-          glnFecha: '2025-04-29',
-          idCiudad: 1,
+          glnFecha: new Date().toISOString().split('T')[0],
+          idCiudad: idCiudad,
           glnCodigopostal: '',
           glnCelular: '',
           glnContacto2: '',

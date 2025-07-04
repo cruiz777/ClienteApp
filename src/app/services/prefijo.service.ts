@@ -88,5 +88,10 @@ export class PrefijoService {
   return this.http.patch(`${this.apiBaseUrl}/prefijos/${idPrefijos}/cliente/${clientesCodigo}`, {});
 }
 
+actualizarOrdenDePrefijo(idPrefijos: number, orden: number): Observable<any> {
+  const payload = { idPrefijos, orden };
+  return this.http.put(`${this.apiBaseUrl}/prefijos/actualizar-orden-prefijo`, payload);
+}
+
 
 }
