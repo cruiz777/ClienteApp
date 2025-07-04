@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Validador Licencia Verified</title>
+    <link rel="stylesheet" href="validador-licenses.component.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header Mejorado -->
+        <div class="header">
+            <div class="header-top">
+                <div class="title-section">
+                    <h1 class="title">Validador Licencia Verified</h1>
+                    <div class="registro-display">
+                        <span class="registro-label">No. Registro:</span>
+                        <strong class="registro-value">{{ searchParams.registro }}</strong>
+                    </div>
+                </div>
+                <div class="header-actions">
+                    <button class="btn btn-secondary" (click)="nuevaBusqueda()">Nueva Búsqueda</button>
+                    <button class="btn btn-primary" (click)="exportarJSON()">JSON</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Form - Layout mejorado -->
+        <div class="form-container">
+            <!-- Sección de búsqueda general -->
+            <div class="search-section">
+                <input type="text" placeholder="Buscar..." class="search-input" />
+            </div>
+
+            <!-- Filtros en dos columnas -->
+            <div class="form-row-simplified">
+                <!-- Columna izquierda -->
+                <div class="form-column-left">
+                    <div class="form-group-inline">
+                        <label for="ruc">RUC (F1):</label>
+                        <input type="text" id="ruc" [(ngModel)]="searchParams.ruc" class="form-control" placeholder="Llenar">
+                    </div>
+                    
+                    <div class="form-group-inline">
+                        <label for="tipo">Tipo (F1):</label>
+                        <input type="text" id="tipo" [(ngModel)]="searchParams.tipo" class="form-control" placeholder="Llenar">
+                    </div>
+                    
+                    <div class="form-group-inline">
+                        <label for="prefijo">Prefijo:</label>
+                        <input type="text" id="prefijo" [(ngModel)]="searchParams.prefijo" class="form-control" placeholder="Llenar">
+                    </div>
+                </div>
+                
+                <!-- Columna derecha -->
+                <div class="form-column-right">
+                    <div class="form-group-inline">
+                        <label for="fechaDerecha">Fecha:</label>
+                        <div class="date-controls">
+                            <input type="date" id="fechaDerecha" [(ngModel)]="searchParams.fechaDerecha" class="form-control date-input">
+                            <div class="date-buttons">
+                                <button type="button" class="btn-date" title="Calendario">📅</button>
+                                <button type="button" class="btn-date" title="Anterior">⬅</button>
+                                <button type="button" class="btn-date" title="Siguiente">➡</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group-inline">
+                        <label for="prefijoEstado">Prefijo Estado:</label>
+                        <select id="prefijoEstado" [(ngModel)]="searchParams.prefijoEstado" class="form-control">
+                            <option value="">Todos</option>
+                            <option value="active">Activo</option>
+                            <option value="inactive">Inactivo</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group-inline">
+                        <label for="empresaEstado">Empresa Estado:</label>
+                        <select id="empresaEstado" [(ngModel)]="searchParams.empresaEstado" class="form-control">
+                            <option value="">Todos</option>
+                            <option value="active">Activo</option>
+                            <option value="inactive">Inactivo</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Fila de botones -->
+            <div class="form-actions-row">
+                <button class="btn btn-primary" (click)="buscar()">Buscar</button>
+                <button class="btn btn-secondary" (click)="limpiarForm()">Limpiar</button>
+            </div>
+        </div>
+
+        <!-- Loading Spinner -->
+        <div class="loading-spinner" *ngIf="isLoading">
+            <div class="spinner"></div>
+            <p>Cargando resultados...</p>
+        </div>
+
+        <!-- Results Table -->
+        <div class="table-container" *ngIf="!isLoading && licencias.length > 0">
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>License Type</th>
+                        <th>License Status</th>
+                        <th>License Name</th>
+                        <th>License GLN</th>
+                        <th>Address</th>
+                        <th>Address Suburb</th>
+                        <th>Address Locality</th>
+                        <th>Address Region</th>
+                        <th>Telephone</th>
+                        <th>Email</th>
+                        <th>Website</th>
+                        <th>M</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let licencia of licencias">
+                        <td>{{ licencia.licenseType }}</td>
+                        <td>
+                            <span [class]="'status-' + licencia.licenseStatus.toLowerCase()">
+                                {{ licencia.licenseStatus }}
+                            </span>
+                        </td>
+                        <td>{{ licencia.licenseName }}</td>
+                        <td>{{ licencia.licenseGLN }}</td>
+                        <td>{{ licencia.address }}</td>
+                        <td>{{ licencia.addressSuburb }}</td>
+                        <td>{{ licencia.addressLocality }}</td>
+                        <td>{{ licencia.addressRegion }}</td>
+                        <td>{{ licencia.telephone }}</td>
+                        <td>{{ licencia.email }}</td>
+                        <td>{{ licencia.website }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-action" (click)="verDetalle(licencia)" title="Ver detalle">
+                                <i class="icon-view"></i>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <!-- No Results Message -->
+        <div class="no-results" *ngIf="!isLoading && licencias.length === 0 && hasSearched">
+            <p>No se encontraron resultados para los criterios de búsqueda especificados.</p>
+        </div>
+
+        <!-- Angular Material Pagination -->
+        <div class="pagination-container" *ngIf="!isLoading && (licencias.length > 0 || !hasSearched)">
+            <mat-paginator
+                [length]="totalItems || 100"
+                [pageSize]="pageSize"
+                [pageSizeOptions]="[5, 10, 20, 50]"
+                [pageIndex]="currentPage - 1"
+                (page)="onPageChange($event)"
+                [showFirstLastButtons]="true"
+                aria-label="Seleccionar página">
+            </mat-paginator>
+        </div>
+    </div>
+</body>
+</html>
