@@ -5,6 +5,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { LoginComponent } from './components/login/login.component';
 import { NotFoundComponent } from './components/not-found/not-found.component';
 import { InicioComponent } from './components/inicio/inicio.component';
+import { InicioSicComponent } from './components/sic-3000/inicio-sic/inicio-sic.component';
 import { NavigationProductoComponent} from './components/productos/navigation-producto/navigation-producto.component';
 import { NuevoProductoComponent } from './components/productos/nuevo-producto/nuevo-producto.component';
 import { AuthGuard } from './guards/auth.guard';
@@ -13,17 +14,22 @@ import { NuevoSsccComponent} from './components/productos/nuevo-sscc/nuevo-sscc.
 import { GlnComponent } from './components/productos/glns/gln-list/nuevo-gln.component';
 import { BloqueComponent } from './components/productos/bloque/bloque.component';
 import { CuponesComponent } from './components/productos/cupones/cupones.component';
+import { Sic3000Module } from './components/sic-3000/sic-3000.module';
 
 
 const routes: Routes = [
   {path:'',redirectTo:'login',pathMatch:'full'},
   {path: 'login', component: LoginComponent },
   {path:'inicio',component:InicioComponent},
+  {path: 'inicio-sic', component: InicioSicComponent },
+
 
   {path: 'menus', loadChildren: () => import('./components/menus/menus.module').then(x => x.MenusModule) },
   {path: 'pages', loadChildren: () => import('./components/pages/pages.module').then(x => x.PagesModule) , canActivate:[AuthGuard]},
 
   {path: 'seguridades', loadChildren: () => import('./components/seguridades/seguridades.module').then(m => m.SeguridadesModule) },
+  //{path: 'inicio-sic', loadComponent: () => import('./components/sic-3000/inicio-sic/inicio-sic.component').then(m => m.InicioSicComponent) },
+
   {
   path: 'productos',
   loadChildren: () => import('./components/productos/productos-routing.module').then(m => m.ProductosRoutingModule)

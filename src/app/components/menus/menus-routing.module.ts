@@ -58,13 +58,6 @@ const routes: Routes = [
           // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
         ]
       },
-      // {path:'usuarios',component:UsuariosComponent},
-      // {path:'productos',component:ProductosComponent},
-      // {path:'vender',component:VenderComponent},
-      // {path:'historialventas',component:HistorialventaComponent},
-      // {path:'reportes',component:ReportesComponent}
-
-
     ]
   }
   ];

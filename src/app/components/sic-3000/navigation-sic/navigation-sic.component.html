@@ -112,7 +112,8 @@
 
   </mat-sidenav>
 
-  <!-- CONTENIDO PRINCIPAL -->
+
+         <!-- CONTENIDO PRINCIPAL -->
   <mat-sidenav-content [ngClass]="isExpanded ? 'content-default' : 'content-collapsed'">
     <router-outlet></router-outlet>
     <footer class="app-footer" [ngClass]="{ 'footer-collapsed': !isExpanded && !isHandset }">
@@ -123,5 +124,3 @@
       </div>
     </footer>
   </mat-sidenav-content>
-
-</mat-sidenav-container>
