@@ -175,7 +175,7 @@ actualizarClientePorPrefijo(idPrefijo: number, nuevoIdCliente: number): Observab
     nuevoIdCliente
   };
 
-  return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/actualizar-idcliente-por-idprefijo`, payload);
+  return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/actualizar-idprefijo`, payload);
 }
 
 
