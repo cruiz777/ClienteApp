@@ -10,7 +10,8 @@ import { EmpresaService } from 'src/app/services/empresa.service';
 import { ExportOptions } from 'src/app/interfaces/export-options';
 import { ExportService } from 'src/app/services/export.service';
 import * as moment from 'moment';
-import { UpdateClienteRequest, ValidacionService } from 'src/app/services/validacion.service';
+import { ValidacionService } from 'src/app/services/validacion.service';
+import { UpdateClienteRequest } from 'src/app/interfaces/requests/update-cliente-request';
 
 type ClienteValidacionExtendido = ClienteIndividual & {
   ciudad: string;
