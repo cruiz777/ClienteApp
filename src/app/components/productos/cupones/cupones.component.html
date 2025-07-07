@@ -36,12 +36,12 @@
       <div class="columna-derecha">
         <mat-form-field appearance="outline">
           <mat-label>Desde Serial</mat-label>
-          <input matInput [(ngModel)]="filtroSerialDesde" placeholder="Ej: 1000">
+          <input matInput [(ngModel)]="filtroSerialDesde" placeholder="Ej: 1000" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
         </mat-form-field>
 
         <mat-form-field appearance="outline">
           <mat-label>Hasta Serial</mat-label>
-          <input matInput [(ngModel)]="filtroSerialHasta" placeholder="Ej: 2000">
+          <input matInput [(ngModel)]="filtroSerialHasta" placeholder="Ej: 2000" (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
         </mat-form-field>
       </div>
     </div>
@@ -50,6 +50,8 @@
     <div class="acciones-filtros">
       <button mat-raised-button color="primary" class="boton-azul-oscuro" (click)="buscarConFiltros()" class="boton-azul-oscuro" [disabled]="!puedeBuscar">Buscar</button>
       <button mat-flat-button color="warn" (click)="eliminarSeleccionados()" [disabled]="!tieneSeleccion">Eliminar</button>
+      <button mat-stroked-button (click)="limpiarFiltros()">
+      <mat-icon>clear</mat-icon> Limpiar Filtros </button>
     </div>
 
     <ag-grid-angular

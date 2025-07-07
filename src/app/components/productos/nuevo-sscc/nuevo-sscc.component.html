@@ -23,7 +23,7 @@
 
     <mat-form-field appearance="outline">
       <mat-label>Buscar en registros actuales</mat-label>
-      <input matInput [(ngModel)]="filtroBusqueda" (input)="cargarSSCCsActual()">
+      <input matInput [(ngModel)]="filtroBusqueda">
     </mat-form-field>
     
     <mat-form-field appearance="outline">
@@ -39,7 +39,7 @@
     <!-- Filtro por ID Empaque -->
     <mat-form-field appearance="fill">
       <mat-label>Empaque</mat-label>
-      <mat-select [(ngModel)]="filtroEmpaque" (input)="cargarSSCCsActual()">
+      <mat-select [(ngModel)]="filtroEmpaque" >
         <mat-option value="">Todos</mat-option>
         <mat-option *ngFor="let e of empaques" [value]="e">{{ e }}</mat-option>
       </mat-select>
@@ -48,18 +48,18 @@
     <!-- Filtro por Serial Desde -->
     <mat-form-field appearance="outline">
       <mat-label>Desde Serial</mat-label>
-      <input matInput [(ngModel)]="filtroSerialDesde" (input)="cargarSSCCsActual()" placeholder="Ej: 2786...">
+      <input matInput [(ngModel)]="filtroSerialDesde" placeholder="Ej: 2786..." (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
     </mat-form-field>
 
     <!-- Filtro por Serial Hasta -->
     <mat-form-field appearance="outline">
       <mat-label>Hasta Serial</mat-label>
-      <input matInput [(ngModel)]="filtroSerialHasta" (input)="cargarSSCCsActual()" placeholder="Ej: 2786...">
+      <input matInput [(ngModel)]="filtroSerialHasta" placeholder="Ej: 2786..." (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
     </mat-form-field>
     <button mat-raised-button color="primary" (click)="buscarConFiltros()" class="boton-azul-oscuro" [disabled]="!puedeBuscar">Buscar</button>
     <button mat-flat-button color="warn" (click)="eliminarSeleccionados()" [disabled]="!tieneSeleccion">Eliminar</button>
-    
-
+     <button mat-stroked-button (click)="limpiarFiltros()">
+      <mat-icon>clear</mat-icon> Limpiar Filtros </button>
   </div>
     <div class="busqueda-sscc" style="margin-bottom: 1rem;">
     <mat-form-field appearance="outline" style="width: 300px;">
