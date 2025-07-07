@@ -177,8 +177,7 @@
                     <th>Address Region</th>
                     <th>Telephone</th>
                     <th>Email</th>
-                    <th>Website</th>
-                    <th>Acciones</th>
+                    <th>Website</th>                    
                 </tr>
             </thead>
             <tbody>
@@ -212,14 +211,7 @@
                             {{ licencia.website }}
                         </a>
                         <span *ngIf="licencia.website === 'N/A'">N/A</span>
-                    </td>
-                    <td>
-                        <button class="btn btn-sm btn-action" 
-                                (click)="verDetalle(licencia)" 
-                                title="Ver detalle">
-                            <i class="icon-view">👁️</i>
-                        </button>
-                    </td>
+                    </td>                
                 </tr>
             </tbody>
         </table>
