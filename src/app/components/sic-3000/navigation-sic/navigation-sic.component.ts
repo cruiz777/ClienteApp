@@ -1,18 +1,24 @@
 import { Component, OnInit } from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Router } from '@angular/router';
+import { MatSidenavModule } from '@angular/material/sidenav';
+import { MatListModule } from '@angular/material/list';
+import { MatIconModule } from '@angular/material/icon';
+import { MatExpansionModule } from '@angular/material/expansion';
+
+
 
 @Component({
-  selector: 'app-navigation',
-  templateUrl: './navigation.component.html',
-  styleUrls: ['./navigation.component.css']
+  selector: 'app-navigation-sic',
+  templateUrl: './navigation-sic.component.html',
+  styleUrl: './navigation-sic.component.css'
 })
-export class NavigationComponent implements OnInit {
+export class NavigationSicComponent {
   currentDateTime: string = '';
   isHandset: boolean = false;
   isExpanded: boolean = true;
 
-  constructor(private breakpointObserver: BreakpointObserver
+ constructor(private breakpointObserver: BreakpointObserver
     ,private router: Router
   ) {
     this.breakpointObserver.observe([Breakpoints.Handset])
@@ -22,9 +28,9 @@ export class NavigationComponent implements OnInit {
       });
   }
 
-  ngOnInit(): void {
+   ngOnInit(): void {
     this.updateDateTime();
-    setInterval(() => this.updateDateTime(), 1000);  // Actualiza cada segundo
+    setInterval(() => this.updateDateTime(), 1000);
   }
 
   updateDateTime(): void {
@@ -36,7 +42,7 @@ export class NavigationComponent implements OnInit {
     this.currentDateTime = `${this.capitalizeFirstLetter(formattedDate)}, ${formattedTime}`;
   }
 
-  capitalizeFirstLetter(text: string): string {
+   capitalizeFirstLetter(text: string): string {
     return text.charAt(0).toUpperCase() + text.slice(1);
   }
 
@@ -44,13 +50,11 @@ export class NavigationComponent implements OnInit {
     this.isExpanded = !this.isExpanded;
   }
 
-  salir(): void {
-    // Opcional: limpiar localStorage o estados
-    // localStorage.removeItem('someKey');
+   salir(): void {
 
-    // Navega a /inicio y recarga la vista
     this.router.navigate(['/inicio']).then(() => {
-      window.location.reload(); // fuerza la recarga de la pantalla inicio
+      window.location.reload();
+
     });
   }
 
