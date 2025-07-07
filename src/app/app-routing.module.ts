@@ -6,7 +6,7 @@ import { LoginComponent } from './components/login/login.component';
 import { NotFoundComponent } from './components/not-found/not-found.component';
 import { InicioComponent } from './components/inicio/inicio.component';
 import { InicioSicComponent } from './components/sic-3000/inicio-sic/inicio-sic.component';
-import { NavigationProductoComponent} from './components/productos/navigation-producto/navigation-producto.component';
+import { NavigationProductoComponent } from './components/productos/navigation-producto/navigation-producto.component';
 import { NuevoProductoComponent } from './components/productos/nuevo-producto/nuevo-producto.component';
 import { AuthGuard } from './guards/auth.guard';
 import { ClienteSeleccionadoComponent } from './components/productos/cliente-seleccionado/cliente-seleccionado.component';
@@ -28,12 +28,6 @@ const routes: Routes = [
   { path: 'recuperar-clave', component: LoginFormComponent },
   { path: 'menus', loadChildren: () => import('./components/menus/menus.module').then(x => x.MenusModule), canActivate: [AuthGuard] },
   { path: 'pages', loadChildren: () => import('./components/pages/pages.module').then(x => x.PagesModule), canActivate: [AuthGuard] },
-  { path: 'seguridades', loadChildren: () => import('./components/seguridades/seguridades.module').then(m => m.SeguridadesModule) },
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
-  { path: 'login', component: LoginComponent },
-  { path: 'inicio', component: InicioComponent },
-  { path: 'menus', loadChildren: () => import('./components/menus/menus.module').then(x => x.MenusModule) },
-  { path: 'pages', loadChildren: () => import('./components/pages/pages.module').then(x => x.PagesModule) },
   { path: 'seguridades', loadChildren: () => import('./components/seguridades/seguridades.module').then(m => m.SeguridadesModule) },
   { path: 'sic-3000', loadChildren: () => import('./components/sic-3000/sic-3000.module').then(m => m.Sic3000Module) },
 
