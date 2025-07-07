@@ -64,81 +64,101 @@
           <button class="subtab-button">Certificados</button>
         </div>
 
-        <div class="reports-section">
-          <div class="report-options">
-            <label class="form-label">Tipo de Reporte:</label>
-            <div class="report-options-row">
-              <label class="report-option">
-                <input type="radio" formControlName="reporte" value="gtinVenta" />
-                <span class="option-text">GTIN Unidad de Venta</span>
-              </label>
-              <label class="report-option">
-                <input type="radio" formControlName="reporte" value="general" />
-                <span class="option-text">General</span>
-              </label>
-            </div>
-            <div class="report-options-row">
-              <label class="report-option">
-                <input type="radio" formControlName="reporte" value="logistica" />
-                <span class="option-text">Unidad Logística</span>
-              </label>
-              <label class="report-option">
-                <input type="radio" formControlName="reporte" value="completo" />
-                <span class="option-text">Completo</span>
-              </label>
-            </div>
+        <mat-radio-group formControlName="reporte" class="radio-grid">
+          <div class="column">
+            <h3 class="titulo">Reportes</h3>
+            <mat-radio-button value="gtinVenta">GTIN Unidad de Venta</mat-radio-button>
+            <mat-radio-button value="logistica">Unidad Logística</mat-radio-button>
+            <mat-radio-button value="general">General</mat-radio-button>
+            <mat-radio-button value="completo">Completo</mat-radio-button>
           </div>
+          <div class="column">
+            <h3 class="titulo">Certificados</h3>
+            <mat-radio-button value="producto">Por Producto</mat-radio-button>
+            <mat-radio-button value="membresia">Membrecía</mat-radio-button>
+            <mat-radio-button value="carta">Carta</mat-radio-button>
+          </div>
+        </mat-radio-group>
 
-          <div class="divider"></div>
 
-          <div class="certificates-section">
-            <label class="form-label">Certificados:</label>
-            <div class="certificate-options">
-              <label class="certificate-option">
-                <input type="radio" formControlName="certificado" value="producto" />
-                <span class="option-text">Por Producto</span>
-              </label>
-              <label class="certificate-option">
-                <input type="radio" formControlName="certificado" value="gps" />
-                <span class="option-text">GPS</span>
-              </label>
-            </div>
-            <!-- 
-            <mat-form-field appearance="fill" class="select-pequeno">
+        <!-- ✅ Mejora del resto del formulario -->
+        <section class="form-section">
+          <div class="prefijo-codigo-wrap">
+            <mat-form-field class="select-pequeno" *ngIf="mostrarPrefijo()">
               <mat-label>Prefijo</mat-label>
               <mat-select formControlName="gcp" (selectionChange)="onPrefijoBlur()">
                 <mat-option *ngFor="let prefijo of prefijos" [value]="prefijo.id_prefijos">
                   {{ prefijo.codpre }}
                 </mat-option>
               </mat-select>
-            </mat-form-field> -->
-
-            <div class="certificate-actions">
-              <div class="letter-selection">
-                <label class="form-label">Carta:</label>
-                <div class="input-field">
-                  <span class="input-text">Carta</span>
-                </div>
-              </div>
-              <button mat-raised-button color="primary" type="submit">Imprimir</button>
-            </div>
+            </mat-form-field>
+          </div>
+          <div>
+            <mat-form-field appearance="fill" class="codigo-separado">
+              <mat-label>Código</mat-label>
+              <input matInput formControlName="codigo" />
+            </mat-form-field>
           </div>
 
+          <div class="date-filter-row">
+            <label class="form-label">Condición de Fecha:</label>
+            <mat-radio-group formControlName="operadorFecha" class="operadores-radio-group"
+              (change)="onOperadorFechaChange()">
+              <mat-radio-button value="igual">=</mat-radio-button>
+              <mat-radio-button value="menorIgual">&le;</mat-radio-button>
+              <mat-radio-button value="mayor">&gt;</mat-radio-button>
+              <mat-radio-button value="entre">Entre</mat-radio-button>
+            </mat-radio-group>
+          </div>
+
+          <div class="date-range">
+            <!-- Solo visible si operador !== 'entre' -->
+            <mat-form-field appearance="fill" *ngIf="formReporte.get('operadorFecha')?.value !== 'entre'">
+              <mat-label>Fecha</mat-label>
+              <input matInput [matDatepicker]="pickerFecha" formControlName="fecha" readonly />
+              <mat-datepicker-toggle matSuffix [for]="pickerFecha"></mat-datepicker-toggle>
+              <mat-datepicker #pickerFecha></mat-datepicker>
+            </mat-form-field>
+
+            <!-- Visible solo si operador === 'entre' -->
+            <ng-container *ngIf="formReporte.get('operadorFecha')?.value === 'entre'">
+              <mat-form-field appearance="fill">
+                <mat-label>Desde</mat-label>
+                <input matInput [matDatepicker]="pickerDesde" formControlName="desde" />
+                <mat-datepicker-toggle matSuffix [for]="pickerDesde"></mat-datepicker-toggle>
+                <mat-datepicker #pickerDesde></mat-datepicker>
+              </mat-form-field>
+
+              <mat-form-field appearance="fill">
+                <mat-label>Hasta</mat-label>
+                <input matInput [matDatepicker]="pickerHasta" formControlName="hasta" />
+                <mat-datepicker-toggle matSuffix [for]="pickerHasta"></mat-datepicker-toggle>
+                <mat-datepicker #pickerHasta></mat-datepicker>
+              </mat-form-field>
+            </ng-container>
+          </div>
+
+          <mat-form-field appearance="fill">
+            <mat-label>Estado</mat-label>
+            <mat-select formControlName="estado">
+              <mat-option value="1">Activo</mat-option>
+              <mat-option value="0">Inactivo</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </section>
+
+
+        <div class="form-actions">
+          <button mat-button>Nuevo</button>
+          <button mat-button>Imprimir</button>
+          <button mat-button>Excel</button>
+          <button mat-button (click)="salir()">
+            <img src="assets/icons/icon-salir.png" alt="Salir" width="18" height="18" style="margin-right: 6px;" />
+            Salir
+          </button>
         </div>
-        <mat-form-field class="select-pequeno">
-          <mat-label>Prefijo</mat-label>
-          <mat-select formControlName="gcp" (selectionChange)="onPrefijoBlur()">
-            <mat-option *ngFor="let prefijo of prefijos" [value]="prefijo.id_prefijos">
-              {{ prefijo.codpre }}
-            </mat-option>
-          </mat-select>
-        </mat-form-field>
-        <label class="form-label">Código:</label>
-        <div class="input-field">
-          <span class="input-text">Código</span>
-        </div>
+
       </div>
-      
     </main>
   </form>
 </ng-container>
