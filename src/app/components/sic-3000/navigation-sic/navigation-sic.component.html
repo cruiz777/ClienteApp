@@ -3,13 +3,8 @@
   'mobile': isHandset
 }">
   <!-- SIDEBAR -->
-  <mat-sidenav #drawer
-              class="sidenav"
-              [mode]="isHandset ? 'over' : 'side'"
-              [opened]="!isHandset || isExpanded"
-              [class.collapsed]="!isExpanded && !isHandset"
-              [fixedInViewport]="true"
-              (backdropClick)="isExpanded = false">
+  <mat-sidenav #drawer class="sidenav" [mode]="isHandset ? 'over' : 'side'" [opened]="!isHandset || isExpanded"
+    [class.collapsed]="!isExpanded && !isHandset" [fixedInViewport]="true" (backdropClick)="isExpanded = false">
 
     <div class="logo-seguridad" *ngIf="isExpanded">
       <img src="assets/logo/seguridad.png" alt="Logo">
@@ -55,56 +50,68 @@
           </a>
         </mat-expansion-panel>
 
-          <!-- FACTURACION-->
-        <mat-expansion-panel>
-         <mat-expansion-panel-header>
-    <mat-panel-title>
-      <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
-      <span *ngIf="isExpanded" class="menu-text">Facturación</span>
-    </mat-panel-title>
-         </mat-expansion-panel-header>
+        <!-- FACTURACION-->
+      <mat-expansion-panel>
+        <!-- Subgrupo: Facturación -->
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Facturación</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Facturación</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <!-- Nivel 3: Facturacion -->
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Fac Individual</span>
+            </a>
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Fac Global</span>
+            </a>
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Fac Anuladas</span>
+            </a>
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Documentos Electrónicos</span>
+            </a>
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Reporte de Facturación</span>
+            </a>
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Notas De Débito / Crédito</span>
+            </a>
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Anticipos</span>
+            </a>
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Explorador Documentos</span>
+            </a>
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Reenvío Doc.Electrónicos</span>
+            </a>
+          </mat-expansion-panel>
 
-  <!-- Subgrupo: Facturación -->
-  <mat-expansion-panel>
-    <mat-expansion-panel-header>
-      <mat-panel-title>
-        <span *ngIf="isExpanded" class="menu-text">Facturación</span>
-      </mat-panel-title>
-    </mat-expansion-panel-header>
-    <!-- Nivel 3: Facturacion -->
-     <a mat-list-item routerLink="">
-      <span *ngIf="isExpanded" class="menu-text">Fac Individual</span>
-    </a>
-    <a mat-list-item routerLink="">
-      <span *ngIf="isExpanded" class="menu-text">Fac Global</span>
-    </a>
-    <a mat-list-item routerLink="">
-      <span *ngIf="isExpanded" class="menu-text">Fac Anuladas</span>
-    </a>
-    <a mat-list-item routerLink="">
-      <span *ngIf="isExpanded" class="menu-text">Documentos Electrónicos</span>
-    </a>
-    <a mat-list-item routerLink="">
-      <span *ngIf="isExpanded" class="menu-text">Reporte de Facturación</span>
-    </a>
-    <a mat-list-item routerLink="">
-      <span *ngIf="isExpanded" class="menu-text">Notas De Débito / Crédito</span>
-    </a>
-    <a mat-list-item routerLink="">
-      <span *ngIf="isExpanded" class="menu-text">Anticipos</span>
-    </a>
-    <a mat-list-item routerLink="">
-      <span *ngIf="isExpanded" class="menu-text">Explorador Documentos</span>
-    </a>
-    <a mat-list-item routerLink="">
-      <span *ngIf="isExpanded" class="menu-text">Reenvío Doc.Electrónicos</span>
-    </a>
+        <!-- Subgrupo: Notas de Crédito/Debito -->
+            <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Notas de Crédito/Debito</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <!-- Nivel 3: Notas de Crédito/Debito-->
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Fac Individual</span>
+            </a>
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Fac Global</span>
+            </a>
+          </mat-expansion-panel>
 
-  </mat-expansion-panel>
-
-
-
-  </mat-expansion-panel>
+      </mat-expansion-panel>
 
 
         <!-- CUENTAS POR COBRAR-->
@@ -115,7 +122,7 @@
               <span *ngIf="isExpanded" class="menu-text">Cuentas por cobrar</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
-          </mat-expansion-panel>
+        </mat-expansion-panel>
 
         <!-- CONFIGURACION-->
         <mat-expansion-panel>
@@ -125,9 +132,10 @@
               <span *ngIf="isExpanded" class="menu-text">Configuración</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
-          </mat-expansion-panel>
+        </mat-expansion-panel>
 
       </mat-accordion>
+
 
       <!-- Salir -->
       <mat-list-item routerLink="/inicio" class="salir-item">
@@ -141,7 +149,7 @@
 
   </mat-sidenav>
 
-         <!-- FOODER -->
+  <!-- FOODER -->
   <mat-sidenav-content [ngClass]="isExpanded ? 'content-default' : 'content-collapsed'">
     <router-outlet></router-outlet>
     <footer class="app-footer" [ngClass]="{ 'footer-collapsed': !isExpanded && !isHandset }">
