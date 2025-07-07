@@ -1,7 +1,9 @@
+import { EstructuraListComponent } from './estructuracomercial/estructura-list/estructura-list.component';
 import { NgModule, Component } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
 import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
+
 
 const routes: Routes = [
   {
@@ -10,7 +12,7 @@ const routes: Routes = [
     children: [
       { path: '', redirectTo: 'inicio', pathMatch: 'full' },
       { path: 'inicio-sic', component: InicioSicComponent },
-
+      { path: 'estructura-list', component: EstructuraListComponent },
     ]
 
   }

@@ -18,8 +18,8 @@ export class NavigationSicComponent {
   isHandset: boolean = false;
   isExpanded: boolean = true;
 
- constructor(private breakpointObserver: BreakpointObserver
-    ,private router: Router
+  constructor(private breakpointObserver: BreakpointObserver
+    , private router: Router
   ) {
     this.breakpointObserver.observe([Breakpoints.Handset])
       .subscribe(result => {
@@ -28,7 +28,7 @@ export class NavigationSicComponent {
       });
   }
 
-   ngOnInit(): void {
+  ngOnInit(): void {
     this.updateDateTime();
     setInterval(() => this.updateDateTime(), 1000);
   }
@@ -42,15 +42,17 @@ export class NavigationSicComponent {
     this.currentDateTime = `${this.capitalizeFirstLetter(formattedDate)}, ${formattedTime}`;
   }
 
-   capitalizeFirstLetter(text: string): string {
+  capitalizeFirstLetter(text: string): string {
     return text.charAt(0).toUpperCase() + text.slice(1);
   }
 
   toggleSidebar(): void {
     this.isExpanded = !this.isExpanded;
   }
-
-   salir(): void {
+  goTo(ruta: string): void {
+    this.router.navigate([ruta]);
+  }
+  salir(): void {
 
     this.router.navigate(['/inicio']).then(() => {
       window.location.reload();
