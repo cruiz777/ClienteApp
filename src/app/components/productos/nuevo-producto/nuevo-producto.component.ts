@@ -15,8 +15,24 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { PrefijoService } from 'src/app/services/prefijo.service';
-import { ClienteService ,ClienteIndividual } from 'src/app/services/cliente.service';
+import { ClienteService, ClienteIndividual } from 'src/app/services/cliente.service';
 import { MatSelectModule } from '@angular/material/select';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core';
+import { MomentDateAdapter } from '@angular/material-moment-adapter';
+import { LOCALE_ID } from '@angular/core';
+import { MatRadioModule } from '@angular/material/radio';
+export const MY_DATE_FORMATS = {
+  parse: {
+    dateInput: 'DD/MM/YYYY'
+  },
+  display: {
+    dateInput: 'DD/MM/YYYY',
+    monthYearLabel: 'MMMM YYYY',
+    dateA11yLabel: 'LL',
+    monthYearA11yLabel: 'MMMM YYYY'
+  }
+};
 
 @Component({
   selector: 'app-nuevo-producto',
@@ -29,10 +45,19 @@ import { MatSelectModule } from '@angular/material/select';
     MatButtonModule,
     AgGridModule,
     ReactiveFormsModule,
-    MatSelectModule
+    MatSelectModule,
+    MatDatepickerModule,
+    MatRadioModule
   ],
   templateUrl: './nuevo-producto.component.html',
-  styleUrl: './nuevo-producto.component.css'
+  styleUrl: './nuevo-producto.component.css',
+
+  providers: [
+    { provide: LOCALE_ID, useValue: 'es' },
+    { provide: MAT_DATE_LOCALE, useValue: 'es-ES' },
+    { provide: DateAdapter, useClass: MomentDateAdapter, deps: [MAT_DATE_LOCALE] },
+    { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS }
+  ]
 })
 export class NuevoProductoComponent implements OnInit {
   formReporte!: FormGroup; // ✅ declara la propiedad correctamente
@@ -52,9 +77,9 @@ export class NuevoProductoComponent implements OnInit {
   ultimoClick = 0;
   dobleClickDelay = 480;
   getRowNodeId = (data: any) => data.codbar; // o data.id si prefieres
-    prefijos: any[] = [];
-
-    clienteE!: ClienteIndividual;
+  prefijos: any[] = [];
+  
+  clienteE!: ClienteIndividual;
 
 
   columnDefsUV = [
@@ -113,26 +138,51 @@ export class NuevoProductoComponent implements OnInit {
     private codigos14Service: Codigos14Service,
     private _snackBar: MatSnackBar,
     private fb: FormBuilder,
-    private prefijoService:PrefijoService,
-    private clienteService:ClienteService
+    private prefijoService: PrefijoService,
+    private clienteService: ClienteService
   ) { }
 
   ngOnInit(): void {
 
-     this.formReporte = this.fb.group({
-      reporte: [''],
-      certificado: [''],
-      gcp: [null],
-      codigoCliente: [''],
-    });
-    this.clienteSeleccionadoService.clienteSeleccionado$.subscribe(cliente => {
-      this.clienteSeleccionado = cliente;
-      if (cliente?.clientes_codigo) {
-        this.cargarProductos(cliente.clientes_codigo);
-      }
-    });
+   this.formReporte = this.fb.group({
+  reporte: ['gtinVenta'],
+  certificado: [''],
+  certificado1: [''],
+  carta: [''],
+  gcp: [null],
+  codigoCliente: [''],
+  operadorFecha: ['igual'],
+  estado: ['1'],
+  fecha: [new Date()],
+  desde: [{ value: new Date(), disabled: true }],
+  hasta: [{ value: new Date(), disabled: true }],
+});
+
+// Suscripción al cambio de operadorFecha
+this.formReporte.get('operadorFecha')?.valueChanges.subscribe(valor => {
+  const fechaCtrl = this.formReporte.get('fecha');
+  const desdeCtrl = this.formReporte.get('desde');
+  const hastaCtrl = this.formReporte.get('hasta');
+
+  if (valor === 'entre') {
+    // Desactivar campo "fecha"
+    fechaCtrl?.disable();
+
+    // Activar campos "desde" y "hasta"
+    desdeCtrl?.enable();
+    hastaCtrl?.enable();
+  } else {
+    // Activar campo "fecha"
+    fechaCtrl?.enable();
+
+    // Desactivar campos "desde" y "hasta"
+    desdeCtrl?.disable();
+    hastaCtrl?.disable();
+  }
+});
+ 
     this.cargarCliente();
-   
+
   }
 
   cambiarTab(tab: string) {
@@ -150,30 +200,30 @@ export class NuevoProductoComponent implements OnInit {
     );
   }
 
-seleccionarRegistro(registro: any): void {
-  this.registroSeleccionado = registro;
-  this.codigoSeleccionado = registro.codbar;
-  this.cargarCodigos14PorGtin(registro.codbar);
+  seleccionarRegistro(registro: any): void {
+    this.registroSeleccionado = registro;
+    this.codigoSeleccionado = registro.codbar;
+    this.cargarCodigos14PorGtin(registro.codbar);
 
-  // Mejor: usa el ID directamente
-  if (this.gridApi) {
-    const node = this.gridApi.getRowNode(registro.codbar); // ← gracias a getRowNodeId
-    if (node) {
-      this.gridApi.deselectAll();
-      node.setSelected(true);
+    // Mejor: usa el ID directamente
+    if (this.gridApi) {
+      const node = this.gridApi.getRowNode(registro.codbar); // ← gracias a getRowNodeId
+      if (node) {
+        this.gridApi.deselectAll();
+        node.setSelected(true);
+      }
     }
   }
-}
 
-abrirVentanaUl(): void {
-  if (!this.codigoSeleccionado) {
-    this.mostrarAlerta('⚠️ Debe seleccionar un código GTIN primero.', 'Advertencia');
-    return;
+  abrirVentanaUl(): void {
+    if (!this.codigoSeleccionado) {
+      this.mostrarAlerta('⚠️ Debe seleccionar un código GTIN primero.', 'Advertencia');
+      return;
+    }
+
+    // Redirige usando el codbar como parte del path
+    this.router.navigateByUrl(`/menuProductos/ul/${this.codigoSeleccionado}`);
   }
-
-  // Redirige usando el codbar como parte del path
-  this.router.navigateByUrl(`/menuProductos/ul/${this.codigoSeleccionado}`);
-}
 
 
   cargarProductos(codigoCliente: number): void {
@@ -270,7 +320,7 @@ abrirVentanaUl(): void {
 
     this.ultimoClick = ahora;
   }
- mostrarAlerta(mensaje: string, tipo: string) {
+  mostrarAlerta(mensaje: string, tipo: string) {
     this._snackBar.open(mensaje, tipo, {
       horizontalPosition: "end",
       verticalPosition: "top",
@@ -278,10 +328,10 @@ abrirVentanaUl(): void {
     });
   }
 
-    onPrefijoBlur(): void {
+  onPrefijoBlur(): void {
     const idSeleccionado = this.formReporte.value.gcp;
     const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
-    
+
   }
 
   cargarPrefijos(codigoCliente: number): void {
@@ -310,15 +360,37 @@ abrirVentanaUl(): void {
       this.cargarPrefijos(cliente.clientes_codigo);
     }
   }
-   cargarClientePorId(id: number): void {
+  cargarClientePorId(id: number): void {
     this.clienteService.getClienteById(id).subscribe({
       next: (cliente) => {
         this.clienteE = cliente;
-        
+
       },
       error: (err) => {
         console.error('Error al obtener cliente:', err);
       }
     });
   }
+  onOperadorFechaChange(): void {
+  const operador = this.formReporte.get('operadorFecha')?.value;
+  const fecha = this.formReporte.get('fecha');
+  const desde = this.formReporte.get('desde');
+  const hasta = this.formReporte.get('hasta');
+
+  if (operador === 'entre') {
+    fecha?.disable();
+    desde?.enable();
+    hasta?.enable();
+  } else {
+    fecha?.enable();
+    desde?.disable();
+    hasta?.disable();
+  }
+}
+
+mostrarPrefijo(): boolean {
+  const tipo = this.formReporte.get('reporte')?.value;
+  return ['gtinVenta', 'logistica', 'carta'].includes(tipo);
+}
+
 }

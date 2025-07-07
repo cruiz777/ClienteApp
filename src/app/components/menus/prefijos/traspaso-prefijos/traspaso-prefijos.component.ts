@@ -35,6 +35,9 @@ import { MatPaginator } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatTableModule } from '@angular/material/table';
 import { forkJoin } from 'rxjs';
+import { AfterViewInit } from '@angular/core';
+import { MatPaginatorModule } from '@angular/material/paginator';
+import { ExportOptions } from 'src/app/interfaces/export-options';
 @Component({
   selector: 'app-traspaso-prefijos',
   standalone: true,
@@ -51,14 +54,16 @@ import { forkJoin } from 'rxjs';
     MatButtonModule,
     MatMenuModule,
     MatPaginator,
-    MatTableModule  
+    MatTableModule,
+    MatPaginatorModule  
   ]
 })
-export class TraspasoPrefijosComponent implements OnInit {
+export class TraspasoPrefijosComponent implements OnInit, AfterViewInit {
+
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   activeTab: string = 'Transferir';
-  filtroBusqueda: string = '';
+
   filtroCliente: string = '';
   botonActivo: string = '';
 
@@ -79,7 +84,7 @@ export class TraspasoPrefijosComponent implements OnInit {
   usuarioActual = this.usuarioService.getUsuarioActual();
   auditoriasTransferencia = new MatTableDataSource<AuditoriaTransferenciaResponse>();
   displayedColumns: string[] = ['index', 'prefijo', 'origen', 'rucOrigen', 'destino', 'rucDestino', 'fecha'];
-
+  logoUrl: string = '';
   constructor(
     private clienteService: ClienteService,
     private prefijoService: PrefijoService,
@@ -180,8 +185,21 @@ export class TraspasoPrefijosComponent implements OnInit {
   }
 
   cambiarTab(tab: string): void {
-    this.activeTab = tab;
+  this.activeTab = tab;
+
+  if (tab === 'Listado') {
+    // Esperar al renderizado del paginator
+    setTimeout(() => {
+      if (this.paginator) {
+        this.auditoriasTransferencia.paginator = this.paginator;
+        console.log('Paginator asignado en tab Listado:', this.paginator);
+      } else {
+        console.warn('Paginator aún no disponible al cambiar de tab');
+      }
+    });
   }
+}
+
 
   seleccionarBoton(nombre: string): void {
     this.botonActivo = nombre;
@@ -194,14 +212,16 @@ export class TraspasoPrefijosComponent implements OnInit {
       verticalPosition: 'top'
     });
   }
-
-  cargarAuditorias(): void {
-    this.auditoriaTransferenciaService.getAuditoriasTransferencia()
-      .subscribe(data => {
-        this.auditoriasTransferencia.data = data;
+cargarAuditorias(): void {
+  this.auditoriaTransferenciaService.getAuditoriasTransferencia()
+    .subscribe(data => {
+      this.auditoriasTransferencia = new MatTableDataSource<AuditoriaTransferenciaResponse>(data);
+      setTimeout(() => {
         this.auditoriasTransferencia.paginator = this.paginator;
       });
-  }
+    });
+}
+
 
   exportarPDF(): void {
     console.log('Exportar PDF');
@@ -269,6 +289,7 @@ export class TraspasoPrefijosComponent implements OnInit {
           await this.codigos14Service.actualizarClientesCodigo14PorIdPrefijos({ idPrefijos: prefijo.id_prefijos, clientesCodigo: this.codcliD }).toPromise();
           await this.cuponService.actualizarClientePorPrefijo(prefijo.id_prefijos, this.codcliD).toPromise();
           await this.ssccService.actualizarClientePorPrefijo(prefijo.id_prefijos, this.codcliD).toPromise();
+          
 
         } catch (err: any) {
           errores.push(`❌ Error en prefijo ${prefijo.id_prefijos}: ${err.message}`);
@@ -293,7 +314,8 @@ export class TraspasoPrefijosComponent implements OnInit {
 
 
 asignarOrdenPrefijo(): void {
-  const seleccionado = this.prefijosClienteEntidad.find(p => p.seleccionado); // <- CORREGIDO
+  // Buscar el que tiene orden = 1
+  const seleccionado = this.prefijosClienteEntidad.find(p => p.orden === 1);
 
   if (!seleccionado) {
     this._snackBar.open('⚠️ Debe seleccionar un prefijo.', 'Cerrar', {
@@ -322,7 +344,7 @@ asignarOrdenPrefijo(): void {
       const actualizaciones = this.prefijosClienteEntidad.map(p => {
         return {
           idPrefijos: p.id_prefijos,
-          orden: p.id_prefijos === seleccionado.id_prefijos ? 1 : 0
+          orden: p.orden === 1 ? 1 : 0  // ya está marcado en la tabla
         };
       });
 
@@ -338,7 +360,6 @@ asignarOrdenPrefijo(): void {
             verticalPosition: 'top',
             panelClass: ['snackbar-success']
           });
-          // Aquí puedes volver a consultar la lista si deseas
         },
         error: (err) => {
           console.error('Error al actualizar orden:', err);
@@ -353,6 +374,7 @@ asignarOrdenPrefijo(): void {
     }
   });
 }
+
 
 
 
@@ -376,5 +398,54 @@ seleccionarUnico2(prefijoSeleccionado: any): void {
     }
   });
 }
+ngAfterViewInit(): void {
+  console.log('Paginator:', this.paginator);
+  this.auditoriasTransferencia.paginator = this.paginator;
+}
+private _filtroBusqueda: string = '';
+get filtroBusqueda(): string {
+  return this._filtroBusqueda;
+}
+set filtroBusqueda(value: string) {
+  this._filtroBusqueda = value;
+  this.auditoriasTransferencia.filter = value.trim().toLowerCase();
+}
+
+exportar(tipo: 'excel' | 'pdf'): void {
+  const headers = ['Prefijo', 'Empresa Anterior', 'RUC Anterior', 'Empresa Actual', 'RUC Actual', 'Fecha'];
+  const columns = ['prefijo', 'origen', 'rucOrigen', 'destino', 'rucDestino', 'fecha'];
+
+  const data = this.auditoriasTransferencia.data.map(item => ({
+    prefijo: item.prefijo,
+    origen: item.origen,
+    rucOrigen: item.rucOrigen,
+    destino: item.destino,
+    rucDestino: item.rucDestino,
+    fecha: item.fecha
+      ? new Date(item.fecha).toLocaleDateString('es-EC', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        })
+      : ''
+  }));
+
+  const options: ExportOptions = {
+    data,
+    columns,
+    headers,
+    filename: 'ListadoPrefijosTransferencia',
+    title: 'ListadoPrefijosTransferencia',
+    logoUrl: this.logoUrl
+  };
+
+  if (tipo === 'excel') {
+    this.exportService.exportarExcel(options);
+  } else {
+    this.exportService.exportarPDF(options);
+  }
+}
+
+
 
 }

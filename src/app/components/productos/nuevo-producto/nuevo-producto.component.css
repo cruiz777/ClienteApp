@@ -738,3 +738,32 @@ table {
   width: 156px;
 }
 
+.radio-grid {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+  padding: 10px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+.radio-grid .column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 45%;
+}
+
+.radio-grid .titulo {
+  font-weight: bold;
+  font-size: 16px;
+  color: #002c6c;
+  margin-bottom: 8px;
+}
+.form-actions {
+  display: flex;
+  justify-content: center; /* Centra horizontalmente */
+  gap: 16px;                /* Espaciado entre botones */
+  margin-top: 20px;         /* Opcional, separación superior */
+}

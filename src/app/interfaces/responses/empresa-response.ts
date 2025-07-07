@@ -12,6 +12,7 @@ export interface EmpresaResponse {
   empresaFax?: string;
   empresaEmail?: string;
   empresaLogo?: string;
+  empresaFirma: string; 
   empresaMoneda?: string | null;
   empresaTipoCambio?: string | null;
   empresaEstablecimiento?: string | null;
