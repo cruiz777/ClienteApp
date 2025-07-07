@@ -30,7 +30,8 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item routerLink="">
+
+          <a mat-list-item [routerLink]="['estructura-list']" routerLinkActive="active">
             <span *ngIf="isExpanded" class="menu-text">Estructura Comercial</span>
           </a>
           <a mat-list-item routerLink="">
@@ -51,14 +52,15 @@
         </mat-expansion-panel>
 
         <!-- FACTURACION-->
-      <mat-expansion-panel>
-        <!-- Subgrupo: Facturación -->
+        <mat-expansion-panel>
+          <!-- Subgrupo: Facturación -->
           <mat-expansion-panel-header>
             <mat-panel-title>
               <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
               <span *ngIf="isExpanded" class="menu-text">Facturación</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
+
           <mat-expansion-panel>
             <mat-expansion-panel-header>
               <mat-panel-title>
@@ -95,23 +97,26 @@
             </a>
           </mat-expansion-panel>
 
-        <!-- Subgrupo: Notas de Crédito/Debito -->
-            <mat-expansion-panel>
+          <!-- Subgrupo: Notas de Crédito/Debito -->
+          <mat-expansion-panel>
             <mat-expansion-panel-header>
               <mat-panel-title>
                 <span *ngIf="isExpanded" class="menu-text">Notas de Crédito/Debito</span>
               </mat-panel-title>
             </mat-expansion-panel-header>
             <!-- Nivel 3: Notas de Crédito/Debito-->
+
             <a mat-list-item routerLink="">
               <span *ngIf="isExpanded" class="menu-text">Fac Individual</span>
             </a>
             <a mat-list-item routerLink="">
               <span *ngIf="isExpanded" class="menu-text">Fac Global</span>
             </a>
+
           </mat-expansion-panel>
 
-      </mat-expansion-panel>
+        </mat-expansion-panel>
+
 
 
         <!-- CUENTAS POR COBRAR-->

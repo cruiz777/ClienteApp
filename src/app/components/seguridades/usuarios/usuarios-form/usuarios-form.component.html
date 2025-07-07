@@ -65,6 +65,7 @@
     </div>
 
     <div class="form-row">
+
       <div class="form-field">
         <label>Clave*:</label>
         <div class="input-con-icono">
@@ -72,6 +73,23 @@
             (click)="toggleClave()" style="cursor: pointer;" />
           <input formControlName="clave" [type]="mostrarClave ? 'text' : 'password'" placeholder="Ingrese su clave"
             autocomplete="new-password" />
+        </div>
+
+        <!-- Barra de seguridad -->
+        <div *ngIf="usuarioForm.get('clave')?.value">
+          <div class="security-bar-container">
+            <div class="security-bar-fill" [ngClass]="{
+        'security-weak': nivelSeguridad === 'Débil',
+        'security-medium': nivelSeguridad === 'Media',
+        'security-strong': nivelSeguridad === 'Alta'
+      }"></div>
+          </div>
+          <!-- <div class="security-label">
+            Seguridad: {{ nivelSeguridad }}
+          </div> -->
+          <div class="security-label security-help" *ngIf="mensajesSeguridad">
+            {{ mensajesSeguridad }}
+          </div>
         </div>
       </div>
 

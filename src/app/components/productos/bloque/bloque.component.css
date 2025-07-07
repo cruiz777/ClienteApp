@@ -251,12 +251,14 @@ mat-form-field {
 }
 
 /* Tamaños personalizados */
-.corto {
+.cortocli {
   max-width: 150px;
 }
-
+.corto {
+  max-width: 110px;
+}
 .largo {
-  min-width: 280px;
+  min-width: 300px;
   flex: 1;
 }
 
@@ -373,9 +375,16 @@ textarea {
 
 .serie-checkbox {
   display: flex;
-  flex-direction: column;
-  min-width: 100px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px; /* separa visualmente de categoría */
 }
+
+.largo {
+  display: block;
+  margin-top: 8px;
+}
+
 
 .campo-gtin {
   width: 240px;
@@ -395,4 +404,111 @@ textarea {
 }
 mat-form-field {
   max-width: 150px;
+}
+::ng-deep .ag-cell .ag-checkbox-input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+::ng-deep .centered-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+::ng-deep .ag-cell .ag-checkbox-input:checked {
+  accent-color: #3f51b5; /* Material Indigo */
+  box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.3);
+}
+.contenedor-grid {
+  overflow-x: auto; /* Habilita scroll horizontal */
+  max-width: 100%;
+}
+.celda-vacia {
+  background-color: #fbb;
+}
+.proceso-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.proceso-contenedor {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.3);
+}
+
+.reloj {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 10px;
+}
+::ng-deep .fila-repetida {
+  background-color: #ffe5e5 !important;
+}
+
+.alinear-campos {
+  display: flex;
+  align-items: center;
+  gap: 20px; /* espacio entre GLN y Serie */
+}
+
+.campo {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.campo input[type="text"] {
+  height: 24px;
+}
+.contenedor-pegar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.campo-label-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.label-codificar {
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.input-cantidad {
+  width: 60px;
+  height: 36px;
+  padding: 4px 6px;
+  font-size: 14px;
+}
+
+.campo-textarea {
+  width: 140px;
+  height: 60px;
+  margin: 0;
+}
+
+mat-form-field textarea {
+  height: 50px !important;
+  padding-top: 6px !important;
+  font-size: 13px;
+}
+::ng-deep .cell-error {
+  background-color: #ffe0e0 !important;
+  border: 1px solid red !important;
 }

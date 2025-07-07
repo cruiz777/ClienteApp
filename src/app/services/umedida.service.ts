@@ -25,4 +25,20 @@ export class UmedidaService {
       map(response => response.data)
     );
   }
+
+  obtenerUnidadPorNombre(nombre: string): Observable<Umedida> {
+  return this.http
+    .get<{ data: Umedida | null }>(`${this.apiBaseUrl}/UnidadMedida/por-nombre`, {
+      params: { nombre }
+    })
+    .pipe(
+      map(response => {
+        if (!response.data) {
+          throw new Error(`Unidad no encontrada: ${nombre}`);
+        }
+        return response.data;
+      })
+    );
+}
+
 }

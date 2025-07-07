@@ -1,0 +1,137 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+/* FONDO DEL BODY CON IMAGEN + DEGRADADO SEMI-OPACO */
+body {
+  margin: 0;
+  height: 100vh;
+  background-image: linear-gradient(
+      rgba(0, 0, 0, 0.35),
+      rgba(0, 0, 0, 0.35)
+    ), url('src/assets/images/fondo_login.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  font-family: 'Poppins', sans-serif;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* TARJETA PRINCIPAL DEL LOGIN */
+.login-container {
+  background-color: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 50px 40px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  max-width: 420px;
+  width: 90%;
+}
+
+/* LOGO Y TITULO DE BIENVENIDA */
+.header-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 30px;
+}
+.logo-image {
+  width: 150px;
+  margin-bottom: 12px;
+}
+.welcome-text {
+  font-size: 24px;
+  font-weight: 600;
+  color: #001f4f;
+}
+
+/* CAMPOS DEL FORMULARIO */
+.form-group {
+  margin-bottom: 20px;
+}
+.field-label {
+  font-size: 15px;
+  font-weight: 500;
+  color: #001f4f;
+  margin-bottom: 5px;
+}
+.input-field {
+  width: 100%;
+  padding: 14px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  font-size: 15px;
+  outline: none;
+  transition: border 0.3s;
+}
+.input-field:focus {
+  border-color: #001f4f;
+}
+
+/* CAMPO DE CONTRASEÑA CON ICONO */
+.password-group {
+  position: relative;
+}
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  top: 41px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.toggle-password img {
+  width: 22px;
+  height: 22px;
+}
+
+/* ENLACE PARA LOGIN */
+.forgot-password {
+  text-align: right;
+  margin-bottom: 20px;
+}
+.forgot-password a {
+  font-size: 14px;
+  color: #001f4f;
+  text-decoration: none;
+  transition: color 0.3s;
+  cursor: pointer;
+}
+.forgot-password a:hover {
+  color: #cd3c0d;
+  text-decoration: underline;
+}
+
+/* BOTÓN DE INICIAR SESIÓN */
+.login-button-container {
+  display: flex;
+  justify-content: center;
+}
+.login-button {
+  background-color: #001f4f;
+  color: #fff;
+  padding: 16px;
+  width: 100%;
+  font-size: 17px;
+  font-weight: 600;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+.login-button:hover {
+  background-color: #cd3c0d;
+}
+
+/* PIE DE PÁGINA CON LOGO GAP */
+.footer-container {
+  margin-top: 30px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 12px;
+  color: #888;
+  gap: 10px;
+}
+.footer-logo {
+  width: 75px;
+}

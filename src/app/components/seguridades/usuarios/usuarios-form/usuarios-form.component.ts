@@ -22,6 +22,8 @@ import { UsuariosRequest, UsuariosEditRequest } from 'src/app/interfaces/request
 
 // Diálogo de mensajes
 import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
+import { RequiredFieldsToastService } from 'src/app/components/utils/messages/required-fields-toast.service';
+
 
 export const MY_DATE_FORMATS = {
   parse: {
@@ -62,6 +64,9 @@ export class UsuariosFormComponent implements OnInit {
   busquedaEntidad = '';
   resultadosEntidad: any[] = [];
   mostrarFormulario = false;
+  usuarioActual = this.usuarioservice.getUsuarioActual();
+  nivelSeguridad: string = '';
+  mensajesSeguridad: string = '';
 
   constructor(
     private fb: FormBuilder,
@@ -70,9 +75,11 @@ export class UsuariosFormComponent implements OnInit {
     public perfilService: PerfilesService,
     public departamentoService: DepartamentosService,
     private dialog: MatDialog,
-    private usuario: UsuarioService,
-    private persona: PersonasService
+    private usuarioservice: UsuarioService,
+    private persona: PersonasService,
+    private toast: RequiredFieldsToastService
   ) { }
+
 
   ngOnInit(): void {
     this.usuarioForm = this.fb.group({
@@ -95,10 +102,13 @@ export class UsuariosFormComponent implements OnInit {
     } else {
       this.usuarioForm.get('estado')?.disable();
     }
+    this.usuarioForm.get('clave')?.valueChanges.subscribe(val => {
+      this.verificarSeguridad(val);
+    });
+
   }
 
   grabar(): void {
-    // Marcar todos los campos como tocados (menos estado que está deshabilitado inicialmente)
     Object.keys(this.usuarioForm.controls).forEach(key => {
       if (key !== 'estado') {
         this.usuarioForm.get(key)?.markAsTouched();
@@ -106,32 +116,34 @@ export class UsuariosFormComponent implements OnInit {
     });
 
     if (this.usuarioForm.invalid) {
-      console.warn('⚠️ Formulario inválido:', this.usuarioForm.value);
-      this.dialog.open(CustomMessageBoxComponent, {
-        width: '400px',
-        data: {
-          title: 'Completado',
-          message: 'Por favor complete todos los campos obligatorios.',
-          type: 'info',
-          confirmText: 'Aceptar',
-          showCancel: false
-        }
-      });
+      const errores: string[] = [];
+      const controles = this.usuarioForm.controls;
+
+      if (controles['usuario'].invalid) errores.push('Usuario es requerido');
+      if (controles['clave'].invalid) errores.push('Clave es requerida');
+      if (controles['perfil'].invalid) errores.push('Perfil es requerido');
+      if (controles['fechaCaducidad'].invalid) errores.push('Fecha de caducidad es requerida');
+      if (controles['departamento'].invalid) errores.push('Departamento es requerido');
+      if (controles['correo'].value && controles['correo'].invalid) errores.push('Correo inválido');
+
+      this.toast.mostrar(errores);
+      return;
+    }
+
+    if (this.usuarioForm.get('clave')?.value && this.nivelSeguridad === 'Débil') {
+      this.toast.error(this.mensajesSeguridad || '❌ Contraseña débil. Mejore la seguridad antes de continuar.');
       return;
     }
 
     const formData = this.usuarioForm.getRawValue();
-
-    // Convertir perfil a número de forma explícita
     formData.perfil = parseInt(formData.perfil, 10);
     if (!formData.perfil || isNaN(formData.perfil) || formData.perfil <= 0) {
-      alert('❌ Debe seleccionar un perfil válido.');
+      this.toast.mostrar(['Debe seleccionar un perfil válido.']);
       return;
     }
 
-    // También puedes validar aquí si el departamento es válido (opcional)
     if (!formData.departamento || isNaN(formData.departamento)) {
-      alert('❌ Debe seleccionar un departamento válido.');
+      this.toast.mostrar(['Debe seleccionar un departamento válido.']);
       return;
     }
 
@@ -148,11 +160,11 @@ export class UsuariosFormComponent implements OnInit {
         id_departamento: formData.departamento
       };
 
-      this.usuario.updateUsuario(formData.perfil, requestEdit).subscribe({
+      this.usuarioservice.updateUsuario(formData.perfil, requestEdit).subscribe({
         next: () => this.dialogRef.close(true),
         error: (err) => {
-          console.error('❌ Error recibido del backend:', err);
-          alert('❌ Error al actualizar el usuario.');
+          const mensaje = err.error?.message || 'Error al actualizar el usuario.';
+          this.toast.error(mensaje);
         }
       });
     } else {
@@ -167,12 +179,8 @@ export class UsuariosFormComponent implements OnInit {
         id_departamento: formData.departamento
       };
 
-      console.log('📤 Enviando request:', request);
-      console.log('📌 ID Perfil:', formData.perfil);
-
-      this.usuario.createUsuario(formData.perfil, request).subscribe({
+      this.usuarioservice.createUsuario(formData.perfil, request).subscribe({
         next: () => {
-          // Mostrar mensaje antes de cerrar
           this.dialog.open(CustomMessageBoxComponent, {
             width: '400px',
             data: {
@@ -183,15 +191,14 @@ export class UsuariosFormComponent implements OnInit {
               showCancel: false
             }
           }).afterClosed().subscribe(() => {
-            this.dialogRef.close(true); // Solo cerrar luego del mensaje
+            this.dialogRef.close(true);
           });
         },
         error: (err) => {
-          console.error('❌ Error del backend al crear el usuario:', err);
-          alert(`❌ Error al crear el usuario: ${err.error?.message || 'Error desconocido'}`);
+          const mensaje = err.error?.message || 'Error al crear el usuario.';
+          this.toast.error(mensaje);
         }
       });
-
     }
   }
 
@@ -276,7 +283,7 @@ export class UsuariosFormComponent implements OnInit {
   }
 
   validarEntidadYaTieneUsuario(entidad: any): void {
-    this.usuario.getUsuarioByIdPersona(entidad.personaCodigo).subscribe({
+    this.usuarioservice.getUsuarioByIdPersona(entidad.personaCodigo, this.usuarioActual!.id_empresa).subscribe({
       next: (res) => {
         if (res.data) {
           this.dialog.open(CustomMessageBoxComponent, {
@@ -301,6 +308,26 @@ export class UsuariosFormComponent implements OnInit {
     });
   }
 
+  verificarSeguridad(password: string): void {
+    const requisitos = [
+      { test: /[a-z]/, mensaje: 'una letra minúscula' },
+      { test: /[A-Z]/, mensaje: 'una letra mayúscula' },
+      { test: /\d/, mensaje: 'un número' },
+      { test: /[\W_]/, mensaje: 'un carácter especial (!, @, #, etc.)' },
+      { test: /.{8,}/, mensaje: 'al menos 8 caracteres' }
+    ];
+
+    const faltantes = requisitos.filter(r => !r.test.test(password)).map(r => r.mensaje);
+
+    const puntos = 5 - faltantes.length;
+    if (puntos <= 2) this.nivelSeguridad = 'Débil';
+    else if (puntos <= 4) this.nivelSeguridad = 'Media';
+    else this.nivelSeguridad = 'Alta';
+
+    this.mensajesSeguridad = faltantes.length > 0
+      ? `⚠️ Para mejorar tu contraseña, añade: ${faltantes.join(', ')}.`
+      : '✅ Contraseña segura.';
+  }
 
 
 }

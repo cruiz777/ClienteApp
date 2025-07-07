@@ -30,4 +30,12 @@ export class OpcionService {
   createOpcion(data: OpcionesRequest): Observable<any> {
     return this.http.post(this.apiUrl, data);
   }
+
+  softDelete(id: number): Observable<ApiResponse<boolean>> {
+    return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/softDelete/${id}`, {});
+  }
+
+  updateOpcion(id: number, data: OpcionesRequest): Observable<ApiResponse<boolean>> {
+    return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/${id}`, data);
+  }
 }

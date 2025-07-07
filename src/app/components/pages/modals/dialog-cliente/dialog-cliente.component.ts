@@ -763,17 +763,17 @@ export class DialogClienteComponent implements OnInit {
       this.paso1Form.patchValue({
         gln: glnGenerado
       });
-
+      const bandera = prefix === 'USA' ? 2 : 0;
       const prefijoData = {
         codpre: prefijo,
         fecha: new Date().toISOString().split('T')[0],
-        fechaCierre: new Date().toISOString().split('T')[0],
+        fechaCierre: null,
         observacion: 'Prefijo generado manualmente',
         digitos: prefijo.length.toString(),
         estado: false,
         control: 0,
         ngln: 0,
-        bandera: 0,
+        bandera: bandera,
         facturar: 'C',
         codpro: '1174',
         nombre: `PREFIJO:`,
@@ -1299,7 +1299,7 @@ export class DialogClienteComponent implements OnInit {
         const id_prefijos = resultado[0].id_prefijos;
 
         const nuevoGln: GlnRequest = {
-          idPrefijos: id_prefijos,
+          id_prefijos: id_prefijos,
           clientesCodigo: codigoCliente,
           gln1: gln,
           idTipoLocalizacion: 12,

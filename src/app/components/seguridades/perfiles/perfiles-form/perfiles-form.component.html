@@ -1,6 +1,17 @@
 <h2 mat-dialog-title>
-  {{ tipo === 'sistema' ? 'Nuevo Sistema' : tipo === 'modulo' ? 'Nuevo Módulo' : tipo === 'menu' ? 'Nuevo Menú' : tipo
-  === 'opcion' ? 'Nueva Opción' : 'Nuevo Perfil' }}
+  {{
+  data?.id
+  ? (tipo === 'sistema' ? 'Editar Sistema'
+  : tipo === 'modulo' ? 'Editar Módulo'
+  : tipo === 'menu' ? 'Editar Menú'
+  : tipo === 'opcion' ? 'Editar Opción'
+  : 'Editar Perfil')
+  : (tipo === 'sistema' ? 'Nuevo Sistema'
+  : tipo === 'modulo' ? 'Nuevo Módulo'
+  : tipo === 'menu' ? 'Nuevo Menú'
+  : tipo === 'opcion' ? 'Nueva Opción'
+  : 'Nuevo Perfil')
+  }}
 </h2>
 
 <div mat-dialog-content style="padding-top: 12px;">
@@ -21,6 +32,6 @@
 <div mat-dialog-actions style="justify-content: flex-end; padding-top: 12px;">
   <button mat-stroked-button (click)="cancelar()">Cancelar</button>
   <button mat-flat-button color="primary" (click)="grabar()" [disabled]="form.invalid">
-    Grabar
+    {{ data?.id ? 'Actualizar' : 'Grabar' }}
   </button>
 </div>

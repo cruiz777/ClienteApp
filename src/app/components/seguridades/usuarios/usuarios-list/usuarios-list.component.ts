@@ -80,6 +80,7 @@ export class UsuariosListComponent implements OnInit {
    */
   eliminarUsuario(id: number) {
     console.log('Eliminar usuario:', id);
+
   }
 
   /**

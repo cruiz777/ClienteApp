@@ -32,7 +32,8 @@ import { MatDialogRef, MAT_DIALOG_DATA, MatDialog } from '@angular/material/dial
 import { GenerarPresentacionesService } from 'src/app/services/generar-presentaciones.service';
 import { switchMap } from 'rxjs/operators';
 import { ChangeDetectorRef } from '@angular/core';
-
+import { ClienteService, ClienteIndividual } from 'src/app/services/cliente.service';
+import { UsuarioService } from 'src/app/services/usuario.service';
 @Component({
   selector: 'app-uv-individual',
   standalone: true,
@@ -102,6 +103,8 @@ export class UvIndividualComponent implements OnInit {
   gtin13UIEnable = false;
   gtin12UIEnable = false;
   longitudMaxima = 0;
+  id_grupo_producto: number = 0;
+  usuarioActual = this.usuarioService.getUsuarioActual();
   constructor(
     private fb: FormBuilder,
     private clienteSeleccionadoService: ClienteSeleccionadoService,
@@ -119,7 +122,9 @@ export class UvIndividualComponent implements OnInit {
     private codigos14Service: Codigos14Service,
     private dialog: MatDialog,
     private generarPresentacionesService: GenerarPresentacionesService,
-    private cd: ChangeDetectorRef
+    private cd: ChangeDetectorRef,
+    private clienteService: ClienteService,
+    private usuarioService: UsuarioService,
   ) { }
 
 
@@ -253,6 +258,7 @@ export class UvIndividualComponent implements OnInit {
     this.botonIngresarULDeshabilitado = true;
     this.botonNuevoDeshabilitado = false;
     this.botonGenerarULDeshabilitado = false;
+    
   }
 
 
@@ -313,50 +319,50 @@ export class UvIndividualComponent implements OnInit {
   }
 
 
- habilitarSerie2(): void {
-  debugger
-  const usarSerie2 = this.formUL.get('usarSerie2')?.value;
-  const gtin = this.formUL.get('gtinNacionalULSeleccionado')?.value;
+  habilitarSerie2(): void {
+    debugger
+    const usarSerie2 = this.formUL.get('usarSerie2')?.value;
+    const gtin = this.formUL.get('gtinNacionalULSeleccionado')?.value;
 
-  if (usarSerie2) {
-    const gcpId = this.formUV.get('gcp')?.value;
-    const prefijo = this.prefijos.find(p => p.id_prefijos === gcpId);
+    if (usarSerie2) {
+      const gcpId = this.formUV.get('gcp')?.value;
+      const prefijo = this.prefijos.find(p => p.id_prefijos === gcpId);
 
-    if (!prefijo) {
-      console.error('? Prefijo no encontrado');
-      return;
-    }
+      if (!prefijo) {
+        console.error('? Prefijo no encontrado');
+        return;
+      }
 
-    if (gtin === 'gtin13u') {
-      this.npais = '786';
-      this.generacionCodigosService.obtenerSecuencia(prefijo.codpre, this.npais).subscribe({
-        next: (resp: SecuenciaResponse) => {
-          this.formUL.get('serie2')?.setValue(resp.data);
-        },
-        error: (err) => {
-          console.error('? Error al obtener secuencia GTIN-13U:', err);
-        }
-      });
+      if (gtin === 'gtin13u') {
+        this.npais = '786';
+        this.generacionCodigosService.obtenerSecuencia(prefijo.codpre, this.npais).subscribe({
+          next: (resp: SecuenciaResponse) => {
+            this.formUL.get('serie2')?.setValue(resp.data);
+          },
+          error: (err) => {
+            console.error('? Error al obtener secuencia GTIN-13U:', err);
+          }
+        });
 
-    } else if (gtin === 'gtin12u') {
-      this.npais = '';
-      this.generacionCodigosService.obtenerSecuencia(prefijo.codpre, this.npais).subscribe({
-        next: (resp: SecuenciaResponse) => {
-          this.formUL.get('serie2')?.setValue(resp.data);
-        },
-        error: (err) => {
-          console.error('? Error al obtener secuencia GTIN-12U:', err);
-        }
-      });
+      } else if (gtin === 'gtin12u') {
+        this.npais = '';
+        this.generacionCodigosService.obtenerSecuencia(prefijo.codpre, this.npais).subscribe({
+          next: (resp: SecuenciaResponse) => {
+            this.formUL.get('serie2')?.setValue(resp.data);
+          },
+          error: (err) => {
+            console.error('? Error al obtener secuencia GTIN-12U:', err);
+          }
+        });
+
+      } else {
+        this.formUL.get('serie2')?.setValue('SERIE-UL-GENERICA');
+      }
 
     } else {
-      this.formUL.get('serie2')?.setValue('SERIE-UL-GENERICA');
+      this.formUL.get('serie2')?.reset();
     }
-
-  } else {
-    this.formUL.get('serie2')?.reset();
   }
-}
 
 
 
@@ -369,6 +375,7 @@ export class UvIndividualComponent implements OnInit {
         cliente: cliente.nomcli || '',
         ruc: cliente.ruc || '',
       });
+      this.cargarClientePorId(cliente.clientes_codigo);
       this.cargarPrefijos(cliente.clientes_codigo);
     }
   }
@@ -393,13 +400,30 @@ export class UvIndividualComponent implements OnInit {
   onPrefijoBlur(): void {
     const idSeleccionado = this.formUV.value.gcp;
     const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+
     if (objeto?.gln) {
       this.formUV.patchValue({ gln: objeto.gln });
-      this.bandera = objeto.bandera;
-      //this.gestionarActivacionOpcionesUL(this.formUV.get('gtinNacionalSeleccionado')?.value, true);
 
+      const codpre = objeto.codpre || objeto.Codpre;
+
+      if (!codpre) {
+        console.warn('⚠️ codpre no disponible en el objeto');
+        return;
+      }
+
+      this.prefijoService.buscarPorCodpre(codpre).subscribe({
+        next: (respuesta) => {
+          const bandera = respuesta[0]?.bandera ?? 0;
+          this.bandera = bandera;
+          console.log('✅ Bandera actualizada:', this.bandera);
+        },
+        error: (err) => {
+          console.error('❌ Error al buscar bandera por codpre:', err);
+        }
+      });
     }
   }
+
 
   cargarGrupoProductos(): void {
 
@@ -416,11 +440,18 @@ export class UvIndividualComponent implements OnInit {
           );
         });
     });
+    this.formUV.get('categoria')?.valueChanges.subscribe(valor => {
+      if (valor && typeof valor === 'object') {
+        this.formUV.get('brick')?.setValue(valor.brick);
+      }
+    });
+
   }
 
   displayWithCategoria(categoria: GrupoProducto): string {
-    return categoria ? ` ${categoria.desBrick}` : '';
+    return categoria?.desBrick || '';
   }
+
 
   limpiarCategoria(): void {
     this.formUV.get('categoria')?.reset();
@@ -451,24 +482,33 @@ export class UvIndividualComponent implements OnInit {
     const codbar = this.formUV.get('gtinUv')?.value;
 
     if (!codbar) {
-      this.mensaje = '⚠️ No ingresó Unidad de Venta';
+      this.mostrarAlerta('⚠️ No ingresó Unidad de Venta', 'Error');
+
+      return;
+    }
+     if (!this.formUV.get('descripcion')?.value) {
+      this.mostrarAlerta('⚠️ No ingresó Descripcion', 'Error');
+
       return;
     }
     if (!this.formUV.get('marca')?.value) {
-      this.mensaje = '⚠️ No ingresó Marca';
+      this.mostrarAlerta('⚠️ No ingresó Marca', 'Error');
+
       return;
     }
     if (!this.formUV.get('contenido')?.value) {
-      this.mensaje = '⚠️ No ingresó Contenido';
+      this.mostrarAlerta('⚠️ No ingresó Contenido', 'Error');
+
       return;
     }
     if (!this.formUV.get('gcp')?.value) {
-      this.mensaje = '⚠️ No seleccionó Prefijo';
+      this.mostrarAlerta('⚠️ No seleccionó Prefijo', 'Error');
+
       return;
     }
     if (!this.formUV.get('categoria')?.value) {
-      this.mensaje = '⚠️ No seleccionó Categoría';
-      return;
+      this.mostrarAlerta('⚠️ No seleccionó Categoría', 'Error');
+            return;
     }
     debugger
     this.productoService.verificarCodbar(codbar).pipe(
@@ -542,7 +582,7 @@ export class UvIndividualComponent implements OnInit {
 
 
   generar() {
-
+    debugger
     const gcpId = this.formUV.get('gcp')?.value;
     if (!gcpId) {
       this.mostrarAlerta('No se selecciono Prefijo', 'Error');
@@ -676,7 +716,10 @@ export class UvIndividualComponent implements OnInit {
       console.log('🎯 GTIN generado:', codigoGenerado12I);
       this.formUV.get('gtinUv')?.setValue(codigoGenerado12I);
     }
-
+    if (gtinNacionalSeleccionado === 'gtin13' && this.bandera === 2) {
+      this.mostrarAlerta('No se puede generar este tipo de codigo', 'Error');
+      return;
+    }
 
     this.campoGtin = true;
     this.botonGenerarDeshabilitado = true;
@@ -709,18 +752,32 @@ export class UvIndividualComponent implements OnInit {
   }
 
   limpiarUl(): void {
-    this.formUL.patchValue({
-      tipoGtin: 'GTIN-14',
-      descripcionu: '',
-      factor: '',
-      tipoEmpaque: 'CAJA',
-      unidad: 'UNIDADES',
-      indicador: '',
-      gtinUl: ''
-    });
-    this.botonGenerarULDeshabilitado = false;
-    this.botonGrabarULDeshabilitado = true;
+  // Limpiar todos los campos de UL
+  this.formUL.patchValue({
+    tipoGtin: 'GTIN-14',
+    descripcionu: '',
+    factor: '',
+    tipoEmpaque: 'CAJA',
+    unidad: 'UNIDADES',
+    indicador: '',
+    gtinUl: ''
+  });
+
+  // Resetear botones
+  this.botonGenerarULDeshabilitado = false;
+  this.botonGrabarULDeshabilitado = true;
+
+  // Obtener GTIN del formulario UV
+  const gtin = this.formUV.get('gtinUv')?.value;
+
+  // Verificar si existe el GTIN antes de continuar
+  if (gtin) {
+    this.verificarExistenciaCodbar();
+  } else {
+    console.warn('⚠️ No se encontró GTIN UV al limpiar UL.');
   }
+}
+
 
   salir(): void {
     this.router.navigate(['/menuProductos/nuevoProducto']); // Redirecciona a /pages/clientes
@@ -906,6 +963,7 @@ export class UvIndividualComponent implements OnInit {
 
 
   cargarPais(): void {
+    debugger
     this.paisService.obtenerPaises().subscribe(data => {
       this.pais = data;
 
@@ -1093,7 +1151,7 @@ export class UvIndividualComponent implements OnInit {
       PGasto: false,
       CtaProdGasto: '',
       RegSanitario: '',
-      IdEmpresa: 1,
+      IdEmpresa: this.usuarioActual?.id_empresa ?? 1,
       Codbar: datos.gtinUv || ''
     };
 
@@ -1110,7 +1168,7 @@ export class UvIndividualComponent implements OnInit {
           IdTipoCodigoGs1: 1 || 0,
           IdGrupoProducto: categoriaId,
           Peso1: datos.Peso,
-          IdUsuario: 2, // o el id de usuario actual
+         IdUsuario: this.usuarioActual?.id_usuario?? 1,
           Facturar: '',
           Nombre: datos.descripcion || '',
           Gtin: datos.tipoGtin,
@@ -1377,7 +1435,8 @@ export class UvIndividualComponent implements OnInit {
     const codbarUL = this.formUL.get('gtinUl')?.value;
 
     if (!codbarUL) {
-      this.mensaje = '⚠️ No ingresó Unidad Logística';
+      this.mostrarAlerta('⚠️ No ingresó Unidad Logística', 'Error');
+
       return;
     }
 
@@ -1535,7 +1594,7 @@ export class UvIndividualComponent implements OnInit {
 
 
   private crearGtin14(msg: string): void {
-   const datosUV = this.formUV.getRawValue(); // incluye campos deshabilitados
+    const datosUV = this.formUV.getRawValue(); // incluye campos deshabilitados
     const datosUL = this.formUL.getRawValue();
     const indicador = this.formUL.get('indicador')?.value || '0';
     debugger
@@ -1701,7 +1760,7 @@ export class UvIndividualComponent implements OnInit {
       .subscribe({
         next: (response) => {
           const serie2 = this.formUL.get('serie2')?.value || ''; // Obtener la serie actual desde el form
-          this.secuencia = serie2 !== '' ? parseInt(serie2, 10) : response.data; 
+          this.secuencia = serie2 !== '' ? parseInt(serie2, 10) : response.data;
           const secuencia: number = response.data;
           console.log('Secuencia obtenida:', secuencia);
 
@@ -1841,7 +1900,7 @@ export class UvIndividualComponent implements OnInit {
       PGasto: false,
       CtaProdGasto: '',
       RegSanitario: '',
-      IdEmpresa: 1,
+      IdEmpresa: this.usuarioActual?.id_empresa ?? 1,
       Codbar: gtinForzado || ''
     };
 
@@ -1858,7 +1917,7 @@ export class UvIndividualComponent implements OnInit {
           IdTipoCodigoGs1: 1 || 0,
           IdGrupoProducto: categoriaId,
           Peso1: datos.Peso,
-          IdUsuario: 2, // o el id de usuario actual
+          IdUsuario: this.usuarioActual?.id_usuario?? 1,
           Facturar: '',
           Nombre: datos.descripcion || '',
           Gtin: datos.tipoGtin,
@@ -2069,59 +2128,86 @@ export class UvIndividualComponent implements OnInit {
     });
   }
 
-validarNumeroDecimal(event: KeyboardEvent): void {
-  const inputChar = event.key;
-  const input = (event.target as HTMLInputElement).value;
+  validarNumeroDecimal(event: KeyboardEvent): void {
+    const inputChar = event.key;
+    const input = (event.target as HTMLInputElement).value;
 
-  const esNumero = /^[0-9]$/.test(inputChar);
-  const esPunto = inputChar === '.';
+    const esNumero = /^[0-9]$/.test(inputChar);
+    const esPunto = inputChar === '.';
 
-  // Permitir números
-  if (esNumero) return;
+    // Permitir números
+    if (esNumero) return;
 
-  // Permitir solo un punto
-  if (esPunto && !input.includes('.')) return;
+    // Permitir solo un punto
+    if (esPunto && !input.includes('.')) return;
 
-  // Bloquear cualquier otro carácter o segundo punto
-  event.preventDefault();
-}
-
-convertirAMayusculas(controlName: string): void {
-  const control = this.formUV.get(controlName);
-  if (control) {
-    const valor = control.value || '';
-    control.setValue(valor.toUpperCase());
-  }
-}
-
-verificarExistenciaCodbar(): void {
-  const codbar = this.formUV.get('gtinUv')?.value;
-
-  if (!codbar) {
-    console.warn('⚠️ No hay código de barras en el formulario.');
-    return;
+    // Bloquear cualquier otro carácter o segundo punto
+    event.preventDefault();
   }
 
-  this.codigos14Service.contarPorCodbar(codbar).subscribe({
-    next: (conteo) => {
-      if (conteo > 0) {
-        const total = conteo + 1;
-        if (total >= 9) {
-          alert(`❌ Solo puede existir hasta 8 presentaciones del producto.`);
-          return;
-        } else {
-          // Suponiendo que tienes un campo llamado "indicador" en el form
-          this.formUV.get('indicador')?.setValue(total);
-        }
-      } else {
-        console.log(`✅ Código de barras ${codbar} no existe, puedes continuar.`);
-      }
-    },
-    error: (err) => {
-      console.error('❌ Error al verificar el código de barras:', err);
+  convertirAMayusculas(controlName: string): void {
+    const control = this.formUV.get(controlName);
+    if (control) {
+      const valor = control.value || '';
+      control.setValue(valor.toUpperCase());
     }
-  });
-}
+  }
+
+  verificarExistenciaCodbar(): void {
+    const codbar = this.formUV.get('gtinUv')?.value;
+
+    if (!codbar) {
+      console.warn('⚠️ No hay código de barras en el formulario.');
+      return;
+    }
+
+    this.codigos14Service.contarPorCodbar(codbar).subscribe({
+      next: (conteo) => {
+        if (conteo > 0) {
+          const total = conteo + 1;
+          if (total >= 9) {
+            alert(`❌ Solo puede existir hasta 8 presentaciones del producto.`);
+            return;
+          } else {
+            // Suponiendo que tienes un campo llamado "indicador" en el form
+            this.formUL.get('indicador')?.setValue(total);
+          }
+        } else {
+          console.log(`✅ Código de barras ${codbar} no existe, puedes continuar.`);
+        }
+      },
+      error: (err) => {
+        console.error('❌ Error al verificar el código de barras:', err);
+      }
+    });
+  }
+
+  cargarClientePorId(id: number): void {
+    debugger
+    console.log('🔍 ID recibido en cargarClientePorId:', id); // 👈 AÑADE ESTO
+
+    this.clienteService.getClienteById(id).subscribe({
+      next: (cliente) => {
+        this.id_grupo_producto = cliente.idGrupoProducto;
+
+        this.grupoProductoService.obtenerGrupoPorId(this.id_grupo_producto).subscribe(grupo => {
+          if (!this.gruposProducto || this.gruposProducto.length === 0) {
+            this.grupoProductoService.obtenerGrupos().subscribe(data => {
+              this.gruposProducto = data;
+              this.seleccionarCategoria(grupo);
+            });
+          } else {
+            this.seleccionarCategoria(grupo);
+          }
+
+          console.log('✅ Grupo producto obtenido:', grupo);
+        });
+      },
+      error: (err) => {
+        console.error('❌ Error al obtener cliente:', err);
+      }
+    });
+  }
 
 
 

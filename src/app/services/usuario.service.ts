@@ -6,7 +6,7 @@ import { UsuariosResponse } from '../interfaces/responses/usuario-response';
 import { UsuariosEditRequest, UsuariosRequest } from '../interfaces/requests/usuario-request';
 import { LoginUsuarioResponse } from '../interfaces/responses/usuario-log-response';
 import { ApiResponse } from './producto.service';
-
+import { RecuperarClaveRequest, UpdateClaveRequest } from '../interfaces/requests/recuperar-clave-request';
 
 @Injectable({
   providedIn: 'root'
@@ -80,8 +80,8 @@ export class UsuarioService {
     return this.http.get<ApiResponse<UsuariosResponse>>(`${this.apiUrl}/${idUsuario}`);
   }
 
-  getUsuarioByIdPersona(idUsuario: number): Observable<ApiResponse<UsuariosResponse>> {
-    return this.http.get<ApiResponse<UsuariosResponse>>(`${this.apiUrl}/persona/${idUsuario}`);
+  getUsuarioByIdPersona(idPersona: number, idEmpresa: number): Observable<ApiResponse<UsuariosResponse>> {
+    return this.http.get<ApiResponse<UsuariosResponse>>(`${this.apiUrl}/persona/${idPersona}/empresa/${idEmpresa}`);
   }
 
   buscarEntidadPorRuc(idUsuario: string): Observable<ApiResponse<any>> {
@@ -91,4 +91,13 @@ export class UsuarioService {
   buscarEntidadPorNombre(idUsuario: string): Observable<ApiResponse<any>> {
     return this.http.get<ApiResponse<any>>(`${this.apiUrl}/${idUsuario}`);
   }
+
+  enviarCorreoRecuperacion(data: RecuperarClaveRequest): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(`${this.apiUrl}/recuperar-clave`, data);
+  }
+
+  actualizarClave(data: UpdateClaveRequest): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(`${this.apiUrl}/cambiar-clave`, data);
+  }
+
 }

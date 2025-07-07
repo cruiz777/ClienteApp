@@ -1,7 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Router } from '@angular/router';
 import { EmpresaResponse } from 'src/app/interfaces/responses/empresa-response';
 import { EmpresaService } from 'src/app/services/empresa.service';
 import { LogoService } from 'src/app/services/logo.service';
+import { UsuarioService } from 'src/app/services/usuario.service';
+import { LoginUsuarioResponse } from 'src/app/interfaces/responses/usuario-log-response';
 
 @Component({
   selector: 'app-inicio',
@@ -18,36 +21,44 @@ export class InicioComponent implements OnInit, OnDestroy {
   ];
   constructor(
     private logoService: LogoService,
-    private empresaService: EmpresaService
-  ) {}
+    private empresaService: EmpresaService,
+    private usuarioService: UsuarioService,
+    private router: Router
+  ) { }
+
   currentIndex = 0;
   intervalId: any;
   logoUrl: string = '';
+  usuario: LoginUsuarioResponse | null = null;
+  showPanel = false;
+
   ngOnInit() {
     this.startCarousel();
-     // Cargar logo inicial desde la base
-  this.empresaService.getEmpresas().subscribe({
-    next: (empresas: EmpresaResponse[]) => {
-      if (empresas.length > 0) {
-        const logoFileName = empresas[0].empresaLogo;
-        if (logoFileName) {
-          const url = this.logoService.getLogoUrl(logoFileName);
-          this.logoUrl = url;
-          this.logoService.updateLogo(logoFileName); // Notifica a los suscriptores
-        }
-      }
-    },
-    error: (err) => {
-      console.error('Error al cargar la empresa para el logo:', err);
-    }
-  });
+    this.usuario = this.usuarioService.getUsuarioActual();
 
-  // Suscribirse a cambios en el logo (en tiempo real)
-  this.logoService.logoUrl$.subscribe((url: string | null) => {
-    if (url) {
-      this.logoUrl = url;
-    }
-  });  
+    // Cargar logo inicial desde la base
+    this.empresaService.getEmpresas().subscribe({
+      next: (empresas: EmpresaResponse[]) => {
+        if (empresas.length > 0) {
+          const logoFileName = empresas[0].empresaLogo;
+          if (logoFileName) {
+            const url = this.logoService.getLogoUrl(logoFileName);
+            this.logoUrl = url;
+            this.logoService.updateLogo(logoFileName); // Notifica a los suscriptores
+          }
+        }
+      },
+      error: (err) => {
+        console.error('Error al cargar la empresa para el logo:', err);
+      }
+    });
+
+    // Suscribirse a cambios en el logo (en tiempo real)
+    this.logoService.logoUrl$.subscribe((url: string | null) => {
+      if (url) {
+        this.logoUrl = url;
+      }
+    });
   }
 
   startCarousel() {
@@ -61,4 +72,14 @@ export class InicioComponent implements OnInit, OnDestroy {
       clearInterval(this.intervalId);
     }
   }
+
+  logout(): void {
+    localStorage.removeItem('currentUser'); // o como guardes la sesión
+    this.router.navigate(['/login'], { replaceUrl: true });
+  }
+
+  togglePanel(): void {
+    this.showPanel = !this.showPanel;
+  }
+
 }
