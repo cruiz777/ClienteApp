@@ -22,6 +22,8 @@ import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, MatNativeDateModule } f
 import { MomentDateAdapter } from '@angular/material-moment-adapter';
 import { LOCALE_ID } from '@angular/core';
 import { MatRadioModule } from '@angular/material/radio';
+import jsPDF from 'jspdf';
+import { de } from 'intl-tel-input/i18n';
 export const MY_DATE_FORMATS = {
   parse: {
     dateInput: 'DD/MM/YYYY'
@@ -78,7 +80,7 @@ export class NuevoProductoComponent implements OnInit {
   dobleClickDelay = 480;
   getRowNodeId = (data: any) => data.codbar; // o data.id si prefieres
   prefijos: any[] = [];
-  
+
   clienteE!: ClienteIndividual;
 
 
@@ -144,44 +146,50 @@ export class NuevoProductoComponent implements OnInit {
 
   ngOnInit(): void {
 
-   this.formReporte = this.fb.group({
-  reporte: ['gtinVenta'],
-  certificado: [''],
-  certificado1: [''],
-  carta: [''],
-  gcp: [null],
-  codigoCliente: [''],
-  operadorFecha: ['igual'],
-  estado: ['1'],
-  fecha: [new Date()],
-  desde: [{ value: new Date(), disabled: true }],
-  hasta: [{ value: new Date(), disabled: true }],
-});
+    this.formReporte = this.fb.group({
+      reporte: ['gtinVenta'],
+      certificado: [''],
+      certificado1: [''],
+      carta: [''],
+      gcp: [null],
+      codigoCliente: [''],
+      operadorFecha: ['igual'],
+      estado: ['1'],
+      fecha: [new Date()],
+      desde: [{ value: new Date(), disabled: true }],
+      hasta: [{ value: new Date(), disabled: true }],
+    });
 
-// Suscripción al cambio de operadorFecha
-this.formReporte.get('operadorFecha')?.valueChanges.subscribe(valor => {
-  const fechaCtrl = this.formReporte.get('fecha');
-  const desdeCtrl = this.formReporte.get('desde');
-  const hastaCtrl = this.formReporte.get('hasta');
+    // Suscripción al cambio de operadorFecha
+    this.formReporte.get('operadorFecha')?.valueChanges.subscribe(valor => {
+      const fechaCtrl = this.formReporte.get('fecha');
+      const desdeCtrl = this.formReporte.get('desde');
+      const hastaCtrl = this.formReporte.get('hasta');
 
-  if (valor === 'entre') {
-    // Desactivar campo "fecha"
-    fechaCtrl?.disable();
+      if (valor === 'entre') {
+        // Desactivar campo "fecha"
+        fechaCtrl?.disable();
 
-    // Activar campos "desde" y "hasta"
-    desdeCtrl?.enable();
-    hastaCtrl?.enable();
-  } else {
-    // Activar campo "fecha"
-    fechaCtrl?.enable();
+        // Activar campos "desde" y "hasta"
+        desdeCtrl?.enable();
+        hastaCtrl?.enable();
+      } else {
+        // Activar campo "fecha"
+        fechaCtrl?.enable();
 
-    // Desactivar campos "desde" y "hasta"
-    desdeCtrl?.disable();
-    hastaCtrl?.disable();
-  }
-});
- 
+        // Desactivar campos "desde" y "hasta"
+        desdeCtrl?.disable();
+        hastaCtrl?.disable();
+      }
+    });
+
     this.cargarCliente();
+    this.clienteSeleccionadoService.clienteSeleccionado$.subscribe(cliente => {
+      this.clienteSeleccionado = cliente;
+      if (cliente?.clientes_codigo) {
+        this.cargarProductos(cliente.clientes_codigo);
+      }
+    });
 
   }
 
@@ -372,25 +380,96 @@ this.formReporte.get('operadorFecha')?.valueChanges.subscribe(valor => {
     });
   }
   onOperadorFechaChange(): void {
-  const operador = this.formReporte.get('operadorFecha')?.value;
-  const fecha = this.formReporte.get('fecha');
-  const desde = this.formReporte.get('desde');
-  const hasta = this.formReporte.get('hasta');
+    const operador = this.formReporte.get('operadorFecha')?.value;
+    const fecha = this.formReporte.get('fecha');
+    const desde = this.formReporte.get('desde');
+    const hasta = this.formReporte.get('hasta');
 
-  if (operador === 'entre') {
-    fecha?.disable();
-    desde?.enable();
-    hasta?.enable();
-  } else {
-    fecha?.enable();
-    desde?.disable();
-    hasta?.disable();
+    if (operador === 'entre') {
+      fecha?.disable();
+      desde?.enable();
+      hasta?.enable();
+    } else {
+      fecha?.enable();
+      desde?.disable();
+      hasta?.disable();
+    }
   }
-}
 
-mostrarPrefijo(): boolean {
-  const tipo = this.formReporte.get('reporte')?.value;
-  return ['gtinVenta', 'logistica', 'carta'].includes(tipo);
-}
+  mostrarPrefijo(): boolean {
+    const tipo = this.formReporte.get('reporte')?.value;
+    return ['gtinVenta', 'logistica', 'carta'].includes(tipo);
+  }
+
+  generarPdfPorProducto(): void {
+    const tipo = this.formReporte.get('certificado')?.value;
+    if (tipo === 'producto') {
+      const doc = new jsPDF();
+
+      doc.setFontSize(16);
+      doc.text('Certificado por Producto', 20, 20);
+
+      // Aquí puedes agregar más detalles del producto:
+      doc.setFontSize(12);
+      doc.text('Empresa: GAPSystem', 20, 40);
+      doc.text('Producto: Ejemplo 12345', 20, 50);
+      // ...otros campos
+
+      doc.save('certificado_producto.pdf');
+    } else {
+      this._snackBar.open('⚠️ Seleccione "Por Producto" para generar este PDF.', 'Cerrar', {
+        duration: 3000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top',
+        panelClass: ['snackbar-warning']
+      });
+    }
+  }
+
+  imprimir(): void {
+    const tipoReporte = this.formReporte.get('reporte')?.value;
+    const tipoCertificado = this.formReporte.get('certificado')?.value;
+    debugger
+    // Prioriza certificados si hay uno seleccionado
+    if (tipoReporte) {
+      switch (tipoReporte) {
+        case 'gtinVenta':
+          this.generarPdfGtinVenta();
+          break;
+        case 'logistica':
+          this.generarPdfLogistica();
+          break;
+        case 'general':
+          this.generarPdfGeneral();
+          break;
+        case 'completo':
+          this.generarPdfCompleto();
+          break;
+        case 'producto':
+          this.generarPdfPorProducto();
+          break;
+        case 'membresia':
+          this.generarPdfMembresia();
+          break;
+          case 'carta':
+          this.generarPdfCarta();
+          break;
+
+        default:
+          this.mostrarAlerta('Reporte no válido.', 'Advertencia');
+          break;
+      }
+    } else {
+      this.mostrarAlerta('Debe seleccionar un reporte o certificado para imprimir.', 'Advertencia');
+    }
+  }
+
+  generarPdfMembresia(): void { /* ... */ }
+  generarPdfCarta(): void { /* ... */ }
+  generarPdfGtinVenta(): void { /* ... */ }
+  generarPdfLogistica(): void { /* ... */ }
+  generarPdfGeneral(): void { /* ... */ }
+  generarPdfCompleto(): void { /* ... */ }
+
 
 }
