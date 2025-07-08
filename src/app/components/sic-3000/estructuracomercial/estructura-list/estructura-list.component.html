@@ -1,1 +1,80 @@
-<p>estructura-list works!</p>
+<div class="contenedor-principal">
+  <h2 class="titulo">Estructura Comercial</h2>
+
+  <div class="filtros">
+    <label>Tipo de Producto:</label>
+    <label><input type="checkbox" /> Activos</label>
+    <label><input type="checkbox" /> Inactivo</label>
+  </div>
+
+  <div class="estructura-contenido">
+    <!-- Árbol de navegación -->
+    <div class="panel-arbol">
+      <ul class="arbol-navegacion">
+        <li *ngFor="let nivel1 of modulos">
+          <div (click)="toggleExpand(nivel1)">
+            {{ nivel1.expandido ? '📂' : '📁' }} {{ nivel1.nombre }}
+          </div>
+
+          <ul *ngIf="nivel1.expandido">
+            <li *ngFor="let nivel2 of nivel1.hijos">
+              <div (click)="toggleExpand(nivel2)">
+                {{ nivel2.expandido ? '📂' : '📁' }} {{ nivel2.nombre }}
+              </div>
+
+              <ul *ngIf="nivel2.expandido">
+                <li *ngFor="let nivel3 of nivel2.hijos">
+                  <div (click)="toggleExpand(nivel3)">
+                    {{ nivel3.expandido ? '📂' : '📁' }} {{ nivel3.nombre }}
+                  </div>
+
+                  <ul *ngIf="nivel3.expandido">
+                    <li *ngFor="let hoja of nivel3.hijos">
+                      <div (click)="toggleExpand(hoja)" [class.hoja]="true"
+                        [class.activo]="opcionSeleccionada?.nombre === hoja.nombre">
+                        📄 {{ hoja.nombre }}
+                      </div>
+                    </li>
+                  </ul>
+                </li>
+              </ul>
+            </li>
+          </ul>
+        </li>
+      </ul>
+
+    </div>
+
+    <!-- Tabla de productos filtrados -->
+    <div class="panel-tabla">
+      <table class="tabla-estilo">
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Cod. Barras</th>
+            <th>Descripción</th>
+            <th>Proveedor</th>
+            <th>Costo Prov.</th>
+            <th>PVP+IVA</th>
+            <th>Abreviación</th>
+            <th>Referencia</th>
+            <th>Exist. Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let producto of productosFiltrados">
+            <td>{{ producto.codigo }}</td>
+            <td>{{ producto.codigoBarras }}</td>
+            <td>{{ producto.descripcion }}</td>
+            <td>{{ producto.proveedor }}</td>
+            <td>{{ producto.costo }}</td>
+            <td>{{ producto.pvp }}</td>
+            <td>{{ producto.abreviacion }}</td>
+            <td>{{ producto.referencia }}</td>
+            <td [class.sin-stock]="producto.existencia == 0">{{ producto.existencia }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
