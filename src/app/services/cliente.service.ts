@@ -108,13 +108,14 @@ export interface ClienteUpdateRequest {
 })
 export class ClienteService {
   private apiBaseUrl = environment.clientsUrl;
+  private apiValid = environment.validationUrl; 
   private apiUrl = `${this.apiBaseUrl}/resumen/`;
-  private apiUrlA = `${this.apiBaseUrl}/Clientes/`;
+  private apiUrlA = `${this.apiValid}/Clientes/`;
 
   constructor(private http: HttpClient) { }
 
   getClientes(): Observable<Cliente[]> {
-    debugger
+
     return this.http.get<ClienteResponse>(this.apiUrl).pipe(
       map(response => response.data)
     );
@@ -167,6 +168,12 @@ export class ClienteService {
   getClientesSummary(filtro: string): Observable<ApiResponse<ClienteSummary[]>> {
     return this.http.get<ApiResponse<ClienteSummary[]>>(
       `${this.apiUrlA}buscar?filtro=${encodeURIComponent(filtro)}`
+    );
+  }
+  buscarPorNomcli(nomcli: string): Observable<ClienteSummary[]> {
+    const url = `${this.apiBaseUrl}/Clientes/buscar-por-nomcli?nomcli=${encodeURIComponent(nomcli)}`;
+    return this.http.get<ApiResponse<ClienteSummary[]>>(url).pipe(
+      map(response => response.data)
     );
   }
 

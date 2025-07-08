@@ -13,6 +13,7 @@ import { BorrarPrefijoComponent } from './prefijos/borrar-prefijo/borrar-prefijo
 import { TraspasoGtinComponent } from './prefijos/traspaso-gtin/traspaso-gtin.component';
 import { TipoPrefijoComponent } from './prefijos/tipo-prefijo/tipo-prefijo.component';
 import { ValidacionSriListComponent } from '../pages/validacion/validador-sri/validador-sri-list/validador-sri-list.component';
+import { LicenseValidatorComponent } from '../pages/validacion/validador-licenses/validador-licenses.component';
 
 
 
@@ -58,6 +59,22 @@ const routes: Routes = [
           // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
         ]
       },
+
+      {
+        path: 'validacion-licenses',
+        children: [
+          { path: '', component: LicenseValidatorComponent },
+          // { path: 'crear', component: TipoLocalizacionFormComponent },
+          // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
+        ]
+      },
+
+      // {path:'usuarios',component:UsuariosComponent},
+      // {path:'productos',component:ProductosComponent},
+      // {path:'vender',component:VenderComponent},
+      // {path:'historialventas',component:HistorialventaComponent},
+      // {path:'reportes',component:ReportesComponent}
+
     ]
   }
   ];

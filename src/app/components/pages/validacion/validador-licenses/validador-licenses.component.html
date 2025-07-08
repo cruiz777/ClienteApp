@@ -1,0 +1,270 @@
+<div class="container">
+    <!-- Header Mejorado -->
+    <div class="header">
+        <div class="header-top">
+            <div class="title-section">
+                <h1 class="title">Validador Licencia Verified</h1>
+                <div class="registro-display">
+                    <span class="registro-label">No. Registro:</span>
+                    <strong class="registro-value">{{ searchParams.registro }}</strong>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" (click)="nuevaBusqueda()">Nueva Búsqueda</button>
+                <button class="btn btn-primary" (click)="exportarJSON()" [disabled]="licencias.length === 0">JSON</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Form - Layout mejorado -->
+    <div class="form-container">
+        <!-- Sección de búsqueda general -->
+        <div class="search-section">
+            <input type="text" 
+                   placeholder="Buscar por nombre..." 
+                   class="search-input" 
+                   #searchInput
+                   (keyup.enter)="buscarGeneral(searchInput.value)" />
+            <button class="btn btn-sm btn-primary" (click)="buscarGeneral(searchInput.value)">🔍</button>
+        </div>
+
+        <!-- Filtros en dos columnas -->
+        <div class="form-row-simplified">
+            <!-- Columna izquierda -->
+            <div class="form-column-left">
+                <div class="form-group-inline">
+                    <label for="ruc">RUC (F1):</label>
+                    <input type="text" 
+                           id="ruc" 
+                           [(ngModel)]="searchParams.ruc" 
+                           class="form-control" 
+                           placeholder="Ingrese RUC"
+                           (keyup.enter)="buscar()">
+                </div>
+                
+                <div class="form-group-inline">
+                    <label for="tipo">Tipo (F1):</label>
+                    <input type="text" 
+                           id="tipo" 
+                           [(ngModel)]="searchParams.tipo" 
+                           class="form-control" 
+                           placeholder="Ingrese tipo"
+                           (keyup.enter)="buscar()">
+                </div>
+                
+                <div class="form-group-inline">
+                    <label for="prefijo">Prefijo:</label>
+                    <input type="text" 
+                           id="prefijo" 
+                           [(ngModel)]="searchParams.prefijo" 
+                           class="form-control" 
+                           placeholder="Ingrese prefijo"
+                           (keyup.enter)="buscar()">
+                </div>
+            </div>
+            
+            <!-- Columna derecha -->
+            <div class="form-column-right">
+                <!-- Sección de fechas actualizada -->
+                <div class="form-group-inline">
+                    <label>Filtros de Fecha:</label>
+                    <div class="date-filter-section">
+                        <!-- Fecha específica -->
+                        <div class="date-option">
+                            <label for="fechaIgual">Fecha específica:</label>
+                            <input type="date" 
+                                   id="fechaIgual" 
+                                   [(ngModel)]="searchParams.fechaIgual" 
+                                   class="form-control date-input"
+                                   (change)="buscar()">
+                        </div>
+                        
+                        <!-- Rango de fechas -->
+                        <div class="date-range">
+                            <div class="date-range-item">
+                                <label for="fechaDesde">Desde:</label>
+                                <input type="date" 
+                                       id="fechaDesde" 
+                                       [(ngModel)]="searchParams.fechaDesde" 
+                                       class="form-control date-input"
+                                       (change)="buscar()">
+                            </div>
+                            <div class="date-range-item">
+                                <label for="fechaHasta">Hasta:</label>
+                                <input type="date" 
+                                       id="fechaHasta" 
+                                       [(ngModel)]="searchParams.fechaHasta" 
+                                       class="form-control date-input"
+                                       (change)="buscar()">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group-inline">
+                    <label for="prefijoEstado">Prefijo Estado:</label>
+                    <select id="prefijoEstado" 
+                            [(ngModel)]="searchParams.prefijoEstado" 
+                            class="form-control"
+                            (change)="buscar()">
+                        <option value="">Todos</option>
+                        <option value="active">Activo</option>
+                        <option value="inactive">Inactivo</option>
+                    </select>
+                </div>
+                
+                <div class="form-group-inline">
+                    <label for="empresaEstado">Empresa Estado:</label>
+                    <select id="empresaEstado" 
+                            [(ngModel)]="searchParams.empresaEstado" 
+                            class="form-control"
+                            (change)="buscar()">
+                        <option value="">Todos</option>
+                        <option value="active">Activo</option>
+                        <option value="inactive">Inactivo</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Fila de botones -->
+        <div class="form-actions-row">
+            <button class="btn btn-primary" 
+                    (click)="buscar()" 
+                    [disabled]="isLoading">
+                {{ isLoading ? 'Buscando...' : 'Buscar' }}
+            </button>
+            <button class="btn btn-secondary" 
+                    (click)="limpiarForm()" 
+                    [disabled]="isLoading">
+                Limpiar
+            </button>
+        </div>
+    </div>
+
+    <!-- Error Message -->
+    <div class="error-message" *ngIf="errorMessage">
+        <div class="alert alert-danger">
+            <strong>Error:</strong> {{ errorMessage }}
+            <button class="btn btn-sm btn-secondary" (click)="errorMessage = ''">×</button>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading-spinner" *ngIf="isLoading">
+        <div class="spinner"></div>
+        <p>Cargando resultados...</p>
+    </div>
+
+    <!-- Results Table -->
+    <div class="table-container" *ngIf="hasResults">
+        <!-- Información de resultados actualizada -->
+        <div class="results-info">
+            <p>Mostrando {{ startItem }} - {{ endItem }} de {{ totalItems }} resultados 
+               (Página {{ currentPage }} de {{ totalPages }})</p>
+        </div>
+        
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th>License Type</th>
+                    <th>License Status</th>
+                    <th>License Name</th>
+                    <th>License GLN</th>
+                    <th>Address</th>
+                    <th>Address Suburb</th>
+                    <th>Address Locality</th>
+                    <th>Address Region</th>
+                    <th>Telephone</th>
+                    <th>Email</th>
+                    <th>Website</th>                    
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let licencia of licencias; let i = index">
+                    <td>{{ licencia.licenseType }}</td>
+                    <td>
+                        <span [class]="'status-' + licencia.licenseStatus.toLowerCase()">
+                            {{ licencia.licenseStatus }}
+                        </span>
+                    </td>
+                    <td>{{ licencia.licenseName }}</td>
+                    <td>{{ licencia.licenseGLN }}</td>
+                    <td>{{ licencia.address }}</td>
+                    <td>{{ licencia.addressSuburb }}</td>
+                    <td>{{ licencia.addressLocality }}</td>
+                    <td>{{ licencia.addressRegion }}</td>
+                    <td>{{ licencia.telephone }}</td>
+                    <td>
+                        <a *ngIf="licencia.email !== 'N/A'" 
+                           [href]="'mailto:' + licencia.email" 
+                           target="_blank">
+                            {{ licencia.email }}
+                        </a>
+                        <span *ngIf="licencia.email === 'N/A'">N/A</span>
+                    </td>
+                    <td>
+                        <a *ngIf="licencia.website !== 'N/A'" 
+                           [href]="getWebsiteUrl(licencia.website)" 
+                           target="_blank" 
+                           rel="noopener noreferrer">
+                            {{ licencia.website }}
+                        </a>
+                        <span *ngIf="licencia.website === 'N/A'">N/A</span>
+                    </td>                
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- No Results Message - Usando getter actualizado -->
+    <div class="no-results" *ngIf="noResults">
+        <div class="alert alert-info">
+            <h4>No se encontraron resultados</h4>
+            <p>No se encontraron licencias que coincidan con los criterios de búsqueda especificados.</p>
+            <p>Sugerencias:</p>
+            <ul>
+                <li>Verifique que los datos ingresados sean correctos</li>
+                <li>Intente con criterios de búsqueda menos específicos</li>
+                <li>Revise los filtros de estado y fechas</li>
+                <li>Pruebe usar un rango de fechas más amplio</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Angular Material Pagination -->
+    <div class="pagination-container" *ngIf="hasResults">
+        <mat-paginator
+            [length]="totalItems"
+            [pageSize]="pageSize"
+            [pageSizeOptions]="[5, 10, 20, 50, 100]"
+            [pageIndex]="currentPage - 1"
+            (page)="onPageChange($event)"
+            [showFirstLastButtons]="true"
+            [disabled]="isLoading"
+            aria-label="Seleccionar página">
+        </mat-paginator>
+    </div>
+
+    <!-- Initial State Message -->
+    <div class="initial-state" *ngIf="!isLoading && !hasSearched">
+        <div class="alert alert-info">
+            <h4>Validador de Licencias</h4>
+            <p>Utilice los filtros anteriores para buscar licencias en el sistema.</p>
+            <div class="instructions">
+                <h5>Opciones de búsqueda:</h5>
+                <ul>
+                    <li><strong>Búsqueda rápida:</strong> Use el campo de búsqueda general por nombre</li>
+                    <li><strong>Filtros específicos:</strong> RUC, prefijo, estados</li>
+                    <li><strong>Filtros de fecha:</strong> 
+                        <ul>
+                            <li>Fecha específica: busca registros de una fecha exacta</li>
+                            <li>Rango de fechas: busca registros entre dos fechas</li>
+                        </ul>
+                    </li>
+                    <li><strong>Estados:</strong> Filtre por estado del prefijo o empresa (Activo/Inactivo)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

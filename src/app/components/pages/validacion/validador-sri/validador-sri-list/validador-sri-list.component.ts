@@ -10,6 +10,8 @@ import { EmpresaService } from 'src/app/services/empresa.service';
 import { ExportOptions } from 'src/app/interfaces/export-options';
 import { ExportService } from 'src/app/services/export.service';
 import * as moment from 'moment';
+import { ValidacionService } from 'src/app/services/validacion.service';
+import { UpdateClienteRequest } from 'src/app/interfaces/requests/update-cliente-request';
 
 type ClienteValidacionExtendido = ClienteIndividual & {
   ciudad: string;
@@ -45,7 +47,8 @@ export class ValidacionSriListComponent implements OnInit {
     private dialog: MatDialog,
     private logoService: LogoService,
     private empresaService: EmpresaService,
-    private exportService: ExportService
+    private exportService: ExportService,
+    private validacionService: ValidacionService
   ) {}
 
   ngOnInit(): void {
@@ -258,17 +261,30 @@ export class ValidacionSriListComponent implements OnInit {
     let actualizados = 0;
 
     const peticiones = clientesActualizar.map(cliente => {
-      const request = {
-        razonSocial: cliente.validacionSRI?.razonSocial,
-        representante: cliente.validacionSRI?.representante,
+        console.log('=== CLIENTE ===', cliente.clientes_codigo);
+        console.log('fechaInicioActividad:', cliente.validacionSRI?.fechaInicioActividad);
+        console.log('fechaCeseActividad:', cliente.validacionSRI?.fechaCeseActividad);
+        console.log('estadoContribuyente:', cliente.validacionSRI?.estadoContribuyente);
+        console.log('===============');
+
+        // PROBAR LAS FUNCIONES DIRECTAMENTE
+      const fecnacProcesada = this.prepararFechaParaBackend(cliente.validacionSRI?.fechaInicioActividad);
+      const fechaCeseProcesada = this.prepararFechaHoraParaBackend(cliente.validacionSRI?.fechaCeseActividad);
+      
+      console.log('RESULTADO fecnacProcesada:', fecnacProcesada);
+      console.log('RESULTADO fechaCeseProcesada:', fechaCeseProcesada);
+      console.log('===============');
+      const request: UpdateClienteRequest = {
+        razonSocial: cliente.validacionSRI?.razonSocial || '',
+        nomCli: cliente.validacionSRI?.razonSocial || '',
+        representante: cliente.validacionSRI?.representante || '',
         idEstadoEmpresa: (() => {
           const estado = cliente.validacionSRI?.estadoContribuyente?.toUpperCase();
           if (estado === 'ACTIVO') return 1;
           if (estado === 'SUSPENDIDO' || estado === 'PASIVO') return 2;
           return undefined;
         })(),
-
-        fecCeseAct: this.limpiarCampoFecha(cliente.validacionSRI?.fechaCeseActividad),
+        fechaCeseAct: this.prepararFechaHoraParaBackend(cliente.validacionSRI?.fechaCeseActividad),
         motivoCeseAct: (() => {
           const estado = cliente.validacionSRI?.estadoContribuyente?.toUpperCase();
           const motivo = cliente.validacionSRI?.motivoCese?.toUpperCase();
@@ -277,24 +293,28 @@ export class ValidacionSriListComponent implements OnInit {
           }
           return '';
         })(),
-
-
-        fecnac: cliente.validacionSRI?.fechaInicioActividad || undefined
+        fecnac: this.prepararFechaParaBackend(cliente.validacionSRI?.fechaInicioActividad)
       };
 
-      return this.clienteService.actualizarCliente(cliente.clientes_codigo, request).toPromise().then(() => {
-        actualizados++;
-      });
+      // Log para debug (puedes removerlo después)
+      console.log('Request preparado para cliente', cliente.clientes_codigo, request);
+
+      return this.validacionService.updateCliente(cliente.clientes_codigo, request)
+        .toPromise()
+        .then(() => {
+          actualizados++;
+        });
     });
 
     Promise.all(peticiones)
       .then(() => {
         dialogRef.close();
         this.mostrarExito('Actualización completa', `${actualizados} clientes actualizados correctamente.`);
-        this.cargarDatos(); // recargar todo
+        this.cargarDatos();
       })
-      .catch(() => {
+      .catch((error) => {
         dialogRef.close();
+        console.error('Error en actualización masiva:', error);
         this.mostrarError('Error', 'Ocurrió un error durante la actualización masiva.');
       });
   }
@@ -314,6 +334,7 @@ export class ValidacionSriListComponent implements OnInit {
         title,
         message,
         type: 'info',
+        isLoading: true,
         confirmText: 'Espere...',
         showCancel: false
       }
@@ -344,10 +365,50 @@ export class ValidacionSriListComponent implements OnInit {
     });
   }
 
-  private limpiarCampoFecha(fecha: string | null | undefined): string | null {
-    if (!fecha || fecha.trim() === '' || fecha.startsWith('0001')) return null;
-    return fecha;
+  private prepararFechaParaBackend(fecha: string | null | undefined): string | null {
+    // Si es null, undefined, vacío, o fecha inválida, retornar null
+    if (!fecha || 
+        fecha.trim() === '' || 
+        fecha.startsWith('0001') ||
+        fecha === '0001-01-01' ||
+        fecha === '1900-01-01') {
+      return null;
+    }
+    
+    const fechaTrimmed = fecha.trim();
+    
+    // Validar que sea una fecha válida
+    const fechaObj = new Date(fechaTrimmed);
+    if (isNaN(fechaObj.getTime())) {
+      return null;
+    }
+    
+    // Para fecnac: retornar solo la fecha (yyyy-MM-dd)
+    return fechaObj.toISOString().split('T')[0];
   }
+
+  private prepararFechaHoraParaBackend(fecha: string | null | undefined): string | null {
+    // Si es null, undefined, vacío, o fecha inválida, retornar null
+    if (!fecha || 
+        fecha.trim() === '' || 
+        fecha.startsWith('0001') ||
+        fecha === '0001-01-01' ||
+        fecha === '1900-01-01') {
+      return null;
+    }
+    
+    const fechaTrimmed = fecha.trim();
+    
+    // Validar que sea una fecha válida
+    const fechaObj = new Date(fechaTrimmed);
+    if (isNaN(fechaObj.getTime())) {
+      return null;
+    }
+    
+    // Para fechaCeseAct: retornar fecha y hora ISO completa
+    return fechaObj.toISOString();
+  }
+  
 
   private limpiarCampoTexto(texto: string | null | undefined): string {
     return (!texto || texto.trim() === '') ? '' : texto.trim();

@@ -7,91 +7,99 @@
 <!-- TAB LISTADO -->
 <ng-container *ngIf="activeTab === 'Listado'">
   <div class="contenedor">
-  <h2 class="titulo">Total de registros: <span class="contador">{{ registros.length }}</span></h2>
-
-  <div class="filtros">
-    <mat-form-field appearance="outline">
+  <!-- Header con título y nombre del cliente -->
+    <div class="header-listado">
+      <h2 class="titulo">Total de registros: <span class="contador">{{ totalItems }}</span></h2>
+      <div class="cliente-info" *ngIf="clienteSeleccionadoObj">
+        <span class="cliente-label">Empresa:</span>
+        <span class="cliente-nombre">{{ clienteSeleccionadoObj.nomcli }}</span>
+      </div>
+    </div>
+  <div class="filtros grid-3-cols">
+    <!-- <mat-form-field appearance="outline">
       <mat-label>Mostrar</mat-label>
       <input matInput [(ngModel)]="filtroTexto" (input)="filtrar()">
-    </mat-form-field>
+    </mat-form-field> -->
 
     <mat-form-field appearance="outline">
+      <mat-label>Buscar en registros actuales</mat-label>
+      <input matInput [(ngModel)]="filtroBusqueda">
+    </mat-form-field>
+    
+    <mat-form-field appearance="outline">
       <mat-label>Prefijo</mat-label>
-      <mat-select [(value)]="filtroPrefijo" (selectionChange)="filtrar()">
-        <mat-option *ngFor="let prefijo of prefijosDisponibles" [value]="prefijo">{{ prefijo }}</mat-option>
+      <mat-select [(ngModel)]="filtroPrefijo">
+        <mat-option *ngFor="let p of prefijosDisponibles" [value]="p.id">
+          {{ p.codpre }}
+        </mat-option>
+        <mat-option [value]="null">Todos</mat-option>
       </mat-select>
     </mat-form-field>
 
-    <mat-form-field appearance="outline">
-      <mat-label>Buscar</mat-label>
-      <input matInput [(ngModel)]="filtroBusqueda" (input)="filtrar()">
+    <!-- Filtro por ID Empaque -->
+    <mat-form-field appearance="fill">
+      <mat-label>Empaque</mat-label>
+      <mat-select [(ngModel)]="filtroEmpaque" >
+        <mat-option value="">Todos</mat-option>
+        <mat-option *ngFor="let e of empaques" [value]="e">{{ e }}</mat-option>
+      </mat-select>
     </mat-form-field>
 
-    <button mat-flat-button color="warn" (click)="eliminarSeleccionados()">Eliminar</button>
+    <!-- Filtro por Serial Desde -->
+    <mat-form-field appearance="outline">
+      <mat-label>Desde Serial</mat-label>
+      <input matInput [(ngModel)]="filtroSerialDesde" placeholder="Ej: 2786..." (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+    </mat-form-field>
+
+    <!-- Filtro por Serial Hasta -->
+    <mat-form-field appearance="outline">
+      <mat-label>Hasta Serial</mat-label>
+      <input matInput [(ngModel)]="filtroSerialHasta" placeholder="Ej: 2786..." (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
+    </mat-form-field>
+    <button mat-raised-button color="primary" (click)="buscarConFiltros()" class="boton-azul-oscuro" [disabled]="!puedeBuscar">Buscar</button>
+    <button mat-flat-button color="warn" (click)="eliminarSeleccionados()" [disabled]="!tieneSeleccion">Eliminar</button>
+     <button mat-stroked-button (click)="limpiarFiltros()">
+      <mat-icon>clear</mat-icon> Limpiar Filtros </button>
+  </div>
+    <div class="busqueda-sscc" style="margin-bottom: 1rem;">
+    <mat-form-field appearance="outline" style="width: 300px;">
+      <mat-label>Buscar SSCC por número</mat-label>
+      <input matInput [formControl]="buscarSsccControl" placeholder="Ej: 178670000030010337" />
+    </mat-form-field>
+    <button mat-flat-button color="primary" class="boton-azul-oscuro" (click)="buscarSSCC()">Buscar</button>
   </div>
 
-  <table mat-table [dataSource]="dataFiltrada" class="tabla-mat" matSort>
+  <ag-grid-angular
+    style="width: 100%; height: 500px;"
+    class="ag-theme-alpine"
+    [rowData]="dataFiltrada.data"
+    [columnDefs]="columnDefs"
+    [defaultColDef]="defaultColDef"
+    [rowSelection]="'multiple'"
+    [animateRows]="true"
+    (gridReady)="onGridReady($event)"
+    (selectionChanged)="onSelectionChanged($event)"
+    >
+  </ag-grid-angular>
+  <div class="paginacion-resumen">
+    Mostrando
+    {{
+      (pageIndex + 1) * pageSize > dataFiltrada.data.length
+        ? dataFiltrada.data.length
+        : (pageIndex + 1) * pageSize
+    }}
+    de {{ dataFiltrada.data.length }} registros
+  </div>
 
-    <!-- Índice -->
-    <ng-container matColumnDef="indice">
-      <th mat-header-cell *matHeaderCellDef>#</th>
-      <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
-    </ng-container>
 
-    <ng-container matColumnDef="empresa">
-      <th mat-header-cell *matHeaderCellDef>Empresa</th>
-      <td mat-cell *matCellDef="let row">{{ row.empresa }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="prefijo">
-      <th mat-header-cell *matHeaderCellDef>Prefijo</th>
-      <td mat-cell *matCellDef="let row">{{ row.prefijo }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="identificadorEmpaque">
-      <th mat-header-cell *matHeaderCellDef>Identificador Empaque</th>
-      <td mat-cell *matCellDef="let row">{{ row.identificadorEmpaque }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="sscc">
-      <th mat-header-cell *matHeaderCellDef>SSCC</th>
-      <td mat-cell *matCellDef="let row">{{ row.sscc }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="fecha">
-      <th mat-header-cell *matHeaderCellDef>Fecha</th>
-      <td mat-cell *matCellDef="let row">{{ row.fecha | date }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="estado">
-      <th mat-header-cell *matHeaderCellDef>Estado</th>
-      <td mat-cell *matCellDef="let row">{{ row.estado }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="usuario">
-      <th mat-header-cell *matHeaderCellDef>Usuario</th>
-      <td mat-cell *matCellDef="let row">{{ row.usuario }}</td>
-    </ng-container>
-
-    <ng-container matColumnDef="opcion">
-      <th mat-header-cell *matHeaderCellDef>Opción</th>
-      <td mat-cell *matCellDef="let row">
-        <button mat-icon-button (click)="verDetalle(row)">
-          <mat-icon>visibility</mat-icon>
-        </button>
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="seleccionar">
-      <th mat-header-cell *matHeaderCellDef>Seleccionar</th>
-      <td mat-cell *matCellDef="let row">
-        <mat-checkbox [(ngModel)]="row.seleccionado"></mat-checkbox>
-      </td>
-    </ng-container>
-
-    <tr mat-header-row *matHeaderRowDef="columnas"></tr>
-    <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
-  </table>
+  <mat-paginator
+    [length]="totalItems"
+    [pageIndex]="pageIndex"
+    [pageSize]="pageSize"
+    [pageSizeOptions]="pageSizeOptions"
+    (page)="onPageChange($event)"
+    [showFirstLastButtons]="true">
+  </mat-paginator>
 </div>
 
 </ng-container>
@@ -104,31 +112,36 @@
     <div class="fila">
       <mat-form-field appearance="outline">
         <mat-label>Código del Cliente</mat-label>
-        <input matInput formControlName="codigoCliente" />
+        <input matInput formControlName="codigoCliente" [readonly]="true" />
       </mat-form-field>
 
       <mat-form-field appearance="outline">
         <mat-label>Cliente</mat-label>
-        <input matInput formControlName="cliente" />
+        <input matInput formControlName="cliente" [readonly]="true" />
       </mat-form-field>
 
       <mat-form-field appearance="outline">
         <mat-label>RUC</mat-label>
-        <input matInput formControlName="ruc" />
+        <input matInput formControlName="ruc"[readonly]="true"  />
       </mat-form-field>
     </div>
 
     <div class="fila">
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="fill">
         <mat-label>Prefijo</mat-label>
-        <mat-select formControlName="prefijo">
-          <mat-option *ngFor="let p of prefijosDisponibles" [value]="p">{{ p }}</mat-option>
+        <mat-select formControlName="prefijo" [compareWith]="compararIds">
+          <mat-option *ngFor="let p of prefijosDisponibles" [value]="p.id">
+            {{ p.codpre }}
+          </mat-option>
         </mat-select>
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
+      <mat-form-field>
         <mat-label>Productos a Codificar</mat-label>
-        <input matInput formControlName="producto" />
+        <input matInput formControlName="producto" type="number" min="1">
+        <mat-error *ngIf="formSSCC.get('producto')?.hasError('max')">
+           Solo se permiten 5000 códigos a generar.
+        </mat-error>          
       </mat-form-field>
 
       <mat-form-field appearance="outline">
@@ -140,58 +153,72 @@
     </div>
 
     <div class="fila">
-      <mat-checkbox formControlName="serie">Serie:</mat-checkbox>
+      <mat-checkbox formControlName="serie" (change)="onSerieChange($event)">Serie:</mat-checkbox>
 
       <mat-form-field appearance="outline">
         <mat-label>Secuencia inicia en:</mat-label>
-        <input matInput formControlName="inicio" />
+        <input
+          matInput
+          formControlName="inicio"
+          type="number"
+          [disabled]="!formSSCC.get('serie')?.value"
+        />
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
+      <!-- <mat-form-field appearance="outline">
         <mat-label>Secuencia termina en:</mat-label>
-        <input matInput formControlName="fin" />
-      </mat-form-field>
+        <input
+          matInput
+          formControlName="fin"
+          type="number"
+          [disabled]="!formSSCC.get('serie')?.value"
+        />
+      </mat-form-field> -->
 
       <mat-form-field appearance="outline">
         <mat-label>Códigos generados:</mat-label>
-        <input matInput formControlName="codigosGenerados" />
+        <input matInput formControlName="codigosGenerados" [readonly]="true" />
       </mat-form-field>
     </div>
 
     <div class="botones">
       <button mat-stroked-button (click)="nuevo()">Nuevo</button>
-      <button mat-stroked-button color="primary" (click)="generar()">Generar</button>
-      <button mat-stroked-button color="accent" (click)="grabar()">Grabar</button>
-      <button mat-stroked-button color="warn" (click)="salir()">Cancelar</button> <!-- analizar esta linea -->
+      <button mat-stroked-button color="primary" (click)="generar()" [disabled]="codigoGenerado || !formSSCC.valid">Generar</button>
+      <button mat-stroked-button color="accent" (click)="grabar()" [disabled]="!puedeGrabar">Grabar</button>
+      <button mat-stroked-button color="warn" (click)="cancelar()">Cancelar</button> <!-- analizar esta linea -->
     </div>
   </form>
-<table *ngIf="dataGenerada.data.length > 0" mat-table [dataSource]="dataGenerada" class="tabla" matSort>
-      <ng-container matColumnDef="ia">
-        <th mat-header-cell *matHeaderCellDef>IA</th>
-        <td mat-cell *matCellDef="let row">{{ row.ia }}</td>
-      </ng-container>
+    <div class="tabla-scroll">
+      <table mat-table *ngIf="dataGenerada.data.length > 0" [dataSource]="dataGenerada" class="tabla"style="max-height: 500px; overflow: auto;" matSort>
+        <ng-container matColumnDef="ia">
+          <th mat-header-cell *matHeaderCellDef>#</th>
+          <td mat-cell *matCellDef="let row">{{ row.ia }}</td>
+        </ng-container>
 
-      <ng-container matColumnDef="sscc">
-        <th mat-header-cell *matHeaderCellDef>SSCC</th>
-        <td mat-cell *matCellDef="let row">{{ row.sscc }}</td>
-      </ng-container>
+        <ng-container matColumnDef="sscc">
+          <th mat-header-cell *matHeaderCellDef>SSCC</th>
+          <td mat-cell *matCellDef="let row">{{ row.sscc }}</td>
+        </ng-container>
 
-      <tr mat-header-row *matHeaderRowDef="columnasGeneradas"></tr>
-      <tr mat-row *matRowDef="let row; columns: columnasGeneradas;"></tr>
-    </table>
+        <tr mat-header-row *matHeaderRowDef="columnasGeneradas"></tr>
+        <tr mat-row *matRowDef="let row; columns: columnasGeneradas;"></tr>
+      </table>
+    </div>
   </div>
 </ng-container>
 <!-- TAB REPORTES -->
- <ng-container *ngIf="activeTab === 'Reportes'">
+ <ng-container *ngIf="activeTab === 'Reportes' && formReporte?.get('operadorFecha')">
   <div class="contenedor">
   <h2 class="titulo">Reportes</h2>
 
   <form [formGroup]="formReporte" class="formulario">
     <div class="fila">
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="fill" class="form-prefijo">
         <mat-label>Prefijo</mat-label>
         <mat-select formControlName="prefijo">
-          <mat-option *ngFor="let p of prefijosDisponibles" [value]="p">{{ p }}</mat-option>
+          <mat-option *ngFor="let prefijo of prefijosDisponibles" [value]="prefijo.id">
+            {{ prefijo.codpre }}
+          </mat-option>
         </mat-select>
       </mat-form-field>
 
@@ -204,13 +231,6 @@
     </div>
 
     <div class="fila">
-      <mat-form-field appearance="outline">
-        <mat-label>Fecha</mat-label>
-        <mat-select formControlName="fecha">
-          <mat-option value="creacion">Creación</mat-option>
-          <mat-option value="modificacion">Modificación</mat-option>
-        </mat-select>
-      </mat-form-field>
 
       <mat-form-field appearance="outline">
         <mat-label>Desde</mat-label>
@@ -228,14 +248,36 @@
     </div>
 
     <div class="fila operadores">
-      <mat-checkbox *ngFor="let op of operadores" formControlName="{{ op.control }}">
-        {{ op.simbolo }}
-      </mat-checkbox>
+      <label style="margin-right: 1rem;">Operador de fecha:</label>
+      <mat-form-field appearance="fill" style="min-width: 150px;">
+        <mat-label>Operador de fecha</mat-label>
+        <mat-select formControlName="operadorFecha">
+          <mat-option value="=">=</mat-option>
+          <mat-option value="<=">&le;</mat-option>
+          <mat-option value=">">&gt;</mat-option>
+          <mat-option value="entre">Entre</mat-option>
+        </mat-select>
+      </mat-form-field>
     </div>
 
+
     <div class="botones">
-      <button mat-stroked-button color="primary" (click)="nuevo()">Nuevo</button>
-      <button mat-stroked-button color="accent" (click)="exportar()">Exportar</button>
+      <button mat-stroked-button color="primary" (click)="nuevo()" [disabled]="!tieneFiltrosReporte">Nuevo</button>
+      <!-- Botón desplegable de exportación -->
+      <button mat-stroked-button [matMenuTriggerFor]="menuExportar"  [disabled]="!puedeExportar" color="accent">
+        Exportar <mat-icon>arrow_drop_down</mat-icon>
+      </button>
+
+      <mat-menu #menuExportar="matMenu">
+        <button mat-menu-item (click)="reportes('excel')">
+          <mat-icon>table_view</mat-icon>
+          <span>Exportar a Excel</span>
+        </button>
+        <button mat-menu-item (click)="reportes('pdf')">
+          <mat-icon>picture_as_pdf</mat-icon>
+          <span>Exportar a PDF</span>
+        </button>
+      </mat-menu>
     </div>
   </form>
 </div>

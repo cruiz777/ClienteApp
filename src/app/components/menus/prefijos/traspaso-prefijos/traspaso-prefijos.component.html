@@ -10,34 +10,37 @@
   <ng-container *ngIf="activeTab === 'Transferir'">
     <h2>Transferencia de Prefijos</h2>
 
-    <div class="form-row alineado-horizontal">
-      <!-- Campo ORIGEN -->
-      <mat-form-field appearance="outline" class="form-campo-largo">
-        <mat-label>Origen</mat-label>
-        <input type="text" matInput [formControl]="clienteOrigenControl" [matAutocomplete]="autoOrigen"
-          placeholder="Buscar cliente..." />
-        <mat-autocomplete #autoOrigen="matAutocomplete" [displayWith]="mostrarNombreCliente"
-          (optionSelected)="seleccionarClienteOrigen($event.option.value)">
-          <mat-option *ngFor="let cliente of clientesFiltrados" [value]="cliente">
-            <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
-          </mat-option>
-        </mat-autocomplete>
-      </mat-form-field>
+    <!-- Campo ORIGEN -->
 
-      <!-- Campo DESTINO -->
-      <mat-form-field appearance="outline" class="form-campo-largo">
-        <mat-label>Destino</mat-label>
-        <input type="text" matInput [formControl]="clienteDestinoControl" [matAutocomplete]="autoDestino"
-          placeholder="Buscar cliente..." />
-        <mat-autocomplete #autoDestino="matAutocomplete" [displayWith]="mostrarNombreCliente"
-          (optionSelected)="seleccionarClienteDestino($event.option.value)">
-          <mat-option *ngFor="let cliente of clientesFiltrados" [value]="cliente">
-            <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
-          </mat-option>
-        </mat-autocomplete>
-      </mat-form-field>
 
-    </div>
+    <mat-form-field appearance="outline" class="form-campo-largo">
+      <mat-label>Cliente</mat-label>
+      <input type="text" matInput [formControl]="clienteOrigenControl" [matAutocomplete]="autoOrigen"
+        placeholder="Buscar cliente..." />
+      <mat-autocomplete #autoOrigen="matAutocomplete" [displayWith]="mostrarNombreCliente"
+        (optionSelected)="seleccionarClienteOrigen($event.option.value)">
+        <mat-option *ngFor="let cliente of clientesOrigenFiltrados" [value]="cliente">
+          <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
+
+
+
+
+
+    <!-- Campo DESTINO -->
+    <mat-form-field appearance="outline" class="form-campo-largo">
+      <mat-label>Destino</mat-label>
+      <input type="text" matInput [formControl]="clienteDestinoControl" [matAutocomplete]="autoDestino"
+        placeholder="Buscar cliente..." />
+      <mat-autocomplete #autoDestino="matAutocomplete" [displayWith]="mostrarNombreCliente"
+        (optionSelected)="seleccionarClienteDestino($event.option.value)">
+        <mat-option *ngFor="let cliente of clientesDestinoFiltrados" [value]="cliente">
+          <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
+        </mat-option>
+      </mat-autocomplete>
+    </mat-form-field>
 
     <h3>Prefijos del Cliente Origen</h3>
     <table class="tabla-estilo" *ngIf="prefijosClienteOrigen.length > 0">
@@ -45,6 +48,8 @@
         <tr>
           <th>#</th>
           <th>Seleccionar</th>
+          <th style="display: none;">Id</th>
+          <th style="display: none;">bandera</th>
           <th>Prefijo</th>
           <th>Fecha</th>
           <th>Fecha Cierre</th>
@@ -54,11 +59,17 @@
       <tbody>
         <tr *ngFor="let item of prefijosClienteOrigen; let i = index">
           <td>{{ i + 1 }}</td>
-          <td><input type="checkbox" /></td>
+          <td><input type="checkbox" [(ngModel)]="item.seleccionado" /></td>
+          <td style="display: none;">{{ item.id_prefijos }}</td>
+          <td style="display: none;">{{ item.bandera }}</td>
           <td>{{ item.codpre }}</td>
-          <td>{{ item.fecha }}</td>
-          <td>{{ item.fechaCierre || '—' }}</td>
-          <td>{{ item.estado ? 'Activo' : 'Inactivo' }}</td>
+          <td>{{ item.fecha | date: 'dd/MM/yyyy'}}</td>
+          <td>{{
+            item.fechaCierre && item.fechaCierre !== '0001-01-01T00:00:00'
+            ? (item.fechaCierre | date: 'dd/MM/yyyy')
+            : ''
+            }}</td>
+          <td>{{ item.estado ? 'Inactivo' : 'Activo' }}</td>
         </tr>
       </tbody>
     </table>
@@ -73,19 +84,17 @@
           (click)="seleccionarBoton('asignar')">Transferir</button>
       </div>
     </div>
-
   </ng-container>
 
   <!-- TAB LISTADO -->
   <ng-container *ngIf="activeTab === 'Listado'">
-
     <div class="encabezado-acciones">
       <div class="titulo-y-busqueda">
         <h2>Listado de Prefijos</h2>
         <div class="form-group">
           <div class="form-row">
             <label>Buscar:</label>
-            <input type="text" placeholder="Buscar prefijo..." [(ngModel)]="filtroBusqueda" />
+            <input matInput type="text" placeholder="Buscar prefijo..." [(ngModel)]="filtroBusqueda" />
           </div>
         </div>
       </div>
@@ -93,95 +102,132 @@
       <div class="form-actions">
         <button mat-button [matMenuTriggerFor]="menuExportar">Exportar</button>
         <mat-menu #menuExportar="matMenu">
-          <button mat-menu-item (click)="exportarPDF()">PDF</button>
-          <button mat-menu-item (click)="exportarExcel()">Excel</button>
+          <button mat-menu-item (click)="exportar('pdf')">PDF</button>
+          <button mat-menu-item (click)="exportar('excel')">Excel</button>
         </mat-menu>
       </div>
     </div>
 
-    <table class="tabla-estilo">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Prefijo</th>
-          <th>Empresa Anterior</th>
-          <th>RUC Anterior</th>
-          <th>Empresa Actual</th>
-          <th>RUC Actual</th>
-          <th>Fecha</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of listado; let i = index">
-          <td>{{ i + 1 }}</td>
-          <td>{{ item.prefijo }}</td>
-          <td>{{ item.empresaAnterior }}</td>
-          <td>{{ item.rucAnterior }}</td>
-          <td>{{ item.empresaActual }}</td>
-          <td>{{ item.rucActual }}</td>
-          <td>{{ item.fecha }}</td>
-        </tr>
-      </tbody>
+    <table mat-table [dataSource]="auditoriasTransferencia" class="mat-elevation-z8 full-width-table">
+
+      <!-- Index -->
+      <ng-container matColumnDef="index">
+        <th mat-header-cell *matHeaderCellDef>#</th>
+        <td mat-cell *matCellDef="let row; let i = index">{{ i + 1 }}</td>
+      </ng-container>
+
+      <!-- Prefijo -->
+      <ng-container matColumnDef="prefijo">
+        <th mat-header-cell *matHeaderCellDef>Prefijo</th>
+        <td mat-cell *matCellDef="let row">{{ row.prefijo }}</td>
+      </ng-container>
+
+      <!-- Empresa Anterior -->
+      <ng-container matColumnDef="origen">
+        <th mat-header-cell *matHeaderCellDef>Empresa Anterior</th>
+        <td mat-cell *matCellDef="let row">{{ row.origen }}</td>
+      </ng-container>
+
+      <!-- RUC Anterior -->
+      <ng-container matColumnDef="rucOrigen">
+        <th mat-header-cell *matHeaderCellDef>RUC Anterior</th>
+        <td mat-cell *matCellDef="let row">{{ row.rucOrigen }}</td>
+      </ng-container>
+
+      <!-- Empresa Actual -->
+      <ng-container matColumnDef="destino">
+        <th mat-header-cell *matHeaderCellDef>Empresa Actual</th>
+        <td mat-cell *matCellDef="let row">{{ row.destino }}</td>
+      </ng-container>
+
+      <!-- RUC Actual -->
+      <ng-container matColumnDef="rucDestino">
+        <th mat-header-cell *matHeaderCellDef>RUC Actual</th>
+        <td mat-cell *matCellDef="let row">{{ row.rucDestino }}</td>
+      </ng-container>
+
+      <!-- Fecha -->
+      <ng-container matColumnDef="fecha">
+        <th mat-header-cell *matHeaderCellDef>Fecha</th>
+        <td mat-cell *matCellDef="let row">{{ row.fecha | date: 'dd/MM/yyyy' }}</td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
     </table>
 
+    <mat-paginator #paginator [pageSizeOptions]="[10, 25, 50]" showFirstLastButtons></mat-paginator>
+
+
   </ng-container>
+
 
   <!-- TAB ASIGNAR -->
   <ng-container *ngIf="activeTab === 'Asignar'">
     <div class="encabezado-acciones">
       <div class="titulo-y-busqueda">
         <h2>Asignación de GLN Entidad</h2>
-
         <div class="form-row">
 
           <div class="form-group">
-            <div class="form-row">
-              <label>Prefijo:</label>
-              <input type="text" placeholder="Buscar Prefijo..." [(ngModel)]="filtroBusqueda" />
-            </div>
-          </div>
 
-          <div class="form-group">
-            <div class="form-row">
-              <label>Cliente:</label>
-              <input type="text" placeholder="Cliente" [(ngModel)]="filtroCliente" />
-            </div>
+
+            <mat-form-field appearance="outline" class="form-campo-largo">
+              <mat-label>Cliente</mat-label>
+              <input type="text" matInput [formControl]="clienteEntidadControl" [matAutocomplete]="autoOrigen"
+                placeholder="Buscar cliente..." />
+              <mat-autocomplete #autoOrigen="matAutocomplete" [displayWith]="mostrarNombreCliente"
+                (optionSelected)="seleccionarClienteEntidad($event.option.value)">
+                <mat-option *ngFor="let cliente of clientesEntidadFiltrados" [value]="cliente">
+                  <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
+                </mat-option>
+              </mat-autocomplete>
+            </mat-form-field>
+
           </div>
 
           <div class="form-actions form-actions-horizontal alineado-derecha">
             <button (click)="onBuscar('llive')" [class.activo]="botonActivo === 'buscar'"
               (click)="seleccionarBoton('buscar')">Buscar</button>
-            <button (click)="onNuevaBusqueda()" [class.activo]="botonActivo === 'nueva'"
+            <button (click)="onNuevaBusqueda2()" [class.activo]="botonActivo === 'nueva'"
               (click)="seleccionarBoton('nueva')">Nueva Búsqueda</button>
-            <button (click)="onAsignar()" [class.activo]="botonActivo === 'asignar'"
+            <button (click)="asignarOrdenPrefijo()" [class.activo]="botonActivo === 'asignar'"
               (click)="seleccionarBoton('asignar')">Asignar</button>
           </div>
 
         </div>
-
       </div>
     </div>
-
-    <table class="tabla-estilo">
+    <table class="tabla-estilo" *ngIf="prefijosClienteEntidad.length > 0">
       <thead>
         <tr>
           <th>#</th>
+          <th>Seleccionar</th>
+          <th style="display: none;" >Id</th>
+          <th style="display: none;">bandera</th>
           <th>Prefijo</th>
           <th>Fecha</th>
+
           <th>Estado</th>
-          <th>Seleccionar</th>
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of asignaciones; let i = index">
+        <tr *ngFor="let item2 of prefijosClienteEntidad; let i = index">
           <td>{{ i + 1 }}</td>
-          <td>{{ item.prefijo }}</td>
-          <td>{{ item.fecha }}</td>
-          <td>{{ item.estado }}</td>
-          <td><input type="checkbox" /></td>
+          <td><input
+  type="checkbox"
+  [checked]="item2.orden === 1"
+  (change)="seleccionarUnico2(item2)"
+/></td>
+          <td style="display: none;">{{ item2.id_prefijos }}</td>
+          <td style="display: none;">{{ item2.orden }}</td>
+          <td>{{ item2.codpre }}</td>
+          <td>{{ item2.fecha | date: 'dd/MM/yyyy'}}</td>
+          <td>{{ item2.orden === 1 ? 'Entidad' : '---' }}</td>
         </tr>
       </tbody>
     </table>
+
   </ng-container>
 
 </div>

@@ -1,0 +1,117 @@
+<div class="contenedor-formulario">
+  <h2>Editar Unidad Logística</h2>
+
+  <form class="formulario" [formGroup]="formUV">
+    <div class="form-grid">
+
+      <!-- Datos del cliente -->
+      <div class="corto">
+        <label for="codigoCliente">Código:</label>
+        <input id="codigoCliente" type="text" formControlName="codigoCliente" readonly />
+      </div>
+
+      <div class="col-2">
+        <label for="cliente">Cliente:</label>
+        <input id="cliente" type="text" formControlName="cliente" readonly />
+      </div>
+
+      <div>
+        <label for="ruc">RUC:</label>
+        <input id="ruc" type="text" formControlName="ruc" readonly />
+      </div>
+
+     <mat-form-field appearance="fill">
+  <mat-label>Prefijo</mat-label>
+  <input matInput formControlName="gcp"  />
+</mat-form-field>
+
+
+
+      
+
+      <!-- GTIN: Nacional, Internacional, Serie, UV, Tipo -->
+      <div class="full-width fila-gtin-combo">
+        
+        
+        <div >
+          <label class="checkbox-serie" readonly>
+            <input type="checkbox" formControlName="activo" /> Activo
+          </label>
+
+        </div>
+        <div class="corto1">
+          <label>GTIN® UL:</label>
+          <input type="text" formControlName="gtinUv" [readonly]="formUV.get('gtinUv')?.disabled || false"
+            [attr.maxLength]="longitudMaxima" (keypress)="permitirSoloNumeros($event)"
+            [ngClass]="{ 'input-verde': campoGtin }" readonly />
+
+
+          <div *ngIf="formUV.get('gtinUv')?.hasError('codbarExistente')" class="mensaje-error">⚠️ Ya registrado.</div>
+        </div>
+        
+      </div>
+
+      <!-- Campos editables principales -->
+      <div class="col-2">
+        <label>Descripción:</label>
+        <input type="text" formControlName="descripcion" (blur)="convertirAMayusculas('descripcion')" />
+      </div>
+
+      <div>
+        <label>Presentacion:</label>
+        <input type="text" formControlName="presentacion" (keypress)="permitirSoloNumeros($event)" maxlength="1"/>
+      </div>
+
+      <div>
+        <label>Factor:</label>
+        <input type="text" formControlName="factor" (keypress)="permitirSoloNumeros($event)" />
+      </div>
+
+
+      <!-- Unidad de medida -->
+      
+
+     
+
+     <mat-form-field appearance="fill" floatLabel="always">
+  <mat-label>Fecha</mat-label>
+  <input matInput [matDatepicker]="picker" formControlName="fecha" readonly
+ />
+  <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+  <mat-datepicker #picker></mat-datepicker>
+</mat-form-field>
+
+
+
+
+
+
+      <!-- URL y Observación alineados -->
+      
+
+
+
+      <!-- Empresas -->
+      
+
+    </div>
+
+    <div class="botones">
+
+      <button class="btn" type="button" (click)="habilitarModificar()" [disabled]="botonGenerarDeshabilitado">
+        Modificar
+      </button>
+
+      <button class="btn btn-azul" type="button" (click)="actualizarCodigo14()" [disabled]="botonGrabarDeshabilitado">
+        Grabar
+      </button>
+
+      <button class="btn btn-rojo" type="button" (click)="salir()">Salir</button>
+
+    </div>
+  </form>
+
+
+  
+
+</div>

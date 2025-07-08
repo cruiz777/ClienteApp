@@ -24,7 +24,7 @@ export class ZonaService {
     debugger
     return this.http.get<any>(this.apiUrl).pipe(
       map(response => response.data.map((item: any) => ({
-        id: item.id,
+        id: item.idZona,
         referencia:item.referencia,
         nombre: item.nombre
       })))

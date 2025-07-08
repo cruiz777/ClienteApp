@@ -284,4 +284,18 @@ export class CustomValidators {
 
     return null;
   }
+  static formatearFecha(fechaStr: string): string {
+    const fecha = new Date(fechaStr);
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const anio = fecha.getFullYear();
+    return `${dia}/${mes}/${anio}`;
+  }
+  static permitirSoloNumeros(event: KeyboardEvent): void {
+    const charCode = event.key;
+
+    if (!/^[0-9]$/.test(charCode)) {
+      event.preventDefault(); // bloquea la tecla
+    }
+  }
 }

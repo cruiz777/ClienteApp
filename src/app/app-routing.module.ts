@@ -1,4 +1,5 @@
 import { UvIndividualComponent } from './components/productos/uv-individual/uv-individual.component';
+import { UvIndividualEditComponent } from './components/productos/uv-individual-edit/uv-individual-edit.component';
 import { NavigationComponent } from './components/seguridades/navigation/navigation.component';
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
@@ -17,6 +18,8 @@ import { LoginFormComponent } from './components/login-form/login-form.component
 import { NuevoSsccComponent } from './components/productos/nuevo-sscc/nuevo-sscc.component'
 import { CuponesComponent } from './components/productos/cupones/cupones.component';
 import { Sic3000Module } from './components/sic-3000/sic-3000.module';
+import { UlEditComponent } from './components/productos/ul-edit/ul-edit.component';
+import { UlComponent } from './components/productos/ul/ul.component';
 
 
 const routes: Routes = [
@@ -43,6 +46,9 @@ const routes: Routes = [
       { path: 'nuevoProducto', component: NuevoProductoComponent },
       { path: 'clienteSeleccion', component: ClienteSeleccionadoComponent },
       { path: 'uvIndividual', component: UvIndividualComponent },
+      { path:'uvIndividualEdit/:codbar',component:UvIndividualEditComponent},
+      { path:'ul/:codbar',component:UlComponent},
+      { path:'ulEdit/:g14',component:UlEditComponent},
       { path: 'nuevoSscc', component: NuevoSsccComponent },
       { path: 'cupones', component: CuponesComponent },
       { path: 'nuevoGln', component: GlnComponent },

@@ -8,6 +8,7 @@ import { CiudadService } from 'src/app/services/ciudad.service';
 import { LogoService } from 'src/app/services/logo.service';
 import { MatDialog } from '@angular/material/dialog';
 import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/components/utils/messages/custom-message-box.component';
+import { FirmaService } from 'src/app/services/firma.service';
 
 @Component({
   selector: 'app-empresa-list',
@@ -21,12 +22,16 @@ export class EmpresasListComponent implements OnInit {
   previewUrl: string | null = null;
   archivoLogo: File | null = null;
 
+  firmaPreviewUrl: string | null = null;
+  archivoFirma: File | null = null;
+
   constructor(
     private fb: FormBuilder,
     private empresaService: EmpresaService,
     private router: Router,
     private ciudadService: CiudadService,
     private logoService: LogoService,
+    private firmaService: FirmaService,
     private dialog: MatDialog
   ) {}
 
@@ -47,6 +52,7 @@ export class EmpresasListComponent implements OnInit {
       fax: [''],
       email: [''],
       logo: [''],
+      firma: [''],
       moneda: [''],
       tipo_cambio: [''],
       establecimiento: [''],
@@ -75,6 +81,10 @@ export class EmpresasListComponent implements OnInit {
             ? this.logoService.getLogoUrl(empresa.empresaLogo)
             : null;
 
+          this.firmaPreviewUrl = empresa.empresaFirma
+            ? this.firmaService.getFirmaUrl(empresa.empresaFirma)
+            : null;
+
           const mappedEmpresa = {
             nombre: empresa.empresaNombre,
             sistema: empresa.empresaSistema,
@@ -85,6 +95,7 @@ export class EmpresasListComponent implements OnInit {
             fax: empresa.empresaFax,
             email: empresa.empresaEmail,
             logo: empresa.empresaLogo,
+            firma: empresa.empresaFirma,
             moneda: empresa.empresaMoneda,
             tipo_cambio: empresa.empresaTipoCambio,
             establecimiento: empresa.empresaEstablecimiento,
@@ -120,12 +131,30 @@ export class EmpresasListComponent implements OnInit {
       }
     });
   }
-
+  // Método para seleccionar firma 
+  triggerFirmaInput(): void {
+    const input = document.getElementById('firmaInput') as HTMLInputElement;
+    input?.click();
+  }
+  // Método para seleccionar logo
   triggerLogoInput(): void {
     const input = document.getElementById('logoInput') as HTMLInputElement;
     input?.click();
   }
 
+  // Método para manejar selección de firma 
+  onFirmaSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    this.archivoFirma = file;
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      this.firmaPreviewUrl = reader.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
   onLogoSelected(event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];
     if (!file) return;
@@ -164,6 +193,7 @@ export class EmpresasListComponent implements OnInit {
       empresaFax: empresaDataRaw.fax,
       empresaEmail: empresaDataRaw.email,
       empresaLogo: empresaDataRaw.logo,
+      empresaFirma: empresaDataRaw.firma,
       empresaMoneda: empresaDataRaw.moneda,
       empresaTipoCambio: empresaDataRaw.tipo_cambio,
       empresaEstablecimiento: empresaDataRaw.establecimiento,
@@ -203,25 +233,60 @@ export class EmpresasListComponent implements OnInit {
         });
       }
     };
+    // Subir archivos en paralelo si existen
+    let promesasPendientes = 0;
+    let erroresSubida = false;
 
+    // Función para manejar las promesas de subida
+    const manejarSubida = () => {
+      promesasPendientes--;
+      if (promesasPendientes === 0 && !erroresSubida) {
+        realizarGuardar();
+      }
+    };
+
+    // Subir logo si existe
     if (this.archivoLogo) {
+      promesasPendientes++;
       this.logoService.uploadLogo(this.archivoLogo).subscribe({
         next: (res) => {
           this.empresaForm.get('logo')?.setValue(res.nombreArchivo);
           this.previewUrl = this.logoService.getLogoUrl(res.nombreArchivo);
-          this.logoService.updateLogo(res.nombreArchivo); // ← ACTUALIZACIÓN GLOBAL
-          empresaData.empresaLogo = res.nombreArchivo; // ← AÑADIDO
-          realizarGuardar();
+          this.logoService.updateLogo(res.nombreArchivo);
+          empresaData.empresaLogo = res.nombreArchivo;
+          manejarSubida();
         },
         error: (err) => {
           console.error('Error al subir logo:', err);
+          erroresSubida = true;
           mostrarMensaje('Error al subir el logo. No se guardaron los datos.', 'error');
         }
       });
     }
-     else {
+    // Subir firma si existe
+    if (this.archivoFirma) {
+      promesasPendientes++;
+      this.firmaService.uploadFirma(this.archivoFirma).subscribe({
+        next: (res) => {
+          this.empresaForm.get('firma')?.setValue(res.nombreArchivo);
+          this.firmaPreviewUrl = this.firmaService.getFirmaUrl(res.nombreArchivo);
+          this.firmaService.updateFirma(res.nombreArchivo);
+          empresaData.empresaFirma = res.nombreArchivo;
+          manejarSubida();
+        },
+        error: (err) => {
+          console.error('Error al subir firma:', err);
+          erroresSubida = true;
+          mostrarMensaje('Error al subir la firma. No se guardaron los datos.', 'error');
+        }
+      });
+    }
+
+    // Si no hay archivos que subir, guardar directamente
+    if (promesasPendientes === 0) {
       realizarGuardar();
     }
+    
   }
 
   cancelar(): void {
