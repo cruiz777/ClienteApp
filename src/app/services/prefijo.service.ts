@@ -48,6 +48,7 @@ export class PrefijoService {
     );
   }
   obtenerPorClienteCodigo(clientesCodigo: number): Observable<PrefijoClienteResponse[]> {
+    debugger
     const params = new HttpParams().set('clientesCodigo', clientesCodigo.toString());
 
     return this.http.get<any>(`${this.apiBaseUrl}/CodpreCliente`, { params }).pipe(

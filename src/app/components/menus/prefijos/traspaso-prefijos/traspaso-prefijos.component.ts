@@ -287,12 +287,13 @@ cargarAuditorias(): void {
           await this.glnService.actualizarGlnClientesCodigoPorIdPrefijo({ idPrefijos: prefijo.id_prefijos, clientesCodigo: this.codcliD }).toPromise();
           await this.productoAdicionalService.actualizarCodigosClientePorIdPrefijos(prefijo.id_prefijos, this.codcliD).toPromise();
           await this.codigos14Service.actualizarClientesCodigo14PorIdPrefijos({ idPrefijos: prefijo.id_prefijos, clientesCodigo: this.codcliD }).toPromise();
+          debugger
           await this.cuponService.actualizarClientePorPrefijo(prefijo.id_prefijos, this.codcliD).toPromise();
           await this.ssccService.actualizarClientePorPrefijo(prefijo.id_prefijos, this.codcliD).toPromise();
           
 
         } catch (err: any) {
-          errores.push(`❌ Error en prefijo ${prefijo.id_prefijos}: ${err.message}`);
+         // errores.push(`❌ Error en prefijo ${prefijo.id_prefijos}: ${err.message}`);
         }
       }
 
