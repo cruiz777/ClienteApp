@@ -13,6 +13,8 @@ export interface Prefijo {
   codpre: string;
   clientesCodigo: number;
   bandera?: number;
+  gln:string;
+  web:string;
 }
 
 export interface ActualizarPrefijoPayload {

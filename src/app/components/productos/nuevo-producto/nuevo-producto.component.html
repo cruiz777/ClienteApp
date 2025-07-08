@@ -100,7 +100,7 @@
             </mat-form-field>
           </div>
 
-          <div class="date-filter-row">
+          <div class="date-filter-row" *ngIf="mostrarFiltros">
             <label class="form-label">Condición de Fecha:</label>
             <mat-radio-group formControlName="operadorFecha" class="operadores-radio-group"
               (change)="onOperadorFechaChange()">
@@ -111,7 +111,7 @@
             </mat-radio-group>
           </div>
 
-          <div class="date-range">
+          <div class="date-range" *ngIf="mostrarFiltros">
             <!-- Solo visible si operador !== 'entre' -->
             <mat-form-field appearance="fill" *ngIf="formReporte.get('operadorFecha')?.value !== 'entre'">
               <mat-label>Fecha</mat-label>
@@ -138,7 +138,7 @@
             </ng-container>
           </div>
 
-          <mat-form-field appearance="fill">
+          <mat-form-field appearance="fill" *ngIf="mostrarFiltros"> 
             <mat-label>Estado</mat-label>
             <mat-select formControlName="estado">
               <mat-option value="1">Activo</mat-option>

@@ -24,6 +24,9 @@ import { LOCALE_ID } from '@angular/core';
 import { MatRadioModule } from '@angular/material/radio';
 import jsPDF from 'jspdf';
 import { de } from 'intl-tel-input/i18n';
+import { take } from 'rxjs/operators';
+import { firstValueFrom } from 'rxjs';
+
 export const MY_DATE_FORMATS = {
   parse: {
     dateInput: 'DD/MM/YYYY'
@@ -80,6 +83,7 @@ export class NuevoProductoComponent implements OnInit {
   dobleClickDelay = 480;
   getRowNodeId = (data: any) => data.codbar; // o data.id si prefieres
   prefijos: any[] = [];
+mostrarFiltros: boolean = true;
 
   clienteE!: ClienteIndividual;
 
@@ -158,6 +162,7 @@ export class NuevoProductoComponent implements OnInit {
       fecha: [new Date()],
       desde: [{ value: new Date(), disabled: true }],
       hasta: [{ value: new Date(), disabled: true }],
+      codigo: ['']
     });
 
     // Suscripción al cambio de operadorFecha
@@ -182,7 +187,9 @@ export class NuevoProductoComponent implements OnInit {
         hastaCtrl?.disable();
       }
     });
-
+    this.formReporte.get('reporte')?.valueChanges.subscribe(valor => {
+    this.mostrarFiltros = valor !== 'producto';  // ocultar filtros si es "producto"
+  });
     this.cargarCliente();
     this.clienteSeleccionadoService.clienteSeleccionado$.subscribe(cliente => {
       this.clienteSeleccionado = cliente;
@@ -401,30 +408,190 @@ export class NuevoProductoComponent implements OnInit {
     return ['gtinVenta', 'logistica', 'carta'].includes(tipo);
   }
 
-  generarPdfPorProducto(): void {
-    const tipo = this.formReporte.get('certificado')?.value;
-    if (tipo === 'producto') {
-      const doc = new jsPDF();
+  async generarPdfPorProducto(): Promise<void> {
+    const logoBase64 = await this.cargarImagenBase64('assets/logo/GS1-logo.png');
+    const firmaBase64 = await this.cargarImagenBase64('assets/logo/firma.png');
+    const logoWidth = 30;
+    const logoHeight = 20;
+    const firmaWidth = 50;
+    const firmaHeight = 15;
 
-      doc.setFontSize(16);
-      doc.text('Certificado por Producto', 20, 20);
+    const codbar = this.formReporte.get('codigo')?.value;
 
-      // Aquí puedes agregar más detalles del producto:
-      doc.setFontSize(12);
-      doc.text('Empresa: GAPSystem', 20, 40);
-      doc.text('Producto: Ejemplo 12345', 20, 50);
-      // ...otros campos
-
-      doc.save('certificado_producto.pdf');
-    } else {
-      this._snackBar.open('⚠️ Seleccione "Por Producto" para generar este PDF.', 'Cerrar', {
+    if (!codbar) {
+      this._snackBar.open('⚠️ Debe ingresar un código de barras.', 'Cerrar', {
         duration: 3000,
         horizontalPosition: 'end',
         verticalPosition: 'top',
         panelClass: ['snackbar-warning']
       });
+      return;
     }
+
+    this.productoService.buscarPorCodbar(codbar).pipe(take(1)).subscribe({
+      next: async (producto) => {
+        if (!producto) {
+          this._snackBar.open('⚠️ Producto no encontrado.', 'Cerrar', {
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top',
+            panelClass: ['snackbar-warning']
+          });
+          return;
+        }
+
+        // Cargar datos del prefijo por codpre
+        let gln = '---';
+        let web = '---';
+
+        if (producto.codpre) {
+          try {
+            const prefijos = await firstValueFrom(
+              this.prefijoService.buscarPorCodpre(producto.codpre)
+            );
+
+            if (prefijos.length > 0) {
+              gln = prefijos[0].gln || '---';
+              web = prefijos[0].web || '---';
+            }
+          } catch (error) {
+            console.error('❌ Error al obtener prefijos:', error);
+          }
+        }
+
+        const doc = new jsPDF();
+        const logoX = 15;
+        const logoY = 10;
+        doc.addImage(logoBase64, 'PNG', logoX, logoY, logoWidth, logoHeight);
+        let y = 10;
+
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Sistema de Control de Códigos', 105, y, { align: 'center' });
+        y += 8;
+        doc.text('Reporte de Ficha Producto', 105, y, { align: 'center' });
+        y += 10;
+
+        const xLabel = 150;
+        const xValue = 180;
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Emisor :', xLabel, y); doc.text('GS1', xValue, y); y += 5;
+        const hoy = new Date();
+        const fecha = `${hoy.getDate().toString().padStart(2, '0')}/${(hoy.getMonth() + 1).toString().padStart(2, '0')}/${hoy.getFullYear()}`;
+        doc.text('Fecha de Emisión:', xLabel, y); doc.text(fecha, xValue, y); y += 5;
+        doc.text('Pag.:', xLabel, y); doc.text('Page 1 of 1', xValue, y); y += 5;
+        doc.text('GLN:', xLabel, y); doc.text(gln, xValue, y); y += 5;
+        doc.text('RUC:', xLabel, y); doc.text(this.clienteSeleccionado?.ruc || '---', xValue, y); y += 5;
+
+        doc.setFont('helvetica', 'bold');
+        doc.text('786' + producto.codpre || '---', 20, y);
+        doc.text(producto.clienteNombres || 'EMPRESA DESCONOCIDA', 50, y);
+        y += 10;
+
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text('GS1 Ecuador (ECOP) certifica que los códigos GTIN que constan a continuación son auténticos y publicados en www.gs1ec.org Verified By Ecuador.', 10, y);
+        y += 5;
+        doc.text('El dueño de la marca del producto coloca el código, es su resposabilidad el manejo y control del código, incluida su descripción y marca.', 10, y);
+        y += 5;
+        doc.text('El Prefijo Global de Compañía GS1, GCP, es intransferible.', 10, y); y += 5;
+
+        doc.setFont('helvetica', 'bold');
+        doc.text('Detalle Unidad Comercial', 10, y); y += 5;
+        doc.setLineWidth(0.3); doc.line(10, y, 200, y); y += 6;
+        doc.setFont('helvetica', 'normal');
+        doc.text('GTIN® UV:', 10, y); doc.text(producto.codbar || '---', 45, y); y += 5;
+        doc.text('Tipo Código:', 10, y); doc.text(producto.gtin || 'GTIN 13', 45, y); y += 5;
+        doc.text('Descripción del Producto:', 10, y); doc.text(producto.Despro || '---', 45, y); y += 5;
+        doc.text('Marca:', 10, y); doc.text(producto.marca || '---', 45, y); y += 5;
+        doc.text('Contenido:', 10, y); doc.text(producto.contenido?.toString() || '---', 45, y); y += 5;
+        doc.text('Unidad de Medida:', 10, y); doc.text(producto.unidad || '---', 45, y); y += 5;
+        doc.text('Categoría:', 10, y); doc.text(producto.dbrick, 45, y); y += 5;
+        doc.text('Brick:', 10, y); doc.text(producto.brick, 45, y); y += 5;
+        doc.text('País:', 10, y); doc.text(producto.pais, 45, y); y += 5;
+        doc.text('Fecha Creación:', 10, y); doc.text(this.formatearFecha(producto.Feccre), 45, y); y += 10;
+
+        // Tabla GTIN-14 UL
+        if (this.registrosGtin14?.length > 0) {
+          doc.setFont('helvetica', 'bold');
+          doc.text('Detalle Unidad Logística', 10, y); y += 5;
+          doc.line(10, y, 200, y); y += 6;
+          doc.setFont('helvetica', 'bold');
+          doc.text('GTIN-14', 10, y);
+          doc.text('Descripción', 45, y);
+          doc.text('Presentación', 110, y);
+          doc.text('Factor', 150, y);
+          y += 5;
+          doc.setLineWidth(0.1);
+          doc.line(10, y, 200, y); y += 4;
+
+          doc.setFont('helvetica', 'normal');
+          for (const reg of this.registrosGtin14) {
+            doc.text(reg.g14, 10, y);
+            doc.text(reg.descripcion || '---', 45, y);
+            doc.text(reg.presentacion?.toString() || '-', 110, y);
+            doc.text(reg.factor?.toString() || '-', 150, y);
+            y += 5;
+            if (y > 270) { doc.addPage(); y = 10; }
+          }
+          y += 5;
+        }
+
+        doc.setFont('helvetica', 'bold');
+        doc.text('Detalle Empresa', 10, y); y += 5;
+        doc.line(10, y, 200, y); y += 6;
+        doc.setFont('helvetica', 'normal');
+        doc.text('GLN:', 10, y); doc.text(gln, 40, y); y += 5;
+        doc.text('RUC:', 10, y); doc.text(this.clienteSeleccionado?.ruc || '---', 40, y); y += 5;
+        doc.text('Empresa:', 10, y); doc.text(producto.clienteNombres || '---', 40, y); y += 5;
+        doc.text('Web:', 10, y); doc.text(web, 40, y);
+
+        const pageHeight = doc.internal.pageSize.getHeight();
+        let firmaY = y + 20;
+        const maxFirmaY = pageHeight - firmaHeight - 10;
+        if (firmaY > maxFirmaY) {
+          firmaY = maxFirmaY;
+        }
+
+        const pageWidth = doc.internal.pageSize.getWidth();
+        const firmaX = (pageWidth - firmaWidth) / 2;
+        doc.addImage(firmaBase64, 'PNG', firmaX, firmaY, firmaWidth, firmaHeight);
+
+        const now = new Date();
+        const fechaHora = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
+        const nombreArchivo = `${producto.codbar}_${fechaHora}.pdf`;
+
+        doc.save(nombreArchivo);
+        this.formReporte.get('codigo')?.reset();
+      },
+      error: () => {
+        this._snackBar.open('❌ Error al obtener el producto.', 'Cerrar', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top',
+          panelClass: ['snackbar-error']
+        });
+      }
+    });
   }
+
+
+
+  private async cargarImagenBase64(ruta: string): Promise<string> {
+    const response = await fetch(ruta);
+    const blob = await response.blob();
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+
 
   imprimir(): void {
     const tipoReporte = this.formReporte.get('reporte')?.value;
@@ -451,7 +618,7 @@ export class NuevoProductoComponent implements OnInit {
         case 'membresia':
           this.generarPdfMembresia();
           break;
-          case 'carta':
+        case 'carta':
           this.generarPdfCarta();
           break;
 
