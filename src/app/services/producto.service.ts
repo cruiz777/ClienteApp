@@ -3,6 +3,9 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { stream } from 'exceljs';
+import { ProductoRequests } from '../interfaces/requests/producto-filter-request'
+import { ProductoResponse } from '../interfaces/responses/producto-filter-response'
+
 export interface ProductoRequest {
   IdProducto: number;
   Codpro: string;
@@ -254,6 +257,7 @@ export interface ApiResponse<T> {
 export class ProductoService {
 
   private apiBaseUrl = environment.invoicesUrl;
+  private apiReporte = environment.reportUrl;
 
   constructor(private http: HttpClient) { }
 
@@ -296,6 +300,17 @@ export class ProductoService {
       payload.request
     );
   }
+
+
+  getProductosFiltrados(request: ProductoRequests): Observable<ProductoResponse[]> {
+    return this.http
+      .post<ApiResponse<ProductoResponse[]>>(`${this.apiReporte}/Producto/filtrar`, request)
+      .pipe(
+        map(response => response.data ?? [])
+      );
+  }
+
+
 
 
 }

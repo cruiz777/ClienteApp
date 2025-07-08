@@ -23,7 +23,13 @@ import { MomentDateAdapter } from '@angular/material-moment-adapter';
 import { LOCALE_ID } from '@angular/core';
 import { MatRadioModule } from '@angular/material/radio';
 import jsPDF from 'jspdf';
+import { firstValueFrom } from 'rxjs';
 import { de } from 'intl-tel-input/i18n';
+import { ProductoResponse } from 'src/app/interfaces/responses/producto-filter-response';
+import { ProductoRequests } from 'src/app/interfaces/requests/producto-filter-request';
+
+
+
 export const MY_DATE_FORMATS = {
   parse: {
     dateInput: 'DD/MM/YYYY'
@@ -466,10 +472,97 @@ export class NuevoProductoComponent implements OnInit {
 
   generarPdfMembresia(): void { /* ... */ }
   generarPdfCarta(): void { /* ... */ }
-  generarPdfGtinVenta(): void { /* ... */ }
+
+async generarPdfGtinVenta(): Promise<void> {
+  const codpro = this.formReporte.get('codigo')?.value;
+  const idPrefijo = this.formReporte.get('gcp')?.value;
+  const operador = this.formReporte.get('operadorFecha')?.value;
+
+  let fechaDesde: Date | undefined;
+  let fechaHasta: Date | undefined;
+
+  if (operador === 'igual') {
+    const fecha = this.formReporte.get('fecha')?.value;
+    fechaDesde = fechaHasta = fecha;
+  } else if (operador === 'mayor') {
+    fechaDesde = this.formReporte.get('fecha')?.value;
+  } else if (operador === 'menorIgual') {
+    fechaHasta = this.formReporte.get('fecha')?.value;
+  } else if (operador === 'entre') {
+    fechaDesde = this.formReporte.get('desde')?.value;
+    fechaHasta = this.formReporte.get('hasta')?.value;
+  }
+
+  const request: ProductoRequests = {
+    codpro,
+    idPrefijo,
+    fechaDesde,
+    fechaHasta
+  };
+
+  const productos = await firstValueFrom(this.productoService.getProductosFiltrados(request));
+
+  if (!productos || productos.length === 0) {
+    this.mostrarAlerta('⚠ No se encontraron productos para el reporte.', 'Advertencia');
+    return;
+  }
+
+  const logo = await this.cargarImagenBase64('assets/logo/GS1-logo.png');
+  const doc = new jsPDF();
+  let y = 10;
+
+  doc.addImage(logo, 'PNG', 10, y, 30, 20);
+  doc.setFontSize(14);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Reporte GTIN Unidad de Venta', 105, y + 10, { align: 'center' });
+  y += 25;
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'bold');
+  doc.text('GTIN', 10, y);
+  doc.text('Descripción', 50, y);
+  doc.text('Marca', 110, y);
+  doc.text('Contenido', 150, y);
+  doc.text('UM', 180, y);
+  y += 5;
+  doc.line(10, y, 200, y);
+  y += 4;
+  doc.setFont('helvetica', 'normal');
+
+  for (const p of productos) {
+    doc.text(p.gtin || '---', 10, y);
+    doc.text(p.despro || '---', 50, y);
+    doc.text(p.marca || '---', 110, y);
+    doc.text(p.contenido || '---', 150, y);
+    doc.text(p.um || '---', 180, y);
+    y += 5;
+
+    if (y > 270) {
+      doc.addPage();
+      y = 10;
+    }
+  }
+
+  const fechaActual = new Date();
+  const nombreArchivo = `Reporte_GTIN_UV_${fechaActual.getFullYear()}${fechaActual.getMonth() + 1}${fechaActual.getDate()}.pdf`;
+  doc.save(nombreArchivo);
+}
+
   generarPdfLogistica(): void { /* ... */ }
   generarPdfGeneral(): void { /* ... */ }
   generarPdfCompleto(): void { /* ... */ }
+
+
+  private async cargarImagenBase64(ruta: string): Promise<string> {
+  const response = await fetch(ruta);
+  const blob = await response.blob();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
 
 
 }
