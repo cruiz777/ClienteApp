@@ -150,8 +150,14 @@
 
         <div class="form-actions">
           <button mat-button>Nuevo</button>
-          <button mat-button (click)="imprimir()">Imprimir</button>
-          <button mat-button>Excel</button>
+          <button mat-button (click)="imprimir()" 
+                  [disabled]="!formReporte.get('reporte')?.value">
+            Imprimir
+          </button>
+          <button mat-button (click)="exportarExcel()" 
+                  [disabled]="formReporte.get('reporte')?.value !== 'logistica'">
+            Excel
+          </button>
           <button mat-button (click)="salir()">
             <img src="assets/icons/icon-salir.png" alt="Salir" width="18" height="18" style="margin-right: 6px;" />
             Salir

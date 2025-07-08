@@ -24,6 +24,11 @@ import { LOCALE_ID } from '@angular/core';
 import { MatRadioModule } from '@angular/material/radio';
 import jsPDF from 'jspdf';
 import { de } from 'intl-tel-input/i18n';
+import { ReporteUnidadLogisticaService } from 'src/app/services/reporte.service';
+import { ExportService } from 'src/app/services/export.service';
+import { ReporteUnidadLogisticaParams } from 'src/app/interfaces/responses/producto-reporte-response';
+import { GlnService } from 'src/app/services/gln.service';
+import { GS1ExportService } from 'src/app/services/gs1-export.service';
 export const MY_DATE_FORMATS = {
   parse: {
     dateInput: 'DD/MM/YYYY'
@@ -141,7 +146,11 @@ export class NuevoProductoComponent implements OnInit {
     private _snackBar: MatSnackBar,
     private fb: FormBuilder,
     private prefijoService: PrefijoService,
-    private clienteService: ClienteService
+    private clienteService: ClienteService,
+    private reporteService: ReporteUnidadLogisticaService,
+    private exportService: ExportService,
+    private glnService: GlnService,
+    private gs1ExportService: GS1ExportService
   ) { }
 
   ngOnInit(): void {
@@ -426,18 +435,19 @@ export class NuevoProductoComponent implements OnInit {
     }
   }
 
+  /**
+ * Actualizar el método imprimir() existente
+ */
   imprimir(): void {
     const tipoReporte = this.formReporte.get('reporte')?.value;
-    const tipoCertificado = this.formReporte.get('certificado')?.value;
-    debugger
-    // Prioriza certificados si hay uno seleccionado
+    
     if (tipoReporte) {
       switch (tipoReporte) {
-        case 'gtinVenta':
-          this.generarPdfGtinVenta();
-          break;
         case 'logistica':
           this.generarPdfLogistica();
+          break;
+        case 'gtinVenta':
+          this.generarPdfGtinVenta();
           break;
         case 'general':
           this.generarPdfGeneral();
@@ -451,25 +461,304 @@ export class NuevoProductoComponent implements OnInit {
         case 'membresia':
           this.generarPdfMembresia();
           break;
-          case 'carta':
+        case 'carta':
           this.generarPdfCarta();
           break;
-
         default:
           this.mostrarAlerta('Reporte no válido.', 'Advertencia');
           break;
       }
     } else {
-      this.mostrarAlerta('Debe seleccionar un reporte o certificado para imprimir.', 'Advertencia');
+      this.mostrarAlerta('Debe seleccionar un reporte para imprimir.', 'Advertencia');
+    }
+  }
+  /**
+ * Genera reporte PDF de Unidad Logística
+ */
+async generarPdfLogistica(): Promise<void> {
+  try {
+    // Mostrar loading
+    this._snackBar.open('🔄 Generando reporte PDF GS1...', '', { duration: 2000 });
+
+    // Preparar parámetros del reporte basados en el formulario
+    const params = this.prepararParametrosReporte();
+    
+    // Obtener todos los productos para la exportación
+    this.reporteService.getAllProductos(params).subscribe({
+      next: async (productos) => {
+        // Aplanar datos para el formato de tabla
+        const datosParaExport = this.aplanarDatosParaExport(productos);
+        
+        // Preparar información del header
+        const headerInfo = await this.prepararHeaderInfo();
+        
+        // Configurar opciones de exportación GS1
+        const gs1Options = {
+          data: datosParaExport,
+          columns: ['gtin13', 'descripcionProducto', 'marca', 'contenidoNeto', 'unidadMedida', 'fecha', 'gtin14', 'descripcionCodigo14', 'presentacion', 'unidad'],
+          headers: ['GTIN-13', 'DESCRIPCIÓN', 'MARCA', 'CONTENIDO NETO', 'UNIDAD MEDIDA', 'FECHA', 'GTIN-14', 'DESCRIPCIÓN', 'PRESENTACIÓN', 'UNIDAD'],
+          filename: 'reporte_unidad_logistica_gs1',
+          title: 'Reporte de Producto con Presentaciones',
+          headerInfo: headerInfo,
+          logoFileName: 'GS1-logo.png', // Nombre del archivo de logo subido
+          firmaFileName: 'firma-autorizada.png' // Nombre del archivo de firma subido
+        };
+
+        // Llamar al nuevo servicio GS1
+        await this.gs1ExportService.exportarPDFGS1(gs1Options);
+        
+        this._snackBar.open('✅ PDF GS1 generado correctamente', 'Cerrar', { 
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top' 
+        });
+      },
+      error: (error) => {
+        console.error('Error al obtener datos:', error);
+        this._snackBar.open('❌ Error al generar el reporte', 'Cerrar', { 
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top' 
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Error en generarPdfLogistica:', error);
+    this._snackBar.open('❌ Error al generar el PDF', 'Cerrar', { duration: 3000 });
+  }
+}
+
+/**
+ * Genera reporte Excel de Unidad Logística
+ */
+async generarExcelLogistica(): Promise<void> {
+  try {
+    // Mostrar loading
+    this._snackBar.open('🔄 Generando reporte Excel...', '', { duration: 2000 });
+
+    // Preparar parámetros del reporte
+    const params = this.prepararParametrosReporte();
+    
+    // Obtener todos los productos para la exportación
+    this.reporteService.getAllProductos(params).subscribe({
+      next: async (productos) => {
+        // Aplanar datos para el formato de tabla del ExportService
+        const datosParaExport = this.aplanarDatosParaExport(productos);
+        
+        // Preparar información del header (AHORA ES ASYNC)
+        const headerInfo = await this.prepararHeaderInfo();
+        
+        // Configurar opciones de exportación
+        const exportOptions = {
+          data: datosParaExport,
+          columns: ['gtin13', 'descripcionProducto', 'marca', 'contenidoNeto', 'unidadMedida', 'fecha', 'gtin14', 'descripcionCodigo14', 'presentacion', 'unidad'],
+          headers: ['GTIN-13', 'DESCRIPCIÓN', 'MARCA', 'CONTENIDO NETO', 'UNIDAD MEDIDA', 'FECHA', 'GTIN-14', 'DESCRIPCIÓN', 'PRESENTACIÓN', 'UNIDAD'],
+          filename: 'reporte_unidad_logistica',
+          title: 'Reporte de Producto con Presentaciones',
+          logoUrl: 'assets/images/GS1-logo.png',
+          headerInfo: headerInfo
+        };
+
+        // Llamar al ExportService
+        await this.exportService.exportarExcel(exportOptions);
+        
+        this._snackBar.open('✅ Excel generado correctamente', 'Cerrar', { 
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top' 
+        });
+      },
+      error: (error) => {
+        console.error('Error al obtener datos:', error);
+        this._snackBar.open('❌ Error al generar el reporte', 'Cerrar', { 
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top' 
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Error en generarExcelLogistica:', error);
+    this._snackBar.open('❌ Error al generar el Excel', 'Cerrar', { duration: 3000 });
+  }
+}
+/**
+ * Nuevo método para exportar a Excel (agregar botón en el template)
+ */
+exportarExcel(): void {
+  const tipoReporte = this.formReporte.get('reporte')?.value;
+  
+  if (tipoReporte === 'logistica') {
+    this.generarExcelLogistica();
+  } else {
+    this.mostrarAlerta('Exportación a Excel disponible solo para Unidad Logística.', 'Advertencia');
+  }
+}
+/**
+ * Prepara los parámetros para el reporte basados en el formulario
+ */
+private prepararParametrosReporte(): ReporteUnidadLogisticaParams {
+  const formValues = this.formReporte.value;
+  const params: ReporteUnidadLogisticaParams = {};
+
+  // Cliente
+  if (this.clienteSeleccionado?.clientes_codigo) {
+    params.clienteCodigo = this.clienteSeleccionado.clientes_codigo;
+  }
+
+  // Prefijo (si está seleccionado)
+  if (formValues.gcp) {
+    const prefijoSeleccionado = this.prefijos.find(p => p.id_prefijos === formValues.gcp);
+    if (prefijoSeleccionado) {
+      params.prefijo = prefijoSeleccionado.codpre;
     }
   }
 
+  // Código de producto (si existe el campo 'codigo' en tu formulario)
+  if (formValues.codigo) {
+    params.codigoProducto = formValues.codigo;
+  }
+
+  // Estado
+  if (formValues.estado !== null && formValues.estado !== undefined) {
+    params.estado = formValues.estado === '1' || formValues.estado === 1;
+  }
+
+  // Fechas según el operador seleccionado
+  const operadorFecha = formValues.operadorFecha;
+  
+  if (operadorFecha === 'entre') {
+    if (formValues.desde) {
+      params.fechaDesde = this.formatearFechaParaApi(formValues.desde);
+      params.condicionFecha = 'ENTRE';
+    }
+    if (formValues.hasta) {
+      params.fechaHasta = this.formatearFechaParaApi(formValues.hasta);
+    }
+  } else if (formValues.fecha) {
+    params.fechaDesde = this.formatearFechaParaApi(formValues.fecha);
+    
+    switch (operadorFecha) {
+      case 'igual':
+        params.condicionFecha = 'IGUAL';
+        break;
+      case 'menorIgual':
+        params.condicionFecha = 'MENOR_IGUAL';
+        break;
+      case 'mayor':
+        params.condicionFecha = 'MAYOR';
+        break;
+    }
+  }
+
+  return params;
+}
   generarPdfMembresia(): void { /* ... */ }
   generarPdfCarta(): void { /* ... */ }
   generarPdfGtinVenta(): void { /* ... */ }
-  generarPdfLogistica(): void { /* ... */ }
   generarPdfGeneral(): void { /* ... */ }
   generarPdfCompleto(): void { /* ... */ }
 
+  /**
+ * Aplana los datos del JSON para el formato de tabla requerido por ExportService
+ */
+private aplanarDatosParaExport(productos: any[]): any[] {
+  const datosAplanados: any[] = [];
 
+  productos.forEach(producto => {
+    if (producto.codigos_14 && producto.codigos_14.length > 0) {
+      // Si tiene códigos 14, crear una fila por cada código 14
+      producto.codigos_14.forEach((codigo14: any) => {
+        datosAplanados.push({
+          gtin13: producto.codigo_producto,
+          descripcionProducto: producto.descripcion,
+          marca: producto.marca,
+          contenidoNeto: producto.contenido_neto,
+          unidadMedida: producto.unidad_medida,
+          fecha: producto.fecha,
+          gtin14: codigo14.gtin_14,
+          descripcionCodigo14: codigo14.descripcion,
+          presentacion: codigo14.presentacion || '',
+          unidad: codigo14.unidad || ''
+        });
+      });
+    } else {
+      // Si no tiene códigos 14, crear una fila solo con datos del producto
+      datosAplanados.push({
+        gtin13: producto.codigo_producto,
+        descripcionProducto: producto.descripcion,
+        marca: producto.marca,
+        contenidoNeto: producto.contenido_neto,
+        unidadMedida: producto.unidad_medida,
+        fecha: producto.fecha,
+        gtin14: '',
+        descripcionCodigo14: '',
+        presentacion: '',
+        unidad: ''
+      });
+    }
+  });
+
+  return datosAplanados;
+}
+
+/**
+ * Prepara la información del header para el reporte
+ */
+private async prepararHeaderInfo(): Promise<any> {
+  const baseInfo = {
+    emisor: 'GS1 Ecuador',
+    fechaEmision: new Date().toLocaleDateString('es-EC', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }),
+    pagina: '1',
+    codigoEmpresa: String(this.clienteSeleccionado?.clientes_codigo || ''),
+    nombreEmpresa: this.clienteSeleccionado?.nomcli || '',
+    ruc: String(this.clienteE?.ruc || ''),
+    gln: '', // Se llenará abajo
+    prefijo: this.obtenerPrefijoSeleccionado()
+  };
+
+  // Obtener GLN basado en el prefijo seleccionado
+  const prefijoId = this.formReporte.value.gcp;
+  if (prefijoId) {
+    try {
+      const glns = await this.glnService.obtenerGlnPorIdPrefijo(prefijoId).toPromise();
+      if (glns && glns.length > 0) {
+        baseInfo.gln = String(glns[0].gln1 || ''); // Tomar el primer GLN encontrado
+      }
+    } catch (error) {
+      console.warn('Error al obtener GLN por prefijo:', error);
+      // Mantener GLN vacío si hay error
+    }
+  }
+
+  return baseInfo;
+}
+/**
+ * Obtiene el prefijo seleccionado en el formulario
+ */
+private obtenerPrefijoSeleccionado(): string {
+  const prefijoId = this.formReporte.value.gcp;
+  if (prefijoId) {
+    const prefijo = this.prefijos.find(p => p.id_prefijos === prefijoId);
+    return prefijo?.codpre || '';
+  }
+  return '';
+}
+
+/**
+ * Formatea una fecha para el formato esperado por la API (YYYY-MM-DD)
+ */
+private formatearFechaParaApi(fecha: Date): string {
+  if (!fecha) return '';
+  
+  const year = fecha.getFullYear();
+  const month = String(fecha.getMonth() + 1).padStart(2, '0');
+  const day = String(fecha.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+}
 }
