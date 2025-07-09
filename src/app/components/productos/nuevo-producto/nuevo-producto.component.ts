@@ -26,6 +26,11 @@ import jsPDF from 'jspdf';
 import { de } from 'intl-tel-input/i18n';
 import { take } from 'rxjs/operators';
 import { firstValueFrom } from 'rxjs';
+import { ModuleRegistry } from '@ag-grid-community/core';
+import * as XLSX from 'xlsx';
+import * as FileSaver from 'file-saver';
+import { CartaComponent } from './carta/carta.component';
+import { ViewChild,ChangeDetectorRef } from '@angular/core';
 
 export const MY_DATE_FORMATS = {
   parse: {
@@ -52,7 +57,8 @@ export const MY_DATE_FORMATS = {
     ReactiveFormsModule,
     MatSelectModule,
     MatDatepickerModule,
-    MatRadioModule
+    MatRadioModule,
+    CartaComponent
   ],
   templateUrl: './nuevo-producto.component.html',
   styleUrl: './nuevo-producto.component.css',
@@ -65,10 +71,17 @@ export const MY_DATE_FORMATS = {
   ]
 })
 export class NuevoProductoComponent implements OnInit {
+  @ViewChild(CartaComponent) cartaComponent!: CartaComponent;
   formReporte!: FormGroup; // ✅ declara la propiedad correctamente
   gridOptions: GridOptions = {
-    getRowId: (params: any) => params.data.codbar
+    getRowId: params => params.data.codbar,
+    enableRangeSelection: true,
+    defaultExcelExportParams: {
+      sheetName: 'GTIN UV'
+    }
   };
+
+
   activeTab: string = 'Listado';
   clienteSeleccionado: Cliente | null = null;
   filtroPrefijo: string = '';
@@ -83,9 +96,10 @@ export class NuevoProductoComponent implements OnInit {
   dobleClickDelay = 480;
   getRowNodeId = (data: any) => data.codbar; // o data.id si prefieres
   prefijos: any[] = [];
-mostrarFiltros: boolean = true;
+  mostrarFiltros: boolean = true;
 
   clienteE!: ClienteIndividual;
+  
 
 
   columnDefsUV = [
@@ -145,11 +159,13 @@ mostrarFiltros: boolean = true;
     private _snackBar: MatSnackBar,
     private fb: FormBuilder,
     private prefijoService: PrefijoService,
-    private clienteService: ClienteService
+    private clienteService: ClienteService,
+    private cdRef: ChangeDetectorRef
+    
   ) { }
 
   ngOnInit(): void {
-
+    
     this.formReporte = this.fb.group({
       reporte: ['gtinVenta'],
       certificado: [''],
@@ -188,8 +204,8 @@ mostrarFiltros: boolean = true;
       }
     });
     this.formReporte.get('reporte')?.valueChanges.subscribe(valor => {
-    this.mostrarFiltros = valor !== 'producto';  // ocultar filtros si es "producto"
-  });
+      this.mostrarFiltros = valor !== 'producto';  // ocultar filtros si es "producto"
+    });
     this.cargarCliente();
     this.clienteSeleccionadoService.clienteSeleccionado$.subscribe(cliente => {
       this.clienteSeleccionado = cliente;
@@ -632,11 +648,84 @@ mostrarFiltros: boolean = true;
   }
 
   generarPdfMembresia(): void { /* ... */ }
-  generarPdfCarta(): void { /* ... */ }
+
   generarPdfGtinVenta(): void { /* ... */ }
   generarPdfLogistica(): void { /* ... */ }
   generarPdfGeneral(): void { /* ... */ }
   generarPdfCompleto(): void { /* ... */ }
+
+
+  exportarExcel(): void {
+    const fechaHora = this.obtenerFechaHoraActual();
+
+    const datos: any[] = [];
+    const totalRows = this.gridApi.getDisplayedRowCount();
+
+    for (let i = 0; i < totalRows; i++) {
+      const fila = this.gridApi.getDisplayedRowAtIndex(i)?.data;
+      if (fila) {
+        datos.push({
+          Empresa: fila.empresa,
+          Prefijo: fila.prefijo,
+          Tipo_GTIN: fila.tipogtin,
+          Estado: fila.estado,
+          GTIN_UV: fila.codbar, // Forzar formato texto en Excel
+          Presentacion: fila.presentacion,
+          Descripcion: fila.descripcion,
+          Fecha: fila.fecha,
+          Marca: fila.marca,
+          Contenido: fila.contenido,
+          Unidad: fila.unidad,
+          Categoria: fila.categoria,
+          Brick: fila.gcp_brick,
+          Pais: fila.pais
+        });
+      }
+    }
+
+    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(datos);
+    const workbook: XLSX.WorkBook = {
+      Sheets: { 'GTINs': worksheet },
+      SheetNames: ['GTINs']
+    };
+
+    const excelBuffer: any = XLSX.write(workbook, {
+      bookType: 'xlsx',
+      type: 'array'
+    });
+
+    const blob: Blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'
+    });
+
+    FileSaver.saveAs(blob, `gtins_export_${fechaHora}.xlsx`);
+  }
+
+
+  obtenerFechaHoraActual(): string {
+    const now = new Date();
+    return `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
+  }
+
+async generarPdfCarta(): Promise<void> {
+  // Forzamos la detección de cambios para asegurar que cartaComponent esté instanciado
+  this.cdRef.detectChanges();
+
+  // Esperamos un poco para que Angular termine de renderizar
+  setTimeout(async () => {
+    // Asignar los @Input()
+    this.cartaComponent.empresa = 'NESTLE ECUADOR S.A.';
+    this.cartaComponent.ruc = '170131311';
+    this.cartaComponent.gcp = '786010012';
+    this.cartaComponent.gln = '7860100120003';
+    this.cartaComponent.anioAfiliacion = '1992';
+
+    // Llamar al método del componente
+    await this.cartaComponent.generarPdfCarta();
+  }, 0);
+}
+
+
 
 
 }

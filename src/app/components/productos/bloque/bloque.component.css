@@ -512,3 +512,23 @@ mat-form-field textarea {
   background-color: #ffe0e0 !important;
   border: 1px solid red !important;
 }
+.celda-repetida {
+  background-color: #ffcccc !important; /* rojo claro */
+}
+.ag-theme-alpine .celda-repetida {
+  background-color: #f8d7da !important; /* Rojo suave */
+  color: #721c24 !important;            /* Letra más visible */
+  font-weight: bold;
+}
+::ng-deep .celda-repetida {
+  background-color: #f8d7da !important;
+  color: #721c24 !important;
+  font-weight: bold;
+  border: 1px solid #f5c6cb;
+}
+::ng-deep .ag-theme-alpine .celda-repetida {
+  background-color: #f8d7da !important;
+  color: #721c24 !important;
+  font-weight: bold;
+  border: 1px solid #f5c6cb;
+}

@@ -111,6 +111,7 @@ export class UvIndividualComponent implements OnInit {
   id_grupo_producto: number = 0;
   @ViewChild('gtinInput') gtinInput!: ElementRef;
   usuarioActual = this.usuarioService.getUsuarioActual();
+  imagenNoDisponible: boolean = false;
   constructor(
     private fb: FormBuilder,
     private clienteSeleccionadoService: ClienteSeleccionadoService,
@@ -269,6 +270,9 @@ export class UvIndividualComponent implements OnInit {
     });
     this.formUL.disable();
     this.cargarParametroFacturaPorId(98);
+    this.formUV.get('urlFoto')?.valueChanges.subscribe(() => {
+      this.imagenNoDisponible = false; // Reinicia el error si cambia la URL
+    });
   }
 
   activarUL(): void {
@@ -1672,6 +1676,7 @@ export class UvIndividualComponent implements OnInit {
       }).afterClosed().subscribe(result => {
         if (result === true) {
           accion();
+          this.mostrarDialogoOtraPresentacion();
         } else {
           console.log('❌ Usuario canceló');
         }
@@ -2616,5 +2621,24 @@ export class UvIndividualComponent implements OnInit {
       }
     });
   }
-
+  mostrarDialogoOtraPresentacion(): void {
+  this.dialog.open(CustomMessageBoxComponent, {
+    width: '400px',
+    data: {
+      title: '',
+      message: '¿Desea generar otra presentación?',
+      type: 'info',
+      confirmText: 'Sí',
+      cancelText: 'No',
+      showCancel: true
+    }
+  }).afterClosed().subscribe(result => {
+    if (result === true) {
+      this.limpiarUl();// 👈 función que puedes definir para preparar nuevo ingreso
+    } else {
+      this.salir();
+      console.log('✅ Usuario finalizó sin nueva presentación');
+    }
+  });
+}
 }

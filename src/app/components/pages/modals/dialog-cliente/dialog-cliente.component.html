@@ -133,7 +133,6 @@
                         <mat-select formControlName="prefix" placeholder="Seleccione prefijo" style="font-size: 12px;">
                           <mat-option [value]="'5'" style="font-size: 12px;">5</mat-option>
                           <mat-option [value]="'6'" style="font-size: 12px;">6</mat-option>
-                          <mat-option [value]="'7'" style="font-size: 12px;">7</mat-option>
                           <mat-option [value]="'8'" style="font-size: 12px;">8</mat-option>
                           <mat-option [value]="'USA'" style="font-size: 12px;">USA</mat-option>
                           <mat-option [value]="'MSV'" style="font-size: 12px;">MSV</mat-option>
@@ -495,16 +494,26 @@
 
 
                       <label class="form-label">
-                        Nombre: (Financiero)
+                        <span style="color: red;">*</span>Nombre: (Financiero)
                       </label>
                       <input type="text" class="underline-input" formControlName="nombreFinanciero"
                         (input)="forzarMayusculas('nombreFinanciero', paso3Form, $event)" maxlength="200"
                         autocomplete="off" />
+                        <mat-error
+                        *ngIf="paso3Form.get('nombreFinanciero')?.hasError('required') && paso3Form.get('nombreFinanciero')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </div>
                     <div class="form-row">
-                      <label style="color: #002c6c;font-size: 12px;">E-mail 1: </label>
+                      <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>E-mail 1: </label>
                       <input type="text" class="underline-input" formControlName="email1" maxlength="200"
                         autocomplete="new-dp" placeholder="gs1@gs1.org" />
+                        <mat-error
+                          *ngIf="paso3Form.get('email1')?.hasError('required') && paso3Form.get('email1')?.touched"
+                          style="color: red; font-size: 12px;">
+                          Este campo es obligatorio.
+                        </mat-error>
                       <div
                         *ngIf="paso3Form.get('email1')?.hasError('emailInvalido') && paso3Form.get('email1')?.touched">
                         <small style="color: red;">Ingrese un correo válido</small>
