@@ -4,6 +4,7 @@ import autoTable from 'jspdf-autotable';
 import * as moment from 'moment';
 import { ExportOptions } from '../interfaces/export-options';
 import { Injectable } from '@angular/core';
+import { ConversionImagenService } from './base64-imagenes.service';
 
 // Extendemos jsPDF para incluir autoTable
 declare module 'jspdf' {
@@ -14,6 +15,9 @@ declare module 'jspdf' {
 
 @Injectable({ providedIn: 'root' })
 export class ExportService {
+  constructor(
+    private configuracionVisualService: ConversionImagenService
+  ) {}
 
   async exportarExcel(options: ExportOptions): Promise<void> {
     const { data, columns, headers, filename, title, logoUrl, headerInfo } = options;
@@ -197,11 +201,15 @@ export class ExportService {
       // Logo (lado izquierdo)
       if (logoUrl) {
         try {
-          const base64Logo = await this.obtenerLogoBase64(logoUrl);
-          doc.addImage(base64Logo, 'PNG', 15, 15, 40, 20);
-          console.log('✅ Logo cargado correctamente');
+          const base64Logo = await this.configuracionVisualService.getLogoActualBase64();
+          if (base64Logo) {
+            doc.addImage(base64Logo, 'PNG', 15, 15, 40, 20);
+            console.log('Logo cargado correctamente');
+          } else {
+            console.warn('Logo no disponible para esta empresa');
+          }
         } catch (error) {
-          console.warn('⚠️ Error al cargar logo, continuando sin logo:', error);
+          console.warn('Error al cargar logo, continuando sin logo:', error);
         }
       }
 

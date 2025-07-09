@@ -10,7 +10,7 @@ import { ApiListResponse } from '../interfaces/responses/ApiListResponse';
   providedIn: 'root'
 })
 export class ReporteUnidadLogisticaService {
-  private readonly baseUrl = `${environment.reportUrl}/ProductosReportes`; // Ajusta según tu configuración
+  private readonly baseUrl = `${environment.reportUrl}/Producto`; // Ajusta según tu configuración
 
   constructor(private http: HttpClient) {}
 

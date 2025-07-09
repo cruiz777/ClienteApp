@@ -661,14 +661,10 @@ async generarPdfLogistica(): Promise<void> {
         // Configurar opciones de exportación GS1
         const gs1Options = {
           data: datosParaExport,
-          columns: ['gtin13', 'descripcionProducto', 'marca', 'contenidoNeto', 'unidadMedida', 'fecha', 'gtin14', 'descripcionCodigo14', 'presentacion', 'unidad'],
-          headers: ['GTIN-13', 'DESCRIPCIÓN', 'MARCA', 'CONTENIDO NETO', 'UNIDAD MEDIDA', 'FECHA', 'GTIN-14', 'DESCRIPCIÓN', 'PRESENTACIÓN', 'UNIDAD'],
           filename: 'reporte_unidad_logistica_gs1',
-          title: 'Reporte de Producto con Presentaciones',
-          headerInfo: headerInfo,
-          logoFileName: 'GS1-logo.png', // Nombre del archivo de logo subido
-          firmaFileName: 'firma-autorizada.png' // Nombre del archivo de firma subido
+          headerInfo: headerInfo
         };
+
 
         // Llamar al nuevo servicio GS1
         await this.gs1ExportService.exportarPDFGS1(gs1Options);
@@ -833,34 +829,14 @@ private aplanarDatosParaExport(productos: any[]): any[] {
 
   productos.forEach(producto => {
     if (producto.codigos_14 && producto.codigos_14.length > 0) {
-      // Si tiene códigos 14, crear una fila por cada código 14
-      producto.codigos_14.forEach((codigo14: any) => {
-        datosAplanados.push({
-          gtin13: producto.codigo_producto,
-          descripcionProducto: producto.descripcion,
-          marca: producto.marca,
-          contenidoNeto: producto.contenido_neto,
-          unidadMedida: producto.unidad_medida,
-          fecha: producto.fecha,
-          gtin14: codigo14.gtin_14,
-          descripcionCodigo14: codigo14.descripcion,
-          presentacion: codigo14.presentacion || '',
-          unidad: codigo14.unidad || ''
-        });
+      datosAplanados.push({
+        ...producto,
+        codigos_14: producto.codigos_14
       });
     } else {
-      // Si no tiene códigos 14, crear una fila solo con datos del producto
       datosAplanados.push({
-        gtin13: producto.codigo_producto,
-        descripcionProducto: producto.descripcion,
-        marca: producto.marca,
-        contenidoNeto: producto.contenido_neto,
-        unidadMedida: producto.unidad_medida,
-        fecha: producto.fecha,
-        gtin14: '',
-        descripcionCodigo14: '',
-        presentacion: '',
-        unidad: ''
+        ...producto,
+        codigos_14: []
       });
     }
   });
@@ -868,8 +844,11 @@ private aplanarDatosParaExport(productos: any[]): any[] {
   return datosAplanados;
 }
 
+
+
 /**
  * Prepara la información del header para el reporte
+ * Usa el endpoint por codpre para obtener prefijogs1
  */
 private async prepararHeaderInfo(): Promise<any> {
   const baseInfo = {
@@ -880,25 +859,43 @@ private async prepararHeaderInfo(): Promise<any> {
       year: 'numeric'
     }),
     pagina: '1',
-    codigoEmpresa: String(this.clienteSeleccionado?.clientes_codigo || ''),
+    codigoEmpresa: '', // 👈 Ahora se llenará con prefijogs1
     nombreEmpresa: this.clienteSeleccionado?.nomcli || '',
     ruc: String(this.clienteE?.ruc || ''),
-    gln: '', // Se llenará abajo
-    prefijo: this.obtenerPrefijoSeleccionado()
+    gln: '',
+    prefijo: ''
   };
 
-  // Obtener GLN basado en el prefijo seleccionado
   const prefijoId = this.formReporte.value.gcp;
   if (prefijoId) {
     try {
-      const glns = await this.glnService.obtenerGlnPorIdPrefijo(prefijoId).toPromise();
-      if (glns && glns.length > 0) {
-        baseInfo.gln = String(glns[0].gln1 || ''); // Tomar el primer GLN encontrado
+      // Obtener el codpre del prefijo seleccionado
+      const prefijoSeleccionado = this.prefijos.find(p => p.id_prefijos === prefijoId);
+      if (prefijoSeleccionado?.codpre) {
+        
+        // Usar el endpoint por codpre para obtener prefijogs1
+        const prefijos = await this.prefijoService.buscarPorCodpre(prefijoSeleccionado.codpre).toPromise();
+        if (prefijos && prefijos.length > 0) {
+          const prefijoData = prefijos[0];
+          baseInfo.gln = prefijoData.gln || '';
+          baseInfo.prefijo = prefijoData.codpre || prefijoData.codpre;
+          baseInfo.codigoEmpresa = prefijoData.prefijosgs1 || String(this.clienteSeleccionado?.clientes_codigo || ''); // 👈 prefijogs1 en codigoEmpresa
+        }
+        
+        // También obtener GLN por id si es necesario
+        const glns = await this.glnService.obtenerGlnPorIdPrefijo(prefijoId).toPromise();
+        if (glns && glns.length > 0 && !baseInfo.gln) {
+          baseInfo.gln = String(glns[0].gln1 || '');
+        }
       }
     } catch (error) {
-      console.warn('Error al obtener GLN por prefijo:', error);
-      // Mantener GLN vacío si hay error
+      console.warn('Error al obtener información del prefijo:', error);
+      baseInfo.prefijo = this.obtenerPrefijoSeleccionado();
+      baseInfo.codigoEmpresa = String(this.clienteSeleccionado?.clientes_codigo || ''); // 👈 Fallback al código de cliente
     }
+  } else {
+    // Si no hay prefijo seleccionado, usar código de cliente como fallback
+    baseInfo.codigoEmpresa = String(this.clienteSeleccionado?.clientes_codigo || '');
   }
 
   return baseInfo;

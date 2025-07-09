@@ -253,14 +253,12 @@ export class NuevoSsccComponent implements OnInit, OnDestroy {
   prefijosCliente: SimplePrefijoResponse[] = [];
   // LISTADO
   columnas: string[] = ['indice', 'empresa', 'prefijo', 'identificadorEmpaque', 'sscc', 'fecha', 'estado', 'usuario', 'opcion', 'seleccionar'];
-  registros = [
-    { empresa: 'Empresa A', prefijo: '12345', identificadorEmpaque: 'EMPK001', sscc: 'SSCC001', fecha: new Date(), estado: 'Activo', usuario: 'admin', seleccionado: false },
-    { empresa: 'Empresa B', prefijo: '67890', identificadorEmpaque: 'EMPK002', sscc: 'SSCC002', fecha: new Date(), estado: 'Inactivo', usuario: 'usuario1', seleccionado: false }
-  ];
+
   // dataFiltrada = new MatTableDataSource(this.registros);
-  prefijosDisponibles: { id: number, codpre: string }[] = [];
+  prefijosDisponibles: { id: number, codpre: string, prefijosgs1: string }[] = [];
+  prefijosgs1: {  id: number, prefijosgs1: string }[] = [];
   filtroTexto = '';
- filtroPrefijo: number | null = null;
+  filtroPrefijo: number | null = null;
   filtroBusqueda = '';
   filtroEmpaque: string | null = null;
   filtroSerialDesde: string = '';
@@ -364,6 +362,7 @@ export class NuevoSsccComponent implements OnInit, OnDestroy {
       return;
     }
     this.cargarPrefijosPorCliente();
+    this.cargarPrefijosGs1();
     //Busca por filtro y muestra en la pagina encontrada
     // this.initFiltroBusquedaListener();
     // this.filtroBusquedaControl.valueChanges.pipe(
@@ -498,13 +497,28 @@ export class NuevoSsccComponent implements OnInit, OnDestroy {
       next: (res) => {
         this.prefijosDisponibles = res.map(p => ({
           id: p.idPrefijos,
-          codpre: p.codpre
+          codpre: p.codpre,
+          prefijosgs1: p.prefijosgs1
         }));
       },
       error: (err) => console.error('❌ Error al cargar prefijos:', err)
     });
   }
 
+  cargarPrefijosGs1(): void {
+    const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+    if (!cliente) return;
+         
+    this.prefijoService.obtenerPorClienteCodigo(cliente.clientes_codigo).subscribe({
+      next: (res) => {
+        this.prefijosgs1 = res.map(p => ({
+          id: p.id_prefijos,
+          prefijosgs1: p.prefijosgs1
+        }));
+      },
+      error: (err) => console.error('❌ Error al cargar prefijos:', err)
+    });
+  }
 
   verDetalle(row: any): void {
     this.mostrarMensaje({
@@ -952,8 +966,8 @@ export class NuevoSsccComponent implements OnInit, OnDestroy {
           };
         });
 
-        const headers = ['ID Empaque', 'SSCC', 'Fecha'];
-        const columns: (keyof SsccTablaView)[] = ['identificadorEmpaque', 'sscc', 'fecha'];
+        const headers = [ 'SSCC', 'Fecha'];
+        const columns: (keyof SsccTablaView)[] = [ 'sscc', 'fecha'];
 
         const options = {
           data,
@@ -964,7 +978,7 @@ export class NuevoSsccComponent implements OnInit, OnDestroy {
           logoUrl: '/assets/logo/GS1-logo.png',
           // Headers del encabezado de los reportes
           headerInfo: {
-            codigoEmpresa: this.prefijosDisponibles.find(p => p.id === Number(prefijo))?.codpre || 'SIN PREFIJO',
+            codigoEmpresa: this.prefijosgs1.find(p => p.id === Number(prefijo))?.prefijosgs1 || 'SIN PREFIJO',
             nombreEmpresa: cliente?.nomcli || 'NOMBRE DE LA EMPRESA',
             emisor: 'GS1 Ecuador',
             fechaEmision: moment().format('DD/MM/YYYY'),

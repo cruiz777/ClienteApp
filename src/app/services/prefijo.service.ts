@@ -12,6 +12,7 @@ export interface Prefijo {
   id_prefijos: number;
   codpre: string;
   clientesCodigo: number;
+  prefijosgs1?: string;
   bandera?: number;
   gln:string;
   web:string;
