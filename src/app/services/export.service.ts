@@ -167,7 +167,7 @@ export class ExportService {
         const cell = row.getCell(j + 2);
         const value = item[key];
         cell.value = value instanceof Date
-          ? moment(value).format('DD/MM/YYYY')
+          ? moment(value).format('DD/MM/yyyy')
           : value;
         cell.border = this.bordeFino();
       });
@@ -203,7 +203,7 @@ export class ExportService {
         try {
           const base64Logo = await this.configuracionVisualService.getLogoActualBase64();
           if (base64Logo) {
-            doc.addImage(base64Logo, 'PNG', 15, 15, 40, 20);
+            doc.addImage(base64Logo, 'PNG', 15, 15, 45, 20);
             console.log('Logo cargado correctamente');
           } else {
             console.warn('Logo no disponible para esta empresa');
@@ -567,5 +567,250 @@ export class ExportService {
         reader.onerror = reject;
         reader.readAsDataURL(blob);
       }));
+  }
+
+  //Método para poder exportar a PDF el gln con el formaato requerido
+  async exportarGLNPDF(options: {
+    gln: string;
+    clienteActual: any;
+    formData: any;
+    ciudad: any;
+    pais: any;
+    tipoLoc: any;
+    logoUrl?: string;
+  }): Promise<void> {
+    const { gln, clienteActual, formData, ciudad, pais, tipoLoc, logoUrl } = options;
+    
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+    // Variables para el layout
+    const pageWidth = doc.internal.pageSize.width;
+    const margin = 15;
+    const tableWidth = pageWidth - (margin * 2);
+
+    // === ENCABEZADO ===
+    // Logo GS1 (lado izquierdo)
+    if (logoUrl) {
+      try {
+        const base64Logo = await this.configuracionVisualService.getLogoActualBase64();
+        if (base64Logo) {
+          doc.addImage(base64Logo, 'PNG', margin, 15, 40, 25);
+        }
+      } catch (error) {
+        console.warn('Error al cargar logo:', error);
+      }
+    }
+
+    // Títulos principales (centro)
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Sistema de Control de Códigos', pageWidth/2, 25, { align: 'center' });
+    
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Informe Global Location Number', pageWidth/2, 32, { align: 'center' });
+
+    // Información del emisor (lado derecho)
+    const infoX = pageWidth - margin - 35;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Emisor:', infoX, 20);
+    doc.setFont('helvetica', 'normal');
+    doc.text('GS1 Ecuador', infoX + 25, 20);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Fecha emisión:', infoX, 26);
+    doc.setFont('helvetica', 'normal');
+    doc.text(moment().format('DD/MM/yyyy'), infoX + 25, 26);
+    
+    doc.setFont('helvetica', 'bold');
+    doc.text('Pág:', infoX, 32);
+    doc.setFont('helvetica', 'normal');
+    doc.text('1', infoX + 25, 32);
+
+    // === PREPARAR DATOS ===
+    const latGMS = `${formData.latiG || '00'}°${formData.latiM || '00'}'${formData.latiS || '00'}" ${formData.latiE || ''}`;
+    const longGMS = `${formData.longG || '00'}°${formData.longM || '00'}'${formData.longS || '00'}" ${formData.longE || ''}`;
+
+    // === CREAR TABLA PRINCIPAL ===
+    let startY = 45; // Reducido para más espacio
+
+    const tableData = [
+      // Encabezado GLN
+      [{ 
+        content: 'GLOBAL LOCATION NUMBER (GLN)', 
+        colSpan: 2, 
+        styles: { 
+          fontStyle: 'bold', 
+          fillColor: [200, 200, 200], 
+          halign: 'center',
+          fontSize: 9
+        } 
+      }],
+      [{ 
+        content: gln || '', 
+        colSpan: 2, 
+        styles: { 
+          halign: 'center', 
+          fontStyle: 'bold', 
+          fontSize: 10,
+          cellPadding: 4
+        } 
+      }],
+      
+      // Información básica
+      ['LOCALIZACIÓN / LOCATION:',clienteActual?.nomcli || ''],
+      ['RUC / IDENTIFICACIÓN NUMBER:', clienteActual?.ruc || ''],
+      ['EMPRESA / COMPANY:', clienteActual?.nomcli || ''],
+      ['REPRESENTANTE LEGAL / LEGAL REPRESENTATIVE:', clienteActual?.representante || ''],
+      
+      // Encabezado Localización
+      [{ 
+        content: 'LOCALIZACIÓN / LOCATION', 
+        colSpan: 2, 
+        styles: { 
+          fontStyle: 'bold', 
+          fillColor: [200, 200, 200], 
+          halign: 'center',
+          fontSize: 9
+        } 
+      }],
+      
+      // Detalles de localización
+      ['TIPO DE LOCALIZACIÓN/LOCATION TYPE:', tipoLoc?.descripcion || ''],
+      ['LATITUD / LATITUDE:', latGMS],
+      ['LONGITUD / LENGTH:', longGMS],
+      ['PAÍS / COUNTRY:', pais?.nombre || ''],
+      ['PROVINCIA / STATE:', ciudad?.provincia || ''],
+      ['CIUDAD / CITY:', ciudad?.ciudad || ''],
+      ['DIRECCIÓN / ADDRESS:', formData.direccion || ''],
+      ['TELÉFONO / PHONE:', clienteActual?.telefono || ''],
+      ['CÓDIGO POSTAL:', formData.glnCodigopostal || ''],
+      ['EMAIL:', formData.email || ''],
+      ['PÁGINA WEB / WEBSITE:', formData.web || ''],
+      
+      // Encabezado Certificados
+      [{ 
+        content: 'CERTIFICADOS/CERTIFICATES', 
+        colSpan: 2, 
+        styles: { 
+          fontStyle: 'bold', 
+          fillColor: [200, 200, 200], 
+          halign: 'center',
+          fontSize: 9
+        } 
+      }],
+      
+      // Certificados
+      ['FDA:', formData.fda || ''],
+      ['EUROPA U:', formData.europa || ''],
+      ['GLOBAL GAP:', formData.glnGlobal || ''],
+      ['OTRO 1:', formData.glnOtro1 || ''],
+      ['OTRO 2:', formData.glnOtro2 || ''],
+      
+      // Encabezado Contacto
+      [{ 
+        content: 'CONTACTO/CONTACT', 
+        colSpan: 2, 
+        styles: { 
+          fontStyle: 'bold', 
+          fillColor: [200, 200, 200], 
+          halign: 'center',
+          fontSize: 9
+        } 
+      }],
+      
+      // Información de contacto
+      ['NOMBRE / NAME:', formData.contacto || ''],
+      ['EMAIL:', formData.email || ''],
+      ['TELÉFONO / PHONE:', formData.glnCelular || '']
+    ];
+
+    // Crear la tabla con autoTable
+    autoTable(doc, {
+      startY: startY,
+      body: tableData,
+      theme: 'grid',
+      styles: {
+        fontSize: 7, // Reducido de 9 a 7
+        cellPadding: 2, // Reducido de 3 a 2
+        lineWidth: 0.3,
+        lineColor: [0, 0, 0],
+        textColor: [0, 0, 0],
+        minCellHeight: 6 // Altura mínima de celda
+      },
+      columnStyles: {
+        0: { 
+          cellWidth: tableWidth * 0.45, 
+          fontStyle: 'bold',
+          fillColor: [245, 245, 245]
+        },
+        1: { 
+          cellWidth: tableWidth * 0.55,
+          fillColor: [255, 255, 255]
+        }
+      },
+      margin: { left: margin, right: margin },
+      tableWidth: 'auto',
+      didParseCell: function(data) {
+        // Ajustar el estilo de las celdas de encabezado de sección
+        if (data.cell.text && data.cell.text[0] && 
+            (data.cell.text[0].includes('GLOBAL LOCATION NUMBER') ||
+            data.cell.text[0].includes('LOCALIZACIÓN / LOCATION') ||
+            data.cell.text[0].includes('CERTIFICADOS') ||
+            data.cell.text[0].includes('CONTACTO'))) {
+          data.cell.styles.fillColor = [200, 200, 200];
+          data.cell.styles.fontSize = 8; // Tamaño específico para encabezados
+        }
+      }
+    });
+
+    // === ÁREA DE FIRMA ===
+    const finalY = (doc as any).lastAutoTable.finalY + 15; // Reducido espacio
+    
+    try {
+      const base64Firma = await this.configuracionVisualService.getFirmaActualBase64();
+      if (base64Firma) {
+        // Mostrar firma como imagen centrada (más pequeña)
+        doc.addImage(base64Firma, 'PNG', pageWidth/2 - 20, finalY, 40, 25);
+        
+        // Línea debajo de la firma
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.3);
+        doc.line(pageWidth/2 - 30, finalY + 25, pageWidth/2 + 30, finalY + 25);
+        
+        // Texto debajo
+        doc.setFontSize(8); // Reducido de 9 a 8
+        doc.setFont('helvetica', 'normal');
+        doc.text('Firma Autorizada GS1 Ecuador', pageWidth/2, finalY + 30, { align: 'center' });
+      } else {
+        // Solo línea y texto si no hay firma
+        doc.setDrawColor(0, 0, 0);
+        doc.setLineWidth(0.3);
+        doc.line(pageWidth/2 - 30, finalY + 5, pageWidth/2 + 30, finalY + 5);
+        
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text('Firma Autorizada GS1 Ecuador', pageWidth/2, finalY + 11, { align: 'center' });
+      }
+    } catch (error) {
+      console.warn('Error al cargar firma:', error);
+      // Fallback: línea y texto
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.3);
+      doc.line(pageWidth/2 - 30, finalY + 5, pageWidth/2 + 30, finalY + 5);
+      
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text('Firma Autorizada GS1 Ecuador', pageWidth/2, finalY + 11, { align: 'center' });
+    }
+
+    // Guardar archivo
+    const filename = `GLN_${gln || 'informe'}_${moment().format('YYYYMMDD_HHmmss')}.pdf`;
+    doc.save(filename);
   }
 }

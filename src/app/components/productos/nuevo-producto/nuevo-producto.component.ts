@@ -23,7 +23,6 @@ import { MomentDateAdapter } from '@angular/material-moment-adapter';
 import { LOCALE_ID } from '@angular/core';
 import { MatRadioModule } from '@angular/material/radio';
 import jsPDF from 'jspdf';
-import { de } from 'intl-tel-input/i18n';
 
 import { ReporteUnidadLogisticaService } from 'src/app/services/reporte.service';
 import { ExportService } from 'src/app/services/export.service';

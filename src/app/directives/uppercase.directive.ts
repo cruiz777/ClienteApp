@@ -1,36 +1,22 @@
-import { Directive, HostListener } from '@angular/core';
-import { NgControl } from '@angular/forms';
+import { Directive, ElementRef, HostListener } from '@angular/core';
 
 @Directive({
   selector: '[appUppercase]'
 })
 export class UppercaseDirective {
-  constructor(private control: NgControl) {
-    if (!control) {
-      console.warn('⚠️ appUppercase usado sin FormControl');
-    }
-  }
+
+  constructor(private el: ElementRef) {}
 
   @HostListener('input', ['$event'])
   onInput(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const originalValue = input.value;
-
-  // Verifica que el control exista y tenga un valor válido
-  if (!this.control?.control || originalValue === null || originalValue === undefined) {
-    return;
+    console.log('Directiva ejecutándose');
+    const input = event.target as HTMLInputElement;
+    const start = input.selectionStart;
+    const end = input.selectionEnd;
+    
+    input.value = input.value.toUpperCase();
+    
+    // Restaurar posición del cursor
+    input.setSelectionRange(start || 0, end || 0);
   }
-
-  const uppercaseValue = originalValue.toUpperCase();
-
-  // Solo actualizar si es diferente y el control no está destruido
-  if (uppercaseValue !== originalValue) {
-    try {
-      this.control.control.setValue(uppercaseValue, { emitEvent: false });
-    } catch (err) {
-      console.warn('⚠️ Error al aplicar mayúsculas:', err);
-    }
-  }
-}
-
 }

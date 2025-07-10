@@ -33,15 +33,14 @@ import { InicioComponent } from './components/inicio/inicio.component';
 import { CustomMessageBoxComponent } from './components/utils/messages/custom-message-box.component';
 import { ConfirmDialogComponent } from './components/reusable/confirm-dialog/confirm-dialog.component';
 import { ModalImpresionComponent } from './components/shared/modal-impresion/modal-impresion.component';
-import { UppercaseDirective } from './directives/uppercase.directive';
 import { LoginFormComponent } from './components/login-form/login-form.component';
 import { ResetPasswordComponent } from './components/reset-password/reset-password.component';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { IntlPhoneInputComponent } from './shared/phone/intl-phone-input.component';
 import { SharedModule } from './shared/shared.module';
 import { ButtonRendererComponent } from './components/utils/grid/button-renderer.component';
 import { CheckboxRendererComponents } from './components/utils/grid/checkbox-renderer.component';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { UppercaseDirective } from './directives/uppercase.directive';
 
 export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
 
