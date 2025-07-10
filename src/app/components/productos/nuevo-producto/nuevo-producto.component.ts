@@ -30,7 +30,8 @@ import { ModuleRegistry } from '@ag-grid-community/core';
 import * as XLSX from 'xlsx';
 import * as FileSaver from 'file-saver';
 import { CartaComponent } from './carta/carta.component';
-import { ViewChild,ChangeDetectorRef } from '@angular/core';
+import { ViewChild, ChangeDetectorRef } from '@angular/core';
+import { CartaOficialComponent } from './carta-oficial/carta-oficial.component';
 
 export const MY_DATE_FORMATS = {
   parse: {
@@ -58,7 +59,8 @@ export const MY_DATE_FORMATS = {
     MatSelectModule,
     MatDatepickerModule,
     MatRadioModule,
-    CartaComponent
+    CartaComponent,
+    CartaOficialComponent
   ],
   templateUrl: './nuevo-producto.component.html',
   styleUrl: './nuevo-producto.component.css',
@@ -72,6 +74,7 @@ export const MY_DATE_FORMATS = {
 })
 export class NuevoProductoComponent implements OnInit {
   @ViewChild(CartaComponent) cartaComponent!: CartaComponent;
+  @ViewChild(CartaOficialComponent) cartaOficialComponent!: CartaOficialComponent;
   formReporte!: FormGroup; // ✅ declara la propiedad correctamente
   gridOptions: GridOptions = {
     getRowId: params => params.data.codbar,
@@ -97,9 +100,9 @@ export class NuevoProductoComponent implements OnInit {
   getRowNodeId = (data: any) => data.codbar; // o data.id si prefieres
   prefijos: any[] = [];
   mostrarFiltros: boolean = true;
-
+  mostrarFiltrosCod: boolean = true;
   clienteE!: ClienteIndividual;
-  
+
 
 
   columnDefsUV = [
@@ -161,11 +164,11 @@ export class NuevoProductoComponent implements OnInit {
     private prefijoService: PrefijoService,
     private clienteService: ClienteService,
     private cdRef: ChangeDetectorRef
-    
+
   ) { }
 
   ngOnInit(): void {
-    
+
     this.formReporte = this.fb.group({
       reporte: ['gtinVenta'],
       certificado: [''],
@@ -203,9 +206,8 @@ export class NuevoProductoComponent implements OnInit {
         hastaCtrl?.disable();
       }
     });
-    this.formReporte.get('reporte')?.valueChanges.subscribe(valor => {
-      this.mostrarFiltros = valor !== 'producto';  // ocultar filtros si es "producto"
-    });
+
+
     this.cargarCliente();
     this.clienteSeleccionadoService.clienteSeleccionado$.subscribe(cliente => {
       this.clienteSeleccionado = cliente;
@@ -213,7 +215,9 @@ export class NuevoProductoComponent implements OnInit {
         this.cargarProductos(cliente.clientes_codigo);
       }
     });
-
+    this.formReporte.get('reporte')?.valueChanges.subscribe(() => {
+      this.actualizarVisibilidadFiltros();
+    });
   }
 
   cambiarTab(tab: string) {
@@ -420,9 +424,10 @@ export class NuevoProductoComponent implements OnInit {
   }
 
   mostrarPrefijo(): boolean {
-    const tipo = this.formReporte.get('reporte')?.value;
-    return ['gtinVenta', 'logistica', 'carta'].includes(tipo);
+    const valor = this.formReporte.get('reporte')?.value;
+    return ['gtinVenta', 'logistica', 'membresia', 'carta'].includes(valor);
   }
+
 
   async generarPdfPorProducto(): Promise<void> {
     const logoBase64 = await this.cargarImagenBase64('assets/logo/GS1-logo.png');
@@ -647,7 +652,47 @@ export class NuevoProductoComponent implements OnInit {
     }
   }
 
-  generarPdfMembresia(): void { /* ... */ }
+async generarPdfCarta(): Promise<void> {
+    this.cdRef.detectChanges();
+
+    const idSeleccionado = this.formReporte.value.gcp;
+    if (!idSeleccionado) {
+      this.mostrarAlerta('⚠️ Debe seleccionar un Prefijo primero.', 'Advertencia');
+      return;
+    }
+
+    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+    const codpre = objeto?.codpre || '';
+
+    if (codpre) {
+      try {
+        const data = await firstValueFrom(this.prefijoService.buscarPorCodpre(codpre));
+        if (data && data.length > 0) {
+          const prefijo = data[0];
+          this.cartaOficialComponent.prefijo = codpre;
+          this.cartaOficialComponent.gcp = prefijo.prefijosgs1;
+          this.cartaOficialComponent.gln = prefijo.gln;
+          this.cartaOficialComponent.empresa=this.clienteSeleccionado?.nomcli||'';
+
+        } else {
+          this.mostrarAlerta('⚠️ No se encontró información para el código de prefijo.', 'Advertencia');
+          return;
+        }
+      } catch (error) {
+        console.error('Error al buscar prefijo:', error);
+        this.mostrarAlerta('❌ Error al buscar el prefijo.', 'Error');
+        return;
+      }
+    }
+
+  await new Promise(resolve => setTimeout(resolve, 0)); // Espera al próximo ciclo
+  if (this.cartaOficialComponent) {
+    await this.cartaOficialComponent.generarCartaPDF();
+  } else {
+    console.error('❌ cartaOficialComponent no disponible');
+  }
+}
+
 
   generarPdfGtinVenta(): void { /* ... */ }
   generarPdfLogistica(): void { /* ... */ }
@@ -707,22 +752,63 @@ export class NuevoProductoComponent implements OnInit {
     return `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
   }
 
-async generarPdfCarta(): Promise<void> {
-  // Forzamos la detección de cambios para asegurar que cartaComponent esté instanciado
-  this.cdRef.detectChanges();
+  async generarPdfMembresia(): Promise<void> {
+    this.cdRef.detectChanges();
 
-  // Esperamos un poco para que Angular termine de renderizar
-  setTimeout(async () => {
+    const idSeleccionado = this.formReporte.value.gcp;
+    if (!idSeleccionado) {
+      this.mostrarAlerta('⚠️ Debe seleccionar un Prefijo primero.', 'Advertencia');
+      return;
+    }
+
+    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+    const codpre = objeto?.codpre || '';
+
+    if (codpre) {
+      try {
+        const data = await firstValueFrom(this.prefijoService.buscarPorCodpre(codpre));
+        if (data && data.length > 0) {
+          const prefijo = data[0];
+          this.cartaComponent.prefijo = codpre;
+          this.cartaComponent.gcp = prefijo.prefijosgs1;
+          this.cartaComponent.gln = prefijo.gln;
+
+        } else {
+          this.mostrarAlerta('⚠️ No se encontró información para el código de prefijo.', 'Advertencia');
+          return;
+        }
+      } catch (error) {
+        console.error('Error al buscar prefijo:', error);
+        this.mostrarAlerta('❌ Error al buscar el prefijo.', 'Error');
+        return;
+      }
+    }
+
     // Asignar los @Input()
-    this.cartaComponent.empresa = 'NESTLE ECUADOR S.A.';
-    this.cartaComponent.ruc = '170131311';
-    this.cartaComponent.gcp = '786010012';
-    this.cartaComponent.gln = '7860100120003';
-    this.cartaComponent.anioAfiliacion = '1992';
+    this.cartaComponent.empresa = this.clienteSeleccionado?.nomcli || '';
+    this.cartaComponent.ruc = this.clienteSeleccionado?.ruc || '';
+    this.cartaComponent.anioAfiliacion = new Date(this.clienteSeleccionado?.fecing || '').getFullYear().toString();
+
+    // Esperar a que Angular termine de renderizar si es necesario
+    await new Promise(resolve => setTimeout(resolve, 0));
 
     // Llamar al método del componente
     await this.cartaComponent.generarPdfCarta();
-  }, 0);
+  }
+ actualizarVisibilidadFiltros(): void {
+  const valor = this.formReporte.get('reporte')?.value;
+
+  // "producto" y "carta" ocultan los filtros generales
+  this.mostrarFiltros = !['producto', 'carta'].includes(valor);
+
+  // Solo "carta" oculta el campo "Código"
+  this.mostrarFiltrosCod = valor !== 'carta';
+
+  if (!this.mostrarFiltrosCod) {
+    this.formReporte.get('codigo')?.reset();
+  }
+
+  this.cdRef.detectChanges();
 }
 
 

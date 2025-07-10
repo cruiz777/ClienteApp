@@ -33,16 +33,9 @@
   <!-- Tabla AG-Grid para UV -->
   <ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 400px; margin-top: 10px;"
     [gridOptions]="gridOptions" [rowData]="filtrarRegistros().slice(0, cantidadMostrar)" [columnDefs]="columnDefsUV"
-    [defaultColDef]="defaultColDef" 
-    rowSelection="multiple" 
-    [enableRangeSelection]="true"
-  [enableCellTextSelection]="true"
-  [suppressClipboardPaste]="false"
-  [suppressCopyRowsToClipboard]="false"
-  [clipboardDelimiter]="'\t'"
-    (gridReady)="onGridReady($event)"
-    (rowClicked)="manejarClic($event.data)"
-    >
+    [defaultColDef]="defaultColDef" rowSelection="multiple" [enableRangeSelection]="true"
+    [enableCellTextSelection]="true" [suppressClipboardPaste]="false" [suppressCopyRowsToClipboard]="false"
+    [clipboardDelimiter]="'\t'" (gridReady)="onGridReady($event)" (rowClicked)="manejarClic($event.data)">
   </ag-grid-angular>
 
 
@@ -102,8 +95,8 @@
               </mat-select>
             </mat-form-field>
           </div>
-          <div>
-            <mat-form-field appearance="fill" class="codigo-separado">
+          <div >
+            <mat-form-field  *ngIf="mostrarFiltrosCod" appearance="fill" class="codigo-separado">
               <mat-label>Código</mat-label>
               <input matInput formControlName="codigo" />
             </mat-form-field>
@@ -147,7 +140,7 @@
             </ng-container>
           </div>
 
-          <mat-form-field appearance="fill" *ngIf="mostrarFiltros"> 
+          <mat-form-field appearance="fill" *ngIf="mostrarFiltros">
             <mat-label>Estado</mat-label>
             <mat-select formControlName="estado">
               <mat-option value="1">Activo</mat-option>
@@ -157,6 +150,7 @@
         </section>
 
         <app-carta #cartaComponent></app-carta>
+        <app-carta-oficial #CartaOficialComponent></app-carta-oficial>
         <div class="form-actions">
           <button mat-button>Nuevo</button>
           <button mat-button (click)="imprimir()">Imprimir</button>
