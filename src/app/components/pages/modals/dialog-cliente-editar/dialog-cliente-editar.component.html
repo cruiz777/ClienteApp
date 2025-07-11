@@ -434,9 +434,14 @@
                       <div *ngIf="paso3Form.get('email')?.hasError('emailInvalido') && paso3Form.get('email')?.touched">
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
-                      <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
+                      <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>TTel.o Cel:</label>
                       {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono"
                         maxlength="9" autocomplete="off" placeholder="999999999" />
+                        <mat-error
+                        *ngIf="paso3Form.get('telefono2')?.hasError('required') && paso3Form.get('telefono2')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </div>
                     <div class="form-row">
 

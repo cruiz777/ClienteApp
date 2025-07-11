@@ -10,10 +10,13 @@ import jsPDF from 'jspdf';
 })
 export class CartaOficialComponent {
   @Input() empresa: string = '';
-  @Input() representante: string = 'PERALTA POLO SANTIAGO AGUSTIN';
+  @Input() representante: string = '';
   @Input() gcp: string = '';
   @Input() prefijo: string = '';
   @Input() gln: string = '';
+  @Input() direccion: string = '';
+  @Input() ciudad: string = '';
+
 async generarCartaPDF(): Promise<void> {
   const doc = new jsPDF();
   const logoBase64 = await this.cargarImagenBase64('assets/logo/GS1-logo.png');
@@ -30,15 +33,14 @@ async generarCartaPDF(): Promise<void> {
 
   y += 35;
 
-  // 🟦 Datos del destinatario alineados a la izquierda
   doc.setFont('Times', 'Normal');
   doc.setFontSize(12);
   doc.text(`Señor(a):`, margenX, y); y += 7;
   doc.text(this.representante, margenX, y); y += 7;
   doc.text(`Representante Legal`, margenX, y); y += 7;
   doc.text(this.empresa, margenX, y); y += 7;
-  doc.text(`REINALDO FLORES E2-23 Y AURELIO GUERRERO`, margenX, y); y += 7;
-  doc.text(`QUITO`, margenX, y); y += 10;
+  doc.text(this.direccion, margenX, y); y += 7;
+  doc.text(this.ciudad, margenX, y); y += 10;
 
   doc.text(`Estimado(a):`, margenX, y); y += 10;
 
@@ -50,10 +52,9 @@ async generarCartaPDF(): Promise<void> {
 
   for (const p of parrafos) {
     doc.text(p, margenX, y, { maxWidth: 170, align: 'justify' });
-    y += 15;
+    y += 25;
   }
 
-  // 🟦 Tabla Prefijo y GLN
   doc.setFont('Times', 'Bold');
   doc.text('Prefijo GS1', margenX + 40, y);
   doc.text('GLN', margenX + 100, y);
@@ -86,47 +87,69 @@ async generarCartaPDF(): Promise<void> {
   doc.setFontSize(12);
   doc.text('Pág. 2', margenX, y); y += 10;
 
-  const texto2 = `
-2. Será causa de cancelación del número de fabricante asignado, el incumplimiento de cualquiera de las bases consignadas en el Manual.
+  const parrafos2 = [
+    `2. Será causa de cancelación del número de fabricante asignado, el incumplimiento de cualquiera de las bases consignadas en el Manual.`,
+    `3. GS1 Ecuador cobrará a cada una de las empresas que participan en el Sistema, una cuota de afiliación, una cuota de asignación de número de empresa y una de mantenimiento anual.`,
+    `4. Las cuotas de que se trata se determinarán de acuerdo a las tarifas que se encuentren en vigor a la fecha en que se realice su pago.`,
+    `5. La marca y descripción de los productos es absoluta responsabilidad de la empresa. Solo se puede usar el Prefijo Global de la Compañía GS1, GCP ${this.gcp} para identificar productos cuya marca le pertenece. Los estándares globales GS1 establecen que de fijarse la marca pone el código sin importar quién lo elabore el producto. Si se fabrican productos para otra empresa esta última debe proporcionarle los códigos respectivos.`
+  ];
 
-3. GS1 Ecuador cobrará a cada una de las empresas que participan en el Sistema, una cuota de afiliación, una cuota de asignación de número de empresa y una de mantenimiento anual.
+  for (const p of parrafos2) {
+    doc.text(p, margenX, y, { maxWidth: 170, align: 'justify' });
+    y += 18;
+  }
 
-4. Las cuotas de que se trata se determinarán de acuerdo a las tarifas que se encuentren en vigor a la fecha en que se realice su pago.
+  // 👉 Separar el párrafo 3
+  y += 10;
+  const parrafos3 = [
+    `Cualquier controversia derivada del presente documento será sometida a la jurisdicción de la autoridad competente.`
+  ];
+  for (const p of parrafos3) {
+    doc.text(p, margenX, y, { maxWidth: 170, align: 'justify' });
+    y += 15;
+  }
 
-5. La marca y descripción de los productos es absoluta responsabilidad de la empresa. Solo se puede usar el Prefijo Global de la Compañía GS1, GCP ${this.gcp} para identificar productos cuya marca le pertenece. Los estándares globales GS1 establecen que de fijarse la marca pone el código sin importar quien lo elabore el producto. Si se fabrican productos para otra empresa esta última debe proporcionarle los códigos respectivos.
+  y += 3;
+  doc.text('Agradecemos su firma de conformidad y la remisión de uno de los originales.', margenX, y, { maxWidth: 170, align: 'justify' });
 
-Cualquier controversia derivada del presente documento será sometida a la jurisdicción de la autoridad competente.
+  y += 20;
+  doc.setFont('Times', 'Italic');
+  doc.text('Cordialmente,', 105, y, { align: 'center' });
 
-Agradecemos su firma de conformidad y la remisión de uno de los originales.
-`;
+  // 🖋 Firma
+  y += 15;
+  doc.addImage(firmaBase64, 'PNG', margenX + 5, y, 40, 15);
 
-  doc.text(texto2.trim(), margenX, y, { maxWidth: 170, align: 'justify' });
-
-  // Firma
-  y = 250;
-  doc.addImage(firmaBase64, 'PNG', margenX + 10, y - 10, 40, 15);
-
+  y += 22;
   doc.setFont('Times', 'Bold');
-  doc.text('ESTEBAN MUÑOZ MIÑO', margenX, y + 15);
-  doc.text(this.representante, 120, y + 15);
+  doc.text('ESTEBAN MUÑOZ MIÑO', margenX + 5, y);
+  doc.text(this.representante.toUpperCase(), 105, y);
 
+  y += 5;
   doc.setFont('Times', 'Normal');
-  doc.text('Gerente General', margenX, y + 20);
-  doc.text('Representante Legal', 120, y + 20);
+  doc.text('Gerente General', margenX + 5, y);
+  doc.text('Representante Legal', 105, y);
 
-  doc.text('GS1-Ecuador', margenX, y + 25);
-  doc.text(this.empresa, 120, y + 25);
+  y += 5;
+  doc.text('GS1-Ecuador', margenX + 5, y);
+    const empresaLines = doc.splitTextToSize(this.empresa, 80);
+  doc.text(empresaLines, 105, y);
 
-  doc.save('Carta-GS1.pdf');
+ const fecha = new Date();
+const fechaStr = fecha.toISOString().slice(0, 16).replace('T', '-').replace(':', '-');
+const nombreLimpio = this.empresa.replace(/[^\w\s-]/g, '').replace(/\s+/g, '_').toUpperCase();
+doc.save(`Carta-${nombreLimpio}-${fechaStr}.pdf`);
+
 }
 
-private obtenerFechaHoy(): string {
-  const hoy = new Date();
-  const dia = hoy.getDate().toString().padStart(2, '0');
-  const mes = (hoy.getMonth() + 1).toString().padStart(2, '0'); // Mes empieza en 0
-  const anio = hoy.getFullYear();
-  return `${dia}/${mes}/${anio}`;
-}
+
+  private obtenerFechaHoy(): string {
+    const hoy = new Date();
+    const dia = hoy.getDate().toString().padStart(2, '0');
+    const mes = (hoy.getMonth() + 1).toString().padStart(2, '0'); // Mes empieza en 0
+    const anio = hoy.getFullYear();
+    return `${dia}/${mes}/${anio}`;
+  }
 
 
 

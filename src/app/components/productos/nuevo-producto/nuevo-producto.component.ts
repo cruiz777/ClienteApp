@@ -32,6 +32,9 @@ import * as FileSaver from 'file-saver';
 import { CartaComponent } from './carta/carta.component';
 import { ViewChild, ChangeDetectorRef } from '@angular/core';
 import { CartaOficialComponent } from './carta-oficial/carta-oficial.component';
+import { CiudadService } from 'src/app/services/ciudad.service';
+import { format } from 'date-fns';
+import * as ExcelJS from 'exceljs';
 
 export const MY_DATE_FORMATS = {
   parse: {
@@ -44,6 +47,7 @@ export const MY_DATE_FORMATS = {
     monthYearA11yLabel: 'MMMM YYYY'
   }
 };
+
 
 @Component({
   selector: 'app-nuevo-producto',
@@ -163,7 +167,8 @@ export class NuevoProductoComponent implements OnInit {
     private fb: FormBuilder,
     private prefijoService: PrefijoService,
     private clienteService: ClienteService,
-    private cdRef: ChangeDetectorRef
+    private cdRef: ChangeDetectorRef,
+    private ciudadService: CiudadService
 
   ) { }
 
@@ -425,178 +430,150 @@ export class NuevoProductoComponent implements OnInit {
 
   mostrarPrefijo(): boolean {
     const valor = this.formReporte.get('reporte')?.value;
-    return ['gtinVenta', 'logistica', 'membresia', 'carta'].includes(valor);
+    return ['gtinVenta', 'logistica', 'membresia', 'carta', 'completo'].includes(valor);
   }
 
 
-  async generarPdfPorProducto(): Promise<void> {
-    const logoBase64 = await this.cargarImagenBase64('assets/logo/GS1-logo.png');
-    const firmaBase64 = await this.cargarImagenBase64('assets/logo/firma.png');
-    const logoWidth = 30;
-    const logoHeight = 20;
-    const firmaWidth = 50;
-    const firmaHeight = 15;
+ async generarPdfPorProducto(): Promise<void> {
+  const codbar = this.formReporte.get('codigo')?.value;
+  if (!codbar) {
+    this._snackBar.open('⚠️ Debe ingresar un código de barras.', 'Cerrar', {
+      duration: 3000,
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
+      panelClass: ['snackbar-warning']
+    });
+    return;
+  }
 
-    const codbar = this.formReporte.get('codigo')?.value;
+  const [logoBase64, firmaBase64] = await Promise.all([
+    this.cargarImagenBase64('assets/logo/GS1-logo.png'),
+    this.cargarImagenBase64('assets/logo/firma.png')
+  ]);
 
-    if (!codbar) {
-      this._snackBar.open('⚠️ Debe ingresar un código de barras.', 'Cerrar', {
+  const logoWidth = 30, logoHeight = 20;
+  const firmaWidth = 50, firmaHeight = 15;
+
+  this.productoService.buscarPorCodbar(codbar).pipe(take(1)).subscribe({
+    next: async (producto) => {
+      if (!producto) {
+        this._snackBar.open('⚠️ Producto no encontrado.', 'Cerrar', { duration: 3000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snackbar-warning'] });
+        return;
+      }
+
+      let gln = '---', web = '---';
+      if (producto.codpre) {
+        try {
+          const prefijos = await firstValueFrom(this.prefijoService.buscarPorCodpre(producto.codpre));
+          if (prefijos.length > 0) {
+            gln = prefijos[0].gln || '---';
+            web = prefijos[0].web || '---';
+          }
+        } catch (error) {
+          console.error('❌ Error al obtener prefijos:', error);
+        }
+      }
+
+      const doc = new jsPDF();
+      let y = 10;
+      const xLabel = 150, xValue = 180;
+
+      doc.addImage(logoBase64, 'PNG', 15, 10, logoWidth, logoHeight);
+      doc.setFontSize(14).setFont('helvetica', 'bold');
+      doc.text('Sistema de Control de Códigos', 105, y, { align: 'center' }); y += 8;
+      doc.text('Reporte de Ficha Producto', 105, y, { align: 'center' }); y += 10;
+
+      doc.setFontSize(10).setFont('helvetica', 'normal');
+      const fecha = this.formatearFecha(new Date().toISOString());
+      const ruc = this.clienteSeleccionado?.ruc || '---';
+      doc.text('Emisor :', xLabel, y); doc.text('GS1', xValue, y); y += 5;
+      doc.text('Fecha de Emisión:', xLabel, y); doc.text(fecha, xValue, y); y += 5;
+      doc.text('Pag.:', xLabel, y); doc.text('Page 1 of 1', xValue, y); y += 5;
+      doc.text('GLN:', xLabel, y); doc.text(gln, xValue, y); y += 5;
+      doc.text('RUC:', xLabel, y); doc.text(ruc, xValue, y); y += 5;
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('786' + (producto.codpre || '---'), 20, y);
+      doc.text(producto.clienteNombres || 'EMPRESA DESCONOCIDA', 50, y); y += 10;
+
+      doc.setFontSize(8).setFont('helvetica', 'normal');
+      doc.text('GS1 Ecuador (ECOP) certifica que los códigos GTIN...', 10, y); y += 5;
+      doc.text('El dueño de la marca del producto coloca el código...', 10, y); y += 5;
+      doc.text('El Prefijo Global de Compañía GS1, GCP, es intransferible.', 10, y); y += 5;
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Detalle Unidad Comercial', 10, y); y += 5;
+      doc.setLineWidth(0.3).line(10, y, 200, y); y += 6;
+
+      doc.setFont('helvetica', 'normal');
+      const detalles = [
+        ['GTIN® UV:', producto.codbar || '---'],
+        ['Tipo Código:', producto.gtin || 'GTIN 13'],
+        ['Descripción del Producto:', producto.Despro || '---'],
+        ['Marca:', producto.marca || '---'],
+        ['Contenido:', producto.contenido?.toString() || '---'],
+        ['Unidad de Medida:', producto.unidad || '---'],
+        ['Categoría:', producto.dbrick || '---'],
+        ['Brick:', producto.brick || '---'],
+        ['País:', producto.pais || '---'],
+        ['Fecha Creación:', this.formatearFecha(producto.Feccre)]
+      ];
+      for (const [label, value] of detalles) {
+        doc.text(label, 10, y); doc.text(value, 45, y); y += 5;
+      }
+
+      if (this.registrosGtin14?.length > 0) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Detalle Unidad Logística', 10, y); y += 5;
+        doc.line(10, y, 200, y); y += 6;
+        doc.text('GTIN-14', 10, y);
+        doc.text('Descripción', 45, y);
+        doc.text('Presentación', 110, y);
+        doc.text('Factor', 150, y); y += 5;
+        doc.setLineWidth(0.1).line(10, y, 200, y); y += 4;
+        doc.setFont('helvetica', 'normal');
+        for (const reg of this.registrosGtin14) {
+          doc.text(reg.g14, 10, y);
+          doc.text(reg.descripcion || '---', 45, y);
+          doc.text(reg.presentacion?.toString() || '-', 110, y);
+          doc.text(reg.factor?.toString() || '-', 150, y);
+          y += 5;
+          if (y > 270) { doc.addPage(); y = 10; }
+        }
+        y += 5;
+      }
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Detalle Empresa', 10, y); y += 5;
+      doc.line(10, y, 200, y); y += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.text('GLN:', 10, y); doc.text(gln, 40, y); y += 5;
+      doc.text('RUC:', 10, y); doc.text(ruc, 40, y); y += 5;
+      doc.text('Empresa:', 10, y); doc.text(producto.clienteNombres || '---', 40, y); y += 5;
+      doc.text('Web:', 10, y); doc.text(web, 40, y);
+
+      const firmaY = Math.min(y + 20, doc.internal.pageSize.getHeight() - firmaHeight - 10);
+      const firmaX = (doc.internal.pageSize.getWidth() - firmaWidth) / 2;
+      doc.addImage(firmaBase64, 'PNG', firmaX, firmaY, firmaWidth, firmaHeight);
+
+      const now = new Date();
+      const fechaHora = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}${now.getSeconds().toString().padStart(2,'0')}`;
+      const nombreArchivo = `${producto.codbar}_${fechaHora}.pdf`;
+
+      doc.save(nombreArchivo);
+      this.formReporte.get('codigo')?.reset();
+    },
+    error: () => {
+      this._snackBar.open('❌ Error al obtener el producto.', 'Cerrar', {
         duration: 3000,
         horizontalPosition: 'end',
         verticalPosition: 'top',
-        panelClass: ['snackbar-warning']
+        panelClass: ['snackbar-error']
       });
-      return;
     }
+  });
+}
 
-    this.productoService.buscarPorCodbar(codbar).pipe(take(1)).subscribe({
-      next: async (producto) => {
-        if (!producto) {
-          this._snackBar.open('⚠️ Producto no encontrado.', 'Cerrar', {
-            duration: 3000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top',
-            panelClass: ['snackbar-warning']
-          });
-          return;
-        }
-
-        // Cargar datos del prefijo por codpre
-        let gln = '---';
-        let web = '---';
-
-        if (producto.codpre) {
-          try {
-            const prefijos = await firstValueFrom(
-              this.prefijoService.buscarPorCodpre(producto.codpre)
-            );
-
-            if (prefijos.length > 0) {
-              gln = prefijos[0].gln || '---';
-              web = prefijos[0].web || '---';
-            }
-          } catch (error) {
-            console.error('❌ Error al obtener prefijos:', error);
-          }
-        }
-
-        const doc = new jsPDF();
-        const logoX = 15;
-        const logoY = 10;
-        doc.addImage(logoBase64, 'PNG', logoX, logoY, logoWidth, logoHeight);
-        let y = 10;
-
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Sistema de Control de Códigos', 105, y, { align: 'center' });
-        y += 8;
-        doc.text('Reporte de Ficha Producto', 105, y, { align: 'center' });
-        y += 10;
-
-        const xLabel = 150;
-        const xValue = 180;
-
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.text('Emisor :', xLabel, y); doc.text('GS1', xValue, y); y += 5;
-        const hoy = new Date();
-        const fecha = `${hoy.getDate().toString().padStart(2, '0')}/${(hoy.getMonth() + 1).toString().padStart(2, '0')}/${hoy.getFullYear()}`;
-        doc.text('Fecha de Emisión:', xLabel, y); doc.text(fecha, xValue, y); y += 5;
-        doc.text('Pag.:', xLabel, y); doc.text('Page 1 of 1', xValue, y); y += 5;
-        doc.text('GLN:', xLabel, y); doc.text(gln, xValue, y); y += 5;
-        doc.text('RUC:', xLabel, y); doc.text(this.clienteSeleccionado?.ruc || '---', xValue, y); y += 5;
-
-        doc.setFont('helvetica', 'bold');
-        doc.text('786' + producto.codpre || '---', 20, y);
-        doc.text(producto.clienteNombres || 'EMPRESA DESCONOCIDA', 50, y);
-        y += 10;
-
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text('GS1 Ecuador (ECOP) certifica que los códigos GTIN que constan a continuación son auténticos y publicados en www.gs1ec.org Verified By Ecuador.', 10, y);
-        y += 5;
-        doc.text('El dueño de la marca del producto coloca el código, es su resposabilidad el manejo y control del código, incluida su descripción y marca.', 10, y);
-        y += 5;
-        doc.text('El Prefijo Global de Compañía GS1, GCP, es intransferible.', 10, y); y += 5;
-
-        doc.setFont('helvetica', 'bold');
-        doc.text('Detalle Unidad Comercial', 10, y); y += 5;
-        doc.setLineWidth(0.3); doc.line(10, y, 200, y); y += 6;
-        doc.setFont('helvetica', 'normal');
-        doc.text('GTIN® UV:', 10, y); doc.text(producto.codbar || '---', 45, y); y += 5;
-        doc.text('Tipo Código:', 10, y); doc.text(producto.gtin || 'GTIN 13', 45, y); y += 5;
-        doc.text('Descripción del Producto:', 10, y); doc.text(producto.Despro || '---', 45, y); y += 5;
-        doc.text('Marca:', 10, y); doc.text(producto.marca || '---', 45, y); y += 5;
-        doc.text('Contenido:', 10, y); doc.text(producto.contenido?.toString() || '---', 45, y); y += 5;
-        doc.text('Unidad de Medida:', 10, y); doc.text(producto.unidad || '---', 45, y); y += 5;
-        doc.text('Categoría:', 10, y); doc.text(producto.dbrick, 45, y); y += 5;
-        doc.text('Brick:', 10, y); doc.text(producto.brick, 45, y); y += 5;
-        doc.text('País:', 10, y); doc.text(producto.pais, 45, y); y += 5;
-        doc.text('Fecha Creación:', 10, y); doc.text(this.formatearFecha(producto.Feccre), 45, y); y += 10;
-
-        // Tabla GTIN-14 UL
-        if (this.registrosGtin14?.length > 0) {
-          doc.setFont('helvetica', 'bold');
-          doc.text('Detalle Unidad Logística', 10, y); y += 5;
-          doc.line(10, y, 200, y); y += 6;
-          doc.setFont('helvetica', 'bold');
-          doc.text('GTIN-14', 10, y);
-          doc.text('Descripción', 45, y);
-          doc.text('Presentación', 110, y);
-          doc.text('Factor', 150, y);
-          y += 5;
-          doc.setLineWidth(0.1);
-          doc.line(10, y, 200, y); y += 4;
-
-          doc.setFont('helvetica', 'normal');
-          for (const reg of this.registrosGtin14) {
-            doc.text(reg.g14, 10, y);
-            doc.text(reg.descripcion || '---', 45, y);
-            doc.text(reg.presentacion?.toString() || '-', 110, y);
-            doc.text(reg.factor?.toString() || '-', 150, y);
-            y += 5;
-            if (y > 270) { doc.addPage(); y = 10; }
-          }
-          y += 5;
-        }
-
-        doc.setFont('helvetica', 'bold');
-        doc.text('Detalle Empresa', 10, y); y += 5;
-        doc.line(10, y, 200, y); y += 6;
-        doc.setFont('helvetica', 'normal');
-        doc.text('GLN:', 10, y); doc.text(gln, 40, y); y += 5;
-        doc.text('RUC:', 10, y); doc.text(this.clienteSeleccionado?.ruc || '---', 40, y); y += 5;
-        doc.text('Empresa:', 10, y); doc.text(producto.clienteNombres || '---', 40, y); y += 5;
-        doc.text('Web:', 10, y); doc.text(web, 40, y);
-
-        const pageHeight = doc.internal.pageSize.getHeight();
-        let firmaY = y + 20;
-        const maxFirmaY = pageHeight - firmaHeight - 10;
-        if (firmaY > maxFirmaY) {
-          firmaY = maxFirmaY;
-        }
-
-        const pageWidth = doc.internal.pageSize.getWidth();
-        const firmaX = (pageWidth - firmaWidth) / 2;
-        doc.addImage(firmaBase64, 'PNG', firmaX, firmaY, firmaWidth, firmaHeight);
-
-        const now = new Date();
-        const fechaHora = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
-        const nombreArchivo = `${producto.codbar}_${fechaHora}.pdf`;
-
-        doc.save(nombreArchivo);
-        this.formReporte.get('codigo')?.reset();
-      },
-      error: () => {
-        this._snackBar.open('❌ Error al obtener el producto.', 'Cerrar', {
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top',
-          panelClass: ['snackbar-error']
-        });
-      }
-    });
-  }
 
 
 
@@ -617,7 +594,7 @@ export class NuevoProductoComponent implements OnInit {
   imprimir(): void {
     const tipoReporte = this.formReporte.get('reporte')?.value;
     const tipoCertificado = this.formReporte.get('certificado')?.value;
-    debugger
+
     // Prioriza certificados si hay uno seleccionado
     if (tipoReporte) {
       switch (tipoReporte) {
@@ -629,9 +606,6 @@ export class NuevoProductoComponent implements OnInit {
           break;
         case 'general':
           this.generarPdfGeneral();
-          break;
-        case 'completo':
-          this.generarPdfCompleto();
           break;
         case 'producto':
           this.generarPdfPorProducto();
@@ -651,8 +625,36 @@ export class NuevoProductoComponent implements OnInit {
       this.mostrarAlerta('Debe seleccionar un reporte o certificado para imprimir.', 'Advertencia');
     }
   }
+  exportar(): void {
+    const tipoReporte = this.formReporte.get('reporte')?.value;
+    const tipoCertificado = this.formReporte.get('certificado')?.value;
+    debugger
+    // Prioriza certificados si hay uno seleccionado
+    if (tipoReporte) {
+      switch (tipoReporte) {
+        case 'gtinVenta':
 
-async generarPdfCarta(): Promise<void> {
+          break;
+        case 'logistica':
+          break;
+        case 'general':
+
+          break;
+        case 'completo':
+          this.generarPdfCompleto();
+          break;
+
+
+        default:
+          this.mostrarAlerta('Reporte no válido.', 'Advertencia');
+          break;
+      }
+    } else {
+      this.mostrarAlerta('Debe seleccionar un reporte o certificado para imprimir.', 'Advertencia');
+    }
+  }
+
+  async generarPdfCarta(): Promise<void> {
     this.cdRef.detectChanges();
 
     const idSeleccionado = this.formReporte.value.gcp;
@@ -664,40 +666,126 @@ async generarPdfCarta(): Promise<void> {
     const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
     const codpre = objeto?.codpre || '';
 
-    if (codpre) {
-      try {
+    if (!this.clienteSeleccionado?.clientes_codigo) {
+      this.mostrarAlerta('⚠️ No hay cliente seleccionado.', 'Advertencia');
+      return;
+    }
+
+    try {
+      // Obtener cliente
+      const cliente = await firstValueFrom(this.clienteService.getClienteById(this.clienteSeleccionado.clientes_codigo));
+
+      // Asignar datos del cliente
+      this.cartaOficialComponent.representante = cliente.representante || '';
+      this.cartaOficialComponent.direccion = cliente.dircli || '';
+      this.cartaOficialComponent.empresa = this.clienteSeleccionado.nomcli || '';
+
+      // Obtener ciudad
+      const ciudad = await firstValueFrom(this.ciudadService.getCiudadById(cliente.idCiudad));
+      this.cartaOficialComponent.ciudad = ciudad.ciudad;
+
+      // Obtener prefijo
+      if (codpre) {
         const data = await firstValueFrom(this.prefijoService.buscarPorCodpre(codpre));
         if (data && data.length > 0) {
           const prefijo = data[0];
           this.cartaOficialComponent.prefijo = codpre;
           this.cartaOficialComponent.gcp = prefijo.prefijosgs1;
           this.cartaOficialComponent.gln = prefijo.gln;
-          this.cartaOficialComponent.empresa=this.clienteSeleccionado?.nomcli||'';
-
         } else {
           this.mostrarAlerta('⚠️ No se encontró información para el código de prefijo.', 'Advertencia');
           return;
         }
-      } catch (error) {
-        console.error('Error al buscar prefijo:', error);
-        this.mostrarAlerta('❌ Error al buscar el prefijo.', 'Error');
-        return;
       }
-    }
 
-  await new Promise(resolve => setTimeout(resolve, 0)); // Espera al próximo ciclo
-  if (this.cartaOficialComponent) {
-    await this.cartaOficialComponent.generarCartaPDF();
-  } else {
-    console.error('❌ cartaOficialComponent no disponible');
+      // ✅ Finalmente generar el PDF
+      await this.cartaOficialComponent.generarCartaPDF();
+
+    } catch (error) {
+      console.error('❌ Error en la generación de carta:', error);
+      this.mostrarAlerta('❌ Ocurrió un error al generar la carta.', 'Error');
+    }
   }
-}
+
 
 
   generarPdfGtinVenta(): void { /* ... */ }
   generarPdfLogistica(): void { /* ... */ }
   generarPdfGeneral(): void { /* ... */ }
-  generarPdfCompleto(): void { /* ... */ }
+
+generarPdfCompleto(): void {
+  const codCliente = this.clienteSeleccionado?.clientes_codigo;
+  const idPrefijo = this.formReporte.get('gcp')?.value;
+  const estado = this.formReporte.get('estado')?.value === '1' ? 'Activo' : 'Inactivo';
+  const operador = this.formReporte.get('operadorFecha')?.value;
+
+  // Obtener el codpre desde el id del prefijo
+  const objetoPrefijo = this.prefijos.find(p => p.id_prefijos === idPrefijo);
+  const codpre = objetoPrefijo?.codpre;
+
+  let condicionFecha = '=';
+  let feccreDesde: string | null = null;
+  let feccreHasta: string | null = null;
+
+  // Validación y extracción de fechas según el operador seleccionado
+  if (operador === 'igual') {
+    condicionFecha = '=';
+    const fecha = this.formReporte.get('fecha')?.value;
+    feccreDesde = fecha ? new Date(fecha).toISOString() : null;
+
+  } else if (operador === 'entre') {
+    condicionFecha = 'entre';
+    const desde = this.formReporte.get('desde')?.value;
+    const hasta = this.formReporte.get('hasta')?.value;
+    feccreDesde = desde ? new Date(desde).toISOString() : null;
+    feccreHasta = hasta ? new Date(hasta).toISOString() : null;
+
+  } else if (operador === '<=') {
+    condicionFecha = '<=';
+    const fecha = this.formReporte.get('fecha')?.value;
+    feccreDesde = fecha ? new Date(fecha).toISOString() : null;
+
+  } else if (operador === '>=') {
+    condicionFecha = '>=';
+    const fecha = this.formReporte.get('fecha')?.value;
+    feccreDesde = fecha ? new Date(fecha).toISOString() : null;
+  }
+
+  // Validar datos obligatorios
+  if (!codCliente || !codpre || !feccreDesde) {
+    this.mostrarAlerta('⚠️ Faltan datos obligatorios para generar el PDF completo.', 'Advertencia');
+    return;
+  }
+
+  // Obtener código si fue ingresado
+  const codigo = this.formReporte.value.codigo?.trim();
+
+  // Armar filtro
+  const filtro: any = {
+    clientesCodigo: codCliente,
+    codpre,
+    estado,
+    feccreDesde,
+    feccreHasta: feccreHasta ?? undefined,
+    condicionFecha
+  };
+
+  if (codigo) {
+    filtro.codbar = codigo;
+  }
+
+  // Consultar y exportar
+  this.productoService.filtrarProductosPorCliente(filtro).subscribe({
+    next: productos => {
+      console.log('Productos filtrados para PDF completo:', productos);
+      this.exportarExcelCompleto(productos);
+    },
+    error: err => {
+      console.error('❌ Error al filtrar productos:', err);
+      this.mostrarAlerta('❌ Error al obtener los productos.', 'Error');
+    }
+  });
+}
 
 
   exportarExcel(): void {
@@ -795,23 +883,164 @@ async generarPdfCarta(): Promise<void> {
     // Llamar al método del componente
     await this.cartaComponent.generarPdfCarta();
   }
- actualizarVisibilidadFiltros(): void {
-  const valor = this.formReporte.get('reporte')?.value;
+  actualizarVisibilidadFiltros(): void {
+    const valor = this.formReporte.get('reporte')?.value;
 
-  // "producto" y "carta" ocultan los filtros generales
-  this.mostrarFiltros = !['producto', 'carta'].includes(valor);
+    // "producto" y "carta" ocultan los filtros generales
+    this.mostrarFiltros = !['producto', 'carta'].includes(valor);
 
-  // Solo "carta" oculta el campo "Código"
-  this.mostrarFiltrosCod = valor !== 'carta';
+    // Solo "carta" oculta el campo "Código"
+    this.mostrarFiltrosCod = valor !== 'carta';
 
-  if (!this.mostrarFiltrosCod) {
-    this.formReporte.get('codigo')?.reset();
+    if (!this.mostrarFiltrosCod) {
+      this.formReporte.get('codigo')?.reset();
+    }
+
+    this.cdRef.detectChanges();
   }
 
-  this.cdRef.detectChanges();
+  async exportarExcelCompleto(productos: any[]): Promise<void> {
+    const fechaActual = new Date();
+    const nombreArchivo = `ReporteCompleto-${this.clienteSeleccionado?.nomcli}-${format(fechaActual, 'yyyy-MM-dd-HH-mm')}.xlsx`;
+    this.cdRef.detectChanges();
+
+    const idSeleccionado = this.formReporte.value.gcp;
+    if (!idSeleccionado) {
+      this.mostrarAlerta('⚠️ Debe seleccionar un Prefijo primero.', 'Advertencia');
+      return;
+    }
+
+    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+    const codpre = objeto?.codpre || '';
+    let prefijo: any = null;
+
+    if (codpre) {
+      try {
+        const data = await firstValueFrom(this.prefijoService.buscarPorCodpre(codpre));
+        if (data && data.length > 0) {
+          prefijo = data[0];
+        } else {
+          this.mostrarAlerta('⚠️ No se encontró información para el código de prefijo.', 'Advertencia');
+          return;
+        }
+      } catch (error) {
+        console.error('Error al buscar prefijo:', error);
+        this.mostrarAlerta('❌ Error al buscar el prefijo.', 'Error');
+        return;
+      }
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Productos');
+
+    const sectorMap: { [key: string]: string } = {
+      '1': 'Salud',
+      '2': 'Retail',
+      '3': 'Otro',
+      '4': 'Alimentos'
+    };
+
+    // 👉 Logo GS1
+    const logoBlob = await fetch('assets/logo/GS1-logo.png').then(res => res.blob());
+    const logoBuffer = await logoBlob.arrayBuffer();
+    const imageId = workbook.addImage({
+      buffer: logoBuffer,
+      extension: 'png'
+    });
+
+    worksheet.addImage(imageId, {
+      tl: { col: 2, row: 0 },
+      ext: { width: 120, height: 60 }
+    });
+
+    // 👉 Encabezado institucional
+    worksheet.mergeCells('B1:E1');
+    worksheet.getCell('B1').value = 'SISTEMA DE CONTROL DE CÓDIGOS';
+    worksheet.getCell('B1').font = { bold: true, size: 14 };
+
+    worksheet.mergeCells('B2:E2');
+    worksheet.getCell('B2').value = 'REPORTE DE PRODUCTOS CODIFICADOS';
+    worksheet.getCell('B2').font = { bold: true, size: 12 };
+
+    worksheet.getCell('B4').value = this.clienteSeleccionado?.nomcli || '';
+    worksheet.getCell('B4').font = { bold: true };
+    worksheet.getCell('C4').value = prefijo?.prefijosgs1 || '';
+
+    worksheet.getCell('B6').value = 'RUC:';
+    worksheet.getCell('C6').value = this.clienteSeleccionado?.ruc || '';
+
+    worksheet.getCell('B7').value = 'GLN:';
+    worksheet.getCell('C7').value = prefijo?.gln || '';
+
+    worksheet.getCell('B8').value = 'Emisor:';
+    worksheet.getCell('C8').value = 'GS1 Ecuador';
+
+    worksheet.getCell('B9').value = 'Fecha emisión :';
+    worksheet.getCell('C9').value = format(fechaActual, 'dd/MM/yyyy');
+
+    // 👉 Cabeceras con columna #
+    const headers = [
+      '#', 'GTIN UV', 'DESCRIPCIÓN', 'MARCA',
+      'CONTENIDO NETO', 'UNIDAD DE MEDIDA', 'CATEGORÍA',
+      'DESCRIPCION EGORÍA', 'GCP BRICK', 'PAIS',
+      'URL', 'SECTOR', 'OBSERVACION', 'FECHA', 'P.:'
+    ];
+
+    worksheet.addRow([]);
+    worksheet.addRow(headers).font = { bold: true };
+
+    // 👉 Filas de productos con numeración
+    productos.forEach((p, i) => {
+      worksheet.addRow([
+        i + 1, // Número de línea
+        p.codbar,
+        p.Despro,
+        p.marca,
+        p.contenido,
+        p.unidad,
+        p.codigoproducto,
+        p.dbrick,
+        p.brick,
+        p.pais,
+        p.url,
+        sectorMap[p.sector] || 'No definido',
+        p.Obs,
+        p.Feccre ? format(new Date(p.Feccre), 'dd/MM/yyyy') : '',
+        p.p
+      ]);
+    });
+
+    // 👉 Autoajustar columnas
+    worksheet.columns.forEach(column => {
+      if (!column) return;
+      let maxLength = 10;
+      column.eachCell?.({ includeEmpty: true }, cell => {
+        const length = cell.value ? cell.value.toString().length : 0;
+        maxLength = Math.max(maxLength, length);
+      });
+      column.width = maxLength + 2;
+    });
+
+    // 👉 Exportar
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    FileSaver.saveAs(blob, nombreArchivo);
+  }
+
+nuevo()
+{
+ const hoy = new Date();
+  this.formReporte.reset({
+    reporte: 'gtinVenta',        // Marcar GTIN Unidad de Venta
+    operadorFecha: 'igual',       // Operador "="
+    fecha: hoy,                   // Fecha actual
+    desde: null,
+    hasta: null,
+    gcp: null,
+    codigo: '',
+    estado: '1'                   // Activo
+  });
 }
-
-
-
-
 }
