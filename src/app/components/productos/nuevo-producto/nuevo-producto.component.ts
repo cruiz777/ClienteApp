@@ -692,38 +692,37 @@ async generarPdfLogistica(): Promise<void> {
 /**
  * Genera reporte Excel de Unidad Logística
  */
+/**
+ * Genera reporte Excel GS1 con el mismo formato que el PDF
+ */
 async generarExcelLogistica(): Promise<void> {
   try {
     // Mostrar loading
-    this._snackBar.open('🔄 Generando reporte Excel...', '', { duration: 2000 });
+    this._snackBar.open('🔄 Generando reporte Excel GS1...', '', { duration: 2000 });
 
-    // Preparar parámetros del reporte
+    // Preparar parámetros del reporte basados en el formulario
     const params = this.prepararParametrosReporte();
     
     // Obtener todos los productos para la exportación
     this.reporteService.getAllProductos(params).subscribe({
       next: async (productos) => {
-        // Aplanar datos para el formato de tabla del ExportService
+        // Aplanar datos para el formato de tabla
         const datosParaExport = this.aplanarDatosParaExport(productos);
         
-        // Preparar información del header (AHORA ES ASYNC)
+        // Preparar información del header
         const headerInfo = await this.prepararHeaderInfo();
         
-        // Configurar opciones de exportación
-        const exportOptions = {
+        // Configurar opciones de exportación GS1
+        const gs1Options = {
           data: datosParaExport,
-          columns: ['gtin13', 'descripcionProducto', 'marca', 'contenidoNeto', 'unidadMedida', 'fecha', 'gtin14', 'descripcionCodigo14', 'presentacion', 'unidad'],
-          headers: ['GTIN-13', 'DESCRIPCIÓN', 'MARCA', 'CONTENIDO NETO', 'UNIDAD MEDIDA', 'FECHA', 'GTIN-14', 'DESCRIPCIÓN', 'PRESENTACIÓN', 'UNIDAD'],
-          filename: 'reporte_unidad_logistica',
-          title: 'Reporte de Producto con Presentaciones',
-          logoUrl: 'assets/images/GS1-logo.png',
+          filename: 'reporte_unidad_logistica_gs1',
           headerInfo: headerInfo
         };
 
-        // Llamar al ExportService
-        await this.exportService.exportarExcel(exportOptions);
+        // Llamar al nuevo método de Excel en GS1ExportService
+        await this.gs1ExportService.exportarExcelGS1(gs1Options);
         
-        this._snackBar.open('✅ Excel generado correctamente', 'Cerrar', { 
+        this._snackBar.open('✅ Excel GS1 generado correctamente', 'Cerrar', { 
           duration: 3000,
           horizontalPosition: 'end',
           verticalPosition: 'top' 
@@ -731,7 +730,7 @@ async generarExcelLogistica(): Promise<void> {
       },
       error: (error) => {
         console.error('Error al obtener datos:', error);
-        this._snackBar.open('❌ Error al generar el reporte', 'Cerrar', { 
+        this._snackBar.open('❌ Error al generar el reporte Excel', 'Cerrar', { 
           duration: 3000,
           horizontalPosition: 'end',
           verticalPosition: 'top' 
@@ -739,10 +738,11 @@ async generarExcelLogistica(): Promise<void> {
       }
     });
   } catch (error) {
-    console.error('Error en generarExcelLogistica:', error);
+    console.error('Error en generarExcelGS1:', error);
     this._snackBar.open('❌ Error al generar el Excel', 'Cerrar', { duration: 3000 });
   }
 }
+
 /**
  * Nuevo método para exportar a Excel (agregar botón en el template)
  */

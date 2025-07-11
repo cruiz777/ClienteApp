@@ -18,8 +18,6 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ToastrService } from 'ngx-toastr';
 import { RequiredFieldsToastService } from 'src/app/components/utils/messages/required-fields-toast.service';
-import * as moment from 'moment';
-import * as html2pdf from 'html2pdf.js';
 import { ExportService } from 'src/app/services/export.service';
 import { LogoService } from 'src/app/services/logo.service';
 import { EmpresaService } from 'src/app/services/empresa.service';
@@ -783,8 +781,6 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     const gln = this.glnsPorPrefijo[this.glnIndex];
     if (!gln) return;
 
-    console.log('📞 Cargando GLN:', gln); // Debug para ver los datos
-
     if (this.ciudadesCargadas && gln.idCiudad) {
       const ciudad = this.ciudades.find(c => c.id === gln.idCiudad);
       if (ciudad) {
@@ -814,11 +810,11 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       glnLongitud: gln.glnLongitud,
       glnFecha: gln.glnFecha,
       glnCodigopostal: gln.glnCodigopostal,
-      // 👈 CAMPOS DE TELÉFONO
+      // CAMPOS DE TELÉFONO
       glnCelular: gln.glnCelular,
       glnTel2: gln.glnTel2,
       glnTel3: gln.glnTel3,
-      // 👈 FIN CAMPOS DE TELÉFONO
+      // FIN CAMPOS DE TELÉFONO
       glnContacto2: gln.glnContacto2,
       glnEmail2: gln.glnEmail2,
       glnContacto3: gln.glnContacto3,
@@ -854,16 +850,9 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       localizacion: gln.nombreLocalizacion
     });
 
-    // 👈 DEBUG PARA VER QUÉ SE ESTÁ CARGANDO
-    console.log('📞 Valores de teléfono desde BD:', {
-      glnCelular: gln.glnCelular,
-      glnTel2: gln.glnTel2,
-      glnTel3: gln.glnTel3
-    });
-
     // 👈 DELAY PARA PERMITIR QUE LOS COMPONENTES PROCESEN
     setTimeout(() => {
-      console.log('📞 Valores en FormControls después del patchValue:');
+      console.log('Valores en FormControls después del patchValue:');
       console.log('glnCelular:', this.formGln.get('glnCelular')?.value);
       console.log('glnTel2:', this.formGln.get('glnTel2')?.value);
       console.log('glnTel3:', this.formGln.get('glnTel3')?.value);
@@ -1128,7 +1117,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
   limpiarCiudad(): void {
     this.ciudadAutocompleteControl.setValue('', { emitEvent: true });
     this.formGln.patchValue({ idCiudad: null });
-    // this.ciudadesFiltradas = []; // opcional, si deseas limpiar la lista también
+    // this.ciudadesFiltradas = []; // opcional, para limpiar la lista de ciudades también
   }
 
   modificar(): void {
@@ -1347,22 +1336,63 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
   }
 
   async exportarPDF(): Promise<void> {
-    const raw = this.formGln.getRawValue();
-    const ciudad = this.ciudades.find(c => c.id === raw.idCiudad);
-    const pais = this.paises.find(p => p.idPais === raw.idPais);
-    const tipoLoc = this.tiposLocalizacion.find(t => t.id_tipo_cliente === raw.idTipoLocalizacion);
+  // PRIORIZAR AUTOCOMPLETE SOBRE TODO LO DEMÁS
+  const ciudadAutocompleteValue = this.ciudadAutocompleteControl.value;
 
-    // Usar el método especializado del ExportService
-    await this.exportService.exportarGLNPDF({
-      gln: raw.gln1 || '',
-      clienteActual: this.clienteActual,
-      formData: raw,
-      ciudad: ciudad,
-      pais: pais,
-      tipoLoc: tipoLoc,
-      logoUrl: this.logoUrl
+  // USAR SIEMPRE EL AUTOCOMPLETE COMO FUENTE DE VERDAD
+  let ciudad = null;
+  
+  if (ciudadAutocompleteValue && typeof ciudadAutocompleteValue === 'object' && ciudadAutocompleteValue.id) {
+    // El autocomplete tiene prioridad absoluta
+    ciudad = ciudadAutocompleteValue;
+    console.log('✅ Usando ciudad del autocomplete (prioridad 1):', ciudad);
+    
+    // Sincronizar el formulario con el autocomplete
+    this.formGln.patchValue({ 
+      idCiudad: ciudad.id,
+      provinciaCodigo: ciudad.provincia,
+      cantonCodigo: ciudad.canton
     });
+  } else {
+    // Solo si no hay autocomplete, buscar por ID del formulario
+    const raw = this.formGln.getRawValue();
+    
+    if (raw.idCiudad) {
+      ciudad = this.ciudades.find(c => c.id === +raw.idCiudad);
+    }
+    
+    // Último recurso: buscar por provincia y cantón
+    if (!ciudad && raw.provinciaCodigo && raw.cantonCodigo) {
+      // 🚨 BUSCAR LA PRIMERA QUE COINCIDA EXACTAMENTE
+      ciudad = this.ciudades.find(c => 
+        c.provincia === raw.provinciaCodigo && 
+        c.canton === raw.cantonCodigo
+      );
+    }
   }
+
+  const raw = this.formGln.getRawValue();
+  
+  // Buscar país
+  let pais = null;
+  if (raw.idPais) {
+    pais = this.paises.find(p => p.idPais === +raw.idPais);
+  } else if (ciudad) {
+    pais = this.paises.find(p => p.nombre.toUpperCase() === ciudad.pais.toUpperCase());
+  }
+  
+  const tipoLoc = this.tiposLocalizacion.find(t => t.id_tipo_cliente === +raw.idTipoLocalizacion);
+
+  await this.exportService.exportarGLNPDF({
+    gln: raw.gln1 || '',
+    clienteActual: this.clienteActual,
+    formData: raw,
+    ciudad: ciudad,
+    pais: pais,
+    tipoLoc: tipoLoc,
+    logoUrl: this.logoUrl
+  });
+}
 
   //Exportar a Excel
   async exportarGLNsExcel(): Promise<void> {

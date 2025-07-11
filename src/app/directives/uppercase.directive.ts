@@ -9,14 +9,37 @@ export class UppercaseDirective {
 
   @HostListener('input', ['$event'])
   onInput(event: Event) {
-    console.log('Directiva ejecutándose');
     const input = event.target as HTMLInputElement;
-    const start = input.selectionStart;
-    const end = input.selectionEnd;
     
-    input.value = input.value.toUpperCase();
-    
-    // Restaurar posición del cursor
-    input.setSelectionRange(start || 0, end || 0);
+    setTimeout(() => {
+      const start = input.selectionStart;
+      const end = input.selectionEnd;
+      
+      const currentValue = input.value;
+      const upperValue = currentValue.toUpperCase();
+      
+      if (currentValue !== upperValue) {
+        input.value = upperValue;
+        input.setSelectionRange(start || 0, end || 0);
+        
+        // Disparar el evento input para que Angular reactive forms detecte el cambio
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }, 0);
+  }
+
+  @HostListener('paste', ['$event'])
+  onPaste(event: ClipboardEvent) {
+    setTimeout(() => {
+      const input = this.el.nativeElement as HTMLInputElement;
+      const start = input.selectionStart;
+      const end = input.selectionEnd;
+      
+      input.value = input.value.toUpperCase();
+      input.setSelectionRange(start || 0, end || 0);
+      
+      // Disparar el evento input para Angular reactive forms
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }, 0);
   }
 }
