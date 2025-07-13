@@ -155,7 +155,7 @@
             Imprimir
           </button>
           <button mat-button (click)="exportarExcel()" 
-                  [disabled]="formReporte.get('reporte')?.value !== 'logistica'">
+                  [disabled]="!formReporte.get('reporte')?.value">
             Excel
           </button>
           <button mat-button (click)="salir()">

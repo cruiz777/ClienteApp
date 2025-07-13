@@ -24,7 +24,7 @@ import { LOCALE_ID } from '@angular/core';
 import { MatRadioModule } from '@angular/material/radio';
 import jsPDF from 'jspdf';
 
-import { ReporteUnidadLogisticaService } from 'src/app/services/reporte.service';
+import { ReporteUnidadLogisticaService, } from 'src/app/services/reporte.service';
 import { ExportService } from 'src/app/services/export.service';
 import { ReporteUnidadLogisticaParams } from 'src/app/interfaces/responses/producto-reporte-response';
 import { GlnService } from 'src/app/services/gln.service';
@@ -744,18 +744,6 @@ async generarExcelLogistica(): Promise<void> {
 }
 
 /**
- * Nuevo método para exportar a Excel (agregar botón en el template)
- */
-exportarExcel(): void {
-  const tipoReporte = this.formReporte.get('reporte')?.value;
-  
-  if (tipoReporte === 'logistica') {
-    this.generarExcelLogistica();
-  } else {
-    this.mostrarAlerta('Exportación a Excel disponible solo para Unidad Logística.', 'Advertencia');
-  }
-}
-/**
  * Prepara los parámetros para el reporte basados en el formulario
  */
 private prepararParametrosReporte(): ReporteUnidadLogisticaParams {
@@ -817,7 +805,6 @@ private prepararParametrosReporte(): ReporteUnidadLogisticaParams {
   generarPdfMembresia(): void { /* ... */ }
   generarPdfCarta(): void { /* ... */ }
   generarPdfGtinVenta(): void { /* ... */ }
-  generarPdfGeneral(): void { /* ... */ }
   generarPdfCompleto(): void { /* ... */ }
 
   /**
@@ -922,5 +909,279 @@ private formatearFechaParaApi(fecha: Date): string {
   const day = String(fecha.getDate()).padStart(2, '0');
   
   return `${year}-${month}-${day}`;
+}
+
+/**
+ * Genera reporte PDF General usando getAllProductosPorCliente
+ */
+async generarPdfGeneral(): Promise<void> {
+  try {
+    this._snackBar.open('🔄 Generando reporte PDF General...', '', { duration: 2000 });
+
+    const params = this.prepararParametrosProductosPorCliente();
+    
+    // Validar parámetros
+    const validationErrors = this.reporteService.validateProductosPorClienteParams(params);
+    if (validationErrors.length > 0) {
+      this._snackBar.open(`⚠️ ${validationErrors[0]}`, 'Cerrar', { 
+        duration: 4000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top' 
+      });
+      return;
+    }
+    
+    this.reporteService.getAllProductosPorCliente(params).subscribe({
+      next: async (productos) => {
+        if (productos.length === 0) {
+          this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', { 
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top' 
+          });
+          return;
+        }
+
+        const datosParaExport = this.aplanarDatosGeneralParaExport(productos);
+        const headerInfo = await this.prepararHeaderInfoGeneral();
+        
+        const gs1Options = {
+          data: datosParaExport,
+          filename: 'reporte_productos_general_gs1',
+          headerInfo: headerInfo
+        };
+
+        await this.gs1ExportService.exportarPDFGS1(gs1Options);
+        
+        this._snackBar.open('✅ PDF General generado correctamente', 'Cerrar', { 
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top' 
+        });
+      },
+      error: (error) => {
+        console.error('Error al obtener productos del cliente:', error);
+        this._snackBar.open('❌ Error al generar el reporte PDF', 'Cerrar', { 
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top' 
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Error en generarPdfGeneral:', error);
+    this._snackBar.open('❌ Error al generar el PDF', 'Cerrar', { duration: 3000 });
+  }
+}
+
+/**
+ * Genera reporte Excel General usando getAllProductosPorCliente
+ */
+async generarExcelGeneral(): Promise<void> {
+  try {
+    this._snackBar.open('🔄 Generando reporte Excel General...', '', { duration: 2000 });
+
+    const params = this.prepararParametrosProductosPorCliente();
+    
+    // Validar parámetros
+    const validationErrors = this.reporteService.validateProductosPorClienteParams(params);
+    if (validationErrors.length > 0) {
+      this._snackBar.open(`⚠️ ${validationErrors[0]}`, 'Cerrar', { 
+        duration: 4000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top' 
+      });
+      return;
+    }
+    
+    this.reporteService.getAllProductosPorCliente(params).subscribe({
+      next: async (productos) => {
+        if (productos.length === 0) {
+          this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', { 
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top' 
+          });
+          return;
+        }
+
+        const datosParaExport = this.aplanarDatosGeneralParaExport(productos);
+        const headerInfo = await this.prepararHeaderInfoGeneral();
+        
+        const gs1Options = {
+          data: datosParaExport,
+          filename: 'reporte_productos_general_gs1',
+          headerInfo: headerInfo
+        };
+
+        await this.gs1ExportService.exportarExcelGS1(gs1Options);
+        
+        this._snackBar.open('✅ Excel General generado correctamente', 'Cerrar', { 
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top' 
+        });
+      },
+      error: (error) => {
+        console.error('Error al obtener productos del cliente:', error);
+        this._snackBar.open('❌ Error al generar el reporte Excel', 'Cerrar', { 
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top' 
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Error en generarExcelGeneral:', error);
+    this._snackBar.open('❌ Error al generar el Excel', 'Cerrar', { duration: 3000 });
+  }
+}
+
+/**
+ * Prepara parámetros específicos para productos por cliente (NUEVO)
+ */
+private prepararParametrosProductosPorCliente(): any {
+  const formValues = this.formReporte.value;
+  const params: any = {
+    clienteCodigo: this.clienteSeleccionado?.clientes_codigo || 0
+  };
+
+  // Código de producto
+  if (formValues.codigo) {
+    params.codigoProducto = formValues.codigo;
+  }
+
+  // Estado
+  if (formValues.estado !== null && formValues.estado !== undefined) {
+    params.estado = formValues.estado === '1' || formValues.estado === 1;
+  }
+
+  // Fechas según el operador seleccionado
+  const operadorFecha = formValues.operadorFecha;
+  
+  if (operadorFecha === 'entre') {
+    if (formValues.desde) {
+      params.fechaDesde = this.formatearFechaParaApi(formValues.desde);
+      params.condicionFecha = 'ENTRE';
+    }
+    if (formValues.hasta) {
+      params.fechaHasta = this.formatearFechaParaApi(formValues.hasta);
+    }
+  } else if (formValues.fecha) {
+    params.fechaDesde = this.formatearFechaParaApi(formValues.fecha);
+    
+    switch (operadorFecha) {
+      case 'igual':
+        params.condicionFecha = 'IGUAL';
+        break;
+      case 'menorIgual':
+        params.condicionFecha = 'MENOR_IGUAL';
+        break;
+      case 'mayor':
+        params.condicionFecha = 'MAYOR';
+        break;
+    }
+  }
+
+  return params;
+}
+
+/**
+ * Aplana datos para reporte general (NUEVO - diferente al de unidad logística)
+ */
+private aplanarDatosGeneralParaExport(productos: any[]): any[] {
+  return productos.map(producto => ({
+    codigo_producto: producto.codigo_producto,
+    descripcion: producto.descripcion,
+    marca: producto.marca,
+    contenido_neto: producto.contenido_neto,
+    unidad_medida: producto.unidad_medida,
+    fecha: producto.fecha,
+    codigos_14: producto.codigos_14 || []
+  }));
+}
+
+/**
+ * Header específico para reporte general (NUEVO)
+ */
+private async prepararHeaderInfoGeneral(): Promise<any> {
+  const baseInfo = {
+    emisor: 'GS1 Ecuador',
+    fechaEmision: new Date().toLocaleDateString('es-EC', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }),
+    pagina: '1',
+    codigoEmpresa: String(this.clienteSeleccionado?.clientes_codigo || ''),
+    nombreEmpresa: this.clienteSeleccionado?.nomcli || '',
+    ruc: String(this.clienteE?.ruc || ''),
+    gln: '',
+    prefijo: 'GENERAL' // Diferencia clave: indica que es un reporte general
+  };
+
+  // Intentar obtener GLN del primer prefijo disponible
+  try {
+    if (this.prefijos.length > 0) {
+      const primerPrefijo = this.prefijos[0];
+      const glns = await this.glnService.obtenerGlnPorIdPrefijo(primerPrefijo.id_prefijos).toPromise();
+      if (glns && glns.length > 0) {
+        baseInfo.gln = String(glns[0].gln1 || '');
+      }
+      
+      // Intentar obtener prefijogs1 para codigoEmpresa
+      const prefijos = await this.prefijoService.buscarPorCodpre(primerPrefijo.codpre).toPromise();
+      if (prefijos && prefijos.length > 0) {
+        baseInfo.codigoEmpresa = prefijos[0].prefijosgs1 || String(this.clienteSeleccionado?.clientes_codigo || '');
+      }
+    }
+  } catch (error) {
+    console.warn('Error al obtener información para reporte general:', error);
+  }
+
+  return baseInfo;
+}
+
+/**
+ * Método principal para exportar a Excel - optimizado con switch
+ */
+exportarExcel(): void {
+  const tipoReporte = this.formReporte.get('reporte')?.value;
+  
+  if (tipoReporte) {
+    switch (tipoReporte) {
+      case 'logistica':
+        this.generarExcelLogistica();
+        break;
+      case 'general':
+        this.generarExcelGeneral();
+        break;
+      case 'gtinVenta':
+        this.generarExcelGtinVenta();
+        break;
+      case 'completo':
+        this.generarExcelCompleto();
+        break;
+      // Agregar más casos según necesites
+      default:
+        this.mostrarAlerta('Exportación a Excel no disponible para este tipo de reporte.', 'Advertencia');
+        break;
+    }
+  } else {
+    this.mostrarAlerta('Debe seleccionar un reporte para exportar a Excel.', 'Advertencia');
+  }
+}
+
+/**
+ * Placeholders para futuros reportes Excel
+ */
+generarExcelGtinVenta(): void {
+  this.mostrarAlerta('Excel para GTIN Venta en desarrollo.', 'Info');
+  // TODO: Implementar cuando sea necesario
+}
+
+generarExcelCompleto(): void {
+  this.mostrarAlerta('Excel para Reporte Completo en desarrollo.', 'Info');
+  // TODO: Implementar cuando sea necesario
 }
 }

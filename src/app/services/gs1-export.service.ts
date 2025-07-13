@@ -44,7 +44,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
         producto.marca || '',
         producto.contenido_neto || '',
         producto.unidad_medida || '',
-        moment(producto.fecha).format('DD/MM/YYYY')
+        this.formatearFechaSafe(producto.fecha)
       ]);
 
       codigos14.forEach((c14: any) => {
@@ -56,7 +56,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
           '',
           '',
           '',
-          moment(c14.fecha || producto.fecha).format('DD/MM/YYYY')
+          this.formatearFechaSafe(c14.fecha || producto.fecha)
         ]);
       });
     });
@@ -346,7 +346,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
     unidadCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
     const fechaCell = worksheet.getCell(`H${currentRow}`);
-    fechaCell.value = moment(producto.fecha).format('DD/MM/YYYY');
+    fechaCell.value = this.formatearFechaSafe(producto.fecha);
     fechaCell.font = { name: 'Arial', size: 9 };
     fechaCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
@@ -370,7 +370,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
       // Columnas E, F, G vacías para GTIN-14
 
       const fecha14Cell = worksheet.getCell(`H${currentRow}`);
-      fecha14Cell.value = moment(c14.fecha || producto.fecha).format('DD/MM/YYYY');
+      fecha14Cell.value = this.formatearFechaSafe(c14.fecha || producto.fecha);
       fecha14Cell.font = { name: 'Arial', size: 9 };
       fecha14Cell.alignment = { horizontal: 'left', vertical: 'middle' };
 
@@ -426,5 +426,22 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
   link.click();
   
   window.URL.revokeObjectURL(url);
+}
+
+private formatearFechaSafe(fecha: any): string {
+  if (!fecha) return '';
+  
+  let fechaMoment;
+  
+  // Intentar diferentes formatos
+  if (typeof fecha === 'string' && fecha.includes('/')) {
+    // Formato DD/MM/YYYY
+    fechaMoment = moment(fecha, 'DD/MM/YYYY');
+  } else {
+    // Formato ISO o Date object
+    fechaMoment = moment(fecha);
+  }
+  
+  return fechaMoment.isValid() ? fechaMoment.format('DD/MM/YYYY') : '';
 }
 }
