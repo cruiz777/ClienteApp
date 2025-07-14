@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild} from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
 import { Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
@@ -11,6 +11,7 @@ import { DialogClienteComponent } from '../modals/dialog-cliente/dialog-cliente.
 import { ClienteService } from '../../../services/cliente.service';
 import { DialogClienteEditarComponent } from '../modals/dialog-cliente-editar/dialog-cliente-editar.component';
 import { MatIconModule } from '@angular/material/icon';
+import { LprefijoComponent } from './lprefijo/lprefijo.component';
 const ELEMENT_DATA: Cliente[] = [
   {
     clientes_codigo: 101,
@@ -18,9 +19,9 @@ const ELEMENT_DATA: Cliente[] = [
     dircli: "Av. Principal 123, Lima",
     ruc: "20456123456",
     fecing: "2021-05-15",
-    zonaReferencia:"Z01",
-    estadoNombre:"Afiliada",
-    prefijo:'7777'
+    zonaReferencia: "Z01",
+    estadoNombre: "Afiliada",
+    prefijo: '7777'
   }
 ];
 
@@ -31,7 +32,7 @@ const ELEMENT_DATA: Cliente[] = [
   styleUrls: ['./clientes.component.css']
 })
 export class ClientesComponent implements OnInit {
-  displayedColumns: string[] = ['clientes_codigo',  'nomcli','dircli','ruc','fecing','zonaReferencia','estadoNombre','prefijo','acciones'];
+  displayedColumns: string[] = ['clientes_codigo', 'nomcli', 'dircli', 'ruc', 'fecing', 'zonaReferencia', 'estadoNombre', 'prefijo', 'codpre', 'acciones'];
   dataSource = new MatTableDataSource(ELEMENT_DATA);
   selectedCliente: Cliente | null = null;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
@@ -39,11 +40,12 @@ export class ClientesComponent implements OnInit {
   constructor(
     private dialog: MatDialog,
     private _snackBar: MatSnackBar,
-    private clienteService:ClienteService,
+    private clienteService: ClienteService,
     private clienteSeleccionadoService: ClienteSeleccionadoService,
-    private router: Router
+    private router: Router,
+    
   ) {
-    }
+  }
 
   ngOnInit(): void {
     this.cargarClientes();
@@ -58,7 +60,7 @@ export class ClientesComponent implements OnInit {
 
     // Limpia primero la tabla visualmente
     this.dataSource = new MatTableDataSource<Cliente>([]);
-this.dataSource.paginator = this.paginator;
+    this.dataSource.paginator = this.paginator;
 
     this.clienteService.getClientes().subscribe({
       next: (resp) => {
@@ -79,7 +81,7 @@ this.dataSource.paginator = this.paginator;
     this.dataSource.filter = filterValue.trim().toLowerCase();
   }
 
-  editarCliente(cliente:Cliente) {
+  editarCliente(cliente: Cliente) {
     this.dialog.open(DialogClienteEditarComponent, {
       width: '1200px', // Aumenta el ancho del diálogo
 
@@ -90,7 +92,7 @@ this.dataSource.paginator = this.paginator;
     }).afterClosed().subscribe(result => {
       if (result === "editado")
         this.cargarClientes(); // ✅ recarga la tabla
-       // this.mostrarAlerta('Cliente actualizado correctamente', 'Éxito');
+      // this.mostrarAlerta('Cliente actualizado correctamente', 'Éxito');
     });
   }
 
@@ -116,10 +118,24 @@ this.dataSource.paginator = this.paginator;
       duration: 3000
     });
   }
-seleccionarFila(cliente: Cliente) {
-  this.selectedCliente = cliente;
-  this.clienteSeleccionadoService.seleccionar(cliente);
-  this.router.navigate(['/menuProductos/clienteSeleccion']);
+  seleccionarFila(cliente: Cliente) {
+    this.selectedCliente = cliente;
+    this.clienteSeleccionadoService.seleccionar(cliente);
+    this.router.navigate(['/menuProductos/clienteSeleccion']);
+  }
+editarPrefijosCliente(cliente: Cliente): void {
+  this.dialog.open(LprefijoComponent, {
+    width: '670px',
+    height: '50vh',
+    maxHeight: '50vh',
+    disableClose: true,
+    data: cliente.clientes_codigo
+  }).afterClosed().subscribe(result => {
+    if (result === 'editado') {
+      this.cargarClientes();
+    }
+  });
 }
+
 
 }

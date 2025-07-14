@@ -13,6 +13,7 @@ import { MatTableModule } from '@angular/material/table';
 import { DialogClienteEditarComponent } from '../../pages/modals/dialog-cliente-editar/dialog-cliente-editar.component';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
+import { LprefijoComponent } from '../../pages/clientes/lprefijo/lprefijo.component';
 @Component({
   selector: 'app-cliente-seleccionado',
   standalone: true,
@@ -38,7 +39,7 @@ export class ClienteSeleccionadoComponent {
 
   columnas: string[] = [
     'clientes_codigo', 'nomcli', 'dircli', 'ruc', 'fecing',
-    'zonaReferencia', 'estadoNombre','acciones'
+    'zonaReferencia', 'estadoNombre','codpre','acciones'
   ];
 
   constructor(
@@ -85,6 +86,20 @@ export class ClienteSeleccionadoComponent {
       });
     }
 
+
+    editarPrefijosCliente(cliente: Cliente): void {
+      this.dialog.open(LprefijoComponent, {
+        width: '670px',
+        height: '50vh',
+        maxHeight: '50vh',
+        disableClose: true,
+        data: cliente.clientes_codigo
+      }).afterClosed().subscribe(result => {
+        if (result === 'editado') {
+          //this.cargarClientes();
+        }
+      });
+    }
     
 
 }
