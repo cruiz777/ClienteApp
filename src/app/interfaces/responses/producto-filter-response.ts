@@ -1,3 +1,10 @@
+export interface ClienteReporteResponse {
+  nombreCliente: string;
+  ruc: string;
+  gln: string;
+  gs1: string;
+}
+
 export interface ProductoResponse {
   codpro: string;
   despro: string;
@@ -5,5 +12,10 @@ export interface ProductoResponse {
   contenido: string;
   um: string;
   gtin: string;
-  feccre: Date | string;
+  feccre: string;
+}
+
+export interface ClienteConProductosResponse {
+  cliente: ClienteReporteResponse;
+  productos: ProductoResponse[];
 }

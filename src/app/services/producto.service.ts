@@ -5,6 +5,7 @@ import { environment } from 'src/environments/environment';
 import { stream } from 'exceljs';
 import { ProductoRequests } from '../interfaces/requests/producto-filter-request'
 import { ProductoResponse } from '../interfaces/responses/producto-filter-response'
+import { ClienteConProductosResponse } from '../interfaces/responses/producto-filter-response'
 
 export interface ProductoRequest {
   IdProducto: number;
@@ -302,12 +303,10 @@ export class ProductoService {
   }
 
 
-  getProductosFiltrados(request: ProductoRequests): Observable<ProductoResponse[]> {
+  getProductosFiltrados(request: ProductoRequests): Observable<ClienteConProductosResponse> {
     return this.http
-      .post<ApiResponse<ProductoResponse[]>>(`${this.apiReporte}/Producto/filtrar`, request)
-      .pipe(
-        map(response => response.data ?? [])
-      );
+      .post<ApiResponse<ClienteConProductosResponse>>(`${this.apiReporte}/Producto/filtrar`, request)
+      .pipe(map(response => response.data!));
   }
 
 

@@ -25,10 +25,9 @@ import { MatRadioModule } from '@angular/material/radio';
 import jsPDF from 'jspdf';
 import { firstValueFrom } from 'rxjs';
 import { de } from 'intl-tel-input/i18n';
-import { ProductoResponse } from 'src/app/interfaces/responses/producto-filter-response';
+import { ClienteReporteResponse, ClienteConProductosResponse, ProductoResponse } from 'src/app/interfaces/responses/producto-filter-response';
 import { ProductoRequests } from 'src/app/interfaces/requests/producto-filter-request';
-
-
+import * as XLSX from 'xlsx';
 
 export const MY_DATE_FORMATS = {
   parse: {
@@ -68,6 +67,8 @@ export const MY_DATE_FORMATS = {
   ]
 })
 export class NuevoProductoComponent implements OnInit {
+  clienteReporte!: ClienteReporteResponse;
+  productosFiltrados: ProductoResponse[] = [];
   formReporte!: FormGroup; // ✅ declara la propiedad correctamente
   gridOptions: GridOptions = {
     getRowId: (params: any) => params.data.codbar
@@ -284,7 +285,7 @@ export class NuevoProductoComponent implements OnInit {
     });
   }
 
-  formatearFecha(fechaStr: string): string {
+  formatearFecha(fechaStr: string | Date): string {
     const fecha = new Date(fechaStr);
     const dia = String(fecha.getDate()).padStart(2, '0');
     const mes = String(fecha.getMonth() + 1).padStart(2, '0');
@@ -457,7 +458,7 @@ export class NuevoProductoComponent implements OnInit {
         case 'membresia':
           this.generarPdfMembresia();
           break;
-          case 'carta':
+        case 'carta':
           this.generarPdfCarta();
           break;
 
@@ -473,80 +474,158 @@ export class NuevoProductoComponent implements OnInit {
   generarPdfMembresia(): void { /* ... */ }
   generarPdfCarta(): void { /* ... */ }
 
-async generarPdfGtinVenta(): Promise<void> {
-  const codpro = this.formReporte.get('codigo')?.value;
-  const idPrefijo = this.formReporte.get('gcp')?.value;
-  const operador = this.formReporte.get('operadorFecha')?.value;
+  async generarPdfGtinVenta(): Promise<void> {
+    const codpro = this.formReporte.get('codigo')?.value;
+    const idPrefijos = this.formReporte.get('gcp')?.value;
+    const operador = this.formReporte.get('operadorFecha')?.value;
 
-  let fechaDesde: Date | undefined;
-  let fechaHasta: Date | undefined;
+    const estadoSeleccionado = this.formReporte.get('estado')?.value;
+    let activo: boolean | undefined;
+    if (estadoSeleccionado === true || estadoSeleccionado === '1') {
+      activo = true;
+    } else if (estadoSeleccionado === false || estadoSeleccionado === '0') {
+      activo = false;
+    }
 
-  if (operador === 'igual') {
-    const fecha = this.formReporte.get('fecha')?.value;
-    fechaDesde = fechaHasta = fecha;
-  } else if (operador === 'mayor') {
-    fechaDesde = this.formReporte.get('fecha')?.value;
-  } else if (operador === 'menorIgual') {
-    fechaHasta = this.formReporte.get('fecha')?.value;
-  } else if (operador === 'entre') {
-    fechaDesde = this.formReporte.get('desde')?.value;
-    fechaHasta = this.formReporte.get('hasta')?.value;
-  }
+    let fechaDesde: Date | undefined;
+    let fechaHasta: Date | undefined;
 
-  const request: ProductoRequests = {
-    codpro,
-    idPrefijo,
-    fechaDesde,
-    fechaHasta
-  };
+    if (operador === 'igual') {
+      const fecha = this.formReporte.get('fecha')?.value;
+      fechaDesde = fechaHasta = fecha;
+    } else if (operador === 'mayor') {
+      fechaDesde = this.formReporte.get('fecha')?.value;
+    } else if (operador === 'menorIgual') {
+      fechaHasta = this.formReporte.get('fecha')?.value;
+    } else if (operador === 'entre') {
+      fechaDesde = this.formReporte.get('desde')?.value;
+      fechaHasta = this.formReporte.get('hasta')?.value;
+    }
 
-  const productos = await firstValueFrom(this.productoService.getProductosFiltrados(request));
+    const request: ProductoRequests = {
+      codpro,
+      idPrefijos,
+      fechaDesde,
+      fechaHasta,
+      activo
+    };
 
-  if (!productos || productos.length === 0) {
-    this.mostrarAlerta('⚠ No se encontraron productos para el reporte.', 'Advertencia');
-    return;
-  }
+    console.log('Enviando request:', JSON.stringify(request));
 
-  const logo = await this.cargarImagenBase64('assets/logo/GS1-logo.png');
-  const doc = new jsPDF();
-  let y = 10;
+    const respuesta = await firstValueFrom(this.productoService.getProductosFiltrados(request));
+    this.clienteReporte = respuesta.cliente;
+    this.productosFiltrados = respuesta.productos;
 
-  doc.addImage(logo, 'PNG', 10, y, 30, 20);
-  doc.setFontSize(14);
-  doc.setFont('helvetica', 'bold');
-  doc.text('Reporte GTIN Unidad de Venta', 105, y + 10, { align: 'center' });
-  y += 25;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+    const logo = await this.cargarImagenBase64('assets/logo/GS1-logo.png');
+    let y = 10;
 
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.text('GTIN', 10, y);
-  doc.text('Descripción', 50, y);
-  doc.text('Marca', 110, y);
-  doc.text('Contenido', 150, y);
-  doc.text('UM', 180, y);
-  y += 5;
-  doc.line(10, y, 200, y);
-  y += 4;
-  doc.setFont('helvetica', 'normal');
+    // LOGO IZQUIERDA
+    doc.addImage(logo, 'PNG', 10, 10, 30, 20);
 
-  for (const p of productos) {
-    doc.text(p.gtin || '---', 10, y);
-    doc.text(p.despro || '---', 50, y);
-    doc.text(p.marca || '---', 110, y);
-    doc.text(p.contenido || '---', 150, y);
-    doc.text(p.um || '---', 180, y);
+    // TÍTULO CENTRAL
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(14);
+    doc.text('Sistema de Control de Códigos', 150, 15, { align: 'center' });
+    doc.text('Reporte de Productos', 150, 22, { align: 'center' });
+
+    // CLIENTE a la izquierda
+    doc.setFontSize(10);
+    doc.text(this.clienteReporte?.gs1 || '---', 15, 35);
+    doc.text(this.clienteReporte?.nombreCliente || '---', 50, 35);
+
+    // DERECHA: Emisor, Fecha, Página, RUC, GLN
+    const rightX = 230;
+    let rightY = 12;
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Emisor:', rightX, rightY);
+    doc.text('GS1 Ecuador', rightX + 25, rightY);
+    rightY += 5;
+    doc.text('Fecha emisión:', rightX, rightY);
+    doc.text(new Date().toLocaleDateString('es-EC'), rightX + 25, rightY);
+    rightY += 5;
+    doc.text('Pág:', rightX, rightY);
+    doc.text('1', rightX + 25, rightY);
+    rightY += 5;
+    doc.text('RUC:', rightX, rightY);
+    doc.text(this.clienteReporte?.ruc || '---', rightX + 25, rightY);
+    rightY += 5;
+    doc.text('GLN:', rightX, rightY);
+    doc.text(this.clienteReporte?.gln || '---', rightX + 25, rightY);
+
+    y = 42;
+
+    // TEXTO INSTITUCIONAL
+    const texto = `La Asociación Ecuatoriana de Código de Producto (ECOP) es organización miembro de GS1 en Ecuador y certifica que los códigos GTIN® que se detallan en este reporte son números estándares autorizados. Le recordamos que publicamos a nivel nacional y global la autenticidad de los códigos GTIN® registrados en la base de datos de GS1 Ecuador. Verifique la identidad de estos códigos en nuestra herramienta GEPIR Ecuador. Es responsabilidad del DUEÑO DE LA MARCA el manejo y control del CÓDIGO, DESCRIPCIÓN y MARCA DEL PRODUCTO. El Prefijo de Compañía GS1 no puede venderse, alquilarse, o entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a todas las claves de identificación GS1. El Prefijo de Compañía es único e inequívoco para cada empresa.`;
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    const textWidth = 280;
+    const lines = doc.splitTextToSize(texto, textWidth);
+    doc.text(lines, 10, y);
+    y += lines.length * 5;
+
+    // CABECERA
+    const colX = [10, 55, 120, 160, 190, 220, 250];
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+
+    // Línea superior
+    doc.line(10, y, 287, y); // línea arriba
     y += 5;
 
-    if (y > 270) {
-      doc.addPage();
-      y = 10;
+    // Primera fila (principal)
+    doc.text('CÓDIGO', colX[0], y);
+    doc.text('DESCRIPCIÓN', colX[1], y);
+    doc.text('MARCA', colX[2], y);
+    doc.text('CONTENIDO', colX[3], y);
+    doc.text('UNIDAD', colX[4], y);
+    doc.text('TIPO', colX[5], y);
+    doc.text('FECHA', colX[6], y);
+
+    y += 5;
+    doc.setFontSize(9);
+
+    // Subtítulos (segunda fila de cabecera)
+    doc.text('NETO', colX[3], y);
+    doc.text('MEDIDA', colX[4], y);
+    doc.text('CÓDIGO', colX[5], y);
+
+    y += 2;
+    // Línea inferior
+    doc.line(10, y, 287, y);
+
+    // CUERPO DE LA TABLA
+    y += 5;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+
+    for (const p of this.productosFiltrados) {
+      if (y > 180) {
+        doc.addPage();
+        y = 20;
+      }
+      const fila = [
+        p.codpro,
+        p.despro,
+        p.marca,
+        p.contenido,
+        p.um,
+        p.gtin,
+        new Date(p.feccre).toLocaleDateString('es-EC')
+      ];
+      fila.forEach((val, i) => {
+        doc.text(val, colX[i], y);
+      });
+      y += 6;
     }
+
+    const nombreArchivo = `Reporte_GTIN_UV_${new Date().toISOString().slice(0, 10)}.pdf`;
+    doc.save(nombreArchivo);
   }
 
-  const fechaActual = new Date();
-  const nombreArchivo = `Reporte_GTIN_UV_${fechaActual.getFullYear()}${fechaActual.getMonth() + 1}${fechaActual.getDate()}.pdf`;
-  doc.save(nombreArchivo);
-}
+
 
   generarPdfLogistica(): void { /* ... */ }
   generarPdfGeneral(): void { /* ... */ }
@@ -554,15 +633,56 @@ async generarPdfGtinVenta(): Promise<void> {
 
 
   private async cargarImagenBase64(ruta: string): Promise<string> {
-  const response = await fetch(ruta);
-  const blob = await response.blob();
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
+    const response = await fetch(ruta);
+    const blob = await response.blob();
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
 
+  exportarExcel(): void {
+    if (!this.productosFiltrados.length || !this.clienteReporte) {
+      this.mostrarAlerta('⚠️ No hay productos o cliente cargado.', 'Advertencia');
+      return;
+    }
+
+    // Encabezado de cliente
+    const encabezadoCliente = [
+      ['GCP:', this.formReporte.get('gcp')?.value || ''],
+      ['Nombre Cliente:', this.clienteReporte.nombreCliente || ''],
+      ['RUC:', this.clienteReporte.ruc || ''],
+      ['GLN:', this.clienteReporte.gln || '']
+    ];
+
+    // Encabezado de columnas
+    const encabezadoColumnas = [
+      ['CÓDIGO', 'DESCRIPCIÓN', 'MARCA', 'CONTENIDO NETO', 'UNIDAD MEDIDA', 'TIPO CÓDIGO', 'FECHA']
+    ];
+
+    // Cuerpo de productos
+    const cuerpo = this.productosFiltrados.map(p => [
+      p.codpro,
+      p.despro,
+      p.marca,
+      p.contenido,
+      p.um,
+      p.gtin,
+      this.formatearFecha(p.feccre)
+    ]);
+
+    // Unir todo
+    const hojaCompleta = [...encabezadoCliente, [], ...encabezadoColumnas, ...cuerpo];
+
+    // Crear Excel
+    const ws: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(hojaCompleta);
+    const wb: XLSX.WorkBook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Productos');
+
+    const nombreArchivo = `Reporte_GTIN_UV_${new Date().toISOString().slice(0, 10)}.xlsx`;
+    XLSX.writeFile(wb, nombreArchivo);
+  }
 
 }
