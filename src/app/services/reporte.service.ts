@@ -16,7 +16,7 @@ import { environment } from 'src/environments/environment';
   providedIn: 'root'
 })
 export class ReporteUnidadLogisticaService {
-  private readonly baseUrl = `${environment.reportsUrl}/Producto`;
+  private readonly baseUrl = `${environment.reportUrl}/Producto`;
 
   constructor(private http: HttpClient) {}
 
