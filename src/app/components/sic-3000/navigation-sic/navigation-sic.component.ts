@@ -49,9 +49,12 @@ export class NavigationSicComponent {
   toggleSidebar(): void {
     this.isExpanded = !this.isExpanded;
   }
+  //goTo(ruta: string): void {
+    //this.router.navigate([ruta]);
+  //}
   goTo(ruta: string): void {
-    this.router.navigate([ruta]);
-  }
+  this.router.navigate(['/sic-3000', ruta]);
+}
   salir(): void {
 
     this.router.navigate(['/inicio']).then(() => {

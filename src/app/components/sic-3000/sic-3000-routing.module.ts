@@ -3,6 +3,7 @@ import { NgModule, Component } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
 import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
+import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.component';
 
 
 const routes: Routes = [
@@ -13,6 +14,7 @@ const routes: Routes = [
       { path: '', redirectTo: 'inicio', pathMatch: 'full' },
       { path: 'inicio-sic', component: InicioSicComponent },
       { path: 'estructura-list', component: EstructuraListComponent },
+      { path: 'registroCobros', component: RegistroCobrosComponent },
     ]
 
   }
