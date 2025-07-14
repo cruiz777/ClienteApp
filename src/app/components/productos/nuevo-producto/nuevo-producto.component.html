@@ -94,7 +94,7 @@
             </mat-form-field>
           </div>
           <div>
-            <mat-form-field appearance="fill" class="codigo-separado">
+            <mat-form-field *ngIf="mostrarFiltrosCod" appearance="fill" class="codigo-separado">
               <mat-label>Código</mat-label>
               <input matInput formControlName="codigo" />
             </mat-form-field>
@@ -147,23 +147,33 @@
           </mat-form-field>
         </section>
 
+        <app-carta #cartaComponent></app-carta>
+        <app-carta-oficial #cartaOficialComponent></app-carta-oficial>
 
+        <!--BOTONES ACTUALIZADOS CON LÓGICA CONDICIONAL -->
         <div class="form-actions">
-          <button mat-button>Nuevo</button>
-          <button mat-button (click)="imprimir()" 
-                  [disabled]="!formReporte.get('reporte')?.value">
+          <button mat-button (click)="nuevo()">Nuevo</button>
+          
+          <!-- Imprimir: Bloqueado para "completo" -->
+          <button mat-button 
+                  (click)="imprimir()" 
+                  [disabled]="!imprimirHabilitado"
+                  [title]="formReporte.get('reporte')?.value === 'completo' ? 'Use Excel para reporte completo' : ''">
             Imprimir
           </button>
-          <button mat-button (click)="exportarExcel()" 
-                  [disabled]="!formReporte.get('reporte')?.value">
+          
+          <!-- Excel: Habilitado para todos los reportes -->
+          <button mat-button 
+                  (click)="exportarExcel()" 
+                  [disabled]="!excelHabilitado">
             Excel
           </button>
+          
           <button mat-button (click)="salir()">
             <img src="assets/icons/icon-salir.png" alt="Salir" width="18" height="18" style="margin-right: 6px;" />
             Salir
           </button>
         </div>
-
       </div>
     </main>
   </form>
