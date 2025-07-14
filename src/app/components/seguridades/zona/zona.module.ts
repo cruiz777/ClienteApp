@@ -10,8 +10,7 @@ import { ZonaFormComponent } from './zona-form/zona-form.component';
 @NgModule({
   declarations: [
     ZonaListComponent,
-    ZonaFormComponent,
-    UppercaseDirective
+    ZonaFormComponent
   ],
   imports: [
     ReusableModule,

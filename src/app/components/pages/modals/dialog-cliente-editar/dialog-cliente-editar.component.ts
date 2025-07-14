@@ -149,6 +149,7 @@ export class DialogClienteEditarComponent implements OnInit {
     'fechaCierre',
     'tipoLocalizacion',
     'observacion',
+    'orden',
     'accion'
   ];
 
@@ -298,12 +299,12 @@ export class DialogClienteEditarComponent implements OnInit {
         telefonoRepresentante: ['', Validators.required],
 
         email: ['', [emailValidoValidator()]],
-        email1: ['', [emailValidoValidator()]],
+        email1: ['', [Validators.required, emailValidoValidator()]],
         email2: ['', [emailValidoValidator()]],
         email3: ['', [emailValidoValidator()]],
         telefono: [''],
         nombreCodificacion: [''],
-        nombreFinanciero: [''],
+        nombreFinanciero:[null, Validators.required],
 
         telefono2: [''],
         pregunta1: [false],
@@ -1421,7 +1422,7 @@ export class DialogClienteEditarComponent implements OnInit {
   cargarPrefijoCliente(codigoCliente: number): void {
     this.prefijoService.obtenerPorClienteCodigo(codigoCliente).subscribe({
       next: (data) => {
-        console.log('📦 Datos del cliente con prefijo:', data);
+        console.log('📦 Datos del cliente con prefijo:-->', data);
 
         // Asegurar que data es un arreglo
         const datos = Array.isArray(data) ? data : [];
@@ -1919,7 +1920,8 @@ logo()
     estadoTexto: el.estado ? 'Inactivo' : 'Activo',
     fechaCierreTexto: this.formatearFecha(el.fechaCierre),
     tipoLocalizacion: el.tipoLocalizacion,
-    observacion: el.observacion
+    observacion: el.observacion,
+    orden:el.orden
   }));
 
   const options: ExportOptions = {

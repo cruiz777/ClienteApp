@@ -9,8 +9,8 @@ import { LoginUsuarioResponse } from '../interfaces/responses/usuario-log-respon
   providedIn: 'root'
 })
 export class IdleService {
-  private timeoutInMs: number = 10 * 60 * 1000; // 10 minutos de inactividad
-  private warningInMs: number = 9 * 60 * 1000; // Mostrar advertencia a los 9 minutos
+  private timeoutInMs: number = 60 * 60 * 1000; // 60 minutos de inactividad
+  private warningInMs: number = 55 * 60 * 1000; // Mostrar advertencia a los 5 minutos
   private warningTimer: any;
   private logoutTimer: any;
   private usuarioActual: LoginUsuarioResponse | null = null;

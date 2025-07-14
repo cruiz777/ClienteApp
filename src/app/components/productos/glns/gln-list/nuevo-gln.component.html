@@ -114,7 +114,7 @@
         <div class="form-row">
           <div class="form-group">
             <label>Localización:</label>
-            <input matInput formControlName="localizacion" [class.invalid]="pasoActual === 1 && formGln.get('localizacion')?.invalid && formGln.get('localizacion')?.touched" placeholder="Ej. Matriz">
+            <input appUppercase  matInput formControlName="localizacion" [class.invalid]="pasoActual === 1 && formGln.get('localizacion')?.invalid && formGln.get('localizacion')?.touched" placeholder="Ej. Matriz">
             <mat-error *ngIf="pasoActual === 1 && formGln.get('localizacion')?.hasError('required')">Campo obligatorio</mat-error>
           </div>
           <div class="form-group">
@@ -139,7 +139,7 @@
           </div>
           <div class="form-group">
             <label>Dirección:</label>
-            <input matInput formControlName="direccion" placeholder="Ej. Av. 10 de Agosto y Av. NNUU">
+            <input appUppercase matInput formControlName="direccion" placeholder="Ej. Av. 10 de Agosto y Av. NNUU">
           </div>
         </div>
 
@@ -205,7 +205,7 @@
         <div class="form-row">
           <div class="form-group">
             <label>Nombre:</label>
-            <input matInput formControlName="contacto" placeholder="José Perez">
+            <input appUppercase matInput formControlName="contacto" placeholder="José Perez">
           </div>
           <div class="form-group">
             <label>E-mail:</label>
@@ -213,12 +213,11 @@
           </div>
           <div class="form-group">
             <label>Telf. o Cel.:</label>
-           <app-intl-phone-input
-            formControlName="glnCelular"
-            [preferredCountries]="['ec', 'us', 'co']"
-            [defaultCountry]="'ec'"
-            >
-          </app-intl-phone-input>
+            <app-phone-input
+              formControlName="glnCelular"
+              [defaultCountry]="'+593'"
+              [preferredCountries]="['EC', 'US', 'CO', 'PE']">
+            </app-phone-input>
           </div>
           <div class="form-row">
             <div class="form-group">
@@ -236,7 +235,7 @@
         <div class="form-row">
           <div class="form-group">
             <label>Nombre:</label>
-            <input matInput formControlName="glnContacto2">
+            <input appUppercase matInput formControlName="glnContacto2">
           </div>
           <div class="form-group">
             <label>E-mail:</label>
@@ -244,12 +243,11 @@
           </div>
           <div class="form-group">
             <label>Telf. o Cel.:</label>
-            <app-intl-phone-input
+            <app-phone-input
               formControlName="glnTel2"
-              [preferredCountries]="['ec', 'us', 'co']"
-              (valueChange)="formGln.get('glnTel2')?.setValue($event)"
-              >
-            </app-intl-phone-input>
+              [defaultCountry]="'+593'"
+              [preferredCountries]="['EC', 'US', 'CO']">
+            </app-phone-input>
           </div>
         </div>
 
@@ -261,7 +259,7 @@
         <div class="form-row">
           <div class="form-group">
             <label>Nombre:</label>
-            <input matInput formControlName="glnContacto3">
+            <input appUppercase matInput formControlName="glnContacto3">
           </div>
           <div class="form-group">
             <label>E-mail:</label>
@@ -269,12 +267,11 @@
           </div>
           <div class="form-group">
             <label>Telf. o Cel.:</label>
-            <app-intl-phone-input
+            <app-phone-input
               formControlName="glnTel3"
-              [preferredCountries]="['ec', 'us', 'co']"
-              (valueChange)="formGln.get('glnTel3')?.setValue($event)"
-              >
-            </app-intl-phone-input>
+              [defaultCountry]="'+593'"
+              [preferredCountries]="['EC', 'US', 'CO']">
+            </app-phone-input>
           </div>
         </div>
       </div>
@@ -400,7 +397,7 @@
                   <td>{{ obtenerCodigoPrefijo(gln.id_prefijos) }}</td>
                   <td>{{ gln.nombreLocalizacion }}</td>
                   <td>{{ gln.direccion }}</td>
-                  <td>{{ gln.contactoTel }}</td>
+                  <td>{{ gln.glnCelular }}</td>
                   <td>{{ gln.contacto }}</td>
                   <td>{{ gln.email }}</td>
                   <td>{{ obtenerNombreCiudad(gln.idCiudad) }}</td>

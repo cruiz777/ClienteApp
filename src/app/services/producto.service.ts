@@ -249,6 +249,15 @@ export interface ApiResponse<T> {
   message: string;
   count: number | null;
 }
+export interface FiltroProductoClienteRequest {
+  clientesCodigo: number;
+  codpre: string;
+  estado: string;
+  codbar?: string;
+  feccreDesde: string; // ISO format
+  feccreHasta?: string;
+  condicionFecha: string; // Ej: "=", "<", "entre", etc.
+}
 
 
 
@@ -301,6 +310,11 @@ export class ProductoService {
       payload.request
     );
   }
+  filtrarProductosPorCliente(filtro: FiltroProductoClienteRequest): Observable<Producto[]> {
+  return this.http
+    .post<ApiResponse<Producto[]>>(`${this.apiBaseUrl}/Producto/filtrar-por-cliente`, filtro)
+    .pipe(map(response => response.data ?? []));
+}
 
 
   getProductosFiltrados(request: ProductoRequests): Observable<ClienteConProductosResponse> {
