@@ -43,4 +43,21 @@ export class CiudadService {
         map(response => response.data)  // Extraemos solo el array de ciudades
       );
     }
+    getCiudadById(id: number): Observable<Ciudad> {
+  const url = `${this.apiUrl}/${id}`;  // Por ejemplo: /Ciudades/1
+
+  return this.http.get<any>(url).pipe(
+    map(response => {
+      const data = response.data;
+      return {
+        id_ciudad: data.id_ciudad,
+        ciudad: data.ciudad,
+        canton: data.canton,
+        provincia: data.provincia,
+        idzona: data.idzona
+      } as Ciudad;
+    })
+  );
+}
+
 }

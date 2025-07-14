@@ -1675,3 +1675,7 @@
   font-size: 18px;
   color: #333;
 }
+.rojo-si-orden {
+  color: red;
+  font-weight: bold;
+}

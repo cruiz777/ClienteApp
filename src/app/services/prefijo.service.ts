@@ -16,6 +16,7 @@ export interface Prefijo {
   bandera?: number;
   gln:string;
   web:string;
+  prefijosgs1:string;
 }
 
 export interface ActualizarPrefijoPayload {
