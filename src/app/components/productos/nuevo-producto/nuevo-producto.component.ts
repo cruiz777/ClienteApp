@@ -639,6 +639,14 @@ async generarPdfLogistica(): Promise<void> {
     // Obtener todos los productos para la exportación
     this.reporteService.getAllProductos(params).subscribe({
       next: async (productos) => {
+        if (productos.length === 0) {
+          this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', { 
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top' 
+          });
+          return;
+        }
         // Aplanar datos para el formato de tabla
         const datosParaExport = this.aplanarDatosParaExport(productos);
         
@@ -694,6 +702,14 @@ async generarExcelLogistica(): Promise<void> {
     // Obtener todos los productos para la exportación
     this.reporteService.getAllProductos(params).subscribe({
       next: async (productos) => {
+        if (productos.length === 0) {
+          this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', { 
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top' 
+          });
+          return;
+        }
         // Aplanar datos para el formato de tabla
         const datosParaExport = this.aplanarDatosParaExport(productos);
         

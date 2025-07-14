@@ -5,8 +5,8 @@
             <div class="title-section">
                 <h1 class="title">Validador Licencia Verified</h1>
                 <div class="registro-display">
-                    <span class="registro-label">No. Registro:</span>
-                    <strong class="registro-value">{{ searchParams.registro }}</strong>
+                    <span class="registro-label">N°. Registros:</span>
+                    <strong class="registro-value">{{ numeroRegistros }}</strong>
                 </div>
             </div>
             <div class="header-actions">
@@ -33,7 +33,7 @@
             <!-- Columna izquierda -->
             <div class="form-column-left">
                 <div class="form-group-inline">
-                    <label for="ruc">RUC (F1):</label>
+                    <label for="ruc">RUC:</label>
                     <input type="text" 
                            id="ruc" 
                            [(ngModel)]="searchParams.ruc" 
@@ -41,16 +41,7 @@
                            placeholder="Ingrese RUC"
                            (keyup.enter)="buscar()">
                 </div>
-                
-                <div class="form-group-inline">
-                    <label for="tipo">Tipo (F1):</label>
-                    <input type="text" 
-                           id="tipo" 
-                           [(ngModel)]="searchParams.tipo" 
-                           class="form-control" 
-                           placeholder="Ingrese tipo"
-                           (keyup.enter)="buscar()">
-                </div>
+        
                 
                 <div class="form-group-inline">
                     <label for="prefijo">Prefijo:</label>

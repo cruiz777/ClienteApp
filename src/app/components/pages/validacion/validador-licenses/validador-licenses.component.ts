@@ -41,9 +41,7 @@ export interface License {
 export class LicenseValidatorComponent implements OnInit {
  
   // Parámetros de búsqueda
-  searchParams: SearchParams = {
-    registro: '1561' // Valor por defecto
-  };
+  searchParams: SearchParams = {};
 
   // Datos de la tabla
   licencias: License[] = [];
@@ -66,12 +64,23 @@ export class LicenseValidatorComponent implements OnInit {
 
   ngOnInit(): void {
     // Establecer fecha actual por defecto
-    this.searchParams.fechaIgual = new Date().toISOString().split('T')[0];
+    //this.searchParams.fechaIgual = new Date().toISOString().split('T')[0];
     
-    // Cargar datos iniciales
-    this.buscar();
+    // Cargar datos iniciales (OPCIONAL)-- Carga datos sin necesidad de aplicar los filtros. Manejar con cuidado porque puede confundir al usuario
+    //this.buscar();
   }
-
+  // Getter para mostrar el número de registros dinámicamente
+  get numeroRegistros(): string {
+    if (!this.hasSearched) {
+      return 'Sin registros';
+    }
+    
+    if (this.isLoading) {
+      return 'Buscando...';
+    }
+    
+    return this.totalItems.toString();
+  }
   // Getters para la información de paginación
   get startItem(): number {
     return this.totalItems === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1;
@@ -120,7 +129,7 @@ export class LicenseValidatorComponent implements OnInit {
     }
     
     if (this.searchParams.empresaEstado) {
-      query.estadoEmpresa = this.searchParams.empresaEstado === 'active' ? 1 : 0;
+      query.estadoEmpresa = this.searchParams.empresaEstado === 'active' ? 1 : 2;
     }
 
     return query;
