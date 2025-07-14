@@ -7,21 +7,37 @@ import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
-import { Sic3000RoutingModule } from './sic-3000-routing.module'; // ✅ IMPORTACIÓN FALTANTE
+import { Sic3000RoutingModule } from './sic-3000-routing.module';
+import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.component';
+import { MatStepperModule } from '@angular/material/stepper';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatButtonModule } from '@angular/material/button';
+import { ReactiveFormsModule, FormsModule } from '@angular/forms';
+
 
 @NgModule({
-  declarations: [
+   declarations: [
     InicioSicComponent,
     NavigationSicComponent,
+    RegistroCobrosComponent
   ],
   imports: [
     CommonModule,
     RouterModule,
+    FormsModule,
+    ReactiveFormsModule,
     MatSidenavModule,
     MatListModule,
     MatIconModule,
     MatExpansionModule,
-    Sic3000RoutingModule 
+    MatStepperModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatCheckboxModule,
+    MatButtonModule,
+    Sic3000RoutingModule
   ]
 })
 export class Sic3000Module { }
