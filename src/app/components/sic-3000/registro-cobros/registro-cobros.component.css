@@ -1,0 +1,33 @@
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+mat-form-field {
+  flex: 1;
+  min-width: 200px;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.tabla th,
+.tabla td {
+  border: 1px solid #ccc;
+  padding: 8px;
+}
+
+.tabla th {
+  background-color: #f2f2f2;
+}
+
+.step-buttons {
+  margin-top: 20px;
+  display: flex;
+  gap: 12px;
+}

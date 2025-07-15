@@ -65,7 +65,10 @@ export class UsuarioService {
     const stored = localStorage.getItem('currentUser');
     return stored ? JSON.parse(stored) : null;
   }
-
+  getEmpresaId(): number | null {
+    const usuario = this.getUsuarioActual();
+    return usuario?.id_empresa ?? null;
+  }
   getUsuarios(): Observable<ApiResponse<UsuariosResponse[]>> {
     return this.http.get<ApiResponse<UsuariosResponse[]>>(this.apiUrl);
   }
