@@ -56,6 +56,12 @@ export interface ProductoDatosAdicionalesRequest {
   SolOtros: string;
   id_producto: number;
 }
+export interface UpdateCodigosClientePorFiltrosRequest {
+  codbar: string;
+  clientesCodigoAnterior: number;
+  clientesCodigoNuevo: number;
+  idPrefijosNuevo: number;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -63,7 +69,7 @@ export interface ProductoDatosAdicionalesRequest {
 export class ProductoAdicionalService {
   private apiBaseUrl = environment.invoicesUrl;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   crearProductoDatosAdicionales(request: ProductoDatosAdicionalesRequest): Observable<ApiResponse<number>> {
     return this.http.post<ApiResponse<number>>(
@@ -96,4 +102,17 @@ export class ProductoAdicionalService {
       payload
     );
   }
+  actualizarCodigosClientePorFiltros(request: {
+    codbar: string;
+    clientesCodigoAnterior: number;
+    clientesCodigoNuevo: number;
+    idPrefijosNuevo: number;
+  }): Observable<ApiResponse<boolean>> {
+    return this.http.put<ApiResponse<boolean>>(
+      `${this.apiBaseUrl}/ProductoDatosAdicionales/actualizar-codigoscliente-por-filtros`,
+      request
+    );
+  }
+
+
 }

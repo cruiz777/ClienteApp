@@ -7,7 +7,7 @@ import { ClienteService } from 'src/app/services/cliente.service';
 import { PrefijoService } from 'src/app/services/prefijo.service';
 import { GlnService } from 'src/app/services/gln.service';
 import { ProductoAdicionalService } from 'src/app/services/producto-adicional.service';
-import { Codigos14Service } from 'src/app/services/codigos14.service';
+import { Codigos14Service,ActualizarCodigo14Request  } from 'src/app/services/codigos14.service';
 import { UsuarioService } from 'src/app/services/usuario.service';
 import { ExportService } from 'src/app/services/export.service';
 import { EmpresaService } from 'src/app/services/empresa.service';
@@ -38,8 +38,12 @@ import { AgGridModule } from 'ag-grid-angular';
 import { ColDef, GridApi, ModuleRegistry } from 'ag-grid-community';
 import { AllCommunityModule } from 'ag-grid-community';
 ModuleRegistry.registerModules([AllCommunityModule]);
-import { GridOptions } from 'ag-grid-community'; 
+import { GridOptions } from 'ag-grid-community';
 import { MatIconModule } from '@angular/material/icon'; // si usas <mat-icon>
+import { ProductoService,Producto } from 'src/app/services/producto.service';
+import { map, catchError } from 'rxjs/operators';
+import { from,  concat, concatMap, delay } from 'rxjs';
+import {  Observable } from 'rxjs';
 
 @Component({
   selector: 'app-traspaso-gtin',
@@ -70,7 +74,7 @@ export class TraspasoGtinComponent implements OnInit {
   mostrarCantidad = 10;
   gridOptions: GridOptions = {};
   transferir: any[] = [];
-
+  textoPegado: string = '';
   clienteOrigenControl = new FormControl('');
   clienteDestinoControl = new FormControl('');
   clientesOrigenFiltrados: ClienteSummary[] = [];
@@ -87,21 +91,21 @@ export class TraspasoGtinComponent implements OnInit {
     editable: true,
     resizable: true,
     sortable: false,
-    flex: 1
+    
   };
 
   columnDefs: ColDef[] = [
-    { headerName: '#', valueGetter: 'node.rowIndex + 1', width: 70 },
-    { headerName: 'Unidad Venta', field: 'UnidadVenta' },
-    { headerName: 'Descripcion', field: 'Descripcion' },
-    { headerName: 'Prefijo', field: 'Prefijo' },
-    { headerName: 'Gtin', field: 'Gtin' },
-    { headerName: 'Marca', field: 'Marca' },
-    { headerName: 'Contenido', field: 'Contenido' },
-    { headerName: 'U.Medida', field: 'UMedida' },
-    { headerName: 'Estado', field: 'Estado' },
-    { headerName: 'Fecha Creacion', field: 'FechaCreacion' },
-    { headerName: 'Presentacion', field: 'Presentacion' },
+    { headerName: '#', valueGetter: 'node.rowIndex + 1', width: 50 ,editable: false },
+    { headerName: 'Unidad Venta', field: 'UnidadVenta' , width: 150 ,editable: true},
+    { headerName: 'Descripcion', field: 'Descripcion' , width: 300 ,editable: false},
+    { headerName: 'Prefijo', field: 'Prefijo' , width: 100 ,editable: false},
+    { headerName: 'Gtin', field: 'Gtin', width: 100 ,editable: false},
+    { headerName: 'Marca', field: 'Marca', width: 150 ,editable: false},
+    { headerName: 'Contenido', field: 'Contenido' , width: 100 ,editable: false},
+    { headerName: 'U.Medida', field: 'UMedida' , width: 100 ,editable: false},
+    { headerName: 'Estado', field: 'Estado' , width: 100 ,editable: false},
+    { headerName: 'Fecha Creacion', field: 'FechaCreacion' , width: 100 ,editable: false},
+    { headerName: 'Presentacion', field: 'Presentacion' , width: 100 ,editable: false},
   ];
 
   listado = [
@@ -143,11 +147,14 @@ export class TraspasoGtinComponent implements OnInit {
     private logoService: LogoService,
     private dialog: MatDialog,
     private _snackBar: MatSnackBar,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private productoService:ProductoService
+  
   ) {
     this.formUV = this.fb.group({
       gcp: [{ value: '', disabled: true }, Validators.required],
-      mostrar: ['']
+      mostrar: [''],
+      textoPegado: ['']
     });
   }
 
@@ -193,17 +200,190 @@ export class TraspasoGtinComponent implements OnInit {
     this.botonActivo = nombre;
   }
 
-  onBuscar(): void {
-    console.log('Buscar datos con:', this.formUV.value);
+onBuscar(): void {
+  if (!this.codcliO || !this.codcliD) {
+    this.mostrarAlerta('Debe seleccionar cliente origen y destino.', 'Error');
+    return;
+  }
+
+  const gtins = this.transferir
+    .map(fila => (fila.UnidadVenta || '').trim())
+    .filter(gtin => gtin.length > 0);
+
+  if (gtins.length === 0) {
+    this.mostrarAlerta('No hay GTINs para buscar.', 'Advertencia');
+    return;
+  }
+
+  const solicitudes = gtins.map(gtin => this.buscarProductoYActualizarFila(gtin));
+
+  forkJoin(solicitudes).subscribe(() => {
+    this.transferir = [...this.transferir]; // Refrescar tabla
+    this.mostrarAlerta('Consulta completada.', 'Información');
+  });
+}
+private buscarProductoYActualizarFila(gtin: string): Observable<void> {
+  return this.productoService.getProductosPorClienteYCodbar(this.codcliO, gtin).pipe(
+    map((productos: Producto[]) => {
+      const fila = this.transferir.find(f => (f.UnidadVenta || '').trim() === gtin);
+
+      if (!fila) return;
+
+      if (productos.length > 0) {
+        const p = productos[0];
+        fila.Descripcion = p.Despro;
+        fila.Prefijo = p.codpre;
+        fila.Gtin = p.codbar;
+        fila.Marca = p.marca;
+        fila.Contenido = p.contenido;
+        fila.UMedida = p.unidad;
+        fila.Estado = p.Activo ? 'ACTIVO' : 'INACTIVO';
+        fila.FechaCreacion = this.formatearFecha(p.Feccre);
+        fila.Presentacion = p.p;
+      } else {
+        // 🔴 Producto no encontrado
+        fila.Descripcion = 'NO EXISTE';
+      }
+    }),
+    catchError(error => {
+      console.error(`Error al buscar producto con GTIN ${gtin}:`, error);
+      const fila = this.transferir.find(f => (f.UnidadVenta || '').trim() === gtin);
+      if (fila) fila.Descripcion = 'ERROR';
+      return of(); // evitar que forkJoin se detenga
+    })
+  );
+}
+
+
+  formatearFecha(fechaStr: string | Date): string {
+    const fecha = new Date(fechaStr);
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const anio = fecha.getFullYear();
+    return `${dia}/${mes}/${anio}`;
   }
 
   onNuevaBusqueda(): void {
     this.formUV.reset();
   }
 
-  ontransferir(): void {
-    console.log('Transferencia con:', this.formUV.value);
+ontransferir(): void {
+  if (!this.codcliO || !this.codcliD) {
+    this.mostrarAlerta('Debe seleccionar cliente origen y destino.', 'Error');
+    return;
   }
+
+  const idPrefijosNuevo = this.formUV.value.gcp;
+  const seleccionado = this.prefijos.find(p => p.id_prefijos === idPrefijosNuevo);
+
+  if (!idPrefijosNuevo || !seleccionado) {
+    this.mostrarAlerta('Debe seleccionar el nuevo prefijo (GCP).', 'Error');
+    return;
+  }
+
+  const filas = this.transferir.filter(
+    fila => fila?.UnidadVenta && fila.Descripcion !== 'NO EXISTE'
+  );
+
+  if (filas.length === 0) {
+    this.mostrarAlerta('No hay datos válidos para transferir.', 'Advertencia');
+    return;
+  }
+
+  const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+    width: '400px',
+    data: {
+      title: 'Confirmar asignación',
+      message: `¿Está seguro que desea transferir códigos?`,
+      type: 'info',
+      confirmText: 'Sí, asignar',
+      cancelText: 'Cancelar',
+      showCancel: true
+    }
+  });
+
+  dialogRef.afterClosed().subscribe(confirmado => {
+    if (!confirmado) return;
+
+    let exitosos = 0;
+    let fallidos = 0;
+
+    from(filas)
+      .pipe(
+        concatMap((fila, index) =>
+          this.codigos14Service.getPorGtin(fila.UnidadVenta).pipe(
+            concatMap((registros) => {
+              const codigos14 = registros?.[0];
+              const clienteReal = codigos14?.clientes_codigo;
+
+              const payloadAdicional = {
+                codbar: fila.UnidadVenta,
+                clientesCodigoAnterior: this.codcliO, // producto_datos_adicionales
+                clientesCodigoNuevo: this.codcliD,
+                idPrefijosNuevo: idPrefijosNuevo
+              };
+
+              const payloadCodigo14: ActualizarCodigo14Request = {
+                codbar: fila.UnidadVenta,
+                clientesCodigoOriginal: clienteReal ?? 0,
+                clientesCodigoNuevo: this.codcliD,
+                idPrefijosNuevo: idPrefijosNuevo
+              };
+
+              // Primero actualizar productos_datos_adicionales
+              return this.productoAdicionalService.actualizarCodigosClientePorFiltros(payloadAdicional).pipe(
+                concatMap(res1 => {
+                  if (res1?.data === true && clienteReal) {
+                    console.log('📤 Payload enviado a Codigos14:', payloadCodigo14);
+
+                    return this.codigos14Service.actualizarClientesCodigo14PorCodbar(payloadCodigo14).pipe(
+                      catchError(err => {
+                        console.warn(`⚠️ Codigos14 no actualizado para ${fila.UnidadVenta}`, err);
+                        return of({ data: null });
+                      })
+                    );
+                  } else {
+                    if (!clienteReal) {
+                      console.warn(`⚠️ Sin coincidencia en Codigos14 para ${fila.UnidadVenta}`);
+                    }
+                    return of({ data: true }); // igual lo marcamos como exitoso
+                  }
+                }),
+                delay(150),
+                catchError(err => {
+                  console.error(`❌ Error en fila ${index}:`, err);
+                  fila.Estado = 'NO TRANSFERIDO';
+                  fallidos++;
+                  return of(null);
+                })
+              );
+            })
+          )
+        )
+      )
+      .subscribe({
+        next: (response) => {
+          const fila = filas[exitosos + fallidos];
+          if (response !== null) {
+            exitosos++;
+            if (fila) fila.Estado = 'TRANSFERIDO';
+          } else {
+            fallidos++;
+            if (fila) fila.Estado = 'NO TRANSFERIDO';
+          }
+        },
+        complete: () => {
+          this.mostrarAlerta(
+            `Transferencia finalizada. Éxitos: ${exitosos}, Errores: ${fallidos}.`,
+            'Transferencia'
+          );
+          this.transferir = [...this.transferir]; // refrescar visualmente
+        }
+      });
+  });
+}
+
+
 
   seleccionarClienteOrigen(cliente: ClienteSummary): void {
     if (!cliente?.clientes_codigo) return;
@@ -241,29 +421,29 @@ export class TraspasoGtinComponent implements OnInit {
     }
   }
 
-generarFilas(): void {
-  const cantidad = this.formUV.value.mostrar;
+  generarFilas(): void {
+    const cantidad = this.formUV.value.mostrar;
 
-  if (!cantidad || cantidad <= 0) return;
+    if (!cantidad || cantidad <= 0) return;
 
-  const nuevasFilas = [];
-  for (let i = 0; i < cantidad; i++) {
-    nuevasFilas.push({
-      UnidadVenta: '',
-      Descripcion: '',
-      Prefijo: '',
-      Gtin: '',
-      Marca: '',
-      Contenido: '',
-      UMedida: '',
-      Estado: '',
-      FechaCreacion: '',
-      Presentacion: ''
-    });
+    const nuevasFilas = [];
+    for (let i = 0; i < cantidad; i++) {
+      nuevasFilas.push({
+        UnidadVenta: '',
+        Descripcion: '',
+        Prefijo: '',
+        Gtin: '',
+        Marca: '',
+        Contenido: '',
+        UMedida: '',
+        Estado: '',
+        FechaCreacion: '',
+        Presentacion: ''
+      });
+    }
+
+    this.transferir = nuevasFilas;
   }
-
-  this.transferir = nuevasFilas;
-}
 
   onGridReady(params: any) {
     this.gridApi = params.api;
@@ -271,7 +451,7 @@ generarFilas(): void {
 
 
   }
-    onCellValueChanged(event: any): void {
+  onCellValueChanged(event: any): void {
     const field = event.colDef.field;
     const newValue = event.newValue;
     if (event.colDef.field === 'activo') {
@@ -287,4 +467,32 @@ generarFilas(): void {
     // Actualiza visual
     this.gridApi?.refreshCells({ rowNodes: [event.node], columns: [field] });
   }
+  pegarPrimeraColumna(): void {
+    const texto = this.formUV.get('textoPegado')?.value;
+
+    if (!texto?.trim()) {
+      return;
+    }
+
+    const lineas = texto.trim().split('\n');
+    const limite = Math.min(lineas.length, this.transferir.length);
+
+    for (let i = 0; i < limite; i++) {
+      const valor = lineas[i].trim();
+      if (this.transferir[i]) {
+        this.transferir[i].UnidadVenta = valor;
+      }
+    }
+
+    this.transferir = [...this.transferir]; // Forzar redibujo
+    this.formUV.get('textoPegado')?.setValue('');
+  }
+  mostrarAlerta(mensaje: string, tipo: string) {
+    this._snackBar.open(mensaje, tipo, {
+      horizontalPosition: "end",
+      verticalPosition: "top",
+      duration: 3000
+    });
+  }
+
 }

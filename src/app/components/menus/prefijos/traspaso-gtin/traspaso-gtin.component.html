@@ -51,14 +51,16 @@
           <!-- Mostrar -->
           <div class="form-group">
             <label>Mostrar:</label>
-            <input type="number"
-       formControlName="mostrar"
-       min="1"
-       step="1"
-       (blur)="generarFilas()" />
+            <input type="number" formControlName="mostrar" min="1" step="1" (blur)="generarFilas()" />
 
 
           </div>
+          <mat-form-field class="campo">
+            <textarea matInput formControlName="textoPegado" placeholder="Pegar GTIN UV" (blur)="pegarPrimeraColumna()">
+  </textarea>
+          </mat-form-field>
+
+
         </div>
 
         <div class="form-actions form-actions-horizontal alineado-derecha">
@@ -72,18 +74,12 @@
       </div>
 
       <!-- Tabla -->
- <div class="contenedor-grid">
-  <ag-grid-angular
-    class="ag-theme-alpine"
-    style="width: 100%; height: 400px;"
-    [rowData]="transferir"
-    [columnDefs]="columnDefs"
-    [defaultColDef]="defaultColDef"
-    [domLayout]="'normal'"
-    (gridReady)="onGridReady($event)"
-    (cellValueChanged)="onCellValueChanged($event)">
-  </ag-grid-angular>
-</div>
+      <div class="contenedor-grid">
+        <ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 400px;" [rowData]="transferir"
+          [columnDefs]="columnDefs" [defaultColDef]="defaultColDef" [domLayout]="'normal'"
+          (gridReady)="onGridReady($event)" (cellValueChanged)="onCellValueChanged($event)">
+        </ag-grid-angular>
+      </div>
 
 
 

@@ -79,6 +79,15 @@ export interface ApiResponse<T> {
 }
 
 
+// src/app/models/actualizar-codigo14-request.model.ts
+export interface ActualizarCodigo14Request {
+  codbar: string;
+  clientesCodigoOriginal: number;
+  clientesCodigoNuevo: number;
+  idPrefijosNuevo: number;
+}
+
+
 @Injectable({
   providedIn: 'root'
 })
@@ -134,6 +143,9 @@ actualizarClientesCodigo14PorIdPrefijos(
 
 }
 
-
+actualizarClientesCodigo14PorCodbar(data: ActualizarCodigo14Request): Observable<ApiResponse<boolean>> {
+  const url = `${this.baseUrl}/Codigos14/actualizar-codigos14-por-codbar`;
+  return this.http.put<ApiResponse<boolean>>(url, data);
+}
 
 }

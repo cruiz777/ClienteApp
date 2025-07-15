@@ -506,8 +506,8 @@ export class NuevoProductoComponent implements OnInit {
         doc.text(producto.clienteNombres || 'EMPRESA DESCONOCIDA', 50, y); y += 10;
 
         doc.setFontSize(8).setFont('helvetica', 'normal');
-        doc.text('GS1 Ecuador (ECOP) certifica que los códigos GTIN...', 10, y); y += 5;
-        doc.text('El dueño de la marca del producto coloca el código...', 10, y); y += 5;
+        doc.text('GS1 Ecuador  (ECOP) certifica que los códigos GTIN que constan a continuación son auténticos y publicados en www.gs1ec.org Verified By Ecuador.', 10, y); y += 5;
+        doc.text('El dueño de la marca del producto coloca el código, es su resposabilidad el manejo y control del código, incluida su descripción y marca.', 10, y); y += 5;
         doc.text('El Prefijo Global de Compañía GS1, GCP, es intransferible.', 10, y); y += 5;
 
         doc.setFont('helvetica', 'bold');

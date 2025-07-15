@@ -324,6 +324,15 @@ export class ProductoService {
   }
 
 
+  getProductosPorClienteYCodbar(codigoCliente: number, codbar: string): Observable<Producto[]> {
+  return this.http
+    .get<ApiResponse<Producto[]>>(
+      `${this.apiBaseUrl}/Producto/por-cliente-y-codbar?clienteCodigo=${codigoCliente}&codbar=${codbar}`
+    )
+    .pipe(
+      map(response => response.data ?? [])
+    );
+}
 
 
 }
