@@ -4,6 +4,7 @@ import { catchError, finalize } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { ClienteLicenseResponse } from 'src/app/interfaces/responses/cliente-license-response';
 import { ClienteLicenseQuery, ValidacionService } from 'src/app/services/validacion.service';
+import { ExportLicenseBatch, ExportLicenseItem, ExportLicenseQuery, ExportLicenseResponse } from 'src/app/interfaces/responses/export-licenses-response';
 
 export interface SearchParams {
   registro?: string;
@@ -20,6 +21,7 @@ export interface SearchParams {
 
 export interface License {
   id?: number;
+  licenseKey?: string;
   licenseType: string;
   licenseStatus: string;
   licenseName: string;
@@ -53,7 +55,7 @@ export class LicenseValidatorComponent implements OnInit {
   isLoading = false;
   hasSearched = false;
   errorMessage = '';
-
+  isExporting = false;
   // Paginación
   currentPage = 1;
   pageSize = 10;
@@ -139,6 +141,7 @@ export class LicenseValidatorComponent implements OnInit {
   private mapearRespuestaServicio(clienteLicenses: ClienteLicenseResponse[]): License[] {
     return clienteLicenses.map((cliente, index) => ({
       id: cliente.cliente_codigo || index,
+      licenseKey: cliente.license_key || 'N/A',
       licenseType: cliente.license_type || 'GCP',
       licenseStatus: cliente.license_status || 'Unknown',
       licenseName: cliente.license_name || 'N/A',
@@ -212,8 +215,6 @@ export class LicenseValidatorComponent implements OnInit {
   nuevaBusqueda(): void {
     console.log('Nueva búsqueda');
     this.searchParams = {
-      registro: '1561',
-      fechaIgual: new Date().toISOString().split('T')[0]
     };
     this.hasSearched = false;
     this.currentPage = 1;
@@ -236,22 +237,128 @@ export class LicenseValidatorComponent implements OnInit {
 
   // Exportar datos a JSON
   exportarJSON(): void {
-    console.log('Exportar JSON');
-    if (this.licencias.length === 0) {
-      alert('No hay datos para exportar');
+    console.log('Iniciando exportación JSON con filtros actuales');
+    
+    if (!this.hasSearched) {
+      alert('Primero debe realizar una búsqueda para exportar datos');
       return;
     }
-    
-    // Crear y descargar JSON con datos originales del servicio
-    const dataStr = JSON.stringify(this.licenciasOriginales, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-    
-    const exportFileDefaultName = `licencias_verified_${new Date().toISOString().split('T')[0]}.json`;
+
+    this.isExporting = true;
+
+    // Crear query de exportación reutilizando EXACTAMENTE los mismos filtros de búsqueda
+    const exportQuery: ExportLicenseQuery = {
+      nombreCliente: this.searchParams.nombreCliente,
+      codigoPrefijo: this.searchParams.prefijo,
+      fechaDesde: this.searchParams.fechaDesde,
+      fechaHasta: this.searchParams.fechaHasta,
+      fechaIgual: this.searchParams.fechaIgual,
+      ruc: this.searchParams.ruc,
+      estadoPrefijo: this.searchParams.prefijoEstado === 'active' ? true : 
+                      this.searchParams.prefijoEstado === 'inactive' ? false : undefined,
+      estadoEmpresa: this.searchParams.empresaEstado === 'active' ? 1 : 
+                     this.searchParams.empresaEstado === 'inactive' ? 2 : undefined,
+      batchSize: 1000
+    };
+
+    this.validacionService.exportClientesLicense(exportQuery)
+      .pipe(
+        catchError(error => {
+          console.error('Error al exportar licencias:', error);
+          this.errorMessage = 'Error al exportar los datos. Por favor, intente nuevamente.';
+          return of(null);
+        }),
+        finalize(() => {
+          this.isExporting = false;
+        })
+      )
+      .subscribe(response => {
+        if (response && response.data && response.type === 'Success') {
+          this.procesarExportacion(response.data);
+        } else {
+          this.errorMessage = response?.message || 'Error al procesar la exportación';
+        }
+      });
+  }
+  private procesarExportacion(exportData: ExportLicenseResponse): void {
+    const { totalItems, totalBatches, batches } = exportData;
+
+    console.log(`Exportación completada: ${totalItems} registros en ${totalBatches} lotes`);
+
+    if (totalBatches === 0) {
+      alert('No hay datos para exportar con los filtros aplicados');
+      return;
+    }
+
+    if (totalBatches === 1) {
+      // Un solo archivo
+      this.descargarArchivo(batches[0].items, 'licencias_verified');
+      alert(`Archivo descargado exitosamente con ${totalItems} registros.`);
+    } else {
+      // Múltiples archivos
+      const confirmar = window.confirm(
+        `Se encontraron ${totalItems} registros.\n` +
+        `Se generarán ${totalBatches} archivos JSON (máximo 1000 registros por archivo).\n\n` +
+        `¿Desea continuar con la descarga?`
+      );
+
+      if (confirmar) {
+        this.descargarMultiplesArchivos(batches, totalItems);
+      }
+    }
+  }
+  private descargarArchivo(items: ExportLicenseItem[], nombreBase: string, sufijo?: string): void {
+    const fecha = new Date().toISOString().split('T')[0];
+    const nombreArchivo = sufijo 
+      ? `${nombreBase}_${sufijo}_${fecha}.json`
+      : `${nombreBase}_${fecha}.json`;
+
+    const dataStr = JSON.stringify(items, null, 2);
+    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
     
     const linkElement = document.createElement('a');
     linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', exportFileDefaultName);
+    linkElement.setAttribute('download', nombreArchivo);
     linkElement.click();
+  }
+
+  private descargarMultiplesArchivos(batches: ExportLicenseBatch[], totalItems: number): void {
+    let archivosDescargados = 0;
+
+    // Mostrar progreso al usuario
+    const progressMessage = `Iniciando descarga de ${batches.length} archivos...`;
+    console.log(progressMessage);
+
+    // Descargar cada lote con delay para evitar bloquear el navegador
+    batches.forEach((batch, index) => {
+      setTimeout(() => {
+        const sufijo = `parte_${batch.batchNumber.toString().padStart(2, '0')}`;
+        this.descargarArchivo(batch.items, 'licencias_verified', sufijo);
+        
+        archivosDescargados++;
+        console.log(`Archivo ${archivosDescargados}/${batches.length} descargado`);
+        
+        // Notificar cuando se complete la descarga
+        if (archivosDescargados === batches.length) {
+          alert(`✅ Descarga completada: ${batches.length} archivos con ${totalItems} registros totales.`);
+        }
+      }, index * 1500); // 1.5 segundos entre descargas
+    });
+
+    // Información inmediata al usuario
+    alert(`📥 Se descargarán ${batches.length} archivos JSON secuencialmente.\n\nPor favor, espere a que se completen todas las descargas (aproximadamente ${Math.ceil(batches.length * 1.5)} segundos).`);
+  }
+
+  // Método helper actualizado para mostrar información de exportación
+  get exportInfo(): string {
+    if (!this.hasSearched) return '';
+    
+    if (this.totalItems <= 1000) {
+      return `Se exportará 1 archivo con ${this.totalItems} registros.`;
+    } else {
+      const archivos = Math.ceil(this.totalItems / 1000);
+      return `Se exportarán ${archivos} archivos con ${this.totalItems} registros totales.`;
+    }
   }
 
   // Ver detalle de licencia
@@ -267,6 +374,7 @@ export class LicenseValidatorComponent implements OnInit {
     if (licenciaOriginal) {
       const detalle = `
         Detalle de la licencia:
+        Clave de Licencia: ${licenciaOriginal.license_key || 'N/A'}
         Nombre: ${licenciaOriginal.license_name || 'N/A'}
         RUC: ${licenciaOriginal.ruc || 'N/A'}
         GLN: ${licenciaOriginal.license_gln || 'N/A'}

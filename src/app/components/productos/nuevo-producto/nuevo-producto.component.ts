@@ -630,48 +630,66 @@ export class NuevoProductoComponent implements OnInit {
  */
 async generarPdfLogistica(): Promise<void> {
   try {
-    // Mostrar loading
     this._snackBar.open('🔄 Generando reporte PDF GS1...', '', { duration: 2000 });
 
-    // Preparar parámetros del reporte basados en el formulario
     const params = this.prepararParametrosReporte();
     
-    // Obtener todos los productos para la exportación
-    this.reporteService.getAllProductos(params).subscribe({
-      next: async (productos) => {
-        if (productos.length === 0) {
-          this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', { 
+    // PASO 1: Obtener metadata del backend (primera página)
+    this.reporteService.getReporteUnidadLogistica(params).subscribe({
+      next: async (response) => {
+        if (response.type !== 'SUCCESS' || !response.data) {
+          this._snackBar.open('⚠️ No se encontraron datos para exportar', 'Cerrar', { 
             duration: 3000,
             horizontalPosition: 'end',
             verticalPosition: 'top' 
           });
           return;
         }
-        // Aplanar datos para el formato de tabla
-        const datosParaExport = this.aplanarDatosParaExport(productos);
-        
-        // Preparar información del header
-        const headerInfo = await this.prepararHeaderInfo();
-        
-        // Configurar opciones de exportación GS1
-        const gs1Options = {
-          data: datosParaExport,
-          filename: 'reporte_unidad_logistica_gs1',
-          headerInfo: headerInfo
-        };
 
+        const { metadata } = response.data;
 
-        // Llamar al nuevo servicio GS1
-        await this.gs1ExportService.exportarPDFGS1(gs1Options);
-        
-        this._snackBar.open('✅ PDF GS1 generado correctamente', 'Cerrar', { 
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top' 
+        // PASO 2: Obtener TODOS los productos para exportación
+        this.reporteService.getAllProductos(params).subscribe({
+          next: async (todosLosProductos) => {
+            if (todosLosProductos.length === 0) {
+              this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', { 
+                duration: 3000,
+                horizontalPosition: 'end',
+                verticalPosition: 'top' 
+              });
+              return;
+            }
+
+            // Usar TODOS los productos + metadata con GLN
+            const datosParaExport = this.aplanarDatosParaExport(todosLosProductos);
+            const headerInfo = this.prepararHeaderInfoDesdeBackend(metadata);
+            
+            const gs1Options = {
+              data: datosParaExport,
+              filename: 'reporte_unidad_logistica_gs1',
+              headerInfo: headerInfo
+            };
+
+            await this.gs1ExportService.exportarPDFGS1(gs1Options);
+            
+            this._snackBar.open('✅ PDF GS1 generado correctamente', 'Cerrar', { 
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top' 
+            });
+          },
+          error: (error) => {
+            console.error('Error al obtener todos los productos:', error);
+            this._snackBar.open('❌ Error al generar el reporte', 'Cerrar', { 
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top' 
+            });
+          }
         });
       },
       error: (error) => {
-        console.error('Error al obtener datos:', error);
+        console.error('Error al obtener metadata:', error);
         this._snackBar.open('❌ Error al generar el reporte', 'Cerrar', { 
           duration: 3000,
           horizontalPosition: 'end',
@@ -693,47 +711,66 @@ async generarPdfLogistica(): Promise<void> {
  */
 async generarExcelLogistica(): Promise<void> {
   try {
-    // Mostrar loading
     this._snackBar.open('🔄 Generando reporte Excel GS1...', '', { duration: 2000 });
 
-    // Preparar parámetros del reporte basados en el formulario
     const params = this.prepararParametrosReporte();
     
-    // Obtener todos los productos para la exportación
-    this.reporteService.getAllProductos(params).subscribe({
-      next: async (productos) => {
-        if (productos.length === 0) {
-          this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', { 
+    // PASO 1: Obtener metadata del backend (primera página)
+    this.reporteService.getReporteUnidadLogistica(params).subscribe({
+      next: async (response) => {
+        if (response.type !== 'SUCCESS' || !response.data) {
+          this._snackBar.open('⚠️ No se encontraron datos para exportar', 'Cerrar', { 
             duration: 3000,
             horizontalPosition: 'end',
             verticalPosition: 'top' 
           });
           return;
         }
-        // Aplanar datos para el formato de tabla
-        const datosParaExport = this.aplanarDatosParaExport(productos);
-        
-        // Preparar información del header
-        const headerInfo = await this.prepararHeaderInfo();
-        
-        // Configurar opciones de exportación GS1
-        const gs1Options = {
-          data: datosParaExport,
-          filename: 'reporte_unidad_logistica_gs1',
-          headerInfo: headerInfo
-        };
 
-        // Llamar al nuevo método de Excel en GS1ExportService
-        await this.gs1ExportService.exportarExcelGS1(gs1Options);
-        
-        this._snackBar.open('✅ Excel GS1 generado correctamente', 'Cerrar', { 
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top' 
+        const { metadata } = response.data;
+
+        // PASO 2: Obtener TODOS los productos para exportación
+        this.reporteService.getAllProductos(params).subscribe({
+          next: async (todosLosProductos) => {
+            if (todosLosProductos.length === 0) {
+              this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', { 
+                duration: 3000,
+                horizontalPosition: 'end',
+                verticalPosition: 'top' 
+              });
+              return;
+            }
+
+            // Usar TODOS los productos + metadata con GLN
+            const datosParaExport = this.aplanarDatosParaExport(todosLosProductos);
+            const headerInfo = this.prepararHeaderInfoDesdeBackend(metadata);
+            
+            const gs1Options = {
+              data: datosParaExport,
+              filename: 'reporte_unidad_logistica_gs1',
+              headerInfo: headerInfo
+            };
+
+            await this.gs1ExportService.exportarExcelGS1(gs1Options);
+            
+            this._snackBar.open('✅ Excel GS1 generado correctamente', 'Cerrar', { 
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top' 
+            });
+          },
+          error: (error) => {
+            console.error('Error al obtener todos los productos:', error);
+            this._snackBar.open('❌ Error al generar el reporte Excel', 'Cerrar', { 
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top' 
+            });
+          }
         });
       },
       error: (error) => {
-        console.error('Error al obtener datos:', error);
+        console.error('Error al obtener metadata:', error);
         this._snackBar.open('❌ Error al generar el reporte Excel', 'Cerrar', { 
           duration: 3000,
           horizontalPosition: 'end',
@@ -742,7 +779,7 @@ async generarExcelLogistica(): Promise<void> {
       }
     });
   } catch (error) {
-    console.error('Error en generarExcelGS1:', error);
+    console.error('Error en generarExcelLogistica:', error);
     this._snackBar.open('❌ Error al generar el Excel', 'Cerrar', { duration: 3000 });
   }
 }
@@ -888,55 +925,22 @@ private aplanarDatosParaExport(productos: any[]): any[] {
  * Prepara la información del header para el reporte
  * Usa el endpoint por codpre para obtener prefijogs1
  */
-private async prepararHeaderInfo(): Promise<any> {
-  const baseInfo = {
-    emisor: 'GS1 Ecuador',
-    fechaEmision: new Date().toLocaleDateString('es-EC', {
+private prepararHeaderInfoDesdeBackend(metadata: any): any {
+  return {
+    emisor: metadata.emisor || 'GS1 Ecuador',
+    fechaEmision: metadata.fecha_emision || new Date().toLocaleDateString('es-EC', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
     }),
-    pagina: '1',
-    codigoEmpresa: '', // 👈 Ahora se llenará con prefijogs1
-    nombreEmpresa: this.clienteSeleccionado?.nomcli || '',
-    ruc: String(this.clienteE?.ruc || ''),
-    gln: '',
-    prefijo: ''
+    pagina: metadata.pagina?.toString() || '1',
+    codigoEmpresa: metadata.prefijo_gs1 || metadata.cliente_codigo?.toString() || '', // Usar prefijo_gs1 principal y clientecodigo como fallback
+    nombreEmpresa: metadata.empresa_nombre || '',
+    ruc: metadata.ruc || '',
+    gln: metadata.gln || '', //GLN ya viene del backend
+    prefijo: metadata.prefijo || ''
   };
-
-  const prefijoId = this.formReporte.value.gcp;
-  if (prefijoId) {
-    try {
-      // Obtener el codpre del prefijo seleccionado
-      const prefijoSeleccionado = this.prefijos.find(p => p.id_prefijos === prefijoId);
-      if (prefijoSeleccionado?.codpre) {
-        
-        // Usar el endpoint por codpre para obtener prefijogs1
-        const prefijos = await this.prefijoService.buscarPorCodpre(prefijoSeleccionado.codpre).toPromise();
-        if (prefijos && prefijos.length > 0) {
-          const prefijoData = prefijos[0];
-          baseInfo.gln = prefijoData.gln || '';
-          baseInfo.prefijo = prefijoData.codpre || prefijoData.codpre;
-          baseInfo.codigoEmpresa = prefijoData.prefijosgs1 || String(this.clienteSeleccionado?.clientes_codigo || ''); // 👈 prefijogs1 en codigoEmpresa
-        }
-        
-        // También obtener GLN por id si es necesario
-        const glns = await this.glnService.obtenerGlnPorIdPrefijo(prefijoId).toPromise();
-        if (glns && glns.length > 0 && !baseInfo.gln) {
-          baseInfo.gln = String(glns[0].gln1 || '');
-        }
-      }
-    } catch (error) {
-      console.warn('Error al obtener información del prefijo:', error);
-      baseInfo.prefijo = this.obtenerPrefijoSeleccionado();
-      baseInfo.codigoEmpresa = String(this.clienteSeleccionado?.clientes_codigo || ''); // 👈 Fallback al código de cliente
-    }
-  } else {
-    // Si no hay prefijo seleccionado, usar código de cliente como fallback
-    baseInfo.codigoEmpresa = String(this.clienteSeleccionado?.clientes_codigo || '');
-  }
-
-  return baseInfo;
+  
 }
 /**
  * Obtiene el prefijo seleccionado en el formulario
@@ -1013,7 +1017,6 @@ async generarPdfGeneral(): Promise<void> {
 
     const params = this.prepararParametrosProductosPorCliente();
     
-    // Validar parámetros
     const validationErrors = this.reporteService.validateProductosPorClienteParams(params);
     if (validationErrors.length > 0) {
       this._snackBar.open(`⚠️ ${validationErrors[0]}`, 'Cerrar', { 
@@ -1024,10 +1027,11 @@ async generarPdfGeneral(): Promise<void> {
       return;
     }
     
-    this.reporteService.getAllProductosPorCliente(params).subscribe({
-      next: async (productos) => {
-        if (productos.length === 0) {
-          this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', { 
+    // PASO 1: Obtener metadata del backend (primera página)
+    this.reporteService.getProductosPorCliente(params).subscribe({
+      next: async (response) => {
+        if (response.type !== 'SUCCESS' || !response.data) {
+          this._snackBar.open('⚠️ No se encontraron datos para exportar', 'Cerrar', { 
             duration: 3000,
             horizontalPosition: 'end',
             verticalPosition: 'top' 
@@ -1035,25 +1039,50 @@ async generarPdfGeneral(): Promise<void> {
           return;
         }
 
-        const datosParaExport = this.aplanarDatosGeneralParaExport(productos);
-        const headerInfo = await this.prepararHeaderInfoGeneral();
-        
-        const gs1Options = {
-          data: datosParaExport,
-          filename: 'reporte_productos_general_gs1',
-          headerInfo: headerInfo
-        };
+        const { metadata } = response.data;
 
-        await this.gs1ExportService.exportarPDFGS1(gs1Options);
-        
-        this._snackBar.open('✅ PDF General generado correctamente', 'Cerrar', { 
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top' 
+        // PASO 2: Obtener TODOS los productos para exportación
+        this.reporteService.getAllProductosPorCliente(params).subscribe({
+          next: async (todosLosProductos) => {
+            if (todosLosProductos.length === 0) {
+              this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', { 
+                duration: 3000,
+                horizontalPosition: 'end',
+                verticalPosition: 'top' 
+              });
+              return;
+            }
+
+            // Usar TODOS los productos + metadata con GLN
+            const datosParaExport = this.aplanarDatosGeneralParaExport(todosLosProductos);
+            const headerInfo = this.prepararHeaderInfoDesdeBackend(metadata);
+            
+            const gs1Options = {
+              data: datosParaExport,
+              filename: 'reporte_productos_general_gs1',
+              headerInfo: headerInfo
+            };
+
+            await this.gs1ExportService.exportarPDFGS1(gs1Options);
+            
+            this._snackBar.open('✅ PDF General generado correctamente', 'Cerrar', { 
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top' 
+            });
+          },
+          error: (error) => {
+            console.error('Error al obtener todos los productos:', error);
+            this._snackBar.open('❌ Error al generar el reporte PDF', 'Cerrar', { 
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top' 
+            });
+          }
         });
       },
       error: (error) => {
-        console.error('Error al obtener productos del cliente:', error);
+        console.error('Error al obtener metadata:', error);
         this._snackBar.open('❌ Error al generar el reporte PDF', 'Cerrar', { 
           duration: 3000,
           horizontalPosition: 'end',
@@ -1068,7 +1097,7 @@ async generarPdfGeneral(): Promise<void> {
 }
 
 /**
- * Genera reporte Excel General usando getAllProductosPorCliente
+ * Genera reporte Excel General usando GLN del backend y TODOS los registros
  */
 async generarExcelGeneral(): Promise<void> {
   try {
@@ -1076,7 +1105,6 @@ async generarExcelGeneral(): Promise<void> {
 
     const params = this.prepararParametrosProductosPorCliente();
     
-    // Validar parámetros
     const validationErrors = this.reporteService.validateProductosPorClienteParams(params);
     if (validationErrors.length > 0) {
       this._snackBar.open(`⚠️ ${validationErrors[0]}`, 'Cerrar', { 
@@ -1087,10 +1115,11 @@ async generarExcelGeneral(): Promise<void> {
       return;
     }
     
-    this.reporteService.getAllProductosPorCliente(params).subscribe({
-      next: async (productos) => {
-        if (productos.length === 0) {
-          this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', { 
+    // PASO 1: Obtener metadata del backend (primera página)
+    this.reporteService.getProductosPorCliente(params).subscribe({
+      next: async (response) => {
+        if (response.type !== 'SUCCESS' || !response.data) {
+          this._snackBar.open('⚠️ No se encontraron datos para exportar', 'Cerrar', { 
             duration: 3000,
             horizontalPosition: 'end',
             verticalPosition: 'top' 
@@ -1098,25 +1127,50 @@ async generarExcelGeneral(): Promise<void> {
           return;
         }
 
-        const datosParaExport = this.aplanarDatosGeneralParaExport(productos);
-        const headerInfo = await this.prepararHeaderInfoGeneral();
-        
-        const gs1Options = {
-          data: datosParaExport,
-          filename: 'reporte_productos_general_gs1',
-          headerInfo: headerInfo
-        };
+        const { metadata } = response.data;
 
-        await this.gs1ExportService.exportarExcelGS1(gs1Options);
-        
-        this._snackBar.open('✅ Excel General generado correctamente', 'Cerrar', { 
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top' 
+        // PASO 2: Obtener TODOS los productos para exportación
+        this.reporteService.getAllProductosPorCliente(params).subscribe({
+          next: async (todosLosProductos) => {
+            if (todosLosProductos.length === 0) {
+              this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', { 
+                duration: 3000,
+                horizontalPosition: 'end',
+                verticalPosition: 'top' 
+              });
+              return;
+            }
+
+            // Usar TODOS los productos + metadata con GLN
+            const datosParaExport = this.aplanarDatosGeneralParaExport(todosLosProductos);
+            const headerInfo = this.prepararHeaderInfoDesdeBackend(metadata);
+            
+            const gs1Options = {
+              data: datosParaExport,
+              filename: 'reporte_productos_general_gs1',
+              headerInfo: headerInfo
+            };
+
+            await this.gs1ExportService.exportarExcelGS1(gs1Options);
+            
+            this._snackBar.open('✅ Excel General generado correctamente', 'Cerrar', { 
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top' 
+            });
+          },
+          error: (error) => {
+            console.error('Error al obtener todos los productos:', error);
+            this._snackBar.open('❌ Error al generar el reporte Excel', 'Cerrar', { 
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top' 
+            });
+          }
         });
       },
       error: (error) => {
-        console.error('Error al obtener productos del cliente:', error);
+        console.error('Error al obtener metadata:', error);
         this._snackBar.open('❌ Error al generar el reporte Excel', 'Cerrar', { 
           duration: 3000,
           horizontalPosition: 'end',
@@ -1194,46 +1248,6 @@ private aplanarDatosGeneralParaExport(productos: any[]): any[] {
   }));
 }
 
-/**
- * Header específico para reporte general (NUEVO)
- */
-private async prepararHeaderInfoGeneral(): Promise<any> {
-  const baseInfo = {
-    emisor: 'GS1 Ecuador',
-    fechaEmision: new Date().toLocaleDateString('es-EC', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    }),
-    pagina: '1',
-    codigoEmpresa: String(this.clienteSeleccionado?.clientes_codigo || ''),
-    nombreEmpresa: this.clienteSeleccionado?.nomcli || '',
-    ruc: String(this.clienteE?.ruc || ''),
-    gln: '',
-    prefijo: 'GENERAL' // Diferencia clave: indica que es un reporte general
-  };
-
-  // Intentar obtener GLN del primer prefijo disponible
-  try {
-    if (this.prefijos.length > 0) {
-      const primerPrefijo = this.prefijos[0];
-      const glns = await this.glnService.obtenerGlnPorIdPrefijo(primerPrefijo.id_prefijos).toPromise();
-      if (glns && glns.length > 0) {
-        baseInfo.gln = String(glns[0].gln1 || '');
-      }
-      
-      // Intentar obtener prefijogs1 para codigoEmpresa
-      const prefijos = await this.prefijoService.buscarPorCodpre(primerPrefijo.codpre).toPromise();
-      if (prefijos && prefijos.length > 0) {
-        baseInfo.codigoEmpresa = prefijos[0].prefijosgs1 || String(this.clienteSeleccionado?.clientes_codigo || '');
-      }
-    }
-  } catch (error) {
-    console.warn('Error al obtener información para reporte general:', error);
-  }
-
-  return baseInfo;
-}
 
 /**
  * Método principal para exportar a Excel - optimizado con switch

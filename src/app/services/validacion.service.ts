@@ -7,6 +7,7 @@ import { ApiResponse } from '../interfaces/responses/api-response';
 import { PaginationResponse } from '../interfaces/responses/pagination-response';
 import { UpdateClienteRequest } from '../interfaces/requests/update-cliente-request';
 import { ClienteLicenseResponse } from '../interfaces/responses/cliente-license-response';
+import { ExportLicenseQuery, ExportLicenseResponse } from '../interfaces/responses/export-licenses-response';
 
 
 export interface ClienteLicenseQuery {
@@ -111,5 +112,28 @@ export class ValidacionService {
     };
 
     return this.getClientesLicense(query);
+  }
+  /**
+   * Exporta licencias en formato específico reutilizando los mismos filtros
+   */
+  exportClientesLicense(query?: ExportLicenseQuery): Observable<ApiResponse<ExportLicenseResponse>> {
+    let params = new HttpParams();
+    
+    if (query) {
+      if (query.nombreCliente) params = params.set('nombreCliente', query.nombreCliente);
+      if (query.codigoPrefijo) params = params.set('codigoPrefijo', query.codigoPrefijo);
+      if (query.fechaDesde) params = params.set('fechaDesde', query.fechaDesde);
+      if (query.fechaHasta) params = params.set('fechaHasta', query.fechaHasta);
+      if (query.fechaIgual) params = params.set('fechaIgual', query.fechaIgual);
+      if (query.ruc) params = params.set('ruc', query.ruc);
+      if (query.estadoPrefijo !== undefined) params = params.set('estadoPrefijo', query.estadoPrefijo.toString());
+      if (query.estadoEmpresa !== undefined) params = params.set('estadoEmpresa', query.estadoEmpresa.toString());
+      if (query.batchSize) params = params.set('batchSize', query.batchSize.toString());
+    }
+
+    return this.http.get<ApiResponse<ExportLicenseResponse>>(
+      `${this.baseUrl}/Clientes/export-licenses`, 
+      { params }
+    );
   }
 }

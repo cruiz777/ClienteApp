@@ -37,6 +37,8 @@ export interface ProductoReporteMetadataResponse {
   ruc: string;
   prefijo: string;
   tipo_reporte: string;
+  gln?: string;
+  prefijo_gs1?: string;
 }
 
 export interface ProductoUnidadLogisticaCompleteResponse {

@@ -11,11 +11,25 @@
             </div>
             <div class="header-actions">
                 <button class="btn btn-secondary" (click)="nuevaBusqueda()">Nueva Búsqueda</button>
-                <button class="btn btn-primary" (click)="exportarJSON()" [disabled]="licencias.length === 0">JSON</button>
+                
+                <!--BOTÓN ÚNICO INTELIGENTE -->
+                <button class="btn btn-primary" 
+                        (click)="exportarJSON()" 
+                        [disabled]="!hasSearched || isExporting"
+                        [title]="exportInfo">
+                    <span *ngIf="!isExporting">JSON</span>
+                    <span *ngIf="isExporting">⏳Exportando...</span>
+                </button>
             </div>
         </div>
     </div>
-
+    <div class="export-info-container" *ngIf="hasResults && exportInfo">
+        <div class="alert alert-info export-info">
+            <strong>Información de exportación:</strong> {{ exportInfo }}
+            <br>
+            <small>Los archivos se descargarán con los mismos filtros aplicados en la búsqueda actual.</small>
+        </div>
+    </div>
     <!-- Search Form - Layout mejorado -->
     <div class="form-container">
         <!-- Sección de búsqueda general -->
@@ -158,6 +172,7 @@
         <table class="results-table">
             <thead>
                 <tr>
+                    <th>License Key</th> 
                     <th>License Type</th>
                     <th>License Status</th>
                     <th>License Name</th>
@@ -173,6 +188,7 @@
             </thead>
             <tbody>
                 <tr *ngFor="let licencia of licencias; let i = index">
+                    <td>{{ licencia.licenseKey }}</td> 
                     <td>{{ licencia.licenseType }}</td>
                     <td>
                         <span [class]="'status-' + licencia.licenseStatus.toLowerCase()">
@@ -188,17 +204,17 @@
                     <td>{{ licencia.telephone }}</td>
                     <td>
                         <a *ngIf="licencia.email !== 'N/A'" 
-                           [href]="'mailto:' + licencia.email" 
-                           target="_blank">
+                        [href]="'mailto:' + licencia.email" 
+                        target="_blank">
                             {{ licencia.email }}
                         </a>
                         <span *ngIf="licencia.email === 'N/A'">N/A</span>
                     </td>
                     <td>
                         <a *ngIf="licencia.website !== 'N/A'" 
-                           [href]="getWebsiteUrl(licencia.website)" 
-                           target="_blank" 
-                           rel="noopener noreferrer">
+                        [href]="getWebsiteUrl(licencia.website)" 
+                        target="_blank" 
+                        rel="noopener noreferrer">
                             {{ licencia.website }}
                         </a>
                         <span *ngIf="licencia.website === 'N/A'">N/A</span>
@@ -206,6 +222,7 @@
                 </tr>
             </tbody>
         </table>
+
     </div>
 
     <!-- No Results Message - Usando getter actualizado -->

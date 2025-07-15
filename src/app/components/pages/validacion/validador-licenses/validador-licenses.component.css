@@ -497,3 +497,104 @@ body {
         max-width: 200px;
     }
 }
+.header-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.header-actions button {
+    position: relative;
+    transition: all 0.3s ease;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 20px;
+    font-weight: 500;
+}
+
+.header-actions button small {
+    display: block;
+    font-size: 0.75em;
+    font-weight: 400;
+    opacity: 0.8;
+    margin-top: 2px;
+}
+
+/* 🔴 Estado Deshabilitado */
+.header-actions button[disabled] {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+}
+
+/* 🟢 Estado Activo */
+.header-actions button:not([disabled]):hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.header-actions button:not([disabled]):active {
+    transform: translateY(0);
+}
+
+/* 📊 Información de Exportación */
+.export-info-container {
+    margin: 15px 0;
+    animation: fadeIn 0.3s ease;
+}
+
+.export-info {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border-left: 4px solid #2196f3;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.export-info small {
+    color: #666;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+/* 🔄 Animación del Spinner */
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* ✨ Animación de Aparición */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* 🎯 Tooltip Mejorado */
+button[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.875em;
+    white-space: nowrap;
+    z-index: 1000;
+    margin-bottom: 5px;
+}
+
+/* 📱 Responsive */
+@media (max-width: 768px) {
+    .header-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .header-actions button {
+        width: 100%;
+        text-align: center;
+    }
+}
