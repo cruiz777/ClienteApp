@@ -18,8 +18,6 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ToastrService } from 'ngx-toastr';
 import { RequiredFieldsToastService } from 'src/app/components/utils/messages/required-fields-toast.service';
-import * as moment from 'moment';
-import * as html2pdf from 'html2pdf.js';
 import { ExportService } from 'src/app/services/export.service';
 import { LogoService } from 'src/app/services/logo.service';
 import { EmpresaService } from 'src/app/services/empresa.service';
@@ -106,6 +104,18 @@ export class GlnComponent implements OnInit {
       this.prefijoService.obtenerPrefijosGlnPorClienteCodigo(clienteCodigo).subscribe({
         next: (res) => {
           this.prefijos = res;
+          
+          // ✅ CORRECTO: Actualizar clienteActual con datos completos
+          if (res.length > 0 && this.clienteActual) {
+            this.clienteActual = {
+              ...this.clienteActual,
+              representante: res[0].representante,
+              telefono: res[0].telefono,
+              ruc: res[0].ruccli || this.clienteActual.ruc
+            };
+          }
+
+          // ✅ Solo actualizar campos del GLN en el formulario
           if (res.length > 0) {
             this.formGln.patchValue({
               glnPrefijogs1: res[0].codpre,
@@ -768,14 +778,14 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
   }
 
   cargarGlnActual(): void {
-    const gln = this.glnsPorPrefijo[this.glnIndex]; // ← Cambia aquí
+    const gln = this.glnsPorPrefijo[this.glnIndex];
     if (!gln) return;
 
     if (this.ciudadesCargadas && gln.idCiudad) {
       const ciudad = this.ciudades.find(c => c.id === gln.idCiudad);
       if (ciudad) {
         this.setUbicacionDesdeCiudad(ciudad);
-        this.ciudadAutocompleteControl.setValue(ciudad, { emitEvent: false }); // 👈 línea clave
+        this.ciudadAutocompleteControl.setValue(ciudad, { emitEvent: false });
       }
     }
 
@@ -800,13 +810,15 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       glnLongitud: gln.glnLongitud,
       glnFecha: gln.glnFecha,
       glnCodigopostal: gln.glnCodigopostal,
+      // CAMPOS DE TELÉFONO
       glnCelular: gln.glnCelular,
+      glnTel2: gln.glnTel2,
+      glnTel3: gln.glnTel3,
+      // FIN CAMPOS DE TELÉFONO
       glnContacto2: gln.glnContacto2,
       glnEmail2: gln.glnEmail2,
-      glnTel2: gln.glnTel2,
       glnContacto3: gln.glnContacto3,
       glnEmail3: gln.glnEmail3,
-      glnTel3: gln.glnTel3,
       glnFacturar: gln.glnFacturar,
       glnCodpro: gln.glnCodpro,
       glnNombre: gln.glnNombre,
@@ -837,12 +849,21 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       idUsuario: gln.idUsuario,
       localizacion: gln.nombreLocalizacion
     });
+
+    // 👈 DELAY PARA PERMITIR QUE LOS COMPONENTES PROCESEN
+    setTimeout(() => {
+      console.log('Valores en FormControls después del patchValue:');
+      console.log('glnCelular:', this.formGln.get('glnCelular')?.value);
+      console.log('glnTel2:', this.formGln.get('glnTel2')?.value);
+      console.log('glnTel3:', this.formGln.get('glnTel3')?.value);
+    }, 200);
+
     this.setCamposUbicacionHabilitados(false);
     this.setCamposGeneralesSoloLectura(); 
     this.bloquearCamposPaso(2, true); // Contactos
     this.bloquearCamposPaso(3, true); // Certificados
-    this.ciudadAutocompleteControl.disable(); // también bloquear autocomplete
-    this.modoEdicion = false; // ✅ para que el mapa esté en modo lectura
+    this.ciudadAutocompleteControl.disable();
+    this.modoEdicion = false;
   }
 
   guardar(): void {
@@ -924,7 +945,10 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       latiE: raw.latiE,
       idUsuario: raw.idUsuario
     };
-
+    console.log('📞 Valores de teléfono al guardar:');
+    console.log('glnCelular:', this.formGln.get('glnCelular')?.value);
+    console.log('glnTel2:', this.formGln.get('glnTel2')?.value);
+    console.log('glnTel3:', this.formGln.get('glnTel3')?.value);
     const callback = () => {
        console.log('📥 Ejecutando callback de actualización...');
       const idGln = this.formGln.get('idGln')?.value;
@@ -1093,7 +1117,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
   limpiarCiudad(): void {
     this.ciudadAutocompleteControl.setValue('', { emitEvent: true });
     this.formGln.patchValue({ idCiudad: null });
-    // this.ciudadesFiltradas = []; // opcional, si deseas limpiar la lista también
+    // this.ciudadesFiltradas = []; // opcional, para limpiar la lista de ciudades también
   }
 
   modificar(): void {
@@ -1190,8 +1214,20 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
 
   bloquearCamposPaso(paso: number, bloquear: boolean): void {
     if (paso === 2) {
-      const campos = ['contacto', 'email', 'contactoTel', 'glnContacto2', 'glnEmail2', 'glnTel2', 'web','glnContacto3', 'glnEmail3', 'glnTel3'];
+      // REMOVER los campos de teléfono de aquí, ya que tienen su propio componente
+      const campos = ['contacto', 'email', 'web', 'glnContacto2', 'glnEmail2', 'glnContacto3', 'glnEmail3'];
       campos.forEach(c => this.formGln.get(c)?.[bloquear ? 'disable' : 'enable']());
+      
+      // Los campos de teléfono se manejan diferente porque son componentes custom
+      if (bloquear) {
+        this.formGln.get('glnCelular')?.disable();
+        this.formGln.get('glnTel2')?.disable();
+        this.formGln.get('glnTel3')?.disable();
+      } else {
+        this.formGln.get('glnCelular')?.enable();
+        this.formGln.get('glnTel2')?.enable();
+        this.formGln.get('glnTel3')?.enable();
+      }
     } else if (paso === 3) {
       const campos = ['fda', 'europa', 'glnGlobal', 'glnOtro1', 'glnOtro2', 'glnGlnp', 'glnGlne'];
       campos.forEach(c => this.formGln.get(c)?.[bloquear ? 'disable' : 'enable']());
@@ -1209,7 +1245,10 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     };
 
     this.formGln.reset();
+    this.modoEdicion = true;
 
+    const latitudDefecto = -0.22985;
+    const longitudDefecto = -78.52495;
     this.formGln.patchValue({
       clientesCodigo: datosGenerales.clientesCodigo,
       documentoIdentidad: datosGenerales.documentoIdentidad,
@@ -1217,8 +1256,8 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       glnOrigenprefijo: datosGenerales.glnOrigenprefijo,
       glnPrefijogs1: datosGenerales.glnPrefijogs1,
       idTipoLocalizacion: null,
-      glnLatitud: -0.22985,
-      glnLongitud: -78.52495
+      glnLatitud: latitudDefecto,
+      glnLongitud: longitudDefecto
     });
 
     // Este lo seteas *aparte* sin emitir evento
@@ -1296,96 +1335,64 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     }
   }
 
-  //Exportar a PDF
   async exportarPDF(): Promise<void> {
+  // PRIORIZAR AUTOCOMPLETE SOBRE TODO LO DEMÁS
+  const ciudadAutocompleteValue = this.ciudadAutocompleteControl.value;
+
+  // USAR SIEMPRE EL AUTOCOMPLETE COMO FUENTE DE VERDAD
+  let ciudad = null;
+  
+  if (ciudadAutocompleteValue && typeof ciudadAutocompleteValue === 'object' && ciudadAutocompleteValue.id) {
+    // El autocomplete tiene prioridad absoluta
+    ciudad = ciudadAutocompleteValue;
+    console.log('✅ Usando ciudad del autocomplete (prioridad 1):', ciudad);
+    
+    // Sincronizar el formulario con el autocomplete
+    this.formGln.patchValue({ 
+      idCiudad: ciudad.id,
+      provinciaCodigo: ciudad.provincia,
+      cantonCodigo: ciudad.canton
+    });
+  } else {
+    // Solo si no hay autocomplete, buscar por ID del formulario
     const raw = this.formGln.getRawValue();
-    const ciudad = this.ciudades.find(c => c.id === raw.idCiudad);
-    const pais = this.paises.find(p => p.idPais === raw.idPais);
-    const tipoLoc = this.tiposLocalizacion.find(t => t.id_tipo_cliente === raw.idTipoLocalizacion);
-
-    const latGMS = `${raw.latiG || '00'}°${raw.latiM || '00'}'${raw.latiS || '00'}" ${raw.latiE || ''}`;
-    const longGMS = `${raw.longG || '00'}°${raw.longM || '00'}'${raw.longS || '00'}" ${raw.longE || ''}`;
-
-    const logoBase64 = this.logoUrl
-      ? await this.exportService['obtenerLogoBase64'](this.logoUrl)
-      : '';
-    // const firmaBase64 = await this.exportService['obtenerLogoBase64'](firmaUrl);
-
-    const contenido = `
-      <div style="font-family: Arial; font-size: 11px; padding: 20px;">
-
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-          <img src="${logoBase64}" style="height: 60px;" />
-          <div style="text-align: right;">
-            <strong>Emisor:</strong> GS1 Ecuador<br>
-            <strong>Fecha emisión:</strong> ${moment().format('DD/MM/YYYY')}<br>
-            <strong>Pág:</strong> 1
-          </div>
-        </div>
-
-        <h3 style="text-align: center; margin-bottom: 5px;">Sistema de Control de Códigos</h3>
-        <h4 style="text-align: center; margin-top: 0;">Informe Global Location Number</h4>
-
-        <table border="1" cellpadding="6" cellspacing="0" style="width: 100%; border-collapse: collapse; margin-top: 10px;">
-          <tr><td colspan="2"><strong>GLOBAL LOCATION NUMBER (GLN)</strong></td></tr>
-          <tr><td colspan="2" style="text-align: center;"><strong>${raw.gln1}</strong></td></tr>
-
-          <tr><td colspan="2"><strong>LOCALIZACIÓN / LOCATION</strong></td></tr>
-          <tr>
-            <td>LOCALIZACIÓN / LOCATION:</td><td>${raw.localizacion}</td>
-          </tr>
-          <tr>
-            <td>RUC / IDENTIFICACIÓN NUMBER:</td><td>${this.clienteActual?.ruc ?? ''}</td>
-          </tr>
-          <tr>
-            <td>EMPRESA / COMPANY:</td><td>${this.clienteActual?.nomcli ?? ''}</td>
-          </tr>
-          <tr>
-            <td>REPRESENTANTE LEGAL / LEGAL REPRESENTATIVE:</td><td>${this.clienteActual?.nomcli ?? ''}</td>
-          </tr>
-
-          <tr><td colspan="2"><strong>LOCALIZACIÓN / LOCATION</strong></td></tr>
-          <tr><td>TIPO DE LOCALIZACIÓN / LOCATION TYPE:</td><td>${tipoLoc?.descripcion ?? ''}</td></tr>
-          <tr><td>LATITUD / LATITUDE:</td><td>${latGMS}</td></tr>
-          <tr><td>LONGITUD / LENGTH:</td><td>${longGMS}</td></tr>
-          <tr><td>PAÍS / COUNTRY:</td><td>${pais?.nombre ?? ''}</td></tr>
-          <tr><td>PROVINCIA / STATE:</td><td>${ciudad?.provincia ?? ''}</td></tr>
-          <tr><td>CIUDAD / CITY:</td><td>${ciudad?.ciudad ?? ''}</td></tr>
-          <tr><td>DIRECCIÓN / ADDRESS:</td><td>${raw.direccion}</td></tr>          
-          <tr><td>CÓDIGO POSTAL:</td><td>${raw.glnCodigopostal}</td></tr>
-          <tr><td>EMAIL:</td><td>${raw.email}</td></tr>
-          <tr><td>PÁGINA WEB / WEBSITE:</td><td>${raw.web}</td></tr>
-
-          <tr><td colspan="2"><strong>CERTIFICADOS / CERTIFICATES</strong></td></tr>
-          <tr><td>FDA:</td><td>${raw.fda ?? ''}</td></tr>
-          <tr><td>EUROPA U:</td><td>${raw.europa ?? ''}</td></tr>
-          <tr><td>GLOBAL GAP:</td><td>${raw.glnGlobal ?? ''}</td></tr>
-          <tr><td>OTRO 1:</td><td>${raw.glnOtro1 ?? ''}</td></tr>
-          <tr><td>OTRO 2:</td><td>${raw.glnOtro2 ?? ''}</td></tr>
-
-          <tr><td colspan="2"><strong>CONTACTO / CONTACT</strong></td></tr>
-          <tr><td>NOMBRE / NAME:</td><td>${raw.contacto ?? ''}</td></tr>
-          <tr><td>EMAIL:</td><td>${raw.email ?? ''}</td></tr>
-          <tr><td>TELÉFONO / PHONE:</td><td>${raw.contactoTel ?? ''}</td></tr>
-        </table>
-
-        <div style="margin-top: 30px; text-align: center;">
-        
-          <span style="font-size: 11px;">Firma Autorizada GS1 Ecuador</span>
-        </div>
-      </div>
-    `;
-
-    const opt = {
-      margin: 0.5,
-      filename: `GLN_${raw.gln1 || 'informe'}_${moment().format('YYYYMMDD_HHmmss')}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2 },
-      jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
-    };
-
-    html2pdf().from(contenido).set(opt).save();
+    
+    if (raw.idCiudad) {
+      ciudad = this.ciudades.find(c => c.id === +raw.idCiudad);
+    }
+    
+    // Último recurso: buscar por provincia y cantón
+    if (!ciudad && raw.provinciaCodigo && raw.cantonCodigo) {
+      // 🚨 BUSCAR LA PRIMERA QUE COINCIDA EXACTAMENTE
+      ciudad = this.ciudades.find(c => 
+        c.provincia === raw.provinciaCodigo && 
+        c.canton === raw.cantonCodigo
+      );
+    }
   }
+
+  const raw = this.formGln.getRawValue();
+  
+  // Buscar país
+  let pais = null;
+  if (raw.idPais) {
+    pais = this.paises.find(p => p.idPais === +raw.idPais);
+  } else if (ciudad) {
+    pais = this.paises.find(p => p.nombre.toUpperCase() === ciudad.pais.toUpperCase());
+  }
+  
+  const tipoLoc = this.tiposLocalizacion.find(t => t.id_tipo_cliente === +raw.idTipoLocalizacion);
+
+  await this.exportService.exportarGLNPDF({
+    gln: raw.gln1 || '',
+    clienteActual: this.clienteActual,
+    formData: raw,
+    ciudad: ciudad,
+    pais: pais,
+    tipoLoc: tipoLoc,
+    logoUrl: this.logoUrl
+  });
+}
 
   //Exportar a Excel
   async exportarGLNsExcel(): Promise<void> {
@@ -1411,5 +1418,16 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       title: 'Listado de GLNs por Prefijo',
       logoUrl: this.logoUrl
     });
+  }
+  onPhoneChange(controlName: string, phoneData: any): void {
+    console.log('Teléfono cambiado:', controlName, phoneData);
+    
+    // Obtener el número completo con código de país
+    const numeroCompleto = phoneData?.e164Number || phoneData?.internationalNumber || phoneData;
+    
+    // Actualizar el FormControl con el número completo
+    this.formGln.get(controlName)?.setValue(numeroCompleto, { emitEvent: false });
+    
+    console.log('💾 Guardado en FormControl:', numeroCompleto);
   }
 }

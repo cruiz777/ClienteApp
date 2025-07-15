@@ -87,7 +87,7 @@
 
       <div>
         <label>Marca:</label>
-        <input type="text" formControlName="marca"  (blur)="convertirAMayusculas('marca')"/>
+        <input type="text" formControlName="marca" (blur)="convertirAMayusculas('marca')" />
       </div>
 
       <div>
@@ -166,6 +166,15 @@
         <div class="campo-url">
           <label>URL foto:</label>
           <input type="text" formControlName="urlFoto" />
+        </div>
+        <div style="margin-top: 10px;">
+          <img *ngIf="formUV.get('urlFoto')?.value && !imagenNoDisponible" [src]="formUV.get('urlFoto')?.value"
+            alt="Previsualización" style="max-height: 150px; border: 1px solid #ccc; border-radius: 4px;"
+            (error)="imagenNoDisponible = true" (load)="imagenNoDisponible = false">
+
+          <div *ngIf="imagenNoDisponible" style="color: red; font-size: 12px;">
+            ⚠️ No se pudo cargar la imagen desde la URL proporcionada.
+          </div>
         </div>
 
         <div class="campo-observacion">
@@ -247,8 +256,10 @@
         </div>
       </div>
       <div><label>Tipo de empaque:</label><input type="text" formControlName="tipoEmpaque" /></div>
-      <div><label>Unidad:</label><input type="text" formControlName="unidad" (keypress)="permitirSoloNumeros($event)" /></div>
-      <div><label>Indicador:</label><input type="text" formControlName="indicador" (keypress)="permitirSoloNumeros($event)" maxlength="1" /></div>
+      <div><label>Unidad:</label><input type="text" formControlName="unidad"  />
+      </div>
+      <div><label>Indicador:</label><input type="text" formControlName="indicador"
+          (keypress)="permitirSoloNumeros($event)" maxlength="1" /></div>
       <div><label>Factor:</label><input type="text" formControlName="factor" (blur)="actualizarDescripcionUL()" /></div>
 
       <div class="corto1">
@@ -264,7 +275,8 @@
         </div>
         <div class="campo-observacion">
           <label>Descripción:</label><textarea formControlName="descripcionu"
-            (blur)="convertirAMayusculas('descripcionu')"></textarea></div>
+            (blur)="convertirAMayusculas('descripcionu')"></textarea>
+        </div>
       </div>
     </div>
 

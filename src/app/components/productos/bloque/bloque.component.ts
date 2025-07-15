@@ -114,7 +114,7 @@ export class BloqueComponent implements OnInit {
   tipoGtin: string = 'GTIN-13';
   factorDeshabilitado: boolean = true; // o false, según tu lógica
   idsProductosCreados: number[] = [];
-   api: string = '';
+  api: string = '';
   claveApi: string = '';
   huboError: boolean = false;
   constructor(
@@ -133,7 +133,7 @@ export class BloqueComponent implements OnInit {
     private router: Router,
     private codigos14Service: Codigos14Service,
     private jsonBloqueService: JsonBloqueService,
-    private parametrosFacturaService:ParametrosFacturaService
+    private parametrosFacturaService: ParametrosFacturaService
 
   ) {
     this.formUV = this.fb.group({
@@ -197,13 +197,19 @@ export class BloqueComponent implements OnInit {
         width: 300,
         minWidth: 300,
         cellStyle: this.estiloDescripcionVacia,
+        tooltipValueGetter: this.tooltipRepetido, // si usas tooltip
         cellClassRules: {
           'celda-repetida': (params) => {
-            const valor = (params.value || '').trim();
-            return this.descripcionesRepetidas.has(valor);
+            const descripcion = (params.data?.descripcion || '').trim().toUpperCase();
+            const marca = (params.data?.marca || '').trim().toUpperCase();
+            const contenido = (params.data?.contenidoNeto || '').toString().trim().toUpperCase();
+            const unidad = (params.data?.contenidoUM || '').trim().toUpperCase();
+            const clave = `${descripcion}~${marca}~${contenido}~${unidad}`;
+            return this.descripcionesRepetidas.has(clave);
           }
         }
       }
+
       ,
       {
         field: 'categoria',
@@ -1615,39 +1621,53 @@ export class BloqueComponent implements OnInit {
       this.mostrarAlerta('Proceso masivo finalizado', '✔️');
     }
   }
-  validarDescripcionRepetida(): boolean {
-    const contador: Record<string, number> = {};
-    const repetidas = new Set<string>();
-    const listaMensajes: string[] = [];
+validarDescripcionRepetida(): boolean {
+  const contador: Record<string, number> = {};
+  const filasRepetidas: Record<string, number[]> = {};
+  const listaMensajes: string[] = [];
 
-    this.gridApi.forEachNode((node) => {
-      const descripcion = (node.data?.descripcion || '').trim().toUpperCase();
-      const marca = (node.data?.marca || '').trim().toUpperCase();
-      const contenido = (node.data?.contenidoNeto || '').toString().trim().toUpperCase();
-      const unidad = (node.data?.contenidoUM || '').trim().toUpperCase();
+  this.gridApi.forEachNode((node) => {
+    const descripcion = (node.data?.descripcion || '').trim().toUpperCase();
+    const marca = (node.data?.marca || '').trim().toUpperCase();
+    const contenido = (node.data?.contenidoNeto || '').toString().trim().toUpperCase();
+    const unidad = (node.data?.contenidoUM || '').trim().toUpperCase();
 
-      const clave = `${descripcion}~${marca}~${contenido}~${unidad}`;
-      if (!descripcion) return;
+    const clave = `${descripcion}~${marca}~${contenido}~${unidad}`;
+    if (!descripcion) return;
 
-      contador[clave] = (contador[clave] || 0) + 1;
-      if (contador[clave] > 1) {
-        repetidas.add(clave);
-      }
-    });
+    contador[clave] = (contador[clave] || 0) + 1;
 
-    repetidas.forEach(clave => {
-      const veces = contador[clave];
+    if (!filasRepetidas[clave]) {
+      filasRepetidas[clave] = [];
+    }
+
+    // Validar que rowIndex no sea null
+    if (node.rowIndex !== null && node.rowIndex !== undefined) {
+      filasRepetidas[clave].push(node.rowIndex + 1); // Fila visible (1-based)
+    }
+  });
+
+  const repetidas = new Set<string>();
+
+  Object.keys(contador).forEach(clave => {
+    const veces = contador[clave];
+    if (veces > 1) {
+      repetidas.add(clave);
       const partes = clave.split('~');
-      const mensaje = `"${partes[0]}" (marca: ${partes[1]}, contenido: ${partes[2]}, unidad: ${partes[3]}) se repite ${veces} veces`;
+      const filas = filasRepetidas[clave].join(', ');
+      const mensaje = `"${partes[0]}" (marca: ${partes[1]}, contenido: ${partes[2]}, unidad: ${partes[3]}) se repite ${veces} veces en las filas: ${filas}`;
       listaMensajes.push(mensaje);
-    });
+    }
+  });
 
-    this.descripcionesRepetidas = repetidas;
-    this.mensajeRepetidos = listaMensajes.join('\n');
-    this.gridApi.redrawRows();
+  this.descripcionesRepetidas = repetidas;
+  this.mensajeRepetidos = listaMensajes.join('\n');
+  this.gridApi.redrawRows();
 
-    return repetidas.size === 0;
-  }
+  return repetidas.size === 0;
+}
+
+
 
   verificarFactor(): boolean {
     let todoBien = true;
@@ -2186,8 +2206,8 @@ export class BloqueComponent implements OnInit {
     }
 
     const prefijoSeleccionado = this.prefijos.find(p => p.id_prefijos === this.formUV.value.gcp);
-    const dapiP = this.api ||'';
-    const capiP = this.claveApi ||'';
+    const dapiP = this.api || '';
+    const capiP = this.claveApi || '';
     const prefijo = prefijoSeleccionado?.codpre || '';
 
     // if (!dapiP || !capiP) {
@@ -2203,7 +2223,7 @@ export class BloqueComponent implements OnInit {
     this.mostrarAlerta('📦 JSON generado y enviado en lote a Verified.', 'Información');
   }
 
- cargarParametroFacturaPorId(id: number): void {
+  cargarParametroFacturaPorId(id: number): void {
     this.parametrosFacturaService.getById(id).subscribe({
       next: (parametro) => {
         // Aquí asignas el resultado a una variable del componente
@@ -2219,5 +2239,17 @@ export class BloqueComponent implements OnInit {
     });
   }
 
+  tooltipRepetido = (params: any): string | null => {
+    const descripcion = (params.data?.descripcion || '').trim().toUpperCase();
+    const marca = (params.data?.marca || '').trim().toUpperCase();
+    const contenido = (params.data?.contenidoNeto || '').toString().trim().toUpperCase();
+    const unidad = (params.data?.contenidoUM || '').trim().toUpperCase();
+    const clave = `${descripcion}~${marca}~${contenido}~${unidad}`;
+
+    if (this.descripcionesRepetidas?.has(clave)) {
+      return '⚠️ Esta combinación está repetida';
+    }
+    return null;
+  };
 
 }

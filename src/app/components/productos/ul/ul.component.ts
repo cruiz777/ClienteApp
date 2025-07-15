@@ -998,7 +998,7 @@ export class UlComponent implements OnInit {
     this.formUL.get('descripcionu')?.setValue(descripcionUL);
   }
   generarUL(): void {
-    debugger
+ 
     const gtinPrincipal =
       this.formUV.get('gtinNacionalSeleccionado')?.value ||
       this.formUV.get('gtinInternacionalSeleccionado')?.value;
@@ -1306,7 +1306,7 @@ export class UlComponent implements OnInit {
         data: {
           title: '¿Desea confirmar?',
           message: `El código será ${msg}. ¿Está seguro?`,
-          type: 'question',
+          type: 'info',
           confirmText: 'Sí, confirmar',
           cancelText: 'Cancelar',
           showCancel: true
@@ -1314,6 +1314,7 @@ export class UlComponent implements OnInit {
       }).afterClosed().subscribe(result => {
         if (result === true) {
           accion();
+          this.mostrarDialogoOtraPresentacion();
         } else {
           console.log('❌ Usuario canceló');
         }
@@ -1456,6 +1457,26 @@ export class UlComponent implements OnInit {
     this.botonGrabarULDeshabilitado = true;
     this.botonGenerarULDeshabilitado = false;
   }
+  mostrarDialogoOtraPresentacion(): void {
+  this.dialog.open(CustomMessageBoxComponent, {
+    width: '400px',
+    data: {
+      title: '',
+      message: '¿Desea generar otra presentación?',
+      type: 'info',
+      confirmText: 'Sí',
+      cancelText: 'No',
+      showCancel: true
+    }
+  }).afterClosed().subscribe(result => {
+    if (result === true) {
+      this.limpiarUl();// 👈 función que puedes definir para preparar nuevo ingreso
+    } else {
+      this.salir();
+      console.log('✅ Usuario finalizó sin nueva presentación');
+    }
+  });
+}
 
 
   private crearGtin14(msg: string): void {

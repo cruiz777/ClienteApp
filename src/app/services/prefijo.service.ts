@@ -12,7 +12,10 @@ export interface Prefijo {
   id_prefijos: number;
   codpre: string;
   clientesCodigo: number;
+  prefijosgs1?: string;
   bandera?: number;
+  gln:string;
+  web:string;
 }
 
 export interface ActualizarPrefijoPayload {
@@ -46,6 +49,7 @@ export class PrefijoService {
     );
   }
   obtenerPorClienteCodigo(clientesCodigo: number): Observable<PrefijoClienteResponse[]> {
+    debugger
     const params = new HttpParams().set('clientesCodigo', clientesCodigo.toString());
 
     return this.http.get<any>(`${this.apiBaseUrl}/CodpreCliente`, { params }).pipe(

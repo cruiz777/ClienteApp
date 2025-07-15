@@ -10,7 +10,7 @@ import { Cliente } from '../../../interfaces/cliente';
 import { DialogClienteComponent } from '../modals/dialog-cliente/dialog-cliente.component';
 import { ClienteService } from '../../../services/cliente.service';
 import { DialogClienteEditarComponent } from '../modals/dialog-cliente-editar/dialog-cliente-editar.component';
-
+import { MatIconModule } from '@angular/material/icon';
 const ELEMENT_DATA: Cliente[] = [
   {
     clientes_codigo: 101,

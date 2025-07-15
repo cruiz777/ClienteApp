@@ -1,0 +1,96 @@
+<mat-horizontal-stepper [linear]="true" #stepper>
+  <!-- Paso 1: Cliente -->
+  <mat-step [stepControl]="formCliente">
+    <ng-template matStepLabel>Datos del Cliente</ng-template>
+    <form [formGroup]="formCliente">
+      <div class="row">
+        <mat-form-field appearance="outline">
+          <mat-label>Cliente (Código)</mat-label>
+          <input matInput formControlName="clienteCodigo" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Cliente (Nombre)</mat-label>
+          <input matInput formControlName="clienteNombre" />
+        </mat-form-field>
+      </div>
+      <div class="row">
+        <mat-form-field appearance="outline">
+          <mat-label>Responsable (Código)</mat-label>
+          <input matInput formControlName="responsableCodigo" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Responsable (Nombre)</mat-label>
+          <input matInput formControlName="responsableNombre" />
+        </mat-form-field>
+      </div>
+      <div class="step-buttons">
+        <button mat-button matStepperNext [disabled]="formCliente.invalid">Siguiente</button>
+      </div>
+    </form>
+  </mat-step>
+
+  <!-- Paso 2: Factura -->
+  <mat-step [stepControl]="formFactura">
+    <ng-template matStepLabel>Factura</ng-template>
+    <form [formGroup]="formFactura">
+      <div class="row">
+        <mat-form-field appearance="outline">
+          <mat-label>Fecha de Pago</mat-label>
+          <input matInput type="date" formControlName="fechaPago" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label>Monto Deuda</mat-label>
+          <input matInput type="number" formControlName="montoDeuda" />
+        </mat-form-field>
+        <mat-checkbox formControlName="documentosCredito">Documentos a Crédito</mat-checkbox>
+      </div>
+
+      <!-- Tabla estática por ahora -->
+      <table class="tabla">
+        <thead>
+          <tr>
+            <th>No. Factura</th>
+            <th>Fecha</th>
+            <th>Monto</th>
+            <th>Pago</th>
+            <th>Estado</th>
+            <th>Vence</th>
+            <th>Descripción</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of registros">
+            <td>{{ item.factura }}</td>
+            <td>{{ item.fecha }}</td>
+            <td>{{ item.monto }}</td>
+            <td>{{ item.pago }}</td>
+            <td>{{ item.estado }}</td>
+            <td>{{ item.vence }}</td>
+            <td>{{ item.descripcion }}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="step-buttons">
+        <button mat-button matStepperPrevious>Anterior</button>
+        <button mat-button matStepperNext [disabled]="formFactura.invalid">Siguiente</button>
+      </div>
+    </form>
+  </mat-step>
+
+  <!-- Paso 3: Pago -->
+  <mat-step [stepControl]="formPago">
+    <ng-template matStepLabel>Formas de Pago</ng-template>
+    <form [formGroup]="formPago">
+      <mat-form-field appearance="outline">
+        <mat-label>Valor a Pagar</mat-label>
+        <input matInput type="number" formControlName="valorPagar" />
+      </mat-form-field>
+      <div class="step-buttons">
+        <button mat-button matStepperPrevious>Anterior</button>
+        <button mat-button color="primary" (click)="registrarPago()" [disabled]="formPago.invalid">Finalizar</button>
+        <button mat-button color="warn" (click)="cancelar()">Cancelar</button>
+      </div>
+    </form>
+  </mat-step>
+</mat-horizontal-stepper>

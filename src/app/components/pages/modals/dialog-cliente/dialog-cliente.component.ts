@@ -212,11 +212,11 @@ export class DialogClienteComponent implements OnInit {
         telefonoRepresentante: ['', Validators.required],
         nombreCodificacion: [''],
         email: ['', [emailValidoValidator()]],
-        email1: ['', [emailValidoValidator()]],
+        email1: ['', [Validators.required, emailValidoValidator()]],
         email2: ['', [emailValidoValidator()]],
         email3: ['', [emailValidoValidator()]],
         telefonoc: [''],
-        nombreFinanciero: [''],
+        nombreFinanciero: [null, Validators.required],
 
         telefono2: [''],
         pregunta1: [false],
@@ -555,15 +555,6 @@ export class DialogClienteComponent implements OnInit {
     });
   }
 
-
-  // obtenerUsuarioActual(): void {
-  //   this.usuarioService.currentUser$.subscribe(user => {
-  //     this.usuarioActual = user;
-
-  //     console.log('Usuario Actual:', this.usuarioActual);
-
-  //   });
-  // }
   cargarZona(): void {
     this.zonaService.obtenerZona().subscribe(data => {
       this.zona = data;

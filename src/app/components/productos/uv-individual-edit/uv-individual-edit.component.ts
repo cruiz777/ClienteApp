@@ -47,7 +47,7 @@ registerLocaleData(localeEs);
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core';
 import { MomentDateAdapter } from '@angular/material-moment-adapter';
 import { JsonProductoService } from 'src/app/services/json-producto.service';
-import { ParametrosFacturaService ,ParametrosFactura} from 'src/app/services/parametros-factura.service';
+import { ParametrosFacturaService, ParametrosFactura } from 'src/app/services/parametros-factura.service';
 export const MY_DATE_FORMATS = {
   parse: {
     dateInput: 'DD/MM/YYYY'
@@ -122,7 +122,7 @@ export class UvIndividualEditComponent implements OnInit {
   botonGenerarULDeshabilitado = true;
   botonGrabarULDeshabilitado = true;
   registroSeleccionado: any = null;
-
+  imagenNoDisponible: boolean = false;
   unidadesMedida: Umedida[] = [];
   unidadesMedidaFiltradas: Umedida[] = [];
   abrevia: string = '';
@@ -146,8 +146,8 @@ export class UvIndividualEditComponent implements OnInit {
   idProductoDatosAdicionles: number = 0;
   usuarioActual = this.usuarioService.getUsuarioActual();
   numeroPrefijo: string = '';
-  api:string='';
-  claveApi:string='';
+  api: string = '';
+  claveApi: string = '';
   columnDefsGtin14 = [
     {
       headerName: '#',
@@ -193,7 +193,7 @@ export class UvIndividualEditComponent implements OnInit {
     private usuarioService: UsuarioService,
     private route: ActivatedRoute,
     private jsonProductoService: JsonProductoService,
-    private parametrosFacturaService:ParametrosFacturaService
+    private parametrosFacturaService: ParametrosFacturaService
 
   ) { }
 
@@ -287,7 +287,9 @@ export class UvIndividualEditComponent implements OnInit {
 
     // Nacional - UL
 
-
+    this.formUV.get('urlFoto')?.valueChanges.subscribe(() => {
+      this.imagenNoDisponible = false; // Reinicia el error si cambia la URL
+    });
 
   }
 
@@ -1329,21 +1331,21 @@ export class UvIndividualEditComponent implements OnInit {
     this.jsonProductoService.generarJson(data);
   }
 
-cargarParametroFacturaPorId(id: number): void {
-  this.parametrosFacturaService.getById(id).subscribe({
-    next: (parametro) => {
-      // Aquí asignas el resultado a una variable del componente
-      this.api = parametro.texto ?? '';
-      this.claveApi = parametro.obs ?? ''; // si `valor` puede ser undefined
+  cargarParametroFacturaPorId(id: number): void {
+    this.parametrosFacturaService.getById(id).subscribe({
+      next: (parametro) => {
+        // Aquí asignas el resultado a una variable del componente
+        this.api = parametro.texto ?? '';
+        this.claveApi = parametro.obs ?? ''; // si `valor` puede ser undefined
 
-      console.log('✅ Parámetro cargado:', parametro);
-    },
-    error: (error) => {
-      console.error('❌ Error al obtener el parámetro:', error);
-      // Puedes mostrar un mensaje de error si deseas
-    }
-  });
-}
+        console.log('✅ Parámetro cargado:', parametro);
+      },
+      error: (error) => {
+        console.error('❌ Error al obtener el parámetro:', error);
+        // Puedes mostrar un mensaje de error si deseas
+      }
+    });
+  }
 
 
 

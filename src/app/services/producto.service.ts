@@ -3,6 +3,10 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { stream } from 'exceljs';
+import { ProductoRequests } from '../interfaces/requests/producto-filter-request'
+import { ProductoResponse } from '../interfaces/responses/producto-filter-response'
+import { ClienteConProductosResponse } from '../interfaces/responses/producto-filter-response'
+
 export interface ProductoRequest {
   IdProducto: number;
   Codpro: string;
@@ -245,6 +249,15 @@ export interface ApiResponse<T> {
   message: string;
   count: number | null;
 }
+export interface FiltroProductoClienteRequest {
+  clientesCodigo: number;
+  codpre: string;
+  estado: string;
+  codbar?: string;
+  feccreDesde: string; // ISO format
+  feccreHasta?: string;
+  condicionFecha: string; // Ej: "=", "<", "entre", etc.
+}
 
 
 
@@ -254,6 +267,7 @@ export interface ApiResponse<T> {
 export class ProductoService {
 
   private apiBaseUrl = environment.invoicesUrl;
+  private apiReporte = environment.reportUrl;
 
   constructor(private http: HttpClient) { }
 
@@ -296,6 +310,20 @@ export class ProductoService {
       payload.request
     );
   }
+  filtrarProductosPorCliente(filtro: FiltroProductoClienteRequest): Observable<Producto[]> {
+  return this.http
+    .post<ApiResponse<Producto[]>>(`${this.apiBaseUrl}/Producto/filtrar-por-cliente`, filtro)
+    .pipe(map(response => response.data ?? []));
+}
+
+
+  getProductosFiltrados(request: ProductoRequests): Observable<ClienteConProductosResponse> {
+    return this.http
+      .post<ApiResponse<ClienteConProductosResponse>>(`${this.apiReporte}/Producto/filtrar`, request)
+      .pipe(map(response => response.data!));
+  }
+
+
 
 
 }

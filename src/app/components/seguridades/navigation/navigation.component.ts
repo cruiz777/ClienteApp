@@ -47,11 +47,11 @@ export class NavigationComponent implements OnInit {
   salir(): void {
     // Opcional: limpiar localStorage o estados
     // localStorage.removeItem('someKey');
-  
+
     // Navega a /inicio y recarga la vista
     this.router.navigate(['/inicio']).then(() => {
       window.location.reload(); // fuerza la recarga de la pantalla inicio
     });
   }
-  
+
 }
