@@ -30,6 +30,7 @@ import { DialogPrefijoEditarComponent } from './modals/dialog-prefijo-editar/dia
 import { ValidacionSriListComponent } from './validacion/validador-sri/validador-sri-list/validador-sri-list.component';
 import { MatMenuModule } from '@angular/material/menu';
 import { LicenseValidatorComponent } from './validacion/validador-licenses/validador-licenses.component';
+import { ProductsLicenseValidator } from './validacion/validador-products/validador-products.component';
 
 @NgModule({
   declarations: [
@@ -51,6 +52,7 @@ import { LicenseValidatorComponent } from './validacion/validador-licenses/valid
     DialogPrefijoEditarComponent,
     ValidacionSriListComponent,
     LicenseValidatorComponent,
+    ProductsLicenseValidator,
     CustomMessageBoxComponent
   ],
   imports: [

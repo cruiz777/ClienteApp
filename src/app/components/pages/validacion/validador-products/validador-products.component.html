@@ -3,7 +3,7 @@
     <div class="header">
         <div class="header-top">
             <div class="title-section">
-                <h1 class="title">Validador Licencia Verified</h1>
+                <h1 class="title">Validador Productos Verified</h1>
                 <div class="registro-display">
                     <span class="registro-label">N°. Registros:</span>
                     <strong class="registro-value">{{ numeroRegistros }}</strong>
@@ -73,7 +73,7 @@
             <!-- Columna derecha -->
             <div class="form-column-right">
                 <!-- Sección de fechas -->
-                <div class="form-group-inline">
+                <div class="form-group-inline" *ngIf="searchParams.fechaIgual">
                     <label>Filtros de Fecha:</label>
                     <div class="date-filter-section">
                         <!-- Fecha específica -->
@@ -85,7 +85,34 @@
                                 class="form-control date-input"
                                 (change)="puedeRealizarBusqueda ? buscar() : null">
                         </div>
-                        
+
+                        <label>Operador de Fecha:</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" 
+                                    name="operadorFecha" 
+                                    [value]="FechaOperator.Igual"
+                                    [(ngModel)]="searchParams.operadorFecha"
+                                    (change)="puedeRealizarBusqueda ? buscar() : null">
+                                <span>Igual</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" 
+                                    name="operadorFecha" 
+                                    [value]="FechaOperator.Mayor"
+                                    [(ngModel)]="searchParams.operadorFecha"
+                                    (change)="puedeRealizarBusqueda ? buscar() : null">
+                                <span>Mayor</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" 
+                                    name="operadorFecha" 
+                                    [value]="FechaOperator.MenorIgual"
+                                    [(ngModel)]="searchParams.operadorFecha"
+                                    (change)="puedeRealizarBusqueda ? buscar() : null">
+                                <span>Menor o Igual</span>
+                            </label>
+                        </div>
                         <!-- Rango de fechas -->
                         <div class="date-range">
                             <div class="date-range-item">
@@ -107,7 +134,17 @@
                         </div>
                     </div>
                 </div>
-                
+                <div class="form-group-inline">
+                    <label for="gtinEstado">GTIN Estado:</label>
+                    <select id="gtinEstado" 
+                            [(ngModel)]="searchParams.gtinEstado" 
+                            class="form-control"
+                            (change)="puedeRealizarBusqueda ? buscar() : null">
+                        <option value="">Todos</option>
+                        <option value="active">Activo</option>
+                        <option value="inactive">Inactivo</option>
+                    </select>
+                </div>
                 <div class="form-group-inline">
                     <label for="prefijoEstado">Prefijo Estado:</label>
                     <select id="prefijoEstado" 
@@ -170,57 +207,52 @@
         <table class="results-table">
             <thead>
                 <tr>
-                    <th>License Key</th> 
-                    <th>License Type</th>
-                    <th>License Status</th>
-                    <th>License Name</th>
-                    <th>License GLN</th>
-                    <th>Address</th>
-                    <th>Address Suburb</th>
-                    <th>Address Locality</th>
-                    <th>Address Region</th>
-                    <th>Telephone</th>
-                    <th>Email</th>
-                    <th>Website</th>                    
+                    <th>GTIN</th> <!-- 🔄 era: License Key -->
+                    <th>GTIN Status</th> <!-- 🔄 era: License Type -->
+                    <th>Licence Key</th> <!-- 🔄 era: License Status -->
+                    <th>Licence Type</th> <!-- 🆕 NUEVO -->
+                    <th>Brand Name</th> <!-- 🔄 era: License Name -->
+                    <th>Product Description</th> <!-- 🆕 NUEVO -->
+                    <th>Product Image</th> <!-- 🆕 NUEVO -->
+                    <th>Net Content</th> <!-- 🆕 NUEVO -->
+                    <th>Cliente</th> <!-- 🆕 NUEVO -->
+                    <th>Prefijo</th> <!-- 🆕 NUEVO -->
+                    <th>Fecha Creación</th> <!-- 🆕 NUEVO -->
+                    <th>Usuario</th> <!-- 🆕 NUEVO -->
                 </tr>
             </thead>
             <tbody>
-                <tr *ngFor="let licencia of licencias; let i = index">
-                    <td>{{ licencia.licenseKey }}</td> 
-                    <td>{{ licencia.licenseType }}</td>
+                <tr *ngFor="let producto of productos; let i = index"> <!-- 🔄 era: licencia of licencias -->
+                    <td>{{ producto.gtin }}</td> <!-- 🔄 era: licencia.licenseKey -->
                     <td>
-                        <span [class]="'status-' + licencia.licenseStatus.toLowerCase()">
-                            {{ licencia.licenseStatus }}
+                        <span [class]="'status-' + producto.gtinStatus.toLowerCase()">
+                            {{ producto.gtinStatus }}
                         </span>
                     </td>
-                    <td>{{ licencia.licenseName }}</td>
-                    <td>{{ licencia.licenseGLN }}</td>
-                    <td>{{ licencia.address }}</td>
-                    <td>{{ licencia.addressSuburb }}</td>
-                    <td>{{ licencia.addressLocality }}</td>
-                    <td>{{ licencia.addressRegion }}</td>
-                    <td>{{ licencia.telephone }}</td>
+                    <td>{{ producto.licenceKey }}</td>
+                    <td>{{ producto.licenceType }}</td>
+                    <td>{{ producto.brandName }}</td>
+                    <td>{{ producto.productDescription }}</td>
                     <td>
-                        <a *ngIf="licencia.email !== 'N/A'" 
-                        [href]="'mailto:' + licencia.email" 
+                        <a *ngIf="producto.productImageUrl && producto.productImageUrl !== 'N/A'" 
+                        [href]="producto.productImageUrl" 
                         target="_blank">
-                            {{ licencia.email }}
+                            Ver Imagen
                         </a>
-                        <span *ngIf="licencia.email === 'N/A'">N/A</span>
+                        <span *ngIf="!producto.productImageUrl || producto.productImageUrl === 'N/A'">N/A</span>
                     </td>
                     <td>
-                        <a *ngIf="licencia.website !== 'N/A'" 
-                        [href]="getWebsiteUrl(licencia.website)" 
-                        target="_blank" 
-                        rel="noopener noreferrer">
-                            {{ licencia.website }}
-                        </a>
-                        <span *ngIf="licencia.website === 'N/A'">N/A</span>
-                    </td>                
+                        <span *ngIf="producto.netContentValue && producto.netContentValue !== 'N/A'">
+                            {{ producto.netContentValue }} {{ producto.netContentUnitCode }}
+                        </span>
+                        <span *ngIf="!producto.netContentValue || producto.netContentValue === 'N/A'">N/A</span>
+                    </td>
+                    <td>{{ producto.nombreCliente }}</td>
+                    <td>{{ producto.codigoPrefijo }}</td>
+                    <td>{{ producto.fechaCreacion | date:'short' }}</td>
                 </tr>
             </tbody>
         </table>
-
     </div>
 
     <!-- No Results Message - Usando getter actualizado -->
@@ -255,7 +287,7 @@
     <!-- Initial State Message -->
     <div class="initial-state" *ngIf="!isLoading && !hasSearched">
         <div class="alert alert-info">
-            <h4>Validador de Licencias</h4>
+            <h4>Validador de Productos</h4>
             <p>Utilice los filtros anteriores para buscar licencias en el sistema.</p>
             <div class="instructions">
                 <h5>Opciones de búsqueda:</h5>
