@@ -434,11 +434,11 @@
                       <div *ngIf="paso3Form.get('email')?.hasError('emailInvalido') && paso3Form.get('email')?.touched">
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
-                      <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>TTel.o Cel:</label>
+                      <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>Tel.o Cel:</label>
                       {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono"
                         maxlength="9" autocomplete="off" placeholder="999999999" />
                         <mat-error
-                        *ngIf="paso3Form.get('telefono2')?.hasError('required') && paso3Form.get('telefono2')?.touched"
+                        *ngIf="paso3Form.get('telefono')?.hasError('required') && paso3Form.get('telefono')?.touched"
                         style="color: red; font-size: 12px;">
                         Este campo es obligatorio.
                       </mat-error>
@@ -487,9 +487,14 @@
                         *ngIf="paso3Form.get('email3')?.hasError('emailInvalido') && paso3Form.get('email3')?.touched">
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
-                      <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
+                      <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>Tel.o Cel:</label>
                       {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2"
                         maxlength="9" placeholder="999999999" autocomplete="off" />
+                        <mat-error
+                        *ngIf="paso3Form.get('telefono2')?.hasError('required') && paso3Form.get('telefono2')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </div>
 
 

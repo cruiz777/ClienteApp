@@ -7,7 +7,7 @@ import { ClienteService } from 'src/app/services/cliente.service';
 import { PrefijoService } from 'src/app/services/prefijo.service';
 import { GlnService } from 'src/app/services/gln.service';
 import { ProductoAdicionalService } from 'src/app/services/producto-adicional.service';
-import { Codigos14Service,ActualizarCodigo14Request  } from 'src/app/services/codigos14.service';
+import { Codigos14Service, ActualizarCodigo14Request } from 'src/app/services/codigos14.service';
 import { UsuarioService } from 'src/app/services/usuario.service';
 import { ExportService } from 'src/app/services/export.service';
 import { EmpresaService } from 'src/app/services/empresa.service';
@@ -40,10 +40,16 @@ import { AllCommunityModule } from 'ag-grid-community';
 ModuleRegistry.registerModules([AllCommunityModule]);
 import { GridOptions } from 'ag-grid-community';
 import { MatIconModule } from '@angular/material/icon'; // si usas <mat-icon>
-import { ProductoService,Producto } from 'src/app/services/producto.service';
+import { ProductoService, Producto } from 'src/app/services/producto.service';
 import { map, catchError } from 'rxjs/operators';
-import { from,  concat, concatMap, delay } from 'rxjs';
-import {  Observable } from 'rxjs';
+import { from, concat, concatMap, delay } from 'rxjs';
+import { Observable } from 'rxjs';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatPaginator } from '@angular/material/paginator';
+import { ViewChild } from '@angular/core';
+import { ExportOptions } from 'src/app/interfaces/export-options';
+
+
 
 @Component({
   selector: 'app-traspaso-gtin',
@@ -60,7 +66,10 @@ import {  Observable } from 'rxjs';
     MatAutocompleteModule,
     MatOptionModule,
     MatMenuModule,
-    MatIconModule
+    MatIconModule,
+    MatTableModule,
+    MatPaginatorModule
+
   ],
   templateUrl: './traspaso-gtin.component.html',
   styleUrl: './traspaso-gtin.component.css'
@@ -81,31 +90,38 @@ export class TraspasoGtinComponent implements OnInit {
   clientesDestinoFiltrados: ClienteSummary[] = [];
   codcliO: number = 0;
   codcliD: number = 0;
+  nomcliO: string = '';
+  nomcliD: string = '';
   formUV!: FormGroup;
   cantidadFilas: number = 0;
-
+   logoUrl: string = '';
   usuarioActual = this.usuarioService.getUsuarioActual();
   private gridApi!: GridApi;
 
+botonAsignarActivo: boolean = true;
   defaultColDef: ColDef = {
     editable: true,
     resizable: true,
     sortable: false,
-    
+
   };
+  columnasTabla: string[] = ['numero', 'codbar', 'despro', 'referencia'];
+  dataSource = new MatTableDataSource<Producto>();
+
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   columnDefs: ColDef[] = [
-    { headerName: '#', valueGetter: 'node.rowIndex + 1', width: 50 ,editable: false },
-    { headerName: 'Unidad Venta', field: 'UnidadVenta' , width: 150 ,editable: true},
-    { headerName: 'Descripcion', field: 'Descripcion' , width: 300 ,editable: false},
-    { headerName: 'Prefijo', field: 'Prefijo' , width: 100 ,editable: false},
-    { headerName: 'Gtin', field: 'Gtin', width: 100 ,editable: false},
-    { headerName: 'Marca', field: 'Marca', width: 150 ,editable: false},
-    { headerName: 'Contenido', field: 'Contenido' , width: 100 ,editable: false},
-    { headerName: 'U.Medida', field: 'UMedida' , width: 100 ,editable: false},
-    { headerName: 'Estado', field: 'Estado' , width: 100 ,editable: false},
-    { headerName: 'Fecha Creacion', field: 'FechaCreacion' , width: 100 ,editable: false},
-    { headerName: 'Presentacion', field: 'Presentacion' , width: 100 ,editable: false},
+    { headerName: '#', valueGetter: 'node.rowIndex + 1', width: 50, editable: false },
+    { headerName: 'Unidad Venta', field: 'UnidadVenta', width: 150, editable: true },
+    { headerName: 'Descripcion', field: 'Descripcion', width: 300, editable: false },
+    { headerName: 'Prefijo', field: 'Prefijo', width: 100, editable: false },
+    { headerName: 'Gtin', field: 'Gtin', width: 100, editable: false },
+    { headerName: 'Marca', field: 'Marca', width: 150, editable: false },
+    { headerName: 'Contenido', field: 'Contenido', width: 100, editable: false },
+    { headerName: 'U.Medida', field: 'UMedida', width: 100, editable: false },
+    { headerName: 'Estado', field: 'Estado', width: 100, editable: false },
+    { headerName: 'Fecha Creacion', field: 'FechaCreacion', width: 100, editable: false },
+    { headerName: 'Presentacion', field: 'Presentacion', width: 100, editable: false },
   ];
 
   listado = [
@@ -148,8 +164,8 @@ export class TraspasoGtinComponent implements OnInit {
     private dialog: MatDialog,
     private _snackBar: MatSnackBar,
     private fb: FormBuilder,
-    private productoService:ProductoService
-  
+    private productoService: ProductoService
+
   ) {
     this.formUV = this.fb.group({
       gcp: [{ value: '', disabled: true }, Validators.required],
@@ -160,7 +176,7 @@ export class TraspasoGtinComponent implements OnInit {
 
   ngOnInit(): void {
     this.usuarioActual = this.usuarioService.getUsuarioActual();
-
+    this.cargarProductosConAbreviaT();
     this.clienteOrigenControl.valueChanges
       .pipe(
         debounceTime(300),
@@ -182,11 +198,39 @@ export class TraspasoGtinComponent implements OnInit {
         })
       )
       .subscribe(resp => this.clientesDestinoFiltrados = resp.data || []);
+      this.dataSource.filterPredicate = (data: Producto, filter: string) => {
+  const valor = filter.trim().toLowerCase();
+  return (
+    data.codbar?.toString().toLowerCase().includes(valor) ||
+    data.Despro?.toLowerCase().includes(valor) ||
+    data.Referencia?.toLowerCase().includes(valor)
+  );
+};
   }
 
-  cambiarTab(tab: string): void {
-    this.activeTab = tab;
+ 
+
+ngAfterViewInit(): void {
+  setTimeout(() => {
+    if (this.dataSource) {
+      this.dataSource.paginator = this.paginator;
+    }
+  });
+}
+
+ cambiarTab(tab: string): void {
+  this.activeTab = tab;
+
+  // Espera un ciclo para asegurar que el DOM haya renderizado el paginator
+  if (tab === 'Listado') {
+    setTimeout(() => {
+      if (this.paginator) {
+        this.dataSource.paginator = this.paginator;
+      }
+    }, 100);
   }
+}
+
 
   exportarPDF(): void {
     console.log('Exportar a PDF');
@@ -200,59 +244,59 @@ export class TraspasoGtinComponent implements OnInit {
     this.botonActivo = nombre;
   }
 
-onBuscar(): void {
-  if (!this.codcliO || !this.codcliD) {
-    this.mostrarAlerta('Debe seleccionar cliente origen y destino.', 'Error');
-    return;
+  onBuscar(): void {
+    if (!this.codcliO || !this.codcliD) {
+      this.mostrarAlerta('Debe seleccionar cliente origen y destino.', 'Error');
+      return;
+    }
+
+    const gtins = this.transferir
+      .map(fila => (fila.UnidadVenta || '').trim())
+      .filter(gtin => gtin.length > 0);
+
+    if (gtins.length === 0) {
+      this.mostrarAlerta('No hay GTINs para buscar.', 'Advertencia');
+      return;
+    }
+
+    const solicitudes = gtins.map(gtin => this.buscarProductoYActualizarFila(gtin));
+
+    forkJoin(solicitudes).subscribe(() => {
+      this.transferir = [...this.transferir]; // Refrescar tabla
+      this.mostrarAlerta('Consulta completada.', 'Información');
+    });
   }
+  private buscarProductoYActualizarFila(gtin: string): Observable<void> {
+    return this.productoService.getProductosPorClienteYCodbar(this.codcliO, gtin).pipe(
+      map((productos: Producto[]) => {
+        const fila = this.transferir.find(f => (f.UnidadVenta || '').trim() === gtin);
 
-  const gtins = this.transferir
-    .map(fila => (fila.UnidadVenta || '').trim())
-    .filter(gtin => gtin.length > 0);
+        if (!fila) return;
 
-  if (gtins.length === 0) {
-    this.mostrarAlerta('No hay GTINs para buscar.', 'Advertencia');
-    return;
+        if (productos.length > 0) {
+          const p = productos[0];
+          fila.Descripcion = p.Despro;
+          fila.Prefijo = p.codpre;
+          fila.Gtin = p.gtin;
+          fila.Marca = p.marca;
+          fila.Contenido = p.contenido;
+          fila.UMedida = p.unidad;
+          fila.Estado = p.Activo ? 'ACTIVO' : 'INACTIVO';
+          fila.FechaCreacion = this.formatearFecha(p.Feccre);
+          fila.Presentacion = p.p;
+        } else {
+          // 🔴 Producto no encontrado
+          fila.Descripcion = 'NO EXISTE';
+        }
+      }),
+      catchError(error => {
+        console.error(`Error al buscar producto con GTIN ${gtin}:`, error);
+        const fila = this.transferir.find(f => (f.UnidadVenta || '').trim() === gtin);
+        if (fila) fila.Descripcion = 'ERROR';
+        return of(); // evitar que forkJoin se detenga
+      })
+    );
   }
-
-  const solicitudes = gtins.map(gtin => this.buscarProductoYActualizarFila(gtin));
-
-  forkJoin(solicitudes).subscribe(() => {
-    this.transferir = [...this.transferir]; // Refrescar tabla
-    this.mostrarAlerta('Consulta completada.', 'Información');
-  });
-}
-private buscarProductoYActualizarFila(gtin: string): Observable<void> {
-  return this.productoService.getProductosPorClienteYCodbar(this.codcliO, gtin).pipe(
-    map((productos: Producto[]) => {
-      const fila = this.transferir.find(f => (f.UnidadVenta || '').trim() === gtin);
-
-      if (!fila) return;
-
-      if (productos.length > 0) {
-        const p = productos[0];
-        fila.Descripcion = p.Despro;
-        fila.Prefijo = p.codpre;
-        fila.Gtin = p.codbar;
-        fila.Marca = p.marca;
-        fila.Contenido = p.contenido;
-        fila.UMedida = p.unidad;
-        fila.Estado = p.Activo ? 'ACTIVO' : 'INACTIVO';
-        fila.FechaCreacion = this.formatearFecha(p.Feccre);
-        fila.Presentacion = p.p;
-      } else {
-        // 🔴 Producto no encontrado
-        fila.Descripcion = 'NO EXISTE';
-      }
-    }),
-    catchError(error => {
-      console.error(`Error al buscar producto con GTIN ${gtin}:`, error);
-      const fila = this.transferir.find(f => (f.UnidadVenta || '').trim() === gtin);
-      if (fila) fila.Descripcion = 'ERROR';
-      return of(); // evitar que forkJoin se detenga
-    })
-  );
-}
 
 
   formatearFecha(fechaStr: string | Date): string {
@@ -264,132 +308,155 @@ private buscarProductoYActualizarFila(gtin: string): Observable<void> {
   }
 
   onNuevaBusqueda(): void {
-    this.formUV.reset();
+   this.formUV.reset();
+  this.cantidadFilas = 0;
+
+  this.clienteOrigenControl.reset();
+  this.clienteDestinoControl.reset();
+this.dataSource.data = [];
+
+this.transferir = [];
+   
+    this.textoPegado = '';
+    this.botonAsignarActivo = true;
   }
 
-ontransferir(): void {
-  if (!this.codcliO || !this.codcliD) {
-    this.mostrarAlerta('Debe seleccionar cliente origen y destino.', 'Error');
-    return;
-  }
-
-  const idPrefijosNuevo = this.formUV.value.gcp;
-  const seleccionado = this.prefijos.find(p => p.id_prefijos === idPrefijosNuevo);
-
-  if (!idPrefijosNuevo || !seleccionado) {
-    this.mostrarAlerta('Debe seleccionar el nuevo prefijo (GCP).', 'Error');
-    return;
-  }
-
-  const filas = this.transferir.filter(
-    fila => fila?.UnidadVenta && fila.Descripcion !== 'NO EXISTE'
-  );
-
-  if (filas.length === 0) {
-    this.mostrarAlerta('No hay datos válidos para transferir.', 'Advertencia');
-    return;
-  }
-
-  const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
-    width: '400px',
-    data: {
-      title: 'Confirmar asignación',
-      message: `¿Está seguro que desea transferir códigos?`,
-      type: 'info',
-      confirmText: 'Sí, asignar',
-      cancelText: 'Cancelar',
-      showCancel: true
+  ontransferir(): void {
+    if (!this.codcliO || !this.codcliD) {
+      this.mostrarAlerta('Debe seleccionar cliente origen y destino.', 'Error');
+      return;
     }
-  });
+    this.botonAsignarActivo = false;
+    this.seleccionarBoton('transferir');
+    const idPrefijosNuevo = this.formUV.value.gcp;
+    const seleccionado = this.prefijos.find(p => p.id_prefijos === idPrefijosNuevo);
 
-  dialogRef.afterClosed().subscribe(confirmado => {
-    if (!confirmado) return;
+    if (!idPrefijosNuevo || !seleccionado) {
+      this.mostrarAlerta('Debe seleccionar el nuevo prefijo (GCP).', 'Error');
+      return;
+    }
 
-    let exitosos = 0;
-    let fallidos = 0;
+    const filas = this.transferir.filter(
+      fila => fila?.UnidadVenta && fila.Descripcion !== 'NO EXISTE'
+    );
 
-    from(filas)
-      .pipe(
-        concatMap((fila, index) =>
-          this.codigos14Service.getPorGtin(fila.UnidadVenta).pipe(
-            concatMap((registros) => {
-              const codigos14 = registros?.[0];
-              const clienteReal = codigos14?.clientes_codigo;
+    if (filas.length === 0) {
+      this.mostrarAlerta('No hay datos válidos para transferir.', 'Advertencia');
+      return;
+    }
 
-              const payloadAdicional = {
-                codbar: fila.UnidadVenta,
-                clientesCodigoAnterior: this.codcliO, // producto_datos_adicionales
-                clientesCodigoNuevo: this.codcliD,
-                idPrefijosNuevo: idPrefijosNuevo
-              };
+    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: 'Confirmar asignación',
+        message: `¿Está seguro que desea transferir códigos?`,
+        type: 'info',
+        confirmText: 'Sí, asignar',
+        cancelText: 'Cancelar',
+        showCancel: true
+      }
+    });
 
-              const payloadCodigo14: ActualizarCodigo14Request = {
-                codbar: fila.UnidadVenta,
-                clientesCodigoOriginal: clienteReal ?? 0,
-                clientesCodigoNuevo: this.codcliD,
-                idPrefijosNuevo: idPrefijosNuevo
-              };
+    dialogRef.afterClosed().subscribe(confirmado => {
+      if (!confirmado) return;
 
-              // Primero actualizar productos_datos_adicionales
-              return this.productoAdicionalService.actualizarCodigosClientePorFiltros(payloadAdicional).pipe(
-                concatMap(res1 => {
-                  if (res1?.data === true && clienteReal) {
-                    console.log('📤 Payload enviado a Codigos14:', payloadCodigo14);
+      let exitosos = 0;
+      let fallidos = 0;
 
-                    return this.codigos14Service.actualizarClientesCodigo14PorCodbar(payloadCodigo14).pipe(
-                      catchError(err => {
-                        console.warn(`⚠️ Codigos14 no actualizado para ${fila.UnidadVenta}`, err);
-                        return of({ data: null });
+      from(filas)
+        .pipe(
+          concatMap((fila, index) =>
+            this.codigos14Service.getPorGtin(fila.UnidadVenta).pipe(
+              concatMap((registros) => {
+                const codigos14 = registros?.[0];
+                const clienteReal = codigos14?.clientes_codigo;
+                const usuario = this.usuarioActual?.nombre_usuario; // debe estar declarado
+                const fecha = this.obtenerFechaFormateada();
+                const payloadProducto = {
+                  codbar: fila.UnidadVenta,
+                  referencia: `${this.nomcliO}-${this.nomcliD}-${fecha}-${usuario}`,
+                  abrevia: 'T'
+                };
+
+                const payloadAdicional = {
+                  codbar: fila.UnidadVenta,
+                  clientesCodigoAnterior: this.codcliO,
+                  clientesCodigoNuevo: this.codcliD,
+                  idPrefijosNuevo: idPrefijosNuevo
+                };
+
+                const payloadCodigo14 = {
+                  codbar: fila.UnidadVenta,
+                  clientesCodigoOriginal: clienteReal ?? 0,
+                  clientesCodigoNuevo: this.codcliD,
+                  idPrefijosNuevo: idPrefijosNuevo
+                };
+
+                return this.productoService.actualizarReferenciaYAbrevia(payloadProducto).pipe(
+                  concatMap(() =>
+                    this.productoAdicionalService.actualizarCodigosClientePorFiltros(payloadAdicional).pipe(
+                      concatMap(res1 => {
+                        if (res1?.data === true && clienteReal) {
+                          return this.codigos14Service.actualizarClientesCodigo14PorCodbar(payloadCodigo14).pipe(
+                            catchError(err => {
+                              console.warn(`⚠️ Codigos14 no actualizado para ${fila.UnidadVenta}`, err);
+                              return of({ data: null });
+                            })
+                          );
+                        } else {
+                          if (!clienteReal) {
+                            console.warn(`⚠️ Sin coincidencia en Codigos14 para ${fila.UnidadVenta}`);
+                          }
+                          return of({ data: true });
+                        }
                       })
-                    );
-                  } else {
-                    if (!clienteReal) {
-                      console.warn(`⚠️ Sin coincidencia en Codigos14 para ${fila.UnidadVenta}`);
-                    }
-                    return of({ data: true }); // igual lo marcamos como exitoso
-                  }
-                }),
-                delay(150),
-                catchError(err => {
-                  console.error(`❌ Error en fila ${index}:`, err);
-                  fila.Estado = 'NO TRANSFERIDO';
-                  fallidos++;
-                  return of(null);
-                })
-              );
-            })
+                    )
+                  ),
+                  delay(150),
+                  catchError(err => {
+                    console.error(`❌ Error en fila ${index}:`, err);
+                    fila.Estado = 'NO TRANSFERIDO';
+                    fallidos++;
+                    return of(null);
+                  })
+                );
+              })
+            )
           )
         )
-      )
-      .subscribe({
-        next: (response) => {
-          const fila = filas[exitosos + fallidos];
-          if (response !== null) {
-            exitosos++;
-            if (fila) fila.Estado = 'TRANSFERIDO';
-          } else {
-            fallidos++;
-            if (fila) fila.Estado = 'NO TRANSFERIDO';
+        .subscribe({
+          next: (response) => {
+            const fila = filas[exitosos + fallidos];
+            if (response !== null) {
+              exitosos++;
+              if (fila) fila.Estado = 'TRANSFERIDO';
+            } else {
+              fallidos++;
+              if (fila) fila.Estado = 'NO TRANSFERIDO';
+            }
+          },
+          complete: () => {
+            this.mostrarAlerta(
+              `Transferencia finalizada. Éxitos: ${exitosos}, Errores: ${fallidos}.`,
+              'Transferencia'
+            );
+            this.transferir = [...this.transferir];
           }
-        },
-        complete: () => {
-          this.mostrarAlerta(
-            `Transferencia finalizada. Éxitos: ${exitosos}, Errores: ${fallidos}.`,
-            'Transferencia'
-          );
-          this.transferir = [...this.transferir]; // refrescar visualmente
-        }
-      });
-  });
-}
+        });
+    });
+  }
 
 
 
   seleccionarClienteOrigen(cliente: ClienteSummary): void {
     if (!cliente?.clientes_codigo) return;
-    this.prefijoService.obtenerPorClienteCodigo(cliente.clientes_codigo)
-      .subscribe(() => this.codcliO = cliente.clientes_codigo);
+
+    this.prefijoService.obtenerPorClienteCodigo(cliente.clientes_codigo).subscribe(() => {
+      this.codcliO = cliente.clientes_codigo;
+      this.nomcliO = cliente.nomcli + " " + cliente.ruc;
+    });
   }
+
 
   seleccionarClienteDestino(cliente: ClienteSummary): void {
     if (!cliente?.clientes_codigo) return;
@@ -398,7 +465,7 @@ ontransferir(): void {
       .subscribe(prefijos => {
         this.prefijos = prefijos;
         this.codcliD = cliente.clientes_codigo;
-
+        this.nomcliD = cliente.nomcli + " " + cliente.ruc;
         const control = this.formUV.get('gcp');
         if (this.prefijos.length > 0) {
           control?.enable();
@@ -494,5 +561,54 @@ ontransferir(): void {
       duration: 3000
     });
   }
+  private obtenerFechaFormateada(): string {
+    const hoy = new Date();
+    const dd = String(hoy.getDate()).padStart(2, '0');
+    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+    const yyyy = hoy.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+cargarProductosConAbreviaT(): void {
+  this.productoService.getProductosConAbreviaT().subscribe(productos => {
+    this.dataSource = new MatTableDataSource<Producto>(productos);
+
+    // Si ya está inicializado el paginator, lo asignas aquí
+    if (this.paginator) {
+      this.dataSource.paginator = this.paginator;
+    }
+  });
+}
+aplicarFiltro(): void {
+  this.dataSource.filter = this.filtroBusqueda.trim().toLowerCase();
+}
+
+exportar(tipo: 'excel' | 'pdf'): void {
+  const headers = [ 'UV', 'Descripción', 'Observación'];
+  const columns = [ 'codbar', 'despro', 'referencia'];
+
+  const data = this.dataSource.data.map((item: any, index: number) => ({
+   
+    codbar: item.codbar,
+    despro: item.Despro,
+    referencia: item.Referencia
+  }));
+
+  const options: ExportOptions = {
+    data,
+    columns,
+    headers,
+    filename: 'GTIN_Transferidos',
+    title: 'Listado de GTIN Transferidos',
+    logoUrl: this.logoUrl
+  };
+
+  if (tipo === 'excel') {
+    this.exportService.exportarExcel(options);
+  } else {
+    this.exportService.exportarPDF(options);
+  }
+}
+
+
 
 }

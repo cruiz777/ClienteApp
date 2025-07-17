@@ -259,6 +259,11 @@ export interface FiltroProductoClienteRequest {
   condicionFecha: string; // Ej: "=", "<", "entre", etc.
 }
 
+export interface ReferenciaAbreviaUpdateRequest {
+  codbar: string;
+  referencia: string;
+  abrevia: string;
+}
 
 
 @Injectable({
@@ -329,6 +334,19 @@ export class ProductoService {
     .get<ApiResponse<Producto[]>>(
       `${this.apiBaseUrl}/Producto/por-cliente-y-codbar?clienteCodigo=${codigoCliente}&codbar=${codbar}`
     )
+    .pipe(
+      map(response => response.data ?? [])
+    );
+}
+actualizarReferenciaYAbrevia(request: ReferenciaAbreviaUpdateRequest): Observable<ApiResponse<boolean>> {
+  return this.http.put<ApiResponse<boolean>>(
+    `${this.apiBaseUrl}/Producto/actualizar-referencia-abrevia`,
+    request
+  );
+}
+getProductosConAbreviaT(): Observable<Producto[]> {
+  return this.http
+    .get<ApiResponse<Producto[]>>(`${this.apiBaseUrl}/Producto/con-abrevia-t`)
     .pipe(
       map(response => response.data ?? [])
     );

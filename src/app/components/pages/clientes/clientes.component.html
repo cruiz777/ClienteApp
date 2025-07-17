@@ -8,6 +8,11 @@
         <mat-label>Buscar</mat-label>
         <input matInput (keyup)="applyFilter($event)" #input>
       </mat-form-field>
+      <mat-form-field appearance="outline" style="padding: 0px 0px;width: 300px; margin-left: 20px;">
+        <mat-label>Buscar Prefijo</mat-label>
+        <input matInput (keyup)="filtrarPorPrefijo($event)" #inputPrefijo>
+      </mat-form-field>
+
 
       <div class="mat-elevation-z2">
         <table mat-table [dataSource]="dataSource">

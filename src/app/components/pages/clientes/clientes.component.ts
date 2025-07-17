@@ -36,6 +36,8 @@ export class ClientesComponent implements OnInit {
   dataSource = new MatTableDataSource(ELEMENT_DATA);
   selectedCliente: Cliente | null = null;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
+  filtroGeneral: string = '';
+  filtroPrefijo: string = '';
 
   constructor(
     private dialog: MatDialog,
@@ -43,7 +45,7 @@ export class ClientesComponent implements OnInit {
     private clienteService: ClienteService,
     private clienteSeleccionadoService: ClienteSeleccionadoService,
     private router: Router,
-    
+
   ) {
   }
 
@@ -75,11 +77,41 @@ export class ClientesComponent implements OnInit {
   }
 
 
+filtrarPorPrefijo(event: Event) {
+  const input = (event.target as HTMLInputElement).value.trim();
+  this.filtroPrefijo = input;
+  this.aplicarFiltrosCombinados();
+}
 
-  applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
-  }
+applyFilter(event: Event) {
+  const input = (event.target as HTMLInputElement).value.trim().toLowerCase();
+  this.filtroGeneral = input;
+  this.aplicarFiltrosCombinados();
+}
+
+aplicarFiltrosCombinados() {
+  this.dataSource.filterPredicate = (data: Cliente, filter: string) => {
+    const [filtroGeneral, filtroPrefijo] = filter.split('|');
+
+    const coincideGeneral =
+      data.nomcli?.toLowerCase().includes(filtroGeneral) ||
+      data.ruc?.toLowerCase().includes(filtroGeneral) ||
+      data.dircli?.toLowerCase().includes(filtroGeneral) ||
+      String(data.clientes_codigo).includes(filtroGeneral);
+
+    const prefijoSinEspacios = String(data.prefijo || '').replace(/\s/g, '');
+    const prefijosSeparados = prefijoSinEspacios.split('/');
+
+    const coincidePrefijo =
+      !filtroPrefijo || prefijosSeparados.includes(filtroPrefijo);
+
+    return coincideGeneral && coincidePrefijo;
+  };
+
+  this.dataSource.filter = `${this.filtroGeneral}|${this.filtroPrefijo}`;
+}
+
+
 
   editarCliente(cliente: Cliente) {
     this.dialog.open(DialogClienteEditarComponent, {
@@ -123,19 +155,19 @@ export class ClientesComponent implements OnInit {
     this.clienteSeleccionadoService.seleccionar(cliente);
     this.router.navigate(['/menuProductos/clienteSeleccion']);
   }
-editarPrefijosCliente(cliente: Cliente): void {
-  this.dialog.open(LprefijoComponent, {
-    width: '670px',
-    height: '50vh',
-    maxHeight: '50vh',
-    disableClose: true,
-    data: cliente.clientes_codigo
-  }).afterClosed().subscribe(result => {
-    if (result === 'editado') {
-      this.cargarClientes();
-    }
-  });
-}
+  editarPrefijosCliente(cliente: Cliente): void {
+    this.dialog.open(LprefijoComponent, {
+      width: '670px',
+      height: '50vh',
+      maxHeight: '50vh',
+      disableClose: true,
+      data: cliente.clientes_codigo
+    }).afterClosed().subscribe(result => {
+      if (result === 'editado') {
+        this.cargarClientes();
+      }
+    });
+  }
 
 
 }
