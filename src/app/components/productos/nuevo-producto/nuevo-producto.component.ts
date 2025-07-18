@@ -1503,55 +1503,170 @@ async exportarExcelCompleto(productos: any[]): Promise<void> {
   }
 
   async generarPdfMembresia(): Promise<void> {
-    this.cdRef.detectChanges();
+  this.cdRef.detectChanges();
 
-    const idSeleccionado = this.formReporte.value.gcp;
-    if (!idSeleccionado) {
-      this.mostrarAlerta('⚠️ Debe seleccionar un Prefijo primero.', 'Advertencia');
-      return;
-    }
-
-    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
-    const codpre = objeto?.codpre || '';
-
-    if (codpre) {
-      try {
-        const data = await firstValueFrom(this.prefijoService.buscarPorCodpre(codpre));
-        if (data && data.length > 0) {
-          const prefijo = data[0];
-          this.cartaComponent.prefijo = codpre;
-          this.cartaComponent.gcp = prefijo.prefijosgs1 || '';
-          this.cartaComponent.gln = prefijo.gln;
-
-        } else {
-          this.mostrarAlerta('⚠️ No se encontró información para el código de prefijo.', 'Advertencia');
-          return;
-        }
-      } catch (error) {
-        console.error('Error al buscar prefijo:', error);
-        this.mostrarAlerta('❌ Error al buscar el prefijo.', 'Error');
-        return;
-      }
-    }
-
-    // Asignar los @Input()
-    this.cartaComponent.empresa = this.clienteSeleccionado?.nomcli || '';
-    this.cartaComponent.ruc = this.clienteSeleccionado?.ruc || '';
-    this.cartaComponent.anioAfiliacion = new Date(this.clienteSeleccionado?.fecing || '').getFullYear().toString();
-
-    // Esperar a que Angular termine de renderizar si es necesario
-    await new Promise(resolve => setTimeout(resolve, 0));
-
-    // Llamar al método del componente
-    await this.cartaComponent.generarPdfCarta();
+  const idSeleccionado = this.formReporte.value.gcp;
+  if (!idSeleccionado) {
+    this.mostrarAlerta('⚠️ Debe seleccionar un Prefijo primero.', 'Advertencia');
+    return;
   }
 
-  // 🔧 OPCIÓN 1: Cambiar el HTML para que coincida con el TS (MÁS FÁCIL)
-// En tu HTML, cambia:
-/*
-<mat-radio-button value="<=">&le;</mat-radio-button>
-<mat-radio-button value=">">&gt;</mat-radio-button>
-*/
+  const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+  const codpre = objeto?.codpre || '';
+
+  if (!codpre) {
+    this.mostrarAlerta('⚠️ No se encontró el código de prefijo.', 'Advertencia');
+    return;
+  }
+
+  try {
+    // PASO 1: Generar la carta de membresía tradicional
+    const data = await firstValueFrom(this.prefijoService.buscarPorCodpre(codpre));
+    if (data && data.length > 0) {
+      const prefijo = data[0];
+      this.cartaComponent.prefijo = codpre;
+      this.cartaComponent.gcp = prefijo.prefijosgs1 || '';
+      this.cartaComponent.gln = prefijo.gln;
+      this.cartaComponent.empresa = this.clienteSeleccionado?.nomcli || '';
+      this.cartaComponent.ruc = this.clienteSeleccionado?.ruc || '';
+      this.cartaComponent.anioAfiliacion = new Date(this.clienteSeleccionado?.fecing || '').getFullYear().toString();
+
+      // Esperar renderizado y generar carta tradicional
+      await new Promise(resolve => setTimeout(resolve, 0));
+      await this.cartaComponent.generarPdfCarta();
+
+      // PASO 2: Generar el nuevo reporte GS1 usando el endpoint de productos por prefijo
+      this._snackBar.open('🔄 Generando reporte complementario GS1...', '', { duration: 2000 });
+      
+      this.generarPdfProductosPorPrefijo(codpre);
+
+    } else {
+      this.mostrarAlerta('⚠️ No se encontró información para el código de prefijo.', 'Advertencia');
+      return;
+    }
+  } catch (error) {
+    console.error('Error al buscar prefijo:', error);
+    this.mostrarAlerta('❌ Error al buscar el prefijo.', 'Error');
+    return;
+  }
+}
+
+  private async generarPdfProductosPorPrefijo(prefijo: string): Promise<void> {
+  try {
+    // Preparar parámetros para el nuevo endpoint
+    const params = {
+      prefijo: prefijo,
+      clienteCodigo: this.clienteSeleccionado?.clientes_codigo, // Opcional
+      pageNumber: 1,
+      pageSize: 50
+    };
+
+    // PASO 1: Obtener metadata del backend (primera página)
+    this.reporteService.getProductosPorPrefijo(params).subscribe({
+      next: async (response) => {
+        if (response.type !== 'SUCCESS' || !response.data) {
+          this._snackBar.open('⚠️ No se encontraron productos para el prefijo seleccionado', 'Cerrar', { 
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top' 
+          });
+          return;
+        }
+
+        const { metadata } = response.data;
+
+        // PASO 2: Obtener TODOS los productos del prefijo para exportación
+        this.reporteService.getAllProductosPorPrefijo(params).subscribe({
+          next: async (todosLosProductos) => {
+            if (todosLosProductos.length === 0) {
+              this._snackBar.open('⚠️ No se encontraron productos para exportar del prefijo', 'Cerrar', { 
+                duration: 3000,
+                horizontalPosition: 'end',
+                verticalPosition: 'top' 
+              });
+              return;
+            }
+
+            // Usar TODOS los productos + metadata del prefijo
+            const datosParaExport = this.aplanarDatosMembresiaPorPrefijo(todosLosProductos);
+            const headerInfo = this.prepararHeaderInfoMembresia(metadata);
+            
+            const gs1Options = {
+              data: datosParaExport,
+              filename: `membresia_productos_prefijo_${prefijo}`,
+              headerInfo: headerInfo
+            };
+
+            await this.gs1ExportService.exportarPDFGS1(gs1Options);
+            
+            this._snackBar.open('✅ Reporte de membresía GS1 generado correctamente', 'Cerrar', { 
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top' 
+            });
+          },
+          error: (error) => {
+            console.error('Error al obtener todos los productos del prefijo:', error);
+            this._snackBar.open('❌ Error al generar el reporte complementario', 'Cerrar', { 
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top' 
+            });
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error al obtener metadata del prefijo:', error);
+        this._snackBar.open('❌ Error al generar el reporte complementario', 'Cerrar', { 
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top' 
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Error en generarPdfProductosPorPrefijo:', error);
+    this._snackBar.open('❌ Error al generar el reporte complementario', 'Cerrar', { duration: 3000 });
+  }
+}
+
+/**
+ * Aplana los datos específicos para el reporte de membresía por prefijo
+ */
+private aplanarDatosMembresiaPorPrefijo(productos: any[]): any[] {
+  return productos.map(producto => ({
+    codigo_producto: producto.codigo_producto,
+    descripcion: producto.descripcion,
+    marca: producto.marca,
+    contenido_neto: producto.contenido_neto,
+    unidad_medida: producto.unidad_medida,
+    fecha: producto.fecha,
+    codigos_14: producto.codigos_14 || [],
+    cliente_codigo: producto.cliente_codigo,
+    cliente_nombre: producto.cliente_nombre
+  }));
+}
+
+/**
+ * Prepara header específico para reporte de membresía por prefijo
+ */
+private prepararHeaderInfoMembresia(metadata: any): any {
+  return {
+    emisor: metadata.emisor || 'GS1 Ecuador',
+    fechaEmision: metadata.fecha_emision || new Date().toLocaleDateString('es-EC', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }),
+    pagina: metadata.pagina?.toString() || '1',
+    codigoEmpresa: metadata.prefijo_gs1 || metadata.prefijo || '',
+    nombreEmpresa: `Productos del Prefijo ${metadata.prefijo}`,
+    ruc: metadata.ruc || '',
+    gln: metadata.gln || '',
+    prefijo: metadata.prefijo || ''
+  };
+}
+
   generarPdfCompleto(): void {
     const codCliente = this.clienteSeleccionado?.clientes_codigo;
     const idPrefijo = this.formReporte.get('gcp')?.value;

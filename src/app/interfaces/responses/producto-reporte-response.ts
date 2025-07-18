@@ -88,3 +88,33 @@ export interface ProductosPorClienteParams {
   pageNumber?: number;
   pageSize?: number;
 }
+
+export interface ProductoCompletoPorPrefijoResponse {
+  codigo_producto: string;
+  descripcion: string;
+  marca: string;
+  contenido_neto: string;
+  unidad_medida: string;
+  fecha: string;
+  tiene_codigos_14: boolean;
+  codigos_14: Codigo14Response[];
+  cliente_codigo?: number;
+  cliente_nombre: string;
+}
+
+export interface ProductoCompletoPorPrefijoCompleteResponse {
+  metadata: ProductoReporteMetadataResponse;
+  productos: PaginationResponse<ProductoCompletoPorPrefijoResponse>;
+}
+
+export interface ProductosPorPrefijoParams {
+  prefijo: string; // OBLIGATORIO
+  clienteCodigo?: number;
+  codigoProducto?: string;
+  fechaDesde?: string; // Formato: YYYY-MM-DD
+  fechaHasta?: string; // Formato: YYYY-MM-DD
+  condicionFecha?: 'IGUAL' | 'MENOR_IGUAL' | 'MAYOR_IGUAL' | 'MAYOR' | 'ENTRE';
+  estado?: boolean; // true=Activo, false=Inactivo, undefined=Todos
+  pageNumber?: number;
+  pageSize?: number;
+}
