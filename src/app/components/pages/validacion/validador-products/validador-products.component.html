@@ -42,7 +42,12 @@
                 (keyup.enter)="puedeRealizarBusqueda ? buscarGeneral(searchInput.value) : null" />
             <button class="btn btn-sm btn-primary" 
                     (click)="buscarGeneral(searchInput.value)"
-                    [disabled]="!puedeRealizarBusqueda || isLoading">🔍</button>
+                    [disabled]="!puedeRealizarBusqueda || isLoading">
+                <!-- Reemplaza 'ruta-a-tu-icono.svg' con la ruta real -->
+                <img src="assets/icons/icon-buscar.png" 
+                    alt="Buscar" 
+                    class="button-icon">
+            </button>
         </div>
 
         <!-- Filtros en dos columnas -->
@@ -73,7 +78,7 @@
             <!-- Columna derecha -->
             <div class="form-column-right">
                 <!-- Sección de fechas -->
-                <div class="form-group-inline" *ngIf="searchParams.fechaIgual">
+                <div class="form-group-inline">
                     <label>Filtros de Fecha:</label>
                     <div class="date-filter-section">
                         <!-- Fecha específica -->
@@ -86,33 +91,37 @@
                                 (change)="puedeRealizarBusqueda ? buscar() : null">
                         </div>
 
-                        <label>Operador de Fecha:</label>
-                        <div class="radio-group">
-                            <label class="radio-option">
-                                <input type="radio" 
-                                    name="operadorFecha" 
-                                    [value]="FechaOperator.Igual"
-                                    [(ngModel)]="searchParams.operadorFecha"
-                                    (change)="puedeRealizarBusqueda ? buscar() : null">
-                                <span>Igual</span>
-                            </label>
-                            <label class="radio-option">
-                                <input type="radio" 
-                                    name="operadorFecha" 
-                                    [value]="FechaOperator.Mayor"
-                                    [(ngModel)]="searchParams.operadorFecha"
-                                    (change)="puedeRealizarBusqueda ? buscar() : null">
-                                <span>Mayor</span>
-                            </label>
-                            <label class="radio-option">
-                                <input type="radio" 
-                                    name="operadorFecha" 
-                                    [value]="FechaOperator.MenorIgual"
-                                    [(ngModel)]="searchParams.operadorFecha"
-                                    (change)="puedeRealizarBusqueda ? buscar() : null">
-                                <span>Menor o Igual</span>
-                            </label>
+                        <!-- Solo mostrar operadores SI hay fecha específica -->
+                        <div *ngIf="searchParams.fechaIgual">
+                            <label>Operador de Fecha:</label>
+                            <div class="radio-group">
+                                <label class="radio-option">
+                                    <input type="radio" 
+                                        name="operadorFecha" 
+                                        [value]="FechaOperator.Igual"
+                                        [(ngModel)]="searchParams.operadorFecha"
+                                        (change)="puedeRealizarBusqueda ? buscar() : null">
+                                    <span>=</span>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" 
+                                        name="operadorFecha" 
+                                        [value]="FechaOperator.Mayor"
+                                        [(ngModel)]="searchParams.operadorFecha"
+                                        (change)="puedeRealizarBusqueda ? buscar() : null">
+                                    <span>></span>
+                                </label>
+                                <label class="radio-option">
+                                    <input type="radio" 
+                                        name="operadorFecha" 
+                                        [value]="FechaOperator.MenorIgual"
+                                        [(ngModel)]="searchParams.operadorFecha"
+                                        (change)="puedeRealizarBusqueda ? buscar() : null">
+                                    <span><=</span>
+                                </label>
+                            </div>
                         </div>
+                        
                         <!-- Rango de fechas -->
                         <div class="date-range">
                             <div class="date-range-item">
@@ -215,10 +224,8 @@
                     <th>Product Description</th> <!-- 🆕 NUEVO -->
                     <th>Product Image</th> <!-- 🆕 NUEVO -->
                     <th>Net Content</th> <!-- 🆕 NUEVO -->
+                    <th>Unit Code</th>
                     <th>Cliente</th> <!-- 🆕 NUEVO -->
-                    <th>Prefijo</th> <!-- 🆕 NUEVO -->
-                    <th>Fecha Creación</th> <!-- 🆕 NUEVO -->
-                    <th>Usuario</th> <!-- 🆕 NUEVO -->
                 </tr>
             </thead>
             <tbody>
@@ -243,13 +250,12 @@
                     </td>
                     <td>
                         <span *ngIf="producto.netContentValue && producto.netContentValue !== 'N/A'">
-                            {{ producto.netContentValue }} {{ producto.netContentUnitCode }}
+                            {{ producto.netContentValue }} 
                         </span>
                         <span *ngIf="!producto.netContentValue || producto.netContentValue === 'N/A'">N/A</span>
                     </td>
+                    <td>{{ producto.netContentUnitCode }}</td>
                     <td>{{ producto.nombreCliente }}</td>
-                    <td>{{ producto.codigoPrefijo }}</td>
-                    <td>{{ producto.fechaCreacion | date:'short' }}</td>
                 </tr>
             </tbody>
         </table>

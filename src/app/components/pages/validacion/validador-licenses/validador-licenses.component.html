@@ -42,7 +42,12 @@
                 (keyup.enter)="puedeRealizarBusqueda ? buscarGeneral(searchInput.value) : null" />
             <button class="btn btn-sm btn-primary" 
                     (click)="buscarGeneral(searchInput.value)"
-                    [disabled]="!puedeRealizarBusqueda || isLoading">🔍</button>
+                    [disabled]="!puedeRealizarBusqueda || isLoading">
+                <!-- Reemplaza 'ruta-a-tu-icono.svg' con la ruta real -->
+                <img src="assets/icons/icon-buscar.png" 
+                    alt="Buscar" 
+                    class="button-icon">
+            </button>
         </div>
 
         <!-- Filtros en dos columnas -->

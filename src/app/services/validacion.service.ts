@@ -11,6 +11,7 @@ import { ExportLicenseQuery, ExportLicenseResponse } from '../interfaces/respons
 import { ExportProductoResponse, ExportProductosResponse, ProductoDisplay, ProductoLicenseResponse } from '../interfaces/responses/products-license-response';
 import { ExportProductosQuery, ProductoLicenseQuery } from '../interfaces/responses/export-products-response';
 import { SendToApiRequest } from '../interfaces/requests/enviar-api-verified-request';
+import { ProductoDetalleResponse } from '../interfaces/responses/producto-detalle-response';
 
 
 export interface ClienteLicenseQuery {
@@ -437,5 +438,37 @@ export class ValidacionService {
       fechaCreacion: producto.fecha_creacion
     };
   }
+
+  /**
+ * Obtiene el detalle completo de un producto por código de barras (GTIN)
+ * @param gtin Código GTIN-13 del producto
+ */
+getProductoDetalle(gtin: string): Observable<ApiResponse<ProductoDetalleResponse>> {
+  const params = new HttpParams().set('gtin', gtin);
+  
+  return this.http.get<ApiResponse<ProductoDetalleResponse>>(
+    `${this.baseUrl}/ProductosLicenses/detalle`, 
+    { params }
+  );
+}
+
+/**
+ * Método helper para validar GTIN
+ * @param gtin Código a validar
+ */
+isValidGtin(gtin: string): boolean {
+  if (!gtin) return false;
+  if (gtin.length !== 13) return false;
+  return /^\d+$/.test(gtin);
+}
+
+/**
+ * Método helper para formatear URL del sitio web
+ * @param website URL del sitio web
+ */
+formatWebsiteUrl(website: string | undefined): string {
+  if (!website || website === 'N/A' || website.trim() === '') return '';
+  return website.startsWith('http') ? website : `https://${website}`;
+}
 
 }

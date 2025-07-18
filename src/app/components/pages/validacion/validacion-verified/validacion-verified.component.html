@@ -1,0 +1,174 @@
+<div class="producto-detalle-container">
+  <!-- Header con estilo GS1 -->
+  <div class="gs1-header">
+    <div class="header-content">
+      <h3 class="gs1-title">
+        Verified by GS<span class="gs1-number">1</span>
+        <span class="ecuador-badge">Ecuador</span>
+      </h3>
+    </div>
+  </div>
+
+  <div class="container">
+    <!-- Sección de Búsqueda -->
+    <div class="search-section">
+      <div class="search-card">
+        <h4 class="search-title">Consulta de Producto por Código de Barras</h4>
+        <div class="search-form">
+          <div class="input-group">
+            <input 
+              type="text" 
+              class="search-input" 
+              placeholder="Ingrese código de barras (GTIN-13)" 
+              [(ngModel)]="codigoBarras"
+              (input)="onCodigoBarrasChange($event)"
+              (keyup.enter)="onEnterKey()"
+              maxlength="13">
+            <button 
+              class="search-btn" 
+              (click)="buscarProducto()"
+              [disabled]="!codigoBarras || isLoading">
+              <img *ngIf="!isLoading" src="assets/icons/icon-buscar.png" alt="Buscar" class="search-icon">
+              <img *ngIf="isLoading" src="assets/icons/icon-reloj-2.png" alt="Buscando..." class="loading-icon">
+              <span>{{ isLoading ? 'Buscando...' : 'Buscar' }}</span>
+            </button>
+          </div>
+          <a *ngIf="hasResult" class="nueva-busqueda" (click)="nuevaBusqueda()">realizar otra búsqueda</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="isLoading" class="loading-state">
+      <img src="assets/icons/icon-reloj-2.png" alt="Cargando..." class="main-loading-icon">
+      <p>Consultando información del producto...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="errorMessage" class="error-state">
+      <div class="error-card">
+        <h4>❌ Producto no encontrado</h4>
+        <p>{{ errorMessage }}</p>
+        <button class="btn-retry" (click)="nuevaBusqueda()">Intentar nueva búsqueda</button>
+      </div>
+    </div>
+
+    <!-- Resultado del Producto -->
+    <div *ngIf="producto && !isLoading" class="producto-result">
+      
+      <!-- Sección: Producto (Product) -->
+      <div class="info-section">
+        <h3 class="section-title">Producto (Product)</h3>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Código GTIN <span class="label-en">(Global Trade Item Number)</span></label>
+            <input readonly class="form-control readonly-input" [value]="producto.gtin">
+          </div>
+          <div class="form-group">
+            <label>Descripción del producto <span class="label-en">(Description)</span></label>
+            <input readonly class="form-control readonly-input" [value]="producto.productDescription">
+          </div>
+          <div class="form-group">
+            <label>Marca <span class="label-en">(Brand)</span></label>
+            <input readonly class="form-control readonly-input" [value]="producto.brandName">
+          </div>
+          <div class="form-group">
+            <label>Contenido neto <span class="label-en">(Net content)</span></label>
+            <input readonly class="form-control readonly-input" [value]="getNetContentText()">
+          </div>
+          <div class="form-group">
+            <label>Unidad de medida <span class="label-en">(Unit of measurement)</span></label>
+            <input readonly class="form-control readonly-input" [value]="producto.netContentUnitCode">
+          </div>
+          <div class="form-group">
+            <label>Fecha de asignación <span class="label-en">(Assignment date)</span></label>
+            <input readonly class="form-control readonly-input" [value]="formatFechaCreacion(producto.fechaCreacion)">
+          </div>
+          <div class="form-group">
+            <label>Grupo del producto <span class="label-en">(Product group)</span></label>
+            <input readonly class="form-control readonly-input" [value]="producto.productGroup">
+          </div>
+          <div class="form-group">
+            <label>Url imagen del producto <span class="label-en">(Image)</span></label>
+            <input readonly class="form-control readonly-input" [value]="producto.productImageUrl">
+            <a *ngIf="hasProductImage()" [href]="producto.productImageUrl" target="_blank" class="view-image">Ver imagen</a>
+          </div>
+          <div class="form-group form-group-wide">
+            <label>Categoría del producto mundial <span class="label-en">(Categories)</span></label>
+            <input readonly class="form-control readonly-input" [value]="producto.categoryDescription">
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Unidad logística (GTIN-14) -->
+      <div class="info-section" *ngIf="producto.unidadesLogisticas?.length">
+        <h3 class="section-title">Unidad logística (GTIN-14)</h3>
+        <div class="logistic-units">
+          <div *ngFor="let unidad of producto.unidadesLogisticas" class="logistic-row">
+            <div class="form-group">
+              <label>Código GTIN-14</label>
+              <input readonly class="form-control readonly-input bold-input" [value]="unidad.gtin14">
+            </div>
+            <div class="form-group">
+              <label>Presentación</label>
+              <input readonly class="form-control readonly-input bold-input" [value]="unidad.presentacion">
+            </div>
+            <div class="form-group">
+              <label>Factor (Contenido)</label>
+              <input readonly class="form-control readonly-input bold-input" [value]="unidad.factor">
+            </div>
+            <div class="form-group form-group-wide">
+              <label>Descripción</label>
+              <input readonly class="form-control readonly-input bold-input" [value]="unidad.descripcion">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sección: Empresa (Company) -->
+      <div class="info-section">
+        <h3 class="section-title">Empresa (Company)</h3>
+        <div class="form-grid">
+          <div class="form-group form-group-wide">
+            <label>Nombre de la empresa <span class="label-en">(Company)</span></label>
+            <input readonly class="form-control readonly-input bold-input" [value]="producto.nombreCliente">
+          </div>
+          <div class="form-group">
+            <label>GS1 Prefijo de Empresa (GCP) <span class="label-en">(Global Company Prefix)</span></label>
+            <input readonly class="form-control readonly-input bold-input" [value]="producto.licenceKey">
+          </div>
+          <div class="form-group">
+            <label>GLN <span class="label-en">(Global Location Number)</span></label>
+            <input readonly class="form-control readonly-input bold-input" [value]="producto.gln">
+          </div>
+          <div class="form-group">
+            <label>Ciudad <span class="label-en">(City)</span></label>
+            <input readonly class="form-control readonly-input" [value]="producto.ciudad">
+          </div>
+          <div class="form-group">
+            <label>Cantón <span class="label-en">(Canton)</span></label>
+            <input readonly class="form-control readonly-input" [value]="producto.canton">
+          </div>
+          <div class="form-group">
+            <label>Provincia <span class="label-en">(State)</span></label>
+            <input readonly class="form-control readonly-input" [value]="producto.provincia">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input readonly class="form-control readonly-input" [value]="producto.email">
+          </div>
+          <div class="form-group form-group-wide">
+            <label>Dirección <span class="label-en">(Address)</span></label>
+            <input readonly class="form-control readonly-input" [value]="producto.direccion">
+          </div>
+          <div class="form-group">
+            <label>Sitio web <span class="label-en">(Web site)</span></label>
+            <input readonly class="form-control readonly-input" [value]="producto.website">
+            <a *ngIf="hasWebsite()" [href]="getWebsiteUrl(producto.website ?? '')" target="_blank" class="view-website">Visitar sitio</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

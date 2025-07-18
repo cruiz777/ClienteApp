@@ -31,6 +31,7 @@ import { ValidacionSriListComponent } from './validacion/validador-sri/validador
 import { MatMenuModule } from '@angular/material/menu';
 import { LicenseValidatorComponent } from './validacion/validador-licenses/validador-licenses.component';
 import { ProductsLicenseValidator } from './validacion/validador-products/validador-products.component';
+import { ProductoDetalleComponent } from './validacion/validacion-verified/validacion-verified.component';
 
 @NgModule({
   declarations: [
@@ -53,6 +54,7 @@ import { ProductsLicenseValidator } from './validacion/validador-products/valida
     ValidacionSriListComponent,
     LicenseValidatorComponent,
     ProductsLicenseValidator,
+    ProductoDetalleComponent,
     CustomMessageBoxComponent
   ],
   imports: [
