@@ -43,7 +43,8 @@ import { format } from 'date-fns';
 import { CiudadService } from 'src/app/services/ciudad.service';
 import { CartaComponent } from './carta/carta.component';
 import { CartaOficialComponent } from './carta-oficial/carta-oficial.component';
-
+import { CustomMessageBoxComponent, MessageBoxData } from '../../utils/messages/custom-message-box.component';
+import { MatDialog } from '@angular/material/dialog';
 
 export const MY_DATE_FORMATS = {
   parse: {
@@ -180,7 +181,8 @@ export class NuevoProductoComponent implements OnInit {
     private glnService: GlnService,
     private gs1ExportService: GS1ExportService,
     private cdRef: ChangeDetectorRef,
-    private ciudadService: CiudadService
+    private ciudadService: CiudadService,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
@@ -275,30 +277,46 @@ export class NuevoProductoComponent implements OnInit {
   }
 
 
-  cargarProductos(codigoCliente: number): void {
-    this.productoService.getProductosPorCliente(codigoCliente).subscribe({
-      next: (productos: Producto[]) => {
-        this.registros = productos.map(p => ({
-          id: p.IdProducto,
-          empresa: p.clienteNombres || '',
-          prefijo: p.codpre || '',
-          tipogtin: p.gtin || '',
-          estado: p.Activo ? 'ACTIVO' : 'INACTIVO',
-          codbar: p.codbar || '',
-          presentacion: p.p || '',
-          descripcion: p.Despro || '',
-          fecha: this.formatearFecha(p.Feccre),
-          marca: p.marca || '',
-          contenido: p.contenido || '',
-          unidad: p.unidad || '',
-          categoria: p.dbrick || '',
-          gcp_brick: p.brick || '',
-          pais: p.pais || ''
-        }));
-      },
-      error: err => console.error('Error al cargar productos:', err)
-    });
-  }
+cargarProductos(codigoCliente: number): void {
+  const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+    disableClose: true,
+    data: {
+      title: 'Cargando Productos...',
+      message: 'Por favor espere mientras se cargan los productos del cliente.',
+      type: 'info',
+      isLoading: true,
+      loadingText: 'Cargando productos...',
+      showCancel: false
+    }
+  });
+
+  this.productoService.getProductosPorCliente(codigoCliente).subscribe({
+    next: (productos: Producto[]) => {
+      this.registros = productos.map(p => ({
+        id: p.IdProducto,
+        empresa: p.clienteNombres || '',
+        prefijo: p.codpre || '',
+        tipogtin: p.gtin || '',
+        estado: p.Activo ? 'ACTIVO' : 'INACTIVO',
+        codbar: p.codbar || '',
+        presentacion: p.p || '',
+        descripcion: p.Despro || '',
+        fecha: this.formatearFecha(p.Feccre),
+        marca: p.marca || '',
+        contenido: p.contenido || '',
+        unidad: p.unidad || '',
+        categoria: p.dbrick || '',
+        gcp_brick: p.brick || '',
+        pais: p.pais || ''
+      }));
+      loadingDialog.close(); // ✅ Cerramos al terminar
+    },
+    error: err => {
+      console.error('Error al cargar productos:', err);
+      loadingDialog.close(); // ✅ Cerramos si hay error
+    }
+  });
+}
 
   cargarCodigos14PorGtin(gtin: string): void {
     this.codigos14Service.getPorGtin(gtin).subscribe({
@@ -319,13 +337,18 @@ export class NuevoProductoComponent implements OnInit {
     });
   }
 
-  formatearFecha(fechaStr: string | Date): string {
-    const fecha = new Date(fechaStr);
-    const dia = String(fecha.getDate()).padStart(2, '0');
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-    const anio = fecha.getFullYear();
+formatearFecha(fechaStr: string | Date): string {
+  if (typeof fechaStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+    const [anio, mes, dia] = fechaStr.split('-');
     return `${dia}/${mes}/${anio}`;
   }
+
+  const fecha = new Date(fechaStr);
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const anio = fecha.getFullYear();
+  return `${dia}/${mes}/${anio}`;
+}
 
   irAUvIndividual(): void {
     this.router.navigate(['/menuProductos/uvIndividual']);

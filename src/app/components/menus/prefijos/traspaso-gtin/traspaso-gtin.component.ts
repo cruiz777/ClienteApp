@@ -441,6 +441,7 @@ this.transferir = [];
               'Transferencia'
             );
             this.transferir = [...this.transferir];
+            this.cargarProductosConAbreviaT();
           }
         });
     });

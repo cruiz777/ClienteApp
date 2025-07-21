@@ -199,48 +199,58 @@ export class DialogClienteEditarComponent implements OnInit {
     private logoService: LogoService,
   ) { }
 
-  ngOnInit(): void {
+ ngOnInit(): void {
+  const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+    disableClose: true,
+    data: {
+      title: 'Cargando Cliente...',
+      message: 'Por favor espere mientras se cargan los datos del cliente.',
+      type: 'info',
+      isLoading: true,
+      loadingText: 'Cargando información...',
+      showCancel: false
+    }
+  });
 
-    this.cargando = true;
-    this.usuarioActual = this.usuarioService.getUsuarioActual();
-    this.initFormulario();
+  this.cargando = true;
+  this.usuarioActual = this.usuarioService.getUsuarioActual();
+  this.initFormulario();
 
-    //this.obtenerUsuarioActual();
-    this.cargarGrupos();
-    this.cargarGruposProducto();
+  this.cargarGrupos();
+  this.cargarGruposProducto();
+  this.cargarCiudad();
+  this.cargarPais();
+  this.cargarZona();
+  this.cargarEstadoEmpresa();
+  this.activarModoEdicion();
 
-    this.cargarCiudad();
-    this.cargarPais();
-    this.cargarZona();
-    this.cargarEstadoEmpresa();
-    this.activarModoEdicion();
+  console.log(this.idCliente);
+  this.cargarHistorial(this.idCliente, 'update', 'Clientes', 1);
+  this.cargarPrefijoCliente(this.idCliente);
+  this.cargarClienteYGrupos(this.idCliente);
+  this.obtenerObservaciones(this.idCliente);
+  this.cargarDatosAdicionales(this.idCliente);
+  this.cargarContactosClientes(this.idCliente);
 
-    console.log(this.idCliente);
-    this.cargarHistorial(this.idCliente, 'update', 'Clientes', 1);
-    this.cargarPrefijoCliente(this.idCliente);
-    this.cargarClienteYGrupos(this.idCliente);
-    this.obtenerObservaciones(this.idCliente);
-    this.cargarDatosAdicionales(this.idCliente);
-    this.cargarContactosClientes(this.idCliente);
-    this.paso2Form.get('razonSocial')?.valueChanges.subscribe(valor => {
-      this.nombrecli = valor;
-    });
+  this.paso2Form.get('razonSocial')?.valueChanges.subscribe(valor => {
+    this.nombrecli = valor;
+  });
 
+  this.paso1Form.get('estadoEmpresa')?.valueChanges.subscribe(value => {
+    this.paso2Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
+    this.paso3Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
+    this.paso4Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
+  });
 
+  this.paso1Form.get('zona')?.valueChanges.subscribe(value => {
+    this.paso2Form.get('zona')?.setValue(value, { emitEvent: false });
+    this.paso3Form.get('zona')?.setValue(value, { emitEvent: false });
+    this.paso4Form.get('zona')?.setValue(value, { emitEvent: false });
+  });
 
-    this.paso1Form.get('estadoEmpresa')?.valueChanges.subscribe(value => {
-      this.paso2Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
-      this.paso3Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
-      this.paso4Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
-    });
-
-    this.paso1Form.get('zona')?.valueChanges.subscribe(value => {
-      this.paso2Form.get('zona')?.setValue(value, { emitEvent: false });
-      this.paso3Form.get('zona')?.setValue(value, { emitEvent: false });
-      this.paso4Form.get('zona')?.setValue(value, { emitEvent: false });
-    });
-    this.cargando = false;
-  }
+  this.cargando = false;
+  loadingDialog.close(); // ✅ cerrar el diálogo
+}
 
   initFormulario(): void {
     this.formCliente = this.fb.group({

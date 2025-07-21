@@ -12,6 +12,8 @@ import { ClienteService } from '../../../services/cliente.service';
 import { DialogClienteEditarComponent } from '../modals/dialog-cliente-editar/dialog-cliente-editar.component';
 import { MatIconModule } from '@angular/material/icon';
 import { LprefijoComponent } from './lprefijo/lprefijo.component';
+import { CustomMessageBoxComponent, MessageBoxData } from '../../utils/messages/custom-message-box.component';
+
 const ELEMENT_DATA: Cliente[] = [
   {
     clientes_codigo: 101,
@@ -58,36 +60,55 @@ export class ClientesComponent implements OnInit {
     this.dataSource.paginator = this.paginator;
   }
 
-  cargarClientes(): void {
+ cargarClientes(): void {
+  const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+    disableClose: true,
+    data: {
+      title: 'Cargando Clientes...',
+      message: 'Por favor espere mientras se cargan los clientes.',
+      type: 'info',
+      isLoading: true,
+      loadingText: `Cargando página ...`,
+      showCancel: false
+    }
+  });
 
-    // Limpia primero la tabla visualmente
-    this.dataSource = new MatTableDataSource<Cliente>([]);
-    this.dataSource.paginator = this.paginator;
+  this.dataSource = new MatTableDataSource<Cliente>([]);
+  this.dataSource.paginator = this.paginator;
 
-    this.clienteService.getClientes().subscribe({
-      next: (resp) => {
-        this.dataSource = new MatTableDataSource(resp);
-        this.dataSource.paginator = this.paginator;
-      },
-      error: (err) => {
-        console.error('Error al obtener clientes', err);
-        this.mostrarAlerta('No se pudieron cargar los clientes', 'Error');
-      }
-    });
-  }
-
-
-filtrarPorPrefijo(event: Event) {
-  const input = (event.target as HTMLInputElement).value.trim();
-  this.filtroPrefijo = input;
-  this.aplicarFiltrosCombinados();
+  this.clienteService.getClientes().subscribe({
+    next: (resp) => {
+      this.dataSource = new MatTableDataSource(resp);
+      this.dataSource.paginator = this.paginator;
+      loadingDialog.close(); // ✅ Cierra el diálogo después de cargar
+    },
+    error: (err) => {
+      console.error('Error al obtener clientes', err);
+      this.mostrarAlerta('No se pudieron cargar los clientes', 'Error');
+      loadingDialog.close(); // ✅ Cierra el diálogo si hay error
+    }
+  });
 }
+applyFilter(event: Event, inputPrefijo: HTMLInputElement) {
+  inputPrefijo.value = '';  // ✅ Borrar visualmente el otro campo
+  this.filtroPrefijo = '';
 
-applyFilter(event: Event) {
   const input = (event.target as HTMLInputElement).value.trim().toLowerCase();
   this.filtroGeneral = input;
+
   this.aplicarFiltrosCombinados();
 }
+
+filtrarPorPrefijo(event: Event, inputGeneral: HTMLInputElement) {
+  inputGeneral.value = '';  // ✅ Borrar visualmente el otro campo
+  this.filtroGeneral = '';
+
+  const input = (event.target as HTMLInputElement).value.trim();
+  this.filtroPrefijo = input;
+
+  this.aplicarFiltrosCombinados();
+}
+
 
 aplicarFiltrosCombinados() {
   this.dataSource.filterPredicate = (data: Cliente, filter: string) => {
@@ -169,5 +190,6 @@ aplicarFiltrosCombinados() {
     });
   }
 
+    
 
 }
