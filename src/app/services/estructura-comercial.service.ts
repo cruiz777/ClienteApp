@@ -10,12 +10,12 @@ import { EstructuraComercialResponse } from '../interfaces/responses/estructura-
   providedIn: 'root'
 })
 export class EstructuraComercialService {
-  private apiUrl = `${environment.applicationUrl}/estructuracomercial`;
+  private apiUrl = `${environment.inventoryUrl}/Estructuracomercial`;
 
   constructor(private http: HttpClient) { }
 
   getByFk(id: number): Observable<ApiResponse<EstructuraComercialResponse[]>> {
-    return this.http.get<ApiResponse<EstructuraComercialResponse[]>>(`${this.apiUrl}/estructura/${id}`);
+    return this.http.get<ApiResponse<EstructuraComercialResponse[]>>(`${this.apiUrl}/empresa/${id}`);
   }
 
   create(data: EstructuraComercialRequest): Observable<ApiResponse<boolean>> {

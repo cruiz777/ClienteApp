@@ -10,12 +10,12 @@ import { SubDivisionResponse } from '../interfaces/responses/subdivision-respons
   providedIn: 'root'
 })
 export class SubdivisionService {
-  private apiUrl = `${environment.applicationUrl}/subdivision`;
+  private apiUrl = `${environment.inventoryUrl}/Subdivision`;
 
   constructor(private http: HttpClient) { }
 
   getByFk(id: number): Observable<ApiResponse<SubDivisionResponse[]>> {
-    return this.http.get<ApiResponse<SubDivisionResponse[]>>(`${this.apiUrl}/subdivision/${id}`);
+    return this.http.get<ApiResponse<SubDivisionResponse[]>>(`${this.apiUrl}/division/${id}`);
   }
 
   create(data: SubDivisionRequest): Observable<ApiResponse<boolean>> {

@@ -10,12 +10,12 @@ import { DepartamentoResponse } from '../interfaces/responses/departamento-respo
   providedIn: 'root'
 })
 export class DepartamentoService {
-  private apiUrl = `${environment.applicationUrl}/departamento`;
+  private apiUrl = `${environment.inventoryUrl}/departamento`;
 
   constructor(private http: HttpClient) { }
 
   getByFk(id: number): Observable<ApiResponse<DepartamentoResponse[]>> {
-    return this.http.get<ApiResponse<DepartamentoResponse[]>>(`${this.apiUrl}/departamento/${id}`);
+    return this.http.get<ApiResponse<DepartamentoResponse[]>>(`${this.apiUrl}/subdivision/${id}`);
   }
 
   create(data: DepartamentoRequest): Observable<ApiResponse<boolean>> {

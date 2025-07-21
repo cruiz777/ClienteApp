@@ -4,3 +4,11 @@ export interface DepartamentoRequest {
   descripcion?: string;
   estado?: boolean;
 }
+
+
+
+export interface DepartamentoRequest1 {
+  id_departamento?: number; // Opcional en creación, requerido en edición
+  nombre: string;
+  estado: boolean;
+}

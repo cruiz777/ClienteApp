@@ -10,12 +10,12 @@ import { GrupoResponse } from '../interfaces/responses/grupo-response';
   providedIn: 'root'
 })
 export class GrupoService {
-  private apiUrl = `${environment.applicationUrl}/grupo`;
+  private apiUrl = `${environment.inventoryUrl}/Grupo`;
 
   constructor(private http: HttpClient) { }
 
   getByFk(id: number): Observable<ApiResponse<GrupoResponse[]>> {
-    return this.http.get<ApiResponse<GrupoResponse[]>>(`${this.apiUrl}/grupo/${id}`);
+    return this.http.get<ApiResponse<GrupoResponse[]>>(`${this.apiUrl}/seccion/${id}`);
   }
 
   create(data: GrupoRequest): Observable<ApiResponse<boolean>> {

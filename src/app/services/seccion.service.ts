@@ -10,12 +10,12 @@ import { SeccionResponse } from '../interfaces/responses/seccion-response';
   providedIn: 'root'
 })
 export class SeccionService {
-  private apiUrl = `${environment.applicationUrl}/seccion`;
+  private apiUrl = `${environment.inventoryUrl}/seccion`;
 
   constructor(private http: HttpClient) { }
 
   getByFk(id: number): Observable<ApiResponse<SeccionResponse[]>> {
-    return this.http.get<ApiResponse<SeccionResponse[]>>(`${this.apiUrl}/seccion/${id}`);
+    return this.http.get<ApiResponse<SeccionResponse[]>>(`${this.apiUrl}/departamento/${id}`);
   }
 
   create(data: SeccionRequest): Observable<ApiResponse<boolean>> {

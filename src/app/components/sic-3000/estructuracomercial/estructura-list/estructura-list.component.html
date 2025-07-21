@@ -12,28 +12,44 @@
     <div class="panel-arbol">
       <ul class="arbol-navegacion">
         <li *ngFor="let nivel1 of modulos">
-          <div (click)="toggleExpand(nivel1)">
+          <div (click)="toggleExpand(nivel1)" (contextmenu)="abrirMenuContextual($event, nivel1)">
             {{ nivel1.expandido ? '📂' : '📁' }} {{ nivel1.nombre }}
           </div>
 
           <ul *ngIf="nivel1.expandido">
             <li *ngFor="let nivel2 of nivel1.hijos">
-              <div (click)="toggleExpand(nivel2)">
+              <div (click)="toggleExpand(nivel2)" (contextmenu)="abrirMenuContextual($event, nivel2)">
                 {{ nivel2.expandido ? '📂' : '📁' }} {{ nivel2.nombre }}
               </div>
 
               <ul *ngIf="nivel2.expandido">
                 <li *ngFor="let nivel3 of nivel2.hijos">
-                  <div (click)="toggleExpand(nivel3)">
+                  <div (click)="toggleExpand(nivel3)" (contextmenu)="abrirMenuContextual($event, nivel3)">
                     {{ nivel3.expandido ? '📂' : '📁' }} {{ nivel3.nombre }}
                   </div>
 
                   <ul *ngIf="nivel3.expandido">
-                    <li *ngFor="let hoja of nivel3.hijos">
-                      <div (click)="toggleExpand(hoja)" [class.hoja]="true"
-                        [class.activo]="opcionSeleccionada?.nombre === hoja.nombre">
-                        📄 {{ hoja.nombre }}
+                    <li *ngFor="let nivel4 of nivel3.hijos">
+                      <div (click)="toggleExpand(nivel4)" (contextmenu)="abrirMenuContextual($event, nivel4)">
+                        {{ nivel4.expandido ? '📂' : '📁' }} {{ nivel4.nombre }}
                       </div>
+
+                      <ul *ngIf="nivel4.expandido">
+                        <li *ngFor="let nivel5 of nivel4.hijos">
+                          <div (click)="toggleExpand(nivel5)" (contextmenu)="abrirMenuContextual($event, nivel5)">
+                            {{ nivel5.expandido ? '📂' : '📁' }} {{ nivel5.nombre }}
+                          </div>
+
+                          <ul *ngIf="nivel5.expandido">
+                            <li *ngFor="let grupo of nivel5.hijos">
+                              <div (click)="toggleExpand(grupo)" (contextmenu)="abrirMenuContextual($event, grupo)"
+                                [class.grupo]="true" [class.activo]="opcionSeleccionada?.nombre === grupo.nombre">
+                                📄 {{ grupo.nombre }}
+                              </div>
+                            </li>
+                          </ul>
+                        </li>
+                      </ul>
                     </li>
                   </ul>
                 </li>
@@ -42,6 +58,13 @@
           </ul>
         </li>
       </ul>
+
+      <div *ngIf="menuContextualVisible" class="context-menu"
+        [ngStyle]="{ top: posicionMenu.y + 'px', left: posicionMenu.x + 'px' }" (click)="$event.stopPropagation()">
+        <ul>
+          <li (click)="crearElemento()">➕ Crear nuevo {{ nodoSeleccionado?.tipo }}</li>
+        </ul>
+      </div>
 
     </div>
 

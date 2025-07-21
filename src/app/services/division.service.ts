@@ -10,12 +10,12 @@ import { DivisionResponse } from '../interfaces/responses/division-response';
   providedIn: 'root'
 })
 export class DivisionService {
-  private apiUrl = `${environment.applicationUrl}/division`;
+  private apiUrl = `${environment.inventoryUrl}/Division`;
 
   constructor(private http: HttpClient) { }
 
   getByFk(id: number): Observable<ApiResponse<DivisionResponse[]>> {
-    return this.http.get<ApiResponse<DivisionResponse[]>>(`${this.apiUrl}/division/${id}`);
+    return this.http.get<ApiResponse<DivisionResponse[]>>(`${this.apiUrl}/estructura/${id}`);
   }
 
   create(data: DivisionRequest): Observable<ApiResponse<boolean>> {

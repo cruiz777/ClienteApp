@@ -104,3 +104,26 @@
   font-weight: bold;
 }
 
+.context-menu {
+  position: fixed;
+  background-color: white;
+  border: 1px solid #ccc;
+  z-index: 1000;
+  padding: 6px 0;
+  border-radius: 6px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  min-width: 180px;
+}
+.context-menu ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.context-menu li {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.context-menu li:hover {
+  background-color: #f3f4f6;
+}
+

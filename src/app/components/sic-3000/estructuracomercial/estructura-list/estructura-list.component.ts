@@ -1,5 +1,11 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { EstructuraComercialService } from 'src/app/services/estructura-comercial.service'
+import { DivisionService } from 'src/app/services/division.service'
+import { SubdivisionService } from 'src/app/services/subdivision.service'
+import { DepartamentoService } from 'src/app/services/departamento.service'
+import { SeccionService } from 'src/app/services/seccion.service'
+import { GrupoService } from 'src/app/services/grupo.service'
 
 @Component({
   selector: 'app-estructura-list',
@@ -10,52 +16,8 @@ import { CommonModule } from '@angular/common';
 })
 export class EstructuraListComponent {
   opcionSeleccionada: any = null;
-
   // Datos jerárquicos (nivel 1 → nivel 3)
-  modulos = [
-    {
-      nombre: 'Noción Imprenta',
-      expandido: true,
-      hijos: [
-        {
-          nombre: 'Materia Prima',
-          expandido: false,
-          hijos: [
-            {
-              nombre: 'Insumos',
-              expandido: false,
-              hijos: [
-                { nombre: 'Papel Bond', tipo: 'hoja' },
-                { nombre: 'Cartón Corrugado', tipo: 'hoja' }
-              ]
-            },
-            {
-              nombre: 'Materiales',
-              expandido: false,
-              hijos: [
-                { nombre: 'Tintas', tipo: 'hoja' },
-                { nombre: 'Pegamentos', tipo: 'hoja' }
-              ]
-            }
-          ]
-        },
-        {
-          nombre: 'Servicios',
-          expandido: false,
-          hijos: [
-            {
-              nombre: 'Diseño Gráfico',
-              expandido: false,
-              hijos: [
-                { nombre: 'Maquetación', tipo: 'hoja' }
-              ]
-            }
-          ]
-        }
-      ]
-    }
-  ];
-
+  modulos: any[] = [];
 
   // Lista completa de productos
   productos = [
@@ -65,21 +27,128 @@ export class EstructuraListComponent {
     { codigo: 'P004', codigoBarras: '123459', descripcion: 'Pegamento Industrial', proveedor: '3M', costo: 6.00, pvp: 9.00, abreviacion: 'PEG-IND', referencia: 'PEG-3M', existencia: 12, categoria: 'Pegamentos' },
     { codigo: 'P005', codigoBarras: '123460', descripcion: 'Servicio Maquetación Editorial', proveedor: 'DiseñoYA', costo: 20.00, pvp: 30.00, abreviacion: 'MAQ-EDIT', referencia: 'SERV-DISE', existencia: 1, categoria: 'Maquetación' }
   ];
-
-
   // Productos filtrados que se muestran en la tabla
   productosFiltrados = this.productos;
 
+  menuContextualVisible = false;
+  posicionMenu = { x: 0, y: 0 };
+  nodoSeleccionado: any = null;
+
+
+  constructor(
+    private estructuraService: EstructuraComercialService,
+    private divisionService: DivisionService,
+    private subdivisionService: SubdivisionService,
+    private departamentoService: DepartamentoService,
+    private seccionService: SeccionService,
+    private grupoService: GrupoService
+  ) { }
+
+  ngOnInit(): void {
+    this.cargarEstructuraComercial();
+  }
+
+  cargarEstructuraComercial(): void {
+    const empresaId = 1;
+    this.estructuraService.getByFk(empresaId).subscribe(res => {
+      if (res.data) {
+        this.modulos = res.data.map(ec => ({
+          id: ec.idEstructuraComercial,
+          nombre: ec.descri,
+          tipo: 'estructura',
+          expandido: false,
+          hijos: []
+        }));
+      }
+    });
+  }
+
   /**
-   * Expande/cierra carpetas o selecciona hojas.
-   */
+ * Expande/cierra carpetas o selecciona hojas.
+ */
+
   toggleExpand(nodo: any): void {
-    if (nodo.hijos) {
+    if (nodo.hijos && nodo.hijos.length > 0) {
       nodo.expandido = !nodo.expandido;
-    } else {
-      this.opcionSeleccionada = nodo;
-      this.productosFiltrados = this.productos.filter(p => p.categoria === nodo.nombre);
+    } else if (nodo.tipo === 'estructura') {
+      this.divisionService.getByFk(nodo.id).subscribe(res => {
+        if (res.data) {
+          nodo.hijos = res.data.map(d => ({
+            id: d.idDivision,
+            nombre: d.descripcion,
+            tipo: 'division',
+            expandido: false,
+            hijos: []
+          }));
+          nodo.expandido = true;
+        }
+      });
+    } else if (nodo.tipo === 'division') {
+      this.subdivisionService.getByFk(nodo.id).subscribe(res => {
+        if (res.data) {
+          nodo.hijos = res.data.map(s => ({
+            id: s.idSubDivision,
+            nombre: s.descripcion,
+            tipo: 'subdivision',
+            expandido: false,
+            hijos: []
+          }));
+          nodo.expandido = true;
+        }
+      });
+    } else if (nodo.tipo === 'subdivision') {
+      this.departamentoService.getByFk(nodo.id).subscribe(res => {
+        if (res.data) {
+          nodo.hijos = res.data.map(d => ({
+            id: d.idDepartamento,
+            nombre: d.descripcion,
+            tipo: 'departamento',
+            expandido: false,
+            hijos: []
+          }));
+          nodo.expandido = true;
+        }
+      });
+    } else if (nodo.tipo === 'departamento') {
+      this.seccionService.getByFk(nodo.id).subscribe(res => {
+        if (res.data) {
+          nodo.hijos = res.data.map(s => ({
+            id: s.idSeccion,
+            nombre: s.descripcion,
+            tipo: 'seccion',
+            expandido: false,
+            hijos: []
+          }));
+          nodo.expandido = true;
+        }
+      });
+    } else if (nodo.tipo === 'seccion') {
+      this.grupoService.getByFk(nodo.id).subscribe(res => {
+        if (res.data) {
+          nodo.hijos = res.data.map(g => ({
+            id: g.idGrupo,
+            nombre: g.descripcion,
+            tipo: 'grupo'  // nivel final
+          }));
+          nodo.expandido = true;
+        }
+      });
     }
+  }
+
+  abrirMenuContextual(event: MouseEvent, nodo: any): void {
+    event.preventDefault();
+    this.menuContextualVisible = true;
+    this.posicionMenu = { x: event.clientX, y: event.clientY };
+    this.nodoSeleccionado = nodo;
+  }
+
+  cerrarMenuContextual(): void {
+    this.menuContextualVisible = false;
+  }
+
+  crearElemento():void{
+
   }
 
 }
