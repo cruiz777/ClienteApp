@@ -10,6 +10,7 @@ import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/cus
 import { FechaOperator } from 'src/app/interfaces/responses/fecha-operator-enum';
 import { ExportProductosResponse, ProductoLicenseResponse } from 'src/app/interfaces/responses/products-license-response';
 import { ExportProductosQuery, ProductoLicenseQuery } from 'src/app/interfaces/responses/export-products-response';
+import { RequiredFieldsToastService } from 'src/app/components/utils/messages/required-fields-toast.service';
 
 export interface SearchParams {
   registro?: string;
@@ -18,8 +19,6 @@ export interface SearchParams {
   prefijo?: string;
   fechaDesde?: string;
   fechaHasta?: string;
-  fechaIgual?: string;
-  operadorFecha?: FechaOperator; 
   prefijoEstado?: string;
   empresaEstado?: string;
   gtinEstado?: string; 
@@ -82,7 +81,8 @@ export class ProductsLicenseValidator implements OnInit {
   totalPages = 0;
 
   constructor(private validacionService: ValidacionService,
-    private dialog: MatDialog 
+    private dialog: MatDialog,
+    private requiredFieldsToast: RequiredFieldsToastService 
   ) {}
 
   ngOnInit(): void {
@@ -125,8 +125,6 @@ export class ProductsLicenseValidator implements OnInit {
     if (this.searchParams.prefijo) query.codigoPrefijo = this.searchParams.prefijo;
     if (this.searchParams.fechaDesde) query.fechaDesde = this.searchParams.fechaDesde;
     if (this.searchParams.fechaHasta) query.fechaHasta = this.searchParams.fechaHasta;
-    if (this.searchParams.fechaIgual) query.fechaIgual = this.searchParams.fechaIgual;
-    if (this.searchParams.operadorFecha !== undefined) query.operadorFecha = this.searchParams.operadorFecha; // 🆕 NUEVO
     if (this.searchParams.nombreCliente) query.nombreCliente = this.searchParams.nombreCliente;
     if (this.searchParams.idUsuario) query.idUsuario = this.searchParams.idUsuario; // 🆕 NUEVO
 
@@ -192,13 +190,17 @@ export class ProductsLicenseValidator implements OnInit {
           this.totalItems = response.data.totalItems || 0;
           this.totalPages = response.data.totalPages || 0;
           this.currentPage = response.data.page || 1;
-          
+          if (this.totalItems === 0) {
+            this.mostrarInstruccionesPopup();
+          }
           console.log('Productos cargados:', this.productos.length); // 🔄 era: Licencias
         } else {
           this.productos = []; // 🔄 era: licencias
           this.totalItems = 0;
           this.totalPages = 0;
           this.errorMessage = response?.message || 'No se encontraron datos';
+
+          this.mostrarInstruccionesPopup();
         }
       });
   }
@@ -250,7 +252,6 @@ export class ProductsLicenseValidator implements OnInit {
     console.log('Limpiar formulario');
     this.searchParams = {
       registro: this.searchParams.registro,
-      fechaIgual: new Date().toISOString().split('T')[0]
     };
     this.currentPage = 1;
     this.errorMessage = '';
@@ -272,8 +273,8 @@ export class ProductsLicenseValidator implements OnInit {
       codigoPrefijo: this.searchParams.prefijo,
       fechaDesde: this.searchParams.fechaDesde,
       fechaHasta: this.searchParams.fechaHasta,
-      fechaIgual: this.searchParams.fechaIgual,
-      operadorFecha: this.searchParams.operadorFecha, // 🆕 NUEVO
+    //   fechaIgual: this.searchParams.fechaIgual,
+    //   operadorFecha: this.searchParams.operadorFecha, // 🆕 NUEVO
       ruc: this.searchParams.ruc,
       estadoPrefijo: this.searchParams.prefijoEstado === 'active' ? true : 
                       this.searchParams.prefijoEstado === 'inactive' ? false : undefined,
@@ -436,7 +437,7 @@ export class ProductsLicenseValidator implements OnInit {
   buscarPorRangoFechas(fechaDesde: string, fechaHasta: string): void {
     this.searchParams.fechaDesde = fechaDesde;
     this.searchParams.fechaHasta = fechaHasta;
-    this.searchParams.fechaIgual = undefined; // Limpiar fecha igual si se usa rango
+    // this.searchParams.fechaIgual = undefined; // Limpiar fecha igual si se usa rango
     this.currentPage = 1;
     this.buscar();
   }
@@ -516,7 +517,6 @@ export class ProductsLicenseValidator implements OnInit {
     // Verificar campos de texto existentes
     const tieneRuc = esStringValido(this.searchParams.ruc);
     const tienePrefijo = esStringValido(this.searchParams.prefijo);
-    const tieneFechaIgual = esStringValido(this.searchParams.fechaIgual);
     const tieneFechaDesde = esStringValido(this.searchParams.fechaDesde);
     const tieneFechaHasta = esStringValido(this.searchParams.fechaHasta);
     const tieneNombreCliente = esStringValido(this.searchParams.nombreCliente);
@@ -531,7 +531,7 @@ export class ProductsLicenseValidator implements OnInit {
     const tieneIdUsuario = esNumeroValido(this.searchParams.idUsuario);
     
     // Retornar true si hay al menos un campo completado
-    return tieneRuc || tienePrefijo || tieneFechaIgual || tieneFechaDesde || 
+    return tieneRuc || tienePrefijo || tieneFechaDesde || 
             tieneFechaHasta || tieneNombreCliente || tienePrefijoEstado || 
             tieneEmpresaEstado || tieneBusquedaGeneral || 
             tieneGtinEstado || tieneIdUsuario; // 🆕 Agregados
@@ -610,8 +610,6 @@ export class ProductsLicenseValidator implements OnInit {
         codigoPrefijo: this.searchParams.prefijo,
         fechaDesde: this.searchParams.fechaDesde,
         fechaHasta: this.searchParams.fechaHasta,
-        fechaIgual: this.searchParams.fechaIgual,
-        operadorFecha: this.searchParams.operadorFecha, // ✅ Agregar campo nuevo
         ruc: this.searchParams.ruc,
         estadoPrefijo: this.searchParams.prefijoEstado === 'active' ? true : 
                         this.searchParams.prefijoEstado === 'inactive' ? false : undefined,
@@ -857,4 +855,24 @@ export class ProductsLicenseValidator implements OnInit {
       return 'Exportar y Enviar';
     }
   }
+
+  private mostrarInstruccionesPopup(): void {
+    const instrucciones = [
+        '<strong>Validador de Productos</strong>',
+        '',
+        'Utilice los filtros anteriores para buscar productos en el sistema.',
+        '',
+        '<strong>Opciones de búsqueda:</strong>',
+        '• <strong>Búsqueda rápida:</strong> Use el campo de búsqueda general por nombre',
+        '• <strong>Filtros específicos:</strong> RUC, prefijo, estados',
+        '• <strong>Filtros de fecha:</strong> Rango de fechas entre dos fechas',
+        '• <strong>Estados:</strong> Filtre por estado GTIN, prefijo o empresa (Activo/Inactivo)'
+    ];
+
+    const mensajeHTML = instrucciones.join('<br>');
+
+    // USAR EL MÉTODO PÚBLICO DEL SERVICIO
+    this.requiredFieldsToast.info(mensajeHTML, 'Instrucciones de Búsqueda');
+  }
+
 }

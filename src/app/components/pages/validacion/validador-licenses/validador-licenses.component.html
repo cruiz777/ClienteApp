@@ -22,122 +22,122 @@
             </div>
         </div>
     </div>
-    <div class="export-info-container" *ngIf="hasResults && exportInfo">
-        <div class="alert alert-info export-info">
+    <div class="export-info-container" *ngIf="hasSearched">
+        <!-- Cuando HAY resultados para exportar -->
+        <div class="export-info has-results" *ngIf="hasResults">
             <strong>Información de exportación:</strong> {{ exportInfo }}
-            <br>
             <small>Los archivos se descargarán con los mismos filtros aplicados en la búsqueda actual.</small>
         </div>
+        
+        <!-- Cuando NO hay resultados -->
+        <div class="export-info no-results" *ngIf="noResults">
+            <strong>No se encontraron resultados</strong>
+            <small>No se encontraron licencias que coincidan con los criterios de búsqueda especificados. Intente con criterios menos específicos o revise los filtros aplicados.</small>
+        </div>
     </div>
-    <!-- Search Form - Layout mejorado -->
-    <div class="form-container">
-        <!-- Sección de búsqueda general -->
-        <div class="search-section">
-            <input type="text" 
-                placeholder="Buscar por nombre..." 
-                class="search-input" 
-                #searchInput
-                [(ngModel)]="terminoBusquedaNombre"
-                (input)="onBusquedaGeneralChange(searchInput.value)"
-                (keyup.enter)="puedeRealizarBusqueda ? buscarGeneral(searchInput.value) : null" />
-            <button class="btn btn-sm btn-primary" 
-                    (click)="buscarGeneral(searchInput.value)"
-                    [disabled]="!puedeRealizarBusqueda || isLoading">
-                <!-- Reemplaza 'ruta-a-tu-icono.svg' con la ruta real -->
-                <img src="assets/icons/icon-buscar.png" 
-                    alt="Buscar" 
-                    class="button-icon">
-            </button>
+        <div class="form-container">
+            <!-- Primera fila: Búsqueda por nombre (izquierda) -->
+            <div class="search-section-left">
+            <div class="form-group-inline">
+                <label for="searchInput">Buscar por nombre:</label>
+                <div class="search-input-container">
+                    <input type="text" 
+                        placeholder="Buscar por nombre..." 
+                        class="search-input-full" 
+                        id="searchInput"
+                        #searchInput
+                        [(ngModel)]="terminoBusquedaNombre"
+                        (input)="onBusquedaGeneralChange(searchInput.value)"
+                        (keyup.enter)="puedeRealizarBusqueda ? buscarGeneral(searchInput.value) : null" />
+                    <button class="btn btn-sm btn-primary search-button" 
+                            (click)="buscarGeneral(searchInput.value)"
+                            [disabled]="!puedeRealizarBusqueda || isLoading">
+                        <img src="assets/icons/icon-buscar.png" 
+                            alt="Buscar" 
+                            class="button-icon">
+                    </button>
+                </div>
+            </div>
         </div>
 
-        <!-- Filtros en dos columnas -->
-        <div class="form-row-simplified">
-            <!-- Columna izquierda -->
-            <div class="form-column-left">
-                <div class="form-group-inline">
-                    <label for="ruc">RUC:</label>
-                    <input type="text" 
-                        id="ruc" 
-                        [(ngModel)]="searchParams.ruc" 
-                        class="form-control" 
-                        placeholder="Ingrese RUC"
-                        (keyup.enter)="puedeRealizarBusqueda ? buscar() : null">
-                </div>
+        <!-- Segunda fila: RUC y Prefijo (2 columnas) -->
+        <div class="form-row-two-columns">
+            <!-- Columna izquierda: RUC -->
+            <div class="form-group-inline">
+                <label for="ruc">RUC:</label>
+                <input type="text" 
+                    id="ruc" 
+                    (keypress)="CustomValidators.onlyNumbersKeyPress($event)"
+                    [(ngModel)]="searchParams.ruc" 
+                    class="form-control" 
+                    placeholder="Ingrese RUC"
+                    (keyup.enter)="puedeRealizarBusqueda ? buscar() : null">
+            </div>
 
-                <div class="form-group-inline">
-                    <label for="prefijo">Prefijo:</label>
-                    <input type="text" 
-                        id="prefijo" 
-                        [(ngModel)]="searchParams.prefijo" 
-                        class="form-control" 
-                        placeholder="Ingrese prefijo"
-                        (keyup.enter)="puedeRealizarBusqueda ? buscar() : null">
-                </div>
+            <!-- Columna derecha: Prefijo -->
+            <div class="form-group-inline">
+                <label for="prefijo">Prefijo:</label>
+                <input type="text" 
+                    id="prefijo" 
+                    (keypress)="CustomValidators.onlyNumbersKeyPress($event)"
+                    [(ngModel)]="searchParams.prefijo" 
+                    class="form-control" 
+                    placeholder="Ingrese prefijo"
+                    (keyup.enter)="puedeRealizarBusqueda ? buscar() : null">
+            </div>
+        </div>
+        <!-- Cuarta fila: Estados (2 columnas) -->
+        <div class="form-row-two-columns">
+            <!-- Columna izquierda: Prefijo Estado -->
+            <div class="form-group-inline">
+                <label for="prefijoEstado">Prefijo Estado:</label>
+                <select id="prefijoEstado" 
+                        [(ngModel)]="searchParams.prefijoEstado" 
+                        class="form-control"
+                        (change)="puedeRealizarBusqueda ? buscar() : null">
+                    <option value="">Todos</option>
+                    <option value="active">Activo</option>
+                    <option value="inactive">Inactivo</option>
+                </select>
             </div>
             
-            <!-- Columna derecha -->
-            <div class="form-column-right">
-                <!-- Sección de fechas -->
-                <div class="form-group-inline">
-                    <label>Filtros de Fecha:</label>
-                    <div class="date-filter-section">
-                        <!-- Fecha específica -->
-                        <div class="date-option">
-                            <label for="fechaIgual">Fecha específica:</label>
-                            <input type="date" 
-                                id="fechaIgual" 
-                                [(ngModel)]="searchParams.fechaIgual" 
-                                class="form-control date-input"
-                                (change)="puedeRealizarBusqueda ? buscar() : null">
-                        </div>
-                        
-                        <!-- Rango de fechas -->
-                        <div class="date-range">
-                            <div class="date-range-item">
-                                <label for="fechaDesde">Desde:</label>
-                                <input type="date" 
-                                    id="fechaDesde" 
-                                    [(ngModel)]="searchParams.fechaDesde" 
-                                    class="form-control date-input"
-                                    (change)="puedeRealizarBusqueda ? buscar() : null">
-                            </div>
-                            <div class="date-range-item">
-                                <label for="fechaHasta">Hasta:</label>
-                                <input type="date" 
-                                    id="fechaHasta" 
-                                    [(ngModel)]="searchParams.fechaHasta" 
-                                    class="form-control date-input"
-                                    (change)="puedeRealizarBusqueda ? buscar() : null">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="form-group-inline">
-                    <label for="prefijoEstado">Prefijo Estado:</label>
-                    <select id="prefijoEstado" 
-                            [(ngModel)]="searchParams.prefijoEstado" 
-                            class="form-control"
-                            (change)="puedeRealizarBusqueda ? buscar() : null">
-                        <option value="">Todos</option>
-                        <option value="active">Activo</option>
-                        <option value="inactive">Inactivo</option>
-                    </select>
-                </div>
-                
-                <div class="form-group-inline">
-                    <label for="empresaEstado">Empresa Estado:</label>
-                    <select id="empresaEstado" 
-                            [(ngModel)]="searchParams.empresaEstado" 
-                            class="form-control"
-                            (change)="puedeRealizarBusqueda ? buscar() : null">
-                        <option value="">Todos</option>
-                        <option value="active">Activo</option>
-                        <option value="inactive">Inactivo</option>
-                    </select>
-                </div>
+            <!-- Columna derecha: Empresa Estado -->
+            <div class="form-group-inline">
+                <label for="empresaEstado">Empresa Estado:</label>
+                <select id="empresaEstado" 
+                        [(ngModel)]="searchParams.empresaEstado" 
+                        class="form-control"
+                        (change)="puedeRealizarBusqueda ? buscar() : null">
+                    <option value="">Todos</option>
+                    <option value="active">Activo</option>
+                    <option value="inactive">Inactivo</option>
+                </select>
             </div>
         </div>
+        <!-- Tercera fila: Fechas (2 columnas) -->
+        <div class="form-row-two-columns">
+            <!-- Columna izquierda: Desde -->
+            <div class="form-group-inline">
+                <label for="fechaDesde">Desde:</label>
+                <input type="date" 
+                    id="fechaDesde" 
+                    [(ngModel)]="searchParams.fechaDesde" 
+                    class="form-control date-input"
+                    (change)="puedeRealizarBusqueda ? buscar() : null">
+            </div>
+            
+            <!-- Columna derecha: Hasta -->
+            <div class="form-group-inline">
+                <label for="fechaHasta">Hasta:</label>
+                <input type="date" 
+                    id="fechaHasta" 
+                    [(ngModel)]="searchParams.fechaHasta" 
+                    class="form-control date-input"
+                    (change)="puedeRealizarBusqueda ? buscar() : null">
+            </div>
+        </div>
+
+        
         
         <!-- Fila de botones -->
         <div class="form-actions-row">
@@ -255,27 +255,5 @@
             [disabled]="isLoading"
             aria-label="Seleccionar página">
         </mat-paginator>
-    </div>
-
-    <!-- Initial State Message -->
-    <div class="initial-state" *ngIf="!isLoading && !hasSearched">
-        <div class="alert alert-info">
-            <h4>Validador de Licencias</h4>
-            <p>Utilice los filtros anteriores para buscar licencias en el sistema.</p>
-            <div class="instructions">
-                <h5>Opciones de búsqueda:</h5>
-                <ul>
-                    <li><strong>Búsqueda rápida:</strong> Use el campo de búsqueda general por nombre</li>
-                    <li><strong>Filtros específicos:</strong> RUC, prefijo, estados</li>
-                    <li><strong>Filtros de fecha:</strong> 
-                        <ul>
-                            <li>Fecha específica: busca registros de una fecha exacta</li>
-                            <li>Rango de fechas: busca registros entre dos fechas</li>
-                        </ul>
-                    </li>
-                    <li><strong>Estados:</strong> Filtre por estado del prefijo o empresa (Activo/Inactivo)</li>
-                </ul>
-            </div>
-        </div>
     </div>
 </div>

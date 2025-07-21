@@ -40,4 +40,14 @@ export class RequiredFieldsToastService {
     });
   }
 
+  info(mensaje: string, titulo?: string): void {
+    this.toastr.info(mensaje, titulo || 'Información', {
+      disableTimeOut: true,
+      closeButton: true,
+      enableHtml: true,
+      tapToDismiss: false,
+      positionClass: 'toast-top-right',
+      toastClass: 'ngx-toastr instructions-toast'
+    });
+  }
 }

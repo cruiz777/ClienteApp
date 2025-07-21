@@ -168,6 +168,6 @@ export class ProductoDetalleComponent implements OnInit {
     const value = this.producto.netContentValue;
     const unit = this.producto.netContentUnitCode || '';
     
-    return unit ? `${value} ${unit}` : value;
+    return unit ? `${value}` : value;
   }
 }

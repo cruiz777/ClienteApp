@@ -7,6 +7,8 @@ import { ClienteLicenseQuery, ValidacionService } from 'src/app/services/validac
 import { ExportLicenseBatch, ExportLicenseItem, ExportLicenseQuery, ExportLicenseResponse } from 'src/app/interfaces/responses/export-licenses-response';
 import { MatDialog } from '@angular/material/dialog';
 import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
+import { RequiredFieldsToastService } from 'src/app/components/utils/messages/required-fields-toast.service';
+import { CustomValidators } from 'src/app/components/utils/validators/validator.util';
 
 export interface SearchParams {
   registro?: string;
@@ -62,7 +64,10 @@ export class LicenseValidatorComponent implements OnInit {
   
   // Datos originales del servicio (para mapear)
   licenciasOriginales: ClienteLicenseResponse[] = [];
- 
+  
+  // Validadores 
+  public CustomValidators = CustomValidators;
+  
   // Estados de carga y búsqueda
   isLoading = false;
   hasSearched = false;
@@ -75,7 +80,8 @@ export class LicenseValidatorComponent implements OnInit {
   totalPages = 0;
 
   constructor(private validacionService: ValidacionService,
-    private dialog: MatDialog 
+    private dialog: MatDialog,
+    private requiredFieldsToast: RequiredFieldsToastService
   ) {}
 
   ngOnInit(): void {
@@ -204,6 +210,11 @@ export class LicenseValidatorComponent implements OnInit {
           this.totalPages = response.data.totalPages || 0;
           this.currentPage = response.data.page || 1;
           
+          // MOSTRAR POPUP SI NO HAY RESULTADOS
+          if (this.totalItems === 0) {
+            this.mostrarInstruccionesPopup();
+          }
+
           console.log('Licencias cargadas:', this.licencias.length);
           console.log('Total items:', this.totalItems);
         } else {
@@ -211,6 +222,7 @@ export class LicenseValidatorComponent implements OnInit {
           this.totalItems = 0;
           this.totalPages = 0;
           this.errorMessage = response?.message || 'No se encontraron datos';
+          this.mostrarInstruccionesPopup();
         }
       });
   }
@@ -785,6 +797,26 @@ export class LicenseValidatorComponent implements OnInit {
         }, index * 1500);
       });
     }
+  }
+
+  
+  private mostrarInstruccionesPopup(): void {
+    const instrucciones = [
+      '<strong>Validador de Licencias</strong>',
+      '',
+      'Utilice los filtros anteriores para buscar licencias en el sistema.',
+      '',
+      '<strong>Opciones de búsqueda:</strong>',
+      '• <strong>Búsqueda rápida:</strong> Use el campo de búsqueda general por nombre',
+      '• <strong>Filtros específicos:</strong> RUC, prefijo, estados',
+      '• <strong>Filtros de fecha:</strong> Rango de fechas entre dos fechas',
+      '• <strong>Estados:</strong> Filtre por estado del prefijo o empresa (Activo/Inactivo)'
+    ];
+
+    const mensajeHTML = instrucciones.join('<br>');
+
+    // USAR EL MÉTODO PÚBLICO DEL SERVICIO
+    this.requiredFieldsToast.info(mensajeHTML, 'Instrucciones de Búsqueda');
   }
 
   private mostrarResumenEnvio(exitosos: number, fallidos: number, errores: string[], totalLicencias: number): void {
