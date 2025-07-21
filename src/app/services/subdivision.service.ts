@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { ApiResponse } from './api-response.interface';
+import { ApiResponse } from './producto.service';
 import { SubDivisionRequest } from '../interfaces/requests/subdivision-request';
 import { SubDivisionResponse } from '../interfaces/responses/subdivision-response';
 

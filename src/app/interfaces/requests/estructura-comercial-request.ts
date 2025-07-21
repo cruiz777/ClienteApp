@@ -1,4 +1,4 @@
-export interface EstructuraComercialRequestRequest {
+export interface EstructuraComercialRequest {
   id_estructura_comercial?: number;
   id_empresa?: number;
   descri?: string;

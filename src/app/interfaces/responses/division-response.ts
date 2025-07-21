@@ -1,4 +1,4 @@
-export interface DivisionResponseResponse {
+export interface DivisionResponse {
   idDivision?: number;
   idEstructuraComercial?: number;
   descripcion?: string;

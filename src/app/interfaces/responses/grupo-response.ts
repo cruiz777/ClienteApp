@@ -1,4 +1,4 @@
-export interface GrupoResponseResponse {
+export interface GrupoResponse {
   idGrupo?: number;
   idSeccion?: number;
   descripcion?: string;

@@ -1,9 +1,9 @@
+import { EstructuraComercialRequest } from './../interfaces/requests/estructura-comercial-request';
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { ApiResponse } from './api-response.interface';
-import { EstructuraComercialRequest } from '../interfaces/requests/estructura-comercial-request';
+import { ApiResponse } from './producto.service';
 import { EstructuraComercialResponse } from '../interfaces/responses/estructura-comercial-response';
 
 @Injectable({

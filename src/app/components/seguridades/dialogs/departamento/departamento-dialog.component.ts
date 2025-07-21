@@ -22,7 +22,7 @@ export class DepartamentoDialogComponent implements OnInit {
     this.modoEdicion = !!this.data?.departamento;
 
     this.departamentoForm = this.fb.group({
-      nombre: [this.data?.departamento?.nombre || '', [Validators.required, Validators.maxLength(100)]],
+      nombre: [this.data?.departamento?.descripcion || '', [Validators.required, Validators.maxLength(100)]],
       estado: [this.data?.departamento?.estado ?? true]
     });
   }

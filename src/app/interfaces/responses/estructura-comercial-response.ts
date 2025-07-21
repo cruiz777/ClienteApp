@@ -1,4 +1,4 @@
-export interface EstructuraComercialResponseResponse {
+export interface EstructuraComercialResponse {
   idEstructuraComercial?: number;
   idEmpresa?: number;
   descri?: string;

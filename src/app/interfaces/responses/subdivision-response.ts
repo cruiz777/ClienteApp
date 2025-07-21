@@ -1,4 +1,4 @@
-export interface SubdivisionResponseResponse {
+export interface SubDivisionResponse {
   idSubDivision?: number;
   idDivision?: number;
   descripcion?: string;
