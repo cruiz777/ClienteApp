@@ -1,6 +1,6 @@
-export interface DepartamentoRequestRequest {
+export interface SeccionRequestRequest {
+  id_seccion?: number;
   id_departamento?: number;
-  id_sub_division?: number;
   descripcion?: string;
   estado?: boolean;
 }
