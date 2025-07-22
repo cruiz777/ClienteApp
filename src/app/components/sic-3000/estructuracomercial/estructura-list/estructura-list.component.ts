@@ -1,5 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+
+import { MatDialog } from '@angular/material/dialog';
+import { EstructuraFormComponent } from '../estructura-form/estructura-form.component';
+
 import { EstructuraComercialService } from 'src/app/services/estructura-comercial.service'
 import { DivisionService } from 'src/app/services/division.service'
 import { SubdivisionService } from 'src/app/services/subdivision.service'
@@ -41,7 +45,8 @@ export class EstructuraListComponent {
     private subdivisionService: SubdivisionService,
     private departamentoService: DepartamentoService,
     private seccionService: SeccionService,
-    private grupoService: GrupoService
+    private grupoService: GrupoService,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
@@ -147,8 +152,42 @@ export class EstructuraListComponent {
     this.menuContextualVisible = false;
   }
 
-  crearElemento():void{
+  crearElemento(): void {
+    this.menuContextualVisible = false;
 
+    if (!this.nodoSeleccionado) return;
+
+    const tipo = this.nodoSeleccionado.tipo;
+    const idPadre = tipo === 'estructura' ? 1 : this.nodoSeleccionado.id;
+
+    const siguienteNivel = this.obtenerTipoHijo(tipo);
+    if (!siguienteNivel) return;
+
+    const dialogRef = this.dialog.open(EstructuraFormComponent, {
+      width: '400px',
+      data: {
+        tipo: siguienteNivel,
+        idPadre: idPadre
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(resultado => {
+      if (resultado === true) {
+        this.toggleExpand(this.nodoSeleccionado); // recargar hijos
+      }
+    });
   }
+
+  obtenerTipoHijo(tipoActual: string): string | null {
+    switch (tipoActual) {
+      case 'estructura': return 'division';
+      case 'division': return 'subDivision';
+      case 'subdivision': return 'departamento';
+      case 'departamento': return 'seccion';
+      case 'seccion': return 'grupo';
+      default: return null;
+    }
+  }
+
 
 }
