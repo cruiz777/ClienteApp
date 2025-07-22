@@ -37,6 +37,7 @@ import { UsuarioService } from 'src/app/services/usuario.service';
 import { ActivatedRoute } from '@angular/router';
 import { take } from 'rxjs/operators';
 import * as moment from 'moment';
+import { debounceTime } from 'rxjs/operators';
 @Component({
   selector: 'app-ul',
   standalone: true,
@@ -276,6 +277,9 @@ export class UlComponent implements OnInit {
 
     this.activarUL();
     this.limpiarUl();
+    this.formUL.get('indicador')?.valueChanges
+    .pipe(debounceTime(300))
+    .subscribe(() => this.onIndicadorBlur());
   }
 
   activarUL(): void {
@@ -2375,6 +2379,38 @@ generacioncodigos12n(): void {
     }
   });
 }
+
+escucharCambiosIndicador(): void {
+  this.formUL.get('indicador')?.valueChanges
+    .pipe(debounceTime(300))
+    .subscribe(() => {
+      this.onIndicadorBlur();
+    });
+}
+
+onIndicadorBlur(): void {
+  
+  const { indicador } = this.formUL.getRawValue();
+  const { gtinUv, codigoCliente } = this.formUV.getRawValue();
+
+  const presentacion = parseInt(indicador, 10);
+
+  if (!gtinUv || !codigoCliente || isNaN(presentacion)) {
+    return; // no hacer nada si falta un dato
+  }
+
+  this.codigos14Service
+  .filtrarCodigos14(codigoCliente, presentacion, gtinUv.trim())
+  .subscribe(result => {
+    console.log('Resultado del filtro:', result);
+    console.log('Cantidad:', result.length); // 👈 aquí debería ser ≥ 1
+    if (result.length > 0) {
+      this.mostrarAlerta('⚠️ Factor ya existe!!!', 'Advertencia');
+    }
+  });
+}
+
+
 
 
 }

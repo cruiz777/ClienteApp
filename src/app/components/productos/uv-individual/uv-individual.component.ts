@@ -37,6 +37,7 @@ import { UsuarioService } from 'src/app/services/usuario.service';
 import { ViewChild, ElementRef } from '@angular/core';
 import { JsonProductoService } from 'src/app/services/json-producto.service';
 import { ParametrosFacturaService, ParametrosFactura } from 'src/app/services/parametros-factura.service';
+import { debounceTime } from 'rxjs/operators';
 @Component({
   selector: 'app-uv-individual',
   standalone: true,
@@ -273,6 +274,9 @@ export class UvIndividualComponent implements OnInit {
     this.formUV.get('urlFoto')?.valueChanges.subscribe(() => {
       this.imagenNoDisponible = false; // Reinicia el error si cambia la URL
     });
+    this.formUL.get('indicador')?.valueChanges
+        .pipe(debounceTime(300))
+        .subscribe(() => this.onIndicadorBlur());
   }
 
   activarUL(): void {
@@ -2622,23 +2626,45 @@ export class UvIndividualComponent implements OnInit {
     });
   }
   mostrarDialogoOtraPresentacion(): void {
-  this.dialog.open(CustomMessageBoxComponent, {
-    width: '400px',
-    data: {
-      title: '',
-      message: '¿Desea generar otra presentación?',
-      type: 'info',
-      confirmText: 'Sí',
-      cancelText: 'No',
-      showCancel: true
-    }
-  }).afterClosed().subscribe(result => {
-    if (result === true) {
-      this.limpiarUl();// 👈 función que puedes definir para preparar nuevo ingreso
-    } else {
-      this.salir();
-      console.log('✅ Usuario finalizó sin nueva presentación');
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: '',
+        message: '¿Desea generar otra presentación?',
+        type: 'info',
+        confirmText: 'Sí',
+        cancelText: 'No',
+        showCancel: true
+      }
+    }).afterClosed().subscribe(result => {
+      if (result === true) {
+        this.limpiarUl();// 👈 función que puedes definir para preparar nuevo ingreso
+      } else {
+        this.salir();
+        console.log('✅ Usuario finalizó sin nueva presentación');
+      }
+    });
+  }
+  onIndicadorBlur(): void {
+  
+  const { indicador } = this.formUL.getRawValue();
+  const { gtinUv, codigoCliente } = this.formUV.getRawValue();
+
+  const presentacion = parseInt(indicador, 10);
+
+  if (!gtinUv || !codigoCliente || isNaN(presentacion)) {
+    return; // no hacer nada si falta un dato
+  }
+
+  this.codigos14Service
+  .filtrarCodigos14(codigoCliente, presentacion, gtinUv.trim())
+  .subscribe(result => {
+    console.log('Resultado del filtro:', result);
+    console.log('Cantidad:', result.length); // 👈 aquí debería ser ≥ 1
+    if (result.length > 0) {
+      this.mostrarAlerta('⚠️ Factor ya existe!!!', 'Advertencia');
     }
   });
 }
+
 }

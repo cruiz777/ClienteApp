@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
-
 export interface UpdateClientesCodigoByIdPrefijosRequest {
   idPrefijos: number;
   clientesCodigo: number;
@@ -147,5 +146,28 @@ actualizarClientesCodigo14PorCodbar(data: ActualizarCodigo14Request): Observable
   const url = `${this.baseUrl}/Codigos14/actualizar-codigos14-por-codbar`;
   return this.http.put<ApiResponse<boolean>>(url, data);
 }
+filtrarCodigos14(
+  clientesCodigo: number,
+  presentacion?: number,
+  codbar?: string
+): Observable<Codigos14Response[]> {
+  let params = new URLSearchParams();
+  params.append('clientesCodigo', clientesCodigo.toString());
+
+  if (presentacion !== undefined && presentacion !== null) {
+    params.append('presentacion', presentacion.toString());
+  }
+
+  if (codbar) {
+    params.append('codbar', codbar);
+  }
+
+  const url = `${this.baseUrl}/Codigos14/filtrar?${params.toString()}`;
+
+  return this.http.get<ApiResponse<Codigos14Response[]>>(url).pipe(
+    map(response => response.data ?? [])
+  );
+}
+
 
 }

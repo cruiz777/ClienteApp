@@ -359,7 +359,7 @@ formatearFecha(fechaStr: string | Date): string {
   }
 
   salir(): void {
-    this.router.navigate(['/pages/clientes']);
+    this.router.navigate(['/menuProductos/clienteSeleccion']);
   }
 
   seleccionarRegistroU(registro: any) {

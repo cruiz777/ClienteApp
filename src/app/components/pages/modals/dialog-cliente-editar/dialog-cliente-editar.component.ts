@@ -316,7 +316,7 @@ export class DialogClienteEditarComponent implements OnInit {
         nombreCodificacion: [''],
         nombreFinanciero:[null, Validators.required],
 
-        telefono2: [''],
+        telefono22: ['', Validators.required],
         pregunta1: [false],
         pregunta2: [false],
         pregunta3: [false],
@@ -1789,7 +1789,7 @@ export class DialogClienteEditarComponent implements OnInit {
               break;
             case 3:
               paso3Patch.email2 = contacto.email;
-              paso3Patch.telefono2 = contacto.telefono;
+              paso3Patch.telefono22 = contacto.telefono;
               break;
             case 4:
               paso3Patch.email3 = contacto.email;
@@ -1824,7 +1824,7 @@ export class DialogClienteEditarComponent implements OnInit {
       {
         id_ContactosClientes: 0,
         Nombre: paso3.nombreFinanciero || '',
-        telefono: paso3.telefono2 || '',
+        telefono: paso3.telefono22 || '',
         email: paso3.email1 || '',
         cargo: 'Facturación',
         clientesCodigo: clientesCodigo,
@@ -1833,7 +1833,7 @@ export class DialogClienteEditarComponent implements OnInit {
       {
         id_ContactosClientes: 0,
         Nombre: paso3.nombreFinanciero || '',
-        telefono: paso3.telefono2 || '',
+        telefono: paso3.telefono22 || '',
         email: paso3.email2 || '',
         cargo: 'Facturación',
         clientesCodigo: clientesCodigo,
@@ -1842,7 +1842,7 @@ export class DialogClienteEditarComponent implements OnInit {
       {
         id_ContactosClientes: 0,
         Nombre: paso3.nombreFinanciero || '',
-        telefono: paso3.telefono2 || '',
+        telefono: paso3.telefono22 || '',
         email: paso3.email3 || '',
         cargo: 'Facturación',
         clientesCodigo: clientesCodigo,
@@ -1960,6 +1960,14 @@ private formatearFecha(fecha: string | Date): string {
   return `${day}/${month}/${year}`;
 }
 
+soloDigitos(ctrl: string, ev: Event, form: FormGroup) {
+  const el = ev.target as HTMLInputElement;
+  const limpio = el.value.replace(/\D/g, ''); // solo dígitos
+  if (el.value !== limpio) {
+    el.value = limpio;
+    form.get(ctrl)?.setValue(limpio);
+  }
+}
 
 
 }

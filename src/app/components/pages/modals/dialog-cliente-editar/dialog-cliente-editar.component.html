@@ -277,8 +277,8 @@
 
                     <label style="color: #002c6c; font-size: 12px; margin-left: 10px;"><span
                         style="color: red;">*</span>Celular:</label>
-                    {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="celular" maxlength="9"
-                      autocomplete="off" placeholder="999999999" />
+                    {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="celular" maxlength="9" minlength="9" pattern="[0-9]*" inputmode="numeric"
+                      autocomplete="off" placeholder="999999999" (input)="soloDigitos('celular', $event,paso2Form)" />
                     <mat-error
                       *ngIf="paso2Form.get('celular')?.hasError('required') && paso2Form.get('celular')?.touched"
                       style="color: red; font-size: 12px;">
@@ -293,7 +293,7 @@
 
                     <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">Teléfono 2:</label>
                     {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2"
-                      maxlength="9" placeholder="999999999" autocomplete="off" />
+                       maxlength="9" minlength="9" pattern="[0-9]*" inputmode="numeric" placeholder="999999999" autocomplete="off" (input)="soloDigitos('telefono2', $event,paso2Form)" />
                   </div>
 
                   <div class="form-row">
@@ -407,8 +407,8 @@
                         <label style="color: #002c6c; font-size: 12px;"><span style="color: red;">*</span>Tel.o
                           Cel:</label>
                         {{ codigoAreaE }}<input type="text" class="underline-input"
-                          formControlName="telefonoRepresentante" maxlength="9" placeholder="999999999"
-                          autocomplete="off" />
+                          formControlName="telefonoRepresentante" maxlength="9" minlength="9"  pattern="[0-9]*" inputmode="numeric" placeholder="999999999"
+                          autocomplete="off" (input)="soloDigitos('telefonoRepresentante', $event,paso3Form)" />
                         <mat-error
                           *ngIf="paso3Form.get('telefonoRepresentante')?.hasError('required') && paso3Form.get('telefonoRepresentante')?.touched"
                           style="color: red; font-size: 12px;">
@@ -436,7 +436,7 @@
                       </div>
                       <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>Tel.o Cel:</label>
                       {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono"
-                        maxlength="9" autocomplete="off" placeholder="999999999" />
+                        maxlength="9" minlength="9"  pattern="[0-9]*" inputmode="numeric" autocomplete="off" placeholder="999999999" (input)="soloDigitos('telefono', $event,paso3Form)" />
                         <mat-error
                         *ngIf="paso3Form.get('telefono')?.hasError('required') && paso3Form.get('telefono')?.touched"
                         style="color: red; font-size: 12px;">
@@ -488,10 +488,10 @@
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
                       <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>Tel.o Cel:</label>
-                      {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2"
-                        maxlength="9" placeholder="999999999" autocomplete="off" />
+                      {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono22"
+                        maxlength="9"  (input)="soloDigitos('telefono22', $event,paso3Form)" />
                         <mat-error
-                        *ngIf="paso3Form.get('telefono2')?.hasError('required') && paso3Form.get('telefono2')?.touched"
+                        *ngIf="paso3Form.get('telefono22')?.hasError('required') && paso3Form.get('telefono22')?.touched"
                         style="color: red; font-size: 12px;">
                         Este campo es obligatorio.
                       </mat-error>
