@@ -4,75 +4,96 @@
 </div>
 
 <!-- TAB TRANSFERIR -->
-  <div class="contenido-tablas">
+<div class="contenido-tablas">
+  <!-- TAB TRANSFERIR -->
   <ng-container *ngIf="activeTab === 'Transferir'">
-    <h2>Transferencia de Gtin</h2>
+    <form [formGroup]="formUV" class="contenido-tablas">
+      <h2>Transferencia de Gtin</h2>
 
-    <div class="form-transferencia">
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Origen:</label>
-          <input type="text" placeholder="Cliente Origen" />
+      <div class="form-transferencia">
+        <div class="form-grid">
+          <!-- Campo ORIGEN -->
+          <mat-form-field appearance="outline" class="campo-largo">
+            <mat-label>Cliente</mat-label>
+            <input type="text" matInput [formControl]="clienteOrigenControl" [matAutocomplete]="autoOrigen"
+              placeholder="Buscar cliente..." />
+            <mat-autocomplete #autoOrigen="matAutocomplete" [displayWith]="mostrarNombreCliente"
+              (optionSelected)="seleccionarClienteOrigen($event.option.value)">
+              <mat-option *ngFor="let cliente of clientesOrigenFiltrados" [value]="cliente">
+                {{ cliente.nomcli }}
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <!-- Campo DESTINO -->
+          <mat-form-field appearance="outline" class="campo-largo">
+            <mat-label>Destino</mat-label>
+            <input type="text" matInput [formControl]="clienteDestinoControl" [matAutocomplete]="autoDestino"
+              placeholder="Buscar cliente..." />
+            <mat-autocomplete #autoDestino="matAutocomplete" [displayWith]="mostrarNombreCliente"
+              (optionSelected)="seleccionarClienteDestino($event.option.value)">
+              <mat-option *ngFor="let cliente of clientesDestinoFiltrados" [value]="cliente">
+                {{ cliente.nomcli }}
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <!-- Prefijo -->
+          <div class="form-grid">
+            <!-- Campo Prefijo -->
+            <mat-form-field appearance="outline" class="form-campo">
+              <mat-label>Prefijo</mat-label>
+              <mat-select formControlName="gcp" (selectionChange)="onPrefijoBlur()">
+                <mat-option *ngFor="let prefijo of prefijos" [value]="prefijo.id_prefijos">
+                  {{ prefijo.codpre }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+
+            <!-- Campo Mostrar -->
+            <div class="form-campo form-mostrar">
+              <label>Mostrar:</label>
+              <input type="number" formControlName="mostrar" min="1" step="1" (blur)="generarFilas()"
+                style="width: 40px;" />
+            </div>
+
+            <!-- Textarea -->
+            <mat-form-field appearance="outline" class="form-campo" style="flex: 2;">
+              <textarea matInput formControlName="textoPegado" placeholder="Pegar GTIN UV"
+                (blur)="pegarPrimeraColumna()"></textarea>
+            </mat-form-field>
+          </div>
+
         </div>
-        <div class="form-group">
-          <label>Destino:</label>
-          <input type="text" placeholder="Cliente Destino" />
-        </div>
-        <div class="form-group">
-          <label>Prefijo Receptor:</label>
-          <input type="text" placeholder="Prefijo Receptor" />
-        </div>
-        <div class="form-group">
-          <label>Mostrar:</label>
-          <input type="text" placeholder="Mostrar" />
+
+
+        <div class="form-actions form-actions-horizontal alineado-derecha">
+          <button type="button" (click)="onBuscar()" [class.activo]="botonActivo === 'buscar'"
+            (click)="seleccionarBoton('buscar')">Buscar</button>
+          <button type="button" (click)="onNuevaBusqueda()" [class.activo]="botonActivo === 'nueva'"
+            (click)="seleccionarBoton('nueva')">Nueva Búsqueda</button>
+          <button type="button" [disabled]="!botonAsignarActivo" [class.activo]="botonActivo === 'transferir'"
+            (click)="ontransferir()">
+            Asignar
+          </button>
+
+
         </div>
       </div>
 
-       <div class="form-actions form-actions-horizontal alineado-derecha">
-            <button (click)="onBuscar()" [class.activo]="botonActivo === 'buscar'"
-              (click)="seleccionarBoton('buscar')">Buscar</button>
-            <button (click)="onNuevaBusqueda()" [class.activo]="botonActivo === 'nueva'"
-              (click)="seleccionarBoton('nueva')">Nueva Búsqueda</button>
-            <button (click)="ontransferir()" [class.activo]="botonActivo === 'transferir'"
-              (click)="seleccionarBoton('transferir')">Asignar</button>
-          </div>
-
-    </div>
+      <!-- Tabla -->
+      <div class="contenedor-grid">
+        <ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 400px;" [rowData]="transferir"
+          [columnDefs]="columnDefs" [defaultColDef]="defaultColDef" [domLayout]="'normal'"
+          (gridReady)="onGridReady($event)" (cellValueChanged)="onCellValueChanged($event)">
+        </ag-grid-angular>
+      </div>
 
 
-  <table class="tabla-estilo">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Unidad Venta</th>
-          <th>Descripcion</th>
-          <th>Prefijo</th>
-          <th>Gtin</th>
-          <th>Marca</th>
-          <th>Contenido</th>
-          <th>U.Medida</th>
-          <th>Estado</th>
-          <th>Fecha Creacion</th>
-          <th>Presentacion</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of transferir; let i = index">
-          <td>{{ i + 1 }}</td>
-          <td>{{ item.UnidadVenta}}</td>
-          <td>{{ item.Descripcion}}</td>
-          <td>{{ item.Prefijo}}</td>
-          <td>{{ item.Gtin}}</td>
-          <td>{{ item.Marca}}</td>
-          <td>{{ item.Contenido }}</td>
-          <td>{{ item.UMedida }}</td>
-          <td>{{ item.Estado }}</td>
-          <td>{{ item.FechaCreacion }}</td>
-          <td>{{ item.Presentacion}}</td>
-        </tr>
-      </tbody>
-    </table>
+
+    </form>
   </ng-container>
+
 
 
   <!-- TAB LISTADO -->
@@ -84,7 +105,8 @@
         <div class="form-group">
           <div class="form-row">
             <label>Buscar:</label>
-            <input type="text" placeholder="Buscar prefijo..." [(ngModel)]="filtroBusqueda" />
+            <input matInput placeholder="Buscar prefijo…" [(ngModel)]="filtroBusqueda" (keyup)="aplicarFiltro()" />
+
           </div>
         </div>
       </div>
@@ -92,37 +114,44 @@
       <div class="form-actions">
         <button mat-button [matMenuTriggerFor]="menuExportar">Exportar</button>
         <mat-menu #menuExportar="matMenu">
-          <button mat-menu-item (click)="exportarPDF()">PDF</button>
-          <button mat-menu-item (click)="exportarExcel()">Excel</button>
+          <button mat-menu-item (click)="exportar('pdf')">PDF</button>
+          <button mat-menu-item (click)="exportar('excel')">Excel</button>
         </mat-menu>
       </div>
     </div>
 
-    <table class="tabla-estilo">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>Prefijo</th>
-          <th>Empresa Anterior</th>
-          <th>RUC Anterior</th>
-          <th>Empresa Actual</th>
-          <th>RUC Actual</th>
-          <th>Fecha</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of listado; let i = index">
-          <td>{{ i + 1 }}</td>
-          <td>{{ item.prefijo }}</td>
-          <td>{{ item.empresaAnterior }}</td>
-          <td>{{ item.rucAnterior }}</td>
-          <td>{{ item.empresaActual }}</td>
-          <td>{{ item.rucActual }}</td>
-          <td>{{ item.fecha }}</td>
-        </tr>
-      </tbody>
-    </table>
+    <mat-table [dataSource]="dataSource" class="mat-elevation-z1">
+
+      <ng-container matColumnDef="numero">
+        <mat-header-cell *matHeaderCellDef class="col-numero">#</mat-header-cell>
+        <mat-cell *matCellDef="let row; let i = index" class="col-numero">
+          {{ i + 1 }}
+        </mat-cell>
+      </ng-container>
+
+
+      <ng-container matColumnDef="codbar">
+        <mat-header-cell *matHeaderCellDef class="col-uv">UV</mat-header-cell>
+        <mat-cell *matCellDef="let row" class="col-uv">{{ row.codbar }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="despro">
+        <mat-header-cell *matHeaderCellDef class="col-despro">Descripción</mat-header-cell>
+        <mat-cell *matCellDef="let row" class="col-despro">{{ row.Despro }}</mat-cell>
+      </ng-container>
+
+      <ng-container matColumnDef="referencia">
+        <mat-header-cell *matHeaderCellDef class="col-referencia">Observación</mat-header-cell>
+        <mat-cell *matCellDef="let row" class="col-referencia">{{ row.Referencia }}</mat-cell>
+      </ng-container>
+
+
+      <mat-header-row *matHeaderRowDef="columnasTabla"></mat-header-row>
+      <mat-row *matRowDef="let row; columns: columnasTabla;"></mat-row>
+
+    </mat-table>
+
+    <mat-paginator [pageSizeOptions]="[5, 10, 20]" showFirstLastButtons></mat-paginator>
+
 
   </ng-container>
-
-

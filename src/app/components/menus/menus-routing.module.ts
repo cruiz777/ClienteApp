@@ -60,6 +60,7 @@ const routes: Routes = [
           // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
         ]
       },
+
       {
         path: 'validacion-licenses',
         children: [
@@ -68,6 +69,7 @@ const routes: Routes = [
           // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
         ]
       },
+
       {
         path: 'validacion-productos',
         children: [
@@ -82,7 +84,6 @@ const routes: Routes = [
       // {path:'vender',component:VenderComponent},
       // {path:'historialventas',component:HistorialventaComponent},
       // {path:'reportes',component:ReportesComponent}
-
 
     ]
   }

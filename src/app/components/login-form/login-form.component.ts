@@ -29,7 +29,8 @@ export class LoginFormComponent {
     this.enviado = true;
 
     const data: RecuperarClaveRequest = {
-      correo: this.formRecuperacion.value.email
+      correo: this.formRecuperacion.value.email,
+      id_empresa: 1
     };
 
     this.usuarioService.enviarCorreoRecuperacion(data).subscribe({

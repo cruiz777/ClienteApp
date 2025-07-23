@@ -54,6 +54,7 @@ export class BloqueComponent implements OnInit {
   bandera = 0;
   selectedColKey: string | null = null;
   checkMaestro: boolean = false;
+  checkIndicador: boolean = false;
 
   unidadesDisponibles: string[] = [];
   mapaUnidades: { [unidad: string]: string } = {};  // código → descripción
@@ -82,6 +83,7 @@ export class BloqueComponent implements OnInit {
 
   gridOptions: GridOptions = {
     suppressMovableColumns: true,
+    onCellValueChanged: this.onCellValueChanged.bind(this),
     components: {
       checkboxRenderer: CheckboxRendererComponent,
       gcpBrickAutocompleteEditor: GcpBrickAutocompleteEditorComponent
@@ -1179,19 +1181,28 @@ export class BloqueComponent implements OnInit {
   onCellValueChanged(event: any): void {
     const field = event.colDef.field;
     const newValue = event.newValue;
-    if (event.colDef.field === 'activo') {
-      console.log(`Checkbox cambiado en fila ${event.rowIndex}:`, event.newValue);
+
+    // ✅ Forzar mayúsculas para 'descripcion' y 'marca'
+    if ((field === 'descripcion' || field === 'marca') && typeof newValue === 'string') {
+      event.data[field] = newValue.toUpperCase();
     }
-    // Si hay error y se corrige
+
+    // ✅ Log especial para 'activo'
+    if (field === 'activo') {
+      console.log(`Checkbox cambiado en fila ${event.rowIndex}:`, newValue);
+    }
+
+    // ✅ Limpiar errores si se corrige
     if (event.data[`_error_${field}`]) {
       if (newValue !== null && newValue !== undefined && newValue.toString().trim() !== '') {
         event.data[`_error_${field}`] = false;
       }
     }
 
-    // Actualiza visual
+    // ✅ Refrescar celda visual
     this.gridApi?.refreshCells({ rowNodes: [event.node], columns: [field] });
   }
+
 
   grabar(): void {
     this.mensaje = ''; // Limpia mensaje
@@ -1359,9 +1370,9 @@ export class BloqueComponent implements OnInit {
       return;
     }
 
-    if (!this.verificarFactor()) {
-      return;
-    }
+    if (!this.verificarFactor()) return;
+
+    const filasMarcadas = this.rowData.filter(f => f.activo);
 
     // 🕓 Mostrar cuadro de espera
     const dialogRef = this.dialog.open(DialogProcesoComponent, {
@@ -1369,15 +1380,16 @@ export class BloqueComponent implements OnInit {
       width: '400px',
       data: {
         procesados: 0,
-        total: this.rowData.filter(f => f.activo).length
+        total: filasMarcadas.length
       }
     });
 
-    this.verificarExistenciaCodbar().then(() => {
-      dialogRef.close(); // ✅ Cerrar cuadro de espera
+    // ✅ Si el checkIndicador está ACTIVADO (true), asumimos que el usuario llenó el campo manualmente
+    if (this.checkIndicador === true) {
+      dialogRef.close();
 
-      const hayIndicadoresVacios = this.rowData.some(f =>
-        f.activo === true && (!f.indicador || f.indicador.toString().trim() === '')
+      const hayIndicadoresVacios = filasMarcadas.some(f =>
+        !f.indicador || f.indicador.toString().trim() === ''
       );
 
       if (hayIndicadoresVacios) {
@@ -1390,6 +1402,29 @@ export class BloqueComponent implements OnInit {
 
       this.botonGenerar14Deshabilitado = false;
       this.botonGrabar14Deshabilitado = false;
+
+      return;
+    }
+
+    // ✅ Si el checkIndicador está DESACTIVADO (false), calcular automáticamente
+    this.verificarExistenciaCodbar().then(() => {
+      dialogRef.close();
+
+      const hayIndicadoresVacios = filasMarcadas.some(f =>
+        !f.indicador || f.indicador.toString().trim() === ''
+      );
+
+      if (hayIndicadoresVacios) {
+        this.mostrarAlerta('❌ Existen productos marcados sin indicador. Verifique antes de continuar.', 'Error');
+        return;
+      }
+
+      this.generarDescripcionCompuesta();
+      this.generarGtin14();
+
+      this.botonGenerar14Deshabilitado = false;
+      this.botonGrabar14Deshabilitado = false;
+
     }).catch(err => {
       dialogRef.close();
       console.error('❌ Error en verificarExistenciaCodbar', err);
@@ -1621,51 +1656,51 @@ export class BloqueComponent implements OnInit {
       this.mostrarAlerta('Proceso masivo finalizado', '✔️');
     }
   }
-validarDescripcionRepetida(): boolean {
-  const contador: Record<string, number> = {};
-  const filasRepetidas: Record<string, number[]> = {};
-  const listaMensajes: string[] = [];
+  validarDescripcionRepetida(): boolean {
+    const contador: Record<string, number> = {};
+    const filasRepetidas: Record<string, number[]> = {};
+    const listaMensajes: string[] = [];
 
-  this.gridApi.forEachNode((node) => {
-    const descripcion = (node.data?.descripcion || '').trim().toUpperCase();
-    const marca = (node.data?.marca || '').trim().toUpperCase();
-    const contenido = (node.data?.contenidoNeto || '').toString().trim().toUpperCase();
-    const unidad = (node.data?.contenidoUM || '').trim().toUpperCase();
+    this.gridApi.forEachNode((node) => {
+      const descripcion = (node.data?.descripcion || '').trim().toUpperCase();
+      const marca = (node.data?.marca || '').trim().toUpperCase();
+      const contenido = (node.data?.contenidoNeto || '').toString().trim().toUpperCase();
+      const unidad = (node.data?.contenidoUM || '').trim().toUpperCase();
 
-    const clave = `${descripcion}~${marca}~${contenido}~${unidad}`;
-    if (!descripcion) return;
+      const clave = `${descripcion}~${marca}~${contenido}~${unidad}`;
+      if (!descripcion) return;
 
-    contador[clave] = (contador[clave] || 0) + 1;
+      contador[clave] = (contador[clave] || 0) + 1;
 
-    if (!filasRepetidas[clave]) {
-      filasRepetidas[clave] = [];
-    }
+      if (!filasRepetidas[clave]) {
+        filasRepetidas[clave] = [];
+      }
 
-    // Validar que rowIndex no sea null
-    if (node.rowIndex !== null && node.rowIndex !== undefined) {
-      filasRepetidas[clave].push(node.rowIndex + 1); // Fila visible (1-based)
-    }
-  });
+      // Validar que rowIndex no sea null
+      if (node.rowIndex !== null && node.rowIndex !== undefined) {
+        filasRepetidas[clave].push(node.rowIndex + 1); // Fila visible (1-based)
+      }
+    });
 
-  const repetidas = new Set<string>();
+    const repetidas = new Set<string>();
 
-  Object.keys(contador).forEach(clave => {
-    const veces = contador[clave];
-    if (veces > 1) {
-      repetidas.add(clave);
-      const partes = clave.split('~');
-      const filas = filasRepetidas[clave].join(', ');
-      const mensaje = `"${partes[0]}" (marca: ${partes[1]}, contenido: ${partes[2]}, unidad: ${partes[3]}) se repite ${veces} veces en las filas: ${filas}`;
-      listaMensajes.push(mensaje);
-    }
-  });
+    Object.keys(contador).forEach(clave => {
+      const veces = contador[clave];
+      if (veces > 1) {
+        repetidas.add(clave);
+        const partes = clave.split('~');
+        const filas = filasRepetidas[clave].join(', ');
+        const mensaje = `"${partes[0]}" (marca: ${partes[1]}, contenido: ${partes[2]}, unidad: ${partes[3]}) se repite ${veces} veces en las filas: ${filas}`;
+        listaMensajes.push(mensaje);
+      }
+    });
 
-  this.descripcionesRepetidas = repetidas;
-  this.mensajeRepetidos = listaMensajes.join('\n');
-  this.gridApi.redrawRows();
+    this.descripcionesRepetidas = repetidas;
+    this.mensajeRepetidos = listaMensajes.join('\n');
+    this.gridApi.redrawRows();
 
-  return repetidas.size === 0;
-}
+    return repetidas.size === 0;
+  }
 
 
 
@@ -2251,5 +2286,11 @@ validarDescripcionRepetida(): boolean {
     }
     return null;
   };
+
+convertirAMayusculas(controlName: string, event: Event): void {
+  const input = event.target as HTMLInputElement;
+  const valor = input.value.toUpperCase();
+  this.formUV.get(controlName)?.setValue(valor);
+}
 
 }

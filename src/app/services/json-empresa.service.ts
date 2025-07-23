@@ -83,11 +83,11 @@ export class JsonEmpresaService {
     this.http.post(data.dapi, jsonData, { headers }).subscribe({
       next: response => {
         console.log('✅ Enviado correctamente:', response);
-        this.descargarArchivo(jsonData, data.licenceKey);
+        //this.descargarArchivo(jsonData, data.licenceKey);
       },
       error: error => {
         console.error('❌ Error al enviar JSON:', error);
-        this.descargarArchivo(jsonData, data.licenceKey);
+        //this.descargarArchivo(jsonData, data.licenceKey);
       }
     });
   }

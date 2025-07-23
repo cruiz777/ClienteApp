@@ -218,7 +218,7 @@ export class DialogClienteComponent implements OnInit {
         telefonoc: [''],
         nombreFinanciero: [null, Validators.required],
 
-        telefono2: [''],
+        telefono22:['', Validators.required],
         pregunta1: [false],
         pregunta2: [false],
         pregunta3: [false],
@@ -630,7 +630,7 @@ export class DialogClienteComponent implements OnInit {
       hello: '',
       desde: 0,
       fechtre: new Date().toISOString(),
-      web: paso2.web,
+      web: paso2.sitioWeb,
       saldo: 0,
       fecfac: '',
       ciudad: ciudadNombre || '',
@@ -1636,7 +1636,7 @@ guardarContactosCliente(): void {
     {
       id_ContactosClientes: 0,
       Nombre: paso3.nombreFinanciero || '',
-      telefono: paso3.telefono2 || '',
+      telefono: paso3.telefono22 || '',
       email: paso3.email1 || '',
       cargo: 'Facturación',
       clientesCodigo: clientesCodigo,
@@ -1645,7 +1645,7 @@ guardarContactosCliente(): void {
     {
       id_ContactosClientes: 0,
       Nombre: paso3.nombreFinanciero || '',
-      telefono: paso3.telefono2 || '',
+      telefono: paso3.telefono22 || '',
       email: paso3.email2 || '',
       cargo: 'Facturación',
       clientesCodigo: clientesCodigo,
@@ -1654,7 +1654,7 @@ guardarContactosCliente(): void {
     {
       id_ContactosClientes: 0,
       Nombre: paso3.nombreFinanciero || '',
-      telefono: paso3.telefono2 || '',
+      telefono: paso3.telefono22 || '',
       email: paso3.email3 || '',
       cargo: 'Facturación',
       clientesCodigo: clientesCodigo,
@@ -1711,6 +1711,15 @@ cargarParametroFacturaPorId(id: number): void {
       }
     });
   }
+
+soloDigitos(ctrl: string, ev: Event, form: FormGroup) {
+  const el = ev.target as HTMLInputElement;
+  const limpio = el.value.replace(/\D/g, ''); // solo dígitos
+  if (el.value !== limpio) {
+    el.value = limpio;
+    form.get(ctrl)?.setValue(limpio);
+  }
+}
 
 
 }

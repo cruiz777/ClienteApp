@@ -238,74 +238,115 @@ cargarAuditorias(): void {
     this.mostrarAlerta(`Filtro aplicado: ${filtro}`, 'info');
   }
 
-  onAsignar(): void {
-    const seleccionados = this.prefijosClienteOrigen.filter(p => p.seleccionado);
-    if (seleccionados.length === 0) {
-      this.mostrarAlerta('Debe seleccionar al menos un prefijo para transferir.', 'warning');
-      return;
-    }
+ onAsignar(): void {
+  const seleccionados = this.prefijosClienteOrigen.filter(p => p.seleccionado);
 
-    if (this.codcliO === this.codcliD) {
-      this.mostrarAlerta('Los clientes origen y destino deben ser diferentes.', 'warning');
-      return;
-    }
-
-    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
-      width: '400px',
-      data: {
-        title: '¿Desea confirmar?',
-        message: `¿Está seguro que desea transferir los ${seleccionados.length} prefijos seleccionados?`,
-        type: 'info',
-        confirmText: 'Sí, transferir',
-        cancelText: 'Cancelar',
-        showCancel: true
-      }
-    });
-
-    dialogRef.afterClosed().subscribe(async result => {
-      if (!result) return;
-
-      let errores: string[] = [];
-
-      for (const prefijo of seleccionados) {
-        try {
-          const auditoriaResp = await this.auditoriaTransferenciaService.crearAuditoriaTransferencia({
-            clientesCodigoOrigen: this.codcliO,
-            clientesCodigoDestino: this.codcliD,
-            fecha: new Date().toISOString(),
-            idPrefijos: prefijo.id_prefijos,
-            idUsuario: this.usuarioActual?.id_usuario || 1,
-            tipo: prefijo.bandera === 0 ? 'NACIONAL' : 'INTER'
-          }).toPromise();
-
-          if (!auditoriaResp?.data) {
-            errores.push(`❌ Auditoría no registrada para prefijo ${prefijo.id_prefijos}`);
-            continue;
-          }
-
-          await this.prefijoService.actualizarClientesCodigoDePrefijo(prefijo.id_prefijos, this.codcliD).toPromise();
-          await this.glnService.actualizarGlnClientesCodigoPorIdPrefijo({ idPrefijos: prefijo.id_prefijos, clientesCodigo: this.codcliD }).toPromise();
-          await this.productoAdicionalService.actualizarCodigosClientePorIdPrefijos(prefijo.id_prefijos, this.codcliD).toPromise();
-          await this.codigos14Service.actualizarClientesCodigo14PorIdPrefijos({ idPrefijos: prefijo.id_prefijos, clientesCodigo: this.codcliD }).toPromise();
-          debugger
-          await this.cuponService.actualizarClientePorPrefijo(prefijo.id_prefijos, this.codcliD).toPromise();
-          await this.ssccService.actualizarClientePorPrefijo(prefijo.id_prefijos, this.codcliD).toPromise();
-          
-
-        } catch (err: any) {
-         // errores.push(`❌ Error en prefijo ${prefijo.id_prefijos}: ${err.message}`);
-        }
-      }
-
-      if (errores.length > 0) {
-        this.mostrarAlerta(`Errores:\n${errores.join('\n')}`, 'warning');
-      } else {
-        this.mostrarAlerta('✅ Transferencia completada con éxito', 'success');
-      }
-
-      this.cargarAuditorias();
-    });
+  if (!seleccionados.length) {
+    this.mostrarAlerta('Debe seleccionar al menos un prefijo para transferir.', 'warning');
+    return;
   }
+
+  if (this.codcliO === this.codcliD) {
+    this.mostrarAlerta('Los clientes origen y destino deben ser diferentes.', 'warning');
+    return;
+  }
+
+  const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+    width: '400px',
+    data: {
+      title: '¿Desea confirmar?',
+      message: `¿Está seguro que desea transferir los ${seleccionados.length} prefijos seleccionados?`,
+      type: 'info',
+      confirmText: 'Sí, transferir',
+      cancelText: 'Cancelar',
+      showCancel: true
+    }
+  });
+
+  dialogRef.afterClosed().subscribe(async result => {
+    if (!result) return;
+
+    const errores: string[] = [];
+
+    for (const prefijo of seleccionados) {
+      try {
+        // Crear auditoría
+        const auditoriaResp = await this.auditoriaTransferenciaService.crearAuditoriaTransferencia({
+          clientesCodigoOrigen: this.codcliO,
+          clientesCodigoDestino: this.codcliD,
+          fecha: new Date().toISOString(),
+          idPrefijos: prefijo.id_prefijos,
+          idUsuario: this.usuarioActual?.id_usuario || 1,
+          tipo: prefijo.bandera === 0 ? 'NACIONAL' : 'INTER'
+        }).toPromise();
+
+        if (!auditoriaResp?.data) {
+          errores.push(`❌ No se registró auditoría para prefijo ${prefijo.id_prefijos}`);
+          continue;
+        }
+
+        // Actualizar prefijo principal
+        await this.prefijoService.actualizarClientesCodigoDePrefijo(prefijo.id_prefijos, this.codcliD).toPromise();
+
+        // Actualizar GLN
+        try {
+          await this.glnService.actualizarGlnClientesCodigoPorIdPrefijo({
+            idPrefijos: prefijo.id_prefijos,
+            clientesCodigo: this.codcliD
+          }).toPromise();
+        } catch {
+          console.warn(`GLN no encontrado para prefijo ${prefijo.id_prefijos}`);
+        }
+
+        // Actualizar producto adicional
+        try {
+          await this.productoAdicionalService.actualizarCodigosClientePorIdPrefijos(
+            prefijo.id_prefijos,
+            this.codcliD
+          ).toPromise();
+        } catch {
+          console.warn(`Producto adicional no encontrado para prefijo ${prefijo.id_prefijos}`);
+        }
+
+        // Actualizar códigos 14
+        try {
+          await this.codigos14Service.actualizarClientesCodigo14PorIdPrefijos({
+            idPrefijos: prefijo.id_prefijos,
+            clientesCodigo: this.codcliD
+          }).toPromise();
+        } catch {
+          console.warn(`Códigos 14 no encontrados para prefijo ${prefijo.id_prefijos}`);
+        }
+
+        // Actualizar cupones
+        try {
+          await this.cuponService.actualizarClientePorPrefijo(prefijo.id_prefijos, this.codcliD).toPromise();
+        } catch {
+          console.warn(`Cupones no encontrados para prefijo ${prefijo.id_prefijos}`);
+        }
+
+        // Actualizar SSCC
+        try {
+          await this.ssccService.actualizarClientePorPrefijo(prefijo.id_prefijos, this.codcliD).toPromise();
+        } catch {
+          console.warn(`SSCC no encontrados para prefijo ${prefijo.id_prefijos}`);
+        }
+
+      } catch (err: any) {
+        errores.push(`❌ Error general en prefijo ${prefijo.id_prefijos}: ${err.message || err}`);
+      }
+    }
+
+    if (errores.length > 0) {
+      this.mostrarAlerta(`Errores durante la transferencia:\n${errores.join('\n')}`, 'warning');
+    } else {
+      this.mostrarAlerta('✅ Transferencia completada con éxito', 'success');
+    }
+
+    this.cargarAuditorias();
+  });
+}
+
   seleccionarUnico(seleccionadoItem: any): void {
   this.prefijosClienteEntidad.forEach(item => {
     item.seleccionado = false;
