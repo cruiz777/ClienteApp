@@ -21,7 +21,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core';
 import { MomentDateAdapter } from '@angular/material-moment-adapter';
-import { LOCALE_ID } from '@angular/core';
+import { LOCALE_ID } from '@angular/core'; 
 import { MatRadioModule } from '@angular/material/radio';
 import jsPDF from 'jspdf';
 import * as ExcelJS from 'exceljs';
@@ -39,6 +39,8 @@ import { format } from 'date-fns';
 import { CiudadService } from 'src/app/services/ciudad.service';
 import { CartaComponent } from './carta/carta.component';
 import { CartaOficialComponent } from './carta-oficial/carta-oficial.component';
+import { MatDialog } from '@angular/material/dialog';
+import { CustomMessageBoxComponent, MessageBoxData } from '../../utils/messages/custom-message-box.component';
 
 
 export const MY_DATE_FORMATS = {
@@ -173,7 +175,8 @@ export class NuevoProductoComponent implements OnInit {
     private glnService: GlnService,
     private gs1ExportService: GS1ExportService,
     private cdRef: ChangeDetectorRef,
-    private ciudadService: CiudadService
+    private ciudadService: CiudadService,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
@@ -269,6 +272,18 @@ export class NuevoProductoComponent implements OnInit {
 
 
   cargarProductos(codigoCliente: number): void {
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      disableClose: true,
+      data: {
+        title: 'Cargando Productos...',
+        message: 'Por favor espere mientras se cargan los productos del cliente.',
+        type: 'info',
+        isLoading: true,
+        loadingText: 'Cargando productos...',
+        showCancel: false
+      }
+    });
+
     this.productoService.getProductosPorCliente(codigoCliente).subscribe({
       next: (productos: Producto[]) => {
         this.registros = productos.map(p => ({
@@ -288,8 +303,12 @@ export class NuevoProductoComponent implements OnInit {
           gcp_brick: p.brick || '',
           pais: p.pais || ''
         }));
+        loadingDialog.close(); // ✅ Cerramos al terminar
       },
-      error: err => console.error('Error al cargar productos:', err)
+      error: err => {
+        console.error('Error al cargar productos:', err);
+        loadingDialog.close(); // ✅ Cerramos si hay error
+      }
     });
   }
 
@@ -312,7 +331,12 @@ export class NuevoProductoComponent implements OnInit {
     });
   }
 
-  formatearFecha(fechaStr: string): string {
+  formatearFecha(fechaStr: string | Date): string {
+    if (typeof fechaStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+      const [anio, mes, dia] = fechaStr.split('-');
+      return `${dia}/${mes}/${anio}`;
+    }
+
     const fecha = new Date(fechaStr);
     const dia = String(fecha.getDate()).padStart(2, '0');
     const mes = String(fecha.getMonth() + 1).padStart(2, '0');
@@ -329,7 +353,7 @@ export class NuevoProductoComponent implements OnInit {
   }
 
   salir(): void {
-    this.router.navigate(['/pages/clientes']);
+    this.router.navigate(['/menuProductos/clienteSeleccion']);
   }
 
   seleccionarRegistroU(registro: any) {
