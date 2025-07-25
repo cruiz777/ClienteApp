@@ -69,23 +69,23 @@ export class JsonProductoService {
     }];
 
     // 🔒 Comentado para pruebas
-    // const headers = new HttpHeaders({
-    //   'Content-Type': 'application/json',
-    //   'APIKey': data.capiP
-    // });
+    const headers = new HttpHeaders({
+      'Content-Type': 'application/json',
+      'APIKey': data.capiP
+    });
 
-    // this.http.post(data.dapiP, vjson, { headers }).subscribe({
-    //   next: (response: any) => {
-    //     console.log('✅ Respuesta:', response);
-    //     this.guardarArchivo(vjson);
-    //   },
-    //   error: (error) => {
-    //     console.error('❌ Error al enviar JSON:', error);
-    //   }
-    // });
+    this.http.post(data.dapiP, vjson, { headers }).subscribe({
+      next: (response: any) => {
+        console.log('✅ Respuesta:', response);
+        this.guardarArchivo(vjson);
+      },
+      error: (error) => {
+        console.error('❌ Error al enviar JSON:', error);
+      }
+    });
 
     // ✅ Solo generar y guardar archivo local (sin enviar)
-    this.guardarArchivo(vjson);
+    //this.guardarArchivo(vjson);
   }
 
   private guardarArchivo(jsonData: any) {

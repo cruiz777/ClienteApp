@@ -199,48 +199,58 @@ export class DialogClienteEditarComponent implements OnInit {
     private logoService: LogoService,
   ) { }
 
-  ngOnInit(): void {
+ ngOnInit(): void {
+  const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+    disableClose: true,
+    data: {
+      title: 'Cargando Cliente...',
+      message: 'Por favor espere mientras se cargan los datos del cliente.',
+      type: 'info',
+      isLoading: true,
+      loadingText: 'Cargando información...',
+      showCancel: false
+    }
+  });
 
-    this.cargando = true;
-    this.usuarioActual = this.usuarioService.getUsuarioActual();
-    this.initFormulario();
+  this.cargando = true;
+  this.usuarioActual = this.usuarioService.getUsuarioActual();
+  this.initFormulario();
 
-    //this.obtenerUsuarioActual();
-    this.cargarGrupos();
-    this.cargarGruposProducto();
+  this.cargarGrupos();
+  this.cargarGruposProducto();
+  this.cargarCiudad();
+  this.cargarPais();
+  this.cargarZona();
+  this.cargarEstadoEmpresa();
+  this.activarModoEdicion();
 
-    this.cargarCiudad();
-    this.cargarPais();
-    this.cargarZona();
-    this.cargarEstadoEmpresa();
-    this.activarModoEdicion();
+  console.log(this.idCliente);
+  this.cargarHistorial(this.idCliente, 'update', 'Clientes', 1);
+  this.cargarPrefijoCliente(this.idCliente);
+  this.cargarClienteYGrupos(this.idCliente);
+  this.obtenerObservaciones(this.idCliente);
+  this.cargarDatosAdicionales(this.idCliente);
+  this.cargarContactosClientes(this.idCliente);
 
-    console.log(this.idCliente);
-    this.cargarHistorial(this.idCliente, 'update', 'Clientes', 1);
-    this.cargarPrefijoCliente(this.idCliente);
-    this.cargarClienteYGrupos(this.idCliente);
-    this.obtenerObservaciones(this.idCliente);
-    this.cargarDatosAdicionales(this.idCliente);
-    this.cargarContactosClientes(this.idCliente);
-    this.paso2Form.get('razonSocial')?.valueChanges.subscribe(valor => {
-      this.nombrecli = valor;
-    });
+  this.paso2Form.get('razonSocial')?.valueChanges.subscribe(valor => {
+    this.nombrecli = valor;
+  });
 
+  this.paso1Form.get('estadoEmpresa')?.valueChanges.subscribe(value => {
+    this.paso2Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
+    this.paso3Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
+    this.paso4Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
+  });
 
+  this.paso1Form.get('zona')?.valueChanges.subscribe(value => {
+    this.paso2Form.get('zona')?.setValue(value, { emitEvent: false });
+    this.paso3Form.get('zona')?.setValue(value, { emitEvent: false });
+    this.paso4Form.get('zona')?.setValue(value, { emitEvent: false });
+  });
 
-    this.paso1Form.get('estadoEmpresa')?.valueChanges.subscribe(value => {
-      this.paso2Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
-      this.paso3Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
-      this.paso4Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
-    });
-
-    this.paso1Form.get('zona')?.valueChanges.subscribe(value => {
-      this.paso2Form.get('zona')?.setValue(value, { emitEvent: false });
-      this.paso3Form.get('zona')?.setValue(value, { emitEvent: false });
-      this.paso4Form.get('zona')?.setValue(value, { emitEvent: false });
-    });
-    this.cargando = false;
-  }
+  this.cargando = false;
+  loadingDialog.close(); // ✅ cerrar el diálogo
+}
 
   initFormulario(): void {
     this.formCliente = this.fb.group({
@@ -306,7 +316,7 @@ export class DialogClienteEditarComponent implements OnInit {
         nombreCodificacion: [''],
         nombreFinanciero:[null, Validators.required],
 
-        telefono2: [''],
+        telefono22: ['', Validators.required],
         pregunta1: [false],
         pregunta2: [false],
         pregunta3: [false],
@@ -1779,7 +1789,7 @@ export class DialogClienteEditarComponent implements OnInit {
               break;
             case 3:
               paso3Patch.email2 = contacto.email;
-              paso3Patch.telefono2 = contacto.telefono;
+              paso3Patch.telefono22 = contacto.telefono;
               break;
             case 4:
               paso3Patch.email3 = contacto.email;
@@ -1814,7 +1824,7 @@ export class DialogClienteEditarComponent implements OnInit {
       {
         id_ContactosClientes: 0,
         Nombre: paso3.nombreFinanciero || '',
-        telefono: paso3.telefono2 || '',
+        telefono: paso3.telefono22 || '',
         email: paso3.email1 || '',
         cargo: 'Facturación',
         clientesCodigo: clientesCodigo,
@@ -1823,7 +1833,7 @@ export class DialogClienteEditarComponent implements OnInit {
       {
         id_ContactosClientes: 0,
         Nombre: paso3.nombreFinanciero || '',
-        telefono: paso3.telefono2 || '',
+        telefono: paso3.telefono22 || '',
         email: paso3.email2 || '',
         cargo: 'Facturación',
         clientesCodigo: clientesCodigo,
@@ -1832,7 +1842,7 @@ export class DialogClienteEditarComponent implements OnInit {
       {
         id_ContactosClientes: 0,
         Nombre: paso3.nombreFinanciero || '',
-        telefono: paso3.telefono2 || '',
+        telefono: paso3.telefono22 || '',
         email: paso3.email3 || '',
         cargo: 'Facturación',
         clientesCodigo: clientesCodigo,
@@ -1950,6 +1960,14 @@ private formatearFecha(fecha: string | Date): string {
   return `${day}/${month}/${year}`;
 }
 
+soloDigitos(ctrl: string, ev: Event, form: FormGroup) {
+  const el = ev.target as HTMLInputElement;
+  const limpio = el.value.replace(/\D/g, ''); // solo dígitos
+  if (el.value !== limpio) {
+    el.value = limpio;
+    form.get(ctrl)?.setValue(limpio);
+  }
+}
 
 
 }

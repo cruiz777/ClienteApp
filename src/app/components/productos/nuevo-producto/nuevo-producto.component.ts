@@ -21,16 +21,11 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core';
 import { MomentDateAdapter } from '@angular/material-moment-adapter';
-import { LOCALE_ID } from '@angular/core';
+import { LOCALE_ID } from '@angular/core'; 
 import { MatRadioModule } from '@angular/material/radio';
 import jsPDF from 'jspdf';
-
-import { firstValueFrom } from 'rxjs';
-import { ClienteReporteResponse, ClienteConProductosResponse, ProductoResponse } from 'src/app/interfaces/responses/producto-filter-response';
-import { ProductoRequests } from 'src/app/interfaces/requests/producto-filter-request';
-import * as XLSX from 'xlsx';
-
 import * as ExcelJS from 'exceljs';
+import * as XLSX from 'xlsx';
 import { ReporteUnidadLogisticaService, } from 'src/app/services/reporte.service';
 import { ExportService } from 'src/app/services/export.service';
 import { ReporteUnidadLogisticaParams } from 'src/app/interfaces/responses/producto-reporte-response';
@@ -38,11 +33,14 @@ import { GlnService } from 'src/app/services/gln.service';
 import { GS1ExportService } from 'src/app/services/gs1-export.service';
 
 import { take } from 'rxjs/operators';
+import { firstValueFrom } from 'rxjs';
 import * as FileSaver from 'file-saver';
 import { format } from 'date-fns';
 import { CiudadService } from 'src/app/services/ciudad.service';
 import { CartaComponent } from './carta/carta.component';
 import { CartaOficialComponent } from './carta-oficial/carta-oficial.component';
+import { MatDialog } from '@angular/material/dialog';
+import { CustomMessageBoxComponent, MessageBoxData } from '../../utils/messages/custom-message-box.component';
 
 
 export const MY_DATE_FORMATS = {
@@ -85,9 +83,6 @@ export const MY_DATE_FORMATS = {
   ]
 })
 export class NuevoProductoComponent implements OnInit {
-
-  clienteReporte!: ClienteReporteResponse;
-  productosFiltrados: ProductoResponse[] = [];
   @ViewChild(CartaComponent) cartaComponent!: CartaComponent;
   @ViewChild(CartaOficialComponent) cartaOficialComponent!: CartaOficialComponent;
   formReporte!: FormGroup; // ✅ declara la propiedad correctamente
@@ -95,8 +90,8 @@ export class NuevoProductoComponent implements OnInit {
     getRowId: (params: any) => params.data.codbar,
     enableRangeSelection: true,
     defaultExcelExportParams: {
-      sheetName: 'GTIN UV'
-    }
+    sheetName: 'GTIN UV'
+  }
   };
   activeTab: string = 'Listado';
   clienteSeleccionado: Cliente | null = null;
@@ -180,7 +175,8 @@ export class NuevoProductoComponent implements OnInit {
     private glnService: GlnService,
     private gs1ExportService: GS1ExportService,
     private cdRef: ChangeDetectorRef,
-    private ciudadService: CiudadService
+    private ciudadService: CiudadService,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
@@ -225,13 +221,13 @@ export class NuevoProductoComponent implements OnInit {
     this.formReporte.get('reporte')?.valueChanges.subscribe(() => {
       this.actualizarVisibilidadFiltros();
     });
-    this.cargarCliente();
-    this.clienteSeleccionadoService.clienteSeleccionado$.subscribe(cliente => {
-      this.clienteSeleccionado = cliente;
-      if (cliente?.clientes_codigo) {
-        this.cargarProductos(cliente.clientes_codigo);
-      }
-    });
+      this.cargarCliente();
+      this.clienteSeleccionadoService.clienteSeleccionado$.subscribe(cliente => {
+        this.clienteSeleccionado = cliente;
+        if (cliente?.clientes_codigo) {
+          this.cargarProductos(cliente.clientes_codigo);
+        }
+      });
   }
 
   cambiarTab(tab: string) {
@@ -276,6 +272,18 @@ export class NuevoProductoComponent implements OnInit {
 
 
   cargarProductos(codigoCliente: number): void {
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      disableClose: true,
+      data: {
+        title: 'Cargando Productos...',
+        message: 'Por favor espere mientras se cargan los productos del cliente.',
+        type: 'info',
+        isLoading: true,
+        loadingText: 'Cargando productos...',
+        showCancel: false
+      }
+    });
+
     this.productoService.getProductosPorCliente(codigoCliente).subscribe({
       next: (productos: Producto[]) => {
         this.registros = productos.map(p => ({
@@ -295,8 +303,12 @@ export class NuevoProductoComponent implements OnInit {
           gcp_brick: p.brick || '',
           pais: p.pais || ''
         }));
+        loadingDialog.close(); // ✅ Cerramos al terminar
       },
-      error: err => console.error('Error al cargar productos:', err)
+      error: err => {
+        console.error('Error al cargar productos:', err);
+        loadingDialog.close(); // ✅ Cerramos si hay error
+      }
     });
   }
 
@@ -320,6 +332,11 @@ export class NuevoProductoComponent implements OnInit {
   }
 
   formatearFecha(fechaStr: string | Date): string {
+    if (typeof fechaStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+      const [anio, mes, dia] = fechaStr.split('-');
+      return `${dia}/${mes}/${anio}`;
+    }
+
     const fecha = new Date(fechaStr);
     const dia = String(fecha.getDate()).padStart(2, '0');
     const mes = String(fecha.getMonth() + 1).padStart(2, '0');
@@ -336,7 +353,7 @@ export class NuevoProductoComponent implements OnInit {
   }
 
   salir(): void {
-    this.router.navigate(['/pages/clientes']);
+    this.router.navigate(['/menuProductos/clienteSeleccion']);
   }
 
   seleccionarRegistroU(registro: any) {
@@ -566,7 +583,7 @@ export class NuevoProductoComponent implements OnInit {
         doc.addImage(firmaBase64, 'PNG', firmaX, firmaY, firmaWidth, firmaHeight);
 
         const now = new Date();
-        const fechaHora = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
+        const fechaHora = `${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}${now.getSeconds().toString().padStart(2,'0')}`;
         const nombreArchivo = `${producto.codbar}_${fechaHora}.pdf`;
 
         doc.save(nombreArchivo);
@@ -584,9 +601,23 @@ export class NuevoProductoComponent implements OnInit {
   }
 
 
+  private async cargarImagenBase64(ruta: string): Promise<string> {
+    const response = await fetch(ruta);
+    const blob = await response.blob();
+
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+
+
+
   imprimir(): void {
     const tipoReporte = this.formReporte.get('reporte')?.value;
-
+    
     if (tipoReporte) {
       switch (tipoReporte) {
         case 'logistica':
@@ -621,377 +652,221 @@ export class NuevoProductoComponent implements OnInit {
   /**
  * Genera reporte PDF de Unidad Logística
  */
-  async generarPdfLogistica(): Promise<void> {
-    try {
-      // Mostrar loading
-      this._snackBar.open('🔄 Generando reporte PDF GS1...', '', { duration: 2000 });
+async generarPdfLogistica(): Promise<void> {
+  try {
+    this._snackBar.open('🔄 Generando reporte PDF GS1...', '', { duration: 2000 });
 
-      // Preparar parámetros del reporte basados en el formulario
-      const params = this.prepararParametrosReporte();
-
-      // Obtener todos los productos para la exportación
-      this.reporteService.getAllProductos(params).subscribe({
-        next: async (productos) => {
-          // Aplanar datos para el formato de tabla
-          const datosParaExport = this.aplanarDatosParaExport(productos);
-
-          // Preparar información del header
-          const headerInfo = await this.prepararHeaderInfo();
-
-          // Configurar opciones de exportación GS1
-          const gs1Options = {
-            data: datosParaExport,
-            filename: 'reporte_unidad_logistica_gs1',
-            headerInfo: headerInfo
-          };
-
-
-          // Llamar al nuevo servicio GS1
-          await this.gs1ExportService.exportarPDFGS1(gs1Options);
-
-          this._snackBar.open('✅ PDF GS1 generado correctamente', 'Cerrar', {
+    const params = this.prepararParametrosReporte();
+    
+    // PASO 1: Obtener metadata del backend (primera página)
+    this.reporteService.getReporteUnidadLogistica(params).subscribe({
+      next: async (response) => {
+        if (response.type !== 'SUCCESS' || !response.data) {
+          this._snackBar.open('⚠️ No se encontraron datos para exportar', 'Cerrar', { 
             duration: 3000,
             horizontalPosition: 'end',
-            verticalPosition: 'top'
+            verticalPosition: 'top' 
           });
-        },
-        error: (error) => {
-          console.error('Error al obtener datos:', error);
-          this._snackBar.open('❌ Error al generar el reporte', 'Cerrar', {
-            duration: 3000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top'
-          });
+          return;
         }
-      });
-    } catch (error) {
-      console.error('Error en generarPdfLogistica:', error);
-      this._snackBar.open('❌ Error al generar el PDF', 'Cerrar', { duration: 3000 });
-    }
-  }
 
-  /**
-   * Genera reporte Excel de Unidad Logística
-   */
-  /**
-   * Genera reporte Excel GS1 con el mismo formato que el PDF
-   */
-  async generarExcelLogistica(): Promise<void> {
-    try {
-      // Mostrar loading
-      this._snackBar.open('🔄 Generando reporte Excel GS1...', '', { duration: 2000 });
+        const { metadata } = response.data;
 
-      // Preparar parámetros del reporte basados en el formulario
-      const params = this.prepararParametrosReporte();
+        // PASO 2: Obtener TODOS los productos para exportación
+        this.reporteService.getAllProductos(params).subscribe({
+          next: async (todosLosProductos) => {
+            if (todosLosProductos.length === 0) {
+              this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', { 
+                duration: 3000,
+                horizontalPosition: 'end',
+                verticalPosition: 'top' 
+              });
+              return;
+            }
 
-      // Obtener todos los productos para la exportación
-      this.reporteService.getAllProductos(params).subscribe({
-        next: async (productos) => {
-          // Aplanar datos para el formato de tabla
-          const datosParaExport = this.aplanarDatosParaExport(productos);
+            // Usar TODOS los productos + metadata con GLN
+            const datosParaExport = this.aplanarDatosParaExport(todosLosProductos);
+            const headerInfo = this.prepararHeaderInfoDesdeBackend(metadata);
+            
+            const gs1Options = {
+              data: datosParaExport,
+              filename: 'reporte_unidad_logistica_gs1',
+              headerInfo: headerInfo
+            };
 
-          // Preparar información del header
-          const headerInfo = await this.prepararHeaderInfo();
-
-          // Configurar opciones de exportación GS1
-          const gs1Options = {
-            data: datosParaExport,
-            filename: 'reporte_unidad_logistica_gs1',
-            headerInfo: headerInfo
-          };
-
-          // Llamar al nuevo método de Excel en GS1ExportService
-          await this.gs1ExportService.exportarExcelGS1(gs1Options);
-
-          this._snackBar.open('✅ Excel GS1 generado correctamente', 'Cerrar', {
-            duration: 3000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top'
-          });
-        },
-        error: (error) => {
-          console.error('Error al obtener datos:', error);
-          this._snackBar.open('❌ Error al generar el reporte Excel', 'Cerrar', {
-            duration: 3000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top'
-          });
-        }
-      });
-    } catch (error) {
-      console.error('Error en generarExcelGS1:', error);
-      this._snackBar.open('❌ Error al generar el Excel', 'Cerrar', { duration: 3000 });
-    }
-  }
-
-
-  async generarPdfGtinVenta(): Promise<void> {
-    const codpro = this.formReporte.get('codigo')?.value;
-    const idPrefijos = this.formReporte.get('gcp')?.value;
-    const operador = this.formReporte.get('operadorFecha')?.value;
-
-    const estadoSeleccionado = this.formReporte.get('estado')?.value;
-    let activo: boolean | undefined;
-    if (estadoSeleccionado === true || estadoSeleccionado === '1') {
-      activo = true;
-    } else if (estadoSeleccionado === false || estadoSeleccionado === '0') {
-      activo = false;
-    }
-
-    let fechaDesde: Date | undefined;
-    let fechaHasta: Date | undefined;
-
-    if (operador === 'igual') {
-      const fecha = this.formReporte.get('fecha')?.value;
-      fechaDesde = fechaHasta = fecha;
-    } else if (operador === 'mayor') {
-      fechaDesde = this.formReporte.get('fecha')?.value;
-    } else if (operador === 'menorIgual') {
-      fechaHasta = this.formReporte.get('fecha')?.value;
-    } else if (operador === 'entre') {
-      fechaDesde = this.formReporte.get('desde')?.value;
-      fechaHasta = this.formReporte.get('hasta')?.value;
-    }
-
-    const request: ProductoRequests = {
-      codpro,
-      idPrefijos,
-      fechaDesde,
-      fechaHasta,
-      activo
-    };
-
-    console.log('Enviando request:', JSON.stringify(request));
-
-    const respuesta = await firstValueFrom(this.productoService.getProductosFiltrados(request));
-    this.clienteReporte = respuesta.cliente;
-    this.productosFiltrados = respuesta.productos;
-
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-    const logo = await this.cargarImagenBase64('assets/logo/GS1-logo.png');
-    let y = 10;
-
-    // LOGO IZQUIERDA
-    doc.addImage(logo, 'PNG', 10, 10, 30, 20);
-
-    // TÍTULO CENTRAL
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(14);
-    doc.text('Sistema de Control de Códigos', 150, 15, { align: 'center' });
-    doc.text('Reporte de Productos', 150, 22, { align: 'center' });
-
-    // CLIENTE a la izquierda
-    doc.setFontSize(10);
-    doc.text(this.clienteReporte?.gs1 || '---', 15, 35);
-    doc.text(this.clienteReporte?.nombreCliente || '---', 50, 35);
-
-    // DERECHA: Emisor, Fecha, Página, RUC, GLN
-    const rightX = 230;
-    let rightY = 12;
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    doc.text('Emisor:', rightX, rightY);
-    doc.text('GS1 Ecuador', rightX + 25, rightY);
-    rightY += 5;
-    doc.text('Fecha emisión:', rightX, rightY);
-    doc.text(new Date().toLocaleDateString('es-EC'), rightX + 25, rightY);
-    rightY += 5;
-    doc.text('Pág:', rightX, rightY);
-    doc.text('1', rightX + 25, rightY);
-    rightY += 5;
-    doc.text('RUC:', rightX, rightY);
-    doc.text(this.clienteReporte?.ruc || '---', rightX + 25, rightY);
-    rightY += 5;
-    doc.text('GLN:', rightX, rightY);
-    doc.text(this.clienteReporte?.gln || '---', rightX + 25, rightY);
-
-    y = 42;
-
-    // TEXTO INSTITUCIONAL
-    const texto = `La Asociación Ecuatoriana de Código de Producto (ECOP) es organización miembro de GS1 en Ecuador y certifica que los códigos GTIN® que se detallan en este reporte son números estándares autorizados. Le recordamos que publicamos a nivel nacional y global la autenticidad de los códigos GTIN® registrados en la base de datos de GS1 Ecuador. Verifique la identidad de estos códigos en nuestra herramienta GEPIR Ecuador. Es responsabilidad del DUEÑO DE LA MARCA el manejo y control del CÓDIGO, DESCRIPCIÓN y MARCA DEL PRODUCTO. El Prefijo de Compañía GS1 no puede venderse, alquilarse, o entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a todas las claves de identificación GS1. El Prefijo de Compañía es único e inequívoco para cada empresa.`;
-
-    doc.setFontSize(9);
-    doc.setFont('helvetica', 'normal');
-    const textWidth = 280;
-    const lines = doc.splitTextToSize(texto, textWidth);
-    doc.text(lines, 10, y);
-    y += lines.length * 5;
-
-    // CABECERA
-    const colX = [10, 55, 120, 160, 190, 220, 250];
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(10);
-
-    // Línea superior
-    doc.line(10, y, 287, y); // línea arriba
-    y += 5;
-
-    // Primera fila (principal)
-    doc.text('CÓDIGO', colX[0], y);
-    doc.text('DESCRIPCIÓN', colX[1], y);
-    doc.text('MARCA', colX[2], y);
-    doc.text('CONTENIDO', colX[3], y);
-    doc.text('UNIDAD', colX[4], y);
-    doc.text('TIPO', colX[5], y);
-    doc.text('FECHA', colX[6], y);
-
-    y += 5;
-    doc.setFontSize(9);
-
-    // Subtítulos (segunda fila de cabecera)
-    doc.text('NETO', colX[3], y);
-    doc.text('MEDIDA', colX[4], y);
-    doc.text('CÓDIGO', colX[5], y);
-
-    y += 2;
-    // Línea inferior
-    doc.line(10, y, 287, y);
-
-    // CUERPO DE LA TABLA
-    y += 5;
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(9);
-
-    for (const p of this.productosFiltrados) {
-      if (y > 180) {
-        doc.addPage();
-        y = 20;
+            await this.gs1ExportService.exportarPDFGS1(gs1Options);
+            
+            this._snackBar.open('✅ PDF GS1 generado correctamente', 'Cerrar', { 
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top' 
+            });
+          },
+          error: (error) => {
+            console.error('Error al obtener todos los productos:', error);
+            this._snackBar.open('❌ Error al generar el reporte', 'Cerrar', { 
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top' 
+            });
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error al obtener metadata:', error);
+        this._snackBar.open('❌ Error al generar el reporte', 'Cerrar', { 
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top' 
+        });
       }
-      const fila = [
-        p.codpro,
-        p.despro,
-        p.marca,
-        p.contenido,
-        p.um,
-        p.gtin,
-        new Date(p.feccre).toLocaleDateString('es-EC')
-      ];
-      fila.forEach((val, i) => {
-        doc.text(val, colX[i], y);
-      });
-      y += 6;
-    }
-
-    const nombreArchivo = `Reporte_GTIN_UV_${new Date().toISOString().slice(0, 10)}.pdf`;
-    doc.save(nombreArchivo);
-  }
-
-  private async cargarImagenBase64(ruta: string): Promise<string> {
-    const response = await fetch(ruta);
-    const blob = await response.blob();
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
     });
+  } catch (error) {
+    console.error('Error en generarPdfLogistica:', error);
+    this._snackBar.open('❌ Error al generar el PDF', 'Cerrar', { duration: 3000 });
+  }
+}
+
+/**
+ * Genera reporte Excel de Unidad Logística
+ */
+/**
+ * Genera reporte Excel GS1 con el mismo formato que el PDF
+ */
+async generarExcelLogistica(): Promise<void> {
+  try {
+    this._snackBar.open('🔄 Generando reporte Excel GS1...', '', { duration: 2000 });
+
+    const params = this.prepararParametrosReporte();
+    
+    // PASO 1: Obtener metadata del backend (primera página)
+    this.reporteService.getReporteUnidadLogistica(params).subscribe({
+      next: async (response) => {
+        if (response.type !== 'SUCCESS' || !response.data) {
+          this._snackBar.open('⚠️ No se encontraron datos para exportar', 'Cerrar', { 
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top' 
+          });
+          return;
+        }
+
+        const { metadata } = response.data;
+
+        // PASO 2: Obtener TODOS los productos para exportación
+        this.reporteService.getAllProductos(params).subscribe({
+          next: async (todosLosProductos) => {
+            if (todosLosProductos.length === 0) {
+              this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', { 
+                duration: 3000,
+                horizontalPosition: 'end',
+                verticalPosition: 'top' 
+              });
+              return;
+            }
+
+            // Usar TODOS los productos + metadata con GLN
+            const datosParaExport = this.aplanarDatosParaExport(todosLosProductos);
+            const headerInfo = this.prepararHeaderInfoDesdeBackend(metadata);
+            
+            const gs1Options = {
+              data: datosParaExport,
+              filename: 'reporte_unidad_logistica_gs1',
+              headerInfo: headerInfo
+            };
+
+            await this.gs1ExportService.exportarExcelGS1(gs1Options);
+            
+            this._snackBar.open('✅ Excel GS1 generado correctamente', 'Cerrar', { 
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top' 
+            });
+          },
+          error: (error) => {
+            console.error('Error al obtener todos los productos:', error);
+            this._snackBar.open('❌ Error al generar el reporte Excel', 'Cerrar', { 
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top' 
+            });
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error al obtener metadata:', error);
+        this._snackBar.open('❌ Error al generar el reporte Excel', 'Cerrar', { 
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top' 
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Error en generarExcelLogistica:', error);
+    this._snackBar.open('❌ Error al generar el Excel', 'Cerrar', { duration: 3000 });
+  }
+}
+
+/**
+ * Prepara los parámetros para el reporte basados en el formulario
+ */
+private prepararParametrosReporte(): ReporteUnidadLogisticaParams {
+  const formValues = this.formReporte.value;
+  const params: ReporteUnidadLogisticaParams = {};
+
+  // Cliente
+  if (this.clienteSeleccionado?.clientes_codigo) {
+    params.clienteCodigo = this.clienteSeleccionado.clientes_codigo;
   }
 
-  generarExcelGtinVenta(): void {
-    if (!this.productosFiltrados.length || !this.clienteReporte) {
-      this.mostrarAlerta('⚠️ No hay productos o cliente cargado.', 'Advertencia');
-      return;
+  // Prefijo (si está seleccionado)
+  if (formValues.gcp) {
+    const prefijoSeleccionado = this.prefijos.find(p => p.id_prefijos === formValues.gcp);
+    if (prefijoSeleccionado) {
+      params.prefijo = prefijoSeleccionado.codpre;
     }
-
-
-    // Encabezado de cliente
-    const encabezadoCliente = [
-      ['GCP:', this.formReporte.get('gcp')?.value || ''],
-      ['Nombre Cliente:', this.clienteReporte.nombreCliente || ''],
-      ['RUC:', this.clienteReporte.ruc || ''],
-      ['GLN:', this.clienteReporte.gln || '']
-    ];
-
-    // Encabezado de columnas
-    const encabezadoColumnas = [
-      ['CÓDIGO', 'DESCRIPCIÓN', 'MARCA', 'CONTENIDO NETO', 'UNIDAD MEDIDA', 'TIPO CÓDIGO', 'FECHA']
-    ];
-
-    // Cuerpo de productos
-    const cuerpo = this.productosFiltrados.map(p => [
-      p.codpro,
-      p.despro,
-      p.marca,
-      p.contenido,
-      p.um,
-      p.gtin,
-      this.formatearFecha(p.feccre)
-    ]);
-
-    // Unir todo
-    const hojaCompleta = [...encabezadoCliente, [], ...encabezadoColumnas, ...cuerpo];
-
-    // Crear Excel
-    const ws: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(hojaCompleta);
-    const wb: XLSX.WorkBook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Productos');
-
-    const nombreArchivo = `Reporte_GTIN_UV_${new Date().toISOString().slice(0, 10)}.xlsx`;
-    XLSX.writeFile(wb, nombreArchivo);
   }
 
-  /**
-   * Prepara los parámetros para el reporte basados en el formulario
-   */
-  private prepararParametrosReporte(): ReporteUnidadLogisticaParams {
-    const formValues = this.formReporte.value;
-    const params: ReporteUnidadLogisticaParams = {};
-
-    // Cliente
-    if (this.clienteSeleccionado?.clientes_codigo) {
-      params.clienteCodigo = this.clienteSeleccionado.clientes_codigo;
-    }
-
-    // Prefijo (si está seleccionado)
-    if (formValues.gcp) {
-      const prefijoSeleccionado = this.prefijos.find(p => p.id_prefijos === formValues.gcp);
-      if (prefijoSeleccionado) {
-        params.prefijo = prefijoSeleccionado.codpre;
-      }
-    }
-
-
-    // Código de producto (si existe el campo 'codigo' en tu formulario)
-    if (formValues.codigo) {
-      params.codigoProducto = formValues.codigo;
-    }
-
-
-    // Estado
-    if (formValues.estado !== null && formValues.estado !== undefined) {
-      params.estado = formValues.estado === '1' || formValues.estado === 1;
-    }
-
-
-    // Fechas según el operador seleccionado
-    const operadorFecha = formValues.operadorFecha;
-
-    if (operadorFecha === 'entre') {
-      if (formValues.desde) {
-        params.fechaDesde = this.formatearFechaParaApi(formValues.desde);
-        params.condicionFecha = 'ENTRE';
-      }
-      if (formValues.hasta) {
-        params.fechaHasta = this.formatearFechaParaApi(formValues.hasta);
-      }
-    } else if (formValues.fecha) {
-      params.fechaDesde = this.formatearFechaParaApi(formValues.fecha);
-
-      switch (operadorFecha) {
-        case 'igual':
-          params.condicionFecha = 'IGUAL';
-          break;
-        case 'menorIgual':
-          params.condicionFecha = 'MENOR_IGUAL';
-          break;
-        case 'mayor':
-          params.condicionFecha = 'MAYOR';
-          break;
-      }
-    }
-
-    return params;
+  // Código de producto (si existe el campo 'codigo' en tu formulario)
+  if (formValues.codigo) {
+    params.codigoProducto = formValues.codigo;
   }
+
+  // Estado
+  if (formValues.estado !== null && formValues.estado !== undefined) {
+    params.estado = formValues.estado === '1' || formValues.estado === 1;
+  }
+
+  // Fechas según el operador seleccionado
+  const operadorFecha = formValues.operadorFecha;
+  
+  if (operadorFecha === 'entre') {
+    if (formValues.desde) {
+      params.fechaDesde = this.formatearFechaParaApi(formValues.desde);
+      params.condicionFecha = 'ENTRE';
+    }
+    if (formValues.hasta) {
+      params.fechaHasta = this.formatearFechaParaApi(formValues.hasta);
+    }
+  } else if (formValues.fecha) {
+    params.fechaDesde = this.formatearFechaParaApi(formValues.fecha);
+    
+    switch (operadorFecha) {
+      case 'igual':
+        params.condicionFecha = 'IGUAL';
+        break;
+      case 'menorIgual':
+        params.condicionFecha = 'MENOR_IGUAL';
+        break;
+      case 'mayor':
+        params.condicionFecha = 'MAYOR';
+        break;
+    }
+  }
+
+  return params;
+}
   async generarPdfCarta(): Promise<void> {
     this.cdRef.detectChanges();
 
@@ -1044,503 +919,484 @@ export class NuevoProductoComponent implements OnInit {
       this.mostrarAlerta('❌ Ocurrió un error al generar la carta.', 'Error');
     }
   }
-
+  generarPdfGtinVenta(): void { /* ... */ }
   /**
  * Aplana los datos del JSON para el formato de tabla requerido por ExportService
  */
-  private aplanarDatosParaExport(productos: any[]): any[] {
-    const datosAplanados: any[] = [];
+private aplanarDatosParaExport(productos: any[]): any[] {
+  const datosAplanados: any[] = [];
 
-    productos.forEach(producto => {
-      if (producto.codigos_14 && producto.codigos_14.length > 0) {
-        datosAplanados.push({
-          ...producto,
-          codigos_14: producto.codigos_14
-        });
-      } else {
-        datosAplanados.push({
-          ...producto,
-          codigos_14: []
-        });
-      }
-    });
-
-    return datosAplanados;
-  }
-
-
-
-  /**
-   * Prepara la información del header para el reporte
-   * Usa el endpoint por codpre para obtener prefijogs1
-   */
-  private async prepararHeaderInfo(): Promise<any> {
-    const baseInfo = {
-      emisor: 'GS1 Ecuador',
-      fechaEmision: new Date().toLocaleDateString('es-EC', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      }),
-      pagina: '1',
-      codigoEmpresa: '', // 👈 Ahora se llenará con prefijogs1
-      nombreEmpresa: this.clienteSeleccionado?.nomcli || '',
-      ruc: String(this.clienteE?.ruc || ''),
-      gln: '',
-      prefijo: ''
-    };
-
-    const prefijoId = this.formReporte.value.gcp;
-    if (prefijoId) {
-      try {
-        // Obtener el codpre del prefijo seleccionado
-        const prefijoSeleccionado = this.prefijos.find(p => p.id_prefijos === prefijoId);
-        if (prefijoSeleccionado?.codpre) {
-
-          // Usar el endpoint por codpre para obtener prefijogs1
-          const prefijos = await this.prefijoService.buscarPorCodpre(prefijoSeleccionado.codpre).toPromise();
-          if (prefijos && prefijos.length > 0) {
-            const prefijoData = prefijos[0];
-            baseInfo.gln = prefijoData.gln || '';
-            baseInfo.prefijo = prefijoData.codpre || prefijoData.codpre;
-            baseInfo.codigoEmpresa = prefijoData.prefijosgs1 || String(this.clienteSeleccionado?.clientes_codigo || ''); // 👈 prefijogs1 en codigoEmpresa
-          }
-
-          // También obtener GLN por id si es necesario
-          const glns = await this.glnService.obtenerGlnPorIdPrefijo(prefijoId).toPromise();
-          if (glns && glns.length > 0 && !baseInfo.gln) {
-            baseInfo.gln = String(glns[0].gln1 || '');
-          }
-        }
-      } catch (error) {
-        console.warn('Error al obtener información del prefijo:', error);
-        baseInfo.prefijo = this.obtenerPrefijoSeleccionado();
-        baseInfo.codigoEmpresa = String(this.clienteSeleccionado?.clientes_codigo || ''); // 👈 Fallback al código de cliente
-      }
+  productos.forEach(producto => {
+    if (producto.codigos_14 && producto.codigos_14.length > 0) {
+      datosAplanados.push({
+        ...producto,
+        codigos_14: producto.codigos_14
+      });
     } else {
-      // Si no hay prefijo seleccionado, usar código de cliente como fallback
-      baseInfo.codigoEmpresa = String(this.clienteSeleccionado?.clientes_codigo || '');
+      datosAplanados.push({
+        ...producto,
+        codigos_14: []
+      });
     }
+  });
 
-    return baseInfo;
+  return datosAplanados;
+}
+
+
+
+/**
+ * Prepara la información del header para el reporte
+ * Usa el endpoint por codpre para obtener prefijogs1
+ */
+private prepararHeaderInfoDesdeBackend(metadata: any): any {
+  return {
+    emisor: metadata.emisor || 'GS1 Ecuador',
+    fechaEmision: metadata.fecha_emision || new Date().toLocaleDateString('es-EC', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }),
+    pagina: metadata.pagina?.toString() || '1',
+    codigoEmpresa: metadata.prefijo_gs1 || metadata.cliente_codigo?.toString() || '', // Usar prefijo_gs1 principal y clientecodigo como fallback
+    nombreEmpresa: metadata.empresa_nombre || '',
+    ruc: metadata.ruc || '',
+    gln: metadata.gln || '', //GLN ya viene del backend
+    prefijo: metadata.prefijo || ''
+  };
+  
+}
+/**
+ * Obtiene el prefijo seleccionado en el formulario
+ */
+private obtenerPrefijoSeleccionado(): string {
+  const prefijoId = this.formReporte.value.gcp;
+  if (prefijoId) {
+    const prefijo = this.prefijos.find(p => p.id_prefijos === prefijoId);
+    return prefijo?.codpre || '';
   }
-  /**
-   * Obtiene el prefijo seleccionado en el formulario
-   */
-  private obtenerPrefijoSeleccionado(): string {
-    const prefijoId = this.formReporte.value.gcp;
-    if (prefijoId) {
-      const prefijo = this.prefijos.find(p => p.id_prefijos === prefijoId);
-      return prefijo?.codpre || '';
+  return '';
+}
+
+/**
+ * Formatea una fecha para el formato esperado por la API (YYYY-MM-DD)
+ */
+private formatearFechaParaApi(fecha: any): string {
+  if (!fecha) return '';
+  
+  // ✅ Crear objeto Date sin importar el tipo de entrada
+  let fechaObj: Date;
+  
+  try {
+    // Si ya es un Date, usarlo directamente
+    if (fecha instanceof Date) {
+      fechaObj = fecha;
+    } 
+    // Si es un objeto Moment.js (Material DatePicker con MomentDateAdapter)
+    else if (fecha && typeof fecha === 'object' && fecha._isAMomentObject) {
+      fechaObj = fecha.toDate(); // Convertir moment a Date
     }
-    return '';
-  }
-
-  /**
-   * Formatea una fecha para el formato esperado por la API (YYYY-MM-DD)
-   */
-  private formatearFechaParaApi(fecha: any): string {
-    if (!fecha) return '';
-
-    // ✅ Crear objeto Date sin importar el tipo de entrada
-    let fechaObj: Date;
-
-    try {
-      // Si ya es un Date, usarlo directamente
-      if (fecha instanceof Date) {
-        fechaObj = fecha;
-      }
-      // Si es un objeto Moment.js (Material DatePicker con MomentDateAdapter)
-      else if (fecha && typeof fecha === 'object' && fecha._isAMomentObject) {
-        fechaObj = fecha.toDate(); // Convertir moment a Date
-      }
-      // Si es un objeto moment sin la propiedad _isAMomentObject
-      else if (fecha && typeof fecha === 'object' && typeof fecha.toDate === 'function') {
-        fechaObj = fecha.toDate();
-      }
-      // Si es string, parsearlo
-      else if (typeof fecha === 'string') {
-        fechaObj = new Date(fecha);
-      }
-      // Si es timestamp numérico
-      else if (typeof fecha === 'number') {
-        fechaObj = new Date(fecha);
-      }
-      // Fallback: intentar crear Date directamente
-      else {
-        fechaObj = new Date(fecha);
-      }
-
-      // ✅ Validar que el Date resultante sea válido
-      if (isNaN(fechaObj.getTime())) {
-        console.warn('Fecha inválida recibida:', fecha);
-        return '';
-      }
-
-    } catch (error) {
-      console.error('Error al procesar fecha:', fecha, error);
+    // Si es un objeto moment sin la propiedad _isAMomentObject
+    else if (fecha && typeof fecha === 'object' && typeof fecha.toDate === 'function') {
+      fechaObj = fecha.toDate();
+    }
+    // Si es string, parsearlo
+    else if (typeof fecha === 'string') {
+      fechaObj = new Date(fecha);
+    }
+    // Si es timestamp numérico
+    else if (typeof fecha === 'number') {
+      fechaObj = new Date(fecha);
+    }
+    // Fallback: intentar crear Date directamente
+    else {
+      fechaObj = new Date(fecha);
+    }
+    
+    // ✅ Validar que el Date resultante sea válido
+    if (isNaN(fechaObj.getTime())) {
+      console.warn('Fecha inválida recibida:', fecha);
       return '';
     }
-
-    // ✅ Formatear fecha válida
-    const year = fechaObj.getFullYear();
-    const month = String(fechaObj.getMonth() + 1).padStart(2, '0');
-    const day = String(fechaObj.getDate()).padStart(2, '0');
-
-    return `${year}-${month}-${day}`;
+    
+  } catch (error) {
+    console.error('Error al procesar fecha:', fecha, error);
+    return '';
   }
+  
+  // ✅ Formatear fecha válida
+  const year = fechaObj.getFullYear();
+  const month = String(fechaObj.getMonth() + 1).padStart(2, '0');
+  const day = String(fechaObj.getDate()).padStart(2, '0');
+  
+  return `${year}-${month}-${day}`;
+}
 
-  /**
-   * Genera reporte PDF General usando getAllProductosPorCliente
-   */
-  async generarPdfGeneral(): Promise<void> {
-    try {
-      this._snackBar.open('🔄 Generando reporte PDF General...', '', { duration: 2000 });
+/**
+ * Genera reporte PDF General usando getAllProductosPorCliente
+ */
+async generarPdfGeneral(): Promise<void> {
+  try {
+    this._snackBar.open('🔄 Generando reporte PDF General...', '', { duration: 2000 });
 
-      const params = this.prepararParametrosProductosPorCliente();
+    const params = this.prepararParametrosProductosPorCliente();
+    
+    const validationErrors = this.reporteService.validateProductosPorClienteParams(params);
+    if (validationErrors.length > 0) {
+      this._snackBar.open(`⚠️ ${validationErrors[0]}`, 'Cerrar', { 
+        duration: 4000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top' 
+      });
+      return;
+    }
+    
+    // PASO 1: Obtener metadata del backend (primera página)
+    this.reporteService.getProductosPorCliente(params).subscribe({
+      next: async (response) => {
+        if (response.type !== 'SUCCESS' || !response.data) {
+          this._snackBar.open('⚠️ No se encontraron datos para exportar', 'Cerrar', { 
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top' 
+          });
+          return;
+        }
 
-      // Validar parámetros
-      const validationErrors = this.reporteService.validateProductosPorClienteParams(params);
-      if (validationErrors.length > 0) {
-        this._snackBar.open(`⚠️ ${validationErrors[0]}`, 'Cerrar', {
-          duration: 4000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top'
-        });
-        return;
-      }
+        const { metadata } = response.data;
 
-      this.reporteService.getAllProductosPorCliente(params).subscribe({
-        next: async (productos) => {
-          if (productos.length === 0) {
-            this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', {
+        // PASO 2: Obtener TODOS los productos para exportación
+        this.reporteService.getAllProductosPorCliente(params).subscribe({
+          next: async (todosLosProductos) => {
+            if (todosLosProductos.length === 0) {
+              this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', { 
+                duration: 3000,
+                horizontalPosition: 'end',
+                verticalPosition: 'top' 
+              });
+              return;
+            }
+
+            // Usar TODOS los productos + metadata con GLN
+            const datosParaExport = this.aplanarDatosGeneralParaExport(todosLosProductos);
+            const headerInfo = this.prepararHeaderInfoDesdeBackend(metadata);
+            
+            const gs1Options = {
+              data: datosParaExport,
+              filename: 'reporte_productos_general_gs1',
+              headerInfo: headerInfo
+            };
+
+            await this.gs1ExportService.exportarPDFGS1(gs1Options);
+            
+            this._snackBar.open('✅ PDF General generado correctamente', 'Cerrar', { 
               duration: 3000,
               horizontalPosition: 'end',
-              verticalPosition: 'top'
+              verticalPosition: 'top' 
             });
-            return;
-          }
-
-          const datosParaExport = this.aplanarDatosGeneralParaExport(productos);
-          const headerInfo = await this.prepararHeaderInfoGeneral();
-
-          const gs1Options = {
-            data: datosParaExport,
-            filename: 'reporte_productos_general_gs1',
-            headerInfo: headerInfo
-          };
-
-          await this.gs1ExportService.exportarPDFGS1(gs1Options);
-
-          this._snackBar.open('✅ PDF General generado correctamente', 'Cerrar', {
-            duration: 3000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top'
-          });
-        },
-        error: (error) => {
-          console.error('Error al obtener productos del cliente:', error);
-          this._snackBar.open('❌ Error al generar el reporte PDF', 'Cerrar', {
-            duration: 3000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top'
-          });
-        }
-      });
-    } catch (error) {
-      console.error('Error en generarPdfGeneral:', error);
-      this._snackBar.open('❌ Error al generar el PDF', 'Cerrar', { duration: 3000 });
-    }
-  }
-
-  /**
-   * Genera reporte Excel General usando getAllProductosPorCliente
-   */
-  async generarExcelGeneral(): Promise<void> {
-    try {
-      this._snackBar.open('🔄 Generando reporte Excel General...', '', { duration: 2000 });
-
-      const params = this.prepararParametrosProductosPorCliente();
-
-      // Validar parámetros
-      const validationErrors = this.reporteService.validateProductosPorClienteParams(params);
-      if (validationErrors.length > 0) {
-        this._snackBar.open(`⚠️ ${validationErrors[0]}`, 'Cerrar', {
-          duration: 4000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top'
-        });
-        return;
-      }
-
-      this.reporteService.getAllProductosPorCliente(params).subscribe({
-        next: async (productos) => {
-          if (productos.length === 0) {
-            this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', {
+          },
+          error: (error) => {
+            console.error('Error al obtener todos los productos:', error);
+            this._snackBar.open('❌ Error al generar el reporte PDF', 'Cerrar', { 
               duration: 3000,
               horizontalPosition: 'end',
-              verticalPosition: 'top'
+              verticalPosition: 'top' 
             });
-            return;
           }
-
-          const datosParaExport = this.aplanarDatosGeneralParaExport(productos);
-          const headerInfo = await this.prepararHeaderInfoGeneral();
-
-          const gs1Options = {
-            data: datosParaExport,
-            filename: 'reporte_productos_general_gs1',
-            headerInfo: headerInfo
-          };
-
-          await this.gs1ExportService.exportarExcelGS1(gs1Options);
-
-          this._snackBar.open('✅ Excel General generado correctamente', 'Cerrar', {
-            duration: 3000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top'
-          });
-        },
-        error: (error) => {
-          console.error('Error al obtener productos del cliente:', error);
-          this._snackBar.open('❌ Error al generar el reporte Excel', 'Cerrar', {
-            duration: 3000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top'
-          });
-        }
-      });
-    } catch (error) {
-      console.error('Error en generarExcelGeneral:', error);
-      this._snackBar.open('❌ Error al generar el Excel', 'Cerrar', { duration: 3000 });
-    }
-  }
-
-  /**
-   * Prepara parámetros específicos para productos por cliente (NUEVO)
-   */
-  private prepararParametrosProductosPorCliente(): any {
-    const formValues = this.formReporte.value;
-    const params: any = {
-      clienteCodigo: this.clienteSeleccionado?.clientes_codigo || 0
-    };
-
-    // Código de producto
-    if (formValues.codigo) {
-      params.codigoProducto = formValues.codigo;
-    }
-
-    // Estado
-    if (formValues.estado !== null && formValues.estado !== undefined) {
-      params.estado = formValues.estado === '1' || formValues.estado === 1;
-    }
-
-    // Fechas según el operador seleccionado
-    const operadorFecha = formValues.operadorFecha;
-
-    if (operadorFecha === 'entre') {
-      if (formValues.desde) {
-        params.fechaDesde = this.formatearFechaParaApi(formValues.desde);
-        params.condicionFecha = 'ENTRE';
-      }
-      if (formValues.hasta) {
-        params.fechaHasta = this.formatearFechaParaApi(formValues.hasta);
-      }
-    } else if (formValues.fecha) {
-      params.fechaDesde = this.formatearFechaParaApi(formValues.fecha);
-
-      switch (operadorFecha) {
-        case 'igual':
-          params.condicionFecha = 'IGUAL';
-          break;
-        case 'menorIgual':
-          params.condicionFecha = 'MENOR_IGUAL';
-          break;
-        case 'mayor':
-          params.condicionFecha = 'MAYOR';
-          break;
-      }
-    }
-
-    return params;
-  }
-
-  /**
-   * Aplana datos para reporte general (NUEVO - diferente al de unidad logística)
-   */
-  private aplanarDatosGeneralParaExport(productos: any[]): any[] {
-    return productos.map(producto => ({
-      codigo_producto: producto.codigo_producto,
-      descripcion: producto.descripcion,
-      marca: producto.marca,
-      contenido_neto: producto.contenido_neto,
-      unidad_medida: producto.unidad_medida,
-      fecha: producto.fecha,
-      codigos_14: producto.codigos_14 || []
-    }));
-  }
-
-  /**
-   * Header específico para reporte general (NUEVO)
-   */
-  private async prepararHeaderInfoGeneral(): Promise<any> {
-    const baseInfo = {
-      emisor: 'GS1 Ecuador',
-      fechaEmision: new Date().toLocaleDateString('es-EC', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      }),
-      pagina: '1',
-      codigoEmpresa: String(this.clienteSeleccionado?.clientes_codigo || ''),
-      nombreEmpresa: this.clienteSeleccionado?.nomcli || '',
-      ruc: String(this.clienteE?.ruc || ''),
-      gln: '',
-      prefijo: 'GENERAL' // Diferencia clave: indica que es un reporte general
-    };
-
-    // Intentar obtener GLN del primer prefijo disponible
-    try {
-      if (this.prefijos.length > 0) {
-        const primerPrefijo = this.prefijos[0];
-        const glns = await this.glnService.obtenerGlnPorIdPrefijo(primerPrefijo.id_prefijos).toPromise();
-        if (glns && glns.length > 0) {
-          baseInfo.gln = String(glns[0].gln1 || '');
-        }
-
-        // Intentar obtener prefijogs1 para codigoEmpresa
-        const prefijos = await this.prefijoService.buscarPorCodpre(primerPrefijo.codpre).toPromise();
-        if (prefijos && prefijos.length > 0) {
-          baseInfo.codigoEmpresa = prefijos[0].prefijosgs1 || String(this.clienteSeleccionado?.clientes_codigo || '');
-        }
-      }
-    } catch (error) {
-      console.warn('Error al obtener información para reporte general:', error);
-    }
-
-    return baseInfo;
-  }
-
-  /**
-   * Método principal para exportar a Excel - optimizado con switch
-   */
-  exportarExcel(): void {
-    const tipoReporte = this.formReporte.get('reporte')?.value;
-
-    if (tipoReporte) {
-      switch (tipoReporte) {
-        case 'logistica':
-          this.generarExcelLogistica();
-          break;
-        case 'general':
-          this.generarExcelGeneral();
-          break;
-        case 'gtinVenta':
-          this.generarExcelGtinVenta();
-          break;
-
-        case 'completo':
-          // Ya tienes este método implementado
-          this.generarPdfCompleto(); // Necesitarás ajustar los parámetros
-          break;
-        // Agregar más casos según necesites
-        default:
-          this.mostrarAlerta('Exportación a Excel no disponible para este tipo de reporte.', 'Advertencia');
-          break;
-      }
-    } else {
-      this.mostrarAlerta('Debe seleccionar un reporte para exportar a Excel.', 'Advertencia');
-    }
-  }
-
-  exportarExcelGrid(): void {
-    const fechaHora = this.obtenerFechaHoraActual();
-    const datos: any[] = [];
-    const totalRows = this.gridApi.getDisplayedRowCount();
-
-    for (let i = 0; i < totalRows; i++) {
-      const fila = this.gridApi.getDisplayedRowAtIndex(i)?.data;
-      if (fila) {
-        datos.push({
-          Empresa: fila.empresa,
-          Prefijo: fila.prefijo,
-          Tipo_GTIN: fila.tipogtin,
-          Estado: fila.estado,
-          GTIN_UV: fila.codbar,
-          Presentacion: fila.presentacion,
-          Descripcion: fila.descripcion,
-          Fecha: fila.fecha,
-          Marca: fila.marca,
-          Contenido: fila.contenido,
-          Unidad: fila.unidad,
-          Categoria: fila.categoria,
-          Brick: fila.gcp_brick,
-          Pais: fila.pais
+        });
+      },
+      error: (error) => {
+        console.error('Error al obtener metadata:', error);
+        this._snackBar.open('❌ Error al generar el reporte PDF', 'Cerrar', { 
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top' 
         });
       }
-    }
-
-    const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(datos);
-    const workbook: XLSX.WorkBook = {
-      Sheets: { 'GTINs': worksheet },
-      SheetNames: ['GTINs']
-    };
-
-    const excelBuffer: any = XLSX.write(workbook, {
-      bookType: 'xlsx',
-      type: 'array'
     });
-
-    const blob: Blob = new Blob([excelBuffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'
-    });
-
-    FileSaver.saveAs(blob, `gtins_export_${fechaHora}.xlsx`);
+  } catch (error) {
+    console.error('Error en generarPdfGeneral:', error);
+    this._snackBar.open('❌ Error al generar el PDF', 'Cerrar', { duration: 3000 });
   }
+}
 
-  exportar(): void {
-    const tipoReporte = this.formReporte.get('reporte')?.value;
+/**
+ * Genera reporte Excel General usando GLN del backend y TODOS los registros
+ */
+async generarExcelGeneral(): Promise<void> {
+  try {
+    this._snackBar.open('🔄 Generando reporte Excel General...', '', { duration: 2000 });
 
-    if (tipoReporte) {
-      switch (tipoReporte) {
-        case 'gtinVenta':
-          // Llamar método cuando lo implementes
-          break;
-        case 'logistica':
-          break;
-        case 'general':
-          break;
-        case 'completo':
-          this.generarPdfCompleto();
-          break;
-        default:
-          this.mostrarAlerta('Reporte no válido.', 'Advertencia');
-          break;
+    const params = this.prepararParametrosProductosPorCliente();
+    
+    const validationErrors = this.reporteService.validateProductosPorClienteParams(params);
+    if (validationErrors.length > 0) {
+      this._snackBar.open(`⚠️ ${validationErrors[0]}`, 'Cerrar', { 
+        duration: 4000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top' 
+      });
+      return;
+    }
+    
+    // PASO 1: Obtener metadata del backend (primera página)
+    this.reporteService.getProductosPorCliente(params).subscribe({
+      next: async (response) => {
+        if (response.type !== 'SUCCESS' || !response.data) {
+          this._snackBar.open('⚠️ No se encontraron datos para exportar', 'Cerrar', { 
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top' 
+          });
+          return;
+        }
+
+        const { metadata } = response.data;
+
+        // PASO 2: Obtener TODOS los productos para exportación
+        this.reporteService.getAllProductosPorCliente(params).subscribe({
+          next: async (todosLosProductos) => {
+            if (todosLosProductos.length === 0) {
+              this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', { 
+                duration: 3000,
+                horizontalPosition: 'end',
+                verticalPosition: 'top' 
+              });
+              return;
+            }
+
+            // Usar TODOS los productos + metadata con GLN
+            const datosParaExport = this.aplanarDatosGeneralParaExport(todosLosProductos);
+            const headerInfo = this.prepararHeaderInfoDesdeBackend(metadata);
+            
+            const gs1Options = {
+              data: datosParaExport,
+              filename: 'reporte_productos_general_gs1',
+              headerInfo: headerInfo
+            };
+
+            await this.gs1ExportService.exportarExcelGS1(gs1Options);
+            
+            this._snackBar.open('✅ Excel General generado correctamente', 'Cerrar', { 
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top' 
+            });
+          },
+          error: (error) => {
+            console.error('Error al obtener todos los productos:', error);
+            this._snackBar.open('❌ Error al generar el reporte Excel', 'Cerrar', { 
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top' 
+            });
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error al obtener metadata:', error);
+        this._snackBar.open('❌ Error al generar el reporte Excel', 'Cerrar', { 
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top' 
+        });
       }
-    } else {
-      this.mostrarAlerta('Debe seleccionar un reporte o certificado para imprimir.', 'Advertencia');
+    });
+  } catch (error) {
+    console.error('Error en generarExcelGeneral:', error);
+    this._snackBar.open('❌ Error al generar el Excel', 'Cerrar', { duration: 3000 });
+  }
+}
+
+/**
+ * Prepara parámetros específicos para productos por cliente (NUEVO)
+ */
+private prepararParametrosProductosPorCliente(): any {
+  const formValues = this.formReporte.value;
+  const params: any = {
+    clienteCodigo: this.clienteSeleccionado?.clientes_codigo || 0
+  };
+
+  // Código de producto
+  if (formValues.codigo) {
+    params.codigoProducto = formValues.codigo;
+  }
+
+  // Estado
+  if (formValues.estado !== null && formValues.estado !== undefined) {
+    params.estado = formValues.estado === '1' || formValues.estado === 1;
+  }
+
+  // Fechas según el operador seleccionado
+  const operadorFecha = formValues.operadorFecha;
+  
+  if (operadorFecha === 'entre') {
+    if (formValues.desde) {
+      params.fechaDesde = this.formatearFechaParaApi(formValues.desde);
+      params.condicionFecha = 'ENTRE';
+    }
+    if (formValues.hasta) {
+      params.fechaHasta = this.formatearFechaParaApi(formValues.hasta);
+    }
+  } else if (formValues.fecha) {
+    params.fechaDesde = this.formatearFechaParaApi(formValues.fecha);
+    
+    switch (operadorFecha) {
+      case 'igual':
+        params.condicionFecha = 'IGUAL';
+        break;
+      case 'menorIgual':
+        params.condicionFecha = 'MENOR_IGUAL';
+        break;
+      case 'mayor':
+        params.condicionFecha = 'MAYOR';
+        break;
     }
   }
-  /**
-   * Placeholders para futuros reportes Excel
-   */
+
+  return params;
+}
+
+/**
+ * Aplana datos para reporte general (NUEVO - diferente al de unidad logística)
+ */
+private aplanarDatosGeneralParaExport(productos: any[]): any[] {
+  return productos.map(producto => ({
+    codigo_producto: producto.codigo_producto,
+    descripcion: producto.descripcion,
+    marca: producto.marca,
+    contenido_neto: producto.contenido_neto,
+    unidad_medida: producto.unidad_medida,
+    fecha: producto.fecha,
+    codigos_14: producto.codigos_14 || []
+  }));
+}
 
 
-  nuevo() {
-    const hoy = new Date();
-    this.formReporte.reset({
-      reporte: 'gtinVenta',        // Marcar GTIN Unidad de Venta
-      operadorFecha: 'igual',       // Operador "="
-      fecha: hoy,                   // Fecha actual
-      desde: null,
-      hasta: null,
-      gcp: null,
-      codigo: '',
-      estado: '1'                   // Activo
-    });
+/**
+ * Método principal para exportar a Excel - optimizado con switch
+ */
+exportarExcel(): void {
+  const tipoReporte = this.formReporte.get('reporte')?.value;
+  
+  if (tipoReporte) {
+    switch (tipoReporte) {
+      case 'logistica':
+        this.generarExcelLogistica();
+        break;
+      case 'general':
+        this.generarExcelGeneral();
+        break;
+      case 'gtinVenta':
+        this.generarExcelGtinVenta();
+        break;
+
+      case 'completo':
+      // Ya tienes este método implementado
+      this.generarPdfCompleto(); // Necesitarás ajustar los parámetros
+      break;
+      // Agregar más casos según necesites
+      default:
+        this.mostrarAlerta('Exportación a Excel no disponible para este tipo de reporte.', 'Advertencia');
+        break;
+    }
+  } else {
+    this.mostrarAlerta('Debe seleccionar un reporte para exportar a Excel.', 'Advertencia');
+  }
+}
+
+exportarExcelGrid(): void {
+  const fechaHora = this.obtenerFechaHoraActual();
+  const datos: any[] = [];
+  const totalRows = this.gridApi.getDisplayedRowCount();
+
+  for (let i = 0; i < totalRows; i++) {
+    const fila = this.gridApi.getDisplayedRowAtIndex(i)?.data;
+    if (fila) {
+      datos.push({
+        Empresa: fila.empresa,
+        Prefijo: fila.prefijo,
+        Tipo_GTIN: fila.tipogtin,
+        Estado: fila.estado,
+        GTIN_UV: fila.codbar,
+        Presentacion: fila.presentacion,
+        Descripcion: fila.descripcion,
+        Fecha: fila.fecha,
+        Marca: fila.marca,
+        Contenido: fila.contenido,
+        Unidad: fila.unidad,
+        Categoria: fila.categoria,
+        Brick: fila.gcp_brick,
+        Pais: fila.pais
+      });
+    }
   }
 
-  async exportarExcelCompleto(productos: any[]): Promise<void> {
+  const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(datos);
+  const workbook: XLSX.WorkBook = {
+    Sheets: { 'GTINs': worksheet },
+    SheetNames: ['GTINs']
+  };
+
+  const excelBuffer: any = XLSX.write(workbook, {
+    bookType: 'xlsx',
+    type: 'array'
+  });
+
+  const blob: Blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'
+  });
+
+  FileSaver.saveAs(blob, `gtins_export_${fechaHora}.xlsx`);
+}
+
+exportar(): void {
+  const tipoReporte = this.formReporte.get('reporte')?.value;
+  
+  if (tipoReporte) {
+    switch (tipoReporte) {
+      case 'gtinVenta':
+        // Llamar método cuando lo implementes
+        break;
+      case 'logistica':
+        break;
+      case 'general':
+        break;
+      case 'completo':
+        this.generarPdfCompleto();
+        break;
+      default:
+        this.mostrarAlerta('Reporte no válido.', 'Advertencia');
+        break;
+    }
+  } else {
+    this.mostrarAlerta('Debe seleccionar un reporte o certificado para imprimir.', 'Advertencia');
+  }
+}
+/**
+ * Placeholders para futuros reportes Excel
+ */
+generarExcelGtinVenta(): void {
+  this.mostrarAlerta('Excel para GTIN Venta en desarrollo.', 'Info');
+  // TODO: Implementar cuando sea necesario
+}
+
+nuevo()
+{
+ const hoy = new Date();
+  this.formReporte.reset({
+    reporte: 'gtinVenta',        // Marcar GTIN Unidad de Venta
+    operadorFecha: 'igual',       // Operador "="
+    fecha: hoy,                   // Fecha actual
+    desde: null,
+    hasta: null,
+    gcp: null,
+    codigo: '',
+    estado: '1'                   // Activo
+  });
+}
+
+async exportarExcelCompleto(productos: any[]): Promise<void> {
     const fechaActual = new Date();
     const nombreArchivo = `ReporteCompleto-${this.clienteSeleccionado?.nomcli}-${format(fechaActual, 'yyyy-MM-dd-HH-mm')}.xlsx`;
     this.cdRef.detectChanges();
@@ -1671,55 +1527,170 @@ export class NuevoProductoComponent implements OnInit {
   }
 
   async generarPdfMembresia(): Promise<void> {
-    this.cdRef.detectChanges();
+  this.cdRef.detectChanges();
 
-    const idSeleccionado = this.formReporte.value.gcp;
-    if (!idSeleccionado) {
-      this.mostrarAlerta('⚠️ Debe seleccionar un Prefijo primero.', 'Advertencia');
-      return;
-    }
-
-    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
-    const codpre = objeto?.codpre || '';
-
-    if (codpre) {
-      try {
-        const data = await firstValueFrom(this.prefijoService.buscarPorCodpre(codpre));
-        if (data && data.length > 0) {
-          const prefijo = data[0];
-          this.cartaComponent.prefijo = codpre;
-          this.cartaComponent.gcp = prefijo.prefijosgs1 || '';
-          this.cartaComponent.gln = prefijo.gln;
-
-        } else {
-          this.mostrarAlerta('⚠️ No se encontró información para el código de prefijo.', 'Advertencia');
-          return;
-        }
-      } catch (error) {
-        console.error('Error al buscar prefijo:', error);
-        this.mostrarAlerta('❌ Error al buscar el prefijo.', 'Error');
-        return;
-      }
-    }
-
-    // Asignar los @Input()
-    this.cartaComponent.empresa = this.clienteSeleccionado?.nomcli || '';
-    this.cartaComponent.ruc = this.clienteSeleccionado?.ruc || '';
-    this.cartaComponent.anioAfiliacion = new Date(this.clienteSeleccionado?.fecing || '').getFullYear().toString();
-
-    // Esperar a que Angular termine de renderizar si es necesario
-    await new Promise(resolve => setTimeout(resolve, 0));
-
-    // Llamar al método del componente
-    await this.cartaComponent.generarPdfCarta();
+  const idSeleccionado = this.formReporte.value.gcp;
+  if (!idSeleccionado) {
+    this.mostrarAlerta('⚠️ Debe seleccionar un Prefijo primero.', 'Advertencia');
+    return;
   }
 
-  // 🔧 OPCIÓN 1: Cambiar el HTML para que coincida con el TS (MÁS FÁCIL)
-  // En tu HTML, cambia:
-  /*
-  <mat-radio-button value="<=">&le;</mat-radio-button>
-  <mat-radio-button value=">">&gt;</mat-radio-button>
-  */
+  const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+  const codpre = objeto?.codpre || '';
+
+  if (!codpre) {
+    this.mostrarAlerta('⚠️ No se encontró el código de prefijo.', 'Advertencia');
+    return;
+  }
+
+  try {
+    // PASO 1: Generar la carta de membresía tradicional
+    const data = await firstValueFrom(this.prefijoService.buscarPorCodpre(codpre));
+    if (data && data.length > 0) {
+      const prefijo = data[0];
+      this.cartaComponent.prefijo = codpre;
+      this.cartaComponent.gcp = prefijo.prefijosgs1 || '';
+      this.cartaComponent.gln = prefijo.gln;
+      this.cartaComponent.empresa = this.clienteSeleccionado?.nomcli || '';
+      this.cartaComponent.ruc = this.clienteSeleccionado?.ruc || '';
+      this.cartaComponent.anioAfiliacion = new Date(this.clienteSeleccionado?.fecing || '').getFullYear().toString();
+
+      // Esperar renderizado y generar carta tradicional
+      await new Promise(resolve => setTimeout(resolve, 0));
+      await this.cartaComponent.generarPdfCarta();
+
+      // PASO 2: Generar el nuevo reporte GS1 usando el endpoint de productos por prefijo
+      this._snackBar.open('🔄 Generando reporte complementario GS1...', '', { duration: 2000 });
+      
+      this.generarPdfProductosPorPrefijo(codpre);
+
+    } else {
+      this.mostrarAlerta('⚠️ No se encontró información para el código de prefijo.', 'Advertencia');
+      return;
+    }
+  } catch (error) {
+    console.error('Error al buscar prefijo:', error);
+    this.mostrarAlerta('❌ Error al buscar el prefijo.', 'Error');
+    return;
+  }
+}
+
+  private async generarPdfProductosPorPrefijo(prefijo: string): Promise<void> {
+  try {
+    // Preparar parámetros para el nuevo endpoint
+    const params = {
+      prefijo: prefijo,
+      clienteCodigo: this.clienteSeleccionado?.clientes_codigo, // Opcional
+      pageNumber: 1,
+      pageSize: 50
+    };
+
+    // PASO 1: Obtener metadata del backend (primera página)
+    this.reporteService.getProductosPorPrefijo(params).subscribe({
+      next: async (response) => {
+        if (response.type !== 'SUCCESS' || !response.data) {
+          this._snackBar.open('⚠️ No se encontraron productos para el prefijo seleccionado', 'Cerrar', { 
+            duration: 3000,
+            horizontalPosition: 'end',
+            verticalPosition: 'top' 
+          });
+          return;
+        }
+
+        const { metadata } = response.data;
+
+        // PASO 2: Obtener TODOS los productos del prefijo para exportación
+        this.reporteService.getAllProductosPorPrefijo(params).subscribe({
+          next: async (todosLosProductos) => {
+            if (todosLosProductos.length === 0) {
+              this._snackBar.open('⚠️ No se encontraron productos para exportar del prefijo', 'Cerrar', { 
+                duration: 3000,
+                horizontalPosition: 'end',
+                verticalPosition: 'top' 
+              });
+              return;
+            }
+
+            // Usar TODOS los productos + metadata del prefijo
+            const datosParaExport = this.aplanarDatosMembresiaPorPrefijo(todosLosProductos);
+            const headerInfo = this.prepararHeaderInfoMembresia(metadata);
+            
+            const gs1Options = {
+              data: datosParaExport,
+              filename: `membresia_productos_prefijo_${prefijo}`,
+              headerInfo: headerInfo
+            };
+
+            await this.gs1ExportService.exportarPDFGS1(gs1Options);
+            
+            this._snackBar.open('✅ Reporte de membresía GS1 generado correctamente', 'Cerrar', { 
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top' 
+            });
+          },
+          error: (error) => {
+            console.error('Error al obtener todos los productos del prefijo:', error);
+            this._snackBar.open('❌ Error al generar el reporte complementario', 'Cerrar', { 
+              duration: 3000,
+              horizontalPosition: 'end',
+              verticalPosition: 'top' 
+            });
+          }
+        });
+      },
+      error: (error) => {
+        console.error('Error al obtener metadata del prefijo:', error);
+        this._snackBar.open('❌ Error al generar el reporte complementario', 'Cerrar', { 
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top' 
+        });
+      }
+    });
+  } catch (error) {
+    console.error('Error en generarPdfProductosPorPrefijo:', error);
+    this._snackBar.open('❌ Error al generar el reporte complementario', 'Cerrar', { duration: 3000 });
+  }
+}
+
+/**
+ * Aplana los datos específicos para el reporte de membresía por prefijo
+ */
+private aplanarDatosMembresiaPorPrefijo(productos: any[]): any[] {
+  return productos.map(producto => ({
+    codigo_producto: producto.codigo_producto,
+    descripcion: producto.descripcion,
+    marca: producto.marca,
+    contenido_neto: producto.contenido_neto,
+    unidad_medida: producto.unidad_medida,
+    fecha: producto.fecha,
+    codigos_14: producto.codigos_14 || [],
+    cliente_codigo: producto.cliente_codigo,
+    cliente_nombre: producto.cliente_nombre
+  }));
+}
+
+/**
+ * Prepara header específico para reporte de membresía por prefijo
+ */
+private prepararHeaderInfoMembresia(metadata: any): any {
+  return {
+    emisor: metadata.emisor || 'GS1 Ecuador',
+    fechaEmision: metadata.fecha_emision || new Date().toLocaleDateString('es-EC', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    }),
+    pagina: metadata.pagina?.toString() || '1',
+    codigoEmpresa: metadata.prefijo_gs1 || metadata.prefijo || '',
+    nombreEmpresa: `Productos del Prefijo ${metadata.prefijo}`,
+    ruc: metadata.ruc || '',
+    gln: metadata.gln || '',
+    prefijo: metadata.prefijo || ''
+  };
+}
+
   generarPdfCompleto(): void {
     const codCliente = this.clienteSeleccionado?.clientes_codigo;
     const idPrefijo = this.formReporte.get('gcp')?.value;
@@ -1815,21 +1786,20 @@ export class NuevoProductoComponent implements OnInit {
   /**
  * Determina si el botón Imprimir debe estar habilitado
  */
-  get imprimirHabilitado(): boolean {
-    const tipoReporte = this.formReporte.get('reporte')?.value;
+get imprimirHabilitado(): boolean {
+  const tipoReporte = this.formReporte.get('reporte')?.value;
+  
+  // Deshabilitar si no hay reporte seleccionado o si es "completo"
+  return !!tipoReporte && tipoReporte !== 'completo';
+}
 
-    // Deshabilitar si no hay reporte seleccionado o si es "completo"
-    return !!tipoReporte && tipoReporte !== 'completo';
-  }
-
-  /**
-   * Determina si el botón Excel debe estar habilitado
-   */
-  get excelHabilitado(): boolean {
-    const tipoReporte = this.formReporte.get('reporte')?.value;
-
-    // Habilitar para todos los reportes que tengan valor
-    return !!tipoReporte;
-  }
-
+/**
+ * Determina si el botón Excel debe estar habilitado
+ */
+get excelHabilitado(): boolean {
+  const tipoReporte = this.formReporte.get('reporte')?.value;
+  
+  // Habilitar para todos los reportes que tengan valor
+  return !!tipoReporte;
+}
 }

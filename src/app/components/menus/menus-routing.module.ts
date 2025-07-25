@@ -14,6 +14,7 @@ import { TraspasoGtinComponent } from './prefijos/traspaso-gtin/traspaso-gtin.co
 import { TipoPrefijoComponent } from './prefijos/tipo-prefijo/tipo-prefijo.component';
 import { ValidacionSriListComponent } from '../pages/validacion/validador-sri/validador-sri-list/validador-sri-list.component';
 import { LicenseValidatorComponent } from '../pages/validacion/validador-licenses/validador-licenses.component';
+import { ProductsLicenseValidator } from '../pages/validacion/validador-products/validador-products.component';
 
 
 
@@ -69,6 +70,15 @@ const routes: Routes = [
         ]
       },
 
+      {
+        path: 'validacion-productos',
+        children: [
+          { path: '', component: ProductsLicenseValidator },
+          // { path: 'crear', component: TipoLocalizacionFormComponent },
+          // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
+        ]
+      }
+      
       // {path:'usuarios',component:UsuariosComponent},
       // {path:'productos',component:ProductosComponent},
       // {path:'vender',component:VenderComponent},

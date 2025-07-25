@@ -148,43 +148,20 @@ body {
     border-bottom: 1px solid #e1e8f0;
 }
 
-/* Sección de búsqueda alineada a la izquierda */
-.search-section-left {
-    margin-bottom: 25px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #e1e8f0;
-}
-
-/* Contenedor del input de búsqueda */
-.search-input-container {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-}
-
-/* Input de búsqueda que ocupa todo el ancho disponible */
-.search-input-full {
-    flex: 1;
+.search-input {
     padding: 12px 16px;
     font-size: 14px;
     border: 1px solid #ccc;
     border-radius: 6px;
+    width: 350px;
     background-color: white;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.search-input-full:focus {
+.search-input:focus {
     outline: none;
-    border-color: #2c5aa0;
+    border-color: #002c6c;
     box-shadow: 0 0 0 2px rgba(44, 90, 160, 0.2);
-}
-
-/* Botón de búsqueda */
-.search-button {
-    flex-shrink: 0;
-    padding: 12px 16px;
-    height: auto;
-    min-width: 50px;
 }
 
 .form-row-simplified {
@@ -250,6 +227,7 @@ body {
 .button-icon {
     width: 16px;
     height: 16px;
+    /* Quita el filter si tu icono ya es blanco */
 }
 .btn-date {
     background: #f8f9fa;
@@ -469,6 +447,11 @@ body {
         gap: 25px;
     }
     
+    .search-input {
+        width: 100%;
+        max-width: 350px;
+    }
+    
     .form-actions-row {
         flex-direction: column;
         align-items: center;
@@ -558,58 +541,24 @@ body {
     transform: translateY(0);
 }
 
-/* Información de Exportación */
+/* 📊 Información de Exportación */
 .export-info-container {
     margin: 15px 0;
     animation: fadeIn 0.3s ease;
 }
 
 .export-info {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border-left: 4px solid #2196f3;
     border-radius: 8px;
     padding: 16px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-/* Variante para información de exportación (con resultados) */
-.export-info.has-results {
-    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
-    border-left: 4px solid #2196f3;
-    color: #1565c0;
-}
-
-/* Variante para mensaje de sin resultados */
-.export-info.no-results {
-    background: linear-gradient(135deg, #fff3e0 0%, #ffeaa7 100%);
-    border-left: 4px solid #ff9800;
-    color: #ef6c00;
-}
-
-.export-info strong {
-    font-weight: 600;
-    font-size: 1.05em;
 }
 
 .export-info small {
-    color: inherit;
-    opacity: 0.8;
+    color: #666;
     font-style: italic;
     line-height: 1.4;
-    margin-top: 4px;
-}
-
-/* Animación de aparición */
-@keyframes fadeIn {
-    from { 
-        opacity: 0; 
-        transform: translateY(-10px); 
-    }
-    to { 
-        opacity: 1; 
-        transform: translateY(0); 
-    }
 }
 
 /* 🔄 Animación del Spinner */
@@ -653,15 +602,89 @@ button[title]:hover::after {
         text-align: center;
     }
 }
-/* Layout del formulario para que coincida con la segunda imagen */
-
-/* Sección de búsqueda general (centrada) */
-.search-section {
+/* Radio buttons para operador de fecha */
+.radio-group {
     display: flex;
-    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.radio-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    color: #444;
+    transition: color 0.3s ease;
+}
+
+.radio-option:hover {
+    color: #2c5aa0;
+}
+
+.radio-option input[type="radio"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+    accent-color: #2c5aa0;
+}
+
+.radio-option span {
+    user-select: none;
+}
+
+/* Responsive para radio buttons */
+@media (max-width: 768px) {
+    .radio-group {
+        flex-direction: column;
+        gap: 8px;
+    }
+}
+
+/* Ajustes para la tabla de productos (más columnas) */
+.results-table {
+    min-width: 1600px; /* Aumentado por más columnas */
+}
+/* Sección de búsqueda alineada a la izquierda */
+.search-section-left {
     margin-bottom: 25px;
     padding-bottom: 20px;
     border-bottom: 1px solid #e1e8f0;
+}
+
+/* Contenedor del input de búsqueda */
+.search-input-container {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+/* Input de búsqueda que ocupa todo el ancho disponible */
+.search-input-full {
+    flex: 1;
+    padding: 12px 16px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    background-color: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.search-input-full:focus {
+    outline: none;
+    border-color: #2c5aa0;
+    box-shadow: 0 0 0 2px rgba(44, 90, 160, 0.2);
+}
+
+/* Botón de búsqueda */
+.search-button {
+    flex-shrink: 0;
+    padding: 12px 16px;
+    height: auto;
+    min-width: 50px;
 }
 
 /* Filas con 2 columnas */
@@ -672,69 +695,111 @@ button[title]:hover::after {
     margin-bottom: 20px;
 }
 
-/* Grupos de formulario */
-.form-group-inline {
+/* Fechas en rango compacto */
+.date-range {
+    display: flex;
+    gap: 15px;
+}
+
+.date-range-item {
+    flex: 1;
     display: flex;
     flex-direction: column;
     gap: 5px;
 }
 
-.form-group-inline label {
-    font-size: 13px;
-    font-weight: 600;
-    color: #444;
-    margin: 0;
-}
-
-/* Controles del formulario */
-.form-control {
-    padding: 10px 14px;
-    border: 1px solid #d0d7de;
-    border-radius: 4px;
-    font-size: 14px;
-    background-color: white;
+.date-input {
     width: 100%;
-    min-height: 20px;
 }
 
-.form-control:focus {
-    outline: none;
-    border-color: #2c5aa0;
-    box-shadow: 0 0 0 2px rgba(44, 90, 160, 0.2);
+/* Información de Exportación Mejorada */
+.export-info-container {
+    margin: 15px 0;
+    animation: fadeIn 0.3s ease;
 }
 
-/* Icono del botón */
-.button-icon {
-    width: 16px;
-    height: 16px;
+.export-info {
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
-/* Responsive para pantallas pequeñas */
+/* Variante para información de exportación (con resultados) */
+.export-info.has-results {
+    background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+    border-left: 4px solid #2196f3;
+    color: #1565c0;
+}
+
+/* Variante para mensaje de sin resultados */
+.export-info.no-results {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffeaa7 100%);
+    border-left: 4px solid #ff9800;
+    color: #ef6c00;
+}
+
+.export-info strong {
+    font-weight: 600;
+    font-size: 1.05em;
+}
+
+.export-info small {
+    color: inherit;
+    opacity: 0.8;
+    font-style: italic;
+    line-height: 1.4;
+    margin-top: 4px;
+}
+
+/* Responsive para las nuevas clases */
 @media (max-width: 768px) {
     .form-row-two-columns {
         grid-template-columns: 1fr;
         gap: 15px;
     }
     
-    .search-input {
+    .search-input-container {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .search-input-full {
         width: 100%;
-        max-width: 350px;
+    }
+    
+    .search-button {
+        width: 100%;
+    }
+    
+    .date-range {
+        flex-direction: column;
+        gap: 10px;
     }
 }
-/* CSS para el toast de instrucciones - Agregar a tu archivo global de estilos */
-::ng-deep .instructions-toast {
-  max-width: 500px !important;
-  width: 500px !important;
-}
 
-::ng-deep .instructions-toast .toast-message {
-  line-height: 1.6 !important;
-  font-size: 14px !important;
-  text-align: left !important;
-}
-
-::ng-deep .instructions-toast .toast-title {
-  font-size: 16px !important;
-  font-weight: 600 !important;
-  margin-bottom: 10px !important;
-}
+/* Ajuste específico de anchos para productos */
+.results-table th:nth-child(1),
+.results-table td:nth-child(1) { width: 120px; } /* GTIN */
+.results-table th:nth-child(2),
+.results-table td:nth-child(2) { width: 100px; } /* GTIN Status */
+.results-table th:nth-child(3),
+.results-table td:nth-child(3) { width: 120px; } /* Licence Key */
+.results-table th:nth-child(4),
+.results-table td:nth-child(4) { width: 80px; }  /* Licence Type */
+.results-table th:nth-child(5),
+.results-table td:nth-child(5) { width: 150px; } /* Brand Name */
+.results-table th:nth-child(6),
+.results-table td:nth-child(6) { width: 200px; } /* Product Description */
+.results-table th:nth-child(7),
+.results-table td:nth-child(7) { width: 100px; } /* Product Image */
+.results-table th:nth-child(8),
+.results-table td:nth-child(8) { width: 120px; } /* Net Content */
+.results-table th:nth-child(9),
+.results-table td:nth-child(9) { width: 150px; } /* Cliente */
+.results-table th:nth-child(10),
+.results-table td:nth-child(10) { width: 100px; } /* Prefijo */
+.results-table th:nth-child(11),
+.results-table td:nth-child(11) { width: 120px; } /* Fecha */

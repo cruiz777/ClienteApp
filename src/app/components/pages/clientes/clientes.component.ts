@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild} from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
 import { Router } from '@angular/router';
 import { MatTableDataSource } from '@angular/material/table';
@@ -11,6 +11,9 @@ import { DialogClienteComponent } from '../modals/dialog-cliente/dialog-cliente.
 import { ClienteService } from '../../../services/cliente.service';
 import { DialogClienteEditarComponent } from '../modals/dialog-cliente-editar/dialog-cliente-editar.component';
 import { MatIconModule } from '@angular/material/icon';
+import { LprefijoComponent } from './lprefijo/lprefijo.component';
+import { CustomMessageBoxComponent, MessageBoxData } from '../../utils/messages/custom-message-box.component';
+
 const ELEMENT_DATA: Cliente[] = [
   {
     clientes_codigo: 101,
@@ -18,9 +21,9 @@ const ELEMENT_DATA: Cliente[] = [
     dircli: "Av. Principal 123, Lima",
     ruc: "20456123456",
     fecing: "2021-05-15",
-    zonaReferencia:"Z01",
-    estadoNombre:"Afiliada",
-    prefijo:'7777'
+    zonaReferencia: "Z01",
+    estadoNombre: "Afiliada",
+    prefijo: '7777'
   }
 ];
 
@@ -31,19 +34,22 @@ const ELEMENT_DATA: Cliente[] = [
   styleUrls: ['./clientes.component.css']
 })
 export class ClientesComponent implements OnInit {
-  displayedColumns: string[] = ['clientes_codigo',  'nomcli','dircli','ruc','fecing','zonaReferencia','estadoNombre','prefijo','acciones'];
+  displayedColumns: string[] = ['clientes_codigo', 'nomcli', 'dircli', 'ruc', 'fecing', 'zonaReferencia', 'estadoNombre', 'prefijo', 'codpre', 'acciones'];
   dataSource = new MatTableDataSource(ELEMENT_DATA);
   selectedCliente: Cliente | null = null;
   @ViewChild(MatPaginator) paginator!: MatPaginator;
+  filtroGeneral: string = '';
+  filtroPrefijo: string = '';
 
   constructor(
     private dialog: MatDialog,
     private _snackBar: MatSnackBar,
-    private clienteService:ClienteService,
+    private clienteService: ClienteService,
     private clienteSeleccionadoService: ClienteSeleccionadoService,
-    private router: Router
+    private router: Router,
+
   ) {
-    }
+  }
 
   ngOnInit(): void {
     this.cargarClientes();
@@ -54,32 +60,81 @@ export class ClientesComponent implements OnInit {
     this.dataSource.paginator = this.paginator;
   }
 
-  cargarClientes(): void {
+ cargarClientes(): void {
+  const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+    disableClose: true,
+    data: {
+      title: 'Cargando Clientes...',
+      message: 'Por favor espere mientras se cargan los clientes.',
+      type: 'info',
+      isLoading: true,
+      loadingText: `Cargando página ...`,
+      showCancel: false
+    }
+  });
 
-    // Limpia primero la tabla visualmente
-    this.dataSource = new MatTableDataSource<Cliente>([]);
-this.dataSource.paginator = this.paginator;
+  this.dataSource = new MatTableDataSource<Cliente>([]);
+  this.dataSource.paginator = this.paginator;
 
-    this.clienteService.getClientes().subscribe({
-      next: (resp) => {
-        this.dataSource = new MatTableDataSource(resp);
-        this.dataSource.paginator = this.paginator;
-      },
-      error: (err) => {
-        console.error('Error al obtener clientes', err);
-        this.mostrarAlerta('No se pudieron cargar los clientes', 'Error');
-      }
-    });
-  }
+  this.clienteService.getClientes().subscribe({
+    next: (resp) => {
+      this.dataSource = new MatTableDataSource(resp);
+      this.dataSource.paginator = this.paginator;
+      loadingDialog.close(); // ✅ Cierra el diálogo después de cargar
+    },
+    error: (err) => {
+      console.error('Error al obtener clientes', err);
+      this.mostrarAlerta('No se pudieron cargar los clientes', 'Error');
+      loadingDialog.close(); // ✅ Cierra el diálogo si hay error
+    }
+  });
+}
+applyFilter(event: Event, inputPrefijo: HTMLInputElement) {
+  inputPrefijo.value = '';  // ✅ Borrar visualmente el otro campo
+  this.filtroPrefijo = '';
+
+  const input = (event.target as HTMLInputElement).value.trim().toLowerCase();
+  this.filtroGeneral = input;
+
+  this.aplicarFiltrosCombinados();
+}
+
+filtrarPorPrefijo(event: Event, inputGeneral: HTMLInputElement) {
+  inputGeneral.value = '';  // ✅ Borrar visualmente el otro campo
+  this.filtroGeneral = '';
+
+  const input = (event.target as HTMLInputElement).value.trim();
+  this.filtroPrefijo = input;
+
+  this.aplicarFiltrosCombinados();
+}
+
+
+aplicarFiltrosCombinados() {
+  this.dataSource.filterPredicate = (data: Cliente, filter: string) => {
+    const [filtroGeneral, filtroPrefijo] = filter.split('|');
+
+    const coincideGeneral =
+      data.nomcli?.toLowerCase().includes(filtroGeneral) ||
+      data.ruc?.toLowerCase().includes(filtroGeneral) ||
+      data.dircli?.toLowerCase().includes(filtroGeneral) ||
+      String(data.clientes_codigo).includes(filtroGeneral);
+
+    const prefijoSinEspacios = String(data.prefijo || '').replace(/\s/g, '');
+    const prefijosSeparados = prefijoSinEspacios.split('/');
+
+    const coincidePrefijo =
+      !filtroPrefijo || prefijosSeparados.includes(filtroPrefijo);
+
+    return coincideGeneral && coincidePrefijo;
+  };
+
+  this.dataSource.filter = `${this.filtroGeneral}|${this.filtroPrefijo}`;
+}
 
 
 
-  applyFilter(event: Event) {
-    const filterValue = (event.target as HTMLInputElement).value;
-    this.dataSource.filter = filterValue.trim().toLowerCase();
-  }
-
-  editarCliente(cliente:Cliente) {
+  editarCliente(cliente: Cliente) {
     this.dialog.open(DialogClienteEditarComponent, {
       width: '1200px', // Aumenta el ancho del diálogo
 
@@ -90,7 +145,7 @@ this.dataSource.paginator = this.paginator;
     }).afterClosed().subscribe(result => {
       if (result === "editado")
         this.cargarClientes(); // ✅ recarga la tabla
-       // this.mostrarAlerta('Cliente actualizado correctamente', 'Éxito');
+      // this.mostrarAlerta('Cliente actualizado correctamente', 'Éxito');
     });
   }
 
@@ -116,10 +171,25 @@ this.dataSource.paginator = this.paginator;
       duration: 3000
     });
   }
-seleccionarFila(cliente: Cliente) {
-  this.selectedCliente = cliente;
-  this.clienteSeleccionadoService.seleccionar(cliente);
-  this.router.navigate(['/menuProductos/clienteSeleccion']);
-}
+  seleccionarFila(cliente: Cliente) {
+    this.selectedCliente = cliente;
+    this.clienteSeleccionadoService.seleccionar(cliente);
+    this.router.navigate(['/menuProductos/clienteSeleccion']);
+  }
+  editarPrefijosCliente(cliente: Cliente): void {
+    this.dialog.open(LprefijoComponent, {
+      width: '670px',
+      height: '50vh',
+      maxHeight: '50vh',
+      disableClose: true,
+      data: cliente.clientes_codigo
+    }).afterClosed().subscribe(result => {
+      if (result === 'editado') {
+        this.cargarClientes();
+      }
+    });
+  }
+
+    
 
 }

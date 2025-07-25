@@ -86,7 +86,7 @@ export class JsonBloqueService {
     this.http.post(dapiP, vjson, { headers }).subscribe({
       next: (response: any) => {
         console.log('✅ Enviado lote a Verified:', response);
-        this.guardarArchivo(vjson);
+        //this.guardarArchivo(vjson);
       },
       error: (error) => {
         console.error('❌ Error al enviar JSON de lote:', error);
