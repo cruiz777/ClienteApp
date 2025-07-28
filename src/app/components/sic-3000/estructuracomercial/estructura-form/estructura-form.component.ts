@@ -6,6 +6,8 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 
+import { ApiResponse } from 'src/app/services/producto.service';
+
 import { EstructuraComercialService } from 'src/app/services/estructura-comercial.service'
 import { DivisionService } from 'src/app/services/division.service'
 import { SubdivisionService } from 'src/app/services/subdivision.service'
@@ -83,7 +85,8 @@ export class EstructuraFormComponent {
         const estructuraData: EstructuraComercialRequest = {
           id_estructura_comercial: this.idGeneral || 0,
           id_empresa: this.data?.idPadre || 1, // asumiendo empresaId = 1
-          descri: nombre
+          descri: nombre,
+          estado: true,
         };
         accion$ = this.idGeneral
           ? this.estructuraService.update(estructuraData)
@@ -94,7 +97,8 @@ export class EstructuraFormComponent {
         const divisionData: DivisionRequest = {
           id_division: this.idGeneral || 0,
           id_estructura_comercial: this.data?.idPadre,
-          descripcion: nombre
+          descripcion: nombre,
+          estado: true,
         };
         accion$ = this.idGeneral
           ? this.divisionService.update(divisionData)
@@ -105,7 +109,8 @@ export class EstructuraFormComponent {
         const subData: SubDivisionRequest = {
           id_subdivision: this.idGeneral || 0,
           id_division: this.data?.idPadre,
-          descripcion: nombre
+          descripcion: nombre,
+          estado: true,
         };
         accion$ = this.idGeneral
           ? this.subdivisionService.update(subData)
@@ -116,7 +121,8 @@ export class EstructuraFormComponent {
         const deptoData: DepartamentoRequest = {
           id_departamento: this.idGeneral || 0,
           id_sub_division: this.data?.idPadre,
-          descripcion: nombre
+          descripcion: nombre,
+          estado: true,
         };
         accion$ = this.idGeneral
           ? this.departamentoService.update(deptoData)
@@ -127,7 +133,8 @@ export class EstructuraFormComponent {
         const seccionData: SeccionRequest = {
           id_seccion: this.idGeneral || 0,
           id_departamento: this.data?.idPadre,
-          descripcion: nombre
+          descripcion: nombre,
+          estado: true,
         };
         accion$ = this.idGeneral
           ? this.seccionService.update(seccionData)
@@ -138,7 +145,8 @@ export class EstructuraFormComponent {
         const grupoData: GrupoRequest = {
           id_grupo: this.idGeneral || 0,
           id_seccion: this.data?.idPadre,
-          descripcion: nombre
+          descripcion: nombre,
+          estado: true,
         };
         accion$ = this.idGeneral
           ? this.grupoService.update(grupoData)
@@ -146,13 +154,17 @@ export class EstructuraFormComponent {
         break;
     }
 
-    // if (accion$) {
-    //   accion$.subscribe(res => {
-    //     if (res.success) {
-    //       this.dialogRef.close(true); // cerrar y notificar éxito
-    //     }
-    //   });
-    // }
+    if (accion$) {
+      accion$.subscribe((res: ApiResponse<boolean>) => {
+        if (res.data === true) {
+          if (res.data === true) {
+            this.dialogRef.close({ nuevoNombre: nombre });
+          }
+        }
+      });
+    }
+
+
   }
 
 

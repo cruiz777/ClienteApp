@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 
 import { MatDialog } from '@angular/material/dialog';
@@ -10,6 +10,8 @@ import { SubdivisionService } from 'src/app/services/subdivision.service'
 import { DepartamentoService } from 'src/app/services/departamento.service'
 import { SeccionService } from 'src/app/services/seccion.service'
 import { GrupoService } from 'src/app/services/grupo.service'
+
+@HostListener('document:click')
 
 @Component({
   selector: 'app-estructura-list',
@@ -181,9 +183,10 @@ export class EstructuraListComponent {
     if (!this.nodoSeleccionado) return;
 
     const tipo = this.nodoSeleccionado.tipo;
-    const idPadre = tipo === 'estructura' ? 1 : this.nodoSeleccionado.id;
+    // const idPadre = tipo === 'estructura' ? 1 : this.nodoSeleccionado.id;
 
     const siguienteNivel = this.obtenerTipoHijo(tipo);
+    const idPadre = this.nodoSeleccionado.id;
     if (!siguienteNivel) return;
 
     const dialogRef = this.dialog.open(EstructuraFormComponent, {
@@ -196,7 +199,9 @@ export class EstructuraListComponent {
 
     dialogRef.afterClosed().subscribe(resultado => {
       if (resultado === true) {
-        this.toggleExpand(this.nodoSeleccionado); // recargar hijos
+        this.nodoSeleccionado.hijos = [];
+        this.nodoSeleccionado.expandido = false;
+        setTimeout(() => this.toggleExpand(this.nodoSeleccionado), 0);
       }
     });
   }
@@ -228,7 +233,13 @@ export class EstructuraListComponent {
       }
     });
 
+    dialogRef.afterClosed().subscribe((resultado: { nuevoNombre?: string } | boolean | undefined) => {
+      if (resultado && typeof resultado === 'object' && resultado.nuevoNombre) {
+        this.nodoSeleccionado.nombre = resultado.nuevoNombre;
+      }
+    });
   }
+
 
   cargarEmpresas(): void {
     // Temporal: empresa fija para pruebas
@@ -268,6 +279,8 @@ export class EstructuraListComponent {
     if (!nodo || nodo.numnodos === undefined) return false;
     return this.getNivelPorTipo(nodo.tipo) < nodo.numnodos;
   }
-
+  onClickOutside(): void {
+    this.menuContextualVisible = false;
+  }
 
 }
