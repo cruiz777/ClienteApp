@@ -16,14 +16,18 @@ import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
 import { MatRadioModule } from '@angular/material/radio';
+import { MatSelectModule } from '@angular/material/select';
+import { MatOptionModule } from '@angular/material/core';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
+import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
 
 
 @NgModule({
    declarations: [
     InicioSicComponent,
     NavigationSicComponent,
-    RegistroCobrosComponent
+    RegistroCobrosComponent,
+    EstadocuentaclienteComponent
   ],
   imports: [
     CommonModule,
@@ -41,6 +45,9 @@ import { ReactiveFormsModule, FormsModule } from '@angular/forms';
     MatButtonModule,
     MatTableModule,
     MatRadioModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    MatOptionModule,
     Sic3000RoutingModule
   ]
 })
