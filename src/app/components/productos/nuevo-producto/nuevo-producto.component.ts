@@ -41,6 +41,7 @@ import { CartaComponent } from './carta/carta.component';
 import { CartaOficialComponent } from './carta-oficial/carta-oficial.component';
 import { MatDialog } from '@angular/material/dialog';
 import { CustomMessageBoxComponent, MessageBoxData } from '../../utils/messages/custom-message-box.component';
+import { ProductoRequests } from 'src/app/interfaces/requests/producto-filter-request';
 
 
 export const MY_DATE_FORMATS = {
@@ -523,8 +524,8 @@ export class NuevoProductoComponent implements OnInit {
         doc.text(producto.clienteNombres || 'EMPRESA DESCONOCIDA', 50, y); y += 10;
 
         doc.setFontSize(8).setFont('helvetica', 'normal');
-        doc.text('GS1 Ecuador (ECOP) certifica que los códigos GTIN...', 10, y); y += 5;
-        doc.text('El dueño de la marca del producto coloca el código...', 10, y); y += 5;
+        doc.text('GS1 Ecuador  (ECOP) certifica que los códigos GTIN que constan a continuación son auténticos y publicados en www.gs1ec.org Verified By Ecuador.', 10, y); y += 5;
+        doc.text('El dueño de la marca del producto coloca el código, es su resposabilidad el manejo y control del código, incluida su descripción y marca.', 10, y); y += 5;
         doc.text('El Prefijo Global de Compañía GS1, GCP, es intransferible.', 10, y); y += 5;
 
         doc.setFont('helvetica', 'bold');
@@ -919,7 +920,88 @@ private prepararParametrosReporte(): ReporteUnidadLogisticaParams {
       this.mostrarAlerta('❌ Ocurrió un error al generar la carta.', 'Error');
     }
   }
-  generarPdfGtinVenta(): void { /* ... */ }
+  async generarPdfGtinVenta(): Promise<void> {
+    if (!this.clienteSeleccionado?.clientes_codigo) {
+      this.mostrarAlerta('⚠️ No hay cliente seleccionado.', 'Advertencia');
+      return;
+    }
+
+    try {
+      this._snackBar.open('🔄 Generando reporte PDF GTIN Venta...', '', { duration: 2000 });
+
+      const codpro = this.formReporte.get('codigo')?.value;
+      const idPrefijos = this.formReporte.get('gcp')?.value;
+      const operador = this.formReporte.get('operadorFecha')?.value;
+
+      const estadoSeleccionado = this.formReporte.get('estado')?.value;
+      let activo: boolean | undefined;
+      if (estadoSeleccionado === true || estadoSeleccionado === '1') {
+        activo = true;
+      } else if (estadoSeleccionado === false || estadoSeleccionado === '0') {
+        activo = false;
+      }
+
+      let fechaDesde: Date | undefined;
+      let fechaHasta: Date | undefined;
+
+      if (operador === 'igual') {
+        const fecha = this.formReporte.get('fecha')?.value;
+        fechaDesde = fechaHasta = fecha;
+      } else if (operador === 'mayor') {
+        fechaDesde = this.formReporte.get('fecha')?.value;
+      } else if (operador === 'menorIgual') {
+        fechaHasta = this.formReporte.get('fecha')?.value;
+      } else if (operador === 'entre') {
+        fechaDesde = this.formReporte.get('desde')?.value;
+        fechaHasta = this.formReporte.get('hasta')?.value;
+      }
+
+      const request: ProductoRequests = {
+        codpro,
+        idPrefijos,
+        fechaDesde,
+        fechaHasta,
+        activo
+      };
+
+      console.log('Enviando request:', JSON.stringify(request));
+
+      const respuesta = await firstValueFrom(this.productoService.getProductosFiltrados(request));
+      
+      if (!respuesta.productos || respuesta.productos.length === 0) {
+        this.mostrarAlerta('⚠️ No se encontraron productos para exportar', 'Advertencia');
+        return;
+      }
+
+      // Usar directamente los datos sin mapear - formato específico para GTIN Venta
+      const headerInfo = {
+        codigoEmpresa: respuesta.cliente?.gs1 || '---',
+        nombreEmpresa: respuesta.cliente?.nombreCliente || '---',
+        ruc: respuesta.cliente?.ruc || '---',
+        gln: respuesta.cliente?.gln || '---',
+        fechaEmision: new Date().toLocaleDateString('es-EC')
+      };
+
+      const exportOptions = {
+        data: respuesta.productos, // Usar directamente ProductoResponse[]
+        filename: 'Reporte_GTIN_UV',
+        headerInfo: headerInfo
+      };
+
+      await this.gs1ExportService.exportarPDFGtinVenta(exportOptions);
+      
+      this._snackBar.open('✅ PDF GTIN Venta generado correctamente', 'Cerrar', { 
+        duration: 3000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top' 
+      });
+
+    } catch (error) {
+      console.error('Error al generar PDF GTIN Venta:', error);
+      this.mostrarAlerta('❌ Error al generar el PDF', 'Error');
+    }
+  }
+
   /**
  * Aplana los datos del JSON para el formato de tabla requerido por ExportService
  */
@@ -1373,12 +1455,87 @@ exportar(): void {
     this.mostrarAlerta('Debe seleccionar un reporte o certificado para imprimir.', 'Advertencia');
   }
 }
-/**
- * Placeholders para futuros reportes Excel
- */
-generarExcelGtinVenta(): void {
-  this.mostrarAlerta('Excel para GTIN Venta en desarrollo.', 'Info');
-  // TODO: Implementar cuando sea necesario
+
+  async generarExcelGtinVenta(): Promise<void> {
+  if (!this.clienteSeleccionado?.clientes_codigo) {
+    this.mostrarAlerta('⚠️ No hay cliente seleccionado.', 'Advertencia');
+    return;
+  }
+
+  try {
+    this._snackBar.open('🔄 Generando reporte Excel GTIN Venta...', '', { duration: 2000 });
+
+    const codpro = this.formReporte.get('codigo')?.value;
+    const idPrefijos = this.formReporte.get('gcp')?.value;
+    const operador = this.formReporte.get('operadorFecha')?.value;
+
+    const estadoSeleccionado = this.formReporte.get('estado')?.value;
+    let activo: boolean | undefined;
+    if (estadoSeleccionado === true || estadoSeleccionado === '1') {
+      activo = true;
+    } else if (estadoSeleccionado === false || estadoSeleccionado === '0') {
+      activo = false;
+    }
+
+    let fechaDesde: Date | undefined;
+    let fechaHasta: Date | undefined;
+
+    if (operador === 'igual') {
+      const fecha = this.formReporte.get('fecha')?.value;
+      fechaDesde = fechaHasta = fecha;
+    } else if (operador === 'mayor') {
+      fechaDesde = this.formReporte.get('fecha')?.value;
+    } else if (operador === 'menorIgual') {
+      fechaHasta = this.formReporte.get('fecha')?.value;
+    } else if (operador === 'entre') {
+      fechaDesde = this.formReporte.get('desde')?.value;
+      fechaHasta = this.formReporte.get('hasta')?.value;
+    }
+
+    const request: ProductoRequests = {
+      codpro,
+      idPrefijos,
+      fechaDesde,
+      fechaHasta,
+      activo
+    };
+
+    console.log('Enviando request:', JSON.stringify(request));
+
+    const respuesta = await firstValueFrom(this.productoService.getProductosFiltrados(request));
+    
+    if (!respuesta.productos || respuesta.productos.length === 0) {
+      this.mostrarAlerta('⚠️ No se encontraron productos para exportar', 'Advertencia');
+      return;
+    }
+
+    // Usar directamente los datos sin mapear - formato específico para GTIN Venta
+    const headerInfo = {
+      codigoEmpresa: respuesta.cliente?.gs1 || '---',
+      nombreEmpresa: respuesta.cliente?.nombreCliente || '---',
+      ruc: respuesta.cliente?.ruc || '---',
+      gln: respuesta.cliente?.gln || '---',
+      fechaEmision: new Date().toLocaleDateString('es-EC')
+    };
+
+    const exportOptions = {
+      data: respuesta.productos, // Usar directamente ProductoResponse[]
+      filename: 'Reporte_GTIN_UV',
+      headerInfo: headerInfo
+    };
+
+    await this.gs1ExportService.exportarExcelGtinVenta(exportOptions);
+    
+    this._snackBar.open('✅ Excel GTIN Venta generado correctamente', 'Cerrar', { 
+      duration: 3000,
+      horizontalPosition: 'end',
+      verticalPosition: 'top' 
+    });
+
+  } catch (error) {
+    console.error('Error al generar Excel GTIN Venta:', error);
+    this.mostrarAlerta('❌ Error al generar el Excel', 'Error');
+  }
 }
 
 nuevo()

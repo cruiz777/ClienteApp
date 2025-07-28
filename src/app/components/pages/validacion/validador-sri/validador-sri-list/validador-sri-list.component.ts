@@ -12,6 +12,8 @@ import { ExportService } from 'src/app/services/export.service';
 import * as moment from 'moment';
 import { ValidacionService } from 'src/app/services/validacion.service';
 import { UpdateClienteRequest } from 'src/app/interfaces/requests/update-cliente-request';
+import { PageEvent } from '@angular/material/paginator';
+import { ClienteBasicoResponse } from 'src/app/interfaces/responses/cliente-validar-response';
 
 type ClienteValidacionExtendido = ClienteIndividual & {
   ciudad: string;
@@ -35,6 +37,11 @@ export class ValidacionSriListComponent implements OnInit {
   actualizarSeleccionados: { [codigo: number]: boolean } = {};
   marcarTodos: boolean = false;
   numeroRegistros = 0;
+
+  currentPage: number = 0; // Material usa 0-based index
+  pageSize: number = 50;
+  totalItems: number = 0;
+  pageSizeOptions: number[] = [10, 25, 50, 100];
 
   letraFiltro: string = '';
   estadoFiltro: string = '';
@@ -100,44 +107,60 @@ export class ValidacionSriListComponent implements OnInit {
       ? this.exportService.exportarExcel(options)
       : this.exportService.exportarPDF(options);
   }
+  
+  onPageChange(event: PageEvent): void {
+    this.currentPage = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.cargarDatos();
+  }
+  private mapearClienteBasico(cliente: ClienteBasicoResponse): ClienteValidacionExtendido {
+    return {
+      clientes_codigo: cliente.cliente_codigo,
+      nomcli: cliente.razon_social,
+      ruc: cliente.ruc,
+      representante: cliente.representante,
+      idEstadoEmpresa: cliente.estado_empresa,
+      ciudad: cliente.ciudad,
+      canton: cliente.canton,
+      provincia: cliente.provincia,
+      zonaNombre: cliente.zona,
+      fecnac: cliente.fecha_inicio,
+      fechaCeseAct: undefined,
+      motivoCeseAct: undefined,
+      validacionSRI: undefined,
+      
+      // Campos adicionales requeridos por ClienteIndividual
+      dircli: '',
+      concli: '',
+      email: '',
+      telefono: '',
+      telefono1: '',
+      razonSocial: cliente.razon_social,
+      fax: '',
+      fecing: undefined,
+      idCiudad: 0,
+      idZona: 0,
+    } as unknown as ClienteValidacionExtendido;
+  }
   cargarDatos(): void {
-    const dialogRef = this.mostrarCargando('Cargando datos', 'Espere mientras se cargan los datos de clientes y ciudades...');
-
-    this.ciudadService.getCiudades().subscribe({
-      next: (ciudades) => {
-        this.ciudades = ciudades;
-
-        this.clienteService.getClientesDetalles().subscribe({
-          next: (clientes) => {
-            this.clientes = clientes
-              .filter(c => Number(c.idEstadoEmpresa) === 1)
-              .map(cliente => {
-              const ciudadInfo = this.ciudades.find(c => c.id === cliente.idCiudad);
-              const zonaNombre = cliente.idZona ? `ZONA ${cliente.idZona}` : '';
-              return {
-                ...cliente,
-                ciudad: ciudadInfo?.ciudad ?? '',
-                canton: ciudadInfo?.canton ?? '',
-                provincia: ciudadInfo?.provincia ?? '',
-                zonaNombre
-              };
-            });
-            this.seleccionados = {};
-            this.actualizarSeleccionados = {};
-            this.marcarTodos = false;
-
-            this.aplicarFiltros();
-            dialogRef.close();
-          },
-          error: () => {
-            dialogRef.close();
-            this.mostrarError('Error de carga', 'Ocurrió un error al cargar los clientes.');
-          }
-        });
+    const dialogRef = this.mostrarCargando('Cargando datos', 'Espere...');
+    
+    // Angular Material usa 0-based, pero tu API usa 1-based
+    const pageForApi = this.currentPage + 1;
+    
+    this.validacionService.getClientesBasicos(pageForApi, this.pageSize).subscribe({
+      next: (response) => {
+        if (response.type === 'success' && response.data) {
+          this.clientes = response.data.items.map(cliente => this.mapearClienteBasico(cliente));
+          this.totalItems = response.data.totalItems;
+          this.numeroRegistros = this.totalItems;
+          this.aplicarFiltros();
+          dialogRef.close();
+        }
       },
-      error: () => {
+      error: (error) => {
         dialogRef.close();
-        this.mostrarError('Error de carga', 'Ocurrió un error al cargar las ciudades.');
+        this.mostrarError('Error de carga', 'Ocurrió un error al cargar los clientes.');
       }
     });
   }
@@ -160,8 +183,7 @@ export class ValidacionSriListComponent implements OnInit {
         cliente.ruc?.toLowerCase().includes(texto) ||
         cliente.representante?.toLowerCase().includes(texto)
       );
-      const rucValido = /^\d{13}$/.test(cliente.ruc ?? '');
-      return coincideLetra  && coincideZona && coincideBusqueda && rucValido;
+      return coincideLetra  && coincideZona && coincideBusqueda;
     });
 
     this.numeroRegistros = this.clientesFiltrados.length;
@@ -204,7 +226,7 @@ export class ValidacionSriListComponent implements OnInit {
 
     const loadingRef = this.mostrarCargando('Validando Registros', 'Por favor espere...');
 
-    this.clienteService.validarMasivo(seleccionadosIds).subscribe({
+    this.validacionService.validarMasivo(seleccionadosIds).subscribe({
       next: (res) => {
         res.data.forEach(validado => {
           const cliente = this.clientes.find(c => c.clientes_codigo === validado.clienteId);
@@ -226,7 +248,7 @@ export class ValidacionSriListComponent implements OnInit {
   validarUno(clienteId: number): void {
     const loadingRef = this.mostrarCargando('Validando Cliente', 'Espere mientras se valida el cliente...');
 
-    this.clienteService.validarUno(clienteId).subscribe({
+    this.validacionService.validarUno(clienteId).subscribe({
       next: (res) => {
         const cliente = this.clientes.find(c => c.clientes_codigo === clienteId);
         if (cliente && res.data) {
