@@ -1,3 +1,4 @@
+import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
 import { EstructuraListComponent } from './estructuracomercial/estructura-list/estructura-list.component';
 import { NgModule, Component } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
@@ -15,6 +16,7 @@ const routes: Routes = [
       { path: 'inicio-sic', component: InicioSicComponent },
       { path: 'estructura-list', component: EstructuraListComponent },
       { path: 'registroCobros', component: RegistroCobrosComponent },
+      { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
     ]
 
   }
