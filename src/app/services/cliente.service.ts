@@ -14,12 +14,14 @@ interface ClienteResponse {
   type: string;
   data: Cliente[];
   message: string;
+  total: number; 
 }
 interface ClienteDetalleResponse {
   id: string;
   type: string;
   data: ClienteIndividual;
   message: string;
+  
 }
 export interface ClienteIndividual {
   clientes_codigo: number;
@@ -102,6 +104,13 @@ export interface ClienteUpdateRequest {
   fechaCeseAct?: string;
   motivoCeseAct?: string;
 }
+export interface ClienteFiltro {
+  clienteBusqueda?:number;
+  nombreBusqueda?: string;
+  rucBusqueda?: string;
+  prefijoBusqueda?: string;
+}
+
 
 @Injectable({
   providedIn: 'root'
@@ -109,17 +118,26 @@ export interface ClienteUpdateRequest {
 export class ClienteService {
   private apiBaseUrl = environment.clientsUrl;
   //private apiValid = environment.validationUrl; 
-  private apiUrl = `${this.apiBaseUrl}/resumen/`;
+  private apiUrl = `${this.apiBaseUrl}/Clientes/resumen/`;
   private apiUrlA = `${this.apiBaseUrl}/Clientes/`;
 
   constructor(private http: HttpClient) { }
 
-  getClientes(): Observable<Cliente[]> {
+getClientes(
+  pageNumber: number,
+  pageSize: number,
+  filtros: { busquedaGeneral?: string, prefijoBusqueda?: string }
+): Observable<{ data: Cliente[], count: number }> {
+  const params: any = {
+    pageNumber,
+    pageSize,
+    ...filtros
+  };
 
-    return this.http.get<ClienteResponse>(this.apiUrl).pipe(
-      map(response => response.data)
-    );
-  }
+  return this.http.get<{ data: Cliente[], count: number }>(`${this.apiUrl}`, { params });
+}
+
+
   guardarCliente(data: any): Observable<any> {
     return this.http.post(`${this.apiBaseUrl}/Clientes`, data);
 
