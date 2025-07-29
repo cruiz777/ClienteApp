@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { 
   ProductoUnidadLogisticaCompleteResponse, 
   ProductoUnidadLogisticaResponse, 
@@ -14,6 +14,9 @@ import {
 } from '../interfaces/responses/producto-reporte-response';
 import { ApiListResponse } from '../interfaces/responses/ApiListResponse';
 import { environment } from 'src/environments/environment';
+import { ProductoRequests } from '../interfaces/requests/producto-filter-request';
+import { ClienteConProductosResponse } from '../interfaces/responses/producto-filter-response';
+import { ApiResponse } from '../interfaces/responses/api-response';
 
 @Injectable({
   providedIn: 'root'
@@ -498,6 +501,12 @@ export class ReporteUnidadLogisticaService {
     return errors;
   }
 
+  
+  getProductosFiltrados(request: ProductoRequests): Observable<ClienteConProductosResponse> {
+    return this.http
+      .post<ApiResponse<ClienteConProductosResponse>>(`${this.baseUrl}/Producto/filtrar`, request)
+      .pipe(map(response => response.data!));
+  }
   // ========================================
   // MÉTODOS UTILITARIOS
   // ========================================

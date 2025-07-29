@@ -160,21 +160,6 @@ getClientes(
     return this.http.put(`${this.apiBaseUrl}/Clientes/${id}`, request);
   }
 
-  // ✅ Validación Masiva
-  validarMasivo(clienteIds: number[]): Observable<ApiResponse<ClienteValidadoResultadoDTO[]>> {
-    return this.http.post<ApiResponse<ClienteValidadoResultadoDTO[]>>(`${this.apiBaseUrl}/Clientes/validar-masivo`, clienteIds);
-  }
-
-  // ✅ Validación Unitaria
-  validarUno(clienteId: number): Observable<ApiResponse<ClienteValidadoDTO>> {
-    return this.http.post<ApiResponse<ClienteValidadoDTO>>(
-      `${this.apiBaseUrl}/Clientes/validar`,
-      clienteId, // ✅ pasar el número directamente
-      {
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
-  }
   // Método adicional para obtener todos los clientes con datos completos
   getClientesDetalles(): Observable<ClienteIndividual[]> {
     const url = `${this.apiBaseUrl}/Clientes`;
