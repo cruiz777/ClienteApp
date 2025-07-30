@@ -6,22 +6,36 @@
 <!-- TAB LISTADO -->
 <ng-container *ngIf="activeTab === 'Listado'">
   <div class="toolbar">
-    <label>Total de registros: <strong>{{ filtrarRegistros().length }}</strong></label>
+    <label>Total de registros: <strong>{{ totalRegistros | number  }}</strong></label>
 
     <mat-form-field appearance="outline">
-      <mat-label>Prefijo</mat-label>
-      <input matInput [(ngModel)]="filtroPrefijo">
-    </mat-form-field>
+  <mat-label>Prefijo</mat-label>
+  <mat-select [(ngModel)]="prefijo" (selectionChange)="onSeleccionPrefijo($event.value)">
+    <mat-option *ngFor="let pref of prefijos" [value]="pref.codpre">
+      {{ pref.codpre }}
+    </mat-option>
+  </mat-select>
+</mat-form-field>
+
 
     <mat-form-field appearance="outline">
-      <mat-label>Buscar</mat-label>
-      <input matInput [(ngModel)]="busqueda">
-    </mat-form-field>
+  <mat-label>Buscar</mat-label>
+  <input matInput [(ngModel)]="busqueda1" (keyup.enter)="buscarProductos()"  />
+</mat-form-field>
+
 
     <mat-form-field appearance="outline">
-      <mat-label>Mostrar</mat-label>
-      <input matInput type="number" [(ngModel)]="cantidadMostrar">
-    </mat-form-field>
+  <mat-label>Mostrar</mat-label>
+  <input
+    matInput
+    type="number"
+    [(ngModel)]="cantidadMostrar"
+    (change)="onChangePageSize()"
+    min="1"
+/>
+</mat-form-field>
+
+
 
     <button mat-raised-button color="primary" (click)="irAUvIndividual()">Ingresar UV</button>
     <button mat-raised-button color="accent" (click)="abrirVentanaUl()">Ingresar UL</button>
@@ -29,12 +43,19 @@
     <button mat-raised-button color="warn" (click)="salir()">Salir</button>
   </div>
 
-  <!-- Tabla AG-Grid para UV -->
-  <ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 400px; margin-top: 10px;"
-    [gridOptions]="gridOptions" [rowData]="filtrarRegistros().slice(0, cantidadMostrar)" [columnDefs]="columnDefsUV"
-    [defaultColDef]="defaultColDef" rowSelection="single" (gridReady)="onGridReady($event)"
-    (rowClicked)="manejarClic($event.data)">
-  </ag-grid-angular>
+<!-- No uses filtrarRegistros si ya viene filtrado -->
+<ag-grid-angular
+  class="ag-theme-alpine"
+  style="width: 100%; height: 400px; margin-top: 10px;"
+  [gridOptions]="gridOptions"
+  [rowData]="registros"
+  [columnDefs]="columnDefsUV"
+  [defaultColDef]="defaultColDef"
+  rowSelection="single"
+  (gridReady)="onGridReady($event)"
+  (rowClicked)="manejarClic($event.data)">
+</ag-grid-angular>
+
 
 
 
@@ -156,17 +177,13 @@
           <button mat-button (click)="nuevo()">Nuevo</button>
 
           <!-- Imprimir: Bloqueado para "completo" -->
-          <button mat-button
-                  (click)="imprimir()"
-                  [disabled]="!imprimirHabilitado"
-                  [title]="formReporte.get('reporte')?.value === 'completo' ? 'Use Excel para reporte completo' : ''">
+          <button mat-button (click)="imprimir()" [disabled]="!imprimirHabilitado"
+            [title]="formReporte.get('reporte')?.value === 'completo' ? 'Use Excel para reporte completo' : ''">
             Imprimir
           </button>
 
           <!-- Excel: Habilitado para todos los reportes -->
-          <button mat-button
-                  (click)="exportarExcel()"
-                  [disabled]="!excelHabilitado">
+          <button mat-button (click)="exportarExcel()" [disabled]="!excelHabilitado">
             Excel
           </button>
 
