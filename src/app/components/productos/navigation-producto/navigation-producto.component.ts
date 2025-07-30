@@ -3,7 +3,7 @@ import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { Router } from '@angular/router';
 import { Cliente } from 'src/app/interfaces/cliente';
 import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
-
+import { UsuarioService } from 'src/app/services/usuario.service';
 @Component({
   selector: 'app-navigation-producto',
   templateUrl: './navigation-producto.component.html',
@@ -19,11 +19,14 @@ export class NavigationProductoComponent implements OnInit {
     'clientes_codigo', 'nomcli', 'dircli', 'ruc', 'fecing',
     'zonaReferencia', 'estadoNombre'
   ];
-
+usuarioActual : any;
   constructor(
     private clienteSeleccionadoService: ClienteSeleccionadoService,
-    private router: Router
-  ) {}
+    private router: Router,
+    private usuarioService:UsuarioService
+  ) {
+    this.usuarioActual = this.usuarioService.getUsuarioActual();
+  }
 
   ngOnInit(): void {
     this.clienteSeleccionadoService.clienteSeleccionado$.subscribe(cliente => {

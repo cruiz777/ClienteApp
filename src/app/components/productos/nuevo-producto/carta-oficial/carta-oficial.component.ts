@@ -60,7 +60,7 @@ async generarCartaPDF(): Promise<void> {
   doc.text('GLN', margenX + 100, y);
   y += 7;
 
-  doc.setFont('Times', 'Normal');
+  doc.setFont('Times', 'Bold');
   doc.text(this.gcp, margenX + 40, y);
   doc.text(this.gln, margenX + 100, y);
   y += 15;

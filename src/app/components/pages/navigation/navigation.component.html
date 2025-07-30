@@ -36,7 +36,7 @@
         </div>
       </mat-list-item>
 
-      <mat-list-item routerLink="/pages/explorador-clientes" class="menu-item-nav">
+      <mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/pages/explorador-clientes" class="menu-item-nav">
         <div class="menu-item">
           <img src="assets/icons/Ecop-explorador-clientes.png" class="menu-icon">
           <span *ngIf="isExpanded" class="menu-text">Explorador de Cliente</span>
@@ -66,12 +66,14 @@
   <mat-sidenav-content [ngClass]="isExpanded ? 'content-default' : 'content-collapsed'">
     <router-outlet></router-outlet>
     <footer class="app-footer" [ngClass]="{ 'footer-collapsed': !isExpanded && !isHandset }">
-      <div class="footer-left">{{ currentDateTime }}</div>
-      <div class="footer-center">
-        <img src="assets/logo/logo-gap.png" alt="GAP System" class="footer-logo">
-        <span class="footer-phone">Telf: 099 970 0288 / 022 464 951</span>
-      </div>
-    </footer>
+  <div class="footer-left">{{ currentDateTime }}</div>
+  <div class="footer-center">
+    <img src="assets/logo/logo-gap.png" alt="GAP System" class="footer-logo">
+    <span class="footer-phone">Telf: 099 970 0288 / 022 464 951</span>
+  </div>
+  <div class="footer-right">{{ usuarioActual?.nombre_usuario }}</div>
+</footer>
+
   </mat-sidenav-content>
 
 </mat-sidenav-container>

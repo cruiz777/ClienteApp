@@ -24,14 +24,16 @@ export class InicioComponent implements OnInit, OnDestroy {
     private empresaService: EmpresaService,
     private usuarioService: UsuarioService,
     private router: Router
-  ) { }
+  ) { 
+    this.usuarioActual = this.usuarioService.getUsuarioActual();
+  }
 
   currentIndex = 0;
   intervalId: any;
   logoUrl: string = '';
   usuario: LoginUsuarioResponse | null = null;
   showPanel = false;
-
+  usuarioActual:any;
   ngOnInit() {
     this.startCarousel();
     this.usuario = this.usuarioService.getUsuarioActual();

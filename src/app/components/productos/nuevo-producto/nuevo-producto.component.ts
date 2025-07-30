@@ -510,7 +510,7 @@ export class NuevoProductoComponent implements OnInit {
         doc.text('Sistema de Control de Códigos', 105, y, { align: 'center' }); y += 8;
         doc.text('Reporte de Ficha Producto', 105, y, { align: 'center' }); y += 10;
 
-        doc.setFontSize(10).setFont('helvetica', 'normal');
+        doc.setFontSize(9).setFont('helvetica', 'normal');
         const fecha = this.formatearFecha(new Date().toISOString());
         const ruc = this.clienteSeleccionado?.ruc || '---';
         doc.text('Emisor :', xLabel, y); doc.text('GS1', xValue, y); y += 5;
@@ -555,15 +555,15 @@ export class NuevoProductoComponent implements OnInit {
           doc.line(10, y, 200, y); y += 6;
           doc.text('GTIN-14', 10, y);
           doc.text('Descripción', 45, y);
-          doc.text('Presentación', 110, y);
-          doc.text('Factor', 150, y); y += 5;
+          doc.text('Presentación', 170, y);
+          doc.text('Factor', 190, y); y += 5;
           doc.setLineWidth(0.1).line(10, y, 200, y); y += 4;
           doc.setFont('helvetica', 'normal');
           for (const reg of this.registrosGtin14) {
             doc.text(reg.g14, 10, y);
             doc.text(reg.descripcion || '---', 45, y);
-            doc.text(reg.presentacion?.toString() || '-', 110, y);
-            doc.text(reg.factor?.toString() || '-', 150, y);
+            doc.text(reg.presentacion?.toString() || '-', 180, y);
+            doc.text(reg.factor?.toString() || '-', 190, y);
             y += 5;
             if (y > 270) { doc.addPage(); y = 10; }
           }
@@ -1552,136 +1552,170 @@ nuevo()
     estado: '1'                   // Activo
   });
 }
-
 async exportarExcelCompleto(productos: any[]): Promise<void> {
-    const fechaActual = new Date();
-    const nombreArchivo = `ReporteCompleto-${this.clienteSeleccionado?.nomcli}-${format(fechaActual, 'yyyy-MM-dd-HH-mm')}.xlsx`;
-    this.cdRef.detectChanges();
+  const fechaActual = new Date();
+  const nombreArchivo = `ReporteCompleto-${this.clienteSeleccionado?.nomcli}-${format(fechaActual, 'yyyy-MM-dd-HH-mm')}.xlsx`;
+  this.cdRef.detectChanges();
 
-    const idSeleccionado = this.formReporte.value.gcp;
-    if (!idSeleccionado) {
-      this.mostrarAlerta('⚠️ Debe seleccionar un Prefijo primero.', 'Advertencia');
-      return;
-    }
+  const idSeleccionado = this.formReporte.value.gcp;
+  if (!idSeleccionado) {
+    this.mostrarAlerta('⚠️ Debe seleccionar un Prefijo primero.', 'Advertencia');
+    return;
+  }
 
-    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
-    const codpre = objeto?.codpre || '';
-    let prefijo: any = null;
+  const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+  const codpre = objeto?.codpre || '';
+  let prefijo: any = null;
 
-    if (codpre) {
-      try {
-        const data = await firstValueFrom(this.prefijoService.buscarPorCodpre(codpre));
-        if (data && data.length > 0) {
-          prefijo = data[0];
-        } else {
-          this.mostrarAlerta('⚠️ No se encontró información para el código de prefijo.', 'Advertencia');
-          return;
-        }
-      } catch (error) {
-        console.error('Error al buscar prefijo:', error);
-        this.mostrarAlerta('❌ Error al buscar el prefijo.', 'Error');
+  if (codpre) {
+    try {
+      const data = await firstValueFrom(this.prefijoService.buscarPorCodpre(codpre));
+      if (data && data.length > 0) {
+        prefijo = data[0];
+      } else {
+        this.mostrarAlerta('⚠️ No se encontró información para el código de prefijo.', 'Advertencia');
         return;
       }
+    } catch (error) {
+      console.error('Error al buscar prefijo:', error);
+      this.mostrarAlerta('❌ Error al buscar el prefijo.', 'Error');
+      return;
     }
-
-    const workbook = new ExcelJS.Workbook();
-    const worksheet = workbook.addWorksheet('Productos');
-
-    const sectorMap: { [key: string]: string } = {
-      '1': 'Salud',
-      '2': 'Retail',
-      '3': 'Otro',
-      '4': 'Alimentos'
-    };
-
-    // 👉 Logo GS1
-    const logoBlob = await fetch('assets/logo/GS1-logo.png').then(res => res.blob());
-    const logoBuffer = await logoBlob.arrayBuffer();
-    const imageId = workbook.addImage({
-      buffer: logoBuffer,
-      extension: 'png'
-    });
-
-    worksheet.addImage(imageId, {
-      tl: { col: 2, row: 0 },
-      ext: { width: 120, height: 60 }
-    });
-
-    // 👉 Encabezado institucional
-    worksheet.mergeCells('B1:E1');
-    worksheet.getCell('B1').value = 'SISTEMA DE CONTROL DE CÓDIGOS';
-    worksheet.getCell('B1').font = { bold: true, size: 14 };
-
-    worksheet.mergeCells('B2:E2');
-    worksheet.getCell('B2').value = 'REPORTE DE PRODUCTOS CODIFICADOS';
-    worksheet.getCell('B2').font = { bold: true, size: 12 };
-
-    worksheet.getCell('B4').value = this.clienteSeleccionado?.nomcli || '';
-    worksheet.getCell('B4').font = { bold: true };
-    worksheet.getCell('C4').value = prefijo?.prefijosgs1 || '';
-
-    worksheet.getCell('B6').value = 'RUC:';
-    worksheet.getCell('C6').value = this.clienteSeleccionado?.ruc || '';
-
-    worksheet.getCell('B7').value = 'GLN:';
-    worksheet.getCell('C7').value = prefijo?.gln || '';
-
-    worksheet.getCell('B8').value = 'Emisor:';
-    worksheet.getCell('C8').value = 'GS1 Ecuador';
-
-    worksheet.getCell('B9').value = 'Fecha emisión :';
-    worksheet.getCell('C9').value = format(fechaActual, 'dd/MM/yyyy');
-
-    // 👉 Cabeceras con columna #
-    const headers = [
-      '#', 'GTIN UV', 'DESCRIPCIÓN', 'MARCA',
-      'CONTENIDO NETO', 'UNIDAD DE MEDIDA', 'CATEGORÍA',
-      'DESCRIPCION EGORÍA', 'GCP BRICK', 'PAIS',
-      'URL', 'SECTOR', 'OBSERVACION', 'FECHA', 'P.:'
-    ];
-
-    worksheet.addRow([]);
-    worksheet.addRow(headers).font = { bold: true };
-
-    // 👉 Filas de productos con numeración
-    productos.forEach((p, i) => {
-      worksheet.addRow([
-        i + 1, // Número de línea
-        p.codbar,
-        p.Despro,
-        p.marca,
-        p.contenido,
-        p.unidad,
-        p.codigoproducto,
-        p.dbrick,
-        p.brick,
-        p.pais,
-        p.url,
-        sectorMap[p.sector] || 'No definido',
-        p.Obs,
-        p.Feccre ? format(new Date(p.Feccre), 'dd/MM/yyyy') : '',
-        p.p
-      ]);
-    });
-
-    // 👉 Autoajustar columnas
-    worksheet.columns.forEach(column => {
-      if (!column) return;
-      let maxLength = 10;
-      column.eachCell?.({ includeEmpty: true }, cell => {
-        const length = cell.value ? cell.value.toString().length : 0;
-        maxLength = Math.max(maxLength, length);
-      });
-      column.width = maxLength + 2;
-    });
-
-    // 👉 Exportar
-    const buffer = await workbook.xlsx.writeBuffer();
-    const blob = new Blob([buffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    });
-    FileSaver.saveAs(blob, nombreArchivo);
   }
+
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Productos');
+
+  const sectorMap: { [key: string]: string } = {
+    '1': 'Salud',
+    '2': 'Retail',
+    '3': 'Otro',
+    '4': 'Alimentos'
+  };
+
+  // 👉 Logo GS1
+  const logoBlob = await fetch('assets/logo/GS1-logo.png').then(res => res.blob());
+  const logoBuffer = await logoBlob.arrayBuffer();
+  const imageId = workbook.addImage({
+    buffer: logoBuffer,
+    extension: 'png'
+  });
+
+  worksheet.addImage(imageId, {
+    tl: { col: 6, row: 0 },
+    ext: { width: 120, height: 60 }
+  });
+
+  // 👉 Encabezado institucional
+  worksheet.mergeCells('B1:E1');
+  worksheet.getCell('B1').value = 'SISTEMA DE CONTROL DE CÓDIGOS';
+  worksheet.getCell('B1').font = { bold: true, size: 14 };
+
+  worksheet.mergeCells('B2:E2');
+  worksheet.getCell('B2').value = 'REPORTE DE PRODUCTOS CODIFICADOS';
+  worksheet.getCell('B2').font = { bold: true, size: 12 };
+
+  worksheet.getCell('B4').value = this.clienteSeleccionado?.nomcli || '';
+  worksheet.getCell('B4').font = { bold: true };
+  worksheet.getCell('C4').value = prefijo?.prefijosgs1 || '';
+
+  worksheet.getCell('B6').value = 'RUC:';
+  worksheet.getCell('C6').value = this.clienteSeleccionado?.ruc || '';
+
+  worksheet.getCell('B7').value = 'GLN:';
+  worksheet.getCell('C7').value = prefijo?.gln || '';
+
+  worksheet.getCell('B8').value = 'Emisor:';
+  worksheet.getCell('C8').value = 'GS1 Ecuador';
+
+  worksheet.getCell('B9').value = 'Fecha emisión :';
+  worksheet.getCell('C9').value = format(fechaActual, 'dd/MM/yyyy');
+
+  // 🟨 Advertencia antes de cabeceras
+  worksheet.mergeCells('B11:O13');
+worksheet.getCell('B11').value = {
+  richText: [
+    {
+      text: 'GS1 Ecuador (ECOP) certifica que los códigos GTIN que constan a continuación son auténticos y publicados en www.gs1ec.org Verified by Ecuador.\n',
+      font: { bold: true, color: { argb: '000000' } }
+    },
+    {
+      text: 'El dueño de la marca del producto pone el código, es su responsabilidad el manejo y control del código, incluida su descripción y marca.\n',
+      font: { color: { argb: '000000' } }
+    },
+    {
+      text: 'El Prefijo Global De Compañía GS1, GCP, es ',
+      font: { color: { argb: '000000' } }
+    },
+    {
+      text: 'INTRANSFERIBLE.',
+      font: { bold: true, color: { argb: 'FFFF0000' } } // rojo fuerte
+    }
+  ]
+};
+worksheet.getCell('B11').alignment = {
+  horizontal: 'center',
+  vertical: 'middle',
+  wrapText: true
+};
+worksheet.getCell('B11').fill = {
+  type: 'pattern',
+  pattern: 'solid',
+  fgColor: { argb: 'FFFFFF00' } // amarillo
+};
+
+
+  // 👉 Cabeceras
+  const headers = [
+    '#', 'GTIN UV', 'DESCRIPCIÓN', 'MARCA',
+    'CONTENIDO NETO', 'UNIDAD DE MEDIDA', 'CATEGORÍA',
+    'DESCRIPCION EGORÍA', 'GCP BRICK', 'PAIS',
+    'URL', 'SECTOR', 'OBSERVACION', 'FECHA', 'P.:'
+  ];
+
+  worksheet.addRow([]); // fila vacía si quieres separar visualmente
+  worksheet.addRow(headers).font = { bold: true };
+
+  // 👉 Filas de productos
+  productos.forEach((p, i) => {
+    worksheet.addRow([
+      i + 1,
+      p.codbar,
+      p.Despro,
+      p.marca,
+      p.contenido,
+      p.unidad,
+      p.codigoproducto,
+      p.dbrick,
+      p.brick,
+      p.pais,
+      p.url,
+      sectorMap[p.sector] || 'No definido',
+      p.Obs,
+      p.Feccre ? format(new Date(p.Feccre), 'dd/MM/yyyy') : '',
+      p.p
+    ]);
+  });
+
+  // 👉 Autoajustar columnas
+  worksheet.columns.forEach(column => {
+    if (!column) return;
+    let maxLength = 10;
+    column.eachCell?.({ includeEmpty: true }, cell => {
+      const length = cell.value ? cell.value.toString().length : 0;
+      maxLength = Math.max(maxLength, length);
+    });
+    column.width = maxLength + 2;
+  });
+
+  // 👉 Exportar
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+  FileSaver.saveAs(blob, nombreArchivo);
+}
+
 
   async generarPdfMembresia(): Promise<void> {
   this.cdRef.detectChanges();

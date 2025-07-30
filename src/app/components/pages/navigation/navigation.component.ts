@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
-
+import { UsuarioService } from 'src/app/services/usuario.service';
 @Component({
   selector: 'app-navigation',
   templateUrl: './navigation.component.html',
@@ -10,8 +10,9 @@ export class NavigationComponent implements OnInit {
   currentDateTime: string = '';
   isHandset: boolean = false;
   isExpanded: boolean = true;
-
-  constructor(private breakpointObserver: BreakpointObserver) {
+   usuarioActual : any;
+  constructor(private breakpointObserver: BreakpointObserver,private usuarioService:UsuarioService) {
+    this.usuarioActual = this.usuarioService.getUsuarioActual();
     this.breakpointObserver.observe([Breakpoints.Handset])
       .subscribe(result => {
         this.isHandset = result.matches;

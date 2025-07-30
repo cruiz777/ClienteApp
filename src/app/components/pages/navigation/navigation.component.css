@@ -178,6 +178,12 @@ mat-accordion ::ng-deep mat-expansion-panel:last-of-type {
   flex: 1;
   text-align: left;
   }
+.footer-right {
+  flex: 1;
+  display: flex; /* ← necesario para que justify-content funcione */
+  justify-content: flex-end;
+  text-align: right;
+}
   .footer-center {
   position: absolute;
   left: 50%;

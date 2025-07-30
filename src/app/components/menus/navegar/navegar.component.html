@@ -42,10 +42,10 @@
           <a mat-list-item routerLink="/pages/clientes">
             <span *ngIf="isExpanded" class="menu-text">Ficha Cliente</span>
           </a>
-          <a mat-list-item routerLink="/menus/tipocliente">
+          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/menus/tipocliente">
             <span *ngIf="isExpanded" class="menu-text">Tipo Cliente</span>
           </a>
-          <a mat-list-item routerLink="/menus/grupocliente">
+          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/menus/grupocliente">
             <span *ngIf="isExpanded" class="menu-text">Grupo Cliente</span>
           </a>
 
@@ -65,76 +65,76 @@
           <a mat-list-item routerLink="tras-gtin">
             <span *ngIf="isExpanded" class="menu-text">Transferencia Gtin</span>
           </a>
-          <a mat-list-item routerLink="tipo-prefijo">
+          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="tipo-prefijo">
             <span *ngIf="isExpanded" class="menu-text">Tipo Prefijo</span>
           </a>
-          <a mat-list-item routerLink="eliminar-prefijo">
+          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="eliminar-prefijo">
             <span *ngIf="isExpanded" class="menu-text">Eliminar Prefijo</span>
           </a>
         </mat-expansion-panel>
 
         <mat-expansion-panel>
-          <mat-expansion-panel-header>
-            <mat-panel-title>
+          <mat-expansion-panel-header *ngIf="usuarioActual?.id_usuario === 1">
+            <mat-panel-title >
               <img src="assets/icons/icon-validacion-2.png" class="menu-icon">
               <span *ngIf="isExpanded" class="menu-text">Validación</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
 
 
-          <a mat-list-item routerLink="/menus/validacionsri">
+          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/menus/validacionsri">
 
             <span *ngIf="isExpanded" class="menu-text">Validar RUC en SRI</span>
           </a>
 
-          <a mat-list-item routerLink="/menus/validacion-licenses">
+          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1"  routerLink="/menus/validacion-licenses">
 
             <span *ngIf="isExpanded" class="menu-text">Validar Licencia Verified</span>
           </a>
-          <a mat-list-item routerLink="/menus/validacion-productos">
+          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/menus/validacion-productos">
 
             <span *ngIf="isExpanded" class="menu-text">Validar Productos Verified</span>
           </a>
 
         </mat-expansion-panel>
         <mat-expansion-panel>
-          <mat-expansion-panel-header>
+          <mat-expansion-panel-header *ngIf="usuarioActual?.id_usuario === 1">
             <mat-panel-title>
               <img src="assets/icons/icon-reporte.png" class="menu-icon">
               <span *ngIf="isExpanded" class="menu-text">Reporte Clientes</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item routerLink="/seguridades/empresas">
+          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/seguridades/empresas">
 
             <span *ngIf="isExpanded" class="menu-text">Reporte Gerencia Cliente</span>
           </a>
 
-          <a mat-list-item routerLink="/seguridades/localizacion">
+          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/seguridades/localizacion">
 
             <span *ngIf="isExpanded" class="menu-text">Reporte Clientes</span>
           </a>
-          <a mat-list-item routerLink="/seguridades/localizacion">
+          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/seguridades/localizacion">
 
-            <span *ngIf="isExpanded" class="menu-text">Explorador Clientes</span>
+            <span *ngIf="isExpanded"  class="menu-text">Explorador Clientes</span>
           </a>
 
         </mat-expansion-panel>
 
         <mat-expansion-panel>
-          <mat-expansion-panel-header>
+          <mat-expansion-panel-header *ngIf="usuarioActual?.id_usuario === 1">
             <mat-panel-title>
               <img src="assets/icons/icon-mantenimiento.png" class="menu-icon">
               <span *ngIf="isExpanded" class="menu-text">Configuración</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item routerLink="/seguridades/empresas">
+          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/seguridades/empresas">
 
             <span *ngIf="isExpanded" class="menu-text">Servicios Productos</span>
           </a>
 
-          <a mat-list-item routerLink="/menus/localizacion-establecimiento">
+          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/menus/localizacion-establecimiento">
 
             <span *ngIf="isExpanded" class="menu-text">Establecimientos GLN</span>
           </a>
@@ -158,12 +158,14 @@
   <mat-sidenav-content [ngClass]="isExpanded ? 'content-default' : 'content-collapsed'">
     <router-outlet></router-outlet>
     <footer class="app-footer" [ngClass]="{ 'footer-collapsed': !isExpanded && !isHandset }">
-      <div class="footer-left">{{ currentDateTime }}</div>
-      <div class="footer-center">
-        <img src="assets/logo/logo-gap.png" alt="GAP System" class="footer-logo">
-        <span class="footer-phone">Telf: 099 970 0288 / 022 464 951</span>
-      </div>
-    </footer>
+  <div class="footer-left">{{ currentDateTime }}</div>
+  <div class="footer-center">
+    <img src="assets/logo/logo-gap.png" alt="GAP System" class="footer-logo">
+    <span class="footer-phone">Telf: 099 970 0288 / 022 464 951</span>
+  </div>
+  <div class="footer-right">{{ usuarioActual?.nombre_usuario }}</div>
+</footer>
+
   </mat-sidenav-content>
 
 </mat-sidenav-container>
