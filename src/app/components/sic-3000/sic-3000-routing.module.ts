@@ -4,7 +4,8 @@ import { RouterModule, Routes } from '@angular/router';
 import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
 import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
 import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.component';
-
+import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
+import { InicioComponent } from '../inicio/inicio.component';
 
 const routes: Routes = [
   {
@@ -15,6 +16,7 @@ const routes: Routes = [
       { path: 'inicio-sic', component: InicioSicComponent },
       { path: 'estructura-list', component: EstructuraListComponent },
       { path: 'registroCobros', component: RegistroCobrosComponent },
+      { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
     ]
 
   }
