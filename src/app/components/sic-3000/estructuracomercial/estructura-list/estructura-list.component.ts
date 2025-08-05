@@ -73,12 +73,14 @@ export class EstructuraListComponent {
  */
 
   toggleExpand(nodo: any): void {
-    if (nodo.hijos && nodo.hijos.length > 0) {
-      nodo.expandido = !nodo.expandido;
+    if (nodo.expandido) {
+      nodo.expandido = false;
+      return;
     }
-    else if (nodo.tipo === 'empresa') {
-      this.estructuraService.getByFk(nodo.id).subscribe(res => {
-        if (res.data) {
+
+    switch (nodo.tipo) {
+      case 'empresa':
+        this.estructuraService.getByFk(nodo.id).subscribe(res => {
           nodo.hijos = res.data.map(ec => ({
             id: ec.idEstructuraComercial,
             nombre: ec.descri,
@@ -88,13 +90,12 @@ export class EstructuraListComponent {
             hijos: []
           }));
           nodo.expandido = true;
-        }
-      });
-    }
-    else if (nodo.tipo === 'estructura') {
-      if (this.getNivelPorTipo('estructura') >= nodo.numnodos) return;
-      this.divisionService.getByFk(nodo.id).subscribe(res => {
-        if (res.data) {
+        });
+        break;
+
+      case 'estructura':
+        if (this.getNivelPorTipo('estructura') >= nodo.numnodos) return;
+        this.divisionService.getByFk(nodo.id).subscribe(res => {
           nodo.hijos = res.data.map(d => ({
             id: d.idDivision,
             nombre: d.descripcion,
@@ -104,12 +105,12 @@ export class EstructuraListComponent {
             hijos: []
           }));
           nodo.expandido = true;
-        }
-      });
-    } else if (nodo.tipo === 'division') {
-      if (this.getNivelPorTipo('division') >= nodo.numnodos) return;
-      this.subdivisionService.getByFk(nodo.id).subscribe(res => {
-        if (res.data) {
+        });
+        break;
+
+      case 'division':
+        if (this.getNivelPorTipo('division') >= nodo.numnodos) return;
+        this.subdivisionService.getByFk(nodo.id).subscribe(res => {
           nodo.hijos = res.data.map(s => ({
             id: s.idSubDivision,
             nombre: s.descripcion,
@@ -119,12 +120,12 @@ export class EstructuraListComponent {
             hijos: []
           }));
           nodo.expandido = true;
-        }
-      });
-    } else if (nodo.tipo === 'subdivision') {
-      if (this.getNivelPorTipo('subdivision') >= nodo.numnodos) return;
-      this.departamentoService.getByFk(nodo.id).subscribe(res => {
-        if (res.data) {
+        });
+        break;
+
+      case 'subdivision':
+        if (this.getNivelPorTipo('subdivision') >= nodo.numnodos) return;
+        this.departamentoService.getByFk(nodo.id).subscribe(res => {
           nodo.hijos = res.data.map(d => ({
             id: d.idDepartamento,
             nombre: d.descripcion,
@@ -134,12 +135,12 @@ export class EstructuraListComponent {
             hijos: []
           }));
           nodo.expandido = true;
-        }
-      });
-    } else if (nodo.tipo === 'departamento') {
-      if (this.getNivelPorTipo('departamento') >= nodo.numnodos) return;
-      this.seccionService.getByFk(nodo.id).subscribe(res => {
-        if (res.data) {
+        });
+        break;
+
+      case 'departamento':
+        if (this.getNivelPorTipo('departamento') >= nodo.numnodos) return;
+        this.seccionService.getByFk(nodo.id).subscribe(res => {
           nodo.hijos = res.data.map(s => ({
             id: s.idSeccion,
             nombre: s.descripcion,
@@ -149,20 +150,20 @@ export class EstructuraListComponent {
             hijos: []
           }));
           nodo.expandido = true;
-        }
-      });
-    } else if (nodo.tipo === 'seccion') {
-      if (this.getNivelPorTipo('seccion') >= nodo.numnodos) return;
-      this.grupoService.getByFk(nodo.id).subscribe(res => {
-        if (res.data) {
+        });
+        break;
+
+      case 'seccion':
+        if (this.getNivelPorTipo('seccion') >= nodo.numnodos) return;
+        this.grupoService.getByFk(nodo.id).subscribe(res => {
           nodo.hijos = res.data.map(g => ({
             id: g.idGrupo,
             nombre: g.descripcion,
-            tipo: 'grupo'  // nivel final
+            tipo: 'grupo'
           }));
           nodo.expandido = true;
-        }
-      });
+        });
+        break;
     }
   }
 
@@ -199,11 +200,10 @@ export class EstructuraListComponent {
 
     dialogRef.afterClosed().subscribe(resultado => {
       if (resultado === true) {
-        this.nodoSeleccionado.hijos = [];
-        this.nodoSeleccionado.expandido = false;
-        setTimeout(() => this.toggleExpand(this.nodoSeleccionado), 0);
+        this.toggleExpand(this.nodoSeleccionado);
       }
     });
+
   }
 
   obtenerTipoHijo(tipoActual: string): string | null {
@@ -279,8 +279,21 @@ export class EstructuraListComponent {
     if (!nodo || nodo.numnodos === undefined) return false;
     return this.getNivelPorTipo(nodo.tipo) < nodo.numnodos;
   }
-  onClickOutside(): void {
-    this.menuContextualVisible = false;
+
+  toggleExpandConRecarga(nodo: any): void {
+    nodo.hijos = [];
+    nodo.expandido = false;
+    setTimeout(() => this.toggleExpand(nodo), 0);
   }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    // Evita cerrar si el clic fue dentro del menú contextual
+    if (!target.closest('.context-menu')) {
+      this.menuContextualVisible = false;
+    }
+  }
+
 
 }

@@ -3,4 +3,5 @@ export interface ModuloResponse {
   nombre: string;
   descripcion?: string;
   status: boolean;
+  url: string;
 }

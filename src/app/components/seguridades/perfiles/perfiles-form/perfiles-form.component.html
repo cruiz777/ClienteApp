@@ -19,11 +19,21 @@
     <mat-form-field appearance="outline" style="width: 100%;">
       <mat-label>
         {{tipo === 'sistema' ? 'Nombre del sistema' : tipo === 'modulo' ? 'Nombre del módulo' : tipo === 'menu' ?
-        'Nombre del menú' : tipo === 'opcion' ? 'Nombre de la opción' : 'Nombre del perfil' }}
+        'Nombre del menú' : tipo === 'submenu' ? 'Nombre del submenú' : tipo === 'opcion' ? 'Nombre de la opción' :
+        'Nombre del perfil' }}
       </mat-label>
       <input matInput placeholder="Ingrese el nombre" formControlName="nombre" />
       <mat-error *ngIf="form.get('nombre')?.hasError('required')">
         El nombre es obligatorio.
+      </mat-error>
+    </mat-form-field>
+
+    <!-- Campo URL -->
+    <mat-form-field appearance="outline" style="width: 100%; margin-top: 16px;">
+      <mat-label>URL</mat-label>
+      <input matInput placeholder="Ingrese la URL" formControlName="url" />
+      <mat-error *ngIf="form.get('url')?.hasError('required')">
+        La URL es obligatoria.
       </mat-error>
     </mat-form-field>
   </form>
