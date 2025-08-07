@@ -133,7 +133,6 @@
                         <mat-select formControlName="prefix" placeholder="Seleccione prefijo" style="font-size: 12px;">
                           <mat-option [value]="'5'" style="font-size: 12px;">5</mat-option>
                           <mat-option [value]="'6'" style="font-size: 12px;">6</mat-option>
-                          <mat-option [value]="'7'" style="font-size: 12px;">7</mat-option>
                           <mat-option [value]="'8'" style="font-size: 12px;">8</mat-option>
                           <mat-option [value]="'USA'" style="font-size: 12px;">USA</mat-option>
                           <mat-option [value]="'MSV'" style="font-size: 12px;">MSV</mat-option>
@@ -337,7 +336,7 @@
                       <mat-autocomplete #autoCiudad="matAutocomplete" [displayWith]="displayCiudad"
                         (optionSelected)="seleccionarCiudad($event.option.value)">
                         <mat-option *ngFor="let ciudad of ciudadFiltrados" [value]="ciudad" style="font-size: 11px;">
-                          {{ ciudad.ciudad }} - {{ ciudad.canton }} - {{ ciudad.provincia }}
+                          {{ ciudad.ciudad }} - {{ ciudad.canton }} - {{ ciudad.provincia }}  - Z0{{ ciudad.idzona }}
                         </mat-option>
                       </mat-autocomplete>
                       <mat-error
@@ -368,8 +367,8 @@
 
                     <label style="color: #002c6c; font-size: 12px; margin-left: 10px;"><span
                         style="color: red;">*</span>Celular:</label>
-                    {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="celular" maxlength="9"
-                      autocomplete="off" placeholder="999999999" />
+                    {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="celular" maxlength="9" minlength="9" pattern="[0-9]*" inputmode="numeric"
+                      autocomplete="off" placeholder="999999999" (input)="soloDigitos('celular', $event,paso2Form)"/>
                     <mat-error
                       *ngIf="paso2Form.get('celular')?.hasError('required') && paso2Form.get('celular')?.touched"
                       style="color: red; font-size: 12px;">
@@ -384,7 +383,7 @@
 
                     <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">Teléfono 2:</label>
                     {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2"
-                      maxlength="9" placeholder="999999999" autocomplete="off" />
+                      maxlength="9"  pattern="[0-9]*" inputmode="numeric" placeholder="999999999" autocomplete="off" />
                   </div>
                   <section class="export-questions-section" style="padding-bottom: 16px;">
                     <div class="questions-container">
@@ -460,8 +459,8 @@
                         <label style="color: #002c6c; font-size: 12px;"><span style="color: red;">*</span>Tel.o
                           Cel:</label>
                         {{ codigoAreaE }}<input type="text" class="underline-input"
-                          formControlName="telefonoRepresentante" maxlength="9" placeholder="999999999"
-                          autocomplete="off" />
+                          formControlName="telefonoRepresentante" maxlength="9" minlength="9"  pattern="[0-9]*" inputmode="numeric" placeholder="999999999"
+                          autocomplete="off" (input)="soloDigitos('telefonoRepresentante', $event,paso3Form)" />
                         <mat-error
                           *ngIf="paso3Form.get('telefonoRepresentante')?.hasError('required') && paso3Form.get('telefonoRepresentante')?.touched"
                           style="color: red; font-size: 12px;">
@@ -489,22 +488,32 @@
                       </div>
                       <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
                       {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefonoc"
-                        maxlength="9" autocomplete="off" placeholder="999999999" />
+                        maxlength="9" minlength="9"  pattern="[0-9]*" inputmode="numeric" autocomplete="off" placeholder="999999999" (input)="soloDigitos('telefonoc', $event,paso3Form)"/>
                     </div>
                     <div class="form-row">
 
 
                       <label class="form-label">
-                        Nombre: (Financiero)
+                        <span style="color: red;">*</span>Nombre: (Financiero)
                       </label>
                       <input type="text" class="underline-input" formControlName="nombreFinanciero"
                         (input)="forzarMayusculas('nombreFinanciero', paso3Form, $event)" maxlength="200"
                         autocomplete="off" />
+                        <mat-error
+                        *ngIf="paso3Form.get('nombreFinanciero')?.hasError('required') && paso3Form.get('nombreFinanciero')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </div>
                     <div class="form-row">
-                      <label style="color: #002c6c;font-size: 12px;">E-mail 1: </label>
+                      <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>E-mail 1: </label>
                       <input type="text" class="underline-input" formControlName="email1" maxlength="200"
                         autocomplete="new-dp" placeholder="gs1@gs1.org" />
+                        <mat-error
+                          *ngIf="paso3Form.get('email1')?.hasError('required') && paso3Form.get('email1')?.touched"
+                          style="color: red; font-size: 12px;">
+                          Este campo es obligatorio.
+                        </mat-error>
                       <div
                         *ngIf="paso3Form.get('email1')?.hasError('emailInvalido') && paso3Form.get('email1')?.touched">
                         <small style="color: red;">Ingrese un correo válido</small>
@@ -525,9 +534,14 @@
                         *ngIf="paso3Form.get('email3')?.hasError('emailInvalido') && paso3Form.get('email3')?.touched">
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
-                      <label style="color: #002c6c;font-size: 12px;">Tel.o Cel:</label>
-                      {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2"
-                        maxlength="9" placeholder="999999999" autocomplete="off" />
+                      <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>Tel.o Cel:</label>
+                      {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono22"
+                        maxlength="9"  minlength="9"  pattern="[0-9]*" inputmode="numeric" placeholder="999999999" autocomplete="off" (input)="soloDigitos('telefono22', $event,paso3Form)" />
+                        <mat-error
+                        *ngIf="paso3Form.get('telefono22')?.hasError('required') && paso3Form.get('telefono22')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
                     </div>
 
 

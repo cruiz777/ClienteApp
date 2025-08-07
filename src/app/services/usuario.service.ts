@@ -15,7 +15,9 @@ export class UsuarioService {
 
   private apiUrl = `${environment.applicationUrl}/Usuarios`;
 
-  private currentUserSubject = new BehaviorSubject<LoginUsuarioResponse | null>(null);
+  private currentUserSubject = new BehaviorSubject<LoginUsuarioResponse | null>(
+    JSON.parse(localStorage.getItem('currentUser') || 'null')
+  );
   public currentUser$ = this.currentUserSubject.asObservable();
 
   constructor(private http: HttpClient) { }
@@ -63,7 +65,10 @@ export class UsuarioService {
     const stored = localStorage.getItem('currentUser');
     return stored ? JSON.parse(stored) : null;
   }
-
+  getEmpresaId(): number | null {
+    const usuario = this.getUsuarioActual();
+    return usuario?.id_empresa ?? null;
+  }
   getUsuarios(): Observable<ApiResponse<UsuariosResponse[]>> {
     return this.http.get<ApiResponse<UsuariosResponse[]>>(this.apiUrl);
   }

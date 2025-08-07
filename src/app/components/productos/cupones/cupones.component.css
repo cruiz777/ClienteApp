@@ -44,36 +44,87 @@
   margin: auto;
 }
 
-/* ============ TÍTULO ============ */
+/* ============ HEADER LISTADO ============ */
+.header-listado {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
 .titulo {
   font-size: 22px;
   font-weight: 600;
   color: #002c6c;
-  margin-bottom: 16px;
+  margin: 0;
 }
 
-/* ============ BÚSQUEDA ============ */
-.campo-busqueda {
-  width: 100%;
-  max-width: 400px;
-  margin-bottom: 16px;
+.cliente-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #f0f7ff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #002c6c;
 }
 
-/* ============ FORMULARIO GENERAR ============ */
-.formulario-grid {
+.cliente-label {
+  font-weight: 600;
+  color: #002c6c;
+  font-size: 14px;
+}
+
+.cliente-nombre {
+  color: #1f2937;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+/* ============ LAYOUT DOS COLUMNAS ============ */
+.filtros-dos-columnas,
+.seccion-cliente,
+.seccion-configuracion,
+.seccion-serie,
+.seccion-filtros {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 16px;
-  margin-bottom: 24px;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
-.campo {
+.columna-izquierda,
+.columna-derecha {
   display: flex;
   flex-direction: column;
+  gap: 16px;
 }
 
-.ancho-completo {
-  grid-column: span 2;
+/* ============ SECCIÓN OPERADOR ============ */
+.seccion-operador {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 20px;
+}
+
+.operador-field {
+  max-width: 250px;
+}
+
+/* ============ ACCIONES FILTROS ============ */
+.acciones-filtros {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  justify-content: flex-start;
+}
+
+/* ============ CHECKBOX CONTAINER ============ */
+.checkbox-container {
+  display: flex;
+  align-items: center;
+  height: 56px; /* Altura similar a mat-form-field */
 }
 
 /* ============ BOTONES GENERALES ============ */
@@ -82,6 +133,7 @@
   justify-content: center;
   gap: 16px;
   margin-top: 24px;
+  flex-wrap: wrap;
 }
 
 /* ============ TABLA GENERAL ============ */
@@ -109,6 +161,12 @@
   font-weight: 600;
 }
 
+.tabla-scroll {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-top: 20px;
+}
+
 /* ============ PAGINADOR ============ */
 mat-paginator {
   margin-top: 12px;
@@ -116,24 +174,11 @@ mat-paginator {
   justify-content: flex-end;
 }
 
-/* ============ REPORTES: FILTROS Y ACCIONES ============ */
-.filtros-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  align-items: end;
-  margin-bottom: 24px;
-}
-
-.filtro {
-  display: flex;
-  flex-direction: column;
-}
-
-.acciones {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+.paginacion-resumen {
+  text-align: right;
+  color: #6b7280;
+  font-size: 14px;
+  margin-top: 12px;
 }
 
 /* ============ FORM FIELD WIDTH ============ */
@@ -147,8 +192,28 @@ mat-form-field {
     flex-direction: column;
   }
 
-  .campo-busqueda {
-    width: 100%;
+  .header-listado {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .cliente-info {
+    align-self: flex-end;
+  }
+
+  .filtros-dos-columnas,
+  .seccion-cliente,
+  .seccion-configuracion,
+  .seccion-serie,
+  .seccion-filtros {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .acciones-filtros {
+    justify-content: center;
+    flex-wrap: wrap;
   }
 
   .tabla {
@@ -158,5 +223,53 @@ mat-form-field {
   mat-paginator {
     justify-content: center;
   }
+
+  .botones {
+    justify-content: center;
+  }
 }
 
+@media (max-width: 480px) {
+  .contenedor {
+    padding: 16px;
+  }
+
+  .titulo {
+    font-size: 18px;
+  }
+
+  .cliente-info {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .botones {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .botones button {
+    width: 100%;
+    max-width: 200px;
+  }
+}
+/* BOTONES*/
+.boton-azul-oscuro {
+  background-color: #002c6c !important;
+  color: white;
+}
+
+.boton-azul-oscuro:hover {
+  background-color: #001f4d !important;
+}
+
+.boton-azul-oscuro:disabled,
+.boton-azul-oscuro[disabled] {
+  background-color: #a0a0a0 !important; /* o puedes usar #d3d3d3 */
+  color: #fff !important;
+  opacity: 0.6;
+}
+.duplicado-row {
+  background-color: #fff3e0; /* naranja suave */
+  font-style: italic;
+}

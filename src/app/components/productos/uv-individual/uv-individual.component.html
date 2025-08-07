@@ -6,7 +6,7 @@
 
       <!-- Datos del cliente -->
       <div class="corto">
-        <label for="codigoCliente">Código del cliente:</label>
+        <label for="codigoCliente">Código:</label>
         <input id="codigoCliente" type="text" formControlName="codigoCliente" readonly />
       </div>
 
@@ -41,9 +41,9 @@
           <mat-form-field appearance="fill" class="select-pequeno">
             <mat-select formControlName="gtinNacionalSeleccionado"
               (selectionChange)="formUV.get('gtinInternacionalSeleccionado')?.reset()">
-              <mat-option value="gtin13">GTIN-13</mat-option>
-              <mat-option value="gtin8">GTIN-8</mat-option>
-              <mat-option value="gtin12">GTIN-12</mat-option>
+              <mat-option value="GTIN-13">GTIN-13</mat-option>
+              <mat-option value="GTIN-8">GTIN-8</mat-option>
+              <mat-option value="UPC">GTIN-12</mat-option>
             </mat-select>
           </mat-form-field>
         </div>
@@ -52,9 +52,9 @@
           <mat-form-field appearance="fill" class="select-pequeno">
             <mat-select formControlName="gtinInternacionalSeleccionado"
               (selectionChange)="formUV.get('gtinNacionalSeleccionado')?.reset()">
-              <mat-option value="gtin13i">GTIN-13</mat-option>
-              <mat-option value="gtin8i">GTIN-8</mat-option>
-              <mat-option value="gtin12i">GTIN-12</mat-option>
+              <mat-option value="GTIN-13I">GTIN-13I</mat-option>
+              <mat-option value="GTIN-8I">GTIN-8I</mat-option>
+              <mat-option value="GTIN-12I">GTIN-12I</mat-option>
             </mat-select>
           </mat-form-field>
         </div>
@@ -68,7 +68,7 @@
           <label>GTIN® UV:</label>
           <input type="text" formControlName="gtinUv" [readonly]="formUV.get('gtinUv')?.disabled || false"
             [attr.maxLength]="longitudMaxima" (keypress)="permitirSoloNumeros($event)"
-            [ngClass]="{ 'input-verde': campoGtin }" />
+            [ngClass]="{ 'input-verde': campoGtin }" #gtinInput />
 
 
           <div *ngIf="formUV.get('gtinUv')?.hasError('codbarExistente')" class="mensaje-error">⚠️ Ya registrado.</div>
@@ -87,7 +87,7 @@
 
       <div>
         <label>Marca:</label>
-        <input type="text" formControlName="marca"  (blur)="convertirAMayusculas('marca')"/>
+        <input type="text" formControlName="marca" (blur)="convertirAMayusculas('marca')" />
       </div>
 
       <div>
@@ -167,6 +167,15 @@
           <label>URL foto:</label>
           <input type="text" formControlName="urlFoto" />
         </div>
+        <div style="margin-top: 10px;">
+          <img *ngIf="formUV.get('urlFoto')?.value && !imagenNoDisponible" [src]="formUV.get('urlFoto')?.value"
+            alt="Previsualización" style="max-height: 150px; border: 1px solid #ccc; border-radius: 4px;"
+            (error)="imagenNoDisponible = true" (load)="imagenNoDisponible = false">
+
+          <div *ngIf="imagenNoDisponible" style="color: red; font-size: 12px;">
+            ⚠️ No se pudo cargar la imagen desde la URL proporcionada.
+          </div>
+        </div>
 
         <div class="campo-observacion">
           <label>Observación:</label>
@@ -230,9 +239,9 @@
           <label>GTIN Internacional</label>
           <mat-form-field appearance="fill">
             <mat-select formControlName="gtinInternacionalULSeleccionado">
-              <mat-option [value]="'gtin14ui'">GTIN-14</mat-option>
-              <mat-option [value]="'gtin13ui'">GTIN-13</mat-option>
-              <mat-option [value]="'gtin12ui'">GTIN-12</mat-option>
+              <mat-option [value]="'gtin14ui'">GTIN-14I</mat-option>
+              <mat-option [value]="'gtin13ui'">GTIN-13I</mat-option>
+              <mat-option [value]="'gtin12ui'">GTIN-12I</mat-option>
             </mat-select>
           </mat-form-field>
         </div>
@@ -247,21 +256,28 @@
         </div>
       </div>
       <div><label>Tipo de empaque:</label><input type="text" formControlName="tipoEmpaque" /></div>
-      <div><label>Unidad:</label><input type="text" formControlName="unidad" (keypress)="permitirSoloNumeros($event)" /></div>
-      <div><label>Indicador:</label><input type="text" formControlName="indicador" (keypress)="permitirSoloNumeros($event)" maxlength="1" /></div>
+      <div><label>Unidad:</label><input type="text" formControlName="unidad"  />
+      </div>
+      <div><label>Indicador:</label><input type="text" formControlName="indicador"
+          (keypress)="permitirSoloNumeros($event)" maxlength="1" (blur)="onIndicadorBlur()" /></div>
       <div><label>Factor:</label><input type="text" formControlName="factor" (blur)="actualizarDescripcionUL()" /></div>
 
-      <div class="col-2">
+      <div class="corto1">
         <label>GTIN® UL:</label>
         <input type="text" formControlName="gtinUl" [ngClass]="{ 'input-verde': campoGtinU }" />
         <div *ngIf="formUL.get('gtinUl')?.hasError('codbarExistente')" class="mensaje-error">
           ⚠️ El código de barras ya está registrado.
         </div>
       </div>
-
-      <div><label>Tipo GTIN®:</label><input type="text" formControlName="tipoGtin" /></div>
-      <div class="col-2"><label>Descripción:</label><textarea formControlName="descripcionu" (blur)="convertirAMayusculas('descripcionu')"></textarea></div>
-
+      <div class="fila-inline full-width">
+        <div class="corto1">
+          <label>Tipo GTIN®:</label><input type="text" formControlName="tipoGtinl" />
+        </div>
+        <div class="campo-observacion">
+          <label>Descripción:</label><textarea formControlName="descripcionu"
+            (blur)="convertirAMayusculas('descripcionu')"></textarea>
+        </div>
+      </div>
     </div>
 
     <div class="botones">

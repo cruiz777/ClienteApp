@@ -1666,3 +1666,16 @@
   padding: 1px;
   margin-top: 10px;
 }
+.overlay-cargando {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  font-size: 18px;
+  color: #333;
+}
+.rojo-si-orden {
+  color: red;
+  font-weight: bold;
+}

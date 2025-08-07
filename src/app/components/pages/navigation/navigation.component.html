@@ -18,6 +18,7 @@
       <img src="assets/logo/CODBAR-GS1.png" alt="Logo">
     </a>
   </div>
+    
     <!-- Menú Principal -->
     <mat-nav-list>
 
@@ -27,38 +28,29 @@
         <span *ngIf="isExpanded" class="menu-text">Menú</span>
       </mat-list-item>
 
-      <!-- Acordeón -->
-      <mat-accordion [multi]="false">
+      <!-- Menu Items -->
+      <mat-list-item routerLink="/pages/nclientes" class="menu-item-nav">
+        <div class="menu-item">
+          <img src="assets/icons/ecop-nuevo-cliente.png" class="menu-icon">
+          <span *ngIf="isExpanded" class="menu-text">Nuevo Cliente</span>
+        </div>
+      </mat-list-item>
 
-        <mat-expansion-panel>
-          <mat-expansion-panel-header>
-            <mat-panel-title routerLink="/pages/nclientes">
-              <img src="assets/icons/ecop-nuevo-cliente.png" class="menu-icon">
-              <span *ngIf="isExpanded" class="menu-text">Nuevo Cliente</span>
-            </mat-panel-title>
-          </mat-expansion-panel-header>
-        </mat-expansion-panel>
-        <mat-expansion-panel>
-          <mat-expansion-panel-header>
-            <mat-panel-title routerLink="/pages/nclientes">
-              <img src="assets/icons/Ecop-explorador-clientes.png" class="menu-icon">
-              <span *ngIf="isExpanded" class="menu-text">Explorador de Cliente</span>
-            </mat-panel-title>
-          </mat-expansion-panel-header>
-        </mat-expansion-panel>
+      <mat-list-item routerLink="/pages/explorador-clientes" class="menu-item-nav">
+        <div class="menu-item">
+          <img src="assets/icons/Ecop-explorador-clientes.png" class="menu-icon">
+          <span *ngIf="isExpanded" class="menu-text">Explorador de Cliente</span>
+        </div>
+      </mat-list-item>
 
-        <mat-expansion-panel>
-          <mat-expansion-panel-header>
-            <mat-panel-title routerLink="/pages/nclientes">
-              <img src="assets/icons/ecop-.png" class="menu-icon">
-              <span *ngIf="isExpanded" class="menu-text">Consulta Verified</span>
-            </mat-panel-title>
-          </mat-expansion-panel-header>
-        </mat-expansion-panel>
+      <mat-list-item routerLink="/pages/consulta-verified" class="menu-item-nav">
+        <div class="menu-item">
+          <img src="assets/icons/ecop-.png" class="menu-icon">
+          <span *ngIf="isExpanded" class="menu-text">Consulta Verified</span>
+        </div>
+      </mat-list-item>
 
-      </mat-accordion>
       <!-- Salir -->
-
       <mat-list-item routerLink="/menus/codbar" class="salir-item">
         <div class="menu-item">
           <img src="assets/icons/icon-salir.png" class="menu-icon">

@@ -1,0 +1,318 @@
+/* Contenedor general */
+.contenedor-formulario {
+  padding: 24px;
+  background-color: #f8fafc;
+  font-family: 'Segoe UI', sans-serif;
+  color: #1e293b;
+}
+
+/* Título principal */
+h2 {
+  text-align: center;
+  color: #1e3a8a;
+  font-weight: bold;
+  margin-bottom: 24px;
+  font-size: 20px;
+  text-transform: uppercase;
+}
+
+/* Tarjeta del formulario */
+.formulario {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Grilla adaptable para campos */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  align-items: flex-start;
+}
+
+/* Etiquetas y campos */
+label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e3a8a;
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* Inputs y textareas */
+input,
+textarea,
+select,
+mat-form-field {
+  width: 100%;
+}
+
+input,
+textarea,
+select {
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px solid #94a3b8;
+  font-size: 13px;
+  padding: 6px 4px;
+  outline: none;
+  color: #1e293b;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* mat-form-field */
+mat-form-field {
+  font-size: 13px;
+}
+
+/* Agrupadores (GTIN combo, empresas, radios) */
+.fila-gtin,
+.fila-gtin-combo {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.combo-gtin {
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  flex: 1 1 160px;
+}
+
+.select-pequeno .mat-form-field-wrapper {
+  padding-bottom: 0 !important;
+}
+
+.select-pequeno .mat-select {
+  font-size: 13px;
+  height: 36px;
+}
+
+/* Etiquetas para agrupaciones */
+.grupo-etiqueta {
+  flex: 1 1 48%;
+  min-width: 240px;
+}
+
+.titulo-grupo {
+  font-weight: bold;
+  color: #1e3a8a;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+/* Grupo de radios */
+.checkbox-contenedor.radio {
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background-color: #f1f5f9;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.checkbox-contenedor.radio label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #1e3a8a;
+  white-space: nowrap;
+}
+
+/* Checkboxes en caja (empresas, país, sector) */
+.checkbox-contenedor {
+  display: flex;
+  gap: 16px;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background-color: #f1f5f9;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.checkbox-contenedor label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  color: #1e3a8a;
+}
+
+/* Fila combinada ocupa todo el ancho */
+.full-width {
+  grid-column: 1 / -1;
+}
+
+/* Botonera final */
+.botones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+/* Botones base */
+.btn {
+  padding: 8px 18px;
+  background-color: #e5e7eb;
+  color: #1e3a8a;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-size: 13px;
+}
+
+.btn:hover {
+  background-color: #cbd5e1;
+}
+
+.btn-azul {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.btn-rojo {
+  background-color: #ef4444;
+  color: white;
+}
+
+/* Separador de secciones */
+.separador {
+  margin-top: 48px;
+  border-top: 2px solid #cbd5e1;
+  padding-top: 24px;
+}
+
+/* Campos con validación visual */
+.input-verde {
+  background-color: #3df067 !important;
+}
+
+.mensaje-error {
+  color: red;
+  font-weight: bold;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Controla columnas específicas para campos proporcionales */
+.col-2 { grid-column: span 2; }
+.col-3 { grid-column: span 3; }
+.col-4 { grid-column: span 4; }
+
+/* Fila compacta: checkbox + input */
+.fila-inline {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.fila-inline input[type="checkbox"] {
+  margin-top: 0 !important;
+  margin-bottom: 0;
+}
+
+/* Tamaños personalizados */
+.corto {
+  max-width: 120px;
+}
+
+.largo {
+  min-width: 280px;
+  flex: 1;
+}
+
+/* Mat-form-field y autocompletes consistentes */
+mat-form-field {
+  width: 100%;
+  font-size: 13px;
+}
+/* Forzar altura de input similar a textarea para alinearlos */
+textarea {
+  min-height: 38px; /* igual que input */
+  padding-top: 6px;
+}
+.serie-inline {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.checkbox-serie {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #1e3a8a;
+  white-space: nowrap;
+}
+.fila-inline {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end; /* <- 🔑 Esto alinea base de input y textarea */
+  flex-wrap: wrap;
+}
+
+.campo-url {
+  flex: 0 0 260px; /* Puedes ajustar este ancho */
+  display: flex;
+  flex-direction: column;
+}
+
+.campo-observacion {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+textarea {
+  min-height: 36px;
+  padding: 6px 4px;
+  font-size: 13px;
+  line-height: 1.4;
+  resize: vertical;
+}
+.fila-inline {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.campo-gtin-ul {
+  flex: 0 0 100px; /* o el ancho que desees para el GTIN UL */
+  display: flex;
+  flex-direction: column;
+}
+
+.campo-descripcion-ul {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.corto1 {
+  max-width: 260px;
+}

@@ -72,6 +72,38 @@
           </button>
         </div>
       </div>
+
+      <!-- Sección de firma -->
+      <div class="form-row">
+        <div class="form-group">
+          <label>Firma:</label>
+          <div class="firma-container">
+            <div class="firma-preview" *ngIf="firmaPreviewUrl; else sinFirma">
+              <img
+                [src]="firmaPreviewUrl"
+                alt="Firma de la empresa"
+                class="preview-img"
+              />
+            </div>
+
+            <ng-template #sinFirma>
+              <p class="firma-placeholder">No hay firma cargada</p>
+            </ng-template>
+
+            <input
+              type="file"
+              id="firmaInput"
+              accept="image/*"
+              (change)="onFirmaSelected($event)"
+              hidden
+            />
+
+            <button type="button" (click)="triggerFirmaInput()" class="firma-btn">
+              Seleccionar Firma
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="form-row">

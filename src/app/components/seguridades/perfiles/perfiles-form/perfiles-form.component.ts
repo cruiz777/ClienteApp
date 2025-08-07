@@ -36,7 +36,7 @@ export class PerfilesFormComponent implements OnInit {
   form!: FormGroup;
   idEmpresa: number = 1;
   idGeneral?: number;
-  tipo!: 'sistema' | 'modulo' | 'menu' | 'opcion' | 'perfil';
+  tipo!: 'sistema' | 'modulo' | 'menu' | 'submenu' | 'opcion' | 'perfil';
   idRelacionado!: number;
   cargando = false;
 
@@ -76,6 +76,7 @@ export class PerfilesFormComponent implements OnInit {
     this.cargando = true;
 
     const nombre = this.form.value.nombre.trim();
+    const url = this.form.value.url.trim();
 
     switch (this.tipo) {
       case 'perfil':
@@ -104,7 +105,8 @@ export class PerfilesFormComponent implements OnInit {
           id_sistema: this.idRelacionado,
           nombre,
           descripcion: nombre,
-          status: true
+          status: true,
+          url: url
         };
         if (this.idGeneral) {
           this.moduloService.updateModulo(this.idGeneral, moduloRequest).subscribe({
@@ -124,7 +126,8 @@ export class PerfilesFormComponent implements OnInit {
           id_modulo: this.idRelacionado,
           nombre,
           descripcion: nombre,
-          status: true
+          status: true,
+          url: url
         };
         if (this.idGeneral) {
           this.menuService.updateMenu(this.idGeneral, menuRequest).subscribe({
@@ -141,7 +144,7 @@ export class PerfilesFormComponent implements OnInit {
 
       case 'opcion':
         const opcionRequest: OpcionesRequest = {
-          id_menu: this.idRelacionado,
+          id_sub: this.idRelacionado,
           nombre,
           descripcion: nombre,
           status: true
@@ -161,10 +164,12 @@ export class PerfilesFormComponent implements OnInit {
 
       case 'sistema':
         const sistemaRequest: SistemasRequest = {
-          id_empresa: this.idRelacionado,
+          id_sistema: this.idRelacionado,
           nombre,
           descripcion: nombre,
-          status: true
+          fecha_creacion: new Date(),
+          status: true,
+          url: url
         };
         if (this.idGeneral) {
           this.sistemaService.updateSistema(this.idGeneral, sistemaRequest).subscribe({

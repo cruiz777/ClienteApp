@@ -168,4 +168,122 @@ mat-form-field {
     font-size: 18px;
   }
 }
+/* Scroll solo para la tabla */
+.tabla-scroll {
+  max-height: 400px; /* Ajusta a tu preferencia */
+  overflow-y: auto;
+  border: 1px solid #ccd5e2;
+  margin-bottom: 16px;
+}
+.tabla-scroll table thead th {
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 100;
+}
+.tabla-scroll {
+  position: relative;
+  max-height: 400px;
+  overflow-y: auto;
+  border: 1px solid #ccd5e2;
+  margin-bottom: 16px;
+}
 
+/* Asegura que la tabla use el 100% del contenedor scroll */
+.tabla-scroll .tabla-mat {
+  min-width: 1000px; /* Si necesitas horizontal scroll también */
+  width: 100%;
+}
+.mat-table thead th {
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 100;
+}
+
+.tabla-scroll .mat-header-cell {
+  position: sticky;
+  top: 0;
+  background-color: white;
+  z-index: 10;
+  box-shadow: 0 2px 2px -1px rgba(0,0,0,0.4);
+}
+.sscc-input {
+  border: none;
+  background: transparent;
+  width: 100%;
+  font-family: monospace;
+  cursor: pointer;
+}
+
+.sscc-input:focus {
+  outline: none;
+}
+.paginacion-resumen {
+  margin-top: 10px;
+  font-weight: 500;
+  color: #444;
+}
+/* Asegura que el mat-datepicker se muestre por encima y fuera del flujo normal */
+.cdk-overlay-container {
+  position: fixed !important;
+  z-index: 1100 !important;
+  pointer-events: none;
+}
+
+.cdk-overlay-pane {
+  pointer-events: auto;
+}
+.boton-azul-oscuro {
+  background-color: #002c6c !important;
+  color: white;
+}
+
+.boton-azul-oscuro:hover {
+  background-color: #001f4d !important;
+}
+
+.boton-azul-oscuro:disabled,
+.boton-azul-oscuro[disabled] {
+  background-color: #a0a0a0 !important; /* o puedes usar #d3d3d3 */
+  color: #fff !important;
+  opacity: 0.6;
+}
+
+/* ============ HEADER LISTADO ============ */
+.header-listado {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.titulo {
+  font-size: 22px;
+  font-weight: 600;
+  color: #002c6c;
+  margin: 0;
+}
+
+.cliente-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #f0f7ff;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid #002c6c;
+}
+
+.cliente-label {
+  font-weight: 600;
+  color: #002c6c;
+  font-size: 14px;
+}
+
+.cliente-nombre {
+  color: #1f2937;
+  font-weight: 500;
+  font-size: 14px;
+}

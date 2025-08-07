@@ -10,8 +10,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTableModule } from '@angular/material/table';
-
-
+import { DialogClienteEditarComponent } from '../../pages/modals/dialog-cliente-editar/dialog-cliente-editar.component';
+import { MatDialog } from '@angular/material/dialog';
+import { MatIconModule } from '@angular/material/icon';
+import { LprefijoComponent } from '../../pages/clientes/lprefijo/lprefijo.component';
 @Component({
   selector: 'app-cliente-seleccionado',
   standalone: true,
@@ -24,7 +26,8 @@ import { MatTableModule } from '@angular/material/table';
     MatMenuModule,
     MatButtonModule,
     MatAutocompleteModule,
-    MatTableModule
+    MatTableModule,
+    MatIconModule
   ],
   templateUrl: './cliente-seleccionado.component.html',
   styleUrl: './cliente-seleccionado.component.css'
@@ -36,12 +39,13 @@ export class ClienteSeleccionadoComponent {
 
   columnas: string[] = [
     'clientes_codigo', 'nomcli', 'dircli', 'ruc', 'fecing',
-    'zonaReferencia', 'estadoNombre'
+    'zonaReferencia', 'estadoNombre','codpre','acciones'
   ];
 
   constructor(
     private clienteSeleccionadoService: ClienteSeleccionadoService,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog,
   ) { }
 
   ngOnInit(): void {
@@ -65,6 +69,37 @@ export class ClienteSeleccionadoComponent {
   salir(): void {
     this.router.navigate(['/pages/clientes']).then(() => window.location.reload());
   }
+  
+    editarCliente(cliente:Cliente) {
+      this.dialog.open(DialogClienteEditarComponent, {
+        width: '1200px', // Aumenta el ancho del diálogo
+  
+        height: '100vh', // ✅ que use casi toda la pantalla
+        maxHeight: '100vh',
+        disableClose: true,
+        data: cliente.clientes_codigo
+      }).afterClosed().subscribe(result => {
+        if (result === "editado")
+          this.clienteSeleccionadoService.clienteSeleccionado$.subscribe(cliente => {
+      this.clienteSeleccionado = cliente;
+    });
+      });
+    }
 
+
+    editarPrefijosCliente(cliente: Cliente): void {
+      this.dialog.open(LprefijoComponent, {
+        width: '670px',
+        height: '50vh',
+        maxHeight: '50vh',
+        disableClose: true,
+        data: cliente.clientes_codigo
+      }).afterClosed().subscribe(result => {
+        if (result === 'editado') {
+          //this.cargarClientes();
+        }
+      });
+    }
+    
 
 }

@@ -34,6 +34,10 @@ import { switchMap } from 'rxjs/operators';
 import { ChangeDetectorRef } from '@angular/core';
 import { ClienteService, ClienteIndividual } from 'src/app/services/cliente.service';
 import { UsuarioService } from 'src/app/services/usuario.service';
+import { ViewChild, ElementRef } from '@angular/core';
+import { JsonProductoService } from 'src/app/services/json-producto.service';
+import { ParametrosFacturaService, ParametrosFactura } from 'src/app/services/parametros-factura.service';
+import { debounceTime } from 'rxjs/operators';
 @Component({
   selector: 'app-uv-individual',
   standalone: true,
@@ -83,10 +87,12 @@ export class UvIndividualComponent implements OnInit {
   botonNuevoDeshabilitado = true;
   botonGenerarULDeshabilitado = true;
   botonGrabarULDeshabilitado = true;
-
+  numeroPrefijo: string = '';
 
   unidadesMedida: Umedida[] = [];
   unidadesMedidaFiltradas: Umedida[] = [];
+  api: string = '';
+  claveApi: string = '';
 
   pais: Pais[] = [];
   paisCtrl = new FormControl('');
@@ -104,7 +110,9 @@ export class UvIndividualComponent implements OnInit {
   gtin12UIEnable = false;
   longitudMaxima = 0;
   id_grupo_producto: number = 0;
+  @ViewChild('gtinInput') gtinInput!: ElementRef;
   usuarioActual = this.usuarioService.getUsuarioActual();
+  imagenNoDisponible: boolean = false;
   constructor(
     private fb: FormBuilder,
     private clienteSeleccionadoService: ClienteSeleccionadoService,
@@ -125,6 +133,8 @@ export class UvIndividualComponent implements OnInit {
     private cd: ChangeDetectorRef,
     private clienteService: ClienteService,
     private usuarioService: UsuarioService,
+    private jsonProductoService: JsonProductoService,
+    private parametrosFacturaService: ParametrosFacturaService
   ) { }
 
 
@@ -149,16 +159,17 @@ export class UvIndividualComponent implements OnInit {
       sector: [''],
       urlFoto: [''],
       observacion: [''],
-      otrosSolicitantes: [''],
+
       empresas: this.fb.group({
         favorita: [false],
         mega: [false],
         amazon: [false],
         rosario: [false],
         tia: [false],
-        google: [false]
+        google: [false],
+        otrosSolicitantes: [''],
       }),
-      gtinNacionalSeleccionado: ['gtin13'],
+      gtinNacionalSeleccionado: ['GTIN-13'],
       gtinInternacionalSeleccionado: [''],
       usarSerie: [false]
     });
@@ -172,7 +183,7 @@ export class UvIndividualComponent implements OnInit {
       indicador: ['1'],
       factor: [''],
       gtinUl: [''],
-      tipoGtin: ['GTIN14'],
+      tipoGtinl: ['GTIN-14'],
       descripcionu: [''],
       usarSerie2: [false]
     });
@@ -202,15 +213,15 @@ export class UvIndividualComponent implements OnInit {
 
       const gtinUvControl = this.formUV.get('gtinUv');
 
-      if (valor === 'gtin13i') {
+      if (valor === 'GTIN-13I') {
         this.longitudMaxima = 12;
         gtinUvControl?.enable();
         gtinUvControl?.setValidators([Validators.required, Validators.maxLength(12)]);
-      } else if (valor === 'gtin12i') {
+      } else if (valor === 'GTIN-12I') {
         this.longitudMaxima = 11;
         gtinUvControl?.enable();
         gtinUvControl?.setValidators([Validators.required, Validators.maxLength(11)]);
-      } else if (valor === 'gtin8i') {
+      } else if (valor === 'GTIN-8I') {
         this.longitudMaxima = 7;
         gtinUvControl?.enable();
         gtinUvControl?.setValidators([Validators.required, Validators.maxLength(7)]);
@@ -226,31 +237,46 @@ export class UvIndividualComponent implements OnInit {
 
     // Nacional - UL
     this.formUL.get('gtinNacionalULSeleccionado')?.valueChanges.subscribe(valor => {
+      console.log('🟦 Cambio en gtinNacionalULSeleccionado:', valor);
+
       if (valor) {
         this.formUL.get('gtinInternacionalULSeleccionado')?.reset();
-        this.formUL.patchValue({ tipoGtinUl: this.obtenerNombreGTIN(valor) });
+        this.formUL.patchValue({ tipoGtinl: this.obtenerNombreGTIN(valor) });
 
-        const actual = this.formUL.get('indicador')?.value;
-        if ((valor === 'gtin13u' || valor === 'gtin12u') && !actual) {
+        if (valor === 'gtin13u' || valor === 'gtin12u') {
+          console.log('✅ Asignando indicador = 0');
           this.formUL.patchValue({ indicador: '0' });
+        } else if (valor === 'gtin14u') {
+          console.log('🔄 Verificando existencia para GTIN-14U...');
+          this.verificarExistenciaCodbar();
         }
       }
     });
 
-    // Internacional - UL
     this.formUL.get('gtinInternacionalULSeleccionado')?.valueChanges.subscribe(valor => {
+      console.log('🟥 Cambio en gtinInternacionalULSeleccionado:', valor);
+
       if (valor) {
         this.formUL.get('gtinNacionalULSeleccionado')?.reset();
-        this.formUL.patchValue({ tipoGtinUl: this.obtenerNombreGTIN(valor) });
+        this.formUL.patchValue({ tipoGtinl: this.obtenerNombreGTIN(valor) });
 
-        const actual = this.formUL.get('indicador')?.value;
-        if ((valor === 'gtin13ui' || valor === 'gtin12ui') && !actual) {
+        if (valor === 'gtin13ui' || valor === 'gtin12ui') {
+          console.log('✅ Asignando indicador = 0');
           this.formUL.patchValue({ indicador: '0' });
+        } else if (valor === 'gtin14ui') {
+          console.log('✅ Asignando indicador = 1');
+          this.formUL.patchValue({ indicador: '1' });
         }
       }
     });
-
     this.formUL.disable();
+    this.cargarParametroFacturaPorId(98);
+    this.formUV.get('urlFoto')?.valueChanges.subscribe(() => {
+      this.imagenNoDisponible = false; // Reinicia el error si cambia la URL
+    });
+    this.formUL.get('indicador')?.valueChanges
+        .pipe(debounceTime(300))
+        .subscribe(() => this.onIndicadorBlur());
   }
 
   activarUL(): void {
@@ -258,7 +284,8 @@ export class UvIndividualComponent implements OnInit {
     this.botonIngresarULDeshabilitado = true;
     this.botonNuevoDeshabilitado = false;
     this.botonGenerarULDeshabilitado = false;
-    
+    this.mostrarAlerta('Ingrese Unidad Logística', '✔');
+
   }
 
 
@@ -276,7 +303,7 @@ export class UvIndividualComponent implements OnInit {
         return;
       }
 
-      if (gtin === 'gtin13') {
+      if (gtin === 'GTIN-13') {
         this.npais = '786';
         this.generacionCodigosService.obtenerSecuencia(prefijo.codpre, this.npais).subscribe({
           next: (resp: SecuenciaResponse) => {
@@ -287,7 +314,7 @@ export class UvIndividualComponent implements OnInit {
           }
         });
 
-      } else if (gtin === 'gtin12') {
+      } else if (gtin === 'UPC') {
         this.npais = '';
         this.generacionCodigosService.obtenerSecuencia(prefijo.codpre, this.npais).subscribe({
           next: (resp: SecuenciaResponse) => {
@@ -320,7 +347,7 @@ export class UvIndividualComponent implements OnInit {
 
 
   habilitarSerie2(): void {
-    debugger
+
     const usarSerie2 = this.formUL.get('usarSerie2')?.value;
     const gtin = this.formUL.get('gtinNacionalULSeleccionado')?.value;
 
@@ -405,7 +432,7 @@ export class UvIndividualComponent implements OnInit {
       this.formUV.patchValue({ gln: objeto.gln });
 
       const codpre = objeto.codpre || objeto.Codpre;
-
+      this.numeroPrefijo = codpre;
       if (!codpre) {
         console.warn('⚠️ codpre no disponible en el objeto');
         return;
@@ -464,18 +491,25 @@ export class UvIndividualComponent implements OnInit {
 
 
   obtenerNombreGTIN(valor: string): string {
-    switch (valor) {
-      case 'gtin13': return 'GTIN-13';
-      case 'gtin8': return 'GTIN-8';
-      case 'gtin12': return 'GTIN-12';
-      case 'gtin14': return 'GTIN-14';
-      case 'gtin13i': return 'GTIN-13I';
-      case 'gtin8i': return 'GTIN-8I';
-      case 'gtin12i': return 'GTIN-12I';
-      case 'gtin14i': return 'GTIN-14I';
+    switch (valor?.toUpperCase()) {
+      case 'GTIN-13': return 'GTIN-13';
+      case 'GTIN-8': return 'GTIN-8';
+      case 'UPC': return 'UPC';
+      case 'GTIN-14': return 'GTIN-14';
+      case 'GTIN-13I': return 'GTIN-13I';
+      case 'GTIN-8I': return 'GTIN-8I';
+      case 'GTIN-12I': return 'GTIN-12I';
+      case 'GTIN-14I': return 'GTIN-14I';
+      case 'GTIN13U': return 'GTIN-13';
+      case 'GTIN12U': return 'UPC';
+      case 'GTIN14U': return 'GTIN-14';
+      case 'GTIN13UI': return 'GTIN-13I';
+      case 'GTIN12UI': return 'GTIN-12I';
+      case 'GTIN14UI': return 'GTIN-14I';
       default: return '';
     }
   }
+
 
 
   grabarTodo(): void {
@@ -486,7 +520,7 @@ export class UvIndividualComponent implements OnInit {
 
       return;
     }
-     if (!this.formUV.get('descripcion')?.value) {
+    if (!this.formUV.get('descripcion')?.value) {
       this.mostrarAlerta('⚠️ No ingresó Descripcion', 'Error');
 
       return;
@@ -508,9 +542,9 @@ export class UvIndividualComponent implements OnInit {
     }
     if (!this.formUV.get('categoria')?.value) {
       this.mostrarAlerta('⚠️ No seleccionó Categoría', 'Error');
-            return;
+      return;
     }
-    debugger
+
     this.productoService.verificarCodbar(codbar).pipe(
       switchMap((res) => {
         if (res.data) {
@@ -531,7 +565,7 @@ export class UvIndividualComponent implements OnInit {
           data: {
             title: '¿Desea confirmar?',
             message: `El código será ${msg}. ¿Está seguro?`,
-            type: 'question',
+            type: 'info',
             confirmText: 'Sí, confirmar',
             cancelText: 'Cancelar',
             showCancel: true
@@ -546,7 +580,7 @@ export class UvIndividualComponent implements OnInit {
 
         const gtinNacionalSeleccionado = this.formUV.get('gtinNacionalSeleccionado')?.value;
 
-        if (gtinNacionalSeleccionado === 'gtin8' && this.bandera === 0) {
+        if (gtinNacionalSeleccionado === 'GTIN-8' && this.bandera === 0) {
           if (!this.prefijo8 || isNaN(parseInt(this.prefijo8, 10))) {
             console.error('⚠️ prefijo8 inválido:', this.prefijo8);
             return;
@@ -572,59 +606,118 @@ export class UvIndividualComponent implements OnInit {
 
 
   continuarGrabado() {
-
     this.guardarProducto();
+
     const datosUV = this.formUV.value;
     const datosUL = this.formUL.value;
+
     console.log('Datos UV:', datosUV);
     console.log('Datos UL:', datosUL);
+
+    // Obtener tipo GTIN (incluso si está deshabilitado)
+    const tipoGtin =
+      this.formUV.getRawValue().gtinNacionalSeleccionado ||
+      this.formUV.getRawValue().gtinInternacionalSeleccionado || '';
+
+    const gtinUv = this.formUV.get('gtinUv')?.value || '';
+
+    // Solo si es GTIN-13 o UPC se pregunta si desea enviar a Verified
+    if (tipoGtin === 'GTIN-13' || tipoGtin === 'UPC') {
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '400px',
+        data: {
+          title: '¿Enviar a Verified?',
+          message: '¿Desea generar el JSON y enviarlo a Verified?',
+          type: 'info',
+          confirmText: 'Sí, enviar',
+          cancelText: 'No',
+          showCancel: true
+        }
+      }).afterClosed().subscribe((confirmado) => {
+        if (confirmado) {
+          if (!gtinUv.includes('7861000')) {
+            this.enviarAJsonVerified();
+          }
+        } else {
+          console.log('⛔ El usuario decidió no enviar a Verified');
+        }
+      });
+    } else {
+      // No aplica envío a Verified, solo se graba
+      console.log('✅ Producto grabado sin necesidad de enviar a Verified');
+    }
+  }
+
+
+  enviarAJsonVerified(): void {
+    const uv = this.formUV.value;
+
+    const data = {
+      gtin: uv.gtinUv,
+      brick: uv.categoria,
+      prefijo: this.numeroPrefijo,
+      marca: uv.marca,
+      descripcion: uv.descripcion,
+      url: uv.urlFoto,
+      unidad: uv.unidadMedida,
+      contenido: uv.contenido,
+      dapiP: this.api,
+      capiP: this.claveApi
+    };
+
+    this.jsonProductoService.generarJson(data);
   }
 
 
   generar() {
-    debugger
     const gcpId = this.formUV.get('gcp')?.value;
     if (!gcpId) {
-      this.mostrarAlerta('No se selecciono Prefijo', 'Error');
+      this.mostrarAlerta('No se seleccionó Prefijo', 'Error');
       return;
     }
+
     const categoriaId = this.formUV.get('categoria')?.value;
     if (!categoriaId) {
-      this.mostrarAlerta('No se selecciono Categoria', 'Error');
+      this.mostrarAlerta('No se seleccionó Categoría', 'Error');
       return;
     }
-    const gtinNacional = this.formUV.get('gtinNacionalSeleccionado')?.value;
-    const gtinInternacional = this.formUV.get('gtinInternacionalSeleccionado')?.value;
 
-    if (!gtinNacional && !gtinInternacional) {
+    const gtinNacionalSeleccionado = this.formUV.get('gtinNacionalSeleccionado')?.value;
+    const gtinInternacionalSeleccionado = this.formUV.get('gtinInternacionalSeleccionado')?.value;
+
+    if (!gtinNacionalSeleccionado && !gtinInternacionalSeleccionado) {
       this.mostrarAlerta('Debe seleccionar Tipo GTIN Nacional o Internacional', 'Error');
       return;
     }
+
     const prefijo = this.prefijos.find(p => p.id_prefijos === gcpId);
     if (!prefijo) {
       console.error('❌ Prefijo no encontrado en la lista');
       return;
     }
-    const gtinNacionalSeleccionado = this.formUV.get('gtinNacionalSeleccionado')?.value;
-    const gtinInternacionalSeleccionado = this.formUV.get('gtinInternacionalSeleccionado')?.value;
 
-    ///////GENERA GTIN13 NACIONAL SIEMPRE QUE EL PREFIJO SEA NACIONAL Y TENGA BANDERA=0
-    if (gtinNacionalSeleccionado === 'gtin13' && this.bandera === 0) {
+    // 🚫 No permitir GTIN-13 con bandera 2
+    if (gtinNacionalSeleccionado === 'GTIN-13' && this.bandera === 2) {
+      this.mostrarAlerta('No se puede generar este tipo de código', 'Error');
+      return;
+    }
+
+    // ✅ GTIN-13 Nacional (bandera 0)
+    if (gtinNacionalSeleccionado === 'GTIN-13' && this.bandera === 0) {
       this.npais = '786';
-
       this.generacionCodigosService.obtenerSecuencia(prefijo.codpre, this.npais).subscribe({
-        next: (resp: SecuenciaResponse) => {
-          const serie = this.formUV.get('serie')?.value || ''; // Obtener la serie actual desde el form
-          this.secuencia = serie !== '' ? parseInt(serie, 10) : resp.data; // Usar la serie si fue escrita manualmente
-          const continuar = this.validarAfiliacion(this.secuencia); // validar límite
+        next: (resp) => {
+          const serie = this.formUV.get('serie')?.value || '';
+          this.secuencia = serie !== '' ? parseInt(serie, 10) : resp.data;
 
+          const continuar = this.validarAfiliacion(this.secuencia);
           if (!continuar) return;
+
           this.mensaje = resp.message;
-
           const codigoGenerado13N = this.generacionCodigosService.generarCodigo13(prefijo.codpre, this.secuencia);
-          console.log('🎯 GTIN generado:', codigoGenerado13N);
-
           this.formUV.get('gtinUv')?.setValue(codigoGenerado13N);
+
+          this.validarYHabilitarGTIN();
         },
         error: (err) => {
           console.error('Error al obtener secuencia', err);
@@ -633,22 +726,14 @@ export class UvIndividualComponent implements OnInit {
       });
     }
 
-
-    ///////GENERA GTIN8 NACIONAL SIEMPRE QUE EL PREFIJO SEA NACIONAL Y TENGA BANDERA=0
-    if (gtinNacionalSeleccionado === 'gtin8' && this.bandera === 0) {
+    // ✅ GTIN-8 Nacional
+    if (gtinNacionalSeleccionado === 'GTIN-8') {
       this.ncontrolService.obtenerNumeroControlMinPorId(74).subscribe({
         next: (data) => {
-          console.log('📦 Datos recibidos del servicio:', data);
           this.prefijo8 = data.numcon;
-
           const codigoGenerado8N = this.generacionCodigosService.generarCodigo8(this.prefijo8);
-          console.log('🎯 GTIN generado:', codigoGenerado8N);
           this.formUV.get('gtinUv')?.setValue(codigoGenerado8N);
-
-          // Si necesitas validar longitud o hacer algo más con el campo:
-          const gtin = this.formUV.get('gtinUv')?.value || '';
-          const longitud = gtin.length;
-          console.log('📏 Longitud:', longitud);
+          this.validarYHabilitarGTIN();
         },
         error: (err) => {
           console.error('❌ Error al obtener el número de control:', err);
@@ -656,75 +741,63 @@ export class UvIndividualComponent implements OnInit {
       });
     }
 
-
-    ///////GENERA GTIN12 UPC SIEMPRE QUE EL PREFIJO SEA NACIONAL Y TENGA BANDERA=2
-
-    if (gtinNacionalSeleccionado === 'gtin12' && this.bandera === 2) {
+    // ✅ UPC Nacional (GTIN-12)
+    if (gtinNacionalSeleccionado === 'UPC' && this.bandera === 2) {
       this.npais = '';
-      this.generacionCodigosService.obtenerSecuencia(prefijo.codpre, this.npais).subscribe({
-        next: (resp: SecuenciaResponse) => {
+      this.generacionCodigosService.obtenerSecuenciaUpc(prefijo.codpre, this.npais).subscribe({
+        next: (resp) => {
           this.secuencia = resp.data;
           this.mensaje = resp.message;
-
           const longitud = this.formUV.get('gtinUv')?.value?.length || 0;
-          console.log(longitud);
-          console.log(prefijo.codpre);
-          console.log(this.secuencia);
           const codigoGenerado12N = this.generacionCodigosService.generarCodigo12N(prefijo.codpre, this.secuencia, longitud);
-
-          console.log('🎯 GTIN generado:', codigoGenerado12N);
           this.formUV.get('gtinUv')?.setValue(codigoGenerado12N);
+          this.validarYHabilitarGTIN();
         },
         error: (err) => {
           console.error('Error al obtener secuencia', err);
           this.mensaje = 'Error al generar la secuencia';
         }
       });
-
-
     }
 
-
-
-
-    ///////REGISTRO GTIN13I UPC SIEMPRE QUE EL  
-
-
-
-    if (gtinInternacionalSeleccionado === 'gtin13i') {
+    // ✅ GTIN-13 Internacional
+    if (gtinInternacionalSeleccionado === 'GTIN-13I') {
       const gnumero = (this.formUV.get('gtinUv')?.value || '').substring(0, 12);
       const codigoGenerado13I = this.generacionCodigosService.validarYGenerarCodigo13i(gnumero);
-      console.log('🎯 GTIN generado:', codigoGenerado13I);
       this.formUV.get('gtinUv')?.setValue(codigoGenerado13I);
+      this.validarYHabilitarGTIN();
     }
 
-
-    ///////REGISTRO GTIN8I UPC SIEMPRE QUE EL PREFIJO SEA NACIONAL 
-
-    if (gtinInternacionalSeleccionado === 'gtin12i') {
+    // ✅ GTIN-12 Internacional
+    if (gtinInternacionalSeleccionado === 'GTIN-12I') {
       const gnumero = (this.formUV.get('gtinUv')?.value || '').substring(0, 11);
       const codigoGenerado12I = this.generacionCodigosService.validarYGenerarCodigo12(gnumero);
-      console.log('🎯 GTIN generado:', codigoGenerado12I);
       this.formUV.get('gtinUv')?.setValue(codigoGenerado12I);
+      this.validarYHabilitarGTIN();
     }
 
-    ///////REGISTRO GTIN8I UPC SIEMPRE QUE EL PREFIJO SEA NACIONAL 
-
-    if (gtinInternacionalSeleccionado === 'gtin8i') {
+    // ✅ GTIN-8 Internacional
+    if (gtinInternacionalSeleccionado === 'GTIN-8I') {
       const gnumero = (this.formUV.get('gtinUv')?.value || '').substring(0, 7);
-      const codigoGenerado12I = this.generacionCodigosService.validarYGenerarCodigo8(gnumero);
-      console.log('🎯 GTIN generado:', codigoGenerado12I);
-      this.formUV.get('gtinUv')?.setValue(codigoGenerado12I);
+      const codigoGenerado8I = this.generacionCodigosService.validarYGenerarCodigo8(gnumero);
+      this.formUV.get('gtinUv')?.setValue(codigoGenerado8I);
+      this.validarYHabilitarGTIN();
     }
-    if (gtinNacionalSeleccionado === 'gtin13' && this.bandera === 2) {
-      this.mostrarAlerta('No se puede generar este tipo de codigo', 'Error');
+  }
+  private validarYHabilitarGTIN(): void {
+    const gtinG = this.formUV.get('gtinUv')?.value?.toString().trim();
+    if (!gtinG) {
+      this.mostrarAlerta('No se ingresó el GTIN', 'Error');
+      this.gtinInput.nativeElement.focus();
       return;
     }
 
     this.campoGtin = true;
+    this.mostrarAlerta('Código Generado Correctamente', '✔');
     this.botonGenerarDeshabilitado = true;
     this.botonGrabarDeshabilitado = false;
   }
+
 
 
   limpiarCampos(): void {
@@ -740,43 +813,68 @@ export class UvIndividualComponent implements OnInit {
       this.formUV.patchValue({
         codigoCliente: this.clienteSeleccionado.clientes_codigo || '',
         cliente: this.clienteSeleccionado.nomcli || '',
-        ruc: this.clienteSeleccionado.ruc || ''
+        ruc: this.clienteSeleccionado.ruc || '',
+        gtinNacionalSeleccionado: 'GTIN-13',
       });
       this.cargarPrefijos(this.clienteSeleccionado.clientes_codigo);
     }
 
     this.serieEditable = false;
     this.campoGtin = false;
+    this.cargarCliente();
+    this.cargarGrupoProductos();
+    this.getSectores();
+    this.cargarPais();
+    this.getUnidadesMedida();
+    this.formUV.get('tipoGtin')?.setValue(['GTIN-13']);
+    this.formUV.get('gtinNacionalSeleccionado')?.setValue('GTIN-13');
 
+    this.formUV.get('gtinNacionalSeleccionado')?.valueChanges.subscribe(valor => {
+      this.gtinInternacionalActivo = !!valor;
+      if (valor) {
+        this.formUV.get('gtinInternacionalSeleccionado')?.reset();
+        this.formUV.patchValue({ tipoGtin: this.obtenerNombreGTIN(valor) });
+      }
+    });
 
+    this.formUV.get('gtinInternacionalSeleccionado')?.valueChanges.subscribe(valor => {
+      this.gtinNacionalActivo = !!valor;
+      if (valor) {
+        this.formUV.get('gtinNacionalSeleccionado')?.reset();
+        this.formUV.patchValue({ tipoGtin: this.obtenerNombreGTIN(valor) });
+      }
+    });
   }
+
 
   limpiarUl(): void {
-  // Limpiar todos los campos de UL
-  this.formUL.patchValue({
-    tipoGtin: 'GTIN-14',
-    descripcionu: '',
-    factor: '',
-    tipoEmpaque: 'CAJA',
-    unidad: 'UNIDADES',
-    indicador: '',
-    gtinUl: ''
-  });
+    // Limpiar todos los campos de UL
+    this.formUL.patchValue({
+      tipoGtinl: 'GTIN-14',
+      descripcionu: '',
+      factor: '',
+      tipoEmpaque: 'CAJA',
+      unidad: 'UNIDADES',
+      indicador: '1',
+      gtinUl: '',
+      gtinNacionalULSeleccionado: 'gtin14u',
 
-  // Resetear botones
-  this.botonGenerarULDeshabilitado = false;
-  this.botonGrabarULDeshabilitado = true;
+    });
 
-  // Obtener GTIN del formulario UV
-  const gtin = this.formUV.get('gtinUv')?.value;
+    // Resetear botones
+    this.botonGenerarULDeshabilitado = false;
+    this.botonGrabarULDeshabilitado = true;
+    this.campoGtinU = false;
+    // Obtener GTIN del formulario UV
+    const gtin = this.formUV.get('gtinUv')?.value;
 
-  // Verificar si existe el GTIN antes de continuar
-  if (gtin) {
-    this.verificarExistenciaCodbar();
-  } else {
-    console.warn('⚠️ No se encontró GTIN UV al limpiar UL.');
+    // Verificar si existe el GTIN antes de continuar
+    if (gtin) {
+      this.verificarExistenciaCodbar();
+    } else {
+      console.warn('⚠️ No se encontró GTIN UV al limpiar UL.');
+    }
   }
-}
 
 
   salir(): void {
@@ -862,9 +960,9 @@ export class UvIndividualComponent implements OnInit {
   setGtinUvValidators(tipo: string): void {
     let longitud = 12;
 
-    if (tipo === 'gtin12') {
+    if (tipo === 'UPC') {
       longitud = 11;
-    } else if (tipo === 'gtin8') {
+    } else if (tipo === 'GTIN-8') {
       longitud = 7;
     }
 
@@ -963,7 +1061,7 @@ export class UvIndividualComponent implements OnInit {
 
 
   cargarPais(): void {
-    debugger
+
     this.paisService.obtenerPaises().subscribe(data => {
       this.pais = data;
 
@@ -1046,7 +1144,7 @@ export class UvIndividualComponent implements OnInit {
     const secto = datos.sector;
     const sectorR = typeof secto === 'object' && secto !== null ? secto.id_sector : 0;
 
-    debugger
+
     console.log(secto);
 
 
@@ -1168,9 +1266,9 @@ export class UvIndividualComponent implements OnInit {
           IdTipoCodigoGs1: 1 || 0,
           IdGrupoProducto: categoriaId,
           Peso1: datos.Peso,
-         IdUsuario: this.usuarioActual?.id_usuario?? 1,
+          IdUsuario: this.usuarioActual?.id_usuario ?? 1,
           Facturar: '',
-          Nombre: datos.descripcion || '',
+          Nombre: 'CODIGO:',
           Gtin: datos.tipoGtin,
           Target: '',
           Marca: datos.marca || '',
@@ -1178,7 +1276,7 @@ export class UvIndividualComponent implements OnInit {
           Registros: '',
           Obsc: datos.observacion || '',
           IdSector: sectorR,
-          Contenido: datos.contenido || '',
+          Contenido: (datos.contenido ?? '').toString(),
           Um: datos.unidadMedida?.unidad || '',
           Brick: datos.brick || '',
           Pais: datos.pais?.nombre || '',
@@ -1277,7 +1375,7 @@ export class UvIndividualComponent implements OnInit {
     const tipoSeleccionado = this.formUL.get('gtinNacionalULSeleccionado')?.value ||
       this.formUL.get('gtinInternacionalULSeleccionado')?.value;
 
-    if (gtinPrincipal == 'gtin13' && tipoSeleccionado === 'gtin14u') {
+    if (gtinPrincipal == 'GTIN-13' && tipoSeleccionado === 'gtin14u') {
       console.log('✔️ GTIN-14U seleccionado');
 
       const indicador = this.formUL.get('indicador')?.value || '1';
@@ -1286,34 +1384,79 @@ export class UvIndividualComponent implements OnInit {
       const codigoGenerado = this.generacionCodigosService.generarCodigo14(indicador, gtinUv);
       this.formUL.get('gtinUl')?.setValue(codigoGenerado);
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
 
     //generacion de 13 a 13 nacional
-    if (gtinPrincipal == 'gtin13' && tipoSeleccionado === 'gtin13u') {
+    if (gtinPrincipal == 'GTIN-13' && tipoSeleccionado === 'gtin13u') {
       this.generacioncodigos13s1();
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
 
-    if (gtinPrincipal == 'gtin8' && tipoSeleccionado === 'gtin14u') {
+    if (gtinPrincipal == 'GTIN-8' && tipoSeleccionado === 'gtin14u') {
       this.generacionCodigo148();
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
-    if (gtinPrincipal == 'gtin8' && tipoSeleccionado === 'gtin13u') {
+    if (gtinPrincipal == 'GTIN-8' && tipoSeleccionado === 'gtin13u') {
       this.generacioncodigos13s1();
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
-
+    if (gtinPrincipal == 'GTIN-8' && tipoSeleccionado === 'gtin13ui') {
+      this.calcularDigitoVerificador13Manual();
+      this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
+      this.botonGenerarULDeshabilitado = true;
+      this.botonGrabarULDeshabilitado = false;
+    }
+    if (gtinPrincipal == 'GTIN-8' && tipoSeleccionado === 'gtin12ui') {
+      this.calcularDigitoVerificador12Manual();
+      this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
+      this.botonGenerarULDeshabilitado = true;
+      this.botonGrabarULDeshabilitado = false;
+    }
+    if (gtinPrincipal == 'GTIN-8' && tipoSeleccionado === 'gtin14ui') {
+      this.calcularDigitoVerificador14Manual();
+      this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
+      this.botonGenerarULDeshabilitado = true;
+      this.botonGrabarULDeshabilitado = false;
+    }
+    if (gtinPrincipal == 'GTIN-13' && tipoSeleccionado === 'gtin13ui') {
+      this.calcularDigitoVerificador13Manual();
+      this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
+      this.botonGenerarULDeshabilitado = true;
+      this.botonGrabarULDeshabilitado = false;
+    }
+    if (gtinPrincipal == 'GTIN-13' && tipoSeleccionado === 'gtin12ui') {
+      this.calcularDigitoVerificador12Manual();
+      this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
+      this.botonGenerarULDeshabilitado = true;
+      this.botonGrabarULDeshabilitado = false;
+    }
+    if (gtinPrincipal == 'GTIN-13' && tipoSeleccionado === 'gtin14ui') {
+      this.calcularDigitoVerificador14Manual();
+      this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
+      this.botonGenerarULDeshabilitado = true;
+      this.botonGrabarULDeshabilitado = false;
+    }
     //generar g13i a gtin 14 n
 
-    if (gtinPrincipal == 'gtin13i' && tipoSeleccionado === 'gtin14u') {
+    if (gtinPrincipal == 'GTIN-13I' && tipoSeleccionado === 'gtin14u') {
       console.log('✔️ GTIN-14U seleccionado');
 
       const indicador = this.formUL.get('indicador')?.value || '1';
@@ -1322,75 +1465,85 @@ export class UvIndividualComponent implements OnInit {
       const codigoGenerado = this.generacionCodigosService.generarCodigo14(indicador, gtinUv);
       this.formUL.get('gtinUl')?.setValue(codigoGenerado);
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
     //genero de 13i a 13 n
 
-    if (gtinPrincipal == 'gtin13i' && tipoSeleccionado === 'gtin13u') {
+    if (gtinPrincipal == 'GTIN-13I' && tipoSeleccionado === 'gtin13u') {
       this.generacioncodigos13s1();
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
 
-    if (gtinPrincipal == 'gtin13i' && tipoSeleccionado === 'gtin14ui') {
+    if (gtinPrincipal == 'GTIN-13I' && tipoSeleccionado === 'gtin14ui') {
       this.generacion14iiver14();
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
-    if (gtinPrincipal == 'gtin13i' && tipoSeleccionado === 'gtin13ui') {
+    if (gtinPrincipal == 'GTIN-13I' && tipoSeleccionado === 'gtin13ui') {
       this.generacion13iiver14();
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
-    if (gtinPrincipal == 'gtin13i' && tipoSeleccionado === 'gtin12ui') {
+    if (gtinPrincipal == 'GTIN-13I' && tipoSeleccionado === 'gtin12ui') {
       this.generacion12iiver14();
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
 
     // generar g8i a g14
 
-    if (gtinPrincipal == 'gtin8i' && tipoSeleccionado === 'gtin14u') {
+    if (gtinPrincipal == 'GTIN-8I' && tipoSeleccionado === 'gtin14u') {
       this.generacionCodigo148();
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
 
     ///gtin 8i internaciona al gtin 13 n
-    if (gtinPrincipal == 'gtin8i' && tipoSeleccionado === 'gtin13u') {
+    if (gtinPrincipal == 'GTIN-8I' && tipoSeleccionado === 'gtin13u') {
       this.generacioncodigos13s1();
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
 
     //////
-    if (gtinPrincipal == 'gtin8i' && tipoSeleccionado === 'gtin14ui') {
+    if (gtinPrincipal == 'GTIN-8I' && tipoSeleccionado === 'gtin14ui') {
       this.generacion14iiver14();
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
 
-    if (gtinPrincipal == 'gtin8i' && tipoSeleccionado === 'gtin13ui') {
+    if (gtinPrincipal == 'GTIN-8I' && tipoSeleccionado === 'gtin13ui') {
       this.generacion13iiver14();
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
-    if (gtinPrincipal == 'gtin8i' && tipoSeleccionado === 'gtin12ui') {
+    if (gtinPrincipal == 'GTIN-8I' && tipoSeleccionado === 'gtin12ui') {
       this.generacion12iiver14();
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
-    if (gtinPrincipal == 'gtin12i' && tipoSeleccionado === 'gtin14u') {
+    if (gtinPrincipal == 'GTIN-12I' && tipoSeleccionado === 'gtin14u') {
       console.log('✔️ GTIN-14U seleccionado');
 
       const indicador = this.formUL.get('indicador')?.value || '1';
@@ -1399,35 +1552,82 @@ export class UvIndividualComponent implements OnInit {
       const codigoGenerado = this.generacionCodigosService.generarCodigo14(indicador, gtinUv);
       this.formUL.get('gtinUl')?.setValue(codigoGenerado);
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
-    if (gtinPrincipal == 'gtin12i' && tipoSeleccionado === 'gtin13u') {
+    if (gtinPrincipal == 'GTIN-12I' && tipoSeleccionado === 'gtin13u') {
       this.generacioncodigos13s1();
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
-    if (gtinPrincipal == 'gtin12i' && tipoSeleccionado === 'gtin14ui') {
+    if (gtinPrincipal == 'GTIN-12I' && tipoSeleccionado === 'gtin14ui') {
       this.generacion14iiver14();
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
 
-    if (gtinPrincipal == 'gtin12i' && tipoSeleccionado === 'gtin13ui') {
+    if (gtinPrincipal == 'GTIN-12I' && tipoSeleccionado === 'gtin13ui') {
       this.generacion13iiver14();
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
-    if (gtinPrincipal == 'gtin12i' && tipoSeleccionado === 'gtin12ui') {
+    if (gtinPrincipal == 'GTIN-12I' && tipoSeleccionado === 'gtin12ui') {
       this.generacion12iiver14();
       this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
+      this.botonGenerarULDeshabilitado = true;
+      this.botonGrabarULDeshabilitado = false;
+    }
+    if (gtinPrincipal == 'UPC' && tipoSeleccionado === 'gtin14u') {
+      this.generarGtin14DesdeUpc12();
+      this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
+      this.botonGenerarULDeshabilitado = true;
+      this.botonGrabarULDeshabilitado = false;
+    }
+    if (gtinPrincipal == 'UPC' && tipoSeleccionado === 'gtin14ui') {
+      this.generacion14iiver14();
+      this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
       this.botonGenerarULDeshabilitado = true;
       this.botonGrabarULDeshabilitado = false;
     }
 
+    if (gtinPrincipal == 'UPC' && tipoSeleccionado === 'gtin13ui') {
+      this.generacion13iiver14();
+      this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
+      this.botonGenerarULDeshabilitado = true;
+      this.botonGrabarULDeshabilitado = false;
+    }
+    if (gtinPrincipal == 'UPC' && tipoSeleccionado === 'gtin12ui') {
+      this.generacion12iiver14();
+      this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
+      this.botonGenerarULDeshabilitado = true;
+      this.botonGrabarULDeshabilitado = false;
+    }
+    if (gtinPrincipal == 'UPC' && tipoSeleccionado === 'gtin12u') {
+      this.generacioncodigos12n();
+      this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
+      this.botonGenerarULDeshabilitado = true;
+      this.botonGrabarULDeshabilitado = false;
+    }
+    if (gtinPrincipal == 'GTIN-8' && tipoSeleccionado === 'gtin12u' && this.bandera === 2) {
+      this.generacioncodigos12n();
+      this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
+      this.botonGenerarULDeshabilitado = true;
+      this.botonGrabarULDeshabilitado = false;
+    }
 
   }
 
@@ -1472,7 +1672,7 @@ export class UvIndividualComponent implements OnInit {
         data: {
           title: '¿Desea confirmar?',
           message: `El código será ${msg}. ¿Está seguro?`,
-          type: 'question',
+          type: 'info',
           confirmText: 'Sí, confirmar',
           cancelText: 'Cancelar',
           showCancel: true
@@ -1480,6 +1680,7 @@ export class UvIndividualComponent implements OnInit {
       }).afterClosed().subscribe(result => {
         if (result === true) {
           accion();
+          this.mostrarDialogoOtraPresentacion();
         } else {
           console.log('❌ Usuario canceló');
         }
@@ -1487,106 +1688,145 @@ export class UvIndividualComponent implements OnInit {
     };
 
     // Mismos casos de antes, ahora limpios
-    if (gtinPrincipal === 'gtin13' && tipoSeleccionado === 'gtin13u') {
+    if (gtinPrincipal === 'GTIN-13' && tipoSeleccionado === 'gtin13u') {
       confirmarYGuardar(() => {
         this.guardarProductoPresentacion();
         this.crearGtin14(msg);
       });
     }
 
-    if (gtinPrincipal === 'gtin13' && tipoSeleccionado === 'gtin14u') {
+    if (gtinPrincipal === 'GTIN-13' && tipoSeleccionado === 'gtin14u') {
       confirmarYGuardar(() => this.crearGtin14(msg));
     }
 
-    if (gtinPrincipal === 'gtin8' && tipoSeleccionado === 'gtin14u') {
+    if (gtinPrincipal === 'GTIN-8' && tipoSeleccionado === 'gtin14u') {
       confirmarYGuardar(() => this.crearGtin14(msg));
     }
 
-    if (gtinPrincipal === 'gtin8' && tipoSeleccionado === 'gtin13u') {
+    if (gtinPrincipal === 'GTIN-8' && tipoSeleccionado === 'gtin13u') {
       confirmarYGuardar(() => {
         this.guardarProductoPresentacion();
         this.crearGtin14(msg);
       });
     }
 
-    if (gtinPrincipal === 'gtin13i' && tipoSeleccionado === 'gtin14u') {
+    if (gtinPrincipal === 'GTIN-13I' && tipoSeleccionado === 'gtin14u') {
       confirmarYGuardar(() => this.crearGtin14(msg));
     }
 
-    if (gtinPrincipal === 'gtin13i' && tipoSeleccionado === 'gtin13u') {
+    if (gtinPrincipal === 'GTIN-13I' && tipoSeleccionado === 'gtin13u') {
       confirmarYGuardar(() => {
         this.guardarProductoPresentacion();
         this.crearGtin14(msg);
       });
     }
 
-    if (gtinPrincipal === 'gtin13i' && tipoSeleccionado === 'gtin14ui') {
+    if (gtinPrincipal === 'GTIN-13I' && tipoSeleccionado === 'gtin14ui') {
       confirmarYGuardar(() => this.crearGtin14(msg));
     }
 
-    if (gtinPrincipal === 'gtin13i' && tipoSeleccionado === 'gtin13ui') {
-      confirmarYGuardar(() => {
-        this.guardarProductoPresentacion();
-        this.crearGtin14(msg);
-      });
-    }
-
-    if (gtinPrincipal === 'gtin13i' && tipoSeleccionado === 'gtin12ui') {
-      confirmarYGuardar(() => {
-        this.guardarProductoPresentacion();
-        this.crearGtin14(msg);
-      });
-    }
-    if (gtinPrincipal === 'gtin8i' && tipoSeleccionado === 'gtin14u') {
-      confirmarYGuardar(() => this.crearGtin14(msg));
-    }
-    if (gtinPrincipal === 'gtin8i' && tipoSeleccionado === 'gtin13u') {
-      confirmarYGuardar(() => {
-        this.guardarProductoPresentacion();
-        this.crearGtin14(msg);
-      });
-    }
-    if (gtinPrincipal === 'gtin8i' && tipoSeleccionado === 'gtin14ui') {
-      confirmarYGuardar(() => this.crearGtin14(msg));
-    }
-    if (gtinPrincipal === 'gtin8i' && tipoSeleccionado === 'gtin13ui') {
-      confirmarYGuardar(() => {
-        this.guardarProductoPresentacion();
-        this.crearGtin14(msg);
-      });
-    }
-    if (gtinPrincipal === 'gtin8i' && tipoSeleccionado === 'gtin12ui') {
-      confirmarYGuardar(() => {
-        this.guardarProductoPresentacion();
-        this.crearGtin14(msg);
-      });
-    }
-    if (gtinPrincipal === 'gtin12i' && tipoSeleccionado === 'gtin14u') {
-      confirmarYGuardar(() => this.crearGtin14(msg));
-    }
-    if (gtinPrincipal === 'gtin12i' && tipoSeleccionado === 'gtin13u') {
-      confirmarYGuardar(() => {
-        this.guardarProductoPresentacion();
-        this.crearGtin14(msg);
-      });
-    }
-    if (gtinPrincipal === 'gtin12i' && tipoSeleccionado === 'gtin14ui') {
-      confirmarYGuardar(() => this.crearGtin14(msg));
-    }
-    if (gtinPrincipal === 'gtin12i' && tipoSeleccionado === 'gtin13ui') {
-      confirmarYGuardar(() => {
-        this.guardarProductoPresentacion();
-        this.crearGtin14(msg);
-      });
-    }
-    if (gtinPrincipal === 'gtin12i' && tipoSeleccionado === 'gtin12ui') {
+    if (gtinPrincipal === 'GTIN-13I' && tipoSeleccionado === 'gtin13ui') {
       confirmarYGuardar(() => {
         this.guardarProductoPresentacion();
         this.crearGtin14(msg);
       });
     }
 
+    if (gtinPrincipal === 'GTIN-13I' && tipoSeleccionado === 'gtin12ui') {
+      confirmarYGuardar(() => {
+        this.guardarProductoPresentacion();
+        this.crearGtin14(msg);
+      });
+    }
+    if (gtinPrincipal === 'gtin8I' && tipoSeleccionado === 'gtin14u') {
+      confirmarYGuardar(() => this.crearGtin14(msg));
+    }
+    if (gtinPrincipal === 'GTIN-8I' && tipoSeleccionado === 'gtin13u') {
+      confirmarYGuardar(() => {
+        this.guardarProductoPresentacion();
+        this.crearGtin14(msg);
+      });
+    }
+    if (gtinPrincipal === 'GTIN-8I' && tipoSeleccionado === 'gtin14ui') {
+      confirmarYGuardar(() => this.crearGtin14(msg));
+    }
+    if (gtinPrincipal === 'GTIN-8I' && tipoSeleccionado === 'gtin13ui') {
+      confirmarYGuardar(() => {
+        this.guardarProductoPresentacion();
+        this.crearGtin14(msg);
+      });
+    }
+    if (gtinPrincipal === 'GTIN-8I' && tipoSeleccionado === 'gtin12ui') {
+      confirmarYGuardar(() => {
+        this.guardarProductoPresentacion();
+        this.crearGtin14(msg);
+      });
+    }
+    if (gtinPrincipal === 'GTIN-12I' && tipoSeleccionado === 'gtin14u') {
+      confirmarYGuardar(() => this.crearGtin14(msg));
+    }
+    if (gtinPrincipal === 'GTIN-12I' && tipoSeleccionado === 'gtin13u') {
+      confirmarYGuardar(() => {
+        this.guardarProductoPresentacion();
+        this.crearGtin14(msg);
+      });
+    }
+    if (gtinPrincipal === 'GTIN-12I' && tipoSeleccionado === 'gtin14ui') {
+      confirmarYGuardar(() => this.crearGtin14(msg));
+    }
+    if (gtinPrincipal === 'GTIN-12I' && tipoSeleccionado === 'gtin13ui') {
+      confirmarYGuardar(() => {
+        this.guardarProductoPresentacion();
+        this.crearGtin14(msg);
+      });
+    }
+    if (gtinPrincipal === 'GTIN-12I' && tipoSeleccionado === 'gtin12ui') {
+      confirmarYGuardar(() => {
+        this.guardarProductoPresentacion();
+        this.crearGtin14(msg);
+      });
+    }
 
+    if (gtinPrincipal === 'UPC' && tipoSeleccionado === 'gtin14u') {
+      confirmarYGuardar(() => {
+        this.guardarProductoPresentacion();
+        this.crearGtin14(msg);
+      });
+    }
+    if (gtinPrincipal === 'UPC' && tipoSeleccionado === 'gtin12ui') {
+      confirmarYGuardar(() => {
+        this.guardarProductoPresentacion();
+        this.crearGtin14(msg);
+      });
+    }
+    if (gtinPrincipal === 'UPC' && tipoSeleccionado === 'gtin13ui') {
+      confirmarYGuardar(() => {
+        this.guardarProductoPresentacion();
+        this.crearGtin14(msg);
+      });
+    }
+    if (gtinPrincipal === 'UPC' && tipoSeleccionado === 'gtin14ui') {
+      confirmarYGuardar(() => this.crearGtin14(msg));
+    }
+    if (gtinPrincipal == 'UPC' && tipoSeleccionado === 'gtin12u') {
+      this.generacioncodigos12n();
+      this.campoGtinU = true;
+      this.mostrarAlerta('Código Generado Correctamente', '✔');
+      this.botonGenerarULDeshabilitado = true;
+      this.botonGrabarULDeshabilitado = false;
+    }
+    if (gtinPrincipal === 'UPC' && tipoSeleccionado === 'gtin12u') {
+      confirmarYGuardar(() => {
+        this.guardarProductoPresentacion();
+        this.crearGtin14(msg);
+      });
+    }
+    if (gtinPrincipal === 'GTIN-8' && tipoSeleccionado === 'gtin12u' && this.bandera === 2) {
+      confirmarYGuardar(() => {
+        this.guardarProductoPresentacion();
+        this.crearGtin14(msg);
+      });
+    }
 
     this.botonGrabarULDeshabilitado = true;
     this.botonGenerarULDeshabilitado = false;
@@ -1597,7 +1837,7 @@ export class UvIndividualComponent implements OnInit {
     const datosUV = this.formUV.getRawValue(); // incluye campos deshabilitados
     const datosUL = this.formUL.getRawValue();
     const indicador = this.formUL.get('indicador')?.value || '0';
-    debugger
+
     const nuevoCodigo14: Codigos14Request = {
       id_codigos14: 0,
       codbar: datosUV.gtinUv ?? '',
@@ -1605,7 +1845,7 @@ export class UvIndividualComponent implements OnInit {
       clientes_codigo: this.clienteSeleccionado?.clientes_codigo ?? 0,
       presentacion: indicador,
       unidad: datosUL.factor ?? '',
-      descripcion: datosUL.descripcionu ?? '',
+      descripcion: datosUL.descripcionu.toUpperCase() ?? '',
       g14: datosUL.gtinUl ?? '',
       largo: 0,
       ancho: 0,
@@ -1617,7 +1857,7 @@ export class UvIndividualComponent implements OnInit {
       id_usuario: 2,
       codpro: datosUV.gtinUv ?? '',
       facturar: '',
-      nombre: datosUV.descripcion ?? '',
+      nombre: 'PRESENTACION:',
       gtin: 'GTIN14',
       target: '',
       marca: datosUV.marca ?? '',
@@ -1783,6 +2023,62 @@ export class UvIndividualComponent implements OnInit {
       });
   }
 
+  generacioncodigos12n(): void {
+    const idSeleccionado = this.formUV.value.gcp;
+    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+
+    const codpre = objeto?.codpre;
+    if (!codpre) {
+      console.error('⚠️ Prefijo no encontrado para el ID:', idSeleccionado);
+      return;
+    }
+
+    this.npais = ''; // UPC nacional no lleva código país
+    const largoPrefijo = codpre.length;
+
+    let inicio: number;
+    let largo: number;
+
+    switch (largoPrefijo) {
+      case 5: inicio = 7; largo = 5; break;
+      case 6: inicio = 8; largo = 4; break;
+      case 7: inicio = 9; largo = 3; break;
+      default:
+        console.error('⚠️ Longitud del prefijo inválida para GTIN-12');
+        return;
+    }
+
+    const codbarPrefix = codpre;
+
+    this.generacionCodigosService.getUltimoRestoPresentacion(
+      codpre,
+      codbarPrefix,
+      inicio,
+      largo,
+      12 // longitud del GTIN final
+    ).subscribe({
+      next: (response) => {
+        const serie2 = this.formUL.get('serie2')?.value || '';
+        this.secuencia = serie2 !== '' ? parseInt(serie2, 10) : response.data;
+
+        const codigoGenerado12 = this.generacionCodigosService.generarCodigo12N(
+          codpre,
+          this.secuencia,
+          12
+        );
+
+        console.log('GTIN-12 generado:', codigoGenerado12);
+
+        this.campoGtinU = true;
+        this.formUL.get('gtinUl')?.setValue(codigoGenerado12);
+      },
+      error: (err) => {
+        console.error('❌ Error al obtener secuencia para GTIN-12:', err);
+      }
+    });
+  }
+
+
 
   guardarProductoPresentacion() {
 
@@ -1802,7 +2098,7 @@ export class UvIndividualComponent implements OnInit {
     const nuevoProducto: ProductoRequest = {
       IdProducto: 0,
       Codpro: gtinForzado || '',
-      Despro: datos1.descripcionu || '',
+      Despro: datos1.descripcionu.toUpperCase() || '',
       Tippro: 'S',
       Codgru: datos.categoria?.id || 0,
       Codsec: 0,
@@ -1917,17 +2213,17 @@ export class UvIndividualComponent implements OnInit {
           IdTipoCodigoGs1: 1 || 0,
           IdGrupoProducto: categoriaId,
           Peso1: datos.Peso,
-          IdUsuario: this.usuarioActual?.id_usuario?? 1,
+          IdUsuario: this.usuarioActual?.id_usuario ?? 1,
           Facturar: '',
-          Nombre: datos.descripcion || '',
-          Gtin: datos.tipoGtin,
+          Nombre: 'CODIGO:',
+          Gtin: datos1.tipoGtinl,
           Target: '',
           Marca: datos.marca || '',
           Autfuncion: '',
           Registros: '',
           Obsc: datos.observacion || '',
           IdSector: sectorR,
-          Contenido: datos.contenido || '',
+          Contenido: (datos.contenido ?? '').toString(),
           Um: datos.unidadMedida?.unidad || '',
           Brick: datos.brick || '',
           Pais: datos.pais?.nombre || '',
@@ -2183,7 +2479,7 @@ export class UvIndividualComponent implements OnInit {
   }
 
   cargarClientePorId(id: number): void {
-    debugger
+
     console.log('🔍 ID recibido en cargarClientePorId:', id); // 👈 AÑADE ESTO
 
     this.clienteService.getClienteById(id).subscribe({
@@ -2209,6 +2505,166 @@ export class UvIndividualComponent implements OnInit {
     });
   }
 
+  calcularDigitoVerificador12Manual(): void {
+    const input = this.formUL.get('gtinUl')?.value;
 
+    if (!input || input.length !== 11 || !/^\d+$/.test(input)) {
+      this.mostrarAlerta('⚠️ Ingrese exactamente 11 dígitos numéricos', 'Error');
+
+      return;
+    }
+
+    const ean = input;
+    let suma = 0;
+
+    for (let i = 0; i < ean.length; i++) {
+      const digito = parseInt(ean.charAt(i), 10);
+
+      // En GTIN-12: impares (pos 1,3,5,...) * 3, pares * 1
+      if ((i + 1) % 2 === 1) {
+        suma += digito * 3;
+      } else {
+        suma += digito;
+      }
+    }
+
+    const dv = (10 - (suma % 10)) % 10;
+    const codigoFinal = ean + dv.toString();
+
+    console.log('✅ Código GTIN-12 con DV calculado:', codigoFinal);
+    this.formUL.get('gtinUl')?.setValue(codigoFinal);
+  }
+
+  calcularDigitoVerificador14Manual(): void {
+    const input = this.formUL.get('gtinUl')?.value;
+
+    if (!input || input.length !== 13 || !/^\d+$/.test(input)) {
+      this.mostrarAlerta('⚠️ Ingrese exactamente 13 dígitos numéricos para GTIN-14', 'Error');
+
+      return;
+    }
+
+    let suma = 0;
+
+    // Desde la derecha hacia la izquierda
+    for (let i = 0; i < 13; i++) {
+      const idx = 12 - i; // posición de derecha a izquierda
+      const digito = parseInt(input.charAt(idx), 10);
+      const peso = (i % 2 === 0) ? 3 : 1;
+      suma += digito * peso;
+    }
+
+    const dv = (10 - (suma % 10)) % 10;
+    const codigoFinal = input + dv.toString();
+
+    console.log(`✅ GTIN-14 completo generado: ${codigoFinal} (DV = ${dv})`);
+    this.formUL.get('gtinUl')?.setValue(codigoFinal);
+  }
+  calcularDigitoVerificador13Manual(): void {
+    const input = this.formUL.get('gtinUl')?.value;
+
+    if (!input || input.length !== 12 || !/^\d+$/.test(input)) {
+      this.mostrarAlerta('⚠️ Ingrese exactamente 12 dígitos numéricos', 'Error');
+
+      return;
+    }
+
+    const ean = input;
+    let suma = 0;
+
+    for (let i = 0; i < ean.length; i++) {
+      const digito = parseInt(ean.charAt(i), 10);
+      // Los dígitos en posiciones impares se multiplican por 1, en pares por 3
+      suma += (i % 2 === 0) ? digito : digito * 3;
+    }
+
+    const dv = (10 - (suma % 10)) % 10;
+    const codigoFinal = ean + dv.toString();
+
+    console.log('✅ Código con DV calculado:', codigoFinal);
+    this.formUL.get('gtinUl')?.setValue(codigoFinal);
+  }
+
+  generarGtin14DesdeUpc12(): void {
+    const indicador = this.formUL.get('indicador')?.value || '';
+    const upc12 = this.formUV.get('gtinUv')?.value || ''; // debe tener 12 dígitos
+
+    if (indicador.length !== 1 || upc12.length !== 12 || !/^\d+$/.test(upc12)) {
+      console.error('⚠️ Indicador o UPC inválido');
+      return;
+    }
+
+    const base = indicador + upc12.substring(0, 11); // 1 + 11 = 12 dígitos base
+
+    let suma = 0;
+    for (let i = 0; i < base.length; i++) {
+      const dig = parseInt(base.charAt(i), 10);
+      suma += (i % 2 === 0) ? dig * 3 : dig; // posición par/impar (0-based)
+    }
+
+    const dv = (10 - (suma % 10)) % 10;
+    const gtin14 = base + dv;
+
+    this.formUL.get('gtinUl')?.setValue(gtin14);
+    console.log('✅ GTIN-14 generado desde UPC:', gtin14);
+    this.campoGtinU = true;
+  }
+
+  cargarParametroFacturaPorId(id: number): void {
+    this.parametrosFacturaService.getById(id).subscribe({
+      next: (parametro) => {
+        // Aquí asignas el resultado a una variable del componente
+        this.api = parametro.texto ?? '';
+        this.claveApi = parametro.obs ?? ''; // si `valor` puede ser undefined
+
+        console.log('✅ Parámetro cargado:', parametro);
+      },
+      error: (error) => {
+        console.error('❌ Error al obtener el parámetro:', error);
+        // Puedes mostrar un mensaje de error si deseas
+      }
+    });
+  }
+  mostrarDialogoOtraPresentacion(): void {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: '',
+        message: '¿Desea generar otra presentación?',
+        type: 'info',
+        confirmText: 'Sí',
+        cancelText: 'No',
+        showCancel: true
+      }
+    }).afterClosed().subscribe(result => {
+      if (result === true) {
+        this.limpiarUl();// 👈 función que puedes definir para preparar nuevo ingreso
+      } else {
+        this.salir();
+        console.log('✅ Usuario finalizó sin nueva presentación');
+      }
+    });
+  }
+  onIndicadorBlur(): void {
+  
+  const { indicador } = this.formUL.getRawValue();
+  const { gtinUv, codigoCliente } = this.formUV.getRawValue();
+
+  const presentacion = parseInt(indicador, 10);
+
+  if (!gtinUv || !codigoCliente || isNaN(presentacion)) {
+    return; // no hacer nada si falta un dato
+  }
+
+  this.codigos14Service
+  .filtrarCodigos14(codigoCliente, presentacion, gtinUv.trim())
+  .subscribe(result => {
+    console.log('Resultado del filtro:', result);
+    console.log('Cantidad:', result.length); // 👈 aquí debería ser ≥ 1
+    if (result.length > 0) {
+      this.mostrarAlerta('⚠️ Factor ya existe!!!', 'Advertencia');
+    }
+  });
+}
 
 }

@@ -7,6 +7,7 @@ import { EmpresaRequest } from '../interfaces/requests/empresa-request';
 import { EmpresaResponse } from '../interfaces/responses/empresa-response';
 import { AsignarGerenteContadorRequest } from '../interfaces/requests/asignar-gerente-contador';
 import { ApiListResponse } from '../interfaces/responses/ApiListResponse';
+import { LogoFirmaResponse } from '../interfaces/responses/logo-firma-response';
 
 @Injectable({
   providedIn: 'root'
@@ -76,5 +77,13 @@ export class EmpresaService {
     return this.http.post<ApiListResponse<any>>(this.asignarUrl, data).pipe(
       map(response => response.data)
     );
+  }
+  //Devuelve el logo y la firma parametrizados en la base
+
+  //Precaucion, si se cambia algun valor de la ruta o del reponse, no funcionarian los logos ni firmas en todo el sistema
+  getLogoFirma(idEmpresa: number): Observable<LogoFirmaResponse> {
+    return this.http
+      .get<ApiListResponse<LogoFirmaResponse>>(`${this.apiUrl}/${idEmpresa}/logo-firma`)
+      .pipe(map(response => response.data));
   }
 }
