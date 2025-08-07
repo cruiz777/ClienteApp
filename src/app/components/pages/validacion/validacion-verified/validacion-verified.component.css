@@ -1,0 +1,353 @@
+/* ESTILOS PARA EL COMPONENTE DE DETALLE DE PRODUCTO */
+
+.producto-detalle-container {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Header estilo GS1 */
+.gs1-header {
+  background-color: #213462;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-content {
+  text-align: center;
+}
+
+.gs1-title {
+  color: white;
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.gs1-number {
+  font-size: 1em;
+  font-weight: 400;
+}
+
+.ecuador-badge {
+  font-size: 1em;
+  font-weight: 400;
+  background-color: white;
+  color: #213462;
+  padding: 8px 16px;
+  border-radius: 8px;
+  margin-left: 10px;
+}
+
+/* Container principal */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px 20px;
+}
+
+/* Sección de búsqueda */
+.search-section {
+  margin-bottom: 30px;
+}
+
+.search-card {
+  background: white;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border-left: 5px solid #002c6c;
+}
+
+.search-title {
+  color: #002c6c;
+  margin-bottom: 20px;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.search-form {
+  position: relative;
+}
+
+.input-group {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 15px 20px;
+  font-size: 16px;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #002c6c;
+  box-shadow: 0 0 0 3px rgba(0, 44, 108, 0.1);
+}
+
+.search-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 15px 25px;
+  background-color: #002c6c;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.search-btn:hover {
+  background-color: #001a44;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 44, 108, 0.3);
+}
+
+.search-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.search-icon, .loading-icon {
+  width: 20px;
+  height: 20px;
+}
+
+.loading-icon {
+  animation: hourglass-spin 2s ease-in-out infinite;
+}
+
+.nueva-busqueda {
+  color: #F26334;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+  float: right;
+  margin-top: -10px;
+}
+
+.nueva-busqueda:hover {
+  text-decoration: underline;
+}
+
+/* Estados de carga y error */
+.loading-state, .error-state {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.main-loading-icon {
+  width: 60px;
+  height: 60px;
+  animation: hourglass-spin 2s ease-in-out infinite;
+  margin-bottom: 20px;
+}
+
+.error-card {
+  background: white;
+  border-radius: 12px;
+  padding: 40px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  border-left: 5px solid #dc3545;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.error-card h4 {
+  color: #dc3545;
+  margin-bottom: 15px;
+}
+
+.btn-retry {
+  background-color: #002c6c;
+  color: white;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 20px;
+}
+
+/* Resultado del producto */
+.producto-result {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.info-section {
+  padding: 30px;
+  border-bottom: 1px solid #eee;
+}
+
+.info-section:last-child {
+  border-bottom: none;
+}
+
+.section-title {
+  color: #F26334;
+  font-size: 22px;
+  font-weight: 600;
+  margin-bottom: 25px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #F26334;
+}
+
+/* Grid de formularios */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group-wide {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #333;
+  font-size: 14px;
+}
+
+.label-en {
+  color: #F26334;
+  font-weight: 400;
+}
+
+.form-control {
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 14px;
+  background-color: #f8f9fa;
+}
+
+.readonly-input {
+  background-color: #f8f9fa;
+  cursor: default;
+}
+
+.bold-input {
+  font-weight: 700;
+  background-color: #ffffff;
+  border-color: #002c6c;
+}
+
+/* Enlaces especiales */
+.view-image, .view-website {
+  font-size: 12px;
+  color: #002c6c;
+  text-decoration: none;
+  margin-top: 5px;
+}
+
+.view-image:hover, .view-website:hover {
+  text-decoration: underline;
+}
+
+/* Unidades logísticas */
+.logistic-units {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+.logistic-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 2fr;
+  gap: 20px;
+  padding: 20px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border-left: 4px solid #002c6c;
+}
+
+/* Animaciones */
+@keyframes hourglass-spin {
+  0% { transform: rotate(0deg); }
+  50% { transform: rotate(180deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container {
+    padding: 20px 15px;
+  }
+  
+  .search-card {
+    padding: 20px;
+  }
+  
+  .input-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-btn {
+    justify-content: center;
+  }
+  
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .logistic-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .info-section {
+    padding: 20px;
+  }
+  
+  .nueva-busqueda {
+    float: none;
+    margin-top: 10px;
+    display: block;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .gs1-title {
+    font-size: 18px;
+  }
+  
+  .ecuador-badge {
+    padding: 6px 12px;
+    font-size: 14px;
+  }
+  
+  .search-input {
+    padding: 12px 15px;
+    font-size: 14px;
+  }
+  
+  .search-btn {
+    padding: 12px 20px;
+    font-size: 14px;
+  }
+}

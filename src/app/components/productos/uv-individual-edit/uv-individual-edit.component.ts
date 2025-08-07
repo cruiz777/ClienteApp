@@ -1260,13 +1260,19 @@ export class UvIndividualEditComponent implements OnInit {
     });
   }
 
-  formatearFecha(fechaStr: string): string {
-    const fecha = new Date(fechaStr);
-    const dia = String(fecha.getDate()).padStart(2, '0');
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-    const anio = fecha.getFullYear();
+ formatearFecha(fechaStr: string | Date): string {
+  if (typeof fechaStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+    const [anio, mes, dia] = fechaStr.split('-');
     return `${dia}/${mes}/${anio}`;
   }
+
+  const fecha = new Date(fechaStr);
+  const dia = String(fecha.getDate()).padStart(2, '0');
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  const anio = fecha.getFullYear();
+  return `${dia}/${mes}/${anio}`;
+}
+
 
 
   habilitarModificar() {

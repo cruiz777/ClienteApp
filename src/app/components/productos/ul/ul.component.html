@@ -237,7 +237,7 @@
       <div><label>Unidad:</label><input type="text" formControlName="unidad"  />
       </div>
       <div><label>Indicador:</label><input type="text" formControlName="indicador"
-          (keypress)="permitirSoloNumeros($event)" maxlength="1" /></div>
+          (keypress)="permitirSoloNumeros($event)" maxlength="1" (blur)="onIndicadorBlur()" /></div>
       <div><label>Factor:</label><input type="text" formControlName="factor" (blur)="actualizarDescripcionUL()"
           (keypress)="permitirSoloNumeros($event)" /></div>
 

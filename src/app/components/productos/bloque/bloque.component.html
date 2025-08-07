@@ -74,10 +74,10 @@
       </div>
       <div>
         <label for="t" style="display: inline;">T:</label>
-        <input id="t" type="text" formControlName="t" style="display: inline; width: 80px;">
+        <input id="t" type="text" formControlName="t" style="display: inline; width: 80px;" (input)="convertirAMayusculas('t', $event)">
 
         <label for="u" style="display: inline; margin-left: 10px;">U:</label>
-        <input id="u" type="text" formControlName="u" style="display: inline; width: 80px;">
+        <input id="u" type="text" formControlName="u" style="display: inline; width: 80px;" (input)="convertirAMayusculas('u', $event)">
       </div>
     </div>
 
@@ -119,6 +119,9 @@
               [disabled]="factorDeshabilitado">
     </textarea>
   </mat-form-field>
+  <mat-checkbox [(ngModel)]="checkIndicador"  [disabled]="checkboxMaestroDeshabilitado" >
+    Modificar Indicador
+  </mat-checkbox>
 </div>
 
 

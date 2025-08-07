@@ -8,6 +8,7 @@ import { TipoClienteListComponent } from './clientes/tipo-clientes/tipo-cliente-
 import { TipoClienteFormComponent } from './clientes/tipo-clientes/tipo-cliente-form/tipo-cliente-form.component';
 import { GrupoClienteListComponent } from './clientes/grupo-clientes/grupo-cliente-list/grupo-cliente-list.component';
 import { GrupoClienteFormComponent } from './clientes/grupo-clientes/grupo-cliente-form/grupo-cliente-form.component';
+import { ProductoDetalleComponent } from './validacion/validacion-verified/validacion-verified.component';
 
 const routes: Routes = [
   {
@@ -15,6 +16,7 @@ const routes: Routes = [
       {path:'dashboard',component:DashboardComponent},
       {path:'clientes',component:ClientesComponent},
       {path:'nclientes',component:NuevoClienteComponent},
+      {path:'consulta-verified',component:ProductoDetalleComponent},
       {path:'tipocliente',component:TipoClienteListComponent},
       {path:'crear',component:TipoClienteFormComponent},
       {path:'editar/:id',component:TipoClienteFormComponent},
