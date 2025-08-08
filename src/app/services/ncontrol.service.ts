@@ -8,6 +8,12 @@ export interface NumeroControlMinDto {
   id: number;
   numcon: string;
 }
+export interface NumeroControlResumenDto {
+  id:number;
+  modcon: string;
+  numcon: string;
+  ocupado: boolean;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -31,6 +37,12 @@ export class NcontrolService {
    
     return this.http.put(`${this.apiUrl}/${id}`, data);
   }
+obtenerPrefijosYGtin(): Observable<{ data: NumeroControlResumenDto[] }> {
+  return this.http.get<{ data: NumeroControlResumenDto[] }>(`${this.apiUrl}/prefijos-gtin`);
+}
+
+
+
 }
 
 

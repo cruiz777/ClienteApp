@@ -15,8 +15,9 @@ import { TipoPrefijoComponent } from './prefijos/tipo-prefijo/tipo-prefijo.compo
 import { ValidacionSriListComponent } from '../pages/validacion/validador-sri/validador-sri-list/validador-sri-list.component';
 import { LicenseValidatorComponent } from '../pages/validacion/validador-licenses/validador-licenses.component';
 import { ProductsLicenseValidator } from '../pages/validacion/validador-products/validador-products.component';
-
-
+import { ExploradorComponent } from './explorador/explorador.component';
+import { GerenciaComponent } from './gerencia/gerencia.component';
+import { GrupoProductoListaComponent } from './grupo-producto-lista/grupo-producto-lista.component';
 
 const routes: Routes = [
   {
@@ -51,11 +52,29 @@ const routes: Routes = [
       {path:'tras-gtin',component:TraspasoGtinComponent},
       {path:'eliminar-prefijo',component:BorrarPrefijoComponent},
       {path:'tipo-prefijo',component:TipoPrefijoComponent},
+      {path:'grupo-producto',component:GrupoProductoListaComponent},
 
       {
         path: 'validacionsri',
         children: [
           { path: '', component: ValidacionSriListComponent },
+          // { path: 'crear', component: TipoLocalizacionFormComponent },
+          // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
+        ]
+      },
+      {
+        path: 'explorador',
+        children: [
+          { path: '', component: ExploradorComponent },
+          // { path: 'crear', component: TipoLocalizacionFormComponent },
+          // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
+        ]
+      },
+
+       {
+        path: 'gerencia',
+        children: [
+          { path: '', component: GerenciaComponent},
           // { path: 'crear', component: TipoLocalizacionFormComponent },
           // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
         ]

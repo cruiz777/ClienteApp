@@ -53,7 +53,7 @@
   [defaultColDef]="defaultColDef"
   rowSelection="single"
   (gridReady)="onGridReady($event)"
-  (rowClicked)="manejarClic($event.data)">
+  (rowClicked)="manejarClic($event.data)" (cellKeyDown)="onKeyDown($event)">
 </ag-grid-angular>
 
 

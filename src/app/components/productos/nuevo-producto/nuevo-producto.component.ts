@@ -42,6 +42,7 @@ import { CartaOficialComponent } from './carta-oficial/carta-oficial.component';
 import { MatDialog } from '@angular/material/dialog';
 import { CustomMessageBoxComponent, MessageBoxData } from '../../utils/messages/custom-message-box.component';
 import { ProductoRequests } from 'src/app/interfaces/requests/producto-filter-request';
+import { CellKeyDownEvent } from 'ag-grid-community';
 
 
 export const MY_DATE_FORMATS = {
@@ -120,6 +121,7 @@ export class NuevoProductoComponent implements OnInit {
   totalRegistros = 0;
   prefijo: string = '';
   busqueda1: string = '';
+public rowData: Producto[] = [];
 
   set cantidadMostrar(value: number) {
     this._cantidadMostrar = value;
@@ -2052,6 +2054,63 @@ onSeleccionPrefijo(prefijoSeleccionado: string): void {
     this.cargarProductos(this.clienteSeleccionado.clientes_codigo);
   }
 }
+
+onKeyDown(event: any): void {
+  if (!event || !event.column || !event.event) return;
+
+  const keyboardEvent = event.event as KeyboardEvent;
+  if (keyboardEvent.key !== 'Delete') return;
+
+  const selectedRows = this.gridApi.getSelectedRows();
+  if (selectedRows.length === 0) return;
+
+  const rowToDelete = selectedRows[0];
+  const codbar = rowToDelete.codbar;
+
+  const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+    width: '400px',
+    data: {
+      title: '¿Desea confirmar?',
+      message: `¿Quiere eliminar este GTIN: ${codbar}?`,
+      type: 'info',
+      confirmText: 'Sí, confirmar',
+      cancelText: 'Cancelar',
+      showCancel: true
+    }
+  });
+
+  dialogRef.afterClosed().subscribe(result => {
+    if (result === true) {
+      this.productoService.eliminarProductoPorCodbar(codbar).subscribe({
+        next: (resp) => {
+          if (resp.type === 'OK') {
+            this.buscarProductos(); // recarga los productos para mantener consistencia
+          } else {
+            this.dialog.open(CustomMessageBoxComponent, {
+              width: '400px',
+              data: {
+                title: 'No se pudo eliminar',
+                message: resp.message,
+                type: 'warning'
+              }
+            });
+          }
+        },
+        error: () => {
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '400px',
+            data: {
+              title: 'Error',
+              message: 'No se puede eliminar el producto, tiene presentaciones',
+              type: 'error'
+            }
+          });
+        }
+      });
+    }
+  });
+}
+
 
 
 }

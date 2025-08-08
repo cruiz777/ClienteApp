@@ -32,7 +32,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { LicenseValidatorComponent } from './validacion/validador-licenses/validador-licenses.component';
 import { ProductsLicenseValidator } from './validacion/validador-products/validador-products.component';
 import { ProductoDetalleComponent } from './validacion/validacion-verified/validacion-verified.component';
-
+import { ExploradorClientesComponent } from './explorador-clientes/explorador-clientes.component';
 @NgModule({
   declarations: [
     PagesComponent,
@@ -55,7 +55,8 @@ import { ProductoDetalleComponent } from './validacion/validacion-verified/valid
     LicenseValidatorComponent,
     ProductsLicenseValidator,
     ProductoDetalleComponent,
-    CustomMessageBoxComponent
+    CustomMessageBoxComponent,
+    ExploradorClientesComponent
   ],
   imports: [
     CommonModule,

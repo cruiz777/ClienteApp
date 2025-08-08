@@ -378,6 +378,11 @@ getProductosConAbreviaT(): Observable<Producto[]> {
       map(response => response.data ?? [])
     );
 }
+eliminarProductoPorCodbar(codbar: string): Observable<ApiResponse<boolean>> {
+  return this.http.delete<ApiResponse<boolean>>(
+    `${this.apiBaseUrl}/Producto/eliminar-por-codbar/${codbar}`
+  );
+}
 
 
 }

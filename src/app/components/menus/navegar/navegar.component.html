@@ -65,9 +65,7 @@
           <a mat-list-item routerLink="tras-gtin">
             <span *ngIf="isExpanded" class="menu-text">Transferencia Gtin</span>
           </a>
-          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="tipo-prefijo">
-            <span *ngIf="isExpanded" class="menu-text">Tipo Prefijo</span>
-          </a>
+          
           <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="eliminar-prefijo">
             <span *ngIf="isExpanded" class="menu-text">Eliminar Prefijo</span>
           </a>
@@ -105,18 +103,18 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/seguridades/empresas">
+          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/menus/gerencia">
 
             <span *ngIf="isExpanded" class="menu-text">Reporte Gerencia Cliente</span>
           </a>
 
-          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/seguridades/localizacion">
+          <!-- <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/seguridades/localizacion">
 
             <span *ngIf="isExpanded" class="menu-text">Reporte Clientes</span>
-          </a>
-          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/seguridades/localizacion">
+          </a> -->
+          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/menus/explorador">
 
-            <span *ngIf="isExpanded"  class="menu-text">Explorador Clientes</span>
+            <span *ngIf="isExpanded"  class="menu-text" >Explorador Clientes</span>
           </a>
 
         </mat-expansion-panel>
@@ -129,14 +127,17 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/seguridades/empresas">
-
-            <span *ngIf="isExpanded" class="menu-text">Servicios Productos</span>
-          </a>
-
+        
           <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/menus/localizacion-establecimiento">
 
             <span *ngIf="isExpanded" class="menu-text">Establecimientos GLN</span>
+          </a>
+          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="/menus/grupo-producto">
+
+            <span *ngIf="isExpanded" class="menu-text">Grupo Producto</span>
+          </a>
+          <a mat-list-item *ngIf="usuarioActual?.id_usuario === 1" routerLink="tipo-prefijo">
+            <span *ngIf="isExpanded" class="menu-text">Tipo Prefijo</span>
           </a>
         </mat-expansion-panel>
 

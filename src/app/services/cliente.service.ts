@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient,HttpParams  } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Cliente } from '../interfaces/cliente';
@@ -179,6 +179,24 @@ getClientes(
       map(response => response.data)
     );
   }
+
+getClientesPaginados(
+  pageNumber: number,
+  pageSize: number,
+  filtros: { busquedaGeneral?: string; prefijoBusqueda?: string } = {}
+): Observable<{ data: Cliente[]; count: number }> {
+  let params = new HttpParams()
+    .set('pageNumber', String(pageNumber))
+    .set('pageSize', String(pageSize));
+
+  if (filtros.busquedaGeneral?.trim()) params = params.set('busquedaGeneral', filtros.busquedaGeneral.trim());
+  if (filtros.prefijoBusqueda?.trim()) params = params.set('prefijoBusqueda', filtros.prefijoBusqueda.trim());
+
+  return this.http.get<{ data: Cliente[]; count: number }>(
+    `${environment.clientsUrl}/Clientes/resumeng`, // <-- ruta correcta
+    { params }
+  );
+}
 
 
 }
