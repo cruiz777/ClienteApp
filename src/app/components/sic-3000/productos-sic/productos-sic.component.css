@@ -275,4 +275,125 @@
     grid-template-columns:1fr;
   }
   .xs,.sm{ max-width:100%; }
+
+/* ============ TAB 5 (Proveedor) ============ */
+/* ============ TAB 5 (Proveedor) ============ */
+.t5{
+  display: grid;
+  grid-template-rows: auto auto 1fr auto; /* título, encabezado, tabla, acciones */
+  gap: 16px;
+  padding: 4px 0 24px;
+}
+
+/* Título */
+.t5-title{
+  color: #1f6fb2;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+}
+
+/* Encabezado de campos en GRID (igual a la imagen) */
+.t5-head{
+  display: grid;
+  grid-template-columns: 380px 380px 1fr; /* Código Interno | Barras | Descripción */
+  gap: 12px 36px;
+  align-items: end;
+}
+.t5-head .field{
+  display: grid;
+  grid-template-columns: 130px 1fr; /* label + input */
+  gap: 8px;
+  align-items: center;
+}
+.t5 .lbl{ font-size: 12px; color: #6b7280; white-space: nowrap; }
+.t5-head .w-sm{ max-width: 280px; }
+.t5-head .w-xl{ max-width: 100%; }
+
+/* Responsive encabezado */
+@media (max-width: 1200px){
+  .t5-head{ grid-template-columns: 1fr 1fr; }
+  .t5-head .field:nth-child(3){ grid-column: 1 / -1; } /* Descripción ocupa la fila completa */
+}
+@media (max-width: 640px){
+  .t5-head{ grid-template-columns: 1fr; gap: 10px 16px; }
+  .t5-head .field{ grid-template-columns: 1fr; }
+  .t5-head .w-sm, .t5-head .w-xl{ max-width: 100%; }
+}
+
+/* ===== Tabla en GRID + estilo “imagen 2” ===== */
+.t5-table{
+  display: grid;                    /* la tabla vive dentro de un grid */
+  grid-template-rows: auto;         /* crece con el contenido */
+  background: #fff;
+  border: 1px solid #e7edf6;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(16,24,40,.05), 0 1px 2px rgba(16,24,40,.06);
+}
+
+/* Material table reset */
+.t5-table .mat-mdc-table{
+  width: 100%;
+  background: transparent;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+/* Header limpio (como la imagen 2) */
+.t5-table .mat-mdc-header-row{
+  background: #ffffff;
+  height: 44px;
+  border-bottom: 1px solid #e7edf6;
+}
+.t5-table .mat-mdc-header-cell{
+  padding: 10px 14px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #27374A;
+}
+
+/* Filas y celdas */
+.t5-table .mat-mdc-row{ background: #fff; }
+.t5-table .mat-mdc-cell{
+  padding: 8px 14px;
+  font-size: 13px;
+  color: #1f2937;
+  border-bottom: 1px solid #eef2f7; /* líneas sutiles entre filas */
+}
+.t5-table .mat-mdc-row:hover{ background: #f8fafc; }
+
+/* Inputs “planos” dentro de celdas */
+.t5-table td input[type="text"],
+.t5-table td input[type="number"]{
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  padding: 6px 0;
+  font: inherit;
+}
+.t5-table td input::placeholder{ color:#98a1b3; }
+
+/* Datepicker compacto dentro de celdas */
+.t5-table .mat-mdc-form-field{ width: 100%; }
+.t5-table .mat-mdc-text-field-wrapper{ height: 36px; }
+.t5-table .mat-mdc-form-field-infix{ padding-top: 6px; padding-bottom: 6px; }
+.t5-table .mat-mdc-form-field-subscript-wrapper{ display: none; }
+.t5-table .mat-mdc-form-field-outline{
+  --mdc-outlined-text-field-outline-color: #d8e3f5;
+}
+
+/* Centrar checkbox “A Consignación” */
+.cell-center{ text-align: center; }
+.t5-table .mat-mdc-checkbox{ vertical-align: middle; }
+
+/* Acciones centradas (botones) */
+.t5-actions{
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 18px;
+}
+.t5-actions button{ min-width: 110px; }
+
 }

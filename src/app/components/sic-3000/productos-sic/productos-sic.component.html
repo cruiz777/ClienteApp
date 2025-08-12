@@ -387,16 +387,127 @@
         }
       </ng-template>
     </mat-tab>
-<!-- ===== Tabs Proveedor ===== -->
-    <mat-tab label="Proveedor">
-      <ng-template matTabContent>
-        @defer (on idle) {
-          <div class="placeholder-tab">Contenido de “Proveedor”</div>
-        } @placeholder {
-          <div class="placeholder-tab">Cargando…</div>
-        }
-      </ng-template>
-    </mat-tab>
+
+  <!-- ===== TAB 5: Proveedor ===== -->
+<mat-tab label="Proveedor">
+  <ng-template matTabContent>
+    <form class="t5" [formGroup]="proveedorForm" novalidate>
+      <!-- Título -->
+      <h3 class="t5-title">Datos del Producto</h3>
+
+      <!-- Fila superior de campos -->
+      <div class="t5-head">
+        <div class="field">
+          <label class="lbl">Código Interno:</label>
+          <mat-form-field appearance="outline" class="w-sm">
+            <input matInput formControlName="codigoInternoTab5" />
+          </mat-form-field>
+        </div>
+
+        <div class="field">
+          <label class="lbl">Código de Barras:</label>
+          <mat-form-field appearance="outline" class="w-sm">
+            <input matInput formControlName="codigoBarrasTab5" />
+          </mat-form-field>
+        </div>
+
+        <div class="field">
+          <label class="lbl">Descripción:</label>
+          <mat-form-field appearance="outline" class="w-xl">
+            <input matInput formControlName="descripcionTab5" />
+          </mat-form-field>
+        </div>
+      </div>
+
+      <!-- Tabla editable -->
+      <div class="t5-table">
+        <table mat-table [dataSource]="filasTab5.controls" formArrayName="filasTab5" class="mat-elevation-z0">
+
+          <!-- Proveedor -->
+          <ng-container matColumnDef="proveedor">
+            <th mat-header-cell *matHeaderCellDef>Proveedor</th>
+            <td mat-cell *matCellDef="let _; let i = index" [formGroupName]="i">
+              <input matInput formControlName="proveedor" />
+            </td>
+          </ng-container>
+
+          <!-- Costo Compra -->
+          <ng-container matColumnDef="costoCompra">
+            <th mat-header-cell *matHeaderCellDef>Costo Compra</th>
+            <td mat-cell *matCellDef="let _; let i = index" [formGroupName]="i">
+              <input matInput type="number" formControlName="costoCompra" />
+            </td>
+          </ng-container>
+
+          <!-- Unidad Compra -->
+          <ng-container matColumnDef="unidadCompra">
+            <th mat-header-cell *matHeaderCellDef>Unidad Compra</th>
+            <td mat-cell *matCellDef="let _; let i = index" [formGroupName]="i">
+              <input matInput formControlName="unidadCompra" />
+            </td>
+          </ng-container>
+
+          <!-- Fecha Ingreso -->
+          <ng-container matColumnDef="fechaIngreso">
+            <th mat-header-cell *matHeaderCellDef>Fecha Ingreso</th>
+            <td mat-cell *matCellDef="let _; let i = index" [formGroupName]="i">
+              <mat-form-field appearance="outline">
+                <input matInput [matDatepicker]="fi" formControlName="fechaIngreso" />
+                <mat-datepicker-toggle matSuffix [for]="fi"></mat-datepicker-toggle>
+                <mat-datepicker #fi></mat-datepicker>
+              </mat-form-field>
+            </td>
+          </ng-container>
+
+          <!-- Costo Neto -->
+          <ng-container matColumnDef="costoNeto">
+            <th mat-header-cell *matHeaderCellDef>Costo Neto</th>
+            <td mat-cell *matCellDef="let _; let i = index" [formGroupName]="i">
+              <input matInput type="number" formControlName="costoNeto" />
+            </td>
+          </ng-container>
+
+          <!-- A Consignación -->
+          <ng-container matColumnDef="consignacion">
+            <th mat-header-cell *matHeaderCellDef>A Consignación</th>
+            <td mat-cell class="cell-center" *matCellDef="let _; let i = index" [formGroupName]="i">
+              <mat-checkbox formControlName="consignacion"></mat-checkbox>
+            </td>
+          </ng-container>
+
+          <!-- Descuento Producto -->
+          <ng-container matColumnDef="descuentoProducto">
+            <th mat-header-cell *matHeaderCellDef>Descuento Producto</th>
+            <td mat-cell *matCellDef="let _; let i = index" [formGroupName]="i">
+              <input matInput type="number" formControlName="descuentoProducto" />
+            </td>
+          </ng-container>
+
+          <!-- Descuentos -->
+          <ng-container matColumnDef="descuentos">
+            <th mat-header-cell *matHeaderCellDef>Descuentos</th>
+            <td mat-cell *matCellDef="let _; let i = index" [formGroupName]="i">
+              <input matInput formControlName="descuentos" />
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="colsTab5"></tr>
+          <tr mat-row *matRowDef="let _; columns: colsTab5; trackBy: trackByIndex"></tr>
+        </table>
+      </div>
+
+      <!-- Botones -->
+      <div class="t5-actions">
+        <button mat-stroked-button color="primary" (click)="nuevoTab5()">Nuevo</button>
+        <button mat-flat-button color="primary" (click)="grabarTab5()" [disabled]="proveedorForm.invalid">Grabar</button>
+        <button mat-stroked-button (click)="imprimirTab5()">Imprimir</button>
+        <button mat-stroked-button (click)="adjuntarTab5()">
+          <mat-icon>upload</mat-icon>&nbsp;Adjuntar
+        </button>
+      </div>
+    </form>
+  </ng-template>
+</mat-tab>
 
   </mat-tab-group>
 </div>
