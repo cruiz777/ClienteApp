@@ -222,8 +222,7 @@
 <mat-tab label="Datos Adicionales">
 </mat-tab>
 
- <!-- ===== TAB 3: Precio / Costo ===== -->
-
+<!-- ===== TAB 3: Precio / Costo ===== -->
 <mat-tab label="Precio / Costo">
   <ng-template matTabContent>
     <div class="pc-grid">
@@ -232,7 +231,6 @@
       <section class="pc-panel">
         <h3 class="pc-title">Precios</h3>
 
-        <!-- Precio Oficial -->
         <div class="pc-row">
           <label class="lbl">Precio Oficial:</label>
           <mat-form-field appearance="outline" class="sm tint-blue">
@@ -240,7 +238,6 @@
           </mat-form-field>
         </div>
 
-        <!-- Precio RED-MSP -->
         <div class="pc-row">
           <label class="lbl">Precio RED-MSP:</label>
           <mat-form-field appearance="outline" class="sm tint-orange">
@@ -248,7 +245,6 @@
           </mat-form-field>
         </div>
 
-        <!-- PVP Actual - IVA -->
         <div class="pc-row">
           <label class="lbl">PVP Actual - IVA:</label>
           <mat-form-field appearance="outline" class="sm">
@@ -256,21 +252,20 @@
           </mat-form-field>
         </div>
 
-        <!-- PVP Anterior + IVA -->
         <div class="pc-row">
           <label class="lbl">PVP Anterior + IVA:</label>
           <mat-form-field appearance="outline" class="sm" disabled>
             <input matInput formControlName="pvpAnteriorConIva" />
           </mat-form-field>
         </div>
-      <!-- PVP Actual + IVA -->
+
         <div class="pc-row">
           <label class="lbl">PVP Actual + IVA:</label>
           <mat-form-field appearance="outline" class="sm tint-green">
             <input matInput formControlName="pvpActualConIva" />
           </mat-form-field>
         </div>
-      <!-- Fec. Ant. Mod. -->
+
         <div class="pc-row">
           <label class="lbl">Fecha Ant Modificación:</label>
           <mat-form-field appearance="outline" class="sm">
@@ -280,7 +275,6 @@
           </mat-form-field>
         </div>
 
-        <!-- Fec. Modi. -->
         <div class="pc-row">
           <label class="lbl">Fecha Modificación:</label>
           <mat-form-field appearance="outline" class="sm">
@@ -294,7 +288,8 @@
       <!-- ===== Panel: Costos ===== -->
       <section class="pc-panel">
         <h3 class="pc-title">Costos</h3>
-        <!-- Costo Suministro | Costo Prod -->
+
+        <!-- Costo Suministro | Costo Prod  (pareja doble simétrica) -->
         <div class="pc-row quad">
           <label class="lbl">Costo Suministro:</label>
           <mat-form-field appearance="outline" class="xs">
@@ -307,9 +302,10 @@
           </mat-form-field>
         </div>
 
-        <div class="pc-row">
+        <!-- Costo Promedio alineado bajo Costo Suministro -->
+        <div class="pc-row pair">
           <label class="lbl">Costo Promedio:</label>
-          <mat-form-field appearance="outline" class="sm">
+          <mat-form-field appearance="outline" class="xs">
             <input matInput formControlName="costoPromedio" />
           </mat-form-field>
         </div>
@@ -350,7 +346,8 @@
           </div>
         </div>
       </section>
- <!-- ===== Panel inferior: Margen / Recepción ===== -->
+
+      <!-- ===== Panel inferior: Margen / Recepción ===== -->
       <section class="pc-panel full">
         <div class="pc-row duo">
           <div class="grp">
@@ -368,8 +365,8 @@
         </div>
       </section>
 
-      <!-- ===== Barra de Acciones ===== -->
-      <div class="acciones">
+      <!-- ===== Barra de Acciones (centrada) ===== -->
+      <div class="pc-actions">
         <button mat-stroked-button color="primary">Nuevo</button>
         <button mat-stroked-button color="accent" [disabled]="true">Grabar</button>
         <button mat-stroked-button>Imprimir</button>
