@@ -41,6 +41,8 @@ import { ButtonRendererComponent } from './components/utils/grid/button-renderer
 import { CheckboxRendererComponents } from './components/utils/grid/checkbox-renderer.component';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { UppercaseDirective } from './directives/uppercase.directive';
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
+import { ApiKeyInterceptor } from './interceptors/api-key.interceptor';
 
 export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
 
@@ -84,7 +86,12 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     MatProgressSpinnerModule
   ],
   providers: [
-    { provide: LocationStrategy, useClass: HashLocationStrategy }
+    { provide: LocationStrategy, useClass: HashLocationStrategy },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: ApiKeyInterceptor,
+      multi: true
+    }
   ],
   bootstrap: [AppComponent]
 })
