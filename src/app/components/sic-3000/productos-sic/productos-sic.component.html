@@ -10,7 +10,7 @@
   </header>
 
   <mat-tab-group class="tabs" [(selectedIndex)]="selectedTab" animationDuration="0ms">
-    <!-- TAB 1: Datos Generales (inmediato) -->
+    <!-- TAB 1: Datos Generales  -->
     <mat-tab label="Datos Generales">
       <div class="tab-body">
         <!-- ===== Grid de 3 secciones alineadas por filas ===== -->
@@ -130,9 +130,7 @@
             <span></span><span></span>
           </div>
         </div>
-        <!-- ===== /Grid 3 secciones ===== -->
-
-        <!-- ===== Opciones (diferido en idle) ===== -->
+        <!-- ===== Opciones ===== -->
         @defer (on idle) {
           <div class="opciones-grid">
             <div class="op-col">
@@ -179,9 +177,7 @@
             <div class="op-col"><div class="placeholder">Cargando…</div></div>
           </div>
         }
-        <!-- ===== /Opciones ===== -->
-
-        <!-- ===== Fechas y acciones (diferido en idle) ===== -->
+       <!-- ===== Fechas y acciones===== -->
         @defer (on idle) {
           <div class="fechas-acciones">
             <div class="fechas">
@@ -219,32 +215,172 @@
             <div class="acciones"><div class="placeholder">Acciones cargando…</div></div>
           </div>
         }
-        <!-- ===== /Fechas y acciones ===== -->
+        </div>
+    </mat-tab>
+
+  <!-- ===== TAB 2: Datos Adicionales ===== -->
+<mat-tab label="Datos Adicionales">
+</mat-tab>
+
+ <!-- ===== TAB 3: Precio / Costo ===== -->
+
+<mat-tab label="Precio / Costo">
+  <ng-template matTabContent>
+    <div class="pc-grid">
+
+      <!-- ===== Panel: Precios ===== -->
+      <section class="pc-panel">
+        <h3 class="pc-title">Precios</h3>
+
+        <!-- Precio Oficial -->
+        <div class="pc-row">
+          <label class="lbl">Precio Oficial:</label>
+          <mat-form-field appearance="outline" class="sm tint-blue">
+            <input matInput formControlName="precioOficial" />
+          </mat-form-field>
+        </div>
+
+        <!-- Precio RED-MSP -->
+        <div class="pc-row">
+          <label class="lbl">Precio RED-MSP:</label>
+          <mat-form-field appearance="outline" class="sm tint-orange">
+            <input matInput formControlName="precioRedMsp" />
+          </mat-form-field>
+        </div>
+
+        <!-- PVP Actual - IVA -->
+        <div class="pc-row">
+          <label class="lbl">PVP Actual - IVA:</label>
+          <mat-form-field appearance="outline" class="sm">
+            <input matInput formControlName="pvpActualSinIva" />
+          </mat-form-field>
+        </div>
+
+        <!-- PVP Anterior + IVA -->
+        <div class="pc-row">
+          <label class="lbl">PVP Anterior + IVA:</label>
+          <mat-form-field appearance="outline" class="sm" disabled>
+            <input matInput formControlName="pvpAnteriorConIva" />
+          </mat-form-field>
+        </div>
+      <!-- PVP Actual + IVA -->
+        <div class="pc-row">
+          <label class="lbl">PVP Actual + IVA:</label>
+          <mat-form-field appearance="outline" class="sm tint-green">
+            <input matInput formControlName="pvpActualConIva" />
+          </mat-form-field>
+        </div>
+      <!-- Fec. Ant. Mod. -->
+        <div class="pc-row">
+          <label class="lbl">Fecha Ant Modificación:</label>
+          <mat-form-field appearance="outline" class="sm">
+            <input matInput formControlName="fechaPrecioAnterior" [matDatepicker]="p1" />
+            <mat-datepicker-toggle matSuffix [for]="p1"></mat-datepicker-toggle>
+            <mat-datepicker #p1></mat-datepicker>
+          </mat-form-field>
+        </div>
+
+        <!-- Fec. Modi. -->
+        <div class="pc-row">
+          <label class="lbl">Fecha Modificación:</label>
+          <mat-form-field appearance="outline" class="sm">
+            <input matInput formControlName="fechaPrecioActual" [matDatepicker]="p2" />
+            <mat-datepicker-toggle matSuffix [for]="p2"></mat-datepicker-toggle>
+            <mat-datepicker #p2></mat-datepicker>
+          </mat-form-field>
+        </div>
+      </section>
+
+      <!-- ===== Panel: Costos ===== -->
+      <section class="pc-panel">
+        <h3 class="pc-title">Costos</h3>
+        <!-- Costo Suministro | Costo Prod -->
+        <div class="pc-row quad">
+          <label class="lbl">Costo Suministro:</label>
+          <mat-form-field appearance="outline" class="xs">
+            <input matInput formControlName="costoSuministro" />
+          </mat-form-field>
+
+          <label class="lbl">Costo Prod:</label>
+          <mat-form-field appearance="outline" class="xs">
+            <input matInput formControlName="costoProducto" />
+          </mat-form-field>
+        </div>
+
+        <div class="pc-row">
+          <label class="lbl">Costo Promedio:</label>
+          <mat-form-field appearance="outline" class="sm">
+            <input matInput formControlName="costoPromedio" />
+          </mat-form-field>
+        </div>
+
+        <!-- Precio Compra Anterior + Fec. Ant. Mod. -->
+        <div class="pc-row duo">
+          <div class="grp">
+            <label class="lbl">Precio Compra Anterior:</label>
+            <mat-form-field appearance="outline" class="xs">
+              <input matInput formControlName="precioCompraAnterior" />
+            </mat-form-field>
+          </div>
+          <div class="grp">
+            <label class="lbl">Fec. Ant. Mod.:</label>
+            <mat-form-field appearance="outline" class="xs">
+              <input matInput formControlName="fechaCompraAnterior" [matDatepicker]="c1" />
+              <mat-datepicker-toggle matSuffix [for]="c1"></mat-datepicker-toggle>
+              <mat-datepicker #c1></mat-datepicker>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- Precio Compra Actual + Fec. Modi. -->
+        <div class="pc-row duo">
+          <div class="grp">
+            <label class="lbl">Precio Compra Actual:</label>
+            <mat-form-field appearance="outline" class="xs">
+              <input matInput formControlName="precioCompraActual" />
+            </mat-form-field>
+          </div>
+          <div class="grp">
+            <label class="lbl">Fec. Modi.:</label>
+            <mat-form-field appearance="outline" class="xs">
+              <input matInput formControlName="fechaCompraActual" [matDatepicker]="c2" />
+              <mat-datepicker-toggle matSuffix [for]="c2"></mat-datepicker-toggle>
+              <mat-datepicker #c2></mat-datepicker>
+            </mat-form-field>
+          </div>
+        </div>
+      </section>
+ <!-- ===== Panel inferior: Margen / Recepción ===== -->
+      <section class="pc-panel full">
+        <div class="pc-row duo">
+          <div class="grp">
+            <label class="lbl">Margen Utilidad %:</label>
+            <mat-form-field appearance="outline" class="xs">
+              <input matInput formControlName="margenUtilidad" />
+            </mat-form-field>
+          </div>
+          <div class="grp">
+            <label class="lbl">Recepción %:</label>
+            <mat-form-field appearance="outline" class="xs">
+              <input matInput formControlName="recepcion" />
+            </mat-form-field>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== Barra de Acciones ===== -->
+      <div class="acciones">
+        <button mat-stroked-button color="primary">Nuevo</button>
+        <button mat-stroked-button color="accent" [disabled]="true">Grabar</button>
+        <button mat-stroked-button>Imprimir</button>
+        <button mat-stroked-button>Adjuntar</button>
       </div>
-    </mat-tab>
 
-    <!-- ===== Tabs diferidos (no críticos) ===== -->
+    </div>
+  </ng-template>
+</mat-tab>
 
-    <mat-tab label="Datos Adicionales">
-      <ng-template matTabContent>
-        @defer (on idle) {
-          <div class="placeholder-tab">Contenido de “Datos Adicionales”</div>
-        } @placeholder {
-          <div class="placeholder-tab">Cargando…</div>
-        }
-      </ng-template>
-    </mat-tab>
-
-    <mat-tab label="Precio / Costo">
-      <ng-template matTabContent>
-        @defer (on idle) {
-          <div class="placeholder-tab">Contenido de “Precio / Costo”</div>
-        } @placeholder {
-          <div class="placeholder-tab">Cargando…</div>
-        }
-      </ng-template>
-    </mat-tab>
-
+<!-- ===== Tabs Estructura y Stock ===== -->
     <mat-tab label="Estructura y Stock">
       <ng-template matTabContent>
         @defer (on idle) {
@@ -254,7 +390,7 @@
         }
       </ng-template>
     </mat-tab>
-
+<!-- ===== Tabs Proveedor ===== -->
     <mat-tab label="Proveedor">
       <ng-template matTabContent>
         @defer (on idle) {
@@ -264,6 +400,7 @@
         }
       </ng-template>
     </mat-tab>
+
   </mat-tab-group>
 </div>
 
