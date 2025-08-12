@@ -4,6 +4,7 @@
   --texto-suave: #6b7280;
 }
 
+/* Contenedor principal */
 .page {
   max-width: 1120px;
   margin: 0 auto;
@@ -66,62 +67,70 @@
   padding: 18px;
 }
 
-/* Layout columnas y filas */
-.cols {
+/* =========================
+   GRID DE 3 SECCIONES (ALINEADO POR FILAS)
+   ========================= */
+.form-grid-3 {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 18px 28px;
+  grid-template-columns: 1fr 1fr 1fr; /* tres secciones */
+  column-gap: 28px;
+  row-gap: 12px;
   align-items: start;
 }
-.col .row {
-  display: grid;
-  grid-template-columns: 140px auto;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 10px;
-}
 
-/* Dos campos en la misma fila (centro) */
-.col .row.two {
-  grid-template-columns: 1fr 1fr;
-  gap: 12px 24px;
-}
-.col .row.two > div {
+/* Cada celda: etiqueta + campo */
+.field-row {
   display: grid;
   grid-template-columns: 140px auto;
   align-items: center;
   gap: 8px;
 }
 
-/* Anchos compactos de los inputs */
+/* Celda compacta para 'Generar' */
+.field-row.generar {
+  grid-template-columns: 70px auto;
+}
+
+/* Inputs compactos */
 .mat-mdc-form-field { width: 100%; }
 .field-sm { max-width: 230px; }
 .field-md { max-width: 320px; }
 
-/* Bloque de opciones */
-.opciones {
+/* =========================
+   BLOQUE OPCIONES EN TRES COLUMNAS
+   ========================= */
+.opciones-grid {
   display: grid;
-  gap: 6px;
-  margin-top: 12px;
-  padding-top: 8px;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+  margin-top: 10px;
+  padding-top: 12px;
   border-top: 1px solid var(--borde);
 }
-.opciones .lbl {
+.op-col {
+  display: grid;
+  grid-auto-rows: 32px;   /* altura consistente por fila */
+  align-content: start;
+  padding-right: 24px;
+}
+.op-col + .op-col {
+  border-left: 1px solid var(--borde);
+  padding-left: 24px;
+}
+.op-col .lbl {
   grid-column: 1 / -1;
   font-weight: 600;
   color: #374151;
+  margin: 0 0 6px 0;
 }
-
-/* Generar código */
-.accion-generar {
+.op-col mat-checkbox {
+  margin: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-left: 12px;
-  color: var(--texto-suave);
 }
 
-/* Foto */
+/* Foto / placeholder */
 .foto {
   margin-top: 8px;
   display: flex;
@@ -158,6 +167,7 @@
   gap: 10px;
 }
 
+/* Tab placeholder */
 .placeholder-tab {
   padding: 32px;
   color: var(--texto-suave);
@@ -168,13 +178,23 @@
 .mdc-line-ripple::before { background-color: #cfe1f8 !important; }
 .mat-mdc-form-field-subscript-wrapper { display: none; }
 
-/* Responsive */
+/* =========================
+   RESPONSIVE
+   ========================= */
 @media (max-width: 980px) {
-  .cols { grid-template-columns: 1fr 1fr; }
+  .form-grid-3 { grid-template-columns: 1fr 1fr; }
+  .opciones-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 640px) {
-  .cols { grid-template-columns: 1fr; }
-  .col .row,
-  .col .row.two > div { grid-template-columns: 1fr; }
+  .form-grid-3 { grid-template-columns: 1fr; }
+  .field-row { grid-template-columns: 1fr; } /* etiqueta arriba del input */
   .field-sm, .field-md { max-width: 100%; }
+
+  .opciones-grid { grid-template-columns: 1fr; }
+  .op-col + .op-col {
+    border-left: 0;
+    padding-left: 0;
+    padding-top: 12px;
+    border-top: 1px solid var(--borde);
+  }
 }

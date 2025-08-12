@@ -2,7 +2,7 @@
   <header class="page-header">
     <h1>Mantenimiento de Productos</h1>
 
-    <!-- Descripción solo como etiqueta -->
+    <!-- Descripción solo etiqueta -->
     <div class="descripcion-static">
       <span class="lbl-strong">Descripción:</span>
       <span class="desc-titulo">Descripción del producto</span>
@@ -10,129 +10,129 @@
   </header>
 
   <mat-tab-group class="tabs" [(selectedIndex)]="selectedTab" animationDuration="0ms">
-    <!-- TAB 1: se renderiza de inmediato -->
+    <!-- TAB 1: Datos Generales -->
     <mat-tab label="Datos Generales">
       <div class="tab-body">
+        <!-- ===== Grid de 3 secciones alineadas por filas ===== -->
+        <div class="form-grid-3">
 
-        <!-- 3 columnas con campos compactos -->
-        <div class="cols cols-tight">
-          <!-- Columna izquierda -->
-          <div class="col">
-            <div class="row">
-              <label class="lbl">Código Interno:</label>
-              <mat-form-field appearance="outline" class="field-sm">
-                <input matInput formControlName="codigoInterno" />
-              </mat-form-field>
-            </div>
-
-            <div class="row">
-              <label class="lbl">Descripción 1:</label>
-              <mat-form-field appearance="outline" class="field-sm">
-                <input matInput formControlName="descripcion1" />
-              </mat-form-field>
-            </div>
-
-            <div class="row">
-              <label class="lbl">Unidad de Venta:</label>
-              <mat-form-field appearance="outline" class="field-sm">
-                <mat-select formControlName="unidadVenta" disableOptionCentering>
-                  <mat-option *ngFor="let u of unidadesVenta" [value]="u">{{ u }}</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
-
-            <div class="row">
-              <label class="lbl">Existencia Global:</label>
-              <mat-form-field appearance="outline" class="field-sm">
-                <input matInput formControlName="existenciaGlobal" />
-              </mat-form-field>
-            </div>
-
-            <div class="row">
-              <label class="lbl">Abreviación:</label>
-              <mat-form-field appearance="outline" class="field-sm">
-                <input matInput formControlName="abreviacion" />
-              </mat-form-field>
-            </div>
+          <!-- Fila 1 -->
+          <div class="field-row">
+            <label class="lbl">Código Interno:</label>
+            <mat-form-field appearance="outline" class="field-sm">
+              <input matInput formControlName="codigoInterno" />
+            </mat-form-field>
           </div>
 
-          <!-- Columna centro -->
-          <div class="col">
-            <div class="row with-action">
-              <div>
-                <label class="lbl">Código de Barras:</label>
-                <mat-form-field appearance="outline" class="field-sm">
-                  <input matInput formControlName="codigoBarras" />
-                </mat-form-field>
-              </div>
-              <div class="accion-generar">
-                <span>Generar</span>
-                <mat-checkbox formControlName="generarCodigo"></mat-checkbox>
-              </div>
-            </div>
-
-            <div class="row">
-              <label class="lbl">Descripción punto de venta:</label>
-              <mat-form-field appearance="outline" class="field-md">
-                <input matInput formControlName="descripcionPOS" />
-              </mat-form-field>
-            </div>
-
-            <div class="row two">
-              <div>
-                <label class="lbl">Cantidad:</label>
-                <mat-form-field appearance="outline" class="field-sm">
-                  <input matInput formControlName="cantidad" type="number" />
-                </mat-form-field>
-              </div>
-              <div>
-                <label class="lbl">Can. Cov.:</label>
-                <mat-form-field appearance="outline" class="field-sm">
-                  <input matInput formControlName="canCov" />
-                </mat-form-field>
-              </div>
-            </div>
-
-            <div class="row">
-              <label class="lbl">Referencia:</label>
-              <mat-form-field appearance="outline" class="field-sm">
-                <input matInput formControlName="referencia" />
-              </mat-form-field>
-            </div>
+          <div class="field-row">
+            <label class="lbl">Código de Barras:</label>
+            <mat-form-field appearance="outline" class="field-sm">
+              <input matInput formControlName="codigoBarras" />
+            </mat-form-field>
           </div>
 
-          <!-- Columna derecha -->
-          <div class="col">
-            <div class="row">
-              <label class="lbl">Tipo Producto:</label>
-              <mat-form-field appearance="outline" class="field-sm">
-                <mat-select formControlName="tipoProducto">
-                  <mat-option *ngFor="let t of tiposProducto" [value]="t">{{ t }}</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
+          <div class="field-row generar">
+            <label class="lbl">Generar</label>
+            <mat-checkbox formControlName="generarCodigo"></mat-checkbox>
+          </div>
 
-            <div class="row">
-              <label class="lbl">Presentación:</label>
-              <mat-form-field appearance="outline" class="field-sm">
-                <mat-select formControlName="presentacion">
-                  <mat-option *ngFor="let p of presentaciones" [value]="p">{{ p }}</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
+          <!-- Fila 2 -->
+          <div class="field-row">
+            <label class="lbl">Descripción 1:</label>
+            <mat-form-field appearance="outline" class="field-sm">
+              <input matInput formControlName="descripcion1" />
+            </mat-form-field>
+          </div>
 
-            <div class="row">
-              <label class="lbl">Clase de Producto:</label>
-              <mat-form-field appearance="outline" class="field-sm">
-                <mat-select formControlName="claseProducto">
-                  <mat-option *ngFor="let c of clasesProducto" [value]="c">{{ c }}</mat-option>
-                </mat-select>
-              </mat-form-field>
-            </div>
+          <div class="field-row">
+            <label class="lbl">Descripción punto venta:</label>
+            <mat-form-field appearance="outline" class="field-md">
+              <input matInput formControlName="descripcionPOS" />
+            </mat-form-field>
+          </div>
+
+          <div class="field-row">
+            <label class="lbl">Tipo Producto:</label>
+            <mat-form-field appearance="outline" class="field-sm">
+              <mat-select formControlName="tipoProducto">
+                <mat-option *ngFor="let t of tiposProducto" [value]="t">{{ t }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Fila 3 -->
+          <div class="field-row">
+            <label class="lbl">Unidad de Venta:</label>
+            <mat-form-field appearance="outline" class="field-sm">
+              <mat-select formControlName="unidadVenta" disableOptionCentering>
+                <mat-option *ngFor="let u of unidadesVenta" [value]="u">{{ u }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <div class="field-row">
+            <label class="lbl">Cantidad:</label>
+            <mat-form-field appearance="outline" class="field-sm">
+              <input matInput formControlName="cantidad" type="number" />
+            </mat-form-field>
+          </div>
+
+          <div class="field-row">
+            <label class="lbl">Presentación:</label>
+            <mat-form-field appearance="outline" class="field-sm">
+              <mat-select formControlName="presentacion">
+                <mat-option *ngFor="let p of presentaciones" [value]="p">{{ p }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Fila 4 -->
+          <div class="field-row">
+            <label class="lbl">Existencia Global:</label>
+            <mat-form-field appearance="outline" class="field-sm">
+              <input matInput formControlName="existenciaGlobal" />
+            </mat-form-field>
+          </div>
+
+          <div class="field-row">
+            <label class="lbl">Can. Cov.:</label>
+            <mat-form-field appearance="outline" class="field-sm">
+              <input matInput formControlName="canCov" />
+            </mat-form-field>
+          </div>
+
+          <div class="field-row">
+            <label class="lbl">Clase de Producto:</label>
+            <mat-form-field appearance="outline" class="field-sm">
+              <mat-select formControlName="claseProducto">
+                <mat-option *ngFor="let c of clasesProducto" [value]="c">{{ c }}</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <!-- Fila 5 -->
+          <div class="field-row">
+            <label class="lbl">Abreviación:</label>
+            <mat-form-field appearance="outline" class="field-sm">
+              <input matInput formControlName="abreviacion" />
+            </mat-form-field>
+          </div>
+
+          <div class="field-row">
+            <label class="lbl">Referencia:</label>
+            <mat-form-field appearance="outline" class="field-sm">
+              <input matInput formControlName="referencia" />
+            </mat-form-field>
+          </div>
+
+          <div class="field-row">
+            <!-- vacío para que cierre la fila con 3 columnas -->
+            <span></span><span></span>
           </div>
         </div>
+        <!-- ===== /Grid 3 secciones ===== -->
 
-        <!-- OPCIONES en bloque único de 3 columnas (alineado como la imagen) -->
+        <!-- ===== Opciones en 3 columnas con separadores ===== -->
         <div class="opciones-grid">
           <div class="op-col">
             <div class="lbl">Opciones:</div>
@@ -171,6 +171,7 @@
             </div>
           </div>
         </div>
+        <!-- ===== /Opciones ===== -->
 
         <!-- Fechas y acciones -->
         <div class="fechas-acciones">
@@ -200,14 +201,14 @@
             <button mat-stroked-button color="primary" (click)="nuevo()">Nuevo</button>
             <button mat-flat-button color="primary" (click)="grabar()" [disabled]="form.invalid">Grabar</button>
             <button mat-stroked-button (click)="imprimir()">Imprimir</button>
-            <!-- sin mat-icon para no cargar la fuente de iconos en el primer paint -->
             <button mat-stroked-button (click)="adjuntar()">Adjuntar</button>
           </div>
         </div>
+
       </div>
     </mat-tab>
 
-    <!-- Resto de tabs: contenido perezoso (no se renderiza al inicio) -->
+    <!-- Tabs perezosas: mejor tiempo de carga -->
     <mat-tab label="Datos Adicionales">
       <ng-template matTabContent>
         <div class="placeholder-tab">Contenido de “Datos Adicionales”</div>
@@ -232,5 +233,4 @@
       </ng-template>
     </mat-tab>
   </mat-tab-group>
-  
 </div>
