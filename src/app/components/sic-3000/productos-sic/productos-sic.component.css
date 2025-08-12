@@ -1,0 +1,180 @@
+:host {
+  --azul: #1f6fb2;
+  --borde: #e6ecf3;
+  --texto-suave: #6b7280;
+}
+
+.page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 12px 16px 32px;
+  background: #fff;
+}
+
+/* Header */
+.page-header {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px 24px;
+  align-items: end;
+  border-bottom: 1px solid var(--borde);
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+.page-header h1 {
+  margin: 0;
+  color: var(--azul);
+  font-size: 20px;
+  font-weight: 700;
+  grid-column: 1 / -1;
+}
+
+/* “Descripción” solo etiqueta */
+.descripcion-static {
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  align-items: center;
+}
+.lbl-strong {
+  font-size: 12px;
+  font-weight: 700;
+  color: #374151;
+}
+.desc-titulo {
+  font-size: 13px;
+  color: #374151;
+}
+
+/* Etiquetas generales */
+.lbl {
+  font-size: 12px;
+  color: var(--texto-suave);
+  margin-right: 8px;
+  white-space: nowrap;
+}
+
+/* Tabs */
+.tabs ::ng-deep .mat-mdc-tab-header {
+  background: #f5f9ff;
+  border: 1px solid var(--borde);
+  border-radius: 8px 8px 0 0;
+}
+.tab-body {
+  border: 1px solid var(--borde);
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+  padding: 18px;
+}
+
+/* Layout columnas y filas */
+.cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px 28px;
+  align-items: start;
+}
+.col .row {
+  display: grid;
+  grid-template-columns: 140px auto;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+/* Dos campos en la misma fila (centro) */
+.col .row.two {
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+}
+.col .row.two > div {
+  display: grid;
+  grid-template-columns: 140px auto;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Anchos compactos de los inputs */
+.mat-mdc-form-field { width: 100%; }
+.field-sm { max-width: 230px; }
+.field-md { max-width: 320px; }
+
+/* Bloque de opciones */
+.opciones {
+  display: grid;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 8px;
+  border-top: 1px solid var(--borde);
+}
+.opciones .lbl {
+  grid-column: 1 / -1;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* Generar código */
+.accion-generar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 12px;
+  color: var(--texto-suave);
+}
+
+/* Foto */
+.foto {
+  margin-top: 8px;
+  display: flex;
+  justify-content: flex-start;
+}
+.foto img,
+.foto .placeholder {
+  width: 92px;
+  height: 92px;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  object-fit: cover;
+}
+.foto .placeholder {
+  display: grid;
+  place-items: center;
+  color: var(--texto-suave);
+  font-size: 12px;
+}
+
+/* Fechas y acciones */
+.fechas-acciones {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 16px;
+  margin-top: 10px;
+  align-items: center;
+  border-top: 1px solid var(--borde);
+  padding-top: 14px;
+}
+.acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.placeholder-tab {
+  padding: 32px;
+  color: var(--texto-suave);
+}
+
+/* Línea sutil Material */
+.mdc-line-ripple::after,
+.mdc-line-ripple::before { background-color: #cfe1f8 !important; }
+.mat-mdc-form-field-subscript-wrapper { display: none; }
+
+/* Responsive */
+@media (max-width: 980px) {
+  .cols { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  .cols { grid-template-columns: 1fr; }
+  .col .row,
+  .col .row.two > div { grid-template-columns: 1fr; }
+  .field-sm, .field-md { max-width: 100%; }
+}

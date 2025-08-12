@@ -1,14 +1,11 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
+
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatExpansionModule } from '@angular/material/expansion';
-import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
-import { Sic3000RoutingModule } from './sic-3000-routing.module';
-import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.component';
 import { MatStepperModule } from '@angular/material/stepper';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -18,16 +15,27 @@ import { MatTableModule } from '@angular/material/table';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
-import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
+import { MatTabsModule } from '@angular/material/tabs';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
 
+import { ReactiveFormsModule, FormsModule } from '@angular/forms';
+
+import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
+import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
+import { Sic3000RoutingModule } from './sic-3000-routing.module';
+import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.component';
+import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
+import { ProductosSicComponent } from './productos-sic/productos-sic.component';
 
 @NgModule({
-   declarations: [
+  declarations: [
     InicioSicComponent,
     NavigationSicComponent,
     RegistroCobrosComponent,
-    EstadocuentaclienteComponent
+    EstadocuentaclienteComponent,
+    ProductosSicComponent
   ],
   imports: [
     CommonModule,
@@ -45,9 +53,12 @@ import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuenta
     MatButtonModule,
     MatTableModule,
     MatRadioModule,
-    MatFormFieldModule,
     MatSelectModule,
     MatOptionModule,
+    MatTabsModule,
+    MatSlideToggleModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     Sic3000RoutingModule
   ]
 })

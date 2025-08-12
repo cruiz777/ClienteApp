@@ -1,0 +1,236 @@
+<div class="page">
+  <header class="page-header">
+    <h1>Mantenimiento de Productos</h1>
+
+    <!-- Descripción solo como etiqueta -->
+    <div class="descripcion-static">
+      <span class="lbl-strong">Descripción:</span>
+      <span class="desc-titulo">Descripción del producto</span>
+    </div>
+  </header>
+
+  <mat-tab-group class="tabs" [(selectedIndex)]="selectedTab" animationDuration="0ms">
+    <!-- TAB 1: se renderiza de inmediato -->
+    <mat-tab label="Datos Generales">
+      <div class="tab-body">
+
+        <!-- 3 columnas con campos compactos -->
+        <div class="cols cols-tight">
+          <!-- Columna izquierda -->
+          <div class="col">
+            <div class="row">
+              <label class="lbl">Código Interno:</label>
+              <mat-form-field appearance="outline" class="field-sm">
+                <input matInput formControlName="codigoInterno" />
+              </mat-form-field>
+            </div>
+
+            <div class="row">
+              <label class="lbl">Descripción 1:</label>
+              <mat-form-field appearance="outline" class="field-sm">
+                <input matInput formControlName="descripcion1" />
+              </mat-form-field>
+            </div>
+
+            <div class="row">
+              <label class="lbl">Unidad de Venta:</label>
+              <mat-form-field appearance="outline" class="field-sm">
+                <mat-select formControlName="unidadVenta" disableOptionCentering>
+                  <mat-option *ngFor="let u of unidadesVenta" [value]="u">{{ u }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="row">
+              <label class="lbl">Existencia Global:</label>
+              <mat-form-field appearance="outline" class="field-sm">
+                <input matInput formControlName="existenciaGlobal" />
+              </mat-form-field>
+            </div>
+
+            <div class="row">
+              <label class="lbl">Abreviación:</label>
+              <mat-form-field appearance="outline" class="field-sm">
+                <input matInput formControlName="abreviacion" />
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Columna centro -->
+          <div class="col">
+            <div class="row with-action">
+              <div>
+                <label class="lbl">Código de Barras:</label>
+                <mat-form-field appearance="outline" class="field-sm">
+                  <input matInput formControlName="codigoBarras" />
+                </mat-form-field>
+              </div>
+              <div class="accion-generar">
+                <span>Generar</span>
+                <mat-checkbox formControlName="generarCodigo"></mat-checkbox>
+              </div>
+            </div>
+
+            <div class="row">
+              <label class="lbl">Descripción punto de venta:</label>
+              <mat-form-field appearance="outline" class="field-md">
+                <input matInput formControlName="descripcionPOS" />
+              </mat-form-field>
+            </div>
+
+            <div class="row two">
+              <div>
+                <label class="lbl">Cantidad:</label>
+                <mat-form-field appearance="outline" class="field-sm">
+                  <input matInput formControlName="cantidad" type="number" />
+                </mat-form-field>
+              </div>
+              <div>
+                <label class="lbl">Can. Cov.:</label>
+                <mat-form-field appearance="outline" class="field-sm">
+                  <input matInput formControlName="canCov" />
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div class="row">
+              <label class="lbl">Referencia:</label>
+              <mat-form-field appearance="outline" class="field-sm">
+                <input matInput formControlName="referencia" />
+              </mat-form-field>
+            </div>
+          </div>
+
+          <!-- Columna derecha -->
+          <div class="col">
+            <div class="row">
+              <label class="lbl">Tipo Producto:</label>
+              <mat-form-field appearance="outline" class="field-sm">
+                <mat-select formControlName="tipoProducto">
+                  <mat-option *ngFor="let t of tiposProducto" [value]="t">{{ t }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="row">
+              <label class="lbl">Presentación:</label>
+              <mat-form-field appearance="outline" class="field-sm">
+                <mat-select formControlName="presentacion">
+                  <mat-option *ngFor="let p of presentaciones" [value]="p">{{ p }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+
+            <div class="row">
+              <label class="lbl">Clase de Producto:</label>
+              <mat-form-field appearance="outline" class="field-sm">
+                <mat-select formControlName="claseProducto">
+                  <mat-option *ngFor="let c of clasesProducto" [value]="c">{{ c }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <!-- OPCIONES en bloque único de 3 columnas (alineado como la imagen) -->
+        <div class="opciones-grid">
+          <div class="op-col">
+            <div class="lbl">Opciones:</div>
+            <mat-checkbox formControlName="pagaIva">Paga IVA</mat-checkbox>
+            <mat-checkbox formControlName="productoEnVenta">Producto en Venta</mat-checkbox>
+            <mat-checkbox formControlName="cargarInventarios">Cargar a inventarios</mat-checkbox>
+            <mat-checkbox formControlName="productoConPeso">Producto con Peso</mat-checkbox>
+            <mat-checkbox formControlName="consumoInterno">Producto consumo Interno</mat-checkbox>
+          </div>
+
+          <div class="op-col">
+            <mat-checkbox formControlName="manejaDecimales">Maneja Cantidad con Decimales</mat-checkbox>
+            <mat-checkbox formControlName="psicotropico">Psicotrópico</mat-checkbox>
+            <mat-checkbox formControlName="estupefaciente">Estupefaciente</mat-checkbox>
+            <mat-checkbox formControlName="activo">Activo</mat-checkbox>
+            <mat-checkbox formControlName="altoRiesgo">Alto Riesgo</mat-checkbox>
+          </div>
+
+          <div class="op-col derecha">
+            <div class="lbl">URL foto Producto:</div>
+            <mat-form-field appearance="outline" class="field-md">
+              <input matInput formControlName="urlFoto" />
+            </mat-form-field>
+
+            <div class="foto">
+              <img
+                *ngIf="form.value.urlFoto; else cuadroVacio"
+                [src]="form.value.urlFoto"
+                alt="foto"
+                loading="lazy"
+                decoding="async"
+              />
+              <ng-template #cuadroVacio>
+                <div class="placeholder">Foto</div>
+              </ng-template>
+            </div>
+          </div>
+        </div>
+
+        <!-- Fechas y acciones -->
+        <div class="fechas-acciones">
+          <div class="fechas">
+            <div class="row">
+              <label class="lbl">Fecha de Creación:</label>
+              <mat-form-field appearance="outline" class="field-sm">
+                <input matInput formControlName="fechaCreacion" [matDatepicker]="dp1" />
+                <mat-datepicker-toggle matSuffix [for]="dp1"></mat-datepicker-toggle>
+                <mat-datepicker #dp1></mat-datepicker>
+              </mat-form-field>
+            </div>
+
+            <div class="row">
+              <label class="lbl">Fecha Modificación:</label>
+              <mat-form-field appearance="outline" class="field-sm">
+                <input matInput formControlName="fechaModificacion" [matDatepicker]="dp2" />
+                <mat-datepicker-toggle matSuffix [for]="dp2"></mat-datepicker-toggle>
+                <mat-datepicker #dp2></mat-datepicker>
+              </mat-form-field>
+            </div>
+          </div>
+
+          <div class="acciones">
+            <mat-slide-toggle formControlName="activo">Activo</mat-slide-toggle>
+
+            <button mat-stroked-button color="primary" (click)="nuevo()">Nuevo</button>
+            <button mat-flat-button color="primary" (click)="grabar()" [disabled]="form.invalid">Grabar</button>
+            <button mat-stroked-button (click)="imprimir()">Imprimir</button>
+            <!-- sin mat-icon para no cargar la fuente de iconos en el primer paint -->
+            <button mat-stroked-button (click)="adjuntar()">Adjuntar</button>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- Resto de tabs: contenido perezoso (no se renderiza al inicio) -->
+    <mat-tab label="Datos Adicionales">
+      <ng-template matTabContent>
+        <div class="placeholder-tab">Contenido de “Datos Adicionales”</div>
+      </ng-template>
+    </mat-tab>
+
+    <mat-tab label="Precio / Costo">
+      <ng-template matTabContent>
+        <div class="placeholder-tab">Contenido de “Precio / Costo”</div>
+      </ng-template>
+    </mat-tab>
+
+    <mat-tab label="Estructura y Stock">
+      <ng-template matTabContent>
+        <div class="placeholder-tab">Contenido de “Estructura y Stock”</div>
+      </ng-template>
+    </mat-tab>
+
+    <mat-tab label="Proveedor">
+      <ng-template matTabContent>
+        <div class="placeholder-tab">Contenido de “Proveedor”</div>
+      </ng-template>
+    </mat-tab>
+  </mat-tab-group>
+  
+</div>
