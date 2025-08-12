@@ -10,6 +10,11 @@ import { SubdivisionService } from 'src/app/services/subdivision.service'
 import { DepartamentoService } from 'src/app/services/departamento.service'
 import { SeccionService } from 'src/app/services/seccion.service'
 import { GrupoService } from 'src/app/services/grupo.service'
+import { ProductoService } from 'src/app/services/productos.service'
+import { UsuarioService } from 'src/app/services/usuario.service';
+
+import { ProductoEstructuraComercialRequest } from 'src/app/interfaces/requests/producto-estructura-request';
+import { ProductoResponse } from 'src/app/interfaces/responses/producto-response'
 
 @HostListener('document:click')
 
@@ -24,20 +29,14 @@ export class EstructuraListComponent {
   opcionSeleccionada: any = null;
   modulos: any[] = [];
 
-  productos = [
-    { codigo: 'P001', codigoBarras: '123456', descripcion: 'Resma Papel Bond A4', proveedor: 'IMPRESO S.A.', costo: 3.20, pvp: 5.00, abreviacion: 'PB-A4', referencia: 'PAP-BOND', existencia: 45, categoria: 'Papel Bond' },
-    { codigo: 'P002', codigoBarras: '123457', descripcion: 'Cartón Corrugado 1.2mm', proveedor: 'Cartopel', costo: 1.50, pvp: 2.10, abreviacion: 'CC-1.2', referencia: 'CART-COR', existencia: 22, categoria: 'Cartón Corrugado' },
-    { codigo: 'P003', codigoBarras: '123458', descripcion: 'Tinta Negra 500ml', proveedor: 'Quimicol', costo: 8.90, pvp: 11.50, abreviacion: 'TINT-N', referencia: 'TINTA-NG', existencia: 0, categoria: 'Tintas' },
-    { codigo: 'P004', codigoBarras: '123459', descripcion: 'Pegamento Industrial', proveedor: '3M', costo: 6.00, pvp: 9.00, abreviacion: 'PEG-IND', referencia: 'PEG-3M', existencia: 12, categoria: 'Pegamentos' },
-    { codigo: 'P005', codigoBarras: '123460', descripcion: 'Servicio Maquetación Editorial', proveedor: 'DiseñoYA', costo: 20.00, pvp: 30.00, abreviacion: 'MAQ-EDIT', referencia: 'SERV-DISE', existencia: 1, categoria: 'Maquetación' }
-  ];
+  productos: ProductoResponse[] = [];
   productosFiltrados = this.productos;
 
   menuContextualVisible = false;
   posicionMenu = { x: 0, y: 0 };
   nodoSeleccionado: any = null;
   empresas: any[] = [];
-
+  usuarioActual = this.usuarioService.getUsuarioActual();
 
   constructor(
     private estructuraService: EstructuraComercialService,
@@ -46,16 +45,18 @@ export class EstructuraListComponent {
     private departamentoService: DepartamentoService,
     private seccionService: SeccionService,
     private grupoService: GrupoService,
+    private productoService: ProductoService,
+    private usuarioService: UsuarioService,
     private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
-    this.cargarEmpresas()
+    this.usuarioActual = this.usuarioService.getUsuarioActual();
+    this.cargarEstructurasRaiz();
   }
 
   cargarEstructuraComercial(): void {
-    const empresaId = 1;
-    this.estructuraService.getByFk(empresaId).subscribe(res => {
+    this.estructuraService.getByFk(this.usuarioActual?.id_empresa ?? 1).subscribe(res => {
       if (res.data) {
         this.modulos = res.data.map(ec => ({
           id: ec.idEstructuraComercial,
@@ -167,6 +168,43 @@ export class EstructuraListComponent {
     }
   }
 
+  onNodoClick(nodo: any) {
+    this.toggleExpand(nodo);
+
+    const req: ProductoEstructuraComercialRequest = {};
+    switch (nodo.tipo) {
+      case 'division': req.iddivision = nodo.id; break;
+      case 'subdivision': req.idsubdivision = nodo.id; break;
+      case 'departamento': req.iddepartamento = nodo.id; break;
+      case 'seccion': req.idseccion = nodo.id; break;
+      case 'grupo': req.idgrupo = nodo.id; break;
+      // Si tu API acepta empresa/estructura, añade los campos al request e inclúyelos aquí
+      default: return; // sin filtro válido, no llamar
+    }
+
+    this.productoService.getByEstructura(req).subscribe({
+      next: (res) => {
+        this.productos = res.data ?? [];
+        this.productosFiltrados = this.productos; // si usas filtrado aparte
+      },
+      error: (err) => console.error(err)
+    });
+  }
+
+  cargarEstructurasRaiz(): void {
+    this.estructuraService.getByFk(this.usuarioActual?.id_empresa ?? 1).subscribe(res => {
+      this.empresas = res.data.map(ec => ({
+        id: ec.idEstructuraComercial,
+        nombre: ec.descri,
+        tipo: 'estructura',
+        numnodos: ec.numnodos,
+        expandido: false,
+        hijos: []
+      }));
+    });
+  }
+
+
   abrirMenuContextual(event: MouseEvent, nodo: any): void {
     event.preventDefault();
     this.menuContextualVisible = true;
@@ -240,20 +278,6 @@ export class EstructuraListComponent {
     });
   }
 
-
-  cargarEmpresas(): void {
-    // Temporal: empresa fija para pruebas
-    this.empresas = [
-      {
-        id: 1,
-        nombre: 'Empresa Demo',
-        tipo: 'empresa',
-        expandido: false,
-        hijos: []
-      }
-    ];
-  }
-
   getNivelPorTipo(tipo: string): number {
     switch (tipo) {
       case 'estructura': return 1;
@@ -294,6 +318,8 @@ export class EstructuraListComponent {
       this.menuContextualVisible = false;
     }
   }
+
+
 
 
 }

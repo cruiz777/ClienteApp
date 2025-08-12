@@ -15,13 +15,6 @@ export class MenuService {
 
   constructor(private http: HttpClient) { }
 
-  getPerfiles(): Observable<ApiResponse<SubMenuResponse[]>> {
-    return this.http.get<ApiResponse<SubMenuResponse[]>>(this.apiUrl);
-  }
-  /**
-   * Obtiene los menús asociados a un módulo específico.
-   * @param idModulo ID del módulo seleccionado
-   */
   getSubMenusPorMenu(idMenu: number): Observable<ApiResponse<SubMenuResponse[]>> {
     return this.http.get<ApiResponse<SubMenuResponse[]>>(`${this.apiUrl}/menu/${idMenu}`);
   }

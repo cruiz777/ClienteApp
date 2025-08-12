@@ -18,37 +18,37 @@
 
           <ul *ngIf="empresa.expandido">
             <li *ngFor="let nivel1 of empresa.hijos">
-              <div (click)="toggleExpand(nivel1)" (contextmenu)="abrirMenuContextual($event, nivel1)">
+              <div (click)="onNodoClick(nivel1)" (contextmenu)="abrirMenuContextual($event, nivel1)">
                 {{ getIcono(nivel1) }} {{ nivel1.nombre }}
               </div>
 
               <ul *ngIf="nivel1.expandido">
                 <li *ngFor="let nivel2 of nivel1.hijos">
-                  <div (click)="toggleExpand(nivel2)" (contextmenu)="abrirMenuContextual($event, nivel2)">
+                  <div (click)="onNodoClick(nivel2)" (contextmenu)="abrirMenuContextual($event, nivel2)">
                     {{ getIcono(nivel2) }} {{ nivel2.nombre }}
                   </div>
 
                   <ul *ngIf="nivel2.expandido">
                     <li *ngFor="let nivel3 of nivel2.hijos">
-                      <div (click)="toggleExpand(nivel3)" (contextmenu)="abrirMenuContextual($event, nivel3)">
+                      <div (click)="onNodoClick(nivel3)" (contextmenu)="abrirMenuContextual($event, nivel3)">
                         {{ getIcono(nivel3) }} {{ nivel3.nombre }}
                       </div>
 
                       <ul *ngIf="nivel3.expandido">
                         <li *ngFor="let nivel4 of nivel3.hijos">
-                          <div (click)="toggleExpand(nivel4)" (contextmenu)="abrirMenuContextual($event, nivel4)">
+                          <div (click)="onNodoClick(nivel4)" (contextmenu)="abrirMenuContextual($event, nivel4)">
                             {{ getIcono(nivel4) }} {{ nivel4.nombre }}
                           </div>
 
                           <ul *ngIf="nivel4.expandido">
                             <li *ngFor="let nivel5 of nivel4.hijos">
-                              <div (click)="toggleExpand(nivel5)" (contextmenu)="abrirMenuContextual($event, nivel5)">
+                              <div (click)="onNodoClick(nivel5)" (contextmenu)="abrirMenuContextual($event, nivel5)">
                                 {{ getIcono(nivel5) }} {{ nivel5.nombre }}
                               </div>
 
                               <ul *ngIf="nivel5.expandido">
                                 <li *ngFor="let grupo of nivel5.hijos">
-                                  <div (click)="toggleExpand(grupo)" (contextmenu)="abrirMenuContextual($event, grupo)"
+                                  <div (click)="onNodoClick(grupo)" (contextmenu)="abrirMenuContextual($event, grupo)"
                                     [class.grupo]="true" [class.activo]="opcionSeleccionada?.nombre === grupo.nombre">
                                     📄 {{ grupo.nombre }}
                                   </div>
@@ -86,28 +86,20 @@
       <table class="tabla-estilo">
         <thead>
           <tr>
-            <th>Código</th>
-            <th>Cod. Barras</th>
+            <th>Id</th>
+            <th>Cod. Pro</th>
             <th>Descripción</th>
-            <th>Proveedor</th>
-            <th>Costo Prov.</th>
-            <th>PVP+IVA</th>
-            <th>Abreviación</th>
-            <th>Referencia</th>
-            <th>Exist. Total</th>
+            <th>Tip. Prod</th>
+            <th>Codbar.</th>
           </tr>
         </thead>
         <tbody>
           <tr *ngFor="let producto of productosFiltrados">
-            <td>{{ producto.codigo }}</td>
-            <td>{{ producto.codigoBarras }}</td>
-            <td>{{ producto.descripcion }}</td>
-            <td>{{ producto.proveedor }}</td>
-            <td>{{ producto.costo }}</td>
-            <td>{{ producto.pvp }}</td>
-            <td>{{ producto.abreviacion }}</td>
-            <td>{{ producto.referencia }}</td>
-            <td [class.sin-stock]="producto.existencia == 0">{{ producto.existencia }}</td>
+            <td>{{ producto.id_producto }}</td>
+            <td>{{ producto.codpro }}</td>
+            <td>{{ producto.despro }}</td>
+            <td>{{ producto.tippro }}</td>
+            <td>{{ producto.codbar }}</td>
           </tr>
         </tbody>
       </table>
