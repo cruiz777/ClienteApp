@@ -10,7 +10,7 @@
   </header>
 
   <mat-tab-group class="tabs" [(selectedIndex)]="selectedTab" animationDuration="0ms">
-    <!-- TAB 1: Datos Generales -->
+    <!-- TAB 1: Datos Generales (inmediato) -->
     <mat-tab label="Datos Generales">
       <div class="tab-body">
         <!-- ===== Grid de 3 secciones alineadas por filas ===== -->
@@ -55,7 +55,7 @@
             <label class="lbl">Tipo Producto:</label>
             <mat-form-field appearance="outline" class="field-sm">
               <mat-select formControlName="tipoProducto">
-                <mat-option *ngFor="let t of tiposProducto" [value]="t">{{ t }}</mat-option>
+                <mat-option *ngFor="let t of tiposProducto; trackBy: trackByValue" [value]="t">{{ t }}</mat-option>
               </mat-select>
             </mat-form-field>
           </div>
@@ -65,7 +65,7 @@
             <label class="lbl">Unidad de Venta:</label>
             <mat-form-field appearance="outline" class="field-sm">
               <mat-select formControlName="unidadVenta" disableOptionCentering>
-                <mat-option *ngFor="let u of unidadesVenta" [value]="u">{{ u }}</mat-option>
+                <mat-option *ngFor="let u of unidadesVenta; trackBy: trackByValue" [value]="u">{{ u }}</mat-option>
               </mat-select>
             </mat-form-field>
           </div>
@@ -81,7 +81,7 @@
             <label class="lbl">Presentación:</label>
             <mat-form-field appearance="outline" class="field-sm">
               <mat-select formControlName="presentacion">
-                <mat-option *ngFor="let p of presentaciones" [value]="p">{{ p }}</mat-option>
+                <mat-option *ngFor="let p of presentaciones; trackBy: trackByValue" [value]="p">{{ p }}</mat-option>
               </mat-select>
             </mat-form-field>
           </div>
@@ -105,7 +105,7 @@
             <label class="lbl">Clase de Producto:</label>
             <mat-form-field appearance="outline" class="field-sm">
               <mat-select formControlName="claseProducto">
-                <mat-option *ngFor="let c of clasesProducto" [value]="c">{{ c }}</mat-option>
+                <mat-option *ngFor="let c of clasesProducto; trackBy: trackByValue" [value]="c">{{ c }}</mat-option>
               </mat-select>
             </mat-form-field>
           </div>
@@ -132,105 +132,138 @@
         </div>
         <!-- ===== /Grid 3 secciones ===== -->
 
-        <!-- ===== Opciones en 3 columnas con separadores ===== -->
-        <div class="opciones-grid">
-          <div class="op-col">
-            <div class="lbl">Opciones:</div>
-            <mat-checkbox formControlName="pagaIva">Paga IVA</mat-checkbox>
-            <mat-checkbox formControlName="productoEnVenta">Producto en Venta</mat-checkbox>
-            <mat-checkbox formControlName="cargarInventarios">Cargar a inventarios</mat-checkbox>
-            <mat-checkbox formControlName="productoConPeso">Producto con Peso</mat-checkbox>
-            <mat-checkbox formControlName="consumoInterno">Producto consumo Interno</mat-checkbox>
-          </div>
+        <!-- ===== Opciones (diferido en idle) ===== -->
+        @defer (on idle) {
+          <div class="opciones-grid">
+            <div class="op-col">
+              <div class="lbl">Opciones:</div>
+              <mat-checkbox formControlName="pagaIva">Paga IVA</mat-checkbox>
+              <mat-checkbox formControlName="productoEnVenta">Producto en Venta</mat-checkbox>
+              <mat-checkbox formControlName="cargarInventarios">Cargar a inventarios</mat-checkbox>
+              <mat-checkbox formControlName="productoConPeso">Producto con Peso</mat-checkbox>
+              <mat-checkbox formControlName="consumoInterno">Producto consumo Interno</mat-checkbox>
+            </div>
 
-          <div class="op-col">
-            <mat-checkbox formControlName="manejaDecimales">Maneja Cantidad con Decimales</mat-checkbox>
-            <mat-checkbox formControlName="psicotropico">Psicotrópico</mat-checkbox>
-            <mat-checkbox formControlName="estupefaciente">Estupefaciente</mat-checkbox>
-            <mat-checkbox formControlName="activo">Activo</mat-checkbox>
-            <mat-checkbox formControlName="altoRiesgo">Alto Riesgo</mat-checkbox>
-          </div>
+            <div class="op-col">
+              <mat-checkbox formControlName="manejaDecimales">Maneja Cantidad con Decimales</mat-checkbox>
+              <mat-checkbox formControlName="psicotropico">Psicotrópico</mat-checkbox>
+              <mat-checkbox formControlName="estupefaciente">Estupefaciente</mat-checkbox>
+              <mat-checkbox formControlName="activo">Activo</mat-checkbox>
+              <mat-checkbox formControlName="altoRiesgo">Alto Riesgo</mat-checkbox>
+            </div>
 
-          <div class="op-col derecha">
-            <div class="lbl">URL foto Producto:</div>
-            <mat-form-field appearance="outline" class="field-md">
-              <input matInput formControlName="urlFoto" />
-            </mat-form-field>
+            <div class="op-col derecha">
+              <div class="lbl">URL foto Producto:</div>
+              <mat-form-field appearance="outline" class="field-md">
+                <input matInput formControlName="urlFoto" />
+              </mat-form-field>
 
-            <div class="foto">
-              <img
-                *ngIf="form.value.urlFoto; else cuadroVacio"
-                [src]="form.value.urlFoto"
-                alt="foto"
-                loading="lazy"
-                decoding="async"
-              />
-              <ng-template #cuadroVacio>
-                <div class="placeholder">Foto</div>
-              </ng-template>
+              <div class="foto">
+                <img
+                  *ngIf="form.value.urlFoto; else cuadroVacio"
+                  [src]="form.value.urlFoto"
+                  alt="foto"
+                  loading="lazy"
+                  decoding="async"
+                />
+                <ng-template #cuadroVacio>
+                  <div class="placeholder">Foto</div>
+                </ng-template>
+              </div>
             </div>
           </div>
-        </div>
+        } @placeholder {
+          <div class="opciones-grid">
+            <div class="op-col"><div class="lbl">Opciones:</div><div class="placeholder">Cargando…</div></div>
+            <div class="op-col"><div class="placeholder">Cargando…</div></div>
+            <div class="op-col"><div class="placeholder">Cargando…</div></div>
+          </div>
+        }
         <!-- ===== /Opciones ===== -->
 
-        <!-- Fechas y acciones -->
-        <div class="fechas-acciones">
-          <div class="fechas">
-            <div class="row">
-              <label class="lbl">Fecha de Creación:</label>
-              <mat-form-field appearance="outline" class="field-sm">
-                <input matInput formControlName="fechaCreacion" [matDatepicker]="dp1" />
-                <mat-datepicker-toggle matSuffix [for]="dp1"></mat-datepicker-toggle>
-                <mat-datepicker #dp1></mat-datepicker>
-              </mat-form-field>
+        <!-- ===== Fechas y acciones (diferido en idle) ===== -->
+        @defer (on idle) {
+          <div class="fechas-acciones">
+            <div class="fechas">
+              <div class="row">
+                <label class="lbl">Fecha de Creación:</label>
+                <mat-form-field appearance="outline" class="field-sm">
+                  <input matInput formControlName="fechaCreacion" [matDatepicker]="dp1" />
+                  <mat-datepicker-toggle matSuffix [for]="dp1"></mat-datepicker-toggle>
+                  <mat-datepicker #dp1></mat-datepicker>
+                </mat-form-field>
+              </div>
+
+              <div class="row">
+                <label class="lbl">Fecha Modificación:</label>
+                <mat-form-field appearance="outline" class="field-sm">
+                  <input matInput formControlName="fechaModificacion" [matDatepicker]="dp2" />
+                  <mat-datepicker-toggle matSuffix [for]="dp2"></mat-datepicker-toggle>
+                  <mat-datepicker #dp2></mat-datepicker>
+                </mat-form-field>
+              </div>
             </div>
 
-            <div class="row">
-              <label class="lbl">Fecha Modificación:</label>
-              <mat-form-field appearance="outline" class="field-sm">
-                <input matInput formControlName="fechaModificacion" [matDatepicker]="dp2" />
-                <mat-datepicker-toggle matSuffix [for]="dp2"></mat-datepicker-toggle>
-                <mat-datepicker #dp2></mat-datepicker>
-              </mat-form-field>
+            <div class="acciones">
+              <mat-slide-toggle formControlName="activo">Activo</mat-slide-toggle>
+
+              <button mat-stroked-button color="primary" (click)="nuevo()">Nuevo</button>
+              <button mat-flat-button color="primary" (click)="grabar()" [disabled]="form.invalid">Grabar</button>
+              <button mat-stroked-button (click)="imprimir()">Imprimir</button>
+              <button mat-stroked-button (click)="adjuntar()">Adjuntar</button>
             </div>
           </div>
-
-          <div class="acciones">
-            <mat-slide-toggle formControlName="activo">Activo</mat-slide-toggle>
-
-            <button mat-stroked-button color="primary" (click)="nuevo()">Nuevo</button>
-            <button mat-flat-button color="primary" (click)="grabar()" [disabled]="form.invalid">Grabar</button>
-            <button mat-stroked-button (click)="imprimir()">Imprimir</button>
-            <button mat-stroked-button (click)="adjuntar()">Adjuntar</button>
+        } @placeholder {
+          <div class="fechas-acciones">
+            <div class="fechas"><div class="placeholder">Fechas cargando…</div></div>
+            <div class="acciones"><div class="placeholder">Acciones cargando…</div></div>
           </div>
-        </div>
-
+        }
+        <!-- ===== /Fechas y acciones ===== -->
       </div>
     </mat-tab>
 
-    <!-- Tabs perezosas: mejor tiempo de carga -->
+    <!-- ===== Tabs diferidos (no críticos) ===== -->
+
     <mat-tab label="Datos Adicionales">
       <ng-template matTabContent>
-        <div class="placeholder-tab">Contenido de “Datos Adicionales”</div>
+        @defer (on idle) {
+          <div class="placeholder-tab">Contenido de “Datos Adicionales”</div>
+        } @placeholder {
+          <div class="placeholder-tab">Cargando…</div>
+        }
       </ng-template>
     </mat-tab>
 
     <mat-tab label="Precio / Costo">
       <ng-template matTabContent>
-        <div class="placeholder-tab">Contenido de “Precio / Costo”</div>
+        @defer (on idle) {
+          <div class="placeholder-tab">Contenido de “Precio / Costo”</div>
+        } @placeholder {
+          <div class="placeholder-tab">Cargando…</div>
+        }
       </ng-template>
     </mat-tab>
 
     <mat-tab label="Estructura y Stock">
       <ng-template matTabContent>
-        <div class="placeholder-tab">Contenido de “Estructura y Stock”</div>
+        @defer (on idle) {
+          <div class="placeholder-tab">Contenido de “Estructura y Stock”</div>
+        } @placeholder {
+          <div class="placeholder-tab">Cargando…</div>
+        }
       </ng-template>
     </mat-tab>
 
     <mat-tab label="Proveedor">
       <ng-template matTabContent>
-        <div class="placeholder-tab">Contenido de “Proveedor”</div>
+        @defer (on idle) {
+          <div class="placeholder-tab">Contenido de “Proveedor”</div>
+        } @placeholder {
+          <div class="placeholder-tab">Cargando…</div>
+        }
       </ng-template>
     </mat-tab>
   </mat-tab-group>
 </div>
+
