@@ -103,11 +103,6 @@
           <a mat-list-item routerLink="/codbar/transferencia/tras-gtin">
             <span *ngIf="isExpanded" class="menu-text">Transferencia Gtin</span>
           </a>
-
-          <a mat-list-item routerLink="/codbar/transferencia/tipo-prefijo">
-            <span *ngIf="isExpanded" class="menu-text">Tipo Prefijo</span>
-          </a>
-
           <a mat-list-item routerLink="/codbar/transferencia/eliminar-prefijo">
             <span *ngIf="isExpanded" class="menu-text">Eliminar Prefijo</span>
           </a>
@@ -145,15 +140,15 @@
           </mat-expansion-panel-header>
 
           <!-- 🔧 TODO: Implementar componentes de reportes -->
-          <a mat-list-item routerLink="/codbar/reportes/gerencia-cliente">
+          <a mat-list-item routerLink="/codbar/reportes/gerencia">
             <span *ngIf="isExpanded" class="menu-text">Reporte Gerencia Cliente</span>
           </a>
 
-          <a mat-list-item routerLink="/codbar/reportes/clientes">
+          <!-- <a mat-list-item routerLink="/codbar/reportes/clientes">
             <span *ngIf="isExpanded" class="menu-text">Reporte Clientes</span>
-          </a>
+          </a> -->
 
-          <a mat-list-item routerLink="/codbar/reportes/explorador-clientes">
+          <a mat-list-item routerLink="/codbar/reportes/explorador-cliente">
             <span *ngIf="isExpanded" class="menu-text">Explorador Clientes</span>
           </a>
         </mat-expansion-panel>
@@ -171,10 +166,14 @@
             <span *ngIf="isExpanded" class="menu-text">Establecimientos GLN</span>
           </a>
 
-          <!-- 🔧 TODO: Servicios Productos -->
-          <a mat-list-item routerLink="/codbar/configuracion/servicios-productos">
-            <span *ngIf="isExpanded" class="menu-text">Servicios Productos</span>
+          <a mat-list-item routerLink="/codbar/transferencia/tipo-prefijo">
+            <span *ngIf="isExpanded" class="menu-text">Tipo Prefijo</span>
           </a>
+
+          <!-- 🔧 TODO: Servicios Productos -->
+          <!-- <a mat-list-item routerLink="/codbar/configuracion/servicios-productos">
+            <span *ngIf="isExpanded" class="menu-text">Servicios Productos</span>
+          </a> -->
         </mat-expansion-panel>
 
       </mat-accordion>

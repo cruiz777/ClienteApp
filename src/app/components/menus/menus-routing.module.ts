@@ -70,21 +70,17 @@ const routes: Routes = [
           }
         ]
       },
-      {
-        path: 'explorador',
-        children: [
-          { path: '', component: ExploradorComponent },
-          // { path: 'crear', component: TipoLocalizacionFormComponent },
-          // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
-        ]
-      },
 
-       {
-        path: 'gerencia',
+      // ✅ MÓDULO: Reportes 
+      {
+        path: 'reportes',
         children: [
-          { path: '', component: GerenciaComponent},
-          // { path: 'crear', component: TipoLocalizacionFormComponent },
-          // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
+          { path: '', redirectTo: 'explorador-cliente', pathMatch: 'full' },
+          { path: 'explorador-cliente', component: ExploradorComponent },
+          { path: 'gerencia', component: GerenciaComponent }
+          // 🆕 Futuros reportes se pueden agregar aquí
+          // { path: 'reporte-ventas', component: ReporteVentasComponent },
+          // { path: 'reporte-productos', component: ReporteProductosComponent },
         ]
       },
 

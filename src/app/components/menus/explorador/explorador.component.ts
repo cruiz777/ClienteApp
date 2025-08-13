@@ -33,7 +33,7 @@ interface Cliente {
   styleUrls: ['./explorador.component.css']
 })
 export class ExploradorComponent implements OnInit {
-  @ViewChild(AgGridAngular) agGrid!: AgGridAngular;
+  @ViewChild(AgGridAngular) agGrid?: AgGridAngular;
 
   filtroForm!: FormGroup;
   pageSize = 10;
