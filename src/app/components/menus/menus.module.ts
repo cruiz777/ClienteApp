@@ -47,6 +47,7 @@ import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-
 
 // 🆕 OTROS MÓDULOS NECESARIOS
 import { ProductosModule } from 'src/app/components/productos/productos.module';
+import { ExploradorClientesComponent } from '../pages/explorador-clientes/explorador-clientes.component';
 
 @NgModule({
   declarations: [
@@ -78,7 +79,8 @@ import { ProductosModule } from 'src/app/components/productos/productos.module';
     CustomMessageBoxComponent,
     ExploradorComponent,
     GerenciaComponent,
-    TipoPrefijoComponent
+    TipoPrefijoComponent,
+    ExploradorClientesComponent
     //TipoClienteListComponent
   ],
   imports: [
