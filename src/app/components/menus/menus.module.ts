@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { NavegarComponent } from './navegar/navegar.component';
 import { MenusComponent } from './menus.component';
+import { TipoPrefijoComponent } from './prefijos/tipo-prefijo/tipo-prefijo.component';
 import { ReusableModule } from '../reusable/reusable.module';
 import { CodbarComponent } from './codbar/codbar.component';
 import { MenusRoutingModule } from './menus-routing.module';
@@ -15,6 +16,12 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { LayoutModule } from '@angular/cdk/layout';
 import { RouterModule } from '@angular/router';
+
+import { UppercaseDirective } from 'src/app/directives/uppercase.directive';
+import { MatCardModule } from '@angular/material/card';
+import { ExploradorComponent } from './explorador/explorador.component';
+import { GerenciaComponent } from './gerencia/gerencia.component';
+import { AgGridModule } from 'ag-grid-angular';
 
 // 🆕 COMPONENTES MIGRADOS DE PAGES
 import { DashboardComponent } from '../pages/dashboard/dashboard.component';
@@ -68,7 +75,11 @@ import { ProductosModule } from 'src/app/components/productos/productos.module';
     DialogClienteEditarComponent,
     DialogPrefijoComponent,
     DialogPrefijoEditarComponent,
-    CustomMessageBoxComponent
+    CustomMessageBoxComponent,
+    ExploradorComponent,
+    GerenciaComponent,
+    TipoPrefijoComponent
+    //TipoClienteListComponent
   ],
   imports: [
     CommonModule,
@@ -87,7 +98,10 @@ import { ProductosModule } from 'src/app/components/productos/productos.module';
     
     // 🆕 OTROS MÓDULOS
     ReusableModule,
-    ProductosModule
+    ProductosModule,
+    ReusableModule,
+    MatCardModule,
+    AgGridModule
   ]
 })
 export class MenusModule { }

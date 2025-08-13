@@ -1,17 +1,44 @@
- <div class="encabezado-acciones">
-      <div class="titulo-y-busqueda">
-        <h2>Eliminacion de Prefijos</h2>
-        <div class="form-group">
-          <div class="form-row">
-            <label>Buscar Prefijo:</label>
-            <input type="text" placeholder="Buscar prefijo..." [(ngModel)]="filtroBusqueda" />
-          </div>
-        </div>
-      </div>
+<div class="contenedor-tabla" *ngIf="listaPrefijos && listaPrefijos.length > 0">
+  <h2>Tipo Prefijos</h2>
+  <table class="tabla-estilizada">
+    <thead>
+      <tr>
+        <th>Id</th>
+        <th>Módulo</th>
+        <th>Número</th>
+        <th>Ocupado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let p of listaPrefijos; trackBy: trackById">
+        <td>{{ p.id }}</td>
+        <td>{{ p.modcon }}</td>
+        <td>{{ p.numcon }}</td>
+        <td>
+          <span [ngClass]="p.ocupado ? 'rojo' : 'verde'">
+            {{ p.ocupado ? 'Sí' : 'No' }}
+          </span>
+        </td>
+        <td>
+          <button class="btn-accion" (click)="abrirModalEditar(p)">Actualizar</button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
 
-      <div class="form-actions">
-        <button>Nueva Busqueda</button>
-        <button>Eliminar</button>
-      </div>
+<!-- Modal para edición -->
+<dialog id="modal-edicion" class="modal-edicion">
+  <h3>Editar número</h3>
+  <p><strong>Módulo:</strong> {{ prefijoSeleccionado?.modcon }}</p>
 
-    </div>
+  <label for="nuevoNumcon">Nuevo número:</label>
+  <input type="text" [(ngModel)]="nuevoNumcon" id="nuevoNumcon" />
+
+  <div class="modal-botones">
+    <button (click)="guardarCambios()">Guardar</button>
+    <button (click)="cerrarModal()">Cancelar</button>
+  </div>
+</dialog>
+  

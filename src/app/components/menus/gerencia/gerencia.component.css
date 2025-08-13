@@ -1,0 +1,62 @@
+.contenedor-gerencia {
+  max-width: 800px;
+  margin: 40px auto;
+  padding: 24px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+}
+
+.encabezado {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.encabezado h2 {
+  font-size: 22px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.filtros {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.campo-anio {
+  width: 150px;
+}
+
+.tabla-gtin {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 24px;
+}
+
+.tabla-gtin th,
+.tabla-gtin td {
+  border: 1px solid #ddd;
+  padding: 10px;
+  text-align: center;
+}
+
+.tabla-gtin th {
+  background-color: #f1f1f1;
+  font-weight: bold;
+}
+
+.mensaje-vacio {
+  color: #888;
+  margin-top: 24px;
+  font-style: italic;
+}
+
+.mensaje-estado {
+  margin-top: 16px;
+  color: #4caf50;
+}

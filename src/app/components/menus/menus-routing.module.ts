@@ -23,6 +23,9 @@ import { DashboardComponent } from '../pages/dashboard/dashboard.component';
 import { ClientesComponent } from '../pages/clientes/clientes.component';
 import { NuevoClienteComponent } from '../pages/nuevo-cliente/nuevo-cliente.component';
 import { ProductoDetalleComponent } from '../pages/validacion/validacion-verified/validacion-verified.component';
+import { ExploradorComponent } from './explorador/explorador.component';
+import { GerenciaComponent } from './gerencia/gerencia.component';
+import { GrupoProductoListaComponent } from './grupo-producto-lista/grupo-producto-lista.component';
 
 const routes: Routes = [
   {
@@ -65,6 +68,23 @@ const routes: Routes = [
               { path: 'editar/:id', component: GrupoClienteFormComponent }
             ]
           }
+        ]
+      },
+      {
+        path: 'explorador',
+        children: [
+          { path: '', component: ExploradorComponent },
+          // { path: 'crear', component: TipoLocalizacionFormComponent },
+          // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
+        ]
+      },
+
+       {
+        path: 'gerencia',
+        children: [
+          { path: '', component: GerenciaComponent},
+          // { path: 'crear', component: TipoLocalizacionFormComponent },
+          // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
         ]
       },
 

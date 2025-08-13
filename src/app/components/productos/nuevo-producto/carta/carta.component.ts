@@ -30,7 +30,7 @@ export class CartaComponent {
     const firmaWidth = 50;
     const firmaHeight = 15;
 
-    doc.setFontSize(9);
+    doc.setFontSize(8);
     doc.setFont('times', 'normal');
     doc.addImage(logoBase64, 'PNG', 25, 10, logoWidth, logoHeight);
 

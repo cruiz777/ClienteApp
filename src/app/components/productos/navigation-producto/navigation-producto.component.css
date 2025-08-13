@@ -21,6 +21,13 @@ CONTENEDOR GENERAL
   .sidenav .mat-toolbar {
   background: inherit;
   }
+  .footer-right {
+  flex: 1;
+  display: flex; /* ← necesario para que justify-content funcione */
+  justify-content: flex-end;
+  text-align: right;
+}
+
   /* =========================
   CONTENIDO PRINCIPAL
   ========================= */

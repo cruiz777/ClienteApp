@@ -17,7 +17,7 @@
 
     <img src="/assets/logo/CG-3000-2.png" alt="CG 3000" class="cg3000" />
     <img src="/assets/logo/ROL-3000-2.png" alt="ROL 3000" class="rol3000" />
-    <img src="/assets/logo/seguridad-2.png" alt="Seguridad" class="seguridad" [routerLink]="'/seguridades/inicio'"
+    <img src="/assets/logo/seguridad-2.png" *ngIf="usuarioActual?.id_usuario === 1" alt="Seguridad" class="seguridad" [routerLink]="'/seguridades/inicio'"
       style="cursor: pointer" />
   </div>
 

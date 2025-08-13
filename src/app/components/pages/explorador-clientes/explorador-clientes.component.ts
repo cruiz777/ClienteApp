@@ -8,16 +8,18 @@ import { Cliente } from '../../../interfaces/cliente';
 import { DialogClienteComponent } from '../modals/dialog-cliente/dialog-cliente.component';
 import { ClienteService } from '../../../services/cliente.service';
 import { DialogClienteEditarComponent } from '../modals/dialog-cliente-editar/dialog-cliente-editar.component';
-import { LprefijoComponent } from './lprefijo/lprefijo.component';
+import { LprefijoComponent } from '../clientes/lprefijo/lprefijo.component';
 import { CustomMessageBoxComponent } from '../../utils/messages/custom-message-box.component';
 import { FormBuilder, FormGroup } from '@angular/forms';
 
 @Component({
-  selector: 'app-clientes',
-  templateUrl: './clientes.component.html',
-  styleUrls: ['./clientes.component.css']
+  selector: 'app-explorador-clientes',
+  templateUrl: './explorador-clientes.component.html',
+  styleUrl: './explorador-clientes.component.css'
 })
-export class ClientesComponent implements OnInit {
+
+export class ExploradorClientesComponent implements OnInit {
+
   displayedColumns: string[] = ['clientes_codigo', 'nomcli', 'dircli', 'ruc', 'fecing', 'zonaReferencia', 'estadoNombre', 'prefijo', 'codpre', 'acciones'];
   
   clientes: Cliente[] = [];
@@ -148,3 +150,5 @@ export class ClientesComponent implements OnInit {
 }
 
 }
+
+
