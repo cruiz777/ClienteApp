@@ -11,8 +11,9 @@
     <!-- Árbol de navegación -->
     <div class="panel-arbol">
       <ul class="arbol-navegacion">
+        <!-- RAÍZ: estructuras comerciales (antes 'empresa'); se mantienen los íconos 🏬/🏢 -->
         <li *ngFor="let empresa of empresas">
-          <div (click)="toggleExpand(empresa)" (contextmenu)="abrirMenuContextual($event, empresa)">
+          <div (click)="onNodoClick(empresa)" (contextmenu)="abrirMenuContextual($event, empresa)">
             {{ empresa.expandido ? '🏢' : '🏬' }} {{ empresa.nombre }}
           </div>
 
@@ -69,40 +70,50 @@
         </li>
       </ul>
 
+      <!-- Menú contextual -->
       <div *ngIf="menuContextualVisible" class="context-menu"
         [ngStyle]="{ top: posicionMenu.y + 'px', left: posicionMenu.x + 'px' }" (click)="$event.stopPropagation()">
         <ul>
           <li *ngIf="puedeCrear(nodoSeleccionado)" (click)="crearElemento()">
             ➕ Crear {{ obtenerTipoHijo(nodoSeleccionado?.tipo) }}
           </li>
-
           <li (click)="editarElemento()">✏️ Editar {{ nodoSeleccionado?.tipo }}</li>
+
+          <li *ngIf="esUltimoNivel(nodoSeleccionado)" (click)="crearProducto()">
+            🆕 Crear producto</li>
         </ul>
       </div>
     </div>
 
-
+    <!-- Panel de resultados con columnas dinámicas -->
     <div class="panel-tabla">
-      <table class="tabla-estilo">
-        <thead>
-          <tr>
-            <th>Id</th>
-            <th>Cod. Pro</th>
-            <th>Descripción</th>
-            <th>Tip. Prod</th>
-            <th>Codbar.</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let producto of productosFiltrados">
-            <td>{{ producto.id_producto }}</td>
-            <td>{{ producto.codpro }}</td>
-            <td>{{ producto.despro }}</td>
-            <td>{{ producto.tippro }}</td>
-            <td>{{ producto.codbar }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="tabla-scrollable">
+        <table class="tabla-estilo tabla-densa">
+          <thead>
+            <tr>
+              <th *ngFor="let col of tableColumns">{{ col.label }}</th>
+            </tr>
+            <tr class="filters-row">
+              <th *ngFor="let col of tableColumns">
+                <input type="text" class="filtro-input" placeholder="Filtrar…" [(ngModel)]="columnFilters[col.key]"
+                  (ngModelChange)="onFilterInput(col.key, $event)" />
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of tableRows">
+              <td *ngFor="let col of tableColumns">{{ row[col.key] }}</td>
+            </tr>
+            <tr *ngIf="tableRows.length === 0">
+              <td [attr.colspan]="tableColumns.length" style="text-align:center; color:#6b7280;">
+                No hay datos para mostrar.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
+
+
   </div>
 </div>
