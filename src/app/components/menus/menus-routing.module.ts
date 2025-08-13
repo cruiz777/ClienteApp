@@ -91,8 +91,7 @@ const routes: Routes = [
           { path: '', redirectTo: 'tras-prefijo', pathMatch: 'full' },
           { path: 'tras-prefijo', component: TraspasoPrefijosComponent },
           { path: 'tras-gtin', component: TraspasoGtinComponent },
-          { path: 'eliminar-prefijo', component: BorrarPrefijoComponent },
-          { path: 'tipo-prefijo', component: TipoPrefijoComponent }
+          { path: 'eliminar-prefijo', component: BorrarPrefijoComponent },          
         ]
       },
 
@@ -119,7 +118,9 @@ const routes: Routes = [
               { path: 'crear', component: TipoLocalizacionFormComponent },
               { path: 'editar/:id', component: TipoLocalizacionFormComponent }
             ]
-          }
+          },
+          {path:'grupo-producto',component:GrupoProductoListaComponent},
+          { path: 'tipo-prefijo', component: TipoPrefijoComponent }
         ]
       }
     ]
