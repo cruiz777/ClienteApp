@@ -582,7 +582,7 @@ export class DialogClienteComponent implements OnInit {
 
   cancelar(): void {
     this.dialogRef.close(); // Cierra el diálogo
-    this.router.navigate(['/pages/clientes']); // Redirecciona a /pages/clientes
+    this.router.navigate(['/codbar/ficha-de-cliente/clientes']); // Redirecciona a /pages/clientes
   }
   guardar(stepper: MatStepper): void {
     if (this.formCliente.invalid) {

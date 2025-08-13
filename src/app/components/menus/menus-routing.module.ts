@@ -2,6 +2,8 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { CodbarComponent } from './codbar/codbar.component';
 import { MenusComponent } from './menus.component';
+
+// Componentes de CODBAR originales
 import { TipoClienteListComponent } from '../pages/clientes/tipo-clientes/tipo-cliente-list/tipo-cliente-list.component';
 import { TipoClienteFormComponent } from '../pages/clientes/tipo-clientes/tipo-cliente-form/tipo-cliente-form.component';
 import { GrupoClienteListComponent } from '../pages/clientes/grupo-clientes/grupo-cliente-list/grupo-cliente-list.component';
@@ -16,78 +18,97 @@ import { ValidacionSriListComponent } from '../pages/validacion/validador-sri/va
 import { LicenseValidatorComponent } from '../pages/validacion/validador-licenses/validador-licenses.component';
 import { ProductsLicenseValidator } from '../pages/validacion/validador-products/validador-products.component';
 
-
+// 🆕 Componentes de PAGES integrados
+import { DashboardComponent } from '../pages/dashboard/dashboard.component';
+import { ClientesComponent } from '../pages/clientes/clientes.component';
+import { NuevoClienteComponent } from '../pages/nuevo-cliente/nuevo-cliente.component';
+import { ProductoDetalleComponent } from '../pages/validacion/validacion-verified/validacion-verified.component';
 
 const routes: Routes = [
   {
-    path: '', component: MenusComponent, children: [
-      {path:'codbar',component:CodbarComponent},
+    path: '', 
+    component: MenusComponent, // Layout principal de CODBAR
+    children: [
+      // ✅ Página de inicio de CODBAR
+      { path: '', redirectTo: 'inicio', pathMatch: 'full' },
+      { path: 'inicio', component: CodbarComponent },
 
+      // ✅ MÓDULO: Ficha de Cliente - COMPLETAMENTE INTEGRADO
       {
-        path: 'tipocliente',
+        path: 'ficha-de-cliente',
         children: [
-          { path: '', component: TipoClienteListComponent },
-          { path: 'crear', component: TipoClienteFormComponent },
-          { path: 'editar/:id', component: TipoClienteFormComponent }
-        ]
-      },
-      {
-        path: 'grupocliente',
-        children: [
-          { path: '', component: GrupoClienteListComponent },
-          { path: 'crear', component: GrupoClienteFormComponent },
-          { path: 'editar/:id', component: GrupoClienteFormComponent }
-        ]
-      },
-      {
-        path: 'localizacion-establecimiento',
-        children: [
-          { path: '', component: TipoLocalizacionListComponent },
-          { path: 'crear', component: TipoLocalizacionFormComponent },
-          { path: 'editar/:id', component: TipoLocalizacionFormComponent }
-        ]
-      },
-      {path:'tras-prefijo',component:TraspasoPrefijosComponent},
-      {path:'tras-gtin',component:TraspasoGtinComponent},
-      {path:'eliminar-prefijo',component:BorrarPrefijoComponent},
-      {path:'tipo-prefijo',component:TipoPrefijoComponent},
-
-      {
-        path: 'validacionsri',
-        children: [
-          { path: '', component: ValidacionSriListComponent },
-          // { path: 'crear', component: TipoLocalizacionFormComponent },
-          // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
-        ]
-      },
-
-      {
-        path: 'validacion-licenses',
-        children: [
-          { path: '', component: LicenseValidatorComponent },
-          // { path: 'crear', component: TipoLocalizacionFormComponent },
-          // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
+          // Dashboard/inicio de ficha cliente
+          { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+          
+          // 🆕 Funcionalidades principales (de pages)
+          { path: 'clientes', component: ClientesComponent },
+          { path: 'nclientes', component: NuevoClienteComponent },
+          { path: 'consulta-verified', component: ProductoDetalleComponent },
+          
+          // 🆕 FUTURO: Explorador de clientes
+          // { path: 'explorador-clientes', component: ExploradorClientesComponent },
+          
+          // Configuraciones de ficha cliente
+          {
+            path: 'tipocliente',
+            children: [
+              { path: '', component: TipoClienteListComponent },
+              { path: 'crear', component: TipoClienteFormComponent },
+              { path: 'editar/:id', component: TipoClienteFormComponent }
+            ]
+          },
+          {
+            path: 'grupocliente',
+            children: [
+              { path: '', component: GrupoClienteListComponent },
+              { path: 'crear', component: GrupoClienteFormComponent },
+              { path: 'editar/:id', component: GrupoClienteFormComponent }
+            ]
+          }
         ]
       },
 
+      // ✅ MÓDULO: Transferencia
       {
-        path: 'validacion-productos',
+        path: 'transferencia',
         children: [
-          { path: '', component: ProductsLicenseValidator },
-          // { path: 'crear', component: TipoLocalizacionFormComponent },
-          // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
+          { path: '', redirectTo: 'tras-prefijo', pathMatch: 'full' },
+          { path: 'tras-prefijo', component: TraspasoPrefijosComponent },
+          { path: 'tras-gtin', component: TraspasoGtinComponent },
+          { path: 'eliminar-prefijo', component: BorrarPrefijoComponent },
+          { path: 'tipo-prefijo', component: TipoPrefijoComponent }
+        ]
+      },
+
+      // ✅ MÓDULO: Validación
+      {
+        path: 'validacion',
+        children: [
+          { path: '', redirectTo: 'validacionsri', pathMatch: 'full' },
+          { path: 'validacionsri', component: ValidacionSriListComponent },
+          { path: 'validacion-licenses', component: LicenseValidatorComponent },
+          { path: 'validacion-productos', component: ProductsLicenseValidator }
+        ]
+      },
+
+      // ✅ MÓDULO: Configuración General
+      {
+        path: 'configuracion',
+        children: [
+          { path: '', redirectTo: 'localizacion-establecimiento', pathMatch: 'full' },
+          {
+            path: 'localizacion-establecimiento',
+            children: [
+              { path: '', component: TipoLocalizacionListComponent },
+              { path: 'crear', component: TipoLocalizacionFormComponent },
+              { path: 'editar/:id', component: TipoLocalizacionFormComponent }
+            ]
+          }
         ]
       }
-      
-      // {path:'usuarios',component:UsuariosComponent},
-      // {path:'productos',component:ProductosComponent},
-      // {path:'vender',component:VenderComponent},
-      // {path:'historialventas',component:HistorialventaComponent},
-      // {path:'reportes',component:ReportesComponent}
-
     ]
   }
-  ];
+];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],

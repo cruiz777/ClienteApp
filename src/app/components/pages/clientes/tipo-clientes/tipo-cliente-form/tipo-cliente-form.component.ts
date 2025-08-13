@@ -143,7 +143,7 @@ export class TipoClienteFormComponent implements OnInit {
   }
 
   cancelar(): void {
-    this.router.navigate(['/menus/tipocliente']);
+    this.router.navigate(['/codbar/ficha-de-cliente/tipocliente']);
   }
 
   private mostrarMensajeError(mensaje: string): void {

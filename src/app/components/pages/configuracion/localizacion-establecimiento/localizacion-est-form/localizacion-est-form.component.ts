@@ -117,7 +117,7 @@ export class TipoLocalizacionFormComponent implements OnInit {
 
 
   cancelar(): void {
-    this.router.navigate(['/menus/localizacion-establecimiento']);
+    this.router.navigate(['codbar/configuracion/localizacion-establecimiento']);
   }
 
   private mostrarMensaje(data: MessageBoxData, redirigir = false): void {

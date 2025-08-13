@@ -60,10 +60,10 @@ export class TipoLocalizacionListComponent implements OnInit {
   }
 
   crearLocalizacion(): void {
-    this.router.navigate(['/menus/localizacion-establecimiento/crear']);
+    this.router.navigate(['codbar/configuracion/localizacion-establecimiento/crear']);
   }
 
   editarLocalizacion(id: number): void {
-    this.router.navigate(['/menus/localizacion-establecimiento/editar', id]);
+    this.router.navigate(['codbar/configuracion/localizacion-establecimiento/editar', id]);
   }
 }

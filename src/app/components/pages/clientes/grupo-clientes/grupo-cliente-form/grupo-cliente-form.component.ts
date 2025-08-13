@@ -164,7 +164,7 @@ export class GrupoClienteFormComponent implements OnInit {
 
 
   cancelar(): void {
-    this.router.navigate(['/menus/grupocliente']);
+    this.router.navigate(['/codbar/ficha-de-cliente/grupocliente']);
   }
 
   private mostrarMensaje(

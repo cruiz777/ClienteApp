@@ -718,7 +718,7 @@ export class DialogClienteEditarComponent implements OnInit {
 
   cancelar(): void {
     this.dialogRef.close("editado");
-    this.router.navigate(['/pages/clientes']); // Redirecciona a /pages/clientes
+    this.router.navigate(['/codbar/ficha-de-cliente/clientes']); // Redirecciona a /pages/clientes
   }
   actualizar(): void {
 

@@ -1,52 +1,52 @@
-import { Component, OnInit } from '@angular/core';
-import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
+// import { Component, OnInit } from '@angular/core';
+// import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 
-@Component({
-  selector: 'app-navigation',
-  templateUrl: './navigation.component.html',
-  styleUrls: ['./navigation.component.css']
-})
-export class NavigationComponent implements OnInit {
-  currentDateTime: string = '';
-  isHandset: boolean = false;
-  isExpanded: boolean = true;
+// @Component({
+//   selector: 'app-navigation',
+//   templateUrl: './navigation.component.html',
+//   styleUrls: ['./navigation.component.css']
+// })
+// export class NavigationComponent implements OnInit {
+//   currentDateTime: string = '';
+//   isHandset: boolean = false;
+//   isExpanded: boolean = true;
 
-  constructor(private breakpointObserver: BreakpointObserver) {
-    this.breakpointObserver.observe([Breakpoints.Handset])
-      .subscribe(result => {
-        this.isHandset = result.matches;
-        this.isExpanded = !this.isHandset;
-      });
-  }
+//   constructor(private breakpointObserver: BreakpointObserver) {
+//     this.breakpointObserver.observe([Breakpoints.Handset])
+//       .subscribe(result => {
+//         this.isHandset = result.matches;
+//         this.isExpanded = !this.isHandset;
+//       });
+//   }
 
-  ngOnInit(): void {
-    this.updateDateTime();
-    setInterval(() => this.updateDateTime(), 1000);  // Actualiza cada segundo
-  }
+//   ngOnInit(): void {
+//     this.updateDateTime();
+//     setInterval(() => this.updateDateTime(), 1000);  // Actualiza cada segundo
+//   }
 
-   updateDateTime(): void {
-    const now = new Date();
-    const options: Intl.DateTimeFormatOptions = {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    };
-    const formattedDate = now.toLocaleDateString('es-EC', options);
-    const formattedTime = now.toLocaleTimeString('es-EC', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
-    });
+//    updateDateTime(): void {
+//     const now = new Date();
+//     const options: Intl.DateTimeFormatOptions = {
+//       weekday: 'long',
+//       year: 'numeric',
+//       month: 'long',
+//       day: 'numeric'
+//     };
+//     const formattedDate = now.toLocaleDateString('es-EC', options);
+//     const formattedTime = now.toLocaleTimeString('es-EC', {
+//       hour: '2-digit',
+//       minute: '2-digit',
+//       second: '2-digit'
+//     });
 
-    this.currentDateTime = `${this.capitalizeFirstLetter(formattedDate)}, ${formattedTime}`;
-  }
+//     this.currentDateTime = `${this.capitalizeFirstLetter(formattedDate)}, ${formattedTime}`;
+//   }
 
-  capitalizeFirstLetter(text: string): string {
-    return text.charAt(0).toUpperCase() + text.slice(1);
-  }
+//   capitalizeFirstLetter(text: string): string {
+//     return text.charAt(0).toUpperCase() + text.slice(1);
+//   }
 
-  toggleSidebar(): void {
-    this.isExpanded = !this.isExpanded;
-  }
-}
+//   toggleSidebar(): void {
+//     this.isExpanded = !this.isExpanded;
+//   }
+// }

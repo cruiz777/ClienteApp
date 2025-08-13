@@ -13,10 +13,10 @@
               (backdropClick)="isExpanded = false">
 
     <!-- Logos -->
-   <div class="logo-seguridad" *ngIf="isExpanded">
-    <a [routerLink]="['/menus/codbar']">
-      <img src="assets/logo/CODBAR-GS1.png" alt="Logo">
-    </a>
+    <div class="logo-seguridad" *ngIf="isExpanded">
+      <a [routerLink]="['/codbar/inicio']">
+        <img src="assets/logo/CODBAR-GS1.png" alt="Logo">
+      </a>
     </div>
 
     <!-- Menú Principal -->
@@ -28,30 +28,66 @@
         <span *ngIf="isExpanded" class="menu-text">Menú</span>
       </mat-list-item>
 
-      <!-- Acordeón -->
+      <!-- Acordeón Principal -->
       <mat-accordion [multi]="false">
 
-        <!-- CLIENTES-->
+        <!-- 👥 FICHA DE CLIENTE - ACORDEÓN PRINCIPAL -->
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
-              <img src="assets/icons/icon-ficha-cliente.png" class="menu-icon" >
+              <img src="assets/icons/icon-ficha-cliente.png" class="menu-icon">
               <span *ngIf="isExpanded" class="menu-text">Ficha Cliente</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
-          <a mat-list-item routerLink="/pages/clientes">
-            <span *ngIf="isExpanded" class="menu-text">Ficha Cliente</span>
+
+          <!-- Dashboard -->
+          <!-- <a mat-list-item routerLink="/codbar/ficha-de-cliente/dashboard">
+            <img src="assets/icons/icon-dashboard.png" class="menu-icon">
+            <span *ngIf="isExpanded" class="menu-text">Dashboard</span>
+          </a> -->
+
+          <!-- Funcionalidades principales -->
+          <a mat-list-item routerLink="/codbar/ficha-de-cliente/nclientes">            
+            <span *ngIf="isExpanded" class="menu-text">Nuevo Cliente</span>
           </a>
-          <a mat-list-item routerLink="/menus/tipocliente">
-            <span *ngIf="isExpanded" class="menu-text">Tipo Cliente</span>
+
+          <a mat-list-item routerLink="/codbar/ficha-de-cliente/clientes">            
+            <span *ngIf="isExpanded" class="menu-text">Explorador de Clientes</span>
           </a>
-          <a mat-list-item routerLink="/menus/grupocliente">
-            <span *ngIf="isExpanded" class="menu-text">Grupo Cliente</span>
+
+          <!-- 
+          <a mat-list-item routerLink="/codbar/ficha-de-cliente/explorador-clientes">
+            <img src="assets/icons/Ecop-explorador-clientes.png" class="menu-icon">
+            <span *ngIf="isExpanded" class="menu-text">Explorador de Cliente</span>
           </a>
+          -->
+
+          <a mat-list-item routerLink="/codbar/ficha-de-cliente/consulta-verified">
+            <span *ngIf="isExpanded" class="menu-text">Consulta Verified</span>
+          </a>
+
+          <!-- SUB-ACORDEÓN: Configuración de Ficha Cliente -->
+          <mat-accordion class="sub-accordion">
+            <mat-expansion-panel>
+              <mat-expansion-panel-header class="sub-header">
+                <mat-panel-title>
+                  <span *ngIf="isExpanded" class="menu-text">Configuración de cliente</span>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+
+              <a mat-list-item routerLink="/codbar/ficha-de-cliente/tipocliente" class="sub-menu-item">
+                <span *ngIf="isExpanded" class="menu-text">Tipo Cliente</span>
+              </a>
+
+              <a mat-list-item routerLink="/codbar/ficha-de-cliente/grupocliente" class="sub-menu-item">
+                <span *ngIf="isExpanded" class="menu-text">Grupo Cliente</span>
+              </a>
+            </mat-expansion-panel>
+          </mat-accordion>
 
         </mat-expansion-panel>
 
-        <!-- PREFIJOS -->
+        <!-- 🔄 TRANSFERENCIA - ACORDEÓN PRINCIPAL -->
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
@@ -59,20 +95,25 @@
               <span *ngIf="isExpanded" class="menu-text">Transferencia</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
-          <a mat-list-item routerLink="tras-prefijo">
+
+          <a mat-list-item routerLink="/codbar/transferencia/tras-prefijo">
             <span *ngIf="isExpanded" class="menu-text">Transferencia de Prefijos</span>
           </a>
-          <a mat-list-item routerLink="tras-gtin">
+
+          <a mat-list-item routerLink="/codbar/transferencia/tras-gtin">
             <span *ngIf="isExpanded" class="menu-text">Transferencia Gtin</span>
           </a>
-          <a mat-list-item routerLink="tipo-prefijo">
+
+          <a mat-list-item routerLink="/codbar/transferencia/tipo-prefijo">
             <span *ngIf="isExpanded" class="menu-text">Tipo Prefijo</span>
           </a>
-          <a mat-list-item routerLink="eliminar-prefijo">
+
+          <a mat-list-item routerLink="/codbar/transferencia/eliminar-prefijo">
             <span *ngIf="isExpanded" class="menu-text">Eliminar Prefijo</span>
           </a>
         </mat-expansion-panel>
 
+        <!-- ✅ VALIDACIÓN - ACORDEÓN PRINCIPAL -->
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
@@ -81,22 +122,20 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-
-          <a mat-list-item routerLink="/menus/validacionsri">
-
+          <a mat-list-item routerLink="/codbar/validacion/validacionsri">
             <span *ngIf="isExpanded" class="menu-text">Validar RUC en SRI</span>
           </a>
 
-          <a mat-list-item routerLink="/menus/validacion-licenses">
-
+          <a mat-list-item routerLink="/codbar/validacion/validacion-licenses">
             <span *ngIf="isExpanded" class="menu-text">Validar Licencia Verified</span>
           </a>
-          <a mat-list-item routerLink="/menus/validacion-productos">
 
+          <a mat-list-item routerLink="/codbar/validacion/validacion-productos">
             <span *ngIf="isExpanded" class="menu-text">Validar Productos Verified</span>
           </a>
-
         </mat-expansion-panel>
+
+        <!-- 📊 REPORTES - ACORDEÓN PRINCIPAL -->
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
@@ -105,22 +144,21 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item routerLink="/seguridades/empresas">
-
+          <!-- 🔧 TODO: Implementar componentes de reportes -->
+          <a mat-list-item routerLink="/codbar/reportes/gerencia-cliente">
             <span *ngIf="isExpanded" class="menu-text">Reporte Gerencia Cliente</span>
           </a>
 
-          <a mat-list-item routerLink="/seguridades/localizacion">
-
+          <a mat-list-item routerLink="/codbar/reportes/clientes">
             <span *ngIf="isExpanded" class="menu-text">Reporte Clientes</span>
           </a>
-          <a mat-list-item routerLink="/seguridades/localizacion">
 
+          <a mat-list-item routerLink="/codbar/reportes/explorador-clientes">
             <span *ngIf="isExpanded" class="menu-text">Explorador Clientes</span>
           </a>
-
         </mat-expansion-panel>
 
+        <!-- ⚙️ CONFIGURACIÓN GENERAL - ACORDEÓN PRINCIPAL -->
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
@@ -129,14 +167,13 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item routerLink="/seguridades/empresas">
-
-            <span *ngIf="isExpanded" class="menu-text">Servicios Productos</span>
+          <a mat-list-item routerLink="/codbar/configuracion/localizacion-establecimiento">
+            <span *ngIf="isExpanded" class="menu-text">Establecimientos GLN</span>
           </a>
 
-          <a mat-list-item routerLink="/menus/localizacion-establecimiento">
-
-            <span *ngIf="isExpanded" class="menu-text">Establecimientos GLN</span>
+          <!-- 🔧 TODO: Servicios Productos -->
+          <a mat-list-item routerLink="/codbar/configuracion/servicios-productos">
+            <span *ngIf="isExpanded" class="menu-text">Servicios Productos</span>
           </a>
         </mat-expansion-panel>
 

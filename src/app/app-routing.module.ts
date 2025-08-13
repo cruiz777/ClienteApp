@@ -29,8 +29,7 @@ const routes: Routes = [
   { path: 'inicio', component: InicioComponent, canActivate: [AuthGuard] },
   { path: 'reset-password', component: ResetPasswordComponent },
   { path: 'recuperar-clave', component: LoginFormComponent },
-  { path: 'menus', loadChildren: () => import('./components/menus/menus.module').then(x => x.MenusModule), canActivate: [AuthGuard] },
-  { path: 'pages', loadChildren: () => import('./components/pages/pages.module').then(x => x.PagesModule), canActivate: [AuthGuard] },
+  { path: 'codbar', loadChildren: () => import('./components/menus/menus.module').then(x => x.MenusModule), canActivate: [AuthGuard] },
   { path: 'seguridades', loadChildren: () => import('./components/seguridades/seguridades.module').then(m => m.SeguridadesModule) },
   { path: 'sic-3000', loadChildren: () => import('./components/sic-3000/sic-3000.module').then(m => m.Sic3000Module) },
 
