@@ -52,6 +52,7 @@ import { ClienteObservacionService,ClienteObservacion } from 'src/app/services/c
 import { ClienteDatosAdicionalesService,ClienteDatosAdicionales } from 'src/app/services/cliente-datos-adicionales.service';
 import { ClienteContacto,ClienteContactoService } from 'src/app/services/cliente-contacto.service';
 import { ParametrosFacturaService } from 'src/app/services/parametros-factura.service';
+import { PermissionsService } from 'src/app/services/permission.service';
 @Component({
   selector: 'app-dialog-cliente',
   templateUrl: './dialog-cliente.component.html',
@@ -143,13 +144,20 @@ export class DialogClienteComponent implements OnInit {
     private clienteDatosAdicionalesService: ClienteDatosAdicionalesService,
     private clienteContactoService:ClienteContactoService,
     private jsonEmpresaService:JsonEmpresaService,
-    private parametrosFacturaService:ParametrosFacturaService
+    private parametrosFacturaService:ParametrosFacturaService,
+    private permissions: PermissionsService
   ) { }
 
   ngOnInit(): void {
     console.log('----Usuario---');
     this.usuarioActual = this.usuarioService.getUsuarioActual();
 
+    console.log('=== DEBUG PERMISOS ===');
+    console.log('1. Todos los permisos flat:', this.permissions.getTodosLosPermisos());
+    console.log('2. ¿Incluye el permiso crear?', this.permissions.getTodosLosPermisos().includes('codbar.ficha-de-cliente.nuevo-cliente.nuevo-cliente.crear'));
+    console.log('3. Resultado de puedeCrear():', this.puedeCrear);
+    console.log('4. Valor de botonGuardarDeshabilitado:', this.botonGuardarDeshabilitado);
+    console.log('5. ¿Botón debería estar deshabilitado?', this.botonGuardarDeshabilitado || !this.puedeCrear);
 
 
     this.initFormulario();
@@ -236,7 +244,20 @@ export class DialogClienteComponent implements OnInit {
     });
   }
 
+  //#region 
+  get puedeCrear(): boolean {
+    return this.permissions.permisosFichaCliente.nuevoCliente.puedeCrear();
+  }
+  //#endregion
 
+  get debugInfo() {
+    return {
+      puedeCrear: this.puedeCrear,
+      botonDeshabilitado: this.botonGuardarDeshabilitado,
+      resultadoFinal: this.botonGuardarDeshabilitado || !this.puedeCrear
+    };
+  }
+  
   get paso1Form(): FormGroup {
     return this.formCliente.get('paso1') as FormGroup;
   }
@@ -582,7 +603,7 @@ export class DialogClienteComponent implements OnInit {
 
   cancelar(): void {
     this.dialogRef.close(); // Cierra el diálogo
-    this.router.navigate(['/codbar/ficha-de-cliente/clientes']); // Redirecciona a /pages/clientes
+    this.router.navigate(['/codbar/ficha-de-cliente/listado-clientes']); // Redirecciona a /pages/clientes
   }
   guardar(stepper: MatStepper): void {
     if (this.formCliente.invalid) {

@@ -9,6 +9,9 @@ export class ApiKeyInterceptor implements HttpInterceptor {
   
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     
+    // Debug simple
+    console.log('🔍 INTERCEPTOR:', req.method, req.url);
+    
     const gatewayUrls = [
       environment.securityApiUrl,
       environment.applicationUrl,
@@ -18,44 +21,31 @@ export class ApiKeyInterceptor implements HttpInterceptor {
       environment.reportUrl
     ];
     
-    // Debug detallado
-    console.log('🔍 INTERCEPTOR DEBUG:');
-    console.log('   URL solicitada:', req.url);
-    console.log('   Method:', req.method);
-    console.log('   securityApiUrl:', environment.securityApiUrl);
-    console.log('   apiKey presente:', !!environment.apiKey);
+    // Verificar si es una petición a través del gateway
+    const isGatewayRequest = gatewayUrls.some(url => req.url.startsWith(url));
     
-    const isGatewayRequest = gatewayUrls.some(url => {
-      const matches = req.url.startsWith(url);
-      console.log(`   ¿${req.url} inicia con ${url}? ${matches}`);
-      return matches;
-    });
-    
-    if (isGatewayRequest) {
-      console.log('✅ AGREGANDO API KEY');
-      
-      const apiKeyReq = req.clone({
-        setHeaders: {
-          'X-API-Key': environment.apiKey
-        }
-      });
-      
-      console.log('   Headers agregados:', apiKeyReq.headers.get('X-API-Key') ? 'SÍ' : 'NO');
-      
-      return next.handle(apiKeyReq).pipe(
-        tap({
-          next: (event) => console.log('✅ Respuesta exitosa para:', req.url),
-          error: (error) => {
-            console.error('❌ Error en petición:', req.url);
-            console.error('   Status:', error.status);
-            console.error('   Message:', error.message);
-            console.error('   Headers enviados:', apiKeyReq.headers.keys());
-          }
-        })
-      );
+    if (!isGatewayRequest) {
+      console.log('🌐 EXTERNAL REQUEST - sin API Key');
+      return next.handle(req);
     }
     
-    console.log('❌ NO ES GATEWAY REQUEST - enviando sin API Key');
-    return next.handle(req);
+    // TODAS las peticiones al gateway llevan API Key
+    // El middleware del backend decidirá cuáles realmente la necesitan
+    console.log('✅ GATEWAY REQUEST - agregando API Key');
+    
+    const apiKeyReq = req.clone({
+      setHeaders: {
+        'X-API-Key': environment.apiKey
+      }
+    });
+    
+    return next.handle(apiKeyReq).pipe(
+      tap({
+        next: (event) => console.log('✅ Respuesta exitosa:', req.url),
+        error: (error) => {
+          console.error('❌ Error:', req.url, 'Status:', error.status);
+        }
+      })
+    );
   }
 }

@@ -44,8 +44,8 @@ const routes: Routes = [
           { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
           
           // 🆕 Funcionalidades principales (de pages)
-          { path: 'clientes', component: ClientesComponent },
-          { path: 'nclientes', component: NuevoClienteComponent },
+          { path: 'listado-clientes', component: ClientesComponent },
+          { path: 'nuevo-cliente', component: NuevoClienteComponent },
           { path: 'consulta-verified', component: ProductoDetalleComponent },
           
           // 🆕 FUTURO: Explorador de clientes
@@ -53,7 +53,7 @@ const routes: Routes = [
           
           // Configuraciones de ficha cliente
           {
-            path: 'tipocliente',
+            path: 'tipo-cliente',
             children: [
               { path: '', component: TipoClienteListComponent },
               { path: 'crear', component: TipoClienteFormComponent },
@@ -61,7 +61,7 @@ const routes: Routes = [
             ]
           },
           {
-            path: 'grupocliente',
+            path: 'grupo-cliente',
             children: [
               { path: '', component: GrupoClienteListComponent },
               { path: 'crear', component: GrupoClienteFormComponent },

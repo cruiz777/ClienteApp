@@ -80,11 +80,11 @@ export class GrupoClienteListComponent implements OnInit {
   }
 
   nuevo(): void {
-    this.router.navigate(['/codbar/ficha-de-cliente/grupocliente/crear']);
+    this.router.navigate(['/codbar/ficha-de-cliente/grupo-cliente/crear']);
   }
 
   editar(id: number): void {
-    this.router.navigate(['/codbar/ficha-de-cliente/grupocliente/editar', id]);
+    this.router.navigate(['/codbar/ficha-de-cliente/grupo-cliente/editar', id]);
   }
 
   // Método para exportar los datos filtrados en formato Excel o PDF
