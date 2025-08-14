@@ -16,15 +16,14 @@
   animationDuration="0ms">
 <!-- ===== TAB 1: Datos Generales  -->
 <mat-tab label="Datos Generales">
+<form class="tab-body" [formGroup]="form" novalidate>
   <div class="tab-body">
-
     <!-- Título -->
     <div class="row">
       <div class="col-12">
         <h3 class="t5-title">Datos del Producto</h3>
       </div>
     </div>
-
     <!-- GRID principal -->
     <div class="row g-3">
       <!-- Columna izquierda (campos) -->
@@ -228,6 +227,7 @@
     </div>
 
   </div>
+</form>
 </mat-tab>
 
   <!-- ===== TAB 2: Datos Adicionales ===== -->

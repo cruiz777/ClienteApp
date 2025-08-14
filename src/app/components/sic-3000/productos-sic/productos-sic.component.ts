@@ -8,7 +8,6 @@ import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 })
 export class ProductosSicComponent implements OnInit, AfterViewInit {
 
-  /** Tab activo */
   selectedTab = 0;
 
   /** Catálogos (combos) */
@@ -17,41 +16,9 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   presentaciones  = ['Botella', 'Caja', 'Bolsa', 'Blíster', 'Granel'];
   clasesProducto  = ['A', 'B', 'C'];
 
-  /** Form principal (Tabs 1–3, etc.) */
-  form: FormGroup = this.fb.group({
-    descripcion: ['', [Validators.required, Validators.maxLength(200)]],
-    codigoInterno: [''],
-    descripcion1: [''],
-    unidadVenta: [null],
-    existenciaGlobal: [''],
-    abreviacion: [''],
-
-    pagaIva: [false],
-    productoEnVenta: [false],
-    cargarInventarios: [false],
-    productoConPeso: [false],
-    consumoInterno: [false],
-
-    codigoBarras: [''],
-    generarCodigo: [false],
-    descripcionPOS: [''],
-    cantidad: [null],
-    canCov: [''],
-    referencia: [''],
-    manejaDecimales: [false],
-    psicotropico: [false],
-    estupefaciente: [false],
-    activo: [true],
-    altoRiesgo: [false],
-
-    tipoProducto: [null],
-    presentacion: [null],
-    claseProducto: [null],
-    urlFoto: [''],
-
-    fechaCreacion: [null],
-    fechaModificacion: [null],
-  });
+  /** Formularios (se definen en ngOnInit) */
+  form!: FormGroup;
+  proveedorForm!: FormGroup;
 
   /** TAB 5: columnas de la tabla */
   colsTab5: string[] = [
@@ -59,36 +26,69 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     'costoNeto', 'consignacion', 'descuentoProducto', 'descuentos'
   ];
 
-  /** TAB 5: formulario propio */
-  proveedorForm: FormGroup = this.fb.group({
-    codigoInternoTab5: [''],
-    codigoBarrasTab5: [''],
-    descripcionTab5: [''],
-    filasTab5: this.fb.array([] as FormGroup[])
-  });
-
   constructor(
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef
   ) {}
 
-  // ===== Ciclo de vida =====
-
   ngOnInit(): void {
-    // Asegura que el primer tab se seleccione desde el arranque
+    // Seleccionar primer tab desde el arranque
     this.selectedTab = 0;
 
-    // Filas iniciales para visualizar la grilla del Tab 5
+    // Form principal (Tab 1)
+    this.form = this.fb.group({
+      descripcion: ['', [Validators.required, Validators.maxLength(200)]],
+      codigoInterno: [''],
+      descripcion1: [''],
+      unidadVenta: [null],
+      existenciaGlobal: [''],
+      abreviacion: [''],
+
+      pagaIva: [false],
+      productoEnVenta: [false],
+      cargarInventarios: [false],
+      productoConPeso: [false],
+      consumoInterno: [false],
+
+      codigoBarras: [''],
+      generarCodigo: [false],
+      descripcionPOS: [''],
+      cantidad: [null],
+      canCov: [''],
+      referencia: [''],
+      manejaDecimales: [false],
+      psicotropico: [false],
+      estupefaciente: [false],
+      activo: [true],
+      altoRiesgo: [false],
+
+      tipoProducto: [null],
+      presentacion: [null],
+      claseProducto: [null],
+      urlFoto: [''],
+
+      fechaCreacion: [null],
+      fechaModificacion: [null],
+    });
+
+    // Form Tab 5
+    this.proveedorForm = this.fb.group({
+      codigoInternoTab5: [''],
+      codigoBarrasTab5: [''],
+      descripcionTab5: [''],
+      filasTab5: this.fb.array([] as FormGroup[])
+    });
+
+    // Filas iniciales para la grilla del Tab 5
     for (let i = 0; i < 4; i++) this.filasTab5.push(this.crearFila());
   }
 
   ngAfterViewInit(): void {
-    // Fuerza el pintado inmediato del primer tab (evita depender de interacción)
+    // Asegura pintado inmediato del primer tab sin depender de interacción
     this.cdr.detectChanges();
   }
 
   // ===== Getters / helpers =====
-
   get filasTab5(): FormArray<FormGroup> {
     return this.proveedorForm.get('filasTab5') as FormArray<FormGroup>;
   }
@@ -109,7 +109,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   trackByValue = (_: number, value: string) => value;
   trackByIndex = (_: number, i: number) => i;
 
-  // ===== Acciones generales (tabs anteriores) =====
+  // ===== Acciones generales =====
   nuevo(): void {
     const keep = { descripcion: this.form.value.descripcion };
     this.form.reset({ ...keep, activo: true });
@@ -120,15 +120,10 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     console.log('Guardar (form principal)', this.form.value);
   }
 
-  imprimir(): void {
-    window.print();
-  }
+  imprimir(): void { window.print(); }
+  adjuntar(): void { console.log('Adjuntar archivo (form principal)'); }
 
-  adjuntar(): void {
-    console.log('Adjuntar archivo (form principal)');
-  }
-
-  // ===== Acciones TAB 5 =====
+  // ===== TAB 5 =====
   nuevoTab5(): void {
     this.proveedorForm.patchValue({
       codigoInternoTab5: '',
@@ -144,11 +139,6 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     console.log('Guardar (TAB 5)', this.proveedorForm.value);
   }
 
-  imprimirTab5(): void {
-    window.print();
-  }
-
-  adjuntarTab5(): void {
-    console.log('Adjuntar (TAB 5)');
-  }
+  imprimirTab5(): void { window.print(); }
+  adjuntarTab5(): void { console.log('Adjuntar (TAB 5)'); }
 }
