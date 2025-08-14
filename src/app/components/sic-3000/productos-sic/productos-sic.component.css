@@ -42,48 +42,33 @@
 /* Etiquetas genéricas */
 .lbl{ font-size:12px; color:var(--texto-suave); margin-right:8px; white-space:nowrap; }
 
-/* Header de tabs */
+/* =========================================================
+   TABS GLN (sin animaciones/ripple)
+   ========================================================= */
 .tabs ::ng-deep .mat-mdc-tab-header {
   background: #f4f6f8;
   border: 1px solid var(--borde);
   border-radius: 8px 8px 0 0;
   padding: 6px;
 }
-
-/* Quitar animaciones/transiciones y ripple */
 .tabs ::ng-deep .mat-mdc-tab-header .mdc-tab__ripple { display: none !important; }
 .tabs ::ng-deep .mat-mdc-tab,
 .tabs ::ng-deep .mat-mdc-tab .mdc-tab__content,
-.tabs ::ng-deep .mdc-tab__text-label {
-  transition: none !important;
-}
+.tabs ::ng-deep .mdc-tab__text-label { transition: none !important; }
+.tabs ::ng-deep .mat-mdc-tab-header-pagination-controls-enabled .mat-mdc-tab-header-pagination { display:none!important; }
+.tabs ::ng-deep .mat-mdc-tab-header .mat-mdc-tab-indicator { display:none!important; }
 
-/* Ocultar ink bar (línea activa) */
-.tabs ::ng-deep .mat-mdc-tab-header-pagination-controls-enabled .mat-mdc-tab-header-pagination {
-  display: none !important;
-}
-.tabs ::ng-deep .mat-mdc-tab-header .mat-mdc-tab-indicator {
-  display: none !important;
-}
-
-/* Cada tab estilo */
+/* Pestañas */
 .tabs ::ng-deep .mat-mdc-tab {
   border-radius: 8px 8px 0 0;
   margin-right: 6px;
   background: #e0e7ef;
   min-height: 36px;
 }
-.tabs ::ng-deep .mat-mdc-tab .mdc-tab__text-label {
-  color: #1f2937;
-  font-weight: 600;
-}
-
-/* Hover */
-.tabs ::ng-deep .mat-mdc-tab:not(.mdc-tab--active):hover { background: #cbd5e1; }
-
-/* Activo */
+.tabs ::ng-deep .mat-mdc-tab .mdc-tab__text-label { color:#1f2937; font-weight:600; }
+.tabs ::ng-deep .mat-mdc-tab:not(.mdc-tab--active):hover { background:#cbd5e1; }
 .tabs ::ng-deep .mat-mdc-tab.mdc-tab--active { background: var(--azul); }
-.tabs ::ng-deep .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label { color: #fff; }
+.tabs ::ng-deep .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label { color:#fff; }
 
 /* Contenido del tab */
 .tab-body{
@@ -94,7 +79,7 @@
 }
 
 /* =========================================================
-   Formularios y grillas
+   Formularios y grillas (Tab 1 base)
    ========================================================= */
 .form-grid-3{
   display:grid;
@@ -148,6 +133,60 @@
 .mdc-line-ripple::after,
 .mdc-line-ripple::before{ background-color:#ccd5e2 !important; }
 .mat-mdc-form-field-subscript-wrapper{ display:none; }
+
+/* =========================================================
+   TAB 2: Datos Adicionales / Características
+   ========================================================= */
+/* Ajustes generales */
+.tab-body .lbl { display:inline-block; min-width:110px; color:var(--texto-suave); }
+.tab-body .input-line { width:100%; }
+
+/* Panel “Genérico” (tabla) */
+.t2-generic .pc-panel {
+  padding: 0;
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background:#fff;
+}
+.t2-generic table { width:100%; border-collapse:separate; border-spacing:0; }
+.t2-generic thead th {
+  background:#f7fafc;
+  border-bottom:1px solid #e6edf6;
+  font-weight:600; font-size:13px;
+  padding:8px 10px; color:#27374A;
+}
+.t2-generic tbody td {
+  height:28px; border-bottom:1px solid #f1f5fb; padding:6px 10px;
+}
+
+/* Grupo “Ubicación” */
+.t2-ubicacion .lbl { min-width:auto; }
+
+/* Observación */
+.t2-observ .pc-panel {
+  border: 1px solid #dbe6f3;
+  border-radius: 8px;
+  background: #fff;
+}
+.t2-observ textarea {
+  border:0; outline:0; resize:none; background:transparent;
+  padding:8px 10px; font:inherit; color:#111827;
+}
+
+/* Divisor suave dentro del tab */
+.tab-body hr {
+  border:0; height:1px; background: linear-gradient(90deg,#e9eff7,transparent);
+  margin:10px 0 14px;
+}
+
+/* Cuentas contables */
+.t2-cc .input-line::placeholder { color:#9aa8be; }
+.t2-cc .lbl { min-width:95px; }
+.t2-cc .form-check-input { margin-top:0; }
+.t2-cc .lbl.mb-0 { transform: translateY(1px); }
+
+/* Acciones (pie del tab 2) */
+.t2-actions .mat-mdc-button-base { min-width:110px; }
 
 /* =========================================================
    TAB 3: Precio / Costo
@@ -284,9 +323,11 @@
   .t5-head .w-sm,.t5-head .w-xl{ max-width:100%; }
 }
 
+/* =========================================================
+   Unificación azul GLN y botones
+   ========================================================= */
 .text-primary { color: var(--azul) !important; }
 
-/* Botones Material primarios*/
 :host ::ng-deep .mat-mdc-outlined-button.mat-primary,
 :host ::ng-deep .mat-mdc-unelevated-button.mat-primary,
 :host ::ng-deep .mat-mdc-raised-button.mat-primary,
@@ -306,6 +347,10 @@
 
 /* Quitar transiciones globales en tabs */
 .tabs ::ng-deep * { transition: none !important; }
+
+/* =========================================================
+   GLN: Combos / Selects (Material y nativos)
+   ========================================================= */
 
 /* MAT-SELECT (panel desplegado) */
 :host ::ng-deep .mat-mdc-select-panel {
