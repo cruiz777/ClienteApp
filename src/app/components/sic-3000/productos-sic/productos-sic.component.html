@@ -9,7 +9,11 @@
     </div>
   </header>
 
-  <mat-tab-group class="tabs" [(selectedIndex)]="selectedTab">
+<mat-tab-group
+  class="tabs"
+  [(selectedIndex)]="selectedTab"
+  [disableRipple]="true"
+  animationDuration="0ms">
 <!-- ===== TAB 1: Datos Generales  -->
 <mat-tab label="Datos Generales">
   <div class="tab-body">
@@ -17,11 +21,11 @@
     <!-- Título -->
     <div class="row">
       <div class="col-12">
-        <h6 class="fw-bold text-primary mb-3">Datos del Producto</h6>
+        <h3 class="t5-title">Datos del Producto</h3>
       </div>
     </div>
 
-    <!-- GRID principal (Bootstrap) -->
+    <!-- GRID principal -->
     <div class="row g-3">
       <!-- Columna izquierda (campos) -->
       <div class="col-12 col-lg-8">

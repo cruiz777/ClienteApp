@@ -1,29 +1,23 @@
-import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, FormArray, FormControl } from '@angular/forms';
+import { Component, OnInit, AfterViewInit, ChangeDetectorRef } from '@angular/core';
+import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 
 @Component({
   selector: 'app-productos-sic',
   templateUrl: './productos-sic.component.html',
-  styleUrls: ['./productos-sic.component.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrls: ['./productos-sic.component.css']
 })
-export class ProductosSicComponent implements OnInit {
+export class ProductosSicComponent implements OnInit, AfterViewInit {
 
+  /** Tab activo */
   selectedTab = 0;
 
-  // Catálogos usados en tabs anteriores
-  unidadesVenta = ['Unidad', 'Caja', 'Docena', 'Paquete', 'Litro'];
-  tiposProducto = ['Bien', 'Servicio', 'Medicamento', 'Insumo'];
-  presentaciones = ['Botella', 'Caja', 'Bolsa', 'Blíster', 'Granel'];
-  clasesProducto = ['A', 'B', 'C'];
+  /** Catálogos (combos) */
+  unidadesVenta   = ['Unidad', 'Caja', 'Docena', 'Paquete', 'Litro'];
+  tiposProducto   = ['Bien', 'Servicio', 'Medicamento', 'Insumo'];
+  presentaciones  = ['Botella', 'Caja', 'Bolsa', 'Blíster', 'Granel'];
+  clasesProducto  = ['A', 'B', 'C'];
 
-  // ===== TAB 5: columnas de la tabla =====
-  colsTab5: string[] = [
-    'proveedor', 'costoCompra', 'unidadCompra', 'fechaIngreso',
-    'costoNeto', 'consignacion', 'descuentoProducto', 'descuentos'
-  ];
-
-  // ===== Form principal (Tabs 1–3, etc.) =====
+  /** Form principal (Tabs 1–3, etc.) */
   form: FormGroup = this.fb.group({
     descripcion: ['', [Validators.required, Validators.maxLength(200)]],
     codigoInterno: [''],
@@ -59,7 +53,13 @@ export class ProductosSicComponent implements OnInit {
     fechaModificacion: [null],
   });
 
-  // ===== TAB 5: formulario propio =====
+  /** TAB 5: columnas de la tabla */
+  colsTab5: string[] = [
+    'proveedor', 'costoCompra', 'unidadCompra', 'fechaIngreso',
+    'costoNeto', 'consignacion', 'descuentoProducto', 'descuentos'
+  ];
+
+  /** TAB 5: formulario propio */
   proveedorForm: FormGroup = this.fb.group({
     codigoInternoTab5: [''],
     codigoBarrasTab5: [''],
@@ -67,17 +67,30 @@ export class ProductosSicComponent implements OnInit {
     filasTab5: this.fb.array([] as FormGroup[])
   });
 
-  constructor(private fb: FormBuilder) {}
+  constructor(
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef
+  ) {}
 
   // ===== Ciclo de vida =====
+
   ngOnInit(): void {
-    // filas iniciales para visualizar la grilla como en la imagen
+    // Asegura que el primer tab se seleccione desde el arranque
+    this.selectedTab = 0;
+
+    // Filas iniciales para visualizar la grilla del Tab 5
     for (let i = 0; i < 4; i++) this.filasTab5.push(this.crearFila());
   }
 
+  ngAfterViewInit(): void {
+    // Fuerza el pintado inmediato del primer tab (evita depender de interacción)
+    this.cdr.detectChanges();
+  }
+
   // ===== Getters / helpers =====
-  get filasTab5(): FormArray {
-    return this.proveedorForm.get('filasTab5') as FormArray;
+
+  get filasTab5(): FormArray<FormGroup> {
+    return this.proveedorForm.get('filasTab5') as FormArray<FormGroup>;
   }
 
   private crearFila(): FormGroup {

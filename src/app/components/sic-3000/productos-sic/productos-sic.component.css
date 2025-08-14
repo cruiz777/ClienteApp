@@ -1,17 +1,18 @@
 :host {
-  --azul: #1f6fb2;
+  --azul: #002c6c;
   --borde: #e6ecf3;
   --texto-suave: #6b7280;
 }
-/* Contenedor principal */
+
+/* ===== Base de página ===== */
 .page {
-  max-width: 1440px; /* antes 1120px */
+  max-width: 1440px;
   margin: 0 auto;
   padding: 12px 16px 32px;
   background: #fff;
 }
 
-/* Header */
+/* ===== Header ===== */
 .page-header {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -28,7 +29,8 @@
   font-weight: 700;
   grid-column: 1 / -1;
 }
-/* ===== Descripción fija ===== */
+
+/* Descripción fija */
 .descripcion-static{
   display:grid;
   grid-template-columns:110px 1fr;
@@ -37,15 +39,53 @@
 .lbl-strong{ font-size:12px; font-weight:700; color:#374151; }
 .desc-titulo{ font-size:13px; color:#374151; }
 
-/* ===== Etiquetas genéricas ===== */
+/* Etiquetas genéricas */
 .lbl{ font-size:12px; color:var(--texto-suave); margin-right:8px; white-space:nowrap; }
 
-/* ===== Tabs (Material) ===== */
-.tabs ::ng-deep .mat-mdc-tab-header{
-  background:#f5f9ff;
-  border:1px solid var(--borde);
-  border-radius:8px 8px 0 0;
+/* Header de tabs */
+.tabs ::ng-deep .mat-mdc-tab-header {
+  background: #f4f6f8;
+  border: 1px solid var(--borde);
+  border-radius: 8px 8px 0 0;
+  padding: 6px;
 }
+
+/* Quitar animaciones/transiciones y ripple */
+.tabs ::ng-deep .mat-mdc-tab-header .mdc-tab__ripple { display: none !important; }
+.tabs ::ng-deep .mat-mdc-tab,
+.tabs ::ng-deep .mat-mdc-tab .mdc-tab__content,
+.tabs ::ng-deep .mdc-tab__text-label {
+  transition: none !important;
+}
+
+/* Ocultar ink bar (línea activa) */
+.tabs ::ng-deep .mat-mdc-tab-header-pagination-controls-enabled .mat-mdc-tab-header-pagination {
+  display: none !important;
+}
+.tabs ::ng-deep .mat-mdc-tab-header .mat-mdc-tab-indicator {
+  display: none !important;
+}
+
+/* Cada tab estilo */
+.tabs ::ng-deep .mat-mdc-tab {
+  border-radius: 8px 8px 0 0;
+  margin-right: 6px;
+  background: #e0e7ef;
+  min-height: 36px;
+}
+.tabs ::ng-deep .mat-mdc-tab .mdc-tab__text-label {
+  color: #1f2937;
+  font-weight: 600;
+}
+
+/* Hover */
+.tabs ::ng-deep .mat-mdc-tab:not(.mdc-tab--active):hover { background: #cbd5e1; }
+
+/* Activo */
+.tabs ::ng-deep .mat-mdc-tab.mdc-tab--active { background: var(--azul); }
+.tabs ::ng-deep .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label { color: #fff; }
+
+/* Contenido del tab */
 .tab-body{
   border:1px solid var(--borde);
   border-top:0;
@@ -53,7 +93,9 @@
   padding:18px;
 }
 
-/* ===== Grid de 3 secciones (Tab 1) ===== */
+/* =========================================================
+   Formularios y grillas
+   ========================================================= */
 .form-grid-3{
   display:grid;
   grid-template-columns:1fr 1fr 1fr;
@@ -73,7 +115,7 @@
 .field-sm{ max-width:230px; }
 .field-md{ max-width:320px; }
 
-/* ===== Opciones (Tab 1) ===== */
+/* Opciones (Tab 1) */
 .opciones-grid{
   display:grid;
   grid-template-columns:1fr 1fr 1fr;
@@ -88,23 +130,23 @@
 .op-col .lbl{ grid-column:1 / -1; font-weight:600; color:#374151; margin:0 0 6px; }
 .op-col mat-checkbox{ margin:0; display:flex; align-items:center; }
 
-/* ===== Foto / placeholder ===== */
+/* Foto / placeholder */
 .foto{ margin-top:8px; display:flex; justify-content:flex-start; }
 .foto img, .foto .placeholder{
   width:92px; height:92px; border:1px solid var(--borde); border-radius:6px; object-fit:cover;
 }
 .foto .placeholder{ display:grid; place-items:center; color:var(--texto-suave); font-size:12px; }
 
-/* ===== Fechas y acciones (Tab 1) ===== */
+/* Fechas y acciones (Tab 1) */
 .fechas-acciones{
   display:grid; grid-template-columns:1fr auto; gap:16px; margin-top:10px;
   align-items:center; border-top:1px solid var(--borde); padding-top:14px;
 }
 .fechas-acciones .acciones{ display:flex; align-items:center; gap:10px; justify-content:flex-start; }
 
-/* ===== Línea sutil Material ===== */
+/* Línea sutil Material -> GLN */
 .mdc-line-ripple::after,
-.mdc-line-ripple::before{ background-color:#cfe1f8 !important; }
+.mdc-line-ripple::before{ background-color:#ccd5e2 !important; }
 .mat-mdc-form-field-subscript-wrapper{ display:none; }
 
 /* =========================================================
@@ -124,27 +166,35 @@
 .xs{ max-width:180px; }
 .sm{ max-width:260px; }
 
-.tint-blue  .mat-mdc-form-field-flex{ background:#e8f1fb; border-radius:6px; }
+/* Tintes suaves */
+.tint-blue  .mat-mdc-form-field-flex{ background:#eef4f7; border-radius:6px; }
 .tint-orange .mat-mdc-form-field-flex{ background:#fde9d2; border-radius:6px; }
 .tint-green .mat-mdc-form-field-flex{ background:#e4f6ea; border-radius:6px; }
 
+/* Mat form-field reestilizado a GLN */
+.mat-mdc-form-field-appearance-outline .mat-mdc-form-field-outline {
+  --mdc-outlined-text-field-outline-color:#ccd5e2;
+}
+.mat-mdc-form-field-appearance-outline .mat-mdc-form-field-outline-thick {
+  --mdc-outlined-text-field-outline-color: var(--azul);
+}
+
+/* Acciones */
 .pc-actions{ display:flex; gap:12px; justify-content:center; margin-top:14px; }
 .pc-actions button{ min-width:100px; font-weight:500; }
 
 /* =========================================================
-   TAB 5: Proveedor (tabla en grid estilo “imagen 2”)
+   TAB 5: Proveedor (tabla estilo limpio)
    ========================================================= */
 .t5{ display:grid; grid-template-rows:auto auto 1fr auto; gap:16px; padding:4px 0 24px; }
-.t5-title{ color:#1f6fb2; font-weight:700; margin:0 0 6px; }
+.t5-title{ color:var(--azul); font-weight:700; margin:0 0 6px; }
 
-/* Cabecera de campos */
 .t5-head{ display:grid; grid-template-columns:380px 380px 1fr; gap:12px 36px; align-items:end; }
 .t5-head .field{ display:grid; grid-template-columns:130px 1fr; gap:8px; align-items:center; }
 .t5 .lbl{ font-size:12px; color:#6b7280; white-space:nowrap; }
 .t5-head .w-sm{ max-width:280px; }
 .t5-head .w-xl{ max-width:100%; }
 
-/* Tabla contenedor */
 .t5-table{
   display:grid;
   grid-template-rows:auto;
@@ -154,48 +204,42 @@
   overflow:hidden;
   box-shadow:0 1px 3px rgba(16,24,40,.05), 0 1px 2px rgba(16,24,40,.06);
 }
-/* Material table reset */
 .t5-table .mat-mdc-table{ width:100%; background:transparent; border-collapse:separate; border-spacing:0; }
-/* Header */
 .t5-table .mat-mdc-header-row{ background:#fff; height:44px; border-bottom:1px solid #e7edf6; }
 .t5-table .mat-mdc-header-cell{ padding:10px 14px; font-weight:600; font-size:13px; color:#27374A; }
-/* Filas */
 .t5-table .mat-mdc-row{ background:#fff; }
 .t5-table .mat-mdc-cell{
   padding:8px 14px; font-size:13px; color:#1f2937;
   border-bottom:1px solid #eef2f7;
 }
 .t5-table .mat-mdc-row:hover{ background:#f8fafc; }
-/* Inputs planos en celdas */
 .t5-table td input[type="text"],
 .t5-table td input[type="number"]{
   width:100%; border:0; outline:0; background:transparent; padding:6px 0; font:inherit;
 }
 .t5-table td input::placeholder{ color:#98a1b3; }
-/* Datepicker compacto en celdas */
 .t5-table .mat-mdc-form-field{ width:100%; }
 .t5-table .mat-mdc-text-field-wrapper{ height:36px; }
 .t5-table .mat-mdc-form-field-infix{ padding-top:6px; padding-bottom:6px; }
 .t5-table .mat-mdc-form-field-subscript-wrapper{ display:none; }
 .t5-table .mat-mdc-form-field-outline{ --mdc-outlined-text-field-outline-color:#d8e3f5; }
-/* Checkbox centrado */
 .cell-center{ text-align:center; }
 .t5-table .mat-mdc-checkbox{ vertical-align:middle; }
-/* Acciones */
+
 .t5-actions{ display:flex; justify-content:center; gap:18px; margin-top:18px; }
 .t5-actions button{ min-width:110px; }
 
-/* ===== Helpers / Bootstrap-like ===== */
+/* ===== Helpers ===== */
 .label-sm{ font-size:12px; color:#6b7280; }
 .border-start-lg{ border-left:1px solid var(--borde); }
 @media (max-width:991.98px){ .border-start-lg{ border-left:0; } }
 
-/* ===== Inputs subrayados (para los campos “sin Material”) ===== */
+/* Inputs subrayados (sin Material) */
 .input-line{
   border:0; border-bottom:1px solid #d9e3f4; outline:none; background:transparent;
   padding:.45rem .25rem .35rem 0; border-radius:0; color:#111827;
 }
-.input-line:focus{ border-bottom-color:#1f6fb2; box-shadow:none; }
+.input-line:focus{ border-bottom-color:var(--azul); box-shadow:none; }
 .input-line::placeholder{ color:#9aa8be; font-size:12px; }
 
 .select-wrap{ position:relative; }
@@ -204,7 +248,7 @@
   border:0; border-bottom:1px solid #d9e3f4; background:transparent;
   padding:.45rem 1.4rem .35rem 0; border-radius:0; color:#111827; width:100%;
 }
-.select-line:focus{ border-bottom-color:#1f6fb2; outline:none; }
+.select-line:focus{ border-bottom-color:var(--azul); outline:none; }
 .select-wrap::after{
   content:""; position:absolute; right:6px; bottom:12px; width:8px; height:8px;
   border-right:2px solid #94a3b8; border-bottom:2px solid #94a3b8; transform:rotate(45deg);
@@ -240,6 +284,89 @@
   .t5-head .w-sm,.t5-head .w-xl{ max-width:100%; }
 }
 
-/* Botones en acciones */
+.text-primary { color: var(--azul) !important; }
+
+/* Botones Material primarios*/
+:host ::ng-deep .mat-mdc-outlined-button.mat-primary,
+:host ::ng-deep .mat-mdc-unelevated-button.mat-primary,
+:host ::ng-deep .mat-mdc-raised-button.mat-primary,
+:host ::ng-deep .mat-mdc-stroked-button.mat-primary {
+  --mdc-theme-primary: var(--azul);
+  color: var(--azul) !important;
+  border-color: var(--azul) !important;
+}
+:host ::ng-deep .mat-mdc-unelevated-button.mat-primary,
+:host ::ng-deep .mat-mdc-raised-button.mat-primary {
+  background: var(--azul) !important;
+  color: #fff !important;
+}
+
+/* Botones planos de acciones en pie */
 .tab-body .mat-mdc-button-base{ min-width:110px; }
 
+/* Quitar transiciones globales en tabs */
+.tabs ::ng-deep * { transition: none !important; }
+
+/* MAT-SELECT (panel desplegado) */
+:host ::ng-deep .mat-mdc-select-panel {
+  background: #fff !important;
+  border: 1px solid #e7edf6 !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 20px rgba(16,24,40,.12), 0 2px 6px rgba(16,24,40,.08) !important;
+  padding: 4px 0 !important;
+}
+
+/* Texto de opciones */
+:host ::ng-deep .mat-mdc-option .mdc-list-item__primary-text {
+  font-size: 13px !important;
+  color: #1f2937 !important;
+}
+
+/* Hover de opción */
+:host ::ng-deep .mat-mdc-option:hover,
+:host ::ng-deep .mat-mdc-option.mat-mdc-option-active:not(.mdc-list-item--selected) {
+  background: #eef4f7 !important;
+}
+
+/* Opción seleccionada: texto + icono (check) en azul GLN */
+:host ::ng-deep .mat-mdc-option.mdc-list-item--selected .mdc-list-item__primary-text {
+  color: var(--azul) !important;
+  font-weight: 600 !important;
+}
+:host ::ng-deep .mat-mdc-option.mdc-list-item--selected .mdc-list-item__end,
+:host ::ng-deep .mat-mdc-option.mdc-list-item--selected .mat-icon {
+  color: var(--azul) !important;
+}
+
+/* Separadores sutiles entre opciones */
+:host ::ng-deep .mat-mdc-select-panel .mat-mdc-option:not(:last-child) {
+  border-bottom: 1px solid #f2f5fa;
+}
+
+/* TRIGGER (select cerrado) */
+:host ::ng-deep .mat-mdc-form-field-appearance-outline .mat-mdc-form-field-outline {
+  --mdc-outlined-text-field-outline-color: #ccd5e2 !important;
+}
+:host ::ng-deep .mat-mdc-form-field-appearance-outline.mat-focused .mat-mdc-form-field-outline-thick {
+  --mdc-outlined-text-field-outline-color: var(--azul) !important;
+}
+:host ::ng-deep .mat-mdc-select-value-text { color: #111827 !important; }
+:host ::ng-deep .mat-mdc-select-arrow { color: #94a3b8 !important; }
+
+/* Estado inválido */
+:host ::ng-deep .mat-mdc-form-field.mat-mdc-form-field-invalid .mat-mdc-form-field-outline-thick {
+  --mdc-outlined-text-field-outline-color: #dc3545 !important;
+}
+
+/* Sin ripple/transiciones en selects */
+:host ::ng-deep .mdc-line-ripple { display: none !important; }
+:host ::ng-deep .mat-mdc-form-field * { transition: none !important; }
+
+/* SELECT nativo (.select-line) */
+.select-line { border-bottom: 1px solid #ccd5e2; color: #111827; }
+.select-line:focus { border-bottom-color: var(--azul); outline: none; }
+.select-wrap::after { border-right: 2px solid #94a3b8; border-bottom: 2px solid #94a3b8; }
+
+/* Tamaño compacto coherente */
+:host ::ng-deep .mat-mdc-text-field-wrapper { min-height: 40px !important; }
+:host ::ng-deep .mat-mdc-form-field-infix { padding-top: 8px !important; padding-bottom: 8px !important; }
