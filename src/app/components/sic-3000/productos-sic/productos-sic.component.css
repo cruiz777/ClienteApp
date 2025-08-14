@@ -28,372 +28,218 @@
   font-weight: 700;
   grid-column: 1 / -1;
 }
-
-/* “Descripción” solo etiqueta */
-.descripcion-static {
-  display: grid;
-  grid-template-columns: 110px 1fr;
-  align-items: center;
-}
-.lbl-strong {
-  font-size: 12px;
-  font-weight: 700;
-  color: #374151;
-}
-.desc-titulo {
-  font-size: 13px;
-  color: #374151;
-}
-
-/* Etiquetas generales */
-.lbl {
-  font-size: 12px;
-  color: var(--texto-suave);
-  margin-right: 8px;
-  white-space: nowrap;
-}
-
-/* Tabs */
-.tabs ::ng-deep .mat-mdc-tab-header {
-  background: #f5f9ff;
-  border: 1px solid var(--borde);
-  border-radius: 8px 8px 0 0;
-}
-.tab-body {
-  border: 1px solid var(--borde);
-  border-top: 0;
-  border-radius: 0 0 8px 8px;
-  padding: 18px;
-}
-
-/* GRID DE 3 SECCIONES */
-.form-grid-3 {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  column-gap: 28px;
-  row-gap: 12px;
-  align-items: start;
-}
-
-/* Cada celda: etiqueta + campo */
-.field-row {
-  display: grid;
-  grid-template-columns: 140px auto;
-  align-items: center;
-  gap: 8px;
-}
-
-/* Celda compacta para 'Generar' */
-.field-row.generar {
-  grid-template-columns: 70px auto;
-}
-
-/* Inputs compactos */
-.mat-mdc-form-field { width: 100%; }
-.field-sm { max-width: 230px; }
-.field-md { max-width: 320px; }
-
-/* BLOQUE OPCIONES EN TRES COLUMNAS */
-.opciones-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 24px;
-  align-items: start;
-  margin-top: 10px;
-  padding-top: 12px;
-  border-top: 1px solid var(--borde);
-}
-.op-col {
-  display: grid;
-  grid-auto-rows: 32px;
-  align-content: start;
-  padding-right: 24px;
-}
-.op-col + .op-col {
-  border-left: 1px solid var(--borde);
-  padding-left: 24px;
-}
-.op-col .lbl {
-  grid-column: 1 / -1;
-  font-weight: 600;
-  color: #374151;
-  margin: 0 0 6px 0;
-}
-.op-col mat-checkbox {
-  margin: 0;
-  display: flex;
-  align-items: center;
-}
-
-/* Foto / placeholder */
-.foto {
-  margin-top: 8px;
-  display: flex;
-  justify-content: flex-start;
-}
-.foto img,
-.foto .placeholder {
-  width: 92px;
-  height: 92px;
-  border: 1px solid var(--borde);
-  border-radius: 6px;
-  object-fit: cover;
-}
-.foto .placeholder {
-  display: grid;
-  place-items: center;
-  color: var(--texto-suave);
-  font-size: 12px;
-}
-
-/* Fechas y acciones (Tab 1) */
-.fechas-acciones {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 16px;
-  margin-top: 10px;
-  align-items: center;
-  border-top: 1px solid var(--borde);
-  padding-top: 14px;
-}
-.fechas-acciones .acciones {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  justify-content: flex-start;
-}
-
-/* Tab placeholder */
-.placeholder-tab {
-  padding: 32px;
-  color: var(--texto-suave);
-}
-
-/* Línea sutil */
-.mdc-line-ripple::after,
-.mdc-line-ripple::before { background-color: #cfe1f8 !important; }
-.mat-mdc-form-field-subscript-wrapper { display: none; }
-
-/* ===== Precio / Costo (Tab 3) ===== */
-.pc-grid{
+/* ===== Descripción fija ===== */
+.descripcion-static{
   display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap:28px;
+  grid-template-columns:110px 1fr;
+  align-items:center;
+}
+.lbl-strong{ font-size:12px; font-weight:700; color:#374151; }
+.desc-titulo{ font-size:13px; color:#374151; }
+
+/* ===== Etiquetas genéricas ===== */
+.lbl{ font-size:12px; color:var(--texto-suave); margin-right:8px; white-space:nowrap; }
+
+/* ===== Tabs (Material) ===== */
+.tabs ::ng-deep .mat-mdc-tab-header{
+  background:#f5f9ff;
+  border:1px solid var(--borde);
+  border-radius:8px 8px 0 0;
+}
+.tab-body{
+  border:1px solid var(--borde);
+  border-top:0;
+  border-radius:0 0 8px 8px;
+  padding:18px;
+}
+
+/* ===== Grid de 3 secciones (Tab 1) ===== */
+.form-grid-3{
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  column-gap:28px;
+  row-gap:12px;
   align-items:start;
 }
-
-/* Paneles */
-.pc-panel{
-  border:1px solid var(--borde);
-  border-radius:8px;
-  padding:12px;
-  background:#fff;
-}
-.pc-panel.full{ grid-column: 1 / -1; }
-.pc-title{
-  margin:0 0 10px 0;
-  font-size:14px;
-  font-weight:700;
-  color:#1f2a37;
-}
-
-/* Filas */
-.pc-row{
+.field-row{
   display:grid;
-  grid-template-columns: 150px 1fr;
+  grid-template-columns:140px auto;
   align-items:center;
-  gap:10px;
-  margin-bottom:10px;
+  gap:8px;
 }
+.field-row.generar{ grid-template-columns:70px auto; }
 
-/* Dos grupos (ej. precio + fecha) */
-.pc-row.duo{
-  grid-template-columns: 1fr 1fr;
-}
-.pc-row.duo .grp{
+.mat-mdc-form-field{ width:100%; }
+.field-sm{ max-width:230px; }
+.field-md{ max-width:320px; }
+
+/* ===== Opciones (Tab 1) ===== */
+.opciones-grid{
   display:grid;
-  grid-template-columns: 150px 1fr;
-  align-items:center;
-  gap:10px;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:24px;
+  align-items:start;
+  margin-top:10px;
+  padding-top:12px;
+  border-top:1px solid var(--borde);
 }
-/* Cuatro celdas (dos pares label+input) – simétrico */
-.pc-row.quad{
-  grid-template-columns: 150px 180px 150px 180px;
-}
-/* Par label+input alineado a la primera pareja (Suministro) */
-.pc-row.pair{
-  grid-template-columns: 150px 180px;
-}
+.op-col{ display:grid; grid-auto-rows:32px; align-content:start; padding-right:24px; }
+.op-col + .op-col{ border-left:1px solid var(--borde); padding-left:24px; }
+.op-col .lbl{ grid-column:1 / -1; font-weight:600; color:#374151; margin:0 0 6px; }
+.op-col mat-checkbox{ margin:0; display:flex; align-items:center; }
 
-/* Anchos compactos */
-.xs{ max-width: 180px; }
-.sm{ max-width: 260px; }
+/* ===== Foto / placeholder ===== */
+.foto{ margin-top:8px; display:flex; justify-content:flex-start; }
+.foto img, .foto .placeholder{
+  width:92px; height:92px; border:1px solid var(--borde); border-radius:6px; object-fit:cover;
+}
+.foto .placeholder{ display:grid; place-items:center; color:var(--texto-suave); font-size:12px; }
 
-/* Tintes suaves tipo imagen 1 */
+/* ===== Fechas y acciones (Tab 1) ===== */
+.fechas-acciones{
+  display:grid; grid-template-columns:1fr auto; gap:16px; margin-top:10px;
+  align-items:center; border-top:1px solid var(--borde); padding-top:14px;
+}
+.fechas-acciones .acciones{ display:flex; align-items:center; gap:10px; justify-content:flex-start; }
+
+/* ===== Línea sutil Material ===== */
+.mdc-line-ripple::after,
+.mdc-line-ripple::before{ background-color:#cfe1f8 !important; }
+.mat-mdc-form-field-subscript-wrapper{ display:none; }
+
+/* =========================================================
+   TAB 3: Precio / Costo
+   ========================================================= */
+.pc-grid{ display:grid; grid-template-columns:1fr 1fr; gap:28px; align-items:start; }
+.pc-panel{ border:1px solid var(--borde); border-radius:8px; padding:12px; background:#fff; }
+.pc-panel.full{ grid-column:1 / -1; }
+.pc-title{ margin:0 0 10px; font-size:14px; font-weight:700; color:#1f2a37; }
+
+.pc-row{ display:grid; grid-template-columns:150px 1fr; align-items:center; gap:10px; margin-bottom:10px; }
+.pc-row.duo{ grid-template-columns:1fr 1fr; }
+.pc-row.duo .grp{ display:grid; grid-template-columns:150px 1fr; align-items:center; gap:10px; }
+.pc-row.quad{ grid-template-columns:150px 180px 150px 180px; }
+.pc-row.pair{ grid-template-columns:150px 180px; }
+
+.xs{ max-width:180px; }
+.sm{ max-width:260px; }
+
 .tint-blue  .mat-mdc-form-field-flex{ background:#e8f1fb; border-radius:6px; }
 .tint-orange .mat-mdc-form-field-flex{ background:#fde9d2; border-radius:6px; }
 .tint-green .mat-mdc-form-field-flex{ background:#e4f6ea; border-radius:6px; }
 
-/* Barra de acciones del Tab 3 centrada */
-.pc-actions{
-  display:flex;
-  gap:12px;
-  justify-content:center;
-  margin-top:14px;
+.pc-actions{ display:flex; gap:12px; justify-content:center; margin-top:14px; }
+.pc-actions button{ min-width:100px; font-weight:500; }
+
+/* =========================================================
+   TAB 5: Proveedor (tabla en grid estilo “imagen 2”)
+   ========================================================= */
+.t5{ display:grid; grid-template-rows:auto auto 1fr auto; gap:16px; padding:4px 0 24px; }
+.t5-title{ color:#1f6fb2; font-weight:700; margin:0 0 6px; }
+
+/* Cabecera de campos */
+.t5-head{ display:grid; grid-template-columns:380px 380px 1fr; gap:12px 36px; align-items:end; }
+.t5-head .field{ display:grid; grid-template-columns:130px 1fr; gap:8px; align-items:center; }
+.t5 .lbl{ font-size:12px; color:#6b7280; white-space:nowrap; }
+.t5-head .w-sm{ max-width:280px; }
+.t5-head .w-xl{ max-width:100%; }
+
+/* Tabla contenedor */
+.t5-table{
+  display:grid;
+  grid-template-rows:auto;
+  background:#fff;
+  border:1px solid #e7edf6;
+  border-radius:10px;
+  overflow:hidden;
+  box-shadow:0 1px 3px rgba(16,24,40,.05), 0 1px 2px rgba(16,24,40,.06);
 }
-.pc-actions button {
-  min-width: 100px;
-  font-weight: 500;
+/* Material table reset */
+.t5-table .mat-mdc-table{ width:100%; background:transparent; border-collapse:separate; border-spacing:0; }
+/* Header */
+.t5-table .mat-mdc-header-row{ background:#fff; height:44px; border-bottom:1px solid #e7edf6; }
+.t5-table .mat-mdc-header-cell{ padding:10px 14px; font-weight:600; font-size:13px; color:#27374A; }
+/* Filas */
+.t5-table .mat-mdc-row{ background:#fff; }
+.t5-table .mat-mdc-cell{
+  padding:8px 14px; font-size:13px; color:#1f2937;
+  border-bottom:1px solid #eef2f7;
+}
+.t5-table .mat-mdc-row:hover{ background:#f8fafc; }
+/* Inputs planos en celdas */
+.t5-table td input[type="text"],
+.t5-table td input[type="number"]{
+  width:100%; border:0; outline:0; background:transparent; padding:6px 0; font:inherit;
+}
+.t5-table td input::placeholder{ color:#98a1b3; }
+/* Datepicker compacto en celdas */
+.t5-table .mat-mdc-form-field{ width:100%; }
+.t5-table .mat-mdc-text-field-wrapper{ height:36px; }
+.t5-table .mat-mdc-form-field-infix{ padding-top:6px; padding-bottom:6px; }
+.t5-table .mat-mdc-form-field-subscript-wrapper{ display:none; }
+.t5-table .mat-mdc-form-field-outline{ --mdc-outlined-text-field-outline-color:#d8e3f5; }
+/* Checkbox centrado */
+.cell-center{ text-align:center; }
+.t5-table .mat-mdc-checkbox{ vertical-align:middle; }
+/* Acciones */
+.t5-actions{ display:flex; justify-content:center; gap:18px; margin-top:18px; }
+.t5-actions button{ min-width:110px; }
+
+/* ===== Helpers / Bootstrap-like ===== */
+.label-sm{ font-size:12px; color:#6b7280; }
+.border-start-lg{ border-left:1px solid var(--borde); }
+@media (max-width:991.98px){ .border-start-lg{ border-left:0; } }
+
+/* ===== Inputs subrayados (para los campos “sin Material”) ===== */
+.input-line{
+  border:0; border-bottom:1px solid #d9e3f4; outline:none; background:transparent;
+  padding:.45rem .25rem .35rem 0; border-radius:0; color:#111827;
+}
+.input-line:focus{ border-bottom-color:#1f6fb2; box-shadow:none; }
+.input-line::placeholder{ color:#9aa8be; font-size:12px; }
+
+.select-wrap{ position:relative; }
+.select-line{
+  appearance:none; -webkit-appearance:none; -moz-appearance:none;
+  border:0; border-bottom:1px solid #d9e3f4; background:transparent;
+  padding:.45rem 1.4rem .35rem 0; border-radius:0; color:#111827; width:100%;
+}
+.select-line:focus{ border-bottom-color:#1f6fb2; outline:none; }
+.select-wrap::after{
+  content:""; position:absolute; right:6px; bottom:12px; width:8px; height:8px;
+  border-right:2px solid #94a3b8; border-bottom:2px solid #94a3b8; transform:rotate(45deg);
+  pointer-events:none;
 }
 
-/* RESPONSIVE*/
-@media (max-width: 980px) {
-  .form-grid-3 { grid-template-columns: 1fr 1fr; }
-  .opciones-grid { grid-template-columns: 1fr 1fr; }
-
+/* ===== Responsive ===== */
+@media (max-width:980px){
+  .form-grid-3{ grid-template-columns:1fr 1fr; }
+  .opciones-grid{ grid-template-columns:1fr 1fr; }
   .pc-grid{ grid-template-columns:1fr; }
   .pc-row.quad{ grid-template-columns:150px 180px 150px 180px; }
+  .t5-head{ grid-template-columns:1fr 1fr; }
+  .t5-head .field:nth-child(3){ grid-column:1 / -1; }
 }
-@media (max-width: 640px) {
-  .form-grid-3 { grid-template-columns:1fr; }
-  .field-row { grid-template-columns:1fr; }
-  .field-sm, .field-md { max-width:100%; }
+@media (max-width:640px){
+  .form-grid-3{ grid-template-columns:1fr; }
+  .field-row{ grid-template-columns:1fr; }
+  .field-sm,.field-md{ max-width:100%; }
 
-  .opciones-grid { grid-template-columns:1fr; }
-  .op-col + .op-col {
-    border-left:0;
-    padding-left:0;
-    padding-top:12px;
-    border-top:1px solid var(--borde);
-  }
+  .opciones-grid{ grid-template-columns:1fr; }
+  .op-col + .op-col{ border-left:0; padding-left:0; padding-top:12px; border-top:1px solid var(--borde); }
 
   .pc-row,
   .pc-row.duo,
   .pc-row.duo .grp,
   .pc-row.quad,
-  .pc-row.pair {
-    grid-template-columns:1fr;
-  }
+  .pc-row.pair{ grid-template-columns:1fr; }
   .xs,.sm{ max-width:100%; }
 
-/* ============ TAB 5 (Proveedor) ============ */
-/* ============ TAB 5 (Proveedor) ============ */
-.t5{
-  display: grid;
-  grid-template-rows: auto auto 1fr auto; /* título, encabezado, tabla, acciones */
-  gap: 16px;
-  padding: 4px 0 24px;
+  .t5-head{ grid-template-columns:1fr; gap:10px 16px; }
+  .t5-head .field{ grid-template-columns:1fr; }
+  .t5-head .w-sm,.t5-head .w-xl{ max-width:100%; }
 }
 
-/* Título */
-.t5-title{
-  color: #1f6fb2;
-  font-weight: 700;
-  margin: 0 0 6px 0;
-}
+/* Botones en acciones */
+.tab-body .mat-mdc-button-base{ min-width:110px; }
 
-/* Encabezado de campos en GRID (igual a la imagen) */
-.t5-head{
-  display: grid;
-  grid-template-columns: 380px 380px 1fr; /* Código Interno | Barras | Descripción */
-  gap: 12px 36px;
-  align-items: end;
-}
-.t5-head .field{
-  display: grid;
-  grid-template-columns: 130px 1fr; /* label + input */
-  gap: 8px;
-  align-items: center;
-}
-.t5 .lbl{ font-size: 12px; color: #6b7280; white-space: nowrap; }
-.t5-head .w-sm{ max-width: 280px; }
-.t5-head .w-xl{ max-width: 100%; }
-
-/* Responsive encabezado */
-@media (max-width: 1200px){
-  .t5-head{ grid-template-columns: 1fr 1fr; }
-  .t5-head .field:nth-child(3){ grid-column: 1 / -1; } /* Descripción ocupa la fila completa */
-}
-@media (max-width: 640px){
-  .t5-head{ grid-template-columns: 1fr; gap: 10px 16px; }
-  .t5-head .field{ grid-template-columns: 1fr; }
-  .t5-head .w-sm, .t5-head .w-xl{ max-width: 100%; }
-}
-
-/* ===== Tabla en GRID + estilo “imagen 2” ===== */
-.t5-table{
-  display: grid;                    /* la tabla vive dentro de un grid */
-  grid-template-rows: auto;         /* crece con el contenido */
-  background: #fff;
-  border: 1px solid #e7edf6;
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: 0 1px 3px rgba(16,24,40,.05), 0 1px 2px rgba(16,24,40,.06);
-}
-
-/* Material table reset */
-.t5-table .mat-mdc-table{
-  width: 100%;
-  background: transparent;
-  border-collapse: separate;
-  border-spacing: 0;
-}
-
-/* Header limpio (como la imagen 2) */
-.t5-table .mat-mdc-header-row{
-  background: #ffffff;
-  height: 44px;
-  border-bottom: 1px solid #e7edf6;
-}
-.t5-table .mat-mdc-header-cell{
-  padding: 10px 14px;
-  font-weight: 600;
-  font-size: 13px;
-  color: #27374A;
-}
-
-/* Filas y celdas */
-.t5-table .mat-mdc-row{ background: #fff; }
-.t5-table .mat-mdc-cell{
-  padding: 8px 14px;
-  font-size: 13px;
-  color: #1f2937;
-  border-bottom: 1px solid #eef2f7; /* líneas sutiles entre filas */
-}
-.t5-table .mat-mdc-row:hover{ background: #f8fafc; }
-
-/* Inputs “planos” dentro de celdas */
-.t5-table td input[type="text"],
-.t5-table td input[type="number"]{
-  width: 100%;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  padding: 6px 0;
-  font: inherit;
-}
-.t5-table td input::placeholder{ color:#98a1b3; }
-
-/* Datepicker compacto dentro de celdas */
-.t5-table .mat-mdc-form-field{ width: 100%; }
-.t5-table .mat-mdc-text-field-wrapper{ height: 36px; }
-.t5-table .mat-mdc-form-field-infix{ padding-top: 6px; padding-bottom: 6px; }
-.t5-table .mat-mdc-form-field-subscript-wrapper{ display: none; }
-.t5-table .mat-mdc-form-field-outline{
-  --mdc-outlined-text-field-outline-color: #d8e3f5;
-}
-
-/* Centrar checkbox “A Consignación” */
-.cell-center{ text-align: center; }
-.t5-table .mat-mdc-checkbox{ vertical-align: middle; }
-
-/* Acciones centradas (botones) */
-.t5-actions{
-  display: flex;
-  justify-content: center;
-  gap: 18px;
-  margin-top: 18px;
-}
-.t5-actions button{ min-width: 110px; }
-
-}

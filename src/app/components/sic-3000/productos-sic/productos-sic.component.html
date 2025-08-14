@@ -9,214 +9,222 @@
     </div>
   </header>
 
-  <mat-tab-group class="tabs" [(selectedIndex)]="selectedTab" animationDuration="0ms">
-    <!-- TAB 1: Datos Generales  -->
-    <mat-tab label="Datos Generales">
-      <div class="tab-body">
-        <!-- ===== Grid de 3 secciones alineadas por filas ===== -->
-        <div class="form-grid-3">
+  <mat-tab-group class="tabs" [(selectedIndex)]="selectedTab">
+<!-- ===== TAB 1: Datos Generales  -->
+<mat-tab label="Datos Generales">
+  <div class="tab-body">
 
-          <!-- Fila 1 -->
-          <div class="field-row">
-            <label class="lbl">Código Interno:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <input matInput formControlName="codigoInterno" />
-            </mat-form-field>
+    <!-- Título -->
+    <div class="row">
+      <div class="col-12">
+        <h6 class="fw-bold text-primary mb-3">Datos del Producto</h6>
+      </div>
+    </div>
+
+    <!-- GRID principal (Bootstrap) -->
+    <div class="row g-3">
+      <!-- Columna izquierda (campos) -->
+      <div class="col-12 col-lg-8">
+        <div class="row g-3 align-items-end">
+          <!-- Código Interno -->
+          <div class="col-12 col-md-4">
+            <label class="label-sm d-block">Código Interno:</label>
+            <input class="input-line w-100" placeholder="texto" formControlName="codigoInterno">
           </div>
 
-          <div class="field-row">
-            <label class="lbl">Código de Barras:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <input matInput formControlName="codigoBarras" />
-            </mat-form-field>
+          <!-- Código de Barras -->
+          <div class="col-12 col-md-4">
+            <label class="label-sm d-block">Código de Barras:</label>
+            <input class="input-line w-100" placeholder="texto" formControlName="codigoBarras">
           </div>
 
-          <div class="field-row generar">
-            <label class="lbl">Generar</label>
-            <mat-checkbox formControlName="generarCodigo"></mat-checkbox>
+          <!-- Generar -->
+          <div class="col-12 col-md-4 d-flex align-items-center gap-2">
+            <span class="label-sm text-secondary">Generar</span>
+            <input type="checkbox" class="form-check-input" formControlName="generarCodigo">
           </div>
 
-          <!-- Fila 2 -->
-          <div class="field-row">
-            <label class="lbl">Descripción 1:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <input matInput formControlName="descripcion1" />
-            </mat-form-field>
+          <!-- Descripción -->
+          <div class="col-12 col-md-6">
+            <label class="label-sm d-block">Descripción:</label>
+            <input class="input-line w-100" placeholder="texto" formControlName="descripcion1">
           </div>
 
-          <div class="field-row">
-            <label class="lbl">Descripción punto venta:</label>
-            <mat-form-field appearance="outline" class="field-md">
-              <input matInput formControlName="descripcionPOS" />
-            </mat-form-field>
+          <!-- Descripción punto de venta -->
+          <div class="col-12 col-md-6">
+            <label class="label-sm d-block">Descripción en el punto de venta:</label>
+            <input class="input-line w-100" placeholder="texto" formControlName="descripcionPOS">
           </div>
 
-          <div class="field-row">
-            <label class="lbl">Tipo Producto:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <mat-select formControlName="tipoProducto">
-                <mat-option *ngFor="let t of tiposProducto; trackBy: trackByValue" [value]="t">{{ t }}</mat-option>
-              </mat-select>
-            </mat-form-field>
+          <!-- Unidad de Venta -->
+          <div class="col-12 col-md-4">
+            <label class="label-sm d-block">Unidad de Venta:</label>
+            <div class="select-wrap">
+              <select class="select-line w-100" formControlName="unidadVenta">
+                <option [ngValue]="null" disabled selected>—</option>
+                <option *ngFor="let u of unidadesVenta; trackBy: trackByValue" [ngValue]="u">{{u}}</option>
+              </select>
+            </div>
           </div>
 
-          <!-- Fila 3 -->
-          <div class="field-row">
-            <label class="lbl">Unidad de Venta:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <mat-select formControlName="unidadVenta" disableOptionCentering>
-                <mat-option *ngFor="let u of unidadesVenta; trackBy: trackByValue" [value]="u">{{ u }}</mat-option>
-              </mat-select>
-            </mat-form-field>
+          <!-- Cantidad -->
+          <div class="col-12 col-md-4">
+            <label class="label-sm d-block">Cantidad:</label>
+            <input type="number" class="input-line w-100" placeholder="0" formControlName="cantidad">
           </div>
 
-          <div class="field-row">
-            <label class="lbl">Cantidad:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <input matInput formControlName="cantidad" type="number" />
-            </mat-form-field>
+          <!-- Tipo Producto -->
+          <div class="col-12 col-md-4">
+            <label class="label-sm d-block">Tipo Producto:</label>
+            <div class="select-wrap">
+              <select class="select-line w-100" formControlName="tipoProducto">
+                <option [ngValue]="null" disabled selected>—</option>
+                <option *ngFor="let t of tiposProducto; trackBy: trackByValue" [ngValue]="t">{{t}}</option>
+              </select>
+            </div>
           </div>
 
-          <div class="field-row">
-            <label class="lbl">Presentación:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <mat-select formControlName="presentacion">
-                <mat-option *ngFor="let p of presentaciones; trackBy: trackByValue" [value]="p">{{ p }}</mat-option>
-              </mat-select>
-            </mat-form-field>
+          <!-- Existencia Global -->
+          <div class="col-12 col-md-4">
+            <label class="label-sm d-block">Existencia Global:</label>
+            <input class="input-line w-100" placeholder="texto" formControlName="existenciaGlobal">
           </div>
 
-          <!-- Fila 4 -->
-          <div class="field-row">
-            <label class="lbl">Existencia Global:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <input matInput formControlName="existenciaGlobal" />
-            </mat-form-field>
+          <!-- Cantidad Conversación -->
+          <div class="col-12 col-md-4">
+            <label class="label-sm d-block">Cantidad Conversación:</label>
+            <input class="input-line w-100" placeholder="texto" formControlName="canCov">
           </div>
 
-          <div class="field-row">
-            <label class="lbl">Can. Cov.:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <input matInput formControlName="canCov" />
-            </mat-form-field>
+          <!-- Presentación -->
+          <div class="col-12 col-md-4">
+            <label class="label-sm d-block">Presentación:</label>
+            <div class="select-wrap">
+              <select class="select-line w-100" formControlName="presentacion">
+                <option [ngValue]="null" disabled selected>—</option>
+                <option *ngFor="let p of presentaciones; trackBy: trackByValue" [ngValue]="p">{{p}}</option>
+              </select>
+            </div>
           </div>
 
-          <div class="field-row">
-            <label class="lbl">Clase de Producto:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <mat-select formControlName="claseProducto">
-                <mat-option *ngFor="let c of clasesProducto; trackBy: trackByValue" [value]="c">{{ c }}</mat-option>
-              </mat-select>
-            </mat-form-field>
+          <!-- Abreviación -->
+          <div class="col-12 col-md-4">
+            <label class="label-sm d-block">Abreviación:</label>
+            <input class="input-line w-100" placeholder="texto" formControlName="abreviacion">
           </div>
 
-          <!-- Fila 5 -->
-          <div class="field-row">
-            <label class="lbl">Abreviación:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <input matInput formControlName="abreviacion" />
-            </mat-form-field>
+          <!-- Referencia -->
+          <div class="col-12 col-md-4">
+            <label class="label-sm d-block">Referencia:</label>
+            <input class="input-line w-100" placeholder="texto" formControlName="referencia">
           </div>
 
-          <div class="field-row">
-            <label class="lbl">Referencia:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <input matInput formControlName="referencia" />
-            </mat-form-field>
+          <!-- Fechas -->
+          <div class="col-12 col-md-4">
+            <label class="label-sm d-block">Fecha de Creación:</label>
+            <input type="date" class="input-line w-100" formControlName="fechaCreacion">
           </div>
-
-          <div class="field-row">
-            <!-- vacío para que cierre la fila con 3 columnas -->
-            <span></span><span></span>
+          <div class="col-12 col-md-4">
+            <label class="label-sm d-block">Fecha de Modificación:</label>
+            <input type="date" class="input-line w-100" formControlName="fechaModificacion">
           </div>
         </div>
-        <!-- ===== Opciones ===== -->
-        @defer (on idle) {
-          <div class="opciones-grid">
-            <div class="op-col">
-              <div class="lbl">Opciones:</div>
-              <mat-checkbox formControlName="pagaIva">Paga IVA</mat-checkbox>
-              <mat-checkbox formControlName="productoEnVenta">Producto en Venta</mat-checkbox>
-              <mat-checkbox formControlName="cargarInventarios">Cargar a inventarios</mat-checkbox>
-              <mat-checkbox formControlName="productoConPeso">Producto con Peso</mat-checkbox>
-              <mat-checkbox formControlName="consumoInterno">Producto consumo Interno</mat-checkbox>
+      </div>
+
+      <!-- Columna derecha (opciones y foto) -->
+      <div class="col-12 col-lg-4">
+        <div class="ps-lg-3 border-start-lg">
+          <div class="row">
+            <div class="col-12">
+              <span class="fw-semibold small d-block mb-2 text-secondary">Opciones:</span>
             </div>
 
-            <div class="op-col">
-              <mat-checkbox formControlName="manejaDecimales">Maneja Cantidad con Decimales</mat-checkbox>
-              <mat-checkbox formControlName="psicotropico">Psicotrópico</mat-checkbox>
-              <mat-checkbox formControlName="estupefaciente">Estupefaciente</mat-checkbox>
-              <mat-checkbox formControlName="activo">Activo</mat-checkbox>
-              <mat-checkbox formControlName="altoRiesgo">Alto Riesgo</mat-checkbox>
+            <div class="col-12 col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" formControlName="pagaIva" id="pagaIva">
+                <label class="form-check-label" for="pagaIva">Paga IVA</label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" formControlName="productoEnVenta" id="enVenta">
+                <label class="form-check-label" for="enVenta">Producto en Venta</label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" formControlName="cargarInventarios" id="inv">
+                <label class="form-check-label" for="inv">Cargar a inventarios</label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" formControlName="productoConPeso" id="peso">
+                <label class="form-check-label" for="peso">Producto con Peso</label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" formControlName="consumoInterno" id="interno">
+                <label class="form-check-label" for="interno">Producto consumo Interno</label>
+              </div>
             </div>
 
-            <div class="op-col derecha">
-              <div class="lbl">URL foto Producto:</div>
-              <mat-form-field appearance="outline" class="field-md">
-                <input matInput formControlName="urlFoto" />
-              </mat-form-field>
+            <div class="col-12 col-md-6">
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" formControlName="manejaDecimales" id="dec">
+                <label class="form-check-label" for="dec">Maneja Cantidad con Decimales</label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" formControlName="psicotropico" id="psi">
+                <label class="form-check-label" for="psi">Psicotrópico</label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" formControlName="estupefaciente" id="estu">
+                <label class="form-check-label" for="estu">Estupefaciente</label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" formControlName="activo" id="activo">
+                <label class="form-check-label" for="activo">Activo</label>
+              </div>
+              <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" formControlName="altoRiesgo" id="alto">
+                <label class="form-check-label" for="alto">Alto Riesgo</label>
+              </div>
+            </div>
 
-              <div class="foto">
+            <div class="col-12 mt-2">
+              <label class="label-sm d-block">URL foto Producto:</label>
+              <input class="input-line w-100" placeholder="texto" formControlName="urlFoto">
+
+              <div class="mt-2 d-flex">
                 <img
                   *ngIf="form.value.urlFoto; else cuadroVacio"
                   [src]="form.value.urlFoto"
                   alt="foto"
-                  loading="lazy"
-                  decoding="async"
+                  class="rounded-2 border object-fit-cover"
+                  style="width:92px;height:92px;"
                 />
                 <ng-template #cuadroVacio>
-                  <div class="placeholder">Foto</div>
+                  <div class="rounded-2 border d-grid place-items-center text-secondary-emphasis"
+                       style="width:92px;height:92px;font-size:12px;">Foto</div>
                 </ng-template>
               </div>
             </div>
           </div>
-        } @placeholder {
-          <div class="opciones-grid">
-            <div class="op-col"><div class="lbl">Opciones:</div><div class="placeholder">Cargando…</div></div>
-            <div class="op-col"><div class="placeholder">Cargando…</div></div>
-            <div class="op-col"><div class="placeholder">Cargando…</div></div>
-          </div>
-        }
-       <!-- ===== Fechas y acciones===== -->
-        @defer (on idle) {
-          <div class="fechas-acciones">
-            <div class="fechas">
-              <div class="row">
-                <label class="lbl">Fecha de Creación:</label>
-                <mat-form-field appearance="outline" class="field-sm">
-                  <input matInput formControlName="fechaCreacion" [matDatepicker]="dp1" />
-                  <mat-datepicker-toggle matSuffix [for]="dp1"></mat-datepicker-toggle>
-                  <mat-datepicker #dp1></mat-datepicker>
-                </mat-form-field>
-              </div>
-
-              <div class="row">
-                <label class="lbl">Fecha Modificación:</label>
-                <mat-form-field appearance="outline" class="field-sm">
-                  <input matInput formControlName="fechaModificacion" [matDatepicker]="dp2" />
-                  <mat-datepicker-toggle matSuffix [for]="dp2"></mat-datepicker-toggle>
-                  <mat-datepicker #dp2></mat-datepicker>
-                </mat-form-field>
-              </div>
-            </div>
-
-            <div class="acciones">
-              <mat-slide-toggle formControlName="activo">Activo</mat-slide-toggle>
-
-              <button mat-stroked-button color="primary" (click)="nuevo()">Nuevo</button>
-              <button mat-flat-button color="primary" (click)="grabar()" [disabled]="form.invalid">Grabar</button>
-              <button mat-stroked-button (click)="imprimir()">Imprimir</button>
-              <button mat-stroked-button (click)="adjuntar()">Adjuntar</button>
-            </div>
-          </div>
-        } @placeholder {
-          <div class="fechas-acciones">
-            <div class="fechas"><div class="placeholder">Fechas cargando…</div></div>
-            <div class="acciones"><div class="placeholder">Acciones cargando…</div></div>
-          </div>
-        }
         </div>
-    </mat-tab>
+      </div>
+    </div><!--/row-->
+
+    <!-- Acciones -->
+    <div class="row mt-3 pt-3 border-top">
+      <div class="col-12 d-flex align-items-center justify-content-center gap-3">
+        <div class="form-check me-2">
+          <input class="form-check-input" type="checkbox" formControlName="activo" id="activoPie">
+          <label class="form-check-label" for="activoPie">Activo</label>
+        </div>
+
+        <button mat-stroked-button color="primary" (click)="nuevo()">Nuevo</button>
+        <button mat-flat-button color="primary" (click)="grabar()" [disabled]="form.invalid">Grabar</button>
+        <button mat-stroked-button (click)="imprimir()">Imprimir</button>
+        <button mat-stroked-button (click)="adjuntar()">Adjuntar</button>
+      </div>
+    </div>
+
+  </div>
+</mat-tab>
 
   <!-- ===== TAB 2: Datos Adicionales ===== -->
 <mat-tab label="Datos Adicionales">
@@ -377,7 +385,7 @@
   </ng-template>
 </mat-tab>
 
-<!-- ===== Tabs Estructura y Stock ===== -->
+<!-- ===== TAB 4: Estructura y Stock ===== -->
     <mat-tab label="Estructura y Stock">
       <ng-template matTabContent>
         @defer (on idle) {
