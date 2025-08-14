@@ -1,0 +1,390 @@
+<mat-tab-group class="tabs-with-circles"
+               [selectedIndex]="currentStep - 1"
+               (selectedIndexChange)="onTabChange($event)">
+
+  <!-- Pestaña 1: Datos del Cliente -->
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <span class="step-badge" [class.active]="currentStep === 1" [class.completed]="currentStep > 1">1</span>
+      <span>Datos del Cliente</span>
+    </ng-template>
+
+    <section class="fi-section" [formGroup]="formCliente">
+      <h1 class="fi-title">Información del Cliente</h1>
+
+      <div class="fi-grid">
+        <div class="fi-field">
+          <label>Buscar Cliente:</label>
+          <div class="fi-input-wrap">
+            <input type="text"
+                   matInput
+                   [formControl]="clienteOrigenControl"
+                   [matAutocomplete]="autoOrigen"
+                   (blur)="onClienteInputBlur()" />
+            <mat-autocomplete #autoOrigen="matAutocomplete"
+                              [displayWith]="mostrarNombreCliente"
+                              (optionSelected)="seleccionarClienteOrigen($event.option.value)">
+              <mat-option *ngFor="let cliente of clientesOrigenFiltrados" [value]="cliente">
+                <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
+              </mat-option>
+            </mat-autocomplete>
+          </div>
+        </div>
+
+        <div class="fi-field">
+          <label>Teléfono:</label>
+          <input class="fi-input" type="text" placeholder="número" formControlName="telefono">
+        </div>
+
+        <div class="fi-field">
+          <label>Identificación (RUC/Cédula):</label>
+          <input class="fi-input" type="text" placeholder="Identificación" formControlName="identificacion" readonly>
+        </div>
+
+        <div class="fi-field">
+          <label>E-mail:</label>
+          <input class="fi-input" type="email" placeholder="pac@gmail.com" formControlName="email">
+        </div>
+
+        <div class="fi-field">
+          <label>Dirección:</label>
+          <input class="fi-input" type="text" placeholder="Calles principales y secundarias" formControlName="direccion">
+        </div>
+
+        <div class="fi-field">
+          <label>E-mail opcional:</label>
+          <input class="fi-input" type="email" placeholder="Email" formControlName="emailOpcional">
+        </div>
+
+        <div class="fi-field">
+          <label>Categoría:</label>
+          <input class="fi-input" type="text" placeholder="Categoría" formControlName="categoria" readonly>
+        </div>
+
+        <div class="fi-field">
+          <mat-form-field class="select-pequeno" appearance="outline">
+            <mat-label>Prefijo</mat-label>
+            <mat-select formControlName="gcp" (selectionChange)="onPrefijoChange($event)">
+              <mat-option value="">Seleccione…</mat-option>
+              <mat-option *ngFor="let prefijo of prefijos; trackBy: trackByPrefijoId"
+                          [value]="prefijo.id_prefijos">
+                {{ prefijo.codpre }}
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+      </div>
+
+      <div class="fi-actions">
+        <button class="fi-btn" type="button" (click)="limpiarCliente()">Cancelar</button>
+        <button class="fi-btn fi-primary" type="button" (click)="currentStep = 2">
+          Siguiente <span class="fi-arrow">›</span>
+        </button>
+      </div>
+    </section>
+  </mat-tab>
+
+  <!-- Pestaña 2: Factura -->
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <span class="step-badge" [class.active]="currentStep === 2" [class.completed]="currentStep > 2">2</span>
+      <span>Factura</span>
+    </ng-template>
+
+    <div class="factura-wrap" [formGroup]="formFactura">
+      <header class="form-header">
+        <h1 class="form-title">Facturación</h1>
+      </header>
+
+      <section class="product-section" aria-labelledby="product-label">
+        <div class="product-selector">
+          <label id="product-label" class="product-label">Producto:</label>
+          <div class="product-dropdown">
+            <div class="dropdown-container">
+              <input type="text"
+                     class="dropdown-input"
+                     placeholder="Buscador de Producto"
+                     formControlName="producto"
+                     (change)="onProductSelect()"
+                     aria-label="Search for product">
+              <div class="input-cursor"></div>
+              <svg width="15" height="12" viewBox="0 0 15 12" class="dropdown-arrow" aria-hidden="true">
+                <path d="M1 1L7.5 10.5L13.5 1" stroke="#CCD5E2" stroke-width="2" stroke-linecap="round"
+                      stroke-linejoin="round"></path>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="table-section" aria-labelledby="table-title">
+        <h2 id="table-title" class="visually-hidden">Billing items table</h2>
+
+        <div class="table-headers" role="row">
+          <div class="header-cell quantity-header"><span class="header-text">Cantidad:</span></div>
+          <div class="header-cell description-header"><span class="header-text">Detalle:</span></div>
+          <div class="header-cell unit-price-header"><span class="header-text">P. Unidad</span></div>
+          <div class="header-cell iva-header"><span class="header-text">IVA</span></div>
+          <div class="header-cell unit-discount-header"><span class="header-text">Des. Unitario</span></div>
+          <div class="header-cell discount-header"><span class="header-text">Descuento</span></div>
+          <div class="header-cell total-discount-header"><span class="header-text">Des. Total</span></div>
+          <div class="header-cell total-header"><span class="header-text">Total</span></div>
+          <div class="header-cell actions-header">
+            <button class="delete-button" type="button" aria-label="Delete item">
+              <img
+                src="https://api.builder.io/api/v1/image/assets/TEMP/6fb58dac91d329b7be96086ef0dc7f5d2b919efe?width=40"
+                alt="" class="delete-icon" />
+            </button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </mat-tab>
+
+  <!-- Pestaña 3: Formas de Pago -->
+  <mat-tab>
+    <ng-template mat-tab-label>
+      <span class="step-badge" [class.active]="currentStep === 3">3</span>
+      <span>Formas de Pago</span>
+    </ng-template>
+
+    <section class="tab-content" [formGroup]="formPagos">
+      <section class="form-title">
+        <h1 class="main-title">Forma de Pago</h1>
+      </section>
+
+      <section class="payment-method-section">
+        <label class="payment-label">Pago:</label>
+        <div class="payment-input-container">
+          <input class="payment-input-field" type="text" formControlName="metodoPago" />
+          <span class="payment-placeholder">Sin utilización del sistema financiero</span>
+          <div class="input-indicator">
+            <div class="indicator-line"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="payment-details">
+        <header class="table-header">
+          <div class="detail-column"><span class="column-title">Detalle:</span></div>
+          <div class="term-column"><span class="column-title">Plazo</span></div>
+          <div class="time-column"><span class="column-title">Tiempo</span></div>
+          <div class="value-column"><span class="column-title">Valor</span></div>
+          <div class="action-column"></div>
+        </header>
+
+        <div class="table-separator"></div>
+
+        <article class="payment-row">
+          <div class="detail-cell"><span class="payment-method">{{ formPagos.value.metodoPago }}</span></div>
+          <div class="term-cell"><input class="fi-input" type="text" formControlName="plazo"></div>
+          <div class="time-cell"><input class="fi-input" type="text" formControlName="tiempo"></div>
+          <div class="value-cell"><input class="fi-input" type="number" formControlName="valor"></div>
+          <div class="action-cell"></div>
+        </article>
+      </section>
+
+      <aside class="balance-summary">
+        <div class="balance-container">
+          <div class="balance-label-container"><span class="balance-label">Saldo Pendiente</span></div>
+          <div class="balance-amount-container">
+            <span class="balance-amount">
+              $ {{ formTotales.get('saldoPendiente')?.value | number:'1.2-2' }}
+            </span>
+          </div>
+        </div>
+      </aside>
+
+      <footer class="action-buttons">
+        <button class="back-button" type="button" (click)="currentStep = 2">
+          <svg width="11" height="13" viewBox="0 0 11 13" fill="none" xmlns="http://www.w3.org/2000/svg"
+               class="back-arrow">
+            <path d="M10 1L1 6.46821L10 12" stroke="#8095B5" stroke-width="1.5" stroke-linecap="round"
+                  stroke-linejoin="round"></path>
+          </svg>
+          <span class="button-text">Regresar</span>
+        </button>
+
+        <button class="cancel-button" type="button" (click)="limpiarCliente()">
+          <span class="button-text">Cancelar</span>
+        </button>
+
+        <button class="generate-button" type="button" (click)="onGenerateInvoice()">
+          <span class="button-text">Generar Factura</span>
+        </button>
+      </footer>
+
+    </section>
+  </mat-tab>
+</mat-tab-group>
+<!-- Contenedor a dos columnas -->
+<!-- Contenedor a dos columnas -->
+<!-- GRID EXTERIOR: contenido principal (izq) + sidebar Totales (der) -->
+<div class="values-layout">
+
+  <!-- CONTENIDO PRINCIPAL: GRID INTERIOR con 2 tarjetas -->
+  <div class="main-cards-grid">
+
+    <!-- IZQ: Caja -->
+    <section class="box-section" aria-labelledby="caja-title" [formGroup]="formCaja">
+      <header class="main-title-section">
+    <h1 class="main-title">Caja</h1>
+  </header>
+      <!-- Invoice fields row -->
+    <div class="invoice-fields-row">
+      <div class="field-group">
+        <label for="factura" class="field-label">Factura:</label>
+        
+      </div>
+
+      <div class="field-group">
+        <label for="p-emision" class="field-label">P. Emisión:</label>
+        <div class="input-wrapper">
+            <input
+            id="p-emision"
+            type="text"
+            class="text-input"
+            formControlName="puntoEmision"
+            placeholder="001"
+            aria-label="Punto de emisión" style="font-size: 20px;height: 40px;font-weight: 700;color:#F26334;" readonly>
+          <div class="input-cursor"></div>
+        </div>
+      </div>
+
+      <div >
+        <label for="caja-field" class="field-label">Caja:</label>
+        <div class="input-wrapper">
+          <input
+            id="caja-field"
+            type="text"
+            class="text-input"
+            formControlName="caja"
+            placeholder="001"
+            aria-label="Número de caja" style="font-size: 20px;height: 40px;font-weight: 700;color:#F26334;" readonly>
+          <div class="input-cursor"></div>
+        </div>
+      </div>
+
+      <div >
+        <label for="secuencial" class="field-label">Secuencial:</label>
+        <div class="input-wrapper">
+          <input
+            id="secuencial"
+            type="text"
+            class="text-input"
+            formControlName="secuencial"
+            placeholder="000055550"
+            aria-label="Número secuencial" style="font-size: 20px;height: 40px;font-weight: 700;color:#F26334;" readonly>
+          <div class="input-cursor"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Combined fields input -->
+    
+
+    <!-- Document reference fields -->
+    <div class="document-references">
+      <div class="field-group">
+        <label for="orden-compra" class="field-label">Orden Compra:</label>
+        <div class="input-wrapper">
+          <input
+            id="orden-compra"
+            type="text"
+            class="text-input"
+            placeholder="texto"
+            aria-label="Número de orden de compra">
+          <div class="input-cursor"></div>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label for="guia-remision" class="field-label">Guía Remisión:</label>
+        <div class="input-wrapper">
+          <div class="input-background"></div>
+          <input
+            id="guia-remision"
+            type="text"
+            class="text-input"
+            placeholder="texto"
+            aria-label="Número de guía de remisión">
+          <div class="input-cursor"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Observation fields -->
+    <div class="observation-section">
+      <label for="observacion-1" class="observation-label">Observación:</label>
+      <div class="observation-input-wrapper">
+        <div class="observation-input-background"></div>
+        <input
+          id="observacion-1"
+          type="text"
+          class="observation-input"
+          placeholder="texto"
+          aria-label="Primera observación">
+        <div class="observation-input-cursor"></div>
+      </div>
+
+      
+    </div>
+    </section>
+    
+
+    <!-- DER (dentro del área principal): Detalle de Valores -->
+     <section class="values-section totales-card values-section--grid"
+           aria-labelledby="values-title"
+           [formGroup]="formTotales">
+    <header class="values-header">
+      <h2 id="values-title" class="values-title">Detalles de Valores</h2>
+    </header>
+
+   
+
+    <div class="value-row">
+      <div class="value-label-wrapper"><span class="value-label">Sub Total:</span></div>
+      <div class="value-amount-wrapper"><input class="fi-input" formControlName="subtotal" readonly></div>
+    </div>
+    <div class="value-row">
+      <div class="value-label-wrapper"><span class="value-label">Descuento:</span></div>
+      <div class="value-amount-wrapper"><input class="fi-input" formControlName="descuento" readonly></div>
+    </div>
+    <div class="value-row">
+      <div class="value-label-wrapper"><span class="value-label">Valor Sin IVA:</span></div>
+      <div class="value-amount-wrapper"><input class="fi-input" formControlName="valorSinIva" readonly></div>
+    </div>
+    <div class="value-row">
+      <div class="value-label-wrapper"><span class="value-label">Valor con IVA:</span></div>
+      <div class="value-amount-wrapper"><input class="fi-input" formControlName="valorConIva" readonly></div>
+    </div>
+    <div class="value-row">
+      <div class="value-label-wrapper"><span class="value-label">Valor IVA:</span></div>
+      <div class="value-amount-wrapper"><input class="fi-input" formControlName="iva" readonly></div>
+    </div>
+
+    <div class="total-section">
+      <div class="total-wrapper">
+        <div class="total-content">
+          <div class="total-label-wrapper"><span class="total-label">TOTAL:</span></div>
+          <div class="total-amount-wrapper"><input class="fi-input" formControlName="total" readonly></div>
+        </div>
+        <div class="total-borders">
+          <div class="total-border-top"></div>
+          <div class="total-border-bottom"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="value-row">
+      <div class="value-label-wrapper"><span class="value-label">Saldo Pendiente:</span></div>
+      <div class="value-amount-wrapper"><input class="fi-input" formControlName="saldoPendiente" readonly></div>
+    </div>
+  </section>
+
+  </div><!-- /main-cards-grid -->
+
+  <!-- SIDEBAR DERECHA: Totales -->
+ 
+</div>
+

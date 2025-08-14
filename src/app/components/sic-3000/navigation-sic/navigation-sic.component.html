@@ -60,12 +60,12 @@
           </mat-expansion-panel-header>
           <mat-expansion-panel>
             <mat-expansion-panel-header>
-              <mat-panel-title>
+              <mat-panel-title >
                 <span *ngIf="isExpanded" class="menu-text">Facturación</span>
               </mat-panel-title>
             </mat-expansion-panel-header>
             <!-- Nivel 3: Facturacion -->
-            <a mat-list-item routerLink="">
+            <a mat-list-item [routerLink]="'/sic-3000/findividual'" routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Facturación Individual</span>
             </a>
             <a mat-list-item routerLink="">

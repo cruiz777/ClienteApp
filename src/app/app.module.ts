@@ -81,7 +81,8 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     HotTableModule,
     SharedModule,
     AgGridModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    BrowserAnimationsModule
   ],
   providers: [
     { provide: LocationStrategy, useClass: HashLocationStrategy }

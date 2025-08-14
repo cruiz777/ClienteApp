@@ -27,4 +27,17 @@ export class GrupoEmpresaService {
       })))
     );
   }
+
+   obtenerGrupoBasicoPorId(id: number): Observable<{ codigo: string; nombre: string }> {
+  return this.http.get<any>(`${this.apiUrl}${id}`).pipe(
+    map(resp => {
+      const d = resp.data;
+      return {
+        codigo: d.codigo,
+        nombre: d.nombre
+      };
+    })
+  );
+}
+
 }
