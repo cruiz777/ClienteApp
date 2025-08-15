@@ -1,5 +1,5 @@
 import { Component, OnInit, AfterViewInit, ChangeDetectorRef } from '@angular/core';
-import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
 @Component({
   selector: 'app-productos-sic',
@@ -8,38 +8,28 @@ import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 })
 export class ProductosSicComponent implements OnInit, AfterViewInit {
 
-  /** Tab activo (asegura primer tab visible de inmediato) */
   selectedTab = 0;
 
-  /** Catálogos (combos) usados en Tab 1 */
+  // Catálogos (Tab 1)
   unidadesVenta   = ['Unidad', 'Caja', 'Docena', 'Paquete', 'Litro'];
   tiposProducto   = ['Bien', 'Servicio', 'Medicamento', 'Insumo'];
   presentaciones  = ['Botella', 'Caja', 'Bolsa', 'Blíster', 'Granel'];
   clasesProducto  = ['A', 'B', 'C'];
 
-  /** Formularios */
-  form!: FormGroup;             // Tab 1: Datos Generales
-  adicionalForm!: FormGroup;    // Tab 2: Datos Adicionales (nuevo)
-  proveedorForm!: FormGroup;    // Tab 5: Proveedor
+  // IVA para Tab 3
+  iva = 0.12;
 
-  /** TAB 5: columnas de la tabla */
-  colsTab5: string[] = [
-    'proveedor', 'costoCompra', 'unidadCompra', 'fechaIngreso',
-    'costoNeto', 'consignacion', 'descuentoProducto', 'descuentos'
-  ];
+  // Formularios
+  form!: FormGroup;          // Tab 1
+  adicionalForm!: FormGroup; // Tab 2
+  preciosForm!: FormGroup;   // Tab 3
 
-  constructor(
-    private fb: FormBuilder,
-    private cdr: ChangeDetectorRef
-  ) {}
-
-  // ================= Ciclo de vida =================
+  constructor(private fb: FormBuilder, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
-    // Primer tab seleccionado desde el arranque
     this.selectedTab = 0;
 
-    // ====== Tab 1: Datos Generales
+    // ===== Tab 1
     this.form = this.fb.group({
       descripcion: ['', [Validators.required, Validators.maxLength(200)]],
       codigoInterno: [''],
@@ -75,7 +65,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       fechaModificacion: [null],
     });
 
-    // ====== Tab 2: Datos Adicionales (nuevo)
+    // ===== Tab 2
     this.adicionalForm = this.fb.group({
       color: [''],
       sabor: [''],
@@ -83,16 +73,12 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       medida1: [''],
       medida2: [''],
       medida3: [''],
-
       pasillo: [''],
       columna: [''],
       nivel: [''],
       tamanoTalla2: [''],
-
       observacion: [''],
-
       registroSanitario: [''],
-
       ctaVentas: [''],
       ctaInventarios: [''],
       ctaCostos: [''],
@@ -101,86 +87,135 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       ctaGastos: [''],
     });
 
-    // ====== Tab 5: Proveedor
-    this.proveedorForm = this.fb.group({
-      codigoInternoTab5: [''],
-      codigoBarrasTab5: [''],
-      descripcionTab5: [''],
-      filasTab5: this.fb.array([] as FormGroup[])
+    // ===== Tab 3
+    this.preciosForm = this.fb.group({
+      // Precios
+      precioOficial: [0],
+      precioRedMsp: [0],
+      pvpActualIva: [0, [Validators.min(0)]],               // base SIN IVA
+      pvpAnteriorMasIva: [{ value: 0, disabled: true }],
+      fechaAnteriorModificarPrecio: [null],
+      pvpActualMasIva: [{ value: 0, disabled: true }],      // calculado
+      fechaModificarPrecio: [null],
+      margenUtilidad: [{ value: 0, disabled: true }],       // calculado %
+
+      // Costos
+      costoSuministro: [0],
+      costoProducto: [0],
+      costoPromedio: [0],
+      precioCompraAnterior: [0],
+      fechaAnteriorModificarCompra: [null],
+      precioCompraActual: [0],
+      fechaModificarCompra: [null],
+      recepcionPorcentaje: [0]
     });
 
-    for (let i = 0; i < 4; i++) this.filasTab5.push(this.crearFila());
+    // Cálculos automáticos Tab 3
+    this.preciosForm.get('pvpActualIva')!.valueChanges.subscribe(() => this.recalcularPvpConIva());
+    this.preciosForm.get('costoProducto')!.valueChanges.subscribe(() => this.recalcularMargen());
+    this.preciosForm.get('costoPromedio')!.valueChanges.subscribe(() => this.recalcularMargen());
+    this.preciosForm.get('pvpActualMasIva')!.valueChanges.subscribe(() => this.recalcularMargen());
   }
 
-  ngAfterViewInit(): void {
-    // Fuerza render inmediato (evita depender de interacción de mouse)
-    this.cdr.detectChanges();
+  ngAfterViewInit(): void { this.cdr.detectChanges(); }
+
+  // ===== Getters para botonera genérica =====
+  get currentForm(): FormGroup | null {
+    switch (this.selectedTab) {
+      case 0: return this.form;
+      case 1: return this.adicionalForm;
+      case 2: return this.preciosForm;
+      default: return null;   // Tab 4 sin formulario
+    }
+  }
+  get currentFormInvalid(): boolean { return !(this.currentForm && this.currentForm.valid); }
+
+  // ===== Utilidades Tab 3 =====
+  private fix(n: number, d = 4): number {
+    return Number((Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d));
+  }
+  formatDecimal(controlName: string, dec = 4): void {
+    const ctrl = this.preciosForm.get(controlName);
+    if (!ctrl) return;
+    const n = Number(ctrl.value);
+    ctrl.setValue(this.fix(isFinite(n) ? n : 0, dec), { emitEvent: true });
+  }
+  recalcularPvpConIva(): void {
+    const base = Number(this.preciosForm.getRawValue().pvpActualIva) || 0;
+    const conIva = base * (1 + this.iva);
+    this.preciosForm.get('pvpActualMasIva')!.setValue(this.fix(conIva, 4), { emitEvent: false });
+
+    const anterior = Number(this.preciosForm.getRawValue().pvpAnteriorMasIva) || 0;
+    if (anterior <= 0) {
+      this.preciosForm.get('pvpAnteriorMasIva')!.setValue(this.fix(conIva, 4), { emitEvent: false });
+    }
+    this.recalcularMargen();
+  }
+  recalcularMargen(): void {
+    const pvpConIva = Number(this.preciosForm.getRawValue().pvpActualMasIva) || 0;
+    const costo = Number(this.preciosForm.getRawValue().costoProducto) || 0;
+    const margen = pvpConIva > 0 ? ((pvpConIva - costo) / pvpConIva) * 100 : 0;
+    this.preciosForm.get('margenUtilidad')!.setValue(this.fix(margen, 4), { emitEvent: false });
   }
 
-  // ================= Getters / helpers =================
-
-  get filasTab5(): FormArray<FormGroup> {
-    return this.proveedorForm.get('filasTab5') as FormArray<FormGroup>;
+  // ===== Botones genéricos (mismos en todos los tabs) =====
+  onNuevo(): void {
+    switch (this.selectedTab) {
+      case 0:
+        this.form.reset({ activo: true });
+        break;
+      case 1:
+        this.adicionalForm.reset({ productoGasto: false });
+        break;
+      case 2:
+        const hoy = null;
+        this.preciosForm.reset({
+          precioOficial: 0,
+          precioRedMsp: 0,
+          pvpActualIva: 0,
+          pvpAnteriorMasIva: 0,
+          fechaAnteriorModificarPrecio: hoy,
+          pvpActualMasIva: 0,
+          fechaModificarPrecio: hoy,
+          margenUtilidad: 0,
+          costoSuministro: 0,
+          costoProducto: 0,
+          costoPromedio: 0,
+          precioCompraAnterior: 0,
+          fechaAnteriorModificarCompra: hoy,
+          precioCompraActual: 0,
+          fechaModificarCompra: hoy,
+          recepcionPorcentaje: 0
+        });
+        break;
+      default:
+        break;
+    }
   }
 
-  private crearFila(): FormGroup {
-    return this.fb.group({
-      proveedor: [''],
-      costoCompra: [null],
-      unidadCompra: [''],
-      fechaIngreso: [null],
-      costoNeto: [null],
-      consignacion: [false],
-      descuentoProducto: [null],
-      descuentos: ['']
-    });
+  onGrabar(): void {
+    switch (this.selectedTab) {
+      case 0:
+        if (this.form.invalid) return;
+        console.log('Guardar (Tab 1 - Datos Generales)', this.form.value);
+        break;
+      case 1:
+        if (this.adicionalForm.invalid) return;
+        console.log('Guardar (Tab 2 - Datos Adicionales)', this.adicionalForm.value);
+        break;
+      case 2:
+        if (this.preciosForm.invalid) return;
+        console.log('Guardar (Tab 3 - Precios/Costos)', this.preciosForm.getRawValue());
+        break;
+      default:
+        console.log('Guardar (Tab 4 - Estructura y Stock)');
+        break;
+    }
   }
 
-  trackByValue = (_: number, value: string) => value;
-  trackByIndex = (_: number, i: number) => i;
+  onImprimir(): void { window.print(); }
+  onAdjuntar(): void { history.back(); }
 
-  // ================= Acciones (Tab 1) =================
-  nuevo(): void {
-    const keep = { descripcion: this.form.value.descripcion };
-    this.form.reset({ ...keep, activo: true });
-  }
-
-  grabar(): void {
-    if (this.form.invalid) return;
-    console.log('Guardar (Tab 1 - Datos Generales)', this.form.value);
-  }
-
-  imprimir(): void { window.print(); }
-  adjuntar(): void { console.log('Adjuntar archivo (Tab 1)'); }
-
-  // ================= Acciones (Tab 2) =================
-  nuevoTab2(): void {
-    this.adicionalForm.reset({
-      productoGasto: false
-    });
-  }
-
-  grabarTab2(): void {
-    if (this.adicionalForm.invalid) return;
-    console.log('Guardar (Tab 2 - Datos Adicionales)', this.adicionalForm.value);
-  }
-
-  // ================= Acciones (Tab 5) =================
-  nuevoTab5(): void {
-    this.proveedorForm.patchValue({
-      codigoInternoTab5: '',
-      codigoBarrasTab5: '',
-      descripcionTab5: ''
-    });
-    this.filasTab5.clear();
-    for (let i = 0; i < 4; i++) this.filasTab5.push(this.crearFila());
-  }
-
-  grabarTab5(): void {
-    if (this.proveedorForm.invalid) return;
-    console.log('Guardar (Tab 5 - Proveedor)', this.proveedorForm.value);
-  }
-
-  imprimirTab5(): void { window.print(); }
-  adjuntarTab5(): void { console.log('Adjuntar (Tab 5)'); }
+  // TrackBy para *ngFor
+  trackByValue = (_: number, v: string) => v;
 }

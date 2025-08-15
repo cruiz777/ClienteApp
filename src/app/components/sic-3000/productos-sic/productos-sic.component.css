@@ -29,7 +29,6 @@
   font-weight: 700;
   grid-column: 1 / -1;
 }
-
 /* Descripción fija */
 .descripcion-static{
   display:grid;
@@ -42,9 +41,7 @@
 /* Etiquetas genéricas */
 .lbl{ font-size:12px; color:var(--texto-suave); margin-right:8px; white-space:nowrap; }
 
-/* =========================================================
-   TABS GLN (sin animaciones/ripple)
-   ========================================================= */
+/* ===== TABS (sin animaciones/ripple) ===== */
 .tabs ::ng-deep .mat-mdc-tab-header {
   background: #f4f6f8;
   border: 1px solid var(--borde);
@@ -57,7 +54,6 @@
 .tabs ::ng-deep .mdc-tab__text-label { transition: none !important; }
 .tabs ::ng-deep .mat-mdc-tab-header-pagination-controls-enabled .mat-mdc-tab-header-pagination { display:none!important; }
 .tabs ::ng-deep .mat-mdc-tab-header .mat-mdc-tab-indicator { display:none!important; }
-
 /* Pestañas */
 .tabs ::ng-deep .mat-mdc-tab {
   border-radius: 8px 8px 0 0;
@@ -70,7 +66,7 @@
 .tabs ::ng-deep .mat-mdc-tab.mdc-tab--active { background: var(--azul); }
 .tabs ::ng-deep .mat-mdc-tab.mdc-tab--active .mdc-tab__text-label { color:#fff; }
 
-/* Contenido del tab */
+/* ===== Contenido del tab ===== */
 .tab-body{
   border:1px solid var(--borde);
   border-top:0;
@@ -78,9 +74,7 @@
   padding:18px;
 }
 
-/* =========================================================
-   Formularios y grillas (Tab 1 base)
-   ========================================================= */
+/* ===== Formularios y grillas (Tab 1 base) */
 .form-grid-3{
   display:grid;
   grid-template-columns:1fr 1fr 1fr;
@@ -96,7 +90,6 @@
 }
 .field-row.generar{ grid-template-columns:70px auto; }
 
-.mat-mdc-form-field{ width:100%; }
 .field-sm{ max-width:230px; }
 .field-md{ max-width:320px; }
 
@@ -113,7 +106,6 @@
 .op-col{ display:grid; grid-auto-rows:32px; align-content:start; padding-right:24px; }
 .op-col + .op-col{ border-left:1px solid var(--borde); padding-left:24px; }
 .op-col .lbl{ grid-column:1 / -1; font-weight:600; color:#374151; margin:0 0 6px; }
-.op-col mat-checkbox{ margin:0; display:flex; align-items:center; }
 
 /* Foto / placeholder */
 .foto{ margin-top:8px; display:flex; justify-content:flex-start; }
@@ -129,55 +121,28 @@
 }
 .fechas-acciones .acciones{ display:flex; align-items:center; gap:10px; justify-content:flex-start; }
 
-/* Línea sutil Material -> GLN */
-.mdc-line-ripple::after,
-.mdc-line-ripple::before{ background-color:#ccd5e2 !important; }
-.mat-mdc-form-field-subscript-wrapper{ display:none; }
-
-/* =========================================================
-   TAB 2: Datos Adicionales / Características
-   ========================================================= */
-/* Ajustes generales */
+/* ===== Ajustes generales Tab 2 ===== */
 .tab-body .lbl { display:inline-block; min-width:110px; color:var(--texto-suave); }
 .tab-body .input-line { width:100%; }
 
 /* Panel “Genérico” (tabla) */
-.t2-generic .pc-panel {
-  padding: 0;
-  border: 1px solid #dbe6f3;
-  border-radius: 8px;
-  background:#fff;
-}
+.t2-generic .pc-panel { padding: 0; border: 1px solid #dbe6f3; border-radius: 8px; background:#fff; }
 .t2-generic table { width:100%; border-collapse:separate; border-spacing:0; }
 .t2-generic thead th {
-  background:#f7fafc;
-  border-bottom:1px solid #e6edf6;
-  font-weight:600; font-size:13px;
-  padding:8px 10px; color:#27374A;
+  background:#f7fafc; border-bottom:1px solid #e6edf6;
+  font-weight:600; font-size:13px; padding:8px 10px; color:#27374A;
 }
-.t2-generic tbody td {
-  height:28px; border-bottom:1px solid #f1f5fb; padding:6px 10px;
-}
+.t2-generic tbody td { height:28px; border-bottom:1px solid #f1f5fb; padding:6px 10px; }
 
 /* Grupo “Ubicación” */
 .t2-ubicacion .lbl { min-width:auto; }
 
 /* Observación */
-.t2-observ .pc-panel {
-  border: 1px solid #dbe6f3;
-  border-radius: 8px;
-  background: #fff;
-}
-.t2-observ textarea {
-  border:0; outline:0; resize:none; background:transparent;
-  padding:8px 10px; font:inherit; color:#111827;
-}
+.t2-observ .pc-panel { border: 1px solid #dbe6f3; border-radius: 8px; background: #fff; }
+.t2-observ textarea { border:0; outline:0; resize:none; background:transparent; padding:8px 10px; font:inherit; color:#111827; }
 
 /* Divisor suave dentro del tab */
-.tab-body hr {
-  border:0; height:1px; background: linear-gradient(90deg,#e9eff7,transparent);
-  margin:10px 0 14px;
-}
+.tab-body hr { border:0; height:1px; background: linear-gradient(90deg,#e9eff7,transparent); margin:10px 0 14px; }
 
 /* Cuentas contables */
 .t2-cc .input-line::placeholder { color:#9aa8be; }
@@ -185,88 +150,18 @@
 .t2-cc .form-check-input { margin-top:0; }
 .t2-cc .lbl.mb-0 { transform: translateY(1px); }
 
-/* Acciones (pie del tab 2) */
-.t2-actions .mat-mdc-button-base { min-width:110px; }
-
-/* =========================================================
-   TAB 3: Precio / Costo
-   ========================================================= */
-.pc-grid{ display:grid; grid-template-columns:1fr 1fr; gap:28px; align-items:start; }
-.pc-panel{ border:1px solid var(--borde); border-radius:8px; padding:12px; background:#fff; }
-.pc-panel.full{ grid-column:1 / -1; }
-.pc-title{ margin:0 0 10px; font-size:14px; font-weight:700; color:#1f2a37; }
-
-.pc-row{ display:grid; grid-template-columns:150px 1fr; align-items:center; gap:10px; margin-bottom:10px; }
-.pc-row.duo{ grid-template-columns:1fr 1fr; }
-.pc-row.duo .grp{ display:grid; grid-template-columns:150px 1fr; align-items:center; gap:10px; }
-.pc-row.quad{ grid-template-columns:150px 180px 150px 180px; }
-.pc-row.pair{ grid-template-columns:150px 180px; }
-
-.xs{ max-width:180px; }
-.sm{ max-width:260px; }
-
-/* Tintes suaves */
-.tint-blue  .mat-mdc-form-field-flex{ background:#eef4f7; border-radius:6px; }
-.tint-orange .mat-mdc-form-field-flex{ background:#fde9d2; border-radius:6px; }
-.tint-green .mat-mdc-form-field-flex{ background:#e4f6ea; border-radius:6px; }
-
-/* Mat form-field reestilizado a GLN */
-.mat-mdc-form-field-appearance-outline .mat-mdc-form-field-outline {
-  --mdc-outlined-text-field-outline-color:#ccd5e2;
+/* ===== Acciones (estilo suave para todos los tabs) ===== */
+.pc-actions { display:flex; gap:28px; justify-content:center; align-items:center; padding:8px 0 0; }
+.btn-soft {
+  appearance: none; border: 0; background: #f2f7fd; color: #0f3770;
+  font-weight: 700; letter-spacing:.2px; border-radius: 12px;
+  padding: 10px 22px; box-shadow: 0 0 0 1px rgba(15,55,112,.06) inset;
+  transition: background .15s ease, transform .05s ease, box-shadow .15s ease;
 }
-.mat-mdc-form-field-appearance-outline .mat-mdc-form-field-outline-thick {
-  --mdc-outlined-text-field-outline-color: var(--azul);
-}
-
-/* Acciones */
-.pc-actions{ display:flex; gap:12px; justify-content:center; margin-top:14px; }
-.pc-actions button{ min-width:100px; font-weight:500; }
-
-/* =========================================================
-   TAB 5: Proveedor (tabla estilo limpio)
-   ========================================================= */
-.t5{ display:grid; grid-template-rows:auto auto 1fr auto; gap:16px; padding:4px 0 24px; }
-.t5-title{ color:var(--azul); font-weight:700; margin:0 0 6px; }
-
-.t5-head{ display:grid; grid-template-columns:380px 380px 1fr; gap:12px 36px; align-items:end; }
-.t5-head .field{ display:grid; grid-template-columns:130px 1fr; gap:8px; align-items:center; }
-.t5 .lbl{ font-size:12px; color:#6b7280; white-space:nowrap; }
-.t5-head .w-sm{ max-width:280px; }
-.t5-head .w-xl{ max-width:100%; }
-
-.t5-table{
-  display:grid;
-  grid-template-rows:auto;
-  background:#fff;
-  border:1px solid #e7edf6;
-  border-radius:10px;
-  overflow:hidden;
-  box-shadow:0 1px 3px rgba(16,24,40,.05), 0 1px 2px rgba(16,24,40,.06);
-}
-.t5-table .mat-mdc-table{ width:100%; background:transparent; border-collapse:separate; border-spacing:0; }
-.t5-table .mat-mdc-header-row{ background:#fff; height:44px; border-bottom:1px solid #e7edf6; }
-.t5-table .mat-mdc-header-cell{ padding:10px 14px; font-weight:600; font-size:13px; color:#27374A; }
-.t5-table .mat-mdc-row{ background:#fff; }
-.t5-table .mat-mdc-cell{
-  padding:8px 14px; font-size:13px; color:#1f2937;
-  border-bottom:1px solid #eef2f7;
-}
-.t5-table .mat-mdc-row:hover{ background:#f8fafc; }
-.t5-table td input[type="text"],
-.t5-table td input[type="number"]{
-  width:100%; border:0; outline:0; background:transparent; padding:6px 0; font:inherit;
-}
-.t5-table td input::placeholder{ color:#98a1b3; }
-.t5-table .mat-mdc-form-field{ width:100%; }
-.t5-table .mat-mdc-text-field-wrapper{ height:36px; }
-.t5-table .mat-mdc-form-field-infix{ padding-top:6px; padding-bottom:6px; }
-.t5-table .mat-mdc-form-field-subscript-wrapper{ display:none; }
-.t5-table .mat-mdc-form-field-outline{ --mdc-outlined-text-field-outline-color:#d8e3f5; }
-.cell-center{ text-align:center; }
-.t5-table .mat-mdc-checkbox{ vertical-align:middle; }
-
-.t5-actions{ display:flex; justify-content:center; gap:18px; margin-top:18px; }
-.t5-actions button{ min-width:110px; }
+.btn-soft:hover:not(:disabled) { background:#eaf1fb; transform:translateY(-1px); }
+.btn-soft:active:not(:disabled) { transform:translateY(0); }
+.btn-soft:focus-visible { outline:2px solid rgba(31,119,237,.28); outline-offset:2px; }
+.btn-soft:disabled { background:#f6f7f9; color:#aeb6c3; box-shadow:0 0 0 1px rgba(0,0,0,.04) inset; cursor:not-allowed; }
 
 /* ===== Helpers ===== */
 .label-sm{ font-size:12px; color:#6b7280; }
@@ -281,6 +176,7 @@
 .input-line:focus{ border-bottom-color:var(--azul); box-shadow:none; }
 .input-line::placeholder{ color:#9aa8be; font-size:12px; }
 
+/* Select nativo estilizado */
 .select-wrap{ position:relative; }
 .select-line{
   appearance:none; -webkit-appearance:none; -moz-appearance:none;
@@ -290,128 +186,25 @@
 .select-line:focus{ border-bottom-color:var(--azul); outline:none; }
 .select-wrap::after{
   content:""; position:absolute; right:6px; bottom:12px; width:8px; height:8px;
-  border-right:2px solid #94a3b8; border-bottom:2px solid #94a3b8; transform:rotate(45deg);
-  pointer-events:none;
+  border-right:2px solid #94a3b8; border-bottom:2px solid #94a3b8; transform:rotate(45deg); pointer-events:none;
 }
+
+/* Tab 3: Tintes como en la maqueta */
+.input-line.tint-blue   { background:#eaf2ff; }
+.input-line.tint-orange { background:#fff2e0; }
+.input-line.tint-green  { background:#e9f7ef; }
+/* Readonly más apagado (gris) */
+.input-line[readonly]   { background:#f5f7fb; color:#6b7a90; }
 
 /* ===== Responsive ===== */
 @media (max-width:980px){
   .form-grid-3{ grid-template-columns:1fr 1fr; }
   .opciones-grid{ grid-template-columns:1fr 1fr; }
-  .pc-grid{ grid-template-columns:1fr; }
-  .pc-row.quad{ grid-template-columns:150px 180px 150px 180px; }
-  .t5-head{ grid-template-columns:1fr 1fr; }
-  .t5-head .field:nth-child(3){ grid-column:1 / -1; }
 }
 @media (max-width:640px){
   .form-grid-3{ grid-template-columns:1fr; }
   .field-row{ grid-template-columns:1fr; }
   .field-sm,.field-md{ max-width:100%; }
-
   .opciones-grid{ grid-template-columns:1fr; }
   .op-col + .op-col{ border-left:0; padding-left:0; padding-top:12px; border-top:1px solid var(--borde); }
-
-  .pc-row,
-  .pc-row.duo,
-  .pc-row.duo .grp,
-  .pc-row.quad,
-  .pc-row.pair{ grid-template-columns:1fr; }
-  .xs,.sm{ max-width:100%; }
-
-  .t5-head{ grid-template-columns:1fr; gap:10px 16px; }
-  .t5-head .field{ grid-template-columns:1fr; }
-  .t5-head .w-sm,.t5-head .w-xl{ max-width:100%; }
 }
-
-/* =========================================================
-   Unificación azul GLN y botones
-   ========================================================= */
-.text-primary { color: var(--azul) !important; }
-
-:host ::ng-deep .mat-mdc-outlined-button.mat-primary,
-:host ::ng-deep .mat-mdc-unelevated-button.mat-primary,
-:host ::ng-deep .mat-mdc-raised-button.mat-primary,
-:host ::ng-deep .mat-mdc-stroked-button.mat-primary {
-  --mdc-theme-primary: var(--azul);
-  color: var(--azul) !important;
-  border-color: var(--azul) !important;
-}
-:host ::ng-deep .mat-mdc-unelevated-button.mat-primary,
-:host ::ng-deep .mat-mdc-raised-button.mat-primary {
-  background: var(--azul) !important;
-  color: #fff !important;
-}
-
-/* Botones planos de acciones en pie */
-.tab-body .mat-mdc-button-base{ min-width:110px; }
-
-/* Quitar transiciones globales en tabs */
-.tabs ::ng-deep * { transition: none !important; }
-
-/* =========================================================
-   GLN: Combos / Selects (Material y nativos)
-   ========================================================= */
-
-/* MAT-SELECT (panel desplegado) */
-:host ::ng-deep .mat-mdc-select-panel {
-  background: #fff !important;
-  border: 1px solid #e7edf6 !important;
-  border-radius: 8px !important;
-  box-shadow: 0 8px 20px rgba(16,24,40,.12), 0 2px 6px rgba(16,24,40,.08) !important;
-  padding: 4px 0 !important;
-}
-
-/* Texto de opciones */
-:host ::ng-deep .mat-mdc-option .mdc-list-item__primary-text {
-  font-size: 13px !important;
-  color: #1f2937 !important;
-}
-
-/* Hover de opción */
-:host ::ng-deep .mat-mdc-option:hover,
-:host ::ng-deep .mat-mdc-option.mat-mdc-option-active:not(.mdc-list-item--selected) {
-  background: #eef4f7 !important;
-}
-
-/* Opción seleccionada: texto + icono (check) en azul GLN */
-:host ::ng-deep .mat-mdc-option.mdc-list-item--selected .mdc-list-item__primary-text {
-  color: var(--azul) !important;
-  font-weight: 600 !important;
-}
-:host ::ng-deep .mat-mdc-option.mdc-list-item--selected .mdc-list-item__end,
-:host ::ng-deep .mat-mdc-option.mdc-list-item--selected .mat-icon {
-  color: var(--azul) !important;
-}
-
-/* Separadores sutiles entre opciones */
-:host ::ng-deep .mat-mdc-select-panel .mat-mdc-option:not(:last-child) {
-  border-bottom: 1px solid #f2f5fa;
-}
-
-/* TRIGGER (select cerrado) */
-:host ::ng-deep .mat-mdc-form-field-appearance-outline .mat-mdc-form-field-outline {
-  --mdc-outlined-text-field-outline-color: #ccd5e2 !important;
-}
-:host ::ng-deep .mat-mdc-form-field-appearance-outline.mat-focused .mat-mdc-form-field-outline-thick {
-  --mdc-outlined-text-field-outline-color: var(--azul) !important;
-}
-:host ::ng-deep .mat-mdc-select-value-text { color: #111827 !important; }
-:host ::ng-deep .mat-mdc-select-arrow { color: #94a3b8 !important; }
-
-/* Estado inválido */
-:host ::ng-deep .mat-mdc-form-field.mat-mdc-form-field-invalid .mat-mdc-form-field-outline-thick {
-  --mdc-outlined-text-field-outline-color: #dc3545 !important;
-}
-
-/* Sin ripple/transiciones en selects */
-:host ::ng-deep .mdc-line-ripple { display: none !important; }
-:host ::ng-deep .mat-mdc-form-field * { transition: none !important; }
-
-/* SELECT nativo (.select-line) */
-.select-line { border-bottom: 1px solid #ccd5e2; color: #111827; }
-.select-line:focus { border-bottom-color: var(--azul); outline: none; }
-.select-wrap::after { border-right: 2px solid #94a3b8; border-bottom: 2px solid #94a3b8; }
-
-/* Tamaño compacto coherente */
-:host ::ng-deep .mat-mdc-text-field-wrapper { min-height: 40px !important; }
-:host ::ng-deep .mat-mdc-form-field-infix { padding-top: 8px !important; padding-bottom: 8px !important; }
