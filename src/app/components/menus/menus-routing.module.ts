@@ -3,6 +3,9 @@ import { RouterModule, Routes } from '@angular/router';
 import { CodbarComponent } from './codbar/codbar.component';
 import { MenusComponent } from './menus.component';
 
+//GUARD de permisos
+import { PermissionGuard } from 'src/app/guards/permission.guard';
+
 // Componentes de CODBAR originales
 import { TipoClienteListComponent } from '../pages/clientes/tipo-clientes/tipo-cliente-list/tipo-cliente-list.component';
 import { TipoClienteFormComponent } from '../pages/clientes/tipo-clientes/tipo-cliente-form/tipo-cliente-form.component';
@@ -32,28 +35,38 @@ const routes: Routes = [
     path: '', 
     component: MenusComponent, // Layout principal de CODBAR
     children: [
-      // ✅ Página de inicio de CODBAR
+      // ✅ Página de inicio de CODBAR (sin guard)
       { path: '', redirectTo: 'inicio', pathMatch: 'full' },
       { path: 'inicio', component: CodbarComponent },
 
-      // ✅ MÓDULO: Ficha de Cliente - COMPLETAMENTE INTEGRADO
+      // ✅ MÓDULO: Ficha de Cliente - CON GUARDS APLICADOS
       {
         path: 'ficha-de-cliente',
         children: [
           // Dashboard/inicio de ficha cliente
-          { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
+          { path: '', redirectTo: 'listado-clientes', pathMatch: 'full' },
           
-          // 🆕 Funcionalidades principales (de pages)
-          { path: 'listado-clientes', component: ClientesComponent },
-          { path: 'nuevo-cliente', component: NuevoClienteComponent },
-          { path: 'consulta-verified', component: ProductoDetalleComponent },
-          
-          // 🆕 FUTURO: Explorador de clientes
-          // { path: 'explorador-clientes', component: ExploradorClientesComponent },
+          // 🔒 Funcionalidades principales PROTEGIDAS
+          { 
+            path: 'listado-clientes', 
+            component: ClientesComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'nuevo-cliente', 
+            component: NuevoClienteComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'consulta-verified', 
+            component: ProductoDetalleComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
           
           // Configuraciones de ficha cliente
           {
             path: 'tipo-cliente',
+            canActivate: [PermissionGuard],  // 🔒 GUARD APLICADO AL PADRE
             children: [
               { path: '', component: TipoClienteListComponent },
               { path: 'crear', component: TipoClienteFormComponent },
@@ -62,6 +75,7 @@ const routes: Routes = [
           },
           {
             path: 'grupo-cliente',
+            canActivate: [PermissionGuard],  // 🔒 GUARD APLICADO AL PADRE
             children: [
               { path: '', component: GrupoClienteListComponent },
               { path: 'crear', component: GrupoClienteFormComponent },
@@ -71,56 +85,94 @@ const routes: Routes = [
         ]
       },
 
-      // ✅ MÓDULO: Reportes 
+      // ✅ MÓDULO: Reportes - CON GUARDS APLICADOS
       {
         path: 'reportes',
         children: [
           { path: '', redirectTo: 'explorador-cliente', pathMatch: 'full' },
-          { path: 'explorador-cliente', component: ExploradorComponent },
-          { path: 'gerencia', component: GerenciaComponent }
-          // 🆕 Futuros reportes se pueden agregar aquí
-          // { path: 'reporte-ventas', component: ReporteVentasComponent },
-          // { path: 'reporte-productos', component: ReporteProductosComponent },
+          { 
+            path: 'explorador-cliente', 
+            component: ExploradorComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'gerencia', 
+            component: GerenciaComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          }
         ]
       },
 
-      // ✅ MÓDULO: Transferencia
+      // ✅ MÓDULO: Transferencia - CON GUARDS APLICADOS
       {
         path: 'transferencia',
         children: [
           { path: '', redirectTo: 'tras-prefijo', pathMatch: 'full' },
-          { path: 'tras-prefijo', component: TraspasoPrefijosComponent },
-          { path: 'tras-gtin', component: TraspasoGtinComponent },
-          { path: 'eliminar-prefijo', component: BorrarPrefijoComponent },          
+          { 
+            path: 'tras-prefijo', 
+            component: TraspasoPrefijosComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'tras-gtin', 
+            component: TraspasoGtinComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'eliminar-prefijo', 
+            component: BorrarPrefijoComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          }        
         ]
       },
 
-      // ✅ MÓDULO: Validación
+      // ✅ MÓDULO: Validación - CON GUARDS APLICADOS
       {
         path: 'validacion',
         children: [
           { path: '', redirectTo: 'validacionsri', pathMatch: 'full' },
-          { path: 'validacionsri', component: ValidacionSriListComponent },
-          { path: 'validacion-licenses', component: LicenseValidatorComponent },
-          { path: 'validacion-productos', component: ProductsLicenseValidator }
+          { 
+            path: 'validacionsri', 
+            component: ValidacionSriListComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'validacion-licenses', 
+            component: LicenseValidatorComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'validacion-productos', 
+            component: ProductsLicenseValidator,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          }
         ]
       },
 
-      // ✅ MÓDULO: Configuración General
+      // ✅ MÓDULO: Configuración General - CON GUARDS APLICADOS
       {
         path: 'configuracion',
         children: [
           { path: '', redirectTo: 'localizacion-establecimiento', pathMatch: 'full' },
           {
             path: 'localizacion-establecimiento',
+            canActivate: [PermissionGuard],  // 🔒 GUARD APLICADO AL PADRE
             children: [
               { path: '', component: TipoLocalizacionListComponent },
               { path: 'crear', component: TipoLocalizacionFormComponent },
               { path: 'editar/:id', component: TipoLocalizacionFormComponent }
             ]
           },
-          {path:'grupo-producto',component:GrupoProductoListaComponent},
-          { path: 'tipo-prefijo', component: TipoPrefijoComponent }
+          {
+            path: 'grupo-producto',
+            component: GrupoProductoListaComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'tipo-prefijo', 
+            component: TipoPrefijoComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          }
         ]
       }
     ]

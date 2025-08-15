@@ -373,11 +373,6 @@ export class DialogClienteEditarComponent implements OnInit {
   get paso4Form(): FormGroup {
     return this.formCliente.get('paso4') as FormGroup;
   }
-
-  //Permiso para poder editar el registro
-  get puedeEditar(): boolean {
-    return this.permissions.permisosFichaCliente.nuevoCliente.puedeEditar();
-  }
   
   cargarGrupos(): void {
     this.grupoService.obtenerGrupos().subscribe(data => {

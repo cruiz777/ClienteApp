@@ -43,6 +43,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { UppercaseDirective } from './directives/uppercase.directive';
 import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { ApiKeyInterceptor } from './interceptors/api-key.interceptor';
+import { SecurityInterceptor } from './interceptors/security.interceptor';
+import { SinPermisosComponent } from './guards/sin-permisos.component';
 
 export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
 
@@ -55,7 +57,8 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     CustomMessageBoxComponent,
     ConfirmDialogComponent,
     ModalImpresionComponent,
-    ResetPasswordComponent
+    ResetPasswordComponent,
+    SinPermisosComponent
   ],
   imports: [
     BrowserModule,
@@ -90,6 +93,11 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     {
       provide: HTTP_INTERCEPTORS,
       useClass: ApiKeyInterceptor,
+      multi: true
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: SecurityInterceptor,
       multi: true
     }
   ],

@@ -1,3 +1,4 @@
+<!-- MENÚ CON PERMISOS DINÁMICOS -->
 <mat-sidenav-container class="sidenav-container" [ngClass]="{
   'collapsed': !isExpanded && !isHandset,
   'mobile': isHandset
@@ -31,8 +32,8 @@
       <!-- Acordeón Principal -->
       <mat-accordion [multi]="false">
 
-        <!-- 👥 FICHA DE CLIENTE - ACORDEÓN PRINCIPAL -->
-        <mat-expansion-panel>
+        <!-- 👥 FICHA DE CLIENTE - CON VERIFICACIÓN DE PERMISOS -->
+        <mat-expansion-panel *ngIf="(menuPermisos$ | async)?.fichaCliente?.modulo">
           <mat-expansion-panel-header>
             <mat-panel-title>
               <img src="assets/icons/icon-ficha-cliente.png" class="menu-icon">
@@ -40,34 +41,28 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <!-- Dashboard -->
-          <!-- <a mat-list-item routerLink="/codbar/ficha-de-cliente/dashboard">
-            <img src="assets/icons/icon-dashboard.png" class="menu-icon">
-            <span *ngIf="isExpanded" class="menu-text">Dashboard</span>
-          </a> -->
-
-          <!-- Funcionalidades principales -->
-          <a mat-list-item routerLink="/codbar/ficha-de-cliente/nuevo-cliente">            
+          <!-- Funcionalidades principales CON PERMISOS -->
+          <a mat-list-item 
+             routerLink="/codbar/ficha-de-cliente/nuevo-cliente"
+             *ngIf="(menuPermisos$ | async)?.fichaCliente?.nuevoCliente">            
             <span *ngIf="isExpanded" class="menu-text">Nuevo Cliente</span>
           </a>
 
-          <a mat-list-item routerLink="/codbar/ficha-de-cliente/listado-clientes">            
+          <a mat-list-item 
+             routerLink="/codbar/ficha-de-cliente/listado-clientes"
+             *ngIf="(menuPermisos$ | async)?.fichaCliente?.listadoClientes">            
             <span *ngIf="isExpanded" class="menu-text">Listado de Clientes</span>
           </a>
 
-          <!-- 
-          <a mat-list-item routerLink="/codbar/ficha-de-cliente/explorador-clientes">
-            <img src="assets/icons/Ecop-explorador-clientes.png" class="menu-icon">
-            <span *ngIf="isExpanded" class="menu-text">Explorador de Cliente</span>
-          </a>
-          -->
-
-          <a mat-list-item routerLink="/codbar/ficha-de-cliente/consulta-verified">
+          <a mat-list-item 
+             routerLink="/codbar/ficha-de-cliente/consulta-verified"
+             *ngIf="(menuPermisos$ | async)?.fichaCliente?.consultaVerified">
             <span *ngIf="isExpanded" class="menu-text">Consulta Verified</span>
           </a>
 
-          <!-- SUB-ACORDEÓN: Configuración de Ficha Cliente -->
-          <mat-accordion class="sub-accordion">
+          <!-- SUB-ACORDEÓN: Configuración de Ficha Cliente CON PERMISOS -->
+          <mat-accordion class="sub-accordion" 
+                        *ngIf="(menuPermisos$ | async)?.fichaCliente?.tipoCliente || (menuPermisos$ | async)?.fichaCliente?.grupoCliente">
             <mat-expansion-panel>
               <mat-expansion-panel-header class="sub-header">
                 <mat-panel-title>
@@ -75,11 +70,17 @@
                 </mat-panel-title>
               </mat-expansion-panel-header>
 
-              <a mat-list-item routerLink="/codbar/ficha-de-cliente/tipo-cliente" class="sub-menu-item">
+              <a mat-list-item 
+                 routerLink="/codbar/ficha-de-cliente/tipo-cliente" 
+                 class="sub-menu-item"
+                 *ngIf="(menuPermisos$ | async)?.fichaCliente?.tipoCliente">
                 <span *ngIf="isExpanded" class="menu-text">Tipo Cliente</span>
               </a>
 
-              <a mat-list-item routerLink="/codbar/ficha-de-cliente/grupo-cliente" class="sub-menu-item">
+              <a mat-list-item 
+                 routerLink="/codbar/ficha-de-cliente/grupo-cliente" 
+                 class="sub-menu-item"
+                 *ngIf="(menuPermisos$ | async)?.fichaCliente?.grupoCliente">
                 <span *ngIf="isExpanded" class="menu-text">Grupo Cliente</span>
               </a>
             </mat-expansion-panel>
@@ -87,8 +88,8 @@
 
         </mat-expansion-panel>
 
-        <!-- 🔄 TRANSFERENCIA - ACORDEÓN PRINCIPAL -->
-        <mat-expansion-panel>
+        <!-- 🔄 TRANSFERENCIA CON PERMISOS -->
+        <mat-expansion-panel *ngIf="(menuPermisos$ | async)?.transferencia?.modulo">
           <mat-expansion-panel-header>
             <mat-panel-title>
               <img src="assets/icons/icon-transf-prefijo.png" class="menu-icon">
@@ -96,20 +97,27 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item routerLink="/codbar/transferencia/tras-prefijo">
+          <a mat-list-item 
+             routerLink="/codbar/transferencia/tras-prefijo"
+             *ngIf="(menuPermisos$ | async)?.transferencia?.trasPrefijo">
             <span *ngIf="isExpanded" class="menu-text">Transferencia de Prefijos</span>
           </a>
 
-          <a mat-list-item routerLink="/codbar/transferencia/tras-gtin">
+          <a mat-list-item 
+             routerLink="/codbar/transferencia/tras-gtin"
+             *ngIf="(menuPermisos$ | async)?.transferencia?.trasGtin">
             <span *ngIf="isExpanded" class="menu-text">Transferencia Gtin</span>
           </a>
-          <a mat-list-item routerLink="/codbar/transferencia/eliminar-prefijo">
+
+          <a mat-list-item 
+             routerLink="/codbar/transferencia/eliminar-prefijo"
+             *ngIf="(menuPermisos$ | async)?.transferencia?.eliminarPrefijo">
             <span *ngIf="isExpanded" class="menu-text">Eliminar Prefijo</span>
           </a>
         </mat-expansion-panel>
 
-        <!-- ✅ VALIDACIÓN - ACORDEÓN PRINCIPAL -->
-        <mat-expansion-panel>
+        <!-- ✅ VALIDACIÓN CON PERMISOS -->
+        <mat-expansion-panel *ngIf="(menuPermisos$ | async)?.validacion?.modulo">
           <mat-expansion-panel-header>
             <mat-panel-title>
               <img src="assets/icons/icon-validacion-2.png" class="menu-icon">
@@ -117,21 +125,27 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item routerLink="/codbar/validacion/validacionsri">
+          <a mat-list-item 
+             routerLink="/codbar/validacion/validacionsri"
+             *ngIf="(menuPermisos$ | async)?.validacion?.validacionSri">
             <span *ngIf="isExpanded" class="menu-text">Validar RUC en SRI</span>
           </a>
 
-          <a mat-list-item routerLink="/codbar/validacion/validacion-licenses">
+          <a mat-list-item 
+             routerLink="/codbar/validacion/validacion-licenses"
+             *ngIf="(menuPermisos$ | async)?.validacion?.validacionLicenses">
             <span *ngIf="isExpanded" class="menu-text">Validar Licencia Verified</span>
           </a>
 
-          <a mat-list-item routerLink="/codbar/validacion/validacion-productos">
+          <a mat-list-item 
+             routerLink="/codbar/validacion/validacion-productos"
+             *ngIf="(menuPermisos$ | async)?.validacion?.validacionProductos">
             <span *ngIf="isExpanded" class="menu-text">Validar Productos Verified</span>
           </a>
         </mat-expansion-panel>
 
-        <!-- 📊 REPORTES - ACORDEÓN PRINCIPAL -->
-        <mat-expansion-panel>
+        <!-- 📊 REPORTES CON PERMISOS -->
+        <mat-expansion-panel *ngIf="(menuPermisos$ | async)?.reportes?.modulo">
           <mat-expansion-panel-header>
             <mat-panel-title>
               <img src="assets/icons/icon-reporte.png" class="menu-icon">
@@ -139,22 +153,21 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <!-- 🔧 TODO: Implementar componentes de reportes -->
-          <a mat-list-item routerLink="/codbar/reportes/gerencia">
+          <a mat-list-item 
+             routerLink="/codbar/reportes/gerencia"
+             *ngIf="(menuPermisos$ | async)?.reportes?.gerencia">
             <span *ngIf="isExpanded" class="menu-text">Reporte Gerencia Cliente</span>
           </a>
 
-          <!-- <a mat-list-item routerLink="/codbar/reportes/clientes">
-            <span *ngIf="isExpanded" class="menu-text">Reporte Clientes</span>
-          </a> -->
-
-          <a mat-list-item routerLink="/codbar/reportes/explorador-cliente">
+          <a mat-list-item 
+             routerLink="/codbar/reportes/explorador-cliente"
+             *ngIf="(menuPermisos$ | async)?.reportes?.exploradorCliente">
             <span *ngIf="isExpanded" class="menu-text">Explorador Clientes</span>
           </a>
         </mat-expansion-panel>
 
-        <!-- ⚙️ CONFIGURACIÓN GENERAL - ACORDEÓN PRINCIPAL -->
-        <mat-expansion-panel>
+        <!-- ⚙️ CONFIGURACIÓN GENERAL CON PERMISOS -->
+        <mat-expansion-panel *ngIf="(menuPermisos$ | async)?.configuracion?.modulo">
           <mat-expansion-panel-header>
             <mat-panel-title>
               <img src="assets/icons/icon-mantenimiento.png" class="menu-icon">
@@ -162,27 +175,28 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item routerLink="/codbar/configuracion/localizacion-establecimiento">
+          <a mat-list-item 
+             routerLink="/codbar/configuracion/localizacion-establecimiento"
+             *ngIf="(menuPermisos$ | async)?.configuracion?.localizacionEstablecimiento">
             <span *ngIf="isExpanded" class="menu-text">Establecimientos GLN</span>
           </a>
 
-          <a mat-list-item routerLink="/codbar/configuracion/grupo-producto">
+          <a mat-list-item 
+             routerLink="/codbar/configuracion/grupo-producto"
+             *ngIf="(menuPermisos$ | async)?.configuracion?.grupoProducto">
             <span *ngIf="isExpanded" class="menu-text">Grupo Producto</span>
           </a>
 
-          <a mat-list-item routerLink="/codbar/configuracion/tipo-prefijo">
+          <a mat-list-item 
+             routerLink="/codbar/configuracion/tipo-prefijo"
+             *ngIf="(menuPermisos$ | async)?.configuracion?.tipoPrefijo">
             <span *ngIf="isExpanded" class="menu-text">Tipo Prefijo</span>
           </a>
-
-          <!-- 🔧 TODO: Servicios Productos -->
-          <!-- <a mat-list-item routerLink="/codbar/configuracion/servicios-productos">
-            <span *ngIf="isExpanded" class="menu-text">Servicios Productos</span>
-          </a> -->
         </mat-expansion-panel>
 
       </mat-accordion>
 
-      <!-- Salir -->
+      <!-- Salir (siempre visible) -->
       <mat-list-item routerLink="/inicio" class="salir-item">
         <div class="menu-item">
           <img src="assets/icons/icon-salir.png" class="menu-icon">

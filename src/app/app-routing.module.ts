@@ -20,10 +20,14 @@ import { CuponesComponent } from './components/productos/cupones/cupones.compone
 import { Sic3000Module } from './components/sic-3000/sic-3000.module';
 import { UlEditComponent } from './components/productos/ul-edit/ul-edit.component';
 import { UlComponent } from './components/productos/ul/ul.component';
+import { SinPermisosComponent } from './guards/sin-permisos.component';
 
 
 const routes: Routes = [
-
+  {
+    path: 'sin-permisos',
+    component: SinPermisosComponent
+  },
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'inicio', component: InicioComponent, canActivate: [AuthGuard] },

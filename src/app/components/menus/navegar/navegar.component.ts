@@ -1,23 +1,35 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { BreakpointObserver, Breakpoints } from '@angular/cdk/layout';
 import { UsuarioService } from 'src/app/services/usuario.service';
+import { PermissionsService } from 'src/app/services/permission.service'; // 🔒 AGREGAR
+import { Observable, Subject } from 'rxjs'; // 🔒 AGREGAR
+import { takeUntil } from 'rxjs/operators'; // 🔒 AGREGAR
 
 @Component({
   selector: 'app-navegar',
   templateUrl: './navegar.component.html',
   styleUrls: ['./navegar.component.css']
 })
-export class NavegarComponent implements OnInit {
+export class NavegarComponent implements OnInit, OnDestroy {
   currentDateTime: string = '';
   isHandset: boolean = false;
   isExpanded: boolean = true;
-  usuarioActual : any;
+  usuarioActual: any;
+  
+  // 🔒 PERMISOS DINÁMICOS
+  menuPermisos$: Observable<any>;
+  private destroy$ = new Subject<void>();
+
   constructor(
     private breakpointObserver: BreakpointObserver,
-    private usuarioService: UsuarioService
+    private usuarioService: UsuarioService,
+    private permissions: PermissionsService // 🔒 AGREGAR
   ) {
-    
     this.usuarioActual = this.usuarioService.getUsuarioActual();
+    
+    // 📡 Observar permisos reactivamente
+    this.menuPermisos$ = this.permissions.menuPermisos$;
+    
     this.breakpointObserver.observe([Breakpoints.Handset])
       .subscribe(result => {
         this.isHandset = result.matches;
@@ -26,8 +38,21 @@ export class NavegarComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    // 🔄 Monitorear cambios de permisos
+    this.menuPermisos$.pipe(
+      takeUntil(this.destroy$)
+    ).subscribe(permisos => {
+      console.log('🔄 Permisos del menú actualizados:', permisos);
+    });
+
+    // Resto de tu código existente
     this.updateDateTime();
     setInterval(() => this.updateDateTime(), 1000);
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   updateDateTime(): void {

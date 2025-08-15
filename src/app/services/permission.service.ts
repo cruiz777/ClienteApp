@@ -44,39 +44,39 @@ export class PermissionsService {
   private autoRefreshInterval = 5 * 60 * 1000; // 5 minutos
   private maxRetries = 3;
 
-  // 🗺️ Mapeo de rutas a permisos
+  // 🗺️ MAPEO CORREGIDO - Sin prefijo /codbar/ para coincidir con backend
   private readonly MAPEO_RUTAS: Record<string, string> = {
-    // Ficha de Cliente
-    '/codbar/ficha-de-cliente/nuevo-cliente': 'codbar.ficha-de-cliente.nuevo-cliente.nuevo-cliente',
-    '/codbar/ficha-de-cliente/listado-clientes': 'codbar.ficha-de-cliente.listado-clientes.listado-clientes',
-    '/codbar/ficha-de-cliente/consulta-verified': 'codbar.ficha-de-cliente.consulta-verified.consulta-verified',
-    '/codbar/ficha-de-cliente/tipo-cliente': 'codbar.ficha-de-cliente.tipo-cliente.tipo-cliente',
-    '/codbar/ficha-de-cliente/tipo-cliente/crear': 'codbar.ficha-de-cliente.tipo-cliente.tipo-cliente',
-    '/codbar/ficha-de-cliente/tipo-cliente/editar': 'codbar.ficha-de-cliente.tipo-cliente.tipo-cliente',
-    '/codbar/ficha-de-cliente/grupo-cliente': 'codbar.ficha-de-cliente.grupo-cliente.grupo-cliente',
-    '/codbar/ficha-de-cliente/grupo-cliente/crear': 'codbar.ficha-de-cliente.grupo-cliente.grupo-cliente',
-    '/codbar/ficha-de-cliente/grupo-cliente/editar': 'codbar.ficha-de-cliente.grupo-cliente.grupo-cliente',
+    // Ficha de Cliente - SIN /codbar/ inicial
+    '/codbar/ficha-de-cliente/nuevo-cliente': 'ficha-de-cliente.nuevo-cliente',
+    '/codbar/ficha-de-cliente/listado-clientes': 'ficha-de-cliente.listado-clientes',
+    '/codbar/ficha-de-cliente/consulta-verified': 'ficha-de-cliente.consulta-verified',
+    '/codbar/ficha-de-cliente/tipo-cliente': 'ficha-de-cliente.tipo-cliente',
+    '/codbar/ficha-de-cliente/tipo-cliente/crear': 'ficha-de-cliente.tipo-cliente',
+    '/codbar/ficha-de-cliente/tipo-cliente/editar': 'ficha-de-cliente.tipo-cliente',
+    '/codbar/ficha-de-cliente/grupo-cliente': 'ficha-de-cliente.grupo-cliente',
+    '/codbar/ficha-de-cliente/grupo-cliente/crear': 'ficha-de-cliente.grupo-cliente',
+    '/codbar/ficha-de-cliente/grupo-cliente/editar': 'ficha-de-cliente.grupo-cliente',
     
     // Transferencia
-    '/codbar/transferencia/tras-prefijo': 'codbar.transferencia.tras-prefijo.tras-prefijo',
-    '/codbar/transferencia/tras-gtin': 'codbar.transferencia.tras-gtin.tras-gtin',
-    '/codbar/transferencia/eliminar-prefijo': 'codbar.transferencia.eliminar-prefijo.eliminar-prefijo',
+    '/codbar/transferencia/tras-prefijo': 'transferencia.tras-prefijo',
+    '/codbar/transferencia/tras-gtin': 'transferencia.tras-gtin',
+    '/codbar/transferencia/eliminar-prefijo': 'transferencia.eliminar-prefijo',
     
     // Validación
-    '/codbar/validacion/validacionsri': 'codbar.validacion.validacionsri.validacionsri',
-    '/codbar/validacion/validacion-licenses': 'codbar.validacion.validacion-licenses.validacion-licenses',
-    '/codbar/validacion/validacion-productos': 'codbar.validacion.validacion-productos.validacion-productos',
+    '/codbar/validacion/validacionsri': 'validacion.validacionsri',
+    '/codbar/validacion/validacion-licenses': 'validacion.validacion-licenses',
+    '/codbar/validacion/validacion-productos': 'validacion.validacion-productos',
     
     // Reportes
-    '/codbar/reportes/explorador-cliente': 'codbar.reportes.explorador-cliente.explorador-cliente',
-    '/codbar/reportes/gerencia': 'codbar.reportes.gerencia.gerencia',
+    '/codbar/reportes/explorador-cliente': 'reportes.explorador-cliente',
+    '/codbar/reportes/gerencia': 'reportes.gerencia',
     
     // Configuración
-    '/codbar/configuracion/localizacion-establecimiento': 'codbar.configuracion.localizacion-establecimiento.localizacion-establecimiento',
-    '/codbar/configuracion/localizacion-establecimiento/crear': 'codbar.configuracion.localizacion-establecimiento.localizacion-establecimiento',
-    '/codbar/configuracion/localizacion-establecimiento/editar': 'codbar.configuracion.localizacion-establecimiento.localizacion-establecimiento',
-    '/codbar/configuracion/grupo-producto': 'codbar.configuracion.grupo-producto.grupo-producto',
-    '/codbar/configuracion/tipo-prefijo': 'codbar.configuracion.tipo-prefijo.tipo-prefijo'
+    '/codbar/configuracion/localizacion-establecimiento': 'configuracion.localizacion-establecimiento',
+    '/codbar/configuracion/localizacion-establecimiento/crear': 'configuracion.localizacion-establecimiento',
+    '/codbar/configuracion/localizacion-establecimiento/editar': 'configuracion.localizacion-establecimiento',
+    '/codbar/configuracion/grupo-producto': 'configuracion.grupo-producto',
+    '/codbar/configuracion/tipo-prefijo': 'configuracion.tipo-prefijo'
   };
 
   constructor(
@@ -155,71 +155,71 @@ export class PermissionsService {
     });
   }
 
-    // 🔄 CARGA ASÍNCRONA CON RETRY
-    private cargarPermisosAsync(usuario: LoginUsuarioResponse): Observable<string[]> {
-        this.loadingSubject.next(true);
-        this.errorSubject.next(null);
+  // 🔄 CARGA ASÍNCRONA CON RETRY
+  private cargarPermisosAsync(usuario: LoginUsuarioResponse): Observable<string[]> {
+    this.loadingSubject.next(true);
+    this.errorSubject.next(null);
 
-        return this.http.get<PermisosResponse>(
-            `${environment.applicationUrl}/Usuarios/${usuario.id_usuario}/permisos`
-        ).pipe(
-            // Retry automático con retryWhen
-            retryWhen(errors => 
-            errors.pipe(
-                scan((retryCount, error) => {
-                console.warn(`⚠️ Intento ${retryCount + 1} falló, reintentando...`, error);
-                if (retryCount >= this.maxRetries) {
-                    throw error;
-                }
-                return retryCount + 1;
-                }, 0),
-                delay(1000) // Esperar 1 segundo entre reintentos
-            )
-            ),
-            
-            // Procesar respuesta
-            tap(response => {
-            if (response?.type === 'OK' && response.data?.permisos_flat) {
-                const nuevosPermisos = response.data.permisos_flat;
-                
-                // Detectar cambios
-                const permisosActuales = this.permisosSubject.value;
-                const cambios = this.detectarCambiosPermisos(permisosActuales, nuevosPermisos);
-                
-                if (cambios.total_cambios > 0) {
-                console.log('🔄 Cambios en permisos detectados:', cambios);
-                
-                // Emitir evento personalizado para componentes que necesiten reaccionar
-                this.emitirEventoCambioPermisos(cambios);
-                }
-
-                // Actualizar estados
-                this.permisosSubject.next([...nuevosPermisos]);
-                this.permisosReadySubject.next(true);
-                
-                // Guardar en storage
-                this.guardarPermisosEnStorage(nuevosPermisos, usuario);
-                
-                console.log('✅ Permisos cargados para:', usuario.nombre_usuario, nuevosPermisos);
-            } else {
-                throw new Error('Respuesta de permisos inválida');
+    return this.http.get<PermisosResponse>(
+      `${environment.applicationUrl}/Usuarios/${usuario.id_usuario}/permisos`
+    ).pipe(
+      // Retry automático con retryWhen
+      retryWhen(errors => 
+        errors.pipe(
+          scan((retryCount, error) => {
+            console.warn(`⚠️ Intento ${retryCount + 1} falló, reintentando...`, error);
+            if (retryCount >= this.maxRetries) {
+              throw error;
             }
-            }),
+            return retryCount + 1;
+          }, 0),
+          delay(1000) // Esperar 1 segundo entre reintentos
+        )
+      ),
+      
+      // Procesar respuesta
+      tap(response => {
+        if (response?.type === 'OK' && response.data?.permisos_flat) {
+          const nuevosPermisos = response.data.permisos_flat;
+          
+          // Detectar cambios
+          const permisosActuales = this.permisosSubject.value;
+          const cambios = this.detectarCambiosPermisos(permisosActuales, nuevosPermisos);
+          
+          if (cambios.total_cambios > 0) {
+            console.log('🔄 Cambios en permisos detectados:', cambios);
             
-            // Retornar los permisos
-            map(response => response.data.permisos_flat),
-            
-            // Manejo de errores final
-            catchError(error => {
-            console.error('❌ Error final cargando permisos:', error);
-            this.errorSubject.next(`Error cargando permisos: ${error.message}`);
-            throw error;
-            }),
-            
-            // Limpiar loading
-            tap(() => this.loadingSubject.next(false))
-        );
+            // Emitir evento personalizado para componentes que necesiten reaccionar
+            this.emitirEventoCambioPermisos(cambios);
+          }
+
+          // Actualizar estados
+          this.permisosSubject.next([...nuevosPermisos]);
+          this.permisosReadySubject.next(true);
+          
+          // Guardar en storage
+          this.guardarPermisosEnStorage(nuevosPermisos, usuario);
+          
+          console.log('✅ Permisos cargados para:', usuario.nombre_usuario, nuevosPermisos);
+        } else {
+          throw new Error('Respuesta de permisos inválida');
         }
+      }),
+      
+      // Retornar los permisos
+      map(response => response.data.permisos_flat),
+      
+      // Manejo de errores final
+      catchError(error => {
+        console.error('❌ Error final cargando permisos:', error);
+        this.errorSubject.next(`Error cargando permisos: ${error.message}`);
+        throw error;
+      }),
+      
+      // Limpiar loading
+      tap(() => this.loadingSubject.next(false))
+    );
+  }
 
   // 🔍 DETECTAR CAMBIOS EN PERMISOS
   private detectarCambiosPermisos(anteriores: string[], nuevos: string[]): any {
@@ -287,9 +287,10 @@ export class PermissionsService {
     );
   }
 
+  // Verificar si tiene permiso específico con acciones
   public puedeEjecutarAccion$(rutaAngular: string, accion: string): Observable<boolean> {
     return this.permisos$.pipe(
-      map(permisos => this.verificarAccesoAccion(rutaAngular, accion, permisos)),
+      map(permisos => this.verificarAccesoConAccion(rutaAngular, accion, permisos)),
       distinctUntilChanged(),
       shareReplay(1)
     );
@@ -301,103 +302,147 @@ export class PermissionsService {
   }
 
   public puedeEjecutarAccion(rutaAngular: string, accion: string): boolean {
-    return this.verificarAccesoAccion(rutaAngular, accion, this.permisosSubject.value);
+    return this.verificarAccesoConAccion(rutaAngular, accion, this.permisosSubject.value);
   }
 
-  // 🔧 MÉTODOS DE VERIFICACIÓN
+  // 🔧 VERIFICACIÓN MEJORADA DE RUTAS
   private verificarAccesoRuta(rutaAngular: string, permisos: string[]): boolean {
     const rutaNormalizada = this.normalizarRuta(rutaAngular);
-    const permisoBase = this.MAPEO_RUTAS[rutaNormalizada];
+    console.log(`🔍 Verificando acceso a ruta: ${rutaNormalizada}`);
     
-    if (!permisoBase) {
+    // Obtener el permiso mapeado
+    const permisoRequerido = this.MAPEO_RUTAS[rutaNormalizada];
+    
+    if (!permisoRequerido) {
       console.warn(`⚠️ Sin mapeo para ruta: ${rutaNormalizada}`);
       return false;
     }
 
-    const tienePermiso = permisos.some(permiso => permiso.startsWith(permisoBase));
-    console.log(`🔍 Ruta ${rutaNormalizada}: ${tienePermiso ? '✅' : '❌'}`);
+    console.log(`🔍 Permiso requerido: ${permisoRequerido}`);
+    console.log(`🔍 Permisos disponibles:`, permisos);
+
+    // NUEVA LÓGICA: Verificar múltiples patrones
+    const tienePermiso = this.verificarMultiplesPatrones(permisoRequerido, permisos);
+    
+    console.log(`🔍 Resultado para ${rutaNormalizada}: ${tienePermiso ? '✅ PERMITIDO' : '❌ DENEGADO'}`);
     return tienePermiso;
   }
 
-  private verificarAccesoAccion(rutaAngular: string, accion: string, permisos: string[]): boolean {
+  // 🔧 VERIFICACIÓN CON MÚLTIPLES PATRONES
+  private verificarMultiplesPatrones(permisoRequerido: string, permisos: string[]): boolean {
+    // 1. Verificar permiso exacto
+    if (permisos.includes(permisoRequerido)) {
+      console.log(`✅ Permiso exacto encontrado: ${permisoRequerido}`);
+      return true;
+    }
+
+    // 2. Verificar con prefijo codbar
+    const conPrefijo = `codbar.${permisoRequerido}`;
+    if (permisos.includes(conPrefijo)) {
+      console.log(`✅ Permiso con prefijo encontrado: ${conPrefijo}`);
+      return true;
+    }
+
+    // 3. Verificar jerarquía hacia arriba (permisos padre)
+    const partesPermiso = permisoRequerido.split('.');
+    for (let i = partesPermiso.length - 1; i > 0; i--) {
+      const permisoParent = partesPermiso.slice(0, i).join('.');
+      
+      if (permisos.includes(permisoParent)) {
+        console.log(`✅ Permiso padre encontrado: ${permisoParent}`);
+        return true;
+      }
+      
+      // También con prefijo codbar
+      const parentConPrefijo = `codbar.${permisoParent}`;
+      if (permisos.includes(parentConPrefijo)) {
+        console.log(`✅ Permiso padre con prefijo encontrado: ${parentConPrefijo}`);
+        return true;
+      }
+    }
+
+    // 4. Verificar si tiene permisos hijos que otorgan acceso
+    const permisosHijos = permisos.filter(p => 
+      p.startsWith(permisoRequerido + '.') || 
+      p.startsWith(`codbar.${permisoRequerido}.`)
+    );
+
+    if (permisosHijos.length > 0) {
+      console.log(`✅ Permisos hijos encontrados:`, permisosHijos);
+      return true;
+    }
+
+    console.log(`❌ No se encontró acceso para: ${permisoRequerido}`);
+    return false;
+  }
+
+  private verificarAccesoConAccion(rutaAngular: string, accion: string, permisos: string[]): boolean {
     const rutaNormalizada = this.normalizarRuta(rutaAngular);
     const permisoBase = this.MAPEO_RUTAS[rutaNormalizada];
-    
-    if (!permisoBase) return false;
 
-    const permisoCompleto = `${permisoBase}.${accion}`;
-    const puedeEjecutar = permisos.includes(permisoCompleto);
-    
-    console.log(`🔍 Acción ${accion} en ${rutaNormalizada}: ${puedeEjecutar ? '✅' : '❌'}`);
-    return puedeEjecutar;
+    if (!permisoBase) {
+      console.warn(`⚠️ Sin mapeo para ruta con acción: ${rutaNormalizada}`);
+      return false;
+    }
+
+    // ✅ SOLO aceptar permisos que incluyan la acción explícita
+    const candidatos: string[] = [
+      `${permisoBase}.${accion}`,                // ficha-de-cliente.nuevo-cliente.crear
+      `codbar.${permisoBase}.${accion}`,         // codbar.ficha-de-cliente.nuevo-cliente.crear
+      // (opcional) padres con la misma acción: ficha-de-cliente.crear / codbar.ficha-de-cliente.crear
+      ...permisoBase.split('.').map((_, i, arr) => arr.slice(0, i + 1).join('.') + `.${accion}`),
+      ...permisoBase.split('.').map((_, i, arr) => `codbar.` + arr.slice(0, i + 1).join('.') + `.${accion}`)
+    ];
+
+    const puede = candidatos.some(p => permisos.includes(p));
+    console.log(`🔍 Acción ${accion} para ${rutaNormalizada}:`, puede ? '✅' : '❌', ' | candidatos:', candidatos);
+    return puede;
   }
 
-  // 🏠 PERMISOS ESPECÍFICOS REACTIVOS
-  public get permisosFichaCliente() {
-    return {
-      nuevoCliente: {
-        // Métodos reactivos
-        puedeVer$: () => this.puedeAccederRuta$('/codbar/ficha-de-cliente/nuevo-cliente'),
-        puedeCrear$: () => this.puedeEjecutarAccion$('/codbar/ficha-de-cliente/nuevo-cliente', 'crear'),
-        puedeEditar$: () => this.puedeEjecutarAccion$('/codbar/ficha-de-cliente/nuevo-cliente', 'editar'),
-        puedeEliminar$: () => this.puedeEjecutarAccion$('/codbar/ficha-de-cliente/nuevo-cliente', 'eliminar'),
-        
-        // Métodos síncronos (compatibilidad)
-        puedeVer: () => this.puedeAccederRuta('/codbar/ficha-de-cliente/nuevo-cliente'),
-        puedeCrear: () => this.puedeEjecutarAccion('/codbar/ficha-de-cliente/nuevo-cliente', 'crear'),
-        puedeEditar: () => this.puedeEjecutarAccion('/codbar/ficha-de-cliente/nuevo-cliente', 'editar'),
-        puedeEliminar: () => this.puedeEjecutarAccion('/codbar/ficha-de-cliente/nuevo-cliente', 'eliminar')
-      },
-      listadoClientes: {
-        puedeVer$: () => this.puedeAccederRuta$('/codbar/ficha-de-cliente/listado-clientes'),
-        puedeVer: () => this.puedeAccederRuta('/codbar/ficha-de-cliente/listado-clientes'),
-        puedeCrear$: () => this.puedeEjecutarAccion$('/codbar/ficha-de-cliente/listado-clientes', 'crear'),
-        puedeCrear: () => this.puedeEjecutarAccion('/codbar/ficha-de-cliente/listado-clientes', 'crear'),
-        puedeEditar$: () => this.puedeEjecutarAccion$('/codbar/ficha-de-cliente/listado-clientes', 'editar'),
-        puedeEditar: () => this.puedeEjecutarAccion('/codbar/ficha-de-cliente/listado-clientes', 'editar'),
-        puedeEliminar$: () => this.puedeEjecutarAccion$('/codbar/ficha-de-cliente/listado-clientes', 'eliminar'),
-        puedeEliminar: () => this.puedeEjecutarAccion('/codbar/ficha-de-cliente/listado-clientes', 'eliminar')
-      }
-      // ... agregar más módulos según necesites
-    };
-  }
 
-  // 📊 MENÚ REACTIVO
+  // 📊 MENÚ REACTIVO MEJORADO
   public get menuPermisos$(): Observable<any> {
     return this.permisos$.pipe(
-      map(permisos => ({
-        fichaCliente: {
-          modulo: permisos.some(p => p.includes('ficha-de-cliente')),
-          nuevoCliente: this.verificarAccesoRuta('/codbar/ficha-de-cliente/nuevo-cliente', permisos),
-          listadoClientes: this.verificarAccesoRuta('/codbar/ficha-de-cliente/listado-clientes', permisos),
-          consultaVerified: this.verificarAccesoRuta('/codbar/ficha-de-cliente/consulta-verified', permisos),
-          tipoCliente: this.verificarAccesoRuta('/codbar/ficha-de-cliente/tipo-cliente', permisos),
-          grupoCliente: this.verificarAccesoRuta('/codbar/ficha-de-cliente/grupo-cliente', permisos)
-        },
-        transferencia: {
-          modulo: permisos.some(p => p.includes('transferencia')),
-          trasPrefijo: this.verificarAccesoRuta('/codbar/transferencia/tras-prefijo', permisos),
-          trasGtin: this.verificarAccesoRuta('/codbar/transferencia/tras-gtin', permisos),
-          eliminarPrefijo: this.verificarAccesoRuta('/codbar/transferencia/eliminar-prefijo', permisos)
-        },
-        validacion: {
-          modulo: permisos.some(p => p.includes('validacion')),
-          validacionSri: this.verificarAccesoRuta('/codbar/validacion/validacionsri', permisos),
-          validacionLicenses: this.verificarAccesoRuta('/codbar/validacion/validacion-licenses', permisos),
-          validacionProductos: this.verificarAccesoRuta('/codbar/validacion/validacion-productos', permisos)
-        },
-        reportes: {
-          modulo: permisos.some(p => p.includes('reportes')),
-          exploradorCliente: this.verificarAccesoRuta('/codbar/reportes/explorador-cliente', permisos),
-          gerencia: this.verificarAccesoRuta('/codbar/reportes/gerencia', permisos)
-        },
-        configuracion: {
-          modulo: permisos.some(p => p.includes('configuracion')),
-          localizacionEstablecimiento: this.verificarAccesoRuta('/codbar/configuracion/localizacion-establecimiento', permisos),
-          grupoProducto: this.verificarAccesoRuta('/codbar/configuracion/grupo-producto', permisos),
-          tipoPrefijo: this.verificarAccesoRuta('/codbar/configuracion/tipo-prefijo', permisos)
-        }
-      })),
+      map(permisos => {
+        console.log('🔄 Calculando permisos de menú con:', permisos);
+        
+        return {
+          fichaCliente: {
+            modulo: this.verificarMultiplesPatrones('ficha-de-cliente', permisos),
+            nuevoCliente: this.verificarAccesoRuta('/codbar/ficha-de-cliente/nuevo-cliente', permisos),
+            listadoClientes: this.verificarAccesoRuta('/codbar/ficha-de-cliente/listado-clientes', permisos),
+            consultaVerified: this.verificarAccesoRuta('/codbar/ficha-de-cliente/consulta-verified', permisos),
+            tipoCliente: this.verificarAccesoRuta('/codbar/ficha-de-cliente/tipo-cliente', permisos),
+            grupoCliente: this.verificarAccesoRuta('/codbar/ficha-de-cliente/grupo-cliente', permisos)
+          },
+          transferencia: {
+            modulo: this.verificarMultiplesPatrones('transferencia', permisos),
+            trasPrefijo: this.verificarAccesoRuta('/codbar/transferencia/tras-prefijo', permisos),
+            trasGtin: this.verificarAccesoRuta('/codbar/transferencia/tras-gtin', permisos),
+            eliminarPrefijo: this.verificarAccesoRuta('/codbar/transferencia/eliminar-prefijo', permisos)
+          },
+          validacion: {
+            modulo: this.verificarMultiplesPatrones('validacion', permisos),
+            validacionSri: this.verificarAccesoRuta('/codbar/validacion/validacionsri', permisos),
+            validacionLicenses: this.verificarAccesoRuta('/codbar/validacion/validacion-licenses', permisos),
+            validacionProductos: this.verificarAccesoRuta('/codbar/validacion/validacion-productos', permisos)
+          },
+          reportes: {
+            modulo: this.verificarMultiplesPatrones('reportes', permisos),
+            exploradorCliente: this.verificarAccesoRuta('/codbar/reportes/explorador-cliente', permisos),
+            gerencia: this.verificarAccesoRuta('/codbar/reportes/gerencia', permisos)
+          },
+          configuracion: {
+            modulo: this.verificarMultiplesPatrones('configuracion', permisos),
+            localizacionEstablecimiento: this.verificarAccesoRuta('/codbar/configuracion/localizacion-establecimiento', permisos),
+            grupoProducto: this.verificarAccesoRuta('/codbar/configuracion/grupo-producto', permisos),
+            tipoPrefijo: this.verificarAccesoRuta('/codbar/configuracion/tipo-prefijo', permisos)
+          }
+        };
+      }),
+      tap(menuPermisos => {
+        console.log('🔍 Permisos de menú calculados:', menuPermisos);
+      }),
       shareReplay(1)
     );
   }
