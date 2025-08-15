@@ -89,17 +89,17 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
 
     // ===== Tab 3
     this.preciosForm = this.fb.group({
-      // Precios
+      // Precios (editables)
       precioOficial: [0],
       precioRedMsp: [0],
-      pvpActualIva: [0, [Validators.min(0)]],               // base SIN IVA
-      pvpAnteriorMasIva: [{ value: 0, disabled: true }],
+      pvpActualIva: [0, [Validators.min(0)]],     // base SIN IVA
+      pvpAnteriorMasIva: [0],                     // se autollenará si está en 0
       fechaAnteriorModificarPrecio: [null],
-      pvpActualMasIva: [{ value: 0, disabled: true }],      // calculado
+      pvpActualMasIva: [0],                       // calculado si el usuario no lo edita
       fechaModificarPrecio: [null],
-      margenUtilidad: [{ value: 0, disabled: true }],       // calculado %
+      margenUtilidad: [0],                        // calculado si el usuario no lo edita
 
-      // Costos
+      // Costos (editables)
       costoSuministro: [0],
       costoProducto: [0],
       costoPromedio: [0],
@@ -110,11 +110,15 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       recepcionPorcentaje: [0]
     });
 
-    // Cálculos automáticos Tab 3
-    this.preciosForm.get('pvpActualIva')!.valueChanges.subscribe(() => this.recalcularPvpConIva());
-    this.preciosForm.get('costoProducto')!.valueChanges.subscribe(() => this.recalcularMargen());
-    this.preciosForm.get('costoPromedio')!.valueChanges.subscribe(() => this.recalcularMargen());
-    this.preciosForm.get('pvpActualMasIva')!.valueChanges.subscribe(() => this.recalcularMargen());
+    // Cálculos automáticos (se recalculan cuando haya cambios reales)
+    this.preciosForm.get('pvpActualIva')!.valueChanges
+      .subscribe(() => this.recalcularPvpConIva());
+    this.preciosForm.get('costoProducto')!.valueChanges
+      .subscribe(() => this.recalcularMargen());
+    this.preciosForm.get('costoPromedio')!.valueChanges
+      .subscribe(() => this.recalcularMargen());
+    this.preciosForm.get('pvpActualMasIva')!.valueChanges
+      .subscribe(() => this.recalcularMargen());
   }
 
   ngAfterViewInit(): void { this.cdr.detectChanges(); }
@@ -125,40 +129,79 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       case 0: return this.form;
       case 1: return this.adicionalForm;
       case 2: return this.preciosForm;
-      default: return null;   // Tab 4 sin formulario
+      default: return null;
     }
   }
   get currentFormInvalid(): boolean { return !(this.currentForm && this.currentForm.valid); }
 
   // ===== Utilidades Tab 3 =====
-  private fix(n: number, d = 4): number {
+  /** Redondea a 'd' decimales (por defecto 3) */
+  private fix(n: number, d = 3): number {
     return Number((Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d));
   }
-  formatDecimal(controlName: string, dec = 4): void {
+
+  /**
+   * Limpia lo que el usuario escribe en tiempo real:
+   * - Acepta solo 0-9 y un único separador decimal.
+   * - Convierte coma a punto.
+   * - NO emite eventos para no disparar cálculos mientras escribe.
+   */
+  onNumericInput(controlName: string): void {
     const ctrl = this.preciosForm.get(controlName);
     if (!ctrl) return;
-    const n = Number(ctrl.value);
+    let val = (ctrl.value ?? '').toString();
+
+    // Reemplazar coma por punto y filtrar caracteres no válidos
+    val = val.replace(',', '.').replace(/[^0-9.]/g, '');
+    // Dejar solo un punto decimal
+    val = val.replace(/(\..*)\./g, '$1');
+
+    ctrl.setValue(val, { emitEvent: false });
+  }
+
+  /** Normaliza en blur: convierte a número y redondea; emite evento para recalcular */
+  formatDecimal(controlName: string, dec = 3): void {
+    const ctrl = this.preciosForm.get(controlName);
+    if (!ctrl) return;
+
+    const raw = (ctrl.value ?? '').toString().replace(',', '.');
+    const n = parseFloat(raw);
     ctrl.setValue(this.fix(isFinite(n) ? n : 0, dec), { emitEvent: true });
   }
+
+  /** Calcula PVP con IVA (si el usuario no lo editó) y prepara PVP anterior si está en 0 */
   recalcularPvpConIva(): void {
     const base = Number(this.preciosForm.getRawValue().pvpActualIva) || 0;
-    const conIva = base * (1 + this.iva);
-    this.preciosForm.get('pvpActualMasIva')!.setValue(this.fix(conIva, 4), { emitEvent: false });
+    const conIva = this.fix(base * (1 + this.iva), 3);
 
-    const anterior = Number(this.preciosForm.getRawValue().pvpAnteriorMasIva) || 0;
-    if (anterior <= 0) {
-      this.preciosForm.get('pvpAnteriorMasIva')!.setValue(this.fix(conIva, 4), { emitEvent: false });
+    const ctrlPvpConIva = this.preciosForm.get('pvpActualMasIva')!;
+    const ctrlPvpAntIva = this.preciosForm.get('pvpAnteriorMasIva')!;
+
+    if (!ctrlPvpConIva.dirty) {
+      ctrlPvpConIva.setValue(conIva, { emitEvent: false });
+    }
+    if (!ctrlPvpAntIva.dirty) {
+      const anterior = Number(ctrlPvpAntIva.value) || 0;
+      if (anterior <= 0) {
+        ctrlPvpAntIva.setValue(conIva, { emitEvent: false });
+      }
     }
     this.recalcularMargen();
   }
+
+  /** Calcula el margen si el usuario no lo editó manualmente */
   recalcularMargen(): void {
     const pvpConIva = Number(this.preciosForm.getRawValue().pvpActualMasIva) || 0;
     const costo = Number(this.preciosForm.getRawValue().costoProducto) || 0;
     const margen = pvpConIva > 0 ? ((pvpConIva - costo) / pvpConIva) * 100 : 0;
-    this.preciosForm.get('margenUtilidad')!.setValue(this.fix(margen, 4), { emitEvent: false });
+
+    const ctrlMargen = this.preciosForm.get('margenUtilidad')!;
+    if (!ctrlMargen.dirty) {
+      ctrlMargen.setValue(this.fix(margen, 3), { emitEvent: false });
+    }
   }
 
-  // ===== Botones genéricos (mismos en todos los tabs) =====
+  // ===== Botones genéricos =====
   onNuevo(): void {
     switch (this.selectedTab) {
       case 0:
@@ -187,8 +230,6 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
           fechaModificarCompra: hoy,
           recepcionPorcentaje: 0
         });
-        break;
-      default:
         break;
     }
   }

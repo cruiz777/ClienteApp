@@ -208,3 +208,35 @@
   .opciones-grid{ grid-template-columns:1fr; }
   .op-col + .op-col{ border-left:0; padding-left:0; padding-top:12px; border-top:1px solid var(--borde); }
 }
+/* Panel y título del bloque */
+.pc-panel{
+  border:1px solid var(--borde);
+  border-radius:8px;
+  padding:12px 14px;
+  background:#fff;
+}
+.pc-title{
+  margin:0 0 8px;
+  font-size:14px;
+  font-weight:700;
+  color:#334155;
+}
+
+/* Filas */
+.pc-row{ display:grid; grid-template-columns:140px 1fr; align-items:center; gap:8px; }
+.pc-row .sm{ max-width:320px; }
+.pc-row .xs{ max-width:220px; }
+
+.pc-row.duo{ grid-template-columns:1fr 1fr; gap:12px; }
+.pc-row.duo .grp{ display:grid; grid-template-columns:140px 1fr; align-items:center; gap:8px; }
+.pc-row.duo .grp .xs{ max-width:220px; }
+
+/* Separador suave dentro del panel */
+.pc-sep{
+  border:0; height:1px; margin:10px 0;
+  background: linear-gradient(90deg,#e9eff7,transparent);
+}
+/* Ocultar flechas de inputs type=number */
+.no-spin::-webkit-outer-spin-button,
+.no-spin::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.no-spin { -moz-appearance: textfield; }

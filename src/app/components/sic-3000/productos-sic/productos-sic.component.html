@@ -15,7 +15,7 @@
     [disableRipple]="true"
     animationDuration="0ms">
 
-    <!-- ========== Template reutilizable de acciones ========== -->
+    <!-- ========== Template reutilizable de botones ========== -->
   <ng-template #accionesTabs>
   <div class="pc-actions">
     <button type="button" class="btn-soft" (click)="onNuevo()">Nuevo</button>
@@ -264,169 +264,228 @@
       </div>
     </mat-tab>
 
+  <!-- ================= TAB 3: Precios / Costos ================= -->
     <!-- ================= TAB 3: Precios / Costos ================= -->
-    <mat-tab label="Precios / Costos">
-      <div class="tab-body" [formGroup]="preciosForm">
-        <div class="row g-4">
-          <!-- ===== Columna Izquierda: PRECIOS ===== -->
-          <div class="col-12 col-lg-6">
-            <div class="pc-panel">
-              <h3 class="pc-title">Precios</h3>
+<mat-tab label="Precios / Costos">
+  <div class="tab-body" [formGroup]="preciosForm">
+    <div class="row g-4">
 
-              <!-- Fila 1: Precio Oficial | Precio RED-MSP -->
-              <div class="pc-row duo">
-                <div class="grp">
-                  <label class="lbl">Precio Oficial:</label>
-                  <div class="xs">
-                    <input type="number" step="0.0001" class="form-control input-line tint-blue"
-                           formControlName="precioOficial" (blur)="formatDecimal('precioOficial',4)">
-                  </div>
-                </div>
-                <div class="grp">
-                  <label class="lbl">Precio RED-MSP:</label>
-                  <div class="xs">
-                    <input type="number" step="0.0001" class="form-control input-line tint-orange"
-                           formControlName="precioRedMsp" (blur)="formatDecimal('precioRedMsp',4)">
-                  </div>
-                </div>
+      <!-- ===== Columna Izquierda: PRECIOS ===== -->
+      <div class="col-12 col-lg-6">
+        <div class="pc-panel">
+          <h3 class="pc-title">Precios</h3>
+
+          <!-- Fila 1: Precio Oficial | Precio RED-MSP -->
+          <div class="pc-row duo">
+            <div class="grp">
+              <label class="lbl">Precio Oficial:</label>
+              <div class="xs">
+                <input
+                  type="text" inputmode="decimal" maxlength="20"
+                  class="input-line tint-blue"
+                  formControlName="precioOficial"
+                  (input)="onNumericInput('precioOficial')"
+                  (blur)="formatDecimal('precioOficial',3)">
               </div>
-
-              <!-- Fila 2: PVP Actual - IVA -->
-              <div class="pc-row">
-                <label class="lbl">PVP Actual - IVA:</label>
-                <div class="sm">
-                  <input type="number" step="0.0001" class="form-control input-line"
-                         formControlName="pvpActualIva" (blur)="formatDecimal('pvpActualIva',4)">
-                </div>
-              </div>
-
-              <!-- Fila 3: PVP Anterior + IVA | Fecha Anterior Modificar -->
-              <div class="pc-row duo">
-                <div class="grp">
-                  <label class="lbl">PVP Anterior + IVA:</label>
-                  <div class="xs">
-                    <input type="number" step="0.0001" class="form-control input-line"
-                           [readonly]="true" formControlName="pvpAnteriorMasIva">
-                  </div>
-                </div>
-                <div class="grp">
-                  <label class="lbl">Fecha Anterior Modificar:</label>
-                  <div class="xs">
-                    <input type="date" class="input-line w-100" formControlName="fechaAnteriorModificarPrecio">
-                  </div>
-                </div>
-              </div>
-
-              <!-- Fila 4: PVP Actual + IVA | Fecha Modificar -->
-              <div class="pc-row duo">
-                <div class="grp">
-                  <label class="lbl">PVP Actual + IVA:</label>
-                  <div class="xs">
-                    <input type="number" step="0.0001" class="form-control input-line tint-green"
-                           [readonly]="true" formControlName="pvpActualMasIva">
-                  </div>
-                </div>
-                <div class="grp">
-                  <label class="lbl">Fecha Modificar:</label>
-                  <div class="xs">
-                    <input type="date" class="input-line w-100" formControlName="fechaModificarPrecio">
-                  </div>
-                </div>
-              </div>
-
-              <!-- Fila 5: Margen Utilidad % -->
-              <div class="pc-row">
-                <label class="lbl">Margen Utilidad %:</label>
-                <div class="sm">
-                  <input type="number" step="0.0001" class="input-line w-100"
-                         [readonly]="true" formControlName="margenUtilidad">
-                </div>
+            </div>
+            <div class="grp">
+              <label class="lbl">Precio RED-MSP:</label>
+              <div class="xs">
+                <input
+                  type="text" inputmode="decimal" maxlength="20"
+                  class="input-line tint-orange"
+                  formControlName="precioRedMsp"
+                  (input)="onNumericInput('precioRedMsp')"
+                  (blur)="formatDecimal('precioRedMsp',3)">
               </div>
             </div>
           </div>
 
-          <!-- ===== Columna Derecha: COSTOS ===== -->
-          <div class="col-12 col-lg-6">
-            <div class="pc-panel">
-              <h3 class="pc-title">Costos</h3>
+          <!-- Fila 2: PVP Actual - IVA (editable) -->
+          <div class="pc-row">
+            <label class="lbl">PVP Actual - IVA:</label>
+            <div class="sm">
+              <input
+                type="text" inputmode="decimal" maxlength="20"
+                class="input-line"
+                formControlName="pvpActualIva"
+                (input)="onNumericInput('pvpActualIva')"
+                (blur)="formatDecimal('pvpActualIva',3)">
+            </div>
+          </div>
 
-              <!-- Fila 1: Costo Suministro | Costo Producto -->
-              <div class="pc-row duo">
-                <div class="grp">
-                  <label class="lbl">Costo Suministro:</label>
-                  <div class="xs">
-                    <input type="number" step="0.0001" class="form-control input-line"
-                           formControlName="costoSuministro" (blur)="formatDecimal('costoSuministro',4)">
-                  </div>
-                </div>
-                <div class="grp">
-                  <label class="lbl">Costo Producto:</label>
-                  <div class="xs">
-                    <input type="number" step="0.0001" class="form-control input-line"
-                           formControlName="costoProducto" (blur)="formatDecimal('costoProducto',4)">
-                  </div>
-                </div>
-              </div>
+          <hr class="pc-sep">
 
-              <!-- Fila 2: Costo Promedio -->
-              <div class="pc-row">
-                <label class="lbl">Costo Promedio:</label>
-                <div class="sm">
-                  <input type="number" step="0.0001" class="form-control input-line"
-                         formControlName="costoPromedio" (blur)="formatDecimal('costoPromedio',4)">
-                </div>
+          <!-- Fila 3: PVP Anterior + IVA | Fecha Anterior Modificar -->
+          <div class="pc-row duo">
+            <div class="grp">
+              <label class="lbl">PVP Anterior + IVA:</label>
+              <div class="xs">
+                <input
+                  type="text" inputmode="decimal" maxlength="20"
+                  class="input-line tint-blue"
+                  [readonly]="true"
+                  formControlName="pvpAnteriorMasIva">
               </div>
+            </div>
+            <div class="grp">
+              <label class="lbl">Fech.Ant.Mod:</label>
+              <div class="xs">
+                <input type="date" class="input-line w-100"
+                       formControlName="fechaAnteriorModificarPrecio">
+              </div>
+            </div>
+          </div>
 
-              <!-- Fila 3: Precio Compra Anterior | Fecha Anterior Modificar -->
-              <div class="pc-row duo">
-                <div class="grp">
-                  <label class="lbl">Precio Compra Anterior:</label>
-                  <div class="xs">
-                    <input type="number" step="0.0001" class="form-control input-line"
-                           formControlName="precioCompraAnterior" (blur)="formatDecimal('precioCompraAnterior',4)">
-                  </div>
-                </div>
-                <div class="grp">
-                  <label class="lbl">Fecha Anterior Modificar:</label>
-                  <div class="xs">
-                    <input type="date" class="input-line w-100" formControlName="fechaAnteriorModificarCompra">
-                  </div>
-                </div>
+          <!-- Fila 4: PVP Actual + IVA | Fecha Modificar -->
+          <div class="pc-row duo">
+            <div class="grp">
+              <label class="lbl">PVP Actual + IVA:</label>
+              <div class="xs">
+                <input
+                  type="text" inputmode="decimal" maxlength="20"
+                  class="input-line tint-green"
+                  [readonly]="true"
+                  formControlName="pvpActualMasIva">
               </div>
+            </div>
+            <div class="grp">
+              <label class="lbl">Fecha Modificación:</label>
+              <div class="xs">
+                <input type="date" class="input-line w-100"
+                       formControlName="fechaModificarPrecio">
+              </div>
+            </div>
+          </div>
 
-              <!-- Fila 4: Precio Compra Actual | Fecha Modificar -->
-              <div class="pc-row duo">
-                <div class="grp">
-                  <label class="lbl">Precio Compra Actual:</label>
-                  <div class="xs">
-                    <input type="number" step="0.0001" class="form-control input-line"
-                           formControlName="precioCompraActual" (blur)="formatDecimal('precioCompraActual',4)">
-                  </div>
-                </div>
-                <div class="grp">
-                  <label class="lbl">Fecha Modificar:</label>
-                  <div class="xs">
-                    <input type="date" class="input-line w-100" formControlName="fechaModificarCompra">
-                  </div>
-                </div>
-              </div>
+          <hr class="pc-sep">
 
-              <!-- Fila 5: Recepción % -->
-              <div class="pc-row">
-                <label class="lbl">Recepción %:</label>
-                <div class="xs">
-                  <input type="number" step="0.0001" class="input-line w-100"
-                         formControlName="recepcionPorcentaje" (blur)="formatDecimal('recepcionPorcentaje',4)">
-                </div>
-              </div>
+          <!-- Fila 5: Margen Utilidad % (solo lectura) -->
+          <div class="pc-row">
+            <label class="lbl">Margen Utilidad %:</label>
+            <div class="sm">
+              <input
+                type="text" inputmode="decimal" maxlength="20"
+                class="input-line w-100"
+                [readonly]="true"
+                formControlName="margenUtilidad">
             </div>
           </div>
         </div>
-
-        <!-- Acciones -->
-        <ng-container [ngTemplateOutlet]="accionesTabs"></ng-container>
       </div>
-    </mat-tab>
+
+      <!-- ===== Columna Derecha: COSTOS ===== -->
+      <div class="col-12 col-lg-6">
+        <div class="pc-panel">
+          <h3 class="pc-title">Costos</h3>
+
+          <!-- Fila 1: Costo Suministro | Costo Producto -->
+          <div class="pc-row duo">
+            <div class="grp">
+              <label class="lbl">Costo Suministro:</label>
+              <div class="xs">
+                <input
+                  type="text" inputmode="decimal" maxlength="20"
+                  class="input-line"
+                  formControlName="costoSuministro"
+                  (input)="onNumericInput('costoSuministro')"
+                  (blur)="formatDecimal('costoSuministro',3)">
+              </div>
+            </div>
+            <div class="grp">
+              <label class="lbl">Costo Producto:</label>
+              <div class="xs">
+                <input
+                  type="text" inputmode="decimal" maxlength="20"
+                  class="input-line"
+                  formControlName="costoProducto"
+                  (input)="onNumericInput('costoProducto')"
+                  (blur)="formatDecimal('costoProducto',3)">
+              </div>
+            </div>
+          </div>
+
+          <!-- Fila 2: Costo Promedio (editable) -->
+          <div class="pc-row">
+            <label class="lbl">Costo Promedio:</label>
+            <div class="sm">
+              <input
+                type="text" inputmode="decimal" maxlength="20"
+                class="input-line"
+                formControlName="costoPromedio"
+                (input)="onNumericInput('costoPromedio')"
+                (blur)="formatDecimal('costoPromedio',3)">
+            </div>
+          </div>
+
+          <hr class="pc-sep">
+
+          <!-- Fila 3: Precio Compra Anterior | Fecha Anterior Modificar -->
+          <div class="pc-row duo">
+            <div class="grp">
+              <label class="lbl">Precio Compra Anterior:</label>
+              <div class="xs">
+                <input
+                  type="text" inputmode="decimal" maxlength="20"
+                  class="input-line"
+                  formControlName="precioCompraAnterior"
+                  (input)="onNumericInput('precioCompraAnterior')"
+                  (blur)="formatDecimal('precioCompraAnterior',3)">
+              </div>
+            </div>
+            <div class="grp">
+              <label class="lbl">Fech.Ant.Mod:</label>
+              <div class="xs">
+                <input type="date" class="input-line w-100"
+                       formControlName="fechaAnteriorModificarCompra">
+              </div>
+            </div>
+          </div>
+
+          <!-- Fila 4: Precio Compra Actual | Fecha Modificar -->
+          <div class="pc-row duo">
+            <div class="grp">
+              <label class="lbl">Precio Compra Actual:</label>
+              <div class="xs">
+                <input
+                  type="text" inputmode="decimal" maxlength="20"
+                  class="input-line"
+                  formControlName="precioCompraActual"
+                  (input)="onNumericInput('precioCompraActual')"
+                  (blur)="formatDecimal('precioCompraActual',3)">
+              </div>
+            </div>
+            <div class="grp">
+              <label class="lbl">Fecha Modificación:</label>
+              <div class="xs">
+                <input type="date" class="input-line w-100"
+                       formControlName="fechaModificarCompra">
+              </div>
+            </div>
+          </div>
+
+          <hr class="pc-sep">
+
+          <!-- Fila 5: Recepción % (editable) -->
+          <div class="pc-row">
+            <label class="lbl">Recepción %:</label>
+            <div class="xs">
+              <input
+                type="text" inputmode="decimal" maxlength="20"
+                class="input-line w-100"
+                formControlName="recepcionPorcentaje"
+                (input)="onNumericInput('recepcionPorcentaje')"
+                (blur)="formatDecimal('recepcionPorcentaje',3)">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Acciones -->
+    <ng-container [ngTemplateOutlet]="accionesTabs"></ng-container>
+  </div>
+</mat-tab>
 
     <!-- ================= TAB 4: Estructura y Stock ================= -->
     <mat-tab label="Estructura y Stock">
