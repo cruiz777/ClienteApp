@@ -225,7 +225,7 @@
 .form-title {
   align-self: stretch;
   display: flex;
-  margin-top: 20px;
+  margin-top: 10px;
   align-items: center;
   gap: 10px;
   font-size: 20px;
@@ -1886,3 +1886,320 @@
 
 /* por si quedó algún centrado heredado */
 .values-layout, .main-cards-grid { margin-left: 0 !important; }
+/* Ajustar el número secuencial */
+#secuencial {
+  text-align: left;       /* Alinea el texto a la izquierda */
+  padding-left: 5px;      /* Espacio interno a la izquierda */
+}
+
+/* Espaciado entre label y campo "Guía Remisión" */
+label[for="guia-remision"] {
+  margin-right: 8px;      /* Espacio a la derecha del label */
+}
+
+/* Si el campo de guía está en un flex container */
+.guia-remision-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Espacio entre los elementos */
+}
+/* ====== BASE ELÁSTICA ====== */
+:root{
+  /* ancho máx. del contenido, crece con el viewport */
+  --content-max: clamp(1200px, 92vw, 1440px);
+}
+
+.fi-page{
+  max-width: var(--content-max);
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 16px 64px;
+}
+
+/* Columna izquierda flexible | sidebar fijo */
+.values-layout{
+  display: grid;
+  grid-template-columns: minmax(700px,1fr) 420px;
+  gap: 20px;
+  align-items: start;
+  justify-content: stretch;
+  width: 100%;
+}
+
+.box-section,
+.values-section{ width: 100%; }
+
+/* ====== “Caja” SIN posiciones absolutas + grid fluido ====== */
+.invoice-fields-row{
+  position: static !important;      /* anula absolute */
+  display: grid !important;
+  grid-template-columns: auto auto auto 1fr; /* Factura | P.Emisión | Caja | Secuencial */
+  gap: 16px 24px;
+  margin: 12px 20px 0 20px;
+}
+
+#secuencial{
+  text-align: left;
+  padding-left: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.document-references{
+  position: static !important;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+  margin: 18px 20px 0 20px;
+}
+
+.observation-section{
+  position: static !important;
+  margin: 18px 20px 0 20px;
+}
+
+/* ====== Sidebar “Detalles de Valores” fluido ====== */
+.values-section--grid{
+  position: static !important;
+  width: 100% !important;
+  margin: 0;
+}
+.values-section--grid .values-header{
+  display:flex; align-items:center; gap:10px;
+  width:100% !important; height:auto;
+}
+.values-section--grid .values-highlight-background{ display:none; }
+.values-section--grid .value-row{
+  position: static !important;
+  width: 100% !important;
+  height: auto !important;
+  display: grid !important;
+  grid-template-columns: 150px 1fr;
+  gap: 10px;
+  align-items: center;
+  border-bottom: 1px solid #e6ecf5;
+  margin: 8px 0;
+}
+.values-section--grid .value-row:nth-child(n){ top:auto !important; }
+.values-section--grid .total-section{
+  position: static !important;
+  width: 100% !important;
+  margin-top: 10px;
+}
+
+/* ====== BREAKPOINTS ====== */
+
+/* <= 1200px: sidebar un poco más angosto, campos de Caja en 2 columnas */
+@media (max-width: 1200px){
+  .values-layout{
+    grid-template-columns: minmax(560px,1fr) 360px;
+  }
+  .invoice-fields-row{
+    grid-template-columns: 1fr 1fr; /* 2 columnas */
+  }
+  .document-references{
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* <= 900px: una sola columna (sidebar pasa debajo) */
+@media (max-width: 900px){
+  .values-layout{
+    grid-template-columns: 1fr;    /* apilar */
+  }
+  .main-cards-grid{ grid-template-columns: 1fr !important; }
+  .invoice-fields-row{
+    grid-template-columns: 1fr;    /* inputs una debajo de otra */
+  }
+  .document-references{
+    grid-template-columns: 1fr;    /* Orden/Guía en una columna */
+  }
+}
+
+/* <= 600px: tipografía e inputs más cómodos */
+@media (max-width: 600px){
+  .main-title, .values-title{ font-size: 18px; }
+  .field-label, .value-label{ font-size: 12px; }
+  .values-section--grid .value-row{
+    grid-template-columns: 120px 1fr;
+  }
+  .text-input,
+  .fi-input{ font-size: 14px; line-height: 1.4; }
+}
+
+/* (Opcional) Scrollbar más grueso para móviles/desktop */
+html::-webkit-scrollbar{ width: 14px; height: 14px; }
+html::-webkit-scrollbar-track{ background:#f2f4f7; }
+html::-webkit-scrollbar-thumb{ background:#c8d1e0; border-radius:8px; border:3px solid #f2f4f7; }
+html::-webkit-scrollbar-thumb:hover{ background:#aeb8cc; }
+html{ scrollbar-width:auto; scrollbar-color:#c8d1e0 #f2f4f7; }
+/* Título Caja arriba y ocupando todo el ancho */
+.main-title-section {
+  grid-column: 1 / -1;   /* ocupa todas las columnas del grid */
+  margin-bottom: 10px;   /* separación con los campos */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.main-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #002c6c;
+  margin: 0;
+}
+
+/* La tarjeta Caja apilada en columna */
+.box-section{
+  display: grid;
+  grid-template-columns: 1fr;
+  row-gap: 12px;
+  padding: 16px 20px 20px;  /* ya lo tienes, lo refuerzo */
+}
+
+/* Título principal arriba, sin absolute */
+.main-title-section{
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  width: auto !important;
+  height: auto !important;
+  grid-column: 1 / -1;
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.main-title{ font-size: 22px; font-weight: 700; margin: 0; }
+
+/* Primera fila (Factura / P.Emisión / Caja / Secuencial) como grid */
+.invoice-fields-row{
+  position: static !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  column-gap: 24px;
+  row-gap: 6px;
+  margin: 0;          /* ya no necesitamos compensar top */
+  align-items: end;
+}
+
+/* Quitar padding manual del label “Secuencial” */
+label[for="secuencial"]{ padding-left: 0 !important; }
+
+/* Resto de secciones debajo, sin absolute */
+.document-references,
+.observation-section{
+  position: static !important;
+  margin: 8px 0 0 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+}
+
+/* Responsive: 2 columnas y luego 1 */
+@media (max-width: 1200px){
+  .invoice-fields-row{ grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 900px){
+  .invoice-fields-row{ grid-template-columns: 1fr; }
+  .document-references{ grid-template-columns: 1fr; }
+}
+/* Reduce relleno de la tarjeta */
+.box-section{
+  padding-top: 10px !important;
+  padding-bottom: 16px;
+  display: flex;                 /* apila contenido */
+  flex-direction: column;
+  gap: 6px;                      /* separación mínima entre bloques */
+}
+
+/* Título sin altura ni margen extra */
+.main-title-section{
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 0 6px 0 !important;  /* separa 6px del siguiente bloque */
+}
+.main-title{ margin: 0 !important; line-height: 1.1; }
+
+/* Primera fila sin desplazamientos ni margen alto */
+.invoice-fields-row{
+  position: static !important;
+  margin: 0 !important;
+  /* si la usas como grid, deja una separación pequeña */
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  column-gap: 24px;
+  row-gap: 6px;
+}
+
+/* Por si algún estilo viejo le da “top” a algo: ignóralo */
+.invoice-fields-row > *{ top: auto !important; }
+
+/* En móviles puedes aumentar un poco el gap si lo ves muy junto */
+@media (max-width: 900px){
+  .invoice-fields-row{ grid-template-columns: 1fr 1fr; row-gap: 8px; }
+}
+@media (max-width: 600px){
+  .invoice-fields-row{ grid-template-columns: 1fr; }
+}
+.ag-theme-alpine { --ag-header-height: 36px; --ag-row-height: 36px; }
+.ag-btn-delete{
+  padding: 4px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+.ag-btn-delete:hover{
+  background:#f3f4f6;
+}
+/* Producto: fondo BLANCO y sin overlay gris */
+.fi-prefix-field .mat-mdc-text-field-wrapper,
+.fi-prefix-field .mat-mdc-form-field-flex,
+.fi-prefix-field .mdc-text-field{
+  background: #fff !important;
+}
+
+.fi-prefix-field .mat-mdc-form-field-focus-overlay{
+  background: transparent !important;
+}
+
+/* Borde/radio como el resto de tus inputs */
+.fi-prefix-field .mat-mdc-form-field-flex{
+  border: 1px solid #E6ECF5;
+  border-radius: 8px;
+  height: 36px;
+  padding: 0 10px;
+  box-shadow: 0 1px 2px rgba(16,24,40,.04);
+}
+
+/* Ajustes internos */
+.fi-prefix-field .mdc-notched-outline{ display: none; }
+.fi-prefix-field .mat-mdc-form-field-subscript-wrapper{ display: none; }
+.fi-prefix-field .mat-mdc-form-field-infix{ padding: 0; min-height: 0; }
+.fi-prefix-field input.mat-mdc-input-element{ padding: 0; font-size: 14px; }
+.fi-prefix-field .fi-prefix{ color:#002c6c; font-weight:600; white-space:nowrap; }
+/* ancho máximo y centrado */
+.tabs-narrow{
+  max-width: 900px;   /* ajusta a tu gusto */
+  width: 100%;
+  margin: 0 auto;     /* centra el tab group */
+}
+
+/* opcional: en móviles permite ancho completo */
+@media (max-width: 600px){
+  .tabs-narrow{ max-width: 100%; }
+}
+/* ancho reducido + alineado a la izquierda */
+.tabs-narrow-left{
+  width: clamp(560px, 70vw, 900px); /* elige el rango que quieras */
+  margin-left: 0;                   /* pegado a la izquierda */
+  margin-right: auto;               /* evita centrado */
+}
+
+/* si el PARENT usa flex y lo centra, fuerza alineación a la izquierda */
+.tabs-narrow-left{ align-self: flex-start; }
+
+/* si el PARENT usa grid y lo centra, idem */
+.tabs-narrow-left{ justify-self: start; }

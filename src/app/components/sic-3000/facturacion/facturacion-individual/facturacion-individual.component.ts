@@ -3,6 +3,8 @@ import { Component, OnInit } from '@angular/core';
 import { map } from 'rxjs';
 import { ClienteContactoService } from 'src/app/services/cliente-contacto.service';
 import { forkJoin } from 'rxjs';
+import { AgGridModule } from 'ag-grid-angular';
+import { ColDef, ColGroupDef, GridApi } from 'ag-grid-community';
 import {
   FormBuilder,
   FormControl,
@@ -77,7 +79,8 @@ interface PaymentDetail {
     MatMenuModule,
     MatTableModule,
     MatPaginatorModule,
-    MatSnackBarModule
+    MatSnackBarModule,
+    AgGridModule
   ]
 })
 export class FacturacionIndividualComponent implements OnInit {
@@ -106,10 +109,94 @@ export class FacturacionIndividualComponent implements OnInit {
 
   isLoadingDetalle = false;
 
+  ///grid producto
+  gridApi!: GridApi;
+
+  columnDefs: ColDef[] = [
+    {
+      headerName: 'Cantidad', field: 'cantidad', editable: true, type: 'numericColumn',
+      cellEditor: 'agNumberCellEditor', width: 110, minWidth: 100
+    },
+
+    { headerName: 'Detalle', field: 'detalle', editable: true, flex: 1, minWidth: 200 },
+
+    {
+      headerName: 'P. Unidad', field: 'pUnidad', editable: true, type: 'numericColumn',
+      cellEditor: 'agNumberCellEditor', width: 120
+    },
+
+    {
+      headerName: 'IVA', field: 'iva', editable: true,
+      cellEditor: 'agSelectCellEditor', cellEditorParams: { values: [0, 12, 15] }, width: 100
+    },
+
+    {
+      headerName: 'Des. Unitario', field: 'desUnit', editable: true, type: 'numericColumn',
+      cellEditor: 'agNumberCellEditor', width: 130
+    },
+
+    {
+      headerName: 'Descuento', field: 'descuento', editable: true, type: 'numericColumn',
+      cellEditor: 'agNumberCellEditor', width: 120
+    },
+
+    {
+      headerName: 'Des. Total', field: 'desTotal', editable: true, type: 'numericColumn',
+      cellEditor: 'agNumberCellEditor', width: 120
+    },
+
+    {
+      headerName: 'Total', field: 'total', editable: true, type: 'numericColumn',
+      cellEditor: 'agNumberCellEditor', width: 130, pinned: 'right'
+    }
+  ];
+
+  defaultColDef: ColDef = {
+    resizable: true,
+    sortable: false,
+    filter: false
+  };
+
+  rowData = [
+    { cantidad: 1, detalle: 'CODIGO INDIVIDUAL', pUnidad: 100, iva: 15, desUnit: 0, descuento: 0, desTotal: 0, total: 115 }
+  ];
+  ///
+
+  pagosApi!: GridApi;
+
+columnDefsPagos: ColDef[] = [
+  { headerName: 'Detalle', field: 'detalle', editable: true, flex: 1, minWidth: 180 },
+  { headerName: 'Plazo', field: 'plazo', editable: true, width: 120 },
+  { headerName: 'Tiempo', field: 'tiempo', editable: true, width: 120 },
+  { headerName: 'Valor', field: 'valor', editable: true, type: 'numericColumn',
+    cellEditor: 'agNumberCellEditor', width: 120 },
+  {
+    headerName: 'Acción',
+    width: 110,
+    pinned: 'right',
+    cellRenderer: (params: any) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = 'Eliminar';
+      btn.className = 'ag-btn-delete';
+      btn.addEventListener('click', () => params.api.applyTransaction({ remove: [params.node.data] }));
+      return btn;
+    }
+  }
+];
+
+  defaultColDefPagos: ColDef = {
+    resizable: true,
+    sortable: false,
+    filter: false
+  };
+
+  rowDataPagos = [
+    { detalle: '', plazo: '', tiempo: '', valor: 0}
+  ];
+
   // ============= Otros campos demo =============
-  paymentMethods: string[] = ['Contado', 'Crédito 30 días', 'Transferencia', 'Tarjeta'];
-  selectedPaymentMethod = this.paymentMethods[0];
-  paymentDetails: PaymentDetail[] = [];
+
   private seqId = 0;
 
   invoiceDate = new Date().toLocaleDateString('es-EC');
@@ -162,7 +249,7 @@ export class FacturacionIndividualComponent implements OnInit {
     });
 
     this.formPagos = this.fb.group({
-      metodoPago: [this.selectedPaymentMethod],
+      metodoPago: [''],
       plazo: [''],
       tiempo: [''],
       valor: ['']
@@ -211,7 +298,7 @@ export class FacturacionIndividualComponent implements OnInit {
       )
       .subscribe(resp => this.clientesOrigenFiltrados = resp.data || []);
 
-    this.recalcTotals();
+   //aqui se pone la funcion para recaulcular tener pendiente
   }
 
   // ============= Prefijos =============
@@ -368,39 +455,14 @@ export class FacturacionIndividualComponent implements OnInit {
 
 
   // ============= Varios =============
-  deleteRow(id: number): void {
-    const before = this.paymentDetails.length;
-    this.paymentDetails = this.paymentDetails.filter(p => p.id !== id);
-    if (this.paymentDetails.length !== before) this.recalcTotals();
-  }
 
-  addPaymentDetail(method: string, term = '-', timeUnit = '-', value = 0): void {
-    this.paymentDetails.push({ id: ++this.seqId, method, term, timeUnit, value: Number(value) || 0 });
-    this.recalcTotals();
-  }
 
   onProductSelect(): void { }
   onDateChange(): void { }
   onPaymentMethodChange(): void { }
   onGenerateInvoice(): void { }
 
-  private recalcTotals(): void {
-    const subtotal = this.values.subtotal ?? 0;
-    const descuento = this.values.discount ?? 0;
-    const valorSinIva = this.values.valueWithoutIva ?? 0;
-    const valorConIva = this.values.valueWithIva ?? 0;
-    const iva = this.values.ivaValue ?? 0;
-    const total = this.values.total ?? (valorSinIva + valorConIva + iva - descuento);
-
-    const pagos = this.paymentDetails.reduce((acc, p) => acc + (Number(p.value) || 0), 0);
-    const saldoPendiente = Math.max(0, total - pagos);
-
-    this.formTotales.patchValue(
-      { subtotal, descuento, valorSinIva, valorConIva, iva, total, saldoPendiente },
-      { emitEvent: false }
-    );
-    this.pendingBalance = saldoPendiente;
-  }
+ 
 
   limpiarCliente(): void {
     this.clienteOrigenControl.setValue('', { emitEvent: false });
@@ -418,4 +480,6 @@ export class FacturacionIndividualComponent implements OnInit {
       panelClass: tipo === 'error' ? ['snack-error'] : tipo === 'ok' ? ['snack-ok'] : ['snack-info']
     });
   }
+  onGridReady(e: any) { this.gridApi = e.api; }
+  onPagosGridReady(e: any){ this.pagosApi = e.api; }
 }
