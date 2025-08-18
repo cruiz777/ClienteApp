@@ -240,3 +240,100 @@
 .no-spin::-webkit-outer-spin-button,
 .no-spin::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .no-spin { -moz-appearance: textfield; }
+
+/* ========== TAB 5: Proveedor ========== */
+
+/* Panel blanco con borde suave */
+.pc-panel{
+  background:#fff;
+  border:1px solid var(--borde, #e6edf6);
+  border-radius:10px;
+  padding:16px;
+  box-shadow:0 1px 1px rgba(16,24,40,.02);
+}
+
+/* Títulos pequeños azules */
+.pc-title{
+  margin:0 0 8px;
+  font-size:14px;
+  font-weight:700;
+  color:#27374A;
+}
+
+/* Campos (etiqueta arriba + línea inferior) */
+.fi-field{ margin-bottom:16px; }
+.fi-label{
+  display:block;
+  font-size:12px;
+  font-weight:600;
+  color:#1f2937;
+  margin-bottom:4px;
+}
+.fi-input-wrap{ position:relative; }
+.fi-input-wrap input[matInput],
+.fi-input-wrap input[type="text"]{
+  width:100%;
+  border:0;
+  border-bottom:2px solid #e6edf6;
+  background:transparent;
+  padding:6px 4px;
+  font-size:13px;
+  outline:none;
+}
+.fi-input-wrap input:focus{
+  border-bottom-color:#1f6feb;
+}
+.fi-input-wrap input::placeholder{ color:#a3acb9; }
+
+/* Tabla de proveedores */
+.table{
+  width:100%;
+  border-collapse:separate;
+  border-spacing:0;
+  font-size:13px;
+}
+.table thead th{
+  position:sticky;        /* deja el encabezado fijo si hay scroll */
+  top:0;
+  background:#f7fafc;
+  color:#27374A;
+  font-weight:600;
+  padding:8px 10px;
+  border-bottom:1px solid #e6edf6;
+}
+.table td, .table th{
+  padding:8px 10px;
+  border-right:1px solid #eef2f8;
+}
+.table td:last-child,
+.table th:last-child{ border-right:0; }
+
+.table tbody tr{ border-bottom:1px solid #f0f3f7; }
+.table tbody tr:hover{ background:#fbfdff; }
+
+/* Check centrado en su celda */
+.table td input[type="checkbox"]{
+  width:16px;
+  height:16px;
+  accent-color:#1f6feb;
+  display:block;
+  margin:0 auto;
+}
+
+/* Botonera inferior */
+.acciones{
+  display:flex;
+  gap:16px;
+  justify-content:center;
+}
+.acciones button[mat-flat-button]{ color:#fff; }
+
+/* Espaciado del contenido del tab */
+.tab-body{ padding:12px 8px; }
+
+/* Responsivo */
+@media (max-width: 992px){
+  .pc-panel{ padding:12px; }
+  .table thead th, .table td{ padding:6px 8px; }
+}
+
