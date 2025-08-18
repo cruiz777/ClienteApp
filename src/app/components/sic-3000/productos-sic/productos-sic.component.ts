@@ -1,5 +1,8 @@
 import { Component, OnInit, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
+
+import { ProductoRequest, sanitizeProductoPayload } from 'src/app/interfaces/requests/producto-request';
 
 @Component({
   selector: 'app-productos-sic',
@@ -9,12 +12,13 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 export class ProductosSicComponent implements OnInit, AfterViewInit {
 
   selectedTab = 0;
+  idEstructura!: number;
 
   // Catálogos (Tab 1)
-  unidadesVenta   = ['Unidad', 'Caja', 'Docena', 'Paquete', 'Litro'];
-  tiposProducto   = ['Bien', 'Servicio', 'Medicamento', 'Insumo'];
-  presentaciones  = ['Botella', 'Caja', 'Bolsa', 'Blíster', 'Granel'];
-  clasesProducto  = ['A', 'B', 'C'];
+  unidadesVenta = ['Unidad', 'Caja', 'Docena', 'Paquete', 'Litro'];
+  tiposProducto = ['Bien', 'Servicio', 'Medicamento', 'Insumo'];
+  presentaciones = ['Botella', 'Caja', 'Bolsa', 'Blíster', 'Granel'];
+  clasesProducto = ['A', 'B', 'C'];
 
   // IVA para Tab 3
   iva = 0.12;
@@ -24,10 +28,19 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   adicionalForm!: FormGroup; // Tab 2
   preciosForm!: FormGroup;   // Tab 3
 
-  constructor(private fb: FormBuilder, private cdr: ChangeDetectorRef) {}
+  constructor(
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef,
+    private route: ActivatedRoute
+  ) { }
 
   ngOnInit(): void {
     this.selectedTab = 0;
+
+    this.route.paramMap.subscribe(params => {
+      this.idEstructura = Number(params.get('idEstructura')) || 0;
+      console.log('ID de estructura recibido:', this.idEstructura);
+    });
 
     // ===== Tab 1
     this.form = this.fb.group({

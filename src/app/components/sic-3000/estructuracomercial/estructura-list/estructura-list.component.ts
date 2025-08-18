@@ -1,3 +1,4 @@
+import { Routes, Router } from '@angular/router';
 import { Component, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms'; // ⬅️ NUEVO
@@ -17,8 +18,8 @@ import { UsuarioService } from 'src/app/services/usuario.service';
 import { ProductoEstructuraComercialRequest } from 'src/app/interfaces/requests/producto-estructura-request';
 import { ProductoResponse } from 'src/app/interfaces/responses/producto-response';
 
-import { Subject } from 'rxjs';              // ⬅️ NUEVO
-import { debounceTime } from 'rxjs/operators'; // ⬅️ NUEVO
+import { Subject } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 
 @HostListener('document:click')
 @Component({
@@ -67,8 +68,9 @@ export class EstructuraListComponent {
     private grupoService: GrupoService,
     private productoService: ProductoService,
     private usuarioService: UsuarioService,
-    private dialog: MatDialog
-  ) {}
+    private dialog: MatDialog,
+    private router: Router
+  ) { }
 
   ngOnInit(): void {
     this.usuarioActual = this.usuarioService.getUsuarioActual();
@@ -266,7 +268,7 @@ export class EstructuraListComponent {
   }
 
   // ===================== Presentación (set columnas + datos) =====================
-  private setTable(columns: Array<{key:string;label:string}>, rows: any[]): void {
+  private setTable(columns: Array<{ key: string; label: string }>, rows: any[]): void {
     this.tableColumns = columns ?? [];
     this.tableRowsAll = rows ?? [];
     this.resetFiltersForCurrentColumns();
@@ -278,10 +280,10 @@ export class EstructuraListComponent {
     this.setTable(
       [
         { key: 'id_producto', label: 'Id' },
-        { key: 'codpro',      label: 'Cod. Pro' },
-        { key: 'despro',      label: 'Descripción' },
-        { key: 'tippro',      label: 'Tip. Prod' },
-        { key: 'codbar',      label: 'Codbar.' }
+        { key: 'codpro', label: 'Cod. Pro' },
+        { key: 'despro', label: 'Descripción' },
+        { key: 'tippro', label: 'Tip. Prod' },
+        { key: 'codbar', label: 'Codbar.' }
       ],
       productos ?? []
     );
@@ -291,7 +293,7 @@ export class EstructuraListComponent {
     this.tableMode = 'intermedio';
     this.setTable(
       [
-        { key: 'id_hijo',     label: 'Id Hijo' },
+        { key: 'id_hijo', label: 'Id Hijo' },
         { key: 'nombre_hijo', label: 'Nombre Hijo' }
       ],
       rows ?? []
@@ -366,13 +368,13 @@ export class EstructuraListComponent {
 
   obtenerTipoHijo(tipoActual: string): string | null {
     switch (tipoActual) {
-      case 'empresa':     return 'estructuraComercial';
-      case 'estructura':  return 'division';
-      case 'division':    return 'subDivision';
+      case 'empresa': return 'estructuraComercial';
+      case 'estructura': return 'division';
+      case 'division': return 'subDivision';
       case 'subdivision': return 'departamento';
-      case 'departamento':return 'seccion';
-      case 'seccion':     return 'grupo';
-      default:            return null;
+      case 'departamento': return 'seccion';
+      case 'seccion': return 'grupo';
+      default: return null;
     }
   }
 
@@ -393,7 +395,13 @@ export class EstructuraListComponent {
       }
     });
   }
-  crearProducto(): void { /* tu flujo */ }
+  crearProducto(): void {
+    this.menuContextualVisible = false;
+    if (!this.nodoSeleccionado) return;
+
+    this.router.navigate(['sic-3000/productossic', this.nodoSeleccionado.id]);
+  }
+
 
   toggleExpandConRecarga(nodo: any): void {
     nodo.hijos = [];

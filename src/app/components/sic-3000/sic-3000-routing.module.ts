@@ -16,7 +16,8 @@ const routes: Routes = [
       { path: '', redirectTo: 'inicio', pathMatch: 'full' },
       { path: 'inicio-sic', component: InicioSicComponent },
       { path: 'estructura-list', component: EstructuraListComponent },
-      { path: 'productossic', component:ProductosSicComponent },
+      { path: 'productossic', component: ProductosSicComponent },
+      { path: 'productossic/:idEstructura', component: ProductosSicComponent },
       { path: 'registroCobros', component: RegistroCobrosComponent },
       { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
     ]
