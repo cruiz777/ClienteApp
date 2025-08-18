@@ -12,18 +12,24 @@ export class AuthGuard implements CanActivate, CanActivateChild {
   ) {}
 
   canActivate(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {
-    const usuario = this.usuarioService.getUsuarioActual();
-    
-    if (usuario && usuario.estado) {
-      console.log('✅ Usuario autenticado:', usuario.nombre_usuario);
-      return true;
-    }
+    try {
+      const usuario = this.usuarioService.getUsuarioActual();
+      
+      if (usuario && usuario.estado) {
+        console.log('✅ Usuario autenticado:', usuario.nombre_usuario);
+        return true;
+      }
 
-    console.warn('❌ Usuario no autenticado, redirigiendo a login');
-    this.router.navigate(['/login'], { 
-      queryParams: { returnUrl: state.url } 
-    });
-    return false;
+      console.warn('❌ Usuario no autenticado, redirigiendo a login');
+      this.router.navigate(['/login'], { 
+        queryParams: { returnUrl: state.url } 
+      });
+      return false;
+    } catch (error) {
+      console.error('❌ Error en AuthGuard:', error);
+      this.router.navigate(['/login']);
+      return false;
+    }
   }
 
   canActivateChild(route: ActivatedRouteSnapshot, state: RouterStateSnapshot): boolean {

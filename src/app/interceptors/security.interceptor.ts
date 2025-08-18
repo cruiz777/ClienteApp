@@ -57,12 +57,11 @@ export class SecurityInterceptor implements HttpInterceptor {
 
   }
 
-  private esRespuestaDePermisos(url: string): boolean {
-    return url.includes('/permisos') || 
-           url.includes('/usuarios') || 
-           url.includes('/roles') ||
-           url.includes('/profiles');
-  }
+    private esRespuestaDePermisos(url: string): boolean {
+    // SOLO recargar para endpoints que NO sean la consulta de permisos
+    return (url.includes('/roles') || url.includes('/profiles')) && 
+            !url.includes('/permisos'); // Excluir explícitamente el endpoint de permisos
+    }
 
   private indicaCambioPermisos(response: HttpResponse<any>): boolean {
     const body = response.body;
@@ -71,8 +70,7 @@ export class SecurityInterceptor implements HttpInterceptor {
     if (body && typeof body === 'object') {
       return body.hasOwnProperty('permisos_changed') ||
              body.hasOwnProperty('role_updated') ||
-             body.hasOwnProperty('profile_modified') ||
-             (body.message && body.message.includes('permiso'));
+             body.hasOwnProperty('profile_modified')
     }
     
     return false;

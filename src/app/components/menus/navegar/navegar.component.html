@@ -1,4 +1,4 @@
-<!-- MENÚ CON PERMISOS DINÁMICOS -->
+<!-- MENÚ CON PERMISOS DINÁMICOS - VERSIÓN CORREGIDA Y ROBUSTA -->
 <mat-sidenav-container class="sidenav-container" [ngClass]="{
   'collapsed': !isExpanded && !isHandset,
   'mobile': isHandset
@@ -32,8 +32,8 @@
       <!-- Acordeón Principal -->
       <mat-accordion [multi]="false">
 
-        <!-- 👥 FICHA DE CLIENTE - CON VERIFICACIÓN DE PERMISOS -->
-        <mat-expansion-panel *ngIf="(menuPermisos$ | async)?.fichaCliente?.modulo">
+        <!-- 👥 FICHA DE CLIENTE - SIEMPRE VISIBLE, ACCESO CONTROLADO -->
+        <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
               <img src="assets/icons/icon-ficha-cliente.png" class="menu-icon">
@@ -41,28 +41,33 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <!-- Funcionalidades principales CON PERMISOS -->
+          <!-- Funcionalidades principales - SIEMPRE VISIBLES -->
           <a mat-list-item 
-             routerLink="/codbar/ficha-de-cliente/nuevo-cliente"
-             *ngIf="(menuPermisos$ | async)?.fichaCliente?.nuevoCliente">            
+             [routerLink]="((menuPermisos$ | async)?.fichaCliente?.nuevoCliente) ? '/codbar/ficha-de-cliente/nuevo-cliente' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.fichaCliente?.nuevoCliente)"
+             (click)="manejarClick('/codbar/ficha-de-cliente/nuevo-cliente', $event)">            
             <span *ngIf="isExpanded" class="menu-text">Nuevo Cliente</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.fichaCliente?.nuevoCliente)" class="lock-icon">lock</mat-icon>
           </a>
 
           <a mat-list-item 
-             routerLink="/codbar/ficha-de-cliente/listado-clientes"
-             *ngIf="(menuPermisos$ | async)?.fichaCliente?.listadoClientes">            
+             [routerLink]="((menuPermisos$ | async)?.fichaCliente?.listadoClientes) ? '/codbar/ficha-de-cliente/listado-clientes' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.fichaCliente?.listadoClientes)"
+             (click)="manejarClick('/codbar/ficha-de-cliente/listado-clientes', $event)">            
             <span *ngIf="isExpanded" class="menu-text">Listado de Clientes</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.fichaCliente?.listadoClientes)" class="lock-icon">lock</mat-icon>
           </a>
 
           <a mat-list-item 
-             routerLink="/codbar/ficha-de-cliente/consulta-verified"
-             *ngIf="(menuPermisos$ | async)?.fichaCliente?.consultaVerified">
+             [routerLink]="((menuPermisos$ | async)?.fichaCliente?.consultaVerified) ? '/codbar/ficha-de-cliente/consulta-verified' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.fichaCliente?.consultaVerified)"
+             (click)="manejarClick('/codbar/ficha-de-cliente/consulta-verified', $event)">
             <span *ngIf="isExpanded" class="menu-text">Consulta Verified</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.fichaCliente?.consultaVerified)" class="lock-icon">lock</mat-icon>
           </a>
 
-          <!-- SUB-ACORDEÓN: Configuración de Ficha Cliente CON PERMISOS -->
-          <mat-accordion class="sub-accordion" 
-                        *ngIf="(menuPermisos$ | async)?.fichaCliente?.tipoCliente || (menuPermisos$ | async)?.fichaCliente?.grupoCliente">
+          <!-- SUB-ACORDEÓN: Configuración de Ficha Cliente - SIEMPRE VISIBLE -->
+          <mat-accordion class="sub-accordion">
             <mat-expansion-panel>
               <mat-expansion-panel-header class="sub-header">
                 <mat-panel-title>
@@ -71,25 +76,29 @@
               </mat-expansion-panel-header>
 
               <a mat-list-item 
-                 routerLink="/codbar/ficha-de-cliente/tipo-cliente" 
+                 [routerLink]="((menuPermisos$ | async)?.fichaCliente?.tipoCliente) ? '/codbar/ficha-de-cliente/tipo-cliente' : null"
                  class="sub-menu-item"
-                 *ngIf="(menuPermisos$ | async)?.fichaCliente?.tipoCliente">
+                 [class.disabled]="!((menuPermisos$ | async)?.fichaCliente?.tipoCliente)"
+                 (click)="manejarClick('/codbar/ficha-de-cliente/tipo-cliente', $event)">
                 <span *ngIf="isExpanded" class="menu-text">Tipo Cliente</span>
+                <mat-icon *ngIf="!((menuPermisos$ | async)?.fichaCliente?.tipoCliente)" class="lock-icon">lock</mat-icon>
               </a>
 
               <a mat-list-item 
-                 routerLink="/codbar/ficha-de-cliente/grupo-cliente" 
+                 [routerLink]="((menuPermisos$ | async)?.fichaCliente?.grupoCliente) ? '/codbar/ficha-de-cliente/grupo-cliente' : null"
                  class="sub-menu-item"
-                 *ngIf="(menuPermisos$ | async)?.fichaCliente?.grupoCliente">
+                 [class.disabled]="!((menuPermisos$ | async)?.fichaCliente?.grupoCliente)"
+                 (click)="manejarClick('/codbar/ficha-de-cliente/grupo-cliente', $event)">
                 <span *ngIf="isExpanded" class="menu-text">Grupo Cliente</span>
+                <mat-icon *ngIf="!((menuPermisos$ | async)?.fichaCliente?.grupoCliente)" class="lock-icon">lock</mat-icon>
               </a>
             </mat-expansion-panel>
           </mat-accordion>
 
         </mat-expansion-panel>
 
-        <!-- 🔄 TRANSFERENCIA CON PERMISOS -->
-        <mat-expansion-panel *ngIf="(menuPermisos$ | async)?.transferencia?.modulo">
+        <!-- 🔄 TRANSFERENCIA - SIEMPRE VISIBLE -->
+        <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
               <img src="assets/icons/icon-transf-prefijo.png" class="menu-icon">
@@ -98,26 +107,32 @@
           </mat-expansion-panel-header>
 
           <a mat-list-item 
-             routerLink="/codbar/transferencia/tras-prefijo"
-             *ngIf="(menuPermisos$ | async)?.transferencia?.trasPrefijo">
+             [routerLink]="((menuPermisos$ | async)?.transferencia?.trasPrefijo) ? '/codbar/transferencia/tras-prefijo' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.transferencia?.trasPrefijo)"
+             (click)="manejarClick('/codbar/transferencia/tras-prefijo', $event)">
             <span *ngIf="isExpanded" class="menu-text">Transferencia de Prefijos</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.transferencia?.trasPrefijo)" class="lock-icon">lock</mat-icon>
           </a>
 
           <a mat-list-item 
-             routerLink="/codbar/transferencia/tras-gtin"
-             *ngIf="(menuPermisos$ | async)?.transferencia?.trasGtin">
+             [routerLink]="((menuPermisos$ | async)?.transferencia?.trasGtin) ? '/codbar/transferencia/tras-gtin' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.transferencia?.trasGtin)"
+             (click)="manejarClick('/codbar/transferencia/tras-gtin', $event)">
             <span *ngIf="isExpanded" class="menu-text">Transferencia Gtin</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.transferencia?.trasGtin)" class="lock-icon">lock</mat-icon>
           </a>
 
           <a mat-list-item 
-             routerLink="/codbar/transferencia/eliminar-prefijo"
-             *ngIf="(menuPermisos$ | async)?.transferencia?.eliminarPrefijo">
+             [routerLink]="((menuPermisos$ | async)?.transferencia?.eliminarPrefijo) ? '/codbar/transferencia/eliminar-prefijo' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.transferencia?.eliminarPrefijo)"
+             (click)="manejarClick('/codbar/transferencia/eliminar-prefijo', $event)">
             <span *ngIf="isExpanded" class="menu-text">Eliminar Prefijo</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.transferencia?.eliminarPrefijo)" class="lock-icon">lock</mat-icon>
           </a>
         </mat-expansion-panel>
 
-        <!-- ✅ VALIDACIÓN CON PERMISOS -->
-        <mat-expansion-panel *ngIf="(menuPermisos$ | async)?.validacion?.modulo">
+        <!-- ✅ VALIDACIÓN - SIEMPRE VISIBLE -->
+        <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
               <img src="assets/icons/icon-validacion-2.png" class="menu-icon">
@@ -126,26 +141,32 @@
           </mat-expansion-panel-header>
 
           <a mat-list-item 
-             routerLink="/codbar/validacion/validacionsri"
-             *ngIf="(menuPermisos$ | async)?.validacion?.validacionSri">
+             [routerLink]="((menuPermisos$ | async)?.validacion?.validacionSri) ? '/codbar/validacion/validacionsri' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.validacion?.validacionSri)"
+             (click)="manejarClick('/codbar/validacion/validacionsri', $event)">
             <span *ngIf="isExpanded" class="menu-text">Validar RUC en SRI</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.validacion?.validacionSri)" class="lock-icon">lock</mat-icon>
           </a>
 
           <a mat-list-item 
-             routerLink="/codbar/validacion/validacion-licenses"
-             *ngIf="(menuPermisos$ | async)?.validacion?.validacionLicenses">
+             [routerLink]="((menuPermisos$ | async)?.validacion?.validacionLicenses) ? '/codbar/validacion/validacion-licenses' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.validacion?.validacionLicenses)"
+             (click)="manejarClick('/codbar/validacion/validacion-licenses', $event)">
             <span *ngIf="isExpanded" class="menu-text">Validar Licencia Verified</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.validacion?.validacionLicenses)" class="lock-icon">lock</mat-icon>
           </a>
 
           <a mat-list-item 
-             routerLink="/codbar/validacion/validacion-productos"
-             *ngIf="(menuPermisos$ | async)?.validacion?.validacionProductos">
+             [routerLink]="((menuPermisos$ | async)?.validacion?.validacionProductos) ? '/codbar/validacion/validacion-productos' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.validacion?.validacionProductos)"
+             (click)="manejarClick('/codbar/validacion/validacion-productos', $event)">
             <span *ngIf="isExpanded" class="menu-text">Validar Productos Verified</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.validacion?.validacionProductos)" class="lock-icon">lock</mat-icon>
           </a>
         </mat-expansion-panel>
 
-        <!-- 📊 REPORTES CON PERMISOS -->
-        <mat-expansion-panel *ngIf="(menuPermisos$ | async)?.reportes?.modulo">
+        <!-- 📊 REPORTES - SIEMPRE VISIBLE -->
+        <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
               <img src="assets/icons/icon-reporte.png" class="menu-icon">
@@ -154,20 +175,24 @@
           </mat-expansion-panel-header>
 
           <a mat-list-item 
-             routerLink="/codbar/reportes/gerencia"
-             *ngIf="(menuPermisos$ | async)?.reportes?.gerencia">
+             [routerLink]="((menuPermisos$ | async)?.reportes?.gerencia) ? '/codbar/reportes/gerencia' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.reportes?.gerencia)"
+             (click)="manejarClick('/codbar/reportes/gerencia', $event)">
             <span *ngIf="isExpanded" class="menu-text">Reporte Gerencia Cliente</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.reportes?.gerencia)" class="lock-icon">lock</mat-icon>
           </a>
 
           <a mat-list-item 
-             routerLink="/codbar/reportes/explorador-cliente"
-             *ngIf="(menuPermisos$ | async)?.reportes?.exploradorCliente">
+             [routerLink]="((menuPermisos$ | async)?.reportes?.exploradorCliente) ? '/codbar/reportes/explorador-cliente' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.reportes?.exploradorCliente)"
+             (click)="manejarClick('/codbar/reportes/explorador-cliente', $event)">
             <span *ngIf="isExpanded" class="menu-text">Explorador Clientes</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.reportes?.exploradorCliente)" class="lock-icon">lock</mat-icon>
           </a>
         </mat-expansion-panel>
 
-        <!-- ⚙️ CONFIGURACIÓN GENERAL CON PERMISOS -->
-        <mat-expansion-panel *ngIf="(menuPermisos$ | async)?.configuracion?.modulo">
+        <!-- ⚙️ CONFIGURACIÓN GENERAL - SIEMPRE VISIBLE -->
+        <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
               <img src="assets/icons/icon-mantenimiento.png" class="menu-icon">
@@ -176,21 +201,27 @@
           </mat-expansion-panel-header>
 
           <a mat-list-item 
-             routerLink="/codbar/configuracion/localizacion-establecimiento"
-             *ngIf="(menuPermisos$ | async)?.configuracion?.localizacionEstablecimiento">
+             [routerLink]="((menuPermisos$ | async)?.configuracion?.localizacionEstablecimiento) ? '/codbar/configuracion/localizacion-establecimiento' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.configuracion?.localizacionEstablecimiento)"
+             (click)="manejarClick('/codbar/configuracion/localizacion-establecimiento', $event)">
             <span *ngIf="isExpanded" class="menu-text">Establecimientos GLN</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.configuracion?.localizacionEstablecimiento)" class="lock-icon">lock</mat-icon>
           </a>
 
           <a mat-list-item 
-             routerLink="/codbar/configuracion/grupo-producto"
-             *ngIf="(menuPermisos$ | async)?.configuracion?.grupoProducto">
+             [routerLink]="((menuPermisos$ | async)?.configuracion?.grupoProducto) ? '/codbar/configuracion/grupo-producto' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.configuracion?.grupoProducto)"
+             (click)="manejarClick('/codbar/configuracion/grupo-producto', $event)">
             <span *ngIf="isExpanded" class="menu-text">Grupo Producto</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.configuracion?.grupoProducto)" class="lock-icon">lock</mat-icon>
           </a>
 
           <a mat-list-item 
-             routerLink="/codbar/configuracion/tipo-prefijo"
-             *ngIf="(menuPermisos$ | async)?.configuracion?.tipoPrefijo">
+             [routerLink]="((menuPermisos$ | async)?.configuracion?.tipoPrefijo) ? '/codbar/configuracion/tipo-prefijo' : null"
+             [class.disabled]="!((menuPermisos$ | async)?.configuracion?.tipoPrefijo)"
+             (click)="manejarClick('/codbar/configuracion/tipo-prefijo', $event)">
             <span *ngIf="isExpanded" class="menu-text">Tipo Prefijo</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.configuracion?.tipoPrefijo)" class="lock-icon">lock</mat-icon>
           </a>
         </mat-expansion-panel>
 

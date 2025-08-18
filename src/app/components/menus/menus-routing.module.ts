@@ -68,18 +68,18 @@ const routes: Routes = [
             path: 'tipo-cliente',
             canActivate: [PermissionGuard],  // 🔒 GUARD APLICADO AL PADRE
             children: [
-              { path: '', component: TipoClienteListComponent },
-              { path: 'crear', component: TipoClienteFormComponent },
-              { path: 'editar/:id', component: TipoClienteFormComponent }
+              { path: '', component: TipoClienteListComponent, canActivate: [PermissionGuard]},
+              { path: 'crear', component: TipoClienteFormComponent,canActivate: [PermissionGuard] },
+              { path: 'editar/:id', component: TipoClienteFormComponent,canActivate: [PermissionGuard] }
             ]
           },
           {
             path: 'grupo-cliente',
             canActivate: [PermissionGuard],  // 🔒 GUARD APLICADO AL PADRE
             children: [
-              { path: '', component: GrupoClienteListComponent },
-              { path: 'crear', component: GrupoClienteFormComponent },
-              { path: 'editar/:id', component: GrupoClienteFormComponent }
+              { path: '', component: GrupoClienteListComponent ,canActivate: [PermissionGuard]},
+              { path: 'crear', component: GrupoClienteFormComponent,canActivate: [PermissionGuard] },
+              { path: 'editar/:id', component: GrupoClienteFormComponent,canActivate: [PermissionGuard] }
             ]
           }
         ]
@@ -158,9 +158,9 @@ const routes: Routes = [
             path: 'localizacion-establecimiento',
             canActivate: [PermissionGuard],  // 🔒 GUARD APLICADO AL PADRE
             children: [
-              { path: '', component: TipoLocalizacionListComponent },
-              { path: 'crear', component: TipoLocalizacionFormComponent },
-              { path: 'editar/:id', component: TipoLocalizacionFormComponent }
+              { path: '', component: TipoLocalizacionListComponent ,canActivate: [PermissionGuard]},
+              { path: 'crear', component: TipoLocalizacionFormComponent,canActivate: [PermissionGuard] },
+              { path: 'editar/:id', component: TipoLocalizacionFormComponent,canActivate: [PermissionGuard]}
             ]
           },
           {

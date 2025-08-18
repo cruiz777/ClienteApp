@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { PermissionsService } from '../services/permission.service';
 import { CommonModule } from '@angular/common';
+import { UsuarioService } from '../services/usuario.service';
 
 @Component({
   selector: 'app-sin-permisos',
@@ -27,15 +28,15 @@ import { CommonModule } from '@angular/common';
         
         <div class="actions">
           <button class="btn btn-primary" (click)="volverInicio()">
-            🏠 Ir al Inicio
+            Ir al Inicio
           </button>
           
           <button class="btn btn-secondary" (click)="recargarPermisos()">
-            🔄 Actualizar Permisos
+            Actualizar Permisos
           </button>
           
           <button class="btn btn-danger" (click)="cerrarSesion()">
-            🚪 Cerrar Sesión
+            Cerrar Sesión
           </button>
         </div>
       </div>
@@ -158,7 +159,8 @@ export class SinPermisosComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private permissions: PermissionsService
+    private permissions: PermissionsService,
+    private usuarioService: UsuarioService
   ) {}
 
   ngOnInit(): void {
@@ -207,8 +209,8 @@ export class SinPermisosComponent implements OnInit {
   }
 
   cerrarSesion(): void {
-    // Aquí deberías llamar a tu servicio de logout
-    // this.authService.logout();
+    // Se deslogea correctamente
+    this.usuarioService.logout();
     this.router.navigate(['/login']);
   }
 }
