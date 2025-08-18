@@ -42,7 +42,7 @@ export class InicioComponent implements OnInit, OnDestroy {
       tienePermiso: false
     },
     {
-      id: 'sic3000',
+      id: 'sic-3000',
       nombre: 'SIC 3000',
       imagenInactiva: '/assets/logo/SIC-3000-2.png',
       imagenActiva: '/assets/logo/SIC-3000.png', // Versión a color
@@ -50,7 +50,7 @@ export class InicioComponent implements OnInit, OnDestroy {
       tienePermiso: false
     },
     {
-      id: 'cg3000',
+      id: 'cg-3000',
       nombre: 'CG 3000',
       imagenInactiva: '/assets/logo/CG-3000-2.png',
       imagenActiva: '/assets/logo/CG-3000.png', // Versión a color
@@ -58,7 +58,7 @@ export class InicioComponent implements OnInit, OnDestroy {
       tienePermiso: false
     },
     {
-      id: 'rol3000',
+      id: 'rol-3000',
       nombre: 'ROL 3000',
       imagenInactiva: '/assets/logo/ROL-3000-2.png',
       imagenActiva: '/assets/logo/ROL-3000.png', // Versión a color
@@ -66,7 +66,7 @@ export class InicioComponent implements OnInit, OnDestroy {
       tienePermiso: false
     },
     {
-      id: 'seguridad',
+      id: 'seguridades',
       nombre: 'Seguridad',
       imagenInactiva: '/assets/logo/seguridad-2.png',
       imagenActiva: '/assets/logo/seguridad.png', // Versión a color
@@ -136,17 +136,17 @@ export class InicioComponent implements OnInit, OnDestroy {
           case 'codbar':
             sistema.tienePermiso = this.tieneAccesoSistema('codbar', permisos);
             break;
-          case 'sic3000':
-            sistema.tienePermiso = this.tieneAccesoSistema('sic3000', permisos);
+          case 'sic-3000':
+            sistema.tienePermiso = this.tieneAccesoSistema('sic-3000', permisos);
             break;
-          case 'cg3000':
-            sistema.tienePermiso = this.tieneAccesoSistema('cg3000', permisos);
+          case 'cg-3000':
+            sistema.tienePermiso = this.tieneAccesoSistema('cg-3000', permisos);
             break;
-          case 'rol3000':
-            sistema.tienePermiso = this.tieneAccesoSistema('rol3000', permisos);
+          case 'rol-3000':
+            sistema.tienePermiso = this.tieneAccesoSistema('rol-3000', permisos);
             break;
-          case 'seguridad':
-            sistema.tienePermiso = this.tieneAccesoSistema('seguridad', permisos);
+          case 'seguridades':
+            sistema.tienePermiso = this.tieneAccesoSistema('seguridades', permisos);
             break;
         }
       });

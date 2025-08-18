@@ -47,7 +47,14 @@ export class PermissionsService {
 
   // 🗺️ MAPEO CORREGIDO - Sin prefijo /codbar/ para coincidir con backend
   private readonly MAPEO_RUTAS: Record<string, string> = {
-    // Ficha de Cliente - CORREGIR PARA QUE COINCIDA CON TU JSON
+    //Rutas de inicio
+    '/codbar/inicio': 'codbar',
+    '/sic-3000/inicio-sic': 'sic-3000',
+    '/cg-3000/inicio': 'cg-3000',
+    '/rol-3000/inicio': 'rol-3000',
+    '/seguridades/inicio': 'seguridades',
+
+    // Ficha de Cliente
     '/codbar/ficha-de-cliente/nuevo-cliente': 'codbar.ficha-de-cliente.nuevo-cliente',  // Agregar codbar
     '/codbar/ficha-de-cliente/listado-clientes': 'codbar.ficha-de-cliente.listado-clientes',
     '/codbar/ficha-de-cliente/consulta-verified': 'codbar.ficha-de-cliente.consulta-verified',
@@ -77,7 +84,21 @@ export class PermissionsService {
     '/codbar/configuracion/localizacion-establecimiento/crear': 'codbar.configuracion.localizacion-establecimiento.crear',
     '/codbar/configuracion/localizacion-establecimiento/editar': 'codbar.configuracion.localizacion-establecimiento.editar',
     '/codbar/configuracion/grupo-producto': 'codbar.configuracion.grupo-producto',
-    '/codbar/configuracion/tipo-prefijo': 'codbar.configuracion.tipo-prefijo'
+    '/codbar/configuracion/tipo-prefijo': 'codbar.configuracion.tipo-prefijo',
+
+    // Rutas específicas de seguridades
+    '/seguridades/usuarios': 'seguridades.usuarios',
+    '/seguridades/perfiles': 'seguridades.perfiles',
+    '/seguridades/departamentos': 'seguridades.departamentos',
+    '/seguridades/entidades': 'seguridades.entidades',
+    '/seguridades/empresas': 'seguridades.empresas',
+    '/seguridades/zonas': 'seguridades.zonas',
+    '/seguridades/proyectos': 'seguridades.proyectos',
+    '/seguridades/segmento-negocio': 'seguridades.segmento-negocio',
+
+    // Rutas específicas de SIC-3000
+    '/sic-3000/estructura-list': 'sic-3000.estructura-comercial',
+    '/sic-3000/registroCobros': 'sic-3000.registro-cobros'
   };
 
   constructor(
@@ -286,6 +307,8 @@ export class PermissionsService {
   // VERIFICACIÓN MEJORADA DE RUTAS
   private verificarAccesoRuta(rutaAngular: string, permisos: string[]): boolean {
     const rutaNormalizada = this.normalizarRuta(rutaAngular);
+    console.log(`🔍 Verificando acceso a ruta: ${rutaNormalizada}`);
+    
     const permisoRequerido = this.MAPEO_RUTAS[rutaNormalizada];
     
     if (!permisoRequerido) {
@@ -293,10 +316,13 @@ export class PermissionsService {
       return false;
     }
 
-    // SOLO VERIFICACIÓN EXACTA - Sin jerarquía
+    console.log(`🔍 Permiso requerido: ${permisoRequerido}`);
+    console.log(`🔍 Permisos disponibles:`, permisos);
+
+    // ✅ VERIFICACIÓN EXACTA SOLAMENTE
     const tienePermiso = permisos.includes(permisoRequerido);
     
-    console.log(`Resultado para ${rutaNormalizada}: ${tienePermiso ? '✅ PERMITIDO' : '❌ DENEGADO'}`);
+    console.log(`🔍 Resultado para ${rutaNormalizada}: ${tienePermiso ? '✅ PERMITIDO' : '❌ DENEGADO'}`);
     return tienePermiso;
   }
 
@@ -375,18 +401,14 @@ export class PermissionsService {
         console.log('🔄 Calculando permisos de menú con:', permisos);
         
         return {
+          // 📊 CODBAR - Sistema existente
           fichaCliente: {
-            // ✅ Verificar módulo por jerarquía (permitido)
             modulo: permisos.includes('codbar.ficha-de-cliente') || permisos.includes('codbar'),
-            
-            // ✅ Verificar funcionalidades específicas EXACTAS
             nuevoCliente: permisos.includes('codbar.ficha-de-cliente.nuevo-cliente'),
             listadoClientes: permisos.includes('codbar.ficha-de-cliente.listado-clientes'),
             consultaVerified: permisos.includes('codbar.ficha-de-cliente.consulta-verified'),
             tipoCliente: permisos.includes('codbar.ficha-de-cliente.tipo-cliente'),
             grupoCliente: permisos.includes('codbar.ficha-de-cliente.grupo-cliente'),
-            
-            // ✅ Verificar acciones específicas
             puedeCrearCliente: permisos.includes('codbar.ficha-de-cliente.nuevo-cliente.crear'),
             puedeEditarTipoCliente: permisos.includes('codbar.ficha-de-cliente.tipo-cliente.editar')
           },
@@ -412,11 +434,83 @@ export class PermissionsService {
             localizacionEstablecimiento: permisos.includes('codbar.configuracion.localizacion-establecimiento'),
             grupoProducto: permisos.includes('codbar.configuracion.grupo-producto'),
             tipoPrefijo: permisos.includes('codbar.configuracion.tipo-prefijo')
+          },
+
+          // 🔒 SEGURIDADES - Sistema nuevo basado en tus rutas
+          seguridades: {
+            // Módulo principal
+            modulo: permisos.includes('seguridades') || 
+                    permisos.includes('seguridad') || 
+                    permisos.some(p => p.startsWith('seguridades.')),
+
+            // Usuarios/Perfiles
+            usuarios: permisos.includes('seguridades.usuarios') || 
+                    permisos.includes('seguridad.usuarios'),
+            perfiles: permisos.includes('seguridades.perfiles') || 
+                    permisos.includes('seguridad.perfiles'),
+            departamentos: permisos.includes('seguridades.departamentos') || 
+                          permisos.includes('seguridad.departamentos'),
+
+            // Entidades
+            entidades: permisos.includes('seguridades.entidades') || 
+                      permisos.includes('seguridad.entidades'),
+
+            // Configuración
+            empresas: permisos.includes('seguridades.empresas') || 
+                    permisos.includes('seguridad.empresas') ||
+                    permisos.includes('seguridades.configuracion.empresas'),
+            zonas: permisos.includes('seguridades.zonas') || 
+                  permisos.includes('seguridad.zonas') ||
+                  permisos.includes('seguridades.configuracion.zonas'),
+            proyectos: permisos.includes('seguridades.proyectos') || 
+                      permisos.includes('seguridad.proyectos') ||
+                      permisos.includes('seguridades.configuracion.proyectos'),
+            segmentoNegocio: permisos.includes('seguridades.segmento-negocio') || 
+                            permisos.includes('seguridad.segmento-negocio') ||
+                            permisos.includes('seguridades.configuracion.segmento-negocio'),
+
+            // Acciones específicas (opcional)
+            puedeCrearUsuarios: permisos.includes('seguridades.usuarios.crear'),
+            puedeEditarPerfiles: permisos.includes('seguridades.perfiles.editar'),
+            puedeEliminarEntidades: permisos.includes('seguridades.entidades.eliminar')
+          },
+
+          // 💰 SIC3000 - Sistema nuevo basado en tus rutas
+          sic3000: {
+            // Módulo principal
+            modulo: permisos.includes('sic3000') || 
+                    permisos.includes('sic-3000') || 
+                    permisos.some(p => p.startsWith('sic3000.')) ||
+                    permisos.some(p => p.startsWith('sic-3000.')),
+
+            // Funcionalidades principales según tus rutas
+            inicio: permisos.includes('sic3000.inicio') || 
+                  permisos.includes('sic-3000.inicio') ||
+                  permisos.includes('sic3000.inicio-sic') ||
+                  permisos.includes('sic-3000.inicio-sic'),
+            
+            estructuraComercial: permisos.includes('sic3000.estructura-comercial') || 
+                                permisos.includes('sic-3000.estructura-comercial') ||
+                                permisos.includes('sic3000.estructura-list') ||
+                                permisos.includes('sic-3000.estructura-list'),
+            
+            registroCobros: permisos.includes('sic3000.registro-cobros') || 
+                          permisos.includes('sic-3000.registro-cobros') ||
+                          permisos.includes('sic3000.registroCobros') ||
+                          permisos.includes('sic-3000.registroCobros'),
+
+            // Acciones específicas (expandir según necesidades)
+            puedeCrearEstructura: permisos.includes('sic3000.estructura-comercial.crear'),
+            puedeEditarCobros: permisos.includes('sic3000.registro-cobros.editar'),
+            puedeEliminarRegistros: permisos.includes('sic3000.registro-cobros.eliminar')
           }
         };
       }),
       tap(menuPermisos => {
         console.log('🔍 Permisos de menú calculados:', menuPermisos);
+        console.log('📊 CODBAR disponible:', menuPermisos.fichaCliente?.modulo);
+        console.log('🔒 SEGURIDADES disponible:', menuPermisos.seguridades?.modulo);
+        console.log('💰 SIC3000 disponible:', menuPermisos.sic3000?.modulo);
       }),
       shareReplay(1)
     );
