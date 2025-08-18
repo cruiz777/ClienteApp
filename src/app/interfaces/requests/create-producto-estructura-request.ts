@@ -1,15 +1,15 @@
 import { ProductoRequest } from './producto-request';
 
 export interface ProductoEstructuraComercialRequest {
-  idproducto?: number;
-  iddivision?: number;
-  idsubdivision?: number;
-  iddepartamento?: number;
-  idseccion?: number;
-  idgrupo?: number;
+  idproducto?: number | null;
+  iddivision?: number | null;
+  idsubdivision?: number | null;
+  iddepartamento?: number | null;
+  idseccion?: number | null;
+  idgrupo?: number | null;
 }
 
 export interface CreateProductoConEstructuraRequest {
-  producto: ProductoRequest;
-  estructura: ProductoEstructuraComercialRequest;
+  Producto: ProductoRequest;
+  Estructura: ProductoEstructuraComercialRequest;
 }

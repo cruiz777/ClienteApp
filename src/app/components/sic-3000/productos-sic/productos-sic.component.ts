@@ -3,6 +3,9 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
 import { ProductoRequest, sanitizeProductoPayload } from 'src/app/interfaces/requests/producto-request';
+import { CreateProductoConEstructuraRequest } from 'src/app/interfaces/requests/create-producto-estructura-request';
+
+import { ProductoService } from 'src/app/services/productos.service';
 
 @Component({
   selector: 'app-productos-sic',
@@ -31,6 +34,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   constructor(
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
+    private productoService: ProductoService,
     private route: ActivatedRoute
   ) { }
 
@@ -248,24 +252,93 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   }
 
   onGrabar(): void {
-    switch (this.selectedTab) {
-      case 0:
-        if (this.form.invalid) return;
-        console.log('Guardar (Tab 1 - Datos Generales)', this.form.value);
-        break;
-      case 1:
-        if (this.adicionalForm.invalid) return;
-        console.log('Guardar (Tab 2 - Datos Adicionales)', this.adicionalForm.value);
-        break;
-      case 2:
-        if (this.preciosForm.invalid) return;
-        console.log('Guardar (Tab 3 - Precios/Costos)', this.preciosForm.getRawValue());
-        break;
-      default:
-        console.log('Guardar (Tab 4 - Estructura y Stock)');
-        break;
-    }
+    if (this.selectedTab === 0 && this.form.invalid) return;
+    if (this.selectedTab === 1 && this.adicionalForm.invalid) return;
+    if (this.selectedTab === 2 && this.preciosForm.invalid) return;
+
+    // ---- Tab 1: Datos Generales ----
+    const form1 = this.form.value;
+    // ---- Tab 2: Datos Adicionales ----
+    const form2 = this.adicionalForm.value;
+    // ---- Tab 3: Precios / Costos ----
+    const form3 = this.preciosForm.getRawValue();
+
+    const productoPayload: ProductoRequest = {
+      // TAB 1
+      despro: form1.descripcion1,
+      despro2: form1.descripcionPOS,
+      codbar: form1.codigoBarras,
+      tippro: form1.tipoProducto,
+      uniman: form1.unidadVenta,
+      abrevia: form1.abreviacion,
+      referencia: form1.referencia,
+      activo: form1.activo,
+      pagaiva: form1.pagaIva,
+      inv: form1.cargarInventarios,
+      peso: form1.productoConPeso,
+      pgasto: form1.productoGasto,
+      altoriesgo: form1.altoRiesgo,
+      clasprod: form1.claseProducto,
+      foto: form1.urlFoto,
+      idempresa: 1, // ⚡ empresa actual (ajustar según contexto)
+      feccre: form1.fechaCreacion,
+      fechamod: form1.fechaModificacion,
+
+      // TAB 2
+      colsab: form2.color,
+      talla: form2.tamanoTalla1,
+      obs: form2.observacion,
+      regsanitario: form2.registroSanitario,
+      codcuedeb: form2.ctaVentas,
+      codcuehab: form2.ctaInventarios,
+      codcuedes: form2.ctaCostos,
+      codcuedev: form2.ctaDevolucion,
+      ctaprodgasto: form2.ctaGastos,
+      // pgasto: form2.productoGasto,
+
+      // TAB 3
+      preven: form3.precioOficial,
+      preven2: form3.precioRedMsp,
+      pvpsiniva: form3.pvpActualIva,
+      preanterior: form3.pvpAnteriorMasIva,
+      feccosact: form3.fechaAnteriorModificarPrecio,
+      // pvpSinIva: form3.pvpActualMasIva,
+      fecpremod: form3.fechaModificarPrecio,
+      margenutilidad: form3.margenUtilidad,
+      costsuminis: form3.costoSuministro,
+      cospro: form3.costoProducto,
+      precos: form3.costoPromedio,
+      cosanterior: form3.precioCompraAnterior,
+      fecpreact: form3.fechaAnteriorModificarCompra,
+      preuni: form3.precioCompraActual?.toString(),
+      // fecpremod: form3.fechaModificarCompra,
+      porcenrecepcion: form3.recepcionPorcentaje
+    };
+
+    // ---- Estructura asociada ----
+    const estructuraPayload = {
+      idgrupo: this.idEstructura || null // ⚡ ID del árbol actual
+    };
+
+    const request: CreateProductoConEstructuraRequest = {
+      Producto: productoPayload,
+      Estructura: estructuraPayload
+    };
+
+    this.productoService.createConEstructura(request).subscribe({
+      next: (res) => {
+        if (res.type === 'SUCCESS' && res.data) {
+          console.log('✅ Producto y estructura creados correctamente');
+        } else {
+          console.error('❌ Error:', res.message);
+        }
+      },
+      error: (err) => {
+        console.error('❌ Error en la petición:', err);
+      }
+    });
   }
+
 
   onImprimir(): void { window.print(); }
   onAdjuntar(): void { history.back(); }
