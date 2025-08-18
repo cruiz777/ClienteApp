@@ -485,18 +485,220 @@
     <ng-container [ngTemplateOutlet]="accionesTabs"></ng-container>
   </div>
     </mat-tab>
-
-    <!-- ================= TAB 4: Estructura y Stock ================= -->
+  <!-- ================= TAB 4: Estructura y Stock ================= -->
     <mat-tab label="Estructura y Stock">
-      <ng-template matTabContent>
-        @defer (on idle) {
-          <div class="placeholder-tab">Contenido de “Estructura y Stock”</div>
-          <ng-container [ngTemplateOutlet]="accionesTabs"></ng-container>
-        } @placeholder {
-          <div class="placeholder-tab">Cargando…</div>
-        }
-      </ng-template>
-    </mat-tab>
+  <div class="tab-body">
+    <div class="row g-4">
+      <!-- ===== Columna Izquierda: Árbol Estructura Comercial ===== -->
+      <div class="col-12 col-lg-5">
+        <div class="pc-panel" style="height: 420px; display:grid; grid-template-rows:auto 1fr;">
+          <h3 class="pc-title mb-2">Estructura Comercial</h3>
 
+          <!-- Árbol simple -->
+          <div style="border:1px solid var(--borde); border-radius:6px; padding:10px; overflow:auto;">
+            <ul class="mb-0" style="list-style:none; padding-left:10px; font-size:13px; color:#374151;">
+              <li>
+                <span class="me-1">▸</span><strong>Noción Imprenta</strong>
+                <ul style="list-style:none; padding-left:18px; margin-top:6px;">
+                  <li>
+                    <span class="me-1">▸</span><strong>Materia Prima</strong>
+                    <ul style="list-style:none; padding-left:18px; margin-top:6px;">
+                      <li><span class="me-1">–</span>Insumos</li>
+                    </ul>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Columna Derecha: Stock Max / Min ===== -->
+      <div class="col-12 col-lg-7">
+        <div class="pc-panel" style="height: 420px; display:grid; grid-template-rows:auto auto 1fr;">
+          <h3 class="pc-title mb-1">Stock</h3>
+
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="label-sm">Stock Max / Min</span>
+            <input type="checkbox" class="form-check-input" />
+          </div>
+
+          <div style="border:1px solid var(--borde); border-radius:6px; overflow:auto;">
+            <table class="table table-sm mb-0" style="width:100%; border-collapse:separate; border-spacing:0;">
+              <thead>
+                <tr style="background:#f7fafc; color:#27374A;">
+                  <th style="width:45%; padding:8px 10px; border-bottom:1px solid #e6edf6;">Local</th>
+                  <th style="width:18%; padding:8px 10px; border-bottom:1px solid #e6edf6; text-align:right;">Stock máx</th>
+                  <th style="width:18%; padding:8px 10px; border-bottom:1px solid #e6edf6; text-align:right;">Stock Min</th>
+                  <th style="width:19%; padding:8px 10px; border-bottom:1px solid #e6edf6; text-align:right;">Existe</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="padding:6px 10px;">Administrativo</td>
+                  <td style="padding:6px 10px; text-align:right;">0</td>
+                  <td style="padding:6px 10px; text-align:right;">0</td>
+                  <td style="padding:6px 10px; text-align:right;">0</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 10px;">Clínico</td>
+                  <td style="padding:6px 10px; text-align:right;">0</td>
+                  <td style="padding:6px 10px; text-align:right;">0</td>
+                  <td style="padding:6px 10px; text-align:right;">0</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 10px;">Servicio</td>
+                  <td style="padding:6px 10px; text-align:right;">0</td>
+                  <td style="padding:6px 10px; text-align:right;">0</td>
+                  <td style="padding:6px 10px; text-align:right;">0</td>
+                </tr>
+                <tr>
+                  <td style="padding:6px 10px;">Farmacia</td>
+                  <td style="padding:6px 10px; text-align:right;">0</td>
+                  <td style="padding:6px 10px; text-align:right;">0</td>
+                  <td style="padding:6px 10px; text-align:right;">215</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botonera reutilizable -->
+    <ng-container [ngTemplateOutlet]="accionesTabs"></ng-container>
+  </div>
+    </mat-tab>
+  <!-- ================= TAB 5: Proveedor ================= -->
+   <mat-tab label="Proveedor">
+  <div class="tab-body">
+    <!-- ====== Datos del Producto ====== -->
+    <div class="pc-panel" style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+      <div>
+        <h3 class="pc-title">Datos del Producto</h3>
+
+        <div class="fi-field">
+          <label class="fi-label">Costo Suministro:</label>
+          <div class="fi-input-wrap">
+            <input matInput type="text" />
+          </div>
+        </div>
+
+        <div class="fi-field mt-3">
+          <label class="fi-label">Código de Barras:</label>
+          <div class="fi-input-wrap">
+            <input matInput type="text" />
+          </div>
+        </div>
+      </div>
+
+      <div style="align-self:end">
+        <div class="fi-field">
+          <label class="fi-label">Descripción:</label>
+          <div class="fi-input-wrap">
+            <input matInput type="text" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====== Tabla Proveedores ====== -->
+    <div class="pc-panel mt-4" style="padding:0;">
+      <div style="border:1px solid var(--borde,#e6edf6); border-radius:6px; overflow:auto;">
+        <table class="table table-sm mb-0" style="width:100%; border-collapse:separate; border-spacing:0;">
+          <thead>
+            <tr style="background:#f7fafc; color:#27374A;">
+              <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:110px;">Cod. Proveedor</th>
+              <th style="padding:8px 10px; border-bottom:1px solid #e6edf6;">Proveedor</th>
+              <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:120px;">Costo Compra</th>
+              <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:140px;">Unidad Compra</th>
+              <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:140px;">Fecha Ingreso</th>
+              <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:120px;">Costo Neto</th>
+              <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:120px;">A Consignación</th>
+              <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:150px;">Descuento Producto</th>
+              <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:90px;">Desct. 1</th>
+              <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:90px;">Desct. 2</th>
+              <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:90px;">Desct. 3</th>
+              <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:90px;">Desct. 4</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Fila 1 -->
+            <tr>
+              <td style="padding:6px 8px;">1</td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px; text-align:center;">
+                <input type="checkbox" />
+              </td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+            </tr>
+            <!-- Fila 2 -->
+            <tr>
+              <td style="padding:6px 8px;">2</td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px; text-align:center;">
+                <input type="checkbox" />
+              </td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+            </tr>
+            <!-- Fila 3 -->
+            <tr>
+              <td style="padding:6px 8px;">3</td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px; text-align:center;">
+                <input type="checkbox" />
+              </td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+            </tr>
+            <!-- Fila 4 -->
+            <tr>
+              <td style="padding:6px 8px;">4</td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px; text-align:center;">
+                <input type="checkbox" />
+              </td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+              <td style="padding:6px 8px;"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Botonera reutilizable -->
+    <ng-container [ngTemplateOutlet]="accionesTabs"></ng-container>
+  </div>
+   </mat-tab>
   </mat-tab-group>
 </div>
