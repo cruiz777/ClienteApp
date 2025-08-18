@@ -67,7 +67,7 @@ export class TipoClienteListComponent implements OnInit {
   }
 
   crearTipoCliente(): void {
-    this.router.navigate(['/codbar/ficha-de-cliente/tipo-liente/crear']);
+    this.router.navigate(['/codbar/ficha-de-cliente/tipo-cliente/crear']);
   }
 
   editarTipoCliente(id: number): void {
