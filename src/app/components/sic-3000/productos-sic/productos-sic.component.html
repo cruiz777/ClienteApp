@@ -9,392 +9,489 @@
     </div>
   </header>
 
-  <mat-tab-group class="tabs" [(selectedIndex)]="selectedTab" animationDuration="0ms">
-    <!-- TAB 1: Datos Generales  -->
+  <mat-tab-group
+    class="tabs"
+    [(selectedIndex)]="selectedTab"
+    [disableRipple]="true"
+    animationDuration="0ms">
+
+    <!-- ========== Template reutilizable de botones ========== -->
+  <ng-template #accionesTabs>
+  <div class="pc-actions">
+    <button type="button" class="btn-soft" (click)="onNuevo()">Nuevo</button>
+    <button type="button" class="btn-soft" (click)="onGrabar()" [disabled]="currentFormInvalid">Grabar</button>
+    <button type="button" class="btn-soft" (click)="onImprimir()">Imprimir</button>
+    <button type="button" class="btn-soft" (click)="onAdjuntar()">Adjuntar</button>
+  </div>
+  </ng-template>
+
+    <!-- ================= TAB 1: Datos Generales ================= -->
     <mat-tab label="Datos Generales">
-      <div class="tab-body">
-        <!-- ===== Grid de 3 secciones alineadas por filas ===== -->
-        <div class="form-grid-3">
-
-          <!-- Fila 1 -->
-          <div class="field-row">
-            <label class="lbl">Código Interno:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <input matInput formControlName="codigoInterno" />
-            </mat-form-field>
+      <form class="tab-body" [formGroup]="form" novalidate>
+        <div class="tab-body">
+          <div class="row">
+            <div class="col-12">
+              <h3 class="t5-title">Datos del Producto</h3>
+            </div>
           </div>
 
-          <div class="field-row">
-            <label class="lbl">Código de Barras:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <input matInput formControlName="codigoBarras" />
-            </mat-form-field>
-          </div>
+          <div class="row g-3">
+            <!-- Columna izquierda -->
+            <div class="col-12 col-lg-8">
+              <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Código Interno:</label>
+                  <input class="input-line w-100" formControlName="codigoInterno">
+                </div>
 
-          <div class="field-row generar">
-            <label class="lbl">Generar</label>
-            <mat-checkbox formControlName="generarCodigo"></mat-checkbox>
-          </div>
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Código de Barras:</label>
+                  <input class="input-line w-100" formControlName="codigoBarras">
+                </div>
 
-          <!-- Fila 2 -->
-          <div class="field-row">
-            <label class="lbl">Descripción 1:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <input matInput formControlName="descripcion1" />
-            </mat-form-field>
-          </div>
+                <div class="col-12 col-md-4 d-flex align-items-center gap-2">
+                  <span class="label-sm text-secondary">Generar</span>
+                  <input type="checkbox" class="form-check-input" formControlName="generarCodigo">
+                </div>
 
-          <div class="field-row">
-            <label class="lbl">Descripción punto venta:</label>
-            <mat-form-field appearance="outline" class="field-md">
-              <input matInput formControlName="descripcionPOS" />
-            </mat-form-field>
-          </div>
+                <div class="col-12 col-md-6">
+                  <label class="label-sm d-block">Descripción:</label>
+                  <input class="input-line w-100" formControlName="descripcion1">
+                </div>
 
-          <div class="field-row">
-            <label class="lbl">Tipo Producto:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <mat-select formControlName="tipoProducto">
-                <mat-option *ngFor="let t of tiposProducto; trackBy: trackByValue" [value]="t">{{ t }}</mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div>
+                <div class="col-12 col-md-6">
+                  <label class="label-sm d-block">Descripción en el punto de venta:</label>
+                  <input class="input-line w-100" formControlName="descripcionPOS">
+                </div>
 
-          <!-- Fila 3 -->
-          <div class="field-row">
-            <label class="lbl">Unidad de Venta:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <mat-select formControlName="unidadVenta" disableOptionCentering>
-                <mat-option *ngFor="let u of unidadesVenta; trackBy: trackByValue" [value]="u">{{ u }}</mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div>
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Unidad de Venta:</label>
+                  <div class="select-wrap">
+                    <select class="select-line w-100" formControlName="unidadVenta">
+                      <option [ngValue]="null" disabled selected>—</option>
+                      <option *ngFor="let u of unidadesVenta; trackBy: trackByValue" [ngValue]="u">{{u}}</option>
+                    </select>
+                  </div>
+                </div>
 
-          <div class="field-row">
-            <label class="lbl">Cantidad:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <input matInput formControlName="cantidad" type="number" />
-            </mat-form-field>
-          </div>
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Cantidad:</label>
+                  <input type="number" class="input-line w-100" formControlName="cantidad">
+                </div>
 
-          <div class="field-row">
-            <label class="lbl">Presentación:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <mat-select formControlName="presentacion">
-                <mat-option *ngFor="let p of presentaciones; trackBy: trackByValue" [value]="p">{{ p }}</mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div>
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Tipo Producto:</label>
+                  <div class="select-wrap">
+                    <select class="select-line w-100" formControlName="tipoProducto">
+                      <option [ngValue]="null" disabled selected>—</option>
+                      <option *ngFor="let t of tiposProducto; trackBy: trackByValue" [ngValue]="t">{{t}}</option>
+                    </select>
+                  </div>
+                </div>
 
-          <!-- Fila 4 -->
-          <div class="field-row">
-            <label class="lbl">Existencia Global:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <input matInput formControlName="existenciaGlobal" />
-            </mat-form-field>
-          </div>
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Existencia Global:</label>
+                  <input class="input-line w-100" formControlName="existenciaGlobal">
+                </div>
 
-          <div class="field-row">
-            <label class="lbl">Can. Cov.:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <input matInput formControlName="canCov" />
-            </mat-form-field>
-          </div>
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Cantidad Conversación:</label>
+                  <input class="input-line w-100" formControlName="canCov">
+                </div>
 
-          <div class="field-row">
-            <label class="lbl">Clase de Producto:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <mat-select formControlName="claseProducto">
-                <mat-option *ngFor="let c of clasesProducto; trackBy: trackByValue" [value]="c">{{ c }}</mat-option>
-              </mat-select>
-            </mat-form-field>
-          </div>
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Presentación:</label>
+                  <div class="select-wrap">
+                    <select class="select-line w-100" formControlName="presentacion">
+                      <option [ngValue]="null" disabled selected>—</option>
+                      <option *ngFor="let p of presentaciones; trackBy: trackByValue" [ngValue]="p">{{p}}</option>
+                    </select>
+                  </div>
+                </div>
 
-          <!-- Fila 5 -->
-          <div class="field-row">
-            <label class="lbl">Abreviación:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <input matInput formControlName="abreviacion" />
-            </mat-form-field>
-          </div>
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Abreviación:</label>
+                  <input class="input-line w-100" formControlName="abreviacion">
+                </div>
 
-          <div class="field-row">
-            <label class="lbl">Referencia:</label>
-            <mat-form-field appearance="outline" class="field-sm">
-              <input matInput formControlName="referencia" />
-            </mat-form-field>
-          </div>
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Referencia:</label>
+                  <input class="input-line w-100" formControlName="referencia">
+                </div>
 
-          <div class="field-row">
-            <!-- vacío para que cierre la fila con 3 columnas -->
-            <span></span><span></span>
-          </div>
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Fecha de Creación:</label>
+                  <input type="date" class="input-line w-100" formControlName="fechaCreacion">
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Fecha de Modificación:</label>
+                  <input type="date" class="input-line w-100" formControlName="fechaModificacion">
+                </div>
+              </div>
+            </div>
+
+            <!-- Columna derecha (checks + foto) -->
+            <div class="col-12 col-lg-4">
+              <div class="ps-lg-3 border-start-lg">
+                <div class="row">
+                  <div class="col-12">
+                    <span class="fw-semibold small d-block mb-2 text-secondary">Opciones:</span>
+                  </div>
+
+                  <div class="col-12 col-md-6">
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" formControlName="pagaIva" id="pagaIva"><label class="form-check-label" for="pagaIva">Paga IVA</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" formControlName="productoEnVenta" id="enVenta"><label class="form-check-label" for="enVenta">Producto en Venta</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" formControlName="cargarInventarios" id="inv"><label class="form-check-label" for="inv">Cargar a inventarios</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" formControlName="productoConPeso" id="peso"><label class="form-check-label" for="peso">Producto con Peso</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" formControlName="consumoInterno" id="interno"><label class="form-check-label" for="interno">Consumo Interno</label></div>
+                  </div>
+
+                  <div class="col-12 col-md-6">
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" formControlName="manejaDecimales" id="dec"><label class="form-check-label" for="dec">Cant. con Decimales</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" formControlName="psicotropico" id="psi"><label class="form-check-label" for="psi">Psicotrópico</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" formControlName="estupefaciente" id="estu"><label class="form-check-label" for="estu">Estupefaciente</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" formControlName="activo" id="activo"><label class="form-check-label" for="activo">Activo</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox" formControlName="altoRiesgo" id="alto"><label class="form-check-label" for="alto">Alto Riesgo</label></div>
+                  </div>
+
+                  <div class="col-12 mt-2">
+                    <label class="label-sm d-block">URL foto Producto:</label>
+                    <input class="input-line w-100" formControlName="urlFoto">
+                    <div class="mt-2 d-flex">
+                      <img *ngIf="form.value.urlFoto; else cuadroVacio"
+                           [src]="form.value.urlFoto"
+                           alt="foto" class="rounded-2 border object-fit-cover"
+                           style="width:92px;height:92px;"/>
+                      <ng-template #cuadroVacio>
+                        <div class="rounded-2 border d-grid place-items-center text-secondary-emphasis"
+                             style="width:92px;height:92px;font-size:12px;">Foto</div>
+                      </ng-template>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div><!--/row-->
+
+          <!-- Acciones -->
+          <ng-container [ngTemplateOutlet]="accionesTabs"></ng-container>
         </div>
-        <!-- ===== Opciones ===== -->
-        @defer (on idle) {
-          <div class="opciones-grid">
-            <div class="op-col">
-              <div class="lbl">Opciones:</div>
-              <mat-checkbox formControlName="pagaIva">Paga IVA</mat-checkbox>
-              <mat-checkbox formControlName="productoEnVenta">Producto en Venta</mat-checkbox>
-              <mat-checkbox formControlName="cargarInventarios">Cargar a inventarios</mat-checkbox>
-              <mat-checkbox formControlName="productoConPeso">Producto con Peso</mat-checkbox>
-              <mat-checkbox formControlName="consumoInterno">Producto consumo Interno</mat-checkbox>
-            </div>
-
-            <div class="op-col">
-              <mat-checkbox formControlName="manejaDecimales">Maneja Cantidad con Decimales</mat-checkbox>
-              <mat-checkbox formControlName="psicotropico">Psicotrópico</mat-checkbox>
-              <mat-checkbox formControlName="estupefaciente">Estupefaciente</mat-checkbox>
-              <mat-checkbox formControlName="activo">Activo</mat-checkbox>
-              <mat-checkbox formControlName="altoRiesgo">Alto Riesgo</mat-checkbox>
-            </div>
-
-            <div class="op-col derecha">
-              <div class="lbl">URL foto Producto:</div>
-              <mat-form-field appearance="outline" class="field-md">
-                <input matInput formControlName="urlFoto" />
-              </mat-form-field>
-
-              <div class="foto">
-                <img
-                  *ngIf="form.value.urlFoto; else cuadroVacio"
-                  [src]="form.value.urlFoto"
-                  alt="foto"
-                  loading="lazy"
-                  decoding="async"
-                />
-                <ng-template #cuadroVacio>
-                  <div class="placeholder">Foto</div>
-                </ng-template>
-              </div>
-            </div>
-          </div>
-        } @placeholder {
-          <div class="opciones-grid">
-            <div class="op-col"><div class="lbl">Opciones:</div><div class="placeholder">Cargando…</div></div>
-            <div class="op-col"><div class="placeholder">Cargando…</div></div>
-            <div class="op-col"><div class="placeholder">Cargando…</div></div>
-          </div>
-        }
-       <!-- ===== Fechas y acciones===== -->
-        @defer (on idle) {
-          <div class="fechas-acciones">
-            <div class="fechas">
-              <div class="row">
-                <label class="lbl">Fecha de Creación:</label>
-                <mat-form-field appearance="outline" class="field-sm">
-                  <input matInput formControlName="fechaCreacion" [matDatepicker]="dp1" />
-                  <mat-datepicker-toggle matSuffix [for]="dp1"></mat-datepicker-toggle>
-                  <mat-datepicker #dp1></mat-datepicker>
-                </mat-form-field>
-              </div>
-
-              <div class="row">
-                <label class="lbl">Fecha Modificación:</label>
-                <mat-form-field appearance="outline" class="field-sm">
-                  <input matInput formControlName="fechaModificacion" [matDatepicker]="dp2" />
-                  <mat-datepicker-toggle matSuffix [for]="dp2"></mat-datepicker-toggle>
-                  <mat-datepicker #dp2></mat-datepicker>
-                </mat-form-field>
-              </div>
-            </div>
-
-            <div class="acciones">
-              <mat-slide-toggle formControlName="activo">Activo</mat-slide-toggle>
-
-              <button mat-stroked-button color="primary" (click)="nuevo()">Nuevo</button>
-              <button mat-flat-button color="primary" (click)="grabar()" [disabled]="form.invalid">Grabar</button>
-              <button mat-stroked-button (click)="imprimir()">Imprimir</button>
-              <button mat-stroked-button (click)="adjuntar()">Adjuntar</button>
-            </div>
-          </div>
-        } @placeholder {
-          <div class="fechas-acciones">
-            <div class="fechas"><div class="placeholder">Fechas cargando…</div></div>
-            <div class="acciones"><div class="placeholder">Acciones cargando…</div></div>
-          </div>
-        }
-        </div>
+      </form>
     </mat-tab>
 
-  <!-- ===== TAB 2: Datos Adicionales ===== -->
-<mat-tab label="Datos Adicionales">
-</mat-tab>
+    <!-- ================= TAB 2: Datos Adicionales ================= -->
+    <mat-tab label="Datos Adicionales">
+      <div class="tab-body">
+        <div class="row g-4">
+          <!-- Columna izquierda -->
+          <div class="col-lg-6">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="lbl">Color:</label>
+                <input type="text" class="input-line" placeholder="| texto">
+              </div>
+              <div class="col-md-6">
+                <label class="lbl">Sabor:</label>
+                <input type="text" class="input-line" placeholder="| texto">
+              </div>
 
- <!-- ===== TAB 3: Precio / Costo ===== -->
+              <div class="col-12">
+                <label class="lbl">Tamaño / Talla:</label>
+                <input type="text" class="input-line" placeholder="| texto">
+              </div>
 
-<mat-tab label="Precio / Costo">
-  <ng-template matTabContent>
-    <div class="pc-grid">
+              <div class="col-12">
+                <label class="lbl">Medidas:</label>
+                <div class="row g-3">
+                  <div class="col-4"><input type="text" class="input-line" placeholder="| texto"></div>
+                  <div class="col-4"><input type="text" class="input-line" placeholder="| texto"></div>
+                  <div class="col-4"><input type="text" class="input-line" placeholder="| texto"></div>
+                </div>
+              </div>
 
-      <!-- ===== Panel: Precios ===== -->
-      <section class="pc-panel">
-        <h3 class="pc-title">Precios</h3>
+              <div class="col-12 mt-2"><div class="lbl-strong">Ubicación</div></div>
+              <div class="col-md-4"><label class="lbl">Pasillo:</label><input type="text" class="input-line" placeholder="| texto"></div>
+              <div class="col-md-4"><label class="lbl">Columna:</label><input type="text" class="input-line" placeholder="| texto"></div>
+              <div class="col-md-4"><label class="lbl">Nivel:</label><input type="text" class="input-line" placeholder="| texto"></div>
 
-        <!-- Precio Oficial -->
-        <div class="pc-row">
-          <label class="lbl">Precio Oficial:</label>
-          <mat-form-field appearance="outline" class="sm tint-blue">
-            <input matInput formControlName="precioOficial" />
-          </mat-form-field>
-        </div>
+              <div class="col-12">
+                <label class="lbl">Tamaño / Talla:</label>
+                <input type="text" class="input-line" placeholder="| texto">
+              </div>
 
-        <!-- Precio RED-MSP -->
-        <div class="pc-row">
-          <label class="lbl">Precio RED-MSP:</label>
-          <mat-form-field appearance="outline" class="sm tint-orange">
-            <input matInput formControlName="precioRedMsp" />
-          </mat-form-field>
-        </div>
-
-        <!-- PVP Actual - IVA -->
-        <div class="pc-row">
-          <label class="lbl">PVP Actual - IVA:</label>
-          <mat-form-field appearance="outline" class="sm">
-            <input matInput formControlName="pvpActualSinIva" />
-          </mat-form-field>
-        </div>
-
-        <!-- PVP Anterior + IVA -->
-        <div class="pc-row">
-          <label class="lbl">PVP Anterior + IVA:</label>
-          <mat-form-field appearance="outline" class="sm" disabled>
-            <input matInput formControlName="pvpAnteriorConIva" />
-          </mat-form-field>
-        </div>
-      <!-- PVP Actual + IVA -->
-        <div class="pc-row">
-          <label class="lbl">PVP Actual + IVA:</label>
-          <mat-form-field appearance="outline" class="sm tint-green">
-            <input matInput formControlName="pvpActualConIva" />
-          </mat-form-field>
-        </div>
-      <!-- Fec. Ant. Mod. -->
-        <div class="pc-row">
-          <label class="lbl">Fecha Ant Modificación:</label>
-          <mat-form-field appearance="outline" class="sm">
-            <input matInput formControlName="fechaPrecioAnterior" [matDatepicker]="p1" />
-            <mat-datepicker-toggle matSuffix [for]="p1"></mat-datepicker-toggle>
-            <mat-datepicker #p1></mat-datepicker>
-          </mat-form-field>
-        </div>
-
-        <!-- Fec. Modi. -->
-        <div class="pc-row">
-          <label class="lbl">Fecha Modificación:</label>
-          <mat-form-field appearance="outline" class="sm">
-            <input matInput formControlName="fechaPrecioActual" [matDatepicker]="p2" />
-            <mat-datepicker-toggle matSuffix [for]="p2"></mat-datepicker-toggle>
-            <mat-datepicker #p2></mat-datepicker>
-          </mat-form-field>
-        </div>
-      </section>
-
-      <!-- ===== Panel: Costos ===== -->
-      <section class="pc-panel">
-        <h3 class="pc-title">Costos</h3>
-        <!-- Costo Suministro | Costo Prod -->
-        <div class="pc-row quad">
-          <label class="lbl">Costo Suministro:</label>
-          <mat-form-field appearance="outline" class="xs">
-            <input matInput formControlName="costoSuministro" />
-          </mat-form-field>
-
-          <label class="lbl">Costo Prod:</label>
-          <mat-form-field appearance="outline" class="xs">
-            <input matInput formControlName="costoProducto" />
-          </mat-form-field>
-        </div>
-
-        <div class="pc-row">
-          <label class="lbl">Costo Promedio:</label>
-          <mat-form-field appearance="outline" class="sm">
-            <input matInput formControlName="costoPromedio" />
-          </mat-form-field>
-        </div>
-
-        <!-- Precio Compra Anterior + Fec. Ant. Mod. -->
-        <div class="pc-row duo">
-          <div class="grp">
-            <label class="lbl">Precio Compra Anterior:</label>
-            <mat-form-field appearance="outline" class="xs">
-              <input matInput formControlName="precioCompraAnterior" />
-            </mat-form-field>
+              <div class="col-12">
+                <label class="lbl">Observación:</label>
+                <div class="pc-panel" style="height: 150px;">
+                  <textarea class="w-100 h-100" style="border:0; outline:0; background:transparent; resize:none;"></textarea>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="grp">
-            <label class="lbl">Fec. Ant. Mod.:</label>
-            <mat-form-field appearance="outline" class="xs">
-              <input matInput formControlName="fechaCompraAnterior" [matDatepicker]="c1" />
-              <mat-datepicker-toggle matSuffix [for]="c1"></mat-datepicker-toggle>
-              <mat-datepicker #c1></mat-datepicker>
-            </mat-form-field>
+
+          <!-- Columna derecha -->
+          <div class="col-lg-6">
+            <div class="mb-3">
+              <div class="lbl-strong mb-1">Genérico</div>
+              <div class="pc-panel" style="padding:0;">
+                <table class="table table-sm mb-0" style="width:100%;">
+                  <thead><tr><th style="width:140px;">Código</th><th>Descripción</th></tr></thead>
+                  <tbody><tr><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>&nbsp;</td><td>&nbsp;</td></tr><tr><td>&nbsp;</td><td>&nbsp;</td></tr></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="lbl">Reg. Sanitario:</label>
+              <input type="text" class="input-line" placeholder="| texto">
+            </div>
+
+            <hr class="my-3">
+
+            <div class="lbl-strong mb-2">Cuentas Contables</div>
+            <div class="row g-3">
+              <div class="col-md-6"><label class="lbl">Ventas:</label><input type="text" class="input-line"></div>
+              <div class="col-md-6"><label class="lbl">Inventarios:</label><input type="text" class="input-line"></div>
+              <div class="col-md-6"><label class="lbl">Costos:</label><input type="text" class="input-line"></div>
+              <div class="col-md-6"><label class="lbl">Devolución:</label><input type="text" class="input-line"></div>
+              <div class="col-md-6 d-flex align-items-center"><label class="lbl mb-0 me-2">Producto Gasto</label><input type="checkbox"></div>
+              <div class="col-md-6"><label class="lbl">Gastos:</label><input type="text" class="input-line"></div>
+            </div>
           </div>
         </div>
 
-        <!-- Precio Compra Actual + Fec. Modi. -->
-        <div class="pc-row duo">
-          <div class="grp">
-            <label class="lbl">Precio Compra Actual:</label>
-            <mat-form-field appearance="outline" class="xs">
-              <input matInput formControlName="precioCompraActual" />
-            </mat-form-field>
+        <!-- Acciones -->
+        <ng-container [ngTemplateOutlet]="accionesTabs"></ng-container>
+      </div>
+    </mat-tab>
+
+   <!-- ================= TAB 3: Precios / Costos ================= -->
+    <mat-tab label="Precios / Costos">
+  <div class="tab-body" [formGroup]="preciosForm">
+    <div class="row g-4">
+
+      <!-- ===== Columna Izquierda: PRECIOS ===== -->
+      <div class="col-12 col-lg-6">
+        <div class="pc-panel">
+          <h3 class="pc-title">Precios</h3>
+
+          <!-- Fila 1: Precio Oficial | Precio RED-MSP -->
+          <div class="pc-row duo">
+            <div class="grp">
+              <label class="lbl">Precio Oficial:</label>
+              <div class="xs">
+                <input
+                  type="text" inputmode="decimal" maxlength="20"
+                  class="input-line tint-blue"
+                  formControlName="precioOficial"
+                  (input)="onNumericInput('precioOficial')"
+                  (blur)="formatDecimal('precioOficial',3)">
+              </div>
+            </div>
+            <div class="grp">
+              <label class="lbl">Precio RED-MSP:</label>
+              <div class="xs">
+                <input
+                  type="text" inputmode="decimal" maxlength="20"
+                  class="input-line tint-orange"
+                  formControlName="precioRedMsp"
+                  (input)="onNumericInput('precioRedMsp')"
+                  (blur)="formatDecimal('precioRedMsp',3)">
+              </div>
+            </div>
           </div>
-          <div class="grp">
-            <label class="lbl">Fec. Modi.:</label>
-            <mat-form-field appearance="outline" class="xs">
-              <input matInput formControlName="fechaCompraActual" [matDatepicker]="c2" />
-              <mat-datepicker-toggle matSuffix [for]="c2"></mat-datepicker-toggle>
-              <mat-datepicker #c2></mat-datepicker>
-            </mat-form-field>
+
+          <!-- Fila 2: PVP Actual - IVA (editable) -->
+          <div class="pc-row">
+            <label class="lbl">PVP Actual - IVA:</label>
+            <div class="sm">
+              <input
+                type="text" inputmode="decimal" maxlength="20"
+                class="input-line"
+                formControlName="pvpActualIva"
+                (input)="onNumericInput('pvpActualIva')"
+                (blur)="formatDecimal('pvpActualIva',3)">
+            </div>
           </div>
-        </div>
-      </section>
- <!-- ===== Panel inferior: Margen / Recepción ===== -->
-      <section class="pc-panel full">
-        <div class="pc-row duo">
-          <div class="grp">
+
+          <hr class="pc-sep">
+
+          <!-- Fila 3: PVP Anterior + IVA | Fecha Anterior Modificar -->
+          <div class="pc-row duo">
+            <div class="grp">
+              <label class="lbl">PVP Anterior + IVA:</label>
+              <div class="xs">
+                <input
+                  type="text" inputmode="decimal" maxlength="20"
+                  class="input-line tint-blue"
+                  [readonly]="true"
+                  formControlName="pvpAnteriorMasIva">
+              </div>
+            </div>
+            <div class="grp">
+              <label class="lbl">Fech.Ant.Mod:</label>
+              <div class="xs">
+                <input type="date" class="input-line w-100"
+                       formControlName="fechaAnteriorModificarPrecio">
+              </div>
+            </div>
+          </div>
+
+          <!-- Fila 4: PVP Actual + IVA | Fecha Modificar -->
+          <div class="pc-row duo">
+            <div class="grp">
+              <label class="lbl">PVP Actual + IVA:</label>
+              <div class="xs">
+                <input
+                  type="text" inputmode="decimal" maxlength="20"
+                  class="input-line tint-green"
+                  [readonly]="true"
+                  formControlName="pvpActualMasIva">
+              </div>
+            </div>
+            <div class="grp">
+              <label class="lbl">Fecha Modificación:</label>
+              <div class="xs">
+                <input type="date" class="input-line w-100"
+                       formControlName="fechaModificarPrecio">
+              </div>
+            </div>
+          </div>
+
+          <hr class="pc-sep">
+
+          <!-- Fila 5: Margen Utilidad % (solo lectura) -->
+          <div class="pc-row">
             <label class="lbl">Margen Utilidad %:</label>
-            <mat-form-field appearance="outline" class="xs">
-              <input matInput formControlName="margenUtilidad" />
-            </mat-form-field>
-          </div>
-          <div class="grp">
-            <label class="lbl">Recepción %:</label>
-            <mat-form-field appearance="outline" class="xs">
-              <input matInput formControlName="recepcion" />
-            </mat-form-field>
+            <div class="sm">
+              <input
+                type="text" inputmode="decimal" maxlength="20"
+                class="input-line w-100"
+                [readonly]="true"
+                formControlName="margenUtilidad">
+            </div>
           </div>
         </div>
-      </section>
-
-      <!-- ===== Barra de Acciones ===== -->
-      <div class="acciones">
-        <button mat-stroked-button color="primary">Nuevo</button>
-        <button mat-stroked-button color="accent" [disabled]="true">Grabar</button>
-        <button mat-stroked-button>Imprimir</button>
-        <button mat-stroked-button>Adjuntar</button>
       </div>
 
-    </div>
-  </ng-template>
-</mat-tab>
+      <!-- ===== Columna Derecha: COSTOS ===== -->
+      <div class="col-12 col-lg-6">
+        <div class="pc-panel">
+          <h3 class="pc-title">Costos</h3>
 
-<!-- ===== Tabs Estructura y Stock ===== -->
+          <!-- Fila 1: Costo Suministro | Costo Producto -->
+          <div class="pc-row duo">
+            <div class="grp">
+              <label class="lbl">Costo Suministro:</label>
+              <div class="xs">
+                <input
+                  type="text" inputmode="decimal" maxlength="20"
+                  class="input-line"
+                  formControlName="costoSuministro"
+                  (input)="onNumericInput('costoSuministro')"
+                  (blur)="formatDecimal('costoSuministro',3)">
+              </div>
+            </div>
+            <div class="grp">
+              <label class="lbl">Costo Producto:</label>
+              <div class="xs">
+                <input
+                  type="text" inputmode="decimal" maxlength="20"
+                  class="input-line"
+                  formControlName="costoProducto"
+                  (input)="onNumericInput('costoProducto')"
+                  (blur)="formatDecimal('costoProducto',3)">
+              </div>
+            </div>
+          </div>
+
+          <!-- Fila 2: Costo Promedio (editable) -->
+          <div class="pc-row">
+            <label class="lbl">Costo Promedio:</label>
+            <div class="sm">
+              <input
+                type="text" inputmode="decimal" maxlength="20"
+                class="input-line"
+                formControlName="costoPromedio"
+                (input)="onNumericInput('costoPromedio')"
+                (blur)="formatDecimal('costoPromedio',3)">
+            </div>
+          </div>
+
+          <hr class="pc-sep">
+
+          <!-- Fila 3: Precio Compra Anterior | Fecha Anterior Modificar -->
+          <div class="pc-row duo">
+            <div class="grp">
+              <label class="lbl">Precio Compra Anterior:</label>
+              <div class="xs">
+                <input
+                  type="text" inputmode="decimal" maxlength="20"
+                  class="input-line"
+                  formControlName="precioCompraAnterior"
+                  (input)="onNumericInput('precioCompraAnterior')"
+                  (blur)="formatDecimal('precioCompraAnterior',3)">
+              </div>
+            </div>
+            <div class="grp">
+              <label class="lbl">Fech.Ant.Mod:</label>
+              <div class="xs">
+                <input type="date" class="input-line w-100"
+                       formControlName="fechaAnteriorModificarCompra">
+              </div>
+            </div>
+          </div>
+
+          <!-- Fila 4: Precio Compra Actual | Fecha Modificar -->
+          <div class="pc-row duo">
+            <div class="grp">
+              <label class="lbl">Precio Compra Actual:</label>
+              <div class="xs">
+                <input
+                  type="text" inputmode="decimal" maxlength="20"
+                  class="input-line"
+                  formControlName="precioCompraActual"
+                  (input)="onNumericInput('precioCompraActual')"
+                  (blur)="formatDecimal('precioCompraActual',3)">
+              </div>
+            </div>
+            <div class="grp">
+              <label class="lbl">Fecha Modificación:</label>
+              <div class="xs">
+                <input type="date" class="input-line w-100"
+                       formControlName="fechaModificarCompra">
+              </div>
+            </div>
+          </div>
+
+          <hr class="pc-sep">
+
+          <!-- Fila 5: Recepción % (editable) -->
+          <div class="pc-row">
+            <label class="lbl">Recepción %:</label>
+            <div class="xs">
+              <input
+                type="text" inputmode="decimal" maxlength="20"
+                class="input-line w-100"
+                formControlName="recepcionPorcentaje"
+                (input)="onNumericInput('recepcionPorcentaje')"
+                (blur)="formatDecimal('recepcionPorcentaje',3)">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Acciones -->
+    <ng-container [ngTemplateOutlet]="accionesTabs"></ng-container>
+  </div>
+    </mat-tab>
+
+    <!-- ================= TAB 4: Estructura y Stock ================= -->
     <mat-tab label="Estructura y Stock">
       <ng-template matTabContent>
         @defer (on idle) {
           <div class="placeholder-tab">Contenido de “Estructura y Stock”</div>
-        } @placeholder {
-          <div class="placeholder-tab">Cargando…</div>
-        }
-      </ng-template>
-    </mat-tab>
-<!-- ===== Tabs Proveedor ===== -->
-    <mat-tab label="Proveedor">
-      <ng-template matTabContent>
-        @defer (on idle) {
-          <div class="placeholder-tab">Contenido de “Proveedor”</div>
+          <ng-container [ngTemplateOutlet]="accionesTabs"></ng-container>
         } @placeholder {
           <div class="placeholder-tab">Cargando…</div>
         }
@@ -403,4 +500,3 @@
 
   </mat-tab-group>
 </div>
-
