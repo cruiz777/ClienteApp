@@ -7,6 +7,9 @@ export interface GrupoEmpresa {
   id_grupo_empresa: number;
   codigo:string;
   nombre: string;
+  inscripcion:number;
+  asignacion:number;
+  mantenimiento:number;
 }
 
 @Injectable({
@@ -34,7 +37,10 @@ export class GrupoEmpresaService {
       const d = resp.data;
       return {
         codigo: d.codigo,
-        nombre: d.nombre
+        nombre: d.nombre,
+        inscripcion:d.inscripcion,
+        asignacion:d.asignacion,
+        mantenimiento:d.mantenimiento
       };
     })
   );

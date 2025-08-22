@@ -384,7 +384,11 @@
                     <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">Teléfono 2:</label>
                     {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2"
                       maxlength="9"  pattern="[0-9]*" inputmode="numeric" placeholder="999999999" autocomplete="off" />
-                  </div>
+                                      <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">Extesión:</label>
+                    <input type="text" class="underline-input" formControlName="extension"
+                       maxlength="5" minlength="1" pattern="[0-9]*" inputmode="numeric" placeholder="12345" autocomplete="off" (input)="soloDigitos('extesion', $event,paso2Form)" />
+                  
+                    </div>
                   <section class="export-questions-section" style="padding-bottom: 16px;">
                     <div class="questions-container">
                       <div class="form-label">
@@ -518,22 +522,6 @@
                         *ngIf="paso3Form.get('email1')?.hasError('emailInvalido') && paso3Form.get('email1')?.touched">
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
-                      <label style="color: #002c6c;font-size: 12px;">E-mail 2:</label>
-                      <input type="text" class="underline-input" formControlName="email2" maxlength="200"
-                        autocomplete="new-dp" placeholder="gs1@gs1.org" />
-                      <div
-                        *ngIf="paso3Form.get('email2')?.hasError('emailInvalido') && paso3Form.get('email2')?.touched">
-                        <small style="color: red;">Ingrese un correo válido</small>
-                      </div>
-                    </div>
-                    <div class="form-row">
-                      <label style="color: #002c6c;font-size: 12px;">E-mail 3: </label>
-                      <input type="text" class="underline-input" formControlName="email3" maxlength="200"
-                        autocomplete="new-dp" placeholder="gs1@gs1.org" />
-                      <div
-                        *ngIf="paso3Form.get('email3')?.hasError('emailInvalido') && paso3Form.get('email3')?.touched">
-                        <small style="color: red;">Ingrese un correo válido</small>
-                      </div>
                       <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>Tel.o Cel:</label>
                       {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono22"
                         maxlength="9"  minlength="9"  pattern="[0-9]*" inputmode="numeric" placeholder="999999999" autocomplete="off" (input)="soloDigitos('telefono22', $event,paso3Form)" />
@@ -542,6 +530,29 @@
                         style="color: red; font-size: 12px;">
                         Este campo es obligatorio.
                       </mat-error>
+                      
+                    </div>
+                    <div class="form-row">
+                      <label style="color:#002c6c;font-size:12px;">E-mail Opcional:</label>
+                      <input type="text" class="underline-input" formControlName="email2" maxlength="200"
+                        inputmode="email" autocomplete="off" placeholder="correo1@dominio.com;correo2@dominio.com"
+                        (keydown.space)="$event.preventDefault()" />
+                      <!-- evita espacios -->
+
+                      <div *ngIf="paso3Form.get('email2')?.touched && paso3Form.get('email2')?.invalid">
+                        <!-- Si AÚN mantienes el validador simple 'emailValidoValidator' en este control -->
+                        <small *ngIf="paso3Form.get('email2')?.errors?.['emailInvalido']" style="color:red;">
+                          Ingrese correo(s) válido(s).
+                        </small>
+
+                        <!-- Si usas CustomValidators.multipleEmailsValidator -->
+                        <ng-container *ngIf="paso3Form.get('email2')?.errors?.['multipleEmails'] as multi">
+                          <small style="color:red;">
+                            Correos inválidos: {{ (multi.invalid || []).join(', ') }}
+                          </small>
+                        </ng-container>
+                      </div>
+                      
                     </div>
 
 

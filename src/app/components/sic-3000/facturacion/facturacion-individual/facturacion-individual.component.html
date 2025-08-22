@@ -1,4 +1,5 @@
-<mat-tab-group class="tabs-with-circles tabs-narrow-left" [selectedIndex]="currentStep - 1" (selectedIndexChange)="onTabChange($event)">
+<mat-tab-group class="tabs-with-circles tabs-narrow-left" [selectedIndex]="currentStep - 1"
+  (selectedIndexChange)="onTabChange($event)">
 
   <!-- Pestaña 1: Datos del Cliente -->
   <mat-tab>
@@ -57,7 +58,7 @@
         </div>
 
         <div class="fi-field">
-          <mat-form-field class="select-pequeno" appearance="outline">
+          <mat-form-field class="select-pequeno">
             <mat-label>Prefijo</mat-label>
             <mat-select formControlName="gcp" (selectionChange)="onPrefijoChange($event)">
               <mat-option value="">Seleccione…</mat-option>
@@ -90,38 +91,43 @@
         <h1 class="form-title">Facturación</h1>
       </header>
 
-     <section class="product-section" aria-labelledby="product-label" style="padding-top:0;">
-  <mat-form-field  class="fi-field fi-prefix-field" style="color: white;">
-    <span matPrefix class="fi-prefix">Producto:&nbsp;</span>
-    <input matInput placeholder="Buscar producto" formControlName="producto" />
-  </mat-form-field>
-</section>
+      <section class="product-section" aria-labelledby="product-label" style="padding-top:0;">
+        <mat-form-field class="fi-field fi-prefix-field"  style="width:100%;">
+          <span matPrefix class="fi-prefix">Producto:&nbsp;</span>
 
+          <input type="text" matInput placeholder="Buscar producto" [matAutocomplete]="autoProducto"
+            formControlName="producto" #productoInputRef #autoProductoTrigger="matAutocompleteTrigger" />
 
+          <mat-autocomplete #autoProducto="matAutocomplete" (optionSelected)="onProductoSelected($event.option.value)">
+            <mat-option *ngFor="let p of filteredProductos$ | async" [value]="p.codpro">
+              {{ p.codpro }} — {{ p.despro }}
+            </mat-option>
+          </mat-autocomplete>
+        </mat-form-field>
+      </section>
 
 
       <section class="table-section" aria-labelledby="table-title">
 
 
         <ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 160px;" [rowData]="rowData"
-          [columnDefs]="columnDefs" [defaultColDef]="defaultColDef" [stopEditingWhenCellsLoseFocus]="true"
-          (gridReady)="onGridReady($event)">
+          [columnDefs]="columnDefs" [defaultColDef]="defaultColDef"  [stopEditingWhenCellsLoseFocus]="true"  [rowHeight]="36" (cellValueChanged)="onCellValueChanged($event)"
+          (gridReady)="onGridReady($event)" (cellValueChanged)="onPagosCellValueChanged($event)"    >
         </ag-grid-angular>
       </section>
-
-
+     
     </div>
-    
 
-        <div class="fi-actions" style="padding-bottom: 10px;">
-          <button class="fi-btn fi-primary" type="button" (click)="currentStep = 1"><span class="fi-arrow">‹</span>
-            Regresar
-          </button>
-          <button class="fi-btn" type="button" (click)="limpiarCliente()">Cancelar</button>
-           <button class="fi-btn fi-primary" type="button" (click)="currentStep = 3">
-          Siguiente <span class="fi-arrow">›</span>
-        </button>
-        </div>
+
+    <div class="fi-actions" style="padding-bottom: 10px;">
+      <button class="fi-btn fi-primary" type="button" (click)="currentStep = 1"><span class="fi-arrow">‹</span>
+        Regresar
+      </button>
+      <button class="fi-btn" type="button" (click)="limpiarCliente()">Cancelar</button>
+      <button class="fi-btn fi-primary" type="button" (click)="currentStep = 3">
+        Siguiente <span class="fi-arrow">›</span>
+      </button>
+    </div>
 
 
   </mat-tab>
@@ -132,25 +138,34 @@
       <span class="step-badge" [class.active]="currentStep === 3">3</span>
       <span>Formas de Pago</span>
     </ng-template>
-
     <section class="tab-content" [formGroup]="formPagos">
       <section class="form-title">
         <h1 class="main-title">Forma de Pago</h1>
       </section>
 
-       <section class="product-section" aria-labelledby="product-label" style="padding-top:0;">
-  <mat-form-field  class="fi-field fi-prefix-field" style="color: white;">
-    <span matPrefix class="fi-prefix">Pago:&nbsp;</span>
-    <input matInput placeholder="Buscar forma de pago" formControlName="metodoPago" />
-  </mat-form-field>
-</section>
+      <section class="product-section" aria-labelledby="product-label" style="padding-top:0;">
+        <mat-form-field class="fi-field fi-prefix-field" style="color: white; width: 100%;">
+          <span matPrefix class="fi-prefix">Pago:&nbsp;</span>
+          <input matInput #pagoInputRef placeholder="Buscar forma de pago" formControlName="metodoPago"
+            [matAutocomplete]="autoPago" />
+        </mat-form-field>
+
+        <mat-autocomplete #autoPago="matAutocomplete" [displayWith]="displayFormaPago"
+          (optionSelected)="onFormaPagoSelected($event)">
+          <mat-option *ngFor="let fp of filteredFormasPago$ | async" [value]="fp">
+            {{ fp.descripcionPago }}
+          </mat-option>
+          <mat-option *ngIf="(filteredFormasPago$ | async)?.length === 0 && !isLoadingFormas" disabled>
+            Sin resultados
+          </mat-option>
+        </mat-autocomplete>
+
+      </section>
 
       <section class="pagos-grid-section" aria-labelledby="pagos-title">
-
-
         <ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 120px;" [rowData]="rowDataPagos"
-          [columnDefs]="columnDefsPagos" [defaultColDef]="defaultColDefPagos" [stopEditingWhenCellsLoseFocus]="true"
-          (gridReady)="onPagosGridReady($event)">
+          [columnDefs]="columnDefsPagos" [defaultColDef]="defaultColDefPagos" [stopEditingWhenCellsLoseFocus]="true"  [rowHeight]="36"
+          (gridReady)="onPagosGridReady($event)" (cellValueChanged)="onPagosCellValueChanged($event)" (rowDataUpdated)="onPagosRowsChanged()" >
         </ag-grid-angular>
       </section>
 
@@ -165,21 +180,14 @@
         </div>
       </aside>
 
-      
-
-        <div class="fi-actions" style="padding-bottom: 10px;">
-          <button class="fi-btn fi-primary" type="button" (click)="currentStep = 2"><span class="fi-arrow">‹</span>
-            Regresar
-          </button>
-          <button class="fi-btn" type="button" (click)="limpiarCliente()">Cancelar</button>
-          <button class="fi-btn fi-primary" type="button" (click)="onGenerateInvoice()">
-            Generar Factura
-          </button>
-        </div>
-
-      
-
+      <div class="fi-actions" style="padding-bottom: 10px;">
+        <button class="fi-btn fi-primary" type="button" (click)="currentStep = 2"><span class="fi-arrow">‹</span>
+          Regresar</button>
+        <button class="fi-btn" type="button" (click)="limpiarCliente()">Cancelar</button>
+        <button class="fi-btn fi-primary" type="button" (click)="onGenerateInvoice()">Generar Factura</button>
+      </div>
     </section>
+
   </mat-tab>
 </mat-tab-group>
 <!-- Contenedor a dos columnas -->

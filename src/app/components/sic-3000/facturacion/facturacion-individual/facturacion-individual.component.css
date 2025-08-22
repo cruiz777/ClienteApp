@@ -2203,3 +2203,23 @@ label[for="secuencial"]{ padding-left: 0 !important; }
 
 /* si el PARENT usa grid y lo centra, idem */
 .tabs-narrow-left{ justify-self: start; }
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 19px;              /* ↓ tamaño del botón */
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.icon-btn .material-icons {
+  font-size: 14px;          /* ↓ tamaño del ícono */
+  line-height: 1;
+}
+
+.icon-btn--trash .material-icons { color: #ef5350; }
+.icon-btn:hover { background: rgba(239, 83, 80, 0.12); }

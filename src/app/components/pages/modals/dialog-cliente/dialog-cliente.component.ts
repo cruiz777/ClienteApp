@@ -28,7 +28,7 @@ const html2pdf: any = require('html2pdf.js');
 
 // Utilidades y validadores
 import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
-import { emailValidoValidator } from 'src/app/util/validators';
+import { emailValidoValidator,multipleEmailsValidator } from 'src/app/util/validators';
 
 // Interfaces y modelos
 import { ClienteRuc } from 'src/app/interfaces/clienteRuc';
@@ -197,7 +197,8 @@ export class DialogClienteComponent implements OnInit {
         nombreRepresentante: [null, Validators.required],
         direccionPrincipal: ['', Validators.required],
         codigoPostal: [''],
-        celular: ['', Validators.required],
+        celular: [''],
+        extension: [''],
         sitioWeb: [''],
         telefono2: [''],
         usuario: [{ value: '', disabled: true }],
@@ -213,7 +214,7 @@ export class DialogClienteComponent implements OnInit {
         nombreCodificacion: [''],
         email: ['', [emailValidoValidator()]],
         email1: ['', [Validators.required, emailValidoValidator()]],
-        email2: ['', [emailValidoValidator()]],
+        email2: ['', [multipleEmailsValidator()]],
         email3: ['', [emailValidoValidator()]],
         telefonoc: [''],
         nombreFinanciero: [null, Validators.required],
@@ -627,7 +628,7 @@ export class DialogClienteComponent implements OnInit {
       marca4: '',
       marca5: '',
       codcue: '',
-      hello: '',
+      hello: paso2.extension || '',
       desde: 0,
       fechtre: new Date().toISOString(),
       web: paso2.sitioWeb,
@@ -654,7 +655,11 @@ export class DialogClienteComponent implements OnInit {
       idZona:idZona,
       //idZona: paso1.zona.id,  por el momento hasta enlazar con la ciudad
       idGrupoEmpresa: paso1.grupo || 1,
-      representante: paso2.nombreRepresentante || ''
+      representante: paso2.nombreRepresentante || '',
+      fecmod: new Date().toLocaleDateString('en-CA'),
+      usumod:this.usuarioActual?.nombre_usuario || '',
+     
+
     };
     this.impresionHabilitada = true;
 
