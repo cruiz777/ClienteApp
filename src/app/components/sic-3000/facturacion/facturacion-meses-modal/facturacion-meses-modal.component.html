@@ -1,0 +1,59 @@
+<h2 mat-dialog-title>Seleccionar meses — {{ data.anioActual }}</h2>
+
+<div mat-dialog-content class="grid" [formGroup]="form">
+  <div class="prefijo">
+    Prefijo: <strong>{{ data.codpre || ('ID ' + data.idPrefijo) }}</strong>
+  </div>
+
+  <!-- Fecha Última de Pago (dd/MM/yyyy) -->
+  <mat-form-field appearance="fill">
+    <mat-label>Fecha Última de Pago</mat-label>
+    <input matInput
+           [matDatepicker]="dp1"
+           formControlName="fchUltimaPago"
+           [readonly]="true"
+           (keydown)="bloquearTeclado($event)"
+           (paste)="$event.preventDefault()"
+           (dateChange)="recalcular()">
+    <mat-datepicker-toggle matSuffix [for]="dp1"></mat-datepicker-toggle>
+    <mat-datepicker #dp1 startView="month"></mat-datepicker>
+  </mat-form-field>
+
+  <!-- Fecha Hasta Paga (dd/MM/yyyy) -->
+  <mat-form-field appearance="fill">
+    <mat-label>Fecha Hasta Paga</mat-label>
+    <input matInput
+           [matDatepicker]="dp2"
+           formControlName="fchHastaPaga"
+           [readonly]="true"
+           (keydown)="bloquearTeclado($event)"
+           (paste)="$event.preventDefault()"
+           (dateChange)="recalcular()">
+    <mat-datepicker-toggle matSuffix [for]="dp2"></mat-datepicker-toggle>
+    <mat-datepicker #dp2 startView="month"></mat-datepicker>
+  </mat-form-field>
+
+  <!-- Número de Meses -->
+  <mat-form-field appearance="fill">
+    <mat-label>Número de Meses</mat-label>
+    <input matInput formControlName="numMeses" readonly>
+  </mat-form-field>
+
+  <!-- Mes (fin) -->
+  <mat-form-field appearance="fill">
+    <mat-label>Mes</mat-label>
+    <input matInput formControlName="mesFinNombre" readonly>
+  </mat-form-field>
+
+  <!-- Año (fin) -->
+  <mat-form-field appearance="fill">
+    <mat-label>Año</mat-label>
+    <input matInput formControlName="anioFin" readonly>
+  </mat-form-field>
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="salir()">Salir</button>
+  <button mat-flat-button color="primary" (click)="aceptar()" [disabled]="aplicado">Aceptar</button>
+
+</div>

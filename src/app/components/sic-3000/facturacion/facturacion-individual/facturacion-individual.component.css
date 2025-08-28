@@ -2023,7 +2023,7 @@ label[for="guia-remision"] {
     grid-template-columns: 120px 1fr;
   }
   .text-input,
-  .fi-input{ font-size: 14px; line-height: 1.4; }
+  .fi-input{ font-size: 12px; line-height: 1.4; }
 }
 
 /* (Opcional) Scrollbar más grueso para móviles/desktop */
@@ -2223,3 +2223,482 @@ label[for="secuencial"]{ padding-left: 0 !important; }
 
 .icon-btn--trash .material-icons { color: #ef5350; }
 .icon-btn:hover { background: rgba(239, 83, 80, 0.12); }
+/* --- grid 3 columnas: A (flex) | C (media) | D (angosta) --- */
+.fi-grid--3{
+  display:grid;
+  grid-template-columns: minmax(420px,1fr) 1fr 280px; /* ajusta 280 si quieres más/menos */
+  column-gap: 24px;
+  row-gap: 12px;
+}
+
+/* Dirección, E-mail opcional, Cliente… que ocupen 2 columnas */
+.fi-span2{ grid-column: span 2; }
+
+/* Teléfono más angosto */
+.fi-sm .fi-input{ max-width: 240px; }
+
+/* Responsive */
+@media (max-width: 1024px){
+  .fi-grid--3{ grid-template-columns: 1fr 1fr; }
+  .fi-sm .fi-input{ max-width: 100%; }
+}
+@media (max-width: 640px){
+  .fi-grid--3{ grid-template-columns: 1fr; }
+  .fi-span2{ grid-column: auto; }
+}
+/* 1) El tab-group a ancho completo */
+.tabs-narrow-left{
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;     /* quita el centrado/offset */
+}
+
+/* 2) La sección “Información del Cliente” sin límite */
+:host .fi-section{
+  max-width: none !important;
+}
+
+/* 3) Grid 3 columnas elástico para que crezca con la página */
+:host .fi-grid{
+  grid-template-columns: 2fr 1.2fr 1fr;  /* ajusta a gusto */
+  gap: 16px 24px;
+}
+
+/* 4) (Opcional) que “Dirección” use toda la fila */
+.fi-cell-direccion{
+  grid-column: 1 / -1;
+}
+/* Asegura 3 columnas en el grid de esta sección */
+:host .fi-grid{
+  display:grid;
+  grid-template-columns: 2fr 1.2fr 1fr;   /* izq más ancha */
+  gap: 16px 24px;
+}
+
+/* Dirección ocupa las columnas 2 y 3 de su fila (la segunda) */
+:host .fi-dir{
+  grid-column: 2 / 4;   /* de la col 2 hasta antes de la 4 */
+}
+
+/* E-mail opcional en la columna 3; como la fila 2 está ocupada por .fi-dir,
+   se coloca automáticamente en la 3ª fila */
+:host .fi-email-opc{
+  grid-column: 3;
+}
+
+/* Responsivo */
+@media (max-width: 1024px){
+  :host .fi-grid{ grid-template-columns: 1fr 1fr; }
+  :host .fi-dir{ grid-column: 1 / -1; }   /* Dirección a lo ancho */
+  :host .fi-email-opc{ grid-column: auto; }
+}
+@media (max-width: 640px){
+  :host .fi-grid{ grid-template-columns: 1fr; }
+}
+/* 3 columnas: izquierda ancha, centro medio, derecha angosta */
+:host .fi-grid{
+  display:grid;
+  grid-template-columns: 2fr 1.2fr 1fr;
+  gap: 16px 24px;
+  grid-template-areas:
+    "cliente  tel      id"
+    "email    dir      ."
+    "emailop  cat      pref";
+}
+
+/* asignación de cada celda */
+.fi-cliente{ grid-area: cliente; }
+.fi-tel    { grid-area: tel; }
+.fi-id     { grid-area: id; }
+.fi-email  { grid-area: email; }
+.fi-dir    { grid-area: dir; }
+.fi-emailop{ grid-area: emailop; }
+.fi-cat    { grid-area: cat; }
+.fi-pref   { grid-area: pref; }
+
+/* Responsivo: 2 columnas */
+@media (max-width: 1024px){
+  :host .fi-grid{
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "cliente cliente"
+      "tel     id"
+      "email   email"
+      "dir     dir"
+      "emailop emailop"
+      "cat     pref";
+  }
+}
+
+/* Responsivo: 1 columna apilado */
+@media (max-width: 640px){
+  :host .fi-grid{
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "cliente"
+      "tel"
+      "id"
+      "email"
+      "dir"
+      "emailop"
+      "cat"
+      "pref";
+  }
+}
+.fi-row-prod-desc {
+  display: grid;
+  grid-template-columns: 5fr 3fr 2fr; /* 50 / 30 / 20 */
+  gap: 10px;
+  align-items: center;
+}
+
+.fi-row-prod-desc .mat-mdc-form-field,
+.fi-row-prod-desc .fi-prefix-field {
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .fi-row-prod-desc {
+    grid-template-columns: 1fr;
+  }
+}
+.invoice-header{
+  display:flex;
+  align-items:center;              /* mismo alto que “Factura” */
+  justify-content:space-between;
+  gap:24px;
+}
+
+.main-title{ margin:0; line-height:1.1; }
+
+.invoice-fields-row{
+  display:flex;
+  align-items:flex-end;            /* alinea inputs por la base */
+  gap:40px;                        /* espacio entre grupos */
+}
+
+.field-group{ display:flex; flex-direction:column; }
+.field-label{ margin:0 0 4px; font-weight:600; }
+
+/* Responsive: apila debajo del título */
+@media (max-width: 768px){
+  .invoice-header{ flex-direction:column; align-items:flex-start; }
+  .invoice-fields-row{ margin-top:8px; gap:20px; flex-wrap:wrap; }
+}
+.refs-row{
+  display:flex;
+  align-items:flex-end;  /* alinea por la base */
+  gap:32px;
+  margin-top:16px;
+}
+
+.field-group{ display:flex; flex-direction:column; }
+
+/* Anchos fijos para los 2 primeros */
+.refs-row .field-group .input-wrapper{ width:180px; }
+.refs-row .field-group .input-background{ width:100%; }
+
+/* Observación ocupa el resto */
+.field-observacion{ flex:1; min-width:260px; }
+.field-observacion .input-wrapper{ width:100%; }
+
+/* Responsivo */
+@media (max-width: 768px){
+  .refs-row{ flex-wrap:wrap; gap:16px; }
+  .refs-row .field-group{ flex:1 1 220px; }
+}
+/* Solo para la fila de referencias */
+.refs-row .input-wrapper{
+  position: relative;
+  padding-bottom: 6px;          /* espacio para la línea */
+}
+
+.refs-row .input-wrapper::after{
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 1px;
+  background: #cfd8dc;          /* gris suave */
+  transition: all .15s ease;
+}
+
+/* Línea activa al enfocar */
+.refs-row .input-wrapper:focus-within::after{
+  height: 2px;
+  background: #cfd8dc;          /* tu naranja */
+}
+
+/* Quita el borde de los inputs/textarea para que solo se vea la línea */
+.refs-row .text-input,
+.refs-row .text-area{
+  border: 0;
+  outline: 0;
+  background: transparent;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Opcional: textarea que crece sin perder la línea */
+.refs-row .text-area{
+  resize: vertical;   /* o 'none' si usas autoGrow */
+  min-height: 40px;
+  overflow: auto;
+}
+/* opción 1: espacio debajo del encabezado */
+.invoice-header { margin-bottom: 10px; }
+
+/* opción 2: espacio encima de la fila Orden/Guía/Observación */
+.refs-row { margin-top: 10px; }
+/* 1) Compactar tarjeta */
+.values-section.totales-card { padding: 10px 14px; }
+.values-header { margin: 0 0 8px; }
+
+/* 2) Una sola línea por fila (separador de la fila) */
+.values-section .value-row{
+  display: grid;
+  grid-template-columns: 1fr 110px; /* etiqueta | valor */
+  align-items: end;
+  column-gap: 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid #dbe3ea;   /* ← ÚNICA línea */
+}
+.values-section .value-row:last-child{ border-bottom: 0; }
+
+/* 3) Quitar la línea del input para evitar la doble línea */
+.values-section .value-amount-wrapper .fi-input{
+  border: none !important;            /* ← quita subrayado del input */
+  box-shadow: none !important;
+  background: transparent;
+  height: 24px;
+  padding: 0;
+  text-align: right;
+}
+
+/* 4) TOTAL compacto y sin doble línea */
+.total-section{ margin-top: 8px; }
+.total-content{
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  align-items: end;
+  column-gap: 12px;
+  padding-top: 6px;
+  
+}
+.total-amount-wrapper .fi-input{
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent;
+  height: 26px;
+  font-size: 18px;
+  padding: 0;
+  text-align: right;
+}
+.fi-row-prod-desc {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;     /* botón alineado arriba */
+}
+
+.fi-prefix-field { width: 100%; min-width: 0; }
+
+/* Reparto del ancho (ajusta a gusto) */
+.grow-6 { flex: 6 1 0; }       /* Producto: ~60% */
+.grow-3 { flex: 3 1 0; }       /* Descuento: ~30% */
+.grow-2 { flex: 2 1 1px; }   /* Año: ~10% con base mínima */
+
+.tooltip-wrapper { display: inline-block; line-height: 0; }
+.fi-meses-btn { height: 40px; padding: 0 10px; }
+
+/* Responsive opcional */
+@media (max-width: 900px) {
+  .grow-6 { flex: 1 1 100%; }
+  .grow-3 { flex: 1 1 50%; }
+  .grow-2 { flex: 1 1 120px; }
+}
+:root { --amount-col: 140px; }               /* ancho de la columna de montos */
+
+.values-section--grid { display: flex; flex-direction: column; gap: 8px; }
+
+.value-row,
+.total-content {
+  display: grid;
+  grid-template-columns: 1fr var(--amount-col); /* mismas columnas para filas y total */
+  align-items: center;
+}
+
+.value-row { 
+  padding: 8px 0;
+  border-bottom: 1px solid #e3e8ee;          /* una línea por fila */
+}
+.value-row--last { border-bottom: 0; }       /* sin línea extra antes del divisor */
+
+.value-amount-wrapper, .total-amount-wrapper { text-align: right; }
+
+.fi-amount, .fi-total-amount { font-variant-numeric: tabular-nums; }
+
+.total-divider {
+  height: 2px;                                /* una sola línea más gruesa */
+  background: #e3e8ee;
+  margin: 4px 0 2px;
+}
+
+.total-label { font-weight: 700; letter-spacing: .3px; }
+.fi-total-amount { font-size: 1.25rem; font-weight: 700; }
+/* === Totales: una sola línea antes del TOTAL y todo alineado === */
+
+/* Misma rejilla para filas y total */
+.values-section.totales-card .value-row,
+.values-section.totales-card .total-content{
+  display: grid;
+  grid-template-columns: 1fr 140px; /* etiqueta | monto (ajusta 140px si quieres) */
+  align-items: center;
+}
+
+/* Línea por fila */
+.values-section.totales-card .value-row{
+  padding: 8px 0;
+  border-bottom: 1px solid #e3e8ee;
+}
+
+/* Quita la línea de la ÚLTIMA fila (evita el “doble renglón”) */
+.values-section.totales-card .value-row:last-of-type{
+  border-bottom: 0 !important;
+}
+
+/* Deja SOLO un separador antes del TOTAL */
+.values-section.totales-card .total-content{
+ 
+  padding-top: 6px;
+}
+
+/* Si todavía existe el sistema viejo de dos líneas, lo apagamos */
+.values-section.totales-card .total-borders,
+.values-section.totales-card .total-border-top,
+.values-section.totales-card .total-border-bottom,
+.values-section.totales-card .total-divider{
+  display: none !important;
+}
+
+/* Alineación a la derecha de los montos */
+.values-section.totales-card .value-amount-wrapper,
+.values-section.totales-card .total-amount-wrapper{
+  text-align: right;
+}
+/* === Compactar un poco más la tarjeta de totales === */
+:root{
+  --amount-col: 120px;                   /* opcional: columna de montos un poco más angosta */
+}
+
+.values-section.totales-card .value-row{
+  padding: 2px 0 !important;            /* ← estaba en 4px 0 */
+  gap: 8px !important;                   /* menos espacio entre etiqueta y monto */
+}
+
+.values-section.totales-card .value-label,
+.values-section.totales-card .value-amount,
+.values-section.totales-card .value-amount-wrapper .fi-input{
+  font-size: 11.5px !important;          /* ↓ antes 12px */
+  line-height: 1.15 !important;          /* ↓ antes 1.2 */
+}
+
+.values-section.totales-card .total-section{
+  margin-top: 6px !important;            /* ↓ antes 8px */
+}
+
+.values-section.totales-card .total-content{
+  padding-top: 4px !important;           /* ↓ antes 6px */
+}
+/* ====== FIX TARJETA DETALLES DE VALORES (compacta y 1 sola fila) ====== */
+
+/* Ancho de la columna de montos */
+:root { --amount-col: 130px; }
+
+/* Reset duro de posiciones/alturas que vengan de estilos anteriores */
+.values-section.totales-card .value-row,
+.values-section.totales-card .total-section,
+.values-section.totales-card .total-content,
+.values-section.totales-card .value-label-wrapper,
+.values-section.totales-card .value-amount-wrapper{
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+}
+
+/* Cabecera compacta */
+.values-section.totales-card .values-header{ margin: 0 0 6px !important; }
+
+/* === Cada fila: una sola línea, etiqueta a la izq. y monto a la der. === */
+.values-section.totales-card .value-row{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding: 4px 0 !important;                 /* ↓ alto compacto */
+  border-bottom: 1px solid #e6ecf5 !important;
+}
+
+.values-section.totales-card .value-row:last-of-type{
+  border-bottom: 1px solid #e6ecf5 !important; /* mantiene la línea antes del total */
+}
+
+/* Etiqueta */
+.values-section.totales-card .value-label-wrapper{
+  flex: 1 1 auto !important;
+  min-width: 0;
+}
+.values-section.totales-card .value-label{
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  white-space: nowrap;
+}
+
+/* Monto alineado a la derecha con ancho fijo */
+.values-section.totales-card .value-amount-wrapper{
+  flex: 0 0 var(--amount-col) !important;
+  text-align: right !important;
+}
+.values-section.totales-card .value-amount,
+.values-section.totales-card .value-amount-wrapper .fi-input{
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  font-variant-numeric: tabular-nums;
+  text-align: right !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  height: auto !important;
+}
+
+/* === TOTAL (una sola fila, sin dobles líneas) === */
+.values-section.totales-card .total-section{ margin-top: 8px !important; }
+.values-section.totales-card .total-content{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding-top: 1px !important;
+   /* divisor del total */
+}
+.values-section.totales-card .total-label-wrapper{ flex: 1 1 auto !important; }
+.values-section.totales-card .total-label{
+  font-weight: 700;
+  white-space: nowrap;                         /* “TOTAL A PAGAR” en una fila */
+}
+.values-section.totales-card .total-amount-wrapper{
+  flex: 0 0 calc(var(--amount-col) + 10px) !important;
+  text-align: right !important;
+}
+.values-section.totales-card .total-amount,
+.values-section.totales-card .total-amount-wrapper .fi-input{
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  text-align: right !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}

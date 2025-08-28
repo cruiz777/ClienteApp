@@ -9,10 +9,10 @@
     </ng-template>
 
     <section class="fi-section" [formGroup]="formCliente">
-      <h1 class="fi-title">Información del Cliente</h1>
+      <h1 class="fi-title" style="padding-top: 0;">Información del Cliente</h1>
 
       <div class="fi-grid">
-        <div class="fi-field">
+        <div class="fi-field fi-cliente">
           <label>Cliente:</label>
           <div class="fi-input-wrap">
             <input type="text" matInput [formControl]="clienteOrigenControl" [matAutocomplete]="autoOrigen"
@@ -26,38 +26,38 @@
           </div>
         </div>
 
-        <div class="fi-field">
+        <div class="fi-field fi-tel">
           <label>Teléfono:</label>
           <input class="fi-input" type="text" placeholder="número" formControlName="telefono">
         </div>
 
-        <div class="fi-field">
+        <div class="fi-field fi-id">
           <label>Identificación (RUC/Cédula):</label>
           <input class="fi-input" type="text" placeholder="Identificación" formControlName="identificacion" readonly>
         </div>
 
-        <div class="fi-field">
+        <div class="fi-field fi-email">
           <label>E-mail:</label>
           <input class="fi-input" type="email" placeholder="pac@gmail.com" formControlName="email">
         </div>
 
-        <div class="fi-field">
+        <div class="fi-field fi-dir">
           <label>Dirección:</label>
           <input class="fi-input" type="text" placeholder="Calles principales y secundarias"
             formControlName="direccion">
         </div>
 
-        <div class="fi-field">
+        <div class="fi-field fi-emailop">
           <label>E-mail opcional:</label>
           <input class="fi-input" type="email" placeholder="Email" formControlName="emailOpcional">
         </div>
 
-        <div class="fi-field">
+        <div class="fi-field fi-cat">
           <label>Categoría:</label>
           <input class="fi-input" type="text" placeholder="Categoría" formControlName="categoria" readonly>
         </div>
 
-        <div class="fi-field">
+        <div class="fi-field fi-pref">
           <mat-form-field class="select-pequeno">
             <mat-label>Prefijo</mat-label>
             <mat-select formControlName="gcp" (selectionChange)="onPrefijoChange($event)">
@@ -69,6 +69,7 @@
           </mat-form-field>
         </div>
       </div>
+
 
       <div class="fi-actions">
         <button class="fi-btn" type="button" (click)="limpiarCliente()">Cancelar</button>
@@ -88,34 +89,85 @@
 
     <div class="factura-wrap" [formGroup]="formFactura">
       <header class="form-header" style="padding-bottom: 0;padding-top: 0;">
-        <h1 class="form-title">Facturación</h1>
+        <h1 class="form-title" style="padding-bottom: 0;padding-top: 0;">Facturación</h1>
       </header>
-
       <section class="product-section" aria-labelledby="product-label" style="padding-top:0;">
-        <mat-form-field class="fi-field fi-prefix-field"  style="width:100%;">
-          <span matPrefix class="fi-prefix">Producto:&nbsp;</span>
+        <div class="fi-row-prod-desc">
+  <!-- Producto -->
+  <mat-form-field class="fi-prefix-field grow-6" appearance="fill">
+    <span matPrefix class="fi-prefix">Producto:&nbsp;</span>
+    <input matInput placeholder="Buscar producto"
+           [matAutocomplete]="autoProducto"
+           formControlName="producto"
+           #productoInputRef #autoProductoTrigger="matAutocompleteTrigger"/>
+    <mat-autocomplete #autoProducto="matAutocomplete"
+                      (optionSelected)="onProductoSelected($event.option.value)">
+      <mat-option *ngFor="let p of filteredProductos$ | async" [value]="p.codpro">
+        {{ p.codpro }} — {{ p.despro }}
+      </mat-option>
+    </mat-autocomplete>
+  </mat-form-field>
 
-          <input type="text" matInput placeholder="Buscar producto" [matAutocomplete]="autoProducto"
-            formControlName="producto" #productoInputRef #autoProductoTrigger="matAutocompleteTrigger" />
+  <!-- Descuento -->
+  <mat-form-field class="fi-prefix-field grow-3" appearance="fill">
+    <span matPrefix class="fi-prefix">Descuento:&nbsp;</span>
+    <input matInput placeholder="Buscar descuento"
+           [matAutocomplete]="autoDescuento"
+           formControlName="descuento"
+           #descuentoInputRef #autoDescuentoTrigger="matAutocompleteTrigger"/>
+    <button *ngIf="!!formFactura.get('descuento')?.value"
+            mat-icon-button matSuffix type="button"
+            aria-label="Limpiar descuento" (click)="clearDescuento()">
+      <mat-icon>close</mat-icon>
+    </button>
+    <mat-autocomplete #autoDescuento="matAutocomplete" [displayWith]="displayDescuento"
+                      (optionSelected)="onDescuentoSelected($event.option.value)">
+      <mat-option *ngFor="let d of filteredDescuentos$ | async" [value]="d">
+        {{ d.descripcion }} ({{ d.valorFormateado || (d.valor + '%') }})
+      </mat-option>
+    </mat-autocomplete>
+  </mat-form-field>
 
-          <mat-autocomplete #autoProducto="matAutocomplete" (optionSelected)="onProductoSelected($event.option.value)">
-            <mat-option *ngFor="let p of filteredProductos$ | async" [value]="p.codpro">
-              {{ p.codpro }} — {{ p.despro }}
-            </mat-option>
-          </mat-autocomplete>
-        </mat-form-field>
+  <!-- Año -->
+  <mat-form-field class="fi-prefix-field grow-2" appearance="fill">
+    <span matPrefix class="fi-prefix">Año:&nbsp;</span>
+    <input matInput type="number" inputmode="numeric" placeholder="Año"
+           formControlName="anio" minlength="1" maxlength="4"
+           (keypress)="soloNumeros($event)" (paste)="soloPegadoNumerico($event)">
+  </mat-form-field>
+
+  <!-- Botón -->
+  <span class="tooltip-wrapper"
+        [matTooltip]="puedeAbrirMeses
+          ? 'Seleccionar meses para MANTENIMIENTO (1176)'
+          : 'Agregue el producto 1176 y seleccione un prefijo para habilitar'"
+        matTooltipPosition="above" matTooltipShowDelay="300">
+    <button mat-stroked-button color="primary" type="button"
+            class="fi-meses-btn"
+            (click)="abrirDialogoAnio()" [disabled]="!puedeAbrirMeses">
+      <mat-icon>event</mat-icon>
+    </button>
+  </span>
+</div>
+
+       
+
       </section>
 
 
       <section class="table-section" aria-labelledby="table-title">
 
 
-        <ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 160px;" [rowData]="rowData"
-          [columnDefs]="columnDefs" [defaultColDef]="defaultColDef"  [stopEditingWhenCellsLoseFocus]="true"  [rowHeight]="36" (cellValueChanged)="onCellValueChanged($event)"
-          (gridReady)="onGridReady($event)" (cellValueChanged)="onPagosCellValueChanged($event)"    >
+        <ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 160px;" [rowData]="rowData" class="ag-theme-alpine w-100"
+  [enableBrowserTooltips]="true"
+  [tooltipShowDelay]="300"
+  [tooltipHideDelay]="100"
+          [columnDefs]="columnDefs" [defaultColDef]="defaultColDef" [stopEditingWhenCellsLoseFocus]="true"
+          [rowHeight]="36" (cellValueChanged)="onCellValueChanged($event)" (gridReady)="onGridReady($event)"
+          (cellValueChanged)="onPagosCellValueChanged($event)" (cellDoubleClicked)="onCellDoubleClicked($event)">
         </ag-grid-angular>
       </section>
-     
+
     </div>
 
 
@@ -131,7 +183,7 @@
 
 
   </mat-tab>
-
+  
   <!-- Pestaña 3: Formas de Pago -->
   <mat-tab>
     <ng-template mat-tab-label>
@@ -164,8 +216,9 @@
 
       <section class="pagos-grid-section" aria-labelledby="pagos-title">
         <ag-grid-angular class="ag-theme-alpine" style="width: 100%; height: 120px;" [rowData]="rowDataPagos"
-          [columnDefs]="columnDefsPagos" [defaultColDef]="defaultColDefPagos" [stopEditingWhenCellsLoseFocus]="true"  [rowHeight]="36"
-          (gridReady)="onPagosGridReady($event)" (cellValueChanged)="onPagosCellValueChanged($event)" (rowDataUpdated)="onPagosRowsChanged()" >
+          [columnDefs]="columnDefsPagos" [defaultColDef]="defaultColDefPagos" [stopEditingWhenCellsLoseFocus]="true"
+          [rowHeight]="36" (gridReady)="onPagosGridReady($event)" (cellValueChanged)="onPagosCellValueChanged($event)"
+          (rowDataUpdated)="onPagosRowsChanged()">
         </ag-grid-angular>
       </section>
 
@@ -184,7 +237,7 @@
         <button class="fi-btn fi-primary" type="button" (click)="currentStep = 2"><span class="fi-arrow">‹</span>
           Regresar</button>
         <button class="fi-btn" type="button" (click)="limpiarCliente()">Cancelar</button>
-        <button class="fi-btn fi-primary" type="button" (click)="onGenerateInvoice()">Generar Factura</button>
+        <button class="fi-btn fi-primary" type="button" (click)="crearFactura()">Generar Factura</button>
       </div>
     </section>
 
@@ -200,137 +253,118 @@
 
     <!-- IZQ: Caja -->
     <section class="box-section" aria-labelledby="caja-title" [formGroup]="formCaja">
-      <header class="main-title-section">
-        <h1 class="main-title">Caja</h1>
-      </header>
-      <!-- Invoice fields row -->
-      <div class="invoice-fields-row">
+      <!-- Título + campos en la misma línea, anclados a la izquierda -->
+      <div class="invoice-header">
+        <h1 class="main-title">Factura</h1>
+        <div class="invoice-fields-row">
+          <div class="field-group">
+            <label class="field-label">P. Emisión:</label>
+            <div class="input-wrapper">
+              <input type="text" class="text-input" formControlName="puntoEmision" readonly
+                style="font-size:20px;height:40px;font-weight:700;color:#F26334;width:60px;">
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Caja:</label>
+            <div class="input-wrapper">
+              <input type="text" class="text-input" formControlName="caja" readonly
+                style="font-size:20px;height:40px;font-weight:700;color:#F26334;width:60px;">
+            </div>
+          </div>
+
+          <div class="field-group">
+            <label class="field-label">Secuencial:</label>
+            <div class="input-wrapper">
+              <input type="text" class="text-input" formControlName="secuencial" readonly
+                style="font-size:20px;height:40px;font-weight:700;color:#F26334;width:140px;">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Orden compra | Guía remisión | Observación en la MISMA fila -->
+      <div class="refs-row">
         <div class="field-group">
-          <label for="factura" class="field-label">Factura:</label>
-
+          <label class="field-label">Orden Compra:</label>
+          <div class="input-wrapper">
+            <input type="text" class="text-input" formControlName="ordenCompra" placeholder="Orden de Compra">
+          </div>
         </div>
 
         <div class="field-group">
-          <label for="p-emision" class="field-label">P. Emisión:</label>
+          <label class="field-label">Guía Remisión:</label>
           <div class="input-wrapper">
-            <input id="p-emision" type="text" class="text-input" formControlName="puntoEmision" placeholder="001"
-              aria-label="Punto de emisión" style="font-size: 20px;height: 40px;font-weight: 700;color:#F26334;"
-              readonly>
-            <div class="input-cursor"></div>
+            <input type="text" class="text-input" formControlName="guiaRemision" placeholder="Guía Remisión">
           </div>
         </div>
 
-        <div>
-          <label for="caja-field" class="field-label">Caja:</label>
+        <div class="field-group field-observacion">
+          <label class="field-label">Observación:</label>
           <div class="input-wrapper">
-            <input id="caja-field" type="text" class="text-input" formControlName="caja" placeholder="001"
-              aria-label="Número de caja"
-              style="font-size: 20px;height: 40px;font-weight: 700;color:#F26334;width: 45px;" readonly>
-            <div class="input-cursor"></div>
-          </div>
-        </div>
-
-        <div>
-          <label for="secuencial" class="field-label" style="padding-left: 7ex;">Secuencial:</label>
-          <div class="input-wrapper">
-            <input id="secuencial" type="text" class="text-input" formControlName="secuencial" placeholder="000055550"
-              aria-label="Número secuencial"
-              style="font-size: 20px; height: 40px; font-weight: 700; color:#F26334; width: 140px; text-align:left; padding-left:5px;"
-              readonly>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Combined fields input -->
-
-
-      <!-- Document reference fields -->
-      <div class="document-references">
-        <div class="field-group" style="padding-top: 25px;padding-left: 160px;">
-          <label for="orden-compra" class="field-label">Orden Compra:</label>
-          <div class="input-wrapper">
-            <div class="input-background" style="width: 150px;"></div>
-            <input id="orden-compra" type="text" class="text-input" placeholder="Orden de Compra"
-              aria-label="Número de orden de compra" style="padding-right: 15px;">
-            <div class="input-cursor"></div>
-          </div>
-        </div>
-
-        <div class="field-group" style="padding-top: 25px;">
-          <label for="guia-remision" class="field-label">Guía Remisión:</label>
-          <div class="input-wrapper">
-            <div class="input-background" style="width: 150px;"></div>
-            <input id="guia-remision" type="text" class="text-input" placeholder="Guía Remsión"
-              aria-label="Número de guía de remisión" style="width: 180px;">
-            <div class="input-cursor"></div>
+            <textarea class="text-area" rows="1" formControlName="observacion" placeholder="Observación"
+              (input)="autoGrow($event)"></textarea>
           </div>
         </div>
       </div>
 
-      <!-- Observation fields -->
-      <div class="observation-section" style="padding-top: 25px;">
-        <label for="observacion-1" class="observation-label">Observación:</label>
-        <div class="observation-input-wrapper">
-          <div class="observation-input-background"></div>
-          <input id="observacion-1" type="text" class="observation-input" placeholder="Observación"
-            aria-label="Primera observación">
-          <div class="observation-input-cursor"></div>
-        </div>
 
-
-      </div>
     </section>
 
 
     <!-- DER (dentro del área principal): Detalle de Valores -->
-    <section class="values-section totales-card values-section--grid" aria-labelledby="values-title"
-      [formGroup]="formTotales">
-      <header class="values-header">
-        <h2 id="values-title" class="values-title">Detalles de Valores</h2>
-      </header>
+   <section class="values-section totales-card values-section--grid" aria-labelledby="values-title">
+  <header class="values-header">
+    <h2 id="values-title" class="values-title">Detalles de Valores</h2>
+  </header>
 
+  <!-- filas -->
+  <div class="value-row">
+    <div class="value-label-wrapper"><span class="value-label">Sub Total:</span></div>
+    <div class="value-amount-wrapper">
+      <span class="fi-amount">{{ formTotales.get('subtotal')?.value | number:'1.2-2' }}</span>
+    </div>
+  </div>
 
+  <div class="value-row">
+    <div class="value-label-wrapper"><span class="value-label">Descuento:</span></div>
+    <div class="value-amount-wrapper">
+      <span class="fi-amount">{{ formTotales.get('descuento')?.value | number:'1.2-2' }}</span>
+    </div>
+  </div>
 
-      <div class="value-row">
-        <div class="value-label-wrapper"><span class="value-label">Sub Total:</span></div>
-        <div class="value-amount-wrapper"><input class="fi-input" formControlName="subtotal" readonly></div>
-      </div>
-      <div class="value-row">
-        <div class="value-label-wrapper"><span class="value-label">Descuento:</span></div>
-        <div class="value-amount-wrapper"><input class="fi-input" formControlName="descuento" readonly></div>
-      </div>
-      <div class="value-row">
-        <div class="value-label-wrapper"><span class="value-label">Valor Sin IVA:</span></div>
-        <div class="value-amount-wrapper"><input class="fi-input" formControlName="valorSinIva" readonly></div>
-      </div>
-      <div class="value-row">
-        <div class="value-label-wrapper"><span class="value-label">Valor con IVA:</span></div>
-        <div class="value-amount-wrapper"><input class="fi-input" formControlName="valorConIva" readonly></div>
-      </div>
-      <div class="value-row">
-        <div class="value-label-wrapper"><span class="value-label">Valor IVA:</span></div>
-        <div class="value-amount-wrapper"><input class="fi-input" formControlName="iva" readonly></div>
-      </div>
+  <div class="value-row">
+    <div class="value-label-wrapper"><span class="value-label">Valor Sin IVA:</span></div>
+    <div class="value-amount-wrapper">
+      <span class="fi-amount">{{ formTotales.get('valorSinIva')?.value | number:'1.2-2' }}</span>
+    </div>
+  </div>
 
-      <div class="total-section">
-        <div class="total-wrapper">
-          <div class="total-content">
-            <div class="total-label-wrapper"><span class="total-label">TOTAL:</span></div>
-            <div class="total-amount-wrapper"><input class="fi-input" formControlName="total" readonly></div>
-          </div>
-          <div class="total-borders">
-            <div class="total-border-top"></div>
-            <div class="total-border-bottom"></div>
-          </div>
-        </div>
-      </div>
+  <div class="value-row">
+    <div class="value-label-wrapper"><span class="value-label">Valor con IVA:</span></div>
+    <div class="value-amount-wrapper">
+      <span class="fi-amount">{{ formTotales.get('valorConIva')?.value | number:'1.2-2' }}</span>
+    </div>
+  </div>
 
-      <div class="value-row">
-        <div class="value-label-wrapper"><span class="value-label">Saldo Pendiente:</span></div>
-        <div class="value-amount-wrapper"><input class="fi-input" formControlName="saldoPendiente" readonly></div>
-      </div>
-    </section>
+  <div class="value-row value-row--last">
+    <div class="value-label-wrapper"><span class="value-label">Valor IVA:</span></div>
+    <div class="value-amount-wrapper">
+      <span class="fi-amount">{{ formTotales.get('iva')?.value | number:'1.2-2' }}</span>
+    </div>
+  </div>
+
+  <!-- única línea divisoria alineada con las columnas -->
+  
+
+  <!-- TOTAL (misma rejilla que las filas) -->
+  <div class="total-content">
+    <div class="total-label-wrapper"><span class="total-label">TOTAL&nbsp;A&nbsp;PAGAR:</span></div>
+    <div class="total-amount-wrapper">
+      <span class="fi-total-amount">{{ formTotales.get('total')?.value | number:'1.2-2' }}</span>
+    </div>
+  </div>
+</section>
 
   </div><!-- /main-cards-grid -->
 

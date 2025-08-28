@@ -1,0 +1,18 @@
+<h2 mat-dialog-title>{{ data.titulo || 'Editar detalle' }}</h2>
+
+<div mat-dialog-content (keydown)="onKey($event)">
+  <mat-form-field appearance="fill" style="width:100%;">
+    <mat-label>Descripción</mat-label>
+    <textarea matInput
+              [formControl]="ctrl"
+              cdkTextareaAutosize
+              [attr.maxLength]="data.maxLen || 500"
+              rows="6"></textarea>
+    <mat-hint align="end">{{ (ctrl.value || '').length }} / {{ data.maxLen || 500 }}</mat-hint>
+  </mat-form-field>
+</div>
+
+<div mat-dialog-actions align="end">
+  <button mat-button (click)="cancelar()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="aceptar()">Aceptar</button>
+</div>

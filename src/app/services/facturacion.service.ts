@@ -29,6 +29,48 @@ export interface ProductoResponse {
   id_empresa: number | null;
 }
 
+export interface FacturaDetalleRequest {
+  idProducto: number;
+  cantidad: number;
+  precio: number;
+  idDescuentoPredeterminado: number | null; // ← permite null
+  porcentajeDescuentoManual: number | null; // ← permite null
+  observaciones: string;
+}
+
+export interface FacturaCrearRequest {
+  idCliente: number;
+  caja: string;
+  idUsuarioCajero: number;
+  idDescuentoGlobal: number | null;          // ← permite null
+  porcentajeDescuentoGlobal: number | null;  // ← permite null
+  observaciones: string;
+  detalles: FacturaDetalleRequest[];
+  formasPago: FacturaFormaPagoRequest[];
+}
+
+
+export interface FacturaFormaPagoRequest {
+  idFormaPago: number;
+  valor: number;
+  referencia: string;
+  observaciones: string;
+  codPlazo: string;
+  banco: string;
+  numeroTarjeta: string;
+  chequeCaduca: string;
+  duenio: string;
+  autoriza: string;
+}
+
+
+
+export interface ApiResponse<T = any> {
+  type: string;
+  message: string;
+  data: T;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -79,4 +121,9 @@ export class FacturacionService {
       })
     );
   }
+  crear(payload: FacturaCrearRequest): Observable<ApiResponse> {
+    return this.http.post<ApiResponse>(`${this.baseUrl}/Facturacion/crear`, payload);
+  }
+
+  
 }

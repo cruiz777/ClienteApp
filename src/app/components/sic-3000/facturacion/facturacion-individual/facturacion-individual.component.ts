@@ -3,11 +3,19 @@ import { Component, OnInit } from '@angular/core';
 import { ClienteContactoService } from 'src/app/services/cliente-contacto.service';
 import { forkJoin, Observable, of } from 'rxjs';
 import { AgGridModule } from 'ag-grid-angular';
-import { ColDef, ColGroupDef, GridApi ,ValueSetterParams} from 'ag-grid-community';
+import { ColDef, ColGroupDef, GridApi, ValueSetterParams } from 'ag-grid-community';
 import { FormaPagoService, FormaPagoResponse } from 'src/app/services/forma-pago.service';
 import { MatAutocompleteSelectedEvent, MatAutocompleteModule, MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { ViewChild, ElementRef, ChangeDetectorRef } from '@angular/core';
 import { FacturacionService } from 'src/app/services/facturacion.service';
+import { IvaService, Iva } from 'src/app/services/iva.service';
+import { FacturaCrearRequest, FacturaDetalleRequest, FacturaFormaPagoRequest } from 'src/app/services/facturacion.service';
+import { MatTooltipModule } from '@angular/material/tooltip';
+import {
+    FacturacionMesesResult
+} from 'src/app/components/sic-3000/facturacion/facturacion-meses-modal/facturacion-meses-modal.component';
+import { CellDoubleClickedEvent } from 'ag-grid-community';
+import { DetalleDescripcionModalComponent } from '../detalle-descripcion-modal/detalle-descripcion-modal.component';
 
 import {
   FormBuilder,
@@ -30,6 +38,10 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { GrupoEmpresaService } from 'src/app/services/grupo-empresa.service';
 import { AutorizacionCajaService } from 'src/app/services/autorizacion-caja.service';
+import { DescuentoService, Descuento, DescuentoApi } from 'src/app/services/descuento.service';
+import { MatIconModule } from '@angular/material/icon';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { FacturacionMesesModalComponent } from '../facturacion-meses-modal/facturacion-meses-modal.component';
 import {
   debounceTime,
   distinctUntilChanged,
@@ -38,8 +50,8 @@ import {
   take,
   filter,
   map,
-  tap,finalize,     
-  startWith  
+  tap, finalize,
+  startWith
 } from 'rxjs/operators';
 
 import { ClienteSummary } from 'src/app/interfaces/responses/cliente-summary-response';
@@ -54,16 +66,18 @@ import { EmpresaService } from 'src/app/services/empresa.service';
 import { HttpClientModule } from '@angular/common/http';
 
 interface LineaFactura {
-  codpro: string | null;  // clave para evitar duplicados
+  codpro: string | null;
   cantidad: number;
   detalle: string;
   pUnidad: number;
   iva: number;
-  desUnit: number;
-  descuento: number;
-  desTotal: number;
+  desUnit: number;     // $ descuento unitario
+  descuento: number;   // $ descuento absoluto adicional (opcional)
+  desTotal: number;    // $ descuento total (cantidad * desUnit)
   total: number;
+  descPct?: number;    // 👈 % de descuento (0..100)
 }
+
 
 // Tipos locales
 interface PrefijoCliente {
@@ -99,14 +113,20 @@ interface PaymentDetail {
     MatTableModule,
     MatPaginatorModule,
     MatSnackBarModule,
-    AgGridModule
+    AgGridModule,
+    MatIconModule,
+    MatDialogModule, 
+    MatTooltipModule
   ]
 })
 export class FacturacionIndividualComponent implements OnInit {
   @ViewChild(MatAutocompleteTrigger) autoPagoTrigger!: MatAutocompleteTrigger;
   @ViewChild('pagoInputRef') pagoInputRef!: ElementRef<HTMLInputElement>;
   @ViewChild('autoProductoTrigger') autoProductoTrigger!: MatAutocompleteTrigger;
-@ViewChild('productoInputRef') productoInputRef!: ElementRef<HTMLInputElement>;
+  @ViewChild('productoInputRef') productoInputRef!: ElementRef<HTMLInputElement>;
+  // ---- ViewChild para cerrar el panel y limpiar input
+  @ViewChild('autoDescuentoTrigger') autoDescuentoTrigger!: MatAutocompleteTrigger;
+  @ViewChild('descuentoInputRef') descuentoInputRef!: ElementRef<HTMLInputElement>;
 
   // ============= Pasos / Tabs =============
   currentStep = 1;
@@ -120,7 +140,12 @@ export class FacturacionIndividualComponent implements OnInit {
 
   // ============= Prefijos (mat-select) =============
   prefijos: PrefijoCliente[] = [];
+  descuentos: Descuento[] = [];
+  filteredDescuentos$: Observable<Descuento[]> = of([]);
+  descuentoSeleccionado: Descuento | null = null;
 
+  ivaOptions: number[] = [0, 12, 15];   // fallback inicial hasta que cargue del backend
+  ivasCatalogo: Iva[] = [];
   // ============= Formularios por pestaña =============
   formCliente!: FormGroup;
   formFactura!: FormGroup;
@@ -132,116 +157,198 @@ export class FacturacionIndividualComponent implements OnInit {
 
   /// grid producto
   gridApi!: GridApi;
-columnDefs: ColDef<any, any>[] = [
-  { headerName: 'Cod.', field: 'codpro', hide: true, suppressColumnsToolPanel: true },
-  {
-    headerName: 'Cantidad',
-    field: 'cantidad',
-    editable: true,
-    width: 110,
-    type: 'numericColumn',
-    cellEditor: 'agNumberCellEditor',
-    valueSetter: (p: ValueSetterParams<any>) => {
-      const v = Number(p.newValue);
-      p.data.cantidad = Number.isFinite(v) ? Math.max(1, Math.trunc(v)) : 1;
-      return true;
+  columnDefs: ColDef<any, any>[] = [
+    { headerName: 'Cod.', field: 'codpro', hide: true, suppressColumnsToolPanel: true },
+    {
+      headerName: 'Cantidad',
+      field: 'cantidad',
+      editable: true,
+      width: 90,
+      type: 'numericColumn',
+      cellEditor: 'agNumberCellEditor',
+      valueSetter: (p: ValueSetterParams<any>) => {
+        const v = Number(p.newValue);
+        p.data.cantidad = Number.isFinite(v) ? Math.max(1, Math.trunc(v)) : 1;
+        return true;
+      }
+    },
+    { headerName: 'Detalle', field: 'detalle', editable: false, flex: 1, minWidth: 200, tooltipField: 'detalle'  },
+    {
+      headerName: 'P. Unidad',
+      field: 'pUnidad',
+      editable: true,
+      type: 'numericColumn',
+      cellEditor: 'agNumberCellEditor',
+      width: 95,
+      // redondea a 3 decimales al guardar en la data
+      valueSetter: (p: ValueSetterParams<any>) => {
+        const v = Number(p.newValue);
+        p.data.pUnidad = this.toN(Number.isFinite(v) ? v : 0, 3);
+        return true;
+      },
+      // muestra siempre con 3 decimales
+      valueFormatter: (p: any) => this.fmtN(p.value, 3),
+    },
+    {
+      headerName: 'IVA',
+      field: 'iva',
+      editable: true,
+      width: 60,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: () => ({ values: this.ivaOptions }),
+      valueFormatter: p => (p.value != null ? `${p.value}%` : ''),
+      valueSetter: p => {
+        const v = Number(p.newValue);
+        if (!Number.isFinite(v) || !this.ivaOptions.includes(v)) return false;
+        p.data.iva = v; return true;
+      }
     }
-  },
-  { headerName: 'Detalle', field: 'detalle', editable: true, flex: 1, minWidth: 200 },
-  { headerName: 'P. Unidad', field: 'pUnidad', editable: true, type: 'numericColumn', cellEditor: 'agNumberCellEditor', width: 120 },
-  { headerName: 'IVA', field: 'iva', editable: true, cellEditor: 'agSelectCellEditor', cellEditorParams: { values: [0, 12, 15] }, width: 100 },
-  { headerName: 'Des. Unitario', field: 'desUnit', editable: true, type: 'numericColumn', cellEditor: 'agNumberCellEditor', width: 130 },
-  { headerName: 'Descuento', field: 'descuento', editable: true, type: 'numericColumn', cellEditor: 'agNumberCellEditor', width: 120 },
-  { headerName: 'Des. Total', field: 'desTotal', editable: false, type: 'numericColumn', width: 120 },
-  { headerName: 'Total', field: 'total', editable: false, type: 'numericColumn', width: 130, pinned: 'right' },
-  {
-  headerName: 'Acción',
-  width: 60,
-  pinned: 'right',
-  cellRenderer: (params: any) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'ag-btn-icon ag-btn-delete';
-    btn.title = 'Eliminar';
-    btn.setAttribute('aria-label', 'Eliminar forma de Producto');
-    btn.innerHTML = '<span class="material-icons">delete</span>';
 
-    // 👇 aquí
-    btn.addEventListener('click', () => {
-      params.api.applyTransaction({ remove: [params.node.data] });
+    ,
+    {
+      headerName: 'Des. Unitario', field: 'desUnit', editable: true, type: 'numericColumn',
+      cellEditor: 'agNumberCellEditor', width: 115,
+      valueSetter: (p) => {
+        const v = Number(p.newValue);
+        p.data.desUnit = this.toN(Number.isFinite(v) ? v : 0, 3);
+        // si editan el $ directo, recalcular % para mantener consistencia
+        const unit = Number(p.data.pUnidad) || 0;
+        p.data.descPct = unit > 0 ? this.toN((p.data.desUnit / unit) * 100, 2) : 0;
+        return true;
+      },
+      valueFormatter: (p) => this.fmtN(p.value, 3),
+    },
 
-      // Recalcular totales y ajustar pagos al nuevo total
-      // (usa arrow function para mantener el this del componente)
-      this.recalcTotalesFactura();
-      this.ajustarPagosAlTotal();
+    {
+      headerName: 'Descuento',
+      field: 'descPct',
+      editable: true,
+      type: 'numericColumn',
+      cellEditor: 'agNumberCellEditor',
+      width: 115,
+      valueSetter: (p: ValueSetterParams<any>) => {
+        let v = Number(p.newValue);
+        if (!Number.isFinite(v)) v = 0;
+        v = Math.max(0, Math.min(100, Math.round(v * 100) / 100)); // 2 decimales
+        p.data.descPct = v;
 
-      // si ves que no actualiza a la primera, usa:
-      // setTimeout(() => { this.recalcTotalesFactura(); this.ajustarPagosAlTotal(); }, 0);
-    });
+        // Mantener desUnit coherente con el %
+        const unit = Number(p.data.pUnidad) || 0;
+        p.data.desUnit = this.toN(unit * (v / 100), 3);
 
-    return btn;
-  }
-}
+        this.recalcLinea(p.data);
+        return true;
+      },
+      valueFormatter: (p: any) => `${this.fmtN(p.value, 2)} %`,
+    },
 
-];
+    {
+      headerName: 'Des. Total', field: 'desTotal', editable: false, type: 'numericColumn', width: 120,
+      valueFormatter: (p) => this.fmtN(p.value, 2)
+    },
+    {
+      headerName: 'Total', field: 'total', editable: false, type: 'numericColumn', width: 90, pinned: 'right',
+      valueFormatter: (p) => this.fmtN(p.value, 2)
+    },
+    {
+      headerName: '',
+      width: 66,
+      pinned: 'left',
+      cellRenderer: (params: any) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ag-btn-icon ag-btn-delete';
+        btn.title = 'Eliminar';
+        btn.setAttribute('aria-label', 'Eliminar forma de Producto');
+        btn.innerHTML = '<span class="material-icons">delete</span>';
+
+        // 👇 aquí
+        btn.addEventListener('click', () => {
+          params.api.applyTransaction({ remove: [params.node.data] });
+
+          // Recalcular totales y ajustar pagos al nuevo total
+          // (usa arrow function para mantener el this del componente)
+          this.recalcTotalesFactura();
+          this.ajustarPagosAlTotal();
+          this.actualizarPuedeAbrirMeses(); 
+          // si ves que no actualiza a la primera, usa:
+          // setTimeout(() => { this.recalcTotalesFactura(); this.ajustarPagosAlTotal(); }, 0);
+        });
+
+        return btn;
+      }
+    }
+
+  ];
 
 
   defaultColDef: ColDef = { resizable: true, sortable: false, filter: false };
-rowData: LineaFactura[] = [
+  rowData: LineaFactura[] = [
   ];
 
   /// grid pagos
   pagosApi!: GridApi;
   columnDefsPagos: ColDef[] = [
     { headerName: 'Id', field: 'id', editable: false, flex: 1, minWidth: 180, hide: true, suppressColumnsToolPanel: true },
-  { headerName: 'Detalle', field: 'detalle', editable: false, flex: 1, minWidth: 180 },
-  { headerName: 'Plazo', field: 'plazo', editable: true, width: 120 },
-  {
-    headerName: 'Tiempo',
-    field: 'tiempo',
-    editable: true,
-    width: 120,
-    cellEditor: 'agSelectCellEditor',
-    cellEditorParams: { values: ['Días', 'Meses'] }
-  },
-  {
-    headerName: 'Valor',
-    field: 'valor',
-    editable: true,
-    type: 'numericColumn',
-    cellEditor: 'agNumberCellEditor',
-    cellEditorParams: { min: 0, step: 0.01 }, 
-    width: 120,
-    valueSetter: (p: ValueSetterParams<any>) => this.pagoValorSetter(p) // 👈
-  },  {
-  headerName: 'Acción',
-  width: 110,
-  pinned: 'right',
-  cellRenderer: (params: any) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'ag-btn-icon ag-btn-delete';
-    btn.title = 'Eliminar';
-    btn.setAttribute('aria-label', 'Eliminar forma de pago');
-    btn.innerHTML = '<span class="material-icons">delete</span>';
+    { headerName: 'Detalle', field: 'detalle', editable: false, flex: 1, minWidth: 180 },
+    { headerName: 'Plazo', field: 'plazo', editable: true, width: 120 },
+    {
+      headerName: 'Tiempo',
+      field: 'tiempo',
+      editable: true,
+      width: 90,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: { values: ['Días', 'Meses'] }
+    },
+   
+    {
+      headerName: 'Valor',
+      field: 'valor',
+      editable: true,
+      type: 'numericColumn',
+      cellEditor: 'agNumberCellEditor',
+      cellEditorParams: { min: 0, step: 0.01 },
+      width: 120,
+      valueSetter: (p: ValueSetterParams<any>) => this.pagoValorSetter(p), // 👈
+      valueFormatter: (p) => this.fmtN(p.value, 2)
+    },
+     { headerName: 'Banco', field: 'banco', editable: true, flex: 1, minWidth: 180 },
+    { headerName: 'NTarjeta', field: 'ntarjeta', editable: true, flex: 1, minWidth: 180 },
+    { headerName: 'Cheque', field: 'cheque', editable: true, flex: 1, minWidth: 180 },
+    { headerName: 'Dueño', field: 'dueno', editable: true, flex: 1, minWidth: 180 },
+    { headerName: 'Autorización', field: 'autorizacion', editable: true, flex: 1, minWidth: 180 },
+    {
+      headerName: '',
+      width: 66,
+      pinned: 'left',
+      cellRenderer: (params: any) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ag-btn-icon ag-btn-delete';
+        btn.title = 'Eliminar';
+        btn.setAttribute('aria-label', 'Eliminar forma de pago');
+        btn.innerHTML = '<span class="material-icons">delete</span>';
 
-    btn.addEventListener('click', () => {
-      params.api.applyTransaction({ remove: [params.node.data] });
+        btn.addEventListener('click', () => {
+          params.api.applyTransaction({ remove: [params.node.data] });
 
-      // ⇩ Recalcula el saldo (total factura - suma pagos)
-      setTimeout(() => this.onPagosRowsChanged(), 0);
-      // o: requestAnimationFrame(() => this.onPagosRowsChanged());
-    });
+          // ⇩ Recalcula el saldo (total factura - suma pagos)
+          setTimeout(() => this.onPagosRowsChanged(), 0);
+          // o: requestAnimationFrame(() => this.onPagosRowsChanged());
+        });
 
-    return btn;
-  }
-}
+        return btn;
+      }
+    }
 
   ];
   rowDataPagos: any[] = [];
   defaultColDefPagos: ColDef = { resizable: true, sortable: false, filter: false };
 
+  private readonly COD_MANT_MENSUAL = '1176';
 
+  // Estado para habilitar el botón
+  puedeAbrirMeses = false;
   // ============= Otros =============
   private seqId = 0;
   invoiceDate = new Date().toLocaleDateString('es-EC');
@@ -257,11 +364,11 @@ rowData: LineaFactura[] = [
   // Productos desde el backend
   productos: any[] = []; // o usa la interfaz de tu servicio: ProductoResponse[]
   filteredProductos$ = of([] as any[]); // stream para el autocomplete
-// ===== propiedades de estado =====
-isLoadingProductos = false;       // para spinner
-productosLoaded = false;          // terminó la carga (éxito o error)
-productosCount = 0;               // cuántos llegaron
-productosError: string | null = null;
+  // ===== propiedades de estado =====
+  isLoadingProductos = false;       // para spinner
+  productosLoaded = false;          // terminó la carga (éxito o error)
+  productosCount = 0;               // cuántos llegaron
+  productosError: string | null = null;
   constructor(
     private clienteService: ClienteService,
     private prefijoService: PrefijoService,
@@ -276,12 +383,17 @@ productosError: string | null = null;
     private autorizacionCajaService: AutorizacionCajaService,
     private formaPagoService: FormaPagoService,
     private cdRef: ChangeDetectorRef,
-    private facturacionService: FacturacionService
+    private facturacionService: FacturacionService,
+    private descuentoService: DescuentoService,
+    private ivaService: IvaService,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
+
+    this.cargarIvasVigentes();
     this.cargarAutorizacion();
-   
+
     this.cargarProductos();
     // Formularios
     this.formCliente = this.fb.group({
@@ -295,7 +407,11 @@ productosError: string | null = null;
       prefijo: ['']
     });
 
-    this.formFactura = this.fb.group({ producto: [''] });
+    this.formFactura = this.fb.group({
+      producto: [''],
+      descuento: [''],
+      anio: [new Date().getFullYear()]
+    });
 
     this.formPagos = this.fb.group({
       metodoPago: [''],
@@ -369,6 +485,8 @@ productosError: string | null = null;
       ),
       tap(() => { this.isLoadingFormas = false; })
     );
+    this.cargarDescuentos();
+    this.configurarFiltroDescuentos();
   }
 
   // ============= Prefijos =============
@@ -472,7 +590,7 @@ productosError: string | null = null;
                 this.vInscripcion = ge?.inscripcion ?? 0;
                 this.vAsignacion = ge?.asignacion ?? 0;
                 this.vMantenimiento = ge?.mantenimiento ?? 0;
-
+                //alert(this.vMantenimiento);
               }),
               map((ge: any) => `${ge.codigo}   ${ge.nombre}`.trim()),
               catchError(() => {
@@ -530,14 +648,66 @@ productosError: string | null = null;
   onDateChange(): void { }
   onPaymentMethodChange(): void { }
   onGenerateInvoice(): void { }
-
   limpiarCliente(): void {
+    // ---- Cliente
     this.clienteOrigenControl.setValue('', { emitEvent: false });
     this.clientesOrigenFiltrados = [];
     this.prefijos = [];
     this.codcliO = 0;
     this.formCliente.reset();
+
+    // ---- Descuento / Factura (autocompletes)
+    this.formFactura.patchValue({ producto: '', descuento: '' }, { emitEvent: false });
+    this.descuentoSeleccionado = null;
+
+    // Cerrar paneles y quitar foco (si estuvieran abiertos)
+    this.autoProductoTrigger?.closePanel();
+    this.autoDescuentoTrigger?.closePanel();
+    this.productoInputRef?.nativeElement.blur();
+    this.descuentoInputRef?.nativeElement.blur();
+
+    // ---- Grid de productos: limpiar filas
+    if (this.gridApi) {
+      const rows: any[] = [];
+      this.gridApi.forEachNode(n => rows.push(n.data));
+      if (rows.length) this.gridApi.applyTransaction({ remove: rows });
+    } else {
+      this.rowData = [];
+    }
+
+    // ---- Grid de pagos: limpiar filas y formulario
+    if (this.pagosApi) {
+      const rows: any[] = [];
+      this.pagosApi.forEachNode(n => rows.push(n.data));
+      if (rows.length) this.pagosApi.applyTransaction({ remove: rows });
+    } else {
+      this.rowDataPagos = [];
+    }
+    this.formPagos.reset({ metodoPago: '', plazo: '', tiempo: '', valor: '' });
+    this.autoPagoTrigger?.closePanel();
+    this.pagoInputRef?.nativeElement.blur();
+
+    // ---- Variables de precios especiales (por si venían del grupo)
+    this.vInscripcion = 0;
+    this.vAsignacion = 0;
+    this.vMantenimiento = 0;
+
+    // ---- Totales
+    this.formTotales.patchValue({
+      subtotal: 0,
+      descuento: 0,
+      valorSinIva: 0,
+      valorConIva: 0,
+      iva: 0,
+      total: 0,
+      saldoPendiente: 0
+    }, { emitEvent: false });
+
+    // Garantiza refresco visual
+    this.cdRef?.markForCheck();
+    this.actualizarPuedeAbrirMeses();
   }
+
 
   mostrarAlerta(mensaje: string, tipo: 'info' | 'error' | 'ok' | string): void {
     this._snackBar.open(mensaje, 'Cerrar', {
@@ -548,106 +718,105 @@ productosError: string | null = null;
     });
   }
 
-  onGridReady(e: any) { this.gridApi = e.api; }
+  onGridReady(e: any) { this.gridApi = e.api; this.actualizarPuedeAbrirMeses(); }
   onPagosGridReady(e: any) { this.pagosApi = e.api; }
 
   // ==== Autocomplete helpers ====
   displayFormaPago = (fp: FormaPagoResponse | string | null): string =>
     (typeof fp === 'string') ? fp : (fp?.descripcionPago ?? '');
 
- onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
-  const item = event.option.value as FormaPagoResponse;
-  const metodoCtrl = this.formPagos.get('metodoPago') as FormControl;
+  onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
+    const item = event.option.value as FormaPagoResponse;
+    const metodoCtrl = this.formPagos.get('metodoPago') as FormControl;
 
-  // evitar duplicados
-  let yaExiste = false;
-  if (this.pagosApi) {
-    this.pagosApi.forEachNode(n => { if (n.data?.id === item.idFormaPago) yaExiste = true; });
-  } else {
-    yaExiste = this.rowDataPagos.some(r => r.id === item.idFormaPago);
+    // evitar duplicados
+    let yaExiste = false;
+    if (this.pagosApi) {
+      this.pagosApi.forEachNode(n => { if (n.data?.id === item.idFormaPago) yaExiste = true; });
+    } else {
+      yaExiste = this.rowDataPagos.some(r => r.id === item.idFormaPago);
+    }
+    if (!yaExiste) {
+      const valorInicial = this.getSaldoPendienteCalc(); // 👈 saldo pendiente actual
+      const nueva = this.buildPagoRow(item, valorInicial); // 👈 pásalo
+      if (this.pagosApi) this.pagosApi.applyTransaction({ add: [nueva] });
+      else this.rowDataPagos.push(nueva);
+
+      // Recalcular saldo
+      this.onPagosRowsChanged();
+    }
+
+    setTimeout(() => {
+      metodoCtrl.setValue('', { emitEvent: false });
+      this.autoPagoTrigger?.closePanel();
+      this.pagoInputRef?.nativeElement.blur();
+    }, 0);
   }
-  if (!yaExiste) {
-    const valorInicial = this.getSaldoPendienteCalc(); // 👈 saldo pendiente actual
-    const nueva = this.buildPagoRow(item, valorInicial); // 👈 pásalo
-    if (this.pagosApi) this.pagosApi.applyTransaction({ add: [nueva] });
-    else this.rowDataPagos.push(nueva);
-
-    // Recalcular saldo
-    this.onPagosRowsChanged();
-  }
-
-  setTimeout(() => {
-    metodoCtrl.setValue('', { emitEvent: false });
-    this.autoPagoTrigger?.closePanel();
-    this.pagoInputRef?.nativeElement.blur();
-  }, 0);
-}
 
 
   // helper dentro de la clase (arriba o debajo de los métodos)
-private buildPagoRow(fp: FormaPagoResponse, valorInicial: number = 0) {
-  return {
-    id: fp.idFormaPago,
-    detalle: fp.descripcionPago ?? '',
-    plazo: 0,
-    tiempo: 'Días',
-    valor: this.to2(valorInicial) // 👈 valor inicial = saldo pendiente
-  };
-}
+  private buildPagoRow(fp: FormaPagoResponse, valorInicial: number = 0) {
+    return {
+      id: fp.idFormaPago,
+      detalle: fp.descripcionPago ?? '',
+      plazo: 0,
+      tiempo: 'Días',
+      valor: this.to2(valorInicial) // 👈 valor inicial = saldo pendiente
+    };
+  }
 
 
 
 
-cargarProductos(): void {
-  this.isLoadingProductos = true;
-  this.productosLoaded = false;
-  this.productosError = null;
+  cargarProductos(): void {
+    this.isLoadingProductos = true;
+    this.productosLoaded = false;
+    this.productosError = null;
 
-  this.facturacionService.getProductosCodproFijos().pipe(
-    take(1),
-    tap(data => this.productosCount = data?.length ?? 0),
-    finalize(() => {
-      this.isLoadingProductos = false;
-      this.productosLoaded = true;
-    })
-  ).subscribe({
-    next: data => {
-      this.productos = data ?? [];
+    this.facturacionService.getProductosCodproFijos().pipe(
+      take(1),
+      tap(data => this.productosCount = data?.length ?? 0),
+      finalize(() => {
+        this.isLoadingProductos = false;
+        this.productosLoaded = true;
+      })
+    ).subscribe({
+      next: data => {
+        this.productos = data ?? [];
 
-      // Configurar filtro del autocomplete
-      const ctrl = this.formFactura.get('producto') as FormControl;
-      this.filteredProductos$ = ctrl.valueChanges.pipe(
-        startWith(''), // <-- para que muestre algo al inicio si quieres
-        map(v => (typeof v === 'string' ? v : (v ?? '')).toString().trim().toLowerCase()),
-        map(term => {
-          if (!term) return this.productos;
-          return this.productos.filter(p =>
-            (p.codpro ?? '').toLowerCase().includes(term) ||
-            (p.despro ?? '').toLowerCase().includes(term)
-          );
-        })
-      );
+        // Configurar filtro del autocomplete
+        const ctrl = this.formFactura.get('producto') as FormControl;
+        this.filteredProductos$ = ctrl.valueChanges.pipe(
+          startWith(''), // <-- para que muestre algo al inicio si quieres
+          map(v => (typeof v === 'string' ? v : (v ?? '')).toString().trim().toLowerCase()),
+          map(term => {
+            if (!term) return this.productos;
+            return this.productos.filter(p =>
+              (p.codpro ?? '').toLowerCase().includes(term) ||
+              (p.despro ?? '').toLowerCase().includes(term)
+            );
+          })
+        );
 
-      // feedback opcional
-      if (this.productosCount === 0) {
-        this.mostrarAlerta('No se encontraron productos', 'info');
-      } else {
-        // this.mostrarAlerta(`Productos cargados: ${this.productosCount}`, 'ok');
+        // feedback opcional
+        if (this.productosCount === 0) {
+          this.mostrarAlerta('No se encontraron productos', 'info');
+        } else {
+          // this.mostrarAlerta(`Productos cargados: ${this.productosCount}`, 'ok');
+        }
+      },
+      error: err => {
+        this.productosError = err?.message ?? 'Error al cargar productos';
+        this.filteredProductos$ = of([]);
+        this.mostrarAlerta(this.productosError ?? 'Error al cargar productos', 'error');
+
       }
-    },
-    error: err => {
-      this.productosError = err?.message ?? 'Error al cargar productos';
-      this.filteredProductos$ = of([]);
-      this.mostrarAlerta(this.productosError ?? 'Error al cargar productos', 'error');
+    });
+  }
 
-    }
-  });
-}
 
-  
-cargarAutorizacion()
-{
-   this.autorizacionCajaService.getAutorizacionCaja(1).subscribe({
+  cargarAutorizacion() {
+    this.autorizacionCajaService.getAutorizacionCaja(1).subscribe({
       next: ({ data }) => {
         if (!data) return;
         this.formCaja.patchValue({
@@ -658,274 +827,618 @@ cargarAutorizacion()
       },
       error: (err) => console.error('Error cargando autorización de caja', err),
     });
-}
-onProductoSelected(codpro: string): void {
-  const p = this.productos.find(x => (x.codpro ?? '').toString() === codpro);
-  const ctrl = this.formFactura.get('producto') as FormControl;
-
-  // Si no se encontró el producto, limpia y sale
-  if (!p) {
-    ctrl.setValue('', { emitEvent: false });
-    this.autoProductoTrigger?.closePanel();
-    this.productoInputRef?.nativeElement.blur();
-    return;
   }
+  // --- reemplaza tu onProductoSelected por esta versión ---
+  onProductoSelected(codpro: string): void {
+    const p = this.productos.find(x => (x.codpro ?? '').toString() === codpro);
+    const ctrl = this.formFactura.get('producto') as FormControl;
 
-  // **Evitar duplicados**: busca por codpro en la grilla
-  let yaExiste = false;
-  if (this.gridApi) {
-    this.gridApi.forEachNode(n => {
-      if ((n.data?.codpro ?? '') === p.codpro) yaExiste = true;
-    });
-  } else {
-    yaExiste = this.rowData.some(r => (r as any)?.codpro === p.codpro);
-  }
+    if (!p) {
+      ctrl.setValue('', { emitEvent: false });
+      this.autoProductoTrigger?.closePanel();
+      this.productoInputRef?.nativeElement.blur();
+      return;
+    }
 
-  if (yaExiste) {
-    this.mostrarAlerta(`El producto ${p.codpro} ya fue agregado.`, 'info');
-    // **Limpiar el input y cerrar el panel**
+    // evitar duplicados
+    let yaExiste = false;
+    if (this.gridApi) {
+      this.gridApi.forEachNode(n => { if ((n.data?.codpro ?? '') === p.codpro) yaExiste = true; });
+    } else {
+      yaExiste = this.rowData.some(r => (r as any)?.codpro === p.codpro);
+    }
+    if (yaExiste) {
+      this.mostrarAlerta(`El producto ${p.codpro} ya fue agregado.`, 'info');
+      ctrl.setValue('', { emitEvent: false });
+      setTimeout(() => { this.autoProductoTrigger?.closePanel(); this.productoInputRef?.nativeElement.blur(); }, 0);
+      return;
+    }
+
+    // ---- precio: si es 1174 usar vAsignacion, caso contrario el del producto ----
+    const ivaPorc = this.getIvaPrincipal() ?? (this.ivaOptions.at(-1) ?? 0);
+
+    const pu = this.getPrecioEspecial(p.codpro) ?? this.to2(Number(p.prevensiniva || 0));
+    const detalle = (p.codpro?.toString() === '1174')
+      ? 'INSCRIPCION PREFIJO'
+      : (p.despro ?? '').toUpperCase();
+
+    const total = this.to2(pu * (1 + ivaPorc / 100));
+
+    const nuevaFila: LineaFactura = {
+      codpro: p.codpro, cantidad: 1, detalle, pUnidad: pu, iva: ivaPorc,
+      descPct: this.descuentoSeleccionado ? this.toN(this.descuentoSeleccionado.valor, 2) : 0,
+      desUnit: 0, descuento: 0, desTotal: 0, total: 0
+    };
+    this.recalcLinea(nuevaFila);
+
+
+    if (this.gridApi) this.gridApi.applyTransaction({ add: [nuevaFila] });
+    else this.rowData.push(nuevaFila);
+
     ctrl.setValue('', { emitEvent: false });
     setTimeout(() => {
       this.autoProductoTrigger?.closePanel();
       this.productoInputRef?.nativeElement.blur();
     }, 0);
-    return;
+
+    this.recalcTotalesFactura();
+    this.ajustarPagosAlTotal();
+    this.actualizarPuedeAbrirMeses();
   }
 
-  // Calcular valores (ajusta según tu lógica real)
-  const ivaPorc = 15; // o deriva de p.id_iva
-  const pu = p.prevensiniva ?? 0;               // precio unitario
-  const total = +(pu * (1 + ivaPorc / 100)).toFixed(2);
-
-  const nuevaFila = {
-    codpro: p.codpro,                      // 👈 clave para detectar duplicados
-    cantidad: 1,
-    detalle: (p.despro ?? '').toUpperCase(),
-    pUnidad: pu,
-    iva: ivaPorc,
-    desUnit: 0,
-    descuento: 0,
-    desTotal: 0,
-    total
-  };
-
-  if (this.gridApi) this.gridApi.applyTransaction({ add: [nuevaFila] });
-  else this.rowData.push(nuevaFila);
-
-  // **Limpiar el input y cerrar el panel** tras agregar
-  ctrl.setValue('', { emitEvent: false });
-  setTimeout(() => {
-    this.autoProductoTrigger?.closePanel();
-    this.productoInputRef?.nativeElement.blur();
-  }, 0);
-  this.recalcTotalesFactura(); // 👈 después de añadir la fila
-
-}
-// Calcula total de UNA línea
-private recalcLinea(row: any): void {
-  const qty = Math.max(1, Number(row.cantidad) || 1);
-  const unit = Number(row.pUnidad) || 0;
-  const ivaPct = Number(row.iva) || 0;
-  const desUnit = Number(row.desUnit) || 0;     // descuento por unidad
-  const descAbs = Number(row.descuento) || 0;   // descuento absoluto a nivel de línea
-
-  // Base neta antes de IVA
-  let base = qty * Math.max(0, unit - desUnit);
-  // Descuento absoluto (si manejas este campo como valor $)
-  base = Math.max(0, base - descAbs);
-
-  // Descuento total mostrado (solo informativo): qty * desUnit
-  row.desTotal = +((qty * desUnit)).toFixed(2);
-
-  // IVA y total
-  const ivaVal = +(base * ivaPct / 100).toFixed(2);
-  row.total = +(base + ivaVal).toFixed(2);
-}
-
-// Recalcula cuando cambia una celda relevante
-onCellValueChanged(e: any): void {
-  const col = e?.column?.getColId?.() ?? '';
-  if (!e?.data) return;
-
-  if (['cantidad', 'pUnidad', 'iva', 'desUnit', 'descuento'].includes(col)) {
-    this.recalcLinea(e.data); // mantiene coherencia de la fila
-    e.api.refreshCells({ rowNodes: [e.node], columns: ['desTotal', 'total'], force: true });
-    this.recalcTotalesFactura(); // 👈 ACTUALIZA TOTALES
-    this.ajustarPagosAlTotal(); 
-  }
-}
-
-
-// ---- helpers de redondeo (2 decimales)
-
-
-// Recalcula totales (subtotal, descuentos, sin IVA, IVA, total, saldo)
-recalcTotalesFactura(): void {
-  let subTotal = 0;        // suma de cantidad * pUnidad
-  let descTotal = 0;       // suma de (cantidad * desUnit) + descuento (abs)
-  let baseSinIva = 0;      // subTotal - descTotal (>=0)
-  let ivaValor = 0;        // suma IVA por línea
-  let total = 0;           // base + IVA
-
-  const acumular = (row: any) => {
+  // Calcula total de UNA línea
+  private recalcLinea(row: any): void {
     const qty = Math.max(1, Number(row.cantidad) || 1);
     const unit = Number(row.pUnidad) || 0;
     const ivaPct = Number(row.iva) || 0;
-    const desUnit = Number(row.desUnit) || 0;      // desc por unidad
-    const descAbs = Number(row.descuento) || 0;    // desc absoluto en la línea
+    const pct = Math.max(0, Math.min(100, Number(row.descPct) || 0));
 
-    const lineaSub = this.to2(qty * unit);
-    const lineaDesc = this.to2(qty * Math.max(0, desUnit)) + this.to2(Math.max(0, descAbs));
-    const lineaBase = this.to2(Math.max(0, lineaSub - lineaDesc));
-    const lineaIva = this.to2(lineaBase * (ivaPct / 100));
-    const lineaTotal = this.to2(lineaBase + lineaIva);
+    // mantener desUnit en 3 decimales a partir del %
+    row.desUnit = this.toN(unit * (pct / 100), 3);
 
-    subTotal += lineaSub;
-    descTotal += lineaDesc;
-    baseSinIva += lineaBase;
-    ivaValor += lineaIva;
-    total += lineaTotal;
-  };
+    const desUnit = Number(row.desUnit) || 0;
+    const descAbs = Number(row.descuento) || 0;   // descuento adicional $ (opcional)
 
-  if (this.gridApi) {
-    this.gridApi.forEachNode(n => acumular(n.data));
-  } else {
-    this.rowData.forEach(acumular);
+    // base antes de IVA
+    let base = qty * Math.max(0, unit - desUnit);
+    base = Math.max(0, base - descAbs);
+
+    row.desTotal = this.to2(qty * desUnit);          // total descuento = qty * desUnit
+    const ivaVal = this.to2(base * (ivaPct / 100));
+    row.total = this.to2(base + ivaVal);
   }
 
-  subTotal = this.to2(subTotal);
-  descTotal = this.to2(descTotal);
-  baseSinIva = this.to2(baseSinIva);
-  ivaValor = this.to2(ivaValor);
-  total = this.to2(total);
 
-  const pagos = this.getTotalPagos();
-  const saldoPendiente = this.to2(total - pagos);
+  // Recalcula cuando cambia una celda relevante
+  onCellValueChanged(e: any): void {
+    const col = e?.column?.getColId?.() ?? '';
+    if (!e?.data) return;
 
-  // Actualiza form de totales
-  this.formTotales.patchValue({
-    subtotal: subTotal,
-    descuento: descTotal,
-    valorSinIva: baseSinIva,
-    valorConIva: this.to2(baseSinIva + ivaValor),
-    iva: ivaValor,
-    total: total,
-    saldoPendiente: saldoPendiente
-  }, { emitEvent: false });
-}
-onPagosCellValueChanged(_: any): void {
-  // Solo recalcula saldo (total ya lo tienes en formTotales)
-  const total = Number(this.formTotales.get('total')?.value) || 0;
-  const pagos = this.getTotalPagos();
-  const saldo = this.to2(total - pagos);
-  this.formTotales.patchValue({ saldoPendiente: saldo }, { emitEvent: false });
-}
-private to2(n: number): number {
-  return Math.round((n ?? 0) * 100) / 100;
-}
-
-private getTotalFactura(): number {
-  return Number(this.formTotales.get('total')?.value) || 0;
-}
-
-private getTotalPagos(): number {
-  let total = 0;
-  if (this.pagosApi) {
-    this.pagosApi.forEachNode(n => total += Number(n.data?.valor) || 0);
-  } else {
-    total = this.rowDataPagos.reduce((acc, r) => acc + (Number(r?.valor) || 0), 0);
+    if (['cantidad', 'pUnidad', 'iva', 'desUnit', 'descuento', 'descPct'].includes(col)) {
+      // si cambió pUnidad, ya sincronizamos desUnit en el valueSetter
+      // si cambió desUnit, ya sincronizamos descPct en el valueSetter
+      this.recalcLinea(e.data);
+      e.api.refreshCells({ rowNodes: [e.node], columns: ['desTotal', 'total', 'desUnit', 'descPct'], force: true });
+      this.recalcTotalesFactura();
+      this.ajustarPagosAlTotal();
+    }
   }
-  return this.to2(total);
-}
 
-private getSaldoPendienteCalc(): number {
-  return this.to2(this.getTotalFactura() - this.getTotalPagos());
-}
 
-private sumPagosExcept(node: any | null): number {
-  let sum = 0;
-  if (this.pagosApi) {
-    this.pagosApi.forEachNode(n => {
-      if (!node || n.id !== node.id) sum += Number(n.data?.valor) || 0;
-    });
-  } else {
-    sum = this.rowDataPagos.reduce((acc, r) => acc + (Number(r?.valor) || 0), 0);
+
+  // ---- helpers de redondeo (2 decimales)
+
+
+  // Recalcula totales (subtotal, descuentos, sin IVA, IVA, total, saldo)
+  recalcTotalesFactura(): void {
+    let subTotal = 0;        // suma de cantidad * pUnidad
+    let descTotal = 0;       // suma de (cantidad * desUnit) + descuento (abs)
+    let baseSinIva = 0;      // subTotal - descTotal (>=0)
+    let ivaValor = 0;        // suma IVA por línea
+    let total = 0;           // base + IVA
+
+    const acumular = (row: any) => {
+      const qty = Math.max(1, Number(row.cantidad) || 1);
+      const unit = Number(row.pUnidad) || 0;
+      const ivaPct = Number(row.iva) || 0;
+      const desUnit = Number(row.desUnit) || 0;      // desc por unidad
+      const descAbs = Number(row.descuento) || 0;    // desc absoluto en la línea
+
+      const lineaSub = this.to2(qty * unit);
+      const lineaDesc = this.to2(qty * Math.max(0, desUnit)) + this.to2(Math.max(0, descAbs));
+      const lineaBase = this.to2(Math.max(0, lineaSub - lineaDesc));
+      const lineaIva = this.to2(lineaBase * (ivaPct / 100));
+      const lineaTotal = this.to2(lineaBase + lineaIva);
+
+      subTotal += lineaSub;
+      descTotal += lineaDesc;
+      baseSinIva += lineaBase;
+      ivaValor += lineaIva;
+      total += lineaTotal;
+    };
+
+    if (this.gridApi) {
+      this.gridApi.forEachNode(n => acumular(n.data));
+    } else {
+      this.rowData.forEach(acumular);
+    }
+
+    subTotal = this.to2(subTotal);
+    descTotal = this.to2(descTotal);
+    baseSinIva = this.to2(baseSinIva);
+    ivaValor = this.to2(ivaValor);
+    total = this.to2(total);
+
+    const pagos = this.getTotalPagos();
+    const saldoPendiente = this.to2(total - pagos);
+
+    // Actualiza form de totales
+    this.formTotales.patchValue({
+      subtotal: subTotal,
+      descuento: descTotal,
+      valorSinIva: baseSinIva,
+      valorConIva: this.to2(baseSinIva + ivaValor),
+      iva: ivaValor,
+      total: total,
+      saldoPendiente: saldoPendiente
+    }, { emitEvent: false });
   }
-  return this.to2(sum);
-}
-pagoValorSetter(p: ValueSetterParams<any>): boolean {
-  // Suma de pagos EXCEPTO la fila que se edita
-  const otros = this.sumPagosExcept(p.node);
-  const totalFactura = this.getTotalFactura();
-  const max = this.to2(Math.max(0, totalFactura - otros));
+  onPagosCellValueChanged(_: any): void {
+    // Solo recalcula saldo (total ya lo tienes en formTotales)
+    const total = Number(this.formTotales.get('total')?.value) || 0;
+    const pagos = this.getTotalPagos();
+    const saldo = this.to2(total - pagos);
+    this.formTotales.patchValue({ saldoPendiente: saldo }, { emitEvent: false });
+  }
+  private to2(n: number): number {
+    return Math.round((n ?? 0) * 100) / 100;
+  }
 
-  let v = Number(p.newValue);
-  if (!Number.isFinite(v) || v < 0) v = 0;
-  if (v > max) v = max; // 👈 no permitir superar el saldo restante
+  private getTotalFactura(): number {
+    return Number(this.formTotales.get('total')?.value) || 0;
+  }
 
-  p.data.valor = this.to2(v);
+  private getTotalPagos(): number {
+    let total = 0;
+    if (this.pagosApi) {
+      this.pagosApi.forEachNode(n => total += Number(n.data?.valor) || 0);
+    } else {
+      total = this.rowDataPagos.reduce((acc, r) => acc + (Number(r?.valor) || 0), 0);
+    }
+    return this.to2(total);
+  }
 
-  // actualiza saldo pendiente
-  setTimeout(() => this.onPagosRowsChanged());
-  return true;
-}
+  private getSaldoPendienteCalc(): number {
+    return this.to2(this.getTotalFactura() - this.getTotalPagos());
+  }
+
+  private sumPagosExcept(node: any | null): number {
+    let sum = 0;
+    if (this.pagosApi) {
+      this.pagosApi.forEachNode(n => {
+        if (!node || n.id !== node.id) sum += Number(n.data?.valor) || 0;
+      });
+    } else {
+      sum = this.rowDataPagos.reduce((acc, r) => acc + (Number(r?.valor) || 0), 0);
+    }
+    return this.to2(sum);
+  }
+  pagoValorSetter(p: ValueSetterParams<any>): boolean {
+    // Suma de pagos EXCEPTO la fila que se edita
+    const otros = this.sumPagosExcept(p.node);
+    const totalFactura = this.getTotalFactura();
+    const max = this.to2(Math.max(0, totalFactura - otros));
+
+    let v = Number(p.newValue);
+    if (!Number.isFinite(v) || v < 0) v = 0;
+    if (v > max) v = max; // 👈 no permitir superar el saldo restante
+
+    p.data.valor = this.to2(v);
+
+    // actualiza saldo pendiente
+    setTimeout(() => this.onPagosRowsChanged());
+    return true;
+  }
 
 
-onPagosRowsChanged(): void {
-  const total = this.getTotalFactura();
-  const pagos = this.getTotalPagos();
-  const saldo = this.to2(total - pagos);
-  this.formTotales.patchValue({ saldoPendiente: saldo }, { emitEvent: false });
-}
-private ajustarPagosAlTotal(): void {
-  const total = this.getTotalFactura();
-  let pagos = this.getTotalPagos();
+  onPagosRowsChanged(): void {
+    const total = this.getTotalFactura();
+    const pagos = this.getTotalPagos();
+    const saldo = this.to2(total - pagos);
+    this.formTotales.patchValue({ saldoPendiente: saldo }, { emitEvent: false });
+  }
+  private ajustarPagosAlTotal(): void {
+    const total = this.getTotalFactura();
+    let pagos = this.getTotalPagos();
 
-  // Si no hay sobrepago, sólo actualiza saldo y sal
-  if (pagos <= total) {
+    // Si no hay sobrepago, sólo actualiza saldo y sal
+    if (pagos <= total) {
+      this.formTotales.patchValue({ saldoPendiente: this.to2(total - pagos) }, { emitEvent: false });
+      return;
+    }
+
+    // Hay sobrepago -> reducir valores empezando por la última fila
+    if (this.pagosApi) {
+      const nodes: any[] = [];
+      this.pagosApi.forEachNode(n => nodes.push(n));
+
+      if (nodes.length === 1) {
+        // caso típico: un solo método de pago => iguala al nuevo total
+        nodes[0].data.valor = this.to2(total);
+        this.pagosApi.refreshCells({ rowNodes: [nodes[0]], columns: ['valor'], force: true });
+      } else {
+        let exceso = this.to2(pagos - total);
+        for (let i = nodes.length - 1; i >= 0 && exceso > 0; i--) {
+          const n = nodes[i];
+          const v = Number(n.data.valor) || 0;
+          const reduce = Math.min(v, exceso);
+          n.data.valor = this.to2(v - reduce);
+          exceso = this.to2(exceso - reduce);
+        }
+        this.pagosApi.refreshCells({ force: true });
+      }
+    } else {
+      // sin API (estado local)
+      if (this.rowDataPagos.length === 1) {
+        this.rowDataPagos[0].valor = this.to2(total);
+      } else {
+        let exceso = this.to2(pagos - total);
+        for (let i = this.rowDataPagos.length - 1; i >= 0 && exceso > 0; i--) {
+          const r = this.rowDataPagos[i];
+          const v = Number(r.valor) || 0;
+          const reduce = Math.min(v, exceso);
+          r.valor = this.to2(v - reduce);
+          exceso = this.to2(exceso - reduce);
+        }
+      }
+    }
+
+    // Actualiza saldo pendiente después del ajuste
+    pagos = this.getTotalPagos();
     this.formTotales.patchValue({ saldoPendiente: this.to2(total - pagos) }, { emitEvent: false });
+  }
+
+  // --- helper: precio especial por código ---
+  private getPrecioEspecial(codpro: string): number | null {
+    const code = (codpro ?? '').toString();
+
+    if (code === '1175') return this.to2(Number(this.vInscripcion || 0)); // AFILIACION
+    if (code === '1174') return this.to2(Number(this.vAsignacion || 0)); // ASIGNACION
+    if (code === '1176') return this.toN(Number(this.vMantenimiento || 0), this.PU_DEC); // MANTENIMIENTO
+
+
+    // Si luego quieres otros:
+    // if (code === '1173') return this.to2(Number(this.vInscripcion || 0)); // INSCRIPCIÓN
+    // if (code === '1175') return this.to2(Number(this.vMantenimiento || 0)); // MANTENIMIENTO
+
+    return null; // sin precio especial -> usa el del producto
+  }
+  // --- helpers de redondeo y formato ---
+  private readonly PU_DEC = 3;
+
+  private toN(n: number, d: number): number {
+    const m = Math.pow(10, d);
+    return Math.round((n ?? 0) * m) / m;
+  }
+  private fmtN(value: any, d: number): string {
+    const v = Number(value);
+    return Number.isFinite(v) ? v.toFixed(d) : (0).toFixed(d);
+  }
+  // ===== Descuentos =====
+  private cargarDescuentos(): void {
+    debugger
+    this.descuentoService.getAll().pipe(take(1)).subscribe({
+      next: (list) => {
+        this.descuentos = list ?? [];
+        // valor por defecto: SIN DESCUENTO si existe
+        const sin = this.descuentos.find(x => (x.valor ?? 0) === 0);
+        if (sin) {
+          this.formFactura.patchValue({ descuento: sin }, { emitEvent: false });
+          this.descuentoSeleccionado = sin;
+        }
+      },
+      error: _ => this.mostrarAlerta('No se pudieron cargar descuentos', 'error')
+    });
+  }
+
+  private configurarFiltroDescuentos(): void {
+    const ctrl = this.formFactura.get('descuento') as FormControl;
+    this.filteredDescuentos$ = ctrl.valueChanges.pipe(
+      startWith(''),
+      map(v => typeof v === 'string' ? v : (v?.descripcion ?? '')),
+      map(txt => (txt || '').toLowerCase().trim()),
+      map(term => {
+        if (!term) return this.descuentos;
+        return this.descuentos.filter(d =>
+          (d.descripcion || '').toLowerCase().includes(term) ||
+          String(d.valor ?? '').includes(term) ||
+          String(d.idDescuento ?? '').includes(term)
+        );
+      })
+    );
+  }
+
+  // Muestra en el input
+  displayDescuento = (d: Descuento | null): string =>
+    d ? `${d.descripcion} (${d.valorFormateado ?? (d.valor ?? 0) + '%'})` : '';
+
+  // Al seleccionar (aplica % global sobre cada línea)
+  onDescuentoSelected(item: Descuento): void {
+    this.descuentoSeleccionado = item ?? null;
+
+    const pct = Number(item?.valor ?? 0); // 0..100
+    this.aplicarDescuentoGlobalPorcentaje(pct);
+
+    // cierra panel y quita foco
+    setTimeout(() => {
+      this.autoDescuentoTrigger?.closePanel();
+      this.descuentoInputRef?.nativeElement.blur();
+    }, 0);
+  }
+
+  // Aplica descuento % a CADA línea como "descuento" absoluto (antes de IVA)
+  private aplicarDescuentoGlobalPorcentaje(pct: number): void {
+    const aplicar = (row: any) => {
+      row.descPct = this.toN(Math.max(0, Math.min(100, pct)), 2);
+      row.descuento = 0; // opcional: limpiar descuento $ adicional
+      this.recalcLinea(row);
+    };
+    if (this.gridApi) {
+      const nodes: any[] = []; this.gridApi.forEachNode(n => nodes.push(n));
+      nodes.forEach(n => aplicar(n.data));
+      this.gridApi.refreshCells({ force: true });
+    } else {
+      this.rowData.forEach(aplicar);
+    }
+    this.recalcTotalesFactura();
+    this.ajustarPagosAlTotal();
+  }
+
+  clearDescuento(): void {
+    this.formFactura.patchValue({ descuento: '' }, { emitEvent: false });
+    this.descuentoSeleccionado = null;
+
+    const aplicar = (row: any) => {
+      row.descPct = 0;
+      row.desUnit = 0;
+      row.descuento = 0;
+      this.recalcLinea(row);
+    };
+    if (this.gridApi) {
+      const nodes: any[] = []; this.gridApi.forEachNode(n => nodes.push(n));
+      nodes.forEach(n => aplicar(n.data));
+      this.gridApi.refreshCells({ force: true });
+    } else {
+      this.rowData.forEach(aplicar);
+    }
+    this.recalcTotalesFactura();
+    this.ajustarPagosAlTotal();
+    setTimeout(() => { this.descuentoInputRef?.nativeElement.focus(); this.autoDescuentoTrigger?.openPanel(); }, 0);
+  }
+
+
+  private cargarIvasVigentes(): void {
+    this.ivaService.getVigentes().subscribe({
+      next: (items) => {
+        this.ivasCatalogo = items;
+        this.ivaOptions = items.map(i => i.porcentaje).sort((a, b) => a - b);
+        this.gridApi?.refreshCells({ force: true, columns: ['iva'] });
+      },
+      error: _ => this.mostrarAlerta('No se pudieron cargar los IVAs', 'error')
+    });
+  }
+
+  private getIvaPrincipal(): number | null {
+    const p = this.ivasCatalogo.find(x => x.principal);
+    return p ? p.porcentaje : null;
+  }
+
+  // Bloquea cualquier tecla que no sea 0–9
+  soloNumeros(e: KeyboardEvent) {
+    const k = e.key;
+    if (!/^\d$/.test(k)) e.preventDefault(); // bloquea . , e + -
+  }
+
+  // Permite pegar solo dígitos y recorta a 4
+  soloPegadoNumerico(e: ClipboardEvent) {
+    e.preventDefault();
+    const texto = (e.clipboardData?.getData('text') || '').replace(/\D/g, '').slice(0, 4);
+    const ctrl = this.formFactura.get('anio');
+    ctrl?.setValue(texto);
+  }
+
+  private buildFacturaPayload(): FacturaCrearRequest {
+    // --- IDs y datos base ---
+    const idCliente = Number(this.codcliO || 0);                                    // elegido en el autocomplete
+    const caja = (this.formCaja.get('caja')?.value ?? '').toString().trim();        // viene de cargarAutorizacion()
+    const idUsuarioCajero = Number((this as any).user?.idUsuario ?? 1);             // ajusta si usas otro origen
+    const idDescuentoGlobal = null; // de tu selección global
+    const porcentajeDescuentoGlobal = null;
+    const observaciones = (this.formCaja.get('observacion')?.value ?? '').toString();
+
+    // --- Detalles (desde grid de productos) ---
+    const filasProd: any[] = [];
+    if (this.gridApi) this.gridApi.forEachNode(n => filasProd.push(n.data));
+    else filasProd.push(...this.rowData);
+
+    const detalles: FacturaDetalleRequest[] = filasProd.map((r) => {
+      const cod = (r.codpro ?? '').toString();
+      const prod = this.productos.find(p => (p.codpro ?? '').toString() === cod);
+      const idProducto = Number(prod?.id_producto ?? 0);
+
+      return {
+        idProducto,
+        cantidad: Number(r.cantidad ?? 0),
+        precio: Number(r.pUnidad ?? 0),                 // precio unitario (antes de IVA)
+        idDescuentoPredeterminado: null,                   // si luego tienes uno por producto, colócalo aquí
+        porcentajeDescuentoManual: null,
+        observaciones: ''                               // puedes pasar r.detalle si lo deseas
+      } as FacturaDetalleRequest;
+    }).filter(d => d.idProducto > 0 && d.cantidad > 0);
+
+    // --- Formas de pago (desde grid pagos) ---
+    const filasPago: any[] = [];
+    if (this.pagosApi) this.pagosApi.forEachNode(n => filasPago.push(n.data));
+    else filasPago.push(...this.rowDataPagos);
+    const tasa = (this.getIvaPrincipal() ?? 0) / 100;
+    const formasPago: FacturaFormaPagoRequest[] = filasPago.map((r) => ({
+      idFormaPago: Number(r.id ?? 0),
+      valor: this.to2(Number(r.valor ?? 0) / (1 + tasa)),
+      referencia: '',                       // completa si manejas referencia
+      observaciones: '',
+      codPlazo: (r.plazo ?? '').toString(), // si tu API espera código, ajusta aquí
+      banco: '',
+      numeroTarjeta: '',
+      chequeCaduca: '',
+      duenio: '',
+      autoriza: ''
+    }));
+
+    return {
+      idCliente,
+      caja,
+      idUsuarioCajero,
+      idDescuentoGlobal,
+      porcentajeDescuentoGlobal,
+      observaciones,
+      detalles,
+      formasPago
+    };
+  }
+
+  // ===== Llama al servicio y maneja la respuesta / errores =====
+  crearFactura(): void {
+    const payload = this.buildFacturaPayload();
+    console.log('PAYLOAD →', payload);
+    console.table(payload.detalles);
+    console.table(payload.formasPago);
+    console.log(JSON.stringify(payload, null, 2));
+    // Validaciones mínimas
+    if (!payload.idCliente) { this.mostrarAlerta('Seleccione un cliente.', 'info'); return; }
+    if (!payload.caja) { this.mostrarAlerta('No hay caja asignada.', 'info'); return; }
+    if (!payload.detalles?.length) { this.mostrarAlerta('Agregue al menos un producto.', 'info'); return; }
+
+    this.facturacionService.crear(payload).subscribe({
+      next: (resp) => {
+        if (resp?.type?.toLowerCase() === 'success') {
+          this.mostrarAlerta('Factura creada correctamente.', 'ok');
+          // TODO: limpiar pantalla o navegar si corresponde
+        } else {
+          this.mostrarAlerta(resp?.message || 'No se pudo crear la factura.', 'error');
+        }
+      },
+      error: (err) => {
+        console.error('[crearFactura] error:', err);
+        this.mostrarAlerta('Error al crear la factura.', 'error');
+      }
+    });
+  }
+  autoGrow(e: Event) {
+    const el = e.target as HTMLTextAreaElement;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }
+abrirDialogoAnio(): void {
+  // ✅ Validar que exista 1176 en el grid
+  if (!this.hasProductoEnGrid(this.COD_MANT_MENSUAL)) {
+    this.mostrarAlerta('Agregue el producto 1176 (MANTENIMIENTO MENSUAL) para usar esta opción.', 'info');
     return;
   }
 
-  // Hay sobrepago -> reducir valores empezando por la última fila
-  if (this.pagosApi) {
-    const nodes: any[] = [];
-    this.pagosApi.forEachNode(n => nodes.push(n));
-
-    if (nodes.length === 1) {
-      // caso típico: un solo método de pago => iguala al nuevo total
-      nodes[0].data.valor = this.to2(total);
-      this.pagosApi.refreshCells({ rowNodes: [nodes[0]], columns: ['valor'], force: true });
-    } else {
-      let exceso = this.to2(pagos - total);
-      for (let i = nodes.length - 1; i >= 0 && exceso > 0; i--) {
-        const n = nodes[i];
-        const v = Number(n.data.valor) || 0;
-        const reduce = Math.min(v, exceso);
-        n.data.valor = this.to2(v - reduce);
-        exceso = this.to2(exceso - reduce);
-      }
-      this.pagosApi.refreshCells({ force: true });
-    }
-  } else {
-    // sin API (estado local)
-    if (this.rowDataPagos.length === 1) {
-      this.rowDataPagos[0].valor = this.to2(total);
-    } else {
-      let exceso = this.to2(pagos - total);
-      for (let i = this.rowDataPagos.length - 1; i >= 0 && exceso > 0; i--) {
-        const r = this.rowDataPagos[i];
-        const v = Number(r.valor) || 0;
-        const reduce = Math.min(v, exceso);
-        r.valor = this.to2(v - reduce);
-        exceso = this.to2(exceso - reduce);
-      }
-    }
+  // (Opcional) validar prefijo seleccionado
+  const idPrefijo = this.formCliente.get('gcp')?.value ?? null;
+  if (!idPrefijo) {
+    this.mostrarAlerta('Seleccione un prefijo antes de continuar.', 'info');
+    return;
   }
 
-  // Actualiza saldo pendiente después del ajuste
-  pagos = this.getTotalPagos();
-  this.formTotales.patchValue({ saldoPendiente: this.to2(total - pagos) }, { emitEvent: false });
+  const anioActual = Number(this.formFactura.get('anio')?.value) || new Date().getFullYear();
+  const pref = this.prefijos.find(p => p.id_prefijos === idPrefijo) || null;
+  const codpre = pref?.codpre ?? null;
+
+  const ref = this.dialog.open(FacturacionMesesModalComponent, {
+    width: '500px',
+    disableClose: true, // solo se cierra con “Salir”
+    data: {
+      anioActual,
+      idPrefijo,
+      codpre,
+      onAceptar: (res: FacturacionMesesResult) => {
+        this.formFactura.get('anio')?.setValue(res.anio);
+
+        const idPrefijoSel = this.formCliente.get('gcp')?.value ?? null;
+        const prefijoObj = this.prefijos.find(p => p.id_prefijos === idPrefijoSel) || null;
+        const codpreSel = prefijoObj?.codpre ?? null;
+        const prefijoTxt = codpreSel || `ID ${idPrefijoSel}`;
+
+        const aplicar = (row: any) => {
+          if ((row.codpro ?? '').toString() !== this.COD_MANT_MENSUAL) return;
+          row.cantidad = res.numeroMeses;
+
+          const marca = `Prefijo: ${prefijoTxt} ${res.periodo}`;
+          const baseDetalle = (row.detalle ?? '').replace(/\s+Prefijo:.*$/, '').trim();
+          row.detalle = `${baseDetalle} ${marca}`.trim();
+
+          this.recalcLinea(row);
+        };
+
+        if (this.gridApi) {
+          const nodes: any[] = []; this.gridApi.forEachNode(n => nodes.push(n));
+          nodes.forEach(n => aplicar(n.data));
+          this.gridApi.refreshCells({ force: true });
+        } else {
+          this.rowData.forEach(aplicar);
+        }
+
+        this.recalcTotalesFactura();
+        this.ajustarPagosAlTotal();
+      }
+    }
+  });
+
+  ref.afterClosed().subscribe(() => {
+    // hook opcional al cerrar
+  });
 }
+
+
+  private hasProductoEnGrid(cod: string): boolean {
+  let found = false;
+  if (this.gridApi) {
+    this.gridApi.forEachNode(n => {
+      if ((n.data?.codpro ?? '').toString() === cod) found = true;
+    });
+  } else {
+    found = this.rowData.some(r => ((r as any)?.codpro ?? '').toString() === cod);
+  }
+  return found;
+}
+
+// Recalcula la habilitación del botón
+private actualizarPuedeAbrirMeses(): void {
+  this.puedeAbrirMeses = this.hasProductoEnGrid(this.COD_MANT_MENSUAL);
+}
+onCellDoubleClicked(e: CellDoubleClickedEvent<any>): void {
+  // Solo aplicamos a la columna "detalle"
+  if (!e?.colDef || e.colDef.field !== 'detalle') return;
+
+  const ref = this.dialog.open(DetalleDescripcionModalComponent, {
+    width: '640px',
+    data: {
+      titulo: 'Editar detalle',
+      descripcion: e.value ?? '',
+      maxLen: 500
+    }
+  });
+
+  ref.afterClosed().subscribe((nuevo?: string) => {
+    if (typeof nuevo !== 'string') return;                 // cancelado
+    const val = (nuevo ?? '').trim();
+    if (val === (e.value ?? '').toString().trim()) return; // sin cambios
+    e.node.setDataValue('detalle', val);
+    e.api.refreshCells({ rowNodes: [e.node], columns: ['detalle'], force: true });
+  });
+}
+
 
 }
