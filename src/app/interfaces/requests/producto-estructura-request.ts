@@ -1,8 +1,15 @@
+import { ProductoRequest } from './producto-request';
+
 export interface ProductoEstructuraComercialRequest {
-  idproducto?: number;      // Opcional: filtra por un producto específico
-  iddivision?: number;      // Nivel 2
-  idsubdivision?: number;   // Nivel 3
-  iddepartamento?: number;  // Nivel 4
-  idseccion?: number;       // Nivel 5
-  idgrupo?: number;         // Nivel 6
+  idproducto?: number | null;
+  iddivision?: number | null;
+  idsubdivision?: number | null;
+  iddepartamento?: number | null;
+  idseccion?: number | null;
+  idgrupo?: number | null; // el que ya usas en el componente
+}
+
+export interface CreateProductoConEstructuraRequest {
+  Producto: ProductoRequest;
+  Estructura: ProductoEstructuraComercialRequest;
 }

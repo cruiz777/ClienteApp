@@ -1,69 +1,100 @@
 
-export type SN = 'S' | 'N'; // utilitario para campos de 1 carácter (sí/no)
+export type SN = 'S' | 'N';
 
 export interface ProductoRequest {
   idproducto?: number;
+
+  // Identificación / descripciones
   codpro?: string;
   despro?: string;
-  tippro?: string;
+  despro2?: string;
+  codbar?: string;
+  uniman?: string;
+  abrevia?: string;
+  referencia?: string;
+  clasprod?: string;
+  foto?: string;
+
+  // Clasificaciones (opcional)
+  tippro?: string;     // 1 char en BD
   codgru?: number;
   codsec?: number;
   coddep?: number;
   codsub?: number;
   coddiv?: number;
   codmar?: number;
-  despro2?: string;
-  uniman?: string;
-  feccre?: string;
+
+  // Fechas
+  feccre?: string;     // ISO
+  fechamod?: string;   // ISO
+
+  // Atributos adicionales
   colsab?: string;
   talla?: string;
-  preven?: number;
-  preven2?: number;
-  precos?: number;
-  cospro?: number;
-  exiqty?: number;
-  exipdc?: number;
-  exipdv?: number;
-  exisic?: number;
-  fecsic?: string;
-  refer?: string | null;     // Base64 o null
+  obs?: string;
+  regsanitario?: string;
+
+  // Cuentas contables
   codcuedeb?: string;
   codcuehab?: string;
   codcuedes?: string;
   codcuedev?: string;
-  iva?: SN | string;         // usualmente 'S' | 'N'
-  tipo?: string;             // en BD es 1 char
-  preuni?: string;
-  regalia?: SN | string;     // usualmente 'S' | 'N'
-  inv?: boolean;
-  prevensiniva?: number;
-  pagaiva?: boolean;
-  pagaregalia?: boolean;
-  desind?: string;
-  codorigen?: string;
-  codcol?: number;
+  ctaprodgasto?: string;
+
+  // Precios / costos
+  preven?: number;
+  preven2?: number;
+  precos?: number;
+  cospro?: number;
+  pvpsiniva?: number;
+  preanterior?: number;
+  cosanterior?: number;
+  preuni?: string;     // precio compra actual (string en back)
+  margenutilidad?: number;
+  porcenrecepcion?: number;
+  feccosact?: string;  // ISO (fecha anterior modificar precio)
+  fecpreact?: string;  // ISO (fecha anterior modificar compra)
+  fecpremod?: string;  // ISO (fecha mod PVP)
+
+  // Existencias / ubicación (si los usaras)
+  exiqty?: number;
+  exipdc?: number;
+  exipdv?: number;
+  exisic?: number;
+  fecsic?: string;     // ISO
   stockmax?: number;
   stockmin?: number;
   espesor?: number;
   largo?: number;
   ancho?: number;
-  fechacad?: string;
-  fechacad1?: number;
-  fabricante?: number;
-  obs?: string;
+  codubi?: string;
+  codniv?: string;
+  codcolubi?: string;
+
+  // Flags
+  inv?: boolean;
+  pagaiva?: boolean;
+  pagaregalia?: boolean;
   peso?: boolean;
-  fecing?: string;
+  receta?: boolean;
+  activo?: boolean;
+  altoriesgo?: boolean;
+  stocks?: boolean;
+  cantdecimal?: boolean;
+  pgasto?: boolean;
+
+  // Otros (menores)
+  iva?: SN | string;
+  tipo?: string;       // 1 char
+  regalia?: SN | string;
   valorunidad?: number;
   codsab?: string;
-  fechamod?: string;
   tamanio?: string;
   modelo?: string;
   numserie?: string;
   coleccion?: string;
   temporada?: string;
   prepormayor?: number;
-  preanterior?: number;
-  cosanterior?: number;
   desccosto1?: number;
   desccosto2?: number;
   desccosto3?: number;
@@ -74,44 +105,30 @@ export interface ProductoRequest {
   fecinipro?: string;
   fecfinpro?: string;
   fecinipro1?: string;
-  codubi?: string;
   fecfinpro1?: string;
-  fecpreact?: string;
-  fecpremod?: string;
-  feccosact?: string;
-  feccosmod?: string;
-  codniv?: string;
-  codcolubi?: string;
-  margenutilidad?: number;
-  pvpsiniva?: number;
-  porcenrecepcion?: number;
-  stocks?: boolean;
-  abrevia?: string;
-  referencia?: string;
+  fechacad?: string;
+  fechacad1?: number;
+  fabricante?: number;
+  fecing?: string;
   margenantes?: number;
   fecmarantes?: string;
-  cantdecimal?: boolean;
   costsuminis?: number;
   cantconv?: number;
   costhelado?: number;
-  receta?: boolean;
-  activo?: boolean;
-  clasprod?: string;
-  foto?: string;
-  altoriesgo?: boolean;
-  pgasto?: boolean;
-  ctaprodgasto?: string;
-  regsanitario?: string;
+
+  // Empresa
   idempresa?: number;
-  codbar?: string;
+
+  // Referencia binaria (si la usas como base64, déjala string/null)
+  refer?: string | null;
 }
 
-/** Sanitizador simple para evitar truncamientos de 1 carácter y normalizar `refer`. */
+/** Sanitizador simple (corta campos de 1 char y normaliza refer). */
 export function sanitizeProductoPayload(p: ProductoRequest): ProductoRequest {
-  const cpy: ProductoRequest = { ...p };
-  if (typeof cpy.tipo === 'string') cpy.tipo = cpy.tipo.trim().slice(0, 1);
-  if (typeof cpy.iva === 'string') cpy.iva = cpy.iva.trim().slice(0, 1);
-  if (typeof cpy.regalia === 'string') cpy.regalia = cpy.regalia.trim().slice(0, 1);
-  if ((cpy as any).refer === '') cpy.refer = null;
-  return cpy;
+  const c = { ...p };
+  if (typeof c.tipo === 'string') c.tipo = c.tipo.trim().slice(0, 1);
+  if (typeof c.iva === 'string')  c.iva  = c.iva.trim().slice(0, 1);
+  if (typeof c.regalia === 'string') c.regalia = c.regalia.trim().slice(0, 1);
+  if ((c as any).refer === '') c.refer = null;
+  return c;
 }

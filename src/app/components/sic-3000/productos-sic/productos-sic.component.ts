@@ -6,6 +6,10 @@ import { ProductoRequest, sanitizeProductoPayload } from 'src/app/interfaces/req
 import { CreateProductoConEstructuraRequest } from 'src/app/interfaces/requests/create-producto-estructura-request';
 
 import { ProductoService } from 'src/app/services/productos.service';
+import { PresentacionService } from 'src/app/services/presentacion.service';
+import { UniddaVentaService } from 'src/app/services/unidad-venta.service';
+import { UnidadVentaResponse } from 'src/app/interfaces/responses/unidad-venta-response';
+import { PresentacionResponse } from '../../../interfaces/responses/presentacion-response';
 
 @Component({
   selector: 'app-productos-sic',
@@ -18,9 +22,9 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   idEstructura!: number;
 
   // Catálogos (Tab 1)
-  unidadesVenta = ['Unidad', 'Caja', 'Docena', 'Paquete', 'Litro'];
-  tiposProducto = ['Bien', 'Servicio', 'Medicamento', 'Insumo'];
-  presentaciones = ['Botella', 'Caja', 'Bolsa', 'Blíster', 'Granel'];
+  unidadesVenta: UnidadVentaResponse[] = [];
+  tiposProducto = ['Bien', 'Servicio'];
+  presentaciones: PresentacionResponse[] = [];
   clasesProducto = ['A', 'B', 'C'];
 
   // IVA para Tab 3
@@ -35,12 +39,15 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
     private productoService: ProductoService,
+    private presentacionService: PresentacionService,
+    private unidadVentaService: UniddaVentaService,
     private route: ActivatedRoute
   ) { }
 
   ngOnInit(): void {
     this.selectedTab = 0;
-
+    this.cargarPresentacion();
+    this.cargarUnidadesVenta();
     this.route.paramMap.subscribe(params => {
       this.idEstructura = Number(params.get('idEstructura')) || 0;
       console.log('ID de estructura recibido:', this.idEstructura);
@@ -48,12 +55,12 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
 
     // ===== Tab 1
     this.form = this.fb.group({
-      descripcion: ['', [Validators.required, Validators.maxLength(200)]],
+      descripcion: ['', [Validators.required, Validators.maxLength(500)]],
       codigoInterno: [''],
-      descripcion1: [''],
-      unidadVenta: [null],
-      existenciaGlobal: [''],
-      abreviacion: [''],
+      descripcion1: ['', [Validators.required, Validators.maxLength(500)]],
+      unidadVenta: [null, Validators.required],
+      existenciaGlobal: ['', Validators.required],
+      abreviacion: ['', Validators.required],
 
       pagaIva: [false],
       productoEnVenta: [false],
@@ -63,7 +70,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
 
       codigoBarras: [''],
       generarCodigo: [false],
-      descripcionPOS: [''],
+      descripcionPOS: ['', Validators.required],
       cantidad: [null],
       canCov: [''],
       referencia: [''],
@@ -74,7 +81,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       altoRiesgo: [false],
 
       tipoProducto: [null],
-      presentacion: [null],
+      presentacion: [null, Validators.required],
       claseProducto: [null],
       urlFoto: [''],
 
@@ -136,6 +143,35 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       .subscribe(() => this.recalcularMargen());
     this.preciosForm.get('pvpActualMasIva')!.valueChanges
       .subscribe(() => this.recalcularMargen());
+  }
+
+  isInvalid(ctrl: string): boolean {
+    const c = this.form.get(ctrl);
+    return !!c && c.invalid && (c.touched || c.dirty);
+  }
+
+  cargarPresentacion(): void {
+    this.presentacionService.getPresentacion().subscribe({
+      next: (resp) => {
+        this.presentaciones = resp.data;
+        console.log(this.presentaciones)
+      },
+      error: () => {
+        alert('Error al cargar presentaciones');
+      }
+    })
+  }
+
+  cargarUnidadesVenta(): void {
+    this.unidadVentaService.getUnidadVenta().subscribe({
+      next: (resp) => {
+        this.unidadesVenta = resp.data;
+        console.log(this.unidadesVenta)
+      },
+      error: () => {
+        alert('Error al cargar unidades de venta')
+      }
+    })
   }
 
   ngAfterViewInit(): void { this.cdr.detectChanges(); }
@@ -251,91 +287,102 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     }
   }
 
+  // 1) Campo de estado
+  saving = false;
+
+  // 2) Helper para armar el request (sanitiza Producto)
+  private buildCreatePERequest(): CreateProductoConEstructuraRequest {
+    const f1 = this.form.value;
+    const f2 = this.adicionalForm.value;
+    const f3 = this.preciosForm.getRawValue();
+
+    const producto = sanitizeProductoPayload({
+      // === TAB 1
+      despro: f1.descripcion1,
+      despro2: f1.descripcionPOS,
+      codbar: f1.codigoBarras,
+      tippro: f1.tipoProducto,
+      uniman: f1.unidadVenta,
+      abrevia: f1.abreviacion,
+      referencia: f1.referencia,
+      activo: f1.activo,
+      pagaiva: f1.pagaIva,
+      inv: f1.cargarInventarios,
+      peso: f1.productoConPeso,
+      pgasto: f2?.productoGasto ?? false,
+      altoriesgo: f1.altoRiesgo,
+      clasprod: f1.claseProducto,
+      foto: f1.urlFoto,
+      idempresa: 1,
+      feccre: f1.fechaCreacion,
+      fechamod: f1.fechaModificacion,
+
+      // === TAB 2
+      colsab: f2.color,
+      talla: f2.tamanoTalla1,
+      obs: f2.observacion,
+      regsanitario: f2.registroSanitario,
+      codcuedeb: f2.ctaVentas,
+      codcuehab: f2.ctaInventarios,
+      codcuedes: f2.ctaCostos,
+      codcuedev: f2.ctaDevolucion,
+      ctaprodgasto: f2.ctaGastos,
+
+      // === TAB 3
+      preven: f3.precioOficial,
+      preven2: f3.precioRedMsp,
+      pvpsiniva: f3.pvpActualIva,
+      preanterior: f3.pvpAnteriorMasIva,
+      feccosact: f3.fechaAnteriorModificarPrecio,
+      fecpremod: f3.fechaModificarPrecio,
+      margenutilidad: f3.margenUtilidad,
+      costsuminis: f3.costoSuministro,
+      cospro: f3.costoProducto,
+      precos: f3.costoPromedio,
+      cosanterior: f3.precioCompraAnterior,
+      fecpreact: f3.fechaAnteriorModificarCompra,
+      preuni: f3.precioCompraActual?.toString(),
+      porcenrecepcion: f3.recepcionPorcentaje
+    });
+
+    return {
+      Producto: producto,
+      Estructura: { idgrupo: this.idEstructura || null }
+    };
+  }
+
+  // 3) Usa el helper en onGrabar()
   onGrabar(): void {
-    if (this.selectedTab === 0 && this.form.invalid) return;
-    if (this.selectedTab === 1 && this.adicionalForm.invalid) return;
-    if (this.selectedTab === 2 && this.preciosForm.invalid) return;
+    if (this.selectedTab === 0 && this.form.invalid) {
+      this.form.markAllAsTouched();
+      this.selectedTab = 0;
+      return;
+    }
+    if (this.selectedTab === 1 && this.adicionalForm.invalid) {
+      this.adicionalForm.markAllAsTouched();
+      this.selectedTab = 1;
+      return;
+    }
+    if (this.selectedTab === 2 && this.preciosForm.invalid) {
+      this.preciosForm.markAllAsTouched();
+      this.selectedTab = 2;
+      return;
+    }
 
-    // ---- Tab 1: Datos Generales ----
-    const form1 = this.form.value;
-    // ---- Tab 2: Datos Adicionales ----
-    const form2 = this.adicionalForm.value;
-    // ---- Tab 3: Precios / Costos ----
-    const form3 = this.preciosForm.getRawValue();
-
-    const productoPayload: ProductoRequest = {
-      // TAB 1
-      despro: form1.descripcion1,
-      despro2: form1.descripcionPOS,
-      codbar: form1.codigoBarras,
-      tippro: form1.tipoProducto,
-      uniman: form1.unidadVenta,
-      abrevia: form1.abreviacion,
-      referencia: form1.referencia,
-      activo: form1.activo,
-      pagaiva: form1.pagaIva,
-      inv: form1.cargarInventarios,
-      peso: form1.productoConPeso,
-      pgasto: form1.productoGasto,
-      altoriesgo: form1.altoRiesgo,
-      clasprod: form1.claseProducto,
-      foto: form1.urlFoto,
-      idempresa: 1, // ⚡ empresa actual (ajustar según contexto)
-      feccre: form1.fechaCreacion,
-      fechamod: form1.fechaModificacion,
-
-      // TAB 2
-      colsab: form2.color,
-      talla: form2.tamanoTalla1,
-      obs: form2.observacion,
-      regsanitario: form2.registroSanitario,
-      codcuedeb: form2.ctaVentas,
-      codcuehab: form2.ctaInventarios,
-      codcuedes: form2.ctaCostos,
-      codcuedev: form2.ctaDevolucion,
-      ctaprodgasto: form2.ctaGastos,
-      // pgasto: form2.productoGasto,
-
-      // TAB 3
-      preven: form3.precioOficial,
-      preven2: form3.precioRedMsp,
-      pvpsiniva: form3.pvpActualIva,
-      preanterior: form3.pvpAnteriorMasIva,
-      feccosact: form3.fechaAnteriorModificarPrecio,
-      // pvpSinIva: form3.pvpActualMasIva,
-      fecpremod: form3.fechaModificarPrecio,
-      margenutilidad: form3.margenUtilidad,
-      costsuminis: form3.costoSuministro,
-      cospro: form3.costoProducto,
-      precos: form3.costoPromedio,
-      cosanterior: form3.precioCompraAnterior,
-      fecpreact: form3.fechaAnteriorModificarCompra,
-      preuni: form3.precioCompraActual?.toString(),
-      // fecpremod: form3.fechaModificarCompra,
-      porcenrecepcion: form3.recepcionPorcentaje
-    };
-
-    // ---- Estructura asociada ----
-    const estructuraPayload = {
-      idgrupo: this.idEstructura || null // ⚡ ID del árbol actual
-    };
-
-    const request: CreateProductoConEstructuraRequest = {
-      Producto: productoPayload,
-      Estructura: estructuraPayload
-    };
+    this.saving = true;
+    const request = this.buildCreatePERequest();
 
     this.productoService.createConEstructura(request).subscribe({
       next: (res) => {
-        if (res.type === 'SUCCESS' && res.data) {
-          console.log('✅ Producto y estructura creados correctamente');
+        if (res?.type?.toUpperCase() === 'SUCCESS') {
+          console.log('✅ Creado correctamente', res.data);
+          // TODO: limpiar forms o navegar si quieres
         } else {
-          console.error('❌ Error:', res.message);
+          console.error('❌ Error lógica:', res?.message || res);
         }
       },
-      error: (err) => {
-        console.error('❌ Error en la petición:', err);
-      }
+      error: (err) => console.error('❌ Error HTTP:', err),
+      complete: () => (this.saving = false)
     });
   }
 
