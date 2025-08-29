@@ -11,8 +11,10 @@ import { FacturacionService } from 'src/app/services/facturacion.service';
 import { IvaService, Iva } from 'src/app/services/iva.service';
 import { FacturaCrearRequest, FacturaDetalleRequest, FacturaFormaPagoRequest } from 'src/app/services/facturacion.service';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { AbstractControl } from '@angular/forms';
+import { Router } from '@angular/router';
 import {
-    FacturacionMesesResult
+  FacturacionMesesResult
 } from 'src/app/components/sic-3000/facturacion/facturacion-meses-modal/facturacion-meses-modal.component';
 import { CellDoubleClickedEvent } from 'ag-grid-community';
 import { DetalleDescripcionModalComponent } from '../detalle-descripcion-modal/detalle-descripcion-modal.component';
@@ -64,6 +66,7 @@ import { LogoService } from 'src/app/services/logo.service';
 import { ExportService } from 'src/app/services/export.service';
 import { EmpresaService } from 'src/app/services/empresa.service';
 import { HttpClientModule } from '@angular/common/http';
+import { defineLocale } from 'moment';
 
 interface LineaFactura {
   codpro: string | null;
@@ -115,7 +118,7 @@ interface PaymentDetail {
     MatSnackBarModule,
     AgGridModule,
     MatIconModule,
-    MatDialogModule, 
+    MatDialogModule,
     MatTooltipModule
   ]
 })
@@ -130,14 +133,24 @@ export class FacturacionIndividualComponent implements OnInit {
 
   // ============= Pasos / Tabs =============
   currentStep = 1;
-  onTabChange(idx: number): void { this.currentStep = (idx ?? 0) + 1; }
+  onTabChange(idx: number): void {
+    // idx: 0=Cliente, 1=Factura, 2=Pagos
+    if (idx === 1 && !this.puedeIrPaso2) {
+      this._snackBar.open('Completa los datos del cliente para continuar.', 'Cerrar', { duration: 2500 });
+      // volver visualmente a la pestaña 1
+      setTimeout(() => this.currentStep = 1);
+      return;
+    }
+    this.currentStep = (idx ?? 0) + 1;
+  }
+
 
   // ============= Autocomplete Cliente =============
-  clienteOrigenControl = new FormControl<ClienteSummary | string | null>(null);
+  clienteOrigenControl = new FormControl<string | any | null>(null, Validators.required);
   clientesOrigenFiltrados: ClienteSummary[] = [];
   prefijosClienteOrigen: (PrefijoClienteTResponse & { seleccionado?: boolean })[] = [];
   codcliO = 0;
-
+  usuarioActual = this.usuarioService.getUsuarioActual();
   // ============= Prefijos (mat-select) =============
   prefijos: PrefijoCliente[] = [];
   descuentos: Descuento[] = [];
@@ -154,7 +167,7 @@ export class FacturacionIndividualComponent implements OnInit {
   formCaja!: FormGroup;
 
   isLoadingDetalle = false;
-
+  
   /// grid producto
   gridApi!: GridApi;
   columnDefs: ColDef<any, any>[] = [
@@ -172,7 +185,7 @@ export class FacturacionIndividualComponent implements OnInit {
         return true;
       }
     },
-    { headerName: 'Detalle', field: 'detalle', editable: false, flex: 1, minWidth: 200, tooltipField: 'detalle'  },
+    { headerName: 'Detalle', field: 'detalle', editable: false, flex: 1, minWidth: 200, tooltipField: 'detalle' },
     {
       headerName: 'P. Unidad',
       field: 'pUnidad',
@@ -193,7 +206,7 @@ export class FacturacionIndividualComponent implements OnInit {
       headerName: 'IVA',
       field: 'iva',
       editable: true,
-      width: 60,
+      width: 65,
       cellEditor: 'agSelectCellEditor',
       cellEditorParams: () => ({ values: this.ivaOptions }),
       valueFormatter: p => (p.value != null ? `${p.value}%` : ''),
@@ -270,7 +283,7 @@ export class FacturacionIndividualComponent implements OnInit {
           // (usa arrow function para mantener el this del componente)
           this.recalcTotalesFactura();
           this.ajustarPagosAlTotal();
-          this.actualizarPuedeAbrirMeses(); 
+          this.actualizarPuedeAbrirMeses();
           // si ves que no actualiza a la primera, usa:
           // setTimeout(() => { this.recalcTotalesFactura(); this.ajustarPagosAlTotal(); }, 0);
         });
@@ -300,7 +313,7 @@ export class FacturacionIndividualComponent implements OnInit {
       cellEditor: 'agSelectCellEditor',
       cellEditorParams: { values: ['Días', 'Meses'] }
     },
-   
+
     {
       headerName: 'Valor',
       field: 'valor',
@@ -312,7 +325,7 @@ export class FacturacionIndividualComponent implements OnInit {
       valueSetter: (p: ValueSetterParams<any>) => this.pagoValorSetter(p), // 👈
       valueFormatter: (p) => this.fmtN(p.value, 2)
     },
-     { headerName: 'Banco', field: 'banco', editable: true, flex: 1, minWidth: 180 },
+    { headerName: 'Banco', field: 'banco', editable: true, flex: 1, minWidth: 180 },
     { headerName: 'NTarjeta', field: 'ntarjeta', editable: true, flex: 1, minWidth: 180 },
     { headerName: 'Cheque', field: 'cheque', editable: true, flex: 1, minWidth: 180 },
     { headerName: 'Dueño', field: 'dueno', editable: true, flex: 1, minWidth: 180 },
@@ -386,25 +399,36 @@ export class FacturacionIndividualComponent implements OnInit {
     private facturacionService: FacturacionService,
     private descuentoService: DescuentoService,
     private ivaService: IvaService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private router: Router
   ) { }
 
   ngOnInit(): void {
-
+    this.usuarioActual = this.usuarioService.getUsuarioActual();
     this.cargarIvasVigentes();
     this.cargarAutorizacion();
 
     this.cargarProductos();
     // Formularios
     this.formCliente = this.fb.group({
-      telefono: [''],
-      identificacion: [''],
-      email: ['', [Validators.email]],
-      direccion: [''],
+      clienteCodigo: [0, [Validators.required, Validators.min(1)]],
+
+      telefono: ['', [
+        Validators.required,
+        (ctrl: AbstractControl) => {
+          const valor = (ctrl.value || '').toString();
+          const digitos = valor.replace(/\D/g, '').length;
+          return digitos >= 9 ? null : { telefonoInvalido: true };
+        }
+      ]],
+      identificacion: ['', [Validators.required]],
+      email: ['', [Validators.required, Validators.email]],
+      direccion: ['', [Validators.required]],
       emailOpcional: [''],
-      categoria: [''],
-      gcp: [''],
+      categoria: ['', [Validators.required]],
+      gcp: ['', [Validators.required]],      // prefijo (select)
       prefijo: ['']
+
     });
 
     this.formFactura = this.fb.group({
@@ -523,6 +547,7 @@ export class FacturacionIndividualComponent implements OnInit {
   seleccionarClienteOrigen(cliente: ClienteSummary): void {
     if (!cliente?.clientes_codigo) return;
     this.codcliO = cliente.clientes_codigo;
+    this.formCliente.patchValue({ clienteCodigo: this.codcliO });
     this.cargarPrefijos(this.codcliO);
     this.cargarClienteDetalle(this.codcliO);
   }
@@ -531,6 +556,7 @@ export class FacturacionIndividualComponent implements OnInit {
     const valor = this.clienteOrigenControl.value;
 
     if (this.codcliO > 0) {
+      this.formCliente.patchValue({ clienteCodigo: this.codcliO });
       this.cargarClienteDetalle(this.codcliO);
       return;
     }
@@ -1251,7 +1277,7 @@ export class FacturacionIndividualComponent implements OnInit {
     // --- IDs y datos base ---
     const idCliente = Number(this.codcliO || 0);                                    // elegido en el autocomplete
     const caja = (this.formCaja.get('caja')?.value ?? '').toString().trim();        // viene de cargarAutorizacion()
-    const idUsuarioCajero = Number((this as any).user?.idUsuario ?? 1);             // ajusta si usas otro origen
+    const idUsuarioCajero = this.usuarioActual!.id_usuario;         // ajusta si usas otro origen
     const idDescuentoGlobal = null; // de tu selección global
     const porcentajeDescuentoGlobal = null;
     const observaciones = (this.formCaja.get('observacion')?.value ?? '').toString();
@@ -1287,11 +1313,11 @@ export class FacturacionIndividualComponent implements OnInit {
       referencia: '',                       // completa si manejas referencia
       observaciones: '',
       codPlazo: (r.plazo ?? '').toString(), // si tu API espera código, ajusta aquí
-      banco: '',
-      numeroTarjeta: '',
-      chequeCaduca: '',
-      duenio: '',
-      autoriza: ''
+      banco: (r.banco ?? '').toString(),
+      numeroTarjeta: (r.ntarjeta ?? '').toString(),
+      chequeCaduca: (r.cheque ?? '').toString(),
+      duenio: (r.dueno ?? '').toString(),
+      autoriza: (r.autorizacion ?? '').toString(),
     }));
 
     return {
@@ -1307,138 +1333,314 @@ export class FacturacionIndividualComponent implements OnInit {
   }
 
   // ===== Llama al servicio y maneja la respuesta / errores =====
+
+
   crearFactura(): void {
+    if (this.getPagosCount() === 0) {
+      this.mostrarAlerta('Agrega al menos una forma de pago.', 'info'); // snackbar
+      return;
+    }
+    if (this.saldoPendiente !== 0) {
+      this.mostrarAlerta('El saldo pendiente debe ser 0.00 para generar la factura.', 'info');
+      return;
+    }
+
     const payload = this.buildFacturaPayload();
     console.log('PAYLOAD →', payload);
     console.table(payload.detalles);
     console.table(payload.formasPago);
     console.log(JSON.stringify(payload, null, 2));
-    // Validaciones mínimas
+
     if (!payload.idCliente) { this.mostrarAlerta('Seleccione un cliente.', 'info'); return; }
     if (!payload.caja) { this.mostrarAlerta('No hay caja asignada.', 'info'); return; }
-    if (!payload.detalles?.length) { this.mostrarAlerta('Agregue al menos un producto.', 'info'); return; }
+    if (!payload.detalles?.length) { this.mostrarAlerta('Agrega al menos un producto a la factura.', 'info'); return; }
 
-    this.facturacionService.crear(payload).subscribe({
-      next: (resp) => {
-        if (resp?.type?.toLowerCase() === 'success') {
-          this.mostrarAlerta('Factura creada correctamente.', 'ok');
-          // TODO: limpiar pantalla o navegar si corresponde
+    const total = this.getTotalFactura();
+    if (this.getPagosCount() === 0) {
+      this.mostrarAlerta('Agregue al menos una forma de pago.', 'info');
+      return;
+    }
+    const saldo = this.to2(total - this.getTotalPagos());
+    if (Math.abs(saldo) >= 0.005) {
+      this.mostrarAlerta(`El saldo pendiente debe ser $0.00. Saldo actual: $${saldo.toFixed(2)}.`, 'info');
+      return;
+    }
+    this.facturacionService.crear(payload).pipe(
+      switchMap(resp => {
+        const tipo = (resp?.type || '').toLowerCase();
+
+        if (tipo === 'success' || tipo === 'warning') {
+          this.mostrarAlerta(resp.message || 'Factura creada correctamente.', 'ok');
+
+          const idNotaRaw = resp?.data?.idNota;              // puede ser number o string
+          const idNota = Number(idNotaRaw);                  // lo vuelvo number
+
+          if (Number.isFinite(idNota)) {
+            return this.facturacionService.descargarXmlFactura(idNota);
+          } else {
+            console.warn('idNota inválido en la respuesta:', idNotaRaw);
+            this.mostrarAlerta('No se recibió idNota válido en la respuesta.', 'error');
+            return of(void 0);
+          }
+
+
         } else {
           this.mostrarAlerta(resp?.message || 'No se pudo crear la factura.', 'error');
+          return of(void 0);
         }
-      },
-      error: (err) => {
+      }),
+      catchError(err => {
         console.error('[crearFactura] error:', err);
         this.mostrarAlerta('Error al crear la factura.', 'error');
+        return of(void 0);
+      })
+    ).subscribe({
+      next: () => {
+        // aquí puedes limpiar o navegar si quieres
+        this.limpiarCliente();
+        this.cargarAutorizacion();
+        this.router.navigate(['/sic-3000/findividual']);
       }
     });
+
   }
+
   autoGrow(e: Event) {
     const el = e.target as HTMLTextAreaElement;
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
   }
-abrirDialogoAnio(): void {
-  // ✅ Validar que exista 1176 en el grid
-  if (!this.hasProductoEnGrid(this.COD_MANT_MENSUAL)) {
-    this.mostrarAlerta('Agregue el producto 1176 (MANTENIMIENTO MENSUAL) para usar esta opción.', 'info');
-    return;
-  }
-
-  // (Opcional) validar prefijo seleccionado
-  const idPrefijo = this.formCliente.get('gcp')?.value ?? null;
-  if (!idPrefijo) {
-    this.mostrarAlerta('Seleccione un prefijo antes de continuar.', 'info');
-    return;
-  }
-
-  const anioActual = Number(this.formFactura.get('anio')?.value) || new Date().getFullYear();
-  const pref = this.prefijos.find(p => p.id_prefijos === idPrefijo) || null;
-  const codpre = pref?.codpre ?? null;
-
-  const ref = this.dialog.open(FacturacionMesesModalComponent, {
-    width: '500px',
-    disableClose: true, // solo se cierra con “Salir”
-    data: {
-      anioActual,
-      idPrefijo,
-      codpre,
-      onAceptar: (res: FacturacionMesesResult) => {
-        this.formFactura.get('anio')?.setValue(res.anio);
-
-        const idPrefijoSel = this.formCliente.get('gcp')?.value ?? null;
-        const prefijoObj = this.prefijos.find(p => p.id_prefijos === idPrefijoSel) || null;
-        const codpreSel = prefijoObj?.codpre ?? null;
-        const prefijoTxt = codpreSel || `ID ${idPrefijoSel}`;
-
-        const aplicar = (row: any) => {
-          if ((row.codpro ?? '').toString() !== this.COD_MANT_MENSUAL) return;
-          row.cantidad = res.numeroMeses;
-
-          const marca = `Prefijo: ${prefijoTxt} ${res.periodo}`;
-          const baseDetalle = (row.detalle ?? '').replace(/\s+Prefijo:.*$/, '').trim();
-          row.detalle = `${baseDetalle} ${marca}`.trim();
-
-          this.recalcLinea(row);
-        };
-
-        if (this.gridApi) {
-          const nodes: any[] = []; this.gridApi.forEachNode(n => nodes.push(n));
-          nodes.forEach(n => aplicar(n.data));
-          this.gridApi.refreshCells({ force: true });
-        } else {
-          this.rowData.forEach(aplicar);
-        }
-
-        this.recalcTotalesFactura();
-        this.ajustarPagosAlTotal();
-      }
+  abrirDialogoAnio(): void {
+    // ✅ Validar que exista 1176 en el grid
+    if (!this.hasProductoEnGrid(this.COD_MANT_MENSUAL)) {
+      this.mostrarAlerta('Agregue el producto 1176 (MANTENIMIENTO MENSUAL) para usar esta opción.', 'info');
+      return;
     }
-  });
 
-  ref.afterClosed().subscribe(() => {
-    // hook opcional al cerrar
-  });
-}
+    // (Opcional) validar prefijo seleccionado
+    const idPrefijo = this.formCliente.get('gcp')?.value ?? null;
+    if (!idPrefijo) {
+      this.mostrarAlerta('Seleccione un prefijo antes de continuar.', 'info');
+      return;
+    }
+
+    const anioActual = Number(this.formFactura.get('anio')?.value) || new Date().getFullYear();
+    const pref = this.prefijos.find(p => p.id_prefijos === idPrefijo) || null;
+    const codpre = pref?.codpre ?? null;
+
+    const ref = this.dialog.open(FacturacionMesesModalComponent, {
+      width: '500px',
+      disableClose: true, // solo se cierra con “Salir”
+      data: {
+        anioActual,
+        idPrefijo,
+        codpre,
+        onAceptar: (res: FacturacionMesesResult) => {
+          this.formFactura.get('anio')?.setValue(res.anio);
+
+          const idPrefijoSel = this.formCliente.get('gcp')?.value ?? null;
+          const prefijoObj = this.prefijos.find(p => p.id_prefijos === idPrefijoSel) || null;
+          const codpreSel = prefijoObj?.codpre ?? null;
+          const prefijoTxt = codpreSel || `ID ${idPrefijoSel}`;
+
+          const aplicar = (row: any) => {
+            if ((row.codpro ?? '').toString() !== this.COD_MANT_MENSUAL) return;
+            row.cantidad = res.numeroMeses;
+
+            const marca = `Prefijo: ${prefijoTxt} ${res.periodo}`;
+            const baseDetalle = (row.detalle ?? '').replace(/\s+Prefijo:.*$/, '').trim();
+            row.detalle = `${baseDetalle} ${marca}`.trim();
+
+            this.recalcLinea(row);
+          };
+
+          if (this.gridApi) {
+            const nodes: any[] = []; this.gridApi.forEachNode(n => nodes.push(n));
+            nodes.forEach(n => aplicar(n.data));
+            this.gridApi.refreshCells({ force: true });
+          } else {
+            this.rowData.forEach(aplicar);
+          }
+
+          this.recalcTotalesFactura();
+          this.ajustarPagosAlTotal();
+        }
+      }
+    });
+
+    ref.afterClosed().subscribe(() => {
+      // hook opcional al cerrar
+    });
+  }
 
 
   private hasProductoEnGrid(cod: string): boolean {
-  let found = false;
-  if (this.gridApi) {
-    this.gridApi.forEachNode(n => {
-      if ((n.data?.codpro ?? '').toString() === cod) found = true;
-    });
-  } else {
-    found = this.rowData.some(r => ((r as any)?.codpro ?? '').toString() === cod);
-  }
-  return found;
-}
-
-// Recalcula la habilitación del botón
-private actualizarPuedeAbrirMeses(): void {
-  this.puedeAbrirMeses = this.hasProductoEnGrid(this.COD_MANT_MENSUAL);
-}
-onCellDoubleClicked(e: CellDoubleClickedEvent<any>): void {
-  // Solo aplicamos a la columna "detalle"
-  if (!e?.colDef || e.colDef.field !== 'detalle') return;
-
-  const ref = this.dialog.open(DetalleDescripcionModalComponent, {
-    width: '640px',
-    data: {
-      titulo: 'Editar detalle',
-      descripcion: e.value ?? '',
-      maxLen: 500
+    let found = false;
+    if (this.gridApi) {
+      this.gridApi.forEachNode(n => {
+        if ((n.data?.codpro ?? '').toString() === cod) found = true;
+      });
+    } else {
+      found = this.rowData.some(r => ((r as any)?.codpro ?? '').toString() === cod);
     }
-  });
+    return found;
+  }
 
-  ref.afterClosed().subscribe((nuevo?: string) => {
-    if (typeof nuevo !== 'string') return;                 // cancelado
-    const val = (nuevo ?? '').trim();
-    if (val === (e.value ?? '').toString().trim()) return; // sin cambios
-    e.node.setDataValue('detalle', val);
-    e.api.refreshCells({ rowNodes: [e.node], columns: ['detalle'], force: true });
-  });
-}
+  // Recalcula la habilitación del botón
+  private actualizarPuedeAbrirMeses(): void {
+    this.puedeAbrirMeses = this.hasProductoEnGrid(this.COD_MANT_MENSUAL);
+  }
+  onCellDoubleClicked(e: CellDoubleClickedEvent<any>): void {
+    // Solo aplicamos a la columna "detalle"
+    if (!e?.colDef || e.colDef.field !== 'detalle') return;
+
+    const ref = this.dialog.open(DetalleDescripcionModalComponent, {
+      width: '640px',
+      data: {
+        titulo: 'Editar detalle',
+        descripcion: e.value ?? '',
+        maxLen: 500
+      }
+    });
+
+    ref.afterClosed().subscribe((nuevo?: string) => {
+      if (typeof nuevo !== 'string') return;                 // cancelado
+      const val = (nuevo ?? '').trim();
+      if (val === (e.value ?? '').toString().trim()) return; // sin cambios
+      e.node.setDataValue('detalle', val);
+      e.api.refreshCells({ rowNodes: [e.node], columns: ['detalle'], force: true });
+    });
+  }
+
+  get puedeIrPaso2(): boolean {
+    // Debe haber cliente elegido (codcliO) y prefijo seleccionado (gcp)
+    return this.codcliO > 0 && !!this.formCliente.get('gcp')?.value
+      && this.formCliente.valid;
+  }
+
+  get puedeIrPaso3(): boolean {
+    return this.getCantidadLineas() > 0; // al menos un producto en el grid
+  }
+
+  private getCantidadLineas(): number {
+    if (this.gridApi) {
+      let n = 0; this.gridApi.forEachNode(() => n++);
+      return n;
+    }
+    return this.rowData.length;
+  }
+
+  irPaso2(): void {
+    // fuerza validación y pinta errores
+    this.formCliente.updateValueAndValidity({ onlySelf: false, emitEvent: true });
+    this.formCliente.markAllAsTouched();
+    this.cdRef.detectChanges();
+
+    if (!this.puedeIrPaso2) {
+      this.mostrarAlerta('Completa los datos del cliente para continuar.', 'info');
+      return;
+    }
+    this.currentStep = 2;
+  }
+
+  onSelectedIndexChange(idx: number): void {
+    if (idx === 1) {
+      this.formCliente.updateValueAndValidity({ onlySelf: false, emitEvent: true });
+      this.formCliente.markAllAsTouched();
+      this.cdRef.detectChanges();
+      if (!this.puedeIrPaso2) {
+        this.mostrarAlerta('Completa los datos del cliente para continuar.', 'info');
+        this.currentStep = 1;
+        return;
+      }
+    }
+    if (idx === 2 && !this.puedeIrPaso3) {
+      this.mostrarAlerta('Agrega productos antes de continuar.', 'info');
+      this.currentStep = 2; return;
+    }
+    this.currentStep = idx + 1;
+  }
+
+
+  // helper opcional
+  private scrollToFirstError() {
+    setTimeout(() => {
+      const el = document.querySelector('.ng-invalid[formcontrolname]') as HTMLElement;
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }, 0);
+  }
+
+
+
+
+  irPaso3(): void {
+    if (this.puedeIrPaso3) {
+      this.currentStep = 3;
+    } else {
+      this.mostrarAlerta('Agrega al menos un producto a la factura.', 'info');
+    }
+  }
+
+
+  // Guardia adicional (por si algún caso intenta cambiar con teclado)
+
+  // ¿Cuántas filas de pagos hay?
+
+
+  // Getter que controla el disabled del botón
+
+  // ---- helpers pagos / saldo ----
+  private getPagosCount(): number {
+    let n = 0;
+    if (this.pagosApi) this.pagosApi.forEachNode(() => n++);
+    else n = this.rowDataPagos.length;
+    return n;
+  }
+
+  get saldoPendiente(): number {
+    return Number(this.formTotales.get('saldoPendiente')?.value) || 0;
+  }
+
+  // Botón “Generar Factura”
+  get puedeGenerar(): boolean {
+    return this.getPagosCount() > 0 && this.saldoPendiente === 0;
+  }
+
+  get motivoNoGenera(): string {
+    if (this.getPagosCount() === 0) return 'Agrega al menos una forma de pago';
+    if (this.saldoPendiente !== 0) return 'El saldo pendiente debe ser 0.00';
+    return '';
+  }
+
+  // --- controla el click del botón ---
+  onGenerarClick(): void {
+    if (!this.puedeGenerarFactura) {
+      this.mostrarAlerta(this.motivoBloqueoFactura(), 'info');
+      return;
+    }
+    this.crearFactura();
+  }
+
+  // --- usa SOLO estos dos getters ---
+  get puedeGenerarFactura(): boolean {
+    const total = this.getTotalFactura();
+    const pagos = this.getTotalPagos();
+    const saldo = this.to2(total - pagos);
+    const sinSaldo = Math.abs(saldo) < 0.005;
+    const tienePagos = this.getPagosCount() > 0;
+    return this.puedeIrPaso2 && this.puedeIrPaso3 && total > 0 && tienePagos && sinSaldo;
+  }
+
+  motivoBloqueoFactura(): string {
+    if (!this.puedeIrPaso2) return 'Completa los datos del cliente';
+    if (!this.puedeIrPaso3) return 'Agrega productos a la factura';
+    const total = this.getTotalFactura();
+    if (total <= 0) return 'El total debe ser mayor a 0';
+    if (this.getPagosCount() === 0) return 'Agrega al menos una forma de pago';
+    const saldo = this.to2(total - this.getTotalPagos());
+    if (Math.abs(saldo) >= 0.005) return `El saldo pendiente debe ser $0.00 (actual: $${saldo.toFixed(2)})`;
+    return '';
+  }
 
 
 }

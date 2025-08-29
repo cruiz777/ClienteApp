@@ -5,7 +5,7 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatExpansionModule } from '@angular/material/expansion';
-
+import { UsuarioService } from 'src/app/services/usuario.service';
 
 
 @Component({
@@ -13,13 +13,15 @@ import { MatExpansionModule } from '@angular/material/expansion';
   templateUrl: './navigation-sic.component.html',
   styleUrl: './navigation-sic.component.css'
 })
-export class NavigationSicComponent {
+export class NavigationSicComponent implements OnInit{
+  usuarioActual = this.usuarioService.getUsuarioActual();
   currentDateTime: string = '';
   isHandset: boolean = false;
   isExpanded: boolean = true;
 
   constructor(private breakpointObserver: BreakpointObserver
-    , private router: Router
+    , private router: Router,
+    private usuarioService:UsuarioService
   ) {
     this.breakpointObserver.observe([Breakpoints.Handset])
       .subscribe(result => {

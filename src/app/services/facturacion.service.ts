@@ -124,6 +124,43 @@ export class FacturacionService {
   crear(payload: FacturaCrearRequest): Observable<ApiResponse> {
     return this.http.post<ApiResponse>(`${this.baseUrl}/Facturacion/crear`, payload);
   }
+  /** GET /api/Facturacion/{idNota}/xml  → XML como string */
+getXmlFactura(idNota: number): Observable<string> {
+  const url = `${this.baseUrl}/api/Facturacion/${idNota}/xml`; // ajusta /api si tu backend no lo usa
+  return this.http.get(url, { responseType: 'text' }).pipe(
+    catchError(err => {
+      console.error('[FacturacionService] getXmlFactura error:', err);
+      return throwError(() => err);
+    })
+  );
+}
+
+/** GET /api/Facturacion/{idNota}/xml  → XML como Blob (para descargar) */
+getXmlFacturaBlob(idNota: number): Observable<Blob> {
+  const url = `${this.baseUrl}/Facturacion/${idNota}/xml`;
+  return this.http.get(url, { responseType: 'blob' }).pipe(
+    catchError(err => {
+      console.error('[FacturacionService] getXmlFacturaBlob error:', err);
+      return throwError(() => err);
+    })
+  );
+}
+
+/** Helper para disparar la descarga inmediatamente */
+descargarXmlFactura(idNota: number, nombre = `factura-${idNota}.xml`): Observable<void> {
+  return this.getXmlFacturaBlob(idNota).pipe(
+    map(blob => {
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = href;
+      a.download = nombre;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(href);
+    })
+  );
+}
 
   
 }

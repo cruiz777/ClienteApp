@@ -2702,3 +2702,5 @@ label[for="secuencial"]{ padding-left: 0 !important; }
   box-shadow: none !important;
   padding: 0 !important;
 }
+.field-error{ color:#d32f2f; font-size:14px; margin-top:4px; }
+.input-error{ border-bottom:1px solid #d32f2f !important; }
