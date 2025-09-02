@@ -66,18 +66,18 @@ export class PermissionsService {
     '/codbar/ficha-de-cliente/grupo-cliente/editar': 'codbar.ficha-de-cliente.grupo-cliente.editar',
     
     // Transferencia
-    '/codbar/transferencia/tras-prefijo': 'codbar.transferencia.tras-prefijo',
-    '/codbar/transferencia/tras-gtin': 'codbar.transferencia.tras-gtin',
+    '/codbar/transferencia/tras-prefijo': 'codbar.transferencia.transferencia-de-prefijo',
+    '/codbar/transferencia/tras-gtin': 'codbar.transferencia.transferencia-de-gtin',
     '/codbar/transferencia/eliminar-prefijo': 'codbar.transferencia.eliminar-prefijo',
     
     // Validación
-    '/codbar/validacion/validacionsri': 'codbar.validacion.validacionsri',
-    '/codbar/validacion/validacion-licenses': 'codbar.validacion.validacion-licenses',
-    '/codbar/validacion/validacion-productos': 'codbar.validacion.validacion-productos',
+    '/codbar/validacion/validacionsri': 'codbar.validacion.validacion-sri',
+    '/codbar/validacion/validacion-licenses': 'codbar.validacion.validacion-licencias-verified',
+    '/codbar/validacion/validacion-productos': 'codbar.validacion.validacion-productos-verified',
     
     // Reportes
-    '/codbar/reportes/explorador-cliente': 'codbar.reportes.explorador-cliente',
-    '/codbar/reportes/gerencia': 'codbar.reportes.gerencia',
+    '/codbar/reportes/explorador-cliente': 'codbar.reportes.explorador-clientes',
+    '/codbar/reportes/gerencia': 'codbar.reportes.reporte-gerencia-clientes',
     
     // Configuración
     '/codbar/configuracion/localizacion-establecimiento': 'codbar.configuracion.localizacion-establecimiento',
@@ -414,20 +414,20 @@ export class PermissionsService {
           },
           transferencia: {
             modulo: permisos.includes('codbar.transferencia') || permisos.includes('codbar'),
-            trasPrefijo: permisos.includes('codbar.transferencia.tras-prefijo'),
-            trasGtin: permisos.includes('codbar.transferencia.tras-gtin'),
+            trasPrefijo: permisos.includes('codbar.transferencia.transferencia-de-prefijo'),
+            trasGtin: permisos.includes('codbar.transferencia.transferencia-de-gtin'),
             eliminarPrefijo: permisos.includes('codbar.transferencia.eliminar-prefijo')
           },
           validacion: {
             modulo: permisos.includes('codbar.validacion') || permisos.includes('codbar'),
-            validacionSri: permisos.includes('codbar.validacion.validacionsri'),
-            validacionLicenses: permisos.includes('codbar.validacion.validacion-licenses'),
-            validacionProductos: permisos.includes('codbar.validacion.validacion-productos')
+            validacionSri: permisos.includes('codbar.validacion.validacion-sri'),
+            validacionLicenses: permisos.includes('codbar.validacion.validacion-licencias-verified'),
+            validacionProductos: permisos.includes('codbar.validacion.validacion-productos-verified')
           },
           reportes: {
             modulo: permisos.includes('codbar.reportes') || permisos.includes('codbar'),
-            exploradorCliente: permisos.includes('codbar.reportes.explorador-cliente'),
-            gerencia: permisos.includes('codbar.reportes.gerencia')
+            exploradorCliente: permisos.includes('codbar.reportes.explorador-clientes'),
+            gerencia: permisos.includes('codbar.reportes.reporte-gerencia-clientes')
           },
           configuracion: {
             modulo: permisos.includes('codbar.configuracion') || permisos.includes('codbar'),

@@ -22,9 +22,13 @@ export class OpcionService {
   /**
      * Obtiene los menús asociados a un módulo específico.
      * @param idModulo ID del módulo seleccionado
-     */
-  getOpcionesPorMenu(idMenu: number): Observable<ApiResponse<OpcionResponse[]>> {
-    return this.http.get<ApiResponse<OpcionResponse[]>>(`${this.apiUrl}/menu/${idMenu}`);
+  //    */
+  // getOpcionesPorMenu(idMenu: number): Observable<ApiResponse<OpcionResponse[]>> {
+  //   return this.http.get<ApiResponse<OpcionResponse[]>>(`${this.apiUrl}/menu/${idMenu}`);
+  // }
+
+  getOpcionesPorSubMenu(idSub: number): Observable<ApiResponse<OpcionResponse[]>> {
+    return this.http.get<ApiResponse<OpcionResponse[]>>(`${this.apiUrl}/submenu/${idSub}`);
   }
 
   createOpcion(data: OpcionesRequest): Observable<any> {
@@ -34,7 +38,9 @@ export class OpcionService {
   softDelete(id: number): Observable<ApiResponse<boolean>> {
     return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/softDelete/${id}`, {});
   }
-
+  getOpcionesPorMenu(idMenu: number): Observable<ApiResponse<OpcionResponse[]>> {
+    return this.http.get<ApiResponse<OpcionResponse[]>>(`${this.apiUrl}/menu/${idMenu}`);
+  }
   updateOpcion(id: number, data: OpcionesRequest): Observable<ApiResponse<boolean>> {
     return this.http.put<ApiResponse<boolean>>(`${this.apiUrl}/${id}`, data);
   }

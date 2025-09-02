@@ -17,6 +17,8 @@ import { ModuloService } from 'src/app/services/modulo.service';
 import { MenuService } from 'src/app/services/menu.service';
 import { OpcionService } from 'src/app/services/opcion.service';
 import { SistemaService } from 'src/app/services/sistema.service';
+import { SubMenuService } from 'src/app/services/submenu.service';
+import { SubMenuRequest } from 'src/app/interfaces/requests/submenu-request';
 
 @Component({
   selector: 'app-perfiles-form',
@@ -36,7 +38,7 @@ export class PerfilesFormComponent implements OnInit {
   form!: FormGroup;
   idEmpresa: number = 1;
   idGeneral?: number;
-  tipo!: 'sistema' | 'modulo' | 'menu' | 'opcion' | 'perfil';
+  tipo!: 'sistema' | 'modulo' | 'menu' | 'submenu' | 'opcion' | 'perfil';
   idRelacionado!: number;
   cargando = false;
 
@@ -48,6 +50,7 @@ export class PerfilesFormComponent implements OnInit {
     private opcionService: OpcionService,
     private sistemaService: SistemaService,
     public dialogRef: MatDialogRef<PerfilesFormComponent>,
+    public submenuService: SubMenuService,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {
     this.tipo = data?.tipo || 'perfil';
@@ -138,10 +141,29 @@ export class PerfilesFormComponent implements OnInit {
           });
         }
         break;
+      case 'submenu':
+        const submenuRequest: SubMenuRequest = {
+          id_menu: this.idRelacionado,
+          nombre,
+          descripcion: nombre,
+          status: true
+        };
+        if (this.idGeneral) {
+          this.submenuService.update(this.idGeneral, submenuRequest).subscribe({
+            next: () => this.dialogRef.close(true),
+            error: () => alert('❌ Error al actualizar el submenu.')
+          });
+        } else {
+          this.submenuService.create(submenuRequest).subscribe({
+            next: () => this.dialogRef.close(true),
+            error: () => alert('❌ Error al crear el submenu.')
+          });
+        }
+        break;
 
       case 'opcion':
         const opcionRequest: OpcionesRequest = {
-          id_menu: this.idRelacionado,
+          id_sub: this.idRelacionado,
           nombre,
           descripcion: nombre,
           status: true

@@ -134,8 +134,10 @@
             <td class="ocultar-id">{{ menu.id_menu }}</td>
             <td>{{ menu.nombre }}</td>
             <td class="col-reducida">
-              <input type="checkbox" [checked]="menu.todasAsignadas" (click)="$event.stopPropagation()"
-                (change)="onToggleTodoOpciones(menu)" />
+              <input type="checkbox"
+                [checked]="menu.todasAsignadas"
+                (click)="$event.stopPropagation()"
+                (change)="onToggleTodoOpciones(menu, obtenerEstadoCheckBox($event))" />
             </td>
             <td>
               <button (click)="editarGeneral('menu', menu.id_menu)" title="Editar">
@@ -149,7 +151,45 @@
         </tbody>
       </table>
     </div>
+    <!-- SubMenus  -->
+    <div class="panel-col">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h3>SubMenus</h3>
+        <button title="Nuevo submenu" (click)="crearEntidad('submenu')" class="btn-accion">+</button>
+      </div>
+      <table class="tabla-estilo">
+        <thead>
+          <tr>
+            <th class="ocultar-id">ID</th>
+            <th>SubMenu</th>
+            <th>Tiene_Acceso</th>  <!-- Agregar esta columna -->
+            <th class="col-reducida">Acciones</th>
+          </tr>
+        </thead>
 
+        <!-- Y en el tbody, agregar la columna del checkbox: -->
+        <tbody>
+          <tr *ngFor="let submenu of submenus" [class.fila-activa]="submenu.id_sub === submenuSeleccionado" 
+              (click)="seleccionarSubMenu(submenu.id_sub)" style="cursor: pointer;">
+            <td class="ocultar-id">{{ submenu.id_sub }}</td>
+            <td>{{ submenu.nombre }}</td>
+            <td class="col-reducida">
+              <input type="checkbox" [checked]="esSubMenuCompletamenteAsignado(submenu.id_sub)" 
+                    (click)="$event.stopPropagation()"
+                    (change)="onToggleTodoOpcionesSubMenu(submenu.id_sub, obtenerEstadoCheckBox($event))" />
+            </td>
+            <td>
+              <button (click)="editarGeneral('submenu', submenu.id_sub)" title="Editar">
+                <img src="assets/icons/icon-modificar-3.png" width="16" />
+              </button>
+              <button (click)="eliminarGeneral('submenu', submenu.id_sub)" title="Eliminar">
+                <img src="assets/icons/icon-basurero.png" width="16" />
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
     <!-- Opciones -->
     <div class="panel-col">
       <div style="display: flex; justify-content: space-between; align-items: center;">
