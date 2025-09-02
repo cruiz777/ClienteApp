@@ -9,11 +9,16 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatMomentDateModule, MAT_MOMENT_DATE_ADAPTER_OPTIONS } from '@angular/material-moment-adapter';
 import { MAT_DATE_FORMATS } from '@angular/material/core';
+// +++ NUEVOS IMPORTS +++
+import { MatSelectModule } from '@angular/material/select';
+import { MatOptionModule } from '@angular/material/core';
+
 export interface FacturacionMesesData {
   anioActual: number;
+  prefijos: { id_prefijos: number; codpre: string }[];
   idPrefijo: number | null;
   codpre: string | null;
-  onAceptar?: (res: FacturacionMesesResult) => void; 
+  onAceptar?: (res: FacturacionMesesResult) => void;
 }
 
 export interface FacturacionMesesResult {
@@ -22,6 +27,8 @@ export interface FacturacionMesesResult {
   fechaHastaPaga: string;  // dd/MM/yyyy
   numeroMeses: number;
   periodo: string;         // "MesInicio AñoInicio -- MesFin AñoFin"
+  idPrefijo: number;       // 👈 obligatorio
+  codpre: string;          // 👈 obligatorio
 }
 
 /** Formato dd/MM/yyyy para el datepicker */
@@ -41,7 +48,8 @@ export const ES_FORMATS = {
   imports: [
     CommonModule, ReactiveFormsModule, MatDialogModule,
     MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule,
-    MatDatepickerModule, MatMomentDateModule
+    MatDatepickerModule, MatMomentDateModule,
+    MatSelectModule, MatOptionModule           // ✅ necesarios para mat-select/mat-option
   ],
   templateUrl: './facturacion-meses-modal.component.html',
   styleUrls: ['./facturacion-meses-modal.component.css'],
@@ -52,7 +60,8 @@ export const ES_FORMATS = {
 })
 export class FacturacionMesesModalComponent {
   form: FormGroup;
-    aplicado = false;
+  aplicado = false;
+
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: FacturacionMesesData,
     public ref: MatDialogRef<FacturacionMesesModalComponent>,
@@ -63,6 +72,9 @@ export class FacturacionMesesModalComponent {
     const f2 = new Date(y, 11, 31); // 31/12/y
 
     this.form = this.fb.group({
+      // 👇 NUEVO: control para el prefijo
+      idPrefijo: [data?.idPrefijo ?? null],
+
       fchUltimaPago: [f1],
       fchHastaPaga: [f2],
       numMeses: [0],
@@ -73,12 +85,10 @@ export class FacturacionMesesModalComponent {
     this.recalcular(); // inicializa cálculos
   }
 
-  /** Bloquea escritura; sólo Tab/Shift para accesibilidad */
   bloquearTeclado(e: KeyboardEvent) {
     if (e.key !== 'Tab' && e.key !== 'Shift') e.preventDefault();
   }
 
-  /** Convierte Moment | string | Date -> Date */
   private asDate(v: any): Date | null {
     if (!v) return null;
     if (v instanceof Date) return v;
@@ -97,7 +107,6 @@ export class FacturacionMesesModalComponent {
   private mesNombre(d: Date): string {
     return d.toLocaleDateString('es-EC', { month: 'long' }).replace(/^\w/, c => c.toUpperCase());
   }
-  /** Diferencia de meses inclusiva (Ene..Dic = 12) */
   private diffMeses(a: Date, b: Date, inclusive = true): number {
     let m = (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
     if (inclusive) m += 1;
@@ -131,23 +140,33 @@ export class FacturacionMesesModalComponent {
       return;
     }
 
+    // ✅ tomar y validar prefijo
+    const idPrefijo = Number(this.form.get('idPrefijo')?.value ?? 0);
+    if (!idPrefijo) {
+      alert('Seleccione un prefijo.');
+      return;
+    }
+    const codpre = this.data.prefijos.find(p => p.id_prefijos === idPrefijo)?.codpre ?? '';
+
     const numeroMeses = this.diffMeses(d1, d2, true);
     const periodo = `${this.mesNombre(d1)} ${d1.getFullYear()} -- ${this.mesNombre(d2)} ${d2.getFullYear()}`;
 
+    // ✅ devuelve los campos requeridos por la interfaz
     const res: FacturacionMesesResult = {
       anio: d2.getFullYear(),
       fechaUltimaPago: this.format(d1),
       fechaHastaPaga: this.format(d2),
       numeroMeses,
-      periodo
+      periodo,
+      idPrefijo,
+      codpre
     };
 
     this.data.onAceptar?.(res); // envía al padre SIN cerrar
-    this.aplicado = true;       // 👈 deshabilita el botón Aceptar
+    this.aplicado = true;       // deshabilita el botón Aceptar
   }
 
   salir(): void {
     this.ref.close();
   }
-  
 }

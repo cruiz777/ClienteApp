@@ -1,11 +1,18 @@
 <h2 mat-dialog-title>Seleccionar meses — {{ data.anioActual }}</h2>
 
 <div mat-dialog-content class="grid" [formGroup]="form">
-  <div class="prefijo">
-    Prefijo: <strong>{{ data.codpre || ('ID ' + data.idPrefijo) }}</strong>
-  </div>
+  <!-- Selector de Prefijo -->
+  <mat-form-field appearance="fill" class="w-full">
+    <mat-label>Prefijo</mat-label>
+    <mat-select formControlName="idPrefijo">
+      <mat-option [value]="null">Seleccione…</mat-option>
+      <mat-option *ngFor="let p of data.prefijos" [value]="p.id_prefijos">
+        {{ p.codpre }}
+      </mat-option>
+    </mat-select>
+  </mat-form-field>
 
-  <!-- Fecha Última de Pago (dd/MM/yyyy) -->
+  <!-- Fecha Última de Pago -->
   <mat-form-field appearance="fill">
     <mat-label>Fecha Última de Pago</mat-label>
     <input matInput
@@ -19,7 +26,7 @@
     <mat-datepicker #dp1 startView="month"></mat-datepicker>
   </mat-form-field>
 
-  <!-- Fecha Hasta Paga (dd/MM/yyyy) -->
+  <!-- Fecha Hasta Paga -->
   <mat-form-field appearance="fill">
     <mat-label>Fecha Hasta Paga</mat-label>
     <input matInput
@@ -55,5 +62,4 @@
 <div mat-dialog-actions align="end">
   <button mat-button (click)="salir()">Salir</button>
   <button mat-flat-button color="primary" (click)="aceptar()" [disabled]="aplicado">Aceptar</button>
-
 </div>

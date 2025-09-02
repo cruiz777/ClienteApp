@@ -79,6 +79,8 @@ interface LineaFactura {
   desTotal: number;    // $ descuento total (cantidad * desUnit)
   total: number;
   descPct?: number;    // 👈 % de descuento (0..100)
+    base?: number;   // base imponible de la línea (ya con descuento, SIN IVA)
+  ivaVal?: number; // valor de IVA de la línea
 }
 
 
@@ -151,6 +153,9 @@ export class FacturacionIndividualComponent implements OnInit {
   prefijosClienteOrigen: (PrefijoClienteTResponse & { seleccionado?: boolean })[] = [];
   codcliO = 0;
   usuarioActual = this.usuarioService.getUsuarioActual();
+  baseTarifa0 = 0;      // p.ej. 50.00
+  baseGravada = 0;      // p.ej. 185.00
+
   // ============= Prefijos (mat-select) =============
   prefijos: PrefijoCliente[] = [];
   descuentos: Descuento[] = [];
@@ -167,11 +172,10 @@ export class FacturacionIndividualComponent implements OnInit {
   formCaja!: FormGroup;
 
   isLoadingDetalle = false;
-  
+
   /// grid producto
   gridApi!: GridApi;
   columnDefs: ColDef<any, any>[] = [
-    { headerName: 'Cod.', field: 'codpro', hide: true, suppressColumnsToolPanel: true },
     {
       headerName: 'Cantidad',
       field: 'cantidad',
@@ -185,6 +189,7 @@ export class FacturacionIndividualComponent implements OnInit {
         return true;
       }
     },
+    { headerName: 'Cod.', field: 'codpro', width: 60, suppressColumnsToolPanel: true },
     { headerName: 'Detalle', field: 'detalle', editable: false, flex: 1, minWidth: 200, tooltipField: 'detalle' },
     {
       headerName: 'P. Unidad',
@@ -265,7 +270,7 @@ export class FacturacionIndividualComponent implements OnInit {
     },
     {
       headerName: '',
-      width: 66,
+      width: 65,
       pinned: 'left',
       cellRenderer: (params: any) => {
         const btn = document.createElement('button');
@@ -290,7 +295,34 @@ export class FacturacionIndividualComponent implements OnInit {
 
         return btn;
       }
+    },
+    {
+      headerName: '',
+      width: 70,
+      pinned: 'left',
+      suppressColumnsToolPanel: true,
+      cellRenderer: (params: any) => {
+        // solo mostrar para el producto 1176
+        if ((params.data?.codpro ?? '').toString() !== this.COD_MANT_MENSUAL) {
+          const span = document.createElement('span');
+          return span; // vacío para otros productos
+        }
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ag-btn-icon ag-btn-meses';
+        btn.title = 'Seleccionar meses para esta fila';
+        btn.setAttribute('aria-label', 'Seleccionar meses');
+        btn.innerHTML = '<span class="material-icons">open_in_new</span>';
+
+        btn.addEventListener('click', () => {
+          this.abrirDialogoMesesFila(params);        // 👈 nuevo método (abajo)
+        });
+
+        return btn;
+      }
     }
+
 
   ];
 
@@ -453,7 +485,14 @@ export class FacturacionIndividualComponent implements OnInit {
       total: [{ value: 0, disabled: true }],
       saldoPendiente: [{ value: 0, disabled: true }]
     });
+    const hoy = new Date();
 
+    // Formatea con dos dígitos (día/mes/año)
+    const dia = String(hoy.getDate()).padStart(2, '0');
+    const mes = String(hoy.getMonth() + 1).padStart(2, '0'); // enero = 0
+    const anio = hoy.getFullYear();
+
+    const fechaFormateada = `${dia}/${mes}/${anio}`; // → "01/09/2025"
     this.formCaja = this.fb.group({
       puntoEmision: [''],
       ordenCompra: [''],
@@ -461,7 +500,7 @@ export class FacturacionIndividualComponent implements OnInit {
       observacion: [''],
       caja: [''],
       guiaRemision: [''],
-      fechaFacturacion: ['']
+      fechaFacturacion: [fechaFormateada]
     });
 
     // ==== Autocomplete clientes ====
@@ -866,13 +905,18 @@ export class FacturacionIndividualComponent implements OnInit {
       return;
     }
 
-    // evitar duplicados
+    // ✅ permitir repetidos solo para 1176
+    const esMantenimiento = (p.codpro ?? '').toString() === this.COD_MANT_MENSUAL;
     let yaExiste = false;
-    if (this.gridApi) {
-      this.gridApi.forEachNode(n => { if ((n.data?.codpro ?? '') === p.codpro) yaExiste = true; });
-    } else {
-      yaExiste = this.rowData.some(r => (r as any)?.codpro === p.codpro);
+
+    if (!esMantenimiento) {
+      if (this.gridApi) {
+        this.gridApi.forEachNode(n => { if ((n.data?.codpro ?? '') === p.codpro) yaExiste = true; });
+      } else {
+        yaExiste = this.rowData.some(r => (r as any)?.codpro === p.codpro);
+      }
     }
+
     if (yaExiste) {
       this.mostrarAlerta(`El producto ${p.codpro} ya fue agregado.`, 'info');
       ctrl.setValue('', { emitEvent: false });
@@ -888,15 +932,12 @@ export class FacturacionIndividualComponent implements OnInit {
       ? 'INSCRIPCION PREFIJO'
       : (p.despro ?? '').toUpperCase();
 
-    const total = this.to2(pu * (1 + ivaPorc / 100));
-
     const nuevaFila: LineaFactura = {
       codpro: p.codpro, cantidad: 1, detalle, pUnidad: pu, iva: ivaPorc,
       descPct: this.descuentoSeleccionado ? this.toN(this.descuentoSeleccionado.valor, 2) : 0,
       desUnit: 0, descuento: 0, desTotal: 0, total: 0
     };
     this.recalcLinea(nuevaFila);
-
 
     if (this.gridApi) this.gridApi.applyTransaction({ add: [nuevaFila] });
     else this.rowData.push(nuevaFila);
@@ -912,27 +953,31 @@ export class FacturacionIndividualComponent implements OnInit {
     this.actualizarPuedeAbrirMeses();
   }
 
+
   // Calcula total de UNA línea
-  private recalcLinea(row: any): void {
-    const qty = Math.max(1, Number(row.cantidad) || 1);
-    const unit = Number(row.pUnidad) || 0;
-    const ivaPct = Number(row.iva) || 0;
-    const pct = Math.max(0, Math.min(100, Number(row.descPct) || 0));
+private recalcLinea(row: any): void {
+  const qty   = Math.max(1, Number(row.cantidad) || 1);
+  const unit  = Number(row.pUnidad) || 0;
+  const ivaPct = Number(row.iva) || 0;
+  const pct   = Math.max(0, Math.min(100, Number(row.descPct) || 0));
 
-    // mantener desUnit en 3 decimales a partir del %
-    row.desUnit = this.toN(unit * (pct / 100), 3);
+  // mantener coherencia desUnit <-> %
+  row.desUnit = this.toN(unit * (pct / 100), 3);
 
-    const desUnit = Number(row.desUnit) || 0;
-    const descAbs = Number(row.descuento) || 0;   // descuento adicional $ (opcional)
+  const desUnit = Number(row.desUnit) || 0;
+  const descAbs = Number(row.descuento) || 0;
 
-    // base antes de IVA
-    let base = qty * Math.max(0, unit - desUnit);
-    base = Math.max(0, base - descAbs);
+  // ✅ base imponible (ya con descuento)
+  let base = qty * Math.max(0, unit - desUnit);
+  base = Math.max(0, base - descAbs);
+  row.base = this.to2(base);
 
-    row.desTotal = this.to2(qty * desUnit);          // total descuento = qty * desUnit
-    const ivaVal = this.to2(base * (ivaPct / 100));
-    row.total = this.to2(base + ivaVal);
-  }
+  // ✅ IVA y total
+  const ivaVal = this.to2(row.base * (ivaPct / 100));
+  row.ivaVal = ivaVal;
+  row.desTotal = this.to2(qty * desUnit);
+  row.total = this.to2(row.base + ivaVal);
+}
 
 
   // Recalcula cuando cambia una celda relevante
@@ -956,59 +1001,60 @@ export class FacturacionIndividualComponent implements OnInit {
 
 
   // Recalcula totales (subtotal, descuentos, sin IVA, IVA, total, saldo)
-  recalcTotalesFactura(): void {
-    let subTotal = 0;        // suma de cantidad * pUnidad
-    let descTotal = 0;       // suma de (cantidad * desUnit) + descuento (abs)
-    let baseSinIva = 0;      // subTotal - descTotal (>=0)
-    let ivaValor = 0;        // suma IVA por línea
-    let total = 0;           // base + IVA
+recalcTotalesFactura(): void {
+  let subTotal = 0, descTotal = 0, ivaValor = 0, total = 0;
+  let base0 = 0;      // base al 0%
+  let baseConIva = 0; // base gravada (>0%)
 
-    const acumular = (row: any) => {
-      const qty = Math.max(1, Number(row.cantidad) || 1);
-      const unit = Number(row.pUnidad) || 0;
-      const ivaPct = Number(row.iva) || 0;
-      const desUnit = Number(row.desUnit) || 0;      // desc por unidad
-      const descAbs = Number(row.descuento) || 0;    // desc absoluto en la línea
+  const acumular = (row: any) => {
+    if (!Number.isFinite(row.base) || !Number.isFinite(row.ivaVal)) this.recalcLinea(row);
+    const qty    = Math.max(1, Number(row.cantidad) || 1);
+    const unit   = Number(row.pUnidad) || 0;
+    const ivaPct = Number(row.iva) || 0;
+    const desUnit = Number(row.desUnit) || 0;
+    const descAbs = Number(row.descuento) || 0;
 
-      const lineaSub = this.to2(qty * unit);
-      const lineaDesc = this.to2(qty * Math.max(0, desUnit)) + this.to2(Math.max(0, descAbs));
-      const lineaBase = this.to2(Math.max(0, lineaSub - lineaDesc));
-      const lineaIva = this.to2(lineaBase * (ivaPct / 100));
-      const lineaTotal = this.to2(lineaBase + lineaIva);
+    const lineaSub  = this.to2(qty * unit);                               // bruto
+    const lineaDesc = this.to2(qty * Math.max(0, desUnit)) + this.to2(Math.max(0, descAbs));
 
-      subTotal += lineaSub;
-      descTotal += lineaDesc;
-      baseSinIva += lineaBase;
-      ivaValor += lineaIva;
-      total += lineaTotal;
-    };
+    subTotal  += lineaSub;
+    descTotal += lineaDesc;
+    ivaValor  += Number(row.ivaVal) || 0;
+    total     += Number(row.total) || 0;
 
-    if (this.gridApi) {
-      this.gridApi.forEachNode(n => acumular(n.data));
-    } else {
-      this.rowData.forEach(acumular);
-    }
+    if (ivaPct === 0) base0 += Number(row.base) || 0;
+    else              baseConIva += Number(row.base) || 0;
+  };
 
-    subTotal = this.to2(subTotal);
-    descTotal = this.to2(descTotal);
-    baseSinIva = this.to2(baseSinIva);
-    ivaValor = this.to2(ivaValor);
-    total = this.to2(total);
+  if (this.gridApi) this.gridApi.forEachNode(n => acumular(n.data));
+  else this.rowData.forEach(acumular);
 
-    const pagos = this.getTotalPagos();
-    const saldoPendiente = this.to2(total - pagos);
+  subTotal   = this.to2(subTotal);      // bruto (por si lo quieres mostrar en otro lado)
+  ivaValor   = this.to2(ivaValor);
+  total      = this.to2(total);
 
-    // Actualiza form de totales
-    this.formTotales.patchValue({
-      subtotal: subTotal,
-      descuento: descTotal,
-      valorSinIva: baseSinIva,
-      valorConIva: this.to2(baseSinIva + ivaValor),
-      iva: ivaValor,
-      total: total,
-      saldoPendiente: saldoPendiente
-    }, { emitEvent: false });
-  }
+  // bases netas (después de descuento)
+  this.baseTarifa0 = this.to2(base0);
+  this.baseGravada = this.to2(baseConIva);
+
+  // 👇 Subtotal NETO que quieres ver como 108.00
+  const subTotalNeto = this.to2(this.baseTarifa0 + this.baseGravada);
+
+  const pagos = this.getTotalPagos();
+  const saldoPendiente = this.to2(total - pagos);
+
+  this.formTotales.patchValue({
+    subtotal: subTotalNeto,          // <-- ahora muestra 108.00
+    descuento: this.to2(descTotal),
+    valorSinIva: this.baseTarifa0,   // base 0%
+    valorConIva: this.baseGravada,   // base gravada
+    iva: ivaValor,
+    total,
+    saldoPendiente
+  }, { emitEvent: false });
+}
+
+
   onPagosCellValueChanged(_: any): void {
     // Solo recalcula saldo (total ya lo tienes en formTotales)
     const total = Number(this.formTotales.get('total')?.value) || 0;
@@ -1281,26 +1327,45 @@ export class FacturacionIndividualComponent implements OnInit {
     const idDescuentoGlobal = null; // de tu selección global
     const porcentajeDescuentoGlobal = null;
     const observaciones = (this.formCaja.get('observacion')?.value ?? '').toString();
-
+    const anioFactura = this.formFactura.get('anio')?.value ?? 0;
+    const numeroOrdenCompra = this.formCaja.get('ordenCompra')?.value ?? '';
+    const numeroGuiaRemision = this.formCaja.get('guiaRemision')?.value ?? '';
+    const idPrefijo = this.formCliente.get('gcp')?.value;   // número (id_prefijos)
+    const prefijoObj = this.prefijos.find(p => p.id_prefijos === idPrefijo);
+    const prefijo = prefijoObj?.codpre ?? '';
+    const totales = this.formTotales.getRawValue();
+    const subtotalSIva = Number(this.baseTarifa0 ?? 0);
+    const subtotalCalculado = Number(this.baseGravada ?? 0);
+    const descuentoTotalCalculado = Number(totales.descuento ?? 0);
+    const ivaTotalCalculado = Number(totales.iva ?? 0);
+    const totalCalculado = Number(totales.total ?? 0);
     // --- Detalles (desde grid de productos) ---
     const filasProd: any[] = [];
     if (this.gridApi) this.gridApi.forEachNode(n => filasProd.push(n.data));
     else filasProd.push(...this.rowData);
 
     const detalles: FacturaDetalleRequest[] = filasProd.map((r) => {
-      const cod = (r.codpro ?? '').toString();
-      const prod = this.productos.find(p => (p.codpro ?? '').toString() === cod);
-      const idProducto = Number(prod?.id_producto ?? 0);
+  const cod = (r.codpro ?? '').toString();
+  const prod = this.productos.find(p => (p.codpro ?? '').toString() === cod);
+  const idProducto = Number(prod?.id_producto ?? 0);
 
-      return {
-        idProducto,
-        cantidad: Number(r.cantidad ?? 0),
-        precio: Number(r.pUnidad ?? 0),                 // precio unitario (antes de IVA)
-        idDescuentoPredeterminado: null,                   // si luego tienes uno por producto, colócalo aquí
-        porcentajeDescuentoManual: null,
-        observaciones: ''                               // puedes pasar r.detalle si lo deseas
-      } as FacturaDetalleRequest;
-    }).filter(d => d.idProducto > 0 && d.cantidad > 0);
+  return {
+    idProducto,
+    cantidad: Number(r.cantidad ?? 0),
+    precio: Number(r.pUnidad ?? 0),
+    idDescuentoPredeterminado: null,
+    porcentajeDescuentoManual: null,
+    nombreProductoPersonalizado: r.detalle,
+
+    // Si tu API espera porcentaje:
+    ivaCalculado: Number(r.iva ?? 0),
+
+    // 👇 usa la base real y el IVA en dinero
+    subtotalCalculado: Number(r.base ?? 0),
+    descuentoCalculado: Number(r.desTotal ?? 0),
+    totalCalculado: Number(r.total ?? 0)
+  } as FacturaDetalleRequest;
+}).filter(d => d.idProducto > 0 && d.cantidad > 0);
 
     // --- Formas de pago (desde grid pagos) ---
     const filasPago: any[] = [];
@@ -1309,7 +1374,7 @@ export class FacturacionIndividualComponent implements OnInit {
     const tasa = (this.getIvaPrincipal() ?? 0) / 100;
     const formasPago: FacturaFormaPagoRequest[] = filasPago.map((r) => ({
       idFormaPago: Number(r.id ?? 0),
-      valor: this.to2(Number(r.valor ?? 0) / (1 + tasa)),
+      valor: this.to2(Number(r.valor ?? 0)),
       referencia: '',                       // completa si manejas referencia
       observaciones: '',
       codPlazo: (r.plazo ?? '').toString(), // si tu API espera código, ajusta aquí
@@ -1327,6 +1392,15 @@ export class FacturacionIndividualComponent implements OnInit {
       idDescuentoGlobal,
       porcentajeDescuentoGlobal,
       observaciones,
+      anioFactura,
+      numeroOrdenCompra,
+      numeroGuiaRemision,
+      prefijo,
+      subtotalSIva,
+      subtotalCalculado,
+      descuentoTotalCalculado,
+      ivaTotalCalculado,
+      totalCalculado,
       detalles,
       formasPago
     };
@@ -1642,5 +1716,60 @@ export class FacturacionIndividualComponent implements OnInit {
     return '';
   }
 
+  private abrirDialogoMesesFila(params: { data: LineaFactura; node: any; api: GridApi }) {
+    // Solo válido para 1176
+    if (!params?.data || (params.data.codpro ?? '').toString() !== this.COD_MANT_MENSUAL) return;
+
+    // Año sugerido (usa el del form si existe)
+    const anioActual = Number(this.formFactura.get('anio')?.value) || new Date().getFullYear();
+
+    // Prefijo actualmente seleccionado (si lo hay en el form)
+    const idPrefijoActual = this.formCliente.get('gcp')?.value ?? null;
+    const codpreActual = this.prefijos.find(p => p.id_prefijos === idPrefijoActual)?.codpre ?? null;
+
+    const ref = this.dialog.open(FacturacionMesesModalComponent, {
+      width: '500px',
+      disableClose: true,
+      data: {
+        // 👉 pasamos lista y selección actual para que el modal muestre y permita elegir
+        anioActual,
+        prefijos: this.prefijos,          // [{ id_prefijos, codpre }, ...]
+        idPrefijo: idPrefijoActual,       // seleccionado actual (opcional)
+        codpre: codpreActual,             // seleccionado actual (opcional)
+        onAceptar: (res: FacturacionMesesResult & { idPrefijo: number; codpre: string }) => {
+          // 1) Refleja la selección en el form del padre (útil para otras validaciones)
+          this.formCliente.patchValue({ gcp: res.idPrefijo, prefijo: res.codpre }, { emitEvent: false });
+
+          // 2) Si cambió el año, sincroniza
+          this.formFactura.get('anio')?.setValue(res.anio);
+
+          // 3) Aplica SOLO a esta fila
+          const row = params.data;
+          row.cantidad = res.numeroMeses;
+
+          const prefijoTxt = res.codpre || `ID ${res.idPrefijo}`;
+          const marca = `Prefijo: ${prefijoTxt} ${res.periodo}`;
+          const baseDetalle = (row.detalle ?? '').replace(/\s+Prefijo:.*$/, '').trim();
+          row.detalle = `${baseDetalle} ${marca}`.trim();
+
+          this.recalcLinea(row);
+
+          // Refresca la fila actual
+          params.api.refreshCells({
+            rowNodes: [params.node],
+            force: true
+          });
+
+          // Recalcula totales/pagos
+          this.recalcTotalesFactura();
+          this.ajustarPagosAlTotal();
+        }
+      }
+    });
+
+    ref.afterClosed().subscribe(() => {
+      // opcional: hook al cerrar
+    });
+  }
 
 }

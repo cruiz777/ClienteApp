@@ -35,7 +35,11 @@ export interface FacturaDetalleRequest {
   precio: number;
   idDescuentoPredeterminado: number | null; // ← permite null
   porcentajeDescuentoManual: number | null; // ← permite null
-  observaciones: string;
+  nombreProductoPersonalizado:string
+  ivaCalculado: number;
+  subtotalCalculado: number;
+  descuentoCalculado: number;
+  totalCalculado: number;
 }
 
 export interface FacturaCrearRequest {
@@ -45,6 +49,15 @@ export interface FacturaCrearRequest {
   idDescuentoGlobal: number | null;          // ← permite null
   porcentajeDescuentoGlobal: number | null;  // ← permite null
   observaciones: string;
+  anioFactura: number;
+  numeroOrdenCompra: string,
+  numeroGuiaRemision: string,
+  prefijo:string;
+  subtotalSIva:number,  
+  subtotalCalculado: number,
+  descuentoTotalCalculado: number,
+  ivaTotalCalculado: number,
+  totalCalculado: number,
   detalles: FacturaDetalleRequest[];
   formasPago: FacturaFormaPagoRequest[];
 }

@@ -236,3 +236,15 @@ FOOTER FIJO Y ADAPTATIVO
     justify-content: center;
   }
 }
+.ag-btn-icon.ag-btn-meses {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ag-btn-icon.ag-btn-meses .material-icons {
+  font-size: 18px;
+}

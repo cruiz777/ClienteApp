@@ -2704,3 +2704,21 @@ label[for="secuencial"]{ padding-left: 0 !important; }
 }
 .field-error{ color:#d32f2f; font-size:14px; margin-top:4px; }
 .input-error{ border-bottom:1px solid #d32f2f !important; }
+.ag-btn-icon.ag-btn-meses {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ag-btn-icon.ag-btn-meses .material-icons {
+  font-size: 18px;
+}
+.ag-btn-delete {
+  margin-right: 6px; /* solo separa la papelera */
+}
+.ag-btn-icon {
+  margin-right: 6px;  /* 👈 ajusta el valor a tu gusto */
+}

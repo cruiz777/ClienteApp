@@ -175,15 +175,7 @@
           </mat-form-field>
 
           <!-- Botón meses -->
-          <span class="tooltip-wrapper" [matTooltip]="puedeAbrirMeses
-                  ? 'Seleccionar meses para MANTENIMIENTO (1176)'
-                  : 'Agregue el producto 1176 y seleccione un prefijo para habilitar'" matTooltipPosition="above"
-            matTooltipShowDelay="300">
-            <button mat-stroked-button color="primary" type="button" class="fi-meses-btn" (click)="abrirDialogoAnio()"
-              [disabled]="!puedeAbrirMeses">
-              <mat-icon>event</mat-icon>
-            </button>
-          </span>
+         
         </div>
       </section>
 
@@ -310,6 +302,11 @@
             </div>
           </div>
         </div>
+        <h1 class="main-title">Fecha</h1>
+        <div class="input-wrapper">
+              <input type="text" class="text-input" formControlName="fechaFacturacion" readonly
+                style="font-size:20px;height:40px;font-weight:700;color:#F26334;width:140px;">
+            </div>
       </div>
 
       <div class="refs-row">
@@ -360,21 +357,24 @@
       <div class="value-row">
         <div class="value-label-wrapper"><span class="value-label">Valor Sin IVA:</span></div>
         <div class="value-amount-wrapper">
-          <span class="fi-amount">{{ formTotales.get('valorSinIva')?.value | number:'1.2-2' }}</span>
+          <span class="left">{{ baseTarifa0 | number:'1.2-2' }}</span>
+    
         </div>
       </div>
 
       <div class="value-row">
         <div class="value-label-wrapper"><span class="value-label">Valor con IVA:</span></div>
         <div class="value-amount-wrapper">
-          <span class="fi-amount">{{ formTotales.get('valorConIva')?.value | number:'1.2-2' }}</span>
+          <span class="left">{{ baseGravada | number:'1.2-2' }}</span>
+      
         </div>
       </div>
 
       <div class="value-row value-row--last">
         <div class="value-label-wrapper"><span class="value-label">Valor IVA:</span></div>
         <div class="value-amount-wrapper">
-          <span class="fi-amount">{{ formTotales.get('iva')?.value | number:'1.2-2' }}</span>
+          <span class="left">{{ formTotales.get('iva')?.value | number:'1.2-2' }}</span>
+      
         </div>
       </div>
 
