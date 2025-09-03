@@ -53,6 +53,7 @@ export interface FacturaCrearRequest {
   numeroOrdenCompra: string,
   numeroGuiaRemision: string,
   prefijo:string;
+  correo:string;
   subtotalSIva:number,  
   subtotalCalculado: number,
   descuentoTotalCalculado: number,

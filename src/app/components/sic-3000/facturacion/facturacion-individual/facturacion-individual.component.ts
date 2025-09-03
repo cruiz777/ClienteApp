@@ -79,7 +79,7 @@ interface LineaFactura {
   desTotal: number;    // $ descuento total (cantidad * desUnit)
   total: number;
   descPct?: number;    // 👈 % de descuento (0..100)
-    base?: number;   // base imponible de la línea (ya con descuento, SIN IVA)
+  base?: number;   // base imponible de la línea (ya con descuento, SIN IVA)
   ivaVal?: number; // valor de IVA de la línea
 }
 
@@ -155,6 +155,7 @@ export class FacturacionIndividualComponent implements OnInit {
   usuarioActual = this.usuarioService.getUsuarioActual();
   baseTarifa0 = 0;      // p.ej. 50.00
   baseGravada = 0;      // p.ej. 185.00
+  generando = false;
 
   // ============= Prefijos (mat-select) =============
   prefijos: PrefijoCliente[] = [];
@@ -955,29 +956,29 @@ export class FacturacionIndividualComponent implements OnInit {
 
 
   // Calcula total de UNA línea
-private recalcLinea(row: any): void {
-  const qty   = Math.max(1, Number(row.cantidad) || 1);
-  const unit  = Number(row.pUnidad) || 0;
-  const ivaPct = Number(row.iva) || 0;
-  const pct   = Math.max(0, Math.min(100, Number(row.descPct) || 0));
+  private recalcLinea(row: any): void {
+    const qty = Math.max(1, Number(row.cantidad) || 1);
+    const unit = Number(row.pUnidad) || 0;
+    const ivaPct = Number(row.iva) || 0;
+    const pct = Math.max(0, Math.min(100, Number(row.descPct) || 0));
 
-  // mantener coherencia desUnit <-> %
-  row.desUnit = this.toN(unit * (pct / 100), 3);
+    // mantener coherencia desUnit <-> %
+    row.desUnit = this.toN(unit * (pct / 100), 3);
 
-  const desUnit = Number(row.desUnit) || 0;
-  const descAbs = Number(row.descuento) || 0;
+    const desUnit = Number(row.desUnit) || 0;
+    const descAbs = Number(row.descuento) || 0;
 
-  // ✅ base imponible (ya con descuento)
-  let base = qty * Math.max(0, unit - desUnit);
-  base = Math.max(0, base - descAbs);
-  row.base = this.to2(base);
+    // ✅ base imponible (ya con descuento)
+    let base = qty * Math.max(0, unit - desUnit);
+    base = Math.max(0, base - descAbs);
+    row.base = this.to2(base);
 
-  // ✅ IVA y total
-  const ivaVal = this.to2(row.base * (ivaPct / 100));
-  row.ivaVal = ivaVal;
-  row.desTotal = this.to2(qty * desUnit);
-  row.total = this.to2(row.base + ivaVal);
-}
+    // ✅ IVA y total
+    const ivaVal = this.to2(row.base * (ivaPct / 100));
+    row.ivaVal = ivaVal;
+    row.desTotal = this.to2(qty * desUnit);
+    row.total = this.to2(row.base + ivaVal);
+  }
 
 
   // Recalcula cuando cambia una celda relevante
@@ -1001,58 +1002,58 @@ private recalcLinea(row: any): void {
 
 
   // Recalcula totales (subtotal, descuentos, sin IVA, IVA, total, saldo)
-recalcTotalesFactura(): void {
-  let subTotal = 0, descTotal = 0, ivaValor = 0, total = 0;
-  let base0 = 0;      // base al 0%
-  let baseConIva = 0; // base gravada (>0%)
+  recalcTotalesFactura(): void {
+    let subTotal = 0, descTotal = 0, ivaValor = 0, total = 0;
+    let base0 = 0;      // base al 0%
+    let baseConIva = 0; // base gravada (>0%)
 
-  const acumular = (row: any) => {
-    if (!Number.isFinite(row.base) || !Number.isFinite(row.ivaVal)) this.recalcLinea(row);
-    const qty    = Math.max(1, Number(row.cantidad) || 1);
-    const unit   = Number(row.pUnidad) || 0;
-    const ivaPct = Number(row.iva) || 0;
-    const desUnit = Number(row.desUnit) || 0;
-    const descAbs = Number(row.descuento) || 0;
+    const acumular = (row: any) => {
+      if (!Number.isFinite(row.base) || !Number.isFinite(row.ivaVal)) this.recalcLinea(row);
+      const qty = Math.max(1, Number(row.cantidad) || 1);
+      const unit = Number(row.pUnidad) || 0;
+      const ivaPct = Number(row.iva) || 0;
+      const desUnit = Number(row.desUnit) || 0;
+      const descAbs = Number(row.descuento) || 0;
 
-    const lineaSub  = this.to2(qty * unit);                               // bruto
-    const lineaDesc = this.to2(qty * Math.max(0, desUnit)) + this.to2(Math.max(0, descAbs));
+      const lineaSub = this.to2(qty * unit);                               // bruto
+      const lineaDesc = this.to2(qty * Math.max(0, desUnit)) + this.to2(Math.max(0, descAbs));
 
-    subTotal  += lineaSub;
-    descTotal += lineaDesc;
-    ivaValor  += Number(row.ivaVal) || 0;
-    total     += Number(row.total) || 0;
+      subTotal += lineaSub;
+      descTotal += lineaDesc;
+      ivaValor += Number(row.ivaVal) || 0;
+      total += Number(row.total) || 0;
 
-    if (ivaPct === 0) base0 += Number(row.base) || 0;
-    else              baseConIva += Number(row.base) || 0;
-  };
+      if (ivaPct === 0) base0 += Number(row.base) || 0;
+      else baseConIva += Number(row.base) || 0;
+    };
 
-  if (this.gridApi) this.gridApi.forEachNode(n => acumular(n.data));
-  else this.rowData.forEach(acumular);
+    if (this.gridApi) this.gridApi.forEachNode(n => acumular(n.data));
+    else this.rowData.forEach(acumular);
 
-  subTotal   = this.to2(subTotal);      // bruto (por si lo quieres mostrar en otro lado)
-  ivaValor   = this.to2(ivaValor);
-  total      = this.to2(total);
+    subTotal = this.to2(subTotal);      // bruto (por si lo quieres mostrar en otro lado)
+    ivaValor = this.to2(ivaValor);
+    total = this.to2(total);
 
-  // bases netas (después de descuento)
-  this.baseTarifa0 = this.to2(base0);
-  this.baseGravada = this.to2(baseConIva);
+    // bases netas (después de descuento)
+    this.baseTarifa0 = this.to2(base0);
+    this.baseGravada = this.to2(baseConIva);
 
-  // 👇 Subtotal NETO que quieres ver como 108.00
-  const subTotalNeto = this.to2(this.baseTarifa0 + this.baseGravada);
+    // 👇 Subtotal NETO que quieres ver como 108.00
+    const subTotalNeto = this.to2(this.baseTarifa0 + this.baseGravada);
 
-  const pagos = this.getTotalPagos();
-  const saldoPendiente = this.to2(total - pagos);
+    const pagos = this.getTotalPagos();
+    const saldoPendiente = this.to2(total - pagos);
 
-  this.formTotales.patchValue({
-    subtotal: subTotalNeto,          // <-- ahora muestra 108.00
-    descuento: this.to2(descTotal),
-    valorSinIva: this.baseTarifa0,   // base 0%
-    valorConIva: this.baseGravada,   // base gravada
-    iva: ivaValor,
-    total,
-    saldoPendiente
-  }, { emitEvent: false });
-}
+    this.formTotales.patchValue({
+      subtotal: subTotalNeto,          // <-- ahora muestra 108.00
+      descuento: this.to2(descTotal),
+      valorSinIva: this.baseTarifa0,   // base 0%
+      valorConIva: this.baseGravada,   // base gravada
+      iva: ivaValor,
+      total,
+      saldoPendiente
+    }, { emitEvent: false });
+  }
 
 
   onPagosCellValueChanged(_: any): void {
@@ -1333,6 +1334,7 @@ recalcTotalesFactura(): void {
     const idPrefijo = this.formCliente.get('gcp')?.value;   // número (id_prefijos)
     const prefijoObj = this.prefijos.find(p => p.id_prefijos === idPrefijo);
     const prefijo = prefijoObj?.codpre ?? '';
+    const correo = this.getEmailsConcat();
     const totales = this.formTotales.getRawValue();
     const subtotalSIva = Number(this.baseTarifa0 ?? 0);
     const subtotalCalculado = Number(this.baseGravada ?? 0);
@@ -1345,27 +1347,27 @@ recalcTotalesFactura(): void {
     else filasProd.push(...this.rowData);
 
     const detalles: FacturaDetalleRequest[] = filasProd.map((r) => {
-  const cod = (r.codpro ?? '').toString();
-  const prod = this.productos.find(p => (p.codpro ?? '').toString() === cod);
-  const idProducto = Number(prod?.id_producto ?? 0);
+      const cod = (r.codpro ?? '').toString();
+      const prod = this.productos.find(p => (p.codpro ?? '').toString() === cod);
+      const idProducto = Number(prod?.id_producto ?? 0);
 
-  return {
-    idProducto,
-    cantidad: Number(r.cantidad ?? 0),
-    precio: Number(r.pUnidad ?? 0),
-    idDescuentoPredeterminado: null,
-    porcentajeDescuentoManual: null,
-    nombreProductoPersonalizado: r.detalle,
+      return {
+        idProducto,
+        cantidad: Number(r.cantidad ?? 0),
+        precio: Number(r.pUnidad ?? 0),
+        idDescuentoPredeterminado: null,
+        porcentajeDescuentoManual: null,
+        nombreProductoPersonalizado: r.detalle,
 
-    // Si tu API espera porcentaje:
-    ivaCalculado: Number(r.iva ?? 0),
+        // Si tu API espera porcentaje:
+        ivaCalculado: Number(r.iva ?? 0),
 
-    // 👇 usa la base real y el IVA en dinero
-    subtotalCalculado: Number(r.base ?? 0),
-    descuentoCalculado: Number(r.desTotal ?? 0),
-    totalCalculado: Number(r.total ?? 0)
-  } as FacturaDetalleRequest;
-}).filter(d => d.idProducto > 0 && d.cantidad > 0);
+        // 👇 usa la base real y el IVA en dinero
+        subtotalCalculado: Number(r.base ?? 0),
+        descuentoCalculado: Number(r.desTotal ?? 0),
+        totalCalculado: Number(r.total ?? 0)
+      } as FacturaDetalleRequest;
+    }).filter(d => d.idProducto > 0 && d.cantidad > 0);
 
     // --- Formas de pago (desde grid pagos) ---
     const filasPago: any[] = [];
@@ -1396,6 +1398,7 @@ recalcTotalesFactura(): void {
       numeroOrdenCompra,
       numeroGuiaRemision,
       prefijo,
+      correo,
       subtotalSIva,
       subtotalCalculado,
       descuentoTotalCalculado,
@@ -1410,54 +1413,42 @@ recalcTotalesFactura(): void {
 
 
   crearFactura(): void {
+    // Validaciones mínimas y no repetidas
     if (this.getPagosCount() === 0) {
-      this.mostrarAlerta('Agrega al menos una forma de pago.', 'info'); // snackbar
+      this.mostrarAlerta('Agrega al menos una forma de pago.', 'info');
       return;
     }
-    if (this.saldoPendiente !== 0) {
+    if (Math.abs(this.saldoPendiente) >= 0.005) {
       this.mostrarAlerta('El saldo pendiente debe ser 0.00 para generar la factura.', 'info');
       return;
     }
 
     const payload = this.buildFacturaPayload();
-    console.log('PAYLOAD →', payload);
-    console.table(payload.detalles);
-    console.table(payload.formasPago);
-    console.log(JSON.stringify(payload, null, 2));
 
     if (!payload.idCliente) { this.mostrarAlerta('Seleccione un cliente.', 'info'); return; }
     if (!payload.caja) { this.mostrarAlerta('No hay caja asignada.', 'info'); return; }
     if (!payload.detalles?.length) { this.mostrarAlerta('Agrega al menos un producto a la factura.', 'info'); return; }
 
-    const total = this.getTotalFactura();
-    if (this.getPagosCount() === 0) {
-      this.mostrarAlerta('Agregue al menos una forma de pago.', 'info');
-      return;
-    }
-    const saldo = this.to2(total - this.getTotalPagos());
-    if (Math.abs(saldo) >= 0.005) {
-      this.mostrarAlerta(`El saldo pendiente debe ser $0.00. Saldo actual: $${saldo.toFixed(2)}.`, 'info');
-      return;
-    }
+    // (Opcional) logs de depuración
+    console.log('PAYLOAD →', payload);
+    console.table(payload.detalles);
+    console.table(payload.formasPago);
+    console.log(JSON.stringify(payload, null, 2));
+
     this.facturacionService.crear(payload).pipe(
       switchMap(resp => {
         const tipo = (resp?.type || '').toLowerCase();
 
         if (tipo === 'success' || tipo === 'warning') {
-          this.mostrarAlerta(resp.message || 'Factura creada correctamente.', 'ok');
+          this.mostrarAlerta(resp?.message || 'Factura creada correctamente.', 'ok');
 
-          const idNotaRaw = resp?.data?.idNota;              // puede ser number o string
-          const idNota = Number(idNotaRaw);                  // lo vuelvo number
-
+          const idNota = Number(resp?.data?.idNota);
           if (Number.isFinite(idNota)) {
             return this.facturacionService.descargarXmlFactura(idNota);
           } else {
-            console.warn('idNota inválido en la respuesta:', idNotaRaw);
             this.mostrarAlerta('No se recibió idNota válido en la respuesta.', 'error');
             return of(void 0);
           }
-
-
         } else {
           this.mostrarAlerta(resp?.message || 'No se pudo crear la factura.', 'error');
           return of(void 0);
@@ -1467,16 +1458,24 @@ recalcTotalesFactura(): void {
         console.error('[crearFactura] error:', err);
         this.mostrarAlerta('Error al crear la factura.', 'error');
         return of(void 0);
+      }),
+      finalize(() => {
+        // ✅ liberar el botón siempre (éxito o error)
+        this.generando = false;
+        this.cdRef.detectChanges();
       })
     ).subscribe({
       next: () => {
-        // aquí puedes limpiar o navegar si quieres
+        // ✅ limpiar y regresar a la pestaña 1
         this.limpiarCliente();
         this.cargarAutorizacion();
-        this.router.navigate(['/sic-3000/findividual']);
+        this.currentStep = 1;
+        this.cdRef.detectChanges();
+
+        // Si prefieres navegar, descomenta:
+        // this.router.navigate(['/sic-3000/findividual']);
       }
     });
-
   }
 
   autoGrow(e: Event) {
@@ -1687,11 +1686,16 @@ recalcTotalesFactura(): void {
   }
 
   // --- controla el click del botón ---
+
+
   onGenerarClick(): void {
+    if (this.generando) return; // seguridad por si acaso
     if (!this.puedeGenerarFactura) {
       this.mostrarAlerta(this.motivoBloqueoFactura(), 'info');
       return;
     }
+
+    this.generando = true; // 🔒 bloquea el botón
     this.crearFactura();
   }
 
@@ -1770,6 +1774,13 @@ recalcTotalesFactura(): void {
     ref.afterClosed().subscribe(() => {
       // opcional: hook al cerrar
     });
+  }
+  getEmailsConcat(): string {
+    const parts = [
+      (this.formCliente.get('email')?.value || '').trim(),
+      (this.formCliente.get('emailOpcional')?.value || '').trim()
+    ].filter(Boolean);
+    return parts.join(';');
   }
 
 }
