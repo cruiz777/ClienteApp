@@ -6,7 +6,9 @@
 
     <!-- TAB 1: Información General -->
     <!-- TAB 1: Información General -->
-    <mat-tab label="Información General">
+    <mat-tab label="Información General"      
+          *ngIf="(permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.informacion-general');">
+      
       <ng-template matTabContent>
         <div>
           <mat-horizontal-stepper linear #stepper>
@@ -711,7 +713,8 @@
     </mat-tab>
 
     <!-- TAB 2: Histórico -->
-    <mat-tab label="Histórico del Cliente">
+    <mat-tab label="Histórico del Cliente" 
+          *ngIf="(permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.historico-del-cliente');">
       <mat-form-field appearance="outline" style="padding: 0px 0px;width: 450px;padding-top: 6px;">
         <mat-label>Buscar</mat-label>
         <input matInput #input (keyup)="aplicarFiltro(input.value)" placeholder="Buscar">
@@ -763,12 +766,13 @@
 
 
     <!-- TAB 3: Prefijos -->
-    <mat-tab label="Prefijos">
+    <mat-tab label="Prefijos" *ngIf="(permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.prefijos');">
       <ng-template matTabContent>
-        <div *ngIf="selectedTab === 2">
+        <div >
 
           <div style="text-align: right; margin-bottom: 10px;">
-            <button mat-button (click)="abrirModalPrefijo()" class="new-button">
+            <button mat-button (click)="abrirModalPrefijo()" class="new-button"
+            *ngIf="(permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-prefijo');">
               Nuevo
             </button>
             <button mat-button (click)="exportar('excel')" class="new-button">
@@ -829,14 +833,23 @@
                 <td mat-cell *matCellDef="let el" style="font-size: 11px;display: none;"> {{ el.orden }} </td>
               </ng-container>
               <ng-container matColumnDef="accion">
-          <th mat-header-cell *matHeaderCellDef style="width: 60px;background-color: #e3edf7;"> Acción </th>
-          <td mat-cell *matCellDef="let element">
-  <button mat-icon-button color="primary" (click)="abrirModalPrefijoEditar(element.codpre)">
-    <mat-icon>visibility</mat-icon>
-  </button>
-</td>
-
-        </ng-container>
+                <th mat-header-cell *matHeaderCellDef style="width: 60px;background-color: #e3edf7;"> Acción </th>
+                <td mat-cell *matCellDef="let element">
+                  <button 
+                    mat-icon-button 
+                    color="primary" 
+                    *ngIf="(permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.editar-prefijo'); else editarPrefijoBlocked"
+                    (click)="abrirModalPrefijoEditar(element.codpre)">
+                    <mat-icon>visibility</mat-icon>
+                  </button>
+                  <ng-template #editarPrefijoBlocked>
+                    <button mat-icon-button disabled>
+                      <mat-icon style="opacity: 0.3;">visibility_off</mat-icon>
+                      <mat-icon class="lock-overlay">lock</mat-icon>
+                    </button>
+                  </ng-template>
+                </td>
+              </ng-container>
               <tr mat-header-row *matHeaderRowDef="displayedPrefijoColumns"></tr>
               <tr mat-row *matRowDef="let row; columns: displayedPrefijoColumns;"></tr>
 
@@ -858,10 +871,19 @@
     <img src="assets/icons/icon-modificar.png" alt="Modificar" width="18" height="18" style="margin-right: 6px;" />
     Modificar
   </button>
-  <button mat-button >
-    <img src="assets/icons/icon-imprimir.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
+  <button 
+    mat-button
+    *ngIf="(permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.imprimir-cliente');">
+    <img src="assets/icons/icon-imprimir.png" alt="Imprimir" width="18" height="18" style="margin-right: 6px;" />
     Imprimir
   </button>
+  <ng-template #imprimirBlocked>
+    <button mat-button disabled style="opacity: 0.3;">
+      <mat-icon>lock</mat-icon>
+      <img src="assets/icons/icon-imprimir.png" alt="Sin permisos" width="18" height="18" style="margin-right: 6px; opacity: 0.3;" />
+      Imprimir (Sin Permisos)
+    </button>
+  </ng-template>
   <button mat-button mat-dialog-close (click)="cancelar()">
     <img src="assets/icons/icon-cancelar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
     Salir

@@ -246,3 +246,30 @@ mat-accordion ::ng-deep mat-expansion-panel:last-of-type {
     margin-top: auto; /* lo empuja al fondo */
     padding-bottom: 20px; /* opcional: separarlo un poco del fondo */
   }
+/* Estilos mejorados para elementos bloqueados */
+.disabled {
+  opacity: 0.6;
+  pointer-events: none !important;  /* ← Importante: bloquear TODOS los eventos */
+  color: #999 !important;
+  cursor: not-allowed !important;
+  text-decoration: none !important;
+}
+
+.disabled .menu-text {
+  color: #999 !important;
+}
+
+.disabled:hover {
+  background-color: transparent !important; /* Evitar hover en disabled */
+}
+
+.lock-icon {
+  font-size: 16px;
+  margin-left: auto;
+  color: #f44336;
+}
+
+/* Hover effect solo para elementos habilitados */
+a[mat-list-item]:not(.disabled):hover {
+  background-color: rgba(0, 0, 0, 0.04);
+}

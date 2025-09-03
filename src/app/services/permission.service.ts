@@ -59,11 +59,30 @@ export class PermissionsService {
     '/codbar/ficha-de-cliente/listado-clientes': 'codbar.ficha-de-cliente.listado-clientes',
     '/codbar/ficha-de-cliente/consulta-verified': 'codbar.ficha-de-cliente.consulta-verified',
     '/codbar/ficha-de-cliente/tipo-cliente': 'codbar.ficha-de-cliente.tipo-cliente',
-    '/codbar/ficha-de-cliente/tipo-cliente/crear': 'codbar.ficha-de-cliente.tipo-cliente.crear',
+    '/codbar/ficha-de-cliente/tipo-cliente/crear': 'codbar.ficha-de-cliente.tipo-cliente.nuevo',
     '/codbar/ficha-de-cliente/tipo-cliente/editar': 'codbar.ficha-de-cliente.tipo-cliente.editar',
     '/codbar/ficha-de-cliente/grupo-cliente': 'codbar.ficha-de-cliente.grupo-cliente',
-    '/codbar/ficha-de-cliente/grupo-cliente/crear': 'codbar.ficha-de-cliente.grupo-cliente.crear',
+    '/codbar/ficha-de-cliente/grupo-cliente/crear': 'codbar.ficha-de-cliente.grupo-cliente.nuevo',
     '/codbar/ficha-de-cliente/grupo-cliente/editar': 'codbar.ficha-de-cliente.grupo-cliente.editar',
+    
+    // ===== PRODUCTOS (dentro de ficha-de-cliente.listado-clientes) =====
+    '/productos': 'codbar.ficha-de-cliente.listado-clientes',
+    '/productos/nuevo-producto': 'codbar.ficha-de-cliente.listado-clientes.nuevo-producto',
+    '/productos/nuevo-gln': 'codbar.ficha-de-cliente.listado-clientes.nuevo-gln', 
+    '/productos/cupones': 'codbar.ficha-de-cliente.listado-clientes.cupones',
+    '/productos/nuevo-sscc': 'codbar.ficha-de-cliente.listado-clientes.nuevo-sscc',
+    
+    // Opciones específicas
+    '/productos/uv-individual': 'codbar.ficha-de-cliente.listado-clientes.nuevo-producto.ingresar-uv',
+    '/productos/ul': 'codbar.ficha-de-cliente.listado-clientes.nuevo-producto.ingresar-ul',
+    '/productos/bloque': 'codbar.ficha-de-cliente.listado-clientes.nuevo-producto.bloque',
+    
+    // Rutas con parámetros (normalizadas)
+    '/productos/uv-individual-edit': 'codbar.ficha-de-cliente.listado-clientes.nuevo-producto.ingresar-uv',
+    '/productos/uv-individual-edit/:codbar': 'codbar.ficha-de-cliente.listado-clientes.nuevo-producto.ingresar-uv',
+    '/productos/ul/:codbar': 'codbar.ficha-de-cliente.listado-clientes.nuevo-producto.ingresar-ul',
+    '/productos/ul-edit/:g14': 'codbar.ficha-de-cliente.listado-clientes.nuevo-producto.ingresar-ul',
+
     
     // Transferencia
     '/codbar/transferencia/tras-prefijo': 'codbar.transferencia.transferencia-de-prefijo',
@@ -81,20 +100,29 @@ export class PermissionsService {
     
     // Configuración
     '/codbar/configuracion/localizacion-establecimiento': 'codbar.configuracion.localizacion-establecimiento',
-    '/codbar/configuracion/localizacion-establecimiento/crear': 'codbar.configuracion.localizacion-establecimiento.crear',
+    '/codbar/configuracion/localizacion-establecimiento/crear': 'codbar.configuracion.localizacion-establecimiento.nuevo',
     '/codbar/configuracion/localizacion-establecimiento/editar': 'codbar.configuracion.localizacion-establecimiento.editar',
     '/codbar/configuracion/grupo-producto': 'codbar.configuracion.grupo-producto',
     '/codbar/configuracion/tipo-prefijo': 'codbar.configuracion.tipo-prefijo',
 
     // Rutas específicas de seguridades
-    '/seguridades/usuarios': 'seguridades.usuarios',
-    '/seguridades/perfiles': 'seguridades.perfiles',
-    '/seguridades/departamentos': 'seguridades.departamentos',
-    '/seguridades/entidades': 'seguridades.entidades',
-    '/seguridades/empresas': 'seguridades.empresas',
-    '/seguridades/zonas': 'seguridades.zonas',
-    '/seguridades/proyectos': 'seguridades.proyectos',
-    '/seguridades/segmento-negocio': 'seguridades.segmento-negocio',
+    '/seguridades/usuarios': 'seguridades.usuarios-perfiles.usuarios',
+    '/seguridades/usuarios/nuevo': 'seguridades.usuarios-perfiles.usuarios.nuevo',
+    '/seguridades/perfiles': 'seguridades.usuarios-perfiles.perfil',
+    '/seguridades/perfiles/nuevo-perfil': 'seguridades.usuarios-perfiles.perfil.nuevo-perfil',
+    '/seguridades/departamentos': 'seguridades.usuarios-perfiles.departamentos',
+    '/seguridades/departamentos/nuevo': 'seguridades.usuarios-perfiles.departamentos.nuevo',
+    '/seguridades/entidades': 'seguridades.entidades.entidades',
+    '/seguridades/entidades/nuevo': 'seguridades.entidades.entidades.nuevo',
+    '/seguridades/empresas': 'seguridades.configuracion.empresas',
+    '/seguridades/empresas/grabar': 'seguridades.configuracion.empresas.grabar',
+    '/seguridades/zonas': 'seguridades.configuracion.zona',
+    '/seguridades/zonas/nuevo': 'seguridades.configuracion.zona.nuevo',
+    '/seguridades/proyectos': 'seguridades.configuracion.proyectos',
+    '/seguridades/proyectos/nuevo-proyecto': 'seguridades.configuracion.proyectos.nuevo-proyecto',
+    '/seguridades/segmento-negocio': 'seguridades.configuracion.segmento-de-negocio',
+    '/seguridades/segmento-negocio/locales': 'seguridades.configuracion.segmento-de-negocio.locales',
+
 
     // Rutas específicas de SIC-3000
     '/sic-3000/estructura-list': 'sic-3000.estructura-comercial',
@@ -409,7 +437,8 @@ export class PermissionsService {
             consultaVerified: permisos.includes('codbar.ficha-de-cliente.consulta-verified'),
             tipoCliente: permisos.includes('codbar.ficha-de-cliente.tipo-cliente'),
             grupoCliente: permisos.includes('codbar.ficha-de-cliente.grupo-cliente'),
-            puedeCrearCliente: permisos.includes('codbar.ficha-de-cliente.nuevo-cliente.crear'),
+            puedeCrearCliente: permisos.includes('codbar.ficha-de-cliente.nuevo-cliente.nuevo'),
+            puedeEditarGrupoCliente: permisos.includes('codbar.ficha-de-cliente.grupo-cliente.editar'),
             puedeEditarTipoCliente: permisos.includes('codbar.ficha-de-cliente.tipo-cliente.editar')
           },
           transferencia: {
@@ -440,39 +469,48 @@ export class PermissionsService {
           seguridades: {
             // Módulo principal
             modulo: permisos.includes('seguridades') || 
-                    permisos.includes('seguridad') || 
                     permisos.some(p => p.startsWith('seguridades.')),
 
             // Usuarios/Perfiles
-            usuarios: permisos.includes('seguridades.usuarios') || 
-                    permisos.includes('seguridad.usuarios'),
-            perfiles: permisos.includes('seguridades.perfiles') || 
-                    permisos.includes('seguridad.perfiles'),
-            departamentos: permisos.includes('seguridades.departamentos') || 
-                          permisos.includes('seguridad.departamentos'),
+            usuariosPerfiles: {
+              modulo: permisos.includes('seguridades.usuarios-perfiles'),
+              usuarios: permisos.includes('seguridades.usuarios-perfiles.usuarios'),
+              perfiles: permisos.includes('seguridades.usuarios-perfiles.perfil'),
+              departamentos: permisos.includes('seguridades.usuarios-perfiles.departamentos'),
+              // Acciones
+              puedeCrearUsuarios: permisos.includes('seguridades.usuarios-perfiles.usuarios.nuevo'),
+              puedeCrearPerfiles: permisos.includes('seguridades.usuarios-perfiles.perfil.nuevo-perfil'),
+              puedeCrearDepartamentos: permisos.includes('seguridades.usuarios-perfiles.departamentos.nuevo')
+            },
 
             // Entidades
-            entidades: permisos.includes('seguridades.entidades') || 
-                      permisos.includes('seguridad.entidades'),
+            entidades: {
+              modulo: permisos.includes('seguridades.entidades'),
+              entidades: permisos.includes('seguridades.entidades.entidades'),
+              puedeCrearEntidades: permisos.includes('seguridades.entidades.entidades.nuevo')
+            },
 
             // Configuración
-            empresas: permisos.includes('seguridades.empresas') || 
-                    permisos.includes('seguridad.empresas') ||
-                    permisos.includes('seguridades.configuracion.empresas'),
-            zonas: permisos.includes('seguridades.zonas') || 
-                  permisos.includes('seguridad.zonas') ||
-                  permisos.includes('seguridades.configuracion.zonas'),
-            proyectos: permisos.includes('seguridades.proyectos') || 
-                      permisos.includes('seguridad.proyectos') ||
-                      permisos.includes('seguridades.configuracion.proyectos'),
-            segmentoNegocio: permisos.includes('seguridades.segmento-negocio') || 
-                            permisos.includes('seguridad.segmento-negocio') ||
-                            permisos.includes('seguridades.configuracion.segmento-negocio'),
+            configuracion: {
+              modulo: permisos.includes('seguridades.configuracion'),
+              empresas: permisos.includes('seguridades.configuracion.empresas'),
+              zonas: permisos.includes('seguridades.configuracion.zona'),
+              proyectos: permisos.includes('seguridades.configuracion.proyectos'),
+              segmentoNegocio: permisos.includes('seguridades.configuracion.segmento-de-negocio'),
+              // Acciones
+              puedeGrabarEmpresas: permisos.includes('seguridades.configuracion.empresas.grabar'),
+              puedeCrearZonas: permisos.includes('seguridades.configuracion.zona.nuevo'),
+              puedeCrearProyectos: permisos.includes('seguridades.configuracion.proyectos.nuevo-proyecto'),
+              puedeVerLocales: permisos.includes('seguridades.configuracion.segmento-de-negocio.locales')
+            },
 
-            // Acciones específicas (opcional)
-            puedeCrearUsuarios: permisos.includes('seguridades.usuarios.crear'),
-            puedeEditarPerfiles: permisos.includes('seguridades.perfiles.editar'),
-            puedeEliminarEntidades: permisos.includes('seguridades.entidades.eliminar')
+            // Accesos directos (compatibilidad con código existente)
+            usuarios: permisos.includes('seguridades.usuarios-perfiles.usuarios'),
+            perfiles: permisos.includes('seguridades.usuarios-perfiles.perfil'),
+            departamentos: permisos.includes('seguridades.usuarios-perfiles.departamentos'),
+            empresas: permisos.includes('seguridades.configuracion.empresas'),
+            zonas: permisos.includes('seguridades.configuracion.zona'),
+            proyectos: permisos.includes('seguridades.configuracion.proyectos')
           },
 
           // 💰 SIC3000 - Sistema nuevo basado en tus rutas

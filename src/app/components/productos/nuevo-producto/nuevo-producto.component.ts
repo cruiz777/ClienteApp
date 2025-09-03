@@ -43,6 +43,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { CustomMessageBoxComponent, MessageBoxData } from '../../utils/messages/custom-message-box.component';
 import { ProductoRequests } from 'src/app/interfaces/requests/producto-filter-request';
 import { CellKeyDownEvent } from 'ag-grid-community';
+import { PermissionsService } from 'src/app/services/permission.service';
 
 
 export const MY_DATE_FORMATS = {
@@ -198,7 +199,8 @@ public rowData: Producto[] = [];
     private gs1ExportService: GS1ExportService,
     private cdRef: ChangeDetectorRef,
     private ciudadService: CiudadService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    public permissions: PermissionsService
   ) { }
 
   ngOnInit(): void {
@@ -289,7 +291,7 @@ public rowData: Producto[] = [];
     }
 
     // Redirige usando el codbar como parte del path
-    this.router.navigateByUrl(`/menuProductos/ul/${this.codigoSeleccionado}`);
+    this.router.navigateByUrl(`/productos/ul/${this.codigoSeleccionado}`);
   }
 
 
@@ -375,21 +377,21 @@ public rowData: Producto[] = [];
   }
 
   irAUvIndividual(): void {
-    this.router.navigate(['/menuProductos/uvIndividual']);
+    this.router.navigate(['/productos/uv-individual']);
   }
 
   irBloque(): void {
-    this.router.navigate(['/menuProductos/bloque']);
+    this.router.navigate(['/productos/bloque']);
   }
 
   salir(): void {
-    this.router.navigate(['/menuProductos/clienteSeleccion']);
+    this.router.navigate(['/productos/cliente-seleccion']);
   }
 
   seleccionarRegistroU(registro: any) {
     console.log('➡️ Doble clic sobre:', registro); // ✅ Verificación
     if (registro?.codbar) {
-      this.router.navigate(['/menuProductos/uvIndividualEdit', registro.codbar]);
+      this.router.navigate(['/productos/uv-individual-edit', registro.codbar]);
     } else {
       console.log('⚠️ codbar no disponible en el registro', registro);
     }

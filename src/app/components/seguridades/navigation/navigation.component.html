@@ -43,29 +43,29 @@
 
           <!-- Usuarios -->
           <a mat-list-item 
-             [routerLink]="((menuPermisos$ | async)?.usuarios?.acceso) ? '/seguridades/usuarios' : null"
-             [class.disabled]="!((menuPermisos$ | async)?.usuarios?.acceso)"
-             (click)="manejarClick('/seguridades/usuarios', $event)">
+            [routerLink]="((menuPermisos$ | async)?.seguridades?.usuarios) ? '/seguridades/usuarios' : null"
+            [class.disabled]="!((menuPermisos$ | async)?.seguridades?.usuarios)"
+            (click)="manejarClick('/seguridades/usuarios', $event)">
             <span *ngIf="isExpanded" class="menu-text">Usuarios</span>
-            <mat-icon *ngIf="!((menuPermisos$ | async)?.usuarios?.acceso)" class="lock-icon">lock</mat-icon>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.seguridades?.usuarios)" class="lock-icon">lock</mat-icon>
           </a>
 
           <!-- Perfiles -->
           <a mat-list-item 
-             [routerLink]="((menuPermisos$ | async)?.perfiles?.acceso) ? '/seguridades/perfiles' : null"
-             [class.disabled]="!((menuPermisos$ | async)?.perfiles?.acceso)"
-             (click)="manejarClick('/seguridades/perfiles', $event)">
+            [routerLink]="((menuPermisos$ | async)?.seguridades?.perfiles) ? '/seguridades/perfiles' : null"
+            [class.disabled]="!((menuPermisos$ | async)?.seguridades?.perfiles)"
+            (click)="manejarClick('/seguridades/perfiles', $event)">
             <span *ngIf="isExpanded" class="menu-text">Perfil</span>
-            <mat-icon *ngIf="!((menuPermisos$ | async)?.perfiles?.acceso)" class="lock-icon">lock</mat-icon>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.seguridades?.perfiles)" class="lock-icon">lock</mat-icon>
           </a>
 
           <!-- Departamentos -->
           <a mat-list-item 
-             [routerLink]="((menuPermisos$ | async)?.departamentos?.acceso) ? '/seguridades/departamentos' : null"
-             [class.disabled]="!((menuPermisos$ | async)?.departamentos?.acceso)"
-             (click)="manejarClick('/seguridades/departamentos', $event)">
+            [routerLink]="((menuPermisos$ | async)?.seguridades?.departamentos) ? '/seguridades/departamentos' : null"
+            [class.disabled]="!((menuPermisos$ | async)?.seguridades?.departamentos)"
+            (click)="manejarClick('/seguridades/departamentos', $event)">
             <span *ngIf="isExpanded" class="menu-text">Departamentos</span>
-            <mat-icon *ngIf="!((menuPermisos$ | async)?.departamentos?.acceso)" class="lock-icon">lock</mat-icon>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.seguridades?.departamentos)" class="lock-icon">lock</mat-icon>
           </a>
 
         </mat-expansion-panel>
@@ -80,11 +80,11 @@
           </mat-expansion-panel-header>
 
           <a mat-list-item 
-             [routerLink]="((menuPermisos$ | async)?.entidades?.acceso) ? '/seguridades/entidades' : null"
-             [class.disabled]="!((menuPermisos$ | async)?.entidades?.acceso)"
-             (click)="manejarClick('/seguridades/entidades', $event)">
+            [routerLink]="((menuPermisos$ | async)?.seguridades?.entidades?.entidades) ? '/seguridades/entidades' : null"
+            [class.disabled]="!((menuPermisos$ | async)?.seguridades?.entidades?.entidades)"
+            (click)="manejarClick('/seguridades/entidades', $event)">
             <span *ngIf="isExpanded" class="menu-text">Entidades</span>
-            <mat-icon *ngIf="!((menuPermisos$ | async)?.entidades?.acceso)" class="lock-icon">lock</mat-icon>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.seguridades?.entidades?.entidades)" class="lock-icon">lock</mat-icon>
           </a>
 
         </mat-expansion-panel>
@@ -100,38 +100,38 @@
 
           <!-- Empresas -->
           <a mat-list-item 
-             [routerLink]="((menuPermisos$ | async)?.configuracion?.empresas) ? '/seguridades/empresas' : null"
-             [class.disabled]="!((menuPermisos$ | async)?.configuracion?.empresas)"
-             (click)="manejarClick('/seguridades/empresas', $event)">
+            [routerLink]="((menuPermisos$ | async)?.seguridades?.configuracion?.empresas) ? '/seguridades/empresas' : null"
+            [class.disabled]="!((menuPermisos$ | async)?.seguridades?.configuracion?.empresas)"
+            (click)="manejarClick('/seguridades/empresas', $event)">
             <span *ngIf="isExpanded" class="menu-text">Empresas</span>
-            <mat-icon *ngIf="!((menuPermisos$ | async)?.configuracion?.empresas)" class="lock-icon">lock</mat-icon>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.seguridades?.configuracion?.empresas)" class="lock-icon">lock</mat-icon>
           </a>
 
           <!-- Zonas -->
           <a mat-list-item 
-             [routerLink]="((menuPermisos$ | async)?.configuracion?.zonas) ? '/seguridades/zonas' : null"
-             [class.disabled]="!((menuPermisos$ | async)?.configuracion?.zonas)"
-             (click)="manejarClick('/seguridades/zonas', $event)">
+            [routerLink]="((menuPermisos$ | async)?.seguridades?.configuracion?.zonas) ? '/seguridades/zonas' : null"
+            [class.disabled]="!((menuPermisos$ | async)?.seguridades?.configuracion?.zonas)"
+            (click)="manejarClick('/seguridades/zonas', $event)">
             <span *ngIf="isExpanded" class="menu-text">Zona</span>
-            <mat-icon *ngIf="!((menuPermisos$ | async)?.configuracion?.zonas)" class="lock-icon">lock</mat-icon>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.seguridades?.configuracion?.zonas)" class="lock-icon">lock</mat-icon>
           </a>
 
           <!-- Segmento de Negocio -->
           <a mat-list-item 
-             [routerLink]="((menuPermisos$ | async)?.configuracion?.segmentoNegocio) ? '/seguridades/segmento-negocio' : null"
-             [class.disabled]="!((menuPermisos$ | async)?.configuracion?.segmentoNegocio)"
-             (click)="manejarClick('/seguridades/segmento-negocio', $event)">
+            [routerLink]="((menuPermisos$ | async)?.seguridades?.configuracion?.segmentoNegocio) ? '/seguridades/segmento-negocio' : null"
+            [class.disabled]="!((menuPermisos$ | async)?.seguridades?.configuracion?.segmentoNegocio)"
+            (click)="manejarClick('/seguridades/segmento-negocio', $event)">
             <span *ngIf="isExpanded" class="menu-text">Segmento de Negocio</span>
-            <mat-icon *ngIf="!((menuPermisos$ | async)?.configuracion?.segmentoNegocio)" class="lock-icon">lock</mat-icon>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.seguridades?.configuracion?.segmentoNegocio)" class="lock-icon">lock</mat-icon>
           </a>
 
           <!-- Proyectos -->
           <a mat-list-item 
-             [routerLink]="((menuPermisos$ | async)?.configuracion?.proyectos) ? '/seguridades/proyectos' : null"
-             [class.disabled]="!((menuPermisos$ | async)?.configuracion?.proyectos)"
-             (click)="manejarClick('/seguridades/proyectos', $event)">
+            [routerLink]="((menuPermisos$ | async)?.seguridades?.configuracion?.proyectos) ? '/seguridades/proyectos' : null"
+            [class.disabled]="!((menuPermisos$ | async)?.seguridades?.configuracion?.proyectos)"
+            (click)="manejarClick('/seguridades/proyectos', $event)">
             <span *ngIf="isExpanded" class="menu-text">Proyectos</span>
-            <mat-icon *ngIf="!((menuPermisos$ | async)?.configuracion?.proyectos)" class="lock-icon">lock</mat-icon>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.seguridades?.configuracion?.proyectos)" class="lock-icon">lock</mat-icon>
           </a>
 
         </mat-expansion-panel>

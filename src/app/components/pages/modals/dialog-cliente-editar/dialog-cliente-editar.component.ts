@@ -198,7 +198,7 @@ export class DialogClienteEditarComponent implements OnInit {
     private exportService: ExportService,
     private empresaService: EmpresaService,
     private logoService: LogoService,
-    private permissions: PermissionsService
+    public permissions: PermissionsService
   ) { }
 
  ngOnInit(): void {

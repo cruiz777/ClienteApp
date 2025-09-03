@@ -14,6 +14,7 @@ import { DialogClienteEditarComponent } from '../../pages/modals/dialog-cliente-
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { LprefijoComponent } from '../../pages/clientes/lprefijo/lprefijo.component';
+import { PermissionsService } from 'src/app/services/permission.service';
 @Component({
   selector: 'app-cliente-seleccionado',
   standalone: true,
@@ -46,6 +47,7 @@ export class ClienteSeleccionadoComponent {
     private clienteSeleccionadoService: ClienteSeleccionadoService,
     private router: Router,
     private dialog: MatDialog,
+    public permissions: PermissionsService
   ) { }
 
   ngOnInit(): void {

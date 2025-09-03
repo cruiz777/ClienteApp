@@ -44,6 +44,7 @@ import { MomentDateAdapter } from '@angular/material-moment-adapter';
 import { isValid, parse, setHours, setMilliseconds, setMinutes, setSeconds } from 'date-fns';
 import * as moment from 'moment';
 import { CustomValidators } from '../../utils/validators/validator.util';
+import { PermissionsService } from 'src/app/services/permission.service';
 
 interface CuponTablaView {
   id: number;
@@ -349,7 +350,8 @@ export class CuponesComponent implements OnInit, OnDestroy {
     private grupoProductoService: GrupoProductoService,
     private dialog: MatDialog,
     private exportService: ExportService,
-    private router: Router
+    private router: Router,
+    public permissions: PermissionsService
   ) {
     this.formCupon = this.fb.group({
       codigoCliente: [''],

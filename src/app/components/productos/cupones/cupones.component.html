@@ -49,7 +49,9 @@
     <!-- Botones de acción -->
     <div class="acciones-filtros">
       <button mat-raised-button color="primary" class="boton-azul-oscuro" (click)="buscarConFiltros()" class="boton-azul-oscuro" [disabled]="!puedeBuscar">Buscar</button>
-      <button mat-flat-button color="warn" (click)="eliminarSeleccionados()" [disabled]="!tieneSeleccion">Eliminar</button>
+      <button mat-flat-button color="warn" (click)="eliminarSeleccionados()"
+      [disabled]="!tieneSeleccion ||!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.eliminar'))" 
+      >Eliminar</button>
       <button mat-stroked-button (click)="limpiarFiltros()">
       <mat-icon>clear</mat-icon> Limpiar Filtros </button>
     </div>
@@ -298,7 +300,9 @@
 
       <div class="botones">
         <button mat-stroked-button (click)="nuevo()" [disabled]="!tieneFiltrosReporte">Nuevo</button>
-        <button mat-stroked-button [matMenuTriggerFor]="menuExportar" color="accent" [disabled]="!puedeExportar">
+        <button mat-stroked-button [matMenuTriggerFor]="menuExportar" color="accent" 
+        [disabled]="!puedeExportar || !((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.exportar'))" 
+        >
           Exportar <mat-icon>arrow_drop_down</mat-icon>
         </button>
 

@@ -25,14 +25,11 @@ export class NavigationComponent implements OnInit, OnDestroy {
     private breakpointObserver: BreakpointObserver,
     private router: Router,
     private usuarioService: UsuarioService,
-    private permissions: PermissionsService
+    private permissionsService: PermissionsService
   ) {
     this.usuarioActual = this.usuarioService.getUsuarioActual();
     
-    // 📡 Crear observable específico para permisos de Seguridades
-    this.menuPermisos$ = this.permissions.permisos$.pipe(
-      map(permisos => this.calcularPermisosSeguridades(permisos))
-    );
+    this.menuPermisos$ = this.permissionsService.menuPermisos$;
     
     this.breakpointObserver.observe([Breakpoints.Handset])
       .subscribe(result => {
@@ -58,113 +55,39 @@ export class NavigationComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  // 🎯 CALCULAR PERMISOS ESPECÍFICOS PARA SEGURIDADES
-  private calcularPermisosSeguridades(permisos: string[]): any {
-    console.log('🔍 Calculando permisos de Seguridades con:', permisos);
-    
-    return {
-      // Usuarios/Perfiles
-      usuarios: {
-        acceso: this.tienePermisoSeguridad('usuarios', permisos),
-        crear: this.tienePermisoSeguridad('usuarios.crear', permisos),
-        editar: this.tienePermisoSeguridad('usuarios.editar', permisos),
-        eliminar: this.tienePermisoSeguridad('usuarios.eliminar', permisos)
-      },
-      perfiles: {
-        acceso: this.tienePermisoSeguridad('perfiles', permisos),
-        crear: this.tienePermisoSeguridad('perfiles.crear', permisos),
-        editar: this.tienePermisoSeguridad('perfiles.editar', permisos)
-      },
-      departamentos: {
-        acceso: this.tienePermisoSeguridad('departamentos', permisos),
-        crear: this.tienePermisoSeguridad('departamentos.crear', permisos),
-        editar: this.tienePermisoSeguridad('departamentos.editar', permisos)
-      },
-      
-      // Entidades
-      entidades: {
-        acceso: this.tienePermisoSeguridad('entidades', permisos),
-        crear: this.tienePermisoSeguridad('entidades.crear', permisos),
-        editar: this.tienePermisoSeguridad('entidades.editar', permisos)
-      },
-      
-      // Configuración
-      configuracion: {
-        modulo: this.tienePermisoSeguridad('configuracion', permisos) || 
-                this.tienePermisoSeguridad('seguridad', permisos),
-        empresas: this.tienePermisoSeguridad('configuracion.empresas', permisos) ||
-                  this.tienePermisoSeguridad('empresas', permisos),
-        zonas: this.tienePermisoSeguridad('configuracion.zonas', permisos) ||
-               this.tienePermisoSeguridad('zonas', permisos),
-        segmentoNegocio: this.tienePermisoSeguridad('configuracion.segmento-negocio', permisos) ||
-                         this.tienePermisoSeguridad('segmento-negocio', permisos),
-        proyectos: this.tienePermisoSeguridad('configuracion.proyectos', permisos) ||
-                   this.tienePermisoSeguridad('proyectos', permisos)
-      }
-    };
-  }
+  
 
-  //VERIFICAR PERMISOS ESPECÍFICOS DE SEGURIDADES
-  private tienePermisoSeguridad(permiso: string, permisos: string[]): boolean {
-    // Variantes posibles del permiso
-    const variantes = [
-      permiso,                                    // usuarios
-      `seguridad.${permiso}`,                     // seguridad.usuarios
-      `seguridades.${permiso}`,                   // seguridades.usuarios
-      `seguridad.${permiso.replace('-', '_')}`,   // seguridad.segmento_negocio
-      `seguridades.${permiso.replace('-', '_')}`  // seguridades.segmento_negocio
-    ];
-
-    // También verificar si es ADMIN
-    const esAdmin = this.usuarioActual?.perfil === 'ADMIN' || 
-                    this.usuarioActual?.perfil === 'ADMINISTRADOR';
-
-    const tieneAcceso = variantes.some(v => permisos.includes(v)) || esAdmin;
-    
-    console.log(`🔍 Permiso ${permiso}: ${tieneAcceso ? '✅ PERMITIDO' : '❌ DENEGADO'}`);
-    return tieneAcceso;
-  }
-
-  // ✅ MÉTODO PRINCIPAL PARA MANEJAR CLICKS - VALIDACIÓN DE PERMISOS
   manejarClick(ruta: string, event: Event): void {
     console.log(`🔍 Verificando acceso a: ${ruta}`);
     
-    // 🚫 VALIDACIÓN: Usar servicio de permisos
-    if (!this.permissions.puedeAccederRuta(ruta)) {
+    // Usar el método del service
+    if (!this.permissionsService.puedeAccederRuta(ruta)) {
       this.bloquearNavegacion(event, ruta, 'Acceso denegado por permisos');
       return;
     }
 
-    // ✅ ACCESO PERMITIDO
     console.log(`✅ Acceso permitido a: ${ruta}`);
-    
-    // Permitir que el routerLink maneje la navegación naturalmente
   }
 
   // 🛡️ MÉTODO PARA BLOQUEAR NAVEGACIÓN COMPLETAMENTE
   private bloquearNavegacion(event: Event, ruta: string, razon: string): void {
-    // Detener TODOS los eventos
     event.preventDefault();
     event.stopPropagation();
     event.stopImmediatePropagation();
-
-    // Log para debugging
     console.warn(`❌ ${razon} para: ${ruta}`);
 
-    // Asegurar que el cursor regrese a normal
     const target = event.target as HTMLElement;
     if (target) {
       target.style.cursor = 'not-allowed';
     }
   }
 
-  // 🔍 MÉTODOS DE VERIFICACIÓN DE PERMISOS (Para uso en template si es necesario)
   puedeAccederRuta(rutaAngular: string): boolean {
-    return this.permissions.puedeAccederRuta(rutaAngular);
+    return this.permissionsService.puedeAccederRuta(rutaAngular);
   }
 
   puedeEjecutarAccion(rutaAngular: string, accion: string): boolean {
-    return this.permissions.puedeEjecutarAccion(rutaAngular, accion);
+    return this.permissionsService.puedeEjecutarAccion(rutaAngular, accion);
   }
 
   // 🔄 MÉTODO PARA ACTUALIZAR FECHA Y HORA

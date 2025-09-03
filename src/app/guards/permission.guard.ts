@@ -1,3 +1,4 @@
+// permission.guard.ts (actualizado)
 import { Injectable, OnDestroy } from '@angular/core';
 import { CanActivate, Router, ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { Observable, of, Subject } from 'rxjs';
@@ -8,9 +9,9 @@ import { PermissionsService } from '../services/permission.service';
   providedIn: 'root'
 })
 export class PermissionGuard implements CanActivate, OnDestroy {
-  
+ 
   private destroy$ = new Subject<void>();
-  private isNavigating = false; // Prevenir navegaciones concurrentes
+  private isNavigating = false;
 
   constructor(
     private permissions: PermissionsService,
@@ -18,10 +19,10 @@ export class PermissionGuard implements CanActivate, OnDestroy {
   ) {}
 
   canActivate(
-    route: ActivatedRouteSnapshot, 
+    route: ActivatedRouteSnapshot,
     state: RouterStateSnapshot
   ): Observable<boolean> | boolean {
-    
+   
     try {
       const rutaCompleta = state.url;
       
@@ -38,8 +39,6 @@ export class PermissionGuard implements CanActivate, OnDestroy {
         '/inicio',
         '/dashboard',
         '/home',
-        // '/codbar/inicio',
-        // '/codbar'
       ];
       
       // Si es una ruta libre, permitir acceso inmediatamente
@@ -48,26 +47,62 @@ export class PermissionGuard implements CanActivate, OnDestroy {
         return true;
       }
       
-      console.log(`🔒 Verificando permisos para: ${rutaCompleta}`);
+      // NUEVA LÓGICA: Usar datos de la ruta si están disponibles
+      const permisoRequerido = route.data?.['permission'];
       
-      // Verificación de permisos con timeout y manejo de errores robusto
+      if (permisoRequerido) {
+        console.log(`🔒 Verificando permiso específico: ${permisoRequerido} para ruta: ${rutaCompleta}`);
+        return this.verificarPermisoEspecifico(permisoRequerido, rutaCompleta);
+      }
+      
+      // Fallback: usar la ruta completa (comportamiento anterior)
+      console.log(`🔒 Verificando permisos para ruta: ${rutaCompleta}`);
       return this.verificarPermisosSeguro(rutaCompleta);
-      
+     
     } catch (error) {
       console.error('❌ Error crítico en PermissionGuard:', error);
       return this.manejarErrorCritico(state.url);
     }
   }
 
+  // NUEVO MÉTODO: Verificar permiso específico desde route.data
+  private verificarPermisoEspecifico(permission: string, ruta: string): Observable<boolean> {
+    this.isNavigating = true;
+    
+    return this.permissions.permisos$.pipe(
+      timeout(8000),
+      take(1),
+      map(permisos => {
+        this.isNavigating = false;
+        
+        const tieneAcceso = permisos.includes(permission);
+        
+        if (tieneAcceso) {
+          console.log(`Acceso PERMITIDO - Permiso: ${permission}`);
+          return true;
+        } else {
+          console.warn(`❌ Acceso DENEGADO - Permiso requerido: ${permission}`);
+          this.navegarASinPermisosSafe(ruta, `sin-permisos-permiso:${permission}`);
+          return false;
+        }
+      }),
+      catchError(error => {
+        this.isNavigating = false;
+        console.error(`❌ Error verificando permiso específico ${permission}:`, error);
+        return this.manejarErrorVerificacion(ruta, error);
+      }),
+      takeUntil(this.destroy$)
+    );
+  }
+
   private verificarPermisosSeguro(ruta: string): Observable<boolean> {
     this.isNavigating = true;
-
     return this.permissions.puedeAccederRuta$(ruta).pipe(
-      timeout(8000), // Timeout más conservador
+      timeout(8000),
       take(1),
       map(tieneAcceso => {
         this.isNavigating = false;
-        
+       
         if (tieneAcceso) {
           console.log(`✅ Acceso PERMITIDO a: ${ruta}`);
           return true;
@@ -87,14 +122,11 @@ export class PermissionGuard implements CanActivate, OnDestroy {
   }
 
   private manejarErrorVerificacion(ruta: string, error: any): Observable<boolean> {
-    // Si es un error de timeout o red, permitir acceso por defecto
-    // pero registrar para monitoreo
     if (error.name === 'TimeoutError' || error.message?.includes('timeout')) {
       console.warn('⏰ Timeout verificando permisos, permitiendo acceso temporal');
       return of(true);
     }
-
-    // Para otros errores, denegar acceso
+    
     console.error('❌ Error grave verificando permisos, denegando acceso');
     this.navegarASinPermisosSafe(ruta);
     return of(false);
@@ -102,22 +134,19 @@ export class PermissionGuard implements CanActivate, OnDestroy {
 
   private manejarErrorCritico(ruta: string): boolean {
     console.error('🚨 Error crítico en guard, redirigiendo a inicio');
-    
-    // En caso de error crítico, ir a una ruta segura
+   
     setTimeout(() => {
       this.router.navigate(['/inicio']).catch(navError => {
         console.error('❌ Error navegando a inicio:', navError);
-        // Como último recurso, recargar la página
         window.location.href = '/inicio';
       });
     }, 100);
-    
+   
     return false;
   }
 
   private esRutaLibre(ruta: string, rutasLibres: string[]): boolean {
     return rutasLibres.some(rutaLibre => {
-      // Verificación más flexible para rutas dinámicas
       if (ruta === rutaLibre) return true;
       if (ruta.startsWith(rutaLibre + '/')) return true;
       if (ruta.startsWith(rutaLibre + '?')) return true;
@@ -125,19 +154,19 @@ export class PermissionGuard implements CanActivate, OnDestroy {
     });
   }
 
-  private navegarASinPermisosSafe(ruta: string): void {
+  private navegarASinPermisosSafe(ruta: string, motivo: string = 'sin-permisos'): void {
     try {
-      // Usar setTimeout para evitar problemas con el ciclo de navegación
       setTimeout(() => {
         if (!this.isNavigating) {
           this.isNavigating = true;
-          
-          this.router.navigate(['/sin-permisos'], { 
-            queryParams: { 
+         
+          this.router.navigate(['/sin-permisos'], {
+            queryParams: {
               ruta: ruta,
+              motivo: motivo,
               timestamp: new Date().getTime()
             },
-            replaceUrl: true // Importante: reemplazar en lugar de añadir al historial
+            replaceUrl: true
           }).then(
             (success) => {
               this.isNavigating = false;
@@ -150,14 +179,13 @@ export class PermissionGuard implements CanActivate, OnDestroy {
           ).catch(error => {
             this.isNavigating = false;
             console.error('❌ Error navegando a sin-permisos:', error);
-            // Fallback: ir a inicio
             this.router.navigate(['/inicio']).catch(() => {
               window.location.href = '/inicio';
             });
           });
         }
       }, 50);
-      
+     
     } catch (error) {
       this.isNavigating = false;
       console.error('❌ Error en navegación segura:', error);

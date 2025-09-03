@@ -337,9 +337,15 @@
       </div>
 
       <div class="form-actions">
-        <button mat-button class="btn-nuevo" (click)="nuevo()">Nuevo</button>
-        <button mat-button  (click)="modificar()" [disabled]="modoEdicion">Modificar</button>
-        <button mat-button (click)="exportarPDF()" [disabled]="!modoEdicion">Imprimir</button>
+        <button mat-button class="btn-nuevo" (click)="nuevo()"
+        [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-gln.nuevo'))"        
+        >Nuevo</button>
+        <button mat-button  (click)="modificar()" [disabled]="modoEdicion"
+        [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-gln.modificar'))" 
+        >Modificar</button>
+        <button mat-button (click)="exportarPDF()" [disabled]="!modoEdicion"
+        [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-gln.imprimir'))" 
+        >Imprimir</button>
         <button mat-button (click)="cancelar()" [disabled]="!modoEdicion">Cancelar</button>
       </div>
     </ng-container>
@@ -362,7 +368,9 @@
             </div>
 
             <div class="buttons-container">
-              <button mat-button [matMenuTriggerFor]="menuExportarGLN" class="export-button">
+              <button mat-button [matMenuTriggerFor]="menuExportarGLN" class="export-button"
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-gln.exportar'))" 
+              >
                 <mat-icon class="export-icon">file_download</mat-icon>
                 <span class="export-text">Exportar</span>
               </button>

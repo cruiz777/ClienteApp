@@ -39,26 +39,9 @@ const routes: Routes = [
 
   {
     path: 'productos',
-    loadChildren: () => import('./components/productos/productos-routing.module').then(m => m.ProductosRoutingModule)
+    loadChildren: () => import('./components/productos/productos-routing.module').then(m => m.ProductosRoutingModule),
+    canActivate: [AuthGuard]
   },
-  {
-    path: 'menuProductos',
-    component: NavigationProductoComponent,
-    children: [
-      { path: '', redirectTo: 'nuevoProducto', pathMatch: 'full' },
-      { path: 'nuevoProducto', component: NuevoProductoComponent },
-      { path: 'clienteSeleccion', component: ClienteSeleccionadoComponent },
-      { path: 'uvIndividual', component: UvIndividualComponent },
-      { path:'uvIndividualEdit/:codbar',component:UvIndividualEditComponent},
-      { path:'ul/:codbar',component:UlComponent},
-      { path:'ulEdit/:g14',component:UlEditComponent},
-      { path: 'nuevoSscc', component: NuevoSsccComponent },
-      { path: 'cupones', component: CuponesComponent },
-      { path: 'nuevoGln', component: GlnComponent },
-      { path: 'bloque', component: BloqueComponent }
-    ]
-  },
-
   { path: '**', component: NotFoundComponent, pathMatch: 'full' }
 ];
 

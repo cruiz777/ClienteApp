@@ -22,13 +22,14 @@ import { UsuarioService } from '../services/usuario.service';
         
         <div class="details" *ngIf="detalles">
           <p><strong>Página solicitada:</strong> {{ detalles.rutaAnterior }}</p>
+          <p><strong>Sistema:</strong> {{ getSistemaTexto() }}</p>
           <p><strong>Motivo:</strong> {{ getMotivoTexto(detalles.motivo) }}</p>
           <p><strong>Hora:</strong> {{ detalles.timestamp | date:'dd/MM/yyyy HH:mm:ss' }}</p>
         </div>
         
         <div class="actions">
           <button class="btn btn-primary" (click)="volverInicio()">
-            Ir al Inicio
+            Ir al Inicio {{ getSistemaTexto() }}
           </button>
           
           <button class="btn btn-secondary" (click)="recargarPermisos()">
@@ -155,6 +156,7 @@ import { UsuarioService } from '../services/usuario.service';
 export class SinPermisosComponent implements OnInit {
   
   detalles: any = null;
+  sistemaActual: string = '';
 
   constructor(
     private route: ActivatedRoute,
@@ -166,16 +168,48 @@ export class SinPermisosComponent implements OnInit {
   ngOnInit(): void {
     // Obtener parámetros de la URL
     this.route.queryParams.subscribe(params => {
-      if (params['rutaAnterior']) {
+      if (params['ruta']) {
         this.detalles = {
-          rutaAnterior: params['rutaAnterior'],
+          rutaAnterior: params['ruta'],
           motivo: params['motivo'] || 'sin-permisos',
           timestamp: params['timestamp'] ? new Date(+params['timestamp']) : new Date()
         };
+        
+        // Detectar sistema basado en la ruta
+        this.sistemaActual = this.detectarSistema(params['ruta']);
       }
     });
     
     console.log('🚫 Usuario redirigido a página sin permisos:', this.detalles);
+    console.log('🎯 Sistema detectado:', this.sistemaActual);
+  }
+
+  // 🎯 DETECTAR SISTEMA BASADO EN LA RUTA
+  private detectarSistema(ruta: string): string {
+    if (!ruta) return 'general';
+    
+    // Mapeo de rutas a sistemas
+    if (ruta.startsWith('/codbar')) return 'codbar';
+    if (ruta.startsWith('/seguridades')) return 'seguridades';
+    if (ruta.startsWith('/sic-3000')) return 'sic-3000';
+    if (ruta.startsWith('/cg-3000')) return 'cg-3000';
+    if (ruta.startsWith('/rol-3000')) return 'rol-3000';
+    
+    return 'general'; // Fallback
+  }
+
+  // 📝 OBTENER TEXTO DEL SISTEMA PARA UI
+  getSistemaTexto(): string {
+    const sistemas: { [key: string]: string } = {
+      'codbar': 'CODBAR',
+      'seguridades': 'SEGURIDADES', 
+      'sic-3000': 'SIC 3000',
+      'cg-3000': 'CG 3000',
+      'rol-3000': 'ROL 3000',
+      'general': 'PRINCIPAL'
+    };
+    
+    return sistemas[this.sistemaActual] || 'PRINCIPAL';
   }
 
   getMotivoTexto(motivo: string): string {
@@ -190,8 +224,33 @@ export class SinPermisosComponent implements OnInit {
     return motivos[motivo] || 'Acceso no autorizado';
   }
 
+  // 🏠 REDIRECCIÓN DINÁMICA AL INICIO DEL SISTEMA
   volverInicio(): void {
-    this.router.navigate(['/codbar']);
+    let rutaInicio: string;
+    
+    switch (this.sistemaActual) {
+      case 'codbar':
+        rutaInicio = '/codbar/inicio';
+        break;
+      case 'seguridades':
+        rutaInicio = '/seguridades/inicio';
+        break;
+      case 'sic-3000':
+        rutaInicio = '/sic-3000/inicio-sic';
+        break;
+      case 'cg-3000':
+        rutaInicio = '/cg-3000/inicio';
+        break;
+      case 'rol-3000':
+        rutaInicio = '/rol-3000/inicio';
+        break;
+      default:
+        rutaInicio = '/inicio'; // Página principal del sistema
+        break;
+    }
+    
+    console.log(`🏠 Redirigiendo a inicio del sistema ${this.sistemaActual}: ${rutaInicio}`);
+    this.router.navigate([rutaInicio]);
   }
 
   recargarPermisos(): void {
@@ -201,6 +260,7 @@ export class SinPermisosComponent implements OnInit {
     // Esperar un poco y luego intentar volver a la página anterior
     setTimeout(() => {
       if (this.detalles?.rutaAnterior) {
+        console.log(`🔄 Reintentando acceso a: ${this.detalles.rutaAnterior}`);
         this.router.navigate([this.detalles.rutaAnterior]);
       } else {
         this.volverInicio();
@@ -209,7 +269,7 @@ export class SinPermisosComponent implements OnInit {
   }
 
   cerrarSesion(): void {
-    // Se deslogea correctamente
+    console.log('🚪 Cerrando sesión desde sin-permisos...');
     this.usuarioService.logout();
     this.router.navigate(['/login']);
   }

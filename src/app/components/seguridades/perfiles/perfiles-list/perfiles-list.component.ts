@@ -77,11 +77,7 @@ export class PerfilesListComponent implements OnInit {
     this.sistemaService.getSistemas().subscribe(response => {
       this.sistemas = response.data.filter(s => s.status === true);
       if (this.sistemas.length > 0) {
-        const sistema = this.sistemas[0];
-        this.sistemaActivo = sistema.nombre;
-        this.moduloService.getModulosPorSistema(sistema.id_sistema).subscribe(resp => {
-          this.modulos = resp.data.filter(m => m.status === true);
-        });
+        this.sistemaActivo = this.sistemas[0].nombre; // Solo marcar el tab activo
       }
     });
   }
@@ -91,6 +87,10 @@ export class PerfilesListComponent implements OnInit {
     this.sistemaActivo = nombre;
     this.menus = [];
     this.opcionnes = [];
+    if (this.perfilSeleccionado === null) {
+      this.modulos = []; // Limpiar módulos si no hay perfil seleccionado
+      return; // No cargar módulos
+    }
     this.moduloService.getModulosPorSistema(idSistema).subscribe(resp => {
       this.modulos = resp.data.filter(m => m.status === true);
     });
@@ -100,6 +100,13 @@ export class PerfilesListComponent implements OnInit {
     this.perfilSeleccionado = idPerfil;
     this.menus = [];
     this.opcionnes = [];
+    // Cargar módulos del sistema activo cuando se selecciona perfil
+    const sistemaActual = this.sistemas.find(s => s.nombre === this.sistemaActivo);
+    if (sistemaActual) {
+      this.moduloService.getModulosPorSistema(sistemaActual.id_sistema).subscribe(resp => {
+        this.modulos = resp.data.filter(m => m.status === true);
+      });
+    }
   }
 
   seleccionarModulo(idModulo: number): void {

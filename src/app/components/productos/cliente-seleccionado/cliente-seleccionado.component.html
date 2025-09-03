@@ -40,20 +40,40 @@
         <th mat-header-cell *matHeaderCellDef style="width: 60px;background-color: #e3edf7;"> Estado </th>
         <td mat-cell *matCellDef="let element"> {{element.estadoNombre}} </td>
       </ng-container>
-      <ng-container matColumnDef="codpre">
+          <ng-container matColumnDef="codpre">
             <th mat-header-cell *matHeaderCellDef style="width: 60px;background-color: #e3edf7;"> Prefijo </th>
             <td mat-cell *matCellDef="let element">
-              <button mat-icon-button color="primary" (click)="editarPrefijosCliente(element)">
+              <button 
+                mat-icon-button 
+                color="primary" 
+                *ngIf="(permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.lista-de-prefijos'); else prefijosBloqueado"
+                (click)="editarPrefijosCliente(element)">
                 <img src="assets/icons/ecop-.png" alt="Ver" width="20" height="20" />
               </button>
+              <ng-template #prefijosBloqueado>
+                <button mat-icon-button disabled>
+                  <img src="assets/icons/ecop-.png" alt="Bloqueado" width="20" height="20" style="opacity: 0.3;" />
+                  <mat-icon class="lock-overlay">lock</mat-icon>
+                </button>
+              </ng-template>
             </td>
           </ng-container>
-      <ng-container matColumnDef="acciones">
+          <ng-container matColumnDef="acciones">
             <th mat-header-cell *matHeaderCellDef style="width: 60px;background-color: #e3edf7;"> Acción </th>
             <td mat-cell *matCellDef="let element">
-              <button mat-icon-button color="primary" (click)="editarCliente(element)">
+              <button 
+                mat-icon-button 
+                color="primary"
+                *ngIf="(permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.modificar-cliente'); else editarBloqueado"
+                (click)="editarCliente(element)">
                 <mat-icon>visibility_outline</mat-icon>
               </button>
+              <ng-template #editarBloqueado>
+                <button mat-icon-button disabled>
+                  <mat-icon style="opacity: 0.3;">visibility_off</mat-icon>
+                  <mat-icon class="lock-overlay">lock</mat-icon>
+                </button>
+              </ng-template>
             </td>
           </ng-container>
 

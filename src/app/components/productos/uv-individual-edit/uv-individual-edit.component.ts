@@ -566,7 +566,7 @@ export class UvIndividualEditComponent implements OnInit {
 
 
   salir(): void {
-    this.router.navigate(['/menuProductos/nuevoProducto']); // Redirecciona a /pages/clientes
+    this.router.navigate(['/productos/nuevo-producto']); // Redirecciona a /pages/clientes
     // Navegación si aplica
   }
 
@@ -1306,7 +1306,7 @@ export class UvIndividualEditComponent implements OnInit {
     console.log('➡️ Doble clic sobre:', registro);
 
     if (registro?.g14) {
-      this.router.navigate(['/menuProductos/ulEdit', registro.g14]);
+      this.router.navigate(['/productos/ul-edit/:g14', registro.g14]);
     } else {
       console.warn('⚠️ g14 no disponible en el registro:', registro);
     }

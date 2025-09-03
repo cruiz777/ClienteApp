@@ -1646,7 +1646,7 @@ export class BloqueComponent implements OnInit {
 
 
   salir(): void {
-    this.router.navigate(['/menuProductos/nuevoProducto']);
+    this.router.navigate(['/productos/nuevo-producto']);
   }
   verificarFinalizacionProceso(): void {
     const total = this.procesadosExitosos + this.procesadosFallidos;
