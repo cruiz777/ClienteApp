@@ -15,8 +15,13 @@
                 <!--BOTÓN ÚNICO INTELIGENTE -->
                 <button class="btn btn-primary" 
                         (click)="exportarYEnviarConConfirmacion()" 
-                        [disabled]="!puedeExportarYEnviar"
-                        [title]="exportInfo">
+                        [title]="exportInfo"  
+                        [disabled]="!puedeExportarYEnviar || !((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-licencias-verified.exportar-y-enviar'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-licencias-verified.exportar-y-enviar')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-licencias-verified.exportar-y-enviar')) ? 'auto' : 'none'"
+                        [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-licencias-verified.exportar-y-enviar')) ? 'Sin permisos' : ''"
+                        matInput
+                        >
                     {{ textoBotonExportarEnviar }}
                 </button>
             </div>
@@ -35,7 +40,10 @@
             <small>No se encontraron licencias que coincidan con los criterios de búsqueda especificados. Intente con criterios menos específicos o revise los filtros aplicados.</small>
         </div>
     </div>
-        <div class="form-container">
+        <div class="form-container"  
+            [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-licencias-verified.buscar')) ? '1' : '0.3'"
+            [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-licencias-verified.buscar')) ? 'auto' : 'none'"
+        >
             <!-- Primera fila: Búsqueda por nombre (izquierda) -->
             <div class="search-section-left">
             <div class="form-group-inline">

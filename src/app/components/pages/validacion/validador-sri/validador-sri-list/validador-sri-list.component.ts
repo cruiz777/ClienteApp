@@ -14,6 +14,7 @@ import { ValidacionService } from 'src/app/services/validacion.service';
 import { UpdateClienteRequest } from 'src/app/interfaces/requests/update-cliente-request';
 import { PageEvent } from '@angular/material/paginator';
 import { ClienteBasicoResponse } from 'src/app/interfaces/responses/cliente-validar-response';
+import { PermissionsService } from 'src/app/services/permission.service';
 
 type ClienteValidacionExtendido = ClienteIndividual & {
   ciudad: string;
@@ -55,7 +56,8 @@ export class ValidacionSriListComponent implements OnInit {
     private logoService: LogoService,
     private empresaService: EmpresaService,
     private exportService: ExportService,
-    private validacionService: ValidacionService
+    private validacionService: ValidacionService,
+    public permissions: PermissionsService
   ) {}
 
   ngOnInit(): void {

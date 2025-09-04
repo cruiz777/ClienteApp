@@ -15,6 +15,8 @@ import { ExportOptions } from 'src/app/interfaces/export-options';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
+import { PermissionsService } from 'src/app/services/permission.service';
+import { MatTooltipModule } from '@angular/material/tooltip';
 @Component({
   selector: 'app-grupo-producto-lista',
   standalone: true,
@@ -30,7 +32,8 @@ import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-
     MatIconModule,
     MatDialogModule,
     DialogGrupoProductoNComponent,
-    MatMenuModule
+    MatMenuModule,
+    MatTooltipModule
   ]
 })
 export class GrupoProductoListaComponent implements OnInit {
@@ -44,6 +47,7 @@ export class GrupoProductoListaComponent implements OnInit {
     private exportService: ExportService,
     private snackBar: MatSnackBar,
     private _snackBar: MatSnackBar,
+    public permissions: PermissionsService
   ) {}
 
   ngOnInit(): void {

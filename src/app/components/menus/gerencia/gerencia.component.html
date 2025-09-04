@@ -8,7 +8,13 @@
         <input matInput type="number" [(ngModel)]="anio" (change)="cambiarAnio(anio)" min="2000" max="2100">
       </mat-form-field>
 
-      <button mat-raised-button color="primary" (click)="exportarPdf()" [disabled]="resumenGtin.length === 0">
+      <button mat-raised-button color="primary" (click)="exportarPdf()"
+                        [disabled]="resumenGtin.length === 0 || !((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? 'auto' : 'none'"
+                        [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? 'Sin permisos' : ''"
+                        matInput
+      >
         <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
       </button>
     </div>

@@ -9,6 +9,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
 import { RequiredFieldsToastService } from 'src/app/components/utils/messages/required-fields-toast.service';
 import { CustomValidators } from 'src/app/components/utils/validators/validator.util';
+import { PermissionsService } from 'src/app/services/permission.service';
 
 export interface SearchParams {
   registro?: string;
@@ -81,7 +82,8 @@ export class LicenseValidatorComponent implements OnInit {
 
   constructor(private validacionService: ValidacionService,
     private dialog: MatDialog,
-    private requiredFieldsToast: RequiredFieldsToastService
+    private requiredFieldsToast: RequiredFieldsToastService,
+    public permissions: PermissionsService
   ) {}
 
   ngOnInit(): void {

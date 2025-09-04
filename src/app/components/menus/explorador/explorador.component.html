@@ -15,7 +15,13 @@
 
       <button mat-raised-button color="primary" (click)="aplicarFiltros()">Buscar</button>
       <button mat-raised-button color="warn" (click)="limpiarFiltros()">Limpiar</button>
-      <button mat-raised-button color="accent" [matMenuTriggerFor]="menuExportar">Exportar</button>
+      <button mat-raised-button color="accent" [matMenuTriggerFor]="menuExportar"
+                        [disabled]="!((permissions.permisos$ | async)?.includes('codbar.reportes.explorador-clientes.exportar'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.reportes.explorador-clientes.exportar')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.reportes.explorador-clientes.exportar')) ? 'auto' : 'none'"
+                        [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.reportes.explorador-clientes.exportar')) ? 'Sin permisos' : ''"
+                        matInput
+      >Exportar</button>
         <mat-menu #menuExportar="matMenu">
           <button mat-menu-item (click)="exportar('pdf')">PDF</button>
           <button mat-menu-item (click)="exportar('excel')">Excel</button>

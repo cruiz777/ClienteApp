@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { ProductoAdicionalService, GtinResumenResponse, ApiResponse } from 'src/app/services/producto-adicional.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { PermissionsService } from 'src/app/services/permission.service';
 
 @Component({
   selector: 'app-gerencia',
@@ -15,7 +16,9 @@ export class GerenciaComponent implements OnInit {
   cargando: boolean = false;
   mensaje: string = '';
 
-  constructor(public productoAdicionalService: ProductoAdicionalService) {}
+  constructor(public productoAdicionalService: ProductoAdicionalService,
+    public permissions: PermissionsService
+  ) {}
 
   ngOnInit(): void {
     this.obtenerResumen();

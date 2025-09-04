@@ -26,6 +26,7 @@ import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/components/ut
 import { PerfilesFormComponent } from '../perfiles-form/perfiles-form.component';
 import { SubMenuService } from 'src/app/services/submenu.service';
 import { SubMenuResponse } from 'src/app/interfaces/responses/submenu-response';
+import { PermissionsService } from 'src/app/services/permission.service';
 
 interface MenuExtendido extends MenuResponse {
   tieneOpciones: boolean;
@@ -67,7 +68,8 @@ export class PerfilesListComponent implements OnInit {
     private opcionesService: OpcionService,
     private dialog: MatDialog,
     private perfilesOpcionesService: PerfilOpcionService,
-    private subMenuService: SubMenuService
+    private subMenuService: SubMenuService,
+    public permissions: PermissionsService
   ) { }
 
   // ==================== Inicialización ====================

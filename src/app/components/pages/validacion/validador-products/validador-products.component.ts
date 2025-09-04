@@ -11,6 +11,7 @@ import { FechaOperator } from 'src/app/interfaces/responses/fecha-operator-enum'
 import { ExportProductosResponse, ProductoLicenseResponse } from 'src/app/interfaces/responses/products-license-response';
 import { ExportProductosQuery, ProductoLicenseQuery } from 'src/app/interfaces/responses/export-products-response';
 import { RequiredFieldsToastService } from 'src/app/components/utils/messages/required-fields-toast.service';
+import { PermissionsService } from 'src/app/services/permission.service';
 
 export interface SearchParams {
   registro?: string;
@@ -82,7 +83,8 @@ export class ProductsLicenseValidator implements OnInit {
 
   constructor(private validacionService: ValidacionService,
     private dialog: MatDialog,
-    private requiredFieldsToast: RequiredFieldsToastService 
+    private requiredFieldsToast: RequiredFieldsToastService,
+    public permissions: PermissionsService
   ) {}
 
   ngOnInit(): void {
