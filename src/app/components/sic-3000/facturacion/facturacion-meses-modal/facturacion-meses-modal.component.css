@@ -14,3 +14,34 @@ mat-form-field{ width:100%; }
 @media (max-width: 560px){
   .grid{ grid-template-columns: 1fr; }
 }
+/* ancho del panel del diálogo */
+.meses-dialog .mdc-dialog__surface {
+  width: 560px;          /* << ajusta a tu gusto */
+  max-width: 95vw;
+}
+
+/* grid en 2 columnas y orden por filas */
+.grid{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  grid-template-areas:
+    "prefijo prefijo"
+    "factura fecha"
+    "desde1  hasta1"
+    "desde2  hasta2"
+    "meses   meses"
+    "mes     anio";
+}
+
+/* asignación de áreas */
+.area-prefijo{ grid-area: prefijo; }
+.area-factura{ grid-area: factura; }
+.area-fecha  { grid-area: fecha; }
+.area-desde1 { grid-area: desde1; }
+.area-hasta1 { grid-area: hasta1; }
+.area-desde2 { grid-area: desde2; }
+.area-hasta2 { grid-area: hasta2; }
+.area-meses  { grid-area: meses; }
+.area-mes    { grid-area: mes; }
+.area-anio   { grid-area: anio; }

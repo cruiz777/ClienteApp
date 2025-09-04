@@ -1,8 +1,9 @@
 <h2 mat-dialog-title>Seleccionar meses — {{ data.anioActual }}</h2>
 
 <div mat-dialog-content class="grid" [formGroup]="form">
-  <!-- Selector de Prefijo -->
-  <mat-form-field appearance="fill" class="w-full">
+
+  <!-- Fila 1: Prefijo (full row) -->
+  <mat-form-field appearance="fill" class="area-prefijo">
     <mat-label>Prefijo</mat-label>
     <mat-select formControlName="idPrefijo">
       <mat-option [value]="null">Seleccione…</mat-option>
@@ -12,51 +13,82 @@
     </mat-select>
   </mat-form-field>
 
-  <!-- Fecha Última de Pago -->
-  <mat-form-field appearance="fill">
-    <mat-label>Fecha Última de Pago</mat-label>
+  <!-- Fila 2: Factura | Fecha Factura -->
+  <mat-form-field appearance="fill" class="area-factura">
+    <mat-label>Factura</mat-label>
+    <input matInput formControlName="numFactura" readonly>
+  </mat-form-field>
+
+  <mat-form-field appearance="fill" class="area-fecha">
+    <mat-label>Fecha Factura</mat-label>
+    <input matInput formControlName="fechaFactura" readonly>
+  </mat-form-field>
+
+  <!-- Fila 3: Desde | Hasta (1er par) -->
+  <mat-form-field appearance="fill" class="area-desde1">
+    <mat-label>Desde</mat-label>
     <input matInput
-           [matDatepicker]="dp1"
+           [matDatepicker]="dpDesde1"
+           formControlName="fDesde"
+           (keydown)="bloquearTeclado($event)"
+           (paste)="$event.preventDefault()">
+    
+    <mat-datepicker #dpDesde1 startView="month"></mat-datepicker>
+  </mat-form-field>
+
+  <mat-form-field appearance="fill" class="area-hasta1">
+    <mat-label>Hasta</mat-label>
+    <input matInput
+           [matDatepicker]="dpHasta1"
+           formControlName="fHasta"
+           (keydown)="bloquearTeclado($event)"
+           (paste)="$event.preventDefault()">
+    
+    <mat-datepicker #dpHasta1 startView="month"></mat-datepicker>
+  </mat-form-field>
+
+  <!-- Fila 4: Desde | Hasta (2º par que usa tu lógica actual) -->
+  <mat-form-field appearance="fill" class="area-desde2">
+    <mat-label>Desde</mat-label>
+    <input matInput
+           [matDatepicker]="dpDesde2"
            formControlName="fchUltimaPago"
-           [readonly]="true"
            (keydown)="bloquearTeclado($event)"
            (paste)="$event.preventDefault()"
            (dateChange)="recalcular()">
-    <mat-datepicker-toggle matSuffix [for]="dp1"></mat-datepicker-toggle>
-    <mat-datepicker #dp1 startView="month"></mat-datepicker>
+    <mat-datepicker-toggle matSuffix [for]="dpDesde2"></mat-datepicker-toggle>
+    <mat-datepicker #dpDesde2 startView="month"></mat-datepicker>
   </mat-form-field>
 
-  <!-- Fecha Hasta Paga -->
-  <mat-form-field appearance="fill">
-    <mat-label>Fecha Hasta Paga</mat-label>
+  <mat-form-field appearance="fill" class="area-hasta2">
+    <mat-label>Hasta</mat-label>
     <input matInput
-           [matDatepicker]="dp2"
+           [matDatepicker]="dpHasta2"
            formControlName="fchHastaPaga"
-           [readonly]="true"
            (keydown)="bloquearTeclado($event)"
            (paste)="$event.preventDefault()"
            (dateChange)="recalcular()">
-    <mat-datepicker-toggle matSuffix [for]="dp2"></mat-datepicker-toggle>
-    <mat-datepicker #dp2 startView="month"></mat-datepicker>
+    <mat-datepicker-toggle matSuffix [for]="dpHasta2"></mat-datepicker-toggle>
+    <mat-datepicker #dpHasta2 startView="month"></mat-datepicker>
   </mat-form-field>
 
-  <!-- Número de Meses -->
-  <mat-form-field appearance="fill">
+  <!-- Fila 5: Número de Meses (full row) -->
+  <mat-form-field appearance="fill" class="area-meses">
     <mat-label>Número de Meses</mat-label>
     <input matInput formControlName="numMeses" readonly>
   </mat-form-field>
 
-  <!-- Mes (fin) -->
-  <mat-form-field appearance="fill">
+  <!-- Fila 6: Mes | Año -->
+  <mat-form-field appearance="fill" class="area-mes">
     <mat-label>Mes</mat-label>
     <input matInput formControlName="mesFinNombre" readonly>
   </mat-form-field>
 
-  <!-- Año (fin) -->
-  <mat-form-field appearance="fill">
+  <mat-form-field appearance="fill" class="area-anio">
     <mat-label>Año</mat-label>
     <input matInput formControlName="anioFin" readonly>
   </mat-form-field>
+
 </div>
 
 <div mat-dialog-actions align="end">

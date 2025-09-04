@@ -73,7 +73,7 @@ export class FacturacionMesesModalComponent {
 
     this.form = this.fb.group({
       // 👇 NUEVO: control para el prefijo
-      idPrefijo: [data?.idPrefijo ?? null],
+      idPrefijo: [null],
 
       fchUltimaPago: [f1],
       fchHastaPaga: [f2],

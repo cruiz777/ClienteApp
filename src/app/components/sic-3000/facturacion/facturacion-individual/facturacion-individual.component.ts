@@ -13,6 +13,8 @@ import { FacturaCrearRequest, FacturaDetalleRequest, FacturaFormaPagoRequest } f
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { AbstractControl } from '@angular/forms';
 import { Router } from '@angular/router';
+import { combineLatest } from 'rxjs';
+import { shareReplay} from 'rxjs/operators';
 import {
   FacturacionMesesResult
 } from 'src/app/components/sic-3000/facturacion/facturacion-meses-modal/facturacion-meses-modal.component';
@@ -81,6 +83,7 @@ interface LineaFactura {
   descPct?: number;    // 👈 % de descuento (0..100)
   base?: number;   // base imponible de la línea (ya con descuento, SIN IVA)
   ivaVal?: number; // valor de IVA de la línea
+  periodo?: string;
 }
 
 
@@ -191,6 +194,7 @@ export class FacturacionIndividualComponent implements OnInit {
       }
     },
     { headerName: 'Cod.', field: 'codpro', width: 60, suppressColumnsToolPanel: true },
+    { headerName: 'Periodo', field: 'periodo', editable: false, flex: 1, minWidth: 200, tooltipField: 'periodo' },
     { headerName: 'Detalle', field: 'detalle', editable: false, flex: 1, minWidth: 200, tooltipField: 'detalle' },
     {
       headerName: 'P. Unidad',
@@ -525,30 +529,42 @@ export class FacturacionIndividualComponent implements OnInit {
       .subscribe(resp => this.clientesOrigenFiltrados = resp.data || []);
 
     // ==== Autocomplete formas de pago ====
+    // --- arriba del bloque, dentro de ngOnInit (o como propiedad de la clase) ---
     const metodoCtrl = this.formPagos.get('metodoPago') as FormControl;
 
-    this.filteredFormasPago$ = metodoCtrl.valueChanges.pipe(
-      map((v: any) => typeof v === 'string' ? v : (v?.descripcionPago ?? v?.descripcion_pago ?? '')),
-      map((v: string) => (v ?? '').trim()),
-      tap(term => { this.isLoadingFormas = true; }),
-      debounceTime(250),
-      distinctUntilChanged(),
-      filter((term: string) => term.length > 0),
-      switchMap((term: string) =>
-        this.formaPagoService.search(term).pipe(
-          // Normaliza a camelCase para el front
-          map(resp => (resp?.data ?? []).map((x: any) => ({
-            idFormaPago: x.idFormaPago ?? x.id_forma_pago ?? x.id ?? 0,
-            descripcionPago: x.descripcionPago ?? x.descripcion_pago ?? x.descripcion ?? ''
-          }) as FormaPagoResponse)),
-          catchError(err => {
-            console.error('[FormasPago] error:', err);
-            return of([] as FormaPagoResponse[]);
-          })
-        )
-      ),
-      tap(() => { this.isLoadingFormas = false; })
+    // cachea la lista de activas una sola vez
+    const formasActivas$ = this.formaPagoService.getActivas().pipe(
+      map(resp => (resp?.data ?? []).map((x: any) => ({
+        idFormaPago: x.idFormaPago ?? x.id_forma_pago ?? x.id ?? 0,
+        descripcionPago: x.descripcionPago ?? x.descripcion_pago ?? x.descripcion ?? ''
+      }) as FormaPagoResponse)),
+      shareReplay(1)
     );
+
+    // stream filtrado para el autocomplete (filtra localmente)
+    this.filteredFormasPago$ = combineLatest([
+      metodoCtrl.valueChanges.pipe(
+        startWith(''),
+        debounceTime(250),
+        distinctUntilChanged(),
+        map((v: any) =>
+          (typeof v === 'string' ? v : (v?.descripcionPago ?? v?.descripcion_pago ?? '')).trim().toLowerCase()
+        ),
+        tap(() => this.isLoadingFormas = true)
+      ),
+      formasActivas$
+    ]).pipe(
+      map(([term, lista]) =>
+        !term ? lista : lista.filter(fp => (fp.descripcionPago ?? '').toLowerCase().includes(term))
+      ),
+      finalize(() => this.isLoadingFormas = false),
+      catchError(err => {
+        console.error('[FormasPago] error:', err);
+        this.isLoadingFormas = false;
+        return of([] as FormaPagoResponse[]);
+      })
+    );
+
     this.cargarDescuentos();
     this.configurarFiltroDescuentos();
   }
@@ -936,7 +952,9 @@ export class FacturacionIndividualComponent implements OnInit {
     const nuevaFila: LineaFactura = {
       codpro: p.codpro, cantidad: 1, detalle, pUnidad: pu, iva: ivaPorc,
       descPct: this.descuentoSeleccionado ? this.toN(this.descuentoSeleccionado.valor, 2) : 0,
-      desUnit: 0, descuento: 0, desTotal: 0, total: 0
+      desUnit: 0, descuento: 0, desTotal: 0, total: 0,
+      periodo: '' // 👈
+
     };
     this.recalcLinea(nuevaFila);
 
@@ -1483,68 +1501,7 @@ export class FacturacionIndividualComponent implements OnInit {
     el.style.height = 'auto';
     el.style.height = `${el.scrollHeight}px`;
   }
-  abrirDialogoAnio(): void {
-    // ✅ Validar que exista 1176 en el grid
-    if (!this.hasProductoEnGrid(this.COD_MANT_MENSUAL)) {
-      this.mostrarAlerta('Agregue el producto 1176 (MANTENIMIENTO MENSUAL) para usar esta opción.', 'info');
-      return;
-    }
 
-    // (Opcional) validar prefijo seleccionado
-    const idPrefijo = this.formCliente.get('gcp')?.value ?? null;
-    if (!idPrefijo) {
-      this.mostrarAlerta('Seleccione un prefijo antes de continuar.', 'info');
-      return;
-    }
-
-    const anioActual = Number(this.formFactura.get('anio')?.value) || new Date().getFullYear();
-    const pref = this.prefijos.find(p => p.id_prefijos === idPrefijo) || null;
-    const codpre = pref?.codpre ?? null;
-
-    const ref = this.dialog.open(FacturacionMesesModalComponent, {
-      width: '500px',
-      disableClose: true, // solo se cierra con “Salir”
-      data: {
-        anioActual,
-        idPrefijo,
-        codpre,
-        onAceptar: (res: FacturacionMesesResult) => {
-          this.formFactura.get('anio')?.setValue(res.anio);
-
-          const idPrefijoSel = this.formCliente.get('gcp')?.value ?? null;
-          const prefijoObj = this.prefijos.find(p => p.id_prefijos === idPrefijoSel) || null;
-          const codpreSel = prefijoObj?.codpre ?? null;
-          const prefijoTxt = codpreSel || `ID ${idPrefijoSel}`;
-
-          const aplicar = (row: any) => {
-            if ((row.codpro ?? '').toString() !== this.COD_MANT_MENSUAL) return;
-            row.cantidad = res.numeroMeses;
-
-            const marca = `Prefijo: ${prefijoTxt} ${res.periodo}`;
-            const baseDetalle = (row.detalle ?? '').replace(/\s+Prefijo:.*$/, '').trim();
-            row.detalle = `${baseDetalle} ${marca}`.trim();
-
-            this.recalcLinea(row);
-          };
-
-          if (this.gridApi) {
-            const nodes: any[] = []; this.gridApi.forEachNode(n => nodes.push(n));
-            nodes.forEach(n => aplicar(n.data));
-            this.gridApi.refreshCells({ force: true });
-          } else {
-            this.rowData.forEach(aplicar);
-          }
-
-          this.recalcTotalesFactura();
-          this.ajustarPagosAlTotal();
-        }
-      }
-    });
-
-    ref.afterClosed().subscribe(() => {
-      // hook opcional al cerrar
-    });
-  }
 
 
   private hasProductoEnGrid(cod: string): boolean {
@@ -1732,14 +1689,16 @@ export class FacturacionIndividualComponent implements OnInit {
     const codpreActual = this.prefijos.find(p => p.id_prefijos === idPrefijoActual)?.codpre ?? null;
 
     const ref = this.dialog.open(FacturacionMesesModalComponent, {
-      width: '500px',
+      width: '560px',       // antes tenías 700px
+      maxWidth: '95vw',
       disableClose: true,
       data: {
         // 👉 pasamos lista y selección actual para que el modal muestre y permita elegir
         anioActual,
         prefijos: this.prefijos,          // [{ id_prefijos, codpre }, ...]
-        idPrefijo: idPrefijoActual,       // seleccionado actual (opcional)
-        codpre: codpreActual,             // seleccionado actual (opcional)
+        idPrefijo: null,       // seleccionado actual (opcional)
+        codpre: null,             // seleccionado actual (opcional)
+
         onAceptar: (res: FacturacionMesesResult & { idPrefijo: number; codpre: string }) => {
           // 1) Refleja la selección en el form del padre (útil para otras validaciones)
           this.formCliente.patchValue({ gcp: res.idPrefijo, prefijo: res.codpre }, { emitEvent: false });
@@ -1751,20 +1710,26 @@ export class FacturacionIndividualComponent implements OnInit {
           const row = params.data;
           row.cantidad = res.numeroMeses;
 
+          // Detalle (con prefijo y periodo legible)
           const prefijoTxt = res.codpre || `ID ${res.idPrefijo}`;
           const marca = `Prefijo: ${prefijoTxt} ${res.periodo}`;
           const baseDetalle = (row.detalle ?? '').replace(/\s+Prefijo:.*$/, '').trim();
           row.detalle = `${baseDetalle} ${marca}`.trim();
 
+          // ✅ Periodo que irá al grid: "prefijo | desde | hasta"
+          row.periodo = `${res.codpre} | ${res.fechaUltimaPago} | ${res.fechaHastaPaga}`;
+
+          // Recalcular importes de la fila
           this.recalcLinea(row);
 
-          // Refresca la fila actual
+          // Refrescar SOLO columnas afectadas
           params.api.refreshCells({
             rowNodes: [params.node],
+            columns: ['cantidad', 'detalle', 'periodo', 'desTotal', 'total'],
             force: true
           });
 
-          // Recalcula totales/pagos
+          // Recalcular totales/pagos
           this.recalcTotalesFactura();
           this.ajustarPagosAlTotal();
         }
@@ -1775,6 +1740,7 @@ export class FacturacionIndividualComponent implements OnInit {
       // opcional: hook al cerrar
     });
   }
+
   getEmailsConcat(): string {
     const parts = [
       (this.formCliente.get('email')?.value || '').trim(),

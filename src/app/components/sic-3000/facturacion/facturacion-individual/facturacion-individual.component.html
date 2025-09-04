@@ -212,8 +212,8 @@
       <section class="product-section" aria-labelledby="product-label" style="padding-top:0;">
         <mat-form-field class="fi-field fi-prefix-field" style="color: white; width: 100%;">
           <span matPrefix class="fi-prefix">Pago:&nbsp;</span>
-          <input matInput #pagoInputRef placeholder="Buscar forma de pago" formControlName="metodoPago"
-            [matAutocomplete]="autoPago" />
+          <input matInput #pagoInputRef #autoPagoTrigger="matAutocompleteTrigger" placeholder="Buscar forma de pago"
+            formControlName="metodoPago" [matAutocomplete]="autoPago"  />
         </mat-form-field>
 
         <mat-autocomplete #autoPago="matAutocomplete" [displayWith]="displayFormaPago"
@@ -225,6 +225,7 @@
             Sin resultados
           </mat-option>
         </mat-autocomplete>
+
       </section>
 
       <section class="pagos-grid-section" aria-labelledby="pagos-title">
