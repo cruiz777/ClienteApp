@@ -48,6 +48,7 @@ import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-
 // 🆕 OTROS MÓDULOS NECESARIOS
 import { ProductosModule } from 'src/app/components/productos/productos.module';
 import { ExploradorClientesComponent } from '../pages/explorador-clientes/explorador-clientes.component';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @NgModule({
   declarations: [
@@ -97,6 +98,7 @@ import { ExploradorClientesComponent } from '../pages/explorador-clientes/explor
     MatIconModule,
     MatMenuModule,
     LayoutModule,
+    MatTooltipModule,
     
     // 🆕 OTROS MÓDULOS
     ReusableModule,

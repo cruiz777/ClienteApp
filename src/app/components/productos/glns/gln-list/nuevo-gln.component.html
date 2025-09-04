@@ -15,7 +15,10 @@
       <button 
         [class.tab-active]="activeTab === 'GLNs'" 
         [class.tab-inactive]="activeTab !== 'GLNs'" 
-        (click)="cambiarTab('GLNs')">
+        (click)="cambiarTab('GLNs')"
+        [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-gln.listado-de-gln'))"
+        [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-gln.listado-de-gln')) ? 'Sin permisos' : ''"
+        >
         GLN´s
       </button>
     </div>

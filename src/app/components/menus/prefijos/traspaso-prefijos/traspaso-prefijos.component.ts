@@ -38,6 +38,8 @@ import { forkJoin } from 'rxjs';
 import { AfterViewInit } from '@angular/core';
 import { MatPaginatorModule } from '@angular/material/paginator';
 import { ExportOptions } from 'src/app/interfaces/export-options';
+import { PermissionsService } from 'src/app/services/permission.service';
+import { MatTooltipModule } from '@angular/material/tooltip';
 @Component({
   selector: 'app-traspaso-prefijos',
   standalone: true,
@@ -55,7 +57,8 @@ import { ExportOptions } from 'src/app/interfaces/export-options';
     MatMenuModule,
     MatPaginator,
     MatTableModule,
-    MatPaginatorModule  
+    MatPaginatorModule,
+    MatTooltipModule
   ]
 })
 export class TraspasoPrefijosComponent implements OnInit, AfterViewInit {
@@ -99,7 +102,8 @@ export class TraspasoPrefijosComponent implements OnInit, AfterViewInit {
     private _snackBar: MatSnackBar,
     private auditoriaTransferenciaService: AuditoriaTransferenciaService,
     private cuponService: CuponService,
-    private ssccService: SsccService
+    private ssccService: SsccService,
+    public permissions: PermissionsService
   ) {}
 
   ngOnInit(): void {

@@ -48,6 +48,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { ViewChild } from '@angular/core';
 import { ExportOptions } from 'src/app/interfaces/export-options';
+import { PermissionsService } from 'src/app/services/permission.service';
 
 
 
@@ -164,7 +165,8 @@ botonAsignarActivo: boolean = true;
     private dialog: MatDialog,
     private _snackBar: MatSnackBar,
     private fb: FormBuilder,
-    private productoService: ProductoService
+    private productoService: ProductoService,
+    public permissions: PermissionsService
 
   ) {
     this.formUV = this.fb.group({

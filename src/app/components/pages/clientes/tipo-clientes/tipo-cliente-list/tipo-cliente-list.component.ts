@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { TipoClienteResponse } from 'src/app/interfaces/responses/tipo-cliente-response';
 import { TipoClienteService } from 'src/app/services/tipo-cliente.service';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
+import { PermissionsService } from 'src/app/services/permission.service';
 
 @Component({
   selector: 'app-tipo-cliente',
@@ -22,7 +23,8 @@ export class TipoClienteListComponent implements OnInit {
 
   constructor(
     private tipoClienteService: TipoClienteService,
-    private router: Router
+    private router: Router,
+    public permissions: PermissionsService
   ) {}
 
   ngOnInit(): void {

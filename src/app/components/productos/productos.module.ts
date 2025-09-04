@@ -57,6 +57,7 @@ import { UlComponent } from './ul/ul.component';
 import { UlEditComponent } from './ul-edit/ul-edit.component';
 import { NuevoSsccComponent } from './nuevo-sscc/nuevo-sscc.component';
 import { CuponesComponent } from './cupones/cupones.component';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 // 📌 Registrar locale español
 registerLocaleData(localeEs);
@@ -96,7 +97,7 @@ export const MY_DATE_FORMATS = {
     UlEditComponent,              
     NuevoSsccComponent,           
     CuponesComponent,   
-    
+
     // Angular Material
     MatSidenavModule,
     MatListModule,
@@ -115,7 +116,7 @@ export const MY_DATE_FORMATS = {
     MatOptionModule,
     MatAutocompleteModule,
     MatProgressBarModule,
-
+    MatTooltipModule, 
     MatAutocompleteModule,
     MatDatepickerModule,
     MatNativeDateModule,

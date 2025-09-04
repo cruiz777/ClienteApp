@@ -1,6 +1,12 @@
 <div class="tabs">
   <button [class.active]="activeTab === 'Transferir'" (click)="cambiarTab('Transferir')">Transferir</button>
-  <button [class.active]="activeTab === 'Listado'" (click)="cambiarTab('Listado')">Listado</button>
+  <button [class.active]="activeTab === 'Listado'" (click)="cambiarTab('Listado')"
+          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.listado'))"
+          [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.listado')) ? '1' : '0.3'"
+          [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.listado')) ? 'auto' : 'none'"
+          [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.listado')) ? 'Sin permisos' : ''"
+          matInput
+  >Listado</button>
 </div>
 
 <!-- TAB TRANSFERIR -->
@@ -16,7 +22,14 @@
           <mat-form-field appearance="outline" class="campo-largo">
             <mat-label>Cliente</mat-label>
             <input type="text" matInput [formControl]="clienteOrigenControl" [matAutocomplete]="autoOrigen"
-              placeholder="Buscar cliente..." />
+              placeholder="Buscar cliente..." 
+              [readonly]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir'))"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? '1' : '0.3'"
+              [style.cursor]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'text' : 'not-allowed'"
+              [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'auto' : 'none'"
+              [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'Sin permisos' : ''"
+              matInput
+              />
             <mat-autocomplete #autoOrigen="matAutocomplete" [displayWith]="mostrarNombreCliente"
               (optionSelected)="seleccionarClienteOrigen($event.option.value)">
               <mat-option *ngFor="let cliente of clientesOrigenFiltrados" [value]="cliente">
@@ -29,7 +42,14 @@
           <mat-form-field appearance="outline" class="campo-largo">
             <mat-label>Destino</mat-label>
             <input type="text" matInput [formControl]="clienteDestinoControl" [matAutocomplete]="autoDestino"
-              placeholder="Buscar cliente..." />
+              placeholder="Buscar cliente..." 
+              [readonly]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir'))"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? '1' : '0.3'"
+              [style.cursor]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'text' : 'not-allowed'"
+              [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'auto' : 'none'"
+              [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'Sin permisos' : ''"
+              matInput
+              />
             <mat-autocomplete #autoDestino="matAutocomplete" [displayWith]="mostrarNombreCliente"
               (optionSelected)="seleccionarClienteDestino($event.option.value)">
               <mat-option *ngFor="let cliente of clientesDestinoFiltrados" [value]="cliente">
@@ -60,7 +80,13 @@
             <!-- Textarea -->
             <mat-form-field appearance="outline" class="form-campo" style="flex: 2;">
               <textarea matInput formControlName="textoPegado" placeholder="Pegar GTIN UV"
-                (blur)="pegarPrimeraColumna()"></textarea>
+                (blur)="pegarPrimeraColumna()"
+                [readonly]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir'))"
+                [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? '1' : '0.3'"
+                [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'auto' : 'none'"
+                [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'Sin permisos' : ''"
+                matInput
+                ></textarea>
             </mat-form-field>
           </div>
 
@@ -69,11 +95,29 @@
 
         <div class="form-actions form-actions-horizontal alineado-derecha">
           <button type="button" (click)="onBuscar()" [class.activo]="botonActivo === 'buscar'"
-            (click)="seleccionarBoton('buscar')">Buscar</button>
+            (click)="seleccionarBoton('buscar')"
+            [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir'))"
+            [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? '1' : '0.3'"
+            [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'auto' : 'none'"
+            [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'Sin permisos' : ''"
+            matInput
+            >Buscar</button>
           <button type="button" (click)="onNuevaBusqueda()" [class.activo]="botonActivo === 'nueva'"
-            (click)="seleccionarBoton('nueva')">Nueva Búsqueda</button>
+            (click)="seleccionarBoton('nueva')"
+            [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir'))"
+            [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? '1' : '0.3'"
+            [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'auto' : 'none'"
+            [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'Sin permisos' : ''"
+            matInput
+            >Nueva Búsqueda</button>
           <button type="button" [disabled]="!botonAsignarActivo" [class.activo]="botonActivo === 'transferir'"
-            (click)="ontransferir()">
+            (click)="ontransferir()"
+            [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir'))"
+            [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? '1' : '0.3'"
+            [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'auto' : 'none'"
+            [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir')) ? 'Sin permisos' : ''"
+            matInput
+            >
             Asignar
           </button>
 
@@ -112,7 +156,13 @@
       </div>
 
       <div class="form-actions">
-        <button mat-button [matMenuTriggerFor]="menuExportar">Exportar</button>
+        <button mat-button [matMenuTriggerFor]="menuExportar"
+          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.exportar'))"
+          [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.exportar')) ? '1' : '0.3'"
+          [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.exportar')) ? 'auto' : 'none'"
+          [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.exportar')) ? 'Sin permisos' : ''"
+          matInput
+        >Exportar</button>
         <mat-menu #menuExportar="matMenu">
           <button mat-menu-item (click)="exportar('pdf')">PDF</button>
           <button mat-menu-item (click)="exportar('excel')">Excel</button>

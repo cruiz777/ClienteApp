@@ -1,7 +1,15 @@
 <div class="tabs">
   <button [class.active]="activeTab === 'Listado'" (click)="cambiarTab('Listado')">Listado Cupones</button>
-  <button [class.active]="activeTab === 'Generar'" (click)="cambiarTab('Generar')">Generar Cupones</button>
-  <button [class.active]="activeTab === 'Reportes'" (click)="cambiarTab('Reportes')">Reportes</button>
+  
+  <button [class.active]="activeTab === 'Generar'" 
+          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.generar-cupones'))"
+          [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.generar-cupones')) ? 'Sin permisos' : ''"
+          (click)="cambiarTab('Generar')">Generar Cupones</button>
+          
+  <button [class.active]="activeTab === 'Reportes'" 
+          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.reportes'))"
+          [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.reportes')) ? 'Sin permisos' : ''"
+          (click)="cambiarTab('Reportes')">Reportes</button>
 </div>
 
 <!-- TAB LISTADO -->

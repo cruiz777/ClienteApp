@@ -45,6 +45,7 @@ import { isValid, parse, setHours, setMilliseconds, setMinutes, setSeconds } fro
 import * as moment from 'moment';
 import { CustomValidators } from '../../utils/validators/validator.util';
 import { PermissionsService } from 'src/app/services/permission.service';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 interface CuponTablaView {
   id: number;
@@ -99,7 +100,8 @@ export const MY_DATE_FORMATS = {
     MatPaginatorModule,
     AgGridModule,
     ButtonRendererComponent,
-    MatDialogModule
+    MatDialogModule,
+    MatTooltipModule
   ],
     providers: [
     { provide: DateAdapter, useClass: MomentDateAdapter, deps: [MAT_DATE_LOCALE] },

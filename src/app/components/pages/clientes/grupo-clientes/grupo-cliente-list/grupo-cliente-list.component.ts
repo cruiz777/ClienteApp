@@ -8,6 +8,7 @@ import { EmpresaService } from 'src/app/services/empresa.service';
 import { ExportService } from 'src/app/services/export.service';
 import { ExportOptions } from 'src/app/interfaces/export-options';
 import * as moment from 'moment';
+import { PermissionsService } from 'src/app/services/permission.service';
 
 @Component({
   selector: 'app-grupo-cliente-list',
@@ -27,7 +28,8 @@ export class GrupoClienteListComponent implements OnInit {
     private router: Router,
     private logoService: LogoService,
     private empresaService: EmpresaService,
-    private exportService: ExportService
+    private exportService: ExportService,
+    public permissions: PermissionsService
   ) {}
 
   ngOnInit(): void {
