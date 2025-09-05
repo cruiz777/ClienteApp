@@ -1,6 +1,7 @@
 import { Component, OnInit, AfterViewInit, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
+import { RequiredFieldsToastService } from 'src/app/components/utils/messages/required-fields-toast.service';
 
 import { ProductoRequest, sanitizeProductoPayload } from 'src/app/interfaces/requests/producto-request';
 import { CreateProductoConEstructuraRequest } from 'src/app/interfaces/requests/create-producto-estructura-request';
@@ -21,19 +22,16 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   selectedTab = 0;
   idEstructura!: number;
 
-  // Catálogos (Tab 1)
   unidadesVenta: UnidadVentaResponse[] = [];
   tiposProducto = ['Bien', 'Servicio'];
   presentaciones: PresentacionResponse[] = [];
   clasesProducto = ['A', 'B', 'C'];
 
-  // IVA para Tab 3
   iva = 0.12;
 
-  // Formularios
-  form!: FormGroup;          // Tab 1
-  adicionalForm!: FormGroup; // Tab 2
-  preciosForm!: FormGroup;   // Tab 3
+  form!: FormGroup;
+  adicionalForm!: FormGroup;
+  preciosForm!: FormGroup;
 
   constructor(
     private fb: FormBuilder,
@@ -41,7 +39,8 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     private productoService: ProductoService,
     private presentacionService: PresentacionService,
     private unidadVentaService: UniddaVentaService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private toastCampos: RequiredFieldsToastService
   ) { }
 
   ngOnInit(): void {
@@ -53,7 +52,6 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       console.log('ID de estructura recibido:', this.idEstructura);
     });
 
-    // ===== Tab 1
     this.form = this.fb.group({
       descripcion: ['', [Validators.required, Validators.maxLength(500)]],
       codigoInterno: [''],
@@ -89,7 +87,6 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       fechaModificacion: [null],
     });
 
-    // ===== Tab 2
     this.adicionalForm = this.fb.group({
       color: [''],
       sabor: [''],
@@ -111,19 +108,16 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       ctaGastos: [''],
     });
 
-    // ===== Tab 3
     this.preciosForm = this.fb.group({
-      // Precios (editables)
       precioOficial: [0],
       precioRedMsp: [0],
-      pvpActualIva: [0, [Validators.min(0)]],     // base SIN IVA
-      pvpAnteriorMasIva: [0],                     // se autollenará si está en 0
+      pvpActualIva: [0, [Validators.min(0)]],
+      pvpAnteriorMasIva: [0],
       fechaAnteriorModificarPrecio: [null],
-      pvpActualMasIva: [0],                       // calculado si el usuario no lo edita
+      pvpActualMasIva: [0],
       fechaModificarPrecio: [null],
-      margenUtilidad: [0],                        // calculado si el usuario no lo edita
+      margenUtilidad: [0],
 
-      // Costos (editables)
       costoSuministro: [0],
       costoProducto: [0],
       costoPromedio: [0],
@@ -134,7 +128,6 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       recepcionPorcentaje: [0]
     });
 
-    // Cálculos automáticos (se recalculan cuando haya cambios reales)
     this.preciosForm.get('pvpActualIva')!.valueChanges
       .subscribe(() => this.recalcularPvpConIva());
     this.preciosForm.get('costoProducto')!.valueChanges
@@ -145,6 +138,8 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       .subscribe(() => this.recalcularMargen());
   }
 
+  ngAfterViewInit(): void { this.cdr.detectChanges(); }
+
   isInvalid(ctrl: string): boolean {
     const c = this.form.get(ctrl);
     return !!c && c.invalid && (c.touched || c.dirty);
@@ -154,7 +149,6 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     this.presentacionService.getPresentacion().subscribe({
       next: (resp) => {
         this.presentaciones = resp.data;
-        console.log(this.presentaciones)
       },
       error: () => {
         alert('Error al cargar presentaciones');
@@ -166,7 +160,6 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     this.unidadVentaService.getUnidadVenta().subscribe({
       next: (resp) => {
         this.unidadesVenta = resp.data;
-        console.log(this.unidadesVenta)
       },
       error: () => {
         alert('Error al cargar unidades de venta')
@@ -174,9 +167,6 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     })
   }
 
-  ngAfterViewInit(): void { this.cdr.detectChanges(); }
-
-  // ===== Getters para botonera genérica =====
   get currentForm(): FormGroup | null {
     switch (this.selectedTab) {
       case 0: return this.form;
@@ -187,32 +177,21 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   }
   get currentFormInvalid(): boolean { return !(this.currentForm && this.currentForm.valid); }
 
-  // ===== Utilidades Tab 3 =====
-  /** Redondea a 'd' decimales (por defecto 3) */
   private fix(n: number, d = 3): number {
     return Number((Math.round(n * Math.pow(10, d)) / Math.pow(10, d)).toFixed(d));
   }
 
-  /**
-   * Limpia lo que el usuario escribe en tiempo real:
-   * - Acepta solo 0-9 y un único separador decimal.
-   * - Convierte coma a punto.
-   * - NO emite eventos para no disparar cálculos mientras escribe.
-   */
   onNumericInput(controlName: string): void {
     const ctrl = this.preciosForm.get(controlName);
     if (!ctrl) return;
     let val = (ctrl.value ?? '').toString();
 
-    // Reemplazar coma por punto y filtrar caracteres no válidos
     val = val.replace(',', '.').replace(/[^0-9.]/g, '');
-    // Dejar solo un punto decimal
     val = val.replace(/(\..*)\./g, '$1');
 
     ctrl.setValue(val, { emitEvent: false });
   }
 
-  /** Normaliza en blur: convierte a número y redondea; emite evento para recalcular */
   formatDecimal(controlName: string, dec = 3): void {
     const ctrl = this.preciosForm.get(controlName);
     if (!ctrl) return;
@@ -222,7 +201,6 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     ctrl.setValue(this.fix(isFinite(n) ? n : 0, dec), { emitEvent: true });
   }
 
-  /** Calcula PVP con IVA (si el usuario no lo editó) y prepara PVP anterior si está en 0 */
   recalcularPvpConIva(): void {
     const base = Number(this.preciosForm.getRawValue().pvpActualIva) || 0;
     const conIva = this.fix(base * (1 + this.iva), 3);
@@ -242,7 +220,6 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     this.recalcularMargen();
   }
 
-  /** Calcula el margen si el usuario no lo editó manualmente */
   recalcularMargen(): void {
     const pvpConIva = Number(this.preciosForm.getRawValue().pvpActualMasIva) || 0;
     const costo = Number(this.preciosForm.getRawValue().costoProducto) || 0;
@@ -254,7 +231,6 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     }
   }
 
-  // ===== Botones genéricos =====
   onNuevo(): void {
     switch (this.selectedTab) {
       case 0:
@@ -287,22 +263,19 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     }
   }
 
-  // 1) Campo de estado
   saving = false;
 
-  // 2) Helper para armar el request (sanitiza Producto)
-  private buildCreatePERequest(): CreateProductoConEstructuraRequest {
+  private buildCreatePERequest(): any {
     const f1 = this.form.value;
     const f2 = this.adicionalForm.value;
     const f3 = this.preciosForm.getRawValue();
 
     const producto = sanitizeProductoPayload({
-      // === TAB 1
       despro: f1.descripcion1,
       despro2: f1.descripcionPOS,
       codbar: f1.codigoBarras,
       tippro: f1.tipoProducto,
-      uniman: f1.unidadVenta,
+      uniman: this.unidadesVenta.find(u => u.idUnidadVenta === f1.unidadVenta)?.descripcion || '',
       abrevia: f1.abreviacion,
       referencia: f1.referencia,
       activo: f1.activo,
@@ -317,7 +290,6 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       feccre: f1.fechaCreacion,
       fechamod: f1.fechaModificacion,
 
-      // === TAB 2
       colsab: f2.color,
       talla: f2.tamanoTalla1,
       obs: f2.observacion,
@@ -328,7 +300,6 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       codcuedev: f2.ctaDevolucion,
       ctaprodgasto: f2.ctaGastos,
 
-      // === TAB 3
       preven: f3.precioOficial,
       preven2: f3.precioRedMsp,
       pvpsiniva: f3.pvpActualIva,
@@ -346,13 +317,46 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     });
 
     return {
-      Producto: producto,
-      Estructura: { idgrupo: this.idEstructura || null }
+      Producto: producto,              // 👈 ahora con mayúscula
+      Estructura: { idgrupo: this.idEstructura || null } // 👈 ahora con mayúscula
     };
   }
 
-  // 3) Usa el helper en onGrabar()
+
   onGrabar(): void {
+    const controles = this.form.controls;
+    const camposFaltantes: string[] = [];
+
+    if (!controles['descripcion1'].value?.trim()) {
+      camposFaltantes.push('Descripción');
+      controles['descripcion1'].markAsTouched();
+    }
+    if (!controles['unidadVenta'].value) {
+      camposFaltantes.push('Unidad de Venta');
+      controles['unidadVenta'].markAsTouched();
+    }
+    if (!controles['existenciaGlobal'].value) {
+      camposFaltantes.push('Existencia Global');
+      controles['existenciaGlobal'].markAsTouched();
+    }
+    if (!controles['abreviacion'].value?.trim()) {
+      camposFaltantes.push('Abreviación');
+      controles['abreviacion'].markAsTouched();
+    }
+    if (!controles['descripcionPOS'].value?.trim()) {
+      camposFaltantes.push('Descripción POS');
+      controles['descripcionPOS'].markAsTouched();
+    }
+    if (!controles['presentacion'].value) {
+      camposFaltantes.push('Presentación');
+      controles['presentacion'].markAsTouched();
+    }
+
+    if (camposFaltantes.length > 0) {
+      this.toastCampos.mostrar(camposFaltantes);
+      return;
+    }
+
     if (this.selectedTab === 0 && this.form.invalid) {
       this.form.markAllAsTouched();
       this.selectedTab = 0;
@@ -372,11 +376,14 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     this.saving = true;
     const request = this.buildCreatePERequest();
 
+    // 👇 imprime request completo en consola
+    console.log('📦 Request a enviar →', request);
+    console.log('📦 JSON.stringify →', JSON.stringify(request, null, 2));
+
     this.productoService.createConEstructura(request).subscribe({
       next: (res) => {
         if (res?.type?.toUpperCase() === 'SUCCESS') {
           console.log('✅ Creado correctamente', res.data);
-          // TODO: limpiar forms o navegar si quieres
         } else {
           console.error('❌ Error lógica:', res?.message || res);
         }
@@ -386,10 +393,8 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     });
   }
 
-
   onImprimir(): void { window.print(); }
   onAdjuntar(): void { history.back(); }
 
-  // TrackBy para *ngFor
   trackByValue = (_: number, v: string) => v;
 }

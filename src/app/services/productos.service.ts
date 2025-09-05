@@ -22,7 +22,7 @@ export interface ApiResponse<T = any> {
 export class ProductoService {
   private apiUrl = `${environment.inventoryUrl}/Producto`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   /** POST /api/Producto/GetByEstructuraComercial */
   getByEstructura(request: ProductoEstructuraComercialRequest): Observable<ApiResponse<ProductoResponse[]>> {
@@ -35,11 +35,13 @@ export class ProductoService {
   }
 
   /** POST /api/Producto/CreatePE */
+  /** POST /api/Producto/CreatePE */
   createConEstructura(req: CreateProductoConEstructuraRequest): Observable<ApiResponse<any>> {
     const payload: CreateProductoConEstructuraRequest = {
-      ...req,
-      Producto: sanitizeProductoPayload(req.Producto as ProductoRequest)
+      Producto: sanitizeProductoPayload(req.Producto as ProductoRequest), // 👈 Mayúscula
+      Estructura: req.Estructura
     };
     return this.http.post<ApiResponse<any>>(`${this.apiUrl}/CreatePE`, payload);
   }
+
 }

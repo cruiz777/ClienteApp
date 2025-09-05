@@ -14,9 +14,10 @@
     <!-- ========== Template reutilizable de botones ========== -->
     <ng-template #accionesTabs>
       <div class="pc-actions">
-        <button type="button" class="btn-soft" (click)="onGrabar()" [disabled]="saving || currentFormInvalid"> {{ saving
-          ? 'Guardando…' : 'Grabar' }}</button>
-        <button type="button" class="btn-soft" (click)="onGrabar()" [disabled]="currentFormInvalid">Grabar</button>
+        <button type="button" class="btn-soft" (click)="onGrabar()" [disabled]="saving">
+          {{ saving ? 'Guardando…' : 'Grabar' }}
+        </button>
+        <!-- <button type="button" class="btn-soft" (click)="onGrabar()" [disabled]="currentFormInvalid">Grabar</button> -->
         <button type="button" class="btn-soft" (click)="onImprimir()">Imprimir</button>
         <button type="button" class="btn-soft" (click)="onAdjuntar()">Adjuntar</button>
       </div>
@@ -55,6 +56,8 @@
                   <label class="label-sm d-block">Descripción:</label>
                   <input class="input-line w-100" formControlName="descripcion1"
                     [class.is-invalid]="isInvalid('descripcion1')">
+                  <small *ngIf="isInvalid('descripcion1')" class="invalid-feedback d-block">Campo obligatorio</small>
+
                 </div>
 
                 <div class="col-12 col-md-6">
@@ -106,10 +109,14 @@
                 <div class="col-12 col-md-4">
                   <label class="label-sm d-block">Presentación:</label>
                   <div class="select-wrap">
-                    <select class="select-line w-100" formControlName="presentacion">
+                    <select class="select-line w-100" formControlName="presentacion"
+                      [class.is-invalid]="isInvalid('presentacion')">
                       <option [ngValue]="null" disabled selected>—</option>
                       <option *ngFor="let p of presentaciones" [ngValue]="p.idPresentacion">{{p.descripcion}}</option>
                     </select>
+                    <small *ngIf="isInvalid('unidadVenta')" class="invalid-feedback d-block">
+                      Campo obligatorio
+                    </small>
                   </div>
                 </div>
 
