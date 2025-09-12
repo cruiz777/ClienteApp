@@ -54,7 +54,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
 
     this.form = this.fb.group({
       descripcion: ['', [Validators.required, Validators.maxLength(500)]],
-      codigoInterno: [''],
+      codigoInterno: ['',Validators.required],
       descripcion1: ['', [Validators.required, Validators.maxLength(500)]],
       unidadVenta: [null, Validators.required],
       existenciaGlobal: ['', Validators.required],
@@ -66,7 +66,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       productoConPeso: [false],
       consumoInterno: [false],
 
-      codigoBarras: [''],
+      codigoBarras: ['',Validators.required],
       generarCodigo: [false],
       descripcionPOS: ['', Validators.required],
       cantidad: [null],
@@ -274,7 +274,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       despro: f1.descripcion1,
       despro2: f1.descripcionPOS,
       codbar: f1.codigoBarras,
-      tippro: f1.tipoProducto,
+      tippro: f1.tipoProducto === 'Bien' ? 'B' : (f1.tipoProducto === 'Servicio' ? 'S' : ''),
       uniman: this.unidadesVenta.find(u => u.idUnidadVenta === f1.unidadVenta)?.descripcion || '',
       abrevia: f1.abreviacion,
       referencia: f1.referencia,
@@ -350,6 +350,14 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     if (!controles['presentacion'].value) {
       camposFaltantes.push('Presentación');
       controles['presentacion'].markAsTouched();
+    }
+    if (!controles['codigoInterno'].value) {
+      camposFaltantes.push('Código Interno');
+      controles['codigoInterno'].markAsTouched();
+    }
+    if (!controles['codigoBarras'].value) {
+      camposFaltantes.push('Código de Barras');
+      controles['codigoBarras'].markAsTouched();
     }
 
     if (camposFaltantes.length > 0) {

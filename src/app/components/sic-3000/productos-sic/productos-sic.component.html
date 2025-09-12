@@ -39,12 +39,16 @@
               <div class="row g-3 align-items-end">
                 <div class="col-12 col-md-4">
                   <label class="label-sm d-block">Código Interno:</label>
-                  <input class="input-line w-100" formControlName="codigoInterno">
+                  <input class="input-line w-100" formControlName="codigoInterno"
+                    [class.is-invalid]="isInvalid('codigoInterno')">
+                  <small *ngIf="isInvalid('codigoInterno')" class="invalid-feedback d-block">Campo obligatorio</small>
                 </div>
 
                 <div class="col-12 col-md-4">
                   <label class="label-sm d-block">Código de Barras:</label>
-                  <input class="input-line w-100" formControlName="codigoBarras">
+                  <input class="input-line w-100" formControlName="codigoBarras"
+                    [class.is-invalid]="isInvalid('codigoBarras')">
+                  <small *ngIf="isInvalid('codigoBarras')" class="invalid-feedback d-block">Campo obligatorio</small>
                 </div>
 
                 <div class="col-12 col-md-4 d-flex align-items-center gap-2">
