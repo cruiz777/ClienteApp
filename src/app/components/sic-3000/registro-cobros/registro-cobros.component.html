@@ -1,199 +1,184 @@
-<mat-horizontal-stepper [linear]="true" #stepper>
-  <!-- Paso 1: Cuenta a Liquidar -->
-  <mat-step [stepControl]="clienteForm">
-    <form [formGroup]="clienteForm">
-      <ng-template matStepLabel>Datos del Cliente</ng-template>
+<div class="container py-4 cuenta-liquidar">
 
-      <h3>Cuenta a Liquidar</h3>
+  <!-- Step header (paso 1 activo) -->
+  <div class="steps mb-4" *ngIf="step === 1">
+    <div class="step active">
+      <div class="step-badge">1</div>
+      <div class="step-text">Datos del Cliente</div>
+    </div>
+    <div class="step-divider"></div>
+    <div class="step">
+      <div class="step-badge">2</div>
+      <div class="step-text">Forma de Pago</div>
+    </div>
+  </div>
 
-      <div class="form-grid">
-        <mat-form-field appearance="outline">
-          <mat-label>Buscar Cliente</mat-label>
-          <input matInput placeholder="Cliente" formControlName="cliente" />
-        </mat-form-field>
+  <!-- Step header (paso 2 activo) -->
+  <div class="steps mb-4" *ngIf="step === 2">
+    <div class="step">
+      <div class="step-badge">1</div>
+      <div class="step-text">Datos del Cliente</div>
+    </div>
+    <div class="step-divider"></div>
+    <div class="step active">
+      <div class="step-badge">2</div>
+      <div class="step-text">Forma de Pago</div>
+    </div>
+  </div>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Factura</mat-label>
-          <input matInput placeholder="Número" formControlName="factura" />
-        </mat-form-field>
+  <!-- ===== PASO 1: DATOS DEL CLIENTE ===== -->
+  <h3 class="titulo" *ngIf="step === 1">Cuenta a Liquidar</h3>
 
-        <mat-form-field appearance="outline">
-          <mat-label>Fecha Registro</mat-label>
-          <input matInput type="date" formControlName="fechaRegistro" />
-        </mat-form-field>
+  <form *ngIf="step === 1" [formGroup]="formCliente" novalidate (ngSubmit)="onNext()">
+    <div class="row g-4">
+      <div class="col-12 col-md-6">
+        <label class="form-label">Cliente:</label>
+        <select class="form-select" formControlName="cliente" [ngClass]="invalid(formCliente,'cliente')">
+          <option value="" disabled selected>Seleccione…</option>
+          <option *ngFor="let c of clientes" [value]="c.id">{{ c.nombre }}</option>
+        </select>
+        <div class="invalid-feedback">Seleccione un cliente.</div>
       </div>
 
-      <h4>Detalle de la cuenta por Cobrar</h4>
-
-      <div class="form-grid">
-        <mat-form-field appearance="outline">
-          <mat-label>Forma de Pago</mat-label>
-          <input matInput formControlName="formaPago" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Fecha</mat-label>
-          <input matInput type="date" formControlName="fechaPago" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Valor CxC</mat-label>
-          <input matInput type="number" formControlName="valorCxc" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Abono</mat-label>
-          <input matInput type="number" formControlName="abono" />
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Saldo</mat-label>
-          <input matInput type="number" formControlName="saldo" />
-        </mat-form-field>
+      <div class="col-12 col-md-6">
+        <label class="form-label">Factura:</label>
+        <select class="form-select" formControlName="factura" [ngClass]="invalid(formCliente,'factura')">
+          <option value="" disabled selected>Seleccione…</option>
+          <option *ngFor="let f of facturas" [value]="f.id">{{ f.numero }}</option>
+        </select>
+        <div class="invalid-feedback">Seleccione una factura.</div>
       </div>
 
-      <div class="actions">
-        <button mat-stroked-button color="warn" (click)="cancelar()">Cancelar</button>
-        <button mat-raised-button color="primary" (click)="siguiente()">Siguiente</button>
+      <div class="col-12 col-md-6">
+        <label class="form-label">Fecha:</label>
+        <input type="date" class="form-control" formControlName="fecha" [ngClass]="invalid(formCliente,'fecha')" />
+        <div class="invalid-feedback">Ingrese la fecha.</div>
       </div>
-    </form>
-  </mat-step>
+    </div>
 
-  <!-- Paso 2: Forma de Pago -->
-  <mat-step [stepControl]="formaPagoForm">
-    <form [formGroup]="formaPagoForm">
-      <ng-template matStepLabel>Forma de Pago</ng-template>
+    <hr class="my-4">
 
-      <h3>Forma de Pago</h3>
+    <h5 class="subtitulo mb-3">Detalle de la cuenta por Cobrar</h5>
 
-      <mat-radio-group formControlName="metodoPago" class="metodo-radio">
-        <mat-radio-button value="efectivo">Efectivo o Equivalente</mat-radio-button>
-        <mat-radio-button value="tarjeta">Tarjeta</mat-radio-button>
-      </mat-radio-group>
-
-      <div class="form-grid">
-        <mat-form-field appearance="outline">
-          <mat-label>Tipo</mat-label>
-          <input matInput formControlName="tipo" placeholder="movimiento">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Fecha Emisión Doc</mat-label>
-          <input matInput type="date" formControlName="fechaEmision">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Valor</mat-label>
-          <input matInput type="number" formControlName="valor">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Lote/Recap</mat-label>
-          <input matInput formControlName="lote">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>No. Documento</mat-label>
-          <input matInput formControlName="documento">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Autorización</mat-label>
-          <input matInput formControlName="autorizacion">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Banco</mat-label>
-          <input matInput formControlName="banco">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Fecha Autorización</mat-label>
-          <input matInput type="date" formControlName="fechaAutorizacion">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Propietario</mat-label>
-          <input matInput formControlName="titular">
-        </mat-form-field>
-
-        <mat-form-field appearance="outline">
-          <mat-label>Observación</mat-label>
-          <input matInput formControlName="observacion">
-        </mat-form-field>
+    <div class="row g-4">
+      <div class="col-12 col-md-6">
+        <label class="form-label">Forma de Pago:</label>
+        <select class="form-select" formControlName="formaPago" [ngClass]="invalid(formCliente,'formaPago')">
+          <option value="" disabled selected>Seleccione…</option>
+          <option *ngFor="let fp of formasPago" [value]="fp.id">{{ fp.descripcion }}</option>
+        </select>
+        <div class="invalid-feedback">Seleccione una forma de pago.</div>
       </div>
 
-      <div class="acciones">
-        <button mat-stroked-button color="primary" (click)="regresar()">
-          <mat-icon>arrow_back</mat-icon> Regresar
-        </button>
-        <button mat-raised-button color="primary" (click)="agregarFormaPago()">
-          Agregar Forma Pago
-        </button>
-        <button mat-stroked-button color="warn" (click)="cancelar()">Cancelar</button>
-        <button mat-raised-button color="accent" (click)="liquidar()">Liquidar</button>
+      <div class="col-12 col-md-6">
+        <label class="form-label">Fecha:</label>
+        <input type="date" class="form-control" formControlName="fechaDetalle" [ngClass]="invalid(formCliente,'fechaDetalle')" />
+        <div class="invalid-feedback">Ingrese la fecha del detalle.</div>
       </div>
 
-      <table mat-table [dataSource]="formasPago" class="mat-elevation-z2 tabla">
-
-        <ng-container matColumnDef="formaPago">
-          <th mat-header-cell *matHeaderCellDef> Forma Pago </th>
-          <td mat-cell *matCellDef="let row"> {{ row.tipo }} </td>
-        </ng-container>
-
-        <ng-container matColumnDef="valor">
-          <th mat-header-cell *matHeaderCellDef> Valor </th>
-          <td mat-cell *matCellDef="let row"> $ {{ row.valor | number: '1.2-2' }} </td>
-        </ng-container>
-
-        <ng-container matColumnDef="documento">
-          <th mat-header-cell *matHeaderCellDef> No. Documento </th>
-          <td mat-cell *matCellDef="let row"> {{ row.documento }} </td>
-        </ng-container>
-
-        <ng-container matColumnDef="banco">
-          <th mat-header-cell *matHeaderCellDef> Banco </th>
-          <td mat-cell *matCellDef="let row"> {{ row.banco }} </td>
-        </ng-container>
-
-        <ng-container matColumnDef="titular">
-          <th mat-header-cell *matHeaderCellDef> Titular </th>
-          <td mat-cell *matCellDef="let row"> {{ row.titular }} </td>
-        </ng-container>
-
-        <ng-container matColumnDef="lote">
-          <th mat-header-cell *matHeaderCellDef> Lote </th>
-          <td mat-cell *matCellDef="let row"> {{ row.lote }} </td>
-        </ng-container>
-
-        <ng-container matColumnDef="fechaEmision">
-          <th mat-header-cell *matHeaderCellDef> Fecha Emisión </th>
-          <td mat-cell *matCellDef="let row"> {{ row.fechaEmision }} </td>
-        </ng-container>
-
-        <ng-container matColumnDef="autorizacion">
-          <th mat-header-cell *matHeaderCellDef> Autorización </th>
-          <td mat-cell *matCellDef="let row"> {{ row.autorizacion }} </td>
-        </ng-container>
-
-        <ng-container matColumnDef="fechaAutorizacion">
-          <th mat-header-cell *matHeaderCellDef> Fecha Autorización </th>
-          <td mat-cell *matCellDef="let row"> {{ row.fechaAutorizacion }} </td>
-        </ng-container>
-
-        <ng-container matColumnDef="observacion">
-          <th mat-header-cell *matHeaderCellDef> Observación </th>
-          <td mat-cell *matCellDef="let row"> {{ row.observacion }} </td>
-        </ng-container>
-
-        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-      </table>
-
-      <div class="total-footer">
-        <span><strong>Total:</strong></span>
-        <span>$ {{ total | number: '1.2-2' }}</span>
+      <!-- Campos de texto libres -->
+      <div class="col-12 col-md-4">
+        <label class="form-label">Valor CxC:</label>
+        <input type="text" class="form-control" formControlName="valorCxc" autocomplete="off" />
       </div>
-    </form>
-  </mat-step>
-</mat-horizontal-stepper>
+
+      <div class="col-12 col-md-4">
+        <label class="form-label">Abono:</label>
+        <input type="text" class="form-control" formControlName="abono" autocomplete="off" />
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label class="form-label">Saldo:</label>
+        <input type="text" class="form-control" formControlName="saldo" autocomplete="off" />
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-center gap-3 mt-5">
+      <button type="button" class="btn btn-outline-secondary px-4" (click)="onCancel()">Cancelar</button>
+      <button type="submit" class="btn btn-primary px-4">Siguiente →</button>
+    </div>
+  </form>
+
+  <!-- ===== PASO 2: FORMA DE PAGO ===== -->
+  <form *ngIf="step === 2" [formGroup]="formPago" novalidate (ngSubmit)="onAddPago()">
+    <h3 class="titulo">Forma de Pago</h3>
+
+    <div class="mb-3 d-flex align-items-center gap-4">
+      <label class="form-check form-check-inline radio-clean">
+        <input type="radio" class="form-check-input" formControlName="categoriaPago" value="efectivo" />
+        <span class="form-check-label">Efectivo o Equivalente</span>
+      </label>
+
+      <label class="form-check form-check-inline radio-clean">
+        <input type="radio" class="form-check-input" formControlName="categoriaPago" value="tarjeta" />
+        <span class="form-check-label">Tarjeta</span>
+      </label>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-12 col-md-4">
+        <label class="form-label">Tipo:</label>
+        <select class="form-select" formControlName="tipo" [ngClass]="invalid(formPago,'tipo')">
+          <option value="" disabled selected>Seleccione…</option>
+          <option *ngFor="let t of tipos" [value]="t">{{ t }}</option>
+        </select>
+        <div class="invalid-feedback">Seleccione el tipo de pago.</div>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label class="form-label">Valor:</label>
+        <input type="text" class="form-control text-end" formControlName="valor" placeholder="$ 0.00" />
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label class="form-label">Fecha Emisión Doc:</label>
+        <input type="date" class="form-control" formControlName="fechaEmision" />
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label class="form-label">Banco:</label>
+        <select class="form-select" formControlName="banco">
+          <option value="" disabled selected>Seleccione…</option>
+          <option *ngFor="let b of bancos" [value]="b">{{ b }}</option>
+        </select>
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label class="form-label">No. Documento:</label>
+        <input type="text" class="form-control" formControlName="numeroDocumento" />
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label class="form-label">Lote/Recap:</label>
+        <input type="text" class="form-control" formControlName="loteRecap" />
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label class="form-label">Propietario:</label>
+        <input type="text" class="form-control" formControlName="propietario" />
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label class="form-label">Autorización:</label>
+        <input type="text" class="form-control" formControlName="autorizacion" />
+      </div>
+
+      <div class="col-12 col-md-6">
+        <label class="form-label">Fecha Autorización:</label>
+        <input type="date" class="form-control" formControlName="fechaAutorizacion" />
+      </div>
+
+      <div class="col-12">
+        <label class="form-label">Observación:</label>
+        <input type="text" class="form-control" formControlName="observacion" />
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-center gap-3 mt-5">
+      <button type="button" class="btn btn-outline-secondary px-4" (click)="step = 1">← Regresar</button>
+      <button type="button" class="btn btn-outline-secondary px-4" (click)="onCancelarPago()">Cancelar</button>
+      <button type="submit" class="btn btn-primary px-4">Agregar Forma Pago →</button>
+    </div>
+  </form>
+
+</div>
