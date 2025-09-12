@@ -6,7 +6,7 @@ import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
 import { EstructuraListComponent } from './estructuracomercial/estructura-list/estructura-list.component';
 import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.component';
 import { FacturacionIndividualComponent } from './facturacion/facturacion-individual/facturacion-individual.component';
-
+import { FacturacionGlobalComponent } from './facturacion/facturacion-global/facturacion-global.component';
 const routes: Routes = [
   {
     path: '',
@@ -19,6 +19,7 @@ const routes: Routes = [
       { path: 'estructura-list', component: EstructuraListComponent },
       { path: 'registroCobros', component: RegistroCobrosComponent },
       { path: 'findividual', component: FacturacionIndividualComponent },  
+      { path:'fglobal',component:FacturacionGlobalComponent}
            
       
     ]

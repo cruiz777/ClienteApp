@@ -23,6 +23,7 @@ import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.compo
 
 // 👉 Standalone: se importa (no va en declarations)
 import { FacturacionIndividualComponent } from './facturacion/facturacion-individual/facturacion-individual.component';
+import { FacturacionGlobalComponent } from './facturacion/facturacion-global/facturacion-global.component';
 
 @NgModule({
   declarations: [
@@ -53,7 +54,8 @@ import { FacturacionIndividualComponent } from './facturacion/facturacion-indivi
     Sic3000RoutingModule,
 
     // ✅ Importar el componente standalone
-    FacturacionIndividualComponent
+    FacturacionIndividualComponent,
+    FacturacionGlobalComponent
   ]
 })
 export class Sic3000Module {}

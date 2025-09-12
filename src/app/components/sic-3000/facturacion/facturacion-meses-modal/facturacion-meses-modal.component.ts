@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, OnInit, HostListener } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { MAT_DIALOG_DATA, MatDialogRef, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -9,9 +9,17 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatMomentDateModule, MAT_MOMENT_DATE_ADAPTER_OPTIONS } from '@angular/material-moment-adapter';
 import { MAT_DATE_FORMATS } from '@angular/material/core';
-// +++ NUEVOS IMPORTS +++
 import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
+import { HttpClientModule } from '@angular/common/http';
+
+import { AgGridModule } from 'ag-grid-angular';
+import { ColDef, GridApi, GridReadyEvent } from 'ag-grid-community';
+
+import {
+  FacturaDetallePrefijosService,
+  FacturaDetallePrefijoResponse
+} from 'src/app/services/factura-detalle-prefijos.service';
 
 export interface FacturacionMesesData {
   anioActual: number;
@@ -27,8 +35,8 @@ export interface FacturacionMesesResult {
   fechaHastaPaga: string;  // dd/MM/yyyy
   numeroMeses: number;
   periodo: string;         // "MesInicio AñoInicio -- MesFin AñoFin"
-  idPrefijo: number;       // 👈 obligatorio
-  codpre: string;          // 👈 obligatorio
+  idPrefijo: number;       // obligatorio
+  codpre: string;          // obligatorio
 }
 
 /** Formato dd/MM/yyyy para el datepicker */
@@ -49,7 +57,9 @@ export const ES_FORMATS = {
     CommonModule, ReactiveFormsModule, MatDialogModule,
     MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule,
     MatDatepickerModule, MatMomentDateModule,
-    MatSelectModule, MatOptionModule           // ✅ necesarios para mat-select/mat-option
+    MatSelectModule, MatOptionModule,
+    HttpClientModule,          // 👉 asegura HttpClient disponible si el padre no lo importa
+    AgGridModule
   ],
   templateUrl: './facturacion-meses-modal.component.html',
   styleUrls: ['./facturacion-meses-modal.component.css'],
@@ -58,23 +68,48 @@ export const ES_FORMATS = {
     { provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { useUtc: true } },
   ]
 })
-export class FacturacionMesesModalComponent {
+export class FacturacionMesesModalComponent implements OnInit {
   form: FormGroup;
   aplicado = false;
+  // dentro de tu componente
+gridHeightPx = 150;   // ajusta a 200/240/300 según quieras
+rowHeight = 28;       // filas compactas (opcional)
+
+  // =======================
+  // AG Grid
+  // =======================
+  rowData: FacturaDetallePrefijoResponse[] = [];
+
+  // Define columnas (sin flex por-columna; lo ponemos en defaultColDef)
+ defaultColDef: ColDef = {
+  resizable: true,
+  sortable: true
+};
+
+columnDefs: ColDef[] = [
+  { headerName: 'Factura', field: 'numnota', width: 180 },
+  { headerName: 'F.Factura', field: 'fechaFactura', width: 120, valueFormatter: p => this.formatISODate(p.value) },
+  { headerName: '#Meses', field: 'cantidad', width: 70 },
+  { headerName: 'Descripción', field: 'descripcion', minWidth: 280, flex: 2 ,  tooltipField: 'descripcion' ,cellClass: 'cell-ellipsis'   }, // ← flexible, crece
+  { headerName: 'Desde', field: 'periodoDesde', width: 140, valueFormatter: p => this.formatISODate(p.value) },
+  { headerName: 'Hasta', field: 'periodoHasta', width: 140, valueFormatter: p => this.formatISODate(p.value) },
+];
+
+  isLoading = false;
+  private gridApi?: GridApi;
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: FacturacionMesesData,
     public ref: MatDialogRef<FacturacionMesesModalComponent>,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private prefijosSrv: FacturaDetallePrefijosService
   ){
     const y = data?.anioActual ?? new Date().getFullYear();
-    const f1 = new Date(y, 0, 1);   // 01/01/y
-    const f2 = new Date(y, 11, 31); // 31/12/y
+    const f1 = new Date(y, 0, 1);
+    const f2 = new Date(y, 11, 31);
 
     this.form = this.fb.group({
-      // 👇 NUEVO: control para el prefijo
-      idPrefijo: [null],
-
+      idPrefijo: [data?.idPrefijo ?? null],
       fchUltimaPago: [f1],
       fchHastaPaga: [f2],
       numMeses: [0],
@@ -82,7 +117,36 @@ export class FacturacionMesesModalComponent {
       anioFin: [f2.getFullYear()]
     });
 
-    this.recalcular(); // inicializa cálculos
+    // Al cambiar el prefijo, consultar
+    this.form.get('idPrefijo')?.valueChanges.subscribe(v => {
+      if (v) this.consultar();
+      else this.rowData = [];
+    });
+
+    this.recalcular();
+  }
+
+  ngOnInit(): void {
+    // Cuando el diálogo ya abrió, ajustar columnas (asegura contenedor con tamaño)
+    this.ref.afterOpened().subscribe(() =>
+      setTimeout(() => this.gridApi?.sizeColumnsToFit(), 0)
+    );
+
+    // Si ya viene seleccionado desde el padre, carga al iniciar
+    if (this.form.get('idPrefijo')?.value) {
+      this.consultar();
+    }
+  }
+
+  onGridReady(params: GridReadyEvent) {
+    this.gridApi = params.api as GridApi;
+    setTimeout(() => this.gridApi?.sizeColumnsToFit(), 0);
+  }
+
+  // Reajustar al redimensionar ventana
+  @HostListener('window:resize')
+  onResize() {
+    setTimeout(() => this.gridApi?.sizeColumnsToFit(), 0);
   }
 
   bloquearTeclado(e: KeyboardEvent) {
@@ -92,25 +156,50 @@ export class FacturacionMesesModalComponent {
   private asDate(v: any): Date | null {
     if (!v) return null;
     if (v instanceof Date) return v;
-    if (typeof v === 'object' && typeof v.toDate === 'function') return v.toDate(); // Moment
+    if (typeof v === 'object' && typeof v.toDate === 'function') {
+      try { return v.toDate(); } catch { /* ignore */ }
+    }
     if (typeof v === 'string') {
-      const [dd, mm, yyyy] = v.split(/[/-]/).map(Number);
-      if (yyyy && mm && dd) return new Date(yyyy, mm - 1, dd);
+      const isISO = /^\d{4}-\d{2}-\d{2}/.test(v);
+      if (isISO) {
+        const base = v.split('T')[0];
+        const [y, m, d] = base.split('-').map(Number);
+        if (y && m && d) return new Date(y, m - 1, d);
+      } else {
+        const parts = v.split(/[\/-]/).map(Number);
+        if (parts.length === 3) {
+          const [dd, mm, yyyy] = parts;
+          if (yyyy && mm && dd) return new Date(yyyy, mm - 1, dd);
+        }
+      }
     }
     return null;
   }
 
   private pad(n: number){ return n < 10 ? `0${n}` : `${n}`; }
+
   private format(d: Date): string {
     return `${this.pad(d.getDate())}/${this.pad(d.getMonth()+1)}/${d.getFullYear()}`;
   }
+
   private mesNombre(d: Date): string {
     return d.toLocaleDateString('es-EC', { month: 'long' }).replace(/^\w/, c => c.toUpperCase());
   }
+
   private diffMeses(a: Date, b: Date, inclusive = true): number {
     let m = (b.getFullYear() - a.getFullYear()) * 12 + (b.getMonth() - a.getMonth());
     if (inclusive) m += 1;
     return Math.max(0, m);
+  }
+
+  formatISODate(iso?: string | null): string {
+    if (!iso) return '';
+    const base = iso.split('T')[0];
+    const [y, m, d] = base.split('-').map(Number);
+    if (!y || !m || !d) return iso;
+    const dd = d < 10 ? `0${d}` : `${d}`;
+    const mm = m < 10 ? `0${m}` : `${m}`;
+    return `${dd}/${mm}/${y}`;
   }
 
   recalcular(): void {
@@ -130,8 +219,37 @@ export class FacturacionMesesModalComponent {
     }, { emitEvent: false });
   }
 
+  consultar(): void {
+    const idPrefijo = Number(this.form.get('idPrefijo')?.value ?? 0);
+    if (!idPrefijo) { this.rowData = []; return; }
+
+    const codpre = this.data.prefijos.find(p => p.id_prefijos === idPrefijo)?.codpre ?? '';
+    if (!codpre) { this.rowData = []; return; }
+
+    this.isLoading = true;
+    this.gridApi?.showLoadingOverlay();
+
+    this.prefijosSrv.getByCodigo(codpre).subscribe({
+      next: (rows) => {
+        // Orden descendente por fecha (ISO)
+        this.rowData = [...rows].sort((a, b) => (b.fechaFactura ?? '').localeCompare(a.fechaFactura ?? ''));
+        this.isLoading = false;
+        setTimeout(() => {
+          this.gridApi?.hideOverlay();
+          this.gridApi?.sizeColumnsToFit();
+        }, 0);
+      },
+      error: (err) => {
+        console.error('[FacturaDetallePrefijos] error', err);
+        this.rowData = [];
+        this.isLoading = false;
+        this.gridApi?.hideOverlay();
+      }
+    });
+  }
+
   aceptar(): void {
-    if (this.aplicado) return; // evita doble click
+    if (this.aplicado) return;
 
     const d1 = this.asDate(this.form.get('fchUltimaPago')?.value);
     const d2 = this.asDate(this.form.get('fchHastaPaga')?.value);
@@ -140,7 +258,6 @@ export class FacturacionMesesModalComponent {
       return;
     }
 
-    // ✅ tomar y validar prefijo
     const idPrefijo = Number(this.form.get('idPrefijo')?.value ?? 0);
     if (!idPrefijo) {
       alert('Seleccione un prefijo.');
@@ -151,7 +268,6 @@ export class FacturacionMesesModalComponent {
     const numeroMeses = this.diffMeses(d1, d2, true);
     const periodo = `${this.mesNombre(d1)} ${d1.getFullYear()} -- ${this.mesNombre(d2)} ${d2.getFullYear()}`;
 
-    // ✅ devuelve los campos requeridos por la interfaz
     const res: FacturacionMesesResult = {
       anio: d2.getFullYear(),
       fechaUltimaPago: this.format(d1),
@@ -162,8 +278,8 @@ export class FacturacionMesesModalComponent {
       codpre
     };
 
-    this.data.onAceptar?.(res); // envía al padre SIN cerrar
-    this.aplicado = true;       // deshabilita el botón Aceptar
+    this.data.onAceptar?.(res);
+    this.aplicado = true;
   }
 
   salir(): void {

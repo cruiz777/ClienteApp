@@ -9,5 +9,7 @@ export const environment = {
 
   validationUrl:'http://181.39.162.182:8000/validations/api',
 
-  reportUrl: 'http://181.39.162.182:8000/reports/api'
+  reportUrl: 'http://181.39.162.182:8000/reports/api',
+
+    invoices_sic:'http://181.39.162.182:8000/invoices-sic/api'
 };

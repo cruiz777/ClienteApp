@@ -2722,3 +2722,79 @@ label[for="secuencial"]{ padding-left: 0 !important; }
 .ag-btn-icon {
   margin-right: 6px;  /* 👈 ajusta el valor a tu gusto */
 }
+.fi-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.fi-btn {
+  position: relative;
+  overflow: hidden;          /* para el ripple */
+  border: 1px solid #d0d5dd;
+  background: #fff;
+  color: #111827;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
+}
+
+.fi-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0,0,0,.08);
+}
+
+.fi-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 3px 10px rgba(0,0,0,.06);
+}
+
+.fi-btn:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Variante primaria */
+.fi-primary {
+  background: linear-gradient(180deg, #2563eb, #1d4ed8);
+  color: #fff;
+  border-color: transparent;
+}
+.fi-primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #2b6ef0, #2357df);
+}
+.fi-primary:active:not(:disabled) {
+  background: linear-gradient(180deg, #235bdd, #1c4acc);
+}
+
+/* Flecha que se desliza */
+.fi-arrow {
+  display: inline-block;
+  margin-left: 6px;
+  transition: transform .18s ease;
+}
+.fi-primary:hover .fi-arrow { transform: translateX(4px); }
+
+/* Ripple */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: scale(0);
+  opacity: .35;
+  background: rgba(0,0,0,.25);   /* por defecto */
+  animation: ripple .6s ease-out;
+}
+.fi-primary .ripple {
+  background: rgba(255,255,255,.45); /* ripple claro en primario */
+}
+
+@keyframes ripple {
+  to { transform: scale(12); opacity: 0; }
+}

@@ -2,51 +2,39 @@
 
 <div mat-dialog-content class="grid" [formGroup]="form">
 
-  <!-- Fila 1: Prefijo (full row) -->
-  <mat-form-field appearance="fill" class="area-prefijo">
-    <mat-label>Prefijo</mat-label>
-    <mat-select formControlName="idPrefijo">
-      <mat-option [value]="null">Seleccione…</mat-option>
-      <mat-option *ngFor="let p of data.prefijos" [value]="p.id_prefijos">
-        {{ p.codpre }}
-      </mat-option>
-    </mat-select>
-  </mat-form-field>
+  <!-- Prefijo -->
+<mat-form-field appearance="fill" class="area-prefijo">
+  <mat-label>Prefijo</mat-label>
+  <mat-select formControlName="idPrefijo" (selectionChange)="consultar()">
+    <mat-option [value]="null">Seleccione…</mat-option>
+    <mat-option *ngFor="let p of data.prefijos" [value]="p.id_prefijos">
+      {{ p.codpre }}
+    </mat-option>
+  </mat-select>
+</mat-form-field>
 
-  <!-- Fila 2: Factura | Fecha Factura -->
-  <mat-form-field appearance="fill" class="area-factura">
-    <mat-label>Factura</mat-label>
-    <input matInput formControlName="numFactura" readonly>
-  </mat-form-field>
+<!-- ✅ Grid a ancho completo -->
+<!-- Área del grid -->
+<div class="area-grid ag-theme-alpine" [style.height.px]="gridHeightPx">
+<ag-grid-angular
+  style="width: 100%; height: 100%;"
+  [rowData]="rowData"
+  [columnDefs]="columnDefs"
+  [defaultColDef]="defaultColDef"
+[enableBrowserTooltips]="true"
+        [tooltipShowDelay]="0">  
+  rowSelection="single"
+  (gridReady)="onGridReady($event)">
+</ag-grid-angular>
 
-  <mat-form-field appearance="fill" class="area-fecha">
-    <mat-label>Fecha Factura</mat-label>
-    <input matInput formControlName="fechaFactura" readonly>
-  </mat-form-field>
 
-  <!-- Fila 3: Desde | Hasta (1er par) -->
-  <mat-form-field appearance="fill" class="area-desde1">
-    <mat-label>Desde</mat-label>
-    <input matInput
-           [matDatepicker]="dpDesde1"
-           formControlName="fDesde"
-           (keydown)="bloquearTeclado($event)"
-           (paste)="$event.preventDefault()">
-    
-    <mat-datepicker #dpDesde1 startView="month"></mat-datepicker>
-  </mat-form-field>
+</div>
 
-  <mat-form-field appearance="fill" class="area-hasta1">
-    <mat-label>Hasta</mat-label>
-    <input matInput
-           [matDatepicker]="dpHasta1"
-           formControlName="fHasta"
-           (keydown)="bloquearTeclado($event)"
-           (paste)="$event.preventDefault()">
-    
-    <mat-datepicker #dpHasta1 startView="month"></mat-datepicker>
-  </mat-form-field>
 
+
+
+
+  
   <!-- Fila 4: Desde | Hasta (2º par que usa tu lógica actual) -->
   <mat-form-field appearance="fill" class="area-desde2">
     <mat-label>Desde</mat-label>

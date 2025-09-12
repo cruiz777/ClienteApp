@@ -11,7 +11,12 @@ export interface ApiResponse<T> {
   message: string;
   count: number;
 }
-
+export interface GenerarXmlFacturaResponse {
+  success: boolean;
+  message: string;
+  fileName?: string;
+  savedPath?: string;
+}
 export interface ProductoResponse {
   id_producto: number;
   codpro: string | null;
@@ -35,11 +40,14 @@ export interface FacturaDetalleRequest {
   precio: number;
   idDescuentoPredeterminado: number | null; // ← permite null
   porcentajeDescuentoManual: number | null; // ← permite null
-  nombreProductoPersonalizado:string
+  nombreProductoPersonalizado: string
   ivaCalculado: number;
   subtotalCalculado: number;
   descuentoCalculado: number;
   totalCalculado: number;
+  codigoPrefijo: string;
+  periodoDesde: string;
+  periodoHasta: string;
 }
 
 export interface FacturaCrearRequest {
@@ -52,9 +60,9 @@ export interface FacturaCrearRequest {
   anioFactura: number;
   numeroOrdenCompra: string,
   numeroGuiaRemision: string,
-  prefijo:string;
-  correo:string;
-  subtotalSIva:number,  
+  prefijo: string;
+  correo: string;
+  subtotalSIva: number,
   subtotalCalculado: number,
   descuentoTotalCalculado: number,
   ivaTotalCalculado: number,
@@ -91,7 +99,7 @@ export interface ApiResponse<T = any> {
 export class FacturacionService {
   private baseUrl = environment.invoices_sic; // ej: http://localhost:5000
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   /**
    * GET /api/producto/by-codpro-fixed
@@ -99,7 +107,7 @@ export class FacturacionService {
    */
   getProductosCodproFijos(): Observable<ProductoResponse[]> {
     const url = `${this.baseUrl}/producto/by-codpro-fixed`;
-      return this.http.get<ApiResponse<ProductoResponse[]>>(url).pipe(
+    return this.http.get<ApiResponse<ProductoResponse[]>>(url).pipe(
       map(resp => {
         if (resp.type !== 'Success') {
           throw new Error(resp.message || 'Error al obtener productos');
@@ -139,42 +147,48 @@ export class FacturacionService {
     return this.http.post<ApiResponse>(`${this.baseUrl}/Facturacion/crear`, payload);
   }
   /** GET /api/Facturacion/{idNota}/xml  → XML como string */
-getXmlFactura(idNota: number): Observable<string> {
-  const url = `${this.baseUrl}/api/Facturacion/${idNota}/xml`; // ajusta /api si tu backend no lo usa
-  return this.http.get(url, { responseType: 'text' }).pipe(
-    catchError(err => {
-      console.error('[FacturacionService] getXmlFactura error:', err);
-      return throwError(() => err);
-    })
-  );
+  getXmlFactura(idNota: number): Observable<string> {
+    const url = `${this.baseUrl}/api/Facturacion/${idNota}/xml`; // ajusta /api si tu backend no lo usa
+    return this.http.get(url, { responseType: 'text' }).pipe(
+      catchError(err => {
+        console.error('[FacturacionService] getXmlFactura error:', err);
+        return throwError(() => err);
+      })
+    );
+  }
+
+  /** GET /api/Facturacion/{idNota}/xml  → XML como Blob (para descargar) */
+  getXmlFacturaBlob(idNota: number): Observable<Blob> {
+    const url = `${this.baseUrl}/Facturacion/${idNota}/xml`;
+    return this.http.get(url, { responseType: 'blob' }).pipe(
+      catchError(err => {
+        console.error('[FacturacionService] getXmlFacturaBlob error:', err);
+        return throwError(() => err);
+      })
+    );
+  }
+
+  /** Helper para disparar la descarga inmediatamente */
+  descargarXmlFactura(idNota: number, nombre = `factura-${idNota}.xml`): Observable<void> {
+    return this.getXmlFacturaBlob(idNota).pipe(
+      map(blob => {
+        const href = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = href;
+        a.download = nombre;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(href);
+      })
+    );
+  }
+generarXmlEnServidor(idNota: number) {
+  // usa la ruta de tu controller:
+  // si dejaste el endpoint en FacturacionController => /api/Facturacion/{idNota}/xml
+  // si lo moviste a FacturaController         => /api/facturas/{idNota}/xml
+  const url = `${this.baseUrl}/Facturacion/${idNota}/xml`; // o '/facturas/...'
+  return this.http.post<GenerarXmlFacturaResponse>(url, {}); // POST y JSON
 }
 
-/** GET /api/Facturacion/{idNota}/xml  → XML como Blob (para descargar) */
-getXmlFacturaBlob(idNota: number): Observable<Blob> {
-  const url = `${this.baseUrl}/Facturacion/${idNota}/xml`;
-  return this.http.get(url, { responseType: 'blob' }).pipe(
-    catchError(err => {
-      console.error('[FacturacionService] getXmlFacturaBlob error:', err);
-      return throwError(() => err);
-    })
-  );
-}
-
-/** Helper para disparar la descarga inmediatamente */
-descargarXmlFactura(idNota: number, nombre = `factura-${idNota}.xml`): Observable<void> {
-  return this.getXmlFacturaBlob(idNota).pipe(
-    map(blob => {
-      const href = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = href;
-      a.download = nombre;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(href);
-    })
-  );
-}
-
-  
 }

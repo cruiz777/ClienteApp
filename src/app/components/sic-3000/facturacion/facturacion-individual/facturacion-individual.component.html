@@ -109,11 +109,15 @@
       </div>
 
       <div class="fi-actions">
-        <button class="fi-btn" type="button" (click)="limpiarCliente()">Cancelar</button>
-        <button class="fi-btn fi-primary" type="button" (click)="irPaso2()" [disabled]="!puedeIrPaso2">
+        <button class="fi-btn" type="button" (click)="ripple($event); limpiarCliente()">
+          Cancelar
+        </button>
+
+        <button class="fi-btn fi-primary" type="button" (click)="ripple($event); irPaso2()" [disabled]="!puedeIrPaso2">
           Siguiente <span class="fi-arrow">›</span>
         </button>
       </div>
+      
     </section>
   </mat-tab>
 
@@ -213,7 +217,7 @@
         <mat-form-field class="fi-field fi-prefix-field" style="color: white; width: 100%;">
           <span matPrefix class="fi-prefix">Pago:&nbsp;</span>
           <input matInput #pagoInputRef #autoPagoTrigger="matAutocompleteTrigger" placeholder="Buscar forma de pago"
-            formControlName="metodoPago" [matAutocomplete]="autoPago"  />
+            formControlName="metodoPago" [matAutocomplete]="autoPago" />
         </mat-form-field>
 
         <mat-autocomplete #autoPago="matAutocomplete" [displayWith]="displayFormaPago"

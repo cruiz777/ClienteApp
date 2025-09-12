@@ -14,7 +14,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { AbstractControl } from '@angular/forms';
 import { Router } from '@angular/router';
 import { combineLatest } from 'rxjs';
-import { shareReplay} from 'rxjs/operators';
+import { shareReplay } from 'rxjs/operators';
 import {
   FacturacionMesesResult
 } from 'src/app/components/sic-3000/facturacion/facturacion-meses-modal/facturacion-meses-modal.component';
@@ -194,7 +194,7 @@ export class FacturacionIndividualComponent implements OnInit {
       }
     },
     { headerName: 'Cod.', field: 'codpro', width: 60, suppressColumnsToolPanel: true },
-    { headerName: 'Periodo', field: 'periodo', editable: false, flex: 1, minWidth: 200, tooltipField: 'periodo' },
+    { headerName: 'Periodo', field: 'periodo', hide: true, editable: false, flex: 1, minWidth: 200, tooltipField: 'periodo' },
     { headerName: 'Detalle', field: 'detalle', editable: false, flex: 1, minWidth: 200, tooltipField: 'detalle' },
     {
       headerName: 'P. Unidad',
@@ -1368,6 +1368,15 @@ export class FacturacionIndividualComponent implements OnInit {
       const cod = (r.codpro ?? '').toString();
       const prod = this.productos.find(p => (p.codpro ?? '').toString() === cod);
       const idProducto = Number(prod?.id_producto ?? 0);
+      let codigoPrefijo: string | null = null;
+      let periodoDesde: string | null = null;
+      let periodoHasta: string | null = null;
+      if (r.periodo && r.periodo.trim() !== '') {
+        const partes = r.periodo.split('|').map((x: string) => x.trim());
+        codigoPrefijo = partes[0] || null;
+        periodoDesde = this.formatearFecha(partes[1] || null);
+        periodoHasta = this.formatearFecha(partes[2] || null);
+      }
 
       return {
         idProducto,
@@ -1377,13 +1386,17 @@ export class FacturacionIndividualComponent implements OnInit {
         porcentajeDescuentoManual: null,
         nombreProductoPersonalizado: r.detalle,
 
+
         // Si tu API espera porcentaje:
         ivaCalculado: Number(r.iva ?? 0),
 
         // 👇 usa la base real y el IVA en dinero
         subtotalCalculado: Number(r.base ?? 0),
         descuentoCalculado: Number(r.desTotal ?? 0),
-        totalCalculado: Number(r.total ?? 0)
+        totalCalculado: Number(r.total ?? 0),
+        codigoPrefijo,
+        periodoDesde,
+        periodoHasta,
       } as FacturaDetalleRequest;
     }).filter(d => d.idProducto > 0 && d.cantidad > 0);
 
@@ -1457,20 +1470,41 @@ export class FacturacionIndividualComponent implements OnInit {
       switchMap(resp => {
         const tipo = (resp?.type || '').toLowerCase();
 
+        // dentro del switchMap de "crear()"
         if (tipo === 'success' || tipo === 'warning') {
           this.mostrarAlerta(resp?.message || 'Factura creada correctamente.', 'ok');
 
           const idNota = Number(resp?.data?.idNota);
           if (Number.isFinite(idNota)) {
-            return this.facturacionService.descargarXmlFactura(idNota);
+            // ⬇️ Llama al nuevo endpoint que guarda el XML en servidor
+            return this.facturacionService.generarXmlEnServidor(idNota).pipe(
+              tap(r => {
+                if (r?.success) {
+                  // feedback al usuario
+                  this.mostrarAlerta(
+                    `XML generado en el servidor: ${r.fileName}`,
+                    'ok'
+                  );
+                  // OPCIONAL: si expones /xml como estático, podrías construir una URL para previsualizar
+                  // const url = `${this.baseUrlPublic}/xml/${r.fileName}`;
+                } else {
+                  this.mostrarAlerta(r?.message || 'No se generó el XML.', 'error');
+                }
+              }),
+              catchError(_ => {
+                this.mostrarAlerta('Error generando el XML en el servidor.', 'error');
+                return of(null);
+              })
+            );
           } else {
             this.mostrarAlerta('No se recibió idNota válido en la respuesta.', 'error');
-            return of(void 0);
+            return of(null); // o EMPTY
           }
         } else {
           this.mostrarAlerta(resp?.message || 'No se pudo crear la factura.', 'error');
-          return of(void 0);
+          return of(null); // o EMPTY
         }
+
       }),
       catchError(err => {
         console.error('[crearFactura] error:', err);
@@ -1689,8 +1723,8 @@ export class FacturacionIndividualComponent implements OnInit {
     const codpreActual = this.prefijos.find(p => p.id_prefijos === idPrefijoActual)?.codpre ?? null;
 
     const ref = this.dialog.open(FacturacionMesesModalComponent, {
-      width: '560px',       // antes tenías 700px
-      maxWidth: '95vw',
+      width: '1000px',       // antes tenías 700px
+      maxWidth: '99vw',
       disableClose: true,
       data: {
         // 👉 pasamos lista y selección actual para que el modal muestre y permita elegir
@@ -1748,5 +1782,31 @@ export class FacturacionIndividualComponent implements OnInit {
     ].filter(Boolean);
     return parts.join(';');
   }
+  formatearFecha(fecha: string | null): string | null {
+    if (!fecha) return null;
+
+    // Detecta formato dd/MM/yyyy
+    const partes = fecha.split('/');
+    if (partes.length === 3) {
+      const [dd, mm, yyyy] = partes;
+      return `${yyyy}-${mm.padStart(2, '0')}-${dd.padStart(2, '0')}`;
+    }
+
+    // Si ya viene en yyyy-MM-dd lo devuelve igual
+    return fecha;
+  }
+// Efecto ripple simple
+ripple(evt: MouseEvent) {
+  const btn = evt.currentTarget as HTMLElement;
+  const r = document.createElement('span');
+  r.className = 'ripple';
+  const rect = btn.getBoundingClientRect();
+  const size = Math.max(rect.width, rect.height);
+  r.style.width = r.style.height = size + 'px';
+  r.style.left = `${evt.clientX - rect.left - size / 2}px`;
+  r.style.top  = `${evt.clientY - rect.top  - size / 2}px`;
+  btn.appendChild(r);
+  setTimeout(() => r.remove(), 600);
+}
 
 }
