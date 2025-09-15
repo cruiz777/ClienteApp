@@ -229,12 +229,29 @@ export class FacturacionIndividualComponent implements OnInit {
 
     ,
     {
-      headerName: 'Des. Unitario', field: 'desUnit', editable: true, type: 'numericColumn',
-      cellEditor: 'agNumberCellEditor', width: 115,
+      headerName: 'Des. Unitario',
+      field: 'desUnit',
+      type: 'numericColumn',
+      cellEditor: 'agNumberCellEditor',
+      width: 115,
+
+      // 👇 Solo editable si NO hay descuento general
+      editable: () => !this.tieneDescuentoGlobal(),
+
+      // Mensaje al pasar el mouse si está bloqueado
+      tooltipValueGetter: () =>
+        this.tieneDescuentoGlobal()
+          ? 'Ya hay un descuento general. Limpie el combo para editar por fila.'
+          : null,
+
+      // Estilo visual cuando está bloqueado (grisecito)
+      cellClassRules: {
+        'ag-cell-disabled': () => this.tieneDescuentoGlobal(),
+      },
+
       valueSetter: (p) => {
         const v = Number(p.newValue);
         p.data.desUnit = this.toN(Number.isFinite(v) ? v : 0, 3);
-        // si editan el $ directo, recalcular % para mantener consistencia
         const unit = Number(p.data.pUnidad) || 0;
         p.data.descPct = unit > 0 ? this.toN((p.data.desUnit / unit) * 100, 2) : 0;
         return true;
@@ -245,25 +262,33 @@ export class FacturacionIndividualComponent implements OnInit {
     {
       headerName: 'Descuento',
       field: 'descPct',
-      editable: true,
       type: 'numericColumn',
       cellEditor: 'agNumberCellEditor',
       width: 115,
-      valueSetter: (p: ValueSetterParams<any>) => {
+
+      // 👇 Solo editable si NO hay descuento general
+      editable: () => !this.tieneDescuentoGlobal(),
+
+      tooltipValueGetter: () =>
+        this.tieneDescuentoGlobal()
+          ? 'Ya hay un descuento general. Limpie el combo para editar por fila.'
+          : null,
+
+      cellClassRules: { 'ag-cell-disabled': () => this.tieneDescuentoGlobal() },
+
+      valueSetter: (p) => {
         let v = Number(p.newValue);
         if (!Number.isFinite(v)) v = 0;
-        v = Math.max(0, Math.min(100, Math.round(v * 100) / 100)); // 2 decimales
+        v = Math.max(0, Math.min(100, Math.round(v * 100) / 100));
         p.data.descPct = v;
-
-        // Mantener desUnit coherente con el %
         const unit = Number(p.data.pUnidad) || 0;
         p.data.desUnit = this.toN(unit * (v / 100), 3);
-
         this.recalcLinea(p.data);
         return true;
       },
-      valueFormatter: (p: any) => `${this.fmtN(p.value, 2)} %`,
-    },
+      valueFormatter: (p) => `${this.fmtN(p.value, 2)} %`,
+    }
+    ,
 
     {
       headerName: 'Des. Total', field: 'desTotal', editable: false, type: 'numericColumn', width: 120,
@@ -790,15 +815,17 @@ export class FacturacionIndividualComponent implements OnInit {
     this.actualizarPuedeAbrirMeses();
   }
 
+mostrarAlerta(mensaje: string, tipo: 'info' | 'error' | 'ok' | string): void {
+  this._snackBar.open(mensaje, 'Cerrar', {
+    duration: 3000,
+    horizontalPosition: 'right',   // 👈 fuerza derecha
+    verticalPosition: 'top',       // 👈 arriba
+    panelClass: tipo === 'error' ? ['snack-error']
+               : tipo === 'ok'    ? ['snack-ok']
+                                  : ['snack-info']
+  });
+}
 
-  mostrarAlerta(mensaje: string, tipo: 'info' | 'error' | 'ok' | string): void {
-    this._snackBar.open(mensaje, 'Cerrar', {
-      duration: 3000,
-      horizontalPosition: 'end',
-      verticalPosition: 'top',
-      panelClass: tipo === 'error' ? ['snack-error'] : tipo === 'ok' ? ['snack-ok'] : ['snack-info']
-    });
-  }
 
   onGridReady(e: any) { this.gridApi = e.api; this.actualizarPuedeAbrirMeses(); }
   onPagosGridReady(e: any) { this.pagosApi = e.api; }
@@ -837,15 +864,28 @@ export class FacturacionIndividualComponent implements OnInit {
 
 
   // helper dentro de la clase (arriba o debajo de los métodos)
-  private buildPagoRow(fp: FormaPagoResponse, valorInicial: number = 0) {
-    return {
-      id: fp.idFormaPago,
-      detalle: fp.descripcionPago ?? '',
-      plazo: 0,
-      tiempo: 'Días',
-      valor: this.to2(valorInicial) // 👈 valor inicial = saldo pendiente
-    };
-  }
+// 👉 agrega esto en tu componente
+private readonly AUTORIZACION_DEFAULT =
+  'SIN UTILIZACION DE SISTEMA FINANCIERO';
+
+// ...y modifica buildPagoRow:
+private buildPagoRow(fp: FormaPagoResponse, valorInicial: number = 0) {
+  return {
+    id: fp.idFormaPago,
+    detalle: fp.descripcionPago ?? '',
+    plazo: 0,
+    tiempo: 'Días',
+    valor: this.to2(valorInicial),
+    // 👇 aquí el valor por defecto
+    autorizacion: this.AUTORIZACION_DEFAULT,
+    // (opcional) inicializa otros campos vacíos
+    banco: '',
+    ntarjeta: '',
+    cheque: '',
+    dueno: ''
+  };
+}
+
 
 
 
@@ -902,7 +942,7 @@ export class FacturacionIndividualComponent implements OnInit {
       next: ({ data }) => {
         if (!data) return;
         this.formCaja.patchValue({
-          secuencial: data.numero_factura ?? '',
+          secuencial: this.padLeft(data.numero_factura, 9),
           caja: data.caja ?? '',
           puntoEmision: data.num_establecimiento ?? '',
         });
@@ -910,6 +950,12 @@ export class FacturacionIndividualComponent implements OnInit {
       error: (err) => console.error('Error cargando autorización de caja', err),
     });
   }
+  // En tu componente
+private padLeft(value: any, size: number): string {
+  const s = (value ?? '').toString().replace(/\D/g, ''); // solo dígitos
+  return s ? s.padStart(size, '0') : '';
+}
+
   // --- reemplaza tu onProductoSelected por esta versión ---
   onProductoSelected(codpro: string): void {
     const p = this.productos.find(x => (x.codpro ?? '').toString() === codpro);
@@ -1254,18 +1300,38 @@ export class FacturacionIndividualComponent implements OnInit {
     d ? `${d.descripcion} (${d.valorFormateado ?? (d.valor ?? 0) + '%'})` : '';
 
   // Al seleccionar (aplica % global sobre cada línea)
-  onDescuentoSelected(item: Descuento): void {
-    this.descuentoSeleccionado = item ?? null;
+ onDescuentoSelected(item: Descuento): void {
+  this.descuentoSeleccionado = item ?? null;
+  const pct = Number(item?.valor ?? 0);
+  this.aplicarDescuentoGlobalPorcentaje(pct);
 
-    const pct = Number(item?.valor ?? 0); // 0..100
-    this.aplicarDescuentoGlobalPorcentaje(pct);
+  // 👇 refresca editable/estilos de las columnas de descuento
+  this.gridApi?.refreshCells({ force: true, columns: ['desUnit', 'descPct'] });
 
-    // cierra panel y quita foco
-    setTimeout(() => {
-      this.autoDescuentoTrigger?.closePanel();
-      this.descuentoInputRef?.nativeElement.blur();
-    }, 0);
-  }
+  setTimeout(() => {
+    this.autoDescuentoTrigger?.closePanel();
+    this.descuentoInputRef?.nativeElement.blur();
+  }, 0);
+}
+
+clearDescuento(): void {
+  this.formFactura.patchValue({ descuento: '' }, { emitEvent: false });
+  this.descuentoSeleccionado = null;
+
+  // esto pone descPct=0 y desUnit=0 en TODAS las filas y recalcula
+  this.aplicarDescuentoGlobalPorcentaje(0);
+
+  this.gridApi?.refreshCells({ force: true, columns: ['desUnit','descPct','desTotal','total'] });
+  this.recalcTotalesFactura();
+  this.ajustarPagosAlTotal();
+
+  setTimeout(() => {
+    this.descuentoInputRef?.nativeElement.focus();
+    this.autoDescuentoTrigger?.openPanel();
+  }, 0);
+}
+
+
 
   // Aplica descuento % a CADA línea como "descuento" absoluto (antes de IVA)
   private aplicarDescuentoGlobalPorcentaje(pct: number): void {
@@ -1285,27 +1351,7 @@ export class FacturacionIndividualComponent implements OnInit {
     this.ajustarPagosAlTotal();
   }
 
-  clearDescuento(): void {
-    this.formFactura.patchValue({ descuento: '' }, { emitEvent: false });
-    this.descuentoSeleccionado = null;
-
-    const aplicar = (row: any) => {
-      row.descPct = 0;
-      row.desUnit = 0;
-      row.descuento = 0;
-      this.recalcLinea(row);
-    };
-    if (this.gridApi) {
-      const nodes: any[] = []; this.gridApi.forEachNode(n => nodes.push(n));
-      nodes.forEach(n => aplicar(n.data));
-      this.gridApi.refreshCells({ force: true });
-    } else {
-      this.rowData.forEach(aplicar);
-    }
-    this.recalcTotalesFactura();
-    this.ajustarPagosAlTotal();
-    setTimeout(() => { this.descuentoInputRef?.nativeElement.focus(); this.autoDescuentoTrigger?.openPanel(); }, 0);
-  }
+ 
 
 
   private cargarIvasVigentes(): void {
@@ -1795,18 +1841,72 @@ export class FacturacionIndividualComponent implements OnInit {
     // Si ya viene en yyyy-MM-dd lo devuelve igual
     return fecha;
   }
-// Efecto ripple simple
-ripple(evt: MouseEvent) {
-  const btn = evt.currentTarget as HTMLElement;
-  const r = document.createElement('span');
-  r.className = 'ripple';
-  const rect = btn.getBoundingClientRect();
-  const size = Math.max(rect.width, rect.height);
-  r.style.width = r.style.height = size + 'px';
-  r.style.left = `${evt.clientX - rect.left - size / 2}px`;
-  r.style.top  = `${evt.clientY - rect.top  - size / 2}px`;
-  btn.appendChild(r);
-  setTimeout(() => r.remove(), 600);
+  // Efecto ripple simple
+  ripple(evt: MouseEvent) {
+    const btn = evt.currentTarget as HTMLElement;
+    const r = document.createElement('span');
+    r.className = 'ripple';
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    r.style.width = r.style.height = size + 'px';
+    r.style.left = `${evt.clientX - rect.left - size / 2}px`;
+    r.style.top = `${evt.clientY - rect.top - size / 2}px`;
+    btn.appendChild(r);
+    setTimeout(() => r.remove(), 600);
+  }
+  // % del descuento general (combo)
+  private getDescuentoGlobalPct(): number {
+    return Number(this.descuentoSeleccionado?.valor ?? 0);
+  }
+  private tieneDescuentoGlobal(): boolean {
+    return this.getDescuentoGlobalPct() > 0;
+  }
+onCellEditingStarted = (e: any) => {
+  if ((e.colDef.field === 'descPct' || e.colDef.field === 'desUnit') && this.tieneDescuentoGlobal()) {
+      this.mostrarAlerta(`Ya tiene un descuento general. Limpie el combo para editar por fila.`, 'info');
+    e.api.stopEditing(true);
+  }
+};
+
+private esColDesc(e: any): boolean {
+  const f = e?.colDef?.field;
+  return f === 'descPct' || f === 'desUnit';
 }
+
+onCellClicked(e: any): void {
+  if (this.esColDesc(e) && this.tieneDescuentoGlobal()) {
+    this.mostrarAlerta('Ya tiene un descuento general. Limpie el combo para editar por fila.', 'info'); // 👈 usa helper
+  }
+}
+
+onCellKeyDown(e: any): void {
+  const key = e.event?.key?.toLowerCase?.();
+  const intentoEditar = key === 'enter' || key === 'f2';
+  if (intentoEditar && this.esColDesc(e) && this.tieneDescuentoGlobal()) {
+    this.mostrarAlerta('Ya tiene un descuento general. Limpie el combo para editar por fila.', 'info'); // 👈 usa helper
+    e.api.stopEditing(true);
+  }
+}
+onCancelarClick(evt?: Event): void {
+  evt?.preventDefault();
+
+  // 1) Limpia todo (formularios, grids, descuentos, totales, etc.)
+  this.limpiarCliente();
+
+  // 2) Vuelve a la primera pestaña
+  this.currentStep = 1;
+
+  // 3) Cierra cualquier panel de autocomplete que haya quedado abierto
+  this.autoProductoTrigger?.closePanel();
+  this.autoDescuentoTrigger?.closePanel();
+  this.autoPagoTrigger?.closePanel();
+
+  // 4) Refresca vista (por si algo queda “pegado”)
+  this.cdRef.detectChanges();
+
+  // (opcional) feedback
+  this.mostrarAlerta('Se limpió el formulario ', 'info');
+}
+
 
 }

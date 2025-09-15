@@ -1345,3 +1345,56 @@ mat-form-field { min-width: 160px; }
   width: 28px;
   height: 28px;
 }
+/* === FILA 1 (una sola línea) === */
+.header-row{
+  display:flex;
+  gap:16px;
+  align-items:flex-end;
+  padding:12px 16px;
+  background:#ECECEC;
+  border-radius:10px;
+  margin-bottom:12px;
+  flex-wrap:wrap;            /* se acomoda en pantallas pequeñas */
+}
+.header-row .fg{display:flex; gap:8px; align-items:center;}
+.header-row .fg label{font-weight:600; color:#666;}
+.header-row .ti{
+  font-size:20px; font-weight:700; height:40px;
+  color:#F26334; width:60px; border:0; background:transparent;
+}
+.header-row .ti.wide{width:140px}
+
+/* === FILA 2 (Año, Buscar, Total, Acciones) === */
+.toolbar-row{
+  display:grid;
+  grid-template-columns: 180px auto 1fr auto; /* Año | Buscar | (espacio) | Total+Acciones */
+  align-items:center;
+  gap:12px;
+  margin:8px 0 16px;
+}
+.total-heading{display:flex; gap:8px; align-items:center; justify-self:end;}
+.total-label{font-weight:700;}
+.fi-total-amount{font-weight:700;}
+.acciones{display:flex; gap:8px; justify-self:end;}
+
+@media (max-width: 900px){
+  .toolbar-row{
+    grid-template-columns: 1fr 1fr;  /* se apila en 2 columnas */
+    row-gap:8px;
+  }
+  .total-heading, .acciones{justify-self:start;}
+}
+.tri-grid{
+  display:grid;
+  grid-template-columns: 1fr auto 1fr; /* como lo tienes */
+  align-items:center;
+  column-gap:12px;
+  row-gap:8px;              /* <-- importante para separar filas */
+}
+
+/* Hacer que cada bloque abarque de la 1ª a la última columna */
+.tri-grid > .header-row { grid-column: 1 / -1; }   /* fila 1 completa */
+.tri-grid > .toolbar-row { grid-column: 1 / -1; }  /* fila 2 completa */
+.header-row .fg.fecha {
+  margin-left: auto;   /* manda la Fecha al extremo derecho */
+}

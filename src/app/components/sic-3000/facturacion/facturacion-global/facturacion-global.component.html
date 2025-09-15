@@ -1,16 +1,10 @@
 <div class="tabs tabs-pills" role="tablist">
-  <button
-    role="tab"
-    [attr.aria-selected]="activeTab === 'Factura'"
-    [class.active]="activeTab === 'Factura'"
+  <button role="tab" [attr.aria-selected]="activeTab === 'Factura'" [class.active]="activeTab === 'Factura'"
     (click)="cambiarTab('Factura')">
     Factura Global
   </button>
 
-  <button
-    role="tab"
-    [attr.aria-selected]="activeTab === 'Listado'"
-    [class.active]="activeTab === 'Listado'"
+  <button role="tab" [attr.aria-selected]="activeTab === 'Listado'" [class.active]="activeTab === 'Listado'"
     (click)="cambiarTab('Listado')">
     Facturas Generadas
   </button>
@@ -22,54 +16,64 @@
   <ng-container *ngIf="activeTab === 'Factura'">
     <!-- FILA 1 -->
     <div class="row-1 tri-grid">
-      <form [formGroup]="formFactura" class="form-inline" (submit)="$event.preventDefault(); buscar()">
-        <mat-form-field appearance="outline" class="anio-field dense">
-          <mat-label>Año</mat-label>
-          <input matInput type="number" formControlName="anio" maxlength="4" />
-        </mat-form-field>
+      <div class="header-row" [formGroup]="formCaja">
+        <div class="fg">
+          <label>P. Emisión:</label>
+          <input class="ti" formControlName="puntoEmision" readonly>
+        </div>
+        <div class="fg">
+          <label>Caja:</label>
+          <input class="ti" formControlName="caja" readonly>
+        </div>
+        <div class="fg">
+          <label>Secuencial:</label>
+          <input class="ti wide" formControlName="secuencial" readonly>
+        </div>
+        <div class="fg fecha">   <!-- antes: class="fg" -->
+  <label>Fecha:</label>
+  <input class="ti wide" formControlName="fechaFacturacion" readonly>
+</div>
 
-        <button type="button" class="btn btn-sm" (click)="buscar()">
-          {{ cargando ? 'Cargando...' : 'Buscar' }}
-        </button>
-      </form>
-
-      <div class="total-heading"><span class="total-label">TOTAL&nbsp;:</span>
-      <span class="fi-total-amount">{{ money(totalSeleccionado) }}</span></div>
-
-      <div class="acciones">
-        <button type="button" class="btn btn-sm" (click)="cancelar()">Cancelar</button>
-        <button type="button" class="btn btn-outline-danger">Facturar</button>
       </div>
+      <form class="toolbar-row" [formGroup]="formFactura" (submit)="$event.preventDefault(); buscar()">
+  <mat-form-field appearance="outline" class="anio-field dense">
+    <mat-label>Año</mat-label>
+    <input matInput type="number" formControlName="anio" maxlength="4" />
+  </mat-form-field>
+
+  <button type="submit" class="btn btn-sm" [disabled]="cargando">
+    {{ cargando ? 'Cargando...' : 'Buscar' }}
+  </button>
+
+  <div class="total-heading">
+    <span class="total-label">TOTAL :</span>
+    <span class="fi-total-amount">{{ money(totalSeleccionado) }}</span>
+  </div>
+
+  <div class="acciones">
+    <button type="button" class="btn btn-sm" (click)="cancelar()">Cancelar</button>
+    <button type="button" class="btn btn-outline-danger">Facturar</button>
+  </div>
+</form>
     </div>
 
     <!-- TOTAL : valor -->
-    
+
 
     <!-- FILA 2: Filtrar -->
-   <div class="row-2 filter-row">
-  <div class="filter-label">Filtrar</div>
+    <div class="row-2 filter-row">
+      <div class="filter-label">Filtrar</div>
 
-  <mat-form-field appearance="outline" class="qf-field dense qf-compact">
-    <input
-      #qfInput
-      matInput
-      placeholder="Buscar en el grid…"
-      (input)="onQuickFilter($event)"
-      aria-label="Búsqueda rápida en el grid" />
-    <button
-  matSuffix
-  mat-icon-button
-  class="clear-suffix"
-  *ngIf="hasQf"
-  type="button"
-  (click)="clearBusqueda(); qfInput.focus()"
-  title="Limpiar búsqueda"
-  aria-label="Limpiar">
-  <mat-icon>close</mat-icon>
-</button>
+      <mat-form-field appearance="outline" class="qf-field dense qf-compact">
+        <input #qfInput matInput placeholder="Buscar en el grid…" (input)="onQuickFilter($event)"
+          aria-label="Búsqueda rápida en el grid" />
+        <button matSuffix mat-icon-button class="clear-suffix" *ngIf="hasQf" type="button"
+          (click)="clearBusqueda(); qfInput.focus()" title="Limpiar búsqueda" aria-label="Limpiar">
+          <mat-icon>close</mat-icon>
+        </button>
 
-  </mat-form-field>
-</div>
+      </mat-form-field>
+    </div>
 
 
     <!-- FILA 3: Solo seleccionados -->
@@ -86,16 +90,9 @@
 
     <!-- GRID -->
     <div class="ag-theme-alpine grid-wrap">
-      <ag-grid-angular
-        style="width:100%; height:100%; display:block"
-        [columnDefs]="columnDefs"
-        [defaultColDef]="defaultColDef"
-        [rowData]="rowData"
-        rowSelection="multiple"
-        (gridReady)="onGridReady($event)"
-        (selectionChanged)="onSelectionChanged()"
-        [enableBrowserTooltips]="true"
-        [tooltipShowDelay]="0">
+      <ag-grid-angular style="width:100%; height:100%; display:block" [columnDefs]="columnDefs"
+        [defaultColDef]="defaultColDef" [rowData]="rowData" rowSelection="multiple" (gridReady)="onGridReady($event)"
+        (selectionChanged)="onSelectionChanged()" [enableBrowserTooltips]="true" [tooltipShowDelay]="0">
       </ag-grid-angular>
     </div>
   </ng-container>

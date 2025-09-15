@@ -2798,3 +2798,27 @@ label[for="secuencial"]{ padding-left: 0 !important; }
 @keyframes ripple {
   to { transform: scale(12); opacity: 0; }
 }
+/* Igualar alturas entre "Factura" (izq) y "Fecha" (der) */
+.invoice-header{
+  display: grid;
+  grid-template-columns: 1fr 280px; /* izquierda flexible | derecha fija */
+  gap: 16px;
+  align-items: stretch;             /* <-- clave para igualar alturas */
+}
+
+/* Asegura que las tarjetas rellenen toda la pista del grid */
+.invoice-header > .box-section{
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Opcional: compactar un poco el header dentro de cada tarjeta */
+.invoice-header .main-title{ margin: 0 0 8px; }
+
+/* Responsive: apila en pantallas pequeñas */
+@media (max-width: 768px){
+  .invoice-header{
+    grid-template-columns: 1fr;
+  }
+}
