@@ -26,74 +26,73 @@
     </div>
   </div>
 
-  <!-- ===== PASO 1: DATOS DEL CLIENTE ===== -->
-  <h3 class="titulo" *ngIf="step === 1">Cuenta a Liquidar</h3>
+  <!-- ===== PASO 1: DATOS DEL CLIENTE (según imagen) ===== -->
+  <h3 class="titulo" *ngIf="step === 1">Registro de Pagos</h3>
 
   <form *ngIf="step === 1" [formGroup]="formCliente" novalidate (ngSubmit)="onNext()">
-    <div class="row g-4">
-      <div class="col-12 col-md-6">
-        <label class="form-label">Cliente:</label>
-        <select class="form-select" formControlName="cliente" [ngClass]="invalid(formCliente,'cliente')">
-          <option value="" disabled selected>Seleccione…</option>
-          <option *ngFor="let c of clientes" [value]="c.id">{{ c.nombre }}</option>
-        </select>
-        <div class="invalid-feedback">Seleccione un cliente.</div>
+    <!-- Fila 1 -->
+    <div class="row g-3 align-items-end">
+      <div class="col-12 col-md-3">
+        <label class="form-label">No. Pago</label>
+        <input class="form-control" formControlName="noPago" placeholder="" />
       </div>
 
-      <div class="col-12 col-md-6">
-        <label class="form-label">Factura:</label>
-        <select class="form-select" formControlName="factura" [ngClass]="invalid(formCliente,'factura')">
-          <option value="" disabled selected>Seleccione…</option>
-          <option *ngFor="let f of facturas" [value]="f.id">{{ f.numero }}</option>
-        </select>
-        <div class="invalid-feedback">Seleccione una factura.</div>
-      </div>
-
-      <div class="col-12 col-md-6">
-        <label class="form-label">Fecha:</label>
-        <input type="date" class="form-control" formControlName="fecha" [ngClass]="invalid(formCliente,'fecha')" />
-        <div class="invalid-feedback">Ingrese la fecha.</div>
+      <div class="col-12 col-md-3">
+        <label class="form-label">Fecha Pago</label>
+        <input type="date" class="form-control" formControlName="fechaPago" />
       </div>
     </div>
 
-    <hr class="my-4">
-
-    <h5 class="subtitulo mb-3">Detalle de la cuenta por Cobrar</h5>
-
-    <div class="row g-4">
-      <div class="col-12 col-md-6">
-        <label class="form-label">Forma de Pago:</label>
-        <select class="form-select" formControlName="formaPago" [ngClass]="invalid(formCliente,'formaPago')">
-          <option value="" disabled selected>Seleccione…</option>
-          <option *ngFor="let fp of formasPago" [value]="fp.id">{{ fp.descripcion }}</option>
-        </select>
-        <div class="invalid-feedback">Seleccione una forma de pago.</div>
-      </div>
-
-      <div class="col-12 col-md-6">
-        <label class="form-label">Fecha:</label>
-        <input type="date" class="form-control" formControlName="fechaDetalle" [ngClass]="invalid(formCliente,'fechaDetalle')" />
-        <div class="invalid-feedback">Ingrese la fecha del detalle.</div>
-      </div>
-
-      <!-- Campos de texto libres -->
-      <div class="col-12 col-md-4">
-        <label class="form-label">Valor CxC:</label>
-        <input type="text" class="form-control" formControlName="valorCxc" autocomplete="off" />
+    <!-- Fila 2 (UN SOLO CAMPO para cliente y responsable) -->
+    <div class="row g-3 align-items-end mt-1">
+      <div class="col-12 col-md-8">
+        <label class="form-label">Cliente</label>
+        <input class="form-control" formControlName="cliente" placeholder="Código o nombre..." />
       </div>
 
       <div class="col-12 col-md-4">
-        <label class="form-label">Abono:</label>
-        <input type="text" class="form-control" formControlName="abono" autocomplete="off" />
-      </div>
-
-      <div class="col-12 col-md-4">
-        <label class="form-label">Saldo:</label>
-        <input type="text" class="form-control" formControlName="saldo" autocomplete="off" />
+        <label class="form-label">Responsable</label>
+        <input class="form-control" formControlName="responsable" placeholder="Código o nombre..." />
       </div>
     </div>
 
-    <div class="d-flex justify-content-center gap-3 mt-5">
+    <!-- Fila 3 -->
+    <div class="row g-3 align-items-end mt-1">
+      <div class="col-12 col-md-3">
+        <label class="form-label">Valor a Pagar</label>
+        <input class="form-control text-end" formControlName="valorAPagar" placeholder="0.00" />
+      </div>
+      <div class="col-12 col-md-3">
+        <label class="form-label">Monto Deuda</label>
+        <input class="form-control text-end" formControlName="montoDeuda" placeholder="0.00" />
+      </div>
+    </div>
+
+    <hr class="my-3">
+
+    <!-- Tabla: AG Grid Community -->
+    <div class="mb-3">
+      <div class="form-label subtitulo mb-2">Detalle</div>
+      <ag-grid-angular
+        class="ag-theme-alpine"
+        style="width: 100%; height: 320px;"
+        [rowData]="rowData"
+        [columnDefs]="columnDefs"
+        [defaultColDef]="defaultColDef"
+        [animateRows]="true"
+        (gridReady)="onGridReady($event)">
+      </ag-grid-angular>
+    </div>
+
+    <!-- Observación -->
+    <div class="row g-3 mt-2">
+      <div class="col-12">
+        <label class="form-label">Observación</label>
+        <input class="form-control" formControlName="observacion" placeholder="" />
+      </div>
+    </div>
+
+    <div class="d-flex justify-content-center gap-3 mt-4">
       <button type="button" class="btn btn-outline-secondary px-4" (click)="onCancel()">Cancelar</button>
       <button type="submit" class="btn btn-primary px-4">Siguiente →</button>
     </div>

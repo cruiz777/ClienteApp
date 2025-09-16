@@ -1,5 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ColDef, GridApi, GridReadyEvent } from 'ag-grid-community';
+import { AgGridAngular } from 'ag-grid-angular';
 
 @Component({
   selector: 'app-registro-cobros',
@@ -17,20 +19,39 @@ export class RegistroCobrosComponent implements OnInit {
   /** Paso 2: Forma de Pago */
   formPago!: FormGroup;
 
-  /** Catálogos demo: reemplaza por servicios reales */
-  clientes = [
-    { id: 1, nombre: 'Cliente A' },
-    { id: 2, nombre: 'Cliente B' }
+  /** AG Grid */
+  private gridApi!: GridApi;
+  columnDefs: ColDef[] = [
+    { headerName: 'No. Factura', editable:false, field: 'numero', minWidth: 160, pinned: 'left' },
+    { headerName: 'Fecha', editable:false, field: 'fecha', width: 120 },
+    {
+      headerName: 'Monto', editable:false, field: 'monto', width: 120, type: 'rightAligned',
+      valueFormatter: p => this.usd(p.value)
+    },
+    {
+      headerName: 'Pago', editable:true, field: 'pago', width: 120, type: 'rightAligned',
+      valueFormatter: p => this.usd(p.value)
+    },
+    { headerName: 'Estado', field: 'estado', width: 170 },
+    {
+      headerName: 'Vence', field: 'vence', width: 120,
+      cellClass: p => (p.data?.valueVencido ? 'text-danger fw-bold' : '')
+    },
+    { headerName: 'Descripción', field: 'descripcion', flex: 1, minWidth: 220 },
+    { headerName: 'Ord', field: 'ord', width: 80 }
   ];
-  facturas = [
-    { id: 100, numero: '001-001-000000123' },
-    { id: 101, numero: '001-001-000000124' }
+  defaultColDef: ColDef = { resizable: true, sortable: true, filter: true };
+
+  rowData = [
+    { numero: 'F - 00202100009308', fecha: '14/08/2025', monto: 189.75, pago: 0, estado: 'PENDIENTE DE PAGO', vence: '14/08/2025', valueVencido: true,  descripcion: 'CRÉDITO PERSONAL', ord: 1 },
+    { numero: 'F - 00202100009305', fecha: '14/08/2025', monto: 498.81, pago: 0, estado: 'PENDIENTE DE PAGO', vence: '14/08/2025', valueVencido: true,  descripcion: 'CRÉDITO PERSONAL', ord: 1 },
+    { numero: 'F - 00202100009306', fecha: '14/08/2025', monto: 498.81, pago: 0, estado: 'PENDIENTE DE PAGO', vence: '14/08/2025', valueVencido: true,  descripcion: 'CRÉDITO PERSONAL', ord: 1 },
+    { numero: 'F - 00202100009307', fecha: '14/08/2025', monto: 240.48, pago: 0, estado: 'PENDIENTE DE PAGO', vence: '14/08/2025', valueVencido: true,  descripcion: 'CRÉDITO PERSONAL', ord: 1 },
+    { numero: 'F - 00202100009308', fecha: '14/08/2025', monto: 250.41, pago: 0, estado: 'PENDIENTE DE PAGO', vence: '14/08/2025', valueVencido: true,  descripcion: 'CRÉDITO PERSONAL', ord: 1 },
+    { numero: 'F - 00202100009328', fecha: '25/08/2025', monto: 498.81, pago: 0, estado: 'PENDIENTE DE PAGO', vence: '25/08/2025', valueVencido: false, descripcion: 'CRÉDITO PERSONAL', ord: 1 }
   ];
-  formasPago = [
-    { id: 1, descripcion: 'Efectivo' },
-    { id: 2, descripcion: 'Tarjeta' },
-    { id: 3, descripcion: 'Transferencia' }
-  ];
+
+  /** Catálogos demo usados en Paso 2 */
   tipos = [
     'Transferencia Pichincha', 'Transferencia Produbanco', 'Cheque',
     'Depósito', 'Efectivo', 'Tarjeta Crédito', 'Tarjeta Débito'
@@ -45,20 +66,18 @@ export class RegistroCobrosComponent implements OnInit {
   constructor(private fb: FormBuilder) {}
 
   ngOnInit(): void {
-    // === Paso 1 ===
+    // === Paso 1 === (un solo campo para cliente y para responsable)
     this.formCliente = this.fb.group({
-      cliente: ['', Validators.required],
-      factura: ['', Validators.required],
-      fecha: ['', Validators.required],
-      formaPago: ['', Validators.required],
-      fechaDetalle: ['', Validators.required],
-      // estos tres son TEXTO (sin cálculo automático)
-      valorCxc: [''],
-      abono: [''],
-      saldo: ['']
+      noPago: [''],
+      fechaPago: ['', Validators.required],
+      cliente: [''],          // 👈 único campo
+      responsable: [''],      // 👈 único campo
+      valorAPagar: ['0.00'],
+      montoDeuda: ['0.00'],
+      observacion: ['']
     });
 
-    // === Paso 2 ===
+    // === Paso 2 === (igual)
     this.formPago = this.fb.group({
       categoriaPago: ['efectivo', Validators.required], // efectivo | tarjeta
       tipo: ['', Validators.required],
@@ -80,13 +99,35 @@ export class RegistroCobrosComponent implements OnInit {
     return { 'is-invalid': !!c && c.touched && c.invalid };
   }
 
+  // ===== AG Grid =====
+  onGridReady(e: GridReadyEvent) {
+    this.gridApi = e.api;
+    this.gridApi.sizeColumnsToFit();
+  }
+
+  usd(v: number) {
+    if (v == null) { return ''; }
+    return new Intl.NumberFormat('es-EC', { style: 'currency', currency: 'USD' }).format(v);
+  }
+
   // ===== Acciones Paso 1 =====
   onCancel(): void {
     this.formCliente.reset({
-      cliente: '', factura: '', fecha: '',
-      formaPago: '', fechaDetalle: '',
-      valorCxc: '', abono: '', saldo: ''
+      noPago: '',
+      fechaPago: '',
+      cliente: '',
+      responsable: '',
+      valorAPagar: '0.00',
+      montoDeuda: '0.00',
+      observacion: ''
     });
+
+    if (this.gridApi) {
+      this.gridApi.setGridOption('quickFilterText', ''); // v31+
+      this.gridApi.setFilterModel(null);
+      this.gridApi.deselectAll();
+    }
+
     this.onCancelarPago();
     this.step = 1;
   }

@@ -8,6 +8,7 @@ import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.compo
 import { ProductosSicComponent } from './productos-sic/productos-sic.component';
 import { InicioComponent } from '../inicio/inicio.component';
 
+
 const routes: Routes = [
   {
     path: '',
@@ -25,7 +26,9 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  imports: [RouterModule.forChild(routes)],
+  imports: [RouterModule.forChild(routes),
+   
+  ],
   exports: [RouterModule]
 })
 export class Sic3000RoutingModule { }

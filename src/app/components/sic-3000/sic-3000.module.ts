@@ -19,7 +19,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-
+import { AgGridModule } from 'ag-grid-angular';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 
 import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
@@ -59,6 +59,7 @@ import { ProductosSicComponent } from './productos-sic/productos-sic.component';
     MatSlideToggleModule,
     MatDatepickerModule,
     MatNativeDateModule,
+    AgGridModule,
     Sic3000RoutingModule
   ]
 })
