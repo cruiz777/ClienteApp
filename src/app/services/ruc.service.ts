@@ -6,7 +6,7 @@ import { map, Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class RucService {
-  private apiUrl = 'http://10.10.7.4:8080/api/services/ruc/';
+  private apiUrl = 'http://pichincha.gapsystem.net:10048/api/services/ruc/';
 
   constructor(private http: HttpClient) {}
 
