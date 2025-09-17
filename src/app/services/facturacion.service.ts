@@ -190,5 +190,25 @@ generarXmlEnServidor(idNota: number) {
   const url = `${this.baseUrl}/Facturacion/${idNota}/xml`; // o '/facturas/...'
   return this.http.post<GenerarXmlFacturaResponse>(url, {}); // POST y JSON
 }
+/** Descarga el PDF de la factura (abre el diálogo de guardar) */
+descargarPdfFactura(idNota: number, nombre = `factura-${idNota}.pdf`): Observable<void> {
+  const url = `${this.baseUrl}/Facturacion/${idNota}/pdf`;
+  return this.http.get<Blob>(url, { responseType: 'blob' as 'json' }).pipe(
+    map(blob => {
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = href;
+      a.download = nombre;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(href);
+    }),
+    catchError(err => {
+      console.error('[FacturacionService] descargarPdfFactura error:', err);
+      return throwError(() => err);
+    })
+  );
+}
 
 }

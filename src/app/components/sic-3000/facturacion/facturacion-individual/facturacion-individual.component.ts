@@ -15,6 +15,8 @@ import { AbstractControl } from '@angular/forms';
 import { Router } from '@angular/router';
 import { combineLatest } from 'rxjs';
 import { shareReplay } from 'rxjs/operators';
+import { environment } from 'src/environments/environment';
+
 import {
   FacturacionMesesResult
 } from 'src/app/components/sic-3000/facturacion/facturacion-meses-modal/facturacion-meses-modal.component';
@@ -215,7 +217,7 @@ export class FacturacionIndividualComponent implements OnInit {
     {
       headerName: 'IVA',
       field: 'iva',
-      editable: true,
+      editable: false,
       width: 65,
       cellEditor: 'agSelectCellEditor',
       cellEditorParams: () => ({ values: this.ivaOptions }),
@@ -1490,91 +1492,84 @@ clearDescuento(): void {
 
 
   crearFactura(): void {
-    // Validaciones mínimas y no repetidas
-    if (this.getPagosCount() === 0) {
-      this.mostrarAlerta('Agrega al menos una forma de pago.', 'info');
-      return;
-    }
-    if (Math.abs(this.saldoPendiente) >= 0.005) {
-      this.mostrarAlerta('El saldo pendiente debe ser 0.00 para generar la factura.', 'info');
-      return;
-    }
-
-    const payload = this.buildFacturaPayload();
-
-    if (!payload.idCliente) { this.mostrarAlerta('Seleccione un cliente.', 'info'); return; }
-    if (!payload.caja) { this.mostrarAlerta('No hay caja asignada.', 'info'); return; }
-    if (!payload.detalles?.length) { this.mostrarAlerta('Agrega al menos un producto a la factura.', 'info'); return; }
-
-    // (Opcional) logs de depuración
-    console.log('PAYLOAD →', payload);
-    console.table(payload.detalles);
-    console.table(payload.formasPago);
-    console.log(JSON.stringify(payload, null, 2));
-
-    this.facturacionService.crear(payload).pipe(
-      switchMap(resp => {
-        const tipo = (resp?.type || '').toLowerCase();
-
-        // dentro del switchMap de "crear()"
-        if (tipo === 'success' || tipo === 'warning') {
-          this.mostrarAlerta(resp?.message || 'Factura creada correctamente.', 'ok');
-
-          const idNota = Number(resp?.data?.idNota);
-          if (Number.isFinite(idNota)) {
-            // ⬇️ Llama al nuevo endpoint que guarda el XML en servidor
-            return this.facturacionService.generarXmlEnServidor(idNota).pipe(
-              tap(r => {
-                if (r?.success) {
-                  // feedback al usuario
-                  this.mostrarAlerta(
-                    `XML generado en el servidor: ${r.fileName}`,
-                    'ok'
-                  );
-                  // OPCIONAL: si expones /xml como estático, podrías construir una URL para previsualizar
-                  // const url = `${this.baseUrlPublic}/xml/${r.fileName}`;
-                } else {
-                  this.mostrarAlerta(r?.message || 'No se generó el XML.', 'error');
-                }
-              }),
-              catchError(_ => {
-                this.mostrarAlerta('Error generando el XML en el servidor.', 'error');
-                return of(null);
-              })
-            );
-          } else {
-            this.mostrarAlerta('No se recibió idNota válido en la respuesta.', 'error');
-            return of(null); // o EMPTY
-          }
-        } else {
-          this.mostrarAlerta(resp?.message || 'No se pudo crear la factura.', 'error');
-          return of(null); // o EMPTY
-        }
-
-      }),
-      catchError(err => {
-        console.error('[crearFactura] error:', err);
-        this.mostrarAlerta('Error al crear la factura.', 'error');
-        return of(void 0);
-      }),
-      finalize(() => {
-        // ✅ liberar el botón siempre (éxito o error)
-        this.generando = false;
-        this.cdRef.detectChanges();
-      })
-    ).subscribe({
-      next: () => {
-        // ✅ limpiar y regresar a la pestaña 1
-        this.limpiarCliente();
-        this.cargarAutorizacion();
-        this.currentStep = 1;
-        this.cdRef.detectChanges();
-
-        // Si prefieres navegar, descomenta:
-        // this.router.navigate(['/sic-3000/findividual']);
-      }
-    });
+  // Validaciones mínimas y no repetidas
+  if (this.getPagosCount() === 0) {
+    this.mostrarAlerta('Agrega al menos una forma de pago.', 'info');
+    return;
   }
+  if (Math.abs(this.saldoPendiente) >= 0.005) {
+    this.mostrarAlerta('El saldo pendiente debe ser 0.00 para generar la factura.', 'info');
+    return;
+  }
+
+  const payload = this.buildFacturaPayload();
+
+  if (!payload.idCliente) { this.mostrarAlerta('Seleccione un cliente.', 'info'); return; }
+  if (!payload.caja) { this.mostrarAlerta('No hay caja asignada.', 'info'); return; }
+  if (!payload.detalles?.length) { this.mostrarAlerta('Agrega al menos un producto a la factura.', 'info'); return; }
+
+  // (Opcional) logs de depuración
+  console.log('PAYLOAD →', payload);
+  console.table(payload.detalles);
+  console.table(payload.formasPago);
+  console.log(JSON.stringify(payload, null, 2));
+
+  this.facturacionService.crear(payload).pipe(
+    switchMap(resp => {
+      const tipo = (resp?.type || '').toLowerCase();
+
+      if (tipo === 'success' || tipo === 'warning') {
+        this.mostrarAlerta(resp?.message || 'Factura creada correctamente.', 'ok');
+
+        const idNota = Number(resp?.data?.idNota);
+        if (Number.isFinite(idNota)) {
+          // 1) Genera el XML en el servidor
+          return this.facturacionService.generarXmlEnServidor(idNota).pipe(
+            tap(r => {
+              if (r?.success) {
+                this.mostrarAlerta(`XML generado en el servidor: ${r.fileName}`, 'ok');
+
+                // 2) Abrir/descargar el PDF inmediatamente (nueva línea)
+                const pdfUrl = `${environment.invoices_sic}/Facturacion/${idNota}/pdf`;
+                window.open(pdfUrl, '_blank'); // deja que el backend ponga Content-Disposition
+              } else {
+                this.mostrarAlerta(r?.message || 'No se generó el XML.', 'error');
+              }
+            }),
+            catchError(_ => {
+              this.mostrarAlerta('Error generando el XML en el servidor.', 'error');
+              return of(null);
+            })
+          );
+        } else {
+          this.mostrarAlerta('No se recibió idNota válido en la respuesta.', 'error');
+          return of(null);
+        }
+      } else {
+        this.mostrarAlerta(resp?.message || 'No se pudo crear la factura.', 'error');
+        return of(null);
+      }
+    }),
+    catchError(err => {
+      console.error('[crearFactura] error:', err);
+      this.mostrarAlerta('Error al crear la factura.', 'error');
+      return of(void 0);
+    }),
+    finalize(() => {
+      // ✅ liberar el botón siempre (éxito o error)
+      this.generando = false;
+      this.cdRef.detectChanges();
+    })
+  ).subscribe({
+    next: () => {
+      // ✅ limpiar y regresar a la pestaña 1
+      this.limpiarCliente();
+      this.cargarAutorizacion();
+      this.currentStep = 1;
+      this.cdRef.detectChanges();
+    }
+  });
+}
 
   autoGrow(e: Event) {
     const el = e.target as HTMLTextAreaElement;
