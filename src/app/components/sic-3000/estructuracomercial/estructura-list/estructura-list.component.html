@@ -102,7 +102,18 @@
           </thead>
           <tbody>
             <tr *ngFor="let row of tableRows">
-              <td *ngFor="let col of tableColumns">{{ row[col.key] }}</td>
+              <td *ngFor="let col of tableColumns">
+                <ng-container [ngSwitch]="col.key">
+                  <ng-container *ngSwitchCase="'acciones'">
+                    <button (click)="editarProducto(row); $event.stopPropagation()" title="Editar">
+                      <img src="assets/icons/icon-modificar-3.png" width="20" />
+                    </button>
+                  </ng-container>
+                  <ng-container *ngSwitchDefault>
+                    {{ row[col.key] }}
+                  </ng-container>
+                </ng-container>
+              </td>
             </tr>
             <tr *ngIf="tableRows.length === 0">
               <td [attr.colspan]="tableColumns.length" style="text-align:center; color:#6b7280;">

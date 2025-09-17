@@ -283,7 +283,8 @@ export class EstructuraListComponent {
         { key: 'codpro', label: 'Cod. Pro' },
         { key: 'despro', label: 'Descripción' },
         { key: 'tippro', label: 'Tip. Prod' },
-        { key: 'codbar', label: 'Codbar.' }
+        { key: 'codbar', label: 'Codbar.' },
+        { key: 'acciones', label: 'Acciones' }
       ],
       productos ?? []
     );
@@ -402,6 +403,10 @@ export class EstructuraListComponent {
     this.router.navigate(['sic-3000/productossic', this.nodoSeleccionado.id]);
   }
 
+  editarProducto(row: any): void {
+    if (!row?.id_producto) return;
+    this.router.navigate(['sic-3000/productossic', row.id_producto]);
+  }
 
   toggleExpandConRecarga(nodo: any): void {
     nodo.hijos = [];

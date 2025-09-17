@@ -49,12 +49,15 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     this.cargarUnidadesVenta();
     this.route.paramMap.subscribe(params => {
       this.idEstructura = Number(params.get('idEstructura')) || 0;
-      console.log('ID de estructura recibido:', this.idEstructura);
+      const idProducto = Number(params.get('id_producto')) || 0;
+      if (idProducto > 0) {
+        this.cargarProducto(idProducto);
+      }
     });
 
     this.form = this.fb.group({
       descripcion: ['', [Validators.required, Validators.maxLength(500)]],
-      codigoInterno: ['',Validators.required],
+      codigoInterno: ['', Validators.required],
       descripcion1: ['', [Validators.required, Validators.maxLength(500)]],
       unidadVenta: [null, Validators.required],
       existenciaGlobal: ['', Validators.required],
@@ -66,7 +69,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       productoConPeso: [false],
       consumoInterno: [false],
 
-      codigoBarras: ['',Validators.required],
+      codigoBarras: ['', Validators.required],
       generarCodigo: [false],
       descripcionPOS: ['', Validators.required],
       cantidad: [null],
@@ -398,6 +401,68 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       },
       error: (err) => console.error('❌ Error HTTP:', err),
       complete: () => (this.saving = false)
+    });
+  }
+
+  cargarProducto(id: number): void {
+    this.productoService.getById(id).subscribe({
+      next: (res) => {
+        const prod = res?.data;
+        if (!prod) return;
+
+        // ✅ Tab 1: datos generales
+        this.form.patchValue({
+          descripcion1: prod.despro,
+          descripcionPOS: prod.despro2,
+          codigoBarras: prod.codbar,
+          tipoProducto: prod.tippro === 'B' ? 'Bien' : (prod.tippro === 'S' ? 'Servicio' : null),
+          unidadVenta: this.unidadesVenta.find(u => u.descripcion === prod.uniman)?.idUnidadVenta || null,
+          abreviacion: prod.abrevia,
+          referencia: prod.referencia,
+          activo: prod.activo,
+          pagaIva: prod.pagaiva,
+          cargarInventarios: prod.inv,
+          productoConPeso: prod.peso,
+          altoRiesgo: prod.altoriesgo,
+          claseProducto: prod.clasprod,
+          urlFoto: prod.foto,
+          fechaCreacion: prod.feccre ? prod.feccre.substring(0, 10) : null,
+          fechaModificacion: prod.fechamod ? prod.fechamod.substring(0, 10) : null,
+        });
+
+        // ✅ Tab 2: adicionales
+        this.adicionalForm.patchValue({
+          color: prod.colsab,
+          tamanoTalla1: prod.talla,
+          observacion: prod.obs,
+          registroSanitario: prod.regsanitario,
+          ctaVentas: prod.codcuedeb,
+          ctaInventarios: prod.codcuehab,
+          ctaCostos: prod.codcuedes,
+          ctaDevolucion: prod.codcuedev,
+          productoGasto: prod.pgasto,
+          ctaGastos: prod.ctaprodgasto,
+        });
+
+        // ✅ Tab 3: precios / costos
+        this.preciosForm.patchValue({
+          precioOficial: prod.preven,
+          precioRedMsp: prod.preven2,
+          pvpActualIva: prod.pvpsiniva,
+          pvpAnteriorMasIva: prod.preanterior,
+          fechaAnteriorModificarPrecio: prod.feccosact,
+          fechaModificarPrecio: prod.fecpremod,
+          margenUtilidad: prod.margenutilidad,
+          costoSuministro: prod.costsuminis,
+          costoProducto: prod.cospro,
+          costoPromedio: prod.precos,
+          precioCompraAnterior: prod.cosanterior,
+          fechaAnteriorModificarCompra: prod.fecpreact,
+          precioCompraActual: prod.preuni,
+          recepcionPorcentaje: prod.porcenrecepcion
+        });
+      },
+      error: (err) => console.error('❌ Error cargando producto', err)
     });
   }
 

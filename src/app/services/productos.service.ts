@@ -44,4 +44,8 @@ export class ProductoService {
     return this.http.post<ApiResponse<any>>(`${this.apiUrl}/CreatePE`, payload);
   }
 
+  getById(id: number): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(`${this.apiUrl}/${id}`);
+  }
+
 }
