@@ -1,0 +1,1506 @@
+
+/* botones superiores pestañas */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 8px;
+  background-color: #f4f6f8;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid #ccc;
+}
+
+.tabs button {
+  flex: 1;
+  background-color: #e0e7ef;
+  border: none;
+  padding: 10px 20px;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
+  color: #1f2937;
+  cursor: pointer;
+  transition: background-color 0.3s;
+  text-align: center;
+}
+
+.tabs button:hover {
+  background-color: #cbd5e1;
+}
+
+.tabs button.active {
+  background-color: #002c6c;
+  color: #ffffff;
+}
+
+.contenido-tablas {
+  padding: 16px;
+  background-color: white;
+  border: 1px solid #ccc;
+  border-radius: 0 0 8px 8px;
+}
+
+h2 {
+  font-size: 18px;
+  margin-bottom: 12px;
+  color: #002c6c;
+  font-weight: 700;
+}
+
+h3 {
+  font-size: 16px;
+  margin-bottom: 8px;
+  color: #002c6c;
+}
+
+.tabla-estilo {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+}
+
+.tabla-estilo th,
+.tabla-estilo td {
+  border: 1px solid #d1d5db;
+  padding: 8px 12px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.tabla-estilo th {
+  background-color: #f0f4f8;
+  color: #1f2937;
+  font-weight: 600;
+}
+/* -------------------------------------------------------------------------------------------- */
+
+/* Panel con columnas distribuidas */
+.tablas-panel {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+.panel-col {
+  flex: 1;
+  min-width: 300px;
+}
+
+.panel-col h3 {
+  font-size: 16px;
+  color: #002c6c;
+  margin-bottom: 8px;
+}
+
+/* Responsive */
+@media screen and (max-width: 768px) {
+  .tabs {
+    flex-direction: column;
+  }
+
+  .tabla-estilo th,
+  .tabla-estilo td {
+    font-size: 12px;
+  }
+
+  .tablas-panel {
+    flex-direction: column;
+  }
+}
+
+/* Ocultar columnas de ID */
+.ocultar-id {
+  display: none;
+}
+
+/* Columnas con ancho personalizado */
+.col-reducida {
+  width: 1%;
+  white-space: nowrap;
+}
+
+.fila-activa {
+  background-color: #cbd5e1 !important;
+  font-weight: bold;
+  color: #002c6c;
+}
+/* Espaciado entre botones en otras acciones */
+.form-actions button {
+  margin-left: 8px;
+}
+.encabezado-acciones {
+  display: flex;
+  justify-content: space-between;
+  /* Título a la izquierda, botones a la derecha */
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.titulo-y-busqueda {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+/* Fila horizontal con inputs y botón */
+.form-row-horizontal {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+/* Campo de formulario: input + label */
+.campo-formulario {
+  display: flex;
+  flex-direction: column;
+}
+
+.campo-formulario label {
+  font-weight: 600;
+  margin-bottom: 4px;
+  color: #002c6c;
+}
+
+.campo-formulario input {
+  padding: 6px 10px;
+  font-size: 14px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-width: 200px;
+}
+
+
+
+.btn-naranja:hover {
+  background-color: #002c6c;
+  /* Azul marino GS1 */
+}
+
+.form-actions {
+  margin-top: 40px;
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.form-actions button {
+  background-color: #eef4f7;
+  border: none;
+  padding: 8px 30px;
+  font-size: 12px;
+  color: #002c6c;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.form-row {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 250px;
+}
+
+.form-group label {
+  font-size: 12px;
+  margin-bottom: 4px;
+  color: #002c6c;
+}
+
+.form-group input,
+.form-group select {
+  padding: 5px 10px;
+  border: none;
+  border-bottom: 1px solid #ccd5e2;
+  font-size: 12px;
+  color: #333;
+  outline: none;
+  background: #fff;
+}
+
+
+.form-row {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 300px;
+}
+
+.form-group label {
+  font-weight: bold;
+  color: #002c6c;
+  font-size: 14px;
+}
+
+.form-group input,
+.form-group select {
+  padding: 6px 10px;
+  font-size: 13px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  min-width: 100px;
+}
+
+.form-actions {
+  margin-top: 24px;
+  display: flex;
+  gap: 20px;
+  justify-content: flex-end;
+}
+
+.form-actions button {
+  background-color: #eef4f7;
+  border: 1px solid #ccd5e2;
+  padding: 8px 20px;
+  font-size: 14px;
+  color: #002c6c;
+  border-radius: 4px;
+  cursor: pointer;
+}
+/*--BOTONERA TRANSFERIR---------------------------*/
+.form-transferencia {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+
+.form-actions-right {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}
+/* Grupo de acciones con botones */
+.form-actions {
+  margin-top: 24px;
+  display: flex;
+  gap: 20px;
+  justify-content: flex-end;
+}
+.form-actions button {
+  background-color: #eef4f7;
+  border: 1px solid #ccd5e2;
+  padding: 8px 20px;
+  font-size: 14px;
+  color: #002c6c;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.form-actions-horizontal.alineado-derecha {
+  margin-left: auto; /* empuja la botonera hacia la derecha */
+  display: flex;
+  gap: 12px;
+}
+
+/* Estilo activo */
+.form-actions-horizontal button.activo {
+  background-color: #002c6c;
+  color: white;
+  border: 1px solid #002c6c;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 8px;
+  background-color: #f4f6f8;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid #ccc;
+}
+.select-pequeno .mat-form-field-wrapper {
+  padding-bottom: 0 !important;
+}
+
+.select-pequeno .mat-select {
+  font-size: 13px;
+  height: 36px;
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+mat-form-field {
+  min-width: 200px;
+  flex: 1;
+}
+
+button[mat-flat-button] {
+  height: 56px;
+  align-self: flex-end;
+}
+/* Contenedor general */
+.contenedor-formulario {
+  padding: 24px;
+  background-color: #f8fafc;
+  font-family: 'Segoe UI', sans-serif;
+  color: #1e293b;
+}
+
+/* Título principal */
+h2 {
+  text-align: center;
+  color: #1e3a8a;
+  font-weight: bold;
+  margin-bottom: 24px;
+  font-size: 20px;
+  text-transform: uppercase;
+}
+
+/* Tarjeta del formulario */
+.formulario {
+  background-color: #ffffff;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 32px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 16px;
+  align-items: flex-start;
+}
+/* Grilla adaptable para campos */
+
+/* Etiquetas y campos */
+label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e3a8a;
+  display: block;
+  margin-bottom: 4px;
+}
+
+/* Inputs y textareas */
+input,
+textarea,
+select,
+mat-form-field {
+  width: 100%;
+}
+
+input,
+textarea,
+select {
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px solid #94a3b8;
+  font-size: 13px;
+  padding: 6px 4px;
+  outline: none;
+  color: #1e293b;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #94a3b8;
+}
+
+textarea {
+  resize: vertical;
+  min-height: 60px;
+}
+
+/* mat-form-field */
+mat-form-field {
+  font-size: 13px;
+}
+
+/* Agrupadores (GTIN combo, empresas, radios) */
+.fila-gtin,
+.fila-gtin-combo {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.combo-gtin {
+  display: flex;
+  flex-direction: column;
+  min-width: 140px;
+  flex: 1 1 160px;
+}
+
+.select-pequeno .mat-form-field-wrapper {
+  padding-bottom: 0 !important;
+}
+
+.select-pequeno .mat-select {
+  font-size: 13px;
+  height: 36px;
+}
+
+/* Etiquetas para agrupaciones */
+.grupo-etiqueta {
+  flex: 1 1 48%;
+  min-width: 240px;
+}
+
+.titulo-grupo {
+  font-weight: bold;
+  color: #1e3a8a;
+  font-size: 14px;
+  margin-bottom: 6px;
+}
+
+/* Grupo de radios */
+.checkbox-contenedor.radio {
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background-color: #f1f5f9;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: flex-start;
+  align-items: center;
+}
+
+.checkbox-contenedor.radio label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #1e3a8a;
+  white-space: nowrap;
+}
+
+/* Checkboxes en caja (empresas, país, sector) */
+.checkbox-contenedor {
+  display: flex;
+  gap: 16px;
+  padding: 10px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background-color: #f1f5f9;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.checkbox-contenedor label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  color: #1e3a8a;
+}
+
+/* Fila combinada ocupa todo el ancho */
+.full-width {
+  grid-column: 1 / -1;
+}
+
+/* Botonera final */
+.botones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+  flex-wrap: wrap;
+}
+
+/* Botones base */
+.btn {
+  padding: 8px 18px;
+  background-color: #e5e7eb;
+  color: #1e3a8a;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-size: 13px;
+}
+
+.btn:hover {
+  background-color: #cbd5e1;
+}
+
+.btn-azul {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.btn-rojo {
+  background-color: #ef4444;
+  color: white;
+}
+
+/* Separador de secciones */
+.separador {
+  margin-top: 48px;
+  border-top: 2px solid #cbd5e1;
+  padding-top: 24px;
+}
+
+/* Campos con validación visual */
+.input-verde {
+  background-color: #3df067 !important;
+}
+
+.mensaje-error {
+  color: red;
+  font-weight: bold;
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Controla columnas específicas para campos proporcionales */
+.col-2 { grid-column: span 2; }
+.col-3 { grid-column: span 3; }
+.col-4 { grid-column: span 4; }
+
+/* Fila compacta: checkbox + input */
+.fila-inline {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.fila-inline input[type="checkbox"] {
+  margin-top: 0 !important;
+  margin-bottom: 0;
+}
+
+/* Tamaños personalizados */
+.cortocli {
+  max-width: 150px;
+}
+.corto {
+  max-width: 110px;
+}
+.largo {
+  min-width: 300px;
+  flex: 1;
+}
+
+/* Mat-form-field y autocompletes consistentes */
+mat-form-field {
+  width: 100%;
+  font-size: 13px;
+}
+/* Forzar altura de input similar a textarea para alinearlos */
+textarea {
+  min-height: 38px; /* igual que input */
+  padding-top: 6px;
+}
+.serie-inline {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.checkbox-serie {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #1e3a8a;
+  white-space: nowrap;
+}
+.fila-inline {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end; /* <- 🔑 Esto alinea base de input y textarea */
+  flex-wrap: wrap;
+}
+
+.campo-url {
+  flex: 0 0 200px; /* Puedes ajustar este ancho */
+  display: flex;
+  flex-direction: column;
+}
+
+.campo-observacion {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+textarea {
+  min-height: 36px;
+  padding: 6px 4px;
+  font-size: 13px;
+  line-height: 1.4;
+  resize: vertical;
+}
+.fila-inline {
+  display: flex;
+  gap: 16px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.campo-gtin-ul {
+  flex: 0 0 100px; /* o el ancho que desees para el GTIN UL */
+  display: flex;
+  flex-direction: column;
+}
+
+.campo-descripcion-ul {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-layout {
+  display: flex;
+  gap: 32px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.bloque {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fila-1 {
+  width: 600px;
+}
+
+.fila-2 {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+  flex-grow: 1;
+}
+
+.fila-3 {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.select-pequeno {
+  width: 120px;
+}
+
+.campo-prefijo {
+  width: 40px;
+}
+
+.serie-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px; /* separa visualmente de categoría */
+}
+
+.largo {
+  display: block;
+  margin-top: 8px;
+}
+
+
+.campo-gtin {
+  width: 240px;
+}
+.hidden-column {
+  display: none;
+}
+.fila-horizontal {
+  display: flex;
+  gap: 16px; /* opcional, espacio entre los campos */
+  align-items: end; /* alinea verticalmente los inputs y labels */
+  flex-wrap: wrap; /* permite que se acomode bien en pantallas pequeñas */
+}
+.select-pequeno {
+  width: 150px; /* ajusta según lo que necesites */
+  min-width: auto;
+}
+mat-form-field {
+  max-width: 150px;
+}
+::ng-deep .ag-cell .ag-checkbox-input {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+
+::ng-deep .centered-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+::ng-deep .ag-cell .ag-checkbox-input:checked {
+  accent-color: #3f51b5; /* Material Indigo */
+  box-shadow: 0 0 0 2px rgba(63, 81, 181, 0.3);
+}
+.contenedor-grid {
+  overflow-x: auto; /* Habilita scroll horizontal */
+  max-width: 100%;
+}
+.celda-vacia {
+  background-color: #fbb;
+}
+.proceso-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.proceso-contenedor {
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  text-align: center;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.3);
+}
+
+.reloj {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 10px;
+}
+::ng-deep .fila-repetida {
+  background-color: #ffe5e5 !important;
+}
+
+.alinear-campos {
+  display: flex;
+  align-items: center;
+  gap: 20px; /* espacio entre GLN y Serie */
+}
+
+.campo {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.campo input[type="text"] {
+  height: 24px;
+}
+.contenedor-pegar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.campo-label-input {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.label-codificar {
+  white-space: nowrap;
+  font-size: 14px;
+}
+
+.input-cantidad {
+  width: 60px;
+  height: 36px;
+  padding: 4px 6px;
+  font-size: 14px;
+}
+
+.campo-textarea {
+  width: 140px;
+  height: 60px;
+  margin: 0;
+}
+
+mat-form-field textarea {
+  height: 50px !important;
+  padding-top: 6px !important;
+  font-size: 13px;
+}
+::ng-deep .cell-error {
+  background-color: #ffe0e0 !important;
+  border: 1px solid red !important;
+}
+.celda-repetida {
+  background-color: #ffcccc !important; /* rojo claro */
+}
+.ag-theme-alpine .celda-repetida {
+  background-color: #f8d7da !important; /* Rojo suave */
+  color: #721c24 !important;            /* Letra más visible */
+  font-weight: bold;
+}
+::ng-deep .celda-repetida {
+  background-color: #f8d7da !important;
+  color: #721c24 !important;
+  font-weight: bold;
+  border: 1px solid #f5c6cb;
+}
+::ng-deep .ag-theme-alpine .celda-repetida {
+  background-color: #f8d7da !important;
+  color: #721c24 !important;
+  font-weight: bold;
+  border: 1px solid #f5c6cb;
+}
+.col-uv {
+  width: 170px;
+  max-width: 170px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.col-despro {
+  width: 300px;
+  max-width: 300px;
+}
+
+.col-referencia {
+  width: 650px;
+  max-width: 650px;
+  white-space: normal;
+  word-wrap: break-word;
+}
+.col-numero {
+  width: 50px;
+  max-width: 50px;
+  text-align: center;
+}
+.form-campo-largo {
+  flex: 1;
+  min-width: 700px;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.form-campo-largo {
+  width: 100%;
+}
+
+.select-pequeno {
+  width: 100%;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.form-group label {
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.form-group input {
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.campo textarea {
+  width: 100%;
+  min-height: 60px;
+}
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+  align-items: start;
+}
+
+.form-campo {
+  flex: 1;
+  min-width: 200px;
+}
+
+.form-mostrar {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-width: 80px;
+}
+
+
+textarea {
+  min-height: 60px;
+}
+.campo-largo {
+  width: 100%;
+  min-width: 550px;
+  flex: 1;
+}
+
+.form-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+/* Tema AG Grid (igual que Bloque) */
+@import "ag-grid-community/styles/ag-grid.css";
+@import "ag-grid-community/styles/ag-theme-alpine.css";
+
+/* Altura/ancho del grid: sin esto no se ve */
+.grid-wrap {
+  height: 420px;
+  width: 100%;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  padding: 8px;
+  background-color: #f4f6f8;
+  border-radius: 8px 8px 0 0;
+  border-bottom: 2px solid #ccc;
+}
+.tabs button {
+  flex: 1;
+  background-color: #e0e7ef;
+  border: none;
+  padding: 10px 20px;
+  font-weight: 600;
+  border-radius: 8px 8px 0 0;
+  color: #1f2937;
+  cursor: pointer;
+  transition: background-color .3s;
+  text-align: center;
+}
+.tabs button:hover { background-color: #cbd5e1; }
+.tabs button.active { background-color: #002c6c; color: #fff; }
+
+.contenido-tabs {
+  padding: 16px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 0 0 8px 8px;
+}
+
+/* Form */
+.form-factura {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+mat-form-field { min-width: 160px; }
+/* centra la casilla */
+:host ::ng-deep .ag-theme-alpine .checkbox-cell {
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* aspecto tipo Material */
+:host ::ng-deep .ag-theme-alpine .checkbox-cell input[type="checkbox"]{
+  appearance:none; width:16px; height:16px; cursor:pointer;
+  border:2px solid #3f51b5; border-radius:3px; background:#fff; position:relative;
+}
+:host ::ng-deep .ag-theme-alpine .checkbox-cell input[type="checkbox"]:checked{
+  background:#3f51b5; border-color:#3f51b5;
+}
+:host ::ng-deep .ag-theme-alpine .checkbox-cell input[type="checkbox"]:checked::after{
+  content:""; position:absolute; left:4px; top:0px; width:4px; height:8px;
+  border:2px solid #fff; border-top:0; border-left:0; transform:rotate(45deg);
+}
+.total-content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  justify-content: flex-end;
+  margin: 8px 0 4px;
+}
+.total-label { opacity: .8; }
+.fi-total-amount { font-size: 1.1rem; }
+:host ::ng-deep .ag-tooltip {
+  pointer-events: none;
+  white-space: pre-line; /* si usas \n en el texto */
+}
+/* Tabs */
+.tabs { display:flex; gap:8px; margin-bottom:8px; }
+.tabs button { padding:8px 12px; border:1px solid #ddd; background:#f7f7f7; cursor:pointer; border-radius:6px; }
+.tabs button.active { background:#e8f0fe; border-color:#90caf9; }
+
+/* Fila 1 en 3 columnas */
+.tri-grid {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr; /* izquierda | centro | derecha */
+  align-items: center;
+  column-gap: 12px;
+  margin-bottom: 6px;
+}
+.form-inline { display:flex; align-items:center; gap:10px; }
+.anio-field { width: 140px; }
+
+/* Título TOTAL centrado */
+.total-heading {
+  justify-self: center;
+  color: #e53935;          /* rojo */
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+
+/* Acciones a la derecha */
+.acciones {
+  justify-self: end;
+  display:flex;
+  gap: 10px;
+}
+
+/* Línea TOTAL : valor */
+.total-inline {
+  margin: 2px 0 8px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.total-label { font-weight:600; color:#555; }
+.fi-total-amount { font-weight:700; font-size:1.05rem; }
+
+/* Fila 2: Filtrar */
+.filter-row {
+  display:flex; align-items:center; gap:12px;
+  margin: 2px 0 10px;
+}
+.filter-label { font-weight:600; min-width:70px; }
+.qf-field { flex:1 1 480px; max-width: 100%; }
+
+/* Fila 3: Solo seleccionados + Limpiar selección */
+.actions-row {
+  display:flex; align-items:center; gap:12px;
+  margin-bottom: 8px;
+}
+.chk-inline { display:flex; align-items:center; gap:8px; user-select:none; }
+
+/* Botón base + variantes */
+.btn { padding:8px 12px; border:1px solid #ddd; background:#f7f7f7; border-radius:6px; cursor:pointer; }
+.btn:hover { background:#efefef; }
+.btn.btn-sm { padding:4px 10px; height: 32px; font-size:13px; border-radius:6px; }
+
+/* Botón tipo chip */
+.chip {
+  background:#5c92e9; border-color:#cbd5e1;
+  border-radius:10px; padding:6px 12px;
+}
+
+/* Outline rojo como en la captura */
+.btn-outline-danger {
+  background: transparent;
+  border: 2px solid #ef5350;
+  color: #ef5350;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+.btn-outline-danger:hover { background: rgba(239,83,80,.06); }
+
+/* Material form-field compacto */
+:host ::ng-deep .dense .mat-mdc-text-field-wrapper {
+  height: 32px; padding: 0 10px; border-radius: 8px;
+}
+:host ::ng-deep .dense .mat-mdc-form-field-flex { height: 32px; }
+:host ::ng-deep .dense .mat-mdc-form-field-infix { padding-top: 2px; padding-bottom: 4px; }
+:host ::ng-deep .dense .mat-mdc-form-field-subscript-wrapper { display:none; }
+:host ::ng-deep .dense .mdc-notched-outline__notch { padding-inline-start:6px !important; }
+
+/* Grid */
+.grid-wrap { height: 58vh; width: 100%; }
+.ag-right-aligned-header .ag-header-cell-label { justify-content:flex-end; }
+/* Compactar mat-form-field (MDC) */
+:host ::ng-deep .dense .mat-mdc-text-field-wrapper {
+  height: 32px;              /* alto final */
+  padding: 0 10px;           /* menos padding lateral */
+  border-radius: 8px;
+}
+:host ::ng-deep .dense .mat-mdc-form-field-flex { height: 32px; }
+:host ::ng-deep .dense .mat-mdc-form-field-infix {
+  padding-top: 2px;          /* menos espacio superior */
+  padding-bottom: 4px;       /* menos espacio inferior */
+}
+:host ::ng-deep .dense .mat-mdc-form-field-subscript-wrapper { display: none; }
+
+/* notch más cerrado para outline */
+:host ::ng-deep .qf-compact .mdc-notched-outline__notch {
+  padding-inline-start: 6px !important;
+}
+
+/* tipografía y botón sufijo más chicos */
+:host ::ng-deep .qf-compact .mat-mdc-input-element {
+  font-size: 13px;
+  line-height: 18px;
+}
+:host ::ng-deep .qf-compact .mat-mdc-form-field-icon-suffix .mat-mdc-icon-button {
+  width: 28px;
+  height: 28px;
+}
+/* ===== Tabs estilo "Transferir / Listado" (GS1) ===== */
+:root{
+  --tabs-outer-bg:   #f4f9ff; /* fondo muy claro del contenedor */
+  --tabs-outer-bd:   #d8e6f7; /* borde del contenedor */
+  --tab-inactive-bg: #e6eef7; /* pestaña inactiva */
+  --tab-inactive-bd: #cddbf0;
+  --tab-active-bg:   #002c6c; /* azul marino activo */
+  --tab-active-bd:   #002758;
+  --tab-text:        #0f1e33; /* texto normal */
+  --tab-text-active: #ffffff; /* texto activo */
+}
+
+/* Contenedor de tabs */
+.tabs{
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* dos pestañas iguales */
+  gap: 10px;
+  padding: 6px;
+  background: var(--tabs-outer-bg);
+  border: 1px solid var(--tabs-outer-bd);
+  border-radius: 12px;
+  margin-bottom: 10px;
+}
+
+/* Botón de tab */
+.tabs button{
+  background: var(--tab-inactive-bg);
+  color: var(--tab-text);
+  border: 1px solid var(--tab-inactive-bd);
+  border-radius: 12px;
+  padding: 10px 16px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.6);
+  text-align: center;
+}
+
+.tabs button:hover{
+  background: #dbe7f7;
+}
+
+/* Estado ACTIVO: azul marino con texto blanco */
+.tabs button.active{
+  background: var(--tab-active-bg);
+  color: var(--tab-text-active);
+  border-color: var(--tab-active-bd);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.25);
+}
+
+/* Accesibilidad: foco visible */
+.tabs button:focus-visible{
+  outline: 2px solid #79b1ff;
+  outline-offset: 2px;
+}
+/* ===== Píldoras con activo MUY marcado ===== */
+.tabs.tabs-pills{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  padding:6px;
+  background:#f4f9ff;                /* fondo contenedor */
+  border:1px solid #d8e6f7;
+  border-radius:12px;
+  margin-bottom:10px;
+}
+
+.tabs.tabs-pills button{
+  background:#e6eef7;                /* inactiva */
+  color:#0f1e33;
+  border:1px solid #cddbf0;
+  border-radius:12px;
+  padding:12px 16px;
+  font-weight:700;
+  letter-spacing:.2px;
+  cursor:pointer;
+  transition:transform .12s ease, background .15s ease, color .15s ease, box-shadow .15s ease, border-color .15s ease;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.6);
+  position:relative;
+  text-align:center;
+}
+
+.tabs.tabs-pills button:not(.active):hover{
+  background:#dbe7f7;
+}
+
+/* === ACTIVA: azul marino, texto blanco, sombra y subrayado === */
+.tabs.tabs-pills button.active{
+  background:#002c6c;
+  color:#fff;
+  border-color:#002758;
+  box-shadow: 0 4px 10px rgba(0,44,108,.25), inset 0 0 0 1px rgba(255,255,255,.2);
+  transform: translateY(-1px);
+  cursor:default;
+}
+
+/* barrita inferior para remarcar */
+.tabs.tabs-pills button.active::after{
+  content:"";
+  position:absolute;
+  left:18px; right:18px; bottom:-6px;
+  height:4px;
+  background:#002c6c;
+  border-radius:4px;
+}
+
+/* accesibilidad: foco visible */
+.tabs.tabs-pills button:focus-visible{
+  outline:2px solid #79b1ff;
+  outline-offset:2px;
+}
+/* Quitar sombra y la barrita del tab activo */
+.tabs.tabs-pills button.active{
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.tabs.tabs-pills button.active::after{
+  content: none !important;   /* elimina la línea inferior */
+}
+
+/* (Opcional) quitar también el pequeño borde blanco interno en todos */
+.tabs.tabs-pills button{
+  box-shadow: none !important;
+}
+:host ::ng-deep .qf-compact .mat-mdc-form-field-icon-suffix .mat-mdc-icon-button {
+  width: 28px;
+  height: 28px;
+}
+:host ::ng-deep .qf-compact .mat-mdc-form-field-icon-suffix .mat-icon {
+  color: #5B5B5B;       /* rojo */
+  font-size: 20px;
+}
+/* Contenedor con sufijo: un poco de espacio a la derecha */
+:host ::ng-deep .has-clear .mat-mdc-form-field-icon-suffix {
+  margin-right: 4px;
+}
+
+/* Botón redondo, fondo gris suave tipo “chip” */
+:host ::ng-deep .clear-suffix.mat-mdc-icon-button {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  background: #eef1f5;                 /* gris claro */
+  border: 1px solid #d9e1ea;           /* borde sutil */
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.75);
+  transition: background .15s ease, transform .06s ease, border-color .15s;
+}
+
+/* Ícono más fino y centrado */
+:host ::ng-deep .clear-suffix .mat-icon {
+  font-size: 18px;
+  line-height: 18px;
+  color: #606a78;                       /* gris medio */
+}
+
+/* Hover/active para feedback */
+:host ::ng-deep .clear-suffix:hover {
+  background: #e6ebf2;
+  border-color: #cfd8e3;
+}
+:host ::ng-deep .clear-suffix:active {
+  transform: scale(.96);
+}
+
+/* Versión compacta consistente con tu input “dense” */
+:host ::ng-deep .qf-compact .mat-mdc-form-field-icon-suffix .mat-mdc-icon-button {
+  width: 28px;
+  height: 28px;
+}
+/* === FILA 1 (una sola línea) === */
+.header-row{
+  display:flex;
+  gap:16px;
+  align-items:flex-end;
+  padding:12px 16px;
+  background:#ECECEC;
+  border-radius:10px;
+  margin-bottom:12px;
+  flex-wrap:wrap;            /* se acomoda en pantallas pequeñas */
+}
+.header-row .fg{display:flex; gap:8px; align-items:center;}
+.header-row .fg label{font-weight:600; color:#666;}
+.header-row .ti{
+  font-size:20px; font-weight:700; height:40px;
+  color:#F26334; width:60px; border:0; background:transparent;
+}
+.header-row .ti.wide{width:140px}
+
+/* === FILA 2 (Año, Buscar, Total, Acciones) === */
+.toolbar-row{
+  display:grid;
+  grid-template-columns: 180px auto 1fr auto; /* Año | Buscar | (espacio) | Total+Acciones */
+  align-items:center;
+  gap:12px;
+  margin:8px 0 16px;
+}
+.total-heading{display:flex; gap:8px; align-items:center; justify-self:end;}
+.total-label{font-weight:700;}
+.fi-total-amount{font-weight:700;}
+.acciones{display:flex; gap:8px; justify-self:end;}
+
+@media (max-width: 900px){
+  .toolbar-row{
+    grid-template-columns: 1fr 1fr;  /* se apila en 2 columnas */
+    row-gap:8px;
+  }
+  .total-heading, .acciones{justify-self:start;}
+}
+.tri-grid{
+  display:grid;
+  grid-template-columns: 1fr auto 1fr; /* como lo tienes */
+  align-items:center;
+  column-gap:12px;
+  row-gap:8px;              /* <-- importante para separar filas */
+}
+
+/* Hacer que cada bloque abarque de la 1ª a la última columna */
+.tri-grid > .header-row { grid-column: 1 / -1; }   /* fila 1 completa */
+.tri-grid > .toolbar-row { grid-column: 1 / -1; }  /* fila 2 completa */
+.header-row .fg.fecha {
+  margin-left: auto;   /* manda la Fecha al extremo derecho */
+}
+/* Barra: grid fluido y compacto */
+.toolbar-row {
+  display: grid;
+  grid-template-columns: 120px 240px 1fr auto auto auto;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Campos compactos */
+.dense .mat-mdc-form-field-infix { padding-top: 6px; padding-bottom: 6px; }
+.qf-compact .mat-mdc-form-field-infix { min-height: 40px; }
+.anio-field { width: 120px; }
+.zona-field { min-width: 220px; }
+.btn-buscar .mat-mdc-progress-spinner { --mdc-circular-progress-active-indicator-width: 2px; }
+
+/* Total a la derecha con énfasis */
+.total-heading {
+  justify-self: end;
+  font-weight: 600;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.total-label { color: #666; letter-spacing: .5px; }
+.fi-total-amount { color: #c62828; font-size: 1rem; }
+
+/* Acciones agrupadas */
+.acciones { display: flex; gap: 8px; }
+/* === Tamaños unificados === */
+:root{
+  --accion-w: 160px;   /* ancho igual para Zona, Buscar y Facturar */
+  --accion-h: 36px;    /* alto visual de los botones */
+}
+
+/* Fila: Año | Zona | Buscar | (flex) | TOTAL | (Cancelar/Facturar) */
+.toolbar-row{
+  display: grid;
+  grid-template-columns: 120px var(--accion-w) var(--accion-w) 1fr auto auto;
+  align-items: end;              /* alinea por la base */
+  column-gap: 16px;              /* ← separación entre Año y Zona */
+  row-gap: 8px;
+}
+
+/* Zona del mismo ancho que los botones */
+.zona-field{ width: var(--accion-w); }
+
+/* Botones Buscar y Facturar del mismo tamaño */
+.btn-accion{
+  width: var(--accion-w);
+  height: var(--accion-h);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+/* (Opcional) que el mat-form-field de Zona “llene” el alto del botón */
+:host ::ng-deep .zona-field .mat-mdc-text-field-wrapper{
+  min-height: var(--accion-h);
+}
+
+/* Total alineado a la derecha como en la imagen */
+.total-heading{
+  justify-self: end;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-weight: 600;
+}
+:root{
+  /* mismo ancho para combo Zona, Buscar y Facturar */
+  --accion-w: 160px;
+  --accion-h: 36px;
+}
+
+/* Hacemos la barra con flex (más robusto frente a reglas globales) */
+.toolbar-row{
+  display: flex !important;
+  align-items: center;
+  gap: 12px;                 /* ← separación entre Año y Zona */
+  flex-wrap: nowrap;
+}
+
+/* Evitar que reglas globales estiren los campos en esta fila */
+.toolbar-row mat-form-field{ width: auto !important; max-width: none !important; }
+.toolbar-row button[mat-flat-button]{ width: auto; }
+
+/* Tamaños exactos */
+.anio-field{ width: 120px; }           /* Año */
+.zona-field{ width: var(--accion-w); } /* Zona = mismo ancho que botones */
+.btn-accion{
+  width: var(--accion-w) !important;   /* Buscar y Facturar iguales */
+  height: var(--accion-h) !important;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 600;
+}
+
+/* Alinear el total y la botonera a la derecha */
+.total-heading{ margin-left: auto; display:flex; gap:8px; align-items: baseline; }
+.acciones{ display:flex; gap:8px; }
+
+/* Responsive: si no cabe, que salte a dos líneas */
+@media (max-width: 900px){
+  .toolbar-row{ flex-wrap: wrap; }
+  .total-heading{ order: 99; margin-left: 0; }
+}

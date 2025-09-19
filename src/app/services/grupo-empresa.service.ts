@@ -7,6 +7,9 @@ export interface GrupoEmpresa {
   id_grupo_empresa: number;
   codigo:string;
   nombre: string;
+  inscripcion:number;
+  asignacion:number;
+  mantenimiento:number;
 }
 
 @Injectable({
@@ -27,4 +30,20 @@ export class GrupoEmpresaService {
       })))
     );
   }
+
+   obtenerGrupoBasicoPorId(id: number): Observable<{ codigo: string; nombre: string }> {
+  return this.http.get<any>(`${this.apiUrl}${id}`).pipe(
+    map(resp => {
+      const d = resp.data;
+      return {
+        codigo: d.codigo,
+        nombre: d.nombre,
+        inscripcion:d.inscripcion,
+        asignacion:d.asignacion,
+        mantenimiento:d.mantenimiento
+      };
+    })
+  );
+}
+
 }

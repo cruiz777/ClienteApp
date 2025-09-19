@@ -50,5 +50,14 @@ update(cliente: ClienteContacto): Observable<any> {
   );
 }
 
- 
+getFacturacionByClienteCodigo(clientesCodigo: number): Observable<ClienteContacto[]> {
+  return this.http
+    .get<{ type: string; data: ClienteContacto[]; message: string }>(
+      `${this.apiBaseUrl}/ContactoClientes/facturacion/${clientesCodigo}`
+    )
+    .pipe(
+      map(response => response.data)
+    );
+}
+
 }
