@@ -69,11 +69,12 @@
   </div>
 
   <div class="acciones">
-     <button mat-stroked-button color="primary" type="submit" >
+     <button mat-stroked-button color="primary" type="submit"  [disabled]="deshabilitarBuscar || cargando || formFactura.invalid">
     Buscar
   </button>
     <button type="button" mat-stroked-button (click)="cancelar()">Cancelar</button>
-    <button type="button" mat-stroked-button color="warn" class="btn-accion">Facturar</button>
+    <button type="button" mat-stroked-button color="warn" class="btn-accion"   (click)="facturar()"
+  [disabled]="!habilitarFacturar || facturando">Facturar</button>
   </div>
 </form>
 

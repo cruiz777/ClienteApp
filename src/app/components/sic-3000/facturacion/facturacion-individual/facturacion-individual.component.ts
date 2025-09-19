@@ -140,7 +140,7 @@ export class FacturacionIndividualComponent implements OnInit {
 
   // ============= Pasos / Tabs =============
   currentStep = 1;
-  nombreCliente='';
+  nombreCliente = '';
   onTabChange(idx: number): void {
     // idx: 0=Cliente, 1=Factura, 2=Pagos
     if (idx === 1 && !this.puedeIrPaso2) {
@@ -634,7 +634,7 @@ export class FacturacionIndividualComponent implements OnInit {
     this.formCliente.patchValue({ clienteCodigo: this.codcliO });
     this.cargarPrefijos(this.codcliO);
     this.cargarClienteDetalle(this.codcliO);
-    this.nombreCliente=cliente.nomcli;
+    this.nombreCliente = cliente.nomcli;
   }
 
   onClienteInputBlur(): void {
@@ -766,8 +766,8 @@ export class FacturacionIndividualComponent implements OnInit {
     this.prefijos = [];
     this.codcliO = 0;
     this.formCliente.reset();
-    this.baseGravada=0;
-    this.nombreCliente='';
+    this.baseGravada = 0;
+    this.nombreCliente = '';
 
     // ---- Descuento / Factura (autocompletes)
     this.formFactura.patchValue({ producto: '', descuento: '' }, { emitEvent: false });
@@ -1724,16 +1724,25 @@ export class FacturacionIndividualComponent implements OnInit {
   // --- controla el click del botón ---
 
 
-  onGenerarClick(): void {
-    if (this.generando) return; // seguridad por si acaso
-    if (!this.puedeGenerarFactura) {
-      this.mostrarAlerta(this.motivoBloqueoFactura(), 'info');
-      return;
-    }
+onGenerarClick(): void {
+  if (this.generando) return;
 
-    this.generando = true; // 🔒 bloquea el botón
-    this.crearFactura();
+  // 👉 bloqueo explícito por mantenimiento sin periodo/prefijo
+  const vm = this.validaMantenimiento();
+  if (!vm.ok) {
+    this.mostrarAlerta(vm.msg || 'Complete los datos del mantenimiento.', 'info');
+    return;
   }
+
+  if (!this.puedeGenerarFactura) {
+    this.mostrarAlerta(this.motivoBloqueoFactura(), 'info');
+    return;
+  }
+
+  this.generando = true;
+  this.crearFactura();
+}
+
 
   // --- usa SOLO estos dos getters ---
   get puedeGenerarFactura(): boolean {
@@ -1742,6 +1751,7 @@ export class FacturacionIndividualComponent implements OnInit {
     const saldo = this.to2(total - pagos);
     const sinSaldo = Math.abs(saldo) < 0.005;
     const tienePagos = this.getPagosCount() > 0;
+    const vm = this.validaMantenimiento();
     return this.puedeIrPaso2 && this.puedeIrPaso3 && total > 0 && tienePagos && sinSaldo;
   }
 
@@ -1753,6 +1763,8 @@ export class FacturacionIndividualComponent implements OnInit {
     if (this.getPagosCount() === 0) return 'Agrega al menos una forma de pago';
     const saldo = this.to2(total - this.getTotalPagos());
     if (Math.abs(saldo) >= 0.005) return `El saldo pendiente debe ser $0.00 (actual: $${saldo.toFixed(2)})`;
+    const vm = this.validaMantenimiento();
+    if (!vm.ok) return vm.msg || 'Complete los datos del mantenimiento.';
     return '';
   }
 
@@ -1791,8 +1803,8 @@ export class FacturacionIndividualComponent implements OnInit {
 
           // Detalle (con prefijo y periodo legible)
           const prefijoTxt = res.codpre || `ID ${res.idPrefijo}`;
-          const marca = `Prefijo: ${prefijoTxt} ${res.periodo}`;
-          const baseDetalle = (row.detalle ?? '').replace(/\s+Prefijo:.*$/, '').trim();
+          const marca = `PREFIJO: ${prefijoTxt} ${res.periodo}`;
+          const baseDetalle = (row.detalle ?? '').replace(/\s+PREFIJO:.*$/, '').trim();
           row.detalle = `${baseDetalle} ${marca}`.trim();
 
           // ✅ Periodo que irá al grid: "prefijo | desde | hasta"
@@ -1906,15 +1918,42 @@ export class FacturacionIndividualComponent implements OnInit {
     // (opcional) feedback
     this.mostrarAlerta('Se limpió el formulario ', 'info');
   }
-onEmailOpcionalInput(ev: Event): void {
-  const el = ev.target as HTMLInputElement;
-  const normalizado = (el.value || '')
-    .replace(/,+/g, ';')   // comas -> ;
-    .replace(/\s+/g, '');  // sin espacios
+  onEmailOpcionalInput(ev: Event): void {
+    const el = ev.target as HTMLInputElement;
+    const normalizado = (el.value || '')
+      .replace(/,+/g, ';')   // comas -> ;
+      .replace(/\s+/g, '');  // sin espacios
 
-  // Actualiza el control (dispara validadores)
-  this.formCliente.get('emailOpcional')?.setValue(normalizado, { emitEvent: true });
-}
+    // Actualiza el control (dispara validadores)
+    this.formCliente.get('emailOpcional')?.setValue(normalizado, { emitEvent: true });
+  }
 
+  /** Valida que las filas de mantenimiento (1176) tengan prefijo y periodo. */
+  private validaMantenimiento(): { ok: boolean; msg?: string } {
+    const filas: any[] = [];
+    if (this.gridApi) this.gridApi.forEachNode(n => filas.push(n.data));
+    else filas.push(...this.rowData);
+
+    for (const f of filas) {
+      if ((f?.codpro ?? '').toString() === this.COD_MANT_MENSUAL) {
+        const det = (f?.detalle ?? '').toString().trim().toUpperCase();
+        const periodo = (f?.periodo ?? '').toString().trim();
+
+        // Reglas: debe tener periodo y en el detalle debe aparecer "PREFIJO:"
+        const tienePeriodo = periodo.length > 0;
+        const tienePrefijoEnDetalle = /PREFIJO\s*:/.test(det);
+
+        if (!tienePeriodo || !tienePrefijoEnDetalle || det === 'MANTENIMIENTO ANUAL') {
+          return {
+            ok: false,
+            msg:
+              'Para el producto de mantenimiento (1176) debe seleccionar PREFIJO y PERÍODO ' +
+              '(use el botón con el ícono ➜ “Seleccionar meses”).'
+          };
+        }
+      }
+    }
+    return { ok: true };
+  }
 
 }

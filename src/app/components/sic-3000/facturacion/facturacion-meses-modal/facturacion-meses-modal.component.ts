@@ -266,7 +266,8 @@ columnDefs: ColDef[] = [
     const codpre = this.data.prefijos.find(p => p.id_prefijos === idPrefijo)?.codpre ?? '';
 
     const numeroMeses = this.diffMeses(d1, d2, true);
-    const periodo = `${this.mesNombre(d1)} ${d1.getFullYear()} -- ${this.mesNombre(d2)} ${d2.getFullYear()}`;
+    const periodo = `${this.mesNombre(d1).toUpperCase()} ${d1.getFullYear()} -- ${this.mesNombre(d2).toUpperCase()} ${d2.getFullYear()}`;
+
 
     const res: FacturacionMesesResult = {
       anio: d2.getFullYear(),
