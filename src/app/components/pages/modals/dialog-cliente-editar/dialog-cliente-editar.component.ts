@@ -320,7 +320,7 @@ export class DialogClienteEditarComponent implements OnInit {
 
         email: ['', [emailValidoValidator()]],
         email1: ['', [emailValidoValidator()]],
-        email2: ['', [multipleEmailsValidator()]],
+        email2: ['', [multipleEmailsValidator({ max: 5 })]],
         email3: ['', [emailValidoValidator()]],
         telefono: [''],
         nombreCodificacion: [''],
@@ -1382,8 +1382,8 @@ private activarModoEdicion$(): Observable<null> {
 
     const historial: HistorialClienteRequest = {
       id_historial_cliente: 0,
-      id_usuario: 2, // TODO: usar this.usuarioActual?.id || 0
-      nombre_usuario: 'mario', // TODO: usar this.usuarioActual?.usr || 'Desconocido'
+      id_usuario: this.usuarioActual?.id_usuario || 1,
+      nombre_usuario: this.usuarioActual?.nombre_usuario || '',
       fecha: new Date().toISOString(),
       descripcion: this.cambios.join('\n'),
       clientes_codigo: this.paso1Form.get('codigoCliente')?.value,

@@ -1398,3 +1398,109 @@ mat-form-field { min-width: 160px; }
 .header-row .fg.fecha {
   margin-left: auto;   /* manda la Fecha al extremo derecho */
 }
+/* Barra: grid fluido y compacto */
+.toolbar-row {
+  display: grid;
+  grid-template-columns: 120px 240px 1fr auto auto auto;
+  gap: 12px;
+  align-items: center;
+}
+
+/* Campos compactos */
+.dense .mat-mdc-form-field-infix { padding-top: 6px; padding-bottom: 6px; }
+.qf-compact .mat-mdc-form-field-infix { min-height: 40px; }
+.anio-field { width: 120px; }
+.zona-field { min-width: 220px; }
+.btn-buscar .mat-mdc-progress-spinner { --mdc-circular-progress-active-indicator-width: 2px; }
+
+/* Total a la derecha con énfasis */
+.total-heading {
+  justify-self: end;
+  font-weight: 600;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+.total-label { color: #666; letter-spacing: .5px; }
+.fi-total-amount { color: #c62828; font-size: 1rem; }
+
+/* Acciones agrupadas */
+.acciones { display: flex; gap: 8px; }
+/* === Tamaños unificados === */
+:root{
+  --accion-w: 160px;   /* ancho igual para Zona, Buscar y Facturar */
+  --accion-h: 36px;    /* alto visual de los botones */
+}
+
+/* Fila: Año | Zona | Buscar | (flex) | TOTAL | (Cancelar/Facturar) */
+.toolbar-row{
+  display: grid;
+  grid-template-columns: 120px var(--accion-w) var(--accion-w) 1fr auto auto;
+  align-items: end;              /* alinea por la base */
+  column-gap: 16px;              /* ← separación entre Año y Zona */
+  row-gap: 8px;
+}
+
+/* Zona del mismo ancho que los botones */
+.zona-field{ width: var(--accion-w); }
+
+/* Botones Buscar y Facturar del mismo tamaño */
+.btn-accion{
+  width: var(--accion-w);
+  height: var(--accion-h);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+/* (Opcional) que el mat-form-field de Zona “llene” el alto del botón */
+:host ::ng-deep .zona-field .mat-mdc-text-field-wrapper{
+  min-height: var(--accion-h);
+}
+
+/* Total alineado a la derecha como en la imagen */
+.total-heading{
+  justify-self: end;
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-weight: 600;
+}
+:root{
+  /* mismo ancho para combo Zona, Buscar y Facturar */
+  --accion-w: 160px;
+  --accion-h: 36px;
+}
+
+/* Hacemos la barra con flex (más robusto frente a reglas globales) */
+.toolbar-row{
+  display: flex !important;
+  align-items: center;
+  gap: 12px;                 /* ← separación entre Año y Zona */
+  flex-wrap: nowrap;
+}
+
+/* Evitar que reglas globales estiren los campos en esta fila */
+.toolbar-row mat-form-field{ width: auto !important; max-width: none !important; }
+.toolbar-row button[mat-flat-button]{ width: auto; }
+
+/* Tamaños exactos */
+.anio-field{ width: 120px; }           /* Año */
+.zona-field{ width: var(--accion-w); } /* Zona = mismo ancho que botones */
+.btn-accion{
+  width: var(--accion-w) !important;   /* Buscar y Facturar iguales */
+  height: var(--accion-h) !important;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-weight: 600;
+}
+
+/* Alinear el total y la botonera a la derecha */
+.total-heading{ margin-left: auto; display:flex; gap:8px; align-items: baseline; }
+.acciones{ display:flex; gap:8px; }
+
+/* Responsive: si no cabe, que salte a dos líneas */
+@media (max-width: 900px){
+  .toolbar-row{ flex-wrap: wrap; }
+  .total-heading{ order: 99; margin-left: 0; }
+}

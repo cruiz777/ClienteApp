@@ -16,7 +16,7 @@ import { Router } from '@angular/router';
 import { combineLatest } from 'rxjs';
 import { shareReplay } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
-
+import { multipleEmailsValidator } from 'src/app/util/validators';
 import {
   FacturacionMesesResult
 } from 'src/app/components/sic-3000/facturacion/facturacion-meses-modal/facturacion-meses-modal.component';
@@ -140,6 +140,7 @@ export class FacturacionIndividualComponent implements OnInit {
 
   // ============= Pasos / Tabs =============
   currentStep = 1;
+  nombreCliente='';
   onTabChange(idx: number): void {
     // idx: 0=Cliente, 1=Factura, 2=Pagos
     if (idx === 1 && !this.puedeIrPaso2) {
@@ -488,7 +489,7 @@ export class FacturacionIndividualComponent implements OnInit {
       identificacion: ['', [Validators.required]],
       email: ['', [Validators.required, Validators.email]],
       direccion: ['', [Validators.required]],
-      emailOpcional: [''],
+      emailOpcional: ['', [multipleEmailsValidator({ max: 5, separators: /[;,]+/ })]],
       categoria: ['', [Validators.required]],
       gcp: ['', [Validators.required]],      // prefijo (select)
       prefijo: ['']
@@ -633,6 +634,7 @@ export class FacturacionIndividualComponent implements OnInit {
     this.formCliente.patchValue({ clienteCodigo: this.codcliO });
     this.cargarPrefijos(this.codcliO);
     this.cargarClienteDetalle(this.codcliO);
+    this.nombreCliente=cliente.nomcli;
   }
 
   onClienteInputBlur(): void {
@@ -764,6 +766,8 @@ export class FacturacionIndividualComponent implements OnInit {
     this.prefijos = [];
     this.codcliO = 0;
     this.formCliente.reset();
+    this.baseGravada=0;
+    this.nombreCliente='';
 
     // ---- Descuento / Factura (autocompletes)
     this.formFactura.patchValue({ producto: '', descuento: '' }, { emitEvent: false });
@@ -817,16 +821,16 @@ export class FacturacionIndividualComponent implements OnInit {
     this.actualizarPuedeAbrirMeses();
   }
 
-mostrarAlerta(mensaje: string, tipo: 'info' | 'error' | 'ok' | string): void {
-  this._snackBar.open(mensaje, 'Cerrar', {
-    duration: 3000,
-    horizontalPosition: 'right',   // 👈 fuerza derecha
-    verticalPosition: 'top',       // 👈 arriba
-    panelClass: tipo === 'error' ? ['snack-error']
-               : tipo === 'ok'    ? ['snack-ok']
-                                  : ['snack-info']
-  });
-}
+  mostrarAlerta(mensaje: string, tipo: 'info' | 'error' | 'ok' | string): void {
+    this._snackBar.open(mensaje, 'Cerrar', {
+      duration: 3000,
+      horizontalPosition: 'right',   // 👈 fuerza derecha
+      verticalPosition: 'top',       // 👈 arriba
+      panelClass: tipo === 'error' ? ['snack-error']
+        : tipo === 'ok' ? ['snack-ok']
+          : ['snack-info']
+    });
+  }
 
 
   onGridReady(e: any) { this.gridApi = e.api; this.actualizarPuedeAbrirMeses(); }
@@ -866,27 +870,27 @@ mostrarAlerta(mensaje: string, tipo: 'info' | 'error' | 'ok' | string): void {
 
 
   // helper dentro de la clase (arriba o debajo de los métodos)
-// 👉 agrega esto en tu componente
-private readonly AUTORIZACION_DEFAULT =
-  'SIN UTILIZACION DE SISTEMA FINANCIERO';
+  // 👉 agrega esto en tu componente
+  private readonly AUTORIZACION_DEFAULT =
+    'OTROS CON UTILIZACIÓN DEL SISTEMA FINANCIERO';
 
-// ...y modifica buildPagoRow:
-private buildPagoRow(fp: FormaPagoResponse, valorInicial: number = 0) {
-  return {
-    id: fp.idFormaPago,
-    detalle: fp.descripcionPago ?? '',
-    plazo: 0,
-    tiempo: 'Días',
-    valor: this.to2(valorInicial),
-    // 👇 aquí el valor por defecto
-    autorizacion: this.AUTORIZACION_DEFAULT,
-    // (opcional) inicializa otros campos vacíos
-    banco: '',
-    ntarjeta: '',
-    cheque: '',
-    dueno: ''
-  };
-}
+  // ...y modifica buildPagoRow:
+  private buildPagoRow(fp: FormaPagoResponse, valorInicial: number = 0) {
+    return {
+      id: fp.idFormaPago,
+      detalle: fp.descripcionPago ?? '',
+      plazo: 0,
+      tiempo: 'Días',
+      valor: this.to2(valorInicial),
+      // 👇 aquí el valor por defecto
+      autorizacion: this.AUTORIZACION_DEFAULT,
+      // (opcional) inicializa otros campos vacíos
+      banco: '',
+      ntarjeta: '',
+      cheque: '',
+      dueno: ''
+    };
+  }
 
 
 
@@ -953,10 +957,10 @@ private buildPagoRow(fp: FormaPagoResponse, valorInicial: number = 0) {
     });
   }
   // En tu componente
-private padLeft(value: any, size: number): string {
-  const s = (value ?? '').toString().replace(/\D/g, ''); // solo dígitos
-  return s ? s.padStart(size, '0') : '';
-}
+  private padLeft(value: any, size: number): string {
+    const s = (value ?? '').toString().replace(/\D/g, ''); // solo dígitos
+    return s ? s.padStart(size, '0') : '';
+  }
 
   // --- reemplaza tu onProductoSelected por esta versión ---
   onProductoSelected(codpro: string): void {
@@ -1302,36 +1306,36 @@ private padLeft(value: any, size: number): string {
     d ? `${d.descripcion} (${d.valorFormateado ?? (d.valor ?? 0) + '%'})` : '';
 
   // Al seleccionar (aplica % global sobre cada línea)
- onDescuentoSelected(item: Descuento): void {
-  this.descuentoSeleccionado = item ?? null;
-  const pct = Number(item?.valor ?? 0);
-  this.aplicarDescuentoGlobalPorcentaje(pct);
+  onDescuentoSelected(item: Descuento): void {
+    this.descuentoSeleccionado = item ?? null;
+    const pct = Number(item?.valor ?? 0);
+    this.aplicarDescuentoGlobalPorcentaje(pct);
 
-  // 👇 refresca editable/estilos de las columnas de descuento
-  this.gridApi?.refreshCells({ force: true, columns: ['desUnit', 'descPct'] });
+    // 👇 refresca editable/estilos de las columnas de descuento
+    this.gridApi?.refreshCells({ force: true, columns: ['desUnit', 'descPct'] });
 
-  setTimeout(() => {
-    this.autoDescuentoTrigger?.closePanel();
-    this.descuentoInputRef?.nativeElement.blur();
-  }, 0);
-}
+    setTimeout(() => {
+      this.autoDescuentoTrigger?.closePanel();
+      this.descuentoInputRef?.nativeElement.blur();
+    }, 0);
+  }
 
-clearDescuento(): void {
-  this.formFactura.patchValue({ descuento: '' }, { emitEvent: false });
-  this.descuentoSeleccionado = null;
+  clearDescuento(): void {
+    this.formFactura.patchValue({ descuento: '' }, { emitEvent: false });
+    this.descuentoSeleccionado = null;
 
-  // esto pone descPct=0 y desUnit=0 en TODAS las filas y recalcula
-  this.aplicarDescuentoGlobalPorcentaje(0);
+    // esto pone descPct=0 y desUnit=0 en TODAS las filas y recalcula
+    this.aplicarDescuentoGlobalPorcentaje(0);
 
-  this.gridApi?.refreshCells({ force: true, columns: ['desUnit','descPct','desTotal','total'] });
-  this.recalcTotalesFactura();
-  this.ajustarPagosAlTotal();
+    this.gridApi?.refreshCells({ force: true, columns: ['desUnit', 'descPct', 'desTotal', 'total'] });
+    this.recalcTotalesFactura();
+    this.ajustarPagosAlTotal();
 
-  setTimeout(() => {
-    this.descuentoInputRef?.nativeElement.focus();
-    this.autoDescuentoTrigger?.openPanel();
-  }, 0);
-}
+    setTimeout(() => {
+      this.descuentoInputRef?.nativeElement.focus();
+      this.autoDescuentoTrigger?.openPanel();
+    }, 0);
+  }
 
 
 
@@ -1353,7 +1357,7 @@ clearDescuento(): void {
     this.ajustarPagosAlTotal();
   }
 
- 
+
 
 
   private cargarIvasVigentes(): void {
@@ -1492,84 +1496,84 @@ clearDescuento(): void {
 
 
   crearFactura(): void {
-  // Validaciones mínimas y no repetidas
-  if (this.getPagosCount() === 0) {
-    this.mostrarAlerta('Agrega al menos una forma de pago.', 'info');
-    return;
-  }
-  if (Math.abs(this.saldoPendiente) >= 0.005) {
-    this.mostrarAlerta('El saldo pendiente debe ser 0.00 para generar la factura.', 'info');
-    return;
-  }
+    // Validaciones mínimas y no repetidas
+    if (this.getPagosCount() === 0) {
+      this.mostrarAlerta('Agrega al menos una forma de pago.', 'info');
+      return;
+    }
+    if (Math.abs(this.saldoPendiente) >= 0.005) {
+      this.mostrarAlerta('El saldo pendiente debe ser 0.00 para generar la factura.', 'info');
+      return;
+    }
 
-  const payload = this.buildFacturaPayload();
+    const payload = this.buildFacturaPayload();
 
-  if (!payload.idCliente) { this.mostrarAlerta('Seleccione un cliente.', 'info'); return; }
-  if (!payload.caja) { this.mostrarAlerta('No hay caja asignada.', 'info'); return; }
-  if (!payload.detalles?.length) { this.mostrarAlerta('Agrega al menos un producto a la factura.', 'info'); return; }
+    if (!payload.idCliente) { this.mostrarAlerta('Seleccione un cliente.', 'info'); return; }
+    if (!payload.caja) { this.mostrarAlerta('No hay caja asignada.', 'info'); return; }
+    if (!payload.detalles?.length) { this.mostrarAlerta('Agrega al menos un producto a la factura.', 'info'); return; }
 
-  // (Opcional) logs de depuración
-  console.log('PAYLOAD →', payload);
-  console.table(payload.detalles);
-  console.table(payload.formasPago);
-  console.log(JSON.stringify(payload, null, 2));
+    // (Opcional) logs de depuración
+    console.log('PAYLOAD →', payload);
+    console.table(payload.detalles);
+    console.table(payload.formasPago);
+    console.log(JSON.stringify(payload, null, 2));
 
-  this.facturacionService.crear(payload).pipe(
-    switchMap(resp => {
-      const tipo = (resp?.type || '').toLowerCase();
+    this.facturacionService.crear(payload).pipe(
+      switchMap(resp => {
+        const tipo = (resp?.type || '').toLowerCase();
 
-      if (tipo === 'success' || tipo === 'warning') {
-        this.mostrarAlerta(resp?.message || 'Factura creada correctamente.', 'ok');
+        if (tipo === 'success' || tipo === 'warning') {
+          this.mostrarAlerta(resp?.message || 'Factura creada correctamente.', 'ok');
 
-        const idNota = Number(resp?.data?.idNota);
-        if (Number.isFinite(idNota)) {
-          // 1) Genera el XML en el servidor
-          return this.facturacionService.generarXmlEnServidor(idNota).pipe(
-            tap(r => {
-              if (r?.success) {
-                this.mostrarAlerta(`XML generado en el servidor: ${r.fileName}`, 'ok');
+          const idNota = Number(resp?.data?.idNota);
+          if (Number.isFinite(idNota)) {
+            // 1) Genera el XML en el servidor
+            return this.facturacionService.generarXmlEnServidor(idNota).pipe(
+              tap(r => {
+                if (r?.success) {
+                  this.mostrarAlerta(`XML generado en el servidor: ${r.fileName}`, 'ok');
 
-                // 2) Abrir/descargar el PDF inmediatamente (nueva línea)
-                const pdfUrl = `${environment.invoices_sic}/Facturacion/${idNota}/pdf`;
-                window.open(pdfUrl, '_blank'); // deja que el backend ponga Content-Disposition
-              } else {
-                this.mostrarAlerta(r?.message || 'No se generó el XML.', 'error');
-              }
-            }),
-            catchError(_ => {
-              this.mostrarAlerta('Error generando el XML en el servidor.', 'error');
-              return of(null);
-            })
-          );
+                  // 2) Abrir/descargar el PDF inmediatamente (nueva línea)
+                  const pdfUrl = `${environment.invoices_sic}/Facturacion/${idNota}/pdf`;
+                  window.open(pdfUrl, '_blank'); // deja que el backend ponga Content-Disposition
+                } else {
+                  this.mostrarAlerta(r?.message || 'No se generó el XML.', 'error');
+                }
+              }),
+              catchError(_ => {
+                this.mostrarAlerta('Error generando el XML en el servidor.', 'error');
+                return of(null);
+              })
+            );
+          } else {
+            this.mostrarAlerta('No se recibió idNota válido en la respuesta.', 'error');
+            return of(null);
+          }
         } else {
-          this.mostrarAlerta('No se recibió idNota válido en la respuesta.', 'error');
+          this.mostrarAlerta(resp?.message || 'No se pudo crear la factura.', 'error');
           return of(null);
         }
-      } else {
-        this.mostrarAlerta(resp?.message || 'No se pudo crear la factura.', 'error');
-        return of(null);
+      }),
+      catchError(err => {
+        console.error('[crearFactura] error:', err);
+        this.mostrarAlerta('Error al crear la factura.', 'error');
+        return of(void 0);
+      }),
+      finalize(() => {
+        // ✅ liberar el botón siempre (éxito o error)
+        this.generando = false;
+        this.cdRef.detectChanges();
+      })
+    ).subscribe({
+      next: () => {
+        // ✅ limpiar y regresar a la pestaña 1
+        this.limpiarCliente();
+        this.cargarAutorizacion();
+        this.currentStep = 1;
+        this.cdRef.detectChanges();
       }
-    }),
-    catchError(err => {
-      console.error('[crearFactura] error:', err);
-      this.mostrarAlerta('Error al crear la factura.', 'error');
-      return of(void 0);
-    }),
-    finalize(() => {
-      // ✅ liberar el botón siempre (éxito o error)
-      this.generando = false;
-      this.cdRef.detectChanges();
-    })
-  ).subscribe({
-    next: () => {
-      // ✅ limpiar y regresar a la pestaña 1
-      this.limpiarCliente();
-      this.cargarAutorizacion();
-      this.currentStep = 1;
-      this.cdRef.detectChanges();
-    }
-  });
-}
+    });
+  }
 
   autoGrow(e: Event) {
     const el = e.target as HTMLTextAreaElement;
@@ -1856,51 +1860,60 @@ clearDescuento(): void {
   private tieneDescuentoGlobal(): boolean {
     return this.getDescuentoGlobalPct() > 0;
   }
-onCellEditingStarted = (e: any) => {
-  if ((e.colDef.field === 'descPct' || e.colDef.field === 'desUnit') && this.tieneDescuentoGlobal()) {
+  onCellEditingStarted = (e: any) => {
+    if ((e.colDef.field === 'descPct' || e.colDef.field === 'desUnit') && this.tieneDescuentoGlobal()) {
       this.mostrarAlerta(`Ya tiene un descuento general. Limpie el combo para editar por fila.`, 'info');
-    e.api.stopEditing(true);
+      e.api.stopEditing(true);
+    }
+  };
+
+  private esColDesc(e: any): boolean {
+    const f = e?.colDef?.field;
+    return f === 'descPct' || f === 'desUnit';
   }
-};
 
-private esColDesc(e: any): boolean {
-  const f = e?.colDef?.field;
-  return f === 'descPct' || f === 'desUnit';
-}
-
-onCellClicked(e: any): void {
-  if (this.esColDesc(e) && this.tieneDescuentoGlobal()) {
-    this.mostrarAlerta('Ya tiene un descuento general. Limpie el combo para editar por fila.', 'info'); // 👈 usa helper
+  onCellClicked(e: any): void {
+    if (this.esColDesc(e) && this.tieneDescuentoGlobal()) {
+      this.mostrarAlerta('Ya tiene un descuento general. Limpie el combo para editar por fila.', 'info'); // 👈 usa helper
+    }
   }
-}
 
-onCellKeyDown(e: any): void {
-  const key = e.event?.key?.toLowerCase?.();
-  const intentoEditar = key === 'enter' || key === 'f2';
-  if (intentoEditar && this.esColDesc(e) && this.tieneDescuentoGlobal()) {
-    this.mostrarAlerta('Ya tiene un descuento general. Limpie el combo para editar por fila.', 'info'); // 👈 usa helper
-    e.api.stopEditing(true);
+  onCellKeyDown(e: any): void {
+    const key = e.event?.key?.toLowerCase?.();
+    const intentoEditar = key === 'enter' || key === 'f2';
+    if (intentoEditar && this.esColDesc(e) && this.tieneDescuentoGlobal()) {
+      this.mostrarAlerta('Ya tiene un descuento general. Limpie el combo para editar por fila.', 'info'); // 👈 usa helper
+      e.api.stopEditing(true);
+    }
   }
-}
-onCancelarClick(evt?: Event): void {
-  evt?.preventDefault();
+  onCancelarClick(evt?: Event): void {
+    evt?.preventDefault();
 
-  // 1) Limpia todo (formularios, grids, descuentos, totales, etc.)
-  this.limpiarCliente();
+    // 1) Limpia todo (formularios, grids, descuentos, totales, etc.)
+    this.limpiarCliente();
 
-  // 2) Vuelve a la primera pestaña
-  this.currentStep = 1;
+    // 2) Vuelve a la primera pestaña
+    this.currentStep = 1;
 
-  // 3) Cierra cualquier panel de autocomplete que haya quedado abierto
-  this.autoProductoTrigger?.closePanel();
-  this.autoDescuentoTrigger?.closePanel();
-  this.autoPagoTrigger?.closePanel();
+    // 3) Cierra cualquier panel de autocomplete que haya quedado abierto
+    this.autoProductoTrigger?.closePanel();
+    this.autoDescuentoTrigger?.closePanel();
+    this.autoPagoTrigger?.closePanel();
 
-  // 4) Refresca vista (por si algo queda “pegado”)
-  this.cdRef.detectChanges();
+    // 4) Refresca vista (por si algo queda “pegado”)
+    this.cdRef.detectChanges();
 
-  // (opcional) feedback
-  this.mostrarAlerta('Se limpió el formulario ', 'info');
+    // (opcional) feedback
+    this.mostrarAlerta('Se limpió el formulario ', 'info');
+  }
+onEmailOpcionalInput(ev: Event): void {
+  const el = ev.target as HTMLInputElement;
+  const normalizado = (el.value || '')
+    .replace(/,+/g, ';')   // comas -> ;
+    .replace(/\s+/g, '');  // sin espacios
+
+  // Actualiza el control (dispara validadores)
+  this.formCliente.get('emailOpcional')?.setValue(normalizado, { emitEvent: true });
 }
 
 

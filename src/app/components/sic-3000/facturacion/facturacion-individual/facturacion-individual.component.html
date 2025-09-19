@@ -81,9 +81,34 @@
 
 
         <div class="fi-field fi-emailop">
-          <label>E-mail opcional:</label>
-          <input class="fi-input" type="email" placeholder="Email" formControlName="emailOpcional">
+          <label>E-mail Facturación:</label>
+
+          <input class="fi-input"
+       type="text"
+       formControlName="emailOpcional"
+       placeholder="correo1@dominio.com;correo2@dominio.com"
+       maxlength="300"
+       autocomplete="off"
+       (keydown.space)="$event.preventDefault()"
+       (input)="onEmailOpcionalInput($event)" />
+
+          <div *ngIf="formCliente.get('emailOpcional')?.touched && formCliente.get('emailOpcional')?.invalid"
+            style="margin-top:4px">
+
+            <!-- lista de correos mal formateados -->
+            <ng-container *ngIf="formCliente.get('emailOpcional')?.errors?.['multipleEmails'] as multi">
+              <small style="color:red">
+                Correos inválidos: {{ (multi.invalid || []).join(', ') }}
+              </small>
+            </ng-container>
+
+            <!-- exceso de correos -->
+            <small *ngIf="formCliente.get('emailOpcional')?.errors?.['tooManyEmails'] as tme" style="color:red">
+              Máximo {{ tme.max }} correos. Ingresaste {{ tme.count }}.
+            </small>
+          </div>
         </div>
+
 
         <div class="fi-field fi-cat">
           <label>Categoría:</label>
@@ -131,6 +156,7 @@
     <div class="factura-wrap" [formGroup]="formFactura">
       <header class="form-header" style="padding-bottom: 0;padding-top: 0;">
         <h1 class="form-title" style="padding-bottom: 0;padding-top: 0;">Facturación</h1>
+        <span>{{ nombreCliente | uppercase }}</span>
       </header>
 
       <section class="product-section" aria-labelledby="product-label" style="padding-top:0;">
@@ -183,8 +209,8 @@
           [enableBrowserTooltips]="true" [tooltipShowDelay]="300" [tooltipHideDelay]="100" [columnDefs]="columnDefs"
           [defaultColDef]="defaultColDef" [stopEditingWhenCellsLoseFocus]="true" [rowHeight]="36"
           (gridReady)="onGridReady($event)" (cellValueChanged)="onCellValueChanged($event)"
-          (cellDoubleClicked)="onCellDoubleClicked($event)" (cellEditingStarted)="onCellEditingStarted($event)" (cellClicked)="onCellClicked($event)"
-  (cellKeyDown)="onCellKeyDown($event)">
+          (cellDoubleClicked)="onCellDoubleClicked($event)" (cellEditingStarted)="onCellEditingStarted($event)"
+          (cellClicked)="onCellClicked($event)" (cellKeyDown)="onCellKeyDown($event)">
         </ag-grid-angular>
       </section>
     </div>
@@ -210,8 +236,9 @@
     </ng-template>
 
     <section class="tab-content" [formGroup]="formPagos">
-      <section class="form-title">
-        <h1 class="main-title">Forma de Pago</h1>
+      <section class="form-header" style="padding-bottom: 0;padding-top: 0;">
+        <h1 class="form-title" style="padding-bottom: 0;padding-top: 0;">Forma de Pago</h1>
+        <span>{{ nombreCliente | uppercase }}</span>
       </section>
 
       <section class="product-section" aria-labelledby="product-label" style="padding-top:0;">
@@ -243,7 +270,8 @@
 
       <aside class="balance-summary">
         <div class="balance-container">
-          <div class="balance-label-container"><span class="balance-label" style="color: black;font-weight: bold;">Saldo Pendiente</span></div>
+          <div class="balance-label-container"><span class="balance-label" style="color: black;font-weight: bold;">Saldo
+              Pendiente</span></div>
           <div class="balance-amount-container">
             <span class="balance-amount" style="color: #F26334;font-weight: bold;">
               $ {{ formTotales.get('saldoPendiente')?.value | number:'1.2-2' }}
@@ -337,7 +365,8 @@
     </section>
 
     <!-- DER: Detalle de Valores -->
-    <section class="values-section totales-card values-section--grid" aria-labelledby="values-title" style="background-color: #ECECEC;">
+    <section class="values-section totales-card values-section--grid" aria-labelledby="values-title"
+      style="background-color: #ECECEC;">
       <header class="values-header">
         <h2 id="values-title" class="values-title">Detalles de Valores</h2>
       </header>

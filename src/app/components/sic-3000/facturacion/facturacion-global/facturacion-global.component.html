@@ -29,21 +29,39 @@
           <label>Secuencial:</label>
           <input class="ti wide" formControlName="secuencial" readonly>
         </div>
-        <div class="fg fecha">   <!-- antes: class="fg" -->
-  <label>Fecha:</label>
-  <input class="ti wide" formControlName="fechaFacturacion" readonly>
-</div>
+        <div class="fg fecha"> <!-- antes: class="fg" -->
+          <label>Fecha:</label>
+          <input class="ti wide" formControlName="fechaFacturacion" readonly>
+        </div>
 
       </div>
-      <form class="toolbar-row" [formGroup]="formFactura" (submit)="$event.preventDefault(); buscar()">
-  <mat-form-field appearance="outline" class="anio-field dense">
-    <mat-label>Año</mat-label>
-    <input matInput type="number" formControlName="anio" maxlength="4" />
+      <form class="toolbar-row" [formGroup]="formFactura" (ngSubmit)="buscar()">
+  <!-- Año -->
+  <mat-form-field appearance="outline" class="anio-field dense" >
+    <input matInput inputmode="numeric" autocomplete="off"
+           formControlName="anio" (input)="limitAnio($event)" />
+    <button *ngIf="anioCtrl.value" mat-icon-button matSuffix type="button"
+            (click)="restoreAnio()" aria-label="Restaurar año" matTooltip="Restaurar año actual" style="width: 50px;">
+      <mat-icon>restore</mat-icon>
+    </button>
   </mat-form-field>
 
-  <button type="submit" class="btn btn-sm" [disabled]="cargando">
-    {{ cargando ? 'Cargando...' : 'Buscar' }}
-  </button>
+  <!-- Zona -->
+  <mat-form-field >
+    <mat-select formControlName="zona">
+      <mat-option [value]="''">Todas las zonas</mat-option>
+      <mat-option *ngFor="let z of zonas; trackBy: trackByZonaId" [value]="z.id">
+        {{ z.referencia }} - {{ z.nombre }}
+      </mat-option>
+    </mat-select>
+    <button *ngIf="zonaCtrl.value !== ''" mat-icon-button matSuffix type="button"
+            (click)="zonaCtrl.setValue('')" aria-label="Limpiar zona">
+      <mat-icon>close</mat-icon>
+    </button>
+  </mat-form-field>
+
+  <!-- Buscar (igual tamaño que Facturar) -->
+ 
 
   <div class="total-heading">
     <span class="total-label">TOTAL :</span>
@@ -51,10 +69,15 @@
   </div>
 
   <div class="acciones">
-    <button type="button" class="btn btn-sm" (click)="cancelar()">Cancelar</button>
-    <button type="button" class="btn btn-outline-danger">Facturar</button>
+     <button mat-stroked-button color="primary" type="submit" >
+    Buscar
+  </button>
+    <button type="button" mat-stroked-button (click)="cancelar()">Cancelar</button>
+    <button type="button" mat-stroked-button color="warn" class="btn-accion">Facturar</button>
   </div>
 </form>
+
+
     </div>
 
     <!-- TOTAL : valor -->

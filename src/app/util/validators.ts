@@ -1,28 +1,38 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 
 export function emailValidoValidator(): ValidatorFn {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
   return (control: AbstractControl): ValidationErrors | null => {
-    const valor = (control.value ?? '').trim();
+    const valor: string = (control.value ?? '').toString().trim();
     if (!valor) return null; // permite vacío
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
     return regex.test(valor) ? null : { emailInvalido: true };
   };
 }
 
-export function multipleEmailsValidator(separators: RegExp = /[;,]/): ValidatorFn {
-  const emailRe =
-    /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/;
+export function multipleEmailsValidator(opts?: { max?: number; separators?: RegExp }): ValidatorFn {
+  const max = opts?.max ?? Infinity;
+  const sep: RegExp = opts?.separators ?? /[;,]+/;
+  const emailRe = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/i;
 
   return (control: AbstractControl): ValidationErrors | null => {
-    const raw: string = (control.value ?? '').trim();
-    if (!raw) return null; // permite vacío
+    const raw: string = (control.value ?? '').toString().trim();
+    if (!raw) return null;
 
+    // ↓ Tipos explícitos en map/filter:
     const emails: string[] = raw
-      .split(separators)
-      .map((e: string) => e.trim())
-      .filter(Boolean);
+      .split(sep)
+      .map((s: string) => s.trim())
+      .filter((s: string) => s.length > 0);
+
+    if (emails.length > max) {
+      return { tooManyEmails: { count: emails.length, max } };
+    }
 
     const invalid: string[] = emails.filter((e: string) => !emailRe.test(e));
-    return invalid.length ? { multipleEmails: { invalid } } : null;
+    if (invalid.length) {
+      return { multipleEmails: { invalid } };
+    }
+
+    return null;
   };
 }

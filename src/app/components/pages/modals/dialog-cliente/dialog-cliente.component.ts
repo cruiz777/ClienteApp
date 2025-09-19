@@ -214,7 +214,7 @@ export class DialogClienteComponent implements OnInit {
         nombreCodificacion: [''],
         email: ['', [emailValidoValidator()]],
         email1: ['', [Validators.required, emailValidoValidator()]],
-        email2: ['', [multipleEmailsValidator()]],
+        email2: ['', [multipleEmailsValidator({ max: 5 })]],
         email3: ['', [emailValidoValidator()]],
         telefonoc: [''],
         nombreFinanciero: [null, Validators.required],

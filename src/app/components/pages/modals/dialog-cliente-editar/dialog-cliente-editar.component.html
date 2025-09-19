@@ -502,23 +502,28 @@
                       <input type="text" class="underline-input" formControlName="email2" maxlength="200"
                         inputmode="email" autocomplete="off" placeholder="correo1@dominio.com;correo2@dominio.com"
                         (keydown.space)="$event.preventDefault()" />
-                      <!-- evita espacios -->
 
                       <div *ngIf="paso3Form.get('email2')?.touched && paso3Form.get('email2')?.invalid">
-                        <!-- Si AÚN mantienes el validador simple 'emailValidoValidator' en este control -->
+
+                        <!-- cuando el validador simple estuviera activo -->
                         <small *ngIf="paso3Form.get('email2')?.errors?.['emailInvalido']" style="color:red;">
                           Ingrese correo(s) válido(s).
                         </small>
 
-                        <!-- Si usas CustomValidators.multipleEmailsValidator -->
+                        <!-- lista de correos mal formateados -->
                         <ng-container *ngIf="paso3Form.get('email2')?.errors?.['multipleEmails'] as multi">
                           <small style="color:red;">
                             Correos inválidos: {{ (multi.invalid || []).join(', ') }}
                           </small>
                         </ng-container>
-                      </div>
 
+                        <!-- exceso de correos: DEBE estar fuera del bloque anterior -->
+                        <small *ngIf="paso3Form.get('email2')?.errors?.['tooManyEmails'] as tme" style="color:red;">
+                          Máximo {{ tme.max }} correos. Ingresaste {{ tme.count }}.
+                        </small>
+                      </div>
                     </div>
+
 
 
                     <section class="export-questions-section">

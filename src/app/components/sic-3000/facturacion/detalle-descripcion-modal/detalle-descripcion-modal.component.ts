@@ -22,7 +22,7 @@ export interface DetalleDescripcionData {
   templateUrl: './detalle-descripcion-modal.component.html'
 })
 export class DetalleDescripcionModalComponent {
-  ctrl = new FormControl<string>(this.data.descripcion ?? '');
+  ctrl = new FormControl<string>((this.data.descripcion ?? '').toUpperCase());
 
   constructor(
     @Inject(MAT_DIALOG_DATA) public data: DetalleDescripcionData,
@@ -43,4 +43,41 @@ export class DetalleDescripcionModalComponent {
     if (e.key === 'Escape') this.cancelar();
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') this.aceptar();
   }
+  // Fuerza MAYÚSCULAS mientras escribe
+forceUppercase(ev: Event): void {
+  const el = ev.target as HTMLTextAreaElement;
+  const { selectionStart, selectionEnd, scrollTop } = el;
+  const upper = (el.value ?? '').toUpperCase();
+
+  if (el.value !== upper) {
+    el.value = upper;
+    this.ctrl.setValue(upper, { emitEvent: false });
+    // restaura caret/scroll
+    const start = selectionStart ?? upper.length;
+    const end   = selectionEnd ?? upper.length;
+    el.setSelectionRange(start, end);
+    el.scrollTop = scrollTop ?? 0;
+  }
+}
+
+// Asegura MAYÚSCULAS también al pegar
+onPasteUpper(e: ClipboardEvent): void {
+  e.preventDefault();
+  const pasted = (e.clipboardData?.getData('text') || '').toUpperCase();
+
+  const el = e.target as HTMLTextAreaElement;
+  const start = el.selectionStart ?? el.value.length;
+  const end   = el.selectionEnd ?? start;
+
+  const before = (el.value ?? '').slice(0, start);
+  const after  = (el.value ?? '').slice(end);
+  const next   = before + pasted + after;
+
+  el.value = next;
+  this.ctrl.setValue(next, { emitEvent: true });
+
+  const caret = start + pasted.length;
+  requestAnimationFrame(() => el.setSelectionRange(caret, caret));
+}
+
 }
