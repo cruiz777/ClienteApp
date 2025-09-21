@@ -125,8 +125,11 @@ export class PermissionsService {
 
 
     // Rutas específicas de SIC-3000
-    '/sic-3000/estructura-list': 'sic-3000.estructura-comercial',
-    '/sic-3000/registroCobros': 'sic-3000.registro-cobros'
+    '/sic-3000/estructura-list': 'sic-3000.inventarios.estructura-comercial',
+    '/sic-3000/registroCobros': 'sic-3000.registro-de-cobros',
+    '/sic-3000/findividual': 'sic-3000.cuentas-por-cobrar.facturacion.facturacion-individual',
+    '/sic-3000/fglobal': 'sic-3000.facturacion.facturacion-global',
+
   };
 
   constructor(
@@ -521,11 +524,6 @@ export class PermissionsService {
                     permisos.some(p => p.startsWith('sic3000.')) ||
                     permisos.some(p => p.startsWith('sic-3000.')),
 
-            // Funcionalidades principales según tus rutas
-            inicio: permisos.includes('sic3000.inicio') || 
-                  permisos.includes('sic-3000.inicio') ||
-                  permisos.includes('sic3000.inicio-sic') ||
-                  permisos.includes('sic-3000.inicio-sic'),
             
             estructuraComercial: permisos.includes('sic3000.estructura-comercial') || 
                                 permisos.includes('sic-3000.estructura-comercial') ||

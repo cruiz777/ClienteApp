@@ -10,6 +10,9 @@ export const environment = {
   validationUrl:'http://181.39.162.182:8000/validations/api',
 
   reportUrl: 'http://181.39.162.182:8000/reports/api',
+  
 
-    invoices_sic:'http://181.39.162.182:8000/invoices-sic/api'
+    invoices_sic:'http://181.39.162.182:8000/invoices-sic/api',
+      apiKey: 'ilGxoWJ9Arp0JdSNuO81aq9sX6ZW9gK9767867tgb',
+
 };
