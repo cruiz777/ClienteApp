@@ -9,8 +9,12 @@
 
   <!-- Nombre de la empresa -->
   <div class="empresa-nombre">
-    {{ dataSourcePrefijo.data[0].nomcli || 'Empresa no disponible' }}
-
+    <ng-container *ngIf="dataSourcePrefijo.data && dataSourcePrefijo.data.length > 0; else noData">
+      {{ dataSourcePrefijo.data[0].nomcli }}
+    </ng-container>
+    <ng-template #noData>
+      Empresa no disponible
+    </ng-template>
   </div>
 
   <!-- Tabla -->

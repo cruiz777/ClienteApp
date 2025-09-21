@@ -20,42 +20,28 @@ import { CuponesComponent } from './components/productos/cupones/cupones.compone
 import { Sic3000Module } from './components/sic-3000/sic-3000.module';
 import { UlEditComponent } from './components/productos/ul-edit/ul-edit.component';
 import { UlComponent } from './components/productos/ul/ul.component';
+import { SinPermisosComponent } from './guards/sin-permisos.component';
 
 
 const routes: Routes = [
-
+  {
+    path: 'sin-permisos',
+    component: SinPermisosComponent
+  },
   { path: '', redirectTo: 'login', pathMatch: 'full' },
   { path: 'login', component: LoginComponent },
   { path: 'inicio', component: InicioComponent, canActivate: [AuthGuard] },
   { path: 'reset-password', component: ResetPasswordComponent },
   { path: 'recuperar-clave', component: LoginFormComponent },
-  { path: 'menus', loadChildren: () => import('./components/menus/menus.module').then(x => x.MenusModule), canActivate: [AuthGuard] },
-  { path: 'pages', loadChildren: () => import('./components/pages/pages.module').then(x => x.PagesModule), canActivate: [AuthGuard] },
+  { path: 'codbar', loadChildren: () => import('./components/menus/menus.module').then(x => x.MenusModule), canActivate: [AuthGuard] },
   { path: 'seguridades', loadChildren: () => import('./components/seguridades/seguridades.module').then(m => m.SeguridadesModule) },
   { path: 'sic-3000', loadChildren: () => import('./components/sic-3000/sic-3000.module').then(m => m.Sic3000Module) },
 
   {
     path: 'productos',
-    loadChildren: () => import('./components/productos/productos-routing.module').then(m => m.ProductosRoutingModule)
+    loadChildren: () => import('./components/productos/productos-routing.module').then(m => m.ProductosRoutingModule),
+    canActivate: [AuthGuard]
   },
-  {
-    path: 'menuProductos',
-    component: NavigationProductoComponent,
-    children: [
-      { path: '', redirectTo: 'nuevoProducto', pathMatch: 'full' },
-      { path: 'nuevoProducto', component: NuevoProductoComponent },
-      { path: 'clienteSeleccion', component: ClienteSeleccionadoComponent },
-      { path: 'uvIndividual', component: UvIndividualComponent },
-      { path:'uvIndividualEdit/:codbar',component:UvIndividualEditComponent},
-      { path:'ul/:codbar',component:UlComponent},
-      { path:'ulEdit/:g14',component:UlEditComponent},
-      { path: 'nuevoSscc', component: NuevoSsccComponent },
-      { path: 'cupones', component: CuponesComponent },
-      { path: 'nuevoGln', component: GlnComponent },
-      { path: 'bloque', component: BloqueComponent }
-    ]
-  },
-
   { path: '**', component: NotFoundComponent, pathMatch: 'full' }
 ];
 

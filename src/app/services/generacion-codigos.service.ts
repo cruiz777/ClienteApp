@@ -244,7 +244,7 @@ export class GeneracionCodigosService {
 
 
   generarCodigo14(pais: string, prefijo: string): string {
-    let codigoBase = pais + prefijo.substring(0, 12); // Concatena país + prefijo (máx 12 dígitos)
+    let codigoBase = pais +"0"+ prefijo.substring(0, 12); // Concatena país + prefijo (máx 12 dígitos)
     let suma = 0;
 
     for (let i = 0; i < codigoBase.length; i++) {

@@ -20,15 +20,15 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatStepper } from '@angular/material/stepper';
 import { ViewChild } from '@angular/core';
 // RxJS
-import { forkJoin, BehaviorSubject, Observable } from 'rxjs';
-import { map, startWith } from 'rxjs/operators';
+import { forkJoin, BehaviorSubject, Observable, Subject, firstValueFrom } from 'rxjs';
+import { map, startWith, take, takeUntil } from 'rxjs/operators';
 
 // Librerías externas
 const html2pdf: any = require('html2pdf.js');
 
 // Utilidades y validadores
 import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
-import { emailValidoValidator } from 'src/app/util/validators';
+import { emailValidoValidator,multipleEmailsValidator } from 'src/app/util/validators';
 
 // Interfaces y modelos
 import { ClienteRuc } from 'src/app/interfaces/clienteRuc';
@@ -52,12 +52,20 @@ import { ClienteObservacionService,ClienteObservacion } from 'src/app/services/c
 import { ClienteDatosAdicionalesService,ClienteDatosAdicionales } from 'src/app/services/cliente-datos-adicionales.service';
 import { ClienteContacto,ClienteContactoService } from 'src/app/services/cliente-contacto.service';
 import { ParametrosFacturaService } from 'src/app/services/parametros-factura.service';
+import { PermissionsService } from 'src/app/services/permission.service';
 @Component({
   selector: 'app-dialog-cliente',
   templateUrl: './dialog-cliente.component.html',
   styleUrls: ['./dialog-cliente.component.css']
 })
 export class DialogClienteComponent implements OnInit {
+
+    private destroy$ = new Subject<void>();
+
+  // ⬇️ Streams de permisos que usaremos en TS y en el template
+  canSeeModule$!: Observable<boolean>;
+  canCreate$!: Observable<boolean>;
+
   formCliente!: FormGroup;
   selectedTab: number = 0;
   @ViewChild('stepper') stepper!: MatStepper;
@@ -143,14 +151,28 @@ export class DialogClienteComponent implements OnInit {
     private clienteDatosAdicionalesService: ClienteDatosAdicionalesService,
     private clienteContactoService:ClienteContactoService,
     private jsonEmpresaService:JsonEmpresaService,
-    private parametrosFacturaService:ParametrosFacturaService
+    private parametrosFacturaService:ParametrosFacturaService,
+    private permissions: PermissionsService
   ) { }
 
   ngOnInit(): void {
+    
+    // ✅ Ver si el usuario puede ver la pantalla
+    this.canSeeModule$ = this.permissions.puedeAccederRuta$(
+      '/codbar/ficha-de-cliente/nuevo-cliente'
+    );
+
+    // ✅ Ver si el usuario puede ejecutar la acción "crear" en esta pantalla
+    this.canCreate$ = this.permissions.puedeEjecutarAccion$(
+      '/codbar/ficha-de-cliente/nuevo-cliente',
+      'crear'
+    );
+
+    // 🔒 Bloquea la UI si no puede crear y cierra el diálogo si ni siquiera puede ver el módulo
+    this.bloquearFormularioSiNoPuedeCrear();
+    this.cerrarSiNoPuedeVer();
     console.log('----Usuario---');
     this.usuarioActual = this.usuarioService.getUsuarioActual();
-
-
 
     this.initFormulario();
 
@@ -166,6 +188,10 @@ export class DialogClienteComponent implements OnInit {
     });
   }
 
+    ngOnDestroy(): void {
+      this.destroy$.next();
+      this.destroy$.complete();
+    }
   initFormulario(): void {
     this.formCliente = this.fb.group({
       paso1: this.fb.group({
@@ -197,7 +223,8 @@ export class DialogClienteComponent implements OnInit {
         nombreRepresentante: [null, Validators.required],
         direccionPrincipal: ['', Validators.required],
         codigoPostal: [''],
-        celular: ['', Validators.required],
+        celular: [''],
+        extension: [''],
         sitioWeb: [''],
         telefono2: [''],
         usuario: [{ value: '', disabled: true }],
@@ -213,7 +240,7 @@ export class DialogClienteComponent implements OnInit {
         nombreCodificacion: [''],
         email: ['', [emailValidoValidator()]],
         email1: ['', [Validators.required, emailValidoValidator()]],
-        email2: ['', [emailValidoValidator()]],
+        email2: ['', [multipleEmailsValidator({ max: 5 })]],
         email3: ['', [emailValidoValidator()]],
         telefonoc: [''],
         nombreFinanciero: [null, Validators.required],
@@ -236,7 +263,43 @@ export class DialogClienteComponent implements OnInit {
     });
   }
 
+  //#region 
+private bloquearFormularioSiNoPuedeCrear(): void {
+  this.canCreate$.pipe(take(1)).subscribe(puedeCrear => {
+    // si NO puede crear, deshabilitamos todo el form y el botón guardar
+    if (!puedeCrear) {
+      this.formCliente?.disable({ emitEvent: false });
+      this.botonGuardarDeshabilitado = true;
+      this._snackBar.open('No tienes permiso para crear clientes.', 'Permisos', {
+        horizontalPosition: "end",
+        verticalPosition: "top",
+        duration: 4000
+      });
+    }
+  });
+}
 
+private cerrarSiNoPuedeVer(): void {
+  this.canSeeModule$
+    .pipe(takeUntil(this.destroy$))
+    .subscribe(puedeVer => {
+      if (!puedeVer) {
+        // Cierra el diálogo y navega a una ruta segura
+        this.dialogRef.close();
+        this.router.navigate(['/sin-permisos'], {
+          queryParams: {
+            rutaAnterior: '/codbar/ficha-de-cliente/nuevo-cliente',
+            motivo: 'sin-permisos-inicial',
+            timestamp: Date.now()
+          },
+          replaceUrl: true
+        });
+      }
+    });
+}
+  //#endregion
+
+  
   get paso1Form(): FormGroup {
     return this.formCliente.get('paso1') as FormGroup;
   }
@@ -582,9 +645,15 @@ export class DialogClienteComponent implements OnInit {
 
   cancelar(): void {
     this.dialogRef.close(); // Cierra el diálogo
-    this.router.navigate(['/pages/clientes']); // Redirecciona a /pages/clientes
+    this.router.navigate(['/codbar/ficha-de-cliente/listado-clientes']); // Redirecciona a /pages/clientes
   }
-  guardar(stepper: MatStepper): void {
+  async guardar(stepper: MatStepper): Promise<void> {
+      // ⛔ Doble seguro: revisa permiso de "crear" al momento del submit
+    const puedeCrear = await firstValueFrom(this.canCreate$.pipe(take(1)));
+    if (!puedeCrear) {
+      this.mostrarAlerta('No tienes permiso para crear clientes.', 'Permisos');
+      return;
+    }
     if (this.formCliente.invalid) {
       this.formCliente.markAllAsTouched(); // muestra errores en pantalla
       this.mostrarAlerta('Faltan campos obligatorios por llenar', 'Formulario Incompleto');
@@ -627,7 +696,7 @@ export class DialogClienteComponent implements OnInit {
       marca4: '',
       marca5: '',
       codcue: '',
-      hello: '',
+      hello: paso2.extension || '',
       desde: 0,
       fechtre: new Date().toISOString(),
       web: paso2.sitioWeb,
@@ -654,7 +723,11 @@ export class DialogClienteComponent implements OnInit {
       idZona:idZona,
       //idZona: paso1.zona.id,  por el momento hasta enlazar con la ciudad
       idGrupoEmpresa: paso1.grupo || 1,
-      representante: paso2.nombreRepresentante || ''
+      representante: paso2.nombreRepresentante || '',
+      fecmod: new Date().toLocaleDateString('en-CA'),
+      usumod:this.usuarioActual?.nombre_usuario || '',
+     
+
     };
     this.impresionHabilitada = true;
 

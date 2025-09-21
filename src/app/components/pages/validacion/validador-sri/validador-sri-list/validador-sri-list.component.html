@@ -32,12 +32,24 @@
         <div class="acciones-principales">
           <div class="grupo-botones">
             <!-- Botón Validar -->
-            <button class="btn-accion" (click)="validarSeleccionados()">
+            <button class="btn-accion" (click)="validarSeleccionados()"
+            [disabled]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar'))"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? '1' : '0.3'"
+              [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'auto' : 'none'"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'Sin permisos' : ''"
+              matInput
+            >
               <mat-icon>check_circle</mat-icon> Validar
             </button>
 
             <!-- Botón Actualizar -->
-            <button class="btn-accion" (click)="actualizarSeleccionadosMasivo()">
+            <button class="btn-accion" (click)="actualizarSeleccionadosMasivo()"
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion'))"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? '1' : '0.3'"
+              [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? 'auto' : 'none'"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? 'Sin permisos' : ''"
+              matInput
+            >
               <mat-icon>autorenew</mat-icon> Actualizar
             </button>
 
@@ -49,7 +61,13 @@
 
           <!-- Botón Exportar con menú -->
           <div class="grupo-exportar">
-            <button mat-button [matMenuTriggerFor]="menuExportar" class="btn-accion exportar">
+            <button mat-button [matMenuTriggerFor]="menuExportar" class="btn-accion exportar"
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.exportar'))"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.exportar')) ? '1' : '0.3'"
+              [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.exportar')) ? 'auto' : 'none'"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.exportar')) ? 'Sin permisos' : ''"
+              matInput
+            >
               <mat-icon>download</mat-icon> Exportar
             </button>
 
@@ -67,18 +85,32 @@
         <!-- Checkboxes de acciones masivas -->
         <div class="filtro-checkboxes">
           <label>
-            <input type="checkbox" [checked]="marcarTodos" (change)="toggleSeleccionTodos($event)" />
+            <input type="checkbox" [checked]="marcarTodos" (change)="toggleSeleccionTodos($event)" 
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar'))"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? '1' : '0.3'"
+              [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'auto' : 'none'"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'Sin permisos' : ''"
+              matInput
+            />
             Marcar validación
           </label>
           <label>
-            <input type="checkbox" (change)="toggleActualizarTodos($event)" />
+            <input type="checkbox" (change)="toggleActualizarTodos($event)" 
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion'))"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? '1' : '0.3'"
+              [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? 'auto' : 'none'"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? 'Sin permisos' : ''"
+              matInput
+            />
             Marcar actualización
           </label>
         </div>
       </div>
 
       <!-- Contador de registros -->
-      <p>Número de Registros: {{ numeroRegistros }}</p>
+      <p>
+        Número de Registros: {{ totalItems }} 
+      </p>
 
       <!-- Mensaje informativo -->
       <div class="info-box">
@@ -116,16 +148,33 @@
                 <td>
                   <input type="checkbox"
                          [checked]="seleccionados[cliente.clientes_codigo] || false"
-                         (change)="toggleSeleccionUno(cliente.clientes_codigo, $event)" />
+                         (change)="toggleSeleccionUno(cliente.clientes_codigo, $event)" 
+                         [disabled]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar'))"
+                          [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? '1' : '0.3'"
+                          [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'auto' : 'none'"
+                          [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'Sin permisos' : ''"
+                          matInput
+                         />
                 </td>
                 <td>
-                  <button (click)="validarUno(cliente.clientes_codigo)">✓</button>
+                  <button (click)="validarUno(cliente.clientes_codigo)"
+                          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar'))"
+                          [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? '1' : '0.3'"
+                          [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'auto' : 'none'"
+                          [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'Sin permisos' : ''"
+                          matInput
+                  >✓</button>
                 </td>
                 <td>
                   <input type="checkbox"
                          [checked]="actualizarSeleccionados[cliente.clientes_codigo] || false"
-                         [disabled]="!cliente.validacionSRI"
-                         (change)="toggleActualizarUno(cliente.clientes_codigo, $event)" />
+                         (change)="toggleActualizarUno(cliente.clientes_codigo, $event)"       
+                         [disabled]="!cliente.validacionSRI || !((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion'))"
+                          [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? '1' : '0.3'"
+                          [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? 'auto' : 'none'"
+                          [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? 'Sin permisos' : ''"
+                          matInput
+                         />
                 </td>
                 <td>{{ cliente.clientes_codigo }}</td>
                 <td>{{ cliente.ruc }}</td>
@@ -138,7 +187,7 @@
                 <td>{{ cliente.ciudad }}</td>
                 <td>{{ cliente.canton }}</td>
                 <td>{{ cliente.provincia }}</td>
-                <td>{{ cliente.idZona ? ('ZONA ' + cliente.idZona) : '' }}</td>
+                <td>{{ cliente.zonaNombre }}</td>
                 <td>{{ cliente.fecnac || '' }}</td>
                 <td>{{ cliente.fechaCeseAct || '' }}</td>
                 <td>{{ cliente.motivoCeseAct || '' }}</td>
@@ -164,6 +213,14 @@
           </tbody>
         </table>
       </div>
+      <mat-paginator 
+        [length]="totalItems"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="pageSizeOptions"
+        [pageIndex]="currentPage"
+        (page)="onPageChange($event)"
+        showFirstLastButtons>
+      </mat-paginator>
     </div>
   </div>
 </div>

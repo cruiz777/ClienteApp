@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient,HttpParams  } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { Cliente } from '../interfaces/cliente';
@@ -14,12 +14,14 @@ interface ClienteResponse {
   type: string;
   data: Cliente[];
   message: string;
+  total: number; 
 }
 interface ClienteDetalleResponse {
   id: string;
   type: string;
   data: ClienteIndividual;
   message: string;
+  
 }
 export interface ClienteIndividual {
   clientes_codigo: number;
@@ -102,6 +104,13 @@ export interface ClienteUpdateRequest {
   fechaCeseAct?: string;
   motivoCeseAct?: string;
 }
+export interface ClienteFiltro {
+  clienteBusqueda?:number;
+  nombreBusqueda?: string;
+  rucBusqueda?: string;
+  prefijoBusqueda?: string;
+}
+
 
 @Injectable({
   providedIn: 'root'
@@ -109,17 +118,26 @@ export interface ClienteUpdateRequest {
 export class ClienteService {
   private apiBaseUrl = environment.clientsUrl;
   //private apiValid = environment.validationUrl; 
-  private apiUrl = `${this.apiBaseUrl}/resumen/`;
+  private apiUrl = `${this.apiBaseUrl}/Clientes/resumen/`;
   private apiUrlA = `${this.apiBaseUrl}/Clientes/`;
 
   constructor(private http: HttpClient) { }
 
-  getClientes(): Observable<Cliente[]> {
+getClientes(
+  pageNumber: number,
+  pageSize: number,
+  filtros: { busquedaGeneral?: string, prefijoBusqueda?: string }
+): Observable<{ data: Cliente[], count: number }> {
+  const params: any = {
+    pageNumber,
+    pageSize,
+    ...filtros
+  };
 
-    return this.http.get<ClienteResponse>(this.apiUrl).pipe(
-      map(response => response.data)
-    );
-  }
+  return this.http.get<{ data: Cliente[], count: number }>(`${this.apiUrl}`, { params });
+}
+
+
   guardarCliente(data: any): Observable<any> {
     return this.http.post(`${this.apiBaseUrl}/Clientes`, data);
 
@@ -142,21 +160,6 @@ export class ClienteService {
     return this.http.put(`${this.apiBaseUrl}/Clientes/${id}`, request);
   }
 
-  // ✅ Validación Masiva
-  validarMasivo(clienteIds: number[]): Observable<ApiResponse<ClienteValidadoResultadoDTO[]>> {
-    return this.http.post<ApiResponse<ClienteValidadoResultadoDTO[]>>(`${this.apiBaseUrl}/Clientes/validar-masivo`, clienteIds);
-  }
-
-  // ✅ Validación Unitaria
-  validarUno(clienteId: number): Observable<ApiResponse<ClienteValidadoDTO>> {
-    return this.http.post<ApiResponse<ClienteValidadoDTO>>(
-      `${this.apiBaseUrl}/Clientes/validar`,
-      clienteId, // ✅ pasar el número directamente
-      {
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
-  }
   // Método adicional para obtener todos los clientes con datos completos
   getClientesDetalles(): Observable<ClienteIndividual[]> {
     const url = `${this.apiBaseUrl}/Clientes`;
@@ -176,6 +179,24 @@ export class ClienteService {
       map(response => response.data)
     );
   }
+
+getClientesPaginados(
+  pageNumber: number,
+  pageSize: number,
+  filtros: { busquedaGeneral?: string; prefijoBusqueda?: string } = {}
+): Observable<{ data: Cliente[]; count: number }> {
+  let params = new HttpParams()
+    .set('pageNumber', String(pageNumber))
+    .set('pageSize', String(pageSize));
+
+  if (filtros.busquedaGeneral?.trim()) params = params.set('busquedaGeneral', filtros.busquedaGeneral.trim());
+  if (filtros.prefijoBusqueda?.trim()) params = params.set('prefijoBusqueda', filtros.prefijoBusqueda.trim());
+
+  return this.http.get<{ data: Cliente[]; count: number }>(
+    `${environment.clientsUrl}/Clientes/resumeng`, // <-- ruta correcta
+    { params }
+  );
+}
 
 
 }

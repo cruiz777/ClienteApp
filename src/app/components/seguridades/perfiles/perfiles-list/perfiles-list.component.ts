@@ -24,6 +24,9 @@ import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/components/ut
 
 //Ruta del modal
 import { PerfilesFormComponent } from '../perfiles-form/perfiles-form.component';
+import { SubMenuService } from 'src/app/services/submenu.service';
+import { SubMenuResponse } from 'src/app/interfaces/responses/submenu-response';
+import { PermissionsService } from 'src/app/services/permission.service';
 
 interface MenuExtendido extends MenuResponse {
   tieneOpciones: boolean;
@@ -42,11 +45,13 @@ export class PerfilesListComponent implements OnInit {
   modulos: ModuloResponse[] = [];
   menus: MenuExtendido[] = [];
   opcionnes: OpcionResponse[] = [];
+  submenus: SubMenuResponse[] = [];
 
   // ==================== Selección actual ====================
   perfilSeleccionado: number | null = null;
   moduloSeleccionado: number | null = null;
   menuSeleccionado: number | null = null;
+  submenuSeleccionado: number | null = null;
   sistemaActivo: string = '';
 
   opcionesAsignadas: number[] = [];
@@ -62,7 +67,9 @@ export class PerfilesListComponent implements OnInit {
     private menuService: MenuService,
     private opcionesService: OpcionService,
     private dialog: MatDialog,
-    private perfilesOpcionesService: PerfilOpcionService
+    private perfilesOpcionesService: PerfilOpcionService,
+    private subMenuService: SubMenuService,
+    public permissions: PermissionsService
   ) { }
 
   // ==================== Inicialización ====================
@@ -72,11 +79,7 @@ export class PerfilesListComponent implements OnInit {
     this.sistemaService.getSistemas().subscribe(response => {
       this.sistemas = response.data.filter(s => s.status === true);
       if (this.sistemas.length > 0) {
-        const sistema = this.sistemas[0];
-        this.sistemaActivo = sistema.nombre;
-        this.moduloService.getModulosPorSistema(sistema.id_sistema).subscribe(resp => {
-          this.modulos = resp.data.filter(m => m.status === true);
-        });
+        this.sistemaActivo = this.sistemas[0].nombre; // Solo marcar el tab activo
       }
     });
   }
@@ -86,6 +89,10 @@ export class PerfilesListComponent implements OnInit {
     this.sistemaActivo = nombre;
     this.menus = [];
     this.opcionnes = [];
+    if (this.perfilSeleccionado === null) {
+      this.modulos = []; // Limpiar módulos si no hay perfil seleccionado
+      return; // No cargar módulos
+    }
     this.moduloService.getModulosPorSistema(idSistema).subscribe(resp => {
       this.modulos = resp.data.filter(m => m.status === true);
     });
@@ -95,6 +102,13 @@ export class PerfilesListComponent implements OnInit {
     this.perfilSeleccionado = idPerfil;
     this.menus = [];
     this.opcionnes = [];
+    // Cargar módulos del sistema activo cuando se selecciona perfil
+    const sistemaActual = this.sistemas.find(s => s.nombre === this.sistemaActivo);
+    if (sistemaActual) {
+      this.moduloService.getModulosPorSistema(sistemaActual.id_sistema).subscribe(resp => {
+        this.modulos = resp.data.filter(m => m.status === true);
+      });
+    }
   }
 
   seleccionarModulo(idModulo: number): void {
@@ -103,28 +117,47 @@ export class PerfilesListComponent implements OnInit {
     this.opcionnes = [];
 
     this.menuService.getMenusPorModulo(idModulo).subscribe(response => {
-      const menuesExtendidos: MenuExtendido[] = response.data.filter(m => m.status === true).map(menu => ({
-        ...menu,
-        tieneOpciones: false,
-        todasAsignadas: false
-      }));
+      const menuesExtendidos: MenuExtendido[] = response.data
+        .filter(m => m.status === true)
+        .map(menu => ({
+          ...menu,
+          tieneOpciones: false,
+          todasAsignadas: false
+        }));
 
       if (this.perfilSeleccionado === null) {
         this.menus = menuesExtendidos;
         return;
       }
 
-      const solicitudes = menuesExtendidos.map(menu =>
-        Promise.all([
-          this.perfilesOpcionesService.getOpcionesPorPerfilYMenu(this.perfilSeleccionado!, menu.id_menu).toPromise(),
-          this.opcionesService.getOpcionesPorMenu(menu.id_menu).toPromise()
-        ]).then(([asignadasResp, todasResp]) => {
-          const asignadas = asignadasResp?.data ?? [];
-          const todas = todasResp?.data ?? [];
-          menu.tieneOpciones = asignadas.length > 0;
-          menu.todasAsignadas = todas.length > 0 && asignadas.length === todas.length;
-        })
-      );
+      // Para cada menú: (1) asignadas por MENÚ, (2) TODAS por MENÚ = sumatoria de submenús
+      const solicitudes = menuesExtendidos.map(async (menu) => {
+        // 1) Asignadas del perfil en este MENÚ
+        const asignadasResp = await this.perfilesOpcionesService
+          .getOpcionesPorPerfilYMenu(this.perfilSeleccionado!, menu.id_menu)
+          .toPromise();
+        const asignadas = asignadasResp?.data ?? [];
+
+        // 2) TODAS las opciones del MENÚ = submenús activos → opciones activas
+        const subResp = await this.subMenuService
+          .getSubMenusPorMenu(menu.id_menu)
+          .toPromise();
+        const subIds = (subResp?.data ?? [])
+          .filter(sm => sm.status === true)
+          .map(sm => sm.id_sub);
+
+        let todas: OpcionResponse[] = [];
+        if (subIds.length > 0) {
+          const todasResp = await Promise.all(
+            subIds.map(idSub => this.opcionesService.getOpcionesPorSubMenu(idSub).toPromise())
+          );
+          todas = todasResp.flatMap(r => (r?.data ?? []).filter(o => o.status === true));
+        }
+
+        // 3) Flags para la UI
+        menu.tieneOpciones  = asignadas.length > 0;
+        menu.todasAsignadas = (todas.length > 0) && (asignadas.length === todas.length);
+      });
 
       Promise.all(solicitudes).then(() => {
         this.menus = menuesExtendidos;
@@ -132,14 +165,27 @@ export class PerfilesListComponent implements OnInit {
     });
   }
 
+
   seleccionarMenu(idMenu: number): void {
     this.menuSeleccionado = idMenu;
+    this.submenuSeleccionado = null;
+    this.opcionnes = [];
+
+    // Cargar submenus del menu seleccionado
+    this.subMenuService.getSubMenusPorMenu(idMenu).subscribe(response => {
+      this.submenus = response.data.filter(sm => sm.status === true);
+    });
+  }
+
+  seleccionarSubMenu(idSub: number): void {
+    this.submenuSeleccionado = idSub;
     if (this.perfilSeleccionado === null) return;
 
-    this.opcionesService.getOpcionesPorMenu(idMenu).subscribe(opcionesResp => {
+    this.opcionesService.getOpcionesPorSubMenu(idSub).subscribe(opcionesResp => {
       const todasLasOpciones = opcionesResp.data.filter(o => o.status === true);
 
-      this.perfilesOpcionesService.getOpcionesPorPerfilYMenu(this.perfilSeleccionado!, idMenu).subscribe(asignadasResp => {
+      // Necesitarás crear este método en tu servicio de perfilOpciones
+      this.perfilesOpcionesService.getOpcionesPorPerfilYSubmenu(this.perfilSeleccionado!, idSub).subscribe(asignadasResp => {
         const asignadasIds = asignadasResp.data.map(op => op.id_opcion);
         this.opcionesAsignadas = asignadasIds;
 
@@ -147,12 +193,9 @@ export class PerfilesListComponent implements OnInit {
           ...op,
           status: asignadasIds.includes(op.id_opcion)
         }));
-
-        this.actualizarEstadoDelMenu();
       });
     });
   }
-
   seleccionarBoton(nombre: string): void {
     this.botonActivo = nombre;
 
@@ -244,6 +287,40 @@ export class PerfilesListComponent implements OnInit {
     });
   }
 
+  //Acciones sobre submenus
+
+  onToggleTodoOpcionesSubMenu(subMenuId: number, marcar: boolean): void {
+    if (this.perfilSeleccionado === null) return;
+
+    const request: CreateBulkPerfilOption = {
+      id_perfil: this.perfilSeleccionado,
+      id: subMenuId,
+      status: marcar,
+      nivel: 'submenu'
+    };
+
+    this.perfilesOpcionesService.CreateBulkPerfilOptions(request).subscribe({
+      next: () => {
+        // Recargar opciones del submenu seleccionado
+        if (this.submenuSeleccionado === subMenuId) {
+          this.seleccionarSubMenu(subMenuId);
+        }
+      },
+      error: (err) => console.error('❌ Error en cambio masivo de opciones de submenu:', err)
+    });
+  }
+
+  esSubMenuCompletamenteAsignado(subMenuId: number): boolean {
+    if (this.submenuSeleccionado !== subMenuId || this.opcionnes.length === 0) {
+      console.log(`SubMenu ${subMenuId}: No seleccionado o sin opciones`);
+      return false;
+    }
+    
+    const resultado = this.opcionnes.every(op => op.status);
+    console.log(`SubMenu ${subMenuId}: ${resultado ? 'Todas asignadas' : 'No todas asignadas'}`);
+    return resultado;
+  }
+
   // ==================== Acciones sobre opciones ====================
   onToggleOpcion(opcion: OpcionResponse): void {
     if (this.perfilSeleccionado === null) return;
@@ -254,16 +331,38 @@ export class PerfilesListComponent implements OnInit {
       status: opcion.status
     };
 
-    this.perfilesOpcionesService.actualizarOpcion(request).subscribe({
+    this.perfilesOpcionesService.updateOpcionStatus(
+      this.perfilSeleccionado!, 
+      opcion.id_opcion, 
+      opcion.status
+    ).subscribe({
       next: () => this.actualizarEstadoDelMenu(),
       error: (err) => console.error('❌ Error al actualizar la opción:', err)
     });
   }
 
-  onToggleTodoOpciones(menu: MenuExtendido): void {
-    if (this.perfilSeleccionado === null) return;
+  // onToggleTodoOpciones(menu: MenuExtendido): void {
+  //   if (this.perfilSeleccionado === null) return;
 
-    const marcar = !menu.todasAsignadas;
+  //   const marcar = !menu.todasAsignadas;
+
+  //   const request: CreateBulkPerfilOption = {
+  //     id_perfil: this.perfilSeleccionado,
+  //     id: menu.id_menu,
+  //     status: marcar,
+  //     nivel: 'menu'
+  //   };
+
+  //   this.perfilesOpcionesService.CreateBulkPerfilOptions(request).subscribe({
+  //     next: () => {
+  //       this.opcionnes = [];
+  //       this.seleccionarMenu(menu.id_menu);
+  //     },
+  //     error: (err) => console.error('❌ Error en cambio masivo de opciones de menú:', err)
+  //   });
+  // }
+  onToggleTodoOpciones(menu: MenuExtendido, marcar: boolean): void {
+    if (this.perfilSeleccionado === null) return;
 
     const request: CreateBulkPerfilOption = {
       id_perfil: this.perfilSeleccionado,
@@ -274,8 +373,12 @@ export class PerfilesListComponent implements OnInit {
 
     this.perfilesOpcionesService.CreateBulkPerfilOptions(request).subscribe({
       next: () => {
-        this.opcionnes = [];
-        this.seleccionarMenu(menu.id_menu);
+        menu.todasAsignadas = marcar;
+        menu.tieneOpciones = marcar;
+        if (this.menuSeleccionado === menu.id_menu) {
+          this.opcionnes = [];
+          this.seleccionarMenu(menu.id_menu);
+        }
       },
       error: (err) => console.error('❌ Error en cambio masivo de opciones de menú:', err)
     });
@@ -285,7 +388,7 @@ export class PerfilesListComponent implements OnInit {
     if (this.perfilSeleccionado === null) return;
 
     const request: CreateBulkPerfilOption = {
-      id_perfil: this.perfilSeleccionado,
+      id_perfil: this.perfilSeleccionado ,
       id: moduloId,
       status: marcar,
       nivel: 'modulo'
@@ -311,16 +414,45 @@ export class PerfilesListComponent implements OnInit {
   }
 
   // ==================== Utilitarios ====================
-  actualizarEstadoDelMenu(): void {
-    if (this.menuSeleccionado === null) return;
+  // actualizarEstadoDelMenu(): void {
+  //   if (this.menuSeleccionado === null) return;
 
-    const total = this.opcionnes.length;
-    const asignadas = this.opcionnes.filter(op => op.status).length;
+  //   const total = this.opcionnes.length;
+  //   const asignadas = this.opcionnes.filter(op => op.status).length;
+
+  //   const menu = this.menus.find(m => m.id_menu === this.menuSeleccionado);
+  //   if (menu) {
+  //     menu.tieneOpciones = asignadas > 0;
+  //     menu.todasAsignadas = asignadas === total;
+  //   }
+  // }
+  async actualizarEstadoDelMenu(): Promise<void> {
+    if (this.menuSeleccionado === null || this.perfilSeleccionado === null) return;
+
+    const asignadasResp = await this.perfilesOpcionesService
+      .getOpcionesPorPerfilYMenu(this.perfilSeleccionado, this.menuSeleccionado)
+      .toPromise();
+    const asignadas = asignadasResp?.data ?? [];
+
+    const subResp = await this.subMenuService
+      .getSubMenusPorMenu(this.menuSeleccionado)
+      .toPromise();
+    const subIds = (subResp?.data ?? [])
+      .filter(sm => sm.status === true)
+      .map(sm => sm.id_sub);
+
+    let todas: OpcionResponse[] = [];
+    if (subIds.length > 0) {
+      const todasResp = await Promise.all(
+        subIds.map(idSub => this.opcionesService.getOpcionesPorSubMenu(idSub).toPromise())
+      );
+      todas = todasResp.flatMap(r => (r?.data ?? []).filter(o => o.status === true));
+    }
 
     const menu = this.menus.find(m => m.id_menu === this.menuSeleccionado);
     if (menu) {
-      menu.tieneOpciones = asignadas > 0;
-      menu.todasAsignadas = asignadas === total;
+      menu.tieneOpciones  = asignadas.length > 0;
+      menu.todasAsignadas = (todas.length > 0) && (asignadas.length === todas.length);
     }
   }
 
@@ -345,7 +477,7 @@ export class PerfilesListComponent implements OnInit {
     });
   }
 
-  crearEntidad(tipo: 'sistema' | 'modulo' | 'menu' | 'opcion'): void {
+  crearEntidad(tipo: 'sistema' | 'modulo' | 'menu' | 'submenu' | 'opcion'): void {
     let idRelacionado: number | null = null;
 
     if (tipo === 'modulo') {
@@ -359,11 +491,16 @@ export class PerfilesListComponent implements OnInit {
       idRelacionado = this.moduloSeleccionado;
     }
 
-    if (tipo === 'opcion') {
+    if (tipo === 'submenu') {
       if (!this.menuSeleccionado) return alert('❌ Selecciona un menú primero.');
       idRelacionado = this.menuSeleccionado;
     }
 
+    if (tipo === 'opcion') {
+      if (!this.submenuSeleccionado) return alert('❌ Selecciona un submenú primero.');
+      idRelacionado = this.submenuSeleccionado;
+    }
+    // Para otros tipos (sistema, modulo, menu, submenu)
     const dialogRef = this.dialog.open(PerfilesFormComponent, {
       width: '400px',
       data: {
@@ -374,33 +511,13 @@ export class PerfilesListComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe((resultado) => {
       if (resultado === true) {
-        if (tipo === 'sistema') {
-          this.sistemaService.getSistemas().subscribe(response => {
-            this.sistemas = response.data.filter(s => s.status === true);
-          });
-        }
-
-        if (tipo === 'modulo') {
-          const sistema = this.sistemas.find(s => s.nombre === this.sistemaActivo);
-          if (sistema) {
-            this.moduloService.getModulosPorSistema(sistema.id_sistema).subscribe(resp => {
-              this.modulos = resp.data;
-            });
-          }
-        }
-
-        if (tipo === 'menu' && this.moduloSeleccionado) {
-          this.seleccionarModulo(this.moduloSeleccionado);
-        }
-
-        if (tipo === 'opcion' && this.menuSeleccionado) {
-          this.seleccionarMenu(this.menuSeleccionado);
-        }
+        this.recargarEntidad(tipo);
       }
     });
   }
 
-  editarGeneral(tipo: 'sistema' | 'modulo' | 'menu' | 'opcion', id: number): void {
+
+  editarGeneral(tipo: 'sistema' | 'modulo' | 'menu' | 'submenu' | 'opcion', id: number): void {
     const dialogRef = this.dialog.open(PerfilesFormComponent, {
       width: '400px',
       data: { tipo, id }
@@ -413,7 +530,7 @@ export class PerfilesListComponent implements OnInit {
     });
   }
 
-  eliminarGeneral(tipo: 'sistema' | 'modulo' | 'menu' | 'opcion', id: number): void {
+  eliminarGeneral(tipo: 'sistema' | 'modulo' | 'menu' | 'submenu' | 'opcion', id: number): void {
     const data: MessageBoxData = {
       title: `¿Eliminar ${tipo}?`,
       message: `¿Estás seguro de que deseas eliminar este ${tipo}?`,
@@ -435,6 +552,7 @@ export class PerfilesListComponent implements OnInit {
         case 'sistema': servicio = this.sistemaService; break;
         case 'modulo': servicio = this.moduloService; break;
         case 'menu': servicio = this.menuService; break;
+        case 'submenu': servicio = this.subMenuService; break;
         case 'opcion': servicio = this.opcionesService; break;
       }
 
@@ -488,8 +606,11 @@ export class PerfilesListComponent implements OnInit {
       case 'menu':
         if (this.moduloSeleccionado) this.seleccionarModulo(this.moduloSeleccionado);
         break;
+      case 'submenu':
+        if (this.moduloSeleccionado) this.seleccionarModulo(this.moduloSeleccionado);
+        break;
       case 'opcion':
-        if (this.menuSeleccionado) this.seleccionarMenu(this.menuSeleccionado);
+        if (this.submenuSeleccionado) this.seleccionarSubMenu(this.submenuSeleccionado);
         break;
     }
   }

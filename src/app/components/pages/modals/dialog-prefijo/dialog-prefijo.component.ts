@@ -458,7 +458,7 @@ console.log('✅ Prefijo leído con getRawValue():', prefijo);
           console.warn('⚠️ No se encontró ningún prefijo con ese código.');
           return;
         }
-
+        debugger
         const id_prefijos = resultado[0].id_prefijos;
 
         const nuevoGln: GlnRequest = {
@@ -472,10 +472,10 @@ console.log('✅ Prefijo leído con getRawValue():', prefijo);
           direccion: 'Calle Ejemplo 123',
           telefono: '12345678',
           fax: '',
-          contacto: 'Juan Pérez',
-          contactoTel: '12345678',
-          email: 'correo@ejemplo.com',
-          web: 'http://example.com',
+          contacto: '',
+          contactoTel: '',
+          email: '',
+          web: '',
           fda: '',
           europa: '',
           glnGlobal: '',
@@ -490,8 +490,8 @@ console.log('✅ Prefijo leído con getRawValue():', prefijo);
           glnEmail3: '',
           glnTel3: '',
           glnFacturar: 'S',
-          glnCodpro: 'PROD01',
-          glnNombre: 'Sucursal Principal',
+          glnCodpro: '',
+          glnNombre: '',
           glnOtro1: '',
           glnOtro2: '',
           glnObs1: '',
@@ -500,7 +500,7 @@ console.log('✅ Prefijo leído con getRawValue():', prefijo);
           glnPrefijogs1: gln,
           glnGlnp: '',
           glnGlne: '',
-          nombreLocalizacion: 'Matriz',
+          nombreLocalizacion: '',
           observ: '',
           expprod: 1,
           gs1ec: 1,

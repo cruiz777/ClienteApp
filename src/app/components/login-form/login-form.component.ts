@@ -16,7 +16,7 @@ import { RecuperarClaveRequest } from 'src/app/interfaces/requests/recuperar-cla
 export class LoginFormComponent {
   formRecuperacion: FormGroup;
   enviado = false;
-
+  
   constructor(private fb: FormBuilder, private usuarioService: UsuarioService) {
     this.formRecuperacion = this.fb.group({
       email: ['', [Validators.required, Validators.email]]

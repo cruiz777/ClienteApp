@@ -22,6 +22,7 @@ import { ExportService } from 'src/app/services/export.service';
 import { LogoService } from 'src/app/services/logo.service';
 import { EmpresaService } from 'src/app/services/empresa.service';
 import { Router } from '@angular/router';
+import { PermissionsService } from 'src/app/services/permission.service';
 
 @Component({
   selector: 'app-nuevo-gln',
@@ -72,7 +73,8 @@ export class GlnComponent implements OnInit {
     private toastr: ToastrService,
     private toastCampos: RequiredFieldsToastService,
     private exportService: ExportService,
-    private router: Router
+    private router: Router,
+    public permissions: PermissionsService
   ) {}
 
   compareCiudad(a: any, b: any): boolean {
@@ -1001,7 +1003,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
           this.mostrarMensajeBox('GLN actualizado', 'El GLN fue actualizado correctamente.', 'success');
           callback();
           this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
-            this.router.navigate(['/menuProductos/nuevoGln']);
+            this.router.navigate(['/productos/nuevo-gln']);
           });
         },
         error: (err) => {
@@ -1017,7 +1019,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
           this.mostrarMensajeBox('GLN creado', 'El GLN fue creado correctamente.', 'success');
           callback();
           this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
-            this.router.navigate(['/menuProductos/nuevoGln']);
+            this.router.navigate(['/productos/nuevo-gln']);
           });
         },
         error: (err) => {
@@ -1144,7 +1146,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
         this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
-          this.router.navigate(['/menuProductos/nuevoGln']);
+          this.router.navigate(['/productos/nuevo-gln']);
         });
       }
     });

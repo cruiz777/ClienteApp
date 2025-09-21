@@ -3,6 +3,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { DashboardComponent } from './dashboard/dashboard.component';
 import { PagesComponent } from './pages.component';
 import { ClientesComponent } from './clientes/clientes.component';
+import { ExploradorClientesComponent } from './explorador-clientes/explorador-clientes.component';
 import { NuevoClienteComponent } from './nuevo-cliente/nuevo-cliente.component';
 import { TipoClienteListComponent } from './clientes/tipo-clientes/tipo-cliente-list/tipo-cliente-list.component';
 import { TipoClienteFormComponent } from './clientes/tipo-clientes/tipo-cliente-form/tipo-cliente-form.component';
@@ -23,6 +24,7 @@ const routes: Routes = [
       {path:'grupocliente',component:GrupoClienteListComponent},
       {path:'crear',component:GrupoClienteFormComponent},
       {path:'editar/:id',component:GrupoClienteFormComponent},
+      {path:'explorador',component:ExploradorClientesComponent},
 
 
 

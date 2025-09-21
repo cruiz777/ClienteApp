@@ -1,0 +1,60 @@
+<mat-card style="margin: 20px;">
+  <mat-card-title>Clientes</mat-card-title>
+  <mat-card-content>
+
+    <form [formGroup]="filtroForm" style="display: flex; gap: 15px; flex-wrap: wrap; margin-bottom: 15px;">
+      <mat-form-field appearance="outline" style="width: 200px;">
+        <mat-label>Código / Nombre / RUC</mat-label>
+        <input matInput formControlName="busquedaGeneral" (keydown.enter)="aplicarFiltros()" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" style="width: 200px;">
+        <mat-label>Prefijo</mat-label>
+        <input matInput formControlName="prefijoBusqueda" (keydown.enter)="aplicarFiltros()" />
+      </mat-form-field>
+
+      <button mat-raised-button color="primary" (click)="aplicarFiltros()">Buscar</button>
+      <button mat-raised-button color="warn" (click)="limpiarFiltros()">Limpiar</button>
+      <button mat-raised-button color="accent" [matMenuTriggerFor]="menuExportar"
+                        [disabled]="!((permissions.permisos$ | async)?.includes('codbar.reportes.explorador-clientes.exportar'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.reportes.explorador-clientes.exportar')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.reportes.explorador-clientes.exportar')) ? 'auto' : 'none'"
+                        [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.reportes.explorador-clientes.exportar')) ? 'Sin permisos' : ''"
+                        matInput
+      >Exportar</button>
+        <mat-menu #menuExportar="matMenu">
+          <button mat-menu-item (click)="exportar('pdf')">PDF</button>
+          <button mat-menu-item (click)="exportar('excel')">Excel</button>
+        </mat-menu>
+    </form>
+
+    <div style="display:flex; gap:8px; align-items:center; justify-content:flex-end;">
+      <span style="color:#d32f2f; font-weight:600;">MOSTRAR REGISTROS</span>
+      <input type="text"
+             [ngModel]="pageSize"
+             (ngModelChange)="onPageSizeInput($event)"
+             (keypress)="onlyDigits($event)"
+             (blur)="normalizePageSize()"
+             inputmode="numeric" pattern="\d*"
+             style="width:80px; text-align:right; border:1px solid #d32f2f; padding:2px 6px; border-radius:4px; font-weight:700; color:#d32f2f;">
+    </div>
+
+<div style="text-align:right; margin-top:4px; font-size:12px; color:#555;">
+  Mostrando {{ agGrid?.api?.getDisplayedRowCount() || (clientesFiltrados.length || 0) }}
+  de {{ totalRegistros || (clientesFiltrados.length || 0) }}
+</div>
+
+<ag-grid-angular
+  class="ag-theme-alpine"
+  style="width:100%;height:500px;"
+  [columnDefs]="columnDefs"
+  [defaultColDef]="defaultColDef"
+  [rowData]="rowData"
+  [pagination]="true"
+  [paginationPageSize]="pageSize"
+  (gridReady)="onGridReady($event)">
+</ag-grid-angular>
+
+
+  </mat-card-content>
+</mat-card>

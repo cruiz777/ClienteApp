@@ -3,6 +3,7 @@ import { TipoLocalizacionService } from 'src/app/services/tipo-localizacion.serv
 import { TipoLocalizacionResponse } from 'src/app/interfaces/responses/tipo-localizacion-response';
 import { Router } from '@angular/router';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
+import { PermissionsService } from 'src/app/services/permission.service';
 
 @Component({
   selector: 'app-localizacion-est-list',
@@ -20,7 +21,8 @@ export class TipoLocalizacionListComponent implements OnInit {
 
   constructor(
     private tipoLocalizacionService: TipoLocalizacionService,
-    private router: Router
+    private router: Router,
+    public permissions: PermissionsService
   ) {}
 
   ngOnInit(): void {
@@ -60,10 +62,10 @@ export class TipoLocalizacionListComponent implements OnInit {
   }
 
   crearLocalizacion(): void {
-    this.router.navigate(['/menus/localizacion-establecimiento/crear']);
+    this.router.navigate(['codbar/configuracion/localizacion-establecimiento/crear']);
   }
 
   editarLocalizacion(id: number): void {
-    this.router.navigate(['/menus/localizacion-establecimiento/editar', id]);
+    this.router.navigate(['codbar/configuracion/localizacion-establecimiento/editar', id]);
   }
 }

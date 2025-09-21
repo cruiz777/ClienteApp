@@ -1,0 +1,47 @@
+<div class="contenedor-gerencia mat-elevation-z4">
+  <div class="encabezado">
+    <h2><mat-icon>insights</mat-icon> Resumen de GTIN por Año</h2>
+
+    <div class="filtros">
+      <mat-form-field appearance="outline" class="campo-anio">
+        <mat-label>Año</mat-label>
+        <input matInput type="number" [(ngModel)]="anio" (change)="cambiarAnio(anio)" min="2000" max="2100">
+      </mat-form-field>
+
+      <button mat-raised-button color="primary" (click)="exportarPdf()"
+                        [disabled]="resumenGtin.length === 0 || !((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? 'auto' : 'none'"
+                        [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? 'Sin permisos' : ''"
+                        matInput
+      >
+        <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
+      </button>
+    </div>
+  </div>
+
+  <mat-progress-bar *ngIf="cargando" mode="indeterminate"></mat-progress-bar>
+
+  <table class="tabla-gtin" *ngIf="!cargando && resumenGtin.length > 0">
+    <thead>
+      <tr>
+        <th>GTIN Tipo</th>
+        <th>Cantidad</th>
+        <th>Año</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of resumenGtin">
+        <td>{{ item.gtinTipo }}</td>
+        <td>{{ item.cantidad }}</td>
+        <td>{{ item.anio }}</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div *ngIf="!cargando && resumenGtin.length === 0" class="mensaje-vacio">
+    No hay datos disponibles para el año {{ anio }}.
+  </div>
+
+  <div class="mensaje-estado">{{ mensaje }}</div>
+</div>

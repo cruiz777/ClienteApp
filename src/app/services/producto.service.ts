@@ -7,6 +7,13 @@ import { ProductoRequests } from '../interfaces/requests/producto-filter-request
 import { ProductoResponse } from '../interfaces/responses/producto-filter-response'
 import { ClienteConProductosResponse } from '../interfaces/responses/producto-filter-response'
 
+export interface PagedResult<T> {
+  totalRecords: number;
+  pageNumber: number;
+  pageSize: number;
+  records: T[];
+}
+
 export interface ProductoRequest {
   IdProducto: number;
   Codpro: string;
@@ -276,13 +283,33 @@ export class ProductoService {
 
   constructor(private http: HttpClient) { }
 
-  getProductosPorCliente(codigoCliente: number): Observable<Producto[]> {
-    return this.http
-      .get<ApiResponse<Producto[]>>(`${this.apiBaseUrl}/Producto/producto-clientecodigo/${codigoCliente}`)
-      .pipe(
-        map(response => response.data ?? []) // puedes transformar más si deseas
-      );
+ getProductosPorCliente(
+  codigoCliente: number,
+  pageNumber: number = 1,
+  pageSize: number = 10,
+  prefijo?: string,
+  busqueda?: string
+): Observable<PagedResult<Producto>> {
+  const params: any = {
+    pageNumber,
+    pageSize
+  };
+
+  if (prefijo) {
+    params.prefijo = prefijo;
   }
+
+  if (busqueda) {
+    params.busqueda = busqueda;
+  }
+
+  return this.http
+    .get<ApiResponse<PagedResult<Producto>>>(`${this.apiBaseUrl}/Producto/producto-clientecodigo/${codigoCliente}`, { params })
+    .pipe(
+      map(response => response.data!)
+    );
+}
+
   crearProducto(request: ProductoRequest): Observable<ApiResponse<number>> {
     return this.http.post<ApiResponse<number>>(
       `${this.apiBaseUrl}/Producto`,
@@ -350,6 +377,11 @@ getProductosConAbreviaT(): Observable<Producto[]> {
     .pipe(
       map(response => response.data ?? [])
     );
+}
+eliminarProductoPorCodbar(codbar: string): Observable<ApiResponse<boolean>> {
+  return this.http.delete<ApiResponse<boolean>>(
+    `${this.apiBaseUrl}/Producto/eliminar-por-codbar/${codbar}`
+  );
 }
 
 

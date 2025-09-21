@@ -4,9 +4,15 @@ import autoTable from 'jspdf-autotable';
 import * as moment from 'moment';
 import * as ExcelJS from 'exceljs';
 import { ConversionImagenService } from './base64-imagenes.service';
+import { ProductoResponse } from '../interfaces/responses/producto-filter-response';
 
 export interface GS1ExportOptions {
   data: any[];
+  filename: string;
+  headerInfo: any;
+}
+export interface GS1GtinVentaOptions {
+  data: ProductoResponse[];
   filename: string;
   headerInfo: any;
 }
@@ -15,6 +21,7 @@ export interface GS1ExportOptions {
 export class GS1ExportService {
   constructor(private configuracionVisualService: ConversionImagenService) {}
 
+  //EXPORTAR PDF PARA UL Y GENERAL
   async exportarPDFGS1(options: GS1ExportOptions): Promise<void> {
     const { data, filename, headerInfo } = options;
     const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
@@ -156,6 +163,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
     doc.save(`${filename}_${moment().format('YYYYMMDD_HHmmss')}.pdf`);
   }
 
+  //EXPORTAR EXCEL PARA UL Y GENERAL
  async exportarExcelGS1(options: GS1ExportOptions): Promise<void> {
   const { data, filename, headerInfo } = options;
   
@@ -428,6 +436,310 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
   window.URL.revokeObjectURL(url);
 }
 
+//EXPORTAR PDF GTIN VENTA
+async exportarPDFGtinVenta(options: GS1GtinVentaOptions): Promise<void> {
+  const { data, filename, headerInfo } = options;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+
+  // Obtener imágenes antes
+  const logoBase64 = await this.configuracionVisualService.getLogoActualBase64();
+  const firmaBase64 = await this.configuracionVisualService.getFirmaActualBase64();
+
+  // Disclaimer específico para GTIN Venta
+  const disclaimer = `La Asociación Ecuatoriana de Código de Producto (ECOP) es organización miembro de GS1 en Ecuador y certifica que los códigos GTIN® que se detallan en este reporte son números estándares autorizados.
+Le recordamos que publicamos a nivel nacional y global la autenticidad de los códigos GTIN® registrados en la base de datos de GS1 Ecuador. Verifique la identidad de estos códigos en nuestra herramienta
+GEPIR Ecuador. Es responsabilidad del DUEÑO DE LA MARCA el manejo y control del CÓDIGO, DESCRIPCIÓN y MARCA DEL PRODUCTO. El Prefijo de Compañía GS1 no puede venderse, alquilarse, o
+entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a todas las claves de identificación GS1. El Prefijo de Compañía es único e inequívoco para cada empresa.`;
+
+  // Preparar tabla con las columnas específicas de GTIN Venta
+  const tableRows: any[] = [];
+  let index = 1;
+
+  data.forEach(producto => {
+    tableRows.push([
+      String(index++),
+      producto.codpro || '',
+      producto.despro || '',
+      producto.marca || '',
+      producto.contenido || '',
+      producto.um || '',
+      producto.gtin || '',
+      this.formatearFechaSafe(producto.feccre)
+    ]);
+  });
+
+  autoTable(doc, {
+    startY: 65,
+    head: [[
+      '#', 'CÓDIGO', 'DESCRIPCIÓN', 'MARCA', 'CONTENIDO', 'UNIDAD', 'TIPO', 'FECHA'
+    ]],
+    body: tableRows,
+    styles: { fontSize: 7.5, cellPadding: 1.2 },
+    headStyles: {
+      fillColor: [255, 255, 255],
+      textColor: [0, 0, 0],
+      fontStyle: 'bold'
+    },
+    columnStyles: {
+      0: { halign: 'center', cellWidth: 10 },  // #
+      1: { cellWidth: 35 },                    // CÓDIGO
+      2: { cellWidth: 65 },                    // DESCRIPCIÓN
+      3: { cellWidth: 35 },                    // MARCA
+      4: { cellWidth: 25 },                    // CONTENIDO
+      5: { cellWidth: 25 },                    // UNIDAD
+      6: { cellWidth: 25 },                    // TIPO
+      7: { cellWidth: 30 },                    // FECHA
+    },
+    margin: { top: 65, left: 10, right: 10, bottom: 55 },
+    didDrawPage: (data) => {
+      const pageWidth = doc.internal.pageSize.width;
+      const pageHeight = doc.internal.pageSize.height;
+      const pageNumber = data.pageNumber;
+      const rightX = pageWidth - 20;
+      let y = 15;
+
+      // Logo
+      if (logoBase64) doc.addImage(logoBase64, 'PNG', 15, y, 35, 20);
+
+      // Títulos
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Sistema de Control de Códigos', pageWidth / 2, y + 5, { align: 'center' });
+      doc.setFontSize(12);
+      doc.text('Reporte de Productos GTIN Venta', pageWidth / 2, y + 12, { align: 'center' });
+
+      // Información lateral derecha
+      doc.setFontSize(9);
+      const info = [
+        { label: 'Emisor:', value: 'GS1 Ecuador' },
+        { label: 'Fecha emisión:', value: headerInfo.fechaEmision },
+        { label: 'Pág:', value: `${pageNumber}` },
+        { label: 'GLN:', value: headerInfo.gln },
+        { label: 'RUC:', value: headerInfo.ruc },
+      ];
+      let rightY = y;
+      info.forEach(line => {
+        doc.setFont('helvetica', 'bold');
+        doc.text(line.label, rightX - 40, rightY);
+        doc.setFont('helvetica', 'normal');
+        doc.text(line.value, rightX, rightY, { align: 'right' });
+        rightY += 5;
+      });
+
+      // Código y empresa
+      y += 25;
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(10);
+      if (headerInfo.codigoEmpresa) doc.text(headerInfo.codigoEmpresa, 15, y);
+      if (headerInfo.nombreEmpresa) doc.text(headerInfo.nombreEmpresa, 50, y);
+
+      // Disclaimer
+      y += 6;
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      const disclaimerLines = doc.splitTextToSize(disclaimer, pageWidth - 20);
+      disclaimerLines.forEach((line: string, index: number) => {
+        doc.text(line, 10, y + (index * 3));
+      });
+
+      // Firma centrada
+      if (firmaBase64) {
+        const firmaWidth = 45;
+        const firmaX = (pageWidth - firmaWidth) / 2;
+        const firmaY = pageHeight - 50;
+        doc.addImage(firmaBase64, 'PNG', firmaX, firmaY, firmaWidth, 45);
+      }
+    }
+  });
+
+  // Guardar PDF
+  doc.save(`${filename}_${moment().format('YYYYMMDD_HHmmss')}.pdf`);
+}
+
+//EXPORTAR GTIN VENTA EXCEL
+async exportarExcelGtinVenta(options: GS1GtinVentaOptions): Promise<void> {
+  const { data, filename, headerInfo } = options;
+  
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet('Reporte GTIN Venta');
+
+  worksheet.pageSetup = {
+    orientation: 'landscape',
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 0
+  };
+
+  let currentRow = 1;
+
+  // FILA 1: TÍTULO PRINCIPAL
+  const titleCell = worksheet.getCell(`B${currentRow}`);
+  titleCell.value = 'SISTEMA DE CONTROL DE CÓDIGOS';
+  titleCell.font = { name: 'Arial', size: 14, bold: true };
+  titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
+  currentRow++;
+
+  // FILA 2: SUBTÍTULO
+  const subtitleCell = worksheet.getCell(`B${currentRow}`);
+  subtitleCell.value = 'REPORTE DE PRODUCTOS GTIN VENTA';
+  subtitleCell.font = { name: 'Arial', size: 12, bold: true };
+  subtitleCell.alignment = { horizontal: 'left', vertical: 'middle' };
+  currentRow++;
+
+  // FILA 3: Vacía
+  currentRow++;
+
+  // FILA 4: EMPRESA Y CÓDIGO
+  const empresaCell = worksheet.getCell(`B${currentRow}`);
+  empresaCell.value = headerInfo.nombreEmpresa || '';
+  empresaCell.font = { name: 'Arial', size: 11, bold: true, color: { argb: 'FF003366' } };
+  empresaCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
+
+  const codigoCell = worksheet.getCell(`C${currentRow}`);
+  codigoCell.value = headerInfo.codigoEmpresa || '';
+  codigoCell.font = { name: 'Arial', size: 11, bold: true };
+  codigoCell.alignment = { horizontal: 'left', vertical: 'middle' };
+  currentRow++;
+
+  currentRow++; // Fila vacía
+
+  // Información de la empresa
+  const empresaInfo = [
+    { label: 'RUC:', value: headerInfo.ruc || '' },
+    { label: 'GLN:', value: headerInfo.gln || '' },
+    { label: 'Emisor:', value: 'GS1 Ecuador' },
+    { label: 'Fecha emisión :', value: headerInfo.fechaEmision || '' }
+  ];
+
+  empresaInfo.forEach(info => {
+    const labelCell = worksheet.getCell(`B${currentRow}`);
+    labelCell.value = info.label;
+    labelCell.font = { name: 'Arial', size: 10, bold: true };
+
+    const valueCell = worksheet.getCell(`C${currentRow}`);
+    valueCell.value = info.value;
+    valueCell.font = { name: 'Arial', size: 10 };
+    
+    currentRow++;
+  });
+
+  currentRow++; // Fila vacía
+
+  // DISCLAIMER
+  worksheet.mergeCells(`B${currentRow}:H${currentRow}`);
+  const disclaimerCell = worksheet.getCell(`B${currentRow}`);
+  disclaimerCell.value = 'GS1 Ecuador (ECOP) certifica que los códigos GTIN que constan a continuación son auténticos y publicados en www.gs1ec.org Verified by Ecuador.\nEl dueño de la marca del producto pone el código, es su responsabilidad el manejo y control del código, incluida su descripción y marca.\nEl Prefijo Global De Compañía GS1, GCP, es INTRANSFERIBLE.';
+  disclaimerCell.font = { name: 'Arial', size: 10, bold: true };
+  disclaimerCell.alignment = { 
+    horizontal: 'center', 
+    vertical: 'middle', 
+    wrapText: true 
+  };
+  disclaimerCell.fill = {
+    type: 'pattern',
+    pattern: 'solid',
+    fgColor: { argb: 'FFFFFF00' }
+  };
+
+  worksheet.getRow(currentRow).height = 50;
+  currentRow++;
+
+  currentRow++; // Fila vacía
+
+  // HEADERS DE LA TABLA
+  const headers = [
+    { col: 'A', value: '#' },
+    { col: 'B', value: 'CÓDIGO' },
+    { col: 'C', value: 'DESCRIPCIÓN' },
+    { col: 'D', value: 'MARCA' },
+    { col: 'E', value: 'CONTENIDO' },
+    { col: 'F', value: 'UNIDAD' },
+    { col: 'G', value: 'TIPO' },
+    { col: 'H', value: 'FECHA' }
+  ];
+  
+  headers.forEach(header => {
+    const cell = worksheet.getCell(`${header.col}${currentRow}`);
+    cell.value = header.value;
+    cell.font = { name: 'Arial', size: 10, bold: true };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFD3D3D3' }
+    };
+  });
+  currentRow++;
+
+  // DATOS DE LA TABLA
+  data.forEach((producto, index) => {
+    const rowData = [
+      index + 1,
+      producto.codpro || '',
+      producto.despro || '',
+      producto.marca || '',
+      producto.contenido || '',
+      producto.um || '',
+      producto.gtin || '',
+      this.formatearFechaSafe(producto.feccre)
+    ];
+
+    ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].forEach((col, colIndex) => {
+      const cell = worksheet.getCell(`${col}${currentRow}`);
+      cell.value = rowData[colIndex];
+      cell.font = { name: 'Arial', size: 9 };
+      cell.alignment = { horizontal: 'left', vertical: 'middle' };
+    });
+
+    currentRow++;
+  });
+
+  // Intentar agregar logo
+  try {
+    const logoBase64 = await this.configuracionVisualService.getLogoActualBase64();
+    if (logoBase64) {
+      const base64Data = logoBase64.replace(/^data:image\/[a-z]+;base64,/, '');
+      
+      const logoId = workbook.addImage({
+        base64: base64Data,
+        extension: 'png',
+      });
+
+      worksheet.addImage(logoId, {
+        tl: { col: 5.5, row: 2.1 },
+        ext: { width: 170, height: 100 }
+      });
+    }
+  } catch (error) {
+    console.warn('No se pudo cargar el logo:', error);
+  }
+
+  // Configurar anchos de columnas
+  worksheet.columns = [
+    { width: 8 },     // A - #
+    { width: 20.36 }, // B - CÓDIGO  
+    { width: 40.36 }, // C - DESCRIPCIÓN
+    { width: 20.36 }, // D - MARCA
+    { width: 15.36 }, // E - CONTENIDO
+    { width: 15.36 }, // F - UNIDAD
+    { width: 15.36 }, // G - TIPO
+    { width: 16.21 }, // H - FECHA
+  ];
+
+  // Generar y descargar
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], { 
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+  });
+  
+  const url = window.URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `${filename}_${moment().format('YYYYMMDD_HHmmss')}.xlsx`;
+  link.click();
+  
+  window.URL.revokeObjectURL(url);
+}
 private formatearFechaSafe(fecha: any): string {
   if (!fecha) return '';
   

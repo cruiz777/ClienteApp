@@ -47,6 +47,7 @@ import { ObservacionDialogComponent } from './observacion-dialog.component';
 import * as moment from 'moment';
 import { CustomMessageBoxComponent, MessageBoxData } from '../../utils/messages/custom-message-box.component';
 import { CustomValidators } from '../../utils/validators/validator.util';
+import { PermissionsService } from 'src/app/services/permission.service';
 
 interface SsccTablaView { //Interfaz auxiliar para poder mapear solamente lo que se requiere
   id: number;
@@ -300,7 +301,8 @@ export class NuevoSsccComponent implements OnInit, OnDestroy {
     private prefijoService: PrefijoService,
     private usuarioService: UsuarioService,
     private dialog: MatDialog,
-    private exportService: ExportService
+    private exportService: ExportService,
+    public permissions: PermissionsService
     ) {
     // FORM GENERAR
     this.formSSCC = this.fb.group({

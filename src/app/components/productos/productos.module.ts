@@ -48,6 +48,16 @@ import { HotTableModule } from '@handsontable/angular';
 
 // Módulo compartido
 import { SharedModule } from 'src/app/shared/shared.module';
+import { ProductosRoutingModule } from './productos-routing.module';
+import { NuevoProductoComponent } from './nuevo-producto/nuevo-producto.component';
+import { ClienteSeleccionadoComponent } from './cliente-seleccionado/cliente-seleccionado.component';
+import { UvIndividualComponent } from './uv-individual/uv-individual.component';
+import { UvIndividualEditComponent } from './uv-individual-edit/uv-individual-edit.component';
+import { UlComponent } from './ul/ul.component';
+import { UlEditComponent } from './ul-edit/ul-edit.component';
+import { NuevoSsccComponent } from './nuevo-sscc/nuevo-sscc.component';
+import { CuponesComponent } from './cupones/cupones.component';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 // 📌 Registrar locale español
 registerLocaleData(localeEs);
@@ -79,6 +89,15 @@ export const MY_DATE_FORMATS = {
     FormsModule,
     ReactiveFormsModule,
 
+    NuevoProductoComponent,       
+    ClienteSeleccionadoComponent,  
+    UvIndividualComponent,        
+    UvIndividualEditComponent,     
+    UlComponent,                  
+    UlEditComponent,              
+    NuevoSsccComponent,           
+    CuponesComponent,   
+
     // Angular Material
     MatSidenavModule,
     MatListModule,
@@ -97,7 +116,7 @@ export const MY_DATE_FORMATS = {
     MatOptionModule,
     MatAutocompleteModule,
     MatProgressBarModule,
-
+    MatTooltipModule, 
     MatAutocompleteModule,
     MatDatepickerModule,
     MatNativeDateModule,
@@ -106,7 +125,7 @@ export const MY_DATE_FORMATS = {
     AgGridModule,
     AgGridAngular,
     HotTableModule,
-
+    ProductosRoutingModule,
     // Shared
     SharedModule
 

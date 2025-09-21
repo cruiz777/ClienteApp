@@ -1,6 +1,9 @@
 <div class="tabs">
   <button [class.active]="activeTab === 'Transferir'" (click)="cambiarTab('Transferir')">Transferir</button>
-  <button [class.active]="activeTab === 'Listado'" (click)="cambiarTab('Listado')">Listado</button>
+  <button [class.active]="activeTab === 'Listado'" (click)="cambiarTab('Listado')"
+  [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.listado'))"
+  [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.listado')) ? 'Sin permisos' : ''"
+  >Listado</button>
   <button [class.active]="activeTab === 'Asignar'" (click)="cambiarTab('Asignar')">Asignar GLN Entidad</button>
 </div>
 
@@ -16,7 +19,12 @@
     <mat-form-field appearance="outline" class="form-campo-largo">
       <mat-label>Cliente</mat-label>
       <input type="text" matInput [formControl]="clienteOrigenControl" [matAutocomplete]="autoOrigen"
-        placeholder="Buscar cliente..." />
+        placeholder="Buscar cliente..." 
+        [readonly]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir'))"
+        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? '1' : '0.5'"
+        [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? 'Sin permisos' : ''"
+        matInput
+        />
       <mat-autocomplete #autoOrigen="matAutocomplete" [displayWith]="mostrarNombreCliente"
         (optionSelected)="seleccionarClienteOrigen($event.option.value)">
         <mat-option *ngFor="let cliente of clientesOrigenFiltrados" [value]="cliente">
@@ -33,7 +41,12 @@
     <mat-form-field appearance="outline" class="form-campo-largo">
       <mat-label>Destino</mat-label>
       <input type="text" matInput [formControl]="clienteDestinoControl" [matAutocomplete]="autoDestino"
-        placeholder="Buscar cliente..." />
+        placeholder="Buscar cliente..." 
+        [readonly]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir'))"
+        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? '1' : '0.5'"
+        [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? 'Sin permisos' : ''"
+        matInput
+        />
       <mat-autocomplete #autoDestino="matAutocomplete" [displayWith]="mostrarNombreCliente"
         (optionSelected)="seleccionarClienteDestino($event.option.value)">
         <mat-option *ngFor="let cliente of clientesDestinoFiltrados" [value]="cliente">
@@ -77,11 +90,19 @@
     <div class="form-actions">
       <div class="form-actions form-actions-horizontal alineado-derecha">
         <button (click)="onNuevaBusqueda()" [class.activo]="botonActivo === 'nueva'"
-          (click)="seleccionarBoton('nueva')">
+          (click)="seleccionarBoton('nueva')"
+          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir'))"
+          [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? 'Sin permisos' : ''"
+          [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? '1' : '0.5'"
+          >
           Nueva Búsqueda
         </button>
         <button (click)="onAsignar()" [class.activo]="botonActivo === 'asignar'"
-          (click)="seleccionarBoton('asignar')">Transferir</button>
+          (click)="seleccionarBoton('asignar')"
+          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir'))"
+          [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? 'Sin permisos' : ''"
+          [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? '1' : '0.5'"
+          >Transferir</button>
       </div>
     </div>
   </ng-container>
@@ -100,7 +121,11 @@
       </div>
 
       <div class="form-actions">
-        <button mat-button [matMenuTriggerFor]="menuExportar">Exportar</button>
+        <button mat-button [matMenuTriggerFor]="menuExportar"
+        [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.exportar'))"
+        [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.exportar')) ? 'Sin permisos' : ''"
+         [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.exportar')) ? '1' : '0.5'"
+        >Exportar</button>
         <mat-menu #menuExportar="matMenu">
           <button mat-menu-item (click)="exportar('pdf')">PDF</button>
           <button mat-menu-item (click)="exportar('excel')">Excel</button>
@@ -175,7 +200,12 @@
             <mat-form-field appearance="outline" class="form-campo-largo">
               <mat-label>Cliente</mat-label>
               <input type="text" matInput [formControl]="clienteEntidadControl" [matAutocomplete]="autoOrigen"
-                placeholder="Buscar cliente..." />
+                placeholder="Buscar cliente..." 
+                [readonly]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir'))"
+                [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? '1' : '0.5'"
+                [title]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.transferir')) ? 'Sin permisos' : ''"
+                matInput
+                />
               <mat-autocomplete #autoOrigen="matAutocomplete" [displayWith]="mostrarNombreCliente"
                 (optionSelected)="seleccionarClienteEntidad($event.option.value)">
                 <mat-option *ngFor="let cliente of clientesEntidadFiltrados" [value]="cliente">
@@ -188,11 +218,23 @@
 
           <div class="form-actions form-actions-horizontal alineado-derecha">
             <button (click)="onBuscar('llive')" [class.activo]="botonActivo === 'buscar'"
-              (click)="seleccionarBoton('buscar')">Buscar</button>
+              (click)="seleccionarBoton('buscar')"
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.asignar-gln-entidad'))"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.asignar-gln-entidad')) ? 'Sin permisos' : ''"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.asignar-gln-entidad')) ? '1' : '0.5'"
+              >Buscar</button>
             <button (click)="onNuevaBusqueda2()" [class.activo]="botonActivo === 'nueva'"
-              (click)="seleccionarBoton('nueva')">Nueva Búsqueda</button>
+              (click)="seleccionarBoton('nueva')"
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.asignar-gln-entidad'))"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.asignar-gln-entidad')) ? 'Sin permisos' : ''"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.asignar-gln-entidad')) ? '1' : '0.5'"
+              >Nueva Búsqueda</button>
             <button (click)="asignarOrdenPrefijo()" [class.activo]="botonActivo === 'asignar'"
-              (click)="seleccionarBoton('asignar')">Asignar</button>
+              (click)="seleccionarBoton('asignar')"
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.asignar-gln-entidad'))"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.asignar-gln-entidad')) ? 'Sin permisos' : ''"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-prefijo.asignar-gln-entidad')) ? '1' : '0.5'"
+              >Asignar</button>
           </div>
 
         </div>

@@ -55,6 +55,7 @@ import { ExportService } from 'src/app/services/export.service';
 import { ExportOptions } from 'src/app/interfaces/export-options';
 import { EmpresaService } from 'src/app/services/empresa.service';
 import { LogoService } from 'src/app/services/logo.service';
+import { PermissionsService } from 'src/app/services/permission.service';
 const ELEMENT_DATA: HistorialClienteRequest[] = [
   {
     id_historial_cliente: 1,
@@ -197,6 +198,7 @@ export class DialogClienteEditarComponent implements OnInit {
     private exportService: ExportService,
     private empresaService: EmpresaService,
     private logoService: LogoService,
+    public permissions: PermissionsService
   ) { }
 
  ngOnInit(): void {
@@ -371,9 +373,7 @@ export class DialogClienteEditarComponent implements OnInit {
   get paso4Form(): FormGroup {
     return this.formCliente.get('paso4') as FormGroup;
   }
-
-
-
+  
   cargarGrupos(): void {
     this.grupoService.obtenerGrupos().subscribe(data => {
       this.grupos = data;
@@ -718,7 +718,7 @@ export class DialogClienteEditarComponent implements OnInit {
 
   cancelar(): void {
     this.dialogRef.close("editado");
-    this.router.navigate(['/pages/clientes']); // Redirecciona a /pages/clientes
+    this.router.navigate(['/codbar/ficha-de-cliente/listado-clientes']); // Redirecciona a /pages/clientes
   }
   actualizar(): void {
 

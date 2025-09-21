@@ -8,17 +8,25 @@
     <img *ngIf="logoUrl" [src]="logoUrl" alt="Logo de la empresa" class="gs1-logo" />
   </div>
 
-
+  <!-- Sistemas con permisos dinámicos -->
   <div class="product-icons">
-    <img src="/assets/logo/CODBAR-GS1-2.png" alt="CODBAR GS1" class="codbar-gs1" [routerLink]="'/menus/codbar'"
-      style="cursor: pointer" />
-    <img src="/assets/logo/SIC-3000-2.png" alt="SIC 3000" class="rol3000" [routerLink]="'/sic-3000/inicio-sic'"
-      style="cursor: pointer" />
-
-    <img src="/assets/logo/CG-3000-2.png" alt="CG 3000" class="cg3000" />
-    <img src="/assets/logo/ROL-3000-2.png" alt="ROL 3000" class="rol3000" />
-    <img src="/assets/logo/seguridad-2.png" alt="Seguridad" class="seguridad" [routerLink]="'/seguridades/inicio'"
-      style="cursor: pointer" />
+    <div *ngFor="let sistema of sistemas" 
+         class="sistema-container"
+         [class.sin-permisos]="!sistema.tienePermiso"
+         [class.con-permisos]="sistema.tienePermiso"
+         (click)="navegarA(sistema, $event)">
+      
+      <img [src]="sistema.imagenInactiva" 
+           [alt]="sistema.nombre" 
+           class="sistema-icon"
+           [style.cursor]="sistema.tienePermiso ? 'pointer' : 'not-allowed'"
+           [style.opacity]="sistema.tienePermiso ? '1' : '0.4'" />
+      
+      <!-- Imagen hover (solo se muestra en hover si tiene permisos) -->
+      <img [src]="sistema.imagenActiva" 
+           [alt]="sistema.nombre" 
+           class="sistema-icon sistema-icon-hover" />
+    </div>
   </div>
 
   <!-- Botón avatar fijo -->
@@ -39,6 +47,4 @@
     </div>
     <button class="logout-button" (click)="logout()">Cerrar sesión</button>
   </div>
-
-
 </section>

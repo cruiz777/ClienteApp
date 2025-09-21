@@ -12,6 +12,8 @@ import { ExportProductoResponse, ExportProductosResponse, ProductoDisplay, Produ
 import { ExportProductosQuery, ProductoLicenseQuery } from '../interfaces/responses/export-products-response';
 import { SendToApiRequest } from '../interfaces/requests/enviar-api-verified-request';
 import { ProductoDetalleResponse } from '../interfaces/responses/producto-detalle-response';
+import { ClienteValidadoDTO, ClienteValidadoResultadoDTO } from '../interfaces/requests/cliente-validado';
+import { ClienteBasicoResponse } from '../interfaces/responses/cliente-validar-response';
 
 
 export interface ClienteLicenseQuery {
@@ -35,10 +37,38 @@ export class ValidacionService {
 
   constructor(private http: HttpClient) {}
 
+  // ✅ Validación Masiva
+    validarMasivo(clienteIds: number[]): Observable<ApiResponse<ClienteValidadoResultadoDTO[]>> {
+      return this.http.post<ApiResponse<ClienteValidadoResultadoDTO[]>>(`${this.baseUrl}/ClientesLicenses/validar-masivo`, clienteIds);
+    }
+  
+    // ✅ Validación Unitaria
+    validarUno(clienteId: number): Observable<ApiResponse<ClienteValidadoDTO>> {
+      return this.http.post<ApiResponse<ClienteValidadoDTO>>(
+        `${this.baseUrl}/ClientesLicenses/validar`,
+        clienteId, // ✅ pasar el número directamente
+        {
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
   updateCliente(idCliente: number, request: UpdateClienteRequest): Observable<ApiListResponse<boolean>> {
-    return this.http.put<ApiListResponse<boolean>>(`${this.baseUrl}/Clientes/validacion/${idCliente}`, request);
+    return this.http.put<ApiListResponse<boolean>>(`${this.baseUrl}/ClientesLicenses/validacion/${idCliente}`, request);
   }
 
+  getClientesBasicos(
+    page: number = 1,
+    pageSize: number = 10
+  ): Observable<ApiResponse<PaginationResponse<ClienteBasicoResponse>>> {
+    let params = new HttpParams()
+      .set('page', page.toString())
+      .set('pageSize', pageSize.toString());
+
+    return this.http.get<ApiResponse<PaginationResponse<ClienteBasicoResponse>>>(
+      `${this.baseUrl}/ClientesLicenses/basicos`, 
+      { params }
+    );
+  }
   /**
    * Obtiene las licencias de clientes con filtros opcionales
    * @param query Parámetros de búsqueda y filtros

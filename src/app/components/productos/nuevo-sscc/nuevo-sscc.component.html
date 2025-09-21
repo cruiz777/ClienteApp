@@ -1,7 +1,13 @@
 <div class="tabs">
   <button [class.active]="activeTab === 'Listado'" (click)="cambiarTab('Listado')">Listado SSCC</button>
-  <button [class.active]="activeTab === 'Generar'" (click)="cambiarTab('Generar')">Generar SSCC</button>
-  <button [class.active]="activeTab === 'Reportes'" (click)="cambiarTab('Reportes')">Reportes</button>
+  <button [class.active]="activeTab === 'Generar'" (click)="cambiarTab('Generar')"
+          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-sscc.generar-sscc'))"
+          [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-sscc.generar-sscc')) ? 'Sin permisos' : ''"
+  >Generar SSCC</button>
+  <button [class.active]="activeTab === 'Reportes'" (click)="cambiarTab('Reportes')"
+          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-sscc.reportes'))"
+          [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-sscc.reportes')) ? 'Sin permisos' : ''"
+  >Reportes</button>
 </div>
 
 <!-- TAB LISTADO -->
@@ -57,7 +63,9 @@
       <input matInput [(ngModel)]="filtroSerialHasta" placeholder="Ej: 2786..." (keypress)="CustomValidators.onlyNumbersKeyPress($event)">
     </mat-form-field>
     <button mat-raised-button color="primary" (click)="buscarConFiltros()" class="boton-azul-oscuro" [disabled]="!puedeBuscar">Buscar</button>
-    <button mat-flat-button color="warn" (click)="eliminarSeleccionados()" [disabled]="!tieneSeleccion">Eliminar</button>
+    <button mat-flat-button color="warn" (click)="eliminarSeleccionados()"
+      [disabled]="!tieneSeleccion ||!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-sscc.eliminar'))" 
+    >Eliminar</button>
      <button mat-stroked-button (click)="limpiarFiltros()">
       <mat-icon>clear</mat-icon> Limpiar Filtros </button>
   </div>

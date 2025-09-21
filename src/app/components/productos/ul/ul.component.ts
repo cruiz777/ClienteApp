@@ -553,7 +553,7 @@ export class UlComponent implements OnInit {
 
 
   salir(): void {
-    this.router.navigate(['/menuProductos/nuevoProducto']); // Redirecciona a /pages/clientes
+    this.router.navigate(['/productos/nuevo-producto']); // Redirecciona a /pages/clientes
     // Navegación si aplica
   }
 
@@ -1002,7 +1002,7 @@ export class UlComponent implements OnInit {
     this.formUL.get('descripcionu')?.setValue(descripcionUL);
   }
   generarUL(): void {
- 
+    debugger
     const gtinPrincipal =
       this.formUV.get('gtinNacionalSeleccionado')?.value ||
       this.formUV.get('gtinInternacionalSeleccionado')?.value;

@@ -1,0 +1,106 @@
+<div class="contenedor">
+    <h2>Grupo Producto</h2>
+
+   <div class="buscador-contenedor">
+  <!-- Exportar a la izquierda -->
+  <div class="exportar-izquierda">
+    <mat-form-field appearance="outline" class="input-busqueda">
+      <mat-label>Buscar</mat-label>
+      <input matInput (keyup)="aplicarFiltro($event)" placeholder="Buscar grupo" />
+    </mat-form-field>
+    
+  </div>
+
+  <!-- Buscar y Nuevo a la derecha -->
+  <div class="buscar-nuevo-derecha">
+    
+    <button button mat-raised-button color="accent"[matMenuTriggerFor]="menuExportar"
+                        [disabled]="!((permissions.permisos$ | async)?.includes('codbar.configuracion.grupo-producto.exportar'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.configuracion.grupo-producto.exportar')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.configuracion.grupo-producto.exportar')) ? 'auto' : 'none'"
+                        [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.configuracion.grupo-producto.exportar')) ? 'Sin permisos' : ''"
+                        matInput
+    >Exportar</button>
+    <mat-menu #menuExportar="matMenu">
+      <button mat-menu-item (click)="exportar('pdf')">PDF</button>
+      <button mat-menu-item (click)="exportar('excel')">Excel</button>
+    </mat-menu>
+    <button mat-flat-button color="primary" (click)="nuevo()"
+                        [disabled]="!((permissions.permisos$ | async)?.includes('codbar.configuracion.grupo-producto.nuevo'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.configuracion.grupo-producto.nuevo')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.configuracion.grupo-producto.nuevo')) ? 'auto' : 'none'"
+                        [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.configuracion.grupo-producto.nuevo')) ? 'Sin permisos' : ''"
+                        matInput
+    >Nuevo</button>
+  </div>
+</div>
+
+
+
+
+
+
+    <table mat-table [dataSource]="dataSource" class="mat-elevation-z1">
+        <ng-container matColumnDef="index">
+            <th mat-header-cell *matHeaderCellDef>#</th>
+            <td mat-cell *matCellDef="let row; let i = index">{{ row.id_grupo_producto}}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="codigo">
+            <th mat-header-cell *matHeaderCellDef>Código</th>
+            <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
+        </ng-container>
+        <ng-container matColumnDef="brick">
+            <th mat-header-cell *matHeaderCellDef>Brick</th>
+            <td mat-cell *matCellDef="let row">{{ row.brick }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="descripcion">
+            <th mat-header-cell *matHeaderCellDef>Descripción</th>
+            <td mat-cell *matCellDef="let row">{{ row.descripcion }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="estado">
+            <th mat-header-cell *matHeaderCellDef>Estado</th>
+            <td mat-cell *matCellDef="let row">
+                {{ row.estado ? 'ACTIVO' : 'INACTIVO' }}
+            </td>
+        </ng-container>
+
+        <ng-container matColumnDef="opcion">
+            <th mat-header-cell *matHeaderCellDef>Actualizar</th>
+            <td mat-cell *matCellDef="let row">
+                <button mat-icon-button color="accent" (click)="editar(row)"
+                        [disabled]="!((permissions.permisos$ | async)?.includes('codbar.configuracion.grupo-producto.actualizar'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.configuracion.grupo-producto.actualizar')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.configuracion.grupo-producto.actualizar')) ? 'auto' : 'none'"
+                        [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.configuracion.grupo-producto.actualizar')) ? 'Sin permisos' : ''"
+                        matInput
+                >
+                    <mat-icon style="color: #1976d2;">edit</mat-icon>
+                </button>
+            </td>
+        </ng-container>
+        <ng-container matColumnDef="borrar">
+            <th mat-header-cell *matHeaderCellDef>Eliminar</th>
+            <td mat-cell *matCellDef="let row">
+                <button mat-icon-button color="accent" (click)="borrar(row)"
+                        [disabled]="!((permissions.permisos$ | async)?.includes('codbar.configuracion.grupo-producto.eliminar'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.configuracion.grupo-producto.eliminar')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.configuracion.grupo-producto.eliminar')) ? 'auto' : 'none'"
+                        [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.configuracion.grupo-producto.eliminar')) ? 'Sin permisos' : ''"
+                        matInput
+                >
+                    <mat-icon>delete</mat-icon>
+                </button>
+            </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+
+    <mat-paginator [pageSize]="20" [pageSizeOptions]="[20, 50, 100]" showFirstLastButtons>
+    </mat-paginator>
+
+</div>

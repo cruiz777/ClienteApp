@@ -48,6 +48,7 @@ import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, MatNativeDateModule } f
 import { MomentDateAdapter } from '@angular/material-moment-adapter';
 import { JsonProductoService } from 'src/app/services/json-producto.service';
 import { ParametrosFacturaService, ParametrosFactura } from 'src/app/services/parametros-factura.service';
+import { finalize } from 'rxjs/operators';
 export const MY_DATE_FORMATS = {
   parse: {
     dateInput: 'DD/MM/YYYY'
@@ -566,7 +567,7 @@ export class UvIndividualEditComponent implements OnInit {
 
 
   salir(): void {
-    this.router.navigate(['/menuProductos/nuevoProducto']); // Redirecciona a /pages/clientes
+    this.router.navigate(['/productos/nuevo-producto']); // Redirecciona a /pages/clientes
     // Navegación si aplica
   }
 
@@ -1041,22 +1042,36 @@ export class UvIndividualEditComponent implements OnInit {
     const codbar = this.route.snapshot.paramMap.get('codbar');
     if (!codbar) return;
 
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      disableClose: true,
+      data: {
+        title: 'Cargando Producto ...',
+        message: 'Por favor espere mientras se cargan los datos del cliente.',
+        type: 'info',
+        isLoading: true,
+        loadingText: 'Cargando información...',
+        showCancel: false
+      }
+    });
+
     this.productoService.buscarPorCodbar(codbar).pipe(take(1)).subscribe({
       next: (producto) => {
         if (!producto) {
           console.warn('⚠️ Producto no encontrado');
+          loadingDialog.close();
           return;
         }
-        console.log(producto);
+
         this.idProducto = producto.IdProducto;
         this.cargarTipoGtin(producto);
         this.cargarUnidadesMedida(producto);
         this.cargarSector(producto);
         this.cargarPaisDesdeProducto(producto);
         this.cargarCodigos14PorGtin(codbar);
-        this.abrevia = producto.Abrevia !== null && producto.Abrevia !== undefined ? producto.Abrevia : '';
-        // Cargar prefijos por cliente
+        this.abrevia = (producto.Abrevia ?? '');
+
         const codigoCliente: number = Number(producto.clienteCodigo || producto.clienteCodigo);
+
         this.prefijoService.obtenerPorClienteCodigo(codigoCliente).pipe(take(1)).subscribe({
           next: (prefijos) => {
             this.prefijos = prefijos;
@@ -1065,12 +1080,10 @@ export class UvIndividualEditComponent implements OnInit {
             if (prefijoCoincidente) {
               this.formUV.get('gcp')?.setValue(prefijoCoincidente.id_prefijos);
               this.formUV.get('gln')?.setValue(prefijoCoincidente.gln);
-              //this.onPrefijoBlur();
             } else {
               console.warn('⚠️ No se encontró prefijo coincidente con codpre:', producto.codpre);
             }
 
-            // Cargar grupos y seleccionar el grupo correspondiente
             this.grupoProductoService.obtenerGrupos().pipe(take(1)).subscribe({
               next: (grupos) => {
                 this.gruposProducto = grupos;
@@ -1078,7 +1091,7 @@ export class UvIndividualEditComponent implements OnInit {
                 const grupo = this.gruposProducto.find(g =>
                   g.id_grupo_producto === Number(producto.idgrupoproducto)
                 );
-                console.log(producto);
+
                 if (grupo) {
                   this.formUV.get('categoria')?.setValue(grupo);
                   this.formUV.get('brick')?.setValue(grupo.brick);
@@ -1086,13 +1099,11 @@ export class UvIndividualEditComponent implements OnInit {
                   console.warn('⚠️ No se encontró grupo coincidente con idgrupoproducto:', producto.idgrupoproducto);
                 }
 
-                // Asignar los demás valores al formulario
                 this.formUV.patchValue({
                   descripcion: producto.Despro || '',
                   marca: producto.marca || '',
                   contenido: producto.contenido || '',
                   unidadesMedida: producto.unidad || '',
-                  //pais: producto.pais || 'EC',
                   grupo: Number(producto.idgrupoproducto) || 0,
                   idProducto: producto.IdProducto || null,
                   gtinUv: producto.codbar || '',
@@ -1110,24 +1121,29 @@ export class UvIndividualEditComponent implements OnInit {
                     google: producto.p6 === 1,
                   }
                 });
-                this.botonGrabarDeshabilitado = true;
 
+                this.botonGrabarDeshabilitado = true;
+                loadingDialog.close(); // ✅ cierre en éxito final
               },
               error: (err) => {
                 console.error('❌ Error al cargar grupos de producto:', err);
+                loadingDialog.close(); // ✅ cierre en error
               }
             });
           },
           error: (err) => {
             console.error('❌ Error al cargar prefijos:', err);
+            loadingDialog.close(); // ✅ cierre en error
           }
         });
       },
       error: (err) => {
         console.error('❌ Error al cargar producto:', err);
+        loadingDialog.close(); // ✅ cierre en error
       }
     });
   }
+
 
   cargarTipoGtin(producto: any): void {
 
@@ -1260,18 +1276,18 @@ export class UvIndividualEditComponent implements OnInit {
     });
   }
 
- formatearFecha(fechaStr: string | Date): string {
-  if (typeof fechaStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
-    const [anio, mes, dia] = fechaStr.split('-');
+  formatearFecha(fechaStr: string | Date): string {
+    if (typeof fechaStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(fechaStr)) {
+      const [anio, mes, dia] = fechaStr.split('-');
+      return `${dia}/${mes}/${anio}`;
+    }
+
+    const fecha = new Date(fechaStr);
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const anio = fecha.getFullYear();
     return `${dia}/${mes}/${anio}`;
   }
-
-  const fecha = new Date(fechaStr);
-  const dia = String(fecha.getDate()).padStart(2, '0');
-  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-  const anio = fecha.getFullYear();
-  return `${dia}/${mes}/${anio}`;
-}
 
 
 
@@ -1306,7 +1322,7 @@ export class UvIndividualEditComponent implements OnInit {
     console.log('➡️ Doble clic sobre:', registro);
 
     if (registro?.g14) {
-      this.router.navigate(['/menuProductos/ulEdit', registro.g14]);
+      this.router.navigate(['/productos/ul-edit/:g14', registro.g14]);
     } else {
       console.warn('⚠️ g14 no disponible en el registro:', registro);
     }

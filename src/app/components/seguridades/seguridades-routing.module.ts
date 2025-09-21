@@ -1,56 +1,68 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
-import { EmpresasListComponent } from '../seguridades/empresas/empresa-list/empresas-list.component';
 import { SeguridadesComponent } from './seguridades.component';
 import { SeguridadesInicioComponent } from './inicio/inicio.component';
+import { AuthGuard } from 'src/app/guards/auth.guard';
+import { PermissionGuard } from 'src/app/guards/permission.guard';
 
 const routes: Routes = [
   {
     path: '',
-    component: SeguridadesComponent,
+    component: SeguridadesComponent, // Layout principal de SEGURIDADES
+    canActivate: [AuthGuard], // Solo verificar autenticación al nivel padre
     children: [
-      {
-        path: 'empresas',
-        loadChildren: () => import('./empresas/empresa.module').then(m => m.EmpresasModule)
-      },
-      {
-        path: 'entidades',
-        loadChildren: () => import('./entidades/entidad.module').then(m => m.EntidadModule)
-      },
-      {
-        path: 'perfiles',
-        loadChildren: () => import('./perfiles/perfiles.module').then(m => m.PerfilesModule)
-      },
-      {
-        path: 'departamentos',
-        loadChildren: () => import('./departamentos/departamentos.module').then(m => m.DepartamentosModule)
-      },
-      {
-        path: 'usuarios',
-        loadChildren: () => import('./usuarios/usuarios.module').then(m => m.UsuariosModule)
-      },
-      {
-        path: 'zonas',
-        loadChildren: () => import('./zona/zona.module').then(m => m.ZonaModule)
-      },
-      {
-        path: 'proyectos',
-        loadChildren: () => import('./configuracion/proyecto/proyecto.module').then(m => m.ProyectoModule)
-      },
-      {
-        path: 'segmento-negocio',
-        loadChildren: () => import('./configuracion/segment-negocio/segmento-negocio.module').then(m => m.SegmentoNegocioModule)
-      },
-      {
-        path: '',
-        redirectTo: 'inicio',
-        pathMatch: 'full'
-      },
+      // Página de inicio de SEGURIDADES (sin guard de permisos)
+      { path: '', redirectTo: 'inicio', pathMatch: 'full' },
       { path: 'inicio', component: SeguridadesInicioComponent },
+
+      // MÓDULO: Usuarios/Perfiles - CON GUARDS APLICADOS
+      { 
+        path: 'usuarios',
+        loadChildren: () => import('./usuarios/usuarios.module').then(m => m.UsuariosModule),
+        canActivate: [PermissionGuard] // GUARD APLICADO
+      },
+      { 
+        path: 'perfiles',
+        loadChildren: () => import('./perfiles/perfiles.module').then(m => m.PerfilesModule),
+        canActivate: [PermissionGuard] // GUARD APLICADO
+      },
+      { 
+        path: 'departamentos',
+        loadChildren: () => import('./departamentos/departamentos.module').then(m => m.DepartamentosModule),
+        canActivate: [PermissionGuard] // GUARD APLICADO
+      },
+
+      // MÓDULO: Entidades - CON GUARDS APLICADOS  
+      { 
+        path: 'entidades',
+        loadChildren: () => import('./entidades/entidad.module').then(m => m.EntidadModule),
+        canActivate: [PermissionGuard] // GUARD APLICADO
+      },
+
+      // MÓDULO: Configuración - CON GUARDS APLICADOS
+      { 
+        path: 'empresas',
+        loadChildren: () => import('./empresas/empresa.module').then(m => m.EmpresasModule),
+        canActivate: [PermissionGuard] // GUARD APLICADO
+      },
+      { 
+        path: 'zonas',
+        loadChildren: () => import('./zona/zona.module').then(m => m.ZonaModule),
+        canActivate: [PermissionGuard] // GUARD APLICADO
+      },
+      { 
+        path: 'proyectos',
+        loadChildren: () => import('./configuracion/proyecto/proyecto.module').then(m => m.ProyectoModule),
+        canActivate: [PermissionGuard] // GUARD APLICADO
+      },
+      { 
+        path: 'segmento-negocio',
+        loadChildren: () => import('./configuracion/segment-negocio/segmento-negocio.module').then(m => m.SegmentoNegocioModule),
+        canActivate: [PermissionGuard] // GUARD APLICADO
+      }
     ]
   }
 ];
-
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],

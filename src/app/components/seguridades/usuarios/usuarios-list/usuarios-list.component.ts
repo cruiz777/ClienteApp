@@ -5,6 +5,7 @@ import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { UsuarioService } from 'src/app/services/usuario.service';
 import { UsuariosResponse } from 'src/app/interfaces/responses/usuario-response';
 import { UsuariosFormComponent } from '../usuarios-form/usuarios-form.component';
+import { PermissionsService } from 'src/app/services/permission.service';
 
 @Component({
   selector: 'app-usuarios-list',
@@ -22,7 +23,8 @@ export class UsuariosListComponent implements OnInit {
 
   constructor(
     private dialog: MatDialog,
-    private usuarioService: UsuarioService
+    private usuarioService: UsuarioService,
+    public permissions: PermissionsService
   ) { }
 
   ngOnInit(): void {

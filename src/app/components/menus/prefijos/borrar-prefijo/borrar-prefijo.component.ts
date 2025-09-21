@@ -21,6 +21,8 @@ import { EmpresaService } from 'src/app/services/empresa.service';
 import { LogoService } from 'src/app/services/logo.service';
 import { CuponService } from 'src/app/services/cupones.service';
 import { SsccService } from 'src/app/services/sscc.service';
+import { PermissionsService } from 'src/app/services/permission.service';
+import { MatTooltipModule } from '@angular/material/tooltip';
 @Component({
   selector: 'app-borrar-prefijo',
   standalone: true,
@@ -30,7 +32,8 @@ import { SsccService } from 'src/app/services/sscc.service';
     MatFormFieldModule,
     MatInputModule,
     MatMenuModule,
-    MatButtonModule
+    MatButtonModule,
+    MatTooltipModule
   ],
   templateUrl: './borrar-prefijo.component.html',
   styleUrl: './borrar-prefijo.component.css'
@@ -57,7 +60,8 @@ export class BorrarPrefijoComponent implements OnInit {
     private empresaService: EmpresaService,
     private logoService: LogoService,
     private cuponService:CuponService,
-    private ssccService:SsccService
+    private ssccService:SsccService,
+    public permissions: PermissionsService
   ) { }
 
   ngOnInit(): void {

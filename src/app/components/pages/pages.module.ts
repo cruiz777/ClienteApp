@@ -1,7 +1,6 @@
 import { NgModule, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PagesRoutingModule } from './pages-routing.module';
-import { NavigationComponent } from './navigation/navigation.component';
 import { PagesComponent } from './pages.component';
 import { RouterModule } from '@angular/router';
 import { LayoutModule } from '@angular/cdk/layout';
@@ -35,42 +34,10 @@ import { ProductoDetalleComponent } from './validacion/validacion-verified/valid
 
 @NgModule({
   declarations: [
-    PagesComponent,
-    NavigationComponent,
 
-    DashboardComponent,
-    ClientesComponent,
-    DialogClienteComponent,
-    DialogClienteEditarComponent,
-    NuevoClienteComponent,
-    TipoClienteListComponent,
-    TipoClienteFormComponent,
-    GrupoClienteListComponent,
-    GrupoClienteFormComponent,
-    TipoLocalizacionListComponent,
-    TipoLocalizacionFormComponent,
-    DialogPrefijoComponent,
-    DialogPrefijoEditarComponent,
-    ValidacionSriListComponent,
-    LicenseValidatorComponent,
-    ProductsLicenseValidator,
-    ProductoDetalleComponent,
-    CustomMessageBoxComponent
   ],
   imports: [
-    CommonModule,
-    PagesRoutingModule,
-    RouterModule,
-    LayoutModule,
-    MatSidenavModule,
-    MatToolbarModule,
-    MatMenuModule,
-    MatListModule,
-    MatIconModule,
-    ReusableModule,
-    ReactiveFormsModule,
-    FormsModule,
-    ProductosModule
+  
   ]
 })
 export class PagesModule { }

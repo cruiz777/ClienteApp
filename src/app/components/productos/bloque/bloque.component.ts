@@ -1361,6 +1361,7 @@ export class BloqueComponent implements OnInit {
 
 
   generar14(): void {
+    debugger
     this.rowData = [...this.rowData];
     this.gridApi.setFocusedCell(0, 'factor');
 
@@ -1646,7 +1647,7 @@ export class BloqueComponent implements OnInit {
 
 
   salir(): void {
-    this.router.navigate(['/menuProductos/nuevoProducto']);
+    this.router.navigate(['/productos/nuevo-producto']);
   }
   verificarFinalizacionProceso(): void {
     const total = this.procesadosExitosos + this.procesadosFallidos;
@@ -1789,9 +1790,18 @@ export class BloqueComponent implements OnInit {
         console.warn(`❌ Datos inválidos en fila: indicador "${indicador}", gtinUv "${gtinUv}"`);
         return;
       }
+      var ean13
+      var base12
+      if (gtinUv.length === 13) {
+         base12 = gtinUv.substring(0, 12);
+         ean13 = indicador + base12; // ⚠️ sin dígito verificador
+      }
 
-      const base12 = gtinUv.substring(0, 12);
-      const ean13 = indicador + base12;
+      if (gtinUv.length === 12) {
+         base12 = gtinUv.substring(0, 11);
+        ean13 = indicador + '0' + base12; // ⚠️ sin dígito verificador
+      }
+
 
       if (ean13.length !== 13) {
         console.warn(`❌ EAN13 mal formado: "${ean13}"`);
@@ -1889,51 +1899,78 @@ export class BloqueComponent implements OnInit {
     }
   }
 
-  private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoComponent>): Promise<void> {
-    return new Promise((resolve) => {
-      const nuevoCodigo14: Codigos14Request = {
-        id_codigos14: 0,
-        codbar: fila.gtinUv || '',
-        id_prefijos: this.formUV.get('gcp')?.value || 0,
-        clientes_codigo: this.clienteSeleccionado?.clientes_codigo ?? 0,
-        presentacion: fila.indicador || '',
-        unidad: fila.factor || 0,
-        descripcion: fila.descripciong.toUpperCase() || '',
-        g14: fila.gtin14 || '',
-        largo: 0,
-        ancho: 0,
-        profundidad: 0,
-        peso: 0,
-        fecha: new Date().toISOString().slice(0, 10),
-        foto: fila.urlFoto || '',
-        activo: true,
-        id_usuario: this.usuarioActual?.id_usuario ?? 0,
-        codpro: fila.gtinUv || '',
-        facturar: '',
-        nombre: 'PRESENTACION:',
-        gtin: 'GTIN14',
-        target: '',
-        marca: fila.marca || '',
-        sector: 'Retail',
-        referencia: '',
-        abrevia: '',
-        id_producto: fila.idProducto || 0
-      };
+private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoComponent>): Promise<void> {
+  return new Promise((resolve) => {
+    // Validaciones mínimas antes de armar payload
+    const presentacion = Number((fila.indicador ?? '').toString().trim());
+    const unidad = Number((fila.factor ?? '').toString().trim());
+    const g14 = (fila.gtin14 ?? '').toString().trim();
 
-      this.codigos14Service.createCodigo14(nuevoCodigo14).pipe(
-        catchError(err => {
-          console.error(`❌ Error al guardar GTIN-14 para ${fila.gtinUv}:`, err);
-          console.warn('➡️ Objeto enviado:', nuevoCodigo14); // 👈 este muestra los datos enviados
-          this.procesadosFallidos++;
-          return of(null); // continúa el flujo
-        })
-      ).subscribe(() => {
-        if (nuevoCodigo14.g14) this.procesadosExitosos++;
+    if (!Number.isInteger(presentacion) || presentacion < 1 || presentacion > 8) {
+      console.error(`❌ Presentación/indicador inválido para ${fila.gtinUv}:`, fila.indicador);
+      this.procesadosFallidos++;
+      dialogRef.componentInstance.data.procesados = this.procesadosExitosos + this.procesadosFallidos;
+      return resolve();
+    }
+    if (!Number.isInteger(unidad) || unidad <= 0) {
+      console.error(`❌ Factor (unidad) inválido para ${fila.gtinUv}:`, fila.factor);
+      this.procesadosFallidos++;
+      dialogRef.componentInstance.data.procesados = this.procesadosExitosos + this.procesadosFallidos;
+      return resolve();
+    }
+    if (g14.length !== 14) {
+      console.error(`❌ GTIN-14 mal formado para ${fila.gtinUv}:`, g14);
+      this.procesadosFallidos++;
+      dialogRef.componentInstance.data.procesados = this.procesadosExitosos + this.procesadosFallidos;
+      return resolve();
+    }
+
+    const nuevoCodigo14: Codigos14Request = {
+      id_codigos14: 0,
+      codbar: (fila.gtinUv ?? '').toString().trim(),
+      id_prefijos: this.formUV.get('gcp')?.value || 0,
+      clientes_codigo: this.clienteSeleccionado?.clientes_codigo ?? 0,
+      presentacion,                    // ✅ numérico
+      unidad,                          // ✅ numérico (si tu API espera 'factor', cambia el nombre aquí)
+      descripcion: ((fila.descripciong ?? '') + '').toUpperCase(),  // ✅ a prueba de undefined
+      g14,
+      largo: 0,
+      ancho: 0,
+      profundidad: 0,
+      peso: 0,
+      fecha: new Date().toISOString().slice(0, 10),
+      foto: (fila.urlFoto ?? '').toString(),
+      activo: true,
+      id_usuario: this.usuarioActual?.id_usuario ?? 1,  // ✅ nunca 0
+      codpro: (fila.gtinUv ?? '').toString().trim(),
+      facturar: '',
+      nombre: 'PRESENTACION:',
+      gtin: 'GTIN14',
+      target: '',
+      marca: ((fila.marca ?? '') + '').toUpperCase(),
+      sector: 'Retail',
+      referencia: '',
+      abrevia: '',
+      id_producto: fila.idProducto || 0
+    };
+
+    this.codigos14Service.createCodigo14(nuevoCodigo14).subscribe({
+      next: (resp) => {
+        // Ideal: validar resp.type === 'OK' si tu API lo envía
+        this.procesadosExitosos++;
         dialogRef.componentInstance.data.procesados = this.procesadosExitosos + this.procesadosFallidos;
         resolve();
-      });
+      },
+      error: (err) => {
+        this.procesadosFallidos++;
+        console.error(`❌ Error al guardar GTIN-14 para ${fila.gtinUv}:`, err);
+        console.warn('➡️ Payload enviado:', nuevoCodigo14);
+        dialogRef.componentInstance.data.procesados = this.procesadosExitosos + this.procesadosFallidos;
+        resolve();
+      }
     });
-  }
+  });
+}
 
   generar12(): void {
     const idSeleccionado = this.formUV.value.gcp;
@@ -2287,10 +2324,10 @@ export class BloqueComponent implements OnInit {
     return null;
   };
 
-convertirAMayusculas(controlName: string, event: Event): void {
-  const input = event.target as HTMLInputElement;
-  const valor = input.value.toUpperCase();
-  this.formUV.get(controlName)?.setValue(valor);
-}
+  convertirAMayusculas(controlName: string, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const valor = input.value.toUpperCase();
+    this.formUV.get(controlName)?.setValue(valor);
+  }
 
 }

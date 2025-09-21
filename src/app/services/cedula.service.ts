@@ -6,7 +6,7 @@ import { Observable, map } from 'rxjs';
   providedIn: 'root'
 })
 export class CedulaService {
-  private baseUrl = 'http://10.10.7.4:8080/api/services/cedula/';
+  private baseUrl = 'http://pichincha.gapsystem.net:10048/api/services/cedula/';
 
   constructor(private http: HttpClient) {}
 

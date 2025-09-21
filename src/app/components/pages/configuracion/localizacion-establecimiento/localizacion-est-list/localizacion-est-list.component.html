@@ -24,7 +24,13 @@
       </div>
 
       <div class="action-buttons">
-        <button class="new-button" (click)="crearLocalizacion()">Nuevo</button>
+        <button class="new-button" (click)="crearLocalizacion()"
+                        [disabled]="!((permissions.permisos$ | async)?.includes('codbar.configuracion.localizacion-establecimiento.nuevo'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.configuracion.localizacion-establecimiento.nuevo')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.configuracion.localizacion-establecimiento.nuevo')) ? 'auto' : 'none'"
+                        [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.configuracion.localizacion-establecimiento.nuevo')) ? 'Sin permisos' : ''"
+                        matInput
+        >Nuevo</button>
       </div>
     </div>
 
@@ -49,7 +55,13 @@
                 <td class="table-cell">{{ local.descripcion }}</td>
                 <td class="table-cell">{{ local.estado ? 'ACTIVO' : 'INACTIVO' }}</td>
                 <td class="table-cell">
-                  <button class="edit-button"  (click)="editarLocalizacion(local.id_tipo_cliente)">
+                  <button class="edit-button"  (click)="editarLocalizacion(local.id_tipo_cliente)"
+                        [disabled]="!((permissions.permisos$ | async)?.includes('codbar.configuracion.localizacion-establecimiento.editar'))"
+                        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.configuracion.localizacion-establecimiento.editar')) ? '1' : '0.3'"
+                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.configuracion.localizacion-establecimiento.editar')) ? 'auto' : 'none'"
+                        [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.configuracion.localizacion-establecimiento.editar')) ? 'Sin permisos' : ''"
+                        matInput
+                  >
                     <img src="assets/icons/icon-modificar-3.png" alt="Editar" />
                   </button>
                 </td>

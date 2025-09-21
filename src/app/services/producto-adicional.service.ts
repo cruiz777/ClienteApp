@@ -3,6 +3,11 @@ import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
+export interface GtinResumenResponse {
+  gtinTipo: string;
+  cantidad: number;
+  anio: number;
+}
 export interface ApiResponse<T> {
   id: string;
   code: string;
@@ -113,6 +118,9 @@ export class ProductoAdicionalService {
       request
     );
   }
-
+getResumenPorAnio(anio: number): Observable<ApiResponse<GtinResumenResponse[]>> {
+    const url = `${this.apiBaseUrl}/ProductoDatosAdicionales/resumen-gtin-por-anio/${anio}`;
+    return this.http.get<ApiResponse<GtinResumenResponse[]>>(url);
+  }
 
 }
