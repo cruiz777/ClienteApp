@@ -696,7 +696,8 @@ Prefijo: ${d.prefijo ?? ''}`;
 
     const prefijo = String(row.prefijo ?? '').trim();
     const correo = String(row.email ?? '').trim();
-
+    const GrupoCliente=String(row.grupo?? '').trim();
+    const facBloque=1;
     const valor = Number(row.valor ?? 0);                  // mensual
     const subtotal = Number(row.subtotal ?? (valor * 12)); // anual
     const iva = Number(row.iva ?? 0);                      // MONTO de IVA
@@ -717,6 +718,8 @@ Prefijo: ${d.prefijo ?? ''}`;
       numeroGuiaRemision: '.',
       prefijo,
       correo,
+      facBloque,
+      GrupoCliente,
       // cabecera (ajusta a tu API)
       subtotalSIva: subtotal,
       subtotalCalculado: subtotal,

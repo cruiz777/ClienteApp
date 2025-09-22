@@ -439,6 +439,7 @@ export class FacturacionIndividualComponent implements OnInit {
   vInscripcion: number = 0;
   vAsignacion: number = 0;
   vMantenimiento: number = 0
+  grupoCli:string='';
   // Productos desde el backend
   productos: any[] = []; // o usa la interfaz de tu servicio: ProductoResponse[]
   filteredProductos$ = of([] as any[]); // stream para el autocomplete
@@ -701,6 +702,7 @@ export class FacturacionIndividualComponent implements OnInit {
                 this.vInscripcion = ge?.inscripcion ?? 0;
                 this.vAsignacion = ge?.asignacion ?? 0;
                 this.vMantenimiento = ge?.mantenimiento ?? 0;
+                this.grupoCli=ge?.codigo;
                 //alert(this.vMantenimiento);
               }),
               map((ge: any) => `${ge.codigo}   ${ge.nombre}`.trim()),
@@ -768,7 +770,7 @@ export class FacturacionIndividualComponent implements OnInit {
     this.formCliente.reset();
     this.baseGravada = 0;
     this.nombreCliente = '';
-
+    this.grupoCli='';
     // ---- Descuento / Factura (autocompletes)
     this.formFactura.patchValue({ producto: '', descuento: '' }, { emitEvent: false });
     this.descuentoSeleccionado = null;
@@ -1405,6 +1407,8 @@ export class FacturacionIndividualComponent implements OnInit {
     const prefijoObj = this.prefijos.find(p => p.id_prefijos === idPrefijo);
     const prefijo = prefijoObj?.codpre ?? '';
     const correo = this.getEmailsConcat();
+    const facBloque=0;
+    const GrupoCliente=this.grupoCli;
     const totales = this.formTotales.getRawValue();
     const subtotalSIva = Number(this.baseTarifa0 ?? 0);
     const subtotalCalculado = Number(this.baseGravada ?? 0);
@@ -1482,6 +1486,8 @@ export class FacturacionIndividualComponent implements OnInit {
       numeroGuiaRemision,
       prefijo,
       correo,
+      facBloque,
+      GrupoCliente,
       subtotalSIva,
       subtotalCalculado,
       descuentoTotalCalculado,
