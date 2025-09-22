@@ -878,7 +878,7 @@ export class UvIndividualComponent implements OnInit {
 
 
   salir(): void {
-    this.router.navigate(['/menuProductos/nuevoProducto']); // Redirecciona a /pages/clientes
+    this.router.navigate(['/productos/nuevo-producto']); // Redirecciona a /pages/clientes
     // Navegación si aplica
   }
 

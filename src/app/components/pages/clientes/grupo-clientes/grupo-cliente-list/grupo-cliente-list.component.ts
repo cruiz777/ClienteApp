@@ -8,6 +8,7 @@ import { EmpresaService } from 'src/app/services/empresa.service';
 import { ExportService } from 'src/app/services/export.service';
 import { ExportOptions } from 'src/app/interfaces/export-options';
 import * as moment from 'moment';
+import { PermissionsService } from 'src/app/services/permission.service';
 
 @Component({
   selector: 'app-grupo-cliente-list',
@@ -27,7 +28,8 @@ export class GrupoClienteListComponent implements OnInit {
     private router: Router,
     private logoService: LogoService,
     private empresaService: EmpresaService,
-    private exportService: ExportService
+    private exportService: ExportService,
+    public permissions: PermissionsService
   ) {}
 
   ngOnInit(): void {
@@ -80,11 +82,11 @@ export class GrupoClienteListComponent implements OnInit {
   }
 
   nuevo(): void {
-    this.router.navigate(['/menus/grupocliente/crear']);
+    this.router.navigate(['/codbar/ficha-de-cliente/grupo-cliente/crear']);
   }
 
   editar(id: number): void {
-    this.router.navigate(['/menus/grupocliente/editar', id]);
+    this.router.navigate(['/codbar/ficha-de-cliente/grupo-cliente/editar', id]);
   }
 
   // Método para exportar los datos filtrados en formato Excel o PDF

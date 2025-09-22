@@ -22,7 +22,7 @@ import {
 } from 'src/app/components/sic-3000/facturacion/facturacion-meses-modal/facturacion-meses-modal.component';
 import { CellDoubleClickedEvent } from 'ag-grid-community';
 import { DetalleDescripcionModalComponent } from '../detalle-descripcion-modal/detalle-descripcion-modal.component';
-
+import { HttpClient } from '@angular/common/http';
 import {
   FormBuilder,
   FormControl,
@@ -449,6 +449,7 @@ export class FacturacionIndividualComponent implements OnInit {
   productosCount = 0;               // cuántos llegaron
   productosError: string | null = null;
   constructor(
+      private http: HttpClient,
     private clienteService: ClienteService,
     private prefijoService: PrefijoService,
     private usuarioService: UsuarioService,
@@ -1540,8 +1541,7 @@ export class FacturacionIndividualComponent implements OnInit {
                   this.mostrarAlerta(`XML generado en el servidor: ${r.fileName}`, 'ok');
 
                   // 2) Abrir/descargar el PDF inmediatamente (nueva línea)
-                  const pdfUrl = `${environment.invoices_sic}/Facturacion/${idNota}/pdf`;
-                  window.open(pdfUrl, '_blank'); // deja que el backend ponga Content-Disposition
+                  this.descargarPdf(idNota); //Aplica la peticion al interceptor
                 } else {
                   this.mostrarAlerta(r?.message || 'No se generó el XML.', 'error');
                 }
@@ -1581,6 +1581,29 @@ export class FacturacionIndividualComponent implements OnInit {
     });
   }
 
+  private descargarPdf(idNota: number): void {
+    const pdfUrl = `${environment.invoices_sic}/Facturacion/${idNota}/pdf`;
+    
+    this.http.get(pdfUrl, { 
+      responseType: 'blob',
+      observe: 'response' 
+    }).subscribe({
+      next: (response) => {
+        // Crear blob URL y descargar
+        const blob = response.body!;
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `factura-${idNota}.pdf`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: (err) => {
+        console.error('Error descargando PDF:', err);
+        this.mostrarAlerta('Error al descargar el PDF', 'error');
+      }
+    });
+  }
   autoGrow(e: Event) {
     const el = e.target as HTMLTextAreaElement;
     el.style.height = 'auto';

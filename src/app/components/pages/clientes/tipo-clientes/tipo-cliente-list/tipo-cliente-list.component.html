@@ -22,7 +22,10 @@
       </div>
 
       <div class="action-buttons">
-        <button class="new-button" (click)="crearTipoCliente()">Nuevo</button>
+        <button class="new-button" (click)="crearTipoCliente()"
+          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.tipo-cliente.nuevo'))"
+          [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.tipo-cliente.nuevo')) ? 'Sin permisos' : ''"
+        >Nuevo</button>
       </div>
     </div>
   </div>
@@ -48,7 +51,10 @@
         <!-- <td>{{ tipo.empresa }}</td> -->
         <td>{{ tipo.estado ? 'ACTIVO' : 'INACTIVO' }}</td>
         <td>
-          <button class="edit-button" (click)="editarTipoCliente(tipo.id_tipo_cliente)">
+          <button class="edit-button" (click)="editarTipoCliente(tipo.id_tipo_cliente)"
+            [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.tipo-cliente.editar'))"
+            [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.tipo-cliente.editar')) ? 'Sin permisos' : ''"
+          >
             <img src="assets/icons/icon-modificar-3.png" alt="Editar" />
           </button>
         </td>

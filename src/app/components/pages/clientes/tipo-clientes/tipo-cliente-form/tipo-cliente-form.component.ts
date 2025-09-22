@@ -135,7 +135,7 @@ export class TipoClienteFormComponent implements OnInit {
             showCancel: false
           }
         }).afterClosed().subscribe(() => {
-          this.router.navigate(['/menus/tipocliente']);
+          this.router.navigate(['/codbar/ficha-de-cliente/tipo-cliente']);
         });
       },
       error: () => this.mostrarMensajeError('Ocurrió un error al guardar el tipo de cliente.')
@@ -143,7 +143,7 @@ export class TipoClienteFormComponent implements OnInit {
   }
 
   cancelar(): void {
-    this.router.navigate(['/menus/tipocliente']);
+    this.router.navigate(['/codbar/ficha-de-cliente/tipo-cliente']);
   }
 
   private mostrarMensajeError(mensaje: string): void {

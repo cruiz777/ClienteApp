@@ -2,6 +2,11 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { CodbarComponent } from './codbar/codbar.component';
 import { MenusComponent } from './menus.component';
+
+//GUARD de permisos
+import { PermissionGuard } from 'src/app/guards/permission.guard';
+
+// Componentes de CODBAR originales
 import { TipoClienteListComponent } from '../pages/clientes/tipo-clientes/tipo-cliente-list/tipo-cliente-list.component';
 import { TipoClienteFormComponent } from '../pages/clientes/tipo-clientes/tipo-cliente-form/tipo-cliente-form.component';
 import { GrupoClienteListComponent } from '../pages/clientes/grupo-clientes/grupo-cliente-list/grupo-cliente-list.component';
@@ -15,98 +20,164 @@ import { TipoPrefijoComponent } from './prefijos/tipo-prefijo/tipo-prefijo.compo
 import { ValidacionSriListComponent } from '../pages/validacion/validador-sri/validador-sri-list/validador-sri-list.component';
 import { LicenseValidatorComponent } from '../pages/validacion/validador-licenses/validador-licenses.component';
 import { ProductsLicenseValidator } from '../pages/validacion/validador-products/validador-products.component';
+
+// 🆕 Componentes de PAGES integrados
+import { DashboardComponent } from '../pages/dashboard/dashboard.component';
+import { ClientesComponent } from '../pages/clientes/clientes.component';
+import { NuevoClienteComponent } from '../pages/nuevo-cliente/nuevo-cliente.component';
+import { ProductoDetalleComponent } from '../pages/validacion/validacion-verified/validacion-verified.component';
 import { ExploradorComponent } from './explorador/explorador.component';
 import { GerenciaComponent } from './gerencia/gerencia.component';
 import { GrupoProductoListaComponent } from './grupo-producto-lista/grupo-producto-lista.component';
 
 const routes: Routes = [
   {
-    path: '', component: MenusComponent, children: [
-      {path:'codbar',component:CodbarComponent},
+    path: '', 
+    component: MenusComponent, // Layout principal de CODBAR
+    children: [
+      // ✅ Página de inicio de CODBAR (sin guard)
+      { path: '', redirectTo: 'inicio', pathMatch: 'full' },
+      { path: 'inicio', component: CodbarComponent },
 
+      // ✅ MÓDULO: Ficha de Cliente - CON GUARDS APLICADOS
       {
-        path: 'tipocliente',
+        path: 'ficha-de-cliente',
         children: [
-          { path: '', component: TipoClienteListComponent },
-          { path: 'crear', component: TipoClienteFormComponent },
-          { path: 'editar/:id', component: TipoClienteFormComponent }
-        ]
-      },
-      {
-        path: 'grupocliente',
-        children: [
-          { path: '', component: GrupoClienteListComponent },
-          { path: 'crear', component: GrupoClienteFormComponent },
-          { path: 'editar/:id', component: GrupoClienteFormComponent }
-        ]
-      },
-      {
-        path: 'localizacion-establecimiento',
-        children: [
-          { path: '', component: TipoLocalizacionListComponent },
-          { path: 'crear', component: TipoLocalizacionFormComponent },
-          { path: 'editar/:id', component: TipoLocalizacionFormComponent }
-        ]
-      },
-      {path:'tras-prefijo',component:TraspasoPrefijosComponent},
-      {path:'tras-gtin',component:TraspasoGtinComponent},
-      {path:'eliminar-prefijo',component:BorrarPrefijoComponent},
-      {path:'tipo-prefijo',component:TipoPrefijoComponent},
-      {path:'grupo-producto',component:GrupoProductoListaComponent},
-
-      {
-        path: 'validacionsri',
-        children: [
-          { path: '', component: ValidacionSriListComponent },
-          // { path: 'crear', component: TipoLocalizacionFormComponent },
-          // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
-        ]
-      },
-      {
-        path: 'explorador',
-        children: [
-          { path: '', component: ExploradorComponent },
-          // { path: 'crear', component: TipoLocalizacionFormComponent },
-          // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
-        ]
-      },
-
-       {
-        path: 'gerencia',
-        children: [
-          { path: '', component: GerenciaComponent},
-          // { path: 'crear', component: TipoLocalizacionFormComponent },
-          // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
+          // Dashboard/inicio de ficha cliente
+          { path: '', redirectTo: 'listado-clientes', pathMatch: 'full' },
+          
+          // 🔒 Funcionalidades principales PROTEGIDAS
+          { 
+            path: 'listado-clientes', 
+            component: ClientesComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'nuevo-cliente', 
+            component: NuevoClienteComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'consulta-verified', 
+            component: ProductoDetalleComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          
+          // Configuraciones de ficha cliente
+          {
+            path: 'tipo-cliente',
+            canActivate: [PermissionGuard],  // 🔒 GUARD APLICADO AL PADRE
+            children: [
+              { path: '', component: TipoClienteListComponent, canActivate: [PermissionGuard]},
+              { path: 'crear', component: TipoClienteFormComponent,canActivate: [PermissionGuard] },
+              { path: 'editar/:id', component: TipoClienteFormComponent,canActivate: [PermissionGuard] }
+            ]
+          },
+          {
+            path: 'grupo-cliente',
+            canActivate: [PermissionGuard],  // 🔒 GUARD APLICADO AL PADRE
+            children: [
+              { path: '', component: GrupoClienteListComponent ,canActivate: [PermissionGuard]},
+              { path: 'crear', component: GrupoClienteFormComponent,canActivate: [PermissionGuard] },
+              { path: 'editar/:id', component: GrupoClienteFormComponent,canActivate: [PermissionGuard] }
+            ]
+          }
         ]
       },
 
+      // ✅ MÓDULO: Reportes - CON GUARDS APLICADOS
       {
-        path: 'validacion-licenses',
+        path: 'reportes',
         children: [
-          { path: '', component: LicenseValidatorComponent },
-          // { path: 'crear', component: TipoLocalizacionFormComponent },
-          // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
+          { path: '', redirectTo: 'explorador-cliente', pathMatch: 'full' },
+          { 
+            path: 'explorador-cliente', 
+            component: ExploradorComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'gerencia', 
+            component: GerenciaComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          }
         ]
       },
 
+      // ✅ MÓDULO: Transferencia - CON GUARDS APLICADOS
       {
-        path: 'validacion-productos',
+        path: 'transferencia',
         children: [
-          { path: '', component: ProductsLicenseValidator },
-          // { path: 'crear', component: TipoLocalizacionFormComponent },
-          // { path: 'editar/:id', component: TipoLocalizacionFormComponent }
+          { path: '', redirectTo: 'tras-prefijo', pathMatch: 'full' },
+          { 
+            path: 'tras-prefijo', 
+            component: TraspasoPrefijosComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'tras-gtin', 
+            component: TraspasoGtinComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'eliminar-prefijo', 
+            component: BorrarPrefijoComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          }        
+        ]
+      },
+
+      // ✅ MÓDULO: Validación - CON GUARDS APLICADOS
+      {
+        path: 'validacion',
+        children: [
+          { path: '', redirectTo: 'validacionsri', pathMatch: 'full' },
+          { 
+            path: 'validacionsri', 
+            component: ValidacionSriListComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'validacion-licenses', 
+            component: LicenseValidatorComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'validacion-productos', 
+            component: ProductsLicenseValidator,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          }
+        ]
+      },
+
+      // ✅ MÓDULO: Configuración General - CON GUARDS APLICADOS
+      {
+        path: 'configuracion',
+        children: [
+          { path: '', redirectTo: 'localizacion-establecimiento', pathMatch: 'full' },
+          {
+            path: 'localizacion-establecimiento',
+            canActivate: [PermissionGuard],  // 🔒 GUARD APLICADO AL PADRE
+            children: [
+              { path: '', component: TipoLocalizacionListComponent ,canActivate: [PermissionGuard]},
+              { path: 'crear', component: TipoLocalizacionFormComponent,canActivate: [PermissionGuard] },
+              { path: 'editar/:id', component: TipoLocalizacionFormComponent,canActivate: [PermissionGuard]}
+            ]
+          },
+          {
+            path: 'grupo-producto',
+            component: GrupoProductoListaComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'tipo-prefijo', 
+            component: TipoPrefijoComponent,
+            canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          }
         ]
       }
-      
-      // {path:'usuarios',component:UsuariosComponent},
-      // {path:'productos',component:ProductosComponent},
-      // {path:'vender',component:VenderComponent},
-      // {path:'historialventas',component:HistorialventaComponent},
-      // {path:'reportes',component:ReportesComponent}
-
     ]
   }
-  ];
+];
 
 @NgModule({
   imports: [RouterModule.forChild(routes)],

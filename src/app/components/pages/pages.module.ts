@@ -1,7 +1,6 @@
 import { NgModule, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { PagesRoutingModule } from './pages-routing.module';
-import { NavigationComponent } from './navigation/navigation.component';
 import { PagesComponent } from './pages.component';
 import { RouterModule } from '@angular/router';
 import { LayoutModule } from '@angular/cdk/layout';
@@ -32,46 +31,13 @@ import { MatMenuModule } from '@angular/material/menu';
 import { LicenseValidatorComponent } from './validacion/validador-licenses/validador-licenses.component';
 import { ProductsLicenseValidator } from './validacion/validador-products/validador-products.component';
 import { ProductoDetalleComponent } from './validacion/validacion-verified/validacion-verified.component';
-import { ExploradorClientesComponent } from './explorador-clientes/explorador-clientes.component';
+
 @NgModule({
   declarations: [
-    PagesComponent,
-    NavigationComponent,
 
-    DashboardComponent,
-    ClientesComponent,
-    DialogClienteComponent,
-    DialogClienteEditarComponent,
-    NuevoClienteComponent,
-    TipoClienteListComponent,
-    TipoClienteFormComponent,
-    GrupoClienteListComponent,
-    GrupoClienteFormComponent,
-    TipoLocalizacionListComponent,
-    TipoLocalizacionFormComponent,
-    DialogPrefijoComponent,
-    DialogPrefijoEditarComponent,
-    ValidacionSriListComponent,
-    LicenseValidatorComponent,
-    ProductsLicenseValidator,
-    ProductoDetalleComponent,
-    CustomMessageBoxComponent,
-    ExploradorClientesComponent
   ],
   imports: [
-    CommonModule,
-    PagesRoutingModule,
-    RouterModule,
-    LayoutModule,
-    MatSidenavModule,
-    MatToolbarModule,
-    MatMenuModule,
-    MatListModule,
-    MatIconModule,
-    ReusableModule,
-    ReactiveFormsModule,
-    FormsModule,
-    ProductosModule
+  
   ]
 })
 export class PagesModule { }

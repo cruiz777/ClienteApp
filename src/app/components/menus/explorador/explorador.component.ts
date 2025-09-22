@@ -12,6 +12,7 @@ import autoTable from 'jspdf-autotable';
 import { ExportService } from 'src/app/services/export.service';
 import { LogoService } from 'src/app/services/logo.service';
 import { ExportOptions } from 'src/app/interfaces/export-options';
+import { PermissionsService } from 'src/app/services/permission.service';
 interface Cliente {
   clientes_codigo: number;
   nomcli: string;
@@ -33,7 +34,7 @@ interface Cliente {
   styleUrls: ['./explorador.component.css']
 })
 export class ExploradorComponent implements OnInit {
-  @ViewChild(AgGridAngular) agGrid!: AgGridAngular;
+  @ViewChild(AgGridAngular) agGrid?: AgGridAngular;
 
   filtroForm!: FormGroup;
   pageSize = 10;
@@ -79,7 +80,8 @@ export class ExploradorComponent implements OnInit {
   constructor(private fb: FormBuilder, 
     private _snackBar: MatSnackBar,
       private clienteService: ClienteService,
-      private exportService:ExportService
+      private exportService:ExportService,
+      public permissions: PermissionsService
   ) {}
 
   ngOnInit(): void {

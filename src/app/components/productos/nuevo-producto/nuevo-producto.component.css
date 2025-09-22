@@ -767,3 +767,47 @@ table {
   gap: 16px;                /* Espaciado entre botones */
   margin-top: 20px;         /* Opcional, separación superior */
 }
+.blocked-content {
+  position: relative;
+}
+
+.blocked-content > *:not(.permission-overlay) {
+  opacity: 0.3;
+  pointer-events: none;
+  user-select: none;
+}
+
+.permission-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255, 255, 255, 0.9);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.permission-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #666;
+  text-align: center;
+}
+
+.permission-message mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  color: #f44336;
+  margin-bottom: 10px;
+}
+
+.permission-message p {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}

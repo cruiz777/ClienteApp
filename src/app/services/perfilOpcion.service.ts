@@ -21,7 +21,20 @@ export class PerfilOpcionService {
   getOpcionesPorPerfilYMenu(idPerfil: number, idMenu: number): Observable<ApiResponse<PerfilOpciones[]>> {
     return this.http.get<ApiResponse<PerfilOpciones[]>>(`${this.apiUrl}/perfil/${idPerfil}/menu/${idMenu}`)
   }
+  // Asignadas por SUBMENÚ
+  getOpcionesPorPerfilYSubmenu(idPerfil: number, idSub: number): Observable<ApiResponse<PerfilOpciones[]>> {
+    return this.http.get<ApiResponse<PerfilOpciones[]>>(
+      `${this.apiUrl}/perfil/${idPerfil}/submenu/${idSub}`
+    );
+  }
 
+  // Toggle individual (PUT)
+  updateOpcionStatus(idPerfil: number, idOpcion: number, status: boolean): Observable<ApiResponse<boolean>> {
+    return this.http.put<ApiResponse<boolean>>(
+      `${this.apiUrl}/perfil/${idPerfil}/opcion/${idOpcion}`,
+      { status }
+    );
+  }
   actualizarOpcion(perfilOpcion: PerfilOpcion): Observable<ApiResponse<boolean>> {
     return this.http.post<ApiResponse<boolean>>(this.apiUrl, perfilOpcion);
   }

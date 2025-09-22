@@ -3,19 +3,26 @@
   'mobile': isHandset
 }">
 
-<router-outlet></router-outlet>
   <!-- SIDEBAR -->
-  <mat-sidenav #drawer class="sidenav" [mode]="isHandset ? 'over' : 'side'" [opened]="!isHandset || isExpanded"
-    [class.collapsed]="!isExpanded && !isHandset" [fixedInViewport]="true" (backdropClick)="isExpanded = false">
+  <mat-sidenav #drawer
+              class="sidenav"
+              [mode]="isHandset ? 'over' : 'side'"
+              [opened]="!isHandset || isExpanded"
+              [class.collapsed]="!isExpanded && !isHandset"
+              [fixedInViewport]="true"
+              (backdropClick)="isExpanded = false">
 
+    <!-- Logo -->
     <div class="logo-seguridad" *ngIf="isExpanded">
-      <img src="assets/logo/CODBAR-GS1.png" alt="Logo">
+      <a [routerLink]="['/codbar/ficha-de-cliente/listado-clientes']">
+        <img src="assets/logo/CODBAR-GS1.png" alt="Logo">
+      </a>
     </div>
 
     <!-- Menú Principal -->
     <mat-nav-list>
 
-      <!-- Botón para colapsar menú -->
+      <!-- Toggle Sidebar -->
       <mat-list-item (click)="toggleSidebar()" class="menu-toggle">
         <mat-icon>menu</mat-icon>
         <span *ngIf="isExpanded" class="menu-text">Menú</span>
@@ -31,85 +38,106 @@
         </div>
       </mat-list-item>
 
-      <!-- Ítems de menú -->
-      <mat-list-item  [routerLink]="['nuevoProducto']" routerLinkActive="active">
+      <!-- MENÚS CON PERMISOS -->
 
+      <!-- Nuevo Producto -->
+      <a mat-list-item 
+         [routerLink]="((productosPermisos.nuevoProducto | async)) ? ['nuevo-producto'] : null"
+         [class.disabled]="!((productosPermisos.nuevoProducto | async))"
+         (click)="manejarClick('/productos/nuevo-producto', $event)"
+         routerLinkActive="active">
         <div class="menu-item">
           <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
           <span *ngIf="isExpanded" class="menu-text">Nuevo Producto</span>
+          <mat-icon *ngIf="!((productosPermisos.nuevoProducto | async))" class="lock-icon">lock</mat-icon>
         </div>
-      </mat-list-item>
+      </a>
 
-      <mat-list-item [routerLink]="['nuevoGln']" routerLinkActive="active">
+      <!-- Nuevo GLN -->
+      <a mat-list-item 
+         [routerLink]="((productosPermisos.nuevoGln | async)) ? ['nuevo-gln'] : null"
+         [class.disabled]="!((productosPermisos.nuevoGln | async))"
+         (click)="manejarClick('/productos/nuevo-gln', $event)"
+         routerLinkActive="active">
         <div class="menu-item">
           <img src="assets/icons/icon-nuevo-GLN.png" class="menu-icon">
           <span *ngIf="isExpanded" class="menu-text">Nuevo GLN</span>
+          <mat-icon *ngIf="!((productosPermisos.nuevoGln | async))" class="lock-icon">lock</mat-icon>
         </div>
-      </mat-list-item>
+      </a>
 
-      <mat-list-item [routerLink]="['cupones']" routerLinkActive="active">
+      <!-- Cupones -->
+      <a mat-list-item 
+         [routerLink]="((productosPermisos.cupones | async)) ? ['cupones'] : null"
+         [class.disabled]="!((productosPermisos.cupones | async))"
+         (click)="manejarClick('/productos/cupones', $event)"
+         routerLinkActive="active">
         <div class="menu-item">
           <img src="assets/icons/icon-cupones.png" class="menu-icon">
           <span *ngIf="isExpanded" class="menu-text">Cupones</span>
+          <mat-icon *ngIf="!((productosPermisos.cupones | async))" class="lock-icon">lock</mat-icon>
         </div>
-      </mat-list-item>
+      </a>
 
-       <mat-list-item [routerLink]="['nuevoSscc']" routerLinkActive="active">
-
+      <!-- Nuevo SSCC -->
+      <a mat-list-item 
+         [routerLink]="((productosPermisos.nuevoSscc | async)) ? ['nuevo-sscc'] : null"
+         [class.disabled]="!((productosPermisos.nuevoSscc | async))"
+         (click)="manejarClick('/productos/nuevo-sscc', $event)"
+         routerLinkActive="active">
         <div class="menu-item">
           <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
           <span *ngIf="isExpanded" class="menu-text">Nuevo SSCC</span>
+          <mat-icon *ngIf="!((productosPermisos.nuevoSscc | async))" class="lock-icon">lock</mat-icon>
         </div>
-      </mat-list-item>
+      </a>
 
-      <mat-list-item *ngIf="usuarioActual?.id_usuario === 1" [routerLink]="'/NuevoProducto'" routerLinkActive="active">
+      <!-- OPCIONES ADMIN (solo si es usuario 1) -->
+      <a mat-list-item 
+         *ngIf="usuarioActual?.id_usuario === 1" 
+         [routerLink]="['/NuevoProducto']" 
+         routerLinkActive="active">
         <div class="menu-item">
           <img src="assets/icons/icon-cuentas-x-cobrar.png" class="menu-icon">
           <span *ngIf="isExpanded" class="menu-text">Cuentas X Cobrar</span>
         </div>
-      </mat-list-item>
+      </a>
 
-      <mat-list-item *ngIf="usuarioActual?.id_usuario === 1" [routerLink]="'/NuevoProducto'" routerLinkActive="active">
+      <a mat-list-item 
+         *ngIf="usuarioActual?.id_usuario === 1" 
+         [routerLink]="['/NuevoProducto']" 
+         routerLinkActive="active">
         <div class="menu-item">
           <img src="assets/icons/icon-estado-cuenta.png" class="menu-icon">
           <span *ngIf="isExpanded" class="menu-text">Estados de Cuenta</span>
         </div>
-      </mat-list-item>
+      </a>
 
       <!-- Botón salir -->
-      <mat-list-item routerLink="/pages/clientes" class="salir-item">
+      <a mat-list-item 
+         [routerLink]="['/codbar/ficha-de-cliente/listado-clientes']" 
+         class="salir-item">
         <div class="menu-item">
           <img src="assets/icons/icon-salir.png" class="menu-icon">
           <span *ngIf="isExpanded" class="menu-text salir-text">Salir</span>
         </div>
-      </mat-list-item>
+      </a>
 
     </mat-nav-list>
+
   </mat-sidenav>
 
-   <mat-sidenav-content [ngClass]="isExpanded ? 'content-default' : 'content-collapsed'">
+  <!-- CONTENIDO PRINCIPAL -->
+  <mat-sidenav-content [ngClass]="isExpanded ? 'content-default' : 'content-collapsed'">
     <router-outlet></router-outlet>
     <footer class="app-footer" [ngClass]="{ 'footer-collapsed': !isExpanded && !isHandset }">
-  <div class="footer-left">{{ currentDateTime }}</div>
-  <div class="footer-center">
-    <img src="assets/logo/logo-gap.png" alt="GAP System" class="footer-logo">
-    <span class="footer-phone">Telf: 099 970 0288 / 022 464 951</span>
-  </div>
-  <div
-  style="
-    flex: 1;
-    display: flex;
-    justify-content: flex-end;
-    text-align: right;
-    font-weight: 700;
-    font-size: clamp(14px, 1.1vw, 24px);
-  "
->
-  {{ usuarioActual?.nombre_usuario }}
-</div>
-
-</footer>
-
+      <div class="footer-left">{{ currentDateTime }}</div>
+      <div class="footer-center">
+        <img src="assets/logo/logo-gap.png" alt="GAP System" class="footer-logo">
+        <span class="footer-phone">Telf: 099 970 0288 / 022 464 951</span>
+      </div>
+      <div class="footer-right">{{ usuarioActual?.nombre_usuario }}</div>
+    </footer>
   </mat-sidenav-content>
 
 </mat-sidenav-container>

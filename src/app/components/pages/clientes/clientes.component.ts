@@ -11,6 +11,7 @@ import { DialogClienteEditarComponent } from '../modals/dialog-cliente-editar/di
 import { LprefijoComponent } from './lprefijo/lprefijo.component';
 import { CustomMessageBoxComponent } from '../../utils/messages/custom-message-box.component';
 import { FormBuilder, FormGroup } from '@angular/forms';
+import { PermissionsService } from 'src/app/services/permission.service';
 
 @Component({
   selector: 'app-clientes',
@@ -34,6 +35,7 @@ export class ClientesComponent implements OnInit {
     private clienteService: ClienteService,
     private clienteSeleccionadoService: ClienteSeleccionadoService,
     private router: Router,
+    public permissions: PermissionsService,
     private fb: FormBuilder
   ) {}
 
@@ -125,7 +127,7 @@ export class ClientesComponent implements OnInit {
   seleccionarFila(cliente: Cliente): void {
     this.selectedCliente = cliente;
     this.clienteSeleccionadoService.seleccionar(cliente);
-    this.router.navigate(['/menuProductos/clienteSeleccion']);
+    this.router.navigate(['/productos/cliente-seleccion']);
   }
 
   mostrarAlerta(mensaje: string, tipo: string): void {

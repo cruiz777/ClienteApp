@@ -18,8 +18,14 @@
         </div>
 
         <div class="buttons-container">
-          <button class="new-button" (click)="nuevo()">Nuevo</button>
-          <button mat-button [matMenuTriggerFor]="menuExportar" class="export-button">
+          <button class="new-button" (click)="nuevo()"
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.grupo-cliente.nuevo'))"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.grupo-cliente.nuevo')) ? 'Sin permisos' : ''"
+          >Nuevo</button>
+          <button mat-button [matMenuTriggerFor]="menuExportar" class="export-button"
+              [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.grupo-cliente.exportar'))"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.grupo-cliente.exportar')) ? 'Sin permisos' : ''"
+          >
             <span class="export-text">Exportar</span>
           </button>
 
@@ -62,8 +68,13 @@
               <td>{{ grupo.valorAnual }}</td>
               <td>{{ grupo.estado ? 'ACTIVO' : 'INACTIVO' }}</td>
               <td>{{ grupo.fecha | date: 'dd/MM/yyyy' }}</td>
-              <td>
-                <div class="edit-icon-container" (click)="editar(grupo.id_grupo_empresa)">
+              <td *ngIf="(permissions.permisos$ | async) as permisos">
+                <div class="edit-icon-container" 
+                    [class.disabled]="!permisos.includes('codbar.ficha-de-cliente.grupo-cliente.editar')"
+                    [style.opacity]="permisos.includes('codbar.ficha-de-cliente.grupo-cliente.editar') ? '1' : '0.3'"
+                    [style.cursor]="permisos.includes('codbar.ficha-de-cliente.grupo-cliente.editar') ? 'pointer' : 'not-allowed'"
+                    [title]="!permisos.includes('codbar.ficha-de-cliente.grupo-cliente.editar') ? 'Sin permisos' : ''"
+                    (click)="permisos.includes('codbar.ficha-de-cliente.grupo-cliente.editar') ? editar(grupo.id_grupo_empresa) : null">
                   <img src="assets/icons/icon-modificar-3.png" class="edit-icon" alt="Editar" />
                 </div>
               </td>

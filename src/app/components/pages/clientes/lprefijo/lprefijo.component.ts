@@ -27,9 +27,8 @@ import { MatDialogModule } from '@angular/material/dialog';
   styleUrls: ['./lprefijo.component.css']
 })
 export class LprefijoComponent implements OnInit {
-
-  dataSourcePrefijo = new MatTableDataSource<PrefijoClienteResponse>();
-
+  dataSourcePrefijo = new MatTableDataSource<PrefijoClienteResponse>([]);
+  
   displayedPrefijoColumns: string[] = [
     'clientesCodigo',
     'codpre',
@@ -80,6 +79,6 @@ export class LprefijoComponent implements OnInit {
   }
 cancelar(): void {
     this.dialogRef.close("editado");
-    this.router.navigate(['/pages/clientes']); // Redirecciona a /pages/clientes
+    this.router.navigate(['/codbar/ficha-de-cliente/clientes']); // Redirecciona a /pages/clientes
   }
 }
