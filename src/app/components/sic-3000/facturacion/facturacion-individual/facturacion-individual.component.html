@@ -195,7 +195,7 @@
           <mat-form-field class="fi-prefix-field grow-2" appearance="fill">
             <span matPrefix class="fi-prefix">Año:&nbsp;</span>
             <input matInput type="number" inputmode="numeric" placeholder="Año" formControlName="anio" minlength="1"
-              maxlength="4" (keypress)="soloNumeros($event)" (paste)="soloPegadoNumerico($event)">
+              maxlength="4" (keypress)="soloNumeros($event)" (paste)="soloPegadoNumerico($event)" readonly>
           </mat-form-field>
 
           <!-- Botón meses -->

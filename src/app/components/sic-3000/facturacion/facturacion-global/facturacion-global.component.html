@@ -37,7 +37,7 @@
       </div>
       <form class="toolbar-row" [formGroup]="formFactura" (ngSubmit)="buscar()">
   <!-- Año -->
-  <mat-form-field appearance="outline" class="anio-field dense" >
+  <mat-form-field appearance="outline" class="anio-field dense"  >
     <input matInput inputmode="numeric" autocomplete="off"
            formControlName="anio" (input)="limitAnio($event)" />
     <button *ngIf="anioCtrl.value" mat-icon-button matSuffix type="button"
@@ -122,7 +122,39 @@
   </ng-container>
 
   <!-- ===== Pestaña: Listado ===== -->
-  <ng-container *ngIf="activeTab === 'Listado'">
-    <p style="margin:16px 0;">Aquí irá tu listado/histórico de facturas generadas.</p>
-  </ng-container>
+  <!-- ===== Pestaña: Listado ===== -->
+<ng-container *ngIf="activeTab === 'Listado'">
+  <!-- Encima del grid del Listado -->
+<div class="row-3 actions-row">
+  <button type="button" class="btn chip" (click)="cargarListado()">Refrescar</button>
+  <button type="button"
+          class="btn chip"
+          [disabled]="listadoSelectedCount === 0 || imprimiendo"
+          (click)="imprimirSeleccionadas()">
+    Imprimir seleccionadas ({{ listadoSelectedCount }})
+  </button>
+  <button type="button"
+        class="btn chip"
+        [disabled]="listadoSelectedCount === 0 || zipping"
+        (click)="zipSeleccionadas()">
+  Descargar ZIP ({{ listadoSelectedCount }})
+</button>
+
+</div>
+
+<!-- GRID del Listado -->
+<div class="ag-theme-alpine grid-wrap">
+  <ag-grid-angular
+    style="width:100%; height:100%; display:block"
+    [columnDefs]="columnDefsListado"
+    [defaultColDef]="defaultColDefListado"
+    [rowData]="listadoData"
+    rowSelection="multiple"
+    (gridReady)="onListadoGridReady($event)"
+    (selectionChanged)="onListadoSelectionChanged()">
+  </ag-grid-angular>
+</div>
+
+</ng-container>
+
 </div>

@@ -6,8 +6,7 @@
 
     <!-- TAB 1: Información General -->
     <!-- TAB 1: Información General -->
-    <mat-tab label="Información General"      
-          *ngIf="(permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.informacion-general');">
+    <mat-tab label="Información General">
       
       <ng-template matTabContent>
         <div>
@@ -713,8 +712,7 @@
     </mat-tab>
 
     <!-- TAB 2: Histórico -->
-    <mat-tab label="Histórico del Cliente" 
-          *ngIf="(permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.historico-del-cliente');">
+    <mat-tab label="Histórico del Cliente" >
       <mat-form-field appearance="outline" style="padding: 0px 0px;width: 450px;padding-top: 6px;">
         <mat-label>Buscar</mat-label>
         <input matInput #input (keyup)="aplicarFiltro(input.value)" placeholder="Buscar">
@@ -766,13 +764,13 @@
 
 
     <!-- TAB 3: Prefijos -->
-    <mat-tab label="Prefijos" *ngIf="(permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.prefijos');">
+    <mat-tab label="Prefijos" >
       <ng-template matTabContent>
         <div >
 
           <div style="text-align: right; margin-bottom: 10px;">
             <button mat-button (click)="abrirModalPrefijo()" class="new-button"
-            *ngIf="(permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.nuevo-prefijo');">
+            >
               Nuevo
             </button>
             <button mat-button (click)="exportar('excel')" class="new-button">
@@ -838,7 +836,7 @@
                   <button 
                     mat-icon-button 
                     color="primary" 
-                    *ngIf="(permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.editar-prefijo'); else editarPrefijoBlocked"
+                    
                     (click)="abrirModalPrefijoEditar(element.codpre)">
                     <mat-icon>visibility</mat-icon>
                   </button>
@@ -873,7 +871,7 @@
   </button>
   <button 
     mat-button
-    *ngIf="(permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.imprimir-cliente');">
+    >
     <img src="assets/icons/icon-imprimir.png" alt="Imprimir" width="18" height="18" style="margin-right: 6px;" />
     Imprimir
   </button>

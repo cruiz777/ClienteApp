@@ -95,6 +95,8 @@ export interface ApiResponse<T = any> {
   data: T;
 }
 
+
+
 @Injectable({
   providedIn: 'root'
 })
@@ -211,6 +213,10 @@ descargarPdfFactura(idNota: number, nombre = `factura-${idNota}.pdf`): Observabl
       return throwError(() => err);
     })
   );
+}
+getPdfFacturaBlob(idNota: number) {
+  const url = `${this.baseUrl}/Facturacion/${idNota}/pdf`;
+  return this.http.get(url, { responseType: 'blob' });
 }
 
 }

@@ -152,4 +152,5 @@ export class FacturaGlobalService {
     const url = `${this.facturacionUrl}/${idNota}/xml`;
     return this.http.post<GenerarXmlFacturaResponse>(url, {});
   }
+  
 }
