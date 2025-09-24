@@ -26,7 +26,7 @@
     </div>
   </div>
 
-  <!-- ===== PASO 1: DATOS DEL CLIENTE (según imagen) ===== -->
+  <!-- ===== PASO 1: DATOS DEL CLIENTE ===== -->
   <h3 class="titulo" *ngIf="step === 1">Registro de Pagos</h3>
 
   <form *ngIf="step === 1" [formGroup]="formCliente" novalidate (ngSubmit)="onNext()">
@@ -43,7 +43,6 @@
       </div>
     </div>
 
-    <!-- Fila 2 (UN SOLO CAMPO para cliente y responsable) -->
     <div class="row g-3 align-items-end mt-1">
       <div class="col-12 col-md-8">
         <label class="form-label">Cliente</label>
@@ -82,6 +81,7 @@
         [animateRows]="true"
         (gridReady)="onGridReady($event)">
       </ag-grid-angular>
+
     </div>
 
     <!-- Observación -->
@@ -98,86 +98,66 @@
     </div>
   </form>
 
-  <!-- ===== PASO 2: FORMA DE PAGO ===== -->
-  <form *ngIf="step === 2" [formGroup]="formPago" novalidate (ngSubmit)="onAddPago()">
-    <h3 class="titulo">Forma de Pago</h3>
+ <!-- ===== PASO 2: FORMA DE PAGO ===== -->
 
-    <div class="mb-3 d-flex align-items-center gap-4">
-      <label class="form-check form-check-inline radio-clean">
-        <input type="radio" class="form-check-input" formControlName="categoriaPago" value="efectivo" />
-        <span class="form-check-label">Efectivo o Equivalente</span>
-      </label>
+<form *ngIf="step === 2" [formGroup]="formPago" novalidate (ngSubmit)="aceptarPagos()">
+  <h3 class="titulo">Registro de Pagos</h3>
 
-      <label class="form-check form-check-inline radio-clean">
-        <input type="radio" class="form-check-input" formControlName="categoriaPago" value="tarjeta" />
-        <span class="form-check-label">Tarjeta</span>
-      </label>
+  <div class="row g-3 mb-2">
+    <div class="col-12 col-md-4">
+      <label class="form-label">Plantilla</label>
+      <select class="form-select" formControlName="plantilla" (change)="onPlantillaChange()">
+        <option value="transfer">Transferencias / Retenciones</option>
+        <option value="cheque">Cheques / Tarjetas</option>
+      </select>
     </div>
 
-    <div class="row g-4">
-      <div class="col-12 col-md-4">
-        <label class="form-label">Tipo:</label>
-        <select class="form-select" formControlName="tipo" [ngClass]="invalid(formPago,'tipo')">
-          <option value="" disabled selected>Seleccione…</option>
-          <option *ngFor="let t of tipos" [value]="t">{{ t }}</option>
-        </select>
-        <div class="invalid-feedback">Seleccione el tipo de pago.</div>
-      </div>
-
-      <div class="col-12 col-md-4">
-        <label class="form-label">Valor:</label>
-        <input type="text" class="form-control text-end" formControlName="valor" placeholder="$ 0.00" />
-      </div>
-
-      <div class="col-12 col-md-4">
-        <label class="form-label">Fecha Emisión Doc:</label>
-        <input type="date" class="form-control" formControlName="fechaEmision" />
-      </div>
-
-      <div class="col-12 col-md-6">
-        <label class="form-label">Banco:</label>
-        <select class="form-select" formControlName="banco">
-          <option value="" disabled selected>Seleccione…</option>
-          <option *ngFor="let b of bancos" [value]="b">{{ b }}</option>
-        </select>
-      </div>
-
-      <div class="col-12 col-md-6">
-        <label class="form-label">No. Documento:</label>
-        <input type="text" class="form-control" formControlName="numeroDocumento" />
-      </div>
-
-      <div class="col-12 col-md-6">
-        <label class="form-label">Lote/Recap:</label>
-        <input type="text" class="form-control" formControlName="loteRecap" />
-      </div>
-
-      <div class="col-12 col-md-6">
-        <label class="form-label">Propietario:</label>
-        <input type="text" class="form-control" formControlName="propietario" />
-      </div>
-
-      <div class="col-12 col-md-6">
-        <label class="form-label">Autorización:</label>
-        <input type="text" class="form-control" formControlName="autorizacion" />
-      </div>
-
-      <div class="col-12 col-md-6">
-        <label class="form-label">Fecha Autorización:</label>
-        <input type="date" class="form-control" formControlName="fechaAutorizacion" />
-      </div>
-
-      <div class="col-12">
-        <label class="form-label">Observación:</label>
-        <input type="text" class="form-control" formControlName="observacion" />
-      </div>
+    <div class="col-12 col-md-4">
+      <label class="form-label">Valor a Pagar</label>
+      <input type="text" class="form-control text-end" formControlName="valor" placeholder="0.00" />
     </div>
+  </div>
 
-    <div class="d-flex justify-content-center gap-3 mt-5">
-      <button type="button" class="btn btn-outline-secondary px-4" (click)="step = 1">← Regresar</button>
-      <button type="button" class="btn btn-outline-secondary px-4" (click)="onCancelarPago()">Cancelar</button>
-      <button type="submit" class="btn btn-primary px-4">Agregar Forma Pago →</button>
+  <div class="mb-2">
+    <div class="form-label subtitulo mb-2">Registro de Pagos</div>
+
+    <ag-grid-angular
+      class="ag-theme-alpine"
+      style="width: 100%; height: 300px;"
+      [rowData]="pagoRowData"
+      [columnDefs]="pagoColumnDefs"
+      [defaultColDef]="pagoDefaultColDef"
+      [singleClickEdit]="true"
+      [stopEditingWhenCellsLoseFocus]="true"
+      (gridReady)="onPagoGridReady($event)"
+      (cellValueChanged)="onPagoCellValueChanged($event)">
+    </ag-grid-angular>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-center my-2">
+    <div class="text-muted small">
+      <strong>Total:</strong> {{ usd(totalPagos) }}
     </div>
-  </form>
+    <div class="d-flex gap-2">
+      <button type="button" class="btn btn-outline-secondary" (click)="salirPagos()">F6 → Salir Pagos</button>
+      <button type="button" class="btn btn-outline-secondary" (click)="cancelarPagos()">F5 → Cancelar</button>
+      <button type="submit" class="btn btn-primary">F4 → Aceptar Pagos</button>
+    </div>
+  </div>
+
+  <div class="row g-3 mt-2">
+    <div class="col-12">
+      <label class="form-label">Observación</label>
+      <input class="form-control" formControlName="observacion" />
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 mt-3">
+    <button type="button" class="btn btn-outline-secondary" (click)="nuevoPago()">Nuevo Pago</button>
+    <button type="button" class="btn btn-outline-secondary" (click)="registrarPago()">Registrar Pago</button>
+  </div>
+
+</form>
+
 
 </div>

@@ -28,11 +28,13 @@ import { Sic3000RoutingModule } from './sic-3000-routing.module';
 import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.component';
 import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
 import { ProductosSicComponent } from './productos-sic/productos-sic.component';
+import { CobroIndividualComponent } from './cobro-individual/cobro-individual.component';
 
 @NgModule({
   declarations: [
     InicioSicComponent,
     NavigationSicComponent,
+    CobroIndividualComponent,
     RegistroCobrosComponent,
     EstadocuentaclienteComponent,
     ProductosSicComponent

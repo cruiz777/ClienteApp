@@ -7,6 +7,7 @@ import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
 import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.component';
 import { ProductosSicComponent } from './productos-sic/productos-sic.component';
 import { InicioComponent } from '../inicio/inicio.component';
+import { CobroIndividualComponent } from './cobro-individual/cobro-individual.component';
 
 
 const routes: Routes = [
@@ -19,6 +20,7 @@ const routes: Routes = [
       { path: 'estructura-list', component: EstructuraListComponent },
       { path: 'productossic', component:ProductosSicComponent },
       { path: 'registroCobros', component: RegistroCobrosComponent },
+      { path: 'cobroIndividual', component: CobroIndividualComponent },
       { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
     ]
 
@@ -27,7 +29,7 @@ const routes: Routes = [
 
 @NgModule({
   imports: [RouterModule.forChild(routes),
-   
+
   ],
   exports: [RouterModule]
 })

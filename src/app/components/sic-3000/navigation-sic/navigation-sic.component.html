@@ -142,9 +142,16 @@
             <!-- Nivel 3: registro de cobros-->
           <mat-expansion-panel hideToggle>
             <mat-expansion-panel-header (click)="goTo('registroCobros')" class="clickable-header">
-    <mat-panel-title>
-      <span *ngIf="isExpanded" class="menu-text">Registro de Pagos</span>
-    </mat-panel-title>
+            <mat-panel-title>
+              <span *ngIf="isExpanded" class="menu-text">Registro de Pagos</span>
+            </mat-panel-title>
+            </mat-expansion-panel-header>
+          </mat-expansion-panel>
+          <mat-expansion-panel hideToggle>
+            <mat-expansion-panel-header (click)="goTo('cobroIndividual')" class="clickable-header">
+            <mat-panel-title>
+              <span *ngIf="isExpanded" class="menu-text">Pagos Individuales</span>
+            </mat-panel-title>
             </mat-expansion-panel-header>
           </mat-expansion-panel>
 
