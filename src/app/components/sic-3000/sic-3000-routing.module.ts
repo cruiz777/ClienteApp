@@ -2,12 +2,15 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
 import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
+import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
 import { EstructuraListComponent } from './estructuracomercial/estructura-list/estructura-list.component';
 import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.component';
 import { FacturacionIndividualComponent } from './facturacion/facturacion-individual/facturacion-individual.component';
 import { FacturacionGlobalComponent } from './facturacion/facturacion-global/facturacion-global.component';
 import { AuthGuard } from 'src/app/guards/auth.guard';
 import { PermissionGuard } from 'src/app/guards/permission.guard';
+import { CobroIndividualComponent } from './cobro-individual/cobro-individual.component';
+
 
 const routes: Routes = [
   {
@@ -40,7 +43,9 @@ const routes: Routes = [
         canActivate: [PermissionGuard],
         data: { permission: 'sic-3000.cuentas-por-cobrar.registro-cobros' }
       },
-      
+      { path: 'cobroIndividual', component: CobroIndividualComponent },
+      { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
+   
       // FACTURACIÓN INDIVIDUAL
       { 
         path: 'findividual', 

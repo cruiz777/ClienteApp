@@ -1,0 +1,36 @@
+/* Tipografía y colores */
+.cuenta-liquidar .titulo { color:#1c2a5e; font-weight:700; margin-bottom:1rem; }
+.cuenta-liquidar .subtitulo { color:#1c2a5e; font-weight:600; }
+
+/* Stepper */
+.steps { display:flex; align-items:center; gap:12px; }
+.step { display:flex; align-items:center; gap:8px; color:#8da1c2; }
+.step .step-badge {
+  width:28px; height:28px; border-radius:50%;
+  border:2px solid #e1e7f5; display:flex; align-items:center; justify-content:center;
+  font-weight:700; background:#fff;
+}
+.step.active { color:#1c2a5e; }
+.step.active .step-badge { border-color:#ff7b00; background:#ff7b00; color:#fff; }
+.step-text { font-weight:600; white-space:nowrap; }
+.step-divider { flex:1 1 auto; height:2px; background:#e9edf6; border-radius:1px; }
+
+/* Radios look limpio */
+.radio-clean .form-check-input {
+  border-radius:50%; width:16px; height:16px; border:1px solid #bcccdf; margin-right:8px;
+}
+.radio-clean .form-check-input:checked { background-color:#1c2a5e; border-color:#1c2a5e; }
+.radio-clean .form-check-label { color:#2c3b6f; font-weight:600; }
+
+/* Inputs estilo línea inferior */
+.form-label { font-weight:600; color:#2c3b6f; }
+.form-control, .form-select {
+  border:none; border-bottom:1px solid #dfe6f5; border-radius:0;
+  background:transparent; padding-left:0;
+}
+.form-control:focus, .form-select:focus { box-shadow:none; border-bottom-color:#9db4d9; }
+
+/* Botones */
+.btn-primary { background-color:#1c2a5e; border-color:#1c2a5e; }
+.btn-primary:hover { background-color:#16224a; border-color:#16224a; }
+hr { color:#e9edf6; opacity:1; }

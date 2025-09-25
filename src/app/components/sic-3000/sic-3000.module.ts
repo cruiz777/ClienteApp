@@ -16,20 +16,34 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
 
 import { Sic3000RoutingModule } from './sic-3000-routing.module';
-
+import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.component';
+import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
+import { CobroIndividualComponent } from './cobro-individual/cobro-individual.component';
 import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
 import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
-import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.component';
 
 // 👉 Standalone: se importa (no va en declarations)
 import { FacturacionIndividualComponent } from './facturacion/facturacion-individual/facturacion-individual.component';
 import { FacturacionGlobalComponent } from './facturacion/facturacion-global/facturacion-global.component';
 
+import { MatTableModule } from '@angular/material/table';
+import { MatRadioModule } from '@angular/material/radio';
+import { MatSelectModule } from '@angular/material/select';
+import { MatOptionModule } from '@angular/material/core';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { AgGridModule } from 'ag-grid-angular';
+
+
+
+
 @NgModule({
   declarations: [
     InicioSicComponent,
     NavigationSicComponent,
-    RegistroCobrosComponent
+    EstadocuentaclienteComponent,
+    CobroIndividualComponent
     // ❌ No declarar FacturacionIndividualComponent porque es standalone
   ],
   imports: [
@@ -37,7 +51,8 @@ import { FacturacionGlobalComponent } from './facturacion/facturacion-global/fac
     RouterModule,
     FormsModule,
     ReactiveFormsModule,
-
+    AgGridModule,
+    MatTableModule,
     // Angular Material
     MatSidenavModule,
     MatListModule,
@@ -49,10 +64,14 @@ import { FacturacionGlobalComponent } from './facturacion/facturacion-global/fac
     MatCheckboxModule,
     MatButtonModule,
     MatTabsModule,
-
+    MatRadioModule,
+    MatSelectModule,
     // Ruteo del feature
     Sic3000RoutingModule,
-
+    MatOptionModule,
+    MatSlideToggleModule,
+    MatDatepickerModule,
+    MatNativeDateModule,
     // ✅ Importar el componente standalone
     FacturacionIndividualComponent,
     FacturacionGlobalComponent
