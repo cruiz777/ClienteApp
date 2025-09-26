@@ -1,13 +1,30 @@
-import { Component, OnInit, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, ViewEncapsulation } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MatAutocompleteTrigger, MatAutocompleteModule } from '@angular/material/autocomplete';
-import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatAutocompleteTrigger, MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ClienteService } from 'src/app/services/cliente.service';
 import { UsuarioService } from 'src/app/services/usuario.service';
 import { CuentaCobrarService, GridRow } from 'src/app/services/cuenta-cobrar.service';
 import { ClienteSummary } from 'src/app/interfaces/responses/cliente-summary-response';
-import { of } from 'rxjs';
+import { FormaPagoService, FormaPagoResponse } from 'src/app/services/forma-pago.service';
+import {  finalize } from 'rxjs/operators';
+import { map, tap } from 'rxjs/operators'; // añade estos si no están
+
+// rxjs
+import {combineLatest } from 'rxjs';
+
+// rxjs/operators
+import {
+ 
+  startWith,
+  shareReplay
+} from 'rxjs/operators';
+
+
+
+import { Observable, of } from 'rxjs';
 import { debounceTime, distinctUntilChanged, filter, switchMap, catchError } from 'rxjs/operators';
+
 import { ColDef, GridApi, GridReadyEvent, ValueSetterParams, GetRowIdParams } from 'ag-grid-community';
 import { AgGridModule } from 'ag-grid-angular';
 import { CommonModule } from '@angular/common';
@@ -21,11 +38,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTableModule } from '@angular/material/table';
 import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ViewEncapsulation } from '@angular/core';
+
 @Component({
   selector: 'app-registro-cobros',
   standalone: true,
@@ -39,8 +55,18 @@ import { ViewEncapsulation } from '@angular/core';
   ]
 })
 export class RegistroCobrosComponent implements OnInit {
-  @ViewChild(MatAutocompleteTrigger) autoClienteTrigger!: MatAutocompleteTrigger;
-  @ViewChild('clienteInputRef') clienteInputRef!: ElementRef<HTMLInputElement>;
+  // Clientes
+// Clientes (paso 1)
+@ViewChild(MatAutocompleteTrigger) autoClienteTrigger!: MatAutocompleteTrigger;
+@ViewChild('clienteInputRef') clienteInputRef!: ElementRef<HTMLInputElement>;
+
+// Valor a pagar
+@ViewChild('valorAPagarRef') valorAPagarRef!: ElementRef<HTMLInputElement>;
+
+// Autocomplete de formas de pago (paso 2)
+@ViewChild('pagoInputRef') pagoInputRef!: ElementRef<HTMLInputElement>;
+@ViewChild('autoPagoTrigger', { read: MatAutocompleteTrigger }) 
+autoPagoTrigger!: MatAutocompleteTrigger;
 
   step = 1;
 
@@ -59,16 +85,14 @@ export class RegistroCobrosComponent implements OnInit {
   private gridApi!: GridApi;
   private pagosEditadosMap = new Map<string, { numero: string; pago: number; estado: string }>();
 
-  // tracking de errores por fila
   private invalidRows = new Set<string>();
   private gridTouched = false;
 
-  // getRowId estable (usado para invalidRows)
   getRowId = (p: GetRowIdParams) => {
     const d = p.data as any;
-    // Usa campos estables; ajusta si tu backend garantiza otro identificador
     return String(d?.numero ?? d?.id ?? `${d?.fecha}|${d?.descripcion}|${d?.monto}`);
   };
+
   columnDefs: ColDef[] = [
     { headerName: 'No. Factura', field: 'numero', minWidth: 160, pinned: 'left' },
     { headerName: 'Fecha', field: 'fecha', width: 120 },
@@ -86,25 +110,24 @@ export class RegistroCobrosComponent implements OnInit {
       type: 'rightAligned',
       editable: () => this.canEditFacturas,
       cellEditor: 'agTextCellEditor',
-
+      // ⬇️ permite Enter/Escape y restringe a dígitos + un punto
       suppressKeyboardEvent: (p) => {
         if (!p.editing) return false;
         const e = p.event as KeyboardEvent;
+        if (e.key === 'Enter' || e.key === 'Escape') return false;
         const allowedNav = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End'];
         if (allowedNav.includes(e.key)) return false;
         const isDigit = e.key >= '0' && e.key <= '9';
         const isDot = e.key === '.';
-        const target = e.target as HTMLInputElement | null;
-        const current = target?.value ?? String(p.data?.pago ?? '');
+        const target = (e.target as HTMLInputElement | null);
+        const current = target?.value ?? String((p.data as any)?.pago ?? '');
         if (isDot) return current.includes('.');
         return !(isDigit || isDot);
       },
-
       valueParser: (p) => {
         const n = parseFloat(String(p.newValue).replace(/[^0-9.]/g, ''));
         return isNaN(n) ? 0 : n;
       },
-
       valueSetter: (p: ValueSetterParams<any>) => {
         const old = Number(p.data.pago) || 0;
         const montoFactura = Number(p.data.monto) || 0;
@@ -118,7 +141,7 @@ export class RegistroCobrosComponent implements OnInit {
         }
 
         const valorAPagar = this.getValorAPagarNumber();
-        const totalActual = this.sumPagos(); // incluye old
+        const totalActual = this.sumPagos();
         const totalPropuesto = this.clamp2(totalActual - old + val);
         if (totalPropuesto > valorAPagar) {
           const maxValPermitido = this.clamp2(valorAPagar - (totalActual - old));
@@ -129,7 +152,6 @@ export class RegistroCobrosComponent implements OnInit {
         p.data.pago = val;
         p.data.estado = this.getEstado(val, montoFactura);
 
-        // revalidación de fila
         const id = this.getRowId({ data: p.data } as any);
         const errs = this.validateFacturaRow(p.data);
         if (errs.length) this.invalidRows.add(id); else this.invalidRows.delete(id);
@@ -144,10 +166,7 @@ export class RegistroCobrosComponent implements OnInit {
         p.api.refreshCells(params);
         return old !== val;
       },
-
       valueFormatter: p => this.usd(p.value),
-
-      // pinta y muestra tooltip cuando la fila es inválida
       cellClassRules: {
         'cell-invalid': (params) => this.invalidRows.has(this.getRowId(params as any)),
       },
@@ -171,7 +190,7 @@ export class RegistroCobrosComponent implements OnInit {
     },
     { headerName: 'Vence', field: 'vence', width: 120, cellClass: p => (p.data?.valueVencido ? 'text-danger fw-bold' : '') },
     { headerName: 'Descripción', field: 'descripcion', flex: 1, minWidth: 220 },
-    { headerName: 'Ord', field: 'ord', width: 80, type: 'rightAligned' },
+    { headerName: 'Ord', field: 'ord', width: 80, type: 'rightAligned', hide: true },
   ];
 
   defaultColDef: ColDef = { resizable: true, sortable: true, filter: true };
@@ -179,6 +198,10 @@ export class RegistroCobrosComponent implements OnInit {
 
   // ===== GRID PAGOS (plantillas) =====
   private pagoGridApi!: GridApi;
+
+  filteredFormasPago$: Observable<FormaPagoResponse[]> = of([]);
+  isLoadingFormas = false;
+
   pagoColumnDefsTransfer: ColDef[] = [
     { headerName: 'CODIGO', field: 'codigo', width: 110, editable: true },
     { headerName: 'DESCRIPCION', field: 'descripcion', flex: 1, minWidth: 220, editable: true },
@@ -227,41 +250,46 @@ export class RegistroCobrosComponent implements OnInit {
       },
       valueFormatter: p => this.usd(p.value),
     },
-  ];
-  pagoColumnDefsCheque: ColDef[] = [
-    { headerName: 'No.CHEQUE/FECHA CADUCIDAD', field: 'numChequeFecha', width: 260, editable: true },
-    { headerName: 'NOMBRE DUEÑO', field: 'nombreDueno', flex: 1, minWidth: 220, editable: true },
-    { headerName: 'AUTORIZACION', field: 'autorizacion', width: 160, editable: true },
     {
-      headerName: 'MONTO',
-      field: 'monto',
-      width: 120,
-      editable: true,
-      type: 'rightAligned',
-      valueSetter: (p: ValueSetterParams<any>) => {
-        const old = Number(p.data.monto) || 0;
-        let val = 0;
-        if (p.newValue != null) {
-          const n = parseFloat(String(p.newValue).replace(/[^\d.-]/g, ''));
-          val = isNaN(n) ? 0 : Math.max(0, n);
-        }
-        p.data.monto = val;
-        this.recalcularTotal();
-        const params: any = { columns: ['monto'], force: true };
-        if (p.node) params.rowNodes = [p.node];
-        p.api.refreshCells(params);
-        return old !== val;
-      },
-      valueFormatter: p => this.usd(p.value),
-    },
+  headerName: '',
+  width: 66,
+  pinned: 'left',
+  cellRenderer: (params: any) => {
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'ag-btn-icon ag-btn-delete';
+  btn.title = 'Eliminar';
+  btn.setAttribute('aria-label', 'Eliminar forma de pago');
+  btn.innerHTML = '<span class="material-icons">delete</span>';
+
+  btn.addEventListener('click', () => {
+    const removed = params.node.data;
+
+    // 1) Quita del grid
+    params.api.applyTransaction({ remove: [removed] });
+
+    // 2) Quita del arreglo fuente (por referencia o por código)
+    this.pagoRowData = (this.pagoRowData ?? []).filter((r: any) =>
+      r !== removed && String(r.codigo ?? '') !== String(removed?.codigo ?? '')
+    );
+
+    // 3) Refresca datos del grid y totales
+    this.pagoGridApi?.setGridOption('rowData', this.pagoRowData);
+    this.recalcularTotal();
+  });
+
+  return btn;
+}
+
+}
+
   ];
+
+
   pagoColumnDefs: ColDef[] = [];
   pagoDefaultColDef: ColDef = { resizable: true, sortable: true, filter: true };
-  pagoRowDataTransfer: any[] = [
-    { codigo: '102', descripcion: 'TRANSFERENCIA PICHINCHA', porcRet: null, banco: '', numCuentaTarjetaFactura: '', numCheque: '', monto: 0 },
-    { codigo: '12', descripcion: 'RETENCION EN LA FUENTE', porcRet: 0, banco: '', numCuentaTarjetaFactura: '', numCheque: '', monto: 0 },
-    { codigo: '13', descripcion: 'RETENCION DEL IVA', porcRet: 0, banco: '', numCuentaTarjetaFactura: '', numCheque: '', monto: 0 },
-  ];
+
+  pagoRowDataTransfer: any[] = [];
   pagoRowDataCheque: any[] = [{ numChequeFecha: '', nombreDueno: '', autorizacion: '', monto: 0 }];
   pagoRowData: any[] = [];
   totalPagos = 0;
@@ -274,26 +302,27 @@ export class RegistroCobrosComponent implements OnInit {
     private clienteService: ClienteService,
     private cuentaCobrarService: CuentaCobrarService,
     private _snackBar: MatSnackBar,
+    private formaPagoService: FormaPagoService,
   ) { }
 
   ngOnInit(): void {
     this.usuarioActual = this.usuarioService.getUsuarioActual();
     this.cargarCliente();
-    
+
     this.formCliente = this.fb.group({
       noPago: [''],
       fechaPago: [this.hoyISO(), Validators.required],
       clienteOrigenControl: [''],
       clienteCodigo: [0],
       responsable: [this.usuarioActual?.nombre_usuario || ''],
-     valorAPagar: [
-    '0.00',
-    [
-      Validators.required,
-      Validators.pattern(/^(?:\d+(?:\.\d{0,2})?)$/),
-      Validators.min(0.01)                 // ⬅️ > 0
-    ]
-  ],
+      valorAPagar: [
+        '0.00',
+        [
+          Validators.required,
+          Validators.pattern(/^(?:\d+(?:\.\d{0,2})?)$/),
+          Validators.min(0.01)
+        ]
+      ],
       montoDeuda: [this.usd(0)],
       observacion: [''],
     });
@@ -302,11 +331,62 @@ export class RegistroCobrosComponent implements OnInit {
       plantilla: ['transfer'],
       valor: [''],
       observacion: [''],
+     metodoPago: [''] 
     });
+
+    // Toggle edición del grid según valor a pagar válido
     this.formCliente.get('valorAPagar')!.valueChanges.subscribe(() => {
-    // si el grid ya está listo, habilita o deshabilita el click-edit
-    this.gridApi?.setGridOption('suppressClickEdit', !this.canEditFacturas);
-  });
+      this.gridApi?.setGridOption('suppressClickEdit', !this.canEditFacturas);
+    });
+
+    // Autocomplete formas de pago
+// ngOnInit()
+const DEBUG_FP = true;
+// --- dentro de ngOnInit() ---
+const metodoCtrl = this.formPago.get('metodoPago') as FormControl;
+
+// 1) Trae una vez las formas activas y cachea
+const formasActivas$ = this.formaPagoService.getActivas().pipe(
+  map((resp: any) => (resp?.data ?? resp ?? []).map((x: any) => ({
+    idFormaPago: x.idFormaPago ?? x.id_forma_pago ?? x.id ?? 0,
+    descripcionPago: x.descripcionPago ?? x.descripcion_pago ?? x.descripcion ?? ''
+  }) as FormaPagoResponse)),
+  tap(list => console.log('[FP] activas:', list)),
+  catchError(err => {
+    console.error('[FP] error getActivas:', err);
+    return of([] as FormaPagoResponse[]);
+  }),
+  shareReplay(1)
+);
+
+// 2) Filtra localmente según lo que teclea el usuario (o vacío para ver todo)
+this.filteredFormasPago$ = combineLatest([
+  metodoCtrl.valueChanges.pipe(
+    startWith(''),
+    debounceTime(250),
+    distinctUntilChanged(),
+    map((v: any) =>
+      (typeof v === 'string' ? v : (v?.descripcionPago ?? v?.descripcion_pago ?? '')).trim().toLowerCase()
+    ),
+    tap(() => this.isLoadingFormas = true)
+  ),
+  formasActivas$
+]).pipe(
+  map(([term, lista]: [string, FormaPagoResponse[]]) =>
+    !term ? lista : lista.filter((fp: FormaPagoResponse) =>
+      (fp.descripcionPago ?? '').toLowerCase().includes(term)
+    )
+  ),
+  tap(r => console.log('[FP] render ->', r)),
+  finalize(() => this.isLoadingFormas = false),
+  catchError(err => {
+    console.error('[FP] stream error:', err);
+    this.isLoadingFormas = false;
+    return of([] as FormaPagoResponse[]);
+  })
+);
+
+
 
 
     this.activarPlantilla('transfer');
@@ -336,7 +416,6 @@ export class RegistroCobrosComponent implements OnInit {
     this.gridApi.sizeColumnsToFit();
   }
 
-  // Validación por fila (factura)
   private validateFacturaRow(r: GridRow): string[] {
     const pago = Number(r.pago) || 0;
     const monto = Number(r.monto) || 0;
@@ -346,21 +425,15 @@ export class RegistroCobrosComponent implements OnInit {
     if (!Number.isFinite(pago)) errors.push('Pago inválido.');
     if (pago > monto) errors.push('Pago supera el monto.');
     if (Math.round(pago * 100) !== pago * 100) errors.push('Pago con más de 2 decimales.');
-
-    // ejemplo adicional: si está vencido, no permitir abonos
-    // if ((r as any).valueVencido && pago > 0 && pago < monto) {
-    //   errors.push('Factura vencida no admite abonos (solo cancelación).');
-    // }
     return errors;
   }
 
-  // Validación global de grilla de facturas
   private validateGridFacturas(): { ok: boolean; errors: string[] } {
     this.gridApi?.stopEditing();
     const errors: string[] = [];
     this.invalidRows.clear();
 
-    (this.rowData || []).forEach((r, idx) => {
+    (this.rowData || []).forEach((r) => {
       const rowErrors = this.validateFacturaRow(r);
       if (rowErrors.length) {
         const id = this.getRowId({ data: r } as any);
@@ -379,14 +452,9 @@ export class RegistroCobrosComponent implements OnInit {
     return { ok: errors.length === 0, errors };
   }
 
-  // Cambios en celdas de facturas
   onCellValueChangedFacturas(_: any) {
     if (!this.gridTouched) return;
-    const res = this.validateGridFacturas();
-    if (!res.ok) {
-      // solo marcamos visualmente; el bloqueo está en onNext()
-      // console.warn('Errores grilla:', res.errors);
-    }
+    this.validateGridFacturas();
   }
 
   guardarPagosEditados() {
@@ -406,7 +474,7 @@ export class RegistroCobrosComponent implements OnInit {
       montoDeuda: '0.00',
       observacion: '',
     });
-
+    this.unlockValorAPagar();
     this.limpiarClienteAutocomplete();
 
     this.rowData = [];
@@ -432,15 +500,17 @@ export class RegistroCobrosComponent implements OnInit {
       this.formCliente.markAllAsTouched();
       return;
     }
-
+    if (this.sumPagos() === 0 && this.getValorAPagarNumber() > 0) {
+      this.mostrarAlerta('Distribuye el Valor a Pagar en el detalle antes de continuar.', 'info');
+      this.irADetalleFacturas();
+      return;
+    }
     const res = this.validateGridFacturas();
     if (!res.ok) {
       this.mostrarAlerta('Hay errores en el detalle de facturas. Revisa los campos en rojo.', 'error');
-      this.revealFirstError();                // ⬅️ te lleva a la primera
+      this.revealFirstError();
       return;
     }
-
-
     this.step = 2;
   }
 
@@ -455,7 +525,7 @@ export class RegistroCobrosComponent implements OnInit {
       this.pagoColumnDefs = this.pagoColumnDefsTransfer;
       this.pagoRowData = JSON.parse(JSON.stringify(this.pagoRowDataTransfer));
     } else {
-      this.pagoColumnDefs = this.pagoColumnDefsCheque;
+      
       this.pagoRowData = JSON.parse(JSON.stringify(this.pagoRowDataCheque));
     }
     this.recalcularTotal();
@@ -479,7 +549,6 @@ export class RegistroCobrosComponent implements OnInit {
     this.totalPagos = this.pagoRowData.reduce((acc, r) => acc + (Number(r.monto) || 0), 0);
   }
 
-  // Validación de grilla de plantillas
   private validateGridPlantilla(): { ok: boolean; errors: string[] } {
     this.pagoGridApi?.stopEditing();
 
@@ -534,7 +603,7 @@ export class RegistroCobrosComponent implements OnInit {
   registrarPago() { console.log('Registrar Pago (temporal) →', this.pagoRowData); }
 
   onCancelarPago(): void {
-    this.formPago.reset({ plantilla: 'transfer', valor: '', observacion: '' });
+    this.formPago.reset({ plantilla: 'transfer', valor: '', observacion: '', metodoPago: '' });
     this.activarPlantilla('transfer');
   }
 
@@ -554,7 +623,8 @@ export class RegistroCobrosComponent implements OnInit {
         }
         this.recalcMontoDeuda();
 
-        if (rows.length === 0) this.mostrarAlerta('El cliente no tiene detalle de facturas (facturas_pendientes = null)', 'info');
+        if (rows.length === 0) this.mostrarAlerta('El cliente no tiene detalle de facturas (No tiene facturas_pendientes)', 'info');
+        this.focusValorAPagar();
       });
   }
 
@@ -595,7 +665,6 @@ export class RegistroCobrosComponent implements OnInit {
     this.formCliente.patchValue({ montoDeuda: this.usd(total) }, { emitEvent: false });
   }
 
-  // Alertas
   mostrarAlerta(mensaje: string, tipo: 'info' | 'error' | 'ok' | string): void {
     this._snackBar.open(mensaje, 'Cerrar', {
       duration: 3000,
@@ -605,7 +674,6 @@ export class RegistroCobrosComponent implements OnInit {
     });
   }
 
-  /** Helpers de validación de pagos/valor a pagar */
   getValorAPagarNumber(): number {
     const raw = String(this.formCliente.get('valorAPagar')?.value ?? '').replace(/[^0-9.]/g, '');
     const n = parseFloat(raw);
@@ -621,7 +689,6 @@ export class RegistroCobrosComponent implements OnInit {
     return Math.round(v * 100) / 100;
   }
 
-  // Restringe teclas: solo dígitos y un solo punto. Bloquea '-', '+', 'e', 'E', ','
   bloquearTeclasInvalidas(e: KeyboardEvent) {
     const invalid = ['-', '+', 'e', 'E', ','];
     if (invalid.includes(e.key)) {
@@ -639,7 +706,6 @@ export class RegistroCobrosComponent implements OnInit {
     }
   }
 
-  // Limpia pegado/escritura: dígitos + 1 punto, máx 2 decimales
   sanearDecimal(e: Event) {
     const input = e.target as HTMLInputElement;
     if (!input) return;
@@ -653,7 +719,6 @@ export class RegistroCobrosComponent implements OnInit {
     this.formCliente.get('valorAPagar')!.setValue(v, { emitEvent: false });
   }
 
-  // Sanea pegado en la columna Pago del ag-Grid
   processDataFromClipboard = (params: any) => {
     const col = params.column ? params.column.getColId() : null;
     if (col !== 'pago') return params.data;
@@ -672,35 +737,130 @@ export class RegistroCobrosComponent implements OnInit {
     if (rowNode) {
       this.gridApi.ensureNodeVisible(rowNode, 'middle');
       this.gridApi.flashCells({ rowNodes: [rowNode], columns: ['pago'] });
-      // Opcional: poner focus en la celda Pago
       this.gridApi.setFocusedCell(rowNode.rowIndex!, 'pago');
     }
   }
-get canEditFacturas(): boolean {
-  // válido y > 0
-  const ctrl = this.formCliente?.get('valorAPagar');
-  const n = this.getValorAPagarNumber();
-  return !!ctrl && ctrl.valid && n > 0;
+
+  get canEditFacturas(): boolean {
+    const ctrl = this.formCliente?.get('valorAPagar');
+    const n = this.getValorAPagarNumber();
+    const isOk = ctrl?.enabled ? !!ctrl && ctrl.valid : true;
+    return isOk && n > 0;
+  }
+
+  onFocusValorAPagar() {
+    this.gridApi?.stopEditing();
+  }
+
+  onValorAPagarInput(e: Event) {
+    if (this.valorAPagarBloqueado) return;
+    this.sanearDecimal(e);
+    const newRows = (this.rowData || []).map(r => {
+      const monto = Number(r.monto) || 0;
+      return { ...r, pago: 0, estado: this.getEstado(0, monto) };
+    });
+    this.rowData = newRows;
+    this.gridApi?.setGridOption('rowData', this.rowData);
+    this.invalidRows.clear();
+    this.gridApi?.refreshCells({ force: true });
+  }
+
+  irADetalleFacturas(e?: Event) {
+    e?.preventDefault();
+    this.lockValorAPagar();
+    if (this.gridApi && (this.rowData?.length ?? 0) > 0) {
+      this.gridApi.ensureIndexVisible(0, 'middle');
+      this.gridApi.setFocusedCell(0, 'pago');
+      (this.gridApi as any).startEditingCell({ rowIndex: 0, colKey: 'pago' });
+    }
+  }
+
+  private focusValorAPagar() {
+    setTimeout(() => {
+      const el = this.valorAPagarRef?.nativeElement;
+      if (el) {
+        el.focus();
+        el.select();
+        el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      }
+    }, 0);
+  }
+
+  valorAPagarBloqueado = false;
+
+  private lockValorAPagar() {
+    if (this.valorAPagarBloqueado) return;
+    const ctrl = this.formCliente.get('valorAPagar');
+    const n = this.getValorAPagarNumber();
+    if (ctrl && n > 0) {
+      ctrl.disable({ emitEvent: false });
+      this.valorAPagarBloqueado = true;
+      this.gridApi?.setGridOption('suppressClickEdit', !this.canEditFacturas);
+    }
+  }
+
+  confirmarValorAPagar() {
+    this.lockValorAPagar();
+  }
+
+  private unlockValorAPagar() {
+    this.valorAPagarBloqueado = false;
+    const ctrl = this.formCliente?.get('valorAPagar');
+    ctrl?.enable({ emitEvent: false });
+    this.gridApi?.setGridOption('suppressClickEdit', !this.canEditFacturas);
+  }
+
+  onFormEnter(e: Event) {
+    const t = e.target as HTMLElement | null;
+    if (t && t.closest('.ag-root')) return; // deja pasar Enter dentro del grid
+    e.preventDefault(); // evita submit por Enter en otros inputs
+  }
+
+  // ===== Autocomplete de Formas de Pago (Paso 2) =====
+  displayFormaPago = (fp: FormaPagoResponse | string | null): string =>
+    (typeof fp === 'string') ? fp : (fp?.descripcionPago ?? '');
+
+  onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
+    const item = event.option.value as FormaPagoResponse;
+    const pl = this.formPago.get('plantilla')?.value as 'transfer' | 'cheque';
+    
+
+    // normaliza datos mínimos
+    const codigo = String((item as any).codigo ?? (item as any).idFormaPago ?? '');
+    const descripcion = (item as any).descripcionPago ?? (item as any).descripcion ?? '';
+
+    if (!codigo && !descripcion) return;
+
+    // evita duplicados por 'codigo'
+    const yaExiste = this.pagoRowData.some(r => String(r.codigo ?? '') === codigo && !!codigo);
+    if (!yaExiste) {
+      if (pl === 'transfer') {
+        this.pagoRowData.push({ codigo, descripcion, porcRet: null, banco: '', numCuentaTarjetaFactura: '', numCheque: '', monto: 0 });
+      } else {
+        this.pagoRowData.push({ numChequeFecha: '', nombreDueno: '', autorizacion: '', monto: 0, codigo, descripcion });
+      }
+      this.pagoGridApi?.setGridOption('rowData', this.pagoRowData);
+      this.recalcularTotal();
+    }
+
+    // limpia input y cierra autocomplete
+    setTimeout(() => {
+      this.formPago.get('metodoPago')?.setValue('', { emitEvent: false });
+      this.autoPagoTrigger?.closePanel();
+      this.pagoInputRef?.nativeElement.blur();
+    }, 0);
+  }
+  onPagosRowsChanged(): void {
+  this.recalcularTotal();
 }
-onFocusValorAPagar() {
-  this.gridApi?.stopEditing();
+private existeFormaEnGrid(codigo: string): boolean {
+  if (!this.pagoGridApi) return false;
+  const count = this.pagoGridApi.getDisplayedRowCount();
+  for (let i = 0; i < count; i++) {
+    const data = this.pagoGridApi.getDisplayedRowAtIndex(i)?.data;
+    if (String(data?.codigo ?? '') === String(codigo ?? '')) return true;
+  }
+  return false;
 }
 
-// 2) sanea el input y ajusta el detalle para que puedas cambiar el número siempre
-onValorAPagarInput(e: Event) {
-  this.sanearDecimal(e); // ya la tienes
-
-  // si el valor cambia, ponemos pagos a 0 para que no “amarren” el input
-  // (si prefieres, aquí podrías recortar sólo el exceso en vez de poner todo a 0)
-  const newRows = (this.rowData || []).map(r => {
-    const monto = Number(r.monto) || 0;
-    return { ...r, pago: 0, estado: this.getEstado(0, monto) };
-  });
-  this.rowData = newRows;
-  this.gridApi?.setGridOption('rowData', this.rowData);
-
-  // limpiar marcas de error y refrescar
-  this.invalidRows.clear();
-  this.gridApi?.refreshCells({ force: true });
-}
 }
