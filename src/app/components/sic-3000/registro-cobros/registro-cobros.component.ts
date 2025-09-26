@@ -7,15 +7,15 @@ import { UsuarioService } from 'src/app/services/usuario.service';
 import { CuentaCobrarService, GridRow } from 'src/app/services/cuenta-cobrar.service';
 import { ClienteSummary } from 'src/app/interfaces/responses/cliente-summary-response';
 import { FormaPagoService, FormaPagoResponse } from 'src/app/services/forma-pago.service';
-import {  finalize } from 'rxjs/operators';
+import { finalize } from 'rxjs/operators';
 import { map, tap } from 'rxjs/operators'; // añade estos si no están
 
 // rxjs
-import {combineLatest } from 'rxjs';
+import { combineLatest } from 'rxjs';
 
 // rxjs/operators
 import {
- 
+
   startWith,
   shareReplay
 } from 'rxjs/operators';
@@ -56,17 +56,17 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 })
 export class RegistroCobrosComponent implements OnInit {
   // Clientes
-// Clientes (paso 1)
-@ViewChild(MatAutocompleteTrigger) autoClienteTrigger!: MatAutocompleteTrigger;
-@ViewChild('clienteInputRef') clienteInputRef!: ElementRef<HTMLInputElement>;
+  // Clientes (paso 1)
+  @ViewChild(MatAutocompleteTrigger) autoClienteTrigger!: MatAutocompleteTrigger;
+  @ViewChild('clienteInputRef') clienteInputRef!: ElementRef<HTMLInputElement>;
 
-// Valor a pagar
-@ViewChild('valorAPagarRef') valorAPagarRef!: ElementRef<HTMLInputElement>;
+  // Valor a pagar
+  @ViewChild('valorAPagarRef') valorAPagarRef!: ElementRef<HTMLInputElement>;
 
-// Autocomplete de formas de pago (paso 2)
-@ViewChild('pagoInputRef') pagoInputRef!: ElementRef<HTMLInputElement>;
-@ViewChild('autoPagoTrigger', { read: MatAutocompleteTrigger }) 
-autoPagoTrigger!: MatAutocompleteTrigger;
+  // Autocomplete de formas de pago (paso 2)
+  @ViewChild('pagoInputRef') pagoInputRef!: ElementRef<HTMLInputElement>;
+  @ViewChild('autoPagoTrigger', { read: MatAutocompleteTrigger })
+  autoPagoTrigger!: MatAutocompleteTrigger;
 
   step = 1;
 
@@ -203,8 +203,8 @@ autoPagoTrigger!: MatAutocompleteTrigger;
   isLoadingFormas = false;
 
   pagoColumnDefsTransfer: ColDef[] = [
-    { headerName: 'CODIGO', field: 'codigo', width: 110, editable: true },
-    { headerName: 'DESCRIPCION', field: 'descripcion', flex: 1, minWidth: 220, editable: true },
+    { headerName: 'CODIGO', field: 'codigo', width: 110, editable: false },
+    { headerName: 'DESCRIPCION', field: 'descripcion', flex: 1, minWidth: 220, editable: false },
     {
       headerName: 'PORC.RET',
       field: 'porcRet',
@@ -235,60 +235,73 @@ autoPagoTrigger!: MatAutocompleteTrigger;
       editable: true,
       type: 'rightAligned',
       valueSetter: (p: ValueSetterParams<any>) => {
-        const old = Number(p.data.monto) || 0;
-        let val = 0;
-        if (p.newValue != null) {
-          const n = parseFloat(String(p.newValue).replace(/[^\d.-]/g, ''));
-          val = isNaN(n) ? 0 : Math.max(0, n);
-        }
-        p.data.monto = val;
-        this.recalcularTotal();
-        const params: any = { columns: ['monto'], force: true };
-        if (p.node) params.rowNodes = [p.node];
-        p.api.refreshCells(params);
-        return old !== val;
-      },
+  const old = Number(p.data.monto) || 0;
+
+  let val = 0;
+  if (p.newValue != null) {
+    const n = parseFloat(String(p.newValue).replace(/[^\d.-]/g, ''));
+    val = isNaN(n) ? 0 : Math.max(0, this.clamp2(n));
+  }
+
+  // saldo disponible antes de aplicar el nuevo valor en esta fila
+  const saldoDisponible = this.clamp2(this.getValorAPagarNumber() - (this.totalPagos - old));
+  if (val > saldoDisponible) val = saldoDisponible;   // cap al saldo
+
+  p.data.monto = val;
+  this.recalcularTotal();
+
+  const params: any = { columns: ['monto'], force: true };
+  if (p.node) params.rowNodes = [p.node];
+  p.api.refreshCells(params);
+  return old !== val;
+},
+
       valueFormatter: p => this.usd(p.value),
     },
     {
-  headerName: '',
-  width: 66,
-  pinned: 'left',
-  cellRenderer: (params: any) => {
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'ag-btn-icon ag-btn-delete';
-  btn.title = 'Eliminar';
-  btn.setAttribute('aria-label', 'Eliminar forma de pago');
-  btn.innerHTML = '<span class="material-icons">delete</span>';
+      colId: 'acciones',
+      headerName: '',
+      pinned: 'left',
 
-  btn.addEventListener('click', () => {
-    const removed = params.node.data;
+      // ancho fijo
+      width: 64,
+      minWidth: 64,
+      maxWidth: 64,
 
-    // 1) Quita del grid
-    params.api.applyTransaction({ remove: [removed] });
+      // que sizeColumnsToFit NO la toque
+      suppressSizeToFit: true,
 
-    // 2) Quita del arreglo fuente (por referencia o por código)
-    this.pagoRowData = (this.pagoRowData ?? []).filter((r: any) =>
-      r !== removed && String(r.codigo ?? '') !== String(removed?.codigo ?? '')
-    );
+      // opcional: centrado del botón
+      cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center' },
 
-    // 3) Refresca datos del grid y totales
-    this.pagoGridApi?.setGridOption('rowData', this.pagoRowData);
-    this.recalcularTotal();
-  });
+      cellRenderer: (params: any) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ag-btn-icon ag-btn-delete';
+        btn.title = 'Eliminar';
+        btn.setAttribute('aria-label', 'Eliminar forma de pago');
+        btn.innerHTML = '<span class="material-icons">delete</span>';
+        btn.addEventListener('click', () => {
+          const removed = params.node.data;
+          params.api.applyTransaction({ remove: [removed] });
+          this.pagoRowData = (this.pagoRowData ?? []).filter((r: any) =>
+            r !== removed && String(r.codigo ?? '') !== String(removed?.codigo ?? '')
+          );
+          this.pagoGridApi?.setGridOption('rowData', this.pagoRowData);
+          this.recalcularTotal();
+        });
+        return btn;
+      },
+    }
 
-  return btn;
-}
 
-}
 
   ];
 
 
   pagoColumnDefs: ColDef[] = [];
   pagoDefaultColDef: ColDef = { resizable: true, sortable: true, filter: true };
-
+  saldoPendiente=0;
   pagoRowDataTransfer: any[] = [];
   pagoRowDataCheque: any[] = [{ numChequeFecha: '', nombreDueno: '', autorizacion: '', monto: 0 }];
   pagoRowData: any[] = [];
@@ -326,65 +339,79 @@ autoPagoTrigger!: MatAutocompleteTrigger;
       montoDeuda: [this.usd(0)],
       observacion: [''],
     });
+    const vCtrl = this.formCliente.get('valorAPagar')!;
+    vCtrl.addValidators(this.maxDeudaValidator);
 
     this.formPago = this.fb.group({
       plantilla: ['transfer'],
       valor: [''],
       observacion: [''],
-     metodoPago: [''] 
+      metodoPago: ['']
     });
 
     // Toggle edición del grid según valor a pagar válido
     this.formCliente.get('valorAPagar')!.valueChanges.subscribe(() => {
       this.gridApi?.setGridOption('suppressClickEdit', !this.canEditFacturas);
     });
+    const refreshMax = () => vCtrl.updateValueAndValidity({ emitEvent: false });
 
+    // después de cargar facturas:
+    this.cuentaCobrarService.getFacturasPendientesGrid(String(this.codcliO))
+      .subscribe((rows: GridRow[]) => {
+        this.rowData = rows;
+        this.gridApi?.setGridOption('rowData', this.rowData);
+        this.gridApi?.sizeColumnsToFit();
+        this.recalcMontoDeuda();
+        refreshMax();                          // <— importante
+        if (rows.length === 0) this.mostrarAlerta('El cliente no tiene detalle de facturas (No tiene facturas_pendientes)', 'info');
+        this.focusValorAPagar();
+      });
     // Autocomplete formas de pago
-// ngOnInit()
-const DEBUG_FP = true;
-// --- dentro de ngOnInit() ---
-const metodoCtrl = this.formPago.get('metodoPago') as FormControl;
+    // ngOnInit()
+    const DEBUG_FP = true;
+    // --- dentro de ngOnInit() ---
+    const metodoCtrl = this.formPago.get('metodoPago') as FormControl;
 
-// 1) Trae una vez las formas activas y cachea
-const formasActivas$ = this.formaPagoService.getActivas().pipe(
-  map((resp: any) => (resp?.data ?? resp ?? []).map((x: any) => ({
-    idFormaPago: x.idFormaPago ?? x.id_forma_pago ?? x.id ?? 0,
-    descripcionPago: x.descripcionPago ?? x.descripcion_pago ?? x.descripcion ?? ''
-  }) as FormaPagoResponse)),
-  tap(list => console.log('[FP] activas:', list)),
-  catchError(err => {
-    console.error('[FP] error getActivas:', err);
-    return of([] as FormaPagoResponse[]);
-  }),
-  shareReplay(1)
-);
+    // 1) Trae una vez las formas activas y cachea
+    const formasActivas$ = this.formaPagoService.getActivas().pipe(
+      map((resp: any) => (resp?.data ?? resp ?? []).map((x: any) => ({
+        idFormaPago: x.idFormaPago ?? x.id_forma_pago ?? x.id ?? 0,
+        descripcionPago: x.descripcionPago ?? x.descripcion_pago ?? x.descripcion ?? ''
+      }) as FormaPagoResponse)),
+      tap(list => console.log('[FP] activas:', list)),
+      catchError(err => {
+        console.error('[FP] error getActivas:', err);
+        return of([] as FormaPagoResponse[]);
+      }),
+      shareReplay(1)
+    );
 
-// 2) Filtra localmente según lo que teclea el usuario (o vacío para ver todo)
-this.filteredFormasPago$ = combineLatest([
-  metodoCtrl.valueChanges.pipe(
-    startWith(''),
-    debounceTime(250),
-    distinctUntilChanged(),
-    map((v: any) =>
-      (typeof v === 'string' ? v : (v?.descripcionPago ?? v?.descripcion_pago ?? '')).trim().toLowerCase()
-    ),
-    tap(() => this.isLoadingFormas = true)
-  ),
-  formasActivas$
-]).pipe(
-  map(([term, lista]: [string, FormaPagoResponse[]]) =>
-    !term ? lista : lista.filter((fp: FormaPagoResponse) =>
-      (fp.descripcionPago ?? '').toLowerCase().includes(term)
-    )
-  ),
-  tap(r => console.log('[FP] render ->', r)),
-  finalize(() => this.isLoadingFormas = false),
-  catchError(err => {
-    console.error('[FP] stream error:', err);
-    this.isLoadingFormas = false;
-    return of([] as FormaPagoResponse[]);
-  })
-);
+    // 2) Filtra localmente según lo que teclea el usuario (o vacío para ver todo)
+    this.filteredFormasPago$ = combineLatest([
+      metodoCtrl.valueChanges.pipe(
+        startWith(''),
+        debounceTime(250),
+        distinctUntilChanged(),
+        map((v: any) =>
+          (typeof v === 'string' ? v : (v?.descripcionPago ?? v?.descripcion_pago ?? '')).trim().toLowerCase()
+        ),
+        tap(() => this.isLoadingFormas = true)
+      ),
+      formasActivas$
+    ]).pipe(
+      map(([term, lista]: [string, FormaPagoResponse[]]) =>
+        !term ? lista : lista.filter((fp: FormaPagoResponse) =>
+          (fp.descripcionPago ?? '').toLowerCase().includes(term)
+        )
+      ),
+      tap(r => console.log('[FP] render ->', r)),
+      finalize(() => this.isLoadingFormas = false),
+      catchError(err => {
+        console.error('[FP] stream error:', err);
+        this.isLoadingFormas = false;
+        return of([] as FormaPagoResponse[]);
+      })
+    );
 
 
 
@@ -475,6 +502,7 @@ this.filteredFormasPago$ = combineLatest([
       observacion: '',
     });
     this.unlockValorAPagar();
+    this.unlockCliente();
     this.limpiarClienteAutocomplete();
 
     this.rowData = [];
@@ -525,7 +553,7 @@ this.filteredFormasPago$ = combineLatest([
       this.pagoColumnDefs = this.pagoColumnDefsTransfer;
       this.pagoRowData = JSON.parse(JSON.stringify(this.pagoRowDataTransfer));
     } else {
-      
+
       this.pagoRowData = JSON.parse(JSON.stringify(this.pagoRowDataCheque));
     }
     this.recalcularTotal();
@@ -544,9 +572,10 @@ this.filteredFormasPago$ = combineLatest([
   onPagoCellValueChanged(_: any) {
     this.recalcularTotal();
   }
-
+saldoPagos = 0;
   private recalcularTotal() {
     this.totalPagos = this.pagoRowData.reduce((acc, r) => acc + (Number(r.monto) || 0), 0);
+    this.saldoPagos = Math.max(0, this.getSaldo());
   }
 
   private validateGridPlantilla(): { ok: boolean; errors: string[] } {
@@ -590,15 +619,19 @@ this.filteredFormasPago$ = combineLatest([
 
   salirPagos() { this.step = 1; }
 
-  nuevoPago() {
-    const pl = this.formPago.get('plantilla')?.value as 'transfer' | 'cheque';
-    if (pl === 'transfer') {
-      this.pagoRowData.push({ codigo: '', descripcion: '', porcRet: null, banco: '', numCuentaTarjetaFactura: '', numCheque: '', monto: 0 });
-    } else {
-      this.pagoRowData.push({ numChequeFecha: '', nombreDueno: '', autorizacion: '', monto: 0 });
-    }
-    if (this.pagoGridApi) this.pagoGridApi.setGridOption('rowData', this.pagoRowData);
+ nuevoPago() {
+  const pl = this.formPago.get('plantilla')?.value as 'transfer' | 'cheque';
+  const montoAuto = Math.max(0, this.getSaldo());
+
+  if (pl === 'transfer') {
+    this.pagoRowData.push({ codigo:'', descripcion:'', porcRet:null, banco:'', numCuentaTarjetaFactura:'', numCheque:'', monto: montoAuto });
+  } else {
+    this.pagoRowData.push({ numChequeFecha:'', nombreDueno:'', autorizacion:'', monto: montoAuto });
   }
+  this.pagoGridApi?.setGridOption('rowData', this.pagoRowData);
+  this.recalcularTotal();
+}
+
 
   registrarPago() { console.log('Registrar Pago (temporal) →', this.pagoRowData); }
 
@@ -626,6 +659,8 @@ this.filteredFormasPago$ = combineLatest([
         if (rows.length === 0) this.mostrarAlerta('El cliente no tiene detalle de facturas (No tiene facturas_pendientes)', 'info');
         this.focusValorAPagar();
       });
+
+    this.lockCliente(); // ⬅️ aquí lo bloqueas
   }
 
   cargarCliente() {
@@ -663,7 +698,9 @@ this.filteredFormasPago$ = combineLatest([
   private recalcMontoDeuda(): void {
     const total = (this.rowData ?? []).reduce((acc, r) => acc + (Number(r.monto) || 0), 0);
     this.formCliente.patchValue({ montoDeuda: this.usd(total) }, { emitEvent: false });
+    this.formCliente.get('valorAPagar')?.updateValueAndValidity({ emitEvent: false }); // ← importante
   }
+
 
   mostrarAlerta(mensaje: string, tipo: 'info' | 'error' | 'ok' | string): void {
     this._snackBar.open(mensaje, 'Cerrar', {
@@ -752,18 +789,7 @@ this.filteredFormasPago$ = combineLatest([
     this.gridApi?.stopEditing();
   }
 
-  onValorAPagarInput(e: Event) {
-    if (this.valorAPagarBloqueado) return;
-    this.sanearDecimal(e);
-    const newRows = (this.rowData || []).map(r => {
-      const monto = Number(r.monto) || 0;
-      return { ...r, pago: 0, estado: this.getEstado(0, monto) };
-    });
-    this.rowData = newRows;
-    this.gridApi?.setGridOption('rowData', this.rowData);
-    this.invalidRows.clear();
-    this.gridApi?.refreshCells({ force: true });
-  }
+
 
   irADetalleFacturas(e?: Event) {
     e?.preventDefault();
@@ -820,47 +846,107 @@ this.filteredFormasPago$ = combineLatest([
   displayFormaPago = (fp: FormaPagoResponse | string | null): string =>
     (typeof fp === 'string') ? fp : (fp?.descripcionPago ?? '');
 
-  onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
-    const item = event.option.value as FormaPagoResponse;
-    const pl = this.formPago.get('plantilla')?.value as 'transfer' | 'cheque';
-    
+onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
+  const item = event.option.value as FormaPagoResponse;
+  const pl = this.formPago.get('plantilla')?.value as 'transfer' | 'cheque';
 
-    // normaliza datos mínimos
-    const codigo = String((item as any).codigo ?? (item as any).idFormaPago ?? '');
-    const descripcion = (item as any).descripcionPago ?? (item as any).descripcion ?? '';
+  const codigo = String((item as any).codigo ?? (item as any).idFormaPago ?? '');
+  const descripcion = (item as any).descripcionPago ?? (item as any).descripcion ?? '';
+  if (!codigo && !descripcion) return;
 
-    if (!codigo && !descripcion) return;
+  // evita duplicados
+  const yaExiste = this.pagoRowData.some(r => String(r.codigo ?? '') === codigo && !!codigo);
+  if (!yaExiste) {
+    const montoAuto = Math.max(0, this.getSaldo());   // ← saldo restante
 
-    // evita duplicados por 'codigo'
-    const yaExiste = this.pagoRowData.some(r => String(r.codigo ?? '') === codigo && !!codigo);
-    if (!yaExiste) {
-      if (pl === 'transfer') {
-        this.pagoRowData.push({ codigo, descripcion, porcRet: null, banco: '', numCuentaTarjetaFactura: '', numCheque: '', monto: 0 });
-      } else {
-        this.pagoRowData.push({ numChequeFecha: '', nombreDueno: '', autorizacion: '', monto: 0, codigo, descripcion });
-      }
-      this.pagoGridApi?.setGridOption('rowData', this.pagoRowData);
-      this.recalcularTotal();
+    if (pl === 'transfer') {
+      this.pagoRowData.push({
+        codigo, descripcion, porcRet: null, banco: '',
+        numCuentaTarjetaFactura: '', numCheque: '', monto: montoAuto
+      });
+    } else {
+      this.pagoRowData.push({
+        codigo, descripcion, numChequeFecha: '', nombreDueno: '',
+        autorizacion: '', monto: montoAuto
+      });
     }
 
-    // limpia input y cierra autocomplete
-    setTimeout(() => {
-      this.formPago.get('metodoPago')?.setValue('', { emitEvent: false });
-      this.autoPagoTrigger?.closePanel();
-      this.pagoInputRef?.nativeElement.blur();
-    }, 0);
+    this.pagoGridApi?.setGridOption('rowData', this.pagoRowData);
+    this.recalcularTotal();
   }
-  onPagosRowsChanged(): void {
-  this.recalcularTotal();
+
+  // limpia input y cierra panel
+  setTimeout(() => {
+    this.formPago.get('metodoPago')?.setValue('', { emitEvent:false });
+    this.autoPagoTrigger?.closePanel();
+    this.pagoInputRef?.nativeElement.blur();
+  }, 0);
 }
-private existeFormaEnGrid(codigo: string): boolean {
-  if (!this.pagoGridApi) return false;
-  const count = this.pagoGridApi.getDisplayedRowCount();
-  for (let i = 0; i < count; i++) {
-    const data = this.pagoGridApi.getDisplayedRowAtIndex(i)?.data;
-    if (String(data?.codigo ?? '') === String(codigo ?? '')) return true;
+
+  onPagosRowsChanged(): void {
+    this.recalcularTotal();
   }
-  return false;
+  private existeFormaEnGrid(codigo: string): boolean {
+    if (!this.pagoGridApi) return false;
+    const count = this.pagoGridApi.getDisplayedRowCount();
+    for (let i = 0; i < count; i++) {
+      const data = this.pagoGridApi.getDisplayedRowAtIndex(i)?.data;
+      if (String(data?.codigo ?? '') === String(codigo ?? '')) return true;
+    }
+    return false;
+  }
+  // Total de deuda tomado del grid (más confiable que el input formateado)
+  getMontoDeudaNumber(): number {
+    return (this.rowData ?? []).reduce((acc, r) => acc + (Number(r.monto) || 0), 0);
+  }
+
+  // Validador: valorAPagar <= monto deuda
+  maxDeudaValidator = (ctrl: import('@angular/forms').AbstractControl) => {
+    const raw = String(ctrl.value ?? '').replace(/[^0-9.]/g, '');
+    const n = parseFloat(raw);
+    const max = this.clamp2(this.getMontoDeudaNumber());
+    if (isNaN(n)) return null;                    // otros validadores ya controlan requerido/patrón
+    return n <= max ? null : { maxDeuda: { max, actual: n } };
+  };
+  onValorAPagarInput(e: Event) {
+    if (this.valorAPagarBloqueado) return;
+
+    this.sanearDecimal(e);
+
+    const max = this.clamp2(this.getMontoDeudaNumber());
+    const ctrl = this.formCliente.get('valorAPagar')!;
+    const n = this.getValorAPagarNumber();
+
+    if (n > max) {
+      this.mostrarAlerta(`El Valor a Pagar no puede superar el total (${this.usd(max)}).`, 'info');
+      ctrl.setValue(max.toFixed(2), { emitEvent: false });
+    }
+
+    // limpiar pagos del grid como ya haces
+    const newRows = (this.rowData || []).map(r => {
+      const monto = Number(r.monto) || 0;
+      return { ...r, pago: 0, estado: this.getEstado(0, monto) };
+    });
+    this.rowData = newRows;
+    this.gridApi?.setGridOption('rowData', this.rowData);
+    this.invalidRows.clear();
+    this.gridApi?.refreshCells({ force: true });
+  }
+  clienteBloqueado = false; // (opcional, solo si quieres mostrar/ocultar algo en UI)
+
+  private lockCliente() {
+    this.clienteBloqueado = true;
+    this.clienteOrigenControl.disable({ emitEvent: false });
+    this.autoClienteTrigger?.closePanel();
+    this.clienteInputRef?.nativeElement.blur();
+  }
+
+  private unlockCliente() {
+    this.clienteBloqueado = false;
+    this.clienteOrigenControl.enable({ emitEvent: false });
+  }
+private getSaldo(): number {
+  return this.clamp2(this.getValorAPagarNumber() - this.totalPagos);
 }
 
 }

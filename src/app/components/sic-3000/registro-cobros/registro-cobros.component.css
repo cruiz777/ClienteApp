@@ -2953,3 +2953,68 @@ label[for="secuencial"]{ padding-left: 0 !important; }
   border: 1px dashed #cfd9ea;
   pointer-events: all;  /* bloquea clics en el grid */
 }
+/* fila cliente + responsable */
+.fi-row{
+  display: flex;
+  gap: 16px;              /* separación entre controles */
+  align-items: flex-end;  /* alinear con la línea de los inputs */
+}
+
+.fi-row .fi-cliente{
+  flex: 1 1 auto;         /* ocupa todo el espacio disponible */
+  min-width: 320px;
+}
+
+.fi-row .fi-resp{
+  flex: 0 0 260px;        /* ancho fijo/sugerido para Responsable */
+  max-width: 320px;
+}
+
+/* que el input ocupe todo el ancho del contenedor */
+.fi-input-wrap, .fi-field .form-control, .fi-field [matInput]{
+  width: 100%;
+}
+
+/* Responsive: en pantallas pequeñas se apilan */
+@media (max-width: 900px){
+  .fi-row{ flex-direction: column; }
+  .fi-row .fi-resp{ flex: 0 0 auto; max-width: none; }
+}
+/* Grid de dos columnas compartidas por ambas filas */
+.fi-grid2{
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) 320px; /* cliente crece; responsable fijo */
+  column-gap: 24px;
+  row-gap: 12px;
+  align-items: end; /* alinea por la línea inferior de los inputs */
+}
+
+/* Helpers para fijar columna de cada item (1 o 2) */
+.fi-grid2 .col-1 { grid-column: 1; }
+.fi-grid2 .col-2 { grid-column: 2; }
+
+/* Formatos coherentes */
+.field label{ display:block; margin: 0 0 6px; color:#445; font-weight:600; }
+.fi-input-wrap, .field .form-control, .field [matInput]{ width:100%; }
+.text-end{ text-align:right; }
+
+/* Responsive: apilar en pantallas pequeñas */
+@media (max-width: 900px){
+  .fi-grid2{ grid-template-columns: 1fr; }
+  .fi-grid2 .col-1, .fi-grid2 .col-2{ grid-column: 1; }
+}
+.text-start { text-align: left !important; }
+/* Quita la línea/underline del input */
+.form-control.no-underline{
+  border: 0 !important;        /* sin bordes */
+  box-shadow: none !important;  /* sin sombras */
+  outline: none !important;     /* sin outline */
+  background: transparent;      /* (opcional) */
+}
+
+/* Evita que en focus vuelva a dibujar algo */
+.form-control.no-underline:focus{
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}

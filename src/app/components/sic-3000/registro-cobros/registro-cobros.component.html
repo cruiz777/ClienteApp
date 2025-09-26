@@ -15,34 +15,22 @@
 
   <!-- ===== PASO 1 ===== -->
   <form *ngIf="step === 1" [formGroup]="formCliente" novalidate (ngSubmit)="onNext()"
-        (keydown.enter)="onFormEnter($event)">
+    (keydown.enter)="onFormEnter($event)">
 
-    <div class="panel">
+    <div class="panel" style="background-color: #ECECEC;">
       <div class="panel-title">Registro de Pagos</div>
 
-      <div class="grid-2">
-        <div class="field">
-          <label>No. Pago</label>
-          <input class="form-control" formControlName="noPago" />
-        </div>
-
-        <div class="field">
-          <label>Fecha Pago</label>
-          <input type="date" class="form-control" formControlName="fechaPago" />
-        </div>
-      </div>
-
-      <div>
-        <div class="fi-field fi-cliente">
+      <!-- Fila(s) alineadas con CSS Grid -->
+      <div class="fi-grid2">
+        <!-- Row 1 -->
+        <div class="field col-1">
           <label>Cliente:</label>
           <div class="fi-input-wrap">
             <input #clienteInputRef type="text" matInput [formControl]="clienteOrigenControl"
-                   [matAutocomplete]="autoOrigen" (blur)="clienteOrigenControl.markAsTouched()"
-                   placeholder="Buscar Cliente"
-                   [class.input-error]="clienteOrigenControl.invalid && clienteOrigenControl.touched" />
-
+              [matAutocomplete]="autoOrigen" (blur)="clienteOrigenControl.markAsTouched()" placeholder="Buscar Cliente"
+              [class.input-error]="clienteOrigenControl.invalid && clienteOrigenControl.touched" />
             <mat-autocomplete #autoOrigen="matAutocomplete" [displayWith]="mostrarNombreCliente"
-                              (optionSelected)="seleccionarClienteOrigen($event.option.value)">
+              (optionSelected)="seleccionarClienteOrigen($event.option.value)">
               <mat-option *ngFor="let cliente of clientesOrigenFiltrados" [value]="cliente">
                 <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
               </mat-option>
@@ -50,30 +38,30 @@
           </div>
         </div>
 
-        <div class="field">
+        <div class="field col-2">
           <label>Responsable</label>
           <input class="form-control" formControlName="responsable" placeholder="Código o nombre..." readonly />
         </div>
-      </div>
 
-      <div class="grid-2">
-        <div class="field">
+        <!-- Row 2 -->
+        <div class="field col-1">
           <label>Valor a Pagar</label>
-          <input #valorAPagarRef class="form-control text-end"
-                 formControlName="valorAPagar"
-                 placeholder="0.00"
-                 inputmode="decimal"
-                 (focus)="onFocusValorAPagar()"
-                 (input)="onValorAPagarInput($event)"
-                 (blur)="confirmarValorAPagar()"
-                 (keydown.enter)="irADetalleFacturas($event)" />
+          <input #valorAPagarRef class="form-control text-start no-underline" formControlName="valorAPagar"
+            placeholder="0.00" inputmode="decimal" (focus)="onFocusValorAPagar()" (input)="onValorAPagarInput($event)"
+            (blur)="confirmarValorAPagar()" (keydown.enter)="irADetalleFacturas($event)" />
+          <div class="text-danger"
+            *ngIf="formCliente.get('valorAPagar')?.hasError('maxDeuda') && formCliente.get('valorAPagar')?.touched">
+            El valor no puede ser mayor que {{ usd(getMontoDeudaNumber()) }}.
+          </div>
         </div>
 
-        <div class="field">
+        <div class="field col-2">
           <label>Monto Deuda</label>
-          <input class="form-control text-end" formControlName="montoDeuda" placeholder="0.00" readonly />
+          <input class="form-control text-start no-underline" formControlName="montoDeuda" placeholder="0.00"
+            readonly />
         </div>
       </div>
+
     </div>
 
     <!-- Tabla Detalle -->
@@ -81,17 +69,10 @@
       <div class="panel-subtitle">Detalle</div>
 
       <div class="grid-wrap">
-        <ag-grid-angular
-          class="ag-theme-alpine compact-grid"
-          style="width: 100%; height: 320px;"
-          [rowData]="rowData"
-          [columnDefs]="columnDefs"
-          [defaultColDef]="defaultColDef"
-          [getRowId]="getRowId"
-          [processDataFromClipboard]="processDataFromClipboard"
-          [suppressClickEdit]="!canEditFacturas"
-          (gridReady)="onGridReady($event)"
-          (cellValueChanged)="onCellValueChangedFacturas($event)">
+        <ag-grid-angular class="ag-theme-alpine compact-grid" style="width: 100%; height: 240px;" [rowData]="rowData"
+          [columnDefs]="columnDefs" [defaultColDef]="defaultColDef" [getRowId]="getRowId"
+          [processDataFromClipboard]="processDataFromClipboard" [suppressClickEdit]="!canEditFacturas"
+          (gridReady)="onGridReady($event)" (cellValueChanged)="onCellValueChangedFacturas($event)">
         </ag-grid-angular>
 
         <!-- ⛔️ sin edición si no se puede -->
@@ -117,64 +98,46 @@
 
   <!-- ===== PASO 2 ===== -->
   <form *ngIf="step === 2" [formGroup]="formPago" novalidate (ngSubmit)="aceptarPagos()">
-    <div class="panel">
-      <div class="panel-title">Registro de Pagos</div>
-
-      <div class="grid-2">
-      
-
-        <div class="field">
-          <label>Valor a Pagar</label>
-          <input type="text" class="form-control text-end" formControlName="valor" placeholder="0.00"
-                 [value]="usd(getValorAPagarNumber())" readonly />
-        </div>
-      </div>
-    </div>
-
-    <div class="panel">
+    <div class="panel" style="background-color: #ECECEC;">
       <div class="panel-subtitle">Registro de Pagos</div>
 
       <!-- Autocomplete Forma de Pago -->
       <section class="product-section" aria-labelledby="product-label" style="padding-top:0;">
-       <mat-form-field class="fi-field fi-prefix-field" style="width: 100%;">
-  <span matPrefix class="fi-prefix">Pago:&nbsp;</span>
-  <input matInput
-         #pagoInputRef
-         #autoPagoTrigger="matAutocompleteTrigger"
-         formControlName="metodoPago"
-         [matAutocomplete]="autoPago"
-         (focus)="autoPagoTrigger.openPanel()" />
-</mat-form-field>
+        <mat-form-field  style="width: 100%;">
+          <span matPrefix class="fi-prefix" >Pago:&nbsp;</span>
+          <input matInput #pagoInputRef #autoPagoTrigger="matAutocompleteTrigger" formControlName="metodoPago"
+            [matAutocomplete]="autoPago" (focus)="autoPagoTrigger.openPanel()" />
+        </mat-form-field>
 
-<mat-autocomplete #autoPago="matAutocomplete"
-                  [displayWith]="displayFormaPago"
-                  (optionSelected)="onFormaPagoSelected($event)">
-  <mat-option *ngFor="let fp of filteredFormasPago$ | async" [value]="fp">
-    {{ fp.descripcionPago }}
-  </mat-option>
-  <mat-option *ngIf="(filteredFormasPago$ | async)?.length === 0 && !isLoadingFormas" disabled>
-    Sin resultados
-  </mat-option>
-</mat-autocomplete>
+        <mat-autocomplete #autoPago="matAutocomplete" [displayWith]="displayFormaPago"
+          (optionSelected)="onFormaPagoSelected($event)">
+          <mat-option *ngFor="let fp of filteredFormasPago$ | async" [value]="fp">
+            {{ fp.descripcionPago }}
+          </mat-option>
+          <mat-option *ngIf="(filteredFormasPago$ | async)?.length === 0 && !isLoadingFormas" disabled>
+            Sin resultados
+          </mat-option>
+        </mat-autocomplete>
 
       </section>
 
-      <ag-grid-angular
-        class="ag-theme-alpine compact-grid"
-        style="width: 100%; height: 300px;"
-        [rowData]="pagoRowData"
-        [columnDefs]="pagoColumnDefs"
-        [defaultColDef]="pagoDefaultColDef"
-        [rowHeight]="28"
-        [headerHeight]="28"
-        [singleClickEdit]="true"
-        [stopEditingWhenCellsLoseFocus]="true"
-        (gridReady)="onPagoGridReady($event)"
+    </div>
+
+    <div class="panel">
+      
+
+      <ag-grid-angular class="ag-theme-alpine compact-grid" style="width: 100%; height:220px;" [rowData]="pagoRowData"
+        [columnDefs]="pagoColumnDefs" [defaultColDef]="pagoDefaultColDef" [rowHeight]="28" [headerHeight]="28"
+        [singleClickEdit]="true" [stopEditingWhenCellsLoseFocus]="true" (gridReady)="onPagoGridReady($event)"
         (cellValueChanged)="onPagoCellValueChanged($event)">
       </ag-grid-angular>
 
       <div class="toolbar">
-        <div class="tot">Total: <b>{{ usd(totalPagos) }}</b></div>
+        <div class="tot"
+       [class.text-danger]="saldoPendiente > 0"
+       [class.text-success]="saldoPendiente === 0">
+    Saldo pendiente: <b>{{ usd(saldoPendiente) }}</b>
+  </div>
         <div class="btns">
           <button type="button" class="btn btn-ghost" (click)="salirPagos()">F6 → Salir Pagos</button>
           <button type="button" class="btn btn-ghost" (click)="cancelarPagos()">F5 → Cancelar</button>
