@@ -90,8 +90,8 @@
       </div>
 
       <div class="actions-left">
-        <button type="button" class="btn btn-ghost" (click)="onCancel()">Cancelar</button>
-        <button type="submit" class="btn btn-primary">Siguiente →</button>
+        <button type="button" class="fi-btn fi-primary" (click)="onCancel()">Cancelar</button>
+        <button type="submit" class="fi-btn fi-primary">Siguiente <span class="fi-arrow">›</span></button>
       </div>
     </div>
   </form>
@@ -139,21 +139,17 @@
     Saldo pendiente: <b>{{ usd(saldoPendiente) }}</b>
   </div>
         <div class="btns">
-          <button type="button" class="btn btn-ghost" (click)="salirPagos()">F6 → Salir Pagos</button>
-          <button type="button" class="btn btn-ghost" (click)="cancelarPagos()">F5 → Cancelar</button>
-          <button type="submit" class="btn btn-primary">F4 → Aceptar Pagos</button>
-        </div>
+          <button type="button" class="fi-btn fi-primary" (click)="salirPagos()"><span class="fi-arrow">‹</span> Regresar</button>
+          <button type="button" class="fi-btn fi-primary" (click)="onCancel()">Cancelar</button>
+          </div>
       </div>
     </div>
 
     <div class="panel panel-bottom">
-      <div class="field">
-        <label>Observación</label>
-        <input class="form-control" formControlName="observacion" />
-      </div>
+      
       <div class="actions-right">
-        <button type="button" class="btn btn-ghost" (click)="nuevoPago()">Nuevo Pago</button>
-        <button type="button" class="btn btn-ghost" (click)="registrarPago()">Registrar Pago</button>
+        <button type="button" class="fi-btn fi-primary" (click)="onCancel()">Nuevo Pago</button>
+        <button type="button" class="fi-btn fi-primary" (click)="registrarPago()">Registrar Pago</button>
       </div>
     </div>
   </form>

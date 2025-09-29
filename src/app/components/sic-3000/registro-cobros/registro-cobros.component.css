@@ -3018,3 +3018,46 @@ label[for="secuencial"]{ padding-left: 0 !important; }
   box-shadow: none !important;
   outline: none !important;
 }
+.toolbar{
+  display: flex;
+  flex-direction: column;   /* saldo arriba, botones abajo */
+  align-items: flex-start;  /* ALINEA A LA IZQUIERDA */
+  gap: .5rem;
+  margin-top: .5rem;
+}
+
+.toolbar .tot{
+  text-align: left;         /* por si hereda centrado */
+}
+
+.toolbar .btns{
+  display: flex;
+  flex-wrap: wrap;          /* por si no caben en una línea */
+  gap: .5rem;
+  align-items: center;      /* verticalmente centrados entre sí */
+  justify-content: flex-start; /* IZQUIERDA */
+}
+.fi-arrow {
+  display: inline-block;
+  margin-left: 6px;
+  transition: transform .18s ease;
+}
+/* base del botón */
+.fi-btn{
+  display:inline-flex; align-items:center; gap:6px;
+  border:1px solid #e1e8f0; border-radius:10px;
+  background:#eef4f7;               /* fondo claro */
+  color:#0b4a8f;                     /* texto azul */
+  font-weight:600; line-height:1;
+  padding:8px 12px; cursor:pointer;
+}
+
+/* variante “fantasma” como el ejemplo */
+.fi-ghost:hover{ background:#e8f0f8; }
+
+/* la flechita solo es el span interno */
+.fi-arrow{ display:inline-block; transition:transform .18s; }
+.fi-btn:hover .fi-arrow{ transform: translateX(3px); }
+
+/* por si algún estilo global mete borde 3D/azul */
+button.fi-btn{ appearance:none; -webkit-appearance:none; }
