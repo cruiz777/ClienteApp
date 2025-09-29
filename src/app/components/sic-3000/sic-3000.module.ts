@@ -30,6 +30,7 @@ import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuenta
 import { ProductosSicComponent } from './productos-sic/productos-sic.component';
 import { CobroIndividualComponent } from './cobro-individual/cobro-individual.component';
 import { ReversionPagoComponent } from './reversion-pago/reversion-pago.component';
+import { NotaDebitoComponent } from './nota-debito/nota-debito.component';
 
 @NgModule({
   declarations: [
@@ -39,7 +40,8 @@ import { ReversionPagoComponent } from './reversion-pago/reversion-pago.componen
     RegistroCobrosComponent,
     ReversionPagoComponent,
     EstadocuentaclienteComponent,
-    ProductosSicComponent
+    ProductosSicComponent,
+    NotaDebitoComponent
   ],
   imports: [
     CommonModule,

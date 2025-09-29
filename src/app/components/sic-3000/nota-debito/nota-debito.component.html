@@ -1,0 +1,161 @@
+<div class="container-xxl nota-debito my-3">
+  <div class="row">
+    <div class="col-12">
+      <h5 class="fw-bold text-primary mb-3">Nota de Débito</h5>
+    </div>
+  </div>
+
+  <form [formGroup]="form" (ngSubmit)="onSave()">
+    <div class="row g-3">
+      <div class="col-md-2">
+        <label class="form-label">Sucursal:</label>
+        <input class="form-control form-control-sm" formControlName="sucursal" />
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Caja:</label>
+        <input class="form-control form-control-sm" formControlName="caja" />
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">No:</label>
+        <input class="form-control form-control-sm" formControlName="numero" />
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Fecha:</label>
+        <input type="date" class="form-control form-control-sm" formControlName="fecha" />
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Cliente:</label>
+        <input class="form-control form-control-sm" formControlName="cliente" />
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">Sucursal Ref.:</label>
+        <input class="form-control form-control-sm" formControlName="sucursal2" />
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Caja Ref.:</label>
+        <input class="form-control form-control-sm" formControlName="caja2" />
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Factura Ref.:</label>
+        <input class="form-control form-control-sm" formControlName="factura" />
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Dirección:</label>
+        <input class="form-control form-control-sm" formControlName="direccion" />
+      </div>
+
+      <div class="col-md-4">
+        <label class="form-label">RUC:</label>
+        <input class="form-control form-control-sm" formControlName="ruc" />
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Fecha Actual:</label>
+        <input class="form-control form-control-sm" [value]="hoy" disabled />
+      </div>
+      <div class="col-md-4">
+        <label class="form-label">Observación:</label>
+        <input class="form-control form-control-sm" formControlName="observacion" />
+      </div>
+    </div>
+
+    <!-- Detalle + Totales -->
+    <div class="row mt-3">
+      <div class="col-lg-9">
+        <div class="ag-container border rounded">
+          <ag-grid-angular
+            class="ag-theme-alpine ag-grid-sm"
+            [rowData]="detalleRowData"
+            [columnDefs]="detalleColumnDefs"
+            [defaultColDef]="defaultColDef"
+            [stopEditingWhenCellsLoseFocus]="true"
+            (cellEditingStopped)="onDetalleEdited()"
+            (rowDataUpdated)="recalcularTotales()"
+            (gridReady)="onDetalleReady($event)">
+          </ag-grid-angular>
+        </div>
+        <div class="d-flex justify-content-end align-items-center mt-2">
+          <div class="badge bg-light text-dark px-3 py-2 border">
+            <span class="me-2 fw-semibold">Total Nota (Subt + IVA − Dev)</span>
+            <span>{{ totales.totalFactura | number : '1.2-2' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-3">
+        <ul class="list-group shadow-none totales">
+          <li class="list-group-item d-flex justify-content-between">
+            <span>Sub Total</span><span>{{ totales.subtotal | number:'1.2-2' }}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span>Base 0</span><span>{{ totales.base0 | number:'1.2-2' }}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span>Base IVA</span><span>{{ totales.baseIva | number:'1.2-2' }}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span>IVA</span><span>{{ totales.iva | number:'1.2-2' }}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between">
+            <span class="fw-semibold">Total Devuelto</span>
+            <span class="fw-semibold">{{ totales.totalDev | number:'1.2-2' }}</span>
+          </li>
+          <li class="list-group-item d-flex justify-content-between total-dev">
+            <span class="fw-bold">Total Nota (neto)</span>
+            <span class="fw-bold">{{ totales.totalFactura | number:'1.2-2' }}</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Formas de pago -->
+    <div class="row mt-4">
+      <div class="col-12">
+        <h6 class="fw-bold text-primary mb-2">Formas de Pago</h6>
+      </div>
+      <div class="col-lg-9">
+        <div class="ag-container border rounded">
+          <ag-grid-angular
+            class="ag-theme-alpine ag-grid-sm"
+            [rowData]="pagoRowData"
+            [columnDefs]="pagoColumnDefs"
+            [defaultColDef]="defaultColDef"
+            [stopEditingWhenCellsLoseFocus]="true"
+            (cellEditingStopped)="recalcularPago()"
+            (rowDataUpdated)="recalcularPago()"
+            (gridReady)="onPagoReady($event)">
+          </ag-grid-angular>
+        </div>
+        <div class="d-flex justify-content-end align-items-center gap-2 mt-2 flex-wrap">
+          <div class="badge bg-light text-dark px-3 py-2 border">
+            <span class="me-2 fw-semibold">Total Pago</span>
+            <span>{{ totalPago | number:'1.2-2' }}</span>
+          </div>
+          <div class="badge bg-light text-dark px-3 py-2 border">
+            <span class="me-2 fw-semibold">Saldo por pagar</span>
+            <span>{{ (totales.totalFactura - totalPago) | number:'1.2-2' }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Botones -->
+    <div class="row mt-4">
+      <div class="col-12 d-flex gap-2">
+        <button type="button" class="btn btn-outline-secondary" (click)="nuevo()">Nuevo</button>
+        <button type="submit" class="btn btn-primary">Grabar</button>
+
+        <div class="dropdown ms-auto">
+          <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" type="button">
+            Exportar
+          </button>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" (click)="exportar('csv')">CSV</a></li>
+            <li><span class="dropdown-item disabled">Excel (.xlsx)</span></li>
+            <li><span class="dropdown-item disabled">PDF</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>

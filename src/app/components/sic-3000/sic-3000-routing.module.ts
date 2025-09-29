@@ -9,6 +9,7 @@ import { ProductosSicComponent } from './productos-sic/productos-sic.component';
 import { InicioComponent } from '../inicio/inicio.component';
 import { CobroIndividualComponent } from './cobro-individual/cobro-individual.component';
 import { ReversionPagoComponent } from './reversion-pago/reversion-pago.component';
+import { NotaDebitoComponent } from './nota-debito/nota-debito.component';
 
 
 const routes: Routes = [
@@ -20,6 +21,7 @@ const routes: Routes = [
       { path: 'inicio-sic', component: InicioSicComponent },
       { path: 'estructura-list', component: EstructuraListComponent },
       { path: 'productossic', component:ProductosSicComponent },
+      { path: 'notaDebito', component: NotaDebitoComponent },
       { path: 'cobroIndividual', component: CobroIndividualComponent },
       { path: 'registroCobros', component: RegistroCobrosComponent },
       { path: 'reversionPago', component: ReversionPagoComponent },

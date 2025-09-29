@@ -1,0 +1,38 @@
+.nota-debito .form-label {
+  font-size: .8rem;
+  color: #6c757d;
+  margin-bottom: .1rem;
+}
+
+.ag-container {
+  height: 300px;
+  background: #fff;
+}
+
+.ag-grid-sm .ag-root-wrapper {
+  border-radius: .5rem;
+}
+.ag-grid-sm .ag-header-cell-text {
+  font-size: .8rem;
+}
+.ag-grid-sm .ag-cell {
+  font-size: .85rem;
+  line-height: 1.4;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.totales .list-group-item {
+  padding: .5rem .75rem;
+  font-size: .9rem;
+}
+.totales .total-dev {
+  background: #f8f9fa;
+  border-top: 2px solid #eee;
+}
+
+.badge.border {
+  background: #f8f9fa !important;
+}
+
+h5, h6 { letter-spacing: .2px; }

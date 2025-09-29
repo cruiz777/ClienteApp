@@ -82,18 +82,19 @@
             </a>
           </mat-expansion-panel>
           <!-- Subgrupo: Notas de Crédito/Debito -->
-          <mat-expansion-panel>
-            <mat-expansion-panel-header>
-              <mat-panel-title>
-                <span *ngIf="isExpanded" class="menu-text">Notas de Crédito/Debito</span>
+           <mat-expansion-panel>
+           <mat-expansion-panel-header>
+             <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Notas de Crédito/Débito</span>
               </mat-panel-title>
             </mat-expansion-panel-header>
             <!-- Nivel 3: Notas de Crédito/Debito-->
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Notas de Crédito</span>
+            <a mat-list-item [routerLink]="['notaDebito']" routerLinkActive="active">
+             <span *ngIf="isExpanded" class="menu-text">Notas de Débito</span>
             </a>
+
             <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Notas de Débito</span>
+              <span *ngIf="isExpanded" class="menu-text">Notas de Credito</span>
             </a>
 
           </mat-expansion-panel>
