@@ -1,0 +1,27 @@
+/* Tipografía y colores */
+.reversion-pagos .titulo { color:#1c2a5e; font-weight:700; }
+
+/* Inputs estilo línea inferior (consistente con tu app) */
+.form-label { font-weight:600; color:#2c3b6f; }
+.form-control, .form-select, textarea.form-control {
+  border:none; border-bottom:1px solid #dfe6f5; border-radius:0;
+  background:transparent; padding-left:0;
+}
+.form-control:focus, .form-select:focus, textarea.form-control:focus {
+  box-shadow:none; border-bottom-color:#9db4d9;
+}
+
+/* Botones */
+.btn-primary { background-color:#1c2a5e; border-color:#1c2a5e; }
+.btn-primary:hover { background-color:#16224a; border-color:#16224a; }
+
+/* Separadores suaves */
+hr { color:#e9edf6; opacity:1; }
+
+/* AG Grid: altura automática y look limpio */
+.ag-theme-quartz {
+  --ag-borders: #e9edf6;
+  --ag-row-border-color: #eef2fb;
+  --ag-header-background-color: #f8faff;
+  --ag-header-foreground-color: #2c3b6f;
+}

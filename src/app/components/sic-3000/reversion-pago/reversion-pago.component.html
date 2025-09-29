@@ -1,0 +1,58 @@
+<div class="container py-4 reversion-pagos">
+
+  <h3 class="titulo mb-4">Reversión de Pagos</h3>
+
+  <form [formGroup]="form" novalidate (ngSubmit)="onConsultar()">
+    <div class="row g-4">
+      <div class="col-12 col-md-4">
+        <label for="numeroPago" class="form-label">No. Pago:</label>
+        <input id="numeroPago" type="text" class="form-control" formControlName="numeroPago" />
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label for="fechaPago" class="form-label">Fecha Pago:</label>
+        <input id="fechaPago" type="date" class="form-control" formControlName="fechaPago" />
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label for="clienteId" class="form-label">Cliente:</label>
+        <select id="clienteId" class="form-select" formControlName="clienteId">
+          <option value="" disabled>Seleccione…</option>
+          <option *ngFor="let c of clientes" [value]="c.id">{{ c.nombre }}</option>
+        </select>
+      </div>
+
+      <div class="col-12 col-md-8">
+        <label for="observacion" class="form-label">Observación:</label>
+        <textarea id="observacion" rows="3" class="form-control" formControlName="observacion"></textarea>
+      </div>
+
+      <div class="col-12 col-md-4">
+        <label for="fechaReversion" class="form-label">Fecha Reversión:</label>
+        <input id="fechaReversion" type="date" class="form-control" formControlName="fechaReversion" />
+      </div>
+    </div>
+
+    <!-- Botonera superior opcional al enviar la consulta por submit -->
+    <div class="d-flex justify-content-center gap-3 mt-4">
+      <button type="submit" class="btn btn-primary px-4">Consulta</button>
+      <button type="button" class="btn btn-outline-secondary px-4" (click)="onRevertirPago()">Revertir Pago</button>
+      <button type="button" class="btn btn-outline-secondary px-4" (click)="onImprimir()">Imprimir</button>
+      <button type="button" class="btn btn-outline-secondary px-4" (click)="onCancelar()">Cancelar</button>
+    </div>
+  </form>
+
+  <!-- Tabla (AG Grid) -->
+  <div class="ag-theme-quartz mt-4" style="width:100%;" [ngStyle]="{ 'min-height.px': 260 }">
+    <ag-grid-angular
+      (gridReady)="onGridReady($event)"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [rowSelection]="'single'"
+      [domLayout]="'autoHeight'"
+      [suppressCellFocus]="true"
+    ></ag-grid-angular>
+  </div>
+</div>
+
