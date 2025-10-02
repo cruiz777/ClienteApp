@@ -5,25 +5,17 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ClienteService } from 'src/app/services/cliente.service';
 import { UsuarioService } from 'src/app/services/usuario.service';
 import { CuentaCobrarService, GridRow } from 'src/app/services/cuenta-cobrar.service';
+import { PagoReportService } from 'src/app/services/pago-report.service';
 import { ClienteSummary } from 'src/app/interfaces/responses/cliente-summary-response';
 import { FormaPagoService, FormaPagoResponse } from 'src/app/services/forma-pago.service';
 import { finalize } from 'rxjs/operators';
-import { map, tap } from 'rxjs/operators'; // añade estos si no están
+import { map, tap } from 'rxjs/operators';
 
 // rxjs
-import { combineLatest } from 'rxjs';
+import { combineLatest, Observable, of } from 'rxjs';
 
 // rxjs/operators
-import {
-
-  startWith,
-  shareReplay
-} from 'rxjs/operators';
-
-
-
-import { Observable, of } from 'rxjs';
-import { debounceTime, distinctUntilChanged, filter, switchMap, catchError } from 'rxjs/operators';
+import { startWith, shareReplay, debounceTime, distinctUntilChanged, filter, switchMap, catchError } from 'rxjs/operators';
 
 import { ColDef, GridApi, GridReadyEvent, ValueSetterParams, GetRowIdParams } from 'ag-grid-community';
 import { AgGridModule } from 'ag-grid-angular';
@@ -55,7 +47,6 @@ import { MatTooltipModule } from '@angular/material/tooltip';
   ]
 })
 export class RegistroCobrosComponent implements OnInit {
-  // Clientes
   // Clientes (paso 1)
   @ViewChild(MatAutocompleteTrigger) autoClienteTrigger!: MatAutocompleteTrigger;
   @ViewChild('clienteInputRef') clienteInputRef!: ElementRef<HTMLInputElement>;
@@ -110,7 +101,6 @@ export class RegistroCobrosComponent implements OnInit {
       type: 'rightAligned',
       editable: () => this.canEditFacturas,
       cellEditor: 'agTextCellEditor',
-      // ⬇️ permite Enter/Escape y restringe a dígitos + un punto
       suppressKeyboardEvent: (p) => {
         if (!p.editing) return false;
         const e = p.event as KeyboardEvent;
@@ -205,7 +195,7 @@ export class RegistroCobrosComponent implements OnInit {
   pagoColumnDefsTransfer: ColDef[] = [
     { headerName: 'CODIGO', field: 'codigo', width: 110, editable: false },
     { headerName: 'DESCRIPCION', field: 'descripcion', flex: 1, minWidth: 220, editable: false },
-     {
+    {
       headerName: 'MONTO',
       field: 'monto',
       width: 120,
@@ -220,9 +210,8 @@ export class RegistroCobrosComponent implements OnInit {
           val = isNaN(n) ? 0 : Math.max(0, this.clamp2(n));
         }
 
-        // saldo disponible antes de aplicar el nuevo valor en esta fila
         const saldoDisponible = this.clamp2(this.getValorAPagarNumber() - (this.totalPagos - old));
-        if (val > saldoDisponible) val = saldoDisponible;   // cap al saldo
+        if (val > saldoDisponible) val = saldoDisponible;
 
         p.data.monto = val;
         this.recalcularTotal();
@@ -232,90 +221,70 @@ export class RegistroCobrosComponent implements OnInit {
         p.api.refreshCells(params);
         return old !== val;
       },
-
       valueFormatter: p => this.usd(p.value),
     },
     {
-  headerName: 'PORC.RET',
-  field: 'porcRet',
-  width: 140,
-  editable: true,
-  cellEditor: 'agTextCellEditor',
+      headerName: 'PORC.RET',
+      field: 'porcRet',
+      width: 140,
+      editable: true,
+      cellEditor: 'agTextCellEditor',
+      suppressKeyboardEvent: (p) => {
+        if (!p.editing) return false;
+        const e = p.event as KeyboardEvent;
 
-  // Solo números y UN punto decimal
-  suppressKeyboardEvent: (p) => {
-    if (!p.editing) return false;
-    const e = p.event as KeyboardEvent;
+        const nav = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End','Enter','Escape'];
+        if (nav.includes(e.key)) return false;
 
-    const nav = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End','Enter','Escape'];
-    if (nav.includes(e.key)) return false;
+        const isDigit = e.key >= '0' && e.key <= '9';
+        if (isDigit) return false;
 
-    const isDigit = e.key >= '0' && e.key <= '9';
-    if (isDigit) return false;
+        if (e.key === '.') {
+          const el = e.target as HTMLInputElement;
+          const curr = el?.value ?? String((p.data ?? {}).porcRet ?? '');
+          return curr.includes('.');
+        }
+        return true;
+      },
+      valueSetter: (p: ValueSetterParams<any>) => {
+        const old = Number(p.data.porcRet) || 0;
 
-    if (e.key === '.') {
-      const el = e.target as HTMLInputElement;
-      const curr = el?.value ?? String((p.data ?? {}).porcRet ?? '');
-      // bloquea segundo punto
-      return curr.includes('.');
-    }
+        let raw = String(p.newValue ?? '').replace(/[^\d.]/g, '');
+        const firstDot = raw.indexOf('.');
+        if (firstDot !== -1) {
+          raw = raw.slice(0, firstDot + 1) + raw.slice(firstDot + 1).replace(/\./g, '');
+        }
+        raw = raw.replace(/^(\d+)(\.\d{0,2})?.*$/, (_m, int, dec) => int + (dec ?? ''));
 
-    // bloquea todo lo demás (letras, -, +, , etc.)
-    return true;
-  },
+        const val = raw === '' ? 0 : parseFloat(raw);
+        p.data.porcRet = isNaN(val) ? 0 : val;
 
-  valueSetter: (p: ValueSetterParams<any>) => {
-    const old = Number(p.data.porcRet) || 0;
+        p.api.refreshCells({
+          columns: ['porcRet'],
+          rowNodes: p.node ? [p.node] : undefined,
+          force: true
+        });
 
-    // sanea: solo dígitos y puntos
-    let raw = String(p.newValue ?? '').replace(/[^\d.]/g, '');
+        return old !== p.data.porcRet;
+      },
+      valueFormatter: p => (p.value || p.value === 0) ? `${(+p.value).toFixed(2)} %` : '',
+    },
 
-    // deja solo el PRIMER punto
-    const firstDot = raw.indexOf('.');
-    if (firstDot !== -1) {
-      raw = raw.slice(0, firstDot + 1) + raw.slice(firstDot + 1).replace(/\./g, '');
-    }
+    { headerName: 'BANCO', field: 'banco', width: 180, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(true), valueSetter: this.upperAlnumValueSetter('banco', true) },
+    { headerName: 'No.CUENTA/TARJETA/FACTURA', field: 'numCuentaTarjetaFactura', width: 260, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(false), valueSetter: this.upperAlnumValueSetter('numCuentaTarjetaFactura', false)},
+    { headerName: 'No.CHEQUE/#', field: 'numCheque', width: 160, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(false), valueSetter: this.upperAlnumValueSetter('numCheque', false)},
+    { headerName: 'DUEÑO', field: 'dueno', width: 160, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(true), valueSetter: this.upperAlnumValueSetter('dueno', true) },
+    { headerName: 'AUTORIZACION', field: 'autorizacion', width: 160, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(false), valueSetter: this.upperAlnumValueSetter('autorizacion', false) },
 
-    // máx. 2 decimales
-    raw = raw.replace(/^(\d+)(\.\d{0,2})?.*$/, (_m, int, dec) => int + (dec ?? ''));
-
-    const val = raw === '' ? 0 : parseFloat(raw);
-    p.data.porcRet = isNaN(val) ? 0 : val;
-
-    p.api.refreshCells({
-      columns: ['porcRet'],
-      rowNodes: p.node ? [p.node] : undefined,
-      force: true
-    });
-
-    return old !== p.data.porcRet;
-  },
-
-  valueFormatter: p => (p.value || p.value === 0) ? `${(+p.value).toFixed(2)} %` : '',
-},
-
-    { headerName: 'BANCO', field: 'banco', width: 180, editable: true,suppressKeyboardEvent: this.suppressUpperAlnum(true),valueSetter: this.upperAlnumValueSetter('banco', true) },
-    { headerName: 'No.CUENTA/TARJETA/FACTURA', field: 'numCuentaTarjetaFactura', width: 260, editable: true ,suppressKeyboardEvent: this.suppressUpperAlnum(false),valueSetter: this.upperAlnumValueSetter('numCuentaTarjetaFactura', false)},
-    { headerName: 'No.CHEQUE/#', field: 'numCheque', width: 160, editable: true ,suppressKeyboardEvent: this.suppressUpperAlnum(false),valueSetter: this.upperAlnumValueSetter('numCheque', false)},
-    { headerName: 'DUEÑO', field: 'dueno', width: 160, editable: true ,suppressKeyboardEvent: this.suppressUpperAlnum(true),valueSetter: this.upperAlnumValueSetter('dueno', true) },
-    { headerName: 'AUTORIZACION', field: 'autorizacion', width: 160, editable: true,suppressKeyboardEvent: this.suppressUpperAlnum(false),valueSetter: this.upperAlnumValueSetter('autorizacion', false) },
-   
     {
       colId: 'acciones',
       headerName: '',
       pinned: 'left',
-
-      // ancho fijo
       width: 64,
       minWidth: 64,
       maxWidth: 64,
-
-      // que sizeColumnsToFit NO la toque
       suppressSizeToFit: true,
-
-      // opcional: centrado del botón
       cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center' },
-
       cellRenderer: (params: any) => {
         const btn = document.createElement('button');
         btn.type = 'button';
@@ -335,11 +304,7 @@ export class RegistroCobrosComponent implements OnInit {
         return btn;
       },
     }
-
-
-
   ];
-
 
   pagoColumnDefs: ColDef[] = [];
   pagoDefaultColDef: ColDef = { resizable: true, sortable: true, filter: true };
@@ -358,6 +323,7 @@ export class RegistroCobrosComponent implements OnInit {
     private cuentaCobrarService: CuentaCobrarService,
     private _snackBar: MatSnackBar,
     private formaPagoService: FormaPagoService,
+    private pagoReportService:PagoReportService
   ) { }
 
   ngOnInit(): void {
@@ -397,24 +363,21 @@ export class RegistroCobrosComponent implements OnInit {
     });
     const refreshMax = () => vCtrl.updateValueAndValidity({ emitEvent: false });
 
-    // después de cargar facturas:
+    // Cargar facturas (ajusta origen real si aplica)
     this.cuentaCobrarService.getFacturasPendientesGrid(String(this.codcliO))
       .subscribe((rows: GridRow[]) => {
         this.rowData = rows;
         this.gridApi?.setGridOption('rowData', this.rowData);
         this.gridApi?.sizeColumnsToFit();
         this.recalcMontoDeuda();
-        refreshMax();                          // <— importante
+        refreshMax();
         if (rows.length === 0) this.mostrarAlerta('El cliente no tiene detalle de facturas (No tiene facturas_pendientes)', 'info');
         this.focusValorAPagar();
       });
+
     // Autocomplete formas de pago
-    // ngOnInit()
-    const DEBUG_FP = true;
-    // --- dentro de ngOnInit() ---
     const metodoCtrl = this.formPago.get('metodoPago') as FormControl;
 
-    // 1) Trae una vez las formas activas y cachea
     const formasActivas$ = this.formaPagoService.getPagedLite(1, 10).pipe(
       map(resp => resp?.type === 'Success' ? (resp.data?.items ?? []) : []),
       tap(list => console.log('[FP] paged items:', list)),
@@ -425,7 +388,6 @@ export class RegistroCobrosComponent implements OnInit {
       shareReplay(1)
     );
 
-    // 2) Filtra localmente según lo que teclea el usuario (o vacío para ver todo)
     this.filteredFormasPago$ = combineLatest([
       metodoCtrl.valueChanges.pipe(
         startWith(''),
@@ -451,9 +413,6 @@ export class RegistroCobrosComponent implements OnInit {
         return of([] as FormaPagoResponse[]);
       })
     );
-
-
-
 
     this.activarPlantilla('transfer');
   }
@@ -592,7 +551,6 @@ export class RegistroCobrosComponent implements OnInit {
       this.pagoColumnDefs = this.pagoColumnDefsTransfer;
       this.pagoRowData = JSON.parse(JSON.stringify(this.pagoRowDataTransfer));
     } else {
-
       this.pagoRowData = JSON.parse(JSON.stringify(this.pagoRowDataCheque));
     }
     this.recalcularTotal();
@@ -611,15 +569,12 @@ export class RegistroCobrosComponent implements OnInit {
   onPagoCellValueChanged(_: any) {
     this.recalcularTotal();
   }
+
   saldoPagos = 0;
-private recalcularTotal() {
-  // suma de montos en la grilla de formas de pago
-  this.totalPagos = (this.pagoRowData ?? []).reduce((acc, r) => acc + (Number(r.monto) || 0), 0);
-
-  // saldo = valorAPagar - totalPagos (redondeado a 2 decimales y nunca negativo)
-  this.saldoPendiente = Math.max(0, this.clamp2(this.getValorAPagarNumber() - this.totalPagos));
-}
-
+  private recalcularTotal() {
+    this.totalPagos = (this.pagoRowData ?? []).reduce((acc, r) => acc + (Number(r.monto) || 0), 0);
+    this.saldoPendiente = Math.max(0, this.clamp2(this.getValorAPagarNumber() - this.totalPagos));
+  }
 
   private validateGridPlantilla(): { ok: boolean; errors: string[] } {
     this.pagoGridApi?.stopEditing();
@@ -674,83 +629,80 @@ private recalcularTotal() {
     this.pagoGridApi?.setGridOption('rowData', this.pagoRowData);
     this.recalcularTotal();
   }
-
-registrarPago() {
-  // 1) Validar plantillas (paso 2)
-  const plant = this.validateGridPlantilla();
-  if (!plant.ok) {
-    this.mostrarAlerta('Revisa las formas de pago (totales/retenciones).', 'error');
-    console.warn('Errores plantilla:', plant.errors);
-    return;
-  }
-
-  // 2) Construir payload
-  const facturas_a_pagar = this.buildFacturasAPagar();
-  const formas_pago      = this.buildFormasPago();
-
-  if (facturas_a_pagar.length === 0) {
-    this.mostrarAlerta('No hay pagos distribuidos en facturas.', 'info');
-    this.salirPagos();
-    return;
-  }
-  if (formas_pago.length === 0) {
-    this.mostrarAlerta('Agrega al menos una forma de pago.', 'info');
-    return;
-  }
-
-  const req = {
-    cliente_codigo: String(this.formCliente.value.clienteCodigo || this.codcliO || ''),
-    facturas_a_pagar,
-    formas_pago,
-    id_usuario_responsable: Number(this.usuarioActual?.id_usuario ?? 0),
-    caja: String(this.formPago.value?.caja || '001'),
-    observaciones: String(this.formCliente.value?.observacion || '').trim(),
-  } as const;
-
-  // 3) Validación local (suma pagos vs suma formas de pago)
-  const chk = this.cuentaCobrarService.validatePago(req as any);
-  if (!chk.ok) {
-    this.mostrarAlerta(
-      `La suma de formas de pago no coincide con las facturas. Diferencia: ${chk.diferencia.toFixed(2)}`,
-      'error'
-    );
-    return;
-  }
-
-  // === 3.5) Mostrar lo que se enviará (debug/confirmación) ===
-  const to2 = (n: number) => Math.round((n ?? 0) * 100) / 100;
-  const totalFacturas = to2(req.facturas_a_pagar.reduce((a, b) => a + (b.monto_a_pagar || 0), 0));
-  const totalFormas   = to2(req.formas_pago.reduce((a, b) => a + (b.monto || 0), 0));
-  const payloadPretty = JSON.stringify(req, null, 2);
-
-  console.groupCollapsed('%c[PAGOS] Payload a enviar', 'color:#2563eb;font-weight:700;');
-  console.log('Cliente:', req.cliente_codigo);
-  console.log('Totales → facturas:', totalFacturas.toFixed(2), '| formas_pago:', totalFormas.toFixed(2));
-  console.log('Detalle facturas_a_pagar:', req.facturas_a_pagar);
-  console.log('Detalle formas_pago:', req.formas_pago);
-  console.log('JSON pretty:\n', payloadPretty);
-  console.groupEnd();
-
-  // Si quieres forzar confirmación visual antes de enviar:
- console.log(payloadPretty);
-  // 4) Llamar al backend
-  this.cuentaCobrarService.registrarPago(req as any).subscribe({
-    next: (res) => {
-      if (res?.ok) {
-        this.mostrarAlerta('Pago registrado correctamente.', 'ok');
-        // resetear estado
-        this.onCancel();
-      } else {
-        this.mostrarAlerta(res?.message || 'No se pudo registrar el pago.', 'error');
-      }
-    },
-    error: (err) => {
-      console.error('registrarPago error', err);
-      this.mostrarAlerta('Error al registrar el pago.', 'error');
+  private ultimoNumeroPago: string | null = null;
+  registrarPago() {
+    const plant = this.validateGridPlantilla();
+    if (!plant.ok) {
+      this.mostrarAlerta('Revisa las formas de pago (totales/retenciones).', 'error');
+      console.warn('Errores plantilla:', plant.errors);
+      return;
     }
-  });
-}
 
+    const facturas_a_pagar = this.buildFacturasAPagar();
+    const formas_pago      = this.buildFormasPago();
+
+    if (facturas_a_pagar.length === 0) {
+      this.mostrarAlerta('No hay pagos distribuidos en facturas.', 'info');
+      this.salirPagos();
+      return;
+    }
+    if (formas_pago.length === 0) {
+      this.mostrarAlerta('Agrega al menos una forma de pago.', 'info');
+      return;
+    }
+
+    const req = {
+      cliente_codigo: this.formCliente.value.clienteCodigo ?? this.codcliO ?? 0,
+      facturas_a_pagar,
+      formas_pago,
+      id_usuario_responsable: Number(this.usuarioActual?.id_usuario ?? 0),
+      caja: String(this.formPago.value?.caja || '001'),
+      observaciones: String(this.formCliente.value?.observacion || '').trim(),
+    } as const;
+
+    const chk = this.cuentaCobrarService.validatePago(req as any);
+    if (!chk.ok) {
+      this.mostrarAlerta(
+        `La suma de formas de pago no coincide con las facturas. Diferencia: ${chk.diferencia.toFixed(2)}`,
+        'error'
+      );
+      return;
+    }
+
+    const to2 = (n: number) => Math.round((n ?? 0) * 100) / 100;
+    const totalFacturas = to2(req.facturas_a_pagar.reduce((a, b) => a + (b.monto_a_pagar || 0), 0));
+    const totalFormas   = to2(req.formas_pago.reduce((a, b) => a + (b.monto || 0), 0));
+    const payloadPretty = JSON.stringify(req, null, 2);
+
+    console.groupCollapsed('%c[PAGOS] Payload a enviar', 'color:#2563eb;font-weight:700;');
+    console.log('Cliente:', req.cliente_codigo);
+    console.log('Totales → facturas:', totalFacturas.toFixed(2), '| formas_pago:', totalFormas.toFixed(2));
+    console.log('Detalle facturas_a_pagar:', req.facturas_a_pagar);
+    console.log('Detalle formas_pago:', req.formas_pago);
+    console.log('JSON pretty:\n', payloadPretty);
+    console.groupEnd();
+
+    // dentro del subscribe de registrarPago()
+this.cuentaCobrarService.registrarPago(req).subscribe({
+  next: async (numeroPago) => {
+    this.mostrarAlerta(`Pago ${numeroPago} registrado correctamente.`, 'ok');
+    this.ultimoNumeroPago = numeroPago;
+
+    // Generar PDF inmediatamente
+    try {
+      await this.pagoReportService.generarPdfDesdeApi(numeroPago);
+    } catch (e:any) {
+      console.error(e);
+      this.mostrarAlerta('Se registró el pago pero no se pudo generar el PDF.', 'warn');
+    }
+  },
+  error: (err) => {
+    console.error(err);
+    this.mostrarAlerta('Error registrando el pago', 'error');
+  }
+});
+
+  }
 
   onCancelarPago(): void {
     this.formPago.reset({ plantilla: 'transfer', valor: '', observacion: '', metodoPago: '' });
@@ -777,7 +729,7 @@ registrarPago() {
         this.focusValorAPagar();
       });
 
-    this.lockCliente(); // ⬅️ aquí lo bloqueas
+    this.lockCliente();
   }
 
   cargarCliente() {
@@ -815,9 +767,8 @@ registrarPago() {
   private recalcMontoDeuda(): void {
     const total = (this.rowData ?? []).reduce((acc, r) => acc + (Number(r.monto) || 0), 0);
     this.formCliente.patchValue({ montoDeuda: this.usd(total) }, { emitEvent: false });
-    this.formCliente.get('valorAPagar')?.updateValueAndValidity({ emitEvent: false }); // ← importante
+    this.formCliente.get('valorAPagar')?.updateValueAndValidity({ emitEvent: false });
   }
-
 
   mostrarAlerta(mensaje: string, tipo: 'info' | 'error' | 'ok' | string): void {
     this._snackBar.open(mensaje, 'Cerrar', {
@@ -906,8 +857,6 @@ registrarPago() {
     this.gridApi?.stopEditing();
   }
 
-
-
   irADetalleFacturas(e?: Event) {
     e?.preventDefault();
     this.lockValorAPagar();
@@ -955,8 +904,8 @@ registrarPago() {
 
   onFormEnter(e: Event) {
     const t = e.target as HTMLElement | null;
-    if (t && t.closest('.ag-root')) return; // deja pasar Enter dentro del grid
-    e.preventDefault(); // evita submit por Enter en otros inputs
+    if (t && t.closest('.ag-root')) return;
+    e.preventDefault();
   }
 
   // ===== Autocomplete de Formas de Pago (Paso 2) =====
@@ -971,10 +920,9 @@ registrarPago() {
     const descripcion = (item as any).descripcionPago ?? (item as any).descripcion ?? '';
     if (!codigo && !descripcion) return;
 
-    // evita duplicados
     const yaExiste = this.pagoRowData.some(r => String(r.codigo ?? '') === codigo && !!codigo);
     if (!yaExiste) {
-      const montoAuto = Math.max(0, this.getSaldo());   // ← saldo restante
+      const montoAuto = Math.max(0, this.getSaldo());
 
       if (pl === 'transfer') {
         this.pagoRowData.push({
@@ -992,7 +940,6 @@ registrarPago() {
       this.recalcularTotal();
     }
 
-    // limpia input y cierra panel
     setTimeout(() => {
       this.formPago.get('metodoPago')?.setValue('', { emitEvent: false });
       this.autoPagoTrigger?.closePanel();
@@ -1003,6 +950,7 @@ registrarPago() {
   onPagosRowsChanged(): void {
     this.recalcularTotal();
   }
+
   private existeFormaEnGrid(codigo: string): boolean {
     if (!this.pagoGridApi) return false;
     const count = this.pagoGridApi.getDisplayedRowCount();
@@ -1012,7 +960,8 @@ registrarPago() {
     }
     return false;
   }
-  // Total de deuda tomado del grid (más confiable que el input formateado)
+
+  // Total de deuda tomado del grid
   getMontoDeudaNumber(): number {
     return (this.rowData ?? []).reduce((acc, r) => acc + (Number(r.monto) || 0), 0);
   }
@@ -1022,37 +971,36 @@ registrarPago() {
     const raw = String(ctrl.value ?? '').replace(/[^0-9.]/g, '');
     const n = parseFloat(raw);
     const max = this.clamp2(this.getMontoDeudaNumber());
-    if (isNaN(n)) return null;                    // otros validadores ya controlan requerido/patrón
+    if (isNaN(n)) return null;
     return n <= max ? null : { maxDeuda: { max, actual: n } };
   };
+
   onValorAPagarInput(e: Event) {
-  if (this.valorAPagarBloqueado) return;
+    if (this.valorAPagarBloqueado) return;
 
-  this.sanearDecimal(e);
+    this.sanearDecimal(e);
 
-  const max = this.clamp2(this.getMontoDeudaNumber());
-  const ctrl = this.formCliente.get('valorAPagar')!;
-  const n = this.getValorAPagarNumber();
+    const max = this.clamp2(this.getMontoDeudaNumber());
+    const ctrl = this.formCliente.get('valorAPagar')!;
+    const n = this.getValorAPagarNumber();
 
-  if (n > max) {
-    this.mostrarAlerta(`El Valor a Pagar no puede superar el total (${this.usd(max)}).`, 'info');
-    ctrl.setValue(max.toFixed(2), { emitEvent: false });
+    if (n > max) {
+      this.mostrarAlerta(`El Valor a Pagar no puede superar el total (${this.usd(max)}).`, 'info');
+      ctrl.setValue(max.toFixed(2), { emitEvent: false });
+    }
+
+    this.rowData = (this.rowData || []).map(r => {
+      const monto = Number(r.monto) || 0;
+      return { ...r, pago: 0, estado: this.getEstado(0, monto) };
+    });
+    this.gridApi?.setGridOption('rowData', this.rowData);
+    this.invalidRows.clear();
+    this.gridApi?.refreshCells({ force: true });
+
+    this.recalcularTotal();
   }
 
-  // limpiar pagos por cambio de valor a pagar
-  this.rowData = (this.rowData || []).map(r => {
-    const monto = Number(r.monto) || 0;
-    return { ...r, pago: 0, estado: this.getEstado(0, monto) };
-  });
-  this.gridApi?.setGridOption('rowData', this.rowData);
-  this.invalidRows.clear();
-  this.gridApi?.refreshCells({ force: true });
-
-  // 🔴 importante: actualizar saldo pendiente
-  this.recalcularTotal();
-}
-
-  clienteBloqueado = false; // (opcional, solo si quieres mostrar/ocultar algo en UI)
+  clienteBloqueado = false;
 
   private lockCliente() {
     this.clienteBloqueado = true;
@@ -1065,94 +1013,94 @@ registrarPago() {
     this.clienteBloqueado = false;
     this.clienteOrigenControl.enable({ emitEvent: false });
   }
+
   private getSaldo(): number {
     return this.clamp2(this.getValorAPagarNumber() - this.totalPagos);
   }
-// ✅ método: disponible en toda la clase sin importar el orden
-private sanitizeUpperAlnum(raw: any, allowSpace = true): string {
-  let s = String(raw ?? '').toUpperCase();
-  const re = allowSpace ? /[^A-Z0-9 ]/g : /[^A-Z0-9]/g;
-  return s.replace(re, '');
-}
 
-// ✅ método que devuelve un handler para ag-Grid
-private suppressUpperAlnum(allowSpace = true) {
-  return (p: any) => {
-    if (!p.editing) return false;
-    const e = p.event as KeyboardEvent;
+  // ===== Helpers de normalizado =====
+  private sanitizeUpperAlnum(raw: any, allowSpace = true): string {
+    let s = String(raw ?? '').toUpperCase();
+    const re = allowSpace ? /[^A-Z0-9 ]/g : /[^A-Z0-9]/g;
+    return s.replace(re, '');
+  }
 
-    const nav = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End','Enter','Escape'];
-    if (nav.includes(e.key)) return false;
+  private suppressUpperAlnum(allowSpace = true) {
+    return (p: any) => {
+      if (!p.editing) return false;
+      const e = p.event as KeyboardEvent;
 
-    const isDigit  = e.key >= '0' && e.key <= '9';
-    const isLetter = (/^[a-z]$/i).test(e.key);
-    const isSpace  = e.key === ' ';
+      const nav = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End','Enter','Escape'];
+      if (nav.includes(e.key)) return false;
 
-    if (isDigit || isLetter) return false;
-    if (allowSpace && isSpace) return false;
+      const isDigit  = e.key >= '0' && e.key <= '9';
+      const isLetter = (/^[a-z]$/i).test(e.key);
+      const isSpace  = e.key === ' ';
 
-    return true; // bloquea todo lo demás
-  };
-}
+      if (isDigit || isLetter) return false;
+      if (allowSpace && isSpace) return false;
 
-// ✅ método que devuelve un valueSetter
-private upperAlnumValueSetter(field: string, allowSpace = true) {
-  return (p: any) => {
-    const oldVal = String(p.data?.[field] ?? '');
-    const cleaned = this.sanitizeUpperAlnum(p.newValue, allowSpace);
-    p.data[field] = cleaned;
-    p.api.refreshCells({
-      columns: [field],
-      rowNodes: p.node ? [p.node] : undefined,
-      force: true
-    });
-    return cleaned !== oldVal;
-  };
-}
-// ===== Helpers de mapeo (dentro de la clase RegistroCobrosComponent) =====
-
-// Toma filas del grid de facturas con pago > 0
-private buildFacturasAPagar(): Array<{ numero_factura: string; tipo_documento: string; monto_a_pagar: number }> {
-  const rows = (this.rowData ?? []).filter(r => (Number(r.pago) || 0) > 0);
-
-  return rows.map(r => {
-    // numero limpio sin "F - "
-    const numero_factura = (r.numero_factura ?? String(r.numero || '')).replace(/^F\s*-\s*/i, '');
-    // tipo: usa el que venga del servicio, si no intenta extraer de la descripción, si no “FACTURA”
-    const tipo_documento =
-      (r.tipo_documento?.toString() || '')
-      || (/NC|ND|VT|FACT/i.test(r.descripcion) ? r.descripcion.trim().toUpperCase() : '')
-      || 'FACTURA';
-
-    return {
-      numero_factura,
-      tipo_documento,
-      monto_a_pagar: this.clamp2(Number(r.pago) || 0),
+      return true;
     };
-  });
-}
+  }
 
-// Toma filas de la grilla de formas de pago (transfer/cheque)
-private buildFormasPago(): Array<{
-  id_forma_pago: number;
-  monto: number;
-  referencia?: string;
-  autorizacion?: string;
-  banco?: string;
-  numero_documento?: string;
-}> {
-  const rows = this.pagoRowData ?? [];
+  private upperAlnumValueSetter(field: string, allowSpace = true) {
+    return (p: any) => {
+      const oldVal = String(p.data?.[field] ?? '');
+      const cleaned = this.sanitizeUpperAlnum(p.newValue, allowSpace);
+      p.data[field] = cleaned;
+      p.api.refreshCells({
+        columns: [field],
+        rowNodes: p.node ? [p.node] : undefined,
+        force: true
+      });
+      return cleaned !== oldVal;
+    };
+  }
 
-  return rows
-    .filter(r => (Number(r.monto) || 0) > 0)
-    .map(r => ({
-      id_forma_pago: Number(r.codigo || 0),                    // ← del autocomplete
-      monto: this.clamp2(Number(r.monto) || 0),
-      referencia: String(r.numCuentaTarjetaFactura ?? '').trim(), // ← “No.CUENTA/TARJETA/FACTURA”
-      autorizacion: String(r.autorizacion ?? '').trim(),
-      banco: String(r.banco ?? '').trim(),
-      numero_documento: String(r.numCheque ?? '').trim(),      // ← “No.CHEQUE”
-    }));
-}
+  // ===== Helpers de mapeo =====
+  // Facturas con pago > 0 (INCLUYE 'tipo')
+  private buildFacturasAPagar(): Array<{ numero_factura: string; tipo_documento: string; tipo: string; monto_a_pagar: number }> {
+    const rows = (this.rowData ?? []).filter(r => (Number(r.pago) || 0) > 0);
 
+    return rows.map(r => {
+      const numero_factura = (r.numero_factura ?? String(r.numero || '')).replace(/^F\s*-\s*/i, '');
+      const tipo_documento =
+        (r.tipo_documento?.toString() || '')
+        || (/NC|ND|VT|FACT/i.test(r.descripcion) ? r.descripcion.trim().toUpperCase() : '')
+        || 'FACTURA';
+
+      return {
+        numero_factura,
+        tipo_documento,
+        tipo: r.estado === 'CANCELADO' ? 'P'
+           : r.estado === 'ABONADO'     ? 'A'
+           : r.estado,
+        monto_a_pagar: this.clamp2(Number(r.pago) || 0),
+      };
+    });
+  }
+
+  // Formas de pago desde grilla (transfer/cheque)
+  private buildFormasPago(): Array<{
+    id_forma_pago: number;
+    monto: number;
+    referencia?: string;
+    autorizacion?: string;
+    banco?: string;
+    numero_documento?: string;
+  }> {
+    const rows = this.pagoRowData ?? [];
+
+    return rows
+      .filter(r => (Number(r.monto) || 0) > 0)
+      .map(r => ({
+        id_forma_pago: Number(r.codigo || 0),
+        monto: this.clamp2(Number(r.monto) || 0),
+        referencia: String(r.numCuentaTarjetaFactura ?? '').trim(),
+        autorizacion: String(r.autorizacion ?? '').trim(),
+        banco: String(r.banco ?? '').trim(),
+        numero_documento: String(r.numCheque ?? '').trim(),
+      }));
+  }
 }

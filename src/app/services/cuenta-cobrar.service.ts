@@ -4,12 +4,21 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable, of } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
-/* ==== INTERFACES (todas FUERA de la clase) ==== */
+/* ==== Tipos genéricos de API ==== */
+export interface ApiResponse<T> {
+  id: string;
+  type: 'Success' | 'Error' | 'NotFound' | 'validation_error' | string;
+  data: T | null;
+  message: string;
+  count?: number | null;
+}
+
+/* ==== CxC ==== */
 export interface ApiRespuestaCxC {
   data?: {
     resumen_por_cliente?: {
       items?: Array<{
-        cliente_codigo: string;
+        cliente_codigo: string | number;
         nombre_cliente: string;
         facturas_pendientes: FacturaPendiente[] | null;
       }>;
@@ -28,48 +37,13 @@ export interface FacturaPendiente {
   observacion: string;
 }
 
-export interface GridRow {
-  numero: string;
-  fecha: string;
-  monto: number;
-  pago: number;
-  estado: string;
-  vence: string;
-  valueVencido: boolean;
-  descripcion: string;
-  ord: number;
+/* ==== Pago (respuesta de creación) ==== */
+export interface CreatePagoResponse {
+  numero_pago?: string;   // snake_case como lo devuelve tu API
+  // otros campos si los necesitas...
 }
 
-/* ---- Pago ---- */
-export interface FacturaAPagar {
-  numero_factura: string;
-  tipo_documento: string;
-  monto_a_pagar: number;
-}
-
-export interface FormaPagoItem {
-  id_forma_pago: number;
-  monto: number;
-  referencia?: string;
-  autorizacion?: string;
-  banco?: string;
-  numero_documento?: string;
-}
-
-export interface PagoRequest {
-  cliente_codigo: string;
-  facturas_a_pagar: FacturaAPagar[];
-  formas_pago: FormaPagoItem[];
-  id_usuario_responsable: number;
-  caja: string;
-  observaciones?: string;
-}
-
-export interface RegistrarPagoResponse {
-  ok: boolean;
-  message?: string;
-  data?: any;
-}
+/* ==== Grid (una sola definición) ==== */
 export interface GridRow {
   numero: string;               // "F - 001-..."
   numero_factura?: string;      // "001-..." (para payload)
@@ -83,16 +57,43 @@ export interface GridRow {
   descripcion: string;
   ord: number;
 }
-/* ==== SERVICIO ==== */
+
+/* ---- Pago (request) ---- */
+export interface FacturaAPagar {
+  numero_factura: string;
+  tipo_documento: string;
+  tipo: string;                 // <-- NECESARIO: 'P' | 'A'
+  monto_a_pagar: number;
+}
+
+export interface FormaPagoItem {
+  id_forma_pago: number;
+  monto: number;
+  referencia?: string;
+  autorizacion?: string;
+  banco?: string;
+  numero_documento?: string;
+}
+
+export interface PagoRequest {
+  cliente_codigo: number;        // <-- número, no string
+  facturas_a_pagar: FacturaAPagar[];
+  formas_pago: FormaPagoItem[];
+  id_usuario_responsable: number;
+  caja: string;
+  observaciones?: string;
+}
+
+/* ==== Servicio ==== */
 @Injectable({ providedIn: 'root' })
 export class CuentaCobrarService {
   private readonly baseUrl = environment.invoices_sic;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   /* --------- Estado de cuenta --------- */
-  getFacturasPendientesGrid(clienteCodigo: string): Observable<GridRow[]> {
-    const url = `${this.baseUrl}/EstadoCuenta/cuenta-cobrar/${encodeURIComponent(clienteCodigo)}`;
+  getFacturasPendientesGrid(clienteCodigo: string | number): Observable<GridRow[]> {
+    const url = `${this.baseUrl}/EstadoCuenta/cuenta-cobrar/${encodeURIComponent(String(clienteCodigo))}`;
     const params = new HttpParams()
       .set('incluirDetalle', 'true')
       .set('saldoMinimo', '0.01')
@@ -100,7 +101,7 @@ export class CuentaCobrarService {
       .set('pageSize', '50');
 
     return this.http.get<ApiRespuestaCxC>(url, { params }).pipe(
-      map(res => this.mapResponseToGridRows(res, clienteCodigo))
+      map(res => this.mapResponseToGridRows(res, String(clienteCodigo)))
     );
   }
 
@@ -110,9 +111,7 @@ export class CuentaCobrarService {
 
   private mapResponseToGridRows(res: ApiRespuestaCxC, clienteCodigo: string): GridRow[] {
     const items = res?.data?.resumen_por_cliente?.items ?? [];
-    const item =
-      items.find(i => String(i?.cliente_codigo) === String(clienteCodigo)) ??
-      items[0];
+    const item = items.find(i => String(i?.cliente_codigo) === String(clienteCodigo)) ?? items[0];
 
     const facturas: FacturaPendiente[] = (item?.facturas_pendientes ?? []) as FacturaPendiente[];
     if (!Array.isArray(facturas) || facturas.length === 0) return [];
@@ -122,7 +121,7 @@ export class CuentaCobrarService {
       const monto = this.to2(this.num(f.saldo_pendiente ?? f.total_factura));
       return {
         numero: `F - ${f.numero_factura}`,
-        numero_factura: f.numero_factura,          // 👈
+        numero_factura: f.numero_factura,
         tipo_documento: f.tipo_documento,
         fecha: f.fecha_factura,
         monto,
@@ -149,15 +148,20 @@ export class CuentaCobrarService {
   }
 
   /* --------- Pagos --------- */
-  registrarPago(req: PagoRequest): Observable<RegistrarPagoResponse> {
-    // Ajusta el endpoint a tu backend real
-    const url = `${this.baseUrl}/pagos/`;
-    return this.http.post<RegistrarPagoResponse>(url, req);
+  registrarPago(req: PagoRequest): Observable<string> {
+    const url = `${this.baseUrl}/Pagos`; // coherente con el controller [Route("api/[controller]")]
+    return this.http.post<ApiResponse<CreatePagoResponse>>(url, req).pipe(
+      map(res => {
+        const n = res.data?.numero_pago;
+        if (!n) throw new Error('No se recibió numero_pago en la respuesta');
+        return n; // "PAG000031"
+      })
+    );
   }
 
   /** Construye el payload de pago desde datos de la UI */
   buildPagoRequest(params: {
-    clienteCodigo: string;
+    clienteCodigo: string | number;
     facturasSeleccionadas: Array<{ numero: string; tipo: string; montoPagar: number }>;
     formasPago: Array<{
       id: number; monto: number; referencia?: string; autorizacion?: string;
@@ -172,7 +176,8 @@ export class CuentaCobrarService {
       .filter(f => this.to2(f.montoPagar) > 0)
       .map(f => ({
         numero_factura: this.sanitizeString(f.numero).replace(/^F\s*-\s*/i, ''),
-        tipo_documento: this.sanitizeString(f.tipo),
+        tipo_documento: this.sanitizeString('FACTURA'),
+        tipo: this.sanitizeString(f.tipo).toUpperCase(), // debe ser 'P' o 'A'
         monto_a_pagar: this.to2(f.montoPagar),
       }));
 
@@ -188,7 +193,7 @@ export class CuentaCobrarService {
       }));
 
     return {
-      cliente_codigo: this.sanitizeString(params.clienteCodigo),
+      cliente_codigo: Number(params.clienteCodigo),  // número
       facturas_a_pagar,
       formas_pago,
       id_usuario_responsable: Number(params.usuarioId),
