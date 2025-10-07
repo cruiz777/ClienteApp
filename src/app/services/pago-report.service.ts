@@ -49,7 +49,7 @@ export class PagoReportService {
   // Ej: http://localhost:5010/invoices-sic
   private readonly baseUrl = environment.invoices_sic;
 
-  constructor(private http: HttpClient) { }
+  constructor(private http: HttpClient) {}
 
   /** Llama a GET /api/Pagos/{numeroPago} y devuelve el array de filas (pagos del lote) */
   async fetchPago(numeroPago: string): Promise<PagoResponse[]> {
@@ -62,16 +62,31 @@ export class PagoReportService {
   }
 
   /** Genera el PDF desde el API y lo descarga */
-  async generarPdfDesdeApi(numeroPago: string, opts?: { asiento?: string; titulo?: string }): Promise<void> {
+  async generarPdfDesdeApi(
+    numeroPago: string,
+    opts?: { asiento?: string; titulo?: string; logoUrl?: string; logoDataUrl?: string }
+  ): Promise<void> {
     const data = await this.fetchPago(numeroPago);
-    this.generarPdfIngresoCaja(data, { numeroPago, asiento: opts?.asiento, titulo: opts?.titulo });
+    await this.generarPdfIngresoCaja(data, {
+      numeroPago,
+      asiento: opts?.asiento,
+      titulo: opts?.titulo,
+      logoUrl: opts?.logoUrl,
+      logoDataUrl: opts?.logoDataUrl
+    });
   }
 
   /** Genera el PDF desde datos ya cargados (por si ya llamaste al endpoint) */
-  generarPdfIngresoCaja(
+  async generarPdfIngresoCaja(
     filas: PagoResponse[],
-    opts: { numeroPago?: string; asiento?: string; titulo?: string } = {}
-  ): void {
+    opts: {
+      numeroPago?: string;
+      asiento?: string;
+      titulo?: string;
+      logoUrl?: string;       // URL del logo (se carga como dataURL)
+      logoDataUrl?: string;   // dataURL ya precargado (opcional)
+    } = {}
+  ): Promise<void> {
     if (!Array.isArray(filas) || filas.length === 0) {
       throw new Error('Sin datos para el PDF');
     }
@@ -82,36 +97,30 @@ export class PagoReportService {
     const cliente = first.cliente_nombre;
     const fechaStr = this.formateaFecha(first.fecha);
     const asiento = opts.asiento ?? '';
-    const tituloEmpresa = opts.titulo ?? 'E C O P';
+    const tituloEmpresa = opts.titulo ?? 'GS1';
 
     // ===== Conceptos por cada documento del lote =====
     const conceptos = filas
       .map(f => {
         const tipo = String(f.tipo || '').toUpperCase();
         const etiqueta = tipo === 'A' ? 'ABONO' : (tipo === 'P' ? 'CANCELACION' : 'CANCELACION');
-
-        // <<< CLAVE: usar el monto por documento, no el total del lote >>>
-        const montoNum = this.to2(f.pagado ?? 0);    // <-- NO uses total_pago aquí
+        // Usar monto del documento (no el total del lote)
+        const montoNum = this.to2(f.pagado ?? 0);
         const monto = this.moneda(montoNum, true);
-
-        const etq = (' ' + etiqueta).padEnd(13, ' ');    // ancho aprox. para la etiqueta
+        const etq = (' ' + etiqueta).padEnd(13, ' ');
         const doc = (this.normalizaDoc(f.numero_documento) + '   ').padEnd(20, ' ');
         return `${etq}${doc}${monto}`;
       })
       .join('\n');
 
-
     // ===== Formas de pago (deduplicadas y sumadas a nivel de lote) =====
     const detallesAll: DetallePagoResponse[] = (filas[0]?.detalles || []).slice();
-
-    // Agrupar por (forma_pago + descripcion) para evitar duplicados por cada fila de pago
     const map = new Map<string, { desc: string; monto: number }>();
 
     for (const d of detallesAll) {
       const desc = (d.descripcion_pago || this.mapIdFormaPago(d.forma_pago)).trim();
       const key = `${String(d.forma_pago).trim()}|${desc.toUpperCase()}`;
       const monto = Number(d.monto || 0);
-
       if (map.has(key)) {
         const v = map.get(key)!;
         v.monto = this.to2(v.monto + monto);
@@ -133,19 +142,32 @@ export class PagoReportService {
     doc.setLineWidth(1);
     doc.rect(margin / 2, margin / 2, pageWidth - margin, pageHeight - margin);
 
+    // === LOGO (arriba-izquierda) ===
+    // Si se pasa logoDataUrl, se usa directo. Si no, se intenta cargar por logoUrl.
+    const logoData =
+      opts.logoDataUrl || (await this.loadLogoDataUrl(opts.logoUrl));
+    let yOffset = 0;
+    if (logoData) {
+      // Ajusta tamaño/posición a tu imagen
+      const logoW = 120; // pt
+      const logoH = 44;  // pt
+      doc.addImage(logoData, 'PNG', margin, 64 - logoH / 2, logoW, logoH);
+      yOffset = 8; // pequeño espacio adicional
+    }
+
     // Título
     doc.setFont('Times', 'Bold');
     doc.setFontSize(16);
-    doc.text(tituloEmpresa, pageWidth / 2, 80, { align: 'center' });
+    doc.text(tituloEmpresa, pageWidth / 2, 80 + yOffset, { align: 'center' });
     doc.setFontSize(14);
-    doc.text('INGRESO DE CAJA', pageWidth / 2, 102, { align: 'center' });
+    doc.text('INGRESO DE CAJA', pageWidth / 2, 102 + yOffset, { align: 'center' });
 
     // ===== Barra superior: Número Pago / Asiento =====
     autoTable(doc, {
-      startY: 120, // <-- usar valor fijo aquí, NO uses y antes de declararlo
-      styles: { font: 'Times', fontSize: 11, textColor: [0, 0, 0] },   // global
-      headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] }, // header negro
-      bodyStyles: { textColor: [0, 0, 0] },                             // cuerpo negro
+      startY: 120 + yOffset,
+      styles: { font: 'Times', fontSize: 11, textColor: [0, 0, 0] },
+      headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] },
+      bodyStyles: { textColor: [0, 0, 0] },
       margin: { left: margin, right: margin },
       head: [[
         { content: 'Número Pago', styles: { halign: 'center' } },
@@ -158,7 +180,6 @@ export class PagoReportService {
 
     // Ahora sí declaramos y, tomando el final de la tabla anterior
     let y = (doc as any).lastAutoTable.finalY + 12;
-
 
     // ===== Bloque FECHA / CLIENTE / CONCEPTO =====
     doc.setFont('Times', 'Bold'); doc.setFontSize(11); doc.text('FECHA:', margin, y);
@@ -261,5 +282,20 @@ export class PagoReportService {
       useGrouping: false
     }).format(n);
     return conSimbolo ? `$${s}` : s;
+  }
+
+  /** Carga un logo (URL) como dataURL; si falla, retorna undefined */
+  private async loadLogoDataUrl(url?: string): Promise<string | undefined> {
+    if (!url) return undefined;
+    try {
+      const blob = await firstValueFrom(this.http.get(url, { responseType: 'blob' as const }));
+      return await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result));
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return undefined; // si falla, seguimos sin logo
+    }
   }
 }

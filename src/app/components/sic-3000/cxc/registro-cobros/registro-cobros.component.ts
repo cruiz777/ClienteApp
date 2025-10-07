@@ -233,7 +233,7 @@ export class RegistroCobrosComponent implements OnInit {
         if (!p.editing) return false;
         const e = p.event as KeyboardEvent;
 
-        const nav = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End','Enter','Escape'];
+        const nav = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End', 'Enter', 'Escape'];
         if (nav.includes(e.key)) return false;
 
         const isDigit = e.key >= '0' && e.key <= '9';
@@ -271,8 +271,8 @@ export class RegistroCobrosComponent implements OnInit {
     },
 
     { headerName: 'BANCO', field: 'banco', width: 180, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(true), valueSetter: this.upperAlnumValueSetter('banco', true) },
-    { headerName: 'No.CUENTA/TARJETA/FACTURA', field: 'numCuentaTarjetaFactura', width: 260, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(false), valueSetter: this.upperAlnumValueSetter('numCuentaTarjetaFactura', false)},
-    { headerName: 'No.CHEQUE/#', field: 'numCheque', width: 160, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(false), valueSetter: this.upperAlnumValueSetter('numCheque', false)},
+    { headerName: 'No.CUENTA/TARJETA/FACTURA', field: 'numCuentaTarjetaFactura', width: 260, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(false), valueSetter: this.upperAlnumValueSetter('numCuentaTarjetaFactura', false) },
+    { headerName: 'No.CHEQUE/#', field: 'numCheque', width: 160, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(false), valueSetter: this.upperAlnumValueSetter('numCheque', false) },
     { headerName: 'DUEÑO', field: 'dueno', width: 160, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(true), valueSetter: this.upperAlnumValueSetter('dueno', true) },
     { headerName: 'AUTORIZACION', field: 'autorizacion', width: 160, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(false), valueSetter: this.upperAlnumValueSetter('autorizacion', false) },
 
@@ -323,7 +323,7 @@ export class RegistroCobrosComponent implements OnInit {
     private cuentaCobrarService: CuentaCobrarService,
     private _snackBar: MatSnackBar,
     private formaPagoService: FormaPagoService,
-    private pagoReportService:PagoReportService
+    private pagoReportService: PagoReportService
   ) { }
 
   ngOnInit(): void {
@@ -639,7 +639,7 @@ export class RegistroCobrosComponent implements OnInit {
     }
 
     const facturas_a_pagar = this.buildFacturasAPagar();
-    const formas_pago      = this.buildFormasPago();
+    const formas_pago = this.buildFormasPago();
 
     if (facturas_a_pagar.length === 0) {
       this.mostrarAlerta('No hay pagos distribuidos en facturas.', 'info');
@@ -671,7 +671,7 @@ export class RegistroCobrosComponent implements OnInit {
 
     const to2 = (n: number) => Math.round((n ?? 0) * 100) / 100;
     const totalFacturas = to2(req.facturas_a_pagar.reduce((a, b) => a + (b.monto_a_pagar || 0), 0));
-    const totalFormas   = to2(req.formas_pago.reduce((a, b) => a + (b.monto || 0), 0));
+    const totalFormas = to2(req.formas_pago.reduce((a, b) => a + (b.monto || 0), 0));
     const payloadPretty = JSON.stringify(req, null, 2);
 
     console.groupCollapsed('%c[PAGOS] Payload a enviar', 'color:#2563eb;font-weight:700;');
@@ -682,25 +682,37 @@ export class RegistroCobrosComponent implements OnInit {
     console.log('JSON pretty:\n', payloadPretty);
     console.groupEnd();
 
-    // dentro del subscribe de registrarPago()
-this.cuentaCobrarService.registrarPago(req).subscribe({
-  next: async (numeroPago) => {
-    this.mostrarAlerta(`Pago ${numeroPago} registrado correctamente.`, 'ok');
-    this.ultimoNumeroPago = numeroPago;
 
-    // Generar PDF inmediatamente
-    try {
-      await this.pagoReportService.generarPdfDesdeApi(numeroPago);
-    } catch (e:any) {
-      console.error(e);
-      this.mostrarAlerta('Se registró el pago pero no se pudo generar el PDF.', 'warn');
-    }
-  },
-  error: (err) => {
-    console.error(err);
-    this.mostrarAlerta('Error registrando el pago', 'error');
-  }
-});
+    console.groupCollapsed('%c[PAGOS] Payload a enviar', 'color:#2563eb;font-weight:700;');
+    console.log('POST → /api/Pagos');
+    console.log('Cliente:', req.cliente_codigo);
+    console.log('facturas_a_pagar:', req.facturas_a_pagar);
+    console.log('formas_pago:', req.formas_pago);
+    console.log('JSON pretty:\n', payloadPretty);
+    console.groupEnd();
+    // dentro del subscribe de registrarPago()
+    this.cuentaCobrarService.registrarPago(req).subscribe({
+      next: async (numeroPago) => {
+        this.mostrarAlerta(`Pago ${numeroPago} registrado correctamente.`, 'ok');
+        this.ultimoNumeroPago = numeroPago;
+
+        // Generar PDF inmediatamente
+        try {
+          await this.pagoReportService.generarPdfDesdeApi(numeroPago, {
+            titulo: 'GS1 ECUADOR',
+            logoUrl: 'assets/logo/GS1-logo.png'
+          });
+        } catch (e: any) {
+          console.error(e);
+          this.mostrarAlerta('Se registró el pago pero no se pudo generar el PDF.', 'warn');
+        }
+
+      },
+      error: (err) => {
+        console.error(err);
+        this.mostrarAlerta('Error registrando el pago', 'error');
+      }
+    });
 
   }
 
@@ -1030,12 +1042,12 @@ this.cuentaCobrarService.registrarPago(req).subscribe({
       if (!p.editing) return false;
       const e = p.event as KeyboardEvent;
 
-      const nav = ['Backspace','Delete','ArrowLeft','ArrowRight','Tab','Home','End','Enter','Escape'];
+      const nav = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End', 'Enter', 'Escape'];
       if (nav.includes(e.key)) return false;
 
-      const isDigit  = e.key >= '0' && e.key <= '9';
+      const isDigit = e.key >= '0' && e.key <= '9';
       const isLetter = (/^[a-z]$/i).test(e.key);
-      const isSpace  = e.key === ' ';
+      const isSpace = e.key === ' ';
 
       if (isDigit || isLetter) return false;
       if (allowSpace && isSpace) return false;
@@ -1074,8 +1086,8 @@ this.cuentaCobrarService.registrarPago(req).subscribe({
         numero_factura,
         tipo_documento,
         tipo: r.estado === 'CANCELADO' ? 'P'
-           : r.estado === 'ABONADO'     ? 'A'
-           : r.estado,
+          : r.estado === 'ABONADO' ? 'A'
+            : r.estado,
         monto_a_pagar: this.clamp2(Number(r.pago) || 0),
       };
     });

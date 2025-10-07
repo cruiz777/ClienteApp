@@ -4,12 +4,12 @@ import { NavigationSicComponent } from './navigation-sic/navigation-sic.componen
 import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
 import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
 import { EstructuraListComponent } from './estructuracomercial/estructura-list/estructura-list.component';
-import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.component';
+import { RegistroCobrosComponent } from './cxc/registro-cobros/registro-cobros.component';
 import { FacturacionIndividualComponent } from './facturacion/facturacion-individual/facturacion-individual.component';
 import { FacturacionGlobalComponent } from './facturacion/facturacion-global/facturacion-global.component';
 import { AuthGuard } from 'src/app/guards/auth.guard';
 import { PermissionGuard } from 'src/app/guards/permission.guard';
-import { CobroIndividualComponent } from './cobro-individual/cobro-individual.component';
+import { AnulacionPagoComponent } from './cxc/anulacion-pago/anulacion-pago.component';
 
 
 const routes: Routes = [
@@ -20,46 +20,51 @@ const routes: Routes = [
     children: [
       // Redirige a la ruta que sí existe
       { path: '', redirectTo: 'inicio-sic', pathMatch: 'full' },
-      
+
       // INICIO - Solo requiere acceso al módulo
-      { 
-        path: 'inicio-sic', 
+      {
+        path: 'inicio-sic',
         component: InicioSicComponent,
         canActivate: [PermissionGuard],
         data: { permission: 'sic-3000' } // ✅ Permiso específico
       },
-      
+
       // ESTRUCTURA COMERCIAL
-      { 
-        path: 'estructura-list', 
+      {
+        path: 'estructura-list',
         component: EstructuraListComponent,
         canActivate: [PermissionGuard],
         data: { permission: 'sic-3000.inventarios.estructura-comercial' }
       },
-      
-      { 
-        path: 'registroCobros', 
+
+      {
+        path: 'registroCobros',
         component: RegistroCobrosComponent,
         canActivate: [PermissionGuard],
         data: { permission: 'sic-3000.cuentas-por-cobrar.registro-cobros' }
       },
-      { path: 'cobroIndividual', component: CobroIndividualComponent },
-      { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
+       {
+        path: 'anularCobros',
+        component: AnulacionPagoComponent,
    
+      },
+
+      { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
+
       // FACTURACIÓN INDIVIDUAL
-      { 
-        path: 'findividual', 
+      {
+        path: 'findividual',
         component: FacturacionIndividualComponent,
         canActivate: [PermissionGuard],
         data: { permission: 'sic-3000.facturacion.facturacion-individual' }
       },
-      
+
       // FACTURACIÓN GLOBAL
-      { 
-        path: 'fglobal', 
+      {
+        path: 'fglobal',
         component: FacturacionGlobalComponent,
         canActivate: [PermissionGuard],
-        data: { permission: 'sic-3000.facturacion.facturacion-global' } 
+        data: { permission: 'sic-3000.facturacion.facturacion-global' }
       }
     ]
   }

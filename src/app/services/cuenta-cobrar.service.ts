@@ -84,6 +84,49 @@ export interface PagoRequest {
   observaciones?: string;
 }
 
+/** ---- Request para anular pago ---- */
+export interface AnularPagoRequest {
+  motivo_anulacion: string;
+  id_usuario_responsable: number;
+}
+
+/** (Opcional) respuesta si tu API envía algo útil */
+export interface AnularPagoResponse {
+  // ajusta si tu backend devuelve más datos
+  numero_pago?: string;
+}
+
+/* ==== Consulta Pago por número ==== */
+export interface PagoDetalle {
+  forma_pago: string;
+  secuencia: string;
+  monto: number;
+  descripcion_pago: string;
+  referencia: string;
+  banco: string;
+  numero_documento: string;
+}
+
+export interface PagoPorNumero {
+  id_pago: number;
+  numero_pago: string;
+  tipo: 'P' | 'A';
+  cliente_codigo: number;
+  cliente_nombre: string;
+  fecha: string;            // ISO 8601 (del backend)
+  numero_documento: string;
+  pagado: number;           // <- normalizado a number
+  total_pago: number;
+  observaciones?: string | null;
+  tiene_retencion_iva: boolean;
+  valor_retencion_iva?: number | null;
+  tiene_retencion_fuente: boolean;
+  valor_retencion_fuente?: number | null;
+  caja: string;
+  detalles: PagoDetalle[];
+}
+
+
 /* ==== Servicio ==== */
 @Injectable({ providedIn: 'root' })
 export class CuentaCobrarService {
@@ -209,4 +252,74 @@ export class CuentaCobrarService {
     const dif = this.to2(totalFacturas - totalFormas);
     return { ok: Math.abs(dif) < 0.01, diferencia: dif };
   }
+    /** GET /api/Pagos/{numeroPago} - devuelve el primer item normalizado */
+  getPagoByNumero(numeroPago: string): Observable<PagoPorNumero> {
+    const url = `${this.baseUrl}/Pagos/${encodeURIComponent(numeroPago)}`;
+    return this.http.get<ApiResponse<PagoPorNumero[]>>(url).pipe(
+      map(res => {
+        const item: any = Array.isArray(res.data) ? res.data[0] : null;
+        if (!item) throw new Error(`Pago ${numeroPago} no encontrado`);
+        return this.normalizePago(item);
+      })
+    );
+  }
+
+  /** (Opcional) GET crudo tal cual viene del API, por si lo necesitas */
+  getPagoByNumeroRaw(numeroPago: string): Observable<ApiResponse<PagoPorNumero[]>> {
+    const url = `${this.baseUrl}/Pagos/${encodeURIComponent(numeroPago)}`;
+    return this.http.get<ApiResponse<PagoPorNumero[]>>(url);
+  }
+
+  /** Normaliza tipos numéricos y estructura de detalles */
+  private normalizePago(raw: any): PagoPorNumero {
+    return {
+      id_pago: Number(raw.id_pago),
+      numero_pago: this.sanitizeString(raw.numero_pago),
+      tipo: this.sanitizeString(raw.tipo) as 'P' | 'A',
+      cliente_codigo: Number(raw.cliente_codigo),
+      cliente_nombre: this.sanitizeString(raw.cliente_nombre),
+      fecha: this.sanitizeString(raw.fecha),
+      numero_documento: this.sanitizeString(raw.numero_documento),
+      pagado: this.to2(this.num(raw.pagado)),         // viene como "10" => 10
+      total_pago: this.to2(this.num(raw.total_pago)),
+      observaciones: raw.observaciones ?? null,
+      tiene_retencion_iva: !!raw.tiene_retencion_iva,
+      valor_retencion_iva: raw.valor_retencion_iva != null ? this.to2(this.num(raw.valor_retencion_iva)) : null,
+      tiene_retencion_fuente: !!raw.tiene_retencion_fuente,
+      valor_retencion_fuente: raw.valor_retencion_fuente != null ? this.to2(this.num(raw.valor_retencion_fuente)) : null,
+      caja: this.sanitizeString(raw.caja),
+      detalles: Array.isArray(raw.detalles)
+        ? raw.detalles.map((d: any): PagoDetalle => ({
+            forma_pago: this.sanitizeString(d.forma_pago),
+            secuencia: this.sanitizeString(d.secuencia),
+            monto: this.to2(this.num(d.monto)),
+            descripcion_pago: this.sanitizeString(d.descripcion_pago),
+            referencia: this.sanitizeString(d.referencia),
+            banco: this.sanitizeString(d.banco),
+            numero_documento: this.sanitizeString(d.numero_documento),
+          }))
+        : [],
+    };
+  }
+anularPago(numeroPago: string, req: AnularPagoRequest): Observable<string> {
+  const nro = this.sanitizeString(numeroPago);
+  if (!nro) throw new Error('numeroPago requerido');
+  const url = `${this.baseUrl}/Pagos/anular/${encodeURIComponent(nro)}`;
+
+  // tip: el backend ya recibe JSON; no necesitas headers manuales
+  return this.http.post<ApiResponse<AnularPagoResponse | null>>(url, {
+    motivo_anulacion: this.sanitizeString(req.motivo_anulacion),
+    id_usuario_responsable: Number(req.id_usuario_responsable),
+  }).pipe(
+    map(res => {
+      // Convención ApiResponse de tu proyecto
+      const t = (res?.type || '').toLowerCase();
+      if (t.includes('error') || t === 'notfound' || t === 'validation_error') {
+        throw new Error(res?.message || 'Error anulando pago');
+      }
+      // retorna un texto amigable
+      return res?.message || 'Pago anulado correctamente.';
+    })
+  );
+}
 }

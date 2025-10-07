@@ -1,0 +1,508 @@
+
+
+:host {
+  display: contents;
+}
+
+.payment-reversal-container {
+  width: 1134px;
+  height: 847px;
+  position: relative;
+  font-family: "Inter", sans-serif;
+  background-color: #fff;
+}
+
+@media (max-width: 991px) {
+  .payment-reversal-container {
+    width: 100%;
+    max-width: 1024px;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 640px) {
+  .payment-reversal-container {
+    padding: 15px;
+  }
+}
+
+.background-wrapper {
+  width: 1133px;
+  height: 847px;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+@media (max-width: 991px) {
+  .background-wrapper {
+    width: 100%;
+    height: auto;
+  }
+}
+
+.main-border {
+  width: 1133px;
+  height: 847px;
+  border: 1px solid #ccd5e2;
+  position: absolute;
+  left: 0;
+  top: 0;
+  background-color: #fff;
+}
+
+@media (max-width: 991px) {
+  .main-border {
+    width: 100%;
+    height: auto;
+  }
+}
+
+.page-title {
+  display: inline-flex;
+  padding: 10px 0;
+  align-items: center;
+  gap: 10px;
+  position: absolute;
+  left: 31px;
+  top: 28px;
+  width: 192px;
+  height: 44px;
+}
+
+@media (max-width: 991px) {
+  .page-title {
+    position: relative;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+}
+
+.title-text {
+  color: #002c6c;
+  font: 700 20px Inter;
+  margin: 0;
+}
+
+.form-section {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  position: absolute;
+  left: 51px;
+  top: 94px;
+  width: calc(100% - 102px);
+}
+
+@media (max-width: 991px) {
+  .form-section {
+    position: relative;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin-bottom: 20px;
+  }
+}
+
+.input-group {
+  width: 243px;
+  height: 43px;
+}
+
+@media (max-width: 991px) {
+  .input-group {
+    width: 48%;
+    margin-bottom: 20px;
+  }
+}
+
+@media (max-width: 640px) {
+  .input-group {
+    width: 100%;
+    margin-bottom: 15px;
+  }
+}
+
+.client-field {
+  width: 506px;
+}
+
+@media (max-width: 991px) {
+  .client-field {
+    width: 100%;
+  }
+}
+
+.field-label {
+  display: flex;
+  width: 198px;
+  height: 16px;
+  padding: 5px 2px;
+  align-items: center;
+  gap: 10px;
+  color: #002c6c;
+  font: 400 12px Inter;
+  margin-bottom: 5px;
+}
+
+.input-wrapper {
+  display: flex;
+  width: 243px;
+  height: 20px;
+  padding: 4px;
+  align-items: center;
+  gap: 7px;
+  border-bottom: 1px solid #ccd5e2;
+  background-color: #fff;
+  position: relative;
+}
+
+.input-wrapper-wide {
+  display: flex;
+  width: 506px;
+  height: 20px;
+  padding: 4px;
+  align-items: center;
+  gap: 7px;
+  border-bottom: 1px solid #ccd5e2;
+  background-color: #fff;
+  position: relative;
+}
+
+@media (max-width: 991px) {
+  .input-wrapper-wide {
+    width: 100%;
+  }
+}
+
+.cursor-line {
+  cursor: line;
+  width: 0;
+  height: 11px;
+  position: relative;
+}
+
+.cursor-indicator {
+  cursor: indicator;
+  width: 11px;
+  height: 0;
+  position: absolute;
+  left: 0;
+  top: 0;
+  background-color: #ccd5e2;
+}
+
+.text-input {
+  color: #ccd5e2;
+  font: 400 11px Inter;
+  border: none;
+  outline: none;
+  background: transparent;
+  flex: 1;
+  width: 100px;
+}
+
+.text-input:focus {
+  color: #002c6c;
+}
+
+.dropdown-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.dropdown-icon {
+  width: 11px;
+  height: 7px;
+}
+
+.observation-section {
+  display: flex;
+  gap: 20px;
+  position: absolute;
+  left: 49px;
+  top: 157px;
+  width: calc(100% - 98px);
+}
+
+@media (max-width: 991px) {
+  .observation-section {
+    position: relative;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin-bottom: 20px;
+    flex-direction: column;
+  }
+}
+
+.observation-group {
+  width: 508px;
+  height: 110px;
+}
+
+@media (max-width: 991px) {
+  .observation-group {
+    width: 100%;
+    margin-bottom: 20px;
+  }
+}
+
+.observation-textarea {
+  width: 506px;
+  height: 87px;
+  border: 1px solid #d9d9d9;
+  background-color: #fff;
+  padding: 8px;
+  font: 400 11px Inter;
+  resize: vertical;
+  outline: none;
+}
+
+@media (max-width: 991px) {
+  .observation-textarea {
+    width: 100%;
+  }
+}
+
+.observation-textarea:focus {
+  border-color: #002c6c;
+}
+
+.reversal-date {
+  margin-top: 0;
+}
+
+@media (max-width: 991px) {
+  .reversal-date {
+    margin-top: 0;
+  }
+}
+
+.table-section {
+  display: flex;
+  width: 1070px;
+  flex-direction: column;
+  align-items: flex-start;
+  position: absolute;
+  left: 31px;
+  top: 292px;
+  height: 128px;
+}
+
+@media (max-width: 991px) {
+  .table-section {
+    position: relative;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin-bottom: 20px;
+    overflow-x: auto;
+  }
+}
+
+.data-table {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  border: 1px solid #ccd5e2;
+  background-color: #fff;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.table-header-row,
+.table-row {
+  display: flex;
+  align-items: flex-start;
+  width: 100%;
+  background-color: rgba(255, 255, 255, 0);
+}
+
+.table-cell {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  height: 100%;
+  border-top: 1px solid #ccd5e2;
+  border-left: 1px solid #ccd5e2;
+}
+
+.header-cell {
+  background-color: #eef4f7;
+  flex: 1 0 0;
+}
+
+.checkbox-cell {
+  width: 50px;
+  flex: none;
+}
+
+.data-cell {
+  background-color: rgba(255, 255, 255, 0);
+  flex: 1 0 0;
+}
+
+.cell-content {
+  display: flex;
+  padding: 10px 12px;
+  align-items: flex-start;
+  width: 100%;
+  flex: 1 0 0;
+  color: #000;
+  text-align: center;
+  font: 400 9px/130% Inter;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 10px;
+  position: absolute;
+  left: 318px;
+  top: 508px;
+}
+
+@media (max-width: 991px) {
+  .action-buttons {
+    position: relative;
+    left: 0;
+    top: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .action-buttons {
+    flex-direction: column;
+    width: 100%;
+  }
+}
+
+.action-button {
+  display: flex;
+  padding: 5px 30px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  border-radius: 5px;
+  height: 25px;
+  background-color: #eef4f7;
+  border: none;
+  cursor: pointer;
+  color: #002c6c;
+  font: 400 12px Inter;
+  transition: background-color 0.2s ease;
+}
+
+.primary-button {
+  width: 90px;
+  border-radius: 5px;
+}
+
+.secondary-button {
+  width: 110px;
+  border-radius: 3px;
+}
+
+.secondary-button:nth-child(3),
+.secondary-button:nth-child(4) {
+  width: 90px;
+}
+
+.action-button:hover {
+  background-color: #d6e7f0;
+}
+
+.action-button:focus {
+  outline: 2px solid #002c6c;
+  outline-offset: 2px;
+}
+
+@media (max-width: 991px) {
+  .action-button {
+    margin: 5px;
+  }
+}
+
+@media (max-width: 640px) {
+  .action-button {
+    width: 100%;
+    margin: 5px 0;
+  }
+}
+/* agrega al .css del componente */
+.alert {
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+.alert-error { background: #fdecea; color: #7f1d1d; border: 1px solid #f8d7da; }
+.alert-info { background: #eef6ff; color: #1e3a8a; border: 1px solid #bfdbfe; }
+.alert-success { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; }
+/*  min  ideal  max  */
+.input-sm { width: clamp(120px, 12vw, 180px); }
+.input-xs { width: clamp(100px, 10vw, 160px); }
+/* --- Reducir "Fecha Pago" --- */
+.input-group.payment-date { width: 180px; }                 /* antes 243px */
+.input-group.payment-date .input-wrapper { width: 180px; }  /* borde inferior */
+.input-group.payment-date .text-input { width: 120px; }     /* campo */
+
+/* --- Reducir "Cliente" --- */
+.input-group.client-field { width: 360px; }                      /* antes 506px */
+.input-group.client-field .input-wrapper-wide { width: 360px; }  /* borde inferior */
+.input-group.client-field .text-input { width: 320px; }          /* campo */
+
+/* Asegura que el input pueda encoger dentro del flex */
+.text-input { width: auto; min-width: 0; flex: 1 1 auto; }
+/* Que los inputs puedan encoger/crecer dentro del wrapper */
+.text-input { flex: 1 1 auto; min-width: 0; width: auto; }
+
+/* --- tamaños de columnas en la fila --- */
+.form-section { display: flex; flex-wrap: wrap; gap: 20px; }
+
+/* No. Pago: más angosto */
+.input-group.payment-number { flex: 0 0 180px; }        /* ancho columna */
+.input-group.payment-number .input-wrapper { width: 180px; }
+
+/* Fecha Pago: más angosto */
+.input-group.payment-date { flex: 0 0 180px; }
+.input-group.payment-date .input-wrapper { width: 180px; }
+
+/* Cliente: que se expanda y llene espacio restante */
+.input-group.client-field { flex: 1 1 420px; }          /* base 420px, crece */
+.input-group.client-field .input-wrapper-wide { width: 100%; }  /* ocupar todo */
+
+/* (opcional) si el borde inferior del cliente queda corto, fuerza 100% */
+.input-wrapper-wide { width: 100%; }
+/* --- Observación grande --- */
+.observation-section { align-items: flex-start; gap: 28px; }
+.observation-group { flex: 1 1 auto; min-width: 520px; } /* ocupa todo lo posible */
+.observation-textarea { width: 100%; height: 40px; }    /* más alta */
+
+/* --- Fecha Reversión a la derecha y angosta --- */
+.input-group.reversal-date { 
+  flex: 0 0 220px;         /* ancho del bloque */
+  margin-left: auto;       /* empuja a la derecha */
+}
+.input-group.reversal-date .input-wrapper { width: 220px; }  /* borde inferior */
+.input-group.reversal-date .text-input { width: 140px; }      /* caja de texto */
+
+/* Asegura que los inputs puedan encoger/crecer correctamente */
+.text-input { flex: 1 1 auto; min-width: 0; width: auto; }
+.input-error {
+  border-color: #dc2626 !important; /* rojo */
+  box-shadow: 0 0 0 1px rgba(220,38,38,0.15);
+}

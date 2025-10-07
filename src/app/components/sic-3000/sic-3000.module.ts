@@ -16,9 +16,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
 
 import { Sic3000RoutingModule } from './sic-3000-routing.module';
-import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.component';
+import { RegistroCobrosComponent } from './cxc/registro-cobros/registro-cobros.component';
+import { AnulacionPagoComponent } from './cxc/anulacion-pago/anulacion-pago.component';
 import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
-import { CobroIndividualComponent } from './cobro-individual/cobro-individual.component';
+
 import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
 import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
 
@@ -43,7 +44,7 @@ import { AgGridModule } from 'ag-grid-angular';
     InicioSicComponent,
     NavigationSicComponent,
     EstadocuentaclienteComponent,
-    CobroIndividualComponent
+    
     // ❌ No declarar FacturacionIndividualComponent porque es standalone
   ],
   imports: [
