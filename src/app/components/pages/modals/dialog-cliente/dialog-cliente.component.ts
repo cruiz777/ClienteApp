@@ -6,7 +6,6 @@ import { JsonEmpresaService } from 'src/app/services/json-empresa.service';
 import { AsyncValidatorFn } from '@angular/forms';
 import { of, timer } from 'rxjs';
 
-
 import { map, startWith, take, takeUntil, filter, switchMap, catchError } from 'rxjs/operators';
 
 // Angular Forms
@@ -554,20 +553,63 @@ actualizarValidacionRuc(): void {
 
 
   // Evento para buscar RUC o cédula automáticamente
-  onRucBlur(): void {
-    const esPasaporte = this.paso1Form.get('esPasaporte')?.value;
-    const valor = this.rucControl.value?.trim();
-    if (!valor) { this.tipoIdentificacion = null; this.error = undefined; return; }
+async onRucBlur(): Promise<void> {
+  const valorRaw = this.rucControl.value;
+  const valor = (valorRaw || '').trim();
+  const esPasaporte = this.paso1Form.get('esPasaporte')?.value === true;
 
-    // si es pasaporte no se valida contra BD
-    if (esPasaporte) { this.tipoIdentificacion = 'PASAPORTE'; this.error = undefined; return; }
+  this.error = undefined;
+  this.tipoIdentificacion = null;
 
-    // dispara validación asíncrona y muestra mensajes por template
-    this.rucControl.updateValueAndValidity();
+  if (!valor) return;
+
+  // Re-valida (dispara async validator si aplica)
+  this.rucControl.updateValueAndValidity();
+
+  // ⏳ Espera a que termine el validador asíncrono
+  if (this.rucControl.pending) {
+    await firstValueFrom(
+      this.rucControl.statusChanges.pipe(
+        filter((s: 'VALID' | 'INVALID' | 'PENDING' | 'DISABLED') => s !== 'PENDING'),
+        take(1)
+      )
+    );
   }
 
+  // ❌ Si está duplicado, corta aquí
+  if (this.rucControl.hasError('duplicado')) {
+    this.error = '⚠️ El cliente ya existe.';
+    // Limpia los campos dependientes
+    this.razonSocial = '';
+    this.nombreRepresentante = '';
+    this.paso2Form.patchValue({ razonSocial: '', nombreRepresentante: '' });
+    this.paso3Form.patchValue({ nombreRepresentante: '' });
+    return;
+  }
 
+  // 🛂 Modo pasaporte
+  if (esPasaporte) {
+    // Si el valor NO parece cédula/RUC, no hay consulta externa
+    if (!/^\d{10}$/.test(valor) && !/^\d{13}$/.test(valor)) {
+      this.tipoIdentificacion = 'PASAPORTE';
+      return;
+    }
+    // Si parece cédula/RUC y NO es duplicado (ya verificado arriba), tratamos como pasaporte.
+    this.tipoIdentificacion = 'PASAPORTE';
+    return;
+  }
 
+  // 📲 Cédula / RUC (no pasaporte)
+  if (/^\d{13}$/.test(valor)) {
+    this.buscarRuc(valor);      // SRI
+    this.tipoIdentificacion = 'RUC';
+  } else if (/^\d{10}$/.test(valor)) {
+    this.buscarCedula(valor);   // Registro Civil
+    this.tipoIdentificacion = 'CEDULA';
+  } else {
+    this.error = '❌ Número inválido. Ingrese 10 dígitos (cédula) o 13 dígitos (RUC).';
+  }
+}
 
 
 

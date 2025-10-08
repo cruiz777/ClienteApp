@@ -271,7 +271,25 @@ export class RegistroCobrosComponent implements OnInit {
     },
 
     { headerName: 'BANCO', field: 'banco', width: 180, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(true), valueSetter: this.upperAlnumValueSetter('banco', true) },
-    { headerName: 'No.CUENTA/TARJETA/FACTURA', field: 'numCuentaTarjetaFactura', width: 260, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(false), valueSetter: this.upperAlnumValueSetter('numCuentaTarjetaFactura', false) },
+    {
+  headerName: 'No.CUENTA/TARJETA/FACTURA',
+  field: 'numCuentaTarjetaFactura',
+  width: 260,
+  editable: true,
+  suppressKeyboardEvent: this.suppressUpperAlnum(false),
+  valueSetter: this.upperAlnumValueSetter('numCuentaTarjetaFactura', false),
+  cellClassRules: {
+    // pinta en rojo cuando es obligatorio y está vacío
+    'cell-required': (p: any) => this.requiereReferencia(p.data) &&
+                                 !String(p.data?.numCuentaTarjetaFactura ?? '').trim()
+  },
+  tooltipValueGetter: (p: any) =>
+    (this.requiereReferencia(p.data) &&
+     !String(p.data?.numCuentaTarjetaFactura ?? '').trim())
+      ? 'Debe ingresar el NÚMERO DE RETENCIÓN aquí'
+      : '',
+},
+
     { headerName: 'No.CHEQUE/#', field: 'numCheque', width: 160, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(false), valueSetter: this.upperAlnumValueSetter('numCheque', false) },
     { headerName: 'DUEÑO', field: 'dueno', width: 160, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(true), valueSetter: this.upperAlnumValueSetter('dueno', true) },
     { headerName: 'AUTORIZACION', field: 'autorizacion', width: 160, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(false), valueSetter: this.upperAlnumValueSetter('autorizacion', false) },
@@ -577,28 +595,31 @@ export class RegistroCobrosComponent implements OnInit {
   }
 
   private validateGridPlantilla(): { ok: boolean; errors: string[] } {
-    this.pagoGridApi?.stopEditing();
+  this.pagoGridApi?.stopEditing();
 
-    const errors: string[] = [];
-    const total = this.clamp2(this.pagoRowData.reduce((s: number, r: any) => s + (Number(r.monto) || 0), 0));
-    const valorAPagar = this.clamp2(this.getValorAPagarNumber());
+  const errors: string[] = [];
+  const total = this.clamp2(this.pagoRowData.reduce((s: number, r: any) => s + (Number(r.monto) || 0), 0));
+  const valorAPagar = this.clamp2(this.getValorAPagarNumber());
 
-    if (Math.abs(total - valorAPagar) >= 0.005) {
-      errors.push(`Total de formas de pago (${this.usd(total)}) debe ser ${this.usd(valorAPagar)}.`);
-    }
-
-    this.pagoRowData.forEach((r: any, i: number) => {
-      const m = Number(r.monto) || 0;
-      if (!Number.isFinite(m)) errors.push(`Línea ${i + 1}: monto inválido.`);
-      if (m < 0) errors.push(`Línea ${i + 1}: monto negativo.`);
-      const isRet = r.codigo === '12' || r.codigo === '13';
-      if (isRet && !(Number(r.porcRet) > 0)) {
-        errors.push(`Línea ${i + 1}: retención requiere porcentaje.`);
-      }
-    });
-
-    return { ok: errors.length === 0, errors };
+  if (Math.abs(total - valorAPagar) >= 0.005) {
+    errors.push(`Total de formas de pago (${this.usd(total)}) debe ser ${this.usd(valorAPagar)}.`);
   }
+
+  this.pagoRowData.forEach((r: any, i: number) => {
+    const m = Number(r.monto) || 0;
+    if (!Number.isFinite(m)) errors.push(`Línea ${i + 1}: monto inválido.`);
+    if (m < 0) errors.push(`Línea ${i + 1}: monto negativo.`);
+
+    // 🔴 Obligatorio: número de retención en "No.CUENTA/TARJETA/FACTURA"
+    if (this.requiereReferencia(r) && !String(r.numCuentaTarjetaFactura ?? '').trim()) {
+      const etiqueta = r.descripcion || r.codigo || `Línea ${i + 1}`;
+      errors.push(`Línea ${i + 1} (${etiqueta}): ingrese el NÚMERO DE RETENCIÓN en "No.CUENTA/TARJETA/FACTURA".`);
+    }
+  });
+
+  return { ok: errors.length === 0, errors };
+}
+
 
   aceptarPagos() {
     const p = this.validateGridPlantilla();
@@ -630,73 +651,67 @@ export class RegistroCobrosComponent implements OnInit {
     this.recalcularTotal();
   }
   private ultimoNumeroPago: string | null = null;
-  registrarPago() {
-    const plant = this.validateGridPlantilla();
-    if (!plant.ok) {
-      this.mostrarAlerta('Revisa las formas de pago (totales/retenciones).', 'error');
-      console.warn('Errores plantilla:', plant.errors);
-      return;
-    }
+// ===== Estado del botón =====
+isSubmitting = false;           // deshabilitar mientras se envía
+registroCompletado = false;     // opcional: mantenerlo deshabilitado tras éxito
 
-    const facturas_a_pagar = this.buildFacturasAPagar();
-    const formas_pago = this.buildFormasPago();
+registrarPago() {
+  // Evita dobles clics
+  if (this.isSubmitting || this.registroCompletado) return;
 
-    if (facturas_a_pagar.length === 0) {
-      this.mostrarAlerta('No hay pagos distribuidos en facturas.', 'info');
-      this.salirPagos();
-      return;
-    }
-    if (formas_pago.length === 0) {
-      this.mostrarAlerta('Agrega al menos una forma de pago.', 'info');
-      return;
-    }
+  const plant = this.validateGridPlantilla();
+  if (!plant.ok) {
+    this.mostrarAlerta('Revisa las formas de pago (totales/retenciones).', 'error');
+    console.warn('Errores plantilla:', plant.errors);
+    return;
+  }
 
-    const req = {
-      cliente_codigo: this.formCliente.value.clienteCodigo ?? this.codcliO ?? 0,
-      facturas_a_pagar,
-      formas_pago,
-      id_usuario_responsable: Number(this.usuarioActual?.id_usuario ?? 0),
-      caja: String(this.formPago.value?.caja || '001'),
-      observaciones: String(this.formCliente.value?.observacion || '').trim(),
-    } as const;
+  const facturas_a_pagar = this.buildFacturasAPagar();
+  const formas_pago = this.buildFormasPago();
+  if (facturas_a_pagar.length === 0) {
+    this.mostrarAlerta('No hay pagos distribuidos en facturas.', 'info');
+    this.salirPagos();
+    return;
+  }
+  if (formas_pago.length === 0) {
+    this.mostrarAlerta('Agrega al menos una forma de pago.', 'info');
+    return;
+  }
 
-    const chk = this.cuentaCobrarService.validatePago(req as any);
-    if (!chk.ok) {
-      this.mostrarAlerta(
-        `La suma de formas de pago no coincide con las facturas. Diferencia: ${chk.diferencia.toFixed(2)}`,
-        'error'
-      );
-      return;
-    }
+  const req = {
+    cliente_codigo: this.formCliente.value.clienteCodigo ?? this.codcliO ?? 0,
+    facturas_a_pagar,
+    formas_pago,
+    id_usuario_responsable: Number(this.usuarioActual?.id_usuario ?? 0),
+    caja: String(this.formPago.value?.caja || '001'),
+    observaciones: String(this.formCliente.value?.observacion || '').trim(),
+  } as const;
 
-    const to2 = (n: number) => Math.round((n ?? 0) * 100) / 100;
-    const totalFacturas = to2(req.facturas_a_pagar.reduce((a, b) => a + (b.monto_a_pagar || 0), 0));
-    const totalFormas = to2(req.formas_pago.reduce((a, b) => a + (b.monto || 0), 0));
-    const payloadPretty = JSON.stringify(req, null, 2);
+  const chk = this.cuentaCobrarService.validatePago(req as any);
+  if (!chk.ok) {
+    this.mostrarAlerta(
+      `La suma de formas de pago no coincide con las facturas. Diferencia: ${chk.diferencia.toFixed(2)}`,
+      'error'
+    );
+    return;
+  }
 
-    console.groupCollapsed('%c[PAGOS] Payload a enviar', 'color:#2563eb;font-weight:700;');
-    console.log('Cliente:', req.cliente_codigo);
-    console.log('Totales → facturas:', totalFacturas.toFixed(2), '| formas_pago:', totalFormas.toFixed(2));
-    console.log('Detalle facturas_a_pagar:', req.facturas_a_pagar);
-    console.log('Detalle formas_pago:', req.formas_pago);
-    console.log('JSON pretty:\n', payloadPretty);
-    console.groupEnd();
+  // 🔒 Deshabilita botón mientras se procesa
+  this.isSubmitting = true;
 
-
-    console.groupCollapsed('%c[PAGOS] Payload a enviar', 'color:#2563eb;font-weight:700;');
-    console.log('POST → /api/Pagos');
-    console.log('Cliente:', req.cliente_codigo);
-    console.log('facturas_a_pagar:', req.facturas_a_pagar);
-    console.log('formas_pago:', req.formas_pago);
-    console.log('JSON pretty:\n', payloadPretty);
-    console.groupEnd();
-    // dentro del subscribe de registrarPago()
-    this.cuentaCobrarService.registrarPago(req).subscribe({
+  this.cuentaCobrarService.registrarPago(req)
+    .pipe(finalize(() => { 
+      // si NO quieres reactivar el botón tras éxito, no cambies isSubmitting aquí
+      this.isSubmitting = false; 
+    }))
+    .subscribe({
       next: async (numeroPago) => {
         this.mostrarAlerta(`Pago ${numeroPago} registrado correctamente.`, 'ok');
         this.ultimoNumeroPago = numeroPago;
 
-        // Generar PDF inmediatamente
+        // Opcional: mantener deshabilitado hasta "Nuevo Pago"
+        this.registroCompletado = true;
+
         try {
           await this.pagoReportService.generarPdfDesdeApi(numeroPago, {
             titulo: 'GS1 ECUADOR',
@@ -706,19 +721,21 @@ export class RegistroCobrosComponent implements OnInit {
           console.error(e);
           this.mostrarAlerta('Se registró el pago pero no se pudo generar el PDF.', 'warn');
         }
-
       },
       error: (err) => {
         console.error(err);
         this.mostrarAlerta('Error registrando el pago', 'error');
+        // en error, se reactivará por finalize()
       }
     });
+}
 
-  }
 
   onCancelarPago(): void {
     this.formPago.reset({ plantilla: 'transfer', valor: '', observacion: '', metodoPago: '' });
     this.activarPlantilla('transfer');
+    this.isSubmitting = false;
+  this.registroCompletado = false;
   }
 
   // ===== Autocomplete clientes =====
@@ -1115,4 +1132,16 @@ export class RegistroCobrosComponent implements OnInit {
         numero_documento: String(r.numCheque ?? '').trim(),
       }));
   }
+  // Códigos de formas que requieren # de retención
+private readonly formasRequierenRetencion = new Set<number>([12, 13]);
+
+// También permite detectar por descripcion si te resulta más cómodo
+private requiereReferencia(row: any): boolean {
+  const cod = Number(row?.codigo) || 0;
+  if (this.formasRequierenRetencion.has(cod)) return true;
+
+  const desc = (row?.descripcion ?? '').toString().toUpperCase();
+  return /RETENCI(Ó|O)N/.test(desc); // "RETENCIÓN" o "RETENCION"
+}
+
 }

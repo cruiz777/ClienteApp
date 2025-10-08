@@ -506,3 +506,129 @@
   border-color: #dc2626 !important; /* rojo */
   box-shadow: 0 0 0 1px rgba(220,38,38,0.15);
 }
+/* ----------- Campos de solo lectura más visibles ----------- */
+.text-input[readonly] {
+  color: #003366; /* azul oscuro más visible */
+  font-weight: 500;
+  opacity: 1;
+}
+
+/* Línea inferior más visible */
+.input-wrapper,
+.input-wrapper-wide {
+  border-bottom: 1.5px solid #99abc7; /* color más fuerte */
+}
+
+/* Al perder el foco: mantener color nítido */
+.text-input:focus,
+.text-input:focus-visible {
+  color: #001a4d; /* tono aún más oscuro en foco */
+  font-weight: 600;
+}
+
+/* Efecto al hacer focus o blur (suave transición) */
+.input-wrapper,
+.input-wrapper-wide {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-wrapper:focus-within,
+.input-wrapper-wide:focus-within {
+  border-bottom-color: #004aad; /* azul corporativo */
+  box-shadow: 0 1px 0 0 #004aad;
+}
+
+/* ----------- En estado blur (sin foco) ----------- */
+.input-wrapper:not(:focus-within),
+.input-wrapper-wide:not(:focus-within) {
+  border-bottom-color: #b0bfdc; /* mantiene un gris medio, más visible */
+}
+
+/* ----------- Si el input tiene error ----------- */
+.input-error {
+  border-bottom-color: #dc2626 !important;
+  box-shadow: 0 1px 0 0 rgba(220, 38, 38, 0.4);
+}
+/* ===== Estilo general para los inputs ===== */
+
+/* Texto visible y nítido */
+.text-input {
+  color: #002c6c;           /* azul oscuro legible */
+  font-weight: 500;
+  border: none;
+  outline: none;
+  background: transparent;
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+  transition: color 0.2s ease;
+}
+
+/* Placeholder con contraste adecuado */
+.text-input::placeholder {
+  color: #7a8da3;           /* gris azulado */
+  opacity: 1;
+}
+
+/* Contenedor con borde más visible */
+.input-wrapper,
+.input-wrapper-wide {
+  border-bottom: 1.5px solid #99abc7;  /* gris medio visible */
+  background-color: #fff;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* En foco: línea azul viva */
+.input-wrapper:focus-within,
+.input-wrapper-wide:focus-within {
+  border-bottom-color: #004aad;  /* azul corporativo */
+  box-shadow: 0 1px 0 0 #004aad;
+}
+
+/* Al perder foco (blur): color estable */
+.input-wrapper:not(:focus-within),
+.input-wrapper-wide:not(:focus-within) {
+  border-bottom-color: #7f8fa8; /* gris más oscuro que el original */
+}
+
+/* Enfocado: texto más intenso */
+.text-input:focus,
+.text-input:focus-visible {
+  color: #001a4d;
+  font-weight: 600;
+}
+
+/* Input en error */
+.input-error {
+  border-bottom-color: #dc2626 !important;
+  box-shadow: 0 1px 0 0 rgba(220, 38, 38, 0.4);
+}
+
+/* Readonly, para que igual se vea nítido */
+.text-input[readonly] {
+  color: #003366;
+  font-weight: 500;
+  opacity: 1;
+}
+
+/* ===== Ajustes específicos por tipo ===== */
+
+/* "No. Pago" más angosto */
+.input-group.payment-number {
+  flex: 0 0 180px;
+}
+.input-group.payment-number .input-wrapper {
+  width: 180px;
+}
+
+/* "Fecha Reversión" angosto y alineado a la derecha */
+.input-group.reversal-date {
+  flex: 0 0 220px;
+  margin-left: auto;
+}
+.input-group.reversal-date .input-wrapper {
+  width: 220px;
+}
+.input-group.reversal-date .text-input {
+  width: 140px;
+}
