@@ -1,13 +1,17 @@
 import { NgModule } from '@angular/core';
+import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
+import { EstructuraListComponent } from './estructuracomercial/estructura-list/estructura-list.component';
+import { Component } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
 import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
-import { EstructuraListComponent } from './estructuracomercial/estructura-list/estructura-list.component';
 import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.component';
 import { FacturacionIndividualComponent } from './facturacion/facturacion-individual/facturacion-individual.component';
 import { FacturacionGlobalComponent } from './facturacion/facturacion-global/facturacion-global.component';
 import { AuthGuard } from 'src/app/guards/auth.guard';
 import { PermissionGuard } from 'src/app/guards/permission.guard';
+import { ProductosSicComponent } from './productos-sic/productos-sic.component';
+import { InicioComponent } from '../inicio/inicio.component';
 
 const routes: Routes = [
   {
@@ -55,7 +59,10 @@ const routes: Routes = [
         component: FacturacionGlobalComponent,
         canActivate: [PermissionGuard],
         data: { permission: 'sic-3000.facturacion.facturacion-global' } 
-      }
+      },
+      { path: 'productossic', component: ProductosSicComponent },
+      { path: 'productossic/:idEstructura', component: ProductosSicComponent },
+      { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
     ]
   }
 ];
