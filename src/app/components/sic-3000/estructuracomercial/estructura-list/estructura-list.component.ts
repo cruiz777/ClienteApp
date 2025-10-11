@@ -279,7 +279,7 @@ export class EstructuraListComponent {
     this.tableMode = 'productos';
     this.setTable(
       [
-        { key: 'id_producto', label: 'Id' },
+        { key: 'idproducto', label: 'Id' },
         { key: 'codpro', label: 'Cod. Pro' },
         { key: 'despro', label: 'Descripción' },
         { key: 'tippro', label: 'Tip. Prod' },
@@ -400,7 +400,12 @@ export class EstructuraListComponent {
     this.menuContextualVisible = false;
     if (!this.nodoSeleccionado) return;
 
-    this.router.navigate(['sic-3000/productossic', this.nodoSeleccionado.id]);
+    // ✅ Pasar ID y TIPO del nodo
+    this.router.navigate([
+      'sic-3000/productossic', 
+      this.nodoSeleccionado.id,
+      { tipo: this.nodoSeleccionado.tipo } // ✅ Agregar tipo
+    ]);
   }
 
   editarProducto(row: any): void {

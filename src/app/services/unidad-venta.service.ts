@@ -11,7 +11,7 @@ import { UnidadVentaResponse } from '../interfaces/responses/unidad-venta-respon
   providedIn: 'root'
 })
 
-export class UniddaVentaService {
+export class UnidadVentaService {
 
   private apiUrl = `${environment.inventoryUrl}/UnidadVenta`;
   constructor(private http: HttpClient) { }

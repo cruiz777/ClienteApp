@@ -39,7 +39,8 @@ export class ProductoService {
   createConEstructura(req: CreateProductoConEstructuraRequest): Observable<ApiResponse<any>> {
     const payload: CreateProductoConEstructuraRequest = {
       Producto: sanitizeProductoPayload(req.Producto as ProductoRequest), // 👈 Mayúscula
-      Estructura: req.Estructura
+      Estructura: req.Estructura,
+      Stocks: req.Stocks
     };
     return this.http.post<ApiResponse<any>>(`${this.apiUrl}/CreatePE`, payload);
   }
@@ -48,4 +49,23 @@ export class ProductoService {
     return this.http.get<ApiResponse<any>>(`${this.apiUrl}/${id}`);
   }
 
+  getSiguienteId(): Observable<ApiResponse<{ siguienteId: number }>> {
+    return this.http.get<ApiResponse<{ siguienteId: number }>>(
+      `${this.apiUrl}/siguiente-id`
+    );
+  }
+  buscarProductosPorEstructura(
+    termino: string, 
+    idEstructura: number
+  ): Observable<ApiResponse<ProductoResponse[]>> {
+    return this.http.get<ApiResponse<ProductoResponse[]>>(
+      `${this.apiUrl}/buscar-por-estructura?termino=${encodeURIComponent(termino)}&idEstructura=${idEstructura}`
+    );
+  }
+  update(id: number, request: any): Observable<ApiResponse<boolean>> {
+    return this.http.put<ApiResponse<boolean>>(
+      `${this.apiUrl}/${id}`,
+      request
+    );
+  }
 }

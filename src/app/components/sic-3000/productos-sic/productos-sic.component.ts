@@ -8,10 +8,23 @@ import { CreateProductoConEstructuraRequest } from 'src/app/interfaces/requests/
 
 import { ProductoService } from 'src/app/services/productos.service';
 import { PresentacionService } from 'src/app/services/presentacion.service';
-import { UniddaVentaService } from 'src/app/services/unidad-venta.service';
+import { UnidadVentaService } from 'src/app/services/unidad-venta.service';
 import { UnidadVentaResponse } from 'src/app/interfaces/responses/unidad-venta-response';
 import { PresentacionResponse } from '../../../interfaces/responses/presentacion-response';
-
+import { ProductoResponse } from 'src/app/interfaces/responses/producto-response';
+import { IvaService, Iva } from 'src/app/services/iva.service';
+import { LocalesResponse } from 'src/app/interfaces/responses/local-response';
+import { LocalesService } from 'src/app/services/locales.service';
+import { StockRequest } from 'src/app/interfaces/requests/stocks-request';
+interface BodegaConfig {
+  idLocal: number;
+  nombreLocal: string;
+  seleccionado: boolean;
+  existenciaInicial: number;
+  stockMin: number | null;
+  stockMax: number | null;
+  alertaStockBajo: boolean;
+}
 @Component({
   selector: 'app-productos-sic',
   templateUrl: './productos-sic.component.html',
@@ -26,32 +39,55 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   tiposProducto = ['Bien', 'Servicio'];
   presentaciones: PresentacionResponse[] = [];
   clasesProducto = ['A', 'B', 'C'];
-
-  iva = 0.12;
-
+  esNuevoProducto: boolean = true;
+  idProductoActual: number = 0;
+  iva = 0;
+  ivaVigente: Iva | null = null;
+  tipoEstructura: string = 'grupo';
+  terminoBusqueda: string = '';
+  resultadosBusqueda: ProductoResponse[] = [];
+  mostrarResultados: boolean = false;
   form!: FormGroup;
   adicionalForm!: FormGroup;
   preciosForm!: FormGroup;
-
+  locales: LocalesResponse[] = [];
+  bodegasConfig: BodegaConfig[] = [];
+  filtroBodega: string = '';
   constructor(
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
     private productoService: ProductoService,
     private presentacionService: PresentacionService,
-    private unidadVentaService: UniddaVentaService,
+    private unidadVentaService: UnidadVentaService,
+    private ivaService: IvaService,
     private route: ActivatedRoute,
+    private localesService: LocalesService,
     private toastCampos: RequiredFieldsToastService
   ) { }
 
   ngOnInit(): void {
     this.selectedTab = 0;
+    this.cargarIvaVigente();
     this.cargarPresentacion();
+    this.cargarLocales(); 
     this.cargarUnidadesVenta();
-    this.route.paramMap.subscribe(params => {
+        this.route.paramMap.subscribe(params => {
       this.idEstructura = Number(params.get('idEstructura')) || 0;
+      this.tipoEstructura = params.get('tipo') || 'grupo'; // ✅ CAPTURAR TIPO
+      
+      console.log('🔍 ID Estructura:', this.idEstructura);
+      console.log('🔍 Tipo Estructura:', this.tipoEstructura);
+      
       const idProducto = Number(params.get('id_producto')) || 0;
+      
       if (idProducto > 0) {
+        this.esNuevoProducto = false;
+        this.idProductoActual = idProducto;
         this.cargarProducto(idProducto);
+      } else {
+        this.esNuevoProducto = true;
+        this.idProductoActual = 0;
+        this.cargarSiguienteId();
       }
     });
 
@@ -147,6 +183,90 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     const c = this.form.get(ctrl);
     return !!c && c.invalid && (c.touched || c.dirty);
   }
+  cargarIvaVigente(): void {
+    this.ivaService.getVigentes().subscribe({
+      next: (ivas) => {
+        // Buscar el IVA principal y vigente
+        this.ivaVigente = ivas.find(i => i.principal && i.esta_vigente) || ivas[0] || null;
+        
+        if (this.ivaVigente) {
+          // Convertir porcentaje a decimal (15% → 0.15)
+          this.iva = this.ivaVigente.porcentaje / 100;
+          console.log('✅ IVA vigente cargado:', this.ivaVigente.porcentaje + '%', '→', this.iva);
+        } else {
+          console.warn('⚠️ No se encontró IVA vigente, usando 12% por defecto');
+          this.iva = 0.12;
+        }
+      },
+      error: (err) => {
+        console.error('❌ Error al cargar IVA vigente:', err);
+        this.iva = 0.12; // Fallback al 12%
+        alert('No se pudo cargar el IVA vigente, usando 12% por defecto');
+      }
+    });
+  }
+
+  cargarLocales(): void {
+    this.localesService.getAll().subscribe({
+      next: (resp) => {        
+        this.locales = (resp.data || []).filter((l: LocalesResponse) => l.estado === true);
+        
+        // Inicializar configuración de bodegas
+        this.bodegasConfig = this.locales.map((local: LocalesResponse) => ({
+          idLocal: local.id, 
+          nombreLocal: local.nombre || '', // Fallback para evitar undefined
+          seleccionado: false,
+          existenciaInicial: 0,
+          stockMin: null,
+          stockMax: null,
+          alertaStockBajo: false
+        }));
+      },
+      error: (err) => {
+        console.error('Error al cargar locales:', err);
+        alert('Error al cargar bodegas disponibles');
+      }
+    });
+  }
+
+    toggleSeleccionBodega(bodega: BodegaConfig): void {
+    bodega.seleccionado = !bodega.seleccionado;
+  }
+
+  seleccionarTodasBodegas(seleccionar: boolean): void {
+    this.bodegasConfig.forEach(b => b.seleccionado = seleccionar);
+  }
+
+  validarStocks(bodega: BodegaConfig): void {
+    if (bodega.stockMin !== null && bodega.stockMax !== null) {
+      if (bodega.stockMin > bodega.stockMax) {
+        bodega.stockMin = bodega.stockMax;
+      }
+    }
+  }
+
+  verificarAlertasStock(): void {
+    this.bodegasConfig.forEach(b => {
+      if (b.seleccionado && b.stockMin !== null) {
+        b.alertaStockBajo = b.existenciaInicial < b.stockMin;
+      }
+    });
+  }
+
+  get bodegasSeleccionadas(): BodegaConfig[] {
+    return this.bodegasConfig.filter(b => b.seleccionado);
+  }
+
+  get bodegasFiltradas(): BodegaConfig[] {
+    if (!this.filtroBodega.trim()) {
+      return this.bodegasConfig;
+    }
+    
+    const filtro = this.filtroBodega.toLowerCase();
+    return this.bodegasConfig.filter(b => 
+      b.nombreLocal.toLowerCase().includes(filtro)
+    );
+  }
 
   cargarPresentacion(): void {
     this.presentacionService.getPresentacion().subscribe({
@@ -158,7 +278,21 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       }
     })
   }
-
+  cargarSiguienteId(): void {
+    this.productoService.getSiguienteId().subscribe({
+      next: (resp) => {
+        if (resp.type === 'SUCCESS' && resp.data) { // ✅ Validar que data existe
+          this.form.patchValue({
+            codigoInterno: resp.data.siguienteId.toString()
+          });
+        }
+      },
+      error: (err) => {
+        console.error('Error al obtener siguiente ID:', err);
+        alert('No se pudo obtener el código del producto');
+      }
+    });
+  }
   cargarUnidadesVenta(): void {
     this.unidadVentaService.getUnidadVenta().subscribe({
       next: (resp) => {
@@ -268,12 +402,106 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
 
   saving = false;
 
-  private buildCreatePERequest(): any {
-    const f1 = this.form.value;
+  private buildCreatePERequest(): CreateProductoConEstructuraRequest {
+    const f1 = this.form.getRawValue();
+    const f2 = this.adicionalForm.value;
+    const f3 = this.preciosForm.getRawValue();
+    let clasprod = f1.claseProducto;
+    if (!clasprod) {
+      clasprod = f1.tipoProducto === 'Bien' ? 'B' : (f1.tipoProducto === 'Servicio' ? 'S' : 'B');
+    }
+    const producto = sanitizeProductoPayload({
+      despro: f1.descripcion1,
+      despro2: f1.descripcionPOS,
+      codbar: f1.codigoBarras,
+      tippro: f1.tipoProducto === 'Bien' ? 'B' : (f1.tipoProducto === 'Servicio' ? 'S' : ''),
+      uniman: this.unidadesVenta.find(u => u.idUnidadVenta === f1.unidadVenta)?.descripcion || '',
+      abrevia: f1.abreviacion,
+      referencia: f1.referencia,
+      activo: f1.activo,
+      pagaiva: f1.pagaIva,
+      inv: f1.cargarInventarios,
+      peso: f1.productoConPeso,
+      pgasto: f2?.productoGasto ?? false,
+      altoriesgo: f1.altoRiesgo,
+      clasprod: clasprod, 
+      foto: f1.urlFoto,
+      idempresa: 1,
+      feccre: f1.fechaCreacion,
+      fechamod: f1.fechaModificacion,
+      colsab: f2.color,
+      talla: f2.tamanoTalla1,
+      obs: f2.observacion,
+      regsanitario: f2.registroSanitario,
+      codcuedeb: f2.ctaVentas,
+      codcuehab: f2.ctaInventarios,
+      codcuedes: f2.ctaCostos,
+      codcuedev: f2.ctaDevolucion,
+      ctaprodgasto: f2.ctaGastos,
+      preven: f3.precioOficial,
+      preven2: f3.precioRedMsp,
+      pvpsiniva: f3.pvpActualIva,
+      preanterior: f3.pvpAnteriorMasIva,
+      feccosact: f3.fechaAnteriorModificarPrecio,
+      fecpremod: f3.fechaModificarPrecio,
+      margenutilidad: f3.margenUtilidad,
+      costsuminis: f3.costoSuministro,
+      cospro: f3.costoProducto,
+      precos: f3.costoPromedio,
+      cosanterior: f3.precioCompraAnterior,
+      fecpreact: f3.fechaAnteriorModificarCompra,
+      preuni: f3.precioCompraActual?.toString(),
+      porcenrecepcion: f3.recepcionPorcentaje
+    });
+
+    const estructura: any = {};
+    
+    switch (this.tipoEstructura) {
+      case 'division':
+        estructura.iddivision = this.idEstructura;
+        break;
+      case 'subdivision':
+        estructura.idsubdivision = this.idEstructura;
+        break;
+      case 'departamento':
+        estructura.iddepartamento = this.idEstructura;
+        break;
+      case 'seccion':
+        estructura.idseccion = this.idEstructura;
+        break;
+      case 'grupo':
+        estructura.idgrupo = this.idEstructura;
+        break;
+    }
+
+    // ✅✅✅ AGREGAR ESTAS LÍNEAS ✅✅✅
+    const stocks = this.bodegasSeleccionadas.length > 0
+      ? this.bodegasSeleccionadas.map(b => ({
+          idlocal: b.idLocal,
+          cantidad: b.existenciaInicial || 0,
+          stockmin: b.stockMin,
+          stockmax: b.stockMax
+        }))
+      : null;
+
+    console.log('📦 Bodegas seleccionadas:', this.bodegasSeleccionadas);
+    console.log('📦 Stocks a enviar:', stocks);
+
+    return {
+      Producto: producto,
+      Estructura: estructura,
+      Stocks: stocks  // ✅✅✅ AGREGAR ESTA LÍNEA ✅✅✅
+    };
+  }
+  
+  private buildUpdateRequest(): any {
+    const f1 = this.form.getRawValue();
     const f2 = this.adicionalForm.value;
     const f3 = this.preciosForm.getRawValue();
 
-    const producto = sanitizeProductoPayload({
+    return sanitizeProductoPayload({
+      idproducto: this.idProductoActual, // ✅ ID del producto a actualizar
+      codpro: f1.codigoInterno,
       despro: f1.descripcion1,
       despro2: f1.descripcionPOS,
       codbar: f1.codigoBarras,
@@ -291,8 +519,9 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       foto: f1.urlFoto,
       idempresa: 1,
       feccre: f1.fechaCreacion,
-      fechamod: f1.fechaModificacion,
+      fechamod: new Date().toISOString(), // ✅ Fecha de modificación actual
 
+      // Tab 2: Adicionales
       colsab: f2.color,
       talla: f2.tamanoTalla1,
       obs: f2.observacion,
@@ -303,6 +532,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       codcuedev: f2.ctaDevolucion,
       ctaprodgasto: f2.ctaGastos,
 
+      // Tab 3: Precios y Costos
       preven: f3.precioOficial,
       preven2: f3.precioRedMsp,
       pvpsiniva: f3.pvpActualIva,
@@ -318,18 +548,107 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       preuni: f3.precioCompraActual?.toString(),
       porcenrecepcion: f3.recepcionPorcentaje
     });
+  }
+  onBuscarProducto(evento: Event): void {
+    const input = evento.target as HTMLInputElement;
+    this.terminoBusqueda = input.value.trim();
+    
+    if (this.terminoBusqueda.length < 2) {
+      this.resultadosBusqueda = [];
+      this.mostrarResultados = false;
+      return;
+    }
 
-    return {
-      Producto: producto,              // 👈 ahora con mayúscula
-      Estructura: { idgrupo: this.idEstructura || null } // 👈 ahora con mayúscula
-    };
+    this.productoService.buscarProductosPorEstructura(
+      this.terminoBusqueda, 
+      this.idEstructura
+    ).subscribe({
+      next: (resp) => {
+        if (resp.type === 'SUCCESS' && resp.data) {
+          this.resultadosBusqueda = resp.data;
+          this.mostrarResultados = true;
+        }
+      },
+      error: (err) => {
+        console.error('Error en búsqueda:', err);
+        this.resultadosBusqueda = [];
+        this.mostrarResultados = false;
+      }
+    });
+  }
+  seleccionarProducto(producto: ProductoResponse): void {
+    this.mostrarResultados = false;
+    const idProducto = producto.idproducto ?? producto.id_producto;
+    if (idProducto) this.cargarProductoCompleto(idProducto);
   }
 
+  cargarProductoCompleto(idProducto: number): void {
+    this.productoService.getById(idProducto).subscribe({
+      next: (res) => {
+        if (!res?.data) return;
+        const prod = res.data;
+
+        // ✅ Tab 1: datos generales
+        this.form.patchValue({
+          codigoInterno: prod.codpro,
+          descripcion1: prod.despro,
+          descripcionPOS: prod.despro2,
+          codigoBarras: prod.codbar,
+          tipoProducto: prod.tippro === 'B' ? 'Bien' : (prod.tippro === 'S' ? 'Servicio' : null),
+          unidadVenta: this.unidadesVenta.find(u => u.descripcion === prod.uniman)?.idUnidadVenta || null,
+          abreviacion: prod.abrevia,
+          referencia: prod.referencia,
+          activo: prod.activo,
+          pagaIva: prod.pagaiva,
+          cargarInventarios: prod.inv,
+          productoConPeso: prod.peso,
+          altoRiesgo: prod.altoriesgo,
+          claseProducto: prod.clasprod,
+          urlFoto: prod.foto,
+          fechaCreacion: prod.feccre ? prod.feccre.substring(0, 10) : null,
+          fechaModificacion: prod.fechamod ? prod.fechamod.substring(0, 10) : null,
+        });
+
+        // ✅ Tab 2: adicionales
+        this.adicionalForm.patchValue({
+          color: prod.colsab,
+          tamanoTalla1: prod.talla,
+          observacion: prod.obs,
+          registroSanitario: prod.regsanitario,
+          ctaVentas: prod.codcuedeb,
+          ctaInventarios: prod.codcuehab,
+          ctaCostos: prod.codcuedes,
+          ctaDevolucion: prod.codcuedev,
+          productoGasto: prod.pgasto,
+          ctaGastos: prod.ctaprodgasto,
+        });
+
+        // ✅ Tab 3: precios / costos
+        this.preciosForm.patchValue({
+          precioOficial: prod.preven,
+          precioRedMsp: prod.preven2,
+          pvpActualIva: prod.pvpsiniva,
+          pvpAnteriorMasIva: prod.preanterior,
+          fechaAnteriorModificarPrecio: prod.feccosact,
+          fechaModificarPrecio: prod.fecpremod,
+          margenUtilidad: prod.margenutilidad,
+          costoSuministro: prod.costsuminis,
+          costoProducto: prod.cospro,
+          costoPromedio: prod.precos,
+          precioCompraAnterior: prod.cosanterior,
+          fechaAnteriorModificarCompra: prod.fecpreact,
+          precioCompraActual: prod.preuni,
+          recepcionPorcentaje: prod.porcenrecepcion
+        });
+      },
+      error: (err) => console.error('❌ Error cargando producto', err)
+    });
+  }
 
   onGrabar(): void {
     const controles = this.form.controls;
     const camposFaltantes: string[] = [];
-
+    
     if (!controles['descripcion1'].value?.trim()) {
       camposFaltantes.push('Descripción');
       controles['descripcion1'].markAsTouched();
@@ -367,41 +686,77 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       this.toastCampos.mostrar(camposFaltantes);
       return;
     }
-
+    
     if (this.selectedTab === 0 && this.form.invalid) {
       this.form.markAllAsTouched();
-      this.selectedTab = 0;
       return;
     }
     if (this.selectedTab === 1 && this.adicionalForm.invalid) {
       this.adicionalForm.markAllAsTouched();
-      this.selectedTab = 1;
       return;
     }
     if (this.selectedTab === 2 && this.preciosForm.invalid) {
       this.preciosForm.markAllAsTouched();
-      this.selectedTab = 2;
       return;
     }
-
+    // ✅ DEBUG
+    console.log('🏪 Bodegas seleccionadas:', this.bodegasSeleccionadas);
+    console.log('🏪 Total:', this.bodegasSeleccionadas.length);
+    
+    if (this.bodegasSeleccionadas.length === 0) {
+      alert('⚠️ Debes seleccionar al menos una bodega en el Tab "Estructura y Stock"');
+      this.selectedTab = 3; // Ir al tab de bodegas
+      return;
+    }
     this.saving = true;
-    const request = this.buildCreatePERequest();
 
-    // 👇 imprime request completo en consola
-    console.log('📦 Request a enviar →', request);
-    console.log('📦 JSON.stringify →', JSON.stringify(request, null, 2));
+    if (this.esNuevoProducto) {
+      const request = this.buildCreatePERequest();
+      
+      // ✅ LOG PARA DEBUG
+      console.log('📦 Request completo:', JSON.stringify(request, null, 2));
 
-    this.productoService.createConEstructura(request).subscribe({
-      next: (res) => {
-        if (res?.type?.toUpperCase() === 'SUCCESS') {
-          console.log('✅ Creado correctamente', res.data);
-        } else {
-          console.error('❌ Error lógica:', res?.message || res);
-        }
-      },
-      error: (err) => console.error('❌ Error HTTP:', err),
-      complete: () => (this.saving = false)
-    });
+      this.productoService.createConEstructura(request).subscribe({
+        next: (res) => {
+          console.log('✅ Respuesta del servidor:', res);
+          
+          if (res?.type?.toUpperCase() === 'SUCCESS') {
+            alert('Producto creado exitosamente');
+            history.back();
+          } else {
+            alert('Error al crear: ' + (res?.message || 'Error desconocido'));
+          }
+        },
+        error: (err) => {
+          console.error('❌ Error HTTP:', err);
+          alert('Error al crear producto: ' + (err.error?.message || err.message));
+        },
+        complete: () => (this.saving = false)
+      });
+    } else {
+      // ✅ ACTUALIZAR PRODUCTO EXISTENTE
+      const request = this.buildUpdateRequest();
+      console.log('📦 Actualizando producto →', request);
+
+      this.productoService.update(this.idProductoActual, request).subscribe({
+        next: (res) => {
+          if (res?.type?.toUpperCase() === 'SUCCESS') {
+            console.log('✅ Producto actualizado correctamente');
+            alert('Producto actualizado exitosamente');
+            // Opcional: recargar datos
+            this.cargarProducto(this.idProductoActual);
+          } else {
+            console.error('❌ Error:', res?.message || res);
+            alert('Error al actualizar: ' + (res?.message || 'Error desconocido'));
+          }
+        },
+        error: (err) => {
+          console.error('❌ Error HTTP:', err);
+          alert('Error al actualizar producto');
+        },
+        complete: () => (this.saving = false)
+      });
+    }
   }
 
   cargarProducto(id: number): void {

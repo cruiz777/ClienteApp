@@ -8,7 +8,30 @@
       <span class="desc-titulo">Descripción del producto</span>
     </div>
   </header>
-
+  <div *ngIf="!esNuevoProducto" class="mb-3">
+    <label class="label-sm d-block">Buscar Producto:</label>
+    <div style="position: relative;">
+      <input 
+        type="text" 
+        class="input-line w-100" 
+        placeholder="Buscar por código, código de barras o nombre..."
+        (input)="onBuscarProducto($event)"
+        [(ngModel)]="terminoBusqueda">
+      
+      <!-- Resultados del autocomplete -->
+      <div 
+        *ngIf="mostrarResultados && resultadosBusqueda.length > 0"
+        class="autocomplete-results">
+        <div 
+          *ngFor="let prod of resultadosBusqueda"
+          class="autocomplete-item"
+          (click)="seleccionarProducto(prod)">
+          <strong>{{ prod.codpro }}</strong> - {{ prod.despro }}
+          <small class="text-muted d-block">{{ prod.codbar }}</small>
+        </div>
+      </div>
+    </div>
+  </div>
   <mat-tab-group class="tabs" [(selectedIndex)]="selectedTab" [disableRipple]="true" animationDuration="0ms">
 
     <!-- ========== Template reutilizable de botones ========== -->
@@ -73,10 +96,16 @@
                 <div class="col-12 col-md-4">
                   <label class="label-sm d-block">Unidad de Venta:</label>
                   <div class="select-wrap">
-                    <select class="select-line w-100" formControlName="unidadVenta"
+                    <select 
+                      class="select-line w-100" 
+                      formControlName="unidadVenta"
                       [class.is-invalid]="isInvalid('unidadVenta')">
-                      <option [ngValue]="null" disabled>—</option>
-                      <option *ngFor="let u of unidadesVenta" [ngValue]="u.idUnidadVenta">{{u.descripcion}}</option>
+                      <option [ngValue]="null" disabled>Seleccione una unidad</option>
+                      <option 
+                        *ngFor="let u of unidadesVenta" 
+                        [ngValue]="u.idUnidadVenta">
+                        {{u.descripcion}}
+                      </option>
                     </select>
                     <small *ngIf="isInvalid('unidadVenta')" class="invalid-feedback d-block">
                       Campo obligatorio
@@ -508,12 +537,10 @@
     <mat-tab label="Estructura y Stock">
       <div class="tab-body">
         <div class="row g-4">
-          <!-- ===== Columna Izquierda: Árbol Estructura Comercial ===== -->
+          <!-- Columna izquierda: Árbol (mantener existente) -->
           <div class="col-12 col-lg-5">
             <div class="pc-panel" style="height: 420px; display:grid; grid-template-rows:auto 1fr;">
               <h3 class="pc-title mb-2">Estructura Comercial</h3>
-
-              <!-- Árbol simple -->
               <div style="border:1px solid var(--borde); border-radius:6px; padding:10px; overflow:auto;">
                 <ul class="mb-0" style="list-style:none; padding-left:10px; font-size:13px; color:#374151;">
                   <li>
@@ -532,62 +559,126 @@
             </div>
           </div>
 
-          <!-- ===== Columna Derecha: Stock Max / Min ===== -->
+          <!-- ✅ Columna derecha: Configuración de Bodegas NUEVA -->
           <div class="col-12 col-lg-7">
-            <div class="pc-panel" style="height: 420px; display:grid; grid-template-rows:auto auto 1fr;">
-              <h3 class="pc-title mb-1">Stock</h3>
-
-              <div class="d-flex align-items-center gap-2 mb-2">
-                <span class="label-sm">Stock Max / Min</span>
-                <input type="checkbox" class="form-check-input" />
+            <div class="pc-panel">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="pc-title mb-0">Configuración de Bodegas</h3>
+                <div class="d-flex gap-2">
+                  <button 
+                    type="button" 
+                    class="btn btn-sm btn-outline-primary"
+                    (click)="seleccionarTodasBodegas(true)">
+                    Seleccionar todas
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn btn-sm btn-outline-secondary"
+                    (click)="seleccionarTodasBodegas(false)">
+                    Limpiar
+                  </button>
+                </div>
               </div>
 
-              <div style="border:1px solid var(--borde); border-radius:6px; overflow:auto;">
-                <table class="table table-sm mb-0" style="width:100%; border-collapse:separate; border-spacing:0;">
-                  <thead>
-                    <tr style="background:#f7fafc; color:#27374A;">
-                      <th style="width:45%; padding:8px 10px; border-bottom:1px solid #e6edf6;">Local</th>
-                      <th style="width:18%; padding:8px 10px; border-bottom:1px solid #e6edf6; text-align:right;">Stock
-                        máx</th>
-                      <th style="width:18%; padding:8px 10px; border-bottom:1px solid #e6edf6; text-align:right;">Stock
-                        Min</th>
-                      <th style="width:19%; padding:8px 10px; border-bottom:1px solid #e6edf6; text-align:right;">Existe
+              <!-- Buscador -->
+              <div class="mb-3">
+                <input 
+                  type="text" 
+                  class="input-line w-100" 
+                  placeholder="🔍 Buscar bodega..."
+                  [(ngModel)]="filtroBodega">
+              </div>
+
+              <!-- Info de selección -->
+              <div class="alert alert-info mb-3" *ngIf="bodegasSeleccionadas.length > 0">
+                <strong>{{ bodegasSeleccionadas.length }}</strong> bodega(s) seleccionada(s)
+              </div>
+
+              <!-- Tabla de bodegas -->
+              <div style="border:1px solid var(--borde); border-radius:6px; overflow:auto; max-height: 400px;">
+                <table class="table table-sm mb-0">
+                  <thead style="position: sticky; top: 0; background: #f7fafc; z-index: 1;">
+                    <tr>
+                      <th style="width: 50px; padding:8px 10px;">
+                        <input 
+                          type="checkbox" 
+                          [checked]="bodegasConfig.length > 0 && bodegasSeleccionadas.length === bodegasConfig.length"
+                          (change)="seleccionarTodasBodegas($any($event.target).checked)">
                       </th>
+                      <th style="padding:8px 10px;">Bodega</th>
+                      <th style="padding:8px 10px; width: 100px;">Existencia</th>
+                      <th style="padding:8px 10px; width: 100px;">Stock Mín</th>
+                      <th style="padding:8px 10px; width: 100px;">Stock Máx</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <tr>
-                      <td style="padding:6px 10px;">Administrativo</td>
-                      <td style="padding:6px 10px; text-align:right;">0</td>
-                      <td style="padding:6px 10px; text-align:right;">0</td>
-                      <td style="padding:6px 10px; text-align:right;">0</td>
+                    <tr 
+                      *ngFor="let bodega of bodegasFiltradas"
+                      [class.table-active]="bodega.seleccionado"
+                      [class.table-warning]="bodega.alertaStockBajo">
+                      <td style="padding:6px 10px;">
+                        <input 
+                          type="checkbox" 
+                          [(ngModel)]="bodega.seleccionado"
+                          (change)="verificarAlertasStock()">
+                      </td>
+                      <td style="padding:6px 10px;">
+                        {{ bodega.nombreLocal }}
+                        <span 
+                          *ngIf="bodega.alertaStockBajo" 
+                          class="badge bg-warning text-dark ms-2"
+                          title="Existencia inicial menor al stock mínimo">
+                          ⚠️ Stock bajo
+                        </span>
+                      </td>
+                      <td style="padding:6px 10px;">
+                        <input 
+                          type="number" 
+                          class="input-line text-end w-100" 
+                          min="0"
+                          [disabled]="!bodega.seleccionado"
+                          [(ngModel)]="bodega.existenciaInicial"
+                          (blur)="verificarAlertasStock()">
+                      </td>
+                      <td style="padding:6px 10px;">
+                        <input 
+                          type="number" 
+                          class="input-line text-end w-100" 
+                          min="0"
+                          [disabled]="!bodega.seleccionado"
+                          [(ngModel)]="bodega.stockMin"
+                          (blur)="validarStocks(bodega); verificarAlertasStock()">
+                      </td>
+                      <td style="padding:6px 10px;">
+                        <input 
+                          type="number" 
+                          class="input-line text-end w-100" 
+                          min="0"
+                          [disabled]="!bodega.seleccionado"
+                          [(ngModel)]="bodega.stockMax"
+                          (blur)="validarStocks(bodega)">
+                      </td>
                     </tr>
-                    <tr>
-                      <td style="padding:6px 10px;">Clínico</td>
-                      <td style="padding:6px 10px; text-align:right;">0</td>
-                      <td style="padding:6px 10px; text-align:right;">0</td>
-                      <td style="padding:6px 10px; text-align:right;">0</td>
-                    </tr>
-                    <tr>
-                      <td style="padding:6px 10px;">Servicio</td>
-                      <td style="padding:6px 10px; text-align:right;">0</td>
-                      <td style="padding:6px 10px; text-align:right;">0</td>
-                      <td style="padding:6px 10px; text-align:right;">0</td>
-                    </tr>
-                    <tr>
-                      <td style="padding:6px 10px;">Farmacia</td>
-                      <td style="padding:6px 10px; text-align:right;">0</td>
-                      <td style="padding:6px 10px; text-align:right;">0</td>
-                      <td style="padding:6px 10px; text-align:right;">215</td>
+
+                    <tr *ngIf="bodegasFiltradas.length === 0">
+                      <td colspan="5" class="text-center text-muted" style="padding: 20px;">
+                        No se encontraron bodegas
+                      </td>
                     </tr>
                   </tbody>
                 </table>
+              </div>
+
+              <!-- Leyenda -->
+              <div class="mt-2 small text-muted">
+                <p class="mb-1">💡 <strong>Tip:</strong> Selecciona las bodegas donde estará disponible este producto.</p>
+                <p class="mb-0">⚠️ Si la existencia inicial es menor al stock mínimo, se mostrará una alerta.</p>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Botonera reutilizable -->
+        <!-- Botonera -->
         <ng-container [ngTemplateOutlet]="accionesTabs"></ng-container>
       </div>
     </mat-tab>
