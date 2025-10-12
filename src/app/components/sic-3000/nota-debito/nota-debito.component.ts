@@ -1,51 +1,75 @@
-import { Component, OnInit } from '@angular/core';
-import { FormBuilder, FormGroup } from '@angular/forms';
+import { Component } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import {
   ColDef,
   GridApi,
   GridReadyEvent,
-  ValueGetterParams,
-  ISelectCellEditorParams
+  ISelectCellEditorParams,
 } from 'ag-grid-community';
+import { AgGridAngular } from 'ag-grid-angular';
 
 @Component({
   selector: 'app-nota-debito',
   templateUrl: './nota-debito.component.html',
-  styleUrls: ['./nota-debito.component.css']
+  styleUrls: ['./nota-debito.component.css'],
 })
-export class NotaDebitoComponent implements OnInit {
-  form!: FormGroup;
+export class NotaDebitoComponent {
+  // ===== Datos de cabecera / mock inicial =====
+  sucursal = '001';
+  caja = '010';
+  numero = '';
+  fecha: string | null = new Date().toISOString().substring(0, 10);
+  cliente = '';
+  factura = '';
+  direccion = '';
+  ruc = '';
+  fechaActual: Date = new Date();
+  observacion = '';
 
-  hoy = new Date().toISOString().substring(0, 10);
-  hoyLargo = new Date().toLocaleDateString('es-EC', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: '2-digit'
-  });
+  // Porcentaje de IVA (ej. 15% = 0.15)
+  ivaPorcentaje = 0.15;
 
-  // APIs de grids
-  private detalleApi!: GridApi;
-  private pagoApi!: GridApi;
-
-  // Config común de columnas
+  // ====== GRID: configuración por defecto ======
   defaultColDef: ColDef = {
-    sortable: true,
+    editable: true,
     resizable: true,
+    sortable: false,
     filter: false,
-    editable: true
   };
 
-  // ====== DETALLE ======
+  // ====== GRID: Detalle ======
+  detalleApi?: GridApi;
+
+  detalleRowData: DetalleRow[] = [
+    // fila de ejemplo; puedes empezar vacío si prefieres []
+    { codigo: '', descripcion: '', cantidad: 0, pvp: 0, afectaIva: true, valorDev: 0 },
+  ];
+
+  detallePinnedBottom: any[] = [
+    { totalLabel: 'Total Factura', total: 0, valorDev: 0 },
+  ];
+
   detalleColumnDefs: ColDef[] = [
+    {
+      headerName: '',
+      field: 'totalLabel',
+      width: 140,
+      editable: false,
+      colSpan: (p) => (p.node?.rowPinned ? 2 : 1),
+      cellClass: (p) => (p.node?.rowPinned ? 'total-label-cell' : ''),
+      valueGetter: (p) => (p.node?.rowPinned ? p.data.totalLabel : ''),
+      suppressMovable: true,
+      lockPosition: true,
+    },
     { headerName: 'Código', field: 'codigo', width: 110 },
-    { headerName: 'Descripción', field: 'descripcion', flex: 1 },
+    { headerName: 'Descripción', field: 'descripcion', flex: 1, minWidth: 180 },
     {
       headerName: 'Cantidad',
       field: 'cantidad',
       width: 110,
       type: 'rightAligned',
-      valueParser: numberParser
+      valueParser: numberParser,
     },
     {
       headerName: 'P.V.P.',
@@ -53,7 +77,7 @@ export class NotaDebitoComponent implements OnInit {
       width: 110,
       type: 'rightAligned',
       valueParser: numberParser,
-      valueFormatter: currency
+      valueFormatter: currency,
     },
     {
       headerName: 'Total',
@@ -61,9 +85,9 @@ export class NotaDebitoComponent implements OnInit {
       width: 120,
       type: 'rightAligned',
       editable: false,
-      valueGetter: (p: ValueGetterParams) =>
-        (toNumber(p.data.cantidad) * toNumber(p.data.pvp)) || 0,
-      valueFormatter: currency
+      valueGetter: (p) =>
+        (toNumber(p.data?.cantidad) * toNumber(p.data?.pvp)) || 0,
+      valueFormatter: currency,
     },
     {
       headerName: 'Afecta IVA',
@@ -73,7 +97,7 @@ export class NotaDebitoComponent implements OnInit {
       cellEditor: 'agSelectCellEditor',
       cellEditorParams: { values: ['Sí', 'No'] } as ISelectCellEditorParams,
       valueSetter: (p) => ((p.data.afectaIva = p.newValue === 'Sí' || p.newValue === true), true),
-      valueGetter: (p) => (p.data.afectaIva ? 'Sí' : 'No')
+      valueGetter: (p) => (p.data?.afectaIva ? 'Sí' : 'No'),
     },
     {
       headerName: 'Valor Dev.',
@@ -81,50 +105,38 @@ export class NotaDebitoComponent implements OnInit {
       width: 120,
       type: 'rightAligned',
       valueParser: numberParser,
-      valueFormatter: currency
-    }
+      valueFormatter: currency,
+    },
   ];
 
-  detalleRowData = [
-    { codigo: '', descripcion: '', cantidad: 0, pvp: 0, afectaIva: true, valorDev: 0 }
+  // ====== GRID: Pagos ======
+  pagoApi?: GridApi;
+
+  pagoRowData: PagoRow[] = [
+    // fila de ejemplo
+    { codigo: '', descripcion: '', debe: 0, haber: 0, saldo: 0, pago: 0, cuenta: '', aplicar: false },
   ];
 
-  // ====== PAGOS ======
+  pagoPinnedBottom: any[] = [{ totalLabel: 'Total Pago', pago: 0 }];
+
   pagoColumnDefs: ColDef[] = [
+    {
+      headerName: '',
+      field: 'totalLabel',
+      width: 140,
+      editable: false,
+      colSpan: (p) => (p.node?.rowPinned ? 2 : 1),
+      cellClass: (p) => (p.node?.rowPinned ? 'total-label-cell' : ''),
+      valueGetter: (p) => (p.node?.rowPinned ? p.data.totalLabel : ''),
+      suppressMovable: true,
+      lockPosition: true,
+    },
     { headerName: 'Código', field: 'codigo', width: 110 },
-    { headerName: 'Descripción', field: 'descripcion', flex: 1 },
-    {
-      headerName: 'Debe',
-      field: 'debe',
-      width: 110,
-      type: 'rightAligned',
-      valueParser: numberParser,
-      valueFormatter: currency
-    },
-    {
-      headerName: 'Haber',
-      field: 'haber',
-      width: 110,
-      type: 'rightAligned',
-      valueParser: numberParser,
-      valueFormatter: currency
-    },
-    {
-      headerName: 'Saldo',
-      field: 'saldo',
-      width: 110,
-      type: 'rightAligned',
-      valueParser: numberParser,
-      valueFormatter: currency
-    },
-    {
-      headerName: 'Pago',
-      field: 'pago',
-      width: 110,
-      type: 'rightAligned',
-      valueParser: numberParser,
-      valueFormatter: currency
-    },
+    { headerName: 'Descripción', field: 'descripcion', flex: 1, minWidth: 180 },
+    { headerName: 'Debe', field: 'debe', width: 110, type: 'rightAligned', valueParser: numberParser, valueFormatter: currency },
+    { headerName: 'Haber', field: 'haber', width: 110, type: 'rightAligned', valueParser: numberParser, valueFormatter: currency },
+    { headerName: 'Saldo', field: 'saldo', width: 110, type: 'rightAligned', valueParser: numberParser, valueFormatter: currency },
+    { headerName: 'Pago', field: 'pago', width: 110, type: 'rightAligned', valueParser: numberParser, valueFormatter: currency },
     { headerName: 'Cuenta Cont.', field: 'cuenta', width: 140 },
     {
       headerName: 'Aplicar',
@@ -134,80 +146,47 @@ export class NotaDebitoComponent implements OnInit {
       cellEditor: 'agSelectCellEditor',
       cellEditorParams: { values: ['Sí', 'No'] } as ISelectCellEditorParams,
       valueSetter: (p) => ((p.data.aplicar = p.newValue === 'Sí' || p.newValue === true), true),
-      valueGetter: (p) => (p.data.aplicar ? 'Sí' : 'No')
-    }
+      valueGetter: (p) => (p.data?.aplicar ? 'Sí' : 'No'),
+    },
   ];
 
-  pagoRowData = [
-    {
-      codigo: '1',
-      descripcion: 'Efectivo',
-      debe: 0,
-      haber: 0,
-      saldo: 0,
-      pago: 0,
-      cuenta: '',
-      aplicar: true
-    }
-  ];
-
-  // Totales (totalFactura es el neto: Subtotal + IVA − TotalDev)
-  totales = {
+  // ====== Totales panel derecho ======
+  totales: Totales = {
     subtotal: 0,
     base0: 0,
     baseIva: 0,
     iva: 0,
     totalDev: 0,
-    totalFactura: 0
+    totalFactura: 0,
   };
 
   totalPago = 0;
-  ivaPorcentaje = 0.15; // Ajusta al % vigente
 
-  constructor(private fb: FormBuilder) {}
-
-  ngOnInit(): void {
-    this.form = this.fb.group({
-      sucursal: ['001'],
-      caja: ['010'],
-      numero: [''],
-      fecha: [this.hoy],
-      cliente: [''],
-      sucursal2: [''],
-      caja2: [''],
-      factura: [''],
-      direccion: [''],
-      ruc: [''],
-      observacion: ['']
-    });
-
-    this.recalcularTotales();
-    this.recalcularPago();
-  }
-
-  // ====== gridReady ======
+  // ====== Eventos de GRID ======
   onDetalleReady(e: GridReadyEvent) {
     this.detalleApi = e.api;
-    this.detalleApi.sizeColumnsToFit();
+    e.api.sizeColumnsToFit();
+    this.recalcularTotales();
   }
 
   onPagoReady(e: GridReadyEvent) {
     this.pagoApi = e.api;
-    this.pagoApi.sizeColumnsToFit();
+    e.api.sizeColumnsToFit();
+    this.recalcularPago();
   }
 
-  // ====== eventos de edición ======
   onDetalleEdited() {
+    this.detalleApi?.refreshCells({ force: true });
     this.recalcularTotales();
   }
 
   // ====== Cálculos ======
   recalcularTotales() {
-    let subtotal = 0,
-      base0 = 0,
-      baseIva = 0,
-      iva = 0,
-      totalDev = 0;
+    let subtotal = 0;
+    let base0 = 0;
+    let baseIva = 0;
+    let iva = 0;
+    let totalDev = 0;
 
     (this.detalleRowData || []).forEach((r) => {
       const lineTotal = toNumber(r.cantidad) * toNumber(r.pvp);
@@ -218,9 +197,19 @@ export class NotaDebitoComponent implements OnInit {
     });
 
     iva = baseIva * this.ivaPorcentaje;
-    const totalFactura = subtotal + iva - totalDev; // neto
+    const totalFactura = subtotal + iva - totalDev;
 
     this.totales = { subtotal, base0, baseIva, iva, totalDev, totalFactura };
+
+    // Actualiza la fila fijada (pie del grid)
+    this.detallePinnedBottom = [
+      {
+        totalLabel: 'Total Factura',
+        total: totalFactura,
+        valorDev: totalDev,
+      },
+    ];
+    this.detalleApi?.setGridOption('pinnedBottomRowData', this.detallePinnedBottom);
   }
 
   recalcularPago() {
@@ -228,99 +217,116 @@ export class NotaDebitoComponent implements OnInit {
       (acc, r) => acc + toNumber(r.pago),
       0
     );
+
+    this.pagoPinnedBottom = [{ totalLabel: 'Total Pago', pago: this.totalPago }];
+    this.pagoApi?.setGridOption('pinnedBottomRowData', this.pagoPinnedBottom);
   }
 
   // ====== Acciones ======
   nuevo() {
-    // Reset de cabecera
-    this.form.reset({
-      sucursal: '001',
-      caja: '010',
-      fecha: this.hoy
-    });
+    // limpia cabecera
+    this.numero = '';
+    this.fecha = new Date().toISOString().substring(0, 10);
+    this.cliente = '';
+    this.factura = '';
+    this.direccion = '';
+    this.ruc = '';
+    this.observacion = '';
 
-    // Reset detalle/pagos
-    this.detalleRowData = [
-      { codigo: '', descripcion: '', cantidad: 0, pvp: 0, afectaIva: true, valorDev: 0 }
-    ];
-    this.pagoRowData = [
-      {
-        codigo: '1',
-        descripcion: 'Efectivo',
-        debe: 0,
-        haber: 0,
-        saldo: 0,
-        pago: 0,
-        cuenta: '',
-        aplicar: true
-      }
-    ];
+    // limpia grillas
+    this.detalleRowData = [{ codigo: '', descripcion: '', cantidad: 0, pvp: 0, afectaIva: true, valorDev: 0 }];
+    this.pagoRowData = [{ codigo: '', descripcion: '', debe: 0, haber: 0, saldo: 0, pago: 0, cuenta: '', aplicar: false }];
+
+    // reinicia pies
+    this.detallePinnedBottom = [{ totalLabel: 'Total Factura', total: 0, valorDev: 0 }];
+    this.pagoPinnedBottom = [{ totalLabel: 'Total Pago', pago: 0 }];
+
+    // refresca grids
+    this.detalleApi?.setGridOption('rowData', this.detalleRowData);
+    this.detalleApi?.setGridOption('pinnedBottomRowData', this.detallePinnedBottom);
+
+    this.pagoApi?.setGridOption('rowData', this.pagoRowData);
+    this.pagoApi?.setGridOption('pinnedBottomRowData', this.pagoPinnedBottom);
 
     this.recalcularTotales();
     this.recalcularPago();
-
-    // AG Grid v31+: usa setGridOption('rowData', ...)
-    if (this.detalleApi) this.detalleApi.setGridOption('rowData', this.detalleRowData);
-    if (this.pagoApi) this.pagoApi.setGridOption('rowData', this.pagoRowData);
   }
 
-  onSave() {
-    // Validación de cuadratura (tolerancia de redondeo)
-    const ok = nearlyEqual(this.totalPago, this.totales.totalFactura, 0.01);
-    if (!ok) {
-      alert(
-        `El total de pago (${this.totalPago.toFixed(
-          2
-        )}) no coincide con el total de la nota (${this.totales.totalFactura.toFixed(
-          2
-        )}).`
-      );
-      return;
-    }
-
+  grabar() {
+    // Aquí envías al backend tu payload consolidado
     const payload = {
-      cabecera: this.form.value,
+      cabecera: {
+        sucursal: this.sucursal,
+        caja: this.caja,
+        numero: this.numero,
+        fecha: this.fecha,
+        cliente: this.cliente,
+        factura: this.factura,
+        direccion: this.direccion,
+        ruc: this.ruc,
+        observacion: this.observacion,
+      },
       detalle: this.detalleRowData,
+      totales: this.totales,
       pagos: this.pagoRowData,
-      totales: this.totales
+      totalPago: this.totalPago,
     };
 
-    console.log('Guardar Nota de Débito:', payload);
-    alert('Guardado (demo). Revisa la consola.');
+    console.log('Grabar Nota de Débito →', payload);
+    // TODO: llamar servicio HTTP
   }
 
-  exportar(tipo: 'xlsx' | 'csv' | 'pdf') {
-    if (tipo === 'csv') {
-      this.detalleApi?.exportDataAsCsv({ fileName: 'nota-debito-detalle.csv' });
-      this.pagoApi?.exportDataAsCsv({ fileName: 'nota-debito-pagos.csv' });
-    } else {
-      alert(`Demo: exportación ${tipo} no implementada en este snippet.`);
-    }
+  exportarExcel() {
+    // Si tienes licencia Enterprise puedes usar export to Excel,
+    // de lo contrario usamos CSV como alternativa.
+    this.detalleApi?.exportDataAsCsv({ fileName: 'nota_debito_detalle.csv' });
+    this.pagoApi?.exportDataAsCsv({ fileName: 'nota_debito_pagos.csv' });
   }
 }
 
-/* ================= Helpers ================= */
+/* ===== Helpers y tipos ===== */
+
 function toNumber(v: any): number {
+  if (v === null || v === undefined || v === '') return 0;
   const n = Number(v);
   return isNaN(n) ? 0 : n;
 }
 
-function numberParser(params: any) {
-  // Acepta punto decimal; si el usuario escribe coma, la convierte a punto.
-  const raw = String(params.newValue ?? '').trim();
-  const normalized = raw.replace(',', '.');
-  const n = Number(normalized);
-  return isNaN(n) ? 0 : n;
+function numberParser(params: any): number {
+  return toNumber(params.newValue ?? params.value);
 }
 
-function currency(params: any) {
-  const n = toNumber(params.value);
-  return n.toLocaleString('es-EC', {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
+// Formato 1,234.56 sin símbolo, como en el mockup
+function currency(params: any): string {
+  const val = toNumber(params.value);
+  return val.toLocaleString('es-EC', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
-function nearlyEqual(a: number, b: number, epsilon = 0.005) {
-  return Math.abs(a - b) <= epsilon;
+export interface DetalleRow {
+  codigo: string;
+  descripcion: string;
+  cantidad: number;
+  pvp: number;
+  afectaIva: boolean;
+  valorDev: number;
+}
+
+export interface PagoRow {
+  codigo: string;
+  descripcion: string;
+  debe: number;
+  haber: number;
+  saldo: number;
+  pago: number;
+  cuenta: string;
+  aplicar: boolean;
+}
+
+export interface Totales {
+  subtotal: number;
+  base0: number;
+  baseIva: number;
+  iva: number;
+  totalDev: number;
+  totalFactura: number;
 }
