@@ -93,7 +93,7 @@
              <span *ngIf="isExpanded" class="menu-text">Notas de Débito</span>
             </a>
 
-            <a mat-list-item routerLink="">
+            <a mat-list-item [routerLink]="['notaCredito']" routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Notas de Credito</span>
             </a>
 

@@ -1,0 +1,140 @@
+<div class="nc-container">
+  <h2 class="titulo">Nota de Crédito</h2>
+
+  <!-- Encabezado -->
+  <div class="grid-header">
+    <div class="field">
+      <label class="form-label">Sucursal:</label>
+      <input class="form-control" [(ngModel)]="encabezado.sucursal" />
+    </div>
+    <div class="field">
+      <label class="form-label">Caja:</label>
+      <input class="form-control" [(ngModel)]="encabezado.caja" />
+    </div>
+    <div class="field">
+      <label class="form-label">No:</label>
+      <input class="form-control" [(ngModel)]="encabezado.numero" />
+    </div>
+    <div class="field">
+      <label class="form-label">Fecha:</label>
+      <input type="date" class="form-control" [(ngModel)]="encabezado.fecha" />
+    </div>
+
+    <div class="field">
+      <label class="form-label">Cliente:</label>
+      <input class="form-control" [(ngModel)]="encabezado.cliente" />
+    </div>
+    <div class="field">
+      <label class="form-label">Sucursal:</label>
+      <input class="form-control" [(ngModel)]="encabezado.sucursal2" />
+    </div>
+    <div class="field">
+      <label class="form-label">Caja:</label>
+      <input class="form-control" [(ngModel)]="encabezado.caja2" />
+    </div>
+    <div class="field">
+      <label class="form-label">Factura:</label>
+      <input class="form-control" [(ngModel)]="encabezado.factura" />
+    </div>
+
+    <div class="field wide">
+      <label class="form-label">Dirección:</label>
+      <input class="form-control" [(ngModel)]="encabezado.direccion" />
+    </div>
+    <div class="field">
+      <label class="form-label">RUC:</label>
+      <input class="form-control" [(ngModel)]="encabezado.ruc" />
+    </div>
+    <div class="field">
+      <label class="form-label">Fecha Actual:</label>
+      <input type="date" class="form-control" [(ngModel)]="encabezado.fechaActual" />
+    </div>
+    <div class="field wide">
+      <label class="form-label">Observación:</label>
+      <input class="form-control" [(ngModel)]="encabezado.observacion" />
+    </div>
+  </div>
+
+  <!-- DETALLES -->
+  <div class="panel">
+    <ag-grid-angular
+      class="ag-theme-quartz nc-grid"
+      [rowData]="detalleRows"
+      [columnDefs]="detalleCols"
+      [defaultColDef]="defaultColDef"
+      [rowSelection]="'single'"
+      [animateRows]="true"
+      [stopEditingWhenCellsLoseFocus]="true"
+      [domLayout]="'autoHeight'"
+      (cellValueChanged)="recalcular()"
+      (rowValueChanged)="recalcular()">
+    </ag-grid-angular>
+
+    <div class="totales-linea">
+      <div class="spacer"></div>
+      <div class="total-fila">
+        <span>Total Factura</span>
+        <span>{{ totales.totalFactura | number:'1.2-2' }}</span>
+        <span>{{ totales.totalDev | number:'1.2-2' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORMAS DE PAGO + RESUMEN -->
+  <div class="grid-2col">
+    <div class="panel">
+      <h3 class="subtitulo">Formas de Pago</h3>
+
+      <div class="toolbar">
+        <button class="btn btn-sm" (click)="agregarPago()">Agregar</button>
+        <div class="spacer"></div>
+        <span class="total-pago">Total Pago: {{ totales.totalPago | number:'1.2-2' }}</span>
+      </div>
+
+      <ag-grid-angular
+        class="ag-theme-quartz nc-grid"
+        [rowData]="pagoRows"
+        [columnDefs]="pagoCols"
+        [defaultColDef]="defaultColDef"
+        [singleClickEdit]="true"
+        [stopEditingWhenCellsLoseFocus]="true"
+        [domLayout]="'autoHeight'"
+        (cellValueChanged)="recalcular()">
+      </ag-grid-angular>
+    </div>
+
+    <div class="panel resumen">
+      <div class="res-item">
+        <span>Sub Total</span>
+        <strong>{{ totales.subtotal | number:'1.2-2' }}</strong>
+      </div>
+      <div class="res-item">
+        <span>Base 0</span>
+        <strong>{{ totales.base0 | number:'1.2-2' }}</strong>
+      </div>
+      <div class="res-item">
+        <span>Base IVA</span>
+        <strong>{{ totales.baseIva | number:'1.2-2' }}</strong>
+      </div>
+      <div class="res-item">
+        <span>IVA</span>
+        <strong>{{ totales.iva | number:'1.2-2' }}</strong>
+      </div>
+      <div class="res-item total-dev">
+        <span>TOTAL DEV.</span>
+        <strong>{{ totales.totalDev | number:'1.2-2' }}</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Acciones -->
+  <div class="acciones">
+    <button class="btn btn-light" (click)="nuevo()">Nuevo</button>
+    <button class="btn btn-primary" (click)="grabar()">Grabar</button>
+    <div class="spacer"></div>
+    <div class="exportar">
+      <button class="btn btn-light" (click)="exportar()">Exportar</button>
+      <span class="caret">▾</span>
+    </div>
+  </div>
+</div>
