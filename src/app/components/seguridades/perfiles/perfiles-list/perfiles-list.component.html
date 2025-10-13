@@ -112,13 +112,19 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let modulo of modulos" [class.fila-activa]="modulo.id_modulo === moduloSeleccionado">
+          <tr *ngFor="let modulo of modulos" 
+            [class.fila-activa]="modulo.id_modulo === moduloSeleccionado"
+            [ngClass]="{
+              'modulo-con-opciones': tieneModuloAlgunasOpciones(modulo.id_modulo),
+              'modulo-con-opciones-completo': esModuloCompletamenteAsignado(modulo.id_modulo)
+            }">
             <td class="ocultar-id">{{ modulo.id_modulo }}</td>
             <td (click)="seleccionarModulo(modulo.id_modulo)" style="cursor: pointer;">
               {{ modulo.nombre }}
             </td>
             <td class="col-reducida">
               <input type="checkbox" [checked]="esModuloCompletamenteAsignado(modulo.id_modulo)"
+                (click)="$event.stopPropagation()"
                 (change)="detenerYAplicarCambioModulo($event, modulo.id_modulo)" />
             </td>
             <td *ngIf="(permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.perfil.modificar-modulo')">
@@ -208,8 +214,13 @@
 
         <!-- Y en el tbody, agregar la columna del checkbox: -->
         <tbody>
-          <tr *ngFor="let submenu of submenus" [class.fila-activa]="submenu.id_sub === submenuSeleccionado" 
-              (click)="seleccionarSubMenu(submenu.id_sub)" style="cursor: pointer;">
+          <tr *ngFor="let submenu of submenus" 
+            [class.fila-activa]="submenu.id_sub === submenuSeleccionado"
+            [ngClass]="{
+              'submenu-con-opciones': tieneSubMenuAlgunasOpciones(submenu.id_sub),
+              'submenu-con-opciones-completo': esSubMenuCompletamenteAsignado(submenu.id_sub)
+            }"
+            (click)="seleccionarSubMenu(submenu.id_sub)" style="cursor: pointer;">
             <td class="ocultar-id">{{ submenu.id_sub }}</td>
             <td>{{ submenu.nombre }}</td>
             <td class="col-reducida">
