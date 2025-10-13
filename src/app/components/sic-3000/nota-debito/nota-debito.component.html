@@ -1,150 +1,107 @@
-<div class="nota-debito container-fluid py-3">
+<div class="nc-container">
+  <h3 class="titulo">Nota de Débito</h3>
 
-  <!-- ===== Título ===== -->
-  <div class="row">
-    <div class="col-12">
-      <h5 class="mb-3">Nota de Débito</h5>
+  <!-- Encabezado -->
+  <div class="grid-header">
+    <div class="field">
+      <label class="form-label">Sucursal:</label>
+      <input class="form-control" [(ngModel)]="sucursal" />
+    </div>
+    <div class="field">
+      <label class="form-label">Caja:</label>
+      <input class="form-control" [(ngModel)]="caja" />
+    </div>
+    <div class="field">
+      <label class="form-label">No:</label>
+      <input class="form-control" [(ngModel)]="numero" />
+    </div>
+    <div class="field">
+      <label class="form-label">Fecha:</label>
+      <input class="form-control" type="date" [(ngModel)]="fecha" />
+    </div>
+
+    <div class="field">
+      <label class="form-label">Cliente:</label>
+      <input class="form-control" [(ngModel)]="cliente" />
+    </div>
+    <div class="field">
+      <label class="form-label">Dirección:</label>
+      <input class="form-control" [(ngModel)]="direccion" />
+    </div>
+    <div class="field">
+      <label class="form-label">RUC:</label>
+      <input class="form-control" [(ngModel)]="ruc" />
+    </div>
+    <div class="field">
+      <label class="form-label">Factura:</label>
+      <input class="form-control" [(ngModel)]="factura" />
+    </div>
+
+    <div class="field wide">
+      <label class="form-label">Observación:</label>
+      <input class="form-control" [(ngModel)]="observacion" />
     </div>
   </div>
 
-  <!-- ===== Encabezado / Datos generales (ANCHO COMPLETO) ===== -->
-  <div class="row g-3 mb-3">
-    <div class="col-12">
-      <div class="row g-3">
-        <div class="col-6 col-xl-3">
-          <label class="form-label" for="nd-sucursal">Sucursal:</label>
-          <input id="nd-sucursal" class="form-control" [value]="sucursal || '001'" disabled />
-        </div>
-        <div class="col-6 col-xl-3">
-          <label class="form-label" for="nd-caja">Caja:</label>
-          <input id="nd-caja" class="form-control" [value]="caja || '010'" disabled />
-        </div>
+  <!-- Detalle -->
+  <div class="panel">
+    <ag-grid-angular
+      class="ag-theme-quartz nc-grid"
+      style="width: 100%; height: 220px"
+      [rowData]="detalleRowData"
+      [columnDefs]="detalleColumnDefs"
+      [rowSelection]="'single'"
+      [animateRows]="true"
+      [domLayout]="'autoHeight'">
+    </ag-grid-angular>
 
-        <div class="col-6 col-xl-3">
-          <label class="form-label" for="nd-numero">No:</label>
-          <input id="nd-numero" class="form-control" [(ngModel)]="numero" placeholder="| texto" />
-        </div>
-        <div class="col-6 col-xl-3">
-          <label class="form-label" for="nd-fecha">Fecha:</label>
-          <input id="nd-fecha" type="date" class="form-control" [(ngModel)]="fecha" />
-        </div>
-
-        <div class="col-12 col-xl-6">
-          <label class="form-label" for="nd-cliente">Cliente:</label>
-          <input id="nd-cliente" class="form-control" [(ngModel)]="cliente" placeholder="| texto" />
-        </div>
-
-        <div class="col-6 col-xl-3">
-          <label class="form-label" for="nd-factura">Factura:</label>
-          <input id="nd-factura" class="form-control" [(ngModel)]="factura" placeholder="| texto" />
-        </div>
-        <div class="col-6 col-xl-3">
-          <label class="form-label" for="nd-direccion">Dirección:</label>
-          <input id="nd-direccion" class="form-control" [(ngModel)]="direccion" placeholder="| texto" />
-        </div>
-
-        <div class="col-6 col-xl-3">
-          <label class="form-label" for="nd-ruc">RUC:</label>
-          <input id="nd-ruc" class="form-control" [(ngModel)]="ruc" placeholder="| texto" />
-        </div>
-        <div class="col-6 col-xl-3">
-          <label class="form-label" for="nd-fecha-actual">Fecha Actual:</label>
-          <input id="nd-fecha-actual" class="form-control" [value]="(fechaActual | date:'yyyy-MM-dd')" disabled />
-        </div>
-
-        <div class="col-12 col-xl-6">
-          <label class="form-label" for="nd-obs">Observación:</label>
-          <input id="nd-obs" class="form-control" [(ngModel)]="observacion" placeholder="| texto" />
-        </div>
+    <div class="totales-linea">
+      <div class="spacer"></div>
+      <div class="total-fila">
+        <span>Total Factura</span>
+        <span></span>
+        <span>{{ subTotal | number:'1.2-2' }}</span>
       </div>
     </div>
   </div>
 
-  <!-- ===== Detalle (AG Grid) ===== -->
-  <div class="row mb-3">
-    <div class="col-12">
-      <div class="ag-container ag-grid-sm">
-        <ag-grid-angular
-          class="ag-theme-alpine w-100 h-100"
-          [rowData]="detalleRowData"
-          [columnDefs]="detalleColumnDefs"
-          [defaultColDef]="defaultColDef"
-          [pinnedBottomRowData]="detallePinnedBottom"
-          [stopEditingWhenCellsLoseFocus]="true"
-          (cellEditingStopped)="onDetalleEdited()"
-          (rowDataUpdated)="recalcularTotales()"
-          (gridReady)="onDetalleReady($event)">
-        </ag-grid-angular>
+  <!-- Formas de Pago + Resumen -->
+  <div class="grid-2col">
+    <div class="panel">
+      <div class="toolbar">
+        <strong class="subtitulo">Formas de Pago</strong>
+        <div class="spacer"></div>
+        <span class="total-pago">Total Pago</span>
       </div>
+
+      <ag-grid-angular
+        class="ag-theme-quartz nc-grid"
+        style="width: 100%; height: 200px"
+        [rowData]="pagoRowData"
+        [columnDefs]="pagoColumnDefs"
+        [rowSelection]="'single'"
+        [animateRows]="true"
+        [domLayout]="'autoHeight'">
+      </ag-grid-angular>
+    </div>
+
+    <div class="panel resumen">
+      <div class="res-item"><span>Sub Total</span><strong>{{ subTotal | number:'1.2-2' }}</strong></div>
+      <div class="res-item"><span>Base 0</span><strong>{{ base0 | number:'1.2-2' }}</strong></div>
+      <div class="res-item"><span>Base IVA</span><strong>{{ baseIva | number:'1.2-2' }}</strong></div>
+      <div class="res-item"><span>IVA</span><strong>{{ iva | number:'1.2-2' }}</strong></div>
+      <div class="res-item total-dev"><span><strong>TOTAL DEV.</strong></span><strong>{{ totalDev | number:'1.2-2' }}</strong></div>
     </div>
   </div>
 
-  <!-- ===== Formas de Pago + Panel Totales ===== -->
-  <div class="row align-items-start g-3 mb-3">
-    <div class="col-12">
-      <h6 class="mb-2">Formas de Pago</h6>
-    </div>
-
-    <!-- Grid de pagos -->
-    <div class="col-12 col-xl-9">
-      <div class="ag-container ag-grid-sm">
-        <ag-grid-angular
-          class="ag-theme-alpine w-100 h-100"
-          [rowData]="pagoRowData"
-          [columnDefs]="pagoColumnDefs"
-          [defaultColDef]="defaultColDef"
-          [pinnedBottomRowData]="pagoPinnedBottom"
-          [stopEditingWhenCellsLoseFocus]="true"
-          (cellEditingStopped)="recalcularPago()"
-          (rowDataUpdated)="recalcularPago()"
-          (gridReady)="onPagoReady($event)">
-        </ag-grid-angular>
-      </div>
-    </div>
-
-    <!-- Panel de totales -->
-    <div class="col-12 col-xl-3">
-      <ul class="list-group totales">
-        <li class="list-group-item">
-          <span>Sub Total</span>
-          <span>{{ (totales?.subtotal || 0) | number:'1.2-2' }}</span>
-        </li>
-        <li class="list-group-item">
-          <span>Base 0</span>
-          <span>{{ (totales?.base0 || 0) | number:'1.2-2' }}</span>
-        </li>
-        <li class="list-group-item">
-          <span>Base IVA</span>
-          <span>{{ (totales?.baseIva || 0) | number:'1.2-2' }}</span>
-        </li>
-        <li class="list-group-item">
-          <span>IVA</span>
-          <span>{{ (totales?.iva || 0) | number:'1.2-2' }}</span>
-        </li>
-        <li class="list-group-item">
-          <span class="fw-bold">TOTAL DEV.</span>
-          <span class="fw-bold">{{ (totales?.totalDev || 0) | number:'1.2-2' }}</span>
-        </li>
-      </ul>
+  <!-- Acciones -->
+  <div class="acciones">
+    <button class="btn" (click)="nuevo()">Nuevo</button>
+    <button class="btn btn-primary" (click)="grabar()">Grabar</button>
+    <div class="spacer"></div>
+    <div class="exportar">
+      <button class="btn btn-sm" (click)="exportar('pdf')">Exportar</button>
+      <span class="caret">▾</span>
     </div>
   </div>
-
-  <!-- ===== Barra de acciones ===== -->
-  <div class="row">
-    <div class="col-12 d-flex gap-2 justify-content-center">
-      <button type="button" class="btn btn-outline-secondary" (click)="nuevo()">Nuevo</button>
-      <button type="button" class="btn btn-primary" (click)="grabar()">Grabar</button>
-
-      <div class="dropdown">
-        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-          Exportar
-        </button>
-        <ul class="dropdown-menu">
-          <li><a class="dropdown-item" (click)="exportarExcel()">Excel</a></li>
-          <li><a class="dropdown-item disabled">PDF</a></li>
-        </ul>
-      </div>
-    </div>
-  </div>
-
 </div>

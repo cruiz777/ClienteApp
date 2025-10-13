@@ -1,171 +1,100 @@
-/* ========== Nota de Débito – Estilos base / variables ========== */
-.nota-debito {
-  --nd-primary: #1c2a5e;   /* azul títulos / headers */
-  --nd-accent:  #ff7b00;   /* acento (TOTAL DEV.) */
-  --nd-text:    #2c3b6f;   /* texto general */
-  --nd-muted:   #8da1c2;   /* textos suaves */
-  --nd-line:    #dfe6f5;   /* líneas inputs */
-  --nd-line-2:  #e9edf6;   /* bordes suaves */
-  --nd-soft:    #f8f9fa;   /* fondos pálidos */
+/* Contenedor general */
+.nc-container { padding: 16px 18px 28px; }
+
+/* Tipografía y colores base (similar a registro de cobros) */
+.titulo { color:#1c2a5e; font-weight:700; margin-bottom:16px; }
+.subtitulo { color:#1c2a5e; font-weight:600; margin:0 0 12px; }
+
+/* Inputs estilo línea inferior */
+.form-label { font-weight:600; color:#2c3b6f; display:block; }
+.form-control {
+  width:100%; border:none; border-bottom:1px solid #dfe6f5; border-radius:0;
+  background:transparent; padding:4px 0; outline:none;
+}
+.form-control:focus { border-bottom-color:#9db4d9; }
+
+/* Encabezado: grilla responsiva */
+.grid-header {
+  display:grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap:18px 24px;
+  margin-bottom:12px;
+}
+.field.wide { grid-column: span 2; }
+
+/* Paneles */
+.panel {
+  background:#fff; border:1px solid #e9edf6; border-radius:12px;
+  padding:12px; box-shadow: 0 1px 2px rgba(0,0,0,.03);
+  margin-top:10px;
 }
 
-/* Separación general */
-.nota-debito.container-fluid {
-  padding-left: 1rem;
-  padding-right: 1rem;
+/* AG Grid tema y alto auto */
+.ag-theme-quartz.nc-grid {
+  --ag-foreground-color: #2c3b6f;
+  --ag-header-background-color: #f6f8fc;
+  --ag-header-foreground-color: #1c2a5e;
+  --ag-row-hover-color: #f2f6ff;
+  --ag-selected-row-background-color: #eef3ff;
+  --ag-borders: #e6ecf7;
 }
 
-/* ========== Títulos ========= */
-.nota-debito h5,
-.nota-debito h6 {
-  margin: 0 0 .75rem 0;
-  color: var(--nd-primary);
-  font-weight: 700;
-  letter-spacing: .2px;
+/* Totales al pie del detalle (alineación como maqueta) */
+.totales-linea {
+  display:flex; align-items:center; margin-top:8px;
+}
+.totales-linea .spacer { flex:1; }
+.total-fila {
+  display:grid;
+  grid-template-columns: 160px 100px 100px;
+  gap:8px; align-items:center;
+  font-weight:600; color:#1c2a5e;
+}
+.total-fila span:last-child { text-align:right; }
+
+/* Bloque Formas de Pago + Resumen */
+.grid-2col {
+  display:grid;
+  grid-template-columns: 1fr 340px;
+  gap:16px;
+  margin-top:16px;
 }
 
-/* ========== Formularios (estilo underline) ========= */
-.nota-debito .form-label {
-  font-size: .85rem;
-  font-weight: 600;
-  color: var(--nd-text);
-  margin-bottom: .15rem;
+.toolbar {
+  display:flex; align-items:center; gap:8px; margin-bottom:8px;
 }
+.toolbar .spacer { flex:1; }
+.total-pago { font-weight:700; color:#1c2a5e; }
 
-.nota-debito .form-control,
-.nota-debito .form-select {
-  border: none;
-  border-bottom: 1px solid var(--nd-line);
-  border-radius: 0;
-  background: transparent;
-  padding-left: 0;
-  padding-right: 0;
-  height: calc(1.6rem + 2px);
-  font-size: .9rem;
-  color: var(--nd-text);
-}
+/* Resumen */
+.resumen { padding:16px 16px 8px; }
+.res-item { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed #edf1fb; }
+.res-item span { color:#6b7ea6; font-weight:600; }
+.res-item strong { color:#1c2a5e; }
+.res-item.total-dev strong { font-size:1.1rem; }
 
-.nota-debito .form-control:focus,
-.nota-debito .form-select:focus {
-  box-shadow: none;
-  border-bottom-color: #9db4d9;
+/* Acciones */
+.acciones {
+  display:flex; align-items:center; gap:10px; margin-top:18px;
 }
+.acciones .spacer { flex:1; }
+.btn {
+  border:1px solid #cfd9ee; background:#fff; color:#1c2a5e;
+  padding:8px 14px; border-radius:10px; cursor:pointer; font-weight:600;
+}
+.btn:hover { background:#f6f8fc; }
+.btn-primary { background:#1c2a5e; color:#fff; border-color:#1c2a5e; }
+.btn-primary:hover { background:#16224a; }
+.btn-sm { padding:6px 10px; }
 
-.nota-debito input[disabled],
-.nota-debito .form-control[disabled],
-.nota-debito .form-select[disabled] {
-  color: #6c757d;
-  border-bottom-style: dotted;
-}
+.exportar { display:flex; align-items:center; gap:6px; }
+.exportar .caret { color:#6b7ea6; }
 
-/* ========== Contenedor de AG Grid ========= */
-.nota-debito .ag-container {
-  height: 300px;                 /* altura visible de la grilla */
-  background: #fff;
-  border: 1px solid var(--nd-line-2);
-  border-radius: .5rem;
-  overflow: hidden;
-}
+/* Checkbox de celdas */
+.nc-checkbox { width:16px; height:16px; }
 
-/* Variación compacta (coincide con “registro de cobros”) */
-.nota-debito .ag-grid-sm .ag-root-wrapper {
-  border-radius: .5rem;
+/* Responsivo */
+@media (max-width: 1100px) {
+  .grid-header { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+  .grid-2col { grid-template-columns: 1fr; }
 }
-.nota-debito .ag-grid-sm .ag-header {
-  border-bottom: 1px solid var(--nd-line-2);
-}
-.nota-debito .ag-grid-sm .ag-header-cell-text {
-  font-size: .8rem;
-  color: var(--nd-primary);
-  font-weight: 600;
-}
-.nota-debito .ag-grid-sm .ag-cell {
-  font-size: .85rem;
-  line-height: 1.4;
-  padding-top: 6px;
-  padding-bottom: 6px;
-}
-
-/* Alineación derecha coherente */
-.nota-debito .ag-theme-alpine .ag-right-aligned-cell {
-  text-align: right;
-}
-
-/* ========== Pie de totales dentro del grid (pinned bottom) ========= */
-.nota-debito .ag-theme-alpine .ag-floating-bottom {
-  background: #f3f6fb;
-  border-top: 1px solid var(--nd-line-2);
-}
-.nota-debito .ag-theme-alpine .ag-floating-bottom .ag-cell {
-  font-weight: 700;
-  color: var(--nd-primary);
-}
-.nota-debito .ag-theme-alpine .ag-floating-bottom .ag-cell.ag-right-aligned-cell {
-  text-align: right;
-}
-
-/* Celda etiqueta “Total Factura / Total Pago” */
-.nota-debito .total-label-cell {
-  background: #e9f0ff;
-  border-right: 1px solid var(--nd-line-2);
-  font-weight: 700;
-}
-
-/* ========== Panel de totales (derecha) ========= */
-.nota-debito .totales .list-group-item {
-  padding: .55rem .8rem;
-  font-size: .95rem;
-  border-color: var(--nd-line-2);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-.nota-debito .totales .list-group-item span:first-child {
-  color: var(--nd-text);
-}
-
-/* Resaltar TOTAL DEV. como en el mockup */
-.nota-debito .totales .list-group-item:last-child {
-  background: #fff7ef;                 /* tenue naranja */
-  border-top: 2px solid var(--nd-line-2);
-}
-.nota-debito .totales .list-group-item:last-child .fw-bold {
-  color: var(--nd-accent);
-}
-
-/* ========== Botones ========= */
-.nota-debito .btn-primary {
-  background-color: var(--nd-primary);
-  border-color: var(--nd-primary);
-}
-.nota-debito .btn-primary:hover {
-  background-color: #16224a;
-  border-color: #16224a;
-}
-.nota-debito .btn.btn-outline-secondary {
-  border-color: var(--nd-line);
-  color: var(--nd-text);
-}
-.nota-debito .btn.btn-outline-secondary:hover {
-  background: var(--nd-soft);
-  border-color: var(--nd-line-2);
-  color: var(--nd-primary);
-}
-
-/* Dropdown Exportar */
-.nota-debito .dropdown-menu {
-  border-color: var(--nd-line-2);
-}
-.nota-debito .dropdown-item.disabled {
-  color: #a7b4cc;
-}
-
-/* ========== Espaciados y pequeños refinamientos ========= */
-.nota-debito .ag-container + .d-flex { margin-top: .5rem; }
-.nota-debito .row.g-3 > [class*="col-"] { margin-top: .15rem; }
-
-/* ========== Responsivo ========= */
-@media (max-width: 992px) {
-  .nota-debito .ag-container { height: 260px; }
-}
-
