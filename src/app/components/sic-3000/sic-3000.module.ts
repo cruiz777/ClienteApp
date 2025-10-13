@@ -1,9 +1,7 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
-
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
-
 import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
@@ -24,13 +22,24 @@ import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.compo
 // 👉 Standalone: se importa (no va en declarations)
 import { FacturacionIndividualComponent } from './facturacion/facturacion-individual/facturacion-individual.component';
 import { FacturacionGlobalComponent } from './facturacion/facturacion-global/facturacion-global.component';
+import { MatTableModule } from '@angular/material/table';
+import { MatRadioModule } from '@angular/material/radio';
+import { MatSelectModule } from '@angular/material/select';
+import { MatOptionModule } from '@angular/material/core';
+import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatNativeDateModule } from '@angular/material/core';
+import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
+import { ProductosSicComponent } from './productos-sic/productos-sic.component';
 
 @NgModule({
   declarations: [
     InicioSicComponent,
     NavigationSicComponent,
-    RegistroCobrosComponent
+    RegistroCobrosComponent,
     // ❌ No declarar FacturacionIndividualComponent porque es standalone
+    EstadocuentaclienteComponent,
+    ProductosSicComponent
   ],
   imports: [
     CommonModule,
@@ -55,7 +64,14 @@ import { FacturacionGlobalComponent } from './facturacion/facturacion-global/fac
 
     // ✅ Importar el componente standalone
     FacturacionIndividualComponent,
-    FacturacionGlobalComponent
+    FacturacionGlobalComponent,
+    MatTableModule,
+    MatRadioModule,
+    MatSelectModule,
+    MatOptionModule,    
+    MatSlideToggleModule,
+    MatDatepickerModule,
+    MatNativeDateModule
   ]
 })
 export class Sic3000Module {}

@@ -25,7 +25,7 @@
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
-              <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
+              <img src="assets/icons/sic-3000/icon-inventario.png" class="menu-icon">
               <span *ngIf="isExpanded" class="menu-text">Inventarios</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
@@ -33,7 +33,7 @@
           <a mat-list-item [routerLink]="['estructura-list']" routerLinkActive="active">
             <span *ngIf="isExpanded" class="menu-text">Estructura Comercial</span>
           </a>
-          <a mat-list-item routerLink="">
+          <a mat-list-item [routerLink]="['productossic']" routerLinkActive="active">
             <span *ngIf="isExpanded" class="menu-text">Producto</span>
           </a>
           <a mat-list-item routerLink="">
@@ -54,7 +54,7 @@
           <!-- Subgrupo: Facturación -->
           <mat-expansion-panel-header>
             <mat-panel-title>
-              <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
+              <img src="assets/icons/sic-3000/icon-factura.png" class="menu-icon">
               <span *ngIf="isExpanded" class="menu-text">Facturación</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
@@ -129,13 +129,13 @@
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
-              <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
+              <img src="assets/icons/sic-3000/icon-cuenta-x-cobrar.png" class="menu-icon">
               <span *ngIf="isExpanded" class="menu-text">Cuentas por cobrar</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
           <!-- Subgrupo: Estado de Cuenta Individual-->
           <mat-expansion-panel hideToggle>
-            <mat-expansion-panel-header (click)="goTo('ruta aqui')" class="clickable-header">
+            <mat-expansion-panel-header (click)="goTo('estadocuentacliente')" class="clickable-header">
               <mat-panel-title>
                 <span *ngIf="isExpanded" class="menu-text">Estado de Cuenta Individual</span>
               </mat-panel-title>
@@ -181,7 +181,7 @@
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
-              <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
+              <img src="assets/icons/sic-3000/icon-configuracion.png" class="menu-icon">
               <span *ngIf="isExpanded" class="menu-text">Configuración</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
@@ -237,7 +237,6 @@
           <span *ngIf="isExpanded" class="menu-text salir-text">Salir</span>
         </div>
       </mat-list-item>
-
     </mat-nav-list>
 
   </mat-sidenav>

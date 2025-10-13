@@ -19,7 +19,6 @@ import { OpcionService } from 'src/app/services/opcion.service';
 import { SistemaService } from 'src/app/services/sistema.service';
 import { SubMenuService } from 'src/app/services/submenu.service';
 import { SubMenuRequest } from 'src/app/interfaces/requests/submenu-request';
-import { UsuarioService } from 'src/app/services/usuario.service';
 
 @Component({
   selector: 'app-perfiles-form',
@@ -52,7 +51,6 @@ export class PerfilesFormComponent implements OnInit {
     private sistemaService: SistemaService,
     public dialogRef: MatDialogRef<PerfilesFormComponent>,
     public submenuService: SubMenuService,
-    private usuarioService: UsuarioService, 
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {
     this.tipo = data?.tipo || 'perfil';
@@ -62,12 +60,6 @@ export class PerfilesFormComponent implements OnInit {
 
 
   ngOnInit(): void {
-    const empresaId = this.usuarioService.getEmpresaId();
-    if (empresaId) {
-      this.idEmpresa = empresaId;
-    } else {
-      console.warn('No se pudo obtener la empresa del usuario logueado');
-    }
     this.form = this.fb.group({
       nombre: ['', Validators.required]
     });
@@ -87,6 +79,7 @@ export class PerfilesFormComponent implements OnInit {
     this.cargando = true;
 
     const nombre = this.form.value.nombre.trim();
+    const url = this.form.value.url.trim();
 
     switch (this.tipo) {
       case 'perfil':
@@ -115,7 +108,8 @@ export class PerfilesFormComponent implements OnInit {
           id_sistema: this.idRelacionado,
           nombre,
           descripcion: nombre,
-          status: true
+          status: true,
+          url: url
         };
         if (this.idGeneral) {
           this.moduloService.updateModulo(this.idGeneral, moduloRequest).subscribe({
@@ -135,7 +129,8 @@ export class PerfilesFormComponent implements OnInit {
           id_modulo: this.idRelacionado,
           nombre,
           descripcion: nombre,
-          status: true
+          status: true,
+          url: url
         };
         if (this.idGeneral) {
           this.menuService.updateMenu(this.idGeneral, menuRequest).subscribe({
@@ -191,10 +186,12 @@ export class PerfilesFormComponent implements OnInit {
 
       case 'sistema':
         const sistemaRequest: SistemasRequest = {
-          id_empresa: this.idEmpresa,
+          id_sistema: this.idRelacionado,
           nombre,
           descripcion: nombre,
-          status: true
+          fecha_creacion: new Date(),
+          status: true,
+          url: url
         };
         if (this.idGeneral) {
           this.sistemaService.updateSistema(this.idGeneral, sistemaRequest).subscribe({

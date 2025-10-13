@@ -1,0 +1,817 @@
+<div class="page">
+  <header class="page-header">
+    <h1>Mantenimiento de Productos</h1>
+
+    <!-- Descripción solo etiqueta -->
+    <div class="descripcion-static">
+      <span class="lbl-strong">Descripción:</span>
+      <span class="desc-titulo">Descripción del producto</span>
+    </div>
+  </header>
+  <div *ngIf="!esNuevoProducto" class="mb-3">
+    <label class="label-sm d-block">Buscar Producto:</label>
+    <div style="position: relative;">
+      <input 
+        type="text" 
+        class="input-line w-100" 
+        placeholder="Buscar por código, código de barras o nombre..."
+        (input)="onBuscarProducto($event)"
+        [(ngModel)]="terminoBusqueda">
+      
+      <!-- Resultados del autocomplete -->
+      <div 
+        *ngIf="mostrarResultados && resultadosBusqueda.length > 0"
+        class="autocomplete-results">
+        <div 
+          *ngFor="let prod of resultadosBusqueda"
+          class="autocomplete-item"
+          (click)="seleccionarProducto(prod)">
+          <strong>{{ prod.codpro }}</strong> - {{ prod.despro }}
+          <small class="text-muted d-block">{{ prod.codbar }}</small>
+        </div>
+      </div>
+    </div>
+  </div>
+  <mat-tab-group class="tabs" [(selectedIndex)]="selectedTab" [disableRipple]="true" animationDuration="0ms">
+
+    <!-- ========== Template reutilizable de botones ========== -->
+    <ng-template #accionesTabs>
+      <div class="pc-actions">
+        <button type="button" class="btn-soft" (click)="onGrabar()" [disabled]="saving">
+          {{ saving ? 'Guardando…' : 'Grabar' }}
+        </button>
+        <!-- <button type="button" class="btn-soft" (click)="onGrabar()" [disabled]="currentFormInvalid">Grabar</button> -->
+        <button type="button" class="btn-soft" (click)="onImprimir()">Imprimir</button>
+        <button type="button" class="btn-soft" (click)="onAdjuntar()">Adjuntar</button>
+      </div>
+    </ng-template>
+
+    <!-- ================= TAB 1: Datos Generales ================= -->
+    <mat-tab label="Datos Generales">
+      <form class="tab-body" [formGroup]="form" novalidate>
+        <div class="tab-body">
+          <div class="row">
+            <div class="col-12">
+              <h3 class="t5-title">Datos del Producto</h3>
+            </div>
+          </div>
+
+          <div class="row g-3">
+            <!-- Columna izquierda -->
+            <div class="col-12 col-lg-8">
+              <div class="row g-3 align-items-end">
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Código Interno:</label>
+                  <input class="input-line w-100" formControlName="codigoInterno"
+                    [class.is-invalid]="isInvalid('codigoInterno')">
+                  <small *ngIf="isInvalid('codigoInterno')" class="invalid-feedback d-block">Campo obligatorio</small>
+                </div>
+
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Código de Barras:</label>
+                  <input class="input-line w-100" formControlName="codigoBarras"
+                    [class.is-invalid]="isInvalid('codigoBarras')">
+                  <small *ngIf="isInvalid('codigoBarras')" class="invalid-feedback d-block">Campo obligatorio</small>
+                </div>
+
+                <div class="col-12 col-md-4 d-flex align-items-center gap-2">
+                  <span class="label-sm text-secondary">Generar</span>
+                  <input type="checkbox" class="form-check-input" formControlName="generarCodigo">
+                </div>
+
+                <div class="col-12 col-md-6">
+                  <label class="label-sm d-block">Descripción:</label>
+                  <input class="input-line w-100" formControlName="descripcion1"
+                    [class.is-invalid]="isInvalid('descripcion1')">
+                  <small *ngIf="isInvalid('descripcion1')" class="invalid-feedback d-block">Campo obligatorio</small>
+
+                </div>
+
+                <div class="col-12 col-md-6">
+                  <label class="label-sm d-block">Descripción en el punto de venta:</label>
+                  <input class="input-line w-100" formControlName="descripcionPOS"
+                    [class.is-invalid]="isInvalid('descripcionPOS')">
+                </div>
+
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Unidad de Venta:</label>
+                  <div class="select-wrap">
+                    <select 
+                      class="select-line w-100" 
+                      formControlName="unidadVenta"
+                      [class.is-invalid]="isInvalid('unidadVenta')">
+                      <option [ngValue]="null" disabled>Seleccione una unidad</option>
+                      <option 
+                        *ngFor="let u of unidadesVenta" 
+                        [ngValue]="u.idUnidadVenta">
+                        {{u.descripcion}}
+                      </option>
+                    </select>
+                    <small *ngIf="isInvalid('unidadVenta')" class="invalid-feedback d-block">
+                      Campo obligatorio
+                    </small>
+                  </div>
+                </div>
+
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Cantidad:</label>
+                  <input type="number" class="input-line w-100" formControlName="cantidad">
+                </div>
+
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Tipo Producto:</label>
+                  <div class="select-wrap">
+                    <select class="select-line w-100" formControlName="tipoProducto">
+                      <option [ngValue]="null" disabled selected>—</option>
+                      <option *ngFor="let t of tiposProducto; trackBy: trackByValue" [ngValue]="t">{{t}}</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Existencia Global:</label>
+                  <input class="input-line w-100" formControlName="existenciaGlobal"
+                    [class.is-invalid]="isInvalid('existenciaGlobal')">
+                </div>
+
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Cantidad Conversion:</label>
+                  <input class="input-line w-100" formControlName="canCov">
+                </div>
+
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Presentación:</label>
+                  <div class="select-wrap">
+                    <select class="select-line w-100" formControlName="presentacion"
+                      [class.is-invalid]="isInvalid('presentacion')">
+                      <option [ngValue]="null" disabled selected>—</option>
+                      <option *ngFor="let p of presentaciones" [ngValue]="p.idPresentacion">{{p.descripcion}}</option>
+                    </select>
+                    <small *ngIf="isInvalid('unidadVenta')" class="invalid-feedback d-block">
+                      Campo obligatorio
+                    </small>
+                  </div>
+                </div>
+
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Abreviación:</label>
+                  <input class="input-line w-100" formControlName="abreviacion"
+                    [class.is-invalid]="isInvalid('abreviacion')">
+                </div>
+
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Referencia:</label>
+                  <input class="input-line w-100" formControlName="referencia">
+                </div>
+
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Fecha de Creación:</label>
+                  <input type="date" class="input-line w-100" formControlName="fechaCreacion">
+                </div>
+                <div class="col-12 col-md-4">
+                  <label class="label-sm d-block">Fecha de Modificación:</label>
+                  <input type="date" class="input-line w-100" formControlName="fechaModificacion">
+                </div>
+              </div>
+            </div>
+
+            <!-- Columna derecha (checks + foto) -->
+            <div class="col-12 col-lg-4">
+              <div class="ps-lg-3 border-start-lg">
+                <div class="row">
+                  <div class="col-12">
+                    <span class="fw-semibold small d-block mb-2 text-secondary">Opciones:</span>
+                  </div>
+
+                  <div class="col-12 col-md-6">
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
+                        formControlName="pagaIva" id="pagaIva"><label class="form-check-label" for="pagaIva">Paga
+                        IVA</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
+                        formControlName="productoEnVenta" id="enVenta"><label class="form-check-label"
+                        for="enVenta">Producto en Venta</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
+                        formControlName="cargarInventarios" id="inv"><label class="form-check-label" for="inv">Cargar a
+                        inventarios</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
+                        formControlName="productoConPeso" id="peso"><label class="form-check-label" for="peso">Producto
+                        con Peso</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
+                        formControlName="consumoInterno" id="interno"><label class="form-check-label"
+                        for="interno">Consumo Interno</label></div>
+                  </div>
+
+                  <div class="col-12 col-md-6">
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
+                        formControlName="manejaDecimales" id="dec"><label class="form-check-label" for="dec">Cant. con
+                        Decimales</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
+                        formControlName="psicotropico" id="psi"><label class="form-check-label"
+                        for="psi">Psicotrópico</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
+                        formControlName="estupefaciente" id="estu"><label class="form-check-label"
+                        for="estu">Estupefaciente</label></div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
+                        formControlName="activo" id="activo"><label class="form-check-label" for="activo">Activo</label>
+                    </div>
+                    <div class="form-check mb-2"><input class="form-check-input" type="checkbox"
+                        formControlName="altoRiesgo" id="alto"><label class="form-check-label" for="alto">Alto
+                        Riesgo</label></div>
+                  </div>
+
+                  <div class="col-12 mt-2">
+                    <label class="label-sm d-block">URL foto Producto:</label>
+                    <input class="input-line w-100" formControlName="urlFoto">
+                    <div class="mt-2 d-flex">
+                      <img *ngIf="form.value.urlFoto; else cuadroVacio" [src]="form.value.urlFoto" alt="foto"
+                        class="rounded-2 border object-fit-cover" style="width:92px;height:92px;" />
+                      <ng-template #cuadroVacio>
+                        <div class="rounded-2 border d-grid place-items-center text-secondary-emphasis"
+                          style="width:92px;height:92px;font-size:12px;">Foto</div>
+                      </ng-template>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div><!--/row-->
+
+          <!-- Acciones -->
+          <ng-container [ngTemplateOutlet]="accionesTabs"></ng-container>
+        </div>
+      </form>
+    </mat-tab>
+
+    <!-- ================= TAB 2: Datos Adicionales ================= -->
+    <mat-tab label="Datos Adicionales">
+      <div class="tab-body">
+        <div class="row g-4">
+          <!-- Columna izquierda -->
+          <div class="col-lg-6">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label class="lbl">Color:</label>
+                <input type="text" class="input-line" placeholder="| texto">
+              </div>
+              <div class="col-md-6">
+                <label class="lbl">Sabor:</label>
+                <input type="text" class="input-line" placeholder="| texto">
+              </div>
+
+              <div class="col-12">
+                <label class="lbl">Tamaño / Talla:</label>
+                <input type="text" class="input-line" placeholder="| texto">
+              </div>
+
+              <div class="col-12">
+                <label class="lbl">Medidas:</label>
+                <div class="row g-3">
+                  <div class="col-4"><input type="text" class="input-line" placeholder="| texto"></div>
+                  <div class="col-4"><input type="text" class="input-line" placeholder="| texto"></div>
+                  <div class="col-4"><input type="text" class="input-line" placeholder="| texto"></div>
+                </div>
+              </div>
+
+              <div class="col-12 mt-2">
+                <div class="lbl-strong">Ubicación</div>
+              </div>
+              <div class="col-md-4"><label class="lbl">Pasillo:</label><input type="text" class="input-line"
+                  placeholder="| texto"></div>
+              <div class="col-md-4"><label class="lbl">Columna:</label><input type="text" class="input-line"
+                  placeholder="| texto"></div>
+              <div class="col-md-4"><label class="lbl">Nivel:</label><input type="text" class="input-line"
+                  placeholder="| texto"></div>
+
+              <div class="col-12">
+                <label class="lbl">Tamaño / Talla:</label>
+                <input type="text" class="input-line" placeholder="| texto">
+              </div>
+
+              <div class="col-12">
+                <label class="lbl">Observación:</label>
+                <div class="pc-panel" style="height: 150px;">
+                  <textarea class="w-100 h-100"
+                    style="border:0; outline:0; background:transparent; resize:none;"></textarea>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Columna derecha -->
+          <div class="col-lg-6">
+            <div class="mb-3">
+              <div class="lbl-strong mb-1">Genérico</div>
+              <div class="pc-panel" style="padding:0;">
+                <table class="table table-sm mb-0" style="width:100%;">
+                  <thead>
+                    <tr>
+                      <th style="width:140px;">Código</th>
+                      <th>Descripción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>&nbsp;</td>
+                      <td>&nbsp;</td>
+                    </tr>
+                    <tr>
+                      <td>&nbsp;</td>
+                      <td>&nbsp;</td>
+                    </tr>
+                    <tr>
+                      <td>&nbsp;</td>
+                      <td>&nbsp;</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label class="lbl">Reg. Sanitario:</label>
+              <input type="text" class="input-line" placeholder="| texto">
+            </div>
+
+            <hr class="my-3">
+
+            <div class="lbl-strong mb-2">Cuentas Contables</div>
+            <div class="row g-3">
+              <div class="col-md-6"><label class="lbl">Ventas:</label><input type="text" class="input-line"></div>
+              <div class="col-md-6"><label class="lbl">Inventarios:</label><input type="text" class="input-line"></div>
+              <div class="col-md-6"><label class="lbl">Costos:</label><input type="text" class="input-line"></div>
+              <div class="col-md-6"><label class="lbl">Devolución:</label><input type="text" class="input-line"></div>
+              <div class="col-md-6 d-flex align-items-center"><label class="lbl mb-0 me-2">Producto Gasto</label><input
+                  type="checkbox"></div>
+              <div class="col-md-6"><label class="lbl">Gastos:</label><input type="text" class="input-line"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acciones -->
+        <ng-container [ngTemplateOutlet]="accionesTabs"></ng-container>
+      </div>
+    </mat-tab>
+
+    <!-- ================= TAB 3: Precios / Costos ================= -->
+    <mat-tab label="Precios / Costos">
+      <div class="tab-body" [formGroup]="preciosForm">
+        <div class="row g-4">
+
+          <!-- ===== Columna Izquierda: PRECIOS ===== -->
+          <div class="col-12 col-lg-6">
+            <div class="pc-panel">
+              <h3 class="pc-title">Precios</h3>
+
+              <!-- Fila 1: Precio Oficial | Precio RED-MSP -->
+              <div class="pc-row duo">
+                <div class="grp">
+                  <label class="lbl">Precio Oficial:</label>
+                  <div class="xs">
+                    <input type="text" inputmode="decimal" maxlength="20" class="input-line tint-blue"
+                      formControlName="precioOficial" (input)="onNumericInput('precioOficial')"
+                      (blur)="formatDecimal('precioOficial',3)">
+                  </div>
+                </div>
+                <div class="grp">
+                  <label class="lbl">Precio RED-MSP:</label>
+                  <div class="xs">
+                    <input type="text" inputmode="decimal" maxlength="20" class="input-line tint-orange"
+                      formControlName="precioRedMsp" (input)="onNumericInput('precioRedMsp')"
+                      (blur)="formatDecimal('precioRedMsp',3)">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Fila 2: PVP Actual - IVA (editable) -->
+              <div class="pc-row">
+                <label class="lbl">PVP Actual - IVA:</label>
+                <div class="sm">
+                  <input type="text" inputmode="decimal" maxlength="20" class="input-line"
+                    formControlName="pvpActualIva" (input)="onNumericInput('pvpActualIva')"
+                    (blur)="formatDecimal('pvpActualIva',3)">
+                </div>
+              </div>
+
+              <hr class="pc-sep">
+
+              <!-- Fila 3: PVP Anterior + IVA | Fecha Anterior Modificar -->
+              <div class="pc-row duo">
+                <div class="grp">
+                  <label class="lbl">PVP Anterior + IVA:</label>
+                  <div class="xs">
+                    <input type="text" inputmode="decimal" maxlength="20" class="input-line tint-blue" [readonly]="true"
+                      formControlName="pvpAnteriorMasIva">
+                  </div>
+                </div>
+                <div class="grp">
+                  <label class="lbl">Fech.Ant.Mod:</label>
+                  <div class="xs">
+                    <input type="date" class="input-line w-100" formControlName="fechaAnteriorModificarPrecio">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Fila 4: PVP Actual + IVA | Fecha Modificar -->
+              <div class="pc-row duo">
+                <div class="grp">
+                  <label class="lbl">PVP Actual + IVA:</label>
+                  <div class="xs">
+                    <input type="text" inputmode="decimal" maxlength="20" class="input-line tint-green"
+                      [readonly]="true" formControlName="pvpActualMasIva">
+                  </div>
+                </div>
+                <div class="grp">
+                  <label class="lbl">Fecha Modificación:</label>
+                  <div class="xs">
+                    <input type="date" class="input-line w-100" formControlName="fechaModificarPrecio">
+                  </div>
+                </div>
+              </div>
+
+              <hr class="pc-sep">
+
+              <!-- Fila 5: Margen Utilidad % (solo lectura) -->
+              <div class="pc-row">
+                <label class="lbl">Margen Utilidad %:</label>
+                <div class="sm">
+                  <input type="text" inputmode="decimal" maxlength="20" class="input-line w-100" [readonly]="true"
+                    formControlName="margenUtilidad">
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== Columna Derecha: COSTOS ===== -->
+          <div class="col-12 col-lg-6">
+            <div class="pc-panel">
+              <h3 class="pc-title">Costos</h3>
+
+              <!-- Fila 1: Costo Suministro | Costo Producto -->
+              <div class="pc-row duo">
+                <div class="grp">
+                  <label class="lbl">Costo Suministro:</label>
+                  <div class="xs">
+                    <input type="text" inputmode="decimal" maxlength="20" class="input-line"
+                      formControlName="costoSuministro" (input)="onNumericInput('costoSuministro')"
+                      (blur)="formatDecimal('costoSuministro',3)">
+                  </div>
+                </div>
+                <div class="grp">
+                  <label class="lbl">Costo Producto:</label>
+                  <div class="xs">
+                    <input type="text" inputmode="decimal" maxlength="20" class="input-line"
+                      formControlName="costoProducto" (input)="onNumericInput('costoProducto')"
+                      (blur)="formatDecimal('costoProducto',3)">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Fila 2: Costo Promedio (editable) -->
+              <div class="pc-row">
+                <label class="lbl">Costo Promedio:</label>
+                <div class="sm">
+                  <input type="text" inputmode="decimal" maxlength="20" class="input-line"
+                    formControlName="costoPromedio" (input)="onNumericInput('costoPromedio')"
+                    (blur)="formatDecimal('costoPromedio',3)">
+                </div>
+              </div>
+
+              <hr class="pc-sep">
+
+              <!-- Fila 3: Precio Compra Anterior | Fecha Anterior Modificar -->
+              <div class="pc-row duo">
+                <div class="grp">
+                  <label class="lbl">Precio Compra Anterior:</label>
+                  <div class="xs">
+                    <input type="text" inputmode="decimal" maxlength="20" class="input-line"
+                      formControlName="precioCompraAnterior" (input)="onNumericInput('precioCompraAnterior')"
+                      (blur)="formatDecimal('precioCompraAnterior',3)">
+                  </div>
+                </div>
+                <div class="grp">
+                  <label class="lbl">Fech.Ant.Mod:</label>
+                  <div class="xs">
+                    <input type="date" class="input-line w-100" formControlName="fechaAnteriorModificarCompra">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Fila 4: Precio Compra Actual | Fecha Modificar -->
+              <div class="pc-row duo">
+                <div class="grp">
+                  <label class="lbl">Precio Compra Actual:</label>
+                  <div class="xs">
+                    <input type="text" inputmode="decimal" maxlength="20" class="input-line"
+                      formControlName="precioCompraActual" (input)="onNumericInput('precioCompraActual')"
+                      (blur)="formatDecimal('precioCompraActual',3)">
+                  </div>
+                </div>
+                <div class="grp">
+                  <label class="lbl">Fecha Modificación:</label>
+                  <div class="xs">
+                    <input type="date" class="input-line w-100" formControlName="fechaModificarCompra">
+                  </div>
+                </div>
+              </div>
+
+              <hr class="pc-sep">
+
+              <!-- Fila 5: Recepción % (editable) -->
+              <div class="pc-row">
+                <label class="lbl">Recepción %:</label>
+                <div class="xs">
+                  <input type="text" inputmode="decimal" maxlength="20" class="input-line w-100"
+                    formControlName="recepcionPorcentaje" (input)="onNumericInput('recepcionPorcentaje')"
+                    (blur)="formatDecimal('recepcionPorcentaje',3)">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acciones -->
+        <ng-container [ngTemplateOutlet]="accionesTabs"></ng-container>
+      </div>
+    </mat-tab>
+    <!-- ================= TAB 4: Estructura y Stock ================= -->
+    <mat-tab label="Estructura y Stock">
+      <div class="tab-body">
+        <div class="row g-4">
+          <!-- Columna izquierda: Árbol (mantener existente) -->
+          <div class="col-12 col-lg-5">
+            <div class="pc-panel" style="height: 420px; display:grid; grid-template-rows:auto 1fr;">
+              <h3 class="pc-title mb-2">Estructura Comercial</h3>
+              <div style="border:1px solid var(--borde); border-radius:6px; padding:10px; overflow:auto;">
+                <ul class="mb-0" style="list-style:none; padding-left:10px; font-size:13px; color:#374151;">
+                  <li>
+                    <span class="me-1">▸</span><strong>Noción Imprenta</strong>
+                    <ul style="list-style:none; padding-left:18px; margin-top:6px;">
+                      <li>
+                        <span class="me-1">▸</span><strong>Materia Prima</strong>
+                        <ul style="list-style:none; padding-left:18px; margin-top:6px;">
+                          <li><span class="me-1">–</span>Insumos</li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <!-- ✅ Columna derecha: Configuración de Bodegas NUEVA -->
+          <div class="col-12 col-lg-7">
+            <div class="pc-panel">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="pc-title mb-0">Configuración de Bodegas</h3>
+                <div class="d-flex gap-2">
+                  <button 
+                    type="button" 
+                    class="btn btn-sm btn-outline-primary"
+                    (click)="seleccionarTodasBodegas(true)">
+                    Seleccionar todas
+                  </button>
+                  <button 
+                    type="button" 
+                    class="btn btn-sm btn-outline-secondary"
+                    (click)="seleccionarTodasBodegas(false)">
+                    Limpiar
+                  </button>
+                </div>
+              </div>
+
+              <!-- Buscador -->
+              <div class="mb-3">
+                <input 
+                  type="text" 
+                  class="input-line w-100" 
+                  placeholder="🔍 Buscar bodega..."
+                  [(ngModel)]="filtroBodega">
+              </div>
+
+              <!-- Info de selección -->
+              <div class="alert alert-info mb-3" *ngIf="bodegasSeleccionadas.length > 0">
+                <strong>{{ bodegasSeleccionadas.length }}</strong> bodega(s) seleccionada(s)
+              </div>
+
+              <!-- Tabla de bodegas -->
+              <div style="border:1px solid var(--borde); border-radius:6px; overflow:auto; max-height: 400px;">
+                <table class="table table-sm mb-0">
+                  <thead style="position: sticky; top: 0; background: #f7fafc; z-index: 1;">
+                    <tr>
+                      <th style="width: 50px; padding:8px 10px;">
+                        <input 
+                          type="checkbox" 
+                          [checked]="bodegasConfig.length > 0 && bodegasSeleccionadas.length === bodegasConfig.length"
+                          (change)="seleccionarTodasBodegas($any($event.target).checked)">
+                      </th>
+                      <th style="padding:8px 10px;">Bodega</th>
+                      <th style="padding:8px 10px; width: 100px;">Existencia</th>
+                      <th style="padding:8px 10px; width: 100px;">Stock Mín</th>
+                      <th style="padding:8px 10px; width: 100px;">Stock Máx</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr 
+                      *ngFor="let bodega of bodegasFiltradas"
+                      [class.table-active]="bodega.seleccionado"
+                      [class.table-warning]="bodega.alertaStockBajo">
+                      <td style="padding:6px 10px;">
+                        <input 
+                          type="checkbox" 
+                          [(ngModel)]="bodega.seleccionado"
+                          (change)="verificarAlertasStock()">
+                      </td>
+                      <td style="padding:6px 10px;">
+                        {{ bodega.nombreLocal }}
+                        <span 
+                          *ngIf="bodega.alertaStockBajo" 
+                          class="badge bg-warning text-dark ms-2"
+                          title="Existencia inicial menor al stock mínimo">
+                          ⚠️ Stock bajo
+                        </span>
+                      </td>
+                      <td style="padding:6px 10px;">
+                        <input 
+                          type="number" 
+                          class="input-line text-end w-100" 
+                          min="0"
+                          [disabled]="!bodega.seleccionado"
+                          [(ngModel)]="bodega.existenciaInicial"
+                          (blur)="verificarAlertasStock()">
+                      </td>
+                      <td style="padding:6px 10px;">
+                        <input 
+                          type="number" 
+                          class="input-line text-end w-100" 
+                          min="0"
+                          [disabled]="!bodega.seleccionado"
+                          [(ngModel)]="bodega.stockMin"
+                          (blur)="validarStocks(bodega); verificarAlertasStock()">
+                      </td>
+                      <td style="padding:6px 10px;">
+                        <input 
+                          type="number" 
+                          class="input-line text-end w-100" 
+                          min="0"
+                          [disabled]="!bodega.seleccionado"
+                          [(ngModel)]="bodega.stockMax"
+                          (blur)="validarStocks(bodega)">
+                      </td>
+                    </tr>
+
+                    <tr *ngIf="bodegasFiltradas.length === 0">
+                      <td colspan="5" class="text-center text-muted" style="padding: 20px;">
+                        No se encontraron bodegas
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+
+              <!-- Leyenda -->
+              <div class="mt-2 small text-muted">
+                <p class="mb-1">💡 <strong>Tip:</strong> Selecciona las bodegas donde estará disponible este producto.</p>
+                <p class="mb-0">⚠️ Si la existencia inicial es menor al stock mínimo, se mostrará una alerta.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Botonera -->
+        <ng-container [ngTemplateOutlet]="accionesTabs"></ng-container>
+      </div>
+    </mat-tab>
+    <!-- ================= TAB 5: Proveedor ================= -->
+    <mat-tab label="Proveedor">
+      <div class="tab-body">
+        <!-- ====== Datos del Producto ====== -->
+        <div class="pc-panel" style="display:grid; grid-template-columns:1fr 1fr; gap:24px;">
+          <div>
+            <h3 class="pc-title">Datos del Producto</h3>
+
+            <div class="fi-field">
+              <label class="fi-label">Costo Suministro:</label>
+              <div class="fi-input-wrap">
+                <input matInput type="text" />
+              </div>
+            </div>
+
+            <div class="fi-field mt-3">
+              <label class="fi-label">Código de Barras:</label>
+              <div class="fi-input-wrap">
+                <input matInput type="text" />
+              </div>
+            </div>
+          </div>
+
+          <div style="align-self:end">
+            <div class="fi-field">
+              <label class="fi-label">Descripción:</label>
+              <div class="fi-input-wrap">
+                <input matInput type="text" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====== Tabla Proveedores ====== -->
+        <div class="pc-panel mt-4" style="padding:0;">
+          <div style="border:1px solid var(--borde,#e6edf6); border-radius:6px; overflow:auto;">
+            <table class="table table-sm mb-0" style="width:100%; border-collapse:separate; border-spacing:0;">
+              <thead>
+                <tr style="background:#f7fafc; color:#27374A;">
+                  <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:110px;">Cod. Proveedor</th>
+                  <th style="padding:8px 10px; border-bottom:1px solid #e6edf6;">Proveedor</th>
+                  <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:120px;">Costo Compra</th>
+                  <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:140px;">Unidad Compra</th>
+                  <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:140px;">Fecha Ingreso</th>
+                  <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:120px;">Costo Neto</th>
+                  <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:120px;">A Consignación</th>
+                  <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:150px;">Descuento Producto</th>
+                  <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:90px;">Desct. 1</th>
+                  <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:90px;">Desct. 2</th>
+                  <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:90px;">Desct. 3</th>
+                  <th style="padding:8px 10px; border-bottom:1px solid #e6edf6; width:90px;">Desct. 4</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Fila 1 -->
+                <tr>
+                  <td style="padding:6px 8px;">1</td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px; text-align:center;">
+                    <input type="checkbox" />
+                  </td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                </tr>
+                <!-- Fila 2 -->
+                <tr>
+                  <td style="padding:6px 8px;">2</td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px; text-align:center;">
+                    <input type="checkbox" />
+                  </td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                </tr>
+                <!-- Fila 3 -->
+                <tr>
+                  <td style="padding:6px 8px;">3</td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px; text-align:center;">
+                    <input type="checkbox" />
+                  </td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                </tr>
+                <!-- Fila 4 -->
+                <tr>
+                  <td style="padding:6px 8px;">4</td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px; text-align:center;">
+                    <input type="checkbox" />
+                  </td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                  <td style="padding:6px 8px;"></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Botonera reutilizable -->
+        <ng-container [ngTemplateOutlet]="accionesTabs"></ng-container>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>
