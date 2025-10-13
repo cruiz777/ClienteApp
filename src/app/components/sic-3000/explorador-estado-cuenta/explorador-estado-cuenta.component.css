@@ -1,0 +1,137 @@
+.nc-container {
+  padding: 16px 18px 28px;
+  background: transparent;
+}
+
+.titulo {
+  color: #1c2a5e;
+  font-weight: 700;
+  margin: 0 0 16px 0;
+  letter-spacing: .2px;
+}
+
+/* ====== Panel / Tarjeta ====== */
+.panel {
+  background: #fff;
+  border: 1px solid #e9edf6;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .03);
+}
+
+/* ====== Etiquetas & Controles ====== */
+.form-label {
+  font-weight: 600;
+  color: #2c3b6f;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.form-control {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #dfe6f5;
+  border-radius: 0;
+  background: transparent;
+  padding: 4px 0;
+  outline: none;
+  font-size: 13px;
+  color: #1c2a5e;
+}
+
+.form-control::placeholder { color: #a7b4d4; }
+.form-control:focus { border-bottom-color: #9db4d9; }
+
+/* ====== Layout de Filtros ====== */
+.grid-header {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 18px 24px;
+  margin-bottom: 4px;
+}
+
+.field { min-width: 0; }            /* evita overflow en grid */
+.field.wide { grid-column: span 2; } /* Cliente Inicial / Final */
+
+/* ====== Totales / Detalle a la derecha de Cliente Final ====== */
+.right-controls {
+  grid-column: span 2;   /* ocupa las dos celdas a la derecha */
+  justify-self: end;     /* alinea el bloque al borde derecho */
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.check-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #2c3b6f;
+  margin: 0;
+}
+
+.nc-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: #1c58ff; /* acorde a look limpio */
+}
+
+/* ====== AG Grid (tema Quartz ajustado) ====== */
+.ag-theme-quartz.nc-grid {
+  --ag-foreground-color: #2c3b6f;
+  --ag-header-background-color: #f6f8fc;
+  --ag-header-foreground-color: #1c2a5e;
+  --ag-row-hover-color: #f2f6ff;
+  --ag-selected-row-background-color: #eef3ff;
+  --ag-borders: #e6ecf7;
+  --ag-font-size: 12.5px;
+  --ag-border-color: #e6ecf7;
+}
+
+/* ====== Acciones / Botones ====== */
+.acciones {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.acciones .spacer { flex: 1; }
+
+.btn {
+  border: 1px solid #cfd9ee;
+  background: #fff;
+  color: #1c2a5e;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 13px;
+  transition: background .15s ease-in-out, box-shadow .15s;
+}
+
+.btn:hover {
+  background: #f6f8fc;
+  box-shadow: 0 1px 2px rgba(0,0,0,.05);
+}
+
+.exportar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.exportar .caret { color: #6b7ea6; }
+
+/* ====== Responsivo ====== */
+@media (max-width: 1100px) {
+  .grid-header { grid-template-columns: repeat(2, minmax(160px, 1fr)); }
+  .right-controls { grid-column: 1 / -1; justify-self: start; margin-top: 6px; }
+}
+
+@media (max-width: 600px) {
+  .nc-container { padding: 12px; }
+  .panel { padding: 10px; }
+  .btn { padding: 7px 12px; border-radius: 8px; }
+}

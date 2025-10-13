@@ -32,6 +32,7 @@ import { CobroIndividualComponent } from './cobro-individual/cobro-individual.co
 import { ReversionPagoComponent } from './reversion-pago/reversion-pago.component';
 import { NotaDebitoComponent } from './nota-debito/nota-debito.component';
 import { NotaCreditoComponent } from './nota-credito/nota-credito.component';
+import { ExploradorEstadoCuentaComponent } from './explorador-estado-cuenta/explorador-estado-cuenta.component';
 
 @NgModule({
   declarations: [
@@ -43,8 +44,9 @@ import { NotaCreditoComponent } from './nota-credito/nota-credito.component';
     EstadocuentaclienteComponent,
     ProductosSicComponent,
     NotaDebitoComponent,
-    NotaCreditoComponent
-    
+    NotaCreditoComponent,
+    ExploradorEstadoCuentaComponent
+
   ],
   imports: [
     CommonModule,

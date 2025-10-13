@@ -11,6 +11,7 @@ import { CobroIndividualComponent } from './cobro-individual/cobro-individual.co
 import { ReversionPagoComponent } from './reversion-pago/reversion-pago.component';
 import { NotaDebitoComponent } from './nota-debito/nota-debito.component';
 import { NotaCreditoComponent } from './nota-credito/nota-credito.component';
+import { ExploradorEstadoCuentaComponent } from './explorador-estado-cuenta/explorador-estado-cuenta.component';
 
 
 const routes: Routes = [
@@ -28,6 +29,7 @@ const routes: Routes = [
       { path: 'registroCobros', component: RegistroCobrosComponent },
       { path: 'reversionPago', component: ReversionPagoComponent },
       { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
+      { path: 'exp-estado-cuenta', component: ExploradorEstadoCuentaComponent},
     ]
 
   }

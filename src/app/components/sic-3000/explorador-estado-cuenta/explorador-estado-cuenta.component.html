@@ -1,0 +1,67 @@
+<div class="nc-container">
+  <h2 class="titulo">Explorador Estado de Cuenta</h2>
+
+  <!-- Filtros -->
+ <div class="panel">
+  <form [formGroup]="form">
+    <div class="grid-header">
+      <div class="field wide">
+        <label class="form-label">Cliente Inicial:</label>
+        <input class="form-control" type="text" formControlName="clienteInicial" placeholder="texto"/>
+      </div>
+
+      <div class="field">
+        <label class="form-label">Fecha Inicial:</label>
+        <input class="form-control" type="date" formControlName="fechaInicial"/>
+      </div>
+
+      <div class="field">
+        <label class="form-label">Fecha Hasta:</label>
+        <input class="form-control" type="date" formControlName="fechaHasta"/>
+      </div>
+
+      <div class="field wide">
+        <label class="form-label">Cliente Final:</label>
+        <input class="form-control" type="text" formControlName="clienteFinal" placeholder="texto"/>
+      </div>
+
+      <!-- NUEVO: controles a la derecha de Cliente Final -->
+      <div class="right-controls">
+        <label class="check-inline">
+          Totales <input class="nc-checkbox" type="checkbox" formControlName="soloTotales"/>
+        </label>
+        <label class="check-inline">
+          Detalle <input class="nc-checkbox" type="checkbox" formControlName="conDetalle"/>
+        </label>
+      </div>
+    </div>
+  </form>
+</div>
+
+
+  <!-- Grid -->
+  <div class="panel" style="margin-top:12px;">
+    <ag-grid-angular
+      class="ag-theme-quartz nc-grid"
+      style="width:100%; height:380px;"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [pagination]="true"
+      [paginationPageSize]="pageSize"
+      (gridReady)="onGridReady($event)">
+    </ag-grid-angular>
+  </div>
+
+  <!-- Acciones -->
+  <div class="acciones">
+    <button class="btn" (click)="nuevaConsulta()">Nueva Consulta</button>
+
+    <div class="spacer"></div>
+
+    <button class="btn exportar" (click)="exportarCsv()">
+      Exportar <span class="caret">▾</span>
+    </button>
+    <button class="btn" (click)="cancelar()">Cancelar</button>
+  </div>
+</div>
