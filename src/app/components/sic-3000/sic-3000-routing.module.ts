@@ -60,8 +60,21 @@ const routes: Routes = [
         canActivate: [PermissionGuard],
         data: { permission: 'sic-3000.facturacion.facturacion-global' } 
       },
-      { path: 'productossic', component: ProductosSicComponent },
-      { path: 'productossic/:idEstructura', component: ProductosSicComponent },
+      // ✅ Ruta para EDITAR producto (con ID)
+      { 
+        path: 'productossic/:idProducto', 
+        component: ProductosSicComponent 
+      },
+      // ✅ Ruta para CREAR producto desde estructura
+      { 
+        path: 'productossic/estructura/:idEstructura', 
+        component: ProductosSicComponent 
+      },
+      // ✅ Ruta para crear producto sin estructura (por si acaso)
+      { 
+        path: 'productossic', 
+        component: ProductosSicComponent 
+      },
       { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
     ]
   }

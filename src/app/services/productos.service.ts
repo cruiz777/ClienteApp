@@ -10,6 +10,7 @@ import {
 
 import { ProductoRequest, sanitizeProductoPayload } from '../interfaces/requests/producto-request';
 import { ProductoResponse } from '../interfaces/responses/producto-response';
+import { BodegaConStockResponse } from '../interfaces/responses/bodega-con-stock-response';
 
 export interface ApiResponse<T = any> {
   id?: string;
@@ -68,4 +69,33 @@ export class ProductoService {
       request
     );
   }
+  getProductosPorEstructura(
+    idDivision?: number | null,
+    idSubDivision?: number | null,
+    idDepartamento?: number | null,
+    idSeccion?: number | null,
+    idGrupo?: number | null
+  ): Observable<ApiResponse<ProductoResponse[]>> {
+    let params: any = {};
+    
+    if (idDivision) params.idDivision = idDivision.toString();
+    if (idSubDivision) params.idSubDivision = idSubDivision.toString();
+    if (idDepartamento) params.idDepartamento = idDepartamento.toString();
+    if (idSeccion) params.idSeccion = idSeccion.toString();
+    if (idGrupo) params.idGrupo = idGrupo.toString();
+
+    return this.http.get<ApiResponse<ProductoResponse[]>>(
+      `${environment.inventoryUrl}/Producto/por-estructura`,
+      { params }
+    );
+  }
+    /**
+     * Obtiene todas las bodegas de un producto con información de stocks
+     * @param idProducto - ID del producto
+     */
+    getBodegasByProducto(idProducto: number): Observable<ApiResponse<BodegaConStockResponse[]>> {
+      return this.http.get<ApiResponse<BodegaConStockResponse[]>>(
+        `${this.apiUrl}/bodega-stock/${idProducto}`
+      );
+    }
 }

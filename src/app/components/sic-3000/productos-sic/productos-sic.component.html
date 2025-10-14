@@ -8,7 +8,7 @@
       <span class="desc-titulo">Descripción del producto</span>
     </div>
   </header>
-  <div *ngIf="!esNuevoProducto" class="mb-3">
+  <div *ngIf="mostrarBuscador" class="mb-3">
     <label class="label-sm d-block">Buscar Producto:</label>
     <div style="position: relative;">
       <input 
@@ -362,7 +362,7 @@
             <div class="pc-panel">
               <h3 class="pc-title">Precios</h3>
 
-              <!-- Fila 1: Precio Oficial | Precio RED-MSP -->
+              <!-- Precio Oficial | Precio RED-MSP -->
               <div class="pc-row duo">
                 <div class="grp">
                   <label class="lbl">Precio Oficial:</label>
@@ -382,7 +382,7 @@
                 </div>
               </div>
 
-              <!-- Fila 2: PVP Actual - IVA (editable) -->
+              <!-- PVP Actual - IVA (editable) -->
               <div class="pc-row">
                 <label class="lbl">PVP Actual - IVA:</label>
                 <div class="sm">
@@ -394,48 +394,60 @@
 
               <hr class="pc-sep">
 
-              <!-- Fila 3: PVP Anterior + IVA | Fecha Anterior Modificar -->
+              <!-- ⭐ PVP Anterior + IVA | Fecha Anterior (READONLY) -->
               <div class="pc-row duo">
                 <div class="grp">
                   <label class="lbl">PVP Anterior + IVA:</label>
                   <div class="xs">
-                    <input type="text" inputmode="decimal" maxlength="20" class="input-line tint-blue" [readonly]="true"
-                      formControlName="pvpAnteriorMasIva">
+                    <input type="text" class="input-line tint-blue" 
+                      formControlName="pvpAnteriorMasIva" 
+                      readonly
+                      style="background-color: #f0f0f0;">
                   </div>
                 </div>
                 <div class="grp">
                   <label class="lbl">Fech.Ant.Mod:</label>
                   <div class="xs">
-                    <input type="date" class="input-line w-100" formControlName="fechaAnteriorModificarPrecio">
+                    <input type="date" class="input-line w-100" 
+                      formControlName="fechaAnteriorModificarPrecio"
+                      readonly
+                      style="background-color: #f0f0f0;">
                   </div>
                 </div>
               </div>
 
-              <!-- Fila 4: PVP Actual + IVA | Fecha Modificar -->
+              <!-- ⭐ PVP Actual + IVA | Fecha Actual (READONLY) -->
               <div class="pc-row duo">
                 <div class="grp">
                   <label class="lbl">PVP Actual + IVA:</label>
                   <div class="xs">
-                    <input type="text" inputmode="decimal" maxlength="20" class="input-line tint-green"
-                      [readonly]="true" formControlName="pvpActualMasIva">
+                    <input type="text" class="input-line tint-green"
+                      formControlName="pvpActualMasIva" 
+                      readonly
+                      style="background-color: #f0f0f0;">
                   </div>
                 </div>
                 <div class="grp">
                   <label class="lbl">Fecha Modificación:</label>
                   <div class="xs">
-                    <input type="date" class="input-line w-100" formControlName="fechaModificarPrecio">
+                    <input type="date" class="input-line w-100" 
+                      formControlName="fechaModificarPrecio"
+                      readonly
+                      style="background-color: #f0f0f0;">
                   </div>
                 </div>
               </div>
 
               <hr class="pc-sep">
 
-              <!-- Fila 5: Margen Utilidad % (solo lectura) -->
+              <!-- Margen Utilidad % (solo lectura) -->
               <div class="pc-row">
                 <label class="lbl">Margen Utilidad %:</label>
                 <div class="sm">
-                  <input type="text" inputmode="decimal" maxlength="20" class="input-line w-100" [readonly]="true"
-                    formControlName="margenUtilidad">
+                  <input type="text" class="input-line w-100" 
+                    formControlName="margenUtilidad"
+                    readonly
+                    style="background-color: #f0f0f0;">
                 </div>
               </div>
             </div>
@@ -446,7 +458,7 @@
             <div class="pc-panel">
               <h3 class="pc-title">Costos</h3>
 
-              <!-- Fila 1: Costo Suministro | Costo Producto -->
+              <!-- Costo Suministro | Costo Producto -->
               <div class="pc-row duo">
                 <div class="grp">
                   <label class="lbl">Costo Suministro:</label>
@@ -466,7 +478,7 @@
                 </div>
               </div>
 
-              <!-- Fila 2: Costo Promedio (editable) -->
+              <!-- Costo Promedio (editable) -->
               <div class="pc-row">
                 <label class="lbl">Costo Promedio:</label>
                 <div class="sm">
@@ -478,25 +490,29 @@
 
               <hr class="pc-sep">
 
-              <!-- Fila 3: Precio Compra Anterior | Fecha Anterior Modificar -->
+              <!-- ⭐ Precio Compra Anterior | Fecha Anterior (READONLY) -->
               <div class="pc-row duo">
                 <div class="grp">
                   <label class="lbl">Precio Compra Anterior:</label>
                   <div class="xs">
-                    <input type="text" inputmode="decimal" maxlength="20" class="input-line"
-                      formControlName="precioCompraAnterior" (input)="onNumericInput('precioCompraAnterior')"
-                      (blur)="formatDecimal('precioCompraAnterior',3)">
+                    <input type="text" class="input-line"
+                      formControlName="precioCompraAnterior"
+                      readonly
+                      style="background-color: #f0f0f0;">
                   </div>
                 </div>
                 <div class="grp">
                   <label class="lbl">Fech.Ant.Mod:</label>
                   <div class="xs">
-                    <input type="date" class="input-line w-100" formControlName="fechaAnteriorModificarCompra">
+                    <input type="date" class="input-line w-100" 
+                      formControlName="fechaAnteriorModificarCompra"
+                      readonly
+                      style="background-color: #f0f0f0;">
                   </div>
                 </div>
               </div>
 
-              <!-- Fila 4: Precio Compra Actual | Fecha Modificar -->
+              <!-- ⭐ Precio Compra Actual | Fecha Actual (READONLY fecha) -->
               <div class="pc-row duo">
                 <div class="grp">
                   <label class="lbl">Precio Compra Actual:</label>
@@ -509,14 +525,17 @@
                 <div class="grp">
                   <label class="lbl">Fecha Modificación:</label>
                   <div class="xs">
-                    <input type="date" class="input-line w-100" formControlName="fechaModificarCompra">
+                    <input type="date" class="input-line w-100" 
+                      formControlName="fechaModificarCompra"
+                      readonly
+                      style="background-color: #f0f0f0;">
                   </div>
                 </div>
               </div>
 
               <hr class="pc-sep">
 
-              <!-- Fila 5: Recepción % (editable) -->
+              <!-- Recepción % (editable) -->
               <div class="pc-row">
                 <label class="lbl">Recepción %:</label>
                 <div class="xs">
@@ -564,7 +583,8 @@
             <div class="pc-panel">
               <div class="d-flex justify-content-between align-items-center mb-3">
                 <h3 class="pc-title mb-0">Configuración de Bodegas</h3>
-                <div class="d-flex gap-2">
+                
+                <div class="d-flex gap-2" *ngIf="modoEdicion">
                   <button 
                     type="button" 
                     class="btn btn-sm btn-outline-primary"
@@ -580,18 +600,38 @@
                 </div>
               </div>
 
-              <!-- Buscador -->
-              <div class="mb-3">
-                <input 
-                  type="text" 
-                  class="input-line w-100" 
-                  placeholder="🔍 Buscar bodega..."
-                  [(ngModel)]="filtroBodega">
+              <!-- Buscador y filtro -->
+              <div class="row g-2 mb-3">
+                <div class="col-md-8">
+                  <input 
+                    type="text" 
+                    class="input-line w-100" 
+                    placeholder="🔍 Buscar bodega..."
+                    [(ngModel)]="filtroBodega">
+                </div>
+                <div class="col-md-4">
+                  <!--Checkbox para filtrar por existencias -->
+                  <div class="form-check">
+                    <input 
+                      class="form-check-input" 
+                      type="checkbox" 
+                      id="filtroExistencia"
+                      [(ngModel)]="mostrarSoloConExistencia">
+                    <label class="form-check-label" for="filtroExistencia">
+                      Solo con existencia
+                    </label>
+                  </div>
+                </div>
               </div>
 
-              <!-- Info de selección -->
-              <div class="alert alert-info mb-3" *ngIf="bodegasSeleccionadas.length > 0">
-                <strong>{{ bodegasSeleccionadas.length }}</strong> bodega(s) seleccionada(s)
+              <!-- ✅ NUEVO: Info según el modo -->
+              <div class="alert mb-3" [ngClass]="esNuevoProducto ? 'alert-info' : 'alert-warning'">
+                <span *ngIf="esNuevoProducto">
+                  ℹ️ El producto se creará en <strong>todas las bodegas</strong> con existencia <strong>0</strong>
+                </span>
+                <span *ngIf="!esNuevoProducto">
+                  Solo puedes configurar <strong>Stock Mín/Máx</strong> en bodegas con existencia mayor a 0
+                </span>
               </div>
 
               <!-- Tabla de bodegas -->
@@ -599,7 +639,8 @@
                 <table class="table table-sm mb-0">
                   <thead style="position: sticky; top: 0; background: #f7fafc; z-index: 1;">
                     <tr>
-                      <th style="width: 50px; padding:8px 10px;">
+                      <!-- ✅ OCULTAR checkbox si es nuevo producto -->
+                      <th style="width: 50px; padding:8px 10px;" *ngIf="modoEdicion">
                         <input 
                           type="checkbox" 
                           [checked]="bodegasConfig.length > 0 && bodegasSeleccionadas.length === bodegasConfig.length"
@@ -616,12 +657,15 @@
                       *ngFor="let bodega of bodegasFiltradas"
                       [class.table-active]="bodega.seleccionado"
                       [class.table-warning]="bodega.alertaStockBajo">
-                      <td style="padding:6px 10px;">
+                      
+                      <!-- Checkbox solo en modo edición -->
+                      <td style="padding:6px 10px;" *ngIf="modoEdicion">
                         <input 
                           type="checkbox" 
                           [(ngModel)]="bodega.seleccionado"
                           (change)="verificarAlertasStock()">
                       </td>
+                      
                       <td style="padding:6px 10px;">
                         {{ bodega.nombreLocal }}
                         <span 
@@ -631,37 +675,42 @@
                           ⚠️ Stock bajo
                         </span>
                       </td>
+                      
+                      <!-- ✅ Existencia: siempre readonly -->
                       <td style="padding:6px 10px;">
                         <input 
                           type="number" 
                           class="input-line text-end w-100" 
-                          min="0"
-                          [disabled]="!bodega.seleccionado"
-                          [(ngModel)]="bodega.existenciaInicial"
-                          (blur)="verificarAlertasStock()">
+                          [value]="bodega.existenciaInicial"
+                          readonly
+                          style="background-color: #f0f0f0;">
                       </td>
+                      
+                      <!-- ✅ Stock Mín: solo editable si hay existencia -->
                       <td style="padding:6px 10px;">
                         <input 
                           type="number" 
                           class="input-line text-end w-100" 
                           min="0"
-                          [disabled]="!bodega.seleccionado"
+                          [disabled]="!puedeEditarStocks(bodega)"
                           [(ngModel)]="bodega.stockMin"
                           (blur)="validarStocks(bodega); verificarAlertasStock()">
                       </td>
+                      
+                      <!-- ✅ Stock Máx: solo editable si hay existencia -->
                       <td style="padding:6px 10px;">
                         <input 
                           type="number" 
                           class="input-line text-end w-100" 
                           min="0"
-                          [disabled]="!bodega.seleccionado"
+                          [disabled]="!puedeEditarStocks(bodega)"
                           [(ngModel)]="bodega.stockMax"
                           (blur)="validarStocks(bodega)">
                       </td>
                     </tr>
 
                     <tr *ngIf="bodegasFiltradas.length === 0">
-                      <td colspan="5" class="text-center text-muted" style="padding: 20px;">
+                      <td [attr.colspan]="modoEdicion ? 5 : 4" class="text-center text-muted" style="padding: 20px;">
                         No se encontraron bodegas
                       </td>
                     </tr>
@@ -671,8 +720,15 @@
 
               <!-- Leyenda -->
               <div class="mt-2 small text-muted">
-                <p class="mb-1">💡 <strong>Tip:</strong> Selecciona las bodegas donde estará disponible este producto.</p>
-                <p class="mb-0">⚠️ Si la existencia inicial es menor al stock mínimo, se mostrará una alerta.</p>
+                <p class="mb-1" *ngIf="esNuevoProducto">
+                  💡 <strong>Nuevo producto:</strong> Se creará automáticamente en todas las bodegas con existencia 0.
+                </p>
+                <p class="mb-1" *ngIf="!esNuevoProducto">
+                  💡 <strong>Edición:</strong> Solo puede configurar stocks mín/máx en bodegas con existencia.
+                </p>
+                <p class="mb-0">
+                  🔍 Usa el filtro "Solo con existencia" para ver únicamente bodegas con productos.
+                </p>
               </div>
             </div>
           </div>

@@ -4,7 +4,7 @@ import { ActivatedRoute } from '@angular/router';
 import { RequiredFieldsToastService } from 'src/app/components/utils/messages/required-fields-toast.service';
 
 import { ProductoRequest, sanitizeProductoPayload } from 'src/app/interfaces/requests/producto-request';
-import { CreateProductoConEstructuraRequest } from 'src/app/interfaces/requests/create-producto-estructura-request';
+import { CreateProductoConEstructuraRequest, ProductoEstructuraComercialRequest } from 'src/app/interfaces/requests/create-producto-estructura-request';
 
 import { ProductoService } from 'src/app/services/productos.service';
 import { PresentacionService } from 'src/app/services/presentacion.service';
@@ -16,6 +16,8 @@ import { IvaService, Iva } from 'src/app/services/iva.service';
 import { LocalesResponse } from 'src/app/interfaces/responses/local-response';
 import { LocalesService } from 'src/app/services/locales.service';
 import { StockRequest } from 'src/app/interfaces/requests/stocks-request';
+import { BodegaService } from 'src/app/services/bodega.service';
+import { StocksService } from 'src/app/services/stocks.service';
 interface BodegaConfig {
   idLocal: number;
   nombreLocal: string;
@@ -34,6 +36,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
 
   selectedTab = 0;
   idEstructura!: number;
+  mostrarBuscador: boolean = false;
 
   unidadesVenta: UnidadVentaResponse[] = [];
   tiposProducto = ['Bien', 'Servicio'];
@@ -53,6 +56,11 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   locales: LocalesResponse[] = [];
   bodegasConfig: BodegaConfig[] = [];
   filtroBodega: string = '';
+  jerarquiaEstructura: any = null;
+  modoEdicion: boolean = false; // Para saber si estamos editando
+  mostrarSoloConExistencia: boolean = false; // Checkbox de filtro
+  productoOriginal: any = null;
+
   constructor(
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
@@ -62,7 +70,9 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     private ivaService: IvaService,
     private route: ActivatedRoute,
     private localesService: LocalesService,
-    private toastCampos: RequiredFieldsToastService
+    private toastCampos: RequiredFieldsToastService,
+    private bodegaService: BodegaService,
+    private stocksService: StocksService
   ) { }
 
   ngOnInit(): void {
@@ -71,22 +81,58 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     this.cargarPresentacion();
     this.cargarLocales(); 
     this.cargarUnidadesVenta();
-        this.route.paramMap.subscribe(params => {
+    this.route.paramMap.subscribe(params => {
+      // 🔍 DEBUG: Ver TODOS los parámetros que llegan
+      console.log('🔍 === DEBUG PARÁMETROS ===');
+      console.log('🔍 Parámetro idProducto:', params.get('idProducto'));
+      console.log('🔍 Parámetro idEstructura:', params.get('idEstructura'));
+      console.log('🔍 Parámetro id:', params.get('id'));
+      console.log('🔍 TODOS los parámetros:');
+      params.keys.forEach(key => {
+        console.log(`  - ${key}: ${params.get(key)}`);
+      });
+      
+      // ✅ SOLUCIÓN TEMPORAL: Leer de donde venga el ID
+      const idProducto = Number(params.get('idProducto') || params.get('idEstructura') || params.get('id')) || 0;
+      
       this.idEstructura = Number(params.get('idEstructura')) || 0;
-      this.tipoEstructura = params.get('tipo') || 'grupo'; // ✅ CAPTURAR TIPO
       
-      console.log('🔍 ID Estructura:', this.idEstructura);
-      console.log('🔍 Tipo Estructura:', this.tipoEstructura);
+      const jerarquiaStr = params.get('jerarquia');
+      this.tipoEstructura = params.get('tipo') || 'grupo';
       
-      const idProducto = Number(params.get('id_producto')) || 0;
+      if (jerarquiaStr) {
+        try {
+          this.jerarquiaEstructura = JSON.parse(jerarquiaStr);
+          console.log('🏗️ Jerarquía recibida:', this.jerarquiaEstructura);
+        } catch (error) {
+          console.error('Error al parsear jerarquía:', error);
+        }
+      }
+      
+      // Determinar modo
+      this.modoEdicion = idProducto > 0;
+      this.esNuevoProducto = idProducto === 0;
+      
+      console.log('🔍 === MODO DE OPERACIÓN ===');
+      console.log('🔍 Modo edición:', this.modoEdicion);
+      console.log('🔍 ID Producto final:', idProducto);
+      console.log('🔍 Es nuevo producto:', this.esNuevoProducto);
       
       if (idProducto > 0) {
-        this.esNuevoProducto = false;
+        // MODO EDICIÓN
+        console.log('✅ Entrando en MODO EDICIÓN');
         this.idProductoActual = idProducto;
+        
+        console.log('📞 Llamando a cargarProducto()...');
         this.cargarProducto(idProducto);
+        
+        console.log('📞 Llamando a cargarBodegasProducto()...');
+        this.cargarBodegasProducto(idProducto);
       } else {
-        this.esNuevoProducto = true;
+        // MODO CREACIÓN
+        console.log('✅ Entrando en MODO CREACIÓN');
         this.idProductoActual = 0;
+        this.mostrarBuscador = !jerarquiaStr;
         this.cargarSiguienteId();
       }
     });
@@ -205,7 +251,30 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       }
     });
   }
-
+  cargarBodegasProducto(idProducto: number): void {
+    this.productoService.getBodegasByProducto(idProducto).subscribe({
+      next: (response) => {
+        if (response.type === 'Success' && response.data) {
+          this.bodegasConfig = response.data.map(bodega => ({
+            idLocal: bodega.id_local,
+            nombreLocal: bodega.nombre_local || '',
+            seleccionado: false,
+            existenciaInicial: bodega.existencia,
+            stockMin: bodega.stock_min,
+            stockMax: bodega.stock_max,
+            alertaStockBajo: false
+          }));
+          
+          this.verificarAlertasStock();
+          console.log('✅ Bodegas cargadas:', this.bodegasConfig);
+        }
+      },
+      error: (err) => {
+        console.error('❌ Error al cargar bodegas:', err);
+        alert('No se pudieron cargar las bodegas del producto');
+      }
+    });
+  }
   cargarLocales(): void {
     this.localesService.getAll().subscribe({
       next: (resp) => {        
@@ -258,16 +327,29 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   }
 
   get bodegasFiltradas(): BodegaConfig[] {
-    if (!this.filtroBodega.trim()) {
-      return this.bodegasConfig;
+    let bodegas = this.bodegasConfig;
+    
+    // Filtro por búsqueda
+    if (this.filtroBodega.trim()) {
+      const filtro = this.filtroBodega.toLowerCase();
+      bodegas = bodegas.filter(b => 
+        b.nombreLocal.toLowerCase().includes(filtro)
+      );
     }
     
-    const filtro = this.filtroBodega.toLowerCase();
-    return this.bodegasConfig.filter(b => 
-      b.nombreLocal.toLowerCase().includes(filtro)
-    );
+    // Filtro por existencias
+    if (this.mostrarSoloConExistencia) {
+      bodegas = bodegas.filter(b => b.existenciaInicial > 0);
+    }
+    
+    return bodegas;
   }
 
+  // Método para verificar si se puede editar stocks
+  puedeEditarStocks(bodega: BodegaConfig): boolean {
+    return this.modoEdicion && bodega.existenciaInicial > 0;
+  }
+  
   cargarPresentacion(): void {
     this.presentacionService.getPresentacion().subscribe({
       next: (resp) => {
@@ -406,10 +488,12 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     const f1 = this.form.getRawValue();
     const f2 = this.adicionalForm.value;
     const f3 = this.preciosForm.getRawValue();
+    
     let clasprod = f1.claseProducto;
     if (!clasprod) {
       clasprod = f1.tipoProducto === 'Bien' ? 'B' : (f1.tipoProducto === 'Servicio' ? 'S' : 'B');
     }
+    
     const producto = sanitizeProductoPayload({
       despro: f1.descripcion1,
       despro2: f1.descripcionPOS,
@@ -454,43 +538,23 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       porcenrecepcion: f3.recepcionPorcentaje
     });
 
-    const estructura: any = {};
-    
-    switch (this.tipoEstructura) {
-      case 'division':
-        estructura.iddivision = this.idEstructura;
-        break;
-      case 'subdivision':
-        estructura.idsubdivision = this.idEstructura;
-        break;
-      case 'departamento':
-        estructura.iddepartamento = this.idEstructura;
-        break;
-      case 'seccion':
-        estructura.idseccion = this.idEstructura;
-        break;
-      case 'grupo':
-        estructura.idgrupo = this.idEstructura;
-        break;
-    }
+    const estructura: ProductoEstructuraComercialRequest = {
+      iddivision: this.jerarquiaEstructura?.iddivision ?? null,
+      idsubdivision: this.jerarquiaEstructura?.idsubdivision ?? null,
+      iddepartamento: this.jerarquiaEstructura?.iddepartamento ?? null,
+      idseccion: this.jerarquiaEstructura?.idseccion ?? null,
+      idgrupo: this.jerarquiaEstructura?.idgrupo ?? null
+    };
 
-    // ✅✅✅ AGREGAR ESTAS LÍNEAS ✅✅✅
-    const stocks = this.bodegasSeleccionadas.length > 0
-      ? this.bodegasSeleccionadas.map(b => ({
-          idlocal: b.idLocal,
-          cantidad: b.existenciaInicial || 0,
-          stockmin: b.stockMin,
-          stockmax: b.stockMax
-        }))
-      : null;
+    const stocks = null;
 
-    console.log('📦 Bodegas seleccionadas:', this.bodegasSeleccionadas);
+    console.log('📦 Estructura completa a enviar:', estructura);
     console.log('📦 Stocks a enviar:', stocks);
 
     return {
       Producto: producto,
       Estructura: estructura,
-      Stocks: stocks  // ✅✅✅ AGREGAR ESTA LÍNEA ✅✅✅
+      Stocks: stocks
     };
   }
   
@@ -498,57 +562,116 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     const f1 = this.form.getRawValue();
     const f2 = this.adicionalForm.value;
     const f3 = this.preciosForm.getRawValue();
-
-    return sanitizeProductoPayload({
-      idproducto: this.idProductoActual, // ✅ ID del producto a actualizar
-      codpro: f1.codigoInterno,
-      despro: f1.descripcion1,
-      despro2: f1.descripcionPOS,
-      codbar: f1.codigoBarras,
+    
+    let clasprod = f1.claseProducto;
+    if (!clasprod) {
+      clasprod = f1.tipoProducto === 'Bien' ? 'B' : (f1.tipoProducto === 'Servicio' ? 'S' : 'B');
+    }
+    
+    // ⭐ DETECTAR CAMBIOS EN PRECIOS
+    const pvpCambio = this.productoOriginal && 
+      parseFloat(f3.pvpActualIva || 0) !== parseFloat(this.productoOriginal.pvpsiniva || 0);
+    
+    // ⭐ DETECTAR CAMBIOS EN COSTOS
+    const costoCambio = this.productoOriginal && 
+      parseFloat(f3.costoProducto || 0) !== parseFloat(this.productoOriginal.cospro || 0);
+    
+    // ⭐ DETECTAR CAMBIOS EN MARGEN
+    const margenCambio = this.productoOriginal && 
+      parseFloat(f3.margenUtilidad || 0) !== parseFloat(this.productoOriginal.margenutilidad || 0);
+    
+    const producto = {
+      ...this.productoOriginal,
+      
+      // ========== TAB 1: DATOS GENERALES ==========
+      codpro: String(f1.codigoInterno || ''),
+      despro: f1.descripcion1 || '',
+      despro2: f1.descripcionPOS || '',
+      codbar: String(f1.codigoBarras || ''),
       tippro: f1.tipoProducto === 'Bien' ? 'B' : (f1.tipoProducto === 'Servicio' ? 'S' : ''),
       uniman: this.unidadesVenta.find(u => u.idUnidadVenta === f1.unidadVenta)?.descripcion || '',
-      abrevia: f1.abreviacion,
-      referencia: f1.referencia,
-      activo: f1.activo,
-      pagaiva: f1.pagaIva,
-      inv: f1.cargarInventarios,
-      peso: f1.productoConPeso,
-      pgasto: f2?.productoGasto ?? false,
-      altoriesgo: f1.altoRiesgo,
-      clasprod: f1.claseProducto,
-      foto: f1.urlFoto,
-      idempresa: 1,
-      feccre: f1.fechaCreacion,
-      fechamod: new Date().toISOString(), // ✅ Fecha de modificación actual
-
+      abrevia: f1.abreviacion || '',
+      referencia: f1.referencia || '',
+      activo: f1.activo ?? true,
+      pagaiva: f1.pagaIva ?? false,
+      inv: f1.cargarInventarios ?? false,
+      peso: f1.productoConPeso ?? false,
+      altoriesgo: f1.altoRiesgo ?? false,
+      cantdecimal: f1.manejaDecimales ?? false,
+      clasprod: clasprod,
+      foto: f1.urlFoto || '',
+      fechamod: new Date().toISOString(), // ⭐ SIEMPRE se actualiza
+      
       // Tab 2: Adicionales
-      colsab: f2.color,
-      talla: f2.tamanoTalla1,
-      obs: f2.observacion,
-      regsanitario: f2.registroSanitario,
-      codcuedeb: f2.ctaVentas,
-      codcuehab: f2.ctaInventarios,
-      codcuedes: f2.ctaCostos,
-      codcuedev: f2.ctaDevolucion,
-      ctaprodgasto: f2.ctaGastos,
+      colsab: f2?.color || '',
+      talla: f2?.tamanoTalla1 || '',
+      obs: f2?.observacion || '',
+      regsanitario: f2?.registroSanitario || '',
+      codcuedeb: f2?.ctaVentas || '',
+      codcuehab: f2?.ctaInventarios || '',
+      codcuedes: f2?.ctaCostos || '',
+      codcuedev: f2?.ctaDevolucion || '',
+      pgasto: f2?.productoGasto ?? false,
+      ctaprodgasto: f2?.ctaGastos || '',
+      
+      // ========== TAB 3: PRECIOS ==========
+      preven: Number(f3.precioOficial) || 0,
+      preven2: Number(f3.precioRedMsp) || 0,
+      pvpsiniva: Number(f3.pvpActualIva) || 0,
+      
+      // ⭐ LÓGICA DE PVP ANTERIOR Y FECHAS
+      preanterior: pvpCambio 
+        ? (this.productoOriginal.pvpsiniva || 0) // Guardar valor anterior
+        : (this.productoOriginal.preanterior || 0), // Mantener el que ya estaba
+      
+      feccosact: pvpCambio 
+        ? (this.productoOriginal.fecpremod || new Date().toISOString()) // Guardar fecha anterior
+        : (this.productoOriginal.feccosact || null), // Mantener la que ya estaba
+      
+      fecpremod: pvpCambio 
+        ? new Date().toISOString() // Nueva fecha de modificación
+        : (this.productoOriginal.fecpremod || null), // Mantener la que ya estaba
+      
+      // ⭐ MARGEN ANTERIOR Y FECHA
+      margenutilidad: Number(f3.margenUtilidad) || 0,
+      margenantes: margenCambio
+        ? (this.productoOriginal.margenutilidad || 0) // Guardar margen anterior
+        : (this.productoOriginal.margenantes || null), // Mantener el que ya estaba
+      
+      fecmarantes: margenCambio
+        ? new Date().toISOString() // Fecha cuando cambió el margen
+        : (this.productoOriginal.fecmarantes || null), // Mantener la que ya estaba
+      
+      // ========== TAB 3: COSTOS ==========
+      costsuminis: Number(f3.costoSuministro) || 0,
+      cospro: Number(f3.costoProducto) || 0,
+      precos: Number(f3.costoPromedio) || 0,
+      preuni: String(f3.precioCompraActual || 0),
+      porcenrecepcion: Number(f3.recepcionPorcentaje) || 0,
+      
+      // ⭐ LÓGICA DE COSTO ANTERIOR Y FECHAS
+      cosanterior: costoCambio
+        ? (this.productoOriginal.cospro || 0) // Guardar costo anterior
+        : (this.productoOriginal.cosanterior || 0), // Mantener el que ya estaba
+      
+      fecpreact: costoCambio
+        ? (this.productoOriginal.feccosmod || new Date().toISOString()) // Guardar fecha anterior
+        : (this.productoOriginal.fecpreact || null), // Mantener la que ya estaba
+      
+      feccosmod: costoCambio
+        ? new Date().toISOString() // Nueva fecha de modificación
+        : (this.productoOriginal.feccosmod || null) // Mantener la que ya estaba
+    };
 
-      // Tab 3: Precios y Costos
-      preven: f3.precioOficial,
-      preven2: f3.precioRedMsp,
-      pvpsiniva: f3.pvpActualIva,
-      preanterior: f3.pvpAnteriorMasIva,
-      feccosact: f3.fechaAnteriorModificarPrecio,
-      fecpremod: f3.fechaModificarPrecio,
-      margenutilidad: f3.margenUtilidad,
-      costsuminis: f3.costoSuministro,
-      cospro: f3.costoProducto,
-      precos: f3.costoPromedio,
-      cosanterior: f3.precioCompraAnterior,
-      fecpreact: f3.fechaAnteriorModificarCompra,
-      preuni: f3.precioCompraActual?.toString(),
-      porcenrecepcion: f3.recepcionPorcentaje
-    });
+    // ✅ Aplicar sanitización
+    const sanitized = sanitizeProductoPayload(producto);
+    
+    console.log('📦 Producto a actualizar:', JSON.stringify(sanitized, null, 2));
+    console.log('🔄 Cambios detectados:', { pvpCambio, costoCambio, margenCambio });
+    
+    return sanitized;
   }
+
   onBuscarProducto(evento: Event): void {
     const input = evento.target as HTMLInputElement;
     this.terminoBusqueda = input.value.trim();
@@ -703,11 +826,6 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     console.log('🏪 Bodegas seleccionadas:', this.bodegasSeleccionadas);
     console.log('🏪 Total:', this.bodegasSeleccionadas.length);
     
-    if (this.bodegasSeleccionadas.length === 0) {
-      alert('⚠️ Debes seleccionar al menos una bodega en el Tab "Estructura y Stock"');
-      this.selectedTab = 3; // Ir al tab de bodegas
-      return;
-    }
     this.saving = true;
 
     if (this.esNuevoProducto) {
@@ -743,8 +861,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
           if (res?.type?.toUpperCase() === 'SUCCESS') {
             console.log('✅ Producto actualizado correctamente');
             alert('Producto actualizado exitosamente');
-            // Opcional: recargar datos
-            this.cargarProducto(this.idProductoActual);
+            this.actualizarStocks();
           } else {
             console.error('❌ Error:', res?.message || res);
             alert('Error al actualizar: ' + (res?.message || 'Error desconocido'));
@@ -758,15 +875,61 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       });
     }
   }
+  private formatearFecha(fecha: string | Date | null): string | null {
+    if (!fecha) return null;
+    
+    try {
+      const date = new Date(fecha);
+      if (isNaN(date.getTime())) return null;
+      
+      // Formato YYYY-MM-DD para input type="date"
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error('Error formateando fecha:', error);
+      return null;
+    }
+  }
+  private actualizarStocks(): void {
+    const stocksParaActualizar = this.bodegasConfig
+      .filter(b => b.existenciaInicial > 0) // Solo bodegas con existencia
+      .map(b => ({
+        idlocal: b.idLocal,
+        stockmin: b.stockMin,
+        stockmax: b.stockMax,
+        cantidad: b.existenciaInicial
+      }));
+
+    if (stocksParaActualizar.length === 0) {
+      console.log('⚠️ No hay stocks para actualizar');
+      return;
+    }
+
+    console.log('📦 Actualizando stocks:', stocksParaActualizar);
+
+    this.stocksService.actualizarStocks(this.idProductoActual, stocksParaActualizar).subscribe({
+      next: (res) => {
+        console.log('✅ Stocks actualizados:', res.message);
+      },
+      error: (err) => {
+        console.error('❌ Error al actualizar stocks:', err);
+        // No mostrar error al usuario, solo loguearlo
+      }
+    });
+  }
 
   cargarProducto(id: number): void {
     this.productoService.getById(id).subscribe({
       next: (res) => {
         const prod = res?.data;
         if (!prod) return;
-
+        this.productoOriginal = { ...prod };
         // ✅ Tab 1: datos generales
         this.form.patchValue({
+          codigoInterno: prod.idproducto,
           descripcion1: prod.despro,
           descripcionPOS: prod.despro2,
           codigoBarras: prod.codbar,
@@ -778,11 +941,12 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
           pagaIva: prod.pagaiva,
           cargarInventarios: prod.inv,
           productoConPeso: prod.peso,
+          manejaDecimales: prod.cantdecimal,
           altoRiesgo: prod.altoriesgo,
           claseProducto: prod.clasprod,
           urlFoto: prod.foto,
-          fechaCreacion: prod.feccre ? prod.feccre.substring(0, 10) : null,
-          fechaModificacion: prod.fechamod ? prod.fechamod.substring(0, 10) : null,
+          fechaCreacion: prod.feccre ? this.formatearFecha(prod.feccre) : null,       
+          fechaModificacion: prod.fechamod ? this.formatearFecha(prod.fechamod) : null, 
         });
 
         // ✅ Tab 2: adicionales
@@ -805,22 +969,27 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
           precioRedMsp: prod.preven2,
           pvpActualIva: prod.pvpsiniva,
           pvpAnteriorMasIva: prod.preanterior,
-          fechaAnteriorModificarPrecio: prod.feccosact,
-          fechaModificarPrecio: prod.fecpremod,
+          fechaAnteriorModificarPrecio: prod.feccosact ? this.formatearFecha(prod.feccosact) : null, 
+          fechaModificarPrecio: prod.fecpremod ? this.formatearFecha(prod.fecpremod) : null,         
           margenUtilidad: prod.margenutilidad,
           costoSuministro: prod.costsuminis,
           costoProducto: prod.cospro,
           costoPromedio: prod.precos,
           precioCompraAnterior: prod.cosanterior,
-          fechaAnteriorModificarCompra: prod.fecpreact,
+          fechaAnteriorModificarCompra: prod.fecpreact ? this.formatearFecha(prod.fecpreact) : null, 
+          fechaModificarCompra: prod.feccosmod ? this.formatearFecha(prod.feccosmod) : null,   
           precioCompraActual: prod.preuni,
           recepcionPorcentaje: prod.porcenrecepcion
         });
+        console.log('📊 Valores históricos:');
+        console.log('  PVP Anterior:', prod.preanterior, '| Fecha:', prod.feccosact);
+        console.log('  Costo Anterior:', prod.cosanterior, '| Fecha:', prod.fecpreact);
+        console.log('  Margen Anterior:', prod.margenantes, '| Fecha:', prod.fecmarantes);
       },
       error: (err) => console.error('❌ Error cargando producto', err)
     });
   }
-
+  
   onImprimir(): void { window.print(); }
   onAdjuntar(): void { history.back(); }
 

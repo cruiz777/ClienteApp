@@ -204,24 +204,40 @@ export class EstructuraListComponent {
 
   // ===================== DATA: Productos =====================
   private loadProductsForNode(nodo: any): void {
-    const req: ProductoEstructuraComercialRequest = {};
-    switch (nodo.tipo) {
-      case 'estructura': (req as any).idestructuracomercial = nodo.id; break;
-      case 'division': req.iddivision = nodo.id; break;
-      case 'subdivision': req.idsubdivision = nodo.id; break;
-      case 'departamento': req.iddepartamento = nodo.id; break;
-      case 'seccion': req.idseccion = nodo.id; break;
-      case 'grupo': req.idgrupo = nodo.id; break;
-      default: return;
-    }
-
-    this.productoService.getByEstructura(req).subscribe({
-      next: (res) => {
-        this.productos = res.data ?? [];
-        this.productosFiltrados = this.productos;
-        this.prepareTableForProducts(this.productos);
+    // Primero obtener la jerarquía completa del nodo
+    this.estructuraService.obtenerJerarquiaCompleta(
+      nodo.tipo, 
+      nodo.id
+    ).subscribe({
+      next: (jerarquiaResponse) => {
+        if (jerarquiaResponse.type === 'SUCCESS' && jerarquiaResponse.data) {
+          const jerarquia = jerarquiaResponse.data;
+          
+          // Llamar al nuevo método con la jerarquía completa
+          this.productoService.getProductosPorEstructura(
+            jerarquia.iddivision,
+            jerarquia.idsubdivision,
+            jerarquia.iddepartamento,
+            jerarquia.idseccion,
+            jerarquia.idgrupo
+          ).subscribe({
+            next: (res) => {
+              this.productos = res.data ?? [];
+              this.productosFiltrados = this.productos;
+              this.prepareTableForProducts(this.productos);
+              console.log(`✅ ${this.productos.length} productos cargados para estructura`);
+            },
+            error: (err) => {
+              console.error('❌ Error al cargar productos:', err);
+              this.prepareTableForProducts([]);
+            }
+          });
+        }
       },
-      error: (err) => console.error(err)
+      error: (err) => {
+        console.error('❌ Error al obtener jerarquía:', err);
+        this.prepareTableForProducts([]);
+      }
     });
   }
 
@@ -396,21 +412,50 @@ export class EstructuraListComponent {
       }
     });
   }
+
   crearProducto(): void {
     this.menuContextualVisible = false;
     if (!this.nodoSeleccionado) return;
 
-    // ✅ Pasar ID y TIPO del nodo
-    this.router.navigate([
-      'sic-3000/productossic', 
-      this.nodoSeleccionado.id,
-      { tipo: this.nodoSeleccionado.tipo } // ✅ Agregar tipo
-    ]);
+    this.estructuraService.obtenerJerarquiaCompleta(
+      this.nodoSeleccionado.tipo, 
+      this.nodoSeleccionado.id
+    ).subscribe({
+      next: (response) => {
+        if (response.type === 'SUCCESS' && response.data) {
+          // ✅ CAMBIAR A LA NUEVA RUTA
+          this.router.navigate([
+            'sic-3000/productossic/estructura',
+            this.nodoSeleccionado.id,
+            {
+              tipo: this.nodoSeleccionado.tipo,
+              jerarquia: JSON.stringify(response.data)
+            }
+          ]);
+        } else {
+          console.error('Error al obtener jerarquía:', response.message);
+          alert('No se pudo obtener la estructura completa');
+        }
+      },
+      error: (err) => {
+        console.error('Error HTTP:', err);
+        alert('Error al obtener la jerarquía de la estructura');
+      }
+    });
   }
 
   editarProducto(row: any): void {
-    if (!row?.id_producto) return;
-    this.router.navigate(['sic-3000/productossic', row.id_producto]);
+    const idProducto = row?.idproducto || row?.id_producto;
+    
+    if (!idProducto) {
+      console.error('❌ No se encontró ID del producto en:', row);
+      return;
+    }
+
+    console.log('✏️ Navegando a editar producto:', idProducto);
+    
+    // ✅ NAVEGACIÓN CORRECTA PARA EDITAR
+    this.router.navigate(['sic-3000/productossic', idProducto]);
   }
 
   toggleExpandConRecarga(nodo: any): void {

@@ -5,7 +5,14 @@ import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { ApiResponse } from './producto.service';
 import { EstructuraComercialResponse } from '../interfaces/responses/estructura-comercial-response';
-
+export interface JerarquiaCompletaResponse {
+  iddivision: number | null;
+  idsubdivision: number | null;
+  iddepartamento: number | null;
+  idseccion: number | null;
+  idgrupo: number | null;
+  numnodos: number;
+}
 @Injectable({
   providedIn: 'root'
 })
@@ -24,5 +31,15 @@ export class EstructuraComercialService {
 
   update(data: EstructuraComercialRequest): Observable<ApiResponse<boolean>> {
     return this.http.put<ApiResponse<boolean>>(this.apiUrl, data);
+  }
+    /**
+   * Obtiene la jerarquía completa de un nodo de la estructura comercial
+   * @param tipo - Tipo del nodo: 'division', 'subdivision', 'departamento', 'seccion', 'grupo'
+   * @param idNodo - ID del nodo seleccionado
+   */
+  obtenerJerarquiaCompleta(tipo: string, idNodo: number): Observable<ApiResponse<JerarquiaCompletaResponse>> {
+    return this.http.get<ApiResponse<JerarquiaCompletaResponse>>(
+      `${this.apiUrl}/jerarquia/${tipo}/${idNodo}`
+    );
   }
 }
