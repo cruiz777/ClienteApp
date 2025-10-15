@@ -4,4 +4,5 @@ export interface MenusRequest {
   nombre: string;
   descripcion?: string;
   status: boolean;
+  url: string;
 }

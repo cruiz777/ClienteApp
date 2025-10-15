@@ -28,6 +28,9 @@ export class PerfilOpcionService {
     );
   }
 
+  getOpcionesPorPerfilYModulo(idPerfil: number, idModulo: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/perfil/${idPerfil}/modulo/${idModulo}`);
+  }
   // Toggle individual (PUT)
   updateOpcionStatus(idPerfil: number, idOpcion: number, status: boolean): Observable<ApiResponse<boolean>> {
     return this.http.put<ApiResponse<boolean>>(
@@ -42,5 +45,7 @@ export class PerfilOpcionService {
   CreateBulkPerfilOptions(createBulkPerfilOption: CreateBulkPerfilOption): Observable<ApiResponse<boolean>> {
     return this.http.post<ApiResponse<boolean>>(`${this.apiUrl}/asignar-todas`, createBulkPerfilOption);
   }
-
+  getResumenPerfilSistema(idPerfil: number, idSistema: number): Observable<any> {
+    return this.http.get(`${this.apiUrl}/perfil/${idPerfil}/sistema/${idSistema}/resumen`);
+  }
 }

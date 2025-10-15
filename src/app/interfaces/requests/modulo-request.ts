@@ -4,4 +4,5 @@ export interface ModulosRequest {
   nombre: string;
   descripcion?: string;
   status: boolean;
+  url: string;
 }
