@@ -371,3 +371,74 @@
 .autocomplete-item:last-child {
   border-bottom: none;
 }
+.btn-grid-edit,
+.btn-grid-delete {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.btn-grid-edit:hover {
+  background-color: #e3f2fd;
+  transform: scale(1.1);
+}
+
+.btn-grid-delete:hover {
+  background-color: #ffebee;
+  transform: scale(1.1);
+}
+
+.btn-grid-edit:active,
+.btn-grid-delete:active {
+  transform: scale(0.95);
+}
+
+/* Select wrap para mejorar apariencia */
+.select-wrap {
+  position: relative;
+}
+
+.select-line {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.select-line:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 0.2rem rgba(0,123,255,.25);
+}
+
+.select-line.is-invalid {
+  border-color: #dc3545;
+}
+
+/* Estilo para el header del producto */
+.descripcion-static {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+  padding: 12px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+}
+
+.descripcion-static .lbl-strong {
+  font-weight: 600;
+  color: #495057;
+}
+
+.descripcion-static .desc-titulo {
+  color: #212529;
+}

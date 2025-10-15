@@ -135,7 +135,18 @@ export interface ProductoResponse {
   // Empresa (alias para compatibilidad)
   idempresa?: number | null;
   id_empresa?: number | null;
+  // Nuevas FK a catálogos
+  idcolor?: number | null;
+  idsabor?: number | null;
+  idfabricante?: number | null;
+  idpresentacion?: number | null;
 
+  // Nuevos campos del TAB 1
+  cantidad?: number | null;
+  productoventa?: boolean | null;
+  consumointerno?: boolean | null;
+  psicotropico?: boolean | null;
+  estupefaciente?: boolean | null;
   codbar?: string | null;
 
   // Si tu API también devuelve idIva, puedes incluirlo:

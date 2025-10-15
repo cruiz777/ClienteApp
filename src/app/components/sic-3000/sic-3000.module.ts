@@ -12,7 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
-
+import { AgGridModule } from 'ag-grid-angular';
 import { Sic3000RoutingModule } from './sic-3000-routing.module';
 
 import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
@@ -71,7 +71,9 @@ import { ProductosSicComponent } from './productos-sic/productos-sic.component';
     MatOptionModule,    
     MatSlideToggleModule,
     MatDatepickerModule,
-    MatNativeDateModule
+    MatNativeDateModule,
+
+    AgGridModule
   ]
 })
 export class Sic3000Module {}

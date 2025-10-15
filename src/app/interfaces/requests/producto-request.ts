@@ -119,6 +119,15 @@ export interface ProductoRequest {
   // Empresa
   idempresa?: number;
 
+  idcolor?: number | null;
+  idsabor?: number | null;
+  idfabricante?: number | null;
+  idpresentacion?: number | null;
+  cantidad?: number | null;
+  productoventa?: boolean;
+  consumointerno?: boolean;
+  psicotropico?: boolean;
+  estupefaciente?: boolean;
   // Referencia binaria (si la usas como base64, déjala string/null)
   refer?: string | null;
 }

@@ -2,7 +2,7 @@ import { Component, OnInit, AfterViewInit, ChangeDetectorRef } from '@angular/co
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { RequiredFieldsToastService } from 'src/app/components/utils/messages/required-fields-toast.service';
-
+import { GridApi, GridReadyEvent, CellValueChangedEvent, CellClickedEvent } from 'ag-grid-community';
 import { ProductoRequest, sanitizeProductoPayload } from 'src/app/interfaces/requests/producto-request';
 import { CreateProductoConEstructuraRequest, ProductoEstructuraComercialRequest } from 'src/app/interfaces/requests/create-producto-estructura-request';
 
@@ -18,6 +18,20 @@ import { LocalesService } from 'src/app/services/locales.service';
 import { StockRequest } from 'src/app/interfaces/requests/stocks-request';
 import { BodegaService } from 'src/app/services/bodega.service';
 import { StocksService } from 'src/app/services/stocks.service';
+
+import { ColorService } from 'src/app/services/color.service';
+import { SaborService } from 'src/app/services/sabor.service';
+import { FabricanteService } from 'src/app/services/fabricante.service';
+import { ColorResponse } from 'src/app/interfaces/responses/color-response';
+import { SaborResponse } from 'src/app/interfaces/responses/sabor-response';
+import { FabricanteResponse } from 'src/app/interfaces/responses/fabricante-response';
+
+import { ProveedorService } from 'src/app/services/proveedor.service';
+import { ProductoProveedorService } from 'src/app/services/producto-proveedor.service';
+import { ProveedorResponse } from 'src/app/interfaces/responses/proveedor-response';
+import { ProductoProveedorResponse } from 'src/app/interfaces/responses/producto-proveedor-response';
+import { ProductoProveedorRequest } from 'src/app/interfaces/requests/producto-proveedor-request';
+
 interface BodegaConfig {
   idLocal: number;
   nombreLocal: string;
@@ -37,7 +51,10 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   selectedTab = 0;
   idEstructura!: number;
   mostrarBuscador: boolean = false;
-
+  proveedoresEnMemoria: any[] = [];
+  proveedoresGridApi!: GridApi;
+  columnDefsProveedores: any[] = [];
+  defaultColDefProveedores: any = {};
   unidadesVenta: UnidadVentaResponse[] = [];
   tiposProducto = ['Bien', 'Servicio'];
   presentaciones: PresentacionResponse[] = [];
@@ -61,6 +78,15 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   mostrarSoloConExistencia: boolean = false; // Checkbox de filtro
   productoOriginal: any = null;
 
+  //Catalogos
+  colores: ColorResponse[] = [];
+  sabores: SaborResponse[] = [];
+  fabricantes: FabricanteResponse[] = [];
+  //Proveedores 
+  proveedores: ProveedorResponse[] = [];
+  proveedoresProducto: ProductoProveedorResponse[] = [];
+  proveedorSeleccionado: ProveedorResponse | null = null;
+
   constructor(
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
@@ -72,7 +98,12 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     private localesService: LocalesService,
     private toastCampos: RequiredFieldsToastService,
     private bodegaService: BodegaService,
-    private stocksService: StocksService
+    private stocksService: StocksService,
+    private colorService: ColorService,
+    private saborService: SaborService,
+    private fabricanteService: FabricanteService,
+    private proveedorService: ProveedorService,
+    private productoProveedorService: ProductoProveedorService
   ) { }
 
   ngOnInit(): void {
@@ -81,6 +112,10 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     this.cargarPresentacion();
     this.cargarLocales(); 
     this.cargarUnidadesVenta();
+    this.cargarColores();
+    this.cargarSabores();
+    this.cargarFabricantes();
+    this.cargarProveedores();
     this.route.paramMap.subscribe(params => {
       // 🔍 DEBUG: Ver TODOS los parámetros que llegan
       console.log('🔍 === DEBUG PARÁMETROS ===');
@@ -128,6 +163,8 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
         
         console.log('📞 Llamando a cargarBodegasProducto()...');
         this.cargarBodegasProducto(idProducto);
+        console.log('📞 Llamando a cargarProveedoresProducto()...');
+        this.cargarProveedoresProducto(idProducto);
       } else {
         // MODO CREACIÓN
         console.log('✅ Entrando en MODO CREACIÓN');
@@ -173,8 +210,9 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     });
 
     this.adicionalForm = this.fb.group({
-      color: [''],
-      sabor: [''],
+      color: [null],        // Era [''], ahora es [null]
+      sabor: [null],        // Era [''], ahora es [null]
+      fabricante: [null],
       tamanoTalla1: [''],
       medida1: [''],
       medida2: [''],
@@ -221,8 +259,46 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       .subscribe(() => this.recalcularMargen());
     this.preciosForm.get('pvpActualMasIva')!.valueChanges
       .subscribe(() => this.recalcularMargen());
+    this.configurarGridProveedores();
+  }
+  cargarColores(): void {
+    this.colorService.getAll().subscribe({
+      next: (resp) => {
+        this.colores = resp.data || [];
+        console.log('✅ Colores cargados:', this.colores.length);
+      },
+      error: (err) => {
+        console.error('❌ Error al cargar colores:', err);
+        alert('Error al cargar colores');
+      }
+    });
   }
 
+  cargarSabores(): void {
+    this.saborService.getAll().subscribe({
+      next: (resp) => {
+        this.sabores = resp.data || [];
+        console.log('✅ Sabores cargados:', this.sabores.length);
+      },
+      error: (err) => {
+        console.error('❌ Error al cargar sabores:', err);
+        alert('Error al cargar sabores');
+      }
+    });
+  }
+
+  cargarFabricantes(): void {
+    this.fabricanteService.getAll().subscribe({
+      next: (resp) => {
+        this.fabricantes = resp.data || [];
+        console.log('✅ Fabricantes cargados:', this.fabricantes.length);
+      },
+      error: (err) => {
+        console.error('❌ Error al cargar fabricantes:', err);
+        alert('Error al cargar fabricantes');
+      }
+    });
+  }
   ngAfterViewInit(): void { this.cdr.detectChanges(); }
 
   isInvalid(ctrl: string): boolean {
@@ -379,6 +455,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     this.unidadVentaService.getUnidadVenta().subscribe({
       next: (resp) => {
         this.unidadesVenta = resp.data;
+        this.configurarGridProveedores();
       },
       error: () => {
         alert('Error al cargar unidades de venta')
@@ -513,7 +590,24 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       idempresa: 1,
       feccre: f1.fechaCreacion,
       fechamod: f1.fechaModificacion,
-      colsab: f2.color,
+      
+      // ✅ AGREGAR CAMPOS NUEVOS DEL TAB 1
+      cantidad: f1.cantidad,
+      productoventa: f1.productoEnVenta,
+      consumointerno: f1.consumoInterno,
+      psicotropico: f1.psicotropico,
+      estupefaciente: f1.estupefaciente,
+      cantconv: f1.canCov,
+      cantdecimal: f1.manejaDecimales,
+      
+      // ✅ AGREGAR NUEVAS FK DEL TAB 2
+      idcolor: f2?.color || null,
+      idsabor: f2?.sabor || null,
+      idfabricante: f2?.fabricante || null,
+      idpresentacion: f1.presentacion || null,
+      
+      // TAB 2: Campos existentes
+      colsab: '', // Ya no se usa, ahora es idcolor/idsabor
       talla: f2.tamanoTalla1,
       obs: f2.observacion,
       regsanitario: f2.registroSanitario,
@@ -522,6 +616,8 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       codcuedes: f2.ctaCostos,
       codcuedev: f2.ctaDevolucion,
       ctaprodgasto: f2.ctaGastos,
+      
+      // TAB 3: Precios y costos
       preven: f3.precioOficial,
       preven2: f3.precioRedMsp,
       pvpsiniva: f3.pvpActualIva,
@@ -535,7 +631,12 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       cosanterior: f3.precioCompraAnterior,
       fecpreact: f3.fechaAnteriorModificarCompra,
       preuni: f3.precioCompraActual?.toString(),
-      porcenrecepcion: f3.recepcionPorcentaje
+      // feccosmod: f3.fechaModificarCompra,
+      porcenrecepcion: f3.recepcionPorcentaje,
+      
+      // ✅ AGREGAR CAMPOS HISTÓRICOS DEL TAB 3
+      margenantes: f3.margenUtilidad, // Se guardará como anterior en el primer guardado
+      fecmarantes: new Date().toISOString()
     });
 
     const estructura: ProductoEstructuraComercialRequest = {
@@ -547,9 +648,6 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     };
 
     const stocks = null;
-
-    console.log('📦 Estructura completa a enviar:', estructura);
-    console.log('📦 Stocks a enviar:', stocks);
 
     return {
       Producto: producto,
@@ -568,22 +666,19 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       clasprod = f1.tipoProducto === 'Bien' ? 'B' : (f1.tipoProducto === 'Servicio' ? 'S' : 'B');
     }
     
-    // ⭐ DETECTAR CAMBIOS EN PRECIOS
     const pvpCambio = this.productoOriginal && 
       parseFloat(f3.pvpActualIva || 0) !== parseFloat(this.productoOriginal.pvpsiniva || 0);
     
-    // ⭐ DETECTAR CAMBIOS EN COSTOS
     const costoCambio = this.productoOriginal && 
       parseFloat(f3.costoProducto || 0) !== parseFloat(this.productoOriginal.cospro || 0);
     
-    // ⭐ DETECTAR CAMBIOS EN MARGEN
     const margenCambio = this.productoOriginal && 
       parseFloat(f3.margenUtilidad || 0) !== parseFloat(this.productoOriginal.margenutilidad || 0);
     
     const producto = {
       ...this.productoOriginal,
       
-      // ========== TAB 1: DATOS GENERALES ==========
+      // TAB 1: DATOS GENERALES
       codpro: String(f1.codigoInterno || ''),
       despro: f1.descripcion1 || '',
       despro2: f1.descripcionPOS || '',
@@ -600,10 +695,24 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       cantdecimal: f1.manejaDecimales ?? false,
       clasprod: clasprod,
       foto: f1.urlFoto || '',
-      fechamod: new Date().toISOString(), // ⭐ SIEMPRE se actualiza
+      fechamod: new Date().toISOString(),
+      
+      // ✅ AGREGAR CAMPOS NUEVOS DEL TAB 1
+      cantidad: f1.cantidad || null,
+      productoventa: f1.productoEnVenta ?? false,
+      consumointerno: f1.consumoInterno ?? false,
+      psicotropico: f1.psicotropico ?? false,
+      estupefaciente: f1.estupefaciente ?? false,
+      cantconv: f1.canCov || null,
+      
+      // ✅ AGREGAR NUEVAS FK
+      idcolor: f2?.color || null,
+      idsabor: f2?.sabor || null,
+      idfabricante: f2?.fabricante || null,
+      idpresentacion: f1.presentacion || null,
       
       // Tab 2: Adicionales
-      colsab: f2?.color || '',
+      colsab: '', // Ya no se usa
       talla: f2?.tamanoTalla1 || '',
       obs: f2?.observacion || '',
       regsanitario: f2?.registroSanitario || '',
@@ -614,60 +723,46 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       pgasto: f2?.productoGasto ?? false,
       ctaprodgasto: f2?.ctaGastos || '',
       
-      // ========== TAB 3: PRECIOS ==========
+      // TAB 3: PRECIOS (lógica ya existente)
       preven: Number(f3.precioOficial) || 0,
       preven2: Number(f3.precioRedMsp) || 0,
       pvpsiniva: Number(f3.pvpActualIva) || 0,
-      
-      // ⭐ LÓGICA DE PVP ANTERIOR Y FECHAS
       preanterior: pvpCambio 
-        ? (this.productoOriginal.pvpsiniva || 0) // Guardar valor anterior
-        : (this.productoOriginal.preanterior || 0), // Mantener el que ya estaba
-      
+        ? (this.productoOriginal.pvpsiniva || 0)
+        : (this.productoOriginal.preanterior || 0),
       feccosact: pvpCambio 
-        ? (this.productoOriginal.fecpremod || new Date().toISOString()) // Guardar fecha anterior
-        : (this.productoOriginal.feccosact || null), // Mantener la que ya estaba
-      
+        ? (this.productoOriginal.fecpremod || new Date().toISOString())
+        : (this.productoOriginal.feccosact || null),
       fecpremod: pvpCambio 
-        ? new Date().toISOString() // Nueva fecha de modificación
-        : (this.productoOriginal.fecpremod || null), // Mantener la que ya estaba
-      
-      // ⭐ MARGEN ANTERIOR Y FECHA
+        ? new Date().toISOString()
+        : (this.productoOriginal.fecpremod || null),
       margenutilidad: Number(f3.margenUtilidad) || 0,
       margenantes: margenCambio
-        ? (this.productoOriginal.margenutilidad || 0) // Guardar margen anterior
-        : (this.productoOriginal.margenantes || null), // Mantener el que ya estaba
-      
+        ? (this.productoOriginal.margenutilidad || 0)
+        : (this.productoOriginal.margenantes || null),
       fecmarantes: margenCambio
-        ? new Date().toISOString() // Fecha cuando cambió el margen
-        : (this.productoOriginal.fecmarantes || null), // Mantener la que ya estaba
+        ? new Date().toISOString()
+        : (this.productoOriginal.fecmarantes || null),
       
-      // ========== TAB 3: COSTOS ==========
+      // TAB 3: COSTOS (lógica ya existente)
       costsuminis: Number(f3.costoSuministro) || 0,
       cospro: Number(f3.costoProducto) || 0,
       precos: Number(f3.costoPromedio) || 0,
       preuni: String(f3.precioCompraActual || 0),
       porcenrecepcion: Number(f3.recepcionPorcentaje) || 0,
-      
-      // ⭐ LÓGICA DE COSTO ANTERIOR Y FECHAS
       cosanterior: costoCambio
-        ? (this.productoOriginal.cospro || 0) // Guardar costo anterior
-        : (this.productoOriginal.cosanterior || 0), // Mantener el que ya estaba
-      
+        ? (this.productoOriginal.cospro || 0)
+        : (this.productoOriginal.cosanterior || 0),
       fecpreact: costoCambio
-        ? (this.productoOriginal.feccosmod || new Date().toISOString()) // Guardar fecha anterior
-        : (this.productoOriginal.fecpreact || null), // Mantener la que ya estaba
-      
+        ? (this.productoOriginal.feccosmod || new Date().toISOString())
+        : (this.productoOriginal.fecpreact || null),
       feccosmod: costoCambio
-        ? new Date().toISOString() // Nueva fecha de modificación
-        : (this.productoOriginal.feccosmod || null) // Mantener la que ya estaba
+        ? new Date().toISOString()
+        : (this.productoOriginal.feccosmod || null)
     };
 
-    // ✅ Aplicar sanitización
     const sanitized = sanitizeProductoPayload(producto);
-    
     console.log('📦 Producto a actualizar:', JSON.stringify(sanitized, null, 2));
-    console.log('🔄 Cambios detectados:', { pvpCambio, costoCambio, margenCambio });
     
     return sanitized;
   }
@@ -828,52 +923,67 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     
     this.saving = true;
 
-    if (this.esNuevoProducto) {
-      const request = this.buildCreatePERequest();
-      
-      // ✅ LOG PARA DEBUG
-      console.log('📦 Request completo:', JSON.stringify(request, null, 2));
+      if (this.esNuevoProducto) {
+        const request = this.buildCreatePERequest();
+        
+        console.log('📦 Request completo:', JSON.stringify(request, null, 2));
 
-      this.productoService.createConEstructura(request).subscribe({
-        next: (res) => {
-          console.log('✅ Respuesta del servidor:', res);
-          
-          if (res?.type?.toUpperCase() === 'SUCCESS') {
-            alert('Producto creado exitosamente');
-            history.back();
-          } else {
-            alert('Error al crear: ' + (res?.message || 'Error desconocido'));
+        this.productoService.createConEstructura(request).subscribe({
+          next: (res) => {
+            console.log('✅ Respuesta del servidor:', res);
+            
+            if (res?.type?.toUpperCase() === 'SUCCESS') {
+              const idProductoCreado = res.data;
+              
+              // ✅ GUARDAR PROVEEDORES DESPUÉS DE CREAR EL PRODUCTO
+              if (this.proveedoresEnMemoria.length > 0) {
+                this.guardarProveedores(idProductoCreado);
+              } else {
+                alert('Producto creado exitosamente');
+                history.back();
+              }
+            } else {
+              alert('Error al crear: ' + (res?.message || 'Error desconocido'));
+            }
+          },
+          error: (err) => {
+            console.error('❌ Error HTTP:', err);
+            alert('Error al crear producto: ' + (err.error?.message || err.message));
+            this.saving = false;
           }
-        },
-        error: (err) => {
-          console.error('❌ Error HTTP:', err);
-          alert('Error al crear producto: ' + (err.error?.message || err.message));
-        },
-        complete: () => (this.saving = false)
-      });
-    } else {
-      // ✅ ACTUALIZAR PRODUCTO EXISTENTE
-      const request = this.buildUpdateRequest();
-      console.log('📦 Actualizando producto →', request);
+        });
+      } else {
+        // ✅ ACTUALIZAR PRODUCTO EXISTENTE
+        const request = this.buildUpdateRequest();
+        console.log('📦 Actualizando producto →', request);
 
-      this.productoService.update(this.idProductoActual, request).subscribe({
-        next: (res) => {
-          if (res?.type?.toUpperCase() === 'SUCCESS') {
-            console.log('✅ Producto actualizado correctamente');
-            alert('Producto actualizado exitosamente');
-            this.actualizarStocks();
-          } else {
-            console.error('❌ Error:', res?.message || res);
-            alert('Error al actualizar: ' + (res?.message || 'Error desconocido'));
+        this.productoService.update(this.idProductoActual, request).subscribe({
+          next: (res) => {
+            if (res?.type?.toUpperCase() === 'SUCCESS') {
+              console.log('✅ Producto actualizado correctamente');
+              
+              // ✅ GUARDAR/ACTUALIZAR PROVEEDORES
+              this.actualizarStocks();
+              
+              if (this.proveedoresEnMemoria.length > 0) {
+                this.guardarProveedores(this.idProductoActual);
+              } else {
+                alert('Producto actualizado exitosamente');
+                this.saving = false;
+              }
+            } else {
+              console.error('❌ Error:', res?.message || res);
+              alert('Error al actualizar: ' + (res?.message || 'Error desconocido'));
+              this.saving = false;
+            }
+          },
+          error: (err) => {
+            console.error('❌ Error HTTP:', err);
+            alert('Error al actualizar producto');
+            this.saving = false;
           }
-        },
-        error: (err) => {
-          console.error('❌ Error HTTP:', err);
-          alert('Error al actualizar producto');
-        },
-        complete: () => (this.saving = false)
-      });
-    }
+        });
+      }
   }
   private formatearFecha(fecha: string | Date | null): string | null {
     if (!fecha) return null;
@@ -927,7 +1037,8 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
         const prod = res?.data;
         if (!prod) return;
         this.productoOriginal = { ...prod };
-        // ✅ Tab 1: datos generales
+        
+        // Tab 1: datos generales
         this.form.patchValue({
           codigoInterno: prod.idproducto,
           descripcion1: prod.despro,
@@ -945,13 +1056,26 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
           altoRiesgo: prod.altoriesgo,
           claseProducto: prod.clasprod,
           urlFoto: prod.foto,
-          fechaCreacion: prod.feccre ? this.formatearFecha(prod.feccre) : null,       
-          fechaModificacion: prod.fechamod ? this.formatearFecha(prod.fechamod) : null, 
+          fechaCreacion: prod.feccre ? this.formatearFecha(prod.feccre) : null,
+          fechaModificacion: prod.fechamod ? this.formatearFecha(prod.fechamod) : null,
+          
+          // ✅ AGREGAR CAMPOS NUEVOS
+          cantidad: prod.cantidad,
+          productoEnVenta: prod.productoventa,
+          consumoInterno: prod.consumointerno,
+          psicotropico: prod.psicotropico,
+          estupefaciente: prod.estupefaciente,
+          canCov: prod.cantconv,
+          presentacion: prod.idpresentacion,
         });
 
-        // ✅ Tab 2: adicionales
+        // Tab 2: adicionales
         this.adicionalForm.patchValue({
-          color: prod.colsab,
+          // ✅ CAMBIAR A IDs
+          color: prod.idcolor,
+          sabor: prod.idsabor,
+          fabricante: prod.idfabricante,
+          
           tamanoTalla1: prod.talla,
           observacion: prod.obs,
           registroSanitario: prod.regsanitario,
@@ -963,33 +1087,637 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
           ctaGastos: prod.ctaprodgasto,
         });
 
-        // ✅ Tab 3: precios / costos
+        // Tab 3: precios / costos (sin cambios)
         this.preciosForm.patchValue({
           precioOficial: prod.preven,
           precioRedMsp: prod.preven2,
           pvpActualIva: prod.pvpsiniva,
           pvpAnteriorMasIva: prod.preanterior,
-          fechaAnteriorModificarPrecio: prod.feccosact ? this.formatearFecha(prod.feccosact) : null, 
-          fechaModificarPrecio: prod.fecpremod ? this.formatearFecha(prod.fecpremod) : null,         
+          fechaAnteriorModificarPrecio: prod.feccosact,
+          fechaModificarPrecio: prod.fecpremod,
           margenUtilidad: prod.margenutilidad,
           costoSuministro: prod.costsuminis,
           costoProducto: prod.cospro,
           costoPromedio: prod.precos,
           precioCompraAnterior: prod.cosanterior,
-          fechaAnteriorModificarCompra: prod.fecpreact ? this.formatearFecha(prod.fecpreact) : null, 
-          fechaModificarCompra: prod.feccosmod ? this.formatearFecha(prod.feccosmod) : null,   
+          fechaAnteriorModificarCompra: prod.fecpreact,
           precioCompraActual: prod.preuni,
           recepcionPorcentaje: prod.porcenrecepcion
         });
-        console.log('📊 Valores históricos:');
-        console.log('  PVP Anterior:', prod.preanterior, '| Fecha:', prod.feccosact);
-        console.log('  Costo Anterior:', prod.cosanterior, '| Fecha:', prod.fecpreact);
-        console.log('  Margen Anterior:', prod.margenantes, '| Fecha:', prod.fecmarantes);
+        this.cargarProveedoresProducto(id);
       },
       error: (err) => console.error('❌ Error cargando producto', err)
     });
   }
-  
+
+  //Proveedores
+  cargarProveedores(): void {
+    this.proveedorService.getAll().subscribe({
+      next: (resp) => {
+        this.proveedores = resp.data || [];
+        console.log('✅ Proveedores cargados:', this.proveedores.length);
+      },
+      error: (err) => {
+        console.error('❌ Error al cargar proveedores:', err);
+        alert('Error al cargar proveedores');
+      }
+    });
+  }
+
+  cargarProveedoresProducto(idProducto: number): void {
+    if (!idProducto || idProducto === 0) {
+      this.proveedoresEnMemoria = [];
+      return;
+    }
+
+    this.productoProveedorService.getProveedoresByProducto(idProducto).subscribe({
+      next: (resp) => {
+        this.proveedoresEnMemoria = (resp.data || []).map(p => {
+          // ✅ Buscar el ID de unidad de venta por su descripción
+          const unidad = this.unidadesVenta.find(u => u.descripcion === p.unidad_compra);
+          
+          return {
+            ...p,
+            _isNew: false,
+            id_unidad_venta: unidad?.idUnidadVenta || null // ✅ Agregar ID para el grid
+          };
+        });
+        
+        console.log('✅ Proveedores cargados en memoria:', this.proveedoresEnMemoria.length);
+      },
+      error: (err) => {
+        console.error('❌ Error al cargar proveedores:', err);
+        this.proveedoresEnMemoria = [];
+      }
+    });
+  }
+
+  private guardarProveedores(idProducto: number): void {
+    console.log('💾 Guardando proveedores en memoria...');
+    
+    // Validar que todos los proveedores tengan los campos obligatorios
+    const proveedoresInvalidos = this.proveedoresEnMemoria.filter(p => 
+      !p.id_proveedor || !p.costo_compra || p.costo_compra === 0
+    );
+
+    if (proveedoresInvalidos.length > 0) {
+      alert('Algunos proveedores no tienen proveedor o costo compra definido. Por favor complete los datos.');
+      this.saving = false;
+      return;
+    }
+      // Validar proveedor duplicado
+    const proveedoresIds = this.proveedoresEnMemoria.map(p => p.id_proveedor);
+    const duplicados = proveedoresIds.filter((id, index) => proveedoresIds.indexOf(id) !== index);
+    
+    if (duplicados.length > 0) {
+      const nombresDuplicados = duplicados.map(id => {
+        const prov = this.proveedores.find(p => p.id_proveedor === id);
+        return prov?.nombre_proveedor || 'Desconocido';
+      });
+      
+      alert(`⚠️ Hay proveedores duplicados:\n${nombresDuplicados.join('\n')}\n\nPor favor elimine los duplicados antes de guardar.`);
+      this.saving = false;
+      return;
+    }
+    // Separar proveedores nuevos de existentes
+    const nuevos = this.proveedoresEnMemoria.filter(p => p._isNew && !p.id_producto_proveedor);
+    const existentes = this.proveedoresEnMemoria.filter(p => p.id_producto_proveedor);
+
+    let operacionesCompletadas = 0;
+    const totalOperaciones = nuevos.length + existentes.length;
+
+    // Si no hay nada que guardar
+    if (totalOperaciones === 0) {
+      alert('Producto guardado exitosamente');
+      this.saving = false;
+      history.back();
+      return;
+    }
+
+    // Función para verificar si terminamos
+    const verificarFinalizacion = () => {
+      operacionesCompletadas++;
+      if (operacionesCompletadas === totalOperaciones) {
+        alert('Producto y proveedores guardados exitosamente');
+        this.saving = false;
+        history.back();
+      }
+    };
+
+    // Guardar proveedores nuevos
+    nuevos.forEach(prov => {
+      const request: ProductoProveedorRequest = {
+        id_producto: idProducto,
+        id_proveedor: prov.id_proveedor,
+        costo_compra: Number(prov.costo_compra) || 0,
+        descuento_general: Number(prov.descuento_general) || 0,
+        descuento_1: Number(prov.descuento_1) || 0,
+        descuento_2: Number(prov.descuento_2) || 0,
+        descuento_3: Number(prov.descuento_3) || 0,
+        descuento_4: Number(prov.descuento_4) || 0,
+        porcentaje_pvp: Number(prov.porcentaje_pvp) || 0,
+        producto_consignacion: prov.producto_consignacion || false,
+        unidad_compra: prov.unidad_compra || '',
+        valor_unidad_compra: Number(prov.valor_unidad_compra) || 0,
+        es_proveedor_principal: true // ✅ TODOS SON PRINCIPALES
+      };
+
+      this.productoProveedorService.create(request).subscribe({
+        next: (res) => {
+          if (res.type === 'SUCCESS') {
+            console.log('✅ Proveedor guardado:', prov.nombre_proveedor);
+            verificarFinalizacion();
+          }
+        },
+        error: (err) => {
+          console.error('❌ Error al guardar proveedor:', err);
+          verificarFinalizacion();
+        }
+      });
+    });
+
+    // Actualizar proveedores existentes
+    existentes.forEach(prov => {
+      const request: ProductoProveedorRequest = {
+        id_producto: idProducto,
+        id_proveedor: prov.id_proveedor,
+        costo_compra: Number(prov.costo_compra) || 0,
+        descuento_general: Number(prov.descuento_general) || 0,
+        descuento_1: Number(prov.descuento_1) || 0,
+        descuento_2: Number(prov.descuento_2) || 0,
+        descuento_3: Number(prov.descuento_3) || 0,
+        descuento_4: Number(prov.descuento_4) || 0,
+        porcentaje_pvp: Number(prov.porcentaje_pvp) || 0,
+        producto_consignacion: prov.producto_consignacion || false,
+        unidad_compra: prov.unidad_compra || '',
+        valor_unidad_compra: Number(prov.valor_unidad_compra) || 0,
+        es_proveedor_principal: true // ✅ TODOS SON PRINCIPALES
+      };
+
+      this.productoProveedorService.update(prov.id_producto_proveedor, request).subscribe({
+        next: (res) => {
+          if (res.type === 'SUCCESS') {
+            console.log('✅ Proveedor actualizado:', prov.nombre_proveedor);
+            verificarFinalizacion();
+          }
+        },
+        error: (err) => {
+          console.error('❌ Error al actualizar proveedor:', err);
+          verificarFinalizacion();
+        }
+      });
+    });
+  }
+
+
+  eliminarProveedor(proveedor: ProductoProveedorResponse): void {
+    if (!confirm(`¿Está seguro de eliminar el proveedor "${proveedor.nombre_proveedor}"?`)) {
+      return;
+    }
+
+    this.productoProveedorService.delete(proveedor.id_producto_proveedor).subscribe({
+      next: (resp) => {
+        if (resp.type === 'SUCCESS') {
+          alert('Proveedor eliminado correctamente');
+          this.cargarProveedoresProducto(this.idProductoActual);
+        } else {
+          alert('Error: ' + resp.message);
+        }
+      },
+      error: (err) => {
+        console.error('❌ Error al eliminar proveedor:', err);
+        alert('Error al eliminar proveedor');
+      }
+    });
+  }
+
+  agregarFilaProveedor(): void {
+    const tempId = `temp_${Date.now()}`;
+    
+    const nuevaFila = {
+      _tempId: tempId,
+      _isNew: true,
+      id_proveedor: null,
+      codigo_proveedor: '',
+      nombre_proveedor: '',
+      costo_compra: 0,
+      descuento_general: 0,
+      descuento_1: 0,
+      descuento_2: 0,
+      descuento_3: 0,
+      descuento_4: 0,
+      costo_neto: 0,
+      id_unidad_venta: null, // ✅ Cambiar a ID
+      unidad_compra: '', // ✅ Mantener para guardar el nombre
+      valor_unidad_compra: 0,
+      porcentaje_pvp: 0,
+      producto_consignacion: false,
+      es_proveedor_principal: true
+    };
+
+    this.proveedoresEnMemoria = [nuevaFila, ...this.proveedoresEnMemoria];
+    
+    if (this.proveedoresGridApi) {
+      this.proveedoresGridApi.applyTransaction({ add: [nuevaFila], addIndex: 0 });
+      
+      setTimeout(() => {
+        this.proveedoresGridApi.setFocusedCell(0, 'id_proveedor');
+        this.proveedoresGridApi.startEditingCell({
+          rowIndex: 0,
+          colKey: 'id_proveedor'
+        });
+      }, 100);
+    }
+    
+    console.log('➕ Nueva fila agregada en memoria');
+  }
+
+  // AG GRID
+  configurarGridProveedores(): void {
+    this.columnDefsProveedores = [
+      {
+        headerName: 'Acciones',
+        field: 'acciones',
+        width: 90,
+        pinned: 'left',
+        cellRenderer: (params: any) => {
+          return `
+            <button 
+              class="btn-grid-delete" 
+              data-action="delete" 
+              title="Eliminar">
+              🗑️
+            </button>
+          `;
+        },
+        cellStyle: { 'text-align': 'center', 'padding': '4px' }
+      },
+      {
+        headerName: '*Proveedor',
+        field: 'id_proveedor',
+        width: 280,
+        editable: true,
+        cellEditor: 'agSelectCellEditor',
+        cellEditorParams: (params: any) => {
+          const proveedoresUsados = this.proveedoresEnMemoria
+            .filter(p => {
+              const esElMismo = p._tempId ? 
+                p._tempId === params.data._tempId : 
+                p.id_producto_proveedor === params.data.id_producto_proveedor;
+              return !esElMismo && p.id_proveedor;
+            })
+            .map(p => p.id_proveedor);
+          
+          const proveedoresDisponibles = this.proveedores
+            .filter(p => !proveedoresUsados.includes(p.id_proveedor))
+            .map(p => p.id_proveedor);
+          
+          return {
+            values: proveedoresDisponibles
+          };
+        },
+        valueFormatter: (params: any) => {
+          if (!params.value) return '⚠️ Seleccione proveedor...';
+          const prov = this.proveedores.find(p => p.id_proveedor === params.value);
+          return prov ? `${prov.codigo_proveedor} - ${prov.nombre_proveedor}` : '';
+        },
+        cellStyle: (params: any) => {
+          if (!params.value) {
+            return { 'background-color': '#fff3cd', 'font-style': 'italic' };
+          }
+          return {};
+        }
+      },
+      {
+        headerName: '*Costo Compra',
+        field: 'costo_compra',
+        width: 140,
+        editable: true,
+        cellEditor: 'agNumberCellEditor',
+        cellEditorParams: {
+          min: 0,
+          precision: 2
+        },
+        valueFormatter: (params: any) => {
+          return params.value != null ? '$ ' + Number(params.value).toFixed(2) : '$ 0.00';
+        },
+        cellStyle: (params: any) => {
+          const style: any = { 'text-align': 'right' };
+          if (!params.value || params.value === 0) {
+            style['background-color'] = '#fff3cd';
+          }
+          return style;
+        }
+      },
+      {
+        headerName: 'Desc. Gral %',
+        field: 'descuento_general',
+        width: 130,
+        editable: true,
+        cellEditor: 'agNumberCellEditor',
+        cellEditorParams: {
+          min: 0,
+          max: 100,
+          precision: 2
+        },
+        valueFormatter: (params: any) => {
+          return params.value != null ? Number(params.value).toFixed(2) + '%' : '0.00%';
+        },
+        cellStyle: { 'text-align': 'right' }
+      },
+      {
+        headerName: 'Desc. 1 %',
+        field: 'descuento_1',
+        width: 110,
+        editable: true,
+        cellEditor: 'agNumberCellEditor',
+        cellEditorParams: { min: 0, max: 100, precision: 2 },
+        valueFormatter: (params: any) => {
+          return params.value != null ? Number(params.value).toFixed(2) + '%' : '0.00%';
+        },
+        cellStyle: { 'text-align': 'right' }
+      },
+      {
+        headerName: 'Desc. 2 %',
+        field: 'descuento_2',
+        width: 110,
+        editable: true,
+        cellEditor: 'agNumberCellEditor',
+        cellEditorParams: { min: 0, max: 100, precision: 2 },
+        valueFormatter: (params: any) => {
+          return params.value != null ? Number(params.value).toFixed(2) + '%' : '0.00%';
+        },
+        cellStyle: { 'text-align': 'right' }
+      },
+      {
+        headerName: 'Desc. 3 %',
+        field: 'descuento_3',
+        width: 110,
+        editable: true,
+        cellEditor: 'agNumberCellEditor',
+        cellEditorParams: { min: 0, max: 100, precision: 2 },
+        valueFormatter: (params: any) => {
+          return params.value != null ? Number(params.value).toFixed(2) + '%' : '0.00%';
+        },
+        cellStyle: { 'text-align': 'right' }
+      },
+      {
+        headerName: 'Desc. 4 %',
+        field: 'descuento_4',
+        width: 110,
+        editable: true,
+        cellEditor: 'agNumberCellEditor',
+        cellEditorParams: { min: 0, max: 100, precision: 2 },
+        valueFormatter: (params: any) => {
+          return params.value != null ? Number(params.value).toFixed(2) + '%' : '0.00%';
+        },
+        cellStyle: { 'text-align': 'right' }
+      },
+      {
+        headerName: 'Costo Neto',
+        field: 'costo_neto',
+        width: 140,
+        editable: false,
+        valueFormatter: (params: any) => {
+          return params.value != null ? '$ ' + Number(params.value).toFixed(2) : '$ 0.00';
+        },
+        cellStyle: { 
+          'text-align': 'right', 
+          'font-weight': 'bold', 
+          'background-color': '#e8f5e9',
+          'color': '#2e7d32'
+        }
+      },
+      // Unidad Compra
+      {
+        headerName: 'Unidad Compra',
+        field: 'id_unidad_venta', // ✅ Campo para guardar el ID (temporal, solo para el grid)
+        width: 150,
+        editable: true,
+        cellEditor: 'agSelectCellEditor',
+        cellEditorParams: (params: any) => {
+          console.log('📋 Opciones del select:', this.unidadesVenta.length);
+          return {
+            values: this.unidadesVenta.map(u => u.idUnidadVenta) // IDs para el select
+          };
+        },
+        valueFormatter: (params: any) => {
+          if (!params.value) return 'Seleccionar...';
+          // Buscar por ID y mostrar descripción
+          const unidad = this.unidadesVenta.find(u => u.idUnidadVenta === params.value);
+          return unidad ? unidad.descripcion : 'Seleccionar...';
+        },
+        cellStyle: (params: any) => {
+          if (!params.value) {
+            return { 'background-color': '#fff3cd', 'font-style': 'italic' };
+          }
+          return {};
+        }
+      },
+      // Cantidad
+      {
+        headerName: 'Cantidad',
+        field: 'valor_unidad_compra',
+        width: 110,
+        editable: true,
+        cellEditor: 'agNumberCellEditor',
+        cellEditorParams: { min: 0, precision: 2 },
+        valueFormatter: (params: any) => {
+          return params.value != null ? Number(params.value).toFixed(2) : '0.00';
+        },
+        cellStyle: { 'text-align': 'right' }
+      },
+      // ❌ OCULTAR columna % PVP
+      // Se elimina completamente o se oculta con hide: true
+      // OPCIÓN 1: Eliminarlo completamente (comentar o borrar)
+      /*
+      {
+        headerName: '% PVP',
+        field: 'porcentaje_pvp',
+        ...
+      },
+      */
+      // OPCIÓN 2: Ocultarlo pero mantenerlo en los datos (recomendado)
+      {
+        headerName: '% PVP',
+        field: 'porcentaje_pvp',
+        width: 110,
+        editable: true,
+        hide: true, // ✅ OCULTAR columna
+        cellEditor: 'agNumberCellEditor',
+        cellEditorParams: { precision: 2 },
+        valueFormatter: (params: any) => {
+          return params.value != null ? Number(params.value).toFixed(2) + '%' : '0.00%';
+        },
+        cellStyle: { 'text-align': 'right' }
+      },
+      {
+        headerName: 'Consignación',
+        field: 'producto_consignacion',
+        width: 130,
+        editable: true,
+        cellEditor: 'agCheckboxCellEditor',
+        cellRenderer: (params: any) => {
+          return params.value ? '✅ Sí' : '❌ No';
+        },
+        cellStyle: { 'text-align': 'center' }
+      }
+    ];
+
+    this.defaultColDefProveedores = {
+      sortable: true,
+      filter: false,
+      resizable: true,
+      suppressMovable: true
+    };
+  }
+  onProveedoresGridReady(params: GridReadyEvent): void {
+    this.proveedoresGridApi = params.api;
+    console.log('✅ Grid de proveedores listo');
+  }
+
+
+  onProveedoresCellClicked(event: CellClickedEvent): void {
+    const target = event.event?.target as HTMLElement;
+    const action = target.getAttribute('data-action');
+    
+    if (action === 'delete') {
+      this.eliminarProveedorDeMemoria(event.data);
+    }
+  }
+  eliminarProveedorDeMemoria(proveedor: any): void {
+    const nombreProv = proveedor.nombre_proveedor || 'este proveedor';
+    
+    if (!confirm(`¿Está seguro de eliminar "${nombreProv}"?`)) {
+      return;
+    }
+
+    // Eliminar del array en memoria
+    this.proveedoresEnMemoria = this.proveedoresEnMemoria.filter(p => {
+      if (proveedor._tempId) {
+        return p._tempId !== proveedor._tempId;
+      }
+      return p.id_producto_proveedor !== proveedor.id_producto_proveedor;
+    });
+
+    // Actualizar grid
+    if (this.proveedoresGridApi) {
+      this.proveedoresGridApi.applyTransaction({ remove: [proveedor] });
+    }
+
+    console.log('🗑️ Proveedor eliminado de memoria');
+  }
+  // ✅ AGREGAR después de onProveedoresCellClicked()
+
+  onProveedoresCellValueChanged(event: CellValueChangedEvent): void {
+    const proveedor = event.data;
+    const campo = event.colDef.field;
+    
+    console.log(`📝 Campo modificado en memoria: ${campo}`, event.newValue);
+
+    // ✅ VALIDAR PROVEEDOR DUPLICADO
+    if (campo === 'id_proveedor') {
+      const proveedorDuplicado = this.proveedoresEnMemoria.filter(p => {
+        // Excluir el actual
+        const esElMismo = p._tempId ? 
+          p._tempId === proveedor._tempId : 
+          p.id_producto_proveedor === proveedor.id_producto_proveedor;
+        
+        if (esElMismo) return false;
+        
+        // Verificar si hay otro con el mismo id_proveedor
+        return p.id_proveedor === event.newValue;
+      });
+
+      if (proveedorDuplicado.length > 0) {
+        alert('⚠️ Este proveedor ya está agregado. No se permiten proveedores duplicados.');
+        
+        // Revertir el cambio
+        proveedor.id_proveedor = event.oldValue || null;
+        proveedor.codigo_proveedor = '';
+        proveedor.nombre_proveedor = '';
+        
+        // Actualizar visualmente
+        event.node.setData(proveedor);
+        return;
+      }
+
+      // Si no está duplicado, actualizar código y nombre
+      const provSeleccionado = this.proveedores.find(p => p.id_proveedor === event.newValue);
+      if (provSeleccionado) {
+        proveedor.codigo_proveedor = provSeleccionado.codigo_proveedor;
+        proveedor.nombre_proveedor = provSeleccionado.nombre_proveedor;
+        
+        console.log('✅ Proveedor seleccionado:', provSeleccionado.nombre_proveedor);
+      }
+    }
+      // Unidad de venta
+    if (campo === 'id_unidad_venta') {
+      const unidadSeleccionada = this.unidadesVenta.find(u => u.idUnidadVenta === event.newValue);
+      if (unidadSeleccionada) {
+        proveedor.unidad_compra = unidadSeleccionada.descripcion; // ✅ Guardar descripción
+        console.log('✅ Unidad seleccionada:', unidadSeleccionada.descripcion);
+        console.log('✅ Se guardará en BD como:', proveedor.unidad_compra);
+      }
+    }
+    // Recalcular costo neto si cambió algún valor relacionado
+    if (
+      campo === 'costo_compra' ||
+      campo === 'descuento_general' ||
+      campo === 'descuento_1' ||
+      campo === 'descuento_2' ||
+      campo === 'descuento_3' ||
+      campo === 'descuento_4'
+    ) {
+      proveedor.costo_neto = this.calcularCostoNetoProveedor(proveedor);
+    }
+
+    // Actualizar el array en memoria
+    const index = this.proveedoresEnMemoria.findIndex(p => 
+      p._tempId === proveedor._tempId || p.id_producto_proveedor === proveedor.id_producto_proveedor
+    );
+    
+    if (index !== -1) {
+      this.proveedoresEnMemoria[index] = proveedor;
+    }
+
+    // Actualizar la fila visualmente
+    event.node.setData(proveedor);
+  }
+
+  // Metodos auxiliares para usar aggrid
+  private calcularCostoNetoProveedor(proveedor: ProductoProveedorResponse): number {
+    let costo = Number(proveedor.costo_compra) || 0;
+    
+    if (proveedor.descuento_general && proveedor.descuento_general > 0) {
+      costo -= (costo * proveedor.descuento_general / 100);
+    }
+    if (proveedor.descuento_1 && proveedor.descuento_1 > 0) {
+      costo -= (costo * proveedor.descuento_1 / 100);
+    }
+    if (proveedor.descuento_2 && proveedor.descuento_2 > 0) {
+      costo -= (costo * proveedor.descuento_2 / 100);
+    }
+    if (proveedor.descuento_3 && proveedor.descuento_3 > 0) {
+      costo -= (costo * proveedor.descuento_3 / 100);
+    }
+    if (proveedor.descuento_4 && proveedor.descuento_4 > 0) {
+      costo -= (costo * proveedor.descuento_4 / 100);
+    }
+    
+    return this.fix(costo, 3);
+  }
+
+  private marcarProveedorPrincipal(proveedorPrincipal: ProductoProveedorResponse): void {
+    this.proveedoresGridApi.forEachNode((node) => {
+      if (node.data.id_producto_proveedor !== proveedorPrincipal.id_producto_proveedor) {
+        node.data.es_proveedor_principal = false;
+        node.setData(node.data);
+      }
+    });
+  }
+
+
   onImprimir(): void { window.print(); }
   onAdjuntar(): void { history.back(); }
 
