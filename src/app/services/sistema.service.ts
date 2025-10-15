@@ -18,6 +18,7 @@ export class SistemaService {
   getSistemas(): Observable<ApiResponse<SistemaResponse[]>> {
     return this.http.get<ApiResponse<SistemaResponse[]>>(this.apiUrl);
   }
+
   createSistema(data: SistemasRequest): Observable<any> {
     return this.http.post(this.apiUrl, data);
   }

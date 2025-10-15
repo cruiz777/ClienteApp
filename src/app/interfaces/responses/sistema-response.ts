@@ -4,4 +4,5 @@ export interface SistemaResponse {
   descripcion?: string;
   fecha_creacion?: Date;
   status: boolean;
+  url: string;
 }

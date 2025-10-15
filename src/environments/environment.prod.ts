@@ -14,6 +14,7 @@ export const environment = {
 
   reportUrl: 'http://10.10.7.11:8000/reports/api',
   
+  inventoryUrl: 'http://10.10.7.11:8000/inventories/api',
 
     invoices_sic:'http://10.10.7.11:8000/invoices-sic/api',
       apiKey: 'ilGxoWJ9Arp0JdSNuO81aq9sX6ZW9gK9767867tgb',

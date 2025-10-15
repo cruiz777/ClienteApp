@@ -334,19 +334,19 @@ export class ProductoService {
   }
 
   actualizarProducto(payload: {
-    idProducto: number;
-    request: ProductoRequest;
-  }): Observable<ApiResponse<boolean>> {
-    return this.http.put<ApiResponse<boolean>>(
-      `${this.apiBaseUrl}/Producto/${payload.idProducto}`,
-      payload.request
-    );
+      idProducto: number;
+      request: ProductoRequest;
+    }): Observable<ApiResponse<boolean>> {
+      return this.http.put<ApiResponse<boolean>>(
+        `${this.apiBaseUrl}/Producto/${payload.idProducto}`,
+        payload.request
+      );
+    }
+    filtrarProductosPorCliente(filtro: FiltroProductoClienteRequest): Observable<Producto[]> {
+    return this.http
+      .post<ApiResponse<Producto[]>>(`${this.apiBaseUrl}/Producto/filtrar-por-cliente`, filtro)
+      .pipe(map(response => response.data ?? []));
   }
-  filtrarProductosPorCliente(filtro: FiltroProductoClienteRequest): Observable<Producto[]> {
-  return this.http
-    .post<ApiResponse<Producto[]>>(`${this.apiBaseUrl}/Producto/filtrar-por-cliente`, filtro)
-    .pipe(map(response => response.data ?? []));
-}
 
 
   getProductosFiltrados(request: ProductoRequests): Observable<ClienteConProductosResponse> {
@@ -364,25 +364,25 @@ export class ProductoService {
     .pipe(
       map(response => response.data ?? [])
     );
-}
-actualizarReferenciaYAbrevia(request: ReferenciaAbreviaUpdateRequest): Observable<ApiResponse<boolean>> {
-  return this.http.put<ApiResponse<boolean>>(
-    `${this.apiBaseUrl}/Producto/actualizar-referencia-abrevia`,
-    request
-  );
-}
-getProductosConAbreviaT(): Observable<Producto[]> {
-  return this.http
-    .get<ApiResponse<Producto[]>>(`${this.apiBaseUrl}/Producto/con-abrevia-t`)
-    .pipe(
-      map(response => response.data ?? [])
+  }
+  actualizarReferenciaYAbrevia(request: ReferenciaAbreviaUpdateRequest): Observable<ApiResponse<boolean>> {
+    return this.http.put<ApiResponse<boolean>>(
+      `${this.apiBaseUrl}/Producto/actualizar-referencia-abrevia`,
+      request
     );
-}
-eliminarProductoPorCodbar(codbar: string): Observable<ApiResponse<boolean>> {
-  return this.http.delete<ApiResponse<boolean>>(
-    `${this.apiBaseUrl}/Producto/eliminar-por-codbar/${codbar}`
-  );
-}
-
+  }
+  getProductosConAbreviaT(): Observable<Producto[]> {
+    return this.http
+      .get<ApiResponse<Producto[]>>(`${this.apiBaseUrl}/Producto/con-abrevia-t`)
+      .pipe(
+        map(response => response.data ?? [])
+      );
+  }
+  eliminarProductoPorCodbar(codbar: string): Observable<ApiResponse<boolean>> {
+    return this.http.delete<ApiResponse<boolean>>(
+      `${this.apiBaseUrl}/Producto/eliminar-por-codbar/${codbar}`
+    );
+  }
+  
 
 }

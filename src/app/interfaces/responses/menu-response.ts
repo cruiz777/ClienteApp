@@ -4,4 +4,5 @@ export interface MenuResponse {
   descripcion?: string;
   status: boolean;
   id_modulo: number;
+  url: string;
 }

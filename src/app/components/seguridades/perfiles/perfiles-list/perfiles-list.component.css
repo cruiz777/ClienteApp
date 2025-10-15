@@ -342,3 +342,26 @@ button[mat-stroked-button]:hover {
     flex-direction: column;
   }
 }
+/* ===================== ESTADOS PARA MÓDULOS ===================== */
+.modulo-con-opciones {
+  background-color: #e0f7fa; /* Verde claro - parcial */
+  font-weight: bold;
+}
+
+.modulo-con-opciones-completo {
+  background-color: #DBEAFE; /* Azul claro - completo */
+  color: #1E3A8A;
+  font-weight: bold;
+}
+
+/* ===================== ESTADOS PARA SUBMENUS ===================== */
+.submenu-con-opciones {
+  background-color: #e0f7fa; /* Verde claro - parcial */
+  font-weight: bold;
+}
+
+.submenu-con-opciones-completo {
+  background-color: #DBEAFE; /* Azul claro - completo */
+  color: #1E3A8A;
+  font-weight: bold;
+}

@@ -1,6 +1,6 @@
-export interface ModulosRequest {
-  id_modulo?: number;
-  id_sistema: number;
+export interface SubMenusRequest {
+  id_sub?: number;
+  id_menu: number;
   nombre: string;
   descripcion?: string;
   status: boolean;

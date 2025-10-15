@@ -1,1 +1,43 @@
-<p>estructura-form works!</p>
+<h2 mat-dialog-title>
+  {{
+  data?.id
+  ? (tipo === 'estructuraComercial' ? 'Editar Estructura Comercial'
+  : tipo === 'division' ? 'Editar Division'
+  : tipo === 'subDivision' ? 'Editar Sub Division'
+  : tipo === 'departamento' ? 'Editar Departamento'
+  : tipo === 'seccion' ? 'Editar Sección'
+  : tipo === 'grupo' ? 'Editar Grupo'
+  : 'Editar Nivel')
+  : (tipo === 'estructuraComercial' ? 'Nuevo Estructura Comercial'
+  : tipo === 'division' ? 'Nuevo Division'
+  : tipo === 'subDivision' ? 'Nuevo Sub Division'
+  : tipo === 'departamento' ? 'Nueva Departamento'
+  : tipo === 'seccion' ? 'Nueva Sección'
+  : tipo === 'grupo' ? 'Nueva Grupo'
+  : 'Nuevo Nivel')
+  }}
+</h2>
+
+<div mat-dialog-content style="padding-top: 12px;">
+  <form [formGroup]="form">
+    <mat-form-field appearance="outline" style="width: 100%;">
+      <mat-label>
+        {{tipo === 'estructuraComercial' ? 'Nombre del estructura comercial' : tipo === 'division' ? 'Nombre del
+        division' : tipo === 'subDivision' ?
+        'Nombre del sub division' : tipo === 'departamento' ? 'Nombre del departamento' : tipo === 'seccion' ? 'Nombre
+        de la seccion' : tipo === 'grupo' ? 'Nombre del frupo' : 'Nombre del perfil' }}
+      </mat-label>
+      <input matInput placeholder="Ingrese el nombre" formControlName="nombre" />
+      <mat-error *ngIf="form.get('nombre')?.hasError('required')">
+        El nombre es obligatorio.
+      </mat-error>
+    </mat-form-field>
+  </form>
+</div>
+
+<div mat-dialog-actions style="justify-content: flex-end; padding-top: 12px;">
+  <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+  <button mat-flat-button color="primary" (click)="grabar()" [disabled]="form.invalid">
+    {{ data?.id ? 'Actualizar' : 'Grabar' }}
+  </button>
+</div>
