@@ -85,11 +85,13 @@
           <mat-expansion-panel>
             <mat-expansion-panel-header>
               <mat-panel-title>
+
                 <span *ngIf="isExpanded" class="menu-text">Notas de Crédito/Debito</span>
+
               </mat-panel-title>
             </mat-expansion-panel-header>
             <!-- Nivel 3: Notas de Crédito/Debito-->
-            <a mat-list-item routerLink="">
+            <a mat-list-item [routerLink]="'/sic-3000/notaCredito'">
               <span *ngIf="isExpanded" class="menu-text">Notas de Crédito</span>
             </a>
             <a mat-list-item routerLink="">
@@ -126,7 +128,7 @@
         </mat-expansion-panel>
 
         <!-- CUENTAS POR COBRAR-->
-         <mat-expansion-panel>
+        <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
               <img src="assets/icons/sic-3000/icon-cuenta-x-cobrar.png" class="menu-icon">
@@ -134,21 +136,21 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
           <!-- Subgrupo: Pagos -->
-         <mat-expansion-panel>
+          <mat-expansion-panel>
             <mat-expansion-panel-header>
               <mat-panel-title>
                 <span *ngIf="isExpanded" class="menu-text">Pagos</span>
               </mat-panel-title>
             </mat-expansion-panel-header>
             <!-- Nivel 3: registro de cobros-->
-          <mat-expansion-panel hideToggle>
-            <mat-expansion-panel-header (click)="goTo('registroCobros')" class="clickable-header">
-            <mat-panel-title>
-              <span *ngIf="isExpanded" class="menu-text">Registro de Pagos</span>
-            </mat-panel-title>
-            </mat-expansion-panel-header>
-          </mat-expansion-panel>
-          <!-- <mat-expansion-panel hideToggle>
+            <mat-expansion-panel hideToggle>
+              <mat-expansion-panel-header (click)="goTo('registroCobros')" class="clickable-header">
+                <mat-panel-title>
+                  <span *ngIf="isExpanded" class="menu-text">Registro de Pagos</span>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+            </mat-expansion-panel>
+            <!-- <mat-expansion-panel hideToggle>
             <mat-expansion-panel-header (click)="goTo('cobroIndividual')" class="clickable-header">
             <mat-panel-title>
               <span *ngIf="isExpanded" class="menu-text">Pagos Individuales</span>
@@ -164,8 +166,8 @@
             </a>
           </mat-expansion-panel>
 
-           <!-- Subgrupo: Explorador -->
-         <mat-expansion-panel>
+          <!-- Subgrupo: Explorador -->
+          <mat-expansion-panel>
             <mat-expansion-panel-header>
               <mat-panel-title>
                 <span *ngIf="isExpanded" class="menu-text">Exploradores</span>

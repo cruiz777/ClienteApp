@@ -10,7 +10,7 @@ import { FacturacionGlobalComponent } from './facturacion/facturacion-global/fac
 import { AuthGuard } from 'src/app/guards/auth.guard';
 import { PermissionGuard } from 'src/app/guards/permission.guard';
 import { AnulacionPagoComponent } from './cxc/anulacion-pago/anulacion-pago.component';
-
+import { NotaCreditoComponent } from './cxc/nota-credito/nota-credito.component';
 
 const routes: Routes = [
   {
@@ -46,6 +46,11 @@ const routes: Routes = [
        {
         path: 'anularCobros',
         component: AnulacionPagoComponent,
+   
+      },
+         {
+        path: 'notaCredito',
+        component: NotaCreditoComponent,
    
       },
 

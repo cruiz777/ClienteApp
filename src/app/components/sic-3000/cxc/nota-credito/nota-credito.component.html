@@ -1,0 +1,194 @@
+<div class="nc-container">
+  <h2 class="titulo">Nota de Crédito</h2>
+
+  <!-- Encabezado -->
+  <div class="grid-header">
+    <div class="field">
+      <label class="form-label">Sucursal:</label>
+      <input class="form-control" [(ngModel)]="encabezado.sucursal" readonly />
+    </div>
+    <div class="field">
+      <label class="form-label">Caja:</label>
+      <input class="form-control" [(ngModel)]="encabezado.caja" readonly />
+    </div>
+    <div class="field">
+      <label class="form-label">No:</label>
+      <input class="form-control" [(ngModel)]="encabezado.numero" readonly />
+    </div>
+    <div class="field">
+      <label class="form-label">Fecha:</label>
+      <input type="date" class="form-control" [(ngModel)]="encabezado.fecha" readonly />
+    </div>
+
+    <div class="field">
+      <label class="form-label">Cliente:</label>
+      <input class="form-control" [(ngModel)]="encabezado.cliente" readonly />
+    </div>
+    <div class="field">
+      <label class="form-label">Sucursal:</label>
+      <input class="form-control" [(ngModel)]="encabezado.sucursal2" readonly />
+    </div>
+    <div class="field">
+      <label class="form-label">Caja:</label>
+      <input class="form-control" [(ngModel)]="encabezado.caja2" readonly />
+    </div>
+    <div class="field">
+      <label class="form-label">Factura:</label>
+      <input class="form-control" [(ngModel)]="encabezado.factura" (keyup.enter)="onEnterFactura()"
+        [readonly]="facturaFijada" />
+    </div>
+
+    <div class="field wide">
+      <label class="form-label">Dirección:</label>
+      <input class="form-control" [(ngModel)]="encabezado.direccion" readonly />
+    </div>
+    <div class="field">
+      <label class="form-label">RUC:</label>
+      <input class="form-control" [(ngModel)]="encabezado.ruc" readonly />
+    </div>
+    <div class="field">
+      <label class="form-label">Fecha Actual:</label>
+      <input type="date" class="form-control" [(ngModel)]="encabezado.fechaActual" readonly />
+    </div>
+    <div class="field wide">
+      <label class="form-label">Observación:</label>
+      <input class="form-control" [(ngModel)]="encabezado.observacion" />
+    </div>
+  </div>
+
+  <!-- DETALLES -->
+  <div class="panel">
+    <ag-grid-angular class="ag-theme-quartz nc-grid" [rowData]="detalleRows" [columnDefs]="detalleCols"
+      [defaultColDef]="defaultColDef" [rowSelection]="'single'" [animateRows]="true"
+      [stopEditingWhenCellsLoseFocus]="true" [domLayout]="'autoHeight'" (cellValueChanged)="recalcular()"
+      (rowValueChanged)="recalcular()">
+    </ag-grid-angular>
+
+
+  </div>
+
+  <!-- FORMAS DE PAGO + RESUMEN -->
+  <div class="grid-2col">
+    <div class="panel">
+      <h3 class="subtitulo">Formas de Pago</h3>
+
+      <div class="toolbar">
+        <section class="product-section" aria-labelledby="product-label" style="padding-top:0;">
+          <mat-form-field style="width:100%;">
+            <span matPrefix class="fi-prefix">Pago:&nbsp;</span>
+            <input
+  matInput
+  [formControl]="fcMetodoPago"
+  #autoPagoTrigger="matAutocompleteTrigger"
+  [matAutocomplete]="autoPago"
+  (focus)="autoPagoTrigger.openPanel()" />
+
+          </mat-form-field>
+
+          <mat-autocomplete #autoPago="matAutocomplete"
+  [displayWith]="displayFormaPago"
+  (optionSelected)="onFormaPagoSelected($event)">
+            <mat-option *ngFor="let fp of filteredFormasPago$ | async" [value]="fp">
+              {{ fp.descripcionPago }}
+            </mat-option>
+            <mat-option *ngIf="(filteredFormasPago$ | async)?.length === 0 && !isLoadingFormas" disabled>
+              Sin resultados
+            </mat-option>
+          </mat-autocomplete>
+
+
+        </section>
+        <div class="spacer"></div>
+     <span class="total-pago" [ngClass]="{ 'text-red-600': !puedeGrabar, 'text-green-700': puedeGrabar }">
+  Total Pago: {{ totales.totalPago | number:'1.2-2' }}
+  <small *ngIf="!puedeGrabar">
+    (faltan {{ diferenciaPago | number:'1.2-2' }})
+  </small>
+</span>
+
+
+      </div>
+
+      <ag-grid-angular class="ag-theme-quartz nc-grid" [rowData]="pagoRows" [columnDefs]="pagoCols"
+        [defaultColDef]="defaultColDef" [singleClickEdit]="true" [stopEditingWhenCellsLoseFocus]="true"
+        [domLayout]="'autoHeight'" (cellValueChanged)="recalcular()">
+      </ag-grid-angular>
+    </div>
+
+    <div class="panel resumen">
+      <div class="res-item">
+        <span>Sub Total</span>
+        <strong>{{ totales.subtotal | currency:'USD' }}</strong>
+      </div>
+      <div class="res-item">
+        <span>Base 0</span>
+        <strong>{{ totales.base0 | currency:'USD' }}</strong>
+      </div>
+      <div class="res-item">
+        <span>Base IVA</span>
+        <strong>{{ totales.baseIva | currency:'USD' }}</strong>
+      </div>
+      <div class="res-item">
+        <span>IVA</span>
+        <strong>{{ totales.iva | currency:'USD' }}</strong>
+      </div>
+      <div class="res-item">
+        <span>Total Factura</span>
+        <strong>{{ totales.totalFacturaConIva | currency:'USD' }}</strong>
+      </div>
+
+      <hr>
+
+      <!-- DEV: todas las filas como hermanas (no anidar) -->
+      <div class="res-item">
+        <span>Sub Total Dev.</span>
+        <strong>{{ totales.subtotalDev | currency:'USD' }}</strong>
+      </div>
+      <div class="res-item">
+        <span>Base Dev. 0</span>
+        <strong>{{ totales.baseDev0 | currency:'USD' }}</strong>
+      </div>
+      <div class="res-item">
+        <span>Base Dev. IVA</span>
+        <strong>{{ totales.baseDevIva | currency:'USD' }}</strong>
+      </div>
+
+      <div class="res-item">
+        <span>IVA Dev.</span>
+        <strong>{{ totales.totalIvaDev | currency:'USD' }}</strong>
+      </div>
+      <div class="res-item total-dev">
+        <span>TOTAL DEV.</span>
+        <strong>{{ totales.totalDevConIva | currency:'USD' }}</strong>
+      </div>
+
+      <hr>
+    </div>
+
+
+
+  </div>
+
+  <!-- Acciones -->
+  <div class="acciones">
+    <button class="btn btn-light" (click)="nuevo()">Nuevo</button>
+<button
+  type="button"
+  class="btn btn-primary"
+  (click)="onClickGrabar()"
+  [class.btn-disabled]="!puedeGrabar"   
+  title="El Total Pago debe ser igual al TOTAL DEV.">
+  Grabar
+</button>
+
+
+
+
+
+    <div class="spacer"></div>
+    <div class="exportar">
+      <button class="btn btn-light" (click)="exportar()">Exportar</button>
+      <span class="caret">▾</span>
+    </div>
+  </div>
+</div>
