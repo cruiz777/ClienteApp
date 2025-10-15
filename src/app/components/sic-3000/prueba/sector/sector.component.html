@@ -1,0 +1,50 @@
+<p>sector works!</p>
+<section class="card">
+  <header class="card__header">
+    <h2 class="title">Sectores</h2>
+
+    <div class="actions">
+      <input
+        class="input"
+        type="text"
+        placeholder="Buscar por ID o descripción…"
+        [(ngModel)]="filtro"
+        aria-label="Buscar sectores"
+      />
+      <button class="btn" (click)="cargar()" [disabled]="loading">
+        {{ loading ? 'Cargando…' : 'Recargar' }}
+      </button>
+    </div>
+  </header>
+
+  <div class="card__body">
+    <div *ngIf="error" class="alert alert--error" role="alert">
+      {{ error }}
+    </div>
+
+    <div *ngIf="loading && !error" class="skeleton">Cargando sectores…</div>
+
+    <div *ngIf="!loading && !error">
+      <div *ngIf="sectoresFiltrados.length === 0" class="alert alert--info">
+        No hay sectores para mostrar.
+      </div>
+
+      <div class="table-wrapper" *ngIf="sectoresFiltrados.length > 0">
+        <table class="table" role="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Descripción</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let s of sectoresFiltrados; trackBy: trackById">
+              <td>{{ s.id }}</td>
+              <td>{{ s.descripcion }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>

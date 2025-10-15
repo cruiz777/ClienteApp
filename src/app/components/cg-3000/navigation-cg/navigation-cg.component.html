@@ -7,7 +7,7 @@
     [class.collapsed]="!isExpanded && !isHandset" [fixedInViewport]="true" (backdropClick)="isExpanded = false">
 
     <div class="logo-seguridad" *ngIf="isExpanded">
-      <img src="assets/logo/seguridad.png" alt="Logo">
+      <img src="assets/logo/CG-3000.png" alt="Logo">
     </div>
 
     <!-- Menú Principal -->
@@ -21,49 +21,30 @@
 
       <!-- Acordeón -->
       <mat-accordion [multi]="false">
-        <!-- INVENTARIOS -->
+        <!-- Transacciones -->
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
               <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
-              <span *ngIf="isExpanded" class="menu-text">Inventarios</span>
+              <span *ngIf="isExpanded" class="menu-text">Transacciones</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
 
           <a mat-list-item [routerLink]="'/sic-3000/sectores'" routerLinkActive="active">
             <span *ngIf="isExpanded" class="menu-text">Sectores</span>
           </a>
-          <a mat-list-item routerLink="">
-            <span *ngIf="isExpanded" class="menu-text">Producto</span>
-          </a>
-          <a mat-list-item routerLink="">
-            <span *ngIf="isExpanded" class="menu-text">Transacción</span>
-          </a>
-          <a mat-list-item routerLink="">
-            <span *ngIf="isExpanded" class="menu-text">Kardex</span>
-          </a>
-          <a mat-list-item routerLink="">
-            <span *ngIf="isExpanded" class="menu-text">Reportes</span>
-          </a>
-          <a mat-list-item routerLink="">
-            <span *ngIf="isExpanded" class="menu-text">Configuración</span>
-          </a>
+          
         </mat-expansion-panel>
-        <!-- FACTURACION-->
+        <!-- Cuentas por Pagar-->
         <mat-expansion-panel>
-          <!-- Subgrupo: Facturación -->
+          <!-- Subgrupo: Cuentas por Pagar -->
           <mat-expansion-panel-header>
             <mat-panel-title>
               <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
-              <span *ngIf="isExpanded" class="menu-text">Facturación</span>
+              <span *ngIf="isExpanded" class="menu-text">Cuentas por Pagar</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
           <mat-expansion-panel>
-            <mat-expansion-panel-header>
-              <mat-panel-title>
-                <span *ngIf="isExpanded" class="menu-text">Facturación</span>
-              </mat-panel-title>
-            </mat-expansion-panel-header>
             <!-- Nivel 3: Facturacion -->
             <a mat-list-item [routerLink]="'/sic-3000/findividual'" routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Facturación Individual</span>
@@ -85,7 +66,7 @@
           <mat-expansion-panel>
             <mat-expansion-panel-header>
               <mat-panel-title>
-                <span *ngIf="isExpanded" class="menu-text">Notas de Crédito/Debito</span>
+                <span *ngIf="isExpanded" class="menu-text">Balance</span>
               </mat-panel-title>
             </mat-expansion-panel-header>
             <!-- Nivel 3: Notas de Crédito/Debito-->
@@ -125,12 +106,12 @@
           </mat-expansion-panel>
         </mat-expansion-panel>
 
-        <!-- CUENTAS POR COBRAR-->
+        <!-- Balance-->
          <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
               <img src="assets/icons/sic-3000/icon-cuenta-x-cobrar.png" class="menu-icon">
-              <span *ngIf="isExpanded" class="menu-text">Cuentas por cobrar</span>
+              <span *ngIf="isExpanded" class="menu-text">Balance</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
           <!-- Subgrupo: Pagos -->
@@ -190,7 +171,7 @@
           <mat-expansion-panel-header>
             <mat-panel-title>
               <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
-              <span *ngIf="isExpanded" class="menu-text">Configuración</span>
+              <span *ngIf="isExpanded" class="menu-text">Anexo Transaccional</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
           <!-- Subgrupo: Parámetros -->
@@ -235,6 +216,122 @@
               <span *ngIf="isExpanded" class="menu-text">Forma de Pago</span>
             </a>
           </mat-expansion-panel>
+        </mat-expansion-panel>
+        <!-- Anexo Transaccional-->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Anexo Transaccional</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+          <!-- Subgrupo: Parámetros -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Parámetros</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <!-- Nivel 3: Parámetros-->
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Parámetros Facturación</span>
+            </a>
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Parámetros Clientes</span>
+            </a>
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Parámetros Caja</span>
+            </a>
+
+          </mat-expansion-panel>
+          <!-- Subgrupo: Descuentos-->
+          <mat-expansion-panel hideToggle>
+            <mat-expansion-panel-header (click)="goTo('ruta aqui')" class="clickable-header">
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Descuentos</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+          </mat-expansion-panel>
+          <!-- Subgrupo: Forma de Pago -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Forma de Pago</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <!-- Nivel 3: Forma de Pago-->
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Clasificación de Pagos</span>
+            </a>
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Forma de Pago</span>
+            </a>
+          </mat-expansion-panel>
+        </mat-expansion-panel>
+        <!-- Activos Fijos-->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Activos Fijos</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+          <!-- Subgrupo: Parámetros -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Parámetros</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <!-- Nivel 3: Parámetros-->
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Parámetros Facturación</span>
+            </a>
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Parámetros Clientes</span>
+            </a>
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Parámetros Caja</span>
+            </a>
+
+          </mat-expansion-panel>
+          <!-- Subgrupo: Descuentos-->
+          <mat-expansion-panel hideToggle>
+            <mat-expansion-panel-header (click)="goTo('ruta aqui')" class="clickable-header">
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Descuentos</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+          </mat-expansion-panel>
+          <!-- Subgrupo: Forma de Pago -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Forma de Pago</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <!-- Nivel 3: Forma de Pago-->
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Clasificación de Pagos</span>
+            </a>
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Forma de Pago</span>
+            </a>
+          </mat-expansion-panel>
+        </mat-expansion-panel>
+        <!-- Configuración-->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Configuración</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+          <mat-expansion-panel>      
+            <a mat-list-item routerLink="">
+              <span *ngIf="isExpanded" class="menu-text">Tipo Cuentas</span>
+            </a>
+          </mat-expansion-panel>          
         </mat-expansion-panel>
 
       </mat-accordion>

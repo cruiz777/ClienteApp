@@ -92,6 +92,16 @@
                 <span *ngIf="isExpanded" class="menu-text">Grupo Cliente</span>
                 <mat-icon *ngIf="!((menuPermisos$ | async)?.fichaCliente?.grupoCliente)" class="lock-icon">lock</mat-icon>
               </a>
+
+              <a mat-list-item 
+                 [routerLink]="((menuPermisos$ | async)?.fichaCliente?.grupoCliente) ? '/codbar/ficha-de-cliente/grupo-cliente' : null"
+                 class="sub-menu-item"
+                 [class.disabled]="!((menuPermisos$ | async)?.fichaCliente?.grupoCliente)"
+                 (click)="manejarClick('/codbar/ficha-de-cliente/grupo-cliente', $event)">
+                <span *ngIf="isExpanded" class="menu-text">Tipo Cuenta</span>
+                <mat-icon *ngIf="!((menuPermisos$ | async)?.fichaCliente?.grupoCliente)" class="lock-icon">lock</mat-icon>
+              </a>
+
             </mat-expansion-panel>
           </mat-accordion>
 

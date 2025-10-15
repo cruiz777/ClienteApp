@@ -54,8 +54,8 @@ export class InicioComponent implements OnInit, OnDestroy {
       nombre: 'CG 3000',
       imagenInactiva: '/assets/logo/CG-3000-2.png',
       imagenActiva: '/assets/logo/CG-3000.png', // Versión a color
-      ruta: '/cg-3000/inicio',
-      tienePermiso: false
+      ruta: '/cg-3000/inicio-cg',
+      tienePermiso: true
     },
     {
       id: 'rol-3000',
@@ -139,9 +139,9 @@ export class InicioComponent implements OnInit, OnDestroy {
           case 'sic-3000':
             sistema.tienePermiso = this.tieneAccesoSistema('sic-3000', permisos);
             break;
-          case 'cg-3000':
-            sistema.tienePermiso = this.tieneAccesoSistema('cg-3000', permisos);
-            break;
+          // case 'cg-3000':
+          //   sistema.tienePermiso = this.tieneAccesoSistema('cg-3000', permisos);
+          //   break;
           case 'rol-3000':
             sistema.tienePermiso = this.tieneAccesoSistema('rol-3000', permisos);
             break;
