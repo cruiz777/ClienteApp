@@ -5,7 +5,16 @@
     <!-- Descripción solo etiqueta -->
     <div class="descripcion-static">
       <span class="lbl-strong">Descripción:</span>
-      <span class="desc-titulo">Descripción del producto</span>
+      <span class="desc-titulo">{{ descripcionProductoHeader }}</span>
+      
+      <!-- Mostrar info adicional si hay producto cargado -->
+      <span *ngIf="!esNuevoProducto && idProductoActual > 0" class="ms-3">
+        <span class="lbl-strong">ID:</span>
+        <span class="desc-titulo">{{ idProductoActual }}</span>
+        
+        <span class="lbl-strong ms-3">Código de Barras:</span>
+        <span class="desc-titulo">{{ form.get('codigoBarras')?.value || 'N/A' }}</span>
+      </span>
     </div>
   </header>
   <div *ngIf="mostrarBuscador" class="mb-3">
@@ -16,18 +25,39 @@
         class="input-line w-100" 
         placeholder="Buscar por código, código de barras o nombre..."
         (input)="onBuscarProducto($event)"
-        [(ngModel)]="terminoBusqueda">
+        [(ngModel)]="terminoBusqueda"
+        [disabled]="cargandoBusqueda">
+      
+      <!-- ✅ Indicador de carga -->
+      <div *ngIf="cargandoBusqueda" class="text-muted small mt-1">
+        Buscando...
+      </div>
       
       <!-- Resultados del autocomplete -->
       <div 
-        *ngIf="mostrarResultados && resultadosBusqueda.length > 0"
-        class="autocomplete-results">
+        *ngIf="mostrarResultados && !cargandoBusqueda"
+        class="autocomplete-results"
+        style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: absolute; width: 100%; z-index: 1000;">
+        
+        <!-- Lista de resultados -->
         <div 
           *ngFor="let prod of resultadosBusqueda"
           class="autocomplete-item"
-          (click)="seleccionarProducto(prod)">
+          (click)="seleccionarProducto(prod)"
+          style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;"
+          [style.background-color]="'white'">
           <strong>{{ prod.codpro }}</strong> - {{ prod.despro }}
           <small class="text-muted d-block">{{ prod.codbar }}</small>
+        </div>
+        
+        <!-- Sin resultados -->
+        <div *ngIf="resultadosBusqueda.length === 0" class="p-3 text-center text-muted">
+          No se encontraron productos con "{{ terminoBusqueda }}"
+        </div>
+        
+        <!-- Mensaje si hay más resultados (sin botones de paginación) -->
+        <div *ngIf="totalResultados > 50" class="p-2 bg-info text-white small text-center">
+          💡 Mostrando 50 de {{ totalResultados }} productos. Refine su búsqueda para ver resultados más específicos.
         </div>
       </div>
     </div>
@@ -37,10 +67,14 @@
     <!-- ========== Template reutilizable de botones ========== -->
     <ng-template #accionesTabs>
       <div class="pc-actions">
-        <button type="button" class="btn-soft" (click)="onGrabar()" [disabled]="saving">
+        <button 
+          type="button" 
+          class="btn-soft" 
+          (click)="onGrabar()" 
+          [disabled]="saving || (esNuevoProducto && idEstructura === 0)"
+          [title]="(esNuevoProducto && idEstructura === 0) ? 'No se puede crear productos sin estructura comercial' : ''">
           {{ saving ? 'Guardando…' : 'Grabar' }}
         </button>
-        <!-- <button type="button" class="btn-soft" (click)="onGrabar()" [disabled]="currentFormInvalid">Grabar</button> -->
         <button type="button" class="btn-soft" (click)="onImprimir()">Imprimir</button>
         <button type="button" class="btn-soft" (click)="onAdjuntar()">Adjuntar</button>
       </div>
@@ -447,15 +481,19 @@
                 </div>
               </div>
 
-              <!-- ⭐ PVP Actual + IVA | Fecha Actual (READONLY) -->
+              <!-- PVP Actual + IVA | Fecha Actual (READONLY) -->
               <div class="pc-row duo">
                 <div class="grp">
                   <label class="lbl">PVP Actual + IVA:</label>
                   <div class="xs">
-                    <input type="text" class="input-line tint-green"
-                      formControlName="pvpActualMasIva" 
-                      readonly
-                      style="background-color: #f0f0f0;">
+                    <input 
+                      type="text" 
+                      inputmode="decimal" 
+                      maxlength="20" 
+                      class="input-line tint-green"
+                      formControlName="pvpActualMasIva"
+                      (input)="onNumericInput('pvpActualMasIva')"
+                      (blur)="formatDecimal('pvpActualMasIva',3)">
                   </div>
                 </div>
                 <div class="grp">
@@ -655,13 +693,13 @@
                 </div>
               </div>
 
-              <!-- ✅ NUEVO: Info según el modo -->
-              <div class="alert mb-3" [ngClass]="esNuevoProducto ? 'alert-info' : 'alert-warning'">
+              <!-- Info según el modo -->
+              <div class="alert alert-info mb-3">
                 <span *ngIf="esNuevoProducto">
-                  ℹ️ El producto se creará en <strong>todas las bodegas</strong> con existencia <strong>0</strong>
+                  ℹ️ <strong>Opcional:</strong> Configure los stocks mínimos y máximos para las bodegas que necesite. Si no configura ninguno, el producto se creará sin restricciones de stock.
                 </span>
                 <span *ngIf="!esNuevoProducto">
-                  Solo puedes configurar <strong>Stock Mín/Máx</strong> en bodegas con existencia mayor a 0
+                  ⚙️ Puede configurar <strong>Stock Mín/Máx</strong> en las bodegas que desee. Deje en blanco las que no necesiten control de stock.
                 </span>
               </div>
 
@@ -717,26 +755,26 @@
                           style="background-color: #f0f0f0;">
                       </td>
                       
-                      <!-- ✅ Stock Mín: solo editable si hay existencia -->
+                      <!-- Stock Mín: SIEMPRE editable, pero opcional -->
                       <td style="padding:6px 10px;">
                         <input 
                           type="number" 
                           class="input-line text-end w-100" 
                           min="0"
-                          [disabled]="!puedeEditarStocks(bodega)"
                           [(ngModel)]="bodega.stockMin"
-                          (blur)="validarStocks(bodega); verificarAlertasStock()">
+                          (blur)="validarStocks(bodega); verificarAlertasStock()"
+                          placeholder="(opcional)">
                       </td>
-                      
-                      <!-- ✅ Stock Máx: solo editable si hay existencia -->
+
+                      <!-- Stock Máx: SIEMPRE editable, pero opcional -->
                       <td style="padding:6px 10px;">
                         <input 
                           type="number" 
                           class="input-line text-end w-100" 
                           min="0"
-                          [disabled]="!puedeEditarStocks(bodega)"
                           [(ngModel)]="bodega.stockMax"
-                          (blur)="validarStocks(bodega)">
+                          (blur)="validarStocks(bodega)"
+                          placeholder="(opcional)">
                       </td>
                     </tr>
 
@@ -752,13 +790,16 @@
               <!-- Leyenda -->
               <div class="mt-2 small text-muted">
                 <p class="mb-1" *ngIf="esNuevoProducto">
-                  💡 <strong>Nuevo producto:</strong> Se creará automáticamente en todas las bodegas con existencia 0.
+                  💡 <strong>Nuevo producto:</strong> La configuración de stocks es <strong>opcional</strong>. Solo configure las bodegas que necesiten control de inventario.
                 </p>
                 <p class="mb-1" *ngIf="!esNuevoProducto">
-                  💡 <strong>Edición:</strong> Solo puede configurar stocks mín/máx en bodegas con existencia.
+                  💡 <strong>Edición:</strong> Configure stocks solo en las bodegas que necesiten control. Deje en blanco para sin restricción.
+                </p>
+                <p class="mb-1">
+                  ⚠️ Si configura stock mínimo, el máximo debe ser igual o mayor.
                 </p>
                 <p class="mb-0">
-                  🔍 Usa el filtro "Solo con existencia" para ver únicamente bodegas con productos.
+                  🔍 Use el filtro "Solo con existencia" para ver bodegas con productos.
                 </p>
               </div>
             </div>
@@ -771,29 +812,12 @@
     </mat-tab>
     <!-- ================= TAB 5: Proveedor ================= -->
     <mat-tab label="Proveedor">
-      <div class="tab-body">
-        
-        <!-- ====== Header con info del producto ====== -->
-        <header class="page-header mb-3">
-          <h1>Proveedores del Producto</h1>
-          
-          <div class="descripcion-static" *ngIf="!esNuevoProducto">
-            <span class="lbl-strong">ID:</span>
-            <span class="desc-titulo">{{ idProductoActual }}</span>
-            <span class="lbl-strong ms-3">Código:</span>
-            <span class="desc-titulo">{{ form.get('codigoBarras')?.value }}</span>
-            <span class="lbl-strong ms-3">Descripción:</span>
-            <span class="desc-titulo">{{ form.get('descripcion1')?.value }}</span>
-          </div>
-        </header>
+      <div class="tab-body">               
 
         <!-- ====== Instrucciones y botón agregar ====== -->
         <div class="pc-panel mb-3" style="background-color: #e3f2fd;">
           <div class="d-flex justify-content-between align-items-center">
             <div>
-              <p class="mb-1">
-                <strong>📝 Instrucciones:</strong>
-              </p>
               <ul class="mb-0 small">
                 <li>Haga clic en <strong>"Agregar Proveedor"</strong> para crear una nueva fila</li>
                 <li>Haga doble clic en cualquier celda para editarla</li>
@@ -837,7 +861,7 @@
               class="text-center p-5">
             <div class="mb-3" style="font-size: 48px;">📦</div>
             <p class="text-muted mb-2">
-              <strong>No hay proveedores en memoria</strong>
+              <strong>No hay proveedores ingresados</strong>
             </p>
             <p class="text-muted small">
               Haga clic en "Agregar Proveedor" para comenzar

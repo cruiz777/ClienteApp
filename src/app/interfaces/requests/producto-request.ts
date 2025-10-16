@@ -115,7 +115,7 @@ export interface ProductoRequest {
   costsuminis?: number;
   cantconv?: number;
   costhelado?: number;
-
+  prevensiniva?: number; 
   // Empresa
   idempresa?: number;
 
