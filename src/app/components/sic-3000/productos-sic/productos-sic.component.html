@@ -17,46 +17,73 @@
       </span>
     </div>
   </header>
-  <div *ngIf="mostrarBuscador" class="mb-3">
-    <label class="label-sm d-block">Buscar Producto:</label>
-    <div style="position: relative;">
-      <input 
-        type="text" 
-        class="input-line w-100" 
-        placeholder="Buscar por código, código de barras o nombre..."
-        (input)="onBuscarProducto($event)"
-        [(ngModel)]="terminoBusqueda"
-        [disabled]="cargandoBusqueda">
+  <div *ngIf="mostrarBuscador" class="mb-4">
+    <label class="label-sm d-block mb-2">Buscar Producto:</label>
+    <div class="search-container">
+      <div class="search-input-wrapper">
+        <!-- Icono de búsqueda -->
+        <img 
+          src="assets/icons/icon-buscar.png" 
+          alt="Buscar" 
+          class="search-icon" />
+        
+        <!-- Input -->
+        <input 
+          type="text" 
+          class="input-line search-input" 
+          placeholder="Buscar por código, código de barras o nombre..."
+          (input)="onBuscarProducto($event)"
+          [(ngModel)]="terminoBusqueda"
+          [disabled]="cargandoBusqueda">
+        
+        <!-- Botón limpiar (X) -->
+        <button 
+          *ngIf="terminoBusqueda && !cargandoBusqueda"
+          type="button"
+          class="btn-clear-search"
+          (click)="limpiarBusquedaProducto()"
+          title="Limpiar búsqueda">
+          ✕
+        </button>
+        
+        <!-- Spinner de carga -->
+        <div *ngIf="cargandoBusqueda" class="search-spinner">
+          <div class="spinner-border spinner-border-sm text-primary" role="status">
+            <span class="visually-hidden">Buscando...</span>
+          </div>
+        </div>
+      </div>
       
-      <!-- ✅ Indicador de carga -->
-      <div *ngIf="cargandoBusqueda" class="text-muted small mt-1">
-        Buscando...
+      <!-- Indicador de carga (texto) -->
+      <div *ngIf="cargandoBusqueda" class="search-status">
+        <small class="text-muted">Buscando productos...</small>
       </div>
       
       <!-- Resultados del autocomplete -->
       <div 
         *ngIf="mostrarResultados && !cargandoBusqueda"
-        class="autocomplete-results"
-        style="max-height: 400px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: absolute; width: 100%; z-index: 1000;">
+        class="autocomplete-results">
         
         <!-- Lista de resultados -->
         <div 
-          *ngFor="let prod of resultadosBusqueda"
+          *ngFor="let prod of resultadosBusqueda; let i = index"
           class="autocomplete-item"
           (click)="seleccionarProducto(prod)"
-          style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;"
-          [style.background-color]="'white'">
-          <strong>{{ prod.codpro }}</strong> - {{ prod.despro }}
-          <small class="text-muted d-block">{{ prod.codbar }}</small>
+          [class.autocomplete-item-hover]="true">
+          <div class="autocomplete-item-content">
+            <strong>{{ prod.codpro }}</strong> - {{ prod.despro }}
+            <small class="text-muted d-block">{{ prod.codbar }}</small>
+          </div>
         </div>
         
         <!-- Sin resultados -->
-        <div *ngIf="resultadosBusqueda.length === 0" class="p-3 text-center text-muted">
-          No se encontraron productos con "{{ terminoBusqueda }}"
+        <div *ngIf="resultadosBusqueda.length === 0" class="autocomplete-empty">
+          <mat-icon class="text-muted mb-2">search_off</mat-icon>
+          <p class="mb-0">No se encontraron productos con "{{ terminoBusqueda }}"</p>
         </div>
         
-        <!-- Mensaje si hay más resultados (sin botones de paginación) -->
-        <div *ngIf="totalResultados > 50" class="p-2 bg-info text-white small text-center">
+        <!-- Mensaje si hay más resultados -->
+        <div *ngIf="totalResultados > 50" class="autocomplete-footer">
           💡 Mostrando 50 de {{ totalResultados }} productos. Refine su búsqueda para ver resultados más específicos.
         </div>
       </div>
@@ -200,11 +227,21 @@
 
                 <div class="col-12 col-md-4">
                   <label class="label-sm d-block">Fecha de Creación:</label>
-                  <input type="date" class="input-line w-100" formControlName="fechaCreacion">
+                  <input 
+                    type="date" 
+                    class="input-line w-100" 
+                    formControlName="fechaCreacion"
+                    readonly
+                    style="background-color: #f0f0f0;">
                 </div>
                 <div class="col-12 col-md-4">
                   <label class="label-sm d-block">Fecha de Modificación:</label>
-                  <input type="date" class="input-line w-100" formControlName="fechaModificacion">
+                    <input 
+                      type="date" 
+                      class="input-line w-100" 
+                      formControlName="fechaModificacion"
+                      readonly
+                      style="background-color: #f0f0f0;">
                 </div>
               </div>
             </div>
@@ -328,15 +365,20 @@
               </div>
 
               <div class="col-12">
-                <label class="lbl">Medidas:</label>
+                <div class="col-12 mt-2">
+                  <div class="lbl-strong">Medidas</div>
+                </div>
                 <div class="row g-3">
                   <div class="col-4">
+                    <label class="lbl">Espesor:</label>
                     <input type="text" class="input-line" placeholder="| texto" formControlName="medida1">
                   </div>
                   <div class="col-4">
+                    <label class="lbl">Largo:</label>
                     <input type="text" class="input-line" placeholder="| texto" formControlName="medida2">
                   </div>
                   <div class="col-4">
+                    <label class="lbl">Ancho:</label>
                     <input type="text" class="input-line" placeholder="| texto" formControlName="medida3">
                   </div>
                 </div>
@@ -562,7 +604,7 @@
               <!-- ⭐ Precio Compra Anterior | Fecha Anterior (READONLY) -->
               <div class="pc-row duo">
                 <div class="grp">
-                  <label class="lbl">Precio Compra Anterior:</label>
+                  <label class="lbl">Costo Compra Anterior:</label>
                   <div class="xs">
                     <input type="text" class="input-line"
                       formControlName="precioCompraAnterior"
@@ -584,7 +626,7 @@
               <!-- ⭐ Precio Compra Actual | Fecha Actual (READONLY fecha) -->
               <div class="pc-row duo">
                 <div class="grp">
-                  <label class="lbl">Precio Compra Actual:</label>
+                  <label class="lbl">Costo Compra Actual:</label>
                   <div class="xs">
                     <input type="text" inputmode="decimal" maxlength="20" class="input-line"
                       formControlName="precioCompraActual" (input)="onNumericInput('precioCompraActual')"
@@ -627,22 +669,103 @@
         <div class="row g-4">
           <!-- Columna izquierda: Árbol (mantener existente) -->
           <div class="col-12 col-lg-5">
-            <div class="pc-panel" style="height: 420px; display:grid; grid-template-rows:auto 1fr;">
-              <h3 class="pc-title mb-2">Estructura Comercial</h3>
-              <div style="border:1px solid var(--borde); border-radius:6px; padding:10px; overflow:auto;">
-                <ul class="mb-0" style="list-style:none; padding-left:10px; font-size:13px; color:#374151;">
-                  <li>
-                    <span class="me-1">▸</span><strong>Noción Imprenta</strong>
-                    <ul style="list-style:none; padding-left:18px; margin-top:6px;">
-                      <li>
-                        <span class="me-1">▸</span><strong>Materia Prima</strong>
-                        <ul style="list-style:none; padding-left:18px; margin-top:6px;">
-                          <li><span class="me-1">–</span>Insumos</li>
-                        </ul>
-                      </li>
-                    </ul>
-                  </li>
-                </ul>
+            <div class="pc-panel" style="min-height: 420px;">
+              <h3 class="pc-title mb-3">Estructura Comercial</h3>
+              
+              <!-- ✅ LOADING mientras carga -->
+              <div *ngIf="cargandoEstructura" class="d-flex justify-content-center align-items-center" style="min-height: 300px;">
+                <div class="text-center">
+                  <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                  </div>
+                  <p class="mt-2 text-muted small">Cargando estructura...</p>
+                </div>
+              </div>
+
+              <!-- ✅ ESTRUCTURA CARGADA - Diseño tipo árbol -->
+              <div *ngIf="!cargandoEstructura && estructuraProducto" class="estructura-arbol">
+                <!-- División -->
+                <div class="nivel-arbol nivel-1" *ngIf="estructuraProducto.nombre_division">
+                  <div class="nodo-contenido">
+                    <img 
+                      [src]="esUltimoNivel('division') ? 'assets/icons/sic-3000/icon-folder.png' : 'assets/icons/sic-3000/icon-folder-2.png'" 
+                      alt="División" 
+                      class="icono-nodo-img">
+                    <div class="nodo-info">
+                      <span class="nodo-nombre">{{ estructuraProducto.nombre_division }}</span>
+                    </div>
+                  </div>
+                  
+                  <!-- Subdivisión -->
+                  <div class="nivel-arbol nivel-2" *ngIf="estructuraProducto.nombre_subdivision">
+                    <div class="linea-vertical"></div>
+                    <div class="nodo-contenido">
+                      <img 
+                        [src]="esUltimoNivel('subdivision') ? 'assets/icons/sic-3000/icon-folder.png' : 'assets/icons/icon-folder-2.png'" 
+                        alt="Subdivisión" 
+                        class="icono-nodo-img">
+                      <div class="nodo-info">
+                        <span class="nodo-nombre">{{ estructuraProducto.nombre_subdivision }}</span>
+                      </div>
+                    </div>
+                    
+                    <!-- Departamento -->
+                    <div class="nivel-arbol nivel-3" *ngIf="estructuraProducto.nombre_departamento">
+                      <div class="linea-vertical"></div>
+                      <div class="nodo-contenido">
+                        <img 
+                          [src]="esUltimoNivel('departamento') ? 'assets/icons/sic-3000/icon-folder.png' : 'assets/icons/sic-3000/icon-folder-2.png'" 
+                          alt="Departamento" 
+                          class="icono-nodo-img">
+                        <div class="nodo-info">
+                          <span class="nodo-nombre">{{ estructuraProducto.nombre_departamento }}</span>
+                        </div>
+                      </div>
+                      
+                      <!-- Sección -->
+                      <div class="nivel-arbol nivel-4" *ngIf="estructuraProducto.nombre_seccion">
+                        <div class="linea-vertical"></div>
+                        <div class="nodo-contenido">
+                          <img 
+                            [src]="esUltimoNivel('seccion') ? 'assets/icons/sic-3000/icon-folder.png' : 'assets/icons/sic-3000/icon-folder-2.png'" 
+                            alt="Sección" 
+                            class="icono-nodo-img">
+                          <div class="nodo-info">
+                            <span class="nodo-nombre">{{ estructuraProducto.nombre_seccion }}</span>
+                          </div>
+                        </div>
+                        
+                        <!-- Grupo -->
+                        <div class="nivel-arbol nivel-5" *ngIf="estructuraProducto.nombre_grupo">
+                          <div class="linea-vertical"></div>
+                          <div class="nodo-contenido">
+                            <img 
+                              [src]="esUltimoNivel('grupo') ? 'assets/icons/sic-3000/icon-folder.png' : 'assets/icons/sic-3000/icon-folder-2.png'" 
+                              alt="Grupo" 
+                              class="icono-nodo-img">
+                            <div class="nodo-info">
+                              <span class="nodo-nombre">{{ estructuraProducto.nombre_grupo }}</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Mensaje si no hay estructura completa -->
+                <div *ngIf="!estructuraProducto.nombre_division" class="alert alert-info">
+                  <mat-icon class="align-middle me-2">info</mat-icon>
+                  <small>Este producto no tiene estructura comercial asignada</small>
+                </div>
+              </div>
+
+              <!-- ✅ SIN ESTRUCTURA -->
+              <div *ngIf="!cargandoEstructura && !estructuraProducto" 
+                  class="d-flex flex-column align-items-center justify-content-center text-center"
+                  style="min-height: 300px; color: #999;">
+                <mat-icon style="font-size: 48px; width: 48px; height: 48px; margin-bottom: 16px;">folder_off</mat-icon>
+                <p class="mb-0">Sin estructura comercial asignada</p>
               </div>
             </div>
           </div>
@@ -672,21 +795,40 @@
               <!-- Buscador y filtro -->
               <div class="row g-2 mb-3">
                 <div class="col-md-8">
-                  <input 
-                    type="text" 
-                    class="input-line w-100" 
-                    placeholder="🔍 Buscar bodega..."
-                    [(ngModel)]="filtroBodega">
+                  <div class="search-input-wrapper">
+                    <!-- Icono de búsqueda -->
+                    <img 
+                      src="assets/icons/icon-buscar.png" 
+                      alt="Buscar" 
+                      class="search-icon" />
+                    
+                    <!-- Input -->
+                    <input 
+                      type="text" 
+                      class="input-line search-input" 
+                      placeholder="Buscar bodega..."
+                      [(ngModel)]="filtroBodega">
+                    
+                    <!-- Botón limpiar (X) -->
+                    <button 
+                      *ngIf="filtroBodega"
+                      type="button"
+                      class="btn-clear-search"
+                      (click)="limpiarFiltroBodega()"
+                      title="Limpiar filtro">
+                      ✕
+                    </button>
+                  </div>
                 </div>
+                
                 <div class="col-md-4">
-                  <!--Checkbox para filtrar por existencias -->
-                  <div class="form-check">
+                  <div class="form-check d-flex align-items-center h-100">
                     <input 
                       class="form-check-input" 
                       type="checkbox" 
                       id="filtroExistencia"
                       [(ngModel)]="mostrarSoloConExistencia">
-                    <label class="form-check-label" for="filtroExistencia">
+                    <label class="form-check-label ms-2" for="filtroExistencia">
                       Solo con existencia
                     </label>
                   </div>
@@ -741,7 +883,7 @@
                           *ngIf="bodega.alertaStockBajo" 
                           class="badge bg-warning text-dark ms-2"
                           title="Existencia inicial menor al stock mínimo">
-                          ⚠️ Stock bajo
+                          ⚠️ Stock bajo del mínimo
                         </span>
                       </td>
                       
@@ -798,9 +940,6 @@
                 <p class="mb-1">
                   ⚠️ Si configura stock mínimo, el máximo debe ser igual o mayor.
                 </p>
-                <p class="mb-0">
-                  🔍 Use el filtro "Solo con existencia" para ver bodegas con productos.
-                </p>
               </div>
             </div>
           </div>
@@ -822,7 +961,6 @@
                 <li>Haga clic en <strong>"Agregar Proveedor"</strong> para crear una nueva fila</li>
                 <li>Haga doble clic en cualquier celda para editarla</li>
                 <li>Los cambios se guardarán al hacer clic en <strong>"Grabar"</strong></li>
-                <li><strong>Todos los proveedores se marcarán como principales</strong> automáticamente</li>
               </ul>
             </div>
             

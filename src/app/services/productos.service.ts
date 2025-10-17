@@ -104,4 +104,9 @@ export class ProductoService {
     const url = `${this.apiUrl}/validar-codigo-barras?codigoBarras=${encodeURIComponent(codigoBarras)}`;
     return this.http.get<any>(url);
   }
+  getEstructuraByProducto(idProducto: number): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/estructura/${idProducto}`
+    );
+  }
 }

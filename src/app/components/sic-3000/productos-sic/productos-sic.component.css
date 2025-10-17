@@ -464,3 +464,360 @@
   font-weight: 600;
   color: #6b7280;
 }
+/* ========== ESTRUCTURA ÁRBOL ========== */
+.estructura-arbol {
+  padding: 20px;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.nivel-arbol {
+  position: relative;
+  margin-left: 0;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.nivel-1 { margin-left: 0; }
+.nivel-2 { margin-left: 25px; }
+.nivel-3 { margin-left: 25px; }
+.nivel-4 { margin-left: 25px; }
+.nivel-5 { margin-left: 25px; }
+
+/* Línea vertical conectora */
+.linea-vertical {
+  position: absolute;
+  left: -13px;
+  top: -12px;
+  width: 2px;
+  height: calc(100% + 12px);
+  background: linear-gradient(180deg, #2196F3 0%, #64B5F6 100%);
+  opacity: 0.6;
+}
+
+.linea-vertical::before {
+  content: '';
+  position: absolute;
+  top: 20px;
+  left: 0;
+  width: 12px;
+  height: 2px;
+  background: linear-gradient(90deg, #2196F3 0%, #64B5F6 100%);
+  opacity: 0.6;
+}
+
+/* Contenedor del nodo */
+.nodo-contenido {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  margin: 8px 0;
+  background: white;
+  border-radius: 8px;
+  border: 2px solid #e3f2fd;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.nodo-contenido:hover {
+  transform: translateX(4px);
+  border-color: #2196F3;
+  box-shadow: 0 4px 12px rgba(33, 150, 243, 0.15);
+  background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%);
+}
+
+/* Icono del nodo */
+.icono-nodo {
+  font-size: 24px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  transition: transform 0.3s ease;
+}
+
+.nodo-contenido:hover .icono-nodo {
+  transform: scale(1.1);
+}
+
+/* Información del nodo */
+.nodo-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.nodo-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #757575;
+  letter-spacing: 0.5px;
+}
+
+.nodo-nombre {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1976D2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Animación de entrada */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .nivel-2, .nivel-3, .nivel-4, .nivel-5 {
+    margin-left: 15px;
+  }
+  
+  .nodo-contenido {
+    padding: 10px 12px;
+  }
+  
+  .icono-nodo {
+    font-size: 20px;
+  }
+  
+  .nodo-nombre {
+    font-size: 13px;
+  }
+}
+
+/* Estado sin estructura */
+.estructura-arbol .alert-info {
+  background: linear-gradient(135deg, #e3f2fd 0%, #f0f7ff 100%);
+  border: 1px solid #90caf9;
+  border-radius: 8px;
+  margin-top: 20px;
+}
+/* ========== CONTENEDOR DE BÚSQUEDA ========== */
+.search-container {
+  position: relative;
+}
+
+.search-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+/* ========== INPUT DE BÚSQUEDA ========== */
+.search-input {
+  padding-left: 40px !important;
+  padding-right: 40px !important;
+  width: 100%;
+  transition: all 0.3s ease;
+}
+
+.search-input:focus {
+  border-color: #2196F3;
+  box-shadow: 0 0 0 3px rgba(33, 150, 243, 0.1);
+}
+
+.search-input:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}
+
+/* ========== ICONO DE BÚSQUEDA ========== */
+.search-icon {
+  position: absolute;
+  left: 12px;
+  width: 20px;
+  height: 20px;
+  opacity: 0.5;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ========== BOTÓN LIMPIAR (X) ========== */
+.btn-clear-search {
+  position: absolute;
+  right: 12px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: #dc3545;
+  color: white;
+  border-radius: 50%;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 2;
+  padding: 0;
+}
+
+.btn-clear-search:hover {
+  background: #c82333;
+  transform: scale(1.1);
+}
+
+.btn-clear-search:active {
+  transform: scale(0.95);
+}
+
+/* ========== SPINNER DE BÚSQUEDA ========== */
+.search-spinner {
+  position: absolute;
+  right: 12px;
+  z-index: 2;
+}
+
+.search-status {
+  margin-top: 8px;
+  padding: 4px 8px;
+  background: #e3f2fd;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+/* ========== RESULTADOS AUTOCOMPLETE ========== */
+.autocomplete-results {
+  position: absolute;
+  width: 100%;
+  max-height: 400px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  z-index: 1000;
+  margin-top: 4px;
+}
+
+.autocomplete-item {
+  padding: 12px 16px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: all 0.2s ease;
+}
+
+.autocomplete-item:last-child {
+  border-bottom: none;
+}
+
+.autocomplete-item:hover {
+  background: linear-gradient(135deg, #e3f2fd 0%, #f0f7ff 100%);
+  transform: translateX(4px);
+}
+
+.autocomplete-item-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.autocomplete-item strong {
+  color: #1976D2;
+  font-size: 14px;
+}
+
+/* ========== SIN RESULTADOS ========== */
+.autocomplete-empty {
+  padding: 40px 20px;
+  text-align: center;
+  color: #999;
+}
+
+.autocomplete-empty mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+}
+
+/* ========== FOOTER DE RESULTADOS ========== */
+.autocomplete-footer {
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+  border-top: 1px solid #ffc107;
+  font-size: 12px;
+  color: #856404;
+  text-align: center;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 768px) {
+  .search-input {
+    font-size: 14px;
+  }
+  
+  .autocomplete-results {
+    max-height: 300px;
+  }
+}
+
+/* ========== SCROLLBAR PERSONALIZADO ========== */
+.autocomplete-results::-webkit-scrollbar {
+  width: 8px;
+}
+
+.autocomplete-results::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.autocomplete-results::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.autocomplete-results::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* ========== ICONOS DE CARPETA (IMÁGENES) ========== */
+.icono-nodo-img {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+  transition: transform 0.3s ease;
+}
+
+.nodo-contenido:hover .icono-nodo-img {
+  transform: scale(1.1);
+}
+
+/* Mantener el resto de tus estilos existentes */
+.nodo-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.nodo-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #757575;
+  letter-spacing: 0.5px;
+}
+
+.nodo-nombre {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1976D2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

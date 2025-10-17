@@ -31,6 +31,10 @@ import { ProductoProveedorService } from 'src/app/services/producto-proveedor.se
 import { ProveedorResponse } from 'src/app/interfaces/responses/proveedor-response';
 import { ProductoProveedorResponse } from 'src/app/interfaces/responses/producto-proveedor-response';
 import { ProductoProveedorRequest } from 'src/app/interfaces/requests/producto-proveedor-request';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
+import { CustomMessageBoxComponent, MessageBoxData } from '../../utils/messages/custom-message-box.component';
+import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
+
 
 interface BodegaConfig {
   idLocal: number;
@@ -81,6 +85,9 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   modoEdicion: boolean = false; // Para saber si estamos editando
   mostrarSoloConExistencia: boolean = false; // Checkbox de filtro
   productoOriginal: any = null;
+  estructuraProducto: any = null;
+  cargandoEstructura: boolean = false;
+  private busquedaSubject$ = new Subject<string>();
   get descripcionProductoHeader(): string {
       if (this.esNuevoProducto && this.idEstructura > 0) {
         return 'Nuevo producto';
@@ -110,6 +117,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   constructor(
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
+    private dialog: MatDialog,
     private productoService: ProductoService,
     private presentacionService: PresentacionService,
     private unidadVentaService: UnidadVentaService,
@@ -315,6 +323,14 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
         }
       }
     });
+    this.busquedaSubject$
+      .pipe(
+        debounceTime(500), // Espera 500ms después de que el usuario deje de escribir
+        distinctUntilChanged() // Solo busca si el valor cambió
+      )
+      .subscribe(termino => {
+        this.ejecutarBusqueda(termino);
+      });
   }
   cargarColores(): void {
     this.colorService.getAll().subscribe({
@@ -775,6 +791,9 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       // TAB 2: Campos existentes
       colsab: '', // Ya no se usa, ahora es idcolor/idsabor
       talla: f2.tamanoTalla1,
+      espesor: Number(f2.medida1) || 0.0,
+      largo: Number(f2.medida2) || 0.0,
+      ancho: Number(f2.medida3) || 0.0,
       obs: f2.observacion,
       regsanitario: f2.registroSanitario,
       codcuedeb: f2.ctaVentas,
@@ -850,29 +869,34 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       clasprod = f1.tipoProducto === 'Bien' ? 'B' : (f1.tipoProducto === 'Servicio' ? 'S' : 'B');
     }
     
-    // ✅ DETECTAR CAMBIO EN PVP SIN IVA
-    const pvpCambio = this.productoOriginal && 
-      parseFloat(f3.pvpActualIva || 0) !== parseFloat(this.productoOriginal.pvpsiniva || 0);
-    
-    // ✅ DETECTAR CAMBIO EN PRECIO DE COMPRA ACTUAL (preuni)
-    const precioCompraActualNum = Number(f3.precioCompraActual) || 0;
-    const precioCompraOriginalNum = Number(this.productoOriginal?.preuni) || 0;
-    
-    const precioCompraCambio = this.productoOriginal && 
-      precioCompraActualNum !== precioCompraOriginalNum;
-    
-    // ✅ DETECTAR CAMBIO EN MARGEN
-    const margenCambio = this.productoOriginal && 
-      parseFloat(f3.margenUtilidad || 0) !== parseFloat(this.productoOriginal.margenutilidad || 0);
-    
+    // ✅ NORMALIZAR VALORES para comparación precisa (2 decimales)
+    const normalizarPrecio = (valor: any): number => {
+      return parseFloat((Number(valor) || 0).toFixed(2));
+    };
+
+    // ✅ VALORES ACTUALES (del formulario)
+    const pvpSinIvaActual = normalizarPrecio(f3.pvpActualIva);
+    const pvpConIvaActual = normalizarPrecio(f3.pvpActualMasIva);
+    const precioCompraActual = normalizarPrecio(f3.precioCompraActual);
+    const margenActual = normalizarPrecio(f3.margenUtilidad);
+
+    // ✅ VALORES ORIGINALES (de la BD)
+    const pvpSinIvaOriginal = normalizarPrecio(this.productoOriginal?.prevensiniva);
+    const pvpConIvaOriginal = normalizarPrecio(this.productoOriginal?.preven);
+    const precioCompraOriginal = normalizarPrecio(this.productoOriginal?.preuni);
+    const margenOriginal = normalizarPrecio(this.productoOriginal?.margenutilidad);
+
+    // ✅ DETECTAR CAMBIOS REALES
+    const pvpCambio = pvpSinIvaActual !== pvpSinIvaOriginal;
+    const precioCompraCambio = precioCompraActual !== precioCompraOriginal;
+    const margenCambio = margenActual !== margenOriginal;
+
     // 🔍 DEBUG
-    console.log('🔍 ========== DEBUG CAMBIOS ==========');
-    console.log('📊 PVP Cambio:', pvpCambio);
-    console.log('📊 Precio Compra Cambio:', precioCompraCambio, {
-      actual: precioCompraActualNum,
-      original: precioCompraOriginalNum
-    });
-    console.log('📊 Margen Cambio:', margenCambio);
+    console.log('🔍 ========== VALIDACIÓN DE CAMBIOS ==========');
+    console.log('📊 PVP Sin IVA:', { actual: pvpSinIvaActual, original: pvpSinIvaOriginal, cambio: pvpCambio });
+    console.log('📊 PVP Con IVA:', { actual: pvpConIvaActual, original: pvpConIvaOriginal });
+    console.log('📊 Precio Compra:', { actual: precioCompraActual, original: precioCompraOriginal, cambio: precioCompraCambio });
+    console.log('📊 Margen:', { actual: margenActual, original: margenOriginal, cambio: margenCambio });
     
     const producto = {
       ...this.productoOriginal,
@@ -908,9 +932,12 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       idfabricante: f2?.fabricante || null,
       idpresentacion: f1.presentacion || null,
       
-      // TAB 2: ADICIONALES (sin cambios)
+      // TAB 2: ADICIONALES
       colsab: '',
       talla: f2?.tamanoTalla1 || '',
+      espesor: Number(f2?.medida1) || null,
+      largo: Number(f2?.medida2) || null,
+      ancho: Number(f2?.medida3) || null,
       obs: f2?.observacion || '',
       regsanitario: f2?.registroSanitario || '',
       codcuedeb: f2?.ctaVentas || '',
@@ -920,40 +947,50 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       pgasto: f2?.productoGasto ?? false,
       ctaprodgasto: f2?.ctaGastos || '',
       
-      // TAB 3: PRECIOS - Lógica de historial
+      // ✅ TAB 3: PRECIOS - Solo actualizar historial si HAY CAMBIO REAL
       preven2: Number(f3.precioOficial) || 0,        
       prepormayor: Number(f3.precioRedMsp) || 0,     
-      preven: Number(f3.pvpActualMasIva) || 0,     
-      prevensiniva: Number(f3.pvpActualIva) || 0, 
       
+      // PVP Con IVA (siempre el actual)
+      preven: pvpConIvaActual,
+      
+      // PVP Sin IVA (siempre el actual)
+      prevensiniva: pvpSinIvaActual,
+      
+      // ✅ HISTORIAL DE PVP: Solo si cambió
       preanterior: pvpCambio 
-        ? (this.productoOriginal.pvpsiniva || 0)
-        : (this.productoOriginal.preanterior || 0),
-      feccosact: pvpCambio 
-        ? (this.productoOriginal.fecpremod || new Date().toISOString())
-        : (this.productoOriginal.feccosact || null),
-      fecpremod: pvpCambio 
-        ? new Date().toISOString()
-        : (this.productoOriginal.fecpremod || null),
+        ? pvpSinIvaOriginal  // El anterior se convierte en histórico
+        : (this.productoOriginal.preanterior || 0), // Mantener el histórico existente
       
-      margenutilidad: Number(f3.margenUtilidad) || 0,
+      feccosact: pvpCambio 
+        ? (this.productoOriginal.fecpremod || new Date().toISOString()) // La fecha actual se vuelve anterior
+        : (this.productoOriginal.feccosact || null), // Mantener fecha anterior existente
+      
+      fecpremod: pvpCambio 
+        ? new Date().toISOString() // Nueva fecha de modificación
+        : (this.productoOriginal.fecpremod || null), // Mantener fecha existente
+      
+      // ✅ MARGEN: Solo si cambió
+      margenutilidad: margenActual,
+      
       margenantes: margenCambio
-        ? (this.productoOriginal.margenutilidad || 0)
+        ? margenOriginal
         : (this.productoOriginal.margenantes || null),
+      
       fecmarantes: margenCambio
         ? new Date().toISOString()
         : (this.productoOriginal.fecmarantes || null),
       
-      // ✅ TAB 3: COSTOS - Separar cospro de preuni
+      // ✅ TAB 3: COSTOS
       costsuminis: Number(f3.costoSuministro) || 0,
-      cospro: Number(f3.costoProducto) || 0,  // ← Este es independiente
+      cospro: Number(f3.costoProducto) || 0,
       precos: Number(f3.costoPromedio) || 0,
-      preuni: String(precioCompraActualNum),  // ← Precio compra ACTUAL
+      preuni: String(precioCompraActual),
       porcenrecepcion: Number(f3.recepcionPorcentaje) || 0,
       
-      // ✅ HISTORIAL DE PRECIO DE COMPRA (usa precioCompraCambio, NO costoCambio)
+      // ✅ HISTORIAL DE PRECIO DE COMPRA: Solo si cambió
       cosanterior: precioCompraCambio
-        ? precioCompraOriginalNum  // El precio actual se convierte en anterior
+        ? precioCompraOriginal
         : (Number(this.productoOriginal.cosanterior) || 0),
       
       fecpreact: precioCompraCambio
@@ -966,14 +1003,27 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     };
 
     // 🔍 DEBUG FINAL
-    console.log('📦 COSTOS que se enviarán:', {
-      cospro: producto.cospro,
+    console.log('📦 HISTORIAL DE PRECIOS que se enviará:', {
+      // PVP
+      pvpCambio: pvpCambio,
+      preven: producto.preven,
+      prevensiniva: producto.prevensiniva,
+      preanterior: producto.preanterior,
+      feccosact: producto.feccosact,
+      fecpremod: producto.fecpremod,
+      // COMPRA
+      precioCompraCambio: precioCompraCambio,
       preuni: producto.preuni,
       cosanterior: producto.cosanterior,
       fecpreact: producto.fecpreact,
-      feccosmod: producto.feccosmod
+      feccosmod: producto.feccosmod,
+      // MARGEN
+      margenCambio: margenCambio,
+      margenutilidad: producto.margenutilidad,
+      margenantes: producto.margenantes,
+      fecmarantes: producto.fecmarantes
     });
-    console.log('🔍 ========== FIN DEBUG ==========');
+    console.log('🔍 ========== FIN VALIDACIÓN ==========');
 
     const sanitized = sanitizeProductoPayload(producto);
     return sanitized;
@@ -989,13 +1039,17 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       return;
     }
 
+    // Emitir al Subject en lugar de buscar directamente
+    this.busquedaSubject$.next(this.terminoBusqueda);
+  }
+  private ejecutarBusqueda(termino: string): void {
+    if (termino.length < 2) return;
+    
     this.cargandoBusqueda = true;
 
-    // ✅ SIEMPRE usar búsqueda global (eliminar lógica de estructura)
-    this.productoService.buscarProductosGlobal(this.terminoBusqueda).subscribe({
+    this.productoService.buscarProductosGlobal(termino).subscribe({
       next: (resp) => {
         if (resp.type === 'SUCCESS' && resp.data) {
-          // ✅ Extraer items de la paginación
           this.resultadosBusqueda = resp.data.items || resp.data;
           this.mostrarResultados = true;
         }
@@ -1009,8 +1063,22 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       }
     });
   }
-  
 
+  // ✅ NUEVO método para limpiar búsqueda de productos
+  limpiarBusquedaProducto(): void {
+    this.terminoBusqueda = '';
+    this.resultadosBusqueda = [];
+    this.mostrarResultados = false;
+  }
+
+  // ✅ NUEVO método para limpiar filtro de bodega
+  limpiarFiltroBodega(): void {
+    this.filtroBodega = '';
+  }
+  ngOnDestroy(): void {
+    // ✅ Limpiar subscripción
+    this.busquedaSubject$.complete();
+  }
   seleccionarProducto(producto: ProductoResponse): void {
     this.mostrarResultados = false;
     const idProducto = producto.idproducto ?? producto.id_producto;
@@ -1142,71 +1210,201 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       this.preciosForm.markAllAsTouched();
       return;
     }
-    // ✅ DEBUG
+    // DEBUG
     console.log('🏪 Bodegas seleccionadas:', this.bodegasSeleccionadas);
     console.log('🏪 Total:', this.bodegasSeleccionadas.length);
     
     this.saving = true;
 
       if (this.esNuevoProducto) {
-        const request = this.buildCreatePERequest();
-        
-        console.log('📦 Request completo:', JSON.stringify(request, null, 2));
-
-        this.productoService.createConEstructura(request).subscribe({
-          next: (res) => {
-            console.log('✅ Respuesta del servidor:', res);
-            
-            if (res?.type?.toUpperCase() === 'SUCCESS') {
-              const idProductoCreado = res.data;
-              
-              // ✅ GUARDAR PROVEEDORES DESPUÉS DE CREAR EL PRODUCTO
-              if (this.proveedoresEnMemoria.length > 0) {
-                this.guardarProveedores(idProductoCreado);
-              } else {
-                alert('Producto creado exitosamente');
-                history.back();
-              }
-            } else {
-              alert('Error al crear: ' + (res?.message || 'Error desconocido'));
-            }
-          },
-          error: (err) => {
-            console.error('❌ Error HTTP:', err);
-            alert('Error al crear producto: ' + (err.error?.message || err.message));
-            this.saving = false;
-          }
+        // ✅ Confirmar creación
+        const confirmDialog = this.dialog.open(CustomMessageBoxComponent, {
+          data: {
+            title: '¿Crear Producto?',
+            message: '¿Está seguro de crear este nuevo producto?',
+            type: 'info',
+            confirmText: 'Sí, crear',
+            cancelText: 'Cancelar',
+            showCancel: true
+          } as MessageBoxData,
+          width: '400px'
         });
-      } else {
-        // ✅ ACTUALIZAR PRODUCTO EXISTENTE
-        const request = this.buildUpdateRequest();
-        console.log('📦 Actualizando producto →', request);
 
-        this.productoService.update(this.idProductoActual, request).subscribe({
-          next: (res) => {
-            if (res?.type?.toUpperCase() === 'SUCCESS') {
-              console.log('✅ Producto actualizado correctamente');
+        confirmDialog.afterClosed().subscribe(confirmed => {
+          if (!confirmed) {
+            this.saving = false;
+            return;
+          }
+
+          // ✅ Mostrar loading durante creación
+          const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+            data: {
+              title: 'Creando Producto',
+              message: 'Por favor espere...',
+              isLoading: true,
+              loadingText: 'Guardando información...'
+            } as MessageBoxData,
+            disableClose: true,
+            width: '400px'
+          });
+
+          const request = this.buildCreatePERequest();
+          
+          this.productoService.createConEstructura(request).subscribe({
+            next: (res) => {
+              console.log('✅ Respuesta del servidor:', res);
               
-              // ✅ GUARDAR/ACTUALIZAR PROVEEDORES
-              this.actualizarStocks();
-              
-              if (this.proveedoresEnMemoria.length > 0) {
-                this.guardarProveedores(this.idProductoActual);
+              if (res?.type?.toUpperCase() === 'SUCCESS') {
+                const idProductoCreado = res.data;
+                
+                if (this.proveedoresEnMemoria.length > 0) {
+                  // Actualizar texto del loading
+                  loadingDialog.componentInstance.updateLoadingState(true, 'Guardando proveedores...');
+                  
+                  this.guardarProveedores(idProductoCreado, loadingDialog);
+                } else {
+                  loadingDialog.close();
+                  
+                  // ✅ Éxito sin proveedores
+                  this.dialog.open(CustomMessageBoxComponent, {
+                    data: {
+                      title: '¡Éxito!',
+                      message: 'Producto creado correctamente',
+                      type: 'success',
+                      showCancel: false
+                    } as MessageBoxData,
+                    width: '400px'
+                  }).afterClosed().subscribe(() => {
+                    history.back();
+                  });
+                }
               } else {
-                alert('Producto actualizado exitosamente');
-                this.saving = false;
+                loadingDialog.close();
+                this.dialog.open(CustomMessageBoxComponent, {
+                  data: {
+                    title: 'Error',
+                    message: 'Error al crear: ' + (res?.message || 'Error desconocido'),
+                    type: 'error',
+                    showCancel: false
+                  } as MessageBoxData,
+                  width: '400px'
+                });
               }
-            } else {
-              console.error('❌ Error:', res?.message || res);
-              alert('Error al actualizar: ' + (res?.message || 'Error desconocido'));
+            },
+            error: (err) => {
+              console.error('❌ Error HTTP:', err);
+              loadingDialog.close();
+              
+              this.dialog.open(CustomMessageBoxComponent, {
+                data: {
+                  title: 'Error de Conexión',
+                  message: 'Error al crear producto: ' + (err.error?.message || err.message),
+                  type: 'error',
+                  showCancel: false
+                } as MessageBoxData,
+                width: '400px'
+              });
+              
               this.saving = false;
             }
-          },
-          error: (err) => {
-            console.error('❌ Error HTTP:', err);
-            alert('Error al actualizar producto');
+          });
+        });
+        
+      } else {
+        // ✅ ACTUALIZAR PRODUCTO EXISTENTE
+        const confirmDialog = this.dialog.open(CustomMessageBoxComponent, {
+          data: {
+            title: '¿Guardar Cambios?',
+            message: '¿Está seguro de actualizar este producto?',
+            type: 'warning',
+            confirmText: 'Sí, actualizar',
+            cancelText: 'Cancelar',
+            showCancel: true
+          } as MessageBoxData,
+          width: '400px'
+        });
+
+        confirmDialog.afterClosed().subscribe(confirmed => {
+          if (!confirmed) {
             this.saving = false;
+            return;
           }
+
+          // ✅ Loading durante actualización
+          const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+            data: {
+              title: 'Actualizando Producto',
+              message: 'Por favor espere...',
+              isLoading: true,
+              loadingText: 'Guardando cambios...'
+            } as MessageBoxData,
+            disableClose: true,
+            width: '400px'
+          });
+
+          const request = this.buildUpdateRequest();
+          
+          this.productoService.update(this.idProductoActual, request).subscribe({
+            next: (res) => {
+              if (res?.type?.toUpperCase() === 'SUCCESS') {
+                console.log('✅ Producto actualizado correctamente');
+                
+                // Actualizar stocks
+                loadingDialog.componentInstance.updateLoadingState(true, 'Actualizando stocks...');
+                this.actualizarStocks();
+                
+                if (this.proveedoresEnMemoria.length > 0) {
+                  loadingDialog.componentInstance.updateLoadingState(true, 'Guardando proveedores...');
+                  this.guardarProveedores(this.idProductoActual, loadingDialog);
+                } else {
+                  loadingDialog.close();
+                  
+                  this.dialog.open(CustomMessageBoxComponent, {
+                    data: {
+                      title: '¡Actualizado!',
+                      message: 'Producto actualizado correctamente',
+                      type: 'success',
+                      showCancel: false
+                    } as MessageBoxData,
+                    width: '400px'
+                  });
+                  
+                  this.saving = false;
+                }
+              } else {
+                console.error('❌ Error:', res?.message || res);
+                loadingDialog.close();
+                
+                this.dialog.open(CustomMessageBoxComponent, {
+                  data: {
+                    title: 'Error',
+                    message: 'Error al actualizar: ' + (res?.message || 'Error desconocido'),
+                    type: 'error',
+                    showCancel: false
+                  } as MessageBoxData,
+                  width: '400px'
+                });
+                
+                this.saving = false;
+              }
+            },
+            error: (err) => {
+              console.error('❌ Error HTTP:', err);
+              loadingDialog.close();
+              
+              this.dialog.open(CustomMessageBoxComponent, {
+                data: {
+                  title: 'Error de Conexión',
+                  message: 'Error al actualizar producto',
+                  type: 'error',
+                  showCancel: false
+                } as MessageBoxData,
+                width: '400px'
+              });
+              
+              this.saving = false;
+            }
+          });
         });
       }
   }
@@ -1256,11 +1454,51 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     });
   }
 
+  cargarEstructuraProducto(idProducto: number): void {
+    this.cargandoEstructura = true;
+    
+    this.productoService.getEstructuraByProducto(idProducto).subscribe({
+      next: (response) => {
+        if (response.type === 'SUCCESS' && response.data) {
+          this.estructuraProducto = response.data;
+          console.log(' Estructura cargada:', this.estructuraProducto);
+        }
+        this.cargandoEstructura = false;
+      },
+      error: (err) => {
+        console.error('❌ Error al cargar estructura:', err);
+        this.estructuraProducto = null;
+        this.cargandoEstructura = false;
+      }
+    });
+  }
   cargarProducto(id: number): void {
+    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      data: {
+        title: 'Cargando Producto',
+        message: 'Obteniendo información del producto...',
+        isLoading: true,
+        loadingText: 'Cargando datos...'
+      } as MessageBoxData,
+      disableClose: true,
+      width: '400px'
+    });
     this.productoService.getById(id).subscribe({
       next: (res) => {
         const prod = res?.data;
-        if (!prod) return;
+        if (!prod) {
+          dialogRef.close();
+          this.dialog.open(CustomMessageBoxComponent, {
+            data: {
+              title: 'Error',
+              message: 'No se encontró el producto',
+              type: 'error',
+              showCancel: false
+            } as MessageBoxData,
+            width: '400px'
+          });
+          return;
+        }
         this.productoOriginal = { ...prod };
         
         // Tab 1: datos generales
@@ -1302,6 +1540,9 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
           fabricante: prod.idfabricante,
           
           tamanoTalla1: prod.talla,
+          medida1: prod.espesor,
+          medida2: prod.largo,
+          medida3: prod.ancho,
           observacion: prod.obs,
           registroSanitario: prod.regsanitario,
           ctaVentas: prod.codcuedeb,
@@ -1348,9 +1589,24 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
           fechaAnteriorModificarCompra: this.preciosForm.get('fechaAnteriorModificarCompra')?.value,
           fechaModificarCompra: this.preciosForm.get('fechaModificarCompra')?.value
         });
+        this.cargarEstructuraProducto(id);
+        dialogRef.close();
         this.cargarProveedoresProducto(id);
       },
-      error: (err) => console.error('❌ Error cargando producto', err)
+      error: (err) => {
+        console.error('❌ Error cargando producto', err);
+        dialogRef.close();
+      
+        this.dialog.open(CustomMessageBoxComponent, {
+          data: {
+            title: 'Error al Cargar',
+            message: 'No se pudo cargar el producto. Por favor intente nuevamente.',
+            type: 'error',
+            showCancel: false
+          } as MessageBoxData,
+          width: '400px'
+        });
+      }
     });
   }
   //EAN13
@@ -1498,7 +1754,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     });
   }
 
-  private guardarProveedores(idProducto: number): void {
+  private guardarProveedores(idProducto: number, loadingDialog?: MatDialogRef<CustomMessageBoxComponent>): void {
     console.log('💾 Guardando proveedores en memoria...');
     
     // Validar que todos los proveedores tengan los campos obligatorios
@@ -1544,9 +1800,22 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     const verificarFinalizacion = () => {
       operacionesCompletadas++;
       if (operacionesCompletadas === totalOperaciones) {
-        alert('Producto y proveedores guardados exitosamente');
-        this.saving = false;
-        history.back();
+        if (loadingDialog) {
+          loadingDialog.close();
+        }
+        
+        this.dialog.open(CustomMessageBoxComponent, {
+          data: {
+            title: '¡Completado!',
+            message: 'Producto y proveedores guardados exitosamente',
+            type: 'success',
+            showCancel: false
+          } as MessageBoxData,
+          width: '400px'
+        }).afterClosed().subscribe(() => {
+          this.saving = false;
+          history.back();
+        });
       }
     };
 
@@ -1934,26 +2203,38 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   eliminarProveedorDeMemoria(proveedor: any): void {
     const nombreProv = proveedor.nombre_proveedor || 'este proveedor';
     
-    if (!confirm(`¿Está seguro de eliminar "${nombreProv}"?`)) {
-      return;
-    }
+    // ✅ Confirmación con MessageBox
+    this.dialog.open(CustomMessageBoxComponent, {
+      data: {
+        title: '¿Eliminar Proveedor?',
+        message: `¿Está seguro de eliminar "${nombreProv}"?`,
+        type: 'warning',
+        confirmText: 'Sí, eliminar',
+        cancelText: 'Cancelar',
+        showCancel: true
+      } as MessageBoxData,
+      width: '400px'
+    }).afterClosed().subscribe(confirmed => {
+      if (!confirmed) return;
 
-    // Eliminar del array en memoria
-    this.proveedoresEnMemoria = this.proveedoresEnMemoria.filter(p => {
-      if (proveedor._tempId) {
-        return p._tempId !== proveedor._tempId;
+      // Eliminar del array en memoria
+      this.proveedoresEnMemoria = this.proveedoresEnMemoria.filter(p => {
+        if (proveedor._tempId) {
+          return p._tempId !== proveedor._tempId;
+        }
+        return p.id_producto_proveedor !== proveedor.id_producto_proveedor;
+      });
+
+      // Actualizar grid
+      if (this.proveedoresGridApi) {
+        this.proveedoresGridApi.applyTransaction({ remove: [proveedor] });
       }
-      return p.id_producto_proveedor !== proveedor.id_producto_proveedor;
+
+      console.log('🗑️ Proveedor eliminado de memoria');
     });
-
-    // Actualizar grid
-    if (this.proveedoresGridApi) {
-      this.proveedoresGridApi.applyTransaction({ remove: [proveedor] });
-    }
-
-    console.log('🗑️ Proveedor eliminado de memoria');
   }
-  // ✅ AGREGAR después de onProveedoresCellClicked()
+
+
 
   onProveedoresCellValueChanged(event: CellValueChangedEvent): void {
     const proveedor = event.data;
@@ -2062,7 +2343,23 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       }
     });
   }
+  
+  obtenerUltimoNivelEstructura(): string | null {
+    if (!this.estructuraProducto) return null;
+    
+    if (this.estructuraProducto.nombre_grupo) return 'grupo';
+    if (this.estructuraProducto.nombre_seccion) return 'seccion';
+    if (this.estructuraProducto.nombre_departamento) return 'departamento';
+    if (this.estructuraProducto.nombre_subdivision) return 'subdivision';
+    if (this.estructuraProducto.nombre_division) return 'division';
+    
+    return null;
+  }
 
+  // ✅ Método auxiliar para saber si es el último nivel
+  esUltimoNivel(nivel: string): boolean {
+    return this.obtenerUltimoNivelEstructura() === nivel;
+  }
 
   onImprimir(): void { window.print(); }
   onAdjuntar(): void { history.back(); }
