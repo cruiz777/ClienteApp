@@ -384,20 +384,89 @@
                 </div>
               </div>
 
-              <div class="col-12 mt-2">
-                <div class="lbl-strong">Ubicación</div>
-              </div>
-              <div class="col-md-4">
-                <label class="lbl">Pasillo:</label>
-                <input type="text" class="input-line" placeholder="| texto" formControlName="pasillo">
-              </div>
-              <div class="col-md-4">
-                <label class="lbl">Columna:</label>
-                <input type="text" class="input-line" placeholder="| texto" formControlName="columna">
-              </div>
-              <div class="col-md-4">
-                <label class="lbl">Nivel:</label>
-                <input type="text" class="input-line" placeholder="| texto" formControlName="nivel">
+              <!-- UBICACIÓN -->
+              <div class="col-12 mt-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <div class="lbl-strong">Ubicación en Bodega</div>
+                  <button 
+                    type="button" 
+                    class="btn-primary"
+                    (click)="agregarUbicacion()"
+                    [disabled]="esNuevoProducto">
+                    Agregar Ubicación
+                  </button>
+                </div>
+
+                <!-- Selector de Bodega -->
+                <div class="row g-2 mb-3" *ngIf="!esNuevoProducto">
+                  <div class="col-12">
+                    <label class="lbl">Filtrar por Bodega:</label>
+                    <div class="select-wrap">
+                      <select 
+                        class="select-line w-100" 
+                        [(ngModel)]="bodegaSeleccionadaUbicacion"
+                        [ngModelOptions]="{standalone: true}"
+                        (change)="cargarUbicacionesPorBodega()">
+                        <option [ngValue]="null">Todas las bodegas</option>
+                        <option 
+                          *ngFor="let bodega of locales" 
+                          [ngValue]="bodega.id">
+                          {{ bodega.nombre }}
+                        </option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Tabla de ubicaciones -->
+                <div class="pc-panel" style="max-height: 400px; overflow-y: auto;">
+                  <table class="table table-sm mb-0" *ngIf="ubicaciones.length > 0">
+                    <thead style="position: sticky; top: 0; background: #f7fafc; z-index: 1;">
+                      <tr>
+                        <th style="width: 50px;">Acciones</th>
+                        <th>Bodega</th>
+                        <th>Área</th>
+                        <th>Columna</th>
+                        <th>Nivel</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let ubicacion of ubicacionesFiltradas">
+                        <td>                                 
+                          <button 
+                            type="button" 
+                            class="btn btn-sm btn-warning me-1"
+                            (click)="editarUbicacion(ubicacion)"
+                            title="Editar"
+                            [disabled]="esNuevoProducto">
+                            ✏️
+                          </button>
+                          <button 
+                            type="button" 
+                            (click)="eliminarUbicacion(ubicacion)"
+                            title="Eliminar">
+                            🗑️
+                          </button>
+                        </td>
+                        <td>{{ ubicacion.nombreLocal }}</td>
+                        <td>{{ ubicacion.codigoArea || '-' }}</td>
+                        <td>{{ ubicacion.codigoColumna || '-' }}</td>
+                        <td>{{ ubicacion.codigoNivel || '-' }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+
+                  <!-- Mensaje sin ubicaciones -->
+                  <div 
+                    *ngIf="ubicaciones.length === 0" 
+                    class="text-center p-5 text-muted">
+                    <div class="mb-3" style="font-size: 48px;">📍</div>
+                    <p class="mb-0">No hay ubicaciones registradas</p>
+                    <small *ngIf="esNuevoProducto">
+                      Las ubicaciones solo se pueden agregar después de crear el producto
+                    </small>
+                  </div>
+                </div>
               </div>
 
               <div class="col-12">

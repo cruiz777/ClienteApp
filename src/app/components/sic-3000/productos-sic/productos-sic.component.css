@@ -821,3 +821,55 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.table-sm th {
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 10px 8px;
+  border-bottom: 2px solid #dee2e6;
+}
+
+.table-sm td {
+  padding: 8px;
+  vertical-align: middle;
+}
+
+.btn-grid-delete {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 4px 8px;
+  transition: transform 0.2s;
+}
+
+.btn-grid-delete:hover {
+  transform: scale(1.2);
+}
+.btn-grid-delete {
+  background: transparent;
+  border: none;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 18px;
+  transition: transform 0.1s ease;
+}
+
+.btn-grid-delete:hover {
+  transform: scale(1.1);
+}
+
+.btn-grid-delete:active {
+  transform: scale(0.95);
+}
+
+.btn-primary {
+  background: #002c6c;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #002df5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(3, 98, 193, 0.3);
+}

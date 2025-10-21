@@ -31,6 +31,8 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
 import { ProductosSicComponent } from './productos-sic/productos-sic.component';
+import { AgregarUbicacionDialogComponent } from './ubicaciones/dialogs/agregar-ubicacion-dialog.component';
+import { MatDialogModule } from '@angular/material/dialog';
 
 @NgModule({
   declarations: [
@@ -39,7 +41,8 @@ import { ProductosSicComponent } from './productos-sic/productos-sic.component';
     RegistroCobrosComponent,
     // ❌ No declarar FacturacionIndividualComponent porque es standalone
     EstadocuentaclienteComponent,
-    ProductosSicComponent
+    ProductosSicComponent,
+    AgregarUbicacionDialogComponent
   ],
   imports: [
     CommonModule,
@@ -58,7 +61,7 @@ import { ProductosSicComponent } from './productos-sic/productos-sic.component';
     MatCheckboxModule,
     MatButtonModule,
     MatTabsModule,
-
+    MatDialogModule,
     // Ruteo del feature
     Sic3000RoutingModule,
 

@@ -5,6 +5,10 @@ import { RequiredFieldsToastService } from 'src/app/components/utils/messages/re
 import { GridApi, GridReadyEvent, CellValueChangedEvent, CellClickedEvent } from 'ag-grid-community';
 import { ProductoRequest, sanitizeProductoPayload } from 'src/app/interfaces/requests/producto-request';
 import { CreateProductoConEstructuraRequest, ProductoEstructuraComercialRequest } from 'src/app/interfaces/requests/create-producto-estructura-request';
+import { ProductoUbicacionBodegaService } from 'src/app/services/producto-ubicacion-bodega.service';
+import { ProductoUbicacionBodegaResponse } from 'src/app/interfaces/responses/producto-ubicacion-bodega-response';
+import { ProductoUbicacionBodegaRequest } from 'src/app/interfaces/requests/producto-ubicacion-bodega-request';
+
 
 import { ProductoService } from 'src/app/services/productos.service';
 import { PresentacionService } from 'src/app/services/presentacion.service';
@@ -34,6 +38,13 @@ import { ProductoProveedorRequest } from 'src/app/interfaces/requests/producto-p
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { CustomMessageBoxComponent, MessageBoxData } from '../../utils/messages/custom-message-box.component';
 import { debounceTime, distinctUntilChanged, Subject } from 'rxjs';
+import { AgregarUbicacionDialogComponent } from '../ubicaciones/dialogs/agregar-ubicacion-dialog.component';
+import { UbicacionAreaResponse } from 'src/app/interfaces/responses/ubicacion-area-response';
+import { UbicacionColumnaResponse } from 'src/app/interfaces/responses/ubicacion-columna-response';
+import { UbicacionNivelResponse } from 'src/app/interfaces/responses/ubicacion-nivel-response';
+import { UbicacionAreaService } from 'src/app/services/ubicacion-area.service';
+import { UbicacionNivelService } from 'src/app/services/ubicacion-nivel.service';
+import { UbicacionColumnaService } from 'src/app/services/ubicacion-columna.service';
 
 
 interface BodegaConfig {
@@ -87,6 +98,12 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   productoOriginal: any = null;
   estructuraProducto: any = null;
   cargandoEstructura: boolean = false;
+  //Ubicaciones
+  ubicaciones: ProductoUbicacionBodegaResponse[] = [];
+  bodegaSeleccionadaUbicacion: number | null = null;
+  areas: UbicacionAreaResponse[] = [];
+  columnas: UbicacionColumnaResponse[] = [];
+  niveles: UbicacionNivelResponse[] = [];
   private busquedaSubject$ = new Subject<string>();
   get descripcionProductoHeader(): string {
       if (this.esNuevoProducto && this.idEstructura > 0) {
@@ -131,7 +148,11 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     private saborService: SaborService,
     private fabricanteService: FabricanteService,
     private proveedorService: ProveedorService,
-    private productoProveedorService: ProductoProveedorService
+    private productoProveedorService: ProductoProveedorService,
+    private productoUbicacionService: ProductoUbicacionBodegaService,
+    private areaService: UbicacionAreaService,
+    private nivelService: UbicacionNivelService,
+    private columnaService: UbicacionColumnaService
   ) { }
 
   ngOnInit(): void {
@@ -144,7 +165,8 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     this.cargarSabores();
     this.cargarFabricantes();
     this.cargarProveedores();
-    
+    this.cargarCatalogosUbicacion();
+
     // CREAR FORMULARIOS PRIMERO
     this.form = this.fb.group({
       descripcion: ['', [Validators.required, Validators.maxLength(500)]],
@@ -332,6 +354,37 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
         this.ejecutarBusqueda(termino);
       });
   }
+  cargarCatalogosUbicacion(): void {
+    // Cargar áreas
+    this.areaService.getAll(true).subscribe({
+      next: (resp) => {
+        if (resp.type === 'Success' && resp.data) {
+          this.areas = resp.data;
+        }
+      },
+      error: (err) => console.error('Error cargando áreas:', err)
+    });
+
+    // Cargar columnas
+    this.columnaService.getAll(true).subscribe({
+      next: (resp) => {
+        if (resp.type === 'Success' && resp.data) {
+          this.columnas = resp.data;
+        }
+      },
+      error: (err) => console.error('Error cargando columnas:', err)
+    });
+
+    // Cargar niveles
+    this.nivelService.getAll(true).subscribe({
+      next: (resp) => {
+        if (resp.type === 'Success' && resp.data) {
+          this.niveles = resp.data;
+        }
+      },
+      error: (err) => console.error('Error cargando niveles:', err)
+    });
+  }
   cargarColores(): void {
     this.colorService.getAll().subscribe({
       next: (resp) => {
@@ -394,6 +447,423 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     });
   }
   ngAfterViewInit(): void { this.cdr.detectChanges(); }
+  
+  get ubicacionesFiltradas(): any[] {
+    let ubicaciones = this.ubicaciones.filter(u => !u._markedForDeletion);
+    
+    if (!this.bodegaSeleccionadaUbicacion) {
+      return ubicaciones;
+    }
+    
+    return ubicaciones.filter(u => u.idLocal === this.bodegaSeleccionadaUbicacion);
+  }
+  eliminarUbicacion(ubicacion: any): void {
+    const nombreLocal = ubicacion.nombreLocal || 'esta ubicación';
+    
+    this.dialog.open(CustomMessageBoxComponent, {
+      data: {
+        title: '¿Eliminar Ubicación?',
+        message: `¿Está seguro de eliminar la ubicación en ${nombreLocal}?`,
+        type: 'warning',
+        confirmText: 'Sí, eliminar',
+        cancelText: 'Cancelar',
+        showCancel: true
+      } as MessageBoxData,
+      width: '400px'
+    }).afterClosed().subscribe(confirmed => {
+      if (!confirmed) return;
+
+      if (ubicacion._isNew) {
+        // ✅ Si es nueva (no guardada), simplemente quitarla de la lista
+        this.ubicaciones = this.ubicaciones.filter(u => u._tempId !== ubicacion._tempId);
+        
+        console.log('🗑️ Ubicación nueva eliminada de memoria');
+      } else {
+        // ✅ Si ya existe en BD, marcarla para eliminar
+        ubicacion._markedForDeletion = true;
+        
+        console.log('🗑️ Ubicación marcada para eliminar al guardar');
+      }
+      
+      // Mensaje de confirmación
+      this.dialog.open(CustomMessageBoxComponent, {
+        data: {
+          title: 'Ubicación Eliminada',
+          message: ubicacion._isNew 
+            ? 'La ubicación fue removida de la lista' 
+            : 'La ubicación se eliminará cuando haga clic en "Grabar"',
+          type: 'success',
+          showCancel: false
+        } as MessageBoxData,
+        width: '400px'
+      });
+    });
+  }
+  agregarUbicacion(): void {
+    // PERMITIR agregar ubicaciones incluso en nuevo producto
+    // if (this.esNuevoProducto) {
+    //   this.dialog.open(CustomMessageBoxComponent, {
+    //     data: {
+    //       title: 'Producto no creado',
+    //       message: '⚠️ Debe crear el producto primero antes de agregar ubicaciones',
+    //       type: 'warning',
+    //       showCancel: false
+    //     } as MessageBoxData,
+    //     width: '400px'
+    //   });
+    //   return;
+    // }
+
+    // Abrir diálogo (funciona para nuevo producto y edición)
+    const dialogRef = this.dialog.open(AgregarUbicacionDialogComponent, {
+      width: '600px',
+      disableClose: true,
+      data: {
+        idProducto: this.idProductoActual || 0, // 0 si es nuevo
+        locales: this.locales,
+        nombreProducto: this.form.get('descripcion1')?.value || 'Nuevo producto'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        // ✅ Agregar a memoria, NO guardar todavía
+        this.agregarUbicacionEnMemoria(result);
+      }
+    });
+  }
+  private agregarUbicacionEnMemoria(request: any): void {
+    console.log('🔍 Request recibido:', request);
+    console.log('🔍 Catálogos disponibles:', {
+      areas: this.areas.length,
+      columnas: this.columnas.length,
+      niveles: this.niveles.length
+    });
+    
+    // Buscar nombres para mostrar en la tabla
+    const local = this.locales.find(l => l.id === request.id_local);
+    
+    // ✅ BUSCAR CÓDIGOS REALES (no usar IDs directamente)
+    const area = this.areas.find(a => a.idarea === request.idarea);
+    const columna = this.columnas.find(c => c.idcolumna === request.idcolumna);
+    const nivel = this.niveles.find(n => n.idnivel === request.idnivel);
+    
+    console.log('🔍 Búsqueda de códigos:', {
+      areaEncontrada: area,
+      columnaEncontrada: columna,
+      nivelEncontrado: nivel
+    });
+    
+    const nuevaUbicacion = {
+      _tempId: `temp_${Date.now()}`,
+      _isNew: true,
+      _markedForDeletion: false, // ✅ IMPORTANTE: agregar esta propiedad
+      idProducto: request.id_producto,
+      idLocal: request.id_local,
+      idArea: request.idarea,
+      idColumna: request.idcolumna,
+      idNivel: request.idnivel,
+      nombreLocal: local?.nombre || '',
+      // ✅ Usar códigos reales de los catálogos
+      codigoArea: area?.codigo || '-',
+      codigoColumna: columna?.codigo || '-',
+      codigoNivel: nivel?.codigo || '-'
+    };
+
+    // ✅ AGREGAR SOLO A this.ubicaciones (eliminar ubicacionesEnMemoria)
+    this.ubicaciones.push(nuevaUbicacion);
+    
+    console.log('📍 Ubicación agregada:', nuevaUbicacion);
+    console.log('📍 Total ubicaciones:', this.ubicaciones.length);
+    console.log('📍 Ubicaciones filtradas:', this.ubicacionesFiltradas.length);
+    
+    // ✅ FORZAR DETECCIÓN DE CAMBIOS
+    this.cdr.detectChanges();
+    
+    // Mostrar mensaje de confirmación
+    this.dialog.open(CustomMessageBoxComponent, {
+      data: {
+        title: 'Ubicación Agregada',
+        message: 'La ubicación se guardará cuando haga clic en "Grabar"',
+        type: 'info',
+        showCancel: false
+      } as MessageBoxData,
+      width: '400px'
+    });
+  }
+
+  private guardarUbicaciones(idProducto: number, loadingDialog?: MatDialogRef<CustomMessageBoxComponent>): void {
+    console.log('📍 Guardando ubicaciones...');
+    
+    const nuevas = this.ubicaciones.filter(u => u._isNew && !u._markedForDeletion);
+    const modificadas = this.ubicaciones.filter(u => u._modificado && !u._isNew && !u._markedForDeletion);
+    const paraEliminar = this.ubicaciones.filter(u => u._markedForDeletion && u.idProductoUbicacion);
+    
+    let operacionesCompletadas = 0;
+    const totalOperaciones = nuevas.length + paraEliminar.length + modificadas.length;
+    
+    console.log('📍 Total operaciones:', {
+      nuevas: nuevas.length,
+      paraEliminar: paraEliminar.length,
+      modificadas: modificadas.length,
+      total: totalOperaciones
+    });
+    
+    // Si no hay nada que hacer
+    if (totalOperaciones === 0) {
+      console.log('📍 No hay ubicaciones para guardar/editar/eliminar');
+      
+      // Continuar con proveedores si hay
+      if (this.proveedoresEnMemoria.length > 0) {
+        if (loadingDialog) {
+          loadingDialog.componentInstance.updateLoadingState(true, 'Guardando proveedores...');
+        }
+        this.guardarProveedores(idProducto, loadingDialog);
+      } else {
+        if (loadingDialog) {
+          loadingDialog.close();
+        }
+        
+        this.dialog.open(CustomMessageBoxComponent, {
+          data: {
+            title: '¡Completado!',
+            message: 'Producto actualizado correctamente',
+            type: 'success',
+            showCancel: false
+          } as MessageBoxData,
+          width: '400px'
+        });
+        
+        this.saving = false;
+      }
+      return;
+    }
+    
+    // Función para verificar si terminamos
+    const verificarFinalizacion = () => {
+      operacionesCompletadas++;
+      console.log(`📍 Operaciones completadas: ${operacionesCompletadas}/${totalOperaciones}`);
+      
+      if (operacionesCompletadas === totalOperaciones) {
+        // ✅ RECARGAR ubicaciones desde el backend
+        console.log('📍 Recargando ubicaciones desde el backend...');
+        this.cargarUbicacionesProducto(idProducto);
+        
+        // ✅ Esperar un poco para que se complete la recarga
+        setTimeout(() => {
+          // Continuar con proveedores si hay
+          if (this.proveedoresEnMemoria.length > 0) {
+            if (loadingDialog) {
+              loadingDialog.componentInstance.updateLoadingState(true, 'Guardando proveedores...');
+            }
+            this.guardarProveedores(idProducto, loadingDialog);
+          } else {
+            if (loadingDialog) {
+              loadingDialog.close();
+            }
+            
+            this.dialog.open(CustomMessageBoxComponent, {
+              data: {
+                title: '¡Completado!',
+                message: 'Producto y ubicaciones guardados exitosamente',
+                type: 'success',
+                showCancel: false
+              } as MessageBoxData,
+              width: '400px'
+            }).afterClosed().subscribe(() => {
+              this.saving = false;
+            });
+          }
+        }, 500); // Pequeño delay para asegurar que la recarga termine
+      }
+    };
+    
+    // ✅ GUARDAR NUEVAS UBICACIONES
+    nuevas.forEach(ubicacion => {
+      const request: ProductoUbicacionBodegaRequest = {
+        id_producto: idProducto,
+        id_local: ubicacion.idLocal,
+        id_area: ubicacion.idArea || 0,
+        id_columna: ubicacion.idColumna || 0,
+        id_nivel: ubicacion.idNivel || 0
+      };
+      
+      console.log('💾 Guardando ubicación:', request);
+      
+      this.productoUbicacionService.create(request).subscribe({
+        next: (res) => {
+          if (res.type === 'SUCCESS') {
+            console.log('✅ Ubicación guardada:', ubicacion.nombreLocal);
+          }
+          verificarFinalizacion();
+        },
+        error: (err) => {
+          console.error('❌ Error al guardar ubicación:', err);
+          verificarFinalizacion();
+        }
+      });
+    });
+    
+    modificadas.forEach(ubicacion => {
+      const request: ProductoUbicacionBodegaRequest = {
+        id_producto: idProducto,
+        id_local: ubicacion.idLocal,
+        id_area: ubicacion.idArea || 0,
+        id_columna: ubicacion.idColumna || 0,
+        id_nivel: ubicacion.idNivel || 0
+      };
+      
+      this.productoUbicacionService.update(ubicacion.idProductoUbicacion!, request).subscribe({
+        next: (res) => {
+          if (res.type === 'SUCCESS') {
+            console.log('✅ Ubicación actualizada:', ubicacion.nombreLocal);
+          }
+          verificarFinalizacion();
+        },
+        error: (err) => {
+          console.error('❌ Error al actualizar ubicación:', err);
+          verificarFinalizacion();
+        }
+      });
+    });
+    // ✅ ELIMINAR UBICACIONES MARCADAS
+    paraEliminar.forEach(ubicacion => {
+      this.productoUbicacionService.delete(ubicacion.idProductoUbicacion!).subscribe({
+        next: (res) => {
+          if (res.type === 'SUCCESS') {
+            console.log('✅ Ubicación eliminada:', ubicacion.nombreLocal);
+          }
+          verificarFinalizacion();
+        },
+        error: (err) => {
+          console.error('❌ Error al eliminar ubicación:', err);
+          verificarFinalizacion();
+        }
+      });
+    });
+  }
+  cargarUbicacionesPorBodega(): void {
+    if (!this.bodegaSeleccionadaUbicacion) {
+      // Si no hay bodega seleccionada, cargar todas
+      this.cargarUbicacionesProducto(this.idProductoActual);
+      return;
+    }
+
+    this.productoUbicacionService
+      .getAll(this.idProductoActual, this.bodegaSeleccionadaUbicacion)
+      .subscribe({
+        next: (resp) => {
+          if (resp.type === 'SUCCESS' && resp.data) {
+            this.ubicaciones = resp.data;
+          }
+        },
+        error: (err) => {
+          console.error('❌ Error al filtrar ubicaciones:', err);
+        }
+      });
+  }
+  cargarUbicacionesProducto(idProducto: number): void {
+    if (!idProducto || idProducto === 0) {
+      this.ubicaciones = [];
+      return;
+    }
+
+    this.productoUbicacionService.getByProductoId(idProducto).subscribe({
+      next: (resp) => {
+        if (resp.type === 'Success' && resp.data) {
+          this.ubicaciones = resp.data.map(u => ({
+            ...u,
+            _isNew: false,
+            _markedForDeletion: false
+          }));
+          
+          console.log('✅ Ubicaciones cargadas:', this.ubicaciones.length);
+        }
+      },
+      error: (err) => {
+        console.error('❌ Error al cargar ubicaciones:', err);
+        this.ubicaciones = [];
+      }
+    });
+  }
+
+  editarUbicacion(ubicacion: any): void {
+    // Abrir el mismo diálogo pero con datos pre-cargados
+    const dialogRef = this.dialog.open(AgregarUbicacionDialogComponent, {
+      width: '600px',
+      disableClose: true,
+      data: {
+        idProducto: this.idProductoActual,
+        locales: this.locales,
+        nombreProducto: this.form.get('descripcion1')?.value || 'Producto',
+        // ✅ PASAR DATOS EXISTENTES PARA EDITAR
+        ubicacionExistente: {
+          idProductoUbicacion: ubicacion.idProductoUbicacion,
+          id_local: ubicacion.idLocal,
+          idarea: ubicacion.idArea,
+          idcolumna: ubicacion.idColumna,
+          idnivel: ubicacion.idNivel
+        }
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        // Si es una ubicación existente (tiene idProductoUbicacion), actualizar
+        if (result.idProductoUbicacion) {
+          this.actualizarUbicacionEnMemoria(result);
+        } else {
+          this.agregarUbicacionEnMemoria(result);
+        }
+      }
+    });
+  }
+
+  // ✅ NUEVO método para actualizar ubicación existente
+  private actualizarUbicacionEnMemoria(result: any): void {
+    console.log('🔍 Actualizando ubicación:', result);
+    
+    // Buscar la ubicación en el array
+    const index = this.ubicaciones.findIndex(u => 
+      u.idProductoUbicacion === result.idProductoUbicacion
+    );
+    
+    if (index !== -1) {
+      const local = this.locales.find(l => l.id === result.id_local);
+      const area = this.areas.find(a => a.idarea === result.idarea);
+      const columna = this.columnas.find(c => c.idcolumna === result.idcolumna);
+      const nivel = this.niveles.find(n => n.idnivel === result.idnivel);
+      
+      // Actualizar la ubicación existente
+      this.ubicaciones[index] = {
+        ...this.ubicaciones[index],
+        idLocal: result.id_local,
+        idArea: result.idarea,
+        idColumna: result.idcolumna,
+        idNivel: result.idnivel,
+        nombreLocal: local?.nombre || '',
+        codigoArea: area?.codigo || '-',
+        codigoColumna: columna?.codigo || '-',
+        codigoNivel: nivel?.codigo || '-',
+        _modificado: true // Marcar como modificado
+      };
+      
+      console.log('✅ Ubicación actualizada en memoria');
+      
+      // Forzar detección de cambios
+      this.cdr.detectChanges();
+      
+      this.dialog.open(CustomMessageBoxComponent, {
+        data: {
+          title: 'Ubicación Actualizada',
+          message: 'Los cambios se guardarán cuando haga clic en "Grabar"',
+          type: 'info',
+          showCancel: false
+        } as MessageBoxData,
+        width: '400px'
+      });
+    }
+  }
 
   isInvalid(ctrl: string): boolean {
     const c = this.form.get(ctrl);
@@ -1210,176 +1680,174 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       this.preciosForm.markAllAsTouched();
       return;
     }
-    // DEBUG
-    console.log('🏪 Bodegas seleccionadas:', this.bodegasSeleccionadas);
-    console.log('🏪 Total:', this.bodegasSeleccionadas.length);
     
     this.saving = true;
 
-      if (this.esNuevoProducto) {
-        // ✅ Confirmar creación
-        const confirmDialog = this.dialog.open(CustomMessageBoxComponent, {
+    if (this.esNuevoProducto) {
+      // ========== CREAR NUEVO PRODUCTO ==========
+      const confirmDialog = this.dialog.open(CustomMessageBoxComponent, {
+        data: {
+          title: '¿Crear Producto?',
+          message: '¿Está seguro de crear este nuevo producto?',
+          type: 'info',
+          confirmText: 'Sí, crear',
+          cancelText: 'Cancelar',
+          showCancel: true
+        } as MessageBoxData,
+        width: '400px'
+      });
+
+      confirmDialog.afterClosed().subscribe(confirmed => {
+        if (!confirmed) {
+          this.saving = false;
+          return;
+        }
+
+        const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
           data: {
-            title: '¿Crear Producto?',
-            message: '¿Está seguro de crear este nuevo producto?',
-            type: 'info',
-            confirmText: 'Sí, crear',
-            cancelText: 'Cancelar',
-            showCancel: true
+            title: 'Creando Producto',
+            message: 'Por favor espere...',
+            isLoading: true,
+            loadingText: 'Guardando información...'
           } as MessageBoxData,
+          disableClose: true,
           width: '400px'
         });
 
-        confirmDialog.afterClosed().subscribe(confirmed => {
-          if (!confirmed) {
-            this.saving = false;
-            return;
-          }
-
-          // ✅ Mostrar loading durante creación
-          const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
-            data: {
-              title: 'Creando Producto',
-              message: 'Por favor espere...',
-              isLoading: true,
-              loadingText: 'Guardando información...'
-            } as MessageBoxData,
-            disableClose: true,
-            width: '400px'
-          });
-
-          const request = this.buildCreatePERequest();
-          
-          this.productoService.createConEstructura(request).subscribe({
-            next: (res) => {
-              console.log('✅ Respuesta del servidor:', res);
+        const request = this.buildCreatePERequest();
+        
+        this.productoService.createConEstructura(request).subscribe({
+          next: (res) => {
+            console.log('✅ Respuesta del servidor:', res);
+            
+            if (res?.type?.toUpperCase() === 'SUCCESS') {
+              const idProductoCreado = res.data;
               
-              if (res?.type?.toUpperCase() === 'SUCCESS') {
-                const idProductoCreado = res.data;
-                
-                if (this.proveedoresEnMemoria.length > 0) {
-                  // Actualizar texto del loading
-                  loadingDialog.componentInstance.updateLoadingState(true, 'Guardando proveedores...');
-                  
-                  this.guardarProveedores(idProductoCreado, loadingDialog);
-                } else {
-                  loadingDialog.close();
-                  
-                  // ✅ Éxito sin proveedores
-                  this.dialog.open(CustomMessageBoxComponent, {
-                    data: {
-                      title: '¡Éxito!',
-                      message: 'Producto creado correctamente',
-                      type: 'success',
-                      showCancel: false
-                    } as MessageBoxData,
-                    width: '400px'
-                  }).afterClosed().subscribe(() => {
-                    history.back();
-                  });
-                }
+              // ✅ Verificar ubicaciones nuevas
+              const tieneUbicacionesNuevas = this.ubicaciones.some(u => u._isNew);
+              
+              // ✅ FLUJO: Ubicaciones → Proveedores → Éxito
+              if (tieneUbicacionesNuevas) {
+                loadingDialog.componentInstance.updateLoadingState(true, 'Guardando ubicaciones...');
+                this.guardarUbicaciones(idProductoCreado, loadingDialog);
+              } else if (this.proveedoresEnMemoria.length > 0) {
+                loadingDialog.componentInstance.updateLoadingState(true, 'Guardando proveedores...');
+                this.guardarProveedores(idProductoCreado, loadingDialog);
               } else {
                 loadingDialog.close();
+                
                 this.dialog.open(CustomMessageBoxComponent, {
                   data: {
-                    title: 'Error',
-                    message: 'Error al crear: ' + (res?.message || 'Error desconocido'),
-                    type: 'error',
+                    title: '¡Éxito!',
+                    message: 'Producto creado correctamente',
+                    type: 'success',
                     showCancel: false
                   } as MessageBoxData,
                   width: '400px'
+                }).afterClosed().subscribe(() => {
+                  history.back();
                 });
               }
-            },
-            error: (err) => {
-              console.error('❌ Error HTTP:', err);
+            } else {
               loadingDialog.close();
-              
               this.dialog.open(CustomMessageBoxComponent, {
                 data: {
-                  title: 'Error de Conexión',
-                  message: 'Error al crear producto: ' + (err.error?.message || err.message),
+                  title: 'Error',
+                  message: 'Error al crear: ' + (res?.message || 'Error desconocido'),
                   type: 'error',
                   showCancel: false
                 } as MessageBoxData,
                 width: '400px'
               });
-              
               this.saving = false;
             }
-          });
+          },
+          error: (err) => {
+            console.error('❌ Error HTTP:', err);
+            loadingDialog.close();
+            
+            this.dialog.open(CustomMessageBoxComponent, {
+              data: {
+                title: 'Error de Conexión',
+                message: 'Error al crear producto: ' + (err.error?.message || err.message),
+                type: 'error',
+                showCancel: false
+              } as MessageBoxData,
+              width: '400px'
+            });
+            
+            this.saving = false;
+          }
         });
-        
-      } else {
-        // ✅ ACTUALIZAR PRODUCTO EXISTENTE
-        const confirmDialog = this.dialog.open(CustomMessageBoxComponent, {
+      });
+      
+    } else {
+      // ========== ACTUALIZAR PRODUCTO EXISTENTE ==========
+      const confirmDialog = this.dialog.open(CustomMessageBoxComponent, {
+        data: {
+          title: '¿Guardar Cambios?',
+          message: '¿Está seguro de actualizar este producto?',
+          type: 'warning',
+          confirmText: 'Sí, actualizar',
+          cancelText: 'Cancelar',
+          showCancel: true
+        } as MessageBoxData,
+        width: '400px'
+      });
+
+      confirmDialog.afterClosed().subscribe(confirmed => {
+        if (!confirmed) {
+          this.saving = false;
+          return;
+        }
+
+        const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
           data: {
-            title: '¿Guardar Cambios?',
-            message: '¿Está seguro de actualizar este producto?',
-            type: 'warning',
-            confirmText: 'Sí, actualizar',
-            cancelText: 'Cancelar',
-            showCancel: true
+            title: 'Actualizando Producto',
+            message: 'Por favor espere...',
+            isLoading: true,
+            loadingText: 'Guardando cambios...'
           } as MessageBoxData,
+          disableClose: true,
           width: '400px'
         });
 
-        confirmDialog.afterClosed().subscribe(confirmed => {
-          if (!confirmed) {
-            this.saving = false;
-            return;
-          }
-
-          // ✅ Loading durante actualización
-          const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
-            data: {
-              title: 'Actualizando Producto',
-              message: 'Por favor espere...',
-              isLoading: true,
-              loadingText: 'Guardando cambios...'
-            } as MessageBoxData,
-            disableClose: true,
-            width: '400px'
-          });
-
-          const request = this.buildUpdateRequest();
-          
-          this.productoService.update(this.idProductoActual, request).subscribe({
-            next: (res) => {
-              if (res?.type?.toUpperCase() === 'SUCCESS') {
-                console.log('✅ Producto actualizado correctamente');
-                
-                // Actualizar stocks
-                loadingDialog.componentInstance.updateLoadingState(true, 'Actualizando stocks...');
-                this.actualizarStocks();
-                
-                if (this.proveedoresEnMemoria.length > 0) {
-                  loadingDialog.componentInstance.updateLoadingState(true, 'Guardando proveedores...');
-                  this.guardarProveedores(this.idProductoActual, loadingDialog);
-                } else {
-                  loadingDialog.close();
-                  
-                  this.dialog.open(CustomMessageBoxComponent, {
-                    data: {
-                      title: '¡Actualizado!',
-                      message: 'Producto actualizado correctamente',
-                      type: 'success',
-                      showCancel: false
-                    } as MessageBoxData,
-                    width: '400px'
-                  });
-                  
-                  this.saving = false;
-                }
+        const request = this.buildUpdateRequest();
+        
+        this.productoService.update(this.idProductoActual, request).subscribe({
+          next: (res) => {
+            if (res?.type?.toUpperCase() === 'SUCCESS') {
+              console.log('✅ Producto actualizado correctamente');
+              
+              // ✅ FLUJO: Stocks → Ubicaciones → Proveedores → Éxito
+              loadingDialog.componentInstance.updateLoadingState(true, 'Actualizando stocks...');
+              this.actualizarStocks();
+              
+              // ✅ AGREGAR: Verificar también ubicaciones MODIFICADAS
+              const tieneUbicacionesNuevas = this.ubicaciones.some(u => u._isNew);
+              const tieneUbicacionesModificadas = this.ubicaciones.some(u => u._modificado);
+              const tieneUbicacionesEliminadas = this.ubicaciones.some(u => u._markedForDeletion);
+              
+              console.log('🔍 Verificación de ubicaciones:', {
+                nuevas: tieneUbicacionesNuevas,
+                modificadas: tieneUbicacionesModificadas,
+                eliminadas: tieneUbicacionesEliminadas
+              });
+              
+              if (tieneUbicacionesNuevas || tieneUbicacionesModificadas || tieneUbicacionesEliminadas) {
+                loadingDialog.componentInstance.updateLoadingState(true, 'Guardando ubicaciones...');
+                this.guardarUbicaciones(this.idProductoActual, loadingDialog);
+              } else if (this.proveedoresEnMemoria.length > 0) {
+                loadingDialog.componentInstance.updateLoadingState(true, 'Guardando proveedores...');
+                this.guardarProveedores(this.idProductoActual, loadingDialog);
               } else {
-                console.error('❌ Error:', res?.message || res);
                 loadingDialog.close();
                 
                 this.dialog.open(CustomMessageBoxComponent, {
                   data: {
-                    title: 'Error',
-                    message: 'Error al actualizar: ' + (res?.message || 'Error desconocido'),
-                    type: 'error',
+                    title: '¡Actualizado!',
+                    message: 'Producto actualizado correctamente',
+                    type: 'success',
                     showCancel: false
                   } as MessageBoxData,
                   width: '400px'
@@ -1387,15 +1855,14 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
                 
                 this.saving = false;
               }
-            },
-            error: (err) => {
-              console.error('❌ Error HTTP:', err);
+            } else {
+              console.error('❌ Error:', res?.message || res);
               loadingDialog.close();
               
               this.dialog.open(CustomMessageBoxComponent, {
                 data: {
-                  title: 'Error de Conexión',
-                  message: 'Error al actualizar producto',
+                  title: 'Error',
+                  message: 'Error al actualizar: ' + (res?.message || 'Error desconocido'),
                   type: 'error',
                   showCancel: false
                 } as MessageBoxData,
@@ -1404,9 +1871,26 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
               
               this.saving = false;
             }
-          });
+          },
+          error: (err) => {
+            console.error('❌ Error HTTP:', err);
+            loadingDialog.close();
+            
+            this.dialog.open(CustomMessageBoxComponent, {
+              data: {
+                title: 'Error de Conexión',
+                message: 'Error al actualizar producto',
+                type: 'error',
+                showCancel: false
+              } as MessageBoxData,
+              width: '400px'
+            });
+            
+            this.saving = false;
+          }
         });
-      }
+      });
+    }
   }
   private formatearFecha(fecha: string | Date | null): string | null {
     if (!fecha) return null;
@@ -1592,6 +2076,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
         this.cargarEstructuraProducto(id);
         dialogRef.close();
         this.cargarProveedoresProducto(id);
+        this.cargarUbicacionesProducto(id);
       },
       error: (err) => {
         console.error('❌ Error cargando producto', err);
@@ -2343,7 +2828,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       }
     });
   }
-  
+
   obtenerUltimoNivelEstructura(): string | null {
     if (!this.estructuraProducto) return null;
     
