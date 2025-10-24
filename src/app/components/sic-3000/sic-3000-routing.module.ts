@@ -11,6 +11,7 @@ import { AuthGuard } from 'src/app/guards/auth.guard';
 import { PermissionGuard } from 'src/app/guards/permission.guard';
 import { AnulacionPagoComponent } from './cxc/anulacion-pago/anulacion-pago.component';
 import { NotaCreditoComponent } from './cxc/nota-credito/nota-credito.component';
+import { CajaComponent } from './facturacion/caja/caja.component';
 
 const routes: Routes = [
   {
@@ -70,6 +71,11 @@ const routes: Routes = [
         component: FacturacionGlobalComponent,
         canActivate: [PermissionGuard],
         data: { permission: 'sic-3000.facturacion.facturacion-global' }
+      },
+      {
+        path: 'caja',
+        component: CajaComponent
+       
       }
     ]
   }

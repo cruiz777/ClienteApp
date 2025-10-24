@@ -4,13 +4,14 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import {  HttpResponse } from '@angular/common/http';
 
 export interface FacturaListResponse {
   idNota: number;
   numeroFactura: string;
   fecha: string;            // o Date si prefieres convertir
   cliente: string;
-  idCliente:number;
+  idCliente: number;
   rucCliente: string;
   dirCliente: string;
   total: number;
@@ -126,6 +127,7 @@ export interface NotaCreditoCrearReq {
   caja: string;               // "001"
   observaciones: string;
   idUsuarioResponsable: number;
+  idEmpresa:number;
   ateCodigo: number;
   historiaClinica: string;
   detalles: NotaCreditoDetalleReq[];
@@ -136,6 +138,26 @@ export interface NotaCreditoCrearResp {
   idNotaCredito: number;
   numeroNota?: string;
 }
+
+// 👇 Agrega esta interfaz (ajústala si tu API devuelve otros campos)
+export interface GenerarXmlNotaCreditoResponse {
+  success: boolean;
+  message: string;
+  fileName: string;
+  savedPath: string;
+}
+export interface SaldoFacturaResponse {
+  numeroFactura: string;
+  totalDebe: number;
+  totalHaber: number;
+  saldo: number;
+}
+
+export interface GetSaldoFacturaOptions {
+  excluirPagosAnulados?: boolean;
+  excluirMovimientosAnulados?: boolean;
+}
+
 
 @Injectable({ providedIn: 'root' })
 export class NotaCreditoService {
@@ -167,8 +189,8 @@ export class NotaCreditoService {
     const url = `${this.baseUrl}/Facturacion/buscar-por-numero`;
 
     return this.http.get<ApiResponse<PaginationResponse<FacturaListResponse>>>(url, { params })
-      // Si quieres convertir fecha:string → Date, descomenta el map:
-      // .pipe(map(resp => this.mapFechas(resp)));
+    // Si quieres convertir fecha:string → Date, descomenta el map:
+    // .pipe(map(resp => this.mapFechas(resp)));
   }
 
   // ========= Helpers opcionales =========
@@ -197,32 +219,113 @@ export class NotaCreditoService {
     return resp;
   }
   // ========= SERVICIO: obtener factura por idNota =========
-/**
- * Trae la factura completa por idNota.
- * Endpoint esperado (según tu controller): GET {baseUrl}/Facturacion/detalle/{idNota}
- * Si tu ruta real es distinta, ajusta la URL.
- */
-getFacturaPorIdNota(idNota: number): Observable<ApiResponse<FacturaCompletaData>> {
-  const url = `${this.baseUrl}/Facturacion/detalle/${idNota}`;
-  
-  return this.http.get<ApiResponse<FacturaCompletaData>>(url);
-  // Si quieres mapear fecha a Date:
-  // .pipe(map(resp => this.mapFacturaFecha(resp)));
-}
+  /**
+   * Trae la factura completa por idNota.
+   * Endpoint esperado (según tu controller): GET {baseUrl}/Facturacion/detalle/{idNota}
+   * Si tu ruta real es distinta, ajusta la URL.
+   */
+  getFacturaPorIdNota(idNota: number): Observable<ApiResponse<FacturaCompletaData>> {
+    const url = `${this.baseUrl}/Facturacion/detalle/${idNota}`;
 
-// (opcional) convertir 'fecha' a Date
-private mapFacturaFecha(
-  resp: ApiResponse<FacturaCompletaData>
-): ApiResponse<FacturaCompletaData> {
-  if (resp?.data?.factura?.fecha) {
-    resp.data.factura.fecha = new Date(resp.data.factura.fecha) as unknown as any; // si cambias el tipo a Date en FacturaCore
+    return this.http.get<ApiResponse<FacturaCompletaData>>(url);
+    // Si quieres mapear fecha a Date:
+    // .pipe(map(resp => this.mapFacturaFecha(resp)));
   }
-  return resp;
+
+  // (opcional) convertir 'fecha' a Date
+  private mapFacturaFecha(
+    resp: ApiResponse<FacturaCompletaData>
+  ): ApiResponse<FacturaCompletaData> {
+    if (resp?.data?.factura?.fecha) {
+      resp.data.factura.fecha = new Date(resp.data.factura.fecha) as unknown as any; // si cambias el tipo a Date en FacturaCore
+    }
+    return resp;
+  }
+
+  crearNotaCredito(payload: NotaCreditoCrearReq) {
+    const url = `${this.baseUrl}/NotasCredito/crear`;
+    return this.http.post<ApiResponse<NotaCreditoCrearResp>>(url, payload);
+  }
+
+  generarXmlNotaCredito(idNotaCredito: number) {
+  // Si environment.invoices_sic ya incluye '/invoices-sic/api', esto queda así:
+  const url = `${this.baseUrl}/NotasCredito/${idNotaCredito}/xml`;
+  // el body puede ir vacío; ajusta si tu backend espera algo
+  return this.http.post<ApiResponse<GenerarXmlNotaCreditoResponse>>(url, {});
+}
+getPdfNotaCreditoResponse(idNotaCredito: number): Observable<HttpResponse<Blob>> {
+    const url = `${this.baseUrl}/NotasCredito/${idNotaCredito}/pdf`;
+    return this.http.get(url, {
+      observe: 'response',
+      responseType: 'blob'
+    });
+  }
+
+  /** Solo el Blob del PDF. */
+  getPdfNotaCredito(idNotaCredito: number): Observable<Blob> {
+    return this.getPdfNotaCreditoResponse(idNotaCredito).pipe(
+      map(res => res.body as Blob)
+    );
+  }
+
+  /** Descarga el PDF en el navegador usando el nombre del header si viene. */
+  // ✅ Igual que descargarPdfFactura: simple, sin headers
+descargarPdfNotaCredito(idNotaCredito: number, nombre = `nota-credito-${idNotaCredito}.pdf`): Observable<void> {
+  const url = `${this.baseUrl}/NotasCredito/${idNotaCredito}/pdf`;
+  return this.http.get<Blob>(url, { responseType: 'blob' as 'json' }).pipe(
+    map(blob => {
+      const href = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = href;
+      a.download = nombre;      // pones tú el nombre
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(href);
+    })
+  );
 }
 
-crearNotaCredito(payload: NotaCreditoCrearReq) {
-  const url = `${this.baseUrl}/NotasCredito/crear`;
-  return this.http.post<ApiResponse<NotaCreditoCrearResp>>(url, payload);
+
+  /** ====== Helpers ====== */
+
+  /** Lee el filename del header Content-Disposition, si existe. */
+  private getFileNameFromContentDisposition(res: HttpResponse<Blob>): string | null {
+    const cd = res.headers.get('Content-Disposition') || res.headers.get('content-disposition');
+    if (!cd) return null;
+    const match = /filename\*?=(?:UTF-8''|")?([^\";]+)/i.exec(cd);
+    if (!match || !match[1]) return null;
+    try {
+      return decodeURIComponent(match[1].replace(/"/g, ''));
+    } catch {
+      return match[1].replace(/"/g, '');
+    }
+  }
+
+
+private downloadBlob(blob: Blob, fileName: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = fileName;
+  a.style.display = 'none';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
+
+getSaldoFactura(
+  numeroFactura: string,
+  opts?: GetSaldoFacturaOptions
+) {
+  const url = `${this.baseUrl}/EstadoCuenta/factura/${encodeURIComponent(numeroFactura)}/saldo`;
+  let params = new HttpParams()
+    .set('excluirPagosAnulados', String(opts?.excluirPagosAnulados ?? true))
+    .set('excluirMovimientosAnulados', String(opts?.excluirMovimientosAnulados ?? true));
+
+  return this.http.get<ApiResponse<SaldoFacturaResponse>>(url, { params });
+}
+
 
 }

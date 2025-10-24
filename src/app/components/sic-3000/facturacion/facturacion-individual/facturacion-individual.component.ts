@@ -947,18 +947,32 @@ export class FacturacionIndividualComponent implements OnInit {
 
 
   cargarAutorizacion() {
-    this.autorizacionCajaService.getAutorizacionCaja(1).subscribe({
-      next: ({ data }) => {
-        if (!data) return;
-        this.formCaja.patchValue({
-          secuencial: this.padLeft(data.numero_factura, 9),
-          caja: data.caja ?? '',
-          puntoEmision: data.num_establecimiento ?? '',
-        });
-      },
-      error: (err) => console.error('Error cargando autorización de caja', err),
-    });
+  const id = this.usuarioActual?.id_autorizacion_usuario;
+
+  // si no hay autorización activa, no llames al backend
+  if (id == null) {
+    // opcional: limpia el form o muestra aviso
+    this.formCaja.patchValue({ secuencial: '', caja: '', puntoEmision: '' });
+    // this.snackBar.open('El usuario no tiene autorización de caja activa', 'Cerrar', {duration: 2500});
+    return;
   }
+
+  // si el id podría venir como string, fuerza número:
+  const idNum = Number(id);
+
+  this.autorizacionCajaService.getAutorizacionCaja(idNum).subscribe({
+    next: ({ data }) => {
+      if (!data) return;
+      this.formCaja.patchValue({
+        secuencial: this.padLeft(data.numero_factura, 9),
+        caja: data.caja ?? '',
+        puntoEmision: data.num_establecimiento ?? '',
+      });
+    },
+    error: (err) => console.error('Error cargando autorización de caja', err),
+  });
+}
+
   // En tu componente
   private padLeft(value: any, size: number): string {
     const s = (value ?? '').toString().replace(/\D/g, ''); // solo dígitos

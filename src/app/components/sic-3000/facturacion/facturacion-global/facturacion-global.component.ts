@@ -60,7 +60,7 @@ export class FacturacionGlobalComponent implements OnInit {
   activeTab: 'Factura' | 'Listado' = 'Factura';
   formFactura!: FormGroup;
   formCaja!: FormGroup;
-  usuarioActual: any = null;
+  usuarioActual = this.usuarioService.getUsuarioActual();
 
   // Botones/estados
   deshabilitarBuscar = false;
@@ -707,19 +707,37 @@ Prefijo: ${d.prefijo ?? ''}`;
     this.cargarAutorizacion();
   }
 
-  cargarAutorizacion() {
-    this.autorizacionCajaService.getAutorizacionCaja(1).subscribe({
-      next: ({ data }) => {
-        if (!data) return;
-        this.formCaja.patchValue({
-          secuencial: this.padLeft(data.numero_factura, 9),
-          caja: data.caja ?? '',
-          puntoEmision: data.num_establecimiento ?? '',
-        });
-      },
-      error: (err) => console.error('Error cargando autorización de caja', err),
-    });
+  cargarAutorizacion(): void {
+  const id = this.usuarioActual?.id_autorizacion_usuario;
+
+  // Si no hay autorización activa, limpia y sal.
+  if (id == null) {
+    this.formCaja.patchValue({ secuencial: '', caja: '', puntoEmision: '' });
+    // this.snackBar.open('No hay autorización de caja activa.', 'Cerrar', { duration: 2500 });
+    return;
   }
+
+  const idNum = Number(id); // por si viene como string
+
+  this.autorizacionCajaService.getAutorizacionCaja(idNum).subscribe({
+    next: ({ data }) => {
+      if (!data) {
+        this.formCaja.patchValue({ secuencial: '', caja: '', puntoEmision: '' });
+        return;
+      }
+      this.formCaja.patchValue({
+        secuencial: this.padLeft(data.numero_factura, 9),
+        caja: data.caja ?? '',
+        puntoEmision: data.num_establecimiento ?? '',
+      });
+    },
+    error: (err) => {
+      console.error('Error cargando autorización de caja', err);
+      this.formCaja.patchValue({ secuencial: '', caja: '', puntoEmision: '' });
+    },
+  });
+}
+
 
   private padLeft(value: any, size: number): string {
     const s = (value ?? '').toString().replace(/\D/g, '');
@@ -809,7 +827,7 @@ Prefijo: ${d.prefijo ?? ''}`;
     const periodoHasta = `${anio}-12-31`;
 
     const caja = String(this.formCaja.get('caja')?.value ?? '').trim();
-    const idUsuarioCajero: number = this.usuarioActual?.idUsuario ?? this.usuarioActual?.id_usuario ?? 0;
+    const idUsuarioCajero: number = this.usuarioActual?.id_usuario?? this.usuarioActual?.id_usuario ?? 0;
 
     const prefijo = String(row.prefijo ?? '').trim();
     const correo = String(row.email ?? '').trim();
