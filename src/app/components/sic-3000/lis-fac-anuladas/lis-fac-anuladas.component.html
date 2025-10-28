@@ -1,0 +1,78 @@
+<div class="page">
+  <h2 class="title">Listado de Facturas Anuladas</h2>
+
+  <!-- Filtros -->
+  <form [formGroup]="f" (ngSubmit)="onBuscar()" class="toolbar">
+    <div class="field fx1">
+      <label>Buscar Cliente:</label>
+      <input class="in compact" placeholder="texto" formControlName="cliente" />
+    </div>
+
+    <div class="field fx0">
+      <label>Fecha desde:</label>
+      <input class="in compact" type="date" formControlName="desde" />
+    </div>
+
+    <div class="field fx0">
+      <label>Fecha hasta:</label>
+      <input class="in compact" type="date" formControlName="hasta" />
+    </div>
+
+    <div class="field fx0 btn-wrap">
+      <button class="btn primary" type="submit">Buscar</button>
+    </div>
+  </form>
+
+  <!-- Tabla -->
+  <div class="table-wrap">
+    <ag-grid-angular
+      class="ag-theme-alpine compact-grid full"
+      [defaultColDef]="defaultColDef"
+      [columnDefs]="columnDefs"
+      [rowData]="pagedData"
+      [domLayout]="'normal'"
+      [rowHeight]="rowHeight"
+      [getRowHeight]="getRowHeight"
+      [tooltipShowDelay]="200"
+      (gridReady)="onGridReady($event)"
+    >
+    </ag-grid-angular>
+
+    <!-- Footer / paginación -->
+    <div class="footer">
+      <div class="left">
+        <span>No Páginas</span>
+        <!-- Sin ngModel: compatible con Reactive Forms sin importar FormsModule -->
+        <select
+  class="in compact small"
+  [value]="pageSize"
+  (change)="changePageSize($any($event.target).value)"
+>
+  <option *ngFor="let s of pageSizeOptions" [value]="s">{{ s }}</option>
+</select>
+
+      </div>
+
+      <div class="center">
+        Páginas mostradas {{ rangeLabel }}
+      </div>
+
+      <div class="right pager">
+        <button class="icon" (click)="goToFirst()" [disabled]="pageIndex===0" title="Primera">«</button>
+        <button class="icon" (click)="prev()" [disabled]="pageIndex===0" title="Anterior">‹</button>
+
+        <button
+          class="page-btn"
+          *ngFor="let p of visiblePages"
+          [class.active]="p===pageIndex+1"
+          (click)="goTo(p-1)"
+        >
+          {{p}}
+        </button>
+
+        <button class="icon" (click)="next()" [disabled]="(pageIndex+1)>=pageCount" title="Siguiente">›</button>
+        <button class="icon" (click)="goToLast()" [disabled]="(pageIndex+1)>=pageCount" title="Última">»</button>
+      </div>
+    </div>
+  </div>
+</div>
