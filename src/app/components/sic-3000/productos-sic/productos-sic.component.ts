@@ -45,6 +45,9 @@ import { UbicacionNivelResponse } from 'src/app/interfaces/responses/ubicacion-n
 import { UbicacionAreaService } from 'src/app/services/ubicacion-area.service';
 import { UbicacionNivelService } from 'src/app/services/ubicacion-nivel.service';
 import { UbicacionColumnaService } from 'src/app/services/ubicacion-columna.service';
+import { PreviewConfig } from 'src/app/util/preview/file-preview.component';
+import { ConfiguracionPDF, ProductoExtraTabs, ProductoPDF, ProductoPDFService } from 'src/app/reports/producto-pdf.service';
+import { PreviewDialogService } from 'src/app/services/preview-dialog.service';
 
 
 interface BodegaConfig {
@@ -104,6 +107,9 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   areas: UbicacionAreaResponse[] = [];
   columnas: UbicacionColumnaResponse[] = [];
   niveles: UbicacionNivelResponse[] = [];
+  mostrarPreview: boolean = false;
+  cargandoPreview: boolean = false;
+  previewConfig: PreviewConfig = {};
   private busquedaSubject$ = new Subject<string>();
   get descripcionProductoHeader(): string {
       if (this.esNuevoProducto && this.idEstructura > 0) {
@@ -152,7 +158,9 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     private productoUbicacionService: ProductoUbicacionBodegaService,
     private areaService: UbicacionAreaService,
     private nivelService: UbicacionNivelService,
-    private columnaService: UbicacionColumnaService
+    private columnaService: UbicacionColumnaService,
+    private productoPDFService: ProductoPDFService,
+    private previewDialogService: PreviewDialogService
   ) { }
 
   ngOnInit(): void {
@@ -918,9 +926,10 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
               
               // Verificar alerta de stock bajo
               bodegaExistente.alertaStockBajo = 
+                !this.esNuevoProducto && //Solo si no es nuevo
                 bodegaExistente.stockMin !== null && 
                 bodegaExistente.existenciaInicial < bodegaExistente.stockMin;
-              
+
               console.log('✅ Bodega actualizada:', {
                 id: bodegaExistente.idLocal,
                 nombre: bodegaExistente.nombreLocal,
@@ -1013,6 +1022,15 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   }
 
   verificarAlertasStock(): void {
+    // 🚫 No validar alertas en productos nuevos
+    if (this.esNuevoProducto) {
+      this.bodegasConfig.forEach(b => {
+        b.alertaStockBajo = false;
+      });
+      return;
+    }
+
+    // ✅ Solo validar en productos existentes
     this.bodegasConfig.forEach(b => {
       if (b.seleccionado && b.stockMin !== null) {
         b.alertaStockBajo = b.existenciaInicial < b.stockMin;
@@ -1249,7 +1267,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       consumointerno: f1.consumoInterno,
       psicotropico: f1.psicotropico,
       estupefaciente: f1.estupefaciente,
-      cantconv: f1.canCov,
+      cantconv: f1.canCov || 0,
       cantdecimal: f1.manejaDecimales,
       
       // ✅ AGREGAR NUEVAS FK DEL TAB 2
@@ -1277,22 +1295,23 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       prepormayor: f3.precioRedMsp,        
       preven: f3.pvpActualMasIva,          
       prevensiniva: f3.pvpActualIva,
-      preanterior: f3.pvpAnteriorMasIva,
-      feccosact: f3.fechaAnteriorModificarPrecio,
-      fecpremod: f3.fechaModificarPrecio,
+      preanterior: 0,
+      feccosact: null,
+      fecpremod: new Date().toISOString(),
       margenutilidad: f3.margenUtilidad,
       costsuminis: f3.costoSuministro,
       cospro: f3.costoProducto,
       precos: f3.costoPromedio,
-      cosanterior: f3.precioCompraAnterior,
-      fecpreact: f3.fechaAnteriorModificarCompra,
+      cosanterior: 0,
+      fecpreact: null,
       preuni: f3.precioCompraActual?.toString(),
+      feccosmod: new Date().toISOString(), 
       // feccosmod: f3.fechaModificarCompra,
       porcenrecepcion: f3.recepcionPorcentaje,
       
       // ✅ AGREGAR CAMPOS HISTÓRICOS DEL TAB 3
-      margenantes: f3.margenUtilidad, // Se guardará como anterior en el primer guardado
-      fecmarantes: new Date().toISOString()
+      margenantes: 0,
+      fecmarantes: null,
     });
 
     const estructura: ProductoEstructuraComercialRequest = {
@@ -1390,12 +1409,12 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       foto: f1.urlFoto || '',
       fechamod: new Date().toISOString(),
       exiqty: f1.existenciaGlobal || 0, 
-      cantidad: f1.cantidad || null,
+      cantidad: f1.cantidad || 0,
       productoventa: f1.productoEnVenta ?? false,
       consumointerno: f1.consumoInterno ?? false,
       psicotropico: f1.psicotropico ?? false,
       estupefaciente: f1.estupefaciente ?? false,
-      cantconv: f1.canCov || null,
+      cantconv: f1.canCov || 0,
       
       idcolor: f2?.color || null,
       idsabor: f2?.sabor || null,
@@ -1429,7 +1448,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       
       // ✅ HISTORIAL DE PVP: Solo si cambió
       preanterior: pvpCambio 
-        ? pvpSinIvaOriginal  // El anterior se convierte en histórico
+        ? pvpConIvaOriginal  // El anterior precio CON iva se convierte en histórico
         : (this.productoOriginal.preanterior || 0), // Mantener el histórico existente
       
       feccosact: pvpCambio 
@@ -1722,7 +1741,18 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
             
             if (res?.type?.toUpperCase() === 'SUCCESS') {
               const idProductoCreado = res.data;
+              // Asignar el ID para usar en actualizarStocks
+              this.idProductoActual = idProductoCreado;
               
+              // Actualizar stocks PRIMERO
+              const tieneStocksConfigurados = this.bodegasConfig.some(
+                b => b.stockMin !== null || b.stockMax !== null
+              );
+              
+              if (tieneStocksConfigurados) {
+                loadingDialog.componentInstance.updateLoadingState(true, 'Guardando stocks...');
+                this.actualizarStocks();
+              }
               // ✅ Verificar ubicaciones nuevas
               const tieneUbicacionesNuevas = this.ubicaciones.some(u => u._isNew);
               
@@ -1912,7 +1942,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   }
   private actualizarStocks(): void {
     const stocksParaActualizar = this.bodegasConfig
-      .filter(b => b.existenciaInicial > 0) // Solo bodegas con existencia
+      .filter(b => b.stockMin !== null || b.stockMax !== null) // Solo bodegas con existencia
       .map(b => ({
         idlocal: b.idLocal,
         stockmin: b.stockMin,
@@ -2012,7 +2042,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
           consumoInterno: prod.consumointerno,
           psicotropico: prod.psicotropico,
           estupefaciente: prod.estupefaciente,
-          canCov: prod.cantconv,
+          canCov: prod.cantconv || 0,
           presentacion: prod.idpresentacion,
         });
 
@@ -2510,9 +2540,9 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
         }
       },
       {
-        headerName: 'Desc. Gral %',
+        headerName: 'Desc. en Producto',
         field: 'descuento_general',
-        width: 130,
+        width: 160,
         editable: true,
         cellEditor: 'agNumberCellEditor',
         cellEditorParams: {
@@ -2801,9 +2831,6 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   private calcularCostoNetoProveedor(proveedor: ProductoProveedorResponse): number {
     let costo = Number(proveedor.costo_compra) || 0;
     
-    if (proveedor.descuento_general && proveedor.descuento_general > 0) {
-      costo -= (costo * proveedor.descuento_general / 100);
-    }
     if (proveedor.descuento_1 && proveedor.descuento_1 > 0) {
       costo -= (costo * proveedor.descuento_1 / 100);
     }
@@ -2846,7 +2873,166 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     return this.obtenerUltimoNivelEstructura() === nivel;
   }
 
-  onImprimir(): void { window.print(); }
+  async onImprimir(): Promise<void> {
+    if (this.idProductoActual === 0) {
+      alert('Guarde el producto primero');
+      return;
+    }
+
+    this.cargandoPreview = true;
+    try {
+      const idEmpresa = parseInt(localStorage.getItem('idEmpresa') || '1', 10);
+      const cfgEmpresa = await this.productoPDFService.obtenerConfiguracionEmpresa(idEmpresa);
+
+      const cfg: ConfiguracionPDF = {
+        ...cfgEmpresa,
+        titulo: 'Ficha de Producto',
+        colorPrimario: '#1f2937',
+        colorSecundario: '#f3f4f6',
+        mostrarFechaHora: true,
+        mostrarDatosGenerales: true,
+        mostrarPrecios: true,
+        mostrarBodegas: true,
+        mostrarProveedores: true,
+        mostrarObservaciones: true
+      };
+
+      // Arma el ProductoPDF con tus forms (ya lo tienes hecho).
+      const productoPDF: ProductoPDF = {
+        codigoInterno: this.form.value.codigoInterno || '',
+        codigoBarras: this.form.value.codigoBarras || '',
+        descripcion1: this.form.value.descripcion1 || '',
+        descripcionPOS: this.form.value.descripcionPOS || '',
+        unidadVenta: (this.form.value.unidadVenta ?? '').toString(),
+        unidadVentaDescripcion: this.obtenerDescripcionUnidadVenta(this.form.value.unidadVenta),
+        marca: undefined,
+        presentacion: this.presentaciones?.find(p => p.idPresentacion === this.form.value.presentacion)?.descripcion,
+        unidadMedida: undefined,
+
+        precioSinIVA: this.preciosForm?.value.pvpActualIva ?? 0,
+        precioConIVA: this.preciosForm?.value.pvpActualMasIva ?? 0,
+        precioCompra: this.preciosForm?.value.precioCompraActual ?? 0,
+        utilidad: this.preciosForm?.value.margenUtilidad ?? 0,
+
+        aplicaIVA: this.form.value.pagaIva ?? false,
+        porcentajeIVA: this.iva ?? 15,
+
+        categoria: this.estructuraProducto?.nombre_division ?? '',
+        subcategoria: this.estructuraProducto?.nombre_subdivision ?? '',
+        grupo: this.estructuraProducto?.nombre_grupo ?? '',
+
+        controlaStock: this.form.value.cargarInventarios ?? false,
+
+        bodegas: this.bodegasConfig.map(b => ({
+          nombreBodega: b.nombreLocal,
+          existencia: b.existenciaInicial,
+          stockMin: b.stockMin,
+          stockMax: b.stockMax,
+          alertaStock: b.alertaStockBajo
+        })),
+
+        proveedores: this.proveedoresEnMemoria.map(p => ({
+          nombreProveedor: p.nombre_proveedor ?? '',
+          codigoProveedor: p.codigo_proveedor ?? '',
+          precioCompra: p.costo_compra ?? 0,
+          descuento: p.descuento_general ?? 0,
+          plazoEntrega: p.tiempo_entrega ?? 0,
+          productoProveedor: p.producto_proveedor ?? ''
+        })),
+
+        observaciones: this.adicionalForm?.value?.observacion ?? '',
+        estado: this.form.value.activo ? 'Activo' : 'Inactivo',
+        fechaCreacion: this.form.value.fechaCreacion,
+        ultimaModificacion: this.form.value.fechaModificacion
+      };
+
+      const extras: ProductoExtraTabs = {
+        cantidad: this.form.value.cantidad,
+        tipoProducto: this.form.value.tipoProducto,
+        existenciaGlobal: this.form.value.existenciaGlobal,
+        canCov: this.form.value.canCov,
+        abreviacion: this.form.value.abreviacion,
+        referencia: this.form.value.referencia,
+        fechaCreacion: this.form.value.fechaCreacion,
+        fechaModificacion: this.form.value.fechaModificacion,
+
+        pagaIva: this.form.value.pagaIva,
+        productoEnVenta: this.form.value.productoEnVenta,
+        cargarInventarios: this.form.value.cargarInventarios,
+        productoConPeso: this.form.value.productoConPeso,
+        consumoInterno: this.form.value.consumoInterno,
+        manejaDecimales: this.form.value.manejaDecimales,
+        psicotropico: this.form.value.psicotropico,
+        estupefaciente: this.form.value.estupefaciente,
+        activo: this.form.value.activo,
+        altoRiesgo: this.form.value.altoRiesgo,
+
+        urlFoto: this.form.value.urlFoto,
+
+        color: this.adicionalForm?.value?.colorDesc,   // o mapea por id a descripción
+        sabor: this.adicionalForm?.value?.saborDesc,
+        fabricante: this.adicionalForm?.value?.fabricanteDesc,
+        tamanoTalla1: this.adicionalForm?.value?.tamanoTalla1,
+        medida1: this.adicionalForm?.value?.medida1,
+        medida2: this.adicionalForm?.value?.medida2,
+        medida3: this.adicionalForm?.value?.medida3,
+        observacion: this.adicionalForm?.value?.observacion,
+        registroSanitario: this.adicionalForm?.value?.registroSanitario,
+
+        ctaVentas: this.adicionalForm?.value?.ctaVentas,
+        ctaInventarios: this.adicionalForm?.value?.ctaInventarios,
+        ctaCostos: this.adicionalForm?.value?.ctaCostos,
+        ctaDevolucion: this.adicionalForm?.value?.ctaDevolucion,
+        productoGasto: this.adicionalForm?.value?.productoGasto,
+        ctaGastos: this.adicionalForm?.value?.ctaGastos,
+
+        ubicaciones: this.ubicacionesFiltradas,
+        estructura: this.estructuraProducto,
+
+        precios: {
+          precioOficial: this.preciosForm?.value.precioOficial,
+          precioRedMsp: this.preciosForm?.value.precioRedMsp,
+          pvpActualIva: this.preciosForm?.value.pvpActualIva,
+          pvpAnteriorMasIva: this.preciosForm?.value.pvpAnteriorMasIva,
+          fechaAnteriorModificarPrecio: this.preciosForm?.value.fechaAnteriorModificarPrecio,
+          pvpActualMasIva: this.preciosForm?.value.pvpActualMasIva,
+          fechaModificarPrecio: this.preciosForm?.value.fechaModificarPrecio,
+          margenUtilidad: this.preciosForm?.value.margenUtilidad,
+          costoSuministro: this.preciosForm?.value.costoSuministro,
+          costoProducto: this.preciosForm?.value.costoProducto,
+          costoPromedio: this.preciosForm?.value.costoPromedio,
+          precioCompraAnterior: this.preciosForm?.value.precioCompraAnterior,
+          fechaAnteriorModificarCompra: this.preciosForm?.value.fechaAnteriorModificarCompra,
+          precioCompraActual: this.preciosForm?.value.precioCompraActual,
+          fechaModificarCompra: this.preciosForm?.value.fechaModificarCompra,
+          recepcionPorcentaje: this.preciosForm?.value.recepcionPorcentaje
+        }
+      };
+
+      const pdfBlob = await this.productoPDFService.generarPDFBlob(productoPDF, cfg, extras);
+
+      // Muestra en tu dialog de solo-PDF:
+      this.previewDialogService.abrirPreview({
+        file: new File([pdfBlob], `producto-${productoPDF.codigoInterno}.pdf`, { type: 'application/pdf' }),
+        showPrintButton: true,
+        showDownloadButton: true,
+        title: `Producto - ${productoPDF.codigoInterno}`
+      });
+
+    } catch (e) {
+      console.error(e);
+      alert('Error al generar el PDF');
+    } finally {
+      this.cargandoPreview = false;
+    }
+  }
+
+  // MÉTODO AUXILIAR PARA OBTENER DESCRIPCIÓN DE UNIDAD
+  private obtenerDescripcionUnidadVenta(idUnidad: number): string {
+    if (!this.unidadesVenta || !idUnidad) return '';
+    const unidad = this.unidadesVenta.find(u => u.idUnidadVenta === idUnidad);
+    return unidad?.descripcion || '';
+  }
   onAdjuntar(): void { history.back(); }
 
   trackByValue = (_: number, v: string) => v;

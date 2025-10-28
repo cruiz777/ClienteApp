@@ -52,10 +52,10 @@ export interface ProductoRequest {
   preuni?: string;     // precio compra actual (string en back)
   margenutilidad?: number;
   porcenrecepcion?: number;
-  feccosact?: string;  // ISO (fecha anterior modificar precio)
-  fecpreact?: string;  // ISO (fecha anterior modificar compra)
-  fecpremod?: string;  // ISO (fecha mod PVP)
-
+  feccosact?: string | null;  // ISO (fecha anterior modificar precio)
+  fecpreact?: string | null;  // ISO (fecha anterior modificar compra)
+  fecpremod?: string | null;  // ISO (fecha mod PVP)
+  feccosmod?: string | null,
   // Existencias / ubicación (si los usaras)
   exiqty?: number;
   exipdc?: number;
@@ -111,7 +111,7 @@ export interface ProductoRequest {
   fabricante?: number;
   fecing?: string;
   margenantes?: number;
-  fecmarantes?: string;
+  fecmarantes?: string | null;
   costsuminis?: number;
   cantconv?: number;
   costhelado?: number;

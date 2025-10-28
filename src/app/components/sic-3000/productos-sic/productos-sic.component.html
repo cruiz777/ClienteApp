@@ -102,7 +102,13 @@
           [title]="(esNuevoProducto && idEstructura === 0) ? 'No se puede crear productos sin estructura comercial' : ''">
           {{ saving ? 'Guardando…' : 'Grabar' }}
         </button>
-        <button type="button" class="btn-soft" (click)="onImprimir()">Imprimir</button>
+        <button 
+          type="button" 
+          class="btn-soft" 
+          (click)="onImprimir()"
+          [disabled]="cargandoPreview || idProductoActual === 0">
+          {{ cargandoPreview ? 'Generando...' : 'Imprimir' }}
+        </button>
         <button type="button" class="btn-soft" (click)="onAdjuntar()">Adjuntar</button>
       </div>
     </ng-template>
@@ -943,7 +949,7 @@
                         <input 
                           type="checkbox" 
                           [(ngModel)]="bodega.seleccionado"
-                          (change)="verificarAlertasStock()">
+                          (change)="toggleSeleccionBodega(bodega)">
                       </td>
                       
                       <td style="padding:6px 10px;">
@@ -973,7 +979,7 @@
                           class="input-line text-end w-100" 
                           min="0"
                           [(ngModel)]="bodega.stockMin"
-                          (blur)="validarStocks(bodega); verificarAlertasStock()"
+                          (blur)="validarStocks(bodega)"
                           placeholder="(opcional)">
                       </td>
 
@@ -1027,7 +1033,6 @@
           <div class="d-flex justify-content-between align-items-center">
             <div>
               <ul class="mb-0 small">
-                <li>Haga clic en <strong>"Agregar Proveedor"</strong> para crear una nueva fila</li>
                 <li>Haga doble clic en cualquier celda para editarla</li>
                 <li>Los cambios se guardarán al hacer clic en <strong>"Grabar"</strong></li>
               </ul>
@@ -1036,8 +1041,9 @@
             <button 
               type="button" 
               class="btn btn-primary btn-lg"
-              (click)="agregarFilaProveedor()">
-              <span style="font-size: 18px;">➕</span> Agregar Proveedor
+              (click)="agregarFilaProveedor()"
+              [disabled]="esNuevoProducto"> 
+              <span style="font-size: 18px;"></span> Agregar Proveedor
             </button>
           </div>
         </div>
@@ -1051,6 +1057,7 @@
               [rowData]="proveedoresEnMemoria"
               [columnDefs]="columnDefsProveedores"
               [defaultColDef]="defaultColDefProveedores"
+              [suppressRowClickSelection]="esNuevoProducto"
               [enableBrowserTooltips]="true"
               [tooltipShowDelay]="300"
               [stopEditingWhenCellsLoseFocus]="true"
@@ -1070,6 +1077,9 @@
             <p class="text-muted mb-2">
               <strong>No hay proveedores ingresados</strong>
             </p>
+            <p class="text-muted small" *ngIf="esNuevoProducto">  <!-- ✅ AGREGAR -->
+              Los proveedores solo se pueden agregar después de crear el producto
+            </p>
             <p class="text-muted small">
               Haga clic en "Agregar Proveedor" para comenzar
             </p>
@@ -1081,4 +1091,5 @@
       </div>
     </mat-tab>
   </mat-tab-group>
+
 </div>

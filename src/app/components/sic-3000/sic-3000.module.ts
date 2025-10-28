@@ -33,6 +33,7 @@ import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuenta
 import { ProductosSicComponent } from './productos-sic/productos-sic.component';
 import { AgregarUbicacionDialogComponent } from './ubicaciones/dialogs/agregar-ubicacion-dialog.component';
 import { MatDialogModule } from '@angular/material/dialog';
+import { FilePreviewComponent } from 'src/app/util/preview/file-preview.component';
 
 @NgModule({
   declarations: [
@@ -42,7 +43,8 @@ import { MatDialogModule } from '@angular/material/dialog';
     // ❌ No declarar FacturacionIndividualComponent porque es standalone
     EstadocuentaclienteComponent,
     ProductosSicComponent,
-    AgregarUbicacionDialogComponent
+    AgregarUbicacionDialogComponent,
+    FilePreviewComponent 
   ],
   imports: [
     CommonModule,
