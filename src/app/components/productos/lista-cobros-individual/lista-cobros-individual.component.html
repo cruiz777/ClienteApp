@@ -1,0 +1,88 @@
+<div class="cuenta-liquidar">
+
+  <!-- Stepper -->
+  <div class="steps" *ngIf="step === 1 || step === 2">
+    <div class="step" [class.active]="step===1">
+      
+      <div class="step-text">Cuentas por Cobrar</div>
+    </div>
+    <div class="step-divider"></div>
+    
+  </div>
+
+  <!-- ===== PASO 1 ===== -->
+  <form *ngIf="step === 1" [formGroup]="formCliente" novalidate (ngSubmit)="onNext()"
+    (keydown.enter)="onFormEnter($event)">
+
+    <div class="panel" style="background-color: #ECECEC;">
+      <!-- Fila(s) alineadas con CSS Grid -->
+      <div class="fi-grid2">
+        <!-- Row 1 -->
+        <div class="field col-1">
+          <label>Cliente:</label>
+          <div class="fi-input-wrap">
+            <input #clienteInputRef type="text" matInput [formControl]="clienteOrigenControl"
+              [matAutocomplete]="autoOrigen" (blur)="clienteOrigenControl.markAsTouched()" placeholder="Buscar Cliente"
+              [class.input-error]="clienteOrigenControl.invalid && clienteOrigenControl.touched" />
+            <mat-autocomplete #autoOrigen="matAutocomplete" [displayWith]="mostrarNombreCliente"
+              (optionSelected)="seleccionarClienteOrigen($event.option.value)">
+              <mat-option *ngFor="let cliente of clientesOrigenFiltrados" [value]="cliente">
+                <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
+              </mat-option>
+            </mat-autocomplete>
+          </div>
+        </div>
+        
+
+        <div class="field col-2">
+          <label>Responsable</label>
+          <input class="form-control" formControlName="responsable" placeholder="Código o nombre..." readonly />
+        </div>
+
+        <!-- Row 2 -->
+        <div class="field col-1">
+  <label>RUC</label>
+  <input class="form-control" formControlName="ruc" placeholder="—" readonly />
+</div>
+
+        <div class="field col-2">
+          <label>Monto Deuda</label>
+          <input class="form-control text-start no-underline" formControlName="montoDeuda" placeholder="0.00"
+            readonly />
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Tabla Detalle -->
+    <div class="panel">
+      <div class="panel-subtitle">Detalle</div>
+
+      <div class="grid-wrap">
+        <ag-grid-angular class="ag-theme-alpine compact-grid" style="width: 100%; height: 240px;" [rowData]="rowData"
+          [columnDefs]="columnDefs" [defaultColDef]="defaultColDef" [getRowId]="getRowId"
+          [processDataFromClipboard]="processDataFromClipboard"
+[suppressClickEdit]="false"
+          (gridReady)="onGridReady($event)" (cellValueChanged)="onCellValueChangedFacturas($event)">
+        </ag-grid-angular>
+
+        <!-- ⛔️ sin edición si no se puede -->
+        
+      </div>
+    </div>
+
+    <!-- Observación + botones -->
+    <div class="panel panel-bottom">
+      
+
+      <div class="actions-left">
+        <button type="button" class="fi-btn fi-primary" (click)="onCancel()">Cancelar</button>
+        
+      </div>
+    </div>
+  </form>
+
+  <!-- ===== PASO 2 ===== -->
+  
+
+</div>

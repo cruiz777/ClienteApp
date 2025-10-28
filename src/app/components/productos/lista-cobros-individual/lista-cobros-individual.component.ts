@@ -2,7 +2,7 @@ import { Component, OnInit, ViewChild, ElementRef, ViewEncapsulation } from '@an
 import { FormBuilder, FormGroup, Validators, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatAutocompleteTrigger, MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { ClienteService } from 'src/app/services/cliente.service';
+import { ClienteService, ClienteIndividual } from 'src/app/services/cliente.service';
 import { UsuarioService } from 'src/app/services/usuario.service';
 import { CuentaCobrarService, GridRow } from 'src/app/services/cuenta-cobrar.service';
 import { PagoReportService } from 'src/app/services/pago-report.service';
@@ -33,12 +33,13 @@ import { MatPaginatorModule } from '@angular/material/paginator';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
-
+import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
+import { Cliente } from 'src/app/interfaces/cliente';
 @Component({
-  selector: 'app-registro-cobros',
+  selector: 'app-lista-cobros-individual',
   standalone: true,
-  templateUrl: './registro-cobros.component.html',
-  styleUrls: ['./registro-cobros.component.css'],
+  templateUrl: './lista-cobros-individual.component.html',
+  styleUrls: ['./lista-cobros-individual.component.css'],
   encapsulation: ViewEncapsulation.None,
   imports: [
     FormsModule, ReactiveFormsModule, MatAutocompleteModule, AgGridModule, CommonModule, HttpClientModule,
@@ -46,7 +47,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     MatMenuModule, MatTableModule, MatPaginatorModule, MatSnackBarModule, MatIconModule, MatDialogModule, MatTooltipModule
   ]
 })
-export class RegistroCobrosComponent implements OnInit {
+export class ListaCobrosIndividualComponent implements OnInit {
   // Clientes (paso 1)
   @ViewChild(MatAutocompleteTrigger) autoClienteTrigger!: MatAutocompleteTrigger;
   @ViewChild('clienteInputRef') clienteInputRef!: ElementRef<HTMLInputElement>;
@@ -63,7 +64,8 @@ export class RegistroCobrosComponent implements OnInit {
 
   formCliente!: FormGroup;
   formPago!: FormGroup;
-
+  clienteE!: ClienteIndividual;
+  clienteSeleccionado: Cliente | null = null;
   usuarioActual = this.usuarioService.getUsuarioActual();
 
   mostrarNombreCliente = (cliente: ClienteSummary | string | null): string =>
@@ -352,27 +354,22 @@ export class RegistroCobrosComponent implements OnInit {
     private cuentaCobrarService: CuentaCobrarService,
     private _snackBar: MatSnackBar,
     private formaPagoService: FormaPagoService,
-    private pagoReportService: PagoReportService
+    private pagoReportService: PagoReportService,
+    private clienteSeleccionadoService: ClienteSeleccionadoService,
   ) { }
 
   ngOnInit(): void {
     this.usuarioActual = this.usuarioService.getUsuarioActual();
-    this.cargarCliente();
 
+    // 1) Construir formularios primero
     this.formCliente = this.fb.group({
       noPago: [''],
       fechaPago: [this.hoyISO(), Validators.required],
       clienteOrigenControl: [''],
       clienteCodigo: [0],
       responsable: [this.usuarioActual?.nombre_usuario || ''],
-      valorAPagar: [
-        '0.00',
-        [
-          Validators.required,
-          Validators.pattern(/^(?:\d+(?:\.\d{0,2})?)$/),
-          Validators.min(0.01)
-        ]
-      ],
+      ruc: [''],
+      valorAPagar: [],
       montoDeuda: [this.usd(0)],
       observacion: [''],
     });
@@ -386,34 +383,16 @@ export class RegistroCobrosComponent implements OnInit {
       metodoPago: ['']
     });
 
-    // Toggle edición del grid según valor a pagar válido
-    this.formCliente.get('valorAPagar')!.valueChanges.subscribe(() => {
-      this.gridApi?.setGridOption('suppressClickEdit', !this.canEditFacturas);
-    });
+    // 2) Reglas de UI que dependen del form ya creado
+
     const refreshMax = () => vCtrl.updateValueAndValidity({ emitEvent: false });
 
-    // Cargar facturas (ajusta origen real si aplica)
-    this.cuentaCobrarService.getFacturasPendientesGrid(String(this.codcliO))
-      .subscribe((rows: GridRow[]) => {
-        this.rowData = rows;
-        this.gridApi?.setGridOption('rowData', this.rowData);
-        this.gridApi?.sizeColumnsToFit();
-        this.recalcMontoDeuda();
-        refreshMax();
-        if (rows.length === 0) this.mostrarAlerta('El cliente no tiene detalle de facturas (No tiene facturas_pendientes)', 'info');
-        this.focusValorAPagar();
-      });
-
-    // Autocomplete formas de pago
+    // 3) Autocomplete de formas de pago (igual que lo tenías)
     const metodoCtrl = this.formPago.get('metodoPago') as FormControl;
-
     const formasActivas$ = this.formaPagoService.getPagedLite(1, 10).pipe(
       map(resp => resp?.type === 'Success' ? (resp.data?.items ?? []) : []),
       tap(list => console.log('[FP] paged items:', list)),
-      catchError(err => {
-        console.error('[FP] error getPagedLite:', err);
-        return of([] as FormaPagoResponse[]);
-      }),
+      catchError(err => { console.error('[FP] error getPagedLite:', err); return of([] as FormaPagoResponse[]); }),
       shareReplay(1)
     );
 
@@ -422,29 +401,40 @@ export class RegistroCobrosComponent implements OnInit {
         startWith(''),
         debounceTime(250),
         distinctUntilChanged(),
-        map((v: any) =>
-          (typeof v === 'string' ? v : (v?.descripcionPago ?? v?.descripcion_pago ?? '')).trim().toLowerCase()
-        ),
+        map((v: any) => (typeof v === 'string' ? v : (v?.descripcionPago ?? v?.descripcion_pago ?? '')).trim().toLowerCase()),
         tap(() => this.isLoadingFormas = true)
       ),
       formasActivas$
     ]).pipe(
-      map(([term, lista]: [string, FormaPagoResponse[]]) =>
-        !term ? lista : lista.filter((fp: FormaPagoResponse) =>
-          (fp.descripcionPago ?? '').toLowerCase().includes(term)
-        )
-      ),
+      map(([term, lista]: [string, FormaPagoResponse[]]) => !term ? lista : lista.filter(fp => (fp.descripcionPago ?? '').toLowerCase().includes(term))),
       tap(r => console.log('[FP] render ->', r)),
       finalize(() => this.isLoadingFormas = false),
-      catchError(err => {
-        console.error('[FP] stream error:', err);
-        this.isLoadingFormas = false;
-        return of([] as FormaPagoResponse[]);
-      })
+      catchError(err => { console.error('[FP] stream error:', err); this.isLoadingFormas = false; return of([] as FormaPagoResponse[]); })
     );
 
     this.activarPlantilla('transfer');
+
+    // 4) Intentar auto-seleccionar cliente DESPUÉS de tener forms
+    this.cargarClienteInv();
+
+    // 5) Si NO hay cliente seleccionado, habilita el autocomplete por texto
+    if (!this.codcliO) {
+      this.cargarCliente();
+    } else {
+      // Si por alguna razón ya viene codcliO, carga facturas y recalcula
+      this.cuentaCobrarService.getFacturasPendientesGrid(String(this.codcliO))
+        .subscribe((rows: GridRow[]) => {
+          this.rowData = rows;
+          this.gridApi?.setGridOption('rowData', this.rowData);
+          this.gridApi?.sizeColumnsToFit();
+          this.recalcMontoDeuda();
+          refreshMax();
+          if (rows.length === 0) this.mostrarAlerta('El cliente no tiene detalle de facturas (No tiene facturas_pendientes)', 'info');
+          this.focusValorAPagar();
+        });
+    }
   }
+
 
   // ===== Utils =====
   usd(v: number) {
@@ -496,10 +486,22 @@ export class RegistroCobrosComponent implements OnInit {
       }
     });
 
-    const valorAPagar = this.clamp2(this.getValorAPagarNumber());
     const sumaPagos = this.clamp2(this.sumPagos());
-    if (Math.abs(sumaPagos - valorAPagar) >= 0.005) {
-      errors.push(`La suma de pagos (${this.usd(sumaPagos)}) debe ser exactamente ${this.usd(valorAPagar)}.`);
+    const deudaTotal = this.clamp2(this.getMontoDeudaNumber());
+    const tieneValor = this.hasValorAPagar();
+    const valorTarget = tieneValor ? this.clamp2(this.getValorAPagarNumber()) : deudaTotal;
+
+    if (tieneValor) {
+      // si el usuario ingresó valor, seguimos pidiendo igualdad exacta
+      if (Math.abs(sumaPagos - valorTarget) >= 0.005) {
+        errors.push(`La suma de pagos (${this.usd(sumaPagos)}) debe ser exactamente ${this.usd(valorTarget)}.`);
+      }
+    } else {
+      // sin valor a pagar → solo valida rango
+      if (sumaPagos <= 0) errors.push('Distribuye un monto en al menos una factura.');
+      if (sumaPagos > deudaTotal) {
+        errors.push(`La suma de pagos (${this.usd(sumaPagos)}) no puede superar la deuda (${this.usd(deudaTotal)}).`);
+      }
     }
 
     this.gridApi?.refreshCells({ force: true });
@@ -519,35 +521,8 @@ export class RegistroCobrosComponent implements OnInit {
   }
 
   onCancel(): void {
-    this.formCliente.reset({
-      noPago: '',
-      fechaPago: this.hoyISO(),
-      clienteCodigo: 0,
-      responsable: this.usuarioActual?.nombre_usuario || '',
-      valorAPagar: '0.00',
-      montoDeuda: '0.00',
-      observacion: '',
-    });
-    this.unlockValorAPagar();
-    this.unlockCliente();
-    this.limpiarClienteAutocomplete();
+    
 
-    this.rowData = [];
-    this.pagosEditadosMap.clear();
-    this.invalidRows.clear();
-
-    if (this.gridApi) {
-      this.gridApi.stopEditing(true);
-      this.gridApi.setFilterModel(null);
-      (this.gridApi as any).setGridOption?.('quickFilterText', '');
-      this.gridApi.applyColumnState({ defaultState: { sort: null } });
-      (this.gridApi as any).setGridOption?.('rowData', []);
-      this.gridApi.refreshCells({ force: true });
-    }
-
-    this.onCancelarPago();
-    this.totalPagos = 0;
-    this.step = 1;
   }
 
   onNext(): void {
@@ -754,23 +729,23 @@ export class RegistroCobrosComponent implements OnInit {
     if (!cliente?.clientes_codigo) return;
 
     this.codcliO = cliente.clientes_codigo;
-    this.formCliente.patchValue({ clienteCodigo: this.codcliO });
+    this.formCliente.patchValue({
+      clienteCodigo: this.codcliO,
+      ruc: this.getRucCliente(cliente)        // <-- setear RUC
+    });
 
     this.cuentaCobrarService.getFacturasPendientesGrid(String(this.codcliO))
       .subscribe((rows: GridRow[]) => {
         this.rowData = rows;
-        if (this.gridApi) {
-          this.gridApi.setGridOption('rowData', this.rowData);
-          this.gridApi.sizeColumnsToFit();
-        }
+        this.gridApi?.setGridOption('rowData', this.rowData);
+        this.gridApi?.sizeColumnsToFit();
         this.recalcMontoDeuda();
-
         if (rows.length === 0) this.mostrarAlerta('El cliente no tiene detalle de facturas (No tiene facturas_pendientes)', 'info');
-        this.focusValorAPagar();
       });
 
     this.lockCliente();
   }
+
 
   cargarCliente() {
     this.clienteOrigenControl.valueChanges.pipe(
@@ -1153,6 +1128,95 @@ export class RegistroCobrosComponent implements OnInit {
 
     const desc = (row?.descripcion ?? '').toString().toUpperCase();
     return /RETENCI(Ó|O)N/.test(desc); // "RETENCIÓN" o "RETENCION"
+  }
+  cargarClientePorId(id: number): void {
+    this.clienteService.getClienteById(id).subscribe({
+      next: (cliente) => {
+        this.clienteE = cliente;
+
+      },
+      error: (err) => {
+        console.error('Error al obtener cliente:', err);
+      }
+    });
+  }
+  cargarClienteInv(): void {
+    const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+    console.log('[ClienteSeleccionadoService] actual →', cliente);
+
+    if (cliente) {
+      this.clienteSeleccionado = cliente;
+      this.applyClienteSeleccion(cliente);
+    } else {
+      // Si no hay cliente previo, habilita el autocomplete normal
+      this.unlockCliente();
+      this.cargarCliente(); // (tu stream de búsqueda por texto)
+    }
+  }
+  /** Extrae el código (id) del cliente desde distintos modelos posibles */
+  private getCodigoCliente(c: any): number {
+    return Number(
+      c?.clientes_codigo ?? c?.cliente_codigo ?? c?.codigoCliente ?? c?.id ?? 0
+    );
+  }
+
+  /** Extrae el nombre del cliente */
+  private getNombreCliente(c: any): string {
+    return String(
+      c?.nomcli ?? c?.nombre ?? c?.cliente ?? c?.razon_social ?? ''
+    ).trim();
+  }
+
+  /** Aplica el cliente a la UI, bloquea el control y carga las facturas */
+  private applyClienteSeleccion(c: any): void {
+    const codigo = this.getCodigoCliente(c);
+    const nombre = this.getNombreCliente(c);
+    if (!codigo) return;
+
+    this.codcliO = codigo;
+
+    // Reflejar en form y autocomplete (sin disparar búsqueda)
+    this.formCliente.patchValue({ clienteCodigo: codigo, ruc: this.getRucCliente(c) }, // <-- RUC aquí también
+      { emitEvent: false }
+    );
+    this.clienteOrigenControl.setValue(nombre || c, { emitEvent: false });
+
+    // Cargar facturas del cliente
+    this.cuentaCobrarService.getFacturasPendientesGrid(String(codigo))
+      .subscribe((rows: GridRow[]) => {
+        this.rowData = rows;
+
+        // si la grid aún no está ready, espera al ciclo siguiente
+        if (!this.gridApi) {
+          setTimeout(() => {
+            this.gridApi?.setGridOption('rowData', this.rowData);
+            this.gridApi?.sizeColumnsToFit();
+          }, 0);
+        } else {
+          this.gridApi.setGridOption('rowData', this.rowData);
+          this.gridApi.sizeColumnsToFit();
+        }
+
+        this.recalcMontoDeuda();
+
+        if (rows.length === 0) {
+          this.mostrarAlerta('El cliente no tiene detalle de facturas (No tiene facturas_pendientes)', 'info');
+        }
+        this.focusValorAPagar();
+      });
+
+    // Bloquear selección para evitar cambios accidentales
+    this.lockCliente();
+  }
+
+  private hasValorAPagar(): boolean {
+    const raw = String(this.formCliente.get('valorAPagar')?.value ?? '').replace(/[^0-9.]/g, '');
+    return raw !== '' && !isNaN(parseFloat(raw));
+  }
+  private getRucCliente(c: any): string {
+    return String(
+      c?.ruc ?? c?.cedruc ?? c?.ruc_ci ?? c?.identificacion ?? c?.rucCliente ?? ''
+    ).trim();
   }
 
 }

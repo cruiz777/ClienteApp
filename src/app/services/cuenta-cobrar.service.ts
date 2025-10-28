@@ -35,6 +35,7 @@ export interface FacturaPendiente {
   saldo_pendiente: number;
   tipo_documento: string;
   observacion: string;
+  detalle:string;
 }
 
 /* ==== Pago (respuesta de creación) ==== */
@@ -56,6 +57,8 @@ export interface GridRow {
   valueVencido: boolean;
   descripcion: string;
   ord: number;
+    detalles?: string[];   // <- del API
+  detalle?: string;  
 }
 
 /* ---- Pago (request) ---- */
@@ -152,31 +155,45 @@ export class CuentaCobrarService {
     return of(this.mapResponseToGridRows(json, clienteCodigo));
   }
 
-  private mapResponseToGridRows(res: ApiRespuestaCxC, clienteCodigo: string): GridRow[] {
-    const items = res?.data?.resumen_por_cliente?.items ?? [];
-    const item = items.find(i => String(i?.cliente_codigo) === String(clienteCodigo)) ?? items[0];
+private mapResponseToGridRows(res: ApiRespuestaCxC, clienteCodigo: string): GridRow[] {
+  const items = res?.data?.resumen_por_cliente?.items ?? [];
+  const item = items.find(i => String(i?.cliente_codigo) === String(clienteCodigo)) ?? items[0];
 
-    const facturas: FacturaPendiente[] = (item?.facturas_pendientes ?? []) as FacturaPendiente[];
-    if (!Array.isArray(facturas) || facturas.length === 0) return [];
+  const facturas: FacturaPendiente[] = (item?.facturas_pendientes ?? []) as FacturaPendiente[];
+  if (!Array.isArray(facturas) || facturas.length === 0) return [];
 
-    return facturas.map((f): GridRow => {
-      const pago = 0;
-      const monto = this.to2(this.num(f.saldo_pendiente ?? f.total_factura));
-      return {
-        numero: `F - ${f.numero_factura}`,
-        numero_factura: f.numero_factura,
-        tipo_documento: f.tipo_documento,
-        fecha: f.fecha_factura,
-        monto,
-        pago,
-        estado: pago <= 0 ? 'PENDIENTE DE PAGO' : (pago >= monto ? 'CANCELADO' : 'ABONADO'),
-        vence: f.fecha_factura,
-        valueVencido: this.num(f.dias_vencimiento) > 0,
-        descripcion: f.observacion || f.tipo_documento || '',
-        ord: 1,
-      };
-    });
-  }
+  return facturas.map((f): GridRow => {
+    const pago = 0;
+    const monto = this.to2(this.num(f.saldo_pendiente ?? f.total_factura));
+
+    // Puede venir como 'detalles' (array) o 'detalle' (string)
+    const rawDetalles = (f as any)?.detalles;
+    const arr: string[] =
+      Array.isArray(rawDetalles) ? rawDetalles
+      : f.detalle ? [String(f.detalle).trim()]
+      : [];
+
+    const detallePlano = arr.map(s => String(s ?? '').trim()).filter(Boolean).join(' • ');
+
+    return {
+      numero: `F - ${f.numero_factura}`,
+      numero_factura: f.numero_factura,
+      tipo_documento: f.tipo_documento,
+      fecha: f.fecha_factura,
+      monto,
+      pago,
+      estado: pago <= 0 ? 'PENDIENTE DE PAGO' : (pago >= monto ? 'CANCELADO' : 'ABONADO'),
+      vence: f.fecha_factura,
+      valueVencido: this.num(f.dias_vencimiento) > 0,
+      descripcion: f.observacion || f.tipo_documento || '',
+      ord: 1,
+      detalles: arr.length ? arr : undefined,          // ← FIX: no null
+      detalle: detallePlano || 'SIN DETALLE',
+    };
+  });
+}
+
+
 
   private num(v: any): number {
     return typeof v === 'string' ? parseFloat(v) : (v ?? 0);
