@@ -48,7 +48,9 @@ export const MY_DATE_FORMATS = {
 
 type AutorizacionRow = {
   idAutorizacionUsuario: number;
+   idAutorizacionCaja: number;     
   establecimiento: string;
+  
   caja: string;
   estado: 'Activo' | 'Inactivo';
 };
@@ -56,6 +58,7 @@ type AutorizacionRow = {
 function mapDtoToRow(dto: AutorizacionCajaUsuarioDto): AutorizacionRow {
   return {
     idAutorizacionUsuario: dto.idAutorizacionUsuario,
+    idAutorizacionCaja: dto.idAutorizacionCaja,
     establecimiento: dto.numEstablecimiento ?? '',
     caja: dto.caja ?? '',
     estado: dto.activa ? 'Activo' : 'Inactivo',
@@ -425,27 +428,39 @@ export class UsuarioCajaComponent implements OnInit {
 
   // Carga catálogo de AutorizacionCaja (para seleccionar)
   private cargarCatalogoAutorizaciones(page: number = 1, pageSize: number = 10): void {
-    this.cajaUsuarioService.getAutorizacionesCaja(page, pageSize).subscribe({
+  // Si estás editando, usa ese id; si no, el del usuario actual
+  const idUsuario = this.esEdicion ? this.usuarioIdEditar! : this.usuarioActual?.id_usuario;
+
+  this.cajaUsuarioService
+    .getAutorizacionesCajaDisponibles(page, pageSize, idUsuario)
+    .subscribe({
       next: (resp: ApiResponse<PaginationResponse<AutorizacionCajaDto>>) => {
         if (resp.type === 'Success' && resp.data) {
-          const d = resp.data as PaginationResponse<AutorizacionCajaDto>;
-          this.catalogoAutorizaciones = d.items ?? [];
-          this.page = d.page;
-          this.pageSize = d.pageSize;
+          const d = resp.data;
+
+          // No mostrar cajas que ya estén listadas en la tabla del usuario actual
+          const yaAsignadas = new Set(this.autorizaciones.map(a => a.idAutorizacionCaja));
+          this.catalogoAutorizaciones = (d.items ?? []).filter(
+            x => !yaAsignadas.has(x.id_autorizacion_caja)
+          );
+
+          this.page       = d.page;
+          this.pageSize   = d.pageSize;
           this.totalItems = d.totalItems;
           this.totalPages = d.totalPages;
         } else {
           this.catalogoAutorizaciones = [];
-          this.toast.error(resp.message || 'No se pudo obtener AutorizacionCaja.');
+          this.toast.error(resp.message || 'No se pudo obtener cajas disponibles.');
         }
       },
       error: (err: any) => {
         console.error(err);
         this.catalogoAutorizaciones = [];
-        this.toast.error(err?.error?.message || 'Error consultando AutorizacionCaja.');
+        this.toast.error(err?.error?.message || 'Error consultando cajas disponibles.');
       }
     });
-  }
+}
+
 
   // Para *ngFor trackBy
   trackById(index: number, row: { idAutorizacionUsuario: number }): number {

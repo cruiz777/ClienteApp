@@ -135,5 +135,53 @@ getAutorizacionesCaja(
     { params }
   );
 }
+// ====== SOLO CAJAS DISPONIBLES ======
+
+/**
+ * GET /AutorizacionCaja/disponibles?page=&pageSize=&idUsuario=
+ * Devuelve SOLO las cajas libres (sin asignación ACTIVA global).
+ * Si envías idUsuario, el backend puede incluir la que esté activa para ese usuario.
+ */
+getAutorizacionesCajaDisponibles(
+  page: number = 1,
+  pageSize: number = 10,
+  idUsuario?: number
+): Observable<ApiResponse<PaginationResponse<AutorizacionCajaDto>>> {
+  let params = new HttpParams()
+    .set('page', String(page))
+    .set('pageSize', String(pageSize));
+
+  if (idUsuario != null) {
+    params = params.set('idUsuario', String(idUsuario));
+  }
+
+  return this.http.get<ApiResponse<PaginationResponse<AutorizacionCajaDto>>>(
+    `${this.baseUrl}/AutorizacionCaja/disponibles`,
+    { params }
+  );
+}
+
+/**
+ * Igual que el anterior pero **observa todo el HttpResponse** para leer headers.
+ * Útil si tu API envía cabeceras como X-Total-Count, X-Trace-Id, etc.
+ */
+getAutorizacionesCajaDisponibles$Response(
+  page: number = 1,
+  pageSize: number = 10,
+  idUsuario?: number
+): Observable<import('@angular/common/http').HttpResponse<ApiResponse<PaginationResponse<AutorizacionCajaDto>>>> {
+  let params = new HttpParams()
+    .set('page', String(page))
+    .set('pageSize', String(pageSize));
+
+  if (idUsuario != null) {
+    params = params.set('idUsuario', String(idUsuario));
+  }
+
+  return this.http.get<ApiResponse<PaginationResponse<AutorizacionCajaDto>>>(
+    `${this.baseUrl}/AutorizacionCaja/disponibles`,
+    { params, observe: 'response' }  // <-- para obtener headers
+  );
+}
 
 }

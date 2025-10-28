@@ -12,6 +12,7 @@ import { PermissionGuard } from 'src/app/guards/permission.guard';
 import { AnulacionPagoComponent } from './cxc/anulacion-pago/anulacion-pago.component';
 import { NotaCreditoComponent } from './cxc/nota-credito/nota-credito.component';
 import { CajaComponent } from './facturacion/caja/caja.component';
+import { LisFacAnuladasComponent } from './facturacion/lis-fac-anuladas/lis-fac-anuladas.component';
 
 const routes: Routes = [
   {
@@ -75,6 +76,12 @@ const routes: Routes = [
       {
         path: 'caja',
         component: CajaComponent
+       
+      }
+      ,
+      {
+        path: 'fanuladas',
+        component: LisFacAnuladasComponent
        
       }
     ]

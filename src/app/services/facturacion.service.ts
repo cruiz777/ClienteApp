@@ -1,22 +1,25 @@
+// src/app/services/facturacion.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
 
-export interface ApiResponse<T> {
-  id: string;
+export interface ApiResponse<T = any> {
+  id?: string;
   type: 'Success' | 'Error' | 'NotFound' | string;
   data: T;
   message: string;
-  count: number;
+  count?: number;
 }
+
 export interface GenerarXmlFacturaResponse {
   success: boolean;
   message: string;
   fileName?: string;
   savedPath?: string;
 }
+
 export interface ProductoResponse {
   id_producto: number;
   codpro: string | null;
@@ -38,9 +41,9 @@ export interface FacturaDetalleRequest {
   idProducto: number;
   cantidad: number;
   precio: number;
-  idDescuentoPredeterminado: number | null; // ← permite null
-  porcentajeDescuentoManual: number | null; // ← permite null
-  nombreProductoPersonalizado: string
+  idDescuentoPredeterminado: number | null;
+  porcentajeDescuentoManual: number | null;
+  nombreProductoPersonalizado: string;
   ivaCalculado: number;
   subtotalCalculado: number;
   descuentoCalculado: number;
@@ -50,29 +53,59 @@ export interface FacturaDetalleRequest {
   periodoHasta: string;
 }
 
+export interface AnularFacturaRequest {
+  motivoAnulacion: string;
+  id_usuario_anula: number;
+}
+
+export interface FacturaAnuladaListResponse {
+  idNota: number;
+  numeroFactura: string;
+  fecha: string; // ISO
+  cliente: string;
+  idCliente: number;
+  rucCliente: string;
+  dirCliente: string;
+  total: number;
+  cajero: string;
+  caja: string;
+  estado: string; // "Anulada"
+  xmlGenerado: boolean;
+  claveAcceso: string | null;
+  observacion: string | null;
+}
+
+export interface PaginationResponse<T> {
+  items: T[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  message: string;
+}
+
 export interface FacturaCrearRequest {
   idCliente: number;
   caja: string;
   idUsuarioCajero: number;
-  idDescuentoGlobal: number | null;          // ← permite null
-  porcentajeDescuentoGlobal: number | null;  // ← permite null
+  idDescuentoGlobal: number | null;
+  porcentajeDescuentoGlobal: number | null;
   observaciones: string;
   anioFactura: number;
-  numeroOrdenCompra: string,
-  numeroGuiaRemision: string,
+  numeroOrdenCompra: string;
+  numeroGuiaRemision: string;
   prefijo: string;
   correo: string;
-  facBloque:number;
-  GrupoCliente:string;
-  subtotalSIva: number,
-  subtotalCalculado: number,
-  descuentoTotalCalculado: number,
-  ivaTotalCalculado: number,
-  totalCalculado: number,
+  facBloque: number;
+  GrupoCliente: string;
+  subtotalSIva: number;
+  subtotalCalculado: number;
+  descuentoTotalCalculado: number;
+  ivaTotalCalculado: number;
+  totalCalculado: number;
   detalles: FacturaDetalleRequest[];
   formasPago: FacturaFormaPagoRequest[];
 }
-
 
 export interface FacturaFormaPagoRequest {
   idFormaPago: number;
@@ -87,27 +120,16 @@ export interface FacturaFormaPagoRequest {
   autoriza: string;
 }
 
-
-
-export interface ApiResponse<T = any> {
-  type: string;
-  message: string;
-  data: T;
-}
-
-
-
 @Injectable({
   providedIn: 'root'
 })
 export class FacturacionService {
-  private baseUrl = environment.invoices_sic; // ej: http://localhost:5000
+  private baseUrl = environment.invoices_sic; // ej: http://localhost:5000  (ajusta si tu baseUrl ya incluye /api)
 
   constructor(private http: HttpClient) { }
 
   /**
-   * GET /api/producto/by-codpro-fixed
-   * Retorna productos con Codpro IN ('1174','1175','1176','1177','1178','1180')
+   * GET /producto/by-codpro-fixed
    */
   getProductosCodproFijos(): Observable<ProductoResponse[]> {
     const url = `${this.baseUrl}/producto/by-codpro-fixed`;
@@ -126,8 +148,7 @@ export class FacturacionService {
   }
 
   /**
-   * GET /api/producto/by-codpro?codigos=1174&codigos=1175...
-   * (Usa este si agregas el endpoint parametrizable en tu backend)
+   * GET /producto/by-codpro?codigos=1174&codigos=1175...
    */
   getProductosPorCodigos(codigos: string[]): Observable<ProductoResponse[]> {
     const url = `${this.baseUrl}/producto/by-codpro`;
@@ -147,12 +168,19 @@ export class FacturacionService {
       })
     );
   }
+
   crear(payload: FacturaCrearRequest): Observable<ApiResponse> {
-    return this.http.post<ApiResponse>(`${this.baseUrl}/Facturacion/crear`, payload);
+    return this.http.post<ApiResponse>(`${this.baseUrl}/Facturacion/crear`, payload).pipe(
+      catchError(err => {
+        console.error('[FacturacionService] crear error:', err);
+        return throwError(() => err);
+      })
+    );
   }
-  /** GET /api/Facturacion/{idNota}/xml  → XML como string */
+
+  /** GET XML como string */
   getXmlFactura(idNota: number): Observable<string> {
-    const url = `${this.baseUrl}/api/Facturacion/${idNota}/xml`; // ajusta /api si tu backend no lo usa
+    const url = `${this.baseUrl}/Facturacion/${idNota}/xml`;
     return this.http.get(url, { responseType: 'text' }).pipe(
       catchError(err => {
         console.error('[FacturacionService] getXmlFactura error:', err);
@@ -161,7 +189,7 @@ export class FacturacionService {
     );
   }
 
-  /** GET /api/Facturacion/{idNota}/xml  → XML como Blob (para descargar) */
+  /** GET XML como Blob */
   getXmlFacturaBlob(idNota: number): Observable<Blob> {
     const url = `${this.baseUrl}/Facturacion/${idNota}/xml`;
     return this.http.get(url, { responseType: 'blob' }).pipe(
@@ -172,7 +200,7 @@ export class FacturacionService {
     );
   }
 
-  /** Helper para disparar la descarga inmediatamente */
+  /** Helper para descargar Blob */
   descargarXmlFactura(idNota: number, nombre = `factura-${idNota}.xml`): Observable<void> {
     return this.getXmlFacturaBlob(idNota).pipe(
       map(blob => {
@@ -184,39 +212,147 @@ export class FacturacionService {
         a.click();
         a.remove();
         URL.revokeObjectURL(href);
+      }),
+      catchError(err => {
+        console.error('[FacturacionService] descargarXmlFactura error:', err);
+        return throwError(() => err);
       })
     );
   }
-generarXmlEnServidor(idNota: number) {
-  // usa la ruta de tu controller:
-  // si dejaste el endpoint en FacturacionController => /api/Facturacion/{idNota}/xml
-  // si lo moviste a FacturaController         => /api/facturas/{idNota}/xml
-  const url = `${this.baseUrl}/Facturacion/${idNota}/xml`; // o '/facturas/...'
-  return this.http.post<GenerarXmlFacturaResponse>(url, {}); // POST y JSON
-}
-/** Descarga el PDF de la factura (abre el diálogo de guardar) */
-descargarPdfFactura(idNota: number, nombre = `factura-${idNota}.pdf`): Observable<void> {
-  const url = `${this.baseUrl}/Facturacion/${idNota}/pdf`;
-  return this.http.get<Blob>(url, { responseType: 'blob' as 'json' }).pipe(
-    map(blob => {
-      const href = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = href;
-      a.download = nombre;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(href);
-    }),
-    catchError(err => {
-      console.error('[FacturacionService] descargarPdfFactura error:', err);
-      return throwError(() => err);
-    })
-  );
-}
-getPdfFacturaBlob(idNota: number) {
-  const url = `${this.baseUrl}/Facturacion/${idNota}/pdf`;
-  return this.http.get(url, { responseType: 'blob' });
+
+  generarXmlEnServidor(idNota: number): Observable<GenerarXmlFacturaResponse> {
+    const url = `${this.baseUrl}/Facturacion/${idNota}/xml`;
+    return this.http.post<GenerarXmlFacturaResponse>(url, {}).pipe(
+      catchError(err => {
+        console.error('[FacturacionService] generarXmlEnServidor error:', err);
+        return throwError(() => err);
+      })
+    );
+  }
+
+  /** Descargar PDF (inicia descarga) */
+  descargarPdfFactura(idNota: number, nombre = `factura-${idNota}.pdf`): Observable<void> {
+    const url = `${this.baseUrl}/Facturacion/${idNota}/pdf`;
+    return this.http.get(url, { responseType: 'blob' }).pipe(
+      map((blob: Blob) => {
+        const href = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = href;
+        a.download = nombre;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(href);
+      }),
+      catchError(err => {
+        console.error('[FacturacionService] descargarPdfFactura error:', err);
+        return throwError(() => err);
+      })
+    );
+  }
+
+  getPdfFacturaBlob(idNota: number): Observable<Blob> {
+    const url = `${this.baseUrl}/Facturacion/${idNota}/pdf`;
+    return this.http.get(url, { responseType: 'blob' }).pipe(
+      catchError(err => {
+        console.error('[FacturacionService] getPdfFacturaBlob error:', err);
+        return throwError(() => err);
+      })
+    );
+  }
+
+  /**
+   * POST /Facturacion/anular/{idNota}
+   * Body: { motivoAnulacion: string, id_usuario_anula: number }
+   */
+  anularFactura(
+    idNota: number,
+    motivoAnulacion: string,
+    idUsuarioAnula: number
+  ): Observable<ApiResponse<any>> {
+    if (!idNota || idNota <= 0) {
+      return throwError(() => new Error('idNota inválido.'));
+    }
+
+    const payload: AnularFacturaRequest = {
+      motivoAnulacion: (motivoAnulacion ?? '').toUpperCase().trim(),
+      id_usuario_anula: idUsuarioAnula
+    };
+
+    const url = `${this.baseUrl}/Facturacion/anular/${idNota}`;
+
+    return this.http.post<ApiResponse<any>>(url, payload).pipe(
+      map(resp => {
+        if (resp?.type !== 'Success') {
+          throw new Error(resp?.message || 'No se pudo anular la factura.');
+        }
+        return resp;
+      }),
+      catchError(err => {
+        console.error('[FacturacionService] anularFactura error:', err);
+        return throwError(() => err);
+      })
+    );
+  }
+
+  getFacturasAnuladas(opts: {
+    clienteLike?: string | null;
+    fechaInicio?: Date | string | null;
+    fechaFin?: Date | string | null;
+    page?: number;
+    pageSize?: number;
+  }): Observable<ApiResponse<PaginationResponse<FacturaAnuladaListResponse>>> {
+    const url = `${this.baseUrl}/Facturacion/anuladas`;
+
+    let params = new HttpParams()
+      .set('page', String(opts.page ?? 1))
+      .set('pageSize', String(opts.pageSize ?? 10));
+
+    if (opts.clienteLike?.trim()) {
+      params = params.set('clienteLike', opts.clienteLike.trim());
+    }
+    if (opts.fechaInicio) {
+      params = params.set('fechaInicio', toLocalStartOfDay(opts.fechaInicio));
+    }
+    if (opts.fechaFin) {
+      params = params.set('fechaFin', toLocalEndOfDay(opts.fechaFin));
+    }
+    
+    return this.http.get<ApiResponse<PaginationResponse<FacturaAnuladaListResponse>>>(url, { params })
+      .pipe(
+        map(resp => {
+          if (resp.type !== 'Success') throw new Error(resp.message || 'No se pudo obtener el listado de anuladas.');
+          return resp;
+        }),
+        catchError(err => {
+          console.error('[FacturacionService] getFacturasAnuladas error:', err);
+          return throwError(() => err);
+        })
+      );
+  }
 }
 
+/* ---------- funciones auxiliares (fuera de la clase) ---------- */
+
+/** Fecha-hora LOCAL en formato 'YYYY-MM-DDTHH:mm:ss.SSS' (sin 'Z') */
+function toLocalStartOfDay(date: Date | string): string {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  return d.toISOString(); // formato válido para DateTime
+}
+
+function toLocalEndOfDay(date: Date | string): string {
+  const d = new Date(date);
+  d.setHours(23, 59, 59, 999);
+  return d.toISOString();
+}
+function fmtLocal(dt: Date): string {
+  const yyyy = dt.getFullYear();
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  const hh = String(dt.getHours()).padStart(2, '0');
+  const mi = String(dt.getMinutes()).padStart(2, '0');
+  const ss = String(dt.getSeconds()).padStart(2, '0');
+  const ms = String(dt.getMilliseconds()).padStart(3, '0');
+  return `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}.${ms}`; // ← sin 'Z'
 }

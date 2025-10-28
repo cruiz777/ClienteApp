@@ -17,6 +17,7 @@ import { combineLatest } from 'rxjs';
 import { shareReplay } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { multipleEmailsValidator } from 'src/app/util/validators';
+import { FacturaAnuladaComponent,DatosAnularFactura  } from '../factura-anulada/factura-anulada.component';
 import {
   FacturacionMesesResult
 } from 'src/app/components/sic-3000/facturacion/facturacion-meses-modal/facturacion-meses-modal.component';
@@ -1998,5 +1999,13 @@ onGenerarClick(): void {
     }
     return { ok: true };
   }
+
+abrirModalAnular() {
+  this.dialog.open(FacturaAnuladaComponent, {
+    width: '900px',
+    disableClose: true,
+    autoFocus: false
+  });
+}
 
 }
