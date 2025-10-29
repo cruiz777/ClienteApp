@@ -7,6 +7,7 @@ import { environment } from 'src/environments/environment';
 import { ProveedorRequest } from '../interfaces/requests/proveedor-request';
 import { ProveedorResponse } from '../interfaces/responses/proveedor-response';
 import { ApiResponse } from '../interfaces/responses/api-response';
+import { PaginationResponse } from '../interfaces/responses/pagination-response';
 
 @Injectable({
   providedIn: 'root'
@@ -16,11 +17,11 @@ export class ProveedorService {
 
   constructor(private http: HttpClient) { }
 
-  /**
-   * Obtiene todos los proveedores activos
+/**
+   * Obtiene todos los proveedores activos (paginados)
    */
-  getAll(): Observable<ApiResponse<ProveedorResponse[]>> {
-    return this.http.get<ApiResponse<ProveedorResponse[]>>(this.apiUrl);
+  getAll(): Observable<PaginationResponse<ProveedorResponse>> { // ✅ CAMBIAR TIPO
+    return this.http.get<PaginationResponse<ProveedorResponse>>(this.apiUrl);
   }
 
   /**
