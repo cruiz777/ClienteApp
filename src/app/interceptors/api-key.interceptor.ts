@@ -22,7 +22,8 @@ export class ApiKeyInterceptor implements HttpInterceptor {
       environment.invoices_sic,
       environment.rucUlr,
       environment.cedulaUrl
-
+      environment.inventoryUrl,
+      
     ];
     
     // Verificar si es una petición a través del gateway

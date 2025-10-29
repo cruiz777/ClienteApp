@@ -11,6 +11,7 @@ export const environment = {
 
   reportUrl: 'http://10.10.7.11:8000/reports/api',
   
+  inventoryUrl: 'http://10.10.7.11:8000/inventories/api',
 
     invoices_sic:'http://10.10.7.11:8000/invoices-sic/api',
     rucUlr:'http://pichincha.gapsystem.net:10048/api/services/ruc/',

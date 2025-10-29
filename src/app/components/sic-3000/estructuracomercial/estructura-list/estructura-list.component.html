@@ -11,70 +11,127 @@
     <!-- Árbol de navegación -->
     <div class="panel-arbol">
       <ul class="arbol-navegacion">
-        <li *ngFor="let nivel1 of modulos">
-          <div (click)="toggleExpand(nivel1)">
-            {{ nivel1.expandido ? '📂' : '📁' }} {{ nivel1.nombre }}
+        <!-- RAÍZ: estructuras comerciales con IMÁGENES -->
+        <li *ngFor="let empresa of empresas">
+          <div (click)="onNodoClick(empresa)" (contextmenu)="abrirMenuContextual($event, empresa)">
+            <img [src]="getIconoEmpresa(empresa)" width="20" height="20" alt="empresa" />
+            {{ empresa.nombre }}
           </div>
 
-          <ul *ngIf="nivel1.expandido">
-            <li *ngFor="let nivel2 of nivel1.hijos">
-              <div (click)="toggleExpand(nivel2)">
-                {{ nivel2.expandido ? '📂' : '📁' }} {{ nivel2.nombre }}
+          <ul *ngIf="empresa.expandido">
+            <li *ngFor="let nivel1 of empresa.hijos">
+              <div (click)="onNodoClick(nivel1)" (contextmenu)="abrirMenuContextual($event, nivel1)">
+                <img [src]="getIcono(nivel1)" width="20" height="20" [alt]="nivel1.tipo" />
+                {{ nivel1.nombre }}
               </div>
 
-              <ul *ngIf="nivel2.expandido">
-                <li *ngFor="let nivel3 of nivel2.hijos">
-                  <div (click)="toggleExpand(nivel3)">
-                    {{ nivel3.expandido ? '📂' : '📁' }} {{ nivel3.nombre }}
+              <ul *ngIf="nivel1.expandido">
+                <li *ngFor="let nivel2 of nivel1.hijos">
+                  <div (click)="onNodoClick(nivel2)" (contextmenu)="abrirMenuContextual($event, nivel2)">
+                    <img [src]="getIcono(nivel2)" width="20" height="20" [alt]="nivel2.tipo" />
+                    {{ nivel2.nombre }}
                   </div>
 
-                  <ul *ngIf="nivel3.expandido">
-                    <li *ngFor="let hoja of nivel3.hijos">
-                      <div (click)="toggleExpand(hoja)" [class.hoja]="true"
-                        [class.activo]="opcionSeleccionada?.nombre === hoja.nombre">
-                        📄 {{ hoja.nombre }}
+                  <ul *ngIf="nivel2.expandido">
+                    <li *ngFor="let nivel3 of nivel2.hijos">
+                      <div (click)="onNodoClick(nivel3)" (contextmenu)="abrirMenuContextual($event, nivel3)">
+                        <img [src]="getIcono(nivel3)" width="20" height="20" [alt]="nivel3.tipo" />
+                        {{ nivel3.nombre }}
                       </div>
+
+                      <ul *ngIf="nivel3.expandido">
+                        <li *ngFor="let nivel4 of nivel3.hijos">
+                          <div (click)="onNodoClick(nivel4)" (contextmenu)="abrirMenuContextual($event, nivel4)">
+                            <img [src]="getIcono(nivel4)" width="20" height="20" [alt]="nivel4.tipo" />
+                            {{ nivel4.nombre }}
+                          </div>
+
+                          <ul *ngIf="nivel4.expandido">
+                            <li *ngFor="let nivel5 of nivel4.hijos">
+                              <div (click)="onNodoClick(nivel5)" (contextmenu)="abrirMenuContextual($event, nivel5)">
+                                <img [src]="getIcono(nivel5)" width="20" height="20" [alt]="nivel5.tipo" />
+                                {{ nivel5.nombre }}
+                              </div>
+
+                              <ul *ngIf="nivel5.expandido">
+                                <li *ngFor="let grupo of nivel5.hijos">
+                                  <div (click)="onNodoClick(grupo)" (contextmenu)="abrirMenuContextual($event, grupo)"
+                                    [class.grupo]="true" [class.activo]="opcionSeleccionada?.nombre === grupo.nombre">
+                                    <img [src]="getIcono(grupo)" width="20" height="20" alt="archivo" />
+                                    {{ grupo.nombre }}
+                                  </div>
+                                </li>
+                              </ul>
+
+                            </li>
+                          </ul>
+                        </li>
+                      </ul>
                     </li>
                   </ul>
                 </li>
               </ul>
             </li>
           </ul>
+
         </li>
       </ul>
 
+      <!-- Menú contextual -->
+      <div *ngIf="menuContextualVisible" class="context-menu"
+        [ngStyle]="{ top: posicionMenu.y + 'px', left: posicionMenu.x + 'px' }" (click)="$event.stopPropagation()">
+        <ul>
+          <li *ngIf="puedeCrear(nodoSeleccionado)" (click)="crearElemento()">
+            ➕ Crear {{ obtenerTipoHijo(nodoSeleccionado?.tipo) }}
+          </li>
+          <li (click)="editarElemento()">✏️ Editar {{ nodoSeleccionado?.tipo }}</li>
+
+          <li *ngIf="esUltimoNivel(nodoSeleccionado)" (click)="crearProducto()">
+            🆕 Crear producto
+          </li>
+        </ul>
+      </div>
     </div>
 
-    <!-- Tabla de productos filtrados -->
+    <!-- Panel de resultados con columnas dinámicas -->
     <div class="panel-tabla">
-      <table class="tabla-estilo">
-        <thead>
-          <tr>
-            <th>Código</th>
-            <th>Cod. Barras</th>
-            <th>Descripción</th>
-            <th>Proveedor</th>
-            <th>Costo Prov.</th>
-            <th>PVP+IVA</th>
-            <th>Abreviación</th>
-            <th>Referencia</th>
-            <th>Exist. Total</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let producto of productosFiltrados">
-            <td>{{ producto.codigo }}</td>
-            <td>{{ producto.codigoBarras }}</td>
-            <td>{{ producto.descripcion }}</td>
-            <td>{{ producto.proveedor }}</td>
-            <td>{{ producto.costo }}</td>
-            <td>{{ producto.pvp }}</td>
-            <td>{{ producto.abreviacion }}</td>
-            <td>{{ producto.referencia }}</td>
-            <td [class.sin-stock]="producto.existencia == 0">{{ producto.existencia }}</td>
-          </tr>
-        </tbody>
-      </table>
+      <div class="tabla-scrollable">
+        <table class="tabla-estilo tabla-densa">
+          <thead>
+            <tr>
+              <th *ngFor="let col of tableColumns">{{ col.label }}</th>
+            </tr>
+            <tr class="filters-row">
+              <th *ngFor="let col of tableColumns">
+                <input type="text" class="filtro-input" placeholder="Filtrar…" [(ngModel)]="columnFilters[col.key]"
+                  (ngModelChange)="onFilterInput(col.key, $event)" />
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of tableRows">
+              <td *ngFor="let col of tableColumns">
+                <ng-container [ngSwitch]="col.key">
+                  <ng-container *ngSwitchCase="'acciones'">
+                    <button (click)="editarProducto(row); $event.stopPropagation()" title="Editar">
+                      <img src="assets/icons/icon-modificar-3.png" width="20" />
+                    </button>
+                  </ng-container>
+                  <ng-container *ngSwitchDefault>
+                    {{ row[col.key] }}
+                  </ng-container>
+                </ng-container>
+              </td>
+            </tr>
+            <tr *ngIf="tableRows.length === 0">
+              <td [attr.colspan]="tableColumns.length" style="text-align:center; color:#6b7280;">
+                No hay datos para mostrar.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
+
   </div>
 </div>
