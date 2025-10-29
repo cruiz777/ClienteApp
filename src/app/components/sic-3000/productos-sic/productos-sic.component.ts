@@ -2551,7 +2551,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
           precision: 2
         },
         valueFormatter: (params: any) => {
-          return params.value != null ? Number(params.value).toFixed(2) + '%' : '0.00%';
+          return params.value != null ? Number(params.value).toFixed(2) + '' : '0.00';
         },
         cellStyle: { 'text-align': 'right' }
       },
