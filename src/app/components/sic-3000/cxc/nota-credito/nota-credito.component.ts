@@ -649,6 +649,10 @@ export class NotaCreditoComponent implements OnInit {
 
   onEnterFactura(): void {
     const entrada = (this.encabezado.factura ?? '').trim();
+    if (!this.cajaAsignada) {
+      this.mostrarAlerta('Usuario no tiene asignado Caja. No podrás generar notas de crédito hasta asignarla.', 'info');
+      return;
+    }
     if (!entrada) return;
 
     this.errorFactura = null;
@@ -911,7 +915,10 @@ export class NotaCreditoComponent implements OnInit {
     const tope = this.getTopePago();
     const pagado = this.totales.totalPago || 0;
     const dif = +(tope - pagado).toFixed(2);
-
+    if (!this.cajaAsignada) {
+      this.mostrarAlerta('Usuario no tiene asignado Caja. No podrás generar notas de crédito hasta asignarla.', 'info');
+      return;
+    }
     if (!(tope > 0)) {
       this.mostrarAlerta('No hay devolución calculada. Verifica el detalle.', 'info');
       return;
@@ -1040,25 +1047,51 @@ export class NotaCreditoComponent implements OnInit {
     return Math.max(0, +(topeBase - sumaOtros).toFixed(2));
   }
 
+  cajaAsignada = false;
   cargarAutorizacion(): void {
     const id = this.usuarioActual?.id_autorizacion_usuario;
-    if (id == null) return;
+
+    // valor por defecto
+    this.cajaAsignada = false;
+
+    if (id == null) {
+      // limpia visualmente sucursal/caja si no hay autorización
+      this.encabezado = {
+        ...this.encabezado,
+        sucursal: '',
+        caja: ''
+      };
+      return;
+    }
 
     this.autorizacionCajaService.getAutorizacionCaja(Number(id)).subscribe({
       next: ({ data }) => {
-        if (!data) return;
+        if (!data) {
+          this.cajaAsignada = false;
+          this.encabezado = { ...this.encabezado, sucursal: '', caja: '' };
+          return;
+        }
 
-        // num_establecimiento → encabezado.sucursal
-        // caja               → encabezado.caja
+        const suc = String(data.num_establecimiento ?? '').padStart(3, '0');
+        const caj = String(data.caja ?? '').padStart(3, '0');
+
         this.encabezado = {
           ...this.encabezado,
-          sucursal: String(data.num_establecimiento ?? '').padStart(3, '0'),
-          caja: String(data.caja ?? '').padStart(3, '0'),
+          sucursal: suc,
+          caja: caj,
         };
+
+        // ✅ se considera “asignada” si hay caja y número de establecimiento válidos
+        this.cajaAsignada = !!(suc && caj);
       },
-      error: (err) => console.error('Error cargando autorización de caja', err),
+      error: (err) => {
+        console.error('Error cargando autorización de caja', err);
+        this.cajaAsignada = false;
+        this.encabezado = { ...this.encabezado, sucursal: '', caja: '' };
+      },
     });
   }
+
 
 
 

@@ -21,7 +21,7 @@ export class ApiKeyInterceptor implements HttpInterceptor {
       environment.reportUrl,
       environment.invoices_sic,
       environment.rucUlr,
-      environment.cedulaUrl
+      environment.cedulaUrl,
       environment.inventoryUrl,
       
     ];

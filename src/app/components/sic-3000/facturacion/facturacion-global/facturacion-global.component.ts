@@ -450,6 +450,19 @@ Prefijo: ${d.prefijo ?? ''}`;
 
   // ========= FACTURAR (CONFIRMAR + ENVÍA + GENERA XML) =========
   facturar() {
+
+    if (!this.cajaAsignada) {
+      this.dialog.open(CustomMessageBoxComponent, {
+        data: {
+          title: 'Caja no asignada',
+          message: 'Usuario no tiene asignado Caja. No podrás generar facturas hasta asignarla.',
+          isLoading: false,
+          showCancel: false
+        }
+      });
+      return;
+    }
+
     if (!this.gridApi) return;
 
     const seleccionadas: any[] = this.gridApi.getSelectedRows() ?? [];
@@ -707,36 +720,44 @@ Prefijo: ${d.prefijo ?? ''}`;
     this.cargarAutorizacion();
   }
 
+  cajaAsignada = false;
   cargarAutorizacion(): void {
-  const id = this.usuarioActual?.id_autorizacion_usuario;
+    const id = this.usuarioActual?.id_autorizacion_usuario;
 
-  // Si no hay autorización activa, limpia y sal.
-  if (id == null) {
-    this.formCaja.patchValue({ secuencial: '', caja: '', puntoEmision: '' });
-    // this.snackBar.open('No hay autorización de caja activa.', 'Cerrar', { duration: 2500 });
-    return;
-  }
+    // Valor por defecto
+    this.cajaAsignada = false;
 
-  const idNum = Number(id); // por si viene como string
-
-  this.autorizacionCajaService.getAutorizacionCaja(idNum).subscribe({
-    next: ({ data }) => {
-      if (!data) {
-        this.formCaja.patchValue({ secuencial: '', caja: '', puntoEmision: '' });
-        return;
-      }
-      this.formCaja.patchValue({
-        secuencial: this.padLeft(data.numero_factura, 9),
-        caja: data.caja ?? '',
-        puntoEmision: data.num_establecimiento ?? '',
-      });
-    },
-    error: (err) => {
-      console.error('Error cargando autorización de caja', err);
+    if (id == null) {
       this.formCaja.patchValue({ secuencial: '', caja: '', puntoEmision: '' });
-    },
-  });
-}
+      return;
+    }
+
+    const idNum = Number(id);
+
+    this.autorizacionCajaService.getAutorizacionCaja(idNum).subscribe({
+      next: ({ data }) => {
+        if (!data) {
+          this.cajaAsignada = false;
+          this.formCaja.patchValue({ secuencial: '', caja: '', puntoEmision: '' });
+          return;
+        }
+
+        this.formCaja.patchValue({
+          secuencial: this.padLeft(data.numero_factura, 9),
+          caja: data.caja ?? '',
+          puntoEmision: data.num_establecimiento ?? '',
+        });
+
+        // Se considera “asignada” si al menos hay caja y número válido
+        this.cajaAsignada = !!(data.caja && data.numero_factura != null);
+      },
+      error: (err) => {
+        console.error('Error cargando autorización de caja', err);
+        this.cajaAsignada = false;
+        this.formCaja.patchValue({ secuencial: '', caja: '', puntoEmision: '' });
+      },
+    });
+  }
 
 
   private padLeft(value: any, size: number): string {
@@ -827,7 +848,7 @@ Prefijo: ${d.prefijo ?? ''}`;
     const periodoHasta = `${anio}-12-31`;
 
     const caja = String(this.formCaja.get('caja')?.value ?? '').trim();
-    const idUsuarioCajero: number = this.usuarioActual?.id_usuario?? this.usuarioActual?.id_usuario ?? 0;
+    const idUsuarioCajero: number = this.usuarioActual?.id_usuario ?? this.usuarioActual?.id_usuario ?? 0;
 
     const prefijo = String(row.prefijo ?? '').trim();
     const correo = String(row.email ?? '').trim();
@@ -1042,22 +1063,22 @@ Prefijo: ${d.prefijo ?? ''}`;
       ),
       // cuando termina la recolección, generamos el zip
       switchMap(() =>
-  zip.generateAsync(
-    {
-      type: 'blob',
-      compression: 'DEFLATE',
-      compressionOptions: { level: 6 }   // ✅ en lugar de compressionLevel
-    },
-    (meta: ZipProgress) => {              // ✅ tipo local en vez de JSZipNS.JSZipGeneratorMetadata
-      if (dlg?.componentInstance) {
-        dlg.componentInstance.data = {
-          ...dlg.componentInstance.data,
-          message: `Comprimiendo… ${Math.round(meta.percent)}%`
-        };
-      }
-    }
-  )
-),
+        zip.generateAsync(
+          {
+            type: 'blob',
+            compression: 'DEFLATE',
+            compressionOptions: { level: 6 }   // ✅ en lugar de compressionLevel
+          },
+          (meta: ZipProgress) => {              // ✅ tipo local en vez de JSZipNS.JSZipGeneratorMetadata
+            if (dlg?.componentInstance) {
+              dlg.componentInstance.data = {
+                ...dlg.componentInstance.data,
+                message: `Comprimiendo… ${Math.round(meta.percent)}%`
+              };
+            }
+          }
+        )
+      ),
 
 
       finalize(() => {

@@ -87,8 +87,6 @@ const routes: Routes = [
         path: 'fanuladas',
         component: LisFacAnuladasComponent
        
-      }
-        data: { permission: 'sic-3000.facturacion.facturacion-global' } 
       },
       // ✅ Ruta para EDITAR producto (con ID)
       { 

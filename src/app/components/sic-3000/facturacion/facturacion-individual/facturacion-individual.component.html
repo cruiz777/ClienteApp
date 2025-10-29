@@ -83,14 +83,9 @@
         <div class="fi-field fi-emailop">
           <label>E-mail Facturación:</label>
 
-          <input class="fi-input"
-       type="text"
-       formControlName="emailOpcional"
-       placeholder="correo1@dominio.com;correo2@dominio.com"
-       maxlength="300"
-       autocomplete="off"
-       (keydown.space)="$event.preventDefault()"
-       (input)="onEmailOpcionalInput($event)" />
+          <input class="fi-input" type="text" formControlName="emailOpcional"
+            placeholder="correo1@dominio.com;correo2@dominio.com" maxlength="300" autocomplete="off"
+            (keydown.space)="$event.preventDefault()" (input)="onEmailOpcionalInput($event)" />
 
           <div *ngIf="formCliente.get('emailOpcional')?.touched && formCliente.get('emailOpcional')?.invalid"
             style="margin-top:4px">
@@ -339,6 +334,12 @@
               style="font-size:20px;height:40px;font-weight:700;color:#F26334;width:140px;">
           </div>
         </div>
+        <div *ngIf="!cajaAsignada" class="alert-warn" style="
+  margin:8px 0; padding:8px 12px; border-radius:8px;
+  background:#fff3cd; color:#664d03; border:1px solid #ffecb5;">
+          Usuario no tiene asignado <strong>Caja</strong>. No podrás generar facturas hasta asignarla.
+        </div>
+
       </div>
       <div class="box-section">
         <div class="refs-row">

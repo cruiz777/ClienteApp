@@ -55,6 +55,15 @@
       <input class="form-control" [(ngModel)]="encabezado.observacion" />
     </div>
   </div>
+  <!-- AVISO: CAJA NO ASIGNADA -->
+<div *ngIf="!cajaAsignada"
+     class="alert-warn"
+     style="margin:8px 0; padding:8px 12px; border-radius:8px;
+            background:#fff3cd; color:#664d03; border:1px solid #ffecb5;"
+     aria-live="polite">
+  Usuario no tiene asignado <strong>Caja</strong>. No podrás generar notas de crédito hasta asignarla.
+</div>
+
 
   <!-- DETALLES -->
   <div class="panel">

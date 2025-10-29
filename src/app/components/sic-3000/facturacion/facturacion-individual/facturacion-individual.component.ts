@@ -947,32 +947,52 @@ export class FacturacionIndividualComponent implements OnInit {
   }
 
 
-  cargarAutorizacion() {
+cargarAutorizacion() {
   const id = this.usuarioActual?.id_autorizacion_usuario;
 
-  // si no hay autorización activa, no llames al backend
+  // Si no hay autorización asociada en el usuario
   if (id == null) {
-    // opcional: limpia el form o muestra aviso
-    this.formCaja.patchValue({ secuencial: '', caja: '', puntoEmision: '' });
-    // this.snackBar.open('El usuario no tiene autorización de caja activa', 'Cerrar', {duration: 2500});
+    this.avisarCajaNoAsignada();
     return;
   }
 
-  // si el id podría venir como string, fuerza número:
   const idNum = Number(id);
 
   this.autorizacionCajaService.getAutorizacionCaja(idNum).subscribe({
-    next: ({ data }) => {
-      if (!data) return;
+    next: ({ data, type, message }) => {
+      // Cuando el API devuelve Success pero sin data
+      if (!data) {
+        this.avisarCajaNoAsignada();
+        return;
+      }
+
+      // OK: carga datos en el form y marca como asignada
       this.formCaja.patchValue({
         secuencial: this.padLeft(data.numero_factura, 9),
         caja: data.caja ?? '',
         puntoEmision: data.num_establecimiento ?? '',
-      });
+      }, { emitEvent: false });
+
+      this.cajaAsignada = true;
     },
-    error: (err) => console.error('Error cargando autorización de caja', err),
+    error: (err) => {
+      // Casos típicos del backend
+      const notFound =
+        err?.status === 404 ||
+        (err?.error?.type || '').toString().toLowerCase() === 'notfound' ||
+        /no encontrada/i.test(err?.error?.message || '');
+
+      if (notFound) {
+        // Ej: {"type":"NotFound","message":"AutorizacionCaja con ID 4 no encontrada"}
+        this.avisarCajaNoAsignada();
+      } else {
+        console.error('Error cargando autorización de caja', err);
+        this.mostrarAlerta('Error al consultar la autorización de caja', 'error');
+      }
+    }
   });
 }
+
 
   // En tu componente
   private padLeft(value: any, size: number): string {
@@ -2006,6 +2026,17 @@ abrirModalAnular() {
     disableClose: true,
     autoFocus: false
   });
+}
+
+cajaAsignada = false;
+
+private avisarCajaNoAsignada(): void {
+  // Limpia los campos de caja en el form
+  this.formCaja.patchValue({ secuencial: '', caja: '', puntoEmision: '' }, { emitEvent: false });
+  this.cajaAsignada = false;
+
+  // Muestra el aviso
+  this.mostrarAlerta('Usuario no tiene asignado Caja', 'info');
 }
 
 }

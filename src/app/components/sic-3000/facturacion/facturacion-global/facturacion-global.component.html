@@ -33,7 +33,13 @@
           <label>Fecha:</label>
           <input class="ti wide" formControlName="fechaFacturacion" readonly>
         </div>
-
+        <div *ngIf="!cajaAsignada"
+       class="alert-warn"
+       style="grid-column: 1 / -1; margin:8px 0; padding:8px 12px; border-radius:8px;
+              background:#fff3cd; color:#664d03; border:1px solid #ffecb5;"
+       aria-live="polite">
+    Usuario no tiene asignado <strong>Caja</strong>. No podrás generar facturas hasta asignarla.
+  </div>
       </div>
       <form class="toolbar-row" [formGroup]="formFactura" (ngSubmit)="buscar()">
   <!-- Año -->
@@ -73,8 +79,15 @@
     Buscar
   </button>
     <button type="button" mat-stroked-button (click)="cancelar()">Cancelar</button>
-    <button type="button" mat-stroked-button color="warn" class="btn-accion"   (click)="facturar()"
-  [disabled]="!habilitarFacturar || facturando">Facturar</button>
+    <button type="button"
+        mat-stroked-button
+        color="warn"
+        class="btn-accion"
+        (click)="facturar()"
+        [disabled]="!habilitarFacturar || facturando || !cajaAsignada">
+  Facturar
+</button>
+
   </div>
 </form>
 
