@@ -1,0 +1,269 @@
+<div class="dialog-container">
+  <!-- Header del Dialog -->
+  <div class="dialog-header">
+    <h2 mat-dialog-title>{{ titulo }}</h2>
+    <button mat-icon-button mat-dialog-close class="btn-cerrar">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Pestañas -->
+  <div class="tabs-container">
+    <div class="tabs">
+      <button 
+        class="tab-button"
+        [class.active]="activeTab === 'general'" 
+        (click)="cambiarTab('general')">
+        Datos Generales
+      </button>
+      <button 
+        class="tab-button"
+        [class.active]="activeTab === 'adicional'" 
+        (click)="cambiarTab('adicional')">
+        Datos Adicionales
+      </button>
+      <button 
+        class="tab-button"
+        [class.active]="activeTab === 'contactos'" 
+        (click)="cambiarTab('contactos')">
+        Contactos
+      </button>
+    </div>
+  </div>
+
+  <!-- Contenido del Dialog -->
+  <mat-dialog-content class="dialog-content">
+    
+    <!-- TAB: DATOS GENERALES -->
+    <div *ngIf="activeTab === 'general'" class="tab-content">
+      <h3 class="seccion-titulo">Datos Generales</h3>
+      
+      <form [formGroup]="formGeneral" class="formulario">
+        <!-- Primera fila -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Código:</mat-label>
+            <input matInput formControlName="codigo" placeholder="texto">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Cédula:</mat-label>
+            <input matInput formControlName="cedula" placeholder="texto">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Razón Social:</mat-label>
+            <input matInput formControlName="razonSocial" placeholder="texto">
+          </mat-form-field>
+        </div>
+
+        <!-- Segunda fila -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>País:</mat-label>
+            <mat-select formControlName="pais">
+              <mat-option value="ecuador">Ecuador</mat-option>
+              <mat-option value="colombia">Colombia</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Ciudad:</mat-label>
+            <mat-select formControlName="ciudad">
+              <mat-option value="quito">Quito</mat-option>
+              <mat-option value="guayaquil">Guayaquil</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Nombre Comercial:</mat-label>
+            <input matInput formControlName="nombreComercial" placeholder="texto">
+          </mat-form-field>
+        </div>
+
+        <!-- Tercera fila -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field-large">
+            <mat-label>Dirección:</mat-label>
+            <input matInput formControlName="direccion" placeholder="texto">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Número de dirección:</mat-label>
+            <input matInput formControlName="numeroDireccion" placeholder="texto">
+            <mat-hint class="hint-destacado">DEBE SER CODIGO POSTAL</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Teléfono 1:</mat-label>
+            <input matInput formControlName="telefono1" placeholder="texto">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Teléfono 2:</mat-label>
+            <input matInput formControlName="telefono2" placeholder="texto">
+          </mat-form-field>
+        </div>
+
+        <!-- Cuarta fila -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>E-mail:</mat-label>
+            <input matInput formControlName="email" type="email" placeholder="texto">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Tipo de Proveedor:</mat-label>
+            <mat-select formControlName="tipoProveedor">
+              <mat-option value="productos">Productos</mat-option>
+              <mat-option value="servicios">Servicios</mat-option>
+            </mat-select>
+            <mat-hint class="hint-eliminado">CODIGO POSTAL</mat-hint>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Teléfono 3:</mat-label>
+            <input matInput formControlName="telefono3" placeholder="texto">
+          </mat-form-field>
+        </div>
+
+        <!-- Quinta fila -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Tipo de Contribuyente:</mat-label>
+            <mat-select formControlName="tipoContribuyente">
+              <mat-option value="natural">Persona Natural</mat-option>
+              <mat-option value="juridica">Persona Jurídica</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Retención:</mat-label>
+            <mat-select formControlName="retencion">
+              <mat-option value="1">1%</mat-option>
+              <mat-option value="2">2%</mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <div class="form-field checkbox-container">
+            <mat-slide-toggle formControlName="pagaIva" color="primary">
+              Paga IVA:
+            </mat-slide-toggle>
+          </div>
+
+          <div class="form-field checkbox-container">
+            <mat-checkbox formControlName="noActualizarCostos">
+              Recepción Compra
+            </mat-checkbox>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- TAB: DATOS ADICIONALES -->
+    <div *ngIf="activeTab === 'adicional'" class="tab-content">
+      <h3 class="seccion-titulo">Datos Adicionales</h3>
+      
+      <form [formGroup]="formAdicional" class="formulario">
+        <!-- Primera fila -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Contacto Principal:</mat-label>
+            <input matInput formControlName="contactoPrincipal" placeholder="texto">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Teléfono Contacto:</mat-label>
+            <input matInput formControlName="telefonoContacto" placeholder="texto">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Email Contacto:</mat-label>
+            <input matInput formControlName="emailContacto" type="email" placeholder="texto">
+          </mat-form-field>
+        </div>
+
+        <!-- Segunda fila -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Días de Crédito:</mat-label>
+            <input matInput formControlName="diasCredito" type="number" placeholder="0">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Límite de Crédito:</mat-label>
+            <input matInput formControlName="limiteCredito" type="number" placeholder="0.00">
+          </mat-form-field>
+
+          <div class="form-field checkbox-container">
+            <mat-slide-toggle formControlName="activo" color="primary">
+              Proveedor Activo
+            </mat-slide-toggle>
+          </div>
+        </div>
+
+        <!-- Tercera fila -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field-full">
+            <mat-label>Observaciones:</mat-label>
+            <textarea matInput formControlName="observaciones" rows="4" placeholder="texto"></textarea>
+          </mat-form-field>
+        </div>
+      </form>
+    </div>
+
+    <!-- TAB: CONTACTOS -->
+    <div *ngIf="activeTab === 'contactos'" class="tab-content">
+      <h3 class="seccion-titulo">Contactos</h3>
+      
+      <form [formGroup]="formContactos" class="formulario">
+        <!-- Primera fila -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Nombre Contacto:</mat-label>
+            <input matInput formControlName="nombreContacto" placeholder="texto">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Cargo:</mat-label>
+            <input matInput formControlName="cargoContacto" placeholder="texto">
+          </mat-form-field>
+        </div>
+
+        <!-- Segunda fila -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Teléfono:</mat-label>
+            <input matInput formControlName="telefonoContacto" placeholder="texto">
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="form-field">
+            <mat-label>Email:</mat-label>
+            <input matInput formControlName="emailContacto" type="email" placeholder="texto">
+          </mat-form-field>
+        </div>
+
+        <!-- Tercera fila -->
+        <div class="form-row">
+          <mat-form-field appearance="outline" class="form-field-full">
+            <mat-label>Notas:</mat-label>
+            <textarea matInput formControlName="notas" rows="4" placeholder="texto"></textarea>
+          </mat-form-field>
+        </div>
+      </form>
+    </div>
+
+  </mat-dialog-content>
+
+  <!-- Footer con botones -->
+  <mat-dialog-actions class="dialog-actions">
+    <button mat-stroked-button (click)="cancelar()" class="btn-cancelar">
+      <mat-icon>close</mat-icon>
+      Cancelar
+    </button>
+    <button mat-raised-button color="primary" (click)="guardar()" class="btn-guardar">
+      <mat-icon>save</mat-icon>
+      Guardar
+    </button>
+  </mat-dialog-actions>
+</div>

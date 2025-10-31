@@ -1,88 +1,90 @@
-// src/app/interfaces/responses/proveedor-response.ts
+// src/app/core/interfaces/proveedor.interface.ts
+
+export interface ProveedorContactoResponse {
+  id_contacto?: number;
+  id_proveedor?: number;
+  nombre_contacto: string;
+  cargo?: string;
+  departamento?: string;
+  telefono?: string;
+  telefono_movil?: string;
+  email?: string;
+  extension?: string;
+  tipo_contacto?: string;
+  es_principal: boolean;
+  observaciones?: string;
+  activo?: boolean;
+  fecha_creacion?: string;
+}
 
 export interface ProveedorResponse {
-  // ==================== IDs ====================
+  // IDs
   id_proveedor: number;
   id_persona: number;
 
-  // ==================== IDENTIFICACIÓN ====================
+  // Identificación
   codigo_proveedor: string;
-  
-  // ✅ Datos de Persona
-  documento: string;
-  tipo_documento?: string | null;
-  tipo_persona?: string | null;
-  nombre_persona: string;
 
-  // ==================== PROVEEDOR ====================
-  nombre_comercial?: string | null;
+  // Datos directos del proveedor
+  nombre_prov?: string;
+  ruc_prov?: string;
+  email_prov?: string;
+  telefono_prov?: string;
+  tel1_prov?: string;
+  tel2_prov?: string;
+  direccion_prov?: string;
+  codigo_postal?: string;
+
+  // Datos de persona (referencia)
+  documento?: string;
+  tipo_documento?: string;
+  tipo_persona?: string;
+  nombre_persona?: string;
+
+  // Proveedor
+  nombre_comercial?: string;
   web_proveedor: string;
 
-  // ==================== UBICACIÓN ====================
-  ciudad?: string | null;
-  provincia?: string | null;
-  pais?: string | null;
-  
-  // ✅ Direcciones de Persona
-  direccion?: string | null;
-  codigo_postal?: string | null;
+  // Ubicación
+  id_ciudad?: number;
+  ciudad?: string;
+  provincia?: string;
+  pais?: string;
 
-  // ==================== CONTACTO (de Persona) ====================
-  email?: string | null;
-  telefono?: string | null;
+  // Tipo y clasificación
+  id_tipo_proveedor?: number;
+  tipo_proveedor?: string;
+  id_tipo_contribuyente?: number;
+  tipo_contribuyente?: string;
 
-  // ==================== TIPO Y CLASIFICACIÓN ====================
-  tipo_proveedor?: string | null;
-  tipo_contribuyente?: string | null;
-  tipo_producto?: string | null;
-  codigo_ean?: string | null;
-  origen_proveedor?: string | null;
-  tipo_nacional_internacional: boolean;
-  tipo_contado: boolean;
-  tipo_produccion: number;
+  // Retenciones
+  porcentaje_retencion_fb?: number;
+  codigo_retencion_fb?: string;
+  porcentaje_retencion_fs?: number;
+  codigo_retencion_fs?: string;
+  porcentaje_retencion_ib?: number;
+  codigo_retencion_ib?: string;
+  porcentaje_retencion_is?: number;
+  codigo_retencion_is?: string;
 
-  // ==================== RETENCIONES ====================
-  porcentaje_retencion?: number | null;
-  motivo_retencion?: string | null;
-  tarifa: boolean;
-  porcentaje_retencion_fb?: number | null;
-  codigo_retencion_fb?: string | null;
-  porcentaje_retencion_fs?: number | null;
-  codigo_retencion_fs?: string | null;
-  porcentaje_retencion_ib?: number | null;
-  codigo_retencion_ib?: string | null;
-  porcentaje_retencion_is?: number | null;
-  codigo_retencion_is?: string | null;
-
-  // ==================== COMERCIAL ====================
-  tiempo_entrega?: number | null;
-  plazo_pago?: number | null;
-  porcentaje_pvp?: number | null;
+  // Comercial
+  tiempo_entrega?: number;
+  plazo_pago?: number;
   no_cambiar_costo_producto: boolean;
 
-  // ==================== CONTABLE ====================
-  codigo_cuenta?: string | null;
+  // Contable
+  id_plan_cuenta?: number;
+  codigo_cuenta?: string;
 
-  // ==================== OTROS ====================
-  observaciones?: string | null;
+  // Otros
+  observaciones?: string;
 
-  // ==================== CONTACTOS DEL PROVEEDOR ====================
-  contactos?: ProveedorContactoResponse[] | null;
+  // Contactos
+  contactos: ProveedorContactoResponse[];
 
-  // ==================== AUDITORÍA ====================
+  // Auditoría
   activo: boolean;
-  fecha_alta?: string | null; // DateTime se convierte a ISO string
-  fecha_modificacion?: string | null; // DateTime se convierte a ISO string
-  fecha_creacion: string; // DateTime se convierte a ISO string
-  usuario_creacion?: number | null;
-}
-
-// ✅ Interface para contactos del proveedor
-export interface ProveedorContactoResponse {
-  id_contacto: number;
-  nombre_contacto: string;
-  cargo?: string | null;
-  telefono?: string | null;
-  email?: string | null;
-  activo: boolean;
+  fecha_modificacion?: string;
+  fecha_creacion: string;
+  usuario_creacion?: number;
 }

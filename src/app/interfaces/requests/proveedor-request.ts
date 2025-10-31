@@ -1,78 +1,72 @@
+// src/app/core/interfaces/proveedor-request.interface.ts
+
+export interface ContactoProveedorRequest {
+  nombre_contacto: string;
+  cargo?: string;
+  departamento?: string;
+  telefono?: string;
+  telefono_movil?: string;
+  email?: string;
+  extension?: string;
+  tipo_contacto?: string;
+  es_principal: boolean;
+  observaciones?: string;
+}
+
 export interface ProveedorRequest {
-  // ========================================
-  // PERSONA: Solo ID o datos mínimos
-  // ========================================
-  id_persona?: number | null;
-  documento?: string | null;
-  nombre_proveedor?: string | null;
-  tipo_persona?: string | null; // NATURAL o JURÍDICA
-  id_ciudad?: number | null;
+  // Persona existente
+  id_persona?: number;
 
-  // ========================================
-  // DATOS DEL PROVEEDOR
-  // ========================================
-  codigo_proveedor?: string | null;
-  ruc_proveedor?: string | null;
-  nombre_comercial?: string | null;
+  // Datos de contacto (para crear persona)
+  email?: string;
+  telefono?: string;
+  direccion?: string;
+  ciudad?: string;
+  codigo_postal?: string;
 
-  // Ubicación
-  codigo_ciudad?: string | null;
-  codigo_pais?: number | null;
-  direccion_proveedor?: string | null;
-  casilla_proveedor?: string | null;
+  // Datos directos del proveedor
+  nombre_prov?: string;
+  ruc_prov?: string;
+  email_prov?: string;
+  telefono_prov?: string;
+  tel1_prov?: string;
+  tel2_prov?: string;
+  direccion_prov?: string;
 
-  // Contacto
-  email_proveedor?: string | null;
-  telefono_proveedor?: string | null;
-  telefono_1_proveedor?: string | null;
-  telefono_2_proveedor?: string | null;
-  fax_proveedor?: string | null;
-  web_proveedor?: string | null;
-  contacto_proveedor?: string | null;
-  representante_proveedor?: string | null;
+  // Datos específicos del proveedor
+  codigo_proveedor?: string;
+  nombre_comercial?: string;
+  web_proveedor?: string;
 
-  // Tipo y Clasificación
-  tipo_proveedor?: string | null;
-  tipo_producto?: string | null;
-  codigo_ean?: string | null;
-  origen_proveedor?: string | null;
-  tipo_nacional_internacional?: boolean;
-  tipo_contado?: boolean;
-  tipo_produccion?: number;
+  // Clasificación
+  id_tipo_proveedor?: number;
+  id_tipo_contribuyente?: number;
+  id_ciudad?: number;
 
   // Retenciones
-  porcentaje_retencion?: number | null;
-  motivo_retencion?: string | null;
-  tarifa?: boolean;
-  porcentaje_retencion_fb?: number | null;
-  codigo_retencion_fb?: string | null;
-  porcentaje_retencion_fs?: number | null;
-  codigo_retencion_fs?: string | null;
-  porcentaje_retencion_ib?: number | null;
-  codigo_retencion_ib?: string | null;
-  porcentaje_retencion_is?: number | null;
-  codigo_retencion_is?: string | null;
-  autorizacion?: string | null;
-  fecha_caducidad?: string | null; // ISO
+  porcentaje_retencion_fb?: number;
+  codigo_retencion_fb?: string;
+  porcentaje_retencion_fs?: number;
+  codigo_retencion_fs?: string;
+  porcentaje_retencion_ib?: number;
+  codigo_retencion_ib?: string;
+  porcentaje_retencion_is?: number;
+  codigo_retencion_is?: string;
 
-  // Comercial
-  tiempo_entrega?: number | null;
-  forma_pago?: string | null;
-  plazo_pago?: number | null;
-  plazo_pago_c?: number | null;
-  descuento_global_monto?: string | null;
-  porcentaje_pvp?: number | null;
-  porcentaje_descuento?: number | null;
-  monto_descuento?: number | null;
-  no_cambiar_costo_producto?: boolean;
-
-  // Bancario
-  codigo_banco?: string | null;
-  cuenta_corriente?: string | null;
+  // Condiciones comerciales
+  tiempo_entrega?: number;
+  plazo_pago?: number;
+  no_cambiar_costo_producto: boolean;
 
   // Contable
-  codigo_cuenta?: string | null;
+  id_plan_cuenta?: number;
+  codigo_cuenta?: string;
 
   // Otros
-  observaciones?: string | null;
+  observaciones?: string;
+  usuario_creacion?: number;
+  usuario_modificacion?: number;
+
+  // Contactos adicionales
+  contactos?: ContactoProveedorRequest[];
 }

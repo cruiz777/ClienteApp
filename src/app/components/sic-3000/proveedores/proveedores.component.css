@@ -1,0 +1,259 @@
+.contenedor-proveedores {
+  padding: 20px;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+}
+
+/* Header */
+.header-proveedores {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  background-color: white;
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.titulo {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+  color: #1a237e;
+}
+
+.btn-nuevo {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 500;
+}
+
+/* Sección de Filtros */
+.filtros-section {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
+}
+
+.filtros-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 15px;
+  align-items: end;
+}
+
+.filtro-item {
+  width: 100%;
+}
+
+.filtros-botones {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-limpiar {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  height: 56px;
+}
+
+/* Grid Container */
+.grid-container {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Estilos para AG-Grid */
+::ng-deep .ag-theme-alpine {
+  --ag-header-background-color: #1a237e;
+  --ag-header-foreground-color: white;
+  --ag-odd-row-background-color: #f8f9fa;
+  --ag-row-hover-color: #e3f2fd;
+  --ag-border-color: #e0e0e0;
+  font-family: 'Roboto', sans-serif;
+}
+
+::ng-deep .ag-theme-alpine .ag-header-cell-label {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+::ng-deep .ag-theme-alpine .ag-cell {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+::ng-deep .ag-theme-alpine .ag-paging-panel {
+  border-top: 1px solid #e0e0e0;
+  padding: 15px;
+  font-size: 13px;
+}
+
+/* Botones de Acción en la celda */
+::ng-deep .acciones-cell {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+
+::ng-deep .btn-accion {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 0;
+}
+
+::ng-deep .btn-accion i {
+  font-size: 18px;
+  transition: transform 0.2s ease;
+}
+
+::ng-deep .btn-accion:hover i {
+  transform: scale(1.1);
+}
+::ng-deep .btn-editar {
+  background-color: transparent;
+  color: #1976d2;
+}
+
+::ng-deep .btn-editar:hover {
+  color: #0d47a1;
+  transform: scale(1.15);
+}
+
+::ng-deep .btn-ver {
+  background-color: transparent;
+  color: #7b1fa2;
+}
+
+::ng-deep .btn-ver:hover {
+  color: #4a148c;
+  transform: scale(1.15);
+}
+
+::ng-deep .btn-eliminar {
+  background-color: transparent;
+  color: #c62828;
+}
+
+::ng-deep .btn-eliminar:hover {
+  color: #8e0000;
+  transform: scale(1.15);
+}
+
+/* Paginación info (si decides usarla) */
+.paginacion-info {
+  background-color: white;
+  padding: 12px 20px;
+  border-radius: 0 0 8px 8px;
+  text-align: center;
+  font-size: 13px;
+  color: #666;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .filtros-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .header-proveedores {
+    flex-direction: column;
+    gap: 15px;
+    align-items: stretch;
+  }
+  
+  .btn-nuevo {
+    width: 100%;
+    justify-content: center;
+  }
+}
+/* Botón de Buscar con color corporativo */
+.btn-buscar {
+  background-color: #1a237e !important;
+  color: white !important;
+  height: 56px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-buscar:hover {
+  background-color: #0d1642 !important;
+  box-shadow: 0 4px 8px rgba(26, 35, 126, 0.3);
+}
+
+/* Ícono personalizado de búsqueda */
+.btn-buscar .icon-buscar {
+  width: 20px;
+  height: 20px;
+  content: url('/assets/icons/icon-buscar.png');
+  filter: brightness(0) invert(1); /* Lo hace blanco */
+}
+
+/* Input de búsqueda con ícono */
+.filtro-item mat-form-field {
+  width: 100%;
+}
+
+.filtro-item .mat-mdc-text-field-wrapper {
+  background-color: #f8f9fa;
+}
+
+/* Opcional: ícono dentro del input */
+.search-icon-input {
+  width: 20px;
+  height: 20px;
+  content: url('/assets/icons/icon-buscar.png');
+  opacity: 0.6;
+}
+/* Botón de Buscar con color corporativo */
+.btn-buscar {
+  background-color: #1a237e !important;
+  color: white !important;
+  height: 56px;
+  padding: 0 24px !important;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.btn-buscar:hover {
+  background-color: #0d1642 !important;
+  box-shadow: 0 4px 8px rgba(26, 35, 126, 0.3);
+}
+
+.btn-buscar .icon-buscar {
+  width: 20px;
+  height: 20px;
+  filter: brightness(0) invert(1);
+}
+
+/* Grid de 3 columnas para los filtros */
+.filtros-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 15px;
+  align-items: end;
+}

@@ -12,6 +12,7 @@ import { AuthGuard } from 'src/app/guards/auth.guard';
 import { PermissionGuard } from 'src/app/guards/permission.guard';
 import { ProductosSicComponent } from './productos-sic/productos-sic.component';
 import { InicioComponent } from '../inicio/inicio.component';
+import { ProveedoresListaComponent } from './proveedores/proveedores.component';
 
 const routes: Routes = [
   {
@@ -74,6 +75,10 @@ const routes: Routes = [
       { 
         path: 'productossic', 
         component: ProductosSicComponent 
+      },
+            { 
+        path: 'proveedores', 
+        component: ProveedoresListaComponent 
       },
       { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
     ]
