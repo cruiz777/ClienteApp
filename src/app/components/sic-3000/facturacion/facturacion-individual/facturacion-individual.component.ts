@@ -17,6 +17,7 @@ import { combineLatest } from 'rxjs';
 import { shareReplay } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { multipleEmailsValidator } from 'src/app/util/validators';
+import { FacturaAnuladaComponent,DatosAnularFactura  } from '../factura-anulada/factura-anulada.component';
 import {
   FacturacionMesesResult
 } from 'src/app/components/sic-3000/facturacion/facturacion-meses-modal/facturacion-meses-modal.component';
@@ -439,6 +440,7 @@ export class FacturacionIndividualComponent implements OnInit {
   vInscripcion: number = 0;
   vAsignacion: number = 0;
   vMantenimiento: number = 0
+  grupoCli:string='';
   // Productos desde el backend
   productos: any[] = []; // o usa la interfaz de tu servicio: ProductoResponse[]
   filteredProductos$ = of([] as any[]); // stream para el autocomplete
@@ -702,6 +704,7 @@ export class FacturacionIndividualComponent implements OnInit {
                 this.vInscripcion = ge?.inscripcion ?? 0;
                 this.vAsignacion = ge?.asignacion ?? 0;
                 this.vMantenimiento = ge?.mantenimiento ?? 0;
+                this.grupoCli=ge?.codigo;
                 //alert(this.vMantenimiento);
               }),
               map((ge: any) => `${ge.codigo}   ${ge.nombre}`.trim()),
@@ -769,7 +772,7 @@ export class FacturacionIndividualComponent implements OnInit {
     this.formCliente.reset();
     this.baseGravada = 0;
     this.nombreCliente = '';
-
+    this.grupoCli='';
     // ---- Descuento / Factura (autocompletes)
     this.formFactura.patchValue({ producto: '', descuento: '' }, { emitEvent: false });
     this.descuentoSeleccionado = null;
@@ -944,19 +947,53 @@ export class FacturacionIndividualComponent implements OnInit {
   }
 
 
-  cargarAutorizacion() {
-    this.autorizacionCajaService.getAutorizacionCaja(1).subscribe({
-      next: ({ data }) => {
-        if (!data) return;
-        this.formCaja.patchValue({
-          secuencial: this.padLeft(data.numero_factura, 9),
-          caja: data.caja ?? '',
-          puntoEmision: data.num_establecimiento ?? '',
-        });
-      },
-      error: (err) => console.error('Error cargando autorización de caja', err),
-    });
+cargarAutorizacion() {
+  const id = this.usuarioActual?.id_autorizacion_usuario;
+
+  // Si no hay autorización asociada en el usuario
+  if (id == null) {
+    this.avisarCajaNoAsignada();
+    return;
   }
+
+  const idNum = Number(id);
+
+  this.autorizacionCajaService.getAutorizacionCaja(idNum).subscribe({
+    next: ({ data, type, message }) => {
+      // Cuando el API devuelve Success pero sin data
+      if (!data) {
+        this.avisarCajaNoAsignada();
+        return;
+      }
+
+      // OK: carga datos en el form y marca como asignada
+      this.formCaja.patchValue({
+        secuencial: this.padLeft(data.numero_factura, 9),
+        caja: data.caja ?? '',
+        puntoEmision: data.num_establecimiento ?? '',
+      }, { emitEvent: false });
+
+      this.cajaAsignada = true;
+    },
+    error: (err) => {
+      // Casos típicos del backend
+      const notFound =
+        err?.status === 404 ||
+        (err?.error?.type || '').toString().toLowerCase() === 'notfound' ||
+        /no encontrada/i.test(err?.error?.message || '');
+
+      if (notFound) {
+        // Ej: {"type":"NotFound","message":"AutorizacionCaja con ID 4 no encontrada"}
+        this.avisarCajaNoAsignada();
+      } else {
+        console.error('Error cargando autorización de caja', err);
+        this.mostrarAlerta('Error al consultar la autorización de caja', 'error');
+      }
+    }
+  });
+}
+
+
   // En tu componente
   private padLeft(value: any, size: number): string {
     const s = (value ?? '').toString().replace(/\D/g, ''); // solo dígitos
@@ -1406,6 +1443,8 @@ export class FacturacionIndividualComponent implements OnInit {
     const prefijoObj = this.prefijos.find(p => p.id_prefijos === idPrefijo);
     const prefijo = prefijoObj?.codpre ?? '';
     const correo = this.getEmailsConcat();
+    const facBloque=0;
+    const GrupoCliente=this.grupoCli;
     const totales = this.formTotales.getRawValue();
     const subtotalSIva = Number(this.baseTarifa0 ?? 0);
     const subtotalCalculado = Number(this.baseGravada ?? 0);
@@ -1483,6 +1522,8 @@ export class FacturacionIndividualComponent implements OnInit {
       numeroGuiaRemision,
       prefijo,
       correo,
+      facBloque,
+      GrupoCliente,
       subtotalSIva,
       subtotalCalculado,
       descuentoTotalCalculado,
@@ -1978,5 +2019,24 @@ onGenerarClick(): void {
     }
     return { ok: true };
   }
+
+abrirModalAnular() {
+  this.dialog.open(FacturaAnuladaComponent, {
+    width: '900px',
+    disableClose: true,
+    autoFocus: false
+  });
+}
+
+cajaAsignada = false;
+
+private avisarCajaNoAsignada(): void {
+  // Limpia los campos de caja en el form
+  this.formCaja.patchValue({ secuencial: '', caja: '', puntoEmision: '' }, { emitEvent: false });
+  this.cajaAsignada = false;
+
+  // Muestra el aviso
+  this.mostrarAlerta('Usuario no tiene asignado Caja', 'info');
+}
 
 }

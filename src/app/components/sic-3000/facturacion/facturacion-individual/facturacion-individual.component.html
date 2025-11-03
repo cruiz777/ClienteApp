@@ -83,14 +83,9 @@
         <div class="fi-field fi-emailop">
           <label>E-mail Facturación:</label>
 
-          <input class="fi-input"
-       type="text"
-       formControlName="emailOpcional"
-       placeholder="correo1@dominio.com;correo2@dominio.com"
-       maxlength="300"
-       autocomplete="off"
-       (keydown.space)="$event.preventDefault()"
-       (input)="onEmailOpcionalInput($event)" />
+          <input class="fi-input" type="text" formControlName="emailOpcional"
+            placeholder="correo1@dominio.com;correo2@dominio.com" maxlength="300" autocomplete="off"
+            (keydown.space)="$event.preventDefault()" (input)="onEmailOpcionalInput($event)" />
 
           <div *ngIf="formCliente.get('emailOpcional')?.touched && formCliente.get('emailOpcional')?.invalid"
             style="margin-top:4px">
@@ -134,6 +129,9 @@
       </div>
 
       <div class="fi-actions">
+        <button class="fi-btn" type="button" (click)="ripple($event); abrirModalAnular()">
+          Anular Factura
+        </button>
         <button class="fi-btn" type="button" (click)="ripple($event); onCancelarClick($event)">
           Cancelar
         </button>
@@ -195,7 +193,7 @@
           <mat-form-field class="fi-prefix-field grow-2" appearance="fill">
             <span matPrefix class="fi-prefix">Año:&nbsp;</span>
             <input matInput type="number" inputmode="numeric" placeholder="Año" formControlName="anio" minlength="1"
-              maxlength="4" (keypress)="soloNumeros($event)" (paste)="soloPegadoNumerico($event)">
+              maxlength="4" (keypress)="soloNumeros($event)" (paste)="soloPegadoNumerico($event)" readonly>
           </mat-form-field>
 
           <!-- Botón meses -->
@@ -336,6 +334,12 @@
               style="font-size:20px;height:40px;font-weight:700;color:#F26334;width:140px;">
           </div>
         </div>
+        <div *ngIf="!cajaAsignada" class="alert-warn" style="
+  margin:8px 0; padding:8px 12px; border-radius:8px;
+  background:#fff3cd; color:#664d03; border:1px solid #ffecb5;">
+          Usuario no tiene asignado <strong>Caja</strong>. No podrás generar facturas hasta asignarla.
+        </div>
+
       </div>
       <div class="box-section">
         <div class="refs-row">

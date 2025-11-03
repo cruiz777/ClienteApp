@@ -14,6 +14,7 @@ import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
 import { BloqueComponent } from './bloque/bloque.component';
 import { AuthGuard } from 'src/app/guards/auth.guard';
 import { PermissionGuard } from 'src/app/guards/permission.guard';
+import { ListaCobrosIndividualComponent } from './lista-cobros-individual/lista-cobros-individual.component';
 
 const routes: Routes = [
   {
@@ -114,7 +115,13 @@ const routes: Routes = [
           permission: 'codbar.ficha-de-cliente.listado-clientes.nuevo-producto.bloque',
           breadcrumb: 'Bloque'
         }
-      }
+      },
+      {
+        path: 'cobrar',
+        component: ListaCobrosIndividualComponent,
+    
+        
+      },
     ]
   }
 ];

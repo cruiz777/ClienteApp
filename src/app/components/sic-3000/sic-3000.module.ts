@@ -14,10 +14,10 @@
   import { MatTabsModule } from '@angular/material/tabs';
   import { AgGridModule } from 'ag-grid-angular';
   import { Sic3000RoutingModule } from './sic-3000-routing.module';
-
-  import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
   import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
-  import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.component';
+import { RegistroCobrosComponent } from './cxc/registro-cobros/registro-cobros.component';
+import { AnulacionPagoComponent } from './cxc/anulacion-pago/anulacion-pago.component';
+import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
 
   // 👉 Standalone: se importa (no va en declarations)
   import { FacturacionIndividualComponent } from './facturacion/facturacion-individual/facturacion-individual.component';
