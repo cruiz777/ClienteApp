@@ -43,7 +43,6 @@ import { ProductosProveedorDialogComponent } from './proveedores/dialog/producto
     declarations: [
       InicioSicComponent,
       NavigationSicComponent,
-      RegistroCobrosComponent,
       // ❌ No declarar FacturacionIndividualComponent porque es standalone
       EstadocuentaclienteComponent,
       ProductosSicComponent,
@@ -58,7 +57,7 @@ import { ProductosProveedorDialogComponent } from './proveedores/dialog/producto
       RouterModule,
       FormsModule,
       ReactiveFormsModule,
-
+      RegistroCobrosComponent,
       // Angular Material
       MatSidenavModule,
       MatListModule,

@@ -32,6 +32,10 @@ import {
   ValueParserParams,
   ValueFormatterParams,
 } from 'ag-grid-community';
+import { MatDialog } from '@angular/material/dialog';
+import { FacturacionService } from 'src/app/services/facturacion.service';
+import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
+import { ClienteService } from 'src/app/services/cliente.service';
 
 type Detalle = {
   codigo?: string;
@@ -89,6 +93,17 @@ type Totales = {
   styleUrls: ['./nota-credito.component.css'],
 })
 export class NotaCreditoComponent implements OnInit {
+  esFacturaDeSaldo = false;
+  datosFacturaValidada: any = null;
+  productos: any[] = []; // Array de productos cargados
+  productosLoaded = false;
+  isLoadingProductos = false;
+  filteredProductosNC$: Observable<any[]> = of([]);
+  buscarProductoTexto = '';
+  productosFiltrados: any[] = [];
+  productoSeleccionado = '';
+
+
   constructor(
     private svc: NotaCreditoService,
     private formaPagoService: FormaPagoService,
@@ -96,7 +111,10 @@ export class NotaCreditoComponent implements OnInit {
     private cdr: ChangeDetectorRef,
     private _snackBar: MatSnackBar,
     private usuarioService: UsuarioService,
-    private autorizacionCajaService: AutorizacionCajaService
+    private autorizacionCajaService: AutorizacionCajaService,
+    private dialog: MatDialog, // ← AGREGAR SI NO LO TIENES
+    private facturacionService: FacturacionService,
+    private clienteService: ClienteService
   ) { }
 
   ngOnInit(): void {
@@ -261,7 +279,24 @@ export class NotaCreditoComponent implements OnInit {
 
         row.valorDev = +(row.cantidadd * pvp).toFixed(2);
         row.ivaDev = +(row.cantidadd * ivaUnit).toFixed(2);
-
+        // No exceder el saldo disponible
+        if (this.esFacturaDeSaldo && this.saldoFacturaPendiente > 0) {
+          const totalConIva = row.valorDev + row.ivaDev;
+          
+          if (totalConIva > this.saldoFacturaPendiente) {
+            // Calcular cantidad máxima permitida
+            const precioConIva = pvp + ivaUnit;
+            const maxCantidad = this.saldoFacturaPendiente / precioConIva;
+            row.cantidadd = +maxCantidad.toFixed(6);
+            row.valorDev = +(row.cantidadd * pvp).toFixed(2);
+            row.ivaDev = +(row.cantidadd * ivaUnit).toFixed(2);
+            
+            this.mostrarAlerta(
+              `Cantidad máxima permitida: ${row.cantidadd.toFixed(2)} (saldo: $${this.saldoFacturaPendiente.toFixed(2)})`,
+              'info'
+            );
+          }
+        }
         if (p.api) {
           if (p.node) p.api.refreshCells({ rowNodes: [p.node], columns: ['cantidadd', 'valorDev', 'ivaDev'] });
           else p.api.refreshCells({ force: true, columns: ['cantidadd', 'valorDev', 'ivaDev'] });
@@ -295,7 +330,23 @@ export class NotaCreditoComponent implements OnInit {
         // no permitas devolver más que la base original de la línea
         const maxValor = qtyOrig * pvp;
         if (val > maxValor) val = maxValor;
-
+        //No exceder el saldo disponible
+        if (this.esFacturaDeSaldo && this.saldoFacturaPendiente > 0) {
+          // Calcular el total con IVA de esta devolución
+          const ivaDev = (val * (ivaPct / 100));
+          const totalConIva = val + ivaDev;
+          
+          if (totalConIva > this.saldoFacturaPendiente) {
+            // Ajustar al máximo permitido
+            const maxBase = this.saldoFacturaPendiente / (1 + (ivaPct / 100));
+            val = +maxBase.toFixed(2);
+            
+            this.mostrarAlerta(
+              `El valor máximo a devolver es $${val.toFixed(2)} (saldo: $${this.saldoFacturaPendiente.toFixed(2)})`,
+              'info'
+            );
+          }
+        }
         row.porMonto = true;
         if (!(this.asNumber(row.cantidadd) > 0)) row.cantidadd = 1; // si no tiene, poner 1
         row.valorDev = +val.toFixed(2);                            // base
@@ -440,6 +491,62 @@ export class NotaCreditoComponent implements OnInit {
   // ======= Totales =======
   puedeGrabarBtn = false;
 
+  // recalcular(): void {
+  //   let base0 = 0, baseIva = 0, iva = 0, subtotal = 0;
+  //   let totalDev = 0, totalIvaDev = 0;
+  //   let baseDev0 = 0, baseDevIva = 0;
+
+  //   for (const r of this.detalleRows) {
+  //     const cantidad = this.asNumber(r.cantidad);
+  //     const pvp = this.asNumber(r.pvp);
+  //     const totalLinea = cantidad * pvp;
+
+  //     subtotal += totalLinea;
+
+  //     const ivaLinea = this.asNumber(r.iva);
+  //     iva += ivaLinea;
+
+  //     const ivaPct = (r.ivaPct ?? (totalLinea > 0 ? (ivaLinea / totalLinea) * 100 : 0));
+  //     if (ivaPct > 0) baseIva += totalLinea; else base0 += totalLinea;
+
+  //     // Devoluciones
+  //     const valorDev = this.asNumber(r.valorDev);
+  //     if (valorDev > 0) {
+  //       totalDev += valorDev;
+  //       if (ivaPct > 0) baseDevIva += valorDev; else baseDev0 += valorDev;
+  //     }
+
+  //     if (r.porMonto) {
+  //       totalIvaDev += this.asNumber(r.ivaDev);
+  //     } else {
+  //       const cantDev = this.asNumber(r.cantidadd);
+  //       if (cantidad > 0) totalIvaDev += cantDev * (ivaLinea / cantidad);
+  //     }
+  //   }
+
+  //   let totalPago = 0;
+  //   for (const r of this.pagoRows) totalPago += this.asNumber(r.pago);
+  //   totalPago = +totalPago.toFixed(2);
+
+  //   const totalDevConIva = +(totalDev + totalIvaDev).toFixed(2);
+  //   const totalFacturaConIva = +(subtotal + iva).toFixed(2);
+
+  //   this.totales = {
+  //     subtotal, base0, baseIva, iva,
+  //     totalFactura: subtotal,
+  //     totalFacturaConIva,
+  //     subtotalDev: baseDev0 + baseDevIva,
+  //     baseDev0, baseDevIva,
+  //     totalDev, totalIvaDev, totalDevConIva,
+  //     totalPago,
+  //   };
+
+  //   const tope = this.getTopePago();
+  //   const diferencia = +(tope - totalPago).toFixed(2);
+  //   this.puedeGrabarBtn = Math.abs(diferencia) < 0.01 && this.pagoRows.length > 0;
+
+  //   this.cdr.detectChanges();
+  // }
   recalcular(): void {
     let base0 = 0, baseIva = 0, iva = 0, subtotal = 0;
     let totalDev = 0, totalIvaDev = 0;
@@ -478,25 +585,89 @@ export class NotaCreditoComponent implements OnInit {
     totalPago = +totalPago.toFixed(2);
 
     const totalDevConIva = +(totalDev + totalIvaDev).toFixed(2);
-    const totalFacturaConIva = +(subtotal + iva).toFixed(2);
+    
+    // ✅ NUEVA LÓGICA: Si es factura de saldo, usar el saldo como tope
+    let totalFacturaConIva: number;
+    let subtotalFactura: number;
+    let ivaFactura: number;
+    let base0Factura: number;
+    let baseIvaFactura: number;
+
+    if (this.esFacturaDeSaldo && this.saldoFacturaPendiente > 0) {
+      // Para facturas de saldo, los totales son el saldo disponible
+      totalFacturaConIva = this.saldoFacturaPendiente;
+      
+      // Calcular IVA proporcional (asumiendo 15% por defecto)
+      const factorIva = 1.15; // 1 + (15/100)
+      subtotalFactura = +(totalFacturaConIva / factorIva).toFixed(2);
+      ivaFactura = +(totalFacturaConIva - subtotalFactura).toFixed(2);
+      
+      // Para simplificar, asumimos todo con IVA en facturas de saldo
+      base0Factura = 0;
+      baseIvaFactura = subtotalFactura;
+    } else {
+      // Lógica normal para facturas con detalle
+      totalFacturaConIva = +(subtotal + iva).toFixed(2);
+      subtotalFactura = subtotal;
+      ivaFactura = iva;
+      base0Factura = base0;
+      baseIvaFactura = baseIva;
+    }
 
     this.totales = {
-      subtotal, base0, baseIva, iva,
-      totalFactura: subtotal,
+      subtotal: subtotalFactura,
+      base0: base0Factura,
+      baseIva: baseIvaFactura,
+      iva: ivaFactura,
+      totalFactura: subtotalFactura,
       totalFacturaConIva,
       subtotalDev: baseDev0 + baseDevIva,
-      baseDev0, baseDevIva,
-      totalDev, totalIvaDev, totalDevConIva,
+      baseDev0, 
+      baseDevIva,
+      totalDev, 
+      totalIvaDev, 
+      totalDevConIva,
       totalPago,
     };
+
+    // ✅ Validar que la devolución no exceda el saldo disponible
+    if (this.esFacturaDeSaldo && totalDevConIva > this.saldoFacturaPendiente) {
+      this.mostrarAlerta(
+        `La devolución ($${totalDevConIva.toFixed(2)}) no puede exceder el saldo disponible ($${this.saldoFacturaPendiente.toFixed(2)})`,
+        'info'
+      );
+    }
 
     const tope = this.getTopePago();
     const diferencia = +(tope - totalPago).toFixed(2);
     this.puedeGrabarBtn = Math.abs(diferencia) < 0.01 && this.pagoRows.length > 0;
-
+    // Auto-ajustar el pago si hay formas de pago y hay devolución
+    if (this.pagoRows.length > 0 && totalDevConIva > 0) {
+      this.ajustarPagoAutomatico(totalDevConIva);
+    }
     this.cdr.detectChanges();
   }
+  private ajustarPagoAutomatico(totalDev: number): void {
+    if (this.pagoRows.length === 0) return;
 
+    // Distribuir el total en las formas de pago existentes
+    const totalActual = this.pagoRows.reduce((sum, r) => sum + this.asNumber(r.pago), 0);
+    
+    // Solo ajustar si hay diferencia significativa
+    if (Math.abs(totalActual - totalDev) < 0.01) return;
+
+    // Si hay una sola forma de pago, asignarle todo
+    if (this.pagoRows.length === 1) {
+      this.pagoRows[0].pago = +totalDev.toFixed(2);
+    } else {
+      // Si hay múltiples, distribuir proporcionalmente o poner todo en la primera
+      this.pagoRows[0].pago = +totalDev.toFixed(2);
+      // Las demás en 0
+      for (let i = 1; i < this.pagoRows.length; i++) {
+        this.pagoRows[i].pago = 0;
+      }
+    }
+  }
   agregarPago(): void {
     this.pagoRows = [
       ...this.pagoRows,
@@ -534,6 +705,7 @@ export class NotaCreditoComponent implements OnInit {
     this.resetTotales();
     this.guardado = false;
     this.encabezado.numero = '';
+    this.esFacturaDeSaldo = false;
   }
 
   get diferenciaPago(): number {
@@ -647,6 +819,78 @@ export class NotaCreditoComponent implements OnInit {
   // totalHaberFactura: number | null = null;
   // saldoFacturaPendiente: number | null = null;
 
+  // onEnterFactura(): void {
+  //   const entrada = (this.encabezado.factura ?? '').trim();
+  //   if (!this.cajaAsignada) {
+  //     this.mostrarAlerta('Usuario no tiene asignado Caja. No podrás generar notas de crédito hasta asignarla.', 'info');
+  //     return;
+  //   }
+  //   if (!entrada) return;
+
+  //   this.errorFactura = null;
+  //   this.buscandoFactura = true;
+    
+  //   this.svc.buscarPorNumeroLike(entrada, true, 1, 20).subscribe({
+  //     next: (resp: ApiResponse<PaginationResponse<FacturaListResponse>>) => {
+  //       this.buscandoFactura = false;
+  //       if (resp.type !== 'Success' || !resp.data?.items?.length) {
+  //         this.errorFactura = resp.message || 'No se encontraron facturas.';
+  //         return;
+  //       }
+
+  //       const sufijo = this.extraerSufijo(entrada);
+  //       const candidatos = resp.data.items.filter(i => i.numeroFactura?.endsWith(sufijo));
+  //       const lista = (candidatos.length ? candidatos : resp.data.items)
+  //         .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+
+  //       const best = lista[0];
+
+  //       this.idNota = best.idNota;
+  //       this.clientesCodigo = best.idCliente;
+
+  //       if (best.numeroFactura) this.fijarFactura(best.numeroFactura);
+  //       else this.facturaFijada = true;
+
+  //       this.encabezado.cliente = (best as any).cliente ?? this.encabezado.cliente;
+  //       this.encabezado.ruc = (best as any).rucCliente ?? this.encabezado.ruc;
+  //       this.encabezado.direccion = (best as any).dirCliente ?? this.encabezado.direccion;
+
+  //       // 🔹 Traer totales (Debe/Haber) y saldo de la factura seleccionada
+  //       if (best.numeroFactura) {
+  //         this.svc.getSaldoFactura(best.numeroFactura, {
+  //           excluirPagosAnulados: true,
+  //           excluirMovimientosAnulados: true,
+  //         }).subscribe({
+  //           // dentro del .subscribe() de getSaldoFactura(...)
+  //           // Dentro del subscribe de getSaldoFactura(...)
+  //           next: (r) => {
+  //             if ((r?.type ?? '').toString().toLowerCase() === 'success' && r.data) {
+  //               this.totalHaberFactura = Number(r.data.totalHaber ?? 0);
+  //               this.saldoFacturaPendiente = Number(r.data.saldo ?? 0);
+
+  //               // actualiza las filas ya cargadas en la grilla
+  //               this.syncPagoRowsConSaldo();
+  //             } else {
+  //               console.warn('No se pudo obtener el saldo de la factura:', r?.message);
+  //             }
+  //           },
+
+
+  //           error: (e) => {
+  //             console.warn('Error consultando saldo de factura:', e?.message || e);
+  //           }
+  //         });
+  //       }
+
+  //       if (this.idNota && this.idNota > 0) this.cargarFacturaPorId(this.idNota);
+  //       else this.errorFactura = 'No se pudo determinar el ID de la factura.';
+  //     },
+  //     error: (e) => {
+  //       this.buscandoFactura = false;
+  //       this.errorFactura = e?.message ?? 'Error consultando la factura.';
+  //     }
+  //   });
+  // }
   onEnterFactura(): void {
     const entrada = (this.encabezado.factura ?? '').trim();
     if (!this.cajaAsignada) {
@@ -658,69 +902,271 @@ export class NotaCreditoComponent implements OnInit {
     this.errorFactura = null;
     this.buscandoFactura = true;
 
-    this.svc.buscarPorNumeroLike(entrada, true, 1, 20).subscribe({
-      next: (resp: ApiResponse<PaginationResponse<FacturaListResponse>>) => {
-        this.buscandoFactura = false;
-        if (resp.type !== 'Success' || !resp.data?.items?.length) {
-          this.errorFactura = resp.message || 'No se encontraron facturas.';
+    // ✅ PASO 1: Validar con el nuevo endpoint PRIMERO
+    this.svc.validarFacturaParaNC(entrada).subscribe({
+      next: (validacion) => {
+        if (!validacion.success || !validacion.data) {
+          this.errorFactura = validacion.message;
+          this.buscandoFactura = false;
           return;
         }
 
-        const sufijo = this.extraerSufijo(entrada);
-        const candidatos = resp.data.items.filter(i => i.numeroFactura?.endsWith(sufijo));
-        const lista = (candidatos.length ? candidatos : resp.data.items)
-          .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+        // ✅ PASO 2: Detectar si es factura de saldo
+        this.esFacturaDeSaldo = !validacion.data.existeEnNota;
+        this.datosFacturaValidada = validacion.data;
 
-        const best = lista[0];
-
-        this.idNota = best.idNota;
-        this.clientesCodigo = best.idCliente;
-
-        if (best.numeroFactura) this.fijarFactura(best.numeroFactura);
-        else this.facturaFijada = true;
-
-        this.encabezado.cliente = (best as any).cliente ?? this.encabezado.cliente;
-        this.encabezado.ruc = (best as any).rucCliente ?? this.encabezado.ruc;
-        this.encabezado.direccion = (best as any).dirCliente ?? this.encabezado.direccion;
-
-        // 🔹 Traer totales (Debe/Haber) y saldo de la factura seleccionada
-        if (best.numeroFactura) {
-          this.svc.getSaldoFactura(best.numeroFactura, {
-            excluirPagosAnulados: true,
-            excluirMovimientosAnulados: true,
-          }).subscribe({
-            // dentro del .subscribe() de getSaldoFactura(...)
-            // Dentro del subscribe de getSaldoFactura(...)
-            next: (r) => {
-              if ((r?.type ?? '').toString().toLowerCase() === 'success' && r.data) {
-                this.totalHaberFactura = Number(r.data.totalHaber ?? 0);
-                this.saldoFacturaPendiente = Number(r.data.saldo ?? 0);
-
-                // actualiza las filas ya cargadas en la grilla
-                this.syncPagoRowsConSaldo();
-              } else {
-                console.warn('No se pudo obtener el saldo de la factura:', r?.message);
-              }
-            },
-
-
-            error: (e) => {
-              console.warn('Error consultando saldo de factura:', e?.message || e);
-            }
-          });
+        // ✅ PASO 3: Si es factura de saldo, cargar productos manualmente
+        if (this.esFacturaDeSaldo) {
+          this.mostrarMensajeFacturaSaldo(validacion.data);
+          this.cargarFacturaSaldo(validacion.data);
+          return; // ← NO continuar con la búsqueda normal
         }
 
-        if (this.idNota && this.idNota > 0) this.cargarFacturaPorId(this.idNota);
-        else this.errorFactura = 'No se pudo determinar el ID de la factura.';
+        // ✅ PASO 4: Si NO es factura de saldo, USAR TU LÓGICA ORIGINAL
+        this.svc.buscarPorNumeroLike(entrada, true, 1, 20).subscribe({
+          next: (resp: ApiResponse<PaginationResponse<FacturaListResponse>>) => {
+            this.buscandoFactura = false;
+            if (resp.type !== 'Success' || !resp.data?.items?.length) {
+              this.errorFactura = resp.message || 'No se encontraron facturas.';
+              return;
+            }
+
+            const sufijo = this.extraerSufijo(entrada);
+            const candidatos = resp.data.items.filter(i => i.numeroFactura?.endsWith(sufijo));
+            const lista = (candidatos.length ? candidatos : resp.data.items)
+              .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+
+            const best = lista[0];
+
+            this.idNota = best.idNota;
+            this.clientesCodigo = best.idCliente;
+
+            if (best.numeroFactura) this.fijarFactura(best.numeroFactura);
+            else this.facturaFijada = true;
+
+            this.encabezado.cliente = (best as any).cliente ?? this.encabezado.cliente;
+            this.encabezado.ruc = (best as any).rucCliente ?? this.encabezado.ruc;
+            this.encabezado.direccion = (best as any).dirCliente ?? this.encabezado.direccion;
+
+            if (best.numeroFactura) {
+              this.svc.getSaldoFactura(best.numeroFactura, {
+                excluirPagosAnulados: true,
+                excluirMovimientosAnulados: true,
+              }).subscribe({
+                next: (r) => {
+                  if ((r?.type ?? '').toString().toLowerCase() === 'success' && r.data) {
+                    this.totalHaberFactura = Number(r.data.totalHaber ?? 0);
+                    this.saldoFacturaPendiente = Number(r.data.saldo ?? 0);
+                    this.syncPagoRowsConSaldo();
+                  } else {
+                    console.warn('No se pudo obtener el saldo de la factura:', r?.message);
+                  }
+                },
+                error: (e) => {
+                  console.warn('Error consultando saldo de factura:', e?.message || e);
+                }
+              });
+            }
+
+            if (this.idNota && this.idNota > 0) this.cargarFacturaPorId(this.idNota);
+            else this.errorFactura = 'No se pudo determinar el ID de la factura.';
+          },
+          error: (e) => {
+            this.buscandoFactura = false;
+            this.errorFactura = e?.message ?? 'Error consultando la factura.';
+          }
+        });
       },
       error: (e) => {
         this.buscandoFactura = false;
-        this.errorFactura = e?.message ?? 'Error consultando la factura.';
+        this.errorFactura = e?.message ?? 'Error validando factura';
       }
     });
   }
 
+private mostrarMensajeFacturaSaldo(datos: any): void {
+  this.dialog.open(CustomMessageBoxComponent, {
+    width: '500px',
+    data: {
+      title: '⚠️ Factura de Saldo Detectada',
+      message: `
+        Esta factura no existe en el sistema de facturas,<br>
+        pero tiene saldo pendiente en Estado de Cuenta.<br><br>
+        
+        <strong>Número:</strong> ${datos.numeroFactura}<br>
+        <strong>Cliente:</strong> ${datos.nombreCliente}<br>
+        <strong>Saldo pendiente:</strong> $${datos.saldoPendiente.toFixed(2)}<br>
+        <strong>Origen:</strong> ${datos.origenDatos}<br><br>
+        
+        <em>Podrás agregar productos manualmente para la devolución.</em>
+      `,
+      type: 'warning',
+      confirmText: 'Continuar',
+      showCancel: false
+    }
+  });
+}
 
+private cargarFacturaSaldo(datos: any): void {
+  this.clientesCodigo = datos.clienteCodigo;
+  this.encabezado.cliente = datos.nombreCliente;
+  this.encabezado.factura = datos.numeroFactura;
+  this.facturaFijada = true;
+
+  this.totalHaberFactura = datos.totalPagado;
+  this.saldoFacturaPendiente = datos.saldoPendiente;
+
+  // ✅ Extraer sucursal2 y caja2 de la factura
+  const digits = (datos.numeroFactura ?? '').replace(/\D/g, '');
+  if (digits.length >= 6) {
+    this.encabezado.sucursal2 = digits.slice(0, 3);
+    this.encabezado.caja2 = digits.slice(3, 3);
+  }
+
+  // Cargar datos completos del cliente (RUC y Dirección)
+  this.cargarDatosClienteCompleto(datos.clienteCodigo);
+
+  this.detalleRows = [
+    { 
+      codigo: '', 
+      descripcion: '', 
+      cantidad: 0, 
+      pvp: 0, 
+      iva: 0,
+      ivaPct: 0,
+      valorDev: 0, 
+      cantidadd: 0,
+      ivaDev: 0,
+      porMonto: false 
+    }
+  ];
+
+  this.cargarProductosParaNC();
+  this.buscandoFactura = false;
+  this.recalcular();
+}
+private cargarDatosClienteCompleto(clienteCodigo: number): void {
+
+  this.clienteService.getClienteById(clienteCodigo).subscribe({
+    next: (cliente) => {
+      if (cliente) {
+        this.encabezado.ruc = cliente.ruc || cliente.ruc || '';
+        this.encabezado.direccion = cliente.dircli || cliente.dircli || '';
+      }
+    },
+    error: (e) => {
+      console.warn('No se pudieron cargar datos del cliente:', e);
+      // Valores por defecto
+      this.encabezado.ruc = '';
+      this.encabezado.direccion = '';
+    }
+  });
+}
+private buscarFacturaNormal(entrada: string, datosValidacion: any): void {
+  this.svc.buscarPorNumeroLike(entrada, true, 1, 20).subscribe({
+    next: (resp: ApiResponse<PaginationResponse<FacturaListResponse>>) => {
+      this.buscandoFactura = false;
+      if (resp.type !== 'Success' || !resp.data?.items?.length) {
+        this.errorFactura = resp.message || 'No se encontraron facturas.';
+        return;
+      }
+
+      const sufijo = this.extraerSufijo(entrada);
+      const candidatos = resp.data.items.filter(i => i.numeroFactura?.endsWith(sufijo));
+      const lista = (candidatos.length ? candidatos : resp.data.items)
+        .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+
+      const best = lista[0];
+      this.idNota = best.idNota;
+      this.clientesCodigo = best.idCliente;
+
+      if (best.numeroFactura) this.fijarFactura(best.numeroFactura);
+      else this.facturaFijada = true;
+
+      this.encabezado.cliente = (best as any).cliente ?? this.encabezado.cliente;
+      this.encabezado.ruc = (best as any).rucCliente ?? this.encabezado.ruc;
+      this.encabezado.direccion = (best as any).dirCliente ?? this.encabezado.direccion;
+
+      if (best.numeroFactura) {
+        this.svc.getSaldoFactura(best.numeroFactura, {
+          excluirPagosAnulados: true,
+          excluirMovimientosAnulados: true,
+        }).subscribe({
+          next: (r) => {
+            if ((r?.type ?? '').toString().toLowerCase() === 'success' && r.data) {
+              this.totalHaberFactura = Number(r.data.totalHaber ?? 0);
+              this.saldoFacturaPendiente = Number(r.data.saldo ?? 0);
+              this.syncPagoRowsConSaldo();
+            }
+          },
+          error: (e) => {
+            console.warn('Error consultando saldo de factura:', e?.message || e);
+          }
+        });
+      }
+
+      if (this.idNota && this.idNota > 0) this.cargarFacturaPorId(this.idNota);
+      else this.errorFactura = 'No se pudo determinar el ID de la factura.';
+    },
+    error: (e) => {
+      this.buscandoFactura = false;
+      this.errorFactura = e?.message ?? 'Error consultando la factura.';
+    }
+  });
+}
+private cargarProductosParaNC(): void {
+  this.isLoadingProductos = true;
+  
+  this.facturacionService.getProductosCodproFijos().pipe(
+    finalize(() => {
+      this.isLoadingProductos = false;
+      this.productosLoaded = true;
+    })
+  ).subscribe({
+    next: data => {
+      this.productos = data ?? [];
+    },
+    error: err => {
+      this.mostrarAlerta('Error al cargar productos', 'error');
+    }
+  });
+}
+onProductoSelectedNC(codpro: string): void {
+  const p = this.productos.find(x => (x.codpro ?? '').toString() === codpro);
+  if (!p) return;
+
+  const yaExiste = this.detalleRows.some(r => r.codigo === p.codpro);
+  if (yaExiste) {
+    this.mostrarAlerta(`El producto ${p.codpro} ya fue agregado.`, 'info');
+    return;
+  }
+
+  const ivaPorc = 15;
+  const precio = Number(p.prevensiniva || p.pvp || 0);
+
+  const nuevaFila: Detalle = {
+    codigo: p.codpro,
+    descripcion: (p.despro ?? '').toUpperCase(),
+    cantidad: 1,
+    pvp: precio,
+    iva: (precio * ivaPorc) / 100,
+    ivaPct: ivaPorc,
+    cantidadd: 0,
+    valorDev: 0,
+    ivaDev: 0,
+    porMonto: false
+  };
+
+  if (this.detalleRows.length === 1 && 
+      !this.detalleRows[0].codigo && 
+      !this.detalleRows[0].descripcion) {
+    this.detalleRows = [nuevaFila];
+  } else {
+    this.detalleRows = [...this.detalleRows, nuevaFila];
+  }
+
+  this.recalcular();
+}
   private cargarFacturaPorId(idNota: number): void {
     this.svc.getFacturaPorIdNota(idNota).subscribe({
       next: (resp) => {
@@ -1092,8 +1538,11 @@ export class NotaCreditoComponent implements OnInit {
     });
   }
 
-
-
-
-
+    filtrarProductos(event: any): void {
+    const texto = event.target.value.toLowerCase();
+    this.productosFiltrados = this.productos.filter(p =>
+      (p.codpro ?? '').toLowerCase().includes(texto) ||
+      (p.despro ?? '').toLowerCase().includes(texto)
+    );
+  }
 }
