@@ -1,5 +1,3 @@
-// src/app/core/interfaces/proveedor-request.interface.ts
-
 export interface ContactoProveedorRequest {
   nombre_contacto: string;
   cargo?: string;
