@@ -14,22 +14,28 @@
         class="tab-button"
         [class.active]="activeTab === 'general'" 
         (click)="cambiarTab('general')">
-        <mat-icon>person</mat-icon>
-        Datos Generales
+        <span class="step-badge">1</span>
+        <span class="tab-label">
+          Datos Generales
+        </span>
       </button>
       <button 
         class="tab-button"
         [class.active]="activeTab === 'adicional'" 
         (click)="cambiarTab('adicional')">
-        <mat-icon>business</mat-icon>
-        Datos Comerciales
+        <span class="step-badge">2</span>
+        <span class="tab-label">
+          Datos Comerciales
+        </span>
       </button>
       <button 
         class="tab-button"
         [class.active]="activeTab === 'contactos'" 
         (click)="cambiarTab('contactos')">
-        <mat-icon>contacts</mat-icon>
-        Contactos
+        <span class="step-badge">3</span>
+        <span class="tab-label">
+          Contactos
+        </span>
       </button>
     </div>
   </div>
@@ -51,7 +57,7 @@
               <div class="col-md-3">
                 <mat-form-field appearance="outline" class="w-100">
                   <mat-label>Código</mat-label>
-                  <input matInput formControlName="codigo_proveedor" placeholder="Auto-generado">
+                  <input matInput formControlName="codigo_proveedor" placeholder="Auto-generado" readonly>
                   <mat-error *ngIf="formGeneral.get('codigo_proveedor')?.hasError('required')">
                     Campo requerido
                   </mat-error>
@@ -62,8 +68,9 @@
                 <mat-form-field appearance="outline" class="w-100">
                   <mat-label>{{ tipoProveedorSeleccionado?.nombre_tipo === 'INTERNACIONAL' ? 'Documento' : 'RUC' }}</mat-label>
                   <input matInput formControlName="ruc_prov" 
-                         [placeholder]="tipoProveedorSeleccionado?.nombre_tipo === 'INTERNACIONAL' ? 'Número de documento' : 'RUC del proveedor'"
-                         [maxlength]="tipoProveedorSeleccionado?.nombre_tipo === 'INTERNACIONAL' ? 20 : 13">
+                        [placeholder]="tipoProveedorSeleccionado?.nombre_tipo === 'INTERNACIONAL' ? 'Número de documento' : 'RUC del proveedor'"
+                        [maxlength]="tipoProveedorSeleccionado?.nombre_tipo === 'INTERNACIONAL' ? 20 : 13"
+                        (blur)="consultarDocumento()">
                   <mat-error *ngIf="formGeneral.get('ruc_prov')?.hasError('required')">
                     Campo requerido
                   </mat-error>
@@ -219,9 +226,10 @@
               
               <div class="col-md-6">
                 <mat-form-field appearance="outline" class="w-100">
-                  <mat-label>Plan de Cuenta</mat-label>
-                  <mat-select formControlName="id_plan_cuenta">
-                    <mat-option *ngFor="let plan of planesCuenta" [value]="plan.id_plan_cuenta">
+                  <mat-label>Cuenta Contable</mat-label>
+                  <mat-select formControlName="id_plan_cuentas"
+                 >
+                    <mat-option *ngFor="let plan of planesCuenta" [value]="plan.id_plan_cuentas">
                       {{ plan.cuenta_presentacion }} - {{ plan.nombre_cuenta }}
                     </mat-option>
                   </mat-select>
@@ -256,7 +264,7 @@
                   <div class="col-6">
                     <mat-form-field appearance="outline" class="w-100">
                       <mat-label>Porcentaje (%)</mat-label>
-                      <input matInput formControlName="porcentaje_retencion_fb" type="number" step="0.01" min="0" max="100">
+                      <input matInput formControlName="porcentaje_retencion_fb" type="number" step="0.01" min="0" max="100" readonly>
                     </mat-form-field>
                   </div>
                   <div class="col-6">
@@ -281,7 +289,7 @@
                   <div class="col-6">
                     <mat-form-field appearance="outline" class="w-100">
                       <mat-label>Porcentaje (%)</mat-label>
-                      <input matInput formControlName="porcentaje_retencion_fs" type="number" step="0.01" min="0" max="100">
+                      <input matInput formControlName="porcentaje_retencion_fs" type="number" step="0.01" min="0" max="100" readonly>
                     </mat-form-field>
                   </div>
                   <div class="col-6">
@@ -307,7 +315,7 @@
                   <div class="col-6">
                     <mat-form-field appearance="outline" class="w-100">
                       <mat-label>Porcentaje (%)</mat-label>
-                      <input matInput formControlName="porcentaje_retencion_ib" type="number" step="0.01" min="0" max="100">
+                      <input matInput formControlName="porcentaje_retencion_ib" type="number" step="0.01" min="0" max="100" readonly>
                     </mat-form-field>
                   </div>
                   <div class="col-6">
@@ -331,7 +339,7 @@
                   <div class="col-6">
                     <mat-form-field appearance="outline" class="w-100">
                       <mat-label>Porcentaje (%)</mat-label>
-                      <input matInput formControlName="porcentaje_retencion_is" type="number" step="0.01" min="0" max="100">
+                      <input matInput formControlName="porcentaje_retencion_is" type="number" step="0.01" min="0" max="100" readonly>
                     </mat-form-field>
                   </div>
                   <div class="col-6">

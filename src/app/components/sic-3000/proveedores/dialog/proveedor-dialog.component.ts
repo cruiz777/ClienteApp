@@ -1,6 +1,6 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatDialogRef, MAT_DIALOG_DATA, MatDialog } from '@angular/material/dialog';
 import { forkJoin } from 'rxjs';
 
 // Tus servicios existentes
@@ -12,6 +12,8 @@ import { CiudadResumen } from 'src/app/interfaces/responses/ciudad-response';
 import { TipoContribuyenteService } from 'src/app/services/tipo-contribuyente.service';
 import { PlanCuentaService } from 'src/app/services/plan-cuenta.service';
 import { TipoRetencionResponse, TipoRetencionService } from 'src/app/services/tipo-retencion.service';
+import { ConsultaSriService } from 'src/app/services/consultas.service';
+import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
 
 interface DialogData {
   modo: 'crear' | 'editar';
@@ -65,7 +67,9 @@ export class ProveedorDialogComponent implements OnInit {
     private proveedorService: ProveedorService,
     private tipoContribuyenteService: TipoContribuyenteService,
     private planCuentaService: PlanCuentaService,
-    private tipoRetencionService: TipoRetencionService
+    private tipoRetencionService: TipoRetencionService,
+    private consultaSriService: ConsultaSriService,
+    private dialog: MatDialog 
   ) {
     this.modo = data.modo;
     this.tipoProveedorSeleccionado = data.tipoProveedor;
@@ -77,12 +81,65 @@ export class ProveedorDialogComponent implements OnInit {
   ngOnInit(): void {
     this.cargarCombos();
     this.inicializarFormularios();
+    this.configurarListenersRetenciones(); 
     
     if (this.modo === 'editar' && this.data.proveedor) {
       this.cargarDatosProveedor(this.data.proveedor);
     }
   }
+  configurarListenersRetenciones(): void {
+    // Listener para Retención Fuente - Bienes
+    this.formAdicional.get('codigo_retencion_fb')?.valueChanges.subscribe(codigo => {
+      if (codigo) {
+        const retencion = this.tiposRetencion.find(r => r.codigo_tipo_ret === codigo);
+        if (retencion) {
+          this.formAdicional.patchValue(
+            { porcentaje_retencion_fb: retencion.porcentaje },
+            { emitEvent: false } // No emitir evento para evitar loops
+          );
+        }
+      }
+    });
 
+    // Listener para Retención Fuente - Servicios
+    this.formAdicional.get('codigo_retencion_fs')?.valueChanges.subscribe(codigo => {
+      if (codigo) {
+        const retencion = this.tiposRetencion.find(r => r.codigo_tipo_ret === codigo);
+        if (retencion) {
+          this.formAdicional.patchValue(
+            { porcentaje_retencion_fs: retencion.porcentaje },
+            { emitEvent: false }
+          );
+        }
+      }
+    });
+
+    // Listener para Retención IVA - Bienes
+    this.formAdicional.get('codigo_retencion_ib')?.valueChanges.subscribe(codigo => {
+      if (codigo) {
+        const retencion = this.tiposRetencion.find(r => r.codigo_tipo_ret === codigo);
+        if (retencion) {
+          this.formAdicional.patchValue(
+            { porcentaje_retencion_ib: retencion.porcentaje },
+            { emitEvent: false }
+          );
+        }
+      }
+    });
+
+    // Listener para Retención IVA - Servicios
+    this.formAdicional.get('codigo_retencion_is')?.valueChanges.subscribe(codigo => {
+      if (codigo) {
+        const retencion = this.tiposRetencion.find(r => r.codigo_tipo_ret === codigo);
+        if (retencion) {
+          this.formAdicional.patchValue(
+            { porcentaje_retencion_is: retencion.porcentaje },
+            { emitEvent: false }
+          );
+        }
+      }
+    });
+  }
   cargarCombos(): void {
     this.isLoadingCombos = true;
     
@@ -98,11 +155,13 @@ export class ProveedorDialogComponent implements OnInit {
         this.paises = responses.paises;
         this.ciudades = responses.ciudades;
         
-        // ✅ CORREGIR: Verificar si viene envuelto en data o directamente
         this.tiposProveedor = responses.tiposProveedor.data || responses.tiposProveedor;
         this.tiposContribuyente = responses.tiposContribuyente.data || responses.tiposContribuyente;
+        console.log('🔍 RAW planesCuenta del backend:', responses.planesCuenta.data || responses.planesCuenta);
+      
         this.planesCuenta = responses.planesCuenta.data || responses.planesCuenta;
-        // ✅ CARGAR RETENCIONES
+
+        // CARGAR RETENCIONES
         this.tiposRetencion = responses.tiposRetencion.data || responses.tiposRetencion;
       
         // Filtrar por tipo
@@ -148,7 +207,7 @@ export class ProveedorDialogComponent implements OnInit {
       tiempo_entrega: [0, [Validators.min(0)]],
       plazo_pago: [0, [Validators.min(0)]],
       no_cambiar_costo_producto: [false],
-      id_plan_cuenta: [''],
+      id_plan_cuentas: null,
       // Retenciones
       porcentaje_retencion_fb: [null, [Validators.min(0), Validators.max(100)]],
       codigo_retencion_fb: [''],
@@ -240,27 +299,35 @@ export class ProveedorDialogComponent implements OnInit {
     // Validar formulario principal
     if (this.formGeneral.invalid) {
       this.activeTab = 'general';
+      
+      // ✅ MOSTRAR ERROR DE VALIDACIÓN
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '350px',
+        data: {
+          title: 'Formulario Incompleto',
+          message: 'Por favor complete todos los campos requeridos en la pestaña "Datos Generales".',
+          type: 'warning',
+          showCancel: false,
+          confirmText: 'Entendido'
+        }
+      });
       return;
     }
 
     // Construir objeto para enviar
     const formData = {
-      ...this.formGeneral.getRawValue(), // incluye campos deshabilitados
+      ...this.formGeneral.getRawValue(),
       ...this.formAdicional.value,
       contactos: this.contactos
     };
 
-    //LIMPIAR CAMPOS VACÍOS ANTES DE ENVIAR
     const proveedorData = {
       ...formData,
-      // Limpiar códigos de retención vacíos
       codigo_retencion_fb: formData.codigo_retencion_fb || null,
       codigo_retencion_fs: formData.codigo_retencion_fs || null,
       codigo_retencion_ib: formData.codigo_retencion_ib || null,
       codigo_retencion_is: formData.codigo_retencion_is || null,
-      
-      // Limpiar otros campos opcionales
-      id_plan_cuenta: formData.id_plan_cuenta || null,
+      id_plan_cuenta: formData.id_plan_cuentas || null,
       codigo_postal: formData.codigo_postal || null,
       tel1_prov: formData.tel1_prov || null,
       tel2_prov: formData.tel2_prov || null,
@@ -268,28 +335,104 @@ export class ProveedorDialogComponent implements OnInit {
       observaciones: formData.observaciones || null
     };
 
-    console.log('Datos a guardar:', proveedorData);
+    console.log('📤 Datos a guardar:', proveedorData);
+    
+    // ✅ MOSTRAR LOADING
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      width: '350px',
+      disableClose: true,
+      data: {
+        title: this.modo === 'crear' ? 'Creando Proveedor' : 'Actualizando Proveedor',
+        message: 'Por favor espere mientras procesamos la información...',
+        type: 'info',
+        isLoading: true,
+        loadingText: this.modo === 'crear' ? 'Creando...' : 'Actualizando...'
+      }
+    });
     
     if (this.modo === 'crear') {
       this.proveedorService.create(proveedorData).subscribe({
         next: (response) => {
-          console.log('Proveedor creado:', response);
-          this.dialogRef.close(response);
+          console.log('✅ Proveedor creado:', response);
+          
+          // ✅ CERRAR LOADING
+          loadingDialog.close();
+          
+          // ✅ MOSTRAR ÉXITO
+          const successDialog = this.dialog.open(CustomMessageBoxComponent, {
+            width: '350px',
+            data: {
+              title: 'Éxito',
+              message: 'El proveedor ha sido creado correctamente.',
+              type: 'success',
+              showCancel: false,
+              confirmText: 'Aceptar'
+            }
+          });
+          
+          successDialog.afterClosed().subscribe(() => {
+            this.dialogRef.close(response);
+          });
         },
         error: (error) => {
-          console.error('Error creando proveedor:', error);
+          console.error('❌ Error creando proveedor:', error);
+          
+          // ✅ CERRAR LOADING Y MOSTRAR ERROR
+          loadingDialog.close();
+          
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '350px',
+            data: {
+              title: 'Error',
+              message: error.error?.message || 'No se pudo crear el proveedor. Por favor intente nuevamente.',
+              type: 'error',
+              showCancel: false,
+              confirmText: 'Entendido'
+            }
+          });
         }
       });
     } else {
-      // Modo editar - necesitarías el ID del proveedor
       const id = this.data.proveedor?.id_proveedor;
       this.proveedorService.update(id, proveedorData).subscribe({
         next: (response) => {
-          console.log('Proveedor actualizado:', response);
-          this.dialogRef.close(response);
+          console.log('✅ Proveedor actualizado:', response);
+          
+          // ✅ CERRAR LOADING
+          loadingDialog.close();
+          
+          // ✅ MOSTRAR ÉXITO
+          const successDialog = this.dialog.open(CustomMessageBoxComponent, {
+            width: '350px',
+            data: {
+              title: 'Éxito',
+              message: 'El proveedor ha sido actualizado correctamente.',
+              type: 'success',
+              showCancel: false,
+              confirmText: 'Aceptar'
+            }
+          });
+          
+          successDialog.afterClosed().subscribe(() => {
+            this.dialogRef.close(response);
+          });
         },
         error: (error) => {
-          console.error('Error actualizando proveedor:', error);
+          console.error('❌ Error actualizando proveedor:', error);
+          
+          // ✅ CERRAR LOADING Y MOSTRAR ERROR
+          loadingDialog.close();
+          
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '350px',
+            data: {
+              title: 'Error',
+              message: error.error?.message || 'No se pudo actualizar el proveedor. Por favor intente nuevamente.',
+              type: 'error',
+              showCancel: false,
+              confirmText: 'Entendido'
+            }
+          });
         }
       });
     }
@@ -308,6 +451,11 @@ export class ProveedorDialogComponent implements OnInit {
   }
 
   cargarDatosProveedor(proveedor: any): void {
+      if (this.isLoadingCombos) {
+      // Si aún se están cargando, esperar un momento y reintentar
+      setTimeout(() => this.cargarDatosProveedor(proveedor), 100);
+      return;
+    }
     // Cargar datos en formulario general
     this.formGeneral.patchValue({
       codigo_proveedor: proveedor.codigo_proveedor,
@@ -331,7 +479,7 @@ export class ProveedorDialogComponent implements OnInit {
       tiempo_entrega: proveedor.tiempo_entrega,
       plazo_pago: proveedor.plazo_pago,
       no_cambiar_costo_producto: proveedor.no_cambiar_costo_producto,
-      id_plan_cuenta: proveedor.id_plan_cuenta, // ✅ Usar el ID
+      id_plan_cuentas: proveedor.id_plan_cuenta,
       // ✅ CÓDIGOS DE RETENCIÓN
       porcentaje_retencion_fb: proveedor.porcentaje_retencion_fb,
       codigo_retencion_fb: proveedor.codigo_retencion_fb,
@@ -347,7 +495,10 @@ export class ProveedorDialogComponent implements OnInit {
     // ✅ Cargar contactos existentes
     this.contactos = proveedor.contactos || [];
   }
-
+  compararPlanCuenta(valor1: any, valor2: any): boolean {
+    // Comparar convirtiendo ambos a number por si acaso
+    return Number(valor1) === Number(valor2);
+  }
   // Método helper para errores
   getErrorMessage(formGroup: FormGroup, fieldName: string): string {
     const control = formGroup.get(fieldName);
@@ -360,4 +511,97 @@ export class ProveedorDialogComponent implements OnInit {
     
     return '';
   }
+
+  //CONSULTAS A APIS
+  consultarDocumento(): void {
+    const esInternacional = this.tipoProveedorSeleccionado?.nombre_tipo === 'INTERNACIONAL';
+    
+    // Solo para proveedores NO internacionales
+    if (esInternacional) return;
+    
+    const documento = this.formGeneral.get('ruc_prov')?.value?.trim();
+    
+    if (!documento) return;
+    
+    // Determinar si es cédula (10) o RUC (13)
+    if (documento.length === 10) {
+      this.consultarCedula(documento);
+    } else if (documento.length === 13) {
+      this.consultarRuc(documento);
+    }
+  }
+
+  private consultarRuc(ruc: string): void {
+    console.log('🔍 Consultando RUC:', ruc);
+    
+    this.consultaSriService.consultarRuc(ruc).subscribe({
+      next: (response) => {
+        if (response.ok && response.consulta && response.consulta.length > 0) {
+          const data = response.consulta[0];
+          
+          console.log('✅ Datos RUC obtenidos:', data);
+          
+          // Autocompletar solo campos básicos
+          this.formGeneral.patchValue({
+            nombre_prov: data.razonSocial || '',
+          });
+          
+          // Buscar tipo contribuyente por nombre
+          this.buscarTipoContribuyente(data.tipoContribuyente);
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error consultando RUC:', error);
+      }
+    });
+  }
+
+  private buscarTipoContribuyente(tipoNombre: string): void {
+    if (!tipoNombre) return;
+    
+    // Mapeo simple de nombres
+    const mapeo: any = {
+      'PERSONA NATURAL': 'PERSONAS NATURALES',
+      'RISE': 'RISE',
+      'ESPECIAL': 'ESPECIAL'
+    };
+    
+    const nombreBuscar = mapeo[tipoNombre.toUpperCase()] || tipoNombre;
+    
+    const tipo = this.tiposContribuyente.find(t => 
+      t.descripcion?.toUpperCase().includes(nombreBuscar.toUpperCase())
+    );
+    
+    if (tipo) {
+      this.formGeneral.patchValue({
+        id_tipo_contribuyente: tipo.id_tipo_contribuyente
+      });
+    }
+  }
+  private consultarCedula(cedula: string): void {
+    console.log('🔍 Consultando Cédula:', cedula);
+    
+    this.consultaSriService.consultarCedula(cedula).subscribe({
+      next: (response) => {
+        if (response.ok && response.consulta) {
+          const data = response.consulta;
+          
+          console.log('✅ Datos Cédula obtenidos:', data);
+          
+          // Construir dirección
+          const direccion = `${data.calleDomicilio || ''} ${data.numeracionDomicilio || ''}`.trim();
+          
+          // Autocompletar solo campos básicos
+          this.formGeneral.patchValue({
+            nombre_prov: data.nombre || '',
+            direccion_prov: direccion || ''
+          });
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error consultando Cédula:', error);
+      }
+    });
+  }
+
 }

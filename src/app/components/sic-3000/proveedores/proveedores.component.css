@@ -187,6 +187,15 @@
     justify-content: center;
   }
 }
+.btn-nuevo {
+  background-color: #1a237e !important;
+  color: white !important;
+  height: 56px;
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
 /* Botón de Buscar con color corporativo */
 .btn-buscar {
   background-color: #1a237e !important;

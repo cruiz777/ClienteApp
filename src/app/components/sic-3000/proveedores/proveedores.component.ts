@@ -7,6 +7,7 @@ import { ProveedorService } from 'src/app/services/proveedor.service';
 import { TipoProveedorService } from 'src/app/services/tipo-proveedor.service';
 import { TipoProveedorResponse } from 'src/app/interfaces/responses/tipo-proveedor-response';
 import { ProductosProveedorDialogComponent } from './dialog/productos-proveedor/productos-proveedor-dialog.component';
+import { CustomMessageBoxComponent } from '../../utils/messages/custom-message-box.component';
 
 @Component({
   selector: 'app-proveedores',
@@ -146,7 +147,19 @@ export class ProveedoresListaComponent implements OnInit {
 cargarDatos(): void {
   this.isLoading = true;
   
-  // ✅ Asegurar valores válidos antes de llamar al servicio
+  // ✅ MOSTRAR LOADING
+  const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+    width: '350px',
+    disableClose: true,
+    data: {
+      title: 'Cargando',
+      message: 'Obteniendo lista de proveedores...',
+      type: 'info',
+      isLoading: true,
+      loadingText: 'Por favor espere'
+    }
+  });
+  
   const page = isNaN(this.currentPage) || this.currentPage < 1 ? 1 : this.currentPage;
   const size = isNaN(this.pageSize) || this.pageSize < 1 ? 20 : this.pageSize;
   
@@ -163,10 +176,27 @@ cargarDatos(): void {
       this.totalItems = response.totalItems;
       this.totalPages = response.totalPages;
       this.isLoading = false;
+      
+      // ✅ CERRAR LOADING
+      loadingDialog.close();
     },
     error: (error) => {
       console.error('Error al cargar proveedores:', error);
       this.isLoading = false;
+      
+      // ✅ CERRAR LOADING Y MOSTRAR ERROR
+      loadingDialog.close();
+      
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '350px',
+        data: {
+          title: 'Error',
+          message: 'No se pudo cargar la lista de proveedores. Por favor intente nuevamente.',
+          type: 'error',
+          showCancel: false,
+          confirmText: 'Entendido'
+        }
+      });
     }
   });
 }
@@ -242,20 +272,80 @@ cargarDatos(): void {
   editarProveedor(proveedor?: ProveedorResponse): void {
     if (!proveedor) return;
 
-    const dialogRef = this.dialog.open(ProveedorDialogComponent, {
-      width: '900px',
-      maxHeight: '90vh',
-      data: { 
-        modo: 'editar',
-        proveedor: proveedor
-      },
-      disableClose: true
+    // ✅ MOSTRAR LOADING
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      width: '350px',
+      disableClose: true,
+      data: {
+        title: 'Cargando',
+        message: 'Obteniendo datos del proveedor...',
+        type: 'info',
+        isLoading: true,
+        loadingText: 'Cargando información completa'
+      }
     });
+    
+    this.proveedorService.getById(proveedor.id_proveedor).subscribe({
+      next: (response) => {
+        // ✅ CERRAR LOADING
+        loadingDialog.close();
+        
+        if (response.type === 'SUCCESS') {
+          const proveedorCompleto = response.data;
+          
+          console.log('✅ Proveedor cargado con contactos:', proveedorCompleto);
+          console.log('📋 Cantidad de contactos:', proveedorCompleto.contactos?.length || 0);
+          
+          const dialogRef = this.dialog.open(ProveedorDialogComponent, {
+            width: '900px',
+            maxHeight: '90vh',
+            data: { 
+              modo: 'editar',
+              proveedor: proveedorCompleto,
+              tipoProveedor: {
+                id_tipo_proveedor: proveedorCompleto.id_tipo_proveedor,
+                nombre_tipo: proveedorCompleto.tipo_proveedor
+              }
+            },
+            disableClose: true
+          });
 
-    dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        console.log('Proveedor editado:', result);
-        this.cargarDatos();
+          dialogRef.afterClosed().subscribe(result => {
+            if (result) {
+              console.log('✅ Proveedor editado:', result);
+              this.cargarDatos();
+            }
+          });
+        } else {
+          // ✅ MOSTRAR ERROR
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '350px',
+            data: {
+              title: 'Error',
+              message: 'No se pudo cargar el proveedor',
+              type: 'error',
+              showCancel: false,
+              confirmText: 'Entendido'
+            }
+          });
+        }
+      },
+      error: (error) => {
+        // ✅ CERRAR LOADING Y MOSTRAR ERROR
+        loadingDialog.close();
+        
+        console.error('❌ Error al cargar proveedor:', error);
+        
+        this.dialog.open(CustomMessageBoxComponent, {
+          width: '350px',
+          data: {
+            title: 'Error',
+            message: 'Error al cargar el proveedor. Por favor intente nuevamente.',
+            type: 'error',
+            showCancel: false,
+            confirmText: 'Entendido'
+          }
+        });
       }
     });
   }
