@@ -20,10 +20,17 @@
                   </div>
                   <div>
                     <label class="form-label"><span style="color: red;">*</span>RUC/CI/Pasaporte:</label>
-                    <input type="text" [formControl]="rucControl" (blur)="onRucBlur()"
+                    <input type="text" [formControl]="rucControl" (blur)="onRucBlur()" 
                       placeholder="Ingrese número o pasaporte" class="underline-input" autocomplete="off" />
 
                     <!-- Mostrar error solo si NO es pasaporte -->
+                    <mat-error *ngIf="rucControl.hasError('duplicado')">
+                      ⚠️ El cliente ya existe.
+                    </mat-error>
+                    <mat-error *ngIf="rucControl.hasError('invalidLength')">
+                      Ingrese 10 dígitos (cédula) o 13 dígitos (RUC).
+                    </mat-error>
+
                     <div *ngIf="error && !esPasaporte" class="error-message" style="color: red; font-size: 12px;">
                       {{ error }}
                     </div>
@@ -257,9 +264,11 @@
                   </div>
                 </section>
                 <div style="text-align: right;">
-                  <button mat-button color="primary" matStepperNext (click)="verificarYAvanzar(paso1Form, stepper)">
+                  <button mat-button color="primary" matStepperNext [disabled]="paso1Form.invalid || paso1Form.pending"
+                    (click)="verificarYAvanzar(paso1Form, stepper)">
                     Siguiente
                   </button>
+
 
 
                 </div>
@@ -400,6 +409,8 @@
                           <label for="chk-compra">Orden de Compra</label>
                           <input type="checkbox" id="chk-prefijo" formControlName="nprefijo" />
                           <label for="chk-prefijo">Prefijos</label>
+                          <input type="checkbox" id="chk-prefijo" formControlName="nprefijo" />
+                          <label for="chk-prefijo">Otros</label>
                         </div>
                       </div>
                     </div>
@@ -712,12 +723,12 @@
   </mat-tab-group>
 </mat-dialog-content>
 <div style="text-align: center;">
-<button mat-button color="primary"
-        [disabled]="botonGuardarDeshabilitado || !(canCreate$ | async)"
-        (click)="guardar(stepper)">
-  <img src="assets/icons/icon-grabar.png" alt="Grabar" width="18" height="18" style="margin-right: 6px;" />
-  {{ (canCreate$ | async) ? 'Grabar' : 'No puede crear' }}
-</button>
+  <button mat-button color="primary"
+    [disabled]="botonGuardarDeshabilitado || !(canCreate$ | async) || formCliente.invalid || paso1Form.pending || rucControl.pending || rucControl.hasError('duplicado')"
+    (click)="guardar(stepper)">
+    {{ (canCreate$ | async) ? 'Grabar' : 'No puede crear' }}
+  </button>
+
   <button mat-button (click)="generarPDF()" [disabled]="!impresionHabilitada">
     <img src="assets/icons/icon-imprimir.png" alt="Imprimir" width="18" height="18" style="margin-right: 6px;" />
     Imprimir

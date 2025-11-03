@@ -3,6 +3,10 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { forkJoin } from 'rxjs';
+import { of } from 'rxjs';
+import { finalize, tap } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
+
 
 // Angular Forms
 import { FormBuilder, FormGroup, FormControl, Validators, AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
@@ -42,7 +46,7 @@ import { PaisService, Pais } from 'src/app/services/pais.service';
 import { HistorialClienteService, HistorialClienteRequest } from 'src/app/services/historial-cliente.service';
 // Interfaces o modelos
 import { ClienteRuc } from '../../../../interfaces/clienteRuc';
-import { emailValidoValidator } from '../../../../util/validators';
+import { emailValidoValidator,multipleEmailsValidator } from '../../../../util/validators';
 
 import { Inject } from '@angular/core';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
@@ -55,7 +59,6 @@ import { ExportService } from 'src/app/services/export.service';
 import { ExportOptions } from 'src/app/interfaces/export-options';
 import { EmpresaService } from 'src/app/services/empresa.service';
 import { LogoService } from 'src/app/services/logo.service';
-import { PermissionsService } from 'src/app/services/permission.service';
 const ELEMENT_DATA: HistorialClienteRequest[] = [
   {
     id_historial_cliente: 1,
@@ -70,7 +73,7 @@ const ELEMENT_DATA: HistorialClienteRequest[] = [
 @Component({
   selector: 'app-dialog-cliente-editar',
   templateUrl: './dialog-cliente-editar.component.html',
-  styleUrl: './dialog-cliente-editar.component.css'
+  styleUrls: ['./dialog-cliente-editar.component.css']
 })
 
 
@@ -155,7 +158,7 @@ export class DialogClienteEditarComponent implements OnInit {
   ];
 
   nombrecli: string = '';
- logoUrl: string = '';
+  logoUrl: string = '';
   prefijoCliente!: PrefijoClienteResponse;
 
   private clienteOriginal!: ClienteIndividual;
@@ -198,61 +201,65 @@ export class DialogClienteEditarComponent implements OnInit {
     private exportService: ExportService,
     private empresaService: EmpresaService,
     private logoService: LogoService,
-    public permissions: PermissionsService
   ) { }
 
- ngOnInit(): void {
-  const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
-    disableClose: true,
-    data: {
-      title: 'Cargando Cliente...',
-      message: 'Por favor espere mientras se cargan los datos del cliente.',
-      type: 'info',
-      isLoading: true,
-      loadingText: 'Cargando información...',
-      showCancel: false
-    }
-  });
+  ngOnInit(): void {
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      disableClose: true,
+      data: {
+        title: 'Cargando Cliente...',
+        message: 'Por favor espere mientras se cargan los datos del cliente.',
+        type: 'info',
+        isLoading: true,
+        loadingText: 'Cargando información...',
+        showCancel: false
+      }
+    });
 
-  this.cargando = true;
-  this.usuarioActual = this.usuarioService.getUsuarioActual();
-  this.initFormulario();
+    this.cargando = true;
+    this.usuarioActual = this.usuarioService.getUsuarioActual();
+    this.initFormulario();
+    this.wireValueChanges(); // <- ahora sí existe (ver más abajo)
 
-  this.cargarGrupos();
-  this.cargarGruposProducto();
-  this.cargarCiudad();
-  this.cargarPais();
-  this.cargarZona();
-  this.cargarEstadoEmpresa();
-  this.activarModoEdicion();
+    forkJoin({
+      grupos: this.cargarGrupos$(),
+      gruposProducto: this.cargarGruposProducto$(),
+      ciudades: this.cargarCiudad$(),
+      paises: this.cargarPais$(),
+      zonas: this.cargarZona$(),
+      estados: this.cargarEstadoEmpresa$(),
 
-  console.log(this.idCliente);
-  this.cargarHistorial(this.idCliente, 'update', 'Clientes', 1);
-  this.cargarPrefijoCliente(this.idCliente);
-  this.cargarClienteYGrupos(this.idCliente);
-  this.obtenerObservaciones(this.idCliente);
-  this.cargarDatosAdicionales(this.idCliente);
-  this.cargarContactosClientes(this.idCliente);
+      // Si tu activarModoEdicion() es SINCRÓNICO, lo llamas y devuelves of(null)
+      editMode: this.activarModoEdicion$(),
 
-  this.paso2Form.get('razonSocial')?.valueChanges.subscribe(valor => {
-    this.nombrecli = valor;
-  });
+      historial: this.cargarHistorial$(this.idCliente, 'update', 'Clientes', 1),
+      prefijo: this.cargarPrefijoCliente$(this.idCliente),
+      clienteYGrupos: this.cargarClienteYGrupos$(this.idCliente),
+      observaciones: this.obtenerObservaciones$(this.idCliente),
+      datosAdicionales: this.cargarDatosAdicionales$(this.idCliente),
+      contactos: this.cargarContactosClientes$(this.idCliente)
+    })
+      .pipe(
+        finalize(() => {
+          this.cargando = false;
+          loadingDialog.close();
+        })
+      )
+      .subscribe({
+        next: () => { },
+        error: (err) => {
+          this.dialog.open(CustomMessageBoxComponent, {
+            data: {
+              title: 'Error al cargar',
+              message: err?.message || 'Ocurrió un error inesperado.',
+              type: 'error',
+              showCancel: false
+            }
+          });
+        }
+      });
+  }
 
-  this.paso1Form.get('estadoEmpresa')?.valueChanges.subscribe(value => {
-    this.paso2Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
-    this.paso3Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
-    this.paso4Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
-  });
-
-  this.paso1Form.get('zona')?.valueChanges.subscribe(value => {
-    this.paso2Form.get('zona')?.setValue(value, { emitEvent: false });
-    this.paso3Form.get('zona')?.setValue(value, { emitEvent: false });
-    this.paso4Form.get('zona')?.setValue(value, { emitEvent: false });
-  });
-
-  this.cargando = false;
-  loadingDialog.close(); // ✅ cerrar el diálogo
-}
 
   initFormulario(): void {
     this.formCliente = this.fb.group({
@@ -287,9 +294,10 @@ export class DialogClienteEditarComponent implements OnInit {
         nombreRepresentante: [null, Validators.required],
         direccionPrincipal: ['', Validators.required],
         codigoPostal: [''],
-        celular: ['', Validators.required],
+        celular: [''],
         sitioWeb: [''],
         telefono2: [''],
+        extension: [''],
         usuario: [{ value: '', disabled: true }],
         observacion1: [''],
         usuario1: [''],
@@ -307,18 +315,18 @@ export class DialogClienteEditarComponent implements OnInit {
 
       paso3: this.fb.group({
         nombreRepresentante: [null, Validators.required],
-        emailRepresentante: ['', [Validators.required, emailValidoValidator()]],
+        emailRepresentante: ['', [emailValidoValidator()]],
         telefonoRepresentante: ['', Validators.required],
 
         email: ['', [emailValidoValidator()]],
-        email1: ['', [Validators.required, emailValidoValidator()]],
-        email2: ['', [emailValidoValidator()]],
+        email1: ['', [emailValidoValidator()]],
+        email2: ['', [multipleEmailsValidator({ max: 5 })]],
         email3: ['', [emailValidoValidator()]],
         telefono: [''],
         nombreCodificacion: [''],
-        nombreFinanciero:[null, Validators.required],
+        nombreFinanciero: [null],
 
-        telefono22: ['', Validators.required],
+        telefono22: [''],
         pregunta1: [false],
         pregunta2: [false],
         pregunta3: [false],
@@ -373,15 +381,19 @@ export class DialogClienteEditarComponent implements OnInit {
   get paso4Form(): FormGroup {
     return this.formCliente.get('paso4') as FormGroup;
   }
-  
-  cargarGrupos(): void {
-    this.grupoService.obtenerGrupos().subscribe(data => {
-      this.grupos = data;
-      this.gruposFiltrados$ = this.grupoCtrl.valueChanges.pipe(
-        startWith(''),
-        map(valor => this.filtrarGrupos(valor || ''))
-      );
-    });
+
+
+
+  private cargarGrupos$(): Observable<any> {
+    return this.grupoService.obtenerGrupos().pipe(
+      tap(data => {
+        this.grupos = data;
+        this.gruposFiltrados$ = this.grupoCtrl.valueChanges.pipe(
+          startWith(''),
+          map(valor => this.filtrarGrupos(valor || ''))
+        );
+      })
+    );
   }
 
   filtrarGrupos(valor: string): GrupoEmpresa[] {
@@ -400,25 +412,22 @@ export class DialogClienteEditarComponent implements OnInit {
 
 
 
- cargarGruposProducto(): void {
-  this.grupoProductoService.obtenerGrupos().subscribe(data => {
-    this.gruposProducto = data;
+  private cargarGruposProducto$(): Observable<any> {
+    return this.grupoProductoService.obtenerGrupos().pipe(
+      tap(data => {
+        this.gruposProducto = data;
 
-    this.paso1Form.get('grupoProducto')?.valueChanges
-      .pipe(startWith(''))
-      .subscribe(valor => {
-        const filtro = typeof valor === 'string' ? valor.toLowerCase() : '';
-        this.grupoProductoFiltrados = this.gruposProducto.filter(g =>
-          (g.codigo + ' ' + g.brick + ' ' + g.desBrick).toLowerCase().includes(filtro)
-        );
-      });
-
-    this.cargando = false; // ✅ Se coloca dentro del subscribe
-  }, error => {
-    console.error('❌ Error al cargar grupoProducto', error);
-    this.cargando = false; // en caso de error también
-  });
-}
+        this.paso1Form.get('grupoProducto')?.valueChanges
+          .pipe(startWith(''))
+          .subscribe(valor => {
+            const filtro = typeof valor === 'string' ? valor.toLowerCase() : '';
+            this.grupoProductoFiltrados = this.gruposProducto.filter(g =>
+              (g.codigo + ' ' + g.brick + ' ' + g.desBrick).toLowerCase().includes(filtro)
+            );
+          });
+      })
+    );
+  }
 
 
 
@@ -485,19 +494,21 @@ export class DialogClienteEditarComponent implements OnInit {
   get rucControl(): FormControl {
     return this.paso1Form.get('ruc') as FormControl;
   }
-  cargarCiudad(): void {
-    this.ciudadService.obtenerCiudad().subscribe(data => {
-      this.ciudad = data;
+  private cargarCiudad$(): Observable<any> {
+    return this.ciudadService.obtenerCiudad().pipe(
+      tap(data => {
+        this.ciudad = data;
 
-      this.paso2Form.get('ciudad')?.valueChanges
-        .pipe(startWith(''))
-        .subscribe(valor => {
-          const texto = typeof valor === 'string' ? valor.toLowerCase() : '';
-          this.ciudadFiltrados = this.ciudad.filter(c =>
-            (c.ciudad).toLowerCase().includes(texto)
-          );
-        });
-    });
+        this.paso2Form.get('ciudad')?.valueChanges
+          .pipe(startWith(''))
+          .subscribe(valor => {
+            const texto = typeof valor === 'string' ? valor.toLowerCase() : '';
+            this.ciudadFiltrados = this.ciudad.filter(c =>
+              (c.ciudad).toLowerCase().includes(texto)
+            );
+          });
+      })
+    );
   }
 
 
@@ -522,34 +533,33 @@ export class DialogClienteEditarComponent implements OnInit {
     this.paso2Form.get('ciudad')?.reset();
   }
 
-  cargarPais(): void {
-    this.paisService.obtenerPaises().subscribe(data => {
-      this.pais = data;
+  private cargarPais$(): Observable<any> {
+    return this.paisService.obtenerPaises().pipe(
+      tap(data => {
+        this.pais = data;
 
-      // ✅ Autocompletar Ecuador al inicio si está disponible
-      const ecuador = this.pais.find(p => p.nombre.toLowerCase() === 'ecuador');
-      if (ecuador) {
-        this.paso2Form.get('pais')?.setValue(ecuador);
-        this.codigoAreaE = ecuador.codigoArea; // <-- se asigna 593 aquí
-      }
+        const ecuador = this.pais.find(p => p.nombre.toLowerCase() === 'ecuador');
+        if (ecuador) {
+          this.paso2Form.get('pais')?.setValue(ecuador);
+          this.codigoAreaE = ecuador.codigoArea;
+        }
 
-      // 🔍 Reacciona a cambios en el campo país
-      this.paso2Form.get('pais')?.valueChanges
-        .pipe(startWith(''))
-        .subscribe(valor => {
-          const texto = typeof valor === 'string' ? valor.toLowerCase() : '';
-          this.paisFiltrados = this.pais.filter(p =>
-            p.nombre.toLowerCase().includes(texto)
-          );
+        this.paso2Form.get('pais')?.valueChanges
+          .pipe(startWith(''))
+          .subscribe(valor => {
+            const texto = typeof valor === 'string' ? valor.toLowerCase() : '';
+            this.paisFiltrados = this.pais.filter(p =>
+              p.nombre.toLowerCase().includes(texto)
+            );
 
-          const ecuador = this.pais.find(p => p.nombre.toLowerCase() === 'ecuador');
-          if (ecuador) {
-            console.log('🇪🇨 Ecuador encontrado y seleccionado automáticamente:', ecuador);
-            this.paso2Form.get('pais')?.setValue(ecuador);
-            this.codigoAreaE = ecuador.codigoArea;
-          }
-        });
-    });
+            const ec = this.pais.find(p => p.nombre.toLowerCase() === 'ecuador');
+            if (ec) {
+              this.paso2Form.get('pais')?.setValue(ec);
+              this.codigoAreaE = ec.codigoArea;
+            }
+          });
+      })
+    );
   }
 
 
@@ -691,15 +701,18 @@ export class DialogClienteEditarComponent implements OnInit {
 
   //   });
   // }
-  cargarZona(): void {
-    this.zonaService.obtenerZona().subscribe(data => {
-      this.zona = data;
-      this.zonaFiltrados$ = this.zonaCtrl.valueChanges.pipe(
-        startWith(''),
-        map(valor => this.filtrarZona(valor || ''))
-      );
-    });
+  private cargarZona$(): Observable<any> {
+    return this.zonaService.obtenerZona().pipe(
+      tap(data => {
+        this.zona = data;
+        this.zonaFiltrados$ = this.zonaCtrl.valueChanges.pipe(
+          startWith(''),
+          map(valor => this.filtrarZona(valor || ''))
+        );
+      })
+    );
   }
+
 
   filtrarZona(valor: string): Zona[] {
     const filtro = valor.toLowerCase();
@@ -757,8 +770,10 @@ export class DialogClienteEditarComponent implements OnInit {
       idZona: idZona,
       idGrupoEmpresa: paso1.grupo || 1,
       representante: paso2.nombreRepresentante || '',
-      fechamod: this.fechaIngreso.toISOString().split('T')[0],
-      usumod: this.usuarioActual?.nombre_usuario || ''
+      fecmod: new Date().toLocaleDateString('en-CA'),
+      usumod: this.usuarioActual?.nombre_usuario || '',
+      hello:paso2.extension || ''
+
     };
 
 
@@ -774,8 +789,9 @@ export class DialogClienteEditarComponent implements OnInit {
         this.verificarYGuardarContactosCliente();
         // ✅ Esperar un poco y recargar el historial
         setTimeout(() => {
-          this.cargarHistorial(this.idCliente);
-        }, 300); // 🔁 Espera 300ms para que se guarde el historial antes de recargarlo
+          this.cargarHistorial$(this.idCliente).subscribe(); // 👈 añade subscribe
+        }, 300);
+
 
         const msg = this.modoEdicion ? 'actualizada' : 'creada';
 
@@ -1103,6 +1119,7 @@ export class DialogClienteEditarComponent implements OnInit {
       celular: cliente.telefono1 || '',
       sitioWeb: cliente.web,
       telefono2: cliente.telefono || '',
+      extension:cliente.hello || '',
       usuario: '',
       fechaIng: cliente.fecing,
       fechaMod: cliente.fecmod,
@@ -1140,34 +1157,31 @@ export class DialogClienteEditarComponent implements OnInit {
   }
 
 
-  cargarClienteYGrupos(idCliente: number): void {
-    
-    forkJoin({
+  private cargarClienteYGrupos$(idCliente: number): Observable<any> {
+    return forkJoin({
       cliente: this.clienteService.getClienteById(idCliente),
       gruposProducto: this.grupoProductoService.obtenerGrupos(),
       gruposEmpresa: this.grupoService.obtenerGrupos(),
       zona: this.zonaService.obtenerZona(),
       ciudad: this.ciudadService.obtenerCiudad(),
       estado: this.estadoempresaService.obtenerEstadosEmpresa(),
-    }).subscribe(({ cliente, gruposProducto, gruposEmpresa, zona, ciudad, estado }) => {
-      this.clienteE = cliente;
-      this.gruposProducto = gruposProducto;
-      this.grupos = gruposEmpresa;
-      this.zona = zona;
-      this.ciudad = ciudad;
-      this.estadoEmpresa = estado; // 👈 asegúrate de tener this.estado declarado
+    }).pipe(
+      tap(({ cliente, gruposProducto, gruposEmpresa, zona, ciudad, estado }) => {
+        this.clienteE = cliente;
+        this.gruposProducto = gruposProducto;
+        this.grupos = gruposEmpresa;
+        this.zona = zona;
+        this.ciudad = ciudad;
+        this.estadoEmpresa = estado;
 
-      this.llenarFormularioConCliente(this.clienteE);
-      this.setGrupoProductoPorId(this.clienteE.idGrupoProducto);
-      this.setGrupoEmpresaPorId(this.clienteE.idGrupoEmpresa);
-      this.setZonaPorId(this.clienteE.idZona);
-      this.setCiudadPorId(this.clienteE.idCiudad);
-      this.setEstadoEmpresaPorId(this.clienteE.idEstadoEmpresa); // 👈 corrijo el método si es necesario
-      
-    });
-
-
-
+        this.llenarFormularioConCliente(this.clienteE);
+        this.setGrupoProductoPorId(this.clienteE.idGrupoProducto);
+        this.setGrupoEmpresaPorId(this.clienteE.idGrupoEmpresa);
+        this.setZonaPorId(this.clienteE.idZona);
+        this.setCiudadPorId(this.clienteE.idCiudad);
+        this.setEstadoEmpresaPorId(this.clienteE.idEstadoEmpresa);
+      })
+    );
   }
 
 
@@ -1226,29 +1240,34 @@ export class DialogClienteEditarComponent implements OnInit {
       console.warn('❌ No se encontró la ciudad con ID:', id);
     }
   }
-  activarModoEdicion() {
+private activarModoEdicion(): void {
+  this.modoEdicion = true;
+  // Si quieres habilitar el form aquí:
+  // this.formCliente.enable();
+}
 
-    this.modoEdicion = true;
-    this.formCliente.enable(); // habilita todo el formulario
-    this.formCliente.get('paso1.ruc')?.disable();
-    this.formCliente.get('paso1.esPasaporte')?.disable();
-    
-  }
+private activarModoEdicion$(): Observable<null> {
+  this.activarModoEdicion();   // ✅ ahora sí existe
+  return of(null);
+}
+
+
 
   desactivarModoEdicion() {
     this.modoEdicion = false;
     //this.formCliente.disable(); // deshabilita todo el formulario
   }
-  cargarEstadoEmpresa(): void {
-    this.estadoempresaService.obtenerEstadosEmpresa().subscribe(data => {
-      this.estadoEmpresa = data;
-      this.estadoEmpresaFiltrados$ = this.estadoEmpresaCtrl.valueChanges.pipe(
-        startWith(''),
-        map(valor => this.filtrarEstadoEmpresa(valor || ''))
-      );
-    });
+  private cargarEstadoEmpresa$(): Observable<any> {
+    return this.estadoempresaService.obtenerEstadosEmpresa().pipe(
+      tap(data => {
+        this.estadoEmpresa = data;
+        this.estadoEmpresaFiltrados$ = this.estadoEmpresaCtrl.valueChanges.pipe(
+          startWith(''),
+          map(valor => this.filtrarEstadoEmpresa(valor || ''))
+        );
+      })
+    );
   }
-
 
   filtrarEstadoEmpresa(valor: string): EstadoEmpresa[] {
     const filtro = valor.toLowerCase();
@@ -1363,8 +1382,8 @@ export class DialogClienteEditarComponent implements OnInit {
 
     const historial: HistorialClienteRequest = {
       id_historial_cliente: 0,
-      id_usuario: 2, // TODO: usar this.usuarioActual?.id || 0
-      nombre_usuario: 'mario', // TODO: usar this.usuarioActual?.usr || 'Desconocido'
+      id_usuario: this.usuarioActual?.id_usuario || 1,
+      nombre_usuario: this.usuarioActual?.nombre_usuario || '',
       fecha: new Date().toISOString(),
       descripcion: this.cambios.join('\n'),
       clientes_codigo: this.paso1Form.get('codigoCliente')?.value,
@@ -1380,41 +1399,23 @@ export class DialogClienteEditarComponent implements OnInit {
   }
 
 
-  cargarHistorial(
-    clientesCodigo: number,
-    tipo_accion?: string,
-    tabla?: string,
-    id_empresa?: number
-
-
-  ): void {
-    this.historialClienteService
+  private cargarHistorial$(clientesCodigo: number, tipo_accion?: string, tabla?: string, id_empresa?: number): Observable<any> {
+    return this.historialClienteService
       .obtenerHistorialPorCliente(clientesCodigo, tipo_accion, tabla, id_empresa)
-      .subscribe({
-        next: (data) => {
-          console.log('📦 Historial recibido desde API:', data);
-
+      .pipe(
+        tap((data) => {
           this.dataSourceHistorial = new MatTableDataSource(data);
 
-          // 🔍 Filtro personalizado
-          this.dataSourceHistorial.filterPredicate = (
-            data: HistorialClienteRequest,
-            filter: string
-          ) => {
-            const fechaFormateada = new Date(data.fecha).toLocaleDateString('es-EC');
-            const dataStr = `${fechaFormateada} ${data.nombre_usuario} ${data.descripcion}`.toLowerCase();
+          this.dataSourceHistorial.filterPredicate = (row: HistorialClienteRequest, filter: string) => {
+            const fechaFormateada = new Date(row.fecha).toLocaleDateString('es-EC');
+            const dataStr = `${fechaFormateada} ${row.nombre_usuario} ${row.descripcion}`.toLowerCase();
             return dataStr.includes(filter.trim().toLowerCase());
           };
 
           this.dataSourceHistorial.paginator = this.paginator;
           this.dataSourceHistorial.sort = this.sort;
-
-          console.log('🧾 Datos en dataSourceHistorial:', this.dataSourceHistorial.data);
-        },
-        error: (err) => {
-          console.error('❌ Error al obtener historial:', err);
-        }
-      });
+        })
+      );
   }
 
 
@@ -1429,34 +1430,25 @@ export class DialogClienteEditarComponent implements OnInit {
     this.dataSourceHistorial.filter = valor.trim().toLowerCase();
   }
 
-  cargarPrefijoCliente(codigoCliente: number): void {
-    this.prefijoService.obtenerPorClienteCodigo(codigoCliente).subscribe({
-      next: (data) => {
-        console.log('📦 Datos del cliente con prefijo:-->', data);
-
-        // Asegurar que data es un arreglo
+  private cargarPrefijoCliente$(codigoCliente: number): Observable<any> {
+    return this.prefijoService.obtenerPorClienteCodigo(codigoCliente).pipe(
+      tap((data) => {
         const datos = Array.isArray(data) ? data : [];
-
         this.dataSourcePrefijo = new MatTableDataSource(datos);
 
-        // Filtro opcional
         this.dataSourcePrefijo.filterPredicate = (item: PrefijoClienteResponse, filter: string) => {
           const dataStr = `${item.nomcli} ${item.ruccli} ${item.gln} ${item.codpre}`.toLowerCase();
           return dataStr.includes(filter.trim().toLowerCase());
         };
 
-        // 👇 Aquí el setTimeout para asegurar que el paginador ya está disponible
         setTimeout(() => {
           if (this.paginatorPrefijo && this.sortPrefijo) {
             this.dataSourcePrefijo.paginator = this.paginatorPrefijo;
             this.dataSourcePrefijo.sort = this.sortPrefijo;
           }
         }, 0);
-      },
-      error: (err) => {
-        console.error('❌ Error al obtener prefijo del cliente:', err);
-      }
-    });
+      })
+    );
   }
 
 
@@ -1488,7 +1480,7 @@ export class DialogClienteEditarComponent implements OnInit {
     dialogRef.afterClosed().subscribe(resultado => {
       if (resultado) {
         console.log('Prefijo seleccionado:', resultado);
-        this.cargarPrefijoCliente(this.idCliente);// puedes usar resultado para otra lógica
+        this.cargarPrefijoCliente$(this.idCliente).subscribe();
       }
     });
   }
@@ -1508,25 +1500,19 @@ export class DialogClienteEditarComponent implements OnInit {
     dialogRef.afterClosed().subscribe(resultado => {
       if (resultado) {
         console.log('Prefijo seleccionado:', resultado);
-        this.cargarPrefijoCliente(this.idCliente);
+        this.cargarPrefijoCliente$(this.idCliente).subscribe();
       }
     });
   }
 
-  obtenerObservaciones(clientesCodigo: number): void {
-    this.clienteObservacionService.getObservacionesPorClienteCodigo(clientesCodigo).subscribe({
-      next: (data) => {
+  private obtenerObservaciones$(clientesCodigo: number): Observable<any> {
+    return this.clienteObservacionService.getObservacionesPorClienteCodigo(clientesCodigo).pipe(
+      tap((data) => {
         this.paso2Form.patchValue({ observacion1: '' });
         this.paso4Form.patchValue({
-          observacion2: '',
-          observacion3: '',
-          observacion4: '',
-          fecha2: '',
-          fecha3: '',
-          fecha4: '',
-          usuario2: '',
-          usuario3: '',
-          usuario4: ''
+          observacion2: '', observacion3: '', observacion4: '',
+          fecha2: '', fecha3: '', fecha4: '',
+          usuario2: '', usuario3: '', usuario4: ''
         });
 
         data.forEach(obs => {
@@ -1543,7 +1529,7 @@ export class DialogClienteEditarComponent implements OnInit {
             }
           };
 
-          if (texto === '') return; // 👈 si detalle está vacío, no hagas nada
+          if (texto === '') return;
 
           switch (linea) {
             case 1:
@@ -1565,17 +1551,10 @@ export class DialogClienteEditarComponent implements OnInit {
               setIfEmpty(this.paso4Form, 'fecha4', fechaFormateada);
               setIfEmpty(this.paso4Form, 'usuario4', usuario);
               break;
-            default:
-              console.warn('❓ Línea no reconocida:', linea);
-              break;
           }
         });
-
-      },
-      error: (err) => {
-        console.error('❌ Error al obtener observaciones:', err);
-      }
-    });
+      })
+    );
   }
 
 
@@ -1676,43 +1655,47 @@ export class DialogClienteEditarComponent implements OnInit {
     });
   }
 
-  cargarDatosAdicionales(clientesCodigo: number): void {
-    if (!clientesCodigo) {
-      console.warn('⚠️ No hay código de cliente definido.');
-      return;
-    }
+private cargarDatosAdicionales$(clientesCodigo: number): Observable<null> {
+  if (!clientesCodigo) return of(null);
 
-    this.clienteDatosAdicionalesService.obtenerPorClienteCodigo(clientesCodigo).subscribe({
-      next: (datos) => {
-        console.log('✅ Datos adicionales cargados:', datos);
+  return this.clienteDatosAdicionalesService
+    .obtenerPorClienteCodigo(clientesCodigo)
+    .pipe(
+      tap((raw) => {
+        const datos: any = Array.isArray(raw) ? raw[0] : raw;
 
-        // ✅ Asegurar valores booleanos para checkboxes
         const paso3Patch = {
-          pregunta1: datos.expprod === true,
-          pregunta2: datos.vendeus === true,
-          pregunta3: datos.medico === true,
-          pregunta4: datos.gs1ec === true,
-          pregunta5: datos.instagram === true,
-          pregunta6: datos.facebook === true,
-          pregunta7: datos.web === true// <-- o puedes omitirlo si `web` no es binario
+          pregunta1: !!datos?.expprod,
+          pregunta2: !!datos?.vendeus,
+          pregunta3: !!datos?.medico,
+          pregunta4: !!datos?.gs1ec,
+          pregunta5: !!datos?.instagram,
+          pregunta6: !!datos?.facebook,
+          pregunta7: !!datos?.web
         };
 
         const paso2Patch = {
-          nprefijo: !!datos.prefijo,
-          compra: !!datos.guia
+          nprefijo: !!datos?.prefijo,
+          compra: !!datos?.guia
         };
 
-        // ✅ Usar setTimeout por si los formularios aún no se renderizan completamente
-        setTimeout(() => {
-          this.paso3Form.patchValue(paso3Patch);
-          this.paso2Form.patchValue(paso2Patch);
-        }, 0);
-      },
-      error: (err) => {
-        console.error('❌ Error al cargar datos adicionales:', err);
-      }
-    });
-  }
+        this.paso3Form.patchValue(paso3Patch, { emitEvent: false });
+        this.paso2Form.patchValue(paso2Patch, { emitEvent: false });
+      }),
+      map(() => null),
+      catchError(() => {
+        this.paso3Form.patchValue({
+          pregunta1: false, pregunta2: false, pregunta3: false, pregunta4: false,
+          pregunta5: false, pregunta6: false, pregunta7: false
+        }, { emitEvent: false });
+
+        this.paso2Form.patchValue({ nprefijo: false, compra: false }, { emitEvent: false });
+        return of(null);
+      })
+    );
+} // <- SOLO uno
+
+
 
   guardarOActualizarDatosAdicionales(): void {
     const paso1 = this.paso1Form.value;
@@ -1768,14 +1751,11 @@ export class DialogClienteEditarComponent implements OnInit {
     });
   }
 
-  cargarContactosClientes(clientesCodigo: number): void {
-    this.clienteContactoService.getByClienteCodigo(clientesCodigo).subscribe({
-      next: (data) => {
+  private cargarContactosClientes$(clientesCodigo: number): Observable<any> {
+    return this.clienteContactoService.getByClienteCodigo(clientesCodigo).pipe(
+      tap((data) => {
         this.contactoCliente = data;
-        console.log('✅ Contactos recibidos:', data);
-
         const paso3Patch: any = {};
-
         data.forEach(contacto => {
           switch (contacto.linea) {
             case 1:
@@ -1796,14 +1776,9 @@ export class DialogClienteEditarComponent implements OnInit {
               break;
           }
         });
-
-        // Aplicar al formulario reactivo
         this.paso3Form.patchValue(paso3Patch);
-      },
-      error: (err) => {
-        console.error('❌ Error al obtener contactos del cliente:', err);
-      }
-    });
+      })
+    );
   }
 
   verificarYGuardarContactosCliente(): void {
@@ -1886,9 +1861,8 @@ export class DialogClienteEditarComponent implements OnInit {
     this.botonModificarDeshabilitado = true;
   }
 
-logo()
-  {
-      this.empresaService.getEmpresas().subscribe({
+  logo() {
+    this.empresaService.getEmpresas().subscribe({
       next: (empresas) => {
         if (empresas.length > 0 && empresas[0].empresaLogo) {
           this.logoUrl = this.logoService.getLogoUrl(empresas[0].empresaLogo);
@@ -1903,71 +1877,89 @@ logo()
     });
   }
   exportar(tipo: 'excel' | 'pdf'): void {
-  const headers = [
-    'Prefijo',
-    'GLN',
-    'Fecha',
-    'Estado',
-    'Fecha Cierre',
-    'Tipo',
-    'Observación'
-  ];
+    const headers = [
+      'Prefijo',
+      'GLN',
+      'Fecha',
+      'Estado',
+      'Fecha Cierre',
+      'Tipo',
+      'Observación'
+    ];
 
-  const columns = [
-    'codpre',
-    'gln',
-    'fecha',
-    'estadoTexto',
-    'fechaCierreTexto',
-    'tipoLocalizacion',
-    'observacion'
-  ];
+    const columns = [
+      'codpre',
+      'gln',
+      'fecha',
+      'estadoTexto',
+      'fechaCierreTexto',
+      'tipoLocalizacion',
+      'observacion'
+    ];
 
-  const data = this.dataSourcePrefijo.data.map((el: any) => ({
-    codpre: el.codpre,
-    gln: el.gln,
-    fecha: this.formatearFecha(el.fecha),
-    estadoTexto: el.estado ? 'Inactivo' : 'Activo',
-    fechaCierreTexto: this.formatearFecha(el.fechaCierre),
-    tipoLocalizacion: el.tipoLocalizacion,
-    observacion: el.observacion,
-    orden:el.orden
-  }));
+    const data = this.dataSourcePrefijo.data.map((el: any) => ({
+      codpre: el.codpre,
+      gln: el.gln,
+      fecha: this.formatearFecha(el.fecha),
+      estadoTexto: el.estado ? 'Inactivo' : 'Activo',
+      fechaCierreTexto: this.formatearFecha(el.fechaCierre),
+      tipoLocalizacion: el.tipoLocalizacion,
+      observacion: el.observacion,
+      orden: el.orden
+    }));
 
-  const options: ExportOptions = {
-    data,
-    columns,
-    headers,
-    filename: 'ListadoPrefijos',
-    title: 'Listado de Prefijos',
-    logoUrl: this.logoUrl || ''
-  };
+    const options: ExportOptions = {
+      data,
+      columns,
+      headers,
+      filename: 'ListadoPrefijos',
+      title: 'Listado de Prefijos',
+      logoUrl: this.logoUrl || ''
+    };
 
-  if (tipo === 'excel') {
-    this.exportService.exportarExcel(options);
-  } else {
-    this.exportService.exportarPDF(options);
+    if (tipo === 'excel') {
+      this.exportService.exportarExcel(options);
+    } else {
+      this.exportService.exportarPDF(options);
+    }
   }
-}
 
-// Utilidad para formatear fecha a dd/MM/yyyy
-private formatearFecha(fecha: string | Date): string {
-  if (!fecha || fecha === '0001-01-01T00:00:00') return '';
-  const d = new Date(fecha);
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const year = d.getFullYear();
-  return `${day}/${month}/${year}`;
-}
-
-soloDigitos(ctrl: string, ev: Event, form: FormGroup) {
-  const el = ev.target as HTMLInputElement;
-  const limpio = el.value.replace(/\D/g, ''); // solo dígitos
-  if (el.value !== limpio) {
-    el.value = limpio;
-    form.get(ctrl)?.setValue(limpio);
+  // Utilidad para formatear fecha a dd/MM/yyyy
+  private formatearFecha(fecha: string | Date): string {
+    if (!fecha || fecha === '0001-01-01T00:00:00') return '';
+    const d = new Date(fecha);
+    const day = String(d.getDate()).padStart(2, '0');
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const year = d.getFullYear();
+    return `${day}/${month}/${year}`;
   }
-}
+
+  soloDigitos(ctrl: string, ev: Event, form: FormGroup) {
+    const el = ev.target as HTMLInputElement;
+    const limpio = el.value.replace(/\D/g, ''); // solo dígitos
+    if (el.value !== limpio) {
+      el.value = limpio;
+      form.get(ctrl)?.setValue(limpio);
+    }
+  }
+
+  private wireValueChanges(): void {
+    this.paso2Form.get('razonSocial')?.valueChanges.subscribe(valor => {
+      this.nombrecli = valor;
+    });
+
+    this.paso1Form.get('estadoEmpresa')?.valueChanges.subscribe(value => {
+      this.paso2Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
+      this.paso3Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
+      this.paso4Form.get('estadoEmpresa')?.setValue(value, { emitEvent: false });
+    });
+
+    this.paso1Form.get('zona')?.valueChanges.subscribe(value => {
+      this.paso2Form.get('zona')?.setValue(value, { emitEvent: false });
+      this.paso3Form.get('zona')?.setValue(value, { emitEvent: false });
+      this.paso4Form.get('zona')?.setValue(value, { emitEvent: false });
+    });
+  }
 
 
 }

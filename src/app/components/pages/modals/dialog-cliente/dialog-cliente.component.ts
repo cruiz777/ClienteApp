@@ -3,6 +3,11 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Inject } from '@angular/core';
 import { JsonEmpresaService } from 'src/app/services/json-empresa.service';
+import { AsyncValidatorFn } from '@angular/forms';
+import { of, timer } from 'rxjs';
+
+import { map, startWith, take, takeUntil, filter, switchMap, catchError } from 'rxjs/operators';
+
 // Angular Forms
 import {
   FormBuilder,
@@ -21,14 +26,14 @@ import { MatStepper } from '@angular/material/stepper';
 import { ViewChild } from '@angular/core';
 // RxJS
 import { forkJoin, BehaviorSubject, Observable, Subject, firstValueFrom } from 'rxjs';
-import { map, startWith, take, takeUntil } from 'rxjs/operators';
+
 
 // Librerías externas
 const html2pdf: any = require('html2pdf.js');
 
 // Utilidades y validadores
 import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
-import { emailValidoValidator,multipleEmailsValidator } from 'src/app/util/validators';
+import { emailValidoValidator, multipleEmailsValidator } from 'src/app/util/validators';
 
 // Interfaces y modelos
 import { ClienteRuc } from 'src/app/interfaces/clienteRuc';
@@ -48,9 +53,9 @@ import { CedulaService } from 'src/app/services/cedula.service';
 import { GenerarglnService } from 'src/app/services/generargln.service';
 import { GlnService, GlnRequest } from 'src/app/services/gln.service';
 import { PaisService, Pais } from 'src/app/services/pais.service';
-import { ClienteObservacionService,ClienteObservacion } from 'src/app/services/cliente-observacion.service';
-import { ClienteDatosAdicionalesService,ClienteDatosAdicionales } from 'src/app/services/cliente-datos-adicionales.service';
-import { ClienteContacto,ClienteContactoService } from 'src/app/services/cliente-contacto.service';
+import { ClienteObservacionService, ClienteObservacion } from 'src/app/services/cliente-observacion.service';
+import { ClienteDatosAdicionalesService, ClienteDatosAdicionales } from 'src/app/services/cliente-datos-adicionales.service';
+import { ClienteContacto, ClienteContactoService } from 'src/app/services/cliente-contacto.service';
 import { ParametrosFacturaService } from 'src/app/services/parametros-factura.service';
 import { PermissionsService } from 'src/app/services/permission.service';
 @Component({
@@ -60,7 +65,7 @@ import { PermissionsService } from 'src/app/services/permission.service';
 })
 export class DialogClienteComponent implements OnInit {
 
-    private destroy$ = new Subject<void>();
+  private destroy$ = new Subject<void>();
 
   // ⬇️ Streams de permisos que usaremos en TS y en el template
   canSeeModule$!: Observable<boolean>;
@@ -125,8 +130,8 @@ export class DialogClienteComponent implements OnInit {
   modoEdicion = false;
   campoGlnVerde = false;
   estadoContribuyenteRuc: string = '';
- codigoAreaE: number | null = null;
-   api: string = '';
+  codigoAreaE: number | null = null;
+  api: string = '';
   claveApi: string = '';
   constructor(
     private fb: FormBuilder,
@@ -149,14 +154,14 @@ export class DialogClienteComponent implements OnInit {
     private paisService: PaisService,
     private clienteObservacionService: ClienteObservacionService,
     private clienteDatosAdicionalesService: ClienteDatosAdicionalesService,
-    private clienteContactoService:ClienteContactoService,
-    private jsonEmpresaService:JsonEmpresaService,
-    private parametrosFacturaService:ParametrosFacturaService,
+    private clienteContactoService: ClienteContactoService,
+    private jsonEmpresaService: JsonEmpresaService,
+    private parametrosFacturaService: ParametrosFacturaService,
     private permissions: PermissionsService
   ) { }
 
   ngOnInit(): void {
-    
+
     // ✅ Ver si el usuario puede ver la pantalla
     this.canSeeModule$ = this.permissions.puedeAccederRuta$(
       '/codbar/ficha-de-cliente/nuevo-cliente'
@@ -188,14 +193,21 @@ export class DialogClienteComponent implements OnInit {
     });
   }
 
-    ngOnDestroy(): void {
-      this.destroy$.next();
-      this.destroy$.complete();
-    }
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
   initFormulario(): void {
     this.formCliente = this.fb.group({
       paso1: this.fb.group({
-        ruc: ['', Validators.required],
+        ruc: this.fb.control(
+          '',
+          {
+            validators: [Validators.required],      // los de longitud los aplicas en actualizarValidacionRuc()
+            asyncValidators: [this.uniqueRucValidator()],
+            updateOn: 'blur'                        // valida al salir del input
+          }
+        ),
         esPasaporte: [false],
         categoriaCliente: [null, Validators.required],
         grupo: [null, Validators.required],
@@ -229,8 +241,8 @@ export class DialogClienteComponent implements OnInit {
         telefono2: [''],
         usuario: [{ value: '', disabled: true }],
         observacion1: [''],
-        nprefijo:[false],
-        compra:[false]
+        nprefijo: [false],
+        compra: [false]
       }),
 
       paso3: this.fb.group({
@@ -245,7 +257,7 @@ export class DialogClienteComponent implements OnInit {
         telefonoc: [''],
         nombreFinanciero: [null, Validators.required],
 
-        telefono22:['', Validators.required],
+        telefono22: ['', Validators.required],
         pregunta1: [false],
         pregunta2: [false],
         pregunta3: [false],
@@ -264,42 +276,42 @@ export class DialogClienteComponent implements OnInit {
   }
 
   //#region 
-private bloquearFormularioSiNoPuedeCrear(): void {
-  this.canCreate$.pipe(take(1)).subscribe(puedeCrear => {
-    // si NO puede crear, deshabilitamos todo el form y el botón guardar
-    if (!puedeCrear) {
-      this.formCliente?.disable({ emitEvent: false });
-      this.botonGuardarDeshabilitado = true;
-      this._snackBar.open('No tienes permiso para crear clientes.', 'Permisos', {
-        horizontalPosition: "end",
-        verticalPosition: "top",
-        duration: 4000
-      });
-    }
-  });
-}
-
-private cerrarSiNoPuedeVer(): void {
-  this.canSeeModule$
-    .pipe(takeUntil(this.destroy$))
-    .subscribe(puedeVer => {
-      if (!puedeVer) {
-        // Cierra el diálogo y navega a una ruta segura
-        this.dialogRef.close();
-        this.router.navigate(['/sin-permisos'], {
-          queryParams: {
-            rutaAnterior: '/codbar/ficha-de-cliente/nuevo-cliente',
-            motivo: 'sin-permisos-inicial',
-            timestamp: Date.now()
-          },
-          replaceUrl: true
+  private bloquearFormularioSiNoPuedeCrear(): void {
+    this.canCreate$.pipe(take(1)).subscribe(puedeCrear => {
+      // si NO puede crear, deshabilitamos todo el form y el botón guardar
+      if (!puedeCrear) {
+        this.formCliente?.disable({ emitEvent: false });
+        this.botonGuardarDeshabilitado = true;
+        this._snackBar.open('No tienes permiso para crear clientes.', 'Permisos', {
+          horizontalPosition: "end",
+          verticalPosition: "top",
+          duration: 4000
         });
       }
     });
-}
+  }
+
+  private cerrarSiNoPuedeVer(): void {
+    this.canSeeModule$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(puedeVer => {
+        if (!puedeVer) {
+          // Cierra el diálogo y navega a una ruta segura
+          this.dialogRef.close();
+          this.router.navigate(['/sin-permisos'], {
+            queryParams: {
+              rutaAnterior: '/codbar/ficha-de-cliente/nuevo-cliente',
+              motivo: 'sin-permisos-inicial',
+              timestamp: Date.now()
+            },
+            replaceUrl: true
+          });
+        }
+      });
+  }
   //#endregion
 
-  
+
   get paso1Form(): FormGroup {
     return this.formCliente.get('paso1') as FormGroup;
   }
@@ -458,35 +470,35 @@ private cerrarSiNoPuedeVer(): void {
     this.paso2Form.get('ciudad')?.reset();
   }
 
- cargarPais(): void {
-  this.paisService.obtenerPaises().subscribe(data => {
-    this.pais = data;
+  cargarPais(): void {
+    this.paisService.obtenerPaises().subscribe(data => {
+      this.pais = data;
 
-    // ✅ Autocompletar Ecuador al inicio si está disponible
-    const ecuador = this.pais.find(p => p.nombre.toLowerCase() === 'ecuador');
-    if (ecuador) {
-      this.paso2Form.get('pais')?.setValue(ecuador);
-      this.codigoAreaE = ecuador.codigoArea; // <-- se asigna 593 aquí
-    }
+      // ✅ Autocompletar Ecuador al inicio si está disponible
+      const ecuador = this.pais.find(p => p.nombre.toLowerCase() === 'ecuador');
+      if (ecuador) {
+        this.paso2Form.get('pais')?.setValue(ecuador);
+        this.codigoAreaE = ecuador.codigoArea; // <-- se asigna 593 aquí
+      }
 
-    // 🔍 Reacciona a cambios en el campo país
-    this.paso2Form.get('pais')?.valueChanges
-      .pipe(startWith(''))
-      .subscribe(valor => {
-        const texto = typeof valor === 'string' ? valor.toLowerCase() : '';
-        this.paisFiltrados = this.pais.filter(p =>
-          p.nombre.toLowerCase().includes(texto)
-        );
+      // 🔍 Reacciona a cambios en el campo país
+      this.paso2Form.get('pais')?.valueChanges
+        .pipe(startWith(''))
+        .subscribe(valor => {
+          const texto = typeof valor === 'string' ? valor.toLowerCase() : '';
+          this.paisFiltrados = this.pais.filter(p =>
+            p.nombre.toLowerCase().includes(texto)
+          );
 
-        // 🎯 Asignar código de área si se seleccionó un país válido
-        if (typeof valor === 'object' && valor?.codigoArea) {
-          this.codigoAreaE = valor.codigoArea;
-        } else {
-          this.codigoAreaE = 593;
-        }
-      });
-  });
-}
+          // 🎯 Asignar código de área si se seleccionó un país válido
+          if (typeof valor === 'object' && valor?.codigoArea) {
+            this.codigoAreaE = valor.codigoArea;
+          } else {
+            this.codigoAreaE = 593;
+          }
+        });
+    });
+  }
 
 
 
@@ -496,9 +508,9 @@ private cerrarSiNoPuedeVer(): void {
   limpiarPais(): void {
     this.paso2Form.get('pais')?.reset();
   }
- displayPais(pais: Pais | string): string {
-  return typeof pais === 'string' ? pais : pais?.nombre || '';
-}
+  displayPais(pais: Pais | string): string {
+    return typeof pais === 'string' ? pais : pais?.nombre || '';
+  }
 
 
 
@@ -508,84 +520,96 @@ private cerrarSiNoPuedeVer(): void {
 
 
 
-  actualizarValidacionRuc(): void {
-    const esPasaporte = this.paso1Form.get('esPasaporte')?.value;
-    if (esPasaporte) {
-      this.tipoIdentificacion = 'PASAPORTE';
-      this.error = undefined; // limpia el error
-      this.rucControl.clearValidators();
-      this.rucControl.setErrors(null);
-    } else {
-      this.rucControl.setValidators([
-        control => {
-          const valor = control.value;
-          const valido = /^\d{10}$/.test(valor) || /^\d{13}$/.test(valor);
-          return valor && valido ? null : { invalidLength: true };
-        }
-      ]);
-    }
+actualizarValidacionRuc(): void {
+  const esPasaporte = this.paso1Form.get('esPasaporte')?.value;
 
-    this.rucControl.updateValueAndValidity();
+  if (esPasaporte) {
+    // Pasaporte: permite alfanumérico 6–20; no forzamos longitud 10/13 aquí.
+    this.rucControl.setValidators([
+      (control: AbstractControl) => {
+        const v = (control.value || '').trim();
+        if (!v) return { required: true };
+        // alfanumérico y -_/ solo de 6 a 20
+        const ok = /^[A-Za-z0-9\-_/]{6,20}$/.test(v);
+        return ok ? null : { formatoPasaporte: true };
+      }
+    ]);
+  } else {
+    // Cédula/RUC: 10 o 13 dígitos
+    this.rucControl.setValidators([
+      (control: AbstractControl) => {
+        const v = (control.value || '').trim();
+        const ok = /^\d{10}$/.test(v) || /^\d{13}$/.test(v);
+        return v && ok ? null : { invalidLength: true };
+      }
+    ]);
   }
 
+  // mantener SIEMPRE el validador asíncrono
+  this.rucControl.setAsyncValidators([this.uniqueRucValidator()]);
+  this.rucControl.updateValueAndValidity({ emitEvent: true });
+}
 
 
 
   // Evento para buscar RUC o cédula automáticamente
-  onRucBlur(): void {
-    const valor = this.rucControl.value;
-    const esPasaporte = this.paso1Form.get('esPasaporte')?.value;
-    console.log('Valor esPasaporte:', this.paso1Form.get('esPasaporte')?.value);
-    console.log('Form válido:', this.paso1Form.valid);
-    console.log('Error:', this.error);
-    if (!valor) {
-      this.tipoIdentificacion = null;
-      return;
-    }
+async onRucBlur(): Promise<void> {
+  const valorRaw = this.rucControl.value;
+  const valor = (valorRaw || '').trim();
+  const esPasaporte = this.paso1Form.get('esPasaporte')?.value === true;
 
-    if (esPasaporte) {
-      this.tipoIdentificacion = 'PASAPORTE';
-      this.error = undefined;
-      return;
-    }
+  this.error = undefined;
+  this.tipoIdentificacion = null;
 
-    this.clienteService.getClientePorRuc(valor).subscribe({
-      next: cliente => {
-        if (cliente) {
-          this.error = '⚠️ El cliente ya existe.';
-          this.razonSocial = '';
-          this.nombreRepresentante = '';
-          this.paso2Form.patchValue({ razonSocial: '', nombreRepresentante: '' });
-          this.paso3Form.patchValue({ nombreRepresentante: '' });
-        } else {
-          if (/^\d{13}$/.test(valor)) {
-            this.buscarRuc(valor);
-          } else if (/^\d{10}$/.test(valor)) {
-            this.buscarCedula(valor);
-          } else {
-            // ❗ solo si NO es pasaporte
-            if (!esPasaporte) {
-              this.error = '❌ Número inválido. Ingrese 10 dígitos para cédula o 13 dígitos para RUC.';
-            }
-          }
-        }
-      },
-      error: () => {
-        if (/^\d{13}$/.test(valor)) {
-          this.buscarRuc(valor);
-        } else if (/^\d{10}$/.test(valor)) {
-          this.buscarCedula(valor);
-        } else {
-          if (!esPasaporte) {
-            this.error = '❌ Número inválido. Ingrese 10 dígitos para cédula o 13 dígitos para RUC.';
-          }
-        }
-      }
-    });
+  if (!valor) return;
+
+  // Re-valida (dispara async validator si aplica)
+  this.rucControl.updateValueAndValidity();
+
+  // ⏳ Espera a que termine el validador asíncrono
+  if (this.rucControl.pending) {
+    await firstValueFrom(
+      this.rucControl.statusChanges.pipe(
+        filter((s: 'VALID' | 'INVALID' | 'PENDING' | 'DISABLED') => s !== 'PENDING'),
+        take(1)
+      )
+    );
   }
 
+  // ❌ Si está duplicado, corta aquí
+  if (this.rucControl.hasError('duplicado')) {
+    this.error = '⚠️ El cliente ya existe.';
+    // Limpia los campos dependientes
+    this.razonSocial = '';
+    this.nombreRepresentante = '';
+    this.paso2Form.patchValue({ razonSocial: '', nombreRepresentante: '' });
+    this.paso3Form.patchValue({ nombreRepresentante: '' });
+    return;
+  }
 
+  // 🛂 Modo pasaporte
+  if (esPasaporte) {
+    // Si el valor NO parece cédula/RUC, no hay consulta externa
+    if (!/^\d{10}$/.test(valor) && !/^\d{13}$/.test(valor)) {
+      this.tipoIdentificacion = 'PASAPORTE';
+      return;
+    }
+    // Si parece cédula/RUC y NO es duplicado (ya verificado arriba), tratamos como pasaporte.
+    this.tipoIdentificacion = 'PASAPORTE';
+    return;
+  }
 
+  // 📲 Cédula / RUC (no pasaporte)
+  if (/^\d{13}$/.test(valor)) {
+    this.buscarRuc(valor);      // SRI
+    this.tipoIdentificacion = 'RUC';
+  } else if (/^\d{10}$/.test(valor)) {
+    this.buscarCedula(valor);   // Registro Civil
+    this.tipoIdentificacion = 'CEDULA';
+  } else {
+    this.error = '❌ Número inválido. Ingrese 10 dígitos (cédula) o 13 dígitos (RUC).';
+  }
+}
 
 
 
@@ -647,138 +671,151 @@ private cerrarSiNoPuedeVer(): void {
     this.dialogRef.close(); // Cierra el diálogo
     this.router.navigate(['/codbar/ficha-de-cliente/listado-clientes']); // Redirecciona a /pages/clientes
   }
-  async guardar(stepper: MatStepper): Promise<void> {
-      // ⛔ Doble seguro: revisa permiso de "crear" al momento del submit
-    const puedeCrear = await firstValueFrom(this.canCreate$.pipe(take(1)));
-    if (!puedeCrear) {
-      this.mostrarAlerta('No tienes permiso para crear clientes.', 'Permisos');
-      return;
-    }
-    if (this.formCliente.invalid) {
-      this.formCliente.markAllAsTouched(); // muestra errores en pantalla
-      this.mostrarAlerta('Faltan campos obligatorios por llenar', 'Formulario Incompleto');
-      return; // ⛔ no continúa si el formulario es inválido
-    }
-    const paso1 = this.paso1Form.value;
-    const paso2 = this.paso2Form.value;
-    const paso3 = this.paso3Form.value;
-    const paso4 = this.paso4Form.value;
-
-    const ciudadObj = paso2.ciudad;
-    const ciudadNombre = typeof ciudadObj === 'object' ? ciudadObj.ciudad : ciudadObj;
-    const idCiudad = typeof ciudadObj === 'object' ? ciudadObj.id_ciudad : 0;
-    const grupoProductoObj = paso1.grupoProducto;
-    const idGrupoProducto = typeof grupoProductoObj === 'object' ? grupoProductoObj.id_grupo_producto : grupoProductoObj || 0;
-    // const zonaObj = paso1.zona;
-     const idZona = typeof ciudadObj === 'object' ? ciudadObj.idzona : 0;
-     debugger
-    const ruc = this.rucControl.value;
-    const jsonCliente = {
-      nomcli: paso2.razonSocial || '',
-      dircli: paso2.direccionPrincipal || '',
-      concli: paso2.nombreRepresentante || '',
-      email: paso3.emailRepresentante || '',
-      razonSocial: paso2.razonSocial || '',
-      telefono1: paso2.celular,
-      fax: paso3.telefonoRepresentante || '',
-      telefono: paso2.telefono2 || '',
-      ruc: paso1.ruc || '',
-      fecing: this.fechaIngreso.toISOString().split('T')[0],
-      fecnac: '2025-04-23',
-      fecfac1: '2025-04-23',
-      fecfac2: '2025-04-23',
-      fecfac3: '2025-04-23',
-      fecfac4: '2025-04-23',
-      fecfac5: '2025-04-23',
-      marca1: '',
-      marca2: '',
-      marca3: '',
-      marca4: '',
-      marca5: '',
-      codcue: '',
-      hello: paso2.extension || '',
-      desde: 0,
-      fechtre: new Date().toISOString(),
-      web: paso2.sitioWeb,
-      saldo: 0,
-      fecfac: '',
-      ciudad: ciudadNombre || '',
-      obs:  '', ///obs: paso2.observacion1 || '',
-      delestado: 0,
-      genero: '',
-      infcamahabitacion: '',
-      empresaCodigo: this.usuarioActual?.id_empresa,
-      seguimiento: 0,
-      fechaactinact: '2025-04-23',
-      idEstadoEmpresa: 1,
-      formatodocumento: 0,
-      imprimeobstramite: 0,
-      idTipoCliente: paso1.categoriaCliente,// aqui llego en blanco
-      idGrupoProducto: paso1.grupoProducto.id_grupo_producto,
-      idPersona: 0, //Siempre al crear una persona esta en 0
-      codigoPostal: paso2.codigoPostal || '',
-      codigoPostal2: '',
-      idVendedor: 1,
-      idCiudad: idCiudad,
-      idZona:idZona,
-      //idZona: paso1.zona.id,  por el momento hasta enlazar con la ciudad
-      idGrupoEmpresa: paso1.grupo || 1,
-      representante: paso2.nombreRepresentante || '',
-      fecmod: new Date().toLocaleDateString('en-CA'),
-      usumod:this.usuarioActual?.nombre_usuario || '',
-     
-
-    };
-    this.impresionHabilitada = true;
-
-    console.log('📤 Enviando cliente:', jsonCliente);
-
-    this.clienteService.guardarCliente(jsonCliente).subscribe({
-      next: (res) => {
-        console.log('✅ Cliente guardado:', res);
-
-        this.clienteService.getClientePorRuc(ruc).subscribe({
-          next: (cliente) => {
-            if (cliente) {
-              console.log('✅ Código recibido:', cliente.clientes_codigo);
-              this.paso1Form.patchValue({
-                codigoCliente: cliente.clientes_codigo
-
-              });
-
-              this.guardarPrefijo();
-              this.guardarTodasLasObservaciones();
-              this.guardarDatosAdicionales();
-              this.guardarContactosCliente();
-              
-              stepper.selectedIndex = 0;
-            }
-          },
-          error: (err) => {
-            console.error('❌ No se pudo obtener el cliente por RUC:', err);
-          }
-        });
-        // Opcional: deshabilitar campo si deseas que sea solo lectura luego
-        // this.paso1Form.get('codigoCliente')?.disable();
-
-        //this.mostrarAlerta('Información Guardada', 'OK');
-
-        //this.dialogRef.close(); // Cierra el modal (opcional)
-        //this.router.navigate(['/pages/clientes']); // Redirecciona (opcional)
-      },
-      error: (err) => {
-        console.error('❌ Error al guardar el cliente:', err);
-        this.mostrarAlerta('No se pudieron cargar los clientes', 'Error');
-      }
-    });
+ // ✅ Guarda solo cuando NO hay pendientes y el RUC no está duplicado
+// ✅ Guarda solo cuando NO hay pendientes y el RUC no está duplicado
+async guardar(stepper: MatStepper): Promise<void> {
+  // 1) Permisos
+  const puedeCrear = await firstValueFrom(this.canCreate$.pipe(take(1)));
+  if (!puedeCrear) {
+    this.mostrarAlerta('No tienes permiso para crear clientes.', 'Permisos');
+    return;
   }
+
+  // 2) Forzar validaciones y esperar pendientes (incluye async validators)
+  this.formCliente.markAllAsTouched();
+  this.formCliente.updateValueAndValidity({ onlySelf: false });
+
+  // espera validaciones del formulario completo
+  if (this.formCliente.pending) {
+    await firstValueFrom(
+      this.formCliente.statusChanges.pipe(
+        filter((s: 'VALID' | 'INVALID' | 'PENDING' | 'DISABLED') => s !== 'PENDING'),
+        take(1)
+      )
+    );
+  }
+
+  // espera específicamente el control de RUC si aún está pendiente
+  if (this.rucControl.pending) {
+    await firstValueFrom(
+      this.rucControl.statusChanges.pipe(
+        filter((s: 'VALID' | 'INVALID' | 'PENDING' | 'DISABLED') => s !== 'PENDING'),
+        take(1)
+      )
+    );
+  }
+
+  // 3) Corta si hay errores (incluye RUC duplicado)
+  if (this.formCliente.invalid || this.rucControl.hasError('duplicado')) {
+    this.mostrarAlerta('RUC/CI inválido o ya registrado. Corrige antes de guardar.', 'Formulario');
+    return;
+  }
+
+  // ---------- Tu lógica original a partir de aquí ----------
+  const paso1 = this.paso1Form.value;
+  const paso2 = this.paso2Form.value;
+  const paso3 = this.paso3Form.value;
+  const paso4 = this.paso4Form.value;
+
+  const ciudadObj = paso2.ciudad;
+  const ciudadNombre = typeof ciudadObj === 'object' ? ciudadObj.ciudad : ciudadObj;
+  const idCiudad = typeof ciudadObj === 'object' ? ciudadObj.id_ciudad : 0;
+
+  const grupoProductoObj = paso1.grupoProducto;
+  const idGrupoProducto =
+    typeof grupoProductoObj === 'object' ? grupoProductoObj.id_grupo_producto : (grupoProductoObj || 0);
+
+  const idZona = typeof ciudadObj === 'object' ? ciudadObj.idzona : 0;
+
+  const ruc = this.rucControl.value;
+
+  const jsonCliente = {
+    nomcli: paso2.razonSocial || '',
+    dircli: paso2.direccionPrincipal || '',
+    concli: paso2.nombreRepresentante || '',
+    email: paso3.emailRepresentante || '',
+    razonSocial: paso2.razonSocial || '',
+    telefono1: paso2.celular,
+    fax: paso3.telefonoRepresentante || '',
+    telefono: paso2.telefono2 || '',
+    ruc: paso1.ruc || '',
+    fecing: this.fechaIngreso.toISOString().split('T')[0],
+    fecnac: '2025-04-23',
+    fecfac1: '2025-04-23',
+    fecfac2: '2025-04-23',
+    fecfac3: '2025-04-23',
+    fecfac4: '2025-04-23',
+    fecfac5: '2025-04-23',
+    marca1: '',
+    marca2: '',
+    marca3: '',
+    marca4: '',
+    marca5: '',
+    codcue: '',
+    hello: paso2.extension || '',
+    desde: 0,
+    fechtre: new Date().toISOString(),
+    web: paso2.sitioWeb,
+    saldo: 0,
+    fecfac: '',
+    ciudad: ciudadNombre || '',
+    obs: '',
+    delestado: 0,
+    genero: '',
+    infcamahabitacion: '',
+    empresaCodigo: this.usuarioActual?.id_empresa,
+    seguimiento: 0,
+    fechaactinact: '2025-04-23',
+    idEstadoEmpresa: 1,
+    formatodocumento: 0,
+    imprimeobstramite: 0,
+    idTipoCliente: paso1.categoriaCliente,
+    idGrupoProducto: paso1.grupoProducto.id_grupo_producto,
+    idPersona: 0,
+    codigoPostal: paso2.codigoPostal || '',
+    codigoPostal2: '',
+    idVendedor: 1,
+    idCiudad: idCiudad,
+    idZona: idZona,
+    idGrupoEmpresa: paso1.grupo || 1,
+    representante: paso2.nombreRepresentante || '',
+    fecmod: new Date().toLocaleDateString('en-CA'),
+    usumod: this.usuarioActual?.nombre_usuario || '',
+  };
+
+  this.impresionHabilitada = true;
+
+  this.clienteService.guardarCliente(jsonCliente).subscribe({
+    next: () => {
+      this.clienteService.getClientePorRuc(ruc).subscribe({
+        next: (cliente) => {
+          if (cliente) {
+            this.paso1Form.patchValue({ codigoCliente: cliente.clientes_codigo });
+            this.guardarPrefijo();
+            this.guardarTodasLasObservaciones();
+            this.guardarDatosAdicionales();
+            this.guardarContactosCliente();
+            stepper.selectedIndex = 0;
+          }
+        },
+        error: (err) => console.error('❌ No se pudo obtener el cliente por RUC:', err)
+      });
+    },
+    error: (err) => {
+      console.error('❌ Error al guardar el cliente:', err);
+      this.mostrarAlerta('No se pudieron cargar los clientes', 'Error');
+    }
+  });
+}
+
+
   guardarPrefijo(): void {
     const prefix = this.paso1Form.get('prefix')?.value;
     let idControl: number;
     let pais: string = '';
     let codigogs1: string = ''
 
-    
+
     switch (prefix) {
       case '5':
         idControl = 70;
@@ -1371,7 +1408,7 @@ private cerrarSiNoPuedeVer(): void {
         ///
         const paso2 = this.paso2Form.value;
         const ciudadObj = paso2.ciudad;
-        
+
         const idCiudad = typeof ciudadObj === 'object' ? ciudadObj.id_ciudad : 0;
         //
         const nuevoGln: GlnRequest = {
@@ -1441,7 +1478,7 @@ private cerrarSiNoPuedeVer(): void {
               this.enviarEmpresaAJson();
             }
 
-            
+
           },
           error: (error) => {
             console.error('❌ Error al guardar GLN:', error);
@@ -1497,25 +1534,30 @@ private cerrarSiNoPuedeVer(): void {
       }
     });
   }
-  verificarYAvanzar(form: FormGroup, stepper: MatStepper): void {
-    console.log('🚦 Ejecutando verificarYAvanzar...');
-    console.log('📋 Estado del formulario:', form.valid, form.value);
+// ✅ Espera validaciones asíncronas antes de avanzar
+// ✅ Espera validaciones asíncronas antes de avanzar
+async verificarYAvanzar(form: FormGroup, stepper: MatStepper): Promise<void> {
+  // marca todo y fuerza validación inmediata
+  form.markAllAsTouched();
+  form.updateValueAndValidity({ onlySelf: false });
 
-    form.markAllAsTouched();
-
-    if (form.valid) {
-      console.log('✅ Formulario válido. Avanzando...');
-      stepper.next();
-    } else {
-      console.warn('❌ Formulario inválido. Verifica los siguientes errores:');
-      for (const key in form.controls) {
-        const ctrl = form.get(key);
-        if (ctrl && ctrl.invalid) {
-          console.warn(`🛑 Campo inválido: ${key}`, ctrl.errors);
-        }
-      }
-    }
+  // ⏳ si hay validadores asíncronos corriendo, espera a que terminen
+  if (form.pending) {
+    await firstValueFrom(
+      form.statusChanges.pipe(
+        filter((s: 'VALID' | 'INVALID' | 'PENDING' | 'DISABLED') => s !== 'PENDING'),
+        take(1)
+      )
+    );
   }
+
+  if (form.valid) {
+    stepper.next();
+  } else {
+    this.mostrarAlerta('Revisa los campos obligatorios y corrige los errores.', 'Formulario');
+  }
+}
+
 
 
   forzarGuardarRazonSocial(): void {
@@ -1606,170 +1648,170 @@ private cerrarSiNoPuedeVer(): void {
   }
 
 
-guardarTodasLasObservaciones(): void {
-  const paso1 = this.paso1Form.value;
-  const paso2 = this.paso2Form.value;
-  const paso4 = this.paso4Form.value;
+  guardarTodasLasObservaciones(): void {
+    const paso1 = this.paso1Form.value;
+    const paso2 = this.paso2Form.value;
+    const paso4 = this.paso4Form.value;
 
-  const fechaActual = new Date().toISOString();
+    const fechaActual = new Date().toISOString();
 
-  const idUsuario = this.usuarioActual?.id_usuario || 0;
-  const nombreUsuario = this.usuarioActual?.nombre_usuario || '';
-  const clientesCodigo = paso1.codigoCliente || 0;
+    const idUsuario = this.usuarioActual?.id_usuario || 0;
+    const nombreUsuario = this.usuarioActual?.nombre_usuario || '';
+    const clientesCodigo = paso1.codigoCliente || 0;
 
-  const observaciones: ClienteObservacion[] = [
-    {
-      id_ClienteObservacion: 0,
-      Detalle: (paso2.observacion1 || '').trim(),
-      fecha: fechaActual,
-      idUsuario,
-      clientesCodigo,
-      nombreUsuario,
-      linea: 1
-    },
-    {
-      id_ClienteObservacion: 0,
-      Detalle: (paso4.observacion2 || '').trim(),
-      fecha: fechaActual,
-      idUsuario,
-      clientesCodigo,
-      nombreUsuario,
-      linea: 2
-    },
-    {
-      id_ClienteObservacion: 0,
-      Detalle: (paso4.observacion3 || '').trim(),
-      fecha: fechaActual,
-      idUsuario,
-      clientesCodigo,
-      nombreUsuario,
-      linea: 3
-    },
-    {
-      id_ClienteObservacion: 0,
-      Detalle: (paso4.observacion4 || '').trim(),
-      fecha: fechaActual,
-      idUsuario,
-      clientesCodigo,
-      nombreUsuario,
-      linea: 4
-    }
-  ];
+    const observaciones: ClienteObservacion[] = [
+      {
+        id_ClienteObservacion: 0,
+        Detalle: (paso2.observacion1 || '').trim(),
+        fecha: fechaActual,
+        idUsuario,
+        clientesCodigo,
+        nombreUsuario,
+        linea: 1
+      },
+      {
+        id_ClienteObservacion: 0,
+        Detalle: (paso4.observacion2 || '').trim(),
+        fecha: fechaActual,
+        idUsuario,
+        clientesCodigo,
+        nombreUsuario,
+        linea: 2
+      },
+      {
+        id_ClienteObservacion: 0,
+        Detalle: (paso4.observacion3 || '').trim(),
+        fecha: fechaActual,
+        idUsuario,
+        clientesCodigo,
+        nombreUsuario,
+        linea: 3
+      },
+      {
+        id_ClienteObservacion: 0,
+        Detalle: (paso4.observacion4 || '').trim(),
+        fecha: fechaActual,
+        idUsuario,
+        clientesCodigo,
+        nombreUsuario,
+        linea: 4
+      }
+    ];
 
-  observaciones.forEach(obs => {
-    this.clienteObservacionService.enviarObservacion(obs).subscribe({
-      next: () => console.log(`✅ Observación línea ${obs.linea} enviada`),
-      error: err => console.error(`❌ Error en línea ${obs.linea}:`, err)
-    });
-  });
-}
-
-guardarDatosAdicionales(): void {
-  const paso1 = this.paso1Form.value;
-  const paso2 = this.paso2Form.value;
-  const paso3 = this.paso3Form.value;
-  const clientesCodigo = paso1.codigoCliente || 0;
-  const datosAdicionales = {
-    idDatosAdicionales: 0,
-    expprod: paso3.pregunta1 || false,
-    vendeus: paso3.pregunta2 || false,
-    medico: paso3.pregunta3 || false,
-    gs1ec: paso3.pregunta4 || false,
-    instagram: paso3.pregunta5 || false,
-    facebook: paso3.pregunta6 || false,
-    web: paso3.pregunta7 || false,
-    clientes_codigo: clientesCodigo,
-    prefijo: paso2.nprefijo || false,
-    guia: paso2.compra || false,
-    estado: true
-  };
-  debugger
-  console.log(datosAdicionales);
-  this.clienteDatosAdicionalesService.crear(datosAdicionales).subscribe({
-    next: () => console.log('✅ Datos creados correctamente'),
-    error: (err) => console.error('❌ Error al crear datos adicionales:', err)
-  });
-}
-
-guardarContactosCliente(): void {
-  const paso1 = this.paso1Form.value;
-  const paso3 = this.paso3Form.value;
-  const clientesCodigo = paso1.codigoCliente || 0;
-
-  const contactosCliente = [
-    {
-      id_ContactosClientes: 0,
-      Nombre: paso3.nombreCodificacion || '',
-      telefono: paso3.telefonoc || '',
-      email: paso3.email || '',
-      cargo: 'Codificación',
-      clientesCodigo: clientesCodigo,
-      linea: 1
-    },
-    {
-      id_ContactosClientes: 0,
-      Nombre: paso3.nombreFinanciero || '',
-      telefono: paso3.telefono22 || '',
-      email: paso3.email1 || '',
-      cargo: 'Facturación',
-      clientesCodigo: clientesCodigo,
-      linea: 2
-    },
-    {
-      id_ContactosClientes: 0,
-      Nombre: paso3.nombreFinanciero || '',
-      telefono: paso3.telefono22 || '',
-      email: paso3.email2 || '',
-      cargo: 'Facturación',
-      clientesCodigo: clientesCodigo,
-      linea: 3
-    },
-    {
-      id_ContactosClientes: 0,
-      Nombre: paso3.nombreFinanciero || '',
-      telefono: paso3.telefono22 || '',
-      email: paso3.email3 || '',
-      cargo: 'Facturación',
-      clientesCodigo: clientesCodigo,
-      linea: 4
-    }
-  ];
-
-  // Enviar cada contacto individualmente
-  contactosCliente.forEach(contacto => {
-    if (contacto.Nombre || contacto.email || contacto.telefono) { // Validar si al menos hay un dato útil
-      this.clienteContactoService.crear(contacto).subscribe({
-        next: () => console.log(`✅ Contacto línea ${contacto.linea} creado correctamente`),
-        error: (err) => console.error(`❌ Error al crear contacto línea ${contacto.linea}:`, err)
+    observaciones.forEach(obs => {
+      this.clienteObservacionService.enviarObservacion(obs).subscribe({
+        next: () => console.log(`✅ Observación línea ${obs.linea} enviada`),
+        error: err => console.error(`❌ Error en línea ${obs.linea}:`, err)
       });
-    }
-  });
-}
+    });
+  }
 
-enviarEmpresaAJson(): void {
-  const ciudadObj = this.paso2Form.get('ciudad')?.value;
-  const data = {
-    status: 'ACTIVE',
-    licenceKey: this.paso1Form.get('prefijo')?.value || '',
-    licenseeName: this.paso2Form.get('razonSocial')?.value || '',
-    licenseeGLN: this.paso1Form.get('gln')?.value || '',
-    streetAddress: this.paso2Form.get('direccionPrincipal')?.value || '',
-    canton: ciudadObj.canton || '',
-    postalName: this.paso2Form.get('codigoPostal')?.value || '',
-    ciudad: ciudadObj.ciudad || '',
-    provincia: ciudadObj.provincia || '',
-    postalCode: this.paso2Form.get('codigoPostal')?.value || '',
-    email: this.paso3Form.get('emailRepresentante')?.value || '',
-    telefono: '593' + (this.paso2Form.get('telefono2')?.value ?? ''),
-    website: this.paso2Form.get('sitioWeb')?.value || '',
-    dapi: this.api,  // reemplaza con tu endpoint real
-    capi: this.claveApi
-  };
-  console.log(data);
-  this.jsonEmpresaService.generarJsonEmpresa(data);
-}
+  guardarDatosAdicionales(): void {
+    const paso1 = this.paso1Form.value;
+    const paso2 = this.paso2Form.value;
+    const paso3 = this.paso3Form.value;
+    const clientesCodigo = paso1.codigoCliente || 0;
+    const datosAdicionales = {
+      idDatosAdicionales: 0,
+      expprod: paso3.pregunta1 || false,
+      vendeus: paso3.pregunta2 || false,
+      medico: paso3.pregunta3 || false,
+      gs1ec: paso3.pregunta4 || false,
+      instagram: paso3.pregunta5 || false,
+      facebook: paso3.pregunta6 || false,
+      web: paso3.pregunta7 || false,
+      clientes_codigo: clientesCodigo,
+      prefijo: paso2.nprefijo || false,
+      guia: paso2.compra || false,
+      estado: true
+    };
+    debugger
+    console.log(datosAdicionales);
+    this.clienteDatosAdicionalesService.crear(datosAdicionales).subscribe({
+      next: () => console.log('✅ Datos creados correctamente'),
+      error: (err) => console.error('❌ Error al crear datos adicionales:', err)
+    });
+  }
 
-cargarParametroFacturaPorId(id: number): void {
+  guardarContactosCliente(): void {
+    const paso1 = this.paso1Form.value;
+    const paso3 = this.paso3Form.value;
+    const clientesCodigo = paso1.codigoCliente || 0;
+
+    const contactosCliente = [
+      {
+        id_ContactosClientes: 0,
+        Nombre: paso3.nombreCodificacion || '',
+        telefono: paso3.telefonoc || '',
+        email: paso3.email || '',
+        cargo: 'Codificación',
+        clientesCodigo: clientesCodigo,
+        linea: 1
+      },
+      {
+        id_ContactosClientes: 0,
+        Nombre: paso3.nombreFinanciero || '',
+        telefono: paso3.telefono22 || '',
+        email: paso3.email1 || '',
+        cargo: 'Facturación',
+        clientesCodigo: clientesCodigo,
+        linea: 2
+      },
+      {
+        id_ContactosClientes: 0,
+        Nombre: paso3.nombreFinanciero || '',
+        telefono: paso3.telefono22 || '',
+        email: paso3.email2 || '',
+        cargo: 'Facturación',
+        clientesCodigo: clientesCodigo,
+        linea: 3
+      },
+      {
+        id_ContactosClientes: 0,
+        Nombre: paso3.nombreFinanciero || '',
+        telefono: paso3.telefono22 || '',
+        email: paso3.email3 || '',
+        cargo: 'Facturación',
+        clientesCodigo: clientesCodigo,
+        linea: 4
+      }
+    ];
+
+    // Enviar cada contacto individualmente
+    contactosCliente.forEach(contacto => {
+      if (contacto.Nombre || contacto.email || contacto.telefono) { // Validar si al menos hay un dato útil
+        this.clienteContactoService.crear(contacto).subscribe({
+          next: () => console.log(`✅ Contacto línea ${contacto.linea} creado correctamente`),
+          error: (err) => console.error(`❌ Error al crear contacto línea ${contacto.linea}:`, err)
+        });
+      }
+    });
+  }
+
+  enviarEmpresaAJson(): void {
+    const ciudadObj = this.paso2Form.get('ciudad')?.value;
+    const data = {
+      status: 'ACTIVE',
+      licenceKey: this.paso1Form.get('prefijo')?.value || '',
+      licenseeName: this.paso2Form.get('razonSocial')?.value || '',
+      licenseeGLN: this.paso1Form.get('gln')?.value || '',
+      streetAddress: this.paso2Form.get('direccionPrincipal')?.value || '',
+      canton: ciudadObj.canton || '',
+      postalName: this.paso2Form.get('codigoPostal')?.value || '',
+      ciudad: ciudadObj.ciudad || '',
+      provincia: ciudadObj.provincia || '',
+      postalCode: this.paso2Form.get('codigoPostal')?.value || '',
+      email: this.paso3Form.get('emailRepresentante')?.value || '',
+      telefono: '593' + (this.paso2Form.get('telefono2')?.value ?? ''),
+      website: this.paso2Form.get('sitioWeb')?.value || '',
+      dapi: this.api,  // reemplaza con tu endpoint real
+      capi: this.claveApi
+    };
+    console.log(data);
+    this.jsonEmpresaService.generarJsonEmpresa(data);
+  }
+
+  cargarParametroFacturaPorId(id: number): void {
     this.parametrosFacturaService.getById(id).subscribe({
       next: (parametro) => {
         // Aquí asignas el resultado a una variable del componente
@@ -1785,14 +1827,35 @@ cargarParametroFacturaPorId(id: number): void {
     });
   }
 
-soloDigitos(ctrl: string, ev: Event, form: FormGroup) {
-  const el = ev.target as HTMLInputElement;
-  const limpio = el.value.replace(/\D/g, ''); // solo dígitos
-  if (el.value !== limpio) {
-    el.value = limpio;
-    form.get(ctrl)?.setValue(limpio);
+  soloDigitos(ctrl: string, ev: Event, form: FormGroup) {
+    const el = ev.target as HTMLInputElement;
+    const limpio = el.value.replace(/\D/g, ''); // solo dígitos
+    if (el.value !== limpio) {
+      el.value = limpio;
+      form.get(ctrl)?.setValue(limpio);
+    }
   }
+ private uniqueRucValidator(): AsyncValidatorFn {
+  return (control: AbstractControl) => {
+    const valor = (control.value || '').trim();
+    const esPasaporte = this.paso1Form?.get('esPasaporte')?.value;
+
+    if (!valor) return of(null);
+
+    const pareceCedulaORuc = /^\d{10}$/.test(valor) || /^\d{13}$/.test(valor);
+
+    // ⚠️ Si es pasaporte PERO el valor luce como cédula/RUC => validar duplicado igual.
+    // Si es pasaporte y NO parece cédula/RUC => no consultar duplicado.
+    if (esPasaporte && !pareceCedulaORuc) return of(null);
+
+    return timer(250).pipe(
+      switchMap(() => this.clienteService.getClientePorRuc(valor)),
+      map(cliente => (cliente ? { duplicado: true } : null)),
+      catchError(() => of(null))
+    );
+  };
 }
 
 
+  
 }

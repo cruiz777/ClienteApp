@@ -83,6 +83,8 @@ export interface FacturaCrearRequest {
   numeroGuiaRemision: string;
   prefijo: string;
   correo: string;
+  facBloque:number;
+  GrupoCliente:string;
   subtotalSIva: number;          // subtotal SIN IVA (cabecera)
   subtotalCalculado: number;     // igual al anterior si ya es sin IVA
   descuentoTotalCalculado: number;
@@ -150,4 +152,5 @@ export class FacturaGlobalService {
     const url = `${this.facturacionUrl}/${idNota}/xml`;
     return this.http.post<GenerarXmlFacturaResponse>(url, {});
   }
+  
 }

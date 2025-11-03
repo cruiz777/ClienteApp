@@ -7,7 +7,10 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { AgGridAngular } from 'ag-grid-angular';
 import { MatIconModule } from '@angular/material/icon';
+import * as JSZip from 'jszip';
 
+
+import { saveAs } from 'file-saver';
 import { FacturaGlobalService, ClienteCodpreGrupoResponse, FacturaCrearRequest } from 'src/app/services/factura-global.service';
 import { AutorizacionCajaService } from 'src/app/services/autorizacion-caja.service';
 import { UsuarioService } from 'src/app/services/usuario.service';
@@ -21,18 +24,19 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
 import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
-
+import { NotasObsService, NotaObs } from 'src/app/services/nota.service';
 import { of, forkJoin, from, timer } from 'rxjs';
+import { FacturacionService } from 'src/app/services/facturacion.service';
 import {
   take, map, switchMap, catchError, finalize,
   retryWhen, delayWhen, scan, tap, concatMap
 } from 'rxjs/operators';
 
 import {
-  ColDef, GridApi, GridReadyEvent, ModuleRegistry, IRowNode, AllCommunityModule
+  ColDef, GridApi, GridReadyEvent, ModuleRegistry, IRowNode, AllCommunityModule, ValueFormatterParams
 } from 'ag-grid-community';
 ModuleRegistry.registerModules([AllCommunityModule]);
-
+type ZipProgress = { percent: number; currentFile?: string | null };
 @Component({
   selector: 'app-facturacion-global',
   standalone: true,
@@ -56,13 +60,13 @@ export class FacturacionGlobalComponent implements OnInit {
   activeTab: 'Factura' | 'Listado' = 'Factura';
   formFactura!: FormGroup;
   formCaja!: FormGroup;
-  usuarioActual: any = null;
+  usuarioActual = this.usuarioService.getUsuarioActual();
 
   // Botones/estados
   deshabilitarBuscar = false;
   habilitarFacturar = false;
   facturando = false;
-
+  zipping = false;
   private gridApi!: GridApi;
   private pendingQuickFilter = '';
   cargando = false;
@@ -70,10 +74,13 @@ export class FacturacionGlobalComponent implements OnInit {
   totalSeleccionado = 0;
   selectedCount = 0;
   showSoloSeleccionados = false;
-
+  private listadoGridApi!: GridApi;
+  listadoSelectedCount = 0;
+  imprimiendo = false;
   zonas: Zona[] = [];
   trackByZonaId = (_: number, z: Zona) => z.id;
   cargandoZonas = false;
+
 
   // Configuración de procesamiento
   private readonly CONCURRENCY = 1;     // ← en serie
@@ -147,6 +154,62 @@ Prefijo: ${d.prefijo ?? ''}`;
 
   defaultColDef: ColDef = { sortable: true, filter: true, resizable: true };
   rowData: any[] = [];
+  // === Listado (Facturas Generadas) ===
+  // === Listado (Facturas Generadas) ===
+  listadoData: NotaObs[] = [];
+
+  columnDefsListado: ColDef<NotaObs>[] = [
+    // checkbox de selección
+    {
+      headerName: '',
+      colId: 'sel',
+      checkboxSelection: true,
+      headerCheckboxSelection: true,
+      width: 48,
+      pinned: 'left'
+    },
+    // botón imprimir
+    {
+      headerName: '',
+      colId: 'print',
+      width: 70,
+      pinned: 'left',
+      suppressHeaderMenuButton: true,   // ← en vez de suppressMenu
+      sortable: false,
+      filter: false,
+      cellRenderer: () => `
+    <button class="btn-icon" title="Imprimir">🖨️</button>
+  `,
+      onCellClicked: (e) => {           // ← evita el error de tipo
+        if (e?.data) this.imprimirNota(e.data as NotaObs);
+      }
+    },
+
+
+    { headerName: '#', valueGetter: 'node.rowIndex + 1', width: 70, pinned: 'left' },
+    { headerName: 'Id Nota', field: 'idNota', width: 120 },
+    { headerName: 'N° Factura', field: 'numnota', minWidth: 160, pinned: 'left' },
+    {
+      headerName: 'Fecha',
+      field: 'fecha',
+      width: 140,
+      valueFormatter: (p: ValueFormatterParams<NotaObs, any>) =>
+        p.value ? new Date(p.value as any).toLocaleDateString('es-EC') : ''
+    },
+    { headerName: 'Cliente', field: 'nomcli', minWidth: 240, flex: 1 },
+    { headerName: 'RUC', field: 'ruc', minWidth: 160 },
+    {
+      headerName: 'Total',
+      field: 'total',
+      width: 140,
+      valueFormatter: p => this.money(Number(p.value))
+    },
+    { headerName: 'Observación Detalle', field: 'obsDetalle', minWidth: 260, flex: 1 }
+  ];
+
+  defaultColDefListado: ColDef<NotaObs> = { sortable: true, filter: true, resizable: true };
+
+
 
   constructor(
     private fb: FormBuilder,
@@ -156,7 +219,9 @@ Prefijo: ${d.prefijo ?? ''}`;
     private clienteService: ClienteService,
     private clienteContactoService: ClienteContactoService,
     private zonaService: ZonaService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private notasObsService: NotasObsService,
+    private facturaService: FacturacionService
   ) { }
 
   ngOnInit(): void {
@@ -196,8 +261,60 @@ Prefijo: ${d.prefijo ?? ''}`;
 
   cambiarTab(tab: 'Factura' | 'Listado') {
     this.activeTab = tab;
-    if (tab === 'Factura' && this.gridApi) setTimeout(() => this.gridApi.sizeColumnsToFit());
+    if (tab === 'Factura' && this.gridApi) {
+      setTimeout(() => this.gridApi.sizeColumnsToFit());
+    }
+    if (tab === 'Listado') {
+      this.cargarListado();
+    }
   }
+
+  cargarListado() {
+    const anio = Number(this.formFactura?.get('anio')?.value ?? new Date().getFullYear());
+
+    // abre “espere…”
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      disableClose: true,
+      data: {
+        title: 'Cargando Facturas…',
+        message: 'Por favor espere mientras se cargan los datos.',
+        type: 'info',
+        isLoading: true,
+        loadingText: 'Cargando información…',
+        showCancel: false
+      }
+    });
+
+    this.cargando = true;
+
+    this.notasObsService.getNotasObsPorAnio(anio, true)
+      .pipe(
+        finalize(() => {
+          this.cargando = false;
+          loadingDialog.close(); // cierra siempre (éxito / error)
+        })
+      )
+      .subscribe({
+        next: rows => {
+          this.listadoData = rows ?? [];
+        },
+        error: err => {
+          console.error('[Listado] error:', err);
+          this.listadoData = [];
+          // opcional: mostrar un aviso de error reutilizando el mismo componente
+          this.dialog.open(CustomMessageBoxComponent, {
+            data: {
+              title: 'Error al cargar',
+              message: 'No se pudieron obtener las facturas. Intente nuevamente.',
+              isLoading: false,
+              showCancel: false
+            }
+          });
+        }
+      });
+  }
+
+
 
   money(v: number) {
     const n = Number(v ?? 0);
@@ -333,6 +450,19 @@ Prefijo: ${d.prefijo ?? ''}`;
 
   // ========= FACTURAR (CONFIRMAR + ENVÍA + GENERA XML) =========
   facturar() {
+
+    if (!this.cajaAsignada) {
+      this.dialog.open(CustomMessageBoxComponent, {
+        data: {
+          title: 'Caja no asignada',
+          message: 'Usuario no tiene asignado Caja. No podrás generar facturas hasta asignarla.',
+          isLoading: false,
+          showCancel: false
+        }
+      });
+      return;
+    }
+
     if (!this.gridApi) return;
 
     const seleccionadas: any[] = this.gridApi.getSelectedRows() ?? [];
@@ -590,19 +720,45 @@ Prefijo: ${d.prefijo ?? ''}`;
     this.cargarAutorizacion();
   }
 
-  cargarAutorizacion() {
-    this.autorizacionCajaService.getAutorizacionCaja(1).subscribe({
+  cajaAsignada = false;
+  cargarAutorizacion(): void {
+    const id = this.usuarioActual?.id_autorizacion_usuario;
+
+    // Valor por defecto
+    this.cajaAsignada = false;
+
+    if (id == null) {
+      this.formCaja.patchValue({ secuencial: '', caja: '', puntoEmision: '' });
+      return;
+    }
+
+    const idNum = Number(id);
+
+    this.autorizacionCajaService.getAutorizacionCaja(idNum).subscribe({
       next: ({ data }) => {
-        if (!data) return;
+        if (!data) {
+          this.cajaAsignada = false;
+          this.formCaja.patchValue({ secuencial: '', caja: '', puntoEmision: '' });
+          return;
+        }
+
         this.formCaja.patchValue({
           secuencial: this.padLeft(data.numero_factura, 9),
           caja: data.caja ?? '',
           puntoEmision: data.num_establecimiento ?? '',
         });
+
+        // Se considera “asignada” si al menos hay caja y número válido
+        this.cajaAsignada = !!(data.caja && data.numero_factura != null);
       },
-      error: (err) => console.error('Error cargando autorización de caja', err),
+      error: (err) => {
+        console.error('Error cargando autorización de caja', err);
+        this.cajaAsignada = false;
+        this.formCaja.patchValue({ secuencial: '', caja: '', puntoEmision: '' });
+      },
     });
   }
+
 
   private padLeft(value: any, size: number): string {
     const s = (value ?? '').toString().replace(/\D/g, '');
@@ -692,11 +848,12 @@ Prefijo: ${d.prefijo ?? ''}`;
     const periodoHasta = `${anio}-12-31`;
 
     const caja = String(this.formCaja.get('caja')?.value ?? '').trim();
-    const idUsuarioCajero: number = this.usuarioActual?.idUsuario ?? this.usuarioActual?.id_usuario ?? 0;
+    const idUsuarioCajero: number = this.usuarioActual?.id_usuario ?? this.usuarioActual?.id_usuario ?? 0;
 
     const prefijo = String(row.prefijo ?? '').trim();
     const correo = String(row.email ?? '').trim();
-
+    const GrupoCliente = String(row.grupo ?? '').trim();
+    const facBloque = 1;
     const valor = Number(row.valor ?? 0);                  // mensual
     const subtotal = Number(row.subtotal ?? (valor * 12)); // anual
     const iva = Number(row.iva ?? 0);                      // MONTO de IVA
@@ -717,6 +874,8 @@ Prefijo: ${d.prefijo ?? ''}`;
       numeroGuiaRemision: '.',
       prefijo,
       correo,
+      facBloque,
+      GrupoCliente,
       // cabecera (ajusta a tu API)
       subtotalSIva: subtotal,
       subtotalCalculado: subtotal,
@@ -769,4 +928,175 @@ Prefijo: ${d.prefijo ?? ''}`;
     const found = cands.find(v => v !== undefined && v !== null);
     return found != null ? Number(found) : null;
   }
+  onAnioInput(evt: Event) {
+    const val = (evt.target as HTMLInputElement).value ?? '';
+    // si quieres forzar 4 dígitos numéricos:
+    const onlyDigits = val.replace(/\D/g, '').slice(0, 4);
+    this.formFactura.get('anio')?.setValue(onlyDigits);
+    // si además quieres disparar la carga automáticamente:
+    this.cargarListado();
+  }
+  imprimirNota(row: NotaObs) {
+    if (!row?.idNota) { return; }
+    const nombre = `factura-${row.numnota ?? row.idNota}.pdf`;
+    this.facturaService.descargarPdfFactura(Number(row.idNota), nombre)
+      .pipe(take(1))
+      .subscribe({
+        next: () => { },
+        error: (err) => console.error('[Imprimir] error:', err)
+      });
+  }
+
+  // --- estado para el grid de Listado ---
+
+
+  onListadoGridReady(e: GridReadyEvent) {
+    this.listadoGridApi = e.api;
+    this.listadoGridApi.sizeColumnsToFit();
+  }
+
+  onListadoSelectionChanged() {
+    if (!this.listadoGridApi) return;
+    this.listadoSelectedCount = this.listadoGridApi.getSelectedRows().length;
+  }
+  imprimirSeleccionadas() {
+    if (!this.listadoGridApi) return;
+
+    const seleccionadas: NotaObs[] = this.listadoGridApi.getSelectedRows() ?? [];
+    if (!seleccionadas.length) return;
+
+    const dlg = this.dialog.open(CustomMessageBoxComponent, {
+      disableClose: true,
+      data: {
+        title: 'Imprimiendo…',
+        message: `Procesadas 0 / ${seleccionadas.length}`,
+        isLoading: true,
+        showCancel: false
+      }
+    });
+
+    this.imprimiendo = true;
+    let procesadas = 0;
+
+    // procesa EN SERIE con pequeña pausa para evitar bloqueos de navegador
+    from(seleccionadas).pipe(
+      concatMap((row, i) =>
+        timer(i === 0 ? 0 : 200).pipe(                 // 200ms entre descargas
+          switchMap(() => {
+            const id = Number(row.idNota);
+            const nombre = `factura-${row.numnota ?? id}.pdf`;
+            return this.facturaService.descargarPdfFactura(id, nombre).pipe(take(1));
+          }),
+          tap(() => {
+            procesadas++;
+            if (dlg?.componentInstance) {
+              dlg.componentInstance.data = {
+                ...dlg.componentInstance.data,
+                message: `Procesadas ${procesadas} / ${seleccionadas.length}`
+              };
+            }
+          }),
+          catchError(err => {
+            console.error('[Imprimir seleccionadas] error:', err);
+            // continúa con la siguiente
+            procesadas++;
+            if (dlg?.componentInstance) {
+              dlg.componentInstance.data = {
+                ...dlg.componentInstance.data,
+                message: `Procesadas ${procesadas} / ${seleccionadas.length} (con errores)`
+              };
+            }
+            return of(void 0);
+          })
+        )
+      ),
+      finalize(() => {
+        this.imprimiendo = false;
+        dlg?.close();
+      })
+    ).subscribe();
+  }
+  zipSeleccionadas() {
+    if (!this.listadoGridApi) return;
+
+    const filas: NotaObs[] = this.listadoGridApi.getSelectedRows() ?? [];
+    if (!filas.length) return;
+
+    const dlg = this.dialog.open(CustomMessageBoxComponent, {
+      disableClose: true,
+      data: {
+        title: 'Preparando ZIP…',
+        message: `Descargando 0 / ${filas.length}`,
+        isLoading: true,
+        showCancel: false
+      }
+    });
+
+    this.zipping = true;
+
+    const zip = new JSZip();
+    let descargadas = 0;
+
+    from(filas).pipe(
+      concatMap((row, i) =>
+        // pequeña pausa, y descarga del PDF como blob
+        timer(i === 0 ? 0 : 150).pipe(
+          switchMap(() => this.facturaService.getPdfFacturaBlob(Number(row.idNota))),
+          tap((blob: Blob) => {
+            const nombre = `factura-${row.numnota ?? row.idNota}.pdf`;
+            zip.file(nombre, blob);
+            descargadas++;
+            if (dlg?.componentInstance) {
+              dlg.componentInstance.data = {
+                ...dlg.componentInstance.data,
+                message: `Descargando ${descargadas} / ${filas.length}`
+              };
+            }
+          }),
+          catchError(err => {
+            console.error('[ZIP] fallo al obtener PDF', row, err);
+            // continúa con las demás
+            descargadas++;
+            return of(null);
+          })
+        )
+      ),
+      // cuando termina la recolección, generamos el zip
+      switchMap(() =>
+        zip.generateAsync(
+          {
+            type: 'blob',
+            compression: 'DEFLATE',
+            compressionOptions: { level: 6 }   // ✅ en lugar de compressionLevel
+          },
+          (meta: ZipProgress) => {              // ✅ tipo local en vez de JSZipNS.JSZipGeneratorMetadata
+            if (dlg?.componentInstance) {
+              dlg.componentInstance.data = {
+                ...dlg.componentInstance.data,
+                message: `Comprimiendo… ${Math.round(meta.percent)}%`
+              };
+            }
+          }
+        )
+      ),
+
+
+      finalize(() => {
+        this.zipping = false;
+        dlg?.close();
+      })
+    ).subscribe({
+      next: (zipBlob: Blob) => {
+        const nombreZip = `facturas_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-')}.zip`;
+        saveAs(zipBlob, nombreZip);
+      },
+      error: (err) => {
+        console.error('[ZIP] error general:', err);
+        this.dialog.open(CustomMessageBoxComponent, {
+          data: { title: 'Error', message: 'No se pudo generar el ZIP.', isLoading: false }
+        });
+      }
+    });
+  }
+
 }

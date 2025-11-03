@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
-
+import { environment } from 'src/environments/environment';
 @Injectable({
   providedIn: 'root'
 })
 export class CedulaService {
-  private baseUrl = 'http://pichincha.gapsystem.net:10048/api/services/cedula/';
+  
+  private baseUrl = environment.cedulaUrl;
 
   constructor(private http: HttpClient) {}
 

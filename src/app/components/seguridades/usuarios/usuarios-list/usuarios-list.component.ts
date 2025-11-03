@@ -6,6 +6,7 @@ import { UsuarioService } from 'src/app/services/usuario.service';
 import { UsuariosResponse } from 'src/app/interfaces/responses/usuario-response';
 import { UsuariosFormComponent } from '../usuarios-form/usuarios-form.component';
 import { PermissionsService } from 'src/app/services/permission.service';
+import { UsuarioCajaComponent } from '../usuario-caja/usuario-caja.component';
 
 @Component({
   selector: 'app-usuarios-list',
@@ -76,6 +77,31 @@ export class UsuariosListComponent implements OnInit {
     });
   }
 
+
+    cajaUsuario(usuario: UsuariosResponse) {
+    this.botonActivo = 'editar';
+
+    this.usuarioService.getUsuarioById(usuario.id_usuario).subscribe(response => {
+      const detalle = response.data; // ← aquí accedes al objeto real
+
+      console.log('🧪 Detalle recibido para edición:', detalle);
+
+      const dialogRef = this.dialog.open(UsuarioCajaComponent, {
+        width: '800px',
+        data: {
+          modo: 'editar',
+          usuario: detalle
+        }
+      });
+
+      dialogRef.afterClosed().subscribe(result => {
+        if (result === true) {
+          this.cargarUsuarios(); // ← recarga lista después de editar
+        }
+      });
+
+    });
+  }
 
   /**
    * Muestra en consola el ID del usuario a eliminar.

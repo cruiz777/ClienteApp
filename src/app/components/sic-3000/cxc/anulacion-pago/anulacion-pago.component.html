@@ -1,0 +1,84 @@
+<!-- Alerta -->
+
+
+<header class="page-title">
+  <h1 class="title-text">Reversión de Pagos</h1>
+</header>
+
+<section class="form-section">
+  <!-- No. Pago -->
+  <div class="input-group payment-number">
+    <label class="field-label" for="paymentNumber">No. Pago:</label>
+    <div class="input-wrapper">
+      <div class="cursor-line">
+        <div class="cursor-indicator"></div>
+      </div>
+      <input type="text" id="paymentNumber" class="text-input" placeholder="000001" aria-label="Número de pago"
+        [(ngModel)]="paymentNumber" />
+    </div>
+  </div>
+
+  <!-- Fecha Pago (solo lectura) -->
+  <div class="input-group payment-date">
+    <label class="field-label" for="paymentDate">Fecha Pago:</label>
+    <div class="input-wrapper">
+      <div class="cursor-line">
+        <div class="cursor-indicator"></div>
+      </div>
+      <input type="text" id="paymentDate" class="text-input" placeholder="dd/MM/yyyy" aria-label="Fecha de pago"
+        [readOnly]="true" [(ngModel)]="paymentDate" />
+    </div>
+  </div>
+
+  <!-- Cliente (solo lectura) -->
+  <div class="input-group client-field">
+    <label class="field-label" for="client">Cliente:</label>
+    <div class="input-wrapper-wide">
+      <div class="cursor-line">
+        <div class="cursor-indicator"></div>
+      </div>
+      <input type="text" id="client" class="text-input" placeholder="Nombre cliente" aria-label="Cliente"
+        [readOnly]="true" [(ngModel)]="clientName" />
+
+    </div>
+  </div>
+</section>
+<section class="observation-section">
+  <div class="observation-group">
+    <label class="field-label" for="observation">Observación:</label>
+    <textarea id="observacion" class="observation-textarea" [class.input-error]="obsError" [(ngModel)]="observacion"
+      (ngModelChange)="onObservacionChange($event)" #obsInput aria-label="Observaciones"></textarea>
+
+  </div>
+
+  <!-- usa 'reversal-date' en lugar de 'payment-date' -->
+  <div class="input-group reversal-date">
+    <label class="field-label" for="reversalDate">Fecha Reversión:</label>
+    <div class="input-wrapper">
+      <div class="cursor-line">
+        <div class="cursor-indicator"></div>
+      </div>
+      <input type="text" id="reversalDate" class="text-input" [(ngModel)]="reversalDate" placeholder="dd/MM/yyyy"
+        aria-label="Fecha de reversión" />
+    </div>
+  </div>
+</section>
+
+
+<section class="action-buttons">
+  <button type="button" class="action-button primary-button" (click)="onConsulta()" [disabled]="loading || !canConsult">
+    {{ loading ? 'Consultando...' : 'Consulta' }}
+  </button>
+
+  <button type="button" class="action-button secondary-button" (click)="onRevertirPago()"
+    [disabled]="reverting || !canRevert ">
+    {{ reverting ? 'Revirtiendo...' : 'Revertir Pago' }}
+  </button>
+
+
+
+
+  <button type="button" class="action-button secondary-button" aria-label="Cancelar" (click)="onCancelar()">
+    Cancelar
+  </button>
+</section>

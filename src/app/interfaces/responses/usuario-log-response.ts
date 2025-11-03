@@ -8,5 +8,6 @@ export interface LoginUsuarioResponse {
   nombreD: string;
   id_perfil: number;
   perfil: string;
+  id_autorizacion_usuario:number;
 }
 
