@@ -80,10 +80,16 @@
       </div>
 
       <!-- Campos editables principales -->
-      <div class="col-2">
-        <label>Descripción:</label>
-        <input type="text" formControlName="descripcion" (blur)="convertirAMayusculas('descripcion')" />
-      </div>
+      <!-- Input ancho: ocupa 4 columnas del grid -->
+<div class="col-12">
+  <label>Descripción:</label>
+  <input type="text"
+         formControlName="descripcion"
+         (blur)="convertirAMayusculas('descripcion')"
+         style="width: 100%;" />
+</div>
+
+
 
       <div>
         <label>Marca:</label>

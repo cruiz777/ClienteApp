@@ -948,7 +948,7 @@ export class FacturacionIndividualComponent implements OnInit {
 
 
 cargarAutorizacion() {
-  const id = this.usuarioActual?.id_autorizacion_usuario;
+  const id = this.usuarioActual?.id_autorizacion_caja;
 
   // Si no hay autorización asociada en el usuario
   if (id == null) {

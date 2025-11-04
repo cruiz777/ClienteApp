@@ -9,5 +9,6 @@ export interface LoginUsuarioResponse {
   id_perfil: number;
   perfil: string;
   id_autorizacion_usuario:number;
+  id_autorizacion_caja:number;
 }
 

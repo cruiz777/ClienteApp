@@ -722,7 +722,7 @@ Prefijo: ${d.prefijo ?? ''}`;
 
   cajaAsignada = false;
   cargarAutorizacion(): void {
-    const id = this.usuarioActual?.id_autorizacion_usuario;
+    const id = this.usuarioActual?.id_autorizacion_caja;
 
     // Valor por defecto
     this.cajaAsignada = false;
