@@ -14,6 +14,7 @@ import { PlanCuentaService } from 'src/app/services/plan-cuenta.service';
 import { TipoRetencionResponse, TipoRetencionService } from 'src/app/services/tipo-retencion.service';
 import { ConsultaSriService } from 'src/app/services/consultas.service';
 import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
+import { UsuarioService } from 'src/app/services/usuario.service';
 
 interface DialogData {
   modo: 'crear' | 'editar';
@@ -40,6 +41,10 @@ export class ProveedorDialogComponent implements OnInit {
   tipoProveedorSeleccionado: any;
   titulo: string = '';
   
+  //Validar internacional
+  esInternacional: boolean = false;
+  nombreTipoProveedor: string = '';
+
   // Arrays para combos
   paises: Pais[] = [];
   ciudades: CiudadResumen[] = [];
@@ -69,6 +74,7 @@ export class ProveedorDialogComponent implements OnInit {
     private planCuentaService: PlanCuentaService,
     private tipoRetencionService: TipoRetencionService,
     private consultaSriService: ConsultaSriService,
+    private usuarioService: UsuarioService,
     private dialog: MatDialog 
   ) {
     this.modo = data.modo;
@@ -79,10 +85,15 @@ export class ProveedorDialogComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.cargarCombos();
+    
+    this.esInternacional = this.tipoProveedorSeleccionado?.descripcion === 'INTERNACIONAL';
+    this.nombreTipoProveedor = this.tipoProveedorSeleccionado?.descripcion || 
+                              this.tipoProveedorSeleccionado?.nombre_tipo || '';
+  
+    
     this.inicializarFormularios();
     this.configurarListenersRetenciones(); 
-    
+    this.cargarCombos();
     if (this.modo === 'editar' && this.data.proveedor) {
       this.cargarDatosProveedor(this.data.proveedor);
     }
@@ -173,6 +184,9 @@ export class ProveedorDialogComponent implements OnInit {
         console.log('Planes Cuenta:', this.planesCuenta);
         
         this.isLoadingCombos = false;
+        if (this.esInternacional && this.modo === 'crear') {
+          this.asignarTipoContribuyenteNoAplica();
+        }
       },
       error: (error) => {
         console.error('Error cargando combos:', error);
@@ -182,16 +196,14 @@ export class ProveedorDialogComponent implements OnInit {
   }
 
   inicializarFormularios(): void {
-    const esInternacional = this.tipoProveedorSeleccionado?.nombre_tipo === 'INTERNACIONAL';
-    
     // FORMULARIO GENERAL
     this.formGeneral = this.fb.group({
       codigo_proveedor: [{ value: '', disabled: this.modo === 'editar' }],
-      ruc_prov: ['', esInternacional ? [] : [Validators.required]],
+      ruc_prov: ['', this.esInternacional ? [] : [Validators.required]],  
       nombre_prov: ['', [Validators.required]],
       nombre_comercial: [''],
       id_tipo_proveedor: [this.tipoProveedorSeleccionado?.id_tipo_proveedor || '', [Validators.required]],
-      id_tipo_contribuyente: ['', esInternacional ? [] : [Validators.required]],
+      id_tipo_contribuyente: ['', this.esInternacional ? [] : [Validators.required]],
       web_proveedor: [''],
       id_ciudad: ['', [Validators.required]],
       direccion_prov: ['', [Validators.required]],
@@ -295,6 +307,7 @@ export class ProveedorDialogComponent implements OnInit {
     // Marcar todos los campos como touched
     Object.values(this.formGeneral.controls).forEach(control => control.markAsTouched());
     Object.values(this.formAdicional.controls).forEach(control => control.markAsTouched());
+    const usuarioActual = this.usuarioService.getUsuarioActual();
 
     // Validar formulario principal
     if (this.formGeneral.invalid) {
@@ -307,6 +320,19 @@ export class ProveedorDialogComponent implements OnInit {
           title: 'Formulario Incompleto',
           message: 'Por favor complete todos los campos requeridos en la pestaña "Datos Generales".',
           type: 'warning',
+          showCancel: false,
+          confirmText: 'Entendido'
+        }
+      });
+      return;
+    }
+    if (!usuarioActual) {
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '350px',
+        data: {
+          title: 'Error de Sesión',
+          message: 'No se pudo obtener el usuario actual. Por favor inicie sesión nuevamente.',
+          type: 'error',
           showCancel: false,
           confirmText: 'Entendido'
         }
@@ -332,7 +358,9 @@ export class ProveedorDialogComponent implements OnInit {
       tel1_prov: formData.tel1_prov || null,
       tel2_prov: formData.tel2_prov || null,
       email_prov: formData.email_prov || null,
-      observaciones: formData.observaciones || null
+      observaciones: formData.observaciones || null,
+      usuario_creacion: this.modo === 'crear' ? usuarioActual.id_usuario : undefined,
+      usuario_modificacion: this.modo === 'editar' ? usuarioActual.id_usuario : undefined
     };
 
     console.log('📤 Datos a guardar:', proveedorData);
@@ -456,6 +484,12 @@ export class ProveedorDialogComponent implements OnInit {
       setTimeout(() => this.cargarDatosProveedor(proveedor), 100);
       return;
     }
+    const tipoProveedor = this.tiposProveedor.find(t => t.id_tipo_proveedor === proveedor.id_tipo_proveedor);
+    if (tipoProveedor) {
+      this.esInternacional = tipoProveedor.nombre_tipo === 'INTERNACIONAL';
+      this.nombreTipoProveedor = tipoProveedor.descripcion || tipoProveedor.nombre_tipo;
+    }
+    
     // Cargar datos en formulario general
     this.formGeneral.patchValue({
       codigo_proveedor: proveedor.codigo_proveedor,
@@ -514,28 +548,68 @@ export class ProveedorDialogComponent implements OnInit {
 
   //CONSULTAS A APIS
   consultarDocumento(): void {
-    const esInternacional = this.tipoProveedorSeleccionado?.nombre_tipo === 'INTERNACIONAL';
-    
     // Solo para proveedores NO internacionales
-    if (esInternacional) return;
+    if (this.esInternacional) return;
     
     const documento = this.formGeneral.get('ruc_prov')?.value?.trim();
     
-    if (!documento) return;
+    if (!documento && !this.esInternacional) {
+      // ✅ MENSAJE: Campo vacío
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '350px',
+        data: {
+          title: 'Campo Requerido',
+          message: 'Por favor ingrese un RUC o cédula para realizar la consulta.',
+          type: 'warning',
+          showCancel: false,
+          confirmText: 'Entendido'
+        }
+      });
+      return;
+    }
     
     // Determinar si es cédula (10) o RUC (13)
     if (documento.length === 10) {
       this.consultarCedula(documento);
     } else if (documento.length === 13) {
       this.consultarRuc(documento);
+    } else {
+      // ✅ MENSAJE: Longitud inválida
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '350px',
+        data: {
+          title: 'Documento Inválido',
+          message: 'El documento debe tener 10 dígitos (cédula) o 13 dígitos (RUC).',
+          type: 'warning',
+          showCancel: false,
+          confirmText: 'Entendido'
+        }
+      });
     }
   }
+
 
   private consultarRuc(ruc: string): void {
     console.log('🔍 Consultando RUC:', ruc);
     
+    // ✅ MOSTRAR LOADING
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      width: '350px',
+      disableClose: true,
+      data: {
+        title: 'Consultando RUC',
+        message: 'Obteniendo información del SRI...',
+        type: 'info',
+        isLoading: true,
+        loadingText: 'Por favor espere'
+      }
+    });
+    
     this.consultaSriService.consultarRuc(ruc).subscribe({
       next: (response) => {
+        // ✅ CERRAR LOADING
+        loadingDialog.close();
+        
         if (response.ok && response.consulta && response.consulta.length > 0) {
           const data = response.consulta[0];
           
@@ -548,14 +622,51 @@ export class ProveedorDialogComponent implements OnInit {
           
           // Buscar tipo contribuyente por nombre
           this.buscarTipoContribuyente(data.tipoContribuyente);
+          
+          // ✅ MENSAJE: Éxito
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '350px',
+            data: {
+              title: 'Datos Obtenidos',
+              message: 'La información del RUC ha sido cargada correctamente.',
+              type: 'success',
+              showCancel: false,
+              confirmText: 'Aceptar'
+            }
+          });
+        } else {
+          // ✅ MENSAJE: No se encontró información
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '350px',
+            data: {
+              title: 'RUC No Encontrado',
+              message: 'No se encontró información para el RUC ingresado en el SRI.',
+              type: 'warning',
+              showCancel: false,
+              confirmText: 'Entendido'
+            }
+          });
         }
       },
       error: (error) => {
         console.error('❌ Error consultando RUC:', error);
+        
+        // ✅ CERRAR LOADING Y MOSTRAR ERROR
+        loadingDialog.close();
+        
+        this.dialog.open(CustomMessageBoxComponent, {
+          width: '350px',
+          data: {
+            title: 'Error de Conexión',
+            message: 'No se pudo conectar con el servicio del SRI para consultar el RUC. Por favor verifique su conexión a internet o intente más tarde.',
+            type: 'error',
+            showCancel: false,
+            confirmText: 'Entendido'
+          }
+        });
       }
     });
   }
-
   private buscarTipoContribuyente(tipoNombre: string): void {
     if (!tipoNombre) return;
     
@@ -581,8 +692,24 @@ export class ProveedorDialogComponent implements OnInit {
   private consultarCedula(cedula: string): void {
     console.log('🔍 Consultando Cédula:', cedula);
     
+    // ✅ MOSTRAR LOADING
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      width: '350px',
+      disableClose: true,
+      data: {
+        title: 'Consultando Cédula',
+        message: 'Obteniendo información del registro civil...',
+        type: 'info',
+        isLoading: true,
+        loadingText: 'Por favor espere'
+      }
+    });
+    
     this.consultaSriService.consultarCedula(cedula).subscribe({
       next: (response) => {
+        // ✅ CERRAR LOADING
+        loadingDialog.close();
+        
         if (response.ok && response.consulta) {
           const data = response.consulta;
           
@@ -596,12 +723,67 @@ export class ProveedorDialogComponent implements OnInit {
             nombre_prov: data.nombre || '',
             direccion_prov: direccion || ''
           });
+          
+          // ✅ MENSAJE: Éxito
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '350px',
+            data: {
+              title: 'Datos Obtenidos',
+              message: 'La información de la cédula ha sido cargada correctamente.',
+              type: 'success',
+              showCancel: false,
+              confirmText: 'Aceptar'
+            }
+          });
+        } else {
+          // ✅ MENSAJE: No se encontró información
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '350px',
+            data: {
+              title: 'Cédula No Encontrada',
+              message: 'No se encontró información para la cédula ingresada.',
+              type: 'warning',
+              showCancel: false,
+              confirmText: 'Entendido'
+            }
+          });
         }
       },
       error: (error) => {
         console.error('❌ Error consultando Cédula:', error);
+        
+        // ✅ CERRAR LOADING Y MOSTRAR ERROR
+        loadingDialog.close();
+        
+        this.dialog.open(CustomMessageBoxComponent, {
+          width: '350px',
+          data: {
+            title: 'Error de Conexión',
+            message: 'No se pudo conectar con el servicio del registro civil para consultar la cédula. Por favor verifique su conexión a internet o intente más tarde.',
+            type: 'error',
+            showCancel: false,
+            confirmText: 'Entendido'
+          }
+        });
       }
     });
+  }
+  // Metodo para asignar tipo de contribuyente cuando sea internacional
+  asignarTipoContribuyenteNoAplica(): void {
+    const noAplica = this.tiposContribuyente.find(t => 
+      t.descripcion?.toUpperCase().includes('NO APLICA') ||
+      t.descripcion?.toUpperCase().includes('INTERNACIONAL') ||
+      t.descripcion?.toUpperCase() === 'N/A'
+    );
+    
+    if (noAplica) {
+      this.formGeneral.patchValue({
+        id_tipo_contribuyente: noAplica.id_tipo_contribuyente
+      });
+      console.log('✅ Tipo contribuyente "NO APLICA" asignado:', noAplica.descripcion);
+    } else {
+      console.warn('⚠️ No se encontró tipo contribuyente "NO APLICA" en la base de datos');
+    }
   }
 
 }

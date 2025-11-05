@@ -1020,7 +1020,7 @@ private cargarFacturaSaldo(datos: any): void {
   const digits = (datos.numeroFactura ?? '').replace(/\D/g, '');
   if (digits.length >= 6) {
     this.encabezado.sucursal2 = digits.slice(0, 3);
-    this.encabezado.caja2 = digits.slice(3, 3);
+    this.encabezado.caja2 = digits.slice(3, 6);
   }
 
   // Cargar datos completos del cliente (RUC y Dirección)

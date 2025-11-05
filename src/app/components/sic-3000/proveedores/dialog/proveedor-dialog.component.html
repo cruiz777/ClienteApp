@@ -1,7 +1,9 @@
 <div class="dialog-container">
   <!-- Header del Dialog -->
   <div class="dialog-header">
-    <h2 mat-dialog-title>{{ titulo }}</h2>
+    <h2 mat-dialog-title>{{ titulo }}
+      <span class="badge-tipo-proveedor">{{ nombreTipoProveedor }}</span>
+    </h2>
     <button mat-icon-button mat-dialog-close class="btn-cerrar">
       <mat-icon>close</mat-icon>
     </button>
@@ -66,10 +68,10 @@
               
               <div class="col-md-3">
                 <mat-form-field appearance="outline" class="w-100">
-                  <mat-label>{{ tipoProveedorSeleccionado?.nombre_tipo === 'INTERNACIONAL' ? 'Documento' : 'RUC' }}</mat-label>
+                <mat-label>{{ esInternacional ? 'Doc. del Exterior' : 'RUC/CI' }}</mat-label>
                   <input matInput formControlName="ruc_prov" 
-                        [placeholder]="tipoProveedorSeleccionado?.nombre_tipo === 'INTERNACIONAL' ? 'Número de documento' : 'RUC del proveedor'"
-                        [maxlength]="tipoProveedorSeleccionado?.nombre_tipo === 'INTERNACIONAL' ? 20 : 13"
+                        [placeholder]="tipoProveedorSeleccionado?.descripcion === 'INTERNACIONAL' ? 'Nro de documento' : 'RUC/CI del proveedor'"
+                        [maxlength]="tipoProveedorSeleccionado?.descripcion === 'INTERNACIONAL' ? 20 : 13"
                         (blur)="consultarDocumento()">
                   <mat-error *ngIf="formGeneral.get('ruc_prov')?.hasError('required')">
                     Campo requerido
