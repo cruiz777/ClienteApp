@@ -155,7 +155,7 @@ export class NotaCreditoComponent implements OnInit {
   clientesCodigo: number = 0;
   totalHaberFactura: number = 0;
   saldoFacturaPendiente: number = 0;
-
+  totalFacturaOriginalSaldo: number = 0;
   encabezado = {
     sucursal: '',   // 👈 necesario
     caja: '',
@@ -256,13 +256,17 @@ export class NotaCreditoComponent implements OnInit {
     {
       headerName: 'Cant.Dev.',
       field: 'cantidadd',
-      editable: true,
+      editable: (params) => !this.esFacturaDeSaldo,
       width: 110,
       type: 'rightAligned',
       valueParser: this.numberParser,
       valueFormatter: this.numberDot2d,
       valueSetter: (p) => {
         const row = p.data as Detalle;
+        if (this.esFacturaDeSaldo) {
+          row.cantidadd = 1; // Si la factura es de saldo siempre sera cantidad 1
+          return true;
+        }
         const max = this.asNumber(row.cantidad);
         let val = this.asNumber(p.newValue);
         if (val < 0) val = 0;
@@ -348,7 +352,14 @@ export class NotaCreditoComponent implements OnInit {
           }
         }
         row.porMonto = true;
-        if (!(this.asNumber(row.cantidadd) > 0)) row.cantidadd = 1; // si no tiene, poner 1
+        // if (!(this.asNumber(row.cantidadd) > 0)) row.cantidadd = 1; // si no tiene, poner 1
+        // Si es factura de saldo, SIEMPRE cantidad = 1 (no condicional)
+        if (this.esFacturaDeSaldo) {
+          row.cantidadd = 1;
+        } else {
+          // Solo si NO es de saldo, usar lógica original
+          if (!(this.asNumber(row.cantidadd) > 0)) row.cantidadd = 1;
+        }
         row.valorDev = +val.toFixed(2);                            // base
         row.ivaDev = +((row.valorDev) * (ivaPct / 100)).toFixed(2);
 
@@ -585,8 +596,8 @@ export class NotaCreditoComponent implements OnInit {
     totalPago = +totalPago.toFixed(2);
 
     const totalDevConIva = +(totalDev + totalIvaDev).toFixed(2);
-    
-    // ✅ NUEVA LÓGICA: Si es factura de saldo, usar el saldo como tope
+    const totalOriginal = +(subtotal + iva).toFixed(2);
+    // NUEVA LÓGICA: Si es factura de saldo, usar el saldo como tope
     let totalFacturaConIva: number;
     let subtotalFactura: number;
     let ivaFactura: number;
@@ -594,17 +605,18 @@ export class NotaCreditoComponent implements OnInit {
     let baseIvaFactura: number;
 
     if (this.esFacturaDeSaldo && this.saldoFacturaPendiente > 0) {
-      // Para facturas de saldo, los totales son el saldo disponible
-      totalFacturaConIva = this.saldoFacturaPendiente;
+      // Calcular el DEBE original: Saldo + Haber
+      const debeOriginal = this.saldoFacturaPendiente + (this.totalHaberFactura || 0);
       
-      // Calcular IVA proporcional (asumiendo 15% por defecto)
-      const factorIva = 1.15; // 1 + (15/100)
-      subtotalFactura = +(totalFacturaConIva / factorIva).toFixed(2);
-      ivaFactura = +(totalFacturaConIva - subtotalFactura).toFixed(2);
-      
-      // Para simplificar, asumimos todo con IVA en facturas de saldo
+      // El Total Factura es el DEBE original
+      totalFacturaConIva = debeOriginal;
+      subtotalFactura = debeOriginal;
+      ivaFactura = 0;
       base0Factura = 0;
-      baseIvaFactura = subtotalFactura;
+      baseIvaFactura = 0;
+      
+      // ✅ Guardar para mostrarlo en "Debe" del grid
+      this.totalFacturaOriginalSaldo = debeOriginal;
     } else {
       // Lógica normal para facturas con detalle
       totalFacturaConIva = +(subtotal + iva).toFixed(2);
@@ -706,6 +718,7 @@ export class NotaCreditoComponent implements OnInit {
     this.guardado = false;
     this.encabezado.numero = '';
     this.esFacturaDeSaldo = false;
+    this.totalFacturaOriginalSaldo = 0;
   }
 
   get diferenciaPago(): number {
@@ -902,7 +915,7 @@ export class NotaCreditoComponent implements OnInit {
     this.errorFactura = null;
     this.buscandoFactura = true;
 
-    // ✅ PASO 1: Validar con el nuevo endpoint PRIMERO
+    // PASO 1: Validar con el nuevo endpoint PRIMERO
     this.svc.validarFacturaParaNC(entrada).subscribe({
       next: (validacion) => {
         if (!validacion.success || !validacion.data) {
@@ -911,11 +924,11 @@ export class NotaCreditoComponent implements OnInit {
           return;
         }
 
-        // ✅ PASO 2: Detectar si es factura de saldo
+        // PASO 2: Detectar si es factura de saldo
         this.esFacturaDeSaldo = !validacion.data.existeEnNota;
         this.datosFacturaValidada = validacion.data;
 
-        // ✅ PASO 3: Si es factura de saldo, cargar productos manualmente
+        // PASO 3: Si es factura de saldo, cargar productos manualmente
         if (this.esFacturaDeSaldo) {
           this.mostrarMensajeFacturaSaldo(validacion.data);
           this.cargarFacturaSaldo(validacion.data);
@@ -1015,7 +1028,7 @@ private cargarFacturaSaldo(datos: any): void {
 
   this.totalHaberFactura = datos.totalPagado;
   this.saldoFacturaPendiente = datos.saldoPendiente;
-
+  
   // ✅ Extraer sucursal2 y caja2 de la factura
   const digits = (datos.numeroFactura ?? '').replace(/\D/g, '');
   if (digits.length >= 6) {
@@ -1331,6 +1344,13 @@ onProductoSelectedNC(codpro: string): void {
   }
 
   private getDebeVisual(): number {
+    //SOLO si es factura de saldo, usar el total original guardado
+
+    if (this.esFacturaDeSaldo && this.totalFacturaOriginalSaldo > 0) {
+      return this.totalFacturaOriginalSaldo;
+    }
+  
+    // Lógica normal (sin cambios)
     return this.totales.totalFacturaConIva || 0;
   }
 
