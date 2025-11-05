@@ -12,6 +12,7 @@ import { ReversionPagoComponent } from './reversion-pago/reversion-pago.componen
 import { NotaDebitoComponent } from './nota-debito/nota-debito.component';
 import { NotaCreditoComponent } from './nota-credito/nota-credito.component';
 import { ExploradorEstadoCuentaComponent } from './explorador-estado-cuenta/explorador-estado-cuenta.component';
+import { CreacionAnticiposComponent } from './anticipos/creacion-anticipos/creacion-anticipos.component';
 
 
 const routes: Routes = [
@@ -30,6 +31,7 @@ const routes: Routes = [
       { path: 'reversionPago', component: ReversionPagoComponent },
       { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
       { path: 'exp-estado-cuenta', component: ExploradorEstadoCuentaComponent},
+      { path: 'creacion-anticipos', component: CreacionAnticiposComponent},
     ]
 
   }

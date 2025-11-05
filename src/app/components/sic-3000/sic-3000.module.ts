@@ -33,6 +33,7 @@ import { ReversionPagoComponent } from './reversion-pago/reversion-pago.componen
 import { NotaDebitoComponent } from './nota-debito/nota-debito.component';
 import { NotaCreditoComponent } from './nota-credito/nota-credito.component';
 import { ExploradorEstadoCuentaComponent } from './explorador-estado-cuenta/explorador-estado-cuenta.component';
+import { CreacionAnticiposComponent } from './anticipos/creacion-anticipos/creacion-anticipos.component';
 
 @NgModule({
   declarations: [
@@ -45,7 +46,8 @@ import { ExploradorEstadoCuentaComponent } from './explorador-estado-cuenta/expl
     ProductosSicComponent,
     NotaDebitoComponent,
     NotaCreditoComponent,
-    ExploradorEstadoCuentaComponent
+    ExploradorEstadoCuentaComponent,
+    CreacionAnticiposComponent
 
   ],
   imports: [
