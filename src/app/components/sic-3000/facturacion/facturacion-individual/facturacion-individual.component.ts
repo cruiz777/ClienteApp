@@ -473,10 +473,7 @@ export class FacturacionIndividualComponent implements OnInit {
 
   ngOnInit(): void {
     this.usuarioActual = this.usuarioService.getUsuarioActual();
-    this.cargarIvasVigentes();
-    this.cargarAutorizacion();
-
-    this.cargarProductos();
+    
     // Formularios
     this.formCliente = this.fb.group({
       clienteCodigo: [0, [Validators.required, Validators.min(1)]],
@@ -595,7 +592,10 @@ export class FacturacionIndividualComponent implements OnInit {
         return of([] as FormaPagoResponse[]);
       })
     );
+    this.cargarIvasVigentes();
+    this.cargarAutorizacion();
 
+    this.cargarProductos();
     this.cargarDescuentos();
     this.configurarFiltroDescuentos();
   }
@@ -946,27 +946,32 @@ export class FacturacionIndividualComponent implements OnInit {
     });
   }
 
+private cargandoAutorizacion = false;
+cargarAutorizacion(): void {
+  // Evita ejecuciones simultáneas o repetidas
+  if (this.cargandoAutorizacion) return;
+  this.cargandoAutorizacion = true;
 
-cargarAutorizacion() {
   const id = this.usuarioActual?.id_autorizacion_caja;
 
   // Si no hay autorización asociada en el usuario
   if (id == null) {
     this.avisarCajaNoAsignada();
+    this.cargandoAutorizacion = false; // libera bandera
     return;
   }
 
   const idNum = Number(id);
 
   this.autorizacionCajaService.getAutorizacionCaja(idNum).subscribe({
-    next: ({ data, type, message }) => {
-      // Cuando el API devuelve Success pero sin data
+    next: ({ data }) => {
       if (!data) {
         this.avisarCajaNoAsignada();
+        this.cargandoAutorizacion = false;
         return;
       }
 
-      // OK: carga datos en el form y marca como asignada
+      // ✅ OK: carga datos en el form y marca como asignada
       this.formCaja.patchValue({
         secuencial: this.padLeft(data.numero_factura, 9),
         caja: data.caja ?? '',
@@ -974,21 +979,22 @@ cargarAutorizacion() {
       }, { emitEvent: false });
 
       this.cajaAsignada = true;
+      this.cargandoAutorizacion = false;
     },
     error: (err) => {
-      // Casos típicos del backend
       const notFound =
         err?.status === 404 ||
         (err?.error?.type || '').toString().toLowerCase() === 'notfound' ||
         /no encontrada/i.test(err?.error?.message || '');
 
       if (notFound) {
-        // Ej: {"type":"NotFound","message":"AutorizacionCaja con ID 4 no encontrada"}
         this.avisarCajaNoAsignada();
       } else {
         console.error('Error cargando autorización de caja', err);
         this.mostrarAlerta('Error al consultar la autorización de caja', 'error');
       }
+
+      this.cargandoAutorizacion = false; // ✅ liberar bandera
     }
   });
 }
