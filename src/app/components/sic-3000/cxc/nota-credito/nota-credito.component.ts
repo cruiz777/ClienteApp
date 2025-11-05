@@ -1495,8 +1495,7 @@ onProductoSelectedNC(codpro: string): void {
 
   cajaAsignada = false;
   cargarAutorizacion(): void {
-    const id = this.usuarioActual?.id_autorizacion_usuario;
-
+    const id = this.usuarioActual?.id_autorizacion_caja;
     // valor por defecto
     this.cajaAsignada = false;
 

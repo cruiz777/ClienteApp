@@ -10,7 +10,7 @@
         <input id="codigoCliente" type="text" formControlName="codigoCliente" readonly />
       </div>
 
-      <div class="col-2">
+      <div class="full-width">
         <label for="cliente">Cliente:</label>
         <input id="cliente" type="text" formControlName="cliente" readonly />
       </div>
@@ -80,10 +80,16 @@
       </div>
 
       <!-- Campos editables principales -->
-      <div class="col-2">
-        <label>Descripción:</label>
-        <input type="text" formControlName="descripcion" (blur)="convertirAMayusculas('descripcion')" />
-      </div>
+      <!-- Input ancho: ocupa 4 columnas del grid -->
+<div class="full-width">
+  <label>Descripción:</label>
+  <input type="text"
+         formControlName="descripcion"
+         (blur)="convertirAMayusculas('descripcion')"
+         style="width: 100%;" />
+</div>
+
+
 
       <div>
         <label>Marca:</label>
