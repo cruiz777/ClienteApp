@@ -1,0 +1,122 @@
+/* Contenedor principal */
+.card {
+  max-width: 980px;
+  margin: 24px auto;
+  padding: 18px 22px 28px;
+  background: #ffffff;
+}
+
+/* Título */
+.title {
+  font-size: 20px;
+  font-weight: 700;
+  margin: 6px 0 22px;
+  color: #1f2a44;
+}
+
+/* Layout de formularios */
+.form-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(200px, 1fr));
+  gap: 22px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+}
+
+.field label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 6px;
+}
+
+.field input[type="date"],
+.field select,
+.field input[type="text"] {
+  height: 36px;
+  padding: 6px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #f9fafb;
+  outline: none;
+  transition: border-color .15s ease, background .15s ease;
+}
+
+.field input:focus,
+.field select:focus {
+  border-color: #c7d2fe;
+  background: #ffffff;
+}
+
+/* Mensajes de error */
+.error {
+  margin-top: 6px;
+  color: #b91c1c;
+  font-size: 12px;
+}
+
+/* Checkboxes centrados */
+.checks {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 34px;
+  margin-top: 6px;
+}
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #374151;
+}
+
+/* Botones alineados en horizontal */
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 12px;
+}
+
+/* Estilos de botones tipo “soft” */
+.btn {
+  min-width: 120px;
+  height: 38px;
+  padding: 0 18px;
+  border-radius: 8px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-weight: 600;
+  transition: filter .15s ease, background .15s ease, border-color .15s ease;
+}
+
+.btn-primary {
+  background: #e8efff;      /* azul muy suave */
+  color: #1e3a8a;
+  border-color: #dbe6ff;
+}
+
+.btn-primary:hover { filter: brightness(0.98); }
+
+.btn-light {
+  background: #f3f4f6;
+  color: #111827;
+  border-color: #e5e7eb;
+}
+
+.btn-light:hover { filter: brightness(0.98); }
+
+/* Responsive */
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+}

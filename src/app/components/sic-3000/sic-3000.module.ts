@@ -34,6 +34,7 @@ import { NotaDebitoComponent } from './nota-debito/nota-debito.component';
 import { NotaCreditoComponent } from './nota-credito/nota-credito.component';
 import { ExploradorEstadoCuentaComponent } from './explorador-estado-cuenta/explorador-estado-cuenta.component';
 import { CreacionAnticiposComponent } from './anticipos/creacion-anticipos/creacion-anticipos.component';
+import { ReporteAnticiposComponent } from './anticipos/reporte-anticipos/reporte-anticipos.component';
 
 @NgModule({
   declarations: [
@@ -47,8 +48,8 @@ import { CreacionAnticiposComponent } from './anticipos/creacion-anticipos/creac
     NotaDebitoComponent,
     NotaCreditoComponent,
     ExploradorEstadoCuentaComponent,
-    CreacionAnticiposComponent
-
+    CreacionAnticiposComponent,
+    ReporteAnticiposComponent
   ],
   imports: [
     CommonModule,
