@@ -34,6 +34,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { AgGridModule } from 'ag-grid-angular';
+import { ProductosSicComponent } from './productos-sic/productos-sic.component';
 
 
 
@@ -43,7 +44,8 @@ import { AgGridModule } from 'ag-grid-angular';
     InicioSicComponent,
     NavigationSicComponent,
     EstadocuentaclienteComponent,
-    CobroIndividualComponent
+    CobroIndividualComponent,
+    ProductosSicComponent
     // ❌ No declarar FacturacionIndividualComponent porque es standalone
   ],
   imports: [

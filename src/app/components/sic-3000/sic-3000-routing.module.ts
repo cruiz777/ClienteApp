@@ -10,9 +10,10 @@ import { FacturacionGlobalComponent } from './facturacion/facturacion-global/fac
 import { AuthGuard } from 'src/app/guards/auth.guard';
 import { PermissionGuard } from 'src/app/guards/permission.guard';
 import { CobroIndividualComponent } from './cobro-individual/cobro-individual.component';
-import { SectorComponent } from './prueba/sector/sector.component';
+
 //hermann
-import { TipcuentaComponent } from './tipocuenta/tipcuenta/tipcuenta.component';
+
+import { ProductosSicComponent } from './productos-sic/productos-sic.component';
 
 
 const routes: Routes = [
@@ -47,9 +48,8 @@ const routes: Routes = [
         data: { permission: 'sic-3000.cuentas-por-cobrar.registro-cobros' }
       },
       { path: 'cobroIndividual', component: CobroIndividualComponent },
-      { path: 'sectores', component: SectorComponent },
-      //hermann
-      { path: 'tipocuenta', component: TipcuentaComponent },
+      
+      
 
       { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
    
@@ -67,7 +67,22 @@ const routes: Routes = [
         component: FacturacionGlobalComponent,
         canActivate: [PermissionGuard],
         data: { permission: 'sic-3000.facturacion.facturacion-global' } 
-      }
+      },
+      // ✅ Ruta para EDITAR producto (con ID)
+      { 
+        path: 'productossic/:idProducto', 
+        component: ProductosSicComponent 
+      },
+      // ✅ Ruta para CREAR producto desde estructura
+      { 
+        path: 'productossic/estructura/:idEstructura', 
+        component: ProductosSicComponent 
+      },
+      // ✅ Ruta para crear producto sin estructura (por si acaso)
+      { 
+        path: 'productossic', 
+        component: ProductosSicComponent 
+      },
     ]
   }
 ];

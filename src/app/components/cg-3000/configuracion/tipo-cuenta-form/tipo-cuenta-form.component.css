@@ -1,0 +1,255 @@
+/* ====== Base ====== */
+.form-card {
+  width: 100%;
+  max-width: 1200px;     /* más ancho en desktop */
+  padding: 24px;         /* más “aire” interno */
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #fff;
+  overflow: hidden;       /* importante para redondeo del header */
+
+}
+
+/* Contenedor de filas (una fila por campo) */
+.form-grid {
+  display: grid;
+  gap: var(--gap);
+  padding: 16px;
+}
+
+
+
+/* Controles */
+.in {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
+  background: #fff;
+}
+.in:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99,102,241,.15);
+}
+
+/* Campo ancho (Descripción) puede crecer más sin romper layout */
+.form-field--wide {
+  grid-template-columns: var(--label-w) 1fr;
+}
+
+/* Hint debajo, alineado al inicio del control */
+.hint {
+  grid-column: 2 / 3;       /* debajo del control */
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+/* Botones centrados */
+
+
+/* Botones (azul -> celeste) */
+.btn-azul {
+  background: #093679; color: #fff; border: 1px solid #0d6efd;
+  padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.btn-azul:hover { background: #48b0ff; border-color: #48b0ff; }
+.btn-ghost {
+  background: #fff; color: #374151; border: 1px solid #d1d5db;
+  padding: 8px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;
+}
+
+/* ====== Responsivo ====== */
+/* Tablets pequeñas: reduce ancho de etiqueta */
+@media (max-width: 880px) {
+  .form-card { --label-w: 150px; }
+}
+
+/* Móviles: etiqueta arriba, control abajo (stack) */
+@media (max-width: 640px) {
+  .form-card { --label-w: 100%; }
+  .form-field {
+    grid-template-columns: 1fr;     /* una sola columna */
+    row-gap: 6px;
+  }
+  .form-field > label {
+    justify-self: start;            /* etiqueta a la izquierda */
+  }
+  .hint {
+    grid-column: 1 / -1;            /* ocupa ancho completo */
+    margin-left: 0;
+  }
+}
+
+/* Muy chico (<=360px): acomoda paddings fuente */
+@media (max-width: 360px) {
+  .in { padding: 7px 9px; }
+  .btn-azul, .btn-ghost { padding: 7px 14px; }
+}
+
+
+.form-actions {
+  display: flex;
+  justify-content: center;  /* centra horizontalmente */
+  align-items: center;      /* alinea verticalmente */
+  gap: 10px;                /* espacio entre botones */
+ /* margin-top: 14px;*/
+  padding: 0 16px 16px;   /* padding inferior del card */
+
+}
+
+/* opcional: que en móvil no cambie nada */
+@media (max-width: 640px) {
+  .form-actions { justify-content: center; }
+}
+
+
+/* === Labels y campos alineados a la izquierda === */
+.form-field {
+  display: grid;
+  grid-template-columns: 160px 1fr; /* etiqueta | control */
+  align-items: center;
+  column-gap: 10px;
+}
+
+.form-field > label {
+  justify-self: start;   /* etiqueta a la izquierda */
+  text-align: left;      /* texto de la etiqueta a la izquierda */
+  margin: 0;
+  font-weight: 600;
+}
+
+.form-field .in {
+  justify-self: start;   /* control a la izquierda */
+  width: 100%;           /* ocupa el ancho disponible de su columna */
+}
+
+/* Para el campo ancho (Descripción), sigue a la izquierda */
+.form-field.form-field--wide {
+  grid-template-columns: 160px 1fr;
+}
+
+/* Hint debajo del control, alineado a la izquierda */
+.form-field .hint {
+  grid-column: 2 / 3;
+  margin-top: 4px;
+  margin-left: 0;
+  text-align: left;
+  color: #6b7280;
+  font-size: 12px;
+}
+
+.form-header {
+  width: 100%;
+  background: #0d6efd;    /* azul */
+  color: #fff;
+  padding: 12px 16px;     /* alto de la franja */
+  font-weight: 700;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+}
+
+.in.invalid {
+  border-color: #ef4444;             /* rojo */
+  box-shadow: 0 0 0 3px rgba(239,68,68,.15);
+}
+.error {
+  margin-top: 4px;
+  color: #b91c1c;
+  font-size: 12px;
+}
+
+.form-title {
+  font-weight: 800;      /* negrita */
+  color: #0d6efd;        /* azul (ajústalo a tu paleta) */
+  font-size: 1.5rem;     /* más grande (~24px) */
+  margin: 0 0 12px 0;
+  line-height: 1.2;
+}
+
+.btn-rojo {
+  background: #dc2626;
+  color: #fff;
+  border: 1px solid #dc2626;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+}
+.btn-rojo:hover { background: #ef4444; border-color: #ef4444; }
+
+
+
+.form-group {
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+
+h3 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #002c6c;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+
+input,
+select {
+ /* padding: 10px 12px;*/
+  padding: 6px 10px; 
+  border-radius: 6px;
+  border: 1px solid #ccd5e2;
+  background-color: #eef4f7;
+  /*font-size: 14px;*/
+  font-size: 13px; 
+   height: 34px; 
+}
+
+
+/*  colores de los fondos de texti */
+
+/* Fondo general de inputs en modo edición */
+.form-container.edit-mode input,
+.form-container.edit-mode select,
+.form-container.edit-mode textarea {
+  background-color: #fff7d6;      /* amarillo suave */
+  border-color: #e5b400;
+  color: #333;
+}
+
+/* Foco en modo edición */
+.form-container.edit-mode input:focus,
+.form-container.edit-mode select:focus,
+.form-container.edit-mode textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(229, 180, 0, 0.25);
+  border-color: #d4a100;
+}
+
+/* Estilo visual para campos sólo lectura (cuando estás editando) */  
+.form-container.edit-mode input[readonly],
+.form-container.edit-mode textarea[readonly] {
+  cursor: not-allowed;
+  opacity: 0.9;
+  background-image: linear-gradient(transparent, transparent); /* evita estilos grises del navegador */
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(246, 246, 244, 0.25);
+  border-color: #f3f3f7;
+  background-color: #eae6e6;
+}
+
+/* (Opcional) si sólo quieres colorear los readonly en edit-mode, usa esto en lugar del bloque general:
+.form-container.edit-mode input:read-only,
+.form-container.edit-mode select:read-only,
+.form-container.edit-mode textarea:read-only {
+  background-color: #fff7d6;
+  border-color: #e5b400;
+}
+*/

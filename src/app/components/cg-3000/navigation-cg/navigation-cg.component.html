@@ -218,56 +218,7 @@
           </mat-expansion-panel>
         </mat-expansion-panel>
         <!-- Anexo Transaccional-->
-        <mat-expansion-panel>
-          <mat-expansion-panel-header>
-            <mat-panel-title>
-              <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
-              <span *ngIf="isExpanded" class="menu-text">Anexo Transaccional</span>
-            </mat-panel-title>
-          </mat-expansion-panel-header>
-          <!-- Subgrupo: Parámetros -->
-          <mat-expansion-panel>
-            <mat-expansion-panel-header>
-              <mat-panel-title>
-                <span *ngIf="isExpanded" class="menu-text">Parámetros</span>
-              </mat-panel-title>
-            </mat-expansion-panel-header>
-            <!-- Nivel 3: Parámetros-->
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Parámetros Facturación</span>
-            </a>
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Parámetros Clientes</span>
-            </a>
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Parámetros Caja</span>
-            </a>
-
-          </mat-expansion-panel>
-          <!-- Subgrupo: Descuentos-->
-          <mat-expansion-panel hideToggle>
-            <mat-expansion-panel-header (click)="goTo('ruta aqui')" class="clickable-header">
-              <mat-panel-title>
-                <span *ngIf="isExpanded" class="menu-text">Descuentos</span>
-              </mat-panel-title>
-            </mat-expansion-panel-header>
-          </mat-expansion-panel>
-          <!-- Subgrupo: Forma de Pago -->
-          <mat-expansion-panel>
-            <mat-expansion-panel-header>
-              <mat-panel-title>
-                <span *ngIf="isExpanded" class="menu-text">Forma de Pago</span>
-              </mat-panel-title>
-            </mat-expansion-panel-header>
-            <!-- Nivel 3: Forma de Pago-->
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Clasificación de Pagos</span>
-            </a>
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Forma de Pago</span>
-            </a>
-          </mat-expansion-panel>
-        </mat-expansion-panel>
+        
         <!-- Activos Fijos-->
         <mat-expansion-panel>
           <mat-expansion-panel-header>
@@ -327,11 +278,49 @@
               <span *ngIf="isExpanded" class="menu-text">Configuración</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
-          <mat-expansion-panel>      
-            <a mat-list-item routerLink="">
+
+           <a  mat-list-item [routerLink]="'/cg-3000/bancos'">
+              <span *ngIf="isExpanded" class="menu-text">Bancos</span>
+           </a>
+
+           <a  mat-list-item [routerLink]="'/cg-3000/bancosempresa'">
+              <span *ngIf="isExpanded" class="menu-text">Bancos Empresa</span>
+           </a>
+
+            <a  mat-list-item [routerLink]="'/cg-3000/bancosterceros'">
+              <span *ngIf="isExpanded" class="menu-text">Bancos Terceros</span>
+            </a>
+          
+            <a  mat-list-item [routerLink]="'/cg-3000/tipocomprobantesri'">
+              <span *ngIf="isExpanded" class="menu-text">Comprobantes SRI</span>
+            </a>
+
+            <a  mat-list-item [routerLink]="'/cg-3000/codigoscontables'">
+              <span *ngIf="isExpanded" class="menu-text">Codigos Contables</span>
+            </a>
+
+            <a  mat-list-item [routerLink]="'/cg-3000/fechascontrol'">
+              <span *ngIf="isExpanded" class="menu-text">Fechas de Control</span>
+            </a>
+            
+            <a  mat-list-item [routerLink]="'/cg-3000/plancuentas'">
+              <span *ngIf="isExpanded" class="menu-text">Plan de Cuentas</span>
+            </a>
+
+            <a  mat-list-item [routerLink]="'/cg-3000/numeroCheques'">
+              <span *ngIf="isExpanded" class="menu-text">Numeración Cheques</span>
+            </a>
+
+            <a  mat-list-item [routerLink]="'/cg-3000/tipoasiento'">
+              <span *ngIf="isExpanded" class="menu-text">Tipo Documento</span>
+            </a>
+            <a  mat-list-item [routerLink]="'/cg-3000/tipocuenta'">
               <span *ngIf="isExpanded" class="menu-text">Tipo Cuentas</span>
             </a>
-          </mat-expansion-panel>          
+            <a  mat-list-item [routerLink]="'/cg-3000/tiporetencion'">
+              <span *ngIf="isExpanded" class="menu-text">Tipo Retenciones</span>
+            </a>
+            
         </mat-expansion-panel>
 
       </mat-accordion>

@@ -1,0 +1,1007 @@
+.wrap {
+  display: grid;
+  grid-template-columns: 1fr 1.1fr;
+  gap: px;
+  height: calc(100vh - 80px);
+}
+
+.left-pane, .right-pane {
+  background: var(--surface, #bf0c0c08);
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 14px;
+  padding: 6px;
+  overflow: auto;
+ 
+}
+
+
+.toolbar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.error {
+  color: #e53935;
+  margin: 6px 0 10px;
+}
+
+.tree .node-label {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.tree .node-label:hover {
+  background:#ef6c00 ; /*#ef6c00 tomate  #093679 azul*/
+   color: #fff !important;
+}
+
+.tree .actions {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 2px;
+}
+
+.inactive {
+  opacity: 0.6;
+  text-decoration: line-through;
+}
+
+.right-pane .panel-title {
+  margin: 4px 0 12px;
+  font-weight: 600;
+}
+
+.form .grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.form .grid.aux {
+  margin-top: 8px;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+
+/* ====== Compact global ====== */
+.layout.compact{
+  --fs:11px;         /* texto base */
+  --fs-label:11px; /* etiquetas */
+  --control-h:32px;  /* alto de inputs/botones */
+  --pad-x:6px;       /* padding X */
+  --pad-y:3px;       /* padding Y */
+  --gap:6px;
+  --radius:6px;
+}
+
+/* ====== FORM ====== */
+.layout.compact .form-grid .row{ gap:var(--gap); margin-bottom:var(--gap); }
+
+.layout.compact label{
+  font-size:var(--fs-label);
+  line-height:1.05;
+  margin-bottom:2px;
+}
+
+.layout.compact input[type="text"],
+.layout.compact input[type="number"],
+.layout.compact input[type="month"],
+.layout.compact input[type="date"],
+.layout.compact input[type="time"],
+.layout.compact input[type="email"],
+.layout.compact input[type="password"],
+.layout.compact select,
+.layout.compact textarea{
+  font-size:var(--fs);
+  height:var(--control-h);
+  padding:var(--pad-y) var(--pad-x);
+  border-radius:var(--radius);
+}
+
+.layout.compact input[readonly]{ opacity:.9; }
+
+.layout.compact .btn-azul,
+.layout.compact .btn-ghost,
+.layout.compact button[type="submit"],
+.layout.compact button[type="button"]{
+  font-size:var(--fs);
+  height:var(--control-h);
+  padding:2px 8px;
+  border-radius:var(--radius);
+}
+
+/* ====== ÁRBOL (Angular Material MatTree) ====== */
+:host ::ng-deep .layout.compact .mat-tree{ font-size:var(--fs); }
+
+:host ::ng-deep .layout.compact .mat-tree-node,
+:host ::ng-deep .layout.compact .mat-nested-tree-node > .mat-tree-node{
+  min-height:24px;            /* fila más baja */
+  padding:0 6px;              /* menos margen lateral */
+}
+
+:host ::ng-deep .layout.compact .mat-nested-tree-node{
+  margin-left:10px;           /* indentación por nivel */
+}
+
+/* iconos expandir/colapsar y botones de acción ( + / 🗑 ) más pequeños */
+:host ::ng-deep .layout.compact .mat-icon-button{
+  width:24px; height:24px; line-height:24px;
+}
+:host ::ng-deep .layout.compact .mat-icon{
+  font-size:16px; width:16px; height:16px;
+}
+
+/* Si usas tus propios botones de acción en el árbol */
+.layout.compact .tree-actions .icon-btn{
+  width:24px; height:24px; padding:0; border-radius:6px;
+}
+
+
+
+/* aqui*/
+
+/* ====== MODO COMPACTO PARA ÁRBOL ====== */
+.tree.compact-tree {
+  --tree-font: 12px;
+  --tree-row-h: 6px;     /* altura visual por fila */
+  --tree-pad-x: 6px;      /* padding horizontal */
+  --tree-gap: 1px;        /* separación mínima entre filas */
+  --indent: 1px;         /* coincide con [matTreeNodePaddingIndent] */
+}
+
+/* Texto y line-height pequeños */
+.tree.compact-tree .mat-tree,
+.tree.compact-tree .mat-tree-node,
+.tree.compact-tree .mat-nested-tree-node .mat-tree-node {
+  font-size: var(--tree-font);
+  line-height: 1.2; /* 0.05 aqui se cambio si hay algun problema 24102025*/
+}
+
+/* Filas más bajas y con menos padding */
+.tree.compact-tree .mat-tree-node,
+.tree.compact-tree .mat-nested-tree-node > .mat-tree-node {
+  min-height: var(--tree-row-h);
+  padding: var(--tree-pad-x);
+  margin: 0; /* elimina márgenes residuales */
+}
+
+/* Reduce espacio entre nodos hermanos */
+.tree.compact-tree .child-container > .mat-nested-tree-node,
+.tree.compact-tree .child-container > .mat-tree-node {
+  margin-top: var(--tree-gap);
+  margin-bottom: var(--tree-gap);
+}
+
+/* Indentación más cerrada (por si el tema añade extra) */
+.tree.compact-tree .mat-nested-tree-node {
+  margin-left: calc(var(--indent) - 2px);
+}
+
+/* Botón de expandir/colapsar y otros icon-buttons más pequeños */
+.tree.compact-tree .mat-icon-button {
+  width: 12px;
+  height: 12px;
+  line-height: 12px;
+  padding: 0;
+  margin: 0 2px 0 0; /* pega los íconos al texto */
+}
+
+/* Iconos más chicos */
+.tree.compact-tree .mat-icon {
+  font-size: 16px;
+  width: 16px;
+  height: 16px;
+}
+
+/* Placeholder del toggle en hojas, para alinear texto con padres */
+.tree.compact-tree .toggle-placeholder {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Contenedor de acciones (add/delete) pegado y sin saltos */
+.tree.compact-tree .node-actions {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 1px;
+}
+
+/* Etiqueta de nodo: evita alturas extra por inline-block raros */
+.tree.compact-tree .node-label {
+  display: inline-block;
+  vertical-align: middle;
+  transform: translateY(-0.5px); /* micro-ajuste óptico */
+}
+
+/* Quita rellenos de MDC que inflan filas en algunos temas */
+:host ::ng-deep .tree.compact-tree .mdc-list-item__primary-text {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Opcional: hover sutil sin aumentar altura */
+.tree.compact-tree .mat-tree-node:hover {
+  background: rgb(241, 188, 109);
+}
+
+
+
+/* ===== MatTree súper compacto =====     nuevvvvvvo*/
+.tree.compact-tree{
+  --row-h: 28px;      /* alto real por fila (prueba 16–20) */
+  --pad-x: 4px;       /* padding horizontal mínimo */
+  --font: 12px;       /* tamaño de letra */
+}
+
+/* tamaño de texto y line-height controlado */
+:host ::ng-deep .tree.compact-tree,
+:host ::ng-deep .tree.compact-tree .mat-tree-node{
+  font-size: var(--font);
+  line-height: var(--row-h);
+}
+
+/* quita rellenos del tema y fija altura exacta */
+:host ::ng-deep .tree.compact-tree .mat-tree-node,
+:host ::ng-deep .tree.compact-tree .mat-nested-tree-node > .mat-tree-node{
+  min-height: var(--row-h);
+  height: var(--row-h);
+  padding: 0 var(--pad-x);
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* elimina espacios “ocultos” de MDC List */
+:host ::ng-deep .tree.compact-tree .mdc-list-item,
+:host ::ng-deep .tree.compact-tree .mdc-list-item__primary-text,
+:host ::ng-deep .tree.compact-tree .mdc-list-item__content{
+  padding: 0 !important;
+  margin: 0 !important;
+  min-height: var(--row-h) !important;
+}
+
+/* sin separación extra entre hermanos */
+:host ::ng-deep .tree.compact-tree .mat-nested-tree-node{ margin: 0; }
+:host ::ng-deep .tree.compact-tree .mat-nested-tree-node > .mat-nested-tree-node{ margin: 0; }
+
+/* iconos/toggle pequeños (para que no estiren la fila) */
+:host ::ng-deep .tree.compact-tree .mat-icon-button{
+  width: 18px; height: 18px; padding: 0; line-height: 18px; margin-right: 4px;
+}
+:host ::ng-deep .tree.compact-tree .mat-icon{
+  font-size: 14px; width: 14px; height: 14px;
+}
+
+/* placeholder del toggle en hojas */
+.tree.compact-tree .toggle-placeholder{ opacity: 0; pointer-events: none; }
+
+/* (opcional) hover sin cambiar altura */
+:host ::ng-deep .tree.compact-tree .mat-tree-node:hover{
+  background:  rgba(0,0,0,.03);
+}
+
+
+.btn-azul {
+  background:#093679;          /* azul */
+  color: #fff;
+  border: 1px solid  #0d6efd;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+.btn-azul:hover {
+  background: #093679;          /* celeste al hover   #48b0ff celeste*/
+  border-color: #093679;
+  color: #fff;
+}
+
+
+
+/* nuevo codigo*/
+/* Fondo del árbol */
+:host ::ng-deep .tree.tree-themed {
+  --tree-bg: #f3f7ff;     /* fondo principal */
+  --tree-border: #d9e4ff; /* borde sutil */
+  --tree-hover: #e8f1ff;  /* hover */
+  --tree-selected: #1f4476; /* seleccionado */
+  --tree-accent: #2b7cff; /* barrita izquierda selección */
+
+  background: var(--tree-bg);
+  border: 1px solid var(--tree-border);
+  border-radius: 12px;
+  padding: 8px;                /* espacio interno */
+}
+
+/* Que el fondo cubra todos los nodos */
+:host ::ng-deep .tree.tree-themed .mat-tree,
+:host ::ng-deep .tree.tree-themed .mat-nested-tree-node,
+:host ::ng-deep .tree.tree-themed .mat-tree-node {
+  background: transparent;
+}
+
+/* Hover y seleccionado (si ya tienes la clase .selected del click) */
+:host ::ng-deep .tree.tree-themed .mat-tree-node:hover,
+:host ::ng-deep .tree.tree-themed .mat-nested-tree-node > .mat-tree-node:hover {
+  background: var(--tree-hover);
+}
+
+:host ::ng-deep .tree.tree-themed .mat-tree-node.selected,
+:host ::ng-deep .tree.tree-themed .mat-nested-tree-node > .mat-tree-node.selected {
+  background: var(--tree-selected);
+  box-shadow: inset 3px 0 0 var(--tree-accent);
+}
+
+/* Opcional: modo oscuro automático */
+@media (prefers-color-scheme: dark) {
+  :host ::ng-deep .tree.tree-themed {
+    --tree-bg: #f2f2af;
+    --tree-border: #26324a;
+    --tree-hover: #172034;
+    --tree-selected: #1d2a45;
+    --tree-accent: #6aa6ff;
+    color: #e7eeff;
+  }
+}
+
+.d-none { display: none !important; }
+
+
+/*capos que ocupen todo el ancho del layot*/
+
+/* que todos los form-field ocupen el ancho del contenedor */
+.right-pane .grid .mat-form-field { width: 100%; display: block; }
+
+/* una sola columna = cada input ocupa todo el largo */
+.right-pane .grid {
+  display: grid;
+  grid-template-columns: 1fr;  /* ← clave */
+  gap: 6px;
+}
+
+/* opcional: si quieres 2 columnas en desktop y full en mobile */
+@media (min-width: 960px) {
+  .right-pane .grid.two-cols { grid-template-columns: 1fr 1fr; }
+  .right-pane .grid.two-cols .full { grid-column: 1 / -1; } /* para forzar full a algunos */
+}
+
+
+/* en fila no en columnas*/
+/* grid de 2 columnas (si ya lo tienes, déjalo) */
+.right-pane .grid.two-cols{
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+/* cualquier form-field con .full ocupa ambas columnas (= ancho completo) */
+.right-pane .grid .full{
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+
+/* ====== Fix: label bien alineado en modo compacto (outlined) ====== */
+.form-grid.compact {
+  --fs: 14px;            /* texto de inputs */
+  --field-h: 8px;     /* alto de campo que estés usando */
+  --label-float-y: -1.35rem; /* ↑ cuánto sube el label al flotar (ajusta -1.20 a -1.50) */
+}
+
+/* Altura del infix (mantiene caja real) */
+:host ::ng-deep .form-grid.compact .mat-mdc-form-field-infix{
+  min-height: var(--field-h) !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+}
+
+/* (1) Label centrado verticalmente cuando NO flota */
+:host ::ng-deep .form-grid.compact .mdc-text-field--outlined .mdc-floating-label{
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  line-height: 1.1; /* evita cortes raros */
+}
+
+/* (2) Label cuando SÍ flota (arriba) */
+:host ::ng-deep .form-grid.compact .mdc-text-field--outlined
+  .mdc-floating-label--float-above{
+  transform: translateY(var(--label-float-y)) scale(0.75) !important;
+}
+
+/* Opcional: ajusta el “ancla” horizontal del label para que no se meta en la curva del outline */
+:host ::ng-deep .form-grid.compact .mdc-text-field--outlined .mdc-floating-label{
+  left: 12px; /* 10–14px suele ir bien */
+}
+
+/* Subtexto (errores/hints) más cerca del campo */
+:host ::ng-deep .form-grid.compact .mat-mdc-form-field-subscript-wrapper{
+  margin-top: 2px !important;
+}
+
+
+/*  codigo para los botones  */
+
+
+/* ====== Título ====== */
+.panel-title.create{
+  color: #002c6c;          /* azul create   #0d47a1; */
+}
+.panel-title.edit{
+  color: #bf360c;         /* naranja edición */
+}
+/* opcional: una pill de estado al lado del título */
+.panel-title.edit::after{
+  content: "MODO EDICIÓN";
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  font-size: 11px;
+  border-radius: 999px;
+  background: #ffe0b2;
+  color: #dc2626;
+  vertical-align: middle;
+}
+
+/* ====== Botón Guardar/Actualizar ====== */
+/* Material MDC permite sobrescribir con CSS variables */
+.btn-save{
+  --mdc-protected-button-container-shape: 10px;
+  --mdc-typography-button-font-weight: 700;
+}
+
+/* Crear (Guardar) */
+.btn-create.mat-mdc-raised-button{
+  --mdc-protected-button-container-color: #3949ab; /* azul */
+  --mdc-protected-button-label-text-color: #fff;
+  box-shadow: 0 2px 6px rgba(57,73,171,.3);
+}
+
+/* Editar (Actualizar) */
+.btn-edit.mat-mdc-raised-button{
+  --mdc-protected-button-container-color:  #dc2626; /* naranja   #ef6c00*/
+  --mdc-protected-button-label-text-color: #fff;
+  box-shadow: 0 2px 6px rgba(239,108,0,.35);
+}
+
+/* Hover (ligero) */
+.btn-create.mat-mdc-raised-button:hover{
+  filter: brightness(1.05);
+}
+.btn-edit.mat-mdc-raised-button:hover{
+  filter: brightness(1.05);
+}
+
+
+/* nuevo*/
+/* tamaño del texto en el trigger (valor seleccionado) y etiqueta */
+.compact-select .mat-mdc-select-value,
+.compact-select .mdc-floating-label,
+.compact-select .mat-mdc-form-field-infix {
+  font-size: 12px;            /* ↓ ajusta a tu gusto (10–13px) */
+  line-height: 1.1;
+}
+
+/* opcional: flecha más pequeña */
+.compact-select .mat-mdc-select-arrow {
+  transform: scale(0.8);
+}
+
+/* ↓ Las opciones del panel viven fuera del árbol del componente.
+   Usa ::ng-deep para afectarlas solo cuando se abra este select. */
+::ng-deep .mat-mdc-select-panel .mat-mdc-option .mdc-list-item__primary-text {
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+/* combo mas pequeño*/
+
+/* Tamaño del texto cuando el valor YA está seleccionado (trigger) */
+.xs-select .mat-mdc-select-trigger,
+.xs-select .mat-mdc-select-value,
+.xs-select .mat-mdc-select-value-text {
+  font-size: 12px;        /* 👈 ajusta a 11–12px a tu gusto */
+  line-height: 1.1;
+}
+
+/* Etiqueta/flotante más pequeña */
+.xs-select .mdc-floating-label {
+  font-size: 11px;
+  line-height: 1.1;
+}
+
+/* Compactar un poco la altura del campo (opcional) */
+.xs-select .mat-mdc-form-field-infix {
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+/* Flecha un poco más pequeña (opcional) */
+.xs-select .mat-mdc-select-arrow {
+  transform: scale(0.8);
+}
+
+/* Opciones dentro del panel desplegado (vive fuera del árbol → usar ::ng-deep) */
+::ng-deep .mat-mdc-select-panel .mat-mdc-option .mdc-list-item__primary-text {
+  font-size: 12px !important;  /* 👈 iguala al trigger para consistencia */
+  line-height: 1.1;
+}
+
+
+/*container
+
+/* Fondo general de inputs en modo edición */
+.form-container.edit-mode input,
+.form-container.edit-mode select,
+.form-container.edit-mode textarea {
+  background-color: #fff7d6;      /* amarillo suave */
+  border-color: #e5b400;
+  color: #333;
+}
+
+/* Foco en modo edición */
+.form-container.edit-mode input:focus,
+.form-container.edit-mode select:focus,
+.form-container.edit-mode textarea:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(229, 180, 0, 0.25);
+  border-color: #d4a100;
+}
+
+/* Estilo visual para campos sólo lectura (cuando estás editando) */  
+.form-container.edit-mode input[readonly],
+.form-container.edit-mode textarea[readonly] {
+  cursor: not-allowed;
+  opacity: 0.9;
+  background-image: linear-gradient(transparent, transparent); /* evita estilos grises del navegador */
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(246, 246, 244, 0.25);
+  border-color: #f3f3f7;
+  background-color: #eae6e6;
+}
+
+/*para el color de los hijos     poner en elspan node model  [ngClass]="{ nivel5: (node.item?.IdNivel || 0) === 5 }"    */
+/* Solo nivel 5 en azul */
+.tree .node-label.nivel5 {
+  color:  #e53935;            /* azul Google-like */
+ 
+}
+
+/* Mantén contraste al pasar el mouse */
+.tree .node-label.nivel5:hover {
+  background: rgba(11, 87, 208, .08);
+  color: #0b57d0;
+}
+
+/* (Opcional) icono “+” de los hijos nivel 5 también en azul */
+.tree .node-label.nivel5 + .actions button mat-icon {
+  color: #0b57d0;
+}
+
+
+/* ====== FORM COMPACT ====== */
+.form-compact{
+  /* Densidad para Angular Material 16/17+ (MDC) */
+  --mat-form-field-container-vertical-padding: 6px;         /* alto del input  */
+  --mat-form-field-filled-with-label-container-padding-top: 12px;
+  --mat-form-field-subscript-margin-top: 0px;               /* espacio de hints/errores */
+  --mat-form-field-subscript-text-line-height: 12px;
+  row-gap: 8px;                                             /* espacio vertical entre filas si usas grid */
+}
+
+/* Reduce el margen inferior por campo */
+.form-compact .mat-mdc-form-field{ margin-bottom: 6px; }
+
+/* Compacta la zona editable del input/select */
+.form-compact
+  .mat-mdc-text-field-wrapper.mdc-text-field--outlined
+  .mat-mdc-form-field-infix{
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+/* Quita casi todo el espacio reservado para hints/errores
+   (si usas errores/hints, sube a height:14px) */
+.form-compact .mat-mdc-form-field-subscript-wrapper{
+  height: 0; margin: 0; padding: 0; overflow: hidden;
+}
+
+/* Select y Autocomplete (misma altura que inputs) */
+.form-compact .mat-mdc-select-trigger,
+.form-compact .mat-mdc-select-value{
+  line-height: 32px;     /* 32–36px = compacto */
+  min-height: 32px;
+}
+
+/* Checkboxes y labels alineados */
+.form-compact .mat-mdc-checkbox{ margin: 0 8px 0 0; }
+.form-compact .mdc-form-field{ margin: 0; }
+
+/* Si usas filas en grid dentro del form */
+.form-compact .form-row{
+  display: grid;
+  grid-template-columns: 1fr 1fr;   /* ajusta según tu layout */
+  column-gap: 10px;
+  row-gap: 8px;
+}
+
+/* Opcional: reduce la altura de los mat-input con label flotante */
+.form-compact .mat-mdc-form-field .mdc-notched-outline__notch{
+  /* evita notch demasiado alto en compacto */
+  max-width: 100%;
+}
+
+
+/*NUEVO*/
+/* ---- Densidad XS para Angular Material (MDC) ---- */
+.form-dense-xs{
+  /* separaciones del layout */
+  --row-gap: 6px;
+}
+.form-dense-xs .mat-mdc-form-field{ margin-bottom: 4px; }
+
+/* Altura real del input/select: 30–32px */
+.form-dense-xs
+  .mat-mdc-text-field-wrapper.mdc-text-field--outlined
+  .mat-mdc-form-field-infix{
+  padding-top: 2px;      /* ↓ reduce alto */
+  padding-bottom: 2px;   /* ↓ reduce alto */
+  min-height: 28px;
+}
+
+/* Tipografía compacta */
+.form-dense-xs .mat-mdc-input-element,
+.form-dense-xs .mat-mdc-select-value,
+.form-dense-xs .mdc-floating-label{
+  font-size: 12px;
+  line-height: 20px;
+}
+
+/* Select/Autocomplete alineados con el input */
+.form-dense-xs .mat-mdc-select-trigger{ min-height: 28px; }
+.form-dense-xs .mat-mdc-select-value{ line-height: 28px; }
+
+/* Hints/errores más bajos (ajusta a 0 si no usas hints) */
+.form-dense-xs .mat-mdc-form-field-subscript-wrapper{
+  margin-top: 2px;
+  height: 12px;
+  font-size: 11px;
+}
+
+/* Checkbox y labels compactos */
+.form-dense-xs .mat-mdc-checkbox{ margin: 0 8px 0 0; }
+.form-dense-xs .mat-mdc-checkbox .mdc-label{ font-size: 12px; }
+
+/* Si usas filas en grid dentro del formulario */
+.form-dense-xs .form-row{
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* ajusta a tu layout */
+  column-gap: 10px;
+  row-gap: var(--row-gap);
+}
+
+/* Textarea más denso (opcional) */
+.form-dense-xs textarea.mat-mdc-input-element{
+  line-height: 1.2;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+/*NEW */
+/* --- LAYOUT --- */
+.wrap{
+  display:grid;
+  grid-template-columns: 1fr 1.05fr;
+  gap:6px;                       /* ↓ menos espacio entre paneles */
+  height:calc(100vh - 80px);
+}
+.left-pane,.right-pane{
+  background:var(--surface,#bf0c0c08);
+  border:1px solid rgba(0,0,0,.08);
+  border-radius:14px;
+  padding:10px;                  /* ↓ padding del panel */
+  overflow:auto;
+}
+
+/* Limita la anchura del formulario para que los campos no se estiren */
+.right-pane form.form-grid-narrow{
+  max-width: 860px;              /* ← ajusta a tu gusto (720–900) */
+}
+
+/* --- GRID DEL FORM: más compacto y 2 columnas controladas --- */
+.grid.two-cols{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(160px, 1fr));
+  column-gap: 8px;               /* ↓ espacios más chicos */
+  row-gap: 6px;
+}
+
+/* Cualquier item con .full ocupa ambas columnas */
+.grid.two-cols .full{ grid-column: 1 / -1; }
+
+/* Anchos contenibles por campo (evitan “campos gigantes”) */
+.w-140{ max-width:140px; width:100%; }
+.w-160{ max-width:160px; width:100%; }
+.w-200{ max-width:200px; width:100%; }
+.w-240{ max-width:240px; width:100%; }
+.w-260{ max-width:260px; width:100%; }
+
+/* Asegura que los mat-form-field respeten ese ancho */
+.grid.two-cols .mat-form-field{ width:100%; }
+
+/* En pantallas chicas todo a 1 columna, compacto */
+@media (max-width: 960px){
+  .grid.two-cols{ grid-template-columns: 1fr; }
+  .right-pane form.form-grid-narrow{ max-width: 100%; }
+}
+
+/* --- DENSIDAD XS (altura baja) --- */
+.form-dense-xs .mat-mdc-form-field{ margin-bottom:4px; }
+.form-dense-xs
+  .mat-mdc-text-field-wrapper.mdc-text-field--outlined
+  .mat-mdc-form-field-infix{
+  padding-top:2px;
+  padding-bottom:2px;
+  min-height:28px;               /* ~30–32px de alto total */
+}
+.form-dense-xs .mat-mdc-select-trigger{ min-height:28px; }
+.form-dense-xs .mat-mdc-select-value{ line-height:28px; }
+.form-dense-xs .mat-mdc-form-field-subscript-wrapper{
+  margin-top:2px; height:6px; font-size:11px;
+}
+.form-dense-xs .mdc-floating-label,
+.form-dense-xs .mat-mdc-select-value,
+.form-dense-xs .mat-mdc-input-element{
+  font-size:12px; line-height:20px;
+}
+
+/* Selects aún más compactos (clase en el mat-form-field) */
+.xs-select .mat-mdc-form-field-infix{ padding-top:2px; padding-bottom:2px; }
+.xs-select .mdc-floating-label,
+.xs-select .mat-mdc-select-value{ font-size:12px; line-height:1.1; }
+
+/* --- Acciones del form --- */
+.actions{ display:flex; gap:8px; margin-top:10px; }
+
+/* (resto de tu CSS del árbol y botones lo puedes mantener tal cual) */
+
+/*NEW */
+
+/* ===== Ultra compacto (XXS) para Angular Material MDC ===== */
+.form-xxs .mat-mdc-form-field { margin-bottom: 2px; }
+
+/* Altura real del input ~22–24px */
+.form-xxs
+  .mat-mdc-text-field-wrapper.mdc-text-field--outlined
+  .mat-mdc-form-field-infix{
+  padding-top: 0px !important;
+  padding-bottom: 0px !important;
+  min-height: 10px !important;        /* ← baja aquí si quieres aún menos */
+}
+
+/* Tipografía pequeña */
+.form-xxs .mat-mdc-input-element,
+.form-xxs .mat-mdc-select-value,
+.form-xxs .mdc-floating-label{
+  font-size: 12px !important;
+  line-height: 16px !important;
+}
+
+/* Select y Autocomplete a la misma altura */
+.form-xxs .mat-mdc-select-trigger{ min-height: 22px !important; }
+.form-xxs .mat-mdc-select-value{ line-height: 22px !important; }
+.form-xxs .mat-mdc-select-arrow{ transform: scale(0.75); }
+
+/* Quita prácticamente el espacio de hints/errores (déjalo en 0 si no los usas) */
+.form-xxs .mat-mdc-form-field-subscript-wrapper{
+  margin-top: 0 !important;
+  height: 0 !important;
+  overflow: hidden;
+}
+
+/* Label centrado y flotante más arriba para que no “infle” el campo */
+.form-xxs .mdc-text-field--outlined .mdc-floating-label{
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+}
+.form-xxs .mdc-text-field--outlined .mdc-floating-label--float-above{
+  transform: translateY(-1.35rem) scale(0.75) !important;
+}
+
+/* Checkboxes y botones compactos */
+.form-xxs .mat-mdc-checkbox .mdc-label{ font-size: 11px; }
+.form-xxs .mat-mdc-checkbox .mdc-checkbox{ transform: scale(0.9); }
+.form-xxs .mat-mdc-raised-button.mat-mdc-button-base,
+.form-xxs .mat-mdc-stroked-button.mat-mdc-button-base{
+  --mdc-protected-button-container-height: 16px;
+  min-height: 26px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+/* Utilidades opcionales de ancho para que no se estiren */
+.form-xxs .w-140{ max-width:140px; width:100%; }
+.form-xxs .w-180{ max-width:180px; width:100%; }
+.form-xxs .w-220{ max-width:220px; width:100%; }
+
+
+.inputField{
+  font-size: 40px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+
+
+/*NEW 3*/
+
+
+/* --- Input XXS para Angular Material (MDC) --- */
+/* úsalo en: <mat-form-field class="field-xxs"> */
+
+.field-xxs { /* si además usas w-160, respeta ese ancho */
+  display: block;
+}
+
+.field-xxs .mat-mdc-form-field-subscript-wrapper{
+  margin-top: 0 !important;
+  height: 10px !important;        /* pon 0 si no usas mat-error/hint */
+  font-size: 11px;
+  overflow: hidden;
+}
+
+/* Alto real del input ~20–22px */
+.field-xxs
+  .mat-mdc-text-field-wrapper.mdc-text-field--outlined
+  .mat-mdc-form-field-infix{
+  min-height: 20px !important;    /* ↓ ajusta 18–22 si quieres */
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+/* Tipografía y línea compactas */
+.field-xxs .mat-mdc-input-element{
+  font-size: 11px !important;
+  line-height: 16px !important;
+  padding: 0 !important;          /* quita relleno interno extra */
+}
+
+/* Centra el label cuando NO flota */
+.field-xxs .mdc-text-field--outlined .mdc-floating-label{
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  font-size: 11px !important;
+  line-height: 1.1 !important;
+}
+
+/* Label cuando SÍ flota (arriba) */
+.field-xxs .mdc-text-field--outlined .mdc-floating-label--float-above{
+  transform: translateY(-1.25rem) scale(0.75) !important;
+}
+
+/* Botón/altura del select si este campo fuera mat-select */
+.field-xxs .mat-mdc-select-trigger{ min-height: 20px !important; }
+.field-xxs .mat-mdc-select-value{ line-height: 20px !important; }
+.field-xxs .mat-mdc-select-arrow{ transform: scale(0.75); }
+
+/*NEW 4*/
+
+/* Texto del label (placeholders/títulos de los campos) */
+:host ::ng-deep .tiny-form .mdc-floating-label{
+  font-size: 15px !important;
+  line-height: 1.1 !important;
+}
+
+/* Texto que escribes dentro del input */
+:host ::ng-deep .tiny-form .mat-mdc-input-element{
+  font-size: 14px !important;
+  line-height: 11px !important;
+  padding: 0 !important;
+}
+
+/* Select: texto del trigger y flecha */
+:host ::ng-deep .tiny-form .mat-mdc-select-value{
+  font-size: 14px !important;
+  line-height: 11px !important;
+}
+:host ::ng-deep .tiny-form .mat-mdc-select-arrow{ transform: scale(.8); }
+
+
+/*NEW6*/
+
+/* ---- Campo súper pequeño (≈18–20px de alto) ---- */
+/* úsalo en: <mat-form-field class="micro-field"> */
+.micro-field .mat-mdc-form-field-subscript-wrapper{
+  height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+/* Alto real del área editable */
+.micro-field .mat-mdc-text-field-wrapper.mdc-text-field--outlined
+.micro-field .mat-mdc-form-field-infix,
+.micro-field .mat-mdc-form-field-infix{
+  min-height: 18px !important;   /* 16–20px según te guste */
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  padding-left: 8px !important;  /* deja algo de aire lateral */
+  padding-right: 8px !important;
+}
+
+/* Texto dentro del input */
+.micro-field .mat-mdc-input-element{
+  font-size: 11px !important;
+  line-height: 16px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Label pequeño y centrado cuando NO flota */
+.micro-field .mdc-text-field--outlined .mdc-floating-label{
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  font-size: 11px !important;
+  line-height: 1.1 !important;
+}
+
+/* Label cuando SÍ flota */
+.micro-field .mdc-text-field--outlined .mdc-floating-label--float-above{
+  transform: translateY(-1.15rem) scale(0.75) !important; /* ajusta -1.05 a -1.30 si lo ves muy arriba/abajo */
+}
+
+/* Selects del mismo tamaño (si alguno es mat-select) */
+.micro-field .mat-mdc-select-trigger{ min-height: 18px !important; }
+.micro-field .mat-mdc-select-value{ line-height: 18px !important; font-size: 11px !important; }
+.micro-field .mat-mdc-select-arrow{ transform: scale(.75); }
+
+
+
+
+
+.mat-form-field mat-label {
+  font-size: 5px; /* Ajusta el tamaño según tu necesidad */
+}
+
+
+
+
+
+::ng-deep .mat-mdc-text-field-wrapper {
+    height: 40px !important;
+}
+::ng-deep .mat-mdc-form-field-flex {
+    margin-top: -7px !important;
+}
+
+
+
+/* ultima revision*/
+
+.row-four {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;                /* separa los campos */
+  align-items: start;       /* alinea top para que no “bailen” */
+}
+
+.row-four mat-form-field {
+  width: 100%;
+}
+
+/* Responsivo opcional */
+@media (max-width: 1024px) {
+  .row-four { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .row-four { grid-template-columns: 1fr; }
+}
+

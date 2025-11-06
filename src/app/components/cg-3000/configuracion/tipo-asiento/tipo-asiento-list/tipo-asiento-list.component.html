@@ -1,0 +1,60 @@
+<div class="zona-container">
+  <div class="zona-header">
+    <h2>Tipo Documentos</h2>
+    <button mat-raised-button class="btn-azul" (click)="abrirCrear()" >Nuevo</button>
+  </div>
+
+  <div class="zona-busqueda">
+    <label for="search">Buscar:</label>
+    <div class="input-wrapper">
+      <input
+        id="search"
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="buscar()"
+        placeholder="Buscar por descripción"
+      />
+      <img src="assets/icons/icon-buscar.png" alt="Buscar" />
+    </div>
+  </div>
+
+  <div class="table-wrap" *ngIf="!loading; else loadingTpl">
+    <table class="zona-tabla">
+      <thead>
+        <tr>
+          <th style="width: 160px;">Id Documento</th>
+          <th style="width: 120px;">Tipo Documento</th>
+          <th>Descripción</th>
+          <th class="col-opcion">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let it of filtered; trackBy: trackById">
+          <td>{{ it.IdTipoAsiento }}</td>
+          <td>{{ it.TipAsiento }}</td>
+          <td>{{ it.Descripcion }}</td>
+          <td class="acciones">
+            <!-- Opción A: botón con ícono dentro -->
+            <button type="button" class="icon-btn" (click)="abrirEditar(it.IdTipoAsiento)" title="Editar" >
+              <img src="assets/icons/icon-modificar-3.png" alt="Editar" />
+            </button>
+
+            <!-- Si luego agregas más acciones, repite el mismo patrón -->
+            <!-- <button type="button" class="icon-btn" title="Eliminar">
+              <img src="assets/icons/icon-delete.png" alt="Eliminar" />
+            </button> -->
+          </td>
+        </tr>
+
+        <tr *ngIf="filtered.length === 0">
+          <td colspan="5" class="empty">No hay resultados.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ng-template #loadingTpl>
+    <div class="loading">Cargando...</div>
+  </ng-template>
+</div>
+
