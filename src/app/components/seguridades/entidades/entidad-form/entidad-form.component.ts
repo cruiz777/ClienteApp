@@ -29,6 +29,7 @@ import { RegistroCivilService } from 'src/app/services/registro-civil.service';
 import { ConsultaRucService } from 'src/app/services/rucapi.service';
 import { RucApiResponse, RucConsulta } from 'src/app/interfaces/responses/RucResponse';
 import { DateUtils } from 'src/app/shared/utils/date-utils';
+import { PersonaResponse } from 'src/app/interfaces/responses/persona-response';
 
 @Component({
   selector: 'app-entidad-form',
@@ -37,6 +38,12 @@ import { DateUtils } from 'src/app/shared/utils/date-utils';
 })
 export class EntidadFormComponent implements OnInit, OnDestroy {
   personaForm!: FormGroup;
+  
+  //Validacion de control para mejor UX
+  private documentoYaValidado = false; 
+  private ultimoDocumentoValidado = ''; 
+  validandoDocumento = false; 
+  private documentoOriginal = ''; 
 
   ciudades: CiudadResumen[] = [];
   filteredCiudades$: ReplaySubject<CiudadResumen[]> = new ReplaySubject<CiudadResumen[]>(1);
@@ -56,7 +63,7 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
 
   tituloFormulario = 'Creación de Entidades';
   mostrarGenero = true;
-
+  mostrarEstadoCivil = true; 
   labelNombre = 'Primer Nombre';
   labelApellido = 'Primer Apellido';
   labelFecha = 'Fecha de Nacimiento';
@@ -126,8 +133,46 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
       this.personaId = +id;
       await this.cargarDatosPersona(this.personaId);
     }
+    // Valida si se sale del documento o no
+    this.personaForm.get('numeroDocumento')?.valueChanges
+      .pipe(takeUntil(this._onDestroy))
+      .subscribe(valor => {
+        // Si el usuario modifica el documento después de validarlo, resetear el estado
+        if (this.documentoYaValidado && valor !== this.ultimoDocumentoValidado) {
+          this.documentoYaValidado = false;
+          this.ultimoDocumentoValidado = '';
+        }
+
+        // Validación automática al completar los dígitos
+        this.validarDocumentoAutomaticamente(valor);
+      });
   }
 
+  private validarDocumentoAutomaticamente(documento: string) {
+    if (!documento) return;
+
+    const tipo = this.personaForm.get('tipoDocumentoDescripcion')?.value;
+    let longitudEsperada = 0;
+
+    // Determinar longitud esperada según el tipo
+    if (tipo === 'CÉDULA') longitudEsperada = 10;
+    else if (tipo === 'RUC') longitudEsperada = 13;
+    else if (tipo === 'PASAPORTE') longitudEsperada = 20;
+    else return; // Si no hay tipo seleccionado, no validar
+
+    // Solo validar si:
+    // 1. El documento tiene la longitud correcta
+    // 2. No se ha validado antes O es un documento diferente
+    // 3. No está en proceso de validación
+    if (
+      documento.length === longitudEsperada &&
+      !this.documentoYaValidado &&
+      !this.validandoDocumento
+    ) {
+      console.log('✅ Documento completo, validando automáticamente...');
+      this.ejecutarValidacionDocumento(documento, tipo);
+    }
+  }
 
   private actualizarFormularioPorTipo(tipo: string) {
     const prefijo = this.modoEdicion ? 'Edición' : 'Creación';
@@ -137,6 +182,7 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
         this.labelNombre = 'Razón Social';
         this.labelApellido = 'Nombre Comercial';
         this.mostrarGenero = false;
+        this.mostrarEstadoCivil = false;
         this.personaForm.get('idGenero')?.setValue(this.generos.find(g => g.generoDescripcion.toLowerCase() === 'otros')?.generoCodigo || null);
         this.labelFecha = 'Fecha de Inicio de Actividades';
 
@@ -152,16 +198,20 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
         this.labelNombre = 'Primer Nombre';
         this.labelApellido = 'Primer Apellido';
         this.mostrarGenero = true;
+        this.mostrarEstadoCivil = true;
         break;
       case 'PASAPORTE':
         this.tituloFormulario = `${prefijo} de Entidades (Pasaporte)`;
-        this.labelNombre = 'Primer Nombre';
-        this.labelApellido = 'Primer Apellido';
+        this.labelNombre = 'Primer Nombre / Razón Social';
+        this.labelApellido = 'Primer Apellido / Nombre Comercial';
+        this.labelFecha = 'Fecha de Nacimiento';
         this.mostrarGenero = true;
+        this.mostrarEstadoCivil = true;
         break;
       default:
         this.tituloFormulario = `${prefijo} de Entidades`;
         this.mostrarGenero = true;
+        this.mostrarEstadoCivil = true;
     }
   }
   private setLongitudValidator(tipo: string) {
@@ -294,6 +344,7 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
     const nombre = this.tiposDocumento.find(t => t.idTipoDocumento === tipo)?.descripcion;
 
     if (nombre === 'RUC') {
+      // RUC: Solo "NO APLICA"
       this.estadosCiviles = this.allEstadosCiviles.filter(e =>
         e.estadoCivilNombre.toUpperCase() === 'NO APLICA'
       );
@@ -304,7 +355,18 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
         this.personaForm.get('idEstadoCivil')?.setValue(this.estadosCiviles[0]?.estadoCivilCodigo || null);
       }
 
+    } else if (nombre === 'PASAPORTE') {
+      // PASAPORTE: TODOS los estados civiles (incluyendo NO APLICA)
+      this.estadosCiviles = [...this.allEstadosCiviles];
+      
+      const selected = this.personaForm.get('idEstadoCivil')?.value;
+      const existe = this.estadosCiviles.some(e => e.estadoCivilCodigo === selected);
+      if (!existe) {
+        this.personaForm.get('idEstadoCivil')?.setValue(null);
+      }
+
     } else {
+      // CÉDULA y otros: Todos menos "NO APLICA"
       this.estadosCiviles = this.allEstadosCiviles.filter(e =>
         e.estadoCivilNombre.toUpperCase() !== 'NO APLICA'
       );
@@ -317,13 +379,13 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
     }
   }
 
-
-
-
   private cargarDatosPersona(id: number) {
     this.personaService.getPersonaById(id).subscribe({
       next: (data) => {
         console.log('✅ Datos recibidos desde API:', data);
+
+        // 👇 GUARDAR DOCUMENTO ORIGINAL
+        this.documentoOriginal = data.identificacion || '';
 
         const descripcion = this.tiposDocumento.find(
           t => t.idTipoDocumento === data.idTipoDocumento
@@ -333,8 +395,6 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
           this.setLongitudValidator(descripcion);
           this.actualizarFormularioPorTipo(descripcion);
           this.personaForm.get('tipoDocumentoDescripcion')?.setValue(descripcion);
-
-          // //PRIMERO filtrar antes de aplicar el valor al formulario
           this.filtrarEstadosCiviles();
         }
 
@@ -345,7 +405,7 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
           segundoApellido: data.segundoApellido || '',
           numeroDocumento: data.identificacion || '',
           idTipoDocumento: data.idTipoDocumento || null,
-          idEstadoCivil: data.idEstadoCivil || null, // ahora sí se respetará si es válido
+          idEstadoCivil: data.idEstadoCivil || null,
           idGenero: data.idGenero || null,
           idCiudad: data.idCiudad || null,
           fechaNacimiento: data.fechaNacimiento || '',
@@ -380,28 +440,59 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
   }
 
   openCorreoDialog() {
-    this.openDialog(CorreoDialogComponent, this.correos, (result) => this.correos = result);
-  }
+    const dialogRef = this.dialog.open(CorreoDialogComponent, {
+      width: '600px',
+      data: {
+        correos: [...this.correos],
+        modoEdicion: this.modoEdicion,
+        personaId: this.personaId || 0
+      },
+      disableClose: true
+    });
 
-  eliminarCorreo(index: number) {
-    this.correos.splice(index, 1);
+    dialogRef.afterClosed().subscribe(result => {
+      if (result !== null) {
+        this.correos = result;
+      }
+    });
   }
 
   openTelefonoDialog() {
-    this.openDialog(TelefonoDialogComponent, this.telefonos, (result) => this.telefonos = result);
-  }
+    const dialogRef = this.dialog.open(TelefonoDialogComponent, {
+      width: '600px',
+      data: {
+        telefonos: [...this.telefonos],
+        modoEdicion: this.modoEdicion,
+        personaId: this.personaId || 0
+      },
+      disableClose: true
+    });
 
-  eliminarTelefono(index: number) {
-    this.telefonos.splice(index, 1);
+    dialogRef.afterClosed().subscribe(result => {
+      if (result !== null) {
+        this.telefonos = result;
+      }
+    });
   }
 
   openDireccionDialog() {
-    this.openDialog(DireccionDialogComponent, this.direcciones, (result) => this.direcciones = result);
+    const dialogRef = this.dialog.open(DireccionDialogComponent, {
+      width: '600px',
+      data: {
+        direcciones: [...this.direcciones],
+        modoEdicion: this.modoEdicion,
+        personaId: this.personaId || 0
+      },
+      disableClose: true
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result !== null) {
+        this.direcciones = result;
+      }
+    });
   }
 
-  eliminarDireccion(index: number) {
-    this.direcciones.splice(index, 1);
-  }
 
   private openDialog(component: any, dataList: any[], callback: (result: any[]) => void) {
     const dialogRef = this.dialog.open(component, {
@@ -414,26 +505,143 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
     });
   }
   //Metodo para validar cédula en el registro civil
+  // onBlurDocumento() {
+  //   const numero = this.personaForm.get('numeroDocumento')?.value;
+  //   const tipo = this.personaForm.get('tipoDocumentoDescripcion')?.value;
+
+  //   if (!numero || numero.length < 10) return;
+
+  //   // 🔍 PASO 1: Verificar si ya existe en la base de datos
+  //   this.personaService.buscarPersonaPorDocumento(numero).subscribe({
+  //     next: (personas) => {
+  //       if (personas && personas.length > 0) {
+  //         // ✅ PERSONA ENCONTRADA EN BD
+  //         const persona = personas[0];
+          
+  //         this.dialog.open(CustomMessageBoxComponent, {
+  //           width: '450px',
+  //           data: {
+  //             title: 'Documento encontrado',
+  //             message: `Ya existe una persona registrada con el documento ${numero}. ¿Desea cargar sus datos en el formulario?`,
+  //             type: 'info',
+  //             confirmText: 'Sí, cargar datos',
+  //             cancelText: 'No, continuar',
+  //             showCancel: true
+  //           }
+  //         }).afterClosed().subscribe(result => {
+  //           if (result) {
+  //             // Usuario aceptó cargar los datos existentes
+  //             this.cargarDatosPersonaExistente(persona);
+  //           }
+  //         });
+  //       } else {
+  //         // ❌ NO EXISTE EN BD: Consultar APIs externas
+  //         this.consultarAPIsExternas(numero, tipo);
+  //       }
+  //     },
+  //     error: (err) => {
+  //       console.error('Error al buscar en BD:', err);
+  //       // Si falla la búsqueda en BD, continuar con APIs externas
+  //       this.consultarAPIsExternas(numero, tipo);
+  //     }
+  //   });
+  // }
   onBlurDocumento() {
     const numero = this.personaForm.get('numeroDocumento')?.value;
     const tipo = this.personaForm.get('tipoDocumentoDescripcion')?.value;
 
+    // Si ya se validó este documento, no hacer nada
+    if (this.documentoYaValidado && numero === this.ultimoDocumentoValidado) {
+      return;
+    }
+
     if (!numero || numero.length < 10) return;
 
+    // Ejecutar validación
+    this.ejecutarValidacionDocumento(numero, tipo);
+  }
+
+  private ejecutarValidacionDocumento(numero: string, tipo: string) {
+    // Validar longitud según tipo
+    if (tipo === 'CÉDULA' && numero.length !== 10) return;
+    if (tipo === 'RUC' && numero.length !== 13) return;
+    if (tipo === 'PASAPORTE' && numero.length < 10) return;
+
+    // 👇 NUEVO: Si estamos en modo edición y es el documento original, no validar
+    if (this.modoEdicion && numero === this.documentoOriginal) {
+      console.log('⏭️ Saltando validación: es el documento original en modo edición');
+      return;
+    }
+
+    // Marcar como validando
+    this.validandoDocumento = true;
+
+    // 🔍 PASO 1: Verificar si ya existe en la base de datos
+    this.personaService.buscarPersonaPorDocumento(numero).subscribe({
+      next: (personas) => {
+        this.validandoDocumento = false;
+
+        if (personas && personas.length > 0) {
+          // ✅ PERSONA ENCONTRADA EN BD
+          const persona = personas[0];
+          
+          // 👇 NUEVO: Si estamos editando la misma persona, no mostrar diálogo
+          if (this.modoEdicion && persona.personaCodigo === this.personaId) {
+            console.log('⏭️ Saltando diálogo: es la misma persona que estamos editando');
+            return;
+          }
+          
+          // Marcar como validado
+          this.documentoYaValidado = true;
+          this.ultimoDocumentoValidado = numero;
+
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '450px',
+            data: {
+              title: 'Documento encontrado',
+              message: `Ya existe una persona registrada con el documento ${numero}. ¿Desea cargar sus datos en el formulario?`,
+              type: 'info',
+              confirmText: 'Sí, cargar datos',
+              cancelText: 'No, continuar',
+              showCancel: true
+            }
+          }).afterClosed().subscribe(result => {
+            if (result) {
+              this.cargarDatosPersonaExistente(persona);
+            }
+          });
+        } else {
+          // ❌ NO EXISTE EN BD: Consultar APIs externas
+          this.consultarAPIsExternas(numero, tipo);
+        }
+      },
+      error: (err) => {
+        this.validandoDocumento = false;
+        console.error('Error al buscar en BD:', err);
+        this.consultarAPIsExternas(numero, tipo);
+      }
+    });
+  }
+    
+  private consultarAPIsExternas(numero: string, tipo: string) {
+    // ============================================
+    // CONSULTA RUC
+    // ============================================
     if (tipo === 'RUC' && numero.length === 13 && /^\d+$/.test(numero)) {
       this.consultaRucService.consultarRuc(numero).subscribe({
         next: (data: RucConsulta) => {
+          // Marcar como validado
+          this.documentoYaValidado = true;
+          this.ultimoDocumentoValidado = numero;
+
           this.personaForm.patchValue({
             primerNombre: data.razonSocial || '',
-            // primerApellido: data.actividadEconomicaPrincipal?.substring(0, 100) || '',
-            fechaNacimiento: DateUtils.normalizeDateString(data.informacionFechasContribuyente?.fechaInicioActividades ?? '1980-01-01'),
-            tipoPersona: 'JURÍDICA'
+            fechaNacimiento: DateUtils.normalizeDateString(
+              data.informacionFechasContribuyente?.fechaInicioActividades ?? '1980-01-01'
+            ),
+            tipoPersona: 'JURÍDICA',
+            idEstadoCivil: 5
           });
-
-          const noAplica = this.estadosCiviles.find(e => e.estadoCivilNombre.toUpperCase() === 'NO APLICA');
-          if (noAplica) {
-            this.personaForm.get('idEstadoCivil')?.setValue(noAplica.estadoCivilCodigo);
-          }
 
           this.dialog.open(CustomMessageBoxComponent, {
             width: '400px',
@@ -451,7 +659,7 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
             width: '400px',
             data: {
               title: 'RUC no encontrado',
-              message: `No se encontraron datos para el RUC ${numero}.`,
+              message: `No se encontraron datos para el RUC ${numero} en el servicio externo.`,
               type: 'error',
               confirmText: 'Cerrar',
               showCancel: false
@@ -461,11 +669,17 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
       });
     }
 
+    // ============================================
+    // CONSULTA CÉDULA
+    // ============================================
     if (tipo === 'CÉDULA') {
       this.registroCivilService.consultarCedula(numero).subscribe({
         next: (data) => {
-          const partes = data.nombre?.trim().split(' ') ?? [];
+          // Marcar como validado
+          this.documentoYaValidado = true;
+          this.ultimoDocumentoValidado = numero;
 
+          const partes = data.nombre?.trim().split(' ') ?? [];
           const idGenero = this.mapGenero(data.genero);
           const idEstadoCivil = this.mapEstadoCivil(data.estadoCivil);
 
@@ -475,10 +689,9 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
             primerNombre: partes[2] || '',
             segundoNombre: partes[3] || '',
             fechaNacimiento: this.convertirFecha(data.fechaNacimiento),
-            tipoPersona: 'Natural'
+            tipoPersona: 'NATURAL'
           });
 
-          // Solo asignar si hay valor válido
           if (idGenero !== null) {
             this.personaForm.get('idGenero')?.setValue(idGenero);
           }
@@ -486,7 +699,6 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
           if (idEstadoCivil !== null) {
             this.personaForm.get('idEstadoCivil')?.setValue(idEstadoCivil);
           }
-
 
           this.dialog.open(CustomMessageBoxComponent, {
             width: '400px',
@@ -504,7 +716,7 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
             width: '400px',
             data: {
               title: 'Cédula no encontrada',
-              message: `No se encontraron datos para la cédula ${numero}.`,
+              message: `No se encontraron datos para la cédula ${numero} en el Registro Civil.`,
               type: 'error',
               confirmText: 'Cerrar',
               showCancel: false
@@ -514,7 +726,58 @@ export class EntidadFormComponent implements OnInit, OnDestroy {
       });
     }
   }
+  private cargarDatosPersonaExistente(persona: PersonaResponse) {
+    console.log('📥 Cargando datos de persona existente:', persona);
 
+    // Obtener la descripción del tipo de documento
+    const descripcion = this.tiposDocumento.find(
+      t => t.idTipoDocumento === persona.idTipoDocumento
+    )?.descripcion;
+
+    if (descripcion) {
+      this.setLongitudValidator(descripcion);
+      this.actualizarFormularioPorTipo(descripcion);
+      this.personaForm.get('tipoDocumentoDescripcion')?.setValue(descripcion);
+      this.filtrarEstadosCiviles();
+    }
+
+    // Cargar todos los datos en el formulario
+    this.personaForm.patchValue({
+      primerNombre: persona.primerNombre || '',
+      segundoNombre: persona.segundoNombre || '',
+      primerApellido: persona.primerApellido || '',
+      segundoApellido: persona.segundoApellido || '',
+      numeroDocumento: persona.identificacion || '',
+      idTipoDocumento: persona.idTipoDocumento || null,
+      idEstadoCivil: persona.idEstadoCivil || null,
+      idGenero: persona.idGenero || null,
+      idCiudad: persona.idCiudad || null,
+      fechaNacimiento: persona.fechaNacimiento || '',
+      tipoPersona: persona.tipoPersona || 'NATURAL',
+      status: persona.status
+    });
+
+    // Deshabilitar campos clave
+    this.personaForm.get('numeroDocumento')?.disable();
+    this.personaForm.get('idTipoDocumento')?.disable();
+
+    // Cargar datos relacionados
+    this.correos = persona.correos || [];
+    this.telefonos = persona.telefonos || [];
+    this.direcciones = persona.direcciones || [];
+
+    // Mostrar mensaje de éxito
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: 'Datos cargados',
+        message: `Se han cargado los datos de: ${persona.primerNombre} ${persona.primerApellido}`,
+        type: 'success',
+        confirmText: 'Aceptar',
+        showCancel: false
+      }
+    });
+  }
   private mostrarMensajeRequerido(campos: string[]) {
     const listaCampos = campos.join(', ').replace(/, ([^,]*)$/, ' y $1'); // "a, b y c"
     const mensaje = `Debe agregar al menos un/a ${listaCampos} antes de guardar.`;

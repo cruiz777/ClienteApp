@@ -1,8 +1,110 @@
-.full-width {
-  width: 100%;
-  margin-bottom: 12px;
+.dialog-content {
+  min-width: 500px;
+  max-height: 600px;
+  padding: 20px;
 }
 
-mat-dialog-content {
-  overflow: hidden;
+.form-section {
+  margin-bottom: 20px;
+}
+
+.form-section h3 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.full-width {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.divider {
+  margin: 20px 0;
+}
+
+.list-section h3 {
+  margin: 0 0 15px 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #999;
+}
+
+.empty-state mat-icon {
+  font-size: 48px;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 10px;
+  opacity: 0.5;
+}
+
+.correos-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.correo-item {
+  margin: 0;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.correo-item mat-card-content {
+  padding: 12px;
+}
+
+.correo-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.correo-details {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+.tipo-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  background-color: #e3f2fd;
+  color: #1976d2;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  width: fit-content;
+}
+
+.email {
+  font-size: 14px;
+  color: #333;
+  font-weight: 500;
+}
+
+.correo-actions {
+  display: flex;
+  gap: 5px;
+}
+
+mat-dialog-actions {
+  padding: 16px 24px;
+  margin: 0;
 }
