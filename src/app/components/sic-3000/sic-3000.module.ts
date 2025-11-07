@@ -18,6 +18,8 @@ import { RegistroCobrosComponent } from './cxc/registro-cobros/registro-cobros.c
 import { AnulacionPagoComponent } from './cxc/anulacion-pago/anulacion-pago.component';
 import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
 import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
+import { CreacionAnticiposComponent } from './anticipos/creacion-anticipos/creacion-anticipos.component';
+import { ReporteAnticiposComponent } from './anticipos/reporte-anticipos/reporte-anticipos.component';
 
 // 👉 Standalone: se importa (no va en declarations)
 import { FacturacionIndividualComponent } from './facturacion/facturacion-individual/facturacion-individual.component';
@@ -45,7 +47,8 @@ import { FilePreviewComponent } from 'src/app/util/preview/file-preview.componen
     // ❌ No declarar FacturacionIndividualComponent porque es standalone
     ProductosSicComponent,
     AgregarUbicacionDialogComponent,
-    FilePreviewComponent 
+    FilePreviewComponent ,
+    
   ],
   imports: [
     CommonModule,
@@ -84,8 +87,9 @@ import { FilePreviewComponent } from 'src/app/util/preview/file-preview.componen
     MatSlideToggleModule,
     MatDatepickerModule,
     MatNativeDateModule,
-
-    AgGridModule
+    AgGridModule,
+    CreacionAnticiposComponent,
+    ReporteAnticiposComponent
   ]
 })
 export class Sic3000Module {}

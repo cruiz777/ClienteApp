@@ -1679,3 +1679,97 @@
   color: red;
   font-weight: bold;
 }
+/* Contenedor en línea con separación robusta */
+.checkbox-inline{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;     /* para que no se amontonen en pantallas pequeñas */
+  gap:12px;           /* espacio entre cada bloque */
+}
+
+/* Etiqueta inicial “Facturación en Bloque:” */
+.checkbox-inline .prefix{
+  margin-right:8px;
+  white-space:nowrap;
+  color:#002c6c;
+  font-size:13px;
+}
+
+/* Cada checkbox con su texto como una unidad */
+.chk{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;            /* espacio entre el cuadradito y el texto */
+}
+
+/* El input sin márgenes raros entre navegadores */
+.chk input{
+  margin:0;
+}
+
+/* Fallback para navegadores sin soporte de gap en flex */
+@supports not (gap: 12px){
+  .checkbox-inline .chk{ margin-right:12px; }
+  .checkbox-inline .chk:last-child{ margin-right:0; }
+}
+/* Contenedor de la línea de checkboxes */
+.checkbox-inline{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;          /* para que baje si no hay espacio */
+  column-gap:28px;         /* espacio horizontal entre items */
+  row-gap:8px;             /* espacio vertical si saltan de línea */
+}
+
+/* Texto “Facturación en Bloque:” */
+.checkbox-inline .prefix{
+  margin-right:14px;       /* separación del primer check */
+  color:#002c6c;
+  font-size:12px;
+  white-space:nowrap;
+}
+
+/* Cada item (checkbox + texto) */
+.checkbox-inline .chk{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;                 /* espacio entre el input y el texto */
+  /* Fallback para navegadores sin gap en flex: */
+  margin-right:28px;
+}
+
+/* Quita espacios raros alrededor del input */
+.checkbox-inline .chk input{
+  margin:0;
+}
+
+/* Opcional: más separación solo para “Otros” */
+.checkbox-inline .chk:last-child{
+  margin-right:0;
+}
+.checks-inline{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;         /* por si no cabe en una sola línea */
+  column-gap: 22px;       /* espacio horizontal entre opciones */
+  row-gap: 8px;           /* espacio vertical si salta de línea */
+}
+
+.checks-inline .question{
+  margin-right: 12px;     /* separación del primer checkbox */
+  white-space: nowrap;
+  color:#002c6c;
+  font-size:12px;
+}
+
+.chk{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;                /* espacio entre el checkbox y el texto */
+  /* Fallback para navegadores viejos sin gap en flex: */
+  margin-right:22px;
+}
+
+.chk:last-child{ margin-right:0; }
+
+.chk input{ margin:0; }   /* elimina márgenes del input */

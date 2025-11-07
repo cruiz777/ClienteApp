@@ -107,10 +107,10 @@
               </mat-panel-title>
             </mat-expansion-panel-header>
             <!-- Nivel 3: Anticipos-->
-            <a mat-list-item routerLink="">
+            <a mat-list-item [routerLink]="'/sic-3000/creacion-anticipos'" >
               <span *ngIf="isExpanded" class="menu-text">Creación de Anticipos</span>
             </a>
-            <a mat-list-item routerLink="">
+            <a mat-list-item [routerLink]="'/sic-3000/reporte-anticipos'" >
               <span *ngIf="isExpanded" class="menu-text">Reporte de Anticipos</span>
             </a>
             <a mat-list-item routerLink="">
@@ -161,8 +161,8 @@
             <a mat-list-item [routerLink]="'/sic-3000/anularCobros'" routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Reversion de Pagos</span>
             </a>
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Listado Pagos Revertidos</span>
+            <a mat-list-item [routerLink]="'/sic-3000/panulados'">
+              <span *ngIf="isExpanded" class="menu-text">Listado Pagos</span>
             </a>
           </mat-expansion-panel>
 

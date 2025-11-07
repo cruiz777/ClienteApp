@@ -17,7 +17,9 @@ import { CajaComponent } from './facturacion/caja/caja.component';
 import { LisFacAnuladasComponent } from './facturacion/lis-fac-anuladas/lis-fac-anuladas.component';
 import { ProductosSicComponent } from './productos-sic/productos-sic.component';
 import { InicioComponent } from '../inicio/inicio.component';
-
+import { CreacionAnticiposComponent } from './anticipos/creacion-anticipos/creacion-anticipos.component';
+import { ReporteAnticiposComponent } from './anticipos/reporte-anticipos/reporte-anticipos.component';
+import { LisPagAnuladosComponent } from './cxc/lis-pag-anulados/lis-pag-anulados.component';
 const routes: Routes = [
   {
     path: '',
@@ -53,6 +55,11 @@ const routes: Routes = [
         path: 'anularCobros',
         component: AnulacionPagoComponent,
    
+      },
+      {
+        path: 'panulados',
+        component: LisPagAnuladosComponent
+       
       },
          {
         path: 'notaCredito',
@@ -104,6 +111,8 @@ const routes: Routes = [
         component: ProductosSicComponent 
       },
       { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
+      { path: 'creacion-anticipos', component: CreacionAnticiposComponent},
+      { path: 'reporte-anticipos', component: ReporteAnticiposComponent},
     ]
   }
 ];

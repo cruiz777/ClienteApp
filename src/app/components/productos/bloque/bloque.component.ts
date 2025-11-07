@@ -428,28 +428,50 @@ export class BloqueComponent implements OnInit {
     }
   }
 
-  habilitarSerie(): void {
-    const usarSerie = this.formUV.get('usarSerie')?.value;
-    const gtin = this.formUV.get('gtinNacionalSeleccionado')?.value;
-    const gcpId = this.formUV.get('gcp')?.value;
-    const prefijo = this.prefijos.find(p => p.id_prefijos === gcpId);
-    if (!prefijo) return;
+ habilitarSerie(): void {
+  const usarSerie = this.formUV.get('usarSerie')?.value;
+  const gtin = this.formUV.get('gtinNacionalSeleccionado')?.value; // GTIN-13 | GTIN-8 | UPC
+  const gcpId = this.formUV.get('gcp')?.value;
 
-    const pais = gtin === 'GTIN-13' ? '786' : '';
+  const prefijo = this.prefijos.find(p => p.id_prefijos === gcpId);
+  if (!prefijo) return;
 
-    if (usarSerie) {
-      this.generacionCodigosService.obtenerSecuencia(prefijo.codpre, pais).subscribe({
-        next: (resp: SecuenciaResponse) => {
-          this.formUV.get('serie')?.setValue(resp.data);
-        },
-        error: (err) => {
-          console.error('Error al obtener secuencia:', err);
-        }
-      });
-    } else {
-      this.formUV.get('serie')?.reset();
-    }
+  // Ecuador = 786 solo para GTIN-13
+  const pais = gtin === 'GTIN-13' ? '786' : '';
+
+  // Si no usa serie → limpiar y salir
+  if (!usarSerie) {
+    this.formUV.get('serie')?.reset();
+    return;
   }
+
+  // LÓGICA DE GTIN
+  if (gtin === 'UPC') {
+    // UPC = GTIN-12 → usar secuencia UPC
+    this.generacionCodigosService.obtenerSecuenciaUpc(prefijo.codpre, pais).subscribe({
+      next: (resp: SecuenciaResponse) => {
+        this.formUV.get('serie')?.setValue(resp.data);
+      },
+      error: (err) => console.error('Error secuencia UPC:', err)
+    });
+    return;
+  }
+
+  if (gtin === 'GTIN-13') {
+    // GTIN-13 nacional → secuencia normal
+    this.generacionCodigosService.obtenerSecuencia(prefijo.codpre, pais).subscribe({
+      next: (resp: SecuenciaResponse) => {
+        this.formUV.get('serie')?.setValue(resp.data);
+      },
+      error: (err) => console.error('Error secuencia GTIN-13:', err)
+    });
+    return;
+  }
+
+  // Otros GTIN → no generan serie
+  this.formUV.get('serie')?.reset();
+}
+
 
   generar(): void {
     debugger

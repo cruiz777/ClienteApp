@@ -13,6 +13,65 @@ export interface ApiResponse<T> {
   count?: number | null;
 }
 
+/* ==== Paginación genérica ==== */
+export interface PaginationResponse<TItem> {
+  items: TItem[];
+  page: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  message?: string;
+}
+/* ========= Item RAW que devuelve /Pagos/todos ========= */
+export interface PagoItemRaw {
+  id_pago: number;
+  numero_pago: string;
+  tipo: 'P' | 'A' | string;
+  cliente_codigo: number;
+  cliente_nombre: string;
+  fecha: string;                 // ISO
+  numero_documento: string;
+  pagado: string;                // ¡Ojo! viene como string
+  total_pago: number;
+  observaciones: string | null;
+  tiene_retencion_iva: boolean | null;
+  valor_retencion_iva: string | null;
+  tiene_retencion_fuente: boolean | null;
+  valor_retencion_fuente: string | null;
+  caja: string | null;
+  pago_anulado: boolean | null;
+  fecha_anulacion: string | null;
+  motivo_anulacion: string | null;
+  anulado_por: number | null;
+  estado: string | null;         // “ACTIVO” | “ANULADO” (lo envía el backend)
+  detalles: any[] | null;        // si incluirDetalle=false, viene null
+}
+
+/* ========= Versión normalizada para la UI ========= */
+export interface PagoItem {
+  idPago: number;
+  numeroPago: string;
+  tipo: 'P' | 'A' | string;
+  clienteCodigo: number;
+  clienteNombre: string;
+  fecha: string;                   // ISO
+  numeroDocumento: string;
+  pagado: number;                  // normalizado a number
+  totalPago: number;
+  observaciones: string | null;
+  tieneRetencionIva: boolean;
+  valorRetencionIva: number | null;
+  tieneRetencionFuente: boolean;
+  valorRetencionFuente: number | null;
+  caja: string | null;
+  pagoAnulado: boolean;
+  fechaAnulacion: string | null;
+  motivoAnulacion: string | null;
+  anuladoPor: number | null;
+  estado: string | null;           // “ACTIVO” | “ANULADO”
+  detalles?: PagoDetalle[];        // si pides incluirDetalle
+}
+
 /* ==== CxC ==== */
 export interface ApiRespuestaCxC {
   data?: {
@@ -35,13 +94,12 @@ export interface FacturaPendiente {
   saldo_pendiente: number;
   tipo_documento: string;
   observacion: string;
-  detalle:string;
+  detalle: string;
 }
 
 /* ==== Pago (respuesta de creación) ==== */
 export interface CreatePagoResponse {
-  numero_pago?: string;   // snake_case como lo devuelve tu API
-  // otros campos si los necesitas...
+  numero_pago?: string;   // snake_case que devuelve el API
 }
 
 /* ==== Grid (una sola definición) ==== */
@@ -57,15 +115,15 @@ export interface GridRow {
   valueVencido: boolean;
   descripcion: string;
   ord: number;
-    detalles?: string[];   // <- del API
-  detalle?: string;  
+  detalles?: string[];          // del API
+  detalle?: string;
 }
 
 /* ---- Pago (request) ---- */
 export interface FacturaAPagar {
   numero_factura: string;
   tipo_documento: string;
-  tipo: string;                 // <-- NECESARIO: 'P' | 'A'
+  tipo: string;                 // 'P' | 'A'
   monto_a_pagar: number;
 }
 
@@ -79,7 +137,7 @@ export interface FormaPagoItem {
 }
 
 export interface PagoRequest {
-  cliente_codigo: number;        // <-- número, no string
+  cliente_codigo: number;
   facturas_a_pagar: FacturaAPagar[];
   formas_pago: FormaPagoItem[];
   id_usuario_responsable: number;
@@ -87,15 +145,13 @@ export interface PagoRequest {
   observaciones?: string;
 }
 
-/** ---- Request para anular pago ---- */
+/** ---- Request/Response para anular pago ---- */
 export interface AnularPagoRequest {
   motivo_anulacion: string;
   id_usuario_responsable: number;
 }
 
-/** (Opcional) respuesta si tu API envía algo útil */
 export interface AnularPagoResponse {
-  // ajusta si tu backend devuelve más datos
   numero_pago?: string;
 }
 
@@ -116,9 +172,9 @@ export interface PagoPorNumero {
   tipo: 'P' | 'A';
   cliente_codigo: number;
   cliente_nombre: string;
-  fecha: string;            // ISO 8601 (del backend)
+  fecha: string;            // ISO 8601
   numero_documento: string;
-  pagado: number;           // <- normalizado a number
+  pagado: number;           // normalizado a number
   total_pago: number;
   observaciones?: string | null;
   tiene_retencion_iva: boolean;
@@ -129,10 +185,58 @@ export interface PagoPorNumero {
   detalles: PagoDetalle[];
 }
 
+/* ========= Item/Modelo para /Pagos/anulados ========= */
+export interface PagoAnuladoItem {
+  id_pago: number;
+  numero_pago: string;
+  tipo: string;               // 'A'
+  cliente_codigo: number;
+  cliente_nombre: string;
+  fecha: string;              // ISO
+  numero_documento: string;
+  pagado: string;             // viene como "100" (string)
+  total_pago: number;         // number
+  observaciones: string | null;
+  tiene_retencion_iva: boolean | null;
+  valor_retencion_iva: string | null;
+  tiene_retencion_fuente: boolean | null;
+  valor_retencion_fuente: string | null;
+  caja: string | null;
+  detalles: any[] | null;     // normalmente null cuando incluirDetalle=false
+  pago_anulado: boolean | null;
+  fecha_anulacion: string | null;
+  motivo_anulacion: string | null;
+  anulado_por: number | null;
+  estado: string | null;
+}
+
+export interface PagoAnulado {
+  idPago: number;
+  numeroPago: string;
+  tipo: string;
+  clienteCodigo: number;
+  clienteNombre: string;
+  fecha: string;                 // ISO
+  numeroDocumento: string;
+  pagado: number;                // normalizado a number
+  totalPago: number;
+  observaciones: string | null;
+  tieneRetencionIva: boolean;
+  valorRetencionIva: number | null;
+  tieneRetencionFuente: boolean;
+  valorRetencionFuente: number | null;
+  caja: string | null;
+  pagoAnulado: boolean;
+  fechaAnulacion: string | null;
+  motivoAnulacion: string | null;
+  anuladoPor: number | null;
+  estado: string | null;
+}
 
 /* ==== Servicio ==== */
 @Injectable({ providedIn: 'root' })
 export class CuentaCobrarService {
+  // Asegúrate que environment.invoices_sic = "http://localhost:5010/invoices-sic/api"
   private readonly baseUrl = environment.invoices_sic;
 
   constructor(private http: HttpClient) {}
@@ -155,45 +259,42 @@ export class CuentaCobrarService {
     return of(this.mapResponseToGridRows(json, clienteCodigo));
   }
 
-private mapResponseToGridRows(res: ApiRespuestaCxC, clienteCodigo: string): GridRow[] {
-  const items = res?.data?.resumen_por_cliente?.items ?? [];
-  const item = items.find(i => String(i?.cliente_codigo) === String(clienteCodigo)) ?? items[0];
+  private mapResponseToGridRows(res: ApiRespuestaCxC, clienteCodigo: string): GridRow[] {
+    const items = res?.data?.resumen_por_cliente?.items ?? [];
+    const item = items.find(i => String(i?.cliente_codigo) === String(clienteCodigo)) ?? items[0];
 
-  const facturas: FacturaPendiente[] = (item?.facturas_pendientes ?? []) as FacturaPendiente[];
-  if (!Array.isArray(facturas) || facturas.length === 0) return [];
+    const facturas: FacturaPendiente[] = (item?.facturas_pendientes ?? []) as FacturaPendiente[];
+    if (!Array.isArray(facturas) || facturas.length === 0) return [];
 
-  return facturas.map((f): GridRow => {
-    const pago = 0;
-    const monto = this.to2(this.num(f.saldo_pendiente ?? f.total_factura));
+    return facturas.map((f): GridRow => {
+      const pago = 0;
+      const monto = this.to2(this.num(f.saldo_pendiente ?? f.total_factura));
 
-    // Puede venir como 'detalles' (array) o 'detalle' (string)
-    const rawDetalles = (f as any)?.detalles;
-    const arr: string[] =
-      Array.isArray(rawDetalles) ? rawDetalles
-      : f.detalle ? [String(f.detalle).trim()]
-      : [];
+      const rawDetalles = (f as any)?.detalles;
+      const arr: string[] =
+        Array.isArray(rawDetalles) ? rawDetalles
+        : f.detalle ? [String(f.detalle).trim()]
+        : [];
 
-    const detallePlano = arr.map(s => String(s ?? '').trim()).filter(Boolean).join(' • ');
+      const detallePlano = arr.map(s => String(s ?? '').trim()).filter(Boolean).join(' • ');
 
-    return {
-      numero: `F - ${f.numero_factura}`,
-      numero_factura: f.numero_factura,
-      tipo_documento: f.tipo_documento,
-      fecha: f.fecha_factura,
-      monto,
-      pago,
-      estado: pago <= 0 ? 'PENDIENTE DE PAGO' : (pago >= monto ? 'CANCELADO' : 'ABONADO'),
-      vence: f.fecha_factura,
-      valueVencido: this.num(f.dias_vencimiento) > 0,
-      descripcion: f.observacion || f.tipo_documento || '',
-      ord: 1,
-      detalles: arr.length ? arr : undefined,          // ← FIX: no null
-      detalle: detallePlano || 'SIN DETALLE',
-    };
-  });
-}
-
-
+      return {
+        numero: `F - ${f.numero_factura}`,
+        numero_factura: f.numero_factura,
+        tipo_documento: f.tipo_documento,
+        fecha: f.fecha_factura,
+        monto,
+        pago,
+        estado: pago <= 0 ? 'PENDIENTE DE PAGO' : (pago >= monto ? 'CANCELADO' : 'ABONADO'),
+        vence: f.fecha_factura,
+        valueVencido: this.num(f.dias_vencimiento) > 0,
+        descripcion: f.observacion || f.tipo_documento || '',
+        ord: 1,
+        detalles: arr.length ? arr : undefined,
+        detalle: detallePlano || 'SIN DETALLE',
+      };
+    });
+  }
 
   private num(v: any): number {
     return typeof v === 'string' ? parseFloat(v) : (v ?? 0);
@@ -209,7 +310,7 @@ private mapResponseToGridRows(res: ApiRespuestaCxC, clienteCodigo: string): Grid
 
   /* --------- Pagos --------- */
   registrarPago(req: PagoRequest): Observable<string> {
-    const url = `${this.baseUrl}/Pagos`; // coherente con el controller [Route("api/[controller]")]
+    const url = `${this.baseUrl}/Pagos`;
     return this.http.post<ApiResponse<CreatePagoResponse>>(url, req).pipe(
       map(res => {
         const n = res.data?.numero_pago;
@@ -219,7 +320,6 @@ private mapResponseToGridRows(res: ApiRespuestaCxC, clienteCodigo: string): Grid
     );
   }
 
-  /** Construye el payload de pago desde datos de la UI */
   buildPagoRequest(params: {
     clienteCodigo: string | number;
     facturasSeleccionadas: Array<{ numero: string; tipo: string; montoPagar: number }>;
@@ -231,13 +331,12 @@ private mapResponseToGridRows(res: ApiRespuestaCxC, clienteCodigo: string): Grid
     caja: string;
     observaciones?: string;
   }): PagoRequest {
-
     const facturas_a_pagar: FacturaAPagar[] = (params.facturasSeleccionadas || [])
       .filter(f => this.to2(f.montoPagar) > 0)
       .map(f => ({
         numero_factura: this.sanitizeString(f.numero).replace(/^F\s*-\s*/i, ''),
         tipo_documento: this.sanitizeString('FACTURA'),
-        tipo: this.sanitizeString(f.tipo).toUpperCase(), // debe ser 'P' o 'A'
+        tipo: this.sanitizeString(f.tipo).toUpperCase(), // 'P' | 'A'
         monto_a_pagar: this.to2(f.montoPagar),
       }));
 
@@ -253,23 +352,23 @@ private mapResponseToGridRows(res: ApiRespuestaCxC, clienteCodigo: string): Grid
       }));
 
     return {
-      cliente_codigo: Number(params.clienteCodigo),  // número
-      facturas_a_pagar,
-      formas_pago,
+      cliente_codigo: Number(params.clienteCodigo),
+      facturas_a_pagar: facturas_a_pagar,
+      formas_pago: formas_pago,
       id_usuario_responsable: Number(params.usuarioId),
       caja: this.sanitizeString(params.caja),
       observaciones: this.sanitizeString(params.observaciones),
     };
   }
 
-  /** Verifica que suma(formas_pago) == suma(facturas_a_pagar) (2 decimales) */
   validatePago(req: PagoRequest): { ok: boolean; diferencia: number } {
     const totalFacturas = this.to2(req.facturas_a_pagar.reduce((a, b) => a + this.to2(b.monto_a_pagar), 0));
     const totalFormas = this.to2(req.formas_pago.reduce((a, b) => a + this.to2(b.monto), 0));
     const dif = this.to2(totalFacturas - totalFormas);
     return { ok: Math.abs(dif) < 0.01, diferencia: dif };
   }
-    /** GET /api/Pagos/{numeroPago} - devuelve el primer item normalizado */
+
+  /** GET /api/Pagos/{numeroPago} - devuelve el primer item normalizado */
   getPagoByNumero(numeroPago: string): Observable<PagoPorNumero> {
     const url = `${this.baseUrl}/Pagos/${encodeURIComponent(numeroPago)}`;
     return this.http.get<ApiResponse<PagoPorNumero[]>>(url).pipe(
@@ -281,11 +380,11 @@ private mapResponseToGridRows(res: ApiRespuestaCxC, clienteCodigo: string): Grid
     );
   }
 
-  /** (Opcional) GET crudo tal cual viene del API, por si lo necesitas */
+  /** GET crudo tal cual viene del API */
   getPagoByNumeroRaw(numeroPago: string): Observable<ApiResponse<PagoPorNumero[]>> {
     const url = `${this.baseUrl}/Pagos/${encodeURIComponent(numeroPago)}`;
     return this.http.get<ApiResponse<PagoPorNumero[]>>(url);
-  }
+    }
 
   /** Normaliza tipos numéricos y estructura de detalles */
   private normalizePago(raw: any): PagoPorNumero {
@@ -297,7 +396,7 @@ private mapResponseToGridRows(res: ApiRespuestaCxC, clienteCodigo: string): Grid
       cliente_nombre: this.sanitizeString(raw.cliente_nombre),
       fecha: this.sanitizeString(raw.fecha),
       numero_documento: this.sanitizeString(raw.numero_documento),
-      pagado: this.to2(this.num(raw.pagado)),         // viene como "10" => 10
+      pagado: this.to2(this.num(raw.pagado)),
       total_pago: this.to2(this.num(raw.total_pago)),
       observaciones: raw.observaciones ?? null,
       tiene_retencion_iva: !!raw.tiene_retencion_iva,
@@ -318,25 +417,188 @@ private mapResponseToGridRows(res: ApiRespuestaCxC, clienteCodigo: string): Grid
         : [],
     };
   }
-anularPago(numeroPago: string, req: AnularPagoRequest): Observable<string> {
-  const nro = this.sanitizeString(numeroPago);
-  if (!nro) throw new Error('numeroPago requerido');
-  const url = `${this.baseUrl}/Pagos/anular/${encodeURIComponent(nro)}`;
 
-  // tip: el backend ya recibe JSON; no necesitas headers manuales
-  return this.http.post<ApiResponse<AnularPagoResponse | null>>(url, {
-    motivo_anulacion: this.sanitizeString(req.motivo_anulacion),
-    id_usuario_responsable: Number(req.id_usuario_responsable),
-  }).pipe(
+  anularPago(numeroPago: string, req: AnularPagoRequest): Observable<string> {
+    const nro = this.sanitizeString(numeroPago);
+    if (!nro) throw new Error('numeroPago requerido');
+    const url = `${this.baseUrl}/Pagos/anular/${encodeURIComponent(nro)}`;
+
+    return this.http.post<ApiResponse<AnularPagoResponse | null>>(url, {
+      motivo_anulacion: this.sanitizeString(req.motivo_anulacion),
+      id_usuario_responsable: Number(req.id_usuario_responsable),
+    }).pipe(
+      map(res => {
+        const t = (res?.type || '').toLowerCase();
+        if (t.includes('error') || t === 'notfound' || t === 'validation_error') {
+          throw new Error(res?.message || 'Error anulando pago');
+        }
+        return res?.message || 'Pago anulado correctamente.';
+      })
+    );
+  }
+
+  /* --------- Pagos anulados --------- */
+  getAnuladosRaw(opts: {
+    incluirDetalle?: boolean;
+    page?: number;
+    pageSize?: number;
+    fechaDesde?: string;   // 'yyyy-MM-dd'
+    fechaHasta?: string;   // 'yyyy-MM-dd'
+    numeroPago?: string;
+  } = {}): Observable<ApiResponse<PaginationResponse<PagoAnuladoItem>>> {
+    const url = `${this.baseUrl}/Pagos/anulados`;
+
+    let params = new HttpParams()
+      .set('incluirDetalle', String(!!opts.incluirDetalle))
+      .set('page', String(opts.page ?? 1))
+      .set('pageSize', String(opts.pageSize ?? 20));
+
+    if (opts.fechaDesde) params = params.set('fechaDesde', opts.fechaDesde);
+    if (opts.fechaHasta) params = params.set('fechaHasta', opts.fechaHasta);
+    if (opts.numeroPago) params = params.set('numeroPago', opts.numeroPago.trim());
+
+    return this.http.get<ApiResponse<PaginationResponse<PagoAnuladoItem>>>(url, { params });
+  }
+
+  getAnulados(opts: {
+    incluirDetalle?: boolean;
+    page?: number;
+    pageSize?: number;
+    fechaDesde?: string;
+    fechaHasta?: string;
+    numeroPago?: string;
+  } = {}): Observable<PaginationResponse<PagoAnulado>> {
+    return this.getAnuladosRaw(opts).pipe(
+      map(res => {
+        if (!res.data) {
+          return {
+            items: [],
+            page: opts.page ?? 1,
+            pageSize: opts.pageSize ?? 20,
+            totalItems: 0,
+            totalPages: 0,
+            message: res.message
+          };
+        }
+        return {
+          ...res.data,
+          items: (res.data.items || []).map(this.normalizeItem)
+        };
+      })
+    );
+  }
+
+  private normalizeItem = (raw: PagoAnuladoItem): PagoAnulado => ({
+    idPago: Number(raw.id_pago),
+    numeroPago: (raw.numero_pago ?? '').trim(),
+    tipo: (raw.tipo ?? '').trim(),
+    clienteCodigo: Number(raw.cliente_codigo),
+    clienteNombre: (raw.cliente_nombre ?? '').trim(),
+    fecha: raw.fecha ?? '',
+    numeroDocumento: (raw.numero_documento ?? '').trim(),
+    pagado: this.num(raw.pagado), // venía string -> number
+    totalPago: Number(raw.total_pago ?? 0),
+    observaciones: raw.observaciones ?? null,
+    tieneRetencionIva: !!raw.tiene_retencion_iva,
+    valorRetencionIva: raw.valor_retencion_iva != null ? this.num(raw.valor_retencion_iva) : null,
+    tieneRetencionFuente: !!raw.tiene_retencion_fuente,
+    valorRetencionFuente: raw.valor_retencion_fuente != null ? this.num(raw.valor_retencion_fuente) : null,
+    caja: raw.caja ?? null,
+    pagoAnulado: !!raw.pago_anulado,
+    fechaAnulacion: raw.fecha_anulacion ?? null,
+    motivoAnulacion: raw.motivo_anulacion ?? null,
+    anuladoPor: raw.anulado_por != null ? Number(raw.anulado_por) : null,
+    estado: raw.estado ?? null,
+  });
+
+  /* --------- Pagos (activos + anulados) --------- */
+getPagosTodosRaw(opts: {
+  incluirDetalle?: boolean;
+  page?: number;
+  pageSize?: number;
+  fechaDesde?: string;     // 'yyyy-MM-dd'
+  fechaHasta?: string;     // 'yyyy-MM-dd'
+  numeroPago?: string;
+  clienteCodigo?: number;  // opcional
+} = {}): Observable<ApiResponse<PaginationResponse<PagoItemRaw>>> {
+  const url = `${this.baseUrl}/Pagos/todos`;
+
+  let params = new HttpParams()
+    .set('incluirDetalle', String(!!opts.incluirDetalle))
+    .set('page', String(opts.page ?? 1))
+    .set('pageSize', String(opts.pageSize ?? 20));
+
+  if (opts.fechaDesde)    params = params.set('fechaDesde', opts.fechaDesde);
+  if (opts.fechaHasta)    params = params.set('fechaHasta', opts.fechaHasta);
+  if (opts.numeroPago)    params = params.set('numeroPago', opts.numeroPago.trim());
+  if (opts.clienteCodigo) params = params.set('clienteCodigo', String(opts.clienteCodigo));
+
+  return this.http.get<ApiResponse<PaginationResponse<PagoItemRaw>>>(url, { params });
+}
+
+/** Devuelve ya normalizado para usar directo en la UI */
+getPagosTodos(opts: {
+  incluirDetalle?: boolean;
+  page?: number;
+  pageSize?: number;
+  fechaDesde?: string;
+  fechaHasta?: string;
+  numeroPago?: string;
+  clienteCodigo?: number;
+} = {}): Observable<PaginationResponse<PagoItem>> {
+  return this.getPagosTodosRaw(opts).pipe(
     map(res => {
-      // Convención ApiResponse de tu proyecto
-      const t = (res?.type || '').toLowerCase();
-      if (t.includes('error') || t === 'notfound' || t === 'validation_error') {
-        throw new Error(res?.message || 'Error anulando pago');
+      if (!res.data) {
+        return {
+          items: [],
+          page: opts.page ?? 1,
+          pageSize: opts.pageSize ?? 20,
+          totalItems: 0,
+          totalPages: 0,
+          message: res.message
+        };
       }
-      // retorna un texto amigable
-      return res?.message || 'Pago anulado correctamente.';
+      return {
+        ...res.data,
+        items: (res.data.items || []).map(this.normalizePagoItem)
+      };
     })
   );
 }
+
+/* ---- Normalizador RAW -> UI ---- */
+private normalizePagoItem = (raw: PagoItemRaw): PagoItem => ({
+  idPago: Number(raw.id_pago),
+  numeroPago: (raw.numero_pago ?? '').trim(),
+  tipo: (raw.tipo ?? '').trim() as any,
+  clienteCodigo: Number(raw.cliente_codigo),
+  clienteNombre: (raw.cliente_nombre ?? '').trim(),
+  fecha: raw.fecha ?? '',
+  numeroDocumento: (raw.numero_documento ?? '').trim(),
+  pagado: this.num(raw.pagado), // string -> number
+  totalPago: Number(raw.total_pago ?? 0),
+  observaciones: raw.observaciones ?? null,
+  tieneRetencionIva: !!raw.tiene_retencion_iva,
+  valorRetencionIva: raw.valor_retencion_iva != null ? this.num(raw.valor_retencion_iva) : null,
+  tieneRetencionFuente: !!raw.tiene_retencion_fuente,
+  valorRetencionFuente: raw.valor_retencion_fuente != null ? this.num(raw.valor_retencion_fuente) : null,
+  caja: raw.caja ?? null,
+  pagoAnulado: !!raw.pago_anulado,
+  fechaAnulacion: raw.fecha_anulacion ?? null,
+  motivoAnulacion: raw.motivo_anulacion ?? null,
+  anuladoPor: raw.anulado_por != null ? Number(raw.anulado_por) : null,
+  estado: raw.estado ?? null,
+  detalles: Array.isArray(raw.detalles)
+    ? raw.detalles.map((d: any): PagoDetalle => ({
+        forma_pago: this.sanitizeString(d.forma_pago),
+        secuencia: this.sanitizeString(d.secuencia),
+        monto: this.to2(this.num(d.monto)),
+        descripcion_pago: this.sanitizeString(d.descripcion_pago),
+        referencia: this.sanitizeString(d.referencia),
+        banco: this.sanitizeString(d.banco),
+        numero_documento: this.sanitizeString(d.numero_documento),
+      }))
+    : undefined
+});
+
 }
