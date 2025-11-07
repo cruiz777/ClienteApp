@@ -1,20 +1,23 @@
 import { NgModule } from '@angular/core';
+import { Component } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
 import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
 import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
 import { EstructuraListComponent } from './estructuracomercial/estructura-list/estructura-list.component';
-import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.component';
+import { RegistroCobrosComponent } from './cxc/registro-cobros/registro-cobros.component';
+
 import { FacturacionIndividualComponent } from './facturacion/facturacion-individual/facturacion-individual.component';
 import { FacturacionGlobalComponent } from './facturacion/facturacion-global/facturacion-global.component';
 import { AuthGuard } from 'src/app/guards/auth.guard';
 import { PermissionGuard } from 'src/app/guards/permission.guard';
-import { CobroIndividualComponent } from './cobro-individual/cobro-individual.component';
-
-//hermann
-
+import { AnulacionPagoComponent } from './cxc/anulacion-pago/anulacion-pago.component';
+import { NotaCreditoComponent } from './cxc/nota-credito/nota-credito.component';
+import { CajaComponent } from './facturacion/caja/caja.component';
+import { LisFacAnuladasComponent } from './facturacion/lis-fac-anuladas/lis-fac-anuladas.component';
 import { ProductosSicComponent } from './productos-sic/productos-sic.component';
-
+import { InicioComponent } from '../inicio/inicio.component';
+import { ProveedoresListaComponent } from './proveedores/proveedores.component';
 
 const routes: Routes = [
   {
@@ -24,49 +27,67 @@ const routes: Routes = [
     children: [
       // Redirige a la ruta que sí existe
       { path: '', redirectTo: 'inicio-sic', pathMatch: 'full' },
-      
+
       // INICIO - Solo requiere acceso al módulo
-      { 
-        path: 'inicio-sic', 
+      {
+        path: 'inicio-sic',
         component: InicioSicComponent,
         canActivate: [PermissionGuard],
         data: { permission: 'sic-3000' } // ✅ Permiso específico
       },
-      
+
       // ESTRUCTURA COMERCIAL
-      { 
-        path: 'estructura-list', 
+      {
+        path: 'estructura-list',
         component: EstructuraListComponent,
         canActivate: [PermissionGuard],
         data: { permission: 'sic-3000.inventarios.estructura-comercial' }
       },
-      
-      { 
-        path: 'registroCobros', 
+
+      {
+        path: 'registroCobros',
         component: RegistroCobrosComponent,
         canActivate: [PermissionGuard],
         data: { permission: 'sic-3000.cuentas-por-cobrar.registro-cobros' }
       },
-      { path: 'cobroIndividual', component: CobroIndividualComponent },
-      
-      
+       {
+        path: 'anularCobros',
+        component: AnulacionPagoComponent,
+   
+      },
+         {
+        path: 'notaCredito',
+        component: NotaCreditoComponent,
+   
+      },
 
       { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
-   
+
       // FACTURACIÓN INDIVIDUAL
-      { 
-        path: 'findividual', 
+      {
+        path: 'findividual',
         component: FacturacionIndividualComponent,
         canActivate: [PermissionGuard],
         data: { permission: 'sic-3000.facturacion.facturacion-individual' }
       },
-      
+
       // FACTURACIÓN GLOBAL
-      { 
-        path: 'fglobal', 
+      {
+        path: 'fglobal',
         component: FacturacionGlobalComponent,
         canActivate: [PermissionGuard],
-        data: { permission: 'sic-3000.facturacion.facturacion-global' } 
+        data: { permission: 'sic-3000.facturacion.facturacion-global' }
+      },
+      {
+        path: 'caja',
+        component: CajaComponent
+       
+      }
+      ,
+      {
+        path: 'fanuladas',
+        component: LisFacAnuladasComponent
+       
       },
       // ✅ Ruta para EDITAR producto (con ID)
       { 
@@ -83,6 +104,11 @@ const routes: Routes = [
         path: 'productossic', 
         component: ProductosSicComponent 
       },
+            { 
+        path: 'proveedores', 
+        component: ProveedoresListaComponent 
+      },
+      { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
     ]
   }
 ];

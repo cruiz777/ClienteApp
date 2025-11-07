@@ -1,0 +1,88 @@
+<div class="panel-header">
+  <h3>Caja</h3>
+
+</div>
+
+<div *ngIf="error" class="alert error">{{ error }}</div>
+<div *ngIf="loading" class="alert loading">Cargando…</div>
+<div class="panel-header">
+  <h3>Tabla de Usuarios</h3>
+  <div>
+    <!-- conservas mat-stroked-button pero aplicas clase para estilizar -->
+    <button mat-stroked-button class="btn-link mat-override" (click)="nuevo()">
+
+      Nuevo
+    </button>
+  </div>
+</div>
+
+<div class="tabla-scrollable" *ngIf="!loading">
+  <table class="tabla-estilo" *ngIf="catalogoAutorizaciones?.length; else vacio">
+    <thead>
+      <tr>
+        <th class="col-num">#</th>
+        <th class="col-sm">Id</th>
+        <th class="col-xs">Caja</th>
+        <th class="col-md"># Autorización</th>
+        <th class="col-sm"># Factura</th>
+        <th class="col-xs">E.Factura</th>
+        <th class="col-xs">Establecimiento</th>
+        <th class="col-lg">Dirección</th>
+        <th class="col-md">Ruc</th>
+        <th class="col-md">Empresa</th>
+        <th class="col-xs">Generar xml</th>
+        <th class="col-sm"># N.Crédito</th>
+        <th class="col-xs">E.N.Crédito</th>
+        <!-- 👇 nuevas -->
+        <th class="col-accion">Editar</th>
+        <th class="col-accion">Eliminar</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr *ngFor="let a of catalogoAutorizaciones; let i = index; trackBy: trackById">
+
+        <td class="col-num">{{ i + 1 }}</td>
+        <td class="mono center">{{ a.id_autorizacion_caja }}</td>
+        <td class="mono center">{{ a.caja }}</td>
+        <td class="mono">{{ a.numero_autorizacion }}</td>
+        <td class="mono right">{{ a.numero_factura }}</td>
+        <td class="center">{{ a.estado_factura }}</td>
+        <td class="mono center">{{ a.num_establecimiento }}</td>
+        <td class="ellipsis" [title]="a.direccion">{{ a.direccion }}</td>
+        <td class="mono">{{ a.ruc }}</td>
+        <td class="ellipsis" [title]="a.nombre_comercial">{{ a.nombre_comercial }}</td>
+        <td class="center">
+          <span class="badge" [class.badge-ok]="a.generar_xml" [class.badge-no]="!a.generar_xml">
+            {{ a.generar_xml ? 'Sí' : 'No' }}
+          </span>
+        </td>
+        <td class="mono right">{{ a.numero_ncredito }}</td>
+        <td class="center">{{ a.estado_ncredito }}</td>
+
+        <!-- 👇 nuevas acciones -->
+        <td class="col-accion">
+          <button type="button" class="btn-icon" [disabled]="loading" (click)="editar(a)" title="Editar"
+            aria-label="Editar autorización">
+            <img src="assets/icons/icon-modificar-3.png" alt="" width="18" height="18" loading="lazy" />
+          </button>
+        </td>
+        <td class="col-accion">
+          <button type="button" class="btn-icon danger" [disabled]="loading || eliminandoId === a.id_autorizacion_caja"
+            (click)="eliminar(a)" title="Eliminar" aria-label="Eliminar autorización">
+            <img src="assets/icons/eliminar.png" alt="" width="18" height="18" loading="lazy" />
+          </button>
+        </td>
+
+      </tr>
+    </tbody>
+  </table>
+
+  <ng-template #vacio>
+    <div class="estado-vacio">No hay registros.</div>
+  </ng-template>
+</div>
+
+<div class="tabla-footer" *ngIf="totalItems">
+  <span>Página {{ page }} de {{ totalPages }} · Total: {{ totalItems }}</span>
+</div>

@@ -3061,3 +3061,55 @@ label[for="secuencial"]{ padding-left: 0 !important; }
 
 /* por si algún estilo global mete borde 3D/azul */
 button.fi-btn{ appearance:none; -webkit-appearance:none; }
+.cell-required {
+  background: #ffe6e6 !important;
+  border: 1px solid #e11d48 !important; /* rojo */
+}
+.spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.6);
+  border-top-color: #fff;
+  margin-right: 6px;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+/* Input “Cliente” más grande */
+:host .fi-input-wrap {
+  display: flex;
+  align-items: center;
+  min-height: 40px;            /* ↑ altura contenedor */
+}
+
+:host .fi-input-wrap input.mat-mdc-input-element[matInput] {
+  height: 40px !important;     /* ↑ altura del input */
+  line-height: 40px !important;
+  padding: 0 12px !important;  /* ↑ respiración lateral */
+  font-size: 14px !important;  /* ↑ tipografía */
+  border-radius: 6px !important;
+  background: #fff !important;
+  border: 1px solid #E6ECF5 !important; /* se ve como los demás */
+  box-shadow: 0 1px 2px rgba(16,24,40,.04) !important;
+}
+
+/* Placeholder y texto con mejor contraste */
+:host .fi-input-wrap input.mat-mdc-input-element::placeholder {
+  color: #9aa8bf !important;
+}
+
+/* Mat Autocomplete: tamaño comfortable */
+:host ::ng-deep .mat-mdc-autocomplete-panel .mat-mdc-option {
+  min-height: 36px !important; /* ↑ alto de cada opción */
+  font-size: 14px !important;
+}
+
+/* Que el panel del autocomplete no se corte */
+:host ::ng-deep .mat-mdc-autocomplete-panel {
+  max-height: 320px !important;
+  border: 1px solid #E6ECF5;
+  box-shadow: 0 6px 16px rgba(0,0,0,.08);
+}
+:host .fi-grid2 .col-1 { min-width: 420px; } /* ya lo tienes en varios sitios */
+:host .fi-grid2 .col-1 .fi-input-wrap,
+:host .fi-grid2 .col-1 input[matInput] { width: 100%; }

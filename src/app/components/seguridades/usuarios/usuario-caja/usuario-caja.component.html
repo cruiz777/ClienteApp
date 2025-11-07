@@ -1,0 +1,132 @@
+<div class="form-contenedor">
+    <form *ngIf="esEdicion || entidadSeleccionada" [formGroup]="usuarioForm" class="form-grid" (ngSubmit)="grabar()">
+        <h3>Usuarios Caja</h3>
+        <!-- Sección 1: Datos de Usuario -->
+        <div class="form-row">
+
+            <div class="form-field">
+                <label>Usuario*:</label>
+                <div class="input-con-icono">
+                    <img src="assets/icons/icon-usuario.png" />
+                    <input formControlName="usuario" type="text" placeholder="ejemplo" autocomplete="off" readonly />
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label>Estado*:</label>
+                <select formControlName="estado" class="readonly-select">
+                    <option value="">Seleccione</option>
+                    <option value="activo">Activo</option>
+                    <option value="inactivo">Inactivo</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- === TABLA AUTORIZACIONES DE CAJA (ASIGNADAS AL USUARIO) === -->
+
+
+        <!-- === CATÁLOGO (resultado de /api/AutorizacionCaja) === -->
+
+
+        <!-- === LISTA DE AUTORIZACIONES ASIGNADAS AL USUARIO === -->
+        <div class="tabla-scrollable">
+            <table class="tabla-estilo">
+                <thead>
+                    <tr>
+                        <th class="col-reducida">#</th>
+                        <th>Establecimiento</th>
+                        <th>Caja</th>
+                        <th>Estado</th>
+                        <th class="col-reducida">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngIf="!autorizaciones || autorizaciones.length === 0">
+                        <td colspan="5">No hay registros.</td>
+                    </tr>
+
+                    <tr *ngFor="let a of autorizaciones; let i = index; trackBy: trackById">
+                        <td class="col-reducida">
+                            {{ i + 1 }}
+                            <small *ngIf="a.idAutorizacionUsuario > 0" class="muted">(#{{ a.idAutorizacionUsuario
+                                }})</small>
+                        </td>
+
+                        <td>{{ a.establecimiento }}</td>
+                        <td>{{ a.caja }}</td>
+
+                        <td>
+                            <!-- Radio para “único activo” -->
+                            <label class="estado-radio">
+                                <input type="radio" name="activoCaja" [checked]="a.estado === 'Activo'"
+                                    (change)="activar(i)" />
+                                <span [ngClass]="a.estado === 'Activo' ? 'badge-activo' : 'badge-inactivo'">
+                                    {{ a.estado }}
+                                </span>
+                            </label>
+                        </td>
+
+                        <td class="col-reducida">
+                            <button type="button" class="btn-mini danger" (click)="confirmarEliminar(i)">
+                                <img src="assets/icons/eliminar.png" alt="" class="icon-18" width="18" height="18"
+                                        loading="lazy" />
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <div *ngIf="catalogoAutorizaciones && catalogoAutorizaciones.length > 0" class="panel-catalogo">
+
+
+            <div class="tabla-scrollable">
+                <table class="tabla-estilo">
+                    <thead>
+                        <tr>
+                            <th class="col-reducida">#</th>
+                            <th>Establecimiento</th>
+                            <th>Caja</th>
+                            <th>Nº Autorización</th>
+                            <th>Dirección</th>
+                            <th class="col-reducida">Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let a of catalogoAutorizaciones; let idx = index">
+                            <td class="col-reducida">{{ idx + 1 }}</td>
+                            <td>{{ a.num_establecimiento }}</td>
+                            <td>{{ a.caja }}</td>
+                            <td>{{ a.numero_autorizacion }}</td>
+                            <td>{{ a.direccion }}</td>
+                            <td class="col-reducida">
+                                <button type="button" class="btn-mini icon-text" (click)="seleccionarAutorizacion(a)"
+                                    aria-label="Agregar autorización" title="Agregar">
+                                    <img src="assets/icons/caja.png" alt="" class="icon-18" width="18" height="18"
+                                        loading="lazy" />
+                                    
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Paginación (opcional) -->
+            <div class="paginador">
+                <span>Página {{ page }} de {{ totalPages }} • Total: {{ totalItems }}</span>
+            </div>
+        </div>
+        <div class="acciones-centradas">
+  <button type="button" class="btn-grabar"
+          (click)="catalogoAutorizaciones?.length ? ocultarCatalogo() : nuevoAutorizacion()">
+    {{ catalogoAutorizaciones?.length ? 'Ocultar' : 'Nuevo' }}
+  </button>
+
+  <!-- Cierra el diálogo -->
+  <button type="button" class="btn-grabar" mat-dialog-close>
+    Salir
+  </button>
+</div>
+
+    </form>
+</div>

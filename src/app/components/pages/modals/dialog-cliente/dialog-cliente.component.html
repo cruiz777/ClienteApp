@@ -20,7 +20,7 @@
                   </div>
                   <div>
                     <label class="form-label"><span style="color: red;">*</span>RUC/CI/Pasaporte:</label>
-                    <input type="text" [formControl]="rucControl" (blur)="onRucBlur()"
+                    <input type="text" [formControl]="rucControl" (blur)="onRucBlur()" 
                       placeholder="Ingrese número o pasaporte" class="underline-input" autocomplete="off" />
 
                     <!-- Mostrar error solo si NO es pasaporte -->
@@ -409,6 +409,8 @@
                           <label for="chk-compra">Orden de Compra</label>
                           <input type="checkbox" id="chk-prefijo" formControlName="nprefijo" />
                           <label for="chk-prefijo">Prefijos</label>
+                          <input type="checkbox" id="chk-prefijo" formControlName="nprefijo" />
+                          <label for="chk-prefijo">Otros</label>
                         </div>
                       </div>
                     </div>

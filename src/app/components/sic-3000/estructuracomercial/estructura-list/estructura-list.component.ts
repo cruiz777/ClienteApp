@@ -101,8 +101,17 @@ export class EstructuraListComponent {
     return this.getNivelPorTipo(nodo.tipo) < nodo.numnodos;
   }
   getIcono(nodo: any): string {
-    if (!this.puedeExpandirse(nodo)) return '📄';
-    return nodo.expandido ? '📂' : '📁';
+    if (!this.puedeExpandirse(nodo)) {
+      return 'assets/icons/sic-3000/icon-Guardar-datos.png';
+    }
+    return nodo.expandido 
+      ? 'assets/icons/sic-3000/icon-folder.png'      // Carpeta abierta
+      : 'assets/icons/sic-3000/icon-folder-2.png';   // Carpeta cerrada
+  }
+  getIconoEmpresa(empresa: any): string {
+    return empresa.expandido 
+      ? 'assets/icons/icon-entidad-1.png'   // Empresa abierta
+      : 'assets/icons/icon-entidad-2.png'; 
   }
   puedeCrear(nodo: any): boolean {
     if (!nodo || nodo.numnodos === undefined) return false;
@@ -296,10 +305,9 @@ export class EstructuraListComponent {
     this.setTable(
       [
         { key: 'idproducto', label: 'Id' },
-        { key: 'codpro', label: 'Cod. Pro' },
+        { key: 'codbar', label: 'Codbar.' },
         { key: 'despro', label: 'Descripción' },
         { key: 'tippro', label: 'Tip. Prod' },
-        { key: 'codbar', label: 'Codbar.' },
         { key: 'acciones', label: 'Acciones' }
       ],
       productos ?? []
@@ -387,7 +395,7 @@ export class EstructuraListComponent {
     switch (tipoActual) {
       case 'empresa': return 'estructuraComercial';
       case 'estructura': return 'division';
-      case 'division': return 'subDivision';
+      case 'division': return 'subdivision';
       case 'subdivision': return 'departamento';
       case 'departamento': return 'seccion';
       case 'seccion': return 'grupo';

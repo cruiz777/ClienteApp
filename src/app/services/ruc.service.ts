@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
-
+import { environment } from 'src/environments/environment';
 @Injectable({
   providedIn: 'root'
 })
 export class RucService {
-  private apiUrl = 'http://pichincha.gapsystem.net:10048/api/services/ruc/';
+    private apiUrl = environment.rucUlr;
+
 
   constructor(private http: HttpClient) {}
 
