@@ -1,0 +1,134 @@
+<div class="page">
+  <h2 class="title">Creación de Anticipos</h2>
+
+  <form [formGroup]="form" class="form-grid">
+    <!-- Nº Anticipos -->
+    <div class="cell span-3">
+      <label>Nº de Anticipos:</label>
+      <div class="badge">
+        <div class="badge-num">{{ numeroAnticipo }}</div>
+      </div>
+    </div>
+
+    <div class="cell span-3 cell--date">
+      <label>Fecha:</label>
+      <input class="in" type="date" formControlName="fecha" readonly />
+    </div>
+
+    <div class="cell span-6">
+      <label>Caja:</label>
+      <input class="in" placeholder="texto" formControlName="caja" readonly />
+    </div>
+
+    <div class="cell span-6">
+      <label>Cajero:</label>
+      <input class="in" placeholder="texto" formControlName="cajero" readonly />
+    </div>
+
+    <!-- Cliente -->
+<div class="cell span-6">
+  <label>*Cliente:</label>
+
+  <div class="fi-input-wrap">
+    <input
+      type="text"
+      class="in"
+      matInput
+      [formControl]="clienteOrigenControl"
+      [matAutocomplete]="autoOrigen"
+      (blur)="clienteOrigenControl.markAsTouched()"
+      placeholder="Buscar Cliente"
+      [class.input-error]="clienteOrigenControl.invalid && clienteOrigenControl.touched" />
+
+    <mat-autocomplete
+      #autoOrigen="matAutocomplete"
+      [displayWith]="mostrarNombreCliente"
+      (optionSelected)="seleccionarClienteOrigen($event.option.value)">
+      <mat-option *ngFor="let cliente of clientesOrigenFiltrados" [value]="cliente">
+        <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
+      </mat-option>
+    </mat-autocomplete>
+  </div>
+
+  <div class="field-error" *ngIf="clienteOrigenControl.invalid && clienteOrigenControl.touched">
+    Campo obligatorio.
+  </div>
+</div>
+
+
+    <div class="cell span-4">
+      <label>Tipo de Anticipo:</label>
+      <input class="in" placeholder="texto" formControlName="tipoAnticipo" />
+    </div>
+
+    <div class="cell span-2 cell--narrow">
+      <label>Monto:</label>
+      <input class="in" type="number" step="0.01" placeholder="0.00" formControlName="monto" />
+    </div>
+
+    <div class="cell span-6">
+      <label>Banco:</label>
+      <input class="in" placeholder="texto" formControlName="banco" />
+    </div>
+
+    <div class="cell span-6">
+      <label>Descripción - Pago:</label>
+      <input class="in" placeholder="texto" formControlName="descrPago" />
+    </div>
+
+    <div class="cell span-6">
+      <label>No. Tarjeta:</label>
+      <input class="in" placeholder="texto" formControlName="noTarjeta" />
+    </div>
+
+    <div class="cell span-6">
+      <label>Autorizado:</label>
+      <input class="in" placeholder="texto" formControlName="autorizado" />
+    </div>
+
+    <div class="cell span-3 cell--narrow">
+      <label>Saldo:</label>
+      <input class="in" placeholder="0.00" formControlName="saldo" />
+    </div>
+
+    <div class="cell span-3">
+      <label>Estado:</label>
+      <input class="in" placeholder="texto" formControlName="estado" />
+    </div>
+
+    <div class="cell span-6">
+      <label>Nombre:</label>
+      <input class="in" placeholder="texto" formControlName="nombre" />
+    </div>
+
+    <div class="cell span-6">
+      <label>Concepto:</label>
+      <input class="in" placeholder="texto" formControlName="concepto" />
+    </div>
+
+    <div class="cell span-3">
+      <label>Lote:</label>
+      <input class="in" placeholder="texto" formControlName="lote" />
+    </div>
+
+    <div class="cell span-3">
+      <label>Plazo:</label>
+      <input class="in" placeholder="texto" formControlName="plazo" />
+    </div>
+
+    <!-- Línea libre final -->
+    <div class="cell span-12 memo-line">
+      <input class="in" placeholder="" />
+    </div>
+
+    <!-- Botonera -->
+    <div class="acciones acciones-soft">
+      <button type="button" class="btn btn-soft">Nuevo</button>
+      <button type="button" class="btn btn-soft">Grabar</button>
+      <button type="button" class="btn btn-soft">Imprimir</button>
+      <button type="button" class="btn btn-soft">Anular</button>
+      <button type="button" class="btn btn-soft">Cancelar</button>
+    </div>
+
+  </form>
+</div>

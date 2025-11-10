@@ -261,8 +261,8 @@
           <input type="text" formControlName="serie2" [readonly]="!formUL.get('usarSerie2')?.value" />
         </div>
       </div>
-      <div><label>Tipo de empaque:</label><input type="text" formControlName="tipoEmpaque" /></div>
-      <div><label>Unidad:</label><input type="text" formControlName="unidad"  />
+      <div><label>Tipo de empaque:</label><input type="text" formControlName="tipoEmpaque" (blur)="actualizarDescripcionUL()" (blur)="convertirAMayusculasUl('tipoEmpaque')" /></div>
+      <div><label>Unidad:</label><input type="text" formControlName="unidad"  (blur)="actualizarDescripcionUL()" (blur)="convertirAMayusculasUl('unidad')" />
       </div>
       <div><label>Indicador:</label><input type="text" formControlName="indicador"
           (keypress)="permitirSoloNumeros($event)" maxlength="1" (blur)="onIndicadorBlur()" /></div>

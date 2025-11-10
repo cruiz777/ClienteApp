@@ -14,8 +14,8 @@ export const environment = {
   inventoryUrl: 'http://181.39.162.182:8000/inventories/api',
 
     invoices_sic:'http://181.39.162.182:8000/invoices-sic/api',
-    rucUlr:'pichincha.gapsystem.net:10048/api/services/ruc/',
-    cedulaUrl:'pichincha.gapsystem.net:10048/api/services/cedula/',
+    rucUlr:'http://pichincha.gapsystem.net:10048/api/services/ruc/',
+    cedulaUrl:'http://pichincha.gapsystem.net:10048/api/services/cedula/',
       apiKey: 'ilGxoWJ9Arp0JdSNuO81aq9sX6ZW9gK9767867tgb',
 
 };

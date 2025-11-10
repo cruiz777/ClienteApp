@@ -59,7 +59,8 @@ export class LisFacAnuladasComponent implements OnInit {
   defaultColDef: ColDef = {
     resizable: true,
     sortable: true,
-    filter: false,
+      filter: true,                 // ✅ Activa filtros
+   
     suppressHeaderMenuButton: true,
     wrapText: true
   };
