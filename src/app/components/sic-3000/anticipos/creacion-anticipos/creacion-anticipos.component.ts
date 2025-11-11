@@ -16,6 +16,17 @@ import { ClienteService } from 'src/app/services/cliente.service';
 import { UsuarioService } from 'src/app/services/usuario.service';
 import { AutorizacionCajaService } from 'src/app/services/autorizacion-caja.service';
 import { ReactiveFormsModule } from '@angular/forms';
+import { MatSelectModule } from '@angular/material/select';
+import { MatOptionModule } from '@angular/material/core';
+import { TipoAnticipo } from '../../../../interfaces/responses/tipo-anticipo-response';
+import { FormaPagoResponse, FormaPagoService } from '../../../../services/forma-pago.service';
+import { PlazoTarjeta } from '../../../../interfaces/responses/plazo-tarjeta-response';
+import { TipoAnticipoService } from '../../../../services/tipo-anticipo.service';
+import { PlazoTarjetaService } from '../../../../services/plazo-tarjeta.service';
+import { AnticipoService } from '../../../../services/anticipo.service';
+import { BancosTercerosService } from '../../../../services/bancosterceros.service';
+import { CreateAnticipoRequest } from '../../../../interfaces/requests/anticipo-request';
+import { BancosTercerosResponse } from '../../../../interfaces/responses/bancos-terceros-response';
 
 // Ajusta a tu interfaz real
 interface ClienteSummary {
@@ -34,7 +45,9 @@ interface ClienteSummary {
     MatFormFieldModule,
     MatInputModule,
     MatAutocompleteModule,
-    MatIconModule
+    MatIconModule,
+    MatSelectModule,      // ← NUEVO
+    MatOptionModule
   ]
 })
 export class CreacionAnticiposComponent implements OnInit {
@@ -49,59 +62,97 @@ export class CreacionAnticiposComponent implements OnInit {
   codcli = 0; // código del cliente seleccionado
   nombreCliente = '';
 
-  // ========= Autorización de caja =========
-  cajaAsignada = false;
+  tipoAnticipoControl = new FormControl<string | TipoAnticipo | null>(null, Validators.required);
+    tiposAnticipo: TipoAnticipo[] = [];
+    tiposAnticipoFiltrados: TipoAnticipo[] = [];
+    tipoAnticipoSeleccionado: TipoAnticipo | null = null;
 
+    bancoControl = new FormControl<string | BancosTercerosResponse | null>(null);
+    bancos: BancosTercerosResponse[] = [];
+    bancosFiltrados: BancosTercerosResponse[] = [];
+    bancoSeleccionado: BancosTercerosResponse | null = null;
+
+    formaPagoControl = new FormControl<string | FormaPagoResponse | null>(null, Validators.required);
+    formasPago: FormaPagoResponse[] = [];
+    formasPagoFiltradas: FormaPagoResponse[] = [];
+    formaPagoSeleccionada: FormaPagoResponse | null = null;
+
+    plazoControl = new FormControl<string | PlazoTarjeta | null>(null);
+    plazos: PlazoTarjeta[] = [];
+    plazosFiltrados: PlazoTarjeta[] = [];
+    plazoSeleccionado: PlazoTarjeta | null = null;
+
+    // ========= NUEVO: Estados de carga =========
+    cargandoDatos = false;
+    guardando = false;
+
+    // ========= Autorización de caja ========= (YA LO TIENES)
+    cajaAsignada = false;
   constructor(
     private fb: FormBuilder,
     private clienteService: ClienteService,
     private usuarioService: UsuarioService,
-    private autorizacionCajaService: AutorizacionCajaService
+    private autorizacionCajaService: AutorizacionCajaService,
+    private tipoAnticipoService: TipoAnticipoService,
+    private plazoTarjetaService: PlazoTarjetaService,
+    private bancosTercerosService: BancosTercerosService,
+    private formaPagoService: FormaPagoService,
+    private anticipoService: AnticipoService
   ) {}
 
   // ========= Ciclo de vida =========
   ngOnInit(): void {
+    // Inicializar formulario
     this.form = this.fb.group({
-      // meta del cliente
+      // Cliente
       clienteCodigo: [0, [Validators.required, Validators.min(1)]],
-      cliente: ['', Validators.required], // se rellenará con el nombre
+      cliente: ['', Validators.required],
 
-      // resto del formulario
+      // Datos básicos
       fecha: [this.hoyIso(), Validators.required],
       caja: [''],
       cajero: [''],
-      tipoAnticipo: ['', Validators.required],
+
+      // Campos principales
+      tipoAnticipo: [null, Validators.required],
       monto: [null, [Validators.required, Validators.min(0.01)]],
-      banco: [''],
-      descrPago: [''],
+      banco: [null],
+      descrPago: [null, Validators.required],
+
+      // Campos de pago
       noTarjeta: [''],
+      nroCuenta: [''],
+      nroCheque: [''],
+      propietario: [''],
+      nroDocumento: [''],
       autorizado: [''],
+
+      // Campos adicionales
       saldo: [''],
       estado: [''],
       nombre: [''],
       concepto: [''],
       lote: [''],
-      plazo: ['']
+      plazo: [null]
     });
 
-    // Cargar cajero/caja si tu servicio lo provee
+    // Cargar cajero
     try {
       const u: any = this.usuarioService?.getUsuarioActual?.();
       if (u) {
         this.form.patchValue({
-          cajero:
-            u.nombre_usuario ??
-            u.username ??
-            u.nombre ??
-            u.usuario ??
-            '',
+          cajero: u.nombre_usuario ?? u.username ?? u.nombre ?? u.usuario ?? '',
         }, { emitEvent: false });
       }
     } catch { /* noop */ }
 
+    // Cargar autorización de caja
     this.cargarAutorizacion();
 
-    // ===== Stream del autocomplete cliente =====
+    // Cargar datos de combobox
+    this.cargarDatosIniciales();
+
+    // ===== Stream del autocomplete CLIENTE =====
     this.clienteOrigenControl.valueChanges
       .pipe(
         filter((v): v is string => typeof v === 'string'),
@@ -118,6 +169,55 @@ export class CreacionAnticiposComponent implements OnInit {
       .subscribe(resp => {
         this.clientesOrigenFiltrados = (resp?.data ?? []) as ClienteSummary[];
       });
+
+    // ===== Stream del autocomplete TIPO ANTICIPO =====
+    this.tipoAnticipoControl.valueChanges
+      .pipe(
+        filter((v): v is string => typeof v === 'string'),
+        debounceTime(200),
+        distinctUntilChanged()
+      )
+      .subscribe(texto => {
+        this.filtrarTiposAnticipo(texto);
+      });
+
+    // ===== Stream del autocomplete BANCO =====
+    this.bancoControl.valueChanges
+      .pipe(
+        filter((v): v is string => typeof v === 'string'),
+        debounceTime(200),
+        distinctUntilChanged()
+      )
+      .subscribe(texto => {
+        this.filtrarBancos(texto);
+      });
+
+    // ===== Stream del autocomplete FORMA PAGO =====
+    this.formaPagoControl.valueChanges
+      .pipe(
+        filter((v): v is string => typeof v === 'string'),
+        debounceTime(200),
+        distinctUntilChanged()
+      )
+      .subscribe(texto => {
+        this.filtrarFormasPago(texto);
+      });
+
+    // ===== Stream del autocomplete PLAZO =====
+    this.plazoControl.valueChanges
+      .pipe(
+        filter((v): v is string => typeof v === 'string'),
+        debounceTime(200),
+        distinctUntilChanged()
+      )
+      .subscribe(texto => {
+        this.filtrarPlazos(texto);
+      });
+    this.form.get('monto')?.valueChanges.subscribe(monto => {
+      if (monto != null && monto > 0) {
+        this.form.patchValue({ saldo: monto }, { emitEvent: false });
+      }
+    });
   }
 
   // ========= Acciones UI =========
@@ -131,39 +231,162 @@ export class CreacionAnticiposComponent implements OnInit {
       cajero: this.form.get('cajero')?.value ?? '',
       clienteCodigo: 0,
       cliente: '',
-      tipoAnticipo: '',
+      tipoAnticipo: null,
       monto: null,
-      banco: '',
-      descrPago: '',
+      banco: null,
+      descrPago: null,
       noTarjeta: '',
+      nroCuenta: '',
+      nroCheque: '',
+      propietario: '',
+      nroDocumento: '',
       autorizado: '',
       saldo: '',
       estado: '',
       nombre: '',
       concepto: '',
       lote: '',
-      plazo: ''
+      plazo: null
     });
 
+    // Limpiar autocompletes
     this.codcli = 0;
     this.nombreCliente = '';
     this.clienteOrigenControl.setValue('', { emitEvent: false });
+
+    this.tipoAnticipoSeleccionado = null;
+    this.tipoAnticipoControl.setValue('', { emitEvent: false });
+
+    this.bancoSeleccionado = null;
+    this.bancoControl.setValue('', { emitEvent: false });
+
+    this.formaPagoSeleccionada = null;
+    this.formaPagoControl.setValue('', { emitEvent: false });
+
+    this.plazoSeleccionado = null;
+    this.plazoControl.setValue('', { emitEvent: false });
+
     this.numeroAnticipo = num;
   }
+  private cargarDatosIniciales(): void {
+    this.cargandoDatos = true;
 
+    // Cargar Tipos de Anticipo
+    this.tipoAnticipoService.getAll().subscribe({
+      next: (response) => {
+        if (response.type === 'success' && response.data) {
+          this.tiposAnticipo = response.data;
+          this.tiposAnticipoFiltrados = [...this.tiposAnticipo];
+        }
+      },
+      error: (error) => console.error('Error cargando tipos de anticipo:', error)
+    });
+
+    // Cargar Bancos
+    this.bancosTercerosService.getAll().subscribe({
+      next: (response) => {
+        if (response.type === 'LIST' && response.data) {
+          this.bancos = response.data;
+          this.bancosFiltrados = [...this.bancos];
+        }
+      },
+      error: (error) => console.error('Error cargando bancos:', error)
+    });
+
+    // Cargar Formas de Pago
+    this.formaPagoService.getActivas().subscribe({
+      next: (response: any) => {
+        console.log('📦 Formas Pago:', response);
+        if ((response.type === 'Success' || response.type === 'success') && response.data) {
+          // Mapear campos snake_case
+          this.formasPago = (response.data || []).map((f: any) => ({
+            idFormaPago: f.id_forma_pago,
+            descripcionPago: f.descripcion_pago,
+            codigoCuenta: f.codigo_cuenta
+          }));
+          this.formasPagoFiltradas = [...this.formasPago];
+          console.log('✅ Formas de pago cargadas:', this.formasPago);
+        }
+        this.cargandoDatos = false;
+      },
+      error: (error) => {
+        console.error('Error cargando formas de pago:', error);
+        this.cargandoDatos = false;
+      }
+    });
+
+    // Cargar Plazos
+    this.plazoTarjetaService.getAll().subscribe({
+      next: (response) => {
+        if (response.type === 'success' && response.data) {
+          this.plazos = response.data;
+          this.plazosFiltrados = [...this.plazos];
+        }
+      },
+      error: (error) => console.error('Error cargando plazos:', error)
+    });
+  }
   grabar(): void {
+    // Marcar todos los controles como tocados
     this.form.markAllAsTouched();
-    if (this.form.invalid) return;
+    this.clienteOrigenControl.markAsTouched();
+    this.tipoAnticipoControl.markAsTouched();
+    this.formaPagoControl.markAsTouched();
 
-    const payload = {
-      numero: this.numeroAnticipo,
-      clienteCodigo: this.form.value.clienteCodigo,
-      clienteNombre: this.form.value.cliente,
-      ...this.form.value
+    // Validar formulario
+    if (this.form.invalid || !this.codcli || !this.tipoAnticipoSeleccionado || !this.formaPagoSeleccionada) {
+      alert('Por favor complete todos los campos obligatorios marcados con *');
+      return;
+    }
+
+    this.guardando = true;
+
+    // Construir request
+    const request: CreateAnticipoRequest = {
+      caja: this.form.value.caja || null,
+      responsable: this.form.value.cajero || null,
+      clientes_codigo: this.codcli,
+      monto: this.form.value.monto,
+      concepto: this.form.value.concepto || null,
+      id_forma_pago: this.formaPagoSeleccionada.idFormaPago,
+      id_local: 1, // Ajustar según tu lógica
+      id_tipo_anticipo: this.tipoAnticipoSeleccionado.id_tipo_anticipo,
+
+      // Opcionales
+      id_bancos_terceros: this.bancoSeleccionado?.IdBancosTerceros ?? null,
+      nro_cuenta: this.form.value.nroCuenta || null,
+      lote: this.form.value.lote || null,
+      nro_cheque: this.form.value.nroCheque || null,
+      propietario: this.form.value.propietario || null,
+      nro_documento: this.form.value.nroDocumento || null,
+      nombre: this.form.value.nombre || null,
+      id_plazo_tarjeta: this.plazoSeleccionado?.id_plazo ?? null,
+      autorizacion: this.form.value.autorizado || null,
+      ate_numero_atencion: null,
+      pac_historia_clinica: null
     };
 
-    console.log('Grabar anticipo:', payload);
-    // TODO: servicio HTTP para crear anticipo
+    console.log('Enviando request:', request);
+
+    this.anticipoService.create(request).subscribe({
+      next: (response) => {
+        this.guardando = false;
+
+        if (response.type === 'success' && response.data) {
+          console.log('✅ Anticipo creado:', response.data);
+          alert(`✅ Anticipo ${response.data.numero_anticipo} creado exitosamente`);
+          this.nuevo(); // Limpiar formulario
+        } else {
+          console.error('❌ Error:', response.message);
+          alert(`❌ Error: ${response.message}`);
+        }
+      },
+      error: (error) => {
+        this.guardando = false;
+        console.error('❌ Error al crear anticipo:', error);
+        alert('❌ Error al crear anticipo. Por favor intente nuevamente.');
+      }
+    });
   }
 
   imprimir(): void {
@@ -178,6 +401,140 @@ export class CreacionAnticiposComponent implements OnInit {
     // restablece al estado actual (no pierde lo escrito)
     this.form.reset(this.form.value);
     console.log('Cancelar');
+  }
+  // ===== Filtros =====
+  private filtrarTiposAnticipo(texto: string): void {
+    const filtro = (texto || '').toLowerCase().trim();
+    if (!filtro) {
+      this.tiposAnticipoFiltrados = [...this.tiposAnticipo];
+      return;
+    }
+    this.tiposAnticipoFiltrados = this.tiposAnticipo.filter(t =>
+      (t.descripcion ?? '').toLowerCase().includes(filtro)
+    );
+  }
+
+  private filtrarBancos(texto: string): void {
+    const filtro = (texto || '').toLowerCase().trim();
+    if (!filtro) {
+      this.bancosFiltrados = [...this.bancos];
+      return;
+    }
+    this.bancosFiltrados = this.bancos.filter(b =>
+      (b.Descripcion ?? '').toLowerCase().includes(filtro)
+    );
+  }
+
+  private filtrarFormasPago(texto: string): void {
+    const filtro = (texto || '').toLowerCase().trim();
+    if (!filtro) {
+      this.formasPagoFiltradas = [...this.formasPago];
+      return;
+    }
+    this.formasPagoFiltradas = this.formasPago.filter(f =>
+      (f.descripcionPago ?? '').toLowerCase().includes(filtro)
+    );
+  }
+
+  private filtrarPlazos(texto: string): void {
+    const filtro = (texto || '').toLowerCase().trim();
+    if (!filtro) {
+      this.plazosFiltrados = [...this.plazos];
+      return;
+    }
+    this.plazosFiltrados = this.plazos.filter(p =>
+      (p.descripcion ?? '').toLowerCase().includes(filtro)
+    );
+  }
+  // ===== Métodos para comportamiento de combobox =====
+  mostrarTodasLasOpciones(tipo: 'tipoAnticipo' | 'banco' | 'formaPago' | 'plazo'): void {
+    switch(tipo) {
+      case 'tipoAnticipo':
+        this.tiposAnticipoFiltrados = [...this.tiposAnticipo];
+        break;
+      case 'banco':
+        this.bancosFiltrados = [...this.bancos];
+        break;
+      case 'formaPago':
+        this.formasPagoFiltradas = [...this.formasPago];
+        break;
+      case 'plazo':
+        this.plazosFiltrados = [...this.plazos];
+        break;
+    }
+  }
+
+  toggleAutocomplete(tipo: 'tipoAnticipo' | 'banco' | 'formaPago' | 'plazo'): void {
+    // Mostrar todas las opciones
+    this.mostrarTodasLasOpciones(tipo);
+
+    // Hacer foco en el input correspondiente para abrir el autocomplete
+    switch(tipo) {
+      case 'tipoAnticipo':
+        this.tipoAnticipoControl.setValue('');
+        setTimeout(() => {
+          const input = document.querySelector('[formcontrolname="tipoAnticipo"]') as HTMLInputElement;
+          input?.focus();
+        }, 0);
+        break;
+      case 'banco':
+        this.bancoControl.setValue('');
+        setTimeout(() => {
+          const input = document.querySelector('[formcontrolname="banco"]') as HTMLInputElement;
+          input?.focus();
+        }, 0);
+        break;
+      case 'formaPago':
+        this.formaPagoControl.setValue('');
+        setTimeout(() => {
+          const input = document.querySelector('[formcontrolname="descrPago"]') as HTMLInputElement;
+          input?.focus();
+        }, 0);
+        break;
+      case 'plazo':
+        this.plazoControl.setValue('');
+        setTimeout(() => {
+          const input = document.querySelector('[formcontrolname="plazo"]') as HTMLInputElement;
+          input?.focus();
+        }, 0);
+        break;
+    }
+  }
+  // ===== Display functions =====
+  mostrarTipoAnticipo = (t: TipoAnticipo | string | null): string =>
+    (t && typeof t === 'object') ? (t.descripcion ?? '') : (t ?? '') as string;
+
+  mostrarBanco = (b: BancosTercerosResponse | string | null): string =>
+    (b && typeof b === 'object') ? (b.Descripcion ?? '') : (b ?? '') as string;
+
+  mostrarFormaPago = (f: FormaPagoResponse | string | null): string =>
+    (f && typeof f === 'object') ? (f.descripcionPago ?? '') : (f ?? '') as string;
+
+  mostrarPlazo = (p: PlazoTarjeta | string | null): string =>
+    (p && typeof p === 'object') ? (p.descripcion ?? '') : (p ?? '') as string;
+
+
+  // ===== Métodos de selección =====
+  seleccionarTipoAnticipo(tipo: TipoAnticipo): void {
+    if (!tipo?.id_tipo_anticipo) return;
+    this.tipoAnticipoSeleccionado = tipo;
+    this.form.patchValue({ tipoAnticipo: tipo.id_tipo_anticipo }, { emitEvent: false });
+  }
+
+  seleccionarBanco(banco: BancosTercerosResponse | null): void {
+    this.bancoSeleccionado = banco;
+    this.form.patchValue({ banco: banco?.IdBancosTerceros ?? null }, { emitEvent: false });
+  }
+
+  seleccionarFormaPago(forma: FormaPagoResponse): void {
+    if (!forma?.idFormaPago) return;
+    this.formaPagoSeleccionada = forma;
+    this.form.patchValue({ descrPago: forma.idFormaPago }, { emitEvent: false });
+  }
+
+  seleccionarPlazo(plazo: PlazoTarjeta | null): void {
+    this.plazoSeleccionado = plazo;
+    this.form.patchValue({ plazo: plazo?.id_plazo ?? null }, { emitEvent: false });
   }
 
   // ========= Autocomplete handlers =========
