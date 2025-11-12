@@ -242,17 +242,25 @@
 
     <!-- Botonera -->
     <div class="acciones acciones-soft">
-      <button type="button" class="btn btn-soft">Nuevo</button>
+      <button type="button" class="btn btn-soft" (click)="nuevo()">Nuevo</button>
+      <button type="button" class="btn btn-soft" (click)="buscarAnticipo()">
+        Buscar
+      </button>
       <button
         type="button"
         class="btn btn-soft"
         (click)="grabar()"
-        [disabled]="guardando">
+        [disabled]="guardando || anticipoActual !== null">
         {{ guardando ? 'Guardando...' : 'Grabar' }}
       </button>
       <button type="button" class="btn btn-soft">Imprimir</button>
-      <button type="button" class="btn btn-soft">Anular</button>
-      <button type="button" class="btn btn-soft">Cancelar</button>
+      <button
+        type="button"
+        class="btn btn-soft"
+        [disabled]="!anticipoActual">
+        Anular
+      </button>
+      <button type="button" class="btn btn-soft" (click)="cancelar()">Cancelar</button>
     </div>
 
   </form>
