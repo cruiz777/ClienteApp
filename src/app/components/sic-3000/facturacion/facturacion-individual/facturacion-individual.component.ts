@@ -87,6 +87,7 @@ interface LineaFactura {
   base?: number;   // base imponible de la línea (ya con descuento, SIN IVA)
   ivaVal?: number; // valor de IVA de la línea
   periodo?: string;
+  cuenta?: string;
 }
 
 
@@ -198,6 +199,7 @@ export class FacturacionIndividualComponent implements OnInit {
       }
     },
     { headerName: 'Cod.', field: 'codpro', width: 60, suppressColumnsToolPanel: true },
+    { headerName: 'Cuenta', field: 'cuenta', width: 60, suppressColumnsToolPanel: true,hide:true },
     { headerName: 'Periodo', field: 'periodo', hide: true, editable: false, flex: 1, minWidth: 200, tooltipField: 'periodo' },
     { headerName: 'Detalle', field: 'detalle', editable: false, flex: 1, minWidth: 200, tooltipField: 'detalle' },
     {
@@ -1049,7 +1051,8 @@ cargarAutorizacion(): void {
       codpro: p.codpro, cantidad: 1, detalle, pUnidad: pu, iva: ivaPorc,
       descPct: this.descuentoSeleccionado ? this.toN(this.descuentoSeleccionado.valor, 2) : 0,
       desUnit: 0, descuento: 0, desTotal: 0, total: 0,
-      periodo: '' // 👈
+      periodo: '' ,
+      cuenta:p.codcuedeb
 
     };
     this.recalcLinea(nuevaFila);

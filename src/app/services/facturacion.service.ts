@@ -34,6 +34,7 @@ export interface ProductoResponse {
   activo: boolean | null;
   codbar: string | null;
   prevensiniva: number | null;
+  codcuedeb:string | null;
   id_empresa: number | null;
 }
 

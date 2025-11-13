@@ -383,6 +383,19 @@ export class ProductoService {
       `${this.apiBaseUrl}/Producto/eliminar-por-codbar/${codbar}`
     );
   }
-  
+  getConteoPorPrefijo(prefijo: string, pais?: string): Observable<number> {
+  const params: any = { prefijo };
+  if (pais && pais.trim() !== '') {
+    params.pais = pais;
+  }
+
+  return this.http
+    .get<ApiResponse<number>>(
+      `${this.apiBaseUrl}/Producto/conteo-por-prefijo`,
+      { params }
+    )
+    .pipe(map(res => res.data ?? 0));
+}
+
 
 }
