@@ -19,3 +19,11 @@ export interface CreateAnticipoRequest {
   ate_numero_atencion?: number | null;
   pac_historia_clinica?: number | null;
 }
+
+
+export interface AnularAnticipoRequest {
+  id_anticipo: number;
+  motivo_anulacion: string;
+  usuario_anula: string;
+  fecha_anulacion: string;
+}

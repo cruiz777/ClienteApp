@@ -72,3 +72,8 @@ export interface MovimientoEstadoCuentaInfo {
   observacion: string | null;
   pago_anulado: boolean | null;
 }
+
+
+export interface SiguienteIdAntiicpo {
+  next_numero: number;
+}

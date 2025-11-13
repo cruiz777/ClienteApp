@@ -256,8 +256,9 @@
       <button type="button" class="btn btn-soft">Imprimir</button>
       <button
         type="button"
-        class="btn btn-soft"
-        [disabled]="!anticipoActual">
+        class="btn btn-danger"
+        (click)="anular()"
+        [disabled]="!anticipoActual || anticipoActual.cancelado">
         Anular
       </button>
       <button type="button" class="btn btn-soft" (click)="cancelar()">Cancelar</button>

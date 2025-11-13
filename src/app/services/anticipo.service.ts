@@ -3,9 +3,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { CreateAnticipoRequest } from '../interfaces/requests/anticipo-request';
+import { AnularAnticipoRequest, CreateAnticipoRequest } from '../interfaces/requests/anticipo-request';
 import { ApiListResponse } from '../interfaces/responses/ApiListResponse';
-import { AnticipoResponse, AnticipoDetalleResponse } from '../interfaces/responses/anticipo-response';
+import { AnticipoResponse, AnticipoDetalleResponse, SiguienteIdAntiicpo } from '../interfaces/responses/anticipo-response';
 import { PaginationResponse } from '../interfaces/responses/pagination-response';
 
 export interface AnticipoFilters {
@@ -128,4 +128,23 @@ export class AnticipoService {
       pageSize
     });
   }
+  /**
+ * Obtiene el siguiente número de anticipo
+ */
+  getNextNumero(): Observable<ApiListResponse<SiguienteIdAntiicpo>> {
+    return this.http.get<ApiListResponse<SiguienteIdAntiicpo>>(
+      `${this.apiUrl}/nextid`
+    );
+  }
+
+    /**
+   * Anula un anticipo existente
+   */
+  anular(request: AnularAnticipoRequest): Observable<ApiListResponse<AnticipoDetalleResponse>> {
+    return this.http.put<ApiListResponse<AnticipoDetalleResponse>>(
+      `${this.apiUrl}/anular`,
+      request
+    );
+  }
+
 }

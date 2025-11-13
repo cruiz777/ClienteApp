@@ -12,9 +12,6 @@ import {
   AbstractControl} from '@angular/forms';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { debounceTime, distinctUntilChanged, filter, switchMap, catchError, of, take } from 'rxjs';
-import { ClienteService } from 'src/app/services/cliente.service';
-import { UsuarioService } from 'src/app/services/usuario.service';
-import { AutorizacionCajaService } from 'src/app/services/autorizacion-caja.service';
 import { ReactiveFormsModule } from '@angular/forms';
 import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
@@ -25,11 +22,16 @@ import { TipoAnticipoService } from '../../../../services/tipo-anticipo.service'
 import { PlazoTarjetaService } from '../../../../services/plazo-tarjeta.service';
 import { AnticipoService } from '../../../../services/anticipo.service';
 import { BancosTercerosService } from '../../../../services/bancosterceros.service';
-import { CreateAnticipoRequest } from '../../../../interfaces/requests/anticipo-request';
+import { AnularAnticipoRequest, CreateAnticipoRequest } from '../../../../interfaces/requests/anticipo-request';
 import { BancosTercerosResponse } from '../../../../interfaces/responses/bancos-terceros-response';
 import { MatDialog } from '@angular/material/dialog';
 import { BuscarAnticipoDialogComponent } from '../dialogs/buscar-anticipo-dialog/buscar-anticipo-dialog.component';
 import { AnticipoDetalleResponse } from '../../../../interfaces/responses/anticipo-response';
+import { CustomMessageBoxComponent } from '../../../utils/messages/custom-message-box.component';
+import { MotivoAnulacionData, MotivoAnulacionDialogComponent } from '../dialogs/anular-anticipo-dialog/anular-anticipo-dialog';
+import { ClienteService } from '../../../../services/cliente.service';
+import { UsuarioService } from '../../../../services/usuario.service';
+import { AutorizacionCajaService } from '../../../../services/autorizacion-caja.service';
 
 // Ajusta a tu interfaz real
 interface ClienteSummary {
@@ -58,7 +60,7 @@ export class CreacionAnticiposComponent implements OnInit {
   // ========= Estado general =========
   numeroAnticipo = 1;
   form!: FormGroup;
-
+  private idUsuario: string = '';
   // ========= Autocomplete Cliente =========
   clienteOrigenControl = new FormControl<string | ClienteSummary | null>(null, Validators.required);
   clientesOrigenFiltrados: ClienteSummary[] = [];
@@ -84,11 +86,8 @@ export class CreacionAnticiposComponent implements OnInit {
     plazos: PlazoTarjeta[] = [];
     plazosFiltrados: PlazoTarjeta[] = [];
     plazoSeleccionado: PlazoTarjeta | null = null;
-
-    // ========= NUEVO: Estados de carga =========
     cargandoDatos = false;
     guardando = false;
-
     // ========= Autorización de caja ========= (YA LO TIENES)
     cajaAsignada = false;
   constructor(
@@ -144,6 +143,8 @@ export class CreacionAnticiposComponent implements OnInit {
     try {
       const u: any = this.usuarioService?.getUsuarioActual?.();
       if (u) {
+        this.idUsuario = u.id?.toString() || u.id_usuario?.toString() || '';
+
         this.form.patchValue({
           cajero: u.nombre_usuario ?? u.username ?? u.nombre ?? u.usuario ?? '',
         }, { emitEvent: false });
@@ -222,15 +223,15 @@ export class CreacionAnticiposComponent implements OnInit {
         this.form.patchValue({ saldo: monto }, { emitEvent: false });
       }
     });
+
+    this.cargarSiguienteNumero();
   }
 
   // ========= Acciones UI =========
   nuevo(): void {
-    const num = this.numeroAnticipo + 1;
-    const fecha = this.form.get('fecha')?.value ?? this.hoyIso();
 
     this.form.reset({
-      fecha,
+      fecha: this.hoyIso(),
       caja: this.form.get('caja')?.value ?? '',
       cajero: this.form.get('cajero')?.value ?? '',
       clienteCodigo: 0,
@@ -270,7 +271,6 @@ export class CreacionAnticiposComponent implements OnInit {
     this.plazoSeleccionado = null;
     this.plazoControl.setValue('', { emitEvent: false });
 
-    this.numeroAnticipo = num;
     this.anticipoActual = null;  // Limpiar anticipo cargado
     this.form.enable();           // Habilitar todos los campos
     this.clienteOrigenControl.enable();
@@ -278,6 +278,8 @@ export class CreacionAnticiposComponent implements OnInit {
     this.bancoControl.enable();
     this.formaPagoControl.enable();
     this.plazoControl.enable();
+
+    this.cargarSiguienteNumero();
   }
   private cargarDatosIniciales(): void {
     this.cargandoDatos = true;
@@ -337,6 +339,20 @@ export class CreacionAnticiposComponent implements OnInit {
       error: (error) => console.error('Error cargando plazos:', error)
     });
   }
+  private cargarSiguienteNumero(): void {
+    this.anticipoService.getNextNumero().subscribe({
+      next: (response) => {
+        if (response.type === 'success' && response.data) {
+          this.numeroAnticipo = response.data.next_numero;
+          console.log('✅ Siguiente número cargado:', this.numeroAnticipo);
+        }
+      },
+      error: (error) => {
+        console.error('Error cargando siguiente número:', error);
+        // En caso de error, mantener el número actual
+      }
+    });
+  }
   grabar(): void {
     // Marcar todos los controles como tocados
     this.form.markAllAsTouched();
@@ -346,21 +362,39 @@ export class CreacionAnticiposComponent implements OnInit {
 
     // Validar formulario
     if (this.form.invalid || !this.codcli || !this.tipoAnticipoSeleccionado || !this.formaPagoSeleccionada) {
-      alert('Por favor complete todos los campos obligatorios marcados con *');
+      // ✅ REEMPLAZAR alert() por MessageBox
+      this.dialog.open(CustomMessageBoxComponent, {
+        data: {
+          title: 'Campos incompletos',
+          message: 'Por favor complete todos los campos obligatorios marcados con *',
+          type: 'warning',
+          showCancel: false,
+          confirmText: 'Entendido'
+        }
+      });
       return;
     }
 
-    this.guardando = true;
+    // ✅ ABRIR MessageBox con loading
+    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      data: {
+        title: 'Guardando anticipo',
+        message: 'Por favor espere...',
+        isLoading: true,
+        loadingText: 'Guardando anticipo...'
+      },
+      disableClose: true
+    });
 
     // Construir request
     const request: CreateAnticipoRequest = {
       caja: this.form.value.caja || null,
-      responsable: this.form.value.cajero || null,
+      responsable: this.idUsuario || null,
       clientes_codigo: this.codcli,
       monto: this.form.value.monto,
       concepto: this.form.value.concepto || null,
       id_forma_pago: this.formaPagoSeleccionada.idFormaPago,
-      id_local: 1, // Ajustar según tu lógica
+      id_local: 1,
       id_tipo_anticipo: this.tipoAnticipoSeleccionado.id_tipo_anticipo,
 
       // Opcionales
@@ -381,21 +415,55 @@ export class CreacionAnticiposComponent implements OnInit {
 
     this.anticipoService.create(request).subscribe({
       next: (response) => {
-        this.guardando = false;
+        // CERRAR loading
+        dialogRef.close();
 
         if (response.type === 'success' && response.data) {
           console.log('✅ Anticipo creado:', response.data);
-          alert(`✅ Anticipo ${response.data.numero_anticipo} creado exitosamente`);
+
+          // ✅ MOSTRAR MessageBox de éxito
+          this.dialog.open(CustomMessageBoxComponent, {
+            data: {
+              title: 'Anticipo creado',
+              message: `Anticipo <strong>${response.data.numero_anticipo}</strong> creado exitosamente`,
+              type: 'success',
+              showCancel: false,
+              confirmText: 'Aceptar'
+            }
+          });
+
           this.nuevo(); // Limpiar formulario
         } else {
           console.error('❌ Error:', response.message);
-          alert(`❌ Error: ${response.message}`);
+
+          // ✅ MOSTRAR MessageBox de error
+          this.dialog.open(CustomMessageBoxComponent, {
+            data: {
+              title: 'Error',
+              message: response.message || 'Ocurrió un error al crear el anticipo',
+              type: 'error',
+              showCancel: false,
+              confirmText: 'Aceptar'
+            }
+          });
         }
       },
       error: (error) => {
-        this.guardando = false;
+        // ✅ CERRAR loading
+        dialogRef.close();
+
         console.error('❌ Error al crear anticipo:', error);
-        alert('❌ Error al crear anticipo. Por favor intente nuevamente.');
+
+        // ✅ MOSTRAR MessageBox de error
+        this.dialog.open(CustomMessageBoxComponent, {
+          data: {
+            title: 'Error de conexión',
+            message: 'Error al crear anticipo. Por favor intente nuevamente.',
+            type: 'error',
+            showCancel: false,
+            confirmText: 'Aceptar'
+          }
+        });
       }
     });
   }
@@ -404,8 +472,139 @@ export class CreacionAnticiposComponent implements OnInit {
     console.log('Imprimir anticipo', this.numeroAnticipo);
   }
 
+
   anular(): void {
-    console.log('Anular anticipo', this.numeroAnticipo);
+    // Validar que hay un anticipo cargado
+    if (!this.anticipoActual) {
+      this.dialog.open(CustomMessageBoxComponent, {
+        data: {
+          title: 'No hay anticipo',
+          message: 'Debe buscar y cargar un anticipo antes de anular',
+          type: 'warning',
+          showCancel: false,
+          confirmText: 'Entendido'
+        }
+      });
+      return;
+    }
+
+    // Validar que NO esté ya anulado
+    if (this.anticipoActual.cancelado) {
+      this.dialog.open(CustomMessageBoxComponent, {
+        data: {
+          title: 'Anticipo ya anulado',
+          message: 'Este anticipo ya fue anulado anteriormente',
+          type: 'warning',
+          showCancel: false,
+          confirmText: 'Entendido'
+        }
+      });
+      return;
+    }
+    const numeroAnticipo = this.anticipoActual.numero_anticipo
+      || this.anticipoActual.consecutivo
+      || `#${this.anticipoActual.id_anticipo}`;
+
+    const monto = this.anticipoActual.monto || this.anticipoActual.valor_original || 0;
+
+     const dialogConfirm = this.dialog.open(CustomMessageBoxComponent, {
+    data: {
+      title: 'Confirmar anulación',
+      message: `¿Está seguro que desea anular el anticipo <strong>${numeroAnticipo}</strong> por <strong>$${monto.toFixed(2)}</strong>?<br><br>Esta acción no se puede deshacer.`,
+      type: 'warning',
+      showCancel: true,
+      confirmText: 'Sí, continuar',
+      cancelText: 'Cancelar'
+    }
+  });
+
+  dialogConfirm.afterClosed().subscribe((confirmed) => {
+    if (confirmed) {
+      // PASO 2: PEDIR MOTIVO Y FECHA
+      const dialogMotivo = this.dialog.open(MotivoAnulacionDialogComponent, {
+        width: '500px',
+        disableClose: true
+      });
+
+      dialogMotivo.afterClosed().subscribe((resultado: MotivoAnulacionData | null) => {
+        if (resultado) {
+          this.ejecutarAnulacion(resultado.motivo, resultado.fecha);
+        }
+      });
+    }
+  });
+  }
+
+  private ejecutarAnulacion(motivoAnulacion: string, fechaAnulacion: Date): void {
+    if (!this.anticipoActual) return;
+
+    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      data: {
+        title: 'Anulando anticipo',
+        message: 'Por favor espere...',
+        isLoading: true,
+        loadingText: 'Anulando anticipo...'
+      },
+      disableClose: true
+    });
+
+    // ✅ CONSTRUIR REQUEST CON FECHA
+    const request: AnularAnticipoRequest = {
+      id_anticipo: this.anticipoActual.id_anticipo,
+      motivo_anulacion: motivoAnulacion,
+      usuario_anula: this.idUsuario,
+      fecha_anulacion: fechaAnulacion.toISOString() // ✅ AGREGAR FECHA EN FORMATO ISO
+    };
+
+    this.anticipoService.anular(request).subscribe({
+      next: (response) => {
+        dialogRef.close();
+
+        if (response.type === 'success' && response.data) {
+          console.log('✅ Anticipo anulado:', response.data);
+
+          const numeroAnticipo = response.data.numero_anticipo
+            || response.data.consecutivo
+            || `#${response.data.id_anticipo}`;
+
+          this.dialog.open(CustomMessageBoxComponent, {
+            data: {
+              title: 'Anticipo anulado',
+              message: `El anticipo <strong>${numeroAnticipo}</strong> ha sido anulado exitosamente`,
+              type: 'success',
+              showCancel: false,
+              confirmText: 'Aceptar'
+            }
+          }).afterClosed().subscribe(() => {
+            this.nuevo();
+          });
+        } else {
+          this.dialog.open(CustomMessageBoxComponent, {
+            data: {
+              title: 'Error',
+              message: response.message || 'No se pudo anular el anticipo',
+              type: 'error',
+              showCancel: false,
+              confirmText: 'Aceptar'
+            }
+          });
+        }
+      },
+      error: (error) => {
+        dialogRef.close();
+        console.error('❌ Error anulando anticipo:', error);
+
+        this.dialog.open(CustomMessageBoxComponent, {
+          data: {
+            title: 'Error de conexión',
+            message: 'Error al anular el anticipo. Por favor intente nuevamente.',
+            type: 'error',
+            showCancel: false,
+            confirmText: 'Aceptar'
+          }
+        });
+      }
+    });
   }
 
   cancelar(): void {
@@ -669,22 +868,53 @@ export class CreacionAnticiposComponent implements OnInit {
   }
   // Método para cargar el anticipo completo
   private cargarAnticipo(idAnticipo: number): void {
-    this.cargandoDatos = true;
+    // ✅ ABRIR MessageBox con loading
+    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      data: {
+        title: 'Cargando anticipo',
+        message: 'Por favor espere...',
+        isLoading: true,
+        loadingText: 'Cargando datos del anticipo...'
+      },
+      disableClose: true
+    });
 
     this.anticipoService.getById(idAnticipo).subscribe({
       next: (response) => {
-        this.cargandoDatos = false;
+        // ✅ CERRAR loading
+        dialogRef.close();
 
         if (response.type === 'success' && response.data) {
           this.llenarFormularioConAnticipo(response.data);
         } else {
-          alert('Error al cargar el anticipo');
+          // ✅ MOSTRAR MessageBox de error
+          this.dialog.open(CustomMessageBoxComponent, {
+            data: {
+              title: 'Error',
+              message: 'Error al cargar el anticipo',
+              type: 'error',
+              showCancel: false,
+              confirmText: 'Aceptar'
+            }
+          });
         }
       },
       error: (error) => {
-        this.cargandoDatos = false;
+        // ✅ CERRAR loading
+        dialogRef.close();
+
         console.error('Error cargando anticipo:', error);
-        alert('Error al cargar el anticipo');
+
+        // ✅ MOSTRAR MessageBox de error
+        this.dialog.open(CustomMessageBoxComponent, {
+          data: {
+            title: 'Error de conexión',
+            message: 'Error al cargar el anticipo',
+            type: 'error',
+            showCancel: false,
+            confirmText: 'Aceptar'
+          }
+        });
       }
     });
   }
@@ -694,11 +924,14 @@ export class CreacionAnticiposComponent implements OnInit {
     this.anticipoActual = anticipo;
     this.numeroAnticipo = anticipo.id_anticipo;
 
-    // Llenar campos básicos
+    // ✅ OBTENER ID DEL USUARIO que creó el anticipo
+    const idUsuarioCreador = anticipo.responsable || anticipo.usuario_ingreso || '';
+
+    // Llenar campos básicos (sin cajero por ahora)
     this.form.patchValue({
       fecha: anticipo.fecha ? anticipo.fecha.split('T')[0] : this.hoyIso(),
       caja: anticipo.caja || '',
-      cajero: anticipo.responsable || '',
+      cajero: 'Cargando...', // ← Placeholder mientras se carga
       monto: anticipo.monto || 0,
       saldo: anticipo.monto || 0,
       concepto: anticipo.concepto || '',
@@ -710,6 +943,39 @@ export class CreacionAnticiposComponent implements OnInit {
       nroDocumento: anticipo.nro_documento || '',
       autorizado: anticipo.autorizacion || ''
     }, { emitEvent: false });
+
+    // ✅ CARGAR NOMBRE DEL USUARIO desde el servicio
+    if (idUsuarioCreador) {
+      const idNumerico = parseInt(idUsuarioCreador.toString());
+
+      if (!isNaN(idNumerico)) {
+        this.usuarioService.getUsuarioById(idNumerico).subscribe({
+          next: (response) => {
+            if (response.type === 'LIST' && response.data) {
+              const nombreUsuario = response.data.nombre_usuario
+                || response.data.nombre_usuario
+                || `Usuario ${idUsuarioCreador}`;
+
+              this.form.patchValue({ cajero: nombreUsuario }, { emitEvent: false });
+              console.log('✅ Usuario cargado:', nombreUsuario);
+            } else {
+              // Si no se encuentra, usar el ID
+              this.form.patchValue({ cajero: `Usuario ${idUsuarioCreador}` }, { emitEvent: false });
+            }
+          },
+          error: (error) => {
+            console.error('Error cargando usuario:', error);
+            // En caso de error, mostrar el ID
+            this.form.patchValue({ cajero: `Usuario ${idUsuarioCreador}` }, { emitEvent: false });
+          }
+        });
+      } else {
+        // Si no es numérico, usar el valor tal cual (por si es un nombre)
+        this.form.patchValue({ cajero: idUsuarioCreador }, { emitEvent: false });
+      }
+    } else {
+      this.form.patchValue({ cajero: 'Sin asignar' }, { emitEvent: false });
+    }
 
     // Cargar CLIENTE
     if (anticipo.clientes_codigo) {
@@ -769,7 +1035,8 @@ export class CreacionAnticiposComponent implements OnInit {
     }
 
     console.log('✅ Anticipo cargado en el formulario');
-      // Deshabilitar TODOS los campos
+
+    // Deshabilitar TODOS los campos
     this.form.disable();
     this.clienteOrigenControl.disable();
     this.tipoAnticipoControl.disable();

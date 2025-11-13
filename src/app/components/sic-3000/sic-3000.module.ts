@@ -41,6 +41,7 @@ import { ReporteAnticiposComponent } from './anticipos/reporte-anticipos/reporte
 import { MatMenuModule } from '@angular/material/menu';
 import { ProductosProveedorDialogComponent } from './proveedores/dialog/productos-proveedor/productos-proveedor-dialog.component';
 import { BuscarAnticipoDialogComponent } from './anticipos/dialogs/buscar-anticipo-dialog/buscar-anticipo-dialog.component';
+import { MotivoAnulacionDialogComponent } from './anticipos/dialogs/anular-anticipo-dialog/anular-anticipo-dialog';
 
   @NgModule({
     declarations: [
@@ -89,7 +90,8 @@ import { BuscarAnticipoDialogComponent } from './anticipos/dialogs/buscar-antici
       AgGridModule,
       CreacionAnticiposComponent,
       ReporteAnticiposComponent,
-      BuscarAnticipoDialogComponent
+      BuscarAnticipoDialogComponent,
+      MotivoAnulacionDialogComponent
     ]
   })
   export class Sic3000Module {}
