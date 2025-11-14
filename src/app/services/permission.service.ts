@@ -26,7 +26,7 @@ export interface PermisosResponse {
   providedIn: 'root'
 })
 export class PermissionsService {
-  
+
   // 🎯 Estados reactivos principales
   private permisosSubject = new BehaviorSubject<string[]>([]);
   private permisosReadySubject = new BehaviorSubject<boolean>(false);
@@ -64,40 +64,40 @@ export class PermissionsService {
     '/codbar/ficha-de-cliente/grupo-cliente': 'codbar.ficha-de-cliente.grupo-cliente',
     '/codbar/ficha-de-cliente/grupo-cliente/crear': 'codbar.ficha-de-cliente.grupo-cliente.nuevo',
     '/codbar/ficha-de-cliente/grupo-cliente/editar': 'codbar.ficha-de-cliente.grupo-cliente.editar',
-    
+
     // ===== PRODUCTOS (dentro de ficha-de-cliente.listado-clientes) =====
     '/productos': 'codbar.ficha-de-cliente.listado-clientes',
     '/productos/nuevo-producto': 'codbar.ficha-de-cliente.listado-clientes.nuevo-producto',
-    '/productos/nuevo-gln': 'codbar.ficha-de-cliente.listado-clientes.nuevo-gln', 
+    '/productos/nuevo-gln': 'codbar.ficha-de-cliente.listado-clientes.nuevo-gln',
     '/productos/cupones': 'codbar.ficha-de-cliente.listado-clientes.cupones',
     '/productos/nuevo-sscc': 'codbar.ficha-de-cliente.listado-clientes.nuevo-sscc',
-    
+
     // Opciones específicas
     '/productos/uv-individual': 'codbar.ficha-de-cliente.listado-clientes.nuevo-producto.ingresar-uv',
     '/productos/ul': 'codbar.ficha-de-cliente.listado-clientes.nuevo-producto.ingresar-ul',
     '/productos/bloque': 'codbar.ficha-de-cliente.listado-clientes.nuevo-producto.bloque',
-    
+
     // Rutas con parámetros (normalizadas)
     '/productos/uv-individual-edit': 'codbar.ficha-de-cliente.listado-clientes.nuevo-producto.ingresar-uv',
     '/productos/uv-individual-edit/:codbar': 'codbar.ficha-de-cliente.listado-clientes.nuevo-producto.ingresar-uv',
     '/productos/ul/:codbar': 'codbar.ficha-de-cliente.listado-clientes.nuevo-producto.ingresar-ul',
     '/productos/ul-edit/:g14': 'codbar.ficha-de-cliente.listado-clientes.nuevo-producto.ingresar-ul',
 
-    
+
     // Transferencia
     '/codbar/transferencia/tras-prefijo': 'codbar.transferencia.transferencia-de-prefijo',
     '/codbar/transferencia/tras-gtin': 'codbar.transferencia.transferencia-de-gtin',
     '/codbar/transferencia/eliminar-prefijo': 'codbar.transferencia.eliminar-prefijo',
-    
+
     // Validación
     '/codbar/validacion/validacionsri': 'codbar.validacion.validacion-sri',
     '/codbar/validacion/validacion-licenses': 'codbar.validacion.validacion-licencias-verified',
     '/codbar/validacion/validacion-productos': 'codbar.validacion.validacion-productos-verified',
-    
+
     // Reportes
     '/codbar/reportes/explorador-cliente': 'codbar.reportes.explorador-clientes',
     '/codbar/reportes/gerencia': 'codbar.reportes.reporte-gerencia-clientes',
-    
+
     // Configuración
     '/codbar/configuracion/localizacion-establecimiento': 'codbar.configuracion.localizacion-establecimiento',
     '/codbar/configuracion/localizacion-establecimiento/crear': 'codbar.configuracion.localizacion-establecimiento.nuevo',
@@ -120,6 +120,7 @@ export class PermissionsService {
     '/seguridades/zonas/nuevo': 'seguridades.configuracion.zona.nuevo',
     '/seguridades/proyectos': 'seguridades.configuracion.proyectos',
     '/seguridades/proyectos/nuevo-proyecto': 'seguridades.configuracion.proyectos.nuevo-proyecto',
+    '/seguridades/videos': 'seguridades.configuracion.videos',
     '/seguridades/segmento-negocio': 'seguridades.configuracion.segmento-de-negocio',
     '/seguridades/segmento-negocio/locales': 'seguridades.configuracion.segmento-de-negocio.locales',
 
@@ -142,7 +143,7 @@ export class PermissionsService {
   // 🚀 SISTEMA REACTIVO PRINCIPAL
   private inicializarSistemaReactivo(): void {
     console.log('Inicializando sistema reactivo de cambios...');
-    
+
     // 1. Cargar desde storage al inicio
     this.cargarPermisosDesdeStorage();
 
@@ -177,7 +178,7 @@ export class PermissionsService {
       `${environment.applicationUrl}/Usuarios/${usuario.id_usuario}/permisos`
     ).pipe(
       // Retry automático con retryWhen
-      retryWhen(errors => 
+      retryWhen(errors =>
         errors.pipe(
           scan((retryCount, error) => {
             console.warn(`⚠️ Intento ${retryCount + 1} falló, reintentando...`, error);
@@ -189,19 +190,19 @@ export class PermissionsService {
           delay(1000) // Esperar 1 segundo entre reintentos
         )
       ),
-      
+
       // Procesar respuesta
       tap(response => {
         if (response?.type === 'OK' && response.data?.permisos_flat) {
           const nuevosPermisos = response.data.permisos_flat;
-          
+
           // Detectar cambios
           const permisosActuales = this.permisosSubject.value;
           const cambios = this.detectarCambiosPermisos(permisosActuales, nuevosPermisos);
-          
+
           if (cambios.total_cambios > 0) {
             console.log('🔄 Cambios en permisos detectados:', cambios);
-            
+
             // Emitir evento personalizado para componentes que necesiten reaccionar
             this.emitirEventoCambioPermisos(cambios);
           }
@@ -209,26 +210,26 @@ export class PermissionsService {
           // Actualizar estados
           this.permisosSubject.next([...nuevosPermisos]);
           this.permisosReadySubject.next(true);
-          
+
           // Guardar en storage
           this.guardarPermisosEnStorage(nuevosPermisos, usuario);
-          
+
           console.log('✅ Permisos cargados para:', usuario.nombre_usuario, nuevosPermisos);
         } else {
           throw new Error('Respuesta de permisos inválida');
         }
       }),
-      
+
       // Retornar los permisos
       map(response => response.data.permisos_flat),
-      
+
       // Manejo de errores final
       catchError(error => {
         console.error('❌ Error final cargando permisos:', error);
         this.errorSubject.next(`Error cargando permisos: ${error.message}`);
         throw error;
       }),
-      
+
       // Limpiar loading
       tap(() => this.loadingSubject.next(false))
     );
@@ -238,7 +239,7 @@ export class PermissionsService {
   private detectarCambiosPermisos(anteriores: string[], nuevos: string[]): any {
     const agregados = nuevos.filter(p => !anteriores.includes(p));
     const removidos = anteriores.filter(p => !nuevos.includes(p));
-    
+
     return {
       agregados,
       removidos,
@@ -265,7 +266,7 @@ export class PermissionsService {
         timestamp: new Date().getTime(),
         version: '3.0'
       };
-      
+
       localStorage.setItem('userPermissions', JSON.stringify(data));
       console.log('💾 Permisos guardados en storage para:', usuario.nombre_usuario);
     } catch (error) {
@@ -286,7 +287,7 @@ export class PermissionsService {
       this.errorSubject.next(error);
       throw new Error(error);
     }
-    
+
     console.log('🔄 Recarga manual solicitada para:', usuario.nombre_usuario);
     return this.cargarPermisosAsync(usuario);
   }
@@ -339,9 +340,9 @@ export class PermissionsService {
   private verificarAccesoRuta(rutaAngular: string, permisos: string[]): boolean {
     const rutaNormalizada = this.normalizarRuta(rutaAngular);
     console.log(`🔍 Verificando acceso a ruta: ${rutaNormalizada}`);
-    
+
     const permisoRequerido = this.MAPEO_RUTAS[rutaNormalizada];
-    
+
     if (!permisoRequerido) {
       console.warn(`⚠️ Sin mapeo para ruta: ${rutaNormalizada}`);
       return false;
@@ -352,7 +353,7 @@ export class PermissionsService {
 
     // ✅ VERIFICACIÓN EXACTA SOLAMENTE
     const tienePermiso = permisos.includes(permisoRequerido);
-    
+
     console.log(`🔍 Resultado para ${rutaNormalizada}: ${tienePermiso ? '✅ PERMITIDO' : '❌ DENEGADO'}`);
     return tienePermiso;
   }
@@ -370,12 +371,12 @@ export class PermissionsService {
 
     //Solo verificar jerarquía para módulos/sistemas, NO para funcionalidades específicas
     const partesPermiso = permisoRequerido.split('.');
-    
+
     // Solo permitir jerarquía si es un módulo/sistema (máximo 2 niveles)
     if (partesPermiso.length <= 2) {
       for (let i = partesPermiso.length - 1; i > 0; i--) {
         const permisoParent = partesPermiso.slice(0, i).join('.');
-        
+
         if (permisos.includes(permisoParent)) {
           console.log(`✅ Permiso padre encontrado para módulo: ${permisoParent}`);
           return true;
@@ -414,14 +415,14 @@ export class PermissionsService {
   public tieneAccionEspecifica(rutaAngular: string, accion: string): boolean {
     const rutaNormalizada = this.normalizarRuta(rutaAngular);
     const permisoBase = this.MAPEO_RUTAS[rutaNormalizada];
-    
+
     if (!permisoBase) {
       return false;
     }
 
     const permisoCompleto = `${permisoBase}.${accion}`;
     const permisos = this.permisosSubject.value;
-    
+
     return permisos.includes(permisoCompleto);
   }
 
@@ -430,7 +431,7 @@ export class PermissionsService {
     return this.permisos$.pipe(
       map(permisos => {
         console.log('🔄 Calculando permisos de menú con:', permisos);
-        
+
         return {
           // 📊 CODBAR - Sistema existente
           fichaCliente: {
@@ -471,7 +472,7 @@ export class PermissionsService {
           // 🔒 SEGURIDADES - Sistema nuevo basado en tus rutas
           seguridades: {
             // Módulo principal
-            modulo: permisos.includes('seguridades') || 
+            modulo: permisos.includes('seguridades') ||
                     permisos.some(p => p.startsWith('seguridades.')),
 
             // Usuarios/Perfiles
@@ -504,7 +505,8 @@ export class PermissionsService {
               puedeGrabarEmpresas: permisos.includes('seguridades.configuracion.empresas.grabar'),
               puedeCrearZonas: permisos.includes('seguridades.configuracion.zona.nuevo'),
               puedeCrearProyectos: permisos.includes('seguridades.configuracion.proyectos.nuevo-proyecto'),
-              puedeVerLocales: permisos.includes('seguridades.configuracion.segmento-de-negocio.locales')
+              puedeVerLocales: permisos.includes('seguridades.configuracion.segmento-de-negocio.locales'),
+              videos: permisos.includes('seguridades.configuracion.videos')
             },
 
             // Accesos directos (compatibilidad con código existente)
@@ -513,24 +515,24 @@ export class PermissionsService {
             departamentos: permisos.includes('seguridades.usuarios-perfiles.departamentos'),
             empresas: permisos.includes('seguridades.configuracion.empresas'),
             zonas: permisos.includes('seguridades.configuracion.zona'),
-            proyectos: permisos.includes('seguridades.configuracion.proyectos')
+            proyectos: permisos.includes('seguridades.configuracion.proyectos'),
           },
 
           // 💰 SIC3000 - Sistema nuevo basado en tus rutas
           sic3000: {
             // Módulo principal
-            modulo: permisos.includes('sic3000') || 
-                    permisos.includes('sic-3000') || 
+            modulo: permisos.includes('sic3000') ||
+                    permisos.includes('sic-3000') ||
                     permisos.some(p => p.startsWith('sic3000.')) ||
                     permisos.some(p => p.startsWith('sic-3000.')),
 
-            
-            estructuraComercial: permisos.includes('sic3000.estructura-comercial') || 
+
+            estructuraComercial: permisos.includes('sic3000.estructura-comercial') ||
                                 permisos.includes('sic-3000.estructura-comercial') ||
                                 permisos.includes('sic3000.estructura-list') ||
                                 permisos.includes('sic-3000.estructura-list'),
-            
-            registroCobros: permisos.includes('sic3000.registro-cobros') || 
+
+            registroCobros: permisos.includes('sic3000.registro-cobros') ||
                           permisos.includes('sic-3000.registro-cobros') ||
                           permisos.includes('sic3000.registroCobros') ||
                           permisos.includes('sic-3000.registroCobros'),
@@ -563,14 +565,14 @@ export class PermissionsService {
       if (stored) {
         const data = JSON.parse(stored);
         const usuario = this.usuarioService.getUsuarioActual();
-        
+
         // Verificar que los permisos sean del usuario actual
-        const esUsuarioActual = usuario && 
-          data.usuario_id === usuario.id_usuario && 
+        const esUsuarioActual = usuario &&
+          data.usuario_id === usuario.id_usuario &&
           data.empresa_id === usuario.id_empresa;
-        
+
         const esReciente = (new Date().getTime() - data.timestamp) < (24 * 60 * 60 * 1000);
-        
+
         if (esUsuarioActual && esReciente && data.permisos_flat) {
           this.permisosSubject.next([...data.permisos_flat]);
           this.permisosReadySubject.next(true);

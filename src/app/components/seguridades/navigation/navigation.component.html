@@ -42,7 +42,7 @@
           </mat-expansion-panel-header>
 
           <!-- Usuarios -->
-          <a mat-list-item 
+          <a mat-list-item
             [routerLink]="((menuPermisos$ | async)?.seguridades?.usuarios) ? '/seguridades/usuarios' : null"
             [class.disabled]="!((menuPermisos$ | async)?.seguridades?.usuarios)"
             (click)="manejarClick('/seguridades/usuarios', $event)">
@@ -51,7 +51,7 @@
           </a>
 
           <!-- Perfiles -->
-          <a mat-list-item 
+          <a mat-list-item
             [routerLink]="((menuPermisos$ | async)?.seguridades?.perfiles) ? '/seguridades/perfiles' : null"
             [class.disabled]="!((menuPermisos$ | async)?.seguridades?.perfiles)"
             (click)="manejarClick('/seguridades/perfiles', $event)">
@@ -60,7 +60,7 @@
           </a>
 
           <!-- Departamentos -->
-          <a mat-list-item 
+          <a mat-list-item
             [routerLink]="((menuPermisos$ | async)?.seguridades?.departamentos) ? '/seguridades/departamentos' : null"
             [class.disabled]="!((menuPermisos$ | async)?.seguridades?.departamentos)"
             (click)="manejarClick('/seguridades/departamentos', $event)">
@@ -79,7 +79,7 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item 
+          <a mat-list-item
             [routerLink]="((menuPermisos$ | async)?.seguridades?.entidades?.entidades) ? '/seguridades/entidades' : null"
             [class.disabled]="!((menuPermisos$ | async)?.seguridades?.entidades?.entidades)"
             (click)="manejarClick('/seguridades/entidades', $event)">
@@ -99,7 +99,7 @@
           </mat-expansion-panel-header>
 
           <!-- Empresas -->
-          <a mat-list-item 
+          <a mat-list-item
             [routerLink]="((menuPermisos$ | async)?.seguridades?.configuracion?.empresas) ? '/seguridades/empresas' : null"
             [class.disabled]="!((menuPermisos$ | async)?.seguridades?.configuracion?.empresas)"
             (click)="manejarClick('/seguridades/empresas', $event)">
@@ -108,7 +108,7 @@
           </a>
 
           <!-- Zonas -->
-          <a mat-list-item 
+          <a mat-list-item
             [routerLink]="((menuPermisos$ | async)?.seguridades?.configuracion?.zonas) ? '/seguridades/zonas' : null"
             [class.disabled]="!((menuPermisos$ | async)?.seguridades?.configuracion?.zonas)"
             (click)="manejarClick('/seguridades/zonas', $event)">
@@ -117,7 +117,7 @@
           </a>
 
           <!-- Segmento de Negocio -->
-          <a mat-list-item 
+          <a mat-list-item
             [routerLink]="((menuPermisos$ | async)?.seguridades?.configuracion?.segmentoNegocio) ? '/seguridades/segmento-negocio' : null"
             [class.disabled]="!((menuPermisos$ | async)?.seguridades?.configuracion?.segmentoNegocio)"
             (click)="manejarClick('/seguridades/segmento-negocio', $event)">
@@ -126,12 +126,21 @@
           </a>
 
           <!-- Proyectos -->
-          <a mat-list-item 
+          <a mat-list-item
             [routerLink]="((menuPermisos$ | async)?.seguridades?.configuracion?.proyectos) ? '/seguridades/proyectos' : null"
             [class.disabled]="!((menuPermisos$ | async)?.seguridades?.configuracion?.proyectos)"
             (click)="manejarClick('/seguridades/proyectos', $event)">
             <span *ngIf="isExpanded" class="menu-text">Proyectos</span>
             <mat-icon *ngIf="!((menuPermisos$ | async)?.seguridades?.configuracion?.proyectos)" class="lock-icon">lock</mat-icon>
+          </a>
+
+          <!-- Videos -->
+          <a mat-list-item
+            [routerLink]="((menuPermisos$ | async)?.seguridades?.configuracion?.videos) ? '/seguridades/videos' : null"
+            [class.disabled]="!((menuPermisos$ | async)?.seguridades?.configuracion?.videos)"
+            (click)="manejarClick('/seguridades/videos', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Videos ayuda</span>
+            <mat-icon *ngIf="!((menuPermisos$ | async)?.seguridades?.configuracion?.videos)" class="lock-icon">lock</mat-icon>
           </a>
 
         </mat-expansion-panel>
