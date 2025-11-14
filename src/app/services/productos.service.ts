@@ -55,13 +55,9 @@ export class ProductoService {
       `${this.apiUrl}/siguiente-id`
     );
   }
-  buscarProductosPorEstructura(
-    termino: string, 
-    idEstructura: number
-  ): Observable<ApiResponse<ProductoResponse[]>> {
-    return this.http.get<ApiResponse<ProductoResponse[]>>(
-      `${this.apiUrl}/buscar-por-estructura?termino=${encodeURIComponent(termino)}&idEstructura=${idEstructura}`
-    );
+  buscarProductosGlobal(termino: string, page: number = 1, pageSize: number = 20): Observable<any> {
+    const url = `${this.apiUrl}/buscar-global?termino=${encodeURIComponent(termino)}&page=${page}&pageSize=${pageSize}`;
+    return this.http.get<any>(url);
   }
   update(id: number, request: any): Observable<ApiResponse<boolean>> {
     return this.http.put<ApiResponse<boolean>>(
@@ -69,6 +65,12 @@ export class ProductoService {
       request
     );
   }
+
+  getPrimerProducto(): Observable<any> {
+    const url = `${this.apiUrl}/primer-producto`;
+    return this.http.get<any>(url);
+  }
+  
   getProductosPorEstructura(
     idDivision?: number | null,
     idSubDivision?: number | null,
@@ -98,4 +100,13 @@ export class ProductoService {
         `${this.apiUrl}/bodega-stock/${idProducto}`
       );
     }
+  validarCodigoBarras(codigoBarras: string): Observable<any> {
+    const url = `${this.apiUrl}/validar-codigo-barras?codigoBarras=${encodeURIComponent(codigoBarras)}`;
+    return this.http.get<any>(url);
+  }
+  getEstructuraByProducto(idProducto: number): Observable<ApiResponse<any>> {
+    return this.http.get<ApiResponse<any>>(
+      `${this.apiUrl}/estructura/${idProducto}`
+    );
+  }
 }

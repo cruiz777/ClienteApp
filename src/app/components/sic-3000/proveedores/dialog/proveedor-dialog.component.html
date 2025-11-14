@@ -1,0 +1,589 @@
+<div class="dialog-container">
+  <!-- Header del Dialog -->
+  <div class="dialog-header">
+    <h2 mat-dialog-title>{{ titulo }}</h2>
+    <button mat-icon-button mat-dialog-close class="btn-cerrar">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <!-- Pestañas -->
+  <div class="tabs-container">
+    <div class="tabs">
+      <button 
+        class="tab-button"
+        [class.active]="activeTab === 'general'" 
+        (click)="cambiarTab('general')">
+        <span class="step-badge">1</span>
+        <span class="tab-label">
+          Datos Generales
+        </span>
+      </button>
+      <button 
+        class="tab-button"
+        [class.active]="activeTab === 'adicional'" 
+        (click)="cambiarTab('adicional')">
+        <span class="step-badge">2</span>
+        <span class="tab-label">
+          Datos Comerciales
+        </span>
+      </button>
+      <button 
+        class="tab-button"
+        [class.active]="activeTab === 'contactos'" 
+        (click)="cambiarTab('contactos')">
+        <span class="step-badge">3</span>
+        <span class="tab-label">
+          Contactos
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Contenido del Dialog -->
+  <mat-dialog-content class="dialog-content">
+    
+    <!-- ======= TAB 1: DATOS GENERALES ======= -->
+    <div *ngIf="activeTab === 'general'" class="tab-content">
+      <form [formGroup]="formGeneral" class="container-fluid">
+        
+        <!-- Sección: Identificación -->
+        <div class="card mb-4">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><mat-icon class="me-2">badge</mat-icon>Identificación</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Código</mat-label>
+                  <input matInput formControlName="codigo_proveedor" placeholder="Auto-generado" readonly>
+                  <mat-error *ngIf="formGeneral.get('codigo_proveedor')?.hasError('required')">
+                    Campo requerido
+                  </mat-error>
+                </mat-form-field>
+              </div>
+              
+              <div class="col-md-3">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>{{ tipoProveedorSeleccionado?.nombre_tipo === 'INTERNACIONAL' ? 'Documento' : 'RUC' }}</mat-label>
+                  <input matInput formControlName="ruc_prov" 
+                        [placeholder]="tipoProveedorSeleccionado?.nombre_tipo === 'INTERNACIONAL' ? 'Número de documento' : 'RUC del proveedor'"
+                        [maxlength]="tipoProveedorSeleccionado?.nombre_tipo === 'INTERNACIONAL' ? 20 : 13"
+                        (blur)="consultarDocumento()">
+                  <mat-error *ngIf="formGeneral.get('ruc_prov')?.hasError('required')">
+                    Campo requerido
+                  </mat-error>
+                </mat-form-field>
+              </div>
+              
+              <div class="col-md-6">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Razón Social</mat-label>
+                  <input matInput formControlName="nombre_prov" placeholder="Nombre completo o razón social">
+                  <mat-error *ngIf="formGeneral.get('nombre_prov')?.hasError('required')">
+                    Campo requerido
+                  </mat-error>
+                </mat-form-field>
+              </div>
+            </div>
+            
+            <div class="row g-3">
+              <div class="col-md-4">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Nombre Comercial</mat-label>
+                  <input matInput formControlName="nombre_comercial" placeholder="Nombre comercial">
+                </mat-form-field>
+              </div>
+                          
+              
+              <div class="col-md-4" *ngIf="tipoProveedorSeleccionado?.nombre_tipo !== 'INTERNACIONAL'">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Tipo de Contribuyente</mat-label>
+                  <mat-select formControlName="id_tipo_contribuyente">
+                    <mat-option *ngFor="let contrib of tiposContribuyente" [value]="contrib.id_tipo_contribuyente">
+                      {{ contrib.codigo  }} - {{ contrib.descripcion  }}
+                    </mat-option>
+                  </mat-select> 
+                  <mat-error *ngIf="formGeneral.get('id_tipo_contribuyente')?.hasError('required')">
+                    Campo requerido
+                  </mat-error>
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección: Ubicación -->
+        <div class="card mb-4">
+          <div class="card-header bg-info text-white">
+            <h5 class="mb-0"><mat-icon class="me-2">location_on</mat-icon>Ubicación y Contacto</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Ciudad</mat-label>
+                  <mat-select formControlName="id_ciudad">
+                    <mat-option *ngFor="let ciudad of ciudades" [value]="ciudad.id">
+                      {{ ciudad.ciudad }} - {{ ciudad.provincia }}, {{ ciudad.pais }}
+                    </mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="formGeneral.get('id_ciudad')?.hasError('required')">
+                    Campo requerido
+                  </mat-error>
+                </mat-form-field>
+              </div>
+              
+              <div class="col-md-6">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Sitio Web</mat-label>
+                  <input matInput formControlName="web_proveedor" placeholder="https://www.ejemplo.com">
+                </mat-form-field>
+              </div>
+            </div>
+            
+            <div class="row g-3">
+              <div class="col-md-8">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Dirección</mat-label>
+                  <input matInput formControlName="direccion_prov" placeholder="Dirección completa">
+                  <mat-error *ngIf="formGeneral.get('direccion_prov')?.hasError('required')">
+                    Campo requerido
+                  </mat-error>
+                </mat-form-field>
+              </div>
+              
+              <div class="col-md-4">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Código Postal</mat-label>
+                  <input matInput formControlName="codigo_postal" placeholder="Código postal">
+                </mat-form-field>
+              </div>
+            </div>
+            
+            <div class="row g-3">
+              <div class="col-md-3">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Teléfono Principal</mat-label>
+                  <input matInput formControlName="telefono_prov" placeholder="Teléfono principal">
+                </mat-form-field>
+              </div>
+              
+              <div class="col-md-3">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Teléfono 2</mat-label>
+                  <input matInput formControlName="tel1_prov" placeholder="Teléfono secundario">
+                </mat-form-field>
+              </div>
+              
+              <div class="col-md-3">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Teléfono 3</mat-label>
+                  <input matInput formControlName="tel2_prov" placeholder="Teléfono adicional">
+                </mat-form-field>
+              </div>
+              
+              <div class="col-md-3">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Email</mat-label>
+                  <input matInput formControlName="email_prov" type="email" placeholder="email@ejemplo.com">
+                  <mat-error *ngIf="formGeneral.get('email_prov')?.hasError('email')">
+                    Email inválido
+                  </mat-error>
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- ======= TAB 2: DATOS COMERCIALES ======= -->
+    <div *ngIf="activeTab === 'adicional'" class="tab-content">
+      <form [formGroup]="formAdicional" class="container-fluid">
+        
+        <!-- Sección: Condiciones Comerciales -->
+        <div class="card mb-4">
+          <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><mat-icon class="me-2">business_center</mat-icon>Condiciones Comerciales</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-3">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Tiempo de Entrega (días)</mat-label>
+                  <input matInput formControlName="tiempo_entrega" type="number" placeholder="0">
+                </mat-form-field>
+              </div>
+              
+              <div class="col-md-3">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Plazo de Pago (días)</mat-label>
+                  <input matInput formControlName="plazo_pago" type="number" placeholder="0">
+                </mat-form-field>
+              </div>
+              
+              <div class="col-md-6">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Cuenta Contable</mat-label>
+                  <mat-select formControlName="id_plan_cuentas"
+                 >
+                    <mat-option *ngFor="let plan of planesCuenta" [value]="plan.id_plan_cuentas">
+                      {{ plan.cuenta_presentacion }} - {{ plan.nombre_cuenta }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </div>
+            </div>
+            
+            <div class="row g-3">
+              <div class="col-md-12">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" formControlName="no_cambiar_costo_producto" id="noCambiarCosto">
+                  <label class="form-check-label" for="noCambiarCosto">
+                    No cambiar costo de productos automáticamente
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección: Retenciones (solo para proveedores no internacionales) -->
+        <div class="card mb-4" *ngIf="tipoProveedorSeleccionado?.nombre_tipo !== 'INTERNACIONAL'">
+          <div class="card-header bg-warning text-dark">
+            <h5 class="mb-0"><mat-icon class="me-2">receipt</mat-icon>Configuración de Retenciones</h5>
+          </div>
+          <div class="card-body">
+            <div class="row g-3 mb-3">
+              <!-- Retención en la Fuente - Bienes -->
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Retención en la Fuente - Bienes</label>
+                <div class="row g-2">
+                  <div class="col-6">
+                    <mat-form-field appearance="outline" class="w-100">
+                      <mat-label>Porcentaje (%)</mat-label>
+                      <input matInput formControlName="porcentaje_retencion_fb" type="number" step="0.01" min="0" max="100" readonly>
+                    </mat-form-field>
+                  </div>
+                  <div class="col-6">
+                    <mat-form-field appearance="outline" class="w-100">
+                      <mat-label>Código</mat-label>
+                      <!-- CAMBIAR A SELECT -->
+                      <mat-select formControlName="codigo_retencion_fb">
+                        <mat-option *ngFor="let codigo of codigosRetencionFuente" [value]="codigo.codigo_tipo_ret">
+                          {{ codigo.texto_combo }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
+              </div>
+
+              
+              <!-- Retención en la Fuente - Servicios -->
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Retención en la Fuente - Servicios</label>
+                <div class="row g-2">
+                  <div class="col-6">
+                    <mat-form-field appearance="outline" class="w-100">
+                      <mat-label>Porcentaje (%)</mat-label>
+                      <input matInput formControlName="porcentaje_retencion_fs" type="number" step="0.01" min="0" max="100" readonly>
+                    </mat-form-field>
+                  </div>
+                  <div class="col-6">
+                    <mat-form-field appearance="outline" class="w-100">
+                      <mat-label>Código</mat-label>
+                      <!-- ✅ CAMBIAR A SELECT -->
+                      <mat-select formControlName="codigo_retencion_fs">
+                        <mat-option *ngFor="let codigo of codigosRetencionFuente" [value]="codigo.codigo_tipo_ret">
+                          {{ codigo.texto_combo }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="row g-3">
+              <!-- Retención IVA - Bienes -->
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Retención IVA - Bienes</label>
+                <div class="row g-2">
+                  <div class="col-6">
+                    <mat-form-field appearance="outline" class="w-100">
+                      <mat-label>Porcentaje (%)</mat-label>
+                      <input matInput formControlName="porcentaje_retencion_ib" type="number" step="0.01" min="0" max="100" readonly>
+                    </mat-form-field>
+                  </div>
+                  <div class="col-6">
+                    <mat-form-field appearance="outline" class="w-100">
+                      <mat-label>Código</mat-label>
+                      <!-- CAMBIAR A SELECT -->
+                      <mat-select formControlName="codigo_retencion_ib">
+                        <mat-option *ngFor="let codigo of codigosRetencionIVA" [value]="codigo.codigo_tipo_ret">
+                          {{ codigo.texto_combo }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Retención IVA - Servicios -->
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Retención IVA - Servicios</label>
+                <div class="row g-2">
+                  <div class="col-6">
+                    <mat-form-field appearance="outline" class="w-100">
+                      <mat-label>Porcentaje (%)</mat-label>
+                      <input matInput formControlName="porcentaje_retencion_is" type="number" step="0.01" min="0" max="100" readonly>
+                    </mat-form-field>
+                  </div>
+                  <div class="col-6">
+                    <mat-form-field appearance="outline" class="w-100">
+                      <mat-label>Código</mat-label>
+                      <!-- CAMBIAR A SELECT -->
+                      <mat-select formControlName="codigo_retencion_is">
+                        <mat-option *ngFor="let codigo of codigosRetencionIVA" [value]="codigo.codigo_tipo_ret">
+                          {{ codigo.texto_combo }}
+                        </mat-option>
+                      </mat-select>
+                    </mat-form-field>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sección: Observaciones -->
+        <div class="card mb-4">
+          <div class="card-header bg-secondary text-white">
+            <h5 class="mb-0"><mat-icon class="me-2">notes</mat-icon>Observaciones</h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-12">
+                <mat-form-field appearance="outline" class="w-100">
+                  <mat-label>Observaciones Generales</mat-label>
+                  <textarea matInput formControlName="observaciones" rows="4" 
+                           placeholder="Observaciones adicionales sobre el proveedor"></textarea>
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <!-- ======= TAB 3: CONTACTOS ======= -->
+    <div *ngIf="activeTab === 'contactos'" class="tab-content">
+      <div class="container-fluid">
+        
+        <!-- Header con botón agregar -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h3 class="mb-0"><mat-icon class="me-2">contacts</mat-icon>Gestión de Contactos</h3>
+          <button type="button" class="btn btn-primary" (click)="agregarContacto()">
+            <mat-icon class="me-2">person_add</mat-icon>Agregar Contacto
+          </button>
+        </div>
+
+        <!-- Lista de contactos existentes -->
+        <div class="card mb-4" *ngIf="contactos.length > 0">
+          <div class="card-header bg-info text-white">
+            <h5 class="mb-0">Contactos Registrados ({{ contactos.length }})</h5>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Cargo</th>
+                    <th>Teléfono</th>
+                    <th>Email</th>
+                    <th>Principal</th>
+                    <th width="120">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let contacto of contactos; let i = index">
+                    <td class="fw-medium">{{ contacto.nombre_contacto }}</td>
+                    <td>{{ contacto.cargo || '-' }}</td>
+                    <td>{{ contacto.telefono || contacto.telefono_movil || '-' }}</td>
+                    <td>{{ contacto.email || '-' }}</td>
+                    <td>
+                      <span class="badge" 
+                            [class]="contacto.es_principal ? 'bg-success' : 'bg-secondary'">
+                        {{ contacto.es_principal ? 'Sí' : 'No' }}
+                      </span>
+                    </td>
+                    <td>
+                      <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                (click)="editarContacto(i)" title="Editar">
+                          <mat-icon style="font-size: 16px;">edit</mat-icon>
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                (click)="eliminarContacto(i)" title="Eliminar">
+                          <mat-icon style="font-size: 16px;">delete</mat-icon>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Mensaje cuando no hay contactos -->
+        <div class="alert alert-info text-center" *ngIf="contactos.length === 0 && !mostrarFormContacto">
+          <mat-icon class="me-2">info</mat-icon>
+          No hay contactos registrados. Haga clic en "Agregar Contacto" para comenzar.
+        </div>
+
+        <!-- Formulario para agregar/editar contacto -->
+        <div class="card" *ngIf="mostrarFormContacto">
+          <div class="card-header" [class]="editandoContacto >= 0 ? 'bg-warning text-dark' : 'bg-success text-white'">
+            <h5 class="mb-0">
+              <mat-icon class="me-2">{{ editandoContacto >= 0 ? 'edit' : 'person_add' }}</mat-icon>
+              {{ editandoContacto >= 0 ? 'Editar' : 'Nuevo' }} Contacto
+            </h5>
+          </div>
+          <div class="card-body">
+            <form [formGroup]="formContacto">
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Nombre Completo *</mat-label>
+                    <input matInput formControlName="nombre_contacto" placeholder="Nombre del contacto">
+                    <mat-error *ngIf="formContacto.get('nombre_contacto')?.hasError('required')">
+                      Campo requerido
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+                <div class="col-md-3">
+                  <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Cargo</mat-label>
+                    <input matInput formControlName="cargo" placeholder="Cargo o posición">
+                  </mat-form-field>
+                </div>
+                <div class="col-md-3">
+                  <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Departamento</mat-label>
+                    <input matInput formControlName="departamento" placeholder="Departamento">
+                  </mat-form-field>
+                </div>
+              </div>
+              
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Teléfono</mat-label>
+                    <input matInput formControlName="telefono" placeholder="Teléfono fijo">
+                  </mat-form-field>
+                </div>
+                <div class="col-md-3">
+                  <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Móvil</mat-label>
+                    <input matInput formControlName="telefono_movil" placeholder="Teléfono móvil">
+                  </mat-form-field>
+                </div>
+                <div class="col-md-4">
+                  <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Email</mat-label>
+                    <input matInput formControlName="email" type="email" placeholder="email@ejemplo.com">
+                    <mat-error *ngIf="formContacto.get('email')?.hasError('email')">
+                      Email inválido
+                    </mat-error>
+                  </mat-form-field>
+                </div>
+                <div class="col-md-2">
+                  <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Extensión</mat-label>
+                    <input matInput formControlName="extension" placeholder="Ext.">
+                  </mat-form-field>
+                </div>
+              </div>
+              
+              <div class="row g-3">
+                <div class="col-md-3">
+                  <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Tipo de Contacto</mat-label>
+                    <mat-select formControlName="tipo_contacto">
+                      <mat-option value="Ventas">Ventas</mat-option>
+                      <mat-option value="Compras">Compras</mat-option>
+                      <mat-option value="Administración">Administración</mat-option>
+                      <mat-option value="Técnico">Técnico</mat-option>
+                      <mat-option value="Gerencia">Gerencia</mat-option>
+                    </mat-select>
+                  </mat-form-field>
+                </div>
+                <div class="col-md-3">
+                  <div class="form-check mt-4">
+                    <input class="form-check-input" type="checkbox" formControlName="es_principal" id="esPrincipal">
+                    <label class="form-check-label fw-medium" for="esPrincipal">
+                      <mat-icon class="me-1" style="font-size: 16px; vertical-align: middle;">star</mat-icon>
+                      Contacto Principal
+                    </label>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <mat-form-field appearance="outline" class="w-100">
+                    <mat-label>Observaciones</mat-label>
+                    <textarea matInput formControlName="observaciones" rows="2" 
+                             placeholder="Observaciones adicionales"></textarea>
+                  </mat-form-field>
+                </div>
+              </div>
+              
+              <div class="d-flex gap-2 mt-4">
+                <button type="button" class="btn btn-success" (click)="guardarContacto()" 
+                        [disabled]="formContacto.invalid">
+                  <mat-icon class="me-2">save</mat-icon>Guardar Contacto
+                </button>
+                <button type="button" class="btn btn-secondary" (click)="cancelarContacto()">
+                  <mat-icon class="me-2">cancel</mat-icon>Cancelar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </mat-dialog-content>
+
+  <!-- Footer con botones -->
+  <mat-dialog-actions class="dialog-actions">
+    <div class="d-flex justify-content-between w-100">
+      <button mat-stroked-button (click)="cancelar()" class="btn-cancelar">
+        <mat-icon class="me-2">close</mat-icon>
+        Cancelar
+      </button>
+      
+      <div class="d-flex gap-2">
+        <button mat-stroked-button color="primary" *ngIf="activeTab !== 'general'" 
+                (click)="cambiarTab(activeTab === 'contactos' ? 'adicional' : 'general')">
+          <mat-icon class="me-2">navigate_before</mat-icon>
+          Anterior
+        </button>
+        
+        <button mat-stroked-button color="primary" *ngIf="activeTab !== 'contactos'" 
+                (click)="cambiarTab(activeTab === 'general' ? 'adicional' : 'contactos')">
+          Siguiente
+          <mat-icon class="ms-2">navigate_next</mat-icon>
+        </button>
+        
+        <button mat-raised-button color="primary" (click)="guardar()" class="btn-guardar">
+          <mat-icon class="me-2">save</mat-icon>
+          Guardar
+        </button>
+      </div>
+    </div>
+  </mat-dialog-actions>
+</div>

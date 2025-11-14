@@ -14,6 +14,7 @@ export interface ApiResponse<T> {
 export interface FormaPagoResponse {
   idFormaPago: number;
   descripcionPago: string;
+  codigoCuenta?: string;   // <- opcional
 }
 
 /** Estructura de datos paginados que devuelve tu API */
@@ -50,26 +51,24 @@ export class FormaPagoService {
    * Endpoint esperado: GET {baseUrl}/FormaPago/search?term=...
    * Retorna directamente tu modelo ligero (array).
    */
-  search(term: string): Observable<ApiResponse<FormaPagoResponse[]>> {
-    const url = `${this.baseUrl}/FormaPago/search`;
-    const params = new HttpParams().set('term', term ?? '');
+ // forma-pago.service.ts
+search(term: string): Observable<ApiResponse<FormaPagoResponse[]>> {
+  const url = `${this.baseUrl}/FormaPago/search`;
+  const params = new HttpParams().set('term', term ?? '');
 
-    console.log('[FormaPagoService] GET', url, 'params =', { term });
+  return this.http.get<ApiResponse<any[]>>(url, { params }).pipe(
+    map(resp => ({
+      ...resp,
+      data: (resp.data ?? []).map(d => ({
+        idFormaPago: d.id_forma_pago,
+        descripcionPago: d.descripcion_pago,
+        codigoCuenta: d.codigo_cuenta,
+      }))
+    })),
+    catchError(() => of({ id:'', type:'Error', data:[], message:'Error' }))
+  );
+}
 
-    return this.http.get<ApiResponse<FormaPagoResponse[]>>(url, { params }).pipe(
-      tap(resp => console.log('[FormaPagoService] OK resp =', resp)),
-      catchError(err => {
-        console.error('[FormaPagoService] ERROR =', err);
-        // Devuelve estructura vacía para no romper el flujo del componente
-        return of({
-          id: '',
-          type: 'Error',
-          data: [] as FormaPagoResponse[],
-          message: 'Error en búsqueda de formas de pago'
-        } as ApiResponse<FormaPagoResponse[]>);
-      })
-    );
-  }
 
   /**
    * Obtiene formas de pago activas (modelo ligero).

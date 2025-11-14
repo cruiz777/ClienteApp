@@ -39,7 +39,7 @@ export class EstructuraFormComponent {
 
   form!: FormGroup;
   idGeneral?: number;
-  tipo!: 'estructuraComercial' | 'division' | 'subDivision' | 'departamento' | 'seccion' | 'grupo';
+  tipo!: 'estructuraComercial' | 'division' | 'subdivision' | 'departamento' | 'seccion' | 'grupo';
 
   constructor(
     private fb: FormBuilder,
@@ -105,7 +105,7 @@ export class EstructuraFormComponent {
           : this.divisionService.create(divisionData);
         break;
 
-      case 'subDivision':
+      case 'subdivision':
         const subData: SubDivisionRequest = {
           id_subdivision: this.idGeneral || 0,
           id_division: this.data?.idPadre,

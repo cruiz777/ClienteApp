@@ -11,47 +11,54 @@
     <!-- Árbol de navegación -->
     <div class="panel-arbol">
       <ul class="arbol-navegacion">
-        <!-- RAÍZ: estructuras comerciales (antes 'empresa'); se mantienen los íconos 🏬/🏢 -->
+        <!-- RAÍZ: estructuras comerciales con IMÁGENES -->
         <li *ngFor="let empresa of empresas">
           <div (click)="onNodoClick(empresa)" (contextmenu)="abrirMenuContextual($event, empresa)">
-            {{ empresa.expandido ? '🏢' : '🏬' }} {{ empresa.nombre }}
+            <img [src]="getIconoEmpresa(empresa)" width="20" height="20" alt="empresa" />
+            {{ empresa.nombre }}
           </div>
 
           <ul *ngIf="empresa.expandido">
             <li *ngFor="let nivel1 of empresa.hijos">
               <div (click)="onNodoClick(nivel1)" (contextmenu)="abrirMenuContextual($event, nivel1)">
-                {{ getIcono(nivel1) }} {{ nivel1.nombre }}
+                <img [src]="getIcono(nivel1)" width="20" height="20" [alt]="nivel1.tipo" />
+                {{ nivel1.nombre }}
               </div>
 
               <ul *ngIf="nivel1.expandido">
                 <li *ngFor="let nivel2 of nivel1.hijos">
                   <div (click)="onNodoClick(nivel2)" (contextmenu)="abrirMenuContextual($event, nivel2)">
-                    {{ getIcono(nivel2) }} {{ nivel2.nombre }}
+                    <img [src]="getIcono(nivel2)" width="20" height="20" [alt]="nivel2.tipo" />
+                    {{ nivel2.nombre }}
                   </div>
 
                   <ul *ngIf="nivel2.expandido">
                     <li *ngFor="let nivel3 of nivel2.hijos">
                       <div (click)="onNodoClick(nivel3)" (contextmenu)="abrirMenuContextual($event, nivel3)">
-                        {{ getIcono(nivel3) }} {{ nivel3.nombre }}
+                        <img [src]="getIcono(nivel3)" width="20" height="20" [alt]="nivel3.tipo" />
+                        {{ nivel3.nombre }}
                       </div>
 
                       <ul *ngIf="nivel3.expandido">
                         <li *ngFor="let nivel4 of nivel3.hijos">
                           <div (click)="onNodoClick(nivel4)" (contextmenu)="abrirMenuContextual($event, nivel4)">
-                            {{ getIcono(nivel4) }} {{ nivel4.nombre }}
+                            <img [src]="getIcono(nivel4)" width="20" height="20" [alt]="nivel4.tipo" />
+                            {{ nivel4.nombre }}
                           </div>
 
                           <ul *ngIf="nivel4.expandido">
                             <li *ngFor="let nivel5 of nivel4.hijos">
                               <div (click)="onNodoClick(nivel5)" (contextmenu)="abrirMenuContextual($event, nivel5)">
-                                {{ getIcono(nivel5) }} {{ nivel5.nombre }}
+                                <img [src]="getIcono(nivel5)" width="20" height="20" [alt]="nivel5.tipo" />
+                                {{ nivel5.nombre }}
                               </div>
 
                               <ul *ngIf="nivel5.expandido">
                                 <li *ngFor="let grupo of nivel5.hijos">
                                   <div (click)="onNodoClick(grupo)" (contextmenu)="abrirMenuContextual($event, grupo)"
                                     [class.grupo]="true" [class.activo]="opcionSeleccionada?.nombre === grupo.nombre">
-                                    📄 {{ grupo.nombre }}
+                                    <img [src]="getIcono(grupo)" width="20" height="20" alt="archivo" />
+                                    {{ grupo.nombre }}
                                   </div>
                                 </li>
                               </ul>
@@ -80,7 +87,8 @@
           <li (click)="editarElemento()">✏️ Editar {{ nodoSeleccionado?.tipo }}</li>
 
           <li *ngIf="esUltimoNivel(nodoSeleccionado)" (click)="crearProducto()">
-            🆕 Crear producto</li>
+            🆕 Crear producto
+          </li>
         </ul>
       </div>
     </div>
@@ -124,7 +132,6 @@
         </table>
       </div>
     </div>
-
 
   </div>
 </div>
