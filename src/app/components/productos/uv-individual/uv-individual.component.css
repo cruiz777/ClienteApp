@@ -317,3 +317,16 @@ textarea {
   flex-direction: column;
 }
 
+/* Asegurar que los campos ocupen todo el ancho del "col-4" */
+.col-4 input,
+.col-4 textarea,
+.col-4 mat-form-field {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Ajustes visuales extra para la descripción */
+.largo { min-width: 360px; }        /* ancho mínimo cómodo, ajusta si quieres */
+@media (max-width: 900px) {
+  .largo { min-width: auto; }      /* en pantallas pequeñas se adapta */
+}

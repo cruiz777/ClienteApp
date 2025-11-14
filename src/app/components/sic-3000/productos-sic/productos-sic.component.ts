@@ -2247,10 +2247,18 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   }
   //Proveedores
   cargarProveedores(): void {
-    console.log('📡 Cargando proveedores...');
+    console.log('📡 Cargando proveedores activos...');
     
-    // ✅ Pedir todos los proveedores (pageSize grande)
-    this.proveedorService.getAll().subscribe({
+    // ✅ Filtrar solo proveedores ACTIVOS para vincular
+    this.proveedorService.getAll(
+      1,
+      1000,  // pageSize grande para traer todos
+      undefined,
+      'nombre',
+      false,
+      undefined,
+      true  // ✅ activo = true (SOLO ACTIVOS)
+    ).subscribe({
       next: (resp) => {
         console.log('📦 Respuesta completa:', resp);
         
@@ -2261,18 +2269,18 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
         }
         
         this.proveedores = resp.items;
-        console.log(`✅ ${this.proveedores.length} proveedores cargados`);
-        console.log(`📊 Total en BD: ${resp.totalItems}`);
+        console.log(`✅ ${this.proveedores.length} proveedores activos cargados`);
+        console.log(`📊 Total activos en BD: ${resp.totalItems}`);
         
         // Ver ejemplos
         if (this.proveedores.length > 0) {
-          console.log('📋 Proveedores disponibles:');
+          console.log('📋 Proveedores disponibles (activos):');
           this.proveedores.forEach((p, i) => {
             const nombre = p.nombre_comercial || p.nombre_persona;
             console.log(`  ${i + 1}. ${p.codigo_proveedor} - ${nombre}`);
           });
         } else {
-          console.warn('⚠️ No hay proveedores en la base de datos');
+          console.warn('⚠️ No hay proveedores activos en la base de datos');
         }
       },
       error: (err) => {
@@ -2298,11 +2306,24 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
           return {
             ...p,
             _isNew: false,
-            id_unidad_venta: unidad?.idUnidadVenta || null // ✅ Agregar ID para el grid
+            id_unidad_venta: unidad?.idUnidadVenta || null,
+            // ✅ Agregar flag para indicar visualmente si está inactivo
+            _esProveedorInactivo: !p.proveedor_activo
           };
         });
         
-        console.log('✅ Proveedores cargados en memoria:', this.proveedoresEnMemoria.length);
+        // ✅ Contadores para logging
+        const activos = this.proveedoresEnMemoria.filter(p => p.proveedor_activo).length;
+        const inactivos = this.proveedoresEnMemoria.filter(p => !p.proveedor_activo).length;
+        
+        console.log(`✅ Proveedores vinculados: ${this.proveedoresEnMemoria.length} total`);
+        console.log(`   - Activos: ${activos}`);
+        console.log(`   - Inactivos: ${inactivos}`);
+        
+        // ✅ Advertir si hay proveedores inactivos
+        if (inactivos > 0) {
+          console.warn('⚠️ Hay proveedores inactivos vinculados a este producto');
+        }
       },
       error: (err) => {
         console.error('❌ Error al cargar proveedores:', err);
@@ -2531,33 +2552,33 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
         editable: true,
         cellEditor: 'agSelectCellEditor',
         cellEditorParams: (params: any) => {
-          console.log('🔍 Proveedores totales:', this.proveedores.length);
+          console.log('🔍 Proveedores totales (activos):', this.proveedores.length);
           
           // Filtrar proveedores ya usados
           const proveedoresUsados = this.proveedoresEnMemoria
             .filter(p => p.id_proveedor && p.id_proveedor !== params.data.id_proveedor)
             .map(p => p.id_proveedor);
           
-          // Proveedores disponibles
+          // Proveedores disponibles (ya son solo activos por cargarProveedores())
           const disponibles = this.proveedores.filter(
             p => !proveedoresUsados.includes(p.id_proveedor)
           );
           
           console.log('✅ Proveedores disponibles:', disponibles.length);
           
-          // ✅ CREAR ARRAY CON ID Y NOMBRE
+          // CREAR ARRAY CON ID Y NOMBRE
           const options = disponibles.map(p => ({
             value: p.id_proveedor,
             label: p.nombre_comercial || p.nombre_persona
           }));
           
-          // ✅ RETORNAR SOLO LOS NOMBRES
+          // RETORNAR SOLO LOS NOMBRES
           return {
-            values: options.map(o => o.label) // Solo nombres
+            values: options.map(o => o.label)
           };
         },
         valueSetter: (params: any) => {
-          // ✅ Cuando selecciona un nombre, buscar el ID
+          // Cuando selecciona un nombre, buscar el ID
           const nombreSeleccionado = params.newValue;
           const proveedor = this.proveedores.find(
             p => (p.nombre_comercial || p.nombre_persona) === nombreSeleccionado
@@ -2567,6 +2588,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
             params.data.id_proveedor = proveedor.id_proveedor;
             params.data.codigo_proveedor = proveedor.codigo_proveedor;
             params.data.nombre_proveedor = nombreSeleccionado;
+            params.data.proveedor_activo = true; // ✅ Siempre true porque solo puede seleccionar activos
             console.log('✅ Proveedor seleccionado:', nombreSeleccionado);
             return true;
           }
@@ -2574,15 +2596,48 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
           return false;
         },
         valueGetter: (params: any) => {
-          // ✅ Mostrar el nombre guardado
-          return params.data.nombre_proveedor || '⚠️ Seleccione proveedor...';
+          // Mostrar el nombre guardado
+          const nombre = params.data.nombre_proveedor || '⚠️ Seleccione proveedor...';
+          return nombre;
+        },
+        //AGREGAR CELLRENDERER PARA MOSTRAR BADGE
+        cellRenderer: (params: any) => {
+          const nombre = params.data.nombre_proveedor || '⚠️ Seleccione proveedor...';
+          const esInactivo = params.data.proveedor_activo === false;
+          
+          if (esInactivo) {
+            return `
+              <span style="color: #666;">
+                ${nombre}
+                <span style="
+                  background: #ff9800; 
+                  color: white; 
+                  padding: 2px 6px; 
+                  border-radius: 3px; 
+                  font-size: 10px; 
+                  margin-left: 8px;
+                  font-weight: bold;
+                ">INACTIVO</span>
+              </span>
+            `;
+          }
+          
+          if (!params.data.id_proveedor) {
+            return `<span style="font-style: italic; color: #856404;">${nombre}</span>`;
+          }
+          
+          return nombre;
         },
         cellStyle: (params: any) => {
           if (!params.data.id_proveedor) {
             return { 
-              'background-color': '#fff3cd', 
-              'font-style': 'italic',
-              'color': '#856404'
+              'background-color': '#fff3cd'
+            };
+          }
+          // ✅ Fondo gris si el proveedor está inactivo
+          if (params.data.proveedor_activo === false) {
+            return {
+              'background-color': '#f5f5f5'
             };
           }
           return {};

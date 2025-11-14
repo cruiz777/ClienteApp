@@ -5,6 +5,7 @@ import { Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import {  HttpResponse } from '@angular/common/http';
+import { FacturaValidacionResponse } from '../interfaces/responses/factura-validacion-response';
 
 export interface FacturaListResponse {
   idNota: number;
@@ -326,6 +327,15 @@ getSaldoFactura(
 
   return this.http.get<ApiResponse<SaldoFacturaResponse>>(url, { params });
 }
-
+  /**
+   * Valida si una factura puede recibir nota de crédito
+   * @param numeroFactura Número de factura a validar
+   * @returns Observable con los datos de validación
+   */
+  validarFacturaParaNC(numeroFactura: string): Observable<FacturaValidacionResponse> {
+    return this.http.get<FacturaValidacionResponse>(
+      `${this.baseUrl}/NotasCredito/validar-factura/${numeroFactura}`
+    );
+  }
 
 }

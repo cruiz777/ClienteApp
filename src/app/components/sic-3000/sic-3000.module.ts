@@ -1,3 +1,4 @@
+import { FilePreviewComponent } from './../../util/preview/file-preview.component';
   import { NgModule } from '@angular/core';
   import { CommonModule } from '@angular/common';
   import { RouterModule } from '@angular/router';
@@ -14,10 +15,12 @@
   import { MatTabsModule } from '@angular/material/tabs';
   import { AgGridModule } from 'ag-grid-angular';
   import { Sic3000RoutingModule } from './sic-3000-routing.module';
-  import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
 import { RegistroCobrosComponent } from './cxc/registro-cobros/registro-cobros.component';
 import { AnulacionPagoComponent } from './cxc/anulacion-pago/anulacion-pago.component';
 import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
+import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
+import { CreacionAnticiposComponent } from './anticipos/creacion-anticipos/creacion-anticipos.component';
+import { ReporteAnticiposComponent } from './anticipos/reporte-anticipos/reporte-anticipos.component';
 
   // 👉 Standalone: se importa (no va en declarations)
   import { FacturacionIndividualComponent } from './facturacion/facturacion-individual/facturacion-individual.component';
@@ -33,17 +36,17 @@ import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
   import { ProductosSicComponent } from './productos-sic/productos-sic.component';
   import { AgregarUbicacionDialogComponent } from './ubicaciones/dialogs/agregar-ubicacion-dialog.component';
   import { MatDialogModule } from '@angular/material/dialog';
-  import { FilePreviewComponent } from 'src/app/util/preview/file-preview.component';
   import { ProveedoresListaComponent } from './proveedores/proveedores.component';
   import { ProveedorDialogComponent } from './proveedores/dialog/proveedor-dialog.component';
 import { MatMenuModule } from '@angular/material/menu';
 import { ProductosProveedorDialogComponent } from './proveedores/dialog/productos-proveedor/productos-proveedor-dialog.component';
+import { BuscarAnticipoDialogComponent } from './anticipos/dialogs/buscar-anticipo-dialog/buscar-anticipo-dialog.component';
+import { MotivoAnulacionDialogComponent } from './anticipos/dialogs/anular-anticipo-dialog/anular-anticipo-dialog';
 
   @NgModule({
     declarations: [
       InicioSicComponent,
       NavigationSicComponent,
-      RegistroCobrosComponent,
       // ❌ No declarar FacturacionIndividualComponent porque es standalone
       EstadocuentaclienteComponent,
       ProductosSicComponent,
@@ -51,14 +54,14 @@ import { ProductosProveedorDialogComponent } from './proveedores/dialog/producto
       ProveedorDialogComponent,
       ProductosProveedorDialogComponent,
       AgregarUbicacionDialogComponent,
-      FilePreviewComponent 
+      FilePreviewComponent
     ],
     imports: [
       CommonModule,
       RouterModule,
       FormsModule,
       ReactiveFormsModule,
-
+      RegistroCobrosComponent,
       // Angular Material
       MatSidenavModule,
       MatListModule,
@@ -79,12 +82,16 @@ import { ProductosProveedorDialogComponent } from './proveedores/dialog/producto
       MatTableModule,
       MatRadioModule,
       MatSelectModule,
-      MatOptionModule,    
+      MatOptionModule,
       MatSlideToggleModule,
       MatDatepickerModule,
       MatNativeDateModule,
       MatMenuModule,
-      AgGridModule
+      AgGridModule,
+      CreacionAnticiposComponent,
+      ReporteAnticiposComponent,
+      BuscarAnticipoDialogComponent,
+      MotivoAnulacionDialogComponent
     ]
   })
   export class Sic3000Module {}

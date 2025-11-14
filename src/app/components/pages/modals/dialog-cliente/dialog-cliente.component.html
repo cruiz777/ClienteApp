@@ -20,7 +20,7 @@
                   </div>
                   <div>
                     <label class="form-label"><span style="color: red;">*</span>RUC/CI/Pasaporte:</label>
-                    <input type="text" [formControl]="rucControl" (blur)="onRucBlur()" 
+                    <input type="text" [formControl]="rucControl" (blur)="onRucBlur()"
                       placeholder="Ingrese número o pasaporte" class="underline-input" autocomplete="off" />
 
                     <!-- Mostrar error solo si NO es pasaporte -->
@@ -400,25 +400,35 @@
                       (input)="soloDigitos('extesion', $event,paso2Form)" />
 
                   </div>
-                  <section class="export-questions-section" style="padding-bottom: 16px;">
+                  <section class="export-questions-section" style="padding-bottom:16px;">
                     <div class="questions-container">
                       <div class="form-label">
-                        <div>
-                          <label style="color: #002c6c; font-size: 13px;">Facturación en Bloque: </label>
-                          <input type="checkbox" id="chk-compra" formControlName="compra" />
-                          <label for="chk-compra">Orden de Compra</label>
-                          <input type="checkbox" id="chk-prefijo" formControlName="nprefijo" />
-                          <label for="chk-prefijo">Prefijos</label>
-                          <input type="checkbox" id="chk-prefijo" formControlName="nprefijo" />
-                          <label for="chk-prefijo">Otros</label>
+                        <div class="checkbox-inline">
+                          <label class="prefix">Facturación en Bloque:</label>
+
+                          <label class="chk">
+                            <input type="checkbox" id="chk-compra" formControlName="compra" />
+                            <span>Orden de Compra</span>
+                          </label>
+
+                          <label class="chk">
+                            <input type="checkbox" id="chk-prefijo" formControlName="nprefijo" />
+                            <span>Prefijos</span>
+                          </label>
+
+                          <label class="chk">
+                            <input type="checkbox" id="chk-otros" formControlName="otros" />
+                            <span>Otros</span>
+                          </label>
                         </div>
                       </div>
                     </div>
                   </section>
 
+
                   <div class="form-row">
                     <label style="color: #002c6c; font-size: 12px;">Usuario:</label>
-                    <input type="text" class="underline-input" formControlName="usuario" readonly
+                    <input type="text" class="underline-input" readonly
                       value=" {{ this.usuarioActual?.nombre_usuario }}" />
                   </div>
 
@@ -601,22 +611,30 @@
 
                         </div>
 
-                        <div>
-                          <label class="form-label">
-                            ¿Cómo se entero de GS1 Ecuador?
+                        <div class="checks-inline">
+                          <label class="question">¿Cómo se enteró de GS1 Ecuador?</label>
+
+                          <label class="chk">
+                            <input type="checkbox" formControlName="pregunta4" />
+                            <span>Página Web</span>
                           </label>
 
-                          <input type="checkbox" formControlName="pregunta4" />
-                          <label for="prefix-5">Página Web</label>
-                          <input type="checkbox" formControlName="pregunta5" />
-                          <label for="prefix-5" class="checkbox-label">Instagram</label>
-                          <input type="checkbox" formControlName="pregunta6" />
-                          <label for="prefix-5" class="checkbox-label">Facebook</label>
-                          <input type="checkbox" formControlName="pregunta7" />
-                          <label for="prefix-5">Un conocido</label>
+                          <label class="chk">
+                            <input type="checkbox" formControlName="pregunta5" />
+                            <span>Instagram</span>
+                          </label>
 
+                          <label class="chk">
+                            <input type="checkbox" formControlName="pregunta6" />
+                            <span>Facebook</span>
+                          </label>
 
+                          <label class="chk">
+                            <input type="checkbox" formControlName="pregunta7" />
+                            <span>Un conocido</span>
+                          </label>
                         </div>
+
                       </div>
                     </section>
 

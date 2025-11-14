@@ -118,8 +118,8 @@
         </div>
         <div class="acciones-centradas">
   <button type="button" class="btn-grabar"
-          (click)="catalogoAutorizaciones?.length ? ocultarCatalogo() : nuevoAutorizacion()">
-    {{ catalogoAutorizaciones?.length ? 'Ocultar' : 'Nuevo' }}
+          (click)="catalogoAutorizaciones.length ? ocultarCatalogo() : nuevoAutorizacion()">
+    {{ catalogoAutorizaciones.length ? 'Ocultar' : 'Nuevo' }}
   </button>
 
   <!-- Cierra el diálogo -->

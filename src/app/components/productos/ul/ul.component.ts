@@ -188,11 +188,11 @@ export class UlComponent implements OnInit {
     });
 
     this.cargarCliente();
-    this.cargarGrupoProductos();
-    this.getSectores();
-    this.cargarPais();
+     this.cargarGrupoProductos();
+     this.getSectores();
+     this.cargarPais();
     this.getUnidadesMedida();
-    this.cargarProducto();
+     this.cargarProducto();
     this.formUV.get('usarSerie')?.disable();
     this.formUV.get('empresas')?.disable();
     // Nacional
@@ -409,15 +409,19 @@ export class UlComponent implements OnInit {
   }
 
   cargarPrefijos(codigoCliente: number): void {
-    this.prefijoService.obtenerPorClienteCodigo(codigoCliente).subscribe({
-      next: (data) => {
-        this.prefijos = data;
-      },
-      error: (err) => {
-        console.error('Error al cargar prefijos:', err);
-      }
-    });
-  }
+  
+  this.prefijoService.obtenerPorClienteCodigo(codigoCliente).subscribe({
+    next: (data) => {
+      this.prefijos = data;
+      console.log('Prefijos cargados:', this.prefijos);  // ✅ Aquí imprime correctamente
+      
+    },
+    error: (err) => {
+      console.error('Error al cargar prefijos:', err);
+    }
+  });
+}
+
 
   mostrarCodigoPrefijo(): string {
     const id = this.formUV.get('gcp')?.value;
@@ -426,10 +430,11 @@ export class UlComponent implements OnInit {
   }
 
   onPrefijoBlur(): void {
+    
     const idSeleccionado = this.formUV.getRawValue().gcp;
 
     const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
-
+    
     if (objeto?.gln) {
       this.formUV.patchValue({ gln: objeto.gln });
 
@@ -439,7 +444,7 @@ export class UlComponent implements OnInit {
         console.warn('⚠️ codpre no disponible en el objeto');
         return;
       }
-
+      
       this.prefijoService.buscarPorCodpre(codpre).subscribe({
         next: (respuesta) => {
           const bandera = respuesta[0]?.bandera ?? 0;
@@ -992,8 +997,10 @@ export class UlComponent implements OnInit {
     const marca = this.formUV.get('marca')?.value || '';
     const contenido = this.formUV.get('contenido')?.value || '';
     const unidadObj = this.formUV.get('unidadMedida')?.value;
-    const unidadu = unidadObj?.unidad || '';
-    const tipoEmpaque = this.formUL.get('tipoEmpaque')?.value || '';
+    const unidadu = this.formUL.getRawValue().unidad || '';
+    const tipoEmpaque = this.formUL.getRawValue().tipoEmpaque || '';
+
+
     const factor = this.formUL.get('factor')?.value || '';
     const unidad = this.formUL.get('unidad')?.value || '';
 
@@ -1964,6 +1971,13 @@ export class UlComponent implements OnInit {
       control.setValue(valor.toUpperCase());
     }
   }
+    convertirAMayusculasUl(controlName: string): void {
+    const control = this.formUL.get(controlName);
+    if (control) {
+      const valor = control.value || '';
+      control.setValue(valor.toUpperCase());
+    }
+  }
 
   verificarExistenciaCodbar(): void {
 
@@ -2048,7 +2062,8 @@ export class UlComponent implements OnInit {
             if (prefijoCoincidente) {
               this.formUV.get('gcp')?.setValue(prefijoCoincidente.id_prefijos);
               this.formUV.get('gln')?.setValue(prefijoCoincidente.gln);
-              //this.onPrefijoBlur();
+              this.bandera=prefijoCoincidente.bandera;
+              
             } else {
               console.warn('⚠️ No se encontró prefijo coincidente con codpre:', producto.codpre);
             }
@@ -2304,12 +2319,12 @@ generarGtin14DesdeUpc12(): void {
   const indicador = this.formUL.get('indicador')?.value || '';
   const upc12 = this.formUV.get('gtinUv')?.value || ''; // debe tener 12 dígitos
 
-  if (indicador.length !== 1 || upc12.length !== 12 || !/^\d+$/.test(upc12)) {
+  if (this.bandera !== 2 || upc12.length !== 12 || !/^\d+$/.test(upc12)) {
     console.error('⚠️ Indicador o UPC inválido');
     return;
   }
 
-  const base = indicador + upc12.substring(0, 11); // 1 + 11 = 12 dígitos base
+  const base = indicador +"0" + upc12.substring(0, 11); // 1 + 11 = 12 dígitos base
 
   let suma = 0;
   for (let i = 0; i < base.length; i++) {

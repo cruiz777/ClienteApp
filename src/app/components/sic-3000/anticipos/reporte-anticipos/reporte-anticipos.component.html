@@ -1,0 +1,63 @@
+<div class="card">
+  <h2 class="title">Reporte de Anticipos</h2>
+
+  <form [formGroup]="form" class="form-grid">
+
+    <!-- Fila de filtros principales -->
+    <div class="grid">
+      <div class="field">
+        <label>Fecha Inicial:</label>
+        <input type="date" formControlName="fechaInicio" />
+        <small class="error" *ngIf="f['fechaInicio'].touched && f['fechaInicio'].invalid">
+          Requerido
+        </small>
+      </div>
+
+      <div class="field">
+        <label>Fecha Final:</label>
+        <input type="date" formControlName="fechaFin" />
+        <small class="error"
+               *ngIf="(f['fechaFin'].touched && f['fechaFin'].invalid) || form.hasError('rangoInvalido')">
+          {{ form.hasError('rangoInvalido') ? 'La fecha final debe ser mayor o igual a la inicial' : 'Requerido' }}
+        </small>
+      </div>
+
+      <div class="field">
+        <label>Tipo de Anticipo:</label>
+        <select formControlName="tipoAnticipo">
+          <option [ngValue]="null">— Seleccione —</option>
+          <option *ngFor="let t of tiposAnticipo" [ngValue]="t.id">{{ t.descripcion }}</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Fila de checkboxes -->
+    <div class="checks" formGroupName="estado">
+      <label class="check">
+        <input type="checkbox" formControlName="utilizado" />
+        <span>Utilizado</span>
+      </label>
+
+      <label class="check">
+        <input type="checkbox" formControlName="sinUtilizar" />
+        <span>Sin utilizar</span>
+      </label>
+
+      <label class="check">
+        <input type="checkbox" formControlName="todos" />
+        <span>Todos</span>
+      </label>
+    </div>
+
+    <!-- Botones -->
+    <div class="actions">
+      <button type="button" class="btn btn-primary" (click)="onGenerar()" [disabled]="loading">
+        Generar
+      </button>
+      <button type="button" class="btn btn-light" (click)="onCancelar()" [disabled]="loading">
+        Cancelar
+      </button>
+    </div>
+
+  </form>
+</div>
