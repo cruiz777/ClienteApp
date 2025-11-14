@@ -6,7 +6,10 @@
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   background: #fff;
-  overflow: hidden;       /* importante para redondeo del header */
+  /*overflow: hidden;       /* importante para redondeo del header */
+  max-height: 85vh;         /* o 80–90vh según prefieras */
+  overflow-y: auto;         /* antes estaba hidden */
+  overflow-x: hidden;
 
 }
 
@@ -122,16 +125,19 @@ select:focus {
 .btn-rojo:hover { background: #ef4444; border-color: #ef4444; }
 
 
+/* Contenedor de acciones fijo al fondo cuando haces scroll */
 .form-actions {
+  position: sticky;         /* se “pega” al fondo del contenedor scrolleable */
+  bottom: 0;
+  background: #fff;
   display: flex;
-  justify-content: center;  /* centra horizontalmente */
-  align-items: center;      /* alinea verticalmente */
-  gap: 10px;                /* espacio entre botones */
- /* margin-top: 14px;*/
-  padding: 0 16px 16px;   /* padding inferior del card */
-
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-top: 1px solid #eee;
+  z-index: 1;               /* sobre inputs al hacer scroll */
 }
-
 
 /*  colores de los fondos de texti */
 
@@ -192,4 +198,33 @@ select:focus {
 }
 @media (max-width: 576px) {
   .row-4 { grid-template-columns: 1fr; }
+}
+
+/* Fila: Razón social (ancha) + Estado (a la derecha) */
+.row-razon {
+  display: grid;
+  grid-template-columns: 1fr auto;  /* razón social ocupa todo; estado se ajusta */
+  gap: 16px;
+  align-items: end;                  /* alinea con la base de los inputs */
+  margin-bottom: 20px;
+}
+
+/* Input al 100% del espacio */
+.row-razon .form-razon input {
+  width: 100%;
+}
+
+/* Presentación compacta del checkbox */
+.row-razon .form-estado-inline label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;                        /* sin salto extra */
+  white-space: nowrap;              /* evita que “Activo” salte de línea */
+}
+
+/* Responsive: si el ancho es pequeño, que bajen en 2 filas */
+@media (max-width: 576px) {
+  .row-razon { grid-template-columns: 1fr; }
+  .row-razon .form-estado-inline { justify-self: start; }
 }

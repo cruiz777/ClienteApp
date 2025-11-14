@@ -1,0 +1,456 @@
+/* Toolbar superior */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background:#1d789f;/*#0d2a56*/
+  color: #fff;
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+.toolbar .title {
+  font-weight: 600;
+  font-size: 15px;
+}
+.toolbar .actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Botones */
+.btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #d0d5dd;
+  background: #fff;
+  cursor: pointer;
+}
+.btn:hover { background: #f3f4f6; }
+.btn.primary {
+  background: #1e88e5;
+  color: white;
+  border-color: #1e88e5;
+}
+.btn.primary:disabled { opacity: .6; cursor: not-allowed; }
+.btn-icon {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #d0d5dd;
+  background: #fff;
+  cursor: pointer;
+}
+.btn-icon.danger { border-color: #ef9a9a; }
+.btn-icon.danger:hover { background: #ffebee; }
+
+/* Form cabecera */
+.header-form {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+.header-form .grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 12px;
+}
+.field { display: flex; flex-direction: column; gap: 6px; }
+.field label { font-size: 12px; color: #334155; }
+.field input, .field select {
+  height: 34px;
+  padding: 6px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+}
+
+/* Sub-toolbar de detalle */
+.subtoolbar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+/* Totales */
+.totales {
+  display: flex;
+  justify-content: flex-end;
+  gap: 24px;
+  align-items: center;
+  margin-top: 10px;
+  padding: 8px 12px;
+  background: #c2c4c7;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+}
+.tot span { color: #555; margin-right: 6px; }
+.tot strong { font-size: 20px; }
+.tot.diff.ok strong { color: #0e6113; }  /* Verde */
+.tot.diff.bad strong { color: #c62828; } /* Rojo */
+
+/* AG Grid */
+.ag-theme-alpine.grid {
+  --ag-foreground-color: #1f2937;
+  --ag-background-color: #ffffff;
+  --ag-header-background-color: #0d2a56;
+  --ag-header-foreground-color: #ffffff;
+  --ag-row-hover-color: #f3f4f6;
+}
+
+
+/* PARA EL SCROLL*/
+:host {
+  display: block;
+  max-height: 85vh; /* ajusta si tu modal es más bajo/alto */
+}
+
+/* Scroll SOLO del contenido; la toolbar queda fija arriba */
+.content-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(85vh - 56px); /* 56px ≈ altura de la toolbar */
+  overflow-y: auto;              /* <- aquí aparece el scroll vertical */
+  padding-right: 6px;            /* evita que el scroll tape contenido */
+}
+
+/* Si usas Angular Material Dialog, asegúrate que la caja permita scroll */
+:host::ng-deep .mat-dialog-content {
+  max-height: 85vh !important;
+  overflow: hidden; /* el scroll lo maneja .content-scroll */
+  padding: 0 !important; /* ya tenemos padding en el contenido */
+}
+
+/* Si tu contenedor es <mat-dialog-content>, puedes usarlo directamente:
+mat-dialog-content { max-height: 85vh; overflow: hidden; padding: 0; }
+*/
+
+/* El grid con altura fija para que no “crezca” infinito */
+.ag-theme-alpine.grid {
+  min-height: 260px;
+  height: 320px;   /* mismo que en el style del HTML */
+}
+
+/* Opcional: totales pegados al borde inferior del área scrolleable */
+.totales {
+  position: sticky;
+  bottom: 0;
+  background: #eaedb7;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 8px 12px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 24px;
+
+}
+
+.total-label{
+  font-size: 18px;            /* 18px aprox */
+  font-weight:600;
+  letter-spacing:.2px;
+}
+
+.total-labelColor{
+ color: #c62828;
+}
+
+.btn-azul {
+  background: #093679; color: #fff; border: 1px solid #0d6efd;
+  padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.btn-azul:hover { background: #48b0ff; border-color: #48b0ff; }
+
+
+
+.btn-rojo {
+  background: #dc2626;
+  color: #fff;
+  border: 1px solid #dc2626;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+}
+.btn-rojo:hover { background: #ef4444; border-color: #ef4444; }
+
+
+.asiento-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: #0e2a54;      /* tu azul #0e2a54 */
+  color: #fff;
+  border-radius: 8px 8px 0 0;
+}
+
+.sticky-header {
+  position: sticky;
+  top: 0;                   /* se pega al borde superior del contenedor que scrollea */
+  z-index: 1000;
+  /* Para que no se transparente al pasar sobre el contenido */
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+
+.asiento-content {
+  /* Asegúrate de que este sea el contenedor que scrollea */
+  max-height: calc(100vh - 140px);
+  overflow: auto;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Aplica solo a este grid */
+.custom-grid {
+  /* Fondo general del grid */
+  --ag-background-color: #fafcff;
+
+  /* Cabecera */
+  --ag-header-background-color: #0d47a1;   /* azul */
+  --ag-header-foreground-color:  #ffffff;  /* texto cabecera */
+  --ag-header-border-color:      #0b3c8a;
+
+  /* Bordes/celdas */
+  --ag-border-color: #d0d7de;
+
+  /* Filas */
+  --ag-odd-row-background-color:  #f7fbff;
+  --ag-even-row-background-color: #ffffff;
+  --ag-row-hover-color:           #e3f2fd;
+
+  /* Texto */
+  --ag-foreground-color: #111827; /* texto normal */
+  --ag-secondary-foreground-color: #8cb716;
+
+  /* Filtros/inputs */
+  --ag-control-panel-background-color: #0d47a1;
+  --ag-input-border-color: #b6c2ce;
+
+  /* Tamaño fuente (opcional) */
+  --ag-font-size: 13px;
+}
+
+/* (Opcional) icono filtro y sort en blanco para cabecera oscura */
+.custom-grid .ag-icon {
+  filter: invert(1) brightness(1.8);
+}
+
+/* (Opcional) Botón de acciones coherente */
+.custom-grid .ag-action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 6px;
+}
+.custom-grid .ag-action-btn svg,
+.custom-grid .ag-action-btn img {
+  width: 18px; height: 18px;
+}
+
+/*:host ::ng-deep .custom-grid { variables aquí  }*/
+
+.custom-grid {
+  --ag-header-height: 36px;
+  --ag-row-height: 32px;
+}
+
+.custom-grid {
+  --ag-background-color:#dde3ee; /*fondo*/
+  --ag-foreground-color:#080808; /*color de letra*/
+  
+  --ag-header-background-color:#1d789f;/*cabecera  :#243760; */
+  --ag-header-foreground-color:#e5e7eb;
+
+  --ag-odd-row-background-color:#f6f8f9; /*liea que resalta #98aee0;*/
+  --ag-even-row-background-color:#abc3f1;
+  
+  --ag-row-hover-color:#e2efc4;
+  --ag-border-color:#adaeb0; /*lineas de la cuadricula*/
+}
+
+.btn-add{ display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .75rem;
+  border:1px solid #d0d7de; border-radius:.6rem; background:#fff; font-weight:600; cursor:pointer; }
+.btn-add__icon{ width:22px; height:22px; display:block; }
+
+/* versión pequeña */
+.btn-add--sm{ padding:.2rem .45rem; gap:.35rem; font-size:.85rem; border-radius:.5rem; }
+.btn-add--sm .btn-add__icon{ width:20px; height:20px; }
+
+/* Estilo visual para campos sólo lectura (cuando estás editando) */  
+.form-container.edit-mode input[readonly],
+.form-container.edit-mode select[readonly],
+.form-container.edit-mode textarea[readonly] {
+  cursor: not-allowed;
+  opacity: 0.9;
+  background-image: linear-gradient(transparent, transparent); /* evita estilos grises del navegador */
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(246, 246, 244, 0.25);
+  border-color: #f3f3f7;
+  background-color: #eae6e6;
+}
+
+/* base */
+.select-control{
+  width: 100%;
+  padding: 6px 28px 6px 12px;  /* espacio para el caret */
+  font-size: 14px;
+  line-height: 1.2;
+  color: #111827;
+  background: #f3f6fb;         /* fondo claro */
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  outline: none;
+  transition: border-color .15s ease, box-shadow .15s ease;
+  appearance: none;             /* ocultar estilo nativo */
+  background-image:
+    linear-gradient(45deg, transparent 50%, #374151 50%),
+    linear-gradient(135deg, #374151 50%, transparent 50%),
+    linear-gradient(to right, transparent, transparent);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 13px) 50%,
+    0 0;
+  background-size: 5px 5px, 5px 5px, 100% 100%;
+  background-repeat: no-repeat;
+}
+
+.select-control:focus{
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96,165,250,.25);
+}
+
+/* versión compacta (alto pequeño) */
+.select-sm{
+  height: 32px;                 /* compacto */
+  padding-top: 4px;
+  padding-bottom: 4px;
+  font-size: 13px;
+}
+
+/* estado deshabilitado (editar) */
+.edit-mode-select{
+  background-color: #f9fafb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* opcional: armoniza el label requerido */
+.required{ color:#ef4444; margin-left: 2px; }
+
+/* Safari / iOS: quita el caret nativo extra */
+select.select-control::-ms-expand { display: none; }
+
+
+/* contenedor de la grilla de campos */
+.header-form .grid{
+  display:grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px 24px;
+  align-items: start; /* evita “estirar” raro */
+}
+
+/* misma altura para todos los inputs/selects */
+.header-form .control{
+  width: 100%;
+  height: 36px;                 /* <- altura uniforme */
+  padding: 6px 12px;
+  font-size: 14px;
+  line-height: 1.2;             /* no uses igual a height */
+  color: #111827;
+  background: #f3f6fb;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-sizing: border-box;       /* importante para que el alto sea real */
+  outline: none;
+}
+
+/* selects: quita estilo nativo y ajusta caret */
+.header-form select.control{
+  appearance: none;
+  padding-right: 28px;          /* espacio para la flecha */
+  background-image:
+    linear-gradient(45deg, transparent 50%, #374151 50%),
+    linear-gradient(135deg, #374151 50%, transparent 50%),
+    linear-gradient(to right, transparent, transparent);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 13px) 50%,
+    0 0;
+  background-size: 5px 5px, 5px 5px, 100% 100%;
+  background-repeat: no-repeat;
+}
+
+/* datetime-local suele ser más alto: igualalo y corrige padding */
+.header-form input[type="datetime-local"].control{
+  height: 36px;
+  padding-right: 10px;
+}
+
+/* focus consistente */
+.header-form .control:focus{
+  border-color:#60a5fa;
+  box-shadow:0 0 0 3px rgba(96,165,250,.25);
+}
+
+/* deshabilitado (modo editar en tu select) */
+.header-form .control:disabled{
+  background:#f9fafb;
+  color:#6b7280;
+  cursor:not-allowed;
+}
+
+
+/* ====== ESTILO BASE ====== */
+.control {
+  width: 100%;
+  height: 36px;
+  padding: 6px 12px;
+  font-size: 14px;
+  color: #111827;
+  background: #f3f6fb;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+/* ====== ENFOQUE ====== */
+.control:focus {
+  border-color: #2563eb; /* azul */
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
+/* ====== ERROR (para cualquier input/select/textarea inválido) ====== */
+.ng-invalid.ng-touched.control,
+.ng-invalid.ng-dirty.control {
+  border-color: #dc2626 !important; /* rojo fuerte */
+  box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.15);
+}
+
+/* ====== MENSAJE DE ERROR ====== */
+.error {
+  color: #dc2626; /* rojo */
+  font-size: 13px;
+  margin-top: 3px;
+}
+
+/* ====== LABELS CON ASTERISCO ====== */
+label .required {
+  color: #dc2626;
+  margin-left: 2px;
+}

@@ -1,9 +1,12 @@
 export const environment = {
   production: true,
-   securityApiUrl: 'http://181.39.162.182:8000/security/api', // URL de la API en desarrollo
- applicationUrl: 'http://181.39.162.182:8000/security/api',  //Cambiar por la url de clientes en el merge
+   securityApiUrl: 'http://10.10.7.11:8000/security/api', // URL de la API en desarrollo
+ applicationUrl: 'http://10.10.7.11:8000/security/api',  //Cambiar por la url de clientes en el merge
+  //mantenimiento contable
+ maintenanceUrl: 'http://localhost:5030/maintenance/api',
+ transactionUrl: 'http://localhost:5070/transaction/api',
+ clientsUrl: 'http://localhost:8000/clients/api',
 
- clientsUrl: 'http://181.39.162.182:8000/clients/api',
 
   invoicesUrl: 'http://181.39.162.182:8000/invoices/api',
 
