@@ -1,197 +1,169 @@
+
 <div class="form-container wide" [class.edit-mode]="isEditMode">
   <h2>{{ isEditMode ? 'Editar Cuentas Contables' : 'Nueva Cuenta Contable' }}</h2>
 
   <form [formGroup]="form" (ngSubmit)="guardar()">
+    
+    <div class="row-4">
+     <!--  <div class="form-group">
+        <label for="idCodContable">Codigo</label>
+        <input id="idCodContable" type="number" formControlName="idCodContable" placeholder="Código..." readonly />
+      </div>-->
 
-    <!-- ID -->
-    <div class="row-4">    
       <div class="form-group">
-        <label for="idCodContable">ID <span class="required">*</span></label>
-        <input
-          id="idCodContable"
-          type="text"
-          formControlName="idCodContable"
-          placeholder="Código..."
-          [readonly]="isEditMode"
-        />
-        <div class="error" *ngIf="form.get('idCodContable')?.invalid && form.get('idCodContable')?.touched">
-          Campo obligatorio.
-        </div>
+        <label for="tipoidentificacion">Tipo Identificacion</label>
+        <input id="tipoidentificacion" type="text" formControlName="tipoidentificacion" maxlength="10" style="text-transform: uppercase" readonly />
       </div>
 
-      <!-- Identificación -->
       <div class="form-group">
         <label for="identificacionauxiliar">Identificación <span class="required">*</span></label>
-        <input
-          id="identificacionauxiliar"
-          type="text"
-          formControlName="identificacionauxiliar"
-          placeholder="Ej: 1713221453 / 1713245812001"
-          maxlength="13"
-          style="text-transform: uppercase"
+        <input id="identificacionauxiliar" type="text" formControlName="identificacionauxiliar" 
+          maxlength="13" placeholder="17112125.." 
           [readonly]="isEditMode"
+          (keydown)="onKeyDownDocumento($event)"
+          (blur)="onBlurDocumento()"
         />
-        <div class="error" *ngIf="form.get('identificacionauxiliar')?.invalid && form.get('identificacionauxiliar')?.touched">
-          Campo obligatorio.
-        </div>
+        <div class="error" *ngIf="form.get('identificacionauxiliar')?.invalid && form.get('identificacionauxiliar')?.touched">Campo obligatorio.</div>
       </div>
-       <!-- Fecha registro -->
-        <div class="form-group">
-          <label for="fechaRegistro">Fecha registro <span class="required">*</span></label>
-          <input id="fechaRegistro" type="date" formControlName="fechaRegistro" />
-          <div class="error" *ngIf="form.get('fechaRegistro')?.touched && form.get('fechaRegistro')?.invalid">
-            Fecha inválida (YYYY-MM-DD).
-          </div>
-        </div>
-    </div>
-    <!-- Nombres -->
-    <div class="form-group">
-      <label for="nombreauxiliar">Nombres <span class="required">*</span></label>
-      <input
-        id="nombreauxiliar"
-        type="text"
-        formControlName="nombreauxiliar"
-        placeholder="Ej: DILIPA S.A"
-        maxlength="150"
-        style="text-transform: uppercase"
-      />
-      <div class="error" *ngIf="form.get('nombreauxiliar')?.invalid && form.get('nombreauxiliar')?.touched">
-        Campo obligatorio.
+
+      <div class="form-group">
+        <label for="fechaRegistro">Fecha registro <span class="required">*</span></label>
+        <input id="fechaRegistro" type="date" formControlName="fechaRegistro" />
+        <div class="error" *ngIf="form.get('fechaRegistro')?.touched && form.get('fechaRegistro')?.invalid">Fecha inválida (YYYY-MM-DD).</div>
       </div>
+
+      <div class="form-group">
+        <label for="idPersona">Persona</label>
+        <input id="idPersona" type="number" formControlName="idPersona" placeholder="20147" />
+      </div>
+
+
     </div>
 
-    <!-- Dirección -->
-    <div class="form-group">
-      <label for="direccionauxiliar">Dirección</label>
-      <input
-        id="direccionauxiliar"
-        type="text"
-        formControlName="direccionauxiliar"
-        placeholder="Ej: Av. Siempre Viva 2354"
-        maxlength="200"
-        style="text-transform: uppercase"
-      />
-    </div>
-
-    <!-- Celular / Teléfono / Email / Plazo (MISMA FILA) -->
     <div class="row-4">
       <div class="form-group">
-        <label for="celularauxiliar">Celular</label>
-        <input
-          id="celularauxiliar"
-          type="text"
-          formControlName="celularauxiliar"
-          maxlength="30"
-          placeholder="0999999999"
-        />
+        <label for="nombre1">Primer Nombre<span class="required">*</span></label>
+        <input id="nombre1" type="text" formControlName="nombre1" maxlength="200" placeholder="nombre1...." style="text-transform: uppercase" />
+        <div class="error" *ngIf="form.get('nombre1')?.invalid && form.get('nombre1')?.touched">Campo obligatorio.</div>
       </div>
 
       <div class="form-group">
-        <label for="telefonoauxiliar">Teléfono</label>
-        <input
-          id="telefonoauxiliar"
-          type="text"
-          formControlName="telefonoauxiliar"
-          maxlength="30"
-          placeholder="022345678"
-        />
+        <label for="nombre2">Segundo Nombre</label>
+        <input id="nombre2" type="text" formControlName="nombre2" maxlength="200" placeholder="nombre2...." style="text-transform: uppercase" />
+        <div class="error" *ngIf="form.get('nombre2')?.invalid && form.get('nombre2')?.touched">Campo obligatorio.</div>
       </div>
 
-      <div class="form-group">
-        <label for="emailauxiliar">Email</label>
-        <input
-          id="emailauxiliar"
-          type="email"
-          formControlName="emailauxiliar"
-          maxlength="150"
-          placeholder="correo@dominio.com"
-        />
+       <div class="form-group">
+        <label for="apellido1">Primer Apellido<span class="required">*</span></label>
+        <input id="apellido1" type="text" formControlName="apellido1" maxlength="200" placeholder="apellido2...." style="text-transform: uppercase" />
       </div>
 
-      <div class="form-group">
-        <label for="plazo">Plazo (días)</label>
-        <input
-          id="plazo"
-          type="number"
-          formControlName="plazo"
-          min="0"
-          placeholder="0"
-        />
+       <div class="form-group">
+        <label for="apellido2">Segundo Apellido<span class="required">*</span></label>
+        <input id="apellido2" type="text" formControlName="apellido2" maxlength="200" placeholder="apellido2...." style="text-transform: uppercase" />
       </div>
     </div>
 
-    <!-- Razón social -->
-    <div class="form-group">
-      <label for="razonsocial">Razón social</label>
-      <input id="razonsocial" type="text" formControlName="razonsocial" maxlength="200" placeholder="Razón social…" />
-      <div class="error" *ngIf="form.get('razonsocial')?.touched && form.get('razonsocial')?.invalid">
-        Máx. 200 caracteres.
+    <div class="row-razon">
+      <div class="form-group form-razon">
+        <label for="razonsocial">Razón social<span class="required">*</span></label>
+        <input id="razonsocial" type="text" formControlName="razonsocial" maxlength="200" placeholder="Razón social…" />
+        <div class="error" *ngIf="form.get('razonsocial')?.invalid && form.get('razonsocial')?.touched">Campo obligatorio.</div>
       </div>
+      <div class="form-group form-estado-inline">
+        <label>
+          <input type="checkbox" formControlName="estado" />
+          Activo
+        </label>
+      </div> 
     </div>
-
-    <!-- Actividad comercial -->
+    
     <div class="form-group">
       <label for="actividadComercial">Actividad comercial</label>
       <input id="actividadComercial" type="text" formControlName="actividadComercial" maxlength="200" placeholder="Actividad…" />
     </div>
 
-    <!-- Tipo persona -->
-     <div class="row-4">  
-        <div class="form-group">
-          <label for="tipopersona">Tipo de persona <span class="required">*</span></label>
-          <select id="tipopersona" formControlName="tipopersona">
-            <option value="01">Natural</option>
-            <option value="02">Jurídica</option>
-          </select>
-          <div class="error" *ngIf="form.get('tipopersona')?.touched && form.get('tipopersona')?.invalid">
-            Selecciona un tipo.
-          </div>
-        </div>
+    <div class="form-group">
+      <label for="direccionauxiliar">Dirección<span class="required">*</span></label>
+      <input id="direccionauxiliar" type="text" formControlName="direccionauxiliar" maxlength="200" placeholder="Av. Siempre Viva 2354" style="text-transform: uppercase" />
+      <div class="error" *ngIf="form.get('direccionauxiliar')?.invalid && form.get('direccionauxiliar')?.touched">Campo obligatorio.</div>
+    </div>
 
-        <!-- Parte relacionada -->
-        <div class="form-group">
-          <label>
-            <input type="text" formControlName="parterelacionada" />
-            Parte relacionada
-          </label>
-        </div>
+    <div class="row-4">
+      <div class="form-group">
+        <label for="celularauxiliar">Celular</label>
+        <input id="celularauxiliar" type="text" formControlName="celularauxiliar" maxlength="30" placeholder="0999999999" />
+      </div>
 
-        <!-- Estado -->
-        <div class="form-group">
-          <label>
-            <input type="checkbox" formControlName="estado" />
-            Activo
-          </label>
+      <div class="form-group">
+        <label for="telefonoauxiliar">Teléfono<span class="required">*</span></label>
+        <input id="telefonoauxiliar" type="text" formControlName="telefonoauxiliar" maxlength="30" placeholder="022345678" />
+        <div class="error" *ngIf="form.get('telefonoauxiliar')?.invalid && form.get('telefonoauxiliar')?.touched">Campo obligatorio.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="emailauxiliar">Email<span class="required">*</span></label>
+        <input id="emailauxiliar" type="email" formControlName="emailauxiliar" maxlength="150" placeholder="correo@dominio.com" />
+        <div class="error" *ngIf="form.get('emailauxiliar')?.invalid && form.get('emailauxiliar')?.touched">Campo obligatorio.</div>
+      </div>
+
+      <div class="form-group">
+        <label for="plazo">Plazo (días)</label>
+        <input id="plazo" type="number" formControlName="plazo" min="0" placeholder="0" />
+      </div>
+    </div>
+
+   
+
+    <div class="row-4">
+      <div class="form-group">
+        <label for="tipopersona">Tipo de persona <span class="required">*</span></label>
+        <select id="tipopersona" formControlName="tipopersona">
+          <option value="01">Natural</option>
+          <option value="02">Jurídica</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="parterelacionada">Parte Relacionada</label>
+        <input type="text" formControlName="parterelacionada" />
+      </div> 
+      <!-- ⬇️ Combo de ciudades (solo este, elimina el input numérico de idCiudad) -->
+      <div class="form-group">
+        <label for="idCiudad">Ciudad<span class="required">*</span></label>
+        <select id="idCiudad" formControlName="idCiudad">
+          <option [ngValue]="null">-- Seleccione --</option>
+          <option *ngFor="let c of ciudades; trackBy: trackCiudad" [ngValue]="c.id">
+            {{ c.nombre }}
+          </option>
+        </select>
+        <div class="error"
+            *ngIf="form.get('idCiudad')?.touched && form.get('idCiudad')?.hasError('requiredSelect')">
+            Seleccione una ciudad.
         </div>
       </div>
 
-      <div class="row-4"> 
-        
-        <div class="form-group">
-          <label for="idPersona">Persona</label>
-          <input id="idPersona" type="text" formControlName="idPersona" maxlength="200" placeholder="Juan Alberto" />
-        </div>
+      <div class="form-group">
+        <label for="idTipoContribuyente">Contribuyente<span class="required">*</span></label>
+        <select id="idTipoContribuyente" formControlName="idTipoContribuyente">
+          <option [ngValue]="null">-- Seleccione --</option>
+          <option *ngFor="let c of tipocontribuyente; trackBy: trackTipoCon" [ngValue]="c.id">
+            {{ c.nombre }}
+          </option>
+        </select>
+        <div class="error"
+            *ngIf="form.get('idTipoContribuyente')?.touched && form.get('idTipoContribuyente')?.hasError('requiredSelect')">
+            Seleccione el tipo de contribuyente.
+        </div>  
+      </div>
 
-         <div class="form-group">
-          <label for="idCiudad">Ciudad</label>
-          <input id="idCiudad" type="text" formControlName="idCiudad" maxlength="200" placeholder="Quito" />
-        </div>
+    </div>
 
-        <div class="form-group">
-          <label for="idTipoContribuyente">Tipo Contribuyente</label>
-          <input id="idTipoContribuyente" type="text" formControlName="idTipoContribuyente" maxlength="200" placeholder="Quito" />
-        </div>
+   
+    
 
-        <div class="form-group">
-          <label for="idEmpresa">Empresa</label>
-          <input id="idEmpresa" type="text" formControlName="idEmpresa" maxlength="200" placeholder="Quito" />
-        </div>
-
-      
-      </div>  
-    <!-- Botones -->
     <div class="form-actions">
-      <button type="submit" class="btn-azul" [disabled]="form.invalid" [ngClass]="isEditMode ? 'btn-rojo' : 'btn-azul'">
+      <button type="submit" class="btn-azul"  [ngClass]="isEditMode ? 'btn-rojo' : 'btn-azul'">
         {{ isEditMode ? 'Actualizar' : 'Guardar' }}
       </button>
       <button type="button" class="cancel-button" (click)="cancelar()">Cancelar</button>

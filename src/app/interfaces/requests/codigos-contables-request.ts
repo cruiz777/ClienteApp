@@ -1,5 +1,4 @@
 // ✅ Tipos consolidados (sin duplicados) y con tipos correctos
-
 export interface CodigosContablesRequest {
   IdCodContable?: number;              // opcional al crear
   Identificacionauxiliar: string;
@@ -20,6 +19,11 @@ export interface CodigosContablesRequest {
   IdUsuario: number;
   Estado: boolean;
   FechaRegistro: string;               // yyyy-MM-dd
+  Nombre1: string;
+  Nombre2: string;
+  Apellido1: string;
+  Apellido2: string;
+  Tipoidentificacion: number;
 }
 
 export interface ApiResponse<T> {

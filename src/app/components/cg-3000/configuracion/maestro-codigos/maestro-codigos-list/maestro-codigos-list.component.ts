@@ -81,6 +81,8 @@ export class CodigosContablesComponent implements OnInit {
     abrirCrear(): void {
         const dialogRef = this.dialog.open(CodigosContablesFormComponent, {
           width: '1000px',
+          maxHeight: '90vh',
+          autoFocus: false,
           data: {}
         });
     
@@ -94,6 +96,8 @@ export class CodigosContablesComponent implements OnInit {
       abrirEditar(id: number): void {
         const dialogRef = this.dialog.open(CodigosContablesFormComponent, {
           width: '1000px',
+          maxHeight: '90vh',
+          autoFocus: false,
           data: { id }
         });
     
