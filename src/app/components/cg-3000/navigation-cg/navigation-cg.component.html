@@ -30,10 +30,10 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item [routerLink]="'/sic-3000/sectores'" routerLinkActive="active">
-            <span *ngIf="isExpanded" class="menu-text">Sectores</span>
-          </a>
-          
+           <a  mat-list-item [routerLink]="'/cg-3000/asientocontable'">
+              <span *ngIf="isExpanded" class="menu-text">Transacciones</span>
+           </a>
+
         </mat-expansion-panel>
         <!-- Cuentas por Pagar-->
         <mat-expansion-panel>
@@ -287,6 +287,7 @@
               <span *ngIf="isExpanded" class="menu-text">Bancos Empresa</span>
            </a>
 
+          
             <a  mat-list-item [routerLink]="'/cg-3000/bancosterceros'">
               <span *ngIf="isExpanded" class="menu-text">Bancos Terceros</span>
             </a>

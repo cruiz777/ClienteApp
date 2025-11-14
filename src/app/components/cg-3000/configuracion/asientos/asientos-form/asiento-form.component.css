@@ -1,0 +1,31 @@
+.toolbar .spacer { flex: 1; }
+.wrapper { padding: 12px; }
+
+.header-grid {
+  display: grid;
+  grid-template-columns: 220px 160px 200px 1fr;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.header-grid .concepto { grid-column: 1 / -1; }
+
+.acciones-detalle { display: flex; align-items: center; gap: 8px; margin: 8px 0; }
+.acciones-detalle .spacer { flex: 1; }
+
+.grid-wrap { border: 1px solid #e0e0e0; border-radius: 6px; padding: 8px; }
+.grid { min-height: 260px; width: 100%; }
+
+.btn-delete {
+  background: transparent; border: none; cursor: pointer; font-size: 16px;
+}
+
+/* src/app/asientos/asientos-form/asiento-form.component.css */
+.grid-wrap {
+  width: 100%;
+  height: 360px; /* importante: sin esto no se ve nada */
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.btn-add { padding: 6px 10px; }
+.seccion-titulo { margin: 12px 0; display: flex; gap: 8px; align-items: center; }

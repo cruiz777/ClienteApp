@@ -33,6 +33,23 @@ export class CodigosContablesService {
     return this.http.get<boolean>(`${this.baseUrl}/exists`, { params });
   }
 
+     create(data: CodigosContablesRequest): Observable<ApiResponse<any>> {
+       return this.http.post<ApiResponse<any>>(this.baseUrl, data);
+     }
+   
+     update(id: number, data: CodigosContablesRequest): Observable<ApiResponse<any>> {
+       return this.http.put<ApiResponse<any>>(`${this.baseUrl}/${id}`, data);
+     }
+   
+     delete(id: number): Observable<ApiResponse<any>> {
+       return this.http.delete<ApiResponse<any>>(`${this.baseUrl}/${id}`);
+     }
+   
+     softDelete(id: number): Observable<ApiResponse<any>> {
+       return this.http.delete<ApiResponse<any>>(`${this.baseUrl}/soft-delete/${id}`);
+     }
+
+     /*
   create(payload: CodigosContablesRequest): Observable<ApiResponse<number>> {
     return this.http.post<ApiResponse<number>>(this.baseUrl, payload);
   }
@@ -40,4 +57,17 @@ export class CodigosContablesService {
   update(id: number, payload: CodigosContablesRequest): Observable<ApiResponse<boolean>> {
     return this.http.put<ApiResponse<boolean>>(`${this.baseUrl}/${id}`, payload);
   }
+
+  /** (Opcional) eliminar duro 
+  delete(id: number): Observable<ApiResponse<boolean>> {
+    return this.http.delete<ApiResponse<boolean>>(`${this.baseUrl}/${id}`);
+  }
+
+  /** (Opcional) eliminar lógico 
+  softDelete(id: number): Observable<ApiResponse<boolean>> {
+    return this.http.delete<ApiResponse<boolean>>(`${this.baseUrl}/soft-delete/${id}`);
+  }
+
+*/
+  
 }

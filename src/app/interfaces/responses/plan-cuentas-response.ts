@@ -24,4 +24,6 @@ export interface PlanCuentasResponse {
   Alcanse:string;
   Medicion:string;
   IdEmpresa:number;
+  Numerocuenta:string | null; 
+  Formato:string | null; 
 }

@@ -128,6 +128,8 @@
                 <mat-label>Código Externo</mat-label>
                 <input matInput formControlName="CodigoExterno" maxlength="30" />
               </mat-form-field>
+
+
               <input type="hidden" formControlName="CuentaDetalle" />
 
               <mat-form-field appearance="outline" class="w-140">
@@ -176,8 +178,21 @@
           <input type="hidden" formControlName="ParentId" />
           <input type="hidden" formControlName="CodigoCompleto" />
 
-          <mat-checkbox formControlName="EsMovimiento">Es movimiento (solo nivel 5)</mat-checkbox>
-          <mat-checkbox formControlName="Estado">Activo</mat-checkbox>
+          
+            
+            <mat-checkbox formControlName="EsMovimiento">Es movimiento (Nivel 5)</mat-checkbox>
+            <mat-checkbox formControlName="Estado">Activo</mat-checkbox>
+           
+            <mat-form-field appearance="outline" class="w-240">
+              <mat-label>Numero Cuenta</mat-label>
+              <input matInput formControlName="Numerocuenta" maxlength="100" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-240">
+              <mat-label>Formato</mat-label>
+              <input matInput formControlName="Formato" maxlength="100" />
+            </mat-form-field>
+         
 
           <mat-form-field appearance="outline" class="full">
             <mat-label>Norma</mat-label>

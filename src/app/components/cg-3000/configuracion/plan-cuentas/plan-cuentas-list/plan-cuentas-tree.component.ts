@@ -47,6 +47,8 @@ type PlanCuentaCreateRequest = {
   Alcanse: string;
   Medicion: string;
   IdEmpresa: number;
+  Numerocuenta:string; 
+  Formato:string; 
 };
 type PlanCuentaUpdateRequest = PlanCuentaCreateRequest & { IdPlanCuentas: number };
 
@@ -158,6 +160,8 @@ export class PlanCuentasTreeComponent implements OnInit {
     Alcanse: [''],
     Medicion: [''],
     IdEmpresa: this.idEmpresaActual,
+    Numerocuenta:[''], 
+    Formato:[''], 
   }, { updateOn: 'blur' });
 
   modoEdicion = toSignal(
@@ -287,6 +291,8 @@ export class PlanCuentasTreeComponent implements OnInit {
       Alcanse: it.Alcanse ?? '',
       Medicion: it.Medicion ?? '',
       IdEmpresa: Number(it.IdEmpresa ?? this.idEmpresaActual),
+      Numerocuenta: it.Numerocuenta ?? '',
+      Formato: it.Formato ?? '',
     });
   }
 
@@ -317,7 +323,9 @@ export class PlanCuentasTreeComponent implements OnInit {
       Norma: '',
       Alcanse: '',
       Medicion: '',
-      IdEmpresa: this.idEmpresaActual
+      IdEmpresa: this.idEmpresaActual,
+      Numerocuenta: '',
+      Formato:''
     });
   }
 
@@ -353,7 +361,9 @@ export class PlanCuentasTreeComponent implements OnInit {
       Norma: '',
       Alcanse: '',
       Medicion: '',
-      IdEmpresa: this.idEmpresaActual
+      IdEmpresa: this.idEmpresaActual,
+      Numerocuenta: '',
+      Formato: ''
     });
   }
 
@@ -406,9 +416,9 @@ export class PlanCuentasTreeComponent implements OnInit {
         IdNivel: nivelNum,
         NombreCuenta: String(val.NombreCuenta),
         Descripcion: String(val.Descripcion ?? ''),
-        CuentaDetalle: dot(val.CuentaDetalle),
+        CuentaDetalle: String(val.CuentaDetalle ?? ''), ////dot(val.CuentaDetalle),
         Orden: Number(val.Orden ?? 0),
-        CodigoCompleto: codigoCompleto,
+        CodigoCompleto: String(val.CodigoCompleto ?? ''), ///codigoCompleto,
         Estado: !!val.Estado,
         CuentaPrincipal: String(val.CuentaPrincipal ?? ''),
         CuentaMayor: String(val.CuentaMayor ?? ''),
@@ -425,7 +435,9 @@ export class PlanCuentasTreeComponent implements OnInit {
         Norma: String(val.Norma ?? ''),
         Alcanse: String(val.Alcanse ?? ''),
         Medicion: String(val.Medicion ?? ''),
-        IdEmpresa: Number(val.IdEmpresa ?? this.idEmpresaActual)
+        IdEmpresa: Number(val.IdEmpresa ?? this.idEmpresaActual),
+        Numerocuenta:String(val.Numerocuenta ?? ''),
+        Formato:String(val.Formato ?? ''),
       };
 
       this.svc.update(payloadUpdate.IdPlanCuentas, payloadUpdate as any).subscribe({
@@ -458,9 +470,9 @@ export class PlanCuentasTreeComponent implements OnInit {
         IdNivel: nivelNum,
         NombreCuenta: String(val.NombreCuenta),
         Descripcion: String(val.Descripcion ?? ''),
-        CuentaDetalle: dot(val.CuentaDetalle),
+        CuentaDetalle: String(val.CuentaDetalle ?? ''), ///dot(val.CuentaDetalle),
         Orden: Number(val.Orden ?? 0),
-        CodigoCompleto: codigoCompleto,
+        CodigoCompleto: String(val.CodigoCompleto ?? ''), ///codigoCompleto,
         CuentaPrincipal: String(val.CuentaPrincipal ?? ''),
         CuentaMayor: String(val.CuentaMayor ?? ''),
         CuentaSubcta: String(val.CuentaSubcta ?? ''),
@@ -477,7 +489,9 @@ export class PlanCuentasTreeComponent implements OnInit {
         Norma: String(val.Norma ?? ''),
         Alcanse: String(val.Alcanse ?? ''),
         Medicion: String(val.Medicion ?? ''),
-        IdEmpresa: Number(val.IdEmpresa ?? this.idEmpresaActual)
+        IdEmpresa: Number(val.IdEmpresa ?? this.idEmpresaActual),
+        Numerocuenta: String(val.Numerocuenta ?? ''),
+        Formato: String(val.Formato ?? ''),
       };
 
       this.svc.create(payloadCreate as any).subscribe({

@@ -19,6 +19,8 @@ import { BancosEmpresaComponent } from './configuracion/bancos-empresa/bancos-em
 import { PlanCuentasTreeComponent } from './configuracion/plan-cuentas/plan-cuentas-list/plan-cuentas-tree.component';
 import { NumeroChequesListComponent } from './configuracion/numero-cheques/numero-cheques-list/numero-cheques-list.component';
 import { CodigosContablesComponent } from './configuracion/maestro-codigos/maestro-codigos-list/maestro-codigos-list.component';
+import { AsientoFormComponent } from './configuracion/asientos/asientos-form/asiento-form.component';
+import { AsientoContableComponent } from './transacciones/asientos-contables/asientos-contables-list/asientos-contables-list.component';
 
 const routes: Routes = [
   {
@@ -41,6 +43,8 @@ const routes: Routes = [
       { path: 'plancuentas', component:PlanCuentasTreeComponent},
       { path: 'numeroCheques', component:NumeroChequesListComponent},
       { path: 'codigoscontables', component:CodigosContablesComponent},
+      { path: 'asientoscontables', component:AsientoFormComponent},
+      { path: 'asientocontable', component:AsientoContableComponent},
       { path: '**', redirectTo: 'inicio-cg' },
     ],
   },
