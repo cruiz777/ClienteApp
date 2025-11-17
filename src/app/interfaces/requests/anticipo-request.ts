@@ -27,3 +27,18 @@ export interface AnularAnticipoRequest {
   usuario_anula: string;
   fecha_anulacion: string;
 }
+//Interfaz para el request de reporte de anticipos
+export interface ReporteAnticipoRequest {
+  fechaInicial: string;      // ISO format: "2025-11-01"
+  fechaFinal: string;        // ISO format: "2025-11-18"
+  idTipoAnticipo?: number;   // null = TODOS
+  estadoFiltro: EstadoAnticipoFiltro;
+  page: number;
+  pageSize: number;
+}
+
+export enum EstadoAnticipoFiltro {
+  Todos = 0,
+  Utilizados = 1,
+  SinUtilizar = 2
+}

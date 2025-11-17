@@ -1,3 +1,4 @@
+<!-- reporte-anticipos.component.html -->
 <div class="card">
   <h2 class="title">Reporte de Anticipos</h2>
 
@@ -25,8 +26,10 @@
       <div class="field">
         <label>Tipo de Anticipo:</label>
         <select formControlName="tipoAnticipo">
-          <option [ngValue]="null">— Seleccione —</option>
-          <option *ngFor="let t of tiposAnticipo" [ngValue]="t.id">{{ t.descripcion }}</option>
+          <option [ngValue]="null">— Todos —</option>
+          <option *ngFor="let t of tiposAnticipo" [ngValue]="t.id_tipo_anticipo">
+            {{ t.descripcion }}
+          </option>
         </select>
       </div>
     </div>
@@ -52,7 +55,8 @@
     <!-- Botones -->
     <div class="actions">
       <button type="button" class="btn btn-primary" (click)="onGenerar()" [disabled]="loading">
-        Generar
+        <span *ngIf="!loading">Generar</span>
+        <span *ngIf="loading">Generando...</span>
       </button>
       <button type="button" class="btn btn-light" (click)="onCancelar()" [disabled]="loading">
         Cancelar

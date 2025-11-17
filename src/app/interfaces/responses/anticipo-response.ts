@@ -1,3 +1,5 @@
+import { PaginationResponse } from "./pagination-response";
+
 export interface AnticipoResponse {
   id_anticipo: number;
   numero_anticipo: string | null;
@@ -77,3 +79,28 @@ export interface MovimientoEstadoCuentaInfo {
 export interface SiguienteIdAntiicpo {
   next_numero: number;
 }
+
+
+// Wrapper principal
+export interface ReporteAnticiposResponse {
+  datos: PaginationResponse<AnticipoReporteItemResponse>;
+  totales: TotalesReporte;
+}
+
+// Totales
+export interface TotalesReporte {
+  total_monto_inicial: number;
+  total_monto_utilizado: number;
+  total_saldo: number;
+}
+
+// Item individual (sin cambios)
+export interface AnticipoReporteItemResponse {
+  numero: string;
+  fecha: string;
+  nombre_cliente: string;
+  concepto: string;
+  monto_inicial: number;
+  monto_utilizado: number;
+  saldo: number;
+  }

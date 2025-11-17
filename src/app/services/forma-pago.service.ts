@@ -154,4 +154,26 @@ search(term: string): Observable<ApiResponse<FormaPagoResponse[]>> {
       })
     );
   }
+    /**
+   * Obtiene formas de pago con ActivarAnticipo activo (modelo ligero).
+   * Endpoint esperado: GET {baseUrl}/FormaPago/anticipo-activas
+   */
+  getAnticipoActivas(): Observable<ApiResponse<FormaPagoResponse[]>> {
+    const url = `${this.baseUrl}/FormaPago/anticipo-activas`;
+
+    console.log('[FormaPagoService] GET', url);
+
+    return this.http.get<ApiResponse<FormaPagoResponse[]>>(url).pipe(
+      tap(resp => console.log('[FormaPagoService] OK resp =', resp)),
+      catchError(err => {
+        console.error('[FormaPagoService] ERROR =', err);
+        return of({
+          id: '',
+          type: 'Error',
+          data: [] as FormaPagoResponse[],
+          message: 'Error al obtener formas de pago con anticipo activo'
+        } as ApiResponse<FormaPagoResponse[]>);
+      })
+    );
+  }
 }

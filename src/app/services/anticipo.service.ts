@@ -1,11 +1,11 @@
 // src/app/services/anticipo.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { catchError, count, map, Observable, of } from 'rxjs';
 import { environment } from '../../environments/environment';
-import { AnularAnticipoRequest, CreateAnticipoRequest } from '../interfaces/requests/anticipo-request';
+import { AnularAnticipoRequest, CreateAnticipoRequest, ReporteAnticipoRequest } from '../interfaces/requests/anticipo-request';
 import { ApiListResponse } from '../interfaces/responses/ApiListResponse';
-import { AnticipoResponse, AnticipoDetalleResponse, SiguienteIdAntiicpo } from '../interfaces/responses/anticipo-response';
+import { AnticipoResponse, AnticipoDetalleResponse, SiguienteIdAntiicpo, AnticipoReporteItemResponse, ReporteAnticiposResponse } from '../interfaces/responses/anticipo-response';
 import { PaginationResponse } from '../interfaces/responses/pagination-response';
 
 export interface AnticipoFilters {
@@ -146,5 +146,68 @@ export class AnticipoService {
       request
     );
   }
+  /**
+   * Obtiene el reporte de anticipos con filtros y paginación
+   * @param request Parámetros del reporte
+   * @returns Observable con la respuesta paginada
+   */
+  getReporteAnticipos(
+    request: ReporteAnticipoRequest
+  ): Observable<ApiListResponse<ReporteAnticiposResponse>> {  // ✅ CAMBIO AQUÍ
+    const url = `${this.apiUrl}/reporte`;
 
+    let params = new HttpParams()
+      .set('fechaInicial', request.fechaInicial)
+      .set('fechaFinal', request.fechaFinal)
+      .set('estadoFiltro', request.estadoFiltro.toString())
+      .set('page', request.page.toString())
+      .set('pageSize', request.pageSize.toString());
+
+    if (request.idTipoAnticipo != null) {
+      params = params.set('idTipoAnticipo', request.idTipoAnticipo.toString());
+    }
+
+    console.log('[AnticipoService] GET Reporte', url, { params: request });
+
+    return this.http.get<ApiListResponse<ReporteAnticiposResponse>>(url, { params }).pipe(
+      map(response => {
+        console.log('[AnticipoService] Reporte OK:', response);
+        return response;
+      }),
+      catchError(error => {
+        console.error('[AnticipoService] Error en reporte:', error);
+        return of({
+          id: '',
+          type: 'Error',
+          data: {
+            datos: {
+              items: [],
+              page: request.page,
+              pageSize: request.pageSize,
+              totalItems: 0,
+              totalPages: 0,
+              message: 'Error al obtener el reporte'
+            },
+            totales: {
+              total_monto_inicial: 0,
+              total_monto_utilizado: 0,
+              total_saldo: 0
+            }
+          },
+          message: error.message || 'Error al obtener el reporte de anticipos',
+          count: 0
+        } as ApiListResponse<ReporteAnticiposResponse>);
+      })
+    );
+  }
+
+  /**
+   * Helper: Convierte Date a formato ISO string (YYYY-MM-DD)
+   */
+  formatDateToISO(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
 }
