@@ -331,6 +331,35 @@ export class FacturacionService {
         })
       );
   }
+    /**
+   * PUT /Factura/ActualizarAsientoContable
+   * Body: { idNota: number, numeroAsiento: string }
+   */
+  actualizarAsientoContable(
+    idNota: number,
+    numeroAsiento: string
+  ): Observable<ApiResponse<boolean>> {
+    const url = `${this.baseUrl}/Factura/ActualizarAsientoContable`;
+
+    const payload = {
+      idNota,
+      numeroAsiento: (numeroAsiento ?? '').toString().trim()
+    };
+
+    return this.http.put<ApiResponse<boolean>>(url, payload).pipe(
+      map(resp => {
+        if (resp.type !== 'Success') {
+          throw new Error(resp.message || 'No se pudo actualizar el asiento contable.');
+        }
+        return resp;
+      }),
+      catchError(err => {
+        console.error('[FacturacionService] actualizarAsientoContable error:', err);
+        return throwError(() => err);
+      })
+    );
+  }
+
 }
 
 /* ---------- funciones auxiliares (fuera de la clase) ---------- */

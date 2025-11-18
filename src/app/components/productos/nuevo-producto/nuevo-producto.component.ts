@@ -1395,6 +1395,7 @@ public rowData: Producto[] = [];
     if (tipoReporte) {
       switch (tipoReporte) {
         case 'logistica':
+          debugger
           this.generarExcelLogistica();
           break;
         case 'general':

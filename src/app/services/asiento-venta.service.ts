@@ -82,7 +82,7 @@ export class AsientoVentaService {
 
   // 🔧 AJUSTA esta URL a tu microservicio de transacciones CG
   // por ejemplo: environment.transaccionesCgUrl o similar
-  private readonly baseUrl = `${environment.transactionUrl}/AsientosContables`;
+  private readonly baseUrl = `${environment.transactionUrl}`;
 
   constructor(private http: HttpClient) { }
 
@@ -93,7 +93,7 @@ export class AsientoVentaService {
   crearAsientoVenta(payload: AsientoVentaRequest): Observable<ApiResponse<boolean>> {
     // Ajusta el endpoint (/Create, /CrearVenta, etc.) según tu API
     return this.http.post<ApiResponse<boolean>>(
-      `${this.baseUrl}/Create`,
+      `${this.baseUrl}/AsientosContables`,
       payload
     );
   }
