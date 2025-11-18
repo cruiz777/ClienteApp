@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { map, Observable } from 'rxjs';
-import { 
-  ProductoUnidadLogisticaCompleteResponse, 
-  ProductoUnidadLogisticaResponse, 
+import {
+  ProductoUnidadLogisticaCompleteResponse,
+  ProductoUnidadLogisticaResponse,
   ReporteUnidadLogisticaParams,
   ProductoCompletoCompleteResponse,
   ProductoCompletoResponse,
@@ -42,37 +42,37 @@ export class ReporteUnidadLogisticaService {
     if (params.prefijo) {
       httpParams = httpParams.set('prefijo', params.prefijo);
     }
-    
+
     if (params.clienteCodigo !== undefined && params.clienteCodigo !== null) {
       httpParams = httpParams.set('clienteCodigo', params.clienteCodigo.toString());
     }
-    
+
     if (params.codigoProducto) {
       httpParams = httpParams.set('codigoProducto', params.codigoProducto);
     }
-    
+
     if (params.fechaDesde) {
       httpParams = httpParams.set('fechaDesde', params.fechaDesde);
     }
-    
+
     if (params.fechaHasta) {
       httpParams = httpParams.set('fechaHasta', params.fechaHasta);
     }
-    
+
     if (params.condicionFecha) {
       httpParams = httpParams.set('condicionFecha', params.condicionFecha);
     }
-    
+
     if (params.estado !== undefined && params.estado !== null) {
       httpParams = httpParams.set('estado', params.estado.toString());
     }
-    
+
     if (params.pageNumber !== undefined && params.pageNumber !== null) {
       httpParams = httpParams.set('pageNumber', params.pageNumber.toString());
     } else {
       httpParams = httpParams.set('pageNumber', '1');
     }
-    
+
     if (params.pageSize !== undefined && params.pageSize !== null) {
       httpParams = httpParams.set('pageSize', params.pageSize.toString());
     } else {
@@ -94,16 +94,16 @@ export class ReporteUnidadLogisticaService {
     return new Observable(observer => {
       const productos: ProductoUnidadLogisticaResponse[] = [];
       let currentPage = 1;
-      const pageSize = 1000; // Tamaño máximo permitido
+      const pageSize = 10000; // Tamaño máximo permitido
 
       const fetchPage = () => {
         const pageParams = { ...params, pageNumber: currentPage, pageSize };
-        
+
         this.getReporteUnidadLogistica(pageParams).subscribe({
           next: (response) => {
             if (response.type === 'SUCCESS' && response.data) {
               productos.push(...response.data.productos.items);
-              
+
               // Si hay más páginas, continuar
               if (currentPage < response.data.productos.totalPages) {
                 currentPage++;
@@ -138,34 +138,34 @@ export class ReporteUnidadLogisticaService {
    */
   getProductosPorCliente(params: ProductosPorClienteParams): Observable<ApiListResponse<ProductoCompletoCompleteResponse>> {
     let httpParams = new HttpParams();
-    
+
     // Agregar parámetros solo si tienen valor
     if (params.codigoProducto) {
       httpParams = httpParams.set('codigoProducto', params.codigoProducto);
     }
-    
+
     if (params.fechaDesde) {
       httpParams = httpParams.set('fechaDesde', params.fechaDesde);
     }
-    
+
     if (params.fechaHasta) {
       httpParams = httpParams.set('fechaHasta', params.fechaHasta);
     }
-    
+
     if (params.condicionFecha) {
       httpParams = httpParams.set('condicionFecha', params.condicionFecha);
     }
-    
+
     if (params.estado !== undefined && params.estado !== null) {
       httpParams = httpParams.set('estado', params.estado.toString());
     }
-    
+
     if (params.pageNumber !== undefined && params.pageNumber !== null) {
       httpParams = httpParams.set('pageNumber', params.pageNumber.toString());
     } else {
       httpParams = httpParams.set('pageNumber', '1');
     }
-    
+
     if (params.pageSize !== undefined && params.pageSize !== null) {
       httpParams = httpParams.set('pageSize', params.pageSize.toString());
     } else {
@@ -187,16 +187,16 @@ export class ReporteUnidadLogisticaService {
     return new Observable(observer => {
       const productos: ProductoCompletoResponse[] = [];
       let currentPage = 1;
-      const pageSize = 1000; // Tamaño máximo permitido
+      const pageSize = 10000; // Tamaño máximo permitido
 
       const fetchPage = () => {
         const pageParams = { ...params, pageNumber: currentPage, pageSize };
-        
+
         this.getProductosPorCliente(pageParams).subscribe({
           next: (response) => {
             if (response.type === 'SUCCESS' && response.data) {
               productos.push(...response.data.productos.items);
-              
+
               // Si hay más páginas, continuar
               if (currentPage < response.data.productos.totalPages) {
                 currentPage++;
@@ -258,38 +258,38 @@ export class ReporteUnidadLogisticaService {
    */
   getProductosPorPrefijo(params: ProductosPorPrefijoParams): Observable<ApiListResponse<ProductoCompletoPorPrefijoCompleteResponse>> {
     let httpParams = new HttpParams();
-    
+
     // Agregar parámetros solo si tienen valor
     if (params.clienteCodigo !== undefined && params.clienteCodigo !== null) {
       httpParams = httpParams.set('clienteCodigo', params.clienteCodigo.toString());
     }
-    
+
     if (params.codigoProducto) {
       httpParams = httpParams.set('codigoProducto', params.codigoProducto);
     }
-    
+
     if (params.fechaDesde) {
       httpParams = httpParams.set('fechaDesde', params.fechaDesde);
     }
-    
+
     if (params.fechaHasta) {
       httpParams = httpParams.set('fechaHasta', params.fechaHasta);
     }
-    
+
     if (params.condicionFecha) {
       httpParams = httpParams.set('condicionFecha', params.condicionFecha);
     }
-    
+
     if (params.estado !== undefined && params.estado !== null) {
       httpParams = httpParams.set('estado', params.estado.toString());
     }
-    
+
     if (params.pageNumber !== undefined && params.pageNumber !== null) {
       httpParams = httpParams.set('pageNumber', params.pageNumber.toString());
     } else {
       httpParams = httpParams.set('pageNumber', '1');
     }
-    
+
     if (params.pageSize !== undefined && params.pageSize !== null) {
       httpParams = httpParams.set('pageSize', params.pageSize.toString());
     } else {
@@ -311,16 +311,16 @@ export class ReporteUnidadLogisticaService {
     return new Observable(observer => {
       const productos: ProductoCompletoPorPrefijoResponse[] = [];
       let currentPage = 1;
-      const pageSize = 1000; // Tamaño máximo permitido
+      const pageSize = 10000; // Tamaño máximo permitido
 
       const fetchPage = () => {
         const pageParams = { ...params, pageNumber: currentPage, pageSize };
-        
+
         this.getProductosPorPrefijo(pageParams).subscribe({
           next: (response) => {
             if (response.type === 'SUCCESS' && response.data) {
               productos.push(...response.data.productos.items);
-              
+
               // Si hay más páginas, continuar
               if (currentPage < response.data.productos.totalPages) {
                 currentPage++;
@@ -444,7 +444,7 @@ export class ReporteUnidadLogisticaService {
     if (params.fechaDesde && params.fechaHasta) {
       const fechaDesde = new Date(params.fechaDesde);
       const fechaHasta = new Date(params.fechaHasta);
-      
+
       if (fechaDesde > fechaHasta) {
         errors.push('La fecha desde no puede ser mayor a la fecha hasta');
       }
@@ -492,7 +492,7 @@ export class ReporteUnidadLogisticaService {
     if (params.fechaDesde && params.fechaHasta) {
       const fechaDesde = new Date(params.fechaDesde);
       const fechaHasta = new Date(params.fechaHasta);
-      
+
       if (fechaDesde > fechaHasta) {
         errors.push('La fecha desde no puede ser mayor a la fecha hasta');
       }
@@ -501,7 +501,7 @@ export class ReporteUnidadLogisticaService {
     return errors;
   }
 
-  
+
   getProductosFiltrados(request: ProductoRequests): Observable<ClienteConProductosResponse> {
     return this.http
       .post<ApiResponse<ClienteConProductosResponse>>(`${this.baseUrl}/Producto/filtrar`, request)

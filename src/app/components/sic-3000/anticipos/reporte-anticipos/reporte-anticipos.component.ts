@@ -175,7 +175,7 @@ export class ReporteAnticiposComponent implements OnInit {
         return;
       }
 
-      // ✅ Actualizar mensaje del loading
+      // Actualizar mensaje del loading
       this.loadingDialogRef.componentInstance.updateLoadingState(true, 'Generando PDF...');
 
       const itemsPDF = datos.items.map(item => ({
@@ -185,7 +185,9 @@ export class ReporteAnticiposComponent implements OnInit {
         concepto: item.concepto,
         monto_inicial: item.monto_inicial,
         monto_utilizado: item.monto_utilizado,
-        saldo: item.saldo
+        saldo: item.saldo,
+        id_tipo_anticipo: item.id_tipo_anticipo,
+        tipo_anticipo: item.tipo_anticipo
       }));
 
       const totalesPDF = {
@@ -217,7 +219,7 @@ export class ReporteAnticiposComponent implements OnInit {
           subtitulo: `Del ${filtrosPDF.fechaInicial} al ${filtrosPDF.fechaFinal}`,
           mostrarUsuario: 'Usuario Actual',
           mostrarFiltros: false,
-          mostrarFechaGeneracion: true
+          mostrarFechaGeneracion: true,
         }
       );
 

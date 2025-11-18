@@ -103,4 +103,6 @@ export interface AnticipoReporteItemResponse {
   monto_inicial: number;
   monto_utilizado: number;
   saldo: number;
-  }
+  id_tipo_anticipo: number;      // ✅ NUEVO
+  tipo_anticipo: string;
+}

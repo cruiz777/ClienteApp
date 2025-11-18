@@ -138,10 +138,10 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
         y += 6;
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7.5);
-        
+
         // Calcular las líneas del disclaimer con ancho ajustado
         const disclaimerLines = doc.splitTextToSize(disclaimer, pageWidth - 20);
-        
+
         // Renderizar el disclaimer línea por línea con espaciado compacto
         disclaimerLines.forEach((line: string, index: number) => {
           doc.text(line, 10, y + (index * 3));
@@ -166,7 +166,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
   //EXPORTAR EXCEL PARA UL Y GENERAL
  async exportarExcelGS1(options: GS1ExportOptions): Promise<void> {
   const { data, filename, headerInfo } = options;
-  
+
   // Crear nuevo workbook
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Reporte Productos Codificados');
@@ -202,8 +202,8 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
   const empresaCell = worksheet.getCell(`B${currentRow}`);
   empresaCell.value = headerInfo.nombreEmpresa || 'NESTLE ECUADOR S.A.';
   empresaCell.font = { name: 'Arial', size: 11, bold: true, color: { argb: 'FF003366' } }; // Azul marino medio
-  empresaCell.alignment = { 
-    horizontal: 'left', 
+  empresaCell.alignment = {
+    horizontal: 'left',
     vertical: 'middle',
     wrapText: true  // Ajuste de texto para que siempre se vea bien
   };
@@ -273,10 +273,10 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
   const disclaimerCell = worksheet.getCell(`B${currentRow}`);
   disclaimerCell.value = 'GS1 Ecuador  (ECOP) certifica que los códigos GTIN que constan a continuación son auténticos y publicados en www.gs1ec.org Verified by Ecuador.\nEl dueño de la marca del producto pone el código, es su responsabilidad el manejo y control del código, incluida su descripción y marca.\nEl Prefijo Global De Compañía GS1, GCP, es INTRANSFERIBLE.';
   disclaimerCell.font = { name: 'Arial', size: 10, bold: true };
-  disclaimerCell.alignment = { 
-    horizontal: 'center', 
-    vertical: 'middle', 
-    wrapText: true 
+  disclaimerCell.alignment = {
+    horizontal: 'center',
+    vertical: 'middle',
+    wrapText: true
   };
   disclaimerCell.fill = {
     type: 'pattern',
@@ -301,7 +301,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
     { col: 'G', value: 'UNIDAD DE MEDIDA' },
     { col: 'H', value: 'FECHA' }
   ];
-  
+
   headers.forEach(header => {
     const cell = worksheet.getCell(`${header.col}${currentRow}`);
     cell.value = header.value;
@@ -391,7 +391,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
     const logoBase64 = await this.configuracionVisualService.getLogoActualBase64();
     if (logoBase64) {
       const base64Data = logoBase64.replace(/^data:image\/[a-z]+;base64,/, '');
-      
+
       const logoId = workbook.addImage({
         base64: base64Data,
         extension: 'png',
@@ -410,7 +410,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
   // Configurar anchos de columnas basados en el análisis del archivo original
   worksheet.columns = [
     { width: 2.5 },   // A - Numeración (muy angosto)
-    { width: 20.36 }, // B - GTIN-13  
+    { width: 20.36 }, // B - GTIN-13
     { width: 20.36 }, // C - GTIN-14
     { width: 40.36 }, // D - DESCRIPCIÓN (más ancho)
     { width: 20.36 }, // E - MARCA
@@ -423,16 +423,16 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
 
   // Generar y descargar el archivo
   const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { 
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   });
-  
+
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
   link.download = `${filename}_${moment().format('YYYYMMDD_HHmmss')}.xlsx`;
   link.click();
-  
+
   window.URL.revokeObjectURL(url);
 }
 
@@ -559,7 +559,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
 //EXPORTAR GTIN VENTA EXCEL
 async exportarExcelGtinVenta(options: GS1GtinVentaOptions): Promise<void> {
   const { data, filename, headerInfo } = options;
-  
+
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet('Reporte GTIN Venta');
 
@@ -619,7 +619,7 @@ async exportarExcelGtinVenta(options: GS1GtinVentaOptions): Promise<void> {
     const valueCell = worksheet.getCell(`C${currentRow}`);
     valueCell.value = info.value;
     valueCell.font = { name: 'Arial', size: 10 };
-    
+
     currentRow++;
   });
 
@@ -630,10 +630,10 @@ async exportarExcelGtinVenta(options: GS1GtinVentaOptions): Promise<void> {
   const disclaimerCell = worksheet.getCell(`B${currentRow}`);
   disclaimerCell.value = 'GS1 Ecuador (ECOP) certifica que los códigos GTIN que constan a continuación son auténticos y publicados en www.gs1ec.org Verified by Ecuador.\nEl dueño de la marca del producto pone el código, es su responsabilidad el manejo y control del código, incluida su descripción y marca.\nEl Prefijo Global De Compañía GS1, GCP, es INTRANSFERIBLE.';
   disclaimerCell.font = { name: 'Arial', size: 10, bold: true };
-  disclaimerCell.alignment = { 
-    horizontal: 'center', 
-    vertical: 'middle', 
-    wrapText: true 
+  disclaimerCell.alignment = {
+    horizontal: 'center',
+    vertical: 'middle',
+    wrapText: true
   };
   disclaimerCell.fill = {
     type: 'pattern',
@@ -657,7 +657,7 @@ async exportarExcelGtinVenta(options: GS1GtinVentaOptions): Promise<void> {
     { col: 'G', value: 'TIPO' },
     { col: 'H', value: 'FECHA' }
   ];
-  
+
   headers.forEach(header => {
     const cell = worksheet.getCell(`${header.col}${currentRow}`);
     cell.value = header.value;
@@ -699,7 +699,7 @@ async exportarExcelGtinVenta(options: GS1GtinVentaOptions): Promise<void> {
     const logoBase64 = await this.configuracionVisualService.getLogoActualBase64();
     if (logoBase64) {
       const base64Data = logoBase64.replace(/^data:image\/[a-z]+;base64,/, '');
-      
+
       const logoId = workbook.addImage({
         base64: base64Data,
         extension: 'png',
@@ -717,7 +717,7 @@ async exportarExcelGtinVenta(options: GS1GtinVentaOptions): Promise<void> {
   // Configurar anchos de columnas
   worksheet.columns = [
     { width: 8 },     // A - #
-    { width: 20.36 }, // B - CÓDIGO  
+    { width: 20.36 }, // B - CÓDIGO
     { width: 40.36 }, // C - DESCRIPCIÓN
     { width: 20.36 }, // D - MARCA
     { width: 15.36 }, // E - CONTENIDO
@@ -728,23 +728,23 @@ async exportarExcelGtinVenta(options: GS1GtinVentaOptions): Promise<void> {
 
   // Generar y descargar
   const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { 
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+  const blob = new Blob([buffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
   });
-  
+
   const url = window.URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
   link.download = `${filename}_${moment().format('YYYYMMDD_HHmmss')}.xlsx`;
   link.click();
-  
+
   window.URL.revokeObjectURL(url);
 }
 private formatearFechaSafe(fecha: any): string {
   if (!fecha) return '';
-  
+
   let fechaMoment;
-  
+
   // Intentar diferentes formatos
   if (typeof fecha === 'string' && fecha.includes('/')) {
     // Formato DD/MM/YYYY
@@ -753,7 +753,7 @@ private formatearFechaSafe(fecha: any): string {
     // Formato ISO o Date object
     fechaMoment = moment(fecha);
   }
-  
+
   return fechaMoment.isValid() ? fechaMoment.format('DD/MM/YYYY') : '';
 }
 }

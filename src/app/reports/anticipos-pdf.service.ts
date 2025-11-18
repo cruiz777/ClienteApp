@@ -15,6 +15,8 @@ export interface AnticipoReportePDF {
   monto_inicial: number;
   monto_utilizado: number;
   saldo: number;
+  id_tipo_anticipo: number;
+  tipo_anticipo: string;
 }
 
 export interface TotalesAnticiposPDF {
@@ -108,7 +110,6 @@ export class AnticipoPDFService {
 
     const cfg = { ...this.configDefault, ...config };
 
-    // Crear documento jsPDF
     const doc = new jsPDF({
       orientation: cfg.orientacion || 'landscape',
       unit: 'mm',
@@ -123,10 +124,8 @@ export class AnticipoPDFService {
     let logoDataUrl: string | null = null;
     try {
       const logoUrl = await firstValueFrom(this.logoService.logoUrl$);
-      console.log('🔍 Logo URL recibida:', logoUrl);
       if (logoUrl) {
         logoDataUrl = await this.toDataUrlSafe(logoUrl);
-        console.log('✅ Logo convertido a DataURL:', logoDataUrl ? 'SUCCESS' : 'FAILED');
       }
     } catch (error) {
       console.warn('[AnticipoPDFService] No se pudo cargar el logo:', error);
@@ -137,18 +136,14 @@ export class AnticipoPDFService {
     // ============ CABECERA ============
     if (logoDataUrl) {
       try {
-        // ✅ Agregar rectángulo blanco de fondo para el logo
         doc.setFillColor(255, 255, 255);
         doc.rect(margins.left, yPosition, 30, 15, 'F');
-
-        // ✅ Agregar logo con tamaño ajustado
         doc.addImage(logoDataUrl, 'PNG', margins.left + 1, yPosition + 1, 28, 13);
       } catch (error) {
         console.warn('[AnticipoPDFService] Error al agregar logo:', error);
       }
     }
 
-    // Datos empresa (lado derecho)
     doc.setFontSize(14);
     doc.setFont('helvetica', 'bold');
     doc.setTextColor(cfg.colorPrimario || '#1f2937');
@@ -171,7 +166,6 @@ export class AnticipoPDFService {
 
     yPosition += 25;
 
-    // Línea separadora
     doc.setDrawColor(200, 200, 200);
     doc.setLineWidth(0.5);
     doc.line(margins.left, yPosition, pageWidth - margins.right, yPosition);
@@ -184,7 +178,6 @@ export class AnticipoPDFService {
     doc.text(cfg.titulo || 'Reporte de Anticipos', margins.left, yPosition);
     yPosition += 8;
 
-    // Subtítulo con rango de fechas
     if (cfg.subtitulo) {
       doc.setFontSize(11);
       doc.setFont('helvetica', 'normal');
@@ -193,16 +186,6 @@ export class AnticipoPDFService {
       yPosition += 6;
     }
 
-    // ✅ NUEVO: Mostrar tipo de anticipo
-    if (filtros && filtros.tipoAnticipo) {
-      doc.setFontSize(10);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(cfg.colorSecundario || '#3b82f6');
-      doc.text(`Tipo de Anticipo: ${filtros.tipoAnticipo}`, margins.left, yPosition);
-      yPosition += 5;
-    }
-
-    // Fecha de generación SIN HORA
     if (cfg.mostrarFechaGeneracion) {
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
@@ -218,107 +201,117 @@ export class AnticipoPDFService {
 
     yPosition += 3;
 
-    // ============ FILTROS APLICADOS (ACTIVAR SI ES NECESARIO) ============
-    // if (cfg.mostrarFiltros && filtros) {
-    //   doc.setFontSize(10);
-    //   doc.setFont('helvetica', 'bold');
-    //   doc.setTextColor(cfg.colorSecundario || '#3b82f6');
-    //   doc.text('Filtros Aplicados:', margins.left, yPosition);
-    //   yPosition += 5;
+    // ✅ AGRUPAR POR TIPO DE ANTICIPO
+    const itemsAgrupados = this.agruparPorTipoAnticipo(items);
 
-    //   doc.setFontSize(9);
-    //   doc.setFont('helvetica', 'normal');
-    //   doc.setTextColor(80, 80, 80);
+    // ✅ ITERAR SOBRE CADA GRUPO
+    for (const grupo of itemsAgrupados) {
 
-    //   const filtrosTexto = [
-    //     `Período: ${filtros.fechaInicial} a ${filtros.fechaFinal}`,
-    //     filtros.tipoAnticipo ? `Tipo: ${filtros.tipoAnticipo}` : 'Tipo: Todos',
-    //     `Estado: ${filtros.estado}`,
-    //     `Total de registros: ${filtros.totalRegistros.toLocaleString('es-EC')}`
-    //   ];
-
-    //   filtrosTexto.forEach(txt => {
-    //     doc.text(`• ${txt}`, margins.left + 2, yPosition);
-    //     yPosition += 4;
-    //   });
-
-    //   yPosition += 4;
-    // }
-
-    // ============ TABLA DE DATOS ============
-    const headers = [
-      ['N°', 'Fecha', 'Cliente', 'Concepto', 'Monto Inicial', 'Monto Utilizado', 'Saldo']
-    ];
-
-    const tableData = items.map(item => [
-      item.numero,
-      this.formatearFechaSoloFecha(item.fecha),
-      item.nombre_cliente,
-      item.concepto,
-      this.formatMoney(item.monto_inicial),
-      this.formatMoney(item.monto_utilizado),
-      this.formatMoney(item.saldo)
-    ]);
-
-    autoTable(doc, {
-      startY: yPosition,
-      head: headers,
-      body: tableData,
-      theme: 'grid',                          // ✅ Cambiar a 'grid' para líneas visibles
-      styles: {
-        fontSize: 7.5,
-        cellPadding: 2,                       // ✅ Más padding para mejor legibilidad
-        lineColor: [200, 200, 200],           // ✅ Color de líneas gris claro
-        lineWidth: 0.1                        // ✅ Grosor de líneas
-      },
-      headStyles: {
-        fillColor: [255, 255, 255],           // Fondo blanco
-        textColor: [0, 0, 0],                 // Texto negro
-        fontStyle: 'bold',
-        fontSize: 9,
-        halign: 'center',
-        lineColor: [0, 0, 0],                 // ✅ Líneas negras en header
-        lineWidth: 0.3                        // ✅ Líneas más gruesas en header
-      },
-      bodyStyles: {
-        fontSize: 8,
-        textColor: 50,
-        lineColor: [200, 200, 200],           // ✅ Líneas gris claro en body
-        lineWidth: 0.1
-      },
-      alternateRowStyles: {
-        fillColor: [248, 249, 250]            // ✅ Gris más sutil para filas alternas
-      },
-      columnStyles: {
-        0: { halign: 'center', cellWidth: 25 },
-        1: { halign: 'center', cellWidth: 25 },
-        2: { halign: 'left', cellWidth: 'auto' },
-        3: { halign: 'left', cellWidth: 'auto' },
-        4: { halign: 'right', cellWidth: 28 },
-        5: { halign: 'right', cellWidth: 28 },
-        6: { halign: 'right', cellWidth: 28 }
-      },
-      margin: { left: margins.left, right: margins.right },
-      didDrawPage: (data) => {
-        this.agregarFooter(doc, data.pageNumber, cfg);
-      }
-    });
-
-
-    // Obtener la posición Y después de la tabla
-    const finalY = (doc as any).lastAutoTable.finalY || yPosition + 20;
-
-    // ============ TOTALES ============
-    if (cfg.mostrarTotales && totales) {
-      // Verificar si hay espacio, si no, nueva página
-      if (finalY > pageHeight - 40) {
+      if (yPosition > pageHeight - 60) {
         doc.addPage();
         yPosition = margins.top;
-      } else {
-        yPosition = finalY + 8;
       }
 
-      // Cuadro de totales
+      // ============ ENCABEZADO DEL GRUPO ============
+      doc.setFillColor(240, 240, 240);
+      doc.rect(margins.left, yPosition, pageWidth - margins.left - margins.right, 8, 'F');
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(cfg.colorSecundario || '#002f75');
+      doc.text(
+        `${grupo.tipoAnticipo} (${grupo.items.length} registros)`,
+        margins.left + 3,
+        yPosition + 5.5
+      );
+
+      yPosition += 10;
+
+      // ============ TABLA DEL GRUPO ============
+      const headers = [
+        ['N°', 'Fecha', 'Cliente', 'Concepto', 'Monto Inicial', 'Monto Utilizado', 'Saldo']
+      ];
+
+      const tableData = grupo.items.map(item => [
+        item.numero,
+        this.formatearFechaSoloFecha(item.fecha),
+        item.nombre_cliente,
+        item.concepto,
+        this.formatMoney(item.monto_inicial),
+        this.formatMoney(item.monto_utilizado),
+        this.formatMoney(item.saldo)
+      ]);
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: headers,
+        body: tableData,
+        theme: 'grid',
+        styles: {
+          fontSize: 7.5,
+          cellPadding: 2,
+          lineColor: [200, 200, 200],
+          lineWidth: 0.1
+        },
+        headStyles: {
+          fillColor: [255, 255, 255],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold',
+          fontSize: 9,
+          halign: 'center',
+          lineColor: [0, 0, 0],
+          lineWidth: 0.3
+        },
+        bodyStyles: {
+          fontSize: 8,
+          textColor: 50,
+          lineColor: [200, 200, 200],
+          lineWidth: 0.1
+        },
+        alternateRowStyles: {
+          fillColor: [248, 249, 250]
+        },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 25 },
+          1: { halign: 'center', cellWidth: 25 },
+          2: { halign: 'left', cellWidth: 'auto' },
+          3: { halign: 'left', cellWidth: 'auto' },
+          4: { halign: 'right', cellWidth: 28 },
+          5: { halign: 'right', cellWidth: 28 },
+          6: { halign: 'right', cellWidth: 28 }
+        },
+        margin: { left: margins.left, right: margins.right },
+        didDrawPage: (data) => {
+          this.agregarFooter(doc, data.pageNumber, cfg);
+        }
+      });
+
+      const finalY = (doc as any).lastAutoTable.finalY || yPosition;
+
+      // ============ SUBTOTALES DEL GRUPO ============
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(80, 80, 80);
+
+      const subtotales = this.calcularSubtotales(grupo.items);
+
+      doc.text(
+        `Subtotal ${grupo.tipoAnticipo}:     Monto Inicial: ${this.formatMoney(subtotales.montoInicial)}     Monto Utilizado: ${this.formatMoney(subtotales.montoUtilizado)}     Saldo: ${this.formatMoney(subtotales.saldo)}`,
+        pageWidth - margins.right,
+        finalY + 6,
+        { align: 'right' }
+      );
+
+      yPosition = finalY + 12;
+    }
+
+    // ============ TOTALES GENERALES ============
+    if (cfg.mostrarTotales && totales) {
+      if (yPosition > pageHeight - 40) {
+        doc.addPage();
+        yPosition = margins.top;
+      }
+
       doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.3);
       doc.rect(pageWidth - margins.right - 90, yPosition, 90, 28);
@@ -326,7 +319,7 @@ export class AnticipoPDFService {
       doc.setFontSize(11);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(cfg.colorPrimario || '#1f2937');
-      doc.text('TOTALES', pageWidth - margins.right - 85, yPosition + 6);
+      doc.text('TOTALES GENERALES', pageWidth - margins.right - 85, yPosition + 6);
 
       doc.setFontSize(9);
       doc.setFont('helvetica', 'normal');
@@ -348,7 +341,6 @@ export class AnticipoPDFService {
       });
     }
 
-    // Convertir a Blob
     return doc.output('blob');
   }
 
@@ -440,6 +432,39 @@ export class AnticipoPDFService {
       console.warn('Error al formatear fecha:', fecha);
       return fecha;
     }
+  }
+  private agruparPorTipoAnticipo(items: AnticipoReportePDF[]): Array<{
+    idTipoAnticipo: number;
+    tipoAnticipo: string;
+    items: AnticipoReportePDF[];
+  }> {
+    const grupos = new Map<number, AnticipoReportePDF[]>();
+
+    items.forEach(item => {
+      const id = item.id_tipo_anticipo;
+      if (!grupos.has(id)) {
+        grupos.set(id, []);
+      }
+      grupos.get(id)!.push(item);
+    });
+
+    return Array.from(grupos.entries()).map(([id, items]) => ({
+      idTipoAnticipo: id,
+      tipoAnticipo: items[0].tipo_anticipo,
+      items
+    })).sort((a, b) => a.idTipoAnticipo - b.idTipoAnticipo);
+  }
+
+  private calcularSubtotales(items: AnticipoReportePDF[]): {
+    montoInicial: number;
+    montoUtilizado: number;
+    saldo: number;
+  } {
+    return items.reduce((acc, item) => ({
+      montoInicial: acc.montoInicial + item.monto_inicial,
+      montoUtilizado: acc.montoUtilizado + item.monto_utilizado,
+      saldo: acc.saldo + item.saldo
+    }), { montoInicial: 0, montoUtilizado: 0, saldo: 0 });
   }
 
 }
