@@ -10,7 +10,7 @@ import { ClienteSummary } from 'src/app/interfaces/responses/cliente-summary-res
 import { FormaPagoService, FormaPagoResponse } from 'src/app/services/forma-pago.service';
 import { finalize } from 'rxjs/operators';
 import { map, tap } from 'rxjs/operators';
-
+import { AsientoVentaService,AsientoVentaRequest } from 'src/app/services/asiento-venta.service';
 // rxjs
 import { combineLatest, Observable, of } from 'rxjs';
 
@@ -206,6 +206,7 @@ export class RegistroCobrosComponent implements OnInit {
   pagoColumnDefsTransfer: ColDef[] = [
     { headerName: 'CODIGO', field: 'codigo', width: 110, editable: false },
     { headerName: 'DESCRIPCION', field: 'descripcion', flex: 1, minWidth: 220, editable: false },
+    { headerName: 'CUENTA', field: 'cuenta',  hide:true },
     {
       headerName: 'MONTO',
       field: 'monto',
@@ -352,7 +353,8 @@ export class RegistroCobrosComponent implements OnInit {
     private cuentaCobrarService: CuentaCobrarService,
     private _snackBar: MatSnackBar,
     private formaPagoService: FormaPagoService,
-    private pagoReportService: PagoReportService
+    private pagoReportService: PagoReportService,
+    private asientoVentaService:AsientoVentaService
   ) { }
 
   ngOnInit(): void {
@@ -666,81 +668,114 @@ export class RegistroCobrosComponent implements OnInit {
   isSubmitting = false;           // deshabilitar mientras se envía
   registroCompletado = false;     // opcional: mantenerlo deshabilitado tras éxito
 
-  registrarPago() {
-    // Evita dobles clics
-    if (this.isSubmitting || this.registroCompletado) return;
+ // ... (resto de tu componente)
 
-    const plant = this.validateGridPlantilla();
-    if (!plant.ok) {
-      this.mostrarAlerta('Revisa las formas de pago (totales/retenciones).', 'error');
-      console.warn('Errores plantilla:', plant.errors);
-      return;
-    }
+registrarPago() {
+  // Evita dobles clics
+  if (this.isSubmitting || this.registroCompletado) return;
 
-    const facturas_a_pagar = this.buildFacturasAPagar();
-    const formas_pago = this.buildFormasPago();
-    if (facturas_a_pagar.length === 0) {
-      this.mostrarAlerta('No hay pagos distribuidos en facturas.', 'info');
-      this.salirPagos();
-      return;
-    }
-    if (formas_pago.length === 0) {
-      this.mostrarAlerta('Agrega al menos una forma de pago.', 'info');
-      return;
-    }
-
-    const req = {
-      cliente_codigo: this.formCliente.value.clienteCodigo ?? this.codcliO ?? 0,
-      facturas_a_pagar,
-      formas_pago,
-      id_usuario_responsable: Number(this.usuarioActual?.id_usuario ?? 0),
-      caja: String(this.formPago.value?.caja || '001'),
-      observaciones: String(this.formCliente.value?.observacion || '').trim(),
-    } as const;
-
-    const chk = this.cuentaCobrarService.validatePago(req as any);
-    if (!chk.ok) {
-      this.mostrarAlerta(
-        `La suma de formas de pago no coincide con las facturas. Diferencia: ${chk.diferencia.toFixed(2)}`,
-        'error'
-      );
-      return;
-    }
-
-    // 🔒 Deshabilita botón mientras se procesa
-    this.isSubmitting = true;
-
-    this.cuentaCobrarService.registrarPago(req)
-      .pipe(finalize(() => {
-        // si NO quieres reactivar el botón tras éxito, no cambies isSubmitting aquí
-        this.isSubmitting = false;
-      }))
-      .subscribe({
-        next: async (numeroPago) => {
-          this.mostrarAlerta(`Pago ${numeroPago} registrado correctamente.`, 'ok');
-          this.ultimoNumeroPago = numeroPago;
-
-          // Opcional: mantener deshabilitado hasta "Nuevo Pago"
-          this.registroCompletado = true;
-
-          try {
-            await this.pagoReportService.generarPdfDesdeApi(numeroPago, {
-              titulo: 'GS1 ECUADOR',
-              logoUrl: 'assets/logo/GS1-logo.png'
-            });
-          } catch (e: any) {
-            console.error(e);
-            this.mostrarAlerta('Se registró el pago pero no se pudo generar el PDF.', 'warn');
-          }
-        },
-        error: (err) => {
-          console.error(err);
-          this.mostrarAlerta('Error registrando el pago', 'error');
-          // en error, se reactivará por finalize()
-        }
-      });
+  const plant = this.validateGridPlantilla();
+  if (!plant.ok) {
+    this.mostrarAlerta('Revisa las formas de pago (totales/retenciones).', 'error');
+    console.warn('Errores plantilla:', plant.errors);
+    return;
   }
 
+  const facturas_a_pagar = this.buildFacturasAPagar();
+  const formas_pago = this.buildFormasPago();
+  if (facturas_a_pagar.length === 0) {
+    this.mostrarAlerta('No hay pagos distribuidos en facturas.', 'info');
+    this.salirPagos();
+    return;
+  }
+  if (formas_pago.length === 0) {
+    this.mostrarAlerta('Agrega al menos una forma de pago.', 'info');
+    return;
+  }
+
+  const req = {
+    cliente_codigo: this.formCliente.value.clienteCodigo ?? this.codcliO ?? 0,
+    facturas_a_pagar,
+    formas_pago,
+    id_usuario_responsable: Number(this.usuarioActual?.id_usuario ?? 0),
+    caja: String(this.formPago.value?.caja || '001'),
+    observaciones: String(this.formCliente.value?.observacion || '').trim(),
+  } as const;
+
+  const chk = this.cuentaCobrarService.validatePago(req as any);
+  if (!chk.ok) {
+    this.mostrarAlerta(
+      `La suma de formas de pago no coincide con las facturas. Diferencia: ${chk.diferencia.toFixed(2)}`,
+      'error'
+    );
+    return;
+  }
+
+  // 🔒 Deshabilita botón mientras se procesa
+  this.isSubmitting = true;
+
+  this.cuentaCobrarService.registrarPago(req)
+    .pipe(finalize(() => {
+      // Se reactiva el botón si el registro del pago falla o si el asiento falla.
+      // Si todo va bien, se mantendrá deshabilitado hasta "Nuevo Pago".
+      if (!this.registroCompletado) {
+          this.isSubmitting = false;
+      }
+    }))
+    .subscribe({
+      next: async (numeroPago) => {
+        this.mostrarAlerta(`Pago ${numeroPago} registrado correctamente.`, 'ok');
+        this.ultimoNumeroPago = numeroPago;
+
+        // ✅ 1. Construir ASIENTO DE COBRO (IG) usando el número de pago
+        const asientoCobro = this.buildAsientoCobroRequest(String(numeroPago));
+        
+        // Si por alguna razón no hay monto, no creamos el asiento.
+        if (!asientoCobro) {
+          this.mostrarAlerta('No se generó asiento contable porque el monto del cobro es cero.', 'warn');
+          this.registroCompletado = true; // Marcamos como completado para permitir nuevo pago
+          return;
+        }
+
+        console.log('ASIENTO COBRO JSON →', JSON.stringify(asientoCobro, null, 2));
+
+        // ✅ 2. Llamar al servicio para guardar el asiento contable
+        this.asientoVentaService.crearAsientoVenta(asientoCobro).subscribe({
+          next: (response) => {
+            // Éxito al guardar el asiento
+            console.log('Asiento contable guardado exitosamente:', response);
+            this.mostrarAlerta(`Pago ${numeroPago} y su asiento contable registrados.`, 'ok');
+            
+            // Opcional: mantener deshabilitado hasta "Nuevo Pago"
+            this.registroCompletado = true;
+
+            // Generar el PDF del pago
+            this.pagoReportService.generarPdfDesdeApi(numeroPago, {
+              titulo: 'GS1 ECUADOR',
+              logoUrl: 'assets/logo/GS1-logo.png'
+            }).catch(e => {
+              console.error(e);
+              this.mostrarAlerta('Se registró el pago y el asiento, pero no se pudo generar el PDF.', 'warn');
+            });
+          },
+          error: (err) => {
+            // Error al guardar el asiento contable
+            console.error('Error al guardar el asiento contable:', err);
+            this.mostrarAlerta(`El pago ${numeroPago} se registró, pero hubo un error al generar el asiento contable. Revisa la consola o contacta al administrador.`, 'error');
+            // Reactivamos el botón para que se pueda intentar de nuevo
+            this.isSubmitting = false;
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error registrando el pago:', err);
+        this.mostrarAlerta('Error registrando el pago', 'error');
+        // El `finalize` se encargará de reactivar el botón
+      }
+    });
+}
+
+// ... (resto de tu componente)
 
   onCancelarPago(): void {
     this.formPago.reset({ plantilla: 'transfer', valor: '', observacion: '', metodoPago: '' });
@@ -952,40 +987,60 @@ export class RegistroCobrosComponent implements OnInit {
   displayFormaPago = (fp: FormaPagoResponse | string | null): string =>
     (typeof fp === 'string') ? fp : (fp?.descripcionPago ?? '');
 
-  onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
-    const item = event.option.value as FormaPagoResponse;
-    const pl = this.formPago.get('plantilla')?.value as 'transfer' | 'cheque';
+ onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
+  const item = event.option.value as FormaPagoResponse;
+  const pl = this.formPago.get('plantilla')?.value as 'transfer' | 'cheque';
 
-    const codigo = String((item as any).codigo ?? (item as any).idFormaPago ?? '');
-    const descripcion = (item as any).descripcionPago ?? (item as any).descripcion ?? '';
-    if (!codigo && !descripcion) return;
+  const codigo = String((item as any).codigo ?? (item as any).idFormaPago ?? '');
+  const descripcion = (item as any).descripcionPago ?? (item as any).descripcion ?? '';
 
-    const yaExiste = this.pagoRowData.some(r => String(r.codigo ?? '') === codigo && !!codigo);
-    if (!yaExiste) {
-      const montoAuto = Math.max(0, this.getSaldo());
+  // 👇 Intentamos tomar la cuenta desde el DTO de forma de pago
+  const cuenta =
+    (item as any).cuenta ??
+    (item as any).cuentaContable ??
+    (item as any).codigoCuenta ??
+    ''; // ajusta al nombre real de tu propiedad
 
-      if (pl === 'transfer') {
-        this.pagoRowData.push({
-          codigo, descripcion, porcRet: null, banco: '',
-          numCuentaTarjetaFactura: '', numCheque: '', monto: montoAuto
-        });
-      } else {
-        this.pagoRowData.push({
-          codigo, descripcion, numChequeFecha: '', nombreDueno: '',
-          autorizacion: '', monto: montoAuto
-        });
-      }
+  if (!codigo && !descripcion) return;
 
-      this.pagoGridApi?.setGridOption('rowData', this.pagoRowData);
-      this.recalcularTotal();
+  const yaExiste = this.pagoRowData.some(r => String(r.codigo ?? '') === codigo && !!codigo);
+  if (!yaExiste) {
+    const montoAuto = Math.max(0, this.getSaldo());
+
+    if (pl === 'transfer') {
+      this.pagoRowData.push({
+        codigo,
+        descripcion,
+        cuenta,                      // 👈 NUEVO: se mostrará en la columna CUENTA
+        porcRet: null,
+        banco: '',
+        numCuentaTarjetaFactura: '',
+        numCheque: '',
+        monto: montoAuto
+      });
+    } else {
+      this.pagoRowData.push({
+        codigo,
+        descripcion,
+        cuenta,                      // 👈 NUEVO: si quieres también para cheques
+        numChequeFecha: '',
+        nombreDueno: '',
+        autorizacion: '',
+        monto: montoAuto
+      });
     }
 
-    setTimeout(() => {
-      this.formPago.get('metodoPago')?.setValue('', { emitEvent: false });
-      this.autoPagoTrigger?.closePanel();
-      this.pagoInputRef?.nativeElement.blur();
-    }, 0);
+    this.pagoGridApi?.setGridOption('rowData', this.pagoRowData);
+    this.recalcularTotal();
   }
+
+  setTimeout(() => {
+    this.formPago.get('metodoPago')?.setValue('', { emitEvent: false });
+    this.autoPagoTrigger?.closePanel();
+    this.pagoInputRef?.nativeElement.blur();
+  }, 0);
+}
+
 
   onPagosRowsChanged(): void {
     this.recalcularTotal();
@@ -1154,5 +1209,202 @@ export class RegistroCobrosComponent implements OnInit {
     const desc = (row?.descripcion ?? '').toString().toUpperCase();
     return /RETENCI(Ó|O)N/.test(desc); // "RETENCIÓN" o "RETENCION"
   }
+
+ 
+// ======================================================
+// ASIENTO CONTABLE POR COBRO DE CXC
+// Varias formas de pago (DEBE)  y  1 sola línea en HABER (Clientes)
+// ======================================================
+private buildAsientoCobroRequest(numeroPago: string): any {
+  // Fecha del pago (del formulario) o hoy
+  const fechaPagoStr = String(this.formCliente.get('fechaPago')?.value || this.hoyISO());
+  const fechaPago = new Date(fechaPagoStr);
+  const yyyy = fechaPago.getFullYear().toString();
+  const mm = String(fechaPago.getMonth() + 1).padStart(2, '0');
+  const dd = String(fechaPago.getDate()).padStart(2, '0');
+  const fechaISO = `${yyyy}-${mm}-${dd}`;
+
+  const ahora = new Date();
+  const hh = String(ahora.getHours()).padStart(2, '0');
+  const mi = String(ahora.getMinutes()).padStart(2, '0');
+  const hora = `${hh}:${mi}`;
+
+  // Facturas afectadas (solo info para docurelacionado y mensaje)
+  const facturas = this.buildFacturasAPagar();
+
+  // Formas de pago del grid (solo montos > 0)
+  const formasPago = (this.pagoRowData ?? []).filter(fp => {
+    const m = this.clamp2(Number(fp.monto) || 0);
+    return m > 0;
+  });
+
+  const totalFormasPago = this.clamp2(
+    formasPago.reduce((s, fp) => s + (Number(fp.monto) || 0), 0)
+  );
+
+  if (totalFormasPago <= 0) {
+    console.warn('[ASIENTO COBRO] totalFormasPago = 0, no se construye asiento.');
+    return null;
+  }
+
+  const idZona = 1; // ajusta según tu lógica
+  const idUsuario = Number(this.usuarioActual?.id_usuario ?? 1);
+  const idEmpresa = Number(this.usuarioActual?.id_empresa ?? 1);
+
+  const idTipoAsiento = 10; // Cobros CxC (ajusta a tu catálogo)
+  const tipdoc = 'IG';
+  const numdoc = String(Number((numeroPago || '').replace(/\D/g, '')));
+  const anio = yyyy;
+
+  const clienteCodigo = this.formCliente.value.clienteCodigo ?? this.codcliO ?? 0;
+  const observacionAdic = String(this.formCliente.value?.observacion || '').trim();
+  const beneficiario = `COBRO CLIENTE COD. ${clienteCodigo}`;
+  const observacion = `COBRO DE FACTURAS CLIENTE ${clienteCodigo} - PAGO ${numeroPago}` +
+    (observacionAdic ? ` - ${observacionAdic}` : '');
+
+  // Cuenta de CLIENTES (HABER)
+  const CTA_CLIENTES = 110101; // 👈 AJUSTA A TU PLAN DE CUENTAS
+
+  // Cuenta default si alguna forma de pago no trae cuenta
+  const CTA_DEFAULT_CAJA = 110201; // 👈 Caja/Banco genérica
+
+  const detalles: any[] = [];
+  let numlinea = 1;
+
+  // ====== 1) DEBE: una línea por cada forma de pago ======
+  for (const fp of formasPago) {
+    const monto = this.clamp2(Number(fp.monto) || 0);
+    if (monto <= 0) continue;
+
+    // cuenta viene del GRID (columna CUENTA)
+    const cuentaStr = String(fp.cuenta ?? '').trim();
+
+    // 👉 codprePc = exactamente lo que viene del grid
+    let codprePc = cuentaStr;
+
+    // 👉 idPlanCuentas: solo dígitos de esa cuenta, o cuenta default si no hay nada
+    const soloDigitos = cuentaStr.replace(/\D/g, '');
+    const idPlanCuentas = soloDigitos
+      ? Number(soloDigitos)
+      : CTA_DEFAULT_CAJA;
+
+    // Si no viene nada en codprePc, usa también la default con sufijo
+    if (!codprePc) {
+      codprePc = `${CTA_DEFAULT_CAJA}-001`;
+    }
+
+    detalles.push({
+      numlinea: numlinea++,
+      anio,
+      fechatransaccion: fechaISO,
+      hora,
+      idZona,
+      idCentroCostos: null,
+      idLocal: 1,
+      idPlanCuentas,       // ← numérico para tu plan de cuentas
+      codprePc,            // ← EXACTAMENTE la cuenta del grid
+      idCodContable: 3,
+      nocomprobante: numeroPago,
+      docurelacionado: '', // Si quieres, aquí puedes usar fp.numCuentaTarjetaFactura o similar
+      cheque: 0,
+      beneficiario: '',
+      debe: monto,         // 👈 DEBE: monto de la forma de pago
+      haber: 0,
+      comentario: `FORMA PAGO ${fp.descripcion || fp.codigo} - PAGO ${numeroPago}`,
+      idMovBancario: null,
+      movbancario: '',
+      fechaingreso: fechaISO,
+      cierre: '',
+      fechacierre: null,
+      conciliado: '',
+      fechaconciliado: null,
+      idSustentoTrib: null,
+      idTipoCompSri: null,
+      autorizacion: '',
+      fechacaduca: null,
+      idTipoRetencion: null,
+      idProyecto: null,
+      idSubproyecto: null,
+      transferido: false,
+      fechatransferido: null,
+      fechavencimiento: null,
+      idConciliacion: null,
+      valorLetras: '',
+      estadoIngreso: false
+    });
+  }
+
+  // ====== 2) HABER: una sola línea por el TOTAL contra CLIENTES ======
+  detalles.push({
+    numlinea: numlinea++,
+    anio,
+    fechatransaccion: fechaISO,
+    hora,
+    idZona,
+    idCentroCostos: null,
+    idLocal: 1,
+    idPlanCuentas: CTA_CLIENTES,
+    codprePc: `${CTA_CLIENTES}-001`,
+    idCodContable: 3,
+    nocomprobante: numeroPago,
+    docurelacionado: facturas.map(f => f.numero_factura).join(', '),
+    cheque: 0,
+    beneficiario: '',
+    debe: 0,
+    haber: totalFormasPago, // 👈 HABER: suma total del pago
+    comentario: `COBRO FACTURAS CLIENTE ${clienteCodigo} - PAGO ${numeroPago}`,
+    idMovBancario: null,
+    movbancario: '',
+    fechaingreso: fechaISO,
+    cierre: '',
+    fechacierre: null,
+    conciliado: '',
+    fechaconciliado: null,
+    idSustentoTrib: null,
+    idTipoCompSri: null,
+    autorizacion: '',
+    fechacaduca: null,
+    idTipoRetencion: null,
+    idProyecto: null,
+    idSubproyecto: null,
+    transferido: false,
+    fechatransferido: null,
+    fechavencimiento: null,
+    idConciliacion: null,
+    valorLetras: '',
+    estadoIngreso: false
+  });
+
+  // Totales
+  const totdebe = this.clamp2(detalles.reduce((s, d) => s + (Number(d.debe) || 0), 0));
+  const tothaber = this.clamp2(detalles.reduce((s, d) => s + (Number(d.haber) || 0), 0));
+
+  const asiento: any = {
+    idZona,
+    idUsuario,
+    idEmpresa,
+    idTipoAsiento,
+    tipdoc,
+    numdoc,
+    anio,
+    fechatransaccion: fechaISO,
+    fechaingreso: fechaISO,
+    observacion,
+    totdebe,
+    tothaber,
+    beneficiario,
+    cierre: '',
+    fechacierre: null,
+    solicitado: '',
+    depto: '',
+    autorizado: '',
+    homCodigo: 0,
+    estado: true,
+    detalles
+  };
+
+  return asiento;
+}
+
 
 }

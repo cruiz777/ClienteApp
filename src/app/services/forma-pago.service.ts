@@ -31,6 +31,7 @@ export interface PagedData<T> {
 interface FormaPagoDto {
   id_forma_pago: number;
   descripcion_pago: string;
+  codigo_cuenta:string;
   // Otros campos vienen en la respuesta pero no los usamos aquí
 }
 
@@ -43,7 +44,8 @@ export class FormaPagoService {
   /** Helper: mapea DTO -> modelo ligero del front */
   private mapDtoToLite = (x: FormaPagoDto): FormaPagoResponse => ({
     idFormaPago: x.id_forma_pago,
-    descripcionPago: x.descripcion_pago
+    descripcionPago: x.descripcion_pago    ,
+  codigoCuenta: x.codigo_cuenta  
   });
 
   /**

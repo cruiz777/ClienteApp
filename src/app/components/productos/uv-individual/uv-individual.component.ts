@@ -932,7 +932,8 @@ export class UvIndividualComponent implements OnInit {
     // Caso especial si empieza con 8000
     if (codpre.length === 8 && codpre.startsWith('8000')) {
       if (nserie >= 10) {
-        alert('¡Ya no puede generar más códigos, necesita afiliarse!');
+        this.mostrarAlerta('¡Ya no puede generar más códigos, necesita afiliarse!', 'Error');
+        
         return false;
       }
     }
