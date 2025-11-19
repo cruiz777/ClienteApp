@@ -7,7 +7,7 @@
     <!-- TAB 1: Información General -->
     <!-- TAB 1: Información General -->
     <mat-tab label="Información General">
-      
+
       <ng-template matTabContent>
         <div>
           <mat-horizontal-stepper linear #stepper>
@@ -129,9 +129,11 @@
                   <label class="form-label">Fecha Ingreso:</label>
                   <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
                   <label class="form-label">Fecha Modificación:</label>
-                  <input style="border: none;" matInput formControlName="fechaMod" type="date" readonly [disabled]="!paso1Form.get('fechaMod')?.value" />
+                  <input style="border: none;" matInput formControlName="fechaMod" type="date" readonly
+                    [disabled]="!paso1Form.get('fechaMod')?.value" />
                   <label class="form-label">Usuario Modificado:</label>
-                  <input style="border: none;" matInput formControlName="usuarioMod" type="text" readonly [disabled]="!paso1Form.get('usuarioMod')?.value" />
+                  <input style="border: none;" matInput formControlName="usuarioMod" type="text" readonly
+                    [disabled]="!paso1Form.get('usuarioMod')?.value" />
 
 
                   <div>
@@ -278,8 +280,9 @@
 
                     <label style="color: #002c6c; font-size: 12px; margin-left: 10px;"><span
                         style="color: red;">*</span>Celular:</label>
-                    {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="celular" maxlength="9" minlength="9" pattern="[0-9]*" inputmode="numeric"
-                      autocomplete="off" placeholder="999999999" (input)="soloDigitos('celular', $event,paso2Form)" />
+                    {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="celular" maxlength="9"
+                      minlength="9" pattern="[0-9]*" inputmode="numeric" autocomplete="off" placeholder="999999999"
+                      (input)="soloDigitos('celular', $event,paso2Form)" />
                     <mat-error
                       *ngIf="paso2Form.get('celular')?.hasError('required') && paso2Form.get('celular')?.touched"
                       style="color: red; font-size: 12px;">
@@ -294,13 +297,13 @@
 
                     <label style="color: #002c6c; font-size: 12px; margin-left: 10px;">Teléfono 2:</label>
                     {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono2"
-                       maxlength="9" minlength="9" pattern="[0-9]*" inputmode="numeric" placeholder="999999999" autocomplete="off" (input)="soloDigitos('telefono2', $event,paso2Form)" />
+                      maxlength="9" minlength="9" pattern="[0-9]*" inputmode="numeric" placeholder="999999999"
+                      autocomplete="off" (input)="soloDigitos('telefono2', $event,paso2Form)" />
                   </div>
 
                   <div class="form-row">
                     <label style="color: #002c6c; font-size: 12px;">Usuario:</label>
-                    <input type="text" class="underline-input" formControlName="usuario1" readonly
-                       />
+                    <input type="text" class="underline-input" formControlName="usuario1" readonly />
                   </div>
 
                   <div class="form-row">
@@ -312,30 +315,42 @@
 
 
                 </div>
-                <section class="export-questions-section" style="padding-bottom: 16px;">
-                    <div class="questions-container">
-                      <div class="form-label">
-                        <div>
-                          <label style="color: #002c6c; font-size: 13px;">Facturación en Bloque:  </label> 
-                          <input type="checkbox" id="chk-compra" formControlName="compra" />
-                          <label for="chk-compra">Orden de Compra</label>
-                          <input type="checkbox" id="chk-prefijo" formControlName="nprefijo" />
-                          <label for="chk-prefijo">Prefijos</label>
-                          <input type="checkbox" id="chk-prefijo" formControlName="nprefijo" />
-                          <label for="chk-prefijo">Otros</label>
-                        </div>
-                      </div>
-                    </div>
-                  </section>
+               <section class="export-questions-section" style="padding-bottom:16px;">
+  <div class="questions-container">
+    <div class="form-label">
+      <div class="checkbox-inline">
+        <label class="prefix">Facturación en Bloque:</label>
+
+        <label class="chk">
+          <input type="checkbox" id="chk-compra" formControlName="compra" />
+          <span>Orden de Compra</span>
+        </label>
+
+        <label class="chk">
+          <input type="checkbox" id="chk-prefijo" formControlName="nprefijo" />
+          <span>Prefijos</span>
+        </label>
+
+        <label class="chk">
+          <input type="checkbox" id="chk-otros" formControlName="otros" />
+          <span>Otros</span>
+        </label>
+      </div>
+    </div>
+  </div>
+</section>
+
                 <div style="background-color: #eef4f7;">
                   <label class="form-label">Fecha Ingreso:</label>
                   <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
                   <label class="form-label">Fecha Modificación:</label>
-                 <input style="border: none;" matInput formControlName="fechaMod" type="date" readonly [disabled]="!paso1Form.get('fechaMod')?.value" />
+                  <input style="border: none;" matInput formControlName="fechaMod" type="date" readonly
+                    [disabled]="!paso1Form.get('fechaMod')?.value" />
                   <label class="form-label">Usuario Modificado:</label>
-                  <input style="border: none;" matInput formControlName="usuarioMod" type="text" readonly [disabled]="!paso1Form.get('usuarioMod')?.value" />
+                  <input style="border: none;" matInput formControlName="usuarioMod" type="text" readonly
+                    [disabled]="!paso1Form.get('usuarioMod')?.value" />
 
-                  
+
                   <div>
                     <div>
 
@@ -410,8 +425,9 @@
                         <label style="color: #002c6c; font-size: 12px;"><span style="color: red;">*</span>Tel.o
                           Cel:</label>
                         {{ codigoAreaE }}<input type="text" class="underline-input"
-                          formControlName="telefonoRepresentante" maxlength="9" minlength="9"  pattern="[0-9]*" inputmode="numeric" placeholder="999999999"
-                          autocomplete="off" (input)="soloDigitos('telefonoRepresentante', $event,paso3Form)" />
+                          formControlName="telefonoRepresentante" maxlength="9" minlength="9" pattern="[0-9]*"
+                          inputmode="numeric" placeholder="999999999" autocomplete="off"
+                          (input)="soloDigitos('telefonoRepresentante', $event,paso3Form)" />
                         <mat-error
                           *ngIf="paso3Form.get('telefonoRepresentante')?.hasError('required') && paso3Form.get('telefonoRepresentante')?.touched"
                           style="color: red; font-size: 12px;">
@@ -437,10 +453,12 @@
                       <div *ngIf="paso3Form.get('email')?.hasError('emailInvalido') && paso3Form.get('email')?.touched">
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
-                      <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>Tel.o Cel:</label>
+                      <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>Tel.o
+                        Cel:</label>
                       {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono"
-                        maxlength="9" minlength="9"  pattern="[0-9]*" inputmode="numeric" autocomplete="off" placeholder="999999999" (input)="soloDigitos('telefono', $event,paso3Form)" />
-                        <mat-error
+                        maxlength="9" minlength="9" pattern="[0-9]*" inputmode="numeric" autocomplete="off"
+                        placeholder="999999999" (input)="soloDigitos('telefono', $event,paso3Form)" />
+                      <mat-error
                         *ngIf="paso3Form.get('telefono')?.hasError('required') && paso3Form.get('telefono')?.touched"
                         style="color: red; font-size: 12px;">
                         Este campo es obligatorio.
@@ -455,49 +473,63 @@
                       <input type="text" class="underline-input" formControlName="nombreFinanciero"
                         (input)="forzarMayusculas('nombreFinanciero', paso3Form, $event)" maxlength="200"
                         autocomplete="off" />
-                        <mat-error
+                      <mat-error
                         *ngIf="paso3Form.get('nombreFinanciero')?.hasError('required') && paso3Form.get('nombreFinanciero')?.touched"
                         style="color: red; font-size: 12px;">
                         Este campo es obligatorio.
                       </mat-error>
                     </div>
                     <div class="form-row">
-                      <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>E-mail 1: </label>
+                      <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>E-mail 1:
+                      </label>
                       <input type="text" class="underline-input" formControlName="email1" maxlength="200"
                         autocomplete="new-dp" placeholder="gs1@gs1.org" />
                       <mat-error
-                          *ngIf="paso3Form.get('email1')?.hasError('required') && paso3Form.get('email1')?.touched"
-                          style="color: red; font-size: 12px;">
-                          Este campo es obligatorio.
-                        </mat-error>
-                        <div
+                        *ngIf="paso3Form.get('email1')?.hasError('required') && paso3Form.get('email1')?.touched"
+                        style="color: red; font-size: 12px;">
+                        Este campo es obligatorio.
+                      </mat-error>
+                      <div
                         *ngIf="paso3Form.get('email1')?.hasError('emailInvalido') && paso3Form.get('email1')?.touched">
                         <small style="color: red;">Ingrese un correo válido</small>
                       </div>
-                      <label style="color: #002c6c;font-size: 12px;">E-mail 2:</label>
-                      <input type="text" class="underline-input" formControlName="email2" maxlength="200"
-                        autocomplete="new-dp" placeholder="gs1@gs1.org" />
-                      <div
-                        *ngIf="paso3Form.get('email2')?.hasError('emailInvalido') && paso3Form.get('email2')?.touched">
-                        <small style="color: red;">Ingrese un correo válido</small>
-                      </div>
-                    </div>
-                    <div class="form-row">
-                      <label style="color: #002c6c;font-size: 12px;">E-mail 3: </label>
-                      <input type="text" class="underline-input" formControlName="email3" maxlength="200"
-                        autocomplete="new-dp" placeholder="gs1@gs1.org" />
-                      <div
-                        *ngIf="paso3Form.get('email3')?.hasError('emailInvalido') && paso3Form.get('email3')?.touched">
-                        <small style="color: red;">Ingrese un correo válido</small>
-                      </div>
-                      <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>Tel.o Cel:</label>
+                      <label style="color: #002c6c;font-size: 12px;"><span style="color: red;">*</span>Tel.o
+                        Cel:</label>
                       {{ codigoAreaE }}<input type="text" class="underline-input" formControlName="telefono22"
-                        maxlength="9"  (input)="soloDigitos('telefono22', $event,paso3Form)" />
-                        <mat-error
+                        maxlength="9" minlength="9" pattern="[0-9]*" inputmode="numeric" placeholder="999999999"
+                        autocomplete="off" (input)="soloDigitos('telefono22', $event,paso3Form)" />
+                      <mat-error
                         *ngIf="paso3Form.get('telefono22')?.hasError('required') && paso3Form.get('telefono22')?.touched"
                         style="color: red; font-size: 12px;">
                         Este campo es obligatorio.
                       </mat-error>
+
+                    </div>
+                    <div class="form-row">
+                      <label style="color:#002c6c;font-size:12px;">E-mail Facturación:</label>
+                      <input type="text" class="underline-input" formControlName="email2" maxlength="200"
+                        inputmode="email" autocomplete="off" placeholder="correo1@dominio.com;correo2@dominio.com"
+                        (keydown.space)="$event.preventDefault()" />
+
+                      <div *ngIf="paso3Form.get('email2')?.touched && paso3Form.get('email2')?.invalid">
+
+                        <!-- cuando el validador simple estuviera activo -->
+                        <small *ngIf="paso3Form.get('email2')?.errors?.['emailInvalido']" style="color:red;">
+                          Ingrese correo(s) válido(s).
+                        </small>
+
+                        <!-- lista de correos mal formateados -->
+                        <ng-container *ngIf="paso3Form.get('email2')?.errors?.['multipleEmails'] as multi">
+                          <small style="color:red;">
+                            Correos inválidos: {{ (multi.invalid || []).join(', ') }}
+                          </small>
+                        </ng-container>
+
+                        <!-- exceso de correos: DEBE estar fuera del bloque anterior -->
+                        <small *ngIf="paso3Form.get('email2')?.errors?.['tooManyEmails'] as tme" style="color:red;">
+                          Máximo {{ tme.max }} correos. Ingresaste {{ tme.count }}.
+                        </small>
+                      </div>
                     </div>
 
 
@@ -523,31 +555,41 @@
 
                         </div>
 
-                        <div>
-                          <label class="form-label">
-                            ¿Cómo se entero de GS1 Ecuador?
-                          </label>
+                       <div class="checks-inline">
+  <label class="question">¿Cómo se enteró de GS1 Ecuador?</label>
 
-                          <input type="checkbox" formControlName="pregunta4" />
-                          <label for="prefix-5">Página Web</label>
-                          <input type="checkbox" formControlName="pregunta5" />
-                          <label for="prefix-5" class="checkbox-label">Instagram</label>
-                          <input type="checkbox" formControlName="pregunta6" />
-                          <label for="prefix-5" class="checkbox-label">Facebook</label>
-                          <input type="checkbox" formControlName="pregunta7" />
-                          <label for="prefix-5">Un conocido</label>
-                          
+  <label class="chk">
+    <input type="checkbox" formControlName="pregunta4" />
+    <span>Página Web</span>
+  </label>
 
-                        </div>
+  <label class="chk">
+    <input type="checkbox" formControlName="pregunta5" />
+    <span>Instagram</span>
+  </label>
+
+  <label class="chk">
+    <input type="checkbox" formControlName="pregunta6" />
+    <span>Facebook</span>
+  </label>
+
+  <label class="chk">
+    <input type="checkbox" formControlName="pregunta7" />
+    <span>Un conocido</span>
+  </label>
+</div>
+
                       </div>
                     </section>
                     <div style="background-color: #eef4f7;">
                       <label class="form-label">Fecha Ingreso:</label>
                       <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
-                     <label class="form-label">Fecha Modificación:</label>
-                      <input style="border: none;" matInput formControlName="fechaMod" type="date" readonly [disabled]="!paso1Form.get('fechaMod')?.value" />
-                  <label class="form-label">Usuario Modificado:</label>
-                  <input style="border: none;" matInput formControlName="usuarioMod" type="text" readonly [disabled]="!paso1Form.get('usuarioMod')?.value" />
+                      <label class="form-label">Fecha Modificación:</label>
+                      <input style="border: none;" matInput formControlName="fechaMod" type="date" readonly
+                        [disabled]="!paso1Form.get('fechaMod')?.value" />
+                      <label class="form-label">Usuario Modificado:</label>
+                      <input style="border: none;" matInput formControlName="usuarioMod" type="text" readonly
+                        [disabled]="!paso1Form.get('usuarioMod')?.value" />
 
 
                       <div>
@@ -622,7 +664,7 @@
                     <div class="form-row">
                       <label class="form-label">Usuario:</label>
 
-                      <input type="text" class="underline-input" readonly formControlName="usuario3"/>
+                      <input type="text" class="underline-input" readonly formControlName="usuario3" />
                       <label class="form-label">Fecha:</label>
 
                       <input type="text" class="underline-input" readonly formControlName="fecha3" />
@@ -664,9 +706,11 @@
                   <label class="form-label">Fecha Ingreso:</label>
                   <input style="border: none;" matInput formControlName="fechaIng" type="date" readonly />
                   <label class="form-label">Fecha Modificación:</label>
-                  <input style="border: none;" matInput formControlName="fechaMod" type="date" readonly [disabled]="!paso1Form.get('fechaMod')?.value" />
+                  <input style="border: none;" matInput formControlName="fechaMod" type="date" readonly
+                    [disabled]="!paso1Form.get('fechaMod')?.value" />
                   <label class="form-label">Usuario Modificado:</label>
-                  <input style="border: none;" matInput formControlName="usuarioMod" type="text" readonly [disabled]="!paso1Form.get('usuarioMod')?.value" />
+                  <input style="border: none;" matInput formControlName="usuarioMod" type="text" readonly
+                    [disabled]="!paso1Form.get('usuarioMod')?.value" />
 
 
                   <div>
@@ -714,7 +758,7 @@
     </mat-tab>
 
     <!-- TAB 2: Histórico -->
-    <mat-tab label="Histórico del Cliente" >
+    <mat-tab label="Histórico del Cliente">
       <mat-form-field appearance="outline" style="padding: 0px 0px;width: 450px;padding-top: 6px;">
         <mat-label>Buscar</mat-label>
         <input matInput #input (keyup)="aplicarFiltro(input.value)" placeholder="Buscar">
@@ -766,13 +810,12 @@
 
 
     <!-- TAB 3: Prefijos -->
-    <mat-tab label="Prefijos" >
+    <mat-tab label="Prefijos">
       <ng-template matTabContent>
-        <div >
+        <div>
 
           <div style="text-align: right; margin-bottom: 10px;">
-            <button mat-button (click)="abrirModalPrefijo()" class="new-button"
-            >
+            <button mat-button (click)="abrirModalPrefijo()" class="new-button">
               Nuevo
             </button>
             <button mat-button (click)="exportar('excel')" class="new-button">
@@ -788,25 +831,29 @@
                 <td mat-cell *matCellDef="let el" style="display: none;"> {{ el.clientesCodigo }} </td>
               </ng-container>
 
-              
+
 
               <ng-container matColumnDef="codpre">
                 <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;">Prefijo </th>
-                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}"> {{ el.codpre }} </td>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}">
+                  {{ el.codpre }} </td>
               </ng-container>
 
               <ng-container matColumnDef="gln">
                 <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> GLN </th>
-                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}"> {{ el.gln }} </td>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}">
+                  {{ el.gln }} </td>
               </ng-container>
 
               <ng-container matColumnDef="fecha">
                 <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Fecha </th>
-                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}"> {{ el.fecha | date: 'dd/MM/yyyy' }} </td>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}">
+                  {{ el.fecha | date: 'dd/MM/yyyy' }} </td>
               </ng-container>
               <ng-container matColumnDef="estado">
                 <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> ESTADO </th>
-                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}"> {{ el.estado ? 'Inactivo' : 'Activo' }}
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}">
+                  {{ el.estado ? 'Inactivo' : 'Activo' }}
                 </td>
               </ng-container>
 
@@ -822,24 +869,22 @@
 
               <ng-container matColumnDef="tipoLocalizacion">
                 <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Tipo </th>
-                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}"> {{ el.tipoLocalizacion }} </td>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}">
+                  {{ el.tipoLocalizacion }} </td>
               </ng-container>
               <ng-container matColumnDef="observacion">
                 <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;"> Observación</th>
-                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}"> {{ el.observacion }} </td>
+                <td mat-cell *matCellDef="let el" style="font-size: 11px;" [ngClass]="{'rojo-si-orden': el.orden == 1}">
+                  {{ el.observacion }} </td>
               </ng-container>
-              <ng-container matColumnDef="orden" >
+              <ng-container matColumnDef="orden">
                 <th mat-header-cell *matHeaderCellDef style="background-color: #e3edf7;display: none;"> Orden</th>
                 <td mat-cell *matCellDef="let el" style="font-size: 11px;display: none;"> {{ el.orden }} </td>
               </ng-container>
               <ng-container matColumnDef="accion">
                 <th mat-header-cell *matHeaderCellDef style="width: 60px;background-color: #e3edf7;"> Acción </th>
                 <td mat-cell *matCellDef="let element">
-                  <button 
-                    mat-icon-button 
-                    color="primary" 
-                    
-                    (click)="abrirModalPrefijoEditar(element.codpre)">
+                  <button mat-icon-button color="primary" (click)="abrirModalPrefijoEditar(element.codpre)">
                     <mat-icon>visibility</mat-icon>
                   </button>
                   <ng-template #editarPrefijoBlocked>
@@ -862,25 +907,25 @@
   </mat-tab-group>
 </mat-dialog-content>
 <div style="text-align: center;">
-  <button mat-button color="primary" (click)="actualizar()" format control="actualizar" [disabled]="botonActualizarDeshabilitado"  >
+  <button mat-button color="primary" (click)="actualizar()" format control="actualizar"
+    [disabled]="botonActualizarDeshabilitado">
     <img src="assets/icons/icon-grabar.png" alt="Grabar" width="18" height="18" style="margin-right: 6px;" />
     Grabar
   </button>
 
-  <button mat-button (click)="habilitarActualizar()" [disabled]="botonModificarDeshabilitado"  >
+  <button mat-button (click)="habilitarActualizar()" [disabled]="botonModificarDeshabilitado">
     <img src="assets/icons/icon-modificar.png" alt="Modificar" width="18" height="18" style="margin-right: 6px;" />
     Modificar
   </button>
-  <button 
-    mat-button
-    >
+  <button mat-button>
     <img src="assets/icons/icon-imprimir.png" alt="Imprimir" width="18" height="18" style="margin-right: 6px;" />
     Imprimir
   </button>
   <ng-template #imprimirBlocked>
     <button mat-button disabled style="opacity: 0.3;">
       <mat-icon>lock</mat-icon>
-      <img src="assets/icons/icon-imprimir.png" alt="Sin permisos" width="18" height="18" style="margin-right: 6px; opacity: 0.3;" />
+      <img src="assets/icons/icon-imprimir.png" alt="Sin permisos" width="18" height="18"
+        style="margin-right: 6px; opacity: 0.3;" />
       Imprimir (Sin Permisos)
     </button>
   </ng-template>
@@ -888,15 +933,15 @@
     <img src="assets/icons/icon-cancelar.png" alt="Cancelar" width="18" height="18" style="margin-right: 6px;" />
     Salir
   </button>
-<!-- Muestra mientras se carga -->
+  <!-- Muestra mientras se carga -->
 
-<div *ngIf="cargando" class="overlay-cargando">
-  <mat-spinner></mat-spinner>
-  <p>Espere, cargando información...</p>
-</div>
+  <div *ngIf="cargando" class="overlay-cargando">
+    <mat-spinner></mat-spinner>
+    <p>Espere, cargando información...</p>
+  </div>
 
-<!-- Muestra el formulario solo cuando ya no está cargando -->
-<div *ngIf="!cargando">
-  <!-- tu formulario aquí -->
-</div>
+  <!-- Muestra el formulario solo cuando ya no está cargando -->
+  <div *ngIf="!cargando">
+    <!-- tu formulario aquí -->
+  </div>
 </div>

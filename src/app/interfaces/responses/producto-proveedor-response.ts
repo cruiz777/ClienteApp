@@ -29,4 +29,5 @@ export interface ProductoProveedorResponse {
   // Datos adicionales para mostrar en listados
   nombre_producto?: string | null;
   nombre_proveedor?: string | null;
+  proveedor_activo?: boolean;
 }

@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from 'src/environments/environment';
 
 interface RucResponse {
   ok: boolean;
@@ -27,8 +28,8 @@ interface CedulaResponse {
   providedIn: 'root'
 })
 export class ConsultaSriService {
-  private rucUrl = 'http://pichincha.gapsystem.net:10048/api/services/ruc/';
-  private cedulaUrl = 'http://pichincha.gapsystem.net:10048/api/services/cedulav2/';
+  private rucUrl = `${environment.rucUlr}`;
+  private cedulaUrl = `${environment.cedulaUrl}`;
 
   constructor(private http: HttpClient) {}
 

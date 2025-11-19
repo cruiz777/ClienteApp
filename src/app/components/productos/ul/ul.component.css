@@ -316,3 +316,6 @@ textarea {
 .corto1 {
   max-width: 260px;
 }
+.full-width {
+  grid-column: 1 / -1;
+}

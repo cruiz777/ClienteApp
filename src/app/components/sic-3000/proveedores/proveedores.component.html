@@ -32,50 +32,58 @@
 
   <!-- Filtros -->
     <div class="filtros-section">
-    <div class="filtros-grid">
-        <!-- Búsqueda general -->
-        <mat-form-field appearance="outline" class="filtro-item">
-        <mat-label>Buscar:</mat-label>
-        <input 
-            matInput 
-            [(ngModel)]="filtroBusqueda" 
-            (keyup.enter)="buscar()"
-            placeholder="RUC, nombre, código...">
-        <mat-icon matSuffix>search</mat-icon>
-        </mat-form-field>
+      <div class="filtros-grid">
+          <!-- Búsqueda general -->
+          <mat-form-field appearance="outline" class="filtro-item">
+          <mat-label>Buscar:</mat-label>
+          <input 
+              matInput 
+              [(ngModel)]="filtroBusqueda" 
+              (keyup.enter)="buscar()"
+              placeholder="RUC, nombre, código...">
+          <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
 
-        <!-- Filtro por tipo de proveedor -->
-        <mat-form-field appearance="outline" class="filtro-item">
-        <mat-label>Tipo de Proveedor</mat-label>
-        <mat-select [(ngModel)]="filtroTipoProveedor" (selectionChange)="buscar()">
-            <mat-option [value]="''">Todos</mat-option>
-            <mat-option *ngFor="let tipo of tiposProveedor" [value]="tipo.id_tipo_proveedor">
-            {{ tipo.descripcion }}
-            </mat-option>
-        </mat-select>
-        </mat-form-field>
-
-        <!-- Botones de acción -->
-        <div class="filtros-botones">
-        <button 
-            mat-raised-button 
-            (click)="buscar()" 
-            class="btn-buscar"
-            [disabled]="isLoading">
-            <img src="assets/icons/icon-buscar.png" alt="Buscar" class="icon-buscar">
-            Buscar
-        </button>
-        
-        <button 
-            mat-stroked-button 
-            (click)="limpiarFiltros()" 
-            class="btn-limpiar"
-            [disabled]="isLoading">
-            <mat-icon>clear</mat-icon>
-            Limpiar
-        </button>
-        </div>
-    </div>
+          <!-- Filtro por tipo de proveedor -->
+          <mat-form-field appearance="outline" class="filtro-item">
+          <mat-label>Tipo de Proveedor</mat-label>
+          <mat-select [(ngModel)]="filtroTipoProveedor" (selectionChange)="buscar()">
+              <mat-option [value]="''">Todos</mat-option>
+              <mat-option *ngFor="let tipo of tiposProveedor" [value]="tipo.id_tipo_proveedor">
+              {{ tipo.descripcion }}
+              </mat-option>
+          </mat-select>
+          </mat-form-field>
+          <!-- Filtro por estado (con Angular Material) -->
+          <mat-form-field appearance="outline" class="filtro-item">
+            <mat-label>Estado</mat-label>
+            <mat-select [(ngModel)]="filtroEstado" (selectionChange)="buscar()">
+              <mat-option value="activos">Activos</mat-option>
+              <mat-option value="inactivos">Inactivos</mat-option>
+              <mat-option value="todos">Todos</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <!-- Botones de acción -->
+          <div class="filtros-botones">
+          <button 
+              mat-raised-button 
+              (click)="buscar()" 
+              class="btn-buscar"
+              [disabled]="isLoading">
+              <img src="assets/icons/icon-buscar.png" alt="Buscar" class="icon-buscar">
+              Buscar
+          </button>
+          
+          <button 
+              mat-stroked-button 
+              (click)="limpiarFiltros()" 
+              class="btn-limpiar"
+              [disabled]="isLoading">
+              <mat-icon>clear</mat-icon>
+              Limpiar
+          </button>
+          </div>
+      </div>
     </div>
 
   <!-- AG-Grid Table -->

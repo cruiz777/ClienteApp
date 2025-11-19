@@ -1,5 +1,7 @@
 import { Component, HostListener, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { ColDef, GridApi, ModuleRegistry, GridOptions, GridReadyEvent } from 'ag-grid-community';
+import { Observable } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { AllCommunityModule } from 'ag-grid-community';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { PrefijoService } from 'src/app/services/prefijo.service';
@@ -316,10 +318,16 @@ export class BloqueComponent implements OnInit {
   }
 
 
-  generarFilas(): void {
+  async generarFilas(): Promise<void> {
 
     if (!this.cantidadFilas || this.cantidadFilas <= 0) return;
-
+    // const cantidad = Number(this.formUV.get('cantidadFilas')?.value) || 0;
+     const idSeleccionado = this.formUV.value.gcp;
+    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+    const prefijo = objeto?.codpre || '';
+    debugger
+  const ok = await firstValueFrom(this.validarCantidadPorPrefijo(prefijo, this.cantidadFilas));
+  if (!ok) return
     const nuevasFilas = [];
     for (let i = 0; i < this.cantidadFilas; i++) {
       nuevasFilas.push({
@@ -428,28 +436,50 @@ export class BloqueComponent implements OnInit {
     }
   }
 
-  habilitarSerie(): void {
-    const usarSerie = this.formUV.get('usarSerie')?.value;
-    const gtin = this.formUV.get('gtinNacionalSeleccionado')?.value;
-    const gcpId = this.formUV.get('gcp')?.value;
-    const prefijo = this.prefijos.find(p => p.id_prefijos === gcpId);
-    if (!prefijo) return;
+ habilitarSerie(): void {
+  const usarSerie = this.formUV.get('usarSerie')?.value;
+  const gtin = this.formUV.get('gtinNacionalSeleccionado')?.value; // GTIN-13 | GTIN-8 | UPC
+  const gcpId = this.formUV.get('gcp')?.value;
 
-    const pais = gtin === 'GTIN-13' ? '786' : '';
+  const prefijo = this.prefijos.find(p => p.id_prefijos === gcpId);
+  if (!prefijo) return;
+  debugger
+  // Ecuador = 786 solo para GTIN-13
+  const pais = gtin === 'GTIN-13' ? '786' : '';
 
-    if (usarSerie) {
-      this.generacionCodigosService.obtenerSecuencia(prefijo.codpre, pais).subscribe({
-        next: (resp: SecuenciaResponse) => {
-          this.formUV.get('serie')?.setValue(resp.data);
-        },
-        error: (err) => {
-          console.error('Error al obtener secuencia:', err);
-        }
-      });
-    } else {
-      this.formUV.get('serie')?.reset();
-    }
+  // Si no usa serie → limpiar y salir
+  if (!usarSerie) {
+    this.formUV.get('serie')?.reset();
+    return;
   }
+
+  // LÓGICA DE GTIN
+  if (gtin === 'UPC') {
+    // UPC = GTIN-12 → usar secuencia UPC
+    this.generacionCodigosService.obtenerSecuenciaUpc(prefijo.codpre, pais).subscribe({
+      next: (resp: SecuenciaResponse) => {
+        this.formUV.get('serie')?.setValue(resp.data);
+      },
+      error: (err) => console.error('Error secuencia UPC:', err)
+    });
+    return;
+  }
+
+  if (gtin === 'GTIN-13') {
+    // GTIN-13 nacional → secuencia normal
+    this.generacionCodigosService.obtenerSecuencia(prefijo.codpre, pais).subscribe({
+      next: (resp: SecuenciaResponse) => {
+        this.formUV.get('serie')?.setValue(resp.data);
+      },
+      error: (err) => console.error('Error secuencia GTIN-13:', err)
+    });
+    return;
+  }
+
+  // Otros GTIN → no generan serie
+  this.formUV.get('serie')?.reset();
+}
+
 
   generar(): void {
     debugger
@@ -464,7 +494,7 @@ export class BloqueComponent implements OnInit {
       this.mostrarAlerta('⚠️ Seleccione Prefijo', 'Error');
       return;
     }
-
+   
 
     if (this.rowData.length === 0) {
       this.mostrarAlerta('⚠️ Productos a codificar en Cero', 'Error');
@@ -530,7 +560,7 @@ export class BloqueComponent implements OnInit {
 
         const secuenciaInicial = serie !== '' ? parseInt(serie, 10) : resp.data;
 
-        if (!this.validarAfiliacion(secuenciaInicial)) return;
+        
 
         const maxCodigos = Math.pow(10, longitudSecuencia);
         if (this.rowData.length > maxCodigos) {
@@ -1017,13 +1047,103 @@ export class BloqueComponent implements OnInit {
     this.textoPegadoF = '';
   }
 
-  validarAfiliacion(secuencia: number): boolean {
-    if (secuencia > 9999) {
-      alert('⚠️ La secuencia ha superado el límite permitido (9999).');
-      return false;
-    }
-    return true;
+/** Lee el prefijo (codpre) según el id seleccionado en el form */
+private getPrefijoSeleccionado(): string {
+  const idPrefijo = this.formUV.get('gcp')?.value;
+  const prefijo = this.prefijos.find(p => p.id_prefijos === idPrefijo);
+  return (prefijo?.codpre ?? '').toString().trim();
+}
+
+/** Valida que la cantidad de filas (this.rowData.length) no supere el máximo
+ *  permitido según bandera y longitud del prefijo. Solo recibe el prefijo.
+ *  - bandera === 0  (GTIN-13 con país 786):
+ *      len 8 → máx 10, len 7 → 100, len 6 → 1000, len 5 → 10000
+ *  - bandera === 2  (UPC-12 sin país):
+ *      secLen = 11 - len  → máx = 10^secLen   (len permitido: 5..7)
+ */
+/** Valida que 'cantidad' no supere el máximo permitido según bandera y longitud del prefijo.
+ *  - bandera === 0  (GTIN-13 con país 786):
+ *      len=8 → máx 10, len=7 → 100, len=6 → 1000, len=5 → 10000
+ *  - bandera === 2  (UPC-12 sin país):
+ *      secLen = 11 - len  → máx = 10^secLen   (len permitido: 5..7)
+ */
+private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
+  const limpio = (prefijo ?? '').trim();
+  const len = limpio.length;
+
+  if (!limpio) {
+    this.mostrarAlerta('⚠️ Debe ingresar un prefijo.', 'Error');
+    return of(false);
   }
+  if (!Number.isFinite(cantidad) || cantidad <= 0) {
+    this.mostrarAlerta('⚠️ Ingrese una cantidad válida de productos a codificar.', 'Error');
+    return of(false);
+  }
+
+  // País según bandera
+  const pais = this.bandera === 0 ? '786' : (this.bandera === 2 ? '' : null);
+  if (pais === null) {
+    this.mostrarAlerta('⚠️ Bandera desconocida para validar cantidad.', 'Error');
+    return of(false);
+  }
+
+  // Regla de longitudes y máximo teórico por prefijo
+  let maxTeorico = 0;
+  debugger
+  if (this.bandera === 0) {            // GTIN-13 (con 786)
+    if (len < 5 || len > 8) {
+      this.mostrarAlerta('⚠️ Para GTIN-13 el prefijo debe tener entre 5 y 8 dígitos.', 'Error');
+      return of(false);
+    }
+    const maxPorLen: Record<number, number> = { 8: 10, 7: 100, 6: 1000, 5: 10000 };
+    maxTeorico = maxPorLen[len];
+  }
+
+  if (this.bandera === 2) {            // UPC-12 (sin 786)
+    if (len < 5 || len > 7) {
+      this.mostrarAlerta('⚠️ Para UPC el prefijo debe tener entre 5 y 7 dígitos.', 'Error');
+      return of(false);
+    }
+    const secLen = 11 - len;           // 11 = dígitos útiles sin DV en UPC-A
+    if (secLen <= 0) {
+      this.mostrarAlerta('⚠️ Prefijo demasiado largo: no queda espacio para secuencia.', 'Error');
+      return of(false);
+    }
+    maxTeorico = Math.pow(10, secLen); // ej. len=7 → 10^4 = 10000
+  }
+
+  // 1) Consultar cuántos ya existen para ese prefijo (y país si aplica)
+  return this.productoService.getConteoPorPrefijo(limpio, pais).pipe(
+    map(existentes => {
+      const restantes = Math.max(0, maxTeorico - existentes);
+
+      // 👉 Ejemplo: si existen 1000 y pides 500000, aquí comparamos 500000 vs (maxTeorico-1000)
+      if (restantes === 0) {
+        this.mostrarAlerta(
+          `⚠️ Ya no hay cupos disponibles para el prefijo ${pais ? pais : ''}${limpio}. Máximo: ${maxTeorico}, existentes: ${existentes}.`,
+          'Error'
+        );
+        return false;
+      }
+
+      if (cantidad > restantes) {
+        this.mostrarAlerta(
+          `⚠️ Solicitas ${cantidad} códigos pero solo puedes generar ${restantes} más con el prefijo ${pais ? pais : ''}${limpio} (máx ${maxTeorico}, existentes ${existentes}).`,
+          'Error'
+        );
+        return false;
+      }
+
+      return true;
+    }),
+    catchError(err => {
+      console.error('Error al obtener conteo por prefijo', err);
+      this.mostrarAlerta('❌ No se pudo validar el conteo actual del prefijo.', 'Error');
+      return of(false);
+    })
+  );
+}
+
 
   onHeaderClicked(event: any): void {
     this.selectedColKey = event.column.getColId();
@@ -1999,7 +2119,7 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
         }
 
         const secuenciaInicial = serie !== '' ? parseInt(serie, 10) : resp.data;
-        if (!this.validarAfiliacion(secuenciaInicial)) return;
+        
 
         const maxCodigos = Math.pow(10, longitudSecuencia);
         if (this.rowData.length > maxCodigos) {

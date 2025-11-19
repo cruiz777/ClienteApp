@@ -25,7 +25,8 @@ export class ProveedorService {
     searchTerm?: string,
     orderBy?: string,
     isDescending: boolean = false,
-    idTipoProveedor?: number  // ← AGREGAR ESTA LÍNEA
+    idTipoProveedor?: number,
+    activo?: boolean 
     ): Observable<PaginationResponse<ProveedorResponse>> {
     let params = new HttpParams()
         .set('page', page.toString())
@@ -43,7 +44,7 @@ export class ProveedorService {
     if (idTipoProveedor) {  // ← AGREGAR ESTE BLOQUE
         params = params.set('idTipoProveedor', idTipoProveedor.toString());
     }
-
+    if (activo !== undefined) params = params.set('activo', activo.toString());
     return this.http.get<PaginationResponse<ProveedorResponse>>(this.apiUrl, { params });
     }
 

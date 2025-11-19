@@ -316,8 +316,9 @@ export class UvIndividualComponent implements OnInit {
 
       } else if (gtin === 'UPC') {
         this.npais = '';
-        this.generacionCodigosService.obtenerSecuencia(prefijo.codpre, this.npais).subscribe({
-          next: (resp: SecuenciaResponse) => {
+        debugger
+        this.generacionCodigosService.obtenerSecuenciaUpc(prefijo.codpre, this.npais).subscribe({
+        next: (resp: SecuenciaResponse) => {
             this.formUV.get('serie')?.setValue(resp.data);
           },
           error: (err) => {
@@ -931,7 +932,8 @@ export class UvIndividualComponent implements OnInit {
     // Caso especial si empieza con 8000
     if (codpre.length === 8 && codpre.startsWith('8000')) {
       if (nserie >= 10) {
-        alert('¡Ya no puede generar más códigos, necesita afiliarse!');
+        this.mostrarAlerta('¡Ya no puede generar más códigos, necesita afiliarse!', 'Error');
+        
         return false;
       }
     }
@@ -2448,6 +2450,13 @@ export class UvIndividualComponent implements OnInit {
       control.setValue(valor.toUpperCase());
     }
   }
+    convertirAMayusculasUl(controlName: string): void {
+    const control = this.formUL.get(controlName);
+    if (control) {
+      const valor = control.value || '';
+      control.setValue(valor.toUpperCase());
+    }
+  }
 
   verificarExistenciaCodbar(): void {
     const codbar = this.formUV.get('gtinUv')?.value;
@@ -2589,12 +2598,12 @@ export class UvIndividualComponent implements OnInit {
     const indicador = this.formUL.get('indicador')?.value || '';
     const upc12 = this.formUV.get('gtinUv')?.value || ''; // debe tener 12 dígitos
 
-    if (indicador.length !== 1 || upc12.length !== 12 || !/^\d+$/.test(upc12)) {
+    if (this.bandera!== 2 || upc12.length !== 12 || !/^\d+$/.test(upc12)) {
       console.error('⚠️ Indicador o UPC inválido');
       return;
     }
 
-    const base = indicador + upc12.substring(0, 11); // 1 + 11 = 12 dígitos base
+    const base = indicador +"0"+ upc12.substring(0, 11); // 1 + 11 = 12 dígitos base
 
     let suma = 0;
     for (let i = 0; i < base.length; i++) {

@@ -32,6 +32,8 @@ export interface PlanCuenta {
   Alcanse: string | null;
   Medicion: string | null;
   IdEmpresa: number;
+  Numerocuenta:string | null;
+  Formato:string | null;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -65,6 +67,8 @@ export class PlanCuentasService {
     Alcanse: x?.Alcanse ?? '',
     Medicion: x?.Medicion ?? '',
     IdEmpresa: Number(x?.IdEmpresa ?? 0),
+    Numerocuenta: x?.Numerocuenta ?? x?.NumeroCuenta ?? x?.numeroCuenta ?? '',
+    Formato: x?.Formato ?? x?.FormatoCuenta ?? x?.formato ?? '',
   });
 
   private normalizeList(res: any): PlanCuenta[] {

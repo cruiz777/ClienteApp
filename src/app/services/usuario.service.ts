@@ -46,7 +46,8 @@ export class UsuarioService {
             id_empresa: raw.id_empresa,
             nombreE: raw.nombreE,
             estado: raw.estado,
-            id_autorizacion_usuario:raw.id_autorizacion_usuario
+            id_autorizacion_usuario:raw.id_autorizacion_usuario,
+            id_autorizacion_caja:raw.id_autorizacion_caja
           };
 
           localStorage.setItem('currentUser', JSON.stringify(user));

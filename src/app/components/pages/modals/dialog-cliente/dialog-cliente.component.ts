@@ -404,31 +404,37 @@ export class DialogClienteComponent implements OnInit {
     }
   }
   buscarRuc(ruc: string): void {
-    this.rucService.obtenerDatosRuc(ruc).subscribe({
-      next: data => {
-        this.tipoIdentificacion = 'RUC'; // ✅ importante
-        this.razonSocial = data.razonSocial;
-        this.nombreRepresentante = data.nombre;
-        this.estadoContribuyenteRuc = data.estadoContribuyenteRuc;
-        this.paso2Form.patchValue({
-          razonSocial: data.razonSocial,
-          nombreRepresentante: data.nombre
-        });
+  this.rucService.obtenerDatosRuc(ruc).subscribe({
+    next: data => {
+      this.tipoIdentificacion = 'RUC';
 
-        this.paso3Form.patchValue({
-          nombreRepresentante: data.nombre
-        });
+      const razonSocial = data.razonSocial || '';
+      const representante = data.nombre?.trim() || razonSocial;
 
-        this.error = undefined;
-        console.log('✅ Datos RUC:', data);
-      },
-      error: err => {
-        this.error = 'No se encontraron datos para el RUC ingresado.';
-        console.error('❌ Error buscando RUC:', err);
-        this.tipoIdentificacion = null;
-      }
-    });
-  }
+      this.razonSocial = razonSocial;
+      this.nombreRepresentante = representante;
+      this.estadoContribuyenteRuc = data.estadoContribuyenteRuc;
+
+      this.paso2Form.patchValue({
+        razonSocial: razonSocial,
+        nombreRepresentante: representante
+      });
+
+      this.paso3Form.patchValue({
+        nombreRepresentante: representante
+      });
+
+      this.error = undefined;
+      console.log('✅ Datos RUC:', data);
+    },
+    error: err => {
+      this.error = 'No se encontraron datos para el RUC ingresado.';
+      console.error('❌ Error buscando RUC:', err);
+      this.tipoIdentificacion = null;
+    }
+  });
+}
+
 
 
 
@@ -1257,6 +1263,7 @@ async guardar(stepper: MatStepper): Promise<void> {
     this.botonGuardarDeshabilitado = false;
     this.modificarSecuencia = false;
     this.paso1Form.get('prefijo')?.disable();
+    this.estadoContribuyenteRuc='';
     // Valores predeterminados que quieres reiniciar
     this.paso1Form.patchValue({
       esPasaporte: false,

@@ -1,0 +1,277 @@
+/* ========================================
+   CONFIGURACIÓN DEL MODAL
+   ======================================== */
+::ng-deep .custom-dialog-container .mat-mdc-dialog-container {
+  padding: 0 !important;
+  overflow: hidden;
+}
+
+::ng-deep .custom-dialog-container .mat-mdc-dialog-surface {
+  border-radius: 8px !important;
+  overflow: hidden;
+}
+
+/* ========================================
+   HEADER
+   ======================================== */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px;
+  border-bottom: 1px solid #ccd5e2;
+  background-color: #ffffff;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #002c6c;
+  font-size: 22px;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+}
+
+.close-button {
+  color: #002c6c !important;
+  opacity: 0.7;
+}
+
+.close-button:hover {
+  opacity: 1 !important;
+  background-color: #eef4f7 !important;
+}
+
+/* ========================================
+   CONTENIDO
+   ======================================== */
+.modal-content-custom {
+  padding: 30px 40px;
+  max-height: calc(85vh - 150px);
+  overflow-y: auto;
+  background-color: #ffffff;
+  font-family: 'Inter', sans-serif;
+}
+
+.loading-container,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  color: #002c6c;
+}
+
+.videos-container {
+  min-height: 500px;
+}
+
+/* ========================================
+   SIDEBAR
+   ======================================== */
+.sistemas-sidebar {
+  border-right: 1px solid #ccd5e2;
+  padding-right: 20px;
+}
+
+.sidebar-title {
+  font-weight: 700;
+  color: #002c6c;
+  margin-bottom: 15px;
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 0.8px;
+}
+
+.list-group-item {
+  border: 1px solid #ccd5e2 !important;
+  border-radius: 6px !important;
+  margin-bottom: 8px;
+  color: #002c6c !important;
+  font-size: 14px;
+  padding: 12px 15px;
+  background-color: #ffffff !important;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.list-group-item:hover {
+  background-color: #f8fafd !important;
+  transform: translateX(3px);
+}
+
+.list-group-item.active {
+  background-color: #002c6c !important;
+  color: #ffffff !important;
+  font-weight: 600;
+  border-left: 3px solid #002c6c !important;
+}
+
+.list-group-item.active i {
+  color: #ffffff !important;
+}
+
+.list-group-item .badge {
+  background-color: #002c6c !important;
+  color: #ffffff !important;
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 12px;
+}
+
+.list-group-item.active .badge {
+  background-color: #ffffff !important;
+  color: #002c6c !important;
+}
+
+/* ========================================
+   VIDEO PLAYER
+   ======================================== */
+.video-player-container {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 8px;
+  border: 1px solid #ccd5e2;
+  margin-bottom: 25px;
+}
+
+.video-title {
+  color: #002c6c;
+  font-weight: 700;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.video-player-container .badge {
+  background-color: #002c6c !important;
+  color: #ffffff !important;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+/* ========================================
+   LISTA DE VIDEOS
+   ======================================== */
+.videos-list {
+  margin-top: 0;
+}
+
+.videos-list h6 {
+  font-weight: 700;
+  color: #002c6c;
+  text-transform: uppercase;
+  font-size: 12px;
+  margin-bottom: 15px;
+  letter-spacing: 0.8px;
+}
+
+/* ========================================
+   ACCORDION
+   ======================================== */
+::ng-deep .mat-expansion-panel {
+  margin-bottom: 10px !important;
+  box-shadow: none !important;
+  border: 1px solid #ccd5e2 !important;
+  border-radius: 6px !important;
+}
+
+::ng-deep .mat-expansion-panel-header {
+  background-color: #eef4f7 !important;
+  color: #002c6c !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  padding: 12px 16px !important;
+  height: auto !important;
+  font-family: 'Inter', sans-serif !important;
+}
+
+::ng-deep .mat-expansion-panel-header:hover {
+  background-color: #d5e8f1 !important;
+}
+
+::ng-deep .mat-expansion-panel-body {
+  padding: 0 !important;
+}
+
+::ng-deep .mat-expansion-indicator::after {
+  color: #002c6c !important;
+}
+
+.list-group-flush .list-group-item {
+  border: none !important;
+  border-bottom: 1px solid #ccd5e2 !important;
+  border-radius: 0 !important;
+  padding: 12px 16px;
+  font-size: 14px;
+  background-color: #ffffff !important;
+  color: #002c6c !important;
+}
+
+.list-group-flush .list-group-item:hover {
+  background-color: #f8fafd !important;
+  padding-left: 20px;
+}
+
+.list-group-flush .list-group-item.active-video {
+  background-color: #eef4f7 !important;
+  border-left: 3px solid #002c6c !important;
+  font-weight: 600;
+  padding-left: 13px;
+}
+
+/* ========================================
+   FOOTER
+   ======================================== */
+::ng-deep .custom-dialog-container mat-dialog-actions {
+  padding: 15px 40px !important;
+  border-top: 1px solid #ccd5e2 !important;
+  background-color: #ffffff !important;
+  margin: 0 !important;
+}
+
+::ng-deep .custom-dialog-container mat-dialog-actions button {
+  background-color: #eef4f7 !important;
+  color: #002c6c !important;
+  padding: 8px 20px !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  font-family: 'Inter', sans-serif !important;
+  text-transform: none !important;
+}
+
+::ng-deep .custom-dialog-container mat-dialog-actions button:hover {
+  background-color: #d5e8f1 !important;
+}
+
+/* ========================================
+   SPINNER
+   ======================================== */
+::ng-deep .mat-mdc-progress-spinner circle {
+  stroke: #002c6c !important;
+}
+
+/* ========================================
+   SCROLLBAR
+   ======================================== */
+.modal-content-custom::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-content-custom::-webkit-scrollbar-track {
+  background: #f8fafd;
+}
+
+.modal-content-custom::-webkit-scrollbar-thumb {
+  background: #ccd5e2;
+  border-radius: 4px;
+}
+
+.modal-content-custom::-webkit-scrollbar-thumb:hover {
+  background: #002c6c;
+}

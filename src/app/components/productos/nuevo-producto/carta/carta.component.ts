@@ -19,22 +19,27 @@ export class CartaComponent {
     const logoBase64 = await this.cargarImagenBase64('assets/logo/GS1-logo.png');
     const firmaBase64 = await this.cargarImagenBase64('assets/logo/firma.png');
 
-    const doc = new jsPDF();
+    // Hoja A4 en mm
+    const doc = new jsPDF('p', 'mm', 'a4');
+
     let y = 15;
     const marginLeft = 25;
     const marginRight = 25;
-    const maxTextWidth = doc.internal.pageSize.getWidth() - marginLeft - marginRight;
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const maxTextWidth = pageWidth - marginLeft - marginRight;
 
     const logoWidth = 30;
     const logoHeight = 20;
     const firmaWidth = 50;
     const firmaHeight = 15;
 
+    // Logo
     doc.setFontSize(8);
     doc.setFont('times', 'normal');
     doc.addImage(logoBase64, 'PNG', 25, 10, logoWidth, logoHeight);
 
-    // Fecha
+    // Fecha (arriba derecha)
     doc.setFont('times', 'bold');
     const fechaActual = new Date().toLocaleDateString('es-EC', {
       weekday: 'long',
@@ -43,49 +48,55 @@ export class CartaComponent {
       year: 'numeric'
     });
     const fechaFormateada = fechaActual.charAt(0).toUpperCase() + fechaActual.slice(1);
-    doc.text(fechaFormateada, 210 - marginLeft, y, { align: 'right' });
+    doc.text(fechaFormateada, pageWidth - marginRight, y, { align: 'right' });
     y += 8;
 
     // Título principal
     doc.setFontSize(14);
-    doc.text('CERTIFICADO MEMBRESÍA - GS1 ECUADOR', 105, y, { align: 'center' });
+    doc.text('CERTIFICADO MEMBRESÍA - GS1 ECUADOR', pageWidth / 2, y, { align: 'center' });
     y += 15;
 
     // Párrafo 1
     doc.setFontSize(9);
     doc.setFont('times', 'normal');
-    const p1 = 'GS1 Ecuador (ECOP) certifica que los códigos GTIN que constan a continuación son auténticos y publicados en www.gs1ec.org Verified by Ecuador. El dueño de la marca del producto asigna el código, es su responsabilidad el manejo y control del código, incluida su descripción y marca. El Prefijo Global de Compañía GS1, GCP, es intransferible.';
+    const p1 =
+      'GS1 Ecuador (ECOP) certifica que los códigos GTIN que constan a continuación son auténticos y publicados en www.gs1ec.org Verified by Ecuador. El dueño de la marca del producto asigna el código, es su responsabilidad el manejo y control del código, incluida su descripción y marca. El Prefijo Global de Compañía GS1, GCP, es intransferible.';
     y = this.drawFormattedParagraph(doc, p1, marginLeft, y, maxTextWidth);
 
-    // Párrafo dinámico 2
-    const ptexto1 = `Prefijo Global de Compañía GS1 (GCP GS1®)`;
+    // Texto de GCP / GLN dinámico
+    const ptexto1 = 'Prefijo Global de Compañía GS1 (GCP GS1®)';
     let ptexto2 = '';
-    debugger
-    const prefijoLimpio = this.prefijo?.trim();
+    let vgln = this.gln;
 
-    console.log('Prefijo:', prefijoLimpio, 'Longitud:', prefijoLimpio?.length);
-    var vgln=this.gln;
+    const prefijoLimpio = (this.prefijo || '').trim();
 
-    if (prefijoLimpio?.length === 8 && prefijoLimpio.startsWith('800')) {
-      ptexto2 = ``;
-      vgln = ``;
+    if (prefijoLimpio.length === 8 && prefijoLimpio.startsWith('800')) {
+      ptexto2 = '';
+      vgln = '';
     } else {
-      ptexto2 = `, el Número de Localización Global (GLN GS1®)` + ` `+ vgln;
-     
+      if (vgln && vgln.trim() !== '') {
+        ptexto2 = `, el Número de Localización Global (GLN GS1®) ${vgln}`;
+      } else {
+        ptexto2 = '';
+      }
     }
 
-
-
+    // Párrafo 2 (dinámico)
     const parrafo2 =
-      `Certifico que la empresa ${this.empresa} con Ruc No. ${this.ruc} se encuentra afiliada a GS1 Ecuador desde el año ${this.anioAfiliacion}, registrada con el ${ptexto1} ${this.gcp} ${ptexto2} , a partir del cual constan codificados los productos que fabrican y cuya marca comercial y descripción es responsabilidad de la empresa referida. Cada presentación será codificada con un código válido, único, inequívoco a nivel mundial denominado Número Global de Artículo Comercial (GTIN®).`;
-    y = this.drawFormattedParagraph(doc, parrafo2, marginLeft, y, maxTextWidth, [
+      `Certifico que la empresa ${this.empresa} con Ruc No. ${this.ruc} se encuentra afiliada a GS1 Ecuador desde el año ${this.anioAfiliacion}, ` +
+      `registrada con el ${ptexto1} ${this.gcp}${ptexto2} , a partir del cual constan codificados los productos que fabrican y cuya marca comercial y descripción es responsabilidad de la empresa referida. ` +
+      `Cada presentación será codificada con un código válido, único, inequívoco a nivel mundial denominado Número Global de Artículo Comercial (GTIN®).`;
+
+    // Solo datos variables en negrita
+    const boldP2 = [
       this.empresa,
       this.ruc,
       this.gcp,
       this.anioAfiliacion,
-      ptexto1,
-      ptexto2
-    ]);
+      vgln
+    ].filter(Boolean) as string[];
+
+    y = this.drawFormattedParagraph(doc, parrafo2, marginLeft, y, maxTextWidth, boldP2);
 
     // Párrafos adicionales
     const parrafos = [
@@ -94,8 +105,10 @@ export class CartaComponent {
       `Los códigos GTIN® que se detallan en el Anexo 1 fueron asignados para ${this.empresa} bajo la marca comercial y descripción cuya única responsabilidad es de la empresa. Por cada presentación comercial la empresa puede asignar hasta ocho factores para las unidades de despacho.`
     ];
 
+    const boldGenerales = [this.empresa].filter(Boolean) as string[];
+
     for (const p of parrafos) {
-      y = this.drawFormattedParagraph(doc, p, marginLeft, y, maxTextWidth, [this.empresa, ptexto1]);
+      y = this.drawFormattedParagraph(doc, p, marginLeft, y, maxTextWidth, boldGenerales);
     }
 
     // "Ver Anexo 1:" en negrita
@@ -104,33 +117,32 @@ export class CartaComponent {
     doc.text('Ver Anexo 1:', marginLeft, y);
     y += 6;
 
-    // Último párrafo
+    // Último párrafo: NO justificar (queda alineado normal)
     doc.setFont('times', 'normal');
+    doc.setFontSize(9);
     y = this.drawFormattedParagraph(
       doc,
       'Autorizamos al portador del presente hacer uso de este documento como estime conveniente.',
       marginLeft,
       y,
       maxTextWidth
+      // boldPhrases vacío y usamos el valor por defecto justifyLastLine = false
     );
 
     // Firma e identificación
-    const firmaY = Math.min(y + 20, doc.internal.pageSize.getHeight() - firmaHeight - 30);
-    const firmaX = (doc.internal.pageSize.getWidth() - firmaWidth) / 2;
+    const firmaY = Math.min(y + 20, pageHeight - firmaHeight - 30);
+    const firmaX = (pageWidth - firmaWidth) / 2;
+
     doc.setFontSize(10);
     doc.setFont('times', 'bold');
-    doc.text('Cordialmente', 105, firmaY - 10, { align: 'center' });
+    doc.text('Cordialmente', pageWidth / 2, firmaY - 10, { align: 'center' });
     doc.addImage(firmaBase64, 'PNG', firmaX, firmaY, firmaWidth, firmaHeight);
-    doc.text('ESTEBAN MUÑOZ MIÑO', 105, firmaY + firmaHeight + 6, { align: 'center' });
+    doc.text('ESTEBAN MUÑOZ MIÑO', pageWidth / 2, firmaY + firmaHeight + 6, { align: 'center' });
     doc.setFont('times', 'normal');
-    doc.text('Gerente General', 105, firmaY + firmaHeight + 12, { align: 'center' });
-    doc.text('GS1 Ecuador', 105, firmaY + firmaHeight + 18, { align: 'center' });
+    doc.text('Gerente General', pageWidth / 2, firmaY + firmaHeight + 12, { align: 'center' });
+    doc.text('GS1 Ecuador', pageWidth / 2, firmaY + firmaHeight + 18, { align: 'center' });
 
-    // Pie de página
-    // doc.setFontSize(8);
-    // doc.text('Documento emitido por GS1 Ecuador - www.gs1ec.org', 105, 290, { align: 'center' });
-
-    // Guardar PDF con nombre dinámico
+    // Nombre de archivo dinámico
     const now = new Date();
     const yyyy = now.getFullYear();
     const mm = String(now.getMonth() + 1).padStart(2, '0');
@@ -144,51 +156,75 @@ export class CartaComponent {
     doc.save(nombreArchivo);
   }
 
-
+  /**
+   * Dibuja un párrafo JUSTIFICADO dentro de maxWidth.
+   * Justifica todas las líneas excepto la última.
+   */
   private drawFormattedParagraph(
     doc: jsPDF,
     text: string,
     x: number,
     y: number,
     maxWidth: number,
-    boldPhrases: string[] = []
+    boldPhrases: string[] = [],
+    justifyLastLine: boolean = false // lo dejamos por si más adelante lo quieres usar
   ): number {
-    const lines = doc.splitTextToSize(text, maxWidth);
+    const lineHeight = 5.5;
 
-    lines.forEach((line: string, lineIndex: number) => {
-      const isLastLine = lineIndex === lines.length - 1;
-      const words = line.trim().split(/\s+/);
+    // Palabras en negrita
+    const boldWords = new Set<string>();
+    for (const phrase of boldPhrases) {
+      if (!phrase) continue;
+      phrase
+        .split(/\s+/)
+        .filter(w => w)
+        .forEach(w => boldWords.add(w));
+    }
 
-      let segments: { text: string; bold: boolean }[] = [];
-      let cursor = 0;
-      while (cursor < line.length) {
-        const match = boldPhrases.find(p => line.substring(cursor).startsWith(p));
-        if (match) {
-          segments.push({ text: match, bold: true });
-          cursor += match.length;
-        } else {
-          const nextSpace = line.indexOf(' ', cursor);
-          const wordEnd = nextSpace === -1 ? line.length : nextSpace;
-          const word = line.substring(cursor, wordEnd);
-          segments.push({ text: word, bold: false });
-          cursor = wordEnd + 1;
-        }
+    const lines: string[] = doc.splitTextToSize(text, maxWidth) as string[];
+
+    lines.forEach((line: string, index: number) => {
+      const isLastLine = index === lines.length - 1;
+      const applyJustify = !isLastLine || justifyLastLine;
+
+      const words: string[] = line.trim().split(/\s+/);
+      if (words.length === 0) {
+        y += lineHeight;
+        return;
       }
 
-      const totalWordsWidth = segments.reduce((sum, s) => sum + doc.getTextWidth(s.text), 0);
-      const spaceCount = segments.length - 1;
-      const spacing = (maxWidth - totalWordsWidth) / (spaceCount || 1);
+      let totalWordsWidth = 0;
+      words.forEach((w: string) => {
+        const isBold = boldWords.has(w);
+        doc.setFont('times', isBold ? 'bold' : 'normal');
+        totalWordsWidth += doc.getTextWidth(w);
+      });
+
+      const spaceCount = Math.max(words.length - 1, 1);
+      const normalSpaceWidth = doc.getTextWidth(' ');
+      let extraSpacePerGap = 0;
+
+      if (applyJustify && spaceCount > 0) {
+        const currentWidth = totalWordsWidth + normalSpaceWidth * spaceCount;
+        const remaining = maxWidth - currentWidth;
+        extraSpacePerGap = remaining > 0 ? remaining / spaceCount : 0;
+      }
 
       let currentX = x;
-      segments.forEach((segment, i) => {
-        doc.setFont('times', segment.bold ? 'bold' : 'normal');
-        doc.text(segment.text, currentX, y);
-        if (i < segments.length - 1) {
-          currentX += doc.getTextWidth(segment.text) + (isLastLine ? doc.getTextWidth(' ') : spacing);
+
+      words.forEach((w: string, i: number) => {
+        const isBold = boldWords.has(w);
+        doc.setFont('times', isBold ? 'bold' : 'normal');
+        doc.text(w, currentX, y);
+
+        if (i < words.length - 1) {
+          const step = normalSpaceWidth + (applyJustify ? extraSpacePerGap : 0);
+          const wordWidth = doc.getTextWidth(w);
+          currentX += wordWidth + step;
         }
       });
 
-      y += 6;
+      y += lineHeight;
     });
 
     return y;

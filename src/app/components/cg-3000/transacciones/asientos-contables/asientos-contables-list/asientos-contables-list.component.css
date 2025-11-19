@@ -1,0 +1,112 @@
+.zona-container { display: flex; flex-direction: column; gap: 12px; }
+.zona-header { display: flex; align-items: center; justify-content: space-between; }
+.btn-azul { background: #1976d2; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; }
+
+.zona-busqueda { display: flex; align-items: center; gap: 12px; }
+.input-wrapper { position: relative; display: inline-flex; align-items: center; }
+.input-wrapper input { padding-right: 34px; }
+.input-wrapper img { position: absolute; right: 8px; width: 18px; height: 18px; opacity: 0.7; }
+
+.table-wrap { height: calc(100vh - 260px); }
+.grid { width: 100%; height: 100%; }
+
+.ag-action-btn {
+  background: transparent; border: none; cursor: pointer; padding: 0 6px;
+  display: inline-flex; align-items: center; height: 28px;
+}
+.ag-action-btn img { width: 18px; height: 18px; }
+.error { color: #b00020; }
+.loading { padding: 16px; }
+
+
+.zona-container {
+  padding: 40px;
+  background-color: #ffffff;
+  font-family: 'Inter', sans-serif;
+}
+
+.zona-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: left;
+  margin-bottom: 25px;
+}
+
+.zona-header h2 {
+  font-size: 22px;
+  color: #002c6c;
+  font-weight: 700;
+}
+
+/* Aplica solo a este grid */
+.custom-grid {
+  /* Fondo general del grid */
+  --ag-background-color: #fafcff;
+
+  /* Cabecera */
+  --ag-header-background-color: #0d47a1;   /* azul */
+  --ag-header-foreground-color:  #ffffff;  /* texto cabecera */
+  --ag-header-border-color:      #0b3c8a;
+
+  /* Bordes/celdas */
+  --ag-border-color: #d0d7de;
+
+  /* Filas */
+  --ag-odd-row-background-color:  #f7fbff;
+  --ag-even-row-background-color: #ffffff;
+  --ag-row-hover-color:           #e3f2fd;
+
+  /* Texto */
+  --ag-foreground-color: #111827; /* texto normal */
+  --ag-secondary-foreground-color: #374151;
+
+  /* Filtros/inputs */
+  --ag-control-panel-background-color: #0d47a1;
+  --ag-input-border-color: #b6c2ce;
+
+  /* Tamaño fuente (opcional) */
+  --ag-font-size: 13px;
+}
+
+/* (Opcional) icono filtro y sort en blanco para cabecera oscura */
+.custom-grid .ag-icon {
+  filter: invert(1) brightness(1.8);
+}
+
+/* (Opcional) Botón de acciones coherente */
+.custom-grid .ag-action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 6px;
+}
+.custom-grid .ag-action-btn svg,
+.custom-grid .ag-action-btn img {
+  width: 18px; height: 18px;
+}
+
+/*:host ::ng-deep .custom-grid { variables aquí  }*/
+
+.custom-grid {
+  --ag-header-height: 36px;
+  --ag-row-height: 32px;
+}
+
+.custom-grid {
+  --ag-background-color:#dde3ee; /*fondo*/
+  --ag-foreground-color:#080808; /*color de letra*/
+  
+  --ag-header-background-color:#1d789f;/*cabecera  :#243760; */
+  --ag-header-foreground-color:#e5e7eb;
+
+  --ag-odd-row-background-color:#f6f8f9; /*liea que resalta #98aee0;*/
+  --ag-even-row-background-color:#abc3f1;
+  
+  --ag-row-hover-color:#e2efc4;
+  --ag-border-color:#adaeb0; /*lineas de la cuadricula*/
+}
+

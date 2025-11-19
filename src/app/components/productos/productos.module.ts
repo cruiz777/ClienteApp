@@ -93,7 +93,7 @@ export const MY_DATE_FORMATS = {
     ClienteSeleccionadoComponent,  
     UvIndividualComponent,        
     UvIndividualEditComponent,     
-    UlComponent,                  
+    //UlComponent,                  
     UlEditComponent,              
     NuevoSsccComponent,           
     CuponesComponent,   

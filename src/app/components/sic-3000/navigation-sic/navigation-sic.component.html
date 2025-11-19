@@ -2,6 +2,9 @@
   'collapsed': !isExpanded && !isHandset,
   'mobile': isHandset
 }">
+  
+  <!-- ESTE ES MI HTML ACTUAL -->
+  
   <!-- SIDEBAR -->
   <mat-sidenav #drawer class="sidenav" [mode]="isHandset ? 'over' : 'side'" [opened]="!isHandset || isExpanded"
     [class.collapsed]="!isExpanded && !isHandset" [fixedInViewport]="true" (backdropClick)="isExpanded = false">
@@ -57,7 +60,7 @@
           <!-- Subgrupo: Facturación -->
           <mat-expansion-panel-header>
             <mat-panel-title>
-              <img src="assets/icons/sic-3000/icon-factura.png" class="menu-icon">
+              <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
               <span *ngIf="isExpanded" class="menu-text">Facturación</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
@@ -74,7 +77,7 @@
             <a mat-list-item [routerLink]="'/sic-3000/fglobal'">
               <span *ngIf="isExpanded" class="menu-text">Facturación Global</span>
             </a>
-            <a mat-list-item routerLink="">
+            <a mat-list-item [routerLink]="'/sic-3000/fanuladas'">
               <span *ngIf="isExpanded" class="menu-text">Facturas Anuladas</span>
             </a>
             <a mat-list-item routerLink="">
@@ -88,11 +91,13 @@
           <mat-expansion-panel>
             <mat-expansion-panel-header>
               <mat-panel-title>
+
                 <span *ngIf="isExpanded" class="menu-text">Notas de Crédito/Debito</span>
+
               </mat-panel-title>
             </mat-expansion-panel-header>
             <!-- Nivel 3: Notas de Crédito/Debito-->
-            <a mat-list-item routerLink="">
+            <a mat-list-item [routerLink]="'/sic-3000/notaCredito'">
               <span *ngIf="isExpanded" class="menu-text">Notas de Crédito</span>
             </a>
             <a mat-list-item routerLink="">
@@ -108,10 +113,10 @@
               </mat-panel-title>
             </mat-expansion-panel-header>
             <!-- Nivel 3: Anticipos-->
-            <a mat-list-item routerLink="">
+            <a mat-list-item [routerLink]="'/sic-3000/creacion-anticipos'" >
               <span *ngIf="isExpanded" class="menu-text">Creación de Anticipos</span>
             </a>
-            <a mat-list-item routerLink="">
+            <a mat-list-item [routerLink]="'/sic-3000/reporte-anticipos'" >
               <span *ngIf="isExpanded" class="menu-text">Reporte de Anticipos</span>
             </a>
             <a mat-list-item routerLink="">
@@ -136,49 +141,58 @@
               <span *ngIf="isExpanded" class="menu-text">Cuentas por cobrar</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
-          <!-- Subgrupo: Estado de Cuenta Individual-->
-          <mat-expansion-panel hideToggle>
-            <mat-expansion-panel-header (click)="goTo('estadocuentacliente')" class="clickable-header">
-              <mat-panel-title>
-                <span *ngIf="isExpanded" class="menu-text">Estado de Cuenta Individual</span>
-              </mat-panel-title>
-            </mat-expansion-panel-header>
-          </mat-expansion-panel>
-          <!-- Subgrupo: Registro de Cobro-->
-          <mat-expansion-panel hideToggle>
-            <mat-expansion-panel-header (click)="goTo('registroCobros')" class="clickable-header">
-              <mat-panel-title>
-                <span *ngIf="isExpanded" class="menu-text">Registro de Cobro</span>
-              </mat-panel-title>
-            </mat-expansion-panel-header>
-          </mat-expansion-panel>
-          <!-- Subgrupo: Explorador de Cuentas por Cobrar-->
-          <mat-expansion-panel hideToggle>
-            <mat-expansion-panel-header (click)="goTo('ruta aqui')" class="clickable-header">
-              <mat-panel-title>
-                <span *ngIf="isExpanded" class="menu-text">Explorador de Cuentas por Cobrar</span>
-              </mat-panel-title>
-            </mat-expansion-panel-header>
-          </mat-expansion-panel>
-          <!-- Subgrupo: Reportes -->
+          <!-- Subgrupo: Pagos -->
           <mat-expansion-panel>
             <mat-expansion-panel-header>
               <mat-panel-title>
-                <span *ngIf="isExpanded" class="menu-text">Reportes</span>
+                <span *ngIf="isExpanded" class="menu-text">Pagos</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <!-- Nivel 3: registro de cobros-->
+            <mat-expansion-panel hideToggle>
+              <mat-expansion-panel-header (click)="goTo('registroCobros')" class="clickable-header">
+                <mat-panel-title>
+                  <span *ngIf="isExpanded" class="menu-text">Registro de Pagos</span>
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+            </mat-expansion-panel>
+            <!-- <mat-expansion-panel hideToggle>
+            <mat-expansion-panel-header (click)="goTo('cobroIndividual')" class="clickable-header">
+            <mat-panel-title>
+              <span *ngIf="isExpanded" class="menu-text">Pagos Individuales</span>
+            </mat-panel-title>
+            </mat-expansion-panel-header>
+          </mat-expansion-panel> -->
+
+            <a mat-list-item [routerLink]="'/sic-3000/anularCobros'" routerLinkActive="active">
+              <span *ngIf="isExpanded" class="menu-text">Reversion de Pagos</span>
+            </a>
+            <a mat-list-item [routerLink]="'/sic-3000/panulados'">
+              <span *ngIf="isExpanded" class="menu-text">Listado Pagos</span>
+            </a>
+          </mat-expansion-panel>
+
+          <!-- Subgrupo: Explorador -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Exploradores</span>
               </mat-panel-title>
             </mat-expansion-panel-header>
             <!-- Nivel 3: Reportes-->
             <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Estado de Cuenta Cliente</span>
+              <span *ngIf="isExpanded" class="menu-text">Exp.Estado de cuenta</span>
             </a>
             <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Cuentas por Vencimiento</span>
+              <span *ngIf="isExpanded" class="menu-text">Exp.Cuentas por Cobrar</span>
             </a>
             <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Cue. Pendiente Por Cliente</span>
+              <span *ngIf="isExpanded" class="menu-text">Exp. Pagos</span>
             </a>
           </mat-expansion-panel>
+
         </mat-expansion-panel>
+
 
         <!-- CONFIGURACION-->
         <mat-expansion-panel>

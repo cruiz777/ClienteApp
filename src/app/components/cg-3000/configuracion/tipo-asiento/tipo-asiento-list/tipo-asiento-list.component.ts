@@ -71,7 +71,7 @@ export class TipoAsientoComponent implements OnInit {
   }
 
     
-  abrirCrear(): void {
+    abrirCrear(): void {
       const dialogRef = this.dialog.open(TipoAsientoFormComponent, {
         width: '600px',
         data: {}

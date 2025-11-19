@@ -19,7 +19,7 @@ export interface GS1GtinVentaOptions {
 
 @Injectable({ providedIn: 'root' })
 export class GS1ExportService {
-  constructor(private configuracionVisualService: ConversionImagenService) {}
+  constructor(private configuracionVisualService: ConversionImagenService) { }
 
   //EXPORTAR PDF PARA UL Y GENERAL
   async exportarPDFGS1(options: GS1ExportOptions): Promise<void> {
@@ -105,9 +105,9 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
         // Títulos
         doc.setFontSize(14);
         doc.setFont('helvetica', 'bold');
-        doc.text('Sistema de Control de Códigos', pageWidth / 2, y + 5, { align: 'center' });
+        doc.text('SISTEMA DE CONTROL DE CÓDIGOS', pageWidth / 2, y + 5, { align: 'center' });
         doc.setFontSize(12);
-        doc.text('Reporte de Producto con Presentaciones', pageWidth / 2, y + 12, { align: 'center' });
+        doc.text('REPORTE DE PRODUCTOS CODIFICADOS', pageWidth / 2, y + 12, { align: 'center' });
 
         // Información lateral derecha
         doc.setFontSize(9);
@@ -138,10 +138,10 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
         y += 6;
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(7.5);
-        
+
         // Calcular las líneas del disclaimer con ancho ajustado
         const disclaimerLines = doc.splitTextToSize(disclaimer, pageWidth - 20);
-        
+
         // Renderizar el disclaimer línea por línea con espaciado compacto
         disclaimerLines.forEach((line: string, index: number) => {
           doc.text(line, 10, y + (index * 3));
@@ -164,596 +164,761 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
   }
 
   //EXPORTAR EXCEL PARA UL Y GENERAL
- async exportarExcelGS1(options: GS1ExportOptions): Promise<void> {
-  const { data, filename, headerInfo } = options;
-  
-  // Crear nuevo workbook
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Reporte Productos Codificados');
+  async exportarExcelGS1(options: GS1ExportOptions): Promise<void> {
+    const { data, filename, headerInfo } = options;
 
-  // Configurar orientación de página como horizontal
-  worksheet.pageSetup = {
-    orientation: 'landscape',
-    fitToPage: true,
-    fitToWidth: 1,
-    fitToHeight: 0
-  };
+    // Crear nuevo workbook
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Reporte Productos Codificados');
 
-  let currentRow = 1;
-
-  // FILA 1: TÍTULO PRINCIPAL - Solo en columna B
-  const titleCell = worksheet.getCell(`B${currentRow}`);
-  titleCell.value = 'SISTEMA DE CONTROL DE CÓDIGOS';
-  titleCell.font = { name: 'Arial', size: 14, bold: true };
-  titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
-  currentRow++;
-
-  // FILA 2: SUBTÍTULO - Solo en columna B
-  const subtitleCell = worksheet.getCell(`B${currentRow}`);
-  subtitleCell.value = 'REPORTE DE PRODUCTOS CODIFICADOS';
-  subtitleCell.font = { name: 'Arial', size: 12, bold: true };
-  subtitleCell.alignment = { horizontal: 'left', vertical: 'middle' };
-  currentRow++;
-
-  // FILA 3: Vacía
-  currentRow++;
-
-  // FILA 4: EMPRESA Y CÓDIGO
-  const empresaCell = worksheet.getCell(`B${currentRow}`);
-  empresaCell.value = headerInfo.nombreEmpresa || 'NESTLE ECUADOR S.A.';
-  empresaCell.font = { name: 'Arial', size: 11, bold: true, color: { argb: 'FF003366' } }; // Azul marino medio
-  empresaCell.alignment = { 
-    horizontal: 'left', 
-    vertical: 'middle',
-    wrapText: true  // Ajuste de texto para que siempre se vea bien
-  };
-
-  const codigoCell = worksheet.getCell(`C${currentRow}`);
-  codigoCell.value = headerInfo.codigoEmpresa || '78610012';
-  codigoCell.font = { name: 'Arial', size: 11, bold: true };
-  codigoCell.alignment = { horizontal: 'left', vertical: 'middle' };
-  currentRow++;
-
-  // FILA 5: Vacía
-  currentRow++;
-
-  // FILA 6: RUC
-  const rucLabelCell = worksheet.getCell(`B${currentRow}`);
-  rucLabelCell.value = 'RUC:';
-  rucLabelCell.font = { name: 'Arial', size: 10, bold: true };
-  rucLabelCell.alignment = { horizontal: 'left', vertical: 'middle' };
-
-  const rucValueCell = worksheet.getCell(`C${currentRow}`);
-  rucValueCell.value = headerInfo.ruc || '0990032246001';
-  rucValueCell.font = { name: 'Arial', size: 10 };
-  rucValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
-  currentRow++;
-
-  // FILA 7: GLN
-  const glnLabelCell = worksheet.getCell(`B${currentRow}`);
-  glnLabelCell.value = 'GLN:';
-  glnLabelCell.font = { name: 'Arial', size: 10, bold: true };
-  glnLabelCell.alignment = { horizontal: 'left', vertical: 'middle' };
-
-  const glnValueCell = worksheet.getCell(`C${currentRow}`);
-  glnValueCell.value = headerInfo.gln || '7861001200003';
-  glnValueCell.font = { name: 'Arial', size: 10 };
-  glnValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
-  currentRow++;
-
-  // FILA 8: EMISOR
-  const emisorLabelCell = worksheet.getCell(`B${currentRow}`);
-  emisorLabelCell.value = 'Emisor:';
-  emisorLabelCell.font = { name: 'Arial', size: 10, bold: true };
-  emisorLabelCell.alignment = { horizontal: 'left', vertical: 'middle' };
-
-  const emisorValueCell = worksheet.getCell(`C${currentRow}`);
-  emisorValueCell.value = 'GS1 Ecuador';
-  emisorValueCell.font = { name: 'Arial', size: 10 };
-  emisorValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
-  currentRow++;
-
-  // FILA 9: FECHA EMISIÓN
-  const fechaLabelCell = worksheet.getCell(`B${currentRow}`);
-  fechaLabelCell.value = 'Fecha emisión :';
-  fechaLabelCell.font = { name: 'Arial', size: 10, bold: true };
-  fechaLabelCell.alignment = { horizontal: 'left', vertical: 'middle' };
-
-  const fechaValueCell = worksheet.getCell(`C${currentRow}`);
-  fechaValueCell.value = headerInfo.fechaEmision || '07/07/2025';
-  fechaValueCell.font = { name: 'Arial', size: 10 };
-  fechaValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
-  currentRow++;
-
-  // FILA 10: Vacía
-  currentRow++;
-
-  // FILA 11: DISCLAIMER - Combinado de B a H
-  worksheet.mergeCells(`B${currentRow}:H${currentRow}`);
-  const disclaimerCell = worksheet.getCell(`B${currentRow}`);
-  disclaimerCell.value = 'GS1 Ecuador  (ECOP) certifica que los códigos GTIN que constan a continuación son auténticos y publicados en www.gs1ec.org Verified by Ecuador.\nEl dueño de la marca del producto pone el código, es su responsabilidad el manejo y control del código, incluida su descripción y marca.\nEl Prefijo Global De Compañía GS1, GCP, es INTRANSFERIBLE.';
-  disclaimerCell.font = { name: 'Arial', size: 10, bold: true };
-  disclaimerCell.alignment = { 
-    horizontal: 'center', 
-    vertical: 'middle', 
-    wrapText: true 
-  };
-  disclaimerCell.fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: { argb: 'FFFFFF00' } // Amarillo brillante
-  };
-
-  // Ajustar altura del disclaimer
-  worksheet.getRow(currentRow).height = 50;
-  currentRow++;
-
-  // FILA 12: Vacía
-  currentRow++;
-
-  // FILA 13: HEADERS DE LA TABLA
-  const headers = [
-    { col: 'B', value: 'GTIN-13' },
-    { col: 'C', value: 'GTIN-14' },
-    { col: 'D', value: 'DESCRIPCION' },
-    { col: 'E', value: 'MARCA' },
-    { col: 'F', value: 'CONTENIDO NETO' },
-    { col: 'G', value: 'UNIDAD DE MEDIDA' },
-    { col: 'H', value: 'FECHA' }
-  ];
-  
-  headers.forEach(header => {
-    const cell = worksheet.getCell(`${header.col}${currentRow}`);
-    cell.value = header.value;
-    cell.font = { name: 'Arial', size: 10, bold: true };
-    cell.alignment = { horizontal: 'center', vertical: 'middle' };
-    cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFD3D3D3' } // Gris claro
+    // Configurar orientación de página como horizontal
+    worksheet.pageSetup = {
+      orientation: 'landscape',
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 0
     };
-  });
-  currentRow++;
 
-  // DATOS DE LA TABLA
-  let rowNumber = 1;
-  data.forEach(producto => {
-    const codigos14 = producto.codigos_14 || [];
+    let currentRow = 1;
 
-    // Fila principal del producto
-    const numeracionCell = worksheet.getCell(`A${currentRow}`);
-    numeracionCell.value = rowNumber++;
-    numeracionCell.font = { name: 'Arial', size: 9 };
-    numeracionCell.alignment = { horizontal: 'center', vertical: 'middle' };
-
-    const gtin13Cell = worksheet.getCell(`B${currentRow}`);
-    gtin13Cell.value = producto.codigo_producto || '';
-    gtin13Cell.font = { name: 'Arial', size: 9 };
-    gtin13Cell.alignment = { horizontal: 'left', vertical: 'middle' };
-
-    // Columna C (GTIN-14) vacía para fila principal
-
-    const descripcionCell = worksheet.getCell(`D${currentRow}`);
-    descripcionCell.value = producto.descripcion || '';
-    descripcionCell.font = { name: 'Arial', size: 9 };
-    descripcionCell.alignment = { horizontal: 'left', vertical: 'middle' };
-
-    const marcaCell = worksheet.getCell(`E${currentRow}`);
-    marcaCell.value = producto.marca || '';
-    marcaCell.font = { name: 'Arial', size: 9 };
-    marcaCell.alignment = { horizontal: 'left', vertical: 'middle' };
-
-    const contenidoCell = worksheet.getCell(`F${currentRow}`);
-    contenidoCell.value = producto.contenido_neto || '';
-    contenidoCell.font = { name: 'Arial', size: 9 };
-    contenidoCell.alignment = { horizontal: 'left', vertical: 'middle' };
-
-    const unidadCell = worksheet.getCell(`G${currentRow}`);
-    unidadCell.value = producto.unidad_medida || '';
-    unidadCell.font = { name: 'Arial', size: 9 };
-    unidadCell.alignment = { horizontal: 'left', vertical: 'middle' };
-
-    const fechaCell = worksheet.getCell(`H${currentRow}`);
-    fechaCell.value = this.formatearFechaSafe(producto.fecha);
-    fechaCell.font = { name: 'Arial', size: 9 };
-    fechaCell.alignment = { horizontal: 'left', vertical: 'middle' };
-
+    worksheet.mergeCells(`B${currentRow}:D${currentRow}`);   // como en tu ejemplo, centrado en varias columnas
+    const titleCell = worksheet.getCell(`B${currentRow}`);
+    titleCell.value = 'SISTEMA DE CONTROL DE CÓDIGOS';
+    titleCell.font = {
+      name: 'Calibri',
+      size: 16,
+      bold: true,
+      color: { argb: 'FF003366' }   // azul oscuro GS1
+    };
+    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
     currentRow++;
 
-    // Filas de códigos GTIN-14
-    codigos14.forEach((c14: any) => {
-      // Columna A vacía (sin numeración)
-      // Columna B vacía (sin GTIN-13)
+    // ======================
 
-      const gtin14Cell = worksheet.getCell(`C${currentRow}`);
-      gtin14Cell.value = c14.gtin_14 || '';
-      gtin14Cell.font = { name: 'Arial', size: 9 };
-      gtin14Cell.alignment = { horizontal: 'left', vertical: 'middle' };
+    // ======================
+    // FILA 2: SUBTÍTULO
+    // ======================
+    worksheet.mergeCells(`B${currentRow}:D${currentRow}`);
+    const subtitleCell = worksheet.getCell(`B${currentRow}`);
+    subtitleCell.value = 'REPORTE DE PRODUCTOS CODIFICADOS';
+    subtitleCell.font = {
+      name: 'Calibri',
+      size: 14,
+      bold: true,
+      color: { argb: 'FF003366' }   // mismo azul
+    };
+    subtitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    currentRow++;
 
-      const desc14Cell = worksheet.getCell(`D${currentRow}`);
-      desc14Cell.value = c14.descripcion || '';
-      desc14Cell.font = { name: 'Arial', size: 9 };
-      desc14Cell.alignment = { horizontal: 'left', vertical: 'middle' };
+    // ======================
+    // FILA 3: VACÍA
+    // ======================
+    currentRow++;
 
-      // Columnas E, F, G vacías para GTIN-14
+    // ======================
+    // FILA 4: EMPRESA Y CÓDIGO
+    // ======================
+    const empresaCell = worksheet.getCell(`B${currentRow}`);
+    empresaCell.value = headerInfo.nombreEmpresa || 'NESTLE ECUADOR S.A.';
+    empresaCell.font = {
+      name: 'Calibri',
+      size: 11,
+      bold: true,
+      color: { argb: 'FFFF6600' }   // naranja como en tu ejemplo
+    };
+    empresaCell.alignment = {
+      horizontal: 'left',
+      vertical: 'middle',
+      wrapText: true
+    };
 
-      const fecha14Cell = worksheet.getCell(`H${currentRow}`);
-      fecha14Cell.value = this.formatearFechaSafe(c14.fecha || producto.fecha);
-      fecha14Cell.font = { name: 'Arial', size: 9 };
-      fecha14Cell.alignment = { horizontal: 'left', vertical: 'middle' };
+    const codigoCell = worksheet.getCell(`C${currentRow}`);
+    codigoCell.value = headerInfo.codigoEmpresa || '78610012';
+    codigoCell.font = {
+      name: 'Calibri',
+      size: 14,
+      bold: true,
+      color: { argb: 'FF003366' }   // azul para el código
+    };
+    codigoCell.alignment = { horizontal: 'left', vertical: 'middle' };
+    currentRow++;
+
+    // ======================
+    // FILA 5: VACÍA
+    // ======================
+    currentRow++;
+
+
+    // FILA 6: RUC
+    const rucLabelCell = worksheet.getCell(`B${currentRow}`);
+    rucLabelCell.value = 'RUC:';
+    rucLabelCell.font = { name: 'Arial', size: 10, bold: true };
+    rucLabelCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+    const rucValueCell = worksheet.getCell(`C${currentRow}`);
+    rucValueCell.value = headerInfo.ruc || '0990032246001';
+    rucValueCell.font = { name: 'Arial', size: 10 };
+    rucValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
+    currentRow++;
+
+    // FILA 7: GLN
+    const glnLabelCell = worksheet.getCell(`B${currentRow}`);
+    glnLabelCell.value = 'GLN:';
+    glnLabelCell.font = { name: 'Arial', size: 10, bold: true };
+    glnLabelCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+    const glnValueCell = worksheet.getCell(`C${currentRow}`);
+    glnValueCell.value = headerInfo.gln || '7861001200003';
+    glnValueCell.font = { name: 'Arial', size: 10 };
+    glnValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
+    currentRow++;
+
+    // FILA 8: EMISOR
+    const emisorLabelCell = worksheet.getCell(`B${currentRow}`);
+    emisorLabelCell.value = 'Emisor:';
+    emisorLabelCell.font = { name: 'Arial', size: 10, bold: true };
+    emisorLabelCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+    const emisorValueCell = worksheet.getCell(`C${currentRow}`);
+    emisorValueCell.value = 'GS1 Ecuador';
+    emisorValueCell.font = { name: 'Arial', size: 10 };
+    emisorValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
+    currentRow++;
+
+    // FILA 9: FECHA EMISIÓN
+    const fechaLabelCell = worksheet.getCell(`B${currentRow}`);
+    fechaLabelCell.value = 'Fecha emisión :';
+    fechaLabelCell.font = { name: 'Arial', size: 10, bold: true };
+    fechaLabelCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+    const fechaValueCell = worksheet.getCell(`C${currentRow}`);
+    fechaValueCell.value = headerInfo.fechaEmision || '07/07/2025';
+    fechaValueCell.font = { name: 'Arial', size: 10 };
+    fechaValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
+    currentRow++;
+
+    // FILA 10: Vacía
+    currentRow++;
+
+    // FILA 11: DISCLAIMER - Combinado de B a H
+    // FILA 11: DISCLAIMER - Combinado de B a H
+    worksheet.mergeCells(`B${currentRow}:H${currentRow}`);
+    const disclaimerCell = worksheet.getCell(`B${currentRow}`);
+
+    disclaimerCell.value = {
+      richText: [
+        {
+          text: 'GS1 Ecuador  (ECOP) certifica que los códigos GTIN que constan a continuación son auténticos y publicados en www.gs1ec.org Verified by Ecuador.\n',
+          font: { name: 'Calibri', size: 10, bold: false }
+        },
+        {
+          text: 'El dueño de la marca del producto pone el código, es su responsabilidad el manejo y control del código, incluida su descripción y marca.\n',
+          font: { name: 'Calibri', size: 10, bold: false }
+        },
+        {
+          text: 'El Prefijo Global De Compañía GS1, GCP, es ',
+          font: { name: 'Calibri', size: 10, bold: true }
+        },
+        {
+          text: 'INTRANSFERIBLE.',
+          font: { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFFF0000' } } // 🔴 ROJO
+        }
+      ]
+    };
+
+    disclaimerCell.alignment = {
+      horizontal: 'center',
+      vertical: 'middle',
+      wrapText: true
+    };
+
+    disclaimerCell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFFFF00' } // Amarillo
+    };
+
+    // altura de la fila para que quepa el texto
+    worksheet.getRow(currentRow).height = 45;
+    currentRow++;
+
+
+    // FILA 12: Vacía
+    currentRow++;
+
+    // FILA 13: HEADERS DE LA TABLA
+    const headers = [
+      { col: 'B', value: 'GTIN-13' },
+      { col: 'C', value: 'GTIN-14' },
+      { col: 'D', value: 'DESCRIPCION' },
+      { col: 'E', value: 'MARCA' },
+      { col: 'F', value: 'CONTENIDO NETO' },
+      { col: 'G', value: 'UNIDAD DE MEDIDA' },
+      { col: 'H', value: 'FECHA' }
+    ];
+
+    headers.forEach(header => {
+      const cell = worksheet.getCell(`${header.col}${currentRow}`);
+      cell.value = header.value;
+      cell.font = { name: 'Arial', size: 10, bold: true };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFFFFF' } // Gris claro
+      };
+    });
+    currentRow++;
+
+    // DATOS DE LA TABLA
+    let rowNumber = 1;
+    data.forEach(producto => {
+      const codigos14 = producto.codigos_14 || [];
+
+      // Fila principal del producto
+      const numeracionCell = worksheet.getCell(`A${currentRow}`);
+      numeracionCell.value = rowNumber++;
+      numeracionCell.font = { name: 'Arial', size: 9, color: { argb: 'FFFF6600' } };
+      numeracionCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+      const gtin13Cell = worksheet.getCell(`B${currentRow}`);
+      gtin13Cell.value = producto.codigo_producto || '';
+      gtin13Cell.font = { name: 'Arial', size: 14, color: { argb: 'FF003366' } };
+      gtin13Cell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+      // Columna C (GTIN-14) vacía para fila principal
+
+      const descripcionCell = worksheet.getCell(`D${currentRow}`);
+      descripcionCell.value = producto.descripcion || '';
+      descripcionCell.font = { name: 'Arial', size: 9 };
+      descripcionCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+      const marcaCell = worksheet.getCell(`E${currentRow}`);
+      marcaCell.value = producto.marca || '';
+      marcaCell.font = { name: 'Arial', size: 9 };
+      marcaCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+      const contenidoCell = worksheet.getCell(`F${currentRow}`);
+      contenidoCell.value = producto.contenido_neto || '';
+      contenidoCell.font = { name: 'Arial', size: 9 };
+      contenidoCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+      const unidadCell = worksheet.getCell(`G${currentRow}`);
+      unidadCell.value = producto.unidad_medida || '';
+      unidadCell.font = { name: 'Arial', size: 9 };
+      unidadCell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+      const fechaCell = worksheet.getCell(`H${currentRow}`);
+      fechaCell.value = this.formatearFechaSafe(producto.fecha);
+      fechaCell.font = { name: 'Arial', size: 9 };
+      fechaCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
       currentRow++;
+
+      // Filas de códigos GTIN-14
+      codigos14.forEach((c14: any) => {
+        // Columna A vacía (sin numeración)
+        // Columna B vacía (sin GTIN-13)
+
+        const gtin14Cell = worksheet.getCell(`C${currentRow}`);
+        gtin14Cell.value = c14.gtin_14 || '';
+        gtin14Cell.font = { name: 'Arial', size: 14, color: { argb: 'FF003366' } };
+        gtin14Cell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+        const desc14Cell = worksheet.getCell(`D${currentRow}`);
+        desc14Cell.value = c14.descripcion || '';
+        desc14Cell.font = { name: 'Arial', size: 9 };
+        desc14Cell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+        // Columnas E, F, G vacías para GTIN-14
+
+        const fecha14Cell = worksheet.getCell(`H${currentRow}`);
+        fecha14Cell.value = this.formatearFechaSafe(c14.fecha || producto.fecha);
+        fecha14Cell.font = { name: 'Arial', size: 9 };
+        fecha14Cell.alignment = { horizontal: 'left', vertical: 'middle' };
+
+        currentRow++;
+      });
     });
-  });
 
-  // Intentar agregar logo desde base64
-  try {
-    const logoBase64 = await this.configuracionVisualService.getLogoActualBase64();
-    if (logoBase64) {
-      const base64Data = logoBase64.replace(/^data:image\/[a-z]+;base64,/, '');
-      
-      const logoId = workbook.addImage({
-        base64: base64Data,
-        extension: 'png',
-      });
+    // Intentar agregar logo desde base64
+    try {
+      const logoBase64 = await this.configuracionVisualService.getLogoActualBase64();
+      if (logoBase64) {
+        const base64Data = logoBase64.replace(/^data:image\/[a-z]+;base64,/, '');
 
-      // Posicionar el logo en la fila F (fila 6), área del encabezado
-      worksheet.addImage(logoId, {
-        tl: { col: 5.5, row: 2.1 }, // Columna F, fila 6 aproximadamente
-        ext: { width: 170, height: 100 }
-      });
+        const logoId = workbook.addImage({
+          base64: base64Data,
+          extension: 'png',
+        });
+
+        // Posicionar el logo en la fila F (fila 6), área del encabezado
+        worksheet.addImage(logoId, {
+          tl: { col: 5.5, row: 2.1 }, // Columna F, fila 6 aproximadamente
+          ext: { width: 170, height: 100 }
+        });
+      }
+    } catch (error) {
+      console.warn('No se pudo cargar el logo:', error);
     }
-  } catch (error) {
-    console.warn('No se pudo cargar el logo:', error);
+
+    // Configurar anchos de columnas basados en el análisis del archivo original
+    worksheet.columns = [
+      { width: 2.5 },   // A - Numeración (muy angosto)
+      { width: 20.36 }, // B - GTIN-13  
+      { width: 20.36 }, // C - GTIN-14
+      { width: 40.36 }, // D - DESCRIPCIÓN (más ancho)
+      { width: 20.36 }, // E - MARCA
+      { width: 20.36 }, // F - CONTENIDO NETO
+      { width: 20.36 }, // G - UNIDAD DE MEDIDA
+      { width: 16.21 }, // H - FECHA
+      { width: 11.07 }, // I - Columna extra
+      { width: 11.07 }  // J - Columna extra
+    ];
+
+    // Generar y descargar el archivo
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}_${moment().format('YYYYMMDD_HHmmss')}.xlsx`;
+    link.click();
+
+    window.URL.revokeObjectURL(url);
   }
 
-  // Configurar anchos de columnas basados en el análisis del archivo original
-  worksheet.columns = [
-    { width: 2.5 },   // A - Numeración (muy angosto)
-    { width: 20.36 }, // B - GTIN-13  
-    { width: 20.36 }, // C - GTIN-14
-    { width: 40.36 }, // D - DESCRIPCIÓN (más ancho)
-    { width: 20.36 }, // E - MARCA
-    { width: 20.36 }, // F - CONTENIDO NETO
-    { width: 20.36 }, // G - UNIDAD DE MEDIDA
-    { width: 16.21 }, // H - FECHA
-    { width: 11.07 }, // I - Columna extra
-    { width: 11.07 }  // J - Columna extra
-  ];
+  //EXPORTAR PDF GTIN VENTA
+  async exportarPDFGtinVenta(options: GS1GtinVentaOptions): Promise<void> {
+    const { data, filename, headerInfo } = options;
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
 
-  // Generar y descargar el archivo
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { 
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-  });
-  
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `${filename}_${moment().format('YYYYMMDD_HHmmss')}.xlsx`;
-  link.click();
-  
-  window.URL.revokeObjectURL(url);
-}
+    // Obtener imágenes antes
+    const logoBase64 = await this.configuracionVisualService.getLogoActualBase64();
+    const firmaBase64 = await this.configuracionVisualService.getFirmaActualBase64();
 
-//EXPORTAR PDF GTIN VENTA
-async exportarPDFGtinVenta(options: GS1GtinVentaOptions): Promise<void> {
-  const { data, filename, headerInfo } = options;
-  const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-
-  // Obtener imágenes antes
-  const logoBase64 = await this.configuracionVisualService.getLogoActualBase64();
-  const firmaBase64 = await this.configuracionVisualService.getFirmaActualBase64();
-
-  // Disclaimer específico para GTIN Venta
-  const disclaimer = `La Asociación Ecuatoriana de Código de Producto (ECOP) es organización miembro de GS1 en Ecuador y certifica que los códigos GTIN® que se detallan en este reporte son números estándares autorizados.
+    // Disclaimer específico para GTIN Venta
+    const disclaimer = `La Asociación Ecuatoriana de Código de Producto (ECOP) es organización miembro de GS1 en Ecuador y certifica que los códigos GTIN® que se detallan en este reporte son números estándares autorizados.
 Le recordamos que publicamos a nivel nacional y global la autenticidad de los códigos GTIN® registrados en la base de datos de GS1 Ecuador. Verifique la identidad de estos códigos en nuestra herramienta
 GEPIR Ecuador. Es responsabilidad del DUEÑO DE LA MARCA el manejo y control del CÓDIGO, DESCRIPCIÓN y MARCA DEL PRODUCTO. El Prefijo de Compañía GS1 no puede venderse, alquilarse, o
 entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a todas las claves de identificación GS1. El Prefijo de Compañía es único e inequívoco para cada empresa.`;
 
-  // Preparar tabla con las columnas específicas de GTIN Venta
-  const tableRows: any[] = [];
-  let index = 1;
+    // Preparar tabla con las columnas específicas de GTIN Venta
+    const tableRows: any[] = [];
+    let index = 1;
 
-  data.forEach(producto => {
-    tableRows.push([
-      String(index++),
-      producto.codpro || '',
-      producto.despro || '',
-      producto.marca || '',
-      producto.contenido || '',
-      producto.um || '',
-      producto.gtin || '',
-      this.formatearFechaSafe(producto.feccre)
-    ]);
-  });
-
-  autoTable(doc, {
-    startY: 65,
-    head: [[
-      '#', 'CÓDIGO', 'DESCRIPCIÓN', 'MARCA', 'CONTENIDO', 'UNIDAD', 'TIPO', 'FECHA'
-    ]],
-    body: tableRows,
-    styles: { fontSize: 7.5, cellPadding: 1.2 },
-    headStyles: {
-      fillColor: [255, 255, 255],
-      textColor: [0, 0, 0],
-      fontStyle: 'bold'
-    },
-    columnStyles: {
-      0: { halign: 'center', cellWidth: 10 },  // #
-      1: { cellWidth: 35 },                    // CÓDIGO
-      2: { cellWidth: 65 },                    // DESCRIPCIÓN
-      3: { cellWidth: 35 },                    // MARCA
-      4: { cellWidth: 25 },                    // CONTENIDO
-      5: { cellWidth: 25 },                    // UNIDAD
-      6: { cellWidth: 25 },                    // TIPO
-      7: { cellWidth: 30 },                    // FECHA
-    },
-    margin: { top: 65, left: 10, right: 10, bottom: 55 },
-    didDrawPage: (data) => {
-      const pageWidth = doc.internal.pageSize.width;
-      const pageHeight = doc.internal.pageSize.height;
-      const pageNumber = data.pageNumber;
-      const rightX = pageWidth - 20;
-      let y = 15;
-
-      // Logo
-      if (logoBase64) doc.addImage(logoBase64, 'PNG', 15, y, 35, 20);
-
-      // Títulos
-      doc.setFontSize(14);
-      doc.setFont('helvetica', 'bold');
-      doc.text('Sistema de Control de Códigos', pageWidth / 2, y + 5, { align: 'center' });
-      doc.setFontSize(12);
-      doc.text('Reporte de Productos GTIN Venta', pageWidth / 2, y + 12, { align: 'center' });
-
-      // Información lateral derecha
-      doc.setFontSize(9);
-      const info = [
-        { label: 'Emisor:', value: 'GS1 Ecuador' },
-        { label: 'Fecha emisión:', value: headerInfo.fechaEmision },
-        { label: 'Pág:', value: `${pageNumber}` },
-        { label: 'GLN:', value: headerInfo.gln },
-        { label: 'RUC:', value: headerInfo.ruc },
-      ];
-      let rightY = y;
-      info.forEach(line => {
-        doc.setFont('helvetica', 'bold');
-        doc.text(line.label, rightX - 40, rightY);
-        doc.setFont('helvetica', 'normal');
-        doc.text(line.value, rightX, rightY, { align: 'right' });
-        rightY += 5;
-      });
-
-      // Código y empresa
-      y += 25;
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
-      if (headerInfo.codigoEmpresa) doc.text(headerInfo.codigoEmpresa, 15, y);
-      if (headerInfo.nombreEmpresa) doc.text(headerInfo.nombreEmpresa, 50, y);
-
-      // Disclaimer
-      y += 6;
-      doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7.5);
-      const disclaimerLines = doc.splitTextToSize(disclaimer, pageWidth - 20);
-      disclaimerLines.forEach((line: string, index: number) => {
-        doc.text(line, 10, y + (index * 3));
-      });
-
-      // Firma centrada
-      if (firmaBase64) {
-        const firmaWidth = 45;
-        const firmaX = (pageWidth - firmaWidth) / 2;
-        const firmaY = pageHeight - 50;
-        doc.addImage(firmaBase64, 'PNG', firmaX, firmaY, firmaWidth, 45);
-      }
-    }
-  });
-
-  // Guardar PDF
-  doc.save(`${filename}_${moment().format('YYYYMMDD_HHmmss')}.pdf`);
-}
-
-//EXPORTAR GTIN VENTA EXCEL
-async exportarExcelGtinVenta(options: GS1GtinVentaOptions): Promise<void> {
-  const { data, filename, headerInfo } = options;
-  
-  const workbook = new ExcelJS.Workbook();
-  const worksheet = workbook.addWorksheet('Reporte GTIN Venta');
-
-  worksheet.pageSetup = {
-    orientation: 'landscape',
-    fitToPage: true,
-    fitToWidth: 1,
-    fitToHeight: 0
-  };
-
-  let currentRow = 1;
-
-  // FILA 1: TÍTULO PRINCIPAL
-  const titleCell = worksheet.getCell(`B${currentRow}`);
-  titleCell.value = 'SISTEMA DE CONTROL DE CÓDIGOS';
-  titleCell.font = { name: 'Arial', size: 14, bold: true };
-  titleCell.alignment = { horizontal: 'left', vertical: 'middle' };
-  currentRow++;
-
-  // FILA 2: SUBTÍTULO
-  const subtitleCell = worksheet.getCell(`B${currentRow}`);
-  subtitleCell.value = 'REPORTE DE PRODUCTOS GTIN VENTA';
-  subtitleCell.font = { name: 'Arial', size: 12, bold: true };
-  subtitleCell.alignment = { horizontal: 'left', vertical: 'middle' };
-  currentRow++;
-
-  // FILA 3: Vacía
-  currentRow++;
-
-  // FILA 4: EMPRESA Y CÓDIGO
-  const empresaCell = worksheet.getCell(`B${currentRow}`);
-  empresaCell.value = headerInfo.nombreEmpresa || '';
-  empresaCell.font = { name: 'Arial', size: 11, bold: true, color: { argb: 'FF003366' } };
-  empresaCell.alignment = { horizontal: 'left', vertical: 'middle', wrapText: true };
-
-  const codigoCell = worksheet.getCell(`C${currentRow}`);
-  codigoCell.value = headerInfo.codigoEmpresa || '';
-  codigoCell.font = { name: 'Arial', size: 11, bold: true };
-  codigoCell.alignment = { horizontal: 'left', vertical: 'middle' };
-  currentRow++;
-
-  currentRow++; // Fila vacía
-
-  // Información de la empresa
-  const empresaInfo = [
-    { label: 'RUC:', value: headerInfo.ruc || '' },
-    { label: 'GLN:', value: headerInfo.gln || '' },
-    { label: 'Emisor:', value: 'GS1 Ecuador' },
-    { label: 'Fecha emisión :', value: headerInfo.fechaEmision || '' }
-  ];
-
-  empresaInfo.forEach(info => {
-    const labelCell = worksheet.getCell(`B${currentRow}`);
-    labelCell.value = info.label;
-    labelCell.font = { name: 'Arial', size: 10, bold: true };
-
-    const valueCell = worksheet.getCell(`C${currentRow}`);
-    valueCell.value = info.value;
-    valueCell.font = { name: 'Arial', size: 10 };
-    
-    currentRow++;
-  });
-
-  currentRow++; // Fila vacía
-
-  // DISCLAIMER
-  worksheet.mergeCells(`B${currentRow}:H${currentRow}`);
-  const disclaimerCell = worksheet.getCell(`B${currentRow}`);
-  disclaimerCell.value = 'GS1 Ecuador (ECOP) certifica que los códigos GTIN que constan a continuación son auténticos y publicados en www.gs1ec.org Verified by Ecuador.\nEl dueño de la marca del producto pone el código, es su responsabilidad el manejo y control del código, incluida su descripción y marca.\nEl Prefijo Global De Compañía GS1, GCP, es INTRANSFERIBLE.';
-  disclaimerCell.font = { name: 'Arial', size: 10, bold: true };
-  disclaimerCell.alignment = { 
-    horizontal: 'center', 
-    vertical: 'middle', 
-    wrapText: true 
-  };
-  disclaimerCell.fill = {
-    type: 'pattern',
-    pattern: 'solid',
-    fgColor: { argb: 'FFFFFF00' }
-  };
-
-  worksheet.getRow(currentRow).height = 50;
-  currentRow++;
-
-  currentRow++; // Fila vacía
-
-  // HEADERS DE LA TABLA
-  const headers = [
-    { col: 'A', value: '#' },
-    { col: 'B', value: 'CÓDIGO' },
-    { col: 'C', value: 'DESCRIPCIÓN' },
-    { col: 'D', value: 'MARCA' },
-    { col: 'E', value: 'CONTENIDO' },
-    { col: 'F', value: 'UNIDAD' },
-    { col: 'G', value: 'TIPO' },
-    { col: 'H', value: 'FECHA' }
-  ];
-  
-  headers.forEach(header => {
-    const cell = worksheet.getCell(`${header.col}${currentRow}`);
-    cell.value = header.value;
-    cell.font = { name: 'Arial', size: 10, bold: true };
-    cell.alignment = { horizontal: 'center', vertical: 'middle' };
-    cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FFD3D3D3' }
-    };
-  });
-  currentRow++;
-
-  // DATOS DE LA TABLA
-  data.forEach((producto, index) => {
-    const rowData = [
-      index + 1,
-      producto.codpro || '',
-      producto.despro || '',
-      producto.marca || '',
-      producto.contenido || '',
-      producto.um || '',
-      producto.gtin || '',
-      this.formatearFechaSafe(producto.feccre)
-    ];
-
-    ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].forEach((col, colIndex) => {
-      const cell = worksheet.getCell(`${col}${currentRow}`);
-      cell.value = rowData[colIndex];
-      cell.font = { name: 'Arial', size: 9 };
-      cell.alignment = { horizontal: 'left', vertical: 'middle' };
+    data.forEach(producto => {
+      tableRows.push([
+        String(index++),
+        producto.codpro || '',
+        producto.despro || '',
+        producto.marca || '',
+        producto.contenido || '',
+        producto.um || '',
+        producto.gtin || '',
+        this.formatearFechaSafe(producto.feccre)
+      ]);
     });
 
+    autoTable(doc, {
+      startY: 65,
+      head: [[
+        '#', 'CÓDIGO', 'DESCRIPCIÓN', 'MARCA', 'CONTENIDO', 'UNIDAD', 'TIPO', 'FECHA'
+      ]],
+      body: tableRows,
+      styles: { fontSize: 7.5, cellPadding: 1.2 },
+      headStyles: {
+        fillColor: [255, 255, 255],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold'
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 10 },  // #
+        1: { cellWidth: 35 },                    // CÓDIGO
+        2: { cellWidth: 65 },                    // DESCRIPCIÓN
+        3: { cellWidth: 35 },                    // MARCA
+        4: { cellWidth: 25 },                    // CONTENIDO
+        5: { cellWidth: 25 },                    // UNIDAD
+        6: { cellWidth: 25 },                    // TIPO
+        7: { cellWidth: 30 },                    // FECHA
+      },
+      margin: { top: 65, left: 10, right: 10, bottom: 55 },
+      didDrawPage: (data) => {
+        const pageWidth = doc.internal.pageSize.width;
+        const pageHeight = doc.internal.pageSize.height;
+        const pageNumber = data.pageNumber;
+        const rightX = pageWidth - 20;
+        let y = 15;
+
+        // Logo
+        if (logoBase64) {
+          doc.addImage(logoBase64, 'PNG', 15, y, 35, 20);
+        }
+
+        // ======================
+        //  TÍTULOS CABECERA
+        // ======================
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(0, 51, 102);   // Azul similar a #003366
+        doc.setFontSize(14);
+        doc.text(
+          'SISTEMA DE CONTROL DE CÓDIGOS',
+          pageWidth / 2,
+          y + 5,
+          { align: 'center' }
+        );
+
+        doc.setFontSize(12);
+        doc.text(
+          'REPORTE DE PRODUCTOS CODIFICADOS',
+          pageWidth / 2,
+          y + 12,
+          { align: 'center' }
+        );
+
+        // Volver a negro para el resto del documento
+        doc.setTextColor(0, 0, 0);
+
+
+        // Volvemos a negro
+        doc.setTextColor(0, 0, 0);
+
+
+        // Información lateral derecha
+        doc.setFontSize(9);
+        const info = [
+          { label: 'Emisor:', value: 'GS1 Ecuador' },
+          { label: 'Fecha emisión:', value: headerInfo.fechaEmision },
+          { label: 'Pág:', value: `${pageNumber}` },
+          { label: 'GLN:', value: headerInfo.gln },
+          { label: 'RUC:', value: headerInfo.ruc },
+        ];
+        let rightY = y;
+        info.forEach(line => {
+          doc.setFont('helvetica', 'bold');
+          doc.text(line.label, rightX - 40, rightY);
+          doc.setFont('helvetica', 'normal');
+          doc.text(line.value, rightX, rightY, { align: 'right' });
+          rightY += 5;
+        });
+
+        // Código y empresa
+        y += 25;
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        if (headerInfo.codigoEmpresa) doc.text(headerInfo.codigoEmpresa, 15, y);
+        if (headerInfo.nombreEmpresa) doc.text(headerInfo.nombreEmpresa, 50, y);
+
+        // Disclaimer
+        y += 6;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(7.5);
+        const disclaimerLines = doc.splitTextToSize(disclaimer, pageWidth - 20);
+        disclaimerLines.forEach((line: string, index: number) => {
+          doc.text(line, 10, y + (index * 3));
+        });
+
+        // Firma centrada
+        if (firmaBase64) {
+          const firmaWidth = 45;
+          const firmaX = (pageWidth - firmaWidth) / 2;
+          const firmaY = pageHeight - 50;
+          doc.addImage(firmaBase64, 'PNG', firmaX, firmaY, firmaWidth, 45);
+        }
+      }
+    });
+
+    // Guardar PDF
+    doc.save(`${filename}_${moment().format('YYYYMMDD_HHmmss')}.pdf`);
+  }
+
+  //EXPORTAR GTIN VENTA EXCEL
+  async exportarExcelGtinVenta(options: GS1GtinVentaOptions): Promise<void> {
+    const { data, filename, headerInfo } = options;
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Reporte GTIN Venta');
+
+    worksheet.pageSetup = {
+      orientation: 'landscape',
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 0
+    };
+
+
+
+    // FILA 1: TÍTULO PRINCIPAL
+    let currentRow = 1;
+
+    // ======================
+    // FILA 1: TÍTULO PRINCIPAL
+    // ======================
+    worksheet.mergeCells(`B${currentRow}:D${currentRow}`);   // como en tu ejemplo, centrado en varias columnas
+    const titleCell = worksheet.getCell(`B${currentRow}`);
+    titleCell.value = 'SISTEMA DE CONTROL DE CÓDIGOS';
+    titleCell.font = {
+      name: 'Calibri',
+      size: 16,
+      bold: true,
+      color: { argb: 'FF003366' }   // azul oscuro GS1
+    };
+    titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
     currentRow++;
-  });
 
-  // Intentar agregar logo
-  try {
-    const logoBase64 = await this.configuracionVisualService.getLogoActualBase64();
-    if (logoBase64) {
-      const base64Data = logoBase64.replace(/^data:image\/[a-z]+;base64,/, '');
-      
-      const logoId = workbook.addImage({
-        base64: base64Data,
-        extension: 'png',
+    // ======================
+    // FILA 2: SUBTÍTULO
+    // ======================
+    worksheet.mergeCells(`B${currentRow}:D${currentRow}`);
+    const subtitleCell = worksheet.getCell(`B${currentRow}`);
+    subtitleCell.value = 'REPORTE DE PRODUCTOS GTIN VENTA';
+    subtitleCell.font = {
+      name: 'Calibri',
+      size: 14,
+      bold: true,
+      color: { argb: 'FF003366' }   // mismo azul
+    };
+    subtitleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+    currentRow++;
+
+    // FILA 3: Vacía
+    currentRow++;
+
+    // ======================
+    // FILA 4: EMPRESA Y CÓDIGO
+    // ======================
+    const empresaCell = worksheet.getCell(`B${currentRow}`);
+    empresaCell.value = headerInfo.nombreEmpresa || '';
+    empresaCell.font = {
+      name: 'Calibri',
+      size: 11,
+      bold: true,
+      color: { argb: 'FFFF6600' }   // NARANJA (como en la captura)
+    };
+    empresaCell.alignment = {
+      horizontal: 'left',
+      vertical: 'middle',
+      wrapText: true
+    };
+
+    const codigoCell = worksheet.getCell(`C${currentRow}`);
+    codigoCell.value = headerInfo.codigoEmpresa || '';
+    codigoCell.font = {
+      name: 'Calibri',
+      size: 14,
+      bold: true,
+      color: { argb: 'FF003366' }   // azul para el código
+    };
+    codigoCell.alignment = { horizontal: 'left', vertical: 'middle' };
+    currentRow++;
+
+    currentRow++;
+
+    currentRow++; // Fila vacía
+
+    // Información de la empresa
+    const empresaInfo = [
+      { label: 'RUC:', value: headerInfo.ruc || '' },
+      { label: 'GLN:', value: headerInfo.gln || '' },
+      { label: 'Emisor:', value: 'GS1 Ecuador' },
+      { label: 'Fecha emisión :', value: headerInfo.fechaEmision || '' }
+    ];
+
+    empresaInfo.forEach(info => {
+      const labelCell = worksheet.getCell(`B${currentRow}`);
+      labelCell.value = info.label;
+      labelCell.font = { name: 'Arial', size: 10, bold: true };
+
+      const valueCell = worksheet.getCell(`C${currentRow}`);
+      valueCell.value = info.value;
+      valueCell.font = { name: 'Arial', size: 10 };
+
+      currentRow++;
+    });
+
+    currentRow++; // Fila vacía
+
+    // DISCLAIMER
+    // FILA 11: DISCLAIMER - Combinado de B a H
+    worksheet.mergeCells(`B${currentRow}:H${currentRow}`);
+    const disclaimerCell = worksheet.getCell(`B${currentRow}`);
+
+    disclaimerCell.value = {
+      richText: [
+        {
+          text: 'GS1 Ecuador  (ECOP) certifica que los códigos GTIN que constan a continuación son auténticos y publicados en www.gs1ec.org Verified by Ecuador.\n',
+          font: { name: 'Calibri', size: 10, bold: false }
+        },
+        {
+          text: 'El dueño de la marca del producto pone el código, es su responsabilidad el manejo y control del código, incluida su descripción y marca.\n',
+          font: { name: 'Calibri', size: 10, bold: false }
+        },
+        {
+          text: 'El Prefijo Global De Compañía GS1, GCP, es ',
+          font: { name: 'Calibri', size: 10, bold: true }
+        },
+        {
+          text: 'INTRANSFERIBLE.',
+          font: { name: 'Calibri', size: 10, bold: true, color: { argb: 'FFFF0000' } } // 🔴 ROJO
+        }
+      ]
+    };
+
+    disclaimerCell.alignment = {
+      horizontal: 'center',
+      vertical: 'middle',
+      wrapText: true
+    };
+
+    disclaimerCell.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFFFFF00' } // Amarillo
+    };
+
+    // altura de la fila para que quepa el texto
+    worksheet.getRow(currentRow).height = 50;
+    currentRow++;
+
+    currentRow++;
+
+    currentRow++; // Fila vacía
+
+    // HEADERS DE LA TABLA
+    const headers = [
+      { col: 'A', value: '#' },
+      { col: 'B', value: 'CÓDIGO' },
+      { col: 'C', value: 'DESCRIPCIÓN' },
+      { col: 'D', value: 'MARCA' },
+      { col: 'E', value: 'CONTENIDO' },
+      { col: 'F', value: 'UNIDAD' },
+      { col: 'G', value: 'TIPO' },
+      { col: 'H', value: 'FECHA' }
+    ];
+
+    headers.forEach(header => {
+      const cell = worksheet.getCell(`${header.col}${currentRow}`);
+      cell.value = header.value;
+      cell.font = { name: 'Arial', size: 10, bold: true };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFFFFF' }  //fgColor: { argb: 'FFD3D3D3' }
+      };
+    });
+    currentRow++;
+
+    // DATOS DE LA TABLA
+    // DATOS DE LA TABLA
+    data.forEach((producto, index) => {
+      const rowData = [
+        index + 1,                       // A  -> #
+        producto.codpro || '',           // B  -> CÓDIGO
+        producto.despro || '',           // C  -> DESCRIPCIÓN
+        producto.marca || '',            // D  -> MARCA
+        producto.contenido || '',        // E  -> CONTENIDO
+        producto.um || '',               // F  -> UNIDAD
+        producto.gtin || '',             // G  -> TIPO
+        this.formatearFechaSafe(producto.feccre) // H -> FECHA
+      ];
+
+      ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'].forEach((col, colIndex) => {
+        const cell = worksheet.getCell(`${col}${currentRow}`);
+        cell.value = rowData[colIndex];
+
+        // Tamaño y color por defecto
+        let fontColor = { argb: 'FF000000' }; // negro
+        let fontSize = 12;
+
+        if (col === 'A') {
+          // Naranja + tamaño 11
+          fontColor = { argb: 'FFFF6600' };
+          fontSize = 11;
+        } else if (col === 'B') {
+          // Azul oscuro (igual que empresa)
+          fontColor = { argb: 'FF003366' };
+          fontSize = 12;
+        }
+
+        cell.font = {
+          name: 'Arial',
+          size: fontSize,
+          color: fontColor
+        };
+
+        cell.alignment = { horizontal: 'left', vertical: 'middle' };
       });
 
-      worksheet.addImage(logoId, {
-        tl: { col: 5.5, row: 2.1 },
-        ext: { width: 170, height: 100 }
-      });
+
+
+      currentRow++;
+    });
+
+
+    // Intentar agregar logo
+    try {
+      const logoBase64 = await this.configuracionVisualService.getLogoActualBase64();
+      if (logoBase64) {
+        const base64Data = logoBase64.replace(/^data:image\/[a-z]+;base64,/, '');
+
+        const logoId = workbook.addImage({
+          base64: base64Data,
+          extension: 'png',
+        });
+
+        worksheet.addImage(logoId, {
+          tl: { col: 5.5, row: 2.1 },
+          ext: { width: 170, height: 100 }
+        });
+      }
+    } catch (error) {
+      console.warn('No se pudo cargar el logo:', error);
     }
-  } catch (error) {
-    console.warn('No se pudo cargar el logo:', error);
-  }
 
-  // Configurar anchos de columnas
-  worksheet.columns = [
-    { width: 8 },     // A - #
-    { width: 20.36 }, // B - CÓDIGO  
-    { width: 40.36 }, // C - DESCRIPCIÓN
-    { width: 20.36 }, // D - MARCA
-    { width: 15.36 }, // E - CONTENIDO
-    { width: 15.36 }, // F - UNIDAD
-    { width: 15.36 }, // G - TIPO
-    { width: 16.21 }, // H - FECHA
-  ];
+    // Configurar anchos de columnas
+    worksheet.columns = [
+      { width: 8 },     // A - #
+      { width: 20.36 }, // B - CÓDIGO  
+      { width: 40.36 }, // C - DESCRIPCIÓN
+      { width: 20.36 }, // D - MARCA
+      { width: 15.36 }, // E - CONTENIDO
+      { width: 15.36 }, // F - UNIDAD
+      { width: 15.36 }, // G - TIPO
+      { width: 16.21 }, // H - FECHA
+    ];
 
-  // Generar y descargar
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], { 
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
-  });
-  
-  const url = window.URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `${filename}_${moment().format('YYYYMMDD_HHmmss')}.xlsx`;
-  link.click();
-  
-  window.URL.revokeObjectURL(url);
-}
-private formatearFechaSafe(fecha: any): string {
-  if (!fecha) return '';
-  
-  let fechaMoment;
-  
-  // Intentar diferentes formatos
-  if (typeof fecha === 'string' && fecha.includes('/')) {
-    // Formato DD/MM/YYYY
-    fechaMoment = moment(fecha, 'DD/MM/YYYY');
-  } else {
-    // Formato ISO o Date object
-    fechaMoment = moment(fecha);
+    // Generar y descargar
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}_${moment().format('YYYYMMDD_HHmmss')}.xlsx`;
+    link.click();
+
+    window.URL.revokeObjectURL(url);
   }
-  
-  return fechaMoment.isValid() ? fechaMoment.format('DD/MM/YYYY') : '';
-}
+  private formatearFechaSafe(fecha: any): string {
+    if (!fecha) return '';
+
+    let fechaMoment;
+
+    // Intentar diferentes formatos
+    if (typeof fecha === 'string' && fecha.includes('/')) {
+      // Formato DD/MM/YYYY
+      fechaMoment = moment(fecha, 'DD/MM/YYYY');
+    } else {
+      // Formato ISO o Date object
+      fechaMoment = moment(fecha);
+    }
+
+    return fechaMoment.isValid() ? fechaMoment.format('DD/MM/YYYY') : '';
+  }
 }

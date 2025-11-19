@@ -17,13 +17,14 @@ import { combineLatest } from 'rxjs';
 import { shareReplay } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { multipleEmailsValidator } from 'src/app/util/validators';
-import { FacturaAnuladaComponent,DatosAnularFactura  } from '../factura-anulada/factura-anulada.component';
+import { FacturaAnuladaComponent, DatosAnularFactura } from '../factura-anulada/factura-anulada.component';
 import {
   FacturacionMesesResult
 } from 'src/app/components/sic-3000/facturacion/facturacion-meses-modal/facturacion-meses-modal.component';
 import { CellDoubleClickedEvent } from 'ag-grid-community';
 import { DetalleDescripcionModalComponent } from '../detalle-descripcion-modal/detalle-descripcion-modal.component';
 import { HttpClient } from '@angular/common/http';
+import { AsientoVentaService, AsientoVentaRequest } from 'src/app/services/asiento-venta.service';
 import {
   FormBuilder,
   FormControl,
@@ -87,6 +88,7 @@ interface LineaFactura {
   base?: number;   // base imponible de la línea (ya con descuento, SIN IVA)
   ivaVal?: number; // valor de IVA de la línea
   periodo?: string;
+  cuenta?: string;
 }
 
 
@@ -198,6 +200,7 @@ export class FacturacionIndividualComponent implements OnInit {
       }
     },
     { headerName: 'Cod.', field: 'codpro', width: 60, suppressColumnsToolPanel: true },
+    { headerName: 'Cuenta', field: 'cuenta', width: 60, suppressColumnsToolPanel: true, hide: false },
     { headerName: 'Periodo', field: 'periodo', hide: true, editable: false, flex: 1, minWidth: 200, tooltipField: 'periodo' },
     { headerName: 'Detalle', field: 'detalle', editable: false, flex: 1, minWidth: 200, tooltipField: 'detalle' },
     {
@@ -440,7 +443,7 @@ export class FacturacionIndividualComponent implements OnInit {
   vInscripcion: number = 0;
   vAsignacion: number = 0;
   vMantenimiento: number = 0
-  grupoCli:string='';
+  grupoCli: string = '';
   // Productos desde el backend
   productos: any[] = []; // o usa la interfaz de tu servicio: ProductoResponse[]
   filteredProductos$ = of([] as any[]); // stream para el autocomplete
@@ -450,7 +453,7 @@ export class FacturacionIndividualComponent implements OnInit {
   productosCount = 0;               // cuántos llegaron
   productosError: string | null = null;
   constructor(
-      private http: HttpClient,
+    private http: HttpClient,
     private clienteService: ClienteService,
     private prefijoService: PrefijoService,
     private usuarioService: UsuarioService,
@@ -468,15 +471,13 @@ export class FacturacionIndividualComponent implements OnInit {
     private descuentoService: DescuentoService,
     private ivaService: IvaService,
     private dialog: MatDialog,
-    private router: Router
+    private router: Router,
+    private asientoVentaService: AsientoVentaService
   ) { }
 
   ngOnInit(): void {
     this.usuarioActual = this.usuarioService.getUsuarioActual();
-    this.cargarIvasVigentes();
-    this.cargarAutorizacion();
 
-    this.cargarProductos();
     // Formularios
     this.formCliente = this.fb.group({
       clienteCodigo: [0, [Validators.required, Validators.min(1)]],
@@ -595,7 +596,10 @@ export class FacturacionIndividualComponent implements OnInit {
         return of([] as FormaPagoResponse[]);
       })
     );
+    this.cargarIvasVigentes();
+    this.cargarAutorizacion();
 
+    this.cargarProductos();
     this.cargarDescuentos();
     this.configurarFiltroDescuentos();
   }
@@ -704,7 +708,7 @@ export class FacturacionIndividualComponent implements OnInit {
                 this.vInscripcion = ge?.inscripcion ?? 0;
                 this.vAsignacion = ge?.asignacion ?? 0;
                 this.vMantenimiento = ge?.mantenimiento ?? 0;
-                this.grupoCli=ge?.codigo;
+                this.grupoCli = ge?.codigo;
                 //alert(this.vMantenimiento);
               }),
               map((ge: any) => `${ge.codigo}   ${ge.nombre}`.trim()),
@@ -772,7 +776,7 @@ export class FacturacionIndividualComponent implements OnInit {
     this.formCliente.reset();
     this.baseGravada = 0;
     this.nombreCliente = '';
-    this.grupoCli='';
+    this.grupoCli = '';
     // ---- Descuento / Factura (autocompletes)
     this.formFactura.patchValue({ producto: '', descuento: '' }, { emitEvent: false });
     this.descuentoSeleccionado = null;
@@ -946,52 +950,58 @@ export class FacturacionIndividualComponent implements OnInit {
     });
   }
 
+  private cargandoAutorizacion = false;
+  cargarAutorizacion(): void {
+    // Evita ejecuciones simultáneas o repetidas
+    if (this.cargandoAutorizacion) return;
+    this.cargandoAutorizacion = true;
 
-cargarAutorizacion() {
-  const id = this.usuarioActual?.id_autorizacion_usuario;
+    const id = this.usuarioActual?.id_autorizacion_caja;
 
-  // Si no hay autorización asociada en el usuario
-  if (id == null) {
-    this.avisarCajaNoAsignada();
-    return;
-  }
-
-  const idNum = Number(id);
-
-  this.autorizacionCajaService.getAutorizacionCaja(idNum).subscribe({
-    next: ({ data, type, message }) => {
-      // Cuando el API devuelve Success pero sin data
-      if (!data) {
-        this.avisarCajaNoAsignada();
-        return;
-      }
-
-      // OK: carga datos en el form y marca como asignada
-      this.formCaja.patchValue({
-        secuencial: this.padLeft(data.numero_factura, 9),
-        caja: data.caja ?? '',
-        puntoEmision: data.num_establecimiento ?? '',
-      }, { emitEvent: false });
-
-      this.cajaAsignada = true;
-    },
-    error: (err) => {
-      // Casos típicos del backend
-      const notFound =
-        err?.status === 404 ||
-        (err?.error?.type || '').toString().toLowerCase() === 'notfound' ||
-        /no encontrada/i.test(err?.error?.message || '');
-
-      if (notFound) {
-        // Ej: {"type":"NotFound","message":"AutorizacionCaja con ID 4 no encontrada"}
-        this.avisarCajaNoAsignada();
-      } else {
-        console.error('Error cargando autorización de caja', err);
-        this.mostrarAlerta('Error al consultar la autorización de caja', 'error');
-      }
+    // Si no hay autorización asociada en el usuario
+    if (id == null) {
+      this.avisarCajaNoAsignada();
+      this.cargandoAutorizacion = false; // libera bandera
+      return;
     }
-  });
-}
+
+    const idNum = Number(id);
+
+    this.autorizacionCajaService.getAutorizacionCaja(idNum).subscribe({
+      next: ({ data }) => {
+        if (!data) {
+          this.avisarCajaNoAsignada();
+          this.cargandoAutorizacion = false;
+          return;
+        }
+
+        // ✅ OK: carga datos en el form y marca como asignada
+        this.formCaja.patchValue({
+          secuencial: this.padLeft(data.numero_factura, 9),
+          caja: data.caja ?? '',
+          puntoEmision: data.num_establecimiento ?? '',
+        }, { emitEvent: false });
+
+        this.cajaAsignada = true;
+        this.cargandoAutorizacion = false;
+      },
+      error: (err) => {
+        const notFound =
+          err?.status === 404 ||
+          (err?.error?.type || '').toString().toLowerCase() === 'notfound' ||
+          /no encontrada/i.test(err?.error?.message || '');
+
+        if (notFound) {
+          this.avisarCajaNoAsignada();
+        } else {
+          console.error('Error cargando autorización de caja', err);
+          this.mostrarAlerta('Error al consultar la autorización de caja', 'error');
+        }
+
+        this.cargandoAutorizacion = false; // ✅ liberar bandera
+      }
+    });
+  }
 
 
   // En tu componente
@@ -1043,7 +1053,8 @@ cargarAutorizacion() {
       codpro: p.codpro, cantidad: 1, detalle, pUnidad: pu, iva: ivaPorc,
       descPct: this.descuentoSeleccionado ? this.toN(this.descuentoSeleccionado.valor, 2) : 0,
       desUnit: 0, descuento: 0, desTotal: 0, total: 0,
-      periodo: '' // 👈
+      periodo: '',
+      cuenta: p.codcuedeb
 
     };
     this.recalcLinea(nuevaFila);
@@ -1443,8 +1454,8 @@ cargarAutorizacion() {
     const prefijoObj = this.prefijos.find(p => p.id_prefijos === idPrefijo);
     const prefijo = prefijoObj?.codpre ?? '';
     const correo = this.getEmailsConcat();
-    const facBloque=0;
-    const GrupoCliente=this.grupoCli;
+    const facBloque = 0;
+    const GrupoCliente = this.grupoCli;
     const totales = this.formTotales.getRawValue();
     const subtotalSIva = Number(this.baseTarifa0 ?? 0);
     const subtotalCalculado = Number(this.baseGravada ?? 0);
@@ -1554,29 +1565,51 @@ cargarAutorizacion() {
     if (!payload.caja) { this.mostrarAlerta('No hay caja asignada.', 'info'); return; }
     if (!payload.detalles?.length) { this.mostrarAlerta('Agrega al menos un producto a la factura.', 'info'); return; }
 
-    // (Opcional) logs de depuración
     console.log('PAYLOAD →', payload);
     console.table(payload.detalles);
     console.table(payload.formasPago);
     console.log(JSON.stringify(payload, null, 2));
 
+    this.generando = true;
+
     this.facturacionService.crear(payload).pipe(
       switchMap(resp => {
         const tipo = (resp?.type || '').toLowerCase();
 
-        if (tipo === 'success' || tipo === 'warning') {
-          this.mostrarAlerta(resp?.message || 'Factura creada correctamente.', 'ok');
+        if (tipo !== 'success' && tipo !== 'warning') {
+          this.mostrarAlerta(resp?.message || 'No se pudo crear la factura.', 'error');
+          return of(null);
+        }
 
-          const idNota = Number(resp?.data?.idNota);
-          if (Number.isFinite(idNota)) {
-            // 1) Genera el XML en el servidor
+        this.mostrarAlerta(resp?.message || 'Factura creada correctamente.', 'ok');
+
+        const idNota = Number(resp?.data?.idNota);
+        if (!Number.isFinite(idNota)) {
+          this.mostrarAlerta('No se recibió idNota válido en la respuesta.', 'error');
+          return of(null);
+        }
+
+        // 1) Crear asiento de venta basado en el grid
+        return this.crearAsientoVenta(idNota, payload).pipe(
+          catchError(err => {
+            console.error('[crearFactura] Error creando asiento contable:', err);
+            this.mostrarAlerta('Error al crear el asiento contable de la venta.', 'error');
+            // Si quieres que aquí se detenga y NO genere XML, devuelve of(null)
+            return of(null);
+          }),
+          // 2) Luego generar XML en el servidor
+          switchMap(asientoResp => {
+            if (asientoResp === null) {
+              // Hubo error en asiento, ya avisamos arriba
+              return of(null);
+            }
+
             return this.facturacionService.generarXmlEnServidor(idNota).pipe(
               tap(r => {
                 if (r?.success) {
                   this.mostrarAlerta(`XML generado en el servidor: ${r.fileName}`, 'ok');
-
-                  // 2) Abrir/descargar el PDF inmediatamente (nueva línea)
-                  this.descargarPdf(idNota); //Aplica la peticion al interceptor
+                  // 3) Descargar el PDF
+                  this.descargarPdf(idNota);
                 } else {
                   this.mostrarAlerta(r?.message || 'No se generó el XML.', 'error');
                 }
@@ -1586,14 +1619,8 @@ cargarAutorizacion() {
                 return of(null);
               })
             );
-          } else {
-            this.mostrarAlerta('No se recibió idNota válido en la respuesta.', 'error');
-            return of(null);
-          }
-        } else {
-          this.mostrarAlerta(resp?.message || 'No se pudo crear la factura.', 'error');
-          return of(null);
-        }
+          })
+        );
       }),
       catchError(err => {
         console.error('[crearFactura] error:', err);
@@ -1601,13 +1628,12 @@ cargarAutorizacion() {
         return of(void 0);
       }),
       finalize(() => {
-        // ✅ liberar el botón siempre (éxito o error)
         this.generando = false;
         this.cdRef.detectChanges();
       })
     ).subscribe({
       next: () => {
-        // ✅ limpiar y regresar a la pestaña 1
+        // Limpiar y regresar a la pestaña 1 solo si todo el flujo terminó
         this.limpiarCliente();
         this.cargarAutorizacion();
         this.currentStep = 1;
@@ -1616,12 +1642,13 @@ cargarAutorizacion() {
     });
   }
 
+
   private descargarPdf(idNota: number): void {
     const pdfUrl = `${environment.invoices_sic}/Facturacion/${idNota}/pdf`;
-    
-    this.http.get(pdfUrl, { 
+
+    this.http.get(pdfUrl, {
       responseType: 'blob',
-      observe: 'response' 
+      observe: 'response'
     }).subscribe({
       next: (response) => {
         // Crear blob URL y descargar
@@ -1788,24 +1815,24 @@ cargarAutorizacion() {
   // --- controla el click del botón ---
 
 
-onGenerarClick(): void {
-  if (this.generando) return;
+  onGenerarClick(): void {
+    if (this.generando) return;
 
-  // 👉 bloqueo explícito por mantenimiento sin periodo/prefijo
-  const vm = this.validaMantenimiento();
-  if (!vm.ok) {
-    this.mostrarAlerta(vm.msg || 'Complete los datos del mantenimiento.', 'info');
-    return;
+    // 👉 bloqueo explícito por mantenimiento sin periodo/prefijo
+    const vm = this.validaMantenimiento();
+    if (!vm.ok) {
+      this.mostrarAlerta(vm.msg || 'Complete los datos del mantenimiento.', 'info');
+      return;
+    }
+
+    if (!this.puedeGenerarFactura) {
+      this.mostrarAlerta(this.motivoBloqueoFactura(), 'info');
+      return;
+    }
+
+    this.generando = true;
+    this.crearFactura();
   }
-
-  if (!this.puedeGenerarFactura) {
-    this.mostrarAlerta(this.motivoBloqueoFactura(), 'info');
-    return;
-  }
-
-  this.generando = true;
-  this.crearFactura();
-}
 
 
   // --- usa SOLO estos dos getters ---
@@ -2020,23 +2047,272 @@ onGenerarClick(): void {
     return { ok: true };
   }
 
-abrirModalAnular() {
-  this.dialog.open(FacturaAnuladaComponent, {
-    width: '900px',
-    disableClose: true,
-    autoFocus: false
+  abrirModalAnular() {
+    this.dialog.open(FacturaAnuladaComponent, {
+      width: '900px',
+      disableClose: true,
+      autoFocus: false
+    });
+  }
+
+  cajaAsignada = false;
+
+  private avisarCajaNoAsignada(): void {
+    // Limpia los campos de caja en el form
+    this.formCaja.patchValue({ secuencial: '', caja: '', puntoEmision: '' }, { emitEvent: false });
+    this.cajaAsignada = false;
+
+    // Muestra el aviso
+    this.mostrarAlerta('Usuario no tiene asignado Caja', 'info');
+  }
+
+private crearAsientoVenta(
+  idNota: number,
+  facturaPayload: FacturaCrearRequest
+) {
+  const asientoReq = this.buildAsientoVentaRequest(idNota, facturaPayload);
+
+  console.log('ASIENTO VENTA OBJ →', asientoReq);
+  console.log('ASIENTO VENTA JSON →', JSON.stringify(asientoReq, null, 2));
+
+  // devolvemos el numdoc del asiento creado
+  return this.asientoVentaService.crearAsientoVenta(asientoReq).pipe(
+    map(() => asientoReq.numdoc)   // 👈 aquí sale "VT-00001"
+  );
+}
+
+private buildAsientoVentaRequest(
+  idNota: number,
+  facturaPayload: FacturaCrearRequest
+): AsientoVentaRequest {
+  const hoy = new Date();
+  const yyyy = hoy.getFullYear().toString();
+  const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+  const dd = String(hoy.getDate()).padStart(2, '0');
+  const fecha = `${yyyy}-${mm}-${dd}`;
+  const hora = hoy.toTimeString().substring(0, 5); // "HH:mm"
+
+  // ❗Campos obligatorios (> 0)
+  const idZona = 1; // si luego usas zona del usuario, cámbialo aquí
+  const idUsuario = Number(this.usuarioActual?.id_usuario ?? 1);
+  const idEmpresa = Number(this.usuarioActual?.id_empresa ?? 1);
+  const idTipoAsiento = 3;        // tipo de asiento para ventas
+
+  // 👉 Tipo de documento del asiento
+  const tipdoc = 'VT';
+
+  // 👉 Secuencial de la factura y numdoc = "VT-00001"
+  const secRaw = (this.formCaja.get('secuencial')?.value ?? idNota)
+    .toString()
+    .replace(/\D/g, '');          // por si viniera con algo raro
+  const secPadded = secRaw.padStart(5, '0');
+  const numdoc = `${secPadded}`;
+
+  // Totales de la factura
+  const tot = this.to2(Number(facturaPayload.totalCalculado ?? 0));
+  const beneficiario = `CLIENTE ID: ${facturaPayload.idCliente}`;
+
+  // 🔹 Cuentas base
+  const CTA_CLIENTES = 110101;          // Clientes
+  const CTA_IVA = 210101;              // IVA Débito Fiscal
+  const CTA_VENTAS_DEFAULT = 410101;   // por si alguna fila no trae cuenta
+
+  // ====== 1) Recuperar filas de productos desde el GRID ======
+  const filasProd: any[] = [];
+  if (this.gridApi) this.gridApi.forEachNode(n => filasProd.push(n.data));
+  else filasProd.push(...this.rowData);
+
+  console.log('FILAS PROD PARA ASIENTO →', filasProd);
+
+  // ====== 2) Calcular IVA total ======
+  let totalIva = 0;
+  for (const row of filasProd) {
+    const ivaVal = this.to2(Number(row.ivaVal ?? 0));
+    if (ivaVal > 0) totalIva = this.to2(totalIva + ivaVal);
+  }
+
+  // ====== 3) Construir nocomprobante tipo "001999000000004" ======
+  const puntoEmision = (this.formCaja.get('puntoEmision')?.value ?? '').toString().trim();
+  const caja = (this.formCaja.get('caja')?.value ?? '').toString().trim();
+  const secuencial = (this.formCaja.get('secuencial')?.value ?? '').toString().trim();
+
+  const nocomprobante = (puntoEmision + caja + secuencial) || idNota.toString();
+
+  // ====== 4) Armar las líneas del asiento ======
+  const detalles: AsientoVentaRequest['detalles'] = [];
+  let numlinea = 1;
+  const anioStr = facturaPayload.anioFactura.toString();
+
+  // 4.1) DEBE: Clientes por el TOTAL
+  detalles.push({
+    numlinea: numlinea++,
+    anio: anioStr,
+    fechatransaccion: fecha,
+    hora,
+    idZona,
+    idCentroCostos: null,
+    idLocal: 1,
+    idPlanCuentas: CTA_CLIENTES,
+    codprePc: `${CTA_CLIENTES}-001`,
+    idCodContable: 3,
+    nocomprobante,
+    docurelacionado: '',
+    cheque: 0,
+    beneficiario: '',
+    debe: tot,
+    haber: 0,
+    comentario: `COBRO FACTURA ${numdoc} - OTROS CON UTILIZACIÓN DEL SISTEMA FINANCIERO`,
+    idMovBancario: null,
+    movbancario: '',
+    fechaingreso: fecha,
+    cierre: '',
+    fechacierre: null,
+    conciliado: '',
+    fechaconciliado: null,
+    idSustentoTrib: null,
+    idTipoCompSri: null,
+    autorizacion: '',
+    fechacaduca: null,
+    idTipoRetencion: null,
+    idProyecto: null,
+    idSubproyecto: null,
+    transferido: false,
+    fechatransferido: null,
+    fechavencimiento: null,
+    idConciliacion: null,
+    valorLetras: '',
+    estadoIngreso: false
   });
+
+  // 4.2) HABER: una línea por producto (cuenta viene del grid)
+  for (const row of filasProd) {
+    const cuentaTexto = (row.cuenta ?? '').toString().trim(); // ej: "410101-001"
+    const [ctaStr] = cuentaTexto.split('-');
+    const cuentaNum = Number(ctaStr) || CTA_VENTAS_DEFAULT;
+    const codprePc = cuentaTexto || `${cuentaNum}-001`;
+
+    const base = this.to2(Number(row.base ?? 0));
+    if (base <= 0) continue;
+
+    detalles.push({
+      numlinea: numlinea++,
+      anio: anioStr,
+      fechatransaccion: fecha,
+      hora,
+      idZona,
+      idCentroCostos: null,
+      idLocal: 1,
+      idPlanCuentas: cuentaNum,
+      codprePc,
+      idCodContable: 3,
+      nocomprobante,
+      docurelacionado: '',
+      cheque: 0,
+      beneficiario: '',
+      debe: 0,
+      haber: base,
+      comentario: `INGRESO POR VENTA FACTURA ${numdoc} - ${(row.detalle ?? '').toString().toUpperCase()}`,
+      idMovBancario: null,
+      movbancario: '',
+      fechaingreso: fecha,
+      cierre: '',
+      fechacierre: null,
+      conciliado: '',
+      fechaconciliado: null,
+      idSustentoTrib: null,
+      idTipoCompSri: null,
+      autorizacion: '',
+      fechacaduca: null,
+      idTipoRetencion: null,
+      idProyecto: null,
+      idSubproyecto: null,
+      transferido: false,
+      fechatransferido: null,
+      fechavencimiento: null,
+      idConciliacion: null,
+      valorLetras: '',
+      estadoIngreso: false
+    });
+  }
+
+  // 4.3) HABER: IVA
+  if (totalIva > 0) {
+    detalles.push({
+      numlinea: numlinea++,
+      anio: anioStr,
+      fechatransaccion: fecha,
+      hora,
+      idZona,
+      idCentroCostos: null,
+      idLocal: 1,
+      idPlanCuentas: CTA_IVA,
+      codprePc: `${CTA_IVA}-001`,
+      idCodContable: 3,
+      nocomprobante,
+      docurelacionado: '',
+      cheque: 0,
+      beneficiario: '',
+      debe: 0,
+      haber: this.to2(totalIva),
+      comentario: `IVA RECAUDADO FACTURA ${numdoc}`,
+      idMovBancario: null,
+      movbancario: '',
+      fechaingreso: fecha,
+      cierre: '',
+      fechacierre: null,
+      conciliado: '',
+      fechaconciliado: null,
+      idSustentoTrib: null,
+      idTipoCompSri: null,
+      autorizacion: '',
+      fechacaduca: null,
+      idTipoRetencion: null,
+      idProyecto: null,
+      idSubproyecto: null,
+      transferido: false,
+      fechatransferido: null,
+      fechavencimiento: null,
+      idConciliacion: null,
+      valorLetras: '',
+      estadoIngreso: false
+    });
+  }
+
+  // ====== 5) Totales ======
+  const totalHaber = this.to2(detalles.reduce((s, d) => s + (Number(d.haber) || 0), 0));
+  const totalDebe = this.to2(detalles.reduce((s, d) => s + (Number(d.debe) || 0), 0));
+
+  const asiento: AsientoVentaRequest = {
+    idZona,
+    idUsuario,
+    idEmpresa,
+    idTipoAsiento,
+    tipdoc,
+    numdoc,                    // 👈 aquí queda "VT-00001"
+    anio: anioStr,
+    fechatransaccion: fecha,
+    fechaingreso: fecha,
+    observacion: `ASIENTO POR VENTA FACTURA ${numdoc}`,
+    totdebe: totalDebe,
+    tothaber: totalHaber,
+    beneficiario,
+    cierre: '',
+    fechacierre: null,
+    solicitado: '',
+    depto: '',
+    autorizado: '',
+    homCodigo: 0,
+    estado: true,
+    detalles
+  };
+
+  console.log('ASIENTO VENTA OBJ →', asiento);
+  console.log('ASIENTO VENTA JSON →', JSON.stringify(asiento, null, 2));
+
+  return asiento;
 }
 
-cajaAsignada = false;
 
-private avisarCajaNoAsignada(): void {
-  // Limpia los campos de caja en el form
-  this.formCaja.patchValue({ secuencial: '', caja: '', puntoEmision: '' }, { emitEvent: false });
-  this.cajaAsignada = false;
 
-  // Muestra el aviso
-  this.mostrarAlerta('Usuario no tiene asignado Caja', 'info');
-}
 
 }

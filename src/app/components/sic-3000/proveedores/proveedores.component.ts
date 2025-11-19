@@ -19,7 +19,8 @@ export class ProveedoresListaComponent implements OnInit {
   private readonly proveedorService = inject(ProveedorService);
   private readonly tipoProveedorService = inject(TipoProveedorService);
   private readonly dialog = inject(MatDialog);
-    
+  //Variable de filtro
+  filtroEstado: string = 'activos'; 
   // AG-Grid
   private gridApi!: GridApi;
   rowData: ProveedorResponse[] = [];
@@ -147,7 +148,6 @@ export class ProveedoresListaComponent implements OnInit {
 cargarDatos(): void {
   this.isLoading = true;
   
-  // ✅ MOSTRAR LOADING
   const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
     width: '350px',
     disableClose: true,
@@ -163,35 +163,38 @@ cargarDatos(): void {
   const page = isNaN(this.currentPage) || this.currentPage < 1 ? 1 : this.currentPage;
   const size = isNaN(this.pageSize) || this.pageSize < 1 ? 20 : this.pageSize;
   
+  // ← CONVERTIR filtroEstado a boolean o undefined
+  let activoParam: boolean | undefined;
+  if (this.filtroEstado === 'activos') activoParam = true;
+  else if (this.filtroEstado === 'inactivos') activoParam = false;
+  else activoParam = undefined;  // 'todos'
+  
   this.proveedorService.getAll(
     page,
     size,
     this.filtroBusqueda || undefined,
     'nombre',
     false,
-    this.filtroTipoProveedor ? Number(this.filtroTipoProveedor) : undefined 
+    this.filtroTipoProveedor ? Number(this.filtroTipoProveedor) : undefined,
+    activoParam  // ← AGREGAR
   ).subscribe({
     next: (response) => {
       this.rowData = response.items;
       this.totalItems = response.totalItems;
       this.totalPages = response.totalPages;
       this.isLoading = false;
-      
-      // ✅ CERRAR LOADING
       loadingDialog.close();
     },
     error: (error) => {
       console.error('Error al cargar proveedores:', error);
       this.isLoading = false;
-      
-      // ✅ CERRAR LOADING Y MOSTRAR ERROR
       loadingDialog.close();
       
       this.dialog.open(CustomMessageBoxComponent, {
         width: '350px',
         data: {
           title: 'Error',
-          message: 'No se pudo cargar la lista de proveedores. Por favor intente nuevamente.',
+          message: 'No se pudo cargar la lista de proveedores.',
           type: 'error',
           showCancel: false,
           confirmText: 'Entendido'
@@ -391,7 +394,8 @@ cargarDatos(): void {
 
   limpiarFiltros(): void {
     this.filtroBusqueda = '';
-    this.filtroTipoProveedor = ''; 
+    this.filtroTipoProveedor = '';
+    this.filtroEstado = 'activos'; 
     this.filtroLista = '';
     this.currentPage = 1;
     this.cargarDatos();

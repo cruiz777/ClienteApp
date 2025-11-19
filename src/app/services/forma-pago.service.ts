@@ -31,6 +31,7 @@ export interface PagedData<T> {
 interface FormaPagoDto {
   id_forma_pago: number;
   descripcion_pago: string;
+  codigo_cuenta:string;
   // Otros campos vienen en la respuesta pero no los usamos aquí
 }
 
@@ -43,7 +44,8 @@ export class FormaPagoService {
   /** Helper: mapea DTO -> modelo ligero del front */
   private mapDtoToLite = (x: FormaPagoDto): FormaPagoResponse => ({
     idFormaPago: x.id_forma_pago,
-    descripcionPago: x.descripcion_pago
+    descripcionPago: x.descripcion_pago    ,
+  codigoCuenta: x.codigo_cuenta  
   });
 
   /**
@@ -151,6 +153,28 @@ search(term: string): Observable<ApiResponse<FormaPagoResponse[]>> {
           },
           message: 'Error al obtener formas de pago paginadas'
         } as ApiResponse<PagedData<FormaPagoResponse>>);
+      })
+    );
+  }
+    /**
+   * Obtiene formas de pago con ActivarAnticipo activo (modelo ligero).
+   * Endpoint esperado: GET {baseUrl}/FormaPago/anticipo-activas
+   */
+  getAnticipoActivas(): Observable<ApiResponse<FormaPagoResponse[]>> {
+    const url = `${this.baseUrl}/FormaPago/anticipo-activas`;
+
+    console.log('[FormaPagoService] GET', url);
+
+    return this.http.get<ApiResponse<FormaPagoResponse[]>>(url).pipe(
+      tap(resp => console.log('[FormaPagoService] OK resp =', resp)),
+      catchError(err => {
+        console.error('[FormaPagoService] ERROR =', err);
+        return of({
+          id: '',
+          type: 'Error',
+          data: [] as FormaPagoResponse[],
+          message: 'Error al obtener formas de pago con anticipo activo'
+        } as ApiResponse<FormaPagoResponse[]>);
       })
     );
   }
