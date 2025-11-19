@@ -1,63 +1,133 @@
-<div class="estado-cuenta-container">
-  <h2 class="titulo">Estado de Cuenta de Cliente</h2>
+<div class="estado-cuenta-wrapper">
 
-  <div class="selector-cliente">
-    <label>Cliente:</label>
-    <mat-form-field appearance="fill">
-      <mat-select [(value)]="clienteSeleccionado">
-        <mat-option *ngFor="let cliente of clientes" [value]="cliente.id">
-          {{ cliente.nombre }}
-        </mat-option>
-      </mat-select>
-    </mat-form-field>
-    <span class="nombre-cliente">{{ getNombreCliente() }}</span>
+  <!-- Encabezado superior como en el PDF -->
+  <div class="encabezado-superior">
+    <div class="encabezado-fecha-izq">
+      {{ hoy | date:'dd/MM/yyyy' }}
+    </div>
+
+    <div class="encabezado-titulo">
+      ESTADO DE CUENTA
+    </div>
+
+    <div class="encabezado-fecha-der">
+      <div class="fila-fecha">
+        <span class="label">Fecha desde:</span>
+        <input type="date" [(ngModel)]="fechaDesde">
+      </div>
+      <div class="fila-fecha">
+        <span class="label">Fecha hasta:</span>
+        <input type="date" [(ngModel)]="fechaHasta">
+      </div>
+      <div class="fila-fecha">
+        <span class="label">Fecha del reporte:</span>
+        {{ hoy | date:'dd/MM/yyyy' }}
+      </div>
+      <div class="fila-fecha">
+        <span class="label">Página:</span> 1 de 1
+      </div>
+    </div>
   </div>
 
-  <table mat-table [dataSource]="estadoCuenta" class="tabla">
+  <!-- Datos del cliente (similar a bloque Cliente/Dirección/Teléfono/Prefijo) -->
+  <div class="bloque-cliente">
+    <div class="cliente-izq">
+      <div class="fila-cliente">
+        <span class="label">Cliente:</span>
 
-    <!-- No Factura -->
-    <ng-container matColumnDef="factura">
-      <th mat-header-cell *matHeaderCellDef>No. Factura</th>
-      <td mat-cell *matCellDef="let row">{{ row.factura }}</td>
-    </ng-container>
+        <select [(ngModel)]="clienteSeleccionado">
+          <option *ngFor="let c of clientes" [value]="c.id">
+            {{ c.nombre }}
+          </option>
+        </select>
+      </div>
 
-    <!-- Fecha -->
-    <ng-container matColumnDef="fecha">
-      <th mat-header-cell *matHeaderCellDef>Fecha</th>
-      <td mat-cell *matCellDef="let row">{{ row.fecha }}</td>
-    </ng-container>
+      <div class="fila-cliente" *ngIf="clienteActual">
+        <span class="label">Dirección:</span>
+        <span>{{ clienteActual?.direccion }}</span>
+      </div>
 
-    <!-- Debe -->
-    <ng-container matColumnDef="debe">
-      <th mat-header-cell *matHeaderCellDef>Debe</th>
-      <td mat-cell *matCellDef="let row">{{ row.debe | number:'1.2-2' }}</td>
-    </ng-container>
+      <div class="fila-cliente" *ngIf="clienteActual">
+        <span class="label">Teléfono:</span>
+        <span>{{ clienteActual?.telefono }}</span>
+      </div>
+    </div>
 
-    <!-- Haber -->
-    <ng-container matColumnDef="haber">
-      <th mat-header-cell *matHeaderCellDef>Haber</th>
-      <td mat-cell *matCellDef="let row">{{ row.haber | number:'1.2-2' }}</td>
-    </ng-container>
+    <div class="cliente-der" *ngIf="clienteActual">
+      <div class="fila-cliente">
+        <span class="label">Prefijo:</span>
+        <span>{{ clienteActual?.prefijo }}</span>
+      </div>
+    </div>
+  </div>
 
-    <!-- Saldo -->
-    <ng-container matColumnDef="saldo">
-      <th mat-header-cell *matHeaderCellDef>Saldo</th>
-      <td mat-cell *matCellDef="let row">{{ row.saldo | number:'1.2-2' }}</td>
-    </ng-container>
+  <!-- Tabla principal con AG Grid (estructura del reporte) -->
+  <div class="grid-contenedor ag-theme-alpine">
+    <ag-grid-angular
+      class="grid-estado"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [domLayout]="'autoHeight'">
+    </ag-grid-angular>
+  </div>
 
-    <!-- Observacion -->
-    <ng-container matColumnDef="observacion">
-      <th mat-header-cell *matHeaderCellDef>Observación</th>
-      <td mat-cell *matCellDef="let row">{{ row.observacion }}</td>
-    </ng-container>
+  <!-- Totales, emulando "TOTAL POR CLIENTE" y "TOTAL GENERAL" -->
+  <div class="totales-contenedor">
+    <div class="total-bloque">
+      <div class="total-titulo">TOTAL POR CLIENTE</div>
+      <div class="total-fila">
+        <span class="label">Valor:</span>
+        <span>{{ totalValor | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-fila">
+        <span class="label">Pago:</span>
+        <span>{{ totalPago | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-fila">
+        <span class="label">Debe:</span>
+        <span>{{ totalDebe | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-fila">
+        <span class="label">Haber:</span>
+        <span>{{ totalHaber | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-fila">
+        <span class="label">Saldo:</span>
+        <span>{{ totalSaldo | number:'1.2-2' }}</span>
+      </div>
+    </div>
 
-    <tr mat-header-row *matHeaderRowDef="columnas"></tr>
-    <tr mat-row *matRowDef="let row; columns: columnas;"></tr>
-  </table>
+    <div class="total-bloque">
+      <div class="total-titulo">TOTAL GENERAL</div>
+      <div class="total-fila">
+        <span class="label">Valor:</span>
+        <span>{{ totalValor | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-fila">
+        <span class="label">Pago:</span>
+        <span>{{ totalPago | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-fila">
+        <span class="label">Debe:</span>
+        <span>{{ totalDebe | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-fila">
+        <span class="label">Haber:</span>
+        <span>{{ totalHaber | number:'1.2-2' }}</span>
+      </div>
+      <div class="total-fila">
+        <span class="label">Saldo:</span>
+        <span>{{ totalSaldo | number:'1.2-2' }}</span>
+      </div>
+    </div>
+  </div>
 
+  <!-- Botones de acción (abajo, estilo reporte) -->
   <div class="botones">
-    <button mat-button color="primary" (click)="nuevaConsulta()">Nueva Consulta</button>
-    <button mat-button color="accent" (click)="imprimir()">Imprimir</button>
-    <button mat-button color="warn" (click)="cancelar()">Cancelar</button>
+    <button type="button" (click)="nuevaConsulta()">Nueva consulta</button>
+    <button type="button" (click)="imprimir()">Imprimir</button>
+    <button type="button" (click)="cancelar()">Cancelar</button>
   </div>
+
 </div>
