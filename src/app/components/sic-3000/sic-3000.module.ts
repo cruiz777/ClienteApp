@@ -1,3 +1,4 @@
+import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
@@ -26,7 +27,6 @@ import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
 import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
 import { Sic3000RoutingModule } from './sic-3000-routing.module';
 import { RegistroCobrosComponent } from './registro-cobros/registro-cobros.component';
-import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
 import { ProductosSicComponent } from './productos-sic/productos-sic.component';
 import { CobroIndividualComponent } from './cobro-individual/cobro-individual.component';
 import { ReversionPagoComponent } from './reversion-pago/reversion-pago.component';
@@ -35,6 +35,7 @@ import { NotaCreditoComponent } from './nota-credito/nota-credito.component';
 import { ExploradorEstadoCuentaComponent } from './explorador-estado-cuenta/explorador-estado-cuenta.component';
 import { CreacionAnticiposComponent } from './anticipos/creacion-anticipos/creacion-anticipos.component';
 import { ReporteAnticiposComponent } from './anticipos/reporte-anticipos/reporte-anticipos.component';
+import { CierreAnticiposComponent } from './anticipos/cierre-anticipos/cierre-anticipos.component';
 
 @NgModule({
   declarations: [
@@ -43,13 +44,14 @@ import { ReporteAnticiposComponent } from './anticipos/reporte-anticipos/reporte
     CobroIndividualComponent,
     RegistroCobrosComponent,
     ReversionPagoComponent,
-    EstadocuentaclienteComponent,
     ProductosSicComponent,
     NotaDebitoComponent,
     NotaCreditoComponent,
     ExploradorEstadoCuentaComponent,
     CreacionAnticiposComponent,
-    ReporteAnticiposComponent
+    ReporteAnticiposComponent,
+    EstadocuentaclienteComponent,
+    CierreAnticiposComponent
   ],
   imports: [
     CommonModule,

@@ -14,6 +14,7 @@ import { NotaCreditoComponent } from './nota-credito/nota-credito.component';
 import { ExploradorEstadoCuentaComponent } from './explorador-estado-cuenta/explorador-estado-cuenta.component';
 import { CreacionAnticiposComponent } from './anticipos/creacion-anticipos/creacion-anticipos.component';
 import { ReporteAnticiposComponent } from './anticipos/reporte-anticipos/reporte-anticipos.component';
+import { CierreAnticiposComponent } from './anticipos/cierre-anticipos/cierre-anticipos.component';
 
 
 const routes: Routes = [
@@ -34,7 +35,8 @@ const routes: Routes = [
       { path: 'exp-estado-cuenta', component: ExploradorEstadoCuentaComponent},
       { path: 'creacion-anticipos', component: CreacionAnticiposComponent},
       { path: 'reporte-anticipos', component: ReporteAnticiposComponent},
-      
+      { path: 'cierre-anticipos', component: CierreAnticiposComponent},
+
     ]
 
   }

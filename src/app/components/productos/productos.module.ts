@@ -49,6 +49,7 @@ import { HotTableModule } from '@handsontable/angular';
 // Módulo compartido
 import { SharedModule } from 'src/app/shared/shared.module';
 
+
 // 📌 Registrar locale español
 registerLocaleData(localeEs);
 
@@ -71,7 +72,8 @@ export const MY_DATE_FORMATS = {
     CheckboxRendererComponent,
     GcpBrickAutocompleteEditorComponent,
     DialogProcesoComponent,
-    ObservacionDialogComponent
+    ObservacionDialogComponent,
+
   ],
   imports: [
     CommonModule,
@@ -113,7 +115,8 @@ export const MY_DATE_FORMATS = {
   ],
   exports: [
     NavigationProductoComponent,
-    BloqueComponent
+    BloqueComponent,
+    
   ],
   providers: [
     { provide: LOCALE_ID, useValue: 'es' },
