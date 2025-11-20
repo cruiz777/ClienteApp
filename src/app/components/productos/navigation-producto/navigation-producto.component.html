@@ -41,7 +41,7 @@
       <!-- MENÚS CON PERMISOS -->
 
       <!-- Nuevo Producto -->
-      <a mat-list-item 
+      <a mat-list-item
          [routerLink]="((productosPermisos.nuevoProducto | async)) ? ['nuevo-producto'] : null"
          [class.disabled]="!((productosPermisos.nuevoProducto | async))"
          (click)="manejarClick('/productos/nuevo-producto', $event)"
@@ -54,7 +54,7 @@
       </a>
 
       <!-- Nuevo GLN -->
-      <a mat-list-item 
+      <a mat-list-item
          [routerLink]="((productosPermisos.nuevoGln | async)) ? ['nuevo-gln'] : null"
          [class.disabled]="!((productosPermisos.nuevoGln | async))"
          (click)="manejarClick('/productos/nuevo-gln', $event)"
@@ -67,7 +67,7 @@
       </a>
 
       <!-- Cupones -->
-      <a mat-list-item 
+      <a mat-list-item
          [routerLink]="((productosPermisos.cupones | async)) ? ['cupones'] : null"
          [class.disabled]="!((productosPermisos.cupones | async))"
          (click)="manejarClick('/productos/cupones', $event)"
@@ -80,7 +80,7 @@
       </a>
 
       <!-- Nuevo SSCC -->
-      <a mat-list-item 
+      <a mat-list-item
          [routerLink]="((productosPermisos.nuevoSscc | async)) ? ['nuevo-sscc'] : null"
          [class.disabled]="!((productosPermisos.nuevoSscc | async))"
          (click)="manejarClick('/productos/nuevo-sscc', $event)"
@@ -93,9 +93,8 @@
       </a>
 
       <!-- OPCIONES ADMIN (solo si es usuario 1) -->
-      <a mat-list-item 
-         *ngIf="usuarioActual?.id_usuario === 1" 
-         [routerLink]="['/productos/cobrar']" 
+      <a mat-list-item
+         [routerLink]="['/productos/cobrar']"
          routerLinkActive="active">
         <div class="menu-item">
           <img src="assets/icons/icon-cuentas-x-cobrar.png" class="menu-icon">
@@ -103,9 +102,8 @@
         </div>
       </a>
 
-      <a mat-list-item 
-         *ngIf="usuarioActual?.id_usuario === 1" 
-         [routerLink]="['/NuevoProducto']" 
+      <a mat-list-item
+         [routerLink]="['/NuevoProducto']"
          routerLinkActive="active">
         <div class="menu-item">
           <img src="assets/icons/icon-estado-cuenta.png" class="menu-icon">
@@ -114,8 +112,8 @@
       </a>
 
       <!-- Botón salir -->
-      <a mat-list-item 
-         [routerLink]="['/codbar/ficha-de-cliente/listado-clientes']" 
+      <a mat-list-item
+         [routerLink]="['/codbar/ficha-de-cliente/listado-clientes']"
          class="salir-item">
         <div class="menu-item">
           <img src="assets/icons/icon-salir.png" class="menu-icon">

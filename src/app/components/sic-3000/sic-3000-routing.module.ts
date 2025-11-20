@@ -21,6 +21,7 @@ import { ProveedoresListaComponent } from './proveedores/proveedores.component';
 import { CreacionAnticiposComponent } from './anticipos/creacion-anticipos/creacion-anticipos.component';
 import { ReporteAnticiposComponent } from './anticipos/reporte-anticipos/reporte-anticipos.component';
 import { LisPagAnuladosComponent } from './cxc/lis-pag-anulados/lis-pag-anulados.component';
+import { CierreAnticiposComponent } from './anticipos/cierre-anticipos/cierre-anticipos.component';
 const routes: Routes = [
   {
     path: '',
@@ -118,6 +119,7 @@ const routes: Routes = [
       { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
       { path: 'creacion-anticipos', component: CreacionAnticiposComponent},
       { path: 'reporte-anticipos', component: ReporteAnticiposComponent},
+      { path: 'cierre-anticipos', component: CierreAnticiposComponent}
     ]
   }
 ];

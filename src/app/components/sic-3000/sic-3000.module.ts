@@ -42,6 +42,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { ProductosProveedorDialogComponent } from './proveedores/dialog/productos-proveedor/productos-proveedor-dialog.component';
 import { BuscarAnticipoDialogComponent } from './anticipos/dialogs/buscar-anticipo-dialog/buscar-anticipo-dialog.component';
 import { MotivoAnulacionDialogComponent } from './anticipos/dialogs/anular-anticipo-dialog/anular-anticipo-dialog';
+import { CierreAnticiposComponent } from './anticipos/cierre-anticipos/cierre-anticipos.component';
 
   @NgModule({
     declarations: [
@@ -54,6 +55,7 @@ import { MotivoAnulacionDialogComponent } from './anticipos/dialogs/anular-antic
       ProveedorDialogComponent,
       ProductosProveedorDialogComponent,
       AgregarUbicacionDialogComponent,
+      CierreAnticiposComponent,
       FilePreviewComponent
     ],
     imports: [

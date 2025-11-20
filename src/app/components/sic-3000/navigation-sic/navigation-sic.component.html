@@ -2,9 +2,9 @@
   'collapsed': !isExpanded && !isHandset,
   'mobile': isHandset
 }">
-  
+
   <!-- ESTE ES MI HTML ACTUAL -->
-  
+
   <!-- SIDEBAR -->
   <mat-sidenav #drawer class="sidenav" [mode]="isHandset ? 'over' : 'side'" [opened]="!isHandset || isExpanded"
     [class.collapsed]="!isExpanded && !isHandset" [fixedInViewport]="true" (backdropClick)="isExpanded = false">
@@ -119,8 +119,8 @@
             <a mat-list-item [routerLink]="'/sic-3000/reporte-anticipos'" >
               <span *ngIf="isExpanded" class="menu-text">Reporte de Anticipos</span>
             </a>
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Cierre de Anticipos</span>
+            <a mat-list-item [routerLink]="['cierre-anticipos']" routerLinkActive="active">
+             <span *ngIf="isExpanded" class="menu-text">Cierre de Anticipos</span>
             </a>
           </mat-expansion-panel>
           <!-- Subgrupo: Reenvio Documentos Electronicos-->
@@ -182,6 +182,9 @@
             <!-- Nivel 3: Reportes-->
             <a mat-list-item routerLink="">
               <span *ngIf="isExpanded" class="menu-text">Exp.Estado de cuenta</span>
+            </a>
+            <a mat-list-item [routerLink]="['estadocuentacliente']" routerLinkActive="active">
+              <span *ngIf="isExpanded" class="menu-text">Estado de cuenta cliente</span>
             </a>
             <a mat-list-item routerLink="">
               <span *ngIf="isExpanded" class="menu-text">Exp.Cuentas por Cobrar</span>
