@@ -78,8 +78,8 @@ export class PerfilesFormComponent implements OnInit {
     if (this.form.invalid) return;
     this.cargando = true;
 
-    const nombre = this.form.value.nombre.trim();
-    const url = this.form.value.url.trim();
+    const nombre = this.form.value.nombre;
+    const url = this.form.value.url || '';
 
     switch (this.tipo) {
       case 'perfil':

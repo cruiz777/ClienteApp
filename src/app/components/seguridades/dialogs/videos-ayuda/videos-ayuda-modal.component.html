@@ -1,0 +1,100 @@
+<div class="modal-header">
+  <h2 mat-dialog-title>
+    <i class="bi bi-question-circle me-2"></i>
+    ¿Necesitas ayuda?
+  </h2>
+  <button mat-icon-button mat-dialog-close class="close-button">
+    <i class="bi bi-x-lg"></i>
+  </button>
+</div>
+
+<mat-dialog-content class="modal-content-custom">
+  <div *ngIf="loading" class="loading-container">
+    <mat-spinner diameter="50"></mat-spinner>
+    <p class="mt-3">Cargando videos de ayuda...</p>
+  </div>
+
+  <div *ngIf="!loading && videosPorSistema.length === 0" class="empty-state">
+    <i class="bi bi-camera-video-off fs-1"></i>
+    <p class="mt-3">No hay videos de ayuda disponibles</p>
+  </div>
+
+  <div *ngIf="!loading && videosPorSistema.length > 0" class="videos-container">
+    <div class="row">
+      <!-- Lista de sistemas (sidebar) -->
+      <div class="col-md-3 sistemas-sidebar">
+        <h6 class="sidebar-title">Sistemas</h6>
+        <div class="list-group">
+          <button
+            *ngFor="let item of videosPorSistema; let i = index"
+            type="button"
+            class="list-group-item list-group-item-action"
+            [class.active]="sistemaSeleccionado === i"
+            (click)="seleccionarSistema(i)">
+            <span>
+              <i class="bi bi-folder me-2"></i>
+              {{ item.nombreSistema }}
+            </span>
+            <span class="badge">{{ item.videos.length }}</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Contenido principal -->
+      <div class="col-md-9">
+        <!-- Video reproductor -->
+        <div *ngIf="videoSeleccionado && videoEmbedUrl" class="video-player-container">
+          <h5 class="video-title">{{ videoSeleccionado.titulo }}</h5>
+          <span class="badge">{{ videoSeleccionado.nombreCategoria }}</span>
+
+          <div class="ratio ratio-16x9">
+            <iframe
+              [src]="videoEmbedUrl"
+              title="{{ videoSeleccionado.titulo }}"
+              frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowfullscreen>
+            </iframe>
+          </div>
+        </div>
+
+        <!-- Lista de videos del sistema seleccionado -->
+        <div class="videos-list">
+          <h6>Videos disponibles</h6>
+
+          <mat-accordion>
+            <mat-expansion-panel
+              *ngFor="let categoria of categoriasActuales"
+              [expanded]="true">
+              <mat-expansion-panel-header>
+                <mat-panel-title>
+                  <i class="bi bi-folder2-open me-2"></i>
+                  {{ categoria.key }}
+                </mat-panel-title>
+              </mat-expansion-panel-header>
+
+              <div class="list-group list-group-flush">
+                <button
+                  *ngFor="let video of categoria.value"
+                  type="button"
+                  class="list-group-item list-group-item-action"
+                  [class.active-video]="videoSeleccionado?.id === video.id"
+                  (click)="seleccionarVideo(video)">
+                  <i class="bi bi-play-circle me-2"></i>
+                  {{ video.titulo }}
+                </button>
+              </div>
+            </mat-expansion-panel>
+          </mat-accordion>
+        </div>
+      </div>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>
+    <i class="bi bi-x-circle me-2"></i>
+    Cerrar
+  </button>
+</mat-dialog-actions>

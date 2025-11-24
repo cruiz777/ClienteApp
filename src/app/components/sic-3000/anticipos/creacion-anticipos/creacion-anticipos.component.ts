@@ -307,7 +307,7 @@ export class CreacionAnticiposComponent implements OnInit {
     });
 
     // Cargar Formas de Pago
-    this.formaPagoService.getActivas().subscribe({
+    this.formaPagoService.getAnticipoActivas().subscribe({
       next: (response: any) => {
         console.log('📦 Formas Pago:', response);
         if ((response.type === 'Success' || response.type === 'success') && response.data) {
@@ -1046,6 +1046,16 @@ export class CreacionAnticiposComponent implements OnInit {
   }
 
   anticipoActual: AnticipoDetalleResponse | null = null;
+
+  // Agregar método helper
+  padNumeroAnticipo(numero: number): string {
+    return numero.toString().padStart(6, '0');
+  }
+
+  // Getter para usar en el template
+  get numeroAnticipoFormateado(): string {
+    return this.padNumeroAnticipo(this.numeroAnticipo);
+  }
 }
 // type guard para usar el mismo método con evento o con objeto
 function isMatEvent(e: any): e is MatAutocompleteSelectedEvent {

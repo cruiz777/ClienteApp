@@ -21,7 +21,6 @@ import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
 import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
 import { CreacionAnticiposComponent } from './anticipos/creacion-anticipos/creacion-anticipos.component';
 import { ReporteAnticiposComponent } from './anticipos/reporte-anticipos/reporte-anticipos.component';
-
   // 👉 Standalone: se importa (no va en declarations)
   import { FacturacionIndividualComponent } from './facturacion/facturacion-individual/facturacion-individual.component';
   import { FacturacionGlobalComponent } from './facturacion/facturacion-global/facturacion-global.component';
@@ -32,7 +31,6 @@ import { ReporteAnticiposComponent } from './anticipos/reporte-anticipos/reporte
   import { MatSlideToggleModule } from '@angular/material/slide-toggle';
   import { MatDatepickerModule } from '@angular/material/datepicker';
   import { MatNativeDateModule } from '@angular/material/core';
-  import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
   import { ProductosSicComponent } from './productos-sic/productos-sic.component';
   import { AgregarUbicacionDialogComponent } from './ubicaciones/dialogs/agregar-ubicacion-dialog.component';
   import { MatDialogModule } from '@angular/material/dialog';
@@ -42,18 +40,19 @@ import { MatMenuModule } from '@angular/material/menu';
 import { ProductosProveedorDialogComponent } from './proveedores/dialog/productos-proveedor/productos-proveedor-dialog.component';
 import { BuscarAnticipoDialogComponent } from './anticipos/dialogs/buscar-anticipo-dialog/buscar-anticipo-dialog.component';
 import { MotivoAnulacionDialogComponent } from './anticipos/dialogs/anular-anticipo-dialog/anular-anticipo-dialog';
+import { CierreAnticiposComponent } from './anticipos/cierre-anticipos/cierre-anticipos.component';
 
   @NgModule({
     declarations: [
       InicioSicComponent,
       NavigationSicComponent,
       // ❌ No declarar FacturacionIndividualComponent porque es standalone
-      EstadocuentaclienteComponent,
       ProductosSicComponent,
       ProveedoresListaComponent,
       ProveedorDialogComponent,
       ProductosProveedorDialogComponent,
       AgregarUbicacionDialogComponent,
+      CierreAnticiposComponent,
       FilePreviewComponent
     ],
     imports: [

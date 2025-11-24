@@ -3,7 +3,6 @@ import { Component } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
 import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
-import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
 import { EstructuraListComponent } from './estructuracomercial/estructura-list/estructura-list.component';
 import { RegistroCobrosComponent } from './cxc/registro-cobros/registro-cobros.component';
 
@@ -21,6 +20,7 @@ import { ProveedoresListaComponent } from './proveedores/proveedores.component';
 import { CreacionAnticiposComponent } from './anticipos/creacion-anticipos/creacion-anticipos.component';
 import { ReporteAnticiposComponent } from './anticipos/reporte-anticipos/reporte-anticipos.component';
 import { LisPagAnuladosComponent } from './cxc/lis-pag-anulados/lis-pag-anulados.component';
+import { CierreAnticiposComponent } from './anticipos/cierre-anticipos/cierre-anticipos.component';
 const routes: Routes = [
   {
     path: '',
@@ -68,7 +68,7 @@ const routes: Routes = [
 
       },
 
-      { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
+      
 
       // FACTURACIÓN INDIVIDUAL
       {
@@ -115,9 +115,10 @@ const routes: Routes = [
         path: 'proveedores',
         component: ProveedoresListaComponent
       },
-      { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
+      
       { path: 'creacion-anticipos', component: CreacionAnticiposComponent},
       { path: 'reporte-anticipos', component: ReporteAnticiposComponent},
+      { path: 'cierre-anticipos', component: CierreAnticiposComponent}
     ]
   }
 ];

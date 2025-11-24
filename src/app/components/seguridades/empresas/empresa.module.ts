@@ -13,10 +13,16 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
+import { VideosAyudaModalComponent } from '../dialogs/videos-ayuda/videos-ayuda-modal.component';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { MatExpansionModule } from '@angular/material/expansion';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @NgModule({
   declarations: [
-    EmpresasListComponent
+    EmpresasListComponent,
+    VideosAyudaModalComponent
     // EmpresaFormComponent
   ],
   imports: [
@@ -28,11 +34,15 @@ import { MatInputModule } from '@angular/material/input';
     MatTableModule,
     MatPaginatorModule,
     MatToolbarModule,
+    MatDialogModule,
     MatButtonModule,
     MatIconModule,
     MatProgressBarModule,
     MatFormFieldModule,
-    MatInputModule
+    MatInputModule,
+    MatProgressSpinnerModule,
+    MatExpansionModule,
+    MatTooltipModule
   ]
 })
 export class EmpresasModule { }
