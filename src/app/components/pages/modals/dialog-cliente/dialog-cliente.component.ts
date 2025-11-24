@@ -679,140 +679,135 @@ async onRucBlur(): Promise<void> {
   }
  // ✅ Guarda solo cuando NO hay pendientes y el RUC no está duplicado
 // ✅ Guarda solo cuando NO hay pendientes y el RUC no está duplicado
+ guardando = false;
 async guardar(stepper: MatStepper): Promise<void> {
-  // 1) Permisos
-  const puedeCrear = await firstValueFrom(this.canCreate$.pipe(take(1)));
-  if (!puedeCrear) {
-    this.mostrarAlerta('No tienes permiso para crear clientes.', 'Permisos');
+  // Evitar dobles envíos
+  if (this.guardando) {
     return;
   }
+  this.guardando = true;
 
-  // 2) Forzar validaciones y esperar pendientes (incluye async validators)
-  this.formCliente.markAllAsTouched();
-  this.formCliente.updateValueAndValidity({ onlySelf: false });
+  try {
+    // 1) Permisos
+    const puedeCrear = await firstValueFrom(this.canCreate$.pipe(take(1)));
+    if (!puedeCrear) {
+      this.mostrarAlerta('No tienes permiso para crear clientes.', 'Permisos');
+      return;
+    }
 
-  // espera validaciones del formulario completo
-  if (this.formCliente.pending) {
-    await firstValueFrom(
-      this.formCliente.statusChanges.pipe(
-        filter((s: 'VALID' | 'INVALID' | 'PENDING' | 'DISABLED') => s !== 'PENDING'),
-        take(1)
-      )
-    );
-  }
+    // 2) Forzar validaciones y esperar pendientes (incluye async validators)
+    this.formCliente.markAllAsTouched();
+    this.formCliente.updateValueAndValidity({ onlySelf: false });
 
-  // espera específicamente el control de RUC si aún está pendiente
-  if (this.rucControl.pending) {
-    await firstValueFrom(
-      this.rucControl.statusChanges.pipe(
-        filter((s: 'VALID' | 'INVALID' | 'PENDING' | 'DISABLED') => s !== 'PENDING'),
-        take(1)
-      )
-    );
-  }
+    if (this.formCliente.pending) {
+      await firstValueFrom(
+        this.formCliente.statusChanges.pipe(
+          filter((s: string) => s !== 'PENDING'),
+          take(1)
+        )
+      );
+    }
 
-  // 3) Corta si hay errores (incluye RUC duplicado)
-  if (this.formCliente.invalid || this.rucControl.hasError('duplicado')) {
-    this.mostrarAlerta('RUC/CI inválido o ya registrado. Corrige antes de guardar.', 'Formulario');
-    return;
-  }
+    if (this.rucControl.pending) {
+      await firstValueFrom(
+        this.rucControl.statusChanges.pipe(
+          filter((s: string) => s !== 'PENDING'),
+          take(1)
+        )
+      );
+    }
 
-  // ---------- Tu lógica original a partir de aquí ----------
-  const paso1 = this.paso1Form.value;
-  const paso2 = this.paso2Form.value;
-  const paso3 = this.paso3Form.value;
-  const paso4 = this.paso4Form.value;
+    // 3) Corta si hay errores (incluye RUC duplicado)
+    if (this.formCliente.invalid || this.rucControl.hasError('duplicado')) {
+      this.mostrarAlerta('RUC/CI inválido o ya registrado. Corrige antes de guardar.', 'Formulario');
+      return;
+    }
 
-  const ciudadObj = paso2.ciudad;
-  const ciudadNombre = typeof ciudadObj === 'object' ? ciudadObj.ciudad : ciudadObj;
-  const idCiudad = typeof ciudadObj === 'object' ? ciudadObj.id_ciudad : 0;
+    // ---------- Construir JSON ----------
+    const paso1 = this.paso1Form.value;
+    const paso2 = this.paso2Form.value;
+    const paso3 = this.paso3Form.value;
+    const paso4 = this.paso4Form.value;
 
-  const grupoProductoObj = paso1.grupoProducto;
-  const idGrupoProducto =
-    typeof grupoProductoObj === 'object' ? grupoProductoObj.id_grupo_producto : (grupoProductoObj || 0);
+    const ciudadObj = paso2.ciudad;
+    const ciudadNombre = typeof ciudadObj === 'object' ? ciudadObj.ciudad : ciudadObj;
+    const idCiudad = typeof ciudadObj === 'object' ? ciudadObj.id_ciudad : 0;
 
-  const idZona = typeof ciudadObj === 'object' ? ciudadObj.idzona : 0;
+    const grupoProductoObj = paso1.grupoProducto;
+    const idGrupoProducto =
+      typeof grupoProductoObj === 'object' ? grupoProductoObj.id_grupo_producto : (grupoProductoObj || 0);
 
-  const ruc = this.rucControl.value;
+    const idZona = typeof ciudadObj === 'object' ? ciudadObj.idzona : 0;
+    const ruc = this.rucControl.value;
 
-  const jsonCliente = {
-    nomcli: paso2.razonSocial || '',
-    dircli: paso2.direccionPrincipal || '',
-    concli: paso2.nombreRepresentante || '',
-    email: paso3.emailRepresentante || '',
-    razonSocial: paso2.razonSocial || '',
-    telefono1: paso2.celular,
-    fax: paso3.telefonoRepresentante || '',
-    telefono: paso2.telefono2 || '',
-    ruc: paso1.ruc || '',
-    fecing: this.fechaIngreso.toISOString().split('T')[0],
-    fecnac: '2025-04-23',
-    fecfac1: '2025-04-23',
-    fecfac2: '2025-04-23',
-    fecfac3: '2025-04-23',
-    fecfac4: '2025-04-23',
-    fecfac5: '2025-04-23',
-    marca1: '',
-    marca2: '',
-    marca3: '',
-    marca4: '',
-    marca5: '',
-    codcue: '',
-    hello: paso2.extension || '',
-    desde: 0,
-    fechtre: new Date().toISOString(),
-    web: paso2.sitioWeb,
-    saldo: 0,
-    fecfac: '',
-    ciudad: ciudadNombre || '',
-    obs: '',
-    delestado: 0,
-    genero: '',
-    infcamahabitacion: '',
-    empresaCodigo: this.usuarioActual?.id_empresa,
-    seguimiento: 0,
-    fechaactinact: '2025-04-23',
-    idEstadoEmpresa: 1,
-    formatodocumento: 0,
-    imprimeobstramite: 0,
-    idTipoCliente: paso1.categoriaCliente,
-    idGrupoProducto: paso1.grupoProducto.id_grupo_producto,
-    idPersona: 0,
-    codigoPostal: paso2.codigoPostal || '',
-    codigoPostal2: '',
-    idVendedor: 1,
-    idCiudad: idCiudad,
-    idZona: idZona,
-    idGrupoEmpresa: paso1.grupo || 1,
-    representante: paso2.nombreRepresentante || '',
-    fecmod: new Date().toLocaleDateString('en-CA'),
-    usumod: this.usuarioActual?.nombre_usuario || '',
-  };
+    const jsonCliente = {
+      nomcli: paso2.razonSocial || '',
+      dircli: paso2.direccionPrincipal || '',
+      concli: paso2.nombreRepresentante || '',
+      email: paso3.emailRepresentante || '',
+      razonSocial: paso2.razonSocial || '',
+      telefono1: paso2.celular,
+      fax: paso3.telefonoRepresentante || '',
+      telefono: paso2.telefono2 || '',
+      ruc: paso1.ruc || '',
+      fecing: this.fechaIngreso.toISOString().split('T')[0],
+      fechtre: new Date().toISOString(),
+      web: paso2.sitioWeb,
+      saldo: 0,
+      ciudad: ciudadNombre || '',
+      delestado: 0,
+      empresaCodigo: this.usuarioActual?.id_empresa,
+      fechaactinact: '2025-04-23',
+      idEstadoEmpresa: 1,
+      idTipoCliente: paso1.categoriaCliente,
+      idGrupoProducto: idGrupoProducto,
+      idPersona: 0,
+      codigoPostal: paso2.codigoPostal || '',
+      idVendedor: 1,
+      idCiudad: idCiudad,
+      idZona: idZona,
+      idGrupoEmpresa: paso1.grupo || 1,
+      representante: paso2.nombreRepresentante || '',
+      fecmod: new Date().toLocaleDateString('en-CA'),
+      usumod: this.usuarioActual?.nombre_usuario || '',
+      // ... si hay más campos, mantenerlos
+    };
 
-  this.impresionHabilitada = true;
+    this.impresionHabilitada = true;
 
-  this.clienteService.guardarCliente(jsonCliente).subscribe({
-    next: () => {
-      this.clienteService.getClientePorRuc(ruc).subscribe({
-        next: (cliente) => {
-          if (cliente) {
-            this.paso1Form.patchValue({ codigoCliente: cliente.clientes_codigo });
-            this.guardarPrefijo();
-            this.guardarTodasLasObservaciones();
-            this.guardarDatosAdicionales();
-            this.guardarContactosCliente();
-            stepper.selectedIndex = 0;
-          }
-        },
-        error: (err) => console.error('❌ No se pudo obtener el cliente por RUC:', err)
-      });
-    },
-    error: (err) => {
+    // ---------- Envío al backend ----------
+    // 1) Si tu servicio devuelve el cliente creado, úsalo directamente:
+    try {
+      const respuestaGuardar: any = await firstValueFrom(this.clienteService.guardarCliente(jsonCliente));
+      // Si el backend devuelve el cliente creado:
+      if (respuestaGuardar && respuestaGuardar.clientes_codigo) {
+        this.paso1Form.patchValue({ codigoCliente: respuestaGuardar.clientes_codigo });
+      } else {
+        // Si no devuelve, intentamos obtener por RUC (tu flujo actual)
+        const cliente = await firstValueFrom(this.clienteService.getClientePorRuc(ruc));
+        if (cliente) {
+          this.paso1Form.patchValue({ codigoCliente: cliente.clientes_codigo });
+        }
+      }
+
+      // continuar acciones
+      this.guardarPrefijo();
+      this.guardarTodasLasObservaciones();
+      this.guardarDatosAdicionales();
+      this.guardarContactosCliente();
+      stepper.selectedIndex = 0;
+
+    } catch (err) {
       console.error('❌ Error al guardar el cliente:', err);
       this.mostrarAlerta('No se pudieron cargar los clientes', 'Error');
     }
-  });
+
+  } finally {
+    // siempre liberar el flag (aunque se haya hecho return dentro del try)
+    this.guardando = false;
+  }
 }
+
 
 
   guardarPrefijo(): void {

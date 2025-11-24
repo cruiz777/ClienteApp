@@ -3,7 +3,6 @@ import { Component } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
 import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
-import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
 import { EstructuraListComponent } from './estructuracomercial/estructura-list/estructura-list.component';
 import { RegistroCobrosComponent } from './cxc/registro-cobros/registro-cobros.component';
 
@@ -67,7 +66,7 @@ const routes: Routes = [
    
       },
 
-      { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
+      
 
       // FACTURACIÓN INDIVIDUAL
       {
@@ -110,7 +109,7 @@ const routes: Routes = [
         path: 'productossic', 
         component: ProductosSicComponent 
       },
-      { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
+      
       { path: 'creacion-anticipos', component: CreacionAnticiposComponent},
       { path: 'reporte-anticipos', component: ReporteAnticiposComponent},
     ]

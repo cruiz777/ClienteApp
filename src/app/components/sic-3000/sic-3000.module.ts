@@ -31,7 +31,6 @@ import { MatOptionModule } from '@angular/material/core';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
-import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
 import { ProductosSicComponent } from './productos-sic/productos-sic.component';
 import { AgregarUbicacionDialogComponent } from './ubicaciones/dialogs/agregar-ubicacion-dialog.component';
 import { MatDialogModule } from '@angular/material/dialog';
@@ -42,7 +41,7 @@ import { FilePreviewComponent } from 'src/app/util/preview/file-preview.componen
   declarations: [
     InicioSicComponent,
     NavigationSicComponent,
-    EstadocuentaclienteComponent,
+    
     
     // ❌ No declarar FacturacionIndividualComponent porque es standalone
     ProductosSicComponent,

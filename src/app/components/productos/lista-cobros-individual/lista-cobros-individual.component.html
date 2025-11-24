@@ -20,7 +20,7 @@
         <!-- Row 1 -->
         <div class="field col-1">
           <label>Cliente:</label>
-          <div class="fi-input-wrap">
+          <div class="fi-input-wrap" style="width: 700px;">
             <input #clienteInputRef type="text" matInput [formControl]="clienteOrigenControl"
               [matAutocomplete]="autoOrigen" (blur)="clienteOrigenControl.markAsTouched()" placeholder="Buscar Cliente"
               [class.input-error]="clienteOrigenControl.invalid && clienteOrigenControl.touched" />
@@ -45,7 +45,7 @@
   <input class="form-control" formControlName="ruc" placeholder="—" readonly />
 </div>
 
-        <div class="field col-2">
+        <div class="field col-2" style="width: 100px;">
           <label>Monto Deuda</label>
           <input class="form-control text-start no-underline" formControlName="montoDeuda" placeholder="0.00"
             readonly />
