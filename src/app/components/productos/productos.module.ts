@@ -12,6 +12,10 @@ import { GlnComponent } from './glns/gln-list/nuevo-gln.component';
 import { CheckboxRendererComponent } from './checkbox-renderer/checkbox-renderer.component';
 import { GcpBrickAutocompleteEditorComponent } from './gcp-brick-autocomplete-editor/gcp-brick-autocomplete-editor.component';
 import { DialogProcesoComponent } from './dialog-proceso/dialog-proceso.component';
+import { ObservacionDialogComponent } from './nuevo-sscc/observacion-dialog.component';
+
+// 👇 TU NUEVO COMPONENTE
+import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
 
 // Angular Material
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -33,6 +37,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 // Formato fecha personalizado
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
@@ -40,10 +45,8 @@ import { MomentDateAdapter } from '@angular/material-moment-adapter';
 
 // Ag-Grid y Handsontable
 import { AgGridModule } from 'ag-grid-angular';
-import { AgGridAngular } from 'ag-grid-angular';
 import { ButtonRendererComponent } from '../utils/grid/button-renderer.component';
 import { CheckboxRendererComponents } from '../utils/grid/checkbox-renderer.component';
-import { ObservacionDialogComponent } from './nuevo-sscc/observacion-dialog.component';
 import { HotTableModule } from '@handsontable/angular';
 
 // Módulo compartido
@@ -53,11 +56,12 @@ import { NuevoProductoComponent } from './nuevo-producto/nuevo-producto.componen
 import { ClienteSeleccionadoComponent } from './cliente-seleccionado/cliente-seleccionado.component';
 import { UvIndividualComponent } from './uv-individual/uv-individual.component';
 import { UvIndividualEditComponent } from './uv-individual-edit/uv-individual-edit.component';
-import { UlComponent } from './ul/ul.component';
 import { UlEditComponent } from './ul-edit/ul-edit.component';
 import { NuevoSsccComponent } from './nuevo-sscc/nuevo-sscc.component';
 import { CuponesComponent } from './cupones/cupones.component';
-import { MatTooltipModule } from '@angular/material/tooltip';
+
+// Servicio
+import { EstadoCuentaService } from 'src/app/services/estado-cuenta.service';
 
 // 📌 Registrar locale español
 registerLocaleData(localeEs);
@@ -81,7 +85,10 @@ export const MY_DATE_FORMATS = {
     CheckboxRendererComponent,
     GcpBrickAutocompleteEditorComponent,
     DialogProcesoComponent,
-    ObservacionDialogComponent
+    ObservacionDialogComponent,
+
+    // 👇 AQUÍ VA TU COMPONENTE
+    EstadocuentaclienteComponent
   ],
   imports: [
     CommonModule,
@@ -89,14 +96,14 @@ export const MY_DATE_FORMATS = {
     FormsModule,
     ReactiveFormsModule,
 
-    NuevoProductoComponent,       
-    ClienteSeleccionadoComponent,  
-    UvIndividualComponent,        
-    UvIndividualEditComponent,     
-    //UlComponent,                  
-    UlEditComponent,              
-    NuevoSsccComponent,           
-    CuponesComponent,   
+    // Standalone que ya usas
+    NuevoProductoComponent,
+    ClienteSeleccionadoComponent,
+    UvIndividualComponent,
+    UvIndividualEditComponent,
+    UlEditComponent,
+    NuevoSsccComponent,
+    CuponesComponent,
 
     // Angular Material
     MatSidenavModule,
@@ -116,19 +123,16 @@ export const MY_DATE_FORMATS = {
     MatOptionModule,
     MatAutocompleteModule,
     MatProgressBarModule,
-    MatTooltipModule, 
-    MatAutocompleteModule,
+    MatTooltipModule,
     MatDatepickerModule,
     MatNativeDateModule,
 
-    // AgGrid y Handsontable
-    AgGridModule,
-    AgGridAngular,
+    // Ag-Grid y Handsontable
+    AgGridModule,       // 👈 SOLO EL MÓDULO, NO AgGridAngular
     HotTableModule,
-    ProductosRoutingModule,
-    // Shared
-    SharedModule
 
+    ProductosRoutingModule,
+    SharedModule
   ],
   exports: [
     NavigationProductoComponent,
@@ -138,7 +142,10 @@ export const MY_DATE_FORMATS = {
     { provide: LOCALE_ID, useValue: 'es' },
     { provide: MAT_DATE_LOCALE, useValue: 'es-ES' },
     { provide: DateAdapter, useClass: MomentDateAdapter, deps: [MAT_DATE_LOCALE] },
-    { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS }
+    { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS },
+
+    // 👇 el servicio va como provider (aunque ya tiene providedIn: 'root', ni hace falta)
+    EstadoCuentaService
   ]
 })
 export class ProductosModule {}
