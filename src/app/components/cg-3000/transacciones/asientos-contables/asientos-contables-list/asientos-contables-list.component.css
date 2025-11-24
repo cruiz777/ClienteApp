@@ -20,7 +20,7 @@
 
 
 .zona-container {
-  padding: 40px;
+  padding: 5px;
   background-color: #ffffff;
   font-family: 'Inter', sans-serif;
 }
@@ -110,3 +110,176 @@
   --ag-border-color:#adaeb0; /*lineas de la cuadricula*/
 }
 
+.filtros-asientos {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.filtro-busqueda,
+.filtro-fecha {
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+}
+
+.filtro-busqueda label,
+.filtro-fecha label {
+  font-size: 13px;
+  margin-bottom: 2px;
+  color: #333;
+}
+
+/* input de fecha con estilo “bonito” */
+.fecha-control {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #2f6fbd;
+  outline: none;
+  font-size: 13px;
+  box-shadow: 0 0 0 2px rgba(47, 111, 189, 0.15);
+}
+
+/* al enfocar, un poco más de azul */
+.fecha-control:focus {
+  border-color: #1f4f9a;
+  box-shadow: 0 0 0 2px rgba(31, 79, 154, 0.3);
+}
+
+.filtro-texto {
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 13px;
+}
+
+.btn-buscar {
+  padding: 6px 16px;
+  border-radius: 4px;
+  border: none;
+  background-color: #1f7ed0;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.btn-buscar:hover {
+  background-color: #1762a4;
+}
+
+/* Contenedor general: todo alineado en una fila */
+.filtros-asientos {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+/* Cada filtro (buscar, fecha desde, fecha hasta) */
+/* Cada item del filtro */
+.filtro-item {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Campo Buscar más ancho */
+.filtro-item:first-child {
+  min-width: 280px;  /* <-- igual o más grande que las fechas */
+}
+
+/* Campos de fecha */
+.filtro-item:not(:first-child) {
+  min-width: 230px;
+}
+
+.filtro-item label {
+  font-size: 13px;
+  margin-bottom: 2px;
+  color: #333;
+}
+
+/* Estilo común para texto y fechas */
+.filtro-control {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #2f6fbd;
+  outline: none;
+  font-size: 13px;
+  box-shadow: 0 0 0 2px rgba(47, 111, 189, 0.15);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.filtro-control:focus {
+  border-color: #1f4f9a;
+  box-shadow: 0 0 0 2px rgba(31, 79, 154, 0.3);
+}
+
+/* Input buscar con ícono */
+.input-with-icon {
+  position: relative;
+}
+
+.input-with-icon .filtro-control {
+  padding-right: 28px; /* espacio para el ícono */
+}
+
+.icon-search {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 14px;
+  color: #666;
+  pointer-events: none;
+}
+
+/* Botón Buscar */
+.btn-buscar {
+  padding: 6px 18px;
+  border-radius: 6px;
+  border: none;
+  background-color: #1f7ed0;
+  color: #fff;
+  font-size: 13px;
+  cursor: pointer;
+  height: 32px;
+}
+
+.btn-buscar:hover {
+  background-color: #1762a4;
+}
+
+/* Ajustar altura del input de búsqueda para que coincida con los mat-form-field */
+.search-input {
+  height: 35px;              /* misma altura que tus controles de fecha */
+  padding: 0 36px 0 12px;    /* deja espacio para el icono de lupa si lo tienes */
+  box-sizing: border-box;
+  font-size: 14px;
+  border-radius: 6px;
+  border: 1px solid #c5ced8;
+  line-height: 40px;         /* centra el texto verticalmente */
+}
+
+/* Si el contenedor es un flex, asegúrate de centrarlo */
+.input-wrapper {
+  display: flex;
+  align-items: center;       /* lo alinea verticalmente con los otros controles */
+}
+
+
+
+.btn-verde {
+  background: #85c160;/* #96e863;*/
+  color: #fff;
+  border: 1px solid #81c8f2;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+  width: 100px;
+  height: 35px;
+}
+.btn-verde:hover { background: #32af4f; border-color: #6291e8; }

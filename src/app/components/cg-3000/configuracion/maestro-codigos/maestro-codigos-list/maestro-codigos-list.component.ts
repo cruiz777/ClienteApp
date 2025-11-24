@@ -3,6 +3,11 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 
+// 🔹 Angular Material para botón, menú e íconos
+import { MatButtonModule } from '@angular/material/button';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatIconModule } from '@angular/material/icon';
+
 import { CodigosContablesService } from 'src/app/services/codigoscontables.service';
 import { CodigosContablesResponse } from 'src/app/interfaces/responses/codigos-contables-response';
 import { UsuarioService } from 'src/app/services/usuario.service';
@@ -12,7 +17,13 @@ import { CodigosContablesFormComponent } from '../maestro-codigos-form/maestro-c
 @Component({
   selector: 'app-codigos-contables',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    MatButtonModule,
+    MatMenuModule,
+    MatIconModule
+  ],
   templateUrl: './maestro-codigos-list.component.html',
   styleUrls: ['./maestro-codigos-list.component.css']
 })
@@ -45,7 +56,6 @@ export class CodigosContablesComponent implements OnInit {
     this.codigosservice
       .getAll({ idEmpresa: this.idEmpresaActual ?? undefined })
       .subscribe({
-        // ⬇️ NO fuerces el tipo aquí; toma resp.data de forma segura
         next: (resp: any) => {
           const list = resp?.data as CodigosContablesResponse[] ?? [];
           this.codigos  = list;
@@ -77,37 +87,36 @@ export class CodigosContablesComponent implements OnInit {
     this.filtered = [...this.codigos];
   }
 
-  
-    abrirCrear(): void {
-        const dialogRef = this.dialog.open(CodigosContablesFormComponent, {
-          width: '1000px',
-          maxHeight: '90vh',
-          autoFocus: false,
-          data: {}
-        });
-    
-        dialogRef.afterClosed().subscribe(result => {
-          if (result) {
-            this.cargarCodigos();
-          }
-        });
-      }
-    
-      abrirEditar(id: number): void {
-        const dialogRef = this.dialog.open(CodigosContablesFormComponent, {
-          width: '1000px',
-          maxHeight: '90vh',
-          autoFocus: false,
-          data: { id }
-        });
-    
-        dialogRef.afterClosed().subscribe(result => {
-          if (result) {
-            this.cargarCodigos();
-          }
-        });
-      }
+  // 🔹 Ahora recibe el tipo de identificación
+  abrirCrear(tipoIdentificacion?: 'CEDULA' | 'RUC' | 'PASAPORTE'): void {
+    const dialogRef = this.dialog.open(CodigosContablesFormComponent, {
+      width: '1000px',
+      maxHeight: '90vh',
+      autoFocus: false,
+      data: { tipoIdentificacion }   // 👈 se envía al form
+    });
 
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.cargarCodigos();
+      }
+    });
+  }
+
+  abrirEditar(id: number): void {
+    const dialogRef = this.dialog.open(CodigosContablesFormComponent, {
+      width: '1000px',
+      maxHeight: '90vh',
+      autoFocus: false,
+      data: { id }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.cargarCodigos();
+      }
+    });
+  }
 
   trackById = (_: number, it: CodigosContablesResponse) =>
     it?.IdCodContable ?? it?.Identificacionauxiliar ?? _;

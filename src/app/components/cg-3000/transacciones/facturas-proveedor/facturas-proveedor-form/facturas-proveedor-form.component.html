@@ -2,7 +2,7 @@
   <div class="toolbar sticky-header">
 
       <div class="title">{{ titulo() }}</div>
-
+      
       <div class="actions">
         <button class="btn-verde"  (click)="guardar()" [disabled]="isReadOnly()">
           <ng-container *ngIf="modo() === 'nuevo'; else actualizarLbl">Guardar</ng-container>
@@ -51,28 +51,31 @@
           </div>
         </div>
 
-
         <div class="form-group">
-          <label for="idTipoAsiento">Tipo Asiento <span class="required" [ngClass]="{ 'edit-mode-label': modo() === 'editar' }" >*</span></label>
+          <label for="idAuxiliar">
+            Proveedor
+            <span class="required">*</span>
+          </label>
+
           <select
-            id="IdTipoAsiento"
+            id="idAuxiliar"
             class="control"
-            [disabled]="modo() === 'editar'"
-            [ngClass]="{ 'edit-mode-select': modo() === 'editar' }"
-            formControlName="idTipoAsiento"
-            [attr.title]="'Seleccione el tipo documento'"
+            [disabled]="isReadOnly()"
+            [formControl]="auxiliarSeleccionadoCtrl"
+            [attr.title]="'Seleccione el auxiliar contable'"
           >
-            <option [ngValue]="null" disabled>Seleccione...</option>
-            <option *ngFor="let ta of (tiposAsiento$ | async)" [ngValue]="ta.IdTipoAsiento">
-              {{ ta.TipAsiento }} — {{ ta.Descripcion }}
+            <option [ngValue]="0" disabled>Seleccione...</option>
+            <option *ngFor="let aux of auxiliares" [ngValue]="aux.id">
+              {{ aux.label }}
             </option>
           </select>
-          <div class="error" *ngIf="form.get('idTipoAsiento')?.invalid && form.get('idTipoAsiento')?.touched">
+
+          <div class="error"
+               *ngIf="auxiliarSeleccionadoCtrl.invalid && auxiliarSeleccionadoCtrl.touched">
             Campo obligatorio.
           </div>
         </div>
-        
-        
+       
         <div class="form-group">
           <label>Fecha Transacción</label>
           <input
@@ -93,12 +96,128 @@
           />
         </div>
 
-        <div class="form-group span-2-left">
+         <div class="form-group">
+          <label for="idTipoCompSri">
+            Tipo Comprobante
+            <span class="required">*</span>
+          </label>
+
+          <select
+            id="idTipoCompSri"
+            class="control"
+            [disabled]="isReadOnly()"
+            [formControl]="tipoCompSriCtrl"
+            [attr.title]="'Seleccione el tipo de comprobante SRI'"
+          >
+            <option [ngValue]="0" disabled>Seleccione...</option>
+
+            <option *ngFor="let t of listaTiposCompSriCab" [ngValue]="t.id">
+              {{ t.label }}
+            </option>
+          </select>
+
+          <div
+            class="error" *ngIf="tipoCompSriCtrl.invalid && tipoCompSriCtrl.touched">
+            Campo obligatorio.
+          </div>
+        </div>
+
+       <div class="form-group">
+          <label for="idSustentoTrib">
+            Sustento Tributario
+            <span class="required">*</span>
+          </label>
+
+          <select
+            id="idSustentoTrib"
+            class="control"
+            [disabled]="isReadOnly()"
+            [formControl]="sustentoTribCtrl"
+            [attr.title]="'Seleccione el sustento tributario'"
+          >
+            <option [ngValue]="0" disabled>Seleccione...</option>
+            <option *ngFor="let s of listaSustentosTrib" [ngValue]="s.id">
+              {{ s.label }}
+            </option>
+          </select>
+
+          <div
+            class="error" *ngIf="sustentoTribCtrl.invalid && sustentoTribCtrl.touched">
+            Campo obligatorio.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="nroComprobante">No. Comprobante</label>
+          <input
+            id="nroComprobante"
+            type="text"
+            class="control"
+            [formControl]="nroComprobanteCtrl"
+            maxlength="25"
+            placeholder="Ingrese No. de comprobante"
+            inputmode="numeric"
+            (input)="onNumericInput(nroComprobanteCtrl, $event)"
+          />
+          <div class="error"
+              *ngIf="nroComprobanteCtrl.hasError('pattern') && nroComprobanteCtrl.touched">
+              Solo se permiten números.
+          </div>
+          <div
+            class="error" *ngIf="nroComprobanteCtrl.invalid && nroComprobanteCtrl.touched">
+            Campo obligatorio.
+          </div>
+        </div>
+       
+         <!-- AUTORIZACIÓN / FECHAS CABECERA -->
+        <div class="form-group">
+          <label>Autorización</label>
+          <input
+            type="text"
+            class="control"
+            [formControl]="autorizacionCtrl"
+            maxlength="49"
+            placeholder="Ingrese Autorizacion"
+            inputmode="numeric"
+            (input)="onNumericInput(autorizacionCtrl, $event)"
+          />
+          <div class="error"
+              *ngIf="autorizacionCtrl.hasError('pattern') && autorizacionCtrl.touched">
+            Solo se permiten números.
+          </div>
+          <div
+            class="error" *ngIf="autorizacionCtrl.invalid && autorizacionCtrl.touched">
+            Campo obligatorio.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Fecha Caduca</label>
+          <input
+            class="control"
+            type="date"
+            [value]="fechacaducaCtrl.value | date:'yyyy-MM-dd'"
+            (input)="fechacaducaCtrl.setValue($any($event.target).value)"
+          />
+        </div>
+
+        <div class="form-group">
+          <label>Fecha Vencimiento</label>
+          <input
+            class="control"
+            type="date"
+            [value]="fechavencimientoCtrl.value | date:'yyyy-MM-dd'"
+            (input)="fechavencimientoCtrl.setValue($any($event.target).value)"
+          />
+        </div>
+
+        <div class="form-group span-2-right">
           <label>Concepto<span class="required">*</span></label>
           <textarea
             class="control"
             type="text"
             formControlName="observacion"
+            maxlength="250"
             (input)="validarTexto('observacion', $event)"
           ></textarea>
           <div class="error" *ngIf="form.get('observacion')?.invalid && form.get('observacion')?.touched">
@@ -106,17 +225,41 @@
           </div>
         </div>
 
-        
-        <div class="form-group span-2-right">
+
+         <div class="form-group" style="display: none;">
+          <label for="idTipoAsiento">Tipo Asiento <span class="required" [ngClass]="{ 'edit-mode-label': modo() === 'editar' }" >*</span></label>
+          <select
+            id="IdTipoAsiento"
+            class="control"
+            [disabled]="modo() === 'editar'"
+            [ngClass]="{ 'edit-mode-select': modo() === 'editar' }"
+            formControlName="idTipoAsiento"
+            [attr.title]="'Seleccione el tipo documento'"
+          >
+            <option [ngValue]="null" disabled>Seleccione...</option>
+            <option *ngFor="let ta of (tiposAsiento$ | async)" [ngValue]="ta.IdTipoAsiento">
+              {{ ta.TipAsiento }} — {{ ta.Descripcion }}
+            </option>
+          </select>
+          <div class="error" *ngIf="form.get('idTipoAsiento')?.invalid && form.get('idTipoAsiento')?.touched">
+            Campo obligatorio.
+          </div>
+        </div>
+
+        <div class="form-group span-2-right" style="display: none;">
           <label>Beneficiario<span class="required">*</span></label>
-          <input class="control" type="text" formControlName="beneficiario" 
-           (input)="validarTexto('beneficiario', $event)"
+          <input class="control" type="text" 
+            formControlName="beneficiario" 
+            maxlength="155"
+            (input)="validarTexto('beneficiario', $event)"
           />
           <div class="error" *ngIf="form.get('beneficiario')?.invalid && form.get('beneficiario')?.touched">
             Campo obligatorio.
           </div>
         </div>
 
+        
+      
         
         <!--
 

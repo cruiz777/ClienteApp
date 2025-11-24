@@ -1,10 +1,11 @@
 import { Component, OnInit, ViewChild, effect, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule 
+        ,FormControl,        // agregar para el control de combo auxiliares contables
+       } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UsuarioService } from 'src/app/services/usuario.service';
-import { MatDialogRef } from '@angular/material/dialog';
-import { MatDialog, MAT_DIALOG_DATA, MatDialogConfig } from '@angular/material/dialog';
+import { MatDialogRef, MatDialog, MatDialogConfig } from '@angular/material/dialog';
 import { ComponentType } from '@angular/cdk/portal';
 import { startWith, distinctUntilChanged } from 'rxjs/operators';
 import { Observable, of } from 'rxjs';
@@ -14,31 +15,45 @@ import { TipoAsientoResponse } from 'src/app/interfaces/responses/tipo-asiento-r
 import { ZonaService } from 'src/app/services/zona.service';
 import { ZonaResponse } from 'src/app/interfaces/responses/zona-response';
 
-/// LOCALES
+// LOCALES
 import { LocalesService } from 'src/app/services/locales.service';
 import { LocalesResponse } from 'src/app/interfaces/responses/local-response';
-import { LocalCellEditorComponent } from './local-cell-editor.component';
-///// plan de cuenta ///
+
+// ⬇️ Reutilizamos los cell editors del módulo de asientos contables
+//import { LocalCellEditorComponent } from '../asientos-contables-form/local-cell-editor.component';
+import { LocalCellEditorComponent } from '../../asientos-contables/asientos-contables-form/local-cell-editor.component';
 import { PlanCuentasService, PlanCuenta } from 'src/app/services/plan-cuentas.service';
-import { PlanCuentaCellEditorComponent } from './plan-cuenta-cell-editor.component';
-///// codigos contables /////
+//import { PlanCuentaCellEditorComponent } from '../asientos-contables-form/plan-cuenta-cell-editor.component';
+import { PlanCuentaCellEditorComponent } from '../../asientos-contables/asientos-contables-form/plan-cuenta-cell-editor.component';
 import { CodigosContablesService } from 'src/app/services/codigoscontables.service';
 import { CodigosContablesResponse } from 'src/app/interfaces/responses/codigos-contables-response';
-import { CodContableCellEditorComponent } from './cod-contable-cell-editor.component';
-// MOVIMIENTOS BANCARIOS
+//import { CodContableCellEditorComponent } from '../asientos-contables-form/cod-contable-cell-editor.component';
+import { CodContableCellEditorComponent } from '../../asientos-contables/asientos-contables-form/cod-contable-cell-editor.component';
 import { MovimientoBancarioService } from 'src/app/services/movimiento-bancario.service';
 import { MovimientoBancarioResponse } from 'src/app/interfaces/responses/movimiento-bancario-response';
-import { MovimientoBancarioCellEditorComponent } from './movimiento-bancario-cell-editor.component';
-/// componente adicional datos tributarios
-import {
-  AsientoTributarioDialogComponent,
-  AsientoTributarioData,
-} from '../datos-tributarios/asiento-tributario-dialog.component';
-// MENSAJERIA
+
+//import { MovimientoBancarioCellEditorComponent } from '../asientos-contables-form/movimiento-bancario-cell-editor.component';
+import { MovimientoBancarioCellEditorComponent } from '../../asientos-contables/asientos-contables-form/movimiento-bancario-cell-editor.component';
+// Datos tributarios
+import { Optional } from '@angular/core';
+import { SustentoTributarioService } from 'src/app/services/sustento-tributario.service';
+import { SustentoTributarioResponse } from 'src/app/interfaces/responses/sustento-tributario-response';
+
+import { TipoComprobanteSriService } from 'src/app/services/tipocomprobantesri.service';
+import { TipoComprobanteSriResponse } from 'src/app/interfaces/responses/tipo-comprobantesri-response';
+
+import { AsientoTributarioDialogComponent, AsientoTributarioData } from '../../asientos-contables/datos-tributarios/asiento-tributario-dialog.component';
+
+import { TipoRetencionService } from 'src/app/services/tiporetencion.service';
+import { TipoRetencionResponse } from 'src/app/interfaces/responses/tipo-retencion-response';
+import { TipoRetencionCellEditorComponent } from './tipo-retencion-cell-editor.component';
+
+// Mensajería
 import {
   CustomMessageBoxComponent,
   MessageBoxData,
 } from 'src/app/util/messages/custom-message-box.component';
+
 import { AgGridAngular } from 'ag-grid-angular';
 
 import {
@@ -54,10 +69,6 @@ import {
 } from 'ag-grid-community';
 
 import {
-  AsientosContablesService,
-  ApiResponse,
-} from 'src/app/services/asientos-contables.service';
-import {
   AsientoContableResponse,
   DetalleAsientoResponse,
   createEmptyAsientoContableResponse,
@@ -65,10 +76,21 @@ import {
 
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
+// 🔹 Servicio específico para facturas de proveedor
+import {
+  FacturasProveedorService,
+  ApiResponse,
+} from 'src/app/services/facturas-proveedor.service';
+
 ModuleRegistry.registerModules([AllCommunityModule]);
 
+interface TipoRetencionCombo {
+  id: number;
+  label: string;   // ej: "001 - RENTA (10%)"
+}
+
 @Component({
-  selector: 'app-asientos-contables-form',
+  selector: 'app-facturas-proveedor-form',
   standalone: true,
   imports: [
     CommonModule,
@@ -79,11 +101,13 @@ ModuleRegistry.registerModules([AllCommunityModule]);
     PlanCuentaCellEditorComponent,
     CodContableCellEditorComponent,
     MovimientoBancarioCellEditorComponent,
+    TipoRetencionCellEditorComponent,  
   ],
-  templateUrl: './asientos-contables-form.component.html',
-  styleUrls: ['./asientos-contables-form.component.css'],
+  templateUrl: './facturas-proveedor-form.component.html',
+  styleUrls: ['./facturas-proveedor-form.component.css'],
 })
-export class AsientosContablesFormComponent implements OnInit {
+
+export class FacturasProveedorFormComponent implements OnInit {
   @ViewChild(AgGridAngular) agGrid!: AgGridAngular;
 
   modo = signal<'nuevo' | 'editar'>('nuevo');
@@ -92,8 +116,8 @@ export class AsientosContablesFormComponent implements OnInit {
 
   titulo = computed(() =>
     this.modo() === 'nuevo'
-      ? 'Crear/Editar (Asiento Contable) — NUEVO'
-      : 'Crear/Editar (Asiento Contable) — EDITAR'
+      ? 'Crear/Editar (Factura Proveedor) — NUEVO'
+      : 'Crear/Editar (Factura Proveedor) — EDITAR'
   );
 
   // USUARIO
@@ -120,22 +144,20 @@ export class AsientosContablesFormComponent implements OnInit {
   private readonly allowedTextPattern = /[^0-9a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s.,;-]/g;
 
   validarTexto(controlName: 'observacion' | 'beneficiario', event: Event): void {
-  const input = event.target as HTMLInputElement | HTMLTextAreaElement;
-  if (!input) return;
+    const input = event.target as HTMLInputElement | HTMLTextAreaElement;
+    if (!input) return;
 
-  const original = input.value;
-  // eliminamos todo lo que NO está en el patrón permitido
-  const limpio = original.replace(this.allowedTextPattern, '');
+    const original = input.value;
+    // eliminamos todo lo que NO está en el patrón permitido
+    const limpio = original.replace(this.allowedTextPattern, '');
 
-  if (original !== limpio) {
-    input.value = limpio; // actualiza el input
+    if (original !== limpio) {
+      input.value = limpio; // actualiza el input
+    }
+
+    // actualiza el formControl sin disparar eventos extra
+    this.form.get(controlName)?.setValue(limpio, { emitEvent: false });
   }
-
-  // actualiza el formControl sin disparar eventos extra
-  this.form.get(controlName)?.setValue(limpio, { emitEvent: false });
-}
-
-
 
   tiposAsiento$!: Observable<TipoAsientoResponse[]>;
   private tipoAsientos: Array<{ id: number; nombre: string; tipDoc: string }> = [];
@@ -143,7 +165,16 @@ export class AsientosContablesFormComponent implements OnInit {
 
   locales: { id: number; nombre: string }[] = [];
   cuentas: { id: number; label: string; codigo: string }[] = [];
-  auxiliares: { id: number; label: string }[] = [];
+  ///para cargar en beneficiaroio lo del combo
+  //auxiliares: { id: number; label: string }[] = [];
+  auxiliares: { id: number; label: string; razon: string }[] = [];
+  ///para el list en la cabecera
+  auxiliarSeleccionadoCtrl = new FormControl<number | null>(null, [
+    Validators.required,
+    Validators.min(1),
+  ]);
+  ////para el numero de comprobante
+  nroComprobanteCtrl = new FormControl<string>('', []);
   // lista de movimientos bancarios
   movimientosBancarios: {
     id: number;
@@ -151,6 +182,31 @@ export class AsientosContablesFormComponent implements OnInit {
     descripcion: string;
     label: string;
   }[] = [];
+
+    //sustento tributario lista que viene del servicio
+    listaSustentosTrib: { id: number; label: string }[] = [];
+    // Control en cabecera (igual que Auxiliar Contable)
+    sustentoTribCtrl = new FormControl<number | null>(null, [
+    Validators.required,
+    Validators.min(1),
+    ]);
+
+    //tipo comprobante sri
+    listaTiposCompSriCab: { id: number; label: string }[] = [];
+      tipoCompSriCtrl = new FormControl<number | null>(0, [
+      Validators.required,
+      Validators.min(1),
+    ]);
+    
+  ////
+   autorizacionCtrl = new FormControl<string>('', [
+    Validators.maxLength(49),
+   ]);
+   fechacaducaCtrl = new FormControl<string | null>(null);
+   fechavencimientoCtrl = new FormControl<string | null>(null);
+  ////tipo retencion
+  // tiposRetencion: { id: number; label: string }[] = [];
+  tiposRetencion: TipoRetencionCombo[] = [];
 
   form!: FormGroup;
 
@@ -263,6 +319,8 @@ export class AsientosContablesFormComponent implements OnInit {
       field: 'idCodContable',
       width: 260,
       editable: true,
+      hide:true,
+      /* ya no se utiliza cell editor aqui
       singleClickEdit: true,
       cellEditor: CodContableCellEditorComponent,
       cellEditorParams: () => ({
@@ -277,12 +335,40 @@ export class AsientosContablesFormComponent implements OnInit {
         const aux = this.auxiliares.find((a) => a.id === id);
         return aux ? aux.label : String(v);
       },
+      */
     },
+
+     {
+      headerName: 'Tipo Retención',
+      field: 'idTipoRetencion',
+      width: 220,
+      editable: true,
+      //valueParser: numberParser,
+      //hide:  false,//true, 
+      /////lista en tipo retencion
+      singleClickEdit: true,
+      cellEditor: TipoRetencionCellEditorComponent,
+      cellEditorParams: () => ({
+        tiposRetencion: this.tiposRetencion,
+      }),
+      valueFormatter: (params) => {
+        const v = params.value;
+        if (v == null || v === '' || Number(v) === 0) {
+            return 'Seleccione...';
+        }
+        const id = Number(v);
+        const tipo = this.tiposRetencion.find(t => t.id === id);
+        return tipo ? tipo.label : String(v);
+      },
+
+    },
+    
     {
       headerName: 'No.Comprobante',
       field: 'nocomprobante',
       width: 160,
       editable: true,
+      hide: true,//true,
     },
     {
       headerName: 'Cheque',
@@ -290,6 +376,7 @@ export class AsientosContablesFormComponent implements OnInit {
       width: 100,
       editable: true,
       valueParser: numberParser,
+       hide: true,//true,
     },
 
     {
@@ -349,17 +436,17 @@ export class AsientosContablesFormComponent implements OnInit {
       cellEditor: 'agLargeTextCellEditor',
       cellEditorPopup: true,  // opcional: editor en ventana emergente
       cellEditorParams: {
-          maxLength: 150,       // ⬅️ NO permite escribir más de 150 caracteres
-          rows: 4,
-          cols: 40
-        }
+        maxLength: 150,       // NO permite escribir más de 150 caracteres
+        rows: 4,
+        cols: 40
+      }
     },
     {
       headerName: 'Codigo Mov.',
       field: 'movbancario',
       width: 160,
       editable: false,
-      hide: true,
+      hide: true,//true,
     },
     {
       headerName: 'Sustento Trib.',
@@ -367,7 +454,7 @@ export class AsientosContablesFormComponent implements OnInit {
       width: 150,
       editable: true,
       valueParser: numberParser,
-      hide: true,
+      hide: true,//true,
     },
     {
       headerName: 'Tipo Comp. SRI',
@@ -375,14 +462,14 @@ export class AsientosContablesFormComponent implements OnInit {
       width: 170,
       editable: true,
       valueParser: numberParser,
-      hide: true,
+      hide: true,//true,
     },
     {
       headerName: 'Autorización',
       field: 'autorizacion',
       width: 160,
       editable: true,
-      hide: true,
+      hide: true,//true,
     },
     {
       headerName: 'Fecha Caduca',
@@ -390,16 +477,7 @@ export class AsientosContablesFormComponent implements OnInit {
       width: 150,
       editable: true,
       valueParser: isoParser,
-      hide: true,
-    },
-
-    {
-      headerName: 'Tipo Retención',
-      field: 'idTipoRetencion',
-      width: 160,
-      editable: true,
-      valueParser: numberParser,
-      hide: true,
+      hide: true,//true,
     },
 
     {
@@ -408,7 +486,7 @@ export class AsientosContablesFormComponent implements OnInit {
       width: 150,
       editable: true,
       valueParser: numberParser,
-      hide: true,
+      hide: true,//true,
     },
     {
       headerName: 'Proyecto',
@@ -416,7 +494,7 @@ export class AsientosContablesFormComponent implements OnInit {
       width: 130,
       editable: true,
       valueParser: numberParser,
-      hide: true,
+      hide: true,//true,
     },
     {
       headerName: 'Subproyecto',
@@ -424,7 +502,7 @@ export class AsientosContablesFormComponent implements OnInit {
       width: 160,
       editable: true,
       valueParser: numberParser,
-      hide: true,
+      hide: true,//true,
     },
 
     {
@@ -435,7 +513,7 @@ export class AsientosContablesFormComponent implements OnInit {
       cellEditor: 'agSelectCellEditor',
       cellEditorParams: { values: ['true', 'false'] },
       valueParser: boolParser,
-      hide: true,
+      hide: true,//true,
     },
     {
       headerName: 'Fecha Transferido',
@@ -443,7 +521,7 @@ export class AsientosContablesFormComponent implements OnInit {
       width: 170,
       editable: true,
       valueParser: isoParser,
-      hide: true,
+      hide: true,//true,
     },
     {
       headerName: 'Fecha Vencimiento',
@@ -451,7 +529,7 @@ export class AsientosContablesFormComponent implements OnInit {
       width: 170,
       editable: true,
       valueParser: isoParser,
-      hide: true,
+      hide: true,//true,
     },
     {
       headerName: 'Cod Conciliación',
@@ -459,32 +537,32 @@ export class AsientosContablesFormComponent implements OnInit {
       width: 150,
       editable: true,
       valueParser: numberParser,
-      hide: true,
+      hide: true,//true,
     },
     {
       headerName: 'Valor en Letras',
       field: 'valorLetras',
       width: 220,
       editable: true,
-      hide: true,
+      hide: true,//true,
     },
-    { headerName: 'Año', field: 'anio', width: 90, editable: true, hide: true },
+    { headerName: 'Año', field: 'anio', width: 90, editable: true, hide: true }, ///cambiar a true solo para verificar datos
     {
       headerName: 'Fecha Transacción',
       field: 'fechatransaccion',
       width: 170,
       editable: true,
       valueParser: isoParser,
-      hide: true,
+      hide: true,//true,
     },
-    { headerName: 'Hora', field: 'hora', width: 100, editable: true, hide: true },
+    { headerName: 'Hora', field: 'hora', width: 100, editable: true, hide: true },//cambiar a true solo para pruebas
     {
       headerName: 'Zona',
       field: 'idZona',
       width: 110,
       editable: true,
       valueParser: numberParser,
-      hide: true,
+      hide: true,//true,
     },
 
     {
@@ -492,7 +570,7 @@ export class AsientosContablesFormComponent implements OnInit {
       field: 'docurelacionado',
       width: 160,
       editable: true,
-      hide: true,
+      hide: true,//true,
     },
 
     {
@@ -500,7 +578,7 @@ export class AsientosContablesFormComponent implements OnInit {
       field: 'beneficiario',
       width: 180,
       editable: true,
-      hide: true,
+      hide: true,//true,
     },
     {
       headerName: 'Fecha Ingreso',
@@ -508,7 +586,7 @@ export class AsientosContablesFormComponent implements OnInit {
       width: 160,
       editable: true,
       valueParser: isoParser,
-      hide: true,
+      hide: true,//true,
     },
     {
       headerName: 'Fecha Cierre',
@@ -516,7 +594,7 @@ export class AsientosContablesFormComponent implements OnInit {
       width: 160,
       editable: true,
       valueParser: isoParser,
-      hide: true,
+      hide: true,//true,
     },
 
     {
@@ -525,10 +603,10 @@ export class AsientosContablesFormComponent implements OnInit {
       width: 170,
       editable: true,
       valueParser: isoParser,
-      hide: true,
+      hide: true,//true,
     },
-    { headerName: 'Cierre', field: 'cierre', width: 120, editable: true, hide: true },
-    { headerName: 'CodprePc', field: 'codprePc', width: 180, editable: true, hide: true },
+    { headerName: 'Cierre', field: 'cierre', width: 120, editable: true, hide: true }, //cambiar a true solo para ver data
+    { headerName: 'CodprePc', field: 'codprePc', width: 180, editable: true, hide: true },//cambiar a true solo para ver data
     {
       headerName: 'Estado Ingreso',
       field: 'estadoIngreso',
@@ -537,9 +615,9 @@ export class AsientosContablesFormComponent implements OnInit {
       cellEditor: 'agSelectCellEditor',
       cellEditorParams: { values: ['true', 'false'] },
       valueParser: boolParser,
-      hide: true,
+      hide: true,//true,
     },
-     // ====== NUEVOS CAMPOS ======
+    // ====== NUEVOS CAMPOS ======
     {
       headerName: 'Autorizacion Relacionado',
       field: 'autorizacionRelacionado',
@@ -573,14 +651,20 @@ export class AsientosContablesFormComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private usuarioService: UsuarioService,
-    public dialogRef: MatDialogRef<AsientosContablesFormComponent>,
+    //cuando entras directo sin opcional cuando entras una pantalla a otro componente
+    //public dialogRef: MatDialogRef<FacturasProveedorFormComponent>,
+     @Optional() public dialogRef: MatDialogRef<FacturasProveedorFormComponent> | null,
+    ////
     private tipoasientoservice: TipoAsientoService,
-    private service: AsientosContablesService,
+    private facturasService: FacturasProveedorService,
     private zonaService: ZonaService,
     private localesService: LocalesService,
     private planCuentasService: PlanCuentasService,
     private codigosContablesService: CodigosContablesService,
     private movimientoBancarioService: MovimientoBancarioService,
+    private sustentoTribService: SustentoTributarioService, //sustento tributario
+    private tipoCompSriService: TipoComprobanteSriService, //tipo comprobante
+    private tipoRetencionService: TipoRetencionService, //tipo retencion
     private dialog: MatDialog,
     private snack: MatSnackBar
   ) {
@@ -608,8 +692,29 @@ export class AsientosContablesFormComponent implements OnInit {
   /// end zonas
 
   ngOnInit(): void {
+    
     this.buildForm();
+    ///para llenar en nebeficiario
+    // 👉 Cuando cambia el auxiliar contable, actualizar Beneficiario
+    this.auxiliarSeleccionadoCtrl.valueChanges.subscribe((id) => {
+        const numId = Number(id || 0);
+        const aux = this.auxiliares.find(a => a.id === numId);
 
+        if (aux) {
+        // Solo ponemos la Razón Social en beneficiario
+        this.form.patchValue(
+            { beneficiario: aux.razon },
+            { emitEvent: false }
+        );
+        } else {
+        // Si se limpia el auxiliar, limpiamos beneficiario
+        this.form.patchValue(
+            { beneficiario: '' },
+            { emitEvent: false }
+        );
+        }
+    });
+    ///
     const id = Number(this.route.snapshot.paramMap.get('id') ?? 0);
     if (id > 0) {
       this.modo.set('editar');
@@ -647,6 +752,9 @@ export class AsientosContablesFormComponent implements OnInit {
               .toUpperCase(),
           }));
           this.syncTipDocFromCurrentId();
+          //llama el asiento por default
+          this.setDefaultTipoAsientoNuevo();
+          ///end
         }),
         shareReplay(1)
       );
@@ -666,6 +774,9 @@ export class AsientosContablesFormComponent implements OnInit {
       this.cargarPlanCuentas();
       this.cargarCodigosContables();
       this.cargarMovimientosBancarios();
+      this.cargarSustentosTributarios();  //sustento tributario
+      this.cargarTiposCompSriCabecera();
+      this.cargarTiposRetencion();   //tipo retencion
     }
   }
 
@@ -714,6 +825,35 @@ export class AsientosContablesFormComponent implements OnInit {
     this.form.get('tipdoc')?.setValue(tipDoc, { emitEvent: false });
   }
 
+  ///para que el el AD ingreso solo con el ingreso de documentos
+  /** Marca automáticamente el Tipo de Asiento por defecto al entrar (modo NUEVO) */
+  private setDefaultTipoAsientoNuevo(): void {
+        // Solo aplicar cuando es NUEVO
+        if (this.modo() !== 'nuevo') return;
+
+        const ctrl = this.form.get('idTipoAsiento');
+        if (!ctrl) return;
+
+        // Si ya tiene algún valor (por navegación con id, etc.) no tocarlo
+        const current = Number(ctrl.value || 0);
+        if (current > 0) return;
+
+        // Código del tipo de asiento que quieres usar por defecto
+        const DEFAULT_TIPO_ASIENTO = 'AD';   // <-- cámbialo si luego quieres otro
+
+        // Buscamos en el array simplificado que llenas en el tap()
+        const found = this.tipoAsientos.find(
+        x => (x.tipDoc || '').toUpperCase() === DEFAULT_TIPO_ASIENTO
+        );
+
+        if (found) {
+        ctrl.patchValue(found.id, { emitEvent: true }); // dispara el binding a tipdoc
+        }
+    }
+
+
+  ///end
+
   private setFormFromHeader(h: AsientoContableResponse): void {
     const idTipoAsiento = h.idTipoAsiento && h.idTipoAsiento > 0 ? h.idTipoAsiento : null;
 
@@ -744,14 +884,64 @@ export class AsientosContablesFormComponent implements OnInit {
 
   private cargarAsiento(idCabMaestro: number): void {
     this.loading.set(true);
-    this.service.getById(idCabMaestro).subscribe({
+    this.facturasService.getById(idCabMaestro).subscribe({
       next: (resp) => {
         this.setFormFromHeader(resp);
         this.rowData.set(resp.detalles ?? []);
+        //tomar el auxiliar para el selector
+         const firstAux = resp.detalles && resp.detalles.length
+          ? Number(resp.detalles[0].idCodContable || 0)
+          : 0;
+        if (firstAux > 0) {
+          //para al editar se cargue el beneficiario PENDIENTE REVISION DEBE RECUPERAR 
+          // LO QUE TIEN YA NO SE PUEDE CAMBIAR DE BENERFICIARIO POR AHORA QUEDA EN FALSE TOMAR EN CUENTA
+          this.auxiliarSeleccionadoCtrl.setValue(firstAux, { emitEvent: false });
+          // this.auxiliarSeleccionadoCtrl.setValue(firstAux, { emitEvent: true });  
+        }
+        /////no de comprobante
+        // 🔹 Tomar el No.Comprobante de la primera línea y mostrarlo arriba
+        const firstNoComp = resp.detalles && resp.detalles.length
+          ? (resp.detalles[0].nocomprobante ?? '')
+          : '';
+        this.nroComprobanteCtrl.setValue(firstNoComp, { emitEvent: false });
+        
+        ///sustento tributario
+        const firstSustento = resp.detalles && resp.detalles.length
+        ? Number(resp.detalles[0].idSustentoTrib || 0)
+        : 0;
+
+        if (firstSustento > 0) {
+        this.sustentoTribCtrl.setValue(firstSustento, { emitEvent: false });
+        }
+        ///tipo comprobante
+         const firstTipoComp = resp.detalles && resp.detalles.length
+          ? Number(resp.detalles[0].idTipoCompSri || 0)
+          : 0;
+        if (firstTipoComp > 0) {
+          this.tipoCompSriCtrl.setValue(firstTipoComp, { emitEvent: false });
+        }
+        /////otros controles
+        // 🔹 Autorización / Fechas tomadas de la primera línea del detalle
+        const firstAut = resp.detalles && resp.detalles.length
+          ? (resp.detalles[0].autorizacion ?? '')
+          : '';
+        this.autorizacionCtrl.setValue(firstAut, { emitEvent: false });
+
+        const firstFechaCad = resp.detalles && resp.detalles.length
+          ? (resp.detalles[0].fechacaduca || '')
+          : '';
+        this.fechacaducaCtrl.setValue(firstFechaCad || null, { emitEvent: false });
+
+        const firstFechaVen = resp.detalles && resp.detalles.length
+          ? (resp.detalles[0].fechavencimiento || '')
+          : '';
+        this.fechavencimientoCtrl.setValue(firstFechaVen || null, { emitEvent: false });
+        /////
+
         this.loading.set(false);
       },
       error: (err) => {
-        console.error('Error al cargar asiento', err);
+        console.error('Error al cargar factura de proveedor', err);
         this.loading.set(false);
       },
     });
@@ -809,6 +999,7 @@ export class AsientosContablesFormComponent implements OnInit {
         this.auxiliares = data.map((a) => ({
           id: a.IdCodContable,
           label: `${a.Identificacionauxiliar} - ${a.Razonsocial}`,
+          razon: a.Razonsocial,              // guardamos la razón social aparte
         }));
 
         this.gridApi?.refreshCells({ force: true, columns: ['idCodContable'] });
@@ -842,6 +1033,58 @@ export class AsientosContablesFormComponent implements OnInit {
     });
   }
 
+  private cargarSustentosTributarios(): void {
+    this.sustentoTribService.getAll().subscribe({
+        next: (resp) => {
+        const data = (resp.data ?? []) as SustentoTributarioResponse[];
+        this.listaSustentosTrib = data.map((s) => ({
+            id: s.IdSustentoTrib,
+            label: `${s.Codsustento} — ${s.Dessustento}`,
+        }));
+        },
+        error: (err) =>
+        console.error('Error cargando Sustentos Tributarios', err),
+    });
+    }
+
+    // comprban te sri
+     // ====== CABECERA: Tipo Comprobante SRI ======
+  private cargarTiposCompSriCabecera(): void {
+    // usamos Listado() para tener Codtipcomp normalizado
+    this.tipoCompSriService.Listado().subscribe({
+      next: (list) => {
+        this.listaTiposCompSriCab = (list ?? []).map((t) => ({
+          id: t.IdTipoCompSri,
+          label: `${t.Codtipcomp} - ${t.Destipcomp}`,
+        }));
+      },
+      error: (err) => {
+        console.error('Error cargando tipos comprobante SRI (cabecera)', err);
+      },
+    });
+  }
+
+  ///tipo retencion
+ private cargarTiposRetencion(): void {
+  this.tipoRetencionService.getAllTipo().subscribe({
+    next: (data: TipoRetencionResponse[]) => {   // 👈 tipar data
+      this.tiposRetencion = data.map(t => ({
+        id: t.IdTipoRetencion,
+        label: `${t.CodigoTipoRet} - ${t.Descripcion} (${t.Porcentaje}%)`,
+      }));
+
+      this.gridApi?.refreshCells({
+        force: true,
+        columns: ['idTipoRetencion'],
+      });
+    },
+    error: (err: any) => {                       // 👈 tipar err
+      console.error('Error cargando tipos de retención', err);
+    },
+  });
+}
+  ///tipo retencion
+  
   //// validaciones
   private validarDetalle(): boolean {
     const filas = this.rowData() ?? [];
@@ -859,6 +1102,8 @@ export class AsientosContablesFormComponent implements OnInit {
       const idMovBancario = Number(f.idMovBancario || 0);
       const debe = Number(f.debe || 0);
       const haber = Number(f.haber || 0);
+      const idSust = Number(f.idSustentoTrib || 0);        // ⬅️ nuevo
+      const idTipoComp = Number(f.idTipoCompSri || 0);     // ⬅️ nuevo
 
       if (idLocal <= 0) {
         errores.push(`Línea ${linea}: debe seleccionar el Local.`);
@@ -889,6 +1134,15 @@ export class AsientosContablesFormComponent implements OnInit {
           `Línea ${linea}: debe seleccionar el Tipo de Movimiento (distinto de NINGUNO).`
         );
       }
+      ///sustento trib
+      if (idSust <= 0) {
+        errores.push(`Línea ${linea}: debe seleccionar el Sustento Tributario.`);
+      }
+      ///tipocomprobante sri
+      if (idTipoComp <= 0) {
+        errores.push(`Línea ${linea}: debe seleccionar el Tipo de Comprobante SRI.`);
+      }
+
     });
 
     const diff = this.totDebe() - this.totHaber();
@@ -905,7 +1159,7 @@ export class AsientosContablesFormComponent implements OnInit {
         verticalPosition: 'top',
       });
 
-      console.warn('Errores en detalle de asiento:', errores);
+      console.warn('Errores en detalle de factura proveedor:', errores);
       return false;
     }
 
@@ -979,7 +1233,7 @@ export class AsientosContablesFormComponent implements OnInit {
           fechaingreso: fechaIng,
           hora: d.hora && d.hora !== '' ? d.hora : getTimeFromInput(fechaIng),
           fechacierre: d.fechacierre || '',
-          // <<< NUEVO: SIEMPRE VALORES POR DEFECTO EN NUEVO >>>
+          // valores por defecto
           autorizacionRelacionado: '',
           fechaCadRelacionado: '',
         } as DetalleAsientoResponse;
@@ -1001,21 +1255,34 @@ export class AsientosContablesFormComponent implements OnInit {
       detalles: this.rowData(),
     };
 
+    const payload = this.normalizarParaBackend(header);
+
     console.log('>>> HEADER.fechaingreso ENVIADO:', header.fechaingreso);
     console.log(
       '>>> DETALLE[0].fechaingreso ENVIADO:',
-      header.detalles?.[0]?.fechaingreso
+     // header.detalles?.[0]?.fechaingreso   estaba antes de setear datos
+      payload.detalles?.[0]?.fechaingreso
     );
+
 
     this.saving.set(true);
 
     const save$ = esNuevo
-      ? this.service.crear(header)
-      : this.service.actualizar(
+      /*
+      ? this.facturasService.crear(header)
+      : this.facturasService.actualizar(
           header.IdCabMaestro ||
             Number(this.route.snapshot.paramMap.get('id') ?? 0),
           header
         );
+        */
+        /////ahora ya va seteado los capos 
+        ? this.facturasService.crear(payload)
+        : this.facturasService.actualizar(
+            payload.IdCabMaestro ||
+              Number(this.route.snapshot.paramMap.get('id') ?? 0),
+            payload
+          );
 
     save$
       .pipe(
@@ -1027,14 +1294,14 @@ export class AsientosContablesFormComponent implements OnInit {
           }
         }),
         map((resp: ApiResponse<boolean>) => {
-          console.log('Respuesta API Asiento:', resp);
+          console.log('Respuesta API Factura Proveedor:', resp);
           if (!resp.data) {
             throw resp;
           }
           return true;
         }),
         catchError((err: any) => {
-          let msg = 'No se ha podido registrar el asiento.';
+          let msg = 'No se ha podido registrar la factura del proveedor.';
 
           if (err?.status === 400) {
             msg =
@@ -1050,7 +1317,7 @@ export class AsientosContablesFormComponent implements OnInit {
             horizontalPosition: 'right',
             verticalPosition: 'top',
           });
-          console.error('Error backend asiento:', err);
+          console.error('Error backend factura proveedor:', err);
           return of(false);
         }),
         finalize(() => this.saving.set(false))
@@ -1066,13 +1333,32 @@ export class AsientosContablesFormComponent implements OnInit {
             horizontalPosition: 'right',
             verticalPosition: 'top',
           });
-          this.dialogRef.close(true);
+          
+          ///caundo llamas de otro componente y no directo
+          //this.dialogRef.close(true);
+           if (this.dialogRef) {
+            // Cuando está abierto como diálogo
+            this.dialogRef.close(true);
+            } else {
+            // Cuando entras por ruta normal
+            // (ajusta la ruta adonde quieras regresar)
+            this.router.navigate(['/cg-3000/ingresodocumentos']);
+            }
+
         }
       });
   }
 
   cancelar(): void {
-    this.dialogRef.close(false);
+    ///cuando es por ingreso de algun componente ej lista y de ahi a nuevo ahi llamas asi caso contrario directo
+    ///la instruccion de abajo
+    //this.dialogRef.close(false);
+    if (this.dialogRef) {
+        this.dialogRef.close(false);
+    } else {
+        this.router.navigate(['/cg-3000/inicio-cg']);
+    }
+
   }
 
   onGridReady(evt: GridReadyEvent<DetalleAsientoResponse>): void {
@@ -1202,13 +1488,25 @@ export class AsientosContablesFormComponent implements OnInit {
   }
 
   agregarLinea(): void {
-    
-    //VALIDAR QUE SE SELECCIONE ZONA Y TIPO ASIENTO PARA AÑADIR LINEA
+    // VALIDAR QUE SE SELECCIONE ZONA Y TIPO ASIENTO PARA AÑADIR LINEA
     const idZonaCtrl = this.form.get('idZona');
     const idTipoAsientoCtrl = this.form.get('idTipoAsiento');
-
     const idZona = Number(idZonaCtrl?.value || 0);
     const idTipoAsiento = Number(idTipoAsientoCtrl?.value || 0);
+    const idAuxiliar = Number(this.auxiliarSeleccionadoCtrl.value || 0); // para el auxiliar en cabecera
+    const nroComprobante = (this.nroComprobanteCtrl.value || '').toString().trim();
+    const idSustentoCab = Number(this.sustentoTribCtrl.value || 0);
+    const idTipoCompSriCab = Number(this.tipoCompSriCtrl.value || 0); 
+    const autorizacionCab = (this.autorizacionCtrl.value || '').toString().trim();
+    const fechaCadCabForm = this.fechacaducaCtrl.value;
+    const fechaVenCabForm = this.fechavencimientoCtrl.value;
+    const fechaCadCabIso = fechaCadCabForm
+      ? normalizeToLocalIso(fechaCadCabForm)
+      : '';
+
+    const fechaVenCabIso = fechaVenCabForm
+      ? normalizeToLocalIso(fechaVenCabForm)
+      : '';
 
     const mensajes: string[] = [];
     if (idZona <= 0) {
@@ -1220,6 +1518,44 @@ export class AsientosContablesFormComponent implements OnInit {
       idTipoAsientoCtrl?.markAsTouched();
     }
 
+    //para el auxilar---
+    if (!idAuxiliar || idAuxiliar <= 0) {
+        mensajes.push('Debe seleccionar el Auxiliar Contable.');
+        this.auxiliarSeleccionadoCtrl.markAsTouched();
+        }
+    ///no de comprobante
+     // 🔹 Nuevo: validar No. Comprobante
+    if (!nroComprobante) {
+      mensajes.push('Debe ingresar el No. Comprobante.');
+      this.nroComprobanteCtrl.markAsTouched();
+    }
+
+    //sustento trinutario
+    if (!idSustentoCab || idSustentoCab <= 0) {
+        mensajes.push('Debe seleccionar el Sustento Tributario.');
+        this.sustentoTribCtrl.markAsTouched();
+    }
+
+    if (!idTipoCompSriCab || idTipoCompSriCab <= 0) {
+      mensajes.push('Debe seleccionar el Tipo de Comprobante SRI.');
+      this.tipoCompSriCtrl.markAsTouched();
+    }
+
+     if (!autorizacionCab) {
+      mensajes.push('Debe ingresar la Autorización.');
+      this.autorizacionCtrl.markAsTouched();
+    }
+
+    if (!fechaCadCabIso) {
+      mensajes.push('Debe ingresar la Fecha Caduca.');
+      this.fechacaducaCtrl.markAsTouched();
+    }
+
+    if (!fechaVenCabIso) {
+      mensajes.push('Debe ingresar la Fecha Vencimiento.');
+      this.fechavencimientoCtrl.markAsTouched();
+    }
+
     if (mensajes.length > 0) {
       this.snack.open(mensajes.join(' '), 'Cerrar', {
         duration: 4000,
@@ -1229,13 +1565,11 @@ export class AsientosContablesFormComponent implements OnInit {
       return; // NO agrega la línea
     }
 
-    //
-    
     const ahora = new Date();
     const nowIso = formatLocalIso(ahora);
 
     const items = this.rowData();
-       const next = (items?.length ?? 0) + 1;
+    const next = (items?.length ?? 0) + 1;
 
     const fechaTransFormulario = this.form.value?.fechatransaccion || nowIso;
     const fechaTransaccionDetalle = normalizeToLocalIso(fechaTransFormulario);
@@ -1256,12 +1590,12 @@ export class AsientosContablesFormComponent implements OnInit {
       hora: horaIngreso,
       idZona: Number(this.form.value?.idZona ?? 0),
 
-      idCentroCostos: 0,
+      idCentroCostos: null as any,//0,
       idLocal: 0,
       idPlanCuentas: 0,
       codprePc: '',
-      idCodContable: 0,
-      nocomprobante: '',
+      idCodContable: idAuxiliar,///0, el id seleccionado en la cabecera
+      nocomprobante: nroComprobante, //'',
       docurelacionado: '',
       cheque: 0,
 
@@ -1273,27 +1607,27 @@ export class AsientosContablesFormComponent implements OnInit {
       movbancario: '',
 
       cierre: '',
-      fechacierre: '',
+      fechacierre: null as any,//'',
       conciliado: '',
-      fechaconciliado: '',
+      fechaconciliado: null as any,//'',
 
-      idSustentoTrib: 0,
-      idTipoCompSri: 0,
-      autorizacion: '',
-      fechacaduca: '',
-      idTipoRetencion: 0,
-      idProyecto: 0,
-      idSubproyecto: 0,
+      idSustentoTrib: idSustentoCab, ///0, 
+      idTipoCompSri: idTipoCompSriCab,//0,
+      autorizacion: autorizacionCab,//'',
+      fechacaduca: fechaCadCabIso,//'',
+      idTipoRetencion: null as any,//0,
+      idProyecto: null as any,//0,
+      idSubproyecto:null as any,// 0,
 
       transferido: false,
-      fechatransferido: '',
-      fechavencimiento: '',
+      fechatransferido: null as any,//'',
+      fechavencimiento: fechaVenCabIso,//'',
       idConciliacion: 0,
       valorLetras: '',
       estadoIngreso: true,
-      // <<< NUEVOS CAMPOS >>>
+      // NUEVOS CAMPOS
       autorizacionRelacionado: '',
-      fechaCadRelacionado: '',
+      fechaCadRelacionado: null as any,//'',
     };
 
     this.rowData.set([...(items ?? []), nueva]);
@@ -1351,7 +1685,7 @@ export class AsientosContablesFormComponent implements OnInit {
     row: DetalleAsientoResponse,
     rowNode: any
   ): void {
-    // *** NUEVO: obtener etiqueta completa del tipo movimiento ***
+    // obtener etiqueta completa del tipo movimiento
     const movLabel =
       this.movimientosBancarios.find(
         (m) => m.id === Number(row.idMovBancario || 0)
@@ -1366,12 +1700,12 @@ export class AsientosContablesFormComponent implements OnInit {
       idCentroCostos: Number(row.idCentroCostos || 0),
       idProyecto: Number(row.idProyecto || 0),
       idSubproyecto: Number(row.idSubproyecto || 0),
-      movLabel, // *** NUEVO ***
+      movLabel,
     };
 
     const dialogRef = this.dialog.open(AsientoTributarioDialogComponent, {
       width: '820px',
-      data: data as any, // movLabel via runtime, no afecta al tipo original
+      data: data as any,
     });
 
     dialogRef.afterClosed().subscribe((result?: AsientoTributarioData & { movLabel?: string }) => {
@@ -1405,6 +1739,73 @@ export class AsientosContablesFormComponent implements OnInit {
       });
     });
   }
+
+////VALIDAR SOLO NUMEROS
+  onNumericInput(ctrl: FormControl<any>, event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input) return;
+
+    const original = input.value;
+    const soloDigitos = original.replace(/\D/g, ''); // elimina todo lo que no sea número
+
+    if (original !== soloDigitos) {
+      input.value = soloDigitos;
+    }
+
+    ctrl.setValue(soloDigitos, { emitEvent: false });
+  }
+////END
+////normalizar play
+/** 
+ * Normaliza el objeto AsientoContableResponse para que:
+ * - Fechas vacías se envíen como null
+ * - IDs opcionales (FK) en 0 se envíen como null
+ */
+private normalizarParaBackend(header: AsientoContableResponse): any {
+  const h: any = { ...header };
+
+  // CABECERA
+  h.fechacierre = h.fechacierre ? normalizeToLocalIso(h.fechacierre) : null;
+
+  // DETALLES
+  h.detalles = (header.detalles ?? []).map((d) => {
+    const det: any = { ...d };
+
+    // ===== FECHAS OPCIONALES EN DETALLE =====
+    det.fechacierre = det.fechacierre ? normalizeToLocalIso(det.fechacierre) : null;
+    det.fechaconciliado = det.fechaconciliado ? normalizeToLocalIso(det.fechaconciliado) : null;
+    det.fechatransferido = det.fechatransferido ? normalizeToLocalIso(det.fechatransferido) : null;
+    det.fechaCadRelacionado = det.fechaCadRelacionado ? normalizeToLocalIso(det.fechaCadRelacionado) : null;
+
+    // OJO: estas dos fechas SÍ las envías siempre si las tienes
+    det.fechacaduca = det.fechacaduca ? normalizeToLocalIso(det.fechacaduca) : det.fechacaduca;
+    det.fechavencimiento = det.fechavencimiento ? normalizeToLocalIso(det.fechavencimiento) : det.fechavencimiento;
+
+    // ===== IDS OPCIONALES (FK) — 0 => null =====
+    det.idCentroCostos = det.idCentroCostos && det.idCentroCostos > 0 ? det.idCentroCostos : null;
+    det.idProyecto     = det.idProyecto     && det.idProyecto     > 0 ? det.idProyecto     : null;
+    det.idSubproyecto  = det.idSubproyecto  && det.idSubproyecto  > 0 ? det.idSubproyecto  : null;
+    det.idConciliacion = det.idConciliacion && det.idConciliacion > 0 ? det.idConciliacion : null;
+
+    // Tipo de retención: si no se selecciona ninguno debe ir null
+    det.idTipoRetencion = det.idTipoRetencion && det.idTipoRetencion > 0
+      ? det.idTipoRetencion
+      : null;
+
+    // IMPORTANTE: NO tocar campos que realmente pueden ser 0:
+    // - cheque (0)
+    // - IdDetMaestro, IdCabMaestro, etc.
+    // - transferido (true/false)
+    // - idMovBancario (ya validas que sea > 0)
+
+    return det;
+  });
+
+  return h;
+}
+
+///
+
 }
 
 /** Helpers de celdas */
@@ -1513,3 +1914,4 @@ function normalizeToLocalIso(v: any): string {
   }
   return formatLocalIso(d);
 }
+

@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, catchError, tap, shareReplay } from 'rxjs/operators';
 
@@ -21,6 +21,19 @@ export class TipoRetencionService {
 
   getAll(): Observable<ApiListResponse<TipoRetencionResponse[]>> {
     return this.http.get<ApiListResponse<TipoRetencionResponse[]>>(this.baseUrl);
+  }
+
+   // 🔹 Nuevo método simplificado para usar en el combo / grid
+ getAllTipo(searchTerm?: string): Observable<TipoRetencionResponse[]> {
+    let params = new HttpParams();
+
+    if (searchTerm) {
+      params = params.set('searchTerm', searchTerm);
+    }
+
+    return this.http
+      .get<ApiListResponse<TipoRetencionResponse[]>>(this.baseUrl, { params })
+      .pipe(map(resp => resp.data ?? []));
   }
 
   getById(id: number): Observable<ApiResponse<TipoRetencionResponse>> {

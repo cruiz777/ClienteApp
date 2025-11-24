@@ -5,6 +5,12 @@ import { AgGridAngular } from 'ag-grid-angular';
 import { ColDef, GridApi, GridReadyEvent, CellClickedEvent } from 'ag-grid-community';
 import { MatDialog } from '@angular/material/dialog';
 
+// 🔹 Angular Material para el dropdown
+import { MatMenuModule } from '@angular/material/menu';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+
+
 import { AsientosContablesService } from 'src/app/services/asientos-contables.service';
 import { ListadoAsientoContableResponse } from 'src/app/interfaces/responses/asientos-contables-response';
 
@@ -13,6 +19,9 @@ import { AsientosContablesFormComponent } from '../asientos-contables-form/asien
 // ✅ Registro de módulos (requerido en v33)
 import { ModuleRegistry, AllCommunityModule } from 'ag-grid-community';
 ModuleRegistry.registerModules([AllCommunityModule]);
+
+// tipo fuerte para el parámetro 
+type TipoIdentificacion = 'CEDULA' | 'RUC' | 'PASAPORTE';
 
 @Component({
   selector: 'app-asientos-contables-ag',
@@ -28,46 +37,26 @@ export class AsientoContableComponent implements OnInit {
   error: string | null = null;
 
   gridOptions = {
-      rowHeight: 25,      // alto de fila
-      headerHeight: 30,   // alto de cabecera
+    rowHeight: 28,      // alto de fila
+    headerHeight: 35,   // alto de cabecera
   };
 
   rowData: ListadoAsientoContableResponse[] = [];
+  /** copia completa para poder volver a filtrar */
+  private rowDataOriginal: ListadoAsientoContableResponse[] = [];
+
+  /** texto del buscador (empresa, beneficiario, etc.) */
   searchTerm = '';
+
+  /** filtros de fecha (vienen del <input type="date"> en formato YYYY-MM-DD) */
+  fechaDesde: string | null = null;
+  fechaHasta: string | null = null;
 
   private gridApi!: GridApi<ListadoAsientoContableResponse>;
 
   columnDefs: ColDef<ListadoAsientoContableResponse>[] = [
-    { headerName: 'Código', field: 'idCabMaestro', width: 160, sortable: true, filter: true,hide:true },
-    { headerName: 'Empresa', field: 'empresa', width: 160, sortable: true, filter: true,hide:true },
-    { headerName: 'Tipo Asiento', field: 'tipoAsientoCompleto', width: 200, sortable: true, filter: true },
-    { headerName: 'Beneficiario', field: 'beneficiario', width: 160, sortable: true, filter: true },
-    { headerName: 'No. Documento', field: 'numdoc', width: 140, sortable: true, filter: true },
-    {
-      headerName: 'Debe', field: 'totdebe', width: 120, sortable: true, filter: 'agNumberColumnFilter',
-      //valueFormatter: p => (p.value ?? 0).toLocaleString('es-EC')
-      editable: haberEditable,
-      type: 'rightAligned',
-      valueSetter: valueSetterDot2,
-      valueFormatter: twoDecimalsDotFormatter,
-      suppressKeyboardEvent: blockComma,
-      cellClassRules: {
-        'ag-disabled': (p: any) => toNumber(p.data?.debe) > 0
-      }
-
-    },
-    {
-      headerName: 'Haber', field: 'tothaber', width: 120, sortable: true, filter: 'agNumberColumnFilter',
-      //valueFormatter: p => (p.value ?? 0).toLocaleString('es-EC')
-      editable: haberEditable,
-      type: 'rightAligned',
-      valueSetter: valueSetterDot2,
-      valueFormatter: twoDecimalsDotFormatter,
-      suppressKeyboardEvent: blockComma,
-      cellClassRules: {
-        'ag-disabled': (p: any) => toNumber(p.data?.debe) > 0
-      }
-    },
+    { headerName: 'Código', field: 'idCabMaestro', width: 160, sortable: true, filter: true, hide: true },
+    { headerName: 'Empresa', field: 'empresa', width: 160, sortable: true, filter: true, hide: true },
     {
       headerName: 'Fecha Transacción', field: 'fechatransaccion', width: 160, sortable: true, filter: true,
       valueGetter: p => p.data?.fechatransaccion ? new Date(p.data.fechatransaccion as any) : null,
@@ -78,11 +67,39 @@ export class AsientoContableComponent implements OnInit {
       valueGetter: p => p.data?.fechaingreso ? new Date(p.data.fechaingreso as any) : null,
       valueFormatter: p => p.value ? formatDateYMD(p.value as Date) : ''
     },
+    
+    { headerName: 'Tipo Asiento', field: 'tipoAsientoCompleto', width: 100, sortable: true, filter: true },
+    
+    { headerName: 'No. Documento', field: 'numdoc', width: 140, sortable: true, filter: true },
+    {
+      headerName: 'Debe', field: 'totdebe', width: 120, sortable: true, filter: 'agNumberColumnFilter',
+      editable: haberEditable,
+      type: 'rightAligned',
+      valueSetter: valueSetterDot2,
+      valueFormatter: twoDecimalsDotFormatter,
+      suppressKeyboardEvent: blockComma,
+      cellClassRules: {
+        'ag-disabled': (p: any) => toNumber(p.data?.debe) > 0
+      }
+    },
+    {
+      headerName: 'Haber', field: 'tothaber', width: 120, sortable: true, filter: 'agNumberColumnFilter',
+      editable: haberEditable,
+      type: 'rightAligned',
+      valueSetter: valueSetterDot2,
+      valueFormatter: twoDecimalsDotFormatter,
+      suppressKeyboardEvent: blockComma,
+      cellClassRules: {
+        'ag-disabled': (p: any) => toNumber(p.data?.debe) > 0
+      }
+    },
+   
+    { headerName: 'Beneficiario', field: 'beneficiario', width: 260, sortable: true, filter: true },
     { headerName: 'Observación', field: 'observacion', width: 300, sortable: true, filter: true },
     {
       headerName: 'Acciones',
       colId: 'acciones',
-      width: 80,
+      width: 60,
       pinned: 'right',
       suppressHeaderMenuButton: true,
       menuTabs: [],
@@ -104,6 +121,7 @@ export class AsientoContableComponent implements OnInit {
   ) {}
 
   ngOnInit(): void {
+     this.setFechasMesActual(); 
     this.obtenerAsientos();
   }
 
@@ -117,7 +135,9 @@ export class AsientoContableComponent implements OnInit {
 
     this.asientosService.GetListado().subscribe({
       next: (resp: ListadoAsientoContableResponse[]) => {
-        this.rowData = resp ?? [];
+        this.rowDataOriginal = resp ?? [];
+        // al cargar, aplicamos filtros actuales (si hubiera)
+        this.aplicarFiltros();
         this.loading = false;
       },
       error: (err) => {
@@ -128,9 +148,69 @@ export class AsientoContableComponent implements OnInit {
     });
   }
 
+  /**
+   * Aplica filtro de texto + rango de fechas sobre rowDataOriginal
+   * y deja el resultado en rowData (lo que ve el grid).
+   */
+  aplicarFiltros(): void {
+    const termino = (this.searchTerm || '').toLowerCase().trim();
 
-  
-  // Usamos quickFilter por binding en el template; no hace falta tocar el API
+    const desde = this.fechaDesde ? new Date(this.fechaDesde) : null;
+    const hasta = this.fechaHasta ? new Date(this.fechaHasta) : null;
+
+    // para que la fechaHasta incluya todo el día
+    let hastaFinDia: Date | null = null;
+    if (hasta) {
+      hastaFinDia = new Date(hasta);
+      hastaFinDia.setHours(23, 59, 59, 999);
+    }
+
+    this.rowData = this.rowDataOriginal.filter(row => {
+      // --- filtro de texto (empresa, beneficiario, numdoc, observación) ---
+      if (termino) {
+        const empresa = (row.empresa || '').toLowerCase();
+        const benef = (row.beneficiario || '').toLowerCase();
+        const numdoc = row.numdoc ? String(row.numdoc).toLowerCase() : '';
+        const obs = (row.observacion || '').toLowerCase();
+
+        const coincideTexto =
+          empresa.includes(termino) ||
+          benef.includes(termino) ||
+          numdoc.includes(termino) ||
+          obs.includes(termino);
+
+        if (!coincideTexto) {
+          return false;
+        }
+      }
+
+      // --- filtro por FECHA TRANSACCIÓN ---
+      if (!desde && !hastaFinDia) {
+        // no hay filtro de fecha
+        return true;
+      }
+
+      if (!row.fechatransaccion) {
+        return false;
+      }
+
+      const f = new Date(row.fechatransaccion as any);
+      if (isNaN(f.getTime())) {
+        return false;
+      }
+
+      if (desde && f < desde) {
+        return false;
+      }
+      if (hastaFinDia && f > hastaFinDia) {
+        return false;
+      }
+
+      return true;
+    });
+  }
+
+  // click en botón de acción
   onCellClicked(evt: CellClickedEvent<ListadoAsientoContableResponse>): void {
     if (evt?.colDef?.colId === 'acciones') {
       const action = (evt.event?.target as HTMLElement)?.closest('button')?.getAttribute('data-action');
@@ -148,50 +228,60 @@ export class AsientoContableComponent implements OnInit {
     console.log('Editar asiento', row);
   }
 
-abrirCrear(): void {
-      const dialogRef = this.dialog.open(AsientosContablesFormComponent, {
-        width: '75vw',
-        maxWidth: '95vw',   // por defecto Material limita a 80vw
-        height: '90vh',
-        panelClass: 'asiento-dialog',  // clase para estilos finos
-         autoFocus: false,
-        restoreFocus: false,
-        data: {}
-      });
-  
-      dialogRef.afterClosed().subscribe(result => {
-        if (result) {
-          this.obtenerAsientos();
-        }
-      });
-    }
-  
-    abrirEditar(id: number): void {
-      const dialogRef = this.dialog.open(AsientosContablesFormComponent, {
-        width: '900px',
-        data: { id }
-      });
-  
-      dialogRef.afterClosed().subscribe(result => {
-        if (result) {
-          this.obtenerAsientos();
-        }
-      });
-    }
+  abrirCrear(): void {
+    const dialogRef = this.dialog.open(AsientosContablesFormComponent, {
+      width: '75vw',
+      maxWidth: '95vw',
+      height: '90vh',
+      panelClass: 'asiento-dialog',
+      autoFocus: false,
+      restoreFocus: false,
+      data: {}
+    });
 
-   
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.obtenerAsientos();
+      }
+    });
+  }
+
+  abrirEditar(id: number): void {
+    const dialogRef = this.dialog.open(AsientosContablesFormComponent, {
+      width: '900px',
+      data: { id }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.obtenerAsientos();
+      }
+    });
+  }
+
+    private setFechasMesActual(): void {
+    const hoy = new Date();
+    const year = hoy.getFullYear();
+    const month = hoy.getMonth(); // 0 = enero
+
+    const primerDia = new Date(year, month, 1);
+    const ultimoDia = new Date(year, month + 1, 0);
+
+    this.fechaDesde = toInputDate(primerDia);
+    this.fechaHasta = toInputDate(ultimoDia);
+  }
 
 }
+
+/* ================== Helpers ================== */
 
 function formatDateYMD(d: Date): string {
   const y = d.getFullYear();
   const m = (d.getMonth() + 1).toString().padStart(2, '0');
   const day = d.getDate().toString().padStart(2, '0');
   return `${day}-${m}-${y}`;
-  // return `${y}-${m}-${day}`;
 }
 
-/** Helpers de celdas */
 function numberParser(params: any): number {
   const v = (params.newValue ?? '').toString().replace(',', '.').trim();
   const n = Number(v);
@@ -208,6 +298,7 @@ function isoParser(params: any): string {
   return isNaN(d.getTime()) ? v : d.toISOString();
 }
 function blockComma(params: any): boolean { return params.event?.key === ','; }
+
 const decimalDot2Regex = /^\d*(\.\d{0,2})?$/;
 function valueSetterDot2(params: any): boolean {
   const raw = String(params.newValue ?? '').trim();
@@ -248,4 +339,11 @@ function debeEditable(params: any) {
 function haberEditable(params: any) {
   const d = toNumber(params.data?.debe);
   return d <= 0;
+}
+
+function toInputDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = (d.getMonth() + 1).toString().padStart(2, '0');
+  const day = d.getDate().toString().padStart(2, '0');
+  return `${y}-${m}-${day}`;   // formato para <input type="date">
 }

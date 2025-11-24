@@ -44,66 +44,21 @@
               <span *ngIf="isExpanded" class="menu-text">Cuentas por Pagar</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
-          <mat-expansion-panel>
-            <!-- Nivel 3: Facturacion -->
-            <a mat-list-item [routerLink]="'/sic-3000/findividual'" routerLinkActive="active">
-              <span *ngIf="isExpanded" class="menu-text">Facturación Individual</span>
-            </a>
-            <a mat-list-item [routerLink]="'/sic-3000/fglobal'">
-              <span *ngIf="isExpanded" class="menu-text">Facturación Global</span>
-            </a>
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Facturas Anuladas</span>
-            </a>
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Documentos Electrónicos</span>
-            </a>
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Reporte de Facturación</span>
-            </a>
-          </mat-expansion-panel>
-          <!-- Subgrupo: Notas de Crédito/Debito -->
-          <mat-expansion-panel>
-            <mat-expansion-panel-header>
-              <mat-panel-title>
-                <span *ngIf="isExpanded" class="menu-text">Balance</span>
-              </mat-panel-title>
-            </mat-expansion-panel-header>
-            <!-- Nivel 3: Notas de Crédito/Debito-->
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Notas de Crédito</span>
-            </a>
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Notas de Débito</span>
-            </a>
+          
+           <a  mat-list-item [routerLink]="'/cg-3000/ingresodocumentos'">
+              <span *ngIf="isExpanded" class="menu-text">Ingreso de Documentos</span>
+           </a>
 
-          </mat-expansion-panel>
-          <!-- Subgrupo: Anticipos -->
-          <mat-expansion-panel>
-            <mat-expansion-panel-header>
-              <mat-panel-title>
-                <span *ngIf="isExpanded" class="menu-text">Anticipos</span>
-              </mat-panel-title>
-            </mat-expansion-panel-header>
-            <!-- Nivel 3: Anticipos-->
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Creación de Anticipos</span>
-            </a>
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Reporte de Anticipos</span>
-            </a>
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Cierre de Anticipos</span>
-            </a>
-          </mat-expansion-panel>
-          <!-- Subgrupo: Reenvio Documentos Electronicos-->
+          <!-- Subgrupo: Notas de Crédito/Debito -->
+         
+          <!-- Subgrupo: Reenvio Documentos Electronicos
           <mat-expansion-panel hideToggle>
             <mat-expansion-panel-header (click)="goTo('ruta aqui')" class="clickable-header">
               <mat-panel-title>
                 <span *ngIf="isExpanded" class="menu-text">Reenvio Documentos Electronicos</span>
               </mat-panel-title>
             </mat-expansion-panel-header>
-          </mat-expansion-panel>
+          </mat-expansion-panel> -->
         </mat-expansion-panel>
 
         <!-- Balance-->

@@ -6,6 +6,14 @@ import { environment } from 'src/environments/environment';
 import { ListadoAsientoContableResponse } from '../interfaces/responses/asientos-contables-response';
 import { AsientoContableResponse } from '../interfaces/responses/asiento-contable-response';
 
+/** ===== Respuesta estándar del API ===== */
+export interface ApiResponse<T> {
+  id: string;
+  type: string;
+  data: T;
+  message: string;
+}
+
 /** ===== Tipos internos para el payload que exige tu API ===== */
 interface CreateDetalleRequest {
   numlinea: number;
@@ -45,6 +53,8 @@ interface CreateDetalleRequest {
   idConciliacion: number | null;
   valorLetras: string | null;
   estadoIngreso: boolean;
+  autorizacionRelacionado: string | null;
+  fechaCadRelacionado: string | null;
 }
 
 interface CreateAsientoRequest {
@@ -78,6 +88,7 @@ export class AsientosContablesService {
 
   constructor(private http: HttpClient) {}
 
+  /** ==== LISTADO ==== */
   private mapItem = (x: any): ListadoAsientoContableResponse => ({
     idCabMaestro: Number(x?.idCabMaestro ?? x?.IdCabMaestro ?? 0),
     empresa: x?.empresa ?? x?.Empresa ?? null,
@@ -112,6 +123,7 @@ export class AsientosContablesService {
     );
   }
 
+  /** ==== GET BY ID ==== */
   getById(idCabMaestro: number): Observable<AsientoContableResponse> {
     return this.http.get<AsientoContableResponse>(`${this.baseUrl}/GetById/${idCabMaestro}`).pipe(
       catchError(err => {
@@ -138,6 +150,34 @@ export class AsientosContablesService {
     if (isNaN(d.getTime())) return String(iso).substring(0, 10);
     return d.toISOString().substring(0, 10);
   }
+
+  private dateTimeIso(value: any): string | null {
+    if (!value) return null;
+
+    // Si ya viene como string con 'T' desde el componente,
+    // asumimos que viene en el formato correcto (2025-11-19T10:17:35)
+    if (typeof value === 'string' && value.includes('T')) {
+      // Por si viniera con 'Z' al final, la quitamos
+      return value.replace('Z', '');
+    }
+
+    const d = new Date(value);
+    if (isNaN(d.getTime())) {
+      // si no se puede convertir a Date, devolvemos null
+      return null;
+    }
+
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
+    const ss = String(d.getSeconds()).padStart(2, '0');
+
+    // Ej: 2025-11-19T14:37:52  (SIN Z)
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}`;
+  }
+
   private toNull<T>(v: T | null | undefined, emptyAsNull = true): T | null {
     if (v === undefined || v === null) return null;
     if (emptyAsNull && (v as any) === '') return null;
@@ -153,7 +193,7 @@ export class AsientosContablesService {
       fechatransaccion: this.dateOnly(d.fechatransaccion),
       hora: this.toNull(d.hora),
       idZona: d.idZona ?? 0,
-      idCentroCostos: this.toNull(d.idCentroCostos),   // ✅ 0 -> null
+      idCentroCostos: this.toNull(d.idCentroCostos),
       idLocal: this.toNull(d.idLocal),
       idPlanCuentas: this.toNull(d.idPlanCuentas),
       codprePc: this.toNull(d.codprePc),
@@ -167,24 +207,26 @@ export class AsientosContablesService {
       comentario: this.toNull(d.comentario, false),
       idMovBancario: this.toNull(d.idMovBancario),
       movbancario: this.toNull(d.movbancario, false),
-      fechaingreso: this.dateOnly(d.fechaingreso),
+      fechaingreso: this.dateTimeIso(d.fechaingreso),
       cierre: this.toNull(d.cierre, false),
       fechacierre: this.dateOnly(d.fechacierre),
       conciliado: this.toNull(d.conciliado, false),
       fechaconciliado: this.dateOnly(d.fechaconciliado),
-      idSustentoTrib: this.toNull(d.idSustentoTrib),   // ✅ 0 -> null
-      idTipoCompSri: this.toNull(d.idTipoCompSri),     // ✅ 0 -> null
+      idSustentoTrib: this.toNull(d.idSustentoTrib),
+      idTipoCompSri: this.toNull(d.idTipoCompSri),
       autorizacion: this.toNull(d.autorizacion, false),
       fechacaduca: this.dateOnly(d.fechacaduca),
-      idTipoRetencion: this.toNull(d.idTipoRetencion), // ✅ 0 -> null
-      idProyecto: this.toNull(d.idProyecto),           // ✅ 0 -> null
-      idSubproyecto: this.toNull(d.idSubproyecto),     // ✅ 0 -> null
+      idTipoRetencion: this.toNull(d.idTipoRetencion),
+      idProyecto: this.toNull(d.idProyecto),
+      idSubproyecto: this.toNull(d.idSubproyecto),
       transferido: !!d.transferido,
       fechatransferido: this.dateOnly(d.fechatransferido),
       fechavencimiento: this.dateOnly(d.fechavencimiento),
-      idConciliacion: this.toNull(d.idConciliacion),   // ✅ 0 -> null
+      idConciliacion: this.toNull(d.idConciliacion),
       valorLetras: this.toNull(d.valorLetras, false),
       estadoIngreso: !!d.estadoIngreso,
+      autorizacionRelacionado: this.toNull(d.autorizacionRelacionado, false),
+      fechaCadRelacionado: this.dateOnly(d.fechaCadRelacionado),
     }));
 
     return {
@@ -193,10 +235,10 @@ export class AsientosContablesService {
       idEmpresa: h.idEmpresa,
       idTipoAsiento: h.idTipoAsiento,
       tipdoc: h.tipdoc,
-      numdoc: h.numdoc,
+      numdoc: h.numdoc,               // en "nuevo" el componente pondrá 0
       anio: h.anio,
       fechatransaccion: this.dateOnly(h.fechatransaccion)!,
-      fechaingreso: this.dateOnly(h.fechaingreso)!,
+      fechaingreso: this.dateTimeIso(h.fechaingreso)!,
       observacion: this.toNull(h.observacion, false),
       totdebe: Number(h.totdebe || 0),
       tothaber: Number(h.tothaber || 0),
@@ -206,50 +248,26 @@ export class AsientosContablesService {
       solicitado: this.toNull(h.solicitado, false),
       depto: this.toNull(h.depto, false),
       autorizado: this.toNull(h.autorizado, false),
-      homCodigo: this.toNull(h.homCodigo),             // ✅ 0 -> null
+      homCodigo: this.toNull(h.homCodigo),
       estado: !!h.estado,
       detalles,
     };
   }
 
-  /** ===== Crear (POST baseUrl) ===== */
-  crear(formValue: AsientoContableResponse): Observable<boolean> {
+  /** ===== Crear (POST) ===== */
+  crear(formValue: AsientoContableResponse): Observable<ApiResponse<boolean>> {
     const body: CreateAsientoRequest = this.mapToCreateRequest(formValue);
-    return this.http.post<any>(`${this.baseUrl}`, body).pipe(
-      map(resp => this.unwrapOk(resp)),
-      catchError(err => { console.error('[crear] Error', err); return of(false); })
-    );
+    return this.http.post<ApiResponse<boolean>>(this.baseUrl, body);
   }
 
-  /** ===== Actualizar (PUT Update/{id}) — enviamos el mismo shape que Create ===== */
-  actualizar(idCabMaestro: number, formValue: AsientoContableResponse): Observable<boolean> {
+  /** ===== Actualizar (PUT) ===== */
+  actualizar(idCabMaestro: number, formValue: AsientoContableResponse): Observable<ApiResponse<boolean>> {
     const body: CreateAsientoRequest = this.mapToCreateRequest(formValue);
-    return this.http.put<any>(`${this.baseUrl}/Update/${idCabMaestro}`, body).pipe(
-      map(resp => this.unwrapOk(resp)),
-      catchError(err => {
-        console.error('[AsientosContablesService.actualizar] Error:', err);
-        return of(false);
-      })
-    );
+    return this.http.put<ApiResponse<boolean>>(`${this.baseUrl}/Update/${idCabMaestro}`, body);
   }
 
-  eliminar(idCabMaestro: number): Observable<boolean> {
-    return this.http.delete<any>(`${this.baseUrl}/Delete/${idCabMaestro}`).pipe(
-      map(resp => this.unwrapOk(resp)),
-      catchError(err => {
-        console.error('[AsientosContablesService.eliminar] Error:', err);
-        return of(false);
-      })
-    );
-  }
-
-  /** Normaliza respuestas tipo ApiResponse<T> */
-  private unwrapOk(resp: any): boolean {
-    if (typeof resp === 'boolean') return resp;
-    if (resp?.ok !== undefined) return !!resp.ok;
-    if (resp?.success !== undefined) return !!resp.success;
-    if (resp?.succeeded !== undefined) return !!resp.succeeded;
-    if (typeof resp?.data === 'boolean') return resp.data;
-    return true;
+  /** ===== Eliminar (DELETE) ===== */
+  eliminar(idCabMaestro: number): Observable<ApiResponse<boolean>> {
+    return this.http.delete<ApiResponse<boolean>>(`${this.baseUrl}/Delete/${idCabMaestro}`);
   }
 }
