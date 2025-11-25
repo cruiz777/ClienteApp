@@ -12,6 +12,7 @@ export interface AnticipoFilters {
   page?: number;
   pageSize?: number;
   clientesCodigo?: number;
+  cliente?: string;
   caja?: string;
   fechaDesde?: string; // formato: 'YYYY-MM-DD'
   fechaHasta?: string; // formato: 'YYYY-MM-DD'
@@ -47,8 +48,8 @@ export class AnticipoService {
     params = params.set('pageSize', (filters?.pageSize || 10).toString());
 
     // Filtros opcionales
-    if (filters?.clientesCodigo) {
-      params = params.set('clientesCodigo', filters.clientesCodigo.toString());
+    if (filters?.cliente) {
+      params = params.set('cliente', filters.cliente);
     }
 
     if (filters?.caja) {

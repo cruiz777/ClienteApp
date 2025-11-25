@@ -1,0 +1,239 @@
+<div class="modal-liquidar-container">
+  <h2>Liquidar Anticipo</h2>
+
+  <!-- Información del Anticipo -->
+  <div class="info-anticipo">
+    <div class="info-row">
+      <div class="info-item">
+        <span class="label">Anticipo:</span>
+        <span class="value">{{ anticipo.numero_anticipo || anticipo.id_anticipo }}</span>
+      </div>
+      <div class="info-item">
+        <span class="label">Tipo Anticipo:</span>
+        <span class="value">ANTICIPO NORMAL</span>
+      </div>
+      <div class="info-item">
+        <span class="label"># Liquidación:</span>
+        <span class="value">{{ numeroLiquidacion || 'Cargando...' }}</span>
+      </div>
+    </div>
+
+    <div class="info-row">
+      <div class="info-item">
+        <span class="label">Fecha Anticipo:</span>
+        <span class="value">{{ anticipo.fecha | date: 'dd/MM/yyyy' }}</span>
+      </div>
+      <div class="info-item">
+        <span class="label">Fecha Liquidación:</span>
+        <span class="value">{{ fechaHoy | date: 'dd/MM/yyyy' }}</span>
+      </div>
+    </div>
+
+    <div class="info-row full">
+      <div class="info-item">
+        <span class="label">Cliente:</span>
+        <span class="value">{{ anticipo.nombre_cliente }}</span>
+      </div>
+    </div>
+
+    <div class="info-row">
+      <div class="info-item">
+        <span class="label">Monto:</span>
+        <span class="value">${{ anticipo.monto?.toFixed(2) || '0.00' }}</span>
+      </div>
+      <div class="info-item">
+        <span class="label">Valor a Liquidar:</span>
+        <span class="value">${{ liquidacionForm.get('valorLiquidado')?.value?.toFixed(2) || '0.00' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <form [formGroup]="liquidacionForm" (ngSubmit)="liquidar()">
+
+    <!-- Checkbox: Mismo Datos Cliente -->
+    <div class="form-group checkbox-group">
+      <label>
+        <input
+          type="checkbox"
+          formControlName="mismosDatosCliente"
+          (change)="onMismosDatosClienteChange($event)" />
+        Mismo Datos Cliente
+      </label>
+    </div>
+    <!-- Valor a Liquidar -->
+    <div class="form-group">
+      <label for="valorLiquidado">Valor a Liquidar: <span class="required">*</span></label>
+      <input
+        id="valorLiquidado"
+        type="number"
+        class="input-valor-liquidar"
+        formControlName="valorLiquidado"
+        step="0.01"
+        [max]="anticipo.monto"
+        placeholder="0.00"
+        style="width: 100%; text-align: right; font-weight: 600; color: #dc2626;" />
+      <span class="hint">Máximo disponible: ${{ anticipo.monto?.toFixed(2) }}</span>
+    </div>
+    <!-- Cédula/Ruc y Beneficiario -->
+    <div class="form-row">
+      <div class="form-group half">
+        <label for="cedula">Cédula/Ruc:</label>
+        <input
+          id="cedula"
+          type="text"
+          formControlName="cedula"
+          placeholder="Ingrese cédula o RUC" />
+      </div>
+
+      <div class="form-group half">
+        <label for="beneficiario">Beneficiario:</label>
+        <input
+          id="beneficiario"
+          type="text"
+          formControlName="beneficiario"
+          placeholder="Nombre del beneficiario" />
+      </div>
+    </div>
+    <!-- Banco -->
+    <div class="form-group">
+      <label for="idBanco">Banco:</label>
+      <select id="idBanco" formControlName="idBanco">
+        <option [ngValue]="null">Seleccione un banco (opcional)</option>
+        <option *ngFor="let banco of bancosFiltrados" [value]="banco.IdBancosTerceros">
+          {{ banco.Descripcion }}
+        </option>
+      </select>
+    </div>
+    <!-- Tipo de Pago -->
+    <div class="form-group">
+      <label>Tipo Pago:</label>
+      <div class="radio-group">
+        <label>
+          <input
+            type="radio"
+            formControlName="tipoPago"
+            value="Cheque"
+            (change)="onTipoPagoChange()" />
+          Cheque
+        </label>
+        <label>
+          <input
+            type="radio"
+            formControlName="tipoPago"
+            value="Transferencia"
+            (change)="onTipoPagoChange()" />
+          Transferencia
+        </label>
+      </div>
+    </div>
+    <!-- Datos Cheque (solo si tipoPago === 'Cheque') -->
+    <div class="datos-cheque" *ngIf="liquidacionForm.get('tipoPago')?.value === 'Cheque'">
+      <h3>Datos del Cheque</h3>
+
+      <div class="form-row">
+        <div class="form-group half">
+          <label for="nroCheque">Número de Cheque: <span class="required">*</span></label>
+          <input
+            id="nroCheque"
+            type="text"
+            formControlName="nroCheque"
+            placeholder="Ingrese número de cheque" />
+        </div>
+      </div>
+    </div>
+    <!-- Datos Transferencia (solo si tipoPago === 'Transferencia') -->
+    <div class="datos-transferencia" *ngIf="liquidacionForm.get('tipoPago')?.value === 'Transferencia'">
+      <h3>Datos Transferencia</h3>
+
+      <div class="form-row">
+        <div class="form-group half">
+          <label>Tipo Cuenta:</label>
+          <div class="radio-group">
+            <label>
+              <input type="radio" formControlName="tipoCuenta" value="Ahorros" />
+              Ahorros
+            </label>
+            <label>
+              <input type="radio" formControlName="tipoCuenta" value="Corriente" />
+              Corriente
+            </label>
+          </div>
+        </div>
+
+        <div class="form-group half">
+          <label for="nroCuenta">Número Cuenta:</label>
+          <input
+            id="nroCuenta"
+            type="text"
+            formControlName="nroCuenta"
+            placeholder="Número de cuenta" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Dirección -->
+    <div class="form-group">
+      <label for="direccion">Dirección:</label>
+      <input
+        id="direccion"
+        type="text"
+        formControlName="direccion"
+        placeholder="Dirección del beneficiario" />
+    </div>
+
+    <!-- Teléfono y Email -->
+    <div class="form-row">
+      <div class="form-group half">
+        <label for="telefono">Teléfono:</label>
+        <input
+          id="telefono"
+          type="text"
+          formControlName="telefono"
+          placeholder="Teléfono" />
+      </div>
+
+      <div class="form-group half">
+        <label for="correo">Email:</label>
+        <input
+          id="correo"
+          type="email"
+          formControlName="correo"
+          placeholder="correo@ejemplo.com" />
+      </div>
+    </div>
+
+    <!-- Observación -->
+    <div class="form-group">
+      <label for="concepto">Observación:</label>
+      <textarea
+        id="concepto"
+        formControlName="concepto"
+        rows="3"
+        placeholder="Ingrese observaciones sobre la liquidación"></textarea>
+    </div>
+
+    <!-- Acciones -->
+    <div class="form-actions">
+      <button
+        type="submit"
+        class="btn-liquidar"
+        [disabled]="liquidacionForm.invalid || isLoading">
+        <span *ngIf="!isLoading">Liquidar</span>
+        <span *ngIf="isLoading">Procesando...</span>
+      </button>
+      <button
+        type="button"
+        class="btn-imprimir"
+        [disabled]="true">
+        Imprimir
+      </button>
+      <button
+        type="button"
+        class="btn-cerrar"
+        (click)="cerrar()"
+        [disabled]="isLoading">
+        Cerrar
+      </button>
+    </div>
+  </form>
+</div>

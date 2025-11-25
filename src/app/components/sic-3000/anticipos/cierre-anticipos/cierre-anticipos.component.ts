@@ -6,6 +6,14 @@ import {
   GridReadyEvent,
   CellClickedEvent,
 } from 'ag-grid-community';
+import { MatDialog } from '@angular/material/dialog';
+import { AnticipoResponse } from 'src/app/interfaces/responses/anticipo-response';
+import { AnticipoLiquidaResponse } from 'src/app/interfaces/responses/anticipo-liquida-response';
+import { AnticipoService } from 'src/app/services/anticipo.service';
+import { AnticipoLiquidaService } from 'src/app/services/anticipo-liquida.service';
+import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
+import { TipoAnticipo } from 'src/app/interfaces/responses/tipo-anticipo-response';
+import { TipoAnticipoService } from 'src/app/services/tipo-anticipo.service';
 
 @Component({
   selector: 'app-cierre-anticipos',
@@ -28,51 +36,135 @@ export class CierreAnticiposComponent implements OnInit {
     minWidth: 110,
   };
 
-  rowDataCierre: any[] = [];
-  rowDataLiquidados: any[] = [];
-
+  rowDataCierre: AnticipoResponse[] = [];
+  rowDataLiquidados: AnticipoLiquidaResponse[] = [];
+  tiposAnticipo: TipoAnticipo[] = [];
   private gridApiCierre!: GridApi;
   private gridApiLiquidados!: GridApi;
 
-  constructor(private fb: FormBuilder) {}
+  // Paginación
+  currentPageCierre = 1;
+  pageSizeCierre = 50;
+  totalItemsCierre = 0;
+
+  currentPageLiquidados = 1;
+  pageSizeLiquidados = 50;
+  totalItemsLiquidados = 0;
+
+  // Loading states
+  loadingCierre = false;
+  loadingLiquidados = false;
+
+  // Modal
+  showModalLiquidar = false;
+  anticipoSeleccionado: AnticipoResponse | null = null;
+
+  constructor(
+    private fb: FormBuilder,
+    private dialog: MatDialog,
+    private anticipoService: AnticipoService,
+    private anticipoLiquidaService: AnticipoLiquidaService,
+    private tipoAnticipoService: TipoAnticipoService
+  ) {}
 
   ngOnInit(): void {
     this.buildForms();
     this.buildColumns();
-    this.loadMockData();
+    this.loadTiposAnticipo();
+    this.loadAnticiposDisponibles();
   }
 
   private buildForms(): void {
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const formatDate = (date: Date) => date.toISOString().split('T')[0];
+
     this.filtroCierreForm = this.fb.group({
-      fechaInicio: [''],
-      fechaHasta: [''],
+      fechaInicio: [formatDate(firstDayOfMonth)],
+      fechaHasta: [formatDate(today)],
       tipoAnticipo: [''],
       cliente: [''],
     });
 
     this.filtroLiquidadosForm = this.fb.group({
-      fechaInicio: [''],
-      fechaHasta: [''],
+      fechaInicio: [formatDate(firstDayOfMonth)],
+      fechaHasta: [formatDate(today)],
       cliente: [''],
     });
   }
 
   private buildColumns(): void {
     this.columnDefsCierre = [
-      { headerName: 'Anticipo', field: 'anticipo' },
-      { headerName: 'Fecha', field: 'fecha' },
-      { headerName: 'Cliente', field: 'cliente' },
-      { headerName: 'Monto', field: 'monto', type: 'rightAligned' },
-      { headerName: 'Saldo', field: 'saldo', type: 'rightAligned' },
-      { headerName: 'Concepto', field: 'concepto' },
-      { headerName: 'C. Forma', field: 'codigoFormaPago' },
-      { headerName: 'Des. Forma Pago', field: 'descripcionFormaPago' },
-      { headerName: 'Tipo. Ant', field: 'tipoAnticipo' },
+      {
+        headerName: 'Anticipo',
+        field: 'numero_anticipo',
+        width: 120,
+        valueFormatter: (params) => {
+          // Si numero_anticipo es null, mostrar el ID
+          return params.data?.id_anticipo || `#${params.data?.id_anticipo || ''}`;
+        },
+      },
+      {
+        headerName: 'Fecha',
+        field: 'fecha',
+        width: 110,
+        valueFormatter: (params) => {
+          if (!params.value) return '';
+          return new Date(params.value).toLocaleDateString('es-EC');
+        },
+      },
+      {
+        headerName: 'Cliente',
+        field: 'nombre_cliente',
+        minWidth: 200,
+        valueFormatter: (params) => {
+          return params.value || `Código: ${params.data?.clientes_codigo || 'N/A'}`;
+        },
+      },
+      {
+        headerName: 'Monto Original',
+        field: 'monto',
+        type: 'rightAligned',
+        width: 130,
+        valueFormatter: (params) =>
+          params.value != null ? `$${params.value.toFixed(2)}` : '$0.00',
+      },
+      {
+        headerName: 'Saldo',
+        field: 'monto',
+        type: 'rightAligned',
+        width: 130,
+        valueFormatter: (params) =>
+          params.value != null ? `$${params.value.toFixed(2)}` : '$0.00',
+        cellStyle: (params) => ({
+          color: params.value > 0 ? '#059669' : '#dc2626',
+          fontWeight: params.value > 0 ? '600' : 'normal'
+        }),
+      },
+      {
+        headerName: 'Concepto',
+        field: 'concepto',
+        minWidth: 180,
+      },
+      {
+        headerName: 'Forma Pago',
+        field: 'descripcion_forma_pago',
+        width: 150,
+      },
       {
         headerName: 'Cierre',
         colId: 'cierreAction',
         width: 90,
-        cellRenderer: () => `<span class="icon-btn lock"></span>`,
+        cellRenderer: (params: any) => {
+          const saldo = params.data?.monto || 0;
+          if (saldo > 0) {
+            return `<img src="assets/icons/icon-cancelar.png"
+                         class="action-icon"
+                         title="Liquidar anticipo"
+                         style="cursor: pointer; width: 24px; height: 24px;" />`;
+          }
+          return '<span style="color: #9ca3af; font-size: 11px;">Sin saldo</span>';
+        },
         sortable: false,
         filter: false,
       },
@@ -80,95 +172,185 @@ export class CierreAnticiposComponent implements OnInit {
         headerName: 'Desglose',
         colId: 'desgloseAction',
         width: 90,
-        cellRenderer: () => `<span class="icon-btn details"></span>`,
+        cellRenderer: () =>
+          `<img src="assets/icons/icon-imprimir.png"
+                class="action-icon"
+                title="Ver desglose"
+                style="cursor: pointer; width: 24px; height: 24px;" />`,
         sortable: false,
         filter: false,
       },
     ];
 
     this.columnDefsLiquidados = [
-      { headerName: '# Liq', field: 'numeroLiq' },
-      { headerName: 'Fecha Liq', field: 'fechaLiq' },
-      { headerName: 'Anticipo', field: 'anticipo' },
-      { headerName: 'Cliente', field: 'cliente' },
-      { headerName: 'Valor', field: 'valor', type: 'rightAligned' },
-      { headerName: 'OBS', field: 'observacion' },
-      { headerName: 'Beneficiario', field: 'beneficiario' },
-      { headerName: 'Asiento C.', field: 'asientoContable' },
-      { headerName: 'Usuario', field: 'usuario' },
-      { headerName: 'Tipo ANT.', field: 'tipoAnticipo' },
       {
-        headerName: 'Liquidación',
-        colId: 'liqAction',
+        headerName: '# Liquidación',
+        field: 'num_liquidacion',
+        width: 100,
+      },
+      {
+        headerName: 'Fecha Liq',
+        field: 'fecha_liquidacion',
         width: 110,
-        cellRenderer: () => `<span class="icon-btn lock"></span>`,
-        sortable: false,
-        filter: false,
+        valueFormatter: (params) => {
+          if (!params.value) return '';
+          // Parsear como fecha local sin conversión de zona horaria
+          const [year, month, day] = params.value.split('-');
+          const date = new Date(year, month - 1, day);
+          return date.toLocaleDateString('es-EC');
+        },
       },
       {
-        headerName: 'Desglose',
-        colId: 'desgloseAction',
+        headerName: '# Anticipo',
+        field: 'id_anticipo',
+        width: 100,
+      },
+      {
+        headerName: 'Cliente',
+        field: 'nombre_cliente',
+        minWidth: 280,
+        valueFormatter: (params) => {
+          return params.value || `Código: ${params.data?.clientes_codigo || 'N/A'}`;
+        },
+      },
+      {
+        headerName: 'Valor',
+        field: 'valor_liquidado',
+        type: 'rightAligned',
+        width: 120,
+        valueFormatter: (params) =>
+          params.value != null ? `$${params.value.toFixed(2)}` : '$0.00',
+      },
+      {
+        headerName: 'Concepto',
+        field: 'concepto',
+        minWidth: 180,
+      },
+      {
+        headerName: 'Beneficiario',
+        field: 'beneficiario',
+        width: 150,
+      },
+      {
+        headerName: 'Usuario',
+        field: 'usuario_ingreso',
+        width: 120,
+      },
+      {
+        headerName: 'Detalle',
+        colId: 'liqAction',
         width: 90,
-        cellRenderer: () => `<span class="icon-btn details"></span>`,
+        cellRenderer: () =>
+          `<img src="assets/icons/icon-imprimir.png"
+                class="action-icon"
+                title="Ver detalle"
+                style="cursor: pointer; width: 24px; height: 24px;" />`,
         sortable: false,
         filter: false,
       },
     ];
   }
 
-  private loadMockData(): void {
-    this.rowDataCierre = [
-      {
-        anticipo: 1,
-        fecha: '2025-11-01',
-        cliente: 'Clínica Demo',
-        monto: 1000,
-        saldo: 400,
-        concepto: 'Anticipo cirugía',
-        codigoFormaPago: 'TRF',
-        descripcionFormaPago: 'Transferencia',
-        tipoAnticipo: 'Cirugía',
-      },
-      {
-        anticipo: 2,
-        fecha: '2025-11-02',
-        cliente: 'Hospital Central',
-        monto: 500,
-        saldo: 0,
-        concepto: 'Anticipo consulta',
-        codigoFormaPago: 'EFE',
-        descripcionFormaPago: 'Efectivo',
-        tipoAnticipo: 'Consulta',
-      },
-    ];
+  // ==================== CARGAR DATOS ====================
 
-    this.rowDataLiquidados = [
-      {
-        numeroLiq: 1,
-        fechaLiq: '2025-11-05',
-        anticipo: 1,
-        cliente: 'Clínica Demo',
-        valor: 600,
-        observacion: 'Liquidación total',
-        beneficiario: 'Paciente Demo',
-        asientoContable: 'AS-0001',
-        usuario: 'ADMIN',
-        tipoAnticipo: 'Cirugía',
-      },
-      {
-        numeroLiq: 2,
-        fechaLiq: '2025-11-06',
-        anticipo: 2,
-        cliente: 'Hospital Central',
-        valor: 500,
-        observacion: 'Liquidación parcial',
-        beneficiario: 'Paciente 2',
-        asientoContable: 'AS-0002',
-        usuario: 'CAJA01',
-        tipoAnticipo: 'Consulta',
-      },
-    ];
+  public loadAnticiposDisponibles(): void {
+    this.loadingCierre = true;
+    const filters = this.filtroCierreForm.value;
+
+    //  Ajustar fechaHasta para incluir todo el día
+    let fechaHasta = filters.fechaHasta;
+    if (fechaHasta) {
+      fechaHasta = `${fechaHasta}T23:59:59`;
+    }
+
+    this.anticipoService
+      .getAll({
+        page: this.currentPageCierre,
+        pageSize: this.pageSizeCierre,
+        cancelado: false,
+        estado: true,
+        utilizado: false,
+        fechaDesde: filters.fechaInicio || undefined,
+        fechaHasta: fechaHasta || undefined,
+        idTipoAnticipo: filters.tipoAnticipo || undefined,
+        cliente: filters.cliente || undefined, //  AGREGAR ESTA LÍNEA
+      })
+      .subscribe({
+        next: (response) => {
+          if (response.type === 'success' && response.data) {
+            this.rowDataCierre = response.data.items;
+            this.totalItemsCierre = response.data.totalItems;
+          } else {
+            this.rowDataCierre = [];
+            this.totalItemsCierre = 0;
+          }
+          this.loadingCierre = false;
+        },
+        error: (error) => {
+          console.error('Error cargando anticipos:', error);
+          this.showMessageBox(
+            'Error',
+            'No se pudieron cargar los anticipos disponibles para liquidar',
+            'error'
+          );
+          this.loadingCierre = false;
+        },
+      });
   }
+  private loadTiposAnticipo(): void {
+    this.tipoAnticipoService.getAll().subscribe({
+      next: (response) => {
+        if (response.type === 'success' && response.data) {
+          this.tiposAnticipo = response.data;
+        }
+      },
+      error: (error) => {
+        console.error('Error cargando tipos de anticipo:', error);
+        this.tiposAnticipo = [];
+      },
+    });
+  }
+  public loadLiquidaciones(): void {
+    this.loadingLiquidados = true;
+    const filters = this.filtroLiquidadosForm.value;
+
+    let fechaHasta = filters.fechaHasta;
+    if (fechaHasta) {
+      fechaHasta = `${fechaHasta}T23:59:59`;
+    }
+
+    this.anticipoLiquidaService
+      .getAll({
+        page: this.currentPageLiquidados,
+        pageSize: this.pageSizeLiquidados,
+        fechaDesde: filters.fechaInicio || undefined,
+        fechaHasta: fechaHasta || undefined,
+        nombreCliente: filters.cliente || undefined,
+      })
+      .subscribe({
+        next: (response) => {
+          if (response.type === 'success' && response.data) {
+            this.rowDataLiquidados = response.data.items;
+            this.totalItemsLiquidados = response.data.totalItems;
+          } else {
+            this.rowDataLiquidados = [];
+            this.totalItemsLiquidados = 0;
+          }
+          this.loadingLiquidados = false;
+        },
+        error: (error) => {
+          console.error('Error cargando liquidaciones:', error);
+          this.showMessageBox(
+            'Error',
+            'No se pudieron cargar las liquidaciones',
+            'error'
+          );
+          this.loadingLiquidados = false;
+        },
+      });
+  }
+
+  // ==================== GRID EVENTS ====================
 
   onGridReadyCierre(event: GridReadyEvent): void {
     this.gridApiCierre = event.api;
@@ -181,8 +363,10 @@ export class CierreAnticiposComponent implements OnInit {
   }
 
   onCellClickedCierre(event: CellClickedEvent): void {
-    if (event.colDef.colId === 'cierreAction') {
-      this.cerrarAnticipo(event.data);
+    const saldo = event.data?.monto || 0;
+
+    if (event.colDef.colId === 'cierreAction' && saldo > 0) {
+      this.abrirModalLiquidar(event.data);
     } else if (event.colDef.colId === 'desgloseAction') {
       this.verDesglose(event.data);
     }
@@ -190,37 +374,139 @@ export class CierreAnticiposComponent implements OnInit {
 
   onCellClickedLiquidados(event: CellClickedEvent): void {
     if (event.colDef.colId === 'liqAction') {
-      this.verLiquidacion(event.data);
-    } else if (event.colDef.colId === 'desgloseAction') {
-      this.verDesglose(event.data);
+      this.verDetalleLiquidacion(event.data);
     }
   }
 
+  // ==================== ACCIONES BOTONES ====================
+
   onNuevoCierre(): void {
-    console.log('Nuevo anticipo');
+    // Limpiar filtros
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const formatDate = (date: Date) => date.toISOString().split('T')[0];
+
+    this.filtroCierreForm.patchValue({
+      fechaInicio: formatDate(firstDayOfMonth),
+      fechaHasta: formatDate(today),
+      tipoAnticipo: '',
+      cliente: ''
+    });
+
+    // Recargar con filtros limpios
+    this.currentPageCierre = 1;
+    this.loadAnticiposDisponibles();
   }
 
   onBuscarCierre(): void {
-    console.log('Buscar cierre', this.filtroCierreForm.value);
+    this.currentPageCierre = 1;
+    this.loadAnticiposDisponibles();
   }
 
   onNuevoLiq(): void {
-    console.log('Nueva liquidación');
+      // Limpiar filtros
+    const today = new Date();
+    const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const formatDate = (date: Date) => date.toISOString().split('T')[0];
+
+    this.filtroLiquidadosForm.patchValue({
+      fechaInicio: formatDate(firstDayOfMonth),
+      fechaHasta: formatDate(today),
+      cliente: ''
+    });
+
+    // Recargar con filtros limpios
+    this.currentPageLiquidados = 1;
+    this.loadLiquidaciones();
   }
 
   onBuscarLiq(): void {
-    console.log('Buscar liquidados', this.filtroLiquidadosForm.value);
+    this.currentPageLiquidados = 1;
+    this.loadLiquidaciones();
   }
 
-  private cerrarAnticipo(row: any): void {
-    console.log('Cerrar anticipo', row);
+  // ==================== ACCIONES PRINCIPALES ====================
+
+  private abrirModalLiquidar(anticipo: AnticipoResponse): void {
+    this.anticipoSeleccionado = anticipo;
+    this.showModalLiquidar = true;
   }
 
-  private verDesglose(row: any): void {
-    console.log('Ver desglose', row);
+  private verDesglose(anticipo: AnticipoResponse): void {
+    // TODO: Implementar modal de desglose
+    console.log('Ver desglose del anticipo:', anticipo);
+    this.showMessageBox(
+      'Información',
+      `Desglose del anticipo ${anticipo.id_anticipo}<br><br>Esta funcionalidad se implementará próximamente`,
+      'info'
+    );
   }
 
-  private verLiquidacion(row: any): void {
-    console.log('Ver liquidación', row);
+  private verDetalleLiquidacion(liquidacion: AnticipoLiquidaResponse): void {
+    // TODO: Implementar modal de detalle
+    console.log('Ver detalle de liquidación:', liquidacion);
+    this.showMessageBox(
+      'Información',
+      `Detalle de la liquidación #${liquidacion.num_liquidacion}<br><br>Esta funcionalidad se implementará próximamente`,
+      'info'
+    );
+  }
+
+  // ==================== CALLBACK DEL MODAL ====================
+
+  onLiquidacionExitosa(): void {
+    this.showModalLiquidar = false;
+    this.anticipoSeleccionado = null;
+
+    this.showMessageBox(
+      'Éxito',
+      'La liquidación se ha registrado correctamente',
+      'success'
+    );
+
+    // Recargar ambas tablas
+    this.loadAnticiposDisponibles();
+    this.loadLiquidaciones();
+  }
+
+  onCerrarModal(): void {
+    // Verificar si el formulario tiene cambios
+    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: '¿Cerrar liquidación?',
+        message: '¿Está seguro que desea cerrar? Los datos ingresados se perderán.',
+        type: 'warning',
+        confirmText: 'Sí, cerrar',
+        cancelText: 'Cancelar',
+        showCancel: true,
+      },
+    });
+
+    dialogRef.afterClosed().subscribe((confirmed) => {
+      if (confirmed) {
+        this.showModalLiquidar = false;
+        this.anticipoSeleccionado = null;
+      }
+    });
+  }
+
+  // ==================== UTILIDADES ====================
+
+  private showMessageBox(
+    title: string,
+    message: string,
+    type: 'success' | 'error' | 'warning' | 'info' = 'info'
+  ): void {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title,
+        message,
+        type,
+        confirmText: 'Aceptar',
+        showCancel: false,
+      },
+    });
   }
 }

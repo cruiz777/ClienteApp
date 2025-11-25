@@ -41,6 +41,7 @@ import { ProductosProveedorDialogComponent } from './proveedores/dialog/producto
 import { BuscarAnticipoDialogComponent } from './anticipos/dialogs/buscar-anticipo-dialog/buscar-anticipo-dialog.component';
 import { MotivoAnulacionDialogComponent } from './anticipos/dialogs/anular-anticipo-dialog/anular-anticipo-dialog';
 import { CierreAnticiposComponent } from './anticipos/cierre-anticipos/cierre-anticipos.component';
+import { LiquidarAnticipoComponent } from './anticipos/dialogs/liquidar-anticipo-dialog/liquidar-anticipo.component';
 
   @NgModule({
     declarations: [
@@ -48,6 +49,7 @@ import { CierreAnticiposComponent } from './anticipos/cierre-anticipos/cierre-an
       NavigationSicComponent,
       // ❌ No declarar FacturacionIndividualComponent porque es standalone
       ProductosSicComponent,
+      LiquidarAnticipoComponent,
       ProveedoresListaComponent,
       ProveedorDialogComponent,
       ProductosProveedorDialogComponent,
