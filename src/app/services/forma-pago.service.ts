@@ -14,7 +14,8 @@ export interface ApiResponse<T> {
 export interface FormaPagoResponse {
   idFormaPago: number;
   descripcionPago: string;
-  codigoCuenta?: string;   // <- opcional
+  codigo_cuenta?: string;   // <- opcional
+  id_plan?:number;
 }
 
 /** Estructura de datos paginados que devuelve tu API */
@@ -32,6 +33,7 @@ interface FormaPagoDto {
   id_forma_pago: number;
   descripcion_pago: string;
   codigo_cuenta:string;
+  id_plan:number;
   // Otros campos vienen en la respuesta pero no los usamos aquí
 }
 
@@ -45,7 +47,8 @@ export class FormaPagoService {
   private mapDtoToLite = (x: FormaPagoDto): FormaPagoResponse => ({
     idFormaPago: x.id_forma_pago,
     descripcionPago: x.descripcion_pago    ,
-  codigoCuenta: x.codigo_cuenta  
+    codigo_cuenta: x.codigo_cuenta  ,
+    id_plan:x.id_plan
   });
 
   /**
@@ -76,24 +79,22 @@ search(term: string): Observable<ApiResponse<FormaPagoResponse[]>> {
    * Obtiene formas de pago activas (modelo ligero).
    * Endpoint esperado: GET {baseUrl}/FormaPago/activas
    */
-  getActivas(): Observable<ApiResponse<FormaPagoResponse[]>> {
-    const url = `${this.baseUrl}/FormaPago/activas`;
+getActivas(): Observable<ApiResponse<FormaPagoResponse[]>> {
+  const url = `${this.baseUrl}/FormaPago/activas`;
 
-    console.log('[FormaPagoService] GET', url);
+  return this.http.get<ApiResponse<any[]>>(url).pipe(
+    map(resp => ({
+      ...resp,
+      data: (resp.data ?? []).map(x => ({
+        idFormaPago: x.id_forma_pago,
+        descripcionPago: x.descripcion_pago,
+        codigo_cuenta: x.codigo_cuenta,
+        id_plan: x.id_plan
+      }))
+    }))
+  );
+}
 
-    return this.http.get<ApiResponse<FormaPagoResponse[]>>(url).pipe(
-      tap(resp => console.log('[FormaPagoService] OK resp =', resp)),
-      catchError(err => {
-        console.error('[FormaPagoService] ERROR =', err);
-        return of({
-          id: '',
-          type: 'Error',
-          data: [] as FormaPagoResponse[],
-          message: 'Error al obtener formas de pago activas'
-        } as ApiResponse<FormaPagoResponse[]>);
-      })
-    );
-  }
 
   /**
    * Lista paginada desde {baseUrl}/FormaPago?page=1&pageSize=10

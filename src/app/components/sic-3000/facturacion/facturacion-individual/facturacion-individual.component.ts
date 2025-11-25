@@ -89,6 +89,7 @@ interface LineaFactura {
   ivaVal?: number; // valor de IVA de la línea
   periodo?: string;
   cuenta?: string;
+  idcuenta?: number;
 }
 
 
@@ -200,7 +201,8 @@ export class FacturacionIndividualComponent implements OnInit {
       }
     },
     { headerName: 'Cod.', field: 'codpro', width: 60, suppressColumnsToolPanel: true },
-    { headerName: 'Cuenta', field: 'cuenta', width: 60, suppressColumnsToolPanel: true, hide: false },
+    { headerName: 'idCuenta', field: 'idcuenta', hide: true },
+    { headerName: 'Cuenta', field: 'cuenta', hide: true },
     { headerName: 'Periodo', field: 'periodo', hide: true, editable: false, flex: 1, minWidth: 200, tooltipField: 'periodo' },
     { headerName: 'Detalle', field: 'detalle', editable: false, flex: 1, minWidth: 200, tooltipField: 'detalle' },
     {
@@ -374,6 +376,8 @@ export class FacturacionIndividualComponent implements OnInit {
     { headerName: 'Id', field: 'id', editable: false, flex: 1, minWidth: 180, hide: true, suppressColumnsToolPanel: true },
     { headerName: 'Detalle', field: 'detalle', editable: false, flex: 1, minWidth: 180 },
     { headerName: 'Plazo', field: 'plazo', editable: true, width: 120 },
+    { headerName: 'iidcuenta', field: 'iidcuenta', hide: true },
+    { headerName: 'ccuenta', field: 'ccuenta', hide: true },
     {
       headerName: 'Tiempo',
       field: 'tiempo',
@@ -567,11 +571,14 @@ export class FacturacionIndividualComponent implements OnInit {
     // cachea la lista de activas una sola vez
     const formasActivas$ = this.formaPagoService.getActivas().pipe(
       map(resp => (resp?.data ?? []).map((x: any) => ({
-        idFormaPago: x.idFormaPago ?? x.id_forma_pago ?? x.id ?? 0,
-        descripcionPago: x.descripcionPago ?? x.descripcion_pago ?? x.descripcion ?? ''
+        idFormaPago: x.id_forma_pago ?? x.idFormaPago ?? x.id ?? 0,
+        descripcionPago: x.descripcion_pago ?? x.descripcionPago ?? x.descripcion ?? '',
+        id_plan: x.id_plan ?? x.idPlan ?? null,
+        codigo_cuenta: x.codigo_cuenta ?? x.codigoCuenta ?? null,
       }) as FormaPagoResponse)),
       shareReplay(1)
     );
+
 
     // stream filtrado para el autocomplete (filtra localmente)
     this.filteredFormasPago$ = combineLatest([
@@ -896,7 +903,9 @@ export class FacturacionIndividualComponent implements OnInit {
       banco: '',
       ntarjeta: '',
       cheque: '',
-      dueno: ''
+      dueno: '',
+      iidcuenta: fp.id_plan,
+      ccuenta: fp.codigo_cuenta,
     };
   }
 
@@ -1054,23 +1063,32 @@ export class FacturacionIndividualComponent implements OnInit {
       descPct: this.descuentoSeleccionado ? this.toN(this.descuentoSeleccionado.valor, 2) : 0,
       desUnit: 0, descuento: 0, desTotal: 0, total: 0,
       periodo: '',
-      cuenta: p.codcuedeb
+      cuenta: p.codcuedeb,
+      idcuenta: p.id_plan
 
     };
     this.recalcLinea(nuevaFila);
 
+    // --- reemplaza la parte final de onProductoSelected ---
     if (this.gridApi) this.gridApi.applyTransaction({ add: [nuevaFila] });
     else this.rowData.push(nuevaFila);
-
-    ctrl.setValue('', { emitEvent: false });
-    setTimeout(() => {
-      this.autoProductoTrigger?.closePanel();
-      this.productoInputRef?.nativeElement.blur();
-    }, 0);
 
     this.recalcTotalesFactura();
     this.ajustarPagosAlTotal();
     this.actualizarPuedeAbrirMeses();
+
+    // 🔹 LIMPIAR AUTOCOMPLETE Y TEXTO DEL INPUT
+    setTimeout(() => {
+      const ctrl = this.formFactura.get('producto') as FormControl;
+
+      // Limpia el valor y vuelve a disparar el filtro (para que ya no quede seleccionado)
+      ctrl.setValue('', { emitEvent: true });
+
+      // Cierra el panel y deja el input listo para volver a escribir
+      this.autoProductoTrigger?.closePanel();
+      this.productoInputRef?.nativeElement.focus();
+    }, 0);
+
   }
 
 
@@ -2066,253 +2084,310 @@ export class FacturacionIndividualComponent implements OnInit {
     this.mostrarAlerta('Usuario no tiene asignado Caja', 'info');
   }
 
-private crearAsientoVenta(
-  idNota: number,
-  facturaPayload: FacturaCrearRequest
-) {
-  const asientoReq = this.buildAsientoVentaRequest(idNota, facturaPayload);
+  private crearAsientoVenta(
+    idNota: number,
+    facturaPayload: FacturaCrearRequest
+  ) {
+    const asientoReq = this.buildAsientoVentaRequest(idNota, facturaPayload);
 
-  console.log('ASIENTO VENTA OBJ →', asientoReq);
-  console.log('ASIENTO VENTA JSON →', JSON.stringify(asientoReq, null, 2));
+    console.log('ASIENTO VENTA OBJ →', asientoReq);
+    console.log('ASIENTO VENTA JSON →', JSON.stringify(asientoReq, null, 2));
 
-  // devolvemos el numdoc del asiento creado
-  return this.asientoVentaService.crearAsientoVenta(asientoReq).pipe(
-    map(() => asientoReq.numdoc)   // 👈 aquí sale "VT-00001"
-  );
-}
-
-private buildAsientoVentaRequest(
-  idNota: number,
-  facturaPayload: FacturaCrearRequest
-): AsientoVentaRequest {
-  const hoy = new Date();
-  const yyyy = hoy.getFullYear().toString();
-  const mm = String(hoy.getMonth() + 1).padStart(2, '0');
-  const dd = String(hoy.getDate()).padStart(2, '0');
-  const fecha = `${yyyy}-${mm}-${dd}`;
-  const hora = hoy.toTimeString().substring(0, 5); // "HH:mm"
-
-  // ❗Campos obligatorios (> 0)
-  const idZona = 1; // si luego usas zona del usuario, cámbialo aquí
-  const idUsuario = Number(this.usuarioActual?.id_usuario ?? 1);
-  const idEmpresa = Number(this.usuarioActual?.id_empresa ?? 1);
-  const idTipoAsiento = 3;        // tipo de asiento para ventas
-
-  // 👉 Tipo de documento del asiento
-  const tipdoc = 'VT';
-
-  // 👉 Secuencial de la factura y numdoc = "VT-00001"
-  const secRaw = (this.formCaja.get('secuencial')?.value ?? idNota)
-    .toString()
-    .replace(/\D/g, '');          // por si viniera con algo raro
-  const secPadded = secRaw.padStart(5, '0');
-  const numdoc = `${secPadded}`;
-
-  // Totales de la factura
-  const tot = this.to2(Number(facturaPayload.totalCalculado ?? 0));
-  const beneficiario = `CLIENTE ID: ${facturaPayload.idCliente}`;
-
-  // 🔹 Cuentas base
-  const CTA_CLIENTES = 110101;          // Clientes
-  const CTA_IVA = 210101;              // IVA Débito Fiscal
-  const CTA_VENTAS_DEFAULT = 410101;   // por si alguna fila no trae cuenta
-
-  // ====== 1) Recuperar filas de productos desde el GRID ======
-  const filasProd: any[] = [];
-  if (this.gridApi) this.gridApi.forEachNode(n => filasProd.push(n.data));
-  else filasProd.push(...this.rowData);
-
-  console.log('FILAS PROD PARA ASIENTO →', filasProd);
-
-  // ====== 2) Calcular IVA total ======
-  let totalIva = 0;
-  for (const row of filasProd) {
-    const ivaVal = this.to2(Number(row.ivaVal ?? 0));
-    if (ivaVal > 0) totalIva = this.to2(totalIva + ivaVal);
+    // devolvemos el numdoc del asiento creado
+    return this.asientoVentaService.crearAsientoVenta(asientoReq).pipe(
+      map(() => asientoReq.numdoc)   // 👈 aquí sale "VT-00001"
+    );
   }
 
-  // ====== 3) Construir nocomprobante tipo "001999000000004" ======
-  const puntoEmision = (this.formCaja.get('puntoEmision')?.value ?? '').toString().trim();
-  const caja = (this.formCaja.get('caja')?.value ?? '').toString().trim();
-  const secuencial = (this.formCaja.get('secuencial')?.value ?? '').toString().trim();
+  private buildAsientoVentaRequest(
+    idNota: number,
+    facturaPayload: FacturaCrearRequest
+  ): AsientoVentaRequest {
+    const hoy = new Date();
+    const yyyy = hoy.getFullYear().toString();
+    const mm = String(hoy.getMonth() + 1).padStart(2, '0');
+    const dd = String(hoy.getDate()).padStart(2, '0');
+    const fecha = `${yyyy}-${mm}-${dd}`;
+    const hora = hoy.toTimeString().substring(0, 5); // "HH:mm"
 
-  const nocomprobante = (puntoEmision + caja + secuencial) || idNota.toString();
+    // ❗Campos obligatorios (> 0)
+    const idZona = 1; // si luego usas zona del usuario, cámbialo aquí
+    const idUsuario = Number(this.usuarioActual?.id_usuario ?? 1);
+    const idEmpresa = Number(this.usuarioActual?.id_empresa ?? 1);
+    const idTipoAsiento = 3;        // tipo de asiento para ventas
 
-  // ====== 4) Armar las líneas del asiento ======
-  const detalles: AsientoVentaRequest['detalles'] = [];
-  let numlinea = 1;
-  const anioStr = facturaPayload.anioFactura.toString();
+    // 👉 Tipo de documento del asiento
+    const tipdoc = 'VT';
 
-  // 4.1) DEBE: Clientes por el TOTAL
-  detalles.push({
-    numlinea: numlinea++,
-    anio: anioStr,
-    fechatransaccion: fecha,
-    hora,
-    idZona,
-    idCentroCostos: null,
-    idLocal: 1,
-    idPlanCuentas: CTA_CLIENTES,
-    codprePc: `${CTA_CLIENTES}-001`,
-    idCodContable: 3,
-    nocomprobante,
-    docurelacionado: '',
-    cheque: 0,
-    beneficiario: '',
-    debe: tot,
-    haber: 0,
-    comentario: `COBRO FACTURA ${numdoc} - OTROS CON UTILIZACIÓN DEL SISTEMA FINANCIERO`,
-    idMovBancario: null,
-    movbancario: '',
-    fechaingreso: fecha,
-    cierre: '',
-    fechacierre: null,
-    conciliado: '',
-    fechaconciliado: null,
-    idSustentoTrib: null,
-    idTipoCompSri: null,
-    autorizacion: '',
-    fechacaduca: null,
-    idTipoRetencion: null,
-    idProyecto: null,
-    idSubproyecto: null,
-    transferido: false,
-    fechatransferido: null,
-    fechavencimiento: null,
-    idConciliacion: null,
-    valorLetras: '',
-    estadoIngreso: false
-  });
+    // 👉 Secuencial de la factura y numdoc = "VT-00001"
+    const secRaw = (this.formCaja.get('secuencial')?.value ?? idNota)
+      .toString()
+      .replace(/\D/g, '');          // por si viniera con algo raro
+    const secPadded = secRaw.padStart(5, '0');
+    const numdoc = `${secPadded}`;
 
-  // 4.2) HABER: una línea por producto (cuenta viene del grid)
-  for (const row of filasProd) {
-    const cuentaTexto = (row.cuenta ?? '').toString().trim(); // ej: "410101-001"
-    const [ctaStr] = cuentaTexto.split('-');
-    const cuentaNum = Number(ctaStr) || CTA_VENTAS_DEFAULT;
-    const codprePc = cuentaTexto || `${cuentaNum}-001`;
+    // Totales de la factura
+    const tot = this.to2(Number(facturaPayload.totalCalculado ?? 0));
+    const beneficiario = `CLIENTE ID: ${facturaPayload.idCliente}`;
 
-    const base = this.to2(Number(row.base ?? 0));
-    if (base <= 0) continue;
+    // 🔹 Cuentas base
+    const CTA_CLIENTES = 110101;          // Clientes
+    const CTA_IVA = 210101;              // IVA Débito Fiscal
+    const CTA_VENTAS_DEFAULT = 410101;   // por si alguna fila no trae cuenta
 
-    detalles.push({
-      numlinea: numlinea++,
-      anio: anioStr,
-      fechatransaccion: fecha,
-      hora,
-      idZona,
-      idCentroCostos: null,
-      idLocal: 1,
-      idPlanCuentas: cuentaNum,
-      codprePc,
-      idCodContable: 3,
-      nocomprobante,
-      docurelacionado: '',
-      cheque: 0,
-      beneficiario: '',
-      debe: 0,
-      haber: base,
-      comentario: `INGRESO POR VENTA FACTURA ${numdoc} - ${(row.detalle ?? '').toString().toUpperCase()}`,
-      idMovBancario: null,
-      movbancario: '',
-      fechaingreso: fecha,
-      cierre: '',
-      fechacierre: null,
-      conciliado: '',
-      fechaconciliado: null,
-      idSustentoTrib: null,
-      idTipoCompSri: null,
-      autorizacion: '',
-      fechacaduca: null,
-      idTipoRetencion: null,
-      idProyecto: null,
-      idSubproyecto: null,
-      transferido: false,
-      fechatransferido: null,
-      fechavencimiento: null,
-      idConciliacion: null,
-      valorLetras: '',
-      estadoIngreso: false
-    });
+    // ====== 1) Recuperar filas de productos desde el GRID ======
+    const filasProd: any[] = [];
+    if (this.gridApi) this.gridApi.forEachNode(n => filasProd.push(n.data));
+    else filasProd.push(...this.rowData);
+
+    console.log('FILAS PROD PARA ASIENTO →', filasProd);
+
+    // ====== 2) Calcular IVA total ======
+    let totalIva = 0;
+    for (const row of filasProd) {
+      const ivaVal = this.to2(Number(row.ivaVal ?? 0));
+      if (ivaVal > 0) totalIva = this.to2(totalIva + ivaVal);
+    }
+
+    // ====== 3) Construir nocomprobante tipo "001999000000004" ======
+    const puntoEmision = (this.formCaja.get('puntoEmision')?.value ?? '').toString().trim();
+    const caja = (this.formCaja.get('caja')?.value ?? '').toString().trim();
+    const secuencial = (this.formCaja.get('secuencial')?.value ?? '').toString().trim();
+
+    const nocomprobante = (puntoEmision + caja + secuencial) || idNota.toString();
+
+    // ====== 4) Armar las líneas del asiento ======
+    const detalles: AsientoVentaRequest['detalles'] = [];
+    const filasPago: any[] = [];
+    if (this.pagosApi) this.pagosApi.forEachNode(n => filasPago.push(n.data));
+    else filasPago.push(...this.rowDataPagos);
+    let numlinea = 1;
+    const anioStr = facturaPayload.anioFactura.toString();
+
+    if (filasPago.length > 0) {
+      for (const pag of filasPago) {
+        const valorPago = this.to2(Number(pag.valor ?? 0));
+        if (valorPago <= 0) continue;
+
+        // 👇 aquí usamos lo que viene del grid de pagos
+        const idCuentaPago = Number(pag.iidcuenta ?? 0) || CTA_CLIENTES;
+        const codprePago =
+          (pag.ccuenta ?? '').toString().trim() || `${idCuentaPago}-001`;
+
+        detalles.push({
+          numlinea: numlinea++,
+          anio: anioStr,
+          fechatransaccion: fecha,
+          hora,
+          idZona,
+          idCentroCostos: null,
+          idLocal: 1,
+          idPlanCuentas: idCuentaPago,     // 👈 cuenta del grid
+          codprePc: codprePago,            // 👈 codpre del grid
+          idCodContable: 3,
+          nocomprobante,
+          docurelacionado: '',
+          cheque: 0,
+          beneficiario: '',
+          debe: valorPago,
+          haber: 0,
+          comentario: `COBRO FACTURA ${numdoc} - ${(pag.detalle ?? '')
+            .toString()
+            .toUpperCase()}`,
+          idMovBancario: null,
+          movbancario: '',
+          fechaingreso: fecha,
+          cierre: '',
+          fechacierre: null,
+          conciliado: '',
+          fechaconciliado: null,
+          idSustentoTrib: null,
+          idTipoCompSri: null,
+          autorizacion: '',
+          fechacaduca: null,
+          idTipoRetencion: null,
+          idProyecto: null,
+          idSubproyecto: null,
+          transferido: false,
+          fechatransferido: null,
+          fechavencimiento: null,
+          idConciliacion: null,
+          valorLetras: '',
+          estadoIngreso: false
+        });
+      }
+    } else {
+      // Fallback: si por alguna razón no hay pagos, usa Clientes como antes
+      detalles.push({
+        numlinea: numlinea++,
+        anio: anioStr,
+        fechatransaccion: fecha,
+        hora,
+        idZona,
+        idCentroCostos: null,
+        idLocal: 1,
+        idPlanCuentas: CTA_CLIENTES,
+        codprePc: `${CTA_CLIENTES}-001`,
+        idCodContable: 3,
+        nocomprobante,
+        docurelacionado: '',
+        cheque: 0,
+        beneficiario: '',
+        debe: tot,
+        haber: 0,
+        comentario: `COBRO FACTURA ${numdoc} - OTROS CON UTILIZACIÓN DEL SISTEMA FINANCIERO`,
+        idMovBancario: null,
+        movbancario: '',
+        fechaingreso: fecha,
+        cierre: '',
+        fechacierre: null,
+        conciliado: '',
+        fechaconciliado: null,
+        idSustentoTrib: null,
+        idTipoCompSri: null,
+        autorizacion: '',
+        fechacaduca: null,
+        idTipoRetencion: null,
+        idProyecto: null,
+        idSubproyecto: null,
+        transferido: false,
+        fechatransferido: null,
+        fechavencimiento: null,
+        idConciliacion: null,
+        valorLetras: '',
+        estadoIngreso: false
+      });
+    }
+      // 4.2) HABER: una línea por producto (cuenta viene del grid)
+      for (const row of filasProd) {
+        const cuentaTexto = (row.cuenta ?? '').toString().trim(); // ej: "410101-001"
+        const [ctaStr] = cuentaTexto.split('-');
+        const cuentaNum = Number(ctaStr) || CTA_VENTAS_DEFAULT;
+        const codprePc = cuentaTexto || `${cuentaNum}-001`;
+        const idcuentaTexto = (row.idcuenta ?? '').toString().trim();
+        const idcuentaNum = Number(idcuentaTexto) || 0;
+        const base = this.to2(Number(row.base ?? 0));
+        if (base <= 0) continue;
+
+        detalles.push({
+          numlinea: numlinea++,
+          anio: anioStr,
+          fechatransaccion: fecha,
+          hora,
+          idZona,
+          idCentroCostos: null,
+          idLocal: 1,
+          idPlanCuentas: idcuentaNum,
+          codprePc,
+          idCodContable: 3,
+          nocomprobante,
+          docurelacionado: '',
+          cheque: 0,
+          beneficiario: '',
+          debe: 0,
+          haber: base,
+          comentario: `INGRESO POR VENTA FACTURA ${numdoc} - ${(row.detalle ?? '').toString().toUpperCase()}`,
+          idMovBancario: null,
+          movbancario: '',
+          fechaingreso: fecha,
+          cierre: '',
+          fechacierre: null,
+          conciliado: '',
+          fechaconciliado: null,
+          idSustentoTrib: null,
+          idTipoCompSri: null,
+          autorizacion: '',
+          fechacaduca: null,
+          idTipoRetencion: null,
+          idProyecto: null,
+          idSubproyecto: null,
+          transferido: false,
+          fechatransferido: null,
+          fechavencimiento: null,
+          idConciliacion: null,
+          valorLetras: '',
+          estadoIngreso: false
+        });
+      }
+
+      // 4.3) HABER: IVA
+      if (totalIva > 0) {
+        detalles.push({
+          numlinea: numlinea++,
+          anio: anioStr,
+          fechatransaccion: fecha,
+          hora,
+          idZona,
+          idCentroCostos: null,
+          idLocal: 1,
+          idPlanCuentas: CTA_IVA,
+          codprePc: `${CTA_IVA}-001`,
+          idCodContable: 3,
+          nocomprobante,
+          docurelacionado: '',
+          cheque: 0,
+          beneficiario: '',
+          debe: 0,
+          haber: this.to2(totalIva),
+          comentario: `IVA RECAUDADO FACTURA ${numdoc}`,
+          idMovBancario: null,
+          movbancario: '',
+          fechaingreso: fecha,
+          cierre: '',
+          fechacierre: null,
+          conciliado: '',
+          fechaconciliado: null,
+          idSustentoTrib: null,
+          idTipoCompSri: null,
+          autorizacion: '',
+          fechacaduca: null,
+          idTipoRetencion: null,
+          idProyecto: null,
+          idSubproyecto: null,
+          transferido: false,
+          fechatransferido: null,
+          fechavencimiento: null,
+          idConciliacion: null,
+          valorLetras: '',
+          estadoIngreso: false
+        });
+      }
+
+      // ====== 5) Totales ======
+      const totalHaber = this.to2(detalles.reduce((s, d) => s + (Number(d.haber) || 0), 0));
+      const totalDebe = this.to2(detalles.reduce((s, d) => s + (Number(d.debe) || 0), 0));
+
+      const asiento: AsientoVentaRequest = {
+        idZona,
+        idUsuario,
+        idEmpresa,
+        idTipoAsiento,
+        tipdoc,
+        numdoc,                    // 👈 aquí queda "VT-00001"
+        anio: anioStr,
+        fechatransaccion: fecha,
+        fechaingreso: fecha,
+        observacion: `ASIENTO POR VENTA FACTURA ${numdoc}`,
+        totdebe: totalDebe,
+        tothaber: totalHaber,
+        beneficiario,
+        cierre: '',
+        fechacierre: null,
+        solicitado: '',
+        depto: '',
+        autorizado: '',
+        homCodigo: 0,
+        estado: true,
+        detalles
+      };
+
+      console.log('ASIENTO VENTA OBJ →', asiento);
+      console.log('ASIENTO VENTA JSON →', JSON.stringify(asiento, null, 2));
+
+      return asiento;
+    }
+
+
+
+
   }
-
-  // 4.3) HABER: IVA
-  if (totalIva > 0) {
-    detalles.push({
-      numlinea: numlinea++,
-      anio: anioStr,
-      fechatransaccion: fecha,
-      hora,
-      idZona,
-      idCentroCostos: null,
-      idLocal: 1,
-      idPlanCuentas: CTA_IVA,
-      codprePc: `${CTA_IVA}-001`,
-      idCodContable: 3,
-      nocomprobante,
-      docurelacionado: '',
-      cheque: 0,
-      beneficiario: '',
-      debe: 0,
-      haber: this.to2(totalIva),
-      comentario: `IVA RECAUDADO FACTURA ${numdoc}`,
-      idMovBancario: null,
-      movbancario: '',
-      fechaingreso: fecha,
-      cierre: '',
-      fechacierre: null,
-      conciliado: '',
-      fechaconciliado: null,
-      idSustentoTrib: null,
-      idTipoCompSri: null,
-      autorizacion: '',
-      fechacaduca: null,
-      idTipoRetencion: null,
-      idProyecto: null,
-      idSubproyecto: null,
-      transferido: false,
-      fechatransferido: null,
-      fechavencimiento: null,
-      idConciliacion: null,
-      valorLetras: '',
-      estadoIngreso: false
-    });
-  }
-
-  // ====== 5) Totales ======
-  const totalHaber = this.to2(detalles.reduce((s, d) => s + (Number(d.haber) || 0), 0));
-  const totalDebe = this.to2(detalles.reduce((s, d) => s + (Number(d.debe) || 0), 0));
-
-  const asiento: AsientoVentaRequest = {
-    idZona,
-    idUsuario,
-    idEmpresa,
-    idTipoAsiento,
-    tipdoc,
-    numdoc,                    // 👈 aquí queda "VT-00001"
-    anio: anioStr,
-    fechatransaccion: fecha,
-    fechaingreso: fecha,
-    observacion: `ASIENTO POR VENTA FACTURA ${numdoc}`,
-    totdebe: totalDebe,
-    tothaber: totalHaber,
-    beneficiario,
-    cierre: '',
-    fechacierre: null,
-    solicitado: '',
-    depto: '',
-    autorizado: '',
-    homCodigo: 0,
-    estado: true,
-    detalles
-  };
-
-  console.log('ASIENTO VENTA OBJ →', asiento);
-  console.log('ASIENTO VENTA JSON →', JSON.stringify(asiento, null, 2));
-
-  return asiento;
-}
-
-
-
-
-}

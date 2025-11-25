@@ -36,6 +36,7 @@ export interface ProductoResponse {
   prevensiniva: number | null;
   codcuedeb:string | null;
   id_empresa: number | null;
+  id_plan:number | null;
 }
 
 export interface FacturaDetalleRequest {
