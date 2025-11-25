@@ -6,6 +6,8 @@ import { LogoService } from 'src/app/services/logo.service';
 import { UsuarioService } from 'src/app/services/usuario.service';
 import { PermissionsService } from 'src/app/services/permission.service';
 import { LoginUsuarioResponse } from 'src/app/interfaces/responses/usuario-log-response';
+import { MatDialog } from '@angular/material/dialog';
+import { VideosAyudaModalComponent } from '../seguridades/dialogs/videos-ayuda/videos-ayuda-modal.component';
 
 // Interface para definir los sistemas
 interface Sistema {
@@ -54,8 +56,8 @@ export class InicioComponent implements OnInit, OnDestroy {
       nombre: 'CG 3000',
       imagenInactiva: '/assets/logo/CG-3000-2.png',
       imagenActiva: '/assets/logo/CG-3000.png', // Versión a color
-      ruta: '/cg-3000/inicio',
-      tienePermiso: false
+      ruta: '/cg-3000/inicio-cg',
+      tienePermiso: true
     },
     {
       id: 'rol-3000',
@@ -80,8 +82,9 @@ export class InicioComponent implements OnInit, OnDestroy {
     private empresaService: EmpresaService,
     private usuarioService: UsuarioService,
     private permissionsService: PermissionsService,
+    private dialog: MatDialog,
     private router: Router
-  ) { 
+  ) {
     this.usuarioActual = this.usuarioService.getUsuarioActual();
   }
 
@@ -95,7 +98,7 @@ export class InicioComponent implements OnInit, OnDestroy {
   ngOnInit() {
     this.startCarousel();
     this.usuario = this.usuarioService.getUsuarioActual();
-    
+
     // Verificar permisos para cada sistema
     this.verificarPermisos();
 
@@ -130,7 +133,7 @@ export class InicioComponent implements OnInit, OnDestroy {
     // Suscribirse a los permisos desde el PermissionsService
     this.permissionsService.permisos$.subscribe(permisos => {
       console.log('🔍 Verificando permisos de sistemas:', permisos);
-      
+
       this.sistemas.forEach(sistema => {
         switch (sistema.id) {
           case 'codbar':
@@ -139,9 +142,9 @@ export class InicioComponent implements OnInit, OnDestroy {
           case 'sic-3000':
             sistema.tienePermiso = this.tieneAccesoSistema('sic-3000', permisos);
             break;
-          case 'cg-3000':
-            sistema.tienePermiso = this.tieneAccesoSistema('cg-3000', permisos);
-            break;
+          // case 'cg-3000':
+          //   sistema.tienePermiso = this.tieneAccesoSistema('cg-3000', permisos);
+          //   break;
           case 'rol-3000':
             sistema.tienePermiso = this.tieneAccesoSistema('rol-3000', permisos);
             break;
@@ -150,7 +153,7 @@ export class InicioComponent implements OnInit, OnDestroy {
             break;
         }
       });
-      
+
       console.log('🔍 Sistemas con permisos actualizados:', this.sistemas);
     });
   }
@@ -159,11 +162,11 @@ export class InicioComponent implements OnInit, OnDestroy {
   private tieneAccesoSistema(nombreSistema: string, permisos: string[]): boolean {
     // Verificar si el usuario tiene acceso al sistema específico
     // Basado en tu JSON: permisos_flat: ["codbar", "codbar.ficha-de-cliente", ...]
-    
-    const tieneAcceso = permisos.includes(nombreSistema) || 
+
+    const tieneAcceso = permisos.includes(nombreSistema) ||
                        permisos.some(p => p.startsWith(`${nombreSistema}.`)) ||
                        this.usuarioActual?.perfil === 'ADMIN';
-    
+
     console.log(`🔍 Sistema ${nombreSistema}: ${tieneAcceso ? '✅ PERMITIDO' : '❌ DENEGADO'}`);
     return tieneAcceso;
   }
@@ -171,11 +174,11 @@ export class InicioComponent implements OnInit, OnDestroy {
   // Método para navegar solo si tiene permisos
   navegarA(sistema: Sistema, event: Event) {
     event.preventDefault();
-    
+
     if (!sistema.tienePermiso) {
       return; // No hace nada si no tiene permisos
     }
-    
+
     this.router.navigate([sistema.ruta]);
   }
 
@@ -203,5 +206,14 @@ export class InicioComponent implements OnInit, OnDestroy {
 
   togglePanel(): void {
     this.showPanel = !this.showPanel;
+  }
+
+  abrirModalAyuda(): void {
+    this.dialog.open(VideosAyudaModalComponent, {
+      width: '90vw',
+      maxWidth: '1200px',
+      height: '85vh',
+      panelClass: 'custom-dialog-container'
+    });
   }
 }

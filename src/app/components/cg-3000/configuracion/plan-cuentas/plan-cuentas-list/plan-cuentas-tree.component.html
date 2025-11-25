@@ -1,0 +1,228 @@
+<div class="layout compact">
+  <div class="wrap">
+    <!-- LEFT -->
+    <div class="left-pane">
+      <div class="toolbar">
+        <button mat-raised-button class="btn-azul" (click)="nuevoRaiz()">
+          <mat-icon>account_tree</mat-icon> Plan de Cuentas
+        </button>
+      </div>
+
+      <mat-progress-bar *ngIf="loading()" mode="indeterminate"></mat-progress-bar>
+      <div class="error" *ngIf="errorMsg()">{{ errorMsg() }}</div>
+
+      <div class="tree compact-tree">
+        <mat-tree [dataSource]="dataSource" [treeControl]="treeControl" class="tree tree-themed">
+          <!-- HOJA -->
+          <mat-tree-node *matTreeNodeDef="let node" matTreeNodePadding>
+            <button mat-icon-button disabled></button>
+            <span class="node-label"
+                  (click)="seleccionar(node)"
+                  matTooltip="Editar {{ node.item?.NombreCuenta }}">
+              {{ node.item?.CuentaPresentacion }} - {{ node.item?.NombreCuenta || '(Sin nombre)' }}
+            </span>
+            <span class="actions">
+              <button mat-icon-button color="primary" (click)="nuevoHijoDesde(node)"
+                      [disabled]="(node.item?.IdNivel ?? 1) >= 5" matTooltip="Agregar subgrupo">
+                <mat-icon>add_circle</mat-icon>
+              </button>
+            </span>
+          </mat-tree-node>
+
+          <!-- CON HIJOS -->
+          <mat-tree-node *matTreeNodeDef="let node; when: hasChild" matTreeNodePadding>
+            <button mat-icon-button matTreeNodeToggle [attr.aria-label]="'toggle ' + (node.item?.NombreCuenta || '')">
+              <mat-icon>{{ treeControl.isExpanded(node) ? 'expand_more' : 'chevron_right' }}</mat-icon>
+            </button>
+            <span class="node-label"
+                  (click)="seleccionar(node)"
+                  matTooltip="Editar {{ node.item?.NombreCuenta }}">
+              {{ node.item?.NombreCuenta || '(Sin nombre)' }} - {{ node.item?.CuentaPresentacion }}
+            </span>
+            <span class="actions">
+              <button mat-icon-button color="primary" (click)="nuevoHijoDesde(node)"
+                      [disabled]="(node.item?.IdNivel ?? 1) >= 5" matTooltip="Agregar Subgrupo">
+                <mat-icon>add_circle</mat-icon>
+              </button>
+            </span>
+          </mat-tree-node>
+        </mat-tree>
+      </div>
+    </div>
+
+    <!-- RIGHT -->
+    <div class="right-pane">
+      <h3 class="panel-title" [ngClass]="modoEdicion() ? 'edit' : 'create'">
+        {{ modoEdicion() ? 'Editar cuenta' : 'Nueva cuenta' }}
+        <small *ngIf="form.value.IdNivel">
+          ({{ form.value.NombreCuenta || '' }}) (Nivel {{ form.value.IdNivel }})
+        </small>
+      </h3>
+
+      <!-- Densidad XS + rejilla compacta y anchos contenidos -->
+      <form [formGroup]="form" (ngSubmit)="guardar()" class="tiny-form">
+
+        <!-- fila 1 (4 campos) -->
+        <br>
+        <div class="row-four">
+          <mat-form-field appearance="outline" class="w-260">
+            <mat-label>Cuenta Contable</mat-label>
+            <input matInput formControlName="CuentaPresentacion" maxlength="10"
+                   (input)="formatCuenta($event)"
+                   (blur)="fixCuenta()" 
+                   (input)="onPresentacionInput($event)" (blur)="onPresentacionBlur()" 
+                   inputmode="numeric"
+                   autocomplete="off"
+                   placeholder="111222-000"
+                   pattern="^\d{6}-\d{3}$"
+                   />
+            <mat-error *ngIf="form.get('CuentaPresentacion')?.hasError('required')">
+              Campo Requerido.
+            </mat-error>
+            <mat-error *ngIf="form.get('CuentaPresentacion')?.hasError('pattern')">
+              Formato inválido (######-###).
+            </mat-error>
+            <mat-error *ngIf="form.get('CuentaPresentacion')?.hasError('duplicada')">
+              {{ 'La cuenta ya existe.' }}
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-160 ">
+            <mat-label>Cuenta Principal</mat-label>
+            <input matInput formControlName="CuentaPrincipal" maxlength="1" readonly />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-160">
+            <mat-label>Cuenta Mayor</mat-label>
+            <input matInput formControlName="CuentaMayor" maxlength="6" readonly />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-160">
+            <mat-label>Subcta</mat-label>
+            <input matInput formControlName="CuentaSubcta" maxlength="3" readonly />
+          </mat-form-field>
+        </div>
+
+        <!-- fila 2+  -->
+        <div class="grid two-cols">
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Nombre de cuenta *</mat-label>
+            <input matInput formControlName="NombreCuenta" maxlength="48" />
+            <mat-error *ngIf="form.get('NombreCuenta')?.hasError('required')">Requerido</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Descripción</mat-label>
+            <input matInput formControlName="Descripcion" maxlength="248" />
+          </mat-form-field>
+        </div>
+        
+          <div class="row-four">  
+
+              <mat-form-field appearance="outline" class="w-240">
+                <mat-label>Cuenta Homologación</mat-label>
+                <input matInput formControlName="CuentaHomologacion" maxlength="25" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-240">
+                <mat-label>Código Externo</mat-label>
+                <input matInput formControlName="CodigoExterno" maxlength="30" />
+              </mat-form-field>
+
+
+              <input type="hidden" formControlName="CuentaDetalle" />
+
+              <mat-form-field appearance="outline" class="w-140">
+                <mat-label>Orden</mat-label>
+                <input matInput type="number" formControlName="Orden" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="w-160">
+                <mat-label>Porcentaje</mat-label>
+                <input matInput type="number" formControlName="PorcentajeRetencion" />
+              </mat-form-field>
+          </div>
+          
+
+          <div class="grid two-cols">  
+
+          <input type="hidden" formControlName="IdNivel" />
+
+          <mat-form-field appearance="outline" class="xs-select w-260">
+            <mat-label>Cuentas Especiales</mat-label>
+            <mat-select formControlName="IdCodigoEspecial">
+              <mat-option [value]="0">-- Seleccione --</mat-option>
+              <mat-option *ngFor="let op of (opcionesCodEsp$ | async); trackBy: trackById" [value]="op.id">
+                {{ op.id }} — {{ op.label }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="form.get('IdCodigoEspecial')?.hasError('requiredSelection') || form.get('IdCodigoEspecial')?.hasError('required')">
+                Seleccione una opción.
+            </mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="xs-select w-260">
+            <mat-label>Modelo*</mat-label>
+            <mat-select formControlName="IdCabModelo">
+              <mat-option [value]="0">-- Seleccione --</mat-option>
+              <mat-option *ngFor="let m of (modelosCabecera$ | async); trackBy: trackByIdModelo" [value]="m.id">
+                {{ m.label }}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="form.get('IdCabModelo')?.hasError('requiredSelection') || form.get('IdCabModelo')?.hasError('required')">
+            Seleccione una opción.
+            </mat-error>
+
+          </mat-form-field>
+
+          <input type="hidden" formControlName="ParentId" />
+          <input type="hidden" formControlName="CodigoCompleto" />
+
+          
+            
+            <mat-checkbox formControlName="EsMovimiento">Es movimiento (Nivel 5)</mat-checkbox>
+            <mat-checkbox formControlName="Estado">Activo</mat-checkbox>
+           
+            <mat-form-field appearance="outline" class="w-240">
+              <mat-label>Numero Cuenta</mat-label>
+              <input matInput formControlName="Numerocuenta" maxlength="100" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="w-240">
+              <mat-label>Formato</mat-label>
+              <input matInput formControlName="Formato" maxlength="100" />
+            </mat-form-field>
+         
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Norma</mat-label>
+            <input matInput formControlName="Norma" maxlength="248" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Alcance</mat-label>
+            <input matInput formControlName="Alcanse" maxlength="248" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Medición</mat-label>
+            <input matInput formControlName="Medicion" maxlength="248" />
+          </mat-form-field>
+        </div>
+
+        <div class="actions">
+          <button mat-raised-button type="submit" [disabled]="loading()"
+                  class="btn-save" [ngClass]="modoEdicion() ? 'btn-edit' : 'btn-create'">
+            <mat-icon>save</mat-icon> {{ modoEdicion() ? 'Actualizar' : 'Guardar' }}
+          </button>
+          <button mat-stroked-button type="button" (click)="limpiarFormulario()" [disabled]="loading()">
+            <mat-icon>refresh</mat-icon> Limpiar
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+

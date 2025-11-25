@@ -1,7 +1,7 @@
 .gs1-section {
   position: relative;
   width: 100%;
-  height: 900vh;
+  height: 100vh;
   overflow: hidden;
   background-color: #fff;
 }
@@ -211,14 +211,21 @@
   text-overflow: ellipsis;
 }
 
-.user-info {
+/* .user-info {
   font-size: 13px;
   color: #444;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+} */
+.user-info {
+  font-size: 13px;
+  color: #444;
+  white-space: normal; /* ✅ CAMBIAR de nowrap a normal */
+  overflow: visible; /* ✅ CAMBIAR de hidden a visible */
+  text-overflow: clip; /* ✅ CAMBIAR de ellipsis a clip */
+  word-break: break-word; /* ✅ AGREGAR */
 }
-
 .user-info span {
   font-weight: 500;
   color: #001f4f;
@@ -350,4 +357,96 @@
 .sistema-container:nth-child(5) .sistema-icon-hover {
   width: 290px;
   height: 53px;
+}
+
+@media (max-width: 768px) {
+  .logo-container {
+    left: 30px;
+    top: 30px;
+  }
+
+  .gs1-logo {
+    width: 120px;
+    height: 66px;
+  }
+
+  .product-icons {
+    left: 30px;
+    top: 140px;
+    gap: 20px;
+  }
+
+  .sistema-container:nth-child(1) .sistema-icon,
+  .sistema-container:nth-child(1) .sistema-icon-hover {
+    width: 220px;
+    height: auto;
+  }
+
+  .sistema-container:nth-child(2) .sistema-icon,
+  .sistema-container:nth-child(2) .sistema-icon-hover,
+  .sistema-container:nth-child(3) .sistema-icon,
+  .sistema-container:nth-child(3) .sistema-icon-hover,
+  .sistema-container:nth-child(4) .sistema-icon,
+  .sistema-container:nth-child(4) .sistema-icon-hover {
+    width: 140px;
+    height: auto;
+    margin-left: 80px;
+  }
+
+  .sistema-container:nth-child(5) .sistema-icon,
+  .sistema-container:nth-child(5) .sistema-icon-hover {
+    width: 220px;
+    height: auto;
+  }
+
+  .user-avatar-toggle {
+    top: 30px;
+    right: 30px;
+    width: 36px;
+    height: 36px;
+    font-size: 14px;
+  }
+
+  .user-panel {
+    top: 75px;
+    right: 20px;
+    width: 200px;
+    padding: 20px 16px;
+  }
+}
+.help-button-container {
+  position: fixed;
+  top: 40px; /* ✅ CAMBIAR de 20px a 40px (alineado con avatar) */
+  right: 120px; /* ✅ CAMBIAR de 100px a 120px */
+  z-index: 1000;
+}
+
+.btn-help {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #001f4f; /* ✅ CAMBIAR a color corporativo */
+  color: white;
+  border: none;
+  border-radius: 50px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(0, 31, 79, 0.3); /* ✅ CAMBIAR */
+  transition: all 0.3s ease;
+}
+
+.btn-help:hover {
+  transform: translateY(-2px);
+  background: #cd3c0d; /* ✅ CAMBIAR a color secundario */
+  box-shadow: 0 6px 20px rgba(205, 60, 13, 0.4); /* ✅ CAMBIAR */
+}
+
+.btn-help:active {
+  transform: translateY(0);
+}
+
+.btn-help i {
+  font-size: 1.2rem;
 }

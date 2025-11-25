@@ -1,0 +1,112 @@
+/* src/app/pages/proveedores/productos-proveedor-dialog/productos-proveedor-dialog.component.css */
+
+.dialog-container {
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.dialog-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 20px;
+  font-weight: 500;
+}
+
+.btn-close {
+  margin-left: auto;
+}
+
+.proveedor-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+  padding: 16px 24px;
+  background-color: #f5f5f5;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.info-item {
+  font-size: 14px;
+}
+
+.info-item strong {
+  color: #666;
+  margin-right: 8px;
+}
+
+mat-dialog-content {
+  flex: 1;
+  padding: 24px;
+  overflow: hidden;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 16px;
+}
+
+.grid-container {
+  width: 100%;
+  height: 100%;
+}
+
+.sin-datos {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 16px;
+}
+
+.sin-datos mat-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  color: #ccc;
+}
+
+.sin-datos p {
+  color: #666;
+  font-size: 16px;
+  margin: 0;
+}
+
+mat-dialog-actions {
+  padding: 16px 24px;
+  border-top: 1px solid #e0e0e0;
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-primary {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.badge-secondary {
+  background-color: #f5f5f5;
+  color: #666;
+}

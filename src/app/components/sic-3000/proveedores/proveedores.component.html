@@ -1,0 +1,120 @@
+<div class="contenedor-proveedores">
+  <!-- Header -->
+  <div class="header-proveedores">
+    <h2 class="titulo">Mantenimiento de Proveedores</h2>
+    
+    <!-- Botón Nuevo con menú dinámico de tipos de proveedor -->
+    <button 
+      mat-raised-button 
+      color="primary" 
+      [matMenuTriggerFor]="menuNuevo" 
+      class="btn-nuevo"
+      [disabled]="isLoadingTipos">
+      Nuevo
+      <mat-icon>arrow_drop_down</mat-icon>
+    </button>
+    
+    <mat-menu #menuNuevo="matMenu">
+      <button 
+        mat-menu-item 
+        *ngFor="let tipo of tiposProveedor" 
+        (click)="nuevoProveedor(tipo)">
+        <mat-icon>add_business</mat-icon>
+        <span>{{ tipo.descripcion }}</span>
+      </button>
+      
+      <!-- Mensaje si no hay tipos cargados -->
+      <button mat-menu-item *ngIf="tiposProveedor.length === 0" disabled>
+        <span>Cargando tipos...</span>
+      </button>
+    </mat-menu>
+  </div>
+
+  <!-- Filtros -->
+    <div class="filtros-section">
+      <div class="filtros-grid">
+          <!-- Búsqueda general -->
+          <mat-form-field appearance="outline" class="filtro-item">
+          <mat-label>Buscar:</mat-label>
+          <input 
+              matInput 
+              [(ngModel)]="filtroBusqueda" 
+              (keyup.enter)="buscar()"
+              placeholder="RUC, nombre, código...">
+          <mat-icon matSuffix>search</mat-icon>
+          </mat-form-field>
+
+          <!-- Filtro por tipo de proveedor -->
+          <mat-form-field appearance="outline" class="filtro-item">
+          <mat-label>Tipo de Proveedor</mat-label>
+          <mat-select [(ngModel)]="filtroTipoProveedor" (selectionChange)="buscar()">
+              <mat-option [value]="''">Todos</mat-option>
+              <mat-option *ngFor="let tipo of tiposProveedor" [value]="tipo.id_tipo_proveedor">
+              {{ tipo.descripcion }}
+              </mat-option>
+          </mat-select>
+          </mat-form-field>
+          <!-- Filtro por estado (con Angular Material) -->
+          <mat-form-field appearance="outline" class="filtro-item">
+            <mat-label>Estado</mat-label>
+            <mat-select [(ngModel)]="filtroEstado" (selectionChange)="buscar()">
+              <mat-option value="activos">Activos</mat-option>
+              <mat-option value="inactivos">Inactivos</mat-option>
+              <mat-option value="todos">Todos</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <!-- Botones de acción -->
+          <div class="filtros-botones">
+          <button 
+              mat-raised-button 
+              (click)="buscar()" 
+              class="btn-buscar"
+              [disabled]="isLoading">
+              <img src="assets/icons/icon-buscar.png" alt="Buscar" class="icon-buscar">
+              Buscar
+          </button>
+          
+          <button 
+              mat-stroked-button 
+              (click)="limpiarFiltros()" 
+              class="btn-limpiar"
+              [disabled]="isLoading">
+              <mat-icon>clear</mat-icon>
+              Limpiar
+          </button>
+          </div>
+      </div>
+    </div>
+
+  <!-- AG-Grid Table -->
+  <div class="grid-container" *ngIf="!isLoading">
+    <ag-grid-angular
+      style="width: 100%; height: 600px;"
+      class="ag-theme-alpine"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [animateRows]="true"
+      [pagination]="true"
+      [paginationPageSize]="pageSize"
+      [paginationPageSizeSelector]="[10, 20, 50, 100]"
+      (gridReady)="onGridReady($event)"
+      (paginationChanged)="onPaginationChanged()"
+    >
+    </ag-grid-angular>
+  </div>
+
+  <!-- Información de paginación -->
+  <div class="paginacion-info" *ngIf="!isLoading && totalItems > 0">
+    Mostrando {{ rowData.length }} de {{ totalItems }} proveedores
+  </div>
+
+  <!-- Mensaje si no hay datos -->
+  <div class="sin-datos" *ngIf="!isLoading && rowData.length === 0">
+    <mat-icon>inbox</mat-icon>
+    <p>No se encontraron proveedores</p>
+    <button mat-raised-button color="primary" [matMenuTriggerFor]="menuNuevo">
+      Crear primer proveedor
+    </button>
+  </div>
+</div>

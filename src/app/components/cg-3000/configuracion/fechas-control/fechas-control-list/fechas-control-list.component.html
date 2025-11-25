@@ -1,0 +1,75 @@
+<div class="zona-container">
+  <div class="zona-header">
+    <h2>Fechas de Control</h2>
+    <button mat-raised-button class="btn-azul" (click)="abrirCrear()" >Nuevo</button>
+  </div>
+
+  <div class="zona-busqueda">
+    <label for="search">Buscar:</label>
+    <div class="input-wrapper">
+      <input
+        id="search"
+        type="text"
+        [(ngModel)]="searchTerm"
+        (input)="buscar()"
+        placeholder="Buscar por documento"
+      />
+      <img src="assets/icons/icon-buscar.png" alt="Buscar" />
+    </div>
+  </div>
+
+  <div class="table-wrap" *ngIf="!loading; else loadingTpl">
+    <table class="zona-tabla">
+      <thead>
+        <tr>
+          <th style="width: 160px;">Id Fecha</th>
+          <th style="width: 120px;">Año/Mes</th>
+          <th style="width: 120px;">Tipo Doc.</th>
+          <th style="width: 120px;">No. Documento</th>
+          <th style="width: 120px;">Activo/Pasivo</th>
+          <th style="width: 120px;">Días</th>
+          <th style="width: 120px;">Estado</th>
+          <th style="width: 120px;">Fecha</th>
+          <th style="width: 120px;">Bloqueado</th>
+          <th style="width: 120px;">id asiento</th>
+          <th class="col-opcion">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let it of filtered; trackBy: trackById">
+          <td>{{ it.IdFechaControl }}</td>
+          <td>{{ it.FecVal }}</td>
+          <td>{{ it.TipDoc }}</td>
+          <td>{{ it.NumDoc }}</td>
+          <td>{{ it.VarVal }}</td>
+          <td>{{ it.Dias }}</td>
+          <td>{{ it.TipoCon }}</td>
+          <td>{{ it.Fecha }}</td>
+          <td>{{ it.Ocupado ? 'SI' : 'NO' }}</td>
+          <td>{{ it.IdTipoAsiento }}</td>
+          <td class="acciones">
+            <!-- Opción A: botón con ícono dentro -->
+            <button type="button" class="icon-btn" (click)="abrirEditar(it.IdFechaControl)" title="Editar" >
+              <img src="assets/icons/icon-modificar-3.png" alt="Editar" />
+            </button>
+
+            <!-- Si luego agregas más acciones, repite el mismo patrón -->
+            <!-- <button type="button" class="icon-btn" title="Eliminar">
+              <img src="assets/icons/icon-delete.png" alt="Eliminar" />
+            </button> -->
+          </td>
+        </tr>
+
+        <tr *ngIf="filtered.length === 0">
+          <td colspan="5" class="empty">No hay resultados.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ng-template #loadingTpl>
+    <div class="loading">Cargando...</div>
+  </ng-template>
+</div>
+
+

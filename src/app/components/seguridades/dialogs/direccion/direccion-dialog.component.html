@@ -1,34 +1,119 @@
-<h2 mat-dialog-title>Agregar Dirección</h2>
+<h2 mat-dialog-title>
+  {{ modoEdicion ? 'Gestionar Direcciones' : 'Agregar Direcciones' }}
+</h2>
 
-<mat-dialog-content>
-  <div class="dialog-form-container">
+<mat-dialog-content class="dialog-content">
+  
+  <!-- FORMULARIO PARA AGREGAR/EDITAR -->
+  <div class="form-section">
+    <h3>{{ editandoIndex !== null ? 'Editar Dirección' : 'Agregar Nueva Dirección' }}</h3>
+    
     <form [formGroup]="direccionForm">
       <mat-form-field appearance="outline" class="full-width">
         <mat-label>Tipo</mat-label>
         <mat-select formControlName="tipo">
-          <mat-option value="Otro">Otro</mat-option>
-          <mat-option value="Trabajo">Trabajo</mat-option>
-          <mat-option value="Casa">Casa</mat-option>
+          <mat-option *ngFor="let tipo of tiposDireccion" [value]="tipo">
+            {{ tipo }}
+          </mat-option>
         </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Calle*</mat-label>
-        <input matInput formControlName="calle">
-        <mat-error *ngIf="direccionForm.get('calle')?.hasError('required')">
-          Campo obligatorio
+        <mat-error *ngIf="mostrarError('tipo')">
+          {{ obtenerMensajeError('tipo') }}
         </mat-error>
       </mat-form-field>
 
       <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Código Postal</mat-label>
-        <input matInput formControlName="codigoPostal">
+        <mat-label>Dirección</mat-label>
+        <textarea 
+          matInput 
+          formControlName="calle" 
+          rows="3"
+          maxlength="200"></textarea>
+        <mat-error *ngIf="mostrarError('calle')">
+          {{ obtenerMensajeError('calle') }}
+        </mat-error>
       </mat-form-field>
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Código Postal (opcional)</mat-label>
+        <input matInput formControlName="codigoPostal" maxlength="10">
+        <mat-error *ngIf="mostrarError('codigoPostal')">
+          {{ obtenerMensajeError('codigoPostal') }}
+        </mat-error>
+      </mat-form-field>
+
+      <div class="form-actions">
+        <button 
+          mat-raised-button 
+          color="primary" 
+          (click)="guardarDireccion()"
+          type="button">
+          {{ editandoIndex !== null ? 'Actualizar' : 'Agregar' }}
+        </button>
+        
+        <button 
+          mat-button 
+          *ngIf="editandoIndex !== null"
+          (click)="cancelarEdicion()"
+          type="button">
+          Cancelar Edición
+        </button>
+      </div>
     </form>
   </div>
+
+  <mat-divider class="divider"></mat-divider>
+
+  <!-- LISTA DE DIRECCIONES -->
+  <div class="list-section">
+    <h3>Direcciones Agregadas ({{ direcciones.length }})</h3>
+    
+    <div *ngIf="direcciones.length === 0" class="empty-state">
+      <mat-icon>home</mat-icon>
+      <p>No hay direcciones agregadas</p>
+    </div>
+
+    <div *ngIf="direcciones.length > 0" class="direcciones-list">
+      <mat-card *ngFor="let direccion of direcciones; let i = index" class="direccion-item">
+        <mat-card-content>
+          <div class="direccion-info">
+            <div class="direccion-details">
+              <span class="tipo-badge">{{ direccion.tipo }}</span>
+              <span class="calle">{{ direccion.calle }}</span>
+              <span class="codigo-postal" *ngIf="direccion.codigoPostal">
+                CP: {{ direccion.codigoPostal }}
+              </span>
+            </div>
+            <div class="direccion-actions">
+              <button 
+                mat-icon-button 
+                color="primary" 
+                (click)="editarDireccion(i)"
+                matTooltip="Editar">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button 
+                mat-icon-button 
+                color="warn" 
+                (click)="eliminarDireccion(i)"
+                matTooltip="Eliminar">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button (click)="cerrar()">Cancelar</button>
-  <button mat-raised-button color="primary" (click)="guardar()">Guardar</button>
+  <button mat-button (click)="cancelar()">Cancelar</button>
+  <button 
+    mat-raised-button 
+    color="primary" 
+    (click)="cerrar()"
+    [disabled]="direcciones.length === 0">
+    Guardar ({{ direcciones.length }})
+  </button>
 </mat-dialog-actions>

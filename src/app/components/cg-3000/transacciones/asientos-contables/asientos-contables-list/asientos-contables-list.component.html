@@ -1,0 +1,43 @@
+
+
+<div class="zona-container">
+  <div class="zona-header">
+    <h2>Listado Asientos Contables</h2>
+    <button type="button" class="btn-azul" (click)="abrirCrear()" >Nuevo Asiento</button>
+  </div>
+
+  <div class="zona-busqueda">
+    <label for="search">Buscar:</label>
+    <div class="input-wrapper">
+      <input
+        id="search"
+        type="text"
+        [(ngModel)]="searchTerm"
+        placeholder="Buscar (empresa, beneficiario, tipo, numdoc...)"
+      />
+      <img src="assets/icons/icon-buscar.png" alt="Buscar" />
+    </div>
+  </div>
+
+  <div class="table-wrap" *ngIf="!loading; else loadingTpl">
+    <ag-grid-angular
+      class="ag-theme-alpine grid custom-grid"
+      [gridOptions]="gridOptions"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      rowSelection="single"
+      [pagination]="true"
+      [paginationPageSize]="20"
+      [quickFilterText]="searchTerm"
+      (gridReady)="onGridReady($event)"
+      (cellClicked)="onCellClicked($event)">
+    </ag-grid-angular>
+  </div>
+
+  <div *ngIf="error" class="error">{{ error }}</div>
+
+  <ng-template #loadingTpl>
+    <div class="loading">Cargando...</div>
+  </ng-template>
+</div>

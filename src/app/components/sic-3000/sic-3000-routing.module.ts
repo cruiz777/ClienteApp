@@ -3,7 +3,6 @@ import { Component } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
 import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
-import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
 import { EstructuraListComponent } from './estructuracomercial/estructura-list/estructura-list.component';
 import { RegistroCobrosComponent } from './cxc/registro-cobros/registro-cobros.component';
 
@@ -17,9 +16,11 @@ import { CajaComponent } from './facturacion/caja/caja.component';
 import { LisFacAnuladasComponent } from './facturacion/lis-fac-anuladas/lis-fac-anuladas.component';
 import { ProductosSicComponent } from './productos-sic/productos-sic.component';
 import { InicioComponent } from '../inicio/inicio.component';
+import { ProveedoresListaComponent } from './proveedores/proveedores.component';
 import { CreacionAnticiposComponent } from './anticipos/creacion-anticipos/creacion-anticipos.component';
 import { ReporteAnticiposComponent } from './anticipos/reporte-anticipos/reporte-anticipos.component';
 import { LisPagAnuladosComponent } from './cxc/lis-pag-anulados/lis-pag-anulados.component';
+import { CierreAnticiposComponent } from './anticipos/cierre-anticipos/cierre-anticipos.component';
 const routes: Routes = [
   {
     path: '',
@@ -54,20 +55,20 @@ const routes: Routes = [
        {
         path: 'anularCobros',
         component: AnulacionPagoComponent,
-   
+
       },
       {
         path: 'panulados',
         component: LisPagAnuladosComponent
-       
+
       },
          {
         path: 'notaCredito',
         component: NotaCreditoComponent,
-   
+
       },
 
-      { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
+      
 
       // FACTURACIÓN INDIVIDUAL
       {
@@ -87,32 +88,37 @@ const routes: Routes = [
       {
         path: 'caja',
         component: CajaComponent
-       
+
       }
       ,
       {
         path: 'fanuladas',
         component: LisFacAnuladasComponent
-       
+
       },
       // ✅ Ruta para EDITAR producto (con ID)
-      { 
-        path: 'productossic/:idProducto', 
-        component: ProductosSicComponent 
+      {
+        path: 'productossic/:idProducto',
+        component: ProductosSicComponent
       },
       // ✅ Ruta para CREAR producto desde estructura
-      { 
-        path: 'productossic/estructura/:idEstructura', 
-        component: ProductosSicComponent 
+      {
+        path: 'productossic/estructura/:idEstructura',
+        component: ProductosSicComponent
       },
       // ✅ Ruta para crear producto sin estructura (por si acaso)
-      { 
-        path: 'productossic', 
-        component: ProductosSicComponent 
+      {
+        path: 'productossic',
+        component: ProductosSicComponent
       },
-      { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
+            {
+        path: 'proveedores',
+        component: ProveedoresListaComponent
+      },
+      
       { path: 'creacion-anticipos', component: CreacionAnticiposComponent},
       { path: 'reporte-anticipos', component: ReporteAnticiposComponent},
+      { path: 'cierre-anticipos', component: CierreAnticiposComponent}
     ]
   }
 ];

@@ -3075,3 +3075,6 @@ button.fi-btn{ appearance:none; -webkit-appearance:none; }
   animation: spin .8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+.full-width {
+  grid-column: 1 / -1;
+}

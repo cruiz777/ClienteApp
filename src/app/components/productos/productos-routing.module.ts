@@ -15,6 +15,7 @@ import { BloqueComponent } from './bloque/bloque.component';
 import { AuthGuard } from 'src/app/guards/auth.guard';
 import { PermissionGuard } from 'src/app/guards/permission.guard';
 import { ListaCobrosIndividualComponent } from './lista-cobros-individual/lista-cobros-individual.component';
+import { EstadocuentaclienteComponent } from './estadocuentacliente/estadocuentacliente.component';
 
 const routes: Routes = [
   {
@@ -71,6 +72,7 @@ const routes: Routes = [
           breadcrumb: 'Nuevo SSCC'
         }
       },
+       { path: 'estadocuentacliente', component: EstadocuentaclienteComponent },
       {
         path: 'uv-individual',
         component: UvIndividualComponent,

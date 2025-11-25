@@ -1,0 +1,226 @@
+/* ========================================
+   MODAL FORM - DISEÑO CORPORATIVO
+   ======================================== */
+
+/* Header */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 30px;
+  border-bottom: 1px solid #ccd5e2;
+  background-color: #ffffff;
+}
+
+.modal-header h2 {
+  margin: 0;
+  color: #002c6c;
+  font-size: 20px;
+  font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  display: flex;
+  align-items: center;
+}
+
+.close-button {
+  color: #002c6c !important;
+  opacity: 0.7;
+}
+
+.close-button:hover {
+  opacity: 1 !important;
+  background-color: #eef4f7 !important;
+}
+
+/* Contenido */
+.modal-content-custom {
+  padding: 30px;
+  max-height: 60vh;
+  overflow-y: auto;
+  background-color: #ffffff;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Loading */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  color: #002c6c;
+}
+
+.loading-container p {
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+::ng-deep .loading-container .mat-mdc-progress-spinner circle {
+  stroke: #002c6c !important;
+}
+
+/* Formulario */
+.form-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #002c6c;
+  margin-bottom: 8px;
+}
+
+.required {
+  color: #dc3545;
+}
+
+.form-group input,
+.form-group select {
+  padding: 10px 12px;
+  border: 1px solid #ccd5e2;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: 'Inter', sans-serif;
+  color: #002c6c;
+  transition: all 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: #002c6c;
+  box-shadow: 0 0 0 3px rgba(0, 44, 108, 0.1);
+}
+
+.form-group input::placeholder {
+  color: #6c757d;
+  opacity: 0.7;
+}
+
+.form-group select {
+  cursor: pointer;
+  background-color: #ffffff;
+}
+
+/* Checkbox */
+.form-group-checkbox {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form-group-checkbox label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.form-group-checkbox input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-right: 10px;
+  cursor: pointer;
+  accent-color: #002c6c;
+}
+
+.checkbox-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #002c6c;
+}
+
+.help-text {
+  font-size: 12px;
+  color: #6c757d;
+  margin-left: 28px;
+  font-style: italic;
+}
+
+/* Mensajes de error */
+.error-message {
+  margin-top: 5px;
+  font-size: 12px;
+  color: #dc3545;
+}
+
+.error-message span {
+  display: block;
+}
+
+.form-group input.ng-invalid.ng-touched,
+.form-group select.ng-invalid.ng-touched {
+  border-color: #dc3545;
+}
+
+/* Footer */
+::ng-deep mat-dialog-actions {
+  padding: 15px 30px !important;
+  border-top: 1px solid #ccd5e2 !important;
+  background-color: #ffffff !important;
+  margin: 0 !important;
+  gap: 10px;
+}
+
+::ng-deep mat-dialog-actions button {
+  padding: 8px 20px !important;
+  border-radius: 6px !important;
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  font-family: 'Inter', sans-serif !important;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  border: none !important;
+  transition: all 0.3s !important;
+  display: flex;
+  align-items: center;
+}
+
+.btn-cancelar {
+  background-color: #f8f9fa !important;
+  color: #6c757d !important;
+}
+
+.btn-cancelar:hover {
+  background-color: #e9ecef !important;
+}
+
+.btn-guardar {
+  background-color: #002c6c !important;
+  color: #ffffff !important;
+}
+
+.btn-guardar:hover:not(:disabled) {
+  background-color: #001a42 !important;
+}
+
+.btn-guardar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Scrollbar */
+.modal-content-custom::-webkit-scrollbar {
+  width: 8px;
+}
+
+.modal-content-custom::-webkit-scrollbar-track {
+  background: #f8fafd;
+}
+
+.modal-content-custom::-webkit-scrollbar-thumb {
+  background: #ccd5e2;
+  border-radius: 4px;
+}
+
+.modal-content-custom::-webkit-scrollbar-thumb:hover {
+  background: #002c6c;
+}

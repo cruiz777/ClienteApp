@@ -2,12 +2,15 @@
   'collapsed': !isExpanded && !isHandset,
   'mobile': isHandset
 }">
+
+  <!-- ESTE ES MI HTML ACTUAL -->
+
   <!-- SIDEBAR -->
   <mat-sidenav #drawer class="sidenav" [mode]="isHandset ? 'over' : 'side'" [opened]="!isHandset || isExpanded"
     [class.collapsed]="!isExpanded && !isHandset" [fixedInViewport]="true" (backdropClick)="isExpanded = false">
 
     <div class="logo-seguridad" *ngIf="isExpanded">
-      <img src="assets/logo/sic-3000.png" alt="Logo">
+      <img src="assets/logo/SIC-3000.png" alt="Logo">
     </div>
 
     <!-- Menú Principal -->
@@ -25,7 +28,7 @@
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
-              <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
+              <img src="assets/icons/sic-3000/icon-inventario.png" class="menu-icon">
               <span *ngIf="isExpanded" class="menu-text">Inventarios</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
@@ -35,6 +38,9 @@
           </a>
           <a mat-list-item [routerLink]="['productossic']" routerLinkActive="active">
             <span *ngIf="isExpanded" class="menu-text">Producto</span>
+          </a>
+          <a mat-list-item [routerLink]="['proveedores']" routerLinkActive="active">
+            <span *ngIf="isExpanded" class="menu-text">Proveedores</span>
           </a>
           <a mat-list-item routerLink="">
             <span *ngIf="isExpanded" class="menu-text">Transacción</span>
@@ -113,8 +119,8 @@
             <a mat-list-item [routerLink]="'/sic-3000/reporte-anticipos'" >
               <span *ngIf="isExpanded" class="menu-text">Reporte de Anticipos</span>
             </a>
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Cierre de Anticipos</span>
+            <a mat-list-item [routerLink]="['cierre-anticipos']" routerLinkActive="active">
+             <span *ngIf="isExpanded" class="menu-text">Cierre de Anticipos</span>
             </a>
           </mat-expansion-panel>
           <!-- Subgrupo: Reenvio Documentos Electronicos-->
@@ -177,6 +183,9 @@
             <a mat-list-item routerLink="">
               <span *ngIf="isExpanded" class="menu-text">Exp.Estado de cuenta</span>
             </a>
+            <a mat-list-item [routerLink]="['estadocuentacliente']" routerLinkActive="active">
+              <span *ngIf="isExpanded" class="menu-text">Estado de cuenta cliente</span>
+            </a>
             <a mat-list-item routerLink="">
               <span *ngIf="isExpanded" class="menu-text">Exp.Cuentas por Cobrar</span>
             </a>
@@ -187,11 +196,12 @@
 
         </mat-expansion-panel>
 
+
         <!-- CONFIGURACION-->
         <mat-expansion-panel>
           <mat-expansion-panel-header>
             <mat-panel-title>
-              <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
+              <img src="assets/icons/sic-3000/icon-configuracion.png" class="menu-icon">
               <span *ngIf="isExpanded" class="menu-text">Configuración</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
@@ -209,7 +219,7 @@
             <a mat-list-item routerLink="">
               <span *ngIf="isExpanded" class="menu-text">Parámetros Clientes</span>
             </a>
-            <a mat-list-item [routerLink]="'/sic-3000/caja'">
+            <a mat-list-item routerLink="">
               <span *ngIf="isExpanded" class="menu-text">Parámetros Caja</span>
             </a>
           </mat-expansion-panel>
@@ -247,7 +257,6 @@
           <span *ngIf="isExpanded" class="menu-text salir-text">Salir</span>
         </div>
       </mat-list-item>
-
     </mat-nav-list>
 
   </mat-sidenav>

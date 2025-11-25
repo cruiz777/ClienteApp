@@ -19,6 +19,7 @@ export class TipoNegocioListComponent implements OnInit {
     private dialog: MatDialog
   ) {}
 
+  
   ngOnInit(): void {
     this.obtenerTipoNegocios();
   }
@@ -67,4 +68,6 @@ export class TipoNegocioListComponent implements OnInit {
       }
     });
   }
+
+  
 }

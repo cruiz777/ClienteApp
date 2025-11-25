@@ -1,24 +1,104 @@
-<h2 mat-dialog-title>Agregar Correo</h2>
+<h2 mat-dialog-title>
+  {{ modoEdicion ? 'Gestionar Correos' : 'Agregar Correos' }}
+</h2>
 
-<mat-dialog-content>
-  <form [formGroup]="correoForm">
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Tipo</mat-label>
+<mat-dialog-content class="dialog-content">
+  
+  <!-- FORMULARIO PARA AGREGAR/EDITAR -->
+  <div class="form-section">
+    <h3>{{ editandoIndex !== null ? 'Editar Correo' : 'Agregar Nuevo Correo' }}</h3>
+    
+    <form [formGroup]="correoForm">
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Tipo</mat-label>
         <mat-select formControlName="tipo">
-          <mat-option value="Otro">Otro</mat-option>
-          <mat-option value="Trabajo">Trabajo</mat-option>
-          <mat-option value="Casa">Personal</mat-option>
+          <mat-option *ngFor="let tipo of tiposCorreo" [value]="tipo">
+            {{ tipo }}
+          </mat-option>
         </mat-select>
-    </mat-form-field>
+        <mat-error *ngIf="mostrarError('tipo')">
+          {{ obtenerMensajeError('tipo') }}
+        </mat-error>
+      </mat-form-field>
 
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Email</mat-label>
-      <input matInput formControlName="email">
-    </mat-form-field>
-  </form>
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Email</mat-label>
+        <input matInput formControlName="email" type="email">
+        <mat-error *ngIf="mostrarError('email')">
+          {{ obtenerMensajeError('email') }}
+        </mat-error>
+      </mat-form-field>
+
+      <div class="form-actions">
+        <button 
+          mat-raised-button 
+          color="primary" 
+          (click)="guardarCorreo()"
+          type="button">
+          {{ editandoIndex !== null ? 'Actualizar' : 'Agregar' }}
+        </button>
+        
+        <button 
+          mat-button 
+          *ngIf="editandoIndex !== null"
+          (click)="cancelarEdicion()"
+          type="button">
+          Cancelar Edición
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <mat-divider class="divider"></mat-divider>
+
+  <!-- LISTA DE CORREOS -->
+  <div class="list-section">
+    <h3>Correos Agregados ({{ correos.length }})</h3>
+    
+    <div *ngIf="correos.length === 0" class="empty-state">
+      <mat-icon>email</mat-icon>
+      <p>No hay correos agregados</p>
+    </div>
+
+    <div *ngIf="correos.length > 0" class="correos-list">
+      <mat-card *ngFor="let correo of correos; let i = index" class="correo-item">
+        <mat-card-content>
+          <div class="correo-info">
+            <div class="correo-details">
+              <span class="tipo-badge">{{ correo.tipo }}</span>
+              <span class="email">{{ correo.email }}</span>
+            </div>
+            <div class="correo-actions">
+              <button 
+                mat-icon-button 
+                color="primary" 
+                (click)="editarCorreo(i)"
+                matTooltip="Editar">
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button 
+                mat-icon-button 
+                color="warn" 
+                (click)="eliminarCorreo(i)"
+                matTooltip="Eliminar">
+                <mat-icon>delete</mat-icon>
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </div>
+
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">
-  <button mat-button (click)="cerrar()">Cancelar</button>
-  <button mat-raised-button color="primary" (click)="guardar()">Guardar</button>
+  <button mat-button (click)="cancelar()">Cancelar</button>
+  <button 
+    mat-raised-button 
+    color="primary" 
+    (click)="cerrar()"
+    [disabled]="correos.length === 0">
+    Guardar ({{ correos.length }})
+  </button>
 </mat-dialog-actions>

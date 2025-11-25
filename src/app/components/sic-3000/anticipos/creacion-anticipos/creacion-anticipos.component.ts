@@ -12,10 +12,26 @@ import {
   AbstractControl} from '@angular/forms';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { debounceTime, distinctUntilChanged, filter, switchMap, catchError, of, take } from 'rxjs';
-import { ClienteService } from 'src/app/services/cliente.service';
-import { UsuarioService } from 'src/app/services/usuario.service';
-import { AutorizacionCajaService } from 'src/app/services/autorizacion-caja.service';
 import { ReactiveFormsModule } from '@angular/forms';
+import { MatSelectModule } from '@angular/material/select';
+import { MatOptionModule } from '@angular/material/core';
+import { TipoAnticipo } from '../../../../interfaces/responses/tipo-anticipo-response';
+import { FormaPagoResponse, FormaPagoService } from '../../../../services/forma-pago.service';
+import { PlazoTarjeta } from '../../../../interfaces/responses/plazo-tarjeta-response';
+import { TipoAnticipoService } from '../../../../services/tipo-anticipo.service';
+import { PlazoTarjetaService } from '../../../../services/plazo-tarjeta.service';
+import { AnticipoService } from '../../../../services/anticipo.service';
+import { BancosTercerosService } from '../../../../services/bancosterceros.service';
+import { AnularAnticipoRequest, CreateAnticipoRequest } from '../../../../interfaces/requests/anticipo-request';
+import { BancosTercerosResponse } from '../../../../interfaces/responses/bancos-terceros-response';
+import { MatDialog } from '@angular/material/dialog';
+import { BuscarAnticipoDialogComponent } from '../dialogs/buscar-anticipo-dialog/buscar-anticipo-dialog.component';
+import { AnticipoDetalleResponse } from '../../../../interfaces/responses/anticipo-response';
+import { CustomMessageBoxComponent } from '../../../utils/messages/custom-message-box.component';
+import { MotivoAnulacionData, MotivoAnulacionDialogComponent } from '../dialogs/anular-anticipo-dialog/anular-anticipo-dialog';
+import { ClienteService } from '../../../../services/cliente.service';
+import { UsuarioService } from '../../../../services/usuario.service';
+import { AutorizacionCajaService } from '../../../../services/autorizacion-caja.service';
 
 // Ajusta a tu interfaz real
 interface ClienteSummary {
@@ -34,7 +50,9 @@ interface ClienteSummary {
     MatFormFieldModule,
     MatInputModule,
     MatAutocompleteModule,
-    MatIconModule
+    MatIconModule,
+    MatSelectModule,      // ← NUEVO
+    MatOptionModule
   ]
 })
 export class CreacionAnticiposComponent implements OnInit {
@@ -42,66 +60,104 @@ export class CreacionAnticiposComponent implements OnInit {
   // ========= Estado general =========
   numeroAnticipo = 1;
   form!: FormGroup;
-
+  private idUsuario: string = '';
   // ========= Autocomplete Cliente =========
   clienteOrigenControl = new FormControl<string | ClienteSummary | null>(null, Validators.required);
   clientesOrigenFiltrados: ClienteSummary[] = [];
   codcli = 0; // código del cliente seleccionado
   nombreCliente = '';
 
-  // ========= Autorización de caja =========
-  cajaAsignada = false;
+  tipoAnticipoControl = new FormControl<string | TipoAnticipo | null>(null, Validators.required);
+    tiposAnticipo: TipoAnticipo[] = [];
+    tiposAnticipoFiltrados: TipoAnticipo[] = [];
+    tipoAnticipoSeleccionado: TipoAnticipo | null = null;
 
+    bancoControl = new FormControl<string | BancosTercerosResponse | null>(null);
+    bancos: BancosTercerosResponse[] = [];
+    bancosFiltrados: BancosTercerosResponse[] = [];
+    bancoSeleccionado: BancosTercerosResponse | null = null;
+
+    formaPagoControl = new FormControl<string | FormaPagoResponse | null>(null, Validators.required);
+    formasPago: FormaPagoResponse[] = [];
+    formasPagoFiltradas: FormaPagoResponse[] = [];
+    formaPagoSeleccionada: FormaPagoResponse | null = null;
+
+    plazoControl = new FormControl<string | PlazoTarjeta | null>(null);
+    plazos: PlazoTarjeta[] = [];
+    plazosFiltrados: PlazoTarjeta[] = [];
+    plazoSeleccionado: PlazoTarjeta | null = null;
+    cargandoDatos = false;
+    guardando = false;
+    // ========= Autorización de caja ========= (YA LO TIENES)
+    cajaAsignada = false;
   constructor(
     private fb: FormBuilder,
     private clienteService: ClienteService,
     private usuarioService: UsuarioService,
-    private autorizacionCajaService: AutorizacionCajaService
+    private autorizacionCajaService: AutorizacionCajaService,
+    private tipoAnticipoService: TipoAnticipoService,
+    private plazoTarjetaService: PlazoTarjetaService,
+    private bancosTercerosService: BancosTercerosService,
+    private formaPagoService: FormaPagoService,
+    private anticipoService: AnticipoService,
+    private dialog: MatDialog
   ) {}
 
   // ========= Ciclo de vida =========
   ngOnInit(): void {
+    // Inicializar formulario
     this.form = this.fb.group({
-      // meta del cliente
+      // Cliente
       clienteCodigo: [0, [Validators.required, Validators.min(1)]],
-      cliente: ['', Validators.required], // se rellenará con el nombre
+      cliente: ['', Validators.required],
 
-      // resto del formulario
+      // Datos básicos
       fecha: [this.hoyIso(), Validators.required],
       caja: [''],
       cajero: [''],
-      tipoAnticipo: ['', Validators.required],
+
+      // Campos principales
+      tipoAnticipo: [null, Validators.required],
       monto: [null, [Validators.required, Validators.min(0.01)]],
-      banco: [''],
-      descrPago: [''],
+      banco: [null],
+      descrPago: [null, Validators.required],
+
+      // Campos de pago
       noTarjeta: [''],
+      nroCuenta: [''],
+      nroCheque: [''],
+      propietario: [''],
+      nroDocumento: [''],
       autorizado: [''],
+
+      // Campos adicionales
       saldo: [''],
       estado: [''],
       nombre: [''],
       concepto: [''],
       lote: [''],
-      plazo: ['']
+      plazo: [null]
     });
 
-    // Cargar cajero/caja si tu servicio lo provee
+    // Cargar cajero
     try {
       const u: any = this.usuarioService?.getUsuarioActual?.();
       if (u) {
+        this.idUsuario = u.id?.toString() || u.id_usuario?.toString() || '';
+
         this.form.patchValue({
-          cajero:
-            u.nombre_usuario ??
-            u.username ??
-            u.nombre ??
-            u.usuario ??
-            '',
+          cajero: u.nombre_usuario ?? u.username ?? u.nombre ?? u.usuario ?? '',
         }, { emitEvent: false });
       }
     } catch { /* noop */ }
 
+    // Cargar autorización de caja
     this.cargarAutorizacion();
 
-    // ===== Stream del autocomplete cliente =====
+    // Cargar datos de combobox
+    this.cargarDatosIniciales();
+
+    // ===== Stream del autocomplete CLIENTE =====
     this.clienteOrigenControl.valueChanges
       .pipe(
         filter((v): v is string => typeof v === 'string'),
@@ -118,66 +174,582 @@ export class CreacionAnticiposComponent implements OnInit {
       .subscribe(resp => {
         this.clientesOrigenFiltrados = (resp?.data ?? []) as ClienteSummary[];
       });
+
+    // ===== Stream del autocomplete TIPO ANTICIPO =====
+    this.tipoAnticipoControl.valueChanges
+      .pipe(
+        filter((v): v is string => typeof v === 'string'),
+        debounceTime(200),
+        distinctUntilChanged()
+      )
+      .subscribe(texto => {
+        this.filtrarTiposAnticipo(texto);
+      });
+
+    // ===== Stream del autocomplete BANCO =====
+    this.bancoControl.valueChanges
+      .pipe(
+        filter((v): v is string => typeof v === 'string'),
+        debounceTime(200),
+        distinctUntilChanged()
+      )
+      .subscribe(texto => {
+        this.filtrarBancos(texto);
+      });
+
+    // ===== Stream del autocomplete FORMA PAGO =====
+    this.formaPagoControl.valueChanges
+      .pipe(
+        filter((v): v is string => typeof v === 'string'),
+        debounceTime(200),
+        distinctUntilChanged()
+      )
+      .subscribe(texto => {
+        this.filtrarFormasPago(texto);
+      });
+
+    // ===== Stream del autocomplete PLAZO =====
+    this.plazoControl.valueChanges
+      .pipe(
+        filter((v): v is string => typeof v === 'string'),
+        debounceTime(200),
+        distinctUntilChanged()
+      )
+      .subscribe(texto => {
+        this.filtrarPlazos(texto);
+      });
+    this.form.get('monto')?.valueChanges.subscribe(monto => {
+      if (monto != null && monto > 0) {
+        this.form.patchValue({ saldo: monto }, { emitEvent: false });
+      }
+    });
+
+    this.cargarSiguienteNumero();
   }
 
   // ========= Acciones UI =========
   nuevo(): void {
-    const num = this.numeroAnticipo + 1;
-    const fecha = this.form.get('fecha')?.value ?? this.hoyIso();
 
     this.form.reset({
-      fecha,
+      fecha: this.hoyIso(),
       caja: this.form.get('caja')?.value ?? '',
       cajero: this.form.get('cajero')?.value ?? '',
       clienteCodigo: 0,
       cliente: '',
-      tipoAnticipo: '',
+      tipoAnticipo: null,
       monto: null,
-      banco: '',
-      descrPago: '',
+      banco: null,
+      descrPago: null,
       noTarjeta: '',
+      nroCuenta: '',
+      nroCheque: '',
+      propietario: '',
+      nroDocumento: '',
       autorizado: '',
       saldo: '',
       estado: '',
       nombre: '',
       concepto: '',
       lote: '',
-      plazo: ''
+      plazo: null
     });
 
+    // Limpiar autocompletes
     this.codcli = 0;
     this.nombreCliente = '';
     this.clienteOrigenControl.setValue('', { emitEvent: false });
-    this.numeroAnticipo = num;
+
+    this.tipoAnticipoSeleccionado = null;
+    this.tipoAnticipoControl.setValue('', { emitEvent: false });
+
+    this.bancoSeleccionado = null;
+    this.bancoControl.setValue('', { emitEvent: false });
+
+    this.formaPagoSeleccionada = null;
+    this.formaPagoControl.setValue('', { emitEvent: false });
+
+    this.plazoSeleccionado = null;
+    this.plazoControl.setValue('', { emitEvent: false });
+
+    this.anticipoActual = null;  // Limpiar anticipo cargado
+    this.form.enable();           // Habilitar todos los campos
+    this.clienteOrigenControl.enable();
+    this.tipoAnticipoControl.enable();
+    this.bancoControl.enable();
+    this.formaPagoControl.enable();
+    this.plazoControl.enable();
+
+    this.cargarSiguienteNumero();
   }
+  private cargarDatosIniciales(): void {
+    this.cargandoDatos = true;
 
+    // Cargar Tipos de Anticipo
+    this.tipoAnticipoService.getAll().subscribe({
+      next: (response) => {
+        if (response.type === 'success' && response.data) {
+          this.tiposAnticipo = response.data;
+          this.tiposAnticipoFiltrados = [...this.tiposAnticipo];
+        }
+      },
+      error: (error) => console.error('Error cargando tipos de anticipo:', error)
+    });
+
+    // Cargar Bancos
+    this.bancosTercerosService.getAll().subscribe({
+      next: (response) => {
+        if (response.type === 'LIST' && response.data) {
+          this.bancos = response.data;
+          this.bancosFiltrados = [...this.bancos];
+        }
+      },
+      error: (error) => console.error('Error cargando bancos:', error)
+    });
+
+    // Cargar Formas de Pago
+    this.formaPagoService.getAnticipoActivas().subscribe({
+      next: (response: any) => {
+        console.log('📦 Formas Pago:', response);
+        if ((response.type === 'Success' || response.type === 'success') && response.data) {
+          // Mapear campos snake_case
+          this.formasPago = (response.data || []).map((f: any) => ({
+            idFormaPago: f.id_forma_pago,
+            descripcionPago: f.descripcion_pago,
+            codigoCuenta: f.codigo_cuenta
+          }));
+          this.formasPagoFiltradas = [...this.formasPago];
+          console.log('✅ Formas de pago cargadas:', this.formasPago);
+        }
+        this.cargandoDatos = false;
+      },
+      error: (error) => {
+        console.error('Error cargando formas de pago:', error);
+        this.cargandoDatos = false;
+      }
+    });
+
+    // Cargar Plazos
+    this.plazoTarjetaService.getAll().subscribe({
+      next: (response) => {
+        if (response.type === 'success' && response.data) {
+          this.plazos = response.data;
+          this.plazosFiltrados = [...this.plazos];
+        }
+      },
+      error: (error) => console.error('Error cargando plazos:', error)
+    });
+  }
+  private cargarSiguienteNumero(): void {
+    this.anticipoService.getNextNumero().subscribe({
+      next: (response) => {
+        if (response.type === 'success' && response.data) {
+          this.numeroAnticipo = response.data.next_numero;
+          console.log('✅ Siguiente número cargado:', this.numeroAnticipo);
+        }
+      },
+      error: (error) => {
+        console.error('Error cargando siguiente número:', error);
+        // En caso de error, mantener el número actual
+      }
+    });
+  }
   grabar(): void {
+    // Marcar todos los controles como tocados
     this.form.markAllAsTouched();
-    if (this.form.invalid) return;
+    this.clienteOrigenControl.markAsTouched();
+    this.tipoAnticipoControl.markAsTouched();
+    this.formaPagoControl.markAsTouched();
 
-    const payload = {
-      numero: this.numeroAnticipo,
-      clienteCodigo: this.form.value.clienteCodigo,
-      clienteNombre: this.form.value.cliente,
-      ...this.form.value
+    // Validar formulario
+    if (this.form.invalid || !this.codcli || !this.tipoAnticipoSeleccionado || !this.formaPagoSeleccionada) {
+      // ✅ REEMPLAZAR alert() por MessageBox
+      this.dialog.open(CustomMessageBoxComponent, {
+        data: {
+          title: 'Campos incompletos',
+          message: 'Por favor complete todos los campos obligatorios marcados con *',
+          type: 'warning',
+          showCancel: false,
+          confirmText: 'Entendido'
+        }
+      });
+      return;
+    }
+
+    // ✅ ABRIR MessageBox con loading
+    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      data: {
+        title: 'Guardando anticipo',
+        message: 'Por favor espere...',
+        isLoading: true,
+        loadingText: 'Guardando anticipo...'
+      },
+      disableClose: true
+    });
+
+    // Construir request
+    const request: CreateAnticipoRequest = {
+      caja: this.form.value.caja || null,
+      responsable: this.idUsuario || null,
+      clientes_codigo: this.codcli,
+      monto: this.form.value.monto,
+      concepto: this.form.value.concepto || null,
+      id_forma_pago: this.formaPagoSeleccionada.idFormaPago,
+      id_local: 1,
+      id_tipo_anticipo: this.tipoAnticipoSeleccionado.id_tipo_anticipo,
+
+      // Opcionales
+      id_bancos_terceros: this.bancoSeleccionado?.IdBancosTerceros ?? null,
+      nro_cuenta: this.form.value.nroCuenta || null,
+      lote: this.form.value.lote || null,
+      nro_cheque: this.form.value.nroCheque || null,
+      propietario: this.form.value.propietario || null,
+      nro_documento: this.form.value.nroDocumento || null,
+      nombre: this.form.value.nombre || null,
+      id_plazo_tarjeta: this.plazoSeleccionado?.id_plazo ?? null,
+      autorizacion: this.form.value.autorizado || null,
+      ate_numero_atencion: null,
+      pac_historia_clinica: null
     };
 
-    console.log('Grabar anticipo:', payload);
-    // TODO: servicio HTTP para crear anticipo
+    console.log('Enviando request:', request);
+
+    this.anticipoService.create(request).subscribe({
+      next: (response) => {
+        // CERRAR loading
+        dialogRef.close();
+
+        if (response.type === 'success' && response.data) {
+          console.log('✅ Anticipo creado:', response.data);
+
+          // ✅ MOSTRAR MessageBox de éxito
+          this.dialog.open(CustomMessageBoxComponent, {
+            data: {
+              title: 'Anticipo creado',
+              message: `Anticipo <strong>${response.data.numero_anticipo}</strong> creado exitosamente`,
+              type: 'success',
+              showCancel: false,
+              confirmText: 'Aceptar'
+            }
+          });
+
+          this.nuevo(); // Limpiar formulario
+        } else {
+          console.error('❌ Error:', response.message);
+
+          // ✅ MOSTRAR MessageBox de error
+          this.dialog.open(CustomMessageBoxComponent, {
+            data: {
+              title: 'Error',
+              message: response.message || 'Ocurrió un error al crear el anticipo',
+              type: 'error',
+              showCancel: false,
+              confirmText: 'Aceptar'
+            }
+          });
+        }
+      },
+      error: (error) => {
+        // ✅ CERRAR loading
+        dialogRef.close();
+
+        console.error('❌ Error al crear anticipo:', error);
+
+        // ✅ MOSTRAR MessageBox de error
+        this.dialog.open(CustomMessageBoxComponent, {
+          data: {
+            title: 'Error de conexión',
+            message: 'Error al crear anticipo. Por favor intente nuevamente.',
+            type: 'error',
+            showCancel: false,
+            confirmText: 'Aceptar'
+          }
+        });
+      }
+    });
   }
 
   imprimir(): void {
     console.log('Imprimir anticipo', this.numeroAnticipo);
   }
 
+
   anular(): void {
-    console.log('Anular anticipo', this.numeroAnticipo);
+    // Validar que hay un anticipo cargado
+    if (!this.anticipoActual) {
+      this.dialog.open(CustomMessageBoxComponent, {
+        data: {
+          title: 'No hay anticipo',
+          message: 'Debe buscar y cargar un anticipo antes de anular',
+          type: 'warning',
+          showCancel: false,
+          confirmText: 'Entendido'
+        }
+      });
+      return;
+    }
+
+    // Validar que NO esté ya anulado
+    if (this.anticipoActual.cancelado) {
+      this.dialog.open(CustomMessageBoxComponent, {
+        data: {
+          title: 'Anticipo ya anulado',
+          message: 'Este anticipo ya fue anulado anteriormente',
+          type: 'warning',
+          showCancel: false,
+          confirmText: 'Entendido'
+        }
+      });
+      return;
+    }
+    const numeroAnticipo = this.anticipoActual.numero_anticipo
+      || this.anticipoActual.consecutivo
+      || `#${this.anticipoActual.id_anticipo}`;
+
+    const monto = this.anticipoActual.monto || this.anticipoActual.valor_original || 0;
+
+     const dialogConfirm = this.dialog.open(CustomMessageBoxComponent, {
+    data: {
+      title: 'Confirmar anulación',
+      message: `¿Está seguro que desea anular el anticipo <strong>${numeroAnticipo}</strong> por <strong>$${monto.toFixed(2)}</strong>?<br><br>Esta acción no se puede deshacer.`,
+      type: 'warning',
+      showCancel: true,
+      confirmText: 'Sí, continuar',
+      cancelText: 'Cancelar'
+    }
+  });
+
+  dialogConfirm.afterClosed().subscribe((confirmed) => {
+    if (confirmed) {
+      // PASO 2: PEDIR MOTIVO Y FECHA
+      const dialogMotivo = this.dialog.open(MotivoAnulacionDialogComponent, {
+        width: '500px',
+        disableClose: true
+      });
+
+      dialogMotivo.afterClosed().subscribe((resultado: MotivoAnulacionData | null) => {
+        if (resultado) {
+          this.ejecutarAnulacion(resultado.motivo, resultado.fecha);
+        }
+      });
+    }
+  });
+  }
+
+  private ejecutarAnulacion(motivoAnulacion: string, fechaAnulacion: Date): void {
+    if (!this.anticipoActual) return;
+
+    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      data: {
+        title: 'Anulando anticipo',
+        message: 'Por favor espere...',
+        isLoading: true,
+        loadingText: 'Anulando anticipo...'
+      },
+      disableClose: true
+    });
+
+    // ✅ CONSTRUIR REQUEST CON FECHA
+    const request: AnularAnticipoRequest = {
+      id_anticipo: this.anticipoActual.id_anticipo,
+      motivo_anulacion: motivoAnulacion,
+      usuario_anula: this.idUsuario,
+      fecha_anulacion: fechaAnulacion.toISOString() // ✅ AGREGAR FECHA EN FORMATO ISO
+    };
+
+    this.anticipoService.anular(request).subscribe({
+      next: (response) => {
+        dialogRef.close();
+
+        if (response.type === 'success' && response.data) {
+          console.log('✅ Anticipo anulado:', response.data);
+
+          const numeroAnticipo = response.data.numero_anticipo
+            || response.data.consecutivo
+            || `#${response.data.id_anticipo}`;
+
+          this.dialog.open(CustomMessageBoxComponent, {
+            data: {
+              title: 'Anticipo anulado',
+              message: `El anticipo <strong>${numeroAnticipo}</strong> ha sido anulado exitosamente`,
+              type: 'success',
+              showCancel: false,
+              confirmText: 'Aceptar'
+            }
+          }).afterClosed().subscribe(() => {
+            this.nuevo();
+          });
+        } else {
+          this.dialog.open(CustomMessageBoxComponent, {
+            data: {
+              title: 'Error',
+              message: response.message || 'No se pudo anular el anticipo',
+              type: 'error',
+              showCancel: false,
+              confirmText: 'Aceptar'
+            }
+          });
+        }
+      },
+      error: (error) => {
+        dialogRef.close();
+        console.error('❌ Error anulando anticipo:', error);
+
+        this.dialog.open(CustomMessageBoxComponent, {
+          data: {
+            title: 'Error de conexión',
+            message: 'Error al anular el anticipo. Por favor intente nuevamente.',
+            type: 'error',
+            showCancel: false,
+            confirmText: 'Aceptar'
+          }
+        });
+      }
+    });
   }
 
   cancelar(): void {
-    // restablece al estado actual (no pierde lo escrito)
-    this.form.reset(this.form.value);
+    if (this.anticipoActual) {
+      // Si hay un anticipo cargado, limpiar y volver a modo nuevo
+      this.nuevo();
+    } else {
+      // Si es nuevo, solo resetear a valores actuales
+      this.form.reset(this.form.value);
+    }
     console.log('Cancelar');
+  }
+  // ===== Filtros =====
+  private filtrarTiposAnticipo(texto: string): void {
+    const filtro = (texto || '').toLowerCase().trim();
+    if (!filtro) {
+      this.tiposAnticipoFiltrados = [...this.tiposAnticipo];
+      return;
+    }
+    this.tiposAnticipoFiltrados = this.tiposAnticipo.filter(t =>
+      (t.descripcion ?? '').toLowerCase().includes(filtro)
+    );
+  }
+
+  private filtrarBancos(texto: string): void {
+    const filtro = (texto || '').toLowerCase().trim();
+    if (!filtro) {
+      this.bancosFiltrados = [...this.bancos];
+      return;
+    }
+    this.bancosFiltrados = this.bancos.filter(b =>
+      (b.Descripcion ?? '').toLowerCase().includes(filtro)
+    );
+  }
+
+  private filtrarFormasPago(texto: string): void {
+    const filtro = (texto || '').toLowerCase().trim();
+    if (!filtro) {
+      this.formasPagoFiltradas = [...this.formasPago];
+      return;
+    }
+    this.formasPagoFiltradas = this.formasPago.filter(f =>
+      (f.descripcionPago ?? '').toLowerCase().includes(filtro)
+    );
+  }
+
+  private filtrarPlazos(texto: string): void {
+    const filtro = (texto || '').toLowerCase().trim();
+    if (!filtro) {
+      this.plazosFiltrados = [...this.plazos];
+      return;
+    }
+    this.plazosFiltrados = this.plazos.filter(p =>
+      (p.descripcion ?? '').toLowerCase().includes(filtro)
+    );
+  }
+  // ===== Métodos para comportamiento de combobox =====
+  mostrarTodasLasOpciones(tipo: 'tipoAnticipo' | 'banco' | 'formaPago' | 'plazo'): void {
+    switch(tipo) {
+      case 'tipoAnticipo':
+        this.tiposAnticipoFiltrados = [...this.tiposAnticipo];
+        break;
+      case 'banco':
+        this.bancosFiltrados = [...this.bancos];
+        break;
+      case 'formaPago':
+        this.formasPagoFiltradas = [...this.formasPago];
+        break;
+      case 'plazo':
+        this.plazosFiltrados = [...this.plazos];
+        break;
+    }
+  }
+
+  toggleAutocomplete(tipo: 'tipoAnticipo' | 'banco' | 'formaPago' | 'plazo'): void {
+    // Mostrar todas las opciones
+    this.mostrarTodasLasOpciones(tipo);
+
+    // Hacer foco en el input correspondiente para abrir el autocomplete
+    switch(tipo) {
+      case 'tipoAnticipo':
+        this.tipoAnticipoControl.setValue('');
+        setTimeout(() => {
+          const input = document.querySelector('[formcontrolname="tipoAnticipo"]') as HTMLInputElement;
+          input?.focus();
+        }, 0);
+        break;
+      case 'banco':
+        this.bancoControl.setValue('');
+        setTimeout(() => {
+          const input = document.querySelector('[formcontrolname="banco"]') as HTMLInputElement;
+          input?.focus();
+        }, 0);
+        break;
+      case 'formaPago':
+        this.formaPagoControl.setValue('');
+        setTimeout(() => {
+          const input = document.querySelector('[formcontrolname="descrPago"]') as HTMLInputElement;
+          input?.focus();
+        }, 0);
+        break;
+      case 'plazo':
+        this.plazoControl.setValue('');
+        setTimeout(() => {
+          const input = document.querySelector('[formcontrolname="plazo"]') as HTMLInputElement;
+          input?.focus();
+        }, 0);
+        break;
+    }
+  }
+  // ===== Display functions =====
+  mostrarTipoAnticipo = (t: TipoAnticipo | string | null): string =>
+    (t && typeof t === 'object') ? (t.descripcion ?? '') : (t ?? '') as string;
+
+  mostrarBanco = (b: BancosTercerosResponse | string | null): string =>
+    (b && typeof b === 'object') ? (b.Descripcion ?? '') : (b ?? '') as string;
+
+  mostrarFormaPago = (f: FormaPagoResponse | string | null): string =>
+    (f && typeof f === 'object') ? (f.descripcionPago ?? '') : (f ?? '') as string;
+
+  mostrarPlazo = (p: PlazoTarjeta | string | null): string =>
+    (p && typeof p === 'object') ? (p.descripcion ?? '') : (p ?? '') as string;
+
+
+  // ===== Métodos de selección =====
+  seleccionarTipoAnticipo(tipo: TipoAnticipo): void {
+    if (!tipo?.id_tipo_anticipo) return;
+    this.tipoAnticipoSeleccionado = tipo;
+    this.form.patchValue({ tipoAnticipo: tipo.id_tipo_anticipo }, { emitEvent: false });
+  }
+
+  seleccionarBanco(banco: BancosTercerosResponse | null): void {
+    this.bancoSeleccionado = banco;
+    this.form.patchValue({ banco: banco?.IdBancosTerceros ?? null }, { emitEvent: false });
+  }
+
+  seleccionarFormaPago(forma: FormaPagoResponse): void {
+    if (!forma?.idFormaPago) return;
+    this.formaPagoSeleccionada = forma;
+    this.form.patchValue({ descrPago: forma.idFormaPago }, { emitEvent: false });
+  }
+
+  seleccionarPlazo(plazo: PlazoTarjeta | null): void {
+    this.plazoSeleccionado = plazo;
+    this.form.patchValue({ plazo: plazo?.id_plazo ?? null }, { emitEvent: false });
   }
 
   // ========= Autocomplete handlers =========
@@ -280,8 +852,211 @@ export class CreacionAnticiposComponent implements OnInit {
     const s = (value ?? '').toString().replace(/\D/g, '');
     return s ? s.padStart(size, '0') : '';
   }
-}
+  //BUSQUEDA DE ANTICIPOS
+  buscarAnticipo(): void {
+    const dialogRef = this.dialog.open(BuscarAnticipoDialogComponent, {
+      width: '900px',
+      disableClose: false,
+      data: {}
+    });
 
+    dialogRef.afterClosed().subscribe((anticipoSeleccionado: any) => {
+      if (anticipoSeleccionado) {
+        this.cargarAnticipo(anticipoSeleccionado.id_anticipo);
+      }
+    });
+  }
+  // Método para cargar el anticipo completo
+  private cargarAnticipo(idAnticipo: number): void {
+    // ✅ ABRIR MessageBox con loading
+    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      data: {
+        title: 'Cargando anticipo',
+        message: 'Por favor espere...',
+        isLoading: true,
+        loadingText: 'Cargando datos del anticipo...'
+      },
+      disableClose: true
+    });
+
+    this.anticipoService.getById(idAnticipo).subscribe({
+      next: (response) => {
+        // ✅ CERRAR loading
+        dialogRef.close();
+
+        if (response.type === 'success' && response.data) {
+          this.llenarFormularioConAnticipo(response.data);
+        } else {
+          // ✅ MOSTRAR MessageBox de error
+          this.dialog.open(CustomMessageBoxComponent, {
+            data: {
+              title: 'Error',
+              message: 'Error al cargar el anticipo',
+              type: 'error',
+              showCancel: false,
+              confirmText: 'Aceptar'
+            }
+          });
+        }
+      },
+      error: (error) => {
+        // ✅ CERRAR loading
+        dialogRef.close();
+
+        console.error('Error cargando anticipo:', error);
+
+        // ✅ MOSTRAR MessageBox de error
+        this.dialog.open(CustomMessageBoxComponent, {
+          data: {
+            title: 'Error de conexión',
+            message: 'Error al cargar el anticipo',
+            type: 'error',
+            showCancel: false,
+            confirmText: 'Aceptar'
+          }
+        });
+      }
+    });
+  }
+  // Método para llenar el formulario con los datos del anticipo
+  private llenarFormularioConAnticipo(anticipo: AnticipoDetalleResponse): void {
+    // Guardar ID del anticipo para futura anulación
+    this.anticipoActual = anticipo;
+    this.numeroAnticipo = anticipo.id_anticipo;
+
+    // ✅ OBTENER ID DEL USUARIO que creó el anticipo
+    const idUsuarioCreador = anticipo.responsable || anticipo.usuario_ingreso || '';
+
+    // Llenar campos básicos (sin cajero por ahora)
+    this.form.patchValue({
+      fecha: anticipo.fecha ? anticipo.fecha.split('T')[0] : this.hoyIso(),
+      caja: anticipo.caja || '',
+      cajero: 'Cargando...', // ← Placeholder mientras se carga
+      monto: anticipo.monto || 0,
+      saldo: anticipo.monto || 0,
+      concepto: anticipo.concepto || '',
+      lote: anticipo.lote || '',
+      nombre: anticipo.nombre || '',
+      nroCuenta: anticipo.nro_cuenta || '',
+      nroCheque: anticipo.nro_cheque || '',
+      propietario: anticipo.propietario || '',
+      nroDocumento: anticipo.nro_documento || '',
+      autorizado: anticipo.autorizacion || ''
+    }, { emitEvent: false });
+
+    // ✅ CARGAR NOMBRE DEL USUARIO desde el servicio
+    if (idUsuarioCreador) {
+      const idNumerico = parseInt(idUsuarioCreador.toString());
+
+      if (!isNaN(idNumerico)) {
+        this.usuarioService.getUsuarioById(idNumerico).subscribe({
+          next: (response) => {
+            if (response.type === 'LIST' && response.data) {
+              const nombreUsuario = response.data.nombre_usuario
+                || response.data.nombre_usuario
+                || `Usuario ${idUsuarioCreador}`;
+
+              this.form.patchValue({ cajero: nombreUsuario }, { emitEvent: false });
+              console.log('✅ Usuario cargado:', nombreUsuario);
+            } else {
+              // Si no se encuentra, usar el ID
+              this.form.patchValue({ cajero: `Usuario ${idUsuarioCreador}` }, { emitEvent: false });
+            }
+          },
+          error: (error) => {
+            console.error('Error cargando usuario:', error);
+            // En caso de error, mostrar el ID
+            this.form.patchValue({ cajero: `Usuario ${idUsuarioCreador}` }, { emitEvent: false });
+          }
+        });
+      } else {
+        // Si no es numérico, usar el valor tal cual (por si es un nombre)
+        this.form.patchValue({ cajero: idUsuarioCreador }, { emitEvent: false });
+      }
+    } else {
+      this.form.patchValue({ cajero: 'Sin asignar' }, { emitEvent: false });
+    }
+
+    // Cargar CLIENTE
+    if (anticipo.clientes_codigo) {
+      this.codcli = anticipo.clientes_codigo;
+      this.nombreCliente = anticipo.nombre_cliente || '';
+
+      const clienteObj: ClienteSummary = {
+        clientes_codigo: anticipo.clientes_codigo,
+        nomcli: this.nombreCliente
+      };
+
+      this.clienteOrigenControl.setValue(clienteObj, { emitEvent: false });
+      this.form.patchValue({
+        clienteCodigo: this.codcli,
+        cliente: this.nombreCliente
+      }, { emitEvent: false });
+    }
+
+    // Cargar TIPO ANTICIPO
+    if (anticipo.id_tipo_anticipo) {
+      const tipo = this.tiposAnticipo.find(t => t.id_tipo_anticipo === anticipo.id_tipo_anticipo);
+      if (tipo) {
+        this.tipoAnticipoSeleccionado = tipo;
+        this.tipoAnticipoControl.setValue(tipo, { emitEvent: false });
+        this.form.patchValue({ tipoAnticipo: tipo.id_tipo_anticipo }, { emitEvent: false });
+      }
+    }
+
+    // Cargar BANCO
+    if (anticipo.id_bancos_terceros) {
+      const banco = this.bancos.find(b => b.IdBancosTerceros === anticipo.id_bancos_terceros);
+      if (banco) {
+        this.bancoSeleccionado = banco;
+        this.bancoControl.setValue(banco, { emitEvent: false });
+        this.form.patchValue({ banco: banco.IdBancosTerceros }, { emitEvent: false });
+      }
+    }
+
+    // Cargar FORMA DE PAGO
+    if (anticipo.id_forma_pago) {
+      const forma = this.formasPago.find(f => f.idFormaPago === anticipo.id_forma_pago);
+      if (forma) {
+        this.formaPagoSeleccionada = forma;
+        this.formaPagoControl.setValue(forma, { emitEvent: false });
+        this.form.patchValue({ descrPago: forma.idFormaPago }, { emitEvent: false });
+      }
+    }
+
+    // Cargar PLAZO
+    if (anticipo.id_plazo_tarjeta) {
+      const plazo = this.plazos.find(p => p.id_plazo === anticipo.id_plazo_tarjeta);
+      if (plazo) {
+        this.plazoSeleccionado = plazo;
+        this.plazoControl.setValue(plazo, { emitEvent: false });
+        this.form.patchValue({ plazo: plazo.id_plazo }, { emitEvent: false });
+      }
+    }
+
+    console.log('✅ Anticipo cargado en el formulario');
+
+    // Deshabilitar TODOS los campos
+    this.form.disable();
+    this.clienteOrigenControl.disable();
+    this.tipoAnticipoControl.disable();
+    this.bancoControl.disable();
+    this.formaPagoControl.disable();
+    this.plazoControl.disable();
+  }
+
+  anticipoActual: AnticipoDetalleResponse | null = null;
+
+  // Agregar método helper
+  padNumeroAnticipo(numero: number): string {
+    return numero.toString().padStart(6, '0');
+  }
+
+  // Getter para usar en el template
+  get numeroAnticipoFormateado(): string {
+    return this.padNumeroAnticipo(this.numeroAnticipo);
+  }
+}
 // type guard para usar el mismo método con evento o con objeto
 function isMatEvent(e: any): e is MatAutocompleteSelectedEvent {
   return !!e && !!(e as MatAutocompleteSelectedEvent).option;

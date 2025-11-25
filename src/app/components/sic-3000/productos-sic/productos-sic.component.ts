@@ -164,6 +164,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   ) { }
 
   ngOnInit(): void {
+    this.cargarProveedores();
     this.selectedTab = 0;
     this.cargarIvaVigente();
     this.cargarPresentacion();
@@ -172,7 +173,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     this.cargarColores();
     this.cargarSabores();
     this.cargarFabricantes();
-    this.cargarProveedores();
+
     this.cargarCatalogosUbicacion();
 
     // CREAR FORMULARIOS PRIMERO
@@ -1235,7 +1236,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     const f1 = this.form.getRawValue();
     const f2 = this.adicionalForm.value;
     const f3 = this.preciosForm.getRawValue();
-    
+    const esServicio = f1.tipoProducto === 'Servicio';
     let clasprod = f1.claseProducto;
     if (!clasprod) {
       clasprod = f1.tipoProducto === 'Bien' ? 'B' : (f1.tipoProducto === 'Servicio' ? 'S' : 'B');
@@ -1247,7 +1248,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       codbar: f1.codigoBarras,
       tippro: f1.tipoProducto === 'Bien' ? 'B' : (f1.tipoProducto === 'Servicio' ? 'S' : ''),
       uniman: this.unidadesVenta.find(u => u.idUnidadVenta === f1.unidadVenta)?.descripcion || '',
-      abrevia: f1.abreviacion,
+      abrevia: esServicio ? 'SRV' : (f1.abreviacion || ''),
       referencia: f1.referencia,
       activo: f1.activo,
       pagaiva: f1.pagaIva,
@@ -1260,7 +1261,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       idempresa: 1,
       feccre: f1.fechaCreacion,
       fechamod: f1.fechaModificacion,
-      exiqty: f1.existenciaGlobal || 0,
+       exiqty: esServicio ? 0 : (f1.existenciaGlobal || 0),
       // ✅ AGREGAR CAMPOS NUEVOS DEL TAB 1
       cantidad: f1.cantidad,
       productoventa: f1.productoEnVenta,
@@ -1328,19 +1329,21 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
 
     let stocks = null;
 
-    if (bodegasConStockConfigurado.length > 0) {
-      stocks = bodegasConStockConfigurado.map(bodega => ({
-        idlocal: bodega.idLocal,
-        stockmin: bodega.stockMin,
-        stockmax: bodega.stockMax,
-        cantidad: bodega.existenciaInicial // Siempre 0 en creación
-      }));
+    if (!esServicio) {
+        const bodegasConStockConfigurado = this.bodegasConfig.filter(b => 
+          b.stockMin !== null || b.stockMax !== null
+        );
+
+        if (bodegasConStockConfigurado.length > 0) {
+          stocks = bodegasConStockConfigurado.map(bodega => ({
+            idlocal: bodega.idLocal,
+            stockmin: bodega.stockMin,
+            stockmax: bodega.stockMax,
+            cantidad: bodega.existenciaInicial
+          }));
+        }
+      }
       
-      console.log('📦 Stocks configurados a enviar:', stocks.length);
-      console.log('📦 Detalle de stocks:', stocks);
-    } else {
-      console.log('📦 No hay stocks configurados, se enviará null');
-    }
     return {
       Producto: producto,
       Estructura: estructura,
@@ -1352,7 +1355,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     const f1 = this.form.getRawValue();
     const f2 = this.adicionalForm.value;
     const f3 = this.preciosForm.getRawValue();
-    
+    const esServicio = f1.tipoProducto === 'Servicio';
     let clasprod = f1.claseProducto;
     if (!clasprod) {
       clasprod = f1.tipoProducto === 'Bien' ? 'B' : (f1.tipoProducto === 'Servicio' ? 'S' : 'B');
@@ -1397,18 +1400,18 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       codbar: String(f1.codigoBarras || ''),
       tippro: f1.tipoProducto === 'Bien' ? 'B' : (f1.tipoProducto === 'Servicio' ? 'S' : ''),
       uniman: this.unidadesVenta.find(u => u.idUnidadVenta === f1.unidadVenta)?.descripcion || '',
-      abrevia: f1.abreviacion || '',
+      abrevia: esServicio ? 'SRV' : (f1.abreviacion || ''),
       referencia: f1.referencia || '',
       activo: f1.activo ?? true,
       pagaiva: f1.pagaIva ?? false,
-      inv: f1.cargarInventarios ?? false,
-      peso: f1.productoConPeso ?? false,
+      inv: esServicio ? false : (f1.cargarInventarios ?? false),
+      peso: esServicio ? false : (f1.productoConPeso ?? false),
       altoriesgo: f1.altoRiesgo ?? false,
       cantdecimal: f1.manejaDecimales ?? false,
       clasprod: clasprod,
       foto: f1.urlFoto || '',
       fechamod: new Date().toISOString(),
-      exiqty: f1.existenciaGlobal || 0, 
+      exiqty: esServicio ? 0 : (f1.existenciaGlobal || 0),
       cantidad: f1.cantidad || 0,
       productoventa: f1.productoEnVenta ?? false,
       consumointerno: f1.consumoInterno ?? false,
@@ -1652,34 +1655,44 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   onGrabar(): void {
     const controles = this.form.controls;
     const camposFaltantes: string[] = [];
+    const esServicio = controles['tipoProducto'].value === 'Servicio';
     
     if (!controles['descripcion1'].value?.trim()) {
       camposFaltantes.push('Descripción');
       controles['descripcion1'].markAsTouched();
     }
-    if (!controles['unidadVenta'].value) {
-      camposFaltantes.push('Unidad de Venta');
-      controles['unidadVenta'].markAsTouched();
-    }
-    if (!controles['abreviacion'].value?.trim()) {
-      camposFaltantes.push('Abreviación');
-      controles['abreviacion'].markAsTouched();
-    }
+    
     if (!controles['descripcionPOS'].value?.trim()) {
       camposFaltantes.push('Descripción POS');
       controles['descripcionPOS'].markAsTouched();
     }
-    if (!controles['presentacion'].value) {
-      camposFaltantes.push('Presentación');
-      controles['presentacion'].markAsTouched();
-    }
+    
     if (!controles['codigoInterno'].value) {
       camposFaltantes.push('Código Interno');
       controles['codigoInterno'].markAsTouched();
     }
+    
     if (!controles['codigoBarras'].value) {
       camposFaltantes.push('Código de Barras');
       controles['codigoBarras'].markAsTouched();
+    }
+
+    // Validaciones SOLO para productos tipo "Bien"
+    if (!esServicio) {
+      if (!controles['unidadVenta'].value) {
+        camposFaltantes.push('Unidad de Venta');
+        controles['unidadVenta'].markAsTouched();
+      }
+      
+      if (!controles['abreviacion'].value?.trim()) {
+        camposFaltantes.push('Abreviación');
+        controles['abreviacion'].markAsTouched();
+      }
+      
+      if (!controles['presentacion'].value) {
+        camposFaltantes.push('Presentación');
+        controles['presentacion'].markAsTouched();
+      }
     }
 
     if (camposFaltantes.length > 0) {
@@ -1941,6 +1954,11 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     }
   }
   private actualizarStocks(): void {
+    const esServicio = this.form.get('tipoProducto')?.value === 'Servicio';
+    if (esServicio) {
+      console.log('⚠️ Los servicios no manejan stocks');
+      return;
+    }
     const stocksParaActualizar = this.bodegasConfig
       .filter(b => b.stockMin !== null || b.stockMax !== null) // Solo bodegas con existencia
       .map(b => ({
@@ -2229,14 +2247,46 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
   }
   //Proveedores
   cargarProveedores(): void {
-    this.proveedorService.getAll().subscribe({
+    console.log('📡 Cargando proveedores activos...');
+    
+    // ✅ Filtrar solo proveedores ACTIVOS para vincular
+    this.proveedorService.getAll(
+      1,
+      1000,  // pageSize grande para traer todos
+      undefined,
+      'nombre',
+      false,
+      undefined,
+      true  // ✅ activo = true (SOLO ACTIVOS)
+    ).subscribe({
       next: (resp) => {
-        this.proveedores = resp.data || [];
-        console.log('✅ Proveedores cargados:', this.proveedores.length);
+        console.log('📦 Respuesta completa:', resp);
+        
+        if (!resp || !resp.items) {
+          console.error('❌ Respuesta sin items');
+          this.proveedores = [];
+          return;
+        }
+        
+        this.proveedores = resp.items;
+        console.log(`✅ ${this.proveedores.length} proveedores activos cargados`);
+        console.log(`📊 Total activos en BD: ${resp.totalItems}`);
+        
+        // Ver ejemplos
+        if (this.proveedores.length > 0) {
+          console.log('📋 Proveedores disponibles (activos):');
+          this.proveedores.forEach((p, i) => {
+            const nombre = p.nombre_comercial || p.nombre_persona;
+            console.log(`  ${i + 1}. ${p.codigo_proveedor} - ${nombre}`);
+          });
+        } else {
+          console.warn('⚠️ No hay proveedores activos en la base de datos');
+        }
       },
       error: (err) => {
-        console.error('❌ Error al cargar proveedores:', err);
-        alert('Error al cargar proveedores');
+        console.error('❌ Error HTTP:', err);
+        this.proveedores = [];
+        alert('Error al cargar proveedores: ' + (err.error?.message || err.message));
       }
     });
   }
@@ -2256,11 +2306,24 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
           return {
             ...p,
             _isNew: false,
-            id_unidad_venta: unidad?.idUnidadVenta || null // ✅ Agregar ID para el grid
+            id_unidad_venta: unidad?.idUnidadVenta || null,
+            // ✅ Agregar flag para indicar visualmente si está inactivo
+            _esProveedorInactivo: !p.proveedor_activo
           };
         });
         
-        console.log('✅ Proveedores cargados en memoria:', this.proveedoresEnMemoria.length);
+        // ✅ Contadores para logging
+        const activos = this.proveedoresEnMemoria.filter(p => p.proveedor_activo).length;
+        const inactivos = this.proveedoresEnMemoria.filter(p => !p.proveedor_activo).length;
+        
+        console.log(`✅ Proveedores vinculados: ${this.proveedoresEnMemoria.length} total`);
+        console.log(`   - Activos: ${activos}`);
+        console.log(`   - Inactivos: ${inactivos}`);
+        
+        // ✅ Advertir si hay proveedores inactivos
+        if (inactivos > 0) {
+          console.warn('⚠️ Hay proveedores inactivos vinculados a este producto');
+        }
       },
       error: (err) => {
         console.error('❌ Error al cargar proveedores:', err);
@@ -2289,7 +2352,7 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     if (duplicados.length > 0) {
       const nombresDuplicados = duplicados.map(id => {
         const prov = this.proveedores.find(p => p.id_proveedor === id);
-        return prov?.nombre_proveedor || 'Desconocido';
+        return prov?.nombre_persona || 'Desconocido';
       });
       
       alert(`⚠️ Hay proveedores duplicados:\n${nombresDuplicados.join('\n')}\n\nPor favor elimine los duplicados antes de guardar.`);
@@ -2485,35 +2548,97 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       {
         headerName: '*Proveedor',
         field: 'id_proveedor',
-        width: 280,
+        width: 320,
         editable: true,
         cellEditor: 'agSelectCellEditor',
         cellEditorParams: (params: any) => {
+          console.log('🔍 Proveedores totales (activos):', this.proveedores.length);
+          
+          // Filtrar proveedores ya usados
           const proveedoresUsados = this.proveedoresEnMemoria
-            .filter(p => {
-              const esElMismo = p._tempId ? 
-                p._tempId === params.data._tempId : 
-                p.id_producto_proveedor === params.data.id_producto_proveedor;
-              return !esElMismo && p.id_proveedor;
-            })
+            .filter(p => p.id_proveedor && p.id_proveedor !== params.data.id_proveedor)
             .map(p => p.id_proveedor);
           
-          const proveedoresDisponibles = this.proveedores
-            .filter(p => !proveedoresUsados.includes(p.id_proveedor))
-            .map(p => p.id_proveedor);
+          // Proveedores disponibles (ya son solo activos por cargarProveedores())
+          const disponibles = this.proveedores.filter(
+            p => !proveedoresUsados.includes(p.id_proveedor)
+          );
           
+          console.log('✅ Proveedores disponibles:', disponibles.length);
+          
+          // CREAR ARRAY CON ID Y NOMBRE
+          const options = disponibles.map(p => ({
+            value: p.id_proveedor,
+            label: p.nombre_comercial || p.nombre_persona
+          }));
+          
+          // RETORNAR SOLO LOS NOMBRES
           return {
-            values: proveedoresDisponibles
+            values: options.map(o => o.label)
           };
         },
-        valueFormatter: (params: any) => {
-          if (!params.value) return '⚠️ Seleccione proveedor...';
-          const prov = this.proveedores.find(p => p.id_proveedor === params.value);
-          return prov ? `${prov.codigo_proveedor} - ${prov.nombre_proveedor}` : '';
+        valueSetter: (params: any) => {
+          // Cuando selecciona un nombre, buscar el ID
+          const nombreSeleccionado = params.newValue;
+          const proveedor = this.proveedores.find(
+            p => (p.nombre_comercial || p.nombre_persona) === nombreSeleccionado
+          );
+          
+          if (proveedor) {
+            params.data.id_proveedor = proveedor.id_proveedor;
+            params.data.codigo_proveedor = proveedor.codigo_proveedor;
+            params.data.nombre_proveedor = nombreSeleccionado;
+            params.data.proveedor_activo = true; // ✅ Siempre true porque solo puede seleccionar activos
+            console.log('✅ Proveedor seleccionado:', nombreSeleccionado);
+            return true;
+          }
+          
+          return false;
+        },
+        valueGetter: (params: any) => {
+          // Mostrar el nombre guardado
+          const nombre = params.data.nombre_proveedor || '⚠️ Seleccione proveedor...';
+          return nombre;
+        },
+        //AGREGAR CELLRENDERER PARA MOSTRAR BADGE
+        cellRenderer: (params: any) => {
+          const nombre = params.data.nombre_proveedor || '⚠️ Seleccione proveedor...';
+          const esInactivo = params.data.proveedor_activo === false;
+          
+          if (esInactivo) {
+            return `
+              <span style="color: #666;">
+                ${nombre}
+                <span style="
+                  background: #ff9800; 
+                  color: white; 
+                  padding: 2px 6px; 
+                  border-radius: 3px; 
+                  font-size: 10px; 
+                  margin-left: 8px;
+                  font-weight: bold;
+                ">INACTIVO</span>
+              </span>
+            `;
+          }
+          
+          if (!params.data.id_proveedor) {
+            return `<span style="font-style: italic; color: #856404;">${nombre}</span>`;
+          }
+          
+          return nombre;
         },
         cellStyle: (params: any) => {
-          if (!params.value) {
-            return { 'background-color': '#fff3cd', 'font-style': 'italic' };
+          if (!params.data.id_proveedor) {
+            return { 
+              'background-color': '#fff3cd'
+            };
+          }
+          // ✅ Fondo gris si el proveedor está inactivo
+          if (params.data.proveedor_activo === false) {
+            return {
+              'background-color': '#f5f5f5'
+            };
           }
           return {};
         }
@@ -2701,6 +2826,21 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       suppressMovable: true
     };
   }
+  /**
+ * Obtiene el nombre a mostrar del proveedor
+ * Prioridad: nombre_comercial > nombre_persona
+ */
+  obtenerNombreProveedor(proveedor: ProveedorResponse): string {
+    return proveedor.nombre_comercial || proveedor.nombre_persona || 'Sin nombre';
+  }
+
+  /**
+   * Obtiene el nombre completo con código
+   */
+  obtenerNombreCompletoProveedor(proveedor: ProveedorResponse): string {
+    const nombre = this.obtenerNombreProveedor(proveedor);
+    return `${proveedor.codigo_proveedor} - ${nombre}`;
+  }
   onProveedoresGridReady(params: GridReadyEvent): void {
     this.proveedoresGridApi = params.api;
     console.log('✅ Grid de proveedores listo');
@@ -2755,66 +2895,41 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
     const proveedor = event.data;
     const campo = event.colDef.field;
     
-    console.log(`📝 Campo modificado en memoria: ${campo}`, event.newValue);
+    if (!campo) return;
+    
+    console.log(`📝 Campo modificado: ${campo}`, event.newValue);
 
-    // ✅ VALIDAR PROVEEDOR DUPLICADO
+    // ✅ Si cambió el proveedor, validar duplicados
     if (campo === 'id_proveedor') {
-      const proveedorDuplicado = this.proveedoresEnMemoria.filter(p => {
-        // Excluir el actual
-        const esElMismo = p._tempId ? 
-          p._tempId === proveedor._tempId : 
-          p.id_producto_proveedor === proveedor.id_producto_proveedor;
-        
-        if (esElMismo) return false;
-        
-        // Verificar si hay otro con el mismo id_proveedor
-        return p.id_proveedor === event.newValue;
-      });
+      // Validar duplicado
+      const duplicado = this.proveedoresEnMemoria.some(p => 
+        p.id_proveedor === proveedor.id_proveedor && 
+        (p._tempId !== proveedor._tempId && p.id_producto_proveedor !== proveedor.id_producto_proveedor)
+      );
 
-      if (proveedorDuplicado.length > 0) {
-        alert('⚠️ Este proveedor ya está agregado. No se permiten proveedores duplicados.');
-        
-        // Revertir el cambio
-        proveedor.id_proveedor = event.oldValue || null;
-        proveedor.codigo_proveedor = '';
+      if (duplicado) {
+        alert('⚠️ Este proveedor ya está agregado');
+        proveedor.id_proveedor = null;
         proveedor.nombre_proveedor = '';
-        
-        // Actualizar visualmente
         event.node.setData(proveedor);
         return;
       }
+    }
 
-      // Si no está duplicado, actualizar código y nombre
-      const provSeleccionado = this.proveedores.find(p => p.id_proveedor === event.newValue);
-      if (provSeleccionado) {
-        proveedor.codigo_proveedor = provSeleccionado.codigo_proveedor;
-        proveedor.nombre_proveedor = provSeleccionado.nombre_proveedor;
-        
-        console.log('✅ Proveedor seleccionado:', provSeleccionado.nombre_proveedor);
-      }
-    }
-      // Unidad de venta
-    if (campo === 'id_unidad_venta') {
-      const unidadSeleccionada = this.unidadesVenta.find(u => u.idUnidadVenta === event.newValue);
-      if (unidadSeleccionada) {
-        proveedor.unidad_compra = unidadSeleccionada.descripcion; // ✅ Guardar descripción
-        console.log('✅ Unidad seleccionada:', unidadSeleccionada.descripcion);
-        console.log('✅ Se guardará en BD como:', proveedor.unidad_compra);
-      }
-    }
-    // Recalcular costo neto si cambió algún valor relacionado
-    if (
-      campo === 'costo_compra' ||
-      campo === 'descuento_general' ||
-      campo === 'descuento_1' ||
-      campo === 'descuento_2' ||
-      campo === 'descuento_3' ||
-      campo === 'descuento_4'
-    ) {
+    // Recalcular costo neto
+    if (['costo_compra', 'descuento_general', 'descuento_1', 'descuento_2', 'descuento_3', 'descuento_4'].includes(campo)) {
       proveedor.costo_neto = this.calcularCostoNetoProveedor(proveedor);
     }
 
-    // Actualizar el array en memoria
+    // Unidad de venta
+    if (campo === 'id_unidad_venta') {
+      const unidad = this.unidadesVenta.find(u => u.idUnidadVenta === event.newValue);
+      if (unidad) {
+        proveedor.unidad_compra = unidad.descripcion;
+      }
+    }
+
+    // Actualizar en memoria
     const index = this.proveedoresEnMemoria.findIndex(p => 
       p._tempId === proveedor._tempId || p.id_producto_proveedor === proveedor.id_producto_proveedor
     );
@@ -2823,7 +2938,6 @@ export class ProductosSicComponent implements OnInit, AfterViewInit {
       this.proveedoresEnMemoria[index] = proveedor;
     }
 
-    // Actualizar la fila visualmente
     event.node.setData(proveedor);
   }
 
