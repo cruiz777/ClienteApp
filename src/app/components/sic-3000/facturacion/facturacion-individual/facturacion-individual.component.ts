@@ -25,6 +25,8 @@ import { CellDoubleClickedEvent } from 'ag-grid-community';
 import { DetalleDescripcionModalComponent } from '../detalle-descripcion-modal/detalle-descripcion-modal.component';
 import { HttpClient } from '@angular/common/http';
 import { AsientoVentaService, AsientoVentaRequest } from 'src/app/services/asiento-venta.service';
+import { ParametrosSicService, ParametrosSic } from 'src/app/services/parametros-sic.service';
+import { PlanCueService, PlanCuenta } from 'src/app/services/plan-cue.service';
 import {
   FormBuilder,
   FormControl,
@@ -308,33 +310,33 @@ export class FacturacionIndividualComponent implements OnInit {
       valueFormatter: (p) => this.fmtN(p.value, 2)
     },
     {
-      headerName: '',
-      width: 65,
-      pinned: 'left',
-      cellRenderer: (params: any) => {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'ag-btn-icon ag-btn-delete';
-        btn.title = 'Eliminar';
-        btn.setAttribute('aria-label', 'Eliminar forma de Producto');
-        btn.innerHTML = '<span class="material-icons">delete</span>';
+  headerName: '',
+  width: 65,
+  pinned: 'left',
+  cellRenderer: (params: any) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'ag-btn-icon ag-btn-delete';
+    btn.title = 'Eliminar';
+    btn.setAttribute('aria-label', 'Eliminar  Producto');
+    btn.innerHTML = '<span class="material-icons">delete</span>';
 
-        // 👇 aquí
-        btn.addEventListener('click', () => {
-          params.api.applyTransaction({ remove: [params.node.data] });
+    btn.addEventListener('click', () => {
+      // 1. Eliminar producto
+      params.api.applyTransaction({ remove: [params.node.data] });
 
-          // Recalcular totales y ajustar pagos al nuevo total
-          // (usa arrow function para mantener el this del componente)
-          this.recalcTotalesFactura();
-          this.ajustarPagosAlTotal();
-          this.actualizarPuedeAbrirMeses();
-          // si ves que no actualiza a la primera, usa:
-          // setTimeout(() => { this.recalcTotalesFactura(); this.ajustarPagosAlTotal(); }, 0);
-        });
+      // 2. Recalcular totales
+      this.recalcTotalesFactura();
+      this.actualizarPuedeAbrirMeses();
 
-        return btn;
-      }
-    },
+      // 3. Limpiar formas de pago porque cambió el total
+      this.limpiarPagosPorCambioDetalle();
+    });
+
+    return btn;
+  }
+},
+
     {
       headerName: '',
       width: 70,
@@ -456,6 +458,8 @@ export class FacturacionIndividualComponent implements OnInit {
   productosLoaded = false;          // terminó la carga (éxito o error)
   productosCount = 0;               // cuántos llegaron
   productosError: string | null = null;
+  parametros: ParametrosSic | null = null;
+  planCuenta: PlanCuenta | null = null;
   constructor(
     private http: HttpClient,
     private clienteService: ClienteService,
@@ -476,11 +480,40 @@ export class FacturacionIndividualComponent implements OnInit {
     private ivaService: IvaService,
     private dialog: MatDialog,
     private router: Router,
-    private asientoVentaService: AsientoVentaService
+    private asientoVentaService: AsientoVentaService,
+    private parametrosSicService: ParametrosSicService,
+    private planCueService: PlanCueService
   ) { }
 
   ngOnInit(): void {
     this.usuarioActual = this.usuarioService.getUsuarioActual();
+    this.parametrosSicService
+      .getByEmpresa(this.usuarioActual?.id_empresa ?? 0) // devuelve ParametrosSic
+      .pipe(
+        switchMap(parametros => {
+          // aquí 'parametros' YA es el data
+          this.parametros = parametros;
+          console.log('Parámetros SIC:', this.parametros);
+
+          const idEmpresa = this.usuarioActual?.id_empresa ?? 0;
+          const cuenta = parametros.codcueretiva;   // usamos el parámetro local, NO this.parametros
+
+          return this.planCueService.getByCuentaPresentacion(idEmpresa, cuenta); // devuelve PlanCuenta
+        })
+      )
+      .subscribe({
+        next: planCuenta => {
+          // aquí 'planCuenta' YA es el data
+          this.planCuenta = planCuenta;
+          console.log('Plan de Cuenta:', this.planCuenta);
+        },
+        error: err => {
+          console.error('Error en la cadena parámetros + plan', err);
+        }
+      });
+
+
+
 
     // Formularios
     this.formCliente = this.fb.group({
@@ -716,7 +749,6 @@ export class FacturacionIndividualComponent implements OnInit {
                 this.vAsignacion = ge?.asignacion ?? 0;
                 this.vMantenimiento = ge?.mantenimiento ?? 0;
                 this.grupoCli = ge?.codigo;
-                //alert(this.vMantenimiento);
               }),
               map((ge: any) => `${ge.codigo}   ${ge.nombre}`.trim()),
               catchError(() => {
@@ -725,7 +757,6 @@ export class FacturacionIndividualComponent implements OnInit {
               })
             )
             : (this.vInscripcion = this.vAsignacion = this.vMantenimiento = 0, of(cli?.categoria ?? ''));
-
 
           const contactos$ = this.clienteContactoService.getFacturacionByClienteCodigo(clientesCodigo).pipe(
             catchError(() => of([]))
@@ -737,19 +768,38 @@ export class FacturacionIndividualComponent implements OnInit {
                 keys.map(k => o?.[k]).find(v => v !== undefined);
 
               const findEmailLinea = (n: number): string => {
-                const c = (contactos as any[]).find(x => (getProp(x, 'linea', 'Linea') ?? 0) === n);
+                const c = (contactos as any[]).find(
+                  x => (getProp(x, 'linea', 'Linea') ?? 0) === n
+                );
                 const email = getProp(c ?? {}, 'email', 'Email');
                 return (email ?? '').toString().trim();
               };
 
+              // 🔹 NUEVO: teléfono desde contactos (ej. línea 2)
+              const findTelefonoLinea = (n: number): string => {
+                const c = (contactos as any[]).find(
+                  x => (getProp(x, 'linea', 'Linea') ?? 0) === n
+                );
+                const tel = getProp(
+                  c ?? {},
+                  'telefono', 'Telefono',
+                  'telcli', 'TelCli',
+                  'telefono1', 'Telefono1'
+                );
+                return (tel ?? '').toString().trim();
+              };
+
               const emailLinea2 = findEmailLinea(2);
               const emailLinea3 = findEmailLinea(3);
+              const telefonoLinea2 = findTelefonoLinea(2);   // 👈 aquí tomamos el teléfono de contactos (línea 2)
 
               const emailOpcionalConcat = [emailLinea3].filter(Boolean).join(';');
 
               return {
                 ...valoresBase,
                 categoria,
+                // 👇 PRIORIDAD: teléfono de contactos, si no, el del cliente
+                telefono: telefonoLinea2 || (valoresBase['telefono'] as string),
                 email: emailLinea2 || (valoresBase['email'] as string),
                 emailOpcional: emailOpcionalConcat || (valoresBase['emailOpcional'] as string)
               } as { [key: string]: any };
@@ -768,6 +818,7 @@ export class FacturacionIndividualComponent implements OnInit {
         }
       });
   }
+
 
   // ============= Varios =============
   onProductSelect(): void { }
@@ -1567,7 +1618,7 @@ export class FacturacionIndividualComponent implements OnInit {
 
 
   crearFactura(): void {
-    // Validaciones mínimas y no repetidas
+    // Validaciones mínimas
     if (this.getPagosCount() === 0) {
       this.mostrarAlerta('Agrega al menos una forma de pago.', 'info');
       return;
@@ -1579,9 +1630,18 @@ export class FacturacionIndividualComponent implements OnInit {
 
     const payload = this.buildFacturaPayload();
 
-    if (!payload.idCliente) { this.mostrarAlerta('Seleccione un cliente.', 'info'); return; }
-    if (!payload.caja) { this.mostrarAlerta('No hay caja asignada.', 'info'); return; }
-    if (!payload.detalles?.length) { this.mostrarAlerta('Agrega al menos un producto a la factura.', 'info'); return; }
+    if (!payload.idCliente) {
+      this.mostrarAlerta('Seleccione un cliente.', 'info');
+      return;
+    }
+    if (!payload.caja) {
+      this.mostrarAlerta('No hay caja asignada.', 'info');
+      return;
+    }
+    if (!payload.detalles?.length) {
+      this.mostrarAlerta('Agrega al menos un producto a la factura.', 'info');
+      return;
+    }
 
     console.log('PAYLOAD →', payload);
     console.table(payload.detalles);
@@ -1601,49 +1661,80 @@ export class FacturacionIndividualComponent implements OnInit {
 
         this.mostrarAlerta(resp?.message || 'Factura creada correctamente.', 'ok');
 
-        const idNota = Number(resp?.data?.idNota);
-        if (!Number.isFinite(idNota)) {
+        const idNota = Number(
+          (resp as any)?.data?.idNota ??
+          (resp as any)?.data?.id_nota ??
+          0
+        );
+
+        if (!Number.isFinite(idNota) || idNota <= 0) {
           this.mostrarAlerta('No se recibió idNota válido en la respuesta.', 'error');
           return of(null);
         }
 
-        // 1) Crear asiento de venta basado en el grid
+        // 1) Crear asiento contable de la venta
         return this.crearAsientoVenta(idNota, payload).pipe(
-          catchError(err => {
-            console.error('[crearFactura] Error creando asiento contable:', err);
-            this.mostrarAlerta('Error al crear el asiento contable de la venta.', 'error');
-            // Si quieres que aquí se detenga y NO genere XML, devuelve of(null)
-            return of(null);
-          }),
-          // 2) Luego generar XML en el servidor
-          switchMap(asientoResp => {
-            if (asientoResp === null) {
-              // Hubo error en asiento, ya avisamos arriba
+          // 2) Actualizar el número de asiento en la nota (Facturacion/ActualizarAsientoContable)
+          switchMap(numeroAsiento => {
+            if (!numeroAsiento) {
+              // Asiento creado pero no se pudo parsear Numdoc
+              this.mostrarAlerta(
+                'Asiento creado, pero no se obtuvo el número de asiento. No se actualizó la nota.',
+                'info'
+              );
               return of(null);
             }
-
+            const numeroAsientoConPrefijo = `VT-${numeroAsiento}`;
+            return this.facturacionService.actualizarAsientoContable(idNota, numeroAsientoConPrefijo).pipe(
+              tap(respAct => {
+                console.log('[actualizarAsientoContable] resp:', respAct);
+                this.mostrarAlerta(
+                  respAct?.message || `Asiento contable actualizado: ${numeroAsiento}`,
+                  'ok'
+                );
+              }),
+              catchError(err => {
+                console.error('[crearFactura] Error actualizando asiento en la nota:', err);
+                this.mostrarAlerta(
+                  'Error al actualizar el número de asiento en la nota.',
+                  'error'
+                );
+                // no corto el flujo, solo aviso
+                return of(null);
+              }),
+              map(() => numeroAsiento) // para pasar al siguiente switchMap si quieres
+            );
+          }),
+          // 3) Generar XML en el servidor
+          switchMap(() => {
             return this.facturacionService.generarXmlEnServidor(idNota).pipe(
               tap(r => {
                 if (r?.success) {
                   this.mostrarAlerta(`XML generado en el servidor: ${r.fileName}`, 'ok');
-                  // 3) Descargar el PDF
+                  // 4) Descargar el PDF
                   this.descargarPdf(idNota);
                 } else {
                   this.mostrarAlerta(r?.message || 'No se generó el XML.', 'error');
                 }
               }),
-              catchError(_ => {
+              catchError(err => {
+                console.error('[crearFactura] Error generando XML en el servidor:', err);
                 this.mostrarAlerta('Error generando el XML en el servidor.', 'error');
                 return of(null);
               })
             );
+          }),
+          catchError(err => {
+            console.error('[crearFactura] Error en crearAsientoVenta/actualizarAsientoContable:', err);
+            this.mostrarAlerta('Error en la creación del asiento contable.', 'error');
+            return of(null);
           })
         );
       }),
       catchError(err => {
         console.error('[crearFactura] error:', err);
         this.mostrarAlerta('Error al crear la factura.', 'error');
-        return of(void 0);
+        return of(null);
       }),
       finalize(() => {
         this.generando = false;
@@ -1662,28 +1753,38 @@ export class FacturacionIndividualComponent implements OnInit {
 
 
   private descargarPdf(idNota: number): void {
-    const pdfUrl = `${environment.invoices_sic}/Facturacion/${idNota}/pdf`;
+  const pdfUrl = `${environment.invoices_sic}/Facturacion/${idNota}/pdf`;
 
-    this.http.get(pdfUrl, {
-      responseType: 'blob',
-      observe: 'response'
-    }).subscribe({
-      next: (response) => {
-        // Crear blob URL y descargar
-        const blob = response.body!;
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `factura-${idNota}.pdf`;
-        a.click();
-        window.URL.revokeObjectURL(url);
-      },
-      error: (err) => {
-        console.error('Error descargando PDF:', err);
-        this.mostrarAlerta('Error al descargar el PDF', 'error');
-      }
-    });
-  }
+  // Armar el nombre 001000100000023
+  const estab = (this.formCaja.get('puntoEmision')?.value ?? '').toString().padStart(3, '0');
+  const caja  = (this.formCaja.get('caja')?.value ?? '').toString().padStart(3, '0');
+  const sec   = (this.formCaja.get('secuencial')?.value ?? '').toString().replace(/\D/g, '').padStart(9, '0');
+
+  const numComprobante = (estab + caja + sec) || idNota.toString(); // fallback
+
+  this.http.get(pdfUrl, {
+    responseType: 'blob',
+    observe: 'response'
+  }).subscribe({
+    next: (response) => {
+      const blob = response.body!;
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+
+      // 👇 aquí el nuevo nombre
+      a.download = `${numComprobante}.pdf`;
+
+      a.click();
+      window.URL.revokeObjectURL(url);
+    },
+    error: (err) => {
+      console.error('Error descargando PDF:', err);
+      this.mostrarAlerta('Error al descargar el PDF', 'error');
+    }
+  });
+}
+
   autoGrow(e: Event) {
     const el = e.target as HTMLTextAreaElement;
     el.style.height = 'auto';
@@ -1882,8 +1983,8 @@ export class FacturacionIndividualComponent implements OnInit {
     if (!params?.data || (params.data.codpro ?? '').toString() !== this.COD_MANT_MENSUAL) return;
 
     // Año sugerido (usa el del form si existe)
-    const anioActual = Number(this.formFactura.get('anio')?.value) || new Date().getFullYear();
-
+    //const anioActual = Number(this.formFactura.get('anio')?.value) || new Date().getFullYear();
+const anioActual = new Date().getFullYear();
     // Prefijo actualmente seleccionado (si lo hay en el form)
     const idPrefijoActual = this.formCliente.get('gcp')?.value ?? null;
     const codpreActual = this.prefijos.find(p => p.id_prefijos === idPrefijoActual)?.codpre ?? null;
@@ -1904,7 +2005,7 @@ export class FacturacionIndividualComponent implements OnInit {
           this.formCliente.patchValue({ gcp: res.idPrefijo, prefijo: res.codpre }, { emitEvent: false });
 
           // 2) Si cambió el año, sincroniza
-          this.formFactura.get('anio')?.setValue(res.anio);
+          //this.formFactura.get('anio')?.setValue(res.anio);
 
           // 3) Aplica SOLO a esta fila
           const row = params.data;
@@ -2087,17 +2188,45 @@ export class FacturacionIndividualComponent implements OnInit {
   private crearAsientoVenta(
     idNota: number,
     facturaPayload: FacturaCrearRequest
-  ) {
+  ): Observable<string | null> {
     const asientoReq = this.buildAsientoVentaRequest(idNota, facturaPayload);
 
     console.log('ASIENTO VENTA OBJ →', asientoReq);
     console.log('ASIENTO VENTA JSON →', JSON.stringify(asientoReq, null, 2));
 
-    // devolvemos el numdoc del asiento creado
     return this.asientoVentaService.crearAsientoVenta(asientoReq).pipe(
-      map(() => asientoReq.numdoc)   // 👈 aquí sale "VT-00001"
+      map((resp: any) => {
+        if (!resp) {
+          throw new Error('Respuesta vacía al crear asiento contable.');
+        }
+
+        const tipo = (resp.type || '').toString().toLowerCase();
+        if (tipo !== 'success' && tipo !== 'boolean') {
+          throw new Error(resp.message || 'No se pudo crear el asiento contable.');
+        }
+
+        const msg: string = resp.message ?? '';
+        // Ejemplo de message:
+        // "Asiento creado. Cabecera Id=64, Numdoc=25110006, detalles=3"
+        const match = msg.match(/Numdoc\s*=\s*(\d+)/i);
+        const numeroAsiento = match ? match[1] : null;
+
+        if (!numeroAsiento) {
+          console.warn('[crearAsientoVenta] No se encontró "Numdoc=" en el mensaje:', msg);
+        } else {
+          console.log('[crearAsientoVenta] Número de asiento creado:', numeroAsiento);
+        }
+
+        return numeroAsiento; // string o null
+      }),
+      catchError(err => {
+        console.error('[crearAsientoVenta] error:', err);
+        this.mostrarAlerta('Error al crear el asiento contable de la venta.', 'error');
+        return of(null);
+      })
     );
   }
+
 
   private buildAsientoVentaRequest(
     idNota: number,
@@ -2119,12 +2248,8 @@ export class FacturacionIndividualComponent implements OnInit {
     // 👉 Tipo de documento del asiento
     const tipdoc = 'VT';
 
-    // 👉 Secuencial de la factura y numdoc = "VT-00001"
-    const secRaw = (this.formCaja.get('secuencial')?.value ?? idNota)
-      .toString()
-      .replace(/\D/g, '');          // por si viniera con algo raro
-    const secPadded = secRaw.padStart(5, '0');
-    const numdoc = `${secPadded}`;
+    // 👉 numdoc para el asiento (el sistema genera su propio Numdoc interno)
+    const numdoc = '0'; // dejamos 0, el backend genera el definitivo (25110006, etc.)
 
     // Totales de la factura
     const tot = this.to2(Number(facturaPayload.totalCalculado ?? 0));
@@ -2149,7 +2274,7 @@ export class FacturacionIndividualComponent implements OnInit {
       if (ivaVal > 0) totalIva = this.to2(totalIva + ivaVal);
     }
 
-    // ====== 3) Construir nocomprobante tipo "001999000000004" ======
+    // ====== 3) Construir nocomprobante tipo "001999000000025" ======
     const puntoEmision = (this.formCaja.get('puntoEmision')?.value ?? '').toString().trim();
     const caja = (this.formCaja.get('caja')?.value ?? '').toString().trim();
     const secuencial = (this.formCaja.get('secuencial')?.value ?? '').toString().trim();
@@ -2158,6 +2283,8 @@ export class FacturacionIndividualComponent implements OnInit {
 
     // ====== 4) Armar las líneas del asiento ======
     const detalles: AsientoVentaRequest['detalles'] = [];
+
+    // 4.1) DEBE: por cada forma de pago (o Clientes si no hay)
     const filasPago: any[] = [];
     if (this.pagosApi) this.pagosApi.forEachNode(n => filasPago.push(n.data));
     else filasPago.push(...this.rowDataPagos);
@@ -2258,136 +2385,162 @@ export class FacturacionIndividualComponent implements OnInit {
         estadoIngreso: false
       });
     }
-      // 4.2) HABER: una línea por producto (cuenta viene del grid)
-      for (const row of filasProd) {
-        const cuentaTexto = (row.cuenta ?? '').toString().trim(); // ej: "410101-001"
-        const [ctaStr] = cuentaTexto.split('-');
-        const cuentaNum = Number(ctaStr) || CTA_VENTAS_DEFAULT;
-        const codprePc = cuentaTexto || `${cuentaNum}-001`;
-        const idcuentaTexto = (row.idcuenta ?? '').toString().trim();
-        const idcuentaNum = Number(idcuentaTexto) || 0;
-        const base = this.to2(Number(row.base ?? 0));
-        if (base <= 0) continue;
 
-        detalles.push({
-          numlinea: numlinea++,
-          anio: anioStr,
-          fechatransaccion: fecha,
-          hora,
-          idZona,
-          idCentroCostos: null,
-          idLocal: 1,
-          idPlanCuentas: idcuentaNum,
-          codprePc,
-          idCodContable: 3,
-          nocomprobante,
-          docurelacionado: '',
-          cheque: 0,
-          beneficiario: '',
-          debe: 0,
-          haber: base,
-          comentario: `INGRESO POR VENTA FACTURA ${numdoc} - ${(row.detalle ?? '').toString().toUpperCase()}`,
-          idMovBancario: null,
-          movbancario: '',
-          fechaingreso: fecha,
-          cierre: '',
-          fechacierre: null,
-          conciliado: '',
-          fechaconciliado: null,
-          idSustentoTrib: null,
-          idTipoCompSri: null,
-          autorizacion: '',
-          fechacaduca: null,
-          idTipoRetencion: null,
-          idProyecto: null,
-          idSubproyecto: null,
-          transferido: false,
-          fechatransferido: null,
-          fechavencimiento: null,
-          idConciliacion: null,
-          valorLetras: '',
-          estadoIngreso: false
-        });
-      }
+    // 4.2) HABER: una línea por producto (cuenta viene del grid)
+    for (const row of filasProd) {
+      const cuentaTexto = (row.cuenta ?? '').toString().trim(); // ej: "410101-011"
+      const [ctaStr] = cuentaTexto.split('-');
+      const cuentaNum = Number(ctaStr) || CTA_VENTAS_DEFAULT;
+      const codprePc = cuentaTexto || `${cuentaNum}-001`;
+      const idcuentaTexto = (row.idcuenta ?? '').toString().trim();
+      const idcuentaNum = Number(idcuentaTexto) || 0;
+      const base = this.to2(Number(row.base ?? 0));
+      if (base <= 0) continue;
 
-      // 4.3) HABER: IVA
-      if (totalIva > 0) {
-        detalles.push({
-          numlinea: numlinea++,
-          anio: anioStr,
-          fechatransaccion: fecha,
-          hora,
-          idZona,
-          idCentroCostos: null,
-          idLocal: 1,
-          idPlanCuentas: CTA_IVA,
-          codprePc: `${CTA_IVA}-001`,
-          idCodContable: 3,
-          nocomprobante,
-          docurelacionado: '',
-          cheque: 0,
-          beneficiario: '',
-          debe: 0,
-          haber: this.to2(totalIva),
-          comentario: `IVA RECAUDADO FACTURA ${numdoc}`,
-          idMovBancario: null,
-          movbancario: '',
-          fechaingreso: fecha,
-          cierre: '',
-          fechacierre: null,
-          conciliado: '',
-          fechaconciliado: null,
-          idSustentoTrib: null,
-          idTipoCompSri: null,
-          autorizacion: '',
-          fechacaduca: null,
-          idTipoRetencion: null,
-          idProyecto: null,
-          idSubproyecto: null,
-          transferido: false,
-          fechatransferido: null,
-          fechavencimiento: null,
-          idConciliacion: null,
-          valorLetras: '',
-          estadoIngreso: false
-        });
-      }
-
-      // ====== 5) Totales ======
-      const totalHaber = this.to2(detalles.reduce((s, d) => s + (Number(d.haber) || 0), 0));
-      const totalDebe = this.to2(detalles.reduce((s, d) => s + (Number(d.debe) || 0), 0));
-
-      const asiento: AsientoVentaRequest = {
-        idZona,
-        idUsuario,
-        idEmpresa,
-        idTipoAsiento,
-        tipdoc,
-        numdoc,                    // 👈 aquí queda "VT-00001"
+      detalles.push({
+        numlinea: numlinea++,
         anio: anioStr,
         fechatransaccion: fecha,
+        hora,
+        idZona,
+        idCentroCostos: null,
+        idLocal: 1,
+        idPlanCuentas: idcuentaNum,
+        codprePc,
+        idCodContable: 3,
+        nocomprobante,
+        docurelacionado: '',
+        cheque: 0,
+        beneficiario: '',
+        debe: 0,
+        haber: base,
+        comentario: `INGRESO POR VENTA FACTURA ${numdoc} - ${(row.detalle ?? '').toString().toUpperCase()}`,
+        idMovBancario: null,
+        movbancario: '',
         fechaingreso: fecha,
-        observacion: `ASIENTO POR VENTA FACTURA ${numdoc}`,
-        totdebe: totalDebe,
-        tothaber: totalHaber,
-        beneficiario,
         cierre: '',
         fechacierre: null,
-        solicitado: '',
-        depto: '',
-        autorizado: '',
-        homCodigo: 0,
-        estado: true,
-        detalles
-      };
-
-      console.log('ASIENTO VENTA OBJ →', asiento);
-      console.log('ASIENTO VENTA JSON →', JSON.stringify(asiento, null, 2));
-
-      return asiento;
+        conciliado: '',
+        fechaconciliado: null,
+        idSustentoTrib: null,
+        idTipoCompSri: null,
+        autorizacion: '',
+        fechacaduca: null,
+        idTipoRetencion: null,
+        idProyecto: null,
+        idSubproyecto: null,
+        transferido: false,
+        fechatransferido: null,
+        fechavencimiento: null,
+        idConciliacion: null,
+        valorLetras: '',
+        estadoIngreso: false
+      });
     }
 
+    // 4.3) HABER: IVA
+    if (totalIva > 0) {
+      detalles.push({
+        numlinea: numlinea++,
+        anio: anioStr,
+        fechatransaccion: fecha,
+        hora,
+        idZona,
+        idCentroCostos: null,
+        idLocal: 1,
+        idPlanCuentas: this.planCuenta?.id_plan ?? 0,
+        codprePc: this.parametros?.codcueretiva ?? '',
+        idCodContable: 3,
+        nocomprobante,
+        docurelacionado: '',
+        cheque: 0,
+        beneficiario: '',
+        debe: 0,
+        haber: this.to2(totalIva),
+        comentario: `IVA RECAUDADO FACTURA ${numdoc}`,
+        idMovBancario: null,
+        movbancario: '',
+        fechaingreso: fecha,
+        cierre: '',
+        fechacierre: null,
+        conciliado: '',
+        fechaconciliado: null,
+        idSustentoTrib: null,
+        idTipoCompSri: null,
+        autorizacion: '',
+        fechacaduca: null,
+        idTipoRetencion: null,
+        idProyecto: null,
+        idSubproyecto: null,
+        transferido: false,
+        fechatransferido: null,
+        fechavencimiento: null,
+        idConciliacion: null,
+        valorLetras: '',
+        estadoIngreso: false
+      });
+    }
 
+    // ====== 5) Totales ======
+    const totalHaber = this.to2(detalles.reduce((s, d) => s + (Number(d.haber) || 0), 0));
+    const totalDebe = this.to2(detalles.reduce((s, d) => s + (Number(d.debe) || 0), 0));
 
+    const asiento: AsientoVentaRequest = {
+      idZona,
+      idUsuario,
+      idEmpresa,
+      idTipoAsiento,
+      tipdoc,
+      numdoc,                    // 👈 sigue en "0", el backend genera el real
+      anio: anioStr,
+      fechatransaccion: fecha,
+      fechaingreso: fecha,
+      observacion: `ASIENTO POR VENTA FACTURA ${nocomprobante}`,
+      totdebe: totalDebe,
+      tothaber: totalHaber,
+      beneficiario,
+      cierre: '',
+      fechacierre: null,
+      solicitado: '',
+      depto: '',
+      autorizado: '',
+      homCodigo: 0,
+      estado: true,
+      detalles
+    };
 
+    console.log('ASIENTO VENTA OBJ →', asiento);
+    console.log('ASIENTO VENTA JSON →', JSON.stringify(asiento, null, 2));
+
+    return asiento;
   }
+
+
+
+private limpiarPagosPorCambioDetalle(): void {
+  // Limpiar filas del grid de pagos
+  if (this.pagosApi) {
+    const rows: any[] = [];
+    this.pagosApi.forEachNode(n => rows.push(n.data));
+    if (rows.length) {
+      this.pagosApi.applyTransaction({ remove: rows });
+    }
+  } else {
+    this.rowDataPagos = [];
+  }
+
+  // Limpiar formulario de pagos
+  this.formPagos.reset({ metodoPago: '', plazo: '', tiempo: '', valor: '' });
+
+  // Recalcular saldo pendiente (total factura - 0 pagos)
+  this.onPagosRowsChanged();
+
+  // Mensaje opcional
+  this.mostrarAlerta(
+    'Se eliminaron las formas de pago porque cambió el detalle de la factura.',
+    'info'
+  );
+}
+
+
+}
