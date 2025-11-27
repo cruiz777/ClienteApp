@@ -4,114 +4,106 @@
 
     <!-- Encabezado superior -->
     <div class="encabezado-superior">
-     
+
 
       <div class="encabezado-titulo">
         ESTADO DE CUENTA
       </div>
 
       <div class="encabezado-fecha-der">
-        
+
         <div class="fila-fecha">
           <span class="label">Fecha del reporte:</span>
           {{ hoy | date: 'dd/MM/yyyy' }}
         </div>
-       
+
       </div>
     </div>
 
     <!-- Datos del cliente -->
-    <div >
+    <div>
       <div class="bloque-cliente" *ngIf="clienteSeleccionado as cli">
-      <div class="cliente-izq">
-        <div class="fila-cliente">
-          <span class="label">Cliente:</span>
-          <span class="cliente-nombre">
-            {{ cli.nomcli }}
-          </span>
+        <div class="cliente-izq">
+          <div class="fila-cliente">
+            <span class="label">Cliente:</span>
+            <span class="cliente-nombre">
+              {{ cli.nomcli }}
+            </span>
+          </div>
+
+          <div class="fila-cliente">
+            <span class="label">Dirección:</span>
+            <span>{{ cli.dircli }}</span>
+          </div>
+
+          <div class="fila-cliente">
+            <span class="label">Teléfono:</span>
+            <span>{{ cli.telefono }}</span>
+          </div>
         </div>
 
-        <div class="fila-cliente">
-          <span class="label">Dirección:</span>
-          <span>{{ cli.dircli }}</span>
-        </div>
 
-        <div class="fila-cliente">
-          <span class="label">Teléfono:</span>
-          <span>{{ cli.telefono }}</span>
+      </div>
+
+      <!-- Mensajes de estado -->
+      <div *ngIf="loading" class="estado-mensaje">
+        Cargando información...
+      </div>
+      <div *ngIf="!loading && errorMessage" class="estado-mensaje error">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Grid -->
+      <div class="grid-wrapper ag-theme-alpine" *ngIf="!loading && !errorMessage">
+        <ag-grid-angular class="ag-grid" [rowData]="rowData" [columnDefs]="columnDefs" [defaultColDef]="defaultColDef"
+          [pagination]="true" [paginationPageSize]="10" [domLayout]="'autoHeight'" (gridReady)="onGridReady($event)"
+          [enableBrowserTooltips]="true" [tooltipShowDelay]="300" [tooltipHideDelay]="100">
+        </ag-grid-angular>
+      </div>
+
+      <!-- Totales -->
+      <div class="totales-contenedor" *ngIf="!loading && !errorMessage">
+        <div class="total-bloque">
+          <div class="total-titulo">TOTAL GENERAL</div>
+
+          <div class="total-fila">
+            <span class="label">Debe:</span>
+            <span>{{ formatNumero(totalDebe) }}</span>
+
+          </div>
+          <div class="total-fila">
+            <span class="label">Haber:</span>
+            <span>{{ formatNumero(totalHaber) }}</span>
+          </div>
+          <div class="total-fila saldo-line">
+            <span class="saldo-value">{{ formatNumero(totalSaldo) }}</span>
+            <span class="saldo-value">{{ totalSaldo | number: '1.2-2' }}</span>
+          </div>
         </div>
       </div>
 
-      
-    </div>
+      <!-- Botones -->
+      <!-- diseño nuevo: mismo comportamiento, mismas funciones -->
+<div class="buttons-row buttons-bottom">
+  <!-- Botón Exportar con menu -->
+  <button mat-button
+          [matMenuTriggerFor]="menuExportar"
+          >
+    Exportar
+  </button>
 
-    <!-- Mensajes de estado -->
-    <div *ngIf="loading" class="estado-mensaje">
-      Cargando información...
-    </div>
-    <div *ngIf="!loading && errorMessage" class="estado-mensaje error">
-      {{ errorMessage }}
-    </div>
+  <mat-menu #menuExportar="matMenu">
+    <!-- llamo a tus funciones existentes -->
+    <button mat-menu-item (click)="exportarPdf()">PDF</button>
+    <button mat-menu-item (click)="exportarExcel()">Excel</button>
+  </mat-menu>
 
-    <!-- Grid -->
-    <div class="grid-wrapper ag-theme-alpine" *ngIf="!loading && !errorMessage">
-      <ag-grid-angular
-        class="ag-grid"
-        [rowData]="rowData"
-        [columnDefs]="columnDefs"
-        [defaultColDef]="defaultColDef"
-        [pagination]="true"
-        [paginationPageSize]="10"
-        [domLayout]="'autoHeight'"
-        (gridReady)="onGridReady($event)">
-      </ag-grid-angular>
-    </div>
-
-    <!-- Totales -->
-    <div class="totales-contenedor" *ngIf="!loading && !errorMessage">
-      <div class="total-bloque">
-        <div class="total-titulo">TOTAL GENERAL</div>
-
-        <div class="total-fila">
-          <span class="label">Debe:</span>
-<span>{{ formatNumero(totalDebe) }}</span>
-
-        </div>
-        <div class="total-fila">
-          <span class="label">Haber:</span>
-          <span>{{ formatNumero(totalHaber) }}</span>
-        </div>
-        <div class="total-fila saldo-line">
-          <span class="saldo-value">{{ formatNumero(totalSaldo) }}</span>
-          <span class="saldo-value">{{ totalSaldo | number: '1.2-2' }}</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Botones -->
-    <div class="buttons-row buttons-bottom">
-      <button class="btn secondary" type="button" (click)="toggleOpcionesImpresion()">
-        Exportar
-      </button>
-      <button class="btn secondary" type="button" (click)="cancelar()">
-        Cancelar
-      </button>
-    </div>
-
-    <!-- Opciones de impresión (PDF / Excel) -->
-    <div class="impresion-opciones" *ngIf="opcionesImpresionVisibles">
-      <div class="impresion-card">
-        <div class="impresion-title">Exportar reporte</div>
-        <div class="impresion-buttons">
-          <button type="button" class="btn primary" (click)="exportarPdf()">
-            PDF
-          </button>
-          <button type="button" class="btn primary" (click)="exportarExcel()">
-            Excel
-          </button>
-        </div>
-      </div>
-    </div>
-
-  </div>
+  <!-- Botón Cancelar (misma función que ya tienes) -->
+  <button mat-button type="button" (click)="cancelar()">
+    Cancelar
+  </button>
 </div>
+
+
+    </div>
+  </div>

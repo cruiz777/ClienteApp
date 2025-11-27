@@ -273,3 +273,19 @@ input[type='date'] {
     align-items: stretch;
   }
 }
+:host ::ng-deep .ag-tooltip {
+  max-width: 450px;      /* opcional: ancho máximo */
+  white-space: normal;   /* para que se rompa en varias líneas */
+
+  /* 🔹 Lo que te hace el tooltip más ALTO */
+  padding: 10px 12px;    /* ↑ más alto con más padding vertical */
+  line-height: 1.6;      /* ↑ cada línea ocupa más altura */
+  min-height: 40px;      /* ↑ altura mínima del cuadro */
+
+  border-radius: 6px;
+  font-size: 12px;
+  background: #1d789f;
+  color: #ffffff;
+  border: 1px solid #0b4e6a;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
