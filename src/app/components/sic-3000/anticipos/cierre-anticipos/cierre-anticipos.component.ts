@@ -14,6 +14,9 @@ import { AnticipoLiquidaService } from 'src/app/services/anticipo-liquida.servic
 import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
 import { TipoAnticipo } from 'src/app/interfaces/responses/tipo-anticipo-response';
 import { TipoAnticipoService } from 'src/app/services/tipo-anticipo.service';
+import { AnticipoPDFService, DesgloceAnticipoData } from 'src/app/reports/anticipos-pdf.service';
+import { EmpresaService } from 'src/app/services/empresa.service';
+import { UsuarioService } from 'src/app/services/usuario.service';
 
 @Component({
   selector: 'app-cierre-anticipos',
@@ -58,13 +61,16 @@ export class CierreAnticiposComponent implements OnInit {
   // Modal
   showModalLiquidar = false;
   anticipoSeleccionado: AnticipoResponse | null = null;
-
+  idEmpresaActual = this.usuarioService.getEmpresaId() || 1;
   constructor(
     private fb: FormBuilder,
     private dialog: MatDialog,
     private anticipoService: AnticipoService,
     private anticipoLiquidaService: AnticipoLiquidaService,
-    private tipoAnticipoService: TipoAnticipoService
+    private tipoAnticipoService: TipoAnticipoService,
+    private anticipoPdfService: AnticipoPDFService,
+    private empresaService: EmpresaService,
+    private usuarioService: UsuarioService
   ) {}
 
   ngOnInit(): void {
@@ -433,13 +439,71 @@ export class CierreAnticiposComponent implements OnInit {
   }
 
   private verDesglose(anticipo: AnticipoResponse): void {
-    // TODO: Implementar modal de desglose
-    console.log('Ver desglose del anticipo:', anticipo);
-    this.showMessageBox(
-      'Información',
-      `Desglose del anticipo ${anticipo.id_anticipo}<br><br>Esta funcionalidad se implementará próximamente`,
-      'info'
-    );
+    console.log('📄 Generando desglose para anticipo:', anticipo.id_anticipo);
+
+    // Mostrar loading
+    this.loadingCierre = true;
+
+    // Obtener desglose desde el backend
+    this.anticipoService.getDesglose(anticipo.id_anticipo).subscribe({
+      next: async (response) => {
+        if (response.type === 'success' && response.data) {
+          try {
+            // Mapear response a DesgloceAnticipoData
+            const desgloseData: DesgloceAnticipoData = {
+              info_anticipo: response.data.info_anticipo,
+              resumen_uso: response.data.resumen_uso,
+              detalle_movimientos: response.data.detalle_movimientos
+            };
+
+            // Obtener configuración de empresa
+            const configEmpresa = await this.anticipoPdfService.obtenerConfiguracionEmpresa(
+              this.idEmpresaActual
+            );
+
+            // Generar y descargar PDF
+            await this.anticipoPdfService.descargarDesglosePDF(
+              desgloseData,
+              `desglose-anticipo-${response.data.info_anticipo.numero_anticipo}.pdf`,
+              {
+                ...configEmpresa,
+                titulo: 'DESGLOSE DE ANTICIPO',
+                mostrarFechaGeneracion: true
+              }
+            );
+
+            this.showMessageBox(
+              'Éxito',
+              'El desglose se ha generado correctamente',
+              'success'
+            );
+          } catch (error) {
+            console.error('❌ Error generando PDF:', error);
+            this.showMessageBox(
+              'Error',
+              'Ocurrió un error al generar el PDF del desglose',
+              'error'
+            );
+          }
+        } else {
+          this.showMessageBox(
+            'Error',
+            response.message || 'No se pudo obtener el desglose del anticipo',
+            'error'
+          );
+        }
+        this.loadingCierre = false;
+      },
+      error: (error) => {
+        console.error('❌ Error obteniendo desglose:', error);
+        this.showMessageBox(
+          'Error',
+          'No se pudo obtener el desglose del anticipo',
+          'error'
+        );
+        this.loadingCierre = false;
+      }
+    });
   }
 
   private verDetalleLiquidacion(liquidacion: AnticipoLiquidaResponse): void {

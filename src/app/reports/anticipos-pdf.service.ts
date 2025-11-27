@@ -54,6 +54,39 @@ export interface ConfiguracionAnticiposPDF {
   tamanioPagina?: 'a4' | 'letter';
 }
 
+// Agregar después de las interfaces existentes
+export interface DesgloceAnticipoData {
+  info_anticipo: {
+    id_anticipo: number;
+    numero_anticipo: string;
+    fecha_creacion: string;
+    cliente_codigo: number;
+    nombre_cliente: string;
+    monto_original: number;
+    concepto: string;
+    esta_liquidado: boolean;
+    fecha_liquidacion?: string;
+    monto_liquidado?: number;
+    forma_pago_liquidacion?: string;
+    beneficiario_liquidacion?: string;
+  };
+  resumen_uso: {
+    monto_original: number;
+    total_utilizado: number;
+    saldo_disponible: number;
+    cantidad_usos: number;
+    usos_en_facturas: number;
+    usos_en_pagos: number;
+  };
+  detalle_movimientos: Array<{
+    fecha_uso: string;
+    tipo_documento: string;
+    numero_documento: string;
+    monto_utilizado: number;
+    observacion?: string;
+  }>;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AnticipoPDFService {
 
@@ -342,6 +375,307 @@ export class AnticipoPDFService {
     }
 
     return doc.output('blob');
+  }
+
+  // ============DESGLOSE DE ANTICIPO ============
+
+  /**
+ * Genera el PDF del desglose de un anticipo específico
+ * @param desglose Datos completos del desglose
+ * @param config Configuración personalizada
+ * @returns Promise<Blob> del PDF generado
+ */
+  async generarDesglosePDFBlob(
+    desglose: DesgloceAnticipoData,
+    config?: Partial<ConfiguracionAnticiposPDF>
+  ): Promise<Blob> {
+
+    const cfg = { ...this.configDefault, ...config };
+
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: cfg.tamanioPagina || 'a4'
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margins = { left: 14, right: 14, top: 14, bottom: 14 };
+
+    // Logo
+    let logoDataUrl: string | null = null;
+    try {
+      const logoUrl = await firstValueFrom(this.logoService.logoUrl$);
+      if (logoUrl) {
+        logoDataUrl = await this.toDataUrlSafe(logoUrl);
+      }
+    } catch (error) {
+      console.warn('[AnticipoPDFService] No se pudo cargar el logo:', error);
+    }
+
+    let yPosition = margins.top;
+
+    // ============ CABECERA (IGUAL QUE REPORTE) ============
+    if (logoDataUrl) {
+      try {
+        doc.setFillColor(255, 255, 255);
+        doc.rect(margins.left, yPosition, 30, 15, 'F');
+        doc.addImage(logoDataUrl, 'PNG', margins.left + 1, yPosition + 1, 28, 13);
+      } catch (error) {
+        console.warn('[AnticipoPDFService] Error al agregar logo:', error);
+      }
+    }
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(cfg.colorPrimario || '#1f2937');
+    doc.text(cfg.nombreEmpresa || 'Mi Empresa', pageWidth - margins.right, yPosition + 5, { align: 'right' });
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+
+    if (cfg.ruc) {
+      doc.text(`RUC: ${cfg.ruc}`, pageWidth - margins.right, yPosition + 10, { align: 'right' });
+    }
+    if (cfg.direccion) {
+      doc.text(cfg.direccion, pageWidth - margins.right, yPosition + 14, { align: 'right' });
+    }
+    if (cfg.telefono || cfg.email) {
+      const contacto = [cfg.telefono, cfg.email].filter(Boolean).join(' · ');
+      doc.text(contacto, pageWidth - margins.right, yPosition + 18, { align: 'right' });
+    }
+
+    yPosition += 25;
+
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(margins.left, yPosition, pageWidth - margins.right, yPosition);
+    yPosition += 8;
+
+    // ============ TÍTULO ============
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(cfg.colorPrimario || '#1f2937');
+    doc.text(cfg.titulo || 'Desglose de Anticipo', margins.left, yPosition);
+    yPosition += 8;
+
+    if (cfg.subtitulo) {
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+      doc.text(cfg.subtitulo, margins.left, yPosition);
+      yPosition += 6;
+    }
+
+    if (cfg.mostrarFechaGeneracion) {
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(120, 120, 120);
+      const fechaSinHora = new Date().toLocaleDateString('es-EC', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      });
+      doc.text(`Generado: ${fechaSinHora}`, margins.left, yPosition);
+      yPosition += 5;
+    }
+
+    yPosition += 3;
+
+    // ============ INFORMACIÓN DEL ANTICIPO ============
+    doc.setFillColor(240, 240, 240);
+    doc.rect(margins.left, yPosition, pageWidth - margins.left - margins.right, 8, 'F');
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(cfg.colorSecundario || '#002f75');
+    doc.text(
+      'INFORMACIÓN DEL ANTICIPO',
+      margins.left + 3,
+      yPosition + 5.5
+    );
+
+    yPosition += 10;
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(80, 80, 80);
+
+    const infoData = [
+      ['Número:', desglose.info_anticipo.numero_anticipo],
+      ['Fecha Creación:', this.formatearFechaSoloFecha(desglose.info_anticipo.fecha_creacion)],
+      ['Cliente:', `${desglose.info_anticipo.nombre_cliente} (${desglose.info_anticipo.cliente_codigo})`],
+      ['Concepto:', desglose.info_anticipo.concepto || 'N/A']
+    ];
+
+    infoData.forEach(([label, value]) => {
+      doc.setFont('helvetica', 'bold');
+      doc.text(label, margins.left, yPosition);
+      doc.setFont('helvetica', 'normal');
+      doc.text(value, margins.left + 35, yPosition);
+      yPosition += 5;
+    });
+
+    yPosition += 3;
+
+    // ============ RESUMEN FINANCIERO ============
+    doc.setFillColor(240, 248, 255);
+    doc.rect(margins.left, yPosition, pageWidth - margins.left - margins.right, 25, 'F');
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(cfg.colorSecundario || '#002f75');
+    doc.text('RESUMEN FINANCIERO', margins.left + 3, yPosition + 6);
+
+    yPosition += 11;
+
+    const resumenData = [
+      ['Monto Original:', this.formatMoney(desglose.resumen_uso.monto_original)],
+      ['Total Utilizado:', this.formatMoney(desglose.resumen_uso.total_utilizado)],
+      ['Saldo Disponible:', this.formatMoney(desglose.resumen_uso.saldo_disponible)]
+    ];
+
+    doc.setFontSize(9);
+    resumenData.forEach(([label, value]) => {
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+      doc.text(label, margins.left + 3, yPosition);
+      doc.setFont('helvetica', 'bold');
+      doc.text(value, margins.left + 50, yPosition);
+      yPosition += 5;
+    });
+
+    yPosition += 5;
+
+    // ============ LIQUIDACIÓN (si existe) ============
+    if (desglose.info_anticipo.esta_liquidado) {
+      doc.setFillColor(255, 248, 240);
+      doc.rect(margins.left, yPosition, pageWidth - margins.left - margins.right, 23, 'F');
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(200, 100, 0);
+      doc.text('⚠ ANTICIPO LIQUIDADO', margins.left + 3, yPosition + 6);
+
+      yPosition += 11;
+
+      const liquidacionData = [
+        ['Fecha Liquidación:', desglose.info_anticipo.fecha_liquidacion || 'N/A'],
+        ['Monto Liquidado:', this.formatMoney(desglose.info_anticipo.monto_liquidado || 0)],
+        ['Forma de Pago:', desglose.info_anticipo.forma_pago_liquidacion || 'N/A']
+      ];
+
+      doc.setFontSize(9);
+      liquidacionData.forEach(([label, value]) => {
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(80, 80, 80);
+        doc.text(label, margins.left + 3, yPosition);
+        doc.setFont('helvetica', 'bold');
+        doc.text(value, margins.left + 50, yPosition);
+        yPosition += 5;
+      });
+
+      yPosition += 5;
+    }
+
+    // ============ DETALLE DE MOVIMIENTOS ============
+    doc.setFillColor(240, 240, 240);
+    doc.rect(margins.left, yPosition, pageWidth - margins.left - margins.right, 8, 'F');
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(cfg.colorSecundario || '#002f75');
+    doc.text(
+      `DETALLE DE MOVIMIENTOS (${desglose.resumen_uso.cantidad_usos} usos: ${desglose.resumen_uso.usos_en_facturas} facturas, ${desglose.resumen_uso.usos_en_pagos} pagos)`,
+      margins.left + 3,
+      yPosition + 5.5
+    );
+
+    yPosition += 10;
+
+    if (desglose.detalle_movimientos.length === 0) {
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'italic');
+      doc.setTextColor(150, 150, 150);
+      doc.text('No se han registrado movimientos para este anticipo.', margins.left, yPosition);
+    } else {
+      const headers = [
+        ['Fecha', 'Tipo', 'N° Documento', 'Monto', 'Observación']
+      ];
+
+      const tableData = desglose.detalle_movimientos.map(item => [
+        this.formatearFechaSoloFecha(item.fecha_uso),
+        item.tipo_documento,
+        item.numero_documento,
+        this.formatMoney(item.monto_utilizado),
+        item.observacion || '-'
+      ]);
+
+      autoTable(doc, {
+        startY: yPosition,
+        head: headers,
+        body: tableData,
+        theme: 'grid',
+        styles: {
+          fontSize: 7.5,
+          cellPadding: 2,
+          lineColor: [200, 200, 200],
+          lineWidth: 0.1
+        },
+        headStyles: {
+          fillColor: [255, 255, 255],
+          textColor: [0, 0, 0],
+          fontStyle: 'bold',
+          fontSize: 9,
+          halign: 'center',
+          lineColor: [0, 0, 0],
+          lineWidth: 0.3
+        },
+        bodyStyles: {
+          fontSize: 8,
+          textColor: 50,
+          lineColor: [200, 200, 200],
+          lineWidth: 0.1
+        },
+        alternateRowStyles: {
+          fillColor: [248, 249, 250]
+        },
+        columnStyles: {
+          0: { halign: 'center', cellWidth: 25 },
+          1: { halign: 'center', cellWidth: 25 },
+          2: { halign: 'left', cellWidth: 40 },
+          3: { halign: 'right', cellWidth: 28 },
+          4: { halign: 'left', cellWidth: 'auto' }
+        },
+        margin: { left: margins.left, right: margins.right },
+        didDrawPage: (data) => {
+          this.agregarFooter(doc, data.pageNumber, cfg);
+        }
+      });
+    }
+
+    return doc.output('blob');
+  }
+
+  /**
+   * Descarga directa del PDF de desglose
+   */
+  async descargarDesglosePDF(
+    desglose: DesgloceAnticipoData,
+    nombreArchivo?: string,
+    config?: Partial<ConfiguracionAnticiposPDF>
+  ): Promise<void> {
+    const filename = nombreArchivo ||
+      `desglose-anticipo-${desglose.info_anticipo.numero_anticipo}.pdf`;
+
+    const blob = await this.generarDesglosePDFBlob(desglose, config);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   /**
