@@ -112,6 +112,13 @@
             <tr *ngFor="let row of tableRows">
               <td *ngFor="let col of tableColumns">
                 <ng-container [ngSwitch]="col.key">
+                  <ng-container *ngSwitchCase="'preven'">
+                    {{ formatPrecio(row[col.key]) }}
+                  </ng-container>
+
+                  <ng-container *ngSwitchCase="'prevensiniva'">
+                    {{ formatPrecio(row[col.key]) }}
+                  </ng-container>
                   <ng-container *ngSwitchCase="'acciones'">
                     <button (click)="editarProducto(row); $event.stopPropagation()" title="Editar">
                       <img src="assets/icons/icon-modificar-3.png" width="20" />
