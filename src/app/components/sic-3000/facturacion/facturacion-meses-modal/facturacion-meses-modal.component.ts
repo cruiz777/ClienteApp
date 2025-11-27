@@ -8,7 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatMomentDateModule, MAT_MOMENT_DATE_ADAPTER_OPTIONS } from '@angular/material-moment-adapter';
-import { MAT_DATE_FORMATS } from '@angular/material/core';
+import { MAT_DATE_FORMATS, MAT_DATE_LOCALE, DateAdapter } from '@angular/material/core';
 import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { HttpClientModule } from '@angular/common/http';
@@ -58,42 +58,49 @@ export const ES_FORMATS = {
     MatFormFieldModule, MatInputModule, MatButtonModule, MatIconModule,
     MatDatepickerModule, MatMomentDateModule,
     MatSelectModule, MatOptionModule,
-    HttpClientModule,          // 👉 asegura HttpClient disponible si el padre no lo importa
+    HttpClientModule,
     AgGridModule
   ],
   templateUrl: './facturacion-meses-modal.component.html',
   styleUrls: ['./facturacion-meses-modal.component.css'],
   providers: [
     { provide: MAT_DATE_FORMATS, useValue: ES_FORMATS },
+    { provide: MAT_DATE_LOCALE, useValue: 'es-EC' },
     { provide: MAT_MOMENT_DATE_ADAPTER_OPTIONS, useValue: { useUtc: true } },
   ]
 })
 export class FacturacionMesesModalComponent implements OnInit {
   form: FormGroup;
   aplicado = false;
-  // dentro de tu componente
-gridHeightPx = 150;   // ajusta a 200/240/300 según quieras
-rowHeight = 28;       // filas compactas (opcional)
+
+  gridHeightPx = 150;
+  rowHeight = 28;
 
   // =======================
   // AG Grid
   // =======================
   rowData: FacturaDetallePrefijoResponse[] = [];
 
-  // Define columnas (sin flex por-columna; lo ponemos en defaultColDef)
- defaultColDef: ColDef = {
-  resizable: true,
-  sortable: true
-};
+  defaultColDef: ColDef = {
+    resizable: true,
+    sortable: true
+  };
 
-columnDefs: ColDef[] = [
-  { headerName: 'Factura', field: 'numnota', width: 180 },
-  { headerName: 'F.Factura', field: 'fechaFactura', width: 120, valueFormatter: p => this.formatISODate(p.value) },
-  { headerName: '#Meses', field: 'cantidad', width: 70 },
-  { headerName: 'Descripción', field: 'descripcion', minWidth: 280, flex: 2 ,  tooltipField: 'descripcion' ,cellClass: 'cell-ellipsis'   }, // ← flexible, crece
-  { headerName: 'Desde', field: 'periodoDesde', width: 140, valueFormatter: p => this.formatISODate(p.value) },
-  { headerName: 'Hasta', field: 'periodoHasta', width: 140, valueFormatter: p => this.formatISODate(p.value) },
-];
+  columnDefs: ColDef[] = [
+    { headerName: 'Factura', field: 'numnota', width: 180 },
+    { headerName: 'F.Factura', field: 'fechaFactura', width: 120, valueFormatter: p => this.formatISODate(p.value) },
+    { headerName: '#Meses', field: 'cantidad', width: 70 },
+    {
+      headerName: 'Descripción',
+      field: 'descripcion',
+      minWidth: 280,
+      flex: 2,
+      tooltipField: 'descripcion',
+      cellClass: 'cell-ellipsis'
+    },
+    { headerName: 'Desde', field: 'periodoDesde', width: 140, valueFormatter: p => this.formatISODate(p.value) },
+    { headerName: 'Hasta', field: 'periodoHasta', width: 140, valueFormatter: p => this.formatISODate(p.value) },
+  ];
 
   isLoading = false;
   private gridApi?: GridApi;
@@ -102,8 +109,12 @@ columnDefs: ColDef[] = [
     @Inject(MAT_DIALOG_DATA) public data: FacturacionMesesData,
     public ref: MatDialogRef<FacturacionMesesModalComponent>,
     private fb: FormBuilder,
-    private prefijosSrv: FacturaDetallePrefijosService
+    private prefijosSrv: FacturaDetallePrefijosService,
+    private dateAdapter: DateAdapter<any>   // 👈 inyectamos el adaptador
   ){
+    // 👇 forzamos locale del adaptador a es-EC (dd/MM/yyyy)
+    this.dateAdapter.setLocale('es-EC');
+
     const y = data?.anioActual ?? new Date().getFullYear();
     const f1 = new Date(y, 0, 1);
     const f2 = new Date(y, 11, 31);
@@ -127,12 +138,10 @@ columnDefs: ColDef[] = [
   }
 
   ngOnInit(): void {
-    // Cuando el diálogo ya abrió, ajustar columnas (asegura contenedor con tamaño)
     this.ref.afterOpened().subscribe(() =>
       setTimeout(() => this.gridApi?.sizeColumnsToFit(), 0)
     );
 
-    // Si ya viene seleccionado desde el padre, carga al iniciar
     if (this.form.get('idPrefijo')?.value) {
       this.consultar();
     }
@@ -143,7 +152,6 @@ columnDefs: ColDef[] = [
     setTimeout(() => this.gridApi?.sizeColumnsToFit(), 0);
   }
 
-  // Reajustar al redimensionar ventana
   @HostListener('window:resize')
   onResize() {
     setTimeout(() => this.gridApi?.sizeColumnsToFit(), 0);
@@ -231,7 +239,6 @@ columnDefs: ColDef[] = [
 
     this.prefijosSrv.getByCodigo(codpre).subscribe({
       next: (rows) => {
-        // Orden descendente por fecha (ISO)
         this.rowData = [...rows].sort((a, b) => (b.fechaFactura ?? '').localeCompare(a.fechaFactura ?? ''));
         this.isLoading = false;
         setTimeout(() => {
@@ -266,8 +273,7 @@ columnDefs: ColDef[] = [
     const codpre = this.data.prefijos.find(p => p.id_prefijos === idPrefijo)?.codpre ?? '';
 
     const numeroMeses = this.diffMeses(d1, d2, true);
-    const periodo = `${this.mesNombre(d1).toUpperCase()} ${d1.getFullYear()} -- ${this.mesNombre(d2).toUpperCase()} ${d2.getFullYear()}`;
-
+    const periodo = `${this.mesNombre(d1).toUpperCase()} ${d1.getFullYear()} - ${this.mesNombre(d2).toUpperCase()} ${d2.getFullYear()}`;
 
     const res: FacturacionMesesResult = {
       anio: d2.getFullYear(),
