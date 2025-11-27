@@ -1,75 +1,130 @@
 <div class="page-container">
-  <h2 class="title">Estado de Cuenta de Clientes</h2>
 
-  <!-- Filtros -->
-  <div class="filters-row">
-    <!-- Búsqueda general -->
-    <div class="filter-group large">
-      <label for="filtroCliente">Buscar cliente (nombre, RUC o prefijo)</label>
-      <input
-        id="filtroCliente"
-        type="text"
-        [(ngModel)]="filtroCliente"
-        (input)="onFiltroClienteChange()"
-        placeholder="Escriba nombre, RUC o prefijo..."
-      />
-    </div>
+  <div class="contenido-tablas estado-cuenta-wrapper">
 
-    <!-- Selector de cliente -->
-    <div class="filter-group">
-      <label for="clienteSelect">Cliente</label>
-      <select
-        id="clienteSelect"
-        [(ngModel)]="clienteSeleccionadoId"
-        (change)="onClienteChange()"
-      >
-        <option [ngValue]="null">-- Seleccione un cliente --</option>
-        <option *ngFor="let c of clientesFiltrados" [ngValue]="c.id">
-          {{ c.nombre }} | RUC: {{ c.ruc }} | Prefijo: {{ c.prefijo }}
-        </option>
-      </select>
-    </div>
+    <!-- Encabezado superior -->
+    <div class="encabezado-superior">
 
-    <!-- Info cliente seleccionado -->
-    <div class="filter-group">
-      <label>Cliente seleccionado</label>
-      <div class="cliente-info">
-        {{ nombreClienteActual || 'Sin cliente seleccionado' }}
+
+      <div class="encabezado-titulo">
+        ESTADO DE CUENTA
+      </div>
+
+      <div class="encabezado-fecha-der">
+
+        <div class="fila-fecha">
+          <span class="label">Fecha del reporte:</span>
+          {{ hoy | date: 'dd/MM/yyyy' }}
+        </div>
+
       </div>
     </div>
-  </div>
 
-  <!-- Botones -->
-  <div class="buttons-row">
-    <button class="btn primary" (click)="nuevaConsulta()">
-      Nueva consulta
-    </button>
+    <!-- Datos del cliente -->
+    <div class="field col-1">
+          <label>Cliente:</label>
+          <div class="fi-input-wrap" style="width: 800px;">
+            <input #clienteInputRef type="text" matInput class="fi-input"  [formControl]="clienteOrigenControl"
+              [matAutocomplete]="autoOrigen" (blur)="clienteOrigenControl.markAsTouched()" placeholder="Buscar Cliente"
+              [class.input-error]="clienteOrigenControl.invalid && clienteOrigenControl.touched" />
 
-    <div class="export-wrapper">
-      <button class="btn secondary" (click)="toggleExportMenu()">
-        Exportar
-      </button>
+            <mat-autocomplete #autoOrigen="matAutocomplete" [displayWith]="mostrarNombreCliente"
+              (optionSelected)="seleccionarClienteOrigen($event.option.value)">
+              <mat-option *ngFor="let cliente of clientesOrigenFiltrados" [value]="cliente">
+                <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
+              </mat-option>
+            </mat-autocomplete>
+          </div>
 
-      <div class="export-menu" *ngIf="showExportMenu">
-        <button class="export-item" (click)="exportarExcel()">
-          Exportar a Excel
-        </button>
-        <button class="export-item" (click)="exportarPdf()">
-          Exportar a PDF
-        </button>
+        </div>
+
+
+
+
+
+    <div>
+      <div class="bloque-cliente" *ngIf="clienteSeleccionado as cli">
+        <div class="cliente-izq">
+          <div class="fila-cliente">
+            <span class="label">Cliente:</span>
+            <span class="cliente-nombre">
+              {{ cli.nomcli }}
+            </span>
+          </div>
+
+          <div class="fila-cliente">
+            <span class="label">Dirección:</span>
+            <span>{{ cli.dircli }}</span>
+          </div>
+
+          <div class="fila-cliente">
+            <span class="label">Teléfono:</span>
+            <span>{{ cli.telefono }}</span>
+          </div>
+        </div>
+
+
       </div>
-    </div>
-  </div>
 
-  <!-- AG Grid -->
-  <div class="grid-wrapper">
-    <ag-grid-angular
-      class="ag-theme-alpine ag-grid"
-      [rowData]="rowData"
-      [columnDefs]="columnDefs"
-      [defaultColDef]="defaultColDef"
-      (gridReady)="onGridReady($event)"
-    >
-    </ag-grid-angular>
-  </div>
+      <!-- Mensajes de estado -->
+      <div *ngIf="loading" class="estado-mensaje">
+        Cargando información...
+      </div>
+      <div *ngIf="!loading && errorMessage" class="estado-mensaje error">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Grid -->
+      <div class="grid-wrapper ag-theme-alpine" *ngIf="!loading && !errorMessage">
+        <ag-grid-angular class="ag-grid" [rowData]="rowData" [columnDefs]="columnDefs" [defaultColDef]="defaultColDef"
+          [pagination]="true" [paginationPageSize]="10" [domLayout]="'autoHeight'" (gridReady)="onGridReady($event)"
+          [enableBrowserTooltips]="true" [tooltipShowDelay]="300" [tooltipHideDelay]="100">
+        </ag-grid-angular>
+      </div>
+
+      <!-- Totales -->
+      <div class="totales-contenedor" *ngIf="!loading && !errorMessage">
+        <div class="total-bloque">
+          <div class="total-titulo">TOTAL GENERAL</div>
+
+          <div class="total-fila">
+            <span class="label">Debe:</span>
+            <span>{{ formatNumero(totalDebe) }}</span>
+
+          </div>
+          <div class="total-fila">
+            <span class="label">Haber:</span>
+            <span>{{ formatNumero(totalHaber) }}</span>
+          </div>
+          <div class="total-fila saldo-line">
+            <span class="saldo-value">{{ formatNumero(totalSaldo) }}</span>
+            <span class="saldo-value">{{ totalSaldo | number: '1.2-2' }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Botones -->
+      <!-- diseño nuevo: mismo comportamiento, mismas funciones -->
+<div class="buttons-row buttons-bottom">
+  <!-- Botón Exportar con menu -->
+  <button mat-button
+          [matMenuTriggerFor]="menuExportar"
+          >
+    Exportar
+  </button>
+
+  <mat-menu #menuExportar="matMenu">
+    <!-- llamo a tus funciones existentes -->
+    <button mat-menu-item (click)="exportarPdf()">PDF</button>
+    <button mat-menu-item (click)="exportarExcel()">Excel</button>
+  </mat-menu>
+
+  <!-- Botón Cancelar (misma función que ya tienes) -->
+  <button mat-button type="button" (click)="cancelar()">
+    Cancelar
+  </button>
 </div>
+
+
+    </div>
+  </div>
