@@ -21,7 +21,7 @@ import { InicioSicComponent } from './inicio-sic/inicio-sic.component';
 import { NavigationSicComponent } from './navigation-sic/navigation-sic.component';
 import { CreacionAnticiposComponent } from './anticipos/creacion-anticipos/creacion-anticipos.component';
 import { ReporteAnticiposComponent } from './anticipos/reporte-anticipos/reporte-anticipos.component';
-  // 👉 Standalone: se importa (no va en declarations)
+
   import { FacturacionIndividualComponent } from './facturacion/facturacion-individual/facturacion-individual.component';
   import { FacturacionGlobalComponent } from './facturacion/facturacion-global/facturacion-global.component';
   import { MatTableModule } from '@angular/material/table';
@@ -41,19 +41,24 @@ import { ProductosProveedorDialogComponent } from './proveedores/dialog/producto
 import { BuscarAnticipoDialogComponent } from './anticipos/dialogs/buscar-anticipo-dialog/buscar-anticipo-dialog.component';
 import { MotivoAnulacionDialogComponent } from './anticipos/dialogs/anular-anticipo-dialog/anular-anticipo-dialog';
 import { CierreAnticiposComponent } from './anticipos/cierre-anticipos/cierre-anticipos.component';
+import { EstadocuentaclienteComponent } from './exploradores/estadocuentacliente/estadocuentacliente.component';
+import { CuentaxcobrarComponent } from './exploradores/cuentaxcobrar/cuentaxcobrar.component';
+
 
   @NgModule({
     declarations: [
       InicioSicComponent,
       NavigationSicComponent,
-      // ❌ No declarar FacturacionIndividualComponent porque es standalone
       ProductosSicComponent,
       ProveedoresListaComponent,
       ProveedorDialogComponent,
       ProductosProveedorDialogComponent,
       AgregarUbicacionDialogComponent,
       CierreAnticiposComponent,
-      FilePreviewComponent
+      EstadocuentaclienteComponent,
+      CuentaxcobrarComponent,
+      FilePreviewComponent,
+
     ],
     imports: [
       CommonModule,
