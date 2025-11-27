@@ -1,0 +1,75 @@
+<div class="page-container">
+  <h2 class="title">Estado de Cuenta de Clientes</h2>
+
+  <!-- Filtros -->
+  <div class="filters-row">
+    <!-- Búsqueda general -->
+    <div class="filter-group large">
+      <label for="filtroCliente">Buscar cliente (nombre, RUC o prefijo)</label>
+      <input
+        id="filtroCliente"
+        type="text"
+        [(ngModel)]="filtroCliente"
+        (input)="onFiltroClienteChange()"
+        placeholder="Escriba nombre, RUC o prefijo..."
+      />
+    </div>
+
+    <!-- Selector de cliente -->
+    <div class="filter-group">
+      <label for="clienteSelect">Cliente</label>
+      <select
+        id="clienteSelect"
+        [(ngModel)]="clienteSeleccionadoId"
+        (change)="onClienteChange()"
+      >
+        <option [ngValue]="null">-- Seleccione un cliente --</option>
+        <option *ngFor="let c of clientesFiltrados" [ngValue]="c.id">
+          {{ c.nombre }} | RUC: {{ c.ruc }} | Prefijo: {{ c.prefijo }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Info cliente seleccionado -->
+    <div class="filter-group">
+      <label>Cliente seleccionado</label>
+      <div class="cliente-info">
+        {{ nombreClienteActual || 'Sin cliente seleccionado' }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Botones -->
+  <div class="buttons-row">
+    <button class="btn primary" (click)="nuevaConsulta()">
+      Nueva consulta
+    </button>
+
+    <div class="export-wrapper">
+      <button class="btn secondary" (click)="toggleExportMenu()">
+        Exportar
+      </button>
+
+      <div class="export-menu" *ngIf="showExportMenu">
+        <button class="export-item" (click)="exportarExcel()">
+          Exportar a Excel
+        </button>
+        <button class="export-item" (click)="exportarPdf()">
+          Exportar a PDF
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- AG Grid -->
+  <div class="grid-wrapper">
+    <ag-grid-angular
+      class="ag-theme-alpine ag-grid"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      (gridReady)="onGridReady($event)"
+    >
+    </ag-grid-angular>
+  </div>
+</div>

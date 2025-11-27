@@ -21,6 +21,9 @@ import { CreacionAnticiposComponent } from './anticipos/creacion-anticipos/creac
 import { ReporteAnticiposComponent } from './anticipos/reporte-anticipos/reporte-anticipos.component';
 import { LisPagAnuladosComponent } from './cxc/lis-pag-anulados/lis-pag-anulados.component';
 import { CierreAnticiposComponent } from './anticipos/cierre-anticipos/cierre-anticipos.component';
+import { EstadocuentaclienteComponent } from './exploradores/estadocuentacliente/estadocuentacliente.component';
+import { CuentaxcobrarComponent } from './exploradores/cuentaxcobrar/cuentaxcobrar.component';
+
 const routes: Routes = [
   {
     path: '',
@@ -68,7 +71,7 @@ const routes: Routes = [
 
       },
 
-      
+
 
       // FACTURACIÓN INDIVIDUAL
       {
@@ -115,10 +118,12 @@ const routes: Routes = [
         path: 'proveedores',
         component: ProveedoresListaComponent
       },
-      
+
       { path: 'creacion-anticipos', component: CreacionAnticiposComponent},
       { path: 'reporte-anticipos', component: ReporteAnticiposComponent},
-      { path: 'cierre-anticipos', component: CierreAnticiposComponent}
+      { path: 'cierre-anticipos', component: CierreAnticiposComponent},
+      { path: 'exp-estadocuenta', component: EstadocuentaclienteComponent},
+      { path: 'exp-cuentaxcobrar', component: CuentaxcobrarComponent}
     ]
   }
 ];

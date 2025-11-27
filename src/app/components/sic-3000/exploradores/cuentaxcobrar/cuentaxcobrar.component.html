@@ -1,0 +1,93 @@
+<div class="page-container">
+  <!-- Título -->
+  <div class="title">Explorador Cuentas por Cobrar</div>
+
+  <!-- Filtros -->
+  <form [formGroup]="filtersForm" (ngSubmit)="onBuscar()">
+    <div class="filters-row">
+      <div class="filter-group large">
+        <label for="cliente">Cliente:</label>
+        <input
+          id="cliente"
+          type="text"
+          formControlName="cliente"
+          placeholder="Buscar por nombre, RUC o prefijo"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label for="fechaInicio">Fecha Inicial:</label>
+        <input
+          id="fechaInicio"
+          type="date"
+          formControlName="fechaInicio"
+        />
+      </div>
+
+      <div class="filter-group">
+        <label for="fechaHasta">Fecha Hasta:</label>
+        <input
+          id="fechaHasta"
+          type="date"
+          formControlName="fechaHasta"
+        />
+      </div>
+    </div>
+
+    <div class="checkbox-row">
+      <label class="checkbox-inline">
+        <input type="checkbox" formControlName="totales" />
+        <span>Totales</span>
+      </label>
+
+      <label class="checkbox-inline">
+        <input type="checkbox" formControlName="detalle" />
+        <span>Detalle</span>
+      </label>
+
+      <div class="checkbox-row-spacer"></div>
+
+      <button type="submit" class="btn primary">
+        Buscar
+      </button>
+    </div>
+  </form>
+
+  <!-- Tabla (AG-Grid) -->
+  <div class="grid-wrapper ag-theme-alpine">
+    <ag-grid-angular
+      class="ag-grid"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [rowData]="rowData"
+      [rowSelection]="'single'"
+      [suppressRowClickSelection]="true"
+      (gridReady)="onGridReady($event)">
+    </ag-grid-angular>
+  </div>
+
+  <!-- Botones inferiores -->
+  <div class="footer-buttons">
+    <button type="button" class="btn secondary" (click)="onNuevaConsulta()">
+      Nueva Consulta
+    </button>
+
+    <div class="export-wrapper">
+      <button
+        type="button"
+        class="btn primary"
+        (click)="toggleExportMenu()">
+        Exportar ▾
+      </button>
+
+      <div class="export-menu" *ngIf="exportMenuOpen">
+        <button type="button" class="export-item" (click)="exportToExcel()">
+          Exportar a Excel
+        </button>
+        <button type="button" class="export-item" (click)="exportToPdf()">
+          Exportar a PDF
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
