@@ -180,17 +180,12 @@
               </mat-panel-title>
             </mat-expansion-panel-header>
             <!-- Nivel 3: Reportes-->
-
             <a mat-list-item [routerLink]="['exp-estadocuenta']" routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Estado de cuenta cliente</span>
             </a>
             <a mat-list-item [routerLink]="['exp-cuentaxcobrar']" routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Cuentas por Cobrar</span>
             </a>
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text"></span>
-            </a>
-
             <a mat-list-item routerLink="">
               <span *ngIf="isExpanded" class="menu-text">Pagos</span>
             </a>
