@@ -1,214 +1,3150 @@
+/* ===== Layout del contenedor ===== */
+.cuenta-liquidar{
+  padding: 12px 18px;
+  background:#f6f8fb;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif;
+  color:#2c3b6f;
+}
+
+/* ===== Stepper ===== */
+.steps{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.step{display:flex;align-items:center;gap:8px;color:#8da1c2;font-weight:600}
+.step-badge{width:22px;height:22px;border-radius:50%;border:2px solid #e1e7f5;display:flex;align-items:center;justify-content:center;font-size:12px;background:#fff}
+.step.active{color:#1c2a5e}
+.step.active .step-badge{border-color:#ff7b00;background:#ff7b00;color:#fff}
+.step-text{white-space:nowrap}
+.step-divider{flex:1;height:2px;background:#e9edf6;border-radius:2px}
+
+/* ===== Paneles con borde (como la 1ª imagen) ===== */
+.panel{
+  background:#fff;
+  border:1px solid #d9e3f0;
+  border-radius:4px;
+  padding:12px 14px;
+  margin-bottom:12px;
+}
+.panel-title{
+  font-weight:700;
+  color:#1c2a5e;
+  margin-bottom:8px;
+  font-size:14px;
+}
+.panel-subtitle{
+  font-weight:600;
+  color:#1c2a5e;
+  margin-bottom:6px;
+  font-size:13px;
+}
+.panel-bottom{padding-bottom:10px}
+
+/* ===== Grid de campos estilo “linea inferior” pero compacto ===== */
+.grid-2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:12px 40px;
+  align-items:end;
+}
+.field label{
+  display:block;
+  font-size:12px;
+  font-weight:600;
+  color:#2c3b6f;
+  margin-bottom:4px;
+}
+.form-control{
+  height:28px;
+  line-height:28px;
+  padding:0 6px;
+  border:none;
+  border-bottom:1px solid #dfe6f5;
+  border-radius:0;
+  background:transparent;
+  font-size:13px;
+}
+.form-control:focus{outline:none;border-bottom-color:#9db4d9}
+
+/* ===== Botones ===== */
+.btn{
+  height:28px;
+  padding:0 12px;
+  font-size:12px;
+  border-radius:4px;
+  border:1px solid transparent;
+  cursor:pointer;
+}
+.btn-primary{background:#1c2a5e;border-color:#1c2a5e;color:#fff}
+.btn-primary:hover{background:#16224a;border-color:#16224a}
+.btn-ghost{background:#fff;color:#2c3b6f;border-color:#cfd9ea}
+.btn-ghost:hover{background:#f3f6fb}
+
+/* Botoneras alineadas como en la captura */
+.actions-left{display:flex;gap:6px;margin-top:10px}
+.actions-right{display:flex;gap:6px;justify-content:flex-end;margin-top:10px}
+.toolbar{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-top:8px;
+}
+.toolbar .tot{color:#6b7890;font-size:12px}
+.toolbar .btns{display:flex;gap:6px}
+
+/* ===== AG Grid “alpine” afinado para verse como la 1ª imagen ===== */
+.ag-theme-alpine.compact-grid{
+  /* Tipografía y alturas */
+  --ag-font-size: 12px;
+  --ag-row-height: 28px;
+  --ag-header-height: 28px;
+
+  /* Colores/bordes */
+  --ag-border-color: #d9e3f0;
+  --ag-header-background-color: #f7f9fc;
+  --ag-header-foreground-color: #2c3b6f;
+  --ag-odd-row-background-color: #ffffff;
+  --ag-row-border-color: #e8eef7;
+}
+
+/* Texto de estado con colores */
+.text-success{color:#1e8e3e;}
+.text-primary{color:#1c2a5e;}
+.text-warning{color:#e5a100;}
+.fw-bold{font-weight:700;}
+.text-danger{color:#d93025;}
+.text-end{text-align:right;}
 :host {
-  display: block;
-  font-family: 'Roboto', Arial, sans-serif;
-  color: #1f2933;
+  display: contents;
 }
 
-/* Layout general (basado en estadocuentacliente) */
-.page-container {
-  padding: 16px 32px 24px;
-  background-color: #f5f8fc;
-  height: 100%;
-  box-sizing: border-box;
+.invoice-customer-container {
+  background-color: rgba(255, 255, 255, 1);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  align-items: stretch;
+  font-family: Inter, -apple-system, Roboto, Helvetica, sans-serif;
+  padding: 31px 0;
 }
 
-/* Título */
-.title {
-  font-size: 20px;
+.steps-header {
+  align-self: end;
+  display: flex;
+  margin-right: 42px;
+  width: 607px;
+  max-width: 100%;
+  align-items: stretch;
+  gap: 20px;
+  color: var(--gs-1-blue-20, #ccd5e2);
   font-weight: 600;
-  margin: 8px 0 18px;
+  flex-wrap: wrap;
+  justify-content: space-between;
+}
+
+@media (max-width: 991px) {
+  .steps-header {
+    margin-right: 10px;
+  }
+}
+
+.step-info {
+  display: flex;
+  min-height: 50px;
+  align-items: center;
+  gap: 17px;
+  white-space: nowrap;
+  justify-content: start;
+  flex-wrap: wrap;
+  padding: 10px;
+}
+
+@media (max-width: 991px) {
+  .step-info {
+    white-space: initial;
+  }
+}
+
+.step-info.inactive {
+  display: flex;
+  min-height: 50px;
+  align-items: center;
+  gap: 17px;
+  white-space: nowrap;
+  justify-content: start;
+  flex-wrap: wrap;
+  padding: 10px;
+}
+
+.step-info.inactive:last-child {
+  display: flex;
+  min-height: 50px;
+  align-items: center;
+  gap: 17px;
+  justify-content: start;
+  flex-wrap: wrap;
+  padding: 10px;
+}
+
+.step-circle {
+  align-self: stretch;
+  font-size: 13px;
+  text-align: center;
+  width: 30px;
+  margin: auto 0;
+}
+
+@media (max-width: 991px) {
+  .step-circle {
+    white-space: initial;
+  }
+}
+
+.step-circle:not(.active) {
+  align-self: stretch;
+  font-size: 13px;
+  white-space: nowrap;
+  text-align: center;
+  width: 30px;
+  margin: auto 0;
+}
+
+@media (max-width: 991px) {
+  .step-circle:not(.active) {
+    white-space: initial;
+  }
+}
+
+.step-number-wrapper {
+  aspect-ratio: 1/1;
+  stroke-width: 1px;
+  background-color: var(--blanco-100, #fff);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 30px;
+  height: 30px;
+  fill: var(--blanco-100, #fff);
+  stroke: var(--gs-1-blue-20, #ccd5e2);
+  padding: 6px 3px 14px;
+  border: 1px solid rgba(204, 213, 226, 1);
+}
+
+@media (max-width: 991px) {
+  .step-number-wrapper {
+    white-space: initial;
+  }
+}
+
+.step-number-wrapper.active {
+  aspect-ratio: 1/1;
+  background-color: var(--gs-1-naranja-100, #f26334);
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 30px;
+  height: 30px;
+  fill: var(--gs-1-naranja-100, #f26334);
+  padding: 6px 3px 15px;
+}
+
+@media (max-width: 991px) {
+  .step-number-wrapper.active {
+    white-space: initial;
+  }
+}
+
+.step-number {
+  color: var(--gs-1-blue-20, #ccd5e2);
+}
+
+.step-number.active {
+  color: var(--blanco-100, #fff);
+}
+
+.step-title {
+  color: var(--gs-1-blue-20, #ccd5e2);
+  font-size: 12px;
+  align-self: stretch;
+  margin: auto 0;
+}
+
+.step-title.active {
+  color: var(--gs-1-azul-100, #002c6c);
+  font-size: 12px;
+  align-self: stretch;
+  margin: auto 0;
+}
+
+.main-content {
+  z-index: 10;
+  display: flex;
+  margin-top: -51px;
+  width: 100%;
+  flex-direction: column;
+  padding: 0 31px;
+}
+
+@media (max-width: 991px) {
+  .main-content {
+    max-width: 100%;
+    padding: 0 20px;
+  }
+}
+
+.current-step-section {
+  display: flex;
+  width: 227px;
+  max-width: 100%;
+  flex-direction: column;
+  align-items: start;
+}
+
+.step-info.active {
+  align-items: center;
+  align-content: center;
+  flex-wrap: wrap;
+  border-bottom: 2px solid var(--gs-1-blue-20, #ccd5e2);
+  display: flex;
+  margin-left: 17px;
+  min-height: 50px;
+  gap: 17px;
+  font-weight: 600;
+  justify-content: start;
+  padding: 10px;
+}
+
+@media (max-width: 991px) {
+  .step-info.active {
+    margin-left: 10px;
+  }
+}
+
+.step-circle.active {
+  align-self: stretch;
+  font-size: 13px;
+  color: var(--blanco-100, #fff);
+  white-space: nowrap;
+  text-align: center;
+  width: 30px;
+  margin: auto 0;
+}
+
+@media (max-width: 991px) {
+  .step-circle.active {
+    white-space: initial;
+  }
+}
+
+.form-title {
+  align-self: stretch;
+  display: flex;
+  margin-top: 10px;
+  align-items: center;
+  gap: 10px;
+  font-size: 20px;
+  color: var(--gs-1-azul-100, #002c6c);
+  font-weight: 700;
+  justify-content: start;
+  padding: 10px 0;
+}
+
+.customer-info-title {
+  color: var(--gs-1-azul-100, #002c6c);
+  align-self: stretch;
+  margin: auto 0;
+}
+
+.customer-label-section {
+  display: flex;
+  min-height: 16px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--gs-1-azul-100, #002c6c);
+  font-weight: 400;
+  white-space: nowrap;
+  justify-content: center;
+  margin: 12px 0 0 18px;
+  padding: 0 2px;
+}
+
+@media (max-width: 991px) {
+  .customer-label-section {
+    margin-left: 10px;
+    white-space: initial;
+  }
+}
+
+.field-label {
+  color: var(--gs-1-azul-100, #002c6c);
+  align-self: stretch;
+  margin: auto 0;
+}
+
+.form-fields-section {
+  align-self: end;
+  z-index: 10;
+  display: flex;
+  margin-top: -16px;
+  width: 513px;
+  max-width: 100%;
+  flex-direction: column;
+  align-items: start;
+  font-size: 13px;
+  color: var(--gs-1-azul-100, #002c6c);
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+@media (max-width: 991px) {
+  .form-fields-section {
+    white-space: initial;
+  }
+}
+
+.phone-field-section {
+  display: flex;
+  width: 513px;
+  max-width: 100%;
+  flex-direction: column;
+  align-items: stretch;
+  white-space: nowrap;
+}
+
+@media (max-width: 991px) {
+  .phone-field-section {
+    white-space: initial;
+  }
+}
+
+.phone-label-wrapper {
+  display: flex;
+  min-height: 16px;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  padding: 0 2px;
+}
+
+@media (max-width: 991px) {
+  .phone-label-wrapper {
+    white-space: initial;
+  }
+}
+
+.input-field {
+  border-bottom: 1px solid var(--gs-1-blue-20, #ccd5e2);
+  background-color: #fff;
+  align-self: stretch;
+  display: flex;
+  margin-top: 7px;
+  align-items: stretch;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--gs-1-blue-20, #ccd5e2);
+  flex-wrap: wrap;
+  padding: 5px 4px;
+}
+
+@media (max-width: 991px) {
+  .input-field {
+    white-space: initial;
+  }
+}
+
+.input-icon {
+  aspect-ratio: 0.09;
+  object-fit: contain;
+  object-position: center;
+  width: 1px;
+  fill: var(--gs-1-blu-50, #8095b5);
+  align-self: start;
+  flex-shrink: 0;
+}
+
+.placeholder-text {
+  color: var(--gs-1-blue-20, #ccd5e2);
+  flex-grow: 1;
+  flex-shrink: 1;
+  width: 495px;
+  flex-basis: auto;
+}
+
+@media (max-width: 991px) {
+  .placeholder-text {
+    max-width: 100%;
+  }
+}
+
+.email-label-wrapper {
+  display: flex;
+  margin-top: 15px;
+  min-height: 16px;
+  align-items: center;
+  gap: 10px;
+  justify-content: center;
+  padding: 0 2px;
+}
+
+@media (max-width: 991px) {
+  .email-label-wrapper {
+    white-space: initial;
+  }
+}
+
+.additional-fields-section {
+  z-index: 10;
+  margin-top: -53px;
+  width: 100%;
+  font-weight: 400;
+  padding: 0 49px;
+}
+
+@media (max-width: 991px) {
+  .additional-fields-section {
+    max-width: 100%;
+    padding: 0 20px;
+  }
+}
+
+.identification-section {
+  display: flex;
+  width: 513px;
+  max-width: 100%;
+  flex-direction: column;
+  align-items: stretch;
+  white-space: nowrap;
+}
+
+@media (max-width: 991px) {
+  .identification-section {
+    white-space: initial;
+  }
+}
+
+.identification-label-wrapper {
+  align-self: start;
+  display: flex;
+  margin-top: 15px;
+  min-height: 16px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--gs-1-azul-100, #002c6c);
+  justify-content: center;
+  padding: 0 2px;
+}
+
+@media (max-width: 991px) {
+  .identification-label-wrapper {
+    white-space: initial;
+  }
+}
+
+.address-email-section {
+  display: flex;
+  margin-top: 7px;
+  width: 100%;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+@media (max-width: 991px) {
+  .address-email-section {
+    max-width: 100%;
+  }
+}
+
+.address-section {
+  display: flex;
+  align-items: stretch;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 991px) {
+  .address-section {
+    max-width: 100%;
+  }
+}
+
+.address-field-section {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  white-space: nowrap;
+  flex: 1;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0;
+  width: fit-content;
+}
+
+@media (max-width: 991px) {
+  .address-field-section {
+    max-width: 100%;
+    white-space: initial;
+  }
+}
+
+.address-label-wrapper {
+  align-self: start;
+  display: flex;
+  margin-top: 15px;
+  min-height: 16px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--gs-1-azul-100, #002c6c);
+  justify-content: center;
+  padding: 0 2px;
+}
+
+@media (max-width: 991px) {
+  .address-label-wrapper {
+    white-space: initial;
+  }
+}
+
+.optional-email-section {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex: 1;
+  flex-grow: 1;
+  flex-shrink: 0;
+  flex-basis: 0;
+  width: fit-content;
+}
+
+@media (max-width: 991px) {
+  .optional-email-section {
+    max-width: 100%;
+  }
+}
+
+.optional-email-label-wrapper {
+  align-self: start;
+  display: flex;
+  margin-top: 15px;
+  min-height: 16px;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--gs-1-azul-100, #002c6c);
+  justify-content: center;
+  padding: 0 2px;
+}
+
+.additional-inputs {
+  display: flex;
+  margin-top: 7px;
+  align-items: stretch;
+  gap: 31px;
+  font-size: 11px;
+  color: var(--gs-1-blue-20, #ccd5e2);
+  white-space: nowrap;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 991px) {
+  .additional-inputs {
+    white-space: initial;
+  }
+}
+
+.additional-inputs .input-field {
+  border-bottom: 1px solid var(--gs-1-blue-20, #ccd5e2);
+  background-color: #fff;
+  display: flex;
+  align-items: stretch;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+  flex-grow: 1;
+  flex-shrink: 1;
+  flex-basis: auto;
+  padding: 5px 4px;
+}
+
+@media (max-width: 991px) {
+  .additional-inputs .input-field {
+    white-space: initial;
+  }
+}
+
+.additional-inputs .placeholder-text {
+  color: var(--gs-1-blue-20, #ccd5e2);
+  flex-basis: auto;
+  flex-grow: 1;
+  flex-shrink: 1;
+}
+
+@media (max-width: 991px) {
+  .additional-inputs .placeholder-text {
+    max-width: 100%;
+  }
+}
+
+.action-buttons {
+  align-self: center;
+  display: flex;
+  margin-top: 34px;
+  width: 274px;
+  max-width: 100%;
+  align-items: stretch;
+  gap: 20px;
+  font-size: 12px;
+  color: var(--gs-1-azul-100, #002c6c);
+  white-space: nowrap;
+  justify-content: space-between;
+}
+
+@media (max-width: 991px) {
+  .action-buttons {
+    white-space: initial;
+  }
+}
+
+.cancel-button {
+  justify-content: center;
+  align-items: center;
+  border-radius: 3px;
+  display: flex;
+  min-height: 23px;
+  gap: 8px;
+  background-color: var(--gs-1-mist-15, #eef4f7);
+  padding: 4px 21px 4px 22px;
+  border: none;
+  cursor: pointer;
+}
+
+@media (max-width: 991px) {
+  .cancel-button {
+    white-space: initial;
+    padding: 0 20px;
+  }
+}
+
+.next-button {
+  justify-content: center;
+  align-items: center;
+  border-radius: 5px;
+  display: flex;
+  min-height: 23px;
+  gap: 10px;
+  background-color: var(--gs-1-mist-15, #eef4f7);
+  padding: 4px 24px;
+  border: none;
+  cursor: pointer;
+}
+
+@media (max-width: 991px) {
+  .next-button {
+    white-space: initial;
+    padding: 0 20px;
+  }
+}
+
+.button-text {
+  color: var(--gs-1-azul-100, #002c6c);
+  align-self: stretch;
+  margin: auto 0;
+}
+
+.next-icon {
+  aspect-ratio: 0.82;
+  object-fit: contain;
+  object-position: center;
+  width: 9px;
+  align-self: stretch;
+  flex-shrink: 0;
+  margin: auto 0;
+}
+/* Círculos de las pestañas */
+.step-badge{
+  display:inline-flex; width:22px; height:22px; min-width:22px;
+  border-radius:50%; align-items:center; justify-content:center;
+  font-size:12px; font-weight:600; background:#CCD5E2; color:#fff; margin-right:8px;
+}
+.step-badge.active{ background:#F26334; }
+.step-badge.completed{ background:#83B899; }
+
+/* ===== Formulario pestaña 1 ===== */
+:host .fi-section{ padding:16px 20px; max-width:1100px; }
+:host .fi-title{ margin:0 0 12px; font-size:20px; font-weight:700; color:#002c6c; }
+
+:host .fi-grid{
+  display:grid; grid-template-columns:1fr 1fr; gap:16px 32px;
+}
+
+:host .fi-field{ display:flex; flex-direction:column; gap:6px; }
+:host .fi-field > label{ font-size:13px; color:#002c6c; }
+
+:host .fi-input-wrap{ position:relative; }
+
+/* Forzar estilo de inputs */
+:host .fi-input,
+:host input.fi-input[type="text"],
+:host input.fi-input[type="email"]{
+  width:100%; box-sizing:border-box;
+  border:none !important; outline:0 !important;
+  border-bottom:1px solid #ccd5e2 !important;
+  background:#fff !important;
+  padding:6px 10px !important;
+  font-size:12px; color:#002c6c;
+}
+:host .fi-input::placeholder{ color:#ccd5e2; }
+
+/* Botón del buscador (flecha) */
+:host .fi-dd{
+  position:absolute; right:4px; top:50%; transform:translateY(-50%);
+  border:none; background:transparent; cursor:pointer; font-size:14px; color:#8095b5;
+}
+
+/* Acciones */
+:host .fi-actions{ margin-top:18px; display:flex; gap:16px; justify-content:center; }
+:host .fi-btn{ border:none; border-radius:5px; padding:6px 18px; background:#eef4f7; color:#002c6c; cursor:pointer; font-size:12px; }
+:host .fi-primary{ padding:6px 16px; }
+:host .fi-arrow{ margin-left:8px; }
+
+/* Responsivo */
+@media (max-width: 768px){
+  :host .fi-grid{ grid-template-columns:1fr; }
+}
+
+/* Quitar padding extra del cuerpo del tab (Material v15+) */
+:host ::ng-deep .mat-mdc-tab-body-content{ padding:0 !important; }
+
+.invoice-container {
+  width: 1135px;
+  height: 409px;
+  position: relative;
+  background-color: #fff;
+  font-family: 'Inter', sans-serif;
+}
+
+@media (max-width: 991px) {
+  .invoice-container {
+    width: 100%;
+    max-width: 800px;
+    height: auto;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+}
+
+@media (max-width: 640px) {
+  .invoice-container {
+    padding: 15px;
+  }
+}
+
+.background-wrapper {
+  width: 1135px;
+  height: 409px;
+  flex-shrink: 0;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+@media (max-width: 991px) {
+  .background-wrapper {
+    width: 100%;
+    height: auto;
+  }
+}
+
+.main-border {
+  width: 1135px;
+  height: 409px;
+  flex-shrink: 0;
+  border: 1px solid #ccd5e2;
+  position: absolute;
+  left: 0;
+  top: 0;
+  background-color: #fff;
+}
+
+@media (max-width: 991px) {
+  .main-border {
+    width: 100%;
+    height: auto;
+  }
+}
+
+.right-section-border {
+  width: 407px;
+  height: 375px;
+  flex-shrink: 0;
+  border-top: 1px solid #ccd5e2;
+  border-left: 1px solid #ccd5e2;
+  position: absolute;
+  left: 690px;
+  top: 20px;
+}
+
+@media (max-width: 991px) {
+  .right-section-border {
+    display: none;
+  }
+}
+
+.left-section-border {
+  width: 642px;
+  height: 375px;
+  flex-shrink: 0;
+  border-top: 1px solid #ccd5e2;
+  border-right: 1px solid #ccd5e2;
+  position: absolute;
+  left: 23px;
+  top: 21px;
+}
+
+@media (max-width: 991px) {
+  .left-section-border {
+    display: none;
+  }
+}
+
+.main-title-section {
+  display: inline-flex;
+  padding: 10px 0;
+  align-items: center;
+  gap: 10px;
+  position: absolute;
+  left: 23px;
+  top: 42px;
+  width: 44px;
+  height: 44px;
+}
+
+@media (max-width: 991px) {
+  .main-title-section {
+    position: relative;
+    left: 0;
+    top: 0;
+    width: auto;
+    margin-bottom: 20px;
+  }
+}
+
+.main-title {
+  color: #002c6c;
+  position: relative;
+  font: 700 20px Inter;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .main-title {
+    font-size: 18px;
+  }
+}
+
+.customer-info-section {
+  position: relative;
+}
+
+.invoice-fields-row {
+  display: flex;
+  gap: 20px;
+  position: absolute;
+  left: 43px;
+  top: 118px;
+}
+
+@media (max-width: 991px) {
+  .invoice-fields-row {
+    position: relative;
+    left: 0;
+    top: 0;
+    flex-wrap: wrap;
+    margin: 20px 0;
+  }
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.field-label {
+  color: #002c6c;
+  font: 400 13px Inter;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .field-label {
+    font-size: 12px;
+  }
+}
+
+.input-wrapper {
+  width: 150px;
+  height: 22px;
+  flex-shrink: 0;
+  position: relative;
+  font-size: 16px;
+}
+
+@media (max-width: 991px) {
+  .input-wrapper {
+    width: 100%;
+  }
+}
+
+.input-background {
+  width: 240px;
+  height: 22px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #ccd5e2;
+  position: absolute;
+  left: 0;
+  top: 0;
+  background-color: #fff;
+}
+
+.text-input {
+  color: #ccd5e2;
+  position: absolute;
+  left: 11px;
+  top: 4px;
+  width: calc(100% - 22px);
+  height: 13px;
+  font: 400 11px Inter;
+  border: none;
+  background: transparent;
+  outline: none;
+}
+
+.text-input:focus {
   color: #002c6c;
 }
 
-/* Filtros */
-.filters-row {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px 24px;
-  margin-bottom: 10px;
-}
-
-.filter-group {
-  display: flex;
-  flex-direction: column;
-  font-size: 13px;
-}
-
-.filter-group.large {
-  grid-column: span 2;
-}
-
-.filter-group label {
-  margin-bottom: 4px;
-  color: #6b7280;
-}
-
-.filter-group input,
-.filter-group select {
-  height: 32px;
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: 1px solid #cbd5e1;
-  font-size: 13px;
-  background-color: #ffffff;
-}
-
-.filter-group input::placeholder {
-  color: #9ca3af;
-}
-
-/* Checkbox fila */
-.checkbox-row {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-bottom: 12px;
-  font-size: 13px;
-}
-
-.checkbox-inline {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: #4b5563;
-}
-
-.checkbox-inline input[type='checkbox'] {
-  width: 14px;
-  height: 14px;
-}
-
-.checkbox-row-spacer {
-  flex: 1;
-}
-
-/* Botones genéricos */
-.btn {
-  min-width: 130px;
-  height: 32px;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.btn.primary {
-  background-color: #e0ebff;
-  color: #1d4ed8;
-}
-
-.btn.primary:hover {
-  background-color: #c7dbff;
-}
-
-.btn.secondary {
-  background-color: #e5e7eb;
-  color: #374151;
-}
-
-.btn.secondary:hover {
-  background-color: #d4d5d8;
-}
-
-/* Exportar */
-.export-wrapper {
-  position: relative;
-  display: inline-block;
-}
-
-.export-menu {
+.input-cursor {
+  width: 0;
+  height: 11px;
+  flex-shrink: 0;
+  fill: #8095b5;
   position: absolute;
-  top: 36px;
-  right: 0;
-  background-color: #ffffff;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  box-shadow: 0px 4px 10px rgba(15, 23, 42, 0.1);
-  min-width: 180px;
-  z-index: 10;
+  left: 4px;
+  top: 4px;
 }
 
-.export-item {
-  width: 100%;
-  padding: 8px 12px;
+.combined-fields-wrapper {
+  width: 508px;
+  height: 22px;
+  flex-shrink: 0;
+  position: absolute;
+  left: 140px;
+  top: 141px;
+}
+
+@media (max-width: 991px) {
+  .combined-fields-wrapper {
+    position: relative;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 10px 0;
+  }
+}
+
+.combined-input-background {
+  width: 508px;
+  height: 22px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #ccd5e2;
+  position: absolute;
+  left: 0;
+  top: 0;
+  background-color: #fff;
+}
+
+.combined-text-input,
+.combined-text-input-2,
+.combined-text-input-3 {
+  color: #ccd5e2;
+  position: absolute;
+  top: 4px;
+  width: 27px;
+  height: 13px;
+  font: 400 11px Inter;
   border: none;
-  background: #ffffff;
-  font-size: 13px;
+  background: transparent;
+  outline: none;
+}
+
+.combined-text-input {
+  left: 11px;
+}
+
+.combined-text-input-2 {
+  left: 121px;
+}
+
+.combined-text-input-3 {
+  left: 254px;
+}
+
+.combined-text-input:focus,
+.combined-text-input-2:focus,
+.combined-text-input-3:focus {
+  color: #002c6c;
+}
+
+.combined-input-cursor,
+.combined-input-cursor-2,
+.combined-input-cursor-3 {
+  width: 0;
+  height: 11px;
+  flex-shrink: 0;
+  fill: #8095b5;
+  position: absolute;
+  top: 4px;
+}
+
+.combined-input-cursor {
+  left: 4px;
+}
+
+.combined-input-cursor-2 {
+  left: 114px;
+}
+
+.combined-input-cursor-3 {
+  left: 247px;
+}
+
+.document-references {
+  display: flex;
+  gap: 20px;
+  position: absolute;
+  left: 138px;
+  top: 183px;
+}
+
+@media (max-width: 991px) {
+  .document-references {
+    position: relative;
+    left: 0;
+    top: 0;
+    flex-wrap: wrap;
+    margin: 20px 0;
+  }
+}
+
+.observation-section {
+  position: absolute;
+  left: 44px;
+  top: 251px;
+}
+
+@media (max-width: 991px) {
+  .observation-section {
+    position: relative;
+    left: 0;
+    top: 0;
+    margin: 20px 0;
+  }
+}
+
+.observation-label {
+  color: #002c6c;
+  font: 400 13px Inter;
+  margin-bottom: 10px;
+  display: block;
+}
+
+.observation-input-wrapper,
+.observation-input-wrapper-2 {
+  width: 508px;
+  height: 20px;
+  flex-shrink: 0;
+  position: relative;
+  margin-bottom: 13px;
+}
+
+@media (max-width: 991px) {
+  .observation-input-wrapper,
+  .observation-input-wrapper-2 {
+    width: 100%;
+  }
+}
+
+.observation-input-background {
+  width: 508px;
+  height: 20px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #ccd5e2;
+  position: absolute;
+  left: 0;
+  top: 0;
+  background-color: #fff;
+}
+
+.observation-input {
+  color: #ccd5e2;
+  position: absolute;
+  left: 11px;
+  top: 4px;
+  width: calc(100% - 22px);
+  height: 13px;
+  font: 400 11px Inter;
+  border: none;
+  background: transparent;
+  outline: none;
+}
+
+.observation-input:focus {
+  color: #002c6c;
+}
+
+.observation-input-cursor {
+  width: 0;
+  height: 11px;
+  flex-shrink: 0;
+  fill: #8095b5;
+  position: absolute;
+  left: 4px;
+  top: 4px;
+}
+
+.date-section {
+  display: flex;
+  width: 130px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  position: absolute;
+  left: 502px;
+  top: 48px;
+  height: 47px;
+}
+
+@media (max-width: 991px) {
+  .date-section {
+    position: relative;
+    left: 0;
+    top: 0;
+    width: auto;
+    margin-bottom: 20px;
+  }
+}
+
+.date-header {
+  display: flex;
+  padding: 5px 10px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #f26334;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 130px;
+  height: 22px;
+}
+
+.date-title {
+  color: #002c6c;
+  position: relative;
+  font: 400 10px Inter;
+  margin: 0;
+}
+
+.date-value {
+  display: flex;
+  padding: 5px 10px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  position: absolute;
+  left: 0;
+  top: 22px;
+  width: 130px;
+  height: 25px;
+}
+
+.date-display {
+  color: #8095b5;
+  position: relative;
+  font: 400 12px Inter;
+}
+
+.values-section {
+  position: absolute;
+  left: 721px;
+  top: 41px;
+  width: 376px;
+}
+
+@media (max-width: 991px) {
+  .values-section {
+    position: relative;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 20px 0;
+  }
+}
+
+.values-header {
+  display: inline-flex;
+  padding: 10px 0;
+  align-items: center;
+  gap: 10px;
+  width: 188px;
+  height: 44px;
+}
+
+.values-title {
+  color: #002c6c;
+  position: relative;
+  font: 700 20px Inter;
+  margin: 0;
+}
+
+@media (max-width: 640px) {
+  .values-title {
+    font-size: 18px;
+  }
+}
+
+.values-highlight-background {
+  width: 311px;
+  height: 39px;
+  flex-shrink: 0;
+  position: absolute;
+  left: 31px;
+  top: 253px;
+  background-color: #fff2e5;
+}
+
+@media (max-width: 991px) {
+  .values-highlight-background {
+    position: relative;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
+
+.value-row {
+  display: flex;
+  width: 308px;
+  height: 35px;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  border-bottom: 1px solid #ccd5e2;
+  position: absolute;
+  left: 34px;
+  margin-bottom: 35px;
+}
+
+.value-row:nth-child(3) {
+  top: 76px;
+}
+
+.value-row:nth-child(4) {
+  top: 111px;
+}
+
+.value-row:nth-child(5) {
+  top: 146px;
+}
+
+.value-row:nth-child(7) {
+  top: 216px;
+}
+
+@media (max-width: 991px) {
+  .value-row {
+    position: relative;
+    left: 0;
+    top: 0 !important;
+    width: 100%;
+    margin: 10px 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .value-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+  }
+}
+
+.value-label-wrapper {
+  display: flex;
+  padding: 5px 10px;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+
+.value-label {
+  color: #002c6c;
+  position: relative;
+  font: 400 13px Inter;
+}
+
+@media (max-width: 640px) {
+  .value-label {
+    font-size: 12px;
+  }
+}
+
+.value-amount-wrapper {
+  display: flex;
+  padding: 5px 10px;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+}
+
+.value-amount {
+  color: #002c6c;
+  text-align: right;
+  position: relative;
+  font: 400 13px Inter;
+}
+
+@media (max-width: 640px) {
+  .value-amount {
+    font-size: 12px;
+  }
+}
+
+.value-row-with-dropdown {
+  width: 309px;
+  height: 35px;
+  flex-shrink: 0;
+  position: absolute;
+  left: 34px;
+  top: 181px;
+}
+
+@media (max-width: 991px) {
+  .value-row-with-dropdown {
+    position: relative;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 10px 0;
+  }
+}
+
+.dropdown-wrapper {
+  display: inline-flex;
+  padding: 5px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  position: absolute;
+  left: 107px;
+  top: 0;
+  width: 82px;
+  height: 35px;
+}
+
+.dropdown-container {
+  width: 72px;
+  height: 25px;
+  position: relative;
+}
+
+.dropdown-button {
+  width: 72px;
+  height: 25px;
+  flex-shrink: 0;
+  border-radius: 4px;
+  border: 1px solid #ccd5e2;
+  position: absolute;
+  left: 0;
+  top: 0;
+  background-color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 8px;
+}
+
+.dropdown-icon {
+  width: 11px;
+  height: 7px;
+  flex-shrink: 0;
+}
+
+.percentage-symbol {
+  color: #ccd5e2;
+  position: absolute;
+  left: 10px;
+  top: 5px;
+  width: 11px;
+  height: 16px;
+  font: 400 13px Inter;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  background: #fff;
+  border: 1px solid #ccd5e2;
+  border-radius: 4px;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.dropdown-option {
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  background: none;
   text-align: left;
   cursor: pointer;
+  font: 400 13px Inter;
+  color: #002c6c;
 }
 
-.export-item:hover {
-  background-color: #f3f4f6;
+.dropdown-option:hover {
+  background-color: #f5f5f5;
 }
 
-/* AG-Grid contenedor */
-.grid-wrapper {
-  height: calc(100vh - 320px);
-  min-height: 260px;
-  background-color: #ffffff;
-  border-radius: 4px;
-  border: 1px solid #dde2ee;
-  overflow: hidden;
+.selected-percentage {
+  color: #002c6c;
+  font: 400 13px Inter;
+  margin-left: 10px;
 }
 
-.ag-grid {
+.value-row-border {
+  width: 309px;
+  height: 35px;
+  flex-shrink: 0;
+  border-bottom: 1px solid #ccd5e2;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.total-section {
+  width: 311px;
+  height: 40px;
+  flex-shrink: 0;
+  position: absolute;
+  left: 31px;
+  top: 252px;
+}
+
+@media (max-width: 991px) {
+  .total-section {
+    position: relative;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 20px 0;
+  }
+}
+
+.total-wrapper {
+  position: relative;
   width: 100%;
   height: 100%;
 }
 
-/* Ajustes visuales del header y celdas */
-.ag-theme-alpine .ag-header {
-  background-color: #eff4fb;
-  border-bottom: 1px solid #d3dde8;
-}
-
-.ag-theme-alpine .ag-header-cell-label {
+.total-content {
+  display: inline-flex;
   justify-content: center;
-  font-size: 12px;
-  color: #4b5563;
+  align-items: center;
+  gap: 153px;
+  position: absolute;
+  left: 3px;
+  top: 5px;
+  width: 308px;
+  height: 29px;
 }
 
-.ag-theme-alpine .ag-cell {
-  font-size: 12px;
+@media (max-width: 640px) {
+  .total-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
 }
 
-.ag-theme-alpine .ag-row {
-  border-bottom: 1px solid #edf2f7;
+.total-label-wrapper {
+  display: flex;
+  padding: 5px 10px;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 77px;
+  height: 29px;
 }
 
-/* Alineación derecha para numéricos */
-.ag-cell-right {
+.total-label {
+  color: #002c6c;
+  position: relative;
+  font: 700 16px Inter;
+}
+
+@media (max-width: 640px) {
+  .total-label {
+    font-size: 14px;
+  }
+}
+
+.total-amount-wrapper {
+  display: flex;
+  padding: 5px 10px;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  position: absolute;
+  left: 230px;
+  top: -2px;
+  width: 78px;
+  height: 34px;
+}
+
+.total-amount {
+  color: #002c6c;
+  position: relative;
+  font: 700 20px Inter;
+}
+
+@media (max-width: 640px) {
+  .total-amount {
+    font-size: 18px;
+  }
+}
+
+.total-borders {
+  display: flex;
+  width: 311px;
+  height: 40px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 40px;
+  flex-shrink: 0;
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+.total-border-top {
+  width: 311px;
+  height: 0;
+  position: absolute;
+  left: 0;
+  top: 0;
+  background-color: #ccd5e2;
+}
+
+.total-border-bottom {
+  width: 311px;
+  height: 0;
+  position: absolute;
+  left: 0;
+  top: 40px;
+  background-color: #ccd5e2;
+}
+/* Quitar borde y ajustar tamaño */
+/* Aplica solo al input dentro de .fi-input-wrap */
+.fi-input-wrap input[matInput] {
+  background-color: #fff;  /* fondo blanco */
+  border: none;            /* sin borde */
+  outline: none;           /* sin borde de foco */
+  box-shadow: none;        /* sin sombra */
+  height: 36px;            /* misma altura que los otros */
+  padding: 0 8px;
+  font-size: 14px;
+  width: 100%;
+  border-radius: 4px;      /* opcional, igual que los otros */
+}
+
+
+/* Asegura que el contenedor tenga misma altura y ancho */
+.fi-input-wrap {
+  display: flex;
+  align-items: center;
+  height: 36px; /* igual que los otros */
+}
+.facturacion-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* Para que ocupe toda la pantalla */
+}
+:host {
+  display: block;
+  width: 100%;
+}
+
+/* ✅ Contenedor central: centra y limita el ancho del contenido */
+.fi-page {
+  max-width: 1080px;         /* ajusta si usas otro ancho */
+  margin: 0 auto;            /* centra horizontalmente */
+  padding: 0 24px 64px;      /* respiración + espacio inferior */
+  display: flex;
+  flex-direction: column;
+}
+
+/* La sección de totales aparece después de las pestañas con un buen margen */
+.values-section {
+  margin-top: 32px;          /* separa de las tabs */
+  background: #fff;
+  border: 1px solid #E6ECF5;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+/* Si en algún momento quieres que “empuje” hacia el fondo de la página: */
+/*
+.fi-page {
+  min-height: calc(100vh - 120px);  // resta cabecera si la hay
+}
+.values-section {
+  margin-top: auto;                 // empuja totales al final de la columna
+}
+*/
+
+/* Evita que algo la deje flotando/encima por z-index raros */
+.values-section, .fi-page {
+  position: relative;
+  z-index: 1;
+}
+/* Layout a dos columnas (ya lo puedes tener, lo dejo por si acaso) */
+.values-layout {
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) 400px;
+  gap: 16px;
+  align-items: start;
+}
+
+/* Tarjeta izquierda (Caja) con el mismo look que Totales */
+.box-section {
+  position: relative;
+  background: #fff;
+  border: 1px solid #e6e8ec;
+  border-radius: 12px;
+  padding: 16px 16px 20px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.04);
+}
+
+/* Título + fecha a la derecha (encabezado dividido) */
+.values-header--split {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.fi-input--sm {
+  height: 30px;
+  padding: 4px 8px;
+}
+
+/* Grid interno de la tarjeta Caja (dos columnas) */
+.box-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 16px;
+  margin-top: 6px;
+}
+
+/* Ajuste de filas/etiquetas reutilizando tus estilos */
+.value-row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 10px;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.value-label-wrapper { text-align: right; }
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .values-layout { grid-template-columns: 1fr; }
+  .box-grid { grid-template-columns: 1fr; }
+  .value-row { grid-template-columns: 1fr; }
+  .value-label-wrapper { text-align: left; }
+}
+
+/* Grid 2 columnas: izquierda flexible, derecha fija */
+.values-layout{
+  display:grid;
+  grid-template-columns:minmax(520px,1fr) 380px; /* ajusta 380px a tu ancho deseado */
+  gap:16px;
+  align-items:start;
+}
+
+/* Asegura que la tarjeta de Totales no herede márgenes raros */
+.totales-card{ margin:0; }
+
+/* Evita que el overlay cruce por encima de inputs */
+.values-section,
+.box-section{
+  position:relative;
+}
+.values-section .values-highlight-background,
+.box-section .values-highlight-background{
+  position:absolute;
+  inset:0;
+  z-index:0;          /* fondo */
+  pointer-events:none;
+}
+.values-section .value-row,
+.box-section .value-row,
+.values-section .total-section{
+  position:relative;
+  z-index:1;          /* contenido por encima del fondo */
+}
+
+/* Filas etiqueta-control coherentes en ambas tarjetas */
+.values-section .value-row,
+.box-section .value-row{
+  display:grid;
+  grid-template-columns:140px 1fr;
+  gap:10px;
+  align-items:center;
+  margin:10px 0;
+}
+.values-section .value-label-wrapper,
+.box-section .value-label-wrapper{ text-align:right; }
+.values-section .value-amount-wrapper .fi-input,
+.box-section .value-amount-wrapper .fi-input{
+  width:100%;
+  box-sizing:border-box;
+}
+
+/* Caja interna a dos columnas */
+.box-section .box-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px 24px;
+  margin-top:6px;
+}
+
+/* Responsive: apilar */
+@media (max-width:1024px){
+  .values-layout{ grid-template-columns:1fr; }
+  .box-section .box-grid{ grid-template-columns:1fr; }
+  .values-section .value-row,
+  .box-section .value-row{ grid-template-columns:1fr; }
+  .values-section .value-label-wrapper,
+  .box-section .value-label-wrapper{ text-align:left; }
+}
+/* === Overrides SOLO para la tarjeta de Totales dentro del grid === */
+.values-section--grid {
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  width: auto !important;
+  margin: 0;
+}
+
+/* El fondo decorativo no debe tapar controles */
+.values-section--grid .values-highlight-background { 
+  display: none; 
+}
+
+/* Filas como grid normal, sin posicionamiento absoluto ni alturas fijas */
+.values-section--grid .value-row {
+  position: static !important;
+  width: 100% !important;
+  height: auto !important;
+  border-bottom: none; /* ya tienes el look con inputs */
+  display: grid !important;
+  grid-template-columns: 140px 1fr;
+  gap: 10px;
+  align-items: center;
+  margin: 10px 0;
+}
+
+/* Quita los top fijos que venían por nth-child */
+.values-section--grid .value-row:nth-child(n) {
+  top: auto !important;
+}
+
+/* Total también sin posiciones fijas */
+.values-section--grid .total-section {
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  width: 100% !important;
+  margin-top: 8px;
+}
+
+.values-section--grid .total-content {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 10px;
+  align-items: center;
+  position: static !important;
+  width: 100% !important;
+  height: auto !important;
+}
+
+.values-section--grid .total-label-wrapper,
+.values-section--grid .total-amount-wrapper {
+  position: static !important;
+}
+
+/* Asegura que el grid de 2 columnas funcione como contenedor principal */
+.values-layout {
+  display: grid;
+  grid-template-columns: minmax(520px, 1fr) 380px; /* ajusta 380px si quieres más/menos ancho */
+  gap: 16px;
+  align-items: start;
+}
+/* Grid exterior: área principal + sidebar de totales */
+.values-layout{
+  display:grid;
+  grid-template-columns: minmax(760px,1fr) 380px; /* ajusta 380px si quieres */
+  gap:16px;
+  align-items:start;
+}
+
+/* Grid interior: Caja | Detalle de Valores */
+.main-cards-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap:16px;
+}
+
+/* Tarjeta "Detalle de Valores" (mismo look que Caja) */
+.detail-section{
+  position:relative;
+  background:#fff;
+  border:1px solid #e6e8ec;
+  border-radius:12px;
+  padding:16px 16px 20px;
+  box-shadow:0 2px 6px rgba(0,0,0,.04);
+}
+
+/* Responsivo: apilar */
+@media (max-width: 1200px){
+  .values-layout{ grid-template-columns:1fr; }
+  .main-cards-grid{ grid-template-columns:1fr; }
+}
+/* Que el header no tenga ancho fijo */
+.values-section.totales-card .values-header,
+.values-section--grid .values-header{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100% !important;   /* o 'auto', cualquiera quita el 188px */
+  height: auto;
+}
+
+/* Mantener el título en una sola línea */
+.values-section.totales-card .values-title,
+.values-section--grid .values-title{
+  white-space: nowrap;
+  overflow: hidden;          /* opcional: por si no cabe */
+  text-overflow: ellipsis;   /* opcional: muestra … si no cabe */
+  margin: 0;
+}
+/* ancho de la tarjeta de Totales (sidebar) */
+:root{
+  --totales-sidebar: clamp(400px, 30vw, 520px); /* ajusta a gusto */
+}
+
+/* grid exterior: contenido | sidebar */
+.values-layout{
+  display: grid;
+  grid-template-columns: minmax(560px, 1fr) var(--totales-sidebar);
+  gap: 16px;
+  align-items: start;
+}
+/* grid interior que contiene Caja y (si la tienes) otra tarjeta */
+/* Grid exterior: ocupa 100% y NO se centra */
+.values-layout{
+  display: grid;
+  grid-template-columns: minmax(600px,1fr) 360px; /* izq flexible, der fija */
+  gap:16px;
+  justify-content: stretch;   /* o start */
+  width:100%;
+}
+
+/* Grid interior: también a la izquierda, sin centrado */
+.main-cards-grid{
+  display:grid;
+  grid-template-columns: 1fr 360px; /* ajusta 360px a gusto o usa 1fr 1fr */
+  gap:16px;
+  justify-content: stretch;   /* o start */
+}
+
+/* por si quedó algún centrado heredado */
+.values-layout, .main-cards-grid { margin-left: 0 !important; }
+/* Ajustar el número secuencial */
+#secuencial {
+  text-align: left;       /* Alinea el texto a la izquierda */
+  padding-left: 5px;      /* Espacio interno a la izquierda */
+}
+
+/* Espaciado entre label y campo "Guía Remisión" */
+label[for="guia-remision"] {
+  margin-right: 8px;      /* Espacio a la derecha del label */
+}
+
+/* Si el campo de guía está en un flex container */
+.guia-remision-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Espacio entre los elementos */
+}
+/* ====== BASE ELÁSTICA ====== */
+:root{
+  /* ancho máx. del contenido, crece con el viewport */
+  --content-max: clamp(1200px, 92vw, 1440px);
+}
+
+.fi-page{
+  max-width: var(--content-max);
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 16px 64px;
+}
+
+/* Columna izquierda flexible | sidebar fijo */
+.values-layout{
+  display: grid;
+  grid-template-columns: minmax(700px,1fr) 420px;
+  gap: 20px;
+  align-items: start;
+  justify-content: stretch;
+  width: 100%;
+}
+
+.box-section,
+.values-section{ width: 100%; }
+
+/* ====== “Caja” SIN posiciones absolutas + grid fluido ====== */
+.invoice-fields-row{
+  position: static !important;      /* anula absolute */
+  display: grid !important;
+  grid-template-columns: auto auto auto 1fr; /* Factura | P.Emisión | Caja | Secuencial */
+  gap: 16px 24px;
+  margin: 12px 20px 0 20px;
+}
+
+#secuencial{
+  text-align: left;
+  padding-left: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.document-references{
+  position: static !important;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+  margin: 18px 20px 0 20px;
+}
+
+.observation-section{
+  position: static !important;
+  margin: 18px 20px 0 20px;
+}
+
+/* ====== Sidebar “Detalles de Valores” fluido ====== */
+.values-section--grid{
+  position: static !important;
+  width: 100% !important;
+  margin: 0;
+}
+.values-section--grid .values-header{
+  display:flex; align-items:center; gap:10px;
+  width:100% !important; height:auto;
+}
+.values-section--grid .values-highlight-background{ display:none; }
+.values-section--grid .value-row{
+  position: static !important;
+  width: 100% !important;
+  height: auto !important;
+  display: grid !important;
+  grid-template-columns: 150px 1fr;
+  gap: 10px;
+  align-items: center;
+  border-bottom: 1px solid #e6ecf5;
+  margin: 8px 0;
+}
+.values-section--grid .value-row:nth-child(n){ top:auto !important; }
+.values-section--grid .total-section{
+  position: static !important;
+  width: 100% !important;
+  margin-top: 10px;
+}
+
+/* ====== BREAKPOINTS ====== */
+
+/* <= 1200px: sidebar un poco más angosto, campos de Caja en 2 columnas */
+@media (max-width: 1200px){
+  .values-layout{
+    grid-template-columns: minmax(560px,1fr) 360px;
+  }
+  .invoice-fields-row{
+    grid-template-columns: 1fr 1fr; /* 2 columnas */
+  }
+  .document-references{
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* <= 900px: una sola columna (sidebar pasa debajo) */
+@media (max-width: 900px){
+  .values-layout{
+    grid-template-columns: 1fr;    /* apilar */
+  }
+  .main-cards-grid{ grid-template-columns: 1fr !important; }
+  .invoice-fields-row{
+    grid-template-columns: 1fr;    /* inputs una debajo de otra */
+  }
+  .document-references{
+    grid-template-columns: 1fr;    /* Orden/Guía en una columna */
+  }
+}
+
+/* <= 600px: tipografía e inputs más cómodos */
+@media (max-width: 600px){
+  .main-title, .values-title{ font-size: 18px; }
+  .field-label, .value-label{ font-size: 12px; }
+  .values-section--grid .value-row{
+    grid-template-columns: 120px 1fr;
+  }
+  .text-input,
+  .fi-input{ font-size: 12px; line-height: 1.4; }
+}
+
+/* (Opcional) Scrollbar más grueso para móviles/desktop */
+html::-webkit-scrollbar{ width: 14px; height: 14px; }
+html::-webkit-scrollbar-track{ background:#f2f4f7; }
+html::-webkit-scrollbar-thumb{ background:#c8d1e0; border-radius:8px; border:3px solid #f2f4f7; }
+html::-webkit-scrollbar-thumb:hover{ background:#aeb8cc; }
+html{ scrollbar-width:auto; scrollbar-color:#c8d1e0 #f2f4f7; }
+/* Título Caja arriba y ocupando todo el ancho */
+.main-title-section {
+  grid-column: 1 / -1;   /* ocupa todas las columnas del grid */
+  margin-bottom: 10px;   /* separación con los campos */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.main-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #002c6c;
+  margin: 0;
+}
+
+/* La tarjeta Caja apilada en columna */
+.box-section{
+  display: grid;
+  grid-template-columns: 1fr;
+  row-gap: 12px;
+  padding: 16px 20px 20px;  /* ya lo tienes, lo refuerzo */
+}
+
+/* Título principal arriba, sin absolute */
+.main-title-section{
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  width: auto !important;
+  height: auto !important;
+  grid-column: 1 / -1;
+  margin: 0 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.main-title{ font-size: 22px; font-weight: 700; margin: 0; }
+
+/* Primera fila (Factura / P.Emisión / Caja / Secuencial) como grid */
+.invoice-fields-row{
+  position: static !important;
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  column-gap: 24px;
+  row-gap: 6px;
+  margin: 0;          /* ya no necesitamos compensar top */
+  align-items: end;
+}
+
+/* Quitar padding manual del label “Secuencial” */
+label[for="secuencial"]{ padding-left: 0 !important; }
+
+/* Resto de secciones debajo, sin absolute */
+.document-references,
+.observation-section{
+  position: static !important;
+  margin: 8px 0 0 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 24px;
+}
+
+/* Responsive: 2 columnas y luego 1 */
+@media (max-width: 1200px){
+  .invoice-fields-row{ grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 900px){
+  .invoice-fields-row{ grid-template-columns: 1fr; }
+  .document-references{ grid-template-columns: 1fr; }
+}
+/* Reduce relleno de la tarjeta */
+.box-section{
+  padding-top: 10px !important;
+  padding-bottom: 16px;
+  display: flex;                 /* apila contenido */
+  flex-direction: column;
+  gap: 6px;                      /* separación mínima entre bloques */
+}
+
+/* Título sin altura ni margen extra */
+.main-title-section{
+  position: static !important;
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  margin: 0 0 6px 0 !important;  /* separa 6px del siguiente bloque */
+}
+.main-title{ margin: 0 !important; line-height: 1.1; }
+
+/* Primera fila sin desplazamientos ni margen alto */
+.invoice-fields-row{
+  position: static !important;
+  margin: 0 !important;
+  /* si la usas como grid, deja una separación pequeña */
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(120px, 1fr));
+  column-gap: 24px;
+  row-gap: 6px;
+}
+
+/* Por si algún estilo viejo le da “top” a algo: ignóralo */
+.invoice-fields-row > *{ top: auto !important; }
+
+/* En móviles puedes aumentar un poco el gap si lo ves muy junto */
+@media (max-width: 900px){
+  .invoice-fields-row{ grid-template-columns: 1fr 1fr; row-gap: 8px; }
+}
+@media (max-width: 600px){
+  .invoice-fields-row{ grid-template-columns: 1fr; }
+}
+.ag-theme-alpine { --ag-header-height: 36px; --ag-row-height: 36px; }
+.ag-btn-delete{
+  padding: 4px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+}
+.ag-btn-delete:hover{
+  background:#f3f4f6;
+}
+/* Producto: fondo BLANCO y sin overlay gris */
+.fi-prefix-field .mat-mdc-text-field-wrapper,
+.fi-prefix-field .mat-mdc-form-field-flex,
+.fi-prefix-field .mdc-text-field{
+  background: #fff !important;
+}
+
+.fi-prefix-field .mat-mdc-form-field-focus-overlay{
+  background: transparent !important;
+}
+
+/* Borde/radio como el resto de tus inputs */
+.fi-prefix-field .mat-mdc-form-field-flex{
+  border: 1px solid #E6ECF5;
+  border-radius: 8px;
+  height: 36px;
+  padding: 0 10px;
+  box-shadow: 0 1px 2px rgba(16,24,40,.04);
+}
+
+/* Ajustes internos */
+.fi-prefix-field .mdc-notched-outline{ display: none; }
+.fi-prefix-field .mat-mdc-form-field-subscript-wrapper{ display: none; }
+.fi-prefix-field .mat-mdc-form-field-infix{ padding: 0; min-height: 0; }
+.fi-prefix-field input.mat-mdc-input-element{ padding: 0; font-size: 14px; }
+.fi-prefix-field .fi-prefix{ color:#002c6c; font-weight:600; white-space:nowrap; }
+/* ancho máximo y centrado */
+.tabs-narrow{
+  max-width: 900px;   /* ajusta a tu gusto */
+  width: 100%;
+  margin: 0 auto;     /* centra el tab group */
+}
+
+/* opcional: en móviles permite ancho completo */
+@media (max-width: 600px){
+  .tabs-narrow{ max-width: 100%; }
+}
+/* ancho reducido + alineado a la izquierda */
+.tabs-narrow-left{
+  width: clamp(560px, 70vw, 900px); /* elige el rango que quieras */
+  margin-left: 0;                   /* pegado a la izquierda */
+  margin-right: auto;               /* evita centrado */
+}
+
+/* si el PARENT usa flex y lo centra, fuerza alineación a la izquierda */
+.tabs-narrow-left{ align-self: flex-start; }
+
+/* si el PARENT usa grid y lo centra, idem */
+.tabs-narrow-left{ justify-self: start; }
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 19px;              /* ↓ tamaño del botón */
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.icon-btn .material-icons {
+  font-size: 14px;          /* ↓ tamaño del ícono */
+  line-height: 1;
+}
+
+.icon-btn--trash .material-icons { color: #ef5350; }
+.icon-btn:hover { background: rgba(239, 83, 80, 0.12); }
+/* --- grid 3 columnas: A (flex) | C (media) | D (angosta) --- */
+.fi-grid--3{
+  display:grid;
+  grid-template-columns: minmax(420px,1fr) 1fr 280px; /* ajusta 280 si quieres más/menos */
+  column-gap: 24px;
+  row-gap: 12px;
+}
+
+/* Dirección, E-mail opcional, Cliente… que ocupen 2 columnas */
+.fi-span2{ grid-column: span 2; }
+
+/* Teléfono más angosto */
+.fi-sm .fi-input{ max-width: 240px; }
+
+/* Responsive */
+@media (max-width: 1024px){
+  .fi-grid--3{ grid-template-columns: 1fr 1fr; }
+  .fi-sm .fi-input{ max-width: 100%; }
+}
+@media (max-width: 640px){
+  .fi-grid--3{ grid-template-columns: 1fr; }
+  .fi-span2{ grid-column: auto; }
+}
+/* 1) El tab-group a ancho completo */
+.tabs-narrow-left{
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;     /* quita el centrado/offset */
+}
+
+/* 2) La sección “Información del Cliente” sin límite */
+:host .fi-section{
+  max-width: none !important;
+}
+
+/* 3) Grid 3 columnas elástico para que crezca con la página */
+:host .fi-grid{
+  grid-template-columns: 2fr 1.2fr 1fr;  /* ajusta a gusto */
+  gap: 16px 24px;
+}
+
+/* 4) (Opcional) que “Dirección” use toda la fila */
+.fi-cell-direccion{
+  grid-column: 1 / -1;
+}
+/* Asegura 3 columnas en el grid de esta sección */
+:host .fi-grid{
+  display:grid;
+  grid-template-columns: 2fr 1.2fr 1fr;   /* izq más ancha */
+  gap: 16px 24px;
+}
+
+/* Dirección ocupa las columnas 2 y 3 de su fila (la segunda) */
+:host .fi-dir{
+  grid-column: 2 / 4;   /* de la col 2 hasta antes de la 4 */
+}
+
+/* E-mail opcional en la columna 3; como la fila 2 está ocupada por .fi-dir,
+   se coloca automáticamente en la 3ª fila */
+:host .fi-email-opc{
+  grid-column: 3;
+}
+
+/* Responsivo */
+@media (max-width: 1024px){
+  :host .fi-grid{ grid-template-columns: 1fr 1fr; }
+  :host .fi-dir{ grid-column: 1 / -1; }   /* Dirección a lo ancho */
+  :host .fi-email-opc{ grid-column: auto; }
+}
+@media (max-width: 640px){
+  :host .fi-grid{ grid-template-columns: 1fr; }
+}
+/* 3 columnas: izquierda ancha, centro medio, derecha angosta */
+:host .fi-grid{
+  display:grid;
+  grid-template-columns: 2fr 1.2fr 1fr;
+  gap: 16px 24px;
+  grid-template-areas:
+    "cliente  tel      id"
+    "email    dir      ."
+    "emailop  cat      pref";
+}
+
+/* asignación de cada celda */
+.fi-cliente{ grid-area: cliente; }
+.fi-tel    { grid-area: tel; }
+.fi-id     { grid-area: id; }
+.fi-email  { grid-area: email; }
+.fi-dir    { grid-area: dir; }
+.fi-emailop{ grid-area: emailop; }
+.fi-cat    { grid-area: cat; }
+.fi-pref   { grid-area: pref; }
+
+/* Responsivo: 2 columnas */
+@media (max-width: 1024px){
+  :host .fi-grid{
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "cliente cliente"
+      "tel     id"
+      "email   email"
+      "dir     dir"
+      "emailop emailop"
+      "cat     pref";
+  }
+}
+
+/* Responsivo: 1 columna apilado */
+@media (max-width: 640px){
+  :host .fi-grid{
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "cliente"
+      "tel"
+      "id"
+      "email"
+      "dir"
+      "emailop"
+      "cat"
+      "pref";
+  }
+}
+.fi-row-prod-desc {
+  display: grid;
+  grid-template-columns: 5fr 3fr 2fr; /* 50 / 30 / 20 */
+  gap: 10px;
+  align-items: center;
+}
+
+.fi-row-prod-desc .mat-mdc-form-field,
+.fi-row-prod-desc .fi-prefix-field {
+  width: 100%;
+}
+
+@media (max-width: 900px) {
+  .fi-row-prod-desc {
+    grid-template-columns: 1fr;
+  }
+}
+.invoice-header{
+  display:flex;
+  align-items:center;              /* mismo alto que “Factura” */
+  justify-content:space-between;
+  gap:24px;
+}
+
+.main-title{ margin:0; line-height:1.1; }
+
+.invoice-fields-row{
+  display:flex;
+  align-items:flex-end;            /* alinea inputs por la base */
+  gap:40px;                        /* espacio entre grupos */
+}
+
+.field-group{ display:flex; flex-direction:column; }
+.field-label{ margin:0 0 4px; font-weight:600; }
+
+/* Responsive: apila debajo del título */
+@media (max-width: 768px){
+  .invoice-header{ flex-direction:column; align-items:flex-start; }
+  .invoice-fields-row{ margin-top:8px; gap:20px; flex-wrap:wrap; }
+}
+.refs-row{
+  display:flex;
+  align-items:flex-end;  /* alinea por la base */
+  gap:32px;
+  margin-top:16px;
+}
+
+.field-group{ display:flex; flex-direction:column; }
+
+/* Anchos fijos para los 2 primeros */
+.refs-row .field-group .input-wrapper{ width:180px; }
+.refs-row .field-group .input-background{ width:100%; }
+
+/* Observación ocupa el resto */
+.field-observacion{ flex:1; min-width:260px; }
+.field-observacion .input-wrapper{ width:100%; }
+
+/* Responsivo */
+@media (max-width: 768px){
+  .refs-row{ flex-wrap:wrap; gap:16px; }
+  .refs-row .field-group{ flex:1 1 220px; }
+}
+/* Solo para la fila de referencias */
+.refs-row .input-wrapper{
+  position: relative;
+  padding-bottom: 6px;          /* espacio para la línea */
+}
+
+.refs-row .input-wrapper::after{
+  content: "";
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 1px;
+  background: #cfd8dc;          /* gris suave */
+  transition: all .15s ease;
+}
+
+/* Línea activa al enfocar */
+.refs-row .input-wrapper:focus-within::after{
+  height: 2px;
+  background: #cfd8dc;          /* tu naranja */
+}
+
+/* Quita el borde de los inputs/textarea para que solo se vea la línea */
+.refs-row .text-input,
+.refs-row .text-area{
+  border: 0;
+  outline: 0;
+  background: transparent;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Opcional: textarea que crece sin perder la línea */
+.refs-row .text-area{
+  resize: vertical;   /* o 'none' si usas autoGrow */
+  min-height: 40px;
+  overflow: auto;
+}
+/* opción 1: espacio debajo del encabezado */
+.invoice-header { margin-bottom: 10px; }
+
+/* opción 2: espacio encima de la fila Orden/Guía/Observación */
+.refs-row { margin-top: 10px; }
+/* 1) Compactar tarjeta */
+.values-section.totales-card { padding: 10px 14px; }
+.values-header { margin: 0 0 8px; }
+
+/* 2) Una sola línea por fila (separador de la fila) */
+.values-section .value-row{
+  display: grid;
+  grid-template-columns: 1fr 110px; /* etiqueta | valor */
+  align-items: end;
+  column-gap: 12px;
+  padding: 4px 0;
+  border-bottom: 1px solid #dbe3ea;   /* ← ÚNICA línea */
+}
+.values-section .value-row:last-child{ border-bottom: 0; }
+
+/* 3) Quitar la línea del input para evitar la doble línea */
+.values-section .value-amount-wrapper .fi-input{
+  border: none !important;            /* ← quita subrayado del input */
+  box-shadow: none !important;
+  background: transparent;
+  height: 24px;
+  padding: 0;
   text-align: right;
 }
 
-/* Botones inferiores */
-.footer-buttons {
+/* 4) TOTAL compacto y sin doble línea */
+.total-section{ margin-top: 8px; }
+.total-content{
+  display: grid;
+  grid-template-columns: 1fr 120px;
+  align-items: end;
+  column-gap: 12px;
+  padding-top: 6px;
+  
+}
+.total-amount-wrapper .fi-input{
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent;
+  height: 26px;
+  font-size: 18px;
+  padding: 0;
+  text-align: right;
+}
+.fi-row-prod-desc {
   display: flex;
-  justify-content: flex-end;
-  align-items: center;
   gap: 12px;
-  margin-top: 12px;
+  align-items: flex-start;     /* botón alineado arriba */
 }
 
-/* Responsive */
-@media screen and (max-width: 768px) {
-  .filters-row {
-    grid-template-columns: repeat(1, minmax(0, 1fr));
-  }
+.fi-prefix-field { width: 100%; min-width: 0; }
 
-  .filter-group.large {
-    grid-column: span 1;
-  }
+/* Reparto del ancho (ajusta a gusto) */
+.grow-6 { flex: 6 1 0; }       /* Producto: ~60% */
+.grow-3 { flex: 3 1 0; }       /* Descuento: ~30% */
+.grow-2 { flex: 2 1 1px; }   /* Año: ~10% con base mínima */
 
-  .checkbox-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
+.tooltip-wrapper { display: inline-block; line-height: 0; }
+.fi-meses-btn { height: 40px; padding: 0 10px; }
 
-  .footer-buttons {
-    flex-direction: column;
-    align-items: flex-start;
+/* Responsive opcional */
+@media (max-width: 900px) {
+  .grow-6 { flex: 1 1 100%; }
+  .grow-3 { flex: 1 1 50%; }
+  .grow-2 { flex: 1 1 120px; }
+}
+:root { --amount-col: 140px; }               /* ancho de la columna de montos */
+
+.values-section--grid { display: flex; flex-direction: column; gap: 8px; }
+
+.value-row,
+.total-content {
+  display: grid;
+  grid-template-columns: 1fr var(--amount-col); /* mismas columnas para filas y total */
+  align-items: center;
+}
+
+.value-row { 
+  padding: 8px 0;
+  border-bottom: 1px solid #e3e8ee;          /* una línea por fila */
+}
+.value-row--last { border-bottom: 0; }       /* sin línea extra antes del divisor */
+
+.value-amount-wrapper, .total-amount-wrapper { text-align: right; }
+
+.fi-amount, .fi-total-amount { font-variant-numeric: tabular-nums; }
+
+.total-divider {
+  height: 2px;                                /* una sola línea más gruesa */
+  background: #e3e8ee;
+  margin: 4px 0 2px;
+}
+
+.total-label { font-weight: 700; letter-spacing: .3px; }
+.fi-total-amount { font-size: 1.25rem; font-weight: 700; }
+/* === Totales: una sola línea antes del TOTAL y todo alineado === */
+
+/* Misma rejilla para filas y total */
+.values-section.totales-card .value-row,
+.values-section.totales-card .total-content{
+  display: grid;
+  grid-template-columns: 1fr 140px; /* etiqueta | monto (ajusta 140px si quieres) */
+  align-items: center;
+}
+
+/* Línea por fila */
+.values-section.totales-card .value-row{
+  padding: 8px 0;
+  border-bottom: 1px solid #e3e8ee;
+}
+
+/* Quita la línea de la ÚLTIMA fila (evita el “doble renglón”) */
+.values-section.totales-card .value-row:last-of-type{
+  border-bottom: 0 !important;
+}
+
+/* Deja SOLO un separador antes del TOTAL */
+.values-section.totales-card .total-content{
+ 
+  padding-top: 6px;
+}
+
+/* Si todavía existe el sistema viejo de dos líneas, lo apagamos */
+.values-section.totales-card .total-borders,
+.values-section.totales-card .total-border-top,
+.values-section.totales-card .total-border-bottom,
+.values-section.totales-card .total-divider{
+  display: none !important;
+}
+
+/* Alineación a la derecha de los montos */
+.values-section.totales-card .value-amount-wrapper,
+.values-section.totales-card .total-amount-wrapper{
+  text-align: right;
+}
+/* === Compactar un poco más la tarjeta de totales === */
+:root{
+  --amount-col: 120px;                   /* opcional: columna de montos un poco más angosta */
+}
+
+.values-section.totales-card .value-row{
+  padding: 2px 0 !important;            /* ← estaba en 4px 0 */
+  gap: 8px !important;                   /* menos espacio entre etiqueta y monto */
+}
+
+.values-section.totales-card .value-label,
+.values-section.totales-card .value-amount,
+.values-section.totales-card .value-amount-wrapper .fi-input{
+  font-size: 11.5px !important;          /* ↓ antes 12px */
+  line-height: 1.15 !important;          /* ↓ antes 1.2 */
+}
+
+.values-section.totales-card .total-section{
+  margin-top: 6px !important;            /* ↓ antes 8px */
+}
+
+.values-section.totales-card .total-content{
+  padding-top: 4px !important;           /* ↓ antes 6px */
+}
+/* ====== FIX TARJETA DETALLES DE VALORES (compacta y 1 sola fila) ====== */
+
+/* Ancho de la columna de montos */
+:root { --amount-col: 130px; }
+
+/* Reset duro de posiciones/alturas que vengan de estilos anteriores */
+.values-section.totales-card .value-row,
+.values-section.totales-card .total-section,
+.values-section.totales-card .total-content,
+.values-section.totales-card .value-label-wrapper,
+.values-section.totales-card .value-amount-wrapper{
+  position: static !important;
+  left: auto !important;
+  top: auto !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+}
+
+/* Cabecera compacta */
+.values-section.totales-card .values-header{ margin: 0 0 6px !important; }
+
+/* === Cada fila: una sola línea, etiqueta a la izq. y monto a la der. === */
+.values-section.totales-card .value-row{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding: 4px 0 !important;                 /* ↓ alto compacto */
+  border-bottom: 1px solid #e6ecf5 !important;
+}
+
+.values-section.totales-card .value-row:last-of-type{
+  border-bottom: 1px solid #e6ecf5 !important; /* mantiene la línea antes del total */
+}
+
+/* Etiqueta */
+.values-section.totales-card .value-label-wrapper{
+  flex: 1 1 auto !important;
+  min-width: 0;
+}
+.values-section.totales-card .value-label{
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  white-space: nowrap;
+}
+
+/* Monto alineado a la derecha con ancho fijo */
+.values-section.totales-card .value-amount-wrapper{
+  flex: 0 0 var(--amount-col) !important;
+  text-align: right !important;
+}
+.values-section.totales-card .value-amount,
+.values-section.totales-card .value-amount-wrapper .fi-input{
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  font-variant-numeric: tabular-nums;
+  text-align: right !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  height: auto !important;
+}
+
+/* === TOTAL (una sola fila, sin dobles líneas) === */
+.values-section.totales-card .total-section{ margin-top: 8px !important; }
+.values-section.totales-card .total-content{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  padding-top: 1px !important;
+   /* divisor del total */
+}
+.values-section.totales-card .total-label-wrapper{ flex: 1 1 auto !important; }
+.values-section.totales-card .total-label{
+  font-weight: 700;
+  white-space: nowrap;                         /* “TOTAL A PAGAR” en una fila */
+}
+.values-section.totales-card .total-amount-wrapper{
+  flex: 0 0 calc(var(--amount-col) + 10px) !important;
+  text-align: right !important;
+}
+.values-section.totales-card .total-amount,
+.values-section.totales-card .total-amount-wrapper .fi-input{
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  text-align: right !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+.field-error{ color:#d32f2f; font-size:14px; margin-top:4px; }
+.input-error{ border-bottom:1px solid #d32f2f !important; }
+.ag-btn-icon.ag-btn-meses {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.ag-btn-icon.ag-btn-meses .material-icons {
+  font-size: 18px;
+}
+.ag-btn-delete {
+  margin-right: 6px; /* solo separa la papelera */
+}
+.ag-btn-icon {
+  margin-right: 6px;  /* 👈 ajusta el valor a tu gusto */
+}
+.fi-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.fi-btn {
+  position: relative;
+  overflow: hidden;          /* para el ripple */
+  border: 1px solid #d0d5dd;
+  background: #fff;
+  color: #111827;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform .15s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
+}
+
+.fi-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0,0,0,.08);
+}
+
+.fi-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 3px 10px rgba(0,0,0,.06);
+}
+
+.fi-btn:disabled {
+  opacity: .6;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+/* Variante primaria */
+.fi-primary {
+  background: linear-gradient(180deg, #2563eb, #1d4ed8);
+  color: #fff;
+  border-color: transparent;
+}
+.fi-primary:hover:not(:disabled) {
+  background: linear-gradient(180deg, #2b6ef0, #2357df);
+}
+.fi-primary:active:not(:disabled) {
+  background: linear-gradient(180deg, #235bdd, #1c4acc);
+}
+
+/* Flecha que se desliza */
+.fi-arrow {
+  display: inline-block;
+  margin-left: 6px;
+  transition: transform .18s ease;
+}
+.fi-primary:hover .fi-arrow { transform: translateX(4px); }
+
+/* Ripple */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: scale(0);
+  opacity: .35;
+  background: rgba(0,0,0,.25);   /* por defecto */
+  animation: ripple .6s ease-out;
+}
+.fi-primary .ripple {
+  background: rgba(255,255,255,.45); /* ripple claro en primario */
+}
+
+@keyframes ripple {
+  to { transform: scale(12); opacity: 0; }
+}
+/* Igualar alturas entre "Factura" (izq) y "Fecha" (der) */
+.invoice-header{
+  display: grid;
+  grid-template-columns: 1fr 280px; /* izquierda flexible | derecha fija */
+  gap: 16px;
+  align-items: stretch;             /* <-- clave para igualar alturas */
+}
+
+/* Asegura que las tarjetas rellenen toda la pista del grid */
+.invoice-header > .box-section{
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Opcional: compactar un poco el header dentro de cada tarjeta */
+.invoice-header .main-title{ margin: 0 0 8px; }
+
+/* Responsive: apila en pantallas pequeñas */
+@media (max-width: 768px){
+  .invoice-header{
+    grid-template-columns: 1fr;
   }
+}
+.cell-invalid { background:#ffe6e6 !important; border:1px solid #ffb3b3 !important; }
+.text-danger.fw-bold { color:#c62828; font-weight:600; }
+.text-success.fw-bold { color:#2e7d32; font-weight:600; }
+.text-primary.fw-bold { color:#1565c0; font-weight:600; }
+.text-warning.fw-bold { color:#ef6c00; font-weight:600; }
+.grid-wrap { position: relative; }
+.grid-overlay{
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12px;
+  font-size: 13px;
+  color: #1c2a5e;
+  border: 1px dashed #cfd9ea;
+  pointer-events: all;  /* bloquea clics en el grid */
+}
+/* fila cliente + responsable */
+.fi-row{
+  display: flex;
+  gap: 16px;              /* separación entre controles */
+  align-items: flex-end;  /* alinear con la línea de los inputs */
+}
+
+.fi-row .fi-cliente{
+  flex: 1 1 auto;         /* ocupa todo el espacio disponible */
+  min-width: 320px;
+}
+
+.fi-row .fi-resp{
+  flex: 0 0 260px;        /* ancho fijo/sugerido para Responsable */
+  max-width: 320px;
+}
+
+/* que el input ocupe todo el ancho del contenedor */
+.fi-input-wrap, .fi-field .form-control, .fi-field [matInput]{
+  width: 100%;
+}
+
+/* Responsive: en pantallas pequeñas se apilan */
+@media (max-width: 900px){
+  .fi-row{ flex-direction: column; }
+  .fi-row .fi-resp{ flex: 0 0 auto; max-width: none; }
+}
+/* Grid de dos columnas compartidas por ambas filas */
+.fi-grid2{
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) 320px; /* cliente crece; responsable fijo */
+  column-gap: 24px;
+  row-gap: 12px;
+  align-items: end; /* alinea por la línea inferior de los inputs */
+}
+
+/* Helpers para fijar columna de cada item (1 o 2) */
+.fi-grid2 .col-1 { grid-column: 1; }
+.fi-grid2 .col-2 { grid-column: 2; }
+
+/* Formatos coherentes */
+.field label{ display:block; margin: 0 0 6px; color:#445; font-weight:600; }
+.fi-input-wrap, .field .form-control, .field [matInput]{ width:100%; }
+.text-end{ text-align:right; }
+
+/* Responsive: apilar en pantallas pequeñas */
+@media (max-width: 900px){
+  .fi-grid2{ grid-template-columns: 1fr; }
+  .fi-grid2 .col-1, .fi-grid2 .col-2{ grid-column: 1; }
+}
+.text-start { text-align: left !important; }
+/* Quita la línea/underline del input */
+.form-control.no-underline{
+  border: 0 !important;        /* sin bordes */
+  box-shadow: none !important;  /* sin sombras */
+  outline: none !important;     /* sin outline */
+  background: transparent;      /* (opcional) */
+}
+
+/* Evita que en focus vuelva a dibujar algo */
+.form-control.no-underline:focus{
+  border: 0 !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+.toolbar{
+  display: flex;
+  flex-direction: column;   /* saldo arriba, botones abajo */
+  align-items: flex-start;  /* ALINEA A LA IZQUIERDA */
+  gap: .5rem;
+  margin-top: .5rem;
+}
+
+.toolbar .tot{
+  text-align: left;         /* por si hereda centrado */
+}
+
+.toolbar .btns{
+  display: flex;
+  flex-wrap: wrap;          /* por si no caben en una línea */
+  gap: .5rem;
+  align-items: center;      /* verticalmente centrados entre sí */
+  justify-content: flex-start; /* IZQUIERDA */
+}
+.fi-arrow {
+  display: inline-block;
+  margin-left: 6px;
+  transition: transform .18s ease;
+}
+/* base del botón */
+.fi-btn{
+  display:inline-flex; align-items:center; gap:6px;
+  border:1px solid #e1e8f0; border-radius:10px;
+  background:#eef4f7;               /* fondo claro */
+  color:#0b4a8f;                     /* texto azul */
+  font-weight:600; line-height:1;
+  padding:8px 12px; cursor:pointer;
+}
+
+/* variante “fantasma” como el ejemplo */
+.fi-ghost:hover{ background:#e8f0f8; }
+
+/* la flechita solo es el span interno */
+.fi-arrow{ display:inline-block; transition:transform .18s; }
+.fi-btn:hover .fi-arrow{ transform: translateX(3px); }
+
+/* por si algún estilo global mete borde 3D/azul */
+button.fi-btn{ appearance:none; -webkit-appearance:none; }
+.cell-required {
+  background: #ffe6e6 !important;
+  border: 1px solid #e11d48 !important; /* rojo */
+}
+.spinner {
+  display: inline-block;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.6);
+  border-top-color: #fff;
+  margin-right: 6px;
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.full-width {
+  grid-column: 1 / -1;
+}
+/* Contenedor inferior */
+.panel-bottom {
+  display: flex;
+  justify-content: center;   /* centra el bloque interno */
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+/* Fila de botones */
+.buttons-row.buttons-bottom {
+  display: flex;
+  gap: 16px;                 /* separación entre Exportar y Cancelar */
+  align-items: center;
+}
+
+/* Opcional: que los botones tengan tamaño similar */
+.buttons-row.buttons-bottom button {
+  min-width: 110px;
+}
+/* Botones tipo "pastilla" Exportar / Cancelar */
+.pill-btn {
+  min-width: 110px;
+  height: 32px;
+  padding: 0 18px;
+  border-radius: 999px;        /* forma redonda */
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  box-shadow: none;
+  text-transform: none;        /* sin MAYÚSCULAS de Angular Material */
+}
+
+/* Exportar: borde gris, fondo blanco */
+.pill-btn-outline {
+  background-color: #ffffff;
+  color: #111827;
+  border-color: #d0d5dd;
+}
+
+/* Cancelar: fondo celeste suave */
+.pill-btn-solid {
+  background-color: #e8f2ff;
+  color: #1d4ed8;
+  border-color: #e1ecff;
+}
+
+/* Hover */
+.pill-btn-outline:hover {
+  background-color: #f9fafb;
+}
+
+.pill-btn-solid:hover {
+  background-color: #dbe9ff;
+}
+
+/* Quitar focus feo de Material y dejar algo suave */
+.pill-btn.cdk-focused,
+.pill-btn.cdk-program-focused {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  outline: none;
+}
+.buttons-row {
+  display: flex;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.buttons-bottom {
+  justify-content: center;   /* 👈 esto los centra */
 }

@@ -55,7 +55,6 @@ import { CuentaxcobrarComponent } from './exploradores/cuentaxcobrar/cuentaxcobr
     ProductosProveedorDialogComponent,
     AgregarUbicacionDialogComponent,
     CierreAnticiposComponent,
-    CuentaxcobrarComponent,
     FilePreviewComponent,
     // 👈 OJO: ya NO va EstadocuentaclienteComponent aquí
   ],

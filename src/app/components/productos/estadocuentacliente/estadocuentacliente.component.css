@@ -289,3 +289,87 @@ input[type='date'] {
   border: 1px solid #0b4e6a;
   box-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
+/* Botones tipo "pastilla" Exportar / Cancelar */
+.pill-btn {
+  min-width: 110px;
+  height: 32px;
+  padding: 0 18px;
+  border-radius: 999px;        /* forma redonda */
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  box-shadow: none;
+  text-transform: none;        /* sin MAYÚSCULAS de Angular Material */
+}
+
+/* Exportar: borde gris, fondo blanco */
+.pill-btn-outline {
+  background-color: #ffffff;
+  color: #111827;
+  border-color: #d0d5dd;
+}
+
+/* Cancelar: fondo celeste suave */
+.pill-btn-solid {
+  background-color: #e8f2ff;
+  color: #1d4ed8;
+  border-color: #e1ecff;
+}
+
+/* Hover */
+.pill-btn-outline:hover {
+  background-color: #f9fafb;
+}
+
+.pill-btn-solid:hover {
+  background-color: #dbe9ff;
+}
+
+/* Quitar focus feo de Material y dejar algo suave */
+.pill-btn.cdk-focused,
+.pill-btn.cdk-program-focused {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  outline: none;
+}
+/* Botones tipo "pastilla" Exportar / Cancelar */
+.pill-btn {
+  min-width: 110px;
+  height: 32px;
+  padding: 0 18px;
+  border-radius: 999px;        /* forma redonda */
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  box-shadow: none;
+  text-transform: none;        /* sin MAYÚSCULAS de Angular Material */
+}
+
+/* Exportar: borde gris, fondo blanco */
+.pill-btn-outline {
+  background-color: #ffffff;
+  color: #111827;
+  border-color: #d0d5dd;
+}
+
+/* Cancelar: fondo celeste suave */
+.pill-btn-solid {
+  background-color: #e8f2ff;
+  color: #1d4ed8;
+  border-color: #e1ecff;
+}
+
+/* Hover */
+.pill-btn-outline:hover {
+  background-color: #f9fafb;
+}
+
+.pill-btn-solid:hover {
+  background-color: #dbe9ff;
+}
+
+/* Quitar focus feo de Material y dejar algo suave */
+.pill-btn.cdk-focused,
+.pill-btn.cdk-program-focused {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  outline: none;
+}

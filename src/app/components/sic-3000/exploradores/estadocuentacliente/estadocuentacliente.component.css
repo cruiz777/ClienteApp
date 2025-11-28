@@ -289,3 +289,93 @@ input[type='date'] {
   border: 1px solid #0b4e6a;
   box-shadow: 0 2px 8px rgba(0,0,0,0.25);
 }
+:host .fi-grid2{
+  display: grid;
+  grid-template-columns: minmax(420px,1fr) 320px;
+  column-gap: 24px;
+  row-gap: 12px;
+  align-items: end;
+}
+
+:host .fi-grid2 .col-1 { grid-column: 1; min-width: 420px; }
+:host .fi-grid2 .col-2 { grid-column: 2; }
+
+:host .fi-input-wrap {
+  display: flex;
+  align-items: center;
+  min-height: 40px;
+}
+
+:host .fi-input-wrap input.mat-mdc-input-element[matInput] {
+  height: 40px !important;
+  line-height: 40px !important;
+  padding: 0 12px !important;
+  font-size: 14px !important;
+  border-radius: 6px !important;
+  background: #fff !important;
+  border: 1px solid #E6ECF5 !important;
+  box-shadow: 0 1px 2px rgba(16,24,40,.04) !important;
+}
+
+:host .fi-input-wrap input.mat-mdc-input-element::placeholder {
+  color: #9aa8bf !important;
+}
+
+.field-error{ color:#d32f2f; font-size:14px; margin-top:4px; }
+.input-error{ border-bottom:1px solid #d32f2f !important; }
+/* que la columna de Cliente sea más ancha */
+:host .fi-grid2 .fi-cliente {
+  min-width: 600px;      /* antes 420, súbelo a lo que quieras */
+}
+
+/* el contenedor del input ocupa todo ese ancho */
+:host .fi-cliente .fi-input-wrap {
+  width: 100%;
+}
+
+/* y el input también al 100% */
+:host .fi-cliente .fi-input-wrap input[matInput] {
+  width: 100%;
+}
+/* Botones tipo "pastilla" Exportar / Cancelar */
+.pill-btn {
+  min-width: 110px;
+  height: 32px;
+  padding: 0 18px;
+  border-radius: 999px;        /* forma redonda */
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  box-shadow: none;
+  text-transform: none;        /* sin MAYÚSCULAS de Angular Material */
+}
+
+/* Exportar: borde gris, fondo blanco */
+.pill-btn-outline {
+  background-color: #ffffff;
+  color: #111827;
+  border-color: #d0d5dd;
+}
+
+/* Cancelar: fondo celeste suave */
+.pill-btn-solid {
+  background-color: #e8f2ff;
+  color: #1d4ed8;
+  border-color: #e1ecff;
+}
+
+/* Hover */
+.pill-btn-outline:hover {
+  background-color: #f9fafb;
+}
+
+.pill-btn-solid:hover {
+  background-color: #dbe9ff;
+}
+
+/* Quitar focus feo de Material y dejar algo suave */
+.pill-btn.cdk-focused,
+.pill-btn.cdk-program-focused {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  outline: none;
+}

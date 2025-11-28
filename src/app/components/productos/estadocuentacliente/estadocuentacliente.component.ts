@@ -366,9 +366,9 @@ export class EstadocuentaclienteComponent implements OnInit {
   if (cli) {
     doc.text(`Cliente: ${cli.nomcli}`,     marginLeft, cursorY);
     cursorY += 16;
-    doc.text(`Dirección: ${cli.dircli}`,   marginLeft, cursorY);
-    cursorY += 16;
-    doc.text(`Teléfono: ${cli.telefono}`,  marginLeft, cursorY);
+    doc.text(`Teléfono: ${cli.ruc}`,  marginLeft, cursorY);
+  
+    
     cursorY += 16;
   }
 
@@ -563,14 +563,11 @@ export class EstadocuentaclienteComponent implements OnInit {
       rowCli.getCell(2).value = cli.nomcli;
       ws.mergeCells(rowCli.number, 2, rowCli.number, 9);
 
-      const rowDir = nextRow();
-      rowDir.getCell(1).value = 'Dirección:';
-      rowDir.getCell(2).value = cli.dircli;
-      ws.mergeCells(rowDir.number, 2, rowDir.number, 9);
+     
 
       const rowTel = nextRow();
-      rowTel.getCell(1).value = 'Teléfono:';
-      rowTel.getCell(2).value = cli.telefono;
+      rowTel.getCell(1).value = 'Ruc:';
+      rowTel.getCell(2).value = cli.ruc;
       ws.mergeCells(rowTel.number, 2, rowTel.number, 9);
 
       const rowFec = nextRow();
@@ -578,7 +575,7 @@ export class EstadocuentaclienteComponent implements OnInit {
       rowFec.getCell(2).value = this.hoy.toLocaleDateString('es-EC');
       ws.mergeCells(rowFec.number, 2, rowFec.number, 9);
 
-      [rowCli, rowDir, rowTel, rowFec].forEach(r => {
+      [rowCli, rowTel, rowFec].forEach(r => {
         r.eachCell((cell, col) => {
           if (col === 1) {
             cell.font = { bold: true, size: 11, color: { argb: 'FF002C6C' } };

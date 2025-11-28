@@ -185,8 +185,8 @@ export class EstadocuentaclienteComponent implements OnInit {
 
   ngOnInit(): void {
     this.usuarioActual = this.usuarioService.getUsuarioActual();
-    this.cargarClienteInv();
-    this.cargarEstadoCuenta();
+    //this.cargarClienteInv();
+    //this.cargarEstadoCuenta();
     this.logoService.loadLogoFromEmpresa(this.usuarioActual?.id_empresa ?? 1);
 
     // 🔎 Autocomplete de clientes usando ClienteService.getClientesSummary
@@ -406,10 +406,9 @@ export class EstadocuentaclienteComponent implements OnInit {
     if (cli) {
       doc.text(`Cliente: ${cli.nomcli}`, marginLeft, cursorY);
       cursorY += 16;
-      doc.text(`Dirección: ${cli.dircli ?? ''}`, marginLeft, cursorY);
+      doc.text(`Ruc: ${cli.ruc ?? ''}`, marginLeft, cursorY);
       cursorY += 16;
-      doc.text(`Teléfono: ${cli.telefono ?? ''}`, marginLeft, cursorY);
-      cursorY += 16;
+      
     }
 
     doc.text(`Fecha del reporte: ${this.hoy.toLocaleDateString('es-EC')}`, marginLeft, cursorY);
@@ -527,10 +526,31 @@ export class EstadocuentaclienteComponent implements OnInit {
 
     this.opcionesImpresionVisibles = false;
   }
+cancelar(): void {
+  console.log('Cancelar');
 
-  cancelar(): void {
-    console.log('Cancelar');
+  // 1) Limpiar el grid
+  this.rowData = [];                  // vacía el array que está ligado al [rowData]
+
+  if (this.gridApi) {
+    this.gridApi.setGridOption('rowData', []); // actualiza los datos en la grilla
+    this.gridApi.deselectAll();                // limpia selección
   }
+
+  // 2) Limpiar selección de cliente / autocomplete
+  this.clienteSeleccionado = null;
+  this.codcliO = 0;
+  this.clientesOrigenFiltrados = [];
+
+  this.clienteOrigenControl.reset(null);
+  this.clienteOrigenControl.markAsPristine();
+  this.clienteOrigenControl.markAsUntouched();
+
+  // 3) Otros flags/mensajes
+  this.errorMessage = '';
+  this.opcionesImpresionVisibles = false;
+}
+
 
   formatNumero(value: number): string {
     if (value == null) {
@@ -595,22 +615,21 @@ export class EstadocuentaclienteComponent implements OnInit {
       rowCli.getCell(2).value = cli.nomcli;
       ws.mergeCells(rowCli.number, 2, rowCli.number, 9);
 
-      const rowDir = nextRow();
-      rowDir.getCell(1).value = 'Dirección:';
-      rowDir.getCell(2).value = cli.dircli ?? '';
-      ws.mergeCells(rowDir.number, 2, rowDir.number, 9);
-
       const rowTel = nextRow();
-      rowTel.getCell(1).value = 'Teléfono:';
-      rowTel.getCell(2).value = cli.telefono ?? '';
+      rowTel.getCell(1).value = 'Ruc:';
+      rowTel.getCell(2).value = cli.ruc ?? '';
       ws.mergeCells(rowTel.number, 2, rowTel.number, 9);
+
+    
+
+      
 
       const rowFec = nextRow();
       rowFec.getCell(1).value = 'Fecha del reporte:';
       rowFec.getCell(2).value = this.hoy.toLocaleDateString('es-EC');
       ws.mergeCells(rowFec.number, 2, rowFec.number, 9);
 
-      [rowCli, rowDir, rowTel, rowFec].forEach(r => {
+      [rowCli, rowTel, rowFec].forEach(r => {
         r.eachCell((cell, col) => {
           if (col === 1) {
             cell.font = { bold: true, size: 11, color: { argb: 'FF002C6C' } };
@@ -807,14 +826,13 @@ export class EstadocuentaclienteComponent implements OnInit {
 
     // Guardamos el código para la consulta
     this.codcliO = cliente.clientes_codigo;
-
     // Actualizamos el cliente seleccionado (cabecera)
     this.clienteSeleccionado = {
       clientes_codigo: cliente.clientes_codigo,
       nomcli: cliente.nomcli,
       // si tu ClienteSummary tiene estos campos, puedes añadirlos:
       // dircli: cliente.dircli,
-      // telefono: cliente.telefono
+       ruc: cliente.ruc
     } as any;
 
     // Mostramos el nombre en el input

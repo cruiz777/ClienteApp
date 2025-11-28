@@ -32,14 +32,11 @@
           </div>
 
           <div class="fila-cliente">
-            <span class="label">Dirección:</span>
-            <span>{{ cli.dircli }}</span>
+            <span class="label">Ruc:</span>
+            <span>{{ cli.ruc}}</span>
           </div>
 
-          <div class="fila-cliente">
-            <span class="label">Teléfono:</span>
-            <span>{{ cli.telefono }}</span>
-          </div>
+
         </div>
 
 
@@ -84,25 +81,30 @@
 
       <!-- Botones -->
       <!-- diseño nuevo: mismo comportamiento, mismas funciones -->
-<div class="buttons-row buttons-bottom">
-  <!-- Botón Exportar con menu -->
-  <button mat-button
-          [matMenuTriggerFor]="menuExportar"
-          >
+      <div class="buttons-row buttons-bottom">
+  <!-- Botón Exportar con menú -->
+  <button
+    mat-button
+    class="pill-btn pill-btn-outline"
+    [matMenuTriggerFor]="menuExportar">
     Exportar
   </button>
 
   <mat-menu #menuExportar="matMenu">
-    <!-- llamo a tus funciones existentes -->
     <button mat-menu-item (click)="exportarPdf()">PDF</button>
     <button mat-menu-item (click)="exportarExcel()">Excel</button>
   </mat-menu>
 
-  <!-- Botón Cancelar (misma función que ya tienes) -->
-  <button mat-button type="button" (click)="cancelar()">
+  <!-- Botón Cancelar -->
+  <button
+    mat-button
+    type="button"
+    class="pill-btn pill-btn-solid"
+    (click)="cancelar()">
     Cancelar
   </button>
 </div>
+
 
 
     </div>
