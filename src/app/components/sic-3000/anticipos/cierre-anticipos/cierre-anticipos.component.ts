@@ -14,7 +14,7 @@ import { AnticipoLiquidaService } from 'src/app/services/anticipo-liquida.servic
 import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
 import { TipoAnticipo } from 'src/app/interfaces/responses/tipo-anticipo-response';
 import { TipoAnticipoService } from 'src/app/services/tipo-anticipo.service';
-import { AnticipoPDFService, DesgloceAnticipoData } from 'src/app/reports/anticipos-pdf.service';
+import { AnticipoPDFService, DesgloceAnticipoData, FiltrosLiquidacionesPDF, LiquidacionReportePDF, TotalesLiquidacionesPDF } from 'src/app/reports/anticipos-pdf.service';
 import { EmpresaService } from 'src/app/services/empresa.service';
 import { UsuarioService } from 'src/app/services/usuario.service';
 
@@ -193,6 +193,9 @@ export class CierreAnticiposComponent implements OnInit {
         headerName: '# Liquidación',
         field: 'num_liquidacion',
         width: 100,
+        valueFormatter: (params) => {
+          return params.value?.toString().padStart(6, '0') || ''; // 000001
+        },
       },
       {
         headerName: 'Fecha Liq',
@@ -507,15 +510,88 @@ export class CierreAnticiposComponent implements OnInit {
   }
 
   private verDetalleLiquidacion(liquidacion: AnticipoLiquidaResponse): void {
-    // TODO: Implementar modal de detalle
-    console.log('Ver detalle de liquidación:', liquidacion);
-    this.showMessageBox(
-      'Información',
-      `Detalle de la liquidación #${liquidacion.num_liquidacion}<br><br>Esta funcionalidad se implementará próximamente`,
-      'info'
-    );
+    console.log('📄 Generando PDF de liquidación:', liquidacion.num_liquidacion);
+
+    this.loadingLiquidados = true;
+
+    // Preparar datos para el PDF
+    const item: LiquidacionReportePDF = {
+      num_liquidacion: liquidacion.num_liquidacion,
+      id_anticipo: liquidacion.id_anticipo,
+      fecha_liquidacion: liquidacion.fecha_liquidacion || '',
+      nombre_cliente: liquidacion.nombre_cliente || `Código: ${liquidacion.clientes_codigo}`,
+      valor_liquidado: liquidacion.valor_liquidado || 0,
+      concepto: liquidacion.concepto || '-',
+      beneficiario: liquidacion.beneficiario || '-',
+      descripcion_forma_pago: liquidacion.tipo_pago || 'N/A'
+    };
+
+    const totales: TotalesLiquidacionesPDF = {
+      total_valor_liquidado: liquidacion.valor_liquidado || 0,
+      cantidad_liquidaciones: 1
+    };
+
+    const filtros: FiltrosLiquidacionesPDF = {
+      fechaInicial: this.formatearFecha(liquidacion.fecha_liquidacion || ''),
+      fechaFinal: this.formatearFecha(liquidacion.fecha_liquidacion || ''),
+      cliente: liquidacion.nombre_cliente || '',
+      totalRegistros: 1
+    };
+
+    // Generar PDF
+    this.generarPDFLiquidacion([item], totales, filtros);
   }
 
+
+  private async generarPDFLiquidacion(
+    items: LiquidacionReportePDF[],
+    totales: TotalesLiquidacionesPDF,
+    filtros: FiltrosLiquidacionesPDF
+  ): Promise<void> {
+    try {
+      const configEmpresa = await this.anticipoPdfService.obtenerConfiguracionEmpresa(
+        this.idEmpresaActual
+      );
+
+      const nombreArchivo = items.length === 1
+        ? `liquidacion-${items[0].num_liquidacion}.pdf`
+        : 'reporte-liquidaciones.pdf';
+
+      await this.anticipoPdfService.descargarLiquidacionesPDF(
+        items,
+        totales,
+        filtros,
+        nombreArchivo,
+        {
+          ...configEmpresa,
+          titulo: items.length === 1 ? 'DETALLE DE LIQUIDACIÓN' : 'REPORTE DE LIQUIDACIONES',
+          subtitulo: items.length === 1 ? `Liquidación N° ${items[0].num_liquidacion}` : undefined,
+          mostrarFechaGeneracion: true,
+          mostrarTotales: true
+        }
+      );
+
+      this.showMessageBox(
+        'Éxito',
+        'El PDF se ha generado correctamente',
+        'success'
+      );
+    } catch (error) {
+      console.error('❌ Error generando PDF:', error);
+      this.showMessageBox(
+        'Error',
+        'Ocurrió un error al generar el PDF',
+        'error'
+      );
+    } finally {
+      this.loadingLiquidados = false;
+    }
+  }
+  private formatearFecha(fecha: string): string {
+    if (!fecha) return '';
+    const [year, month, day] = fecha.split('-');
+    return `${day}/${month}/${year}`;
+  }
   // ==================== CALLBACK DEL MODAL ====================
 
   onLiquidacionExitosa(): void {

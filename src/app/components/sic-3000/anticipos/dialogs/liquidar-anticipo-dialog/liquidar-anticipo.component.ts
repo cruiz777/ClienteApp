@@ -64,7 +64,10 @@ export class LiquidarAnticipoComponent implements OnInit {
   private buildForm(): void {
       this.liquidacionForm = this.fb.group({
       valorLiquidado: [
-        parseFloat((this.anticipo.monto || 0).toFixed(2)), //Redondear a 2
+        {
+          value: parseFloat((this.anticipo.monto || 0).toFixed(2)),
+          disabled: true  // DESHABILITAR el campo (Solo liquidacioens totales, no parciales)
+        },
         [
           Validators.required,
           Validators.min(0.01),
@@ -221,6 +224,7 @@ export class LiquidarAnticipoComponent implements OnInit {
 
     // Obtener el siguiente número de liquidación desde el backend
     const numLiquidacion = this.numeroLiquidacion;
+    const valorLiquidado = this.liquidacionForm.getRawValue().valorLiquidado;
 
     const request: LiquidarAnticipoRequest = {
       num_liquidacion: numLiquidacion,
@@ -228,7 +232,7 @@ export class LiquidarAnticipoComponent implements OnInit {
       id_anticipo: this.anticipo.id_anticipo,
       responsable: this.usuarioActual,
       clientes_codigo: this.anticipo.clientes_codigo,
-      valor_liquidado: formValue.valorLiquidado,
+      valor_liquidado: valorLiquidado,
       concepto: formValue.concepto,
       id_forma_pago: this.anticipo.id_forma_pago, // Usar la forma de pago del anticipo
       asiento_contable: null,

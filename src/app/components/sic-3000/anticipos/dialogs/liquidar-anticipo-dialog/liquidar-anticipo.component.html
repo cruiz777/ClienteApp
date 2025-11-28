@@ -72,7 +72,7 @@
         [max]="anticipo.monto"
         placeholder="0.00"
         style="width: 100%; text-align: right; font-weight: 600; color: #dc2626;" />
-      <span class="hint">Máximo disponible: ${{ anticipo.monto?.toFixed(2) }}</span>
+      <span class="hint">Máximo disponible: ${{ anticipo.monto?.toFixed(2) }} -     ✓ Liquidación total</span>
     </div>
     <!-- Cédula/Ruc y Beneficiario -->
     <div class="form-row">
@@ -221,12 +221,12 @@
         <span *ngIf="!isLoading">Liquidar</span>
         <span *ngIf="isLoading">Procesando...</span>
       </button>
-      <button
+      <!-- <button
         type="button"
         class="btn-imprimir"
         [disabled]="true">
         Imprimir
-      </button>
+      </button> -->
       <button
         type="button"
         class="btn-cerrar"

@@ -64,6 +64,7 @@ export interface DesgloceAnticipoData {
     nombre_cliente: string;
     monto_original: number;
     concepto: string;
+    caja?: string;
     esta_liquidado: boolean;
     fecha_liquidacion?: string;
     monto_liquidado?: number;
@@ -87,6 +88,28 @@ export interface DesgloceAnticipoData {
   }>;
 }
 
+export interface LiquidacionReportePDF {
+  num_liquidacion: number;
+  id_anticipo: number;
+  fecha_liquidacion: string;
+  nombre_cliente: string;
+  valor_liquidado: number;
+  concepto: string;
+  beneficiario: string;
+  descripcion_forma_pago: string;
+}
+
+export interface TotalesLiquidacionesPDF {
+  total_valor_liquidado: number;
+  cantidad_liquidaciones: number;
+}
+
+export interface FiltrosLiquidacionesPDF {
+  fechaInicial: string;
+  fechaFinal: string;
+  cliente?: string;
+  totalRegistros: number;
+}
 @Injectable({ providedIn: 'root' })
 export class AnticipoPDFService {
 
@@ -506,6 +529,7 @@ export class AnticipoPDFService {
       ['Número:', desglose.info_anticipo.numero_anticipo],
       ['Fecha Creación:', this.formatearFechaSoloFecha(desglose.info_anticipo.fecha_creacion)],
       ['Cliente:', `${desglose.info_anticipo.nombre_cliente} (${desglose.info_anticipo.cliente_codigo})`],
+      ['Caja:', desglose.info_anticipo.caja || 'N/A'],
       ['Concepto:', desglose.info_anticipo.concepto || 'N/A']
     ];
 
@@ -653,11 +677,258 @@ export class AnticipoPDFService {
           this.agregarFooter(doc, data.pageNumber, cfg);
         }
       });
+      const finalY = (doc as any).lastAutoTable.finalY || yPosition;
+
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(cfg.colorSecundario || '#002f75');
+
+      doc.text(
+        `Saldo Restante: ${this.formatMoney(desglose.resumen_uso.saldo_disponible)}`,
+        pageWidth - margins.right,
+        finalY + 8,
+        { align: 'right' }
+      );
+    }
+
+    return doc.output('blob');
+  }
+    /**
+   * Genera el PDF del reporte de liquidaciones de anticipos
+   * @param items Array de liquidaciones
+   * @param totales Totales del reporte
+   * @param filtros Filtros aplicados
+   * @param config Configuración personalizada
+   * @returns Promise<Blob> del PDF generado
+   */
+  async generarLiquidacionesPDFBlob(
+    items: LiquidacionReportePDF[],
+    totales: TotalesLiquidacionesPDF,
+    filtros: FiltrosLiquidacionesPDF,
+    config?: Partial<ConfiguracionAnticiposPDF>
+  ): Promise<Blob> {
+
+    const cfg = {
+      ...this.configDefault,
+      ...config,
+      titulo: config?.titulo || 'Reporte de Liquidaciones de Anticipos'
+    };
+
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'mm',
+      format: cfg.tamanioPagina || 'a4'
+    });
+
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const margins = { left: 14, right: 14, top: 14, bottom: 14 };
+
+    // Logo (igual que antes)
+    let logoDataUrl: string | null = null;
+    try {
+      const logoUrl = await firstValueFrom(this.logoService.logoUrl$);
+      if (logoUrl) {
+        logoDataUrl = await this.toDataUrlSafe(logoUrl);
+      }
+    } catch (error) {
+      console.warn('[AnticipoPDFService] No se pudo cargar el logo:', error);
+    }
+
+    let yPosition = margins.top;
+
+    // ============ CABECERA (igual que antes) ============
+    if (logoDataUrl) {
+      try {
+        doc.setFillColor(255, 255, 255);
+        doc.rect(margins.left, yPosition, 30, 15, 'F');
+        doc.addImage(logoDataUrl, 'PNG', margins.left + 1, yPosition + 1, 28, 13);
+      } catch (error) {
+        console.warn('[AnticipoPDFService] Error al agregar logo:', error);
+      }
+    }
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(cfg.colorPrimario || '#1f2937');
+    doc.text(cfg.nombreEmpresa || 'Mi Empresa', pageWidth - margins.right, yPosition + 5, { align: 'right' });
+
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 100, 100);
+
+    if (cfg.ruc) {
+      doc.text(`RUC: ${cfg.ruc}`, pageWidth - margins.right, yPosition + 10, { align: 'right' });
+    }
+    if (cfg.direccion) {
+      doc.text(cfg.direccion, pageWidth - margins.right, yPosition + 14, { align: 'right' });
+    }
+    if (cfg.telefono || cfg.email) {
+      const contacto = [cfg.telefono, cfg.email].filter(Boolean).join(' · ');
+      doc.text(contacto, pageWidth - margins.right, yPosition + 18, { align: 'right' });
+    }
+
+    yPosition += 25;
+
+    doc.setDrawColor(200, 200, 200);
+    doc.setLineWidth(0.5);
+    doc.line(margins.left, yPosition, pageWidth - margins.right, yPosition);
+    yPosition += 8;
+
+    // ============ TÍTULO ============
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(cfg.colorPrimario || '#1f2937');
+    doc.text(cfg.titulo || 'Reporte de Liquidaciones de Anticipos', margins.left, yPosition);
+    yPosition += 8;
+
+    if (cfg.mostrarFechaGeneracion) {
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(120, 120, 120);
+      const fechaSinHora = new Date().toLocaleDateString('es-EC', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      });
+      doc.text(`Generado: ${fechaSinHora}`, margins.left, yPosition);
+      yPosition += 5;
+    }
+
+    // ============ FILTROS (OPCIONAL) ============
+    if (cfg.mostrarFiltros) {
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(100, 100, 100);
+      doc.text(
+        `Período: ${filtros.fechaInicial} - ${filtros.fechaFinal} | Total: ${filtros.totalRegistros} liquidación(es)`,
+        margins.left,
+        yPosition
+      );
+      yPosition += 8;
+    }
+
+    // ============ TABLA DE LIQUIDACIONES ============
+    const headers = [
+      ['N° Liquidación', 'N° Anticipo', 'Fecha', 'Cliente', 'Concepto', 'Beneficiario', 'Forma Pago', 'Valor']
+    ];
+
+    const tableData = items.map(item => [
+      item.num_liquidacion.toString().padStart(6, '0'),
+      item.id_anticipo.toString().padStart(6, '0'),
+      this.formatearFechaSoloFecha(item.fecha_liquidacion),
+      item.nombre_cliente,
+      item.concepto || '-',
+      item.beneficiario || '-',
+      item.descripcion_forma_pago || 'N/A',
+      this.formatMoney(item.valor_liquidado)
+    ]);
+
+    autoTable(doc, {
+      startY: yPosition,
+      head: headers,
+      body: tableData,
+      theme: 'grid',
+      styles: {
+        fontSize: 7.5,
+        cellPadding: 2,
+        lineColor: [200, 200, 200],
+        lineWidth: 0.1
+      },
+      headStyles: {
+        fillColor: [255, 255, 255],
+        textColor: [0, 0, 0],
+        fontStyle: 'bold',
+        fontSize: 9,
+        halign: 'center',
+        lineColor: [0, 0, 0],
+        lineWidth: 0.3
+      },
+      bodyStyles: {
+        fontSize: 8,
+        textColor: 50,
+        lineColor: [200, 200, 200],
+        lineWidth: 0.1
+      },
+      alternateRowStyles: {
+        fillColor: [248, 249, 250]
+      },
+      columnStyles: {
+        0: { halign: 'center', cellWidth: 28 },
+        1: { halign: 'center', cellWidth: 28 },
+        2: { halign: 'center', cellWidth: 25 },
+        3: { halign: 'left', cellWidth: 'auto' },
+        4: { halign: 'left', cellWidth: 'auto' },
+        5: { halign: 'left', cellWidth: 'auto' },
+        6: { halign: 'center', cellWidth: 30 },
+        7: { halign: 'right', cellWidth: 28 }
+      },
+      margin: { left: margins.left, right: margins.right },
+      didDrawPage: (data) => {
+        this.agregarFooter(doc, data.pageNumber, cfg);
+      }
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY || yPosition;
+
+    // ============ TOTALES ============
+    if (cfg.mostrarTotales && totales) {
+      if (finalY > pageHeight - 40) {
+        doc.addPage();
+        yPosition = margins.top;
+      } else {
+        yPosition = finalY + 10;
+      }
+
+      doc.setDrawColor(200, 200, 200);
+      doc.setLineWidth(0.3);
+      doc.rect(pageWidth - margins.right - 90, yPosition, 90, 20);
+
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(cfg.colorPrimario || '#1f2937');
+      doc.text('TOTALES', pageWidth - margins.right - 85, yPosition + 6);
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(80, 80, 80);
+
+      const totalesData = [
+        ['Cantidad Liquidaciones:', totales.cantidad_liquidaciones.toString()],
+        ['Total Liquidado:', this.formatMoney(totales.total_valor_liquidado)]
+      ];
+
+      let yTotales = yPosition + 11;
+      totalesData.forEach(([label, value]) => {
+        doc.text(label, pageWidth - margins.right - 85, yTotales);
+        doc.setFont('helvetica', 'bold');
+        doc.text(value, pageWidth - margins.right - 5, yTotales, { align: 'right' });
+        doc.setFont('helvetica', 'normal');
+        yTotales += 5;
+      });
     }
 
     return doc.output('blob');
   }
 
+  /**
+   * Descarga directa del PDF de liquidaciones
+   */
+  async descargarLiquidacionesPDF(
+    items: LiquidacionReportePDF[],
+    totales: TotalesLiquidacionesPDF,
+    filtros: FiltrosLiquidacionesPDF,
+    nombreArchivo: string = 'reporte-liquidaciones-anticipos.pdf',
+    config?: Partial<ConfiguracionAnticiposPDF>
+  ): Promise<void> {
+    const blob = await this.generarLiquidacionesPDFBlob(items, totales, filtros, config);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = nombreArchivo;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
   /**
    * Descarga directa del PDF de desglose
    */
