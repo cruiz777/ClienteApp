@@ -1,0 +1,138 @@
+<div class="page-container">
+  <!-- TABS estilo cierre de anticipos -->
+  <div class="tabs">
+    <button
+      type="button"
+      [class.active]="tipoDocumentoActivo === 'FACTURA'"
+      (click)="cambiarTab('FACTURA')"
+    >
+      Factura
+    </button>
+
+    <button
+      type="button"
+      [class.active]="tipoDocumentoActivo === 'NC'"
+      (click)="cambiarTab('NC')"
+    >
+      Nota de Crédito
+    </button>
+
+    <button
+      type="button"
+      [class.active]="tipoDocumentoActivo === 'ND'"
+      (click)="cambiarTab('ND')"
+    >
+      Nota de Débito
+    </button>
+
+    <button
+      type="button"
+      [class.active]="tipoDocumentoActivo === 'RET'"
+      (click)="cambiarTab('RET')"
+    >
+      Retenciones
+    </button>
+  </div>
+
+  <!-- Contenedor blanco con mismo estilo que cierre de anticipos -->
+  <div class="contenido-tablas">
+    <h2 class="title">Consulta de Facturas</h2>
+
+    <!-- Filtros -->
+    <form [formGroup]="filtrosForm" class="filters-row">
+      <div class="filters-group">
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Fecha desde</mat-label>
+          <input
+            matInput
+            [matDatepicker]="pickerDesde"
+            formControlName="fechaDesde"
+          />
+          <mat-datepicker-toggle
+            matSuffix
+            [for]="pickerDesde"
+          ></mat-datepicker-toggle>
+          <mat-datepicker #pickerDesde></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="filter-field">
+          <mat-label>Fecha hasta</mat-label>
+          <input
+            matInput
+            [matDatepicker]="pickerHasta"
+            formControlName="fechaHasta"
+          />
+          <mat-datepicker-toggle
+            matSuffix
+            [for]="pickerHasta"
+          ></mat-datepicker-toggle>
+          <mat-datepicker #pickerHasta></mat-datepicker>
+        </mat-form-field>
+
+        <button
+          mat-raised-button
+          color="primary"
+          type="button"
+          class="btn-buscar"
+          (click)="buscar()"
+        >
+          Buscar
+        </button>
+
+        <!-- Botón de impresión -->
+        <button
+          mat-raised-button
+          type="button"
+          class="btn-imprimir"
+          (click)="imprimirSeleccionadas()"
+        >
+          <mat-icon>print</mat-icon>
+          Imprimir
+        </button>
+      </div>
+
+      <!-- Buscar texto -->
+      <div class="search-row">
+        <mat-form-field appearance="outline" class="search-field">
+          <mat-label>Buscar</mat-label>
+          <input
+            matInput
+            formControlName="textoBusqueda"
+            placeholder="texto"
+            (keyup.enter)="buscar()"
+          />
+          <button
+            *ngIf="filtrosForm.get('textoBusqueda')?.value"
+            matSuffix
+            mat-icon-button
+            type="button"
+            aria-label="Limpiar"
+            (click)="clearSearchText()"
+          >
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-form-field>
+      </div>
+    </form>
+
+    <!-- Tabla -->
+    <div class="grid-wrapper ag-theme-alpine">
+      <ag-grid-angular
+        class="facturas-grid"
+        [rowData]="rowData"
+        [columnDefs]="columnDefs"
+        [defaultColDef]="defaultColDef"
+        [rowSelection]="'multiple'"
+        [suppressRowClickSelection]="false"
+        [animateRows]="true"
+        (gridReady)="onGridReady($event)"
+      >
+      </ag-grid-angular>
+    </div>
+
+    <!-- Texto de paginación (puedes reemplazarlo por la paginación real de AG-Grid/servidor) -->
+    <div class="paginacion-texto">
+      Páginas mostradas 1 a 10 de 100 entradas
+    </div>
+  </div>
+</div>

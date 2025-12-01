@@ -80,7 +80,8 @@
             <a mat-list-item [routerLink]="'/sic-3000/fanuladas'">
               <span *ngIf="isExpanded" class="menu-text">Facturas Anuladas</span>
             </a>
-            <a mat-list-item routerLink="">
+
+            <a mat-list-item [routerLink]="['doc-electronicos']" routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Documentos Electrónicos</span>
             </a>
             <a mat-list-item routerLink="">
@@ -186,10 +187,7 @@
             <a mat-list-item [routerLink]="['exp-cuentaxcobrar']" routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Cuentas por Cobrar</span>
             </a>
-            <a mat-list-item routerLink="">
-              <span *ngIf="isExpanded" class="menu-text">Pagos</span>
-            </a>
-          </mat-expansion-panel>
+            </mat-expansion-panel>
 
         </mat-expansion-panel>
 

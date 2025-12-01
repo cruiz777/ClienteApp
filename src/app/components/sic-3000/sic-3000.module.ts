@@ -43,6 +43,7 @@ import { MotivoAnulacionDialogComponent } from './anticipos/dialogs/anular-antic
 import { CierreAnticiposComponent } from './anticipos/cierre-anticipos/cierre-anticipos.component';
 import { EstadocuentaclienteComponent } from './exploradores/estadocuentacliente/estadocuentacliente.component';
 import { CuentaxcobrarComponent } from './exploradores/cuentaxcobrar/cuentaxcobrar.component';
+import { DocElectronicosComponent } from './facturacion/doc-electronicos/doc-electronicos.component';
 
 
   @NgModule({
@@ -58,6 +59,7 @@ import { CuentaxcobrarComponent } from './exploradores/cuentaxcobrar/cuentaxcobr
       EstadocuentaclienteComponent,
       CuentaxcobrarComponent,
       FilePreviewComponent,
+      DocElectronicosComponent,
 
     ],
     imports: [
