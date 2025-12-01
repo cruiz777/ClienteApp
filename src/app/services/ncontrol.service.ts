@@ -34,15 +34,16 @@ export class NcontrolService {
     );
   }
   actualizarNumeroControl(id: number, data: { numcon: string; ocupado: boolean }): Observable<any> {
-   
+
     return this.http.put(`${this.apiUrl}/${id}`, data);
   }
-obtenerPrefijosYGtin(): Observable<{ data: NumeroControlResumenDto[] }> {
-  return this.http.get<{ data: NumeroControlResumenDto[] }>(`${this.apiUrl}/prefijos-gtin`);
-}
+  obtenerPrefijosYGtin(): Observable<{ data: NumeroControlResumenDto[] }> {
+    return this.http.get<{ data: NumeroControlResumenDto[] }>(`${this.apiUrl}/prefijos-gtin`);
+  }
 
-
-
+  obtenerYReservarNumeroControl(id: number): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/reservar/${id}`);
+  }
 }
 
 

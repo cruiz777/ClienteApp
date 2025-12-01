@@ -275,7 +275,7 @@ export class DialogClienteComponent implements OnInit {
     });
   }
 
-  //#region 
+  //#region
   private bloquearFormularioSiNoPuedeCrear(): void {
     this.canCreate$.pipe(take(1)).subscribe(puedeCrear => {
       // si NO puede crear, deshabilitamos todo el form y el botón guardar
@@ -923,40 +923,36 @@ async guardar(stepper: MatStepper): Promise<void> {
 
 
     } else {
-      // Flujo automático
-      this.ncontrolService.obtenerNumeroControlMinPorId(idControl).subscribe({
-        next: (data) => {
-          const siguienteNum = (parseInt(data.numcon, 10) + 1).toString().padStart(data.numcon.length, '0');
+      // Flujo automático CORREGIDO
+      this.ncontrolService.obtenerYReservarNumeroControl(idControl).subscribe({
+        next: (response) => {
+          const data = response.data;
+          const prefijoAsignado = data.numeroAsignado;
 
-          // Primero actualizamos prefijo, prefijoGS1 y origen
-          this.paso1Form.get('prefijogs1')?.enable(); // ✅ Habilita temporalmente
+          // Actualizar formulario
+          this.paso1Form.get('prefijogs1')?.enable();
           this.paso1Form.patchValue({
-            prefijo: data.numcon,
-            prefijogs1: `${codigogs1}${data.numcon}`,
+            prefijo: prefijoAsignado,
+            prefijogs1: `${codigogs1}${prefijoAsignado}`,
             origen: pais
           });
 
-          // Luego generamos el GLN
+          // Generar GLN
           const glnGenerado = this.generarGLN();
           this.campoGlnVerde = true;
           this.paso1Form.patchValue({
             gln: glnGenerado
           });
-          console.log('⚠️ Valores en form paso1:', this.paso1Form.getRawValue());
-          console.log('✅ Prefijo actualizado:', this.paso1Form.get('prefijo')?.value);
-          console.log('✅ Prefijo gs1 actualizado:', this.paso1Form.get('prefijogs1')?.value);
-          console.log('✅ GLN generado:', glnGenerado);
 
           const paso1 = this.paso1Form.getRawValue();
           const codigoCliente = paso1.codigoCliente || 0;
-          const prefijo = paso1.prefijo || '0';
 
           const prefijoData = {
-            codpre: prefijo,
+            codpre: prefijoAsignado,
             fecha: new Date().toISOString().split('T')[0],
             fechaCierre: null,
             observacion: '',
-            digitos: prefijo.length.toString(),
+            digitos: prefijoAsignado.length.toString(),
             estado: false,
             control: 0,
             ngln: 0,
@@ -965,43 +961,37 @@ async guardar(stepper: MatStepper): Promise<void> {
             codpro: '1174',
             nombre: `PREFIJO:`,
             fecfac: 'C',
-            referenciaInterna: prefijo,
-            prefijosgs1: `${codigogs1}${prefijo}`,
+            referenciaInterna: prefijoAsignado,
+            prefijosgs1: `${codigogs1}${prefijoAsignado}`,
             origenPrefijo: pais,
             orden: 0,
             clientesCodigo: codigoCliente
           };
 
-          console.log('📦 Enviando prefijo a guardar:', prefijoData);
-
+          // Guardar prefijo
           this.prefijoService.guardarPrefijo(prefijoData).subscribe({
             next: () => {
-              const msg = this.modoEdicion ? 'Creado' : 'creado';
-
               this.dialog.open(CustomMessageBoxComponent, {
                 width: '400px',
                 data: {
                   title: 'Éxito',
-                  message: `El Cliente fue ${msg} correctamente.`,
+                  message: 'El Cliente fue creado correctamente.',
                   type: 'success',
                   confirmText: '',
                   showCancel: false
                 }
               });
 
-              this.guardarNuevoGln(); // ✅ llamada adicional
-              this.actualizarNumeroControl(idControl, siguienteNum, false); // ✅ nueva lógica
-              this.botonGuardarDeshabilitado = true; // ✅ se desactiva el botón luego de guardar
+              this.guardarNuevoGln();
+              this.botonGuardarDeshabilitado = true;
             },
             error: () => {
               this.mostrarAlerta('Error al guardar el prefijo', 'Error');
             }
           });
-
-
         },
         error: (err) => {
-          console.error('❌ Error al obtener el número de control:', err);
+          console.error('❌ Error al reservar número de control:', err);
           this.mostrarAlerta('Error al obtener el número de control', 'Error');
         }
       });
@@ -1859,5 +1849,5 @@ async verificarYAvanzar(form: FormGroup, stepper: MatStepper): Promise<void> {
 }
 
 
-  
+
 }
