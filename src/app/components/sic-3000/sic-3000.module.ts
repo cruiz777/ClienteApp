@@ -44,6 +44,7 @@ import { MotivoAnulacionDialogComponent } from './anticipos/dialogs/anular-antic
 import { CierreAnticiposComponent } from './anticipos/cierre-anticipos/cierre-anticipos.component';
 import { EstadocuentaclienteComponent } from './exploradores/estadocuentacliente/estadocuentacliente.component';
 import { CuentaxcobrarComponent } from './exploradores/cuentaxcobrar/cuentaxcobrar.component';
+import { LiquidarAnticipoComponent } from './anticipos/dialogs/liquidar-anticipo-dialog/liquidar-anticipo.component';
 
 @NgModule({
   declarations: [
@@ -56,6 +57,7 @@ import { CuentaxcobrarComponent } from './exploradores/cuentaxcobrar/cuentaxcobr
     AgregarUbicacionDialogComponent,
     CierreAnticiposComponent,
     FilePreviewComponent,
+    LiquidarAnticipoComponent
     // 👈 OJO: ya NO va EstadocuentaclienteComponent aquí
   ],
   imports: [
@@ -73,7 +75,7 @@ import { CuentaxcobrarComponent } from './exploradores/cuentaxcobrar/cuentaxcobr
     BuscarAnticipoDialogComponent,
     MotivoAnulacionDialogComponent,
     EstadocuentaclienteComponent, // ✅ standalone va en imports
-
+    CuentaxcobrarComponent,
     // Angular Material
     MatSidenavModule,
     MatListModule,
@@ -94,7 +96,6 @@ import { CuentaxcobrarComponent } from './exploradores/cuentaxcobrar/cuentaxcobr
     MatDatepickerModule,
     MatNativeDateModule,
     MatMenuModule,
-
     // Otros
     Sic3000RoutingModule,
     AgGridModule
