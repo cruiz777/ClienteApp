@@ -4,26 +4,38 @@ import { finalize } from 'rxjs/operators';
 import { ClienteService, ClienteIndividual } from 'src/app/services/cliente.service';
 import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
 import { Cliente } from 'src/app/interfaces/cliente';
-import * as XLSX from 'xlsx-js-style';
 import { LogoService } from 'src/app/services/logo.service';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 import { take } from 'rxjs/operators';
 import { UsuarioService } from 'src/app/services/usuario.service';
 import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
-import autoTable, { UserOptions } from 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
+import { ClienteSummary } from 'src/app/interfaces/responses/cliente-summary-response';
 
-
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { FormControl, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  startWith,
+  debounceTime,
+  distinctUntilChanged,
+  switchMap,
+  map,
+  catchError
+} from 'rxjs/operators';
+import { CommonModule } from '@angular/common';
+import { MatInputModule } from '@angular/material/input';
+import { MatOptionModule } from '@angular/material/core';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatButtonModule } from '@angular/material/button';
+import { AgGridAngular } from 'ag-grid-angular';   // 👈 IMPORTANTE
 
 import {
   EstadoCuentaService,
   SaldoFacturaDetalladoResponse,
   SaldoFacturaItemResponse,
-
 } from 'src/app/services/estado-cuenta.service';
-
-
 
 interface EstadoCuentaRow {
   factura: string;
@@ -41,21 +53,42 @@ interface EstadoCuentaRow {
 
 @Component({
   selector: 'app-estadocuentacliente',
+  standalone: true,
   templateUrl: './estadocuentacliente.component.html',
-  styleUrls: ['./estadocuentacliente.component.css']
+  styleUrls: ['./estadocuentacliente.component.css'],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ReactiveFormsModule,
+    MatAutocompleteModule,
+    MatInputModule,
+    MatOptionModule,
+    MatMenuModule,
+    MatButtonModule,
+    AgGridAngular            // 👈 REGISTRAR AQUÍ EL COMPONENTE DE AG GRID
+  ]
 })
 export class EstadocuentaclienteComponent implements OnInit {
 
   hoy: Date = new Date();
   clienteE!: ClienteIndividual;
   clienteSeleccionado: Cliente | null = null;
+
+  // Autocomplete
+  clienteOrigenControl = new FormControl<ClienteSummary | string | null>(null, Validators.required);
+  clientesOrigenFiltrados: ClienteSummary[] = [];
+  mostrarNombreCliente = (cliente: ClienteSummary | string | null): string =>
+    cliente && typeof cliente === 'object'
+      ? (cliente.nomcli ?? '')
+      : (cliente ?? '') as string;
+
   // filtros de fecha (solo visuales por ahora)
   fechaDesde: string = '';
   fechaHasta: string = '';
   usuarioActual = this.usuarioService.getUsuarioActual();
-  // cliente a consultar (por ahora fijo; luego puedes poner un input/autocomplete)
-  clienteCodigo: number | null = null;
 
+  // cliente a consultar
+  clienteCodigo: number | null = null;
 
   // AG Grid API para exportar / paginar
   private gridApi!: GridApi;
@@ -73,22 +106,22 @@ export class EstadocuentaclienteComponent implements OnInit {
   // datos del grid
   rowData: EstadoCuentaRow[] = [];
 
+  // código de cliente seleccionado desde el autocomplete
+  codcliO = 0;
+
   // formateador de moneda para AG Grid (punto decimal)
   monedaFormatter = (params: any) => {
     if (params.value == null || params.value === '') {
       return '';
     }
     const valor = Number(params.value);
-
-    // en-US → separador decimal = punto, miles = coma
     return valor.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2
     });
   };
 
-  // ORDEN DE COLUMNAS:
-  // factura, documento, fecha, tipo documento, debe, haber, saldo factura, saldo, observacion.
+  // columnas AG-Grid
   columnDefs: ColDef[] = [
     { headerName: 'Factura', field: 'factura', width: 200 },
     { headerName: 'Documento', field: 'documento', width: 200 },
@@ -130,7 +163,8 @@ export class EstadocuentaclienteComponent implements OnInit {
       headerName: 'Observación',
       field: 'observacion',
       flex: 1,
-      minWidth: 220, tooltipField: 'observacion'
+      minWidth: 220,
+      tooltipField: 'observacion'
     }
   ];
 
@@ -141,7 +175,8 @@ export class EstadocuentaclienteComponent implements OnInit {
     cellClass: 'celda-centro'
   };
 
-  constructor(private estadoCuentaService: EstadoCuentaService,
+  constructor(
+    private estadoCuentaService: EstadoCuentaService,
     private clienteService: ClienteService,
     private clienteSeleccionadoService: ClienteSeleccionadoService,
     private logoService: LogoService,
@@ -150,20 +185,41 @@ export class EstadocuentaclienteComponent implements OnInit {
 
   ngOnInit(): void {
     this.usuarioActual = this.usuarioService.getUsuarioActual();
-    this.cargarClienteInv();
-    this.cargarEstadoCuenta();
+    //this.cargarClienteInv();
+    //this.cargarEstadoCuenta();
     this.logoService.loadLogoFromEmpresa(this.usuarioActual?.id_empresa ?? 1);
 
+    // 🔎 Autocomplete de clientes usando ClienteService.getClientesSummary
+    this.clienteOrigenControl.valueChanges.pipe(
+      startWith(''),
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(value => {
+        const termino =
+          typeof value === 'string'
+            ? value
+            : value?.nomcli ?? '';
 
+        if (!termino || termino.length < 3) {
+          return of<ClienteSummary[]>([]);
+        }
+
+        return this.clienteService.getClientesSummary(termino).pipe(
+          map(resp => resp.data ?? []),
+          catchError(() => of<ClienteSummary[]>([]))
+        );
+      })
+    ).subscribe(clientes => {
+      this.clientesOrigenFiltrados = clientes;
+    });
   }
-  cargarClienteInv(): void {
 
+  cargarClienteInv(): void {
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
     console.log('[ClienteSeleccionadoService] actual →', cliente);
 
     if (cliente) {
       this.clienteSeleccionado = cliente;
-
     }
   }
 
@@ -191,8 +247,13 @@ export class EstadocuentaclienteComponent implements OnInit {
     this.loading = true;
     this.errorMessage = '';
 
+    const codigoCliente =
+      this.clienteSeleccionado?.clientes_codigo
+      ?? this.codcliO
+      ?? 0;
+
     this.estadoCuentaService
-      .getSaldoFacturasPorCliente(this.clienteSeleccionado?.clientes_codigo ?? 0, true, 1, 50)
+      .getSaldoFacturasPorCliente(codigoCliente, true, 1, 50)
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: resp => {
@@ -202,8 +263,6 @@ export class EstadocuentaclienteComponent implements OnInit {
           }
 
           const data: SaldoFacturaDetalladoResponse = resp.data;
-
-          // Tomamos el primer cliente (el API viene paginado pero por cliente)
           const cli = data.resumenPorCliente.items[0];
 
           if (!cli) {
@@ -212,25 +271,13 @@ export class EstadocuentaclienteComponent implements OnInit {
             return;
           }
 
-          // llenar datos del cliente (dirección/teléfono no vienen en este API)
-          // this.clientes = [
-          //   {
-          //     id: Number(cli.clienteCodigo),
-          //     nombre: cli.cliente,
-          //     direccion: '',
-          //     telefono: '',
-          //     prefijo: cli.clienteCodigo
-          //   }
-          // ];
-
-          // mapear detalle -> filas del grid
           const rows: EstadoCuentaRow[] = cli.detalle.map((item: SaldoFacturaItemResponse) => ({
             factura: item.numeroFactura,
             documento: item.numeroDocumento,
             fecha: item.fecha,
             tipoDocumento: item.tipDoc,
-            valor: 0, // no viene del API
-            pago: 0,  // no viene del API
+            valor: 0,
+            pago: 0,
             debe: item.debe ?? 0,
             haber: item.haber ?? 0,
             saldo: item.saldoLinea,
@@ -238,7 +285,6 @@ export class EstadocuentaclienteComponent implements OnInit {
             saldoFactura: null
           }));
 
-          // calcular SALDO FACTURA (valor de la factura solo en la F)
           this.rowData = this.calcularSaldoPorFactura(rows);
         },
         error: err => {
@@ -275,14 +321,12 @@ export class EstadocuentaclienteComponent implements OnInit {
 
     facturas.forEach(factura => {
       const resumen = mapFacturas.get(factura)!;
-      const valorFactura = resumen.debe;   // monto facturado
+      const valorFactura = resumen.debe;
 
-      // buscar la fila F de esa factura
       let indexFactura = rows.findIndex(
         r => r.factura === factura && r.tipoDocumento === 'F'
       );
 
-      // si no hay F, usar alguna fila de esa factura (por seguridad)
       if (indexFactura === -1) {
         const indicesFactura = rows
           .map((r, index) => ({ r, index }))
@@ -299,7 +343,7 @@ export class EstadocuentaclienteComponent implements OnInit {
       }
     });
 
-    // 4) 🔴 Aquí forzamos que TODAS las demás filas tengan 0
+    // 4) Las demás filas a 0
     rows.forEach(r => {
       if (r.saldoFactura == null) {
         r.saldoFactura = 0;
@@ -323,181 +367,191 @@ export class EstadocuentaclienteComponent implements OnInit {
     this.opcionesImpresionVisibles = !this.opcionesImpresionVisibles;
   }
 
-
-
   async exportarPdf(): Promise<void> {
-  if (!this.rowData || this.rowData.length === 0) {
-    alert('No hay información para exportar.');
-    return;
-  }
-
-  const cli = this.clienteSeleccionado;
-
-  // ⬅️ Cambiamos a 'l' (landscape)
-  const doc = new jsPDF('l', 'pt', 'a4');   // l = landscape
-  const pageWidth  = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const marginLeft = 40;
-  let cursorY = 40;
-
-  // ========= LOGO =========
-  const logoDataUrl = await this.cargarLogoBase64();
-  const logoHeight = 50;
-  const logoWidth  = 120;
-
-  if (logoDataUrl) {
-    // esquina superior izquierda
-    doc.addImage(logoDataUrl, 'PNG', marginLeft, cursorY, logoWidth, logoHeight);
-  }
-
-  // ========= TÍTULO =========
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.setTextColor(0, 44, 108); // azul oscuro
-  doc.text('ESTADO DE CUENTA', pageWidth / 2, cursorY + 30, { align: 'center' });
-
-  cursorY += logoHeight + 25; // debajo del logo
-
-  // ========= DATOS DEL CLIENTE =========
-  doc.setFontSize(11);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont('helvetica', 'normal');
-
-  if (cli) {
-    doc.text(`Cliente: ${cli.nomcli}`,     marginLeft, cursorY);
-    cursorY += 16;
-    doc.text(`Teléfono: ${cli.ruc}`,  marginLeft, cursorY);
-  
-    
-    cursorY += 16;
-  }
-
-  doc.text(`Fecha del reporte: ${this.hoy.toLocaleDateString('es-EC')}`, marginLeft, cursorY);
-  cursorY += 24;
-
-  // Línea separadora
-  doc.setDrawColor(200);
-  doc.setLineWidth(0.5);
-  doc.line(marginLeft, cursorY, pageWidth - marginLeft, cursorY);
-  cursorY += 10;
-
-  // ========= TABLA PRINCIPAL =========
-  const body = this.rowData.map(r => ([
-    r.factura,
-    r.documento,
-    r.fecha,
-    r.tipoDocumento,
-    r.debe != null ? r.debe.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
-    r.haber != null ? r.haber.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
-    r.saldoFactura != null ? r.saldoFactura.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
-    r.saldo != null ? r.saldo.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
-    r.observacion || ''
-  ]));
-
-  autoTable(doc, {
-    startY: cursorY,
-    head: [[
-      'Factura',
-      'Documento',
-      'Fecha',
-      'Tipo Doc',
-      'Debe',
-      'Haber',
-      'Saldo Factura',
-      'Saldo',
-      'Observación'
-    ]],
-    body,
-    styles: {
-      fontSize: 8,
-      cellPadding: 3,
-      halign: 'left'
-    },
-    headStyles: {
-      fillColor: [29, 120, 159], // azul cabecera
-      textColor: [255, 255, 255],
-      halign: 'center'
-    },
-    alternateRowStyles: {
-      fillColor: [247, 249, 252] // gris muy claro
-    },
-    columnStyles: {
-      0: { cellWidth: 80 },   // Factura
-      1: { cellWidth: 80 },   // Documento
-      2: { cellWidth: 55 },   // Fecha
-      3: { cellWidth: 40, halign: 'center' },
-      4: { cellWidth: 60, halign: 'right' }, // Debe
-      5: { cellWidth: 60, halign: 'right' }, // Haber
-      6: { cellWidth: 70, halign: 'right' }, // Saldo Factura
-      7: { cellWidth: 60, halign: 'right' }, // Saldo
-      8: { cellWidth: 150 }                  // Observación
-    },
-    margin: { left: marginLeft, right: marginLeft },
-    didDrawPage: (data: any) => {
-      // Número de página en el pie
-      const str = `Página ${doc.getNumberOfPages()}`;
-      doc.setFontSize(8);
-      doc.setTextColor(120);
-      doc.text(
-        str,
-        pageWidth - marginLeft,
-        pageHeight - 10,
-        { align: 'right' }
-      );
+    if (!this.rowData || this.rowData.length === 0) {
+      alert('No hay información para exportar.');
+      return;
     }
-  });
 
-  const finalY = (doc as any).lastAutoTable.finalY || cursorY;
+    const cli = this.clienteSeleccionado;
 
-  // ========= TOTALES =========
-  let yTotales = finalY + 20;
+    const doc = new jsPDF('l', 'pt', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const marginLeft = 40;
+    let cursorY = 40;
 
-  if (yTotales + 60 > pageHeight) {
-    doc.addPage('l');
-    yTotales = 60;
+    // LOGO
+    const logoDataUrl = await this.cargarLogoBase64();
+    const logoHeight = 50;
+    const logoWidth = 120;
+
+    if (logoDataUrl) {
+      doc.addImage(logoDataUrl, 'PNG', marginLeft, cursorY, logoWidth, logoHeight);
+    }
+
+    // TÍTULO
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(0, 44, 108);
+    doc.text('ESTADO DE CUENTA', pageWidth / 2, cursorY + 30, { align: 'center' });
+
+    cursorY += logoHeight + 25;
+
+    // DATOS CLIENTE
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal');
+
+    if (cli) {
+      doc.text(`Cliente: ${cli.nomcli}`, marginLeft, cursorY);
+      cursorY += 16;
+      doc.text(`Ruc: ${cli.ruc ?? ''}`, marginLeft, cursorY);
+      cursorY += 16;
+      
+    }
+
+    doc.text(`Fecha del reporte: ${this.hoy.toLocaleDateString('es-EC')}`, marginLeft, cursorY);
+    cursorY += 24;
+
+    // Línea separadora
+    doc.setDrawColor(200);
+    doc.setLineWidth(0.5);
+    doc.line(marginLeft, cursorY, pageWidth - marginLeft, cursorY);
+    cursorY += 10;
+
+    // TABLA
+    const body = this.rowData.map(r => ([
+      r.factura,
+      r.documento,
+      r.fecha,
+      r.tipoDocumento,
+      r.debe != null ? r.debe.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
+      r.haber != null ? r.haber.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
+      r.saldoFactura != null ? r.saldoFactura.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
+      r.saldo != null ? r.saldo.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
+      r.observacion || ''
+    ]));
+
+    autoTable(doc, {
+      startY: cursorY,
+      head: [[
+        'Factura',
+        'Documento',
+        'Fecha',
+        'Tipo Doc',
+        'Debe',
+        'Haber',
+        'Saldo Factura',
+        'Saldo',
+        'Observación'
+      ]],
+      body,
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+        halign: 'left'
+      },
+      headStyles: {
+        fillColor: [29, 120, 159],
+        textColor: [255, 255, 255],
+        halign: 'center'
+      },
+      alternateRowStyles: {
+        fillColor: [247, 249, 252]
+      },
+      columnStyles: {
+        0: { cellWidth: 80 },
+        1: { cellWidth: 80 },
+        2: { cellWidth: 55 },
+        3: { cellWidth: 40, halign: 'center' },
+        4: { cellWidth: 60, halign: 'right' },
+        5: { cellWidth: 60, halign: 'right' },
+        6: { cellWidth: 70, halign: 'right' },
+        7: { cellWidth: 60, halign: 'right' },
+        8: { cellWidth: 150 }
+      },
+      margin: { left: marginLeft, right: marginLeft },
+      didDrawPage: (_data: any) => {
+        const str = `Página ${doc.getNumberOfPages()}`;
+        doc.setFontSize(8);
+        doc.setTextColor(120);
+        doc.text(
+          str,
+          pageWidth - marginLeft,
+          pageHeight - 10,
+          { align: 'right' }
+        );
+      }
+    });
+
+    const finalY = (doc as any).lastAutoTable.finalY || cursorY;
+
+    // TOTALES
+    let yTotales = finalY + 20;
+
+    if (yTotales + 60 > pageHeight) {
+      doc.addPage('l');
+      yTotales = 60;
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.text('TOTAL GENERAL', marginLeft, yTotales);
+    yTotales += 12;
+
+    const labelX = pageWidth - 160;
+    const valueX = pageWidth - marginLeft;
+
+    const formatNum = (v: number) =>
+      v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    doc.setFontSize(10);
+
+    doc.text('Debe:', labelX, yTotales);
+    doc.text(formatNum(this.totalDebe), valueX, yTotales, { align: 'right' });
+
+    yTotales += 14;
+    doc.text('Haber:', labelX, yTotales);
+    doc.text(formatNum(this.totalHaber), valueX, yTotales, { align: 'right' });
+
+    yTotales += 14;
+    doc.text('Saldo:', labelX, yTotales);
+    doc.text(formatNum(this.totalSaldo), valueX, yTotales, { align: 'right' });
+
+    const nombreArchivo =
+      `estado_cuenta_${cli?.clientes_codigo ?? ''}_${this.hoy.toISOString().substring(0, 10)}.pdf`;
+    doc.save(nombreArchivo);
+
+    this.opcionesImpresionVisibles = false;
+  }
+cancelar(): void {
+  console.log('Cancelar');
+
+  // 1) Limpiar el grid
+  this.rowData = [];                  // vacía el array que está ligado al [rowData]
+
+  if (this.gridApi) {
+    this.gridApi.setGridOption('rowData', []); // actualiza los datos en la grilla
+    this.gridApi.deselectAll();                // limpia selección
   }
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11);
-  doc.setTextColor(0, 0, 0);
-  doc.text('TOTAL GENERAL', marginLeft, yTotales);
-  yTotales += 12;
+  // 2) Limpiar selección de cliente / autocomplete
+  this.clienteSeleccionado = null;
+  this.codcliO = 0;
+  this.clientesOrigenFiltrados = [];
 
-  const labelX = pageWidth - 160;
-  const valueX = pageWidth - marginLeft;
+  this.clienteOrigenControl.reset(null);
+  this.clienteOrigenControl.markAsPristine();
+  this.clienteOrigenControl.markAsUntouched();
 
-  const formatNum = (v: number) =>
-    v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-  doc.setFontSize(10);
-
-  doc.text('Debe:',  labelX, yTotales);
-  doc.text(formatNum(this.totalDebe),  valueX, yTotales, { align: 'right' });
-
-  yTotales += 14;
-  doc.text('Haber:', labelX, yTotales);
-  doc.text(formatNum(this.totalHaber), valueX, yTotales, { align: 'right' });
-
-  yTotales += 14;
-  doc.text('Saldo:', labelX, yTotales);
-  doc.text(formatNum(this.totalSaldo), valueX, yTotales, { align: 'right' });
-
-  // ========= GUARDAR =========
-  const nombreArchivo =
-    `estado_cuenta_${cli?.clientes_codigo ?? ''}_${this.hoy.toISOString().substring(0, 10)}.pdf`;
-  doc.save(nombreArchivo);
-
+  // 3) Otros flags/mensajes
+  this.errorMessage = '';
   this.opcionesImpresionVisibles = false;
 }
 
 
-
-  cancelar(): void {
-    console.log('Cancelar');
-    // cerrar dialog, navegar atrás, etc.
-  }
-
-  // (opcional) formateador si quisieras usarlo en el template
   formatNumero(value: number): string {
     if (value == null) {
       return '';
@@ -507,6 +561,7 @@ export class EstadocuentaclienteComponent implements OnInit {
       maximumFractionDigits: 2
     });
   }
+
   async exportarExcel(): Promise<void> {
     if (!this.rowData || this.rowData.length === 0) {
       alert('No hay información para exportar.');
@@ -518,7 +573,6 @@ export class EstadocuentaclienteComponent implements OnInit {
     const workbook = new ExcelJS.Workbook();
     const ws = workbook.addWorksheet('EstadoCuenta');
 
-    // === Definir columnas (ancho) ===
     ws.columns = [
       { header: 'Factura', key: 'factura', width: 18 },
       { header: 'Documento', key: 'documento', width: 14 },
@@ -540,10 +594,9 @@ export class EstadocuentaclienteComponent implements OnInit {
     };
 
     let currentRow = 1;
-
     const nextRow = () => ws.getRow(currentRow++);
 
-    // ====== TÍTULO ======
+    // TÍTULO
     const tituloRow = nextRow();
     tituloRow.getCell(1).value = 'ESTADO DE CUENTA';
     ws.mergeCells(tituloRow.number, 1, tituloRow.number, 9);
@@ -553,22 +606,23 @@ export class EstadocuentaclienteComponent implements OnInit {
       cell.alignment = { horizontal: 'center', vertical: 'middle' };
     });
 
-    // Fila en blanco
     currentRow++;
 
-    // ====== DATOS DEL CLIENTE ======
+    // DATOS CLIENTE
     if (cli) {
       const rowCli = nextRow();
       rowCli.getCell(1).value = 'Cliente:';
       rowCli.getCell(2).value = cli.nomcli;
       ws.mergeCells(rowCli.number, 2, rowCli.number, 9);
 
-     
-
       const rowTel = nextRow();
       rowTel.getCell(1).value = 'Ruc:';
-      rowTel.getCell(2).value = cli.ruc;
+      rowTel.getCell(2).value = cli.ruc ?? '';
       ws.mergeCells(rowTel.number, 2, rowTel.number, 9);
+
+    
+
+      
 
       const rowFec = nextRow();
       rowFec.getCell(1).value = 'Fecha del reporte:';
@@ -585,17 +639,15 @@ export class EstadocuentaclienteComponent implements OnInit {
         });
       });
     } else {
-      // aun así ponemos fecha
       const rowFec = nextRow();
       rowFec.getCell(1).value = 'Fecha del reporte:';
       rowFec.getCell(2).value = this.hoy.toLocaleDateString('es-EC');
       ws.mergeCells(rowFec.number, 2, rowFec.number, 9);
     }
 
-    // Fila en blanco
     currentRow++;
 
-    // ====== CABECERA TABLA ======
+    // CABECERA TABLA
     const headerRow = nextRow();
     const headerIdx = headerRow.number;
     headerRow.values = [
@@ -624,7 +676,7 @@ export class EstadocuentaclienteComponent implements OnInit {
 
     const firstDetailRow = headerIdx + 1;
 
-    // ====== DETALLE ======
+    // DETALLE
     this.rowData.forEach(r => {
       const row = nextRow();
       row.values = [
@@ -642,7 +694,7 @@ export class EstadocuentaclienteComponent implements OnInit {
 
     const lastDetailRow = currentRow - 1;
 
-    // ====== ZEBRA ROWS, BORDES y FORMATOS ======
+    // ZEBRA, BORDES, FORMATOS
     for (let i = firstDetailRow; i <= lastDetailRow; i++) {
       const row = ws.getRow(i);
       const isEven = (i - firstDetailRow) % 2 === 1;
@@ -655,11 +707,10 @@ export class EstadocuentaclienteComponent implements OnInit {
           cell.fill = {
             type: 'pattern',
             pattern: 'solid',
-            fgColor: { argb: 'FFF7F9FC' } // gris muy claro
+            fgColor: { argb: 'FFF7F9FC' }
           };
         }
 
-        // numérico para Debe/Haber/SaldoFact/Saldo
         if ([5, 6, 7, 8].includes(col) && typeof cell.value === 'number') {
           cell.numFmt = '#,##0.00';
           cell.alignment = { horizontal: 'right', vertical: 'middle' };
@@ -675,8 +726,8 @@ export class EstadocuentaclienteComponent implements OnInit {
       });
     }
 
-    // ====== TOTALES ======
-    currentRow++; // fila en blanco
+    // TOTALES
+    currentRow++;
     const totTitleRow = nextRow();
     const totTitleIdx = totTitleRow.number;
     totTitleRow.getCell(1).value = 'TOTAL GENERAL';
@@ -714,9 +765,7 @@ export class EstadocuentaclienteComponent implements OnInit {
       r.getCell(2).alignment = { horizontal: 'right', vertical: 'middle' };
     });
 
-    // ====== LOGO (dinámico desde LogoService) ======
-    // ====== LOGO (dinámico desde LogoService) ======
-    // ====== LOGO (dinámico desde LogoService) ======
+    // LOGO en Excel
     try {
       const logoUrl = await firstValueFrom(this.logoService.logoUrl$.pipe(take(1)));
 
@@ -726,22 +775,18 @@ export class EstadocuentaclienteComponent implements OnInit {
 
         const imageId = workbook.addImage({
           buffer,
-          extension: 'png' // o 'jpeg', según lo que retorne tu API
+          extension: 'png'
         });
 
-        // Posicionamos el logo arriba a la derecha, con tamaño fijo
         ws.addImage(imageId, {
-          tl: { col: 8, row: 2 },              // cerca de la columna H
-          ext: { width: 180, height: 60 }      // tamaño en píxeles
-        } as any); // cast para evitar problemas de tipos con Anchor
+          tl: { col: 8, row: 2 },
+          ext: { width: 180, height: 60 }
+        } as any);
       }
     } catch (e) {
       console.warn('No se pudo cargar el logo para el Excel:', e);
     }
 
-
-
-    // ====== GUARDAR ARCHIVO ======
     const nombreArchivo =
       `estado_cuenta_${cli?.clientes_codigo ?? ''}_${this.hoy
         .toISOString()
@@ -754,26 +799,6 @@ export class EstadocuentaclienteComponent implements OnInit {
     saveAs(blob, nombreArchivo);
 
     this.opcionesImpresionVisibles = false;
-  }
-  private async obtenerLogoDataUrl(): Promise<string | null> {
-    try {
-      const logoUrl = await firstValueFrom(this.logoService.logoUrl$.pipe(take(1)));
-      if (!logoUrl) {
-        return null;
-      }
-
-      const resp = await fetch(logoUrl);
-      const blob = await resp.blob();
-
-      return await new Promise<string | null>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = () => resolve(null);
-        reader.readAsDataURL(blob);
-      });
-    } catch {
-      return null;
-    }
   }
 
   private async cargarLogoBase64(): Promise<string | null> {
@@ -796,5 +821,24 @@ export class EstadocuentaclienteComponent implements OnInit {
     }
   }
 
+  seleccionarClienteOrigen(cliente: ClienteSummary): void {
+    if (!cliente?.clientes_codigo) return;
 
+    // Guardamos el código para la consulta
+    this.codcliO = cliente.clientes_codigo;
+    // Actualizamos el cliente seleccionado (cabecera)
+    this.clienteSeleccionado = {
+      clientes_codigo: cliente.clientes_codigo,
+      nomcli: cliente.nomcli,
+      // si tu ClienteSummary tiene estos campos, puedes añadirlos:
+      // dircli: cliente.dircli,
+       ruc: cliente.ruc
+    } as any;
+
+    // Mostramos el nombre en el input
+    this.clienteOrigenControl.setValue(cliente);
+
+    // Recargamos el estado de cuenta para este cliente
+    this.cargarEstadoCuenta();
+  }
 }

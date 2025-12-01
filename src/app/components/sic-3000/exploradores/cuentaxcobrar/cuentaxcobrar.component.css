@@ -3078,15 +3078,73 @@ button.fi-btn{ appearance:none; -webkit-appearance:none; }
 .full-width {
   grid-column: 1 / -1;
 }
-.panel-bottom .buttons-row {
+/* Contenedor inferior */
+.panel-bottom {
   display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 12px;
+  justify-content: center;   /* centra el bloque interno */
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
 
-.export-pill {
-  border-radius: 999px;
-  padding: 6px 18px;
+/* Fila de botones */
+.buttons-row.buttons-bottom {
+  display: flex;
+  gap: 16px;                 /* separación entre Exportar y Cancelar */
+  align-items: center;
+}
+
+/* Opcional: que los botones tengan tamaño similar */
+.buttons-row.buttons-bottom button {
+  min-width: 110px;
+}
+/* Botones tipo "pastilla" Exportar / Cancelar */
+.pill-btn {
+  min-width: 110px;
+  height: 32px;
+  padding: 0 18px;
+  border-radius: 999px;        /* forma redonda */
   font-size: 13px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  box-shadow: none;
+  text-transform: none;        /* sin MAYÚSCULAS de Angular Material */
+}
+
+/* Exportar: borde gris, fondo blanco */
+.pill-btn-outline {
+  background-color: #ffffff;
+  color: #111827;
+  border-color: #d0d5dd;
+}
+
+/* Cancelar: fondo celeste suave */
+.pill-btn-solid {
+  background-color: #e8f2ff;
+  color: #1d4ed8;
+  border-color: #e1ecff;
+}
+
+/* Hover */
+.pill-btn-outline:hover {
+  background-color: #f9fafb;
+}
+
+.pill-btn-solid:hover {
+  background-color: #dbe9ff;
+}
+
+/* Quitar focus feo de Material y dejar algo suave */
+.pill-btn.cdk-focused,
+.pill-btn.cdk-program-focused {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+  outline: none;
+}
+.buttons-row {
+  display: flex;
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.buttons-bottom {
+  justify-content: center;   /* 👈 esto los centra */
 }

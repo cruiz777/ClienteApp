@@ -104,14 +104,14 @@ export class EstructuraListComponent {
     if (!this.puedeExpandirse(nodo)) {
       return 'assets/icons/sic-3000/icon-Guardar-datos.png';
     }
-    return nodo.expandido 
+    return nodo.expandido
       ? 'assets/icons/sic-3000/icon-folder.png'      // Carpeta abierta
       : 'assets/icons/sic-3000/icon-folder-2.png';   // Carpeta cerrada
   }
   getIconoEmpresa(empresa: any): string {
-    return empresa.expandido 
+    return empresa.expandido
       ? 'assets/icons/icon-entidad-1.png'   // Empresa abierta
-      : 'assets/icons/icon-entidad-2.png'; 
+      : 'assets/icons/icon-entidad-2.png';
   }
   puedeCrear(nodo: any): boolean {
     if (!nodo || nodo.numnodos === undefined) return false;
@@ -215,13 +215,13 @@ export class EstructuraListComponent {
   private loadProductsForNode(nodo: any): void {
     // Primero obtener la jerarquía completa del nodo
     this.estructuraService.obtenerJerarquiaCompleta(
-      nodo.tipo, 
+      nodo.tipo,
       nodo.id
     ).subscribe({
       next: (jerarquiaResponse) => {
         if (jerarquiaResponse.type === 'SUCCESS' && jerarquiaResponse.data) {
           const jerarquia = jerarquiaResponse.data;
-          
+
           // Llamar al nuevo método con la jerarquía completa
           this.productoService.getProductosPorEstructura(
             jerarquia.iddivision,
@@ -308,6 +308,8 @@ export class EstructuraListComponent {
         { key: 'codbar', label: 'Codbar.' },
         { key: 'despro', label: 'Descripción' },
         { key: 'tippro', label: 'Tip. Prod' },
+        { key: 'preven', label: 'PVP' },
+        { key: 'prevensiniva', label: 'PVP s/IVA' },
         { key: 'acciones', label: 'Acciones' }
       ],
       productos ?? []
@@ -426,7 +428,7 @@ export class EstructuraListComponent {
     if (!this.nodoSeleccionado) return;
 
     this.estructuraService.obtenerJerarquiaCompleta(
-      this.nodoSeleccionado.tipo, 
+      this.nodoSeleccionado.tipo,
       this.nodoSeleccionado.id
     ).subscribe({
       next: (response) => {
@@ -454,14 +456,14 @@ export class EstructuraListComponent {
 
   editarProducto(row: any): void {
     const idProducto = row?.idproducto || row?.id_producto;
-    
+
     if (!idProducto) {
       console.error('❌ No se encontró ID del producto en:', row);
       return;
     }
 
     console.log('✏️ Navegando a editar producto:', idProducto);
-    
+
     // ✅ NAVEGACIÓN CORRECTA PARA EDITAR
     this.router.navigate(['sic-3000/productossic', idProducto]);
   }
@@ -471,7 +473,12 @@ export class EstructuraListComponent {
     nodo.expandido = false;
     setTimeout(() => this.toggleExpand(nodo), 0);
   }
-
+  formatPrecio(valor: any): string {
+    if (valor == null || valor === '') return '$0.00';
+    const numero = parseFloat(valor);
+    if (isNaN(numero)) return '$0.00';
+    return `$${numero.toFixed(2)}`;
+  }
   @HostListener('document:click', ['$event'])
   onDocumentClick(event: MouseEvent): void {
     const target = event.target as HTMLElement;

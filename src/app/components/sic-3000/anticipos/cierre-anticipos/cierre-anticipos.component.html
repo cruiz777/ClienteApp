@@ -5,14 +5,14 @@
     <button
       type="button"
       [class.active]="selectedTab === 'cierre'"
-      (click)="selectedTab = 'cierre'">
+      (click)="selectedTab = 'cierre'; loadAnticiposDisponibles()">
       Cierre de anticipos
     </button>
 
     <button
       type="button"
       [class.active]="selectedTab === 'liquidados'"
-      (click)="selectedTab = 'liquidados'">
+      (click)="selectedTab = 'liquidados'; loadLiquidaciones()">
       Anticipos liquidados
     </button>
   </div>
@@ -41,9 +41,9 @@
           <label>Tipo de anticipo:</label>
           <select formControlName="tipoAnticipo">
             <option value="">(Todos)</option>
-            <option value="Cirugía">Cirugía</option>
-            <option value="Consulta">Consulta</option>
-            <!-- aquí agregas tus tipos reales -->
+            <option *ngFor="let tipo of tiposAnticipo" [value]="tipo.id_tipo_anticipo">
+              {{ tipo.descripcion }}
+            </option>
           </select>
         </div>
 
@@ -59,8 +59,14 @@
         <button type="button" class="btn secondary" (click)="onBuscarCierre()">Buscar</button>
       </div>
 
+      <!-- Loading Spinner -->
+      <div *ngIf="loadingCierre" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Cargando anticipos...</p>
+      </div>
+
       <!-- Tabla AG-Grid -->
-      <div class="grid-wrapper ag-theme-alpine">
+      <div class="grid-wrapper ag-theme-alpine" *ngIf="!loadingCierre">
         <ag-grid-angular
           class="ag-grid"
           [rowData]="rowDataCierre"
@@ -71,6 +77,16 @@
           (gridReady)="onGridReadyCierre($event)"
           (cellClicked)="onCellClickedCierre($event)">
         </ag-grid-angular>
+      </div>
+
+      <!-- Paginación info -->
+      <div class="pagination-info" *ngIf="!loadingCierre && totalItemsCierre > 0">
+        <p>Total: {{ totalItemsCierre }} anticipo(s) disponible(s) para liquidar</p>
+      </div>
+
+      <!-- Sin resultados -->
+      <div class="no-results" *ngIf="!loadingCierre && totalItemsCierre === 0">
+        <p>No se encontraron anticipos disponibles para liquidar</p>
       </div>
     </div>
 
@@ -103,8 +119,14 @@
         <button type="button" class="btn secondary" (click)="onBuscarLiq()">Buscar</button>
       </div>
 
+      <!-- Loading Spinner -->
+      <div *ngIf="loadingLiquidados" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Cargando liquidaciones...</p>
+      </div>
+
       <!-- Tabla AG-Grid -->
-      <div class="grid-wrapper ag-theme-alpine">
+      <div class="grid-wrapper ag-theme-alpine" *ngIf="!loadingLiquidados">
         <ag-grid-angular
           class="ag-grid"
           [rowData]="rowDataLiquidados"
@@ -116,7 +138,29 @@
           (cellClicked)="onCellClickedLiquidados($event)">
         </ag-grid-angular>
       </div>
+
+      <!-- Paginación info -->
+      <div class="pagination-info" *ngIf="!loadingLiquidados && totalItemsLiquidados > 0">
+        <p>Total: {{ totalItemsLiquidados }} liquidación(es) registrada(s)</p>
+      </div>
+
+      <!-- Sin resultados -->
+      <div class="no-results" *ngIf="!loadingLiquidados && totalItemsLiquidados === 0">
+        <p>No se encontraron liquidaciones registradas</p>
+      </div>
     </div>
 
+  </div>
+</div>
+
+<!-- ================== MODAL LIQUIDAR ================== -->
+<div class="modal-overlay" *ngIf="showModalLiquidar" (click)="onCerrarModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <app-liquidar-anticipo
+      *ngIf="anticipoSeleccionado"
+      [anticipo]="anticipoSeleccionado"
+      (onSuccess)="onLiquidacionExitosa()"
+      (onCancel)="onCerrarModal()">
+    </app-liquidar-anticipo>
   </div>
 </div>

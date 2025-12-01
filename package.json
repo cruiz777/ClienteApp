@@ -33,7 +33,7 @@
     "file-saver": "^2.0.5",
     "handsontable": "^15.3.0",
     "html2pdf.js": "^0.10.3",
-    "jspdf": "^3.0.1",
+    "jspdf": "^3.0.4",
     "jspdf-autotable": "^5.0.2",
     "leaflet": "^1.9.4",
     "moment": "^2.30.1",
@@ -45,6 +45,7 @@
     "sistemaventaangular": "file:",
     "tslib": "^2.3.0",
     "xlsx": "^0.18.5",
+    "xlsx-js-style": "^1.2.0",
     "zone.js": "~0.14.10"
   },
   "devDependencies": {

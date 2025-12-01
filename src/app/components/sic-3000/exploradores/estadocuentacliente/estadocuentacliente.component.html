@@ -21,6 +21,27 @@
     </div>
 
     <!-- Datos del cliente -->
+    <div class="field col-1">
+     
+      <div class="fi-input-wrap" style="width: 800px;">
+        <input #clienteInputRef type="text" matInput class="fi-input" [formControl]="clienteOrigenControl"
+          [matAutocomplete]="autoOrigen" (blur)="clienteOrigenControl.markAsTouched()" placeholder="Buscar Cliente o Ruc"
+          [class.input-error]="clienteOrigenControl.invalid && clienteOrigenControl.touched" style="width: 800px;" />
+
+        <mat-autocomplete #autoOrigen="matAutocomplete" [displayWith]="mostrarNombreCliente"
+          (optionSelected)="seleccionarClienteOrigen($event.option.value)">
+          <mat-option *ngFor="let cliente of clientesOrigenFiltrados" [value]="cliente">
+            <span class="opcion-autocomplete">{{ cliente.nomcli }}</span>
+          </mat-option>
+        </mat-autocomplete>
+      </div>
+
+    </div>
+
+
+
+
+
     <div>
       <div class="bloque-cliente" *ngIf="clienteSeleccionado as cli">
         <div class="cliente-izq">
@@ -30,13 +51,12 @@
               {{ cli.nomcli }}
             </span>
           </div>
-
           <div class="fila-cliente">
             <span class="label">Ruc:</span>
-            <span>{{ cli.ruc}}</span>
+            <span>{{ cli.ruc }}</span>
           </div>
 
-
+          
         </div>
 
 

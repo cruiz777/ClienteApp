@@ -1,63 +1,90 @@
-<h2 mat-dialog-title>Nuevo Prefijo</h2>
+<h2 mat-dialog-title class="prefijo-dialog-title">Nuevo Prefijo</h2>
 
-<mat-dialog-content [formGroup]="formPrefijo">
-  <table style="width: 100%; border-collapse: separate; border-spacing: 10px;">
-    <tr>
-      <td><label class="form-label">Código:</label></td>
-      <td><input matInput formControlName="codigoCliente" readonly class="form-label" style="border: none; outline: none; box-shadow: none;"/></td>
-      <td><label class="form-label">Cliente:</label></td>
-      <td><input matInput formControlName="nomcli" readonly class="form-label" style="width: 150px;border: none;"/></td>
-    </tr>
-    <tr>
-      <td><label class="form-label">RUC:</label></td>
-      <td><input matInput formControlName="ruccli" readonly class="form-label" style="border: none; outline: none; box-shadow: none;" /></td>
-      <td><label class="form-label">Prefijo:</label></td>
-      <td>
-        
-        <div class="prefix-inline-group">
-          <mat-form-field  style="width: 100px; margin-right: 10px;height: 60px;">
-            <mat-select formControlName="prefix" placeholder="Prefijo" style="font-size: 11px;height: 5px;">
-              <mat-option value="5" >5</mat-option>
-              <mat-option value="6">6</mat-option>
-              <mat-option value="8">8</mat-option>
-              <mat-option value="USA">USA</mat-option>
-              <mat-option value="MSV">MSV</mat-option>
-            </mat-select>
-          </mat-form-field>
-          <input matInput formControlName="prefijo" [readonly]="!modificarSecuencia"
-                 (input)="limpiarPrefijo()" (blur)="validarPrefijoExistente()" maxlength="10"
-                 [ngClass]="{ 'input-verde': campoGlnVerde }"
-                 style="width: 100px;border: none;" />
-          <label style="font-size: 12px; margin-right: 10px;">
-            <input type="checkbox" (change)="onModificarSecuenciaChange($event)" />
-            Modificar
-          </label>
-          
-        </div>
-      </td>
-    </tr>
-    <tr>
-      <td><label class="form-label">Prefijo GS1:</label></td>
-      <td><input matInput formControlName="prefijogs1" readonly class="form-label" [ngClass]="{ 'input-verde': campoGlnVerde }" style="border: none; outline: none; box-shadow: none;" /></td>
-      <td><label class="form-label">Origen Prefijo:</label></td>
-      <td><input matInput formControlName="origen" readonly class="form-label" [ngClass]="{ 'input-verde': campoGlnVerde }" style="border: none; outline: none; box-shadow: none;"/></td>
-    </tr>
-    <tr>
-      <td><label class="form-label">GLN:</label></td>
-      <td colspan="3"><input matInput formControlName="gln" readonly class="form-label" [ngClass]="{ 'input-verde': campoGlnVerde }" style="border: none; outline: none; box-shadow: none;" /></td>
-    </tr>
-  </table>
+<mat-dialog-content [formGroup]="formPrefijo" class="prefijo-dialog-content">
+  <div class="prefijo-form-grid">
+    <!-- Fila 1 -->
+    <div class="field">
+      <label class="field-label">Código:</label>
+      <input matInput formControlName="codigoCliente"
+             readonly class="field-input readonly" />
+    </div>
+
+    <div class="field field--wide">
+      <label class="field-label">Cliente:</label>
+      <input matInput formControlName="nomcli"
+             readonly class="field-input readonly" />
+    </div>
+
+    <!-- Fila 2 -->
+    <div class="field">
+      <label class="field-label">RUC:</label>
+      <input matInput formControlName="ruccli"
+             readonly class="field-input readonly" />
+    </div>
+
+    <div class="field">
+      <label class="field-label">Prefijo:</label>
+      <div class="prefix-row">
+        <mat-form-field appearance="outline" class="prefijo-select compacto-form-field">
+          <mat-select formControlName="prefix" placeholder="Prefijo">
+            <mat-option value="5">5</mat-option>
+            <mat-option value="6">6</mat-option>
+            <mat-option value="8">8</mat-option>
+            <mat-option value="USA">USA</mat-option>
+            <mat-option value="MSV">MSV</mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <input matInput formControlName="prefijo"
+               [readonly]="!modificarSecuencia"
+               (input)="limpiarPrefijo()"
+               (blur)="validarPrefijoExistente()"
+               maxlength="10"
+               [ngClass]="{ 'input-verde': campoGlnVerde }"
+               class="field-input prefijo-input" />
+
+        <mat-checkbox class="modificar-checkbox"
+                      (change)="onModificarSecuenciaChange($event)">
+          Modificar
+        </mat-checkbox>
+      </div>
+    </div>
+
+    <!-- Fila 3 -->
+    <div class="field">
+      <label class="field-label">Prefijo GS1:</label>
+      <input matInput formControlName="prefijogs1"
+             readonly
+             class="field-input readonly"
+             [ngClass]="{ 'input-verde': campoGlnVerde }" />
+    </div>
+
+    <div class="field">
+      <label class="field-label">Origen Prefijo:</label>
+      <input matInput formControlName="origen"
+             readonly
+             class="field-input readonly"
+             [ngClass]="{ 'input-verde': campoGlnVerde }" />
+    </div>
+
+    <!-- Fila 4 -->
+    <div class="field field--full">
+      <label class="field-label">GLN:</label>
+      <input matInput formControlName="gln"
+             readonly
+             class="field-input readonly"
+             [ngClass]="{ 'input-verde': campoGlnVerde }" />
+    </div>
+  </div>
 </mat-dialog-content>
 
-<mat-dialog-actions align="center" style="margin-top: 20px;">
-  <button mat-button (click)="guardarPrefijo()">
+<mat-dialog-actions align="center" class="prefijo-actions">
+  <button mat-button color="primary" (click)="guardarPrefijo()" class="btn-accion">
     <img src="assets/icons/icon-grabar.png" width="18" height="18" style="margin-right: 6px;" />
     Guardar
   </button>
 
- 
-
-    <button mat-button (click)="cerrar()">
+  <button mat-button (click)="cerrar()" class="btn-accion">
     <img src="assets/icons/icon-salir.png" width="18" height="18" style="margin-right: 6px;" />
     Salir
   </button>

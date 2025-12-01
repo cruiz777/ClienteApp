@@ -8,16 +8,29 @@ import { CuentaCobrarService, GridRow } from 'src/app/services/cuenta-cobrar.ser
 import { PagoReportService } from 'src/app/services/pago-report.service';
 import { ClienteSummary } from 'src/app/interfaces/responses/cliente-summary-response';
 import { FormaPagoService, FormaPagoResponse } from 'src/app/services/forma-pago.service';
-import { finalize } from 'rxjs/operators';
-import { map, tap } from 'rxjs/operators';
+import { finalize, map, tap } from 'rxjs/operators';
 
 // rxjs
 import { combineLatest, Observable, of } from 'rxjs';
 
 // rxjs/operators
-import { startWith, shareReplay, debounceTime, distinctUntilChanged, filter, switchMap, catchError } from 'rxjs/operators';
+import {
+  startWith,
+  shareReplay,
+  debounceTime,
+  distinctUntilChanged,
+  filter,
+  switchMap,
+  catchError
+} from 'rxjs/operators';
 
-import { ColDef, GridApi, GridReadyEvent, ValueSetterParams, GetRowIdParams } from 'ag-grid-community';
+import {
+  ColDef,
+  GridApi,
+  GridReadyEvent,
+  ValueSetterParams,
+  GetRowIdParams
+} from 'ag-grid-community';
 import { AgGridModule } from 'ag-grid-angular';
 import { CommonModule } from '@angular/common';
 import { HttpClientModule } from '@angular/common/http';
@@ -36,27 +49,53 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
 import { Cliente } from 'src/app/interfaces/cliente';
 
-// 👉 librerías de exportación
+// ==== exportaciones Excel / PDF ====
 import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
 @Component({
-  selector: 'app-lista-cobros-individual',
+  selector: 'app-cuentaxcobrar',
   standalone: true,
-  templateUrl: './lista-cobros-individual.component.html',
-  styleUrls: ['./lista-cobros-individual.component.css'],
+  templateUrl: './cuentaxcobrar.component.html',
+  styleUrl: './cuentaxcobrar.component.css',
   encapsulation: ViewEncapsulation.None,
   imports: [
-    FormsModule, ReactiveFormsModule, MatAutocompleteModule, AgGridModule, CommonModule, HttpClientModule,
-    MatTabsModule, MatFormFieldModule, MatInputModule, MatOptionModule, MatSelectModule, MatButtonModule,
-    MatMenuModule, MatTableModule, MatPaginatorModule, MatSnackBarModule, MatIconModule, MatDialogModule, MatTooltipModule
+    FormsModule,
+    ReactiveFormsModule,
+    MatAutocompleteModule,
+    AgGridModule,
+    CommonModule,
+    HttpClientModule,
+    MatTabsModule,
+    MatFormFieldModule,
+    MatInputModule,
+    MatOptionModule,
+    MatSelectModule,
+    MatButtonModule,
+    MatMenuModule,
+    MatTableModule,
+    MatPaginatorModule,
+    MatSnackBarModule,
+    MatIconModule,
+    MatDialogModule,
+    MatTooltipModule
   ]
 })
-export class ListaCobrosIndividualComponent implements OnInit {
-  // fecha actual para reportes
-  hoy: Date = new Date();
+export class CuentaxcobrarComponent implements OnInit {
+
+  // ===== estado general =====
+  step = 1;
+  hoy = new Date();
+  errorMessage = '';
+  opcionesImpresionVisibles = false;
+
+  formCliente!: FormGroup;
+  formPago!: FormGroup;
+  clienteE!: ClienteIndividual;
+  clienteSeleccionado: Cliente | any | null = null; // puede venir de ClienteSummary
+  usuarioActual = this.usuarioService.getUsuarioActual();
 
   // Clientes (paso 1)
   @ViewChild(MatAutocompleteTrigger) autoClienteTrigger!: MatAutocompleteTrigger;
@@ -70,24 +109,21 @@ export class ListaCobrosIndividualComponent implements OnInit {
   @ViewChild('autoPagoTrigger', { read: MatAutocompleteTrigger })
   autoPagoTrigger!: MatAutocompleteTrigger;
 
-  step = 1;
-
-  formCliente!: FormGroup;
-  formPago!: FormGroup;
-  clienteE!: ClienteIndividual;
-  clienteSeleccionado: Cliente | null = null;
-  usuarioActual = this.usuarioService.getUsuarioActual();
-
   mostrarNombreCliente = (cliente: ClienteSummary | string | null): string =>
-    (cliente && typeof cliente === 'object') ? (cliente.nomcli ?? '') : (cliente ?? '') as string;
+    (cliente && typeof cliente === 'object')
+      ? (cliente.nomcli ?? '')
+      : (cliente ?? '') as string;
 
-  clienteOrigenControl = new FormControl<string | any | null>(null, Validators.required);
+  // El control viene del form
+  get clienteOrigenControl(): FormControl {
+    return this.formCliente.get('clienteOrigenControl') as FormControl;
+  }
+
   clientesOrigenFiltrados: ClienteSummary[] = [];
 
   // ===== GRID FACTURAS =====
   private gridApi!: GridApi;
   private pagosEditadosMap = new Map<string, { numero: string; pago: number; estado: string }>();
-
   private invalidRows = new Set<string>();
   private gridTouched = false;
 
@@ -159,7 +195,11 @@ export class ListaCobrosIndividualComponent implements OnInit {
         if (errs.length) this.invalidRows.add(id); else this.invalidRows.delete(id);
 
         if (p.data?.numero) {
-          this.pagosEditadosMap.set(p.data.numero, { numero: p.data.numero, pago: val, estado: p.data.estado });
+          this.pagosEditadosMap.set(p.data.numero, {
+            numero: p.data.numero,
+            pago: val,
+            estado: p.data.estado
+          });
         }
         this.gridTouched = true;
 
@@ -190,17 +230,26 @@ export class ListaCobrosIndividualComponent implements OnInit {
         return 'text-warning fw-bold';
       },
     },
-    { headerName: 'Vence', field: 'vence', width: 120, cellClass: p => (p.data?.valueVencido ? 'text-danger fw-bold' : '') },
+    {
+      headerName: 'Vence',
+      field: 'vence',
+      width: 120,
+      cellClass: p => (p.data?.valueVencido ? 'text-danger fw-bold' : '')
+    },
     { headerName: 'Descripción', field: 'descripcion', flex: 1, minWidth: 220 },
     { headerName: 'Ord', field: 'ord', width: 80, type: 'rightAligned', hide: true },
     {
       headerName: 'Detalle',
       field: 'detalles',
-      flex: 1,
-      minWidth: 220,tooltipField:'detalles',
-      valueGetter: p => Array.isArray(p.data?.detalles) && p.data.detalles.length
-        ? p.data.detalles.map((s: any) => String(s ?? '').trim()).filter(Boolean).join(' • ')
-        : 'SIN DETALLE'
+      flex: 1,tooltipField:'detalles',
+      minWidth: 220,
+      valueGetter: p =>
+        Array.isArray(p.data?.detalles) && p.data.detalles.length
+          ? p.data.detalles
+              .map((s: any) => String(s ?? '').trim())
+              .filter(Boolean)
+              .join(' • ')
+          : 'SIN DETALLE'
     }
   ];
 
@@ -209,7 +258,6 @@ export class ListaCobrosIndividualComponent implements OnInit {
 
   // ===== GRID PAGOS (plantillas) =====
   private pagoGridApi!: GridApi;
-
   filteredFormasPago$: Observable<FormaPagoResponse[]> = of([]);
   isLoadingFormas = false;
 
@@ -254,7 +302,17 @@ export class ListaCobrosIndividualComponent implements OnInit {
         if (!p.editing) return false;
         const e = p.event as KeyboardEvent;
 
-        const nav = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End', 'Enter', 'Escape'];
+        const nav = [
+          'Backspace',
+          'Delete',
+          'ArrowLeft',
+          'ArrowRight',
+          'Tab',
+          'Home',
+          'End',
+          'Enter',
+          'Escape'
+        ];
         if (nav.includes(e.key)) return false;
 
         const isDigit = e.key >= '0' && e.key <= '9';
@@ -291,7 +349,14 @@ export class ListaCobrosIndividualComponent implements OnInit {
       valueFormatter: p => (p.value || p.value === 0) ? `${(+p.value).toFixed(2)} %` : '',
     },
 
-    { headerName: 'BANCO', field: 'banco', width: 180, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(true), valueSetter: this.upperAlnumValueSetter('banco', true) },
+    {
+      headerName: 'BANCO',
+      field: 'banco',
+      width: 180,
+      editable: true,
+      suppressKeyboardEvent: this.suppressUpperAlnum(true),
+      valueSetter: this.upperAlnumValueSetter('banco', true)
+    },
     {
       headerName: 'No.CUENTA/TARJETA/FACTURA',
       field: 'numCuentaTarjetaFactura',
@@ -300,7 +365,8 @@ export class ListaCobrosIndividualComponent implements OnInit {
       suppressKeyboardEvent: this.suppressUpperAlnum(false),
       valueSetter: this.upperAlnumValueSetter('numCuentaTarjetaFactura', false),
       cellClassRules: {
-        'cell-required': (p: any) => this.requiereReferencia(p.data) &&
+        'cell-required': (p: any) =>
+          this.requiereReferencia(p.data) &&
           !String(p.data?.numCuentaTarjetaFactura ?? '').trim()
       },
       tooltipValueGetter: (p: any) =>
@@ -310,9 +376,30 @@ export class ListaCobrosIndividualComponent implements OnInit {
           : '',
     },
 
-    { headerName: 'No.CHEQUE/#', field: 'numCheque', width: 160, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(false), valueSetter: this.upperAlnumValueSetter('numCheque', false) },
-    { headerName: 'DUEÑO', field: 'dueno', width: 160, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(true), valueSetter: this.upperAlnumValueSetter('dueno', true) },
-    { headerName: 'AUTORIZACION', field: 'autorizacion', width: 160, editable: true, suppressKeyboardEvent: this.suppressUpperAlnum(false), valueSetter: this.upperAlnumValueSetter('autorizacion', false) },
+    {
+      headerName: 'No.CHEQUE/#',
+      field: 'numCheque',
+      width: 160,
+      editable: true,
+      suppressKeyboardEvent: this.suppressUpperAlnum(false),
+      valueSetter: this.upperAlnumValueSetter('numCheque', false)
+    },
+    {
+      headerName: 'DUEÑO',
+      field: 'dueno',
+      width: 160,
+      editable: true,
+      suppressKeyboardEvent: this.suppressUpperAlnum(true),
+      valueSetter: this.upperAlnumValueSetter('dueno', true)
+    },
+    {
+      headerName: 'AUTORIZACION',
+      field: 'autorizacion',
+      width: 160,
+      editable: true,
+      suppressKeyboardEvent: this.suppressUpperAlnum(false),
+      valueSetter: this.upperAlnumValueSetter('autorizacion', false)
+    },
 
     {
       colId: 'acciones',
@@ -365,14 +452,24 @@ export class ListaCobrosIndividualComponent implements OnInit {
     private clienteSeleccionadoService: ClienteSeleccionadoService,
   ) { }
 
+  // ===== getters de totales para exportar =====
+  get totalMonto(): number {
+    return (this.rowData ?? []).reduce((acc, r: any) => acc + (Number(r.monto) || 0), 0);
+  }
+  get totalPago(): number {
+    return (this.rowData ?? []).reduce((acc, r: any) => acc + (Number(r.pago) || 0), 0);
+  }
+  get totalSaldo(): number {
+    return this.totalMonto - this.totalPago;
+  }
+
   ngOnInit(): void {
     this.usuarioActual = this.usuarioService.getUsuarioActual();
 
-    // Formularios
     this.formCliente = this.fb.group({
       noPago: [''],
       fechaPago: [this.hoyISO(), Validators.required],
-      clienteOrigenControl: [''],
+      clienteOrigenControl: [null, Validators.required],
       clienteCodigo: [0],
       responsable: [this.usuarioActual?.nombre_usuario || ''],
       ruc: [''],
@@ -390,14 +487,23 @@ export class ListaCobrosIndividualComponent implements OnInit {
       metodoPago: ['']
     });
 
-    const refreshMax = () => vCtrl.updateValueAndValidity({ emitEvent: false });
+    this.activarPlantilla('transfer');
 
-    // Autocomplete Formas de pago
+    // búsqueda por cliente
+    this.cargarCliente();
+
+    // cliente que venga de otra pantalla
+    //this.cargarClienteInv();
+
+    // Autocomplete de formas de pago
     const metodoCtrl = this.formPago.get('metodoPago') as FormControl;
     const formasActivas$ = this.formaPagoService.getPagedLite(1, 10).pipe(
       map(resp => resp?.type === 'Success' ? (resp.data?.items ?? []) : []),
       tap(list => console.log('[FP] paged items:', list)),
-      catchError(err => { console.error('[FP] error getPagedLite:', err); return of([] as FormaPagoResponse[]); }),
+      catchError(err => {
+        console.error('[FP] error getPagedLite:', err);
+        return of([] as FormaPagoResponse[]);
+      }),
       shareReplay(1)
     );
 
@@ -406,43 +512,37 @@ export class ListaCobrosIndividualComponent implements OnInit {
         startWith(''),
         debounceTime(250),
         distinctUntilChanged(),
-        map((v: any) => (typeof v === 'string' ? v : (v?.descripcionPago ?? v?.descripcion_pago ?? '')).trim().toLowerCase()),
+        map((v: any) =>
+          (typeof v === 'string'
+            ? v
+            : (v?.descripcionPago ?? v?.descripcion_pago ?? '')
+          ).trim().toLowerCase()
+        ),
         tap(() => this.isLoadingFormas = true)
       ),
       formasActivas$
     ]).pipe(
-      map(([term, lista]: [string, FormaPagoResponse[]]) => !term ? lista : lista.filter(fp => (fp.descripcionPago ?? '').toLowerCase().includes(term))),
+      map(([term, lista]: [string, FormaPagoResponse[]]) =>
+        !term ? lista : lista.filter(fp => (fp.descripcionPago ?? '').toLowerCase().includes(term))
+      ),
       tap(r => console.log('[FP] render ->', r)),
       finalize(() => this.isLoadingFormas = false),
-      catchError(err => { console.error('[FP] stream error:', err); this.isLoadingFormas = false; return of([] as FormaPagoResponse[]); })
+      catchError(err => {
+        console.error('[FP] stream error:', err);
+        this.isLoadingFormas = false;
+        return of([] as FormaPagoResponse[]);
+      })
     );
-
-    this.activarPlantilla('transfer');
-
-    // Cargar cliente desde servicio de selección (si viene de otra pantalla)
-    this.cargarClienteInv();
-
-    if (!this.codcliO) {
-      this.cargarCliente();
-    } else {
-      this.cuentaCobrarService.getFacturasPendientesGrid(String(this.codcliO))
-        .subscribe((rows: GridRow[]) => {
-          this.rowData = rows;
-          this.gridApi?.setGridOption('rowData', this.rowData);
-          this.gridApi?.sizeColumnsToFit();
-          this.recalcMontoDeuda();
-          refreshMax();
-          if (rows.length === 0) this.mostrarAlerta('El cliente no tiene detalle de facturas (No tiene facturas_pendientes)', 'info');
-          this.focusValorAPagar();
-        });
-    }
   }
 
   // ===== Utils =====
   usd(v: number) {
     if (v == null) return '';
     return new Intl.NumberFormat('en-US', {
-      style: 'currency', currency: 'USD', minimumFractionDigits: 2, maximumFractionDigits: 2,
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
     }).format(v);
   }
 
@@ -520,40 +620,42 @@ export class ListaCobrosIndividualComponent implements OnInit {
     this.pagosEditadosMap.clear();
   }
 
-  // ====== CANCELAR (Paso 1) ======
+  // ===== Cancelar / limpiar todo =====
   onCancel(): void {
-    // 1) limpiar grid
+    this.cancelar();
+  }
+
+  cancelar(): void {
+    console.log('Cancelar');
+
+    // 1) Limpiar el grid
     this.rowData = [];
+
     if (this.gridApi) {
       this.gridApi.setGridOption('rowData', []);
       this.gridApi.deselectAll();
     }
-    this.invalidRows.clear();
-    this.gridTouched = false;
 
-    // 2) limpiar cliente / autocomplete
+    // 2) Limpiar selección de cliente / autocomplete
     this.clienteSeleccionado = null;
     this.codcliO = 0;
     this.clientesOrigenFiltrados = [];
-    this.unlockCliente();
-    this.limpiarClienteAutocomplete();
 
-    // 3) reset formulario (dejando responsable y fecha)
-    this.formCliente.reset({
-      noPago: '',
-      fechaPago: this.hoyISO(),
-      clienteOrigenControl: '',
+    this.clienteOrigenControl.reset(null);
+    this.clienteOrigenControl.markAsPristine();
+    this.clienteOrigenControl.markAsUntouched();
+
+    this.formCliente.patchValue({
       clienteCodigo: 0,
-      responsable: this.usuarioActual?.nombre_usuario || '',
       ruc: '',
-      valorAPagar: '',
       montoDeuda: this.usd(0),
+      valorAPagar: '',
       observacion: ''
     }, { emitEvent: false });
 
-    this.valorAPagarBloqueado = false;
-    this.totalPagos = 0;
-    this.saldoPendiente = 0;
+    // 3) Otros flags/mensajes
+    this.errorMessage = '';
+    this.opcionesImpresionVisibles = false;
   }
 
   onNext(): void {
@@ -568,8 +670,7 @@ export class ListaCobrosIndividualComponent implements OnInit {
     }
     const res = this.validateGridFacturas();
     if (!res.ok) {
-      // this.mostrarAlerta('Hay errores en el detalle de facturas. Revisa los campos en rojo.', 'error');
-      // this.revealFirstError();
+     
       return;
     }
     this.step = 2;
@@ -615,7 +716,9 @@ export class ListaCobrosIndividualComponent implements OnInit {
     this.pagoGridApi?.stopEditing();
 
     const errors: string[] = [];
-    const total = this.clamp2(this.pagoRowData.reduce((s: number, r: any) => s + (Number(r.monto) || 0), 0));
+    const total = this.clamp2(
+      this.pagoRowData.reduce((s: number, r: any) => s + (Number(r.monto) || 0), 0)
+    );
     const valorAPagar = this.clamp2(this.getValorAPagarNumber());
 
     if (Math.abs(total - valorAPagar) >= 0.005) {
@@ -658,9 +761,22 @@ export class ListaCobrosIndividualComponent implements OnInit {
     const montoAuto = Math.max(0, this.getSaldo());
 
     if (pl === 'transfer') {
-      this.pagoRowData.push({ codigo: '', descripcion: '', porcRet: null, banco: '', numCuentaTarjetaFactura: '', numCheque: '', monto: montoAuto });
+      this.pagoRowData.push({
+        codigo: '',
+        descripcion: '',
+        porcRet: null,
+        banco: '',
+        numCuentaTarjetaFactura: '',
+        numCheque: '',
+        monto: montoAuto
+      });
     } else {
-      this.pagoRowData.push({ numChequeFecha: '', nombreDueno: '', autorizacion: '', monto: montoAuto });
+      this.pagoRowData.push({
+        numChequeFecha: '',
+        nombreDueno: '',
+        autorizacion: '',
+        monto: montoAuto
+      });
     }
     this.pagoGridApi?.setGridOption('rowData', this.pagoRowData);
     this.recalcularTotal();
@@ -742,7 +858,12 @@ export class ListaCobrosIndividualComponent implements OnInit {
   }
 
   onCancelarPago(): void {
-    this.formPago.reset({ plantilla: 'transfer', valor: '', observacion: '', metodoPago: '' });
+    this.formPago.reset({
+      plantilla: 'transfer',
+      valor: '',
+      observacion: '',
+      metodoPago: ''
+    });
     this.activarPlantilla('transfer');
     this.isSubmitting = false;
     this.registroCompletado = false;
@@ -753,10 +874,14 @@ export class ListaCobrosIndividualComponent implements OnInit {
     if (!cliente?.clientes_codigo) return;
 
     this.codcliO = cliente.clientes_codigo;
+    this.clienteSeleccionado = cliente; // usado para exportar
+
     this.formCliente.patchValue({
       clienteCodigo: this.codcliO,
       ruc: this.getRucCliente(cliente)
     });
+
+    this.clienteOrigenControl.setValue(cliente, { emitEvent: false });
 
     this.cuentaCobrarService.getFacturasPendientesGrid(String(this.codcliO))
       .subscribe((rows: GridRow[]) => {
@@ -764,7 +889,9 @@ export class ListaCobrosIndividualComponent implements OnInit {
         this.gridApi?.setGridOption('rowData', this.rowData);
         this.gridApi?.sizeColumnsToFit();
         this.recalcMontoDeuda();
-        if (rows.length === 0) this.mostrarAlerta('El cliente no tiene detalle de facturas (No tiene facturas_pendientes)', 'info');
+        if (rows.length === 0) {
+          this.mostrarAlerta('El cliente no tiene detalle de facturas (No tiene facturas_pendientes)', 'info');
+        }
       });
 
     this.lockCliente();
@@ -778,7 +905,9 @@ export class ListaCobrosIndividualComponent implements OnInit {
       switchMap(txt => {
         const q = (txt || '').trim();
         return q
-          ? this.clienteService.getClientesSummary(q).pipe(catchError(() => of({ data: [] })))
+          ? this.clienteService.getClientesSummary(q).pipe(
+              catchError(() => of({ data: [] }))
+            )
           : of({ data: [] });
       })
     ).subscribe(resp => this.clientesOrigenFiltrados = resp?.data ?? []);
@@ -814,7 +943,11 @@ export class ListaCobrosIndividualComponent implements OnInit {
       duration: 3000,
       horizontalPosition: 'right',
       verticalPosition: 'top',
-      panelClass: tipo === 'error' ? ['snack-error'] : tipo === 'ok' ? ['snack-ok'] : ['snack-info']
+      panelClass: tipo === 'error'
+        ? ['snack-error']
+        : tipo === 'ok'
+          ? ['snack-ok']
+          : ['snack-info']
     });
   }
 
@@ -1000,18 +1133,12 @@ export class ListaCobrosIndividualComponent implements OnInit {
     return false;
   }
 
-  getRowHeight = (params: any) => {
-    const txt: string = params?.data?.estado ?? '';
-    if (txt.length > 160) return 64;
-    if (txt.length > 80) return 48;
-    return 34;
-  };
-
   // Total de deuda tomado del grid
   getMontoDeudaNumber(): number {
     return (this.rowData ?? []).reduce((acc, r) => acc + (Number(r.monto) || 0), 0);
   }
 
+  // Validador: valorAPagar <= monto deuda
   maxDeudaValidator = (ctrl: import('@angular/forms').AbstractControl) => {
     const raw = String(ctrl.value ?? '').replace(/[^0-9.]/g, '');
     const n = parseFloat(raw);
@@ -1063,6 +1190,7 @@ export class ListaCobrosIndividualComponent implements OnInit {
     return this.clamp2(this.getValorAPagarNumber() - this.totalPagos);
   }
 
+  // ===== Helpers de normalizado =====
   private sanitizeUpperAlnum(raw: any, allowSpace = true): string {
     let s = String(raw ?? '').toUpperCase();
     const re = allowSpace ? /[^A-Z0-9 ]/g : /[^A-Z0-9]/g;
@@ -1074,7 +1202,17 @@ export class ListaCobrosIndividualComponent implements OnInit {
       if (!p.editing) return false;
       const e = p.event as KeyboardEvent;
 
-      const nav = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab', 'Home', 'End', 'Enter', 'Escape'];
+      const nav = [
+        'Backspace',
+        'Delete',
+        'ArrowLeft',
+        'ArrowRight',
+        'Tab',
+        'Home',
+        'End',
+        'Enter',
+        'Escape'
+      ];
       if (nav.includes(e.key)) return false;
 
       const isDigit = e.key >= '0' && e.key <= '9';
@@ -1102,22 +1240,31 @@ export class ListaCobrosIndividualComponent implements OnInit {
     };
   }
 
-  // Facturas con pago > 0
-  private buildFacturasAPagar(): Array<{ numero_factura: string; tipo_documento: string; tipo: string; monto_a_pagar: number }> {
+  // ===== Helpers de mapeo =====
+  private buildFacturasAPagar(): Array<{
+    numero_factura: string;
+    tipo_documento: string;
+    tipo: string;
+    monto_a_pagar: number;
+  }> {
     const rows = (this.rowData ?? []).filter(r => (Number(r.pago) || 0) > 0);
 
     return rows.map(r => {
       const numero_factura = (r.numero_factura ?? String(r.numero || '')).replace(/^F\s*-\s*/i, '');
       const tipo_documento =
-        (r.tipo_documento?.toString() || '')
-        || (/NC|ND|VT|FACT/i.test(r.descripcion) ? r.descripcion.trim().toUpperCase() : '')
-        || 'FACTURA';
+        (r.tipo_documento?.toString() || '') ||
+        (/NC|ND|VT|FACT/i.test(r.descripcion)
+          ? r.descripcion.trim().toUpperCase()
+          : '') ||
+        'FACTURA';
 
       return {
         numero_factura,
         tipo_documento,
-        tipo: r.estado === 'CANCELADO' ? 'P'
-          : r.estado === 'ABONADO' ? 'A'
+        tipo: r.estado === 'CANCELADO'
+          ? 'P'
+          : r.estado === 'ABONADO'
+            ? 'A'
             : r.estado,
         monto_a_pagar: this.clamp2(Number(r.pago) || 0),
       };
@@ -1176,19 +1323,26 @@ export class ListaCobrosIndividualComponent implements OnInit {
       this.applyClienteSeleccion(cliente);
     } else {
       this.unlockCliente();
-      this.cargarCliente();
     }
   }
 
   private getCodigoCliente(c: any): number {
     return Number(
-      c?.clientes_codigo ?? c?.cliente_codigo ?? c?.codigoCliente ?? c?.id ?? 0
+      c?.clientes_codigo ??
+      c?.cliente_codigo ??
+      c?.codigoCliente ??
+      c?.id ??
+      0
     );
   }
 
   private getNombreCliente(c: any): string {
     return String(
-      c?.nomcli ?? c?.nombre ?? c?.cliente ?? c?.razon_social ?? ''
+      c?.nomcli ??
+      c?.nombre ??
+      c?.cliente ??
+      c?.razon_social ??
+      ''
     ).trim();
   }
 
@@ -1198,11 +1352,16 @@ export class ListaCobrosIndividualComponent implements OnInit {
     if (!codigo) return;
 
     this.codcliO = codigo;
+    this.clienteSeleccionado = c;
 
     this.formCliente.patchValue(
-      { clienteCodigo: codigo, ruc: this.getRucCliente(c) },
+      {
+        clienteCodigo: codigo,
+        ruc: this.getRucCliente(c)
+      },
       { emitEvent: false }
     );
+
     this.clienteOrigenControl.setValue(nombre || c, { emitEvent: false });
 
     this.cuentaCobrarService.getFacturasPendientesGrid(String(codigo))
@@ -1237,396 +1396,410 @@ export class ListaCobrosIndividualComponent implements OnInit {
 
   private getRucCliente(c: any): string {
     return String(
-      c?.ruc ?? c?.cedruc ?? c?.ruc_ci ?? c?.identificacion ?? c?.rucCliente ?? ''
+      c?.ruc ??
+      c?.cedruc ??
+      c?.ruc_ci ??
+      c?.identificacion ??
+      c?.rucCliente ??
+      ''
     ).trim();
   }
 
-  // ========= EXPORTAR EXCEL / PDF (Paso 1) =========
-
-async exportarExcel(): Promise<void> {
-  if (!this.rowData || this.rowData.length === 0) {
-    this.mostrarAlerta('No hay información para exportar.', 'info');
-    return;
-  }
-
-  const workbook = new ExcelJS.Workbook();
-  const ws = workbook.addWorksheet('Cuentas por Cobrar');
-
-  // columnas SIN header (para que no cree fila 1 automática)
-  ws.columns = [
-    { key: 'numero',      width: 18 },
-    { key: 'fecha',       width: 14 },
-    { key: 'monto',       width: 14 },
-    { key: 'pago',        width: 14 },
-    { key: 'estado',      width: 16 },
-    { key: 'vence',       width: 14 },
-    { key: 'descripcion', width: 60 },
-  ];
-
-  // ===== LOGO EN H3–H5 (sin distorsión) =====
-   // ===== LOGO EN COLUMNA G (G3 aprox, sin deformar) =====
-  try {
-    const logoBase64 = await this.cargarLogoBase64();
-    const imageId = workbook.addImage({
-      base64: logoBase64,
-      extension: 'png'
-    });
-
-    // Posición: columna G (índice 6), fila 3 aprox.
-    // Ajusta width/height si quieres verlo más grande o más pequeño,
-    // pero manteniendo la misma proporción (por ejemplo 120x50, 144x60, etc.)
-    ws.addImage(imageId, {
-      tl:  { col: 6, row: 2.2 },  // G3 aprox
-      ext: { width: 120, height: 50 }
-    });
-  } catch (e) {
-    console.warn('No se pudo cargar el logo para Excel:', e);
-  }
-
-
-  const thinBorder: Partial<ExcelJS.Borders> = {
-    top:    { style: 'thin', color: { argb: 'FFCCCCCC' } },
-    bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
-    left:   { style: 'thin', color: { argb: 'FFCCCCCC' } },
-    right:  { style: 'thin', color: { argb: 'FFCCCCCC' } },
-  };
-
-  let currentRow = 1;
-  const nextRow = () => ws.getRow(currentRow++);
-
-  // ===== TÍTULO =====
-  const tituloRow = nextRow();
-  tituloRow.getCell(1).value = 'CUENTAS POR COBRAR';
-  ws.mergeCells(tituloRow.number, 1, tituloRow.number, 7);
-  tituloRow.height = 22;
-  tituloRow.eachCell(cell => {
-    cell.font = { bold: true, size: 16, color: { argb: 'FF002C6C' } };
-    cell.alignment = { horizontal: 'center', vertical: 'middle' };
-  });
-
-  // fila en blanco
-  currentRow++;
-
-  // ===== CLIENTE & RUC & FECHA =====
-  const nombreCliente = this.obtenerNombreClienteParaReporte();
-  const rucCliente = this.formCliente.get('ruc')?.value || '';
-
-  if (nombreCliente) {
-    const rowCli = nextRow();
-    rowCli.getCell(1).value = 'Cliente:';
-    rowCli.getCell(2).value = nombreCliente;
-    ws.mergeCells(rowCli.number, 2, rowCli.number, 7);
-    rowCli.eachCell((cell, col) => {
-      if (col === 1) {
-        cell.font = { bold: true, size: 11, color: { argb: 'FF002C6C' } };
-      } else {
-        cell.font = { size: 11 };
-      }
-    });
-  }
-
-  if (rucCliente) {
-    const rowRuc = nextRow();
-    rowRuc.getCell(1).value = 'Ruc:';
-    rowRuc.getCell(2).value = rucCliente;
-    ws.mergeCells(rowRuc.number, 2, rowRuc.number, 7);
-    rowRuc.eachCell((cell, col) => {
-      if (col === 1) {
-        cell.font = { bold: true, size: 11, color: { argb: 'FF002C6C' } };
-      } else {
-        cell.font = { size: 11 };
-      }
-    });
-  }
-
-  const rowFec = nextRow();
-  rowFec.getCell(1).value = 'Fecha del reporte:';
-  rowFec.getCell(2).value = this.hoy.toLocaleDateString('es-EC');
-  ws.mergeCells(rowFec.number, 2, rowFec.number, 7);
-  rowFec.eachCell((cell, col) => {
-    if (col === 1) {
-      cell.font = { bold: true, size: 11, color: { argb: 'FF002C6C' } };
-    } else {
-      cell.font = { size: 11 };
+  // ============== EXPORTAR A EXCEL ==============
+  async exportarExcel(): Promise<void> {
+    if (!this.rowData || this.rowData.length === 0) {
+      alert('No hay información para exportar.');
+      return;
     }
-  });
 
-  // fila en blanco antes de la tabla
-  currentRow++;
+    const cli = this.clienteSeleccionado;
+    const workbook = new ExcelJS.Workbook();
+    const ws = workbook.addWorksheet('CuentasXCobrar');
 
-  // ===== CABECERA TABLA =====
-  const headerRow = nextRow();
-  headerRow.values = ['Factura', 'Fecha', 'Monto', 'Pago', 'Estado', 'Vence', 'Descripción'];
-  headerRow.height = 18;
-  headerRow.eachCell(cell => {
-    cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-    cell.fill = {
-      type: 'pattern',
-      pattern: 'solid',
-      fgColor: { argb: 'FF1D789F' }
-    };
-    cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
-    cell.border = thinBorder;
-  });
-
-  const firstDetailRow = headerRow.number + 1;
-
-  // ===== DETALLE =====
-  this.rowData.forEach(r => {
-    const row = nextRow();
-    row.values = [
-      r.numero,
-      r.fecha,
-      r.monto,
-      r.pago,
-      r.estado,
-      r.vence,
-      r.descripcion
+    ws.columns = [
+      { header: 'No. Factura', key: 'numero', width: 18 },
+      { header: 'Fecha', key: 'fecha', width: 12 },
+      { header: 'Monto', key: 'monto', width: 14 },
+      { header: 'Pago', key: 'pago', width: 14 },
+      { header: 'Estado', key: 'estado', width: 16 },
+      { header: 'Vence', key: 'vence', width: 12 },
+      { header: 'Descripción', key: 'descripcion', width: 40 },
+      { header: 'Detalle', key: 'detalles', width: 50, },
     ];
-  });
 
-  const lastDetailRow = currentRow - 1;
-  const allCols = [1, 2, 3, 4, 5, 6, 7];
+    const allCols = [1, 2, 3, 4, 5, 6, 7, 8];
+    const thinBorder: Partial<ExcelJS.Borders> = {
+      top: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      bottom: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      left: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+      right: { style: 'thin', color: { argb: 'FFCCCCCC' } },
+    };
 
-  for (let i = firstDetailRow; i <= lastDetailRow; i++) {
-    const row = ws.getRow(i);
-    const isEven = (i - firstDetailRow) % 2 === 1;
+    let currentRow = 1;
+    const nextRow = () => ws.getRow(currentRow++);
 
-    allCols.forEach(col => {
-      const cell = row.getCell(col);
-      cell.border = thinBorder;
-
-      if (isEven) {
-        cell.fill = {
-          type: 'pattern',
-          pattern: 'solid',
-          fgColor: { argb: 'FFF7F9FC' }
-        };
-      }
-
-      if ([3, 4].includes(col) && typeof cell.value === 'number') {
-        cell.numFmt = '#,##0.00';
-        cell.alignment = { horizontal: 'right', vertical: 'middle' };
-      }
-
-      if (col === 7) {
-        cell.alignment = {
-          horizontal: 'left',
-          vertical: 'top',
-          wrapText: true
-        };
-      }
+    // TÍTULO
+    const tituloRow = nextRow();
+    tituloRow.getCell(1).value = 'EXPLORADOR CUENTAS POR COBRAR';
+    ws.mergeCells(tituloRow.number, 1, tituloRow.number, 8);
+    tituloRow.height = 22;
+    tituloRow.eachCell(cell => {
+      cell.font = { bold: true, size: 16, color: { argb: 'FF002C6C' } };
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
     });
-  }
 
-  // ===== TOTAL DE DEUDA AL FINAL =====
-  const totalDeuda = this.clamp2(this.getMontoDeudaNumber());
+    currentRow++;
 
-  currentRow++;
-  const totalRow = nextRow();
-  totalRow.getCell(1).value = 'TOTAL DE DEUDA:';
-  totalRow.getCell(1).font = { bold: true, size: 12, color: { argb: 'FF002C6C' } };
-  totalRow.getCell(3).value = totalDeuda;
-  totalRow.getCell(3).numFmt = '#,##0.00';
-  totalRow.getCell(3).font = { bold: true, size: 12 };
-  totalRow.getCell(3).alignment = { horizontal: 'right', vertical: 'middle' };
+    // DATOS CLIENTE
+    const nomCli = cli ? this.getNombreCliente(cli) : '';
+    const rucCli = cli ? this.getRucCliente(cli) : '';
 
-  const nombreArchivo =
-    `cxc_detalle_${this.hoy.toISOString().substring(0, 10)}.xlsx`;
+    if (cli) {
+      const rowCli = nextRow();
+      rowCli.getCell(1).value = 'Cliente:';
+      rowCli.getCell(2).value = nomCli;
+      ws.mergeCells(rowCli.number, 2, rowCli.number, 8);
 
-  const buffer = await workbook.xlsx.writeBuffer();
-  const blob = new Blob([buffer], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  });
-  saveAs(blob, nombreArchivo);
-}
-async exportarPdf(): Promise<void> {
-  if (!this.rowData || this.rowData.length === 0) {
-    this.mostrarAlerta('No hay información para exportar.', 'info');
-    return;
-  }
+      const rowRuc = nextRow();
+      rowRuc.getCell(1).value = 'Ruc:';
+      rowRuc.getCell(2).value = rucCli;
+      ws.mergeCells(rowRuc.number, 2, rowRuc.number, 8);
 
-   const doc = new jsPDF('l', 'pt', 'a4');
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const marginLeft = 40;
-  let cursorY = 40;
+      const rowFec = nextRow();
+      rowFec.getCell(1).value = 'Fecha del reporte:';
+      rowFec.getCell(2).value = this.hoy.toLocaleDateString('es-EC');
+      ws.mergeCells(rowFec.number, 2, rowFec.number, 8);
 
-  // ===== LOGO ARRIBA A LA IZQUIERDA =====
-  try {
-    const logoBase64 = await this.cargarLogoBase64();
-    const logoWidth = 100;   // ajusta si lo quieres más grande/pequeño
-    const logoHeight = 45;
-    const xLogo = marginLeft; // izquierda
-    const yLogo = 20;         // un poco arriba
+      [rowCli, rowRuc, rowFec].forEach(r => {
+        r.eachCell((cell, col) => {
+          if (col === 1) {
+            cell.font = { bold: true, size: 11, color: { argb: 'FF002C6C' } };
+          } else {
+            cell.font = { size: 11 };
+          }
+        });
+      });
+    } else {
+      const rowFec = nextRow();
+      rowFec.getCell(1).value = 'Fecha del reporte:';
+      rowFec.getCell(2).value = this.hoy.toLocaleDateString('es-EC');
+      ws.mergeCells(rowFec.number, 2, rowFec.number, 8);
+    }
 
-    doc.addImage(logoBase64, 'PNG', xLogo, yLogo, logoWidth, logoHeight);
+    currentRow++;
 
-    // Bajamos el cursor para que el título quede debajo del logo
-    cursorY = yLogo + logoHeight + 20;
-  } catch (e) {
-    console.warn('No se pudo cargar el logo para PDF:', e);
-    cursorY = 40; // fallback
-  }
-
-  // ===== TÍTULO =====
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(18);
-  doc.setTextColor(0, 44, 108);
-  doc.text('CUENTAS POR COBRAR', pageWidth / 2, cursorY, { align: 'center' });
-  cursorY += 30;
-
-  // ===== CLIENTE, RUC, FECHA =====
-  doc.setFontSize(11);
-  doc.setTextColor(0, 0, 0);
-  doc.setFont('helvetica', 'normal');
-
-  const nombreCliente = this.obtenerNombreClienteParaReporte();
-  const rucCliente = this.formCliente.get('ruc')?.value || '';
-
-  if (nombreCliente) {
-    doc.text(`Cliente: ${nombreCliente}`, marginLeft, cursorY);
-    cursorY += 14;
-  }
-
-  if (rucCliente) {
-    doc.text(`Ruc: ${rucCliente}`, marginLeft, cursorY);
-    cursorY += 14;
-  }
-
-  doc.text(`Fecha del reporte: ${this.hoy.toLocaleDateString('es-EC')}`, marginLeft, cursorY);
-  cursorY += 16;
-
-  // línea separadora
-  doc.setDrawColor(200);
-  doc.setLineWidth(0.5);
-  doc.line(marginLeft, cursorY, pageWidth - marginLeft, cursorY);
-  cursorY += 10;
-
-  const body = this.rowData.map(r => ([
-    r.numero,
-    r.fecha,
-    this.usd(Number(r.monto) || 0),
-    this.usd(Number(r.pago) || 0),
-    r.estado,
-    r.vence,
-    r.descripcion || ''
-  ]));
-
-  // ===== TABLA =====
-  const result: any = autoTable(doc, {
-    startY: cursorY,
-    head: [[
-      'Factura',
+    // CABECERA TABLA
+    const headerRow = nextRow();
+    const headerIdx = headerRow.number;
+    headerRow.values = [
+      'No. Factura',
       'Fecha',
       'Monto',
       'Pago',
       'Estado',
       'Vence',
-      'Descripción'
-    ]],
-    body,
-    styles: {
-      fontSize: 8,
-      cellPadding: 3,
-      halign: 'left'
-    },
-    headStyles: {
-      fillColor: [29, 120, 159],
-      textColor: [255, 255, 255],
-      halign: 'center'
-    },
-    alternateRowStyles: {
-      fillColor: [247, 249, 252]
-    },
-    columnStyles: {
-      0: { cellWidth: 80 },
-      1: { cellWidth: 70 },
-      2: { cellWidth: 70, halign: 'right' },
-      3: { cellWidth: 70, halign: 'right' },
-      4: { cellWidth: 70 },
-      5: { cellWidth: 70 },
-      6: { cellWidth: 200 }
-    },
-    margin: { left: marginLeft, right: marginLeft },
-    didDrawPage: () => {
-      const str = `Página ${doc.getNumberOfPages()}`;
-      doc.setFontSize(8);
-      doc.setTextColor(120);
-      doc.text(str, pageWidth - marginLeft, pageHeight - 10, { align: 'right' });
+      'Descripción',
+      'Detalle'
+    ];
+
+    headerRow.height = 18;
+    headerRow.eachCell(cell => {
+      cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF1D789F' }
+      };
+      cell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+      cell.border = thinBorder;
+    });
+
+    const firstDetailRow = headerIdx + 1;
+
+    // DETALLE
+    this.rowData.forEach(r => {
+      const row = nextRow();
+      const detalle = Array.isArray((r as any).detalles)
+        ? (r as any).detalles.map((s: any) => String(s ?? '').trim()).filter(Boolean).join(' • ')
+        : ((r as any).detalles ?? '');
+      row.values = [
+        (r as any).numero,
+        (r as any).fecha,
+        (r as any).monto,
+        (r as any).pago,
+        (r as any).estado,
+        (r as any).vence,
+        (r as any).descripcion,
+        detalle
+      ];
+    });
+
+    const lastDetailRow = currentRow - 1;
+
+    // ZEBRA, BORDES, FORMATOS
+    for (let i = firstDetailRow; i <= lastDetailRow; i++) {
+      const row = ws.getRow(i);
+      const isEven = (i - firstDetailRow) % 2 === 1;
+
+      allCols.forEach(col => {
+        const cell = row.getCell(col);
+        cell.border = thinBorder;
+
+        if (isEven) {
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFF7F9FC' }
+          };
+        }
+
+        if ([3, 4].includes(col) && typeof cell.value === 'number') {
+          cell.numFmt = '#,##0.00';
+          cell.alignment = { horizontal: 'right', vertical: 'middle' };
+        }
+
+        if (col >= 7) {
+          cell.alignment = {
+            horizontal: 'left',
+            vertical: 'top',
+            wrapText: true
+          };
+        }
+      });
     }
-  });
 
-  const finalY = (result && result.finalY) || (doc as any).lastAutoTable.finalY || cursorY;
+    // TOTALES
+    currentRow++;
+    const totTitleRow = nextRow();
+    const totTitleIdx = totTitleRow.number;
+    totTitleRow.getCell(1).value = 'RESUMEN';
+    ws.mergeCells(totTitleIdx, 1, totTitleIdx, 2);
+    totTitleRow.eachCell(cell => {
+      cell.font = { bold: true };
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFE8EDF5' }
+      };
+      cell.border = thinBorder;
+      cell.alignment = { horizontal: 'left', vertical: 'middle' };
+    });
 
-  // ===== TOTAL DE DEUDA AL FINAL =====
-  const totalDeuda = this.clamp2(this.getMontoDeudaNumber());
-  let totalY = finalY + 20;
+    const rowTotMonto = nextRow();
+    rowTotMonto.getCell(1).value = 'Total Monto:';
+    rowTotMonto.getCell(2).value = this.totalMonto;
 
-  // si no entra en la página, nueva página
-  if (totalY > pageHeight - 40) {
-    doc.addPage();
-    totalY = 40;
+    const rowTotPago = nextRow();
+    rowTotPago.getCell(1).value = 'Total Pago:';
+    rowTotPago.getCell(2).value = this.totalPago;
+
+    const rowTotSaldo = nextRow();
+    rowTotSaldo.getCell(1).value = 'Saldo:';
+    rowTotSaldo.getCell(2).value = this.totalSaldo;
+
+    [rowTotMonto, rowTotPago, rowTotSaldo].forEach(r => {
+      r.getCell(1).font = { bold: true };
+      r.getCell(2).font = { bold: true };
+      r.getCell(1).border = thinBorder;
+      r.getCell(2).border = thinBorder;
+      r.getCell(2).numFmt = '#,##0.00';
+      r.getCell(1).alignment = { horizontal: 'right', vertical: 'middle' };
+      r.getCell(2).alignment = { horizontal: 'right', vertical: 'middle' };
+    });
+
+    const codigoCli = cli ? this.getCodigoCliente(cli) : '';
+    const nombreArchivo =
+      `explorador_cxc_${codigoCli}_${this.hoy.toISOString().substring(0, 10)}.xlsx`;
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    });
+    saveAs(blob, nombreArchivo);
+
+    this.opcionesImpresionVisibles = false;
   }
 
-  doc.setFontSize(12);
-  doc.setTextColor(0, 44, 108);
-  doc.setFont('helvetica', 'bold');
-  doc.text(
-    `TOTAL DE DEUDA: ${this.usd(totalDeuda)}`,
-    marginLeft,
-    totalY
-  );
-
-  const nombreArchivo =
-    `cxc_detalle_${this.hoy.toISOString().substring(0, 10)}.pdf`;
-  doc.save(nombreArchivo);
-}
-
-
-
-  // Cache para no cargar el logo cada vez
-private logoBase64Cache: string | null = null;
-
-// Ruta del logo (ajusta si tu logo está en otra carpeta)
-private readonly logoPath = 'assets/logo/GS1-logo.png';
-
-private async cargarLogoBase64(): Promise<string> {
-  if (this.logoBase64Cache) return this.logoBase64Cache;
-
-  const response = await fetch(this.logoPath);
-  const blob = await response.blob();
-
-  const base64 = await this.blobToBase64(blob);
-  this.logoBase64Cache = base64;
-  return base64;
-}
-
-private blobToBase64(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onloadend = () => resolve(reader.result as string);
-    reader.onerror = reject;
-    reader.readAsDataURL(blob);
-  });
-}
-/** Nombre de cliente para usar en reportes (Excel / PDF) */
-private obtenerNombreClienteParaReporte(): string {
-  const val = this.clienteOrigenControl.value;
-
-  if (typeof val === 'string') {
-    return val.trim();
+  // helper para logo en PDF (opcional)
+  private async cargarLogoBase64(): Promise<string | null> {
+    try {
+      const resp = await fetch('assets/logo/GS1-logo.png');
+      if (!resp.ok) return null;
+      const blob = await resp.blob();
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = err => reject(err);
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return null;
+    }
   }
 
-  if (val) {
-    return this.getNombreCliente(val);
-  }
+  // ============== EXPORTAR A PDF ==============
+  async exportarPdf(): Promise<void> {
+    if (!this.rowData || this.rowData.length === 0) {
+      alert('No hay información para exportar.');
+      return;
+    }
 
-  if (this.clienteSeleccionado) {
-    return this.getNombreCliente(this.clienteSeleccionado);
-  }
+    const cli = this.clienteSeleccionado;
+    const doc = new jsPDF('l', 'pt', 'a4');
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const pageHeight = doc.internal.pageSize.getHeight();
+    const marginLeft = 40;
+    let cursorY = 40;
 
-  return '';
-}
+    // LOGO
+    const logoDataUrl = await this.cargarLogoBase64();
+    const logoHeight = 50;
+    const logoWidth = 120;
+
+    if (logoDataUrl) {
+      doc.addImage(logoDataUrl, 'PNG', marginLeft, cursorY, logoWidth, logoHeight);
+    }
+
+    // TÍTULO
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(18);
+    doc.setTextColor(0, 44, 108);
+    doc.text('EXPLORADOR CUENTAS POR COBRAR', pageWidth / 2, cursorY + 30, { align: 'center' });
+
+    cursorY += logoHeight + 25;
+
+    // DATOS CLIENTE
+    const nomCli = cli ? this.getNombreCliente(cli) : '';
+    const rucCli = cli ? this.getRucCliente(cli) : '';
+
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.setFont('helvetica', 'normal');
+
+    if (cli) {
+      doc.text(`Cliente: ${nomCli}`, marginLeft, cursorY);
+      cursorY += 16;
+      doc.text(`Ruc: ${rucCli}`, marginLeft, cursorY);
+      cursorY += 16;
+    }
+
+    doc.text(`Fecha del reporte: ${this.hoy.toLocaleDateString('es-EC')}`, marginLeft, cursorY);
+    cursorY += 24;
+
+    // Línea separadora
+    doc.setDrawColor(200);
+    doc.setLineWidth(0.5);
+    doc.line(marginLeft, cursorY, pageWidth - marginLeft, cursorY);
+    cursorY += 10;
+
+    // TABLA
+    const body = this.rowData.map((r: any) => {
+      const detalle = Array.isArray(r.detalles)
+        ? r.detalles.map((s: any) => String(s ?? '').trim()).filter(Boolean).join(' • ')
+        : (r.detalles ?? '');
+      return [
+        r.numero,
+        r.fecha,
+        r.monto != null ? r.monto.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
+        r.pago != null ? r.pago.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '',
+        r.estado || '',
+        r.vence || '',
+        r.descripcion || '',
+        detalle || ''
+      ];
+    });
+
+    autoTable(doc, {
+      startY: cursorY,
+      head: [[
+        'No. Factura',
+        'Fecha',
+        'Monto',
+        'Pago',
+        'Estado',
+        'Vence',
+        'Descripción',
+        'Detalle'
+      ]],
+      body,
+      styles: {
+        fontSize: 8,
+        cellPadding: 3,
+        halign: 'left'
+      },
+      headStyles: {
+        fillColor: [29, 120, 159],
+        textColor: [255, 255, 255],
+        halign: 'center'
+      },
+      alternateRowStyles: {
+        fillColor: [247, 249, 252]
+      },
+      columnStyles: {
+        0: { cellWidth: 80 },
+        1: { cellWidth: 60 },
+        2: { cellWidth: 70, halign: 'right' },
+        3: { cellWidth: 70, halign: 'right' },
+        4: { cellWidth: 80 },
+        5: { cellWidth: 60 },
+        6: { cellWidth: 140 },
+        7: { cellWidth: 150 }
+      },
+      margin: { left: marginLeft, right: marginLeft },
+      didDrawPage: (_data: any) => {
+        const str = `Página ${doc.getNumberOfPages()}`;
+        doc.setFontSize(8);
+        doc.setTextColor(120);
+        doc.text(
+          str,
+          pageWidth - marginLeft,
+          pageHeight - 10,
+          { align: 'right' }
+        );
+      }
+    });
+
+    const finalY = (doc as any).lastAutoTable?.finalY || cursorY;
+
+    // TOTALES
+    let yTotales = finalY + 20;
+
+    if (yTotales + 60 > pageHeight) {
+      doc.addPage('l');
+      yTotales = 60;
+    }
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.setTextColor(0, 0, 0);
+    doc.text('RESUMEN', marginLeft, yTotales);
+    yTotales += 14;
+
+    const labelX = pageWidth - 200;
+    const valueX = pageWidth - marginLeft;
+
+    const formatNum = (v: number) =>
+      v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+    doc.setFontSize(10);
+
+    doc.text('Total Monto:', labelX, yTotales);
+    doc.text(formatNum(this.totalMonto), valueX, yTotales, { align: 'right' });
+
+    yTotales += 14;
+    doc.text('Total Pago:', labelX, yTotales);
+    doc.text(formatNum(this.totalPago), valueX, yTotales, { align: 'right' });
+
+    yTotales += 14;
+    doc.text('Saldo:', labelX, yTotales);
+    doc.text(formatNum(this.totalSaldo), valueX, yTotales, { align: 'right' });
+
+    const codigoCli = cli ? this.getCodigoCliente(cli) : '';
+    const nombreArchivo =
+      `explorador_cxc_${codigoCli}_${this.hoy.toISOString().substring(0, 10)}.pdf`;
+    doc.save(nombreArchivo);
+
+    this.opcionesImpresionVisibles = false;
+  }
 
 }
