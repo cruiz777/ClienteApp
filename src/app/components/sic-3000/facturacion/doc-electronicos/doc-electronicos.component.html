@@ -1,5 +1,5 @@
 <div class="page-container">
-  <!-- TABS estilo cierre de anticipos -->
+  <!-- TABS -->
   <div class="tabs">
     <button
       type="button"
@@ -34,11 +34,11 @@
     </button>
   </div>
 
-  <!-- Contenedor blanco con mismo estilo que cierre de anticipos -->
+  <!-- CONTENIDO -->
   <div class="contenido-tablas">
-    <h2 class="title">Consulta de Facturas</h2>
+    <h2 class="title">Facturación electrónica</h2>
 
-    <!-- Filtros -->
+    <!-- FILTROS -->
     <form [formGroup]="filtrosForm" class="filters-row">
       <div class="filters-group">
         <mat-form-field appearance="outline" class="filter-field">
@@ -115,7 +115,7 @@
       </div>
     </form>
 
-    <!-- Tabla -->
+    <!-- TABLA AG-GRID -->
     <div class="grid-wrapper ag-theme-alpine">
       <ag-grid-angular
         class="facturas-grid"
@@ -130,7 +130,7 @@
       </ag-grid-angular>
     </div>
 
-    <!-- Texto de paginación (puedes reemplazarlo por la paginación real de AG-Grid/servidor) -->
+    <!-- Texto de paginación (dummy, puedes reemplazar por paginación real) -->
     <div class="paginacion-texto">
       Páginas mostradas 1 a 10 de 100 entradas
     </div>
