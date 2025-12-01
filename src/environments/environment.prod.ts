@@ -1,3 +1,4 @@
+
 export const environment = {
   production: true,
    securityApiUrl: 'http://10.10.7.11:8000/security/api', // URL de la API en desarrollo
