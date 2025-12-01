@@ -768,6 +768,8 @@ public rowData: Producto[] = [];
    */
   async generarExcelLogistica(): Promise<void> {
     try {
+
+      
       const loadingDialog = this.abrirDialogoProgreso(
         '📊 Generando Reporte Excel',
         'Obteniendo información del servidor...'
@@ -952,6 +954,10 @@ public rowData: Producto[] = [];
   async generarPdfGtinVenta(): Promise<void> {
     if (!this.clienteSeleccionado?.clientes_codigo) {
       this.mostrarAlerta('⚠️ No hay cliente seleccionado.', 'Advertencia');
+      return;
+    }
+     if (!this.formReporte.get('gcp')?.value) {
+      this.mostrarAlerta('⚠️ No  seleccionado Prefijo', 'Advertencia');
       return;
     }
 
@@ -1551,7 +1557,10 @@ public rowData: Producto[] = [];
       this.mostrarAlerta('⚠️ No hay cliente seleccionado.', 'Advertencia');
       return;
     }
-
+    if (!this.formReporte.get('gcp')?.value) {
+      this.mostrarAlerta('⚠️ No Selecciono Prefijo', 'Advertencia');
+      return;
+    }
     try {
       // ✅ Abrir diálogo de loading simple
       const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
