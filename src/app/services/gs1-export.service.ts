@@ -203,7 +203,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
     subtitleCell.value = 'REPORTE DE PRODUCTOS CODIFICADOS';
     subtitleCell.font = {
       name: 'Calibri',
-      size: 14,
+      size: 16,
       bold: true,
       color: { argb: 'FF003366' }   // mismo azul
     };
@@ -222,7 +222,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
     empresaCell.value = headerInfo.nombreEmpresa || 'NESTLE ECUADOR S.A.';
     empresaCell.font = {
       name: 'Calibri',
-      size: 11,
+      size: 14,
       bold: true,
       color: { argb: 'FFFF6600' }   // naranja como en tu ejemplo
     };
@@ -252,48 +252,48 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
     // FILA 6: RUC
     const rucLabelCell = worksheet.getCell(`B${currentRow}`);
     rucLabelCell.value = 'RUC:';
-    rucLabelCell.font = { name: 'Arial', size: 10, bold: true };
+    rucLabelCell.font = { name: 'Calibri', size: 11, bold: true };
     rucLabelCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
     const rucValueCell = worksheet.getCell(`C${currentRow}`);
     rucValueCell.value = headerInfo.ruc || '0990032246001';
-    rucValueCell.font = { name: 'Arial', size: 10 };
+    rucValueCell.font = { name: 'Calibri', size: 11 };
     rucValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
     currentRow++;
 
     // FILA 7: GLN
     const glnLabelCell = worksheet.getCell(`B${currentRow}`);
     glnLabelCell.value = 'GLN:';
-    glnLabelCell.font = { name: 'Arial', size: 10, bold: true };
+    glnLabelCell.font = { name: 'Calibri', size: 11, bold: true };
     glnLabelCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
     const glnValueCell = worksheet.getCell(`C${currentRow}`);
     glnValueCell.value = headerInfo.gln || '7861001200003';
-    glnValueCell.font = { name: 'Arial', size: 10 };
+    glnValueCell.font = { name: 'Calibri', size: 11 };
     glnValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
     currentRow++;
 
     // FILA 8: EMISOR
     const emisorLabelCell = worksheet.getCell(`B${currentRow}`);
     emisorLabelCell.value = 'Emisor:';
-    emisorLabelCell.font = { name: 'Arial', size: 10, bold: true };
+    emisorLabelCell.font = { name: 'Calibri', size: 11, bold: true };
     emisorLabelCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
     const emisorValueCell = worksheet.getCell(`C${currentRow}`);
     emisorValueCell.value = 'GS1 Ecuador';
-    emisorValueCell.font = { name: 'Arial', size: 10 };
+    emisorValueCell.font = { name: 'Calibri', size: 11 };
     emisorValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
     currentRow++;
 
     // FILA 9: FECHA EMISIÓN
     const fechaLabelCell = worksheet.getCell(`B${currentRow}`);
     fechaLabelCell.value = 'Fecha emisión :';
-    fechaLabelCell.font = { name: 'Arial', size: 10, bold: true };
+    fechaLabelCell.font = { name: 'Calibri', size: 11, bold: true };
     fechaLabelCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
     const fechaValueCell = worksheet.getCell(`C${currentRow}`);
     fechaValueCell.value = headerInfo.fechaEmision || '07/07/2025';
-    fechaValueCell.font = { name: 'Arial', size: 10 };
+    fechaValueCell.font = { name: 'Calibri', size: 11 };
     fechaValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
     currentRow++;
 
@@ -360,7 +360,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
     headers.forEach(header => {
       const cell = worksheet.getCell(`${header.col}${currentRow}`);
       cell.value = header.value;
-      cell.font = { name: 'Arial', size: 10, bold: true };
+      cell.font = { name: 'Calibri', size: 11, bold: true };
       cell.alignment = { horizontal: 'center', vertical: 'middle' };
       cell.fill = {
         type: 'pattern',
@@ -378,39 +378,39 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
       // Fila principal del producto
       const numeracionCell = worksheet.getCell(`A${currentRow}`);
       numeracionCell.value = rowNumber++;
-      numeracionCell.font = { name: 'Arial', size: 9, color: { argb: 'FFFF6600' } };
+      numeracionCell.font = { name: 'Calibri', size: 9, color: { argb: 'FFFF6600' } };
       numeracionCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
       const gtin13Cell = worksheet.getCell(`B${currentRow}`);
       gtin13Cell.value = producto.codigo_producto || '';
-      gtin13Cell.font = { name: 'Arial', size: 14, color: { argb: 'FF003366' } };
+      gtin13Cell.font = { name: 'Calibri', size: 12, color: { argb: 'FF0000FF' } ,bold: true};
       gtin13Cell.alignment = { horizontal: 'left', vertical: 'middle' };
 
       // Columna C (GTIN-14) vacía para fila principal
 
       const descripcionCell = worksheet.getCell(`D${currentRow}`);
       descripcionCell.value = producto.descripcion || '';
-      descripcionCell.font = { name: 'Arial', size: 9 };
+      descripcionCell.font = { name: 'Calibri', size: 12 };
       descripcionCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
       const marcaCell = worksheet.getCell(`E${currentRow}`);
       marcaCell.value = producto.marca || '';
-      marcaCell.font = { name: 'Arial', size: 9 };
+      marcaCell.font = { name: 'Calibri', size: 12 };
       marcaCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
       const contenidoCell = worksheet.getCell(`F${currentRow}`);
       contenidoCell.value = producto.contenido_neto || '';
-      contenidoCell.font = { name: 'Arial', size: 9 };
+      contenidoCell.font = { name: 'Calibri', size: 12 };
       contenidoCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
       const unidadCell = worksheet.getCell(`G${currentRow}`);
       unidadCell.value = producto.unidad_medida || '';
-      unidadCell.font = { name: 'Arial', size: 9 };
+      unidadCell.font = { name: 'Calibri', size: 12 };
       unidadCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
       const fechaCell = worksheet.getCell(`H${currentRow}`);
       fechaCell.value = this.formatearFechaSafe(producto.fecha);
-      fechaCell.font = { name: 'Arial', size: 9 };
+      fechaCell.font = { name: 'Calibri', size: 12 };
       fechaCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
       currentRow++;
@@ -422,19 +422,19 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
 
         const gtin14Cell = worksheet.getCell(`C${currentRow}`);
         gtin14Cell.value = c14.gtin_14 || '';
-        gtin14Cell.font = { name: 'Arial', size: 14, color: { argb: 'FF003366' } };
+        gtin14Cell.font = { name: 'Calibri', size: 12, color: { argb: 'FF0000FF' } ,bold: true};
         gtin14Cell.alignment = { horizontal: 'left', vertical: 'middle' };
 
         const desc14Cell = worksheet.getCell(`D${currentRow}`);
         desc14Cell.value = c14.descripcion || '';
-        desc14Cell.font = { name: 'Arial', size: 9 };
+        desc14Cell.font = { name: 'Calibri', size: 12 };
         desc14Cell.alignment = { horizontal: 'left', vertical: 'middle' };
 
         // Columnas E, F, G vacías para GTIN-14
 
         const fecha14Cell = worksheet.getCell(`H${currentRow}`);
         fecha14Cell.value = this.formatearFechaSafe(c14.fecha || producto.fecha);
-        fecha14Cell.font = { name: 'Arial', size: 9 };
+        fecha14Cell.font = { name: 'Calibri', size: 12 };
         fecha14Cell.alignment = { horizontal: 'left', vertical: 'middle' };
 
         currentRow++;
@@ -677,7 +677,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
     subtitleCell.value = 'REPORTE DE PRODUCTOS GTIN VENTA';
     subtitleCell.font = {
       name: 'Calibri',
-      size: 14,
+      size: 16,
       bold: true,
       color: { argb: 'FF003366' }   // mismo azul
     };
@@ -694,7 +694,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
     empresaCell.value = headerInfo.nombreEmpresa || '';
     empresaCell.font = {
       name: 'Calibri',
-      size: 11,
+      size: 14,
       bold: true,
       color: { argb: 'FFFF6600' }   // NARANJA (como en la captura)
     };
@@ -730,11 +730,11 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
     empresaInfo.forEach(info => {
       const labelCell = worksheet.getCell(`B${currentRow}`);
       labelCell.value = info.label;
-      labelCell.font = { name: 'Arial', size: 10, bold: true };
+      labelCell.font = { name: 'Calibri', size: 11, bold: true };
 
       const valueCell = worksheet.getCell(`C${currentRow}`);
       valueCell.value = info.value;
-      valueCell.font = { name: 'Arial', size: 10 };
+      valueCell.font = { name: 'Calibri', size: 11 };
 
       currentRow++;
     });
@@ -802,7 +802,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
     headers.forEach(header => {
       const cell = worksheet.getCell(`${header.col}${currentRow}`);
       cell.value = header.value;
-      cell.font = { name: 'Arial', size: 10, bold: true };
+      cell.font = { name: 'Calibri', size: 11, bold: true };
       cell.alignment = { horizontal: 'center', vertical: 'middle' };
       cell.fill = {
         type: 'pattern',
@@ -833,6 +833,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
         // Tamaño y color por defecto
         let fontColor = { argb: 'FF000000' }; // negro
         let fontSize = 12;
+        let isBold = false;
 
         if (col === 'A') {
           // Naranja + tamaño 11
@@ -840,14 +841,16 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
           fontSize = 11;
         } else if (col === 'B') {
           // Azul oscuro (igual que empresa)
-          fontColor = { argb: 'FF003366' };
+          fontColor = { argb: 'FF0000FF' };
           fontSize = 12;
+           isBold = true; 
         }
 
         cell.font = {
-          name: 'Arial',
+          name: 'Calibri',
           size: fontSize,
-          color: fontColor
+          color: fontColor,
+           bold: isBold 
         };
 
         cell.alignment = { horizontal: 'left', vertical: 'middle' };
