@@ -7,6 +7,13 @@ interface VideosPorSistema {
   nombreSistema: string;
   idSistema: number;
   videos: VideosAyudaResponse[];
+  expandido: boolean; // ⬅️ NUEVO
+}
+
+interface CategoriaConEstado {
+  key: string;
+  value: VideosAyudaResponse[];
+  expandido: boolean; // ⬅️ NUEVO
 }
 
 @Component({
@@ -21,9 +28,7 @@ export class VideosAyudaModalComponent implements OnInit {
   videoSeleccionado: VideosAyudaResponse | null = null;
   videoEmbedUrl: SafeResourceUrl | null = null;
   loading: boolean = true;
-
-  // NUEVA PROPIEDAD: Cachear categorías
-  categoriasActuales: Array<{ key: string; value: VideosAyudaResponse[] }> = [];
+  categoriasPorSistema: Map<number, CategoriaConEstado[]> = new Map();
 
   constructor(
     private videosService: VideosAyudaService,
@@ -37,22 +42,28 @@ export class VideosAyudaModalComponent implements OnInit {
 
   cargarVideos(): void {
     this.loading = true;
+    this.cdr.markForCheck();
 
     this.videosService.getAll().subscribe({
       next: (response) => {
-        console.log('Respuesta del API:', response); // Para debug
+        console.log('✅ Respuesta del API:', response);
 
         if (response.data && response.data.length > 0) {
-          // Filtrar solo activos
           const videosActivos = response.data.filter(v => v.activo);
 
           if (videosActivos.length > 0) {
-            // Organizar videos por sistema
             this.organizarVideosPorSistema(videosActivos);
 
-            // Seleccionar el primer video del primer sistema
-            if (this.videosPorSistema.length > 0 && this.videosPorSistema[0].videos.length > 0) {
-              this.seleccionarSistema(0); // Usar el método para cachear las categorías
+            // Auto-seleccionar primer video
+        if (this.videosPorSistema.length > 0) {
+          this.videosPorSistema[0].expandido = true;
+          const primeraCategoria = this.getCategoriasPorSistema(this.videosPorSistema[0].idSistema)[0];
+              if (primeraCategoria) {
+                primeraCategoria.expandido = true; // Expandir primera categoría
+                if (primeraCategoria.value.length > 0) {
+                  this.seleccionarVideo(primeraCategoria.value[0]);
+                }
+              }
             }
           }
         }
@@ -61,7 +72,7 @@ export class VideosAyudaModalComponent implements OnInit {
         this.cdr.markForCheck();
       },
       error: (error) => {
-        console.error('Error al cargar videos:', error);
+        console.error('❌ Error al cargar videos:', error);
         this.loading = false;
         this.cdr.markForCheck();
       }
@@ -81,22 +92,45 @@ export class VideosAyudaModalComponent implements OnInit {
     this.videosPorSistema = Array.from(sistemaMap.entries()).map(([idSistema, videosDelSistema]) => ({
       idSistema: idSistema,
       nombreSistema: videosDelSistema[0].nombreSistema || 'Sin nombre',
-      videos: videosDelSistema.sort((a, b) => a.orden - b.orden)
+      videos: videosDelSistema.sort((a, b) => a.orden - b.orden),
+      expandido: false // ⬅️ NUEVO
     }));
-
+    this.videosPorSistema.forEach(sistema => {
+      const categorias = this.crearCategoriasPorSistema(sistema.videos);
+      this.categoriasPorSistema.set(sistema.idSistema, categorias);
+    });
     this.videosPorSistema.sort((a, b) => a.idSistema - b.idSistema);
   }
 
-  seleccionarSistema(index: number): void {
-    this.sistemaSeleccionado = index;
+  //Toggle sistema
+  toggleSistema(index: number): void {
+    this.videosPorSistema[index].expandido = !this.videosPorSistema[index].expandido;
+    this.cdr.markForCheck();
+  }
 
-    if (this.videosPorSistema[index].videos.length > 0) {
-      // Cachear categorías cuando cambia de sistema
-      this.actualizarCategorias(this.videosPorSistema[index].videos);
+  // Toggle categoría
+  toggleCategoria(categoria: CategoriaConEstado): void {
+    categoria.expandido = !categoria.expandido;
+    console.log('🔄 Categoría toggled:', categoria.key, 'Expandido:', categoria.expandido, 'Videos:', categoria.value.length);
+    this.cdr.markForCheck();
+  }
 
-      // Seleccionar primer video
-      this.seleccionarVideo(this.videosPorSistema[index].videos[0]);
-    }
+  //Seleccionar video y asegurar que el sistema esté seleccionado
+  seleccionarVideoDirecto(video: VideosAyudaResponse): void {
+    this.seleccionarVideo(video);
+
+    // Opcional: cerrar otras categorías
+    this.videosPorSistema.forEach(sistema => {
+      const categorias = this.getCategoriasPorSistema(sistema.idSistema);
+      categorias.forEach(cat => {
+        // Cerrar todas excepto la del video seleccionado
+        if (!cat.value.find(v => v.id === video.id)) {
+          cat.expandido = false;
+        }
+      });
+    });
+
+    this.cdr.markForCheck();
   }
 
   seleccionarVideo(video: VideosAyudaResponse): void {
@@ -105,8 +139,8 @@ export class VideosAyudaModalComponent implements OnInit {
     this.cdr.markForCheck();
   }
 
-  // NUEVO MÉTODO: Actualizar categorías cacheadas
-  private actualizarCategorias(videos: VideosAyudaResponse[]): void {
+  // Retorna con estado expandido
+  private crearCategoriasPorSistema(videos: VideosAyudaResponse[]): CategoriaConEstado[] {
     const porCategoria = new Map<string, VideosAyudaResponse[]>();
 
     videos.forEach(video => {
@@ -117,17 +151,22 @@ export class VideosAyudaModalComponent implements OnInit {
       porCategoria.get(categoria)?.push(video);
     });
 
-    // Convertir Map a Array para usar en el template
-    this.categoriasActuales = Array.from(porCategoria.entries()).map(([key, value]) => ({
-      key,
-      value
-    }));
+    return Array.from(porCategoria.entries())
+      .map(([key, value]) => ({
+        key,
+        value: value.sort((a, b) => a.orden - b.orden),
+        expandido: false
+      }))
+      .sort((a, b) => a.key.localeCompare(b.key));
   }
 
   private getYoutubeEmbedUrl(url: string): SafeResourceUrl {
     const videoId = this.extractVideoId(url);
     const embedUrl = `https://www.youtube.com/embed/${videoId}`;
     return this.sanitizer.bypassSecurityTrustResourceUrl(embedUrl);
+  }
+  getCategoriasPorSistema(idSistema: number): CategoriaConEstado[] {
+    return this.categoriasPorSistema.get(idSistema) || [];
   }
 
   private extractVideoId(url: string): string {

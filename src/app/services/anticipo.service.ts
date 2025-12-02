@@ -7,11 +7,13 @@ import { AnularAnticipoRequest, CreateAnticipoRequest, ReporteAnticipoRequest } 
 import { ApiListResponse } from '../interfaces/responses/ApiListResponse';
 import { AnticipoResponse, AnticipoDetalleResponse, SiguienteIdAntiicpo, AnticipoReporteItemResponse, ReporteAnticiposResponse } from '../interfaces/responses/anticipo-response';
 import { PaginationResponse } from '../interfaces/responses/pagination-response';
+import { DesgloceAnticipoResponse } from '../interfaces/responses/desglose-anticipo-response';
 
 export interface AnticipoFilters {
   page?: number;
   pageSize?: number;
   clientesCodigo?: number;
+  cliente?: string;
   caja?: string;
   fechaDesde?: string; // formato: 'YYYY-MM-DD'
   fechaHasta?: string; // formato: 'YYYY-MM-DD'
@@ -47,8 +49,8 @@ export class AnticipoService {
     params = params.set('pageSize', (filters?.pageSize || 10).toString());
 
     // Filtros opcionales
-    if (filters?.clientesCodigo) {
-      params = params.set('clientesCodigo', filters.clientesCodigo.toString());
+    if (filters?.cliente) {
+      params = params.set('cliente', filters.cliente);
     }
 
     if (filters?.caja) {
@@ -200,7 +202,24 @@ export class AnticipoService {
       })
     );
   }
+  /**
+ * Obtiene el desglose completo de uso de un anticipo específico
+ * Muestra dónde se ha utilizado el anticipo (facturas y pagos)
+ * @param idAnticipo ID del anticipo
+ * @returns Observable con el desglose del anticipo
+ */
+  getDesglose(idAnticipo: number): Observable<ApiListResponse<DesgloceAnticipoResponse>> {
+    const url = `${this.apiUrl}/desglose/${idAnticipo}`;
 
+    console.log('[AnticipoService] GET Desglose', url, { idAnticipo });
+
+    return this.http.get<ApiListResponse<DesgloceAnticipoResponse>>(url).pipe(
+      map(response => {
+        console.log('[AnticipoService] Desglose OK:', response);
+        return response;
+      })
+    );
+  }
   /**
    * Helper: Convierte Date a formato ISO string (YYYY-MM-DD)
    */

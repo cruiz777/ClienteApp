@@ -9,45 +9,86 @@
 </div>
 
 <mat-dialog-content class="modal-content-custom">
+  <!-- Loading -->
   <div *ngIf="loading" class="loading-container">
     <mat-spinner diameter="50"></mat-spinner>
     <p class="mt-3">Cargando videos de ayuda...</p>
   </div>
 
+  <!-- Sin datos -->
   <div *ngIf="!loading && videosPorSistema.length === 0" class="empty-state">
     <i class="bi bi-camera-video-off fs-1"></i>
     <p class="mt-3">No hay videos de ayuda disponibles</p>
   </div>
 
+  <!-- Contenido principal -->
   <div *ngIf="!loading && videosPorSistema.length > 0" class="videos-container">
     <div class="row">
-      <!-- Lista de sistemas (sidebar) -->
-      <div class="col-md-3 sistemas-sidebar">
-        <h6 class="sidebar-title">Sistemas</h6>
-        <div class="list-group">
-          <button
-            *ngFor="let item of videosPorSistema; let i = index"
-            type="button"
-            class="list-group-item list-group-item-action"
-            [class.active]="sistemaSeleccionado === i"
-            (click)="seleccionarSistema(i)">
-            <span>
-              <i class="bi bi-folder me-2"></i>
-              {{ item.nombreSistema }}
-            </span>
-            <span class="badge">{{ item.videos.length }}</span>
-          </button>
+      <!-- Sidebar con árbol -->
+      <div class="col-md-4 tree-sidebar">
+        <h6 class="sidebar-title">
+          <i class="bi bi-folder-symlink me-2"></i>
+          Biblioteca de Videos
+        </h6>
+
+        <!-- ÁRBOL SIMPLE CON ngFor (sin accordion anidado complejo) -->
+        <div class="tree-simple">
+          <div *ngFor="let sistema of videosPorSistema; let i = index" class="sistema-node">
+            <!-- Sistema -->
+            <div
+              class="sistema-header"
+              [class.expanded]="sistema.expandido"
+              (click)="toggleSistema(i)">
+              <i class="bi" [ngClass]="sistema.expandido ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+              <i class="bi bi-hdd-stack me-2"></i>
+              <span class="sistema-nombre">{{ sistema.nombreSistema }}</span>
+              <span class="badge-count ms-auto">{{ sistema.videos.length }}</span>
+            </div>
+
+            <!-- Categorías y Videos -->
+            <div *ngIf="sistema.expandido" class="sistema-content">
+              <div *ngFor="let categoria of getCategoriasPorSistema(sistema.idSistema)" class="categoria-node">
+                <!-- Categoría -->
+                <div
+                  class="categoria-header"
+                  [class.expanded]="categoria.expandido"
+                  (click)="toggleCategoria(categoria); $event.stopPropagation()">
+                  <i class="bi" [ngClass]="categoria.expandido ? 'bi-chevron-down' : 'bi-chevron-right'"></i>
+                  <i class="bi bi-folder2 me-2"></i>
+                  <span class="categoria-nombre">{{ categoria.key }}</span>
+                  <span class="badge-count-small ms-auto">{{ categoria.value.length }}</span>
+                </div>
+
+                <!-- Videos -->
+                <div *ngIf="categoria.expandido" class="videos-list-tree">
+                  <button
+                    *ngFor="let video of categoria.value; let videoIndex = index"
+                    type="button"
+                    class="video-item"
+                    [class.active-video]="videoSeleccionado?.id === video.id"
+                    (click)="seleccionarVideoDirecto(video)">
+                    <i class="bi bi-play-circle-fill me-2"></i>
+                    <span class="video-text">{{ video.titulo }}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- Contenido principal -->
-      <div class="col-md-9">
-        <!-- Video reproductor -->
+      <!-- Video player -->
+      <div class="col-md-8">
         <div *ngIf="videoSeleccionado && videoEmbedUrl" class="video-player-container">
-          <h5 class="video-title">{{ videoSeleccionado.titulo }}</h5>
-          <span class="badge">{{ videoSeleccionado.nombreCategoria }}</span>
+          <div class="video-header">
+            <div>
+              <h5 class="video-title mb-1">{{ videoSeleccionado.titulo }}</h5>
+              <span class="badge-sistema">{{ videoSeleccionado.nombreSistema }}</span>
+              <span class="badge-categoria ms-2">{{ videoSeleccionado.nombreCategoria }}</span>
+            </div>
+          </div>
 
-          <div class="ratio ratio-16x9">
+          <div class="ratio ratio-16x9 mt-3">
             <iframe
               [src]="videoEmbedUrl"
               title="{{ videoSeleccionado.titulo }}"
@@ -58,34 +99,9 @@
           </div>
         </div>
 
-        <!-- Lista de videos del sistema seleccionado -->
-        <div class="videos-list">
-          <h6>Videos disponibles</h6>
-
-          <mat-accordion>
-            <mat-expansion-panel
-              *ngFor="let categoria of categoriasActuales"
-              [expanded]="true">
-              <mat-expansion-panel-header>
-                <mat-panel-title>
-                  <i class="bi bi-folder2-open me-2"></i>
-                  {{ categoria.key }}
-                </mat-panel-title>
-              </mat-expansion-panel-header>
-
-              <div class="list-group list-group-flush">
-                <button
-                  *ngFor="let video of categoria.value"
-                  type="button"
-                  class="list-group-item list-group-item-action"
-                  [class.active-video]="videoSeleccionado?.id === video.id"
-                  (click)="seleccionarVideo(video)">
-                  <i class="bi bi-play-circle me-2"></i>
-                  {{ video.titulo }}
-                </button>
-              </div>
-            </mat-expansion-panel>
-          </mat-accordion>
+        <div *ngIf="!videoSeleccionado" class="empty-player">
+          <i class="bi bi-play-btn fs-1"></i>
+          <p class="mt-3">Selecciona un video del árbol para reproducirlo</p>
         </div>
       </div>
     </div>
