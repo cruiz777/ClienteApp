@@ -1,0 +1,407 @@
+
+  <div class="toolbar sticky-header">
+
+      <div class="title">{{ titulo() }}</div>
+      
+      <div class="actions">
+        <button class="btn-verde"  (click)="guardar()" [disabled]="isReadOnly()">
+          <ng-container *ngIf="modo() === 'nuevo'; else actualizarLbl">Guardar</ng-container>
+          <ng-template #actualizarLbl>Actualizar</ng-template>
+        </button>
+        <button class="btn" (click)="cancelar()">Cancelar</button>
+      </div>
+    
+</div>
+
+<div class="content-scroll" [class.cabecera-readonly]="cabeceraBloqueada">
+    <form [formGroup]="form" class="header-form header-compact">
+      <div class="grid">
+         
+        <div class="form-group">
+          <label for="idZona">
+            Zona
+            <span class="required" [ngClass]="{ 'edit-mode-label': modo() === 'editar' }">*</span>
+          </label>
+
+          <select
+            id="idZona"
+            class="control"
+            [disabled]="isReadOnly()"
+            [ngClass]="{ 'edit-mode-select': modo() === 'editar' }"
+            formControlName="idZona"
+            [attr.title]="'Seleccione la zona'"
+          >
+            <!-- Opción placeholder -->
+            <option [ngValue]="0" disabled>Seleccione...</option>
+            <!-- Opciones de zonas -->
+            <option *ngFor="let z of (zonas$ | async)"  [ngValue]="z.idZona">
+              {{ z.numero }} - {{ z.nombre }}
+            </option>
+
+          </select>
+          <!-- Mensajes de error -->
+          <div class="error" *ngIf="form.get('idZona')?.hasError('required') && form.get('idZona')?.touched">
+            Campo obligatorio.
+          </div>
+          <div  class="error" *ngIf="form.get('idZona')?.hasError('min') && form.get('idZona')?.touched">
+             Campo obligatorio.
+          </div>
+
+        </div>
+
+        <div class="form-group">
+            <label for="proveedorInput">
+              Proveedor
+              <span class="required">*</span>
+            </label>
+            <!-- Input estilo propio .control, tamaño igual a los demás -->
+            <input
+              id="proveedorInput"
+              type="text"
+              class="control"
+              placeholder="Buscar por identificación o nombre..."
+              [formControl]="proveedorCtrl"
+              [matAutocomplete]="autoProveedor"
+              [readonly]="isReadOnly()"
+              [ngClass]="{
+                'ng-invalid ng-touched':
+                  auxiliarSeleccionadoCtrl.invalid && auxiliarSeleccionadoCtrl.touched
+              }"
+            />
+            <!-- Panel de resultados -->
+            <mat-autocomplete
+              #autoProveedor="matAutocomplete"
+              [displayWith]="displayProveedor"
+              panelClass="panel-proveedor">
+              <mat-option
+                *ngFor="let aux of (filteredAuxiliares$ | async)"
+                [value]="aux">
+                {{ aux.label }}
+              </mat-option>
+            </mat-autocomplete>
+            <div
+                class="error" *ngIf="auxiliarSeleccionadoCtrl.invalid && auxiliarSeleccionadoCtrl.touched">
+                Campo obligatorio.
+            </div>
+
+          </div>
+
+
+       
+        <div class="form-group">
+          <label>Fecha Transacción</label>
+          <input
+            class="control"
+            type="datetime-local"
+            [value]="form.value.fechatransaccion | date:'yyyy-MM-ddTHH:mm'"
+            (input)="form.patchValue({ fechatransaccion: $any($event.target).value })"
+          />
+        </div>
+        
+        <div class="form-group">
+          <label>Fecha Ingreso</label>
+          <input
+            class="control"
+            type="datetime-local"
+            [value]="form.value.fechaingreso | date:'yyyy-MM-ddTHH:mm'"
+            (input)="form.patchValue({ fechaingreso: $any($event.target).value })"
+            readonly
+          />
+        </div>
+
+         <div class="form-group">
+          <label for="idTipoCompSri">
+            Tipo Comprobante
+            <span class="required">*</span>
+          </label>
+          <select
+            id="idTipoCompSri"
+            class="control"
+            [disabled]="isReadOnly()"
+            [formControl]="tipoCompSriCtrl"
+            [attr.title]="'Seleccione el tipo de comprobante SRI'"
+          >
+            <option [ngValue]="0" disabled>Seleccione...</option>
+
+            <option *ngFor="let t of listaTiposCompSriCab" [ngValue]="t.id">
+              {{ t.label }}
+            </option>
+          </select>
+
+          <div
+            class="error" *ngIf="tipoCompSriCtrl.invalid && tipoCompSriCtrl.touched">
+            Campo obligatorio.
+          </div>
+        </div>
+
+       <div class="form-group">
+          <label for="idSustentoTrib">
+            Sustento Tributario
+            <span class="required">*</span>
+          </label>
+
+          <select
+            id="idSustentoTrib"
+            class="control"
+            [disabled]="isReadOnly()"
+            [formControl]="sustentoTribCtrl"
+            [attr.title]="'Seleccione el sustento tributario'"
+          >
+            <option [ngValue]="0" disabled>Seleccione...</option>
+            <option *ngFor="let s of listaSustentosTrib" [ngValue]="s.id">
+              {{ s.label }}
+            </option>
+          </select>
+
+          <div
+            class="error" *ngIf="sustentoTribCtrl.invalid && sustentoTribCtrl.touched">
+            Campo obligatorio.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="nroComprobante">No. Comprobante<span class="required">*</span></label>
+          <input
+            id="nroComprobante"
+            type="text"
+            class="control"
+            [formControl]="nroComprobanteCtrl"
+            maxlength="25"
+            placeholder="Ingrese No. de comprobante"
+            inputmode="numeric"
+            (input)="onNumericInput(nroComprobanteCtrl, $event)"
+          />
+          <div class="error"
+              *ngIf="nroComprobanteCtrl.hasError('pattern') && nroComprobanteCtrl.touched">
+              Solo se permiten números.
+          </div>
+          <div
+            class="error" *ngIf="nroComprobanteCtrl.invalid && nroComprobanteCtrl.touched">
+            Campo obligatorio.
+          </div>
+        </div>
+       
+         <!-- AUTORIZACIÓN / FECHAS CABECERA -->
+        <div class="form-group">
+          <label>Autorización<span class="required">*</span></label>
+          <input
+            type="text"
+            class="control"
+            [formControl]="autorizacionCtrl"
+            maxlength="49"
+            placeholder="Ingrese Autorizacion"
+            inputmode="numeric"
+            (input)="onNumericInput(autorizacionCtrl, $event)"
+          />
+          <div class="error"
+              *ngIf="autorizacionCtrl.hasError('pattern') && autorizacionCtrl.touched">
+            Solo se permiten números.
+          </div>
+          <div
+            class="error" *ngIf="autorizacionCtrl.invalid && autorizacionCtrl.touched">
+            Campo obligatorio.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Fecha Caduca<span class="required">*</span></label>
+          <input
+            class="control"
+            type="date"
+            [value]="fechacaducaCtrl.value | date:'yyyy-MM-dd'"
+            (input)="fechacaducaCtrl.setValue($any($event.target).value)"
+            [ngClass]="{
+              'ng-invalid ng-touched':
+                fechacaducaCtrl.invalid && fechacaducaCtrl.touched
+            }"
+          />
+          <div class="error"
+              *ngIf="fechacaducaCtrl.invalid && fechacaducaCtrl.touched">
+            Campo obligatorio.
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Fecha Vencimiento<span class="required">*</span></label>
+          <input
+            class="control"
+            type="date"
+            [value]="fechavencimientoCtrl.value | date:'yyyy-MM-dd'"
+            (input)="fechavencimientoCtrl.setValue($any($event.target).value)"
+            [ngClass]="{
+              'ng-invalid ng-touched':
+                fechavencimientoCtrl.invalid && fechavencimientoCtrl.touched
+            }"
+          />
+          <div class="error"
+              *ngIf="fechavencimientoCtrl.invalid && fechavencimientoCtrl.touched">
+              Campo obligatorio.
+          </div>
+        </div>
+
+        <div class="form-group span-2-right">
+          <label>Concepto<span class="required">*</span></label>
+          <textarea
+            class="control"
+            type="text"
+            formControlName="observacion"
+            maxlength="250"
+            (input)="validarTexto('observacion', $event)"
+          ></textarea>
+          <div class="error" *ngIf="form.get('observacion')?.invalid && form.get('observacion')?.touched">
+            Campo obligatorio.
+          </div>
+        </div>
+
+
+         <div class="form-group" style="display: none;">
+          <label for="idTipoAsiento">Tipo Asiento <span class="required" [ngClass]="{ 'edit-mode-label': modo() === 'editar' }" >*</span></label>
+          <select
+            id="IdTipoAsiento"
+            class="control"
+            [disabled]="modo() === 'editar'"
+            [ngClass]="{ 'edit-mode-select': modo() === 'editar' }"
+            formControlName="idTipoAsiento"
+            [attr.title]="'Seleccione el tipo documento'"
+          >
+            <option [ngValue]="null" disabled>Seleccione...</option>
+            <option *ngFor="let ta of (tiposAsiento$ | async)" [ngValue]="ta.IdTipoAsiento">
+              {{ ta.TipAsiento }} — {{ ta.Descripcion }}
+            </option>
+          </select>
+          <div class="error" *ngIf="form.get('idTipoAsiento')?.invalid && form.get('idTipoAsiento')?.touched">
+            Campo obligatorio.
+          </div>
+        </div>
+
+        <div class="form-group span-2-right" style="display: none;">
+          <label>Beneficiario<span class="required">*</span></label>
+          <input class="control" type="text" 
+            formControlName="beneficiario" 
+            maxlength="155"
+            (input)="validarTexto('beneficiario', $event)"
+          />
+          <div class="error" *ngIf="form.get('beneficiario')?.invalid && form.get('beneficiario')?.touched">
+            Campo obligatorio.
+          </div>
+        </div>
+
+        
+      
+        
+        <!--
+
+        <div class="form-group">
+          <label>Zona *</label>
+          <input class="control" type="number" formControlName="idZona" />
+          <div class="error" *ngIf="form.get('idZona')?.invalid && form.get('idZona')?.touched">
+              Campo obligatorio.
+          </div>
+        </div>
+
+         <div class="form-group">
+          <label>Usuario</label>
+           <div class="constante-box">
+              {{ nombreusuario }}
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label>Número</label>
+          <input class="control" type="number" formControlName="numdoc" />
+          <div class="error" *ngIf="form.get('numdoc')?.invalid && form.get('numdoc')?.touched">
+              Campo obligatorio.
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Tipo Asiento *</label>
+          <input type="number" formControlName="idTipoAsiento" />
+        </div>
+        <div class="field">
+          <label>Tip. Doc.</label>
+          <input type="text" formControlName="tipdoc" />
+        </div>
+        <div class="field">
+          <label>Año</label>
+          <input type="text" formControlName="anio" />
+        </div>
+
+        <div class="field">
+          <label>Solicitado</label>
+          <input type="text" formControlName="solicitado" />
+        </div>
+
+        <div class="field">
+          <label>Depto</label>
+          <input type="text" formControlName="depto" />
+        </div>
+
+        <div class="field">
+          <label>Autorizado</label>
+          <input type="text" formControlName="autorizado" />
+        </div>
+
+        <div class="field">
+          <label>Cierre</label>
+          <input type="text" formControlName="cierre" />
+        </div>
+
+        <div class="field">
+          <label>Fecha Cierre</label>
+          <input
+            type="datetime-local"
+            [value]="form.value.fechacierre | date:'yyyy-MM-ddTHH:mm'"
+            (input)="form.patchValue({ fechacierre: $any($event.target).value })"
+          />
+        </div>
+      
+        <div class="form-group">
+          <label>Estado</label>
+          <select class="control" formControlName="estado">
+            <option [ngValue]="true">Activo</option>
+            <option [ngValue]="false">Inactivo</option>
+          </select>
+        </div>
+        -->
+      </div>
+    </form>
+</div>
+<div class="subtoolbar">
+  <button class="btn" (click)="agregarLinea()" [disabled]="isReadOnly()" title="Añadir línea">
+      <img src="assets/icons/aniadir.png" alt="" class="btn-add__icon">
+      Agregar Linea
+  </button>
+</div>
+
+<ag-grid-angular
+  class="ag-theme-alpine grid custom-grid"
+  style="width: 100%; height: 320px"
+  [gridOptions]="gridOptions"
+  [rowData]="rowData()"
+  [columnDefs]="columnDefs"
+  [defaultColDef]="defaultColDef"
+  [rowSelection]="'single'"
+  [animateRows]="true"
+  (gridReady)="onGridReady($event)"
+  (cellClicked)="onCellClicked($event)"
+  (cellValueChanged)="onCellValueChanged($event)"
+  (cellKeyDown)="onCellKeyDown($event)"
+  >
+  
+</ag-grid-angular>
+
+<div class="totales">
+  <div class="tot">
+    <span class="total-label">Total Debe:</span>
+    <strong>{{ totDebe() | number:'1.2-2' }}</strong>
+  </div>
+  <div class="tot">
+    <span class="total-label">Total Haber:</span>
+    <strong>{{ totHaber() | number:'1.2-2' }}</strong>
+  </div>
+  <div class="tot diff" [class.ok]="diferencia() === 0" [class.bad]="diferencia() !== 0">
+    <span class="total-label">Diferencia:</span>
+    <strong>{{ diferencia() | number:'1.2-2' }}</strong>
+  </div>
+</div>

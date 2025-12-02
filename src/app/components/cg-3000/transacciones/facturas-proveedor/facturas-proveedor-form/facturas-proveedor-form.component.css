@@ -20,23 +20,6 @@
 }
 
 /* Botones */
-
-
-.btn-verde {
-  background: #85c160;/* #96e863;*/
-  color: #fff;
-  border: 1px solid #81c8f2;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-weight: 900;
-  cursor: pointer;
-  transition: background .15s, border-color .15s, box-shadow .15s;
-  /*width: 200px;
-  height: 500px;*/
-}
-.btn-verde:hover { background: #32af4f; border-color: #6291e8; }
-
-
 .btn {
   padding: 6px 12px;
   border-radius: 8px;
@@ -45,9 +28,6 @@
   cursor: pointer;
 }
 .btn:hover { background: #d5f7b3; }
-
-
-
 .btn.primary {
   background: #1e88e5;
   color: white;
@@ -230,6 +210,36 @@ mat-dialog-content { max-height: 85vh; overflow: hidden; padding: 0; }
   gap: 8px;
 }
 
+/* Aplica solo a este grid */
+.custom-grid {
+  /* Fondo general del grid */
+  --ag-background-color: #fafcff;
+
+  /* Cabecera */
+  --ag-header-background-color: #0d47a1;   /* azul */
+  --ag-header-foreground-color:  #ffffff;  /* texto cabecera */
+  --ag-header-border-color:      #0b3c8a;
+
+  /* Bordes/celdas */
+  --ag-border-color: #d0d7de;
+
+  /* Filas */
+  --ag-odd-row-background-color:  #f7fbff;
+  --ag-even-row-background-color: #ffffff;
+  --ag-row-hover-color:           #e3f2fd;
+
+  /* Texto */
+  --ag-foreground-color: #111827; /* texto normal */
+  --ag-secondary-foreground-color: #8cb716;
+
+  /* Filtros/inputs */
+  --ag-control-panel-background-color: #0d47a1;
+  --ag-input-border-color: #b6c2ce;
+
+  /* Tamaño fuente (opcional) */
+  --ag-font-size: 13px;
+}
+
 /* (Opcional) icono filtro y sort en blanco para cabecera oscura */
 .custom-grid .ag-icon {
   filter: invert(1) brightness(1.8);
@@ -257,6 +267,7 @@ mat-dialog-content { max-height: 85vh; overflow: hidden; padding: 0; }
   --ag-header-height: 36px;
   --ag-row-height: 32px;
 }
+
 .custom-grid {
   --ag-background-color:#dde3ee; /*fondo*/
   --ag-foreground-color:#080808; /*color de letra*/
@@ -269,7 +280,6 @@ mat-dialog-content { max-height: 85vh; overflow: hidden; padding: 0; }
   
   --ag-row-hover-color:#eaf1c3; /*#e2efc4;*/
   --ag-border-color:#afb0ad; /*lineas de la cuadricula*/
-  --ag-font-size: 12px;
 }
 
 .btn-add{ display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .75rem;
@@ -288,7 +298,7 @@ mat-dialog-content { max-height: 85vh; overflow: hidden; padding: 0; }
   opacity: 0.9;
   background-image: linear-gradient(transparent, transparent); /* evita estilos grises del navegador */
   outline: none;
-  box-shadow: 0 0 0 3px rgba(246, 246, 244, 0.25);
+  box-shadow: 0 0 0 3px rgba(208, 208, 10, 0.25);
   border-color: #f3f3f7;
   background-color: #eae6e6;
 }
@@ -524,8 +534,22 @@ label .required {
   min-height: 40px;  /* ajusta a la altura de tus inputs */
   resize: vertical;
 }
+.row-4 {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;                 /* espacio entre columnas */
+}
 
-/*controles mas pequeños cabecera*/
+
+/* Responsive: en pantallas chicas baja a 2 columnas */
+@media (max-width: 992px) {
+  .row-4 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 576px) {
+  .row-4 { grid-template-columns: 1fr; }
+}
+
+
 /* CABECERA MÁS PEQUEÑA */
 .header-compact {
   font-size: 12px;          /* tamaño base más pequeño */
@@ -588,7 +612,7 @@ label .required {
 /* Estilo visual de solo lectura (opcional) */
 .cabecera-readonly .mat-input-element,
 .cabecera-readonly .mat-select-trigger {
-  background-color: #f5f5f5; /* #f5f5f5;*/
+  background-color: #f5f5f5;
 }
 
 .cabecera-readonly .control,
@@ -598,90 +622,53 @@ label .required {
 }
 
 
-/* para el boton agregar fila*/
-/* Contenedor de la barra sobre el grid, alineado a la derecha */
-.subtoolbar {
-  margin: 8px 0;
+/* ====== AUTOCOMPLETE PROVEEDOR: TAMAÑO DE LETRA LISTA ====== */
+/* ================================
+   AUTOCOMPLETE PROVEEDOR (panel-proveedor)
+   ================================ */
+/* ============================================
+   AUTOCOMPLETE PROVEEDOR (panel-proveedor)
+   – tamaño de letra + color de selección
+   ============================================ */
+
+/* --- LEGACY MATERIAL (mat-autocomplete-panel / mat-option) --- */
+.cdk-overlay-container .cdk-overlay-pane
+  .mat-autocomplete-panel.panel-proveedor .mat-option {
+  font-size: 11px !important;       /* LETRA MÁS PEQUEÑA */
+  line-height: 1.2 !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
 }
 
-.subtoolbar--right {
-  display: flex;
-  justify-content: flex-start;   /* manda el botón a la derecha */
-  align-items: center;
+.cdk-overlay-container .cdk-overlay-pane
+  .mat-autocomplete-panel.panel-proveedor
+  .mat-option.mat-active,
+.cdk-overlay-container .cdk-overlay-pane
+  .mat-autocomplete-panel.panel-proveedor
+  .mat-option.mat-selected {
+  background-color: #2563eb !important;  /* AZUL MÁS OSCURO */
+  color: #ffffff !important;
 }
 
-/* Botón más pequeño */
-.btn-mini {
-  padding: 4px 10px;           /* menos relleno = más pequeño */
-  font-size: 12px;
-  line-height: 1.2;
+/* --- MDC MATERIAL (mat-mdc-autocomplete-panel / mat-mdc-option) --- */
+.cdk-overlay-container .cdk-overlay-pane
+  .mat-mdc-autocomplete-panel.panel-proveedor .mat-mdc-option {
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
 }
 
-/* Opcional: por si quieres diferenciarlo un poco del btn normal */
-.btn-add-line {
-  border-radius: 4px;
-}
-
-/* Icono más pequeño dentro del botón */
-.btn-add__icon {
-  width: 14px;
-  height: 14px;
-  margin-right: 4px;
-  vertical-align: middle;
+.cdk-overlay-container .cdk-overlay-pane
+  .mat-mdc-autocomplete-panel.panel-proveedor
+  .mat-mdc-option.mdc-list-item--activated,
+.cdk-overlay-container .cdk-overlay-pane
+  .mat-mdc-autocomplete-panel.panel-proveedor
+  .mat-mdc-option.mat-mdc-option-active {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
 }
 
 .custom-grid {
   --ag-selected-row-background-color: #a3c0e8; /* o el color que quieras */
-}
-
-
-
-.btn-tomate {
-  background: #e2a661;/* #96e863;*/
-  color: #fff;
-  border: 1px solid #81c8f2;
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-weight: 900;
-  cursor: pointer;
-  transition: background .15s, border-color .15s, box-shadow .15s;
-  width: 100px;
-  height: 35px;
-}
-.btn-tomate:hover { background: #686fcd; border-color: #6291e8; }
-
-
-/* boton circulo*/
-.icon-circle {
-  width: 40px;        /* más grande el círculo */
-  height: 40px;
-  border-radius: 50%;
-  border: none;
-  background: #ffffff;
-  padding: 0;
-
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  box-shadow: 0 0 0 2px #38b000;  /* borde verde (opcional) */
-  cursor: pointer;
-  transition: box-shadow 0.15s ease, background-color 0.15s ease, transform 0.05s ease;
-}
-
-.icon-circle img {
-  width: 80%;   /* el icono ocupa casi todo el círculo */
-  height: 80%;
-  object-fit: contain;
-}
-
-.icon-circle:hover {
-  background-color: #f3f6fb;
-  box-shadow: 0 0 0 2px #1e88e5;
-  transform: translateY(-1px);
-}
-
-.icon-circle:active {
-  transform: translateY(0);
-  box-shadow: 0 0 0 1px #1e88e5;
 }

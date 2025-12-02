@@ -63,6 +63,8 @@ export interface DetalleAsientoResponse {
   idConciliacion: number;
   valorLetras: string;
   estadoIngreso: boolean;
+  autorizacionRelacionado:string;
+  fechaCadRelacionado:string; // ISO string
 }
 
 /** Opcional: fábrica de objeto con valores por defecto válidos */
@@ -131,6 +133,8 @@ export function createEmptyAsientoContableResponse(): AsientoContableResponse {
         idConciliacion: 0,
         valorLetras: '',
         estadoIngreso: true,
+        autorizacionRelacionado:'',
+        fechaCadRelacionado:'', // ISO string
       },
     ],
   };

@@ -21,6 +21,7 @@ import { NumeroChequesListComponent } from './configuracion/numero-cheques/numer
 import { CodigosContablesComponent } from './configuracion/maestro-codigos/maestro-codigos-list/maestro-codigos-list.component';
 import { AsientoFormComponent } from './configuracion/asientos/asientos-form/asiento-form.component';
 import { AsientoContableComponent } from './transacciones/asientos-contables/asientos-contables-list/asientos-contables-list.component';
+import { FacturasProveedorFormComponent } from './transacciones/facturas-proveedor/facturas-proveedor-form/facturas-proveedor-form.component';
 
 const routes: Routes = [
   {
@@ -45,6 +46,7 @@ const routes: Routes = [
       { path: 'codigoscontables', component:CodigosContablesComponent},
       { path: 'asientoscontables', component:AsientoFormComponent},
       { path: 'asientocontable', component:AsientoContableComponent},
+      { path: 'ingresodocumentos', component:FacturasProveedorFormComponent},      
       { path: '**', redirectTo: 'inicio-cg' },
     ],
   },

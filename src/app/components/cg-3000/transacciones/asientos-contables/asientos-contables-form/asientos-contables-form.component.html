@@ -4,7 +4,8 @@
       <div class="title">{{ titulo() }}</div>
 
       <div class="actions">
-        <button class="btn primary"  (click)="guardar()" [disabled]="isReadOnly()">
+        <button (click)="guardar()" [disabled]="isReadOnly()" 
+         [ngClass]="modo() === 'nuevo' ? 'btn-verde' : 'btn-tomate'">
           <ng-container *ngIf="modo() === 'nuevo'; else actualizarLbl">Guardar</ng-container>
           <ng-template #actualizarLbl>Actualizar</ng-template>
         </button>
@@ -13,11 +14,47 @@
     
 </div>
 
-<div class="content-scroll">
-    <form [formGroup]="form" class="header-form">
+<div class="content-scroll" [class.cabecera-readonly]="cabeceraBloqueada">
+    <form [formGroup]="form" class="header-form header-compact" >
       <div class="grid">
+         
         <div class="form-group">
-          <label for="idTipoAsiento">Control Tipo Asiento <span class="required" [ngClass]="{ 'edit-mode-label': modo() === 'editar' }" >*</span></label>
+          <label for="idZona">
+            Zona
+            <span class="required" [ngClass]="{ 'edit-mode-label': modo() === 'editar' }">*</span>
+          </label>
+
+          <select
+            id="idZona"
+            class="control"
+            [disabled]="isReadOnly()"
+            [ngClass]="{ 'edit-mode-select': modo() === 'editar' }"
+            formControlName="idZona"
+            [attr.title]="'Seleccione la zona'"
+          >
+            <!-- Opción placeholder -->
+            <option [ngValue]="0" disabled>Seleccione...</option>
+
+            <!-- Opciones de zonas -->
+            <option *ngFor="let z of (zonas$ | async)"  [ngValue]="z.idZona">
+              {{ z.numero }} - {{ z.nombre }}
+            </option>
+
+          </select>
+
+          <!-- Mensajes de error -->
+          <div class="error" *ngIf="form.get('idZona')?.hasError('required') && form.get('idZona')?.touched">
+            Campo obligatorio.
+          </div>
+
+          <div  class="error" *ngIf="form.get('idZona')?.hasError('min') && form.get('idZona')?.touched">
+             Campo obligatorio.
+          </div>
+        </div>
+
+
+        <div class="form-group">
+          <label for="idTipoAsiento">Tipo Asiento <span class="required" [ngClass]="{ 'edit-mode-label': modo() === 'editar' }" >*</span></label>
           <select
             id="IdTipoAsiento"
             class="control"
@@ -35,16 +72,10 @@
             Campo obligatorio.
           </div>
         </div>
+        
+        
         <div class="form-group">
-          <label>Número</label>
-          <input class="control" type="number" formControlName="numdoc" />
-          <div class="error" *ngIf="form.get('numdoc')?.invalid && form.get('numdoc')?.touched">
-              Campo obligatorio.
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Fecha</label>
+          <label>Fecha Transacción</label>
           <input
             class="control"
             type="datetime-local"
@@ -54,12 +85,63 @@
         </div>
         
         <div class="form-group">
-          <label>Concepto / Observación</label>
-          <input class="control" type="text" formControlName="observacion" />
+          <label>Fecha Ingreso</label>
+          <input
+            class="control"
+            type="datetime-local"
+            [value]="form.value.fechaingreso | date:'yyyy-MM-ddTHH:mm'"
+            (input)="form.patchValue({ fechaingreso: $any($event.target).value })"
+            readonly
+          />
+        </div>
+
+       
+
+        
+        <div class="form-group span-2-left">
+          <label>Beneficiario<span class="required">*</span></label>
+          <input
+              type="text"
+              class="control"
+              placeholder="Buscar por identificación o razón social..."
+              formControlName="beneficiario"
+              [matAutocomplete]="autoBenef"
+              [readonly]="isReadOnly()"
+              (input)="validarTexto('beneficiario', $event)"
+              [ngClass]="{
+                'ng-invalid ng-touched':
+                  form.get('beneficiario')?.invalid && form.get('beneficiario')?.touched
+              }"
+          />
+            <!-- es para realizar un proceso al seleccionar valor del list  [value]="formatearBeneficiario(c)" estaba antes-->
+            <mat-autocomplete #autoBenef="matAutocomplete"
+              (optionSelected)="onBeneficiarioSelected($event.option.value)">
+              <mat-option
+                *ngFor="let c of (beneficiariosFiltrados$ | async)"
+                [value]="c"
+              >
+                {{ c.Identificacionauxiliar }} — {{ c.Razonsocial }}
+              </mat-option>
+            </mat-autocomplete>
+            <div class="error" *ngIf="form.get('beneficiario')?.invalid && form.get('beneficiario')?.touched">
+                Campo obligatorio.
+            </div>
+        </div>
+
+        <div class="form-group span-2-right">
+          <label>Concepto<span class="required">*</span></label>
+          <textarea
+            class="control"
+            type="text"
+            formControlName="observacion"
+            (input)="validarTexto('observacion', $event)"
+          ></textarea>
           <div class="error" *ngIf="form.get('observacion')?.invalid && form.get('observacion')?.touched">
-              Campo obligatorio.
+            Campo obligatorio.
           </div>
         </div>
+        
+        <!--
 
         <div class="form-group">
           <label>Zona *</label>
@@ -68,12 +150,22 @@
               Campo obligatorio.
           </div>
         </div>
-        <div class="form-group">
-          <label>Beneficiario</label>
-          <input class="control" type="text" formControlName="beneficiario" />
+
+         <div class="form-group">
+          <label>Usuario</label>
+           <div class="constante-box">
+              {{ nombreusuario }}
+          </div>
         </div>
 
-        <!--
+        <div class="form-group">
+          <label>Número</label>
+          <input class="control" type="number" formControlName="numdoc" />
+          <div class="error" *ngIf="form.get('numdoc')?.invalid && form.get('numdoc')?.touched">
+              Campo obligatorio.
+          </div>
+        </div>
+
         <div class="field">
           <label>Tipo Asiento *</label>
           <input type="number" formControlName="idTipoAsiento" />
@@ -115,7 +207,7 @@
             (input)="form.patchValue({ fechacierre: $any($event.target).value })"
           />
         </div>
-        -->
+      
         <div class="form-group">
           <label>Estado</label>
           <select class="control" formControlName="estado">
@@ -123,12 +215,15 @@
             <option [ngValue]="false">Inactivo</option>
           </select>
         </div>
+        -->
       </div>
     </form>
 </div>
-<div class="subtoolbar">
+
+<div class="subtoolbar subtoolbar--right">
   <button class="btn" (click)="agregarLinea()" [disabled]="isReadOnly()" title="Añadir línea">
       <img src="assets/icons/aniadir.png" alt="" class="btn-add__icon">
+      Agregar Linea
   </button>
 </div>
 
@@ -143,7 +238,10 @@
   [animateRows]="true"
   (gridReady)="onGridReady($event)"
   (cellClicked)="onCellClicked($event)"
-  (cellValueChanged)="onCellValueChanged($event)">
+  (cellValueChanged)="onCellValueChanged($event)"
+  (cellKeyDown)="onCellKeyDown($event)"
+  >
+  
 </ag-grid-angular>
 
 <div class="totales">

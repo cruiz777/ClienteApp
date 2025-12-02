@@ -1,10 +1,20 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+//import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { ListadoAsientoContableResponse } from '../interfaces/responses/asientos-contables-response';
 import { AsientoContableResponse } from '../interfaces/responses/asiento-contable-response';
+import { AsientoImpresion } from '../interfaces/responses/asiento-impresion.model';
+
+/** ===== Respuesta estándar del API ===== */
+export interface ApiResponse<T> {
+  id: string;
+  type: string;
+  data: T;
+  message: string;
+}
 
 /** ===== Tipos internos para el payload que exige tu API ===== */
 interface CreateDetalleRequest {
@@ -45,6 +55,8 @@ interface CreateDetalleRequest {
   idConciliacion: number | null;
   valorLetras: string | null;
   estadoIngreso: boolean;
+  autorizacionRelacionado: string | null;
+  fechaCadRelacionado: string | null;
 }
 
 interface CreateAsientoRequest {
@@ -78,6 +90,7 @@ export class AsientosContablesService {
 
   constructor(private http: HttpClient) {}
 
+  /** ==== LISTADO ==== */
   private mapItem = (x: any): ListadoAsientoContableResponse => ({
     idCabMaestro: Number(x?.idCabMaestro ?? x?.IdCabMaestro ?? 0),
     empresa: x?.empresa ?? x?.Empresa ?? null,
@@ -93,6 +106,29 @@ export class AsientosContablesService {
     estado: Boolean(x?.estado ?? x?.Estado ?? true),
   });
 
+  GetListado(fechaInicio: string, fechaFinal: string): Observable<ListadoAsientoContableResponse[]> {
+    const params = new HttpParams()
+      .set('fechaInicio', fechaInicio)
+      .set('fechaFinal', fechaFinal);
+
+    return this.http.get<any>(`${this.baseUrl}/listado`, { params }).pipe(
+      map(raw => {
+        const items: any[] =
+          Array.isArray(raw) ? raw
+          : Array.isArray(raw?.data) ? raw.data
+          : Array.isArray(raw?.Data) ? raw.Data
+          : Array.isArray(raw?.result) ? raw.result
+          : Array.isArray(raw?.items) ? raw.items
+          : [];
+        return items.map(this.mapItem);
+      }),
+      catchError(err => {
+        console.error('GetListado error', err);
+        return of([]);
+      })
+    );
+  }
+  /*
   GetListado(): Observable<ListadoAsientoContableResponse[]> {
     return this.http.get<any>(`${this.baseUrl}/listado`).pipe(
       map(raw => {
@@ -112,6 +148,11 @@ export class AsientosContablesService {
     );
   }
 
+  */
+
+  
+  /** ==== GET BY ID ==== */
+  /*
   getById(idCabMaestro: number): Observable<AsientoContableResponse> {
     return this.http.get<AsientoContableResponse>(`${this.baseUrl}/GetById/${idCabMaestro}`).pipe(
       catchError(err => {
@@ -131,6 +172,8 @@ export class AsientosContablesService {
     );
   }
 
+  */
+
   /** ===== helpers ===== */
   private dateOnly(iso: string | null | undefined): string | null {
     if (!iso) return null;
@@ -138,6 +181,34 @@ export class AsientosContablesService {
     if (isNaN(d.getTime())) return String(iso).substring(0, 10);
     return d.toISOString().substring(0, 10);
   }
+
+  private dateTimeIso(value: any): string | null {
+    if (!value) return null;
+
+    // Si ya viene como string con 'T' desde el componente,
+    // asumimos que viene en el formato correcto (2025-11-19T10:17:35)
+    if (typeof value === 'string' && value.includes('T')) {
+      // Por si viniera con 'Z' al final, la quitamos
+      return value.replace('Z', '');
+    }
+
+    const d = new Date(value);
+    if (isNaN(d.getTime())) {
+      // si no se puede convertir a Date, devolvemos null
+      return null;
+    }
+
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    const hh = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
+    const ss = String(d.getSeconds()).padStart(2, '0');
+
+    // Ej: 2025-11-19T14:37:52  (SIN Z)
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}`;
+  }
+
   private toNull<T>(v: T | null | undefined, emptyAsNull = true): T | null {
     if (v === undefined || v === null) return null;
     if (emptyAsNull && (v as any) === '') return null;
@@ -153,7 +224,7 @@ export class AsientosContablesService {
       fechatransaccion: this.dateOnly(d.fechatransaccion),
       hora: this.toNull(d.hora),
       idZona: d.idZona ?? 0,
-      idCentroCostos: this.toNull(d.idCentroCostos),   // ✅ 0 -> null
+      idCentroCostos: this.toNull(d.idCentroCostos),
       idLocal: this.toNull(d.idLocal),
       idPlanCuentas: this.toNull(d.idPlanCuentas),
       codprePc: this.toNull(d.codprePc),
@@ -167,24 +238,26 @@ export class AsientosContablesService {
       comentario: this.toNull(d.comentario, false),
       idMovBancario: this.toNull(d.idMovBancario),
       movbancario: this.toNull(d.movbancario, false),
-      fechaingreso: this.dateOnly(d.fechaingreso),
+      fechaingreso: this.dateTimeIso(d.fechaingreso),
       cierre: this.toNull(d.cierre, false),
       fechacierre: this.dateOnly(d.fechacierre),
       conciliado: this.toNull(d.conciliado, false),
       fechaconciliado: this.dateOnly(d.fechaconciliado),
-      idSustentoTrib: this.toNull(d.idSustentoTrib),   // ✅ 0 -> null
-      idTipoCompSri: this.toNull(d.idTipoCompSri),     // ✅ 0 -> null
+      idSustentoTrib: this.toNull(d.idSustentoTrib),
+      idTipoCompSri: this.toNull(d.idTipoCompSri),
       autorizacion: this.toNull(d.autorizacion, false),
       fechacaduca: this.dateOnly(d.fechacaduca),
-      idTipoRetencion: this.toNull(d.idTipoRetencion), // ✅ 0 -> null
-      idProyecto: this.toNull(d.idProyecto),           // ✅ 0 -> null
-      idSubproyecto: this.toNull(d.idSubproyecto),     // ✅ 0 -> null
+      idTipoRetencion: this.toNull(d.idTipoRetencion),
+      idProyecto: this.toNull(d.idProyecto),
+      idSubproyecto: this.toNull(d.idSubproyecto),
       transferido: !!d.transferido,
       fechatransferido: this.dateOnly(d.fechatransferido),
       fechavencimiento: this.dateOnly(d.fechavencimiento),
-      idConciliacion: this.toNull(d.idConciliacion),   // ✅ 0 -> null
+      idConciliacion: this.toNull(d.idConciliacion),
       valorLetras: this.toNull(d.valorLetras, false),
       estadoIngreso: !!d.estadoIngreso,
+      autorizacionRelacionado: this.toNull(d.autorizacionRelacionado, false),
+      fechaCadRelacionado: this.dateOnly(d.fechaCadRelacionado),
     }));
 
     return {
@@ -193,10 +266,10 @@ export class AsientosContablesService {
       idEmpresa: h.idEmpresa,
       idTipoAsiento: h.idTipoAsiento,
       tipdoc: h.tipdoc,
-      numdoc: h.numdoc,
+      numdoc: h.numdoc,               // en "nuevo" el componente pondrá 0
       anio: h.anio,
       fechatransaccion: this.dateOnly(h.fechatransaccion)!,
-      fechaingreso: this.dateOnly(h.fechaingreso)!,
+      fechaingreso: this.dateTimeIso(h.fechaingreso)!,
       observacion: this.toNull(h.observacion, false),
       totdebe: Number(h.totdebe || 0),
       tothaber: Number(h.tothaber || 0),
@@ -206,50 +279,74 @@ export class AsientosContablesService {
       solicitado: this.toNull(h.solicitado, false),
       depto: this.toNull(h.depto, false),
       autorizado: this.toNull(h.autorizado, false),
-      homCodigo: this.toNull(h.homCodigo),             // ✅ 0 -> null
+      homCodigo: this.toNull(h.homCodigo),
       estado: !!h.estado,
       detalles,
     };
   }
 
-  /** ===== Crear (POST baseUrl) ===== */
-  crear(formValue: AsientoContableResponse): Observable<boolean> {
+  /** ===== Crear (POST) ===== se cambia de bool a number */
+  crear(formValue: AsientoContableResponse): Observable<ApiResponse<number>> {
     const body: CreateAsientoRequest = this.mapToCreateRequest(formValue);
-    return this.http.post<any>(`${this.baseUrl}`, body).pipe(
-      map(resp => this.unwrapOk(resp)),
-      catchError(err => { console.error('[crear] Error', err); return of(false); })
-    );
+    return this.http.post<ApiResponse<number>>(this.baseUrl, body);
   }
 
-  /** ===== Actualizar (PUT Update/{id}) — enviamos el mismo shape que Create ===== */
-  actualizar(idCabMaestro: number, formValue: AsientoContableResponse): Observable<boolean> {
+  /*
+  crear(formValue: AsientoContableResponse): Observable<ApiResponse<boolean>> {
     const body: CreateAsientoRequest = this.mapToCreateRequest(formValue);
-    return this.http.put<any>(`${this.baseUrl}/Update/${idCabMaestro}`, body).pipe(
-      map(resp => this.unwrapOk(resp)),
-      catchError(err => {
-        console.error('[AsientosContablesService.actualizar] Error:', err);
-        return of(false);
-      })
+    return this.http.post<ApiResponse<boolean>>(this.baseUrl, body);
+  }
+  */
+
+  // ------------------ ACTUALIZAR (PUT) ------------------
+  // Swagger: PUT /api/AsientosContables/{id}
+  actualizar(
+    idCabMaestro: number,
+    formValue: AsientoContableResponse 
+  ): Observable<ApiResponse<boolean>> {
+    const body: CreateAsientoRequest = this.mapToCreateRequest(formValue);
+    return this.http.put<ApiResponse<boolean>>(
+      `${this.baseUrl}/${idCabMaestro}`,
+      body
     );
   }
 
-  eliminar(idCabMaestro: number): Observable<boolean> {
-    return this.http.delete<any>(`${this.baseUrl}/Delete/${idCabMaestro}`).pipe(
-      map(resp => this.unwrapOk(resp)),
-      catchError(err => {
-        console.error('[AsientosContablesService.eliminar] Error:', err);
-        return of(false);
-      })
+  ///buscar asiento contable
+
+  getById(idCabMaestro: number): Observable<AsientoContableResponse> {
+  return this.http
+    .get<ApiResponse<AsientoContableResponse>>(`${this.baseUrl}/${idCabMaestro}`)
+    .pipe(
+      map(resp => resp.data)   // <- nos quedamos solo con "data"
     );
   }
 
-  /** Normaliza respuestas tipo ApiResponse<T> */
-  private unwrapOk(resp: any): boolean {
-    if (typeof resp === 'boolean') return resp;
-    if (resp?.ok !== undefined) return !!resp.ok;
-    if (resp?.success !== undefined) return !!resp.success;
-    if (resp?.succeeded !== undefined) return !!resp.succeeded;
-    if (typeof resp?.data === 'boolean') return resp.data;
-    return true;
+
+ // pendiente revisar delete el proceso y vericiar si el controlador: si el atributo es [HttpDelete("{id}")]
+  // deberías dejarlo así:
+  eliminar(idCabMaestro: number): Observable<ApiResponse<boolean>> {
+    return this.http.delete<ApiResponse<boolean>>(
+      `${this.baseUrl}/${idCabMaestro}` //sin /Delete si no existe en la API
+    );
   }
+
+  //obtiene el api para imprimir
+  getAsientoImpresion(idCabMaestro: number): Observable<AsientoImpresion> {
+    return this.http
+      .get<any>(`${this.baseUrl}/${idCabMaestro}/impresion`)
+      .pipe(
+        map(raw => {
+          // Tu handler devuelve ApiResponse<T>, pero por si acaso, soportamos varias formas.
+          const data =
+            raw?.data ??
+            raw?.Data ??
+            raw?.result ??
+            raw?.Result ??
+            raw;
+          return data as AsientoImpresion;
+        })
+      );
+  }
+
+
 }

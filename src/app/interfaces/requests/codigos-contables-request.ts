@@ -24,6 +24,8 @@ export interface CodigosContablesRequest {
   Apellido1: string;
   Apellido2: string;
   Tipoidentificacion: number;
+  EstadoRuc:boolean;
+  FechaInicioAct: string | null;
 }
 
 export interface ApiResponse<T> {

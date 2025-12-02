@@ -23,5 +23,7 @@ export interface CodigosContablesResponse {
   Apellido1: string;
   Apellido2: string;
   Tipoidentificacion: number;
+  EstadoRuc:boolean;
+  FechaInicioAct: string | null;
 }
 
