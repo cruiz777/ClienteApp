@@ -7,6 +7,13 @@ import { CodigosContablesResponse } from '../interfaces/responses/codigos-contab
 
 type ApiListResponse<T> = { ok: boolean; data: T; count?: number | null; message?: string | null; };
 type ApiResponse<T>    = { ok: boolean; data: T; message?: string | null; };
+///para buscar codigos contables
+type ApiNetResponse<T> = {
+  id: string;
+  type: string;        // "LIST", "ERROR", etc.
+  data: T;
+  message?: string | null;
+};
 
 @Injectable({ providedIn: 'root' })
 export class CodigosContablesService {
@@ -22,6 +29,28 @@ export class CodigosContablesService {
 
   getById(id: number): Observable<ApiResponse<CodigosContablesResponse>> {
     return this.http.get<ApiResponse<CodigosContablesResponse>>(`${this.baseUrl}/${id}`);
+  }
+
+  // 🔍 Nuevo método: buscar para autocompletar / combo
+  // GET /codigoscontables/buscar?idEmpresa=1&term=ABC&maxResults=20
+  buscar(
+    term: string,
+    opts: { idEmpresa: number; maxResults?: number }
+  ): Observable<ApiNetResponse<CodigosContablesResponse[]>> {
+
+    let params = new HttpParams()
+      .set('idEmpresa', String(opts.idEmpresa))
+      .set('term', term?.trim() ?? '');
+
+    if (opts.maxResults != null) {
+      params = params.set('maxResults', String(opts.maxResults));
+    }
+
+    // coincide con tu endpoint: /CodigosContables/search
+    return this.http.get<ApiNetResponse<CodigosContablesResponse[]>>(
+      `${this.baseUrl}/search`,
+      { params }
+    );
   }
 
   // Valida identificación única por empresa (excluye un IdCodContable opcional para edición)

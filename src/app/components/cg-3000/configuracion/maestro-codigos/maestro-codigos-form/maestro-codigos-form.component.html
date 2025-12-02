@@ -34,7 +34,7 @@
               </div>
         </div>
 
-        <div class="row-4">
+        <div class="row-4 row-tipo-id">
         <!--  <div class="form-group">
             <label for="idCodContable">Codigo</label>
             <input id="idCodContable" type="number" formControlName="idCodContable" placeholder="Código..." readonly />
@@ -42,7 +42,9 @@
 
           <div class="form-group">
             <label for="tipoidentificacion">Tipo Identificacion</label>
-            <input id="tipoidentificacion" type="text" formControlName="tipoidentificacion" maxlength="10" style="text-transform: uppercase" readonly />
+            <input id="tipoidentificacion" type="text" formControlName="tipoidentificacion" maxlength="10" 
+            style="text-transform: uppercase" 
+            readonly />
           </div>
 
           <div class="form-group">
@@ -51,14 +53,19 @@
               maxlength="13" placeholder="17112125.." 
               [readonly]="isEditMode"
               (keydown)="onKeyDownDocumento($event)"
+              (keypress)="soloNumeros($event)"        
+              (paste)="soloNumerosPaste($event)"     
               (blur)="onBlurDocumento()"
             />
             <div class="error" *ngIf="form.get('identificacionauxiliar')?.invalid && form.get('identificacionauxiliar')?.touched">Campo obligatorio.</div>
           </div>
 
           <div class="form-group">
-            <label for="fechaRegistro">Fecha registro <span class="required">*</span></label>
-            <input id="fechaRegistro" type="date" formControlName="fechaRegistro" />
+            <label for="fechaRegistro">Fecha registro <span class="required" 
+            ></span></label>
+            <input id="fechaRegistro" type="date" formControlName="fechaRegistro" 
+              readonly
+            />
             <div class="error" *ngIf="form.get('fechaRegistro')?.touched && form.get('fechaRegistro')?.invalid">Fecha inválida (YYYY-MM-DD).</div>
           </div>
 
@@ -67,31 +74,47 @@
         <div class="row-4">
           <div class="form-group">
             <label for="nombre1">Primer Nombre<span class="required">*</span></label>
-            <input id="nombre1" type="text" formControlName="nombre1" maxlength="200" placeholder="nombre1...." style="text-transform: uppercase" />
+            <input id="nombre1" type="text" formControlName="nombre1" maxlength="200" placeholder="nombre1...." 
+            style="text-transform: uppercase" 
+            (input)="onUppercase('nombre1')" 
+            />
             <div class="error" *ngIf="form.get('nombre1')?.invalid && form.get('nombre1')?.touched">Campo obligatorio.</div>
           </div>
 
           <div class="form-group">
             <label for="nombre2">Segundo Nombre</label>
-            <input id="nombre2" type="text" formControlName="nombre2" maxlength="200" placeholder="nombre2...." style="text-transform: uppercase" />
+            <input id="nombre2" type="text" formControlName="nombre2" maxlength="200" placeholder="nombre2...." 
+            style="text-transform: uppercase" 
+            (input)="onUppercase('nombre2')" 
+            />
             <div class="error" *ngIf="form.get('nombre2')?.invalid && form.get('nombre2')?.touched">Campo obligatorio.</div>
           </div>
 
           <div class="form-group">
-            <label for="apellido1">Primer Apellido<span class="required">*</span></label>
-            <input id="apellido1" type="text" formControlName="apellido1" maxlength="200" placeholder="apellido2...." style="text-transform: uppercase" />
+            <label for="apellido1">Primer Apellido<span class="required"></span></label>
+            <input id="apellido1" type="text" formControlName="apellido1" maxlength="200" placeholder="apellido2...." 
+            style="text-transform: uppercase" 
+            (input)="onUppercase('apellido1')" 
+            />
           </div>
 
           <div class="form-group">
-            <label for="apellido2">Segundo Apellido<span class="required">*</span></label>
-            <input id="apellido2" type="text" formControlName="apellido2" maxlength="200" placeholder="apellido2...." style="text-transform: uppercase" />
+            <label for="apellido2">Segundo Apellido<span class="required"></span></label>
+            <input id="apellido2" type="text" formControlName="apellido2" maxlength="200" placeholder="apellido2...." 
+            style="text-transform: uppercase" 
+            (input)="onUppercase('apellido2')" 
+            />
           </div>
         </div>
 
         <div class="row-razon">
           <div class="form-group form-razon">
             <label for="razonsocial">Razón social<span class="required">*</span></label>
-            <input id="razonsocial" type="text" formControlName="razonsocial" maxlength="200" placeholder="Razón social…" />
+            <input id="razonsocial" type="text" formControlName="razonsocial" maxlength="200" 
+            placeholder="Razón social…"
+             style="text-transform: uppercase" 
+            (input)="onUppercase('razonsocial')" 
+            />
             <div class="error" *ngIf="form.get('razonsocial')?.invalid && form.get('razonsocial')?.touched">Campo obligatorio.</div>
           </div>
         
@@ -111,12 +134,20 @@
         
         <div class="form-group">
           <label for="actividadComercial">Actividad comercial</label>
-          <input id="actividadComercial" type="text" formControlName="actividadComercial" maxlength="200" placeholder="Actividad…" />
+          <input id="actividadComercial" type="text" formControlName="actividadComercial" maxlength="200" 
+          placeholder="Actividad…" 
+          style="text-transform: uppercase" 
+          (input)="onUppercase('actividadComercial')"
+          />
         </div>
 
         <div class="form-group">
           <label for="direccionauxiliar">Dirección<span class="required">*</span></label>
-          <input id="direccionauxiliar" type="text" formControlName="direccionauxiliar" maxlength="200" placeholder="Av. Siempre Viva 2354" style="text-transform: uppercase" />
+          <input id="direccionauxiliar" type="text" formControlName="direccionauxiliar" maxlength="200" 
+          placeholder="Av. Siempre Viva 2354" 
+          style="text-transform: uppercase" 
+           (input)="onUppercase('direccionauxiliar')"
+          />
           <div class="error" *ngIf="form.get('direccionauxiliar')?.invalid && form.get('direccionauxiliar')?.touched">Campo obligatorio.</div>
         </div>
 
@@ -209,7 +240,6 @@
               formControlName="fechaInicioAct" />
           </div>
         </div>
-        
 
         <div class="form-actions">
           <button type="submit" class="btn-azul"  [ngClass]="isEditMode ? 'btn-rojo' : 'btn-azul'">
@@ -217,6 +247,8 @@
           </button>
           <button type="button" class="cancel-button" (click)="cancelar()">Cancelar</button>
         </div>
+
       </form>
   </div>
+  
 </div>

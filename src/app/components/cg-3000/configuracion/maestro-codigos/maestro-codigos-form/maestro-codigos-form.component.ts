@@ -95,7 +95,9 @@ export class CodigosContablesFormComponent implements OnInit {
     // 👇 aquí viene CÉDULA / RUC / PASAPORTE desde el listado
     @Inject(MAT_DIALOG_DATA)
     public data: { id?: number; tipoIdentificacion?: 'CEDULA' | 'RUC' | 'PASAPORTE' }
-  ) {}
+  ) {
+    this.dialogRef.disableClose = true;// no permite salir del componente
+  }
 
   /** Devuelve el primer valor definido/no nulo entre varios alias. */
   private pick<T = any>(obj: any, ...keys: string[]): T | null {
@@ -105,6 +107,21 @@ export class CodigosContablesFormComponent implements OnInit {
     }
     return null;
   }
+
+  /** Normaliza a MAYÚSCULAS con trim */
+  private toUpper(value: any): string {
+   // return (value ?? '').toString().trim().toUpperCase();
+    return (value ?? '').toString().toUpperCase();
+  }
+
+  /** Forzar que un control del form quede en MAYÚSCULAS mientras se escribe */
+  onUppercase(controlName: string): void {
+    const ctrl = this.form.get(controlName);
+    if (!ctrl) { return; }
+    const value = this.toUpper(ctrl.value);
+    ctrl.setValue(value, { emitEvent: false });
+  }
+
 
   // ==========================================================
   // INIT
@@ -359,6 +376,82 @@ export class CodigosContablesFormComponent implements OnInit {
   }
 
   /** Llena el formulario con los datos de la persona seleccionada */
+    /** Llena el formulario con los datos de la persona seleccionada */
+  private fillFromPersona(p: PersonaResponse): void {
+    const dir = (p.direcciones && p.direcciones.length)
+      ? (p.direcciones.find(d => d.status) ?? p.direcciones[0])
+      : null;
+
+    const tel = (p.telefonos && p.telefonos.length)
+      ? (p.telefonos.find(t => t.status) ?? p.telefonos[0])
+      : null;
+
+    const mail = (p.correos && p.correos.length)
+      ? (p.correos.find(c => c.status) ?? p.correos[0])
+      : null;
+
+    const calle   = dir?.calle   ?? '';
+    const numero  = tel?.numero  ?? '';
+    const email   = mail?.email  ?? '';
+
+    const tipoPersRaw = (p.tipoPersona || '').toUpperCase();
+    let tipoPersonaCombo = '01'; // NATURAL
+    if (tipoPersRaw.includes('JUR')) tipoPersonaCombo = '02';
+    else if (tipoPersRaw.includes('OTRO')) tipoPersonaCombo = '03';
+
+    let tipoDocTexto = '';
+    switch (p.idTipoDocumento) {
+      case 1: tipoDocTexto = 'CEDULA';    break;
+      case 2: tipoDocTexto = 'PASAPORTE'; break;
+      case 3: tipoDocTexto = 'RUC';       break;
+      default: tipoDocTexto = '';         break;
+    }
+
+    // Razón social construida desde la persona
+    const razonDesdePersona =
+      `${p.primerApellido ?? ''} ${p.segundoApellido ?? ''} ${p.primerNombre ?? ''} ${p.segundoNombre ?? ''}`
+        .replace(/\s+/g, ' ')
+        .trim();
+
+    // Valores actuales del formulario (lo que vino de BD)
+    const razonActualForm  = (this.form.get('razonsocial')?.value ?? '').toString().trim();
+    const nombreAuxActual  = (this.form.get('nombreauxiliar')?.value ?? '').toString().trim();
+
+    const esNuevo = this.esNuevo;
+
+    // Patch base: SIEMPRE actualiza estos datos desde persona
+    const patch: any = {
+      identificacionauxiliar: p.identificacion ?? '',
+      nombre1: p.primerNombre ?? '',
+      nombre2: p.segundoNombre ?? '',
+      apellido1: p.primerApellido ?? '',
+      apellido2: p.segundoApellido ?? '',
+      direccionauxiliar: calle,
+      telefonoauxiliar: numero,
+      emailauxiliar: email,
+      tipopersona: tipoPersonaCombo,
+      idCiudad: p.idCiudad ?? null,
+      tipoidentificacion: tipoDocTexto
+    };
+
+    // SOLO para registros nuevos se arma / cambia la razón social
+    if (esNuevo) {
+      const razonFinal   = (razonActualForm || razonDesdePersona).toUpperCase();
+      const nombreAuxFin = (nombreAuxActual || razonFinal).toUpperCase();
+
+      patch.razonsocial    = razonFinal;
+      patch.nombreauxiliar = nombreAuxFin;
+    }
+    // En edición NO se tocan razonsocial ni nombreauxiliar
+
+    this.form.patchValue(patch);
+
+    if (tipoDocTexto) {
+      this.setLongitudValidator(tipoDocTexto);
+    }
+  }
+
+/*
   private fillFromPersona(p: PersonaResponse): void {
     const dir = (p.direcciones && p.direcciones.length)
       ? (p.direcciones.find(d => d.status) ?? p.direcciones[0])
@@ -392,7 +485,7 @@ export class CodigosContablesFormComponent implements OnInit {
     const razonSocial =
       `${p.primerApellido ?? ''} ${p.segundoApellido ?? ''} ${p.primerNombre ?? ''} ${p.segundoNombre ?? ''}`
         .replace(/\s+/g, ' ')
-        .trim();
+        .trim();  
 
     this.form.patchValue({
       identificacionauxiliar: p.identificacion ?? '',
@@ -413,6 +506,8 @@ export class CodigosContablesFormComponent implements OnInit {
       this.setLongitudValidator(tipoDocTexto);
     }
   }
+
+*/
 
   displayPersonaLabel(option: PersonaOption | string | null): string {
     if (!option) return '';
@@ -438,6 +533,7 @@ export class CodigosContablesFormComponent implements OnInit {
   // GUARDAR
   // ==========================================================
 
+  /*
   guardar(): void {
     this.touchAndValidateAll(this.form);
 
@@ -461,14 +557,14 @@ export class CodigosContablesFormComponent implements OnInit {
 
     //validaciones de razon social////
     const esNuevo = this.esNuevo;
-    let razonSocialFinal = String(raw.razonsocial ?? '').trim();
-    let nombreAuxFinal   = String(raw.nombreauxiliar ?? '').trim();
+    let razonSocialFinal = this.toUpper(String(raw.razonsocial ?? '').trim());
+    let nombreAuxFinal   = this.toUpper(String(raw.nombreauxiliar ?? '').trim());
       
     if (esNuevo) {
-          const apellido1 = String(raw.apellido1 ?? '').trim();
-          const apellido2 = String(raw.apellido2 ?? '').trim();
-          const nombre1   = String(raw.nombre1 ?? '').trim();
-          const nombre2   = String(raw.nombre2 ?? '').trim();
+          const apellido1 = this.toUpper(String(raw.apellido1 ?? '').trim());
+          const apellido2 = this.toUpper(String(raw.apellido2 ?? '').trim());
+          const nombre1   = this.toUpper(String(raw.nombre1 ?? '').trim());
+          const nombre2   = this.toUpper(String(raw.nombre2 ?? '').trim());
 
           const unionNombres = `${apellido1} ${apellido2} ${nombre1} ${nombre2}`
             .replace(/\s+/g, ' ')
@@ -499,8 +595,8 @@ export class CodigosContablesFormComponent implements OnInit {
           }
         } else {
           // EDICIÓN: respetar lo que viene de BD / formulario
-          razonSocialFinal = String(raw.razonsocial ?? '').trim();
-          nombreAuxFinal   = String(raw.nombreauxiliar ?? '').trim();
+          razonSocialFinal = this.toUpper(String(raw.razonsocial ?? '').trim());
+          nombreAuxFinal   = this.toUpper(String(raw.nombreauxiliar ?? '').trim());
     }
 
     /////
@@ -525,7 +621,7 @@ export class CodigosContablesFormComponent implements OnInit {
       emailauxiliar: String(raw.emailauxiliar ?? ''),
       plazo: Number(raw.plazo ?? 0),
       razonsocial:razonSocialFinal, /// String(raw.razonsocial ?? '').trim(),
-      actividadComercial: String(raw.actividadComercial ?? '').trim(),
+      actividadComercial: String(raw.actividadComercial ?? '').trim().toLocaleUpperCase(),
       tipopersona: String(raw.tipopersona ?? ''),
       parterelacionada: Number(raw.parterelacionada ?? 0),
       idPersona: Number(raw.idPersona ?? 0),
@@ -549,6 +645,115 @@ export class CodigosContablesFormComponent implements OnInit {
     req$ = this.isEditMode
       ? this.codigosservice.update(idForUpdate, data) as unknown as Observable<ApiResponse<any>>
       : this.codigosservice.create(data) as unknown as Observable<ApiResponse<any>>;
+
+    req$
+      .pipe(
+        catchError(() => {
+          this.mostrarMensaje({
+            type: 'error',
+            title: 'Error',
+            message: `No se pudo ${this.isEditMode ? 'actualizar' : 'crear'} códigos contables.`,
+            showCancel: false
+          });
+          return of(null);
+        })
+      )
+      .subscribe(res => {
+        if (!res) return;
+        this.mostrarMensaje({
+          type: 'success',
+          title: 'Éxito',
+          message: `Códigos contables ${this.isEditMode ? 'actualizado' : 'creado'} correctamente.`,
+          showCancel: false
+        }).afterClosed().subscribe(() => this.dialogRef.close(true));
+      });
+  }
+  */
+
+    guardar(): void {
+    this.touchAndValidateAll(this.form);
+
+    if (this.form.invalid) {
+      const faltan = this.getMissingRequired(this.form);
+      this.mostrarMensaje({
+        type: 'warning',
+        title: 'Formulario incompleto',
+        message: faltan.length
+          ? 'Faltan campos obligatorios:\n• ' + faltan.join('\n• ')
+          : 'Completa todos los campos obligatorios.',
+        showCancel: false
+      });
+      this.focusFirstInvalid();
+      return;
+    }
+
+    const tipoTxt: string = (this.form.get('tipoidentificacion')?.value ?? '')
+      .toString()
+      .toUpperCase();
+    const tipoNum =
+      tipoTxt === 'CEDULA' ? 1 :
+      tipoTxt === 'PASAPORTE' ? 2 :
+      tipoTxt === 'RUC' ? 3 : 0;
+
+    const raw = this.form.getRawValue();
+
+    // >>> Aquí YA NO SE ARMA NADA, solo se respeta lo que hay en los campos
+    const razonSocialFinal = this.toUpper(raw.razonsocial);
+    const nombreAuxFinal   = this.toUpper(raw.nombreauxiliar);
+
+    const fechaInicioActRaw: string | null =
+      raw.fechaInicioAct && String(raw.fechaInicioAct).trim().length > 0
+        ? String(raw.fechaInicioAct).substring(0, 10)
+        : null;
+
+    const estadoRucBool: boolean =
+      typeof raw.estadoRuc === 'string'
+        ? ['ACTIVO', 'TRUE', '1'].includes(raw.estadoRuc.toString().toUpperCase())
+        : Boolean(raw.estadoRuc);
+
+    const data: CodigosContablesRequest = {
+      ...raw,
+
+      idCodContable: Number(raw.idCodContable ?? 0),
+
+      // TEXTOS EN MAYÚSCULAS (Respetando lo que puso el usuario)
+      identificacionauxiliar: this.toUpper(raw.identificacionauxiliar),
+      nombreauxiliar: nombreAuxFinal.trim(),
+      direccionauxiliar: this.toUpper(raw.direccionauxiliar).trim(),
+      telefonoauxiliar: String(raw.telefonoauxiliar ?? ''), // numérico
+      celularauxiliar: String(raw.celularauxiliar ?? ''),   // numérico
+      emailauxiliar: this.toUpper(raw.emailauxiliar).trim(),
+      plazo: Number(raw.plazo ?? 0),
+      razonsocial: razonSocialFinal.trim(),
+      actividadComercial: this.toUpper(raw.actividadComercial).trim(),
+      tipopersona: this.toUpper(raw.tipopersona),
+      parterelacionada: Number(raw.parterelacionada ?? 0),
+
+      idPersona: Number(raw.idPersona ?? 0),
+      idEmpresa: Number(raw.idEmpresa ?? 0),
+      idCiudad: Number(raw.idCiudad ?? 0),
+      idTipoContribuyente: Number(raw.idTipoContribuyente ?? 0),
+      idUsuario: Number(raw.idUsuario ?? 0),
+      estado: Boolean(raw.estado ?? true),
+
+      fechaRegistro: String(raw.fechaRegistro ?? this.todayYmd()).substring(0, 10),
+
+      // Nombres y apellidos también en MAYÚSCULAS
+      nombre1: this.toUpper(raw.nombre1).trim(),
+      nombre2: this.toUpper(raw.nombre2).trim(),
+      apellido1: this.toUpper(raw.apellido1).trim(),
+      apellido2: this.toUpper(raw.apellido2).trim(),
+
+      tipoidentificacion: tipoNum as any,
+      EstadoRuc: estadoRucBool,
+      FechaInicioAct: fechaInicioActRaw
+    } as CodigosContablesRequest;
+
+    const idForUpdate = Number(this.form.get('idCodContable')!.value || 0);
+
+    const req$: Observable<ApiResponse<any>> = this.isEditMode
+      ? (this.codigosservice.update(idForUpdate, data) as unknown as Observable<ApiResponse<any>>)
+      : (this.codigosservice.create(data) as unknown as Observable<ApiResponse<any>>);
 
     req$
       .pipe(
@@ -691,15 +896,25 @@ export class CodigosContablesFormComponent implements OnInit {
     const estadoRucStr: string = (d as any)?.estadoContribuyenteRuc ?? '';
     const estadoRucBool = estadoRucStr.toUpperCase() === 'ACTIVO';
 
+
+     // Normalizar razón social a MAYÚSCULAS
+    const razonUpper = this.toUpper(razonSocial).trim();
+    const { nombre1, nombre2, apellido1, apellido2 } =
+    this.splitRazonSocialEnNombres(razonUpper);
+
     this.form.patchValue({
       identificacionauxiliar: numero,
-      razonsocial: razonSocial,
+      razonsocial: razonUpper,//razonSocial,
       nombreauxiliar: (nombreComercial || razonSocial || '').toString().trim(),
       tipopersona: '02',
       tipoidentificacion: 'RUC',
       actividadComercial: ActividadComercial,
       estadoRuc: estadoRucBool,
-      fechaInicioAct: fechaInicioYmd
+      fechaInicioAct: fechaInicioYmd,
+      nombre1,
+      nombre2,
+      apellido1,
+      apellido2
     });
     this.toastOK(`Datos obtenidos correctamente para el RUC ${numero}.`);
   }
@@ -726,6 +941,7 @@ export class CodigosContablesFormComponent implements OnInit {
 
     const nombreaux = `${nombre1} ${nombre2} ${apellido1} ${apellido2}`.replace(/\s+/g, ' ').trim();
     const razon    = `${apellido1} ${apellido2} ${nombre1} ${nombre2}`.replace(/\s+/g, ' ').trim();
+    const fechaNacimiento2 = this.toYmd(d?.fechaNacimiento);
 
     this.form.patchValue({
       identificacionauxiliar: numero,
@@ -737,7 +953,8 @@ export class CodigosContablesFormComponent implements OnInit {
       razonsocial: razon,
       tipopersona: '01',
       tipoidentificacion: 'CEDULA',
-      direccionauxiliar: d?.lugarDomicilio ?? ''
+      direccionauxiliar: d?.calleDomicilio ?? '',
+      fechaInicioAct: fechaNacimiento2
     });
 
     this.setLongitudValidator('CEDULA');
@@ -829,4 +1046,97 @@ export class CodigosContablesFormComponent implements OnInit {
       return value;
     }, 2);
   }
+
+  //formato fecah que viene del registro civil
+  private toYmd(fecha: any): string {
+    if (!fecha) return '';
+
+    const s = String(fecha).trim();
+
+    // ya viene en formato ISO
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) {
+      return s.substring(0, 10);
+    }
+
+    // viene como DD/MM/AAAA
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+      const [dd, mm, yyyy] = s.split('/');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    // viene como DD-MM-AAAA
+    if (/^\d{2}-\d{2}-\d{4}$/.test(s)) {
+      const [dd, mm, yyyy] = s.split('-');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+
+    return '';
+  }
+
+  //numeros
+  soloNumeros(event: KeyboardEvent): void {
+    const key = event.key;
+
+    // Teclas de control que sí permitimos
+    const controlKeys = [
+      'Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight',
+      'Home', 'End'
+    ];
+    if (controlKeys.includes(key)) {
+      return; // no bloquear
+    }
+
+    // Si no es un dígito, cancelar
+    if (!/^[0-9]$/.test(key)) {
+      event.preventDefault();
+    }
+  }
+
+  /**
+   * Evita pegar contenido que no sea numérico.
+   */
+  soloNumerosPaste(event: ClipboardEvent): void {
+    const pasted = event.clipboardData?.getData('text') ?? '';
+    if (!/^\d*$/.test(pasted)) {
+      event.preventDefault();
+    }
+  }
+  // llena campos 
+
+  private splitRazonSocialEnNombres(razon: string): {
+    nombre1: string;
+    nombre2: string;
+    apellido1: string;
+    apellido2: string;
+  } {
+    const partes = (razon || '')
+      .trim()
+      .split(/\s+/)
+      .filter(p => p.length > 0);
+
+    let nombre1 = '';
+    let nombre2 = '';
+    let apellido1 = '';
+    let apellido2 = '';
+
+    if (partes.length >= 4) {
+      nombre1 = partes[0];
+      nombre2 = partes[1];
+      apellido1 = partes[2];
+      apellido2 = partes.slice(3).join(' ');
+    } else if (partes.length === 3) {
+      nombre1 = partes[0];
+      nombre2 = partes[1];
+      apellido1 = partes[2];
+    } else if (partes.length === 2) {
+      nombre1 = partes[0];
+      apellido1 = partes[1];
+    } else if (partes.length === 1) {
+      nombre1 = partes[0];
+    }
+
+    return { nombre1, nombre2, apellido1, apellido2 };
+  }
+  //
+  //
 }

@@ -13,7 +13,7 @@
     
 </div>
 
-<div class="content-scroll">
+<div class="content-scroll" [class.cabecera-readonly]="cabeceraBloqueada">
     <form [formGroup]="form" class="header-form header-compact">
       <div class="grid">
          
@@ -33,48 +33,60 @@
           >
             <!-- Opción placeholder -->
             <option [ngValue]="0" disabled>Seleccione...</option>
-
             <!-- Opciones de zonas -->
             <option *ngFor="let z of (zonas$ | async)"  [ngValue]="z.idZona">
               {{ z.numero }} - {{ z.nombre }}
             </option>
 
           </select>
-
           <!-- Mensajes de error -->
           <div class="error" *ngIf="form.get('idZona')?.hasError('required') && form.get('idZona')?.touched">
             Campo obligatorio.
           </div>
-
           <div  class="error" *ngIf="form.get('idZona')?.hasError('min') && form.get('idZona')?.touched">
              Campo obligatorio.
           </div>
+
         </div>
 
         <div class="form-group">
-          <label for="idAuxiliar">
-            Proveedor
-            <span class="required">*</span>
-          </label>
+            <label for="proveedorInput">
+              Proveedor
+              <span class="required">*</span>
+            </label>
+            <!-- Input estilo propio .control, tamaño igual a los demás -->
+            <input
+              id="proveedorInput"
+              type="text"
+              class="control"
+              placeholder="Buscar por identificación o nombre..."
+              [formControl]="proveedorCtrl"
+              [matAutocomplete]="autoProveedor"
+              [readonly]="isReadOnly()"
+              [ngClass]="{
+                'ng-invalid ng-touched':
+                  auxiliarSeleccionadoCtrl.invalid && auxiliarSeleccionadoCtrl.touched
+              }"
+            />
+            <!-- Panel de resultados -->
+            <mat-autocomplete
+              #autoProveedor="matAutocomplete"
+              [displayWith]="displayProveedor"
+              panelClass="panel-proveedor">
+              <mat-option
+                *ngFor="let aux of (filteredAuxiliares$ | async)"
+                [value]="aux">
+                {{ aux.label }}
+              </mat-option>
+            </mat-autocomplete>
+            <div
+                class="error" *ngIf="auxiliarSeleccionadoCtrl.invalid && auxiliarSeleccionadoCtrl.touched">
+                Campo obligatorio.
+            </div>
 
-          <select
-            id="idAuxiliar"
-            class="control"
-            [disabled]="isReadOnly()"
-            [formControl]="auxiliarSeleccionadoCtrl"
-            [attr.title]="'Seleccione el auxiliar contable'"
-          >
-            <option [ngValue]="0" disabled>Seleccione...</option>
-            <option *ngFor="let aux of auxiliares" [ngValue]="aux.id">
-              {{ aux.label }}
-            </option>
-          </select>
-
-          <div class="error"
-               *ngIf="auxiliarSeleccionadoCtrl.invalid && auxiliarSeleccionadoCtrl.touched">
-            Campo obligatorio.
           </div>
-        </div>
+
+
        
         <div class="form-group">
           <label>Fecha Transacción</label>
@@ -93,6 +105,7 @@
             type="datetime-local"
             [value]="form.value.fechaingreso | date:'yyyy-MM-ddTHH:mm'"
             (input)="form.patchValue({ fechaingreso: $any($event.target).value })"
+            readonly
           />
         </div>
 
@@ -101,7 +114,6 @@
             Tipo Comprobante
             <span class="required">*</span>
           </label>
-
           <select
             id="idTipoCompSri"
             class="control"
@@ -148,7 +160,7 @@
         </div>
 
         <div class="form-group">
-          <label for="nroComprobante">No. Comprobante</label>
+          <label for="nroComprobante">No. Comprobante<span class="required">*</span></label>
           <input
             id="nroComprobante"
             type="text"
@@ -171,7 +183,7 @@
        
          <!-- AUTORIZACIÓN / FECHAS CABECERA -->
         <div class="form-group">
-          <label>Autorización</label>
+          <label>Autorización<span class="required">*</span></label>
           <input
             type="text"
             class="control"
@@ -192,23 +204,39 @@
         </div>
 
         <div class="form-group">
-          <label>Fecha Caduca</label>
+          <label>Fecha Caduca<span class="required">*</span></label>
           <input
             class="control"
             type="date"
             [value]="fechacaducaCtrl.value | date:'yyyy-MM-dd'"
             (input)="fechacaducaCtrl.setValue($any($event.target).value)"
+            [ngClass]="{
+              'ng-invalid ng-touched':
+                fechacaducaCtrl.invalid && fechacaducaCtrl.touched
+            }"
           />
+          <div class="error"
+              *ngIf="fechacaducaCtrl.invalid && fechacaducaCtrl.touched">
+            Campo obligatorio.
+          </div>
         </div>
 
         <div class="form-group">
-          <label>Fecha Vencimiento</label>
+          <label>Fecha Vencimiento<span class="required">*</span></label>
           <input
             class="control"
             type="date"
             [value]="fechavencimientoCtrl.value | date:'yyyy-MM-dd'"
             (input)="fechavencimientoCtrl.setValue($any($event.target).value)"
+            [ngClass]="{
+              'ng-invalid ng-touched':
+                fechavencimientoCtrl.invalid && fechavencimientoCtrl.touched
+            }"
           />
+          <div class="error"
+              *ngIf="fechavencimientoCtrl.invalid && fechavencimientoCtrl.touched">
+              Campo obligatorio.
+          </div>
         </div>
 
         <div class="form-group span-2-right">
@@ -348,7 +376,7 @@
 
 <ag-grid-angular
   class="ag-theme-alpine grid custom-grid"
-  style="width: 100%; height: 380px"
+  style="width: 100%; height: 320px"
   [gridOptions]="gridOptions"
   [rowData]="rowData()"
   [columnDefs]="columnDefs"

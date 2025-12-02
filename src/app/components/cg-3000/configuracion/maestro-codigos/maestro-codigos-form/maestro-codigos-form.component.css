@@ -2,15 +2,25 @@
 
   width: 100%;
   max-width: 1200px;     /* más ancho en desktop */
+ /* max-height: 90vh;*/    /*nuevo */
   padding: 24px;         /* más “aire” interno */
   border: 1px solid #e5e7eb;
   border-radius: 12px;
   background: #fff;
   /*overflow: hidden;       /* importante para redondeo del header */
-  max-height: 85vh;         /* o 80–90vh según prefieras */
-  overflow-y: auto;         /* antes estaba hidden */
+  padding: 0;
+  /*
+  max-height: 85vh;        
+  overflow-y: auto;        
   overflow-x: hidden;
+  */
+   /* Para que header arriba y body abajo funcionen bien */
+  display: flex;
+  flex-direction: column;
 
+  /* Nada se debe ver por fuera (controles “por detrás” del header) */
+  overflow: hidden;
+  
 }
 
 h2 {
@@ -136,7 +146,7 @@ select:focus {
   gap: 10px;
   padding: 12px 16px;
   border-top: 1px solid #eee;
-  z-index: 1;               /* sobre inputs al hacer scroll */
+          /* sobre inputs al hacer scroll  z-index: 1;       */
 }
 
 /*  colores de los fondos de texti */
@@ -206,7 +216,7 @@ select:focus {
   grid-template-columns: 1fr auto;  /* razón social ocupa todo; estado se ajusta */
   gap: 16px;
   align-items: end;                  /* alinea con la base de los inputs */
-  margin-bottom: 20px;
+  margin-bottom: 6px;
 }
 
 /* Input al 100% del espacio */
@@ -321,12 +331,19 @@ input[formcontrolname="tipoidentificacion"]:disabled,
   top: 0;
   z-index: 10;
   background-color: #ffffff;   /* mismo fondo del formulario */
-  padding: 16px 0 8px 0;
+  padding: 16px 24px 8px 24px;   /* padding interno del header */
+  /*padding: 16px 0 8px 0;*/
+   border-bottom: 1px solid #e5e7eb;
 }
 
 /* opcional: que el título no se pegue tanto al borde */
 .form-header h2 {
   margin: 0;
+  /*nuevo*/
+  font-size: 22px;
+  font-weight: 600;
+  color: #002c6c;
+  text-align: center;
 }
 
 /* El contenedor general debe poder scrollear */
@@ -334,6 +351,15 @@ input[formcontrolname="tipoidentificacion"]:disabled,
   max-height: 100vh;          /* o la altura que uses para el dialog */
   overflow-y: auto;
   position: relative;
+}
+
+.form-body {
+  flex: 1;                       /* ocupa todo el alto restante */
+  padding: 0 24px 24px 24px;     /* antes estaba en .form-container */
+  
+  /*overflow-y: auto;    */          /* el scroll ahora es del cuerpo */
+  /*overflow-x: hidden;*/
+  padding-bottom: 32px; /* para que los últimos controles no queden tapados por los botones */
 }
 
 /* control del texto buscar*/
@@ -393,4 +419,52 @@ input[formcontrolname="tipoidentificacion"]:disabled,
 
 :host ::ng-deep .persona-search-field .mat-mdc-text-field-wrapper {
   background-color: #f5f7fa;   /* plomo muy suave para el contorno */
+}
+
+/* cabecera*/
+.page-container {
+  /* si tienes algo como padding: 24px 32px; bájale el top */
+  padding: 5px 32px 24px;   /* antes 24 / 32 / 24 */
+}
+
+/* título del listado */
+.page-container .title,
+.page-container h2 {
+  margin: 4px 0 12px 0;      /* sin margen arriba, poco abajo */
+}
+
+.row-3 .form-group {
+  margin-bottom: 6px;        /* antes 20px */
+}
+
+/* El mat-form-field también sin margen extra */
+:host ::ng-deep .persona-search-field.mat-mdc-form-field {
+  margin-bottom: 4px;        /* antes el default ~16px */
+}
+
+/* Un pequeño margen al último bloque de filas
+   para que no “choque” visualmente con los botones */
+.form-body form > .row-4:last-of-type {
+  margin-bottom: 4px;
+}
+
+.form-body form > .row-4:first-of-type .form-group {
+  margin-bottom: 8px;   /* antes 20px */
+}
+
+.row-tipo-id {
+  /* sobrescribe el repeat(4,1fr) de .row-4 */
+  grid-template-columns: 0.6fr 1.2fr 1fr;  /* ajusta las proporciones a tu gusto */
+}
+
+/* opcional: si quieres todavía un poco más corta la CEDULA */
+.row-tipo-id .form-group:first-child input {
+  /* que no se estire tanto dentro de su columna */
+  max-width: 220px;
+}
+
+.readonly-date {
+  pointer-events: none;        /* no abre el calendario ni permite cambios */
+  background-color: #eae6e6;   /* similar a tus readonly */
+  cursor: not-allowed;
 }

@@ -13,6 +13,8 @@ import { ICellEditorParams } from 'ag-grid-community';
 interface TipoRetencionCombo {
   id: number;
   label: string; // ej: "001 - RENTA (10%)"
+  codigo?: string;    // opcional por si no lo usas aquí para validaciones
+  porcentaje?: number;
 }
 
 @Component({

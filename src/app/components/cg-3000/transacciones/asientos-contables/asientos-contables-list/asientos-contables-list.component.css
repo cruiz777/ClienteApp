@@ -1,6 +1,8 @@
 .zona-container { display: flex; flex-direction: column; gap: 12px; }
 .zona-header { display: flex; align-items: center; justify-content: space-between; }
-.btn-azul { background: #1976d2; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer; }
+.btn-azul { background: #1976d2; color: #fff; border: none; 
+  padding: 8px 14px; border-radius: 6px; cursor: pointer; }
+
 
 .zona-busqueda { display: flex; align-items: center; gap: 12px; }
 .input-wrapper { position: relative; display: inline-flex; align-items: center; }
@@ -38,35 +40,6 @@
   font-weight: 700;
 }
 
-/* Aplica solo a este grid */
-.custom-grid {
-  /* Fondo general del grid */
-  --ag-background-color: #fafcff;
-
-  /* Cabecera */
-  --ag-header-background-color: #0d47a1;   /* azul */
-  --ag-header-foreground-color:  #ffffff;  /* texto cabecera */
-  --ag-header-border-color:      #0b3c8a;
-
-  /* Bordes/celdas */
-  --ag-border-color: #d0d7de;
-
-  /* Filas */
-  --ag-odd-row-background-color:  #f7fbff;
-  --ag-even-row-background-color: #ffffff;
-  --ag-row-hover-color:           #e3f2fd;
-
-  /* Texto */
-  --ag-foreground-color: #111827; /* texto normal */
-  --ag-secondary-foreground-color: #374151;
-
-  /* Filtros/inputs */
-  --ag-control-panel-background-color: #0d47a1;
-  --ag-input-border-color: #b6c2ce;
-
-  /* Tamaño fuente (opcional) */
-  --ag-font-size: 13px;
-}
 
 /* (Opcional) icono filtro y sort en blanco para cabecera oscura */
 .custom-grid .ag-icon {
@@ -96,6 +69,7 @@
   --ag-row-height: 32px;
 }
 
+
 .custom-grid {
   --ag-background-color:#dde3ee; /*fondo*/
   --ag-foreground-color:#080808; /*color de letra*/
@@ -106,9 +80,11 @@
   --ag-odd-row-background-color:#f6f8f9; /*liea que resalta #98aee0;*/
   --ag-even-row-background-color:#abc3f1;
   
-  --ag-row-hover-color:#e2efc4;
-  --ag-border-color:#adaeb0; /*lineas de la cuadricula*/
+  --ag-row-hover-color:#eaf1c3; /*#e2efc4;*/
+  --ag-border-color:#afb0ad; /*lineas de la cuadricula*/
+  --ag-font-size: 12px;
 }
+
 
 .filtros-asientos {
   display: flex;
@@ -283,3 +259,191 @@
   height: 35px;
 }
 .btn-verde:hover { background: #32af4f; border-color: #6291e8; }
+
+/* personalizacion del list*/
+
+/* Contenedor general de la página */
+.page-wrapper-asientos {
+  padding: 10px 20px;
+}
+
+/* Título centrado con poco espacio abajo */
+.page-title-row {
+  display: flex;
+  justify-content: left;
+  margin-bottom: 8px;   /* antes tenías mucho espacio, bajamos a ~8px */
+}
+
+.page-title-asientos {
+  font-size: 19px;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* Fila de filtros + botón nuevo */
+.filters-row-asientos {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;   /* alinear a la misma altura de las fechas */
+  gap: 16px;
+  margin-bottom: 6px;      /* poco espacio antes del ag-grid */
+}
+
+/* Columna izquierda (buscar + fechas + botón buscar) */
+.filters-left-asientos {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+}
+
+/* Cada control (label + input/botón) */
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 180px;
+}
+
+.filter-group label {
+  font-size: 13px;
+  margin-bottom: 2px;
+}
+
+/* Estilo base de inputs para que queden parejos */
+.control {
+  height: 36px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 13px;
+}
+
+/* Campo de búsqueda un poco más ancho */
+.search-input {
+  min-width: 260px;
+}
+
+/* Columna derecha con el botón “Nuevo Asiento” */
+.filters-right-asientos {
+  display: flex;
+  align-items: flex-end; /* misma línea que las fechas */
+}
+
+/* Botón “Nuevo Asiento” */
+.btn-nuevo-asiento {
+  height: 36px;
+  padding: 0 20px;
+  font-size: 14px;
+}
+
+/* Opcional: quitar margen extra arriba del grid si lo hubiera */
+.ag-theme-alpine.grid.custom-grid {
+  margin-top: 0;
+}
+
+/* grid mas responsive*/
+
+.grid-wrapper {
+  height: calc(100vh - 200px); /* ajusta 220 según el alto de tus filtros / título */
+}
+
+.grid-wrapper .ag-theme-alpine {
+  height: 100%;
+  width: 100%;
+}
+
+
+.custom-grid {
+  --ag-selected-row-background-color: #a3c0e8; /* o el color que quieras */
+}
+
+/* barra de botones */
+
+/* Solo para este componente */
+:host ::ng-deep .custom-grid .ag-paging-panel {
+  padding: 4px 10px;
+  gap: 8px;
+  font-size: 13px;
+}
+
+/* Botones de paginación << < > >> */
+:host ::ng-deep .custom-grid .ag-paging-button {
+  min-width: 32px;
+  height: 32px;
+  padding: 0;
+  margin: 0 2px;
+  border-radius: 50px;           /* si quieres redondos: 50% */
+  border: 1px solid #b0bec5;
+  background-color: #a3c0e8;  /* #f5f5f5;*/
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Iconitos dentro del botón */
+:host ::ng-deep .custom-grid .ag-paging-button .ag-icon {
+  font-size: 16px;
+}
+
+/* Hover */
+:host ::ng-deep .custom-grid .ag-paging-button:hover {
+  background-color: #e0f2f1;
+}
+
+/* Combo de Page Size */
+:host ::ng-deep .custom-grid .ag-paging-panel .ag-paging-page-size-select {
+  height: 32px;
+  font-size: 13px;
+  padding: 2px 6px;
+}
+
+/* boton circulo*/
+.icon-circle {
+  width: 40px;        /* más grande el círculo */
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #ffffff;
+  padding: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow: 0 0 0 2px #38b000;  /* borde verde (opcional) */
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, background-color 0.15s ease, transform 0.05s ease;
+}
+
+.icon-circle img {
+  width: 80%;   /* el icono ocupa casi todo el círculo */
+  height: 80%;
+  object-fit: contain;
+}
+
+.icon-circle:hover {
+  background-color: #f3f6fb;
+  box-shadow: 0 0 0 2px #1e88e5;
+  transform: translateY(-1px);
+}
+
+.icon-circle:active {
+  transform: translateY(0);
+  box-shadow: 0 0 0 1px #1e88e5;
+}
+
+
+.btn-tomate {
+  background: #e2a661;/* #96e863;*/
+  color: #fff;
+  border: 1px solid #81c8f2;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+  width: 100px;
+  height: 35px;
+}
+.btn-tomate:hover { background: #686fcd; border-color: #6291e8; }

@@ -1,6 +1,24 @@
 <div class="zona-container">
+  <!-- Título -->
   <div class="zona-header">
     <h2>Códigos Contables</h2>
+  </div>
+
+  <!-- Toolbar: Buscar (izquierda) + Nuevo Código (derecha) -->
+  <div class="zona-toolbar">
+    <div class="zona-busqueda">
+      <label for="search">Buscar:</label>
+      <div class="input-wrapper">
+        <input
+          id="search"
+          type="text"
+          [(ngModel)]="searchTerm"
+          (input)="buscar()"
+          placeholder="Buscar por nombre , identificacion"
+        />
+        <img src="assets/icons/icon-buscar.png" alt="Buscar" />
+      </div>
+    </div>
 
     <!-- 🔹 Menú de nueva entidad -->
     <div class="acciones-header">
@@ -28,33 +46,19 @@
     </div>
   </div>
 
-  <div class="zona-busqueda">
-    <label for="search">Buscar:</label>
-    <div class="input-wrapper">
-      <input
-        id="search"
-        type="text"
-        [(ngModel)]="searchTerm"
-        (input)="buscar()"
-        placeholder="Buscar por nombre , identificacion"
-      />
-      <img src="assets/icons/icon-buscar.png" alt="Buscar" />
-    </div>
-  </div>
-
   <div class="table-wrap" *ngIf="!loading; else loadingTpl">
     <table class="zona-tabla">
       <thead>
         <tr>
           <th style="width: 50px;">Codigo Contable</th>
           <th style="width: 50px;">Identificación</th>
-          <th style="width: 120px;">Nombre</th>
-          <th style="width: 120px;">Dirección</th>
+          <th style="width: 170px;">Razon Social</th>
+          <th style="width: 150px;">Actividad Comercial</th>
+           <!--<th style="width: 120px;">Nombre</th> -->
+          <th style="width: 100px;">Dirección</th>
           <th style="width: 80px;">No. Teléfono</th>
           <th style="width: 80px;">No. Celular</th>
-          <th style="width: 80px;">Correo</th>
-          <th style="width: 80px;">Razon Social</th>
-          <th style="width: 80px;">Actividad Comercial</th>
+          <th style="width: 60px;">Correo</th>
           <th style="width: 80px;">Código Persona</th>
           <th class="col-opcion">Acciones</th>
         </tr>
@@ -63,13 +67,13 @@
         <tr *ngFor="let it of filtered; trackBy: trackById">
           <td>{{ it.IdCodContable }}</td>
           <td>{{ it.Identificacionauxiliar }}</td>
-          <td>{{ it.Nombreauxiliar }}</td>
+          <td>{{ it.Razonsocial }}</td>
+          <td>{{ it.ActividadComercial }}</td>
+          <!--<td>{{ it.Nombreauxiliar }}</td> -->
           <td>{{ it.Direccionauxiliar }}</td>
           <td>{{ it.Telefonoauxiliar }}</td>
           <td>{{ it.Celularauxiliar }}</td>
           <td>{{ it.Emailauxiliar }}</td>
-          <td>{{ it.Razonsocial }}</td>
-          <td>{{ it.ActividadComercial }}</td>
           <td>{{ it.IdPersona }}</td>
           <td class="acciones">
             <button

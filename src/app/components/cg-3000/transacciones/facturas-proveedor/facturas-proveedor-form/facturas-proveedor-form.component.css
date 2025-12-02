@@ -24,10 +24,10 @@
   padding: 6px 12px;
   border-radius: 8px;
   border: 1px solid #d0d5dd;
-  background: #fff;
+  background:  #e1f9ca; /*#76afce;*/
   cursor: pointer;
 }
-.btn:hover { background: #f3f4f6; }
+.btn:hover { background: #d5f7b3; }
 .btn.primary {
   background: #1e88e5;
   color: white;
@@ -278,8 +278,8 @@ mat-dialog-content { max-height: 85vh; overflow: hidden; padding: 0; }
   --ag-odd-row-background-color:#f6f8f9; /*liea que resalta #98aee0;*/
   --ag-even-row-background-color:#abc3f1;
   
-  --ag-row-hover-color:#e2efc4;
-  --ag-border-color:#adaeb0; /*lineas de la cuadricula*/
+  --ag-row-hover-color:#eaf1c3; /*#e2efc4;*/
+  --ag-border-color:#afb0ad; /*lineas de la cuadricula*/
 }
 
 .btn-add{ display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .75rem;
@@ -298,7 +298,7 @@ mat-dialog-content { max-height: 85vh; overflow: hidden; padding: 0; }
   opacity: 0.9;
   background-image: linear-gradient(transparent, transparent); /* evita estilos grises del navegador */
   outline: none;
-  box-shadow: 0 0 0 3px rgba(246, 246, 244, 0.25);
+  box-shadow: 0 0 0 3px rgba(208, 208, 10, 0.25);
   border-color: #f3f3f7;
   background-color: #eae6e6;
 }
@@ -596,3 +596,79 @@ label .required {
   padding: 2px 6px;
 }
 
+/*bloquear cabecera*/
+/* Cuando la cabecera esté bloqueada, no acepta clicks / cambios */
+.cabecera-readonly {
+  pointer-events: none;       /* bloquea clicks */
+}
+
+/* Pero permitimos que los botones de Guardar/Cancelar sí funcionen
+   (si están dentro del mismo contenedor, ajústalo según tu HTML) */
+.cabecera-readonly .acciones-toolbar,
+.cabecera-readonly .acciones-toolbar * {
+  pointer-events: auto;
+}
+
+/* Estilo visual de solo lectura (opcional) */
+.cabecera-readonly .mat-input-element,
+.cabecera-readonly .mat-select-trigger {
+  background-color: #f5f5f5;
+}
+
+.cabecera-readonly .control,
+.cabecera-readonly textarea.control {
+  background-color: #ecedae; /* #f5f5f5; color de los controles bloqueados*/ 
+  color: #6b7280;
+}
+
+
+/* ====== AUTOCOMPLETE PROVEEDOR: TAMAÑO DE LETRA LISTA ====== */
+/* ================================
+   AUTOCOMPLETE PROVEEDOR (panel-proveedor)
+   ================================ */
+/* ============================================
+   AUTOCOMPLETE PROVEEDOR (panel-proveedor)
+   – tamaño de letra + color de selección
+   ============================================ */
+
+/* --- LEGACY MATERIAL (mat-autocomplete-panel / mat-option) --- */
+.cdk-overlay-container .cdk-overlay-pane
+  .mat-autocomplete-panel.panel-proveedor .mat-option {
+  font-size: 11px !important;       /* LETRA MÁS PEQUEÑA */
+  line-height: 1.2 !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+}
+
+.cdk-overlay-container .cdk-overlay-pane
+  .mat-autocomplete-panel.panel-proveedor
+  .mat-option.mat-active,
+.cdk-overlay-container .cdk-overlay-pane
+  .mat-autocomplete-panel.panel-proveedor
+  .mat-option.mat-selected {
+  background-color: #2563eb !important;  /* AZUL MÁS OSCURO */
+  color: #ffffff !important;
+}
+
+/* --- MDC MATERIAL (mat-mdc-autocomplete-panel / mat-mdc-option) --- */
+.cdk-overlay-container .cdk-overlay-pane
+  .mat-mdc-autocomplete-panel.panel-proveedor .mat-mdc-option {
+  font-size: 11px !important;
+  line-height: 1.2 !important;
+  padding-top: 2px !important;
+  padding-bottom: 2px !important;
+}
+
+.cdk-overlay-container .cdk-overlay-pane
+  .mat-mdc-autocomplete-panel.panel-proveedor
+  .mat-mdc-option.mdc-list-item--activated,
+.cdk-overlay-container .cdk-overlay-pane
+  .mat-mdc-autocomplete-panel.panel-proveedor
+  .mat-mdc-option.mat-mdc-option-active {
+  background-color: #2563eb !important;
+  color: #ffffff !important;
+}
+
+.custom-grid {
+  --ag-selected-row-background-color: #a3c0e8; /* o el color que quieras */
+}

@@ -14,6 +14,13 @@ import { TipoAsientoResponse } from 'src/app/interfaces/responses/tipo-asiento-r
 import { ZonaService } from 'src/app/services/zona.service';
 import { ZonaResponse } from 'src/app/interfaces/responses/zona-response';
 
+import { debounceTime, switchMap } from 'rxjs/operators';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatFormFieldModule }   from '@angular/material/form-field';
+import { MatInputModule }       from '@angular/material/input';
+//para impresion
+import { AsientoImpresion } from 'src/app/interfaces/responses/asiento-impresion.model';
+import { generarPdfAsiento } from '../../util/asiento-pdf.util';
 /// LOCALES
 import { LocalesService } from 'src/app/services/locales.service';
 import { LocalesResponse } from 'src/app/interfaces/responses/local-response';
@@ -29,6 +36,9 @@ import { CodContableCellEditorComponent } from './cod-contable-cell-editor.compo
 import { MovimientoBancarioService } from 'src/app/services/movimiento-bancario.service';
 import { MovimientoBancarioResponse } from 'src/app/interfaces/responses/movimiento-bancario-response';
 import { MovimientoBancarioCellEditorComponent } from './movimiento-bancario-cell-editor.component';
+
+import { Inject } from '@angular/core';
+
 /// componente adicional datos tributarios
 import {
   AsientoTributarioDialogComponent,
@@ -79,6 +89,9 @@ ModuleRegistry.registerModules([AllCommunityModule]);
     PlanCuentaCellEditorComponent,
     CodContableCellEditorComponent,
     MovimientoBancarioCellEditorComponent,
+     MatAutocompleteModule, ///para la busqueda de codigos contables
+    MatFormFieldModule, ///para la busqueda de codigos contables
+    MatInputModule, ///para la busqueda de codigos contables
   ],
   templateUrl: './asientos-contables-form.component.html',
   styleUrls: ['./asientos-contables-form.component.css'],
@@ -104,6 +117,7 @@ export class AsientosContablesFormComponent implements OnInit {
   gridOptions = {
     rowHeight: 30,
     headerHeight: 32,
+    stopEditingWhenCellsLoseFocus: true // para que desaparesca el control al perder el foco
   };
 
   private syncUsuarioEmpresa(): void {
@@ -118,24 +132,28 @@ export class AsientosContablesFormComponent implements OnInit {
 
   // PARA VALIDAR CARACTERES ESPECIALES
   private readonly allowedTextPattern = /[^0-9a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s.,;-]/g;
+  // --- NUEVO: helper común para limpiar texto ---
 
-  validarTexto(controlName: 'observacion' | 'beneficiario', event: Event): void {
-  const input = event.target as HTMLInputElement | HTMLTextAreaElement;
-  if (!input) return;
+    validarTexto(controlName: 'observacion' | 'beneficiario', event: Event): void {
+      const input = event.target as HTMLInputElement | HTMLTextAreaElement;
+      if (!input) return;
 
-  const original = input.value;
-  // eliminamos todo lo que NO está en el patrón permitido
-  const limpio = original.replace(this.allowedTextPattern, '');
+      const original = input.value;
+      // eliminamos todo lo que NO está en el patrón permitido
+      const limpio = original.replace(this.allowedTextPattern, '');
 
-  if (original !== limpio) {
-    input.value = limpio; // actualiza el input
-  }
+      if (original !== limpio) {
+        input.value = limpio; // actualiza el input
+      }
+      // actualiza el formControl sin disparar eventos extra
+      this.form.get(controlName)?.setValue(limpio, { emitEvent: false });
+    }
 
-  // actualiza el formControl sin disparar eventos extra
-  this.form.get(controlName)?.setValue(limpio, { emitEvent: false });
-}
+  
 
+  //controles y carga de datos 
 
+  cabeceraBloqueada = false;
 
   tiposAsiento$!: Observable<TipoAsientoResponse[]>;
   private tipoAsientos: Array<{ id: number; nombre: string; tipDoc: string }> = [];
@@ -152,6 +170,11 @@ export class AsientosContablesFormComponent implements OnInit {
     label: string;
   }[] = [];
 
+  //beneficiario
+  beneficiariosFiltrados$!: Observable<CodigosContablesResponse[]>;
+
+  ////end carga de datos
+
   form!: FormGroup;
 
   private gridApi!: GridApi<DetalleAsientoResponse>;
@@ -164,6 +187,7 @@ export class AsientosContablesFormComponent implements OnInit {
   ): void {
     const keyboardEvent = evt.event as KeyboardEvent;
 
+    ////
     if (keyboardEvent.key === 'Enter') {
       keyboardEvent.preventDefault();
 
@@ -182,7 +206,7 @@ export class AsientosContablesFormComponent implements OnInit {
       headerName: 'Acción',
       colId: 'accion',
       width: 80,
-      pinned: 'left',
+      pinned: 'right',
       suppressHeaderMenuButton: true,
       sortable: false,
       filter: false,
@@ -222,8 +246,10 @@ export class AsientosContablesFormComponent implements OnInit {
       editable: true,
       singleClickEdit: true,
       cellEditor: LocalCellEditorComponent,
+      cellEditorPopup: true, 
       cellEditorParams: () => ({
         locales: this.locales,
+        //stopEditingWhenCellsLoseFocus: true
       }),
       valueFormatter: (params) => {
         const v = params.value;
@@ -283,13 +309,26 @@ export class AsientosContablesFormComponent implements OnInit {
       field: 'nocomprobante',
       width: 160,
       editable: true,
+      suppressKeyboardEvent: onlyDigitsKey,   // ⬅️ bloquea letras al tipear
+      valueSetter: (params) => {
+        // por si viene un pegado con letras, limpiamos todo lo que no sea dígito
+        const soloDigitos = String(params.newValue ?? '').replace(/\D/g, '');
+        params.data.nocomprobante = soloDigitos;
+        return true;
+      },
     },
     {
       headerName: 'Cheque',
       field: 'cheque',
       width: 100,
       editable: true,
-      valueParser: numberParser,
+      suppressKeyboardEvent: onlyDigitsKey,   // ⬅️ bloquea letras al tipear
+      valueSetter: (params) => {
+        const soloDigitos = String(params.newValue ?? '').replace(/[^0-9]/g, '');
+        const n = Number(soloDigitos);
+        params.data.cheque = Number.isNaN(n) ? 0 : n;
+        return true;
+      },
     },
 
     {
@@ -352,6 +391,12 @@ export class AsientosContablesFormComponent implements OnInit {
           maxLength: 150,       // ⬅️ NO permite escribir más de 150 caracteres
           rows: 4,
           cols: 40
+        },
+        suppressKeyboardEvent: onlyAllowedComentarioKey,
+        valueSetter: (params) => {
+          const limpio = sanitizeTextoGenerico(params.newValue);
+          params.data.comentario = limpio;
+          return true;
         }
     },
     {
@@ -574,6 +619,8 @@ export class AsientosContablesFormComponent implements OnInit {
     private router: Router,
     private usuarioService: UsuarioService,
     public dialogRef: MatDialogRef<AsientosContablesFormComponent>,
+    @Inject(MAT_DIALOG_DATA)
+    public data: { id?: number; IdCabMaestro?: number; modo?: 'nuevo' | 'editar' } | null,
     private tipoasientoservice: TipoAsientoService,
     private service: AsientosContablesService,
     private zonaService: ZonaService,
@@ -594,6 +641,9 @@ export class AsientosContablesFormComponent implements OnInit {
         );
       }
     });
+
+    this.dialogRef.disableClose = true;// no permite salir del componente
+    
   }
 
   //// zonas
@@ -606,67 +656,99 @@ export class AsientosContablesFormComponent implements OnInit {
     );
   }
   /// end zonas
+  ///ID DE EDICION
+  private idEdicion: number | null = null;
 
   ngOnInit(): void {
     this.buildForm();
+    this.initAutocompleteBeneficiario();
 
-    const id = Number(this.route.snapshot.paramMap.get('id') ?? 0);
+    // 1) Catálogos comunes (sirven para nuevo y editar)
+    this.tiposAsiento$ = this.tipoasientoservice.ListadoAsiento().pipe(
+      tap((list) => {
+        this.tipoAsientos = (list ?? []).map((r: any) => ({
+          id: r.IdTipoAsiento ?? r[' IdTipoAsiento'],
+          nombre: (r.Descripcion ?? r.TipAsiento ?? '').toString().trim(),
+          tipDoc: (r.TipAsiento ?? r.CodigoDoc ?? '')
+            .toString()
+            .trim()
+            .toUpperCase(),
+        }));
+        this.syncTipDocFromCurrentId();
+      }),
+      shareReplay(1)
+    );
+
+    this.bindTipoAsientoToTipDoc();
+
+    // tipdoc siempre en mayúsculas
+    this.form.get('tipdoc')?.valueChanges.subscribe((v) => {
+      if (typeof v === 'string') {
+        const up = v.toUpperCase();
+        if (v !== up) {
+          this.form.get('tipdoc')?.setValue(up, { emitEvent: false });
+        }
+      }
+    });
+
+    // catálogos que usan solo usuarioActual, no dependen del form
+    this.cargarZonasPorEmpresa();
+    this.cargarLocales();
+    this.cargarPlanCuentas();
+    this.cargarCodigosContables();
+    this.cargarMovimientosBancarios();
+
+    // 2) Determinar el ID desde DIALOG o desde ROUTE
+    const idFromDialog = Number(this.data?.id ?? this.data?.IdCabMaestro ?? 0);
+    const idFromRoute  = Number(this.route.snapshot.paramMap.get('id') ?? 0);
+    const id = idFromDialog || idFromRoute;
+
+    console.log(
+      '>>> ASIENTO FORM - idFromDialog:',
+      idFromDialog,
+      'idFromRoute:',
+      idFromRoute,
+      'id usado:',
+      id
+    );
+
     if (id > 0) {
+      // MODO EDITAR
+      this.idEdicion = id; ///ID PARA EDICION
       this.modo.set('editar');
+      this.bloquearCabecera();  //bloquea la cabecera
       this.cargarAsiento(id);
+      // (opcional) si quieres forzar que el usuario actual quede en el form:
+      // this.syncUsuarioEmpresa();
     } else {
+      // MODO NUEVO
       this.modo.set('nuevo');
+
       const empty = createEmptyAsientoContableResponse();
       this.setFormFromHeader(empty);
       this.rowData.set([]);
 
+      // IMPORTANTE: AHORA SÍ aplicamos usuario/empresa DESPUÉS
+      this.syncUsuarioEmpresa();
+
+      // sincronizar año con la fecha de transacción
+      const fechaTransCtrl = this.form.get('fechatransaccion')!;
       this.form.patchValue(
-        { anio: getYearFromInput(this.form.get('fechatransaccion')!.value) },
+        { anio: getYearFromInput(fechaTransCtrl.value) },
         { emitEvent: false }
       );
 
-      this.form
-        .get('fechatransaccion')!
-        .valueChanges.pipe(
-          startWith(this.form.get('fechatransaccion')!.value),
+      fechaTransCtrl.valueChanges
+        .pipe(
+          startWith(fechaTransCtrl.value),
           map(getYearFromInput),
           distinctUntilChanged()
         )
         .subscribe((y) => {
           this.form.patchValue({ anio: y }, { emitEvent: false });
         });
-
-      this.tiposAsiento$ = this.tipoasientoservice.ListadoAsiento().pipe(
-        tap((list) => {
-          this.tipoAsientos = (list ?? []).map((r: any) => ({
-            id: r.IdTipoAsiento ?? r[' IdTipoAsiento'],
-            nombre: (r.Descripcion ?? r.TipAsiento ?? '').toString().trim(),
-            tipDoc: (r.TipAsiento ?? r.CodigoDoc ?? '')
-              .toString()
-              .trim()
-              .toUpperCase(),
-          }));
-          this.syncTipDocFromCurrentId();
-        }),
-        shareReplay(1)
-      );
-
-      this.bindTipoAsientoToTipDoc();
-
-      this.form.get('tipdoc')?.valueChanges.subscribe((v) => {
-        if (typeof v === 'string') {
-          const up = v.toUpperCase();
-          if (v !== up) this.form.get('tipdoc')?.setValue(up, { emitEvent: false });
-        }
-      });
-
-      this.syncUsuarioEmpresa();
-      this.cargarZonasPorEmpresa();
-      this.cargarLocales();
-      this.cargarPlanCuentas();
-      this.cargarCodigosContables();
-      this.cargarMovimientosBancarios();
     }
+
   }
 
   private buildForm(): void {
@@ -681,7 +763,7 @@ export class AsientosContablesFormComponent implements OnInit {
       numdoc: [0],
       anio: [''],
       fechatransaccion: [nowIso, [Validators.required]],
-      fechaingreso: [nowIso, [Validators.required]],
+      fechaingreso: [nowIso, [Validators.required]], //[{nowIso, disabled: true}, Validators.required]
       observacion: ['', [Validators.required, Validators.maxLength(250)]],
       totdebe: [0],
       tothaber: [0],
@@ -1009,6 +1091,21 @@ export class AsientosContablesFormComponent implements OnInit {
 
     this.saving.set(true);
 
+    let save$: import('rxjs').Observable<ApiResponse<number | boolean>>;
+
+    if (esNuevo) {
+    // create devuelve ApiResponse<long> (number)
+        save$ = this.service.crear(header) as any;
+    } else {
+      // update sigue devolviendo ApiResponse<bool>
+      const id = this.idEdicion ?? header.IdCabMaestro ?? 0;
+      save$ = this.service.actualizar(
+        header.IdCabMaestro ||
+          Number(this.route.snapshot.paramMap.get('id') ?? 0),
+        header
+      ) as any;
+    }
+    /*
     const save$ = esNuevo
       ? this.service.crear(header)
       : this.service.actualizar(
@@ -1016,23 +1113,41 @@ export class AsientosContablesFormComponent implements OnInit {
             Number(this.route.snapshot.paramMap.get('id') ?? 0),
           header
         );
-
+        */
     save$
       .pipe(
-        tap((resp: ApiResponse<boolean>) => {
-          if (resp.data && resp.message) {
-            const match = resp.message.match(/Numdoc\s*=\s*(\d+)/i);
-            this.numdocGenerado = match && match[1] ? match[1] : null;
-            console.log('Numdoc generado:', this.numdocGenerado);
-          }
-        }),
-        map((resp: ApiResponse<boolean>) => {
+        tap((resp: ApiResponse<number | boolean>) => {
+        // ===== OBTENER ID DE CABECERAMAESTRO cuando es NUEVO =====
+        if (esNuevo && typeof resp.data === 'number' && resp.data > 0) {
+          this.form.patchValue(
+            { IdCabMaestro: resp.data },
+            { emitEvent: false }
+          );
+        }
+
+        // extraer Numdoc del mensaje, si viene
+        if (resp.message) {
+          const match = resp.message.match(/Numdoc\s*=\s*(\d+)/i);
+          this.numdocGenerado = match && match[1] ? match[1] : null;
+        }
+      }),
+        
+        map((resp: ApiResponse<number | boolean>) => {
           console.log('Respuesta API Asiento:', resp);
-          if (!resp.data) {
+
+          // ok = número > 0 (create) o boolean true (update)
+          const ok =
+            typeof resp.data === 'number'
+              ? resp.data > 0
+              : !!resp.data;
+
+          if (!ok) {
             throw resp;
           }
           return true;
         }),
+
+
         catchError((err: any) => {
           let msg = 'No se ha podido registrar el asiento.';
 
@@ -1066,7 +1181,27 @@ export class AsientosContablesFormComponent implements OnInit {
             horizontalPosition: 'right',
             verticalPosition: 'top',
           });
-          this.dialogRef.close(true);
+
+          ///imprimir asiento///
+          const dlg = this.mostrarMensaje({
+              title: 'Imprimir asiento',
+              message: '¿Desea imprimir el asiento?',
+              type: 'info',
+              confirmText: 'Sí',
+              cancelText: 'No',
+              showCancel: true,
+            });
+
+            dlg.afterClosed().subscribe((imprimir) => {
+            if (imprimir) {
+              this.imprimirAsiento(); // usa el IdCabMaestro / id de ruta
+            }
+            // cerramos el formulario igual
+            this.dialogRef.close(true);
+          });
+          
+          ////
+          //this.dialogRef.close(true); EN LA IMPRESION CIERRA EL COMPONENTE
         }
       });
   }
@@ -1081,7 +1216,24 @@ export class AsientosContablesFormComponent implements OnInit {
 
   onCellValueChanged(evt: CellValueChangedEvent<DetalleAsientoResponse>): void {
     if (evt.colDef.field === 'debe' || evt.colDef.field === 'haber') {
-      this.rowData.set([...this.rowData()]);
+      
+      const filas = this.rowData() ?? [];
+      const rowIndex = evt.node.rowIndex ?? 0;
+      const lastIndex = filas.length - 1;
+
+      // refrescamos señales para que los totales se actualicen
+      this.rowData.set([...filas]);
+      //this.rowData.set([...this.rowData()]);
+      // Si cambió el DEBE, recalculamos el HABER global
+      /*if (evt.colDef.field === 'debe') {
+        //this.recalcularHaberDesdeDebe();
+        this.recalcularHaberDesdeDebe(false);
+      }
+      */
+      if (rowIndex < lastIndex) {
+          this.recalcularHaberDesdeDebe(false);
+      }
+
     }
 
     if (evt.colDef.field === 'idPlanCuentas') {
@@ -1230,17 +1382,16 @@ export class AsientosContablesFormComponent implements OnInit {
     }
 
     //
-    
     const ahora = new Date();
     const nowIso = formatLocalIso(ahora);
 
     const items = this.rowData();
-       const next = (items?.length ?? 0) + 1;
+    const next = (items?.length ?? 0) + 1;
 
     const fechaTransFormulario = this.form.value?.fechatransaccion || nowIso;
     const fechaTransaccionDetalle = normalizeToLocalIso(fechaTransFormulario);
     const anioTransaccion =
-      this.form.value?.anio || getYearFromInput(fechaTransaccionDetalle);
+    this.form.value?.anio || getYearFromInput(fechaTransaccionDetalle);
 
     const fechaIngresoIso = nowIso;
     const horaIngreso = getTimeFromInput(fechaIngresoIso);
@@ -1268,7 +1419,7 @@ export class AsientosContablesFormComponent implements OnInit {
       beneficiario: this.form.value?.beneficiario ?? '',
       debe: 0,
       haber: 0,
-      comentario: '',
+      comentario: this.form.value?.observacion ?? '',///'',
       idMovBancario: 0, // inicial 0 (ninguno) -> debe ser cambiado por el usuario
       movbancario: '',
 
@@ -1306,12 +1457,50 @@ export class AsientosContablesFormComponent implements OnInit {
         colKey: 'codprePc',
       });
     });
+
+    //bloquear cabecera debe bloquear en los 2 tiempos
+    //if (this.modo() === 'nuevo') {
+      this.bloquearCabecera();
+      //this.recalcularHaberDesdeDebe();
+      this.recalcularHaberDesdeDebe(true);
+    //}
+
   }
 
+  /*
   eliminarLinea(item: DetalleAsientoResponse): void {
     const items = (this.rowData() ?? []).filter((x) => x !== item);
     items.forEach((d, i) => (d.numlinea = i + 1));
     this.rowData.set(items);
+    //reclaula el haber
+    //this.recalcularHaberDesdeDebe();
+    this.recalcularHaberDesdeDebe(false);
+  }
+*/
+
+  eliminarLinea(item: DetalleAsientoResponse): void {
+    const actuales = this.rowData() ?? [];
+
+    // índice de la fila eliminada en la lista original
+    const deletedIndex = actuales.indexOf(item);
+
+    // nueva lista sin la fila eliminada
+    const items = actuales.filter((x) => x !== item);
+
+    // renumerar líneas
+    items.forEach((d, i) => (d.numlinea = i + 1));
+
+    // actualizar grid
+    this.rowData.set(items);
+
+    // ¿la que borraste era la última de la lista original?
+    const eraUltima = deletedIndex === actuales.length - 1;
+
+    // 🔴 Si borraste la ÚLTIMA → NO recalculamos saldo, solo cambian totales.
+    // 🟢 Si borraste una del medio → recalculamos la última (saldo automático).
+    if (!eraUltima) {
+      this.recalcularHaberDesdeDebe(false);
+    }
   }
 
   isReadOnly(): boolean {
@@ -1405,6 +1594,255 @@ export class AsientosContablesFormComponent implements OnInit {
       });
     });
   }
+
+  ///bloquear cabecera
+  private bloquearCabecera(): void {
+    if (this.cabeceraBloqueada) { 
+      return; 
+    }
+    // Solo marcamos el flag. NO deshabilitamos controles.
+    this.cabeceraBloqueada = true;
+  }
+  //////
+ /*
+  private recalcularHaberDesdeDebe(forzar: boolean = false): void {
+  const filas = this.rowData() ?? [];
+  if (!filas.length) { return; }
+
+  const totalDebe = filas.reduce(
+    (acc, f) => acc + (Number(f.debe) || 0),
+    0
+  );
+
+  // Si no hay saldo en debe o solo hay una línea, NO hay línea de haber automática
+  if (filas.length < 2 || totalDebe === 0) {
+    // si quieres limpiar haberes cuando solo hay una línea, puedes hacerlo aquí
+    // pero OJO: sólo si lo forzamos, para no tocar lo que el usuario puso a mano
+    if (forzar) {
+      filas.forEach(f => { f.haber = 0; });
+      this.rowData.set([...filas]);
+      this.gridApi?.refreshCells({
+        force: true,
+        columns: ['debe', 'haber'],
+      });
+    }
+    return;
+  }
+
+  // ¿Existe actualmente alguna línea con HABER > 0?
+  const tieneHaber = filas.some(f => Number(f.haber) > 0);
+
+  // Si NO hay ninguna línea en HABER y NO estamos forzando (no se acaba de agregar línea),
+  // respetamos lo que el usuario está digitando y NO recalculamos nada.
+  if (!tieneHaber && !forzar) {
+    return;
+  }
+
+  // A partir de aquí sí recalculamos:
+  // siempre la ÚLTIMA línea será la línea de HABER automática
+  const filaHaber = filas[filas.length - 1];
+
+  filas.forEach(f => {
+    if (f === filaHaber) {
+      f.debe = 0; // la línea de haber no debe tener DEBE
+      f.haber = Number(totalDebe.toFixed(2));
+    } else {
+      f.haber = 0; // las demás líneas sólo manejan DEBE
+    }
+  });
+
+  this.rowData.set([...filas]);
+  this.gridApi?.refreshCells({
+    force: true,
+    columns: ['debe', 'haber'],
+  });
+}
+
+*/
+
+  private recalcularHaberDesdeDebe(forzar: boolean = false): void {
+    const filas = this.rowData() ?? [];
+
+    // Si no hay al menos 2 filas, no tiene sentido calcular saldo
+    if (filas.length < 2) {
+      // opcional: si quieres limpiar el haber de la única línea cuando se fuerza
+      if (forzar && filas.length === 1) {
+        filas[0].haber = 0;
+        filas[0].debe = filas[0].debe || 0;
+        this.rowData.set([...filas]);
+        this.gridApi?.refreshCells({
+          force: true,
+          columns: ['debe', 'haber'],
+        });
+      }
+      return;
+    }
+
+    const lastIndex = filas.length - 1;
+    const filaSaldo = filas[lastIndex];
+
+    // ¿La última fila ya tiene un HABER (es línea de saldo)?
+    const lastTieneHaber = Number(filaSaldo.haber || 0) > 0;
+
+    // 👉 Si NO estamos forzando (no es "Agregar Línea")
+    //    y la última fila NO tiene HABER, NO tocamos nada.
+    //    Solo se recalculan los totales automáticamente por las signals.
+    if (!forzar && !lastTieneHaber) {
+      return;
+    }
+
+    // --- A partir de aquí sí recalculamos la línea de saldo (última fila) ---
+
+    // Total Debe de TODAS las filas
+    const totalDebe = filas.reduce(
+      (acc, f) => acc + (Number(f.debe) || 0),
+      0
+    );
+
+    // Total Haber de TODAS las filas EXCEPTO la última (saldo)
+    const totalHaberSinSaldo = filas.reduce((acc, f, idx) => {
+      if (idx === lastIndex) return acc; // saltamos la fila saldo
+      return acc + (Number(f.haber) || 0);
+    }, 0);
+
+    // Saldo que debe ir en la última fila (HABER)
+    let saldo = totalDebe - totalHaberSinSaldo;
+    saldo = Number(saldo.toFixed(2));
+
+    if (saldo < 0) {
+      saldo = 0; // opcional: nunca negativo
+    }
+
+    // La fila de saldo solo lleva HABER, no DEBE
+    filaSaldo.debe = 0;
+    filaSaldo.haber = saldo;
+
+    // Disparar actualización de señales y grilla
+    this.rowData.set([...filas]);
+    this.gridApi?.refreshCells({
+      force: true,
+      columns: ['debe', 'haber'],
+    });
+  }
+
+
+///
+formatearBeneficiario(c: CodigosContablesResponse): string {
+  // Ajusta estas propiedades según tu CodigosContablesResponse real
+  // Por lo que usas en el grid, parecen ser Identificacionauxiliar y Razonsocial
+  return `${c.Identificacionauxiliar} - ${c.Razonsocial}`.trim();
+}
+
+private initAutocompleteBeneficiario(): void {
+  const ctrl = this.form.get('beneficiario');
+  if (!ctrl) return;
+
+  this.beneficiariosFiltrados$ = ctrl.valueChanges.pipe(
+    debounceTime(300),
+
+    // Aseguramos que siempre trabajamos con string
+    map((value: any) => {
+      if (typeof value === 'string') {
+        return value;
+      }
+      // Si viene un objeto (cuando seleccionas una opción del listado)
+      // lo tratamos como cadena vacía para que se limpien las sugerencias.
+      return '';
+    }),
+
+    distinctUntilChanged(),
+
+    switchMap((term: string) => {
+      const empresaId = this.usuarioActual?.id_empresa ?? 0;
+      if (!empresaId) return of([]);
+
+      const texto = term.trim();
+      if (texto.length < 2) {
+        // Si está vacío o menos de 2 caracteres, limpiar la lista
+        return of([]);
+      }
+
+      return this.codigosContablesService
+        .buscar(texto, { idEmpresa: empresaId, maxResults: 20 })
+        .pipe(
+          map(r => r.data ?? []),
+          catchError(() => of([]))
+        );
+    })
+  );
+}
+
+
+// poara selecionar parte de lo visual
+onBeneficiarioSelected(c: CodigosContablesResponse): void {
+  if (!c) return;
+
+  const razon = (c.Razonsocial ?? '').toString().trim();
+
+  // Solo guardamos la razón social en el formControl
+  this.form.get('beneficiario')?.setValue(razon, { emitEvent: false });
+}
+
+//
+  imprimirAsiento(): void {
+    const id = Number(
+      this.form.get('IdCabMaestro')?.value ||
+      this.route.snapshot.paramMap.get('id') ||
+      0
+    );
+
+    if (!id || id <= 0) {
+      this.snack.open(
+        'Debe guardar el asiento antes de poder imprimirlo.',
+        'Cerrar',
+        {
+          duration: 4000,
+          horizontalPosition: 'right',
+          verticalPosition: 'top',
+        }
+      );
+      return;
+    }
+
+    this.loading.set(true);
+
+    this.service.getAsientoImpresion(id)
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe({
+        next: (asiento: AsientoImpresion) => {
+          if (!asiento) {
+            this.snack.open(
+              'No se encontraron datos para la impresión del asiento.',
+              'Cerrar',
+              {
+                duration: 4000,
+                horizontalPosition: 'right',
+                verticalPosition: 'top',
+              }
+            );
+            return;
+          }
+          //this.generarPdfAsiento(asiento); ahora entra directo con el utilitario
+          generarPdfAsiento(asiento, this.nombreusuario);
+        },
+        error: (err) => {
+          console.error('Error al obtener asiento para impresión:', err);
+          this.snack.open(
+            'Ocurrió un error al preparar la impresión del asiento.',
+            'Cerrar',
+            {
+              duration: 4000,
+              horizontalPosition: 'right',
+              verticalPosition: 'top',
+            }
+          );
+        }
+      });
+  }
+
+///
+///
+
 }
 
 /** Helpers de celdas */
@@ -1513,3 +1951,84 @@ function normalizeToLocalIso(v: any): string {
   }
   return formatLocalIso(d);
 }
+
+function onlyDigitsKey(params: any): boolean {
+  const e = params.event as KeyboardEvent;
+  const key = e.key;
+
+  // Permitir teclas de edición / navegación
+  if (
+    key === 'Backspace' ||
+    key === 'Delete' ||
+    key === 'Tab' ||
+    key === 'ArrowLeft' ||
+    key === 'ArrowRight' ||
+    key === 'ArrowUp' ||
+    key === 'ArrowDown' ||
+    key === 'Home' ||
+    key === 'End' ||
+    key === 'Enter'
+  ) {
+    return false; // no suprimir nada especial
+  }
+
+  // Permitir combinaciones Ctrl/Cmd (copiar, pegar, seleccionar todo, etc.)
+  if (e.ctrlKey || e.metaKey) {
+    return false;
+  }
+
+  // Permitir solo dígitos 0–9
+  if (/^[0-9]$/.test(key)) {
+    return false; // se deja pasar
+  }
+
+  // Cualquier otra tecla (letras, comillas, etc.) se BLOQUEA
+  e.preventDefault();      // ⬅⬅ esto es lo que te faltaba
+  return true;             // le dice al grid que no haga nada más
+}
+
+function sanitizeTextoGenerico(value: any): string {
+  const raw = (value ?? '').toString();
+  // permite letras (con tildes y ñ), números, espacio, punto, coma, punto y coma y guion
+  return raw.replace(/[^0-9a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s.,;-]/g, '');
+}
+
+function onlyAllowedComentarioKey(params: any): boolean {
+  const e = params.event as KeyboardEvent;
+  const key = e.key;
+
+  // Teclas de edición / navegación permitidas
+  if (
+    key === 'Backspace' ||
+    key === 'Delete' ||
+    key === 'Tab' ||
+    key === 'Enter' ||
+    key === 'Escape' ||
+    key === 'ArrowLeft' ||
+    key === 'ArrowRight' ||
+    key === 'ArrowUp' ||
+    key === 'ArrowDown' ||
+    key === 'Home' ||
+    key === 'End'
+  ) {
+    return false; // no suprimir
+  }
+
+  // Combos Ctrl/Cmd (copiar, pegar, etc.) permitidos
+  if (e.ctrlKey || e.metaKey) {
+    return false;
+  }
+
+  // SOLO permitimos: letras (con tildes y ñ), números, espacio, punto, coma, punto y coma y guion
+  const allowedCharRegex = /^[0-9a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s.,;-]$/;
+
+  if (allowedCharRegex.test(key)) {
+    return false; // carácter permitido
+  }
+
+  // Cualquier otro carácter (comillas, apóstrofes, símbolos raros, etc.) se BLOQUEA
+  e.preventDefault();   // evita que se escriba en el textarea
+  return true;          // indica al grid que suprima el evento
+}
+
+

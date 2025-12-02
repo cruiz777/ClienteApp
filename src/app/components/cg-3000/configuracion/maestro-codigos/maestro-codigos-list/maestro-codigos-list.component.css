@@ -1,20 +1,25 @@
 .zona-container {
-  padding: 40px;
+  padding: 16px 24px 20px;     /* antes 40px */
   background-color: #ffffff;
   font-family: 'Inter', sans-serif;
 }
 
 .zona-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: left;
-  margin-bottom: 25px;
+ display: flex;
+  align-items: center;
+  margin-bottom: 6px;     /* poco espacio debajo del título */
 }
 
 .zona-header h2 {
   font-size: 22px;
   color: #002c6c;
   font-weight: 700;
+}
+.zona-toolbar {
+  display: flex;
+  align-items: flex-end;  /* alinea base del input y botón */
+  gap: 16px;
+  margin-bottom: 6px;     /* casi pegado a la tabla */
 }
 
 .btn-nueva-zona {
@@ -35,12 +40,12 @@
 .zona-busqueda {
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 0;            /* ya no deja hueco extra */
 }
 
 .zona-busqueda label {
-  margin-right: 10px;
-  font-size: 14px;
+  margin-right: 6px;
+  font-size: 13px;
   color: #002c6c;
 }
 
@@ -49,21 +54,21 @@
 }
 
 .input-wrapper input {
-  padding: 6px 30px 6px 10px;
+ padding: 4px 26px 4px 8px;   /* más compacto */
   border: none;
   border-bottom: 1px solid #ccd5e2;
   outline: none;
-  font-size: 14px;
-  width: 250px;
+  font-size: 13px;
+  width: 260px;
 }
 
 .input-wrapper img {
   position: absolute;
-  right: 6px;
+  right: 4px;
   top: 50%;
   transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   opacity: 0.7;
 }
 
@@ -72,7 +77,7 @@
   width: 100%;
   border-collapse: collapse;
   border: 1px solid #ccd5e2;
-  font-size: 12px;
+  font-size: 11px;
 }
 
 .zona-tabla thead tr {
@@ -83,7 +88,7 @@
 .zona-tabla th,
 .zona-tabla td {
   border: 1px solid #ccd5e2;
-  padding: 10px 15px;
+  padding: 6px 8px;
   text-align: left;
 }
 
@@ -180,5 +185,25 @@
 
 }
 
+.acciones-header {
+  display: flex;
+  align-items: center;
+  margin-left: auto;      /* truco: empuja el botón al extremo derecho */
+}
 
+
+
+.btn-verde {
+  background: #85c160;/* #96e863;*/
+  color: #fff;
+  border: 1px solid #81c8f2;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+  /*width: 200px;
+  height: 500px;*/
+}
+.btn-verde:hover { background: #32af4f; border-color: #6291e8; }
 

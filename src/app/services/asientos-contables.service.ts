@@ -1,10 +1,12 @@
 import { Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+//import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { ListadoAsientoContableResponse } from '../interfaces/responses/asientos-contables-response';
 import { AsientoContableResponse } from '../interfaces/responses/asiento-contable-response';
+import { AsientoImpresion } from '../interfaces/responses/asiento-impresion.model';
 
 /** ===== Respuesta estándar del API ===== */
 export interface ApiResponse<T> {
@@ -104,6 +106,29 @@ export class AsientosContablesService {
     estado: Boolean(x?.estado ?? x?.Estado ?? true),
   });
 
+  GetListado(fechaInicio: string, fechaFinal: string): Observable<ListadoAsientoContableResponse[]> {
+    const params = new HttpParams()
+      .set('fechaInicio', fechaInicio)
+      .set('fechaFinal', fechaFinal);
+
+    return this.http.get<any>(`${this.baseUrl}/listado`, { params }).pipe(
+      map(raw => {
+        const items: any[] =
+          Array.isArray(raw) ? raw
+          : Array.isArray(raw?.data) ? raw.data
+          : Array.isArray(raw?.Data) ? raw.Data
+          : Array.isArray(raw?.result) ? raw.result
+          : Array.isArray(raw?.items) ? raw.items
+          : [];
+        return items.map(this.mapItem);
+      }),
+      catchError(err => {
+        console.error('GetListado error', err);
+        return of([]);
+      })
+    );
+  }
+  /*
   GetListado(): Observable<ListadoAsientoContableResponse[]> {
     return this.http.get<any>(`${this.baseUrl}/listado`).pipe(
       map(raw => {
@@ -123,7 +148,11 @@ export class AsientosContablesService {
     );
   }
 
+  */
+
+  
   /** ==== GET BY ID ==== */
+  /*
   getById(idCabMaestro: number): Observable<AsientoContableResponse> {
     return this.http.get<AsientoContableResponse>(`${this.baseUrl}/GetById/${idCabMaestro}`).pipe(
       catchError(err => {
@@ -142,6 +171,8 @@ export class AsientosContablesService {
       })
     );
   }
+
+  */
 
   /** ===== helpers ===== */
   private dateOnly(iso: string | null | undefined): string | null {
@@ -254,20 +285,68 @@ export class AsientosContablesService {
     };
   }
 
-  /** ===== Crear (POST) ===== */
+  /** ===== Crear (POST) ===== se cambia de bool a number */
+  crear(formValue: AsientoContableResponse): Observable<ApiResponse<number>> {
+    const body: CreateAsientoRequest = this.mapToCreateRequest(formValue);
+    return this.http.post<ApiResponse<number>>(this.baseUrl, body);
+  }
+
+  /*
   crear(formValue: AsientoContableResponse): Observable<ApiResponse<boolean>> {
     const body: CreateAsientoRequest = this.mapToCreateRequest(formValue);
     return this.http.post<ApiResponse<boolean>>(this.baseUrl, body);
   }
+  */
 
-  /** ===== Actualizar (PUT) ===== */
-  actualizar(idCabMaestro: number, formValue: AsientoContableResponse): Observable<ApiResponse<boolean>> {
+  // ------------------ ACTUALIZAR (PUT) ------------------
+  // Swagger: PUT /api/AsientosContables/{id}
+  actualizar(
+    idCabMaestro: number,
+    formValue: AsientoContableResponse 
+  ): Observable<ApiResponse<boolean>> {
     const body: CreateAsientoRequest = this.mapToCreateRequest(formValue);
-    return this.http.put<ApiResponse<boolean>>(`${this.baseUrl}/Update/${idCabMaestro}`, body);
+    return this.http.put<ApiResponse<boolean>>(
+      `${this.baseUrl}/${idCabMaestro}`,
+      body
+    );
   }
 
-  /** ===== Eliminar (DELETE) ===== */
-  eliminar(idCabMaestro: number): Observable<ApiResponse<boolean>> {
-    return this.http.delete<ApiResponse<boolean>>(`${this.baseUrl}/Delete/${idCabMaestro}`);
+  ///buscar asiento contable
+
+  getById(idCabMaestro: number): Observable<AsientoContableResponse> {
+  return this.http
+    .get<ApiResponse<AsientoContableResponse>>(`${this.baseUrl}/${idCabMaestro}`)
+    .pipe(
+      map(resp => resp.data)   // <- nos quedamos solo con "data"
+    );
   }
+
+
+ // pendiente revisar delete el proceso y vericiar si el controlador: si el atributo es [HttpDelete("{id}")]
+  // deberías dejarlo así:
+  eliminar(idCabMaestro: number): Observable<ApiResponse<boolean>> {
+    return this.http.delete<ApiResponse<boolean>>(
+      `${this.baseUrl}/${idCabMaestro}` //sin /Delete si no existe en la API
+    );
+  }
+
+  //obtiene el api para imprimir
+  getAsientoImpresion(idCabMaestro: number): Observable<AsientoImpresion> {
+    return this.http
+      .get<any>(`${this.baseUrl}/${idCabMaestro}/impresion`)
+      .pipe(
+        map(raw => {
+          // Tu handler devuelve ApiResponse<T>, pero por si acaso, soportamos varias formas.
+          const data =
+            raw?.data ??
+            raw?.Data ??
+            raw?.result ??
+            raw?.Result ??
+            raw;
+          return data as AsientoImpresion;
+        })
+      );
+  }
+
+
 }

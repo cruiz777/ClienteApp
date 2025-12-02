@@ -15,7 +15,7 @@ export interface ApiResponse<T> {
 export class FacturasProveedorService {
   // 🔹 AJUSTA ESTA URL SEGÚN TU API
   //private baseUrl = '/api/AsientosContables'; ///facturas-proveedor
-  private readonly baseUrl = `${environment.transactionUrl}/AsientosContables`;
+  private readonly baseUrl = `${environment.transactionUrl}/FacturaProveedor`;
 
   constructor(private http: HttpClient) {}
 
@@ -25,14 +25,23 @@ export class FacturasProveedorService {
 
   crear(
     request: AsientoContableResponse
+  ): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(this.baseUrl, request);
+  }
+
+  /*
+  crear(
+    request: AsientoContableResponse
   ): Observable<ApiResponse<boolean>> {
     return this.http.post<ApiResponse<boolean>>(this.baseUrl, request);
   }
 
+  */  
   actualizar(
     id: number,
     request: AsientoContableResponse
   ): Observable<ApiResponse<boolean>> {
     return this.http.put<ApiResponse<boolean>>(`${this.baseUrl}/${id}`, request);
   }
+
 }

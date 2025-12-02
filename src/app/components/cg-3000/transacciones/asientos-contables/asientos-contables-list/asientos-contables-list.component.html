@@ -1,25 +1,24 @@
-/<!---->
-
-<div class="zona-container">
-  <div class="zona-header">
-    <h2>Listado Asientos Contables</h2>
-    <button type="button" class="btn-azul" (click)="abrirCrear()" >Nuevo Asiento</button>
+<div class="page-wrapper-asientos">
+  <div class="page-title-row">
+    <h2 class="page-title-asientos">Listado Asientos Contables</h2>
   </div>
 
-  <div class="filtros-asientos">
-    <label for="search">Buscar:</label>
-    <div class="input-wrapper">
-      <input
-        id="search"
-        type="text"
-        class="search-input"
-        [(ngModel)]="searchTerm"
-        placeholder="Buscar (empresa, beneficiario, tipo, numdoc...)"
-      />
-      <img src="assets/icons/icon-buscar.png" alt="Buscar" />
-    </div>
+  <div class="filters-row-asientos">
 
-        <div class="filtro-item">
+    <div class="filters-left-asientos">
+      <label for="search">Buscar:</label>
+      <div class="input-wrapper">
+        <input
+          id="search"
+          type="text"
+          class="search-input"
+          [(ngModel)]="searchTerm"
+          placeholder="Buscar (empresa, beneficiario, tipo, numdoc...)"
+        />
+        <img src="assets/icons/icon-buscar.png" alt="Buscar" />
+      </div>
+
+      <div class="filtro-item">
         <label for="fechaDesde">Fecha Inicio</label>
         <input
           id="fechaDesde"
@@ -41,12 +40,55 @@
         />
       </div>
 
-      <button class="btn-buscar btn-verde"  (click)="aplicarFiltros()" placeholder="Buscar asientos" >
-        Buscar
+      <button
+        type="button"
+        class="icon-circle"
+        (click)="buscar()"
+        title="Buscar"
+      >
+       <img src="assets/icons/buscar-down1.png" alt="Buscar" />
       </button>
+
+      <!-- ICONOS REDONDOS “OCULTANDO” QUE SON BOTONES -->
+      <button
+        type="button"
+        class="icon-circle"
+        title="Exportar a Excel"
+        (click)="onExportExcel()"
+      >
+        <img src="assets/icons/xls.png" alt="Excel" />
+      </button>
+
+      <button
+        type="button"
+        class="icon-circle"
+        title="Exportar a PDF"
+        (click)="onExportPdf()"
+      >
+        <img src="assets/icons/pdf-down.png" alt="PDF" />
+      </button>
+    </div>
+
+    <div class="filters-right-asientos">
+      <!-- si ya no quieres los botones azules de Excel/PDF, puedes borrarlos -->
+      <!--
+      <button type="button" class="btn-azul" (click)="onExportExcel()">
+        Excel
+      </button>
+
+      <button type="button" class="btn-azul" (click)="onExportPdf()">
+        PDF
+      </button>
+      -->
+
+      <button type="button" class="btn-azul" (click)="abrirCrear()">
+        Nuevo Asiento
+      </button>
+    </div>
+
   </div>
 
-  <div class="table-wrap" *ngIf="!loading; else loadingTpl">
+  <div class="grid-wrapper">
     <ag-grid-angular
       class="ag-theme-alpine grid custom-grid"
       [gridOptions]="gridOptions"
@@ -58,13 +100,10 @@
       [paginationPageSize]="20"
       [quickFilterText]="searchTerm"
       (gridReady)="onGridReady($event)"
-      (cellClicked)="onCellClicked($event)">
+      (cellClicked)="onCellClicked($event)"
+    >
     </ag-grid-angular>
   </div>
 
   <div *ngIf="error" class="error">{{ error }}</div>
-
-  <ng-template #loadingTpl>
-    <div class="loading">Cargando...</div>
-  </ng-template>
 </div>
