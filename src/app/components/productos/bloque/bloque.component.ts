@@ -240,7 +240,7 @@ export class BloqueComponent implements OnInit {
       {
         field: 'gcpBrick',
         headerName: 'GCP Brick',
-        editable: false,
+        editable: true,
         cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100
 
       }
@@ -309,13 +309,123 @@ export class BloqueComponent implements OnInit {
 
 
 
-  @HostListener('paste', ['$event'])
-  manejarPegado(event: ClipboardEvent) {
-    const data = event.clipboardData?.getData('text/plain');
-    if (data) {
-      this.textoPegado = data;
-    }
+@HostListener('paste', ['$event'])
+onPasteExcelToGrid(event: ClipboardEvent): void {
+  // 👀 Solo manejar pegado cuando el foco está dentro del AG Grid
+  const target = event.target as HTMLElement | null;
+  if (!target || !target.closest('.ag-root')) {
+    // El pegado ocurrió en otro control (ej: textareas de GTIN/Factor), lo dejamos normal
+    return;
   }
+
+  if (!this.gridApi) {
+    return;
+  }
+
+  const clipboardData = event.clipboardData || (window as any).clipboardData;
+  if (!clipboardData) {
+    return;
+  }
+
+  const text: string = clipboardData.getData('text/plain');
+  if (!text) {
+    return;
+  }
+
+  // Evitamos el pegado por defecto
+  event.preventDefault();
+
+  // 📋 Texto de Excel → filas y columnas
+  const rows: string[] = text
+    .split(/\r?\n/)
+    .filter((r: string) => r.trim() !== '');
+
+  if (!rows.length) {
+    return;
+  }
+
+  // 🔎 Celda inicial: donde el usuario tiene el foco
+  const focus = this.gridApi.getFocusedCell();
+
+  let startRowIndex: number;
+  let startField: string | null;
+
+  if (focus) {
+    // Caso normal: el usuario hizo clic en una celda
+    startRowIndex = focus.rowIndex ?? 0;
+    startField = focus.column.getColDef().field ?? null;
+  } else if (this.selectedColKey) {
+    // ✅ Caso encabezado: el usuario hizo clic en el header (Factor, Indicador, Categoría, GCP Brick, etc.)
+    startRowIndex = 0; // puedes cambiar la fila de inicio
+    startField = this.selectedColKey;
+  } else {
+    this.mostrarAlerta('⚠️ Seleccione primero una celda o encabezado de columna en la grilla.', 'Info');
+    return;
+  }
+
+  if (!startField) {
+    this.mostrarAlerta('⚠️ La columna seleccionada no admite pegado.', 'Info');
+    return;
+  }
+
+  // ✅ Lista explícita de columnas donde SÍ permitimos pegar
+  const allowedPasteFields: string[] = [
+    'gtinUv',
+    'descripcion',
+    'categoria',
+    'gcpBrick',
+    'marca',
+    'contenidoNeto',
+    'contenidoUM',
+    'factor',
+    'indicador'
+  ];
+
+  // 📌 Columnas sobre las que se puede pegar
+  const pasteableFields: string[] = this.columnDefs
+    .filter(col => !!col.field && allowedPasteFields.includes(col.field as string))
+    .map(col => col.field!) as string[];
+
+  const startColIndex: number = pasteableFields.indexOf(startField);
+  if (startColIndex === -1) {
+    this.mostrarAlerta('⚠️ La columna seleccionada no admite pegado.', 'Info');
+    return;
+  }
+
+  // 🧱 Copiamos los datos sobre rowData empezando desde (startRowIndex, startColIndex)
+  const updated = [...this.rowData];
+
+  rows.forEach((rowText: string, rIdx: number) => {
+    const cells: string[] = rowText.split('\t');
+    const rowIndex: number = startRowIndex + rIdx;
+
+    if (rowIndex >= updated.length) {
+      return; // no hay más filas en la grilla
+    }
+
+    const row: any = updated[rowIndex] ?? (updated[rowIndex] = {});
+
+    cells.forEach((cellValue: string, cIdx: number) => {
+      const colIndex: number = startColIndex + cIdx;
+      if (colIndex >= pasteableFields.length) {
+        return; // no hay más columnas disponibles
+      }
+
+      const field: string = pasteableFields[colIndex];
+      row[field] = cellValue;
+    });
+  });
+
+  // 🔄 Actualizamos el array que está enlazado a [rowData]
+  this.rowData = updated;
+
+  // Refresco visual
+  this.gridApi.refreshCells({ force: true });
+
+  // Si tienes validaciones adicionales:
+  // this.validarDescripcionRepetida();
+}
+
 
 
   async generarFilas(): Promise<void> {

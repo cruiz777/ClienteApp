@@ -122,7 +122,7 @@ export class NuevoProductoComponent implements OnInit {
   totalRegistros = 0;
   prefijo: string = '';
   busqueda1: string = '';
-public rowData: Producto[] = [];
+  public rowData: Producto[] = [];
 
   set cantidadMostrar(value: number) {
     this._cantidadMostrar = value;
@@ -769,7 +769,10 @@ public rowData: Producto[] = [];
   async generarExcelLogistica(): Promise<void> {
     try {
 
-      
+      if (!this.formReporte.get('gcp')?.value) {
+        this.mostrarAlerta('⚠️ No Selecciono Prefijo', 'Advertencia');
+        return;
+      }
       const loadingDialog = this.abrirDialogoProgreso(
         '📊 Generando Reporte Excel',
         'Obteniendo información del servidor...'
@@ -956,7 +959,7 @@ public rowData: Producto[] = [];
       this.mostrarAlerta('⚠️ No hay cliente seleccionado.', 'Advertencia');
       return;
     }
-     if (!this.formReporte.get('gcp')?.value) {
+    if (!this.formReporte.get('gcp')?.value) {
       this.mostrarAlerta('⚠️ No  seleccionado Prefijo', 'Advertencia');
       return;
     }
@@ -1181,110 +1184,110 @@ public rowData: Producto[] = [];
    * Genera reporte PDF General usando getAllProductosPorCliente
    */
   async generarPdfGeneral(): Promise<void> {
-      try {
-        // ✅ Abrir diálogo de loading
-        const loadingDialog = this.abrirDialogoProgreso(
-          '🔄 Generando Reporte PDF General',
-          'Obteniendo información del servidor...'
-        );
+    try {
+      // ✅ Abrir diálogo de loading
+      const loadingDialog = this.abrirDialogoProgreso(
+        '🔄 Generando Reporte PDF General',
+        'Obteniendo información del servidor...'
+      );
 
-        const params = this.prepararParametrosProductosPorCliente();
+      const params = this.prepararParametrosProductosPorCliente();
 
-        // Validar parámetros
-        const validationErrors = this.reporteService.validateProductosPorClienteParams(params);
-        if (validationErrors.length > 0) {
-          loadingDialog.close();
-          this._snackBar.open(`⚠️ ${validationErrors[0]}`, 'Cerrar', {
-            duration: 4000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top'
-          });
-          return;
-        }
-
-        // PASO 1: Obtener metadata del backend (primera página)
-        const response = await firstValueFrom(
-          this.reporteService.getProductosPorCliente(params)
-        );
-
-        if (response.type !== 'SUCCESS' || !response.data) {
-          loadingDialog.close();
-          this._snackBar.open('⚠️ No se encontraron datos para exportar', 'Cerrar', {
-            duration: 3000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top'
-          });
-          return;
-        }
-
-        const { metadata } = response.data;
-
-        // ✅ Obtener total de registros desde productos.totalItems
-        const totalRegistros = response.data.productos.totalItems || 0;
-
-        // Calcular tiempo estimado
-        const lotesTotales = Math.ceil(totalRegistros / 10000);
-        const tiempoEstimadoSegundos = Math.ceil((lotesTotales * 989) / 1000);
-        const tiempoEstimadoMostrar = this.formatearTiempoEstimado(tiempoEstimadoSegundos);
-
-        // Actualizar diálogo con información real
-        loadingDialog.componentInstance.updateProgress(0, totalRegistros, tiempoEstimadoMostrar);
-
-        // PASO 2: Obtener TODOS los productos por lotes con progreso
-        // ✅ USAR: obtenerProductosPorLotesDirecto con tipo 'general'
-        const todosLosProductos = await this.obtenerProductosPorLotesDirecto(
-          params,
-          totalRegistros,
-          loadingDialog,
-          'general'
-        );
-
-        if (todosLosProductos.length === 0) {
-          loadingDialog.close();
-          this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', {
-            duration: 3000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top'
-          });
-          return;
-        }
-
-        // ✅ Actualizar: Generando PDF
-        loadingDialog.componentInstance.data.loadingText = '📄 Generando documento PDF...';
-        loadingDialog.componentInstance.data.showProgress = false;
-
-        // PASO 3: Preparar datos y generar PDF
-        const datosParaExport = this.aplanarDatosGeneralParaExport(todosLosProductos);
-        const headerInfo = this.prepararHeaderInfoDesdeBackend(metadata);
-
-        await this.gs1ExportService.exportarPDFGS1({
-          data: datosParaExport,
-          filename: 'reporte_productos_general_gs1',
-          headerInfo: headerInfo
-        });
-
-        // ✅ Cerrar loading y mostrar éxito
+      // Validar parámetros
+      const validationErrors = this.reporteService.validateProductosPorClienteParams(params);
+      if (validationErrors.length > 0) {
         loadingDialog.close();
-        this._snackBar.open('✅ PDF General generado correctamente', 'Cerrar', {
-          duration: 3000,
+        this._snackBar.open(`⚠️ ${validationErrors[0]}`, 'Cerrar', {
+          duration: 4000,
           horizontalPosition: 'end',
           verticalPosition: 'top'
         });
-
-      } catch (error) {
-        console.error('Error en generarPdfGeneral:', error);
-        this._snackBar.open('❌ Error al generar el PDF', 'Cerrar', {
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top'
-        });
+        return;
       }
-    }
 
-    /**
-     * Genera reporte Excel General usando GLN del backend y TODOS los registros
-     */
-    async generarExcelGeneral(): Promise<void> {
+      // PASO 1: Obtener metadata del backend (primera página)
+      const response = await firstValueFrom(
+        this.reporteService.getProductosPorCliente(params)
+      );
+
+      if (response.type !== 'SUCCESS' || !response.data) {
+        loadingDialog.close();
+        this._snackBar.open('⚠️ No se encontraron datos para exportar', 'Cerrar', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top'
+        });
+        return;
+      }
+
+      const { metadata } = response.data;
+
+      // ✅ Obtener total de registros desde productos.totalItems
+      const totalRegistros = response.data.productos.totalItems || 0;
+
+      // Calcular tiempo estimado
+      const lotesTotales = Math.ceil(totalRegistros / 10000);
+      const tiempoEstimadoSegundos = Math.ceil((lotesTotales * 989) / 1000);
+      const tiempoEstimadoMostrar = this.formatearTiempoEstimado(tiempoEstimadoSegundos);
+
+      // Actualizar diálogo con información real
+      loadingDialog.componentInstance.updateProgress(0, totalRegistros, tiempoEstimadoMostrar);
+
+      // PASO 2: Obtener TODOS los productos por lotes con progreso
+      // ✅ USAR: obtenerProductosPorLotesDirecto con tipo 'general'
+      const todosLosProductos = await this.obtenerProductosPorLotesDirecto(
+        params,
+        totalRegistros,
+        loadingDialog,
+        'general'
+      );
+
+      if (todosLosProductos.length === 0) {
+        loadingDialog.close();
+        this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top'
+        });
+        return;
+      }
+
+      // ✅ Actualizar: Generando PDF
+      loadingDialog.componentInstance.data.loadingText = '📄 Generando documento PDF...';
+      loadingDialog.componentInstance.data.showProgress = false;
+
+      // PASO 3: Preparar datos y generar PDF
+      const datosParaExport = this.aplanarDatosGeneralParaExport(todosLosProductos);
+      const headerInfo = this.prepararHeaderInfoDesdeBackend(metadata);
+
+      await this.gs1ExportService.exportarPDFGS1({
+        data: datosParaExport,
+        filename: 'reporte_productos_general_gs1',
+        headerInfo: headerInfo
+      });
+
+      // ✅ Cerrar loading y mostrar éxito
+      loadingDialog.close();
+      this._snackBar.open('✅ PDF General generado correctamente', 'Cerrar', {
+        duration: 3000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top'
+      });
+
+    } catch (error) {
+      console.error('Error en generarPdfGeneral:', error);
+      this._snackBar.open('❌ Error al generar el PDF', 'Cerrar', {
+        duration: 3000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top'
+      });
+    }
+  }
+
+  /**
+   * Genera reporte Excel General usando GLN del backend y TODOS los registros
+   */
+  async generarExcelGeneral(): Promise<void> {
     try {
       // ✅ Abrir diálogo de loading
       const loadingDialog = this.abrirDialogoProgreso(
@@ -1640,7 +1643,12 @@ public rowData: Producto[] = [];
         nombreEmpresa: respuesta.cliente?.nombreCliente || '---',
         ruc: respuesta.cliente?.ruc || '---',
         gln: respuesta.cliente?.gln || '---',
-        fechaEmision: new Date().toLocaleDateString('es-EC')
+        fechaEmision: new Date().toLocaleDateString('es-EC', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        })
+
       };
 
       const exportOptions = {
@@ -1893,7 +1901,7 @@ public rowData: Producto[] = [];
   }
 
   private async generarPdfProductosPorPrefijo(prefijo: string): Promise<void> {
-      try {
+    try {
       // ✅ Abrir diálogo de loading
       const loadingDialog = this.abrirDialogoProgreso(
         'Generando Reporte Complementario',
@@ -2140,87 +2148,87 @@ public rowData: Producto[] = [];
 
   }
   onChangePageSize(): void {
-  this.pageSize = this.cantidadMostrar;
-  this.pageNumber = 1;
+    this.pageSize = this.cantidadMostrar;
+    this.pageNumber = 1;
 
-  const codigoCliente = this.clienteSeleccionado?.clientes_codigo;
-  if (codigoCliente !== undefined && codigoCliente !== null) {
-    this.cargarProductos(codigoCliente);
-  } else {
-    console.warn('Cliente no seleccionado. No se puede cargar productos.');
-  }
-}
-buscarProductos(): void {
-  this.pageNumber = 1; // reiniciar a la primera página
-  if (this.clienteSeleccionado?.clientes_codigo) {
-    this.cargarProductos(this.clienteSeleccionado.clientes_codigo);
-  }
-}
-
-onSeleccionPrefijo(prefijoSeleccionado: string): void {
-  this.prefijo = prefijoSeleccionado;
-  this.pageNumber = 1; // reinicia la paginación si es necesario
-
-  if (this.clienteSeleccionado?.clientes_codigo) {
-    this.cargarProductos(this.clienteSeleccionado.clientes_codigo);
-  }
-}
-
-onKeyDown(event: any): void {
-  if (!event || !event.column || !event.event) return;
-
-  const keyboardEvent = event.event as KeyboardEvent;
-  if (keyboardEvent.key !== 'Delete') return;
-
-  const selectedRows = this.gridApi.getSelectedRows();
-  if (selectedRows.length === 0) return;
-
-  const rowToDelete = selectedRows[0];
-  const codbar = rowToDelete.codbar;
-
-  const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
-    width: '400px',
-    data: {
-      title: '¿Desea confirmar?',
-      message: `¿Quiere eliminar este GTIN: ${codbar}?`,
-      type: 'info',
-      confirmText: 'Sí, confirmar',
-      cancelText: 'Cancelar',
-      showCancel: true
+    const codigoCliente = this.clienteSeleccionado?.clientes_codigo;
+    if (codigoCliente !== undefined && codigoCliente !== null) {
+      this.cargarProductos(codigoCliente);
+    } else {
+      console.warn('Cliente no seleccionado. No se puede cargar productos.');
     }
-  });
+  }
+  buscarProductos(): void {
+    this.pageNumber = 1; // reiniciar a la primera página
+    if (this.clienteSeleccionado?.clientes_codigo) {
+      this.cargarProductos(this.clienteSeleccionado.clientes_codigo);
+    }
+  }
 
-  dialogRef.afterClosed().subscribe(result => {
-    if (result === true) {
-      this.productoService.eliminarProductoPorCodbar(codbar).subscribe({
-        next: (resp) => {
-          if (resp.type === 'OK') {
-            this.buscarProductos(); // recarga los productos para mantener consistencia
-          } else {
+  onSeleccionPrefijo(prefijoSeleccionado: string): void {
+    this.prefijo = prefijoSeleccionado;
+    this.pageNumber = 1; // reinicia la paginación si es necesario
+
+    if (this.clienteSeleccionado?.clientes_codigo) {
+      this.cargarProductos(this.clienteSeleccionado.clientes_codigo);
+    }
+  }
+
+  onKeyDown(event: any): void {
+    if (!event || !event.column || !event.event) return;
+
+    const keyboardEvent = event.event as KeyboardEvent;
+    if (keyboardEvent.key !== 'Delete') return;
+
+    const selectedRows = this.gridApi.getSelectedRows();
+    if (selectedRows.length === 0) return;
+
+    const rowToDelete = selectedRows[0];
+    const codbar = rowToDelete.codbar;
+
+    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: '¿Desea confirmar?',
+        message: `¿Quiere eliminar este GTIN: ${codbar}?`,
+        type: 'info',
+        confirmText: 'Sí, confirmar',
+        cancelText: 'Cancelar',
+        showCancel: true
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        this.productoService.eliminarProductoPorCodbar(codbar).subscribe({
+          next: (resp) => {
+            if (resp.type === 'OK') {
+              this.buscarProductos(); // recarga los productos para mantener consistencia
+            } else {
+              this.dialog.open(CustomMessageBoxComponent, {
+                width: '400px',
+                data: {
+                  title: 'No se pudo eliminar',
+                  message: resp.message,
+                  type: 'warning'
+                }
+              });
+            }
+          },
+          error: () => {
             this.dialog.open(CustomMessageBoxComponent, {
               width: '400px',
               data: {
-                title: 'No se pudo eliminar',
-                message: resp.message,
-                type: 'warning'
+                title: 'Error',
+                message: 'No se puede eliminar el producto, tiene presentaciones',
+                type: 'error'
               }
             });
           }
-        },
-        error: () => {
-          this.dialog.open(CustomMessageBoxComponent, {
-            width: '400px',
-            data: {
-              title: 'Error',
-              message: 'No se puede eliminar el producto, tiene presentaciones',
-              type: 'error'
-            }
-          });
-        }
-      });
-    }
-  });
-}
+        });
+      }
+    });
+  }
   //HELPERS
 
   // Método para obtener productos por lotes con progreso

@@ -996,7 +996,7 @@ export class UlComponent implements OnInit {
     const descripcion = this.formUV.get('descripcion')?.value || '';
     const marca = this.formUV.get('marca')?.value || '';
     const contenido = this.formUV.get('contenido')?.value || '';
-    const unidadObj = this.formUV.get('unidadMedida')?.value;
+   const unidadObj = this.formUV.getRawValue().unidadMedida?.unidad || '';
     const unidadu = this.formUL.getRawValue().unidad || '';
     const tipoEmpaque = this.formUL.getRawValue().tipoEmpaque || '';
 
@@ -1004,8 +1004,10 @@ export class UlComponent implements OnInit {
     const factor = this.formUL.get('factor')?.value || '';
     const unidad = this.formUL.get('unidad')?.value || '';
 
+    const descripcionUL = `${descripcion} ${marca} ${contenido} ${unidadObj} ${tipoEmpaque} ${factor} ${unidad}`
+    .toUpperCase();
 
-    const descripcionUL = `${descripcion} ${marca} ${contenido}  ${unidadu} ${tipoEmpaque} ${factor} ${unidad}`;
+    
     this.formUL.get('descripcionu')?.setValue(descripcionUL);
   }
   generarUL(): void {
