@@ -193,7 +193,7 @@ export class CartaOficialComponent {
     doc.text(item3Titulo, sangria, y, { maxWidth: maxWidthSangria, align: 'left' });
     y += alturaItem3Titulo;
 
-    // Sub-item a - EN LA MISMA LÍNEA
+    // Sub-item a
     doc.setFont('times', 'bold');
     const subATitulo = `o     Cuota de afiliación: `;
     const subATituloWidth = doc.getTextWidth(subATitulo);
@@ -203,10 +203,12 @@ export class CartaOficialComponent {
     const subATexto = `se paga una sola vez, al momento de incorporarse al sistema.`;
     const anchoDisponibleA = pageWidth - rightMargin - (sangriaSubItem + subATituloWidth);
     const subALines = doc.splitTextToSize(subATexto, anchoDisponibleA);
-    doc.text(subALines, sangriaSubItem + subATituloWidth, y, { align: 'left' });
+    //USAR subALines (el array), NO subATexto (el string)
+    // NO usar opciones { maxWidth, align }
+    doc.text(subALines, sangriaSubItem + subATituloWidth, y);
     y += subALines.length * lineHeight + 1.5;
 
-    // Sub-item b - EN LA MISMA LÍNEA
+    // Sub-item b
     doc.setFont('times', 'bold');
     const subBTitulo = `o     Cuota de asignación del número de empresa: `;
     const subBTituloWidth = doc.getTextWidth(subBTitulo);
@@ -216,10 +218,10 @@ export class CartaOficialComponent {
     const subBTexto = `también se paga una sola vez, al recibir su prefijo GS1.`;
     const anchoDisponibleB = pageWidth - rightMargin - (sangriaSubItem + subBTituloWidth);
     const subBLines = doc.splitTextToSize(subBTexto, anchoDisponibleB);
-    doc.text(subBLines, sangriaSubItem + subBTituloWidth, y, { align: 'left' });
+    doc.text(subBLines, sangriaSubItem + subBTituloWidth, y);
     y += subBLines.length * lineHeight + 1.5;
 
-    // Sub-item c - EN LA MISMA LÍNEA
+    // Sub-item c
     doc.setFont('times', 'bold');
     const subCTitulo = `o     Cuota de mantenimiento anual: `;
     const subCTituloWidth = doc.getTextWidth(subCTitulo);
@@ -229,8 +231,7 @@ export class CartaOficialComponent {
     const subCTexto = `se paga cada año, mientras los productos identificados con el prefijo GS1 permanezcan activos en el sistema. Esta cuota garantiza el uso continuo y actualizado de los estándares GS1.`;
     const anchoDisponibleC = pageWidth - rightMargin - (sangriaSubItem + subCTituloWidth);
     const subCLines = doc.splitTextToSize(subCTexto, anchoDisponibleC);
-    // AGREGAR align: 'left' explícitamente
-    doc.text(subCLines, sangriaSubItem + subCTituloWidth, y, { align: 'left' });
+    doc.text(subCLines, sangriaSubItem + subCTituloWidth, y);
     y += subCLines.length * lineHeight + 2.5;
 
     // Párrafo pequeño después del item 4
