@@ -1356,14 +1356,14 @@ export class UvIndividualComponent implements OnInit {
     const descripcion = this.formUV.get('descripcion')?.value || '';
     const marca = this.formUV.get('marca')?.value || '';
     const contenido = this.formUV.get('contenido')?.value || '';
-    const unidadObj = this.formUV.get('unidadMedida')?.value;
+    const unidadObj = this.formUV.getRawValue().unidadMedida?.unidad || '';
     const unidadu = unidadObj?.unidad || '';
     const tipoEmpaque = this.formUL.get('tipoEmpaque')?.value || '';
     const factor = this.formUL.get('factor')?.value || '';
     const unidad = this.formUL.get('unidad')?.value || '';
 
-
-    const descripcionUL = `${descripcion} ${marca} ${contenido}  ${unidadu} ${tipoEmpaque} ${factor} ${unidad}`;
+ const descripcionUL = `${descripcion} ${marca} ${contenido} ${unidadObj} ${tipoEmpaque} ${factor} ${unidad}`
+    .toUpperCase();
     this.formUL.get('descripcionu')?.setValue(descripcionUL);
   }
   generarUL(): void {

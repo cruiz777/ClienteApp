@@ -3,7 +3,7 @@ export const environment = {
    securityApiUrl: 'http://181.39.162.182:8000/security/api', // URL de la API en desarrollo
  applicationUrl: 'http://181.39.162.182:8000/security/api',  //Cambiar por la url de clientes en el merge
   //mantenimiento contable
- maintenanceUrl: 'http://181.39.162.182:5030/maintenance/api',
+
  clientsUrl: 'http://181.39.162.182:8000/clients/api',
 
 
@@ -15,7 +15,7 @@ export const environment = {
 
   inventoryUrl: 'http://181.39.162.182:8000/inventories/api',
   transactionUrl: 'http://181.39.162.182:8000/transaction/api',
-
+ maintenanceUrl: 'http://181.39.162.182:8000/maintenance-cg/api',
     invoices_sic:'http://181.39.162.182:8000/invoices-sic/api',
     rucUlr:'http://pichincha.gapsystem.net:10048/api/services/ruc/',
     cedulaUrl:'http://pichincha.gapsystem.net:10048/api/services/cedula/',

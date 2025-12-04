@@ -104,7 +104,7 @@
   </div>
 
   <!-- Pegado GTIN UV -->
-  <mat-form-field class="campo">
+  <mat-form-field class="campo" [hidden]="true">
     <textarea matInput [(ngModel)]="textoPegado"
               placeholder="Pegar GTIN UV"
               (blur)="pegarColumnaGtinUv()">
@@ -112,7 +112,7 @@
   </mat-form-field>
 
   <!-- Pegado Factor -->
-  <mat-form-field class="campo">
+  <mat-form-field class="campo"  [hidden]="true">
     <textarea matInput [(ngModel)]="textoPegadoF"
               placeholder="Pegar Factor"
               (blur)="pegarColumnaFactor()"
