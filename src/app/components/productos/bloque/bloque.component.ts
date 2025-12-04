@@ -42,7 +42,8 @@ export class BloqueComponent implements OnInit {
 
 
 
-  defaultColDef: ColDef = { editable: true, resizable: true, sortable: false, flex: 1 };
+  defaultColDef: ColDef = { editable: true, resizable: true, sortable: false, flex: 1 ,
+  headerClass: 'header-uv' };
   rowData: any[] = [];
   columnDefs: ColDef[] = [];
 
@@ -82,15 +83,85 @@ export class BloqueComponent implements OnInit {
 
   private gridApi!: GridApi;
 
+gridOptions: GridOptions = {
+  suppressMovableColumns: true,
+  onCellValueChanged: this.onCellValueChanged.bind(this),
 
-  gridOptions: GridOptions = {
-    suppressMovableColumns: true,
-    onCellValueChanged: this.onCellValueChanged.bind(this),
-    components: {
-      checkboxRenderer: CheckboxRendererComponent,
-      gcpBrickAutocompleteEditor: GcpBrickAutocompleteEditorComponent
+  // 👇 forzamos event: any para evitar problemas de tipos con AG Grid
+  onCellKeyDown: (event: any) => {
+    const kb = event.event as KeyboardEvent;
+    if (!kb) { return; }
+
+    // Sacamos el field de forma segura
+    const colDef = event.colDef || event.column?.getColDef?.();
+    const field: string | null = colDef?.field ?? null;
+
+    if (!field) {
+      return; // nada que validar si no hay field
     }
-  };
+
+    // ✅ Teclas de control que siempre se permiten
+    const allowedControlKeys = [
+      'Backspace', 'Tab', 'ArrowLeft', 'ArrowRight',
+      'ArrowUp', 'ArrowDown', 'Delete', 'Home', 'End', 'Enter'
+    ];
+
+    // Ctrl + C / V / X / A → permitir
+    if (kb.ctrlKey && ['c', 'v', 'x', 'a'].includes(kb.key.toLowerCase())) {
+      return;
+    }
+
+    // ==============================
+    // 🔹 C.Neto → solo número + 1 punto
+    // ==============================
+    if (field === 'contenidoNeto') {
+      const key = kb.key;
+
+      // dígitos → OK
+      if (/^\d$/.test(key)) { return; }
+
+      // permitir un solo punto
+      if (key === '.') {
+        const data = event.data || {};
+        const current = (data['contenidoNeto'] ?? '').toString();
+        if (!current.includes('.')) {
+          return; // aún no tiene punto → lo dejamos pasar
+        }
+      }
+
+      // teclas de control → OK
+      if (allowedControlKeys.includes(key)) { return; }
+
+      // todo lo demás (coma, letras, signos, etc.) se bloquea
+      kb.preventDefault();
+      return;
+    }
+
+    // ==============================
+    // 🔹 factor / indicador → solo enteros
+    // ==============================
+    if (field === 'factor' || field === 'indicador') {
+      const key = kb.key;
+
+      // dígitos 0–9 → OK
+      if (/^\d$/.test(key)) { return; }
+
+      // teclas de control → OK
+      if (allowedControlKeys.includes(key)) { return; }
+
+      // bloquear punto, coma, letras, etc.
+      kb.preventDefault();
+      return;
+    }
+
+    // otras columnas → sin restricciones
+  },
+
+  components: {
+    checkboxRenderer: CheckboxRendererComponent,
+    gcpBrickAutocompleteEditor: GcpBrickAutocompleteEditorComponent
+  }
+};
 
 
 
@@ -308,17 +379,24 @@ export class BloqueComponent implements OnInit {
   }
 
 
-
 @HostListener('paste', ['$event'])
 onPasteExcelToGrid(event: ClipboardEvent): void {
-  // 👀 Solo manejar pegado cuando el foco está dentro del AG Grid
-  const target = event.target as HTMLElement | null;
-  if (!target || !target.closest('.ag-root')) {
-    // El pegado ocurrió en otro control (ej: textareas de GTIN/Factor), lo dejamos normal
+  // 1️⃣ Si no tenemos gridApi todavía, salimos
+  if (!this.gridApi) {
     return;
   }
 
-  if (!this.gridApi) {
+  // 2️⃣ Detectar si el foco está dentro del grid
+  const activeElement = document.activeElement as HTMLElement | null;
+  const target = (event.target as HTMLElement | null) ?? activeElement;
+
+  const estaDentroDelGrid =
+    !!target &&
+    !!target.closest('.ag-root');
+
+  // 3️⃣ Si NO está dentro del grid y tampoco tenemos columna seleccionada,
+  //    no hacemos nada. Pero si hay selectedColKey, sí permitimos pegar.
+  if (!estaDentroDelGrid && !this.selectedColKey) {
     return;
   }
 
@@ -332,10 +410,8 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
     return;
   }
 
-  // Evitamos el pegado por defecto
   event.preventDefault();
 
-  // 📋 Texto de Excel → filas y columnas
   const rows: string[] = text
     .split(/\r?\n/)
     .filter((r: string) => r.trim() !== '');
@@ -344,22 +420,24 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
     return;
   }
 
-  // 🔎 Celda inicial: donde el usuario tiene el foco
+  // 🔎 Si hay celda con foco, usamos esa.
+  //    Si no, usamos la columna seleccionada desde el encabezado.
   const focus = this.gridApi.getFocusedCell();
 
   let startRowIndex: number;
   let startField: string | null;
 
   if (focus) {
-    // Caso normal: el usuario hizo clic en una celda
     startRowIndex = focus.rowIndex ?? 0;
     startField = focus.column.getColDef().field ?? null;
   } else if (this.selectedColKey) {
-    // ✅ Caso encabezado: el usuario hizo clic en el header (Factor, Indicador, Categoría, GCP Brick, etc.)
-    startRowIndex = 0; // puedes cambiar la fila de inicio
+    startRowIndex = 0;
     startField = this.selectedColKey;
   } else {
-    this.mostrarAlerta('⚠️ Seleccione primero una celda o encabezado de columna en la grilla.', 'Info');
+    this.mostrarAlerta(
+      '⚠️ Seleccione primero una celda o encabezado de columna en la grilla.',
+      'Info'
+    );
     return;
   }
 
@@ -368,7 +446,7 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
     return;
   }
 
-  // ✅ Lista explícita de columnas donde SÍ permitimos pegar
+  // 🔹 columnas que permiten pegado
   const allowedPasteFields: string[] = [
     'gtinUv',
     'descripcion',
@@ -381,7 +459,6 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
     'indicador'
   ];
 
-  // 📌 Columnas sobre las que se puede pegar
   const pasteableFields: string[] = this.columnDefs
     .filter(col => !!col.field && allowedPasteFields.includes(col.field as string))
     .map(col => col.field!) as string[];
@@ -392,7 +469,10 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
     return;
   }
 
-  // 🧱 Copiamos los datos sobre rowData empezando desde (startRowIndex, startColIndex)
+  // 🔹 listas de valores válidos
+  const unidadesValidas = this.unidadesDisponibles; // UM
+  const categoriasValidas = this.gcpBricksDisponibles.map(g => g.codigo + ''); // Categoria (código)
+
   const updated = [...this.rowData];
 
   rows.forEach((rowText: string, rIdx: number) => {
@@ -400,7 +480,7 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
     const rowIndex: number = startRowIndex + rIdx;
 
     if (rowIndex >= updated.length) {
-      return; // no hay más filas en la grilla
+      return;
     }
 
     const row: any = updated[rowIndex] ?? (updated[rowIndex] = {});
@@ -408,24 +488,57 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
     cells.forEach((cellValue: string, cIdx: number) => {
       const colIndex: number = startColIndex + cIdx;
       if (colIndex >= pasteableFields.length) {
-        return; // no hay más columnas disponibles
+        return;
       }
 
       const field: string = pasteableFields[colIndex];
-      row[field] = cellValue;
+      const raw = (cellValue ?? '').trim();
+
+      switch (field) {
+        case 'contenidoNeto': {
+          // Solo números con punto: 12 o 12.3 (NO coma)
+          const regexNumero = /^\d+(\.\d+)?$/;
+          if (raw !== '' && regexNumero.test(raw)) {
+            row[field] = parseFloat(raw);
+          }
+          // Si no cumple, NO se asigna nada (mantiene lo que tenía)
+          break;
+        }
+
+        case 'factor':
+        case 'indicador':
+          // Solo enteros positivos
+          if (/^\d+$/.test(raw)) {
+            row[field] = parseInt(raw, 10);
+          }
+          break;
+
+        case 'contenidoUM':
+          // Solo unidades que EXISTEN en el combo
+          if (unidadesValidas.includes(raw)) {
+            row[field] = raw;
+          }
+          break;
+
+        case 'categoria':
+          // Solo categorías que EXISTEN en el combo (código)
+          if (categoriasValidas.includes(raw)) {
+            row[field] = raw;
+          }
+          break;
+
+        default:
+          // Otras columnas se pegan tal cual
+          row[field] = raw;
+          break;
+      }
     });
   });
 
-  // 🔄 Actualizamos el array que está enlazado a [rowData]
   this.rowData = updated;
-
-  // Refresco visual
   this.gridApi.refreshCells({ force: true });
-
-  // Si tienes validaciones adicionales:
-  // this.validarDescripcionRepetida();
+  this.gridApi.redrawRows();
 }
-
 
 
   async generarFilas(): Promise<void> {
@@ -593,6 +706,7 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
 
   generar(): void {
     debugger
+    this.commitGridChanges(); 
     this.rowData = [...this.rowData]; // Refrescar AG-Grid visualmente
     this.gridApi.setFocusedCell(0, 'gtinUv');
 
@@ -1436,7 +1550,7 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
 
   grabar(): void {
     this.mensaje = ''; // Limpia mensaje
-
+    this.commitGridChanges(); 
     const msg = this.modoEdicion ? 'actualizado' : 'creados';
 
     this.dialog.open(CustomMessageBoxComponent, {
@@ -1592,6 +1706,7 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
 
   generar14(): void {
     debugger
+    this.commitGridChanges(); 
     this.rowData = [...this.rowData];
     this.gridApi.setFocusedCell(0, 'factor');
 
@@ -1689,7 +1804,7 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
     const cliente = this.clienteSeleccionado;
     const idPrefijo = this.formUV.value.gcp;
     const prefijo = this.prefijos.find(p => p.id_prefijos === idPrefijo);
-
+    this.commitGridChanges(); 
     const nuevoProducto: ProductoRequest = {
       IdProducto: 0,
       Codpro: fila.gtinUv || '',
@@ -2057,7 +2172,7 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
 
   private crearGtin14(msg: string): void {
     const filas = this.rowData.filter(f => f.activo === true);
-
+    this.commitGridChanges(); 
     if (filas.length === 0) {
       this.mostrarAlerta('⚠️ No hay filas marcadas con GTIN 14 para guardar.', 'Advertencia');
       return;
@@ -2559,5 +2674,11 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
     const valor = input.value.toUpperCase();
     this.formUV.get(controlName)?.setValue(valor);
   }
+  private commitGridChanges(): void {
+  if (!this.gridApi) { return; }
+
+  this.gridApi.stopEditing();                 // guarda lo que está editando
+  this.gridApi.refreshCells({ force: true }); // repinta estilos
+}
 
 }

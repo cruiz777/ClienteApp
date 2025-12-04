@@ -532,3 +532,15 @@ mat-form-field textarea {
   font-weight: bold;
   border: 1px solid #f5c6cb;
 }
+/* Fondo del header del grid UV */
+.ag-theme-alpine.grid-uv .ag-header,
+.ag-theme-alpine.grid-uv .ag-header-row {
+  background-color: #003366 !important;   /* color de fondo de los títulos */
+}
+
+/* Texto de los títulos */
+.ag-theme-alpine.grid-uv .ag-header-cell-label {
+  color: #ffffff !important;              /* color del texto */
+  font-weight: 600;
+  font-size: 12px;
+}
