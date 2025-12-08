@@ -184,7 +184,7 @@ export class UlComponent implements OnInit {
       gtinUl: [''],
       tipoGtinl: ['GTIN-14'],
       descripcionu: [''],
-      usarSerie2: [false]
+      usarSerie2: false
     });
 
     this.cargarCliente();
@@ -384,7 +384,7 @@ export class UlComponent implements OnInit {
         });
 
       } else {
-        this.formUL.get('serie2')?.setValue('SERIE-UL-GENERICA');
+        this.mostrarAlerta('⚠️ No se puede modificar Serie', 'Error');
       }
 
     } else {
@@ -535,7 +535,8 @@ export class UlComponent implements OnInit {
       gtinUl: '',
 
       gtinNacionalULSeleccionado: 'gtin14u',
-
+      usarSerie2: false,
+      serie2: '',
 
     });
     this.formUL.get('tipoGtinl')?.setValue(this.obtenerNombreGTIN('gtin14u'));

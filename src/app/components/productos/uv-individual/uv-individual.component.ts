@@ -384,7 +384,7 @@ export class UvIndividualComponent implements OnInit {
         });
 
       } else {
-        this.formUL.get('serie2')?.setValue('SERIE-UL-GENERICA');
+        this.mostrarAlerta('⚠️ No se puede modificar Serie', 'Error');
       }
 
     } else {
@@ -859,6 +859,8 @@ export class UvIndividualComponent implements OnInit {
       indicador: '1',
       gtinUl: '',
       gtinNacionalULSeleccionado: 'gtin14u',
+         usarSerie2: false,
+      serie2: '',
 
     });
 
