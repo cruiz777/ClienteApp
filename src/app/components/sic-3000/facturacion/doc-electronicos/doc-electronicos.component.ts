@@ -12,14 +12,16 @@ import {
   DocElectronico,
 } from 'src/app/services/doc-electronicos.service';
 
+type TipoDocumento = 'FACTURA' | 'NC' | 'ND' | 'RET';
+
 @Component({
   selector: 'app-doc-electronicos',
   templateUrl: './doc-electronicos.component.html',
   styleUrls: ['./doc-electronicos.component.css'],
 })
 export class DocElectronicosComponent implements OnInit {
-  /** Tab activo */
-  tipoDocumentoActivo: 'FACTURA' | 'NC' | 'ND' | 'RET' = 'FACTURA';
+  /** Tipo de documento seleccionado en el combo */
+  tipoDocumentoActivo: TipoDocumento = 'FACTURA';
 
   filtrosForm: FormGroup;
   columnDefs: ColDef<DocElectronico>[] = [];
@@ -59,31 +61,29 @@ export class DocElectronicosComponent implements OnInit {
         menuTabs: [],
       },
 
-      // Columna de ACCIONES con iconos de colores
+      // ===== COLUMNA ACCIÓN CON 4 ÍCONOS PEQUEÑOS =====
       {
         headerName: 'Acción',
-        field: 'acciones' as any, // no existe en el modelo, solo para la celda
-        width: 170,
-        sortable: false,
-        filter: false,
+        colId: 'acciones',
+        width: 120,
+        pinned: 'right',
+        suppressHeaderMenuButton: true,
         menuTabs: [],
         cellRenderer: () => {
+          // OJO: cambia los nombres de los íconos según tus archivos reales en assets/icons
           return `
-            <div class="acciones-cell">
-              <button class="accion-btn accion-ver" title="Ver documento">
-                <span class="material-icons">visibility</span>
+            <div class="acciones-inline">
+              <button class="ag-action-btn" data-action="ver" title="Ver documento">
+                <img src="assets/icons/icon-ver.png" alt="Ver" />
               </button>
-              <button class="accion-btn accion-xml" title="Ver XML">
-                <span class="material-icons">description</span>
+              <button class="ag-action-btn" data-action="xml" title="Ver XML">
+                <img src="assets/icons/icon-xml.png" alt="XML" />
               </button>
-              <button class="accion-btn accion-pdf" title="Descargar PDF">
-                <span class="material-icons">picture_as_pdf</span>
+              <button class="ag-action-btn" data-action="pdf" title="Ver PDF">
+                <img src="assets/icons/icon-pdf.png" alt="PDF" />
               </button>
-              <button class="accion-btn accion-mail" title="Enviar por correo">
-                <span class="material-icons">email</span>
-              </button>
-              <button class="accion-btn accion-anular" title="Anular documento">
-                <span class="material-icons">close</span>
+              <button class="ag-action-btn" data-action="mail" title="Enviar correo">
+                <img src="assets/icons/icon-mail.png" alt="Mail" />
               </button>
             </div>
           `;
@@ -104,7 +104,8 @@ export class DocElectronicosComponent implements OnInit {
         headerName: 'Total',
         field: 'total',
         width: 110,
-        valueFormatter: this.formatoMoneda,
+        valueFormatter: (p) => this.formatoMoneda(p),
+        type: 'rightAligned',
       },
       {
         headerName: 'Estado',
@@ -125,30 +126,71 @@ export class DocElectronicosComponent implements OnInit {
     // Para ver la tabla con datos de prueba:
     this.cargarDatosPrueba();
 
-    // Cuando tengas el backend listo, puedes cambiar por:
+    // Cuando tengas el backend listo, puedes usar:
     // this.cargarDocumentos();
   }
 
-  onGridReady(params: GridReadyEvent<DocElectronico>): void {
-    this.gridApi = params.api;
+  onGridReady(e: GridReadyEvent<DocElectronico>): void {
+    this.gridApi = e.api as GridApi<DocElectronico>;
   }
 
-  /** Cambio de pestaña (Factura / NC / ND / Retenciones) */
-  cambiarTab(tipo: 'FACTURA' | 'NC' | 'ND' | 'RET'): void {
+  /** Cambio de tipo de documento desde el combo */
+  onTipoDocumentoChange(tipo: TipoDocumento): void {
     if (this.tipoDocumentoActivo === tipo) {
       return;
     }
     this.tipoDocumentoActivo = tipo;
-
-    // Si quieres usar datos mock para todas las pestañas:
-    // this.cargarDatosPrueba();
-
-    // Si ya tienes backend:
     this.cargarDocumentos();
   }
 
+  buscar(): void {
+    this.cargarDocumentos();
+  }
+
+  clearSearchText(): void {
+    this.filtrosForm.patchValue({ textoBusqueda: '' });
+    this.buscar();
+  }
+
+  /** Imprime PDFs de las filas seleccionadas */
+  imprimirSeleccionadas(): void {
+    if (!this.gridApi) {
+      return;
+    }
+
+    // Obtener directamente las filas seleccionadas
+    const seleccionadas = this.gridApi.getSelectedRows() as DocElectronico[];
+
+    if (!seleccionadas.length) {
+      this.snackBar.open(
+        'Debe seleccionar al menos un documento para imprimir.',
+        'Cerrar',
+        { duration: 3000 }
+      );
+      return;
+    }
+
+    seleccionadas.forEach((doc) => {
+      this.docService
+        .obtenerPdfDocumento(this.tipoDocumentoActivo, doc.id)
+        .subscribe({
+          next: (blob) => {
+            const fileURL = URL.createObjectURL(blob);
+            window.open(fileURL, '_blank');
+          },
+          error: () => {
+            this.snackBar.open(
+              `Error al imprimir el documento ${doc.secuencial}.`,
+              'Cerrar',
+              { duration: 3000 }
+            );
+          },
+        });
+    });
+  }
+
   /** Llamada al backend para listar documentos */
-  cargarDocumentos(): void {
+  private cargarDocumentos(): void {
     const { fechaDesde, fechaHasta, textoBusqueda } = this.filtrosForm.value;
 
     this.docService
@@ -172,7 +214,7 @@ export class DocElectronicosComponent implements OnInit {
       });
   }
 
-  /** Datos de prueba para que se vea como tu imagen */
+  /** Datos de prueba para que se vea la grilla mientras tanto */
   private cargarDatosPrueba(): void {
     this.rowData = [
       {
@@ -208,55 +250,8 @@ export class DocElectronicosComponent implements OnInit {
     ];
   }
 
-  buscar(): void {
-    // this.cargarDatosPrueba(); // si quisieras ignorar filtros usando mock
-    this.cargarDocumentos();
-  }
-
-  clearSearchText(): void {
-    this.filtrosForm.patchValue({ textoBusqueda: '' });
-    this.buscar();
-  }
-
-  /** Imprime PDFs de las filas seleccionadas */
-  imprimirSeleccionadas(): void {
-    if (!this.gridApi) {
-      return;
-    }
-
-    // Más sencillo: obtener directamente las filas seleccionadas
-    const seleccionadas = this.gridApi.getSelectedRows() as DocElectronico[];
-
-    if (!seleccionadas.length) {
-      this.snackBar.open(
-        'Debe seleccionar al menos un documento para imprimir.',
-        'Cerrar',
-        { duration: 3000 }
-      );
-      return;
-    }
-
-    seleccionadas.forEach((doc) => {
-      this.docService
-        .obtenerPdfDocumento(this.tipoDocumentoActivo, doc.id)
-        .subscribe({
-          next: (blob) => {
-            const fileURL = URL.createObjectURL(blob);
-            window.open(fileURL, '_blank');
-          },
-          error: () => {
-            this.snackBar.open(
-              `Error al imprimir el documento ${doc.secuencial}.`,
-              'Cerrar',
-              { duration: 3000 }
-            );
-          },
-        });
-    });
-  }
-
   /** Formato de moneda para la columna Total */
-  formatoMoneda(params: ValueFormatterParams): string {
+  private formatoMoneda(params: ValueFormatterParams): string {
     if (params.value == null) {
       return '';
     }

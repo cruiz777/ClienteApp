@@ -1,44 +1,24 @@
 <div class="page-container">
-  <!-- TABS -->
-  <div class="tabs">
-    <button
-      type="button"
-      [class.active]="tipoDocumentoActivo === 'FACTURA'"
-      (click)="cambiarTab('FACTURA')"
-    >
-      Factura
-    </button>
-
-    <button
-      type="button"
-      [class.active]="tipoDocumentoActivo === 'NC'"
-      (click)="cambiarTab('NC')"
-    >
-      Nota de Crédito
-    </button>
-
-    <button
-      type="button"
-      [class.active]="tipoDocumentoActivo === 'ND'"
-      (click)="cambiarTab('ND')"
-    >
-      Nota de Débito
-    </button>
-
-    <button
-      type="button"
-      [class.active]="tipoDocumentoActivo === 'RET'"
-      (click)="cambiarTab('RET')"
-    >
-      Retenciones
-    </button>
-  </div>
-
-  <!-- CONTENIDO -->
   <div class="contenido-tablas">
-    <h2 class="title">Facturación electrónica</h2>
+    <!-- ===== TÍTULO + COMBO TIPO DOCUMENTO ===== -->
+    <div class="header-row">
+      <h2 class="title">Documentos electrónicos</h2>
 
-    <!-- FILTROS -->
+      <mat-form-field appearance="outline" class="tipo-doc-field">
+        <mat-label>Tipo de documento</mat-label>
+        <mat-select
+          [value]="tipoDocumentoActivo"
+          (selectionChange)="onTipoDocumentoChange($event.value)"
+        >
+          <mat-option value="FACTURA">Factura</mat-option>
+          <mat-option value="NC">Nota de crédito</mat-option>
+          <mat-option value="ND">Nota de débito</mat-option>
+          <mat-option value="RET">Retenciones</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- ===== FILTROS ===== -->
     <form [formGroup]="filtrosForm" class="filters-row">
       <div class="filters-group">
         <mat-form-field appearance="outline" class="filter-field">
@@ -115,22 +95,24 @@
       </div>
     </form>
 
-    <!-- TABLA AG-GRID -->
-    <div class="grid-wrapper ag-theme-alpine">
+    <!-- ===== TABLA AG-GRID ===== -->
+    <div class="grid-wrapper">
       <ag-grid-angular
-        class="facturas-grid"
+        class="ag-theme-alpine custom-grid"
         [rowData]="rowData"
         [columnDefs]="columnDefs"
         [defaultColDef]="defaultColDef"
         [rowSelection]="'multiple'"
         [suppressRowClickSelection]="false"
         [animateRows]="true"
+        [pagination]="true"
+        [paginationPageSize]="20"
         (gridReady)="onGridReady($event)"
       >
       </ag-grid-angular>
     </div>
 
-    <!-- Texto de paginación (dummy, puedes reemplazar por paginación real) -->
+    <!-- Texto de paginación (opcional) -->
     <div class="paginacion-texto">
       Páginas mostradas 1 a 10 de 100 entradas
     </div>

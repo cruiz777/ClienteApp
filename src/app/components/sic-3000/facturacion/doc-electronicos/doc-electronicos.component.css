@@ -13,56 +13,32 @@
   box-sizing: border-box;
 }
 
-/* ===== TABS (estilo cierre de anticipos) ===== */
-
-.tabs {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 0;
-  padding: 8px;
-  background-color: #f4f6f8;
-  border-radius: 8px 8px 0 0;
-  border-bottom: 2px solid #ccc;
-}
-
-.tabs button {
-  flex: 1;
-  background-color: #e0e7ef;
-  border: none;
-  padding: 10px 20px;
-  font-weight: 600;
-  border-radius: 8px 8px 0 0;
-  color: #1f2937;
-  cursor: pointer;
-  transition: background-color 0.25s ease, color 0.25s ease;
-  text-align: center;
-}
-
-.tabs button:hover {
-  background-color: #cbd5e1;
-}
-
-.tabs button.active {
-  background-color: #002c6c;
-  color: #ffffff;
-}
-
-/* ===== CONTENEDOR PRINCIPAL ===== */
-
 .contenido-tablas {
   padding: 16px 20px 20px;
   background-color: #ffffff;
   border: 1px solid #ccc;
-  border-radius: 0 0 8px 8px;
+  border-radius: 8px;
 }
 
-/* Título */
+/* ===== CABECERA: TÍTULO + COMBO ===== */
+
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 10px;
+}
 
 .title {
   font-size: 20px;
   font-weight: 600;
-  margin: 8px 0 18px;
+  margin: 0;
   color: #002c6c;
+}
+
+.tipo-doc-field {
+  width: 260px;
 }
 
 /* ===== FILTROS Y BÚSQUEDA ===== */
@@ -120,10 +96,10 @@
   width: 100%;
 }
 
-/* ===== AG-GRID ===== */
+/* ===== AG-GRID WRAPPER ===== */
 
 .grid-wrapper {
-  height: 360px;
+  height: calc(100vh - 260px); /* similar a asientos contables */
   margin-top: 8px;
   background-color: #ffffff;
   border-radius: 4px;
@@ -131,83 +107,114 @@
   overflow: hidden;
 }
 
-.facturas-grid {
-  width: 100%;
-  height: 100%;
+/* ===== TEMA CUSTOM-GRID (Mismo estilo asientos) ===== */
+
+.ag-theme-alpine.custom-grid {
+  --ag-header-height: 36px;
+  --ag-row-height: 32px;
+
+  --ag-background-color: #dde3ee;      /* fondo */
+  --ag-foreground-color: #080808;      /* letra */
+
+  --ag-header-background-color: #1d789f; /* cabecera */
+  --ag-header-foreground-color: #e5e7eb;
+
+  --ag-odd-row-background-color: #f6f8f9; /* filas impares */
+  --ag-even-row-background-color: #abc3f1; /* filas pares */
+
+  --ag-row-hover-color: #eaf1c3;
+  --ag-border-color: #afb0ad;
+  --ag-font-size: 12px;
+
+  --ag-selected-row-background-color: #a3c0e8;
 }
 
 /* Header AG-Grid */
 
-.ag-theme-alpine .ag-header {
-  background-color: #eff4fb;
+.ag-theme-alpine.custom-grid .ag-header {
   border-bottom: 1px solid #d3dde8;
 }
 
-.ag-theme-alpine .ag-header-cell-label {
+.ag-theme-alpine.custom-grid .ag-header-cell-label {
   justify-content: center;
   font-size: 12px;
-  color: #4b5563;
 }
 
 /* Celdas */
 
-.ag-theme-alpine .ag-cell {
+.ag-theme-alpine.custom-grid .ag-cell {
   font-size: 12px;
 }
 
-.ag-theme-alpine .ag-row {
+.ag-theme-alpine.custom-grid .ag-row {
   border-bottom: 1px solid #edf2f7;
 }
 
-/* ===== COLUMNA ACCIÓN (ICONOS COLORES) ===== */
+/* ===== PAGINACIÓN ESTILO ASIENTOS ===== */
 
-.acciones-cell {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 4px;
+:host ::ng-deep .custom-grid .ag-paging-panel {
+  padding: 4px 10px;
+  gap: 8px;
+  font-size: 13px;
 }
 
-.accion-btn {
-  width: 24px;
-  height: 24px;
-  border-radius: 4px;
-  border: none;
+/* Botones de paginación << < > >> */
+:host ::ng-deep .custom-grid .ag-paging-button {
+  min-width: 32px;
+  height: 32px;
   padding: 0;
-  display: flex;
+  margin: 0 2px;
+  border-radius: 50px;
+  border: 1px solid #b0bec5;
+  background-color: #a3c0e8;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
 }
 
-.accion-btn .material-icons {
+/* Iconos dentro del botón */
+:host ::ng-deep .custom-grid .ag-paging-button .ag-icon {
   font-size: 16px;
-  color: #ffffff;
 }
 
-/* Colores (ajustados al estilo de la imagen) */
-
-.accion-ver {
-  background-color: #26b7ff; /* azul visibilidad */
+/* Hover */
+:host ::ng-deep .custom-grid .ag-paging-button:hover {
+  background-color: #e0f2f1;
 }
 
-.accion-xml {
-  background-color: #00b894; /* verde XML */
+/* Combo de Page Size */
+:host ::ng-deep .custom-grid .ag-paging-panel .ag-paging-page-size-select {
+  height: 32px;
+  font-size: 13px;
+  padding: 2px 6px;
 }
 
-.accion-pdf {
-  background-color: #f39c12; /* naranja PDF */
+/* ===== COLUMNA ACCIÓN (ÍCONOS PEQUEÑOS) ===== */
+
+.acciones-inline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
-.accion-mail {
-  background-color: #2ecc71; /* verde correo */
+.ag-action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
 }
 
-.accion-anular {
-  background-color: #e74c3c; /* rojo anular */
+.ag-action-btn img {
+  width: 16px;
+  height: 16px;
 }
 
-/* ===== PIE / PAGINACIÓN TEXTO ===== */
+/* ===== PIE / PAGINACIÓN TEXTO (OPCIONAL) ===== */
 
 .paginacion-texto {
   margin-top: 8px;
@@ -219,12 +226,13 @@
 /* ===== RESPONSIVE ===== */
 
 @media screen and (max-width: 768px) {
-  .tabs {
-    flex-direction: column;
-  }
-
   .page-container {
     padding: 12px 12px 16px;
+  }
+
+  .header-row {
+    flex-direction: column;
+    align-items: flex-start;
   }
 
   .filters-group {
@@ -233,6 +241,10 @@
   }
 
   .filter-field {
+    width: 100%;
+  }
+
+  .tipo-doc-field {
     width: 100%;
   }
 
