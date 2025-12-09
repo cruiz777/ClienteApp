@@ -6,7 +6,7 @@ import { JsonEmpresaService } from 'src/app/services/json-empresa.service';
 import { AsyncValidatorFn } from '@angular/forms';
 import { of, timer } from 'rxjs';
 
-import { map, startWith, take, takeUntil, filter, switchMap, catchError } from 'rxjs/operators';
+import { map, startWith, take, takeUntil, filter, switchMap, catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 // Angular Forms
 import {
@@ -82,6 +82,7 @@ export class DialogClienteComponent implements OnInit {
   grupoSeleccionado!: number;
 
   gruposProducto: GrupoProducto[] = [];
+  buscandoGrupoProducto = false;
   grupoProductoCtrl = new FormControl('');
   gruposProductoFiltrados$!: Observable<GrupoProducto[]>;
   grupoProductoFiltrados: GrupoProducto[] = [];
@@ -356,21 +357,72 @@ export class DialogClienteComponent implements OnInit {
 
 
 
-  cargarGruposProducto(): void {
-    this.grupoProductoService.obtenerGrupos().subscribe(data => {
-      this.gruposProducto = data;
+  // cargarGruposProducto(): void {
+  //   this.grupoProductoService.obtenerGrupos().subscribe(data => {
+  //     this.gruposProducto = data;
 
-      this.paso1Form.get('grupoProducto')?.valueChanges
-        .pipe(startWith(''))
-        .subscribe(valor => {
-          const filtro = typeof valor === 'string' ? valor.toLowerCase() : '';
-          this.grupoProductoFiltrados = this.gruposProducto.filter(g =>
-            (g.codigo + ' ' + g.brick + ' ' + g.desBrick).toLowerCase().includes(filtro)
+  //     this.paso1Form.get('grupoProducto')?.valueChanges
+  //       .pipe(startWith(''))
+  //       .subscribe(valor => {
+  //         const filtro = typeof valor === 'string' ? valor.toLowerCase() : '';
+  //         this.grupoProductoFiltrados = this.gruposProducto.filter(g =>
+  //           (g.codigo + ' ' + g.brick + ' ' + g.desBrick).toLowerCase().includes(filtro)
+  //         );
+  //       });
+  //   });
+  // }
+  cargarGruposProducto(): void {
+    this.paso1Form.get('grupoProducto')?.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap(valor => {
+          // Si es objeto seleccionado, no buscar
+          if (typeof valor === 'object' && valor !== null) {
+            this.buscandoGrupoProducto = false;
+            return of([valor]);
+          }
+
+          const searchTerm = typeof valor === 'string' ? valor.trim() : '';
+
+          // 🔄 Mostrar indicador de carga
+          this.buscandoGrupoProducto = true;
+
+          // 🆕 Si está vacío, traer los primeros 100 registros
+          return this.grupoProductoService.buscarGrupoProducto(searchTerm, 100).pipe(
+            catchError(err => {
+              console.error('❌ Error:', err);
+              this.mostrarAlerta('Error al buscar categorías', 'Error');
+              return of([]);
+            })
           );
-        });
-    });
+        })
+      )
+      .subscribe(resultados => {
+        this.grupoProductoFiltrados = resultados;
+        this.buscandoGrupoProducto = false;
+      });
   }
 
+  // 🆕 NUEVO MÉTODO: Cargar al hacer focus
+  cargarGruposProductoInicial(): void {
+    // Solo cargar si no hay resultados previos
+    if (this.grupoProductoFiltrados.length === 0) {
+      this.buscandoGrupoProducto = true;
+
+      this.grupoProductoService.buscarGrupoProducto('', 100).subscribe({
+        next: (resultados) => {
+          this.grupoProductoFiltrados = resultados;
+          this.buscandoGrupoProducto = false;
+          console.log('📦 Cargados primeros 100 registros');
+        },
+        error: (err) => {
+          console.error('❌ Error cargando inicial:', err);
+          this.buscandoGrupoProducto = false;
+        }
+      });
+    }
+  }
 
   filtrarGruposProducto(valor: string | GrupoProducto): GrupoProducto[] {
     const filtro = typeof valor === 'string' ? valor.toLowerCase() : valor?.desBrick?.toLowerCase() || '';

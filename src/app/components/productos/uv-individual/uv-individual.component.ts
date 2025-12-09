@@ -14,7 +14,7 @@ import { PrefijoService } from 'src/app/services/prefijo.service';
 import { GrupoProductoService, GrupoProducto } from 'src/app/services/grupo-producto.service';
 import { Observable, of } from 'rxjs';
 import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
-import { startWith, map } from 'rxjs/operators';
+import { startWith, map, distinctUntilChanged, catchError } from 'rxjs/operators';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
 import { GeneracionCodigosService, SecuenciaResponse } from 'src/app/services/generacion-codigos.service';
@@ -68,6 +68,7 @@ export class UvIndividualComponent implements OnInit {
   gruposProducto: GrupoProducto[] = [];
   grupoProductoCtrl = new FormControl('');
   categoriasFiltradas: GrupoProducto[] = [];
+  buscandoGrupoProducto = false;
   grupoProductoSeleccionado!: number;
 
   bandera: number = 0;
@@ -453,29 +454,58 @@ export class UvIndividualComponent implements OnInit {
   }
 
 
+  //
+
   cargarGrupoProductos(): void {
+    // ✅ Configurar búsqueda dinámica con debounce
+    this.formUV.get('categoria')?.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap(valor => {
+          // Si es objeto seleccionado, no buscar
+          if (typeof valor === 'object' && valor !== null) {
+            this.buscandoGrupoProducto = false;
+            // ✅ Mantener la lógica de brick
+            if (valor.brick) {
+              this.formUV.get('brick')?.setValue(valor.brick);
+            }
+            return of([]);
+          }
 
-    this.grupoProductoService.obtenerGrupos().subscribe(data => {
-      this.gruposProducto = data;
-      this.formUV.get('categoria')?.valueChanges
-        .pipe(startWith(''))
-        .subscribe(valor => {
-          const filtro = typeof valor === 'string' ? valor.toLowerCase() : '';
-          this.categoriasFiltradas = this.gruposProducto.filter(g =>
-            g.codigo.toLowerCase().includes(filtro) ||
-            g.brick.toLowerCase().includes(filtro) ||
-            g.desBrick.toLowerCase().includes(filtro)
+          const searchTerm = typeof valor === 'string' ? valor.trim() : '';
+          this.buscandoGrupoProducto = true;
+
+          return this.grupoProductoService.buscarGrupoProducto(searchTerm, 100).pipe(
+            catchError(err => {
+              console.error('❌ Error:', err);
+              return of([]);
+            })
           );
-        });
-    });
-    this.formUV.get('categoria')?.valueChanges.subscribe(valor => {
-      if (valor && typeof valor === 'object') {
-        this.formUV.get('brick')?.setValue(valor.brick);
-      }
-    });
-
+        })
+      )
+      .subscribe(resultados => {
+        if (resultados.length > 0 || typeof this.formUV.get('categoria')?.value === 'string') {
+          this.categoriasFiltradas = resultados;
+        }
+        this.buscandoGrupoProducto = false;
+      });
   }
+  cargarGruposProductoInicial(): void {
+    if (this.categoriasFiltradas.length === 0) {
+      this.buscandoGrupoProducto = true;
 
+      this.grupoProductoService.buscarGrupoProducto('', 100).subscribe({
+        next: (resultados) => {
+          this.categoriasFiltradas = resultados;
+          this.buscandoGrupoProducto = false;
+        },
+        error: () => {
+          this.buscandoGrupoProducto = false;
+        }
+      });
+    }
+  }
   displayWithCategoria(categoria: GrupoProducto): string {
     return categoria?.desBrick || '';
   }
@@ -935,7 +965,7 @@ export class UvIndividualComponent implements OnInit {
     if (codpre.length === 8 && codpre.startsWith('8000')) {
       if (nserie >= 10) {
         this.mostrarAlerta('¡Ya no puede generar más códigos, necesita afiliarse!', 'Error');
-        
+
         return false;
       }
     }
@@ -2490,24 +2520,21 @@ export class UvIndividualComponent implements OnInit {
   }
 
   cargarClientePorId(id: number): void {
-
-    console.log('🔍 ID recibido en cargarClientePorId:', id); // 👈 AÑADE ESTO
+    console.log('🔍 ID recibido en cargarClientePorId:', id);
 
     this.clienteService.getClienteById(id).subscribe({
       next: (cliente) => {
         this.id_grupo_producto = cliente.idGrupoProducto;
 
-        this.grupoProductoService.obtenerGrupoPorId(this.id_grupo_producto).subscribe(grupo => {
-          if (!this.gruposProducto || this.gruposProducto.length === 0) {
-            this.grupoProductoService.obtenerGrupos().subscribe(data => {
-              this.gruposProducto = data;
-              this.seleccionarCategoria(grupo);
-            });
-          } else {
+        // Cargar solo el grupo específico del cliente
+        this.grupoProductoService.obtenerGrupoPorId(this.id_grupo_producto).subscribe({
+          next: (grupo) => {
             this.seleccionarCategoria(grupo);
+            console.log('✅ Grupo producto obtenido:', grupo);
+          },
+          error: (err) => {
+            console.error('❌ Error al obtener grupo producto:', err);
           }
-
-          console.log('✅ Grupo producto obtenido:', grupo);
         });
       },
       error: (err) => {
@@ -2515,6 +2542,32 @@ export class UvIndividualComponent implements OnInit {
       }
     });
   }
+  // cargarClientePorId(id: number): void {
+
+  //   console.log('🔍 ID recibido en cargarClientePorId:', id); // 👈 AÑADE ESTO
+
+  //   this.clienteService.getClienteById(id).subscribe({
+  //     next: (cliente) => {
+  //       this.id_grupo_producto = cliente.idGrupoProducto;
+
+  //       this.grupoProductoService.obtenerGrupoPorId(this.id_grupo_producto).subscribe(grupo => {
+  //         if (!this.gruposProducto || this.gruposProducto.length === 0) {
+  //           this.grupoProductoService.obtenerGrupos().subscribe(data => {
+  //             this.gruposProducto = data;
+  //             this.seleccionarCategoria(grupo);
+  //           });
+  //         } else {
+  //           this.seleccionarCategoria(grupo);
+  //         }
+
+  //         console.log('✅ Grupo producto obtenido:', grupo);
+  //       });
+  //     },
+  //     error: (err) => {
+  //       console.error('❌ Error al obtener cliente:', err);
+  //     }
+  //   });
+  // }
 
   calcularDigitoVerificador12Manual(): void {
     const input = this.formUL.get('gtinUl')?.value;
@@ -2657,7 +2710,7 @@ export class UvIndividualComponent implements OnInit {
     });
   }
   onIndicadorBlur(): void {
-  
+
   const { indicador } = this.formUL.getRawValue();
   const { gtinUv, codigoCliente } = this.formUV.getRawValue();
 
