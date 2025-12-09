@@ -92,8 +92,8 @@
           <label>Fecha Transacción</label>
           <input
             class="control"
-            type="datetime-local"
-            [value]="form.value.fechatransaccion | date:'yyyy-MM-ddTHH:mm'"
+            type="date"
+            [value]="form.value.fechatransaccion | date:'yyyy-MM-dd'"
             (input)="form.patchValue({ fechatransaccion: $any($event.target).value })"
           />
         </div>

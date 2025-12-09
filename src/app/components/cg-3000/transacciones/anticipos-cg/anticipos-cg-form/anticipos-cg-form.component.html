@@ -1,0 +1,259 @@
+<!-- src/app/components/anticipos/anticipos-cg-form/anticipos-cg-form.component.html -->
+
+<div class="anticipo-wrapper">
+  <div class="toolbar sticky-header">
+    <div class="title">Crear/Editar (Anticipo a Proveedores)</div>
+
+    <div class="actions">
+      <button (click)="guardar()" class="btn-verde">Guardar</button>
+      <button class="btn" (click)="cancelar()">Cancelar</button>
+    </div>
+  </div>
+
+  <div class="content-scroll">
+    <form [formGroup]="formCabecera" class="header-form header-compact">
+      <div class="grid">
+        <!-- ZONA -->
+        <div class="form-group">
+          <label for="idZona">
+            Zona
+            <span class="required">*</span>
+          </label>
+
+          <select
+            id="idZona"
+            class="control"
+            formControlName="idZona"
+            [attr.title]="'Seleccione la zona'"
+          >
+            <option [ngValue]="null" disabled>Seleccione...</option>
+            <option *ngFor="let z of (zonas$ | async)" [ngValue]="z.idZona">
+              {{ z.numero }} - {{ z.nombre }}
+            </option>
+          </select>
+
+          <div
+            class="error"
+            *ngIf="
+              formCabecera.get('idZona')?.hasError('required') &&
+              formCabecera.get('idZona')?.touched
+            "
+          >
+            Campo obligatorio.
+          </div>
+        </div>
+
+        <!-- TIPO ASIENTO -->
+        <div class="form-group">
+          <label for="idTipoAsiento">
+            Tipo Asiento
+            <span class="required">*</span>
+          </label>
+
+          <select
+            id="idTipoAsiento"
+            class="control"
+            formControlName="idTipoAsiento"
+            [attr.title]="'Seleccione el tipo documento'"
+          >
+            <option [ngValue]="null" disabled>Seleccione...</option>
+            <option
+              *ngFor="let ta of (tiposAsiento$ | async)"
+              [ngValue]="ta.IdTipoAsiento"
+            >
+              {{ ta.TipAsiento }} — {{ ta.Descripcion }}
+            </option>
+          </select>
+
+          <div
+            class="error"
+            *ngIf="
+              formCabecera.get('idTipoAsiento')?.invalid &&
+              formCabecera.get('idTipoAsiento')?.touched
+            "
+          >
+            Campo obligatorio.
+          </div>
+        </div>
+
+        <!-- FECHA TRANSACCIÓN -->
+        <div class="form-group">
+          <label>Fecha Transacción</label>
+          <input
+            class="control"
+            type="date"
+            formControlName="fechatransaccion"
+          />
+        </div>
+
+        <!-- FECHA INGRESO -->
+        <div class="form-group">
+          <label>Fecha Ingreso</label>
+          <input
+            class="control"
+            type="datetime-local"
+            formControlName="fechaingreso"
+            readonly
+          />
+        </div>
+
+        <!-- BENEFICIARIO -->
+        <div class="form-group span-2-left">
+          <label>Proveedor <span class="required">*</span></label>
+          <input
+            type="text"
+            class="control"
+            placeholder="Buscar por identificación o razón social..."
+            formControlName="beneficiario"
+            [matAutocomplete]="autoBenef"
+            [ngClass]="{
+              'ng-invalid ng-touched':
+                formCabecera.get('beneficiario')?.invalid &&
+                formCabecera.get('beneficiario')?.touched
+            }"
+          />
+
+          <mat-autocomplete
+            #autoBenef="matAutocomplete"
+            (optionSelected)="onBeneficiarioSelected($event.option.value)"
+          >
+            <mat-option
+              *ngFor="let c of (beneficiariosFiltrados$ | async)"
+              [value]="c"
+            >
+              {{ c.Identificacionauxiliar }} — {{ c.Razonsocial }}
+            </mat-option>
+          </mat-autocomplete>
+
+          <div
+            class="error"
+            *ngIf="
+              formCabecera.get('beneficiario')?.invalid &&
+              formCabecera.get('beneficiario')?.touched
+            "
+          >
+            Campo obligatorio.
+          </div>
+        </div>
+
+        <!-- CONCEPTO -->
+        <div class="form-group span-2-right">
+          <label>Concepto <span class="required">*</span></label>
+          <textarea class="control" formControlName="concepto"></textarea>
+          <div
+            class="error"
+            *ngIf="
+              formCabecera.get('concepto')?.invalid &&
+              formCabecera.get('concepto')?.touched
+            "
+          >
+            Campo obligatorio.
+          </div>
+        </div>
+
+        <!-- CUENTA ANTICIPO (combo ya implementado) -->
+        <div class="form-group span-2-left">
+          <label>Cuenta Anticipo <span class="required">*</span></label>
+
+          <select class="control" formControlName="idPlanCtasAnticipo">
+            <option [ngValue]="null" disabled>Seleccione cuenta...</option>
+            <option
+              *ngFor="let cta of (cuentasAnticipo$ | async)"
+              [ngValue]="cta.IdPlanCuentas"
+            >
+              {{ cta.CuentaPresentacion }} - {{ cta.Descripcion }}
+            </option>
+          </select>
+
+          <div
+            class="error"
+            *ngIf="
+              formCabecera.get('idPlanCtasAnticipo')?.invalid &&
+              formCabecera.get('idPlanCtasAnticipo')?.touched
+            "
+          >
+            Seleccione la cuenta de anticipo.
+          </div>
+        </div>
+
+        <!-- FORMA DE PAGO CG -->
+        <div class="form-group">
+          <label>Forma de Pago <span class="required">*</span></label>
+          <select class="control" formControlName="idFormaPagoCg">
+            <option [ngValue]="null" disabled>Seleccione...</option>
+            <option
+              *ngFor="let fp of (formasPago$ | async)"
+              [ngValue]="fp.idFormaPagoCg"
+            >
+              {{ fp.descripcion }}
+            </option>
+          </select>
+
+          <div
+            class="error"
+            *ngIf="
+              formCabecera.get('idFormaPagoCg')?.invalid &&
+              formCabecera.get('idFormaPagoCg')?.touched
+            "
+          >
+            Seleccione una forma de pago.
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- BOTÓN + BENEFICIARIO 2 (BANCO) EN LA MISMA FILA -->
+  <div class="subtoolbar subtoolbar--right subtoolbar-banco">
+    <button class="btn" type="button" (click)="agregarLinea()">
+      <img src="assets/icons/aniadir.png" alt="" class="btn-add__icon" />
+      Agregar Línea Banco
+    </button>
+
+    <!-- Beneficiario 2 -->
+    <div class="banco-busqueda">
+      <label class="banco-busqueda-label">Beneficiario</label>
+
+      <input
+        type="text"
+        class="control"
+        placeholder="Buscar por identificación o razón social..."
+        [formControl]="busquedaCodBanco"
+        [matAutocomplete]="autoBanco"
+      />
+
+      <mat-autocomplete
+        #autoBanco="matAutocomplete"
+        (optionSelected)="onCodBancoSelected($event.option.value)"
+      >
+        <mat-option
+          *ngFor="let c of (codigosBancoFiltrados$ | async)"
+          [value]="c"
+        >
+          {{ c.Identificacionauxiliar }} — {{ c.Razonsocial }}
+        </mat-option>
+      </mat-autocomplete>
+    </div>
+  </div>
+
+  <!-- GRID DETALLE (BANCO) -->
+  <ag-grid-angular
+    class="ag-theme-alpine grid-anticipo"
+    [rowData]="rowData"
+    [columnDefs]="columnDefs"
+    [defaultColDef]="defaultColDef"
+    (gridReady)="onGridReady($event)"
+    (cellValueChanged)="onCellValueChanged($event)"
+    (cellClicked)="onCellClicked($event)"
+  >
+  </ag-grid-angular>
+
+  <!-- TOTALES -->
+   <div class="totales">
+    <div class="tot">
+      <span class="total-label">Total Anticipo:</span>
+      <strong>{{ totalAnticipo | number: '1.2-2' }}</strong>
+    </div>
+  </div>
+  
+</div>

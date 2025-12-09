@@ -28,7 +28,7 @@ type PlanCuentaCreateRequest = {
   CuentaSubcta: string;
   CuentaPresentacion: string;
   NombreCuenta: string;
-  IdCodigoEspecial: number;
+  IdCodigoEspecial: number | null;///number;
   IdNivel: number;
   Descripcion: string;
   CuentaHomologacion: string;
@@ -36,7 +36,7 @@ type PlanCuentaCreateRequest = {
   Estado: boolean;
   FechaActivacion: string;
   IdUsuario: number;
-  IdCabModelo: number;
+  IdCabModelo: number | null;//number;
   ParentId: number;
   EsMovimiento: boolean;
   Orden: number;
@@ -149,12 +149,12 @@ export class PlanCuentasTreeComponent implements OnInit {
       ],
       [this.cuentaPresentacionUnicaValidator()]
     ],
-    IdCodigoEspecial: [0, [Validators.required, this.requireSelection()]],
+    IdCodigoEspecial: [null as number | null],// [0, [Validators.required, this.requireSelection()]],
     CuentaHomologacion: [''],
     PorcentajeRetencion: [0, [Validators.required]],
     FechaActivacion: [''],
     IdUsuario: this.usuarioActual?.id_usuario,
-    IdCabModelo: [0, [Validators.required, this.requireSelection()]],
+    IdCabModelo:  [null as number | null],  /// [0, [Validators.required, this.requireSelection()]],
     CodigoExterno: [''],
     Norma: [''],
     Alcanse: [''],
@@ -280,12 +280,12 @@ export class PlanCuentasTreeComponent implements OnInit {
       CuentaMayor: it.CuentaMayor ?? '',
       CuentaSubcta: it.CuentaSubcta ?? '',
       CuentaPresentacion: it.CuentaPresentacion ?? '',
-      IdCodigoEspecial: Number(it.IdCodigoEspecial ?? 0),
+      IdCodigoEspecial:(it.IdCodigoEspecial ?? null) as number | null,///Number(it.IdCodigoEspecial ?? 0),
       CuentaHomologacion: it.CuentaHomologacion ?? '',
       PorcentajeRetencion: Number(it.PorcentajeRetencion ?? 0),
       FechaActivacion: it.FechaActivacion ?? '',
       IdUsuario: Number(it.IdUsuario ?? 0),
-      IdCabModelo: Number(it.IdCabModelo ?? 0),
+      IdCabModelo: (it.IdCabModelo ?? null) as number | null,// Number(it.IdCabModelo ?? 0),
       CodigoExterno: it.CodigoExterno ?? '',
       Norma: it.Norma ?? '',
       Alcanse: it.Alcanse ?? '',
@@ -313,12 +313,12 @@ export class PlanCuentasTreeComponent implements OnInit {
       CuentaMayor: '',
       CuentaSubcta: '',
       CuentaPresentacion: '',
-      IdCodigoEspecial: 0,
+      IdCodigoEspecial: null as number | null,//0,
       CuentaHomologacion: '',
       PorcentajeRetencion: 0,
       FechaActivacion: '',
       IdUsuario: this.usuarioActual?.id_usuario,
-      IdCabModelo: 0,
+      IdCabModelo: null as number | null, //0,
       CodigoExterno: '',
       Norma: '',
       Alcanse: '',
@@ -351,12 +351,12 @@ export class PlanCuentasTreeComponent implements OnInit {
       CuentaMayor: '',
       CuentaSubcta: '',
       CuentaPresentacion: '',
-      IdCodigoEspecial: 0,
+      IdCodigoEspecial:  null as number | null, // 0,
       CuentaHomologacion: '',
       PorcentajeRetencion: 0,
       FechaActivacion: '',
       IdUsuario: this.usuarioActual?.id_usuario, // ✅ corregido
-      IdCabModelo: 0,
+      IdCabModelo:  null as number | null, // 0,
       CodigoExterno: '',
       Norma: '',
       Alcanse: '',
@@ -399,6 +399,16 @@ export class PlanCuentasTreeComponent implements OnInit {
     const parentId  = Number(val.ParentId ?? 0);
     const esMovimiento = nivelNum === 5;
 
+    const idCodEsp =
+    val.IdCodigoEspecial == null || Number(val.IdCodigoEspecial) === 0
+    ? null
+    : Number(val.IdCodigoEspecial);
+
+    const idCabModelo =
+    val.IdCabModelo == null || Number(val.IdCabModelo) === 0
+    ? null
+    : Number(val.IdCabModelo);
+
     const codigoCompleto = (val.CodigoCompleto && String(val.CodigoCompleto).trim() !== '')
       ? String(val.CodigoCompleto)
       : this.generarCodigoCompleto(val);
@@ -424,12 +434,12 @@ export class PlanCuentasTreeComponent implements OnInit {
         CuentaMayor: String(val.CuentaMayor ?? ''),
         CuentaSubcta: String(val.CuentaSubcta ?? ''),
         CuentaPresentacion: String(val.CuentaPresentacion ?? ''),
-        IdCodigoEspecial: Number(val.IdCodigoEspecial ?? 0),
+        IdCodigoEspecial: idCodEsp, //Number(val.IdCodigoEspecial ?? 0),
         CuentaHomologacion: String(val.CuentaHomologacion ?? ''),
         PorcentajeRetencion: Number(val.PorcentajeRetencion ?? 0),
         FechaActivacion: fechaActivacion,
         IdUsuario: Number(val.IdUsuario ?? 0),
-        IdCabModelo: Number(val.IdCabModelo ?? 0),
+        IdCabModelo:  idCabModelo,// Number(val.IdCabModelo ?? 0),
         EsMovimiento: esMovimiento,
         CodigoExterno: String(val.CodigoExterno ?? ''),
         Norma: String(val.Norma ?? ''),
@@ -465,6 +475,17 @@ export class PlanCuentasTreeComponent implements OnInit {
       });
 
     } else {
+
+      const idCodEsp =
+        val.IdCodigoEspecial == null || Number(val.IdCodigoEspecial) === 0
+          ? null
+          : Number(val.IdCodigoEspecial);
+
+      const idCabModelo =
+        val.IdCabModelo == null || Number(val.IdCabModelo) === 0
+          ? null
+          : Number(val.IdCabModelo);
+
       const payloadCreate: PlanCuentaCreateRequest = {
         ParentId: parentId,
         IdNivel: nivelNum,
@@ -477,13 +498,13 @@ export class PlanCuentasTreeComponent implements OnInit {
         CuentaMayor: String(val.CuentaMayor ?? ''),
         CuentaSubcta: String(val.CuentaSubcta ?? ''),
         CuentaPresentacion: String(val.CuentaPresentacion ?? ''),
-        IdCodigoEspecial: Number(val.IdCodigoEspecial ?? 0),
+        IdCodigoEspecial: idCodEsp, //Number(val.IdCodigoEspecial ?? 0),
         CuentaHomologacion: String(val.CuentaHomologacion ?? ''),
         PorcentajeRetencion: Number(val.PorcentajeRetencion ?? 0),
         Estado: true,
         FechaActivacion: fechaActivacion,
         IdUsuario: Number(val.IdUsuario ?? 0),
-        IdCabModelo: Number(val.IdCabModelo ?? 0),
+        IdCabModelo: idCabModelo,// Number(val.IdCabModelo ?? 0),
         EsMovimiento: esMovimiento,
         CodigoExterno: String(val.CodigoExterno ?? ''),
         Norma: String(val.Norma ?? ''),

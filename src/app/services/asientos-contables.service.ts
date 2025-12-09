@@ -80,6 +80,7 @@ interface CreateAsientoRequest {
   autorizado: string | null;
   homCodigo: number | null;
   estado: boolean;
+  modulo: number;  ///campo nuevo
   detalles: CreateDetalleRequest[];
 }
 /** ============================================================= */
@@ -104,6 +105,7 @@ export class AsientosContablesService {
     observacion: x?.observacion ?? x?.Observacion ?? null,
     idEmpresa: Number(x?.idEmpresa ?? x?.IdEmpresa ?? 0),
     estado: Boolean(x?.estado ?? x?.Estado ?? true),
+    modulo: Number(x?.modulo ?? x?.Modulo ?? 0),  ///campo nuevo
   });
 
   GetListado(fechaInicio: string, fechaFinal: string): Observable<ListadoAsientoContableResponse[]> {
@@ -281,6 +283,7 @@ export class AsientosContablesService {
       autorizado: this.toNull(h.autorizado, false),
       homCodigo: this.toNull(h.homCodigo),
       estado: !!h.estado,
+      modulo: 0,   
       detalles,
     };
   }

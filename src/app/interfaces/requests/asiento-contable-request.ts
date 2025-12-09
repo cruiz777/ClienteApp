@@ -20,6 +20,7 @@ export interface AsientoContableRequest {
   autorizado: string;
   homCodigo: number;
   estado: boolean;
+  modulo: number;
   detalles: DetalleAsientoRequest[];
 }
 
@@ -92,6 +93,7 @@ export function createEmptyAsientoContableRequest(): AsientoContableRequest {
     autorizado: '',
     homCodigo: 0,
     estado: true,
+    modulo: 0,
     detalles: [
       {
         IdDetMaestro: 0,

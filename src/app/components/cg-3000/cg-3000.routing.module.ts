@@ -22,6 +22,8 @@ import { CodigosContablesComponent } from './configuracion/maestro-codigos/maest
 import { AsientoFormComponent } from './configuracion/asientos/asientos-form/asiento-form.component';
 import { AsientoContableComponent } from './transacciones/asientos-contables/asientos-contables-list/asientos-contables-list.component';
 import { FacturasProveedorFormComponent } from './transacciones/facturas-proveedor/facturas-proveedor-form/facturas-proveedor-form.component';
+import { FacturasProveedorComponent } from './transacciones/facturas-proveedor/facturas-proveedor-list/facturas-proveedor-list.component';
+import { AnticipoCgFormComponent } from './transacciones/anticipos-cg/anticipos-cg-form/anticipos-cg-form.component';
 
 const routes: Routes = [
   {
@@ -46,7 +48,8 @@ const routes: Routes = [
       { path: 'codigoscontables', component:CodigosContablesComponent},
       { path: 'asientoscontables', component:AsientoFormComponent},
       { path: 'asientocontable', component:AsientoContableComponent},
-      { path: 'ingresodocumentos', component:FacturasProveedorFormComponent},      
+      { path: 'ingresodocumentos', component:FacturasProveedorComponent},      
+      { path: 'anticipos', component:AnticipoCgFormComponent}, 
       { path: '**', redirectTo: 'inicio-cg' },
     ],
   },

@@ -20,6 +20,7 @@ export interface AsientoContableResponse {
   autorizado: string;
   homCodigo: number;
   estado: boolean;
+  modulo: number;
   detalles: DetalleAsientoResponse[];
 }
 
@@ -92,6 +93,7 @@ export function createEmptyAsientoContableResponse(): AsientoContableResponse {
     autorizado: '',
     homCodigo: 0,
     estado: true,
+    modulo: 0,
     detalles: [
       {
         IdDetMaestro: 0,
