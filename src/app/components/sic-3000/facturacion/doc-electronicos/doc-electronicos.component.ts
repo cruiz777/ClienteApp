@@ -1,18 +1,19 @@
+// doc-electronicos.component.ts
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import {
   ColDef,
   GridApi,
   GridReadyEvent,
-  ValueFormatterParams,
+  ValueFormatterParams
 } from 'ag-grid-community';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import {
-  DocElectronicosService,
-  DocElectronico,
-} from 'src/app/services/doc-electronicos.service';
-
-type TipoDocumento = 'FACTURA' | 'NC' | 'ND' | 'RET';
+  DocumentosService,
+  DocumentoGrid,
+  TipoDocumento,
+} from 'src/app/services/docs-elect.service';
+import { AccionesCellRendererComponent } from './acciones-cell-renderer.component';
 
 @Component({
   selector: 'app-doc-electronicos',
@@ -20,38 +21,41 @@ type TipoDocumento = 'FACTURA' | 'NC' | 'ND' | 'RET';
   styleUrls: ['./doc-electronicos.component.css'],
 })
 export class DocElectronicosComponent implements OnInit {
-  /** Tipo de documento seleccionado en el combo */
   tipoDocumentoActivo: TipoDocumento = 'FACTURA';
 
   filtrosForm: FormGroup;
-  columnDefs: ColDef<DocElectronico>[] = [];
+  columnDefs: ColDef<DocumentoGrid>[] = [];
   defaultColDef: ColDef;
-  rowData: DocElectronico[] = [];
+  rowData: DocumentoGrid[] = [];
 
-  private gridApi?: GridApi<DocElectronico>;
-
+  private gridApi?: GridApi<DocumentoGrid>;
+  loading = false;
+  currentPage = 1;        // ⬅️ AGREGAR
+  pageSize = 20;          // ⬅️ AGREGAR
+  totalItems = 0;
   constructor(
     private fb: FormBuilder,
-    private docService: DocElectronicosService,
+    private docService: DocumentosService,
     private snackBar: MatSnackBar
   ) {
-    // Formulario de filtros
+    // ⬅️ FECHAS POR DEFECTO: 1° del mes actual hasta hoy
+    const hoy = new Date();
+    const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+
     this.filtrosForm = this.fb.group({
-      fechaDesde: [null],
-      fechaHasta: [null],
+      fechaDesde: [primerDiaMes], // ⬅️ Por defecto: 1° del mes
+      fechaHasta: [hoy],           // ⬅️ Por defecto: hoy
       textoBusqueda: [''],
     });
 
-    // Configuración por defecto de columnas
     this.defaultColDef = {
       sortable: true,
       filter: true,
       resizable: true,
     };
 
-    // Definición de columnas
     this.columnDefs = [
-      // Columna índice (1, 2, 3, ...)
+      // Índice
       {
         headerName: '#',
         width: 60,
@@ -61,36 +65,7 @@ export class DocElectronicosComponent implements OnInit {
         menuTabs: [],
       },
 
-      // ===== COLUMNA ACCIÓN CON 4 ÍCONOS PEQUEÑOS =====
-      {
-        headerName: 'Acción',
-        colId: 'acciones',
-        width: 120,
-        pinned: 'right',
-        suppressHeaderMenuButton: true,
-        menuTabs: [],
-        cellRenderer: () => {
-          // OJO: cambia los nombres de los íconos según tus archivos reales en assets/icons
-          return `
-            <div class="acciones-inline">
-              <button class="ag-action-btn" data-action="ver" title="Ver documento">
-                <img src="assets/icons/icon-ver.png" alt="Ver" />
-              </button>
-              <button class="ag-action-btn" data-action="xml" title="Ver XML">
-                <img src="assets/icons/icon-xml.png" alt="XML" />
-              </button>
-              <button class="ag-action-btn" data-action="pdf" title="Ver PDF">
-                <img src="assets/icons/icon-pdf.png" alt="PDF" />
-              </button>
-              <button class="ag-action-btn" data-action="mail" title="Enviar correo">
-                <img src="assets/icons/icon-mail.png" alt="Mail" />
-              </button>
-            </div>
-          `;
-        },
-      },
-
-      { headerName: 'F. Emisión', field: 'fechaEmision', width: 110 },
+      { headerName: 'F. Emisión', field: 'fechaEmision', width: 120 },
       { headerName: 'Estb', field: 'estab', width: 80 },
       { headerName: 'P. Emisión', field: 'ptoEmision', width: 110 },
       { headerName: 'Secuencial', field: 'secuencial', width: 120 },
@@ -119,47 +94,60 @@ export class DocElectronicosComponent implements OnInit {
       },
       { headerName: 'RUC', field: 'ruc', minWidth: 130 },
       { headerName: 'Clave de Acceso', field: 'claveAcceso', minWidth: 220 },
+
+      // ===== COLUMNA ACCIÓN CON 4 BOTONES =====
+      {
+        headerName: 'Acción',
+        colId: 'acciones',
+        width: 180,
+        pinned: 'right',
+        suppressHeaderMenuButton: true,
+        sortable: false,
+        filter: false,
+        cellRenderer: AccionesCellRendererComponent, // ⬅️ Usa el componente
+        cellRendererParams: {
+          onVerPDF: (claveAcceso: string) => this.verPDF(claveAcceso),
+          onVerXML: (claveAcceso: string) => this.verXML(claveAcceso),
+          onReenviar: (id: number, claveAcceso: string) => this.reenviarCorreo(id, claveAcceso),
+          onAnular: (id: number) => this.anularDocumento(id),
+        },
+
+        suppressMovable: true,
+      },
     ];
   }
 
   ngOnInit(): void {
-    // Para ver la tabla con datos de prueba:
-    this.cargarDatosPrueba();
-
-    // Cuando tengas el backend listo, puedes usar:
-    // this.cargarDocumentos();
+    console.log('🚀 Iniciando componente de documentos electrónicos');
   }
 
-  onGridReady(e: GridReadyEvent<DocElectronico>): void {
-    this.gridApi = e.api as GridApi<DocElectronico>;
+  onGridReady(e: GridReadyEvent<DocumentoGrid>): void {
+    console.log('✅ Grid listo');
+    this.gridApi = e.api;
+    this.cargarDocumentos(); // ⬅️ CARGAR DATOS AL INICIO
   }
 
-  /** Cambio de tipo de documento desde el combo */
+
   onTipoDocumentoChange(tipo: TipoDocumento): void {
-    if (this.tipoDocumentoActivo === tipo) {
-      return;
-    }
+    if (this.tipoDocumentoActivo === tipo) return;
     this.tipoDocumentoActivo = tipo;
     this.cargarDocumentos();
   }
-
   buscar(): void {
+    console.log('🔍 Buscando...');
     this.cargarDocumentos();
   }
+
 
   clearSearchText(): void {
     this.filtrosForm.patchValue({ textoBusqueda: '' });
     this.buscar();
   }
 
-  /** Imprime PDFs de las filas seleccionadas */
   imprimirSeleccionadas(): void {
-    if (!this.gridApi) {
-      return;
-    }
+    if (!this.gridApi) return;
 
-    // Obtener directamente las filas seleccionadas
-    const seleccionadas = this.gridApi.getSelectedRows() as DocElectronico[];
+    const seleccionadas = this.gridApi.getSelectedRows() as DocumentoGrid[];
 
     if (!seleccionadas.length) {
       this.snackBar.open(
@@ -171,90 +159,124 @@ export class DocElectronicosComponent implements OnInit {
     }
 
     seleccionadas.forEach((doc) => {
-      this.docService
-        .obtenerPdfDocumento(this.tipoDocumentoActivo, doc.id)
-        .subscribe({
-          next: (blob) => {
-            const fileURL = URL.createObjectURL(blob);
-            window.open(fileURL, '_blank');
-          },
-          error: () => {
-            this.snackBar.open(
-              `Error al imprimir el documento ${doc.secuencial}.`,
-              'Cerrar',
-              { duration: 3000 }
-            );
-          },
-        });
+      if (doc.puedeReimprimir) {
+        this.docService.abrirPDF(doc.claveAcceso);
+      } else {
+        this.snackBar.open(
+          `El documento ${doc.secuencial} no está autorizado.`,
+          'Cerrar',
+          { duration: 3000 }
+        );
+      }
     });
   }
 
-  /** Llamada al backend para listar documentos */
+  private verPDF(claveAcceso: string): void {
+    console.log('📄 Abriendo PDF:', claveAcceso);
+    this.docService.abrirPDF(claveAcceso);
+    this.snackBar.open('Abriendo PDF...', 'Cerrar', { duration: 2000 });
+  }
+
+  private verXML(claveAcceso: string): void {
+    console.log('📑 Descargando XML:', claveAcceso);
+    this.docService.descargarYGuardar(claveAcceso, 'XML');
+    this.snackBar.open('Descargando XML...', 'Cerrar', { duration: 2000 });
+  }
+
+  private reenviarCorreo(id: number, claveAcceso: string): void {
+    console.log('📧 Reenviar correo:', { id, claveAcceso });
+
+    const email = prompt('Ingrese el correo electrónico de destino:');
+    if (!email || !email.trim()) {
+      return;
+    }
+
+    // TODO: Implementar cuando tengas el endpoint
+    this.snackBar.open(
+      'Función de reenvío de correo en desarrollo',
+      'Cerrar',
+      { duration: 3000 }
+    );
+  }
+
+  private anularDocumento(id: number): void {
+    console.log('🚫 Anular documento:', id);
+
+    const confirmar = confirm('¿Está seguro de que desea anular este documento?');
+    if (!confirmar) return;
+
+    const observacion = prompt('Ingrese el motivo de anulación:');
+    if (!observacion || observacion.trim() === '') {
+      this.snackBar.open('Debe ingresar un motivo', 'Cerrar', {
+        duration: 3000,
+      });
+      return;
+    }
+
+    this.docService.anularDocumento(id, observacion.trim()).subscribe({
+      next: (response) => {
+        console.log('✅ Documento anulado:', response);
+        if (response.type === 'success') {
+          this.snackBar.open('Documento anulado correctamente', 'Cerrar', {
+            duration: 3000,
+          });
+          this.cargarDocumentos(); // Recargar lista
+        } else {
+          this.snackBar.open(response.message || 'Error al anular', 'Cerrar', {
+            duration: 3000,
+          });
+        }
+      },
+      error: (error) => {
+        console.error('❌ Error al anular:', error);
+        this.snackBar.open(
+          `Error: ${error.message || 'No se pudo anular el documento'}`,
+          'Cerrar',
+          { duration: 3000 }
+        );
+      },
+    });
+  }
+
+  // ========================================
+  // CARGA DE DATOS
+  // ========================================
+
   private cargarDocumentos(): void {
     const { fechaDesde, fechaHasta, textoBusqueda } = this.filtrosForm.value;
+
+    console.log('📥 Cargando documentos...');
+    this.loading = true;
 
     this.docService
       .listarDocumentos(
         this.tipoDocumentoActivo,
         fechaDesde,
         fechaHasta,
-        textoBusqueda
+        textoBusqueda,
+        1,     // ⬅️ Siempre página 1 por ahora
+        1000   // ⬅️ Traer todos los registros
       )
       .subscribe({
-        next: (docs) => {
-          this.rowData = docs;
+        next: (response) => {
+          console.log('✅ Documentos recibidos:', response.docs.length);
+          this.rowData = response.docs;
+          this.totalItems = response.totalItems;
+          this.loading = false;
         },
-        error: () => {
-          this.snackBar.open(
-            'Error al cargar los documentos electrónicos.',
-            'Cerrar',
-            { duration: 3000 }
-          );
+        error: (error) => {
+          console.error('❌ Error:', error);
+          this.snackBar.open(`Error: ${error.message}`, 'Cerrar', { duration: 5000 });
+          this.loading = false;
+          this.rowData = [];
         },
       });
   }
 
-  /** Datos de prueba para que se vea la grilla mientras tanto */
-  private cargarDatosPrueba(): void {
-    this.rowData = [
-      {
-        id: 1,
-        tipo: 'FACTURA',
-        fechaEmision: '22-05-2025',
-        estab: '001',
-        ptoEmision: '012',
-        secuencial: '000002205',
-        razonSocial: 'Moscoso Toledo Cristóbal',
-        total: 230.0,
-        estado:
-          'Estado Documento: AUTORIZADO. Fecha de autorización: 2025-05-22T15:59:57',
-        fechaAutorizada: '2025-05-22T15:59:57',
-        ruc: '010179856001',
-        claveAcceso: '2205202500002205001012...',
-      },
-      {
-        id: 2,
-        tipo: 'FACTURA',
-        fechaEmision: '28-11-2025',
-        estab: '001',
-        ptoEmision: '010',
-        secuencial: '000007527',
-        razonSocial: 'MESTIZA S.A.',
-        total: 747.5,
-        estado:
-          'Estado Documento: AUTORIZADO. Fecha de autorización: 2025-11-28T09:50:00',
-        fechaAutorizada: '2025-11-28T09:50:00',
-        ruc: '0999999999001',
-        claveAcceso: '22051128000075270001010...',
-      },
-    ];
-  }
 
-  /** Formato de moneda para la columna Total */
+
   private formatoMoneda(params: ValueFormatterParams): string {
-    if (params.value == null) {
-      return '';
-    }
+    if (params.value == null) return '';
     return '$' + Number(params.value).toFixed(2);
   }
 }
