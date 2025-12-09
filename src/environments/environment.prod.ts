@@ -17,6 +17,8 @@ export const environment = {
   transactionUrl: 'http://181.39.162.182:8000/transaction/api',
  maintenanceUrl: 'http://181.39.162.182:8000/maintenance-cg/api',
     invoices_sic:'http://181.39.162.182:8000/invoices-sic/api',
+    docs: 'http://181.39.162.182:8000/docs/api',
+    idEmisorPorDefecto: 4,
     rucUlr:'http://pichincha.gapsystem.net:10048/api/services/ruc/',
     cedulaUrl:'http://pichincha.gapsystem.net:10048/api/services/cedula/',
 

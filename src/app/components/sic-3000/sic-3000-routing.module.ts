@@ -23,6 +23,7 @@ import { LisPagAnuladosComponent } from './cxc/lis-pag-anulados/lis-pag-anulados
 import { CierreAnticiposComponent } from './anticipos/cierre-anticipos/cierre-anticipos.component';
 import { EstadocuentaclienteComponent } from './exploradores/estadocuentacliente/estadocuentacliente.component';
 import { CuentaxcobrarComponent } from './exploradores/cuentaxcobrar/cuentaxcobrar.component';
+import { DocElectronicosComponent } from './facturacion/doc-electronicos/doc-electronicos.component';
 
 const routes: Routes = [
   {
@@ -99,6 +100,8 @@ const routes: Routes = [
         component: LisFacAnuladasComponent
 
       },
+      { path: 'doc-electronicos', component: DocElectronicosComponent},
+      
       // ✅ Ruta para EDITAR producto (con ID)
       {
         path: 'productossic/:idProducto',
@@ -124,6 +127,7 @@ const routes: Routes = [
       { path: 'cierre-anticipos', component: CierreAnticiposComponent},
       { path: 'exp-estadocuenta', component: EstadocuentaclienteComponent},
       { path: 'exp-cuentaxcobrar', component: CuentaxcobrarComponent}
+
     ]
   }
 ];
