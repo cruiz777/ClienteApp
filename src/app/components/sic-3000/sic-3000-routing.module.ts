@@ -25,6 +25,10 @@ import { EstadocuentaclienteComponent } from './exploradores/estadocuentacliente
 import { CuentaxcobrarComponent } from './exploradores/cuentaxcobrar/cuentaxcobrar.component';
 import { DocElectronicosComponent } from './facturacion/doc-electronicos/doc-electronicos.component';
 
+import { FormaPagoListComponent } from './forma-pago/forma-pago-list.component';
+import { ClasificacionListComponent } from './clasificacion-list/clasificacion-list.component';
+import { DescuentoListComponent } from './descuento/descuento-list/descuento-list.component';
+
 const routes: Routes = [
   {
     path: '',
@@ -121,6 +125,21 @@ const routes: Routes = [
         path: 'proveedores',
         component: ProveedoresListaComponent
       },
+
+       {
+        path: 'formapago',
+        component:FormaPagoListComponent
+      },
+         {
+        path: 'clasificacion',
+        component:ClasificacionListComponent
+      },
+         {
+        path: 'descuento',
+        component:DescuentoListComponent
+      },
+
+
 
       { path: 'creacion-anticipos', component: CreacionAnticiposComponent},
       { path: 'reporte-anticipos', component: ReporteAnticiposComponent},

@@ -11,6 +11,8 @@ import { FormaPagoService, FormaPagoResponse } from 'src/app/services/forma-pago
 import { finalize } from 'rxjs/operators';
 import { map, tap } from 'rxjs/operators';
 import { AsientoVentaService,AsientoVentaRequest } from 'src/app/services/asiento-venta.service';
+import { ParametrosSicService, ParametrosSic } from 'src/app/services/parametros-sic.service';
+import { PlanCueService, PlanCuenta } from 'src/app/services/plan-cue.service';
 // rxjs
 import { combineLatest, Observable, of } from 'rxjs';
 
@@ -55,15 +57,20 @@ export class RegistroCobrosComponent implements OnInit {
   @ViewChild('valorAPagarRef') valorAPagarRef!: ElementRef<HTMLInputElement>;
 
   // Autocomplete de formas de pago (paso 2)
-  @ViewChild('pagoInputRef') pagoInputRef!: ElementRef<HTMLInputElement>;
-  @ViewChild('autoPagoTrigger', { read: MatAutocompleteTrigger })
-  autoPagoTrigger!: MatAutocompleteTrigger;
+// Autocomplete de formas de pago (paso 2)
+// Autocomplete de formas de pago (paso 2)
+// ✅ TOMAMOS EL TRIGGER POR EL NOMBRE DEL TEMPLATE
+@ViewChild('pagoInputRef') pagoInputRef!: ElementRef<HTMLInputElement>;
+@ViewChild('autoPagoTrigger') autoPagoTrigger!: MatAutocompleteTrigger;
+
+
 
   step = 1;
 
   formCliente!: FormGroup;
   formPago!: FormGroup;
-
+ parametros: ParametrosSic | null = null;
+  planCuenta: PlanCuenta | null = null;
   usuarioActual = this.usuarioService.getUsuarioActual();
 
   mostrarNombreCliente = (cliente: ClienteSummary | string | null): string =>
@@ -206,11 +213,12 @@ export class RegistroCobrosComponent implements OnInit {
   pagoColumnDefsTransfer: ColDef[] = [
     { headerName: 'CODIGO', field: 'codigo', width: 110, editable: false },
     { headerName: 'DESCRIPCION', field: 'descripcion', flex: 1, minWidth: 220, editable: false },
+    { headerName: 'IDCUENTA', field: 'idcuenta',  hide:true },
     { headerName: 'CUENTA', field: 'cuenta',  hide:true },
     {
       headerName: 'MONTO',
       field: 'monto',
-      width: 120,
+      width: 180,
       editable: true,
       type: 'rightAligned',
       valueSetter: (p: ValueSetterParams<any>) => {
@@ -337,7 +345,7 @@ export class RegistroCobrosComponent implements OnInit {
   ];
 
   pagoColumnDefs: ColDef[] = [];
-  pagoDefaultColDef: ColDef = { resizable: true, sortable: true, filter: true };
+  pagoDefaultColDef: ColDef = { resizable: true, sortable: true, filter: false };
   saldoPendiente = 0;
   pagoRowDataTransfer: any[] = [];
   pagoRowDataCheque: any[] = [{ numChequeFecha: '', nombreDueno: '', autorizacion: '', monto: 0 }];
@@ -354,11 +362,37 @@ export class RegistroCobrosComponent implements OnInit {
     private _snackBar: MatSnackBar,
     private formaPagoService: FormaPagoService,
     private pagoReportService: PagoReportService,
-    private asientoVentaService:AsientoVentaService
+    private asientoVentaService:AsientoVentaService,
+    private parametrosSicService: ParametrosSicService,
+    private planCueService: PlanCueService
   ) { }
 
   ngOnInit(): void {
     this.usuarioActual = this.usuarioService.getUsuarioActual();
+    this.parametrosSicService
+          .getByEmpresa(this.usuarioActual?.id_empresa ?? 0) // devuelve ParametrosSic
+          .pipe(
+            switchMap(parametros => {
+              // aquí 'parametros' YA es el data
+              this.parametros = parametros;
+              console.log('Parámetros SIC:', this.parametros);
+    
+              const idEmpresa = this.usuarioActual?.id_empresa ?? 0;
+              const cuenta = parametros.codcueretiva;   // usamos el parámetro local, NO this.parametros
+    
+              return this.planCueService.getByCuentaPresentacion(idEmpresa, cuenta); // devuelve PlanCuenta
+            })
+          )
+          .subscribe({
+            next: planCuenta => {
+              // aquí 'planCuenta' YA es el data
+              this.planCuenta = planCuenta;
+              console.log('Plan de Cuenta:', this.planCuenta);
+            },
+            error: err => {
+              console.error('Error en la cadena parámetros + plan', err);
+            }
+          });
     this.cargarCliente();
 
     this.formCliente = this.fb.group({
@@ -395,16 +429,16 @@ export class RegistroCobrosComponent implements OnInit {
     const refreshMax = () => vCtrl.updateValueAndValidity({ emitEvent: false });
 
     // Cargar facturas (ajusta origen real si aplica)
-    this.cuentaCobrarService.getFacturasPendientesGrid(String(this.codcliO))
-      .subscribe((rows: GridRow[]) => {
-        this.rowData = rows;
-        this.gridApi?.setGridOption('rowData', this.rowData);
-        this.gridApi?.sizeColumnsToFit();
-        this.recalcMontoDeuda();
-        refreshMax();
-        if (rows.length === 0) this.mostrarAlerta('El cliente no tiene detalle de facturas (No tiene facturas_pendientes)', 'info');
-        this.focusValorAPagar();
-      });
+    // this.cuentaCobrarService.getFacturasPendientesGrid(String(this.codcliO))
+    //   .subscribe((rows: GridRow[]) => {
+    //     this.rowData = rows;
+    //     this.gridApi?.setGridOption('rowData', this.rowData);
+    //     this.gridApi?.sizeColumnsToFit();
+    //     this.recalcMontoDeuda();
+    //     refreshMax();
+    //     if (rows.length === 0) this.mostrarAlerta('El cliente no tiene detalle de facturas (No tiene facturas_pendientes)', 'info');
+    //     this.focusValorAPagar();
+    //   });
 
     // Autocomplete formas de pago
     const metodoCtrl = this.formPago.get('metodoPago') as FormControl;
@@ -987,23 +1021,25 @@ registrarPago() {
   displayFormaPago = (fp: FormaPagoResponse | string | null): string =>
     (typeof fp === 'string') ? fp : (fp?.descripcionPago ?? '');
 
- onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
+onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
   const item = event.option.value as FormaPagoResponse;
+  if (!item) return;
+
   const pl = this.formPago.get('plantilla')?.value as 'transfer' | 'cheque';
 
-  const codigo = String((item as any).codigo ?? (item as any).idFormaPago ?? '');
-  const descripcion = (item as any).descripcionPago ?? (item as any).descripcion ?? '';
+  const codigo = String(item.idFormaPago ?? '');
+  const descripcion = item.descripcionPago ?? '';
 
-  // 👇 Intentamos tomar la cuenta desde el DTO de forma de pago
-  const cuenta =
-    (item as any).cuenta ??
-    (item as any).cuentaContable ??
-    (item as any).codigoCuenta ??
-    ''; // ajusta al nombre real de tu propiedad
+  const idcuenta = item.id_plan ?? null;
+  const cuenta   = item.codigo_cuenta ?? '';
 
+  // Si no hay datos válidos, no hacemos nada
   if (!codigo && !descripcion) return;
 
-  const yaExiste = this.pagoRowData.some(r => String(r.codigo ?? '') === codigo && !!codigo);
+  // Evitar duplicados en la grilla
+  const yaExiste = this.pagoRowData.some(
+    r => String(r.codigo ?? '') === codigo && !!codigo
+  );
   if (!yaExiste) {
     const montoAuto = Math.max(0, this.getSaldo());
 
@@ -1011,18 +1047,20 @@ registrarPago() {
       this.pagoRowData.push({
         codigo,
         descripcion,
-        cuenta,                      // 👈 NUEVO: se mostrará en la columna CUENTA
+        idcuenta,
+        cuenta,
         porcRet: null,
         banco: '',
         numCuentaTarjetaFactura: '',
         numCheque: '',
         monto: montoAuto
       });
-    } else {
+    } else { // plantilla = 'cheque'
       this.pagoRowData.push({
         codigo,
         descripcion,
-        cuenta,                      // 👈 NUEVO: si quieres también para cheques
+        idcuenta,
+        cuenta,
         numChequeFecha: '',
         nombreDueno: '',
         autorizacion: '',
@@ -1034,12 +1072,27 @@ registrarPago() {
     this.recalcularTotal();
   }
 
+  // 🔹 Dejar el campo "Pago:" en blanco para poder elegir otra forma
   setTimeout(() => {
-    this.formPago.get('metodoPago')?.setValue('', { emitEvent: false });
+    const metodoCtrl = this.formPago.get('metodoPago') as FormControl;
+
+    // Limpia el valor del FormControl (sin emitEvent:false para que el autocomplete
+    // quite la selección y el check)
+    metodoCtrl.setValue(null);
+    metodoCtrl.markAsPristine();
+    metodoCtrl.markAsUntouched();
+
+    // Limpia el input físico y vuelve a enfocarlo
+    if (this.pagoInputRef?.nativeElement) {
+      this.pagoInputRef.nativeElement.value = '';
+      this.pagoInputRef.nativeElement.focus();
+    }
+
+    // Cierra el panel del autocomplete
     this.autoPagoTrigger?.closePanel();
-    this.pagoInputRef?.nativeElement.blur();
   }, 0);
 }
+
 
 
   onPagosRowsChanged(): void {
@@ -1219,15 +1272,17 @@ private buildAsientoCobroRequest(numeroPago: string): any {
   // Fecha del pago (del formulario) o hoy
   const fechaPagoStr = String(this.formCliente.get('fechaPago')?.value || this.hoyISO());
   const fechaPago = new Date(fechaPagoStr);
-  const yyyy = fechaPago.getFullYear().toString();
-  const mm = String(fechaPago.getMonth() + 1).padStart(2, '0');
-  const dd = String(fechaPago.getDate()).padStart(2, '0');
-  const fechaISO = `${yyyy}-${mm}-${dd}`;
+ 
+  
+  const fechaISO = this.getFechaPagoISO();
+  const [yyyy, mm, dd] = fechaISO.split('-');
 
   const ahora = new Date();
   const hh = String(ahora.getHours()).padStart(2, '0');
   const mi = String(ahora.getMinutes()).padStart(2, '0');
   const hora = `${hh}:${mi}`;
+
+
 
   // Facturas afectadas (solo info para docurelacionado y mensaje)
   const facturas = this.buildFacturasAPagar();
@@ -1251,7 +1306,7 @@ private buildAsientoCobroRequest(numeroPago: string): any {
   const idUsuario = Number(this.usuarioActual?.id_usuario ?? 1);
   const idEmpresa = Number(this.usuarioActual?.id_empresa ?? 1);
 
-  const idTipoAsiento = 10; // Cobros CxC (ajusta a tu catálogo)
+  const idTipoAsiento = 5; // Cobros CxC (ajusta a tu catálogo)
   const tipdoc = 'IG';
   const numdoc = String(Number((numeroPago || '').replace(/\D/g, '')));
   const anio = yyyy;
@@ -1273,66 +1328,56 @@ private buildAsientoCobroRequest(numeroPago: string): any {
 
   // ====== 1) DEBE: una línea por cada forma de pago ======
   for (const fp of formasPago) {
-    const monto = this.clamp2(Number(fp.monto) || 0);
-    if (monto <= 0) continue;
+  const monto = this.clamp2(Number(fp.monto) || 0);
+  if (monto <= 0) continue;
 
-    // cuenta viene del GRID (columna CUENTA)
-    const cuentaStr = String(fp.cuenta ?? '').trim();
+  // 👇 vienen del grid
+  const idPlanCuentas = Number(fp.idcuenta || 0) || CTA_DEFAULT_CAJA;
+  const cuentaStr = String(fp.cuenta ?? '').trim();
 
-    // 👉 codprePc = exactamente lo que viene del grid
-    let codprePc = cuentaStr;
+  // codprePc: si hay cuenta en el grid la usamos, caso contrario armamos con la default
+  const codprePc = cuentaStr || `${idPlanCuentas}-001`;
 
-    // 👉 idPlanCuentas: solo dígitos de esa cuenta, o cuenta default si no hay nada
-    const soloDigitos = cuentaStr.replace(/\D/g, '');
-    const idPlanCuentas = soloDigitos
-      ? Number(soloDigitos)
-      : CTA_DEFAULT_CAJA;
-
-    // Si no viene nada en codprePc, usa también la default con sufijo
-    if (!codprePc) {
-      codprePc = `${CTA_DEFAULT_CAJA}-001`;
-    }
-
-    detalles.push({
-      numlinea: numlinea++,
-      anio,
-      fechatransaccion: fechaISO,
-      hora,
-      idZona,
-      idCentroCostos: null,
-      idLocal: 1,
-      idPlanCuentas,       // ← numérico para tu plan de cuentas
-      codprePc,            // ← EXACTAMENTE la cuenta del grid
-      idCodContable: 3,
-      nocomprobante: numeroPago,
-      docurelacionado: '', // Si quieres, aquí puedes usar fp.numCuentaTarjetaFactura o similar
-      cheque: 0,
-      beneficiario: '',
-      debe: monto,         // 👈 DEBE: monto de la forma de pago
-      haber: 0,
-      comentario: `FORMA PAGO ${fp.descripcion || fp.codigo} - PAGO ${numeroPago}`,
-      idMovBancario: null,
-      movbancario: '',
-      fechaingreso: fechaISO,
-      cierre: '',
-      fechacierre: null,
-      conciliado: '',
-      fechaconciliado: null,
-      idSustentoTrib: null,
-      idTipoCompSri: null,
-      autorizacion: '',
-      fechacaduca: null,
-      idTipoRetencion: null,
-      idProyecto: null,
-      idSubproyecto: null,
-      transferido: false,
-      fechatransferido: null,
-      fechavencimiento: null,
-      idConciliacion: null,
-      valorLetras: '',
-      estadoIngreso: false
-    });
-  }
+  detalles.push({
+    numlinea: numlinea++,
+    anio,
+    fechatransaccion: fechaISO,
+    hora,
+    idZona,
+    idCentroCostos: null,
+    idLocal: 1,
+    idPlanCuentas,
+    codprePc,
+    idCodContable: 3,
+    nocomprobante: numeroPago,
+    docurelacionado: '',
+    cheque: 0,
+    beneficiario: '',
+    debe: monto,
+    haber: 0,
+    comentario: `FORMA PAGO ${fp.descripcion || fp.codigo} - PAGO ${numeroPago}`,
+    idMovBancario: null,
+    movbancario: '',
+    fechaingreso: fechaISO,
+    cierre: '',
+    fechacierre: null,
+    conciliado: '',
+    fechaconciliado: null,
+    idSustentoTrib: null,
+    idTipoCompSri: null,
+    autorizacion: '',
+    fechacaduca: null,
+    idTipoRetencion: null,
+    idProyecto: null,
+    idSubproyecto: null,
+    transferido: false,
+    fechatransferido: null,
+    fechavencimiento: null,
+    idConciliacion: null,
+    valorLetras: '',
+    estadoIngreso: false
+  });
+}
 
   // ====== 2) HABER: una sola línea por el TOTAL contra CLIENTES ======
   detalles.push({
@@ -1343,8 +1388,8 @@ private buildAsientoCobroRequest(numeroPago: string): any {
     idZona,
     idCentroCostos: null,
     idLocal: 1,
-    idPlanCuentas: CTA_CLIENTES,
-    codprePc: `${CTA_CLIENTES}-001`,
+    idPlanCuentas:  this.planCuenta?.id_plan,
+    codprePc: this.parametros?.codcuedesc,
     idCodContable: 3,
     nocomprobante: numeroPago,
     docurelacionado: facturas.map(f => f.numero_factura).join(', '),
@@ -1404,6 +1449,33 @@ private buildAsientoCobroRequest(numeroPago: string): any {
   };
 
   return asiento;
+}
+private getFechaPagoISO(): string {
+  const raw = this.formCliente.get('fechaPago')?.value;
+
+  if (!raw) return this.hoyISO();
+
+  // 1) Si viene como string yyyy-MM-dd (input type="date")
+  if (typeof raw === 'string') {
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      return raw; // ya está OK
+    }
+    // 2) Si viene como dd/MM/yyyy, lo convertimos
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+      const [dd, mm, yyyy] = raw.split('/');
+      return `${yyyy}-${mm}-${dd}`;
+    }
+  }
+
+  // 3) Si viene como Date (por si acaso)
+  if (raw instanceof Date) {
+    const yyyy = raw.getFullYear();
+    const mm = String(raw.getMonth() + 1).padStart(2, '0');
+    const dd = String(raw.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  return this.hoyISO();
 }
 
 

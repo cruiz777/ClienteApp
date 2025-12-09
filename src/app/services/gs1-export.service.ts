@@ -388,7 +388,7 @@ fechaValueCell.numFmt = 'dd/mm/yyyy';
       // Fila principal del producto
       const numeracionCell = worksheet.getCell(`A${currentRow}`);
       numeracionCell.value = rowNumber++;
-      numeracionCell.font = { name: 'Calibri', size: 9, color: { argb: 'FFFF6600' } };
+      numeracionCell.font = { name: 'Calibri', size: 11, color: { argb: 'FFFF6600' } };
       numeracionCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
       const gtin13Cell = worksheet.getCell(`B${currentRow}`);

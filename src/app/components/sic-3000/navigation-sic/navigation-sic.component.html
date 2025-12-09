@@ -221,8 +221,8 @@
           </mat-expansion-panel>
           <!-- Subgrupo: Descuentos-->
           <mat-expansion-panel hideToggle>
-            <mat-expansion-panel-header (click)="goTo('ruta aqui')" class="clickable-header">
-              <mat-panel-title>
+            <mat-expansion-panel-header (click)="goTo('descuento')" class="clickable-header">
+              <mat-panel-title routerLink="descuento" routerLinkActive="active" > 
                 <span *ngIf="isExpanded" class="menu-text">Descuentos</span>
               </mat-panel-title>
             </mat-expansion-panel-header>
@@ -235,10 +235,10 @@
               </mat-panel-title>
             </mat-expansion-panel-header>
             <!-- Nivel 3: Forma de Pago-->
-            <a mat-list-item routerLink="">
+            <a mat-list-item routerLink="clasificacion" routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Clasificación de Pagos</span>
             </a>
-            <a mat-list-item routerLink="">
+            <a mat-list-item routerLink="formapago" routerLinkActive="active">
               <span *ngIf="isExpanded" class="menu-text">Forma de Pago</span>
             </a>
           </mat-expansion-panel>

@@ -1741,18 +1741,18 @@ export class NuevoProductoComponent implements OnInit {
     });
 
     // 👉 Encabezado institucional
-    worksheet.mergeCells('B1:E1');
+    worksheet.mergeCells('B1:D1');
     worksheet.getCell('B1').value = 'SISTEMA DE CONTROL DE CÓDIGOS';
-    worksheet.getCell('B1').font = { bold: true, size: 14 };
-
-    worksheet.mergeCells('B2:E2');
+    worksheet.getCell('B1').font = { bold: true, size: 16, color: { argb: 'FF003366' } };
+    worksheet.getCell('B1').alignment = { horizontal: 'center', vertical: 'middle' };
+    worksheet.mergeCells('B2:D2');
     worksheet.getCell('B2').value = 'REPORTE DE PRODUCTOS CODIFICADOS';
-    worksheet.getCell('B2').font = { bold: true, size: 12 };
-
+    worksheet.getCell('B2').font = { bold: true, size: 16, color: { argb: 'FF003366' } };
+    worksheet.getCell('B2').alignment = { horizontal: 'center', vertical: 'middle' };
     worksheet.getCell('B4').value = this.clienteSeleccionado?.nomcli || '';
-    worksheet.getCell('B4').font = { bold: true };
+    worksheet.getCell('B4').font = { bold: true, size: 14, color: { argb: 'FFFF6600' } };
     worksheet.getCell('C4').value = prefijo?.prefijosgs1 || '';
-
+    worksheet.getCell('C4').font = { bold: true, size: 14, color: { argb: 'FF003366' } };
     worksheet.getCell('B6').value = 'RUC:';
     worksheet.getCell('C6').value = this.clienteSeleccionado?.ruc || '';
 
@@ -1767,36 +1767,41 @@ export class NuevoProductoComponent implements OnInit {
 
     // 🟨 Advertencia antes de cabeceras
     worksheet.mergeCells('B11:O13');
-    worksheet.getCell('B11').value = {
+
+    const cell = worksheet.getCell('B11');
+    cell.value = {
       richText: [
         {
           text: 'GS1 Ecuador (ECOP) certifica que los códigos GTIN que constan a continuación son auténticos y publicados en www.gs1ec.org Verified by Ecuador.\n',
-          font: { bold: true, color: { argb: '000000' } }
+          font: { bold: false, color: { argb: 'FF000000' } }  // negro normal
         },
         {
           text: 'El dueño de la marca del producto pone el código, es su responsabilidad el manejo y control del código, incluida su descripción y marca.\n',
-          font: { color: { argb: '000000' } }
+          font: { bold: false, color: { argb: 'FF000000' } }  // negro normal
         },
         {
           text: 'El Prefijo Global De Compañía GS1, GCP, es ',
-          font: { color: { argb: '000000' } }
+          font: { bold: true, color: { argb: 'FF000000' } }   // negro en negrita
         },
         {
           text: 'INTRANSFERIBLE.',
-          font: { bold: true, color: { argb: 'FFFF0000' } } // rojo fuerte
+          font: { bold: true, color: { argb: 'FFFF0000' } }   // rojo en negrita
         }
       ]
     };
-    worksheet.getCell('B11').alignment = {
+
+    cell.alignment = {
       horizontal: 'center',
       vertical: 'middle',
       wrapText: true
     };
-    worksheet.getCell('B11').fill = {
+
+    cell.fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FFFFFF00' } // amarillo
+      fgColor: { argb: 'FFFFFF00' } // fondo amarillo
     };
+
 
 
     // 👉 Cabeceras
@@ -1812,9 +1817,9 @@ export class NuevoProductoComponent implements OnInit {
 
     // 👉 Filas de productos
     productos.forEach((p, i) => {
-      worksheet.addRow([
-        i + 1,
-        p.codbar,
+      const row = worksheet.addRow([
+        i + 1,   // Columna 1
+        p.codbar,        // Columna 2
         p.Despro,
         p.marca,
         p.contenido,
@@ -1829,6 +1834,18 @@ export class NuevoProductoComponent implements OnInit {
         p.Feccre ? format(new Date(p.Feccre), 'dd/MM/yyyy') : '',
         p.p
       ]);
+
+      // 🔸 Columna 1: naranja
+      row.getCell(1).font = {
+        color: { argb: 'FFFF6600' } // naranja
+      };
+
+      // 🔹 Columna 2: azul y negrita
+      row.getCell(2).font = {
+        bold: true,
+        size:12,
+        color: { argb: 'FF0000FF' } // azul corporativo (o usa 'FF0000FF' para azul puro)
+      };
     });
 
     // 👉 Autoajustar columnas
