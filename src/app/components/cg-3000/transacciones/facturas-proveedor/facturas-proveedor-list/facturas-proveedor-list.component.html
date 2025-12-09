@@ -1,0 +1,97 @@
+<div class="page-wrapper-asientos">
+  <div class="page-title-row">
+    <h2 class="page-title-asientos">Listado Facturas Proveedor</h2>
+  </div>
+
+  <div class="filters-row-asientos">
+
+    <div class="filters-left-asientos">
+      <label for="search">Buscar:</label>
+      <div class="input-wrapper">
+        <input
+          id="search"
+          type="text"
+          class="search-input"
+          [(ngModel)]="searchTerm"
+          placeholder="Buscar (empresa, beneficiario, tipo, numdoc...)"
+        />
+        <img src="assets/icons/icon-buscar.png" alt="Buscar" />
+      </div>
+
+      <div class="filtro-item">
+        <label for="fechaDesde">Fecha Inicio</label>
+        <input
+          id="fechaDesde"
+          type="date"
+          [(ngModel)]="fechaDesde"
+          class="fecha-control"
+          placeholder="dd/mm/aaaa"
+        />
+      </div>
+
+      <div class="filtro-item">
+        <label for="fechaHasta">Fecha Final</label>
+        <input
+          id="fechaHasta"
+          type="date"
+          [(ngModel)]="fechaHasta"
+          class="fecha-control"
+          placeholder="dd/mm/aaaa"
+        />
+      </div>
+
+      <button
+        type="button"
+        class="icon-circle"
+        (click)="buscar()"
+        title="Buscar"
+      >
+       <img src="assets/icons/buscar-down1.png" alt="Buscar" />
+      </button>
+
+      <button
+        type="button"
+        class="icon-circle"
+        title="Exportar a Excel"
+        (click)="onExportExcel()"
+      >
+        <img src="assets/icons/xls.png" alt="Excel" />
+      </button>
+
+      <button
+        type="button"
+        class="icon-circle"
+        title="Exportar a PDF"
+        (click)="onExportPdf()"
+      >
+        <img src="assets/icons/pdf-down.png" alt="PDF" />
+      </button>
+    </div>
+
+    <div class="filters-right-asientos">
+      <button type="button" class="btn-azul" (click)="abrirCrear()">
+        Nueva Factura
+      </button>
+    </div>
+
+  </div>
+
+  <div class="grid-wrapper">
+    <ag-grid-angular
+      class="ag-theme-alpine grid custom-grid"
+      [gridOptions]="gridOptions"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      rowSelection="single"
+      [pagination]="true"
+      [paginationPageSize]="20"
+      [quickFilterText]="searchTerm"
+      (gridReady)="onGridReady($event)"
+      (cellClicked)="onCellClicked($event)"
+    >
+    </ag-grid-angular>
+  </div>
+
+  <div *ngIf="error" class="error">{{ error }}</div>
+</div>

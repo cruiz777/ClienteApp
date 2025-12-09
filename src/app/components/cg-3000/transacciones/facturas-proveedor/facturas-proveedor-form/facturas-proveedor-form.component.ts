@@ -5,7 +5,8 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule
        } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { UsuarioService } from 'src/app/services/usuario.service';
-import { MatDialogRef, MatDialog, MatDialogConfig } from '@angular/material/dialog';
+import { Optional, Inject } from '@angular/core';
+import { MatDialogRef, MatDialog, MatDialogConfig, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { ComponentType } from '@angular/cdk/portal';
 import { startWith, distinctUntilChanged } from 'rxjs/operators';
 import { Observable, of } from 'rxjs';
@@ -31,7 +32,6 @@ import { MovimientoBancarioResponse } from 'src/app/interfaces/responses/movimie
 
 import { MovimientoBancarioCellEditorComponent } from '../../asientos-contables/asientos-contables-form/movimiento-bancario-cell-editor.component';
 // Datos tributarios
-import { Optional } from '@angular/core';
 import { SustentoTributarioService } from 'src/app/services/sustento-tributario.service';
 import { SustentoTributarioResponse } from 'src/app/interfaces/responses/sustento-tributario-response';
 
@@ -255,6 +255,24 @@ export class FacturasProveedorFormComponent implements OnInit {
   private gridApi!: GridApi<DetalleAsientoResponse>;
   rowData = signal<DetalleAsientoResponse[]>([]);
 
+  private movimientosBancariosLoaded = false; ////cambio para refredcar los listas
+  private refrescarColumnasDetalle(): void {
+    if (!this.gridApi) return;
+
+    this.gridApi.refreshCells({
+      force: true,
+      columns: [
+        'idMovBancario',
+        'movbancario',
+        'idLocal',
+        'idPlanCuentas',
+        'idCodContable',
+        'idTipoRetencion',
+      ],
+    });
+  }
+  ///////end
+
   onCellKeyDown(
     evt:
       | CellKeyDownEvent<DetalleAsientoResponse>
@@ -477,7 +495,7 @@ export class FacturasProveedorFormComponent implements OnInit {
       field: 'idCodContable',
       width: 260,
       editable: true,
-      hide:true,
+      hide:false,
       /* ya no se utiliza cell editor aqui
       singleClickEdit: true,
       cellEditor: CodContableCellEditorComponent,
@@ -772,7 +790,10 @@ export class FacturasProveedorFormComponent implements OnInit {
     private usuarioService: UsuarioService,
     //cuando entras directo sin opcional cuando entras una pantalla a otro componente
     //public dialogRef: MatDialogRef<FacturasProveedorFormComponent>,
-     @Optional() public dialogRef: MatDialogRef<FacturasProveedorFormComponent> | null,
+    @Optional() public dialogRef: MatDialogRef<FacturasProveedorFormComponent> | null,
+    @Optional()
+    @Inject(MAT_DIALOG_DATA)
+    public data: { modo?: 'nuevo' | 'editar'; id?: number } | null,
     ////
     private tipoasientoservice: TipoAsientoService,
     private facturasService: FacturasProveedorService,
@@ -932,17 +953,65 @@ export class FacturasProveedorFormComponent implements OnInit {
         );
         }
     });
+
     ///
-    const id = Number(this.route.snapshot.paramMap.get('id') ?? 0);
+    const idDialog = this.data?.id ?? 0;
+    const idRoute = Number(this.route.snapshot.paramMap.get('id') ?? 0);
+    const id       = idDialog || idRoute;
+
+    if (id > 0) {
+    this.modo.set('editar');
+    } else {
+      this.modo.set('nuevo');
+    }
+    
+    this.tiposAsiento$ = this.tipoasientoservice.ListadoAsiento().pipe(
+      tap((list) => {
+        this.tipoAsientos = (list ?? []).map((r: any) => ({
+          id: r.IdTipoAsiento ?? r[' IdTipoAsiento'],
+          nombre: (r.Descripcion ?? r.TipAsiento ?? '').toString().trim(),
+          tipDoc: (r.TipAsiento ?? r.CodigoDoc ?? '')
+            .toString()
+            .trim()
+            .toUpperCase(),
+        }));
+        this.syncTipDocFromCurrentId();
+        // Solo hace algo si modo === 'nuevo'
+        this.setDefaultTipoAsientoNuevo();
+      }),
+      shareReplay(1)
+    );
+
+    this.bindTipoAsientoToTipDoc();
+
+    // Siempre mantener tipdoc en mayúsculas
+    this.form.get('tipdoc')?.valueChanges.subscribe((v) => {
+      if (typeof v === 'string') {
+        const up = v.toUpperCase();
+        if (v !== up) this.form.get('tipdoc')?.setValue(up, { emitEvent: false });
+      }
+    });
+
+    //this.syncUsuarioEmpresa();
+    this.cargarZonasPorEmpresa();
+    this.cargarLocales();
+    this.cargarPlanCuentas();
+    //this.cargarCodigosContables(); // se busca solo al digitar proveedor
+    this.cargarMovimientosBancarios();
+    this.cargarSustentosTributarios();
+    this.cargarTiposCompSriCabecera();
+    this.cargarTiposRetencion();
+
     if (id > 0) {
       this.modo.set('editar');
       this.cargarAsiento(id);
     } else {
       this.modo.set('nuevo');
       const empty = createEmptyAsientoContableResponse();
+      this.syncUsuarioEmpresa();
       this.setFormFromHeader(empty);
       this.rowData.set([]);
-
+      this.form.patchValue({ modulo: 1 }, { emitEvent: false }); ///modulo en 1
       this.form.patchValue(
         { anio: getYearFromInput(this.form.get('fechatransaccion')!.value) },
         { emitEvent: false }
@@ -959,47 +1028,15 @@ export class FacturasProveedorFormComponent implements OnInit {
           this.form.patchValue({ anio: y }, { emitEvent: false });
         });
 
-      this.tiposAsiento$ = this.tipoasientoservice.ListadoAsiento().pipe(
-        tap((list) => {
-          this.tipoAsientos = (list ?? []).map((r: any) => ({
-            id: r.IdTipoAsiento ?? r[' IdTipoAsiento'],
-            nombre: (r.Descripcion ?? r.TipAsiento ?? '').toString().trim(),
-            tipDoc: (r.TipAsiento ?? r.CodigoDoc ?? '')
-              .toString()
-              .trim()
-              .toUpperCase(),
-          }));
-          this.syncTipDocFromCurrentId();
-          //llama el asiento por default
-          this.setDefaultTipoAsientoNuevo();
-          ///end
-        }),
-        shareReplay(1)
-      );
-
-      this.bindTipoAsientoToTipDoc();
-
-      this.form.get('tipdoc')?.valueChanges.subscribe((v) => {
-        if (typeof v === 'string') {
-          const up = v.toUpperCase();
-          if (v !== up) this.form.get('tipdoc')?.setValue(up, { emitEvent: false });
-        }
-      });
-
-      this.syncUsuarioEmpresa();
-      this.cargarZonasPorEmpresa();
-      this.cargarLocales();
-      this.cargarPlanCuentas();
-      //this.cargarCodigosContables(); se buscar cuando digite el proveedor
-      this.cargarMovimientosBancarios();
-      this.cargarSustentosTributarios();  //sustento tributario
-      this.cargarTiposCompSriCabecera();
-      this.cargarTiposRetencion();   //tipo retencion
+        this.syncUsuarioEmpresa();
     }
   }
 
   private buildForm(): void {
+    const ahora = new Date();
     const nowIso = formatLocalIso(new Date());
+    const todayDate = formatLocalDateOnly(ahora);  // solo fecha (yyyy-MM-dd)
+
     this.form = this.fb.group({
       IdCabMaestro: [0],
       idZona: [0, [Validators.required, Validators.min(1)]],
@@ -1009,7 +1046,7 @@ export class FacturasProveedorFormComponent implements OnInit {
       tipdoc: ['', [Validators.required]],
       numdoc: [0],
       anio: [''],
-      fechatransaccion: [nowIso, [Validators.required]],
+      fechatransaccion: [todayDate, [Validators.required]],
       fechaingreso: [nowIso, [Validators.required]],
       observacion: ['', [Validators.required, Validators.maxLength(250)]],
       totdebe: [0],
@@ -1022,6 +1059,7 @@ export class FacturasProveedorFormComponent implements OnInit {
       autorizado: [''],
       homCodigo: [0],
       estado: [true],
+      modulo: [1],
     });
   }
 
@@ -1084,7 +1122,9 @@ export class FacturasProveedorFormComponent implements OnInit {
       tipdoc: h.tipdoc,
       numdoc: h.numdoc,
       anio: h.anio,
-      fechatransaccion: h.fechatransaccion,
+      fechatransaccion: h.fechatransaccion
+      ? normalizeToLocalDate(h.fechatransaccion)   // solo fecha
+      : null,
       fechaingreso: h.fechaingreso,
       observacion: h.observacion,
       totdebe: h.totdebe,
@@ -1097,6 +1137,7 @@ export class FacturasProveedorFormComponent implements OnInit {
       autorizado: h.autorizado,
       homCodigo: h.homCodigo,
       estado: h.estado,
+      modulo: h.modulo != null ? Number(h.modulo) : 1,
     });
   }
 
@@ -1105,17 +1146,33 @@ export class FacturasProveedorFormComponent implements OnInit {
     this.facturasService.getById(idCabMaestro).subscribe({
       next: (resp) => {
         this.setFormFromHeader(resp);
+
+       
         this.rowData.set(resp.detalles ?? []);
+        this.refrescarColumnasDetalle();
         //tomar el auxiliar para el selector
          const firstAux = resp.detalles && resp.detalles.length
           ? Number(resp.detalles[0].idCodContable || 0)
           : 0;
-        if (firstAux > 0) {
+       
+       
+          if (firstAux > 0) {
           //para al editar se cargue el beneficiario PENDIENTE REVISION DEBE RECUPERAR 
           // LO QUE TIEN YA NO SE PUEDE CAMBIAR DE BENERFICIARIO POR AHORA QUEDA EN FALSE TOMAR EN CUENTA
           this.auxiliarSeleccionadoCtrl.setValue(firstAux, { emitEvent: false });
           // this.auxiliarSeleccionadoCtrl.setValue(firstAux, { emitEvent: true });  
         }
+      
+      const bene = resp.beneficiario ?? '';
+      this.proveedorCtrl.setValue(bene, { emitEvent: false });
+
+      // 3) Por si acaso, sincronizamos también el control del form,
+      //    aunque setFormFromHeader ya lo hizo
+      this.form.patchValue(
+        { beneficiario: bene },
+        { emitEvent: false }
+      );
+
         /////no de comprobante
         // 🔹 Tomar el No.Comprobante de la primera línea y mostrarlo arriba
         const firstNoComp = resp.detalles && resp.detalles.length
@@ -1145,6 +1202,8 @@ export class FacturasProveedorFormComponent implements OnInit {
           : '';
         this.autorizacionCtrl.setValue(firstAut, { emitEvent: false });
 
+        ///fechas
+        /* 
         const firstFechaCad = resp.detalles && resp.detalles.length
           ? (resp.detalles[0].fechacaduca || '')
           : '';
@@ -1154,14 +1213,32 @@ export class FacturasProveedorFormComponent implements OnInit {
           ? (resp.detalles[0].fechavencimiento || '')
           : '';
         this.fechavencimientoCtrl.setValue(firstFechaVen || null, { emitEvent: false });
-        /////
+        */
+      const firstFechaCad = resp.detalles && resp.detalles.length
+        ? (resp.detalles[0].fechacaduca || '')
+        : '';
+      this.fechacaducaCtrl.setValue(
+        firstFechaCad ? normalizeToLocalDate(firstFechaCad) : null,
+        { emitEvent: false }
+      );
 
+      const firstFechaVen = resp.detalles && resp.detalles.length
+        ? (resp.detalles[0].fechavencimiento || '')
+        : '';
+      this.fechavencimientoCtrl.setValue(
+        firstFechaVen ? normalizeToLocalDate(firstFechaVen) : null,
+        { emitEvent: false }
+      );
+        /////
+        this.refrescarColumnasDetalle();
         this.loading.set(false);
       },
       error: (err) => {
         console.error('Error al cargar factura de proveedor', err);
         this.loading.set(false);
       },
+
+
     });
   }
 
@@ -1333,7 +1410,10 @@ export class FacturasProveedorFormComponent implements OnInit {
           this.movimientosBancarios
         );
 
-        this.gridApi?.refreshCells({ force: true, columns: ['idMovBancario'] });
+        //this.gridApi?.refreshCells({ force: true, columns: ['idMovBancario'] });
+        this.movimientosBancariosLoaded = true;
+        this.refrescarColumnasDetalle();
+
       },
       error: (err) => {
         console.error('Error cargando movimientos bancarios', err);
@@ -1520,16 +1600,33 @@ export class FacturasProveedorFormComponent implements OnInit {
   const nowIso = formatLocalIso(ahora);
 
   const fechaTransControl = this.form.get('fechatransaccion')!.value;
+
+  if (!fechaTransControl) {
+    this.snack.open('Debe ingresar la Fecha de Transacción.', 'Cerrar', {
+      duration: 3000,
+      horizontalPosition: 'right',
+      verticalPosition: 'top',
+    });
+    return;
+  }
+  /*
   const fechaTransaccionIso = fechaTransControl
     ? normalizeToLocalIso(fechaTransControl)
     : nowIso;
 
   const anioTransaccion = getYearFromInput(fechaTransaccionIso);
+  */
+ // ✅ Solo FECHA (yyyy-MM-dd), respetando lo que puso el usuario
+  const fechaTransaccionSoloFecha = normalizeToLocalDate(fechaTransControl);
+
+  // Año basado en esa fecha
+  const anioTransaccion = getYearFromInput(fechaTransaccionSoloFecha);
+
 
   this.form.patchValue(
     {
       anio: anioTransaccion,
-      fechatransaccion: fechaTransaccionIso,
+      fechatransaccion: fechaTransaccionSoloFecha,// fechaTransaccionIso,
     },
     { emitEvent: false }
   );
@@ -1551,11 +1648,12 @@ export class FacturasProveedorFormComponent implements OnInit {
           ? normalizeToLocalIso(d.fechaingreso)
           : nowIso;
 
-      const fechaTransDet =
+      const fechaTransDet =fechaTransaccionSoloFecha;
+      /*
         d.fechatransaccion && d.fechatransaccion !== ''
           ? normalizeToLocalIso(d.fechatransaccion)
-          : fechaTransaccionIso;
-
+          : fechaTransaccionSoloFecha//fechaTransaccionIso;
+      */
       return {
         ...d,
         anio: d.anio && d.anio !== '' ? d.anio : anioTransaccion,
@@ -1573,9 +1671,21 @@ export class FacturasProveedorFormComponent implements OnInit {
 
   const rawForm = this.form.value as AsientoContableResponse;
 
-  const header: AsientoContableResponse = {
+    const header: AsientoContableResponse = {
     ...rawForm,
-    fechatransaccion: fechaTransaccionIso,
+    /*
+    //modulo: 1,
+     modulo: esNuevo
+      ? 1
+      : (rawForm.modulo != null && rawForm.modulo !== undefined
+          ? Number(rawForm.modulo)
+          : 0),
+    */
+    modulo:
+    rawForm.modulo != null && !isNaN(Number(rawForm.modulo))
+      ? Number(rawForm.modulo)
+      : 1,    
+    fechatransaccion: fechaTransaccionSoloFecha, //fechaTransaccionIso,
     fechaingreso: esNuevo ? nowIso : normalizeToLocalIso(rawForm.fechaingreso),
     fechacierre: esNuevo ? '' : rawForm.fechacierre,
     numdoc: esNuevo ? 0 : rawForm.numdoc ?? 0,
@@ -1588,6 +1698,10 @@ export class FacturasProveedorFormComponent implements OnInit {
 
   console.log('>>> HEADER.fechaingreso ENVIADO:', header.fechaingreso);
   console.log('>>> DETALLE[0].fechaingreso ENVIADO:', payload.detalles?.[0]?.fechaingreso);
+  console.log('form.modulo:', this.form.get('modulo')?.value);
+  console.log('header.modulo:', header.modulo);
+  console.log('payload.modulo:', payload.modulo);
+
 
   this.saving.set(true);
  // Respuesta puede ser ApiResponse<number> (crear) o ApiResponse<boolean> (update)
@@ -1714,6 +1828,7 @@ export class FacturasProveedorFormComponent implements OnInit {
 
   onGridReady(evt: GridReadyEvent<DetalleAsientoResponse>): void {
     this.gridApi = evt.api;
+    this.refrescarColumnasDetalle(); ////refrescar el detalle
   }
 
   onCellValueChanged(evt: CellValueChangedEvent<DetalleAsientoResponse>): void {
@@ -1895,6 +2010,7 @@ export class FacturasProveedorFormComponent implements OnInit {
 
   agregarLinea(): void {
     // VALIDAR QUE SE SELECCIONE ZONA Y TIPO ASIENTO PARA AÑADIR LINEA
+
     const idZonaCtrl = this.form.get('idZona');
     const idTipoAsientoCtrl = this.form.get('idTipoAsiento');
     const idZona = Number(idZonaCtrl?.value || 0);
@@ -1904,8 +2020,19 @@ export class FacturasProveedorFormComponent implements OnInit {
     const idSustentoCab = Number(this.sustentoTribCtrl.value || 0);
     const idTipoCompSriCab = Number(this.tipoCompSriCtrl.value || 0); 
     const autorizacionCab = (this.autorizacionCtrl.value || '').toString().trim();
+
     const fechaCadCabForm = this.fechacaducaCtrl.value;
     const fechaVenCabForm = this.fechavencimientoCtrl.value;
+
+    const fechaCadCab = fechaCadCabForm
+    ? normalizeToLocalDate(fechaCadCabForm)
+    : '';
+
+  const fechaVenCab = fechaVenCabForm
+    ? normalizeToLocalDate(fechaVenCabForm)
+    : '';
+    
+    /*
     const fechaCadCabIso = fechaCadCabForm
       ? normalizeToLocalIso(fechaCadCabForm)
       : '';
@@ -1913,7 +2040,7 @@ export class FacturasProveedorFormComponent implements OnInit {
     const fechaVenCabIso = fechaVenCabForm
       ? normalizeToLocalIso(fechaVenCabForm)
       : '';
-
+    */
     const mensajes: string[] = [];
     if (idZona <= 0) {
       mensajes.push('Debe seleccionar la Zona.');
@@ -1952,12 +2079,12 @@ export class FacturasProveedorFormComponent implements OnInit {
       this.autorizacionCtrl.markAsTouched();
     }
 
-    if (!fechaCadCabIso) {
+    if (!fechaCadCab) {
       mensajes.push('Debe ingresar la Fecha Caduca.');
       this.fechacaducaCtrl.markAsTouched();
     }
 
-    if (!fechaVenCabIso) {
+    if (!fechaVenCab) {
       mensajes.push('Debe ingresar la Fecha Vencimiento.');
       this.fechavencimientoCtrl.markAsTouched();
     }
@@ -1978,7 +2105,7 @@ export class FacturasProveedorFormComponent implements OnInit {
     const next = (items?.length ?? 0) + 1;
 
     const fechaTransFormulario = this.form.value?.fechatransaccion || nowIso;
-    const fechaTransaccionDetalle = normalizeToLocalIso(fechaTransFormulario);
+    const fechaTransaccionDetalle = normalizeToLocalDate(fechaTransFormulario);//  normalizeToLocalIso(fechaTransFormulario);
     const anioTransaccion =
       this.form.value?.anio || getYearFromInput(fechaTransaccionDetalle);
 
@@ -2020,14 +2147,14 @@ export class FacturasProveedorFormComponent implements OnInit {
       idSustentoTrib: idSustentoCab, ///0, 
       idTipoCompSri: idTipoCompSriCab,//0,
       autorizacion: autorizacionCab,//'',
-      fechacaduca: fechaCadCabIso,//'',
+      fechacaduca: fechaCadCab, ///fechaCadCabIso,//'',
       idTipoRetencion: null as any,//0,
       idProyecto: null as any,//0,
       idSubproyecto:null as any,// 0,
 
       transferido: false,
       fechatransferido: null as any,//'',
-      fechavencimiento: fechaVenCabIso,//'',
+      fechavencimiento: fechaVenCab, //fechaVenCabIso,//'',
       idConciliacion: 0,
       valorLetras: '',
       estadoIngreso: true,
@@ -2207,21 +2334,29 @@ private normalizarParaBackend(header: AsientoContableResponse): any {
   const h: any = { ...header };
 
   // CABECERA
-  h.fechacierre = h.fechacierre ? normalizeToLocalIso(h.fechacierre) : null;
+  h.fechacierre = h.fechacierre ? normalizeToLocalDate(h.fechacierre) : null;
 
   // DETALLES
   h.detalles = (header.detalles ?? []).map((d) => {
     const det: any = { ...d };
 
-    // ===== FECHAS OPCIONALES EN DETALLE =====
+    // ===== FECHAS OPCIONALES EN DETALLE ===== cambiar aqui a normalizeToLocalDate solo fecha sin hora
+    /*
     det.fechacierre = det.fechacierre ? normalizeToLocalIso(det.fechacierre) : null;
     det.fechaconciliado = det.fechaconciliado ? normalizeToLocalIso(det.fechaconciliado) : null;
     det.fechatransferido = det.fechatransferido ? normalizeToLocalIso(det.fechatransferido) : null;
     det.fechaCadRelacionado = det.fechaCadRelacionado ? normalizeToLocalIso(det.fechaCadRelacionado) : null;
+    */
+    det.fechatransaccion = det.fechatransaccion ? normalizeToLocalDate(det.fechatransaccion) : null;
+    det.fechacierre = det.fechacierre ? normalizeToLocalDate(det.fechacierre) : null;
+    det.fechaconciliado = det.fechaconciliado ? normalizeToLocalDate(det.fechaconciliado) : null;
+    det.fechatransferido = det.fechatransferido ? normalizeToLocalDate(det.fechatransferido) : null;
+    det.fechaCadRelacionado = det.fechaCadRelacionado ? normalizeToLocalDate(det.fechaCadRelacionado) : null;
+
 
     // estas dos fechas SÍ las envías siempre si las tienes
-    det.fechacaduca = det.fechacaduca ? normalizeToLocalIso(det.fechacaduca) : det.fechacaduca;
-    det.fechavencimiento = det.fechavencimiento ? normalizeToLocalIso(det.fechavencimiento) : det.fechavencimiento;
+    det.fechacaduca = det.fechacaduca ? normalizeToLocalDate(det.fechacaduca) : det.fechacaduca;
+    det.fechavencimiento = det.fechavencimiento ? normalizeToLocalDate(det.fechavencimiento) : det.fechavencimiento;
 
     // ===== IDS OPCIONALES (FK) — 0 => null =====
     det.idCentroCostos = det.idCentroCostos && det.idCentroCostos > 0 ? det.idCentroCostos : null;
@@ -2391,6 +2526,9 @@ private resetParaNuevo(): void {
   const nowIso = formatLocalIso(new Date());
   const anio = getYearFromInput(nowIso);
 
+  const ahora = new Date();
+  const todayDate = formatLocalDateOnly(ahora); // solo fecha
+
   // Reset del form principal
   this.form.reset({
     IdCabMaestro: 0,
@@ -2401,7 +2539,7 @@ private resetParaNuevo(): void {
     tipdoc: this.form.get('tipdoc')?.value ?? '',
     numdoc: 0,
     anio: anio,
-    fechatransaccion: nowIso,
+    fechatransaccion: todayDate, //nowIso,
     fechaingreso: nowIso,
     observacion: '',
     totdebe: 0,
@@ -2414,6 +2552,7 @@ private resetParaNuevo(): void {
     autorizado: '',
     homCodigo: 0,
     estado: true,
+    modulo: 1, 
   });
 
   // Reset de controles auxiliares de cabecera
@@ -2506,6 +2645,7 @@ imprimirAsiento(): void {
       });
   }
 
+ 
 /// FINAL
 }
 
@@ -2660,3 +2800,39 @@ function sanitizeTextoGenerico(value: any): string {
   // permite letras (con tildes y ñ), números, espacio, punto, coma, punto y coma y guion
   return raw.replace(/[^0-9a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s.,;-]/g, '');
 }
+
+function formatLocalDateOnly(d: Date): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  // 👀 solo fecha
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+
+function normalizeToLocalDate(v: any): string {
+  if (!v) return '';
+
+  // Si ya viene como 'yyyy-MM-dd', la dejamos tal cual
+  if (typeof v === 'string') {
+    const s = v.trim();
+
+    // caso: '2025-12-01'
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      return s;
+    }
+
+    // caso: '2025-12-01T23:59:59' -> tomamos solo la parte de fecha
+    if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+      return s.substring(0, 10);
+    }
+  }
+
+  // Si es Date (o algo que Date pueda parsear) usamos la función de fecha sola
+  const d = v instanceof Date ? v : new Date(v);
+  if (isNaN(d.getTime())) {
+    return String(v);
+  }
+  return formatLocalDateOnly(d);
+}
+
