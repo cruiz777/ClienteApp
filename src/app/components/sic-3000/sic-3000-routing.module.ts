@@ -23,6 +23,11 @@ import { LisPagAnuladosComponent } from './cxc/lis-pag-anulados/lis-pag-anulados
 import { CierreAnticiposComponent } from './anticipos/cierre-anticipos/cierre-anticipos.component';
 import { EstadocuentaclienteComponent } from './exploradores/estadocuentacliente/estadocuentacliente.component';
 import { CuentaxcobrarComponent } from './exploradores/cuentaxcobrar/cuentaxcobrar.component';
+import { DocElectronicosComponent } from './facturacion/doc-electronicos/doc-electronicos.component';
+
+import { FormaPagoListComponent } from './forma-pago/forma-pago-list.component';
+import { ClasificacionListComponent } from './clasificacion-list/clasificacion-list.component';
+import { DescuentoListComponent } from './descuento/descuento-list/descuento-list.component';
 
 const routes: Routes = [
   {
@@ -99,6 +104,8 @@ const routes: Routes = [
         component: LisFacAnuladasComponent
 
       },
+      { path: 'doc-electronicos', component: DocElectronicosComponent},
+      
       // ✅ Ruta para EDITAR producto (con ID)
       {
         path: 'productossic/:idProducto',
@@ -119,11 +126,27 @@ const routes: Routes = [
         component: ProveedoresListaComponent
       },
 
+       {
+        path: 'formapago',
+        component:FormaPagoListComponent
+      },
+         {
+        path: 'clasificacion',
+        component:ClasificacionListComponent
+      },
+         {
+        path: 'descuento',
+        component:DescuentoListComponent
+      },
+
+
+
       { path: 'creacion-anticipos', component: CreacionAnticiposComponent},
       { path: 'reporte-anticipos', component: ReporteAnticiposComponent},
       { path: 'cierre-anticipos', component: CierreAnticiposComponent},
       { path: 'exp-estadocuenta', component: EstadocuentaclienteComponent},
       { path: 'exp-cuentaxcobrar', component: CuentaxcobrarComponent}
+
     ]
   }
 ];

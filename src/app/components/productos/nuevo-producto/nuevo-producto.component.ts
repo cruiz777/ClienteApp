@@ -122,7 +122,7 @@ export class NuevoProductoComponent implements OnInit {
   totalRegistros = 0;
   prefijo: string = '';
   busqueda1: string = '';
-public rowData: Producto[] = [];
+  public rowData: Producto[] = [];
 
   set cantidadMostrar(value: number) {
     this._cantidadMostrar = value;
@@ -769,7 +769,10 @@ public rowData: Producto[] = [];
   async generarExcelLogistica(): Promise<void> {
     try {
 
-      
+      if (!this.formReporte.get('gcp')?.value) {
+        this.mostrarAlerta('⚠️ No Selecciono Prefijo', 'Advertencia');
+        return;
+      }
       const loadingDialog = this.abrirDialogoProgreso(
         '📊 Generando Reporte Excel',
         'Obteniendo información del servidor...'
@@ -956,7 +959,7 @@ public rowData: Producto[] = [];
       this.mostrarAlerta('⚠️ No hay cliente seleccionado.', 'Advertencia');
       return;
     }
-     if (!this.formReporte.get('gcp')?.value) {
+    if (!this.formReporte.get('gcp')?.value) {
       this.mostrarAlerta('⚠️ No  seleccionado Prefijo', 'Advertencia');
       return;
     }
@@ -1181,110 +1184,110 @@ public rowData: Producto[] = [];
    * Genera reporte PDF General usando getAllProductosPorCliente
    */
   async generarPdfGeneral(): Promise<void> {
-      try {
-        // ✅ Abrir diálogo de loading
-        const loadingDialog = this.abrirDialogoProgreso(
-          '🔄 Generando Reporte PDF General',
-          'Obteniendo información del servidor...'
-        );
+    try {
+      // ✅ Abrir diálogo de loading
+      const loadingDialog = this.abrirDialogoProgreso(
+        '🔄 Generando Reporte PDF General',
+        'Obteniendo información del servidor...'
+      );
 
-        const params = this.prepararParametrosProductosPorCliente();
+      const params = this.prepararParametrosProductosPorCliente();
 
-        // Validar parámetros
-        const validationErrors = this.reporteService.validateProductosPorClienteParams(params);
-        if (validationErrors.length > 0) {
-          loadingDialog.close();
-          this._snackBar.open(`⚠️ ${validationErrors[0]}`, 'Cerrar', {
-            duration: 4000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top'
-          });
-          return;
-        }
-
-        // PASO 1: Obtener metadata del backend (primera página)
-        const response = await firstValueFrom(
-          this.reporteService.getProductosPorCliente(params)
-        );
-
-        if (response.type !== 'SUCCESS' || !response.data) {
-          loadingDialog.close();
-          this._snackBar.open('⚠️ No se encontraron datos para exportar', 'Cerrar', {
-            duration: 3000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top'
-          });
-          return;
-        }
-
-        const { metadata } = response.data;
-
-        // ✅ Obtener total de registros desde productos.totalItems
-        const totalRegistros = response.data.productos.totalItems || 0;
-
-        // Calcular tiempo estimado
-        const lotesTotales = Math.ceil(totalRegistros / 10000);
-        const tiempoEstimadoSegundos = Math.ceil((lotesTotales * 989) / 1000);
-        const tiempoEstimadoMostrar = this.formatearTiempoEstimado(tiempoEstimadoSegundos);
-
-        // Actualizar diálogo con información real
-        loadingDialog.componentInstance.updateProgress(0, totalRegistros, tiempoEstimadoMostrar);
-
-        // PASO 2: Obtener TODOS los productos por lotes con progreso
-        // ✅ USAR: obtenerProductosPorLotesDirecto con tipo 'general'
-        const todosLosProductos = await this.obtenerProductosPorLotesDirecto(
-          params,
-          totalRegistros,
-          loadingDialog,
-          'general'
-        );
-
-        if (todosLosProductos.length === 0) {
-          loadingDialog.close();
-          this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', {
-            duration: 3000,
-            horizontalPosition: 'end',
-            verticalPosition: 'top'
-          });
-          return;
-        }
-
-        // ✅ Actualizar: Generando PDF
-        loadingDialog.componentInstance.data.loadingText = '📄 Generando documento PDF...';
-        loadingDialog.componentInstance.data.showProgress = false;
-
-        // PASO 3: Preparar datos y generar PDF
-        const datosParaExport = this.aplanarDatosGeneralParaExport(todosLosProductos);
-        const headerInfo = this.prepararHeaderInfoDesdeBackend(metadata);
-
-        await this.gs1ExportService.exportarPDFGS1({
-          data: datosParaExport,
-          filename: 'reporte_productos_general_gs1',
-          headerInfo: headerInfo
-        });
-
-        // ✅ Cerrar loading y mostrar éxito
+      // Validar parámetros
+      const validationErrors = this.reporteService.validateProductosPorClienteParams(params);
+      if (validationErrors.length > 0) {
         loadingDialog.close();
-        this._snackBar.open('✅ PDF General generado correctamente', 'Cerrar', {
-          duration: 3000,
+        this._snackBar.open(`⚠️ ${validationErrors[0]}`, 'Cerrar', {
+          duration: 4000,
           horizontalPosition: 'end',
           verticalPosition: 'top'
         });
-
-      } catch (error) {
-        console.error('Error en generarPdfGeneral:', error);
-        this._snackBar.open('❌ Error al generar el PDF', 'Cerrar', {
-          duration: 3000,
-          horizontalPosition: 'end',
-          verticalPosition: 'top'
-        });
+        return;
       }
-    }
 
-    /**
-     * Genera reporte Excel General usando GLN del backend y TODOS los registros
-     */
-    async generarExcelGeneral(): Promise<void> {
+      // PASO 1: Obtener metadata del backend (primera página)
+      const response = await firstValueFrom(
+        this.reporteService.getProductosPorCliente(params)
+      );
+
+      if (response.type !== 'SUCCESS' || !response.data) {
+        loadingDialog.close();
+        this._snackBar.open('⚠️ No se encontraron datos para exportar', 'Cerrar', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top'
+        });
+        return;
+      }
+
+      const { metadata } = response.data;
+
+      // ✅ Obtener total de registros desde productos.totalItems
+      const totalRegistros = response.data.productos.totalItems || 0;
+
+      // Calcular tiempo estimado
+      const lotesTotales = Math.ceil(totalRegistros / 10000);
+      const tiempoEstimadoSegundos = Math.ceil((lotesTotales * 989) / 1000);
+      const tiempoEstimadoMostrar = this.formatearTiempoEstimado(tiempoEstimadoSegundos);
+
+      // Actualizar diálogo con información real
+      loadingDialog.componentInstance.updateProgress(0, totalRegistros, tiempoEstimadoMostrar);
+
+      // PASO 2: Obtener TODOS los productos por lotes con progreso
+      // ✅ USAR: obtenerProductosPorLotesDirecto con tipo 'general'
+      const todosLosProductos = await this.obtenerProductosPorLotesDirecto(
+        params,
+        totalRegistros,
+        loadingDialog,
+        'general'
+      );
+
+      if (todosLosProductos.length === 0) {
+        loadingDialog.close();
+        this._snackBar.open('⚠️ No se encontraron productos para exportar', 'Cerrar', {
+          duration: 3000,
+          horizontalPosition: 'end',
+          verticalPosition: 'top'
+        });
+        return;
+      }
+
+      // ✅ Actualizar: Generando PDF
+      loadingDialog.componentInstance.data.loadingText = '📄 Generando documento PDF...';
+      loadingDialog.componentInstance.data.showProgress = false;
+
+      // PASO 3: Preparar datos y generar PDF
+      const datosParaExport = this.aplanarDatosGeneralParaExport(todosLosProductos);
+      const headerInfo = this.prepararHeaderInfoDesdeBackend(metadata);
+
+      await this.gs1ExportService.exportarPDFGS1({
+        data: datosParaExport,
+        filename: 'reporte_productos_general_gs1',
+        headerInfo: headerInfo
+      });
+
+      // ✅ Cerrar loading y mostrar éxito
+      loadingDialog.close();
+      this._snackBar.open('✅ PDF General generado correctamente', 'Cerrar', {
+        duration: 3000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top'
+      });
+
+    } catch (error) {
+      console.error('Error en generarPdfGeneral:', error);
+      this._snackBar.open('❌ Error al generar el PDF', 'Cerrar', {
+        duration: 3000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top'
+      });
+    }
+  }
+
+  /**
+   * Genera reporte Excel General usando GLN del backend y TODOS los registros
+   */
+  async generarExcelGeneral(): Promise<void> {
     try {
       // ✅ Abrir diálogo de loading
       const loadingDialog = this.abrirDialogoProgreso(
@@ -1640,7 +1643,12 @@ public rowData: Producto[] = [];
         nombreEmpresa: respuesta.cliente?.nombreCliente || '---',
         ruc: respuesta.cliente?.ruc || '---',
         gln: respuesta.cliente?.gln || '---',
-        fechaEmision: new Date().toLocaleDateString('es-EC')
+        fechaEmision: new Date().toLocaleDateString('es-EC', {
+          day: '2-digit',
+          month: '2-digit',
+          year: 'numeric'
+        })
+
       };
 
       const exportOptions = {
@@ -1733,18 +1741,18 @@ public rowData: Producto[] = [];
     });
 
     // 👉 Encabezado institucional
-    worksheet.mergeCells('B1:E1');
+    worksheet.mergeCells('B1:D1');
     worksheet.getCell('B1').value = 'SISTEMA DE CONTROL DE CÓDIGOS';
-    worksheet.getCell('B1').font = { bold: true, size: 14 };
-
-    worksheet.mergeCells('B2:E2');
+    worksheet.getCell('B1').font = { bold: true, size: 16, color: { argb: 'FF003366' } };
+    worksheet.getCell('B1').alignment = { horizontal: 'center', vertical: 'middle' };
+    worksheet.mergeCells('B2:D2');
     worksheet.getCell('B2').value = 'REPORTE DE PRODUCTOS CODIFICADOS';
-    worksheet.getCell('B2').font = { bold: true, size: 12 };
-
+    worksheet.getCell('B2').font = { bold: true, size: 16, color: { argb: 'FF003366' } };
+    worksheet.getCell('B2').alignment = { horizontal: 'center', vertical: 'middle' };
     worksheet.getCell('B4').value = this.clienteSeleccionado?.nomcli || '';
-    worksheet.getCell('B4').font = { bold: true };
+    worksheet.getCell('B4').font = { bold: true, size: 14, color: { argb: 'FFFF6600' } };
     worksheet.getCell('C4').value = prefijo?.prefijosgs1 || '';
-
+    worksheet.getCell('C4').font = { bold: true, size: 14, color: { argb: 'FF003366' } };
     worksheet.getCell('B6').value = 'RUC:';
     worksheet.getCell('C6').value = this.clienteSeleccionado?.ruc || '';
 
@@ -1759,36 +1767,41 @@ public rowData: Producto[] = [];
 
     // 🟨 Advertencia antes de cabeceras
     worksheet.mergeCells('B11:O13');
-    worksheet.getCell('B11').value = {
+
+    const cell = worksheet.getCell('B11');
+    cell.value = {
       richText: [
         {
           text: 'GS1 Ecuador (ECOP) certifica que los códigos GTIN que constan a continuación son auténticos y publicados en www.gs1ec.org Verified by Ecuador.\n',
-          font: { bold: true, color: { argb: '000000' } }
+          font: { bold: false, color: { argb: 'FF000000' } }  // negro normal
         },
         {
           text: 'El dueño de la marca del producto pone el código, es su responsabilidad el manejo y control del código, incluida su descripción y marca.\n',
-          font: { color: { argb: '000000' } }
+          font: { bold: false, color: { argb: 'FF000000' } }  // negro normal
         },
         {
           text: 'El Prefijo Global De Compañía GS1, GCP, es ',
-          font: { color: { argb: '000000' } }
+          font: { bold: true, color: { argb: 'FF000000' } }   // negro en negrita
         },
         {
           text: 'INTRANSFERIBLE.',
-          font: { bold: true, color: { argb: 'FFFF0000' } } // rojo fuerte
+          font: { bold: true, color: { argb: 'FFFF0000' } }   // rojo en negrita
         }
       ]
     };
-    worksheet.getCell('B11').alignment = {
+
+    cell.alignment = {
       horizontal: 'center',
       vertical: 'middle',
       wrapText: true
     };
-    worksheet.getCell('B11').fill = {
+
+    cell.fill = {
       type: 'pattern',
       pattern: 'solid',
-      fgColor: { argb: 'FFFFFF00' } // amarillo
+      fgColor: { argb: 'FFFFFF00' } // fondo amarillo
     };
+
 
 
     // 👉 Cabeceras
@@ -1804,9 +1817,9 @@ public rowData: Producto[] = [];
 
     // 👉 Filas de productos
     productos.forEach((p, i) => {
-      worksheet.addRow([
-        i + 1,
-        p.codbar,
+      const row = worksheet.addRow([
+        i + 1,   // Columna 1
+        p.codbar,        // Columna 2
         p.Despro,
         p.marca,
         p.contenido,
@@ -1821,6 +1834,18 @@ public rowData: Producto[] = [];
         p.Feccre ? format(new Date(p.Feccre), 'dd/MM/yyyy') : '',
         p.p
       ]);
+
+      // 🔸 Columna 1: naranja
+      row.getCell(1).font = {
+        color: { argb: 'FFFF6600' } // naranja
+      };
+
+      // 🔹 Columna 2: azul y negrita
+      row.getCell(2).font = {
+        bold: true,
+        size:12,
+        color: { argb: 'FF0000FF' } // azul corporativo (o usa 'FF0000FF' para azul puro)
+      };
     });
 
     // 👉 Autoajustar columnas
@@ -1893,7 +1918,7 @@ public rowData: Producto[] = [];
   }
 
   private async generarPdfProductosPorPrefijo(prefijo: string): Promise<void> {
-      try {
+    try {
       // ✅ Abrir diálogo de loading
       const loadingDialog = this.abrirDialogoProgreso(
         'Generando Reporte Complementario',
@@ -2140,87 +2165,87 @@ public rowData: Producto[] = [];
 
   }
   onChangePageSize(): void {
-  this.pageSize = this.cantidadMostrar;
-  this.pageNumber = 1;
+    this.pageSize = this.cantidadMostrar;
+    this.pageNumber = 1;
 
-  const codigoCliente = this.clienteSeleccionado?.clientes_codigo;
-  if (codigoCliente !== undefined && codigoCliente !== null) {
-    this.cargarProductos(codigoCliente);
-  } else {
-    console.warn('Cliente no seleccionado. No se puede cargar productos.');
-  }
-}
-buscarProductos(): void {
-  this.pageNumber = 1; // reiniciar a la primera página
-  if (this.clienteSeleccionado?.clientes_codigo) {
-    this.cargarProductos(this.clienteSeleccionado.clientes_codigo);
-  }
-}
-
-onSeleccionPrefijo(prefijoSeleccionado: string): void {
-  this.prefijo = prefijoSeleccionado;
-  this.pageNumber = 1; // reinicia la paginación si es necesario
-
-  if (this.clienteSeleccionado?.clientes_codigo) {
-    this.cargarProductos(this.clienteSeleccionado.clientes_codigo);
-  }
-}
-
-onKeyDown(event: any): void {
-  if (!event || !event.column || !event.event) return;
-
-  const keyboardEvent = event.event as KeyboardEvent;
-  if (keyboardEvent.key !== 'Delete') return;
-
-  const selectedRows = this.gridApi.getSelectedRows();
-  if (selectedRows.length === 0) return;
-
-  const rowToDelete = selectedRows[0];
-  const codbar = rowToDelete.codbar;
-
-  const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
-    width: '400px',
-    data: {
-      title: '¿Desea confirmar?',
-      message: `¿Quiere eliminar este GTIN: ${codbar}?`,
-      type: 'info',
-      confirmText: 'Sí, confirmar',
-      cancelText: 'Cancelar',
-      showCancel: true
+    const codigoCliente = this.clienteSeleccionado?.clientes_codigo;
+    if (codigoCliente !== undefined && codigoCliente !== null) {
+      this.cargarProductos(codigoCliente);
+    } else {
+      console.warn('Cliente no seleccionado. No se puede cargar productos.');
     }
-  });
+  }
+  buscarProductos(): void {
+    this.pageNumber = 1; // reiniciar a la primera página
+    if (this.clienteSeleccionado?.clientes_codigo) {
+      this.cargarProductos(this.clienteSeleccionado.clientes_codigo);
+    }
+  }
 
-  dialogRef.afterClosed().subscribe(result => {
-    if (result === true) {
-      this.productoService.eliminarProductoPorCodbar(codbar).subscribe({
-        next: (resp) => {
-          if (resp.type === 'OK') {
-            this.buscarProductos(); // recarga los productos para mantener consistencia
-          } else {
+  onSeleccionPrefijo(prefijoSeleccionado: string): void {
+    this.prefijo = prefijoSeleccionado;
+    this.pageNumber = 1; // reinicia la paginación si es necesario
+
+    if (this.clienteSeleccionado?.clientes_codigo) {
+      this.cargarProductos(this.clienteSeleccionado.clientes_codigo);
+    }
+  }
+
+  onKeyDown(event: any): void {
+    if (!event || !event.column || !event.event) return;
+
+    const keyboardEvent = event.event as KeyboardEvent;
+    if (keyboardEvent.key !== 'Delete') return;
+
+    const selectedRows = this.gridApi.getSelectedRows();
+    if (selectedRows.length === 0) return;
+
+    const rowToDelete = selectedRows[0];
+    const codbar = rowToDelete.codbar;
+
+    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: '¿Desea confirmar?',
+        message: `¿Quiere eliminar este GTIN: ${codbar}?`,
+        type: 'info',
+        confirmText: 'Sí, confirmar',
+        cancelText: 'Cancelar',
+        showCancel: true
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result === true) {
+        this.productoService.eliminarProductoPorCodbar(codbar).subscribe({
+          next: (resp) => {
+            if (resp.type === 'OK') {
+              this.buscarProductos(); // recarga los productos para mantener consistencia
+            } else {
+              this.dialog.open(CustomMessageBoxComponent, {
+                width: '400px',
+                data: {
+                  title: 'No se pudo eliminar',
+                  message: resp.message,
+                  type: 'warning'
+                }
+              });
+            }
+          },
+          error: () => {
             this.dialog.open(CustomMessageBoxComponent, {
               width: '400px',
               data: {
-                title: 'No se pudo eliminar',
-                message: resp.message,
-                type: 'warning'
+                title: 'Error',
+                message: 'No se puede eliminar el producto, tiene presentaciones',
+                type: 'error'
               }
             });
           }
-        },
-        error: () => {
-          this.dialog.open(CustomMessageBoxComponent, {
-            width: '400px',
-            data: {
-              title: 'Error',
-              message: 'No se puede eliminar el producto, tiene presentaciones',
-              type: 'error'
-            }
-          });
-        }
-      });
-    }
-  });
-}
+        });
+      }
+    });
+  }
   //HELPERS
 
   // Método para obtener productos por lotes con progreso

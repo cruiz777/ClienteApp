@@ -291,8 +291,18 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
     fechaLabelCell.font = { name: 'Calibri', size: 11, bold: true };
     fechaLabelCell.alignment = { horizontal: 'left', vertical: 'middle' };
 
-    const fechaValueCell = worksheet.getCell(`C${currentRow}`);
-    fechaValueCell.value = headerInfo.fechaEmision || '07/07/2025';
+const fechaTexto = headerInfo.fechaEmision as string; // '03/12/2025'
+const [diaStr, mesStr, anioStr] = fechaTexto.split('/');
+const fecha = new Date(
+  parseInt(anioStr, 10),
+  parseInt(mesStr, 10) - 1,
+  parseInt(diaStr, 10)
+);
+
+const fechaValueCell = worksheet.getCell(`C${currentRow}`);
+fechaValueCell.value = fecha;
+fechaValueCell.numFmt = 'dd/mm/yyyy';
+
     fechaValueCell.font = { name: 'Calibri', size: 11 };
     fechaValueCell.alignment = { horizontal: 'left', vertical: 'middle' };
     currentRow++;
@@ -378,7 +388,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
       // Fila principal del producto
       const numeracionCell = worksheet.getCell(`A${currentRow}`);
       numeracionCell.value = rowNumber++;
-      numeracionCell.font = { name: 'Calibri', size: 9, color: { argb: 'FFFF6600' } };
+      numeracionCell.font = { name: 'Calibri', size: 11, color: { argb: 'FFFF6600' } };
       numeracionCell.alignment = { horizontal: 'center', vertical: 'middle' };
 
       const gtin13Cell = worksheet.getCell(`B${currentRow}`);
@@ -924,4 +934,26 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
 
     return fechaMoment.isValid() ? fechaMoment.format('DD/MM/YYYY') : '';
   }
+private formatearFechaDDMMYYYY(fecha: string | Date): string {
+  let d: Date;
+
+  if (fecha instanceof Date) {
+    d = fecha;
+  } else {
+    // fecha viene como 'dd/mm/yyyy'
+    const [diaStr, mesStr, anioStr] = fecha.split('/');
+    const dia = parseInt(diaStr, 10);
+    const mes = parseInt(mesStr, 10) - 1; // meses 0–11 en JS
+    const anio = parseInt(anioStr, 10);
+    d = new Date(anio, mes, dia);
+  }
+
+  const day = String(d.getDate()).padStart(2, '0');
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const year = d.getFullYear();
+
+  return `${day}/${month}/${year}`;
+}
+
+
 }

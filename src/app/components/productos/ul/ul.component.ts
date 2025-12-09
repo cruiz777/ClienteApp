@@ -184,7 +184,7 @@ export class UlComponent implements OnInit {
       gtinUl: [''],
       tipoGtinl: ['GTIN-14'],
       descripcionu: [''],
-      usarSerie2: [false]
+      usarSerie2: false
     });
 
     this.cargarCliente();
@@ -384,7 +384,7 @@ export class UlComponent implements OnInit {
         });
 
       } else {
-        this.formUL.get('serie2')?.setValue('SERIE-UL-GENERICA');
+        this.mostrarAlerta('⚠️ No se puede modificar Serie', 'Error');
       }
 
     } else {
@@ -535,7 +535,8 @@ export class UlComponent implements OnInit {
       gtinUl: '',
 
       gtinNacionalULSeleccionado: 'gtin14u',
-
+      usarSerie2: false,
+      serie2: '',
 
     });
     this.formUL.get('tipoGtinl')?.setValue(this.obtenerNombreGTIN('gtin14u'));
@@ -996,7 +997,7 @@ export class UlComponent implements OnInit {
     const descripcion = this.formUV.get('descripcion')?.value || '';
     const marca = this.formUV.get('marca')?.value || '';
     const contenido = this.formUV.get('contenido')?.value || '';
-    const unidadObj = this.formUV.get('unidadMedida')?.value;
+   const unidadObj = this.formUV.getRawValue().unidadMedida?.unidad || '';
     const unidadu = this.formUL.getRawValue().unidad || '';
     const tipoEmpaque = this.formUL.getRawValue().tipoEmpaque || '';
 
@@ -1004,8 +1005,10 @@ export class UlComponent implements OnInit {
     const factor = this.formUL.get('factor')?.value || '';
     const unidad = this.formUL.get('unidad')?.value || '';
 
+    const descripcionUL = `${descripcion} ${marca} ${contenido} ${unidadObj} ${tipoEmpaque} ${factor} ${unidad}`
+    .toUpperCase();
 
-    const descripcionUL = `${descripcion} ${marca} ${contenido}  ${unidadu} ${tipoEmpaque} ${factor} ${unidad}`;
+    
     this.formUL.get('descripcionu')?.setValue(descripcionUL);
   }
   generarUL(): void {
