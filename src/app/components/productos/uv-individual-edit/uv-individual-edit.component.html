@@ -120,12 +120,20 @@
       <mat-form-field>
         <mat-label>Categoría</mat-label>
         <input matInput formControlName="categoria" [matAutocomplete]="autoCategoria"
-          placeholder="Seleccione Categoría" />
+          placeholder="Seleccione Categoría"
+          (focus)="cargarGruposProductoInicial()"/>
+
+        <mat-spinner matSuffix *ngIf="buscandoGrupoProducto" diameter="20"></mat-spinner>
+
         <button matSuffix mat-icon-button *ngIf="formUV.get('categoria')?.value" (click)="limpiarCategoria()">
           <mat-icon>close</mat-icon>
         </button>
         <mat-autocomplete #autoCategoria="matAutocomplete" [displayWith]="displayWithCategoria"
           (optionSelected)="seleccionarCategoria($event.option.value)">
+          <!-- Sin resultados -->
+          <mat-option *ngIf="categoriasFiltradas.length === 0 && !buscandoGrupoProducto" disabled>
+            <span style="color: #999; font-size: 11px;">No se encontraron resultados</span>
+          </mat-option>
           <mat-option *ngFor="let cat of categoriasFiltradas" [value]="cat">
             {{ cat.desBrick }}
           </mat-option>

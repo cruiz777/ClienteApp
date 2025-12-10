@@ -106,8 +106,8 @@
                     <label class="form-label"> <span style="color: red;">*</span>Categoría Producto:</label>
                     <mat-form-field class="full-width" style="font-size: 12px; height: 60px;">
                       <input matInput formControlName="grupoProducto" [matAutocomplete]="autoGrupoProducto"
-                        placeholder="Seleccione Categoría Producto">
-
+                        placeholder="Seleccione Categoría Producto" (focus)="cargarGruposProductoInicial()">
+                      <mat-spinner matSuffix *ngIf="buscandoGrupoProducto" diameter="20"></mat-spinner>
                       <button matSuffix mat-icon-button aria-label="Limpiar"
                         *ngIf="paso1Form.get('grupoProducto')?.value" (click)="limpiarGrupoProducto()">
                         <mat-icon>close</mat-icon>
