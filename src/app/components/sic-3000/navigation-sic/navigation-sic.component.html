@@ -61,7 +61,7 @@
           <!-- Subgrupo: Facturación -->
           <mat-expansion-panel-header>
             <mat-panel-title>
-              <img src="assets/icons/icon-Usuario-perfil.png" class="menu-icon">
+              <img src="assets/icons/sic-3000/icon-factura.png" class="menu-icon">
               <span *ngIf="isExpanded" class="menu-text">Facturación</span>
             </mat-panel-title>
           </mat-expansion-panel-header>
@@ -127,7 +127,9 @@
           </mat-expansion-panel>
           <!-- Subgrupo: Reenvio Documentos Electronicos-->
           <mat-expansion-panel hideToggle>
-            <mat-expansion-panel-header (click)="goTo('ruta aqui')" class="clickable-header">
+            <mat-expansion-panel-header
+              (click)="goTo(urlReenvioDocumentos)"
+              class="clickable-header">
               <mat-panel-title>
                 <span *ngIf="isExpanded" class="menu-text">Reenvio Documentos Electronicos</span>
               </mat-panel-title>
@@ -222,7 +224,7 @@
           <!-- Subgrupo: Descuentos-->
           <mat-expansion-panel hideToggle>
             <mat-expansion-panel-header (click)="goTo('descuento')" class="clickable-header">
-              <mat-panel-title routerLink="descuento" routerLinkActive="active" > 
+              <mat-panel-title routerLink="descuento" routerLinkActive="active" >
                 <span *ngIf="isExpanded" class="menu-text">Descuentos</span>
               </mat-panel-title>
             </mat-expansion-panel-header>

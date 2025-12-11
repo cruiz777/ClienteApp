@@ -6,6 +6,7 @@ import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatExpansionModule } from '@angular/material/expansion';
 import { UsuarioService } from 'src/app/services/usuario.service';
+import { ParametrosFacturaService } from 'src/app/services/parametros-factura.service';
 
 
 @Component({
@@ -18,10 +19,13 @@ export class NavigationSicComponent implements OnInit{
   currentDateTime: string = '';
   isHandset: boolean = false;
   isExpanded: boolean = true;
+  urlReenvioDocumentos: string = '';
+  isLoadingUrl: boolean = true;
 
   constructor(private breakpointObserver: BreakpointObserver
     , private router: Router,
-    private usuarioService:UsuarioService
+    private usuarioService:UsuarioService,
+    private parametrosService: ParametrosFacturaService
   ) {
     this.breakpointObserver.observe([Breakpoints.Handset])
       .subscribe(result => {
@@ -33,6 +37,17 @@ export class NavigationSicComponent implements OnInit{
   ngOnInit(): void {
     this.updateDateTime();
     setInterval(() => this.updateDateTime(), 1000);
+    // Cargar URL parametrizable
+    this.parametrosService.getByIdUrl(10005).subscribe({
+      next: (param) => {
+        this.urlReenvioDocumentos = param.texto || '';
+        this.isLoadingUrl = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar URL de reenvío:', error);
+        this.isLoadingUrl = false;
+      }
+    });
   }
 
   updateDateTime(): void {
@@ -55,8 +70,13 @@ export class NavigationSicComponent implements OnInit{
     //this.router.navigate([ruta]);
   //}
   goTo(ruta: string): void {
-  this.router.navigate(['/sic-3000', ruta]);
-}
+    if (!ruta || ruta.trim() === '') {
+      console.warn('La URL no está disponible');
+      return; // No hace nada si está vacía
+    }
+    window.open(ruta, '_blank');
+  }
+
   salir(): void {
 
     this.router.navigate(['/inicio']).then(() => {

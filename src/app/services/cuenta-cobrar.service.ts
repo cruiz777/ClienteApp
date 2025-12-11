@@ -239,7 +239,7 @@ export class CuentaCobrarService {
   // Asegúrate que environment.invoices_sic = "http://localhost:5010/invoices-sic/api"
   private readonly baseUrl = environment.invoices_sic;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   /* --------- Estado de cuenta --------- */
   getFacturasPendientesGrid(clienteCodigo: string | number): Observable<GridRow[]> {
@@ -273,8 +273,8 @@ export class CuentaCobrarService {
       const rawDetalles = (f as any)?.detalles;
       const arr: string[] =
         Array.isArray(rawDetalles) ? rawDetalles
-        : f.detalle ? [String(f.detalle).trim()]
-        : [];
+          : f.detalle ? [String(f.detalle).trim()]
+            : [];
 
       const detallePlano = arr.map(s => String(s ?? '').trim()).filter(Boolean).join(' • ');
 
@@ -384,7 +384,7 @@ export class CuentaCobrarService {
   getPagoByNumeroRaw(numeroPago: string): Observable<ApiResponse<PagoPorNumero[]>> {
     const url = `${this.baseUrl}/Pagos/${encodeURIComponent(numeroPago)}`;
     return this.http.get<ApiResponse<PagoPorNumero[]>>(url);
-    }
+  }
 
   /** Normaliza tipos numéricos y estructura de detalles */
   private normalizePago(raw: any): PagoPorNumero {
@@ -406,14 +406,14 @@ export class CuentaCobrarService {
       caja: this.sanitizeString(raw.caja),
       detalles: Array.isArray(raw.detalles)
         ? raw.detalles.map((d: any): PagoDetalle => ({
-            forma_pago: this.sanitizeString(d.forma_pago),
-            secuencia: this.sanitizeString(d.secuencia),
-            monto: this.to2(this.num(d.monto)),
-            descripcion_pago: this.sanitizeString(d.descripcion_pago),
-            referencia: this.sanitizeString(d.referencia),
-            banco: this.sanitizeString(d.banco),
-            numero_documento: this.sanitizeString(d.numero_documento),
-          }))
+          forma_pago: this.sanitizeString(d.forma_pago),
+          secuencia: this.sanitizeString(d.secuencia),
+          monto: this.to2(this.num(d.monto)),
+          descripcion_pago: this.sanitizeString(d.descripcion_pago),
+          referencia: this.sanitizeString(d.referencia),
+          banco: this.sanitizeString(d.banco),
+          numero_documento: this.sanitizeString(d.numero_documento),
+        }))
         : [],
     };
   }
@@ -512,84 +512,84 @@ export class CuentaCobrarService {
   });
 
   /* --------- Pagos (activos + anulados) --------- */
-getPagosTodosRaw(opts: {
-  incluirDetalle?: boolean;
-  page?: number;
-  pageSize?: number;
-  fechaDesde?: string;     // 'yyyy-MM-dd'
-  fechaHasta?: string;     // 'yyyy-MM-dd'
-  numeroPago?: string;
-  clienteCodigo?: number;  // opcional
-} = {}): Observable<ApiResponse<PaginationResponse<PagoItemRaw>>> {
-  const url = `${this.baseUrl}/Pagos/todos`;
+  getPagosTodosRaw(opts: {
+    incluirDetalle?: boolean;
+    page?: number;
+    pageSize?: number;
+    fechaDesde?: string;     // 'yyyy-MM-dd'
+    fechaHasta?: string;     // 'yyyy-MM-dd'
+    numeroPago?: string;
+    clienteCodigo?: number;  // opcional
+  } = {}): Observable<ApiResponse<PaginationResponse<PagoItemRaw>>> {
+    const url = `${this.baseUrl}/Pagos/todos`;
 
-  let params = new HttpParams()
-    .set('incluirDetalle', String(!!opts.incluirDetalle))
-    .set('page', String(opts.page ?? 1))
-    .set('pageSize', String(opts.pageSize ?? 20));
+    let params = new HttpParams()
+      .set('incluirDetalle', String(!!opts.incluirDetalle))
+      .set('page', String(opts.page ?? 1))
+      .set('pageSize', String(opts.pageSize ?? 20));
 
-  if (opts.fechaDesde)    params = params.set('fechaDesde', opts.fechaDesde);
-  if (opts.fechaHasta)    params = params.set('fechaHasta', opts.fechaHasta);
-  if (opts.numeroPago)    params = params.set('numeroPago', opts.numeroPago.trim());
-  if (opts.clienteCodigo) params = params.set('clienteCodigo', String(opts.clienteCodigo));
+    if (opts.fechaDesde) params = params.set('fechaDesde', opts.fechaDesde);
+    if (opts.fechaHasta) params = params.set('fechaHasta', opts.fechaHasta);
+    if (opts.numeroPago) params = params.set('numeroPago', opts.numeroPago.trim());
+    if (opts.clienteCodigo) params = params.set('clienteCodigo', String(opts.clienteCodigo));
 
-  return this.http.get<ApiResponse<PaginationResponse<PagoItemRaw>>>(url, { params });
-}
+    return this.http.get<ApiResponse<PaginationResponse<PagoItemRaw>>>(url, { params });
+  }
 
-/** Devuelve ya normalizado para usar directo en la UI */
-getPagosTodos(opts: {
-  incluirDetalle?: boolean;
-  page?: number;
-  pageSize?: number;
-  fechaDesde?: string;
-  fechaHasta?: string;
-  numeroPago?: string;
-  clienteCodigo?: number;
-} = {}): Observable<PaginationResponse<PagoItem>> {
-  return this.getPagosTodosRaw(opts).pipe(
-    map(res => {
-      if (!res.data) {
+  /** Devuelve ya normalizado para usar directo en la UI */
+  getPagosTodos(opts: {
+    incluirDetalle?: boolean;
+    page?: number;
+    pageSize?: number;
+    fechaDesde?: string;
+    fechaHasta?: string;
+    numeroPago?: string;
+    clienteCodigo?: number;
+  } = {}): Observable<PaginationResponse<PagoItem>> {
+    return this.getPagosTodosRaw(opts).pipe(
+      map(res => {
+        if (!res.data) {
+          return {
+            items: [],
+            page: opts.page ?? 1,
+            pageSize: opts.pageSize ?? 20,
+            totalItems: 0,
+            totalPages: 0,
+            message: res.message
+          };
+        }
         return {
-          items: [],
-          page: opts.page ?? 1,
-          pageSize: opts.pageSize ?? 20,
-          totalItems: 0,
-          totalPages: 0,
-          message: res.message
+          ...res.data,
+          items: (res.data.items || []).map(this.normalizePagoItem)
         };
-      }
-      return {
-        ...res.data,
-        items: (res.data.items || []).map(this.normalizePagoItem)
-      };
-    })
-  );
-}
+      })
+    );
+  }
 
-/* ---- Normalizador RAW -> UI ---- */
-private normalizePagoItem = (raw: PagoItemRaw): PagoItem => ({
-  idPago: Number(raw.id_pago),
-  numeroPago: (raw.numero_pago ?? '').trim(),
-  tipo: (raw.tipo ?? '').trim() as any,
-  clienteCodigo: Number(raw.cliente_codigo),
-  clienteNombre: (raw.cliente_nombre ?? '').trim(),
-  fecha: raw.fecha ?? '',
-  numeroDocumento: (raw.numero_documento ?? '').trim(),
-  pagado: this.num(raw.pagado), // string -> number
-  totalPago: Number(raw.total_pago ?? 0),
-  observaciones: raw.observaciones ?? null,
-  tieneRetencionIva: !!raw.tiene_retencion_iva,
-  valorRetencionIva: raw.valor_retencion_iva != null ? this.num(raw.valor_retencion_iva) : null,
-  tieneRetencionFuente: !!raw.tiene_retencion_fuente,
-  valorRetencionFuente: raw.valor_retencion_fuente != null ? this.num(raw.valor_retencion_fuente) : null,
-  caja: raw.caja ?? null,
-  pagoAnulado: !!raw.pago_anulado,
-  fechaAnulacion: raw.fecha_anulacion ?? null,
-  motivoAnulacion: raw.motivo_anulacion ?? null,
-  anuladoPor: raw.anulado_por != null ? Number(raw.anulado_por) : null,
-  estado: raw.estado ?? null,
-  detalles: Array.isArray(raw.detalles)
-    ? raw.detalles.map((d: any): PagoDetalle => ({
+  /* ---- Normalizador RAW -> UI ---- */
+  private normalizePagoItem = (raw: PagoItemRaw): PagoItem => ({
+    idPago: Number(raw.id_pago),
+    numeroPago: (raw.numero_pago ?? '').trim(),
+    tipo: (raw.tipo ?? '').trim() as any,
+    clienteCodigo: Number(raw.cliente_codigo),
+    clienteNombre: (raw.cliente_nombre ?? '').trim(),
+    fecha: raw.fecha ?? '',
+    numeroDocumento: (raw.numero_documento ?? '').trim(),
+    pagado: this.num(raw.pagado), // string -> number
+    totalPago: Number(raw.total_pago ?? 0),
+    observaciones: raw.observaciones ?? null,
+    tieneRetencionIva: !!raw.tiene_retencion_iva,
+    valorRetencionIva: raw.valor_retencion_iva != null ? this.num(raw.valor_retencion_iva) : null,
+    tieneRetencionFuente: !!raw.tiene_retencion_fuente,
+    valorRetencionFuente: raw.valor_retencion_fuente != null ? this.num(raw.valor_retencion_fuente) : null,
+    caja: raw.caja ?? null,
+    pagoAnulado: !!raw.pago_anulado,
+    fechaAnulacion: raw.fecha_anulacion ?? null,
+    motivoAnulacion: raw.motivo_anulacion ?? null,
+    anuladoPor: raw.anulado_por != null ? Number(raw.anulado_por) : null,
+    estado: raw.estado ?? null,
+    detalles: Array.isArray(raw.detalles)
+      ? raw.detalles.map((d: any): PagoDetalle => ({
         forma_pago: this.sanitizeString(d.forma_pago),
         secuencia: this.sanitizeString(d.secuencia),
         monto: this.to2(this.num(d.monto)),
@@ -598,7 +598,32 @@ private normalizePagoItem = (raw: PagoItemRaw): PagoItem => ({
         banco: this.sanitizeString(d.banco),
         numero_documento: this.sanitizeString(d.numero_documento),
       }))
-    : undefined
-});
+      : undefined
+  });
+  /** 
+   * PUT /api/Pagos/asiento-contable
+   * Actualiza solo el campo AsientoContable de sic.pagos para un NumeroPago.
+   */
+  actualizarAsientoContable(numeroPago: string, asientoContable: string): Observable<string> {
+    const url = `${this.baseUrl}/Pagos/asiento-contable`;
+
+    const body = {
+      numeroPago: this.sanitizeString(numeroPago),
+      asientoContable: this.sanitizeString(asientoContable),
+    };
+
+    return this.http.put<ApiResponse<boolean>>(url, body).pipe(
+      map(res => {
+        const t = (res?.type || '').toLowerCase();
+
+        if (t.includes('error') || t === 'validation_error' || t === 'notfound') {
+          throw new Error(res?.message || 'Error actualizando asiento contable');
+        }
+
+        return res?.message || 'Asiento contable actualizado correctamente.';
+      })
+    );
+  }
+
 
 }

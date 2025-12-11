@@ -6,7 +6,7 @@ import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { environment } from 'src/environments/environment';
 
-/* ====== Tipos (ajusta si ya los tienes en otro archivo) ====== */
+/* ====== Tipos ====== */
 export interface ApiResponse<T> {
   id: string;
   type: string;
@@ -31,27 +31,31 @@ export interface PagoResponse {
   tipo: string;                 // 'A' (Abono) | 'P' (Cancelación)
   cliente_codigo: number;
   cliente_nombre: string;
-  fecha: string;                // ISO
+  fecha: string;                // ISO (fecha de pago)
   numero_documento: string;
   total_pago: number;
-  pagado?: number;              // por si tu API lo trae
+  pagado?: number;
+
   observaciones?: string | null;
   tiene_retencion_iva: boolean;
   valor_retencion_iva?: string | null;
   tiene_retencion_fuente: boolean;
   valor_retencion_fuente?: string | null;
   caja?: string | null;
+
+  // 👇 NUEVO: lo manda el backend
+  asientoContable?: string | null;
+
   detalles?: DetallePagoResponse[] | null;
 }
 
 @Injectable({ providedIn: 'root' })
 export class PagoReportService {
-  // Ej: http://localhost:5010/invoices-sic
   private readonly baseUrl = environment.invoices_sic;
 
   constructor(private http: HttpClient) {}
 
-  /** Llama a GET /api/Pagos/{numeroPago} y devuelve el array de filas (pagos del lote) */
+  /** GET /api/Pagos/{numeroPago} */
   async fetchPago(numeroPago: string): Promise<PagoResponse[]> {
     const url = `${this.baseUrl}/Pagos/${encodeURIComponent(numeroPago)}`;
     const res = await firstValueFrom(this.http.get<ApiResponse<PagoResponse[]>>(url));
@@ -61,42 +65,46 @@ export class PagoReportService {
     return res.data;
   }
 
-  /** Genera el PDF desde el API y lo descarga */
+  /** Genera el PDF directamente desde el API */
   async generarPdfDesdeApi(
     numeroPago: string,
-    opts?: { asiento?: string; titulo?: string; logoUrl?: string; logoDataUrl?: string }
+    opts?: { titulo?: string; logoUrl?: string; logoDataUrl?: string }
   ): Promise<void> {
     const data = await this.fetchPago(numeroPago);
     await this.generarPdfIngresoCaja(data, {
       numeroPago,
-      asiento: opts?.asiento,
       titulo: opts?.titulo,
       logoUrl: opts?.logoUrl,
       logoDataUrl: opts?.logoDataUrl
     });
   }
 
-  /** Genera el PDF desde datos ya cargados (por si ya llamaste al endpoint) */
+  /** Genera el PDF desde datos ya cargados */
   async generarPdfIngresoCaja(
     filas: PagoResponse[],
     opts: {
       numeroPago?: string;
-      asiento?: string;
       titulo?: string;
-      logoUrl?: string;       // URL del logo (se carga como dataURL)
-      logoDataUrl?: string;   // dataURL ya precargado (opcional)
+      logoUrl?: string;
+      logoDataUrl?: string;
     } = {}
   ): Promise<void> {
     if (!Array.isArray(filas) || filas.length === 0) {
       throw new Error('Sin datos para el PDF');
     }
 
-    // ===== Cabecera consolidada =====
+    // ===== Cabecera =====
     const first = filas[0];
+
     const numeroPago = opts.numeroPago || first.numero_pago;
     const cliente = first.cliente_nombre;
+
+    // ✅ FECHA desde backend
     const fechaStr = this.formateaFecha(first.fecha);
-    const asiento = opts.asiento ?? '';
+
+    // ✅ ASIENTO desde backend (si viene)
+    const asiento = (first.asientoContable?? '').toString();
+
     const tituloEmpresa = opts.titulo ?? 'GS1';
 
     // ===== Conceptos por cada documento del lote =====
@@ -104,7 +112,6 @@ export class PagoReportService {
       .map(f => {
         const tipo = String(f.tipo || '').toUpperCase();
         const etiqueta = tipo === 'A' ? 'ABONO' : (tipo === 'P' ? 'CANCELACION' : 'CANCELACION');
-        // Usar monto del documento (no el total del lote)
         const montoNum = this.to2(f.pagado ?? 0);
         const monto = this.moneda(montoNum, true);
         const etq = (' ' + etiqueta).padEnd(13, ' ');
@@ -113,7 +120,7 @@ export class PagoReportService {
       })
       .join('\n');
 
-    // ===== Formas de pago (deduplicadas y sumadas a nivel de lote) =====
+    // ===== Formas de pago (agrupadas) =====
     const detallesAll: DetallePagoResponse[] = (filas[0]?.detalles || []).slice();
     const map = new Map<string, { desc: string; monto: number }>();
 
@@ -132,37 +139,34 @@ export class PagoReportService {
     const formas = Array.from(map.values());
     const total = this.to2(formas.reduce((a, b) => a + (b.monto || 0), 0));
 
-    // ===== jsPDF layout =====
+    // ===== jsPDF =====
     const doc = new jsPDF({ unit: 'pt', format: 'A4' });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 36;
 
-    // Marco
     doc.setLineWidth(1);
     doc.rect(margin / 2, margin / 2, pageWidth - margin, pageHeight - margin);
 
-    // === LOGO (arriba-izquierda) ===
-    // Si se pasa logoDataUrl, se usa directo. Si no, se intenta cargar por logoUrl.
+    // Logo
     const logoData =
       opts.logoDataUrl || (await this.loadLogoDataUrl(opts.logoUrl));
     let yOffset = 0;
     if (logoData) {
-      // Ajusta tamaño/posición a tu imagen
-      const logoW = 120; // pt
-      const logoH = 44;  // pt
+      const logoW = 120;
+      const logoH = 44;
       doc.addImage(logoData, 'PNG', margin, 64 - logoH / 2, logoW, logoH);
-      yOffset = 8; // pequeño espacio adicional
+      yOffset = 8;
     }
 
-    // Título
+    // Títulos
     doc.setFont('Times', 'Bold');
     doc.setFontSize(16);
-    doc.text(tituloEmpresa, pageWidth / 2, 80 + yOffset, { align: 'center' });
+    doc.text(tituloEmpresa, pageWidth / 2, 100 + yOffset, { align: 'center' });
     doc.setFontSize(14);
-    doc.text('INGRESO DE CAJA', pageWidth / 2, 102 + yOffset, { align: 'center' });
+    doc.text('INGRESO DE CAJA', pageWidth / 2, 122 + yOffset, { align: 'center' });
 
-    // ===== Barra superior: Número Pago / Asiento =====
+    // Barra: Número Pago / Asiento
     autoTable(doc, {
       startY: 120 + yOffset,
       styles: { font: 'Times', fontSize: 11, textColor: [0, 0, 0] },
@@ -178,10 +182,9 @@ export class PagoReportService {
       body: []
     });
 
-    // Ahora sí declaramos y, tomando el final de la tabla anterior
     let y = (doc as any).lastAutoTable.finalY + 12;
 
-    // ===== Bloque FECHA / CLIENTE / CONCEPTO =====
+    // FECHA / CLIENTE / CONCEPTO
     doc.setFont('Times', 'Bold'); doc.setFontSize(11); doc.text('FECHA:', margin, y);
     doc.setFont('Times', 'Normal'); doc.text(fechaStr, margin + 60, y); y += 16;
 
@@ -194,7 +197,7 @@ export class PagoReportService {
     doc.text(conceptoLines, margin + 60, y);
     y += 18 * (Array.isArray(conceptoLines) ? conceptoLines.length : 1) + 8;
 
-    // ===== FORMAS DE PAGO (tabla) =====
+    // FORMAS DE PAGO
     doc.setFont('Times', 'Bold'); doc.text('FORMA DE PAGO:', margin, y); y += 6;
 
     autoTable(doc, {
@@ -212,7 +215,7 @@ export class PagoReportService {
 
     y = (doc as any).lastAutoTable.finalY + 10;
 
-    // ===== Observación + Total =====
+    // Observación + Total
     const obsText = `OBSERVACION : ${first.observaciones?.toUpperCase() || 'ESTE COMPROBANTE DE NINGUNA MANERA CONSTITUYE UNA FACTURA'}`;
     autoTable(doc, {
       startY: y,
@@ -227,7 +230,7 @@ export class PagoReportService {
 
     y = (doc as any).lastAutoTable.finalY + 50;
 
-    // ===== Firmas =====
+    // Firmas
     const col1 = margin + 40;
     const col2 = pageWidth - margin - 240;
     doc.line(col1, y, col1 + 200, y);
@@ -236,7 +239,6 @@ export class PagoReportService {
     doc.text('Elaborado por', col1 + 100, y + 16, { align: 'center' });
     doc.text('Cliente', col2 + 100, y + 16, { align: 'center' });
 
-    // Descargar
     doc.save(`IngresoCaja_${numeroPago}.pdf`);
   }
 
@@ -255,13 +257,11 @@ export class PagoReportService {
 
   private normalizaDoc(doc: string): string {
     if (!doc) return '';
-    // "001001000000163" -> "001-001-000000163"
     return doc.replace(/^(\d{3})(\d{3})(\d{9})$/, '$1-$2-$3');
   }
 
   private mapIdFormaPago(id: string | number): string {
     const k = String(id).trim();
-    // Ajusta el catálogo según tu BD
     const map: Record<string, string> = {
       '1': 'EFECTIVO',
       '2': 'DEPOSITO',
@@ -273,7 +273,6 @@ export class PagoReportService {
     return map[k] || `Forma ${k}`;
   }
 
-  // Punto decimal con 2 decimales; sin separador de miles
   private moneda(v: any, conSimbolo = false): string {
     const n = Number(v || 0);
     const s = new Intl.NumberFormat('en-US', {
@@ -284,7 +283,6 @@ export class PagoReportService {
     return conSimbolo ? `$${s}` : s;
   }
 
-  /** Carga un logo (URL) como dataURL; si falla, retorna undefined */
   private async loadLogoDataUrl(url?: string): Promise<string | undefined> {
     if (!url) return undefined;
     try {
@@ -295,7 +293,7 @@ export class PagoReportService {
         reader.readAsDataURL(blob);
       });
     } catch {
-      return undefined; // si falla, seguimos sin logo
+      return undefined;
     }
   }
 }
