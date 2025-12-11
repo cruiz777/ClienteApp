@@ -11,4 +11,5 @@ export interface ListadoAsientoContableResponse {
   observacion: string | null;
   idEmpresa: number;
   estado: boolean;
+  modulo: number;
 }

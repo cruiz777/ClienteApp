@@ -77,10 +77,10 @@
         <div class="form-group">
           <label>Fecha Transacción</label>
           <input
-            class="control"
-            type="datetime-local"
-            [value]="form.value.fechatransaccion | date:'yyyy-MM-ddTHH:mm'"
-            (input)="form.patchValue({ fechatransaccion: $any($event.target).value })"
+           class="control"
+           type="date"
+           [value]="form.value.fechatransaccion"
+           (input)="form.patchValue({ fechatransaccion: $any($event.target).value })"
           />
         </div>
         

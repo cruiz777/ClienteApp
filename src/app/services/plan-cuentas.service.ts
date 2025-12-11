@@ -12,7 +12,7 @@ export interface PlanCuenta {
   CuentaSubcta: string;
   CuentaPresentacion: string;
   NombreCuenta: string;
-  IdCodigoEspecial: number;
+  IdCodigoEspecial: number | null;///number
   IdNivel: number;
   Descripcion: string | null;
   CuentaHomologacion: string | null;
@@ -20,7 +20,7 @@ export interface PlanCuenta {
   Estado: boolean;
   FechaActivacion: string | null;
   IdUsuario: number;
-  IdCabModelo: number;
+  IdCabModelo: number | null; ///number
   ParentId: number | null;
   EsMovimiento: boolean;
   Orden: number | null;
@@ -47,7 +47,11 @@ export class PlanCuentasService {
     CuentaSubcta: x?.CuentaSubcta ?? '',
     CuentaPresentacion: x?.CuentaPresentacion ?? '',
     NombreCuenta: x?.NombreCuenta ?? '',
-    IdCodigoEspecial: Number(x?.IdCodigoEspecial ?? 0),
+    //IdCodigoEspecial: Number(x?.IdCodigoEspecial ?? 0),
+    IdCodigoEspecial:
+      x?.IdCodigoEspecial !== undefined && x?.IdCodigoEspecial !== null
+        ? Number(x.IdCodigoEspecial)
+        : null,
     IdNivel: Number(x?.IdNivel ?? 1),
     Descripcion: x?.Descripcion ?? null,
     CuentaHomologacion: x?.CuentaHomologacion ?? null,
@@ -55,7 +59,11 @@ export class PlanCuentasService {
     Estado: x?.Estado !== false,
     FechaActivacion: x?.FechaActivacion ?? null,
     IdUsuario: Number(x?.IdUsuario ?? 0),
-    IdCabModelo: Number(x?.IdCabModelo ?? 0),
+    //IdCabModelo: Number(x?.IdCabModelo ?? 0),
+    IdCabModelo:
+      x?.IdCabModelo !== undefined && x?.IdCabModelo !== null
+        ? Number(x.IdCabModelo)
+        : null,
     ParentId: Number(x?.ParentId ?? 0),
     EsMovimiento: !!x?.EsMovimiento,
     Orden: Number(x?.Orden ?? 0),
