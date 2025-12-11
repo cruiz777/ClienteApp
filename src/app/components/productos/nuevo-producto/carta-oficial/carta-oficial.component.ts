@@ -45,7 +45,7 @@ export class CartaOficialComponent {
     y += 25;
 
     doc.setFontSize(12);
-
+     y += 5;
     // --- Destinatario ---
     doc.setFont('Times', 'Normal');
     doc.text('Señor(a):', margenX, y);
@@ -62,7 +62,7 @@ export class CartaOficialComponent {
     doc.setFont('Times', 'Normal');
     doc.text('Representante Legal', margenX, y);
     y += lineHeight;
-
+        y += 5;
     // Empresa (negrita, multilinea)
     doc.setFont('Times', 'Bold');
     const empresaText = (this.empresa || '').toUpperCase();
@@ -75,7 +75,7 @@ export class CartaOficialComponent {
     const direccionLinesCab = doc.splitTextToSize(this.direccion || '', maxWidth);
     doc.text(direccionLinesCab, margenX, y);
     y += direccionLinesCab.length * lineHeight;
-
+     y += 5;
     const ciudadLinesCab = doc.splitTextToSize(this.ciudad || '', maxWidth);
     doc.text(ciudadLinesCab, margenX, y);
     y += ciudadLinesCab.length * lineHeight + 4;

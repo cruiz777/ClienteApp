@@ -3,18 +3,22 @@ import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
-// ===== Interfaces de request =====
+// ===== DETALLE =====
+// ===== DETALLE =====
 export interface DetalleAsientoVentaRequest {
+  IdDetMaestro: number;
+  IdCabMaestro: number;
   numlinea: number;
   anio: string;
-  fechatransaccion: string;  // yyyy-MM-dd
+  fechatransaccion: string;
+  fechaingreso: string;
   hora: string;
   idZona: number;
   idCentroCostos: number | null;
   idLocal: number;
   idPlanCuentas: number;
   codprePc: string;
-  idCodContable: number | null;
+  idCodContable: number;
   nocomprobante: string;
   docurelacionado: string;
   cheque: number;
@@ -24,7 +28,6 @@ export interface DetalleAsientoVentaRequest {
   comentario: string;
   idMovBancario: number | null;
   movbancario: string;
-  fechaingreso: string;
   cierre: string;
   fechacierre: string | null;
   conciliado: string;
@@ -42,18 +45,22 @@ export interface DetalleAsientoVentaRequest {
   idConciliacion: number | null;
   valorLetras: string;
   estadoIngreso: boolean;
+  autorizacionRelacionado: string;
+  fechaCadRelacionado: string | null;
 }
 
+// ===== CABECERA =====
 export interface AsientoVentaRequest {
+  IdCabMaestro: number;      // 0 al crear
   idZona: number;
   idUsuario: number;
   idEmpresa: number;
   idTipoAsiento: number;
   tipdoc: string;
-  numdoc: string;
+  numdoc: number;            // 👈 ahora numérico
   anio: string;
-  fechatransaccion: string;   // yyyy-MM-dd
-  fechaingreso: string;       // yyyy-MM-dd
+  fechatransaccion: string;  // "2025-11-29T22:35:32"
+  fechaingreso: string;      // "2025-11-29T22:37:09"
   observacion: string;
   totdebe: number;
   tothaber: number;
@@ -65,14 +72,16 @@ export interface AsientoVentaRequest {
   autorizado: string;
   homCodigo: number;
   estado: boolean;
+  modulo: number;            // 👈 NUEVO (0 en tu ejemplo)
   detalles: DetalleAsientoVentaRequest[];
 }
 
-// Si tu API envuelve respuestas (tipo, message, data, etc.)
+// Respuesta genérica de tu API
 export interface ApiResponse<T> {
+  id: string;
   type: string;
-  message: string;
   data: T;
+  message: string;
 }
 
 @Injectable({
@@ -80,21 +89,14 @@ export interface ApiResponse<T> {
 })
 export class AsientoVentaService {
 
-  // 🔧 AJUSTA esta URL a tu microservicio de transacciones CG
-  // por ejemplo: environment.transaccionesCgUrl o similar
+  // ej: https://.../api
   private readonly baseUrl = `${environment.transactionUrl}`;
 
   constructor(private http: HttpClient) { }
 
-  /**
-   * Crea un asiento contable de venta.
-   * El payload debe venir ya armado (igual a tu JSON de ejemplo).
-   */
-  crearAsientoVenta(payload: AsientoVentaRequest): Observable<ApiResponse<boolean>> {
-    // Ajusta el endpoint (/Create, /CrearVenta, etc.) según tu API
-    return this.http.post<ApiResponse<boolean>>(
-      `${this.baseUrl}/AsientosContables`,
-      payload
-    );
+  crearAsientoVenta(asiento: AsientoVentaRequest): Observable<ApiResponse<number>> {
+    return this.http.post<ApiResponse<number>>(this.baseUrl + '/AsientosContables', asiento);
+    //            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    //            Nada de { asiento }, nada de JSON.stringify(asiento)
   }
 }
