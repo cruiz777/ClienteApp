@@ -822,6 +822,7 @@ async guardar(stepper: MatStepper): Promise<void> {
       representante: paso2.nombreRepresentante || '',
       fecmod: new Date().toLocaleDateString('en-CA'),
       usumod: this.usuarioActual?.nombre_usuario || '',
+      idUsuario: this.usuarioActual?.id_usuario ?? 1 //Envia el usuario para codcon
       // ... si hay más campos, mantenerlos
     };
 
