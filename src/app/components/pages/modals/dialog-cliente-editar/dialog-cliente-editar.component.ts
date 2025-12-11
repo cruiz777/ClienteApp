@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 
 import { forkJoin } from 'rxjs';
 import { of } from 'rxjs';
-import { finalize, tap } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, finalize, switchMap, tap } from 'rxjs/operators';
 import { catchError } from 'rxjs/operators';
 
 
@@ -90,6 +90,7 @@ export class DialogClienteEditarComponent implements OnInit {
   gruposProducto: GrupoProducto[] = [];
   grupoProductoCtrl = new FormControl('');
   gruposProductoFiltrados$!: Observable<GrupoProducto[]>;
+  buscandoGrupoProducto = false;
   grupoProductoFiltrados: GrupoProducto[] = [];
   grupoProductoSeleccionado!: number;
   fechaIngreso: Date = new Date();
@@ -412,24 +413,72 @@ export class DialogClienteEditarComponent implements OnInit {
 
 
 
-  private cargarGruposProducto$(): Observable<any> {
-    return this.grupoProductoService.obtenerGrupos().pipe(
-      tap(data => {
-        this.gruposProducto = data;
+  // private cargarGruposProducto$(): Observable<any> {
+  //   return this.grupoProductoService.obtenerGrupos().pipe(
+  //     tap(data => {
+  //       this.gruposProducto = data;
 
-        this.paso1Form.get('grupoProducto')?.valueChanges
-          .pipe(startWith(''))
-          .subscribe(valor => {
-            const filtro = typeof valor === 'string' ? valor.toLowerCase() : '';
-            this.grupoProductoFiltrados = this.gruposProducto.filter(g =>
-              (g.codigo + ' ' + g.brick + ' ' + g.desBrick).toLowerCase().includes(filtro)
-            );
-          });
-      })
-    );
+  //       this.paso1Form.get('grupoProducto')?.valueChanges
+  //         .pipe(startWith(''))
+  //         .subscribe(valor => {
+  //           const filtro = typeof valor === 'string' ? valor.toLowerCase() : '';
+  //           this.grupoProductoFiltrados = this.gruposProducto.filter(g =>
+  //             (g.codigo + ' ' + g.brick + ' ' + g.desBrick).toLowerCase().includes(filtro)
+  //           );
+  //         });
+  //     })
+  //   );
+  // }
+
+  private cargarGruposProducto$(): Observable<any> {
+    // ✅ Configurar búsqueda dinámica con debounce
+    this.paso1Form.get('grupoProducto')?.valueChanges
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap(valor => {
+          // Si es objeto seleccionado, no buscar
+          if (typeof valor === 'object' && valor !== null) {
+            this.buscandoGrupoProducto = false;
+            return of([]);
+          }
+
+          const searchTerm = typeof valor === 'string' ? valor.trim() : '';
+          this.buscandoGrupoProducto = true;
+
+          return this.grupoProductoService.buscarGrupoProducto(searchTerm, 100).pipe(
+            catchError(err => {
+              console.error('❌ Error:', err);
+              return of([]);
+            })
+          );
+        })
+      )
+      .subscribe(resultados => {
+        if (resultados.length > 0 || typeof this.paso1Form.get('grupoProducto')?.value === 'string') {
+          this.grupoProductoFiltrados = resultados;
+        }
+        this.buscandoGrupoProducto = false;
+      });
+
+    return of(null); // ✅ Devuelve observable vacío para que funcione en forkJoin
   }
 
+  cargarGruposProductoInicial(): void {
+    if (this.grupoProductoFiltrados.length === 0) {
+      this.buscandoGrupoProducto = true;
 
+      this.grupoProductoService.buscarGrupoProducto('', 100).subscribe({
+        next: (resultados) => {
+          this.grupoProductoFiltrados = resultados;
+          this.buscandoGrupoProducto = false;
+        },
+        error: () => {
+          this.buscandoGrupoProducto = false;
+        }
+      });
+    }
+  }
 
   filtrarGruposProducto(valor: string | GrupoProducto): GrupoProducto[] {
     const filtro = typeof valor === 'string' ? valor.toLowerCase() : valor?.desBrick?.toLowerCase() || '';
@@ -1186,12 +1235,16 @@ export class DialogClienteEditarComponent implements OnInit {
 
 
   setGrupoProductoPorId(id: number): void {
-    const grupo = this.gruposProducto.find(g => g.id_grupo_producto === id);
-    if (grupo) {
-      this.paso1Form.get('grupoProducto')?.setValue(grupo);
-    } else {
-      console.warn('❌ No se encontró el grupo producto con ID:', id);
-    }
+    // Buscar por ID directamente en el backend
+    this.grupoProductoService.obtenerGrupoPorId(id).subscribe({
+      next: (grupo) => {
+        this.paso1Form.get('grupoProducto')?.setValue(grupo);
+        console.log('Grupo producto cargado:', grupo);
+      },
+      error: (err) => {
+        console.error('Error al cargar grupo producto con ID:', id, err);
+      }
+    });
   }
   setGrupoEmpresaPorId(id: number): void {
 
