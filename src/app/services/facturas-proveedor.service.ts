@@ -53,6 +53,9 @@ interface CreateDetalleRequest {
   estadoIngreso: boolean;
   autorizacionRelacionado: string | null;
   fechaCadRelacionado: string | null;
+  idPorIva?: number | null;
+  porcentaje?: number | null;
+
 }
 
 interface CreateAsientoRequest {
@@ -164,6 +167,9 @@ private mapItem = (x: any): ListadoAsientoContableResponse => ({
         estadoIngreso: !!d.estadoIngreso,
         autorizacionRelacionado: this.toNull(d.autorizacionRelacionado, false),
         fechaCadRelacionado: this.dateOnly(d.fechaCadRelacionado),
+        idPorIva:this.toNull(d.idPorIva),
+        porcentaje: this.toNull(d.porcentaje),
+
       }));
   
       return {

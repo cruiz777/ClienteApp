@@ -234,6 +234,7 @@ export class FacturasProveedorComponent implements OnInit {
       panelClass: 'asiento-dialog',
       autoFocus: false,
       restoreFocus: false,
+      disableClose: true,    
       data: {
         modo: 'nuevo'
       }
@@ -254,6 +255,7 @@ export class FacturasProveedorComponent implements OnInit {
       panelClass: 'asiento-dialog',
       autoFocus: false,
       restoreFocus: false,
+      disableClose: true,    
       data: {
         modo: 'editar',
         id

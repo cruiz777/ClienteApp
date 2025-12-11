@@ -53,7 +53,13 @@ import { AsientosContablesService } from 'src/app/services/asientos-contables.se
 import { generarPdfAsiento } from '../../util/asiento-pdf.util';
 import { AsientoImpresion } from 'src/app/interfaces/responses/asiento-impresion.model';
 
+// Servicio IVA
+import { PorcentajeIvaCgService } from 'src/app/services/porcentaje-iva-cg.service';
+import { PorcentajeIvaResponse } from 'src/app/interfaces/responses/porcentaje-iva-cg-response';
+// Cell editor IVA
 
+import { PorcentajeIvaCellEditorComponent } from './porcentaje-iva-cell-editor.component';
+///
 // Mensajería
 import {
   CustomMessageBoxComponent,
@@ -98,6 +104,15 @@ interface TipoRetencionCombo {
   porcentaje: number; // Porcentaje
 }
 
+///para eñ porcentaje iva
+interface PorcentajeIvaCombo {
+  id: number;           // idPorIva
+  label: string;        // "2 - IVA 12% (12%)"
+  codigoIva: number;
+  porcentaje: number;
+  descripcion: string;
+}
+///
 @Component({
   selector: 'app-facturas-proveedor-form',
   standalone: true,
@@ -114,6 +129,7 @@ interface TipoRetencionCombo {
     MatAutocompleteModule, //para autofiltrar
     MatFormFieldModule, //para autofiltrar
     MatInputModule, //para autofiltrar
+    PorcentajeIvaCellEditorComponent,   // porcentaje iva 
   ],
   templateUrl: './facturas-proveedor-form.component.html',
   styleUrls: ['./facturas-proveedor-form.component.css'],
@@ -184,10 +200,13 @@ export class FacturasProveedorFormComponent implements OnInit {
     label: string; 
     codigo: string;
     idCodigoEspecial?: number | null; 
+    porcentajeRetencion?: number | null;   // para calculo automatico de la retencion hr
     }[] = [];
   ///para cargar en beneficiaroio lo del combo
   //auxiliares: { id: number; label: string }[] = [];
   auxiliares: { id: number; label: string; razon: string }[] = [];
+  ////para el grid
+  auxiliaresGrid: { id: number; label: string; razon: string }[] = [];
   ///para el list en la cabecera
   auxiliarSeleccionadoCtrl = new FormControl<number | null>(null, [
     Validators.required,
@@ -231,9 +250,10 @@ export class FacturasProveedorFormComponent implements OnInit {
   ////tipo retencion
   // tiposRetencion: { id: number; label: string }[] = [];
   tiposRetencion: TipoRetencionCombo[] = [];
-  
   tiposRetencionAll: TipoRetencionCombo[] = [];
 
+  // Lista de porcentajes IVA para el combo del grid
+  porcentajesIva: PorcentajeIvaCombo[] = [];
   
   //buscar
   // input de búsqueda del proveedor (texto que escribe el usuario)
@@ -268,6 +288,8 @@ export class FacturasProveedorFormComponent implements OnInit {
         'idPlanCuentas',
         'idCodContable',
         'idTipoRetencion',
+        'idPorIva',       // nuevo porcentaje iva
+        'porcentaje',     // nuevo
       ],
     });
   }
@@ -373,6 +395,43 @@ export class FacturasProveedorFormComponent implements OnInit {
         return mov ? mov.label : String(v);
       },
     },
+
+    /// campos nuevos porcentaje iva
+    {
+      headerName: 'Porcentaje IVA',
+      field: 'idPorIva',
+      width: 220,
+      editable: true,
+      singleClickEdit: true,
+      cellEditor: PorcentajeIvaCellEditorComponent,
+      cellEditorParams: () => ({
+        porcentajesIva: this.porcentajesIva,
+      }),
+      valueFormatter: (params) => {
+        const v = params.value;
+        if (v == null || v === '' || Number(v) === 0) {
+          return 'Seleccione...';
+        }
+        const id = Number(v);
+        const item = this.porcentajesIva.find(p => p.id === id);
+        return item ? item.label : String(v);
+      },
+    },
+    {
+      headerName: '% IVA',
+      field: 'porcentaje',
+      width: 100,
+      editable: false,
+      type: 'rightAligned',
+      valueFormatter: (params) => {
+        const val = Number(params.value ?? 0);
+        if (!val) {
+          return '';
+        }
+        return `${val.toFixed(2)} %`;
+      },
+    },
+    //// porcentaje iva
 
     {
       headerName: 'Tipo Retención',
@@ -489,31 +548,6 @@ export class FacturasProveedorFormComponent implements OnInit {
       },
     },
 
-    ///// CODIGOS CONTABLES
-    {
-      headerName: 'Auxiliar Contable',
-      field: 'idCodContable',
-      width: 260,
-      editable: true,
-      hide:false,
-      /* ya no se utiliza cell editor aqui
-      singleClickEdit: true,
-      cellEditor: CodContableCellEditorComponent,
-      cellEditorParams: () => ({
-        auxiliares: this.auxiliares,
-      }),
-      valueFormatter: (params) => {
-        const v = params.value;
-        if (v == null || v === '' || Number(v) === 0) {
-          return 'Seleccione...';
-        }
-        const id = Number(v);
-        const aux = this.auxiliares.find((a) => a.id === id);
-        return aux ? aux.label : String(v);
-      },
-      */
-    },
-    
     {
       headerName: 'No.Comprobante',
       field: 'nocomprobante',
@@ -578,6 +612,34 @@ export class FacturasProveedorFormComponent implements OnInit {
         }
 
     },
+
+    ///// CODIGOS CONTABLES
+    {
+      headerName: 'Auxiliar Contable',
+      field: 'idCodContable',
+      width: 260,
+      editable: true,
+      hide:false,
+      ///* ya no se utiliza cell editor aqui
+        singleClickEdit: true,
+        cellEditor: CodContableCellEditorComponent,
+        cellEditorParams: () => ({
+          // 🔹 El editor del grid usa SIEMPRE la lista completa
+          auxiliares: this.auxiliaresGrid,
+        }),
+        valueFormatter: (params) => {
+          const v = params.value;
+          if (v == null || v === '' || Number(v) === 0) {
+            return 'Seleccione...';
+          }
+          const id = Number(v);
+          const aux = this.auxiliaresGrid.find((a) => a.id === id) 
+                    || this.auxiliares.find((a) => a.id === id); // fallback por si acaso
+          return aux ? aux.label : String(v);
+        },
+     ///// */
+    },
+
     {
       headerName: 'Codigo Mov.',
       field: 'movbancario',
@@ -715,7 +777,7 @@ export class FacturasProveedorFormComponent implements OnInit {
       field: 'beneficiario',
       width: 180,
       editable: true,
-      hide: true,//true,
+      hide: false,//true,
     },
     {
       headerName: 'Fecha Ingreso',
@@ -806,6 +868,7 @@ export class FacturasProveedorFormComponent implements OnInit {
     private tipoCompSriService: TipoComprobanteSriService, //tipo comprobante
     private tipoRetencionService: TipoRetencionService, //tipo retencion
     private asientosService: AsientosContablesService,//para obtener la impresion
+    private porcentajeIvaService: PorcentajeIvaCgService,   // NUEVO porcentaje iva
     private dialog: MatDialog,
     private snack: MatSnackBar
   ) {
@@ -831,6 +894,32 @@ export class FacturasProveedorFormComponent implements OnInit {
     );
   }
   /// end zonas
+  //porcentaje iva///
+  private cargarPorcentajesIva(): void {
+    const empresaId = this.usuarioActual?.id_empresa ?? 0;
+
+    this.porcentajeIvaService.getAll({ idEmpresa: empresaId }).subscribe({
+      next: (list: PorcentajeIvaResponse[]) => {
+        this.porcentajesIva = (list || []).map(p => ({
+          id: p.idPorIva,
+          codigoIva: p.codigoIva,
+          descripcion: p.descripcion,
+          porcentaje: p.porcentaje,
+          label: `${p.codigoIva} - ${p.descripcion} (${p.porcentaje}%)`,
+        }));
+
+        // refrescamos la columna si ya existe gridApi
+        this.gridApi?.refreshCells({
+          force: true,
+          columns: ['idPorIva', 'porcentaje'],
+        });
+      },
+      error: (err) => {
+        console.error('Error cargando porcentajes de IVA', err);
+      },
+    });
+  }
+  ////
 
   ngOnInit(): void {
     
@@ -997,10 +1086,12 @@ export class FacturasProveedorFormComponent implements OnInit {
     this.cargarLocales();
     this.cargarPlanCuentas();
     //this.cargarCodigosContables(); // se busca solo al digitar proveedor
+    this.cargarCodigosContables(); //se añadio para el comboo del grid
     this.cargarMovimientosBancarios();
     this.cargarSustentosTributarios();
     this.cargarTiposCompSriCabecera();
     this.cargarTiposRetencion();
+    this.cargarPorcentajesIva();   //nuevo porcentaje iva
 
     if (id > 0) {
       this.modo.set('editar');
@@ -1232,6 +1323,9 @@ export class FacturasProveedorFormComponent implements OnInit {
         /////
         this.refrescarColumnasDetalle();
         this.loading.set(false);
+        // bloquear cabecera
+        this.bloquearCabecera();
+        /////end hr 
       },
       error: (err) => {
         console.error('Error al cargar factura de proveedor', err);
@@ -1299,8 +1393,7 @@ export class FacturasProveedorFormComponent implements OnInit {
       .subscribe({
         next: (list: PlanCuenta[]) => {
           const lista = list || [];
-
-          // ⚠️ IMPORTANTE:
+          // TOMAR EN CUENTA IMPORTANTE:
           // Antes filtrábamos por c.EsMovimiento. Eso puede dejar FUERA
           // cuentas que sí tienen IdCodigoEspecial = 9 (IVA) y por eso
           // al filtrar por condición 9 no aparecía ninguna.
@@ -1310,6 +1403,7 @@ export class FacturasProveedorFormComponent implements OnInit {
           //   const fuente = lista.filter(c => c.EsMovimiento);
           const fuente = lista; // TODAS las cuentas activas
 
+          /* anterior antes del cambio
           this.cuentas = fuente.map((c) => ({
             id: c.IdPlanCuentas,
             label: `${c.CuentaPresentacion} - ${c.NombreCuenta}`,
@@ -1320,6 +1414,52 @@ export class FacturasProveedorFormComponent implements OnInit {
                 ? Number(c.IdCodigoEspecial)
                 : null,
           }));
+          */
+
+          this.cuentas = fuente.map((c) => {
+          // 1️⃣ Intentar leer porcentaje numérico desde el backend
+          let porcentaje: number | null = null;
+
+          const posibles = [
+            (c as any).PorcentajeRetencion,
+            (c as any).Porcentaje,
+            (c as any).porcentaje,
+          ];
+
+          for (const p of posibles) {
+            if (p !== null && p !== undefined && p !== '') {
+              const n = Number(p);
+              if (!isNaN(n) && n > 0) {
+                porcentaje = n;
+                break;
+              }
+            }
+          }
+
+          // 2️⃣ Respaldo: intentar obtenerlo del nombre "RETENCIÓN 1.75%"
+          if (porcentaje === null) {
+            const texto = `${c.CuentaPresentacion ?? ''} ${c.NombreCuenta ?? ''}`;
+            const match = texto.match(/(\d+(\.\d+)?)\s*%/);
+            if (match) {
+              const n = parseFloat(match[1].replace(',', '.'));
+              if (!isNaN(n) && n > 0) {
+                porcentaje = n;
+              }
+            }
+          }
+
+          return {
+            id: c.IdPlanCuentas,
+            label: `${c.CuentaPresentacion} - ${c.NombreCuenta}`,
+            codigo: c.CuentaPresentacion,
+            idCodigoEspecial:
+              c.IdCodigoEspecial != null && Number(c.IdCodigoEspecial) > 0
+                ? Number(c.IdCodigoEspecial)
+                : null,
+            porcentajeRetencion: porcentaje, // 👈 aquí queda guardado 1.75
+          };
+        });
+
 
           console.log('Plan de cuentas normalizado:', this.cuentas.slice(0, 5));
 
@@ -1340,12 +1480,20 @@ export class FacturasProveedorFormComponent implements OnInit {
         const data = (res.data ?? []) as CodigosContablesResponse[];
 
         console.log('Codigos contables recibidos:', data[0]);
+        const lista = data.map(a => ({
+          id: a.IdCodContable,
+          label: `${a.Identificacionauxiliar} - ${a.Razonsocial}`,
+          razon: a.Razonsocial,
+        }));
+        this.auxiliaresGrid = lista;
 
+        /*
         this.auxiliares = data.map((a) => ({
           id: a.IdCodContable,
           label: `${a.Identificacionauxiliar} - ${a.Razonsocial}`,
           razon: a.Razonsocial,              // guardamos la razón social aparte
         }));
+        */
 
         this.gridApi?.refreshCells({ force: true, columns: ['idCodContable'] });
       },
@@ -1855,6 +2003,7 @@ export class FacturasProveedorFormComponent implements OnInit {
 
     }
 
+    /*
     if (evt.colDef.field === 'idPlanCuentas') {
       const id = Number(evt.newValue ?? 0);
       const cta = this.cuentas.find((c) => c.id === id);
@@ -1870,8 +2019,29 @@ export class FacturasProveedorFormComponent implements OnInit {
         });
       }
     }
+    */
+    
+    if (evt.colDef.field === 'idPlanCuentas') {
+      const id = Number(evt.newValue ?? 0);
+      const cta = this.cuentas.find((c) => c.id === id);
 
-    // Tipo Movimiento → movbancario (código)
+      if (cta && evt.data) {
+        evt.data.idPlanCuentas = id as any;
+        evt.data.codprePc = cta.codigo;
+
+        // 🔹 Cálculo automático de retención para FB / FS / RFB / RFS
+        const rowIndex = evt.node.rowIndex ?? -1;
+        this.calcularRetencionDesdeFactura(rowIndex);
+
+        this.rowData.set([...this.rowData()]);
+        this.gridApi.refreshCells({
+          rowNodes: [evt.node],
+          columns: ['codprePc', 'debe', 'haber'],
+          force: true,
+        });
+      }
+    }
+    //////end
     // Tipo Movimiento → movbancario (código)
     if (evt.colDef.field === 'idMovBancario') {
       const idNuevo = Number(evt.newValue ?? 0);
@@ -1935,6 +2105,12 @@ export class FacturasProveedorFormComponent implements OnInit {
           evt.data.codprePc = '';            // limpia el código de la cuenta
         }
 
+        //cambio hr para retencion en caso de reaclcular
+        const rowIndex = evt.node.rowIndex ?? -1;
+        if (['RFB', 'RFS'].includes(movCode) && Number(evt.data.idPlanCuentas || 0) > 0) {
+            this.calcularRetencionDesdeFactura(rowIndex);
+        }
+        ///hr retencion fuente
         this.rowData.set([...this.rowData()]);
         this.gridApi.refreshCells({
           rowNodes: [evt.node],
@@ -1949,6 +2125,57 @@ export class FacturasProveedorFormComponent implements OnInit {
           force: true,
         });
       }
+    }
+
+    ///porcentaje iva
+    if (evt.colDef.field === 'idPorIva') {
+      const id = Number(evt.newValue ?? 0);
+      const iva = this.porcentajesIva.find(p => p.id === id);
+
+      if (evt.data) {
+        if (iva) {
+          evt.data.idPorIva = id as any;
+          evt.data.porcentaje = iva.porcentaje as any;
+        } else {
+          // si no encuentra, resetea a null
+          evt.data.idPorIva = null as any;
+          evt.data.porcentaje = null as any;
+        }
+
+        this.rowData.set([...this.rowData()]);
+        this.gridApi.refreshCells({
+          rowNodes: [evt.node],
+          columns: ['idPorIva', 'porcentaje'],
+          force: true,
+        });
+      }
+    }
+    ////
+    ///PARA LOS CODIGOS CONTABLES
+    //NUEVO: cuando cambia el Auxiliar Contable
+    if (evt.colDef.field === 'idCodContable') {
+      const id = Number(evt.newValue ?? 0);
+
+      // buscamos el auxiliar en la lista del grid (y, por si acaso, en la de cabecera)
+      const aux =
+        this.auxiliaresGrid.find(a => a.id === id) ||
+        this.auxiliares.find(a => a.id === id);
+
+      if (evt.data) {
+        // si encontramos, ponemos la razón social, si no, limpiamos
+        evt.data.beneficiario = aux ? aux.razon : '';
+        // si quieres también actualizar el beneficiario de cabecera
+        // cuando se cambia el auxiliar en la línea, puedes hacer:
+        // this.form.patchValue({ beneficiario: evt.data.beneficiario }, { emitEvent: false });
+      }
+
+      // refrescamos la fila en el grid
+      this.rowData.set([...this.rowData()]);
+      this.gridApi.refreshCells({
+        rowNodes: [evt.node],
+        columns: ['beneficiario', 'idCodContable'],
+        force: true,
+      });
     }
     //
   }
@@ -2161,6 +2388,10 @@ export class FacturasProveedorFormComponent implements OnInit {
       // NUEVOS CAMPOS
       autorizacionRelacionado: '',
       fechaCadRelacionado: null as any,//'',
+      // AQUÍ INICIALIZAMOS LOS DOS CAMPOS NUEVOS por iva
+      idPorIva: null,
+      porcentaje: null,
+
     };
 
     this.rowData.set([...(items ?? []), nueva]);
@@ -2374,7 +2605,23 @@ private normalizarParaBackend(header: AsientoContableResponse): any {
     // - IdDetMaestro, IdCabMaestro, etc.
     // - transferido (true/false)
     // - idMovBancario (ya validas que sea > 0)
+    // porc iva
+    // Si vienen null/undefined, se quedan null.
+    // Si vienen con dato, se normaliza a número.
+    if (det.idPorIva === null || det.idPorIva === undefined) {
+      det.idPorIva = null;
+    } else {
+      const n = Number(det.idPorIva);
+      det.idPorIva = isNaN(n) ? null : n;
+    }
 
+    if (det.porcentaje === null || det.porcentaje === undefined) {
+      det.porcentaje = null;
+    } else {
+      const n = Number(det.porcentaje);
+      det.porcentaje = isNaN(n) ? null : n;
+    }
+    /// por iva
     return det;
   });
 
@@ -2390,6 +2637,127 @@ private normalizarParaBackend(header: AsientoContableResponse): any {
     // Solo marcamos el flag. NO deshabilitamos controles.
     this.cabeceraBloqueada = true;
   }
+
+  //hr calculo porcentaje fuente////
+
+ //hr calculo porcentaje fuente////
+// ⬇️ REEMPLAZA TODO EL MÉTODO POR ESTE
+private calcularRetencionDesdeFactura(rowIndex: number): void {
+    const filas = this.rowData() ?? [];
+    if (rowIndex < 0 || rowIndex >= filas.length) {
+      return;
+    }
+
+    const fila = filas[rowIndex];
+
+    // ✅ SOLO calcular cuando el tipo de movimiento de la fila es RFB o RFS
+    const movActual = (fila.movbancario || '').toString().trim().toUpperCase();
+    if (!['RFB', 'RFS'].includes(movActual)) {
+      // no es una línea de retención de fuente, no hacemos nada
+      return;
+    }
+
+    // 1️⃣ Cuenta contable seleccionada en ESTA fila (cuenta de retención)
+    const idCuenta = Number(fila.idPlanCuentas || 0);
+    if (!idCuenta) {
+      return;
+    }
+
+    const cuenta = this.cuentas.find((c) => c.id === idCuenta);
+    if (!cuenta) {
+      return;
+    }
+
+    // 2️⃣ Obtener porcentaje de la cuenta (PorcentajeRetencion o "1.75%" del texto)
+    let porcentaje: number | null = cuenta.porcentajeRetencion ?? null;
+
+    if (!porcentaje || porcentaje <= 0) {
+      const texto = cuenta.label ?? '';
+      const match = texto.match(/(\d+([.,]\d+)?)\s*%/); // captura 1.75 ó 1,75
+      if (match) {
+        const n = parseFloat(match[1].replace(',', '.'));
+        if (!isNaN(n) && n > 0) {
+          porcentaje = n;
+        }
+      }
+    }
+
+    // Si la cuenta NO tiene porcentaje → no es cuenta de retención, salimos
+    if (!porcentaje || porcentaje <= 0) {
+      return;
+    }
+
+    // 3️⃣ Buscar la BASE de la retención (el DEBE de la FACTURA)
+    //    En tu caso, la factura es FB o FS (y también dejo los antiguos por si acaso)
+    //const codigosBaseFactura = ['FB', 'FS', 'FCB', 'FCS', 'FSB', 'FSS'];
+    const codigosBaseFactura = ['FCB', 'FCS', 'FSB', 'FSS'];
+
+    // IVA que NO debe usarse como base
+    const codigosIva = ['IB', 'IS'];
+
+    let baseDebe = 0;
+
+    // 3.1 Primero, buscar hacia arriba una línea con movbancario FB/FS/...
+    for (let i = rowIndex - 1; i >= 0; i--) {
+      const filaArriba = filas[i];
+      const movBase = (filaArriba.movbancario || '')
+        .toString()
+        .trim()
+        .toUpperCase();
+      const debe = Number(filaArriba.debe || 0);
+
+      if (debe > 0 && codigosBaseFactura.includes(movBase)) {
+        baseDebe = debe;
+        break;
+      }
+    }
+
+    // 3.2 Si no encuentro FB/FS, tomo el primer DEBE>0 hacia arriba que NO sea IVA
+    if (baseDebe <= 0) {
+      for (let i = rowIndex - 1; i >= 0; i--) {
+        const filaArriba = filas[i];
+        const movBase = (filaArriba.movbancario || '')
+          .toString()
+          .trim()
+          .toUpperCase();
+        const debe = Number(filaArriba.debe || 0);
+
+        if (debe > 0 && !codigosIva.includes(movBase)) {
+          baseDebe = debe;
+          break;
+        }
+      }
+    }
+
+    // Si aún no hay base, no hacemos nada
+    if (baseDebe <= 0) {
+      return;
+    }
+
+    // 4️⃣ Calcular la retención y ponerla en HABER de esta fila
+    const valorRet = Number((baseDebe * (porcentaje / 100)).toFixed(2));
+
+    fila.debe = 0;
+    fila.haber = valorRet;
+
+    // 5️⃣ Refrescar grid y ajustar línea de saldo
+    this.rowData.set([...filas]);
+    this.gridApi?.refreshCells({
+      force: true,
+      columns: ['debe', 'haber'],
+    });
+
+    ///se añadio esta parte///
+    //this.recalcularHaberDesdeDebe(false);
+ // 6️⃣ Solo reajustar la línea de saldo si ESTA fila NO es la última
+    const lastIndex = filas.length - 1;
+    if (rowIndex < lastIndex) {
+      this.recalcularHaberDesdeDebe(false);
+    }
+
+  }
+  //// end hr
+
 
   private recalcularHaberDesdeDebe(forzar: boolean = false): void {
     const filas = this.rowData() ?? [];
