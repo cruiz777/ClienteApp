@@ -152,6 +152,7 @@ export class FacturacionIndividualComponent implements OnInit {
   // ============= Pasos / Tabs =============
   currentStep = 1;
   nombreCliente = '';
+  idPersona=0;
   onTabChange(idx: number): void {
     // idx: 0=Cliente, 1=Factura, 2=Pagos
     if (idx === 1 && !this.puedeIrPaso2) {
@@ -736,12 +737,14 @@ export class FacturacionIndividualComponent implements OnInit {
       .pipe(
         take(1),
         switchMap((cli: any) => {
+          this.idPersona = cli?.idPersona ?? 0;
           const valoresBase: { [key: string]: any } = {
             identificacion: cli?.ruc ?? cli?.cedula ?? '',
             direccion: cli?.dircli ?? cli?.direccion ?? '',
             telefono: cli?.telefono ?? cli?.telcli ?? '',
             email: cli?.email ?? cli?.correo ?? '',
             emailOpcional: cli?.emailOpcional ?? ''
+                        
           };
 
           const idGrupo = cli?.idGrupoEmpresa ?? cli?.id_grupo_empresa;
