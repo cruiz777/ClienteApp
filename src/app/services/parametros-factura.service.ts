@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { ApiResponse } from '../interfaces/responses/api-response';
 
 export interface ParametrosFactura {
   id_parametrosFactura: number;
@@ -47,7 +48,24 @@ export class ParametrosFacturaService {
       }))
     );
   }
-
+  getByIdUrl(id: number): Observable<ParametrosFactura> {
+    return this.http.get<ApiResponse<ParametrosFactura>>(`${this.baseUrl}/${id}`).pipe(
+      map(response => {
+        const item = response.data;
+        return {
+          ...item,
+          descripcion: item.descripcion?.trim() ?? '',
+          texto: item.texto?.trim() ?? '',
+          obs: item.obs?.trim() ?? ''
+        };
+      })
+    );
+  }
+  getUrlReenvioDocumentos(): Observable<string> {
+    return this.getByIdUrl(10005).pipe(
+      map(param => param.texto || '')
+    );
+  }
   create(parametro: ParametrosFactura): Observable<ParametrosFactura> {
     return this.http.post<ParametrosFactura>(this.baseUrl, parametro);
   }
