@@ -153,6 +153,7 @@ export class FacturacionIndividualComponent implements OnInit {
   currentStep = 1;
   nombreCliente = '';
   idPersona=0;
+  idCodigoContable=0;
   onTabChange(idx: number): void {
     // idx: 0=Cliente, 1=Factura, 2=Pagos
     if (idx === 1 && !this.puedeIrPaso2) {
@@ -730,28 +731,31 @@ export class FacturacionIndividualComponent implements OnInit {
     }
   }
 
-  private cargarClienteDetalle(id: number): void {
-    this.isLoadingDetalle = true;
+private cargarClienteDetalle(id: number): void {
+  this.isLoadingDetalle = true;
 
-    this.clienteService.getClienteById(id)
-      .pipe(
-        take(1),
-        switchMap((cli: any) => {
-          this.idPersona = cli?.idPersona ?? 0;
-          const valoresBase: { [key: string]: any } = {
-            identificacion: cli?.ruc ?? cli?.cedula ?? '',
-            direccion: cli?.dircli ?? cli?.direccion ?? '',
-            telefono: cli?.telefono ?? cli?.telcli ?? '',
-            email: cli?.email ?? cli?.correo ?? '',
-            emailOpcional: cli?.emailOpcional ?? ''
-                        
-          };
+  this.clienteService.getClienteById(id)
+    .pipe(
+      take(1),
+      switchMap((cli: any) => {
+        // 🔹 IdPersona del cliente
+        const idPersona = cli?.idPersona ?? cli?.id_persona ?? 0;
 
-          const idGrupo = cli?.idGrupoEmpresa ?? cli?.id_grupo_empresa;
-          const clientesCodigo = cli?.clientesCodigo ?? cli?.clientes_codigo ?? id;
+        // 🔹 Valores base del cliente
+        const valoresBase: { [key: string]: any } = {
+          identificacion: cli?.ruc ?? cli?.cedula ?? '',
+          direccion: cli?.dircli ?? cli?.direccion ?? '',
+          telefono: cli?.telefono ?? cli?.telcli ?? '',
+          email: cli?.email ?? cli?.correo ?? '',
+          emailOpcional: cli?.emailOpcional ?? ''
+        };
 
-          const categoria$ = idGrupo
-            ? this.grupoEmpresaService.obtenerGrupoBasicoPorId(idGrupo).pipe(
+        const idGrupo = cli?.idGrupoEmpresa ?? cli?.id_grupo_empresa;
+        const clientesCodigo = cli?.clientesCodigo ?? cli?.clientes_codigo ?? id;
+
+        // 🔹 Observable de categoría (Grupo Empresa)
+        const categoria$ = idGrupo
+          ? this.grupoEmpresaService.obtenerGrupoBasicoPorId(idGrupo).pipe(
               tap((ge: any) => {
                 this.vInscripcion = ge?.inscripcion ?? 0;
                 this.vAsignacion = ge?.asignacion ?? 0;
@@ -764,68 +768,87 @@ export class FacturacionIndividualComponent implements OnInit {
                 return of(cli?.categoria ?? '');
               })
             )
-            : (this.vInscripcion = this.vAsignacion = this.vMantenimiento = 0, of(cli?.categoria ?? ''));
+          : (this.vInscripcion = this.vAsignacion = this.vMantenimiento = 0, of(cli?.categoria ?? ''));
 
-          const contactos$ = this.clienteContactoService.getFacturacionByClienteCodigo(clientesCodigo).pipe(
-            catchError(() => of([]))
+        // 🔹 Observable de contactos de facturación
+        const contactos$ = this.clienteContactoService
+          .getFacturacionByClienteCodigo(clientesCodigo)
+          .pipe(catchError(() => of([])));
+
+        // 🔹 Observable de IdCodContable por persona
+        const idCodContable$ = this.clienteService
+          .getIdCodContableByPersona(idPersona)
+          .pipe(
+            catchError(() => of(0)) // si falla, devolvemos 0
           );
 
-          return forkJoin({ categoria: categoria$, contactos: contactos$ }).pipe(
-            map(({ categoria, contactos }) => {
-              const getProp = (o: any, ...keys: string[]) =>
-                keys.map(k => o?.[k]).find(v => v !== undefined);
+        // ⬇️ Combinamos categoría, contactos e idCodContable
+        return forkJoin({
+          categoria: categoria$,
+          contactos: contactos$,
+          idCodContable: idCodContable$
+        }).pipe(
+          map(({ categoria, contactos, idCodContable }) => {
+            // Guardamos el IdCodContable en la propiedad del componente
+            this.idCodigoContable = idCodContable;
 
-              const findEmailLinea = (n: number): string => {
-                const c = (contactos as any[]).find(
-                  x => (getProp(x, 'linea', 'Linea') ?? 0) === n
-                );
-                const email = getProp(c ?? {}, 'email', 'Email');
-                return (email ?? '').toString().trim();
-              };
+            const getProp = (o: any, ...keys: string[]) =>
+              keys.map(k => o?.[k]).find(v => v !== undefined);
 
-              // 🔹 NUEVO: teléfono desde contactos (ej. línea 2)
-              const findTelefonoLinea = (n: number): string => {
-                const c = (contactos as any[]).find(
-                  x => (getProp(x, 'linea', 'Linea') ?? 0) === n
-                );
-                const tel = getProp(
-                  c ?? {},
-                  'telefono', 'Telefono',
-                  'telcli', 'TelCli',
-                  'telefono1', 'Telefono1'
-                );
-                return (tel ?? '').toString().trim();
-              };
+            const findEmailLinea = (n: number): string => {
+              const c = (contactos as any[]).find(
+                x => (getProp(x, 'linea', 'Linea') ?? 0) === n
+              );
+              const email = getProp(c ?? {}, 'email', 'Email');
+              return (email ?? '').toString().trim();
+            };
 
-              const emailLinea2 = findEmailLinea(2);
-              const emailLinea3 = findEmailLinea(3);
-              const telefonoLinea2 = findTelefonoLinea(2);   // 👈 aquí tomamos el teléfono de contactos (línea 2)
+            // Teléfono desde contactos (ej. línea 2)
+            const findTelefonoLinea = (n: number): string => {
+              const c = (contactos as any[]).find(
+                x => (getProp(x, 'linea', 'Linea') ?? 0) === n
+              );
+              const tel = getProp(
+                c ?? {},
+                'telefono', 'Telefono',
+                'telcli', 'TelCli',
+                'telefono1', 'Telefono1'
+              );
+              return (tel ?? '').toString().trim();
+            };
 
-              const emailOpcionalConcat = [emailLinea3].filter(Boolean).join(';');
+            const emailLinea2 = findEmailLinea(2);
+            const emailLinea3 = findEmailLinea(3);
+            const telefonoLinea2 = findTelefonoLinea(2);
 
-              return {
-                ...valoresBase,
-                categoria,
-                // 👇 PRIORIDAD: teléfono de contactos, si no, el del cliente
-                telefono: telefonoLinea2 || (valoresBase['telefono'] as string),
-                email: emailLinea2 || (valoresBase['email'] as string),
-                emailOpcional: emailOpcionalConcat || (valoresBase['emailOpcional'] as string)
-              } as { [key: string]: any };
-            })
-          );
-        })
-      )
-      .subscribe({
-        next: (valoresPatch: { [key: string]: any }) => {
-          this.isLoadingDetalle = false;
-          this.formCliente.patchValue(valoresPatch);
-        },
-        error: _ => {
-          this.isLoadingDetalle = false;
-          this.mostrarAlerta('No se pudo cargar el detalle del cliente', 'error');
-        }
-      });
-  }
+            const emailOpcionalConcat = [emailLinea3].filter(Boolean).join(';');
+
+            return {
+              ...valoresBase,
+              categoria,
+              // PRIORIDAD: teléfono de contactos (línea 2), si no, el del cliente
+              telefono: telefonoLinea2 || (valoresBase['telefono'] as string),
+              // PRIORIDAD: email de contactos (línea 2), si no, el del cliente
+              email: emailLinea2 || (valoresBase['email'] as string),
+              emailOpcional: emailOpcionalConcat || (valoresBase['emailOpcional'] as string),
+              // 👇 también puedes exponerlo al formulario si quieres
+              idCodContable: idCodContable
+            } as { [key: string]: any };
+          })
+        );
+      })
+    )
+    .subscribe({
+      next: (valoresPatch: { [key: string]: any }) => {
+        this.isLoadingDetalle = false;
+        this.formCliente.patchValue(valoresPatch);
+      },
+      error: _ => {
+        this.isLoadingDetalle = false;
+        this.mostrarAlerta('No se pudo cargar el detalle del cliente', 'error');
+      }
+    });
+}
 
 
   // ============= Varios =============
@@ -843,6 +866,8 @@ export class FacturacionIndividualComponent implements OnInit {
     this.baseGravada = 0;
     this.nombreCliente = '';
     this.grupoCli = '';
+      this.idCodigoContable = 0;
+  this.idPersona = 0;
     // ---- Descuento / Factura (autocompletes)
     this.formFactura.patchValue({ producto: '', descuento: '' }, { emitEvent: false });
     this.descuentoSeleccionado = null;
@@ -2278,13 +2303,20 @@ export class FacturacionIndividualComponent implements OnInit {
 
     // Totales de la factura
     const tot = this.to2(Number(facturaPayload.totalCalculado ?? 0));
-    const beneficiario = `CLIENTE ID: ${facturaPayload.idCliente}`;
+    const beneficiario =
+  (this.nombreCliente && this.nombreCliente.trim().length > 0)
+    ? this.nombreCliente.trim().toUpperCase()        // o sin .toUpperCase() si no quieres mayúsculas
+    : `CLIENTE ID: ${facturaPayload.idCliente}`;
+
 
     // Cuentas base (fallbacks)
     const CTA_CLIENTES = 110101;        // Clientes
     const CTA_IVA = 210602;            // IVA, ajusta si aplica
     const CTA_VENTAS_DEFAULT = 410101; // Ventas
-
+    const idCodContableLinea =
+    this.idCodigoContable && this.idCodigoContable > 0
+      ? this.idCodigoContable
+      : 1; // valor por defecto si no llegó nada
     // ====== 1) Filas de productos ======
     const filasProd: any[] = [];
     if (this.gridApi) this.gridApi.forEachNode(n => filasProd.push(n.data));
@@ -2334,7 +2366,7 @@ export class FacturacionIndividualComponent implements OnInit {
           idLocal: 1,
           idPlanCuentas: idCuentaPago,
           codprePc: codprePago,
-          idCodContable: 1129,
+          idCodContable: idCodContableLinea,
           nocomprobante,
           docurelacionado: '',
           cheque: 0,
@@ -2382,7 +2414,7 @@ export class FacturacionIndividualComponent implements OnInit {
         idLocal: 1,
         idPlanCuentas: CTA_CLIENTES,
         codprePc: `${CTA_CLIENTES}-001`,
-        idCodContable: 1129,
+        idCodContable: idCodContableLinea,
         nocomprobante,
         docurelacionado: '',
         cheque: 0,
@@ -2437,7 +2469,7 @@ export class FacturacionIndividualComponent implements OnInit {
         idLocal: 1,
         idPlanCuentas: idcuentaNum,
         codprePc,
-        idCodContable: 1129,
+        idCodContable: idCodContableLinea,
         nocomprobante,
         docurelacionado: '',
         cheque: 0,
@@ -2486,7 +2518,7 @@ export class FacturacionIndividualComponent implements OnInit {
         idLocal: 1,
         idPlanCuentas: this.planCuenta?.id_plan ?? CTA_IVA,
         codprePc: this.parametros?.codcueretiva ?? `${CTA_IVA}-001`,
-        idCodContable: 1129,
+        idCodContable: idCodContableLinea,
         nocomprobante,
         docurelacionado: '',
         cheque: 0,
@@ -2544,7 +2576,7 @@ export class FacturacionIndividualComponent implements OnInit {
       autorizado: '',
       homCodigo: 0,
       estado: true,
-      modulo: 0,
+      modulo: 2,
       detalles
     };
 

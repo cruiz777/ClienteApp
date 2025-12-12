@@ -161,14 +161,14 @@ export class PagoReportService {
 
     // Títulos
     doc.setFont('Times', 'Bold');
-    doc.setFontSize(16);
-    doc.text(tituloEmpresa, pageWidth / 2, 100 + yOffset, { align: 'center' });
     doc.setFontSize(14);
+    doc.text(tituloEmpresa, pageWidth / 2, 100 + yOffset, { align: 'center' });
+    doc.setFontSize(12);
     doc.text('INGRESO DE CAJA', pageWidth / 2, 122 + yOffset, { align: 'center' });
 
     // Barra: Número Pago / Asiento
     autoTable(doc, {
-      startY: 120 + yOffset,
+      startY: 150 + yOffset,
       styles: { font: 'Times', fontSize: 11, textColor: [0, 0, 0] },
       headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] },
       bodyStyles: { textColor: [0, 0, 0] },

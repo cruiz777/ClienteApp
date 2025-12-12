@@ -23,6 +23,10 @@ interface ClienteDetalleResponse {
   message: string;
   
 }
+interface CodContablePersonaDto {
+  id_cod_contable: number;
+  id_persona: number;
+}
 export interface ClienteIndividual {
   clientes_codigo: number;
   nomcli: string;
@@ -197,6 +201,18 @@ getClientesPaginados(
     { params }
   );
 }
-
+getIdCodContableByPersona(idPersona: number): Observable<number> {
+  const url = `${this.apiBaseUrl}/CodigosContables/persona/${idPersona}`;
+  return this.http
+    .get<ApiResponse<CodContablePersonaDto>>(url)
+    .pipe(
+      map(resp => {
+        if (!resp.data) {
+          throw new Error('No se encontró código contable para esa persona.');
+        }
+        return resp.data.id_cod_contable;
+      })
+    );
+}
 
 }
