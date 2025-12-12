@@ -13,7 +13,7 @@ import { NotaCreditoService, FacturaListResponse } from 'src/app/services/nota-c
 import { UsuarioService } from 'src/app/services/usuario.service';
 import { FacturacionService } from 'src/app/services/facturacion.service';
 import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
-
+import { ReversarAsientoService } from 'src/app/services/reversar-asiento.service';
 // Tipos mínimos locales (si en tu proyecto existen definiciones globales usa esas)
 interface ApiResponse<T = any> { type: string; message?: string; data?: T | null; }
 interface PaginationResponse<TItem> { items: TItem[]; page: number; pageSize: number; totalItems: number; totalPages: number; }
@@ -91,7 +91,8 @@ export class FacturaAnuladaComponent implements OnInit {
     private dialog: MatDialog,
     private snack: MatSnackBar,
     private usuarioService: UsuarioService,
-    private facturacionService: FacturacionService
+    private facturacionService: FacturacionService,
+    private reversarAsientoService: ReversarAsientoService
   ) {}
 
   ngOnInit(): void {
@@ -112,66 +113,98 @@ export class FacturaAnuladaComponent implements OnInit {
   }
 
   /** Click en "Anular": valida, pregunta confirmación, llama servicio, alerta y cierra */
-  confirmar() {
-    // 1) Validación de precondiciones
-    if (this.idNota == null) {
-      this.mostrarAlerta('No se ha seleccionado una factura válida para anular.', 'error');
-      return;
-    }
-
-    // Normalizar observación: mayúsculas y trim para validar longitud real
-    this.observacion = (this.observacion || '').toUpperCase().trim();
-
-    if (!this.observacion) {
-      this.mostrarAlerta('Debe ingresar una observación para anular la factura.', 'error');
-      return;
-    }
-
-    if (this.observacion.length < this.MIN_OBSERVACION) {
-      this.mostrarAlerta(`El motivo de anulación debe tener al menos ${this.MIN_OBSERVACION} caracteres.`, 'error');
-      return;
-    }
-
-    const obs = this.observacion;
-
-    // 2) Confirmación previa (ventana modal)
-    this.dialog.open(CustomMessageBoxComponent, {
-      width: '420px',
-      data: {
-        title: 'Confirmar anulación',
-        message: '¿Está seguro que desea anular esta factura? Esta acción no se puede deshacer.',
-        type: 'info',
-        confirmText: 'Sí, anular',
-        cancelText: 'Cancelar',
-        showCancel: true
-      }
-    }).afterClosed().subscribe((acepta: boolean) => {
-      if (!acepta) {
-        this.mostrarAlerta('Operación cancelada.', 'info');
-        return;
-      }
-
-      // 3) Llamado real al backend
-      const idUsuario = this.usuarioActual?.id_usuario ?? 0; // ajusta el campo si tu modelo usa otro nombre
-      this.facturacionService
-        .anularFactura(this.idNota!, obs, idUsuario)
-        .subscribe({
-          next: (resp: ApiResponse<any>) => {
-            // asumir que la API retorna type: 'Success' en caso de éxito
-            if (resp?.type === 'Success') {
-              this.mostrarAlerta('Factura anulada correctamente.', 'ok');
-              this.dialogRef.close({ ok: true, idNota: this.idNota!, observacion: obs });
-            } else {
-              // Manejo de respuestas no exitosas
-              this.mostrarAlerta(resp?.message ?? 'No se pudo anular la factura.', 'error');
-            }
-          },
-          error: (e) => {
-            this.mostrarAlerta(e?.message ?? 'No se pudo anular la factura.', 'error');
-          }
-        });
-    });
+confirmar() {
+  // 1) Validación de precondiciones
+  if (this.idNota == null) {
+    this.mostrarAlerta('No se ha seleccionado una factura válida para anular.', 'error');
+    return;
   }
+
+  // Normalizar observación: mayúsculas y trim para validar longitud real
+  this.observacion = (this.observacion || '').toUpperCase().trim();
+
+  if (!this.observacion) {
+    this.mostrarAlerta('Debe ingresar una observación para anular la factura.', 'error');
+    return;
+  }
+
+  if (this.observacion.length < this.MIN_OBSERVACION) {
+    this.mostrarAlerta(`El motivo de anulación debe tener al menos ${this.MIN_OBSERVACION} caracteres.`, 'error');
+    return;
+  }
+
+  const obs = this.observacion;
+
+  // 2) Confirmación previa (ventana modal)
+  this.dialog.open(CustomMessageBoxComponent, {
+    width: '420px',
+    data: {
+      title: 'Confirmar anulación',
+      message: '¿Está seguro que desea anular esta factura? Esta acción no se puede deshacer.',
+      type: 'info',
+      confirmText: 'Sí, anular',
+      cancelText: 'Cancelar',
+      showCancel: true
+    }
+  }).afterClosed().subscribe((acepta: boolean) => {
+    if (!acepta) {
+      this.mostrarAlerta('Operación cancelada.', 'info');
+      return;
+    }
+
+    // 3) Llamado real al backend: ANULAR FACTURA
+    const idUsuario = this.usuarioActual?.id_usuario ?? 0;
+
+    this.facturacionService
+      .anularFactura(this.idNota!, obs, idUsuario)
+      .subscribe({
+        next: (resp: ApiResponse<any>) => {
+          if (resp?.type === 'Success') {
+            this.mostrarAlerta('Factura anulada correctamente. Generando reverso de asiento...', 'ok');
+
+            // 4) Generar ASIENTO DE REVERSO a partir de la nota
+            this.reversarAsientoService
+              .generarReversoDesdeNota(this.idNota!, idUsuario)
+              .subscribe({
+                next: (revResp) => {
+                  const esOk = revResp && revResp.type &&
+                    revResp.type.toString().toLowerCase() === 'success';
+
+                  if (esOk && revResp.data) {
+                    this.mostrarAlerta('Asiento de reverso generado correctamente.', 'ok');
+                    console.log('Reverso generado:', revResp.data);
+                  } else {
+                    this.mostrarAlerta(
+                      revResp?.message ?? 'Factura anulada, pero no se pudo generar el asiento de reverso.',
+                      'info'
+                    );
+                  }
+
+                  // Cerrar el diálogo informando éxito de anulación
+                  this.dialogRef.close({ ok: true, idNota: this.idNota!, observacion: obs });
+                },
+                error: (err) => {
+                  console.error('Error generando asiento de reverso:', err);
+                  this.mostrarAlerta(
+                    'La factura se anuló, pero ocurrió un error al generar el asiento de reverso.',
+                    'error'
+                  );
+
+                  // Igual cerramos como OK respecto a la anulación
+                  this.dialogRef.close({ ok: true, idNota: this.idNota!, observacion: obs });
+                }
+              });
+
+          } else {
+            this.mostrarAlerta(resp?.message ?? 'No se pudo anular la factura.', 'error');
+          }
+        },
+        error: (e) => {
+          this.mostrarAlerta(e?.message ?? 'No se pudo anular la factura.', 'error');
+        }
+      });
+  });
+}
 
   /** Busca factura al presionar Enter o invocar la búsqueda */
   onEnterFactura(): void {
