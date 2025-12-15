@@ -3,8 +3,18 @@ import { NgZone, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgGridAngular } from 'ag-grid-angular';
-import { NotaCreditoService, ApiResponse, PaginationResponse, FacturaListResponse, NotaCreditoCrearReq } from 'src/app/services/nota-credito.service';
-import { FormaPagoService, FormaPagoResponse, ApiResponse as ApiResponseFP } from 'src/app/services/forma-pago.service';
+import {
+  NotaCreditoService,
+  ApiResponse,
+  PaginationResponse,
+  FacturaListResponse,
+  NotaCreditoCrearReq
+} from 'src/app/services/nota-credito.service';
+import {
+  FormaPagoService,
+  FormaPagoResponse,
+  ApiResponse as ApiResponseFP
+} from 'src/app/services/forma-pago.service';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { ReactiveFormsModule, FormControl } from '@angular/forms';
@@ -36,6 +46,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { FacturacionService } from 'src/app/services/facturacion.service';
 import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
 import { ClienteService } from 'src/app/services/cliente.service';
+import { ReversarAsientoService } from 'src/app/services/reversar-asiento.service';
 
 type Detalle = {
   codigo?: string;
@@ -103,6 +114,8 @@ export class NotaCreditoComponent implements OnInit {
   productosFiltrados: any[] = [];
   productoSeleccionado = '';
 
+  // Para visualizar el resultado del asiento VT
+  asientoVentaInfo: any | null = null;
 
   constructor(
     private svc: NotaCreditoService,
@@ -112,9 +125,10 @@ export class NotaCreditoComponent implements OnInit {
     private _snackBar: MatSnackBar,
     private usuarioService: UsuarioService,
     private autorizacionCajaService: AutorizacionCajaService,
-    private dialog: MatDialog, // ← AGREGAR SI NO LO TIENES
+    private dialog: MatDialog,
     private facturacionService: FacturacionService,
-    private clienteService: ClienteService
+    private clienteService: ClienteService,
+    private reversarAsientoService: ReversarAsientoService
   ) { }
 
   ngOnInit(): void {
@@ -156,14 +170,15 @@ export class NotaCreditoComponent implements OnInit {
   totalHaberFactura: number = 0;
   saldoFacturaPendiente: number = 0;
   totalFacturaOriginalSaldo: number = 0;
+
   encabezado = {
-    sucursal: '',   // 👈 necesario
+    sucursal: '',   // sucursal/caja de la NC
     caja: '',
     numero: '',
     fecha: this.toISO(new Date()),
     cliente: '',
     idCliente: 0,
-    sucursal2: '',
+    sucursal2: '',  // sucursal/caja de la factura
     caja2: '',
     factura: '',
     direccion: '',
@@ -264,7 +279,7 @@ export class NotaCreditoComponent implements OnInit {
       valueSetter: (p) => {
         const row = p.data as Detalle;
         if (this.esFacturaDeSaldo) {
-          row.cantidadd = 1; // Si la factura es de saldo siempre sera cantidad 1
+          row.cantidadd = 1; // Si la factura es de saldo siempre será cantidad 1
           return true;
         }
         const max = this.asNumber(row.cantidad);
@@ -283,18 +298,18 @@ export class NotaCreditoComponent implements OnInit {
 
         row.valorDev = +(row.cantidadd * pvp).toFixed(2);
         row.ivaDev = +(row.cantidadd * ivaUnit).toFixed(2);
+
         // No exceder el saldo disponible
         if (this.esFacturaDeSaldo && this.saldoFacturaPendiente > 0) {
           const totalConIva = row.valorDev + row.ivaDev;
-          
+
           if (totalConIva > this.saldoFacturaPendiente) {
-            // Calcular cantidad máxima permitida
             const precioConIva = pvp + ivaUnit;
             const maxCantidad = this.saldoFacturaPendiente / precioConIva;
             row.cantidadd = +maxCantidad.toFixed(6);
             row.valorDev = +(row.cantidadd * pvp).toFixed(2);
             row.ivaDev = +(row.cantidadd * ivaUnit).toFixed(2);
-            
+
             this.mostrarAlerta(
               `Cantidad máxima permitida: ${row.cantidadd.toFixed(2)} (saldo: $${this.saldoFacturaPendiente.toFixed(2)})`,
               'info'
@@ -334,17 +349,16 @@ export class NotaCreditoComponent implements OnInit {
         // no permitas devolver más que la base original de la línea
         const maxValor = qtyOrig * pvp;
         if (val > maxValor) val = maxValor;
-        //No exceder el saldo disponible
+
+        // No exceder el saldo disponible
         if (this.esFacturaDeSaldo && this.saldoFacturaPendiente > 0) {
-          // Calcular el total con IVA de esta devolución
           const ivaDev = (val * (ivaPct / 100));
           const totalConIva = val + ivaDev;
-          
+
           if (totalConIva > this.saldoFacturaPendiente) {
-            // Ajustar al máximo permitido
             const maxBase = this.saldoFacturaPendiente / (1 + (ivaPct / 100));
             val = +maxBase.toFixed(2);
-            
+
             this.mostrarAlerta(
               `El valor máximo a devolver es $${val.toFixed(2)} (saldo: $${this.saldoFacturaPendiente.toFixed(2)})`,
               'info'
@@ -352,12 +366,11 @@ export class NotaCreditoComponent implements OnInit {
           }
         }
         row.porMonto = true;
-        // if (!(this.asNumber(row.cantidadd) > 0)) row.cantidadd = 1; // si no tiene, poner 1
-        // Si es factura de saldo, SIEMPRE cantidad = 1 (no condicional)
+
+        // Si es factura de saldo, siempre cantidad = 1
         if (this.esFacturaDeSaldo) {
           row.cantidadd = 1;
         } else {
-          // Solo si NO es de saldo, usar lógica original
           if (!(this.asNumber(row.cantidadd) > 0)) row.cantidadd = 1;
         }
         row.valorDev = +val.toFixed(2);                            // base
@@ -432,7 +445,6 @@ export class NotaCreditoComponent implements OnInit {
       valueGetter: () => this.getDebeVisual(),
       valueFormatter: this.currencyUSD,
     },
-    // En pagoCols, reemplaza estas dos columnas:
     {
       headerName: 'Haber',
       field: 'haber',
@@ -502,62 +514,6 @@ export class NotaCreditoComponent implements OnInit {
   // ======= Totales =======
   puedeGrabarBtn = false;
 
-  // recalcular(): void {
-  //   let base0 = 0, baseIva = 0, iva = 0, subtotal = 0;
-  //   let totalDev = 0, totalIvaDev = 0;
-  //   let baseDev0 = 0, baseDevIva = 0;
-
-  //   for (const r of this.detalleRows) {
-  //     const cantidad = this.asNumber(r.cantidad);
-  //     const pvp = this.asNumber(r.pvp);
-  //     const totalLinea = cantidad * pvp;
-
-  //     subtotal += totalLinea;
-
-  //     const ivaLinea = this.asNumber(r.iva);
-  //     iva += ivaLinea;
-
-  //     const ivaPct = (r.ivaPct ?? (totalLinea > 0 ? (ivaLinea / totalLinea) * 100 : 0));
-  //     if (ivaPct > 0) baseIva += totalLinea; else base0 += totalLinea;
-
-  //     // Devoluciones
-  //     const valorDev = this.asNumber(r.valorDev);
-  //     if (valorDev > 0) {
-  //       totalDev += valorDev;
-  //       if (ivaPct > 0) baseDevIva += valorDev; else baseDev0 += valorDev;
-  //     }
-
-  //     if (r.porMonto) {
-  //       totalIvaDev += this.asNumber(r.ivaDev);
-  //     } else {
-  //       const cantDev = this.asNumber(r.cantidadd);
-  //       if (cantidad > 0) totalIvaDev += cantDev * (ivaLinea / cantidad);
-  //     }
-  //   }
-
-  //   let totalPago = 0;
-  //   for (const r of this.pagoRows) totalPago += this.asNumber(r.pago);
-  //   totalPago = +totalPago.toFixed(2);
-
-  //   const totalDevConIva = +(totalDev + totalIvaDev).toFixed(2);
-  //   const totalFacturaConIva = +(subtotal + iva).toFixed(2);
-
-  //   this.totales = {
-  //     subtotal, base0, baseIva, iva,
-  //     totalFactura: subtotal,
-  //     totalFacturaConIva,
-  //     subtotalDev: baseDev0 + baseDevIva,
-  //     baseDev0, baseDevIva,
-  //     totalDev, totalIvaDev, totalDevConIva,
-  //     totalPago,
-  //   };
-
-  //   const tope = this.getTopePago();
-  //   const diferencia = +(tope - totalPago).toFixed(2);
-  //   this.puedeGrabarBtn = Math.abs(diferencia) < 0.01 && this.pagoRows.length > 0;
-
-  //   this.cdr.detectChanges();
-  // }
   recalcular(): void {
     let base0 = 0, baseIva = 0, iva = 0, subtotal = 0;
     let totalDev = 0, totalIvaDev = 0;
@@ -596,7 +552,7 @@ export class NotaCreditoComponent implements OnInit {
     totalPago = +totalPago.toFixed(2);
 
     const totalDevConIva = +(totalDev + totalIvaDev).toFixed(2);
-    const totalOriginal = +(subtotal + iva).toFixed(2);
+
     // NUEVA LÓGICA: Si es factura de saldo, usar el saldo como tope
     let totalFacturaConIva: number;
     let subtotalFactura: number;
@@ -607,15 +563,15 @@ export class NotaCreditoComponent implements OnInit {
     if (this.esFacturaDeSaldo && this.saldoFacturaPendiente > 0) {
       // Calcular el DEBE original: Saldo + Haber
       const debeOriginal = this.saldoFacturaPendiente + (this.totalHaberFactura || 0);
-      
+
       // El Total Factura es el DEBE original
       totalFacturaConIva = debeOriginal;
       subtotalFactura = debeOriginal;
       ivaFactura = 0;
       base0Factura = 0;
       baseIvaFactura = 0;
-      
-      // ✅ Guardar para mostrarlo en "Debe" del grid
+
+      // Guardar para mostrarlo en "Debe" del grid
       this.totalFacturaOriginalSaldo = debeOriginal;
     } else {
       // Lógica normal para facturas con detalle
@@ -634,15 +590,15 @@ export class NotaCreditoComponent implements OnInit {
       totalFactura: subtotalFactura,
       totalFacturaConIva,
       subtotalDev: baseDev0 + baseDevIva,
-      baseDev0, 
+      baseDev0,
       baseDevIva,
-      totalDev, 
-      totalIvaDev, 
+      totalDev,
+      totalIvaDev,
       totalDevConIva,
       totalPago,
     };
 
-    // ✅ Validar que la devolución no exceda el saldo disponible
+    // Validar que la devolución no exceda el saldo disponible
     if (this.esFacturaDeSaldo && totalDevConIva > this.saldoFacturaPendiente) {
       this.mostrarAlerta(
         `La devolución ($${totalDevConIva.toFixed(2)}) no puede exceder el saldo disponible ($${this.saldoFacturaPendiente.toFixed(2)})`,
@@ -653,18 +609,20 @@ export class NotaCreditoComponent implements OnInit {
     const tope = this.getTopePago();
     const diferencia = +(tope - totalPago).toFixed(2);
     this.puedeGrabarBtn = Math.abs(diferencia) < 0.01 && this.pagoRows.length > 0;
+
     // Auto-ajustar el pago si hay formas de pago y hay devolución
     if (this.pagoRows.length > 0 && totalDevConIva > 0) {
       this.ajustarPagoAutomatico(totalDevConIva);
     }
     this.cdr.detectChanges();
   }
+
   private ajustarPagoAutomatico(totalDev: number): void {
     if (this.pagoRows.length === 0) return;
 
     // Distribuir el total en las formas de pago existentes
     const totalActual = this.pagoRows.reduce((sum, r) => sum + this.asNumber(r.pago), 0);
-    
+
     // Solo ajustar si hay diferencia significativa
     if (Math.abs(totalActual - totalDev) < 0.01) return;
 
@@ -672,14 +630,14 @@ export class NotaCreditoComponent implements OnInit {
     if (this.pagoRows.length === 1) {
       this.pagoRows[0].pago = +totalDev.toFixed(2);
     } else {
-      // Si hay múltiples, distribuir proporcionalmente o poner todo en la primera
+      // Si hay múltiples, poner todo en la primera y cero en las demás
       this.pagoRows[0].pago = +totalDev.toFixed(2);
-      // Las demás en 0
       for (let i = 1; i < this.pagoRows.length; i++) {
         this.pagoRows[i].pago = 0;
       }
     }
   }
+
   agregarPago(): void {
     this.pagoRows = [
       ...this.pagoRows,
@@ -719,6 +677,7 @@ export class NotaCreditoComponent implements OnInit {
     this.encabezado.numero = '';
     this.esFacturaDeSaldo = false;
     this.totalFacturaOriginalSaldo = 0;
+    this.asientoVentaInfo = null;
   }
 
   get diferenciaPago(): number {
@@ -767,14 +726,62 @@ export class NotaCreditoComponent implements OnInit {
 
     this.guardando = true;
     console.log('payload (json):\n', JSON.stringify(payload, null, 2));
+
     this.svc.crearNotaCredito(payload).pipe(
       switchMap(resp => {
         const tipo = (resp?.type || '').toLowerCase();
-        const idNc = Number(resp?.data?.idNotaCredito);
+        const dataNc: any = resp?.data || {};
+        const idNc = Number(dataNc.idNotaCredito ?? dataNc.idnota ?? 0);
 
-        if (tipo === 'success' && Number.isFinite(idNc)) {
+        if (tipo === 'success' && Number.isFinite(idNc) && idNc > 0) {
           this.mostrarAlerta(resp?.message || 'Nota de crédito creada correctamente.', 'ok');
 
+          // =============================
+          // 1) DISPARAR GENERACIÓN ASIENTO VT
+          // =============================
+          const numeroNotaCredito =
+            dataNc.numeroNotaCredito ??
+            dataNc.numeroNota ??
+            this.encabezado.numero ??
+            '';
+
+          const numeroFactura =
+            dataNc.numeroFactura ??
+            this.encabezado.factura ??
+            '';
+
+          const idUsuario = this.usuarioActual?.id_usuario ?? 1;
+
+          this.reversarAsientoService
+            .generarReversoDesdeNotaCredito(this.idNota, idUsuario, numeroNotaCredito, numeroFactura)
+            .pipe(
+              catchError(err => {
+                console.error('[NC] Error generando asiento VT:', err);
+                this.mostrarAlerta('Nota creada, pero no se pudo generar el asiento de ventas (VT).', 'error');
+                return of(null);
+              })
+            )
+            .subscribe(revResp => {
+              if (!revResp) return;
+              const tipoRev = (revResp.type || '').toLowerCase();
+              if (tipoRev === 'success' && revResp.data) {
+                this.asientoVentaInfo = revResp.data;
+                this.mostrarAlerta(
+                  `Asiento VT generado. Origen: ${revResp.data.numdocOriginal}, Reverso: ${revResp.data.numdocReverso}`,
+                  'ok'
+                );
+                console.log('[NC] Asiento VT generado:', revResp.data);
+              } else {
+                this.mostrarAlerta(
+                  revResp.message || 'No se pudo generar el asiento de ventas (VT).',
+                  'error'
+                );
+              }
+            });
+
+          // =============================
+          // 2) XML + PDF DE LA NOTA DE CRÉDITO
+          // =============================
           return this.svc.generarXmlNotaCredito(idNc).pipe(
             switchMap((r: any) => {
               const ok = (r?.success ?? r?.data?.success) === true;
@@ -782,7 +789,7 @@ export class NotaCreditoComponent implements OnInit {
               const msg = r?.message ?? r?.data?.message ?? '';
 
               if (!ok) {
-                this.mostrarAlerta(msg || 'No se generó el XML.', 'error');
+                this.mostrarAlerta(msg || 'No se generó el XML de la Nota de Crédito.', 'error');
                 return of(void 0);
               }
 
@@ -827,83 +834,6 @@ export class NotaCreditoComponent implements OnInit {
 
   editarFactura() { this.facturaFijada = false; }
 
-  // props sugeridas en tu componente:
-  // totalDebeFactura: number | null = null;
-  // totalHaberFactura: number | null = null;
-  // saldoFacturaPendiente: number | null = null;
-
-  // onEnterFactura(): void {
-  //   const entrada = (this.encabezado.factura ?? '').trim();
-  //   if (!this.cajaAsignada) {
-  //     this.mostrarAlerta('Usuario no tiene asignado Caja. No podrás generar notas de crédito hasta asignarla.', 'info');
-  //     return;
-  //   }
-  //   if (!entrada) return;
-
-  //   this.errorFactura = null;
-  //   this.buscandoFactura = true;
-    
-  //   this.svc.buscarPorNumeroLike(entrada, true, 1, 20).subscribe({
-  //     next: (resp: ApiResponse<PaginationResponse<FacturaListResponse>>) => {
-  //       this.buscandoFactura = false;
-  //       if (resp.type !== 'Success' || !resp.data?.items?.length) {
-  //         this.errorFactura = resp.message || 'No se encontraron facturas.';
-  //         return;
-  //       }
-
-  //       const sufijo = this.extraerSufijo(entrada);
-  //       const candidatos = resp.data.items.filter(i => i.numeroFactura?.endsWith(sufijo));
-  //       const lista = (candidatos.length ? candidatos : resp.data.items)
-  //         .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-
-  //       const best = lista[0];
-
-  //       this.idNota = best.idNota;
-  //       this.clientesCodigo = best.idCliente;
-
-  //       if (best.numeroFactura) this.fijarFactura(best.numeroFactura);
-  //       else this.facturaFijada = true;
-
-  //       this.encabezado.cliente = (best as any).cliente ?? this.encabezado.cliente;
-  //       this.encabezado.ruc = (best as any).rucCliente ?? this.encabezado.ruc;
-  //       this.encabezado.direccion = (best as any).dirCliente ?? this.encabezado.direccion;
-
-  //       // 🔹 Traer totales (Debe/Haber) y saldo de la factura seleccionada
-  //       if (best.numeroFactura) {
-  //         this.svc.getSaldoFactura(best.numeroFactura, {
-  //           excluirPagosAnulados: true,
-  //           excluirMovimientosAnulados: true,
-  //         }).subscribe({
-  //           // dentro del .subscribe() de getSaldoFactura(...)
-  //           // Dentro del subscribe de getSaldoFactura(...)
-  //           next: (r) => {
-  //             if ((r?.type ?? '').toString().toLowerCase() === 'success' && r.data) {
-  //               this.totalHaberFactura = Number(r.data.totalHaber ?? 0);
-  //               this.saldoFacturaPendiente = Number(r.data.saldo ?? 0);
-
-  //               // actualiza las filas ya cargadas en la grilla
-  //               this.syncPagoRowsConSaldo();
-  //             } else {
-  //               console.warn('No se pudo obtener el saldo de la factura:', r?.message);
-  //             }
-  //           },
-
-
-  //           error: (e) => {
-  //             console.warn('Error consultando saldo de factura:', e?.message || e);
-  //           }
-  //         });
-  //       }
-
-  //       if (this.idNota && this.idNota > 0) this.cargarFacturaPorId(this.idNota);
-  //       else this.errorFactura = 'No se pudo determinar el ID de la factura.';
-  //     },
-  //     error: (e) => {
-  //       this.buscandoFactura = false;
-  //       this.errorFactura = e?.message ?? 'Error consultando la factura.';
-  //     }
-  //   });
-  // }
   onEnterFactura(): void {
     const entrada = (this.encabezado.factura ?? '').trim();
     if (!this.cajaAsignada) {
@@ -915,7 +845,7 @@ export class NotaCreditoComponent implements OnInit {
     this.errorFactura = null;
     this.buscandoFactura = true;
 
-    // PASO 1: Validar con el nuevo endpoint PRIMERO
+    // 1) Validar con el nuevo endpoint
     this.svc.validarFacturaParaNC(entrada).subscribe({
       next: (validacion) => {
         if (!validacion.success || !validacion.data) {
@@ -924,18 +854,18 @@ export class NotaCreditoComponent implements OnInit {
           return;
         }
 
-        // PASO 2: Detectar si es factura de saldo
+        // 2) Detectar si es factura de saldo
         this.esFacturaDeSaldo = !validacion.data.existeEnNota;
         this.datosFacturaValidada = validacion.data;
 
-        // PASO 3: Si es factura de saldo, cargar productos manualmente
+        // 3) Si es factura de saldo, cargar manualmente
         if (this.esFacturaDeSaldo) {
           this.mostrarMensajeFacturaSaldo(validacion.data);
           this.cargarFacturaSaldo(validacion.data);
-          return; // ← NO continuar con la búsqueda normal
+          return; // NO continuar con la búsqueda normal
         }
 
-        // ✅ PASO 4: Si NO es factura de saldo, USAR TU LÓGICA ORIGINAL
+        // 4) Si NO es factura de saldo, usar la lógica original
         this.svc.buscarPorNumeroLike(entrada, true, 1, 20).subscribe({
           next: (resp: ApiResponse<PaginationResponse<FacturaListResponse>>) => {
             this.buscandoFactura = false;
@@ -997,189 +927,84 @@ export class NotaCreditoComponent implements OnInit {
     });
   }
 
-private mostrarMensajeFacturaSaldo(datos: any): void {
-  this.dialog.open(CustomMessageBoxComponent, {
-    width: '500px',
-    data: {
-      title: '⚠️ Factura de Saldo Detectada',
-      message: `
-        Esta factura no existe en el sistema de facturas,<br>
-        pero tiene saldo pendiente en Estado de Cuenta.<br><br>
-        
-        <strong>Número:</strong> ${datos.numeroFactura}<br>
-        <strong>Cliente:</strong> ${datos.nombreCliente}<br>
-        <strong>Saldo pendiente:</strong> $${datos.saldoPendiente.toFixed(2)}<br>
-        <strong>Origen:</strong> ${datos.origenDatos}<br><br>
-        
-        <em>Podrás agregar productos manualmente para la devolución.</em>
-      `,
-      type: 'warning',
-      confirmText: 'Continuar',
-      showCancel: false
-    }
-  });
-}
-
-private cargarFacturaSaldo(datos: any): void {
-  this.clientesCodigo = datos.clienteCodigo;
-  this.encabezado.cliente = datos.nombreCliente;
-  this.encabezado.factura = datos.numeroFactura;
-  this.facturaFijada = true;
-
-  this.totalHaberFactura = datos.totalPagado;
-  this.saldoFacturaPendiente = datos.saldoPendiente;
-  
-  // ✅ Extraer sucursal2 y caja2 de la factura
-  const digits = (datos.numeroFactura ?? '').replace(/\D/g, '');
-  if (digits.length >= 6) {
-    this.encabezado.sucursal2 = digits.slice(0, 3);
-    this.encabezado.caja2 = digits.slice(3, 6);
+  private mostrarMensajeFacturaSaldo(datos: any): void {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '500px',
+      data: {
+        title: '⚠️ Factura de Saldo Detectada',
+        message: `
+          Esta factura no existe en el sistema de facturas,<br>
+          pero tiene saldo pendiente en Estado de Cuenta.<br><br>
+          
+          <strong>Número:</strong> ${datos.numeroFactura}<br>
+          <strong>Cliente:</strong> ${datos.nombreCliente}<br>
+          <strong>Saldo pendiente:</strong> $${datos.saldoPendiente.toFixed(2)}<br>
+          <strong>Origen:</strong> ${datos.origenDatos}<br><br>
+          
+          <em>Podrás agregar productos manualmente para la devolución.</em>
+        `,
+        type: 'warning',
+        confirmText: 'Continuar',
+        showCancel: false
+      }
+    });
   }
 
-  // Cargar datos completos del cliente (RUC y Dirección)
-  this.cargarDatosClienteCompleto(datos.clienteCodigo);
+  private cargarFacturaSaldo(datos: any): void {
+    this.clientesCodigo = datos.clienteCodigo;
+    this.encabezado.cliente = datos.nombreCliente;
+    this.encabezado.factura = datos.numeroFactura;
+    this.facturaFijada = true;
 
-  this.detalleRows = [
-    { 
-      codigo: '', 
-      descripcion: '', 
-      cantidad: 0, 
-      pvp: 0, 
-      iva: 0,
-      ivaPct: 0,
-      valorDev: 0, 
-      cantidadd: 0,
-      ivaDev: 0,
-      porMonto: false 
+    this.totalHaberFactura = datos.totalPagado;
+    this.saldoFacturaPendiente = datos.saldoPendiente;
+
+    // sucursal2 y caja2 de la factura
+    const digits = (datos.numeroFactura ?? '').replace(/\D/g, '');
+    if (digits.length >= 6) {
+      this.encabezado.sucursal2 = digits.slice(0, 3);
+      this.encabezado.caja2 = digits.slice(3, 6);
     }
-  ];
 
-  this.cargarProductosParaNC();
-  this.buscandoFactura = false;
-  this.recalcular();
-}
-private cargarDatosClienteCompleto(clienteCodigo: number): void {
+    // Cargar datos completos del cliente (RUC y Dirección)
+    this.cargarDatosClienteCompleto(datos.clienteCodigo);
 
-  this.clienteService.getClienteById(clienteCodigo).subscribe({
-    next: (cliente) => {
-      if (cliente) {
-        this.encabezado.ruc = cliente.ruc || cliente.ruc || '';
-        this.encabezado.direccion = cliente.dircli || cliente.dircli || '';
+    this.detalleRows = [
+      {
+        codigo: '',
+        descripcion: '',
+        cantidad: 0,
+        pvp: 0,
+        iva: 0,
+        ivaPct: 0,
+        valorDev: 0,
+        cantidadd: 0,
+        ivaDev: 0,
+        porMonto: false
       }
-    },
-    error: (e) => {
-      console.warn('No se pudieron cargar datos del cliente:', e);
-      // Valores por defecto
-      this.encabezado.ruc = '';
-      this.encabezado.direccion = '';
-    }
-  });
-}
-private buscarFacturaNormal(entrada: string, datosValidacion: any): void {
-  this.svc.buscarPorNumeroLike(entrada, true, 1, 20).subscribe({
-    next: (resp: ApiResponse<PaginationResponse<FacturaListResponse>>) => {
-      this.buscandoFactura = false;
-      if (resp.type !== 'Success' || !resp.data?.items?.length) {
-        this.errorFactura = resp.message || 'No se encontraron facturas.';
-        return;
-      }
+    ];
 
-      const sufijo = this.extraerSufijo(entrada);
-      const candidatos = resp.data.items.filter(i => i.numeroFactura?.endsWith(sufijo));
-      const lista = (candidatos.length ? candidatos : resp.data.items)
-        .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-
-      const best = lista[0];
-      this.idNota = best.idNota;
-      this.clientesCodigo = best.idCliente;
-
-      if (best.numeroFactura) this.fijarFactura(best.numeroFactura);
-      else this.facturaFijada = true;
-
-      this.encabezado.cliente = (best as any).cliente ?? this.encabezado.cliente;
-      this.encabezado.ruc = (best as any).rucCliente ?? this.encabezado.ruc;
-      this.encabezado.direccion = (best as any).dirCliente ?? this.encabezado.direccion;
-
-      if (best.numeroFactura) {
-        this.svc.getSaldoFactura(best.numeroFactura, {
-          excluirPagosAnulados: true,
-          excluirMovimientosAnulados: true,
-        }).subscribe({
-          next: (r) => {
-            if ((r?.type ?? '').toString().toLowerCase() === 'success' && r.data) {
-              this.totalHaberFactura = Number(r.data.totalHaber ?? 0);
-              this.saldoFacturaPendiente = Number(r.data.saldo ?? 0);
-              this.syncPagoRowsConSaldo();
-            }
-          },
-          error: (e) => {
-            console.warn('Error consultando saldo de factura:', e?.message || e);
-          }
-        });
-      }
-
-      if (this.idNota && this.idNota > 0) this.cargarFacturaPorId(this.idNota);
-      else this.errorFactura = 'No se pudo determinar el ID de la factura.';
-    },
-    error: (e) => {
-      this.buscandoFactura = false;
-      this.errorFactura = e?.message ?? 'Error consultando la factura.';
-    }
-  });
-}
-private cargarProductosParaNC(): void {
-  this.isLoadingProductos = true;
-  
-  this.facturacionService.getProductosCodproFijos().pipe(
-    finalize(() => {
-      this.isLoadingProductos = false;
-      this.productosLoaded = true;
-    })
-  ).subscribe({
-    next: data => {
-      this.productos = data ?? [];
-    },
-    error: err => {
-      this.mostrarAlerta('Error al cargar productos', 'error');
-    }
-  });
-}
-onProductoSelectedNC(codpro: string): void {
-  const p = this.productos.find(x => (x.codpro ?? '').toString() === codpro);
-  if (!p) return;
-
-  const yaExiste = this.detalleRows.some(r => r.codigo === p.codpro);
-  if (yaExiste) {
-    this.mostrarAlerta(`El producto ${p.codpro} ya fue agregado.`, 'info');
-    return;
+    this.cargarProductosParaNC();
+    this.buscandoFactura = false;
+    this.recalcular();
   }
 
-  const ivaPorc = 15;
-  const precio = Number(p.prevensiniva || p.pvp || 0);
-
-  const nuevaFila: Detalle = {
-    codigo: p.codpro,
-    descripcion: (p.despro ?? '').toUpperCase(),
-    cantidad: 1,
-    pvp: precio,
-    iva: (precio * ivaPorc) / 100,
-    ivaPct: ivaPorc,
-    cantidadd: 0,
-    valorDev: 0,
-    ivaDev: 0,
-    porMonto: false
-  };
-
-  if (this.detalleRows.length === 1 && 
-      !this.detalleRows[0].codigo && 
-      !this.detalleRows[0].descripcion) {
-    this.detalleRows = [nuevaFila];
-  } else {
-    this.detalleRows = [...this.detalleRows, nuevaFila];
+  private cargarDatosClienteCompleto(clienteCodigo: number): void {
+    this.clienteService.getClienteById(clienteCodigo).subscribe({
+      next: (cliente: any) => {
+        if (cliente) {
+          this.encabezado.ruc = cliente.ruc || '';
+          this.encabezado.direccion = cliente.dircli || '';
+        }
+      },
+      error: (e) => {
+        console.warn('No se pudieron cargar datos del cliente:', e);
+        this.encabezado.ruc = '';
+        this.encabezado.direccion = '';
+      }
+    });
   }
 
-  this.recalcular();
-}
   private cargarFacturaPorId(idNota: number): void {
     this.svc.getFacturaPorIdNota(idNota).subscribe({
       next: (resp) => {
@@ -1289,7 +1114,7 @@ onProductoSelectedNC(codpro: string): void {
     const haberBack = this.totalHaberFactura;
     const saldoBack = this.saldoFacturaPendiente;
 
-    const pagoSugerido = this.getMaxPermitidoPago(); // ← respeta saldo
+    const pagoSugerido = this.getMaxPermitidoPago(); // respeta saldo
 
     if (idx >= 0) {
       const actual = this.pagoRows[idx];
@@ -1306,7 +1131,6 @@ onProductoSelectedNC(codpro: string): void {
     }
     this.recalcular();
   }
-
 
   onFormaPagoSelected(e: MatAutocompleteSelectedEvent) {
     const fp = e.option.value as FormaPagoResponse;
@@ -1344,13 +1168,12 @@ onProductoSelectedNC(codpro: string): void {
   }
 
   private getDebeVisual(): number {
-    //SOLO si es factura de saldo, usar el total original guardado
-
+    // SOLO si es factura de saldo, usar el total original guardado
     if (this.esFacturaDeSaldo && this.totalFacturaOriginalSaldo > 0) {
       return this.totalFacturaOriginalSaldo;
     }
-  
-    // Lógica normal (sin cambios)
+
+    // Lógica normal
     return this.totales.totalFacturaConIva || 0;
   }
 
@@ -1479,6 +1302,7 @@ onProductoSelectedNC(codpro: string): void {
       formasPago
     };
   }
+
   private syncPagoRowsConSaldo(): void {
     if (!Array.isArray(this.pagoRows)) return;
 
@@ -1516,11 +1340,9 @@ onProductoSelectedNC(codpro: string): void {
   cajaAsignada = false;
   cargarAutorizacion(): void {
     const id = this.usuarioActual?.id_autorizacion_caja;
-    // valor por defecto
     this.cajaAsignada = false;
 
     if (id == null) {
-      // limpia visualmente sucursal/caja si no hay autorización
       this.encabezado = {
         ...this.encabezado,
         sucursal: '',
@@ -1546,7 +1368,6 @@ onProductoSelectedNC(codpro: string): void {
           caja: caj,
         };
 
-        // ✅ se considera “asignada” si hay caja y número de establecimiento válidos
         this.cajaAsignada = !!(suc && caj);
       },
       error: (err) => {
@@ -1557,8 +1378,63 @@ onProductoSelectedNC(codpro: string): void {
     });
   }
 
-    filtrarProductos(event: any): void {
-    const texto = event.target.value.toLowerCase();
+  private cargarProductosParaNC(): void {
+    this.isLoadingProductos = true;
+
+    this.facturacionService.getProductosCodproFijos().pipe(
+      finalize(() => {
+        this.isLoadingProductos = false;
+        this.productosLoaded = true;
+      })
+    ).subscribe({
+      next: data => {
+        this.productos = data ?? [];
+      },
+      error: () => {
+        this.mostrarAlerta('Error al cargar productos', 'error');
+      }
+    });
+  }
+
+  onProductoSelectedNC(codpro: string): void {
+    const p = this.productos.find(x => (x.codpro ?? '').toString() === codpro);
+    if (!p) return;
+
+    const yaExiste = this.detalleRows.some(r => r.codigo === p.codpro);
+    if (yaExiste) {
+      this.mostrarAlerta(`El producto ${p.codpro} ya fue agregado.`, 'info');
+      return;
+    }
+
+    const ivaPorc = 15;
+    const precio = Number(p.prevensiniva || p.pvp || 0);
+
+    const nuevaFila: Detalle = {
+      codigo: p.codpro,
+      descripcion: (p.despro ?? '').toUpperCase(),
+      cantidad: 1,
+      pvp: precio,
+      iva: (precio * ivaPorc) / 100,
+      ivaPct: ivaPorc,
+      cantidadd: 0,
+      valorDev: 0,
+      ivaDev: 0,
+      porMonto: false
+    };
+
+    if (this.detalleRows.length === 1 &&
+      !this.detalleRows[0].codigo &&
+      !this.detalleRows[0].descripcion) {
+      this.detalleRows = [nuevaFila];
+    } else {
+      this.detalleRows = [...this.detalleRows, nuevaFila];
+    }
+
+    this.recalcular();
+  }
+
+  filtrarProductos(event: any): void {
+    const texto = (event.target.value || '').toLowerCase();
     this.productosFiltrados = this.productos.filter(p =>
       (p.codpro ?? '').toLowerCase().includes(texto) ||
       (p.despro ?? '').toLowerCase().includes(texto)
