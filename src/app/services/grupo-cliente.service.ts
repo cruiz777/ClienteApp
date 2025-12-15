@@ -8,7 +8,7 @@ import { ApiResponse } from '../interfaces/responses/api-response'; // Asegúrat
 
 @Injectable({ providedIn: 'root' })
 export class GrupoClienteService {
-  private readonly apiUrl = `${environment.inventoryUrl}/GrupoEmpresa`;
+  private readonly apiUrl = `${environment.clientsUrl}/GrupoEmpresa`;
 
   constructor(private http: HttpClient) {}
 
