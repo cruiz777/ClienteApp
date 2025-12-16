@@ -447,3 +447,15 @@
   height: 35px;
 }
 .btn-tomate:hover { background: #686fcd; border-color: #6291e8; }
+
+/* para los mensajes*/
+.snackbar-error {
+  background: #d32f2f;   /* rojo Material */
+  color: #ffffff;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+.snackbar-error .mat-simple-snackbar-action {
+  color: #ffebee;        /* color del botón "Cerrar" */
+}

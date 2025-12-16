@@ -12,7 +12,7 @@ import {
   AllCommunityModule
 } from 'ag-grid-community';
 import { MatDialog } from '@angular/material/dialog';
-
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AsientosContablesService } from 'src/app/services/asientos-contables.service';
 import { ListadoAsientoContableResponse } from 'src/app/interfaces/responses/asientos-contables-response';
 import { AsientosContablesFormComponent } from '../asientos-contables-form/asientos-contables-form.component';
@@ -32,7 +32,7 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 @Component({
   selector: 'app-asientos-contables-ag',
   standalone: true,
-  imports: [CommonModule, FormsModule, AgGridAngular],
+  imports: [CommonModule, FormsModule, AgGridAngular, MatSnackBarModule],
   templateUrl: './asientos-contables-list.component.html',
   styleUrls: ['./asientos-contables-list.component.css']
 })
@@ -63,6 +63,7 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
   private gridApi!: GridApi<ListadoAsientoContableResponse>;
 
   columnDefs: ColDef<ListadoAsientoContableResponse>[] = [
+    { headerName: 'Modulo', field: 'modulo', width: 100, sortable: true, filter: true, hide: true },
     { headerName: 'Código', field: 'idCabMaestro', width: 160, sortable: true, filter: true, hide: true },
     { headerName: 'Empresa', field: 'empresa', width: 160, sortable: true, filter: true, hide: true },
 
@@ -147,7 +148,8 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
   constructor(
     private asientosService: AsientosContablesService,
     private dialog: MatDialog,
-    private usuarioService: UsuarioService    // ⬅️ nuevo
+    private usuarioService: UsuarioService,   // ⬅nuevo usuario
+    private snackBar: MatSnackBar              // ⬅nuevo nesajes
   ) {}
 
   ngOnInit(): void {
@@ -242,6 +244,21 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
     if (!id || id <= 0) {
       console.warn('No se encontró idCabMaestro para la fila:', row);
       return;
+    }
+
+    const modulo = Number((row as any).modulo ?? 0);
+    if (modulo === 1) {
+       this.snackBar.open(
+      'No se puede editar, Corresponde a una factura de proveedor.',
+      'Cerrar',
+      {
+        duration: 4000,
+        horizontalPosition: 'right',
+        verticalPosition: 'top',
+        panelClass: ['snackbar-error']   // clase de estilo personalizada
+      }
+    );
+    return;
     }
 
     this.abrirEditar(id);

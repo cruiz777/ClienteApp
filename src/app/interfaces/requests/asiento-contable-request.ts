@@ -66,6 +66,9 @@ export interface DetalleAsientoRequest {
   estadoIngreso: boolean;
   autorizacionRelacionado:string;
   fechaCadRelacionado:string; // ISO string
+  idPorIva?: number | null;
+  porcentaje?: number | null;
+
 }
 
 /** Opcional: fábrica de objeto con valores por defecto válidos */
@@ -137,6 +140,8 @@ export function createEmptyAsientoContableRequest(): AsientoContableRequest {
         estadoIngreso: true,
         autorizacionRelacionado:'',
         fechaCadRelacionado:'', // ISO string
+        idPorIva: null,
+        porcentaje: null,
       },
     ],
   };

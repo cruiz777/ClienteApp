@@ -1039,6 +1039,10 @@ export class AsientosContablesFormComponent implements OnInit {
           fechacierre: d.fechacierre || '',
           autorizacionRelacionado: '',
           fechaCadRelacionado: '',
+          // PORCENTAJE Siempre enviar null en estos campos al crear
+          idPorIva: null,
+          porcentaje: null,
+
         } as DetalleAsientoResponse;
       });
 
@@ -1056,7 +1060,12 @@ export class AsientosContablesFormComponent implements OnInit {
       numdoc: esNuevo ? 0 : rawForm.numdoc ?? 0,
       totdebe: this.totDebe(),
       tothaber: this.totHaber(),
-      detalles: this.rowData(),
+      //detalles: this.rowData(), ESTABA ANTES AHORA ESTA CON PORCENTAJE NULL
+      detalles: (this.rowData() ?? []).map((d) => ({
+        ...d,
+        idPorIva: null,
+        porcentaje: null,
+      }) as DetalleAsientoResponse),
     };
 
     this.saving.set(true);
@@ -1298,6 +1307,10 @@ export class AsientosContablesFormComponent implements OnInit {
     const idZona = Number(idZonaCtrl?.value || 0);
     const idTipoAsiento = Number(idTipoAsientoCtrl?.value || 0);
 
+    const beneficiarioCtrl  = this.form.get('beneficiario');
+    const conceptoCtrl      = this.form.get('observacion'); //campo "Concepto" en el formulario
+
+
     const mensajes: string[] = [];
     if (idZona <= 0) {
       mensajes.push('Debe seleccionar la Zona.');
@@ -1306,6 +1319,18 @@ export class AsientosContablesFormComponent implements OnInit {
     if (!idTipoAsiento || idTipoAsiento <= 0) {
       mensajes.push('Debe seleccionar el Tipo de Asiento.');
       idTipoAsientoCtrl?.markAsTouched();
+    }
+
+    // 🔹 NUEVO: validar Beneficiario
+    if (!beneficiarioCtrl?.value || beneficiarioCtrl.invalid) {
+      mensajes.push('Debe seleccionar el Beneficiario.');
+      beneficiarioCtrl?.markAsTouched();
+    }
+
+    // 🔹 NUEVO: validar Concepto (observacion)
+    if (!conceptoCtrl?.value || conceptoCtrl.invalid) {
+      mensajes.push('Debe ingresar el Concepto.');
+      conceptoCtrl?.markAsTouched();
     }
 
     if (mensajes.length > 0) {
@@ -1374,6 +1399,8 @@ export class AsientosContablesFormComponent implements OnInit {
       estadoIngreso: true,
       autorizacionRelacionado: '',
       fechaCadRelacionado: '',
+      idPorIva: null,  //AÑADIDO PORCENTAJE IVA AQUI SIEMPRE VA NULL
+      porcentaje: null,
     };
 
     this.rowData.set([...(items ?? []), nueva]);
