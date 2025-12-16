@@ -6,6 +6,7 @@ import { environment } from 'src/environments/environment';
 import { ListadoAsientoContableResponse } from '../interfaces/responses/asientos-contables-response';
 import { AsientoContableResponse,} from 'src/app/interfaces/responses/asiento-contable-response';
 import { AsientoImpresion } from 'src/app/interfaces/responses/asiento-impresion.model';
+import { ValidarComprobanteDetalleResponse } from '../interfaces/responses/validar-comprobante-detalle-response';
 
 export interface ApiResponse<T> {
   data: T;
@@ -279,6 +280,26 @@ private mapItem = (x: any): ListadoAsientoContableResponse => ({
     );
   }
 /// para editar
+
+///buscar comprobante
+validarComprobanteDetalle(
+    idEmpresa: number,
+    idCodContable: number,
+    noComprobante: string
+  ): Observable<ApiResponse<ValidarComprobanteDetalleResponse>> {
+
+    const params = new HttpParams()
+      .set('idEmpresa', String(idEmpresa))
+      .set('idCodContable', String(idCodContable))
+      .set('noComprobante', (noComprobante ?? '').trim());
+
+    return this.http.get<ApiResponse<ValidarComprobanteDetalleResponse>>(
+      `${this.baseUrl}/validar-comprobante-detalle`,
+      { params }
+    );
+  }
+
+////
 
 /** ===== helpers ===== */
   private dateOnly(iso: string | null | undefined): string | null {

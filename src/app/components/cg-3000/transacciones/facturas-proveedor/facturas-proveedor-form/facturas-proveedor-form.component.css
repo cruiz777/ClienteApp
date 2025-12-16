@@ -750,3 +750,157 @@ label .required {
   box-shadow: 0 0 0 1px #1e88e5;
 }
 
+/* para imagenes en  botones*/
+.btn-icon-xs {
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  border-radius: 3px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/*boton*/
+.acciones-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Botón pequeño: se reduce el CONTENEDOR, no el ícono */
+.acciones-cell .btn-xs {
+  padding: 0 !important;        /* sin relleno alrededor */
+  margin: 0;
+  width: 20px !important;       /* ancho del botón */
+  height: 5px !important;      /* alto del botón */
+  min-width: 20px !important;
+  min-height: 20px !important;
+  border-radius: 3px;
+  line-height: 20px !important; /* evita que el texto/imagen lo estire */
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  background-color: transparent; /* si no quieres tanto fondo */
+  border: 1px solid #ddd;        /* opcional: borde fino */
+  font-size: 0;                  /* para que ningún texto influya en el alto */
+}
+
+/* Opcional: efecto hover */
+.acciones-cell .btn-xs:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* para los campos concepto*/
+/* ✅ Esto hace que el bloque ocupe TODAS las columnas del grid padre */
+
+/* El bloque ocupa todo el ancho del grid padre */
+.grid-4-fechas{
+  grid-column: 1 / -1;
+  width: 100%;
+  display: grid;
+
+  /* ✅ Aquí está el truco: la 4ta columna (Concepto) es más grande */
+  grid-template-columns:
+    minmax(180px, 1fr)   /* Fecha Caduca */
+    minmax(140px, 0.7fr) /* Plazo */
+    minmax(180px, 1.2fr)   /* Fecha Vencimiento */
+    minmax(360px, 2.2fr) /* Concepto (más ancho) */;
+
+  gap: 12px;
+  align-items: end;
+}
+
+.grid-4-fechas .form-group,
+.grid-4-fechas .control{
+  min-width: 0;
+}
+
+/* Concepto en 1 línea tipo input (si quieres que sea más alto, sube height) */
+.control-1line{
+  height: 38px;
+  min-height: 38px;
+  resize: none;
+  overflow: hidden;
+}
+
+/* ✅ Ubicar la fila 2 debajo de las 3 primeras columnas */
+.rel-col-1{ grid-column: 1; }
+.rel-col-2{ grid-column: 2; }
+.rel-col-3{ grid-column: 3; }
+
+/* Responsive */
+@media (max-width: 1100px){
+  .grid-4-fechas{
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+  .rel-col-1, .rel-col-2, .rel-col-3{ grid-column: auto; }
+}
+@media (max-width: 650px){
+  .grid-4-fechas{ grid-template-columns: 1fr; }
+}
+
+.grid-3-relacionados{
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  align-items: end;
+}
+
+/*controles campos relacionados*/
+
+/* ✅ Fila completa debajo (como los cuadros naranjas) */
+.grid-3-relacionados{
+  grid-column: 1 / -1;            /* 👈 ocupa TODO el ancho de la grilla principal */
+  display: grid;
+  grid-template-columns: 1.2fr 1.2fr 220px;  /* Doc y Aut grandes + Fecha más corta */
+  gap: 10px;
+  align-items: end;
+  margin-top: 6px;
+}
+
+/* Ajustes finos para que se vea “compacto” como tu cabecera */
+.grid-3-relacionados .form-group{
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 1100px){
+  .grid-3-relacionados{
+    grid-template-columns: 1fr 1fr;
+  }
+  .grid-3-relacionados .form-group:last-child{
+    grid-column: 1 / -1; /* la fecha baja y ocupa toda la fila */
+  }
+}
+
+@media (max-width: 700px){
+  .grid-3-relacionados{
+    grid-template-columns: 1fr; /* todo en una columna en móvil */
+  }
+}
+
+
+/* VERIFICAR CAMBIOS */
+
+/* ===== Toolbar (cabecera azul) más baja ===== */
+.toolbar.sticky-header{
+  min-height: 48px !important;
+  height: 48px !important;
+  padding: 6px 12px !important;
+  display: flex;
+  align-items: center;
+}
+
+.toolbar .title{
+  font-size: 16px !important;
+  line-height: 18px !important;
+}
+
+.toolbar .actions button{
+  height: 34px !important;
+  padding: 0 12px !important;
+}
