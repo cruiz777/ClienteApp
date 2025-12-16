@@ -28,6 +28,7 @@ import { DocElectronicosComponent } from './facturacion/doc-electronicos/doc-ele
 import { FormaPagoListComponent } from './forma-pago/forma-pago-list.component';
 import { ClasificacionListComponent } from './clasificacion-list/clasificacion-list.component';
 import { DescuentoListComponent } from './descuento/descuento-list/descuento-list.component';
+import { ReporteVentasComponent } from './reporte-ventas/reporte-ventas.component';
 
 const routes: Routes = [
   {
@@ -105,7 +106,9 @@ const routes: Routes = [
 
       },
       { path: 'doc-electronicos', component: DocElectronicosComponent},
-      
+
+      { path: 'reporte-ventas', component: ReporteVentasComponent},
+
       // ✅ Ruta para EDITAR producto (con ID)
       {
         path: 'productossic/:idProducto',

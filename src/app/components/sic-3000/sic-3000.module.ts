@@ -47,6 +47,7 @@ import { CuentaxcobrarComponent } from './exploradores/cuentaxcobrar/cuentaxcobr
 import { LiquidarAnticipoComponent } from './anticipos/dialogs/liquidar-anticipo-dialog/liquidar-anticipo.component';
 import { DocElectronicosComponent } from './facturacion/doc-electronicos/doc-electronicos.component';
 import { AccionesCellRendererComponent } from './facturacion/doc-electronicos/acciones-cell-renderer.component';
+import { ReporteVentasComponent } from './reporte-ventas/reporte-ventas.component';
 
 @NgModule({
   declarations: [
@@ -61,6 +62,7 @@ import { AccionesCellRendererComponent } from './facturacion/doc-electronicos/ac
     FilePreviewComponent,
     LiquidarAnticipoComponent,
     DocElectronicosComponent,
+    ReporteVentasComponent,
     AccionesCellRendererComponent
     // 👈 OJO: ya NO va EstadocuentaclienteComponent aquí
   ],
