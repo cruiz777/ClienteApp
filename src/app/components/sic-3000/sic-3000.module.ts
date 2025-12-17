@@ -44,6 +44,7 @@ import { CierreAnticiposComponent } from './anticipos/cierre-anticipos/cierre-an
 import { EstadocuentaclienteComponent } from './exploradores/estadocuentacliente/estadocuentacliente.component';
 import { CuentaxcobrarComponent } from './exploradores/cuentaxcobrar/cuentaxcobrar.component';
 import { DocElectronicosComponent } from './facturacion/doc-electronicos/doc-electronicos.component';
+import { ReenvioFacComponent } from './facturacion/reenvio-fac/reenvio-fac.component';
 
 
   @NgModule({
@@ -60,6 +61,7 @@ import { DocElectronicosComponent } from './facturacion/doc-electronicos/doc-ele
       CuentaxcobrarComponent,
       FilePreviewComponent,
       DocElectronicosComponent,
+      ReenvioFacComponent
 
     ],
     imports: [

@@ -24,6 +24,7 @@ import { CierreAnticiposComponent } from './anticipos/cierre-anticipos/cierre-an
 import { EstadocuentaclienteComponent } from './exploradores/estadocuentacliente/estadocuentacliente.component';
 import { CuentaxcobrarComponent } from './exploradores/cuentaxcobrar/cuentaxcobrar.component';
 import { DocElectronicosComponent } from './facturacion/doc-electronicos/doc-electronicos.component';
+import { ReenvioFacComponent } from './facturacion/reenvio-fac/reenvio-fac.component';
 
 const routes: Routes = [
   {
@@ -101,7 +102,7 @@ const routes: Routes = [
 
       },
       { path: 'doc-electronicos', component: DocElectronicosComponent},
-      
+
       // ✅ Ruta para EDITAR producto (con ID)
       {
         path: 'productossic/:idProducto',
@@ -126,7 +127,8 @@ const routes: Routes = [
       { path: 'reporte-anticipos', component: ReporteAnticiposComponent},
       { path: 'cierre-anticipos', component: CierreAnticiposComponent},
       { path: 'exp-estadocuenta', component: EstadocuentaclienteComponent},
-      { path: 'exp-cuentaxcobrar', component: CuentaxcobrarComponent}
+      { path: 'exp-cuentaxcobrar', component: CuentaxcobrarComponent},
+      { path: 'reenvio-fact', component: ReenvioFacComponent}
 
     ]
   }
