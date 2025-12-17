@@ -178,61 +178,20 @@
   }
 }
 /* ===== CAMBIAR/REEMPLAZAR LA TOPBAR ===== */
-/* Elimina estos estilos de .topbar y reemplázalos por: */
-
 .topbar {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end; /* Cambiar a flex-end para alinear botones */
+  align-items: flex-end; /* ← CAMBIO: era center */
   gap: 16px;
-  padding: 0; /* Sin padding especial */
-  background: transparent; /* Sin fondo azul */
-  border: none; /* Sin borde */
-  border-radius: 0;
-  margin-bottom: 10px;
-}
-
-/* ===== AGREGAR TEMA CUSTOM-GRID PARA AG-GRID ===== */
-/* Reemplaza los estilos de .ag-theme-alpine por estos: */
-
-.ag-theme-quartz.custom-grid {
-  --ag-header-height: 36px;
-  --ag-row-height: 32px;
-
-  --ag-background-color: #dde3ee;
-  --ag-foreground-color: #080808;
-
-  --ag-header-background-color: #1d789f;
-  --ag-header-foreground-color: #e5e7eb;
-
-  --ag-odd-row-background-color: #f6f8f9;
-  --ag-row-background-color: #abc3f1; /* Filas pares */
-
-  --ag-row-hover-color: #eaf1c3;
-  --ag-border-color: #afb0ad;
-  --ag-font-size: 12px;
-
-  --ag-selected-row-background-color: #a3c0e8;
-}
-
-.ag-theme-quartz.custom-grid .ag-header {
-  border-bottom: 1px solid #d3dde8;
-}
-
-.ag-theme-quartz.custom-grid .ag-header-cell-label {
-  justify-content: center;
-  font-size: 12px;
-}
-
-.ag-theme-quartz.custom-grid .ag-cell {
-  font-size: 12px;
-}
-
-.ag-theme-quartz.custom-grid .ag-row {
-  border-bottom: 1px solid #edf2f7;
+  padding: 0; /* ← CAMBIO: era 10px 12px */
+  background: transparent; /* ← CAMBIO: era #cfe2f6 */
+  border: none; /* ← CAMBIO: era border: 1px solid #98b7dd */
+  border-radius: 0; /* ← CAMBIO: era 6px */
+  margin-bottom: 10px; /* ← CAMBIO: era 12px */
 }
 
 /* ===== PAGINACIÓN PERSONALIZADA ===== */
+
 :host ::ng-deep .custom-grid .ag-paging-panel {
   padding: 4px 10px;
   gap: 8px;
@@ -265,6 +224,11 @@
   height: 32px;
   font-size: 13px;
   padding: 2px 6px;
+}
+.grid-wrapper {
+  height: calc(100vh - 300px); /* ← era 320px, ajusta según necesites */
+  min-height: 280px;
+  margin-top: 8px; /* ← agregar si no existe */
 }
 
 /* ===== BOTONES DE ACCIÓN EN GRID (si los usas) ===== */

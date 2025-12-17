@@ -1,9 +1,11 @@
+<!-- reenvio-fac.component.html -->
+
 <div class="page-container">
   <div class="contenido-tablas">
 
     <div class="title">Generación Archivos Factura Electrónica</div>
 
-    <!-- Barra superior (similar a la ventana) -->
+    <!-- Barra superior con filtros -->
     <form [formGroup]="filtrosForm" class="topbar">
       <div class="topbar-left">
         <div class="filter-inline">
@@ -16,10 +18,32 @@
           <input type="date" formControlName="hasta" />
         </div>
 
+        <!-- Radio buttons para tipo de documento -->
         <div class="filter-inline radio-inline">
           <label>
-            <input type="radio" formControlName="tipo" value="FACTURAS" />
+            <input type="radio" formControlName="tipo" value="FACTURA" />
             Facturas
+          </label>
+        </div>
+
+        <div class="filter-inline radio-inline">
+          <label>
+            <input type="radio" formControlName="tipo" value="NC" />
+            NC
+          </label>
+        </div>
+
+        <div class="filter-inline radio-inline">
+          <label>
+            <input type="radio" formControlName="tipo" value="ND" />
+            ND
+          </label>
+        </div>
+
+        <div class="filter-inline radio-inline">
+          <label>
+            <input type="radio" formControlName="tipo" value="RETENCION" />
+            Retenciones
           </label>
         </div>
 
@@ -35,13 +59,17 @@
       </div>
 
       <div class="topbar-right">
-        <button type="button" class="btn btn-primary-solid" (click)="buscar()" [disabled]="loading">
+        <button
+          type="button"
+          class="btn btn-primary-solid"
+          (click)="buscar()"
+          [disabled]="loading">
           Buscar
         </button>
       </div>
     </form>
 
-    <!-- Grid -->
+    <!-- Grid con tema custom-grid -->
     <div class="grid-wrapper">
       <ag-grid-angular
         class="ag-theme-alpine ag-grid"
@@ -49,8 +77,10 @@
         [columnDefs]="columnDefs"
         [defaultColDef]="defaultColDef"
         [rowSelection]="'multiple'"
-        [suppressRowClickSelection]="true"
         [animateRows]="true"
+        [pagination]="true"
+        [paginationPageSize]="20"
+        [paginationPageSizeSelector]="[10, 20, 50, 100]"
         [overlayLoadingTemplate]="overlayLoadingTemplate"
         [overlayNoRowsTemplate]="overlayNoRowsTemplate"
         (gridReady)="onGridReady($event)"
@@ -61,11 +91,19 @@
     <!-- Footer botones -->
     <div class="footer-bar">
       <div class="footer-actions">
-        <button type="button" class="btn btn-secondary" (click)="nuevo()" [disabled]="loading">
+        <button
+          type="button"
+          class="btn btn-secondary"
+          (click)="nuevo()"
+          [disabled]="loading">
           Nuevo
         </button>
 
-        <button type="button" class="btn btn-primary-solid" (click)="generarXml()" [disabled]="loading">
+        <button
+          type="button"
+          class="btn btn-primary-solid"
+          (click)="generarXml()"
+          [disabled]="loading">
           Generar XML
         </button>
       </div>
