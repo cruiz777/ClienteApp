@@ -26,6 +26,7 @@ import { RetencionesFormComponent } from '../../retenciones/retenciones-form/ret
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { AsientoContableResponse } from 'src/app/interfaces/responses/asiento-contable-response';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -145,6 +146,10 @@ export class FacturasProveedorComponent implements OnInit {
           <button class="accion-icon accion-icon--pdf" data-action="print" title="Imprimir asiento">
             <img src="assets/icons/icon-imprimir.png" width="18" height="18" alt="PDF" />
           </button>
+          <!--BOTÓN DE DUPLICAR -->
+          <button class="accion-icon accion-icon--copy" data-action="copy" title="Duplicar Factura">
+            <img src="assets/icons/icon-ficha-cliente.png" width="18" height="18" alt="Duplicar" />
+          </button>
           <button class="accion-icon accion-icon--pdf" data-action="ret" title="Genera Ret">
             <img src="assets/icons/retencion.png" width="18" height="18" alt="Retención" />
           </button>
@@ -249,7 +254,11 @@ export class FacturasProveedorComponent implements OnInit {
       this.editarAsiento(evt.data);
       return;
     }
-
+      if (action === 'copy' && evt.data) {
+      const id = Number(evt.data.idCabMaestro || 0);
+      this.crearFacturaEstandar(id);
+      return;
+    }
     if (action === 'print' && evt.data) {
       const idCab = Number(evt.data.idCabMaestro || 0);
       this.imprimirAsiento(idCab);
@@ -538,6 +547,109 @@ export class FacturasProveedorComponent implements OnInit {
     doc.save(`Listado_FacturasProveedor_${fechaStr}.pdf`);
   }
 
+    /**
+   * 🔹 NUEVO MÉTODO: Duplica una factura de proveedor desde una existente
+   * Conserva: Zona, Proveedor, Tipo Comprobante, Sustento Tributario, Estructura del detalle
+   * Limpia: No.Comprobante, Autorización, Fechas, Debe/Haber
+   */
+  crearFacturaEstandar(idCabMaestro: number): void {
+    if (!idCabMaestro || idCabMaestro <= 0) {
+      console.warn('ID de factura inválido');
+      return;
+    }
+
+    this.loading = true;
+
+    // 1️⃣ Obtener la factura completa
+    this.facturasService.getById(idCabMaestro).subscribe({
+      next: (facturaOriginal) => {
+        this.loading = false;
+
+        // 2️⃣ Preparar plantilla (limpia campos editables)
+        const plantilla = this.prepararPlantillaEstandar(facturaOriginal);
+
+        // 3️⃣ Abrir formulario en modo "plantilla"
+        const dialogRef = this.dialog.open(FacturasProveedorFormComponent, {
+          width: '75vw',
+          maxWidth: '95vw',
+          height: '90vh',
+          panelClass: 'asiento-dialog',
+          autoFocus: false,
+          restoreFocus: false,
+          disableClose: true,
+          data: {
+            modo: 'plantilla',              //  Nuevo modo
+            facturaPlantilla: plantilla     //  Datos pre-cargados
+          }
+        });
+
+        dialogRef.afterClosed().subscribe(result => {
+          if (result) {
+            this.obtenerAsientos(); // Recargar listado
+          }
+        });
+      },
+      error: (err) => {
+        this.loading = false;
+        console.error('Error al cargar factura para duplicar:', err);
+        alert('No se pudo cargar la factura. Intente nuevamente.');
+      }
+    });
+  }
+
+  /**
+   * 🔹 NUEVO MÉTODO: Prepara la factura como plantilla
+   * Conserva: Zona, Proveedor, Tipo Comprobante, Sustento Tributario, TODO el detalle
+   * Limpia: No.Comprobante, Autorización, Fechas, Observación, Debe/Haber, Campos Relacionados
+   */
+  private prepararPlantillaEstandar(facturaOriginal: AsientoContableResponse): AsientoContableResponse {
+    const hoy = new Date();
+    const fechaHoy = hoy.toISOString().substring(0, 10); // YYYY-MM-DD
+    const horaHoy = hoy.toISOString(); // ISO completo
+
+    return {
+      ...facturaOriginal,
+
+      // ❌ Campos que se resetean (usuario los editará)
+      IdCabMaestro: 0,                    //  Nueva factura
+      numdoc: 0,                          //  Se auto-generará
+      observacion: '',                    //  Usuario lo ingresará (concepto)
+      fechatransaccion: fechaHoy,         //  Fecha actual (editable)
+      fechaingreso: horaHoy,              //  Fecha/hora actual
+
+      // Campos que se mantienen de la plantilla
+      // idZona, idEmpresa, idUsuario, idTipoAsiento, tipdoc, anio vienen en ...facturaOriginal
+
+      // Detalles/Líneas se copian COMPLETOS PERO con debe/haber en 0
+      detalles: (facturaOriginal.detalles || []).map((detalle, index) => ({
+        ...detalle,
+        IdDetMaestro: 0,                  //  Nueva línea
+        IdCabMaestro: 0,                  //  Se asignará al guardar
+        numlinea: index + 1,              //  Re-numerar
+        fechatransaccion: fechaHoy,       //  Actualizar fecha
+        fechaingreso: horaHoy,            //  Actualizar fecha/hora
+
+        // LIMPIAR debe/haber (usuario los ingresará)
+        debe: 0,                          //  RESETEAR debe
+        haber: 0,                         //  RESETEAR haber
+
+        // LIMPIAR campos que se llenan por factura
+        nocomprobante: '',                //  Se tomará de cabecera
+        autorizacion: '',                 //  Se tomará de cabecera
+        fechacaduca: '',                  //  Se tomará de cabecera
+        fechavencimiento: '',             //  Se tomará de cabecera
+
+        // LIMPIAR campos relacionados (opcional para NC)
+        docurelacionado: '',              //  Limpio (para NC relacionadas)
+        autorizacionRelacionado: '',      //  Limpio
+        fechaCadRelacionado: null as any, //  Limpio
+
+        // Se mantienecuentas, auxiliares, movimientos, etc.
+        beneficiario: detalle.beneficiario || '',
+        comentario: detalle.comentario || '',
+      }))
+    };
+  }
   /* ========== IMPRIMIR ASIENTO ========== */
 
   private imprimirAsiento(idCabMaestro: number): void {

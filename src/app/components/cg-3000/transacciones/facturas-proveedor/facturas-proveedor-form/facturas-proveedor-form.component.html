@@ -2,18 +2,13 @@
   <div class="title">{{ titulo() }}</div>
 
   <div class="actions">
-    <button
-      class="btn-verde"
-      (click)="guardar()"
-      [disabled]="isReadOnly()"
-      [ngClass]="{
-        'btn-verde': modo() === 'nuevo',
-        'btn-tomate': modo() === 'editar'
-      }"
-    >
-      <ng-container *ngIf="modo() === 'nuevo'; else actualizarLbl">Guardar</ng-container>
-      <ng-template #actualizarLbl>Actualizar</ng-template>
-    </button>
+      <button (click)="guardar()" [disabled]="isReadOnly()"
+        [ngClass]="(modo() === 'nuevo' || modo() === 'plantilla') ? 'btn-verde' : 'btn-tomate'">
+        <ng-container *ngIf="modo() === 'nuevo' || modo() === 'plantilla'; else actualizarLbl">
+          Guardar
+        </ng-container>
+        <ng-template #actualizarLbl>Actualizar</ng-template>
+      </button>
     <button class="btn" (click)="cancelar()">Cancelar</button>
   </div>
 </div>
@@ -249,7 +244,7 @@
             placeholder="0"
             min="0"
             [formControl]="plazoCtrl"
-            [readonly]="isReadOnly() || cabeceraBloqueada" 
+            [readonly]="isReadOnly() || cabeceraBloqueada"
           />
         </div>
 
