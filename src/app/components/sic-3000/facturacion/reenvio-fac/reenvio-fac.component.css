@@ -26,20 +26,6 @@
   margin: 8px 0 14px;
   color: #002c6c;
 }
-
-/* Barra superior tipo WinForms */
-.topbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
-  padding: 10px 12px;
-  background: #cfe2f6;
-  border: 1px solid #98b7dd;
-  border-radius: 6px;
-  margin-bottom: 12px;
-}
-
 .topbar-left {
   display: flex;
   align-items: center;
@@ -190,4 +176,148 @@
     width: 100%;
     justify-content: flex-end;
   }
+}
+/* ===== CAMBIAR/REEMPLAZAR LA TOPBAR ===== */
+/* Elimina estos estilos de .topbar y reemplázalos por: */
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end; /* Cambiar a flex-end para alinear botones */
+  gap: 16px;
+  padding: 0; /* Sin padding especial */
+  background: transparent; /* Sin fondo azul */
+  border: none; /* Sin borde */
+  border-radius: 0;
+  margin-bottom: 10px;
+}
+
+/* ===== AGREGAR TEMA CUSTOM-GRID PARA AG-GRID ===== */
+/* Reemplaza los estilos de .ag-theme-alpine por estos: */
+
+.ag-theme-quartz.custom-grid {
+  --ag-header-height: 36px;
+  --ag-row-height: 32px;
+
+  --ag-background-color: #dde3ee;
+  --ag-foreground-color: #080808;
+
+  --ag-header-background-color: #1d789f;
+  --ag-header-foreground-color: #e5e7eb;
+
+  --ag-odd-row-background-color: #f6f8f9;
+  --ag-row-background-color: #abc3f1; /* Filas pares */
+
+  --ag-row-hover-color: #eaf1c3;
+  --ag-border-color: #afb0ad;
+  --ag-font-size: 12px;
+
+  --ag-selected-row-background-color: #a3c0e8;
+}
+
+.ag-theme-quartz.custom-grid .ag-header {
+  border-bottom: 1px solid #d3dde8;
+}
+
+.ag-theme-quartz.custom-grid .ag-header-cell-label {
+  justify-content: center;
+  font-size: 12px;
+}
+
+.ag-theme-quartz.custom-grid .ag-cell {
+  font-size: 12px;
+}
+
+.ag-theme-quartz.custom-grid .ag-row {
+  border-bottom: 1px solid #edf2f7;
+}
+
+/* ===== PAGINACIÓN PERSONALIZADA ===== */
+:host ::ng-deep .custom-grid .ag-paging-panel {
+  padding: 4px 10px;
+  gap: 8px;
+  font-size: 13px;
+}
+
+:host ::ng-deep .custom-grid .ag-paging-button {
+  min-width: 32px;
+  height: 32px;
+  padding: 0;
+  margin: 0 2px;
+  border-radius: 50px;
+  border: 1px solid #b0bec5;
+  background-color: #a3c0e8;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+:host ::ng-deep .custom-grid .ag-paging-button .ag-icon {
+  font-size: 16px;
+}
+
+:host ::ng-deep .custom-grid .ag-paging-button:hover {
+  background-color: #e0f2f1;
+}
+
+:host ::ng-deep .custom-grid .ag-paging-panel .ag-paging-page-size-select {
+  height: 32px;
+  font-size: 13px;
+  padding: 2px 6px;
+}
+
+/* ===== BOTONES DE ACCIÓN EN GRID (si los usas) ===== */
+.acciones-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+  padding: 2px;
+}
+
+.ag-action-btn {
+  background: #ffffff;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 4px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 28px;
+  transition: all 0.2s;
+}
+
+.ag-action-btn:hover:not(.disabled) {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.ag-action-btn:active:not(.disabled) {
+  transform: translateY(0);
+  box-shadow: none;
+}
+
+.ag-action-btn img {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
+.ag-action-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  background-color: #f9fafb;
+}
+
+/* ===== AJUSTAR ALTURA DEL GRID ===== */
+.grid-wrapper {
+  height: calc(100vh - 280px); /* Ajustado para los nuevos filtros */
+  min-height: 280px;
+  margin-top: 8px; /* Agregar margen superior */
 }
