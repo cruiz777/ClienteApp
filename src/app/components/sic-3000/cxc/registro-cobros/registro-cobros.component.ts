@@ -1474,7 +1474,7 @@ export class RegistroCobrosComponent implements OnInit {
       codprePc: codpreClientes,
       idCodContable: idCodContableClientes,
       nocomprobante: numeroPago,
-      docurelacionado: facturas.map(f => f.numero_factura).join(', '),
+      docurelacionado: numeroPago,
       cheque: 0,
       beneficiario: '',
       debe: 0,
