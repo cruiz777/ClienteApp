@@ -42,23 +42,23 @@
           </mat-expansion-panel-header>
 
           <!-- Funcionalidades principales - SIEMPRE VISIBLES -->
-          <a mat-list-item 
+          <a mat-list-item
              [routerLink]="((menuPermisos$ | async)?.fichaCliente?.nuevoCliente) ? '/codbar/ficha-de-cliente/nuevo-cliente' : null"
              [class.disabled]="!((menuPermisos$ | async)?.fichaCliente?.nuevoCliente)"
-             (click)="manejarClick('/codbar/ficha-de-cliente/nuevo-cliente', $event)">            
+             (click)="manejarClick('/codbar/ficha-de-cliente/nuevo-cliente', $event)">
             <span *ngIf="isExpanded" class="menu-text">Nuevo Cliente</span>
             <mat-icon *ngIf="!((menuPermisos$ | async)?.fichaCliente?.nuevoCliente)" class="lock-icon">lock</mat-icon>
           </a>
 
-          <a mat-list-item 
+          <a mat-list-item
              [routerLink]="((menuPermisos$ | async)?.fichaCliente?.listadoClientes) ? '/codbar/ficha-de-cliente/listado-clientes' : null"
              [class.disabled]="!((menuPermisos$ | async)?.fichaCliente?.listadoClientes)"
-             (click)="manejarClick('/codbar/ficha-de-cliente/listado-clientes', $event)">            
+             (click)="manejarClick('/codbar/ficha-de-cliente/listado-clientes', $event)">
             <span *ngIf="isExpanded" class="menu-text">Listado de Clientes</span>
             <mat-icon *ngIf="!((menuPermisos$ | async)?.fichaCliente?.listadoClientes)" class="lock-icon">lock</mat-icon>
           </a>
 
-          <a mat-list-item 
+          <a mat-list-item
              [routerLink]="((menuPermisos$ | async)?.fichaCliente?.consultaVerified) ? '/codbar/ficha-de-cliente/consulta-verified' : null"
              [class.disabled]="!((menuPermisos$ | async)?.fichaCliente?.consultaVerified)"
              (click)="manejarClick('/codbar/ficha-de-cliente/consulta-verified', $event)">
@@ -75,7 +75,7 @@
                 </mat-panel-title>
               </mat-expansion-panel-header>
 
-              <a mat-list-item 
+              <a mat-list-item
                  [routerLink]="((menuPermisos$ | async)?.fichaCliente?.tipoCliente) ? '/codbar/ficha-de-cliente/tipo-cliente' : null"
                  class="sub-menu-item"
                  [class.disabled]="!((menuPermisos$ | async)?.fichaCliente?.tipoCliente)"
@@ -84,7 +84,7 @@
                 <mat-icon *ngIf="!((menuPermisos$ | async)?.fichaCliente?.tipoCliente)" class="lock-icon">lock</mat-icon>
               </a>
 
-              <a mat-list-item 
+              <a mat-list-item
                  [routerLink]="((menuPermisos$ | async)?.fichaCliente?.grupoCliente) ? '/codbar/ficha-de-cliente/grupo-cliente' : null"
                  class="sub-menu-item"
                  [class.disabled]="!((menuPermisos$ | async)?.fichaCliente?.grupoCliente)"
@@ -93,14 +93,14 @@
                 <mat-icon *ngIf="!((menuPermisos$ | async)?.fichaCliente?.grupoCliente)" class="lock-icon">lock</mat-icon>
               </a>
 
-              <a mat-list-item 
+              <!-- <a mat-list-item
                  [routerLink]="((menuPermisos$ | async)?.fichaCliente?.grupoCliente) ? '/codbar/ficha-de-cliente/grupo-cliente' : null"
                  class="sub-menu-item"
                  [class.disabled]="!((menuPermisos$ | async)?.fichaCliente?.grupoCliente)"
                  (click)="manejarClick('/codbar/ficha-de-cliente/grupo-cliente', $event)">
                 <span *ngIf="isExpanded" class="menu-text">Tipo Cuenta</span>
                 <mat-icon *ngIf="!((menuPermisos$ | async)?.fichaCliente?.grupoCliente)" class="lock-icon">lock</mat-icon>
-              </a>
+              </a> -->
 
             </mat-expansion-panel>
           </mat-accordion>
@@ -116,7 +116,7 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item 
+          <a mat-list-item
              [routerLink]="((menuPermisos$ | async)?.transferencia?.trasPrefijo) ? '/codbar/transferencia/tras-prefijo' : null"
              [class.disabled]="!((menuPermisos$ | async)?.transferencia?.trasPrefijo)"
              (click)="manejarClick('/codbar/transferencia/tras-prefijo', $event)">
@@ -124,7 +124,7 @@
             <mat-icon *ngIf="!((menuPermisos$ | async)?.transferencia?.trasPrefijo)" class="lock-icon">lock</mat-icon>
           </a>
 
-          <a mat-list-item 
+          <a mat-list-item
              [routerLink]="((menuPermisos$ | async)?.transferencia?.trasGtin) ? '/codbar/transferencia/tras-gtin' : null"
              [class.disabled]="!((menuPermisos$ | async)?.transferencia?.trasGtin)"
              (click)="manejarClick('/codbar/transferencia/tras-gtin', $event)">
@@ -132,7 +132,7 @@
             <mat-icon *ngIf="!((menuPermisos$ | async)?.transferencia?.trasGtin)" class="lock-icon">lock</mat-icon>
           </a>
 
-          <a mat-list-item 
+          <a mat-list-item
              [routerLink]="((menuPermisos$ | async)?.transferencia?.eliminarPrefijo) ? '/codbar/transferencia/eliminar-prefijo' : null"
              [class.disabled]="!((menuPermisos$ | async)?.transferencia?.eliminarPrefijo)"
              (click)="manejarClick('/codbar/transferencia/eliminar-prefijo', $event)">
@@ -150,7 +150,7 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item 
+          <a mat-list-item
              [routerLink]="((menuPermisos$ | async)?.validacion?.validacionSri) ? '/codbar/validacion/validacionsri' : null"
              [class.disabled]="!((menuPermisos$ | async)?.validacion?.validacionSri)"
              (click)="manejarClick('/codbar/validacion/validacionsri', $event)">
@@ -158,7 +158,7 @@
             <mat-icon *ngIf="!((menuPermisos$ | async)?.validacion?.validacionSri)" class="lock-icon">lock</mat-icon>
           </a>
 
-          <a mat-list-item 
+          <a mat-list-item
              [routerLink]="((menuPermisos$ | async)?.validacion?.validacionLicenses) ? '/codbar/validacion/validacion-licenses' : null"
              [class.disabled]="!((menuPermisos$ | async)?.validacion?.validacionLicenses)"
              (click)="manejarClick('/codbar/validacion/validacion-licenses', $event)">
@@ -166,7 +166,7 @@
             <mat-icon *ngIf="!((menuPermisos$ | async)?.validacion?.validacionLicenses)" class="lock-icon">lock</mat-icon>
           </a>
 
-          <a mat-list-item 
+          <a mat-list-item
              [routerLink]="((menuPermisos$ | async)?.validacion?.validacionProductos) ? '/codbar/validacion/validacion-productos' : null"
              [class.disabled]="!((menuPermisos$ | async)?.validacion?.validacionProductos)"
              (click)="manejarClick('/codbar/validacion/validacion-productos', $event)">
@@ -184,7 +184,7 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item 
+          <a mat-list-item
              [routerLink]="((menuPermisos$ | async)?.reportes?.gerencia) ? '/codbar/reportes/gerencia' : null"
              [class.disabled]="!((menuPermisos$ | async)?.reportes?.gerencia)"
              (click)="manejarClick('/codbar/reportes/gerencia', $event)">
@@ -192,7 +192,7 @@
             <mat-icon *ngIf="!((menuPermisos$ | async)?.reportes?.gerencia)" class="lock-icon">lock</mat-icon>
           </a>
 
-          <a mat-list-item 
+          <a mat-list-item
              [routerLink]="((menuPermisos$ | async)?.reportes?.exploradorCliente) ? '/codbar/reportes/explorador-cliente' : null"
              [class.disabled]="!((menuPermisos$ | async)?.reportes?.exploradorCliente)"
              (click)="manejarClick('/codbar/reportes/explorador-cliente', $event)">
@@ -210,7 +210,7 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item 
+          <a mat-list-item
              [routerLink]="((menuPermisos$ | async)?.configuracion?.localizacionEstablecimiento) ? '/codbar/configuracion/localizacion-establecimiento' : null"
              [class.disabled]="!((menuPermisos$ | async)?.configuracion?.localizacionEstablecimiento)"
              (click)="manejarClick('/codbar/configuracion/localizacion-establecimiento', $event)">
@@ -218,7 +218,7 @@
             <mat-icon *ngIf="!((menuPermisos$ | async)?.configuracion?.localizacionEstablecimiento)" class="lock-icon">lock</mat-icon>
           </a>
 
-          <a mat-list-item 
+          <a mat-list-item
              [routerLink]="((menuPermisos$ | async)?.configuracion?.grupoProducto) ? '/codbar/configuracion/grupo-producto' : null"
              [class.disabled]="!((menuPermisos$ | async)?.configuracion?.grupoProducto)"
              (click)="manejarClick('/codbar/configuracion/grupo-producto', $event)">
@@ -226,7 +226,7 @@
             <mat-icon *ngIf="!((menuPermisos$ | async)?.configuracion?.grupoProducto)" class="lock-icon">lock</mat-icon>
           </a>
 
-          <a mat-list-item 
+          <a mat-list-item
              [routerLink]="((menuPermisos$ | async)?.configuracion?.tipoPrefijo) ? '/codbar/configuracion/tipo-prefijo' : null"
              [class.disabled]="!((menuPermisos$ | async)?.configuracion?.tipoPrefijo)"
              (click)="manejarClick('/codbar/configuracion/tipo-prefijo', $event)">

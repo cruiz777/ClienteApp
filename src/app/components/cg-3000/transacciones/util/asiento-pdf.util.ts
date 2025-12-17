@@ -125,12 +125,12 @@ export function generarPdfAsiento(
     columnStyles: {
       0: { cellWidth: 10 },
       1: { cellWidth: 18 },
-      2: { cellWidth: 70 },
+      2: { cellWidth: 60 },
       3: { cellWidth: 20 },
       4: { cellWidth: 12 },
       5: { cellWidth: 28 },
-      6: { cellWidth: 16, halign: 'right' },
-      7: { cellWidth: 16, halign: 'right' },
+      6: { cellWidth: 22, halign: 'right' },
+      7: { cellWidth: 22, halign: 'right' },
     },
     foot: [[
       '',
@@ -304,9 +304,23 @@ function formatFechaHora(iso: string | null | undefined): string {
   return `${dd}/${mm}/${yyyy} ${hh}:${mi}:${ss}`;
 }
 
+/*
 function formatNumero2(v: number | null | undefined): string {
   const n = Number(v || 0);
   return n.toLocaleString('es-EC', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+*/
+function formatNumero2(v: number | null | undefined): string {
+  const n = Number(v ?? 0);
+  if (isNaN(n)) {
+    return '0.00';
+  }
+
+  // Formato tipo 1,704.00 – estilo “en-US”
+  return n.toLocaleString('en-US', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });

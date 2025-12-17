@@ -128,13 +128,16 @@
           <!-- Subgrupo: Reenvio Documentos Electronicos-->
           <mat-expansion-panel hideToggle>
             <mat-expansion-panel-header
-              (click)="goTo(urlReenvioDocumentos)"
+              [routerLink]="'/sic-3000/inicio-sic'"
               class="clickable-header">
               <mat-panel-title>
                 <span *ngIf="isExpanded" class="menu-text">Reenvio Documentos Electronicos</span>
               </mat-panel-title>
             </mat-expansion-panel-header>
           </mat-expansion-panel>
+          <a mat-list-item [routerLink]="'/sic-3000/reporte-ventas'" routerLinkActive="active">
+             <span *ngIf="isExpanded" class="menu-text">Reporte de Ventas</span>
+          </a>
         </mat-expansion-panel>
 
         <!-- CUENTAS POR COBRAR-->

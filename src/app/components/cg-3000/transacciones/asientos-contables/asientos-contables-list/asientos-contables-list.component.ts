@@ -12,7 +12,7 @@ import {
   AllCommunityModule
 } from 'ag-grid-community';
 import { MatDialog } from '@angular/material/dialog';
-
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AsientosContablesService } from 'src/app/services/asientos-contables.service';
 import { ListadoAsientoContableResponse } from 'src/app/interfaces/responses/asientos-contables-response';
 import { AsientosContablesFormComponent } from '../asientos-contables-form/asientos-contables-form.component';
@@ -25,13 +25,14 @@ import { UsuarioService } from 'src/app/services/usuario.service';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
+import { AsientoContableResponse } from '../../../../../interfaces/responses/asiento-contable-response';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 @Component({
   selector: 'app-asientos-contables-ag',
   standalone: true,
-  imports: [CommonModule, FormsModule, AgGridAngular],
+  imports: [CommonModule, FormsModule, AgGridAngular, MatSnackBarModule],
   templateUrl: './asientos-contables-list.component.html',
   styleUrls: ['./asientos-contables-list.component.css']
 })
@@ -62,9 +63,10 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
   private gridApi!: GridApi<ListadoAsientoContableResponse>;
 
   columnDefs: ColDef<ListadoAsientoContableResponse>[] = [
+    { headerName: 'Modulo', field: 'modulo', width: 100, sortable: true, filter: true, hide: true },
     { headerName: 'Código', field: 'idCabMaestro', width: 160, sortable: true, filter: true, hide: true },
     { headerName: 'Empresa', field: 'empresa', width: 160, sortable: true, filter: true, hide: true },
-    
+
     {
       headerName: 'Fecha Transacción',
       field: 'fechatransaccion',
@@ -131,6 +133,10 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
         <button class="btn-icon pdf"  data-action="print" title="Imprimir asiento">
             <img src="assets/icons/icon-imprimir.png" width="16" height="16" alt="PDF" />
         </button>
+        <!--Copiar/Crear asiento estándar desde plantilla ⬇️⬇️ -->
+        <button class="ag-action-btn" data-action="copy" title="Crear desde este asiento">
+          <img src="assets/icons/icon-copiar.png" width="18" height="18" alt="Copiar" />
+        </button>
       `,
       sortable: false,
       filter: false
@@ -142,7 +148,8 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
   constructor(
     private asientosService: AsientosContablesService,
     private dialog: MatDialog,
-    private usuarioService: UsuarioService    // ⬅️ nuevo
+    private usuarioService: UsuarioService,   // ⬅nuevo usuario
+    private snackBar: MatSnackBar              // ⬅nuevo nesajes
   ) {}
 
   ngOnInit(): void {
@@ -183,7 +190,7 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
   }
 
   onCellClicked(evt: CellClickedEvent<ListadoAsientoContableResponse>): void {
-   
+
     /*
     if (evt?.colDef?.colId === 'acciones') {
       const action = (evt.event?.target as HTMLElement)?.closest('button')?.getAttribute('data-action');
@@ -206,6 +213,12 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
 
     if (action === 'edit' && evt.data) {
       this.editarAsiento(evt.data);
+      return;
+    }
+
+    if (action === 'copy' && evt.data) {
+      const id = Number(evt.data.idCabMaestro || 0);
+      this.crearDesdeAsiento(id);
       return;
     }
 
@@ -233,10 +246,104 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
       return;
     }
 
+    const modulo = Number((row as any).modulo ?? 0);
+    if (modulo === 1) {
+       this.snackBar.open(
+      'No se puede editar, Corresponde a una factura de proveedor.',
+      'Cerrar',
+      {
+        duration: 4000,
+        horizontalPosition: 'right',
+        verticalPosition: 'top',
+        panelClass: ['snackbar-error']   // clase de estilo personalizada
+      }
+    );
+    return;
+    }
+
     this.abrirEditar(id);
     ///
   }
 
+  /**
+ * Crea un NUEVO asiento copiando la estructura de uno existente
+ * Solo permite editar: Beneficiario, Observación y Fecha de transacción
+ */
+  crearDesdeAsiento(idCabMaestro: number): void {
+    if (!idCabMaestro || idCabMaestro <= 0) {
+      console.warn('ID de asiento inválido');
+      return;
+    }
+
+    this.loading = true;
+
+    // Obtener el asiento completo (cabecera + detalles)
+    this.asientosService.getById(idCabMaestro).subscribe({
+      next: (asientoOriginal) => {
+        this.loading = false;
+
+        //  Preparar el asiento para crear uno nuevo
+        const asientoNuevo = this.prepararAsientoPlantilla(asientoOriginal);
+
+        // Abrir el formulario en modo "nuevo-desde-plantilla"
+        const dialogRef = this.dialog.open(AsientosContablesFormComponent, {
+          width: '75vw',
+          maxWidth: '95vw',
+          height: '90vh',
+          panelClass: 'asiento-dialog',
+          autoFocus: false,
+          restoreFocus: false,
+          data: {
+            modo: 'nuevo-plantilla', // Nuevo modo
+            asiento: asientoNuevo    // Datos pre-cargados
+          }
+        });
+
+        dialogRef.afterClosed().subscribe(result => {
+          if (result) {
+            this.obtenerAsientos(); // Recargar el listado
+          }
+        });
+      },
+      error: (err) => {
+        this.loading = false;
+        console.error('Error al obtener asiento para copiar:', err);
+        alert('No se pudo cargar el asiento. Intente nuevamente.');
+      }
+    });
+  }
+  /**
+ * Prepara el asiento original para usarlo como plantilla
+ * Limpia los campos que el usuario debe ingresar manualmente
+ */
+  private prepararAsientoPlantilla(asientoOriginal: AsientoContableResponse): AsientoContableResponse {
+    const hoy = new Date();
+    const fechaHoy = hoy.toISOString().substring(0, 10); // YYYY-MM-DD
+
+    return {
+      ...asientoOriginal,
+
+      //Campos que se resetean (usuario los ingresará)
+      IdCabMaestro: 0,                    // Nuevo asiento
+      numdoc: 0,                          // Se auto-generará
+      beneficiario: '',                   // Usuario lo ingresará
+      observacion: '',                    // Usuario lo ingresará
+      fechatransaccion: fechaHoy,         // Fecha actual (editable)
+      fechaingreso: new Date().toISOString(), // Fecha/hora actual
+
+      //Campos que se mantienen de la plantilla
+      // idTipoAsiento, idZona, idEmpresa, etc. ya vienen en ...asientoOriginal
+
+      // Detalles/Líneas se mantienen completos
+      detalles: (asientoOriginal.detalles || []).map((detalle, index) => ({
+        ...detalle,
+        numlinea: index + 1,              // Re-numerar por si acaso
+        fechatransaccion: fechaHoy,       // Actualizar fecha de las líneas
+        fechaingreso: new Date().toISOString(),
+        // Mantener: cuentas, centros de costo, montos, etc.
+      }))
+    };
+  }
   abrirCrear(): void {
     const dialogRef = this.dialog.open(AsientosContablesFormComponent, {
       width: '75vw',
@@ -266,7 +373,7 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
       panelClass: 'asiento-dialog',
       autoFocus: false,
       restoreFocus: false,
-      data: { 
+      data: {
         modo: 'editar',
         id }
     });
@@ -683,7 +790,7 @@ private imprimirAsiento(idCabMaestro: number): void {
 }
 
   //
-  
+
   //
 
 }
