@@ -144,15 +144,20 @@ interface PorcentajeIvaCombo {
 export class FacturasProveedorFormComponent implements OnInit {
   @ViewChild(AgGridAngular) agGrid!: AgGridAngular;
 
-  modo = signal<'nuevo' | 'editar'>('nuevo');
+  modo = signal<'nuevo' | 'editar' | 'plantilla'>('nuevo');
   loading = signal(false);
   saving = signal(false);
 
-  titulo = computed(() =>
-    this.modo() === 'nuevo'
-      ? 'Crear(Factura Proveedor) — NUEVO'
-      : 'Editar (Factura Proveedor) — EDITAR'
-  );
+  titulo = computed(() => {
+    const m = this.modo();
+    if (m === 'editar') {
+      return 'Editar (Factura Proveedor) — EDITAR';
+    }
+    if (m === 'plantilla') {
+      return 'Duplicación de Factura — NUEVO';
+    }
+    return 'Crear(Factura Proveedor) — NUEVO';
+  });
 
   // USUARIO
   usuarioActual = this.usuarioService.getUsuarioActual();
@@ -269,7 +274,7 @@ export class FacturasProveedorFormComponent implements OnInit {
   ///PARA CALCULO DE FFECHAS PLAZO
   private _calculandoVencimiento = false;
 
-  
+
   private parseDateOnlyToLocal(dateStr: string): Date | null {
     // Espera yyyy-MM-dd (lo que entrega el input type="date")
     if (!dateStr) return null;
@@ -975,7 +980,11 @@ export class FacturasProveedorFormComponent implements OnInit {
     @Optional() public dialogRef: MatDialogRef<FacturasProveedorFormComponent> | null,
     @Optional()
     @Inject(MAT_DIALOG_DATA)
-    public data: { modo?: 'nuevo' | 'editar'; id?: number } | null,
+    public data: {
+      modo?: 'nuevo' | 'editar' | 'plantilla';     //Se agrega plantilla
+      id?: number;
+      facturaPlantilla?: AsientoContableResponse;
+    } | null,
     private tipoasientoservice: TipoAsientoService,
     private facturasService: FacturasProveedorService,
     private zonaService: ZonaService,
@@ -1128,7 +1137,7 @@ export class FacturasProveedorFormComponent implements OnInit {
       } else {
         this.form.patchValue({ beneficiario: '' }, { emitEvent: false });
         this.plazoCtrl.setValue(0, { emitEvent: false });
-        ///VERIFICAR HR 
+        ///VERIFICAR HR
         this.recalcularFechaVencimiento();
       }
     });
@@ -1191,32 +1200,52 @@ export class FacturasProveedorFormComponent implements OnInit {
     this.cargarTiposRetencion();
     this.cargarPorcentajesIva(); //nuevo porcentaje iva
 
-    if (id > 0) {
-      this.modo.set('editar');
-      this.cargarAsiento(id);
+    const modoData = this.data?.modo;
+    const plantilla = this.data?.facturaPlantilla;
+
+    if (modoData === 'plantilla' && plantilla) {
+      //MODO PLANTILLA: Cargar factura pre-configurada
+      this.modo.set('plantilla');
+      this.cargarPlantilla(plantilla);
+
     } else {
-      this.modo.set('nuevo');
-      const empty = createEmptyAsientoContableResponse();
-      this.syncUsuarioEmpresa();
-      this.setFormFromHeader(empty);
-      this.rowData.set([]);
-      this.form.patchValue({ modulo: 1 }, { emitEvent: false });
-      this.form.patchValue({ anio: getYearFromInput(this.form.get('fechatransaccion')!.value) }, { emitEvent: false });
+      //  Si NO es plantilla, verificar id para editar/nuevo
+      const idDialog = this.data?.id ?? 0;
+      const idRoute = Number(this.route.snapshot.paramMap.get('id') ?? 0);
+      const id = idDialog || idRoute;
 
-      this.form
-        .get('fechatransaccion')!
-        .valueChanges.pipe(
-          startWith(this.form.get('fechatransaccion')!.value),
-          map(getYearFromInput),
-          distinctUntilChanged()
-        )
-        .subscribe((y) => {
-          this.form.patchValue({ anio: y }, { emitEvent: false });
-        });
+      if (id > 0) {
+        // MODO EDITAR
+        this.modo.set('editar');
+        this.cargarAsiento(id);
 
-      this.syncUsuarioEmpresa();
+      } else {
+        // MODO NUEVO
+        this.modo.set('nuevo');
+        const empty = createEmptyAsientoContableResponse();
+        this.syncUsuarioEmpresa();
+        this.setFormFromHeader(empty);
+        this.rowData.set([]);
+        this.form.patchValue({ modulo: 1 }, { emitEvent: false });
+        this.form.patchValue(
+          { anio: getYearFromInput(this.form.get('fechatransaccion')!.value) },
+          { emitEvent: false }
+        );
+
+        this.form
+          .get('fechatransaccion')!
+          .valueChanges.pipe(
+            startWith(this.form.get('fechatransaccion')!.value),
+            map(getYearFromInput),
+            distinctUntilChanged()
+          )
+          .subscribe((y) => {
+            this.form.patchValue({ anio: y }, { emitEvent: false });
+          });
+
+        this.syncUsuarioEmpresa();
+      }
     }
-    
     ////CAMBIOS HR PARA CALCULO DEL PLAZO
     this.fechacaducaCtrl.valueChanges.subscribe(() => {
         this.recalcularFechaVencimiento();
@@ -1226,7 +1255,6 @@ export class FacturasProveedorFormComponent implements OnInit {
         this.recalcularFechaVencimiento();
       });
     ///END
-
   }
 
   private buildForm(): void {
@@ -1392,7 +1420,81 @@ export class FacturasProveedorFormComponent implements OnInit {
       },
     });
   }
+  /**
+ * Bloquea: Zona, Proveedor, Tipo Comprobante SRI, Sustento Tributario
+ * Permite editar: No.Comprobante, Autorización, Fechas, Observación, Debe/Haber
+ */
+  private cargarPlantilla(plantilla: AsientoContableResponse): void {
+    // Setear la cabecera (con campos limpios ya viene en plantilla)
+    this.setFormFromHeader(plantilla);
 
+    // Cargar las líneas del detalle (ya vienen con debe/haber en 0)
+    this.rowData.set(plantilla.detalles ?? []);
+
+    // Sincronizar usuario y empresa
+    this.syncUsuarioEmpresa();
+
+    // Extraer valores de la primera línea para mostrar en cabecera
+    const primeraLinea = plantilla.detalles && plantilla.detalles.length ? plantilla.detalles[0] : null;
+
+    if (primeraLinea) {
+      // ===== PROVEEDOR (MEJORADO) =====
+      const idAux = Number(primeraLinea.idCodContable || 0);
+
+      if (idAux > 0) {
+        // 🔹 Setear el ID del auxiliar
+        this.auxiliarSeleccionadoCtrl.setValue(idAux, { emitEvent: false });
+
+        // 🔹 Crear objeto temporal para el autocomplete usando datos de la plantilla
+        const razonSocial = plantilla.beneficiario || primeraLinea.beneficiario || '';
+
+        // Primero intentar buscar en auxiliaresGrid (si ya se cargó)
+        let proveedorObj: ProveedorItem | undefined = this.auxiliaresGrid.find(a => a.id === idAux) as any;
+
+        // Si no está en el grid, crear objeto temporal con los datos que tenemos
+        if (!proveedorObj && razonSocial) {
+          proveedorObj = {
+            id: idAux,
+            label: `${idAux} - ${razonSocial}`,
+            razon: razonSocial,
+            plazo: null,
+          } as ProveedorItem;
+        }
+
+        // Setear en el autocomplete
+        if (proveedorObj) {
+          this.proveedorCtrl.setValue(proveedorObj, { emitEvent: false });
+
+          // Asegurar que el beneficiario esté en el form
+          this.form.patchValue({ beneficiario: razonSocial }, { emitEvent: false });
+        }
+      }
+
+      // ===== SUSTENTO TRIBUTARIO =====
+      const idSust = Number(primeraLinea.idSustentoTrib || 0);
+      if (idSust > 0) {
+        this.sustentoTribCtrl.setValue(idSust, { emitEvent: false });
+      }
+
+      // ===== TIPO COMPROBANTE SRI =====
+      const idTipoComp = Number(primeraLinea.idTipoCompSri || 0);
+      if (idTipoComp > 0) {
+        this.tipoCompSriCtrl.setValue(idTipoComp, { emitEvent: false });
+      }
+    }
+
+    // BLOQUEAR SOLO LOS 4 CAMPOS ESPECÍFICOS
+    this.form.get('idZona')?.disable();              //  Zona bloqueada
+    this.auxiliarSeleccionadoCtrl.disable();         //  Proveedor (ID) bloqueado
+    this.proveedorCtrl.disable();                    //  Proveedor (autocomplete) bloqueado
+    this.tipoCompSriCtrl.disable();                  //  Tipo Comprobante bloqueado
+    this.sustentoTribCtrl.disable();                 //  Sustento Trib. bloqueado
+
+    //Forzar refresco del grid
+    this.refrescarColumnasDetalle();
+
+    console.log('Plantilla cargada - Proveedor:', this.proveedorCtrl.value);
+  }
   private cargarLocales(): void {
     this.localesService.getAll().subscribe({
       next: (res) => {
@@ -1635,7 +1737,7 @@ export class FacturasProveedorFormComponent implements OnInit {
 
     if (!this.validarDetalle()) return;
 
-    const esNuevo = this.modo() === 'nuevo';
+    const esNuevo = this.modo() === 'nuevo' || this.modo() === 'plantilla';
 
     const ahora = new Date();
     const nowIso = formatLocalIso(ahora);
@@ -1690,11 +1792,24 @@ export class FacturasProveedorFormComponent implements OnInit {
       this.rowData.set(detallesConFecha);
     }
 
-    const rawForm = this.form.value as AsientoContableResponse;
+    const rawForm = this.form.getRawValue() as AsientoContableResponse;
 
     // ====== APLICAR CAMPOS RELACIONADOS (CABECERA -> TODAS LAS LÍNEAS) ======
-    const detallesConRelacionados = this.aplicarCamposRelacionadosCabecera(this.rowData());
+    let detallesConRelacionados = this.aplicarCamposRelacionadosCabecera(this.rowData());
+    if (this.modo() === 'plantilla') {
+      const nroComp = (this.nroComprobanteCtrl.value || '').toString().trim();
+      const autCab = (this.autorizacionCtrl.value || '').toString().trim();
+      const fCadCab = this.fechacaducaCtrl.value ? normalizeToLocalDate(this.fechacaducaCtrl.value) : null;
+      const fVenCab = this.fechavencimientoCtrl.value ? normalizeToLocalDate(this.fechavencimientoCtrl.value) : null;
 
+      detallesConRelacionados = detallesConRelacionados.map(d => ({
+        ...d,
+        nocomprobante: nroComp || d.nocomprobante || '',
+        autorizacion: autCab || d.autorizacion || '',
+        fechacaduca: fCadCab ?? d.fechacaduca ?? null,
+        fechavencimiento: fVenCab ?? d.fechavencimiento ?? null,
+      }));
+    }
     const header: AsientoContableResponse = {
       ...rawForm,
       modulo: rawForm.modulo != null && !isNaN(Number(rawForm.modulo)) ? Number(rawForm.modulo) : 1,
@@ -2593,7 +2708,7 @@ export class FacturasProveedorFormComponent implements OnInit {
     this.fechaCadRelacionadoCtrl.reset(null);
 
     this.plazoCtrl.setValue(0, { emitEvent: false });
-   
+
 
     // ✅ reset cache/duplicado
     this.limpiarCacheNoComprobante();

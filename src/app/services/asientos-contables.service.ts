@@ -155,7 +155,7 @@ export class AsientosContablesService {
 
   */
 
-  
+
   /** ==== GET BY ID ==== */
   /*
   getById(idCabMaestro: number): Observable<AsientoContableResponse> {
@@ -289,7 +289,7 @@ export class AsientosContablesService {
       autorizado: this.toNull(h.autorizado, false),
       homCodigo: this.toNull(h.homCodigo),
       estado: !!h.estado,
-      modulo: 0,   
+      modulo: h.modulo ?? 0,
       detalles,
     };
   }
@@ -311,7 +311,7 @@ export class AsientosContablesService {
   // Swagger: PUT /api/AsientosContables/{id}
   actualizar(
     idCabMaestro: number,
-    formValue: AsientoContableResponse 
+    formValue: AsientoContableResponse
   ): Observable<ApiResponse<boolean>> {
     const body: CreateAsientoRequest = this.mapToCreateRequest(formValue);
     return this.http.put<ApiResponse<boolean>>(

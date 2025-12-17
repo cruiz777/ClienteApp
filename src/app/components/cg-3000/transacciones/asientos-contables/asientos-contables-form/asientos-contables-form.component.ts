@@ -103,15 +103,21 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 export class AsientosContablesFormComponent implements OnInit {
   @ViewChild(AgGridAngular) agGrid!: AgGridAngular;
 
-  modo = signal<'nuevo' | 'editar'>('nuevo');
+  // modo = signal<'nuevo' | 'editar'>('nuevo');
+  modo = signal<'nuevo' | 'editar' | 'plantilla'>('nuevo');
   loading = signal(false);
   saving = signal(false);
 
-  titulo = computed(() =>
-    this.modo() === 'nuevo'
-      ? 'Crear/Editar (Asiento Contable) — NUEVO'
-      : 'Crear/Editar (Asiento Contable) — EDITAR'
-  );
+  titulo = computed(() => {
+    const m = this.modo();
+    if (m === 'editar') {
+      return 'Crear/Editar (Asiento Contable) — EDITAR';
+    }
+    if (m === 'plantilla') {
+      return 'Duplicación de Asiento (Asiento estándar)';  // Plantilla
+    }
+    return 'Crear/Editar (Asiento Contable) — NUEVO';
+  });
 
   // USUARIO
   usuarioActual = this.usuarioService.getUsuarioActual();
@@ -600,9 +606,12 @@ export class AsientosContablesFormComponent implements OnInit {
     private usuarioService: UsuarioService,
     public dialogRef: MatDialogRef<AsientosContablesFormComponent>,
     @Inject(MAT_DIALOG_DATA)
-    public data:
-      | { id?: number; IdCabMaestro?: number; modo?: 'nuevo' | 'editar' }
-      | null,
+    public data: {
+      id?: number;
+      IdCabMaestro?: number;
+      modo?: 'nuevo' | 'editar' | 'plantilla';
+      asientoPlantilla?: AsientoContableResponse;
+    } | null,
     private tipoasientoservice: TipoAsientoService,
     private service: AsientosContablesService,
     private zonaService: ZonaService,
@@ -690,37 +699,82 @@ export class AsientosContablesFormComponent implements OnInit {
     const idFromDialog = Number(this.data?.id ?? this.data?.IdCabMaestro ?? 0);
     const idFromRoute = Number(this.route.snapshot.paramMap.get('id') ?? 0);
     const id = idFromDialog || idFromRoute;
+    // Verificar si viene modo 'plantilla' en data
+    const modoData = this.data?.modo;
+    const plantilla = this.data?.asientoPlantilla;
 
-    if (id > 0) {
-      this.idEdicion = id;
-      this.modo.set('editar');
-      this.bloquearCabecera();
-      this.cargarAsiento(id);
+    if (modoData === 'plantilla' && plantilla) {
+      // 🔹 MODO PLANTILLA: Cargar asiento pre-configurado
+      this.modo.set('plantilla');
+      this.cargarPlantilla(plantilla);
+
     } else {
-      this.modo.set('nuevo');
+      // Lógica original para 'nuevo' o 'editar'
+      const idFromDialog = Number(this.data?.id ?? this.data?.IdCabMaestro ?? 0);
+      const idFromRoute = Number(this.route.snapshot.paramMap.get('id') ?? 0);
+      const id = idFromDialog || idFromRoute;
 
-      const empty = createEmptyAsientoContableResponse();
-      this.setFormFromHeader(empty);
-      this.rowData.set([]);
+      if (id > 0) {
+        this.idEdicion = id;
+        this.modo.set('editar');
+        this.bloquearCabecera();
+        this.cargarAsiento(id);
+      } else {
+        this.modo.set('nuevo');
 
-      this.syncUsuarioEmpresa();
+        const empty = createEmptyAsientoContableResponse();
+        this.setFormFromHeader(empty);
+        this.rowData.set([]);
 
-      const fechaTransCtrl = this.form.get('fechatransaccion')!;
-      this.form.patchValue(
-        { anio: getYearFromInput(fechaTransCtrl.value) },
-        { emitEvent: false }
-      );
+        this.syncUsuarioEmpresa();
 
-      fechaTransCtrl.valueChanges
-        .pipe(
-          startWith(fechaTransCtrl.value),
-          map(getYearFromInput),
-          distinctUntilChanged()
-        )
-        .subscribe((y) => {
-          this.form.patchValue({ anio: y }, { emitEvent: false });
-        });
+        const fechaTransCtrl = this.form.get('fechatransaccion')!;
+        this.form.patchValue(
+          { anio: getYearFromInput(fechaTransCtrl.value) },
+          { emitEvent: false }
+        );
+
+        fechaTransCtrl.valueChanges
+          .pipe(
+            startWith(fechaTransCtrl.value),
+            map(getYearFromInput),
+            distinctUntilChanged()
+          )
+          .subscribe((y) => {
+            this.form.patchValue({ anio: y }, { emitEvent: false });
+          });
+      }
     }
+    // if (id > 0) {
+    //   this.idEdicion = id;
+    //   this.modo.set('editar');
+    //   this.bloquearCabecera();
+    //   this.cargarAsiento(id);
+    // } else {
+    //   this.modo.set('nuevo');
+
+    //   const empty = createEmptyAsientoContableResponse();
+    //   this.setFormFromHeader(empty);
+    //   this.rowData.set([]);
+
+    //   this.syncUsuarioEmpresa();
+
+    //   const fechaTransCtrl = this.form.get('fechatransaccion')!;
+    //   this.form.patchValue(
+    //     { anio: getYearFromInput(fechaTransCtrl.value) },
+    //     { emitEvent: false }
+    //   );
+
+    //   fechaTransCtrl.valueChanges
+    //     .pipe(
+    //       startWith(fechaTransCtrl.value),
+    //       map(getYearFromInput),
+    //       distinctUntilChanged()
+    //     )
+    //     .subscribe((y) => {
+    //       this.form.patchValue({ anio: y }, { emitEvent: false });
+    //     });
+    // }
   }
 
   private buildForm(): void {
@@ -817,7 +871,31 @@ export class AsientosContablesFormComponent implements OnInit {
       },
     });
   }
+  /**
+   * Carga un asiento como plantilla para transacciones estándar
+   * Mantiene toda la estructura pero permite editar solo campos específicos
+  */
+  private cargarPlantilla(plantilla: AsientoContableResponse): void {
+    // Setear la cabecera (con beneficiario y observación vacíos)
+    this.setFormFromHeader(plantilla);
 
+    // Asegurar que modulo = 5
+    this.form.patchValue({ modulo: 5 }, { emitEvent: false });
+
+    this.form.get('idZona')?.disable();
+    this.form.get('idTipoAsiento')?.disable();
+
+    // Cargar las líneas del detalle
+    this.rowData.set(plantilla.detalles ?? []);
+
+    // Sincronizar usuario y empresa
+    this.syncUsuarioEmpresa();
+
+    // Forzar refresco del grid
+    this.refreshGrid();
+
+    console.log('✅ Plantilla cargada con modulo=5');
+  }
   private cargarLocales(): void {
     this.localesService.getAll().subscribe({
       next: (res) => {
@@ -988,7 +1066,9 @@ export class AsientosContablesFormComponent implements OnInit {
       return;
     }
 
-    const esNuevo = this.modo() === 'nuevo';
+    // const esNuevo = this.modo() === 'nuevo';
+
+    const esNuevo = this.modo() === 'nuevo' || this.modo() === 'plantilla';
 
     const ahora = new Date();
     const nowIso = formatLocalIso(ahora);
@@ -1053,7 +1133,10 @@ export class AsientosContablesFormComponent implements OnInit {
 
     const header: AsientoContableResponse = {
       ...rawForm,
-      modulo: rawForm.modulo ?? 0,
+      modulo: this.modo() === 'plantilla' ? 5 : (rawForm.modulo ?? 0),
+      idZona: this.form.get('idZona')?.value ?? rawForm.idZona,
+      idTipoAsiento: this.form.get('idTipoAsiento')?.value ?? rawForm.idTipoAsiento,
+      tipdoc: this.form.get('tipdoc')?.value ?? rawForm.tipdoc,
       fechatransaccion: fechaTransaccionDateOnly,
       fechaingreso: esNuevo ? nowIso : normalizeToLocalIso(rawForm.fechaingreso),
       fechacierre: esNuevo ? '' : rawForm.fechacierre,
@@ -1067,7 +1150,15 @@ export class AsientosContablesFormComponent implements OnInit {
         porcentaje: null,
       }) as DetalleAsientoResponse),
     };
-
+    console.log('🔍 Guardando asiento:', {
+      modo: this.modo(),
+      esNuevo,
+      modulo: header.modulo,
+      idZona: header.idZona,
+      idTipoAsiento: header.idTipoAsiento,
+      beneficiario: header.beneficiario,
+      observacion: header.observacion
+    });
     this.saving.set(true);
 
     let save$: import('rxjs').Observable<ApiResponse<number | boolean>>;
