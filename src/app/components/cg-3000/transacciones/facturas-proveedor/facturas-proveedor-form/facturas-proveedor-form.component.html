@@ -157,24 +157,35 @@
           type="text"
           class="control"
           [formControl]="nroComprobanteCtrl"
-          maxlength="25"
-          placeholder="Ingrese No. de comprobante"
+          maxlength="15"
+          placeholder="Ingrese No.comprobante ej: 001001000000001"
           inputmode="numeric"
-          (input)="onNumericInput(nroComprobanteCtrl, $event)"
+          (input)="onNumericInput(nroComprobanteCtrl, $event,15)"
+          (blur)="onNroComprobanteBlur()"
           [readonly]="isReadOnly() || cabeceraBloqueada"
+          [ngClass]="{ 'ng-invalid ng-touched': nroComprobanteCtrl.invalid && nroComprobanteCtrl.touched }"
         />
-
-        <div class="error" *ngIf="nroComprobanteCtrl.hasError('pattern') && nroComprobanteCtrl.touched">
-          Solo se permiten números.
-        </div>
-
-        <div class="error" *ngIf="nroComprobanteCtrl.hasError('duplicado') && nroComprobanteCtrl.touched">
-          El No. Comprobante ya existe para este proveedor.
-        </div>
 
         <div class="error" *ngIf="nroComprobanteCtrl.hasError('required') && nroComprobanteCtrl.touched">
           Campo obligatorio.
         </div>
+        <div class="error" *ngIf="(nroComprobanteCtrl.hasError('minlength') || nroComprobanteCtrl.hasError('maxlength')) && nroComprobanteCtrl.touched">
+          Debe ingresar exactamente 15 dígitos.
+        </div>
+        <div class="error" *ngIf="(nroComprobanteCtrl.hasError('pattern') || nroComprobanteCtrl.hasError('sriFormato')) && nroComprobanteCtrl.touched">
+          Formato inválido. Ejemplo: 001001000000456
+        </div>        
+        <div class="error" *ngIf="nroComprobanteCtrl.hasError('duplicado') && nroComprobanteCtrl.touched">
+          El No. Comprobante ya existe para este proveedor.
+        </div>
+        <div class="error" *ngIf="nroComprobanteCtrl.hasError('sriSerieRango') && nroComprobanteCtrl.touched">
+          Serie inválida. Establecimiento y punto de emisión deben estar entre 001 y 099.
+        </div>
+
+        <div class="error" *ngIf="nroComprobanteCtrl.hasError('sriSecuencialInvalido') && nroComprobanteCtrl.touched">
+          Secuencial inválido. No puede ser 000000000.
+        </div>
+
       </div>
 
       <div class="form-group">
@@ -195,6 +206,11 @@
         <div class="error" *ngIf="autorizacionCtrl.invalid && autorizacionCtrl.touched">
           Campo obligatorio.
         </div>
+        <div class="error"
+        *ngIf="(autorizacionCtrl.hasError('minlength') || autorizacionCtrl.hasError('maxlength')) && autorizacionCtrl.touched">
+            Debe tener entre 10 y 49 dígitos.
+        </div>
+
       </div>
 
       <!-- ✅ 4 CAMPOS EN UNA SOLA FILA: Fecha Caduca / Plazo / Fecha Vencimiento / Concepto -->
