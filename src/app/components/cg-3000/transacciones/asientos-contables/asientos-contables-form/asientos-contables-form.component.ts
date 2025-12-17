@@ -836,6 +836,7 @@ export class AsientosContablesFormComponent implements OnInit {
     });
   }
 
+  /*
   private cargarPlanCuentas(): void {
     const empresaId = this.usuarioActual?.id_empresa ?? 0;
     this.planCuentasService
@@ -857,6 +858,46 @@ export class AsientosContablesFormComponent implements OnInit {
         },
       });
   }
+
+  */
+
+  ////PLAN DE CUENTAS FILTRADAS
+  private cargarPlanCuentas(): void {
+    const empresaId = this.usuarioActual?.id_empresa ?? 0;
+
+    this.planCuentasService
+      .getAll({ idEmpresa: empresaId, estado: 'A' })
+      .subscribe({
+        next: (list: PlanCuenta[]) => {
+          const fuente = list || [];
+
+          // ✅ SOLO cuentas con esMovimiento = 1
+          const soloMovimiento = fuente.filter((c: any) => {
+            const v =
+              c?.EsMovimiento ??
+              c?.esMovimiento ??
+              c?.es_movimiento ??
+              c?.Movimiento ??
+              c?.movimiento;
+
+            return Number(v) === 1; // <- aquí está la regla exacta
+          });
+
+          this.cuentas = soloMovimiento.map((c: any) => ({
+            id: Number(c?.IdPlanCuentas ?? 0),
+            label: `${(c?.CuentaPresentacion ?? '').toString().trim()} - ${(c?.NombreCuenta ?? '').toString().trim()}`,
+            codigo: (c?.CuentaPresentacion ?? '').toString().trim(),
+          }));
+
+          this.refreshGrid(['idPlanCuentas']);
+        },
+        error: (err) => {
+          console.error('Error cargando plan de cuentas', err);
+        },
+      });
+  }
+
+  ///
 
   private cargarCodigosContables(): void {
     const empresaId = this.usuarioActual?.id_empresa ?? 0;
@@ -1342,6 +1383,13 @@ export class AsientosContablesFormComponent implements OnInit {
       return;
     }
 
+    /// VALIDAR SI YA ESTA CON DATOS LAS LINEA
+      if (!this.validarAntesDeAgregarLinea()) {
+        return;
+      }
+
+    //
+
     const ahora = new Date();
     const nowIso = formatLocalIso(ahora);
 
@@ -1686,6 +1734,58 @@ export class AsientosContablesFormComponent implements OnInit {
         },
       });
   }
+
+  //AÑADIR MAS EVENTOS QUI
+  private validarLineaDetalleMinima(
+    f: DetalleAsientoResponse,
+    idxBase1: number
+  ): string[] {
+    const errores: string[] = [];
+
+    const idLocal = Number(f.idLocal || 0);
+    const idPlanCuentas = Number(f.idPlanCuentas || 0);
+    const idAuxiliar = Number(f.idCodContable || 0);
+    const idMovBancario = Number(f.idMovBancario || 0);
+    const debe = Number(f.debe || 0);
+    const haber = Number(f.haber || 0);
+
+    if (idLocal <= 0) errores.push(`Línea ${idxBase1}: seleccione el Local.`);
+    if (idPlanCuentas <= 0) errores.push(`Línea ${idxBase1}: seleccione la Cuenta Contable.`);
+    if (idAuxiliar <= 0) errores.push(`Línea ${idxBase1}: seleccione el Auxiliar Contable.`);
+
+    if (debe <= 0 && haber <= 0) {
+      errores.push(`Línea ${idxBase1}: ingrese un valor en Debe o Haber.`);
+    }
+    if (debe > 0 && haber > 0) {
+      errores.push(`Línea ${idxBase1}: no puede tener Debe y Haber a la vez.`);
+    }
+
+    if (idMovBancario <= 0) {
+      errores.push(`Línea ${idxBase1}: seleccione un Tipo de Movimiento (distinto de NINGUNO).`);
+    }
+
+    return errores;
+  }
+
+  /** Si ya hay líneas, obliga a que la última esté completa antes de agregar otra */
+ private validarAntesDeAgregarLinea(): boolean {
+  const filas = this.rowData() ?? [];
+  if (filas.length === 0) return true;
+
+  for (let i = 0; i < filas.length; i++) {
+    const errores = this.validarLineaDetalleMinima(filas[i], i + 1);
+    if (errores.length > 0) {
+      this.snack.open(errores[0], 'Cerrar', {
+        duration: 4000,
+        horizontalPosition: 'right',
+        verticalPosition: 'top',
+      });
+      return false;
+    }
+  }
+  return true;
+}
+  ///
 }
 
 /** Helpers de celdas */

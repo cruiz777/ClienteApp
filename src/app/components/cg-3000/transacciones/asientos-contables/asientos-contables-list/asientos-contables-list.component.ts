@@ -133,10 +133,6 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
         <button class="btn-icon pdf"  data-action="print" title="Imprimir asiento">
             <img src="assets/icons/icon-imprimir.png" width="16" height="16" alt="PDF" />
         </button>
-        <!--Copiar/Crear asiento estándar desde plantilla ⬇️⬇️ -->
-        <button class="ag-action-btn" data-action="copy" title="Crear desde este asiento">
-          <img src="assets/icons/icon-copiar.png" width="18" height="18" alt="Copiar" />
-        </button>
       `,
       sortable: false,
       filter: false
