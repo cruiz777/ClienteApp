@@ -1,0 +1,75 @@
+<div class="page-container">
+  <div class="contenido-tablas">
+
+    <div class="title">Generación Archivos Factura Electrónica</div>
+
+    <!-- Barra superior (similar a la ventana) -->
+    <form [formGroup]="filtrosForm" class="topbar">
+      <div class="topbar-left">
+        <div class="filter-inline">
+          <label>Desde:</label>
+          <input type="date" formControlName="desde" />
+        </div>
+
+        <div class="filter-inline">
+          <label>Hasta:</label>
+          <input type="date" formControlName="hasta" />
+        </div>
+
+        <div class="filter-inline radio-inline">
+          <label>
+            <input type="radio" formControlName="tipo" value="FACTURAS" />
+            Facturas
+          </label>
+        </div>
+
+        <div class="filter-inline">
+          <label>No. Caja:</label>
+          <input
+            type="text"
+            formControlName="numeroCaja"
+            placeholder="Ej: 1"
+            (keydown.enter)="buscar()"
+          />
+        </div>
+      </div>
+
+      <div class="topbar-right">
+        <button type="button" class="btn btn-primary-solid" (click)="buscar()" [disabled]="loading">
+          Buscar
+        </button>
+      </div>
+    </form>
+
+    <!-- Grid -->
+    <div class="grid-wrapper">
+      <ag-grid-angular
+        class="ag-theme-alpine ag-grid"
+        [rowData]="rowData"
+        [columnDefs]="columnDefs"
+        [defaultColDef]="defaultColDef"
+        [rowSelection]="'multiple'"
+        [suppressRowClickSelection]="true"
+        [animateRows]="true"
+        [overlayLoadingTemplate]="overlayLoadingTemplate"
+        [overlayNoRowsTemplate]="overlayNoRowsTemplate"
+        (gridReady)="onGridReady($event)"
+      >
+      </ag-grid-angular>
+    </div>
+
+    <!-- Footer botones -->
+    <div class="footer-bar">
+      <div class="footer-actions">
+        <button type="button" class="btn btn-secondary" (click)="nuevo()" [disabled]="loading">
+          Nuevo
+        </button>
+
+        <button type="button" class="btn btn-primary-solid" (click)="generarXml()" [disabled]="loading">
+          Generar XML
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

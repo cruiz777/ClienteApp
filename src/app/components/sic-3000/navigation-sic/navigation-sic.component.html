@@ -126,12 +126,11 @@
             </a>
           </mat-expansion-panel>
           <!-- Subgrupo: Reenvio Documentos Electronicos-->
-          <mat-expansion-panel hideToggle>
-            <mat-expansion-panel-header
-              [routerLink]="'/sic-3000/inicio-sic'"
-              class="clickable-header">
+
+         <mat-expansion-panel hideToggle>
+            <mat-expansion-panel-header (click)="goTo('reenvio-fact')" class="clickable-header">
               <mat-panel-title>
-                <span *ngIf="isExpanded" class="menu-text">Reenvio Documentos Electronicos</span>
+                <span *ngIf="isExpanded" class="menu-text">Reenvio Facturas Electronicas</span>
               </mat-panel-title>
             </mat-expansion-panel-header>
           </mat-expansion-panel>
@@ -140,6 +139,8 @@
           </a>
         </mat-expansion-panel>
 
+
+        </mat-expansion-panel>
         <!-- CUENTAS POR COBRAR-->
         <mat-expansion-panel>
           <mat-expansion-panel-header>
