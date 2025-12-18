@@ -1092,6 +1092,111 @@ export class UvIndividualEditComponent implements OnInit {
     });
   }
 
+  // cargarProducto(): void {
+  //   const codbar = this.route.snapshot.paramMap.get('codbar');
+  //   if (!codbar) return;
+
+  //   const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+  //     disableClose: true,
+  //     data: {
+  //       title: 'Cargando Producto ...',
+  //       message: 'Por favor espere mientras se cargan los datos del cliente.',
+  //       type: 'info',
+  //       isLoading: true,
+  //       loadingText: 'Cargando información...',
+  //       showCancel: false
+  //     }
+  //   });
+
+  //   this.productoService.buscarPorCodbar(codbar).pipe(take(1)).subscribe({
+  //     next: (producto) => {
+  //       if (!producto) {
+  //         console.warn('⚠️ Producto no encontrado');
+  //         loadingDialog.close();
+  //         return;
+  //       }
+
+  //       this.idProducto = producto.IdProducto;
+  //       this.cargarTipoGtin(producto);
+  //       this.cargarUnidadesMedida(producto);
+  //       this.cargarSector(producto);
+  //       this.cargarPaisDesdeProducto(producto);
+  //       this.cargarCodigos14PorGtin(codbar);
+  //       this.abrevia = (producto.Abrevia ?? '');
+
+  //       const codigoCliente: number = Number(producto.clienteCodigo || producto.clienteCodigo);
+
+  //       this.prefijoService.obtenerPorClienteCodigo(codigoCliente).pipe(take(1)).subscribe({
+  //         next: (prefijos) => {
+  //           this.prefijos = prefijos;
+
+  //           const prefijoCoincidente = this.prefijos.find(p => p.codpre === producto.codpre);
+  //           if (prefijoCoincidente) {
+  //             this.formUV.get('gcp')?.setValue(prefijoCoincidente.id_prefijos);
+  //             this.formUV.get('gln')?.setValue(prefijoCoincidente.gln);
+  //           } else {
+  //             console.warn('⚠️ No se encontró prefijo coincidente con codpre:', producto.codpre);
+  //           }
+
+  //           this.grupoProductoService.obtenerGrupos().pipe(take(1)).subscribe({
+  //             next: (grupos) => {
+  //               this.gruposProducto = grupos;
+
+  //               const grupo = this.gruposProducto.find(g =>
+  //                 g.id_grupo_producto === Number(producto.idgrupoproducto)
+  //               );
+
+  //               if (grupo) {
+  //                 this.formUV.get('categoria')?.setValue(grupo);
+  //                 this.formUV.get('brick')?.setValue(grupo.brick);
+  //               } else {
+  //                 console.warn('⚠️ No se encontró grupo coincidente con idgrupoproducto:', producto.idgrupoproducto);
+  //               }
+
+  //               this.formUV.patchValue({
+  //                 descripcion: producto.Despro || '',
+  //                 marca: producto.marca || '',
+  //                 contenido: producto.contenido || '',
+  //                 unidadesMedida: producto.unidad || '',
+  //                 grupo: Number(producto.idgrupoproducto) || 0,
+  //                 idProducto: producto.IdProducto || null,
+  //                 gtinUv: producto.codbar || '',
+  //                 observacion: producto.Obs || '',
+  //                 urlFoto: producto.url || '',
+  //                 activo: producto.Activo,
+  //                 feccre: moment(producto.Feccre, 'YYYY-MM-DD'),
+  //                 empresas: {
+  //                   otrosSolicitantes: producto.po || '',
+  //                   favorita: producto.p1 === 1,
+  //                   mega: producto.p2 === 1,
+  //                   amazon: producto.p3 === 1,
+  //                   rosario: producto.p4 === 1,
+  //                   tia: producto.p5 === 1,
+  //                   google: producto.p6 === 1,
+  //                 }
+  //               });
+
+  //               this.botonGrabarDeshabilitado = true;
+  //               loadingDialog.close(); // ✅ cierre en éxito final
+  //             },
+  //             error: (err) => {
+  //               console.error('❌ Error al cargar grupos de producto:', err);
+  //               loadingDialog.close(); // ✅ cierre en error
+  //             }
+  //           });
+  //         },
+  //         error: (err) => {
+  //           console.error('❌ Error al cargar prefijos:', err);
+  //           loadingDialog.close(); // ✅ cierre en error
+  //         }
+  //       });
+  //     },
+  //     error: (err) => {
+  //       console.error('❌ Error al cargar producto:', err);
+  //       loadingDialog.close(); // ✅ cierre en error
+  //     }
+  //   });
+  // }
   cargarProducto(): void {
     const codbar = this.route.snapshot.paramMap.get('codbar');
     if (!codbar) return;
@@ -1138,19 +1243,16 @@ export class UvIndividualEditComponent implements OnInit {
               console.warn('⚠️ No se encontró prefijo coincidente con codpre:', producto.codpre);
             }
 
-            this.grupoProductoService.obtenerGrupos().pipe(take(1)).subscribe({
-              next: (grupos) => {
-                this.gruposProducto = grupos;
+            // ✅ CAMBIO: Cargar solo el grupo específico del producto
+            const idGrupo = Number(producto.idgrupoproducto);
 
-                const grupo = this.gruposProducto.find(g =>
-                  g.id_grupo_producto === Number(producto.idgrupoproducto)
-                );
-
+            this.grupoProductoService.obtenerGrupoPorId(idGrupo).pipe(take(1)).subscribe({
+              next: (grupo) => {
                 if (grupo) {
                   this.formUV.get('categoria')?.setValue(grupo);
                   this.formUV.get('brick')?.setValue(grupo.brick);
                 } else {
-                  console.warn('⚠️ No se encontró grupo coincidente con idgrupoproducto:', producto.idgrupoproducto);
+                  console.warn('⚠️ No se encontró grupo coincidente con idgrupoproducto:', idGrupo);
                 }
 
                 this.formUV.patchValue({
@@ -1158,7 +1260,7 @@ export class UvIndividualEditComponent implements OnInit {
                   marca: producto.marca || '',
                   contenido: producto.contenido || '',
                   unidadesMedida: producto.unidad || '',
-                  grupo: Number(producto.idgrupoproducto) || 0,
+                  grupo: idGrupo || 0,
                   idProducto: producto.IdProducto || null,
                   gtinUv: producto.codbar || '',
                   observacion: producto.Obs || '',
@@ -1177,23 +1279,23 @@ export class UvIndividualEditComponent implements OnInit {
                 });
 
                 this.botonGrabarDeshabilitado = true;
-                loadingDialog.close(); // ✅ cierre en éxito final
+                loadingDialog.close();
               },
               error: (err) => {
-                console.error('❌ Error al cargar grupos de producto:', err);
-                loadingDialog.close(); // ✅ cierre en error
+                console.error('❌ Error al cargar grupo de producto:', err);
+                loadingDialog.close();
               }
             });
           },
           error: (err) => {
             console.error('❌ Error al cargar prefijos:', err);
-            loadingDialog.close(); // ✅ cierre en error
+            loadingDialog.close();
           }
         });
       },
       error: (err) => {
         console.error('❌ Error al cargar producto:', err);
-        loadingDialog.close(); // ✅ cierre en error
+        loadingDialog.close();
       }
     });
   }
