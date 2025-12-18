@@ -24,6 +24,7 @@ import { AsientoContableComponent } from './transacciones/asientos-contables/asi
 import { FacturasProveedorFormComponent } from './transacciones/facturas-proveedor/facturas-proveedor-form/facturas-proveedor-form.component';
 import { FacturasProveedorComponent } from './transacciones/facturas-proveedor/facturas-proveedor-list/facturas-proveedor-list.component';
 import { AnticipoCgFormComponent } from './transacciones/anticipos-cg/anticipos-cg-form/anticipos-cg-form.component';
+import { BalanceComponent } from './balance/balance/balance-comprobacion-list/balance-comprobacion-list.component'
 
 const routes: Routes = [
   {
@@ -35,21 +36,22 @@ const routes: Routes = [
       { path: 'inicio-cg', component: InicioCgComponent },
       { path: 'tipocuenta', component: TipcuentaComponent },
       { path: 'tipocuentaform', component: TipocuentaFormComponent },
-      { path: 'tiporetencion', component:TipoRetencionComponent},
+      { path: 'tiporetencion', component: TipoRetencionComponent },
       { path: 'tiporetencionform', component: TipoRetencionFormComponent },
-      { path: 'tipocomprobantesri', component:TipoComprobanteSriComponent},
-      { path: 'tipoasiento', component:TipoAsientoComponent},
-      { path: 'fechascontrol', component:FechasControlComponent},
-      { path: 'bancos', component:BancosComponent},
-      { path: 'bancosterceros', component:BancosTercerosComponent},
-      { path: 'bancosempresa', component:BancosEmpresaComponent},
-      { path: 'plancuentas', component:PlanCuentasTreeComponent},
-      { path: 'numeroCheques', component:NumeroChequesListComponent},
-      { path: 'codigoscontables', component:CodigosContablesComponent},
-      { path: 'asientoscontables', component:AsientoFormComponent},
-      { path: 'asientocontable', component:AsientoContableComponent},
-      { path: 'ingresodocumentos', component:FacturasProveedorComponent},      
-      { path: 'anticipos', component:AnticipoCgFormComponent}, 
+      { path: 'tipocomprobantesri', component: TipoComprobanteSriComponent },
+      { path: 'tipoasiento', component: TipoAsientoComponent },
+      { path: 'fechascontrol', component: FechasControlComponent },
+      { path: 'bancos', component: BancosComponent },
+      { path: 'bancosterceros', component: BancosTercerosComponent },
+      { path: 'bancosempresa', component: BancosEmpresaComponent },
+      { path: 'plancuentas', component: PlanCuentasTreeComponent },
+      { path: 'numeroCheques', component: NumeroChequesListComponent },
+      { path: 'codigoscontables', component: CodigosContablesComponent },
+      { path: 'asientoscontables', component: AsientoFormComponent },
+      { path: 'asientocontable', component: AsientoContableComponent },
+      { path: 'ingresodocumentos', component: FacturasProveedorComponent },
+      { path: 'anticipos', component: AnticipoCgFormComponent },
+      { path: 'diario', component: BalanceComponent },
       { path: '**', redirectTo: 'inicio-cg' },
     ],
   },
@@ -59,4 +61,4 @@ const routes: Routes = [
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule],
 })
-export class Cg3000RoutingModule {}
+export class Cg3000RoutingModule { }

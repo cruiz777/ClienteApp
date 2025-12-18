@@ -1,0 +1,325 @@
+/* ============================================================
+   BASE
+============================================================ */
+.page-wrapper-balance{
+  padding: 10px 20px;
+  background: #ffffff;
+  font-family: 'Inter', sans-serif;
+  color: #1f2937;
+}
+
+/* ============================================================
+   TÍTULO (similar a guía Asientos)
+============================================================ */
+.page-title-row{
+  display:flex;
+  justify-content:left;
+  margin-bottom:8px;
+}
+
+.page-title-balance{
+  font-size: 19px;
+  font-weight: 700;
+  margin: 0;
+  color:#002c6c;
+}
+
+/* ============================================================
+   FILTROS / ACCIONES (layout tipo guía)
+============================================================ */
+.filters-row-balance{
+  display:flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  margin-bottom: 10px;
+}
+
+.filters-left-balance{
+  display:flex;
+  align-items:flex-end;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+}
+
+.filter-group{
+  display:flex;
+  flex-direction: column;
+  min-width: 190px;
+}
+
+.filter-label{
+  font-size: 13px;
+  margin-bottom: 2px;
+  color:#374151;
+}
+
+.control{
+  height: 36px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #c5ced8;
+  font-size: 13px;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.control:focus{
+  border-color:#1f4f9a;
+  box-shadow: 0 0 0 2px rgba(31,79,154,0.22);
+}
+
+.filter-group.disabled{
+  opacity: .65;
+}
+
+/* Modo */
+.mode-group{
+  min-width: 230px;
+}
+
+.mode-options{
+  display:flex;
+  gap: 12px;
+  align-items:center;
+  height: 36px;
+}
+
+.mode-option{
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  font-size: 13px;
+  user-select: none;
+}
+
+/* Status */
+.status-chip{
+  height: 36px;
+  display:flex;
+  align-items:center;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  background: #f3f6fb;
+  border: 1px solid #c5ced8;
+}
+
+/* ============================================================
+   BOTONES ICONO (igual idea a guía)
+============================================================ */
+.icon-circle {
+  width: 40px;        /* más grande el círculo */
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #ffffff;
+  padding: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow: 0 0 0 2px #38b000;  /* borde verde (opcional) */
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, background-color 0.15s ease, transform 0.05s ease;
+}
+
+.icon-circle img {
+  width: 80%;   /* el icono ocupa casi todo el círculo */
+  height: 80%;
+  object-fit: contain;
+}
+
+.icon-circle:hover{
+  background-color:#f3f6fb;
+  box-shadow: 0 0 0 2px #1e88e5;
+  transform: translateY(-1px);
+}
+
+.icon-circle:active{
+  transform: translateY(0);
+  box-shadow: 0 0 0 1px #1e88e5;
+}
+
+.icon-circle:disabled{
+  opacity: .55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.icon-text{
+  font-size: 16px;
+  line-height: 1;
+  color:#0f172a;
+}
+
+/* ============================================================
+   TABLA PRINCIPAL
+============================================================ */
+.table-wrap{
+  height: calc(100vh - 200px);
+  overflow: auto;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+}
+
+.tabla-balance{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12.5px;
+}
+
+.tabla-balance thead th{
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background:#1d789f;
+  color:#e5e7eb;
+  text-align: left;
+  padding: 10px 10px;
+  border-bottom: 1px solid #0f5f7e;
+  white-space: nowrap;
+}
+
+.tabla-balance tbody td{
+  padding: 9px 10px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+  vertical-align: middle;
+}
+
+.tabla-balance tbody tr:nth-child(4n + 1) td{
+  background:#f6f8f9;
+}
+
+.tabla-balance tbody tr:nth-child(4n + 3) td{
+  background:#eef4fb;
+}
+
+.row-main{
+  cursor: pointer;
+}
+
+.row-main:hover td{
+  background:#eaf1c3 !important;
+}
+
+/* columnas */
+.col-exp{ width: 36px; text-align:center; }
+.col-doc{ width: 120px; }
+.col-fecha{ width: 120px; }
+.col-num{ width: 120px; }
+.col-resp{ width: 220px; }
+
+.text-right{ text-align:right; }
+.mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+/* truncado */
+.truncate{
+  max-width: 280px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* chevron */
+.chev{
+  display:inline-block;
+  transition: transform .15s ease;
+  color:#0f172a;
+}
+.chev.open{
+  transform: rotate(90deg);
+}
+
+/* ============================================================
+   FILA DETALLE
+============================================================ */
+.row-detail td{
+  padding: 0;
+  background: #ffffff !important;
+  border-bottom: none;
+}
+
+.detail-card{
+  margin: 10px;
+  border: 1px solid #d1d5db;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.detail-title{
+  padding: 10px 12px;
+  font-weight: 700;
+  font-size: 13px;
+  color:#0f172a;
+  background:#f3f6fb;
+  border-bottom: 1px solid #d1d5db;
+}
+
+.detail-table-wrap{
+  overflow: auto;
+}
+
+.tabla-detalle{
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.tabla-detalle th{
+  background:#243760;
+  color:#e5e7eb;
+  text-align:left;
+  padding: 8px 10px;
+  white-space: nowrap;
+}
+
+.tabla-detalle td{
+  padding: 8px 10px;
+  border-top: 1px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+.tabla-detalle tbody tr:hover td{
+  background:#f6f8f9;
+}
+
+/* empty states */
+.empty-state{
+  padding: 18px;
+}
+.empty-title{
+  font-weight: 700;
+  color:#0f172a;
+}
+.empty-sub{
+  margin-top: 4px;
+  color:#6b7280;
+  font-size: 13px;
+}
+.empty-inline{
+  padding: 12px;
+  color:#6b7280;
+  font-size: 13px;
+}
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+@media (max-width: 1100px){
+  .filter-group{ min-width: 170px; }
+  .col-resp{ width: 180px; }
+  .truncate{ max-width: 220px; }
+}
+
+@media (max-width: 820px){
+  .table-wrap{ height: auto; max-height: 70vh; }
+  .filters-row-balance{ align-items: stretch; }
+  .filters-left-balance{ align-items: stretch; }
+  .filter-group{ min-width: 48%; }
+  .mode-group{ min-width: 100%; }
+}
