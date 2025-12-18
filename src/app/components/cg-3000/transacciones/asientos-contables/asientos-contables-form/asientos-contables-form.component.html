@@ -4,20 +4,22 @@
       <div class="title">{{ titulo() }}</div>
 
       <div class="actions">
-        <button (click)="guardar()" [disabled]="isReadOnly()" 
-         [ngClass]="modo() === 'nuevo' ? 'btn-verde' : 'btn-tomate'">
-          <ng-container *ngIf="modo() === 'nuevo'; else actualizarLbl">Guardar</ng-container>
+        <button (click)="guardar()" [disabled]="isReadOnly()"
+        [ngClass]="(modo() === 'nuevo' || modo() === 'plantilla') ? 'btn-verde' : 'btn-tomate'">
+          <ng-container *ngIf="modo() === 'nuevo' || modo() === 'plantilla'; else actualizarLbl">
+            {{ modo() === 'plantilla' ? 'Guardar' : 'Guardar' }}
+          </ng-container>
           <ng-template #actualizarLbl>Actualizar</ng-template>
         </button>
         <button class="btn" (click)="cancelar()">Cancelar</button>
       </div>
-    
+
 </div>
 
 <div class="content-scroll" [class.cabecera-readonly]="cabeceraBloqueada">
     <form [formGroup]="form" class="header-form header-compact" >
       <div class="grid">
-         
+
         <div class="form-group">
           <label for="idZona">
             Zona
@@ -72,8 +74,8 @@
             Campo obligatorio.
           </div>
         </div>
-        
-        
+
+
         <div class="form-group">
           <label>Fecha Transacción</label>
           <input
@@ -83,7 +85,7 @@
            (input)="form.patchValue({ fechatransaccion: $any($event.target).value })"
           />
         </div>
-        
+
         <div class="form-group">
           <label>Fecha Ingreso</label>
           <input
@@ -95,9 +97,9 @@
           />
         </div>
 
-       
 
-        
+
+
         <div class="form-group span-2-left">
           <label>Beneficiario<span class="required">*</span></label>
           <input
@@ -140,7 +142,7 @@
             Campo obligatorio.
           </div>
         </div>
-        
+
         <!--
 
         <div class="form-group">
@@ -207,7 +209,7 @@
             (input)="form.patchValue({ fechacierre: $any($event.target).value })"
           />
         </div>
-      
+
         <div class="form-group">
           <label>Estado</label>
           <select class="control" formControlName="estado">
@@ -241,7 +243,7 @@
   (cellValueChanged)="onCellValueChanged($event)"
   (cellKeyDown)="onCellKeyDown($event)"
   >
-  
+
 </ag-grid-angular>
 
 <div class="totales">

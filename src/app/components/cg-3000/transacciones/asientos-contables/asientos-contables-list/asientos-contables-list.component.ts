@@ -122,7 +122,7 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
     {
       headerName: 'Acciones',
       colId: 'acciones',
-      width: 93,
+      width: 160,
       pinned: 'right',
       suppressHeaderMenuButton: true,
       menuTabs: [],
@@ -133,9 +133,9 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
         <button class="btn-icon pdf"  data-action="print" title="Imprimir asiento">
             <img src="assets/icons/icon-imprimir.png" width="16" height="16" alt="PDF" />
         </button>
-        <!--Copiar/Crear asiento estándar desde plantilla ⬇️⬇️ -->
-        <button class="ag-action-btn" data-action="copy" title="Crear desde este asiento">
-          <img src="assets/icons/icon-copiar.png" width="18" height="18" alt="Copiar" />
+        <!--Copiar/Crear asiento estándar desde plantilla -->
+        <button class="ag-action-btn" data-action="copy" title="Duplicación de asiento">
+          <img src="assets/icons/icon-ficha-cliente.png" width="18" height="18" alt="Copiar" />
         </button>
       `,
       sortable: false,
@@ -218,7 +218,7 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
 
     if (action === 'copy' && evt.data) {
       const id = Number(evt.data.idCabMaestro || 0);
-      this.crearDesdeAsiento(id);
+      this.crearAsientoEstandar(id);
       return;
     }
 
@@ -269,7 +269,7 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
  * Crea un NUEVO asiento copiando la estructura de uno existente
  * Solo permite editar: Beneficiario, Observación y Fecha de transacción
  */
-  crearDesdeAsiento(idCabMaestro: number): void {
+  crearAsientoEstandar(idCabMaestro: number): void {
     if (!idCabMaestro || idCabMaestro <= 0) {
       console.warn('ID de asiento inválido');
       return;
@@ -277,15 +277,15 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
 
     this.loading = true;
 
-    // Obtener el asiento completo (cabecera + detalles)
+    // 1️⃣ Obtener el asiento completo
     this.asientosService.getById(idCabMaestro).subscribe({
       next: (asientoOriginal) => {
         this.loading = false;
 
-        //  Preparar el asiento para crear uno nuevo
-        const asientoNuevo = this.prepararAsientoPlantilla(asientoOriginal);
+        // 2️⃣ Preparar plantilla (limpia campos editables)
+        const plantilla = this.prepararPlantillaEstandar(asientoOriginal);
 
-        // Abrir el formulario en modo "nuevo-desde-plantilla"
+        // 3️⃣ Abrir formulario en modo "plantilla"
         const dialogRef = this.dialog.open(AsientosContablesFormComponent, {
           width: '75vw',
           maxWidth: '95vw',
@@ -294,20 +294,20 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
           autoFocus: false,
           restoreFocus: false,
           data: {
-            modo: 'nuevo-plantilla', // Nuevo modo
-            asiento: asientoNuevo    // Datos pre-cargados
+            modo: 'plantilla',           //  Nuevo modo
+            asientoPlantilla: plantilla  //  Datos pre-cargados
           }
         });
 
         dialogRef.afterClosed().subscribe(result => {
           if (result) {
-            this.obtenerAsientos(); // Recargar el listado
+            this.obtenerAsientos(); // Recargar listado
           }
         });
       },
       error: (err) => {
         this.loading = false;
-        console.error('Error al obtener asiento para copiar:', err);
+        console.error('Error al cargar asiento para copiar:', err);
         alert('No se pudo cargar el asiento. Intente nuevamente.');
       }
     });
@@ -316,34 +316,44 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
  * Prepara el asiento original para usarlo como plantilla
  * Limpia los campos que el usuario debe ingresar manualmente
  */
-  private prepararAsientoPlantilla(asientoOriginal: AsientoContableResponse): AsientoContableResponse {
+  private prepararPlantillaEstandar(asientoOriginal: AsientoContableResponse): AsientoContableResponse {
     const hoy = new Date();
     const fechaHoy = hoy.toISOString().substring(0, 10); // YYYY-MM-DD
+    const horaHoy = hoy.toISOString(); // ISO completo
 
     return {
       ...asientoOriginal,
 
-      //Campos que se resetean (usuario los ingresará)
+      // Campos que se resetean (usuario los editará)
       IdCabMaestro: 0,                    // Nuevo asiento
       numdoc: 0,                          // Se auto-generará
       beneficiario: '',                   // Usuario lo ingresará
-      observacion: '',                    // Usuario lo ingresará
+      observacion: '',                    // Usuario lo ingresará (concepto)
       fechatransaccion: fechaHoy,         // Fecha actual (editable)
-      fechaingreso: new Date().toISOString(), // Fecha/hora actual
+      fechaingreso: horaHoy,              // Fecha/hora actual
 
-      //Campos que se mantienen de la plantilla
-      // idTipoAsiento, idZona, idEmpresa, etc. ya vienen en ...asientoOriginal
+      //  Campo especial: marcar como transacción estándar
+      modulo: 0,                          //  Transacción estándar
 
-      // Detalles/Líneas se mantienen completos
+      //  Campos que se mantienen de la plantilla
+      // idTipoAsiento, idZona, idEmpresa, tipdoc, etc. vienen en ...asientoOriginal
+
+      //  Detalles/Líneas se copian COMPLETOS (cuentas, montos, todo)
       detalles: (asientoOriginal.detalles || []).map((detalle, index) => ({
         ...detalle,
-        numlinea: index + 1,              // Re-numerar por si acaso
-        fechatransaccion: fechaHoy,       // Actualizar fecha de las líneas
-        fechaingreso: new Date().toISOString(),
-        // Mantener: cuentas, centros de costo, montos, etc.
+        IdDetMaestro: 0,                  //  Nueva línea
+        IdCabMaestro: 0,                  //  Se asignará al guardar
+        numlinea: index + 1,              //  Re-numerar
+        fechatransaccion: fechaHoy,       //  Actualizar fecha
+        fechaingreso: horaHoy,            //  Actualizar fecha/hora
+        beneficiario: '',                 //  Se tomará de la cabecera
+        comentario: detalle.comentario || '',
+        debe: 0,
+        haber: 0,
       }))
     };
   }
+
   abrirCrear(): void {
     const dialogRef = this.dialog.open(AsientosContablesFormComponent, {
       width: '75vw',

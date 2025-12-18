@@ -107,6 +107,14 @@ interface TipoRetencionCombo {
   porcentaje: number; // Porcentaje
 }
 
+///numero de control
+type SriSerieRangoCfg = {
+  minEstab?: number; // default 1
+  maxEstab?: number; // default 99  (si quieres 999, cámbialo)
+  minPto?: number;   // default 1
+  maxPto?: number;   // default 99
+};
+
 ///plazo proveedor
 type ProveedorItem = { id: number; label: string; razon: string; plazo: number | null };
 
@@ -144,15 +152,20 @@ interface PorcentajeIvaCombo {
 export class FacturasProveedorFormComponent implements OnInit {
   @ViewChild(AgGridAngular) agGrid!: AgGridAngular;
 
-  modo = signal<'nuevo' | 'editar'>('nuevo');
+  modo = signal<'nuevo' | 'editar' | 'plantilla'>('nuevo');
   loading = signal(false);
   saving = signal(false);
 
-  titulo = computed(() =>
-    this.modo() === 'nuevo'
-      ? 'Crear(Factura Proveedor) — NUEVO'
-      : 'Editar (Factura Proveedor) — EDITAR'
-  );
+  titulo = computed(() => {
+    const m = this.modo();
+    if (m === 'editar') {
+      return 'Editar (Factura Proveedor) — EDITAR';
+    }
+    if (m === 'plantilla') {
+      return 'Duplicación de Factura — NUEVO';
+    }
+    return 'Crear(Factura Proveedor) — NUEVO';
+  });
 
   // USUARIO
   usuarioActual = this.usuarioService.getUsuarioActual();
@@ -217,9 +230,18 @@ export class FacturasProveedorFormComponent implements OnInit {
 
   //// ✅ No. comprobante (solo números) + validación duplicado por backend (en NUEVO antes de agregar línea)
   nroComprobanteCtrl = new FormControl<string>('', [
+    
+    //Validators.required,
+    //Validators.maxLength(25),
+    //Validators.pattern(/^\d+$/),
+
     Validators.required,
-    Validators.maxLength(25),
-    Validators.pattern(/^\d+$/),
+    Validators.minLength(15),
+    Validators.maxLength(15),
+    Validators.pattern(/^\d{15}$/),
+    //sriNoComprobanteValidator(), // 👈 custom
+    sriNoComprobanteValidator({ maxEstab: 99, maxPto: 99 }), // ✅ aquí defines el rango d 999 999
+
   ]);
 
   // lista de movimientos bancarios añadir condicion
@@ -250,7 +272,9 @@ export class FacturasProveedorFormComponent implements OnInit {
   ////
   autorizacionCtrl = new FormControl<string>('', [
     Validators.required,
+    Validators.minLength(10),
     Validators.maxLength(49),
+    Validators.pattern(/^\d+$/),
   ]);
   fechacaducaCtrl = new FormControl<string | null>(null, [Validators.required]);
   fechavencimientoCtrl = new FormControl<string | null>(null, [Validators.required]);
@@ -269,7 +293,7 @@ export class FacturasProveedorFormComponent implements OnInit {
   ///PARA CALCULO DE FFECHAS PLAZO
   private _calculandoVencimiento = false;
 
-  
+
   private parseDateOnlyToLocal(dateStr: string): Date | null {
     // Espera yyyy-MM-dd (lo que entrega el input type="date")
     if (!dateStr) return null;
@@ -646,10 +670,18 @@ export class FacturasProveedorFormComponent implements OnInit {
         // Por defecto NO filtramos (mostramos todas las cuentas)
         let condicion: number | null = null;
 
+        /*
         if (idMov > 0) {
           const mov = this.movimientosBancarios.find((m) => m.id === idMov);
 
           if (mov && mov.condicion != null && !isNaN(Number(mov.condicion)) && Number(mov.condicion) > 0) {
+            condicion = Number(mov.condicion);
+          }
+        }
+        */
+        if (idMov > 0) {
+          const mov = this.movimientosBancarios.find((m) => m.id === idMov);
+          if (mov && mov.condicion != null && Number(mov.condicion) > 0) {
             condicion = Number(mov.condicion);
           }
         }
@@ -975,7 +1007,11 @@ export class FacturasProveedorFormComponent implements OnInit {
     @Optional() public dialogRef: MatDialogRef<FacturasProveedorFormComponent> | null,
     @Optional()
     @Inject(MAT_DIALOG_DATA)
-    public data: { modo?: 'nuevo' | 'editar'; id?: number } | null,
+    public data: {
+      modo?: 'nuevo' | 'editar' | 'plantilla';     //Se agrega plantilla
+      id?: number;
+      facturaPlantilla?: AsientoContableResponse;
+    } | null,
     private tipoasientoservice: TipoAsientoService,
     private facturasService: FacturasProveedorService,
     private zonaService: ZonaService,
@@ -1128,7 +1164,7 @@ export class FacturasProveedorFormComponent implements OnInit {
       } else {
         this.form.patchValue({ beneficiario: '' }, { emitEvent: false });
         this.plazoCtrl.setValue(0, { emitEvent: false });
-        ///VERIFICAR HR 
+        ///VERIFICAR HR
         this.recalcularFechaVencimiento();
       }
     });
@@ -1191,32 +1227,52 @@ export class FacturasProveedorFormComponent implements OnInit {
     this.cargarTiposRetencion();
     this.cargarPorcentajesIva(); //nuevo porcentaje iva
 
-    if (id > 0) {
-      this.modo.set('editar');
-      this.cargarAsiento(id);
+    const modoData = this.data?.modo;
+    const plantilla = this.data?.facturaPlantilla;
+
+    if (modoData === 'plantilla' && plantilla) {
+      //MODO PLANTILLA: Cargar factura pre-configurada
+      this.modo.set('plantilla');
+      this.cargarPlantilla(plantilla);
+
     } else {
-      this.modo.set('nuevo');
-      const empty = createEmptyAsientoContableResponse();
-      this.syncUsuarioEmpresa();
-      this.setFormFromHeader(empty);
-      this.rowData.set([]);
-      this.form.patchValue({ modulo: 1 }, { emitEvent: false });
-      this.form.patchValue({ anio: getYearFromInput(this.form.get('fechatransaccion')!.value) }, { emitEvent: false });
+      //  Si NO es plantilla, verificar id para editar/nuevo
+      const idDialog = this.data?.id ?? 0;
+      const idRoute = Number(this.route.snapshot.paramMap.get('id') ?? 0);
+      const id = idDialog || idRoute;
 
-      this.form
-        .get('fechatransaccion')!
-        .valueChanges.pipe(
-          startWith(this.form.get('fechatransaccion')!.value),
-          map(getYearFromInput),
-          distinctUntilChanged()
-        )
-        .subscribe((y) => {
-          this.form.patchValue({ anio: y }, { emitEvent: false });
-        });
+      if (id > 0) {
+        // MODO EDITAR
+        this.modo.set('editar');
+        this.cargarAsiento(id);
 
-      this.syncUsuarioEmpresa();
+      } else {
+        // MODO NUEVO
+        this.modo.set('nuevo');
+        const empty = createEmptyAsientoContableResponse();
+        this.syncUsuarioEmpresa();
+        this.setFormFromHeader(empty);
+        this.rowData.set([]);
+        this.form.patchValue({ modulo: 1 }, { emitEvent: false });
+        this.form.patchValue(
+          { anio: getYearFromInput(this.form.get('fechatransaccion')!.value) },
+          { emitEvent: false }
+        );
+
+        this.form
+          .get('fechatransaccion')!
+          .valueChanges.pipe(
+            startWith(this.form.get('fechatransaccion')!.value),
+            map(getYearFromInput),
+            distinctUntilChanged()
+          )
+          .subscribe((y) => {
+            this.form.patchValue({ anio: y }, { emitEvent: false });
+          });
+
+        this.syncUsuarioEmpresa();
+      }
     }
-    
     ////CAMBIOS HR PARA CALCULO DEL PLAZO
     this.fechacaducaCtrl.valueChanges.subscribe(() => {
         this.recalcularFechaVencimiento();
@@ -1226,7 +1282,6 @@ export class FacturasProveedorFormComponent implements OnInit {
         this.recalcularFechaVencimiento();
       });
     ///END
-
   }
 
   private buildForm(): void {
@@ -1392,7 +1447,81 @@ export class FacturasProveedorFormComponent implements OnInit {
       },
     });
   }
+  /**
+ * Bloquea: Zona, Proveedor, Tipo Comprobante SRI, Sustento Tributario
+ * Permite editar: No.Comprobante, Autorización, Fechas, Observación, Debe/Haber
+ */
+  private cargarPlantilla(plantilla: AsientoContableResponse): void {
+    // Setear la cabecera (con campos limpios ya viene en plantilla)
+    this.setFormFromHeader(plantilla);
 
+    // Cargar las líneas del detalle (ya vienen con debe/haber en 0)
+    this.rowData.set(plantilla.detalles ?? []);
+
+    // Sincronizar usuario y empresa
+    this.syncUsuarioEmpresa();
+
+    // Extraer valores de la primera línea para mostrar en cabecera
+    const primeraLinea = plantilla.detalles && plantilla.detalles.length ? plantilla.detalles[0] : null;
+
+    if (primeraLinea) {
+      // ===== PROVEEDOR (MEJORADO) =====
+      const idAux = Number(primeraLinea.idCodContable || 0);
+
+      if (idAux > 0) {
+        // 🔹 Setear el ID del auxiliar
+        this.auxiliarSeleccionadoCtrl.setValue(idAux, { emitEvent: false });
+
+        // 🔹 Crear objeto temporal para el autocomplete usando datos de la plantilla
+        const razonSocial = plantilla.beneficiario || primeraLinea.beneficiario || '';
+
+        // Primero intentar buscar en auxiliaresGrid (si ya se cargó)
+        let proveedorObj: ProveedorItem | undefined = this.auxiliaresGrid.find(a => a.id === idAux) as any;
+
+        // Si no está en el grid, crear objeto temporal con los datos que tenemos
+        if (!proveedorObj && razonSocial) {
+          proveedorObj = {
+            id: idAux,
+            label: `${idAux} - ${razonSocial}`,
+            razon: razonSocial,
+            plazo: null,
+          } as ProveedorItem;
+        }
+
+        // Setear en el autocomplete
+        if (proveedorObj) {
+          this.proveedorCtrl.setValue(proveedorObj, { emitEvent: false });
+
+          // Asegurar que el beneficiario esté en el form
+          this.form.patchValue({ beneficiario: razonSocial }, { emitEvent: false });
+        }
+      }
+
+      // ===== SUSTENTO TRIBUTARIO =====
+      const idSust = Number(primeraLinea.idSustentoTrib || 0);
+      if (idSust > 0) {
+        this.sustentoTribCtrl.setValue(idSust, { emitEvent: false });
+      }
+
+      // ===== TIPO COMPROBANTE SRI =====
+      const idTipoComp = Number(primeraLinea.idTipoCompSri || 0);
+      if (idTipoComp > 0) {
+        this.tipoCompSriCtrl.setValue(idTipoComp, { emitEvent: false });
+      }
+    }
+
+    // BLOQUEAR SOLO LOS 4 CAMPOS ESPECÍFICOS
+    this.form.get('idZona')?.disable();              //  Zona bloqueada
+    this.auxiliarSeleccionadoCtrl.disable();         //  Proveedor (ID) bloqueado
+    this.proveedorCtrl.disable();                    //  Proveedor (autocomplete) bloqueado
+    this.tipoCompSriCtrl.disable();                  //  Tipo Comprobante bloqueado
+    this.sustentoTribCtrl.disable();                 //  Sustento Trib. bloqueado
+
+    //Forzar refresco del grid
+    this.refrescarColumnasDetalle();
+
+    console.log('Plantilla cargada - Proveedor:', this.proveedorCtrl.value);
+  }
   private cargarLocales(): void {
     this.localesService.getAll().subscribe({
       next: (res) => {
@@ -1411,6 +1540,7 @@ export class FacturasProveedorFormComponent implements OnInit {
     });
   }
 
+  /*
   private cargarPlanCuentas(): void {
     const empresaId = this.usuarioActual?.id_empresa ?? 0;
 
@@ -1461,6 +1591,70 @@ export class FacturasProveedorFormComponent implements OnInit {
       },
     });
   }
+
+  */
+  ///plan de cuentas solo esrmovimiento=1
+  private cargarPlanCuentas(): void {
+    const empresaId = this.usuarioActual?.id_empresa ?? 0;
+
+    this.planCuentasService.getAll({ idEmpresa: empresaId, estado: 'A' }).subscribe({
+      next: (list: PlanCuenta[]) => {
+        const fuente = list || [];
+
+        // ✅ Filtrar SOLO cuentas de movimiento
+        const soloMovimiento = fuente.filter((c: any) => {
+          const v =
+            c?.EsMovimiento ??
+            c?.esMovimiento ??
+            c?.es_movimiento ??
+            c?.Movimiento ??
+            c?.movimiento;
+
+          return Number(v) === 1;
+        });
+
+        this.cuentas = soloMovimiento.map((c: any) => {
+          let porcentaje: number | null = null;
+
+          // porcentaje retención (si viene en backend)
+          const posibles = [c?.PorcentajeRetencion, c?.Porcentaje, c?.porcentaje];
+          for (const p of posibles) {
+            if (p !== null && p !== undefined && p !== '') {
+              const n = Number(p);
+              if (!isNaN(n) && n > 0) {
+                porcentaje = n;
+                break;
+              }
+            }
+          }
+
+          // fallback: leer % del texto
+          if (porcentaje === null) {
+            const texto = `${c?.CuentaPresentacion ?? ''} ${c?.NombreCuenta ?? ''}`;
+            const match = texto.match(/(\d+([.,]\d+)?)\s*%/);
+            if (match) {
+              const n = parseFloat(match[1].replace(',', '.'));
+              if (!isNaN(n) && n > 0) porcentaje = n;
+            }
+          }
+
+          return {
+            id: Number(c?.IdPlanCuentas ?? 0),
+            label: `${(c?.CuentaPresentacion ?? '').toString().trim()} - ${(c?.NombreCuenta ?? '').toString().trim()}`,
+            codigo: (c?.CuentaPresentacion ?? '').toString().trim(),
+            idCodigoEspecial:
+              c?.IdCodigoEspecial != null && Number(c.IdCodigoEspecial) > 0 ? Number(c.IdCodigoEspecial) : null,
+            porcentajeRetencion: porcentaje,
+          };
+        });
+
+        this.gridApi?.refreshCells({ force: true, columns: ['idPlanCuentas'] });
+      },
+      error: (err) => console.error('Error cargando plan de cuentas', err),
+    });
+  }
+
+  /////
 
   private cargarCodigosContables(): void {
     const empresaId = this.usuarioActual?.id_empresa ?? 0;
@@ -1635,7 +1829,7 @@ export class FacturasProveedorFormComponent implements OnInit {
 
     if (!this.validarDetalle()) return;
 
-    const esNuevo = this.modo() === 'nuevo';
+    const esNuevo = this.modo() === 'nuevo' || this.modo() === 'plantilla';
 
     const ahora = new Date();
     const nowIso = formatLocalIso(ahora);
@@ -1690,11 +1884,24 @@ export class FacturasProveedorFormComponent implements OnInit {
       this.rowData.set(detallesConFecha);
     }
 
-    const rawForm = this.form.value as AsientoContableResponse;
+    const rawForm = this.form.getRawValue() as AsientoContableResponse;
 
     // ====== APLICAR CAMPOS RELACIONADOS (CABECERA -> TODAS LAS LÍNEAS) ======
-    const detallesConRelacionados = this.aplicarCamposRelacionadosCabecera(this.rowData());
+    let detallesConRelacionados = this.aplicarCamposRelacionadosCabecera(this.rowData());
+    if (this.modo() === 'plantilla') {
+      const nroComp = (this.nroComprobanteCtrl.value || '').toString().trim();
+      const autCab = (this.autorizacionCtrl.value || '').toString().trim();
+      const fCadCab = this.fechacaducaCtrl.value ? normalizeToLocalDate(this.fechacaducaCtrl.value) : null;
+      const fVenCab = this.fechavencimientoCtrl.value ? normalizeToLocalDate(this.fechavencimientoCtrl.value) : null;
 
+      detallesConRelacionados = detallesConRelacionados.map(d => ({
+        ...d,
+        nocomprobante: nroComp || d.nocomprobante || '',
+        autorizacion: autCab || d.autorizacion || '',
+        fechacaduca: fCadCab ?? d.fechacaduca ?? null,
+        fechavencimiento: fVenCab ?? d.fechavencimiento ?? null,
+      }));
+    }
     const header: AsientoContableResponse = {
       ...rawForm,
       modulo: rawForm.modulo != null && !isNaN(Number(rawForm.modulo)) ? Number(rawForm.modulo) : 1,
@@ -2071,8 +2278,18 @@ export class FacturasProveedorFormComponent implements OnInit {
       this.tipoCompSriCtrl.markAsTouched();
     }
 
+    /*
     if (!autorizacionCab) {
       mensajes.push('Debe ingresar la Autorización.');
+      this.autorizacionCtrl.markAsTouched();
+    }
+    */
+
+    if (!autorizacionCab) {
+      mensajes.push('Debe ingresar la Autorización.');
+      this.autorizacionCtrl.markAsTouched();
+    } else if (this.autorizacionCtrl.invalid) {
+      mensajes.push('La Autorización debe tener entre 10 y 49 dígitos (solo números).');
       this.autorizacionCtrl.markAsTouched();
     }
 
@@ -2104,9 +2321,12 @@ export class FacturasProveedorFormComponent implements OnInit {
           horizontalPosition: 'right',
           verticalPosition: 'top',
         });
-        return; // ❌ NO agrega línea
+        return; // NO agrega línea
       }
-
+      ////valida lineas del detalle
+      if (this.tieneAlMenosUnaLineaEnDetalle()) {
+          if (!this.validarDetalleAntesDeAgregarLinea()) return;
+      }
       // =========================
       // ✅ (si pasa validación) continúa flujo original
       // =========================
@@ -2275,6 +2495,7 @@ export class FacturasProveedorFormComponent implements OnInit {
     });
   }
 
+  /*
   onNumericInput(ctrl: FormControl<any>, event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input) return;
@@ -2293,6 +2514,38 @@ export class FacturasProveedorFormComponent implements OnInit {
 
     ctrl.setValue(soloDigitos, { emitEvent: false });
   }
+  */
+  ///nuevo metodo numero comprobante
+  onNumericInput(ctrl: FormControl<any>, event: Event, maxLen?: number): void {
+    const input = event.target as HTMLInputElement;
+    if (!input) return;
+
+    const original = input.value ?? '';
+    let soloDigitos = original.replace(/\D/g, '');
+
+    const limite =
+      maxLen ??
+      (ctrl === this.nroComprobanteCtrl ? 15 : undefined);
+
+    if (limite != null) {
+      soloDigitos = soloDigitos.slice(0, limite);
+    }
+
+    if (original !== soloDigitos) {
+      input.value = soloDigitos;
+    }
+
+    //  si cambió el nro comprobante, limpiamos cache/duplicado
+    if (ctrl === this.nroComprobanteCtrl) {
+      this.limpiarCacheNoComprobante();
+    }
+
+    ctrl.setValue(soloDigitos, { emitEvent: false });
+    ctrl.updateValueAndValidity({ onlySelf: true, emitEvent: false }); //clave
+  }
+
+
+  ///end
 
   private normalizarParaBackend(header: AsientoContableResponse): any {
     const h: any = { ...header };
@@ -2523,7 +2776,12 @@ export class FacturasProveedorFormComponent implements OnInit {
     if (!nroComp) errores.push('Debe ingresar el No. Comprobante.');
     if (idSust <= 0) errores.push('Debe seleccionar el Sustento Tributario.');
     if (idTipoC <= 0) errores.push('Debe seleccionar el Tipo de Comprobante SRI.');
-    if (!aut) errores.push('Debe ingresar la Autorización.');
+   // if (!aut) errores.push('Debe ingresar la Autorización.');
+   if (!aut) {
+      errores.push('Debe ingresar la Autorización.');
+    } else if (this.autorizacionCtrl.invalid) {
+      errores.push('La Autorización debe tener entre 10 y 49 dígitos (solo números).');
+    }
     if (!fCad) errores.push('Debe ingresar la Fecha Caduca.');
     if (!fVen) errores.push('Debe ingresar la Fecha Vencimiento.');
     if (!concepto) errores.push('Debe ingresar el Concepto.');
@@ -2593,7 +2851,7 @@ export class FacturasProveedorFormComponent implements OnInit {
     this.fechaCadRelacionadoCtrl.reset(null);
 
     this.plazoCtrl.setValue(0, { emitEvent: false });
-   
+
 
     // ✅ reset cache/duplicado
     this.limpiarCacheNoComprobante();
@@ -2744,6 +3002,95 @@ export class FacturasProveedorFormComponent implements OnInit {
       this.recalcularHaberDesdeDebe(false);
     }
   }
+/*
+  ///validador comprobante
+  onNroComprobanteBlur(): void {
+  const ctrl = this.nroComprobanteCtrl;
+  ctrl.markAsTouched();
+  ctrl.updateValueAndValidity({ onlySelf: true });
+
+  // Si está mal y el usuario escribió algo -> advertencia
+  if (ctrl.invalid && (ctrl.value ?? '').trim().length > 0) {
+    this.snack.open(
+      'Formato incorrecto. Debe ser 15 dígitos (SRI 3-3-9). Ej: 001001000000456.',
+      'Cerrar',
+      { duration: 4000, horizontalPosition: 'right', verticalPosition: 'top' }
+    );
+  }
+}
+*/
+
+onNroComprobanteBlur(): void {
+  const ctrl = this.nroComprobanteCtrl;
+  ctrl.markAsTouched();
+  ctrl.updateValueAndValidity({ onlySelf: true });
+
+  if (ctrl.invalid && (ctrl.value ?? '').trim().length > 0) {
+    let msg = 'Formato incorrecto. Debe ser 15 dígitos (SRI 3-3-9). Ej: 001001000000456.';
+
+    const e = ctrl.errors || {};
+    if (e['sriSerieRango']) {
+      const info = e['sriSerieRango'];
+      msg = `Serie inválida: ${info.parte === 'estab' ? 'Establecimiento' : 'Punto de emisión'} = ${info.valor}. Rango permitido: ${String(info.min).padStart(3,'0')}–${String(info.max).padStart(3,'0')}.`;
+    } else if (e['sriSecuencialInvalido']) {
+      msg = 'Secuencial inválido. No puede ser 000000000.';
+    }
+
+    this.snack.open(msg, 'Cerrar', {
+      duration: 4000,
+      horizontalPosition: 'right',
+      verticalPosition: 'top',
+    });
+  }
+}
+
+//verificar si hay lineas
+private tieneAlMenosUnaLineaEnDetalle(): boolean {
+  this.gridApi?.stopEditing();
+  return (this.rowData()?.length ?? 0) > 0;
+}
+
+private validarDetalleAntesDeAgregarLinea(): boolean {
+  const filas = this.rowData() ?? [];
+  const errores: string[] = [];
+
+  // Si no hay filas, no validamos (se permite agregar la primera)
+  if (!filas.length) return true;
+
+  filas.forEach((f, idx) => {
+    const linea = idx + 1;
+    const idLocal = Number(f.idLocal || 0);
+    const idPlanCuentas = Number(f.idPlanCuentas || 0);
+    const idAuxiliar = Number(f.idCodContable || 0);
+    const idMovBancario = Number(f.idMovBancario || 0);
+    const debe = Number(f.debe || 0);
+    const haber = Number(f.haber || 0);
+    const idSust = Number(f.idSustentoTrib || 0);
+    const idTipoComp = Number(f.idTipoCompSri || 0);
+
+    if (idLocal <= 0) errores.push(`Línea ${linea}: debe seleccionar el Local.`);
+    if (idMovBancario <= 0) errores.push(`Línea ${linea}: debe seleccionar el Tipo de Movimiento.`);
+    if (idPlanCuentas <= 0) errores.push(`Línea ${linea}: debe seleccionar la Cuenta Contable.`);
+    if (idAuxiliar <= 0) errores.push(`Línea ${linea}: debe seleccionar el Auxiliar Contable.`);
+    if (debe <= 0 && haber <= 0) errores.push(`Línea ${linea}: debe ingresar un valor en Debe o en Haber.`);
+    if (debe > 0 && haber > 0) errores.push(`Línea ${linea}: no puede tener Debe y Haber al mismo tiempo.`);
+    if (idSust <= 0) errores.push(`Línea ${linea}: debe seleccionar el Sustento Tributario.`);
+    if (idTipoComp <= 0) errores.push(`Línea ${linea}: debe seleccionar el Tipo de Comprobante SRI.`);
+  });
+
+  if (errores.length > 0) {
+    this.snack.open(errores[0], 'Cerrar', {
+      duration: 5000,
+      horizontalPosition: 'right',
+      verticalPosition: 'top',
+    });
+    return false;
+  }
+
+  return true;
+}
+
+  ///nuevas funciones
 }
 
 /** Helpers de celdas Y OTRAS FUNCIONES A UTILIZAR */
@@ -2907,4 +3254,47 @@ function normalizeToLocalDate(v: any): string {
   const d = v instanceof Date ? v : new Date(v);
   if (isNaN(d.getTime())) return String(v);
   return formatLocalDateOnly(d);
+}
+
+///validador para el numero de comprobante
+
+
+function sriNoComprobanteValidator(cfg: SriSerieRangoCfg = {}) {
+  const minEstab = cfg.minEstab ?? 1;
+  const maxEstab = cfg.maxEstab ?? 99;
+  const minPto   = cfg.minPto   ?? 1;
+  const maxPto   = cfg.maxPto   ?? 99;
+
+  return (control: FormControl<string>): { [key: string]: any } | null => {
+    const valueRaw = (control.value ?? '').trim();
+    if (!valueRaw) return null;
+
+    const value = valueRaw.replace(/\D/g, ''); // por seguridad, solo dígitos
+
+    // 15 dígitos exactos
+    if (!/^\d{15}$/.test(value)) return { sriFormato: true };
+
+    const estabStr = value.substring(0, 3);  // 001
+    const ptoStr   = value.substring(3, 6);  // 001
+    const secStr   = value.substring(6, 15); // 000000001
+
+    const estab = Number(estabStr);
+    const pto   = Number(ptoStr);
+
+    // "000" no permitido y además dentro de rango
+    if (estabStr === '000' || ptoStr === '000') return { sriFormato: true };
+
+    // ✅ rango permitido: 001–099 (o lo que configures)
+    if (isNaN(estab) || estab < minEstab || estab > maxEstab) {
+      return { sriSerieRango: { parte: 'estab', valor: estabStr, min: minEstab, max: maxEstab } };
+    }
+    if (isNaN(pto) || pto < minPto || pto > maxPto) {
+      return { sriSerieRango: { parte: 'pto', valor: ptoStr, min: minPto, max: maxPto } };
+    }
+
+    // Secuencial no debe ser todo ceros
+    if (/^0{9}$/.test(secStr)) return { sriSecuencialInvalido: true };
+
+    return null;
+  };
 }
