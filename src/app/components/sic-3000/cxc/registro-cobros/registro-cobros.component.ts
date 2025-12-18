@@ -349,9 +349,8 @@ export class RegistroCobrosComponent implements OnInit {
         btn.addEventListener('click', () => {
           const removed = params.node.data;
           params.api.applyTransaction({ remove: [removed] });
-          this.pagoRowData = (this.pagoRowData ?? []).filter((r: any) =>
-            r !== removed && String(r.codigo ?? '') !== String(removed?.codigo ?? '')
-          );
+         
+
           this.pagoGridApi?.setGridOption('rowData', this.pagoRowData);
           this.recalcularTotal();
         });
@@ -664,30 +663,75 @@ export class RegistroCobrosComponent implements OnInit {
     this.saldoPendiente = Math.max(0, this.clamp2(this.getValorAPagarNumber() - this.totalPagos));
   }
 
-  private validateGridPlantilla(): { ok: boolean; errors: string[] } {
-    this.pagoGridApi?.stopEditing();
+private validateGridPlantilla(): { ok: boolean; errors: string[] } {
+  this.pagoGridApi?.stopEditing();
 
-    const errors: string[] = [];
-    const total = this.clamp2(this.pagoRowData.reduce((s: number, r: any) => s + (Number(r.monto) || 0), 0));
-    const valorAPagar = this.clamp2(this.getValorAPagarNumber());
+  const errors: string[] = [];
+  const total = this.clamp2(
+    this.pagoRowData.reduce((s: number, r: any) => s + (Number(r.monto) || 0), 0)
+  );
+  const valorAPagar = this.clamp2(this.getValorAPagarNumber());
 
-    if (Math.abs(total - valorAPagar) >= 0.005) {
-      errors.push(`Total de formas de pago (${this.usd(total)}) debe ser ${this.usd(valorAPagar)}.`);
+  // 1) Total de pagos debe cuadrar con el valor a pagar
+  if (Math.abs(total - valorAPagar) >= 0.005) {
+    errors.push(`Total de formas de pago (${this.usd(total)}) debe ser ${this.usd(valorAPagar)}.`);
+  }
+
+  // 2) Validaciones por fila
+  this.pagoRowData.forEach((r: any, i: number) => {
+    const m = Number(r.monto) || 0;
+
+    if (!Number.isFinite(m)) errors.push(`Línea ${i + 1}: monto inválido.`);
+    if (m < 0) errors.push(`Línea ${i + 1}: monto negativo.`);
+
+    // Si la forma de pago requiere referencia, exigir No.CUENTA/TARJETA/FACTURA
+    if (this.requiereReferencia(r) && !String(r.numCuentaTarjetaFactura ?? '').trim()) {
+      const etiqueta = r.descripcion || r.codigo || `Línea ${i + 1}`;
+      errors.push(
+        `Línea ${i + 1} (${etiqueta}): ingrese el NÚMERO DE RETENCIÓN en "No.CUENTA/TARJETA/FACTURA".`
+      );
+    }
+  });
+
+  // 3) NUEVO: permitir repetir forma de pago, pero NO repetir la misma referencia
+  // Regla: si se repite el mismo "codigo", cada fila debe tener un "numCuentaTarjetaFactura" NO vacío y ÚNICO.
+  const refsPorCodigo = new Map<string, Set<string>>();
+
+  this.pagoRowData.forEach((r: any, i: number) => {
+    const codigo = String(r.codigo ?? '').trim();
+    if (!codigo) return;
+
+    const ref = String(r.numCuentaTarjetaFactura ?? '').trim().toUpperCase();
+    const etiqueta = r.descripcion || codigo || `Línea ${i + 1}`;
+
+    if (!refsPorCodigo.has(codigo)) refsPorCodigo.set(codigo, new Set<string>());
+    const setRefs = refsPorCodigo.get(codigo)!;
+
+    // Si ya existe el código en el mapa (es decir, es 2da/3ra vez que aparece),
+    // obligamos a que la referencia sea no vacía para poder diferenciar.
+    const esRepetida = setRefs.size > 0;
+
+    if (esRepetida && !ref) {
+      errors.push(
+        `Línea ${i + 1} (${etiqueta}): esta forma de pago está repetida; debe ingresar un No.CUENTA/TARJETA/FACTURA para diferenciarla.`
+      );
+      return;
     }
 
-    this.pagoRowData.forEach((r: any, i: number) => {
-      const m = Number(r.monto) || 0;
-      if (!Number.isFinite(m)) errors.push(`Línea ${i + 1}: monto inválido.`);
-      if (m < 0) errors.push(`Línea ${i + 1}: monto negativo.`);
-
-      if (this.requiereReferencia(r) && !String(r.numCuentaTarjetaFactura ?? '').trim()) {
-        const etiqueta = r.descripcion || r.codigo || `Línea ${i + 1}`;
-        errors.push(`Línea ${i + 1} (${etiqueta}): ingrese el NÚMERO DE RETENCIÓN en "No.CUENTA/TARJETA/FACTURA".`);
+    // Si hay referencia, no permitir duplicarla en el mismo código
+    if (ref) {
+      if (setRefs.has(ref)) {
+        errors.push(
+          `Línea ${i + 1} (${etiqueta}): No.CUENTA/TARJETA/FACTURA (${ref}) ya está usado en otra línea con la misma forma de pago.`
+        );
+      } else {
+        setRefs.add(ref);
       }
-    });
+    }
+  });
 
-    return { ok: errors.length === 0, errors };
-  }
+  return { ok: errors.length === 0, errors };
+}
 
   aceptarPagos() {
     const p = this.validateGridPlantilla();
@@ -1086,69 +1130,65 @@ export class RegistroCobrosComponent implements OnInit {
   displayFormaPago = (fp: FormaPagoResponse | string | null): string =>
     (typeof fp === 'string') ? fp : (fp?.descripcionPago ?? '');
 
-  onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
-    const item = event.option.value as FormaPagoResponse;
-    if (!item) return;
+onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
+  const item = event.option.value as FormaPagoResponse;
+  if (!item) return;
 
-    const pl = this.formPago.get('plantilla')?.value as 'transfer' | 'cheque';
+  const pl = this.formPago.get('plantilla')?.value as 'transfer' | 'cheque';
 
-    const codigo = String(item.idFormaPago ?? '');
-    const descripcion = item.descripcionPago ?? '';
+  const codigo = String(item.idFormaPago ?? '');
+  const descripcion = item.descripcionPago ?? '';
+  const idcuenta = item.id_plan ?? null;
+  const cuenta = item.codigo_cuenta ?? '';
 
-    const idcuenta = item.id_plan ?? null;
-    const cuenta = item.codigo_cuenta ?? '';
+  if (!codigo && !descripcion) return;
 
-    if (!codigo && !descripcion) return;
+  const montoAuto = Math.max(0, this.getSaldo());
 
-    const yaExiste = this.pagoRowData.some(
-      r => String(r.codigo ?? '') === codigo && !!codigo
-    );
-    if (!yaExiste) {
-      const montoAuto = Math.max(0, this.getSaldo());
+  // ✅ SIEMPRE PERMITE AGREGAR (aunque ya exista el mismo código)
+  if (pl === 'transfer') {
+    this.pagoRowData.push({
+      codigo,
+      descripcion,
+      idcuenta,
+      cuenta,
+      porcRet: null,
+      banco: '',
+      numCuentaTarjetaFactura: '', // <- aquí quedará distinto por cada línea
+      numCheque: '',
+      monto: montoAuto
+    });
+  } else {
+    this.pagoRowData.push({
+      codigo,
+      descripcion,
+      idcuenta,
+      cuenta,
+      numChequeFecha: '',
+      nombreDueno: '',
+      autorizacion: '',
+      monto: montoAuto
+    });
+  }
 
-      if (pl === 'transfer') {
-        this.pagoRowData.push({
-          codigo,
-          descripcion,
-          idcuenta,
-          cuenta,
-          porcRet: null,
-          banco: '',
-          numCuentaTarjetaFactura: '',
-          numCheque: '',
-          monto: montoAuto
-        });
-      } else {
-        this.pagoRowData.push({
-          codigo,
-          descripcion,
-          idcuenta,
-          cuenta,
-          numChequeFecha: '',
-          nombreDueno: '',
-          autorizacion: '',
-          monto: montoAuto
-        });
-      }
+  this.pagoGridApi?.setGridOption('rowData', this.pagoRowData);
+  this.recalcularTotal();
 
-      this.pagoGridApi?.setGridOption('rowData', this.pagoRowData);
-      this.recalcularTotal();
+  setTimeout(() => {
+    const metodoCtrl = this.formPago.get('metodoPago') as FormControl;
+    metodoCtrl.setValue(null);
+    metodoCtrl.markAsPristine();
+    metodoCtrl.markAsUntouched();
+
+    if (this.pagoInputRef?.nativeElement) {
+      this.pagoInputRef.nativeElement.value = '';
+      this.pagoInputRef.nativeElement.focus();
     }
 
-    setTimeout(() => {
-      const metodoCtrl = this.formPago.get('metodoPago') as FormControl;
-      metodoCtrl.setValue(null);
-      metodoCtrl.markAsPristine();
-      metodoCtrl.markAsUntouched();
+    this.autoPagoTrigger?.closePanel();
+  }, 0);
+}
 
-      if (this.pagoInputRef?.nativeElement) {
-        this.pagoInputRef.nativeElement.value = '';
-        this.pagoInputRef.nativeElement.focus();
-      }
-
-      this.autoPagoTrigger?.closePanel();
-    }, 0);
-  }
 
   onPagosRowsChanged(): void {
     this.recalcularTotal();
@@ -1323,6 +1363,7 @@ export class RegistroCobrosComponent implements OnInit {
   // ======================================================
   private buildAsientoCobroRequest(numeroPago: string): any {
     const fechaISO = this.getFechaPagoISO(); // yyyy-MM-dd
+    const fechaISO1 = this.getFechaPagoISO1(); // yyyy-MM-dd
     const [yyyy, mm, dd] = fechaISO.split('-');
 
     const ahora = new Date();
@@ -1423,7 +1464,7 @@ export class RegistroCobrosComponent implements OnInit {
       detalles.push({
         numlinea: numlinea++,
         anio,
-        fechatransaccion: fechaISO,
+        fechatransaccion: fechaISO1,
         hora,
         idZona,
         idCentroCostos: null,
@@ -1438,9 +1479,9 @@ export class RegistroCobrosComponent implements OnInit {
         debe: monto,
         haber: 0,
         comentario: `FORMA PAGO ${fp.descripcion || fp.codigo} - PAGO ${numeroPago}`,
-        idMovBancario: null,
-        movbancario: '',
-        fechaingreso: fechaISO,
+        idMovBancario: 1,
+        movbancario: '0',
+        fechaingreso: fechaISO1,
         cierre: '',
         fechacierre: null,
         conciliado: '',
@@ -1465,7 +1506,7 @@ export class RegistroCobrosComponent implements OnInit {
     detalles.push({
       numlinea: numlinea++,
       anio,
-      fechatransaccion: fechaISO,
+      fechatransaccion: fechaISO1,
       hora,
       idZona,
       idCentroCostos: null,
@@ -1480,9 +1521,9 @@ export class RegistroCobrosComponent implements OnInit {
       debe: 0,
       haber: totalFormasPago,
       comentario: `COBRO FACTURAS CLIENTE ${clienteCodigo} - PAGO ${numeroPago}`,
-      idMovBancario: null,
-      movbancario: '',
-      fechaingreso: fechaISO,
+      idMovBancario: 1,
+      movbancario: '0',
+      fechaingreso: fechaISO1,
       cierre: '',
       fechacierre: null,
       conciliado: '',
@@ -1513,8 +1554,8 @@ export class RegistroCobrosComponent implements OnInit {
       tipdoc,
       numdoc,
       anio,
-      fechatransaccion: fechaISO,
-      fechaingreso: fechaISO,
+      fechatransaccion: fechaISO1,
+      fechaingreso: fechaISO1,
       observacion,
       totdebe,
       tothaber,
@@ -1628,5 +1669,58 @@ export class RegistroCobrosComponent implements OnInit {
         );
       });
   }
-  
+private getFechaPagoISO1(): string {
+  const raw = this.formCliente.get('fechaPago')?.value;
+
+  if (!raw) return this.hoyISOConHora();
+
+  // STRING
+  if (typeof raw === 'string') {
+
+    // yyyy-mm-dd
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+      return `${raw}T${this.horaActual()}`;
+    }
+
+    // dd/mm/yyyy
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+      const [dd, mm, yyyy] = raw.split('/');
+      return `${yyyy}-${mm}-${dd}T${this.horaActual()}`;
+    }
+
+    // yyyy-mm-dd HH:mm:ss  → convertir a ISO
+    if (/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}$/.test(raw)) {
+      return raw.replace(' ', 'T');
+    }
+
+    // yyyy-mm-ddTHH:mm:ss (ya correcto)
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(raw)) {
+      return raw;
+    }
+  }
+
+  // DATE
+  if (raw instanceof Date) {
+    const yyyy = raw.getFullYear();
+    const mm = String(raw.getMonth() + 1).padStart(2, '0');
+    const dd = String(raw.getDate()).padStart(2, '0');
+    const hh = String(raw.getHours()).padStart(2, '0');
+    const mi = String(raw.getMinutes()).padStart(2, '0');
+    const ss = String(raw.getSeconds()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}`;
+  }
+
+  return this.hoyISOConHora();
+}
+private hoyISOConHora(): string {
+  const now = new Date();
+  return now.toISOString().slice(0, 19);
+}
+
+private horaActual(): string {
+  const now = new Date();
+  return now.toTimeString().slice(0, 8);
+}
+
+
 }
