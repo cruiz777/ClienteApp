@@ -48,6 +48,7 @@ import { LiquidarAnticipoComponent } from './anticipos/dialogs/liquidar-anticipo
 import { DocElectronicosComponent } from './facturacion/doc-electronicos/doc-electronicos.component';
 import { AccionesCellRendererComponent } from './facturacion/doc-electronicos/acciones-cell-renderer.component';
 import { ReporteVentasComponent } from './reporte-ventas/reporte-ventas.component';
+import { ReenvioFacComponent } from './facturacion/reenvio-fac/reenvio-fac.component';
 
 @NgModule({
   declarations: [
@@ -63,7 +64,8 @@ import { ReporteVentasComponent } from './reporte-ventas/reporte-ventas.componen
     LiquidarAnticipoComponent,
     DocElectronicosComponent,
     ReporteVentasComponent,
-    AccionesCellRendererComponent
+    AccionesCellRendererComponent,
+    ReenvioFacComponent
     // 👈 OJO: ya NO va EstadocuentaclienteComponent aquí
   ],
   imports: [
