@@ -1,10 +1,15 @@
+// retencion-pdf.util.ts
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { RetencionesImpresionResponse } from 'src/app/interfaces/responses/retenciones-impresion-response';
 
 export class RetencionPdfUtil {
 
-  static generarPdfRetencion(m: RetencionesImpresionResponse): void {
+  // ✅ nuevo parámetro opcional: logo override (base64 puro o dataUrl)
+  static generarPdfRetencion(
+    m: RetencionesImpresionResponse,
+    logoOverrideBase64OrDataUrl?: string | null
+  ): void {
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageW = doc.internal.pageSize.getWidth();
     const margin = 12;
@@ -15,29 +20,25 @@ export class RetencionPdfUtil {
       const dd = String(d.getDate()).padStart(2, '0');
       const mm = String(d.getMonth() + 1).padStart(2, '0');
       const yy = d.getFullYear();
-      // modelo: mm/dd/yyyy
       return `${mm}/${dd}/${yy}`;
     };
 
     const safe = (s: any) => String(s ?? '').trim();
 
-    // ========= CAJA DERECHA =========
     const boxW = 80;
     const boxH = 52;
     const boxX = pageW - margin - boxW;
     const boxY = 12;
 
-    // Bloque izquierdo
     const leftX = margin;
     const leftMaxW = (boxX - leftX) - 6;
 
-    // ========= ENCABEZADO IZQUIERDA =========
     const topY = 12;
 
-    // Logo
-    RetencionPdfUtil.tryAddLogo(doc, m.logoBase64, leftX, topY, 26, 18);
+    // ✅ Logo: usa primero el override; si no, usa el del reporte
+    const logo = String(logoOverrideBase64OrDataUrl ?? (m as any).logoBase64 ?? '').trim();
+    RetencionPdfUtil.tryAddLogo(doc, logo, leftX, topY, 26, 18);
 
-    // Nombre empresa (wrap)
     doc.setFont('times', 'bold');
     doc.setFontSize(12);
 
@@ -48,7 +49,6 @@ export class RetencionPdfUtil {
     doc.text(nombreLines as any, leftX, y);
     y += (nombreLines.length * 5);
 
-    // Datos empresa
     doc.setFont('times', 'normal');
     doc.setFontSize(9);
 
@@ -74,7 +74,6 @@ export class RetencionPdfUtil {
       y += (wrapped.length * 4);
     }
 
-    // ========= CAJA DERECHA (dibujo) =========
     doc.setDrawColor(0);
     doc.rect(boxX, boxY, boxW, boxH);
 
@@ -102,7 +101,6 @@ export class RetencionPdfUtil {
     doc.text('EMISION', boxX + boxW / 2, boxY + 46, { align: 'center' });
     doc.text(safe((m as any).emision || 'NORMAL'), boxX + boxW / 2, boxY + 50, { align: 'center' });
 
-    // ========= CLIENTE =========
     const clientY = Math.max(y + 6, boxY + boxH + 8);
 
     doc.setFont('times', 'normal');
@@ -130,12 +128,9 @@ export class RetencionPdfUtil {
     doc.text(safe((m as any).clienteTelefono), pageW - margin, clientY + 5, { align: 'right' });
     doc.text(safe((m as any).clienteEmail), pageW - margin, clientY + 10, { align: 'right' });
 
-    // ========= DETALLE (ALINEADO COMO SU IMAGEN) =========
     const tableStartY = clientY + 22;
-
-    // CLAVE: misma alineación que el contenido, sin inset.
-    const tableLeft = margin;   // <-- antes estaba margin + 10
-    const tableRight = margin;  // <-- antes estaba margin + 10
+    const tableLeft = margin;
+    const tableRight = margin;
 
     const body = ((m as any).detalles ?? []).map((d: any) => ([
       safe(d.comprobante || 'Factura'),
@@ -152,10 +147,7 @@ export class RetencionPdfUtil {
       startY: tableStartY,
       margin: { left: tableLeft, right: tableRight },
       theme: 'grid',
-
-      // fuerza a usar TODO el ancho disponible entre márgenes
       tableWidth: 'auto',
-
       styles: {
         font: 'times',
         fontSize: 9,
@@ -163,7 +155,6 @@ export class RetencionPdfUtil {
         lineWidth: 0.2,
         valign: 'middle',
       },
-
       headStyles: {
         fontStyle: 'bold',
         fillColor: [0, 92, 153],
@@ -171,48 +162,30 @@ export class RetencionPdfUtil {
         halign: 'center',
         valign: 'middle',
       },
-
-      bodyStyles: {
-        fontStyle: 'normal',
-      },
-
+      bodyStyles: { fontStyle: 'normal' },
       head: [[
-        'COMPROBANTE',
-        'NUMERO',
-        'FECHA',
-        'BASE IMPONIBLE',
-        'IMPUESTO',
-        'CODIGO',
-        'PORCENTAJE',
-        'VALOR',
+        'COMPROBANTE','NUMERO','FECHA','BASE IMPONIBLE','IMPUESTO','CODIGO','PORCENTAJE','VALOR',
       ]],
-
       body,
-
-      // Anchos relativos (sin “encoger” la tabla). Solo guía.
       columnStyles: {
-        0: { cellWidth: 30, halign: 'left' },   // COMPROBANTE
-        1: { cellWidth: 20, halign: 'left' },   // NUMERO
-        2: { cellWidth: 20, halign: 'left' },   // FECHA
-        3: { cellWidth: 24, halign: 'right' },  // BASE
-        4: { cellWidth: 22, halign: 'left' },   // IMPUESTO
-        5: { cellWidth: 18, halign: 'left' },   // CODIGO
-        6: { cellWidth: 28, halign: 'right' },  // %
-        7: { cellWidth: 18, halign: 'right' },  // VALOR
+        0: { cellWidth: 30, halign: 'left' },
+        1: { cellWidth: 20, halign: 'left' },
+        2: { cellWidth: 20, halign: 'left' },
+        3: { cellWidth: 24, halign: 'right' },
+        4: { cellWidth: 22, halign: 'left' },
+        5: { cellWidth: 18, halign: 'left' },
+        6: { cellWidth: 28, halign: 'right' },
+        7: { cellWidth: 18, halign: 'right' },
       },
     });
 
-    // ========= TOTAL (alineado al margen derecho del detalle) =========
     const lastY = (doc as any).lastAutoTable?.finalY ?? (tableStartY + 20);
 
     doc.setFont('times', 'bold');
     doc.setFontSize(10);
-
-    // usa tableRight (mismo margen del detalle)
     doc.text('TOTAL:', pageW - tableRight - 35, lastY + 12, { align: 'right' });
     doc.text(RetencionPdfUtil.fmt2((m as any).total), pageW - tableRight, lastY + 12, { align: 'right' });
 
-    // Abrir en nueva pestaña
     const blobUrl = doc.output('bloburl');
     window.open(blobUrl, '_blank');
   }
@@ -222,25 +195,64 @@ export class RetencionPdfUtil {
     return isNaN(n) ? '0.00' : n.toFixed(2);
   }
 
+  /*
   private static tryAddLogo(
     doc: jsPDF,
-    base64: string | null | undefined,
+    base64OrDataUrl: string | null | undefined,
     x: number,
     y: number,
     w: number,
     h: number
   ): boolean {
     try {
-      const s = String(base64 ?? '').trim();
+      const s = String(base64OrDataUrl ?? '').trim();
       if (!s) return false;
 
       const isDataUrl = s.startsWith('data:image');
       const dataUrl = isDataUrl ? s : `data:image/png;base64,${s}`;
 
-      doc.addImage(dataUrl, 'PNG', x, y, w, h);
+      // ✅ soporte jpg/jpeg si algún día llega así
+      const isJpg = dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/jpg');
+      doc.addImage(dataUrl, isJpg ? 'JPEG' : 'PNG', x, y, w, h);
       return true;
     } catch {
       return false;
     }
   }
+  */
+
+  private static tryAddLogo(
+  doc: jsPDF,
+  base64OrDataUrl: string | null | undefined,
+  x: number,
+  y: number,
+  w: number,
+  h: number
+): boolean {
+  try {
+    const s = String(base64OrDataUrl ?? '').trim();
+
+    if (!s) {
+      console.warn('[PDF] Logo vacío: no se insertó.');
+      return false;
+    }
+
+    const isDataUrl = s.startsWith('data:image');
+    const dataUrl = isDataUrl ? s : `data:image/png;base64,${s}`;
+
+    let fmt: 'PNG' | 'JPEG' = 'PNG';
+    if (dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/jpg')) {
+      fmt = 'JPEG';
+    }
+
+    doc.addImage(dataUrl, fmt, x, y, w, h);
+    return true;
+  } catch (e) {
+    console.warn('[PDF] addImage falló (logo).', e);
+    return false;
+  }
+}
+
+
+
 }
