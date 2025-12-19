@@ -17,4 +17,6 @@ export interface BalanceDiarioDetalleResponse {
   detalleCuenta?: string;
   codigoAuxiliar?: number;
   nombreAuxiliar?: string;
+  fechaCaduca?: string;
+  autorizacion?: string;
 }
