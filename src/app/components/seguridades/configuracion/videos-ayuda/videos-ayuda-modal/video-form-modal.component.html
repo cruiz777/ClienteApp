@@ -19,6 +19,29 @@
   <form [formGroup]="videoForm" *ngIf="!loading">
     <div class="form-container">
 
+      <!-- 🆕 PESTAÑAS: YouTube vs Local -->
+      <div class="form-group" *ngIf="!isEditMode">
+        <label>Tipo de Video <span class="required">*</span></label>
+        <div class="tabs-container">
+          <button
+            type="button"
+            class="tab-button"
+            [class.active]="tipoVideo === 'youtube'"
+            (click)="onTipoVideoChange('youtube')">
+            <i class="bi bi-youtube me-2"></i>
+            YouTube
+          </button>
+          <button
+            type="button"
+            class="tab-button"
+            [class.active]="tipoVideo === 'local'"
+            (click)="onTipoVideoChange('local')">
+            <i class="bi bi-camera-video me-2"></i>
+            Archivo Local
+          </button>
+        </div>
+      </div>
+
       <!-- Título -->
       <div class="form-group">
         <label for="titulo">
@@ -37,20 +60,68 @@
         </div>
       </div>
 
-      <!-- URL de YouTube -->
-      <div class="form-group">
-        <label for="urlVideo">
-          URL de YouTube <span class="required">*</span>
-        </label>
-        <input
-          id="urlVideo"
-          type="text"
-          formControlName="urlVideo"
-          placeholder="https://www.youtube.com/watch?v=..."
-        />
-        <div class="error-message" *ngIf="urlVideo?.invalid && urlVideo?.touched">
-          <span *ngIf="urlVideo?.errors?.['required']">La URL es requerida</span>
-          <span *ngIf="urlVideo?.errors?.['invalidYoutubeUrl']">Ingresa una URL válida de YouTube</span>
+      <!-- 🆕 CONTENIDO CONDICIONAL SEGÚN EL TIPO -->
+
+      <!-- OPCIÓN A: URL de YouTube -->
+      <div *ngIf="tipoVideo === 'youtube' || isEditMode">
+        <div class="form-group">
+          <label for="urlVideo">
+            URL de YouTube <span class="required">*</span>
+          </label>
+          <input
+            id="urlVideo"
+            type="text"
+            formControlName="urlVideo"
+            placeholder="https://www.youtube.com/watch?v=..."
+          />
+          <div class="error-message" *ngIf="urlVideo?.invalid && urlVideo?.touched">
+            <span *ngIf="urlVideo?.errors?.['required']">La URL es requerida</span>
+            <span *ngIf="urlVideo?.errors?.['invalidYoutubeUrl']">Ingresa una URL válida de YouTube</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- OPCIÓN B: Archivo Local -->
+      <div *ngIf="tipoVideo === 'local' && !isEditMode">
+        <div class="form-group">
+          <label for="videoFile">
+            Archivo de Video <span class="required">*</span>
+          </label>
+          <div class="file-input-container">
+            <input
+              id="videoFile"
+              type="file"
+              accept="video/mp4"
+              (change)="onFileSelected($event)"
+              #fileInput
+              style="display: none;"
+            />
+            <button
+              type="button"
+              class="btn-select-file"
+              (click)="fileInput.click()"
+              [disabled]="isUploading">
+              <i class="bi bi-upload me-2"></i>
+              {{ selectedFile ? 'Cambiar archivo' : 'Seleccionar archivo MP4' }}
+            </button>
+            <span class="file-name" *ngIf="selectedFile">
+              {{ selectedFile.name }} ({{ (selectedFile.size / 1024 / 1024).toFixed(2) }} MB)
+            </span>
+          </div>
+          <small class="help-text">Formato: MP4. Tamaño máximo: 60MB</small>
+
+          <!-- Preview del video -->
+          <div class="video-preview" *ngIf="previewUrl">
+            <video [src]="previewUrl" controls style="width: 100%; max-height: 300px; margin-top: 10px;"></video>
+            <button
+              type="button"
+              class="btn-clear-file"
+              (click)="clearFile()"
+              [disabled]="isUploading">
+              <i class="bi bi-x-circle me-1"></i>
+              Quitar video
+            </button>
+          </div>
         </div>
       </div>
 

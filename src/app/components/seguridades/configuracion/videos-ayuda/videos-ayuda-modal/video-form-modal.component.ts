@@ -20,6 +20,11 @@ export class VideoFormModalComponent implements OnInit {
   sistemas: SistemaResponse[] = [];
   categorias: CategoriaVideosResponse[] = [];
   loading: boolean = false;
+  tipoVideo: 'youtube' | 'local' = 'youtube';
+  selectedFile: File | null = null;
+  previewUrl: string | null = null;
+  uploadProgress: number = 0;
+  isUploading: boolean = false;
 
   constructor(
     private fb: FormBuilder,
@@ -139,11 +144,100 @@ export class VideoFormModalComponent implements OnInit {
 
     return youtubeRegex.test(url) ? null : { invalidYoutubeUrl: true };
   }
+  /**
+ * Maneja la selección de archivo
+ */
+  onFileSelected(event: any): void {
+    const file = event.target.files[0];
 
-  onSubmit(): void {
-    if (this.videoForm.invalid) {
-      this.videoForm.markAllAsTouched();
+    if (!file) return;
+
+    // Validar tipo
+    if (file.type !== 'video/mp4') {
+      this.mostrarMensaje({
+        title: 'Error',
+        message: 'Solo se permiten archivos MP4',
+        type: 'error',
+        showCancel: false
+      });
       return;
+    }
+
+    // Validar tamaño (60MB)
+    const maxSize = 60 * 1024 * 1024; // 60MB en bytes
+    if (file.size > maxSize) {
+      this.mostrarMensaje({
+        title: 'Error',
+        message: 'El archivo no debe superar 60MB',
+        type: 'error',
+        showCancel: false
+      });
+      return;
+    }
+
+    this.selectedFile = file;
+
+    // Generar preview
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      this.previewUrl = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  /**
+   * Limpia el archivo seleccionado
+   */
+  clearFile(): void {
+    this.selectedFile = null;
+    this.previewUrl = null;
+    this.uploadProgress = 0;
+  }
+
+  /**
+   * Cambia el tipo de video
+   */
+  onTipoVideoChange(tipo: 'youtube' | 'local'): void {
+    this.tipoVideo = tipo;
+
+    // Limpiar validaciones según el tipo
+    if (tipo === 'youtube') {
+      this.videoForm.get('urlVideo')?.setValidators([Validators.required, this.youtubeUrlValidator]);
+      this.clearFile();
+    } else {
+      this.videoForm.get('urlVideo')?.clearValidators();
+    }
+    this.videoForm.get('urlVideo')?.updateValueAndValidity();
+  }
+  onSubmit(): void {
+    // Validación según el tipo de video
+    if (this.tipoVideo === 'youtube') {
+      if (this.videoForm.invalid) {
+        this.videoForm.markAllAsTouched();
+        return;
+      }
+    } else {
+      // Para video local, el archivo es obligatorio solo en creación
+      if (!this.isEditMode && !this.selectedFile) {
+        this.mostrarMensaje({
+          title: 'Error',
+          message: 'Debes seleccionar un archivo de video',
+          type: 'error',
+          showCancel: false
+        });
+        return;
+      }
+
+      // Validar otros campos (excepto urlVideo)
+      const controls = this.videoForm.controls;
+      const requiredControls = ['titulo', 'idSistema', 'idCategoria', 'orden'];
+
+      for (const controlName of requiredControls) {
+        if (controls[controlName].invalid) {
+          this.videoForm.markAllAsTouched();
+          return;
+        }
+      }
     }
 
     const usuarioActual = this.usuarioService.getUsuarioActual();
@@ -157,11 +251,72 @@ export class VideoFormModalComponent implements OnInit {
       return;
     }
 
+    // Si es video local Y no es edición, primero subir el archivo
+    if (this.tipoVideo === 'local' && this.selectedFile && !this.isEditMode) {
+      this.uploadAndCreate(usuarioActual);
+    } else {
+      // YouTube o edición sin cambio de archivo
+      this.saveVideo(usuarioActual, this.videoForm.value.urlVideo);
+    }
+  }
+  /**
+ * Sube el archivo y luego crea el registro
+ */
+  private uploadAndCreate(usuarioActual: any): void {
+    this.isUploading = true;
+
+    const loadingRef = this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      disableClose: true,
+      data: {
+        title: 'Subiendo video',
+        message: 'Por favor espera...',
+        type: 'info',
+        isLoading: true,
+        loadingText: 'Subiendo archivo al servidor...'
+      } as MessageBoxData
+    });
+
+    this.videosService.uploadVideoFile(this.selectedFile!).subscribe({
+      next: (response) => {
+        loadingRef.close();
+        this.isUploading = false;
+
+        if (response.data) {
+          // Archivo subido exitosamente, ahora guardar en BD
+          this.saveVideo(usuarioActual, response.data);
+        } else {
+          this.mostrarMensaje({
+            title: 'Error',
+            message: response.message || 'No se pudo subir el archivo',
+            type: 'error',
+            showCancel: false
+          });
+        }
+      },
+      error: (error) => {
+        loadingRef.close();
+        this.isUploading = false;
+        console.error('Error al subir archivo:', error);
+        this.mostrarMensaje({
+          title: 'Error',
+          message: 'Ocurrió un error al subir el archivo',
+          type: 'error',
+          showCancel: false
+        });
+      }
+    });
+  }
+
+  /**
+   * Guarda el video en la base de datos
+   */
+  private saveVideo(usuarioActual: any, urlVideo: string): void {
     const formValue = this.videoForm.value;
     const request = {
       id: this.isEditMode ? this.data.videoId! : 0,
       titulo: formValue.titulo.trim(),
-      urlVideo: formValue.urlVideo.trim(),
+      urlVideo: urlVideo.trim(), // ← Aquí va la URL de YouTube o el nombre del archivo
       idSistema: formValue.idSistema,
       idCategoria: formValue.idCategoria,
       orden: formValue.orden,
@@ -218,7 +373,6 @@ export class VideoFormModalComponent implements OnInit {
       }
     });
   }
-
   onCancel(): void {
     this.dialogRef.close(false);
   }

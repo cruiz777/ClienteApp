@@ -29,7 +29,8 @@ export class VideosAyudaModalComponent implements OnInit {
   videoEmbedUrl: SafeResourceUrl | null = null;
   loading: boolean = true;
   categoriasPorSistema: Map<number, CategoriaConEstado[]> = new Map();
-
+  videoStreamUrl: string | null = null;
+  isYouTubeVideo: boolean = true;
   constructor(
     private videosService: VideosAyudaService,
     private sanitizer: DomSanitizer,
@@ -135,7 +136,18 @@ export class VideosAyudaModalComponent implements OnInit {
 
   seleccionarVideo(video: VideosAyudaResponse): void {
     this.videoSeleccionado = video;
-    this.videoEmbedUrl = this.getYoutubeEmbedUrl(video.urlVideo);
+    this.isYouTubeVideo = this.videosService.isYouTubeUrl(video.urlVideo);
+
+    if (this.isYouTubeVideo) {
+      // Es YouTube - usar iframe
+      this.videoEmbedUrl = this.getYoutubeEmbedUrl(video.urlVideo);
+      this.videoStreamUrl = null;
+    } else {
+      // Es video local - usar tag <video>
+      this.videoStreamUrl = this.videosService.getVideoStreamUrl(video.urlVideo);
+      this.videoEmbedUrl = null;
+    }
+
     this.cdr.markForCheck();
   }
 
