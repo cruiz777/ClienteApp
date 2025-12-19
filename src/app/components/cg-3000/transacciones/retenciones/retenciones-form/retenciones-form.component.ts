@@ -28,6 +28,9 @@ import { RetencionesService, CreateRetencionesResultResponse } from 'src/app/ser
 import { RetencionesRequest } from 'src/app/interfaces/requests/retenciones-request';
 import { RetencionesResponse } from 'src/app/interfaces/responses/retenciones-response';
 import { RetencionesResumenResponse } from 'src/app/interfaces/responses/retenciones-resumen-response';
+import { EmpresaService } from 'src/app/services/empresa.service';
+import { LogoService } from 'src/app/services/logo.service';
+import { HttpClient } from '@angular/common/http';
 
 type RetRow = RetencionesRequest & {
   _uiState?: 'NUEVO' | 'EDITADO' | 'GUARDADO' | 'ERROR';
@@ -211,6 +214,9 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
 
   constructor(
     private fb: FormBuilder,
+    private http: HttpClient,
+    private empresaService: EmpresaService,
+    private logoService: LogoService,
     private route: ActivatedRoute,
     private router: Router,
     private snack: MatSnackBar,
@@ -716,17 +722,9 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
     }
   }
 
-  /*
-  imprimir(): void {
-    this.snack.open('Imprimir: pendiente.', 'OK', { duration: 2500,
-       horizontalPosition: 'right',
-          verticalPosition: 'top',
-     });
-  }
-  */
-
-  //imprimir
-  async imprimir(): Promise<void> {
+/* 
+//imprimir
+async imprimir(): Promise<void> {
   if (!this.readOnly) {
     this.snack.open('Primero debe GRABAR la retención para poder imprimir.', 'OK', {
       duration: 3500,
@@ -765,7 +763,72 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
     this.loading = false;
   }
 }
+*/
 
+async imprimir(): Promise<void> {
+  if (!this.readOnly) {
+    this.snack.open('Primero debe GRABAR la retención para poder imprimir.', 'OK', {
+      duration: 3500,
+      horizontalPosition: 'right',
+      verticalPosition: 'top',
+    });
+    return;
+  }
+
+  const hasIds = (this.rowData ?? []).some(r => Number(r.idretencion ?? 0) > 0);
+  if (!hasIds) {
+    this.snack.open('No existen líneas guardadas (ID) para imprimir.', 'OK', {
+      duration: 3500,
+      horizontalPosition: 'right',
+      verticalPosition: 'top',
+    });
+    return;
+  }
+
+  try {
+    this.loading = true;
+
+    // 1) Datos de impresión (tu backend CG)
+    const data = await firstValueFrom(
+      this.retencionesService.getImpresion(this.idEmpresa, this.idCabMaestro)
+    );
+
+    // 2) Traer logo parametrizado (Security)
+    const lf = await firstValueFrom(this.empresaService.getLogoFirma(this.idEmpresa));
+    const logoFile = String(lf?.logo ?? '').trim();
+
+    let logoDataUrl: string | null = null;
+
+    if (logoFile) {
+      const logoUrl = this.logoService.getLogoUrl(logoFile);
+
+      // IMPORTANTE: convierte URL -> DataURL (jsPDF NO debe recibir URL http)
+      logoDataUrl = await this.urlToDataUrl(logoUrl);
+
+      if (!logoDataUrl) {
+        console.warn('[RET] No se pudo convertir logo a DataURL. URL=', logoUrl);
+      }
+    } else {
+      console.warn('[RET] Empresa sin logo parametrizado (getLogoFirma devolvió vacío).');
+    }
+
+    // 3) Generar PDF (si logoDataUrl existe, lo usa; si no, imprime sin logo)
+    RetencionPdfUtil.generarPdfRetencion(data, logoDataUrl);
+
+  } catch (err: any) {
+    this.snack.open(err?.message ?? 'Error al imprimir retención.', 'Cerrar', {
+      duration: 6000,
+      horizontalPosition: 'right',
+      verticalPosition: 'top',
+    });
+  } finally {
+    this.loading = false;
+  }
+}
+
+
+
+///////////
   /////
   envioSRI(): void {
     this.snack.open('Envío SRI: pendiente.', 'OK', { duration: 2500 ,
@@ -981,4 +1044,48 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
       }
     }
   }
+  ////
+  /*
+  private async urlToDataUrl(url: string): Promise<string | null> {
+  try {
+    // Importante: la URL debe permitir CORS o estar en el mismo dominio.
+    // Si no, el browser bloqueará la lectura del blob.
+    const blob = await firstValueFrom(this.http.get(url, { responseType: 'blob' }));
+    return await this.blobToDataUrl(blob);
+  } catch {
+    return null;
+  }
+}
+*/
+private async urlToDataUrl(url: string): Promise<string | null> {
+  try {
+    // Si tu backend usa cookies/sesión, esto es CLAVE.
+    // Si usas JWT con interceptor, no estorba.
+    const blob = await firstValueFrom(
+      this.http.get(url, { responseType: 'blob', withCredentials: true })
+    );
+
+    // Validación mínima: si viene vacío, no sirve
+    if (!blob || blob.size <= 0) {
+      console.warn('[RET] Blob del logo vacío:', url);
+      return null;
+    }
+
+    return await this.blobToDataUrl(blob);
+  } catch (e) {
+    console.warn('[RET] urlToDataUrl falló:', url, e);
+    return null;
+  }
+}
+
+private blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('No se pudo leer el blob.'));
+    reader.onload = () => resolve(String(reader.result));
+    reader.readAsDataURL(blob);
+  });
+}
+
+  /// rp
 }

@@ -26,6 +26,12 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { AsientoContableResponse } from '../../../../../interfaces/responses/asiento-contable-response';
+import {
+  CustomMessageBoxComponent,
+  MessageBoxData,
+} from 'src/app/util/messages/custom-message-box.component';
+
+
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -42,9 +48,9 @@ export class AsientoContableComponent implements OnInit {
   loading = false;
   error: string | null = null;
 
-  ////impresion////
-usuarioActual = this.usuarioService.getUsuarioActual();
-nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
+   ////impresion////
+  usuarioActual = this.usuarioService.getUsuarioActual();
+  nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
   ////
 
   gridOptions: GridOptions<ListadoAsientoContableResponse> = {
@@ -122,7 +128,7 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
     {
       headerName: 'Acciones',
       colId: 'acciones',
-      width: 160,
+      width: 170,
       pinned: 'right',
       suppressHeaderMenuButton: true,
       menuTabs: [],
@@ -136,6 +142,9 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
         <!--Copiar/Crear asiento estándar desde plantilla -->
         <button class="ag-action-btn" data-action="copy" title="Duplicación de asiento">
           <img src="assets/icons/icon-ficha-cliente.png" width="18" height="18" alt="Copiar" />
+        </button>
+        <button class="ag-action-btn danger" data-action="delete" title="Eliminar asiento">
+          <img src="assets/icons/eliminar-as.png" width="18" height="18" />
         </button>
       `,
       sortable: false,
@@ -191,15 +200,7 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
 
   onCellClicked(evt: CellClickedEvent<ListadoAsientoContableResponse>): void {
 
-    /*
-    if (evt?.colDef?.colId === 'acciones') {
-      const action = (evt.event?.target as HTMLElement)?.closest('button')?.getAttribute('data-action');
-      if (action === 'edit' && evt.data) {
-        this.editarAsiento(evt.data);
-      }
-    }
-    */
-
+    
     if (evt?.colDef?.colId !== 'acciones') {
       return;
     }
@@ -227,6 +228,13 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
       this.imprimirAsiento(idCab);
       return;
     }
+
+    if (action === 'delete') {
+      if (!evt.data) { return; } // ✅ evita el error: T | undefined
+      this.confirmarEliminar(evt.data);
+      return;
+    }
+
   }
 
   nuevoAsiento(): void {
@@ -394,6 +402,145 @@ nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
       }
     });
   }
+  ///eliminar
+  /*
+  confirmarEliminar(row: ListadoAsientoContableResponse): void {
+
+    const idCabMaestro = Number(row.idCabMaestro ?? 0);
+    const idEmpresa = Number(row.idEmpresa ?? 0);
+    const idUsuario = Number(this.usuarioActual?.id_usuario ?? 0);
+
+    if (!idCabMaestro || !idEmpresa || !idUsuario) {
+      this.snackBar.open(
+        'No se pudo obtener la información necesaria para eliminar el asiento.',
+        'Cerrar',
+        { duration: 4000, panelClass: ['snackbar-error'] }
+      );
+      return;
+    }
+
+    ///cambio caja de texto
+    const numero = String((row as any).numdoc ?? '');
+
+    ////
+    const confirmacion = confirm(
+      `¿Está seguro de eliminar el asiento N° ${row.numdoc}?\n\nEsta acción NO se puede deshacer.`
+    );
+
+    if (!confirmacion) {
+      return;
+    }
+
+    this.loading = true;
+
+    this.asientosService
+      .eliminar(idCabMaestro, idEmpresa, idUsuario)
+      .subscribe({
+        next: resp => {
+          this.loading = false;
+
+          if (resp.type === 'DELETED') {
+            this.snackBar.open(
+              'Asiento eliminado correctamente.',
+              'OK',
+              { duration: 3000, panelClass: ['snackbar-success'] }
+            );
+            this.obtenerAsientos(); // refrescar grid
+          } else {
+            this.snackBar.open(
+              resp.message || 'No se pudo eliminar el asiento.',
+              'Cerrar',
+              { duration: 4000, panelClass: ['snackbar-error'] }
+            );
+          }
+        },
+        error: err => {
+          this.loading = false;
+          console.error('Error al eliminar asiento:', err);
+          this.snackBar.open(
+            'Error inesperado al eliminar el asiento.',
+            'Cerrar',
+            { duration: 4000, panelClass: ['snackbar-error'] }
+          );
+        }
+      });
+  }
+  */
+
+  confirmarEliminar(row: ListadoAsientoContableResponse): void {
+    const idCabMaestro = Number(row.idCabMaestro ?? 0);
+    const idEmpresa = Number(row.idEmpresa ?? 0);
+    const idUsuario = Number(this.usuarioActual?.id_usuario ?? 0);
+   
+
+    if (!idCabMaestro || !idEmpresa || !idUsuario) {
+      this.mostrarMensaje({
+        type: 'error',
+        title: 'Error',
+        message: 'No se pudo obtener la información necesaria para eliminar el asiento.',
+        showCancel: false,
+        confirmText: 'Aceptar'
+      });
+      return;
+    }
+
+    
+    const numero = String((row as any).numdoc ?? '');
+    const tipdoc = String((row as any).tipoAsientoCompleto ?? '');
+
+    // ✅ Reemplaza confirm() por tu MessageBox (gráfico 1)
+    this.mostrarMensaje({
+      type: 'warning', // o 'error' si quieres que se vea más fuerte
+      title: 'Confirmación',
+      message: `¿Está seguro de eliminar el asiento ?${tipdoc}-${numero}\n\n Esta acción NO se puede deshacer.`,
+      showCancel: true,
+      confirmText: 'Sí, eliminar',
+      cancelText: 'No'
+    })
+    .afterClosed()
+    .subscribe((confirmado: boolean) => {
+      if (!confirmado) return;
+
+      this.loading = true;
+
+      this.asientosService.eliminar(idCabMaestro, idEmpresa, idUsuario).subscribe({
+        next: resp => {
+          this.loading = false;
+
+          if (resp.type === 'DELETED') {
+            this.mostrarMensaje({
+              type: 'success',
+              title: 'Ok',
+              message: 'Asiento eliminado correctamente.',
+              showCancel: false,
+              confirmText: 'Aceptar'
+            }).afterClosed().subscribe(() => this.obtenerAsientos());
+          } else {
+            this.mostrarMensaje({
+              type: 'error',
+              title: 'Error',
+              message: resp.message || 'No se pudo eliminar el asiento.',
+              showCancel: false,
+              confirmText: 'Aceptar'
+            });
+          }
+        },
+        error: err => {
+          this.loading = false;
+          console.error('Error al eliminar asiento:', err);
+
+          this.mostrarMensaje({
+            type: 'error',
+            title: 'Error',
+            message: 'Error inesperado al eliminar el asiento.',
+            showCancel: false,
+            confirmText: 'Aceptar'
+          });
+        }
+      });
+    });
+  }
+  ////
 
   private setFechasMesActual(): void {
     const hoy = new Date();
@@ -798,6 +945,31 @@ private imprimirAsiento(idCabMaestro: number): void {
     }
   });
 }
+
+
+ private mostrarMensaje(data: MessageBoxData) {
+    return this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        confirmText: 'Aceptar',
+        cancelText: 'Cancelar',
+        ...data
+      }
+    });
+  }
+
+   private mostrarMensajeAdvertencia(mensaje: string): void {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: 'Campos obligatorios',
+        message: mensaje,
+        type: 'warning',
+        confirmText: 'Entendido',
+        showCancel: false
+      }
+    });
+  }
 
   //
 
