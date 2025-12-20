@@ -116,6 +116,7 @@ export class NotaCreditoComponent implements OnInit {
   idPersona: number = 0;
   idCodContableCliente: number = 0; 
   esFacturaDeSaldo = false;
+   ivaPctSaldo: number = 15; // IVA por defecto para facturas de saldo
   datosFacturaValidada: any = null;
   productos: any[] = []; // Array de productos cargados
   productosLoaded = false;
@@ -332,18 +333,56 @@ export class NotaCreditoComponent implements OnInit {
       valueParser: this.numberParser,
     },
     {
-      headerName: 'IVA %',
-      field: 'piva',
-      width: 100,
-      type: 'rightAligned',
-      hide: true,
-      editable:true,
-      valueGetter: (p) => {
-        const total = this.asNumber(p.data?.cantidad) * this.asNumber(p.data?.pvp);
-        const iva = this.asNumber(p.data?.iva);
-        return total > 0 ? (iva / total) * 100 : 0;
-      },
-    },
+  headerName: 'IVA %',
+  field: 'ivaPct',
+  width: 100,
+  type: 'rightAligned',
+  editable: (p) => this.esFacturaDeSaldo, // SOLO para facturas de saldo (no dañas las normales)
+  valueParser: this.numberParser,
+  valueFormatter: (p: any) => this.numberDot2d(p),
+  valueSetter: (p) => {
+    const row = p.data as Detalle;
+
+    // 1) Tomar el nuevo % (ej 12, 15)
+    let pct = this.asNumber(p.newValue);
+    if (pct < 0) pct = 0;
+    if (pct > 100) pct = 100;
+
+    row.ivaPct = +pct.toFixed(2);
+
+    // 2) Recalcular IVA $ de la línea ORIGINAL (según cantidad y pvp)
+    const totalLinea = this.asNumber(row.cantidad) * this.asNumber(row.pvp);
+    row.iva = +((totalLinea * row.ivaPct) / 100).toFixed(2);
+
+    // 3) Si está en modo porMonto (devolución por valor), recalcular ivaDev
+    if (row.porMonto) {
+      const baseDev = this.asNumber(row.valorDev);
+      row.ivaDev = +((baseDev * row.ivaPct) / 100).toFixed(2);
+    } else {
+      // Si es por cantidad, también podemos ajustar ivaDev proporcionalmente
+      const cantDev = this.asNumber(row.cantidadd);
+      const cantidad = Math.max(1, this.asNumber(row.cantidad));
+      const ivaUnit = this.asNumber(row.iva) / cantidad;
+      row.ivaDev = +(cantDev * ivaUnit).toFixed(2);
+    }
+
+    // refrescar celdas afectadas
+    if (p.api) {
+      if (p.node) {
+        p.api.refreshCells({
+          rowNodes: [p.node],
+          columns: ['iva', 'ivaPct', 'ivaDev']
+        });
+      } else {
+        p.api.refreshCells({ force: true, columns: ['iva', 'ivaPct', 'ivaDev'] });
+      }
+    }
+
+    this.recalcular();
+    return true;
+  }
+},
+
 
     // Cant.Dev. (si editas aquí, sales del modo porMonto)
     {
@@ -781,7 +820,7 @@ grabar(): void {
     this.mostrarAlerta('No hay devolución calculada. Verifica el detalle.', 'info');
     return;
   }
-  debugger
+  //this.idCodContableCliente=1129;
   if (!this.idCodContableCliente) {
   this.mostrarAlerta('No Existe Código contable', 'info');
   return;
@@ -1933,8 +1972,8 @@ private buildPayload(): NotaCreditoCrearReq {
     return;
   }
 
-  const ivaPorc = 15;
-  const precio = Number(p.prevensiniva || p.pvp || 0);
+  const ivaPorc = this.esFacturaDeSaldo ? this.ivaPctSaldo : 15;
+const precio = Number(p.prevensiniva || p.pvp || 0);
 
   // 🔹 obtener cuenta desde la lista de productos
   const { idcuenta, cuenta } = this.getCuentaPorProducto(p.codpro);
@@ -1946,8 +1985,8 @@ private buildPayload(): NotaCreditoCrearReq {
     descripcion: (p.despro ?? '').toUpperCase(),
     cantidad: 1,
     pvp: precio,
-    iva: (precio * ivaPorc) / 100,
-    ivaPct: ivaPorc,
+     iva: +((precio * ivaPorc) / 100).toFixed(2),
+  ivaPct: ivaPorc,
     cantidadd: 0,
     valorDev: 0,
     ivaDev: 0,
