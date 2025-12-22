@@ -1,0 +1,122 @@
+<div class="page-wrapper-balance">
+
+  <!-- TÍTULO -->
+  <div class="page-title-row">
+    <h2 class="page-title-balance">Diario de movimiento</h2>
+  </div>
+
+  <!-- FILTROS + ACCIONES (REDISEÑO JERÁRQUICO) -->
+  <div class="filters-panel">
+
+    <!-- Fila 1 (principal): Fechas + Tipo asiento + Acciones -->
+    <div class="filters-top">
+
+      <div class="filters-primary">
+        <div class="filters-title">
+          <div class="filters-title-main">Filtros</div>
+        </div>
+
+        <div class="primary-grid">
+
+          <!-- Fecha inicio -->
+          <div class="fg">
+            <label class="fg-label" for="fechaDesde">Fecha inicio</label>
+            <input id="fechaDesde" type="date" [(ngModel)]="fechaDesde" class="fg-control" />
+          </div>
+
+          <!-- Fecha final -->
+          <div class="fg">
+            <label class="fg-label" for="fechaHasta">Fecha final</label>
+            <input id="fechaHasta" type="date" [(ngModel)]="fechaHasta" class="fg-control" />
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Acciones -->
+      <div class="filters-actions">
+        <button type="button" class="btn-icon" (click)="refrescar()" title="Buscar">
+          <img src="assets/icons/buscar-down1.png" alt="Buscar" />
+        </button>
+
+        <button type="button" class="btn-icon" title="Exportar a Excel" (click)="onExportExcelConDetalle()">
+          <img src="assets/icons/xls.png" alt="Excel" />
+        </button>
+
+        <button type="button" class="btn-icon" title="Exportar a PDF" (click)="exportPdfDiarioMovimientos()">
+          <img src="assets/icons/pdf-down.png" alt="PDF" />
+        </button>
+
+        <div class="status-pill" *ngIf="loading">Cargando…</div>
+      </div>
+
+    </div>
+
+    <!-- Fila 2 (secundaria): Modo + Cuentas (solo si modo cuenta) -->
+    <div class="filters-bottom">
+      <div class="secondary-grid">
+
+        <!-- Modo (lo paso abajo para que no compita con fechas) -->
+        <div class="fg fg-mode">
+          <div class="mode-chipset">
+            <button type="button" class="mode-chip" [class.active]="modoFiltro === 'cuenta'"
+              (click)="toggleModoCuenta()">
+              Por cuentas
+            </button>
+          </div>
+        </div>
+
+        <!-- Cuenta inicial -->
+        <div class="fg" *ngIf="modoFiltro === 'cuenta'">
+          <label class="fg-label" for="cuentaDesde">Cuenta inicial</label>
+          <input id="cuentaDesde" type="text" [(ngModel)]="cuentaDesde" class="fg-control"
+            placeholder="Ej: 110101-001" />
+        </div>
+
+        <!-- Cuenta final -->
+        <div class="fg" *ngIf="modoFiltro === 'cuenta'">
+          <label class="fg-label" for="cuentaHasta">Cuenta final</label>
+          <input id="cuentaHasta" type="text" [(ngModel)]="cuentaHasta" class="fg-control"
+            placeholder="Ej: 110101-001" />
+        </div>
+
+        <div class="fg form-field" *ngIf="modoFiltro === 'cuenta'">
+          <label class="fg-label">Tipo de Asiento</label>
+
+          <select class="fg-control" [(ngModel)]="idTipoAsiento" [ngModelOptions]="{ standalone: true }">
+            <option [ngValue]="null">Seleccione</option>
+            <option *ngFor="let item of tipoAsiento" [ngValue]="item.IdTipoAsiento">
+              {{ item.TipAsiento }} - {{ item.Descripcion }}
+            </option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TABLA -->
+  <div class="table-wrap">
+
+    <!-- =======================
+     GRID (AG GRID)
+======================= -->
+    <div class="grid-wrapper">
+      <ag-grid-angular class="ag-theme-alpine custom-grid" [rowData]="rowData" [columnDefs]="columnDefs"
+        [defaultColDef]="defaultColDef" [gridOptions]="gridOptions" [getRowId]="getRowId"
+        [detailCellRendererParams]="detailCellRendererParams" (gridReady)="onGridReady($event)"
+        (cellClicked)="onCellClicked($event)">
+      </ag-grid-angular>
+    </div>
+
+
+    <ng-template #sinDatos>
+      <div class="empty-state">
+        <div class="empty-title">No hay datos para mostrar</div>
+        <div class="empty-sub">Ajusta los filtros y presiona Refrescar.</div>
+      </div>
+    </ng-template>
+
+  </div>
+</div>
