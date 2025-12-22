@@ -95,6 +95,9 @@ export class VideosAyudaComponent implements OnInit {
   }
 
   eliminarVideo(id: number, titulo: string): void {
+    // Primero obtener los datos del video para saber si es local
+    const video = this.filteredVideos.find(v => v.id === id);
+
     const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
       width: '400px',
       data: {
@@ -109,7 +112,6 @@ export class VideosAyudaComponent implements OnInit {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        // Mostrar loading
         const loadingRef = this.dialog.open(CustomMessageBoxComponent, {
           width: '400px',
           disableClose: true,
@@ -124,9 +126,16 @@ export class VideosAyudaComponent implements OnInit {
 
         this.videosService.softDelete(id).subscribe({
           next: (response) => {
+            // Si es un video local (no YouTube), eliminar archivo físico
+            if (video && !this.videosService.isYouTubeUrl(video.urlVideo)) {
+              this.videosService.deleteVideoFile(video.urlVideo).subscribe({
+                next: () => console.log('Archivo físico eliminado'),
+                error: (err) => console.error('Error al eliminar archivo físico:', err)
+              });
+            }
+
             loadingRef.close();
 
-            // ✅ CORRECCIÓN: Validar response.data en lugar de response.success
             if (response.data) {
               this.mostrarMensaje({
                 title: '¡Eliminado!',

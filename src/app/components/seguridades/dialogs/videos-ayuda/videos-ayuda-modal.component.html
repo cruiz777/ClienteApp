@@ -79,16 +79,25 @@
 
       <!-- Video player -->
       <div class="col-md-8">
-        <div *ngIf="videoSeleccionado && videoEmbedUrl" class="video-player-container">
+        <div *ngIf="videoSeleccionado" class="video-player-container">
           <div class="video-header">
             <div>
               <h5 class="video-title mb-1">{{ videoSeleccionado.titulo }}</h5>
               <span class="badge-sistema">{{ videoSeleccionado.nombreSistema }}</span>
               <span class="badge-categoria ms-2">{{ videoSeleccionado.nombreCategoria }}</span>
+
+              <!--Badge indicador del tipo de video -->
+              <span class="badge-tipo ms-2" [class.badge-youtube]="isYouTubeVideo" [class.badge-local]="!isYouTubeVideo">
+                <i class="bi" [ngClass]="isYouTubeVideo ? 'bi-youtube' : 'bi-camera-video'"></i>
+                {{ isYouTubeVideo ? 'YouTube' : 'Video Local' }}
+              </span>
             </div>
           </div>
 
-          <div class="ratio ratio-16x9 mt-3">
+          <!--CONTENIDO CONDICIONAL: YouTube o Local -->
+
+          <!-- OPCIÓN A: Video de YouTube -->
+          <div *ngIf="isYouTubeVideo && videoEmbedUrl" class="ratio ratio-16x9 mt-3">
             <iframe
               [src]="videoEmbedUrl"
               title="{{ videoSeleccionado.titulo }}"
@@ -96,6 +105,18 @@
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowfullscreen>
             </iframe>
+          </div>
+
+          <!-- OPCIÓN B: Video Local -->
+          <div *ngIf="!isYouTubeVideo && videoStreamUrl" class="video-local-container mt-3">
+            <video
+              [src]="videoStreamUrl"
+              controls
+              controlsList="nodownload"
+              class="video-local"
+              preload="metadata">
+              Tu navegador no soporta el elemento de video.
+            </video>
           </div>
         </div>
 

@@ -268,12 +268,12 @@
         <div class="form-group">
           <label>Concepto<span class="required">*</span></label>
           <textarea
-            class="control control-1line"
+            class="control allow-edit"
             formControlName="observacion"
             maxlength="250"
             style="text-transform: uppercase;"
             (input)="validarTexto('observacion', $event)"
-            [readonly]="isReadOnly() || cabeceraBloqueada"
+            [readonly]="isReadOnly()"
           ></textarea>
           <div class="error" *ngIf="form.get('observacion')?.invalid && form.get('observacion')?.touched">
             Campo obligatorio.

@@ -27,6 +27,12 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import * as XLSX from 'xlsx';
 import { AsientoContableResponse } from 'src/app/interfaces/responses/asiento-contable-response';
+import { AsientosContablesService } from 'src/app/services/asientos-contables.service';
+import {
+  CustomMessageBoxComponent,
+  MessageBoxData,
+} from 'src/app/util/messages/custom-message-box.component';
+
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -59,12 +65,24 @@ export class FacturasProveedorComponent implements OnInit {
   gridOptions: GridOptions<ListadoAsientoContableResponse> = {
     rowHeight: 28,
     headerHeight: 35,
+    alwaysShowVerticalScroll: true, 
     suppressLoadingOverlay: true,
     suppressNoRowsOverlay: true,
 
     // Opcional: que el resize se sienta bien
     colResizeDefault: 'shift',
 
+    /// CAMBIO HR DISTORCIONA EL GRID
+    onFirstDataRendered: () => {
+    if (this.gridApi && !this.userResizedAnyColumn) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          try { this.gridApi.sizeColumnsToFit(); } catch {}
+        });
+      });
+    }
+  }
+    /// SE DISTORICONA EL AG GRID
     // NO pongas sizeColumnsToFit aquí en gridSizeChanged en loop
   };
 
@@ -134,7 +152,9 @@ export class FacturasProveedorComponent implements OnInit {
     {
       headerName: 'Acciones',
       colId: 'acciones',
-      width: 145,
+      width: 205,
+      resizable: false,
+      suppressSizeToFit: true,   // CLAVE
       pinned: 'right',
       suppressHeaderMenuButton: true,
       menuTabs: [],
@@ -153,6 +173,10 @@ export class FacturasProveedorComponent implements OnInit {
           <button class="accion-icon accion-icon--pdf" data-action="ret" title="Genera Ret">
             <img src="assets/icons/retencion.png" width="18" height="18" alt="Retención" />
           </button>
+            <button class="ag-action-btn danger" data-action="delete" title="Eliminar asiento">
+            <img src="assets/icons/eliminar-as.png" width="18" height="18" />
+          </button>
+
         </div>
       `,
       sortable: false,
@@ -163,7 +187,8 @@ export class FacturasProveedorComponent implements OnInit {
   constructor(
     private facturasService: FacturasProveedorService,
     private dialog: MatDialog,
-    private usuarioService: UsuarioService
+    private usuarioService: UsuarioService,
+    private asientosService: AsientosContablesService
   ) {}
 
   ngOnInit(): void {
@@ -172,6 +197,8 @@ export class FacturasProveedorComponent implements OnInit {
   }
 
   onGridReady(e: GridReadyEvent): void {
+    
+    /*
     this.gridApi = e.api as GridApi<ListadoAsientoContableResponse>;
 
     // Detecta cuando el usuario redimensiona (para NO volver a auto-ajustar)
@@ -184,6 +211,16 @@ export class FacturasProveedorComponent implements OnInit {
 
     // Ajuste inicial 1 sola vez
     this.fitColumnsOnce();
+    */
+    // SE DISTORCIONA EL GRID CAMBIO HR
+    this.gridApi = e.api as GridApi<ListadoAsientoContableResponse>;
+
+    this.gridApi.addEventListener('columnResized', (ev: ColumnResizedEvent) => {
+      if (ev.finished && ev.source === 'uiColumnDragged') {
+        this.userResizedAnyColumn = true;
+      }
+    });
+
   }
 
   private fitColumnsOnce(): void {
@@ -277,6 +314,14 @@ export class FacturasProveedorComponent implements OnInit {
       this.abrirRetenciones(idEmpresa, idCabMaestro);
       return;
     }
+
+    //ELIMNAR ASENTOS
+      if (action === 'delete') {
+      if (!evt.data) { return; } // ✅ evita el error: T | undefined
+      this.confirmarEliminar(evt.data);
+      return;
+    }
+    ///
   }
 
   abrirRetenciones(idEmpresa: number, idCabMaestro: number): void {
@@ -676,6 +721,106 @@ export class FacturasProveedorComponent implements OnInit {
       }
     });
   }
+
+  ///ELIMINAR ASIENTOS
+  confirmarEliminar(row: ListadoAsientoContableResponse): void {
+    const idCabMaestro = Number(row.idCabMaestro ?? 0);
+    const idEmpresa = Number(row.idEmpresa ?? 0);
+    const idUsuario = Number(this.usuarioActual?.id_usuario ?? 0);
+   
+
+    if (!idCabMaestro || !idEmpresa || !idUsuario) {
+      this.mostrarMensaje({
+        type: 'error',
+        title: 'Error',
+        message: 'No se pudo obtener la información necesaria para eliminar el asiento.',
+        showCancel: false,
+        confirmText: 'Aceptar'
+      });
+      return;
+    } 
+    const numero = String((row as any).numdoc ?? '');
+    const tipdoc = String((row as any).tipoAsientoCompleto ?? '');
+
+    // ✅ Reemplaza confirm() por tu MessageBox (gráfico 1)
+    this.mostrarMensaje({
+      type: 'warning', // o 'error' si quieres que se vea más fuerte
+      title: 'Confirmación',
+      message: `¿Está seguro de eliminar el asiento ?${tipdoc}-${numero}\n\n Esta acción NO se puede deshacer.`,
+      showCancel: true,
+      confirmText: 'Sí, eliminar',
+      cancelText: 'No'
+    })
+    .afterClosed()
+    .subscribe((confirmado: boolean) => {
+      if (!confirmado) return;
+
+      this.loading = true;
+
+      this.asientosService.eliminar(idCabMaestro, idEmpresa, idUsuario).subscribe({
+        next: resp => {
+          this.loading = false;
+
+          if (resp.type === 'DELETED') {
+            this.mostrarMensaje({
+              type: 'success',
+              title: 'Ok',
+              message: 'Asiento eliminado correctamente.',
+              showCancel: false,
+              confirmText: 'Aceptar'
+            }).afterClosed().subscribe(() => this.obtenerAsientos());
+          } else {
+            this.mostrarMensaje({
+              type: 'error',
+              title: 'Error',
+              message: resp.message || 'No se pudo eliminar el asiento.',
+              showCancel: false,
+              confirmText: 'Aceptar'
+            });
+          }
+        },
+        error: err => {
+          this.loading = false;
+          console.error('Error al eliminar asiento:', err);
+
+          this.mostrarMensaje({
+            type: 'error',
+            title: 'Error',
+            message: 'Error inesperado al eliminar el asiento.',
+            showCancel: false,
+            confirmText: 'Aceptar'
+          });
+        }
+      });
+    });
+  }
+
+   private mostrarMensaje(data: MessageBoxData) {
+      return this.dialog.open(CustomMessageBoxComponent, {
+        width: '400px',
+        data: {
+          confirmText: 'Aceptar',
+          cancelText: 'Cancelar',
+          ...data
+        }
+      });
+    }
+  
+     private mostrarMensajeAdvertencia(mensaje: string): void {
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '400px',
+        data: {
+          title: 'Campos obligatorios',
+          message: mensaje,
+          type: 'warning',
+          confirmText: 'Entendido',
+          showCancel: false
+        }
+      });
+    }
+  
+  ///AÑADIR MAS METODOS
+  ////
 }
 
 /* ================== Helpers ================== */

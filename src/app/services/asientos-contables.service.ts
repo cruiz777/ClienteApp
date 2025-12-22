@@ -331,11 +331,9 @@ export class AsientosContablesService {
   }
 
 
- // pendiente revisar delete el proceso y vericiar si el controlador: si el atributo es [HttpDelete("{id}")]
-  // deberías dejarlo así:
-  eliminar(idCabMaestro: number): Observable<ApiResponse<boolean>> {
+  eliminar(idCabMaestro: number, idEmpresa: number, idUsuario: number): Observable<ApiResponse<boolean>> {
     return this.http.delete<ApiResponse<boolean>>(
-      `${this.baseUrl}/${idCabMaestro}` //sin /Delete si no existe en la API
+      `${this.baseUrl}/${idCabMaestro}/empresa/${idEmpresa}/usuario/${idUsuario}`
     );
   }
 
