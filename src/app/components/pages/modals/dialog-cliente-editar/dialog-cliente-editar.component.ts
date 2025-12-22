@@ -310,7 +310,8 @@ export class DialogClienteEditarComponent implements OnInit {
         compra: [false],
         fechaIng: [''],
         fechaMod: [''],
-        usuarioMod: ['']
+        usuarioMod: [''],
+        otros:[false]
 
       }),
 
@@ -1729,7 +1730,9 @@ private cargarDatosAdicionales$(clientesCodigo: number): Observable<null> {
 
         const paso2Patch = {
           nprefijo: !!datos?.prefijo,
-          compra: !!datos?.guia
+          compra: !!datos?.guia,
+          otros:!!datos?.otros
+        
         };
 
         this.paso3Form.patchValue(paso3Patch, { emitEvent: false });
@@ -1742,7 +1745,7 @@ private cargarDatosAdicionales$(clientesCodigo: number): Observable<null> {
           pregunta5: false, pregunta6: false, pregunta7: false
         }, { emitEvent: false });
 
-        this.paso2Form.patchValue({ nprefijo: false, compra: false }, { emitEvent: false });
+        this.paso2Form.patchValue({ nprefijo: false, compra: false,otros:false }, { emitEvent: false });
         return of(null);
       })
     );
@@ -1768,6 +1771,7 @@ private cargarDatosAdicionales$(clientesCodigo: number): Observable<null> {
       clientes_codigo: clientesCodigo,
       prefijo: paso2.nprefijo || false,
       guia: paso2.compra || false,
+      otros: paso2.otros || false,
       estado: true
     };
 

@@ -243,7 +243,8 @@ export class DialogClienteComponent implements OnInit {
         usuario: [{ value: '', disabled: true }],
         observacion1: [''],
         nprefijo: [false],
-        compra: [false]
+        compra: [false],
+        otros:[false]
       }),
 
       paso3: this.fb.group({
@@ -1768,6 +1769,7 @@ async verificarYAvanzar(form: FormGroup, stepper: MatStepper): Promise<void> {
       clientes_codigo: clientesCodigo,
       prefijo: paso2.nprefijo || false,
       guia: paso2.compra || false,
+      otros:paso2.otros || false,
       estado: true
     };
     debugger
