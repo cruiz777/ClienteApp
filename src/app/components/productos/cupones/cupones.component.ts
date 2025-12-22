@@ -381,7 +381,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
     // Formulario Reportes
     this.formReporte = this.fb.group({
       prefijo: [''],
-      estado: ['todos'],
+      estado: [''],
       desde: [null],
       hasta: [null],
       operadorFecha: ['=']
@@ -1216,8 +1216,8 @@ export class CuponesComponent implements OnInit, OnDestroy {
     if (estado === true || estado === false) {
       filtros.estado = estado;
     }
-    if (estado !== null && estado !== undefined && estado !== '') {
-      filtros.estado = estado; // Ya viene como true/false desde el HTML
+    if (estado === true || estado === false) {
+      filtros.estado = estado;
     }
 
     if (operadorFecha && operadorFecha !== '') {
