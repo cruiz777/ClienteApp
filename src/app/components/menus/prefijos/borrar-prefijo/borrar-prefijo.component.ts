@@ -298,8 +298,6 @@ eliminarPrefijo(): void {
     this.exportService.exportarPDF(options);
   }
 }
-
-
   logo()
   {
       this.empresaService.getEmpresas().subscribe({
