@@ -22,11 +22,19 @@ export class BalanceService {
 
   getByCondicionBalanceDiario(
     desde: string,
-    hasta: string
+    hasta: string,
+    cuentaA?: string | null,
+    cuentaB?: string | null,
+    id?: number | null
   ): Observable<ApiResponse<BalanceDiarioResponse[]>> {
 
+    // Normaliza valores para URL (evita undefined/null en la ruta)
+    const ca = (cuentaA ?? '').trim() || '0';
+    const cb = (cuentaB ?? '').trim() || '0';
+    const tipo = (id ?? 0);
+
     return this.http.get<ApiResponse<BalanceDiarioResponse[]>>(
-      `${this.apiUrl}/desde/${desde}/hasta/${hasta}`
+      `${this.apiUrl}/desde/${desde}/hasta/${hasta}/cuentaA/${ca}/cuentaB/${cb}/asiento/${tipo}`
     );
   }
 
