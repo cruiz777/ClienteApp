@@ -231,28 +231,44 @@ export class BalanceComponent implements OnInit {
       return;
     }
 
-    // 2) Si modo cuenta, validar cuentas y armar parámetros
     let cd: string | null = null;
     let ch: string | null = null;
-    let tipo: number | null = null;
+
+    // Tipo de asiento (siempre opcional)
+    let tipo: number | null = this.idTipoAsiento ?? null;
 
     if (this.modoFiltro === 'cuenta') {
-      cd = (this.cuentaDesde ?? '').trim();
-      ch = (this.cuentaHasta ?? '').trim();
+      const desde = (this.cuentaDesde ?? '').trim();
+      const hasta = (this.cuentaHasta ?? '').trim();
 
-      if (!cd || !ch) {
-        console.warn('Debe ingresar Cuenta Inicial y Cuenta Final');
+      const tieneDesde = !!desde;
+      const tieneHasta = !!hasta;
+      const tieneTipo = tipo != null; // si usas 0 como "todos", ajusta esto
+
+      // Caso A: Solo tipo de asiento (sin cuentas) => PERMITIR
+      if (!tieneDesde && !tieneHasta && tieneTipo) {
+        cd = null;
+        ch = null;
+      }
+      // Caso B: Rango completo de cuentas => VALIDAR y PERMITIR
+      else if (tieneDesde && tieneHasta) {
+        if (hasta < desde) {
+          console.warn('La Cuenta Final no puede ser menor a la Cuenta Inicial');
+          return;
+        }
+        cd = desde;
+        ch = hasta;
+      }
+      // Caso C: Solo una cuenta => ERROR
+      else if (tieneDesde || tieneHasta) {
+        console.warn('Debe ingresar Cuenta Inicial y Cuenta Final (ambas).');
         return;
       }
-      if (ch < cd) {
-        console.warn('La Cuenta Final no puede ser menor a la Cuenta Inicial');
+      // Caso D: No hay cuentas ni tipo => ERROR (porque activaste "Por cuentas")
+      else {
+        console.warn('Debe seleccionar Tipo de Asiento o ingresar un rango de cuentas.');
         return;
       }
-
-      // tipo asiento solo aplica en modo cuenta (según tu UI)
-      tipo = this.idTipoAsiento ?? null;
-      // Si tu backend requiere 0 en vez de null:
-      // tipo = this.idTipoAsiento ?? 0;
     }
 
     // 3) Llamada al backend (sin valores quemados)
