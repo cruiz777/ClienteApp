@@ -1921,7 +1921,10 @@ private buildPayload(): NotaCreditoCrearReq {
 
   cajaAsignada = false;
   cargarAutorizacion(): void {
-    const id = this.usuarioActual?.id_autorizacion_caja;
+    const id = this.usuarioActual?.cajas?.find(c => c.doc_fi === 2)?.id_autorizacion_caja
+  ?? this.usuarioActual?.cajas?.[0]?.id_autorizacion_caja
+  ?? null;
+
     this.cajaAsignada = false;
 
     if (id == null) {

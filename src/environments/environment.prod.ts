@@ -23,5 +23,5 @@ export const environment = {
     cedulaUrl:'http://pichincha.gapsystem.net:10048/api/services/cedula/',
 
       apiKey: 'ilGxoWJ9Arp0JdSNuO81aq9sX6ZW9gK9767867tgb',
-
+  
 };

@@ -1049,7 +1049,10 @@ private cargarClienteDetalle(id: number): void {
     if (this.cargandoAutorizacion) return;
     this.cargandoAutorizacion = true;
 
-    const id = this.usuarioActual?.id_autorizacion_caja;
+    const id = this.usuarioActual?.cajas?.find(c => c.doc_fi === 1)?.id_autorizacion_caja
+  ?? this.usuarioActual?.cajas?.[0]?.id_autorizacion_caja
+  ?? null;
+
 
     // Si no hay autorización asociada en el usuario
     if (id == null) {
