@@ -124,6 +124,17 @@ export class AsientosContablesFormComponent implements OnInit {
   nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
   numdocGenerado: string | null = null; // numero documento generado
 
+  ///validar hr para solo lectura en caso de editar
+  soloLectura = signal(false);
+  motivoSoloLectura = signal<string>('');
+  isViewOnly = computed(() => this.soloLectura() === true);
+  ////end
+
+  //RECUPERA USUARIO DEL ASIENTO: 
+  usuarioAsientoNombre = signal<string>('');
+  private usuarioAsientoIdCargado: number | null = null;
+  //END
+
   gridOptions = {
     rowHeight: 30,
     headerHeight: 32,
@@ -611,6 +622,8 @@ export class AsientosContablesFormComponent implements OnInit {
       IdCabMaestro?: number;
       modo?: 'nuevo' | 'editar' | 'plantilla';
       asientoPlantilla?: AsientoContableResponse;
+      soloLectura?: boolean; //cambio hr solo de lectura
+      motivoSoloLectura?: string; /// cambio hr solo de lectura
     } | null,
     private tipoasientoservice: TipoAsientoService,
     private service: AsientosContablesService,
@@ -707,6 +720,10 @@ export class AsientosContablesFormComponent implements OnInit {
       // 🔹 MODO PLANTILLA: Cargar asiento pre-configurado
       this.modo.set('plantilla');
       this.cargarPlantilla(plantilla);
+      ///ID USUARIO RECUPERADO
+      this.usuarioAsientoNombre.set('');
+      this.usuarioAsientoIdCargado = null;
+      ////
 
     } else {
       // Lógica original para 'nuevo' o 'editar'
@@ -719,6 +736,12 @@ export class AsientosContablesFormComponent implements OnInit {
         this.modo.set('editar');
         this.bloquearCabecera();
         this.cargarAsiento(id);
+        //modo edicion hr cambio solo de lectura
+        if (this.data?.soloLectura) {
+          this.soloLectura.set(true);
+          this.motivoSoloLectura.set(this.data?.motivoSoloLectura ?? '');
+        }
+        //
       } else {
         this.modo.set('nuevo');
 
@@ -861,6 +884,13 @@ export class AsientosContablesFormComponent implements OnInit {
     this.service.getById(idCabMaestro).subscribe({
       next: (resp) => {
         this.setFormFromHeader(resp);
+        ///USUARIO RECUPERADO
+        //SOLO EDITAR: recuperar nombre del usuario del asiento (transacción)
+        const idUserAsiento =
+        Number((resp as any)?.idUsuario ?? (resp as any)?.IdUsuario ?? this.form.get('idUsuario')?.value ?? 0);
+        this.cargarUsuarioAsientoNombre(idUserAsiento);
+        /// END
+
         this.rowData.set(resp.detalles ?? []);
         this.refreshGrid(); // 🔹 fuerza refresco cuando ya hay detalle
         this.loading.set(false);
@@ -1091,6 +1121,19 @@ export class AsientosContablesFormComponent implements OnInit {
   }
 
   guardar(): void {
+    
+    ///validacion hr solo de lectura
+    if (this.isViewOnly()) {
+       const msg = this.motivoSoloLectura().trim() || 'Este asiento está en modo solo lectura.';
+        this.snack.open(msg, 'Cerrar', {
+          duration: 5000,
+          horizontalPosition: 'right',
+          verticalPosition: 'top',
+      });
+      return;
+    }
+    
+    
     if (this.saving() || this.loading()) return;
 
     if (this.form.invalid) {
@@ -1433,6 +1476,15 @@ export class AsientosContablesFormComponent implements OnInit {
   }
 
   agregarLinea(): void {
+   
+    ///cambio hr validacion solo de lectura
+    if (this.isViewOnly()) {
+      const msg = this.motivoSoloLectura().trim() || 'Este asiento está en modo solo lectura.';
+      this.snack.open(msg, 'Cerrar', { duration: 3500, horizontalPosition: 'right', verticalPosition: 'top' });
+      return;
+    }
+    
+    
     const idZonaCtrl = this.form.get('idZona');
     const idTipoAsientoCtrl = this.form.get('idTipoAsiento');
 
@@ -1876,6 +1928,44 @@ export class AsientosContablesFormComponent implements OnInit {
   }
   return true;
 }
+
+///
+private cargarUsuarioAsientoNombre(idUsuario: number): void {
+  const id = Number(idUsuario || 0);
+
+    // Solo en editar
+    if (this.modo() !== 'editar') {
+      this.usuarioAsientoNombre.set('');
+      this.usuarioAsientoIdCargado = null;
+      return;
+    }
+
+    if (id <= 0) {
+      this.usuarioAsientoNombre.set('');
+      this.usuarioAsientoIdCargado = null;
+      return;
+    }
+
+    // Evita llamar varias veces por el mismo usuario
+    if (this.usuarioAsientoIdCargado === id && this.usuarioAsientoNombre().trim()) return;
+
+    this.usuarioAsientoIdCargado = id;
+
+    this.usuarioService.getUsuarioById(id).pipe(
+      map((r: any) => r?.data),
+      catchError((err) => {
+        console.error('Error getUsuarioById (usuario asiento):', err);
+        return of(null);
+      })
+    ).subscribe((u: any) => {
+      // Ajusta estos campos según tu UsuariosResponse real:
+      const nombre =
+        (u?.nombre_usuario ?? u?.nombreUsuario ?? u?.username ?? u?.usuario ?? '').toString().trim();
+
+      this.usuarioAsientoNombre.set(nombre || '');
+    });
+  }
+
   ///
 }
 

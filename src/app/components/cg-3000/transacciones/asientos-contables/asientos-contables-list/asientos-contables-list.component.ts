@@ -16,10 +16,12 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { AsientosContablesService } from 'src/app/services/asientos-contables.service';
 import { ListadoAsientoContableResponse } from 'src/app/interfaces/responses/asientos-contables-response';
 import { AsientosContablesFormComponent } from '../asientos-contables-form/asientos-contables-form.component';
+import { finalize } from 'rxjs/operators';
 //para imprimir el pdf
 import { generarPdfAsiento } from '../../util/asiento-pdf.util';
 import { AsientoImpresion } from 'src/app/interfaces/responses/asiento-impresion.model';
 import { UsuarioService } from 'src/app/services/usuario.service';
+import { MotivoNoAnulacionAsientoResponse } from 'src/app/interfaces/responses/MotivoNoAnulacionAsientoResponse ';
 
 // Exportación
 import jsPDF from 'jspdf';
@@ -144,7 +146,7 @@ export class AsientoContableComponent implements OnInit {
           <img src="assets/icons/icon-ficha-cliente.png" width="18" height="18" alt="Copiar" />
         </button>
         <button class="ag-action-btn danger" data-action="delete" title="Eliminar asiento">
-          <img src="assets/icons/eliminar-as.png" width="18" height="18" />
+          <img src="assets/icons/icon-basurero.png" width="18" height="18" />
         </button>
       `,
       sortable: false,
@@ -243,6 +245,8 @@ export class AsientoContableComponent implements OnInit {
   }
 
   editarAsiento(row: ListadoAsientoContableResponse): void {
+   
+    /*
     console.log('Editar asiento', row);
     ///EDITAR ASIENTO
      const id = Number(
@@ -270,6 +274,121 @@ export class AsientoContableComponent implements OnInit {
     }
 
     this.abrirEditar(id);
+    */
+    ///nuevo proceso
+  
+  const id = Number((row as any).idCabMaestro ?? (row as any).IdCabMaestro ?? 0);
+  if (!id || id <= 0) return;
+
+  const modulo = Number((row as any).modulo ?? 0);
+  if (modulo === 1) {
+    this.snackBar.open(
+      'No se puede editar, Corresponde a una factura de proveedor.',
+      'Cerrar',
+      { duration: 4000, horizontalPosition: 'right', verticalPosition: 'top', panelClass: ['snackbar-error'] }
+    );
+    return;
+  }
+
+  const idEmpresa = Number((row as any).idEmpresa ?? (row as any).IdEmpresa ?? 0);
+  const tipoDoc = String((row as any).tipoAsientoCompleto ?? '').trim(); // si tienes tipdoc real, úsalo mejor
+
+  /*
+  if (!idEmpresa || !tipoDoc) {
+    // Si no puedes validar por falta de datos, abre normal
+    this.abrirEditar(id);
+    return;
+  }
+  */
+
+  this.loading = true;
+
+  this.asientosService.validarAnulacion(id, idEmpresa, tipoDoc)
+    .pipe(finalize(() => (this.loading = false)))
+    .subscribe({
+      next: (resp) => {
+        const data = resp?.data;
+
+        // Si no hay data, abre normal
+        if (!data) {
+          this.abrirEditar(id);
+          return;
+        }
+        /*
+        // Si NO puede modificar => abrir solo lectura
+        if (data.puedeAnular === false) {
+          const motivosTxt = this.formatearMotivosValidacion(data.motivos ?? []);
+          const encabezado = `Asiento: ${tipoDoc}-${String((row as any).numdoc ?? '')}`;
+          const msgFinal =
+            `${encabezado}\nNo se puede modificar.\n\n` +
+            (motivosTxt || 'Revise los motivos.');
+
+          this.dialog.open(AsientosContablesFormComponent, {
+            width: '75vw',
+            maxWidth: '95vw',
+            height: '90vh',
+            panelClass: 'asiento-dialog',
+            autoFocus: false,
+            restoreFocus: false,
+            data: {
+              modo: 'editar',
+              id,
+              soloLectura: true,
+              motivoSoloLectura: msgFinal
+            }
+          });
+
+          return;
+        }
+        */
+
+        if (data.puedeAnular === false) {
+          const motivosTxt = this.formatearMotivosValidacion(data.motivos ?? []);
+          const encabezado = `Asiento: ${tipoDoc}-${String((row as any).numdoc ?? '')}`;
+          const msgFinal =
+            `${encabezado}\nNo se puede modificar.\n\n` +
+            (motivosTxt || 'Revise los motivos.');
+
+          // 1) Primero mostrar el mensaje del backend
+          this.mostrarMensaje({
+            type: 'error',
+            title: 'No se puede modificar',
+            message: msgFinal,
+            showCancel: false,
+            confirmText: 'Aceptar',
+          })
+          .afterClosed()
+          .subscribe(() => {
+            // 2) Luego abrir el formulario en modo lectura
+            this.dialog.open(AsientosContablesFormComponent, {
+              width: '75vw',
+              maxWidth: '95vw',
+              height: '90vh',
+              panelClass: 'asiento-dialog',
+              autoFocus: false,
+              restoreFocus: false,
+              data: {
+                modo: 'editar',
+                id,
+                soloLectura: true,
+                // Si quieres conservar el detalle pero NO mostrarlo en UI:
+                motivoSoloLectura: msgFinal
+              }
+            });
+          });
+
+          return;
+        }
+
+        // Si SI puede modificar => abrir edición normal
+        this.abrirEditar(id);
+      },
+      error: () => {
+        // Si falla validación, abre normal (o si prefieres, bloquea)
+        //this.abrirEditar(id);
+      }
+    });
+
     ///
   }
 
@@ -405,73 +524,9 @@ export class AsientoContableComponent implements OnInit {
   ///eliminar
   /*
   confirmarEliminar(row: ListadoAsientoContableResponse): void {
-
     const idCabMaestro = Number(row.idCabMaestro ?? 0);
     const idEmpresa = Number(row.idEmpresa ?? 0);
     const idUsuario = Number(this.usuarioActual?.id_usuario ?? 0);
-
-    if (!idCabMaestro || !idEmpresa || !idUsuario) {
-      this.snackBar.open(
-        'No se pudo obtener la información necesaria para eliminar el asiento.',
-        'Cerrar',
-        { duration: 4000, panelClass: ['snackbar-error'] }
-      );
-      return;
-    }
-
-    ///cambio caja de texto
-    const numero = String((row as any).numdoc ?? '');
-
-    ////
-    const confirmacion = confirm(
-      `¿Está seguro de eliminar el asiento N° ${row.numdoc}?\n\nEsta acción NO se puede deshacer.`
-    );
-
-    if (!confirmacion) {
-      return;
-    }
-
-    this.loading = true;
-
-    this.asientosService
-      .eliminar(idCabMaestro, idEmpresa, idUsuario)
-      .subscribe({
-        next: resp => {
-          this.loading = false;
-
-          if (resp.type === 'DELETED') {
-            this.snackBar.open(
-              'Asiento eliminado correctamente.',
-              'OK',
-              { duration: 3000, panelClass: ['snackbar-success'] }
-            );
-            this.obtenerAsientos(); // refrescar grid
-          } else {
-            this.snackBar.open(
-              resp.message || 'No se pudo eliminar el asiento.',
-              'Cerrar',
-              { duration: 4000, panelClass: ['snackbar-error'] }
-            );
-          }
-        },
-        error: err => {
-          this.loading = false;
-          console.error('Error al eliminar asiento:', err);
-          this.snackBar.open(
-            'Error inesperado al eliminar el asiento.',
-            'Cerrar',
-            { duration: 4000, panelClass: ['snackbar-error'] }
-          );
-        }
-      });
-  }
-  */
-
-  confirmarEliminar(row: ListadoAsientoContableResponse): void {
-    const idCabMaestro = Number(row.idCabMaestro ?? 0);
-    const idEmpresa = Number(row.idEmpresa ?? 0);
-    const idUsuario = Number(this.usuarioActual?.id_usuario ?? 0);
-   
 
     if (!idCabMaestro || !idEmpresa || !idUsuario) {
       this.mostrarMensaje({
@@ -540,6 +595,167 @@ export class AsientoContableComponent implements OnInit {
       });
     });
   }
+  */
+  /////eliminar asiento
+
+confirmarEliminar(row: ListadoAsientoContableResponse): void {
+  const idCabMaestro = Number(row.idCabMaestro ?? 0);
+  const idEmpresa = Number((row as any).idEmpresa ?? (row as any).IdEmpresa ?? 0);
+  const idUsuario = Number(this.usuarioActual?.id_usuario ?? 0);
+
+  if (!idCabMaestro || !idEmpresa || !idUsuario) {
+    this.mostrarMensaje({
+      type: 'error',
+      title: 'Error',
+      message: 'No se pudo obtener la información necesaria para eliminar el asiento.',
+      showCancel: false,
+      confirmText: 'Aceptar'
+    });
+    return;
+  }
+
+  // Número para mostrar
+  const numero = String((row as any).numdoc ?? '');
+
+  // TipoDoc real: ideal que venga del backend como "tipdoc".
+  // Si no existe, lo derivamos desde tipoAsientoCompleto.
+  const tipoDoc = String((row as any).tipoAsientoCompleto ?? '');
+
+  if (!tipoDoc) {
+    this.mostrarMensaje({
+      type: 'error',
+      title: 'Error',
+      message: 'No se pudo determinar el tipo de asiento (tipoDoc) para validar la eliminación.',
+      showCancel: false,
+      confirmText: 'Aceptar'
+    });
+    return;
+  }
+
+  this.loading = true;
+
+  // 1) VALIDAR primero (backend)
+  this.asientosService.validarAnulacion(idCabMaestro, idEmpresa, tipoDoc)
+    .pipe(finalize(() => (this.loading = false)))
+    .subscribe({
+      next: (resp) => {
+        const data = resp?.data;
+
+        // Si el API por alguna razón devolviera data null
+        if (!data) {
+          this.mostrarMensaje({
+            type: 'error',
+            title: 'Error',
+            message: resp?.message || 'No se pudo validar la eliminación del asiento.',
+            showCancel: false,
+            confirmText: 'Aceptar'
+          });
+          return;
+        }
+
+        // 2) Si NO puede anular => mostrar motivos y salir
+        if (data.puedeAnular === false) {
+          const numero = String((row as any).numdoc ?? '');
+          const tipoDoc = String((row as any).tipoAsientoCompleto ?? '');
+          const encabezado = `Asiento: ${tipoDoc}-${numero}`;
+
+          const motivosTxt = this.formatearMotivosValidacion(data.motivos ?? []);
+
+          const msgFinal =
+            `${encabezado}\n` +
+            `No se puede eliminar/modificar.\n\n` +
+            (motivosTxt || 'Revise los motivos.');
+
+          /*
+          const msgFinal =
+            (resp?.message ? `${resp.message}\n\n` : '') +
+            (motivosTxt ? motivosTxt : 'El asiento no puede eliminarse/modificarse por reglas de validación.');
+          */
+
+          this.mostrarMensaje({
+            type: 'error',
+            title: 'No se puede eliminar',
+            message: msgFinal,
+            showCancel: false,
+            confirmText: 'Aceptar'
+          });
+
+          return;
+        }
+
+        // 3) Si SÍ puede anular => confirmar con modal
+        const etiqueta = `${tipoDoc}-${numero}`;
+
+        this.mostrarMensaje({
+          type: 'warning',
+          title: 'Confirmación',
+          message: `¿Está seguro de eliminar el asiento ${etiqueta}?\n\nEsta acción NO se puede deshacer.`,
+          showCancel: true,
+          confirmText: 'Sí, eliminar',
+          cancelText: 'No'
+        })
+        .afterClosed()
+        .subscribe((confirmado: boolean) => {
+          if (!confirmado) return;
+
+          // 4) Eliminar
+          this.loading = true;
+
+          this.asientosService.eliminar(idCabMaestro, idEmpresa, idUsuario)
+            .pipe(finalize(() => (this.loading = false)))
+            .subscribe({
+              next: (delResp) => {
+                if (delResp?.type === 'DELETED') {
+                  this.mostrarMensaje({
+                    type: 'success',
+                    title: 'Ok',
+                    message: 'Asiento eliminado correctamente.',
+                    showCancel: false,
+                    confirmText: 'Aceptar'
+                  }).afterClosed().subscribe(() => this.obtenerAsientos());
+                } else {
+                  this.mostrarMensaje({
+                    type: 'error',
+                    title: 'Error',
+                    message: delResp?.message || 'No se pudo eliminar el asiento.',
+                    showCancel: false,
+                    confirmText: 'Aceptar'
+                  });
+                }
+              },
+              error: (err) => {
+                console.error('Error al eliminar asiento:', err);
+                const msg = err?.error?.message ?? err?.message ?? 'Error inesperado al eliminar el asiento.';
+                this.mostrarMensaje({
+                  type: 'error',
+                  title: 'Error',
+                  message: msg,
+                  showCancel: false,
+                  confirmText: 'Aceptar'
+                });
+              }
+            });
+        });
+      },
+      error: (err) => {
+        console.error('Error al validar anulación:', err);
+
+        const msg =
+          err?.error?.message ??
+          err?.error?.Message ??
+          err?.message ??
+          'Error inesperado al validar si el asiento puede eliminarse.';
+
+        this.mostrarMensaje({
+          type: 'error',
+          title: 'Error de validación',
+          message: msg,
+          showCancel: false,
+          confirmText: 'Aceptar'
+        });
+      }
+    });
+}
   ////
 
   private setFechasMesActual(): void {
@@ -969,6 +1185,59 @@ private imprimirAsiento(idCabMaestro: number): void {
         showCancel: false
       }
     });
+  }
+
+  formatearMotivosValidacion(motivos: MotivoNoAnulacionAsientoResponse[]): string {
+    /*
+    if (!motivos || motivos.length === 0) return '';
+
+    return motivos
+      .map(m =>
+        `• ${m.codigo}: ${m.mensaje}${m.detalle ? `\n  ${m.detalle}` : ''}`
+      )
+      .join('\n\n');
+    */
+   if (!motivos || motivos.length === 0) return '';
+
+      return motivos.map(m => {
+        const codigo = String(m.codigo ?? '').toUpperCase();
+        const mensaje = String(m.mensaje ?? '').trim();
+        const detalle = String(m.detalle ?? '').trim();
+
+        // EG: banco -> solo cuenta y nombre (sin prefijos, sin códigos)
+        if (codigo === 'EG_TIENE_CUENTA_BANCO') {
+          // Si backend ya manda limpio, esto solo lo presenta.
+          // Si backend aún manda "CodCont..., Plan..., Cuenta..., Nombre..."
+          // intentamos extraer Cuenta y Nombre:
+          const cuentaNombre = this.extraerCuentaNombreBanco(detalle);
+          return `Motivo: ${mensaje}\nCuenta banco: ${cuentaNombre || detalle}`;
+        }
+
+        // Conciliado -> no mostrar detalle técnico
+        if (codigo === 'ASIENTO_CONCILIADO') {
+          return `Motivo: ${mensaje}`;
+        }
+
+        // Otros -> solo mensaje (y si detalle es corto y útil, lo añades)
+        return `Motivo: ${mensaje}`;
+      }).join('\n\n');
+
+  }
+
+  private extraerCuentaNombreBanco(detalle: string): string {
+    if (!detalle) return '';
+
+    // Caso 1 (tu formato anterior): "... Cuenta:110102-001, Nombre:BANCO PRODUBANCO"
+    const cuentaMatch = detalle.match(/Cuenta\s*:\s*([^,|]+)/i);
+    const nombreMatch = detalle.match(/Nombre\s*:\s*([^|]+)/i);
+
+    const cuenta = cuentaMatch?.[1]?.trim() ?? '';
+    const nombre = nombreMatch?.[1]?.trim() ?? '';
+
+    if (cuenta && nombre) return `${cuenta} - ${nombre}`;
+
+    // Caso 2 (nuevo backend limpio): "110102-001 - BANCO PRODUBANCO"
+    return detalle.replace(/^IdCodigoEspecial.*?\.\s*/i, '').trim();
   }
 
   //

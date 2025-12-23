@@ -13,7 +13,7 @@ import {
   ColumnResizedEvent,
 } from 'ag-grid-community';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-
+import { finalize } from 'rxjs/operators';
 import { FacturasProveedorFormComponent } from '../facturas-proveedor-form/facturas-proveedor-form.component';
 import { ListadoAsientoContableResponse } from 'src/app/interfaces/responses/asientos-contables-response';
 import { FacturasProveedorService } from 'src/app/services/facturas-proveedor.service';
@@ -33,6 +33,7 @@ import {
   MessageBoxData,
 } from 'src/app/util/messages/custom-message-box.component';
 
+import { MotivoNoAnulacionAsientoResponse } from 'src/app/interfaces/responses/MotivoNoAnulacionAsientoResponse ';
 
 ModuleRegistry.registerModules([AllCommunityModule]);
 
@@ -160,21 +161,21 @@ export class FacturasProveedorComponent implements OnInit {
       menuTabs: [],
       cellRenderer: () => `
         <div class="acciones-cell">
-          <button class="accion-icon accion-icon--edit" data-action="edit" title="Editar">
+          <button class="accion-icon accion-icon--edit" data-action="edit" title="Editar Asiento">
             <img src="assets/icons/icon-modificar-3.png" width="18" height="18" alt="Editar" />
           </button>
-          <button class="accion-icon accion-icon--pdf" data-action="print" title="Imprimir asiento">
+          <button class="accion-icon accion-icon--pdf" data-action="print" title="Imprimir Asiento">
             <img src="assets/icons/icon-imprimir.png" width="18" height="18" alt="PDF" />
           </button>
           <!--BOTÓN DE DUPLICAR -->
           <button class="accion-icon accion-icon--copy" data-action="copy" title="Duplicar Factura">
             <img src="assets/icons/icon-ficha-cliente.png" width="18" height="18" alt="Duplicar" />
           </button>
-          <button class="accion-icon accion-icon--pdf" data-action="ret" title="Genera Ret">
-            <img src="assets/icons/retencion.png" width="18" height="18" alt="Retención" />
+          <button class="accion-icon accion-icon--pdf" data-action="ret" title="Generar Retención">
+            <img src="assets/icons/icon-transaccion.png" width="18" height="18" alt="Retención" />
           </button>
-            <button class="ag-action-btn danger" data-action="delete" title="Eliminar asiento">
-            <img src="assets/icons/eliminar-as.png" width="18" height="18" />
+            <button class="ag-action-btn danger" data-action="delete" title="Eliminar Asiento">
+            <img src="assets/icons/icon-basurero.png" width="18" height="18" />
           </button>
 
         </div>
@@ -352,13 +353,102 @@ export class FacturasProveedorComponent implements OnInit {
   }
 
   editarAsiento(row: ListadoAsientoContableResponse): void {
+    /*
     const id = Number((row as any).idCabMaestro ?? (row as any).IdCabMaestro ?? 0);
     if (!id || id <= 0) {
       console.warn('No se encontró idCabMaestro para la fila:', row);
       return;
     }
     this.abrirEditar(id);
+    */
+    const id = Number((row as any).idCabMaestro ?? (row as any).IdCabMaestro ?? 0);
+    if (!id || id <= 0) {
+      console.warn('No se encontró idCabMaestro para la fila:', row);
+      return;
+    }
+
+    const idEmpresa = Number((row as any).idEmpresa ?? (row as any).IdEmpresa ?? 0);
+    const tipoDoc = String((row as any).tipoAsientoCompleto ?? '').trim(); // ideal: tipdoc real
+    
+    /*
+    if (!idEmpresa || !tipoDoc) {
+      // Si no tienes datos para validar, abre normal (o puedes bloquear si prefieres)
+    this.abrirEditar(id);
+      this.abrirEditar(id);
+      return;
+    }
+    */
+
+    this.loading = true;
+    this.asientosService.validarAnulacion(id, idEmpresa, tipoDoc)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (resp) => {
+          const data = resp?.data;
+          if (!data) {
+            // si el API no trae data, abre normal
+            this.abrirEditar(id);
+            return;
+          }
+          if (data.puedeAnular === false) {
+            const numero = String((row as any).numdoc ?? '');
+            const encabezado = `Asiento: ${tipoDoc}-${numero}`;
+            const motivosTxt = this.formatearMotivosValidacion(data.motivos ?? []);
+            const msgFinal =
+              `${encabezado}\nNo se puede modificar.\n\n` +
+              (motivosTxt || 'Revise los motivos.');
+            // 1) Mostrar mensaje backend
+            this.mostrarMensaje({
+              type: 'error',
+              title: 'No se puede modificar',
+              message: msgFinal,
+              showCancel: false,
+              confirmText: 'Aceptar',
+            })
+            .afterClosed()
+            .subscribe(() => {
+              // 2) Abrir formulario SOLO LECTURA
+              this.dialog.open(FacturasProveedorFormComponent, {
+                width: '75vw',
+                maxWidth: '95vw',
+                height: '90vh',
+                panelClass: 'asiento-dialog',
+                autoFocus: false,
+                restoreFocus: false,
+                disableClose: true,
+                data: {
+                  modo: 'editar',
+                  id: id,
+                  soloLectura: true,
+                  motivoSoloLectura: msgFinal
+                }
+              });
+            });
+            return;
+          }
+          // ✅ Si puede modificar => abrir edición normal
+          this.abrirEditar(id);
+        },
+        error: (err) => {
+          console.error('Error al validar edición:', err);
+          const msg =
+            err?.error?.message ??
+            err?.error?.Message ??
+            err?.message ??
+            'Error inesperado al validar si puede modificarse la factura.';
+          this.mostrarMensaje({
+            type: 'error',
+            title: 'Error de validación',
+            message: msg,
+            showCancel: false,
+            confirmText: 'Aceptar'
+          });
+          // Si prefieres: abrir normal cuando falla validación
+          // this.abrirEditar(idCabMaestro);
+        }
+      });
   }
+  /////end
 
   abrirCrear(): void {
     const dialogRef = this.dialog.open(FacturasProveedorFormComponent, {
@@ -723,7 +813,10 @@ export class FacturasProveedorComponent implements OnInit {
   }
 
   ///ELIMINAR ASIENTOS
-  confirmarEliminar(row: ListadoAsientoContableResponse): void {
+  
+confirmarEliminar(row: ListadoAsientoContableResponse): void {
+  
+  /*   
     const idCabMaestro = Number(row.idCabMaestro ?? 0);
     const idEmpresa = Number(row.idEmpresa ?? 0);
     const idUsuario = Number(this.usuarioActual?.id_usuario ?? 0);
@@ -793,6 +886,165 @@ export class FacturasProveedorComponent implements OnInit {
         }
       });
     });
+  */
+
+  const idCabMaestro = Number(row.idCabMaestro ?? 0);
+  const idEmpresa = Number((row as any).idEmpresa ?? (row as any).IdEmpresa ?? 0);
+  const idUsuario = Number(this.usuarioActual?.id_usuario ?? 0);
+
+  if (!idCabMaestro || !idEmpresa || !idUsuario) {
+    this.mostrarMensaje({
+      type: 'error',
+      title: 'Error',
+      message: 'No se pudo obtener la información necesaria para eliminar el asiento.',
+      showCancel: false,
+      confirmText: 'Aceptar'
+    });
+    return;
+  }
+
+  // Número para mostrar
+  const numero = String((row as any).numdoc ?? '');
+
+  // TipoDoc real: ideal que venga del backend como "tipdoc".
+  // Si no existe, lo derivamos desde tipoAsientoCompleto.
+  const tipoDoc = String((row as any).tipoAsientoCompleto ?? '');
+
+  if (!tipoDoc) {
+    this.mostrarMensaje({
+      type: 'error',
+      title: 'Error',
+      message: 'No se pudo determinar el tipo de asiento (tipoDoc) para validar la eliminación.',
+      showCancel: false,
+      confirmText: 'Aceptar'
+    });
+    return;
+  }
+
+  this.loading = true;
+
+  // 1) VALIDAR primero (backend)
+  this.asientosService.validarAnulacion(idCabMaestro, idEmpresa, tipoDoc)
+    .pipe(finalize(() => (this.loading = false)))
+    .subscribe({
+      next: (resp) => {
+        const data = resp?.data;
+
+        // Si el API por alguna razón devolviera data null
+        if (!data) {
+          this.mostrarMensaje({
+            type: 'error',
+            title: 'Error',
+            message: resp?.message || 'No se pudo validar la eliminación del asiento.',
+            showCancel: false,
+            confirmText: 'Aceptar'
+          });
+          return;
+        }
+
+        // 2) Si NO puede anular => mostrar motivos y salir
+        if (data.puedeAnular === false) {
+          const numero = String((row as any).numdoc ?? '');
+          const tipoDoc = String((row as any).tipoAsientoCompleto ?? '');
+          const encabezado = `Asiento: ${tipoDoc}-${numero}`;
+
+          const motivosTxt = this.formatearMotivosValidacion(data.motivos ?? []);
+
+          const msgFinal =
+            `${encabezado}\n` +
+            `No se puede eliminar/modificar.\n\n` +
+            (motivosTxt || 'Revise los motivos.');
+
+          /*
+          const msgFinal =
+            (resp?.message ? `${resp.message}\n\n` : '') +
+            (motivosTxt ? motivosTxt : 'El asiento no puede eliminarse/modificarse por reglas de validación.');
+          */
+
+          this.mostrarMensaje({
+            type: 'error',
+            title: 'No se puede eliminar',
+            message: msgFinal,
+            showCancel: false,
+            confirmText: 'Aceptar'
+          });
+
+          return;
+        }
+
+        // 3) Si SÍ puede anular => confirmar con modal
+        const etiqueta = `${tipoDoc}-${numero}`;
+
+        this.mostrarMensaje({
+          type: 'warning',
+          title: 'Confirmación',
+          message: `¿Está seguro de eliminar el asiento ${etiqueta}?\n\nEsta acción NO se puede deshacer.`,
+          showCancel: true,
+          confirmText: 'Sí, eliminar',
+          cancelText: 'No'
+        })
+        .afterClosed()
+        .subscribe((confirmado: boolean) => {
+          if (!confirmado) return;
+
+          // 4) Eliminar
+          this.loading = true;
+
+          this.asientosService.eliminar(idCabMaestro, idEmpresa, idUsuario)
+            .pipe(finalize(() => (this.loading = false)))
+            .subscribe({
+              next: (delResp) => {
+                if (delResp?.type === 'DELETED') {
+                  this.mostrarMensaje({
+                    type: 'success',
+                    title: 'Ok',
+                    message: 'Asiento eliminado correctamente.',
+                    showCancel: false,
+                    confirmText: 'Aceptar'
+                  }).afterClosed().subscribe(() => this.obtenerAsientos());
+                } else {
+                  this.mostrarMensaje({
+                    type: 'error',
+                    title: 'Error',
+                    message: delResp?.message || 'No se pudo eliminar el asiento.',
+                    showCancel: false,
+                    confirmText: 'Aceptar'
+                  });
+                }
+              },
+              error: (err) => {
+                console.error('Error al eliminar asiento:', err);
+                const msg = err?.error?.message ?? err?.message ?? 'Error inesperado al eliminar el asiento.';
+                this.mostrarMensaje({
+                  type: 'error',
+                  title: 'Error',
+                  message: msg,
+                  showCancel: false,
+                  confirmText: 'Aceptar'
+                });
+              }
+            });
+        });
+      },
+      error: (err) => {
+        console.error('Error al validar anulación:', err);
+
+        const msg =
+          err?.error?.message ??
+          err?.error?.Message ??
+          err?.message ??
+          'Error inesperado al validar si el asiento puede eliminarse.';
+
+        this.mostrarMensaje({
+          type: 'error',
+          title: 'Error de validación',
+          message: msg,
+          showCancel: false,
+          confirmText: 'Aceptar'
+        });
+      }
+    });
+
   }
 
    private mostrarMensaje(data: MessageBoxData) {
@@ -818,6 +1070,38 @@ export class FacturasProveedorComponent implements OnInit {
         }
       });
     }
+
+  /* ================== FORMATO MOTIVOS VALIDACIÓN ================== */
+  formatearMotivosValidacion(motivos: MotivoNoAnulacionAsientoResponse[]): string {
+    if (!motivos || motivos.length === 0) return '';
+    return motivos.map(m => {
+      const codigo = String((m as any).codigo ?? '').toUpperCase();
+      const mensaje = String((m as any).mensaje ?? '').trim();
+      const detalle = String((m as any).detalle ?? '').trim();
+      // Banco -> muestra cuenta y nombre
+      if (codigo === 'EG_TIENE_CUENTA_BANCO') {
+        const cuentaNombre = this.extraerCuentaNombreBanco(detalle);
+        return `Motivo: ${mensaje}\nCuenta banco: ${cuentaNombre || detalle}`;
+      }
+      // Conciliado -> sin detalle técnico
+      if (codigo === 'ASIENTO_CONCILIADO') {
+        return `Motivo: ${mensaje}`;
+      }
+      // Otros
+      return `Motivo: ${mensaje}`;
+    }).join('\n\n');
+  ////
+  }
+  
+  private extraerCuentaNombreBanco(detalle: string): string {
+    if (!detalle) return '';
+    const cuentaMatch = detalle.match(/Cuenta\s*:\s*([^,|]+)/i);
+    const nombreMatch = detalle.match(/Nombre\s*:\s*([^|]+)/i);
+    const cuenta = cuentaMatch?.[1]?.trim() ?? '';
+    const nombre = nombreMatch?.[1]?.trim() ?? '';
+    if (cuenta && nombre) return `${cuenta} - ${nombre}`;
+    return detalle.replace(/^IdCodigoEspecial.*?\.\s*/i, '').trim();
+  }
   
   ///AÑADIR MAS METODOS
   ////

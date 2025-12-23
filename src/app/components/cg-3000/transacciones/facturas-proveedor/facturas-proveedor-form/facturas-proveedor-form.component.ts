@@ -172,6 +172,16 @@ export class FacturasProveedorFormComponent implements OnInit {
   nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
   numdocGenerado: string | null = null; // numero documento generado
 
+  ///validar hr para solo lectura en caso de editar
+  soloLectura = signal(false);
+  motivoSoloLectura = signal<string>('');
+  isViewOnly = computed(() => this.soloLectura() === true);
+  ////end
+  //RECUPERA USUARIO DEL ASIENTO: 
+  usuarioAsientoNombre = signal<string>('');
+  private usuarioAsientoIdCargado: number | null = null;
+  //END
+
   gridOptions = {
     rowHeight: 30,
     headerHeight: 32,
@@ -1011,6 +1021,8 @@ export class FacturasProveedorFormComponent implements OnInit {
       modo?: 'nuevo' | 'editar' | 'plantilla';     //Se agrega plantilla
       id?: number;
       facturaPlantilla?: AsientoContableResponse;
+      soloLectura?: boolean; //cambio hr solo de lectura
+      motivoSoloLectura?: string; /// cambio hr solo de lectura
     } | null,
     private tipoasientoservice: TipoAsientoService,
     private facturasService: FacturasProveedorService,
@@ -1234,6 +1246,10 @@ export class FacturasProveedorFormComponent implements OnInit {
       //MODO PLANTILLA: Cargar factura pre-configurada
       this.modo.set('plantilla');
       this.cargarPlantilla(plantilla);
+      ///ID USUARIO RECUPERADO
+      this.usuarioAsientoNombre.set('');
+      this.usuarioAsientoIdCargado = null;
+      ////
 
     } else {
       //  Si NO es plantilla, verificar id para editar/nuevo
@@ -1245,6 +1261,12 @@ export class FacturasProveedorFormComponent implements OnInit {
         // MODO EDITAR
         this.modo.set('editar');
         this.cargarAsiento(id);
+        //modo edicion hr cambio solo de lectura
+        if (this.data?.soloLectura) {
+          this.soloLectura.set(true);
+          this.motivoSoloLectura.set(this.data?.motivoSoloLectura ?? '');
+        }
+        //
 
       } else {
         // MODO NUEVO
@@ -1384,6 +1406,13 @@ export class FacturasProveedorFormComponent implements OnInit {
     this.facturasService.getById(idCabMaestro).subscribe({
       next: (resp) => {
         this.setFormFromHeader(resp);
+
+        ///USUARIO RECUPERADO
+        //SOLO EDITAR: recuperar nombre del usuario del asiento (transacción)
+        const idUserAsiento =
+        Number((resp as any)?.idUsuario ?? (resp as any)?.IdUsuario ?? this.form.get('idUsuario')?.value ?? 0);
+        this.cargarUsuarioAsientoNombre(idUserAsiento);
+        /// END
 
         const detallesNorm = (resp.detalles ?? []).map((d) => this.normalizarDetalleRelacionadoDesdeBackend(d));
         this.rowData.set(detallesNorm);
@@ -1805,6 +1834,18 @@ export class FacturasProveedorFormComponent implements OnInit {
 
   ///guardar factura proveedor
   guardar(): void {
+
+     ///validacion hr solo de lectura
+    if (this.isViewOnly()) {
+       const msg = this.motivoSoloLectura().trim() || 'Este asiento está en modo solo lectura.';
+        this.snack.open(msg, 'Cerrar', {
+          duration: 5000,
+          horizontalPosition: 'right',
+          verticalPosition: 'top',
+      });
+      return;
+    }
+
     if (this.saving() || this.loading()) return;
 
     this.numdocGenerado = null;
@@ -2231,8 +2272,16 @@ export class FacturasProveedorFormComponent implements OnInit {
     }
   }
 
-  // ✅ Aquí se valida antes de agregar línea (solo NUEVO)
+  //Aquí se valida antes de agregar línea (solo NUEVO)
   agregarLinea(): void {
+
+     ///cambio hr validacion solo de lectura
+    if (this.isViewOnly()) {
+      const msg = this.motivoSoloLectura().trim() || 'Este asiento está en modo solo lectura.';
+      this.snack.open(msg, 'Cerrar', { duration: 3500, horizontalPosition: 'right', verticalPosition: 'top' });
+      return;
+    }
+    
     const idZonaCtrl = this.form.get('idZona');
     const idTipoAsientoCtrl = this.form.get('idTipoAsiento');
     const idZona = Number(idZonaCtrl?.value || 0);
@@ -2804,9 +2853,12 @@ export class FacturasProveedorFormComponent implements OnInit {
     this.numdocGenerado = null;
     this.loading.set(false);
     this.saving.set(false);
-
     const nowIso = formatLocalIso(new Date());
     const anio = getYearFromInput(nowIso);
+    //ID DE USUARIO RECUPERADO
+    this.usuarioAsientoNombre.set('');
+    this.usuarioAsientoIdCargado = null;
+    ///////
 
     const ahora = new Date();
     const todayDate = formatLocalDateOnly(ahora);
@@ -3002,23 +3054,6 @@ export class FacturasProveedorFormComponent implements OnInit {
       this.recalcularHaberDesdeDebe(false);
     }
   }
-/*
-  ///validador comprobante
-  onNroComprobanteBlur(): void {
-  const ctrl = this.nroComprobanteCtrl;
-  ctrl.markAsTouched();
-  ctrl.updateValueAndValidity({ onlySelf: true });
-
-  // Si está mal y el usuario escribió algo -> advertencia
-  if (ctrl.invalid && (ctrl.value ?? '').trim().length > 0) {
-    this.snack.open(
-      'Formato incorrecto. Debe ser 15 dígitos (SRI 3-3-9). Ej: 001001000000456.',
-      'Cerrar',
-      { duration: 4000, horizontalPosition: 'right', verticalPosition: 'top' }
-    );
-  }
-}
-*/
 
 onNroComprobanteBlur(): void {
   const ctrl = this.nroComprobanteCtrl;
@@ -3089,6 +3124,43 @@ private validarDetalleAntesDeAgregarLinea(): boolean {
 
   return true;
 }
+
+private cargarUsuarioAsientoNombre(idUsuario: number): void {
+  const id = Number(idUsuario || 0);
+
+    // Solo en editar
+    if (this.modo() !== 'editar') {
+      this.usuarioAsientoNombre.set('');
+      this.usuarioAsientoIdCargado = null;
+      return;
+    }
+
+    if (id <= 0) {
+      this.usuarioAsientoNombre.set('');
+      this.usuarioAsientoIdCargado = null;
+      return;
+    }
+
+    // Evita llamar varias veces por el mismo usuario
+    if (this.usuarioAsientoIdCargado === id && this.usuarioAsientoNombre().trim()) return;
+
+    this.usuarioAsientoIdCargado = id;
+
+    this.usuarioService.getUsuarioById(id).pipe(
+      map((r: any) => r?.data),
+      catchError((err) => {
+        console.error('Error getUsuarioById (usuario asiento):', err);
+        return of(null);
+      })
+    ).subscribe((u: any) => {
+      // Ajusta estos campos según tu UsuariosResponse real:
+      const nombre =
+        (u?.nombre_usuario ?? u?.nombreUsuario ?? u?.username ?? u?.usuario ?? '').toString().trim();
+
+      this.usuarioAsientoNombre.set(nombre || '');
+    });
+  }
+
 
   ///nuevas funciones
 }

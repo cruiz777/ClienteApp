@@ -785,3 +785,78 @@ label .required {
 .banco-busqueda .control {
   flex: 1;
 }
+
+/* ver cambio grid*/
+
+/* Aplica solo a este grid */
+.custom-grid {
+  /* Fondo general del grid */
+  --ag-background-color: #fafcff;
+
+  /* Cabecera */
+  --ag-header-background-color: #0d47a1;   /* azul */
+  --ag-header-foreground-color:  #ffffff;  /* texto cabecera */
+  --ag-header-border-color:      #0b3c8a;
+
+  /* Bordes/celdas */
+  --ag-border-color: #d0d7de;
+
+  /* Filas */
+  --ag-odd-row-background-color:  #f7fbff;
+  --ag-even-row-background-color: #ffffff;
+  --ag-row-hover-color:           #e3f2fd;
+
+  /* Texto */
+  --ag-foreground-color: #111827; /* texto normal */
+  --ag-secondary-foreground-color: #8cb716;
+
+  /* Filtros/inputs */
+  --ag-control-panel-background-color: #0d47a1;
+  --ag-input-border-color: #b6c2ce;
+
+  /* Tamaño fuente (opcional) */
+  --ag-font-size: 13px;
+}
+
+/* (Opcional) icono filtro y sort en blanco para cabecera oscura */
+.custom-grid .ag-icon {
+  filter: invert(1) brightness(1.8);
+}
+
+/* (Opcional) Botón de acciones coherente */
+.custom-grid .ag-action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 6px;
+}
+.custom-grid .ag-action-btn svg,
+.custom-grid .ag-action-btn img {
+  width: 18px; height: 18px;
+}
+
+/*:host ::ng-deep .custom-grid { variables aquí  }*/
+
+.custom-grid {
+  --ag-header-height: 36px;
+  --ag-row-height: 32px;
+}
+
+.custom-grid {
+  --ag-background-color:#dde3ee; /*fondo*/
+  --ag-foreground-color:#080808; /*color de letra*/
+  
+  --ag-header-background-color:#1d789f;/*cabecera  :#243760; */
+  --ag-header-foreground-color:#e5e7eb;
+
+  --ag-odd-row-background-color:#f6f8f9; /*liea que resalta #98aee0;*/
+  --ag-even-row-background-color:#abc3f1;
+  
+  --ag-row-hover-color:#eaf1c3; /*#e2efc4;*/
+  --ag-border-color:#afb0ad; /*lineas de la cuadricula*/
+}
+
