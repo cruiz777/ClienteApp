@@ -5,26 +5,14 @@ import { FormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 
-import { AgGridAngular } from 'ag-grid-angular';
-import {
-  ColDef, GridApi, GridReadyEvent, CellClickedEvent,
-  GridOptions, ModuleRegistry, AllCommunityModule
-} from 'ag-grid-community';
-
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-
-import { MasterDetailModule } from 'ag-grid-enterprise';
-import 'ag-grid-enterprise';
-
 
 import { BalanceService, ApiResponse } from 'src/app/services/balance.service';
 import { TipoAsientoService } from 'src/app/services/tipo-asiento.service';
 
 import { BalanceDiarioResponse } from 'src/app/interfaces/responses/balance-diario-response';
 import { TipoAsientoResponse } from 'src/app/interfaces/responses/tipo-asiento-response';
-
-ModuleRegistry.registerModules([AllCommunityModule,MasterDetailModule]);
 
 @Component({
   selector: 'app-balance',
@@ -34,7 +22,6 @@ ModuleRegistry.registerModules([AllCommunityModule,MasterDetailModule]);
     FormsModule,
     DatePipe,
     CurrencyPipe,
-    AgGridAngular,
     MatFormFieldModule,
     MatSelectModule
   ],
@@ -43,9 +30,6 @@ ModuleRegistry.registerModules([AllCommunityModule,MasterDetailModule]);
 })
 export class BalanceComponent implements OnInit {
 
-  // ============================================================
-  // CONSTRUCTOR / SERVICES
-  // ============================================================
   constructor(
     private balanceService: BalanceService,
     private tipoAsientoService: TipoAsientoService
@@ -56,11 +40,11 @@ export class BalanceComponent implements OnInit {
   // ============================================================
   loading = false;
 
-  /** Documento expandido (master/detail) */
-  expandedId: number | string | null = null;
+  /** Documento expandido (tabla común) */
+  expandedId: string | null = null;
 
   // ============================================================
-  // FILTROS (tu UI)
+  // FILTROS
   // ============================================================
   modoFiltro: 'fecha' | 'cuenta' = 'fecha';
 
@@ -73,141 +57,11 @@ export class BalanceComponent implements OnInit {
   /** Tipo de asiento (solo cuando modo cuenta) */
   idTipoAsiento: number | null = null;
 
-
   // ============================================================
   // DATA
   // ============================================================
   rowData: BalanceDiarioResponse[] = [];
   tipoAsiento: TipoAsientoResponse[] = [];
-
-  // ============================================================
-  // AG GRID
-  // ============================================================
-  private gridApi?: GridApi;
-
-  defaultColDef: ColDef = {
-    resizable: true,
-    sortable: true,
-    filter: true,
-    floatingFilter: true
-  };
-
-  /** Identificador único por fila (debe ser único) */
-  getRowId = (params: any) => String(params.data?.documento ?? '');
-
-  columnDefs: ColDef[] = [
-    {
-      headerName: '',
-      field: 'documento',
-      width: 60,
-      pinned: 'left',
-      filter: false,
-      sortable: false,
-      cellRenderer: 'agGroupCellRenderer',
-      cellRendererParams: { suppressCount: true }
-    },
-    { headerName: 'Tipo', field: 'tipo', width: 110 },
-    { headerName: 'Documento', field: 'documento', width: 150 },
-    {
-      headerName: 'F. Transacción',
-      field: 'fechaTransaccion',
-      width: 150,
-      filter: 'agDateColumnFilter',
-      valueGetter: p => p.data?.fechaTransaccion ? new Date(p.data.fechaTransaccion as any) : null,
-      valueFormatter: p => p.value ? this.formatDateDDMMYYYY(p.value as Date) : ''
-    },
-    {
-      headerName: 'F. Ingreso',
-      field: 'fechaIngreso',
-      width: 150,
-      filter: 'agDateColumnFilter',
-      valueGetter: p => p.data?.fechaIngreso ? new Date(p.data.fechaIngreso as any) : null,
-      valueFormatter: p => p.value ? this.formatDateDDMMYYYY(p.value as Date) : ''
-    },
-    { headerName: 'Beneficiario', field: 'beneficiario', flex: 1, minWidth: 200 },
-    { headerName: 'Observación', field: 'observacion', flex: 1, minWidth: 240 },
-    { headerName: 'Debe', field: 'debe', width: 140, filter: 'agNumberColumnFilter' },
-    { headerName: 'Haber', field: 'haber', width: 140, filter: 'agNumberColumnFilter' },
-    {
-      headerName: 'Responsable',
-      field: 'codResponsable',
-      width: 200,
-      valueGetter: p => `${p.data?.codResponsable ?? ''} - ${p.data?.nomResponsable ?? ''}`
-    }
-  ];
-
-  gridOptions: GridOptions = {
-    masterDetail: true,
-    animateRows: true,
-    suppressRowClickSelection: true
-  };
-
-  detailCellRendererParams = {
-    detailGridOptions: <GridOptions>{
-      defaultColDef: {
-        resizable: true,
-        sortable: true,
-        filter: true,
-        floatingFilter: true
-      },
-      columnDefs: <ColDef[]>[
-        { headerName: 'Año', field: 'anio', width: 90 },
-        {
-          headerName: 'Fecha',
-          field: 'fecha',
-          width: 130,
-          filter: 'agDateColumnFilter',
-          valueGetter: p => p.data?.fecha ? new Date(p.data.fecha as any) : null,
-          valueFormatter: p => p.value ? this.formatDateDDMMYYYY(p.value as Date) : ''
-        },
-        { headerName: 'Hora', field: 'hora', width: 100 },
-        { headerName: 'Comprobante', field: 'comprobante', width: 140 },
-        { headerName: 'Relacionado', field: 'relacionado', width: 140 },
-        { headerName: 'Cuenta', field: 'cuenta', width: 160 },
-        { headerName: 'Detalle Cuenta', field: 'detalleCuenta', flex: 1, minWidth: 220 },
-        {
-          headerName: 'Auxiliar',
-          field: 'codigoAuxiliar',
-          width: 220,
-          valueGetter: p => `${p.data?.codigoAuxiliar ?? ''} - ${p.data?.nombreAuxiliar ?? ''}`
-        },
-        { headerName: 'Debe', field: 'debe', width: 130, filter: 'agNumberColumnFilter' },
-        { headerName: 'Haber', field: 'haber', width: 130, filter: 'agNumberColumnFilter' },
-        { headerName: 'Beneficiario', field: 'beneficiario', width: 200 },
-        { headerName: 'Cheque', field: 'cheque', width: 140 },
-        { headerName: 'Comentario', field: 'comentario', width: 220 },
-        { headerName: 'Sustento Tributario', field: 'sustento', width: 200 },
-        { headerName: 'Tipo comprobante SRI', field: 'sri', width: 200 },
-        { headerName: 'Tipo Retención', field: 'retencion', width: 160 }
-      ]
-    },
-
-    getDetailRowData: (params: any) => {
-      params.successCallback(params.data?.detalles ?? []);
-    }
-  };
-
-  onGridReady(e: GridReadyEvent): void {
-    this.gridApi = e.api;
-  }
-
-  /**
-   * Click en fila:
-   * - Mantiene tu control expandedId
-   * - Expande/colapsa el master/detail del AG Grid
-   */
-  onCellClicked(e: CellClickedEvent): void {
-    const doc = e.data?.documento;
-    if (!doc || !this.gridApi) return;
-
-    const rowId = String(doc);
-
-    this.toggleDetalle(rowId);
-
-    const node = this.gridApi.getRowNode(rowId);
-    if (node) node.setExpanded(this.expandedId === rowId);
-
-  }
 
   // ============================================================
   // LIFECYCLE
@@ -250,7 +104,7 @@ export class BalanceComponent implements OnInit {
 
       const tieneDesde = !!desde;
       const tieneHasta = !!hasta;
-      const tieneTipo = tipo != null; // si usas 0 como "todos", ajusta esto
+      const tieneTipo = tipo != null;
 
       // Caso A: Solo tipo de asiento (sin cuentas) => PERMITIR
       if (!tieneDesde && !tieneHasta && tieneTipo) {
@@ -271,29 +125,50 @@ export class BalanceComponent implements OnInit {
         console.warn('Debe ingresar Cuenta Inicial y Cuenta Final (ambas).');
         return;
       }
-      // Caso D: No hay cuentas ni tipo => ERROR (porque activaste "Por cuentas")
+      // Caso D: No hay cuentas ni tipo => ERROR
       else {
         console.warn('Debe seleccionar Tipo de Asiento o ingresar un rango de cuentas.');
         return;
       }
     }
 
-    // 3) Llamada al backend (sin valores quemados)
+    // 3) Llamada al backend
     this.cargarPorCondicion(d1, d2, cd, ch, tipo);
   }
 
-  onExportExcelConDetalle(): void {
-    if (!this.gridApi) return;
+  // ============================================================
+  // TOGGLE MODO CUENTA
+  // ============================================================
+  toggleModoCuenta(): void {
+    this.modoFiltro = (this.modoFiltro === 'cuenta') ? 'fecha' : 'cuenta';
 
-    // Si ya importas XLSX arriba, elimina este require y usa tu import.
+    if (this.modoFiltro !== 'cuenta') {
+      this.cuentaDesde = '';
+      this.cuentaHasta = '';
+      this.idTipoAsiento = null;
+    }
+  }
+
+  // ============================================================
+  // EXPAND / COLLAPSE (tabla común)
+  // ============================================================
+  toggleDetalle(id: any): void {
+    if (id == null) return;
+    const key = String(id);
+    this.expandedId = (this.expandedId === key) ? null : key;
+  }
+
+  trackByIndex = (_: number, row: BalanceDiarioResponse) => row.documento;
+
+  // ============================================================
+  // EXPORT EXCEL (sin AG Grid)
+  // ============================================================
+  onExportExcelConDetalle(): void {
     const XLSX = require('xlsx-js-style');
 
     const hoy = new Date();
     const fechaStr = hoy.toISOString().slice(0, 10);
 
-    // ============================================================
-    // CABECERA (título + filtros aplicados)
-    // ============================================================
     const titulo = 'BALANCE / LISTADO DE ASIENTOS';
     const linea1 = `Rango: ${this.fechaDesde ?? ''}  a  ${this.fechaHasta ?? ''}`;
     const linea2 =
@@ -307,27 +182,38 @@ export class BalanceComponent implements OnInit {
     data.push([linea2]);
     data.push([]);
 
-    // ============================================================
-    // COLUMNAS MASTER (desde tu columnDefs)
-    // ============================================================
-    const masterCols = (this.columnDefs ?? []).filter((c: any) => !c.hide && c.colId !== 'acciones' && c.field);
-    const masterHeader = masterCols.map((c: any) => c.headerName || c.field);
+    // Columnas MASTER (definidas aquí, ya no desde columnDefs)
+    const masterCols: Array<{
+      header: string;
+      field?: string;
+      value?: (m: BalanceDiarioResponse) => any;
+    }> = [
+        { header: 'Tipo', field: 'tipo' },
+        { header: 'Documento', field: 'documento' },
+        { header: 'F. Transacción', value: (m) => this.formatIsoDDMMYYYY((m as any).fechaTransaccion) },
+        { header: 'F. Ingreso', value: (m) => this.formatIsoDDMMYYYY((m as any).fechaIngreso) },
+        { header: 'Beneficiario', field: 'beneficiario' },
+        { header: 'Observación', field: 'observacion' },
+        { header: 'Debe', value: (m) => Number((m as any).totdebe ?? (m as any).debe ?? 0) },
+        { header: 'Haber', value: (m) => Number((m as any).tothaber ?? (m as any).haber ?? 0) },
+        {
+          header: 'Responsable',
+          value: (m) => `${(m as any).codResponsable ?? ''} - ${(m as any).nomResponsable ?? ''}`
+        }
+      ];
+
+    const masterHeader = masterCols.map(c => c.header);
     data.push(masterHeader);
 
-    const headerRowIndex = 4; // 0=titulo,1=linea1,2=linea2,3=blank,4=header
+    const headerRowIndex = 4;
     let rowCursor = headerRowIndex + 1;
 
-    // Totales
     let totalDebe = 0;
     let totalHaber = 0;
 
-    // Meta para outline (agrupación en Excel)
     const rowMeta: any[] = [];
 
-    // ============================================================
-    // DEFINIR COLUMNAS DETALLE (ajusta fields si cambian)
-    // ============================================================
-    const detailCols: { header: string; field: string; width?: number }[] = [
+    const detailCols: { header: string; field: string }[] = [
       { header: 'Fecha', field: 'fecha' },
       { header: 'Hora', field: 'hora' },
       { header: 'Cuenta', field: 'cuenta' },
@@ -338,43 +224,32 @@ export class BalanceComponent implements OnInit {
       { header: 'Comentario', field: 'comentario' }
     ];
 
-    // ============================================================
-    // RECORRER FILAS MASTER (respetando filtros y orden)
-    // ============================================================
-    this.gridApi.forEachNodeAfterFilterAndSort((node: any) => {
-      if (!node?.data) return;
-
-      // ----- MASTER ROW
-      const masterRow = masterCols.map((c: any) => (node.data as any)[c.field as string]);
+    (this.rowData ?? []).forEach((m: any) => {
+      const masterRow = masterCols.map(c => c.value ? c.value(m) : (m as any)[c.field as string]);
       data.push(masterRow);
 
-      const debeM = Number((node.data as any).totdebe ?? (node.data as any).debe ?? 0);
-      const haberM = Number((node.data as any).tothaber ?? (node.data as any).haber ?? 0);
+      const debeM = Number(m.totdebe ?? m.debe ?? 0);
+      const haberM = Number(m.tothaber ?? m.haber ?? 0);
       if (!isNaN(debeM)) totalDebe += debeM;
       if (!isNaN(haberM)) totalHaber += haberM;
 
-      // ----- DETAILS
-      const detalles = (node.data as any).detalles ?? []; // Ajusta si tu propiedad se llama distinto
+      const detalles = m.detalles ?? [];
 
       if (Array.isArray(detalles) && detalles.length > 0) {
-        // Línea “Detalle…”
-        data.push([`Detalle de documento: ${(node.data as any).documento ?? ''}`]);
-        rowMeta[rowCursor] = { level: 1 }; // nivel detalle
+        data.push([`Detalle de documento: ${m.documento ?? ''}`]);
+        rowMeta[rowCursor] = { level: 1 };
         rowCursor++;
 
-        // Header detalle
         data.push(detailCols.map(c => c.header));
         rowMeta[rowCursor] = { level: 1 };
         rowCursor++;
 
-        // Filas detalle (colapsables en Excel)
         detalles.forEach((d: any) => {
           data.push(detailCols.map(c => (d as any)[c.field]));
-          rowMeta[rowCursor] = { level: 1, hidden: true }; // oculto inicialmente
+          rowMeta[rowCursor] = { level: 1, hidden: true };
           rowCursor++;
         });
 
-        // Separador
         data.push([]);
         rowCursor++;
       }
@@ -382,55 +257,37 @@ export class BalanceComponent implements OnInit {
       rowCursor++; // por el masterRow agregado
     });
 
-    const saldo = totalDebe - totalHaber;
-
-    // ============================================================
-    // FILA DE TOTALES MASTER
-    // ============================================================
-    const totalsRow = masterCols.map((col: any) => {
-      switch (col.field) {
-        case 'documento':
-        case 'numdoc':
-          return 'TOTALES:';
-        case 'totdebe':
-        case 'debe':
-          return totalDebe;
-        case 'tothaber':
-        case 'haber':
-          return totalHaber;
-        default:
-          return '';
-      }
+    // Fila de totales
+    const totalsRow = masterCols.map(col => {
+      if (col.header === 'Documento') return 'TOTALES:';
+      if (col.header === 'Debe') return totalDebe;
+      if (col.header === 'Haber') return totalHaber;
+      return '';
     });
     data.push(totalsRow);
 
-    // ============================================================
-    // SHEET + MERGES + OUTLINE
-    // ============================================================
     const ws: any = XLSX.utils.aoa_to_sheet(data);
 
     const totalCols = masterCols.length;
     ws['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } }, // título
-      { s: { r: 1, c: 0 }, e: { r: 1, c: totalCols - 1 } }, // línea 1
-      { s: { r: 2, c: 0 }, e: { r: 2, c: totalCols - 1 } }  // línea 2
+      { s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: totalCols - 1 } },
+      { s: { r: 2, c: 0 }, e: { r: 2, c: totalCols - 1 } }
     ];
 
     ws['!rows'] = rowMeta;
     ws['!outline'] = { above: true };
 
-    // Anchos master (básicos)
-    ws['!cols'] = masterCols.map((col: any) => {
+    ws['!cols'] = masterCols.map(col => {
       let wch = 14;
-      if (String(col.field).toLowerCase().includes('fecha')) wch = 16;
-      if (col.field === 'beneficiario') wch = 28;
-      if (col.field === 'observacion') wch = 40;
+      const h = (col.header || '').toLowerCase();
+      if (h.includes('fecha')) wch = 16;
+      if (h.includes('beneficiario')) wch = 28;
+      if (h.includes('observación') || h.includes('observacion')) wch = 40;
+      if (h.includes('responsable')) wch = 24;
       return { wch };
     });
 
-    // ============================================================
-    // ESTILOS (si ya usas xlsx-js-style)
-    // ============================================================
     const borderStyle = {
       top: { style: 'thin', color: { rgb: 'CCCCCC' } },
       bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
@@ -438,7 +295,6 @@ export class BalanceComponent implements OnInit {
       right: { style: 'thin', color: { rgb: 'CCCCCC' } }
     };
 
-    // Título
     const titleCell = ws[XLSX.utils.encode_cell({ r: 0, c: 0 })];
     if (titleCell) {
       titleCell.s = {
@@ -447,7 +303,6 @@ export class BalanceComponent implements OnInit {
       };
     }
 
-    // Header master (fila headerRowIndex)
     for (let C = 0; C < totalCols; C++) {
       const addr = XLSX.utils.encode_cell({ r: headerRowIndex, c: C });
       const cell = ws[addr];
@@ -460,7 +315,6 @@ export class BalanceComponent implements OnInit {
       };
     }
 
-    // Bordes + zebra (solo filas master)
     const ref = ws['!ref'] as string;
     if (ref) {
       const range = XLSX.utils.decode_range(ref);
@@ -478,7 +332,6 @@ export class BalanceComponent implements OnInit {
           cell.s = cell.s || {};
           cell.s.border = borderStyle;
 
-          // zebra solo en master
           if (!isDetail) {
             const isEven = (R - (headerRowIndex + 1)) % 2 === 0;
             cell.s.fill = {
@@ -490,32 +343,20 @@ export class BalanceComponent implements OnInit {
       }
     }
 
-    // ============================================================
-    // GUARDAR
-    // ============================================================
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Asientos');
     XLSX.writeFile(wb, `Diario_movimientos_${fechaStr}.xlsx`);
   }
 
+  // ============================================================
+  // EXPORT PDF (sin AG Grid)
+  // ============================================================
   exportPdfDiarioMovimientos(): void {
     const LOGO_BASE64 = '';
 
-    if (!this.gridApi) return;
-
-    // ============================================================
-    // 1) Preparar dataset (MASTER + DETAIL) desde el grid (respeta filtros/orden)
-    // ============================================================
-    const documentos: any[] = [];
-    this.gridApi.forEachNodeAfterFilterAndSort((node: any) => {
-      if (node?.data) documentos.push(node.data);
-    });
-
+    const documentos: any[] = [...(this.rowData ?? [])];
     if (documentos.length === 0) return;
 
-    // ============================================================
-    // 2) Configuración general del PDF
-    // ============================================================
     const doc = new jsPDF('p', 'mm', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
@@ -525,15 +366,9 @@ export class BalanceComponent implements OnInit {
     const topMargin = 12;
     const bottomMargin = 12;
 
-    // Tipografías
     const FONT = 'helvetica';
-
-    // Control Y
     let y = topMargin;
 
-    // ============================================================
-    // 3) Helpers
-    // ============================================================
     const formatDateES = (iso: any): string => {
       if (!iso) return '';
       const d = new Date(iso);
@@ -556,14 +391,6 @@ export class BalanceComponent implements OnInit {
       doc.line(marginLeft, yy, pageWidth - marginRight, yy);
     };
 
-    const ensureSpace = (neededMm: number) => {
-      if (y + neededMm <= pageHeight - bottomMargin) return;
-
-      doc.addPage();
-      y = topMargin;
-      drawHeaderGeneral(); // repetir encabezado general en cada página
-    };
-
     const drawFooter = () => {
       const page = doc.getNumberOfPages();
       doc.setFont(FONT, 'normal');
@@ -571,26 +398,19 @@ export class BalanceComponent implements OnInit {
       doc.text(`Página ${page}`, pageWidth - marginRight - 20, pageHeight - 6);
     };
 
-    // ============================================================
-    // 4) Encabezado general (repetible)
-    // ============================================================
     const drawHeaderGeneral = () => {
       doc.setFont(FONT, 'bold');
       doc.setFontSize(14);
 
-      // Logo
       if (LOGO_BASE64) {
-        // Ajusta tamaño según tu imagen
         doc.addImage(`data:image/png;base64,${LOGO_BASE64}`, 'PNG', marginLeft, 8, 22, 22);
       }
 
-      // Título centrado
       doc.text('DIARIO DE MOVIMIENTOS', pageWidth / 2, 16, { align: 'center' });
 
       doc.setFont(FONT, 'normal');
       doc.setFontSize(10);
 
-      // Bloque izquierda (Rango fechas / filtros)
       const leftX = marginLeft;
       let yy = 26;
 
@@ -603,11 +423,9 @@ export class BalanceComponent implements OnInit {
       yy += 7;
       doc.text(`Fecha del Reporte: ${formatDateES(new Date())}`, leftX, yy);
 
-      // Bloque derecha (otros filtros)
       const rightX = pageWidth / 2 + 20;
       let yr = 26;
 
-      // Si estás en modo cuenta, muestra rango cuentas; caso contrario “TODOS”
       const rangoCuenta = (this.modoFiltro === 'cuenta')
         ? `${this.cuentaDesde ?? ''} - ${this.cuentaHasta ?? ''}`
         : 'TODOS';
@@ -622,29 +440,29 @@ export class BalanceComponent implements OnInit {
       yr += 5;
       doc.text(`Tipo Asiento: ${tipoAsientoTxt}`, rightX, yr);
 
-      // Línea separadora
       drawLine(50);
-      y = 56; // contenido arranca debajo del header
+      y = 56;
     };
 
-    // Encabezado 1era página
+    const ensureSpace = (neededMm: number) => {
+      if (y + neededMm <= pageHeight - bottomMargin) return;
+
+      doc.addPage();
+      y = topMargin;
+      drawHeaderGeneral();
+    };
+
     drawHeaderGeneral();
 
-    // ============================================================
-    // 5) Render por cada asiento (encabezado + tabla detalle + total)
-    // ============================================================
-    documentos.forEach((m: any, idx: number) => {
-      // Alto aproximado del header del asiento
+    documentos.forEach((m: any) => {
       ensureSpace(40);
 
-      // Encabezado por asiento (como tu imagen)
       doc.setFont(FONT, 'bold');
       doc.setFontSize(10);
 
       const x1 = marginLeft;
       const x2 = pageWidth / 2 + 10;
 
-      // Izquierda
       doc.text('N° Documento', x1, y);
       doc.setFont(FONT, 'normal');
       doc.text(String(m.documento ?? ''), x1 + 35, y);
@@ -667,12 +485,11 @@ export class BalanceComponent implements OnInit {
       doc.setFont(FONT, 'normal');
       doc.text(String(m.beneficiario ?? ''), x1 + 35, y);
 
-      // Derecha
       const comp = m.comprobante ?? m.numComprobante ?? '';
       const cheque = m.cheque ?? 0;
       const cotizacion = m.cotizacion ?? m.cotiza ?? '';
 
-      const yTop = y - 15; // alinear con bloque izquierdo
+      const yTop = y - 15;
 
       doc.setFont(FONT, 'bold');
       doc.text('N° Comprobante', x2, yTop);
@@ -691,11 +508,9 @@ export class BalanceComponent implements OnInit {
 
       y += 6;
 
-      // Línea antes de tabla
       drawLine(y);
       y += 2;
 
-      // Detalle: tabla
       const detalles = Array.isArray(m.detalles) ? m.detalles : [];
 
       let totalDebe = 0;
@@ -717,57 +532,45 @@ export class BalanceComponent implements OnInit {
         ];
       });
 
-      // Si no hay detalles, igual dibuja tabla vacía (opcional)
-      if (body.length === 0) {
-        body.push(['', '', '(Sin detalles)', '', '0.00', '0.00']);
-      }
+      if (body.length === 0) body.push(['', '', '(Sin detalles)', '', '0.00', '0.00']);
 
       autoTable(doc, {
         startY: y,
         theme: 'grid',
-        styles: {
-          font: FONT,
-          fontSize: 9,
-          cellPadding: 2
-        },
+        styles: { font: FONT, fontSize: 9, cellPadding: 2 },
         headStyles: {
           fillColor: [230, 230, 230],
           textColor: [0, 0, 0],
           fontStyle: 'bold'
         },
         columnStyles: {
-          0: { cellWidth: 12 },  // Local
-          1: { cellWidth: 28 },  // Cuenta
-          2: { cellWidth: 45 },  // Descripción
-          3: { cellWidth: 55 },  // Comentario
-          4: { halign: 'right', cellWidth: 20 }, // Debe
-          5: { halign: 'right', cellWidth: 20 }  // Haber
+          0: { cellWidth: 12 },
+          1: { cellWidth: 28 },
+          2: { cellWidth: 45 },
+          3: { cellWidth: 55 },
+          4: { halign: 'right', cellWidth: 20 },
+          5: { halign: 'right', cellWidth: 20 }
         },
         head: [['Local', 'N° Cuenta', 'Descripción', 'Comentario', 'Debe', 'Haber']],
         body,
         didDrawPage: () => {
-          // Encabezado y pie en cada página que autoTable genere
           drawFooter();
         }
       });
 
-      // Luego de la tabla
       const finalY = (doc as any).lastAutoTable.finalY ?? y;
       y = finalY + 4;
 
-      // Total por comprobante
       ensureSpace(10);
       doc.setFont(FONT, 'bold');
       doc.text('Total por Comprobante', pageWidth - marginRight - 85, y);
 
       doc.setFont(FONT, 'bold');
       doc.text(fmtMoney(totalDebe), pageWidth - marginRight - 25, y, { align: 'right' });
-
       doc.text(fmtMoney(totalHaber), pageWidth - marginRight - 5, y, { align: 'right' });
 
       y += 6;
 
-      // Línea separadora entre asientos
       doc.setDrawColor(0, 0, 0);
       doc.setLineWidth(0.2);
       doc.setLineDashPattern([2, 2], 0);
@@ -777,37 +580,8 @@ export class BalanceComponent implements OnInit {
       y += 6;
     });
 
-    // Pie final (por si la última página no fue tocada por autoTable)
     drawFooter();
-
-    // ============================================================
-    // 6) Guardar
-    // ============================================================
     doc.save(`Diario_Movimientos_${this.fechaDesde}_${this.fechaHasta}.pdf`);
-  }
-
-
-  // ============================================================
-  // TOGGLE MODO CUENTA (tu UI)
-  // ============================================================
-  toggleModoCuenta(): void {
-    this.modoFiltro = (this.modoFiltro === 'cuenta') ? 'fecha' : 'cuenta';
-
-    // Al cerrar modo cuenta, limpia filtros secundarios
-    if (this.modoFiltro !== 'cuenta') {
-      this.cuentaDesde = '';
-      this.cuentaHasta = '';
-      this.idTipoAsiento = null;
-    }
-  }
-
-  // ============================================================
-  // EXPAND / COLLAPSE
-  // ============================================================
-  toggleDetalle(id: any): void {
-    if (id == null) return;
-    const key = String(id);
-    this.expandedId = (this.expandedId === key) ? null : key;
   }
 
   // ============================================================
@@ -825,11 +599,6 @@ export class BalanceComponent implements OnInit {
     });
   }
 
-  /**
-   * Carga principal:
-   * - Si cd/ch vienen vacíos => el backend filtra solo por fechas
-   * - Si cd/ch vienen con valores => backend filtra por fechas + rango de cuentas + tipo (si aplica)
-   */
   private cargarPorCondicion(
     fechaDesde: string,
     fechaHasta: string,
@@ -854,6 +623,85 @@ export class BalanceComponent implements OnInit {
       });
   }
 
+  docKey(row: any): string {
+    return String(row?.documento ?? '');
+  }
+
+  // ===========================
+  // PAGINACIÓN (tabla común)
+  // ===========================
+  pageSizeOptions: number[] = [10, 20, 50, 100];
+  pageSize = 20;
+  pageIndex = 0; // 0-based
+
+  get totalRows(): number {
+    return this.rowData?.length ?? 0;
+  }
+
+  get totalPages(): number {
+    const t = this.totalRows;
+    return t === 0 ? 0 : Math.ceil(t / this.pageSize);
+  }
+
+  get fromRow(): number {
+    if (this.totalRows === 0) return 0;
+    return this.pageIndex * this.pageSize + 1;
+  }
+
+  get toRow(): number {
+    if (this.totalRows === 0) return 0;
+    return Math.min((this.pageIndex + 1) * this.pageSize, this.totalRows);
+  }
+
+  get pagedRowData() {
+    const start = this.pageIndex * this.pageSize;
+    const end = start + this.pageSize;
+    return (this.rowData ?? []).slice(start, end);
+  }
+
+  get canPrev(): boolean {
+    return this.pageIndex > 0;
+  }
+
+  get canNext(): boolean {
+    return this.totalPages > 0 && this.pageIndex < this.totalPages - 1;
+  }
+
+  onPageSizeChange(value: any): void {
+    const newSize = Number(value);
+    if (!newSize || newSize <= 0) return;
+
+    this.pageSize = newSize;
+    this.pageIndex = 0;
+    this.expandedId = null;
+  }
+
+  firstPage(): void {
+    if (!this.canPrev) return;
+    this.pageIndex = 0;
+    this.expandedId = null;
+  }
+
+  prevPage(): void {
+    if (!this.canPrev) return;
+    this.pageIndex--;
+    this.expandedId = null;
+  }
+
+  nextPage(): void {
+    if (!this.canNext) return;
+    this.pageIndex++;
+    this.expandedId = null;
+  }
+
+  lastPage(): void {
+    if (!this.canNext) return;
+    this.pageIndex = this.totalPages - 1;
+    this.expandedId = null;
+  }
+
+  trackByDoc = (_: number, row: any) => String(row?.documento ?? '');
+
   // ============================================================
   // HELPERS
   // ============================================================
@@ -870,5 +718,12 @@ export class BalanceComponent implements OnInit {
     const mm = String(d.getMonth() + 1).padStart(2, '0');
     const yyyy = d.getFullYear();
     return `${dd}/${mm}/${yyyy}`;
+  }
+
+  private formatIsoDDMMYYYY(iso: any): string {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return String(iso);
+    return this.formatDateDDMMYYYY(d);
   }
 }
