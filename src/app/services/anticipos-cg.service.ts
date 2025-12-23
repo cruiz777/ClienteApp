@@ -58,13 +58,16 @@ export class AnticiposCgService {
     return {
       ...req,
       // CABECERA
-      fechatransaccion: this.formatYYYYMMDD(req.fechatransaccion),
+      //fechatransaccion: this.formatYYYYMMDD(req.fechatransaccion),
+      fechatransaccion: this.toIsoUtcMidnight(req.fechatransaccion),
+
       fechaingreso: this.formatISODateTime(req.fechaingreso),
 
       // DETALLES
       detalles: req.detalles.map(d => ({
         ...d,
-        fechatransaccion: this.formatYYYYMMDD(d.fechatransaccion),
+        //fechatransaccion: this.formatYYYYMMDD(d.fechatransaccion),
+        fechatransaccion: this.toIsoUtcMidnight(d.fechatransaccion),
         fechaingreso: this.formatISODateTime(d.fechaingreso),
       })),
     };
@@ -135,4 +138,25 @@ export class AnticiposCgService {
     const d = new Date(date);
     return d.toISOString();
   }
+
+
+  private toIsoUtcMidnight(value: any): string | null {
+    if (!value) return null;
+
+    // Si viene como "YYYY-MM-DD"
+    const s = value.toString().trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+      return `${s}T00:00:00.000Z`;
+    }
+
+    // Si viene Date
+    const d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return null;
+
+    const utc = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate(), 0, 0, 0, 0));
+    return utc.toISOString();
+  }
+
 }
+
+

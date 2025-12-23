@@ -13,7 +13,6 @@
         </button>
         <button class="btn" (click)="cancelar()">Cancelar</button>
       </div>
-
 </div>
 
 <div class="content-scroll" [class.cabecera-readonly]="cabeceraBloqueada">
@@ -227,6 +226,10 @@
       <img src="assets/icons/aniadir.png" alt="" class="btn-add__icon">
       Agregar Linea
   </button>
+  <div *ngIf="isViewOnly()" class="alert-readonly" [attr.title]="motivoSoloLectura()">
+          ASIENTO SOLO DE LECTURA
+  </div>
+
 </div>
 
 <ag-grid-angular
@@ -247,6 +250,12 @@
 </ag-grid-angular>
 
 <div class="totales">
+
+  <div class="usuario-totales">
+    <span class="usuario-label">USUARIO:</span>
+    <span class="usuario-valor">{{ (usuarioAsientoNombre() || '') | uppercase }}</span>
+  </div>
+
   <div class="tot">
     <span class="total-label">Total Debe:</span>
     <strong>{{ totDebe() | number:'1.2-2' }}</strong>

@@ -7,6 +7,8 @@ import { environment } from 'src/environments/environment';
 import { ListadoAsientoContableResponse } from '../interfaces/responses/asientos-contables-response';
 import { AsientoContableResponse } from '../interfaces/responses/asiento-contable-response';
 import { AsientoImpresion } from '../interfaces/responses/asiento-impresion.model';
+import { ValidarAnulacionAsientoResponse } from '../interfaces/responses/MotivoNoAnulacionAsientoResponse ';{}
+
 
 /** ===== Respuesta estándar del API ===== */
 export interface ApiResponse<T> {
@@ -355,5 +357,23 @@ export class AsientosContablesService {
       );
   }
 
+  //validacion asientos antes de anular
+   /** Validación previa a eliminar/modificar (backend) */
+  validarAnulacion(
+    idCabMaestro: number,
+    idEmpresa: number,
+    tipoDoc: string
+  ): Observable<ApiResponse<ValidarAnulacionAsientoResponse>> {
 
+    const params = new HttpParams()
+      .set('idCabMaestro', String(idCabMaestro))
+      .set('idEmpresa', String(idEmpresa))
+      .set('tipoDoc', (tipoDoc ?? '').trim().toUpperCase());
+
+    return this.http.get<ApiResponse<ValidarAnulacionAsientoResponse>>(
+      `${this.baseUrl}/validar-anulacion`,
+      { params }
+    );
+  }
+  //
 }
