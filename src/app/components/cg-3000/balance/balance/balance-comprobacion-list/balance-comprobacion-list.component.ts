@@ -14,13 +14,17 @@ import {
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+import { MasterDetailModule } from 'ag-grid-enterprise';
+import 'ag-grid-enterprise';
+
+
 import { BalanceService, ApiResponse } from 'src/app/services/balance.service';
 import { TipoAsientoService } from 'src/app/services/tipo-asiento.service';
 
 import { BalanceDiarioResponse } from 'src/app/interfaces/responses/balance-diario-response';
 import { TipoAsientoResponse } from 'src/app/interfaces/responses/tipo-asiento-response';
 
-ModuleRegistry.registerModules([AllCommunityModule]);
+ModuleRegistry.registerModules([AllCommunityModule,MasterDetailModule]);
 
 @Component({
   selector: 'app-balance',
@@ -89,7 +93,7 @@ export class BalanceComponent implements OnInit {
   };
 
   /** Identificador único por fila (debe ser único) */
-  getRowId = (params: any) => params.data?.documento;
+  getRowId = (params: any) => String(params.data?.documento ?? '');
 
   columnDefs: ColDef[] = [
     {
@@ -196,10 +200,13 @@ export class BalanceComponent implements OnInit {
     const doc = e.data?.documento;
     if (!doc || !this.gridApi) return;
 
-    this.toggleDetalle(doc);
+    const rowId = String(doc);
 
-    const node = this.gridApi.getRowNode(doc);
-    if (node) node.setExpanded(this.expandedId === doc);
+    this.toggleDetalle(rowId);
+
+    const node = this.gridApi.getRowNode(rowId);
+    if (node) node.setExpanded(this.expandedId === rowId);
+
   }
 
   // ============================================================
@@ -799,7 +806,8 @@ export class BalanceComponent implements OnInit {
   // ============================================================
   toggleDetalle(id: any): void {
     if (id == null) return;
-    this.expandedId = (this.expandedId === id) ? null : id;
+    const key = String(id);
+    this.expandedId = (this.expandedId === key) ? null : key;
   }
 
   // ============================================================
