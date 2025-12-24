@@ -1,0 +1,160 @@
+/* ===== Layout del contenedor ===== */
+.cuenta-liquidar {
+  padding: 12px 18px;
+  background: #f6f8fb;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color: #2c3b6f;
+}
+
+/* ===== Stepper simple ===== */
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #8da1c2;
+  font-weight: 600;
+}
+.step-badge {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #e1e7f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  background: #fff;
+}
+.step.active {
+  color: #1c2a5e;
+}
+.step.active .step-badge {
+  border-color: #ff7b00;
+  background: #ff7b00;
+  color: #fff;
+}
+.step-divider {
+  flex: 1;
+  height: 2px;
+  background: #e9edf6;
+  border-radius: 2px;
+}
+
+/* ===== Paneles minimalistas ===== */
+.panel {
+  background: #fff;
+  border: 1px solid #d9e3f0;
+  border-radius: 4px;
+  padding: 12px 14px;
+  margin-bottom: 12px;
+}
+.panel-title {
+  font-weight: 700;
+  color: #1c2a5e;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+.panel-subtitle {
+  font-weight: 600;
+  color: #1c2a5e;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+/* ===== Campos con línea inferior ===== */
+.field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: #2c3b6f;
+  margin-bottom: 4px;
+}
+.form-control, mat-form-field input {
+  height: 28px;
+  line-height: 28px;
+  padding: 0 6px;
+  border: none;
+  border-bottom: 1px solid #dfe6f5;
+  border-radius: 0;
+  background: transparent;
+  font-size: 13px;
+}
+.form-control:focus {
+  outline: none;
+  border-bottom-color: #9db4d9;
+}
+
+/* ===== Grid compacto ===== */
+.grid-wrap {
+  position: relative;
+}
+.ag-theme-material.compact-grid {
+  --ag-font-size: 12px;
+  --ag-row-height: 28px;
+  --ag-header-height: 28px;
+  --ag-border-color: #d9e3f0;
+  --ag-header-background-color: #f7f9fc;
+  --ag-header-foreground-color: #2c3b6f;
+}
+
+/* ===== Botones minimalistas ===== */
+.fi-btn {
+  height: 28px;
+  padding: 0 12px;
+  font-size: 12px;
+  border-radius: 4px;
+  border: 1px solid #cfd9ea;
+  background: #fff;
+  color: #2c3b6f;
+  cursor: pointer;
+}
+.fi-btn.fi-primary {
+  background: #1c2a5e;
+  border-color: #1c2a5e;
+  color: #fff;
+}
+.fi-btn:hover {
+  background: #f3f6fb;
+}
+.fi-btn.fi-primary:hover {
+  background: #16224a;
+}
+
+/* ===== Estados coloreados ===== */
+.text-success { color: #1e8e3e; }
+.text-primary { color: #1c2a5e; }
+.text-warning { color: #e5a100; }
+.text-danger { color: #d93025; }
+.fw-bold { font-weight: 700; }
+
+/* ===== Toolbar ===== */
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+.toolbar .tot {
+  color: #6b7890;
+  font-size: 12px;
+}
+.toolbar .btns {
+  display: flex;
+  gap: 6px;
+}
+
+/* ===== Acciones ===== */
+.actions-left, .actions-right {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+.actions-right {
+  justify-content: flex-end;
+}
