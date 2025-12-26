@@ -2,7 +2,12 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
+
+import { BalanceComprobacionRequest } from '../interfaces/requests/balance-comprobacion-request';
+
 import { BalanceDiarioResponse } from '../interfaces/responses/balance-diario-response';
+import { BalanceComprobacionResponse } from '../interfaces/responses/balance-comprobacion-response';
+
 
 // Si quieres tipar la respuesta genérica como en producto.service.ts
 export interface ApiResponse<T> {
@@ -37,5 +42,15 @@ export class BalanceService {
       `${this.apiUrl}/desde/${desde}/hasta/${hasta}/cuentaA/${ca}/cuentaB/${cb}/asiento/${tipo}`
     );
   }
+
+  getByCondicionBalanceComprobacion(
+    request: BalanceComprobacionRequest
+  ): Observable<ApiResponse<BalanceComprobacionResponse[]>> {
+    return this.http.post<ApiResponse<BalanceComprobacionResponse[]>>(
+      `${this.apiUrl}/balance-comprobacion`,
+      request
+    );
+  }
+
 
 }
