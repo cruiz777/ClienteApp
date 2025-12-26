@@ -30,88 +30,100 @@ login(nombreUsuario: string, contrasenia: string): Observable<LoginUsuarioRespon
     password: contrasenia
   };
 
-  return this.http.post<{ type: string; data: any; message: string }>(`${this.apiUrl}/login`, body).pipe(
-    map(response => {
-      console.log('Respuesta cruda del backend:', response);
+  return this.http
+    .post<{ type: string; data: any; message: string }>(`${this.apiUrl}/login`, body)
+    .pipe(
+      map(response => {
+        console.log('Respuesta cruda del backend:', response);
 
-      if (!response?.type || response.type.toUpperCase() !== 'OK' || !response.data) {
-        throw new Error(response?.message || 'Error al iniciar sesión.');
-      }
+        if (!response?.type || response.type.toUpperCase() !== 'OK' || !response.data) {
+          throw new Error(response?.message || 'Error al iniciar sesión.');
+        }
 
-      const raw = response.data;
+        const raw = response.data;
 
-      // ✅ 1) Normalizar cajas desde distintas formas posibles del backend
-      let cajas: any[] = [];
+        // 1) Normalizar "cajas"
+        let cajas: any[] = [];
+        if (Array.isArray(raw?.cajas)) {
+          cajas = raw.cajas;
+        } else if (Array.isArray(raw?.autorizacionCajaUsuario)) {
+          cajas = raw.autorizacionCajaUsuario;
+        } else if (raw?.id_autorizacion_caja) {
+          cajas = [{
+            id_autorizacion_usuario: raw.id_autorizacion_usuario,
+            id_autorizacion_caja: raw.id_autorizacion_caja
+          }];
+        }
 
-      // a) si backend ya manda "cajas"
-      if (Array.isArray(raw?.cajas)) {
-        cajas = raw.cajas;
-      }
-      // b) si backend manda "autorizacionCajaUsuario" (EF)
-      else if (Array.isArray(raw?.autorizacionCajaUsuario)) {
-        cajas = raw.autorizacionCajaUsuario;
-      }
-      // c) fallback si backend manda plano
-      else if (raw?.id_autorizacion_caja) {
-        cajas = [{
-          id_autorizacion_usuario: raw.id_autorizacion_usuario,
-          id_autorizacion_caja: raw.id_autorizacion_caja
-        }];
-      }
+        // 2) Mapear cajas al contrato actual (con id_tipo_documento)
+        const cajasMap = cajas
+          .map((x: any) => ({
+            id_autorizacion_usuario:
+              x.id_autorizacion_usuario ??
+              x.idAutorizacionUsuario ??
+              0,
 
-      // ✅ 2) Mapear a tu contrato final
-      const cajasMap = cajas.map((x: any) => ({
-        id_autorizacion_usuario:
-          x.id_autorizacion_usuario ??
-          x.idAutorizacionUsuario ??
-          x.id_autorizacionusuario ??
-          0,
+            id_autorizacion_caja:
+              x.id_autorizacion_caja ??
+              x.idAutorizacionCaja ??
+              0,
 
-        id_autorizacion_caja:
-          x.id_autorizacion_caja ??
-          x.idAutorizacionCaja ??
-          x.id_autorizacioncaja ??
-          0,
+            // ✅ NUEVO: viene del backend
+            id_tipo_documento:
+              x.id_tipo_documento ??
+              x.idTipoDocumento ??
+              null,
 
-        // opcionales si vienen del join
-        doc_fi:
-          x.doc_fi ??
-          x.docFi ??
-          x.idAutorizacionCajaNavigation?.docFi ??
-          x.idAutorizacionCajaNavigation?.doc_fi,
+            // opcionales
+            caja:
+              x.caja ??
+              x.Caja ??
+              null,
 
-        numero:
-          x.numero ??
-          x.idAutorizacionCajaNavigation?.numero ??
-          x.idAutorizacionCajaNavigation?.numero_autorizacion,
+            numero:
+              x.numero ??
+              x.Numero ??
+              null,
 
-        estado:
-          x.estado ??
-          x.idAutorizacionCajaNavigation?.estado
-      }))
-      // por seguridad: quitar registros sin id_autorizacion_caja válido
-      .filter((c: any) => !!c.id_autorizacion_caja);
+            numero_autorizacion:
+              x.numero_autorizacion ??
+              x.numeroAutorizacion ??
+              null
+          }))
+          .filter((c: any) => !!c.id_autorizacion_caja);
 
-      const user: LoginUsuarioResponse = {
-        id_usuario: raw.id_usuario,
-        nombre_usuario: raw.nombre_usuario,
-        correo: raw.correo ?? null,
-        nombreD: raw.nombreD,
-        id_perfil: raw.id_perfil,
-        perfil: raw.perfil,
-        id_empresa: raw.id_empresa,
-        nombreE: raw.nombreE,
-        estado: raw.estado,
+        const user: LoginUsuarioResponse = {
+          id_usuario: raw.id_usuario,
+          nombre_usuario: raw.nombre_usuario,
+          correo: raw.correo ?? null,
+          nombreD: raw.nombreD,
+          id_perfil: raw.id_perfil,
+          perfil: raw.perfil,
+          id_empresa: raw.id_empresa,
+          nombreE: raw.nombreE,
+          estado: raw.estado,
+          cajas: cajasMap
+        };
 
-        // ✅ aquí ya va arreglo
-        cajas: cajasMap
-      };
+        // ✅ Guardar
+        localStorage.setItem('currentUser', JSON.stringify(user));
 
-      localStorage.setItem('currentUser', JSON.stringify(user));
-      this.currentUserSubject.next(user);
-      return user;
-    })
-  );
+        // ✅ (Recomendado) guardar una caja por defecto: FACTURA (1) primero, si existe
+        const cajaDefault =
+          user.cajas?.find(c => c.id_tipo_documento === 1) ??
+          user.cajas?.[0] ??
+          null;
+
+        if (cajaDefault) {
+          localStorage.setItem('cajaSeleccionada', JSON.stringify(cajaDefault));
+        } else {
+          localStorage.removeItem('cajaSeleccionada');
+        }
+
+        this.currentUserSubject.next(user);
+        return user;
+      })
+    );
 }
 
   logout(): void {

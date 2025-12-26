@@ -1874,6 +1874,7 @@ private buildPayload(): NotaCreditoCrearReq {
   return {
     clienteCodigo: this.clientesCodigo,
     caja: this.encabezado.caja || '001',
+    idAutorizacionCaja: this.idAutorizacionCajaNc ?? 0,
     observaciones: this.encabezado.observacion || '',
     idUsuarioResponsable: this.usuarioActual?.id_usuario ?? 1,
     idEmpresa: this.usuarioActual?.id_empresa ?? 1,
@@ -1920,11 +1921,14 @@ private buildPayload(): NotaCreditoCrearReq {
   }
 
   cajaAsignada = false;
+  idAutorizacionCajaNc: number | null = null;
   cargarAutorizacion(): void {
-    const id = this.usuarioActual?.cajas?.find(c => c.doc_fi === 2)?.id_autorizacion_caja
-  ?? this.usuarioActual?.cajas?.[0]?.id_autorizacion_caja
-  ?? null;
 
+    const id =
+  this.usuarioActual?.cajas?.find(c => c.id_tipo_documento === 2)?.id_autorizacion_caja
+  ?? null;
+  console.log('usuarioActual.cajas:', this.usuarioActual?.cajas);
+this.idAutorizacionCajaNc = (id != null ? Number(id) : null);
     this.cajaAsignada = false;
 
     if (id == null) {

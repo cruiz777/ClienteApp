@@ -1,10 +1,16 @@
 export interface LoginCajaResponse {
   id_autorizacion_usuario: number;
   id_autorizacion_caja: number;
-  doc_fi?: number;   // 1=factura, 2=NC (si lo envías)
-  numero?: number;
-  estado?: string;
+
+  // ✅ viene del backend
+  id_tipo_documento?: number; // 1=factura, 2=NC
+
+  // opcionales (vienen también)
+  caja?: number;
+  numero?: number | null;
+  numero_autorizacion?: string | null;
 }
+
 
 export interface LoginUsuarioResponse {
   id_usuario: number;
