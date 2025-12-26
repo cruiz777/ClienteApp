@@ -134,16 +134,9 @@
           <button
             type="button"
             class="fi-btn fi-primary"
-            (click)="distribuirPagoUniforme()"
+            (click)="distribuirPago()"
             [disabled]="montoPagar <= 0">
-            Distribuir Uniforme
-          </button>
-          <button
-            type="button"
-            class="fi-btn fi-primary"
-            (click)="distribuirPagoProporcional()"
-            [disabled]="montoPagar <= 0">
-            Distribuir Proporcional
+            Pagar Facturas
           </button>
           <button
             type="button"
@@ -171,11 +164,22 @@
       </div>
 
       <!-- RESUMEN PASO 1 -->
-      <div class="toolbar mt-3">
-        <div class="tot">
-          <strong>Total a Pagar:</strong> <b>${{ totalFacturas.toFixed(2) }}</b>
-          &nbsp;|&nbsp;
-          <strong>Facturas con Pago:</strong> <b>{{ totalFacturasConPago }}</b>
+      <div class="resumen-totales">
+        <div class="resumen-item">
+          <span class="resumen-label">TOTAL DEUDA:</span>
+          <span class="resumen-valor">${{ totalDeuda.toFixed(2) }}</span>
+        </div>
+        <div class="resumen-separador">-</div>
+        <div class="resumen-item">
+          <span class="resumen-label">TOTAL A PAGAR:</span>
+          <span class="resumen-valor texto-azul">${{ montoPagar.toFixed(2) }}</span>
+        </div>
+        <div class="resumen-separador">=</div>
+        <div class="resumen-item">
+          <span class="resumen-label">SALDO:</span>
+          <span class="resumen-valor" [class.texto-verde]="saldoDeuda >= 0" [class.texto-rojo]="saldoDeuda < 0">
+            ${{ saldoDeuda.toFixed(2) }}
+          </span>
         </div>
       </div>
     </div>
@@ -190,6 +194,12 @@
     <!-- NAVEGACIÓN -->
     <div class="panel panel-bottom">
       <div class="actions-right">
+        <button
+          type="button"
+          class="fi-btn"
+          (click)="nuevoRegistro()">
+          Nuevo Pago
+        </button>
         <button
           type="button"
           class="fi-btn fi-primary"
@@ -283,6 +293,7 @@
           [columnDefs]="columnDefsFormasPago"
           [defaultColDef]="defaultColDef"
           [animateRows]="true"
+          [getRowId]="getRowIdFormasPago"
           (gridReady)="onGridFormasPagoReady($event)"
           (cellValueChanged)="onCellValueChangedFormasPago($event)">
         </ag-grid-angular>
@@ -300,16 +311,33 @@
       </div>
 
       <!-- TOOLBAR SALDO -->
-      <div class="toolbar">
-        <div class="tot"
-             [class.text-danger]="Math.abs(diferencia) >= 0.01"
-             [class.text-success]="Math.abs(diferencia) < 0.01">
-          <strong>Total Facturas:</strong> ${{ totalFacturas.toFixed(2) }}
-          &nbsp;|&nbsp;
-          <strong>Total Formas de Pago:</strong> ${{ totalFormasPago.toFixed(2) }}
-          &nbsp;|&nbsp;
-          <strong>Diferencia:</strong> <b>${{ diferencia.toFixed(2) }}</b>
+      <div class="resumen-totales">
+        <div class="resumen-item">
+          <span class="resumen-label">TOTAL A PAGAR:</span>
+          <span class="resumen-valor">${{ totalFacturas.toFixed(2) }}</span>
         </div>
+        <div class="resumen-separador">-</div>
+        <div class="resumen-item">
+          <span class="resumen-label">FORMAS DE PAGO:</span>
+          <span class="resumen-valor texto-azul">${{ totalFormasPago.toFixed(2) }}</span>
+        </div>
+        <div class="resumen-separador">=</div>
+        <div class="resumen-item">
+          <span class="resumen-label">DIFERENCIA:</span>
+          <span class="resumen-valor"
+                [class.texto-verde]="Math.abs(diferencia) < 0.01"
+                [class.texto-rojo]="Math.abs(diferencia) >= 0.01">
+            ${{ diferencia.toFixed(2) }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Agregar mensaje de validación visual -->
+      <div class="estado-validacion" *ngIf="Math.abs(diferencia) >= 0.01">
+        <mat-icon>warning</mat-icon>
+        <span>
+          {{ diferencia > 0 ? 'Falta distribuir $' + diferencia.toFixed(2) : 'Exceso de $' + Math.abs(diferencia).toFixed(2) }}
+        </span>
       </div>
     </div>
 
@@ -344,9 +372,8 @@
           type="button"
           class="fi-btn fi-primary"
           (click)="guardarPago()"
-          [disabled]="!pagoValido || guardando">
-          <span *ngIf="guardando" class="spinner"></span>
-          {{ guardando ? 'Guardando...' : 'Guardar Pago' }}
+          [disabled]="!pagoValido">
+          Guardar Pago
         </button>
       </div>
     </div>

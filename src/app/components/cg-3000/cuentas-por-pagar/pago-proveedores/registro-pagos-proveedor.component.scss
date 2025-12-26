@@ -158,3 +158,84 @@
 .actions-right {
   justify-content: flex-end;
 }
+/* ===== Badges de estado ===== */
+.badge-estado {
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  display: inline-block;
+}
+.badge-no-pagado {
+  background: #fce4e4;
+  color: #d32f2f;
+}
+.badge-abonado {
+  background: #e3f2fd;
+  color: #1976d2;
+}
+.badge-cancelado {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+/* ===== Resumen de totales ===== */
+.resumen-totales {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 14px;
+  background: #f7f9fc;
+  border-radius: 4px;
+  margin-top: 12px;
+  border: 1px solid #e1e7f5;
+}
+.resumen-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.resumen-label {
+  font-size: 10px;
+  color: #6b7890;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.resumen-valor {
+  font-size: 18px;
+  color: #1c2a5e;
+  font-weight: 700;
+}
+.resumen-separador {
+  font-size: 20px;
+  color: #8da1c2;
+  font-weight: 700;
+}
+.texto-azul {
+  color: #1976d2;
+}
+.texto-verde {
+  color: #2e7d32;
+}
+.texto-rojo {
+  color: #d32f2f;
+}
+/* ===== Estado de validación (PASO 2) ===== */
+.estado-validacion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fff9e6;
+  border: 1px solid #ffd54f;
+  border-radius: 4px;
+  margin-top: 12px;
+  color: #f57c00;
+  font-size: 13px;
+  font-weight: 600;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}

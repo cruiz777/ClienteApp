@@ -44,7 +44,16 @@ export class PlanCuentaCellEditorComponent implements ICellEditorAngularComp {
   }
 
   getValue(): number {
-    return this.selectedId;
+    // IMPORTANTE: Convertir a número explícitamente
+    // porque ngModel puede devolver string desde el DOM
+    const valor = Number(this.selectedId);
+    console.log('📤 getValue() llamado:', {
+      selectedIdRaw: this.selectedId,
+      selectedIdTipo: typeof this.selectedId,
+      valorConvertido: valor,
+      valorTipo: typeof valor
+    });
+    return valor;
   }
 
   onChange(): void {

@@ -18,6 +18,8 @@ import { PlanCuentasService, PlanCuenta } from 'src/app/services/plan-cuentas.se
 
 
 import { PlanCuentaCellEditorComponent } from './plan-cuenta-cell-editor.component';
+import { MatDialog } from '@angular/material/dialog';
+import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/components/utils/messages/custom-message-box.component';
 
 
 
@@ -155,18 +157,19 @@ export class RegistroPagosProveedorComponent implements OnInit {
     {
       field: 'estadopago',
       headerName: 'Estado',
-      width: 90,
-      cellRenderer: (params: any) =>  {
+      width: 110,
+      cellRenderer: (params: any) => {
         const badges = {
-          'N': '<span class="badge badge-warning">Pendiente</span>',
-          'A': '<span class="badge badge-info">Abonado</span>',
-          'P': '<span class="badge badge-success">Pagado</span>'
+          'N': '<span class="badge-estado badge-no-pagado">No Pagado</span>',
+          'A': '<span class="badge-estado badge-abonado">Abonado</span>',
+          'P': '<span class="badge-estado badge-cancelado">Cancelado</span>'
         };
         return badges[params.value as keyof typeof badges] || params.value;
       }
     },
     { field: 'comentario', headerName: 'Comentario', width: 200 }
   ];
+  pinnedBottomRowData: any[] = [];
 
   columnDefsFormasPago: ColDef[] = [
     {
@@ -199,8 +202,30 @@ export class RegistroPagosProveedorComponent implements OnInit {
 
         const cuenta = lista.find(c => c.id === v);
         return cuenta ? cuenta.label : String(v);
+      },
+      // Siempre tener el valuesetter
+      valueSetter: (params) => {
+        console.log('🎯 valueSetter ejecutado:', {
+          newValue: params.newValue,
+          tipoNewValue: typeof params.newValue,
+          oldValue: params.oldValue
+        });
+
+        // Convertir a número
+        const newValue = Number(params.newValue);
+
+        // Validar
+        if (isNaN(newValue)) {
+          console.error('❌ Valor inválido recibido:', params.newValue);
+          return false;
+        }
+
+        // Asignar
+        params.data.idPlanCuentas = newValue;
+
+        console.log('✅ Valor asignado:', newValue);
+        return true; // ← Indica que el valor cambió exitosamente
       }
-      // QUITAR valueSetter (se maneja en onCellValueChanged)
     },
     {
       field: 'monto',
@@ -273,7 +298,8 @@ export class RegistroPagosProveedorComponent implements OnInit {
     private formaPagoCgService: FormaPagoCgService,
     private planCuentasService: PlanCuentasService,
     private router: Router,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -363,7 +389,9 @@ export class RegistroPagosProveedorComponent implements OnInit {
   //   //   })
   //   // );
   // }
-
+  getRowIdFormasPago = (params: any) => {
+    return params.data.id.toString();
+  };
   onFormaPagoSeleccionadaDropdown(forma: FormaPagoCgResponse): void {
     if (!forma) return;
 
@@ -527,35 +555,63 @@ export class RegistroPagosProveedorComponent implements OnInit {
     });
   }
 
-  // ===== DISTRIBUCIÓN DE PAGO =====
-  distribuirPagoUniforme(): void {
-    const facturasSeleccionadas = this.gridApiFacturas.getSelectedRows() as FacturaRow[];
+  // // ===== DISTRIBUCIÓN DE PAGO =====
+  // distribuirPagoUniforme(): void {
+  //   const facturasSeleccionadas = this.gridApiFacturas.getSelectedRows() as FacturaRow[];
+
+  //   if (facturasSeleccionadas.length === 0) {
+  //     this.showError('Seleccione al menos una factura');
+  //     return;
+  //   }
+
+  //   const montoPorFactura = this.montoPagar / facturasSeleccionadas.length;
+
+  //   facturasSeleccionadas.forEach(factura => {
+  //     factura.pago = Math.min(montoPorFactura, factura.saldoPendiente);
+  //     factura.estadopago = this.getEstado(factura.pago, factura.saldoPendiente);
+
+  //   });
+
+  //   this.gridApiFacturas.applyTransaction({ update: facturasSeleccionadas });
+  //   this.calcularTotales();
+  // }
+
+  // distribuirPagoProporcional(): void {
+  //   const facturasSeleccionadas = this.gridApiFacturas.getSelectedRows() as FacturaRow[];
+
+  //   if (facturasSeleccionadas.length === 0) {
+  //     this.showError('Seleccione al menos una factura');
+  //     return;
+  //   }
+
+  //   const totalSaldos = facturasSeleccionadas.reduce((sum, f) => sum + f.saldoPendiente, 0);
+
+  //   facturasSeleccionadas.forEach(factura => {
+  //     const proporcion = factura.saldoPendiente / totalSaldos;
+  //     factura.pago = Math.min(this.montoPagar * proporcion, factura.saldoPendiente);
+  //     factura.estadopago = this.getEstado(factura.pago, factura.saldoPendiente);
+  //   });
+
+  //   this.gridApiFacturas.applyTransaction({ update: facturasSeleccionadas });
+  //   this.calcularTotales();
+  // }
+
+  // Esta función reemplaza distribuirPagoUniforme y distribuirPagoProporcional
+  distribuirPago(): void {
+    let facturasSeleccionadas = this.gridApiFacturas.getSelectedRows() as FacturaRow[];
+
+    // Si NO hay facturas seleccionadas, seleccionar TODAS
+    if (facturasSeleccionadas.length === 0) {
+      this.gridApiFacturas.selectAll();
+      facturasSeleccionadas = this.gridApiFacturas.getSelectedRows() as FacturaRow[];
+    }
 
     if (facturasSeleccionadas.length === 0) {
-      this.showError('Seleccione al menos una factura');
+      this.showError('No hay facturas disponibles');
       return;
     }
 
-    const montoPorFactura = this.montoPagar / facturasSeleccionadas.length;
-
-    facturasSeleccionadas.forEach(factura => {
-      factura.pago = Math.min(montoPorFactura, factura.saldoPendiente);
-      factura.estadopago = this.getEstado(factura.pago, factura.saldoPendiente);
-
-    });
-
-    this.gridApiFacturas.applyTransaction({ update: facturasSeleccionadas });
-    this.calcularTotales();
-  }
-
-  distribuirPagoProporcional(): void {
-    const facturasSeleccionadas = this.gridApiFacturas.getSelectedRows() as FacturaRow[];
-
-    if (facturasSeleccionadas.length === 0) {
-      this.showError('Seleccione al menos una factura');
-      return;
-    }
-
+    // Distribuir proporcionalmente
     const totalSaldos = facturasSeleccionadas.reduce((sum, f) => sum + f.saldoPendiente, 0);
 
     facturasSeleccionadas.forEach(factura => {
@@ -606,7 +662,13 @@ export class RegistroPagosProveedorComponent implements OnInit {
     this.totalFormasPago = this.formasPagoRows.reduce((sum, f) => sum + (f.monto || 0), 0);
     this.diferencia = this.totalFacturas - this.totalFormasPago;
   }
+  get totalDeuda(): number {
+    return this.facturasRows.reduce((sum, f) => sum + f.saldoPendiente, 0);
+  }
 
+  get saldoDeuda(): number {
+    return this.totalDeuda - this.montoPagar;
+  }
   get totalFacturasConPago(): number {
     return this.facturasRows.filter(f => f.pago > 0).length;
   }
@@ -653,6 +715,16 @@ export class RegistroPagosProveedorComponent implements OnInit {
       this.showError('Todas las formas de pago deben tener una cuenta contable asignada');
       return;
     }
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      data: {
+        title: 'Guardando Pago',
+        message: 'Por favor espere mientras se procesa el pago...',
+        type: 'info',
+        isLoading: true,
+        loadingText: 'Registrando pago en el sistema...'
+      } as MessageBoxData,
+      disableClose: true
+    });
     const facturas: FacturaPagoItem[] = this.facturasRows
       .filter(f => f.pago > 0)
       .map(f => ({
@@ -693,17 +765,30 @@ export class RegistroPagosProveedorComponent implements OnInit {
     this.guardando = true;
     this.pagoProveedorService.registrarPago(request).subscribe({
       next: (response) => {
+        loadingDialog.close(); // ✅ Cerrar loading
+
         if (response.type === 'CREATED') {
-          this.showSuccess(response.message || 'Pago registrado exitosamente');
-          this.resetearFormulario();
+          // ✅ Mostrar éxito
+          const successDialog = this.dialog.open(CustomMessageBoxComponent, {
+            data: {
+              title: 'Pago Registrado',
+              message: response.message || 'El pago se ha registrado exitosamente',
+              type: 'success',
+              confirmText: 'Aceptar',
+              showCancel: false
+            } as MessageBoxData
+          });
+
+          successDialog.afterClosed().subscribe(() => {
+            this.resetearFormulario();
+          });
         } else {
           this.showError(response.message || 'Error al registrar el pago');
         }
-        this.guardando = false;
       },
       error: (err) => {
+        loadingDialog.close(); // ✅ Cerrar loading
         this.showError('Error de conexión al guardar el pago');
-        this.guardando = false;
       }
     });
   }
@@ -772,21 +857,44 @@ export class RegistroPagosProveedorComponent implements OnInit {
       this.calcularTotales();
     }
   }
+  // private showError(message: string): void {
+  //   this.snackBar.open(message, 'Cerrar', {
+  //     duration: 5000,
+  //     panelClass: ['error-snackbar'],
+  //     horizontalPosition: 'end',
+  //     verticalPosition: 'top'
+  //   });
+  // }
+
+  // private showSuccess(message: string): void {
+  //   this.snackBar.open(message, 'Cerrar', {
+  //     duration: 3000,
+  //     panelClass: ['success-snackbar'],
+  //     horizontalPosition: 'end',
+  //     verticalPosition: 'top'
+  //   });
+  // }
   private showError(message: string): void {
-    this.snackBar.open(message, 'Cerrar', {
-      duration: 5000,
-      panelClass: ['error-snackbar'],
-      horizontalPosition: 'end',
-      verticalPosition: 'top'
+    this.dialog.open(CustomMessageBoxComponent, {
+      data: {
+        title: 'Error',
+        message: message,
+        type: 'error',
+        confirmText: 'Aceptar',
+        showCancel: false
+      } as MessageBoxData
     });
   }
 
   private showSuccess(message: string): void {
-    this.snackBar.open(message, 'Cerrar', {
-      duration: 3000,
-      panelClass: ['success-snackbar'],
-      horizontalPosition: 'end',
-      verticalPosition: 'top'
+    this.dialog.open(CustomMessageBoxComponent, {
+      data: {
+        title: 'Éxito',
+        message: message,
+        type: 'success',
+        confirmText: 'Aceptar',
+        showCancel: false
+      } as MessageBoxData
     });
   }
   private getEstado(pago: number, saldoPendiente: number): string {
@@ -798,5 +906,24 @@ export class RegistroPagosProveedorComponent implements OnInit {
   private clamp2(v: number): number {
     if (!isFinite(v) || v < 0) return 0;
     return Math.round(v * 100) / 100;
+  }
+  nuevoRegistro(): void {
+    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      data: {
+        title: 'Confirmar',
+        message: '¿Está seguro que desea iniciar un nuevo registro? Se perderán los datos actuales.',
+        type: 'warning',
+        confirmText: 'Sí, continuar',
+        cancelText: 'Cancelar',
+        showCancel: true
+      } as MessageBoxData
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.resetearFormulario();
+        this.montoPagar = 0;
+      }
+    });
   }
 }
