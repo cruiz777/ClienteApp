@@ -25,6 +25,7 @@ import { FacturasProveedorFormComponent } from './transacciones/facturas-proveed
 import { FacturasProveedorComponent } from './transacciones/facturas-proveedor/facturas-proveedor-list/facturas-proveedor-list.component';
 import { AnticipoCgFormComponent } from './transacciones/anticipos-cg/anticipos-cg-form/anticipos-cg-form.component';
 import { BalanceComponent } from './balance/balance/balance-comprobacion-list/balance-comprobacion-list.component'
+import { RegistroPagosProveedorComponent } from './cuentas-por-pagar/pago-proveedores/registro-pagos-proveedor.component';
 
 const routes: Routes = [
   {
@@ -52,6 +53,7 @@ const routes: Routes = [
       { path: 'ingresodocumentos', component: FacturasProveedorComponent },
       { path: 'anticipos', component: AnticipoCgFormComponent },
       { path: 'diario', component: BalanceComponent },
+      { path: 'pago-proveedores', component: RegistroPagosProveedorComponent },
       { path: '**', redirectTo: 'inicio-cg' },
     ],
   },
