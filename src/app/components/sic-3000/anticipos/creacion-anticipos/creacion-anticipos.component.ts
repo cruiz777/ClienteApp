@@ -311,12 +311,8 @@ export class CreacionAnticiposComponent implements OnInit {
       next: (response: any) => {
         console.log('📦 Formas Pago:', response);
         if ((response.type === 'Success' || response.type === 'success') && response.data) {
-          // Mapear campos snake_case
-          this.formasPago = (response.data || []).map((f: any) => ({
-            idFormaPago: f.id_forma_pago,
-            descripcionPago: f.descripcion_pago,
-            codigoCuenta: f.codigo_cuenta
-          }));
+          // Ya vienen mapeadas a camelCase por el servicio
+          this.formasPago = response.data;
           this.formasPagoFiltradas = [...this.formasPago];
           console.log('✅ Formas de pago cargadas:', this.formasPago);
         }
@@ -722,8 +718,11 @@ export class CreacionAnticiposComponent implements OnInit {
   mostrarBanco = (b: BancosTercerosResponse | string | null): string =>
     (b && typeof b === 'object') ? (b.Descripcion ?? '') : (b ?? '') as string;
 
-  mostrarFormaPago = (f: FormaPagoResponse | string | null): string =>
-    (f && typeof f === 'object') ? (f.descripcionPago ?? '') : (f ?? '') as string;
+  mostrarFormaPago = (f: FormaPagoResponse | string | null): string => {
+    if (!f) return '';
+    if (typeof f === 'string') return f;
+    return f.descripcionPago ?? '';
+  };
 
   mostrarPlazo = (p: PlazoTarjeta | string | null): string =>
     (p && typeof p === 'object') ? (p.descripcion ?? '') : (p ?? '') as string;
@@ -743,7 +742,13 @@ export class CreacionAnticiposComponent implements OnInit {
 
   seleccionarFormaPago(forma: FormaPagoResponse): void {
     if (!forma?.idFormaPago) return;
+
     this.formaPagoSeleccionada = forma;
+
+    // Actualiza el FormControl con el OBJETO completo (para que displayWith funcione)
+    this.formaPagoControl.setValue(forma, { emitEvent: false });
+
+    // Actualiza el form con el ID
     this.form.patchValue({ descrPago: forma.idFormaPago }, { emitEvent: false });
   }
 
