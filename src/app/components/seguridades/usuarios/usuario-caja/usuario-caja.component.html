@@ -36,6 +36,7 @@
                         <th class="col-reducida">#</th>
                         <th>Establecimiento</th>
                         <th>Caja</th>
+                        <th>Tipo</th>
                         <th>Estado</th>
                         <th class="col-reducida">Acciones</th>
                     </tr>
@@ -54,22 +55,21 @@
 
                         <td>{{ a.establecimiento }}</td>
                         <td>{{ a.caja }}</td>
-
+                        <td>{{ a.tipoDocumentoDescripcion }}</td>
                         <td>
-                            <!-- Radio para “único activo” -->
                             <label class="estado-radio">
-                                <input type="radio" name="activoCaja" [checked]="a.estado === 'Activo'"
-                                    (change)="activar(i)" />
-                                <span [ngClass]="a.estado === 'Activo' ? 'badge-activo' : 'badge-inactivo'">
-                                    {{ a.estado }}
+                                <input type="checkbox" [checked]="a.activa" (change)="cambiarEstado(i, $event)" />
+                                <span [ngClass]="a.activa ? 'badge-activo' : 'badge-inactivo'">
+                                    {{ a.activa ? 'Activo' : 'Inactivo' }}
                                 </span>
                             </label>
                         </td>
 
+
                         <td class="col-reducida">
                             <button type="button" class="btn-mini danger" (click)="confirmarEliminar(i)">
                                 <img src="assets/icons/eliminar.png" alt="" class="icon-18" width="18" height="18"
-                                        loading="lazy" />
+                                    loading="lazy" />
                             </button>
                         </td>
                     </tr>
@@ -86,6 +86,7 @@
                             <th class="col-reducida">#</th>
                             <th>Establecimiento</th>
                             <th>Caja</th>
+                            <th>Tipo</th>
                             <th>Nº Autorización</th>
                             <th>Dirección</th>
                             <th class="col-reducida">Acción</th>
@@ -96,6 +97,7 @@
                             <td class="col-reducida">{{ idx + 1 }}</td>
                             <td>{{ a.num_establecimiento }}</td>
                             <td>{{ a.caja }}</td>
+                            <td>{{ a.tipo_documento_descripcion }}</td>
                             <td>{{ a.numero_autorizacion }}</td>
                             <td>{{ a.direccion }}</td>
                             <td class="col-reducida">
@@ -103,7 +105,7 @@
                                     aria-label="Agregar autorización" title="Agregar">
                                     <img src="assets/icons/caja.png" alt="" class="icon-18" width="18" height="18"
                                         loading="lazy" />
-                                    
+
                                 </button>
                             </td>
                         </tr>
@@ -117,16 +119,16 @@
             </div>
         </div>
         <div class="acciones-centradas">
-  <button type="button" class="btn-grabar"
-          (click)="catalogoAutorizaciones.length ? ocultarCatalogo() : nuevoAutorizacion()">
-    {{ catalogoAutorizaciones.length ? 'Ocultar' : 'Nuevo' }}
-  </button>
+            <button type="button" class="btn-grabar"
+                (click)="catalogoAutorizaciones.length ? ocultarCatalogo() : nuevoAutorizacion()">
+                {{ catalogoAutorizaciones.length ? 'Ocultar' : 'Nuevo' }}
+            </button>
 
-  <!-- Cierra el diálogo -->
-  <button type="button" class="btn-grabar" mat-dialog-close>
-    Salir
-  </button>
-</div>
+            <!-- Cierra el diálogo -->
+            <button type="button" class="btn-grabar" mat-dialog-close>
+                Salir
+            </button>
+        </div>
 
     </form>
 </div>

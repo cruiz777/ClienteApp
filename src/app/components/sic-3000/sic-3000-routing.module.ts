@@ -30,6 +30,7 @@ import { ClasificacionListComponent } from './clasificacion-list/clasificacion-l
 import { DescuentoListComponent } from './descuento/descuento-list/descuento-list.component';
 import { ReporteVentasComponent } from './reporte-ventas/reporte-ventas.component';
 import { ReenvioFacComponent } from './facturacion/reenvio-fac/reenvio-fac.component';
+import { AutorizacionCajaListComponent } from './autorizacion-caja-list/autorizacion-caja-list.component';
 
 const routes: Routes = [
   {
@@ -137,6 +138,10 @@ const routes: Routes = [
          {
         path: 'clasificacion',
         component:ClasificacionListComponent
+      },
+       {
+        path: 'cajas',
+        component:AutorizacionCajaListComponent
       },
          {
         path: 'descuento',

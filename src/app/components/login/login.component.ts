@@ -24,7 +24,7 @@ export class LoginComponent implements OnInit {
   togglePasswordVisibility(): void {
     this.showPassword = !this.showPassword;
   }
-  /* MARIO */
+
   constructor(
     private fb: FormBuilder,
     private router: Router,
@@ -63,12 +63,26 @@ export class LoginComponent implements OnInit {
       next: (user: LoginUsuarioResponse) => {
         console.log('Login exitoso. Usuario:', user);
 
-        // ⬇ Recuperar desde localStorage (opcional, ya tienes "user" directamente)
+        // ✅ Guardar usuario completo (incluye cajas)
+        localStorage.setItem('currentUser', JSON.stringify(user));
+
+        // ✅ Guardar solo cajas (opcional)
+        localStorage.setItem('cajasUsuario', JSON.stringify(user.cajas ?? []));
+
+        // ✅ Caja por defecto (opcional)
+        const cajaDefault = (user.cajas && user.cajas.length > 0) ? user.cajas[0] : null;
+        if (cajaDefault) {
+          localStorage.setItem('cajaSeleccionada', JSON.stringify(cajaDefault));
+        } else {
+          localStorage.removeItem('cajaSeleccionada');
+        }
+
+        // ✅ validar lectura
         const storedUser = localStorage.getItem('currentUser');
         if (storedUser) {
           const usuarioLocal: LoginUsuarioResponse = JSON.parse(storedUser);
           console.log('Usuario desde localStorage:', usuarioLocal);
-          // Puedes acceder: usuarioLocal.id_usuario, usuarioLocal.nombre_usuario, etc.
+          console.log('Cajas desde localStorage:', usuarioLocal.cajas);
         }
 
         const data: MessageBoxData = {
@@ -85,8 +99,9 @@ export class LoginComponent implements OnInit {
         }).afterClosed().subscribe(() => {
           this.router.navigateByUrl('/inicio');
         });
-      }
-      ,
+
+        this.loading = false;
+      },
       error: (error: any) => {
         console.error('Error en login:', error);
 
@@ -107,5 +122,4 @@ export class LoginComponent implements OnInit {
       }
     });
   }
-
 }
