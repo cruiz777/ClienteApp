@@ -24,7 +24,8 @@ import { AsientoContableComponent } from './transacciones/asientos-contables/asi
 import { FacturasProveedorFormComponent } from './transacciones/facturas-proveedor/facturas-proveedor-form/facturas-proveedor-form.component';
 import { FacturasProveedorComponent } from './transacciones/facturas-proveedor/facturas-proveedor-list/facturas-proveedor-list.component';
 import { AnticipoCgFormComponent } from './transacciones/anticipos-cg/anticipos-cg-form/anticipos-cg-form.component';
-import { BalanceComponent } from './balance/balance/balance-comprobacion-list/balance-comprobacion-list.component'
+import { BalanceComprobacionComponent } from './balance/balance/balance-comprobacion-list/balance-comprobacion-list.component'
+import { DiarioMoviminetoListComponent } from './balance/balance/diario-movimineto-list/diario-movimineto-list.component';
 
 const routes: Routes = [
   {
@@ -51,7 +52,8 @@ const routes: Routes = [
       { path: 'asientocontable', component: AsientoContableComponent },
       { path: 'ingresodocumentos', component: FacturasProveedorComponent },
       { path: 'anticipos', component: AnticipoCgFormComponent },
-      { path: 'diario', component: BalanceComponent },
+      { path: 'diario', component: DiarioMoviminetoListComponent },
+      { path: 'balance', component: BalanceComprobacionComponent },
       { path: '**', redirectTo: 'inicio-cg' },
     ],
   },
