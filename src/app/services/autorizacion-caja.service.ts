@@ -73,6 +73,7 @@ export class AutorizacionCajaService {
   tipoDocumentoLabel(idTipoDocumento?: number | null): string {
     if (idTipoDocumento === 1) return 'FACTURA';
     if (idTipoDocumento === 2) return 'NOTA DE CRÉDITO';
+    if (idTipoDocumento === 3) return 'RETENCION';
     return idTipoDocumento != null ? `TIPO ${idTipoDocumento}` : '—';
   }
 
