@@ -79,6 +79,13 @@ import {
 
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
+// ✅ PON ESTO FUERA DE LA CLASE (arriba del @Component)
+interface AuxiliarItem {
+  id: number;
+  label: string;      // lo que se muestra (solo nombre)
+  searchText: string; // para buscar (nombre + ruc)
+}
+
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 @Component({
@@ -183,7 +190,11 @@ export class AsientosContablesFormComponent implements OnInit {
 
   locales: { id: number; nombre: string }[] = [];
   cuentas: { id: number; label: string; codigo: string }[] = [];
-  auxiliares: { id: number; label: string }[] = [];
+
+  // cambio hr para filtrar los datos
+  auxiliares: AuxiliarItem[] = [];
+  //  auxiliares: { id: number; label: string }[] = [];
+  
   movimientosBancarios: {
     id: number;
     movimiento: string;
@@ -1006,7 +1017,7 @@ export class AsientosContablesFormComponent implements OnInit {
   }
 
   ///
-
+  /*
   private cargarCodigosContables(): void {
     const empresaId = this.usuarioActual?.id_empresa ?? 0;
 
@@ -1026,6 +1037,43 @@ export class AsientosContablesFormComponent implements OnInit {
       },
     });
   }
+
+  */
+
+  private cargarCodigosContables(): void {
+    const empresaId = this.usuarioActual?.id_empresa ?? 0;
+
+    this.codigosContablesService.getAll({ idEmpresa: empresaId }).subscribe({
+      next: (res) => {
+        const data = (res.data ?? []) as CodigosContablesResponse[];
+
+        const mapped: AuxiliarItem[] = data.map((a) => {
+          const nombre = (a.Razonsocial ?? '').toString().trim();
+          const ruc = (a.Identificacionauxiliar ?? '').toString().trim();
+
+          return {
+            id: Number(a.IdCodContable ?? 0),
+            label: nombre, // ✅ SOLO NOMBRE (NO RUC)
+            // ✅ searchText permite buscar por nombre o por ruc, aunque no se muestre
+            searchText: `${nombre} ${ruc}`.toLowerCase(),
+          };
+        });
+
+        // ✅ Orden alfabético por nombre (sin distinguir mayúsc/minúsc/acentos)
+        mapped.sort((x, y) =>
+          (x.label || '').localeCompare((y.label || ''), 'es', { sensitivity: 'base' })
+        );
+
+        this.auxiliares = mapped;
+
+        this.refreshGrid(['idCodContable']);
+      },
+      error: (err) => {
+        console.error('Error cargando códigos contables', err);
+      },
+    });
+  }
+
 
   private cargarMovimientosBancarios(): void {
     this.movimientoBancarioService.getAll().subscribe({
@@ -1158,11 +1206,13 @@ export class AsientosContablesFormComponent implements OnInit {
     const nowIso = formatLocalIso(ahora);
 
     const fechaTransControl = this.form.get('fechatransaccion')!.value;
-    const fechaTransaccionDateOnly = fechaTransControl
-      ? normalizeToDateOnly(fechaTransControl)
-      : normalizeToDateOnly(ahora);
+    const fechaTransaccionDateOnly = normalizeToDateOnly(fechaTransControl || ahora); //fechaTransControl
+      //? normalizeToDateOnly(fechaTransControl)
+      //: normalizeToDateOnly(ahora); estaba antes
 
     const anioTransaccion = getYearFromInput(fechaTransaccionDateOnly);
+    const fechaTransaccionBackend = dateOnlyToLocalMidnightIso(fechaTransaccionDateOnly);
+
 
     this.form.patchValue(
       {
@@ -1189,10 +1239,18 @@ export class AsientosContablesFormComponent implements OnInit {
             ? normalizeToLocalIso(d.fechaingreso)
             : nowIso;
 
+        /*
         const fechaTransDet =
           d.fechatransaccion && d.fechatransaccion !== ''
             ? normalizeToDateOnly(d.fechatransaccion)
             : fechaTransaccionDateOnly;
+        */
+        const fechaTransDetDateOnly =
+          d.fechatransaccion && d.fechatransaccion !== ''
+          ? normalizeToDateOnly(d.fechatransaccion)
+          : fechaTransaccionDateOnly;
+
+        const fechaTransDet = dateOnlyToLocalMidnightIso(fechaTransDetDateOnly);
 
         return {
           ...d,
@@ -1221,7 +1279,7 @@ export class AsientosContablesFormComponent implements OnInit {
       idZona: this.form.get('idZona')?.value ?? rawForm.idZona,
       idTipoAsiento: this.form.get('idTipoAsiento')?.value ?? rawForm.idTipoAsiento,
       tipdoc: this.form.get('tipdoc')?.value ?? rawForm.tipdoc,
-      fechatransaccion: fechaTransaccionDateOnly,
+      fechatransaccion: fechaTransaccionBackend, //fechaTransaccionDateOnly, estaba antes
       fechaingreso: esNuevo ? nowIso : normalizeToLocalIso(rawForm.fechaingreso),
       fechacierre: esNuevo ? '' : rawForm.fechacierre,
       numdoc: esNuevo ? 0 : rawForm.numdoc ?? 0,
@@ -1421,6 +1479,30 @@ export class AsientosContablesFormComponent implements OnInit {
         });
       }
     }
+
+    ///BENEFICIARIO
+  if (evt.colDef.field === 'idCodContable') {
+    const id = Number(evt.newValue ?? 0);
+
+      if (!evt.data) return;
+
+      if (!id || id <= 0) {
+        evt.data.beneficiario = '';
+      } else {
+        const aux = this.auxiliares.find(a => a.id === id);
+        // aux.label = Razón Social (solo nombre) según tu cargarCodigosContables()
+        evt.data.beneficiario = aux ? aux.label : '';
+      }
+
+      // refresca la celda Beneficiario en esa misma fila
+      this.rowData.set([...this.rowData()]);
+      this.gridApi.refreshCells({
+        rowNodes: [evt.node],
+        columns: ['beneficiario'],
+        force: true,
+      });
+    }
+    //////
   }
 
   onCellClicked(evt: CellClickedEvent<DetalleAsientoResponse>): void {
@@ -1539,9 +1621,17 @@ export class AsientosContablesFormComponent implements OnInit {
     const items = this.rowData();
     const next = (items?.length ?? 0) + 1;
 
+    /*
     const fechaTransFormulario =
       this.form.value?.fechatransaccion || normalizeToDateOnly(ahora);
     const fechaTransaccionDetalle = normalizeToDateOnly(fechaTransFormulario);
+    */
+    const fechaTransFormulario =
+    this.form.value?.fechatransaccion || normalizeToDateOnly(ahora);
+
+    const fechaTransaccionDetalleDateOnly = normalizeToDateOnly(fechaTransFormulario);
+    const fechaTransaccionDetalle = dateOnlyToLocalMidnightIso(fechaTransaccionDetalleDateOnly);
+
     const anioTransaccion =
       this.form.value?.anio || getYearFromInput(fechaTransaccionDetalle);
 
@@ -1565,7 +1655,7 @@ export class AsientosContablesFormComponent implements OnInit {
       nocomprobante: '',
       docurelacionado: '',
       cheque: 0,
-      beneficiario: this.form.value?.beneficiario ?? '',
+      beneficiario: '', //this.form.value?.beneficiario ?? '',
       debe: 0,
       haber: 0,
       comentario: this.form.value?.observacion ?? '',
@@ -2039,8 +2129,24 @@ function haberEditable(params: any) {
   return d <= 0;
 }
 
+/*
 function getYearFromInput(v: any): string {
   if (!v) return '';
+  const d = v instanceof Date ? v : new Date(v);
+  return isNaN(d.getTime()) ? '' : String(d.getFullYear());
+}
+*/
+
+function getYearFromInput(v: any): string {
+  if (!v) return '';
+
+  // yyyy-MM-dd => no usar new Date() (lo interpreta como UTC)
+  if (typeof v === 'string') {
+    const s = v.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s.substring(0, 4);
+    if (/^\d{4}-\d{2}-\d{2}[ T]/.test(s)) return s.substring(0, 4);
+  }
+
   const d = v instanceof Date ? v : new Date(v);
   return isNaN(d.getTime()) ? '' : String(d.getFullYear());
 }
@@ -2154,6 +2260,7 @@ function formatDateOnly(d: Date): string {
 }
 
 /** Normaliza cualquier entrada a SOLO fecha yyyy-MM-dd */
+/*
 function normalizeToDateOnly(v: any): string {
   if (!v) return '';
 
@@ -2170,4 +2277,58 @@ function normalizeToDateOnly(v: any): string {
     return String(v);
   }
   return formatDateOnly(d);
+}
+*/
+
+/** Normaliza cualquier entrada a SOLO fecha yyyy-MM-dd, sin sumar/restar días */
+function normalizeToDateOnly(v: any): string {
+  if (!v) return '';
+
+  // Si ya viene Date
+  if (v instanceof Date) {
+    if (isNaN(v.getTime())) return '';
+    return formatDateOnly(v); // usa año/mes/día LOCAL
+  }
+
+  // Si viene string
+  if (typeof v === 'string') {
+    const s0 = v.trim();
+    if (!s0) return '';
+
+    // Caso 1: date-only => devolver tal cual
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s0)) return s0;
+
+    // Caso 2: SQL/ISO sin zona => tomar solo la parte de fecha (no hay shift)
+    // 2025-12-29 00:00:00.000  | 2025-12-29T00:00:00
+    if (/^\d{4}-\d{2}-\d{2}[ T]/.test(s0) && !/[zZ]|[+-]\d{2}:\d{2}$/.test(s0)) {
+      return s0.substring(0, 10);
+    }
+
+    // Caso 3: ISO con zona (Z o +hh:mm) => convertir a LOCAL y sacar yyyy-MM-dd
+    // 2025-12-29T00:00:00.000Z -> local puede ser 2025-12-28
+    if (/^\d{4}-\d{2}-\d{2}T/.test(s0) && (/[zZ]$/.test(s0) || /[+-]\d{2}:\d{2}$/.test(s0))) {
+      const d = new Date(s0);
+      if (!isNaN(d.getTime())) return formatDateOnly(d);
+      return s0.substring(0, 10);
+    }
+
+    // Fallback: si empieza con yyyy-MM-dd, al menos respeta esos 10 chars
+    if (/^\d{4}-\d{2}-\d{2}/.test(s0)) return s0.substring(0, 10);
+
+    // Último fallback
+    const d = new Date(s0);
+    if (!isNaN(d.getTime())) return formatDateOnly(d);
+    return s0;
+  }
+
+  // Otros tipos
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return String(v);
+  return formatDateOnly(d);
+}
+
+function dateOnlyToLocalMidnightIso(dateOnly: string): string {
+  const s = (dateOnly ?? '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  return `${s}T00:00:00`;
 }

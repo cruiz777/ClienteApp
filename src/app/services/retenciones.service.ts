@@ -149,5 +149,49 @@ createLote(req: RetencionesRequest[]): Observable<CreateRetencionesResultRespons
       })
     );
 }
+//////delete retenciones
+/**
+   * DELETE /Retenciones?idCabMaestro=65&idEmpresa=1&idUsuario=2
+   * Retorna true si se eliminó (Type == DELETED). Caso contrario lanza Error con message del backend.
+   */
+   /**
+   * DELETE /Retenciones?idCabMaestro=65&idEmpresa=1&idUsuario=2
+   * Retorna true si el backend responde Type="DELETED".
+   * Caso contrario lanza Error con message del backend.
+   */
+  deleteByCabecera(idCabMaestro: number, idEmpresa: number, idUsuario: number): Observable<boolean> {
+    const params = new HttpParams()
+      .set('idCabMaestro', String(idCabMaestro))
+      .set('idEmpresa', String(idEmpresa))
+      .set('idUsuario', String(idUsuario));
+
+    return this.http
+      .delete<ApiResponse<boolean>>(this.baseUrl, { params })
+      .pipe(
+        map(resp => this.unwrapDeletedOrThrow(resp)),
+        catchError(err => {
+          const backendMsg =
+            err?.error?.message ||
+            err?.error?.Message ||
+            err?.message ||
+            'Error al eliminar retenciones.';
+          return throwError(() => new Error(backendMsg));
+        })
+      );
+  }
+
+
+    /** Para DELETE: éxito únicamente si Type == DELETED */
+    private unwrapDeletedOrThrow(resp: ApiResponse<boolean>): boolean {
+      const type = (resp?.type ?? '').toUpperCase();
+
+      if (type === 'DELETED') return true;
+
+      const msg = resp?.message?.trim() || 'No se pudo eliminar las retenciones.';
+      throw new Error(msg);
+    }
+
+    ////
+    
 
 }

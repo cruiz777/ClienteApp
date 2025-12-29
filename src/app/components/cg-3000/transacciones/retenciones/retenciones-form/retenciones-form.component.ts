@@ -22,7 +22,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatNativeDateModule } from '@angular/material/core';
 import { RetencionPdfUtil } from '../../util/retencion-pdf.util';
-import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { MatDialog, MatDialogModule, MatDialogConfig, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
+import { ComponentType } from '@angular/cdk/portal';
 
 import { RetencionesService, CreateRetencionesResultResponse } from 'src/app/services/retenciones.service';
 import { RetencionesRequest } from 'src/app/interfaces/requests/retenciones-request';
@@ -31,6 +32,12 @@ import { RetencionesResumenResponse } from 'src/app/interfaces/responses/retenci
 import { EmpresaService } from 'src/app/services/empresa.service';
 import { LogoService } from 'src/app/services/logo.service';
 import { HttpClient } from '@angular/common/http';
+import { UsuarioService } from 'src/app/services/usuario.service';
+import {
+  CustomMessageBoxComponent,
+  MessageBoxData,
+} from 'src/app/util/messages/custom-message-box.component';
+
 
 type RetRow = RetencionesRequest & {
   _uiState?: 'NUEVO' | 'EDITADO' | 'GUARDADO' | 'ERROR';
@@ -51,7 +58,8 @@ type RetRow = RetencionesRequest & {
     MatSnackBarModule,
     MatProgressSpinnerModule,
     MatDatepickerModule,
-    MatNativeDateModule
+    MatNativeDateModule,
+    MatDialogModule, 
   ],
   templateUrl: './retenciones-form.component.html',
   styleUrls: ['./retenciones-form.component.css'],
@@ -61,6 +69,8 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
 
   idEmpresa = 0;
   idCabMaestro = 0;
+  usuarioActual = this.usuarioService.getUsuarioActual();
+  idUsuario = this.usuarioActual?.id_usuario ?? 0;
 
   headerForm!: FormGroup;
 
@@ -117,18 +127,18 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
 
     ///vamos a ordenar
     { headerName: 'Secuencial', field: 'secuencial', width: 110 },
-    { headerName: 'CódigoRet', field: 'codigoretencion', width: 120 },
-    { headerName: 'NumCompVta', field: 'numcompvta', width: 130 },
+    { headerName: 'CódigoRet', field: 'codigoretencion', width: 100 },
+    { headerName: 'NumCompVta', field: 'numcompvta', width: 160 },
     { headerName: 'TipCompVta', field: 'tipcompvta', width: 120 },
     { headerName: 'EjerFiscal', field: 'ejerfiscal', width: 110 },
     { headerName: 'DesComp', field: 'descomp', width: 180 },
  
-    { headerName: 'Base', field: 'baseimponible', width: 120, valueParser: p => p.newValue === '' ? null : Number(p.newValue) },
-    { headerName: '%Ret', field: 'porcentajeretencion', width: 110, valueParser: p => p.newValue === '' ? null : Number(p.newValue) },
-    { headerName: 'ValorRet', field: 'valorretenido', width: 120, valueParser: p => p.newValue === '' ? null : Number(p.newValue) },
-    { headerName: 'TipoComprobante', field: 'tipocomprobante', width: 140 },
+    { headerName: 'Base', field: 'baseimponible', width: 100, valueParser: p => p.newValue === '' ? null : Number(p.newValue) },
+    { headerName: '%Ret', field: 'porcentajeretencion', width: 100, valueParser: p => p.newValue === '' ? null : Number(p.newValue) },
+    { headerName: 'ValorRet', field: 'valorretenido', width: 100, valueParser: p => p.newValue === '' ? null : Number(p.newValue) },
+    { headerName: 'TipoComprobante', field: 'tipocomprobante', width: 120 },
     
-    { headerName: 'TipoMov', field: 'tipomovimiento', width: 110, },
+    { headerName: 'TipoMov', field: 'tipomovimiento', width: 100, },
     
     { headerName: 'IdTipoCompSRI', field: 'idtipocompsri', width: 140, valueParser: p => p.newValue === '' ? null : Number(p.newValue) , hide: true,},
 
@@ -217,6 +227,8 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private empresaService: EmpresaService,
     private logoService: LogoService,
+    private usuarioService: UsuarioService, ///para grabar usuario anula retencion
+     private dialog: MatDialog, ///mensajes 
     private route: ActivatedRoute,
     private router: Router,
     private snack: MatSnackBar,
@@ -722,50 +734,143 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
     }
   }
 
-/* 
-//imprimir
-async imprimir(): Promise<void> {
-  if (!this.readOnly) {
-    this.snack.open('Primero debe GRABAR la retención para poder imprimir.', 'OK', {
-      duration: 3500,
-      horizontalPosition: 'right',
-      verticalPosition: 'top',
-    });
-    return;
+
+  ///ANULAR RETENCIONES
+  canAnularRet(): boolean {
+    // Reglas mínimas:
+    // - Debe existir cabecera/empresa
+    // - Debe estar en modo lectura (ya grabado) para poder anular lo existente
+    // - Debe existir al menos una línea con idretencion > 0
+    if (this.idEmpresa <= 0 || this.idCabMaestro <= 0) return false;
+    if (!this.readOnly) return false;
+
+    const hasSaved = (this.rowData ?? []).some(r => Number(r.idretencion ?? 0) > 0);
+    return hasSaved;
   }
 
-  const hasIds = (this.rowData ?? []).some(r => Number(r.idretencion ?? 0) > 0);
-  if (!hasIds) {
-    this.snack.open('No existen líneas guardadas (ID) para imprimir.', 'OK', {
-      duration: 3500,
-      horizontalPosition: 'right',
-      verticalPosition: 'top',
-    });
-    return;
+  /*
+  async anularRet(): Promise<void> {
+    if (this.loading) return;
+
+    if (this.idUsuario <= 0) {
+      this.snack.open('No se encontró IdUsuario para auditoría. Vuelva a iniciar sesión.', 'Cerrar', {
+        duration: 4500,
+        horizontalPosition: 'right',
+        verticalPosition: 'top',
+      });
+      return;
+    }
+
+    if (!this.canAnularRet()) {
+      this.snack.open('Solo puede anular una retención ya GENERADAS.', 'OK', {
+        duration: 3500,
+        horizontalPosition: 'right',
+        verticalPosition: 'top',
+      });
+      return;
+    }
+
+    // Confirmación simple (sin añadir MatDialog nuevo)
+    const ok = confirm('¿Desea ANULAR la retención? Esto eliminará y archivará todas las líneas.');
+
+
+
+    if (!ok) return;
+
+    try {
+      this.loading = true;
+
+      await firstValueFrom(
+        this.retencionesService.deleteByCabecera(this.idCabMaestro, this.idEmpresa, this.idUsuario)
+      );
+
+      this.snack.open('Retención anulada correctamente.', 'OK', {
+        duration: 3500,
+        horizontalPosition: 'right',
+        verticalPosition: 'top',
+      });
+
+      // Refrescar pantalla: vuelve a cargar resumen/retenciones según exista o no
+      this.readOnly = false;
+      this.setHeaderEditable(true);
+      await this.loadInitial();
+
+    } catch (err: any) {
+      this.snack.open(err?.message ?? 'Error al anular retenciones.', 'Cerrar', {
+        duration: 6000,
+        horizontalPosition: 'right',
+        verticalPosition: 'top',
+      });
+    } finally {
+      this.loading = false;
+    }
   }
 
-  try {
-    this.loading = true;
+  */
 
-    const data = await firstValueFrom(
-      this.retencionesService.getImpresion(this.idEmpresa, this.idCabMaestro)
-    );
+  async anularRet(): Promise<void> {
+    if (this.loading) return;
 
-    RetencionPdfUtil.generarPdfRetencion(data);
+    if (this.idUsuario <= 0) {
+      this.mostrarMensajeAdvertencia('No se encontró IdUsuario para auditoría. Vuelva a iniciar sesión.');
+      return;
+    }
 
-  } catch (err: any) {
-    this.snack.open(err?.message ?? 'Error al imprimir retención.', 'Cerrar', {
-      duration: 6000,
-      horizontalPosition: 'right',
-      verticalPosition: 'top',
+    if (!this.canAnularRet()) {
+      this.mostrarMensajeAdvertencia('Solo puede anular una retención ya GENERADA.');
+      return;
+    }
+
+    // ✅ Confirmación con tu CustomMessageBoxComponent
+    const ref = this.mostrarMensaje({
+      title: 'Confirmación',
+      message: '¿Desea ANULAR la retención?',
+      type: 'warning',
+      confirmText: 'Sí, anular',
+      cancelText: 'No',
+      showCancel: true,
     });
-  } finally {
-    this.loading = false;
-  }
-}
-*/
 
-async imprimir(): Promise<void> {
+    const confirmado = await firstValueFrom(ref.afterClosed());
+    if (!confirmado) return;
+
+    try {
+      this.loading = true;
+
+      await firstValueFrom(
+        this.retencionesService.deleteByCabecera(this.idCabMaestro, this.idEmpresa, this.idUsuario)
+      );
+
+      // Mensaje anulado éxitosamente 
+      this.snack.open('Retención anulada correctamente.', 'OK', {
+        duration: 3500,
+        horizontalPosition: 'right',
+        verticalPosition: 'top',
+      });
+
+      this.readOnly = false;
+      this.setHeaderEditable(true);
+      await this.loadInitial();
+
+    } catch (err: any) {
+      // ✅ Error con tu MessageBox
+      this.mostrarMensaje({
+        title: 'Error',
+        message: err?.message ?? 'Error al anular retenciones.',
+        type: 'error',
+        confirmText: 'Entendido',
+        showCancel: false,
+      });
+
+    } finally {
+      this.loading = false;
+    }
+  }
+
+
+  ///////
+
+  async imprimir(): Promise<void> {
   if (!this.readOnly) {
     this.snack.open('Primero debe GRABAR la retención para poder imprimir.', 'OK', {
       duration: 3500,
@@ -1045,47 +1150,66 @@ async imprimir(): Promise<void> {
     }
   }
   ////
-  /*
+ 
   private async urlToDataUrl(url: string): Promise<string | null> {
-  try {
-    // Importante: la URL debe permitir CORS o estar en el mismo dominio.
-    // Si no, el browser bloqueará la lectura del blob.
-    const blob = await firstValueFrom(this.http.get(url, { responseType: 'blob' }));
-    return await this.blobToDataUrl(blob);
-  } catch {
-    return null;
-  }
-}
-*/
-private async urlToDataUrl(url: string): Promise<string | null> {
-  try {
-    // Si tu backend usa cookies/sesión, esto es CLAVE.
-    // Si usas JWT con interceptor, no estorba.
-    const blob = await firstValueFrom(
-      this.http.get(url, { responseType: 'blob', withCredentials: true })
-    );
+    try {
+      // Si tu backend usa cookies/sesión, esto es CLAVE.
+      // Si usas JWT con interceptor, no estorba.
+      const blob = await firstValueFrom(
+        this.http.get(url, { responseType: 'blob', withCredentials: true })
+      );
 
-    // Validación mínima: si viene vacío, no sirve
-    if (!blob || blob.size <= 0) {
-      console.warn('[RET] Blob del logo vacío:', url);
+      // Validación mínima: si viene vacío, no sirve
+      if (!blob || blob.size <= 0) {
+        console.warn('[RET] Blob del logo vacío:', url);
+        return null;
+      }
+
+      return await this.blobToDataUrl(blob);
+    } catch (e) {
+      console.warn('[RET] urlToDataUrl falló:', url, e);
       return null;
     }
-
-    return await this.blobToDataUrl(blob);
-  } catch (e) {
-    console.warn('[RET] urlToDataUrl falló:', url, e);
-    return null;
   }
-}
 
-private blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(new Error('No se pudo leer el blob.'));
-    reader.onload = () => resolve(String(reader.result));
-    reader.readAsDataURL(blob);
-  });
-}
+  private blobToDataUrl(blob: Blob): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('No se pudo leer el blob.'));
+      reader.onload = () => resolve(String(reader.result));
+      reader.readAsDataURL(blob);
+    });
+  }
+
+  //mensajeria
+   private mostrarMensaje(data: MessageBoxData) {
+    const config: MatDialogConfig<MessageBoxData> = {
+      width: '400px',
+      data: {
+        confirmText: 'Aceptar',
+        cancelText: 'Cancelar',
+        ...data,
+      },
+    };
+    return this.dialog.open<unknown, MessageBoxData, boolean>(
+      CustomMessageBoxComponent as ComponentType<unknown>,
+      config
+    );
+  }
+
+
+ private mostrarMensajeAdvertencia(mensaje: string): void {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: 'Campos obligatorios',
+        message: mensaje,
+        type: 'warning',
+        confirmText: 'Entendido',
+        showCancel: false
+      }
+    });
+  }
 
   /// rp
 }

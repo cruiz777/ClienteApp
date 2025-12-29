@@ -546,3 +546,57 @@ mat-dialog-content { max-height: 85vh; overflow: hidden; padding: 0; }
   height: 500px;*/
 }
 .btn-verde:hover { background: #32af4f; border-color: #6291e8; }
+
+/* BOTON ANULAR*/
+.btn-anular{
+  border: 2px solid #f39c12;   /* borde naranja */
+  color: #161615; /*#f39c12;*/
+  background: #f2b868;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  cursor: pointer;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.btn-anular:hover{
+  filter: brightness(0.98);
+}
+
+.btn-anular:disabled{
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+
+.totales-bar{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #e8f3c8; /* tono verde claro similar */
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 6px;
+  margin-top: 10px;
+}
+
+.totales-right{
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.tot{
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  color: #2b2b2b;
+}
+
+.total-label{
+  opacity: .85;
+  font-weight: 600;
+}
