@@ -129,6 +129,7 @@ export interface NotaCreditoCrearReq {
   clienteCodigo: number;
   caja: string;               // "001"
   observaciones: string;
+  idAutorizacionCaja: number;
   idUsuarioResponsable: number;
   idEmpresa:number;
   ateCodigo: number;

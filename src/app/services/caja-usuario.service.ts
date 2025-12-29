@@ -19,6 +19,7 @@ export interface AutorizacionCajaUsuarioDto {
   activa: boolean | null;
   caja?: string | null;
   numEstablecimiento?: string | null;
+  tipoDocumentoDescripcion: string
 }
 
 // payloads básicos por si usas los demás endpoints
@@ -54,8 +55,7 @@ export interface AutorizacionCajaDto {
   id_empresa: number;
   generar_xml: boolean;
   id_tipo_documento: number;
-  numero_ncredito: string;
-  estado_ncredito: string;
+  tipo_documento_descripcion?: string | null; 
 }
 
 export interface PaginationResponse<T> {

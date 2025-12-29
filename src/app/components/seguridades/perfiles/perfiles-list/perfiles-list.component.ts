@@ -56,7 +56,7 @@ export class PerfilesListComponent implements OnInit {
   opcionnes: OpcionResponse[] = [];
   // submenus: SubMenuResponse[] = [];
   modulos: ModuloExtendido[] = [];
-submenus: SubMenuExtendido[] = [];
+  submenus: SubMenuExtendido[] = [];
   // ==================== Selección actual ====================
   perfilSeleccionado: number | null = null;
   moduloSeleccionado: number | null = null;
@@ -104,11 +104,11 @@ submenus: SubMenuExtendido[] = [];
       return; // No cargar módulos
     }
     this.moduloService.getModulosPorSistema(idSistema).subscribe(resp => {
-          this.modulos = resp.data.filter(m => m.status === true).map(modulo => ({
-      ...modulo,
-      tieneOpciones: false,
-      todasAsignadas: false
-    }));
+      this.modulos = resp.data.filter(m => m.status === true).map(modulo => ({
+        ...modulo,
+        tieneOpciones: false,
+        todasAsignadas: false
+      }));
     });
   }
 
@@ -117,7 +117,7 @@ submenus: SubMenuExtendido[] = [];
     this.menus = [];
     this.opcionnes = [];
     this.estadosCache = null; // Limpiar cache
-    
+
     const sistemaActual = this.sistemas.find(s => s.nombre === this.sistemaActivo);
     if (sistemaActual) {
       this.moduloService.getModulosPorSistema(sistemaActual.id_sistema).subscribe(async resp => {
@@ -217,13 +217,13 @@ submenus: SubMenuExtendido[] = [];
 
   private actualizarEstadoDelMenuActual(): void {
     if (!this.menuSeleccionado) return;
-    
+
     const menu = this.menus.find(m => m.id_menu === this.menuSeleccionado);
     if (!menu) return;
 
     // Usar los submenus cargados para determinar el estado del menú
     const submenusConEstado = this.submenus.filter(sm => (sm as any).tieneOpciones !== undefined);
-    
+
     if (submenusConEstado.length > 0) {
       menu.tieneOpciones = submenusConEstado.some(sm => (sm as any).tieneOpciones);
       menu.todasAsignadas = submenusConEstado.every(sm => (sm as any).todasAsignadas);
@@ -400,8 +400,8 @@ submenus: SubMenuExtendido[] = [];
     if (this.perfilSeleccionado === null) return;
 
     this.perfilesOpcionesService.updateOpcionStatus(
-      this.perfilSeleccionado!, 
-      opcion.id_opcion, 
+      this.perfilSeleccionado!,
+      opcion.id_opcion,
       opcion.status
     ).subscribe({
       next: async () => {
@@ -533,11 +533,11 @@ submenus: SubMenuExtendido[] = [];
 
     const menu = this.menus.find(m => m.id_menu === this.menuSeleccionado);
     if (menu) {
-      menu.tieneOpciones  = asignadas.length > 0;
+      menu.tieneOpciones = asignadas.length > 0;
       menu.todasAsignadas = (todas.length > 0) && (asignadas.length === todas.length);
     }
   }
-  
+
   esModuloCompletamenteAsignado(moduloId: number): boolean {
     const modulo = this.modulos.find(m => m.id_modulo === moduloId) as any;
     return modulo?.todasAsignadas ?? false;
@@ -550,7 +550,7 @@ submenus: SubMenuExtendido[] = [];
   detenerYAplicarCambioModulo(event: Event, moduloId: number): void {
     event.stopPropagation();
     const marcar = (event.target as HTMLInputElement).checked;
-    
+
     if (this.perfilSeleccionado === null) return;
 
     const request: CreateBulkPerfilOption = {
@@ -567,7 +567,7 @@ submenus: SubMenuExtendido[] = [];
         if (sistema) {
           await this.cargarEstadosCompletos(sistema.id_sistema);
         }
-        
+
         this.seleccionarModulo(moduloId);
       },
       error: (err) => console.error('Error en cambio masivo de módulo:', err)

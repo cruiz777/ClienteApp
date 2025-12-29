@@ -16,6 +16,7 @@ export interface ClienteDatosAdicionales {
   clientes_codigo: number;
   prefijo?: boolean;
   guia?: boolean;
+  otros?: boolean;
   estado?: boolean;
 }
 

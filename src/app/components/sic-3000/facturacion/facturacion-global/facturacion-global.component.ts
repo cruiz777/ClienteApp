@@ -722,7 +722,12 @@ Prefijo: ${d.prefijo ?? ''}`;
 
   cajaAsignada = false;
   cargarAutorizacion(): void {
-    const id = this.usuarioActual?.id_autorizacion_caja;
+const id =
+  this.usuarioActual?.cajas?.find(c => c.id_tipo_documento === 1)?.id_autorizacion_caja
+  ?? null;
+
+
+
 
     // Valor por defecto
     this.cajaAsignada = false;
@@ -743,13 +748,13 @@ Prefijo: ${d.prefijo ?? ''}`;
         }
 
         this.formCaja.patchValue({
-          secuencial: this.padLeft(data.numero_factura, 9),
+          secuencial: this.padLeft(data.numero, 9),
           caja: data.caja ?? '',
           puntoEmision: data.num_establecimiento ?? '',
         });
 
         // Se considera “asignada” si al menos hay caja y número válido
-        this.cajaAsignada = !!(data.caja && data.numero_factura != null);
+        this.cajaAsignada = !!(data.caja && data.numero != null);
       },
       error: (err) => {
         console.error('Error cargando autorización de caja', err);

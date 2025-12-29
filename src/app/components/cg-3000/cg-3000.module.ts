@@ -26,6 +26,10 @@ import { AgGridModule } from 'ag-grid-angular';
 import { Cg3000RoutingModule } from './cg-3000.routing.module';
 import { InicioCgComponent } from './inicio-cg/inicio-cg.component';
 import { NavigationCgComponent } from './navigation-cg/navigation-cg.component';
+import { RegistroPagosProveedorComponent } from './cuentas-por-pagar/pago-proveedores/registro-pagos-proveedor.component';
+import { MatAutocompleteModule } from '@angular/material/autocomplete';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { PlanCuentaCellEditorComponent, PlanCuentaCellEditorParams } from './cuentas-por-pagar/pago-proveedores/plan-cuenta-cell-editor.component';
 
 
 
@@ -34,6 +38,7 @@ import { NavigationCgComponent } from './navigation-cg/navigation-cg.component';
   declarations: [
     InicioCgComponent,
     NavigationCgComponent,
+    RegistroPagosProveedorComponent
   ],
   imports: [
     CommonModule,
@@ -55,6 +60,9 @@ import { NavigationCgComponent } from './navigation-cg/navigation-cg.component';
     MatTabsModule,
     MatRadioModule,
     MatSelectModule,
+    MatAutocompleteModule,
+    MatProgressSpinnerModule,
+    PlanCuentaCellEditorComponent,
     // Ruteo del feature
     Cg3000RoutingModule,
     MatOptionModule,

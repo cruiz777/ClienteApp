@@ -1,0 +1,135 @@
+<div class="page-wrapper-balance">
+
+  <!-- Título -->
+  <div class="page-title-row">
+    <h1 class="page-title-balance">Balance de Comprobación</h1>
+  </div>
+
+  <!-- Panel de filtros -->
+  <div class="filters-panel">
+
+    <!-- Fila 1: Fechas + Acciones -->
+    <div class="filters-top">
+      <div class="filters-primary">
+        <div class="filters-title">
+          <div class="filters-title-main">Filtros</div>
+        </div>
+        <div class="primary-grid">
+          <div class="fg">
+            <label class="fg-label" for="fechaDesde">Fecha inicio</label>
+            <input id="fechaDesde" type="date" [(ngModel)]="filtros.fechaDesde" class="fg-control" />
+          </div>
+          <div class="fg">
+            <label class="fg-label" for="fechaHasta">Fecha final</label>
+            <input id="fechaHasta" type="date" [(ngModel)]="filtros.fechaHasta" class="fg-control" />
+          </div>
+        </div>
+      </div>
+
+      <div class="filters-actions">
+        <button type="button" class="btn-icon" (click)="consultar()" title="Buscar">
+          <img src="assets/icons/buscar-down1.png" alt="Buscar" />
+        </button>
+        <button type="button" class="btn-icon" title="Exportar a Excel" (click)="exportExcel()">
+          <img src="assets/icons/xls.png" alt="Excel" />
+        </button>
+        <button type="button" class="btn-icon" title="Exportar a PDF" (click)="exportPdf()">
+          <img src="assets/icons/pdf-down.png" alt="PDF" />
+        </button>
+        <div class="status-pill" *ngIf="loading">Cargando…</div>
+      </div>
+    </div>
+
+    <!-- Fila 2: Modo cuentas -->
+    <div class="filters-bottom">
+      <div class="secondary-grid">
+        <div class="fg fg-mode">
+          <div class="mode-chipset">
+            <button type="button" class="mode-chip" [class.active]="modoFiltro === 'cuenta'"
+              (click)="toggleModoCuenta()">Por cuentas</button>
+          </div>
+        </div>
+        <div class="fg" *ngIf="modoFiltro === 'cuenta'">
+          <label class="fg-label" for="cuentaA">Cuenta inicial</label>
+          <input id="cuentaA" type="text" [(ngModel)]="filtros.cuentaA" class="fg-control"
+            placeholder="Ej: 110101-001" />
+        </div>
+        <div class="fg" *ngIf="modoFiltro === 'cuenta'">
+          <label class="fg-label" for="cuentaB">Cuenta final</label>
+          <input id="cuentaB" type="text" [(ngModel)]="filtros.cuentaB" class="fg-control"
+            placeholder="Ej: 110101-002" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Fila 3: Local y Zona -->
+    <div class="filters-bottom">
+      <div class="secondary-grid">
+        <div class="fg">
+          <label class="fg-label" for="idLocal">Local</label>
+          <select id="idLocal" [(ngModel)]="filtros.idLocal" class="fg-control">
+            <option value="">Seleccione...</option>
+            <option *ngFor="let local of locales" [value]="local.id">{{ local.nombre }}</option>
+          </select>
+        </div>
+        <div class="fg">
+          <label class="fg-label" for="idZona">Zona</label>
+          <select id="idZona" [(ngModel)]="filtros.idZona" class="fg-control">
+            <option value="">Seleccione...</option>
+            <option *ngFor="let zona of zonas" [value]="zona.id">{{ zona.nombre }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla jerárquica -->
+  <div class="table-wrap" *ngIf="agrupado.length">
+    <div class="grid-wrapper">
+      <table class="tabla-balance">
+        <thead>
+          <tr>
+            <th>Cuenta</th>
+            <th>Nombre</th>
+            <th class="text-right">Saldo Anterior</th>
+            <th class="text-right">Debe</th>
+            <th class="text-right">Haber</th>
+            <th class="text-right">Neto</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let raiz of pagedData">
+            <!-- Raíz -->
+            <tr class="row-raiz">
+              <td colspan="6">{{ raiz.nombreRaiz }} ({{ raiz.cuentaRaiz }})</td>
+            </tr>
+            <ng-container *ngFor="let padre of raiz.hijos">
+              <!-- Padre -->
+              <tr class="row-padre">
+                <td colspan="6">{{ padre.nombrePadre }} ({{ padre.cuentaPadre }})</td>
+              </tr>
+              <ng-container *ngFor="let hijo of padre.hijos">
+                <!-- Hijo -->
+                <tr class="row-hijo">
+                  <td>{{ hijo.cuenta }}</td>
+                  <td>{{ hijo.nombreHijo }}</td>
+                  <td class="text-right mono">{{ hijo.saldoAnterior | number:'1.2-2' }}</td>
+                  <td class="text-right mono">{{ hijo.debe | number:'1.2-2' }}</td>
+                  <td class="text-right mono">{{ hijo.haber | number:'1.2-2' }}</td>
+                  <td class="text-right mono">{{ hijo.neto | number:'1.2-2' }}</td>
+                </tr>
+              </ng-container>
+            </ng-container>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <div class="empty-state" *ngIf="!agrupado.length && !loading">
+    <div class="empty-title">Sin resultados</div>
+    <div class="empty-sub">Ajusta los filtros y vuelve a consultar.</div>
+  </div>
+
+</div>

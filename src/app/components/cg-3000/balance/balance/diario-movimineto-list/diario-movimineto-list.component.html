@@ -1,0 +1,265 @@
+<div class="page-wrapper-balance">
+
+  <!-- TÍTULO -->
+  <div class="page-title-row">
+    <h2 class="page-title-balance">Diario de movimiento</h2>
+  </div>
+
+  <!-- FILTROS + ACCIONES (REDISEÑO JERÁRQUICO) -->
+  <div class="filters-panel">
+
+    <!-- Fila 1 (principal): Fechas + Tipo asiento + Acciones -->
+    <div class="filters-top">
+
+      <div class="filters-primary">
+        <div class="filters-title">
+          <div class="filters-title-main">Filtros</div>
+        </div>
+
+        <div class="primary-grid">
+
+          <!-- Fecha inicio -->
+          <div class="fg">
+            <label class="fg-label" for="fechaDesde">Fecha inicio</label>
+            <input id="fechaDesde" type="date" [(ngModel)]="fechaDesde" class="fg-control" />
+          </div>
+
+          <!-- Fecha final -->
+          <div class="fg">
+            <label class="fg-label" for="fechaHasta">Fecha final</label>
+            <input id="fechaHasta" type="date" [(ngModel)]="fechaHasta" class="fg-control" />
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Acciones -->
+      <div class="filters-actions">
+        <button type="button" class="btn-icon" (click)="refrescar()" title="Buscar">
+          <img src="assets/icons/buscar-down1.png" alt="Buscar" />
+        </button>
+
+        <button type="button" class="btn-icon" title="Exportar a Excel" (click)="onExportExcelConDetalle()">
+          <img src="assets/icons/xls.png" alt="Excel" />
+        </button>
+
+        <button type="button" class="btn-icon" title="Exportar a PDF" (click)="exportPdfDiarioMovimientos()">
+          <img src="assets/icons/pdf-down.png" alt="PDF" />
+        </button>
+
+        <div class="status-pill" *ngIf="loading">Cargando…</div>
+      </div>
+
+    </div>
+
+    <!-- Fila 2 (secundaria): Modo + Cuentas (solo si modo cuenta) -->
+    <div class="filters-bottom">
+      <div class="secondary-grid">
+
+        <!-- Modo (lo paso abajo para que no compita con fechas) -->
+        <div class="fg fg-mode">
+          <div class="mode-chipset">
+            <button type="button" class="mode-chip" [class.active]="modoFiltro === 'cuenta'"
+              (click)="toggleModoCuenta()">
+              Por cuentas
+            </button>
+          </div>
+        </div>
+
+        <!-- Cuenta inicial -->
+        <div class="fg" *ngIf="modoFiltro === 'cuenta'">
+          <label class="fg-label" for="cuentaDesde">Cuenta inicial</label>
+          <input id="cuentaDesde" type="text" [(ngModel)]="cuentaDesde" class="fg-control"
+            placeholder="Ej: 110101-001" />
+        </div>
+
+        <!-- Cuenta final -->
+        <div class="fg" *ngIf="modoFiltro === 'cuenta'">
+          <label class="fg-label" for="cuentaHasta">Cuenta final</label>
+          <input id="cuentaHasta" type="text" [(ngModel)]="cuentaHasta" class="fg-control"
+            placeholder="Ej: 110101-001" />
+        </div>
+
+        <div class="fg form-field" *ngIf="modoFiltro === 'cuenta'">
+          <label class="fg-label">Tipo de Asiento</label>
+
+          <select class="fg-control" [(ngModel)]="idTipoAsiento" [ngModelOptions]="{ standalone: true }">
+            <option [ngValue]="null">Seleccione</option>
+            <option *ngFor="let item of tipoAsiento" [ngValue]="item.IdTipoAsiento">
+              {{ item.TipAsiento }} - {{ item.Descripcion }}
+            </option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- TABLA -->
+  <div class="table-wrap">
+
+    <div class="grid-wrapper">
+
+      <table class="tabla-balance" *ngIf="rowData?.length; else sinDatos">
+        <thead>
+          <tr>
+            <th class="col-exp"></th>
+            <th>Tipo</th>
+            <th class="col-doc">Documento</th>
+            <th class="col-fecha">F. Transacción</th>
+            <th class="col-fecha">F. Ingreso</th>
+            <th>Beneficiario</th>
+            <th>Observación</th>
+            <th class="col-num text-right">Debe</th>
+            <th class="col-num text-right">Haber</th>
+            <th class="col-resp">Responsable</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          <ng-container *ngFor="let row of pagedRowData; trackBy: trackByDoc">
+
+            <!-- Fila principal -->
+            <tr class="row-main" (click)="toggleDetalle(row.documento)" [class.expanded]="expandedId === docKey(row)">
+              <td class="col-exp">
+                <span class="chev" [class.open]="expandedId === docKey(row)">▸</span>
+              </td>
+
+              <td>{{ row.tipo }}</td>
+              <td class="col-doc mono">{{ row.documento }}</td>
+
+              <td class="col-fecha">
+                {{ row.fechaTransaccion | date:'dd/MM/yyyy' }}
+              </td>
+
+              <td class="col-fecha">
+                {{ row.fechaIngreso | date:'dd/MM/yyyy' }}
+              </td>
+
+              <td class="truncate" title="{{ row.beneficiario }}">
+                {{ row.beneficiario }}
+              </td>
+
+              <td class="truncate" title="{{ row.observacion }}">
+                {{ row.observacion }}
+              </td>
+
+              <td class="col-num text-right">
+                {{ row.debe | currency:'USD':'symbol':'1.2-2' }}
+              </td>
+
+              <td class="col-num text-right">
+                {{ row.haber | currency:'USD':'symbol':'1.2-2' }}
+              </td>
+
+              <td class="col-resp truncate" title="{{ row.codResponsable }} - {{ row.nomResponsable }}">
+                {{ row.codResponsable }} - {{ row.nomResponsable }}
+              </td>
+            </tr>
+
+            <!-- Detalle expandido -->
+            <tr class="row-detail" *ngIf="expandedId === docKey(row)">
+              <td colspan="10">
+                <div class="detail-card">
+
+                  <div class="detail-title">
+                    Detalle del documento <span class="mono">{{ row.documento }}</span>
+                  </div>
+
+                  <div class="detail-table-wrap" *ngIf="row.detalles?.length; else sinDetalle">
+                    <table class="tabla-detalle">
+                      <thead>
+                        <tr>
+                          <th>Año</th>
+                          <th>Fecha</th>
+                          <th>Hora</th>
+                          <th>Comprobante</th>
+                          <th>Relacionado</th>
+                          <th>Cuenta</th>
+                          <th>Detalle Cuenta</th>
+                          <th>Auxiliar</th>
+                          <th class="text-right">Debe</th>
+                          <th class="text-right">Haber</th>
+                          <th>Beneficiario</th>
+                          <th>Cheque</th>
+                          <th>Comentario</th>
+                          <th>Sustento Tributario</th>
+                          <th>Tipo comprobante Sri</th>
+                          <th>Tipo Retencion</th>
+                        </tr>
+                      </thead>
+
+                      <tbody>
+                        <tr *ngFor="let d of row.detalles">
+                          <td class="mono">{{ d.anio }}</td>
+                          <td>{{ d.fecha | date:'dd/MM/yyyy' }}</td>
+                          <td class="mono">{{ d.hora }}</td>
+                          <td class="mono">{{ d.comprobante }}</td>
+                          <td class="mono">{{ d.relacionado }}</td>
+                          <td class="mono">{{ d.cuenta }}</td>
+                          <td class="truncate" title="{{ d.detalleCuenta }}">{{ d.detalleCuenta }}</td>
+                          <td class="truncate" title="{{ d.codigoAuxiliar }} - {{ d.nombreAuxiliar }}">
+                            {{ d.codigoAuxiliar }} - {{ d.nombreAuxiliar }}
+                          </td>
+                          <td class="text-right">{{ d.debe | number:'1.2-2' }}</td>
+                          <td class="text-right">{{ d.haber | number:'1.2-2' }}</td>
+                          <td class="mono">{{ d.cheque }}</td>
+                          <td class="mono">{{ d.beneficiario }}</td>
+                          <td class="mono">{{ d.comentario }}</td>
+                          <td class="mono">{{ d.sustento }}</td>
+                          <td class="mono">{{ d.sri }}</td>
+                          <td class="mono">{{ d.retencion }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <ng-template #sinDetalle>
+                    <div class="empty-inline">No hay detalle para este documento.</div>
+                  </ng-template>
+
+                </div>
+              </td>
+            </tr>
+
+          </ng-container>
+        </tbody>
+      </table>
+
+      <div class="pager-bar">
+        <div class="pager-left">
+          <span class="pager-label">Page Size:</span>
+
+          <select class="pager-select" [ngModel]="pageSize" (ngModelChange)="onPageSizeChange($event)">
+            <option *ngFor="let s of pageSizeOptions" [ngValue]="s">{{ s }}</option>
+          </select>
+        </div>
+
+        <div class="pager-mid">
+          <span class="pager-count">{{ fromRow }} to {{ toRow }} of {{ totalRows }}</span>
+        </div>
+
+        <div class="pager-right">
+          <button class="pager-btn" (click)="firstPage()" [disabled]="!canPrev">|&lt;</button>
+          <button class="pager-btn" (click)="prevPage()" [disabled]="!canPrev">&lt;</button>
+
+          <span class="pager-page">Page {{ totalPages === 0 ? 0 : (pageIndex + 1) }} of {{ totalPages }}</span>
+
+          <button class="pager-btn" (click)="nextPage()" [disabled]="!canNext">&gt;</button>
+          <button class="pager-btn" (click)="lastPage()" [disabled]="!canNext">&gt;|</button>
+        </div>
+      </div>
+
+    </div>
+
+    <ng-template #sinDatos>
+      <div class="empty-state">
+        <div class="empty-title">No hay datos para mostrar</div>
+        <div class="empty-sub">Ajusta los filtros y presiona Refrescar.</div>
+      </div>
+    </ng-template>
+
+  </div>
+</div>
+
