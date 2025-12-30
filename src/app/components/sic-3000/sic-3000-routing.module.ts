@@ -31,6 +31,7 @@ import { DescuentoListComponent } from './descuento/descuento-list/descuento-lis
 import { ReporteVentasComponent } from './reporte-ventas/reporte-ventas.component';
 import { ReenvioFacComponent } from './facturacion/reenvio-fac/reenvio-fac.component';
 import { AutorizacionCajaListComponent } from './autorizacion-caja-list/autorizacion-caja-list.component';
+import { TipoDocListComponent } from './tipo-doc-list/tipo-doc-list.component';
 
 const routes: Routes = [
   {
@@ -142,6 +143,10 @@ const routes: Routes = [
        {
         path: 'cajas',
         component:AutorizacionCajaListComponent
+      },
+      {
+        path: 'tipdocsri',
+        component:TipoDocListComponent
       },
          {
         path: 'descuento',

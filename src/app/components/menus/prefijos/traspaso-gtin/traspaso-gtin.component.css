@@ -975,3 +975,26 @@ textarea {
   flex-wrap: wrap;
   gap: 1rem;
 }
+/* Celdas */
+:host ::ng-deep .ag-theme-alpine .col-unidad-venta {
+  background-color: #fff59d !important; /* amarillo suave */
+}
+
+/* Encabezado */
+:host ::ng-deep .ag-theme-alpine .col-unidad-venta-header .ag-header-cell-label {
+  background-color: #fff59d !important;
+}
+/* Celdas (columna Unidad Venta) */
+:host ::ng-deep .ag-cell.col-unidad-venta {
+  background-color: #fff59d !important; /* amarillo suave */
+}
+
+/* Encabezado (columna Unidad Venta) */
+:host ::ng-deep .ag-header-cell.col-unidad-venta-header {
+  background-color: #fff59d !important;
+}
+
+/* Para que el texto del header no “tape” el fondo */
+:host ::ng-deep .ag-header-cell.col-unidad-venta-header .ag-header-cell-label {
+  background-color: transparent !important;
+}
