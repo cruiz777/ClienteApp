@@ -1061,6 +1061,7 @@ export class FacturasProveedorFormComponent implements OnInit {
   /// end zonas
 
   //porcentaje iva///
+  /*
   private cargarPorcentajesIva(): void {
     const empresaId = this.usuarioActual?.id_empresa ?? 0;
 
@@ -1085,6 +1086,40 @@ export class FacturasProveedorFormComponent implements OnInit {
       },
     });
   }
+  */
+ 
+  private cargarPorcentajesIva(): void {
+    const empresaId = this.usuarioActual?.id_empresa ?? 0;
+
+    this.porcentajeIvaService.getAll({ idEmpresa: empresaId }).subscribe({
+      next: (list: PorcentajeIvaResponse[]) => {
+        const activos = (list ?? []).filter(p => this.isIvaActivo((p as any).estado));
+
+        this.porcentajesIva = activos.map((p) => ({
+          id: Number(p.idPorIva),
+          codigoIva: Number(p.codigoIva),
+          descripcion: (p.descripcion ?? '').toString().trim(),
+          porcentaje: Number(p.porcentaje ?? 0),
+          estado: true,
+          label: `${(p.descripcion ?? '').toString().trim()} (${Number(p.porcentaje ?? 0)}%)`,
+        }));
+
+        // refrescamos la columna si ya existe gridApi
+        this.gridApi?.refreshCells({
+          force: true,
+          columns: ['idPorIva', 'porcentaje'],
+        });
+      },
+      error: (err) => {
+        console.error('Error cargando porcentajes de IVA', err);
+        this.porcentajesIva = [];
+        this.gridApi?.refreshCells({ force: true, columns: ['idPorIva', 'porcentaje'] });
+      },
+    });
+  }
+
+  //porcentaje iva///
+  
   ////
 
   ngOnInit(): void {
@@ -3207,6 +3242,20 @@ private cargarUsuarioAsientoNombre(idUsuario: number): void {
     });
   }
 
+  //porcentaje iva
+  private isIvaActivo(estado: unknown): boolean {
+    // true/false
+    if (estado === true) return true;
+    if (estado === false || estado == null) return false;
+
+    // 1/0 o "1"/"0"
+    const n = Number(estado);
+    if (!Number.isNaN(n)) return n === 1;
+
+    // "true"/"false" u otros textos
+    const s = String(estado).trim().toLowerCase();
+    return s === '1' || s === 'true' || s === 'activo' || s === 'a';
+  }
 
   ///nuevas funciones
 }

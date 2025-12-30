@@ -90,6 +90,7 @@ export class AnticipoCgFormComponent implements OnInit {
   busquedaCodBanco = new FormControl<string | CodigosContablesResponse>('');
   beneficiarioBancoTexto = '';
 
+
   columnDefs: ColDef[] = [];
   defaultColDef: ColDef = {
     editable: true,
@@ -350,7 +351,7 @@ export class AnticipoCgFormComponent implements OnInit {
       {
         headerName: 'Cuenta Contable (Banco)',
         field: 'idPlanCuentas',
-        width: 580,
+        width: 380,
         editable: true,
         singleClickEdit: true,
         cellEditor: PlanCuentaCellEditorComponent,
