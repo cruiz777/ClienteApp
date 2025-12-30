@@ -33,7 +33,7 @@
         >
           <option [ngValue]="0" disabled>Seleccione...</option>
           <option *ngFor="let z of (zonas$ | async)" [ngValue]="z.idZona">
-            {{ z.numero }} - {{ z.nombre }}
+            {{ z.idZona }} - {{ z.nombre }}
           </option>
         </select>
 

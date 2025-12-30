@@ -5,5 +5,6 @@ export interface PorcentajeIvaResponse {
   porcentaje: number;
   fechainicio: string;          // ISO del backend
   fechafin: string | null;      // puede venir null
+  estado: boolean | number;
 }
 

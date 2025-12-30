@@ -38,7 +38,7 @@
 
             <!-- Opciones de zonas -->
             <option *ngFor="let z of (zonas$ | async)"  [ngValue]="z.idZona">
-              {{ z.numero }} - {{ z.nombre }}
+              {{ z.idZona }} - {{ z.nombre }}
             </option>
 
           </select>

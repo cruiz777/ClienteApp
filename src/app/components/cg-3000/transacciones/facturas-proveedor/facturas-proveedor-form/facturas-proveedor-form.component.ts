@@ -1,3 +1,4 @@
+
 import { Component, OnInit, ViewChild, effect, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -193,7 +194,7 @@ export class FacturasProveedorFormComponent implements OnInit {
     const idEmpresa = this.usuarioActual?.id_empresa ?? 0;
     this.form.patchValue({ idUsuario, idEmpresa }, { emitEvent: false });
     this.form.patchValue(
-      { anio: getYearFromInput(this.form.get('fechatransaccion')!.value) },
+      { anio: getYearFromDateOnly(this.form.get('fechatransaccion')!.value) },//anio: getYearFromInput(this.form.get('fechatransaccion')!.value) },
       { emitEvent: false }
     );
   }
@@ -1060,6 +1061,7 @@ export class FacturasProveedorFormComponent implements OnInit {
   /// end zonas
 
   //porcentaje iva///
+  /*
   private cargarPorcentajesIva(): void {
     const empresaId = this.usuarioActual?.id_empresa ?? 0;
 
@@ -1084,6 +1086,40 @@ export class FacturasProveedorFormComponent implements OnInit {
       },
     });
   }
+  */
+ 
+  private cargarPorcentajesIva(): void {
+    const empresaId = this.usuarioActual?.id_empresa ?? 0;
+
+    this.porcentajeIvaService.getAll({ idEmpresa: empresaId }).subscribe({
+      next: (list: PorcentajeIvaResponse[]) => {
+        const activos = (list ?? []).filter(p => this.isIvaActivo((p as any).estado));
+
+        this.porcentajesIva = activos.map((p) => ({
+          id: Number(p.idPorIva),
+          codigoIva: Number(p.codigoIva),
+          descripcion: (p.descripcion ?? '').toString().trim(),
+          porcentaje: Number(p.porcentaje ?? 0),
+          estado: true,
+          label: `${(p.descripcion ?? '').toString().trim()} (${Number(p.porcentaje ?? 0)}%)`,
+        }));
+
+        // refrescamos la columna si ya existe gridApi
+        this.gridApi?.refreshCells({
+          force: true,
+          columns: ['idPorIva', 'porcentaje'],
+        });
+      },
+      error: (err) => {
+        console.error('Error cargando porcentajes de IVA', err);
+        this.porcentajesIva = [];
+        this.gridApi?.refreshCells({ force: true, columns: ['idPorIva', 'porcentaje'] });
+      },
+    });
+  }
+
+  //porcentaje iva///
+  
   ////
 
   ngOnInit(): void {
@@ -1285,7 +1321,8 @@ export class FacturasProveedorFormComponent implements OnInit {
           .get('fechatransaccion')!
           .valueChanges.pipe(
             startWith(this.form.get('fechatransaccion')!.value),
-            map(getYearFromInput),
+            //map(getYearFromInput), estaba anterior hr
+            map(getYearFromDateOnly),
             distinctUntilChanged()
           )
           .subscribe((y) => {
@@ -1384,7 +1421,8 @@ export class FacturasProveedorFormComponent implements OnInit {
       tipdoc: h.tipdoc,
       numdoc: h.numdoc,
       anio: h.anio,
-      fechatransaccion: h.fechatransaccion ? normalizeToLocalDate(h.fechatransaccion) : null,
+      //fechatransaccion: h.fechatransaccion ? normalizeToLocalDate(h.fechatransaccion) : null, estaba anterior
+      fechatransaccion: h.fechatransaccion ? dateOnlySafe(h.fechatransaccion) : null,
       fechaingreso: h.fechaingreso,
       observacion: h.observacion,
       totdebe: h.totdebe,
@@ -1707,6 +1745,7 @@ export class FacturasProveedorFormComponent implements OnInit {
     });
   }
 
+  /*
   private cargarMovimientosBancarios(): void {
     this.movimientoBancarioService.getAll().subscribe({
       next: (res) => {
@@ -1726,6 +1765,8 @@ export class FacturasProveedorFormComponent implements OnInit {
             };
           });
 
+          
+
         this.movimientosBancariosLoaded = true;
         this.refrescarColumnasDetalle();
       },
@@ -1734,7 +1775,39 @@ export class FacturasProveedorFormComponent implements OnInit {
       },
     });
   }
+  */
+  private cargarMovimientosBancarios(): void {
+    this.movimientoBancarioService.getAll().subscribe({
+      next: (res) => {
+        const data = (res.data ?? []) as MovimientoBancarioResponse[];
 
+        this.movimientosBancarios = (data || [])
+          .filter((m) => m.IdMovBancario && m.IdMovBancario > 0)
+          .map((m) => {
+            const cond = m.Condicion != null && m.Condicion !== undefined ? Number(m.Condicion) : null;
+
+            return {
+              id: m.IdMovBancario,
+              movimiento: (m.Movimiento ?? '').toString().trim(),
+              descripcion: (m.Descripcion ?? '').toString().trim(),
+              label: `${(m.Movimiento ?? '').toString().trim()} - ${(m.Descripcion ?? '').toString().trim()}`,
+              condicion: !isNaN(cond as any) && (cond as number) > 0 ? cond : null,
+            };
+          })
+          // ORDENAR SOLO POR DESCRIPCION
+          .sort((a, b) =>
+            (a.descripcion || '').localeCompare((b.descripcion || ''), 'es', { sensitivity: 'base' })
+          );
+
+        this.movimientosBancariosLoaded = true;
+        this.refrescarColumnasDetalle();
+      },
+      error: (err) => {
+        console.error('Error cargando movimientos bancarios', err);
+      },
+    });
+  }
+  
   private cargarSustentosTributarios(): void {
     this.sustentoTribService.getAll().subscribe({
       next: (resp) => {
@@ -1876,7 +1949,7 @@ export class FacturasProveedorFormComponent implements OnInit {
     const nowIso = formatLocalIso(ahora);
 
     const fechaTransControl = this.form.get('fechatransaccion')!.value;
-
+    
     if (!fechaTransControl) {
       this.snack.open('Debe ingresar la Fecha de Transacción.', 'Cerrar', {
         duration: 3000,
@@ -1886,8 +1959,10 @@ export class FacturasProveedorFormComponent implements OnInit {
       return;
     }
 
-    const fechaTransaccionSoloFecha = normalizeToLocalDate(fechaTransControl);
-    const anioTransaccion = getYearFromInput(fechaTransaccionSoloFecha);
+    //const fechaTransaccionSoloFecha = normalizeToLocalDate(fechaTransControl); estaba anterior
+    const fechaTransaccionSoloFecha = dateOnlySafe(fechaTransControl);
+    //const anioTransaccion = getYearFromInput(fechaTransaccionSoloFecha); estaba anterior
+    const anioTransaccion = getYearFromDateOnly(fechaTransaccionSoloFecha); // ✅
 
     this.form.patchValue(
       {
@@ -2385,9 +2460,13 @@ export class FacturasProveedorFormComponent implements OnInit {
       const items = this.rowData();
       const next = (items?.length ?? 0) + 1;
 
-      const fechaTransFormulario = this.form.value?.fechatransaccion || nowIso;
-      const fechaTransaccionDetalle = normalizeToLocalDate(fechaTransFormulario);
-      const anioTransaccion = this.form.value?.anio || getYearFromInput(fechaTransaccionDetalle);
+      //const fechaTransFormulario = this.form.value?.fechatransaccion || nowIso;
+      //const fechaTransaccionDetalle = normalizeToLocalDate(fechaTransFormulario);
+      //const anioTransaccion = this.form.value?.anio || getYearFromInput(fechaTransaccionDetalle);
+
+      const fechaTransFormulario = this.form.get('fechatransaccion')?.value;
+      const fechaTransaccionDetalle = dateOnlySafe(fechaTransFormulario) || dateOnlySafe(nowIso);
+      const anioTransaccion = fechaTransaccionDetalle ? fechaTransaccionDetalle.substring(0, 4) : '';
 
       const fechaIngresoIso = nowIso;
       const horaIngreso = getTimeFromInput(fechaIngresoIso);
@@ -2601,12 +2680,14 @@ export class FacturasProveedorFormComponent implements OnInit {
 
     // CABECERA
     h.fechacierre = h.fechacierre ? normalizeToLocalDate(h.fechacierre) : null;
+    h.fechatransaccion = h.fechatransaccion ? dateOnlySafe(h.fechatransaccion) : null;
 
     // DETALLES
     h.detalles = (header.detalles ?? []).map((d) => {
       const det: any = { ...d };
 
-      det.fechatransaccion = det.fechatransaccion ? normalizeToLocalDate(det.fechatransaccion) : null;
+      //det.fechatransaccion = det.fechatransaccion ? normalizeToLocalDate(det.fechatransaccion) : null;
+      det.fechatransaccion = det.fechatransaccion ? dateOnlySafe(det.fechatransaccion) : null;
       det.fechacierre = det.fechacierre ? normalizeToLocalDate(det.fechacierre) : null;
       det.fechaconciliado = det.fechaconciliado ? normalizeToLocalDate(det.fechaconciliado) : null;
       det.fechatransferido = det.fechatransferido ? normalizeToLocalDate(det.fechatransferido) : null;
@@ -3161,6 +3242,20 @@ private cargarUsuarioAsientoNombre(idUsuario: number): void {
     });
   }
 
+  //porcentaje iva
+  private isIvaActivo(estado: unknown): boolean {
+    // true/false
+    if (estado === true) return true;
+    if (estado === false || estado == null) return false;
+
+    // 1/0 o "1"/"0"
+    const n = Number(estado);
+    if (!Number.isNaN(n)) return n === 1;
+
+    // "true"/"false" u otros textos
+    const s = String(estado).trim().toLowerCase();
+    return s === '1' || s === 'true' || s === 'activo' || s === 'a';
+  }
 
   ///nuevas funciones
 }
@@ -3370,3 +3465,60 @@ function sriNoComprobanteValidator(cfg: SriSerieRangoCfg = {}) {
     return null;
   };
 }
+
+//fechas
+function toDateOnlyString(v: any): string {
+  if (!v) return '';
+
+  // string: "yyyy-MM-dd" o "yyyy-MM-ddTHH:mm:ss..."
+  if (typeof v === 'string') {
+    const s = v.trim();
+    const m = /^(\d{4}-\d{2}-\d{2})/.exec(s);
+    return m ? m[1] : '';
+  }
+
+  // Date object
+  if (v instanceof Date && !isNaN(v.getTime())) {
+    const yyyy = v.getFullYear();
+    const mm = String(v.getMonth() + 1).padStart(2, '0');
+    const dd = String(v.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  return '';
+}
+
+function getYearFromDateOnly(v: any): string {
+  const s = toDateOnlyString(v);
+  return s ? s.substring(0, 4) : '';
+}
+
+function dateOnlySafe(v: any): string {
+  if (!v) return '';
+
+  // Si ya viene como string ISO/date-only, cortar sin convertir a Date
+  if (typeof v === 'string') {
+    const s = v.trim();
+
+    // yyyy-MM-dd o yyyy-MM-ddTHH:mm:ss...
+    const mIso = /^(\d{4})-(\d{2})-(\d{2})/.exec(s);
+    if (mIso) return `${mIso[1]}-${mIso[2]}-${mIso[3]}`;
+
+    // dd/MM/yyyy (por si en algún lado te llega así)
+    const mLat = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(s);
+    if (mLat) return `${mLat[3]}-${mLat[2]}-${mLat[1]}`;
+
+    return '';
+  }
+
+  // Si viene Date, formatear en local SIN convertir a UTC
+  if (v instanceof Date && !isNaN(v.getTime())) {
+    const yyyy = v.getFullYear();
+    const mm = String(v.getMonth() + 1).padStart(2, '0');
+    const dd = String(v.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  return '';
+}
+

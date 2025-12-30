@@ -101,16 +101,26 @@
   </ag-grid-angular>
 
 <div class="totales-bar">
-  <div class="tot">
-    <span class="total-label">Total Base:</span>
-    <strong>{{ totBase | number:'1.2-2' }}</strong>
-  </div>
 
-  <div class="tot">
-    <span class="total-label">Total Retenido:</span>
-    <strong>{{ totValorRet | number:'1.2-2' }}</strong>
-  </div>
+  <button
+    type="button"
+    class="btn-anular"
+    (click)="anularRet()"
+    [disabled]="loading || !canAnularRet()">
+    ANULAR RETENCION
+  </button>
 
+  <div class="totales-right">
+    <div class="tot">
+      <span class="total-label">Total Base:</span>
+      <strong>{{ totBase | number:'1.2-2' }}</strong>
+    </div>
+
+    <div class="tot">
+      <span class="total-label">Total Retenido:</span>
+      <strong>{{ totValorRet | number:'1.2-2' }}</strong>
+    </div>
+  </div>
 </div>
 
 </div>

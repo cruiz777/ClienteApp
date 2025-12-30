@@ -53,38 +53,32 @@ export class FacturasProveedorComponent implements OnInit {
   usuarioActual = this.usuarioService.getUsuarioActual();
   nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
 
-  // ---- IMPORTANTE: resizable + minWidth global ----
   defaultColDef: ColDef = {
     resizable: true,
     minWidth: 90
   };
 
-  // Bandera: ajusto columnas SOLO 1 vez (para que luego el usuario pueda redimensionar)
+  // Ajusto columnas SOLO 1 vez
   private didInitialFit = false;
   private userResizedAnyColumn = false;
 
+  private gridApi!: GridApi<ListadoAsientoContableResponse>;
+
+  // ✅ CAMBIO CLAVE: sizeColumnsToFit SOLO 1 VEZ, y respetando suppressSizeToFit
   gridOptions: GridOptions<ListadoAsientoContableResponse> = {
     rowHeight: 28,
     headerHeight: 35,
-    alwaysShowVerticalScroll: true, 
+    alwaysShowVerticalScroll: true,
     suppressLoadingOverlay: true,
     suppressNoRowsOverlay: true,
-
-    // Opcional: que el resize se sienta bien
     colResizeDefault: 'shift',
 
-    /// CAMBIO HR DISTORCIONA EL GRID
+    /*
     onFirstDataRendered: () => {
-    if (this.gridApi && !this.userResizedAnyColumn) {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          try { this.gridApi.sizeColumnsToFit(); } catch {}
-        });
-      });
+      this.fitColumnsOnce();
     }
-  }
-    /// SE DISTORICONA EL AG GRID
-    // NO pongas sizeColumnsToFit aquí en gridSizeChanged en loop
+    */
+
   };
 
   rowData: ListadoAsientoContableResponse[] = [];
@@ -93,15 +87,17 @@ export class FacturasProveedorComponent implements OnInit {
   fechaDesde: string | null = null; // yyyy-MM-dd
   fechaHasta: string | null = null;
 
-  private gridApi!: GridApi<ListadoAsientoContableResponse>;
-
   columnDefs: ColDef<ListadoAsientoContableResponse>[] = [
     { headerName: 'Código', field: 'idCabMaestro', width: 160, sortable: true, filter: true, hide: true },
     { headerName: 'Empresa', field: 'empresa', width: 160, sortable: true, filter: true, hide: true },
+
+    // ✅ CAMBIO CLAVE: estas 2 columnas quedan FIJAS en 240 y NO las toca sizeColumnsToFit
     {
       headerName: 'Fecha Transacción',
       field: 'fechatransaccion',
-      width: 160,
+      width: 140,
+      minWidth: 140,
+      //suppressSizeToFit: true,
       sortable: true,
       filter: true,
       valueGetter: p => p.data?.fechatransaccion ? new Date(p.data.fechatransaccion as any) : null,
@@ -110,14 +106,17 @@ export class FacturasProveedorComponent implements OnInit {
     {
       headerName: 'Fecha Ingreso',
       field: 'fechaingreso',
-      width: 160,
+      width: 140,
+      minWidth: 140,
+      //suppressSizeToFit: true,
       sortable: true,
       filter: true,
       valueGetter: p => p.data?.fechaingreso ? new Date(p.data.fechaingreso as any) : null,
       valueFormatter: p => p.value ? formatDateYMD(p.value as Date) : ''
     },
-    { headerName: 'Tipo Asiento', field: 'tipoAsientoCompleto', width: 100, sortable: true, filter: true },
-    { headerName: 'No. Documento', field: 'numdoc', width: 140, sortable: true, filter: true },
+
+    { headerName: 'Tipo Asiento', field: 'tipoAsientoCompleto', width: 150, sortable: true, filter: true },
+    { headerName: 'No. Documento', field: 'numdoc', width: 150, sortable: true, filter: true },
     {
       headerName: 'Debe',
       field: 'totdebe',
@@ -148,14 +147,14 @@ export class FacturasProveedorComponent implements OnInit {
         'ag-disabled': (p: any) => toNumber(p.data?.debe) > 0
       }
     },
-    { headerName: 'Beneficiario', field: 'beneficiario', width: 260, sortable: true, filter: true },
+    { headerName: 'Beneficiario', field: 'beneficiario', width: 360, sortable: true, filter: true },
     { headerName: 'Observación', field: 'observacion', width: 300, sortable: true, filter: true },
     {
       headerName: 'Acciones',
       colId: 'acciones',
       width: 205,
       resizable: false,
-      suppressSizeToFit: true,   // CLAVE
+      suppressSizeToFit: true, // ya lo tenías bien
       pinned: 'right',
       suppressHeaderMenuButton: true,
       menuTabs: [],
@@ -167,17 +166,15 @@ export class FacturasProveedorComponent implements OnInit {
           <button class="accion-icon accion-icon--pdf" data-action="print" title="Imprimir Asiento">
             <img src="assets/icons/icon-imprimir.png" width="18" height="18" alt="PDF" />
           </button>
-          <!--BOTÓN DE DUPLICAR -->
           <button class="accion-icon accion-icon--copy" data-action="copy" title="Duplicar Factura">
             <img src="assets/icons/icon-ficha-cliente.png" width="18" height="18" alt="Duplicar" />
           </button>
           <button class="accion-icon accion-icon--pdf" data-action="ret" title="Generar Retención">
             <img src="assets/icons/icon-transaccion.png" width="18" height="18" alt="Retención" />
           </button>
-            <button class="ag-action-btn danger" data-action="delete" title="Eliminar Asiento">
+          <button class="ag-action-btn danger" data-action="delete" title="Eliminar Asiento">
             <img src="assets/icons/icon-basurero.png" width="18" height="18" />
           </button>
-
         </div>
       `,
       sortable: false,
@@ -198,46 +195,27 @@ export class FacturasProveedorComponent implements OnInit {
   }
 
   onGridReady(e: GridReadyEvent): void {
-    
-    /*
     this.gridApi = e.api as GridApi<ListadoAsientoContableResponse>;
 
     // Detecta cuando el usuario redimensiona (para NO volver a auto-ajustar)
     this.gridApi.addEventListener('columnResized', (ev: ColumnResizedEvent) => {
-      // source: 'uiColumnDragged' cuando el usuario lo arrastra con mouse
       if (ev.finished && ev.source === 'uiColumnDragged') {
         this.userResizedAnyColumn = true;
       }
     });
-
-    // Ajuste inicial 1 sola vez
-    this.fitColumnsOnce();
-    */
-    // SE DISTORCIONA EL GRID CAMBIO HR
-    this.gridApi = e.api as GridApi<ListadoAsientoContableResponse>;
-
-    this.gridApi.addEventListener('columnResized', (ev: ColumnResizedEvent) => {
-      if (ev.finished && ev.source === 'uiColumnDragged') {
-        this.userResizedAnyColumn = true;
-      }
-    });
-
   }
 
+  // ✅ AJUSTE 1 SOLA VEZ (y no toca columnas con suppressSizeToFit)
   private fitColumnsOnce(): void {
     if (!this.gridApi) return;
     if (this.didInitialFit) return;
+    if (this.userResizedAnyColumn) return;
 
     this.didInitialFit = true;
 
-    // setTimeout para que el DOM y la grilla ya tengan ancho real
-    setTimeout(() => {
-      try {
-        this.gridApi.sizeColumnsToFit();
-      } catch {
-        // no-op
-      }
-    }, 0);
+    requestAnimationFrame(() => {
+      try { this.gridApi.sizeColumnsToFit(); } catch {}
+    });
   }
 
   obtenerAsientos(): void {
@@ -255,12 +233,7 @@ export class FacturasProveedorComponent implements OnInit {
         this.rowData = resp ?? [];
         this.loading = false;
 
-        // Si aún NO han redimensionado manualmente, puedes ajustar 1 vez al cargar data
-        if (this.gridApi && !this.userResizedAnyColumn) {
-          setTimeout(() => {
-            try { this.gridApi.sizeColumnsToFit(); } catch {}
-          }, 0);
-        }
+        // ❌ IMPORTANTE: YA NO sizeColumnsToFit aquí (esto era lo que te cambiaba los widths)
       },
       error: (err) => {
         console.error('Error al obtener facturas proveedor:', err);
@@ -272,8 +245,6 @@ export class FacturasProveedorComponent implements OnInit {
   }
 
   buscar(): void {
-    // Importante: si deseas que al buscar vuelva a auto-ajustar, NO marques userResizedAnyColumn
-    // Si quieres respetar el tamaño que el usuario dejó, no toques flags.
     this.obtenerAsientos();
   }
 
@@ -292,7 +263,7 @@ export class FacturasProveedorComponent implements OnInit {
       this.editarAsiento(evt.data);
       return;
     }
-      if (action === 'copy' && evt.data) {
+    if (action === 'copy' && evt.data) {
       const id = Number(evt.data.idCabMaestro || 0);
       this.crearFacturaEstandar(id);
       return;
@@ -316,13 +287,11 @@ export class FacturasProveedorComponent implements OnInit {
       return;
     }
 
-    //ELIMNAR ASENTOS
-      if (action === 'delete') {
-      if (!evt.data) { return; } // ✅ evita el error: T | undefined
+    if (action === 'delete') {
+      if (!evt.data) { return; }
       this.confirmarEliminar(evt.data);
       return;
     }
-    ///
   }
 
   abrirRetenciones(idEmpresa: number, idCabMaestro: number): void {
@@ -334,17 +303,11 @@ export class FacturasProveedorComponent implements OnInit {
       autoFocus: false,
       restoreFocus: false,
       disableClose: true,
-      data: {
-        modo: 'nuevo',
-        idEmpresa,
-        idCabMaestro
-      }
+      data: { modo: 'nuevo', idEmpresa, idCabMaestro }
     });
 
     dialogRef.afterClosed().subscribe(result => {
-      if (result) {
-        this.obtenerAsientos();
-      }
+      if (result) this.obtenerAsientos();
     });
   }
 
@@ -353,14 +316,6 @@ export class FacturasProveedorComponent implements OnInit {
   }
 
   editarAsiento(row: ListadoAsientoContableResponse): void {
-    /*
-    const id = Number((row as any).idCabMaestro ?? (row as any).IdCabMaestro ?? 0);
-    if (!id || id <= 0) {
-      console.warn('No se encontró idCabMaestro para la fila:', row);
-      return;
-    }
-    this.abrirEditar(id);
-    */
     const id = Number((row as any).idCabMaestro ?? (row as any).IdCabMaestro ?? 0);
     if (!id || id <= 0) {
       console.warn('No se encontró idCabMaestro para la fila:', row);
@@ -368,16 +323,7 @@ export class FacturasProveedorComponent implements OnInit {
     }
 
     const idEmpresa = Number((row as any).idEmpresa ?? (row as any).IdEmpresa ?? 0);
-    const tipoDoc = String((row as any).tipoAsientoCompleto ?? '').trim(); // ideal: tipdoc real
-    
-    /*
-    if (!idEmpresa || !tipoDoc) {
-      // Si no tienes datos para validar, abre normal (o puedes bloquear si prefieres)
-    this.abrirEditar(id);
-      this.abrirEditar(id);
-      return;
-    }
-    */
+    const tipoDoc = String((row as any).tipoAsientoCompleto ?? '').trim();
 
     this.loading = true;
     this.asientosService.validarAnulacion(id, idEmpresa, tipoDoc)
@@ -386,7 +332,6 @@ export class FacturasProveedorComponent implements OnInit {
         next: (resp) => {
           const data = resp?.data;
           if (!data) {
-            // si el API no trae data, abre normal
             this.abrirEditar(id);
             return;
           }
@@ -397,7 +342,7 @@ export class FacturasProveedorComponent implements OnInit {
             const msgFinal =
               `${encabezado}\nNo se puede modificar.\n\n` +
               (motivosTxt || 'Revise los motivos.');
-            // 1) Mostrar mensaje backend
+
             this.mostrarMensaje({
               type: 'error',
               title: 'No se puede modificar',
@@ -407,7 +352,6 @@ export class FacturasProveedorComponent implements OnInit {
             })
             .afterClosed()
             .subscribe(() => {
-              // 2) Abrir formulario SOLO LECTURA
               this.dialog.open(FacturasProveedorFormComponent, {
                 width: '75vw',
                 maxWidth: '95vw',
@@ -426,7 +370,6 @@ export class FacturasProveedorComponent implements OnInit {
             });
             return;
           }
-          // ✅ Si puede modificar => abrir edición normal
           this.abrirEditar(id);
         },
         error: (err) => {
@@ -443,12 +386,9 @@ export class FacturasProveedorComponent implements OnInit {
             showCancel: false,
             confirmText: 'Aceptar'
           });
-          // Si prefieres: abrir normal cuando falla validación
-          // this.abrirEditar(idCabMaestro);
         }
       });
   }
-  /////end
 
   abrirCrear(): void {
     const dialogRef = this.dialog.open(FacturasProveedorFormComponent, {
@@ -532,9 +472,6 @@ export class FacturasProveedorComponent implements OnInit {
     const headerRow = visibleCols.map(c => c.headerName || c.field);
     data.push(headerRow);
 
-    const headerRowIndex = cab.lineas.length + 2;
-    const firstDataRowIndex = headerRowIndex + 1;
-
     let totalDebe = 0;
     let totalHaber = 0;
 
@@ -564,18 +501,6 @@ export class FacturasProveedorComponent implements OnInit {
     data.push(totalsRow);
 
     const ws: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(data);
-    const totalCols = visibleCols.length;
-
-    const merges: XLSX.Range[] = [];
-    merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } });
-    cab.lineas.forEach((_, index) => {
-      merges.push({
-        s: { r: 1 + index, c: 0 },
-        e: { r: 1 + index, c: totalCols - 1 }
-      });
-    });
-    ws['!merges'] = merges;
-
     ws['!cols'] = visibleCols.map(col => {
       let wch = 14;
       if (col.field === 'fechatransaccion' || col.field === 'fechaingreso') { wch = 16; }
@@ -682,11 +607,6 @@ export class FacturasProveedorComponent implements OnInit {
     doc.save(`Listado_FacturasProveedor_${fechaStr}.pdf`);
   }
 
-    /**
-   * 🔹 NUEVO MÉTODO: Duplica una factura de proveedor desde una existente
-   * Conserva: Zona, Proveedor, Tipo Comprobante, Sustento Tributario, Estructura del detalle
-   * Limpia: No.Comprobante, Autorización, Fechas, Debe/Haber
-   */
   crearFacturaEstandar(idCabMaestro: number): void {
     if (!idCabMaestro || idCabMaestro <= 0) {
       console.warn('ID de factura inválido');
@@ -695,15 +615,12 @@ export class FacturasProveedorComponent implements OnInit {
 
     this.loading = true;
 
-    // 1️⃣ Obtener la factura completa
     this.facturasService.getById(idCabMaestro).subscribe({
       next: (facturaOriginal) => {
         this.loading = false;
 
-        // 2️⃣ Preparar plantilla (limpia campos editables)
         const plantilla = this.prepararPlantillaEstandar(facturaOriginal);
 
-        // 3️⃣ Abrir formulario en modo "plantilla"
         const dialogRef = this.dialog.open(FacturasProveedorFormComponent, {
           width: '75vw',
           maxWidth: '95vw',
@@ -712,16 +629,11 @@ export class FacturasProveedorComponent implements OnInit {
           autoFocus: false,
           restoreFocus: false,
           disableClose: true,
-          data: {
-            modo: 'plantilla',              //  Nuevo modo
-            facturaPlantilla: plantilla     //  Datos pre-cargados
-          }
+          data: { modo: 'plantilla', facturaPlantilla: plantilla }
         });
 
         dialogRef.afterClosed().subscribe(result => {
-          if (result) {
-            this.obtenerAsientos(); // Recargar listado
-          }
+          if (result) this.obtenerAsientos();
         });
       },
       error: (err) => {
@@ -732,60 +644,40 @@ export class FacturasProveedorComponent implements OnInit {
     });
   }
 
-  /**
-   * 🔹 NUEVO MÉTODO: Prepara la factura como plantilla
-   * Conserva: Zona, Proveedor, Tipo Comprobante, Sustento Tributario, TODO el detalle
-   * Limpia: No.Comprobante, Autorización, Fechas, Observación, Debe/Haber, Campos Relacionados
-   */
   private prepararPlantillaEstandar(facturaOriginal: AsientoContableResponse): AsientoContableResponse {
     const hoy = new Date();
-    const fechaHoy = hoy.toISOString().substring(0, 10); // YYYY-MM-DD
-    const horaHoy = hoy.toISOString(); // ISO completo
+    const fechaHoy = hoy.toISOString().substring(0, 10);
+    const horaHoy = hoy.toISOString();
 
     return {
       ...facturaOriginal,
+      IdCabMaestro: 0,
+      numdoc: 0,
+      observacion: '',
+      fechatransaccion: fechaHoy,
+      fechaingreso: horaHoy,
 
-      // ❌ Campos que se resetean (usuario los editará)
-      IdCabMaestro: 0,                    //  Nueva factura
-      numdoc: 0,                          //  Se auto-generará
-      observacion: '',                    //  Usuario lo ingresará (concepto)
-      fechatransaccion: fechaHoy,         //  Fecha actual (editable)
-      fechaingreso: horaHoy,              //  Fecha/hora actual
-
-      // Campos que se mantienen de la plantilla
-      // idZona, idEmpresa, idUsuario, idTipoAsiento, tipdoc, anio vienen en ...facturaOriginal
-
-      // Detalles/Líneas se copian COMPLETOS PERO con debe/haber en 0
       detalles: (facturaOriginal.detalles || []).map((detalle, index) => ({
         ...detalle,
-        IdDetMaestro: 0,                  //  Nueva línea
-        IdCabMaestro: 0,                  //  Se asignará al guardar
-        numlinea: index + 1,              //  Re-numerar
-        fechatransaccion: fechaHoy,       //  Actualizar fecha
-        fechaingreso: horaHoy,            //  Actualizar fecha/hora
-
-        // LIMPIAR debe/haber (usuario los ingresará)
-        debe: 0,                          //  RESETEAR debe
-        haber: 0,                         //  RESETEAR haber
-
-        // LIMPIAR campos que se llenan por factura
-        nocomprobante: '',                //  Se tomará de cabecera
-        autorizacion: '',                 //  Se tomará de cabecera
-        fechacaduca: '',                  //  Se tomará de cabecera
-        fechavencimiento: '',             //  Se tomará de cabecera
-
-        // LIMPIAR campos relacionados (opcional para NC)
-        docurelacionado: '',              //  Limpio (para NC relacionadas)
-        autorizacionRelacionado: '',      //  Limpio
-        fechaCadRelacionado: null as any, //  Limpio
-
-        // Se mantienecuentas, auxiliares, movimientos, etc.
+        IdDetMaestro: 0,
+        IdCabMaestro: 0,
+        numlinea: index + 1,
+        fechatransaccion: fechaHoy,
+        fechaingreso: horaHoy,
+        debe: 0,
+        haber: 0,
+        nocomprobante: '',
+        autorizacion: '',
+        fechacaduca: '',
+        fechavencimiento: '',
+        docurelacionado: '',
+        autorizacionRelacionado: '',
+        fechaCadRelacionado: null as any,
         beneficiario: detalle.beneficiario || '',
         comentario: detalle.comentario || '',
       }))
     };
   }
-  /* ========== IMPRIMIR ASIENTO ========== */
 
   private imprimirAsiento(idCabMaestro: number): void {
     if (!idCabMaestro || idCabMaestro <= 0) {
@@ -812,15 +704,10 @@ export class FacturasProveedorComponent implements OnInit {
     });
   }
 
-  ///ELIMINAR ASIENTOS
-  
-confirmarEliminar(row: ListadoAsientoContableResponse): void {
-  
-  /*   
+  confirmarEliminar(row: ListadoAsientoContableResponse): void {
     const idCabMaestro = Number(row.idCabMaestro ?? 0);
-    const idEmpresa = Number(row.idEmpresa ?? 0);
+    const idEmpresa = Number((row as any).idEmpresa ?? (row as any).IdEmpresa ?? 0);
     const idUsuario = Number(this.usuarioActual?.id_usuario ?? 0);
-   
 
     if (!idCabMaestro || !idEmpresa || !idUsuario) {
       this.mostrarMensaje({
@@ -831,268 +718,172 @@ confirmarEliminar(row: ListadoAsientoContableResponse): void {
         confirmText: 'Aceptar'
       });
       return;
-    } 
+    }
+
     const numero = String((row as any).numdoc ?? '');
-    const tipdoc = String((row as any).tipoAsientoCompleto ?? '');
+    const tipoDoc = String((row as any).tipoAsientoCompleto ?? '');
 
-    // ✅ Reemplaza confirm() por tu MessageBox (gráfico 1)
-    this.mostrarMensaje({
-      type: 'warning', // o 'error' si quieres que se vea más fuerte
-      title: 'Confirmación',
-      message: `¿Está seguro de eliminar el asiento ?${tipdoc}-${numero}\n\n Esta acción NO se puede deshacer.`,
-      showCancel: true,
-      confirmText: 'Sí, eliminar',
-      cancelText: 'No'
-    })
-    .afterClosed()
-    .subscribe((confirmado: boolean) => {
-      if (!confirmado) return;
+    if (!tipoDoc) {
+      this.mostrarMensaje({
+        type: 'error',
+        title: 'Error',
+        message: 'No se pudo determinar el tipo de asiento (tipoDoc) para validar la eliminación.',
+        showCancel: false,
+        confirmText: 'Aceptar'
+      });
+      return;
+    }
 
-      this.loading = true;
+    this.loading = true;
 
-      this.asientosService.eliminar(idCabMaestro, idEmpresa, idUsuario).subscribe({
-        next: resp => {
-          this.loading = false;
+    this.asientosService.validarAnulacion(idCabMaestro, idEmpresa, tipoDoc)
+      .pipe(finalize(() => (this.loading = false)))
+      .subscribe({
+        next: (resp) => {
+          const data = resp?.data;
 
-          if (resp.type === 'DELETED') {
-            this.mostrarMensaje({
-              type: 'success',
-              title: 'Ok',
-              message: 'Asiento eliminado correctamente.',
-              showCancel: false,
-              confirmText: 'Aceptar'
-            }).afterClosed().subscribe(() => this.obtenerAsientos());
-          } else {
+          if (!data) {
             this.mostrarMensaje({
               type: 'error',
               title: 'Error',
-              message: resp.message || 'No se pudo eliminar el asiento.',
+              message: resp?.message || 'No se pudo validar la eliminación del asiento.',
               showCancel: false,
               confirmText: 'Aceptar'
             });
+            return;
           }
-        },
-        error: err => {
-          this.loading = false;
-          console.error('Error al eliminar asiento:', err);
+
+          if (data.puedeAnular === false) {
+            const encabezado = `Asiento: ${tipoDoc}-${numero}`;
+            const motivosTxt = this.formatearMotivosValidacion(data.motivos ?? []);
+            const msgFinal =
+              `${encabezado}\n` +
+              `No se puede eliminar/modificar.\n\n` +
+              (motivosTxt || 'Revise los motivos.');
+
+            this.mostrarMensaje({
+              type: 'error',
+              title: 'No se puede eliminar',
+              message: msgFinal,
+              showCancel: false,
+              confirmText: 'Aceptar'
+            });
+            return;
+          }
+
+          const etiqueta = `${tipoDoc}-${numero}`;
 
           this.mostrarMensaje({
-            type: 'error',
-            title: 'Error',
-            message: 'Error inesperado al eliminar el asiento.',
-            showCancel: false,
-            confirmText: 'Aceptar'
-          });
-        }
-      });
-    });
-  */
+            type: 'warning',
+            title: 'Confirmación',
+            message: `¿Está seguro de eliminar el asiento ${etiqueta}?\n\nEsta acción NO se puede deshacer.`,
+            showCancel: true,
+            confirmText: 'Sí, eliminar',
+            cancelText: 'No'
+          })
+          .afterClosed()
+          .subscribe((confirmado: boolean) => {
+            if (!confirmado) return;
 
-  const idCabMaestro = Number(row.idCabMaestro ?? 0);
-  const idEmpresa = Number((row as any).idEmpresa ?? (row as any).IdEmpresa ?? 0);
-  const idUsuario = Number(this.usuarioActual?.id_usuario ?? 0);
+            this.loading = true;
 
-  if (!idCabMaestro || !idEmpresa || !idUsuario) {
-    this.mostrarMensaje({
-      type: 'error',
-      title: 'Error',
-      message: 'No se pudo obtener la información necesaria para eliminar el asiento.',
-      showCancel: false,
-      confirmText: 'Aceptar'
-    });
-    return;
-  }
-
-  // Número para mostrar
-  const numero = String((row as any).numdoc ?? '');
-
-  // TipoDoc real: ideal que venga del backend como "tipdoc".
-  // Si no existe, lo derivamos desde tipoAsientoCompleto.
-  const tipoDoc = String((row as any).tipoAsientoCompleto ?? '');
-
-  if (!tipoDoc) {
-    this.mostrarMensaje({
-      type: 'error',
-      title: 'Error',
-      message: 'No se pudo determinar el tipo de asiento (tipoDoc) para validar la eliminación.',
-      showCancel: false,
-      confirmText: 'Aceptar'
-    });
-    return;
-  }
-
-  this.loading = true;
-
-  // 1) VALIDAR primero (backend)
-  this.asientosService.validarAnulacion(idCabMaestro, idEmpresa, tipoDoc)
-    .pipe(finalize(() => (this.loading = false)))
-    .subscribe({
-      next: (resp) => {
-        const data = resp?.data;
-
-        // Si el API por alguna razón devolviera data null
-        if (!data) {
-          this.mostrarMensaje({
-            type: 'error',
-            title: 'Error',
-            message: resp?.message || 'No se pudo validar la eliminación del asiento.',
-            showCancel: false,
-            confirmText: 'Aceptar'
-          });
-          return;
-        }
-
-        // 2) Si NO puede anular => mostrar motivos y salir
-        if (data.puedeAnular === false) {
-          const numero = String((row as any).numdoc ?? '');
-          const tipoDoc = String((row as any).tipoAsientoCompleto ?? '');
-          const encabezado = `Asiento: ${tipoDoc}-${numero}`;
-
-          const motivosTxt = this.formatearMotivosValidacion(data.motivos ?? []);
-
-          const msgFinal =
-            `${encabezado}\n` +
-            `No se puede eliminar/modificar.\n\n` +
-            (motivosTxt || 'Revise los motivos.');
-
-          /*
-          const msgFinal =
-            (resp?.message ? `${resp.message}\n\n` : '') +
-            (motivosTxt ? motivosTxt : 'El asiento no puede eliminarse/modificarse por reglas de validación.');
-          */
-
-          this.mostrarMensaje({
-            type: 'error',
-            title: 'No se puede eliminar',
-            message: msgFinal,
-            showCancel: false,
-            confirmText: 'Aceptar'
-          });
-
-          return;
-        }
-
-        // 3) Si SÍ puede anular => confirmar con modal
-        const etiqueta = `${tipoDoc}-${numero}`;
-
-        this.mostrarMensaje({
-          type: 'warning',
-          title: 'Confirmación',
-          message: `¿Está seguro de eliminar el asiento ${etiqueta}?\n\nEsta acción NO se puede deshacer.`,
-          showCancel: true,
-          confirmText: 'Sí, eliminar',
-          cancelText: 'No'
-        })
-        .afterClosed()
-        .subscribe((confirmado: boolean) => {
-          if (!confirmado) return;
-
-          // 4) Eliminar
-          this.loading = true;
-
-          this.asientosService.eliminar(idCabMaestro, idEmpresa, idUsuario)
-            .pipe(finalize(() => (this.loading = false)))
-            .subscribe({
-              next: (delResp) => {
-                if (delResp?.type === 'DELETED') {
-                  this.mostrarMensaje({
-                    type: 'success',
-                    title: 'Ok',
-                    message: 'Asiento eliminado correctamente.',
-                    showCancel: false,
-                    confirmText: 'Aceptar'
-                  }).afterClosed().subscribe(() => this.obtenerAsientos());
-                } else {
+            this.asientosService.eliminar(idCabMaestro, idEmpresa, idUsuario)
+              .pipe(finalize(() => (this.loading = false)))
+              .subscribe({
+                next: (delResp) => {
+                  if (delResp?.type === 'DELETED') {
+                    this.mostrarMensaje({
+                      type: 'success',
+                      title: 'Ok',
+                      message: 'Asiento eliminado correctamente.',
+                      showCancel: false,
+                      confirmText: 'Aceptar'
+                    }).afterClosed().subscribe(() => this.obtenerAsientos());
+                  } else {
+                    this.mostrarMensaje({
+                      type: 'error',
+                      title: 'Error',
+                      message: delResp?.message || 'No se pudo eliminar el asiento.',
+                      showCancel: false,
+                      confirmText: 'Aceptar'
+                    });
+                  }
+                },
+                error: (err) => {
+                  console.error('Error al eliminar asiento:', err);
+                  const msg = err?.error?.message ?? err?.message ?? 'Error inesperado al eliminar el asiento.';
                   this.mostrarMensaje({
                     type: 'error',
                     title: 'Error',
-                    message: delResp?.message || 'No se pudo eliminar el asiento.',
+                    message: msg,
                     showCancel: false,
                     confirmText: 'Aceptar'
                   });
                 }
-              },
-              error: (err) => {
-                console.error('Error al eliminar asiento:', err);
-                const msg = err?.error?.message ?? err?.message ?? 'Error inesperado al eliminar el asiento.';
-                this.mostrarMensaje({
-                  type: 'error',
-                  title: 'Error',
-                  message: msg,
-                  showCancel: false,
-                  confirmText: 'Aceptar'
-                });
-              }
-            });
-        });
-      },
-      error: (err) => {
-        console.error('Error al validar anulación:', err);
+              });
+          });
+        },
+        error: (err) => {
+          console.error('Error al validar anulación:', err);
+          const msg =
+            err?.error?.message ??
+            err?.error?.Message ??
+            err?.message ??
+            'Error inesperado al validar si el asiento puede eliminarse.';
 
-        const msg =
-          err?.error?.message ??
-          err?.error?.Message ??
-          err?.message ??
-          'Error inesperado al validar si el asiento puede eliminarse.';
-
-        this.mostrarMensaje({
-          type: 'error',
-          title: 'Error de validación',
-          message: msg,
-          showCancel: false,
-          confirmText: 'Aceptar'
-        });
-      }
-    });
-
+          this.mostrarMensaje({
+            type: 'error',
+            title: 'Error de validación',
+            message: msg,
+            showCancel: false,
+            confirmText: 'Aceptar'
+          });
+        }
+      });
   }
 
-   private mostrarMensaje(data: MessageBoxData) {
-      return this.dialog.open(CustomMessageBoxComponent, {
-        width: '400px',
-        data: {
-          confirmText: 'Aceptar',
-          cancelText: 'Cancelar',
-          ...data
-        }
-      });
-    }
-  
-     private mostrarMensajeAdvertencia(mensaje: string): void {
-      this.dialog.open(CustomMessageBoxComponent, {
-        width: '400px',
-        data: {
-          title: 'Campos obligatorios',
-          message: mensaje,
-          type: 'warning',
-          confirmText: 'Entendido',
-          showCancel: false
-        }
-      });
-    }
+  private mostrarMensaje(data: MessageBoxData) {
+    return this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        confirmText: 'Aceptar',
+        cancelText: 'Cancelar',
+        ...data
+      }
+    });
+  }
 
-  /* ================== FORMATO MOTIVOS VALIDACIÓN ================== */
+  private mostrarMensajeAdvertencia(mensaje: string): void {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: 'Campos obligatorios',
+        message: mensaje,
+        type: 'warning',
+        confirmText: 'Entendido',
+        showCancel: false
+      }
+    });
+  }
+
   formatearMotivosValidacion(motivos: MotivoNoAnulacionAsientoResponse[]): string {
     if (!motivos || motivos.length === 0) return '';
     return motivos.map(m => {
       const codigo = String((m as any).codigo ?? '').toUpperCase();
       const mensaje = String((m as any).mensaje ?? '').trim();
       const detalle = String((m as any).detalle ?? '').trim();
-      // Banco -> muestra cuenta y nombre
+
       if (codigo === 'EG_TIENE_CUENTA_BANCO') {
         const cuentaNombre = this.extraerCuentaNombreBanco(detalle);
         return `Motivo: ${mensaje}\nCuenta banco: ${cuentaNombre || detalle}`;
       }
-      // Conciliado -> sin detalle técnico
       if (codigo === 'ASIENTO_CONCILIADO') {
         return `Motivo: ${mensaje}`;
       }
-      // Otros
       return `Motivo: ${mensaje}`;
     }).join('\n\n');
-  ////
   }
-  
+
   private extraerCuentaNombreBanco(detalle: string): string {
     if (!detalle) return '';
     const cuentaMatch = detalle.match(/Cuenta\s*:\s*([^,|]+)/i);
@@ -1102,9 +893,6 @@ confirmarEliminar(row: ListadoAsientoContableResponse): void {
     if (cuenta && nombre) return `${cuenta} - ${nombre}`;
     return detalle.replace(/^IdCodigoEspecial.*?\.\s*/i, '').trim();
   }
-  
-  ///AÑADIR MAS METODOS
-  ////
 }
 
 /* ================== Helpers ================== */
