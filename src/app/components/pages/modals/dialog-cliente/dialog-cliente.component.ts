@@ -589,7 +589,7 @@ actualizarValidacionRuc(): void {
         const v = (control.value || '').trim();
         if (!v) return { required: true };
         // alfanumérico y -_/ solo de 6 a 20
-        const ok = /^[A-Za-z0-9\-_/]{6,20}$/.test(v);
+        const ok = /^[A-Za-z0-9\-_/]{1,20}$/.test(v);
         return ok ? null : { formatoPasaporte: true };
       }
     ]);

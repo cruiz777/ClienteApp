@@ -1,15 +1,34 @@
 // src/app/services/autorizacion-caja.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, catchError, map, throwError } from 'rxjs';
+import { Observable, catchError, map, throwError, firstValueFrom } from 'rxjs';
 import { environment } from 'src/environments/environment';
+
+import {
+  TipoDocumentoSriService,
+  TipoDocumentoSriResponse,
+  ApiResponse as ApiResponseTipoDoc,
+  PaginationResponse as PaginationResponseTipoDoc,
+} from 'src/app/services/tipo-documento-sri.service';
 
 @Injectable({ providedIn: 'root' })
 export class AutorizacionCajaService {
   private apiBaseUrl = environment.invoices_sic; // ej: http://localhost:5010/invoices-sic/api
 
-  constructor(private http: HttpClient) {}
+  // =======================
+  // Cache Tipos Documento SRI (NO QUEMADO)
+  // =======================
+  private tiposDocMap = new Map<number, string>();
+  private tiposDocCargados = false;
 
+  constructor(
+    private http: HttpClient,
+    private tipoDocSriService: TipoDocumentoSriService
+  ) {}
+
+  // =======================
+  // Helpers text/plain
+  // =======================
   private headersTextPlain(): HttpHeaders {
     // tu swagger pide Accept:text/plain aunque el contenido sea JSON
     return new HttpHeaders({ Accept: 'text/plain', 'Content-Type': 'application/json' });
@@ -18,6 +37,40 @@ export class AutorizacionCajaService {
   private parseText<T>(t: string): T {
     return JSON.parse(t) as T;
   }
+
+  // =======================
+  // Cargar catálogo TipoDocumentoSri (1 sola vez)
+  // =======================
+  async ensureTiposDocumentoLoaded(): Promise<void> {
+    if (this.tiposDocCargados) return;
+
+    const resp = await firstValueFrom(
+      this.tipoDocSriService.getAll(1, 9999) as Observable<ApiResponseTipoDoc<PaginationResponseTipoDoc<TipoDocumentoSriResponse>>>
+    );
+
+    if ((resp.type || '').toLowerCase() === 'success') {
+      const items = resp.data?.items ?? [];
+      this.tiposDocMap.clear();
+
+      items.forEach((x: TipoDocumentoSriResponse) => {
+        if (x?.idTipoDocumento != null) {
+          this.tiposDocMap.set(x.idTipoDocumento, (x.descripcion ?? '').trim());
+        }
+      });
+
+      this.tiposDocCargados = true;
+    }
+  }
+
+  /** ✅ Label dinámico (ya NO quemado) */
+  tipoDocumentoLabel(idTipoDocumento?: number | null): string {
+    if (idTipoDocumento == null) return '—';
+    return this.tiposDocMap.get(idTipoDocumento) || `TIPO ${idTipoDocumento}`;
+  }
+
+  // =======================
+  // ENDPOINTS AutorizacionCaja
+  // =======================
 
   /** ✅ GET por ID */
   getAutorizacionCaja(id: number): Observable<ApiResponse<AutorizacionCaja>> {
@@ -67,14 +120,6 @@ export class AutorizacionCajaService {
         map(t => this.parseText<ApiResponse<AutorizacionCaja>>(t)),
         catchError(this.handleError)
       );
-  }
-
-  /** 1=FACTURA, 2=NC */
-  tipoDocumentoLabel(idTipoDocumento?: number | null): string {
-    if (idTipoDocumento === 1) return 'FACTURA';
-    if (idTipoDocumento === 2) return 'NOTA DE CRÉDITO';
-    if (idTipoDocumento === 3) return 'RETENCION';
-    return idTipoDocumento != null ? `TIPO ${idTipoDocumento}` : '—';
   }
 
   private handleError(err: any) {
@@ -134,4 +179,5 @@ export interface AutorizacionCaja {
 }
 
 /** ✅ Request para crear/editar */
-export type AutorizacionCajaUpsertRequest = Partial<Omit<AutorizacionCaja, 'id_autorizacion_caja' | 'tipo_documento_descripcion'>>;
+export type AutorizacionCajaUpsertRequest =
+  Partial<Omit<AutorizacionCaja, 'id_autorizacion_caja' | 'tipo_documento_descripcion'>>;

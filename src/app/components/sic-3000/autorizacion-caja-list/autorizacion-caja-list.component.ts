@@ -44,9 +44,11 @@ export class AutorizacionCajaListComponent implements OnInit {
     private dialog: MatDialog
   ) {}
 
-  ngOnInit(): void {
-    this.cargar();
-  }
+ async ngOnInit(): Promise<void> {
+  await this.autCajaService.ensureTiposDocumentoLoaded();
+  this.cargar();
+}
+
 
   cargar(page: number = 1): void {
     this.loading = true;

@@ -15,7 +15,7 @@ import { LogoService } from 'src/app/services/logo.service';
 import { AuditoriaTransferenciaService } from 'src/app/services/auditoria-transferencia.service';
 import { CuponService } from 'src/app/services/cupones.service';
 import { SsccService } from 'src/app/services/sscc.service';
-
+import {  HostListener } from '@angular/core';
 import { ClienteSummary } from 'src/app/interfaces/responses/cliente-summary-response';
 
 import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
@@ -113,7 +113,11 @@ botonAsignarActivo: boolean = true;
 
   columnDefs: ColDef[] = [
     { headerName: '#', valueGetter: 'node.rowIndex + 1', width: 50, editable: false },
-    { headerName: 'Unidad Venta', field: 'UnidadVenta', width: 150, editable: true },
+    { headerName: 'Unidad Venta', field: 'UnidadVenta', width: 150, editable: true,
+ cellClass: 'col-unidad-venta',
+  headerClass: 'col-unidad-venta-header'
+
+     },
     { headerName: 'Descripcion', field: 'Descripcion', width: 300, editable: false },
     { headerName: 'Prefijo', field: 'Prefijo', width: 100, editable: false },
     { headerName: 'Gtin', field: 'Gtin', width: 100, editable: false },
@@ -482,14 +486,16 @@ this.transferir = [];
     return cliente ? cliente.nomcli : '';
   }
 
-  onPrefijoBlur(): void {
-    const idSeleccionado = this.formUV.value.gcp;
-    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
-    if (objeto?.gln) {
-      this.formUV.patchValue({ gln: objeto.gln });
-      this.bandera = objeto.bandera;
-    }
+ onPrefijoBlur(): void {
+  const idSeleccionado = this.formUV.value.gcp;
+  const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+
+  if (objeto) {
+    this.bandera = objeto.bandera;
+    // NO hagas patchValue('gln') si el control no existe
   }
+}
+
 
   generarFilas(): void {
     const cantidad = this.formUV.value.mostrar;
@@ -515,12 +521,18 @@ this.transferir = [];
     this.transferir = nuevasFilas;
   }
 
-  onGridReady(params: any) {
-    this.gridApi = params.api;
+onGridReady(params: any) {
+  this.gridApi = params.api;
 
+  // Permite seleccionar columna desde el encabezado (como en Bloque)
+  params.api.addEventListener('cellClicked', (event: any) => {
+    if (event.rowIndex == null) {
+      const field = event.column?.getColDef?.()?.field;
+      this.selectedColKey = field ?? event.column?.getColId?.() ?? null;
+    }
+  });
+}
 
-
-  }
   onCellValueChanged(event: any): void {
     const field = event.colDef.field;
     const newValue = event.newValue;
@@ -611,7 +623,72 @@ exportar(tipo: 'excel' | 'pdf'): void {
     this.exportService.exportarPDF(options);
   }
 }
+selectedColKey: string | null = null;
 
+private commitGridChanges(): void {
+  if (!this.gridApi) return;
+  this.gridApi.stopEditing();
+  this.gridApi.refreshCells({ force: true });
+}
+
+@HostListener('paste', ['$event'])
+onPasteExcelToGrid(event: ClipboardEvent): void {
+  if (!this.gridApi) return;
+
+  const activeElement = document.activeElement as HTMLElement | null;
+  const target = (event.target as HTMLElement | null) ?? activeElement;
+
+  const estaDentroDelGrid = !!target && !!target.closest('.ag-root');
+
+  // Si no está dentro del grid y no hay columna seleccionada (header), no hacemos nada
+  if (!estaDentroDelGrid && !this.selectedColKey) return;
+
+  const text = event.clipboardData?.getData('text/plain') ?? '';
+  if (!text.trim()) return;
+
+  event.preventDefault();
+  this.commitGridChanges();
+
+  const rows = text
+    .split(/\r?\n/)
+    .map(r => r.trim())
+    .filter(r => r !== '');
+
+  if (!rows.length) return;
+  if (!this.transferir || this.transferir.length === 0) return;
+
+  const focus = this.gridApi.getFocusedCell();
+
+  let startRowIndex = focus?.rowIndex ?? 0;
+  let startField = focus?.column?.getColDef?.()?.field ?? this.selectedColKey;
+
+  // En tu grilla, lo lógico es pegar SOLO en "UnidadVenta"
+  const pasteField = 'UnidadVenta';
+
+  // Si el usuario tiene otra columna enfocada, igual pegamos en UnidadVenta
+  if (!startField) startField = pasteField;
+
+  const updated = [...this.transferir];
+
+  rows.forEach((rowText, rIdx) => {
+    const rowIndex = startRowIndex + rIdx;
+    if (rowIndex >= updated.length) return;
+
+    // Excel viene tabulado: tomamos la primera columna
+    const firstCell = (rowText.split('\t')[0] ?? '').trim();
+
+    updated[rowIndex] = {
+      ...updated[rowIndex],
+      UnidadVenta: firstCell
+    };
+  });
+
+  this.transferir = updated;
+
+  // Refresca visual
+  this.gridApi.refreshCells({ force: true, columns: [pasteField] });
+  this.gridApi.redrawRows();
+}
 
 
 }
