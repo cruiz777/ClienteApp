@@ -16,9 +16,9 @@
           <label for="zona">Zona:</label>
           <select id="zona" [(ngModel)]="zonaFiltro" (ngModelChange)="aplicarFiltros()">
             <option value="">Todas</option>
-            <option value="ZONA 1">ZONA 1</option>
-            <option value="ZONA 2">ZONA 2</option>
-            <option value="ZONA 3">ZONA 3</option>
+            <option *ngFor="let zona of zonas" [value]="zona.nombre">
+              {{ zona.nombre }}
+            </option>
           </select>
         </div>
 
@@ -85,7 +85,7 @@
         <!-- Checkboxes de acciones masivas -->
         <div class="filtro-checkboxes">
           <label>
-            <input type="checkbox" [checked]="marcarTodos" (change)="toggleSeleccionTodos($event)" 
+            <input type="checkbox" [checked]="marcarTodos" (change)="toggleSeleccionTodos($event)"
               [disabled]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar'))"
               [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? '1' : '0.3'"
               [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'auto' : 'none'"
@@ -95,7 +95,7 @@
             Marcar validación
           </label>
           <label>
-            <input type="checkbox" (change)="toggleActualizarTodos($event)" 
+            <input type="checkbox" (change)="toggleActualizarTodos($event)"
               [disabled]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion'))"
               [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? '1' : '0.3'"
               [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? 'auto' : 'none'"
@@ -109,7 +109,10 @@
 
       <!-- Contador de registros -->
       <p>
-        Número de Registros: {{ totalItems }} 
+        Número de Registros: {{ totalItems }}
+        <span *ngIf="letraFiltro || zonaFiltro || textoBusqueda">
+          (filtrados)
+        </span>
       </p>
 
       <!-- Mensaje informativo -->
@@ -141,14 +144,14 @@
             </tr>
           </thead>
           <tbody>
-            <ng-container *ngFor="let cliente of clientesFiltrados; let i = index">
+            <ng-container *ngFor="let cliente of clientes; let i = index">
               <!-- Fila principal -->
               <tr class="fila-original">
                 <td>{{ i + 1 }}</td>
                 <td>
                   <input type="checkbox"
                          [checked]="seleccionados[cliente.clientes_codigo] || false"
-                         (change)="toggleSeleccionUno(cliente.clientes_codigo, $event)" 
+                         (change)="toggleSeleccionUno(cliente.clientes_codigo, $event)"
                          [disabled]="!((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar'))"
                           [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? '1' : '0.3'"
                           [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.validar')) ? 'auto' : 'none'"
@@ -168,7 +171,7 @@
                 <td>
                   <input type="checkbox"
                          [checked]="actualizarSeleccionados[cliente.clientes_codigo] || false"
-                         (change)="toggleActualizarUno(cliente.clientes_codigo, $event)"       
+                         (change)="toggleActualizarUno(cliente.clientes_codigo, $event)"
                          [disabled]="!cliente.validacionSRI || !((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion'))"
                           [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? '1' : '0.3'"
                           [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.validacion.validacion-sri.actualizacion')) ? 'auto' : 'none'"
@@ -213,7 +216,7 @@
           </tbody>
         </table>
       </div>
-      <mat-paginator 
+      <mat-paginator
         [length]="totalItems"
         [pageSize]="pageSize"
         [pageSizeOptions]="pageSizeOptions"

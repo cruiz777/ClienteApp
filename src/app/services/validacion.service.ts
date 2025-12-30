@@ -5,7 +5,7 @@ import { environment } from 'src/environments/environment';
 import { ApiListResponse } from '../interfaces/responses/ApiListResponse';
 import { ApiResponse } from '../interfaces/responses/api-response';
 import { PaginationResponse } from '../interfaces/responses/pagination-response';
-import { UpdateClienteRequest } from '../interfaces/requests/update-cliente-request';
+import { UpdateClienteRequest, UpdateClientesMasivoRequest } from '../interfaces/requests/update-cliente-request';
 import { ClienteLicenseResponse } from '../interfaces/responses/cliente-license-response';
 import { ExportLicenseQuery, ExportLicenseResponse } from '../interfaces/responses/export-licenses-response';
 import { ExportProductoResponse, ExportProductosResponse, ProductoDisplay, ProductoLicenseResponse } from '../interfaces/responses/products-license-response';
@@ -14,6 +14,7 @@ import { SendToApiRequest } from '../interfaces/requests/enviar-api-verified-req
 import { ProductoDetalleResponse } from '../interfaces/responses/producto-detalle-response';
 import { ClienteValidadoDTO, ClienteValidadoResultadoDTO } from '../interfaces/requests/cliente-validado';
 import { ClienteBasicoResponse } from '../interfaces/responses/cliente-validar-response';
+import { BatchUpdateResult } from '../interfaces/requests/batch-update-result';
 
 
 export interface ClienteLicenseQuery {
@@ -41,7 +42,7 @@ export class ValidacionService {
     validarMasivo(clienteIds: number[]): Observable<ApiResponse<ClienteValidadoResultadoDTO[]>> {
       return this.http.post<ApiResponse<ClienteValidadoResultadoDTO[]>>(`${this.baseUrl}/ClientesLicenses/validar-masivo`, clienteIds);
     }
-  
+
     // ✅ Validación Unitaria
     validarUno(clienteId: number): Observable<ApiResponse<ClienteValidadoDTO>> {
       return this.http.post<ApiResponse<ClienteValidadoDTO>>(
@@ -55,17 +56,61 @@ export class ValidacionService {
   updateCliente(idCliente: number, request: UpdateClienteRequest): Observable<ApiListResponse<boolean>> {
     return this.http.put<ApiListResponse<boolean>>(`${this.baseUrl}/ClientesLicenses/validacion/${idCliente}`, request);
   }
-
+  //ACTUALIZA MASIVAMENTE LOS REGISTROS EN VEZ DE 1 A 1
+  updateClientesMasivo(request: UpdateClientesMasivoRequest): Observable<ApiResponse<BatchUpdateResult>> {
+    return this.http.put<ApiResponse<BatchUpdateResult>>(
+      `${this.baseUrl}/ClientesLicenses/batch`,
+      request
+    );
+  }
   getClientesBasicos(
     page: number = 1,
-    pageSize: number = 10
+    pageSize: number = 10,
+    letraInicial?: string,
+    zona?: string,
+    textoBusqueda?: string
   ): Observable<ApiResponse<PaginationResponse<ClienteBasicoResponse>>> {
     let params = new HttpParams()
       .set('page', page.toString())
       .set('pageSize', pageSize.toString());
 
+    // ✅ Agregar filtros si existen
+    if (letraInicial && letraInicial.trim()) {
+      params = params.set('letraInicial', letraInicial.trim());
+    }
+    if (zona && zona.trim()) {
+      params = params.set('zona', zona.trim());
+    }
+    if (textoBusqueda && textoBusqueda.trim()) {
+      params = params.set('textoBusqueda', textoBusqueda.trim());
+    }
+
     return this.http.get<ApiResponse<PaginationResponse<ClienteBasicoResponse>>>(
-      `${this.baseUrl}/ClientesLicenses/basicos`, 
+      `${this.baseUrl}/ClientesLicenses/basicos`,
+      { params }
+    );
+  }
+
+  // NUEVO MÉTODO para obtener todos los IDs filtrados
+  getClientesIdsFiltrados(
+    letraInicial?: string,
+    zona?: string,
+    textoBusqueda?: string
+  ): Observable<ApiResponse<number[]>> {
+    let params = new HttpParams();
+
+    if (letraInicial && letraInicial.trim()) {
+      params = params.set('letraInicial', letraInicial.trim());
+    }
+    if (zona && zona.trim()) {
+      params = params.set('zona', zona.trim());
+    }
+    if (textoBusqueda && textoBusqueda.trim()) {
+      params = params.set('textoBusqueda', textoBusqueda.trim());
+    }
+
+    return this.http.get<ApiResponse<number[]>>(
+      `${this.baseUrl}/ClientesLicenses/basicos/ids`,
       { params }
     );
   }
@@ -76,7 +121,7 @@ export class ValidacionService {
    */
   getClientesLicense(query?: ClienteLicenseQuery): Observable<ApiResponse<PaginationResponse<ClienteLicenseResponse>>> {
     let params = new HttpParams();
-    
+
     if (query) {
       // Agregar parámetros solo si tienen valor
       if (query.nombreCliente) {
@@ -112,7 +157,7 @@ export class ValidacionService {
     }
 
     return this.http.get<ApiResponse<PaginationResponse<ClienteLicenseResponse>>>(
-      `${this.baseUrl}/ClientesLicenses/licenses`, 
+      `${this.baseUrl}/ClientesLicenses/licenses`,
       { params }
     );
   }
@@ -152,7 +197,7 @@ export class ValidacionService {
    */
   exportClientesLicense(query?: ExportLicenseQuery): Observable<ApiResponse<ExportLicenseResponse>> {
     let params = new HttpParams();
-    
+
     if (query) {
       if (query.nombreCliente) params = params.set('nombreCliente', query.nombreCliente);
       if (query.codigoPrefijo) params = params.set('codigoPrefijo', query.codigoPrefijo);
@@ -166,7 +211,7 @@ export class ValidacionService {
     }
 
     return this.http.get<ApiResponse<ExportLicenseResponse>>(
-      `${this.baseUrl}/ClientesLicenses/licenses/export`, 
+      `${this.baseUrl}/ClientesLicenses/licenses/export`,
       { params }
     );
   }
@@ -178,7 +223,7 @@ export class ValidacionService {
    */
   getProductosLicense(query?: ProductoLicenseQuery): Observable<ApiResponse<PaginationResponse<ProductoLicenseResponse>>> {
     let params = new HttpParams();
-    
+
     if (query) {
       // Filtros de texto
       if (query.nombreCliente) {
@@ -231,7 +276,7 @@ export class ValidacionService {
     }
 
     return this.http.get<ApiResponse<PaginationResponse<ProductoLicenseResponse>>>(
-      `${this.baseUrl}/ProductosLicenses/licenses`, 
+      `${this.baseUrl}/ProductosLicenses/licenses`,
       { params }
     );
   }
@@ -242,7 +287,7 @@ export class ValidacionService {
    */
   exportProductosLicense(query?: ExportProductosQuery): Observable<ApiResponse<ExportProductosResponse>> {
     let params = new HttpParams();
-    
+
     if (query) {
       // Filtros de texto
       if (query.nombreCliente) {
@@ -292,7 +337,7 @@ export class ValidacionService {
     }
 
     return this.http.get<ApiResponse<ExportProductosResponse>>(
-      `${this.baseUrl}/ProductosLicenses/licenses/export`, 
+      `${this.baseUrl}/ProductosLicenses/licenses/export`,
       { params }
     );
   }
@@ -331,7 +376,7 @@ export class ValidacionService {
       apiType: 'licenses',
       products: licencias   // Directamente las licencias, no anidado
     };
-    
+
     return this.sendProductosToApi(request);
   }
 
@@ -400,8 +445,8 @@ export class ValidacionService {
    * Convierte filtros del formulario a ProductoLicenseQuery
    */
   mapSearchParamsToProductoQuery(
-    searchParams: any, 
-    currentPage: number, 
+    searchParams: any,
+    currentPage: number,
     pageSize: number
   ): ProductoLicenseQuery {
     return {
@@ -411,9 +456,9 @@ export class ValidacionService {
       fechaHasta: searchParams.fechaHasta,
       fechaIgual: searchParams.fechaIgual,
       ruc: searchParams.ruc,
-      estadoPrefijo: searchParams.prefijoEstado === 'active' ? true : 
+      estadoPrefijo: searchParams.prefijoEstado === 'active' ? true :
                       searchParams.prefijoEstado === 'inactive' ? false : undefined,
-      estadoEmpresa: searchParams.empresaEstado === 'active' ? 1 : 
+      estadoEmpresa: searchParams.empresaEstado === 'active' ? 1 :
                      searchParams.empresaEstado === 'inactive' ? 2 : undefined,
       estadoGtin: searchParams.gtinEstado === 'active' ? true :
                   searchParams.gtinEstado === 'inactive' ? false : undefined,
@@ -427,7 +472,7 @@ export class ValidacionService {
    * Convierte filtros del formulario a ExportProductosQuery
    */
   mapSearchParamsToExportQuery(
-    searchParams: any, 
+    searchParams: any,
     batchSize: number = 1000
   ): ExportProductosQuery {
     return {
@@ -437,9 +482,9 @@ export class ValidacionService {
       fechaHasta: searchParams.fechaHasta,
       fechaIgual: searchParams.fechaIgual,
       ruc: searchParams.ruc,
-      estadoPrefijo: searchParams.prefijoEstado === 'active' ? true : 
+      estadoPrefijo: searchParams.prefijoEstado === 'active' ? true :
                       searchParams.prefijoEstado === 'inactive' ? false : undefined,
-      estadoEmpresa: searchParams.empresaEstado === 'active' ? 1 : 
+      estadoEmpresa: searchParams.empresaEstado === 'active' ? 1 :
                      searchParams.empresaEstado === 'inactive' ? 2 : undefined,
       estadoGtin: searchParams.gtinEstado === 'active' ? true :
                   searchParams.gtinEstado === 'inactive' ? false : undefined,
@@ -475,9 +520,9 @@ export class ValidacionService {
  */
 getProductoDetalle(gtin: string): Observable<ApiResponse<ProductoDetalleResponse>> {
   const params = new HttpParams().set('gtin', gtin);
-  
+
   return this.http.get<ApiResponse<ProductoDetalleResponse>>(
-    `${this.baseUrl}/ProductosLicenses/detalle`, 
+    `${this.baseUrl}/ProductosLicenses/detalle`,
     { params }
   );
 }

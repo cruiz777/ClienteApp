@@ -7,3 +7,12 @@ export interface UpdateClienteRequest {
   motivoCeseAct?: string;
   fecnac?: string | null; // Permitir null explícitamente
 }
+export interface ClienteUpdateDto {
+  clienteId: number;
+  data: UpdateClienteRequest;
+}
+
+// Request completo para batch
+export interface UpdateClientesMasivoRequest {
+  clientes: ClienteUpdateDto[];
+}
