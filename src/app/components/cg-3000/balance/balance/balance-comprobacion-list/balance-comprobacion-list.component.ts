@@ -287,6 +287,8 @@ export class BalanceComprobacionComponent implements OnInit {
 
   toggleModoCuenta(): void {
     this.modoFiltro1 = this.modoFiltro1 === 'cuenta' ? null : 'cuenta';
+    this.filtros.cuentaA = undefined;
+    this.filtros.cuentaB = undefined;
   }
 
   toggleModoLocal(): void {
@@ -308,23 +310,64 @@ export class BalanceComprobacionComponent implements OnInit {
    * ========================================================== */
 
   consultar(): void {
-    // Validación mínima de fechas
-    if (!this.filtros.fechaDesde || !this.filtros.fechaHasta) return;
 
+    // 1) Validar fechas (obligatorias)
+    const d1 = (this.filtros.fechaDesde ?? '').trim();
+    const d2 = (this.filtros.fechaHasta ?? '').trim();
+
+    if (!d1 || !d2) {
+      console.warn('Debe ingresar Fecha Inicio y Fecha Final');
+      return;
+    }
+
+    // 2) Validar orden de fechas (seguro si es YYYY-MM-DD)
+    // Si tu input es <input type="date">, normalmente ya te da YYYY-MM-DD.
+    const dateDesde = new Date(d1);
+    const dateHasta = new Date(d2);
+
+    if (isNaN(dateDesde.getTime()) || isNaN(dateHasta.getTime())) {
+      console.warn('Formato de fecha inválido');
+      return;
+    }
+
+    if (dateDesde > dateHasta) {
+      console.warn('La Fecha Inicial no puede ser mayor a la Fecha Final');
+      return;
+    }
+
+    // 3) Validar cuentas SOLO si el modo "cuenta" está activo
+    if (this.modoFiltro1 === 'cuenta') {
+      const desde = (this.filtros.cuentaA ?? '').trim();
+      const hasta = (this.filtros.cuentaB ?? '').trim();
+
+      const tieneDesde = !!desde;
+      const tieneHasta = !!hasta;
+
+      // Regla: si llena una, debe llenar la otra
+      if (tieneDesde !== tieneHasta) {
+        console.warn('Para filtrar por cuenta debe ingresar CUENTA A y CUENTA B');
+        return;
+      }
+
+      // (Opcional recomendado) Validar orden de cuentas si ambas vienen
+      if (tieneDesde && tieneHasta) {
+        // Comparación simple (si tus cuentas son códigos comparables alfabéticamente)
+        if (hasta.localeCompare(desde) < 0) {
+          console.warn('CUENTA B no puede ser menor que CUENTA A');
+          return;
+        }
+      }
+    }
+
+    // ===== aquí sigue tu lógica actual, sin tocar =====
     this.loading = true;
 
     this.balanceService.getByCondicionBalanceComprobacion(this.filtros).subscribe({
       next: (resp) => {
-        // dataset crudo
         const data = resp?.data ?? [];
         this.resultados = data;
-
-        // dataset “reporte impreso”
         this.rowData = this.buildReporteRows(data);
-
-        // recalcular totales pinned luego de render
         setTimeout(() => this.actualizarTotalesPinned(), 0);
-
         this.loading = false;
       },
       error: () => {
@@ -848,4 +891,44 @@ export class BalanceComprobacionComponent implements OnInit {
       total: t.total,
     };
   }
+
+  /* ==========================================================
+   * 14) Se parece NgxMask: CUENTA A / CUENTA B
+   * ========================================================== */
+
+  private readonly CUENTA_REGEX = /^\d{6}-\d{3}$/;
+
+  // Se llama en (input)
+  onCuentaInput(tipo: 'A' | 'B', ev: Event): void {
+    const input = ev.target as HTMLInputElement;
+    let v = (input.value ?? '').replace(/\D/g, ''); // solo dígitos
+
+    // max 9 dígitos (6 + 3)
+    if (v.length > 9) v = v.slice(0, 9);
+
+    // inserta guion después de 6 dígitos
+    if (v.length > 6) v = `${v.slice(0, 6)}-${v.slice(6)}`;
+
+    input.value = v; // actualiza el input visible
+
+    if (tipo === 'A') this.filtros.cuentaA = v;
+    else this.filtros.cuentaB = v;
+  }
+
+  // Se llama en (blur): valida formato completo
+  onCuentaBlur(tipo: 'A' | 'B'): void {
+    const v = (tipo === 'A' ? this.filtros.cuentaA : this.filtros.cuentaB) ?? '';
+    const t = v.trim();
+
+    // si está vacío, no molestar (la regla de “ambas cuentas” ya la validas en consultar())
+    if (!t) return;
+
+    if (!this.CUENTA_REGEX.test(t)) {
+      console.warn('Formato de cuenta inválido. Use: 110101-001');
+      // opcional: limpiar campo para obligar corrección
+      // if (tipo === 'A') this.filtros.cuentaA = '';
+      // else this.filtros.cuentaB = '';
+    }
+  }
+
 }

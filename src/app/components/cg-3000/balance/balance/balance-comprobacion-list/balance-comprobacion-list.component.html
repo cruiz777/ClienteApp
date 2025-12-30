@@ -51,12 +51,14 @@
       <div class="secondary-grid">
         <div class="fg" *ngIf="modoFiltro1 === 'cuenta'">
           <label class="fg-label" for="cuentaA">Cuenta inicial</label>
-          <input id="cuentaA" type="text" [(ngModel)]="filtros.cuentaA" class="fg-control"
+          <input id="cuentaA" type="text" class="fg-control" [(ngModel)]="filtros.cuentaA"
+            (input)="onCuentaInput('A', $event)" (blur)="onCuentaBlur('A')" maxlength="10"
             placeholder="Ej: 110101-001" />
         </div>
         <div class="fg" *ngIf="modoFiltro1 === 'cuenta'">
           <label class="fg-label" for="cuentaB">Cuenta final</label>
-          <input id="cuentaB" type="text" [(ngModel)]="filtros.cuentaB" class="fg-control"
+          <input id="cuentaB" type="text" class="fg-control" [(ngModel)]="filtros.cuentaB"
+            (input)="onCuentaInput('B', $event)" (blur)="onCuentaBlur('B')" maxlength="10"
             placeholder="Ej: 110101-002" />
         </div>
       </div>
