@@ -7,6 +7,7 @@ import { RetencionesResumenResponse } from 'src/app/interfaces/responses/retenci
 import { RetencionesResponse } from '../interfaces/responses/retenciones-response';
 import { RetencionesRequest } from '../interfaces/requests/retenciones-request';
 import { RetencionesImpresionResponse } from 'src/app/interfaces/responses/retenciones-impresion-response';
+import { GenerarXmlRetencionResponse } from '../interfaces/responses/generar-xml-retencion-response';
 
 
 export interface ApiResponse<T> {
@@ -192,6 +193,30 @@ createLote(req: RetencionesRequest[]): Observable<CreateRetencionesResultRespons
     }
 
     ////
-    
 
+    /**
+   * POST /Retenciones/{idRetencion}/xml
+   * Genera el XML de retención y lo envía para autorización.
+   */
+  generarXml(idRetencion: number): Observable<GenerarXmlRetencionResponse> {
+    return this.http
+      .post<GenerarXmlRetencionResponse>(`${this.baseUrl}/${idRetencion}/xml`, null)
+      .pipe(
+        map(resp => {
+          // Validación: si success es false, lanzamos error
+          if (!resp.success) {
+            throw new Error(resp.message || 'Error al generar XML de retención.');
+          }
+          return resp;
+        }),
+        catchError(err => {
+          const backendMsg =
+            err?.error?.message ||
+            err?.error?.Message ||
+            err?.message ||
+            'Error al generar XML de retención.';
+          return throwError(() => new Error(backendMsg));
+        })
+      );
+  }
 }
