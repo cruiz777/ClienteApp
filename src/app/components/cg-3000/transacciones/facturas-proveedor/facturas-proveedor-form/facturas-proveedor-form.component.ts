@@ -178,7 +178,7 @@ export class FacturasProveedorFormComponent implements OnInit {
   motivoSoloLectura = signal<string>('');
   isViewOnly = computed(() => this.soloLectura() === true);
   ////end
-  //RECUPERA USUARIO DEL ASIENTO: 
+  //RECUPERA USUARIO DEL ASIENTO:
   usuarioAsientoNombre = signal<string>('');
   private usuarioAsientoIdCargado: number | null = null;
   //END
@@ -241,7 +241,7 @@ export class FacturasProveedorFormComponent implements OnInit {
 
   //// ✅ No. comprobante (solo números) + validación duplicado por backend (en NUEVO antes de agregar línea)
   nroComprobanteCtrl = new FormControl<string>('', [
-    
+
     //Validators.required,
     //Validators.maxLength(25),
     //Validators.pattern(/^\d+$/),
@@ -1087,7 +1087,7 @@ export class FacturasProveedorFormComponent implements OnInit {
     });
   }
   */
- 
+
   private cargarPorcentajesIva(): void {
     const empresaId = this.usuarioActual?.id_empresa ?? 0;
 
@@ -1119,7 +1119,7 @@ export class FacturasProveedorFormComponent implements OnInit {
   }
 
   //porcentaje iva///
-  
+
   ////
 
   ngOnInit(): void {
@@ -1765,7 +1765,7 @@ export class FacturasProveedorFormComponent implements OnInit {
             };
           });
 
-          
+
 
         this.movimientosBancariosLoaded = true;
         this.refrescarColumnasDetalle();
@@ -1807,7 +1807,7 @@ export class FacturasProveedorFormComponent implements OnInit {
       },
     });
   }
-  
+
   private cargarSustentosTributarios(): void {
     this.sustentoTribService.getAll().subscribe({
       next: (resp) => {
@@ -1949,7 +1949,7 @@ export class FacturasProveedorFormComponent implements OnInit {
     const nowIso = formatLocalIso(ahora);
 
     const fechaTransControl = this.form.get('fechatransaccion')!.value;
-    
+
     if (!fechaTransControl) {
       this.snack.open('Debe ingresar la Fecha de Transacción.', 'Cerrar', {
         duration: 3000,
@@ -2129,8 +2129,58 @@ export class FacturasProveedorFormComponent implements OnInit {
     this.gridApi = evt.api;
     this.refrescarColumnasDetalle();
   }
+  /**
+ * Recalcula automáticamente IVA, Retenciones de Renta y Retenciones de IVA
+ * cuando cambia el valor de una factura base (FCB/FCS/FSB/FSS)
+ */
+  private recalcularLineasDependientes(rowIndexFactura: number): void {
+    const filas = this.rowData() ?? [];
 
+    for (let i = rowIndexFactura + 1; i < filas.length; i++) {
+      const fila = filas[i];
+      const mov = (fila.movbancario || '').toString().trim().toUpperCase();
+
+      // ✅ Recalcular IVA (IB/IS)
+      if (['IB', 'IS'].includes(mov)) {
+        this.calcularIvaDesdeFactura(i);
+      }
+
+      // ✅ Recalcular Retención de Renta (RFB/RFS)
+      if (['RFB', 'RFS'].includes(mov)) {
+        this.calcularRetencionDesdeFactura(i);
+      }
+
+      // ✅ Recalcular Retención de IVA (RIB/RIS)
+      if (['RIB', 'RIS'].includes(mov)) {
+        this.calcularRetencionIvaDesdeIva(i);
+      }
+    }
+
+    // ✅ Actualizar grid
+    this.rowData.set([...filas]);
+    this.gridApi?.refreshCells({ force: true, columns: ['debe', 'haber'] });
+  }
   onCellValueChanged(evt: CellValueChangedEvent<DetalleAsientoResponse>): void {
+    if (evt.colDef.field === 'debe' || evt.colDef.field === 'haber') {
+      const filas = this.rowData() ?? [];
+      const rowIndex = evt.node.rowIndex ?? 0;
+      const lastIndex = filas.length - 1;
+
+      this.rowData.set([...filas]);
+
+      // ✅ NUEVO: Recalcular líneas dependientes automáticamente
+      const movActual = (evt.data?.movbancario || '').toString().trim().toUpperCase();
+
+      // Si cambió el debe de una FACTURA (FCB/FCS/FSB/FSS), recalcular IVA y retenciones posteriores
+      if (['FCB', 'FCS', 'FSB', 'FSS'].includes(movActual) && evt.colDef.field === 'debe') {
+        this.recalcularLineasDependientes(rowIndex);
+      }
+
+      // Recalcular saldo final (última línea)
+      if (rowIndex < lastIndex) {
+        this.recalcularHaberDesdeDebe(false);
+      }
+    }
     if (evt.colDef.field === 'debe' || evt.colDef.field === 'haber') {
       const filas = this.rowData() ?? [];
       const rowIndex = evt.node.rowIndex ?? 0;
@@ -2356,7 +2406,7 @@ export class FacturasProveedorFormComponent implements OnInit {
       this.snack.open(msg, 'Cerrar', { duration: 3500, horizontalPosition: 'right', verticalPosition: 'top' });
       return;
     }
-    
+
     const idZonaCtrl = this.form.get('idZona');
     const idTipoAsientoCtrl = this.form.get('idTipoAsiento');
     const idZona = Number(idZonaCtrl?.value || 0);
