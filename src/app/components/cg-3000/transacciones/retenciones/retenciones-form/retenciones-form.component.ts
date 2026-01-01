@@ -59,7 +59,7 @@ type RetRow = RetencionesRequest & {
     MatProgressSpinnerModule,
     MatDatepickerModule,
     MatNativeDateModule,
-    MatDialogModule, 
+    MatDialogModule,
   ],
   templateUrl: './retenciones-form.component.html',
   styleUrls: ['./retenciones-form.component.css'],
@@ -132,14 +132,14 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
     { headerName: 'TipCompVta', field: 'tipcompvta', width: 120 },
     { headerName: 'EjerFiscal', field: 'ejerfiscal', width: 110 },
     { headerName: 'DesComp', field: 'descomp', width: 180 },
- 
+
     { headerName: 'Base', field: 'baseimponible', width: 100, valueParser: p => p.newValue === '' ? null : Number(p.newValue) },
     { headerName: '%Ret', field: 'porcentajeretencion', width: 100, valueParser: p => p.newValue === '' ? null : Number(p.newValue) },
     { headerName: 'ValorRet', field: 'valorretenido', width: 100, valueParser: p => p.newValue === '' ? null : Number(p.newValue) },
     { headerName: 'TipoComprobante', field: 'tipocomprobante', width: 120 },
-    
+
     { headerName: 'TipoMov', field: 'tipomovimiento', width: 100, },
-    
+
     { headerName: 'IdTipoCompSRI', field: 'idtipocompsri', width: 140, valueParser: p => p.newValue === '' ? null : Number(p.newValue) , hide: true,},
 
     { headerName: 'Empresa', field: 'idempresa', width: 110, editable: false , hide: true,},
@@ -148,7 +148,7 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
     { headerName: 'NumDoc', field: 'numdoc', width: 110 , hide: true,},
     { headerName: 'Línea', field: 'numlinea', width: 90, valueParser: p => Number(p.newValue ?? 0) , hide: true,},
     { headerName: 'Año', field: 'anio', width: 90, hide: true, },
-    
+
 
     {
       headerName: 'Fecha',
@@ -160,12 +160,12 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
     },
     { headerName: 'Hora', field: 'hora', width: 110 , hide: true,},
     { headerName: 'TipoComp', field: 'tipocomp', width: 110 ,  hide: true,},
-    
+
 
     { headerName: 'IdCodContable', field: 'idcodcontable', width: 140, valueParser: p => Number(p.newValue ?? 0) , hide: true,},
-   
 
-   
+
+
     { headerName: 'RUC/CI', field: 'rucci', width: 140 , hide: true,},
     { headerName: 'Contribuyente', field: 'contribuyente', width: 220 , hide: true,},
     { headerName: 'Dirección', field: 'direccion', width: 240 , hide: true,},
@@ -174,11 +174,11 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
 
 
     { headerName: 'IdTipoRet', field: 'idtiporetencion', width: 110, valueParser: p => Number(p.newValue ?? 0) , hide: true,},
-   
+
     { headerName: 'AutRet', field: 'autretencion', width: 170, hide: true, },
     { headerName: 'Estab', field: 'numestablecimiento', width: 110 , hide: true,},
     { headerName: 'PtoEmisión', field: 'puntoemision', width: 110 , hide: true,},
-   
+
 
     {
       headerName: 'Enviado',
@@ -228,7 +228,7 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
     private empresaService: EmpresaService,
     private logoService: LogoService,
     private usuarioService: UsuarioService, ///para grabar usuario anula retencion
-     private dialog: MatDialog, ///mensajes 
+     private dialog: MatDialog, ///mensajes
     private route: ActivatedRoute,
     private router: Router,
     private snack: MatSnackBar,
@@ -636,7 +636,7 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
 
   async grabar(): Promise<void> {
     if (this.readOnly) {
-      this.snack.open('Retencion solo en Modo lectura.', 'OK', { duration: 3500 
+      this.snack.open('Retencion solo en Modo lectura.', 'OK', { duration: 3500
         , horizontalPosition: 'right',
           verticalPosition: 'top',
       });
@@ -841,7 +841,7 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
         this.retencionesService.deleteByCabecera(this.idCabMaestro, this.idEmpresa, this.idUsuario)
       );
 
-      // Mensaje anulado éxitosamente 
+      // Mensaje anulado éxitosamente
       this.snack.open('Retención anulada correctamente.', 'OK', {
         duration: 3500,
         horizontalPosition: 'right',
@@ -935,11 +935,79 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
 
 ///////////
   /////
-  envioSRI(): void {
-    this.snack.open('Envío SRI: pendiente.', 'OK', { duration: 2500 ,
-       horizontalPosition: 'right',
-          verticalPosition: 'top',
+  async envioSRI(): Promise<void> {
+    if (this.loading) return;
+
+    // Validar que esté en modo lectura (ya guardado)
+    if (!this.readOnly) {
+      this.mostrarMensajeAdvertencia('Primero debe GRABAR la retención para enviar al SRI.');
+      return;
+    }
+
+    // Obtener el PRIMER ID de retención guardada
+    const primeraRetencion = (this.rowData ?? [])
+      .map(r => Number(r.idretencion ?? 0))
+      .find(id => id > 0);
+
+    if (!primeraRetencion) {
+      this.mostrarMensajeAdvertencia('No existen retenciones guardadas para enviar al SRI.');
+      return;
+    }
+
+    // ✅ Confirmación
+    const ref = this.mostrarMensaje({
+      title: 'Confirmación',
+      message: '¿Desea generar el XML y enviar la retención al SRI?',
+      type: 'warning',
+      confirmText: 'Sí, enviar',
+      cancelText: 'No',
+      showCancel: true,
     });
+
+    const confirmado = await firstValueFrom(ref.afterClosed());
+    if (!confirmado) return;
+
+    try {
+      this.loading = true;
+
+      const respuesta = await firstValueFrom(
+        this.retencionesService.generarXml(primeraRetencion)
+      );
+
+      if (respuesta.success) {
+        const mensaje = `${respuesta.message || 'XML generado correctamente'}\n\n` +
+                        `Clave de Acceso: ${respuesta.claveAcceso || 'N/A'}\n` +
+                        `Secuencial: ${respuesta.secuencial || 'N/A'}\n` +
+                        `Total Líneas: ${respuesta.totalLineas || 0}`;
+
+        this.mostrarMensaje({
+          title: 'Envío exitoso',
+          message: mensaje,
+          type: 'success',
+          confirmText: 'Aceptar',
+          showCancel: false,
+        });
+      } else {
+        this.mostrarMensaje({
+          title: 'Error',
+          message: respuesta.message || 'No se pudo generar el XML.',
+          type: 'error',
+          confirmText: 'Entendido',
+          showCancel: false,
+        });
+      }
+
+    } catch (err: any) {
+      this.mostrarMensaje({
+        title: 'Error',
+        message: err?.message ?? 'Error al enviar retención al SRI.',
+        type: 'error',
+        confirmText: 'Entendido',
+        showCancel: false,
+      });
+    } finally {
+      this.loading = false;
+    }
   }
 
   // ---------- Validación y Sanitización ----------
@@ -1150,7 +1218,7 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
     }
   }
   ////
- 
+
   private async urlToDataUrl(url: string): Promise<string | null> {
     try {
       // Si tu backend usa cookies/sesión, esto es CLAVE.
