@@ -23,6 +23,12 @@
             <label class="fg-label" for="fechaHasta">Fecha final</label>
             <input id="fechaHasta" type="date" [(ngModel)]="filtros.fechaHasta" class="fg-control" />
           </div>
+          <div class="mode-chipset">
+            <button type="button" class="mode-chip" [class.active]="modoFiltro1 === 'cuenta'"
+              (click)="toggleModoCuenta()">Por cuentas</button>
+            <button type="button" class="mode-chip" [class.active]="modoFiltro2 === 'local' || modoFiltro3 === 'zona'"
+              (click)="toggleModoLocal()">Por local</button>
+          </div>
         </div>
       </div>
 
@@ -43,20 +49,16 @@
     <!-- Fila 2: Modo cuentas -->
     <div class="filters-bottom">
       <div class="secondary-grid">
-        <div class="fg fg-mode">
-          <div class="mode-chipset">
-            <button type="button" class="mode-chip" [class.active]="modoFiltro === 'cuenta'"
-              (click)="toggleModoCuenta()">Por cuentas</button>
-          </div>
-        </div>
-        <div class="fg" *ngIf="modoFiltro === 'cuenta'">
+        <div class="fg" *ngIf="modoFiltro1 === 'cuenta'">
           <label class="fg-label" for="cuentaA">Cuenta inicial</label>
-          <input id="cuentaA" type="text" [(ngModel)]="filtros.cuentaA" class="fg-control"
+          <input id="cuentaA" type="text" class="fg-control" [(ngModel)]="filtros.cuentaA"
+            (input)="onCuentaInput('A', $event)" (blur)="onCuentaBlur('A')" maxlength="10"
             placeholder="Ej: 110101-001" />
         </div>
-        <div class="fg" *ngIf="modoFiltro === 'cuenta'">
+        <div class="fg" *ngIf="modoFiltro1 === 'cuenta'">
           <label class="fg-label" for="cuentaB">Cuenta final</label>
-          <input id="cuentaB" type="text" [(ngModel)]="filtros.cuentaB" class="fg-control"
+          <input id="cuentaB" type="text" class="fg-control" [(ngModel)]="filtros.cuentaB"
+            (input)="onCuentaInput('B', $event)" (blur)="onCuentaBlur('B')" maxlength="10"
             placeholder="Ej: 110101-002" />
         </div>
       </div>
@@ -65,71 +67,46 @@
     <!-- Fila 3: Local y Zona -->
     <div class="filters-bottom">
       <div class="secondary-grid">
-        <div class="fg">
-          <label class="fg-label" for="idLocal">Local</label>
-          <select id="idLocal" [(ngModel)]="filtros.idLocal" class="fg-control">
-            <option value="">Seleccione...</option>
-            <option *ngFor="let local of locales" [value]="local.id">{{ local.nombre }}</option>
+
+        <div class="fg" *ngIf="modoFiltro2 === 'local'">
+          <label class="fg-label">Local</label>
+          <select class="fg-control" [(ngModel)]="filtros.idLocal" [ngModelOptions]="{ standalone: true }">
+            <option [ngValue]="null">Seleccione</option>
+            <option *ngFor="let local of localesResponse; trackBy: trackById" [ngValue]="local.id">
+              {{ local.nombre }}
+            </option>
           </select>
         </div>
-        <div class="fg">
-          <label class="fg-label" for="idZona">Zona</label>
-          <select id="idZona" [(ngModel)]="filtros.idZona" class="fg-control">
-            <option value="">Seleccione...</option>
-            <option *ngFor="let zona of zonas" [value]="zona.id">{{ zona.nombre }}</option>
+
+        <div class="fg" *ngIf="modoFiltro3 === 'zona'">
+          <label class="fg-label">Zona</label>
+          <select class="fg-control" [(ngModel)]="filtros.idZona" [ngModelOptions]="{ standalone: true }">
+            <option [ngValue]="null">Seleccione</option>
+            <option *ngFor="let zona of zonaResponse; trackBy: trackByIdZona" [ngValue]="zona.idZona">
+              {{ zona.nombre }}
+            </option>
           </select>
         </div>
+
       </div>
     </div>
+
   </div>
 
   <!-- Tabla jerárquica -->
-  <div class="table-wrap" *ngIf="agrupado.length">
+  <div class="table-wrap">
     <div class="grid-wrapper">
-      <table class="tabla-balance">
-        <thead>
-          <tr>
-            <th>Cuenta</th>
-            <th>Nombre</th>
-            <th class="text-right">Saldo Anterior</th>
-            <th class="text-right">Debe</th>
-            <th class="text-right">Haber</th>
-            <th class="text-right">Neto</th>
-          </tr>
-        </thead>
-        <tbody>
-          <ng-container *ngFor="let raiz of pagedData">
-            <!-- Raíz -->
-            <tr class="row-raiz">
-              <td colspan="6">{{ raiz.nombreRaiz }} ({{ raiz.cuentaRaiz }})</td>
-            </tr>
-            <ng-container *ngFor="let padre of raiz.hijos">
-              <!-- Padre -->
-              <tr class="row-padre">
-                <td colspan="6">{{ padre.nombrePadre }} ({{ padre.cuentaPadre }})</td>
-              </tr>
-              <ng-container *ngFor="let hijo of padre.hijos">
-                <!-- Hijo -->
-                <tr class="row-hijo">
-                  <td>{{ hijo.cuenta }}</td>
-                  <td>{{ hijo.nombreHijo }}</td>
-                  <td class="text-right mono">{{ hijo.saldoAnterior | number:'1.2-2' }}</td>
-                  <td class="text-right mono">{{ hijo.debe | number:'1.2-2' }}</td>
-                  <td class="text-right mono">{{ hijo.haber | number:'1.2-2' }}</td>
-                  <td class="text-right mono">{{ hijo.neto | number:'1.2-2' }}</td>
-                </tr>
-              </ng-container>
-            </ng-container>
-          </ng-container>
-        </tbody>
-      </table>
+      <ag-grid-angular *ngIf="rowData.length" class="ag-theme-alpine" style="width: 100%; height: 100%;"
+        [rowData]="rowData" [columnDefs]="columnDefs" [gridOptions]="gridOptions" (gridReady)="onGridReady($event)"
+        (filterChanged)="onFilterChanged()" (sortChanged)="onSortChanged()" rowSelection="single">
+      </ag-grid-angular>
+
+
+      <div class="empty-state" *ngIf="!rowData.length && !loading">
+        <div class="empty-title">Sin resultados</div>
+        <div class="empty-sub">Ajusta los filtros y vuelve a consultar.</div>
+      </div>
     </div>
-
-  </div>
-
-  <div class="empty-state" *ngIf="!agrupado.length && !loading">
-    <div class="empty-title">Sin resultados</div>
-    <div class="empty-sub">Ajusta los filtros y vuelve a consultar.</div>
   </div>
 
 </div>
