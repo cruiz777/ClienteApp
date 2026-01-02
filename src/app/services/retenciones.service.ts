@@ -219,4 +219,30 @@ createLote(req: RetencionesRequest[]): Observable<CreateRetencionesResultRespons
         })
       );
   }
+  /**
+   * GET /Retenciones/{idRetencion}/pdf
+   * Descarga el PDF de la retención (genera XML automáticamente si no existe)
+   */
+  descargarPdf(idRetencion: number): Observable<Blob> {
+    return this.http
+      .get(`${this.baseUrl}/${idRetencion}/pdf`, {
+        responseType: 'blob',
+        observe: 'response'
+      })
+      .pipe(
+        map(response => {
+          // Retorna el blob del PDF
+          return response.body as Blob;
+        }),
+        catchError(err => {
+          // Manejo de errores
+          const backendMsg =
+            err?.error?.message ||
+            err?.error?.Message ||
+            err?.message ||
+            'Error al descargar PDF de retención.';
+          return throwError(() => new Error(backendMsg));
+        })
+      );
+  }
 }

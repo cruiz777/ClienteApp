@@ -870,67 +870,135 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
 
   ///////
 
+  // async imprimir(): Promise<void> {
+  //   if (!this.readOnly) {
+  //     this.snack.open('Primero debe GRABAR la retención para poder imprimir.', 'OK', {
+  //       duration: 3500,
+  //       horizontalPosition: 'right',
+  //       verticalPosition: 'top',
+  //     });
+  //     return;
+  //   }
+
+  //   const hasIds = (this.rowData ?? []).some(r => Number(r.idretencion ?? 0) > 0);
+  //   if (!hasIds) {
+  //     this.snack.open('No existen líneas guardadas (ID) para imprimir.', 'OK', {
+  //       duration: 3500,
+  //       horizontalPosition: 'right',
+  //       verticalPosition: 'top',
+  //     });
+  //     return;
+  //   }
+
+  //   try {
+  //     this.loading = true;
+
+  //     // 1) Datos de impresión (tu backend CG)
+  //     const data = await firstValueFrom(
+  //       this.retencionesService.getImpresion(this.idEmpresa, this.idCabMaestro)
+  //     );
+
+  //     // 2) Traer logo parametrizado (Security)
+  //     const lf = await firstValueFrom(this.empresaService.getLogoFirma(this.idEmpresa));
+  //     const logoFile = String(lf?.logo ?? '').trim();
+
+  //     let logoDataUrl: string | null = null;
+
+  //     if (logoFile) {
+  //       const logoUrl = this.logoService.getLogoUrl(logoFile);
+
+  //       // IMPORTANTE: convierte URL -> DataURL (jsPDF NO debe recibir URL http)
+  //       logoDataUrl = await this.urlToDataUrl(logoUrl);
+
+  //       if (!logoDataUrl) {
+  //         console.warn('[RET] No se pudo convertir logo a DataURL. URL=', logoUrl);
+  //       }
+  //     } else {
+  //       console.warn('[RET] Empresa sin logo parametrizado (getLogoFirma devolvió vacío).');
+  //     }
+
+  //     // 3) Generar PDF (si logoDataUrl existe, lo usa; si no, imprime sin logo)
+  //     RetencionPdfUtil.generarPdfRetencion(data, logoDataUrl);
+
+  //   } catch (err: any) {
+  //     this.snack.open(err?.message ?? 'Error al imprimir retención.', 'Cerrar', {
+  //       duration: 6000,
+  //       horizontalPosition: 'right',
+  //       verticalPosition: 'top',
+  //     });
+  //   } finally {
+  //     this.loading = false;
+  //   }
+  // }
+
+  /**
+   * IMPRIMIR: Descarga el PDF desde el backend
+   * El backend genera automáticamente el XML si no existe
+   */
   async imprimir(): Promise<void> {
-  if (!this.readOnly) {
-    this.snack.open('Primero debe GRABAR la retención para poder imprimir.', 'OK', {
-      duration: 3500,
-      horizontalPosition: 'right',
-      verticalPosition: 'top',
-    });
-    return;
-  }
+    if (this.loading) return;
 
-  const hasIds = (this.rowData ?? []).some(r => Number(r.idretencion ?? 0) > 0);
-  if (!hasIds) {
-    this.snack.open('No existen líneas guardadas (ID) para imprimir.', 'OK', {
-      duration: 3500,
-      horizontalPosition: 'right',
-      verticalPosition: 'top',
-    });
-    return;
-  }
-
-  try {
-    this.loading = true;
-
-    // 1) Datos de impresión (tu backend CG)
-    const data = await firstValueFrom(
-      this.retencionesService.getImpresion(this.idEmpresa, this.idCabMaestro)
-    );
-
-    // 2) Traer logo parametrizado (Security)
-    const lf = await firstValueFrom(this.empresaService.getLogoFirma(this.idEmpresa));
-    const logoFile = String(lf?.logo ?? '').trim();
-
-    let logoDataUrl: string | null = null;
-
-    if (logoFile) {
-      const logoUrl = this.logoService.getLogoUrl(logoFile);
-
-      // IMPORTANTE: convierte URL -> DataURL (jsPDF NO debe recibir URL http)
-      logoDataUrl = await this.urlToDataUrl(logoUrl);
-
-      if (!logoDataUrl) {
-        console.warn('[RET] No se pudo convertir logo a DataURL. URL=', logoUrl);
-      }
-    } else {
-      console.warn('[RET] Empresa sin logo parametrizado (getLogoFirma devolvió vacío).');
+    // Validar que esté guardado
+    if (!this.readOnly) {
+      this.mostrarMensajeAdvertencia('Primero debe GRABAR la retención para poder imprimir.');
+      return;
     }
 
-    // 3) Generar PDF (si logoDataUrl existe, lo usa; si no, imprime sin logo)
-    RetencionPdfUtil.generarPdfRetencion(data, logoDataUrl);
+    // Obtener el PRIMER ID de retención guardada
+    const primeraRetencion = (this.rowData ?? [])
+      .map(r => Number(r.idretencion ?? 0))
+      .find(id => id > 0);
 
-  } catch (err: any) {
-    this.snack.open(err?.message ?? 'Error al imprimir retención.', 'Cerrar', {
-      duration: 6000,
-      horizontalPosition: 'right',
-      verticalPosition: 'top',
-    });
-  } finally {
-    this.loading = false;
+    if (!primeraRetencion) {
+      this.mostrarMensajeAdvertencia('No existen retenciones guardadas para imprimir.');
+      return;
+    }
+
+    try {
+      this.loading = true;
+
+      // Descargar el PDF del backend
+      const pdfBlob = await firstValueFrom(
+        this.retencionesService.descargarPdf(primeraRetencion)
+      );
+
+      // Crear URL temporal del Blob
+      const url = window.URL.createObjectURL(pdfBlob);
+
+      // Crear elemento <a> para descargar
+      const link = document.createElement('a');
+      link.href = url;
+
+      // Nombre del archivo (puedes obtenerlo del rowData si quieres)
+      const secuencial = this.rowData[0]?.secuencial || 'RETENCION';
+      link.download = `RET-${secuencial}.pdf`;
+
+      // Disparar descarga
+      document.body.appendChild(link);
+      link.click();
+
+      // Limpiar
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      this.snack.open('PDF descargado correctamente.', 'OK', {
+        duration: 3000,
+        horizontalPosition: 'right',
+        verticalPosition: 'top',
+      });
+
+    } catch (err: any) {
+      this.mostrarMensaje({
+        title: 'Error',
+        message: err?.message ?? 'Error al descargar PDF de retención.',
+        type: 'error',
+        confirmText: 'Entendido',
+        showCancel: false,
+      });
+    } finally {
+      this.loading = false;
+    }
   }
-}
-
 
 
 ///////////
