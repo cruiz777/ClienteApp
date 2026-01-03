@@ -216,6 +216,9 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
       valueParser: p => this.toIso(p.newValue),
        hide: true,
     },
+
+    { headerName: 'IdUsuario', field: 'idusuario', width: 110, editable: false, hide: true },
+
   ];
 
   private sub = new Subscription();
@@ -455,6 +458,7 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
 
         const rows = (lines ?? []).map((x: RetencionesResponse) => ({
           ...x,
+          idusuario: Number((x as any).idusuario ?? 0), // ✅ nuevo campo
           enviado: this.asBool((x as any).enviado),
           estadoingreso: this.asBool((x as any).estadoingreso),
           hora: this.normalizeHora((x as any).hora),
@@ -537,7 +541,7 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
       idretencion: 0,
       idempresa: this.idEmpresa,
       idcabmaestro: this.idCabMaestro,
-
+      idusuario: this.idUsuario, // ✅ nuevo campo
       numdoc: String((src as any).numdoc ?? ''),
       numlinea,
       anio,
@@ -618,6 +622,7 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
     row.enviado = this.asBool(v.enviado);
     row.tipomovimiento = v.tipomovimiento ?? null;
     row.estadoingreso = this.asBool(v.estadoingreso);
+    row.idusuario = this.idUsuario; // ✅ nuevo nuevo
 
     this.setGridData([...this.rowData, row]);
     this.gridApi?.refreshCells({ force: true });
@@ -653,6 +658,7 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
 
         row.idempresa = this.idEmpresa;
         row.idcabmaestro = this.idCabMaestro;
+        row.idusuario = this.idUsuario; // ✅ nuevo (campo)
 
         row.fecha = this.toIso(row.fecha);
         row.hora = this.normalizeHora(row.hora);
@@ -993,6 +999,7 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
       enviado: this.asBool(r.enviado),
       tipomovimiento: r.tipomovimiento ?? null,
       estadoingreso: this.asBool(r.estadoingreso), /// 1 as any, //this.asBool(r.estadoingreso),
+      idusuario: Number(r.idusuario ?? this.idUsuario), // ✅ nuevo campo
     };
 
     return clean;
@@ -1004,7 +1011,7 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
       idretencion: 0,
       idempresa: this.idEmpresa,
       idcabmaestro: this.idCabMaestro,
-
+      idusuario: this.idUsuario, // ✅ nuevo campo
       numdoc: '',
       numlinea,
       anio: String(now.getFullYear()),
