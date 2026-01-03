@@ -110,6 +110,11 @@
     ANULAR RETENCION
   </button>
 
+  <div class="usr-grabador" *ngIf="readOnly && usuarioGrabadorNombre">
+    USUARIO : {{ usuarioGrabadorNombre }}
+  </div>
+
+
   <div class="totales-right">
     <div class="tot">
       <span class="total-label">Total Base:</span>
