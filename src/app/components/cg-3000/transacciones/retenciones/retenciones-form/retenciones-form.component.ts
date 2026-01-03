@@ -1,3 +1,4 @@
+
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit, Optional, Inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -71,6 +72,10 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
   idCabMaestro = 0;
   usuarioActual = this.usuarioService.getUsuarioActual();
   idUsuario = this.usuarioActual?.id_usuario ?? 0;
+
+  ///usuario retenciones
+  usuarioGrabadorId = 0;
+  usuarioGrabadorNombre = ''; 
 
   headerForm!: FormGroup;
 
@@ -304,6 +309,7 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
 
     await this.loadInitial();
   }
+  
 
   ngOnDestroy(): void {
     this.sub.unsubscribe();
@@ -471,6 +477,9 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
         this.selectedIndex = 0;
         if (this.rowData[0]) this.patchHeaderFromRow(this.rowData[0]);
 
+        //usuario retenciones
+        await this.cargarUsuarioGrabadorDesdeRetenciones(rows);
+        //
         this.snack.open('Retenciones ya generada.', 'OK', {
           duration: 3000,
           horizontalPosition: 'right',
@@ -482,6 +491,10 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
 
       this.readOnly = false;
       this.setHeaderEditable(true);
+      ///usuario retenciones 03012026
+      this.usuarioGrabadorId = 0;
+      this.usuarioGrabadorNombre = '';
+      ///
 
       const resumen = await firstValueFrom(
         this.retencionesService.getResumen(this.idEmpresa, this.idCabMaestro)
@@ -1353,6 +1366,54 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
       }
     });
   }
+
+  //usuario retenciones 03012026
+
+    // ============================
+  // Usuario grabador (solo al recuperar)
+  // ============================
+  private getApiData<T>(resp: any): T | null {
+    // Soporta ApiResponse { type, data, message } o variantes
+    if (!resp) return null;
+      return (resp.data ?? resp.Data ?? resp.result ?? resp) as T;
+  }
+
+  private resolveNombreUsuario(u: any): string {
+      if (!u) return '';
+      // Ajusta a tus campos reales del backend
+      return String(
+        u.nombre_usuario ??
+        u.nombreUsuario ??
+        u.nombreD ??
+        u.nombre ??
+        u.usuario ??
+        u.userName ??
+        ''
+      ).trim();
+  }
+
+  private async cargarUsuarioGrabadorDesdeRetenciones(rows: RetRow[]): Promise<void> {
+      // Solo aplica en modo recuperación (readOnly = true)
+      this.usuarioGrabadorId = 0;
+      this.usuarioGrabadorNombre = '';
+
+      const id = Number(rows?.[0]?.idusuario ?? 0);
+      if (id <= 0) return;
+
+      this.usuarioGrabadorId = id;
+
+      try {
+        const resp = await firstValueFrom(this.usuarioService.getUsuarioById(id));
+        const data = this.getApiData<any>(resp);
+
+        const nombre = this.resolveNombreUsuario(data);
+        this.usuarioGrabadorNombre = nombre || `ID ${id}`;
+      } catch (e) {
+        // Fallback seguro: no rompe pantalla
+        this.usuarioGrabadorNombre = `ID ${id}`;
+      }
+  }
+
 
   /// rp
 }
