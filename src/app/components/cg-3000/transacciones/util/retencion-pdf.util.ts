@@ -11,6 +11,7 @@ export class RetencionPdfUtil {
     logoOverrideBase64OrDataUrl?: string | null
   ): void {
     const doc = new jsPDF('p', 'mm', 'a4');
+    RetencionPdfUtil.drawWatermark(doc, 'DOCUMENTO NO VÁLIDO'); ///marca de agua
     const pageW = doc.internal.pageSize.getWidth();
     const margin = 12;
 
@@ -64,9 +65,10 @@ export class RetencionPdfUtil {
     if (safe((m as any).empresaObligadoContabilidad)) {
       empresaLines.push(`Obligado a llevar contabilidad : ${safe((m as any).empresaObligadoContabilidad)}`);
     }
-    if (safe((m as any).empresaLeyenda)) {
-      empresaLines.push(safe((m as any).empresaLeyenda));
-    }
+
+    //if (safe((m as any).empresaLeyenda)) {
+    //  empresaLines.push(safe((m as any).empresaLeyenda));
+    //}
 
     for (const line of empresaLines) {
       const wrapped = doc.splitTextToSize(line, leftMaxW) as string[];
@@ -177,6 +179,11 @@ export class RetencionPdfUtil {
         6: { cellWidth: 28, halign: 'right' },
         7: { cellWidth: 18, halign: 'right' },
       },
+
+      didDrawPage: () => {
+          RetencionPdfUtil.drawWatermark(doc, 'DOCUMENTO NO VÁLIDO');
+      }
+
     });
 
     const lastY = (doc as any).lastAutoTable?.finalY ?? (tableStartY + 20);
@@ -228,31 +235,59 @@ export class RetencionPdfUtil {
   y: number,
   w: number,
   h: number
-): boolean {
-  try {
-    const s = String(base64OrDataUrl ?? '').trim();
+  ): boolean {
+    try {
+      const s = String(base64OrDataUrl ?? '').trim();
 
-    if (!s) {
-      console.warn('[PDF] Logo vacío: no se insertó.');
+      if (!s) {
+        console.warn('[PDF] Logo vacío: no se insertó.');
+        return false;
+      }
+
+      const isDataUrl = s.startsWith('data:image');
+      const dataUrl = isDataUrl ? s : `data:image/png;base64,${s}`;
+
+      let fmt: 'PNG' | 'JPEG' = 'PNG';
+      if (dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/jpg')) {
+        fmt = 'JPEG';
+      }
+
+      doc.addImage(dataUrl, fmt, x, y, w, h);
+      return true;
+    } catch (e) {
+      console.warn('[PDF] addImage falló (logo).', e);
       return false;
     }
+  }
 
-    const isDataUrl = s.startsWith('data:image');
-    const dataUrl = isDataUrl ? s : `data:image/png;base64,${s}`;
+  //marca de agua
+  private static drawWatermark(doc: jsPDF, text: string): void {
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
 
-    let fmt: 'PNG' | 'JPEG' = 'PNG';
-    if (dataUrl.startsWith('data:image/jpeg') || dataUrl.startsWith('data:image/jpg')) {
-      fmt = 'JPEG';
+    // Guardar estado para no afectar el resto del documento
+    (doc as any).saveGraphicsState?.();
+
+    // Opacidad baja si está disponible (depende de versión de jsPDF)
+    const anyDoc: any = doc as any;
+    if (anyDoc.GState) {
+      const gState = new anyDoc.GState({ opacity: 0.12 });
+      anyDoc.setGState(gState);
     }
 
-    doc.addImage(dataUrl, fmt, x, y, w, h);
-    return true;
-  } catch (e) {
-    console.warn('[PDF] addImage falló (logo).', e);
-    return false;
+    doc.setFont('times', 'bold');
+    doc.setFontSize(55);
+    doc.setTextColor(160); // gris
+
+    // Texto al centro y diagonal
+    doc.text(text, pageW / 2, pageH / 2, { align: 'center', angle: 35 });
+
+    // Restaurar estado
+    (doc as any).restoreGraphicsState?.();
+
+    // Si no existe save/restoreGraphicsState, al menos reestablecemos color para no afectar
+    doc.setTextColor(0);
+    doc.setFontSize(9);
   }
-}
-
-
 
 }
