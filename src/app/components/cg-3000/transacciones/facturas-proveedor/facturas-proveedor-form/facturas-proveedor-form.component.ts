@@ -1,4 +1,5 @@
 
+
 import { Component, OnInit, ViewChild, effect, computed, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {
@@ -13,14 +14,19 @@ import { UsuarioService } from 'src/app/services/usuario.service';
 import { Optional, Inject } from '@angular/core';
 import { MatDialogRef, MatDialog, MatDialogConfig, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { ComponentType } from '@angular/cdk/portal';
-import { startWith, distinctUntilChanged } from 'rxjs/operators';
-import { Observable, of } from 'rxjs';
+import { startWith, distinctUntilChanged,filter } from 'rxjs/operators';
+import { Observable, of ,combineLatest } from 'rxjs';
 import { tap, shareReplay, map, catchError, finalize } from 'rxjs/operators';
 import { TipoAsientoService } from 'src/app/services/tipoasiento.service';
 import { TipoAsientoResponse } from 'src/app/interfaces/responses/tipo-asiento-response';
 import { ZonaService } from 'src/app/services/zona.service';
 import { ZonaResponse } from 'src/app/interfaces/responses/zona-response';
 
+//PARA NUMERO COMPROBANTE CAMBIO 01012026
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { DestroyRef } from '@angular/core';
+
+//
 // LOCALES
 import { LocalesService } from 'src/app/services/locales.service';
 import { LocalesResponse } from 'src/app/interfaces/responses/local-response';
@@ -126,6 +132,7 @@ interface PorcentajeIvaCombo {
   codigoIva: number;
   porcentaje: number;
   descripcion: string;
+  estado?: boolean; // ✅ agregar  revisar 01012026
 }
 ///
 @Component({
@@ -167,6 +174,12 @@ export class FacturasProveedorFormComponent implements OnInit {
     }
     return 'Crear(Factura Proveedor) — NUEVO';
   });
+
+  //no. comprobante 01012026
+  private noCompKeySnackDuplicado: string | null = null;
+  //cuenta banco  01012026
+  private readonly CODIGO_ESPECIAL_BANCOS = 4;
+  //end 
 
   // USUARIO
   usuarioActual = this.usuarioService.getUsuarioActual();
@@ -273,8 +286,10 @@ export class FacturasProveedorFormComponent implements OnInit {
     Validators.min(1),
   ]);
 
-  //tipo comprobante sri
-  listaTiposCompSriCab: { id: number; label: string }[] = [];
+  //tipo comprobante sri cambio hr 31122025 para guardar codigo
+  //listaTiposCompSriCab: { id: number; label: string }[] = [];
+  listaTiposCompSriCab: { id: number; cod: string; desc: string; label: string }[] = [];
+
   tipoCompSriCtrl = new FormControl<number | null>(0, [
     Validators.required,
     Validators.min(1),
@@ -429,6 +444,7 @@ export class FacturasProveedorFormComponent implements OnInit {
 
   private limpiarCacheNoComprobante(): void {
     this.noCompKeyValidadoOk = null;
+    this.noCompKeySnackDuplicado = null; // no. comprobante 01012026
     this.quitarError(this.nroComprobanteCtrl, 'duplicado');
   }
 
@@ -674,6 +690,9 @@ export class FacturasProveedorFormComponent implements OnInit {
       editable: true,
       singleClickEdit: true,
       cellEditor: PlanCuentaCellEditorComponent,
+      
+      //cambio hr 01012026 cuenta bancos 0-NINGUNO
+      /*
       cellEditorParams: (params: any) => {
         const row = params.data as DetalleAsientoResponse;
         const idMov = Number(row.idMovBancario || 0);
@@ -681,15 +700,6 @@ export class FacturasProveedorFormComponent implements OnInit {
         // Por defecto NO filtramos (mostramos todas las cuentas)
         let condicion: number | null = null;
 
-        /*
-        if (idMov > 0) {
-          const mov = this.movimientosBancarios.find((m) => m.id === idMov);
-
-          if (mov && mov.condicion != null && !isNaN(Number(mov.condicion)) && Number(mov.condicion) > 0) {
-            condicion = Number(mov.condicion);
-          }
-        }
-        */
         if (idMov > 0) {
           const mov = this.movimientosBancarios.find((m) => m.id === idMov);
           if (mov && mov.condicion != null && Number(mov.condicion) > 0) {
@@ -707,6 +717,14 @@ export class FacturasProveedorFormComponent implements OnInit {
         }
 
         return { cuentas: cuentasFiltradas };
+      },
+      */
+      cellEditorParams: (params: any) => {
+        const row = params.data as DetalleAsientoResponse;
+        return {
+          // ✅ aquí entra la regla: si es '0' excluye bancos; si no, aplica condicion
+          cuentas: this.obtenerCuentasFiltradasPorMovimiento(row),
+        };
       },
 
       valueFormatter: (params) => {
@@ -1038,6 +1056,7 @@ export class FacturasProveedorFormComponent implements OnInit {
     private asientosService: AsientosContablesService,
     private porcentajeIvaService: PorcentajeIvaCgService,
     private dialog: MatDialog,
+    private destroyRef: DestroyRef,  // numerocomprobante 01012026
     private snack: MatSnackBar
   ) {
     effect(() => {
@@ -1118,12 +1137,24 @@ export class FacturasProveedorFormComponent implements OnInit {
     });
   }
 
-  //porcentaje iva///
-
   ////
 
   ngOnInit(): void {
     this.buildForm();
+
+    //cambio hr 31122025
+    this.syncFechaTransaccionConIngreso();
+    // Regla NC: por defecto bloqueado hasta que sea 04 - Nota de crédito
+    this.docRelacionadoCtrl.disable({ emitEvent: false });
+    this.autorizacionRelacionadoCtrl.disable({ emitEvent: false });
+    this.fechaCadRelacionadoCtrl.disable({ emitEvent: false });
+
+    // Al cambiar Tipo Comprobante, habilitar/bloquear campos NC
+    this.tipoCompSriCtrl.valueChanges.subscribe(() => {
+      this.aplicarReglaCamposNC();
+    });
+    //end cambio
+
     const empresaId = this.usuarioActual?.id_empresa ?? 0;
 
     // Autocomplete de proveedor: buscar en backend al escribir
@@ -1232,6 +1263,10 @@ export class FacturasProveedorFormComponent implements OnInit {
       }
     });
 
+    //No. Comprobante 01012026
+    this.initAutoValidacionNoComprobante();
+    ////
+
     const idDialog = this.data?.id ?? 0;
     const idRoute = Number(this.route.snapshot.paramMap.get('id') ?? 0);
     const id = idDialog || idRoute;
@@ -1307,15 +1342,18 @@ export class FacturasProveedorFormComponent implements OnInit {
       } else {
         // MODO NUEVO
         this.modo.set('nuevo');
-        const empty = createEmptyAsientoContableResponse();
-        this.syncUsuarioEmpresa();
-        this.setFormFromHeader(empty);
+        //const empty = createEmptyAsientoContableResponse();
+        //this.syncUsuarioEmpresa();
+        //this.setFormFromHeader(empty);
         this.rowData.set([]);
         this.form.patchValue({ modulo: 1 }, { emitEvent: false });
         this.form.patchValue(
           { anio: getYearFromInput(this.form.get('fechatransaccion')!.value) },
           { emitEvent: false }
         );
+
+        this.setFechasNowLocal();
+        this.syncUsuarioEmpresa();
 
         this.form
           .get('fechatransaccion')!
@@ -1343,10 +1381,30 @@ export class FacturasProveedorFormComponent implements OnInit {
     ///END
   }
 
+  private setFechasNowLocal(): void {
+    const now = new Date();
+    const nowIso = formatLocalIso(now);     // yyyy-MM-ddTHH:mm:ss (LOCAL)
+    const today = dateOnlySafe(nowIso);     // yyyy-MM-dd
+
+    this.form.patchValue(
+      {
+        fechaingreso: nowIso,
+        fechatransaccion: today,
+        anio: today.substring(0, 4),
+      },
+      { emitEvent: false }
+    );
+  }
+
   private buildForm(): void {
+    //const ahora = new Date();
+    //const nowIso = formatLocalIso(new Date());
+    //const todayDate = formatLocalDateOnly(ahora); // solo fecha (yyyy-MM-dd)
+
     const ahora = new Date();
-    const nowIso = formatLocalIso(new Date());
-    const todayDate = formatLocalDateOnly(ahora); // solo fecha (yyyy-MM-dd)
+    const nowIso = formatLocalIso(ahora);        // yyyy-MM-ddTHH:mm:ss (LOCAL)
+    const todayDate = dateOnlySafe(nowIso);      // yyyy-MM-dd (SOLO FECHA, SIN DatePipe)
+
 
     this.form = this.fb.group({
       IdCabMaestro: [0],
@@ -1482,6 +1540,7 @@ export class FacturasProveedorFormComponent implements OnInit {
         const firstTipoComp = resp.detalles && resp.detalles.length ? Number(resp.detalles[0].idTipoCompSri || 0) : 0;
         if (firstTipoComp > 0) {
           this.tipoCompSriCtrl.setValue(firstTipoComp, { emitEvent: false });
+          this.aplicarReglaCamposNC({ forzar: true }); ///cambio hr 31122025 añadir
         }
 
         // 🔹 Autorización / Fechas tomadas de la primera línea del detalle
@@ -1574,6 +1633,7 @@ export class FacturasProveedorFormComponent implements OnInit {
       const idTipoComp = Number(primeraLinea.idTipoCompSri || 0);
       if (idTipoComp > 0) {
         this.tipoCompSriCtrl.setValue(idTipoComp, { emitEvent: false });
+        this.aplicarReglaCamposNC({ forzar: true });//cambio hr 31122025 ñadir
       }
     }
 
@@ -1821,6 +1881,8 @@ export class FacturasProveedorFormComponent implements OnInit {
     });
   }
 
+  //cambio hr 31122025
+  /*
   private cargarTiposCompSriCabecera(): void {
     this.tipoCompSriService.Listado().subscribe({
       next: (list) => {
@@ -1832,6 +1894,28 @@ export class FacturasProveedorFormComponent implements OnInit {
       error: (err) => {
         console.error('Error cargando tipos comprobante SRI (cabecera)', err);
       },
+    });
+  }
+  */
+ 
+  private cargarTiposCompSriCabecera(): void {
+    this.tipoCompSriService.Listado().subscribe({
+      next: (list) => {
+        this.listaTiposCompSriCab = (list ?? []).map((t: any) => {
+          const cod = (t.Codtipcomp ?? '').toString().trim();   // "04"
+          const desc = (t.Destipcomp ?? '').toString().trim();  // "Nota de crédito"
+          return {
+            id: Number(t.IdTipoCompSri),
+            cod,
+            desc,
+            label: `${cod} - ${desc}`,
+          };
+        });
+
+        // Reaplicar regla una vez que ya existe el catálogo
+        this.aplicarReglaCamposNC({ forzar: true });
+      },
+      error: (err) => console.error('Error cargando tipos comprobante SRI (cabecera)', err),
     });
   }
 
@@ -1877,13 +1961,25 @@ export class FacturasProveedorFormComponent implements OnInit {
       const haber = Number(f.haber || 0);
       const idSust = Number(f.idSustentoTrib || 0);
       const idTipoComp = Number(f.idTipoCompSri || 0);
-
+     
+      ///validacion retenciones 31122025
+      const movCode = this.getMovCode(f);
+      const permiteCeroCero = ['RFB', 'RFS'].includes(movCode);
+      ///
       if (idLocal <= 0) errores.push(`Línea ${linea}: debe seleccionar el Local.`);
       if (idMovBancario <= 0) errores.push(`Línea ${linea}: debe seleccionar el Tipo de Movimiento (distinto de NINGUNO).`);
       if (idPlanCuentas <= 0) errores.push(`Línea ${linea}: debe seleccionar la Cuenta Contable.`);
       if (idAuxiliar <= 0) errores.push(`Línea ${linea}: debe seleccionar el Auxiliar Contable.`);
-      if (debe <= 0 && haber <= 0) errores.push(`Línea ${linea}: debe ingresar un valor en Debe o en Haber.`);
-      if (debe > 0 && haber > 0) errores.push(`Línea ${linea}: no puede tener valores en Debe y Haber al mismo tiempo.`);
+      //validacion retenciones 31122025
+      if (!permiteCeroCero && debe <= 0 && haber <= 0) {
+        errores.push(`Línea ${linea}: debe ingresar un valor en Debe o en Haber.`);
+      }
+      if (debe > 0 && haber > 0) {
+        errores.push(`Línea ${linea}: no puede tener valores en Debe y Haber al mismo tiempo.`);
+      }
+      //if (debe <= 0 && haber <= 0) errores.push(`Línea ${linea}: debe ingresar un valor en Debe o en Haber.`);
+      //if (debe > 0 && haber > 0) errores.push(`Línea ${linea}: no puede tener valores en Debe y Haber al mismo tiempo.`);
+      
       if (idSust <= 0) errores.push(`Línea ${linea}: debe seleccionar el Sustento Tributario.`);
       if (idTipoComp <= 0) errores.push(`Línea ${linea}: debe seleccionar el Tipo de Comprobante SRI.`);
     });
@@ -2271,6 +2367,19 @@ export class FacturasProveedorFormComponent implements OnInit {
 
         const movCode = mov.movimiento.toString().trim().toUpperCase();
 
+        //CAMBIO 01012026
+        if (movCode === '0') {
+            const idCuentaActual = Number(evt.data.idPlanCuentas || 0);
+            if (idCuentaActual > 0) {
+              const cuentaActual = this.cuentas.find((c) => Number(c.id) === idCuentaActual);
+              if (cuentaActual && this.esCuentaBanco(cuentaActual)) {
+                evt.data.idPlanCuentas = 0 as any;
+                evt.data.codprePc = '';
+              }
+            }
+        }
+        ///END
+        
         if (['0', 'CH', 'DP', 'NC', 'ND', 'TB'].includes(movCode)) {
           evt.data.idTipoRetencion = null as any;
         } else if (movCode === 'IB' || movCode === 'RIB') {
@@ -2674,25 +2783,6 @@ export class FacturasProveedorFormComponent implements OnInit {
   }
 
   /*
-  onNumericInput(ctrl: FormControl<any>, event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (!input) return;
-
-    const original = input.value;
-    const soloDigitos = original.replace(/\D/g, '');
-
-    if (original !== soloDigitos) {
-      input.value = soloDigitos;
-    }
-
-    // ✅ si cambió el nro comprobante, limpiamos cache/duplicado
-    if (ctrl === this.nroComprobanteCtrl) {
-      this.limpiarCacheNoComprobante();
-    }
-
-    ctrl.setValue(soloDigitos, { emitEvent: false });
-  }
-  */
   ///nuevo metodo numero comprobante
   onNumericInput(ctrl: FormControl<any>, event: Event, maxLen?: number): void {
     const input = event.target as HTMLInputElement;
@@ -2721,7 +2811,33 @@ export class FacturasProveedorFormComponent implements OnInit {
     ctrl.setValue(soloDigitos, { emitEvent: false });
     ctrl.updateValueAndValidity({ onlySelf: true, emitEvent: false }); //clave
   }
+  */
 
+  onNumericInput(ctrl: FormControl<any>, event: Event, maxLen?: number): void {
+    const input = event.target as HTMLInputElement;
+    if (!input) return;
+
+    const original = input.value ?? '';
+    let soloDigitos = original.replace(/\D/g, '');
+
+    const limite = maxLen ?? (ctrl === this.nroComprobanteCtrl ? 15 : undefined);
+    if (limite != null) soloDigitos = soloDigitos.slice(0, limite);
+
+    if (original !== soloDigitos) input.value = soloDigitos;
+
+    // ✅ si cambió el nro comprobante, limpiamos cache/duplicado
+    if (ctrl === this.nroComprobanteCtrl) {
+      this.limpiarCacheNoComprobante();
+    }
+
+    // ✅ IMPORTANTE:
+    // - Para nroComprobanteCtrl: emitEvent = true (para disparar valueChanges y validar al llegar a 15)
+    // - Para el resto: emitEvent = false (como lo tenías)
+    const emit = ctrl === this.nroComprobanteCtrl;
+
+    ctrl.setValue(soloDigitos, { emitEvent: emit });
+    ctrl.updateValueAndValidity({ onlySelf: true, emitEvent: false });
+  }
 
   ///end
 
@@ -2807,6 +2923,7 @@ export class FacturasProveedorFormComponent implements OnInit {
   private bloquearCabecera(): void {
     if (this.cabeceraBloqueada) return;
     this.cabeceraBloqueada = true;
+    this.aplicarReglaCamposNC({ forzar: true }); //cambio hr 31122025 añadir
   }
 
   private calcularRetencionDesdeFactura(rowIndex: number): void {
@@ -3234,12 +3351,25 @@ private validarDetalleAntesDeAgregarLinea(): boolean {
     const idSust = Number(f.idSustentoTrib || 0);
     const idTipoComp = Number(f.idTipoCompSri || 0);
 
+    ///retenciones
+    const movCode = this.getMovCode(f);
+    const permiteCeroCero = ['RFB', 'RFS'].includes(movCode);
+
     if (idLocal <= 0) errores.push(`Línea ${linea}: debe seleccionar el Local.`);
     if (idMovBancario <= 0) errores.push(`Línea ${linea}: debe seleccionar el Tipo de Movimiento.`);
     if (idPlanCuentas <= 0) errores.push(`Línea ${linea}: debe seleccionar la Cuenta Contable.`);
     if (idAuxiliar <= 0) errores.push(`Línea ${linea}: debe seleccionar el Auxiliar Contable.`);
-    if (debe <= 0 && haber <= 0) errores.push(`Línea ${linea}: debe ingresar un valor en Debe o en Haber.`);
-    if (debe > 0 && haber > 0) errores.push(`Línea ${linea}: no puede tener Debe y Haber al mismo tiempo.`);
+    
+    ///retenciones
+    if (!permiteCeroCero && debe <= 0 && haber <= 0) {
+      errores.push(`Línea ${linea}: debe ingresar un valor en Debe o en Haber.`);
+    }
+    if (debe > 0 && haber > 0) {
+      errores.push(`Línea ${linea}: no puede tener Debe y Haber al mismo tiempo.`);
+    }
+    //if (debe <= 0 && haber <= 0) errores.push(`Línea ${linea}: debe ingresar un valor en Debe o en Haber.`);
+    //if (debe > 0 && haber > 0) errores.push(`Línea ${linea}: no puede tener Debe y Haber al mismo tiempo.`);
+    
     if (idSust <= 0) errores.push(`Línea ${linea}: debe seleccionar el Sustento Tributario.`);
     if (idTipoComp <= 0) errores.push(`Línea ${linea}: debe seleccionar el Tipo de Comprobante SRI.`);
   });
@@ -3307,6 +3437,200 @@ private cargarUsuarioAsientoNombre(idUsuario: number): void {
     return s === '1' || s === 'true' || s === 'activo' || s === 'a';
   }
 
+  ///cambio hr 31122025 
+  ///** Devuelve true si el Tipo Comprobante SRI seleccionado es 04 - Nota de crédito */
+  esNotaCreditoSeleccionada(): boolean {
+    const id = Number(this.tipoCompSriCtrl.value || 0);
+    if (!id) return false;
+
+    const item = this.listaTiposCompSriCab.find((x) => Number(x.id) === id);
+    if (item?.cod) return item.cod.trim() === '04';
+
+    // Fallback si por alguna razón no está cargada la lista aún:
+    // intenta parsear desde el label "04 - Nota de crédito"
+    const label = (item?.label ?? '').toString().trim();
+    const m = /^(\d{2})\s*[-–—]/.exec(label);
+    return (m?.[1] ?? '') === '04';
+  }
+
+  /** Habilita/deshabilita los 3 campos relacionados a NC según el tipo comprobante */
+  private aplicarReglaCamposNC(opts?: { forzar?: boolean }): void {
+    const esNC = this.esNotaCreditoSeleccionada();
+
+    // Si está en readOnly general o cabecera bloqueada, NO habilites aunque sea NC
+    const puedeEditar = !this.isReadOnly() && !this.cabeceraBloqueada;
+
+    const debeHabilitar = esNC && puedeEditar;
+
+    if (debeHabilitar) {
+      this.docRelacionadoCtrl.enable({ emitEvent: false });
+      this.autorizacionRelacionadoCtrl.enable({ emitEvent: false });
+      this.fechaCadRelacionadoCtrl.enable({ emitEvent: false });
+      return;
+    }
+
+    // Si NO es NC, se bloquea siempre
+    this.docRelacionadoCtrl.disable({ emitEvent: false });
+    this.autorizacionRelacionadoCtrl.disable({ emitEvent: false });
+    this.fechaCadRelacionadoCtrl.disable({ emitEvent: false });
+
+    // En NUEVO/PLANTILLA, además limpia (para que no se envíen valores indebidamente)
+    if (this.modo() === 'nuevo' || this.modo() === 'plantilla') {
+      this.syncFechaTransaccionConIngreso();
+      this.docRelacionadoCtrl.setValue('', { emitEvent: false });
+      this.autorizacionRelacionadoCtrl.setValue('', { emitEvent: false });
+      this.fechaCadRelacionadoCtrl.setValue(null, { emitEvent: false });
+ 
+    }
+  }
+
+  ////
+  private getMovCode(row: DetalleAsientoResponse): string {
+    const code = (row.movbancario ?? '').toString().trim().toUpperCase();
+    if (code) return code;
+
+    const id = Number(row.idMovBancario || 0);
+    if (id > 0) {
+      const mov = this.movimientosBancarios.find(m => Number(m.id) === id);
+      return (mov?.movimiento ?? '').toString().trim().toUpperCase();
+    }
+
+    return '';
+  }
+
+  ///fechas
+  private syncFechaTransaccionConIngreso(): void {
+    const ing = this.form.get('fechaingreso');
+    const trans = this.form.get('fechatransaccion');
+    const anio = this.form.get('anio');
+
+    if (!ing || !trans) return;
+
+    ing.valueChanges
+      .pipe(startWith(ing.value), distinctUntilChanged())
+      .subscribe((v) => {
+        const d = dateOnlySafe(v); // yyyy-MM-dd
+        if (!d) return;
+
+        if (trans.value !== d) trans.setValue(d, { emitEvent: false });
+        if (anio && anio.value !== d.substring(0, 4)) anio.setValue(d.substring(0, 4), { emitEvent: false });
+      });
+  }
+
+  toDatetimeLocal(v: any): string {
+    if (!v) return '';
+    if (typeof v === 'string') {
+      const m = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})/.exec(v.trim());
+      if (m) return m[1]; // yyyy-MM-ddTHH:mm
+      const d = new Date(v);
+      if (!isNaN(d.getTime())) return formatLocalIso(d).substring(0,16);
+      return '';
+    }
+    if (v instanceof Date && !isNaN(v.getTime())) return formatLocalIso(v).substring(0,16);
+    return '';
+  }
+
+  // No. comprobante 01012026
+  private initAutoValidacionNoComprobante(): void {
+    const nro$: Observable<string> = this.nroComprobanteCtrl.valueChanges.pipe(
+      startWith(this.nroComprobanteCtrl.value ?? ''),
+      map((v: string | null) => (v ?? '').toString().trim()),
+      distinctUntilChanged()
+    );
+
+    const aux$: Observable<number> = this.auxiliarSeleccionadoCtrl.valueChanges.pipe(
+      startWith(this.auxiliarSeleccionadoCtrl.value ?? 0),
+      map((v: number | null) => Number(v ?? 0)),
+      distinctUntilChanged()
+    );
+
+    combineLatest([nro$, aux$])
+      .pipe(
+        debounceTime(250),
+
+        // Solo aplica en NUEVO
+        filter((): boolean => this.modo() === 'nuevo'),
+
+        // Si borra o aún no llega a 15: limpiar duplicado y no validar online
+        tap(([nro]: [string, number]) => {
+          if (nro.length !== 15) {
+            this.noCompKeyValidadoOk = null;
+            this.noCompKeySnackDuplicado = null;
+            this.quitarError(this.nroComprobanteCtrl, 'duplicado');
+          }
+        }),
+
+        // Condiciones mínimas para validar online
+        filter(([nro, idAux]: [string, number]) => idAux > 0 && nro.length === 15),
+
+        // Debe pasar validadores sync
+        filter((): boolean => this.nroComprobanteCtrl.valid),
+
+        // Llama validación online (tu método ya usa caché)
+        switchMap((): Observable<boolean> => this.validarNoComprobanteAntesDeAgregarLinea$()),
+
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((ok: boolean) => {
+        if (!ok) {
+          this.nroComprobanteCtrl.markAsTouched();
+
+          // Evitar spam snack por la misma llave
+          const idEmpresa = Number(this.usuarioActual?.id_empresa || 0);
+          const idAux = Number(this.auxiliarSeleccionadoCtrl.value || 0);
+          const nro = (this.nroComprobanteCtrl.value || '').toString().trim();
+          const key = `${idEmpresa}|${idAux}|${nro}`;
+
+          if (this.noCompKeySnackDuplicado !== key) {
+            this.noCompKeySnackDuplicado = key;
+
+            this.snack.open(
+              'El No. Comprobante ya existe para este proveedor. Verifique y cambie el número.',
+              'Cerrar',
+              { duration: 4500, horizontalPosition: 'right', verticalPosition: 'top' }
+            );
+          }
+        } else {
+          this.noCompKeySnackDuplicado = null;
+        }
+      });
+  }
+
+  //cuenta banco 01012026
+
+  private esCuentaBanco(c: { idCodigoEspecial?: number | null }): boolean {
+    return Number(c?.idCodigoEspecial ?? 0) === this.CODIGO_ESPECIAL_BANCOS;
+  }
+
+  private obtenerCuentasFiltradasPorMovimiento(row: DetalleAsientoResponse): typeof this.cuentas {
+    const movCode = this.getMovCode(row); // usa tu helper existente
+
+    // ✅ REGLA: NINGUNO => excluir bancos
+    if (movCode === '0') {
+      return (this.cuentas ?? []).filter((c) => !this.esCuentaBanco(c));
+    }
+
+    // ===== tu lógica actual por "condicion" =====
+    const idMov = Number(row?.idMovBancario ?? 0);
+    let condicion: number | null = null;
+
+    if (idMov > 0) {
+      const mov = this.movimientosBancarios.find((m) => Number(m.id) === idMov);
+      if (mov && mov.condicion != null && Number(mov.condicion) > 0) {
+        condicion = Number(mov.condicion);
+      }
+    }
+
+    if (condicion !== null) {
+      return (this.cuentas ?? []).filter(
+        (c) => c.idCodigoEspecial != null && Number(c.idCodigoEspecial) === condicion
+      );
+    }
+
+    // sin condición: todas
+    return this.cuentas ?? [];
+  }
+ 
   ///nuevas funciones
 }
 
@@ -3571,4 +3895,7 @@ function dateOnlySafe(v: any): string {
 
   return '';
 }
+
+
+
 

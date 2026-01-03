@@ -27,7 +27,8 @@ import { MotivoNoAnulacionAsientoResponse } from 'src/app/interfaces/responses/M
 // Exportación
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
-import * as XLSX from 'xlsx';
+//import * as XLSX from 'xlsx';
+import * as XLSX from 'xlsx-js-style';
 import { AsientoContableResponse } from '../../../../../interfaces/responses/asiento-contable-response';
 import {
   CustomMessageBoxComponent,
@@ -792,211 +793,384 @@ confirmarEliminar(row: ListadoAsientoContableResponse): void {
 
   /* ================== EXPORTAR EXCEL (XLSX) ================== */
 
-  onExportExcel(): void {
-    if (!this.gridApi) { return; }
-
+   onExportExcel(): void {
+    if (!this.gridApi) return;
+  
     const cab = this.getCabeceraTexto();
     const fechaStr = new Date().toISOString().slice(0, 10);
-
-    const data: any[][] = [];
-
-    // 1) Cabecera
-    data.push([cab.titulo]);
-    cab.lineas.forEach(l => data.push([l]));
-    data.push([]);
-
-    // columnas visibles sin Acciones
-    const visibleCols = this.columnDefs.filter(
-      c => !c.hide && c.colId !== 'acciones'
-    );
+    const now = new Date();
+  
+    const visibleCols = this.columnDefs.filter(c => !c.hide && c.colId !== 'acciones');
+    const colCount = visibleCols.length;
+  
+    // ========= helpers =========
+    const excelSerial = (dt: Date): number => {
+      const utc = Date.UTC(
+        dt.getFullYear(),
+        dt.getMonth(),
+        dt.getDate(),
+        dt.getHours(),
+        dt.getMinutes(),
+        dt.getSeconds()
+      );
+      return utc / 86400000 + 25569;
+    };
+  
+    const parseDateOnly = (v: any): Date | null => {
+      if (!v) return null;
+      const s = String(v);
+      const y = Number(s.slice(0, 4));
+      const m = Number(s.slice(5, 7));
+      const d = Number(s.slice(8, 10));
+      if (!y || !m || !d) return null;
+      return new Date(y, m - 1, d, 0, 0, 0);
+    };
+  
+    const parseDateTime = (v: any): Date | null => {
+      if (!v) return null;
+      const dt = new Date(v);
+      return isNaN(dt.getTime()) ? null : dt;
+    };
+  
+    const getCell = (ws: XLSX.WorkSheet, r: number, c: number) => {
+      const addr = XLSX.utils.encode_cell({ r, c });
+      return ws[addr];
+    };
+  
+    const fmt2 = (n: number) =>
+      n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  
+    const borderSoft = {
+      top: { style: 'thin', color: { rgb: 'D9D9D9' } },
+      bottom: { style: 'thin', color: { rgb: 'D9D9D9' } },
+      left: { style: 'thin', color: { rgb: 'D9D9D9' } },
+      right: { style: 'thin', color: { rgb: 'D9D9D9' } },
+    };
+  
+    // ========= estilos =========
+    // ✅ FILA 1 SIN COLOR (solo título en negrita)
+    const styleTitlePlain = {
+      font: { bold: true, sz: 14, name: 'Calibri', color: { rgb: '000000' } },
+      alignment: { horizontal: 'left', vertical: 'center' },
+    };
+  
+    // ✅ FILA 2 SIN FONDO (blanca)
+    const styleInfoBase = {
+      font: { bold: false, sz: 10, name: 'Calibri', color: { rgb: '000000' } },
+      alignment: { vertical: 'center' },
+    };
+    const styleInfoLeft = { ...styleInfoBase, alignment: { horizontal: 'left', vertical: 'center' } };
+    const styleInfoCenter = { ...styleInfoBase, alignment: { horizontal: 'center', vertical: 'center' } };
+    const styleInfoRight = { ...styleInfoBase, alignment: { horizontal: 'right', vertical: 'center' } };
+  
+    const styleHeader = {
+      font: { bold: true, color: { rgb: 'FFFFFF' }, sz: 10, name: 'Calibri' },
+      fill: { patternType: 'solid', fgColor: { rgb: '0070C0' } },
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      border: borderSoft,
+    };
+  
+    const styleText = {
+      font: { sz: 10, name: 'Calibri', color: { rgb: '000000' } },
+      alignment: { horizontal: 'left', vertical: 'center', wrapText: true },
+      border: borderSoft,
+    };
+  
+    const styleCenter = {
+      font: { sz: 10, name: 'Calibri', color: { rgb: '000000' } },
+      alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+      border: borderSoft,
+    };
+  
+    const styleNumber = {
+      font: { sz: 10, name: 'Calibri', color: { rgb: '000000' } },
+      alignment: { horizontal: 'right', vertical: 'center' },
+      border: borderSoft,
+    };
+  
+    const styleRowAlt = {
+      fill: { patternType: 'solid', fgColor: { rgb: 'F7F7F7' } },
+    };
+  
+    const styleZero = {
+      font: { sz: 10, name: 'Calibri', color: { rgb: '7F7F7F' } },
+      alignment: { horizontal: 'right', vertical: 'center' },
+      border: borderSoft,
+    };
+  
+    const styleTotals = {
+      font: { bold: true, sz: 10, name: 'Calibri' },
+      fill: { patternType: 'solid', fgColor: { rgb: 'E6E6E6' } },
+      alignment: { vertical: 'center' },
+      border: borderSoft,
+    };
+  
+    const styleTotalsRight = {
+      ...styleTotals,
+      alignment: { horizontal: 'right', vertical: 'center' },
+    };
+  
+    const styleTotalsTopDouble = {
+      top: { style: 'double', color: { rgb: '7F7F7F' } },
+      bottom: { style: 'thin', color: { rgb: 'D9D9D9' } },
+      left: { style: 'thin', color: { rgb: 'D9D9D9' } },
+      right: { style: 'thin', color: { rgb: 'D9D9D9' } },
+    };
+  
+    // ========= construir AOA =========
     const headerRow = visibleCols.map(c => c.headerName || c.field);
-    data.push(headerRow);
-
-    const headerRowIndex = cab.lineas.length + 2;  // fila encabezados
-    const firstDataRowIndex = headerRowIndex + 1;  // primera fila de datos
-
-    // 2) Detalle (grid respetando filtros y orden) + totales
+    const aoa: any[][] = [];
+  
+    // Fila 1: Título (SIN color)
+    aoa.push([cab.titulo]);
+  
+    // Fila 2: info en 3 bloques: izquierda / centro / derecha
+    const rangoTxt = cab.lineas[0] ?? '';
+    const generadoTxt = `Generado: ${now.toLocaleDateString('es-EC')} ${now.toLocaleTimeString('es-EC')}`;
+    const userTxt = this.nombreusuario ? `Usuario: ${this.nombreusuario}` : '';
+  
+    const infoRow = new Array(colCount).fill('');
+  
+    // posiciones “bonitas” para 8 cols: A..C | D..E | F..H
+    const leftEnd = Math.min(2, colCount - 1);
+    const midStart = Math.min(leftEnd + 1, colCount - 1);
+    const midEnd = Math.min(midStart + 1, colCount - 1);
+    const rightStart = Math.min(midEnd + 1, colCount - 1);
+  
+    // ✅ Orden requerido: PRIMERO Generado, DESPUÉS Usuario
+    infoRow[0] = rangoTxt;
+    if (colCount > 1) infoRow[midStart] = generadoTxt;  // centro = Generado
+    if (colCount > 2) infoRow[rightStart] = userTxt;    // derecha = Usuario
+  
+    aoa.push(infoRow);
+  
+    // Fila 3: blanco
+    aoa.push([]);
+  
+    // Fila 4: headers tabla
+    aoa.push(headerRow);
+  
+    // ========= dataset + totales =========
     let totalDebe = 0;
     let totalHaber = 0;
-
+  
+    const rowsData: any[] = [];
     this.gridApi.forEachNodeAfterFilterAndSort(node => {
-      if (node.data) {
-        const row = visibleCols.map(c => (node.data as any)[c.field as string]);
-        data.push(row);
-
-        const debe = Number((node.data as any).totdebe || 0);
-        const haber = Number((node.data as any).tothaber || 0);
-        if (!isNaN(debe)) totalDebe += debe;
-        if (!isNaN(haber)) totalHaber += haber;
-      }
+      if (!node.data) return;
+      rowsData.push(node.data);
+  
+      const debe = Number((node.data as any).totdebe || 0);
+      const haber = Number((node.data as any).tothaber || 0);
+      if (!isNaN(debe)) totalDebe += debe;
+      if (!isNaN(haber)) totalHaber += haber;
     });
-
+  
+    for (const r of rowsData) {
+      const row: any[] = [];
+      for (const col of visibleCols) {
+        const field = col.field as string;
+        let value = (r as any)[field];
+  
+        // ✅ numdoc SIEMPRE texto
+        if (field === 'numdoc') {
+          value = (value === null || value === undefined) ? '' : String(value);
+        }
+  
+        row.push(value);
+      }
+      aoa.push(row);
+    }
+  
     const saldo = totalDebe - totalHaber;
-
-    // 3) Fila de totales
     const totalsRow = visibleCols.map(col => {
       switch (col.field) {
-        case 'numdoc':
-          return 'TOTALES:';
-        case 'totdebe':
-          return totalDebe;
-        case 'tothaber':
-          return totalHaber;
-        case 'observacion':
-          return `Saldo: ${saldo.toFixed(2)}`;
-        default:
-          return '';
+        case 'numdoc': return 'TOTALES:';
+        case 'totdebe': return totalDebe;
+        case 'tothaber': return totalHaber;
+        case 'observacion': return `Saldo: ${fmt2(saldo)}`;
+        default: return '';
       }
     });
-    data.push(totalsRow);
-
-    const ws: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(data);
-    const totalCols = visibleCols.length;
-    const merges: XLSX.Range[] = [];
-
-    // Merge título
-    merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: totalCols - 1 } });
-    // Merge líneas de cabecera
-    cab.lineas.forEach((_, index) => {
-      merges.push({
-        s: { r: 1 + index, c: 0 },
-        e: { r: 1 + index, c: totalCols - 1 }
-      });
-    });
-
+    aoa.push(totalsRow);
+  
+    const ws: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(aoa);
+  
+    // ========= merges =========
+    const merges: any[] = [];
+    merges.push({ s: { r: 0, c: 0 }, e: { r: 0, c: colCount - 1 } }); // A1..H1
+  
+    // Fila 2: A2:C2 | D2:E2 | F2:H2
+    if (leftEnd > 0) merges.push({ s: { r: 1, c: 0 }, e: { r: 1, c: leftEnd } });
+    if (midEnd > midStart) merges.push({ s: { r: 1, c: midStart }, e: { r: 1, c: midEnd } });
+    if (colCount - 1 > rightStart) merges.push({ s: { r: 1, c: rightStart }, e: { r: 1, c: colCount - 1 } });
+  
     ws['!merges'] = merges;
-
-    // 4) Anchos de columna
-    ws['!cols'] = visibleCols.map(col => {
-      let wch = 14;
-      if (col.field === 'fechatransaccion' || col.field === 'fechaingreso') { wch = 16; }
-      if (col.field === 'beneficiario') { wch = 28; }
-      if (col.field === 'observacion') { wch = 40; }
-      if (col.field === 'tipoAsientoCompleto') { wch = 18; }
-      if (col.field === 'numdoc') { wch = 18; }
+  
+    // ========= freeze panes =========
+    (ws as any)['!sheetViews'] = [{ state: 'frozen', xSplit: 1, ySplit: 4 }];
+  
+    // ========= anchos columnas =========
+    const maxLen = (v: any) => (v == null ? 0 : String(v).length);
+    const colMax: number[] = new Array(colCount).fill(0);
+  
+    for (let c = 0; c < colCount; c++) colMax[c] = Math.max(colMax[c], maxLen(headerRow[c]));
+    for (let r = 0; r < rowsData.length; r++) {
+      const rowIndex = 4 + r;
+      for (let c = 0; c < colCount; c++) {
+        const cell = getCell(ws, rowIndex, c);
+        colMax[c] = Math.max(colMax[c], maxLen(cell?.v));
+      }
+    }
+    for (let c = 0; c < colCount; c++) {
+      const cell = getCell(ws, 4 + rowsData.length, c);
+      colMax[c] = Math.max(colMax[c], maxLen(cell?.v));
+    }
+  
+    ws['!cols'] = visibleCols.map((col, idx) => {
+      let wch = Math.min(Math.max(colMax[idx] + 2, 10), 55);
+      if (col.field === 'fechatransaccion') wch = Math.max(wch, 16);
+      if (col.field === 'fechaingreso') wch = Math.max(wch, 22);
+      if (col.field === 'beneficiario') wch = Math.max(wch, 32);
+      if (col.field === 'observacion') wch = Math.max(wch, 42);
+      if (col.field === 'tipoAsientoCompleto') wch = Math.max(wch, 18);
+      if (col.field === 'numdoc') wch = Math.max(wch, 24);
+      if (col.field === 'totdebe' || col.field === 'tothaber') wch = Math.max(wch, 14);
       return { wch };
     });
-
-    // 5) Formato de celdas (fechas y montos)
-    const ref = ws['!ref'] as string;
-    let totalsRowIndex = data.length - 1;
-
-    if (ref) {
-      const range = XLSX.utils.decode_range(ref);
-
-      for (let R = firstDataRowIndex; R <= range.e.r; ++R) {
-        for (let C = 0; C < totalCols; ++C) {
-          const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
-          const cell = ws[cellAddress];
-          if (!cell) continue;
-
-          const fieldName = visibleCols[C].field;
-
-          // Fechas
-          if (fieldName === 'fechatransaccion' || fieldName === 'fechaingreso') {
-            if (cell.v) {
-              const dt = new Date(cell.v);
-              const dd = dt.getDate().toString().padStart(2, '0');
-              const mm = (dt.getMonth() + 1).toString().padStart(2, '0');
-              const yyyy = dt.getFullYear();
-              cell.v = `${dd}/${mm}/${yyyy}`;
-              cell.t = 's';
-            }
-          }
-
-          // Montos
-          if (fieldName === 'totdebe' || fieldName === 'tothaber') {
-            if (cell.v != null && cell.v !== '') {
-              const num = Number(cell.v);
-              if (!isNaN(num)) {
-                cell.v = num;
-                cell.t = 'n';
-                cell.z = '0.00';
-              }
-            }
-          }
+  
+    // ========= alturas =========
+    ws['!rows'] = [
+      { hpt: 24 }, // fila 1 (sin color)
+      { hpt: 18 }, // fila 2 (blanca)
+      { hpt: 8 },  // separador
+      { hpt: 20 }, // header tabla
+    ];
+  
+    // ========= estilos fila 1 (SIN COLOR) =========
+    for (let c = 0; c < colCount; c++) {
+      const cell = getCell(ws, 0, c);
+      if (cell) cell.s = styleTitlePlain;
+    }
+  
+    // ========= estilos fila 2 (blanca) =========
+    for (let c = 0; c < colCount; c++) {
+      const cell = getCell(ws, 1, c);
+      if (!cell) continue;
+  
+      if (c <= leftEnd) cell.s = styleInfoLeft;
+      else if (c >= midStart && c <= midEnd) cell.s = styleInfoCenter;
+      else if (c >= rightStart) cell.s = styleInfoRight;
+      else cell.s = styleInfoBase;
+    }
+  
+    // ========= estilos header tabla =========
+    const headerR = 3;
+    for (let c = 0; c < colCount; c++) {
+      const cell = getCell(ws, headerR, c);
+      if (cell) cell.s = styleHeader;
+    }
+  
+    // ========= estilos data + formatos =========
+    const firstDataR = 4;
+    const totalsR = 4 + rowsData.length;
+  
+    for (let r = firstDataR; r <= totalsR; r++) {
+      const isTotalsRow = r === totalsR;
+      const isAlt = !isTotalsRow && ((r - firstDataR) % 2 === 1);
+  
+      for (let c = 0; c < colCount; c++) {
+        const col = visibleCols[c];
+        const field = col.field as string;
+        const cell = getCell(ws, r, c);
+        if (!cell) continue;
+  
+        if (isTotalsRow) {
+          cell.s = { ...styleTotals, border: styleTotalsTopDouble };
+          continue;
         }
+  
+        if (field === 'fechatransaccion') {
+          const dt = parseDateOnly(cell.v);
+          if (dt) {
+            cell.t = 'n';
+            cell.v = excelSerial(dt);
+            cell.z = 'dd/mm/yyyy';
+          }
+          cell.s = { ...styleCenter, ...(isAlt ? styleRowAlt : {}) };
+          continue;
+        }
+  
+        if (field === 'fechaingreso') {
+          const dt = parseDateTime(cell.v);
+          if (dt) {
+            cell.t = 'n';
+            cell.v = excelSerial(dt);
+            cell.z = 'dd/mm/yyyy hh:mm:ss';
+          }
+          cell.s = { ...styleCenter, ...(isAlt ? styleRowAlt : {}) };
+          continue;
+        }
+  
+        if (field === 'numdoc') {
+          cell.t = 's';
+          cell.v = cell.v == null ? '' : String(cell.v);
+          cell.z = '@';
+          cell.s = { ...styleCenter, ...(isAlt ? styleRowAlt : {}) };
+          continue;
+        }
+  
+        if (field === 'totdebe' || field === 'tothaber') {
+          const n = Number(cell.v ?? 0);
+          cell.t = 'n';
+          cell.v = isNaN(n) ? 0 : n;
+          cell.z = '#,##0.00';
+          const base = (cell.v === 0) ? styleZero : styleNumber;
+          cell.s = { ...base, ...(isAlt ? styleRowAlt : {}) };
+          continue;
+        }
+  
+        const base = (field === 'tipoAsientoCompleto') ? styleCenter : styleText;
+        cell.s = { ...base, ...(isAlt ? styleRowAlt : {}) };
       }
     }
-
-    // 6) Estilos: título centrado y header azul
-    const titleCellAddr = XLSX.utils.encode_cell({ r: 0, c: 0 });
-    const titleCell = ws[titleCellAddr];
-    if (titleCell) {
-      (titleCell as any).s = {
-        font: { bold: true, sz: 14 },
-        alignment: { horizontal: 'center', vertical: 'center' }
-      };
-    }
-
-    // Encabezados (fila headerRowIndex)
-    for (let C = 0; C < totalCols; ++C) {
-      const addr = XLSX.utils.encode_cell({ r: headerRowIndex, c: C });
-      const cell = ws[addr];
+  
+    // ========= estilos fila totales =========
+    for (let c = 0; c < colCount; c++) {
+      const col = visibleCols[c];
+      const field = col.field as string;
+      const cell = getCell(ws, totalsR, c);
       if (!cell) continue;
-      (cell as any).s = {
-        font: { bold: true, color: { rgb: 'FFFFFF' } },
-        alignment: { horizontal: 'center', vertical: 'center' },
-        fill: {
-          patternType: 'solid',
-          fgColor: { rgb: '1D789F' }  // azul cabecera
-        }
-      };
-    }
-
-    // Fila de totales (última fila)
-    for (let C = 0; C < totalCols; ++C) {
-      const addr = XLSX.utils.encode_cell({ r: totalsRowIndex, c: C });
-      const cell = ws[addr];
-      if (!cell) continue;
-      (cell as any).s = {
-        font: { bold: true },
-        alignment: { horizontal: C >= 4 && C <= 5 ? 'right' : 'left' }
-      };
-    }
-
-    // 7) Zebra rows + bordes finos en toda la tabla (encabezado, detalle y totales)
-    if (ref) {
-      const range = XLSX.utils.decode_range(ref);
-
-      const borderStyle = {
-        top:    { style: 'thin', color: { rgb: 'CCCCCC' } },
-        bottom: { style: 'thin', color: { rgb: 'CCCCCC' } },
-        left:   { style: 'thin', color: { rgb: 'CCCCCC' } },
-        right:  { style: 'thin', color: { rgb: 'CCCCCC' } }
-      };
-
-      const stripe1 = 'FFFFFF';  // blanco
-      const stripe2 = 'F5F5F5';  // gris muy claro
-
-      for (let R = headerRowIndex; R <= totalsRowIndex; ++R) {
-        for (let C = 0; C < totalCols; ++C) {
-          const addr = XLSX.utils.encode_cell({ r: R, c: C });
-          const cell = ws[addr];
-          if (!cell) continue;
-
-          const existing = (cell as any).s || {};
-
-          // Bordes en todo
-          existing.border = borderStyle;
-
-          // Zebra solo para filas de detalle
-          if (R >= firstDataRowIndex && R < totalsRowIndex) {
-            const isEven = (R - firstDataRowIndex) % 2 === 0;
-            existing.fill = {
-              patternType: 'solid',
-              fgColor: { rgb: isEven ? stripe1 : stripe2 }
-            };
-          }
-
-          (cell as any).s = existing;
-        }
+  
+      if (field === 'totdebe' || field === 'tothaber') {
+        const n = Number(cell.v ?? 0);
+        cell.t = 'n';
+        cell.v = isNaN(n) ? 0 : n;
+        cell.z = '#,##0.00';
+        cell.s = { ...styleTotalsRight, border: styleTotalsTopDouble };
+      } else if (field === 'numdoc' || field === 'observacion') {
+        cell.t = 's';
+        cell.v = cell.v == null ? '' : String(cell.v);
+        cell.z = '@';
+        cell.s = {
+          ...styleTotals,
+          alignment: { horizontal: 'left', vertical: 'center' },
+          border: styleTotalsTopDouble
+        };
+      } else {
+        cell.s = { ...styleTotals, border: styleTotalsTopDouble };
       }
     }
-
+  
+    // ========= rango + autofiltro =========
+    const lastColLetter = XLSX.utils.encode_col(colCount - 1);
+    const lastRowNumber = totalsR + 1;
+    ws['!ref'] = `A1:${lastColLetter}${lastRowNumber}`;
+    ws['!autofilter'] = { ref: `A4:${lastColLetter}4` };
+  
+    // ========= workbook =========
     const wb: XLSX.WorkBook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Asientos');
-    XLSX.writeFile(wb, `Listado_Asientos_${fechaStr}.xlsx`);
+    XLSX.utils.book_append_sheet(wb, ws, 'Facturas');
+    XLSX.writeFile(wb, `Listado_FacturasProveedor_${fechaStr}.xlsx`);
   }
 
   /* ================== EXPORTAR PDF (jsPDF + autoTable) ================== */

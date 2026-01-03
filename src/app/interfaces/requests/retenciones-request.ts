@@ -33,4 +33,5 @@ export interface RetencionesRequest {
   enviado: boolean;
   tipomovimiento: string | null;
   estadoingreso: boolean;
+  idusuario:number;
 }

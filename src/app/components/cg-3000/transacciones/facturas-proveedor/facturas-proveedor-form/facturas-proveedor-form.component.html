@@ -85,8 +85,7 @@
         <input
           class="control"
           type="date"
-          [value]="form.value.fechatransaccion | date:'yyyy-MM-dd'"
-          (input)="form.patchValue({ fechatransaccion: $any($event.target).value })"
+          formControlName="fechatransaccion"
           [disabled]="isReadOnly() || cabeceraBloqueada"
         />
       </div>
@@ -293,7 +292,7 @@
             (input)="docRelacionadoCtrl.setValue($any($event.target).value)"
             maxlength="25"
             placeholder="Ingrese documento relacionado"
-            [readonly]="isReadOnly() || cabeceraBloqueada"
+            [readonly]="isReadOnly() || cabeceraBloqueada || !esNotaCreditoSeleccionada()"
           />
         </div>
 
@@ -308,7 +307,7 @@
             maxlength="49"
             placeholder="Ingrese autorización relacionada"
             inputmode="numeric"
-            [readonly]="isReadOnly() || cabeceraBloqueada"
+            [readonly]="isReadOnly() || cabeceraBloqueada || !esNotaCreditoSeleccionada()"
           />
         </div>
 
@@ -320,7 +319,7 @@
             class="control"
             [value]="fechaCadRelacionadoCtrl.value | date:'yyyy-MM-dd'"
             (input)="fechaCadRelacionadoCtrl.setValue($any($event.target).value)"
-            [disabled]="isReadOnly() || cabeceraBloqueada"
+            [disabled]="isReadOnly() || cabeceraBloqueada || !esNotaCreditoSeleccionada()"
           />
         </div>
       </div>
