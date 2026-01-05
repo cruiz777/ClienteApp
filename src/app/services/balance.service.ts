@@ -7,6 +7,7 @@ import { BalanceComprobacionRequest } from '../interfaces/requests/balance-compr
 
 import { BalanceDiarioResponse } from '../interfaces/responses/balance-diario-response';
 import { BalanceComprobacionResponse } from '../interfaces/responses/balance-comprobacion-response';
+import { MayorCuentasResponse } from '../interfaces/responses/mayor-cuentas-response';
 
 
 // Si quieres tipar la respuesta genérica como en producto.service.ts
@@ -52,5 +53,13 @@ export class BalanceService {
     );
   }
 
+  getByCondicionMayorCuentas(
+    request: BalanceComprobacionRequest
+  ): Observable<ApiResponse<MayorCuentasResponse[]>> {
+    return this.http.post<ApiResponse<MayorCuentasResponse[]>>(
+      `${this.apiUrl}/mayor-cuentas`,
+      request
+    );
+  }
 
 }
