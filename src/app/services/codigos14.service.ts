@@ -169,5 +169,36 @@ filtrarCodigos14(
   );
 }
 
+  /**
+   * Devuelve TRUE/FALSE si existe un registro en codigos14 por codbar + unidad.
+   * GET: /api/Codigos14/existe-por-codbar-unidad?codbar=...&unidad=...
+   */
+  existePorCodbarUnidad(codbar: string, unidad: number): Observable<boolean> {
+    const url = `${this.baseUrl}/Codigos14/existe-por-codbar-unidad`;
+
+    return this.http
+      .get<ApiResponse<boolean>>(url, {
+        params: {
+          codbar: codbar?.trim() ?? '',
+          unidad: String(unidad),
+        },
+      })
+      .pipe(map(r => !!r.data));
+  }
+
+  /**
+   * (Opcional) Devuelve el ApiResponse completo (con message, type, etc.)
+   */
+  existePorCodbarUnidadRaw(codbar: string, unidad: number): Observable<ApiResponse<boolean>> {
+    const url = `${this.baseUrl}/Codigos14/existe-por-codbar-unidad`;
+
+    return this.http.get<ApiResponse<boolean>>(url, {
+      params: {
+        codbar: codbar?.trim() ?? '',
+        unidad: String(unidad),
+      },
+    });
+  }
+
 
 }
