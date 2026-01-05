@@ -2341,9 +2341,9 @@ export class NuevoProductoComponent implements OnInit {
     // Formato: TipoReporte_NombreEmpresa_Prefijo
     // El servicio agregará automáticamente: _YYYYMMDD_HHmmss
     if (codigoPrefijo) {
-      return `${tipoReporte}_${nombreLimpio}_${codigoPrefijo}`;
+      return `${nombreLimpio}_${codigoPrefijo}`;
     } else {
-      return `${tipoReporte}_${nombreLimpio}`;
+      return `${nombreLimpio}`;
     }
   }
   // Método para obtener productos por lotes con progreso
