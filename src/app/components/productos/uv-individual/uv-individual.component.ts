@@ -16,7 +16,7 @@ import { Observable, of } from 'rxjs';
 import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
 import { startWith, map, distinctUntilChanged, catchError } from 'rxjs/operators';
 import { MatIconModule } from '@angular/material/icon';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GeneracionCodigosService, SecuenciaResponse } from 'src/app/services/generacion-codigos.service';
 import { stream } from 'exceljs';
 import { MatSnackBar } from '@angular/material/snack-bar';
@@ -135,7 +135,8 @@ export class UvIndividualComponent implements OnInit {
     private clienteService: ClienteService,
     private usuarioService: UsuarioService,
     private jsonProductoService: JsonProductoService,
-    private parametrosFacturaService: ParametrosFacturaService
+    private parametrosFacturaService: ParametrosFacturaService,
+    private route: ActivatedRoute
   ) { }
 
 
@@ -2729,6 +2730,65 @@ export class UvIndividualComponent implements OnInit {
       this.mostrarAlerta('⚠️ Factor ya existe!!!', 'Advertencia');
     }
   });
+}
+
+onFactorBlur(): void {
+  // lo que ya hacías
+  this.actualizarDescripcionUL();
+
+  // nuevo: validar si ya existe
+  this.verificarFactorExistente();
+}
+generarULBloqueado = false;
+private verificarFactorExistente(): void {
+  const factorStr = (this.formUL.get('factor')?.value ?? '').toString().trim();
+  const factorNum = Number(factorStr);
+
+  // si está vacío o no es número, no validamos (ya tienes keypress numérico, pero por si pega texto)
+  if (!factorStr || Number.isNaN(factorNum)) return;
+
+  // codbar UV (tu tabla Codigos14 guarda codbar = GTIN UV)
+  const codbarUv =
+    (this.formUV.getRawValue().gtinUv ?? this.route.snapshot.paramMap.get('codbar') ?? '').toString().trim();
+
+  if (!codbarUv) return;
+
+ this.codigos14Service.existePorCodbarUnidad(codbarUv, factorNum).subscribe({
+  next: (existe) => {
+    const factorCtrl = this.formUL.get('factor');
+
+    if (existe) {
+      // error en control
+      factorCtrl?.setErrors({ ...(factorCtrl.errors ?? {}), factorExistente: true });
+      factorCtrl?.markAsTouched();
+      factorCtrl?.updateValueAndValidity({ emitEvent: false });
+
+      // bloquear generar
+      this.generarULBloqueado = true;
+
+      this.mostrarAlerta(
+        '⚠️ Ya existe una presentación con este Factor para este producto.',
+        'Advertencia'
+      );
+    } else {
+      // limpiar solo nuestro error
+      if (factorCtrl?.errors?.['factorExistente']) {
+        const { factorExistente, ...rest } = factorCtrl.errors;
+        factorCtrl.setErrors(Object.keys(rest).length ? rest : null);
+        factorCtrl.updateValueAndValidity({ emitEvent: false });
+      }
+
+      // desbloquear generar
+      this.generarULBloqueado = false;
+    }
+  },
+  error: () => {
+    // si falla la validación, por seguridad puedes bloquear generar
+    this.generarULBloqueado = true;
+    this.mostrarAlerta('❌ Error al verificar si el Factor ya existe.', 'Error');
+  }
+});
+
 }
 
 }

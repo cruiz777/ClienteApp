@@ -820,6 +820,7 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
     });
   }
   recupera13() {
+    debugger
     const soloCopiarGtin = this.tipoGtin === 'GTIN-13' && this.formUV.get('checkExiste')?.value;
     if (!soloCopiarGtin) return;
 
@@ -833,11 +834,12 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
 
       const obs$ = this.productoService.buscarPorCodbar(codbar).pipe(
         map((producto) => {
+          console.log('📦 Producto recibido del backend:', producto);
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto = fila.contenidoNeto?.toString().trim() || producto.contenido || '';
-            fila.contenidoUM = fila.contenidoUM?.trim() || producto.unidad || 'g';
+            fila.contenidoNeto =  producto.contenido || '';
+            fila.contenidoUM = producto.unidad || 'g';
             fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
             fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
@@ -882,10 +884,10 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
         !fila.descripcion || !fila.marca || !fila.contenidoNeto || !fila.categoria
       );
 
-      if (camposIncompletos) {
-        this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
-        return;
-      }
+      // if (camposIncompletos) {
+      //   this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
+      //   return;
+      // }
 
       const msg = this.modoEdicion ? 'actualizados' : 'generar';
 
@@ -1011,8 +1013,8 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto = fila.contenidoNeto?.toString().trim() || producto.contenido || '';
-            fila.contenidoUM = fila.contenidoUM?.trim() || producto.unidad || 'g';
+            fila.contenidoNeto =  producto.contenido || '';
+            fila.contenidoUM = producto.unidad || 'g';
             fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
             fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
@@ -1057,10 +1059,10 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
         !fila.descripcion || !fila.marca || !fila.contenidoNeto || !fila.categoria
       );
 
-      if (camposIncompletos) {
-        this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
-        return;
-      }
+      // if (camposIncompletos) {
+      //   this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
+      //   return;
+      // }
 
       const msg = this.modoEdicion ? 'actualizados' : 'generar';
 
@@ -1114,8 +1116,8 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto = fila.contenidoNeto?.toString().trim() || producto.contenido || '';
-            fila.contenidoUM = fila.contenidoUM?.trim() || producto.unidad || 'g';
+            fila.contenidoNeto =  producto.contenido || '';
+            fila.contenidoUM = producto.unidad || 'g';
             fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
             fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
@@ -1159,10 +1161,10 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
         !fila.descripcion || !fila.marca || !fila.contenidoNeto || !fila.categoria
       );
 
-      if (camposIncompletos) {
-        this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
-        return;
-      }
+      // if (camposIncompletos) {
+      //   this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
+      //   return;
+      // }
 
       const msg = this.modoEdicion ? 'actualizados' : 'generar';
 
@@ -1324,7 +1326,7 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
   }
 
   if (this.bandera === 2) {            // UPC-12 (sin 786)
-    if (len < 5 || len > 7) {
+    if (len < 5 || len > 8) {
       this.mostrarAlerta('⚠️ Para UPC el prefijo debe tener entre 5 y 7 dígitos.', 'Error');
       return of(false);
     }
@@ -2460,8 +2462,8 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto = fila.contenidoNeto?.toString().trim() || producto.contenido || '';
-            fila.contenidoUM = fila.contenidoUM?.trim() || producto.unidad || 'g';
+            fila.contenidoNeto =  producto.contenido || '';
+            fila.contenidoUM = producto.unidad || 'g';
             fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
             fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
@@ -2506,10 +2508,10 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
         !fila.descripcion || !fila.marca || !fila.contenidoNeto || !fila.categoria
       );
 
-      if (camposIncompletos) {
-        this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
-        return;
-      }
+      // if (camposIncompletos) {
+      //   this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
+      //   return;
+      // }
 
       const msg = this.modoEdicion ? 'actualizados' : 'generar';
 
