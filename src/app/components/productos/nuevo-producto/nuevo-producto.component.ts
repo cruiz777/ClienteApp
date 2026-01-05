@@ -687,6 +687,11 @@ export class NuevoProductoComponent implements OnInit {
  */
   async generarPdfLogistica(): Promise<void> {
     try {
+      if (!this.formReporte.get('gcp')?.value) {
+        this.mostrarAlerta('⚠️ Debe seleccionar un Prefijo', 'Advertencia');
+        return;
+      }
+      
       // ✅ Abrir diálogo de loading
       const loadingDialog = this.abrirDialogoProgreso(
         'Generando Reporte PDF',
@@ -2106,6 +2111,11 @@ export class NuevoProductoComponent implements OnInit {
   }
 
   generarPdfCompleto(): void {
+    if (!this.formReporte.get('gcp')?.value) {
+      this.mostrarAlerta('⚠️ Debe seleccionar un Prefijo', 'Advertencia');
+      return;
+    }
+    
     const codCliente = this.clienteSeleccionado?.clientes_codigo;
     const idPrefijo = this.formReporte.get('gcp')?.value;
     const estado = this.formReporte.get('estado')?.value === '1' ? 'Activo' : 'Inactivo';
