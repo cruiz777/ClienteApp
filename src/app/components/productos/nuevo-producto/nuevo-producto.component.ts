@@ -1112,7 +1112,7 @@ export class NuevoProductoComponent implements OnInit {
         year: 'numeric'
       }),
       pagina: metadata.pagina?.toString() || '1',
-      codigoEmpresa: metadata.prefijo_gs1 || metadata.cliente_codigo?.toString() || '', // Usar prefijo_gs1 principal y clientecodigo como fallback
+      codigoEmpresa: metadata.prefijo_gs1 || '', // Usar prefijo_gs1 principal y clientecodigo como fallback
       nombreEmpresa: metadata.empresa_nombre || '',
       ruc: metadata.ruc || '',
       gln: metadata.gln || '', //GLN ya viene del backend
@@ -2036,7 +2036,10 @@ export class NuevoProductoComponent implements OnInit {
       pageNumber: 1,
       pageSize: 50
     };
-
+    
+    if (formValues.codigo) {
+      params.codigoProducto = formValues.codigo;
+    }
     // Estado
     if (formValues.estado !== null && formValues.estado !== undefined) {
       params.estado = formValues.estado === '1' || formValues.estado === 1;
