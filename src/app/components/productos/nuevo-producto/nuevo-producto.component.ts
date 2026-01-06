@@ -1839,7 +1839,7 @@ export class NuevoProductoComponent implements OnInit {
         p.Despro,
         p.marca,
         p.contenido,
-        p.unidad,
+        (p.unidad ?? '').toString().toUpperCase(),
         p.codigoproducto,
         p.dbrick,
         p.brick,

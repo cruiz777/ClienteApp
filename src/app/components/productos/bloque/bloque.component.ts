@@ -2105,25 +2105,33 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
 
 
   generarDescripcionCompuesta(): void {
-    this.gridApi.forEachNode((node) => {
-      const data = node.data;
-      if (data.activo !== true) return; // solo los marcados
+  this.gridApi.forEachNode((node) => {
+    const data = node.data;
+    if (data.activo !== true) return; // solo los marcados
 
-      const descripcion = (data.descripcion || '').trim();
-      const marca = (data.marca || '').trim();
-      const contenido = (data.contenidoNeto || '').toString().trim();
-      const unidad = (data.contenidoUM || '').trim();
-      const factor = (data.factor || '').toString().trim();
+    const descripcion = (data.descripcion ?? '').toString().trim();
+    const marca = (data.marca ?? '').toString().trim();
+    const contenido = (data.contenidoNeto ?? '').toString().trim();
+    const factor = (data.factor ?? '').toString().trim();
 
-      const t = this.formUV.get('t')?.value || '';
-      const u = this.formUV.get('u')?.value || '';
+    const t = (this.formUV.get('t')?.value ?? '').toString().trim();
+    const u = (this.formUV.get('u')?.value ?? '').toString().trim();
 
-      const texto = `${descripcion} ${marca} ${contenido} ${unidad} ${t} ${factor} ${u}`;
+    // Si marca y contenido están en blanco, unidad también debe ir en blanco
+    const unidad =
+      (marca === '' && contenido === '')
+        ? ''
+        : (data.contenidoUM ?? '').toString().trim();
 
-      node.setDataValue('descripciong', texto);
-      this.gridApi.refreshCells({ rowNodes: [node], columns: ['descripciong'], force: true });
-    });
-  }
+    const texto = `${descripcion} ${marca} ${contenido} ${unidad} ${t} ${factor} ${u}`
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    node.setDataValue('descripciong', texto);
+    this.gridApi.refreshCells({ rowNodes: [node], columns: ['descripciong'], force: true });
+  });
+}
+
 
   generarGtin14(): void {
     this.gridApi.forEachNode((node) => {
