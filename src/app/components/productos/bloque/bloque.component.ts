@@ -85,7 +85,7 @@ export class BloqueComponent implements OnInit {
 
 gridOptions: GridOptions = {
   suppressMovableColumns: true,
-  onCellValueChanged: this.onCellValueChanged.bind(this),
+  onCellValueChanged: this.onCellValueChanged.bind(this),  
 
   // 👇 forzamos event: any para evitar problemas de tipos con AG Grid
   onCellKeyDown: (event: any) => {
@@ -378,7 +378,38 @@ gridOptions: GridOptions = {
     });
   }
 
+@HostListener('copy', ['$event'])
+onCopyFromGrid(event: ClipboardEvent): void {
+  if (!this.gridApi) {
+    return;
+  }
 
+  const focus = this.gridApi.getFocusedCell();
+  if (!focus) {
+    return; // Si no hay celda con foco, dejamos que el navegador copie normalmente
+  }
+
+  const rowIndex = focus.rowIndex ?? -1;
+  const field = focus.column.getColDef().field ?? null;
+
+  if (rowIndex < 0 || !field || rowIndex >= this.rowData.length) {
+    return;
+  }
+
+  const row = this.rowData[rowIndex];
+  const valorReal = row[field];
+
+  // 🔹 Solo interceptamos para categoria y contenidoUM
+  if (field === 'categoria' || field === 'contenidoUM') {
+    if (valorReal !== null && valorReal !== undefined) {
+      event.preventDefault();
+      event.clipboardData?.setData('text/plain', valorReal.toString());
+      console.log(`📋 Copiado valor real de ${field}:`, valorReal);
+    }
+  }
+  // Para otros campos, dejamos que el navegador copie normalmente
+}
+//
 @HostListener('paste', ['$event'])
 onPasteExcelToGrid(event: ClipboardEvent): void {
   // 1️⃣ Si no tenemos gridApi todavía, salimos
@@ -411,6 +442,7 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
   }
 
   event.preventDefault();
+  event.stopPropagation();
 
   const rows: string[] = text
     .split(/\r?\n/)
@@ -490,9 +522,9 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
       if (colIndex >= pasteableFields.length) {
         return;
       }
-
+      
       const field: string = pasteableFields[colIndex];
-      const raw = (cellValue ?? '').trim();
+      const raw = (cellValue ?? '').trim();      
 
       switch (field) {
         case 'contenidoNeto': {
@@ -514,16 +546,22 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
           break;
 
         case 'contenidoUM':
-          // Solo unidades que EXISTEN en el combo
+          // ✅ Solo unidades válidas
           if (unidadesValidas.includes(raw)) {
             row[field] = raw;
+            console.log(`✅ UM pegada en fila ${rowIndex + 1}: ${raw}`);
+          } else {
+            console.warn(`⚠️ UM "${raw}" no válida en fila ${rowIndex + 1}, ignorada`);
           }
           break;
 
         case 'categoria':
-          // Solo categorías que EXISTEN en el combo (código)
+          // ✅ Solo categorías válidas
           if (categoriasValidas.includes(raw)) {
             row[field] = raw;
+            console.log(`✅ Categoría pegada en fila ${rowIndex + 1}: ${raw}`);
+          } else {
+            console.warn(`⚠️ Categoría "${raw}" no válida en fila ${rowIndex + 1}, ignorada`);
           }
           break;
 
@@ -538,7 +576,9 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
   this.rowData = updated;
   this.gridApi.refreshCells({ force: true });
   this.gridApi.redrawRows();
+  console.log('✅ Pegado completado');
 }
+//
 
 
   async generarFilas(): Promise<void> {
