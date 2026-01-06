@@ -38,6 +38,7 @@ import { ActivatedRoute } from '@angular/router';
 import { take } from 'rxjs/operators';
 import * as moment from 'moment';
 import { debounceTime } from 'rxjs/operators';
+import { themeAlpine } from 'ag-grid-community';
 @Component({
   selector: 'app-ul',
   standalone: true,
@@ -993,24 +994,31 @@ export class UlComponent implements OnInit {
     console.log('⚫ Seleccionado GTIN-14 UL Internacional');
     // tu lógica aquí
   }
-  actualizarDescripcionUL(): void {
-    const descripcion = this.formUV.get('descripcion')?.value || '';
-    const marca = this.formUV.get('marca')?.value || '';
-    const contenido = this.formUV.get('contenido')?.value || '';
-   const unidadObj = this.formUV.getRawValue().unidadMedida?.unidad || '';
-    const unidadu = this.formUL.getRawValue().unidad || '';
-    const tipoEmpaque = this.formUL.getRawValue().tipoEmpaque || '';
+ actualizarDescripcionUL(): void {
+  const descripcion  = (this.formUV.get('descripcion')?.value ?? '').toString().trim();
+  const marca        = (this.formUV.get('marca')?.value ?? '').toString().trim();
+  const contenido    = (this.formUV.get('contenido')?.value ?? '').toString().trim();
 
+  const unidadObj    = (this.formUV.getRawValue()?.unidadMedida?.unidad ?? '').toString().trim();
+  const tipoEmpaque  = (this.formUL.getRawValue()?.tipoEmpaque ?? '').toString().trim();
 
-    const factor = this.formUL.get('factor')?.value || '';
-    const unidad = this.formUL.get('unidad')?.value || '';
+  const factor       = (this.formUL.get('factor')?.value ?? '').toString().trim();
+  const unidad       = (this.formUL.get('unidad')?.value ?? '').toString().trim();
 
-    const descripcionUL = `${descripcion} ${marca} ${contenido} ${unidadObj} ${tipoEmpaque} ${factor} ${unidad}`
+  const sinMarcaYContenido = marca === '' && contenido === '';
+
+  const descripcionUL = (
+    sinMarcaYContenido
+      ? `${descripcion} ${marca} ${contenido} ${tipoEmpaque} ${factor} ${unidad}`
+      : `${descripcion} ${marca} ${contenido} ${unidadObj} ${tipoEmpaque} ${factor} ${unidad}`
+  )
+    .replace(/\s+/g, ' ')
+    .trim()
     .toUpperCase();
 
-    
-    this.formUL.get('descripcionu')?.setValue(descripcionUL);
-  }
+  this.formUL.get('descripcionu')?.setValue(descripcionUL);
+}
+
   generarUL(): void {
     debugger
     const gtinPrincipal =
