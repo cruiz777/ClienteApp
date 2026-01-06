@@ -345,6 +345,7 @@ export class NuevoProductoComponent implements OnInit {
 
 
   cargarCodigos14PorGtin(gtin: string): void {
+    debugger
     this.codigos14Service.getPorGtin(gtin).subscribe({
       next: codigos => {
         this.registrosGtin14 = codigos.map(c => ({
@@ -493,145 +494,193 @@ export class NuevoProductoComponent implements OnInit {
 
 
   async generarPdfPorProducto(): Promise<void> {
-    const codbar = this.formReporte.get('codigo')?.value;
-    if (!codbar) {
-      this._snackBar.open('⚠️ Debe ingresar un código de barras.', 'Cerrar', {
-        duration: 3000,
-        horizontalPosition: 'end',
-        verticalPosition: 'top',
-        panelClass: ['snackbar-warning']
-      });
-      return;
-    }
+  debugger;
 
-    const [logoBase64, firmaBase64] = await Promise.all([
-      this.cargarImagenBase64('assets/logo/GS1-logo.png'),
-      this.cargarImagenBase64('assets/logo/firma.png')
-    ]);
+  const codbar = this.formReporte.get('codigo')?.value;
+  if (!codbar) {
+    this._snackBar.open('⚠️ Debe ingresar un código de barras.', 'Cerrar', {
+      duration: 3000,
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
+      panelClass: ['snackbar-warning']
+    });
+    return;
+  }
 
-    const logoWidth = 30, logoHeight = 20;
-    const firmaWidth = 50, firmaHeight = 15;
+  const [logoBase64, firmaBase64] = await Promise.all([
+    this.cargarImagenBase64('assets/logo/GS1-logo.png'),
+    this.cargarImagenBase64('assets/logo/firma.png')
+  ]);
 
-    this.productoService.buscarPorCodbar(codbar).pipe(take(1)).subscribe({
-      next: async (producto) => {
-        if (!producto) {
-          this._snackBar.open('⚠️ Producto no encontrado.', 'Cerrar', { duration: 3000, horizontalPosition: 'end', verticalPosition: 'top', panelClass: ['snackbar-warning'] });
-          return;
-        }
+  const logoWidth = 30, logoHeight = 20;
+  const firmaWidth = 50, firmaHeight = 15;
 
-        let gln = '---', web = '---';
-        if (producto.codpre) {
-          try {
-            const prefijos = await firstValueFrom(this.prefijoService.buscarPorCodpre(producto.codpre));
-            if (prefijos.length > 0) {
-              gln = prefijos[0].gln || '---';
-              web = prefijos[0].web || '---';
-            }
-          } catch (error) {
-            console.error('❌ Error al obtener prefijos:', error);
-          }
-        }
-
-        const doc = new jsPDF();
-        let y = 10;
-        const xLabel = 150, xValue = 180;
-
-        doc.addImage(logoBase64, 'PNG', 15, 10, logoWidth, logoHeight);
-        doc.setFontSize(14).setFont('helvetica', 'bold');
-        doc.text('Sistema de Control de Códigos', 105, y, { align: 'center' }); y += 8;
-        doc.text('Reporte de Ficha Producto', 105, y, { align: 'center' }); y += 10;
-
-        doc.setFontSize(9).setFont('helvetica', 'normal');
-        const fecha = this.formatearFecha(new Date().toISOString());
-        const ruc = this.clienteSeleccionado?.ruc || '---';
-        doc.text('Emisor :', xLabel, y); doc.text('GS1', xValue, y); y += 5;
-        doc.text('Fecha de Emisión:', xLabel, y); doc.text(fecha, xValue, y); y += 5;
-        doc.text('Pag.:', xLabel, y); doc.text('Page 1 of 1', xValue, y); y += 5;
-        doc.text('GLN:', xLabel, y); doc.text(gln, xValue, y); y += 5;
-        doc.text('RUC:', xLabel, y); doc.text(ruc, xValue, y); y += 5;
-
-        doc.setFont('helvetica', 'bold');
-        doc.text('786' + (producto.codpre || '---'), 20, y);
-        doc.text(producto.clienteNombres || 'EMPRESA DESCONOCIDA', 50, y); y += 10;
-
-        doc.setFontSize(8).setFont('helvetica', 'normal');
-        doc.text('GS1 Ecuador  (ECOP) certifica que los códigos GTIN que constan a continuación son auténticos y publicados en www.gs1ec.org Verified By Ecuador.', 10, y); y += 5;
-        doc.text('El dueño de la marca del producto coloca el código, es su resposabilidad el manejo y control del código, incluida su descripción y marca.', 10, y); y += 5;
-        doc.text('El Prefijo Global de Compañía GS1, GCP, es intransferible.', 10, y); y += 5;
-
-        doc.setFont('helvetica', 'bold');
-        doc.text('Detalle Unidad Comercial', 10, y); y += 5;
-        doc.setLineWidth(0.3).line(10, y, 200, y); y += 6;
-
-        doc.setFont('helvetica', 'normal');
-        const detalles = [
-          ['GTIN® UV:', producto.codbar || '---'],
-          ['Tipo Código:', producto.gtin || 'GTIN 13'],
-          ['Descripción del Producto:', producto.Despro || '---'],
-          ['Marca:', producto.marca || '---'],
-          ['Contenido:', producto.contenido?.toString() || '---'],
-          ['Unidad de Medida:', producto.unidad || '---'],
-          ['Categoría:', producto.dbrick || '---'],
-          ['Brick:', producto.brick || '---'],
-          ['País:', producto.pais || '---'],
-          ['Fecha Creación:', this.formatearFecha(producto.Feccre)]
-        ];
-        for (const [label, value] of detalles) {
-          doc.text(label, 10, y); doc.text(value, 45, y); y += 5;
-        }
-
-        if (this.registrosGtin14?.length > 0) {
-          doc.setFont('helvetica', 'bold');
-          doc.text('Detalle Unidad Logística', 10, y); y += 5;
-          doc.line(10, y, 200, y); y += 6;
-          doc.text('GTIN-14', 10, y);
-          doc.text('Descripción', 45, y);
-          doc.text('Presentación', 170, y);
-          doc.text('Factor', 190, y); y += 5;
-          doc.setLineWidth(0.1).line(10, y, 200, y); y += 4;
-          doc.setFont('helvetica', 'normal');
-          for (const reg of this.registrosGtin14) {
-            doc.text(reg.g14, 10, y);
-            doc.text(reg.descripcion || '---', 45, y);
-            doc.text(reg.presentacion?.toString() || '-', 180, y);
-            doc.text(reg.factor?.toString() || '-', 190, y);
-            y += 5;
-            if (y > 270) { doc.addPage(); y = 10; }
-          }
-          y += 5;
-        }
-
-        doc.setFont('helvetica', 'bold');
-        doc.text('Detalle Empresa', 10, y); y += 5;
-        doc.line(10, y, 200, y); y += 6;
-        doc.setFont('helvetica', 'normal');
-        doc.text('GLN:', 10, y); doc.text(gln, 40, y); y += 5;
-        doc.text('RUC:', 10, y); doc.text(ruc, 40, y); y += 5;
-        doc.text('Empresa:', 10, y); doc.text(producto.clienteNombres || '---', 40, y); y += 5;
-        doc.text('Web:', 10, y); doc.text(web, 40, y);
-
-        const firmaY = Math.min(y + 20, doc.internal.pageSize.getHeight() - firmaHeight - 10);
-        const firmaX = (doc.internal.pageSize.getWidth() - firmaWidth) / 2;
-        doc.addImage(firmaBase64, 'PNG', firmaX, firmaY, firmaWidth, firmaHeight);
-
-        const now = new Date();
-        const fechaHora = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
-        const codigoProducto = producto.codbar || 'SinCodigo';
-        const nombreArchivo = `${this.generarNombreArchivo('Producto')}_${codigoProducto}_${fechaHora}.pdf`;
-
-        doc.save(nombreArchivo);
-        this.formReporte.get('codigo')?.reset();
-      },
-      error: () => {
-        this._snackBar.open('❌ Error al obtener el producto.', 'Cerrar', {
+  this.productoService.buscarPorCodbar(codbar).pipe(take(1)).subscribe({
+    next: async (producto) => {
+      if (!producto) {
+        this._snackBar.open('⚠️ Producto no encontrado.', 'Cerrar', {
           duration: 3000,
           horizontalPosition: 'end',
           verticalPosition: 'top',
-          panelClass: ['snackbar-error']
+          panelClass: ['snackbar-warning']
         });
+        return;
       }
-    });
-  }
+
+      let gln = '---', web = '---';
+      if (producto.codpre) {
+        try {
+          const prefijos = await firstValueFrom(this.prefijoService.buscarPorCodpre(producto.codpre));
+          if (prefijos.length > 0) {
+            gln = prefijos[0].gln || '---';
+            web = prefijos[0].web || '---';
+          }
+        } catch (error) {
+          console.error('❌ Error al obtener prefijos:', error);
+        }
+      }
+
+      // ✅ Cargar UL (GTIN-14) SIEMPRE aquí (porque al imprimir por código no viene del grid)
+      let ulRows: any[] = [];
+      try {
+        const codigos = await firstValueFrom(this.codigos14Service.getPorGtin(producto.codbar));
+        ulRows = (codigos || []).map(c => ({
+          id: c.id_codigos14,
+          g14: c.g14 || '',
+          descripcion: c.descripcion || '',
+          presentacion: c.presentacion || 0,
+          factor: c.unidad || ''
+        }));
+
+        // (Opcional) si quieres que también quede en la variable global:
+        this.registrosGtin14 = ulRows.map(r => ({
+          g14: r.g14,
+          descripcion: r.descripcion,
+          presentacion: r.presentacion,
+          factor: r.factor
+        }));
+      } catch (e) {
+        console.error('Error al cargar códigos14 para PDF:', e);
+        ulRows = [];
+        this.registrosGtin14 = [];
+      }
+
+      const doc = new jsPDF();
+      let y = 10;
+      const xLabel = 150, xValue = 180;
+
+      doc.addImage(logoBase64, 'PNG', 15, 10, logoWidth, logoHeight);
+      doc.setFontSize(14).setFont('helvetica', 'bold');
+      doc.text('Sistema de Control de Códigos', 105, y, { align: 'center' }); y += 8;
+     doc.text('Reporte de Ficha Producto', 105, y, { align: 'center' }); 
+y += 10;
+
+
+      doc.setFontSize(9).setFont('helvetica', 'normal');
+      const fecha = this.formatearFecha(new Date().toISOString());
+      const ruc = this.clienteSeleccionado?.ruc || '---';
+      doc.text('Emisor :', xLabel, y); doc.text('GS1', xValue, y); y += 5;
+      doc.text('Fecha de Emisión:', xLabel, y); doc.text(fecha, xValue, y); y += 5;
+      doc.text('Pag.:', xLabel, y); doc.text('Page 1 of 1', xValue, y); y += 5;
+      doc.text('GLN:', xLabel, y); doc.text(gln, xValue, y); y += 5;
+      doc.text('RUC:', xLabel, y); doc.text(ruc, xValue, y); y += 5;
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('786' + (producto.codpre || '---'), 20, y);
+      doc.text(producto.clienteNombres || 'EMPRESA DESCONOCIDA', 50, y); y += 10;
+
+      doc.setFontSize(8).setFont('helvetica', 'normal');
+      doc.text('GS1 Ecuador  (ECOP) certifica que los códigos GTIN que constan a continuación son auténticos y publicados en www.gs1ec.org Verified By Ecuador.', 10, y); y += 5;
+      doc.text('El dueño de la marca del producto coloca el código, es su resposabilidad el manejo y control del código, incluida su descripción y marca.', 10, y); y += 5;
+      doc.text('El Prefijo Global de Compañía GS1, GCP, es intransferible.', 10, y); y += 5;
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Detalle Unidad Comercial', 10, y); y += 5;
+      doc.setLineWidth(0.3).line(10, y, 200, y); y += 6;
+
+      doc.setFont('helvetica', 'normal');
+      const detalles = [
+        ['GTIN® UV:', producto.codbar || '---'],
+        ['Tipo Código:', producto.gtin || 'GTIN 13'],
+        ['Descripción del Producto:', producto.Despro || '---'],
+        ['Marca:', producto.marca || '---'],
+        ['Contenido:', producto.contenido?.toString() || '---'],
+        ['Unidad de Medida:', producto.unidad || '---'],
+        ['Categoría:', producto.dbrick || '---'],
+        ['Brick:', producto.brick || '---'],
+        ['País:', producto.pais || '---'],
+        ['Fecha Creación:', this.formatearFecha(producto.Feccre)]
+      ];
+      for (const [label, value] of detalles) {
+        doc.text(label, 10, y);
+        doc.text(value, 45, y);
+        y += 5;
+      }
+
+      // ✅ AHORA usa ulRows (no dependas de this.registrosGtin14)
+      if (ulRows.length > 0) {
+        doc.setFont('helvetica', 'bold');
+        doc.text('Detalle Unidad Logística', 10, y); y += 5;
+        doc.line(10, y, 200, y); y += 6;
+
+        doc.text('GTIN-14', 10, y);
+        doc.text('Descripción', 45, y);
+        doc.text('Presentación', 170, y);
+        doc.text('Factor', 190, y); y += 5;
+
+        doc.setLineWidth(0.1).line(10, y, 200, y); y += 4;
+        doc.setFont('helvetica', 'normal');
+
+        for (const reg of ulRows) {
+          doc.text(String(reg.g14 || '---'), 10, y);
+          doc.text(String(reg.descripcion || '---'), 45, y);
+          doc.text(String(reg.presentacion ?? '-'), 180, y);
+          doc.text(String(reg.factor ?? '-'), 190, y);
+
+          y += 5;
+
+          if (y > 270) {
+            doc.addPage();
+            y = 10;
+          }
+        }
+
+        y += 5;
+      }
+
+      doc.setFont('helvetica', 'bold');
+      doc.text('Detalle Empresa', 10, y); y += 5;
+      doc.line(10, y, 200, y); y += 6;
+
+      doc.setFont('helvetica', 'normal');
+      doc.text('GLN:', 10, y); doc.text(gln, 40, y); y += 5;
+      doc.text('RUC:', 10, y); doc.text(ruc, 40, y); y += 5;
+      doc.text('Empresa:', 10, y); doc.text(producto.clienteNombres || '---', 40, y); y += 5;
+      doc.text('Web:', 10, y); doc.text(web, 40, y);
+
+      const firmaY = Math.min(y + 20, doc.internal.pageSize.getHeight() - firmaHeight - 10);
+      const firmaX = (doc.internal.pageSize.getWidth() - firmaWidth) / 2;
+      doc.addImage(firmaBase64, 'PNG', firmaX, firmaY, firmaWidth, firmaHeight);
+
+      const now = new Date();
+      const fechaHora = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
+      const codigoProducto = producto.codbar || 'SinCodigo';
+      const nombreArchivo = `${this.generarNombreArchivo('Producto')}_${codigoProducto}_${fechaHora}.pdf`;
+
+      doc.save(nombreArchivo);
+      this.formReporte.get('codigo')?.reset();
+    },
+    error: () => {
+      this._snackBar.open('❌ Error al obtener el producto.', 'Cerrar', {
+        duration: 3000,
+        horizontalPosition: 'end',
+        verticalPosition: 'top',
+        panelClass: ['snackbar-error']
+      });
+    }
+  });
+}
+
 
 
   private async cargarImagenBase64(ruta: string): Promise<string> {
