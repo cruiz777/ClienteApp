@@ -187,12 +187,14 @@ export class DocumentosService {
   }
 
   abrirPDF(claveAcceso: string): void {
+    console.log('📄 Descargando/Abriendo PDF:', claveAcceso);
+    
     this.descargarPDF(claveAcceso).subscribe({
       next: (response) => {
         const blob = response.body;
         if (!blob) return;
 
-        // Extraer nombre
+        // Extraer nombre del archivo
         const contentDisposition = response.headers.get('Content-Disposition');
         let nombreArchivo = `${claveAcceso}.pdf`;
 
@@ -203,25 +205,21 @@ export class DocumentosService {
           }
         }
 
-        // ✅ Crear blob con tipo correcto
+        // ✅ FORZAR DESCARGA (el navegador puede abrirlo automáticamente según configuración)
         const blobWithType = new Blob([blob], { type: 'application/pdf' });
         const url = URL.createObjectURL(blobWithType);
         
-        // ✅ Abrir en nueva pestaña
-        const win = window.open(url, '_blank');
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = nombreArchivo; // ⬅️ Esto fuerza el nombre correcto
+        link.click();
         
-        // ✅ Opcional: Si el navegador bloquea popups, descargar
-        if (!win) {
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = nombreArchivo;
-          link.click();
-        }
-        
-        // Limpiar después de un tiempo
-        setTimeout(() => URL.revokeObjectURL(url), 100);
+        URL.revokeObjectURL(url);
+      
       },
-      error: (error) => console.error('Error al abrir PDF:', error),
+      error: (error) => {
+        console.error('Error al descargar PDF:', error);
+      }
     });
   }
 
