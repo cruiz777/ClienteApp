@@ -47,7 +47,11 @@ import { BalanceComprobacionRequest } from 'src/app/interfaces/requests/balance-
 import { MayorCuentasResponse } from 'src/app/interfaces/responses/mayor-cuentas-response';
 import { LocalesResponse } from 'src/app/interfaces/responses/local-response'
 import { ZonaResponse } from 'src/app/interfaces/responses/zona-response'
-import { ApiResponse } from 'src/app/services/generacion-codigos.service';
+
+/* ==========================
+ * Messages
+ * ========================== */
+import { RequiredFieldsToastService } from 'src/app/components/utils/messages/required-fields-toast.service';
 
 type MayorCuentaRow = {
   tipo: string;
@@ -117,7 +121,8 @@ export class MayorCuentasListComponent implements OnInit {
   constructor(
     private balanceService: BalanceService,
     private localService: LocalesService,
-    private zonaService: ZonaService
+    private zonaService: ZonaService,
+    private message: RequiredFieldsToastService
   ) { }
 
   // trackBy (mejora performance en combos)
@@ -167,7 +172,9 @@ export class MayorCuentasListComponent implements OnInit {
     const d2 = (this.filtros.fechaHasta ?? '').trim();
 
     if (!d1 || !d2) {
+
       console.warn('Debe ingresar Fecha Inicio y Fecha Final');
+      this.message.mostrar(['Fecha Inicio', 'Fecha Final']);
       return;
     }
 
@@ -177,11 +184,13 @@ export class MayorCuentasListComponent implements OnInit {
     const dateHasta = new Date(d2);
 
     if (isNaN(dateDesde.getTime()) || isNaN(dateHasta.getTime())) {
+      this.message.error('Formato de fecha inválido. Use YYYY-MM-DD.');
       console.warn('Formato de fecha inválido');
       return;
     }
 
     if (dateDesde > dateHasta) {
+      this.message.error('La Fecha Inicial no puede ser mayor a la Fecha Final.');
       console.warn('La Fecha Inicial no puede ser mayor a la Fecha Final');
       return;
     }
@@ -196,6 +205,7 @@ export class MayorCuentasListComponent implements OnInit {
 
       // Regla: si llena una, debe llenar la otra
       if (tieneDesde !== tieneHasta) {
+        this.message.mostrar(['Cuenta A', 'Cuenta B']);
         console.warn('Para filtrar por cuenta debe ingresar CUENTA A y CUENTA B');
         return;
       }
@@ -204,6 +214,7 @@ export class MayorCuentasListComponent implements OnInit {
       if (tieneDesde && tieneHasta) {
         // Comparación simple (si tus cuentas son códigos comparables alfabéticamente)
         if (hasta.localeCompare(desde) < 0) {
+          this.message.error('Cuenta B no puede ser menor que Cuenta A.');
           console.warn('CUENTA B no puede ser menor que CUENTA A');
           return;
         }
@@ -222,10 +233,14 @@ export class MayorCuentasListComponent implements OnInit {
         const data = resp?.data ?? [];
         this.resultados = data;
         this.loading = false;
+        // Mostrar mensaje de éxito
+        this.message.exito('Consulta mayor de cuentas realizada correctamente.');
       },
       error: (err) => {
         console.error('ERROR BACK:', err);
         this.loading = false;
+        // Mostrar popup de error al usuario
+        this.message.error('No se pudo consultar el mayor de cuentas. Intente nuevamente.');
       }
     });
 
@@ -279,13 +294,9 @@ export class MayorCuentasListComponent implements OnInit {
  * ========================================================== */
 
   // Acciones de exportación (placeholders)
-  async exportExcel() {
-
-  }
-
-  async exportPdf(): Promise<void> {
+  async exportExcel(): Promise<void> {
     try {
-      // 1) Validaciones mínimas (igual a tu guía)
+      // 1) Validaciones mínimas
       const d1 = (this.filtros.fechaDesde ?? '').trim();
       const d2 = (this.filtros.fechaHasta ?? '').trim();
 
@@ -295,6 +306,337 @@ export class MayorCuentasListComponent implements OnInit {
       }
       if (d2 < d1) {
         console.warn('La Fecha Final no puede ser menor a la Fecha Inicial');
+        return;
+      }
+
+      // 2) Labels
+      const cuentaIni = (this.filtros.cuentaA ?? '').trim() || 'TODOS';
+      const cuentaFin = (this.filtros.cuentaB ?? '').trim() || 'TODOS';
+
+      const localLabel =
+        this.filtros.idLocal
+          ? (this.localesResponse.find(x => (x as any).id === this.filtros.idLocal)?.nombre ?? 'TODOS')
+          : 'TODOS';
+
+      const zonaLabel =
+        this.filtros.idZona
+          ? (this.zonaResponse.find(z => (z as any).idZona === this.filtros.idZona)?.nombre ?? 'TODOS')
+          : 'TODOS';
+
+      const usuario = (this as any).usuarioActual ?? 'ADMINISTRADOR';
+      const fechaImpresion = this.formatDateEC(new Date());
+      const desde = this.formatDateECFromIso(d1);
+      const hasta = this.formatDateECFromIso(d2);
+
+      // 3) Data
+      const rows = (this.resultados ?? []) as MayorCuentasResponse[];
+      if (!rows.length) {
+        console.warn('No hay datos para exportar');
+        return;
+      }
+
+      // 4) Workbook / Worksheet
+      const wb = new ExcelJS.Workbook();
+      wb.creator = 'ECOP';
+      wb.created = new Date();
+
+      const ws = wb.addWorksheet('Mayor', {
+        pageSetup: {
+          paperSize: 9, // A4
+          orientation: 'landscape',
+          fitToPage: true,
+          fitToWidth: 1,
+          fitToHeight: 0,
+          margins: { left: 0.3, right: 0.3, top: 0.4, bottom: 0.4, header: 0.2, footer: 0.2 }
+        },
+        properties: { defaultRowHeight: 15 }
+      });
+
+      // 5) Column widths
+      ws.columns = [
+        { key: 'tipo', width: 6 },
+        { key: 'asiento', width: 12 },
+        { key: 'cheque', width: 9 },
+        { key: 'fTrans', width: 12 },
+        { key: 'fIng', width: 12 },
+        { key: 'nComp', width: 18 },
+        { key: 'mov', width: 6 },
+        { key: 'benef', width: 26 },
+        { key: 'debe', width: 14 },
+        { key: 'haber', width: 14 },
+        { key: 'saldo', width: 14 },
+        { key: 'concepto', width: 55 },
+      ];
+
+      // 6) Logo (opcional)
+      const LOGO_URL = 'assets/logo/GS1-logo.png';
+      try {
+        const logo = await this.getBase64ImageFromUrl(LOGO_URL);
+        const imgId = wb.addImage({
+          base64: logo.dataUrl,
+          extension: logo.format === 'PNG' ? 'png' : 'jpeg',
+        });
+
+        ws.addImage(imgId, {
+          tl: { col: 0, row: 0 },   // A1
+          ext: { width: 100, height: 50 }
+        });
+      } catch {
+        // sin logo no bloquea
+      }
+
+      // 7) Encabezado general
+      // Título
+      ws.mergeCells('A1:L1');
+      const titleCell = ws.getCell('A1');
+      titleCell.value = 'MAYOR DE CUENTAS DETALLADO';
+      titleCell.font = { bold: true, size: 14 };
+      titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      ws.getRow(1).height = 22;
+
+      // Bloque izquierda
+      ws.getCell('A3').value = 'CuentaDesde:';
+      ws.getCell('B3').value = cuentaIni;
+      ws.mergeCells('B3:D3');
+
+      ws.getCell('A4').value = 'CuentaHasta:';
+      ws.getCell('B4').value = cuentaFin;
+      ws.mergeCells('B4:D4');
+
+      ws.getCell('A5').value = 'Fecha Desde:';
+      ws.getCell('B5').value = desde;
+      ws.mergeCells('B5:D5');
+
+      ws.getCell('A6').value = 'Fecha Hasta:';
+      ws.getCell('B6').value = hasta;
+      ws.mergeCells('B6:D6');
+
+      ws.getCell('A7').value = 'Usuario:';
+      ws.getCell('B7').value = usuario;
+      ws.mergeCells('B7:D7');
+
+      ws.getCell('A8').value = 'Fec. Impresion:';
+      ws.getCell('B8').value = fechaImpresion;
+      ws.mergeCells('B8:D8');
+
+      // Bloque derecha
+      ws.getCell('J5').value = 'Zona:';
+      ws.getCell('K5').value = zonaLabel;
+      ws.mergeCells('K5:L5');
+
+      ws.getCell('J6').value = 'Local:';
+      ws.getCell('K6').value = localLabel;
+      ws.mergeCells('K6:L6');
+
+      // Estilos labels
+      const headerLabelCells = ['A3', 'A4', 'A5', 'A6', 'A7', 'A8', 'J5', 'J6'];
+      for (const addr of headerLabelCells) {
+        ws.getCell(addr).font = { bold: true, size: 10 };
+      }
+      const headerValueCells = ['B3', 'B4', 'B5', 'B6', 'B7', 'B8', 'K5', 'K6'];
+      for (const addr of headerValueCells) {
+        ws.getCell(addr).font = { size: 10 };
+      }
+
+      // Línea separadora
+      ws.getRow(9).height = 6;
+      for (let c = 1; c <= 12; c++) {
+        ws.getCell(9, c).border = { bottom: { style: 'thin' } };
+      }
+
+      // 8) Header de columnas (tabla)
+      const tableHeaderRowIdx = 10;
+      const hdr = ws.getRow(tableHeaderRowIdx);
+      hdr.values = [
+        'Tipo', 'Asiento', 'Cheque',
+        'F. Trans', 'F. Ing',
+        'N. Comp', 'Mov',
+        'Beneficiario',
+        'Debe', 'Haber', 'Saldo',
+        'Concepto'
+      ];
+      hdr.font = { bold: true, size: 10 };
+      hdr.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      hdr.height = 22;
+
+      // Bordes header
+      for (let c = 1; c <= 12; c++) {
+        ws.getCell(tableHeaderRowIdx, c).border = { bottom: { style: 'thin' } };
+      }
+
+      // Freeze panes (mantiene headers)
+      ws.views = [{ state: 'frozen', ySplit: tableHeaderRowIdx }];
+
+      // 9) Body agrupado por cuentaHijo
+      const numFmt = '#,##0.00';
+      const fmtDate = (iso: string): string => {
+        const v = (iso ?? '').trim();
+        if (!v) return '';
+        // ISO -> dd/MM/yyyy
+        const yyyy = v.slice(0, 4);
+        const mm = v.slice(5, 7);
+        const dd = v.slice(8, 10);
+        if (!yyyy || !mm || !dd) return v;
+        return `${dd}/${mm}/${yyyy}`;
+      };
+
+      const getCuenta = (r: any): string => {
+        return String((r?.cuentaHijo ?? r?.cuentalHijo ?? '')).trim();
+      };
+
+      let rowIdx = tableHeaderRowIdx + 1;
+
+      let currentCuenta = '';
+      let totalDebe = 0;
+      let totalHaber = 0;
+      let saldoFinal = 0;
+
+      const pushTotal = () => {
+        if (!currentCuenta) return;
+
+        const r = ws.getRow(rowIdx);
+
+        // Merge A..H para el label TOTAL
+        ws.mergeCells(rowIdx, 1, rowIdx, 8);
+        const cLabel = r.getCell(1);
+        cLabel.value = 'TOTAL';
+        cLabel.font = { bold: true, size: 10 };
+        cLabel.alignment = { horizontal: 'right', vertical: 'middle' };
+
+        const cDebe = r.getCell(9);
+        cDebe.value = totalDebe;
+        cDebe.numFmt = numFmt;
+        cDebe.font = { bold: true, size: 10 };
+        cDebe.alignment = { horizontal: 'right', vertical: 'middle' };
+
+        const cHaber = r.getCell(10);
+        cHaber.value = totalHaber;
+        cHaber.numFmt = numFmt;
+        cHaber.font = { bold: true, size: 10 };
+        cHaber.alignment = { horizontal: 'right', vertical: 'middle' };
+
+        const cSaldo = r.getCell(11);
+        cSaldo.value = saldoFinal;
+        cSaldo.numFmt = numFmt;
+        cSaldo.font = { bold: true, size: 10 };
+        cSaldo.alignment = { horizontal: 'right', vertical: 'middle' };
+
+        // Concepto vacío
+        r.getCell(12).value = '';
+
+        // Borde superior fino para separar
+        for (let c = 1; c <= 12; c++) {
+          r.getCell(c).border = { top: { style: 'thin' } };
+        }
+
+        rowIdx++;
+        // fila en blanco opcional para separación visual
+        rowIdx++;
+      };
+
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows[i] as any;
+        const cuenta = getCuenta(r);
+
+        // Cambio de cuenta
+        if (i === 0 || cuenta !== currentCuenta) {
+          // cerrar anterior
+          if (i !== 0) pushTotal();
+
+          // abrir nuevo
+          currentCuenta = cuenta;
+          totalDebe = 0;
+          totalHaber = 0;
+          saldoFinal = 0;
+
+          const nombre = String(r?.nombreHijo ?? '').trim();
+          const saldoAnterior = Number(r?.saldoAnterior ?? 0);
+
+          // Encabezado de cuenta: merge A..L
+          ws.mergeCells(rowIdx, 1, rowIdx, 12);
+          const h = ws.getRow(rowIdx).getCell(1);
+          h.value = `Cuenta: ${cuenta} ${nombre}    Saldo Anterior: ${saldoAnterior.toFixed(2)}`;
+          h.font = { bold: true, size: 10 };
+          h.alignment = { horizontal: 'left', vertical: 'middle' };
+          ws.getRow(rowIdx).height = 18;
+
+          rowIdx++;
+        }
+
+        // Acumular totales
+        const debe = Number(r?.debe ?? 0) || 0;
+        const haber = Number(r?.haber ?? 0) || 0;
+        totalDebe += debe;
+        totalHaber += haber;
+        saldoFinal = Number(r?.saldo ?? saldoFinal) || saldoFinal;
+
+        // Detalle
+        const excelRow = ws.getRow(rowIdx);
+
+        excelRow.getCell(1).value = r?.tipo ?? '';
+        excelRow.getCell(2).value = r?.asiento ?? null;
+        excelRow.getCell(3).value = r?.cheque ?? null;
+        excelRow.getCell(4).value = fmtDate(String(r?.fechaTransaccion ?? ''));
+        excelRow.getCell(5).value = fmtDate(String(r?.fechaIngreso ?? ''));
+        excelRow.getCell(6).value = r?.numeroComprobante ?? '';
+        excelRow.getCell(7).value = r?.movimiento ?? '';
+        excelRow.getCell(8).value = r?.beneficiario ?? '';
+
+        excelRow.getCell(9).value = debe || null;
+        excelRow.getCell(9).numFmt = numFmt;
+
+        excelRow.getCell(10).value = haber || null;
+        excelRow.getCell(10).numFmt = numFmt;
+
+        excelRow.getCell(11).value = Number(r?.saldo ?? 0) || null;
+        excelRow.getCell(11).numFmt = numFmt;
+
+        excelRow.getCell(12).value = r?.concepto ?? '';
+
+        // Alineaciones
+        for (let c = 1; c <= 8; c++) {
+          excelRow.getCell(c).alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
+        }
+        for (let c = 9; c <= 11; c++) {
+          excelRow.getCell(c).alignment = { vertical: 'top', horizontal: 'right' };
+        }
+        excelRow.getCell(6).alignment = { vertical: 'top', horizontal: 'center' }; // N. Comp
+        excelRow.getCell(7).alignment = { vertical: 'top', horizontal: 'center' }; // Mov
+        excelRow.getCell(2).alignment = { vertical: 'top', horizontal: 'right' };  // Asiento
+        excelRow.getCell(3).alignment = { vertical: 'top', horizontal: 'right' };  // Cheque
+        excelRow.getCell(4).alignment = { vertical: 'top', horizontal: 'center' }; // fechas
+        excelRow.getCell(5).alignment = { vertical: 'top', horizontal: 'center' };
+
+        rowIdx++;
+      }
+
+      // Cerrar último grupo
+      pushTotal();
+
+      // 10) Descargar
+      const fileName = `Mayor_Cuentas_${desde.split('/').join('-')}_${hasta.split('/').join('-')}.xlsx`;
+      const buffer = await wb.xlsx.writeBuffer();
+      saveAs(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), fileName);
+
+    } catch (e) {
+      this.message.error('No se pudo exportando Excel Mayor de Cuentas.');
+      console.error('Error exportando Excel Mayor de Cuentas', e);
+    }
+  }
+  async exportPdf(): Promise<void> {
+    try {
+      // 1) Validaciones mínimas (igual a tu guía)
+      const d1 = (this.filtros.fechaDesde ?? '').trim();
+      const d2 = (this.filtros.fechaHasta ?? '').trim();
+
+      if (!d1 || !d2) {
+        console.warn('Debe ingresar Fecha Inicio y Fecha Final');
+        this.message.mostrar(['Fecha Inicio', 'Fecha Final']);
+        return;
+      }
+      if (d2 < d1) {
+        this.message.error('La Fecha Inicial no puede ser mayor a la Fecha Final.');
+        console.warn('La Fecha Inicial no puede ser mayor a la Fecha Final.');
         return;
       }
 
@@ -330,7 +672,7 @@ export class MayorCuentasListComponent implements OnInit {
       const hasta = this.formatDateECFromIso(d2);
 
       // 5) Logo (opcional) - mismo enfoque robusto que tu guía
-      const LOGO_URL = 'assets/logo/clinica-pasteur.png'; // AJUSTA
+      const LOGO_URL = 'assets/logo/GS1-logo.png';
       let logo: { dataUrl: string; format: 'PNG' | 'JPEG' } | null = null;
       try {
         logo = await this.getBase64ImageFromUrl(LOGO_URL);
@@ -351,8 +693,7 @@ export class MayorCuentasListComponent implements OnInit {
         'F. Ingreso', 'F. Trans.',
         'N. Comp', 'Mov',
         'Beneficiario',
-        'Debe', 'Haber', 'Saldo',
-        'Concepto'
+        'Debe', 'Haber', 'Saldo'
       ];
 
       const body = this.buildPdfBodyMayorCuentas(rows, columns.length);
@@ -382,18 +723,17 @@ export class MayorCuentasListComponent implements OnInit {
           valign: 'middle',
         },
         columnStyles: {
-          0: { cellWidth: 10, halign: 'center' }, // Tipo
-          1: { cellWidth: 18, halign: 'right' }, // Asiento
-          2: { cellWidth: 10, halign: 'right' }, // Cheque
-          3: { cellWidth: 16, halign: 'center' }, // F. Ingreso
-          4: { cellWidth: 16, halign: 'center' }, // F. Trans
-          5: { cellWidth: 20, halign: 'center' }, // N. Comp
+          0: { cellWidth: 8, halign: 'center' }, // Tipo
+          1: { cellWidth: 15, halign: 'right' }, // Asiento
+          2: { cellWidth: 15, halign: 'right' }, // Cheque
+          3: { cellWidth: 18, halign: 'center' }, // F. Ingreso
+          4: { cellWidth: 18, halign: 'center' }, // F. Trans
+          5: { cellWidth: 28, halign: 'center' }, // N. Comp
           6: { cellWidth: 10, halign: 'center' }, // Mov
-          7: { cellWidth: 26, halign: 'left' }, // Beneficiario
-          8: { cellWidth: 14, halign: 'right' }, // Debe
-          9: { cellWidth: 14, halign: 'right' }, // Haber
-          10: { cellWidth: 14, halign: 'right' }, // Saldo
-          11: { cellWidth: 22, halign: 'left' }, // Concepto
+          7: { cellWidth: 35, halign: 'left' }, // Beneficiario
+          8: { cellWidth: 15, halign: 'right' }, // Debe
+          9: { cellWidth: 15, halign: 'right' }, // Haber
+          10: { cellWidth: 15, halign: 'right' }, // Saldo
         },
 
         didParseCell: (data) => {
@@ -456,6 +796,7 @@ export class MayorCuentasListComponent implements OnInit {
 
     } catch (e) {
       console.error('Error exportando PDF Mayor de Cuentas', e);
+      console.error('No de pudo exportando PDF Mayor de Cuentas');
     }
   }
 
@@ -497,7 +838,6 @@ export class MayorCuentasListComponent implements OnInit {
         { content: fmt(totalDebe), styles: { halign: 'right', fontStyle: 'bold' } }, // Debe
         { content: fmt(totalHaber), styles: { halign: 'right', fontStyle: 'bold' } }, // Haber
         { content: fmt(saldoFinal), styles: { halign: 'right', fontStyle: 'bold' } }, // Saldo
-        { content: '' } // Concepto
       ];
       (row as any).__rowTipo = 'total';
       body.push(row);
@@ -552,10 +892,21 @@ export class MayorCuentasListComponent implements OnInit {
         fmt(debe),
         fmt(haber),
         fmt(r.saldo),
-        (r.concepto ?? '')
       ];
       (detalle as any).__rowTipo = 'detalle';
       body.push(detalle);
+
+      // Fila concepto debajo (colSpan al resto)
+      const conceptoTxt = (r.concepto ?? '').toString().trim();
+      if (conceptoTxt) {
+        const conceptoRow: any[] = [
+          { content: 'Concepto', colSpan: 2, styles: { fontStyle: 'bold', halign: 'left' } },
+          { content: conceptoTxt, colSpan: colCount - 2, styles: { halign: 'left' } },
+        ];
+        (conceptoRow as any).__rowTipo = 'concepto';
+        body.push(conceptoRow);
+      }
+
     }
 
     // cerrar último grupo
@@ -590,7 +941,7 @@ export class MayorCuentasListComponent implements OnInit {
     // Logo
     if (logo?.dataUrl) {
       try {
-        doc.addImage(logo.dataUrl, logo.format, 10, 6, 22, 16);
+        doc.addImage(logo.dataUrl, logo.format, 10, 6, 22, 12);
       } catch { /* no bloquea */ }
     }
 
@@ -623,22 +974,25 @@ export class MayorCuentasListComponent implements OnInit {
     doc.text(info.hasta, xL + 28, y);
     y += 5;
 
-    doc.text(`Usuario:`, xL, y);
-    doc.text(info.usuario, xL + 28, y);
-    y += 5;
 
-    doc.text(`Fec. Impresion:`, xL, y);
-    doc.text(info.fechaImpresion, xL + 28, y);
 
     // Bloque derecho
     const xR = pageWidth - 70;
-    let yR = 30;
+    let yR = 22;
     doc.text(`Zona:`, xR, yR);
     doc.text(info.zonaLabel, xR + 20, yR);
     yR += 5;
 
     doc.text(`Local:`, xR, yR);
     doc.text(info.localLabel, xR + 20, yR);
+    yR += 7;
+
+    doc.text(`Usuario:`, xR, yR);
+    doc.text(info.usuario, xR + 28, yR);
+    yR += 5;
+
+    doc.text(`Fec. Impresion:`, xR, yR);
+    doc.text(info.fechaImpresion, xR + 28, yR);
   }
 
   // ==========================
