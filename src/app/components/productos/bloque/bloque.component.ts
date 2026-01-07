@@ -186,6 +186,8 @@ gridOptions: GridOptions = {
 
   descripcionesRepetidas = new Set<string>();
   repetidosDetectados = false;
+  gtinsRepetidos = new Set<string>(); 
+  mensajeGtinsRepetidos: string = '';
   tipoGtin: string = 'GTIN-13';
   factorDeshabilitado: boolean = true; // o false, según tu lógica
   idsProductosCreados: number[] = [];
@@ -268,7 +270,7 @@ gridOptions: GridOptions = {
       {
         field: 'descripcion',
         headerName: 'Descripción',
-        editable: true,
+        editable: () => !this.formUV.get('checkExiste')?.value,
         width: 300,
         minWidth: 300,
         cellStyle: this.estiloDescripcionVacia,
@@ -303,12 +305,12 @@ gridOptions: GridOptions = {
         }
 
       },
-      { field: 'marca', headerName: 'Marca', editable: true, cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100, resizable: true },
+      { field: 'marca', headerName: 'Marca', editable: () => !this.formUV.get('checkExiste')?.value, cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100, resizable: true },
       { field: 'contenidoNeto', headerName: 'C.Neto', editable: true, cellStyle: this.estiloDescripcionVacia, valueParser: this.validarNumeroConUnPunto, width: 90, minWidth: 90 },
       {
         field: 'contenidoUM',
         headerName: 'UM',
-        editable: true,
+        editable: () => !this.formUV.get('checkExiste')?.value,
         cellEditor: 'agSelectCellEditor',
         cellEditorParams: () => ({
           values: this.unidadesDisponibles
@@ -319,14 +321,14 @@ gridOptions: GridOptions = {
       {
         field: 'gcpBrick',
         headerName: 'GCP Brick',
-        editable: true,
+        editable: () => !this.formUV.get('checkExiste')?.value,
         cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100
 
       }
 
 
       ,
-      { field: 'pais', headerName: 'País', cellStyle: this.estiloDescripcionVacia, width: 70, minWidth: 70 },
+      { field: 'pais', headerName: 'País', editable: () => !this.formUV.get('checkExiste')?.value, cellStyle: this.estiloDescripcionVacia, width: 70, minWidth: 70 },
       {
         field: 'activo',
         headerName: 'GTIN 14',
@@ -486,7 +488,7 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
   }
 
   // 🔹 columnas que permiten pegado
-  const allowedPasteFields: string[] = [
+  let allowedPasteFields: string[] = [
     'gtinUv',
     'descripcion',
     'categoria',
@@ -497,7 +499,9 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
     'factor',
     'indicador'
   ];
-
+  if (this.formUV.get('checkExiste')?.value) {
+    allowedPasteFields = ['gtinUv'];
+  }
   const pasteableFields: string[] = this.columnDefs
     .filter(col => !!col.field && allowedPasteFields.includes(col.field as string))
     .map(col => col.field!) as string[];
@@ -589,6 +593,28 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
   this.gridApi.refreshCells({ force: true });
   this.gridApi.redrawRows();
   console.log('✅ Pegado completado');
+  // Validar GTINs repetidos si checkExiste está marcado
+  if (this.formUV.get('checkExiste')?.value) {
+    setTimeout(() => {  // ← pequeño delay para que se actualice el grid primero
+      const sinRepetidos = this.validarGtinUvRepetido();
+      
+      if (!sinRepetidos) {
+        this.botonGenerarDeshabilitado = true;
+        
+        this.dialog.open(CustomMessageBoxComponent, {
+          width: '500px',
+          data: {
+            title: '⚠️ GTINs Repetidos Detectados',
+            message: this.mensajeGtinsRepetidos,
+            type: 'error',
+            confirmText: 'Entendido'
+          }
+        });
+      } else {
+        this.botonGenerarDeshabilitado = false;
+      }
+    }, 100);
+  }
 }
 //
 
@@ -645,6 +671,8 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
     this.cargarUnidades();
     this.cargarGrupos();
     this.mensajeRepetidos = '';
+    this.gtinsRepetidos.clear();          // ⬅️ AGREGAR
+    this.mensajeGtinsRepetidos = '';
   }
 
 
@@ -892,7 +920,9 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
             fila.marca = fila.marca?.trim() || producto.marca || '';
             fila.contenidoNeto =  producto.contenido || '';
             fila.contenidoUM = producto.unidad || 'g';
-            fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
+            fila.categoria = this.formUV.get('checkExiste')?.value 
+              ? (producto.codigoproducto || fila.categoria?.trim() || '')
+              : (fila.categoria?.trim() || producto.codigoproducto || '');
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
             fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
             fila.grupo = fila.grupo || (isNaN(Number(producto.idgrupoproducto)) ? 0 : Number(producto.idgrupoproducto));
@@ -1067,7 +1097,9 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
             fila.marca = fila.marca?.trim() || producto.marca || '';
             fila.contenidoNeto =  producto.contenido || '';
             fila.contenidoUM = producto.unidad || 'g';
-            fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
+            fila.categoria = this.formUV.get('checkExiste')?.value 
+              ? (producto.codigoproducto || fila.categoria?.trim() || '')
+              : (fila.categoria?.trim() || producto.codigoproducto || '');
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
             fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
             fila.grupo = fila.grupo || (isNaN(Number(producto.idgrupoproducto)) ? 0 : Number(producto.idgrupoproducto));
@@ -1170,7 +1202,9 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
             fila.marca = fila.marca?.trim() || producto.marca || '';
             fila.contenidoNeto =  producto.contenido || '';
             fila.contenidoUM = producto.unidad || 'g';
-            fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
+            fila.categoria = this.formUV.get('checkExiste')?.value 
+                ? (producto.codigoproducto || fila.categoria?.trim() || '')
+                : (fila.categoria?.trim() || producto.codigoproducto || '');
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
             fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
             fila.grupo = fila.grupo || (isNaN(Number(producto.idgrupoproducto)) ? 0 : Number(producto.idgrupoproducto));
@@ -1299,6 +1333,26 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
 
     this.rowData = [...this.rowData]; // Refrescar AG-Grid
     this.textoPegado = '';
+    // Validar si checkExiste está marcado
+    if (this.formUV.get('checkExiste')?.value) {
+      const sinRepetidos = this.validarGtinUvRepetido();
+      
+      if (!sinRepetidos) {
+        this.botonGenerarDeshabilitado = true;
+        
+        this.dialog.open(CustomMessageBoxComponent, {
+          width: '500px',
+          data: {
+            title: '⚠️ GTINs Repetidos Detectados',
+            message: this.mensajeGtinsRepetidos,
+            type: 'error',
+            confirmText: 'Entendido'
+          }
+        });
+      } else {
+        this.botonGenerarDeshabilitado = false;
+      }
+    }
   }
 
 
@@ -1607,6 +1661,11 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
 
     // ✅ Refrescar celda visual
     this.gridApi?.refreshCells({ rowNodes: [event.node], columns: [field] });
+    // Si modificó gtinUv y checkExiste está marcado, validar repetidos
+    if (field === 'gtinUv' && this.formUV.get('checkExiste')?.value) {
+      const sinRepetidos = this.validarGtinUvRepetido();
+      this.botonGenerarDeshabilitado = !sinRepetidos;
+    }
   }
 
 
@@ -2110,7 +2169,41 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
     return repetidas.size === 0;
   }
 
+  validarGtinUvRepetido(): boolean {
+    const contador: Record<string, number> = {};
+    const listaCodigos: string[] = [];
 
+    this.gridApi.forEachNode((node) => {
+      const gtin = (node.data?.gtinUv || '').toString().trim();
+      if (!gtin) return;
+
+      contador[gtin] = (contador[gtin] || 0) + 1;
+    });
+
+    const repetidos = new Set<string>();
+
+    Object.keys(contador).forEach(gtin => {
+      if (contador[gtin] > 1) {
+        repetidos.add(gtin);
+        listaCodigos.push(`${gtin} (${contador[gtin]} veces)`);
+      }
+    });
+
+    this.gtinsRepetidos = repetidos;
+    this.mensajeGtinsRepetidos = listaCodigos.length > 0 
+      ? `⚠️ GTINs repetidos:\n${listaCodigos.join('\n')}` 
+      : '';
+
+    // Marcar visualmente las filas repetidas
+    this.gridApi.forEachNode((node) => {
+      const gtin = (node.data?.gtinUv || '').toString().trim();
+      node.data._duplicadoGtinUv = repetidos.has(gtin);
+    });
+
+    this.gridApi.refreshCells({ force: true, columns: ['gtinUv'] });
+
+    return repetidos.size === 0;
+  }
 
   verificarFactor(): boolean {
     let todoBien = true;
@@ -2532,7 +2625,9 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
             fila.marca = fila.marca?.trim() || producto.marca || '';
             fila.contenidoNeto =  producto.contenido || '';
             fila.contenidoUM = producto.unidad || 'g';
-            fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
+            fila.categoria = this.formUV.get('checkExiste')?.value 
+              ? (producto.codigoproducto || fila.categoria?.trim() || '')
+              : (fila.categoria?.trim() || producto.codigoproducto || '');
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
             fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
             fila.grupo = fila.grupo || (isNaN(Number(producto.idgrupoproducto)) ? 0 : Number(producto.idgrupoproducto));

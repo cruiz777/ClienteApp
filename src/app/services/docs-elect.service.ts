@@ -1,6 +1,6 @@
 // docs-elect.service.ts
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Observable, map, catchError, throwError, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 
@@ -160,19 +160,23 @@ export class DocumentosService {
     );
   }
 
-  descargarPDF(claveAcceso: string): Observable<Blob> {
+  descargarPDF(claveAcceso: string): Observable<HttpResponse<Blob>> {
     const params = new HttpParams().set('tipoArchivo', 'PDF');
     return this.http.get(`${this.baseUrl}/descargar/${claveAcceso}`, {
       params,
       responseType: 'blob',
+      observe: 'response' //AGREGAR ESTO
     });
   }
 
-  descargarXML(claveAcceso: string): Observable<Blob> {
+
+  
+  descargarXML(claveAcceso: string): Observable<HttpResponse<Blob>> {
     const params = new HttpParams().set('tipoArchivo', 'XML');
     return this.http.get(`${this.baseUrl}/descargar/${claveAcceso}`, {
       params,
       responseType: 'blob',
+      observe: 'response'
     });
   }
 
@@ -184,9 +188,38 @@ export class DocumentosService {
 
   abrirPDF(claveAcceso: string): void {
     this.descargarPDF(claveAcceso).subscribe({
-      next: (blob) => {
-        const fileURL = URL.createObjectURL(blob);
-        window.open(fileURL, '_blank');
+      next: (response) => {
+        const blob = response.body;
+        if (!blob) return;
+
+        // Extraer nombre
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let nombreArchivo = `${claveAcceso}.pdf`;
+
+        if (contentDisposition) {
+          const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+          if (matches && matches[1]) {
+            nombreArchivo = matches[1].replace(/['"]/g, '');
+          }
+        }
+
+        // ✅ Crear blob con tipo correcto
+        const blobWithType = new Blob([blob], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blobWithType);
+        
+        // ✅ Abrir en nueva pestaña
+        const win = window.open(url, '_blank');
+        
+        // ✅ Opcional: Si el navegador bloquea popups, descargar
+        if (!win) {
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = nombreArchivo;
+          link.click();
+        }
+        
+        // Limpiar después de un tiempo
+        setTimeout(() => URL.revokeObjectURL(url), 100);
       },
       error: (error) => console.error('Error al abrir PDF:', error),
     });
@@ -196,11 +229,26 @@ export class DocumentosService {
     const descarga$ = tipo === 'PDF' ? this.descargarPDF(claveAcceso) : this.descargarXML(claveAcceso);
 
     descarga$.subscribe({
-      next: (blob) => {
+      next: (response) => {
+        const blob = response.body;
+        if (!blob) return;
+
+        // ✅ EXTRAER EL NOMBRE DESDE LOS HEADERS
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let nombreArchivo = `${claveAcceso}.${tipo.toLowerCase()}`; // Fallback
+
+        if (contentDisposition) {
+          const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+          if (matches && matches[1]) {
+            nombreArchivo = matches[1].replace(/['"]/g, '');
+          }
+        }
+
+        // Descargar con el nombre correcto
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `${claveAcceso}.${tipo.toLowerCase()}`;
+        link.download = nombreArchivo; //USAR NOMBRE REAL DEL ARCHIVO
         link.click();
         URL.revokeObjectURL(url);
       },
