@@ -224,3 +224,111 @@
 .modal-content-custom::-webkit-scrollbar-thumb:hover {
   background: #002c6c;
 }
+.tabs-container {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.tab-button {
+  flex: 1;
+  padding: 12px 20px;
+  border: 2px solid #ddd;
+  background: white;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.tab-button:hover {
+  border-color: #007bff;
+  background: #f0f8ff;
+}
+
+.tab-button.active {
+  border-color: #007bff;
+  background: #007bff;
+  color: white;
+}
+
+.tab-button i {
+  font-size: 18px;
+}
+
+/* ============= 🆕 ESTILOS PARA ARCHIVO ============= */
+
+.file-input-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.btn-select-file {
+  padding: 10px 20px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-select-file:hover:not(:disabled) {
+  background: #218838;
+}
+
+.btn-select-file:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.file-name {
+  font-size: 13px;
+  color: #666;
+  padding: 8px;
+  background: #f8f9fa;
+  border-radius: 4px;
+}
+
+.video-preview {
+  margin-top: 15px;
+  padding: 15px;
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  background: #f8f9fa;
+}
+
+.btn-clear-file {
+  margin-top: 10px;
+  padding: 8px 16px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.3s ease;
+}
+
+.btn-clear-file:hover:not(:disabled) {
+  background: #c82333;
+}
+
+.btn-clear-file:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.help-text {
+  display: block;
+  margin-top: 5px;
+  font-size: 12px;
+  color: #6c757d;
+}

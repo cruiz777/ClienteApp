@@ -1,5 +1,3 @@
-// src/app/components/cg-3000/transacciones/asientos-contables/asientos-contables-form/cod-contable-cell-editor.component.ts
-
 import { Component, ElementRef, ViewChild, ViewChildren, QueryList } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -7,8 +5,9 @@ import { ICellEditorAngularComp } from 'ag-grid-angular';
 import { ICellEditorParams } from 'ag-grid-community';
 
 interface AuxiliarItem {
-  id: number;    // IdCodContable
-  label: string; // "IdentificacionAuxiliar - RazonSocial"
+  id: number;        // IdCodContable
+  label: string;     // ✅ SOLO NOMBRE (lo que se muestra)
+  searchText: string; // ✅ texto de búsqueda (nombre + ruc)
 }
 
 @Component({
@@ -16,20 +15,24 @@ interface AuxiliarItem {
   selector: 'app-cod-contable-cell-editor',
   imports: [CommonModule, FormsModule],
   template: `
-    <div class="cuenta-editor" [style.width.px]="columnWidth" >
-      <input #input
-             type="text"
-             [(ngModel)]="search"
-             (input)="onSearchChange()"
-             (keydown.enter)="onEnter($event)"
-             (keydown.arrowDown)="onArrowDown($event)"
-             (keydown.arrowUp)="onArrowUp($event)" />
+    <div class="cuenta-editor" [style.width.px]="columnWidth">
+      <input
+        #input
+        type="text"
+        [(ngModel)]="search"
+        (input)="onSearchChange()"
+        (keydown.enter)="onEnter($event)"
+        (keydown.arrowDown)="onArrowDown($event)"
+        (keydown.arrowUp)="onArrowUp($event)"
+      />
 
       <ul class="cuenta-list" *ngIf="filtered.length > 0">
-        <li *ngFor="let a of filtered; let i = index"
-            #itemRef
-            [class.selected]="i === selectedIndex"
-            (click)="onClickItem(i)">
+        <li
+          *ngFor="let a of filtered; let i = index"
+          #itemRef
+          [class.selected]="i === selectedIndex"
+          (click)="onClickItem(i)"
+        >
           {{ a.label }}
         </li>
       </ul>
@@ -53,14 +56,8 @@ interface AuxiliarItem {
       list-style: none;
       font-size: 12px;
     }
-    .cuenta-list li {
-      padding: 2px 4px;
-      cursor: pointer;
-    }
-    .cuenta-list li.selected {
-      background: #1976d2;
-      color: #fff;
-    }
+    .cuenta-list li { padding: 2px 4px; cursor: pointer; }
+    .cuenta-list li.selected { background: #1976d2; color: #fff; }
   `]
 })
 export class CodContableCellEditorComponent implements ICellEditorAngularComp {
@@ -72,16 +69,20 @@ export class CodContableCellEditorComponent implements ICellEditorAngularComp {
 
   auxiliares: AuxiliarItem[] = [];
   filtered: AuxiliarItem[] = [];
+
   value: number | null = null;
   search = '';
   selectedIndex = 0;
-  columnWidth = 0;
+  columnWidth = 200;
 
   agInit(params: ICellEditorParams & { auxiliares?: AuxiliarItem[] }): void {
     this.params = params;
+
+    // catálogo
     this.auxiliares = params.auxiliares ?? [];
     this.filtered = [...this.auxiliares];
 
+    // valor actual
     const currentValue = params.value ?? null;
     this.value = currentValue === 0 ? null : currentValue;
 
@@ -94,11 +95,8 @@ export class CodContableCellEditorComponent implements ICellEditorAngularComp {
     } else {
       this.selectedIndex = this.filtered.length > 0 ? 0 : -1;
     }
-    this.columnWidth = params.column
-    ? params.column.getActualWidth()
-    : 200;
 
-
+    this.columnWidth = params.column ? params.column.getActualWidth() : 200;
   }
 
   afterGuiAttached(): void {
@@ -116,12 +114,12 @@ export class CodContableCellEditorComponent implements ICellEditorAngularComp {
     return true;
   }
 
-  // --------- helpers
-
   onSearchChange(): void {
-    const term = this.search.toLowerCase();
+    const term = (this.search ?? '').toString().toLowerCase().trim();
+
+    // ✅ filtra por searchText (nombre+ruc) pero muestra solo label (nombre)
     this.filtered = this.auxiliares.filter(a =>
-      a.label.toLowerCase().includes(term)
+      (a.searchText ?? '').includes(term) || (a.label ?? '').toLowerCase().includes(term)
     );
 
     this.selectedIndex = this.filtered.length > 0 ? 0 : -1;
@@ -134,7 +132,7 @@ export class CodContableCellEditorComponent implements ICellEditorAngularComp {
     const sel = this.filtered[index];
     if (sel) {
       this.value = sel.id;
-      this.search = sel.label;
+      this.search = sel.label; // ✅ deja el input con el nombre
       this.selectedIndex = index;
     }
   }
@@ -169,7 +167,6 @@ export class CodContableCellEditorComponent implements ICellEditorAngularComp {
     this.ensureItemVisible();
   }
 
-  // hace scroll para que el <li> seleccionado quede visible
   private ensureItemVisible(): void {
     if (!this.items || !this.items.length) return;
     const arr = this.items.toArray();
@@ -179,13 +176,16 @@ export class CodContableCellEditorComponent implements ICellEditorAngularComp {
     el.scrollIntoView({ block: 'nearest' });
   }
 
-  refresh(params: ICellEditorParams): boolean {
+  refresh(params: ICellEditorParams & { auxiliares?: AuxiliarItem[] }): boolean {
+    // si el grid refresca, re-tomamos el catálogo
+    this.auxiliares = params.auxiliares ?? this.auxiliares;
+    this.filtered = [...this.auxiliares];
+
     const currentValue = params.value ?? null;
     this.value = currentValue === 0 ? null : currentValue;
 
     const sel = this.auxiliares.find(a => a.id === this.value);
     this.search = sel ? sel.label : '';
-    this.filtered = [...this.auxiliares];
 
     if (sel) {
       const idx = this.filtered.findIndex(a => a.id === sel.id);

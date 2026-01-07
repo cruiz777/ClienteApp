@@ -71,6 +71,7 @@ export class CartaOficialComponent {
     y += empresaLinesCab.length * lineHeight - 2;
 
     // Dirección
+    y += 5;
     doc.setFont('Times', 'Normal');
     const direccionLinesCab = doc.splitTextToSize(this.direccion || '', maxWidth);
     doc.text(direccionLinesCab, margenX, y);

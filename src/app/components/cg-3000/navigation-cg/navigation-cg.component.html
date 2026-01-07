@@ -33,10 +33,6 @@
           <a mat-list-item [routerLink]="'/cg-3000/asientocontable'">
             <span *ngIf="isExpanded" class="menu-text">Transacciones General</span>
           </a>
-          <a mat-list-item [routerLink]="'/cg-3000/inicio'">
-            <span *ngIf="isExpanded" class="menu-text">Transacciones Estándar</span>
-          </a>
-
           <!-- Subgrupo: Reportes -->
           <mat-expansion-panel>
             <mat-expansion-panel-header>
@@ -99,7 +95,7 @@
             <a mat-list-item [routerLink]="'/cg-3000/anticipos'">
               <span *ngIf="isExpanded" class="menu-text">Anticipos a proveedores</span>
             </a>
-            <a mat-list-item routerLink="/cg-3000/inicio-cg">
+            <a mat-list-item routerLink="/cg-3000/pago-proveedores">
               <span *ngIf="isExpanded" class="menu-text">Pagos Individuales</span>
             </a>
             <a mat-list-item routerLink="/cg-3000/inicio-cg">
@@ -153,7 +149,7 @@
                 <span *ngIf="isExpanded" class="menu-text">Balance</span>
               </mat-panel-title>
             </mat-expansion-panel-header>
-            <a mat-list-item [routerLink]="['/cg-3000', 'diario']">
+            <a mat-list-item routerLink="/cg-3000/diario">
               <span *ngIf="isExpanded" class="menu-text">Diario de movimiento</span>
             </a>
             <a mat-list-item [routerLink]="['/cg-3000', 'balance']">

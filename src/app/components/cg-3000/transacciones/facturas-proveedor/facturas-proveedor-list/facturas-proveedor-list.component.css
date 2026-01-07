@@ -447,3 +447,63 @@
   height: 35px;
 }
 .btn-tomate:hover { background: #686fcd; border-color: #6291e8; }
+
+/*botones ag grid */
+/* Contenedor de la celda de acciones */
+:host ::ng-deep .ag-theme-alpine .acciones-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Botón visual pequeño (span) */
+:host ::ng-deep .ag-theme-alpine .accion-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;   /* controla tamaño total */
+  height: 18px;
+  padding: 0;
+  border-radius: 4px;
+  border: 1px solid #d0d7de;
+  background-color: #ffffff;
+  cursor: pointer;
+  box-shadow: none;
+  line-height: 1;
+  box-sizing: border-box;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.05s ease;
+}
+
+/* Icono interno */
+:host ::ng-deep .ag-theme-alpine .accion-icon img {
+  width: 10px;
+  height: 10px;
+}
+
+/* Colores por acción */
+:host ::ng-deep .ag-theme-alpine .accion-icon--edit {
+  background-color: #e7f1ff;
+  border-color: #99bdf5;
+}
+
+:host ::ng-deep .ag-theme-alpine .accion-icon--pdf {
+  background-color: #ffecec;
+  border-color: #f5a4a4;
+}
+
+/* Hover / active */
+:host ::ng-deep .ag-theme-alpine .accion-icon:hover {
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.18);
+  border-color: #2196f3;
+  transform: translateY(-1px);
+}
+
+:host ::ng-deep .ag-theme-alpine .accion-icon:active {
+  transform: translateY(0);
+  box-shadow: none;
+}

@@ -28,6 +28,10 @@ import { DocElectronicosComponent } from './facturacion/doc-electronicos/doc-ele
 import { FormaPagoListComponent } from './forma-pago/forma-pago-list.component';
 import { ClasificacionListComponent } from './clasificacion-list/clasificacion-list.component';
 import { DescuentoListComponent } from './descuento/descuento-list/descuento-list.component';
+import { ReporteVentasComponent } from './reporte-ventas/reporte-ventas.component';
+import { ReenvioFacComponent } from './facturacion/reenvio-fac/reenvio-fac.component';
+import { AutorizacionCajaListComponent } from './autorizacion-caja-list/autorizacion-caja-list.component';
+import { TipoDocListComponent } from './tipo-doc-list/tipo-doc-list.component';
 
 const routes: Routes = [
   {
@@ -105,7 +109,9 @@ const routes: Routes = [
 
       },
       { path: 'doc-electronicos', component: DocElectronicosComponent},
-      
+
+      { path: 'reporte-ventas', component: ReporteVentasComponent},
+
       // ✅ Ruta para EDITAR producto (con ID)
       {
         path: 'productossic/:idProducto',
@@ -134,11 +140,19 @@ const routes: Routes = [
         path: 'clasificacion',
         component:ClasificacionListComponent
       },
+       {
+        path: 'cajas',
+        component:AutorizacionCajaListComponent
+      },
+      {
+        path: 'tipdocsri',
+        component:TipoDocListComponent
+      },
          {
         path: 'descuento',
         component:DescuentoListComponent
       },
-
+      { path: 'reenvio-fact', component: ReenvioFacComponent},
 
 
       { path: 'creacion-anticipos', component: CreacionAnticiposComponent},

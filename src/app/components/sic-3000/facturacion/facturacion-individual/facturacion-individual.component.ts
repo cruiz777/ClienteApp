@@ -1049,7 +1049,11 @@ private cargarClienteDetalle(id: number): void {
     if (this.cargandoAutorizacion) return;
     this.cargandoAutorizacion = true;
 
-    const id = this.usuarioActual?.id_autorizacion_caja;
+const id =
+  this.usuarioActual?.cajas?.find(c => c.id_tipo_documento === 1)?.id_autorizacion_caja
+  ?? null;
+
+
 
     // Si no hay autorización asociada en el usuario
     if (id == null) {
@@ -1070,7 +1074,7 @@ private cargarClienteDetalle(id: number): void {
 
         // ✅ OK: carga datos en el form y marca como asignada
         this.formCaja.patchValue({
-          secuencial: this.padLeft(data.numero_factura, 9),
+          secuencial: this.padLeft(data.numero, 9),
           caja: data.caja ?? '',
           puntoEmision: data.num_establecimiento ?? '',
         }, { emitEvent: false });

@@ -4,6 +4,8 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable, map, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
+import { FacturaReporteResponse } from '../interfaces/responses/factura-reporte-response';
+import { ReporteFacturasResponse } from '../interfaces/responses/totales-ventas-response';
 
 export interface ApiResponse<T = any> {
   id?: string;
@@ -319,7 +321,7 @@ export class FacturacionService {
     if (opts.fechaFin) {
       params = params.set('fechaFin', toLocalEndOfDay(opts.fechaFin));
     }
-    
+
     return this.http.get<ApiResponse<PaginationResponse<FacturaAnuladaListResponse>>>(url, { params })
       .pipe(
         map(resp => {
@@ -361,8 +363,47 @@ export class FacturacionService {
     })
   );
 }
+/**
+ * GET /FacturaReporte?fechaInicio=...&fechaFin=...&page=1&pageSize=20
+ * Obtiene reporte de facturas por rango de fechas CON TOTALES
+ */
+getReporteFacturas(
+  fechaInicio: Date | string,
+  fechaFin: Date | string,
+  page: number = 1,
+  pageSize: number = 20
+): Observable<ApiResponse<ReporteFacturasResponse>> {
+  const url = `${this.baseUrl}/Facturacion/reporte`;
 
+  let params = new HttpParams()
+    .set('fechaInicio', toLocalStartOfDay(fechaInicio))
+    .set('fechaFin', toLocalEndOfDay(fechaFin))
+    .set('page', String(page))
+    .set('pageSize', String(pageSize));
 
+  return this.http.get<ApiResponse<ReporteFacturasResponse>>(url, { params })
+    .pipe(
+      map(resp => {
+        if (resp.type !== 'Success' && resp.type !== 'success') {
+          throw new Error(resp.message || 'Error al obtener reporte de facturas');
+        }
+        return resp;
+      }),
+      catchError(err => {
+        console.error('[FacturacionService] getReporteFacturas error:', err);
+        return throwError(() => err);
+      })
+    );
+}
+/**
+ * Obtiene TODAS las facturas sin paginar (para exportar a Excel)
+ */
+getReporteFacturasCompleto(
+  fechaInicio: Date | string,
+  fechaFin: Date | string
+): Observable<ApiResponse<ReporteFacturasResponse>> {
+  return this.getReporteFacturas(fechaInicio, fechaFin, 1, 10000);
+}
 }
 
 /* ---------- funciones auxiliares (fuera de la clase) ---------- */

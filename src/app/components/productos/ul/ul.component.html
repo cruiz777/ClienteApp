@@ -238,7 +238,7 @@
       </div>
       <div><label>Indicador:</label><input type="text" formControlName="indicador"
           (keypress)="permitirSoloNumeros($event)" maxlength="1" (blur)="onIndicadorBlur()" /></div>
-      <div><label>Factor:</label><input type="text" formControlName="factor" (blur)="actualizarDescripcionUL()"
+      <div><label>Factor:</label><input type="text" formControlName="factor" (blur)="onFactorBlur()"
           (keypress)="permitirSoloNumeros($event)" /></div>
 
       <div class="corto1">
@@ -261,7 +261,7 @@
     <div class="botones">
       <button class="btn" type="button" (click)="limpiarUl()" [disabled]="botonNuevoDeshabilitado">Nuevo</button>
 
-      <button class="btn" type="button" (click)="generarUL()" [disabled]="botonGenerarULDeshabilitado">
+      <button class="btn" type="button" (click)="generarUL()" [disabled]="generarULBloqueado || formUL.get('factor')?.hasError('factorExistente')">
         Generar
       </button>
 

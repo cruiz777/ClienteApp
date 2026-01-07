@@ -78,7 +78,7 @@
             </div>
 
             <!-- Textarea -->
-            <mat-form-field appearance="outline" class="form-campo" style="flex: 2;">
+            <mat-form-field appearance="outline" class="form-campo" style="visibility: hidden;">
               <textarea matInput formControlName="textoPegado" placeholder="Pegar GTIN UV"
                 (blur)="pegarPrimeraColumna()"
                 [readonly]="!((permissions.permisos$ | async)?.includes('codbar.transferencia.transferencia-de-gtin.transferir'))"

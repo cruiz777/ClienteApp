@@ -685,3 +685,95 @@ label .required {
   transform: translateY(0);
   box-shadow: 0 0 0 1px #1e88e5;
 }
+
+.cabecera-readonly .control {
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.cabecera-readonly .allow-edit {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+/* ===== MODO EDITAR: fondo blanco en controles ===== */
+.modo-editar .control,
+.modo-editar input.control,
+.modo-editar select.control,
+.modo-editar textarea.control {
+  background-color: #d04d4d !important;
+}
+
+/* Si tienes estilos para readonly que cambian color, igual dejamos blanco */
+.modo-editar .control[readonly],
+.modo-editar .control:disabled {
+  background-color: #36b44f !important;   /*#ffffff*/
+  opacity: 1; /* opcional: evita que se vea "apagado" */
+}
+
+
+.cabecera-readonly textarea.control.allow-edit {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  pointer-events: auto !important;
+  opacity: 1 !important;
+}
+
+/* (opcional) si quieres que se vea normal al enfocarlo */
+.cabecera-readonly textarea.control.allow-edit:focus {
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 3px rgba(96,165,250,.25) !important;
+}
+
+/* mensaje solo de lectura */
+
+.alert-readonly{
+  color: #b00020;          /* rojo tipo material */
+  font-weight: 700;
+  margin-left: 12px;
+  white-space: nowrap;
+}
+
+.usuario-totales{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase; /* etiqueta + valor en mayúsculas */
+}
+
+.usuario-label{
+  font-weight: 700;
+}
+
+.usuario-valor{
+  font-weight: 800;
+}
+
+/* USUARIO pegado a la esquina izquierda */
+.usuario-totales{
+  position: absolute;
+  left: 12px;   /* separación mínima del borde */
+  bottom: 8px;  /* alínea con el padding */
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  font-weight: 800;
+}
+
+/* Opcional: si tu contenido queda tapado por la barra inferior */
+.content-scroll{
+  padding-bottom: 52px; /* ajusta según el alto real de .totales */
+}
+
+/* Etiqueta "USUARIO:" */
+.usuario-label{
+  color: #1b5e20;
+  letter-spacing: 0.5px;
+}
+
+/* Valor "ADMIN" */
+.usuario-valor{
+  color: #1b5e20;
+}

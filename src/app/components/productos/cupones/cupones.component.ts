@@ -59,8 +59,8 @@ interface CuponTablaView {
   categoriaNombre?: string; // Nuevo campo para mostrar el nombre del grupo
   fecha?: string;
   fecha_creacion?: string;
-  fechaInicio?: string;     // ✅ Agregar este campo
-  fechaCaducidad?: string;  
+  fechaInicio?: string;     //  Agregar este campo
+  fechaCaducidad?: string;
   estado: string;
   usuario?: number | string;
   usuarioNombre?: string; // Nuevo campo para mostrar el nombre del usuario
@@ -112,12 +112,15 @@ export const MY_DATE_FORMATS = {
 export class CuponesComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
   private gridApi!: GridApi<CuponTablaView>;
-  
+
   selectedRows: CuponTablaView[] = [];
+  private todosLosIdsSeleccionados: Set<number> = new Set();
+  seleccionandoTodo: boolean = false;
+  private restaurandoSeleccion: boolean = false;
   public CustomValidators = CustomValidators;
   // Usuario actual
   usuarioActual: LoginUsuarioResponse | null = null;
-  
+
   // Datos para selects
   prefijosDisponibles: { id: number, codpre: string }[] = [];
   gruposProducto: GrupoProducto[] = [];
@@ -129,6 +132,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
       headerName: '',
       checkboxSelection: true,
       headerCheckboxSelection: true,
+      headerCheckboxSelectionFilteredOnly: false,
       width: 50,
       pinned: 'left',
       lockPosition: true,
@@ -145,16 +149,16 @@ export class CuponesComponent implements OnInit, OnDestroy {
       filter: false,
       cellClass: 'text-center font-medium text-gray-600'
     },
-    // { 
-    //   field: 'empresa', 
-    //   headerName: 'Empresa', 
+    // {
+    //   field: 'empresa',
+    //   headerName: 'Empresa',
     //   filter: 'agTextColumnFilter',
     //   width: 200,
     //   cellClass: 'font-medium text-gray-800'
     // },
-    { 
-      field: 'prefijo', 
-      headerName: 'Prefijo', 
+    {
+      field: 'prefijo',
+      headerName: 'Prefijo',
       filter: 'agTextColumnFilter',
       width: 120,
       cellClass: 'text-center font-mono bg-blue-50'
@@ -167,24 +171,24 @@ export class CuponesComponent implements OnInit, OnDestroy {
       cellClass: 'text-right font-mono',
       valueFormatter: (params) => params.value?.toString() || 'N/A'
     },
-    { 
-      field: 'cupon', 
-      headerName: 'Cupón', 
+    {
+      field: 'cupon',
+      headerName: 'Cupón',
       filter: 'agTextColumnFilter',
       width: 200,
       cellClass: 'font-mono text-sm',
       tooltipField: 'cupon'
     },
-    { 
-      field: 'descripcion', 
-      headerName: 'Descripción', 
+    {
+      field: 'descripcion',
+      headerName: 'Descripción',
       filter: 'agTextColumnFilter',
       width: 250,
       cellClass: 'text-gray-600'
     },
-    { 
-      field: 'categoriaNombre', 
-      headerName: 'Grupo Producto', 
+    {
+      field: 'categoriaNombre',
+      headerName: 'Grupo Producto',
       filter: 'agTextColumnFilter',
       width: 180,
       cellClass: 'text-gray-600',
@@ -201,9 +205,9 @@ export class CuponesComponent implements OnInit, OnDestroy {
         return 'Sin asignar';
       }
     },
-    { 
-      field: 'fecha', 
-      headerName: 'Fecha Creación', 
+    {
+      field: 'fecha',
+      headerName: 'Fecha Creación',
       filter: 'agDateColumnFilter',
       width: 160,
       cellClass: 'text-gray-600',
@@ -212,9 +216,9 @@ export class CuponesComponent implements OnInit, OnDestroy {
           return moment(params.value).format('DD/MM/YYYY');
         }
     },
-    { 
-      field: 'fechaInicio', 
-      headerName: 'Fecha Inicio',  
+    {
+      field: 'fechaInicio',
+      headerName: 'Fecha Inicio',
       filter: 'agDateColumnFilter',
       width: 140,
       cellClass: 'text-blue-600',
@@ -223,8 +227,8 @@ export class CuponesComponent implements OnInit, OnDestroy {
         return moment(params.value).format('DD/MM/YYYY');
       }
     },
-    { 
-      field: 'fechaCaducidad', 
+    {
+      field: 'fechaCaducidad',
       headerName: 'Fecha Caducidad',
       filter: 'agDateColumnFilter',
       width: 150,
@@ -234,9 +238,9 @@ export class CuponesComponent implements OnInit, OnDestroy {
         return moment(params.value).format('DD/MM/YYYY');
       }
     },
-    { 
-      field: 'estado', 
-      headerName: 'Estado', 
+    {
+      field: 'estado',
+      headerName: 'Estado',
       filter: 'agSetColumnFilter',
       width: 120,
       pinned: 'right',
@@ -248,12 +252,12 @@ export class CuponesComponent implements OnInit, OnDestroy {
       cellEditorParams: {
         values: ['Activo', 'Inactivo']
       },
-      // ✅ Manejar el cambio de valor
+      //  Manejar el cambio de valor
       onCellValueChanged: (params: any) => this.onEstadoChangedConConfirmacion(params)
     },
-    { 
-      field: 'usuarioNombre', 
-      headerName: 'Usuario', 
+    {
+      field: 'usuarioNombre',
+      headerName: 'Usuario',
       filter: 'agTextColumnFilter',
       width: 140,
       cellClass: 'text-gray-700',
@@ -303,9 +307,9 @@ export class CuponesComponent implements OnInit, OnDestroy {
     rowSelection: 'multiple',
     suppressCellFocus: false,
     enableCellTextSelection: true,
-    pagination: true,
-    paginationPageSize: 50,
-    paginationPageSizeSelector: [50, 100, 200, 500],
+    pagination: false, // SE CAMBIA A FALSE PARA PAGINAR CON ANGUALR NO CON AGGRID
+    // paginationPageSize: 50,
+    // paginationPageSizeSelector: [50, 100, 200, 500],
     overlayLoadingTemplate: '<span class="ag-overlay-loading-center">Cargando datos...</span>',
     overlayNoRowsTemplate: '<span class="ag-overlay-no-rows-center">No hay datos para mostrar</span>',
     rowHeight: 48,
@@ -313,18 +317,20 @@ export class CuponesComponent implements OnInit, OnDestroy {
     floatingFiltersHeight: 35,
     singleClickEdit: true, // Permitir edición por clic simple (opcional)
     stopEditingWhenCellsLoseFocus: true, // Detener edición al hacer clic fuera
-    onSelectionChanged: (event: SelectionChangedEvent) => this.onSelectionChanged(event)
+    onSelectionChanged: (event: SelectionChangedEvent) => this.onSelectionChanged(event),
+    onRowSelected: (event: any) => this.onRowSelected(event)
+
   };
 
   activeTab: string = 'Listado';
-  
+
   // Filtros
   filtroBusqueda = '';
   filtroPrefijo: number | null = null;
   filtroSerialDesde: string = '';
   filtroSerialHasta: string = '';
   buscarCuponControl = new FormControl('');
-  
+
   // Datos
   cuponesData: CuponTablaView[] = [];
   totalItems = 0;
@@ -335,10 +341,11 @@ export class CuponesComponent implements OnInit, OnDestroy {
   // Formularios
   formCupon: FormGroup;
   formReporte: FormGroup;
-  
+
   codigoGenerado = false;
   cuponesGenerados: any[] = [];
   estados = ['Activo', 'Inactivo'];
+  minDate = new Date(); //FECHA MINIMA VALIDADA
   // Cache
   private ultimaCarga: number = 0;
   private readonly CACHE_DURATION = 30000; // 30 segundos
@@ -361,13 +368,13 @@ export class CuponesComponent implements OnInit, OnDestroy {
       ruc: [''],
       prefijo: [null, Validators.required],
       descripcion: ['', Validators.required],
-      categoria: [''], 
+      categoria: [''],
       idGrupoProducto: [null],
       cantidad: [1, [Validators.required, Validators.min(1), Validators.max(5000)]],
       serie: [false],
       inicio: [1],
       codigosGenerados: [''],
-      fechaInicio: [null, Validators.required],    
+      fechaInicio: [null, Validators.required],
       fechaCaducidad: [null, Validators.required]
     });
 
@@ -507,6 +514,51 @@ export class CuponesComponent implements OnInit, OnDestroy {
       });
 
     this.formCupon.get('inicio')?.disable();
+  // Validar fecha de inicio
+  this.formCupon.get('fechaInicio')?.valueChanges
+    .pipe(takeUntil(this.destroy$))
+    .subscribe((fecha) => {
+      if (fecha) {
+        const fechaSeleccionada = new Date(fecha);
+        const hoy = new Date();
+
+        // Normalizar ambas fechas a medianoche para comparar solo días
+        fechaSeleccionada.setHours(0, 0, 0, 0);
+        hoy.setHours(0, 0, 0, 0);
+
+        if (fechaSeleccionada < hoy) {
+          this.mostrarMensaje({
+            title: 'Fecha inválida',
+            message: 'La fecha de inicio no puede ser anterior a la fecha actual.',
+            type: 'warning'
+          });
+          this.formCupon.patchValue({ fechaInicio: null }, { emitEvent: false });
+        }
+      }
+    });
+
+  // Validar fecha de caducidad
+  this.formCupon.get('fechaCaducidad')?.valueChanges
+    .pipe(takeUntil(this.destroy$))
+    .subscribe((fecha) => {
+      if (fecha) {
+        const fechaSeleccionada = new Date(fecha);
+        const hoy = new Date();
+
+        // Normalizar ambas fechas a medianoche para comparar solo días
+        fechaSeleccionada.setHours(0, 0, 0, 0);
+        hoy.setHours(0, 0, 0, 0);
+
+        if (fechaSeleccionada < hoy) {
+          this.mostrarMensaje({
+            title: 'Fecha inválida',
+            message: 'La fecha de caducidad no puede ser anterior a la fecha actual.',
+            type: 'warning'
+          });
+          this.formCupon.patchValue({ fechaCaducidad: null }, { emitEvent: false });
+        }
+      }
+    });
   }
 
   // ========== MÉTODOS DE CARGA DE DATOS ==========
@@ -555,11 +607,12 @@ export class CuponesComponent implements OnInit, OnDestroy {
           this.totalItems = response.data.totalItems;
           this.pageIndex = response.data.page - 1;
           this.pageSize = response.data.pageSize;
+          this.restaurarSeleccionVisual();
         },
         error: (err) => {
           // Cerrar loading en error
           loadingDialog.close();
-          
+
           console.error('Error al cargar cupones:', err);
           this.mostrarMensaje({
             title: 'Error de conexión',
@@ -572,13 +625,13 @@ export class CuponesComponent implements OnInit, OnDestroy {
 
   private mapearDatosCupones(items: CuponResponse[], cliente: Cliente): CuponTablaView[] {
     return items.map((item: CuponResponse) => {
-      console.log('Fecha original desde el backend:', item.fechaCreacion); 
+      console.log('Fecha original desde el backend:', item.fechaCreacion);
       const codpre = this.prefijosDisponibles.find(p => p.id === item.idPrefijo)?.codpre || 'N/A';
-      
+
       // Buscar información del grupo de producto
       const grupoProducto = this.gruposProducto.find(g => g.id_grupo_producto === item.idGrupoProducto);
-      const categoriaNombre = grupoProducto 
-        ? `${grupoProducto.codigo} - ${grupoProducto.desBrick}` 
+      const categoriaNombre = grupoProducto
+        ? `${grupoProducto.codigo} - ${grupoProducto.desBrick}`
         : undefined;
 
       return {
@@ -592,7 +645,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
         categoria: item.idGrupoProducto,
         categoriaNombre: categoriaNombre,
         fecha: item.fechaCreacion,
-        fechaInicio: item.fechaInicio,     
+        fechaInicio: item.fechaInicio,
         fechaCaducidad: item.fechaCaducidad,
         estado: item.estado ? 'Activo' : 'Inactivo',
         usuario: item.usuario,
@@ -606,19 +659,19 @@ export class CuponesComponent implements OnInit, OnDestroy {
     // Por ahora retornamos el ID, pero podrías implementar un cache de usuarios
     // o hacer una llamada al servicio para obtener el nombre
     if (!idUsuario) return 'N/A';
-    
+
     // Si es el usuario actual, mostrar su nombre
     if (this.usuarioActual && idUsuario === this.usuarioActual.id_usuario) {
       return this.usuarioActual.nombreD || this.usuarioActual.nombre_usuario;
     }
-    
+
     return `Usuario ${idUsuario}`;
   }
 
   cargarPrefijosPorCliente(): void {
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
     if (!cliente) return;
-         
+
     this.prefijoService.obtenerPrefijosUnicosPorCliente(cliente.clientes_codigo)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
@@ -678,31 +731,31 @@ export class CuponesComponent implements OnInit, OnDestroy {
           const generados = res.data?.cuponesGenerados || [];
           const duplicados = res.data?.cuponesDuplicados || [];
 
-          // ✅ MEJORA: Mapear correctamente los duplicados
+          //  MEJORA: Mapear correctamente los duplicados
           const lista = generados.map((codigo: string, index: number) => ({
             ia: index + 1,
             cupon: codigo,
             prefijo: this.prefijosDisponibles.find(p => p.id === Number(this.formCupon.get('prefijo')?.value))?.codpre || 'N/A',
             fecha: this.formatFecha(new Date()),
-            duplicado: duplicados.includes(codigo) // ✅ Marcar si es duplicado
+            duplicado: duplicados.includes(codigo) //  Marcar si es duplicado
           }));
 
-          // ✅ MEJORA: Agregar duplicados a la lista para mostrarlos
+          //  MEJORA: Agregar duplicados a la lista para mostrarlos
           const duplicadosParaMostrar = duplicados.map((codigo: string, index: number) => ({
             ia: generados.length + index + 1,
             cupon: codigo,
             prefijo: this.prefijosDisponibles.find(p => p.id === Number(this.formCupon.get('prefijo')?.value))?.codpre || 'N/A',
             fecha: this.formatFecha(new Date()),
-            duplicado: true // ✅ Marcar como duplicado
+            duplicado: true //  Marcar como duplicado
           }));
 
-          // ✅ Combinar generados y duplicados en una sola lista
+          //  Combinar generados y duplicados en una sola lista
           this.cuponesGenerados = [...lista, ...duplicadosParaMostrar];
-          
+
           this.formCupon.patchValue({ codigosGenerados: generados.length }); // Solo contar los nuevos
           this.codigoGenerado = true;
 
-          // ✅ MEJORA: Mensaje más claro sobre el estado
+          //  MEJORA: Mensaje más claro sobre el estado
           let mensaje = `Se generaron ${generados.length} cupones nuevos.`;
           if (duplicados.length > 0) {
             mensaje += ` Se encontraron ${duplicados.length} duplicados que no serán guardados`;
@@ -754,7 +807,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
       cantidad: cantidad,
       serie: this.formCupon.get('serie')?.value || false,
       serialInicio: this.formCupon.get('serie')?.value ? inicio : undefined,
-      previsualizar: false, // ✅ Importante: false para grabar realmente
+      previsualizar: false, //  Importante: false para grabar realmente
       fechaInicio: this.formatFecha(this.formCupon.get('fechaInicio')?.value),
       fechaCaducidad: this.formatFecha(this.formCupon.get('fechaCaducidad')?.value),
       descripcion: this.formCupon.get('descripcion')?.value,
@@ -763,7 +816,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
       usuario: this.usuarioActual.id_usuario
     };
 
-    // ✅ Mostrar loading
+    //  Mostrar loading
     const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
       disableClose: true,
       data: {
@@ -779,43 +832,43 @@ export class CuponesComponent implements OnInit, OnDestroy {
     this.cuponService.create(payload)
       .pipe(
         takeUntil(this.destroy$),
-        // ✅ Agregar timeout para evitar loading infinito
+        //  Agregar timeout para evitar loading infinito
         timeout(30000), // 30 segundos timeout
-        // ✅ Agregar manejo de errores más robusto
+        //  Agregar manejo de errores más robusto
         catchError(error => {
           console.error('Error en grabar():', error);
           loadingDialog.close();
-          
+
           this.mostrarMensaje({
             title: 'Error al grabar',
             message: error?.error?.message || 'No se pudieron guardar los cupones. Intenta nuevamente.',
             type: 'error'
           });
-          
+
           return throwError(() => error);
         })
       )
       .subscribe({
         next: (response) => {
-          // ✅ Cerrar loading inmediatamente
+          //  Cerrar loading inmediatamente
           loadingDialog.close();
-          
-          console.log('✅ Cupones guardados exitosamente:', response);
-          
-          // ✅ Mostrar mensaje de éxito
+
+          console.log(' Cupones guardados exitosamente:', response);
+
+          //  Mostrar mensaje de éxito
           this.mostrarMensaje({
             title: 'Cupones guardados',
             message: `Se grabaron correctamente ${this.cuponesGenerados.length} cupones.`,
             type: 'success'
           });
-          
-          // ✅ Limpiar formulario ANTES de recargar datos
+
+          //  Limpiar formulario ANTES de recargar datos
           this.nuevo();
-          
-          // ✅ Cambiar a tab de listado para ver los resultados
+
+          //  Cambiar a tab de listado para ver los resultados
           this.activeTab = 'Listado';
-          
-          // ✅ Recargar cupones de forma más simple (sin navegación compleja)
+
+          //  Recargar cupones de forma más simple (sin navegación compleja)
           setTimeout(() => {
             this.cargarCuponesActual();
           }, 500); // Pequeño delay para que se complete el cambio de tab
@@ -824,7 +877,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
           // Este bloque puede que no se ejecute debido al catchError arriba
           // pero lo mantenemos por seguridad
           console.error('Error final en grabar():', err);
-          if (loadingDialog && loadingDialog.getState() === 0) {//Verifica si está abierto 
+          if (loadingDialog && loadingDialog.getState() === 0) {//Verifica si está abierto
             loadingDialog.close();
           }
         }
@@ -833,6 +886,10 @@ export class CuponesComponent implements OnInit, OnDestroy {
 
   // ========== MÉTODOS DE BÚSQUEDA Y FILTROS ==========
   buscarConFiltros(): void {
+    // Limpiar selección antes de nueva búsqueda
+    this.todosLosIdsSeleccionados.clear();
+    this.seleccionandoTodo = false;
+    this.selectedRows = [];
     this.pageIndex = 0;
     this.buscarCuponesConFiltros(0, this.pageSize);
   }
@@ -890,6 +947,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
           this.totalItems = response.data.totalItems;
           this.pageIndex = response.data.page - 1;
           this.pageSize = response.data.pageSize;
+          this.restaurarSeleccionVisual();
         },
         error: (err) => {
           console.error('Error al buscar cupones:', err);
@@ -924,7 +982,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
       return;
     }
 
-    this.cuponService.buscarCupones({ 
+    this.cuponService.buscarCupones({
       busqueda : busqueda,
       idCliente: cliente.clientes_codigo ,
       page: 1,
@@ -966,8 +1024,73 @@ export class CuponesComponent implements OnInit, OnDestroy {
   }
 
   // ========== MÉTODOS DE ELIMINACIÓN ==========
+  // eliminarSeleccionados(): void {
+  //   if (this.selectedRows.length === 0) {
+  //     this.mostrarMensaje({
+  //       title: 'Sin selección',
+  //       message: 'Selecciona al menos un registro para eliminar.',
+  //       type: 'warning'
+  //     });
+  //     return;
+  //   }
+
+  //   const dialogRef = this.dialog.open(ObservacionDialogComponent, {
+  //     width: '450px',
+  //     data: { observacion: '' }
+  //   });
+
+  //   dialogRef.afterClosed().subscribe((observacion: string | undefined) => {
+  //     if (!observacion) return;
+
+  //     if (!this.usuarioActual) {
+  //       this.mostrarMensaje({
+  //         title: 'Error de sesión',
+  //         message: 'Usuario no disponible.',
+  //         type: 'error'
+  //       });
+  //       return;
+  //     }
+
+  //     const payload: DeleteCuponRequest = {
+  //       ids: this.selectedRows.map(row => row.id).filter(id => id != null) as number[],
+  //       observacion,
+  //       usuario: this.usuarioActual.id_usuario
+  //     };
+
+  //     if (payload.ids.length === 0) {
+  //       this.mostrarMensaje({
+  //         title: 'Error',
+  //         message: 'No hay registros válidos para eliminar.',
+  //         type: 'error'
+  //       });
+  //       return;
+  //     }
+
+  //     this.cuponService.deleteMultiple(payload)
+  //       .pipe(takeUntil(this.destroy$))
+  //       .subscribe({
+  //         next: (response) => {
+  //           this.mostrarMensaje({
+  //             title: 'Eliminación exitosa',
+  //             message: response.message || 'Registros eliminados correctamente.',
+  //             type: 'success'
+  //           });
+  //           this.cargarCuponesActual();
+  //           this.selectedRows = [];
+  //         },
+  //         error: (err) => {
+  //           this.mostrarMensaje({
+  //             title: 'Error al eliminar',
+  //             message: 'Ocurrió un error al intentar eliminar los registros.',
+  //             type: 'error'
+  //           });
+  //           console.error(err);
+  //         }
+  //       });
+  //   });
+  // }
   eliminarSeleccionados(): void {
-    if (this.selectedRows.length === 0) {
+    if (this.todosLosIdsSeleccionados.size === 0) {
       this.mostrarMensaje({
         title: 'Sin selección',
         message: 'Selecciona al menos un registro para eliminar.',
@@ -994,7 +1117,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
       }
 
       const payload: DeleteCuponRequest = {
-        ids: this.selectedRows.map(row => row.id).filter(id => id != null) as number[],
+        ids: Array.from(this.todosLosIdsSeleccionados),
         observacion,
         usuario: this.usuarioActual.id_usuario
       };
@@ -1017,8 +1140,20 @@ export class CuponesComponent implements OnInit, OnDestroy {
               message: response.message || 'Registros eliminados correctamente.',
               type: 'success'
             });
-            this.cargarCuponesActual();
+
+            //  LIMPIAR TODO completamente
+            this.todosLosIdsSeleccionados.clear();
+            this.seleccionandoTodo = false;
             this.selectedRows = [];
+
+            //  Limpiar selección visual del grid
+            if (this.gridApi) {
+              this.gridApi.deselectAll();
+            }
+
+            //  Recargar datos desde página 1
+            this.pageIndex = 0;
+            this.cargarCupones(0, this.pageSize);
           },
           error: (err) => {
             this.mostrarMensaje({
@@ -1076,24 +1211,23 @@ export class CuponesComponent implements OnInit, OnDestroy {
 
     //Solo se incluyen filtros con valores válidos
     const filtros: any = {};
-    
+
     // Solo agregar si tiene valor válido
-    if (prefijo && prefijo !== '' && prefijo !== 'todos') {
-      filtros.idPrefijo = Number(prefijo);
+    if (estado === true || estado === false) {
+      filtros.estado = estado;
     }
-    
-    if (estado && estado !== '' && estado !== 'todos') {
-      filtros.estado = estado === 'Activo' ? true : false;
+    if (estado === true || estado === false) {
+      filtros.estado = estado;
     }
-    
+
     if (operadorFecha && operadorFecha !== '') {
       filtros.operadorFecha = operadorFecha;
     }
-    
+
     if (fechaDesde) {
       filtros.fechaDesde = fechaDesde.toISOString();
     }
-    
+
     if (fechaHasta) {
       filtros.fechaHasta = fechaHasta.toISOString();
     }
@@ -1106,7 +1240,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
       console.log('No hay filtros específicos, consultando todos los registros...');
     }
 
-    // ✅ Mostrar loading durante la generación del reporte
+    //  Mostrar loading durante la generación del reporte
     const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
       disableClose: true,
       data: {
@@ -1125,13 +1259,13 @@ export class CuponesComponent implements OnInit, OnDestroy {
         next: (res) => {
           console.log('📦 Respuesta del servicio:', res);
           console.log('📊 Cantidad de registros:', res.data?.length || 0);
-          
+
           const cliente = this.clienteSeleccionadoObj;
 
           if (!res.data || res.data.length === 0) {
-            // ✅ Cerrar loading antes de mostrar mensaje
+            //  Cerrar loading antes de mostrar mensaje
             loadingDialog.close();
-            
+
             console.log('❌ No se encontraron registros');
             this.mostrarMensaje({
               title: 'Sin resultados',
@@ -1145,8 +1279,8 @@ export class CuponesComponent implements OnInit, OnDestroy {
           const data = res.data.map((item): CuponTablaView => {
             const codpre = this.prefijosDisponibles.find(p => p.id === item.idPrefijo)?.codpre || 'N/A';
             const grupoProducto = this.gruposProducto.find(g => g.id_grupo_producto === item.idGrupoProducto);
-            const categoriaNombre = grupoProducto 
-              ? `${grupoProducto.codigo} - ${grupoProducto.desBrick}` 
+            const categoriaNombre = grupoProducto
+              ? `${grupoProducto.codigo} - ${grupoProducto.desBrick}`
               : 'Sin asignar';
 
             return {
@@ -1197,7 +1331,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
               this.exportService.exportarPDF(options);
             }
 
-            // ✅ Cerrar loading después de la exportación exitosa
+            //  Cerrar loading después de la exportación exitosa
             loadingDialog.close();
 
             // Mostrar mensaje de éxito
@@ -1208,9 +1342,9 @@ export class CuponesComponent implements OnInit, OnDestroy {
             });
 
           } catch (exportError) {
-            // ✅ Cerrar loading en error de exportación
+            //  Cerrar loading en error de exportación
             loadingDialog.close();
-            
+
             console.error('Error al exportar:', exportError);
             this.mostrarMensaje({
               title: 'Error al exportar',
@@ -1220,13 +1354,13 @@ export class CuponesComponent implements OnInit, OnDestroy {
           }
         },
         error: (err) => {
-          // ✅ Cerrar loading en error de servicio
+          //  Cerrar loading en error de servicio
           loadingDialog.close();
-          
+
           console.error('❌ Error completo:', err);
           console.error('❌ Status:', err.status);
           console.error('❌ Error body:', err.error);
-          
+
           this.mostrarMensaje({
             title: 'Error al generar reporte',
             message: err?.error?.message || 'Ocurrió un error al generar el reporte.',
@@ -1240,33 +1374,260 @@ export class CuponesComponent implements OnInit, OnDestroy {
   onGridReady(params: GridReadyEvent): void {
     this.gridApi = params.api;
   }
+  /**
+ * Restaura la selección visual en el grid basándose en el Set global
+ */
+  private restaurarSeleccionVisual(): void {
+    if (!this.gridApi) {
+      console.log('⚠️ Grid API no disponible');
+      return;
+    }
+
+    if (this.todosLosIdsSeleccionados.size === 0) {
+      console.log('⚠️ No hay IDs para restaurar');
+      this.gridApi.deselectAll();
+      return;
+    }
+
+    console.log('🔄 Iniciando restauración...', this.todosLosIdsSeleccionados.size, 'IDs en Set');
+    this.restaurandoSeleccion = true;
+
+    setTimeout(() => {
+      try {
+        // ✅ Primero deseleccionar todo
+        this.gridApi.deselectAll();
+
+        // ✅ Recolectar nodos a seleccionar
+        const nodosASeleccionar: any[] = [];
+        const idsEnPaginaActual: number[] = [];
+
+        this.gridApi.forEachNode(node => {
+          if (node.data) {
+            idsEnPaginaActual.push(node.data.id);
+
+            if (this.todosLosIdsSeleccionados.has(node.data.id)) {
+              nodosASeleccionar.push(node);
+            }
+          }
+        });
+
+        // ✅ Seleccionar todos los nodos de una vez (más eficiente)
+        if (nodosASeleccionar.length > 0) {
+          this.gridApi.setNodesSelected({
+            nodes: nodosASeleccionar,
+            newValue: true
+          });
+        }
+
+        console.log('📄 IDs en página actual:', idsEnPaginaActual);
+        console.log(`✅ Seleccionados ${nodosASeleccionar.length} de ${idsEnPaginaActual.length}`);
+
+        // ✅ Forzar actualización del header checkbox
+        this.gridApi.refreshHeader();
+
+      } catch (error) {
+        console.error('❌ Error en restaurarSeleccionVisual:', error);
+      } finally {
+        setTimeout(() => {
+          this.restaurandoSeleccion = false;
+          this.selectedRows = this.gridApi.getSelectedRows();
+          console.log('✅ Restauración completa. Total en selectedRows:', this.selectedRows.length);
+        }, 200);
+      }
+    }, 100);
+  }
+  // onSelectionChanged(event: SelectionChangedEvent): void {
+  //   this.selectedRows = this.gridApi.getSelectedRows();
+  // }
 
   onSelectionChanged(event: SelectionChangedEvent): void {
+    // AGREGAR esta validación al inicio
+    if (this.restaurandoSeleccion) {
+      return; // No hacer nada si estamos restaurando
+    }
+    const selectedNodes = this.gridApi.getSelectedNodes();
+
+    // Si se clickeó el header checkbox
+    if (selectedNodes.length === this.cuponesData.length || selectedNodes.length === 0) {
+      const todosSeleccionados = selectedNodes.length === this.cuponesData.length;
+
+      if (todosSeleccionados && !this.seleccionandoTodo) {
+        // Se clickeó para seleccionar todo
+        this.seleccionarTodosLosCupones();
+      } else if (!todosSeleccionados && this.todosLosIdsSeleccionados.size > 0) {
+        // Se clickeó para deseleccionar todo
+        this.deseleccionarTodosLosCupones();
+      }
+    }
+
     this.selectedRows = this.gridApi.getSelectedRows();
   }
 
+  onRowSelected(event: any): void {
+    if (this.restaurandoSeleccion) {
+      return; // No hacer nada si estamos restaurando
+    }
+
+    if (event.node.isSelected()) {
+      this.todosLosIdsSeleccionados.add(event.data.id);
+    } else {
+      this.todosLosIdsSeleccionados.delete(event.data.id);
+      this.seleccionandoTodo = false;
+    }
+  }
+  /**
+ * Selecciona TODOS los cupones de TODAS las páginas
+ */
+  private seleccionarTodosLosCupones(): void {
+    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      width: '450px',
+      data: {
+        title: 'Seleccionar registros',
+        message: `¿Deseas seleccionar los ${this.cuponesData.length} cupones de la página actual?`,
+        type: 'question',
+        showCancel: true,
+        confirmText: 'Sí, seleccionar',
+        cancelText: 'Cancelar'
+      }
+    });
+
+    dialogRef.afterClosed().subscribe((confirmar: boolean) => {
+      if (confirmar) {
+        // Solo seleccionar página actual
+        this.seleccionandoTodo = false;
+
+        // Agregar IDs de página actual al Set
+        this.cuponesData.forEach(cupon => {
+          this.todosLosIdsSeleccionados.add(cupon.id);
+        });
+
+        // Seleccionar todos visualmente en el grid
+        this.gridApi.selectAll();
+
+        // Actualizar selectedRows
+        this.selectedRows = this.gridApi.getSelectedRows();
+      }
+    });
+  }
+
+  /**
+   * Carga todos los IDs disponibles según los filtros actuales
+   */
+  private cargarTodosLosIds(): void {
+    const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+    if (!cliente) return;
+
+    console.log('🔍 Iniciando carga de TODOS los IDs. Total esperado:', this.totalItems);
+
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      disableClose: true,
+      data: {
+        title: 'Cargando...',
+        message: `Seleccionando ${this.totalItems} cupones...`,
+        type: 'info',
+        isLoading: true,
+        showCancel: false
+      }
+    });
+
+    // Preparar filtros actuales
+    const filtros = {
+      page: 1,
+      pageSize: this.totalItems, // Traer TODOS
+      idCliente: cliente.clientes_codigo,
+      ...(this.filtroPrefijo && { idPrefijo: this.filtroPrefijo }),
+      ...(this.filtroBusqueda?.trim() && { busqueda: this.filtroBusqueda.trim() }),
+      ...(this.filtroSerialDesde?.trim() && { serial: parseInt(this.filtroSerialDesde) }),
+      ...(this.formReporte.value.estado === 'Activo' && { estado: true }),
+      ...(this.formReporte.value.estado === 'Inactivo' && { estado: false }),
+      ...(this.formReporte.value.desde && { fechaDesde: this.formReporte.value.desde }),
+      ...(this.formReporte.value.hasta && { fechaHasta: this.formReporte.value.hasta })
+    };
+
+    console.log('📤 Enviando solicitud con filtros:', filtros);
+
+    this.cuponService.buscarCupones(filtros)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          console.log('📥 Respuesta recibida:', response);
+          console.log('📊 Items recibidos:', response.data?.items?.length);
+
+          loadingDialog.close();
+
+          if (response.type === 'SUCCESS' && response.data) {
+            //  Limpiar antes de agregar
+            this.todosLosIdsSeleccionados.clear();
+            console.log('🗑️ Set limpiado. Size:', this.todosLosIdsSeleccionados.size);
+
+            //  Agregar todos los IDs
+            response.data.items.forEach((item: CuponResponse) => {
+              this.todosLosIdsSeleccionados.add(item.idCupon);
+            });
+
+            console.log(' IDs agregados al Set. Size final:', this.todosLosIdsSeleccionados.size);
+            console.log('📋 Primeros 10 IDs:', Array.from(this.todosLosIdsSeleccionados).slice(0, 10));
+
+            //  Restaurar la selección visual
+            this.restaurarSeleccionVisual();
+
+            this.mostrarMensaje({
+              title: 'Selección completa',
+              message: `Se han seleccionado ${this.todosLosIdsSeleccionados.size} cupones de todas las páginas.`,
+              type: 'success'
+            });
+          } else {
+            console.error('❌ Respuesta no exitosa:', response);
+          }
+        },
+        error: (err) => {
+          loadingDialog.close();
+          this.seleccionandoTodo = false;
+          console.error('❌ Error al cargar todos los IDs:', err);
+          this.mostrarMensaje({
+            title: 'Error',
+            message: 'No se pudieron cargar todos los registros.',
+            type: 'error'
+          });
+        }
+      });
+  }
+
+  /**
+   * Deselecciona todos los cupones
+   */
+  private deseleccionarTodosLosCupones(): void {
+    this.todosLosIdsSeleccionados.clear();
+    this.seleccionandoTodo = false;
+    this.gridApi.deselectAll();
+    this.selectedRows = [];
+    if (this.gridApi) {
+      this.gridApi.deselectAll();
+    }
+  }
+
   cambiarTab(tab: string): void {
-    // Evitar recarga si ya estamos en el mismo tab
     if (this.activeTab === tab) {
       return;
     }
+
     this.activeTab = tab;
+
+    //  Limpiar TODA la selección al cambiar de tab
+    this.todosLosIdsSeleccionados.clear();
+    this.seleccionandoTodo = false;
     this.selectedRows = [];
-    
-    // Limpiar selección del grid
+
     if (this.gridApi) {
       this.gridApi.deselectAll();
     }
 
-    //Solo limpiar filtros y recargar si es necesario
     if (tab === 'Listado') {
       this.limpiarFiltrosSinMensaje();
-      // Solo cargar si no hay datos o los datos están desactualizados
       if (this.cuponesData.length === 0) {
         this.cargarCuponesActual();
       }
     } else {
-      // Solo limpiar filtros al salir del tab de Listado
       this.limpiarFiltrosSinMensaje();
     }
   }
@@ -1274,7 +1635,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
   verDetalle(row: any): void {
     const grupoInfo = row.categoriaNombre ? ` - Grupo: ${row.categoriaNombre}` : '';
     const usuarioInfo = row.usuarioNombre ? ` - Usuario: ${row.usuarioNombre}` : '';
-    
+
     this.mostrarMensaje({
       title: 'Detalle del Cupón',
       message: `Cupón: ${row.cupon}${grupoInfo}${usuarioInfo}`,
@@ -1311,11 +1672,11 @@ export class CuponesComponent implements OnInit, OnDestroy {
       fechaInicio: null,
       fechaCaducidad: null
     });
-    
+
     this.formCupon.get('inicio')?.disable();
     this.cuponesGenerados = [];
     this.codigoGenerado = false;
-    
+
     // Limpiar también los filtros de reportes
     this.limpiarFiltros();
   }
@@ -1326,12 +1687,12 @@ export class CuponesComponent implements OnInit, OnDestroy {
   }
 
   compararIds = (o1: any, o2: any): boolean => Number(o1) === Number(o2);
-  
+
   onEstadoChangedConConfirmacion(params: any): void {
     const { data, newValue, oldValue } = params;
-    
+
     if (newValue === oldValue) return;
-    
+
     // Mostrar diálogo de confirmación
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '400px',
@@ -1347,7 +1708,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
       if (confirmed) {
         // Proceder con el cambio
         const nuevoEstado = newValue === 'Activo';
-        
+
         this.cuponService.updateEstado(data.id, nuevoEstado)
           .pipe(takeUntil(this.destroy$))
           .subscribe({
@@ -1384,12 +1745,12 @@ export class CuponesComponent implements OnInit, OnDestroy {
   private revertirCambioEstado(params: any, valorAnterior: string): void {
     // Revertir el valor en el grid
     params.node.setDataValue('estado', valorAnterior);
-    
+
     // Refrescar la celda
-    this.gridApi.refreshCells({ 
-      rowNodes: [params.node], 
+    this.gridApi.refreshCells({
+      rowNodes: [params.node],
       columns: ['estado'],
-      force: true 
+      force: true
     });
   }
   private initFiltroBusquedaListener(): void {
@@ -1422,7 +1783,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
    */
   private tieneFiltrosActivos(): boolean {
     const formValues = this.formReporte.value;
-    
+
     return !!(
       this.filtroBusqueda?.trim() ||
       this.filtroPrefijo !== null ||
@@ -1442,7 +1803,7 @@ export class CuponesComponent implements OnInit, OnDestroy {
 
   public cargarCuponesActual(): void {
      const ahora = Date.now();
-  
+
     // Evitar recargas muy frecuentes de la página
     if (ahora - this.ultimaCarga < this.CACHE_DURATION && this.cuponesData.length > 0) {
       console.log('🚫 Evitando recarga innecesaria - datos recientes');
@@ -1458,11 +1819,21 @@ export class CuponesComponent implements OnInit, OnDestroy {
    * Método para manejar cambios de página
    */
   onPageChange(event: any): void {
-    // Decidir si usar filtros o cargar todos según el estado actual
+    console.log('📄 Cambiando a página:', event.pageIndex);
+    console.log('🔢 IDs en Set antes de cambio:', this.todosLosIdsSeleccionados.size);
+
+    //  Guardar estado antes de cargar
+    const teníaSeleccionGlobal = this.seleccionandoTodo;
+
     if (this.tieneFiltrosActivos()) {
       this.buscarCuponesConFiltros(event.pageIndex, event.pageSize);
     } else {
       this.cargarCupones(event.pageIndex, event.pageSize);
+    }
+
+    //  Restaurar flag si había selección global
+    if (teníaSeleccionGlobal) {
+      this.seleccionandoTodo = true;
     }
   }
 
@@ -1486,11 +1857,11 @@ export class CuponesComponent implements OnInit, OnDestroy {
     this.filtroSerialDesde = '';
     this.filtroSerialHasta = '';
     this.buscarCuponControl.setValue('', { emitEvent: false });
-    
+
     // Resetear formulario de reportes completamente
     this.formReporte.reset({
       prefijo: '',
-      estado: '',
+      estado: null,
       desde: null,
       hasta: null,
       operadorFecha: '='
@@ -1503,8 +1874,16 @@ export class CuponesComponent implements OnInit, OnDestroy {
     if (this.gridApi) {
       this.gridApi.deselectAll();
     }
-    
+
     //Solo recargar si estamos en el tab correcto
+    if (this.activeTab === 'Listado') {
+      this.cargarCuponesActual();
+    }
+
+    this.todosLosIdsSeleccionados.clear();
+    this.seleccionandoTodo = false;
+    this.selectedRows = [];
+
     if (this.activeTab === 'Listado') {
       this.cargarCuponesActual();
     }
@@ -1521,16 +1900,16 @@ export class CuponesComponent implements OnInit, OnDestroy {
     this.filtroSerialDesde = '';
     this.filtroSerialHasta = '';
     this.buscarCuponControl.setValue('', { emitEvent: false }); // emitEvent: false para evitar trigger del listener
-    
+
     // Resetear formulario de reportes completamente
     this.formReporte.reset({
       prefijo: '',
-      estado: '',
+      estado: null,
       desde: null,
       hasta: null,
       operadorFecha: '='
     });
-    
+
     // Limpiar selección del grid
     this.selectedRows = [];
     if (this.gridApi) {
@@ -1570,12 +1949,18 @@ export class CuponesComponent implements OnInit, OnDestroy {
     );
   }
 
+  // get tieneSeleccion(): boolean {
+  //   return this.selectedRows.length > 0;
+  // }
   get tieneSeleccion(): boolean {
-    return this.selectedRows.length > 0;
+    return this.todosLosIdsSeleccionados.size > 0;
   }
 
+  // get textoSeleccion(): string {
+  //   return `${this.selectedRows.length} registro(s) seleccionado(s)`;
+  // }
   get textoSeleccion(): string {
-    return `${this.selectedRows.length} registro(s) seleccionado(s)`;
+    return `${this.todosLosIdsSeleccionados.size} registro(s) seleccionado(s)`;
   }
 
   get usuarioNombre(): string {

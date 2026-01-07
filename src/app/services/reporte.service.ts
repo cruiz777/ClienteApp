@@ -138,7 +138,10 @@ export class ReporteUnidadLogisticaService {
    */
   getProductosPorCliente(params: ProductosPorClienteParams): Observable<ApiListResponse<ProductoCompletoCompleteResponse>> {
     let httpParams = new HttpParams();
-
+    
+    if (params.prefijo) {
+      httpParams = httpParams.set('prefijo', params.prefijo);
+    }
     // Agregar parámetros solo si tienen valor
     if (params.codigoProducto) {
       httpParams = httpParams.set('codigoProducto', params.codigoProducto);

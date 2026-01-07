@@ -672,3 +672,319 @@ label .required {
 .custom-grid {
   --ag-selected-row-background-color: #a3c0e8; /* o el color que quieras */
 }
+
+/*bloquear cabecera*/
+/* Cuando la cabecera esté bloqueada, no acepta clicks / cambios */
+.cabecera-readonly {
+  pointer-events: none;       /* bloquea clicks */
+}
+
+/* Pero permitimos que los botones de Guardar/Cancelar sí funcionen
+   (si están dentro del mismo contenedor, ajústalo según tu HTML) */
+.cabecera-readonly .acciones-toolbar,
+.cabecera-readonly .acciones-toolbar * {
+  pointer-events: auto;
+}
+
+/* Estilo visual de solo lectura (opcional) */
+.cabecera-readonly .mat-input-element,
+.cabecera-readonly .mat-select-trigger {
+  background-color: #f5f5f5; /* #f5f5f5;*/
+}
+
+.cabecera-readonly .control,
+.cabecera-readonly textarea.control {
+  background-color: #ecedae; /* #f5f5f5; color de los controles bloqueados*/ 
+  color: #6b7280;
+}
+
+
+
+.btn-tomate {
+  background: #e2a661;/* #96e863;*/
+  color: #fff;
+  border: 1px solid #81c8f2;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+  width: 100px;
+  height: 35px;
+}
+.btn-tomate:hover { background: #686fcd; border-color: #6291e8; }
+
+
+/* boton circulo*/
+.icon-circle {
+  width: 40px;        /* más grande el círculo */
+  height: 40px;
+  border-radius: 50%;
+  border: none;
+  background: #ffffff;
+  padding: 0;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow: 0 0 0 2px #38b000;  /* borde verde (opcional) */
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, background-color 0.15s ease, transform 0.05s ease;
+}
+
+.icon-circle img {
+  width: 80%;   /* el icono ocupa casi todo el círculo */
+  height: 80%;
+  object-fit: contain;
+}
+
+.icon-circle:hover {
+  background-color: #f3f6fb;
+  box-shadow: 0 0 0 2px #1e88e5;
+  transform: translateY(-1px);
+}
+
+.icon-circle:active {
+  transform: translateY(0);
+  box-shadow: 0 0 0 1px #1e88e5;
+}
+
+/* para imagenes en  botones*/
+.btn-icon-xs {
+  padding: 0;
+  width: 20px;
+  height: 20px;
+  min-width: 20px;
+  min-height: 20px;
+  border-radius: 3px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/*boton*/
+.acciones-cell {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
+}
+
+/* Botón pequeño: se reduce el CONTENEDOR, no el ícono */
+.acciones-cell .btn-xs {
+  padding: 0 !important;        /* sin relleno alrededor */
+  margin: 0;
+  width: 20px !important;       /* ancho del botón */
+  height: 5px !important;      /* alto del botón */
+  min-width: 20px !important;
+  min-height: 20px !important;
+  border-radius: 3px;
+  line-height: 20px !important; /* evita que el texto/imagen lo estire */
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  background-color: transparent; /* si no quieres tanto fondo */
+  border: 1px solid #ddd;        /* opcional: borde fino */
+  font-size: 0;                  /* para que ningún texto influya en el alto */
+}
+
+/* Opcional: efecto hover */
+.acciones-cell .btn-xs:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* para los campos concepto*/
+/* ✅ Esto hace que el bloque ocupe TODAS las columnas del grid padre */
+
+/* El bloque ocupa todo el ancho del grid padre */
+.grid-4-fechas{
+  grid-column: 1 / -1;
+  width: 100%;
+  display: grid;
+
+  /* ✅ Aquí está el truco: la 4ta columna (Concepto) es más grande */
+  grid-template-columns:
+    minmax(180px, 1fr)   /* Fecha Caduca */
+    minmax(140px, 0.7fr) /* Plazo */
+    minmax(180px, 1.2fr)   /* Fecha Vencimiento */
+    minmax(360px, 2.2fr) /* Concepto (más ancho) */;
+
+  gap: 12px;
+  align-items: end;
+}
+
+.grid-4-fechas .form-group,
+.grid-4-fechas .control{
+  min-width: 0;
+}
+
+/* Concepto en 1 línea tipo input (si quieres que sea más alto, sube height) */
+.control-1line{
+  height: 38px;
+  min-height: 38px;
+  resize: none;
+  overflow: hidden;
+}
+
+/* ✅ Ubicar la fila 2 debajo de las 3 primeras columnas */
+.rel-col-1{ grid-column: 1; }
+.rel-col-2{ grid-column: 2; }
+.rel-col-3{ grid-column: 3; }
+
+/* Responsive */
+@media (max-width: 1100px){
+  .grid-4-fechas{
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
+  }
+  .rel-col-1, .rel-col-2, .rel-col-3{ grid-column: auto; }
+}
+@media (max-width: 650px){
+  .grid-4-fechas{ grid-template-columns: 1fr; }
+}
+
+.grid-3-relacionados{
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 12px;
+  align-items: end;
+}
+
+/*controles campos relacionados*/
+
+/* ✅ Fila completa debajo (como los cuadros naranjas) */
+.grid-3-relacionados{
+  grid-column: 1 / -1;            /* 👈 ocupa TODO el ancho de la grilla principal */
+  display: grid;
+  grid-template-columns: 1.2fr 1.2fr 220px;  /* Doc y Aut grandes + Fecha más corta */
+  gap: 10px;
+  align-items: end;
+  margin-top: 6px;
+}
+
+/* Ajustes finos para que se vea “compacto” como tu cabecera */
+.grid-3-relacionados .form-group{
+  margin: 0;
+}
+
+/* Responsive */
+@media (max-width: 1100px){
+  .grid-3-relacionados{
+    grid-template-columns: 1fr 1fr;
+  }
+  .grid-3-relacionados .form-group:last-child{
+    grid-column: 1 / -1; /* la fecha baja y ocupa toda la fila */
+  }
+}
+
+@media (max-width: 700px){
+  .grid-3-relacionados{
+    grid-template-columns: 1fr; /* todo en una columna en móvil */
+  }
+}
+
+
+/* VERIFICAR CAMBIOS */
+
+/* ===== Toolbar (cabecera azul) más baja ===== */
+.toolbar.sticky-header{
+  min-height: 48px !important;
+  height: 48px !important;
+  padding: 6px 12px !important;
+  display: flex;
+  align-items: center;
+}
+
+.toolbar .title{
+  font-size: 16px !important;
+  line-height: 18px !important;
+}
+
+.toolbar .actions button{
+  height: 34px !important;
+  padding: 0 12px !important;
+}
+
+
+/* ===== MODO EDITAR: fondo blanco en controles ===== */
+.modo-editar .control,
+.modo-editar input.control,
+.modo-editar select.control,
+.modo-editar textarea.control {
+  background-color: #d04d4d !important;
+}
+
+/* Si tienes estilos para readonly que cambian color, igual dejamos blanco */
+.modo-editar .control[readonly],
+.modo-editar .control:disabled {
+  background-color: #36b44f !important;   /*#ffffff*/
+  opacity: 1; /* opcional: evita que se vea "apagado" */
+}
+
+
+.cabecera-readonly textarea.control.allow-edit {
+  background-color: #ffffff !important;
+  color: #111827 !important;
+  pointer-events: auto !important;
+  opacity: 1 !important;
+}
+
+/* (opcional) si quieres que se vea normal al enfocarlo */
+.cabecera-readonly textarea.control.allow-edit:focus {
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 0 3px rgba(96,165,250,.25) !important;
+}
+
+
+/* mensaje solo de lectura */
+
+.alert-readonly{
+  color: #b00020;          /* rojo tipo material */
+  font-weight: 700;
+  margin-left: 12px;
+  white-space: nowrap;
+}
+
+.usuario-totales{
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase; /* etiqueta + valor en mayúsculas */
+}
+
+.usuario-label{
+  font-weight: 700;
+}
+
+.usuario-valor{
+  font-weight: 800;
+}
+
+/* USUARIO pegado a la esquina izquierda */
+.usuario-totales{
+  position: absolute;
+  left: 12px;   /* separación mínima del borde */
+  bottom: 8px;  /* alínea con el padding */
+
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  font-weight: 800;
+}
+
+/* Opcional: si tu contenido queda tapado por la barra inferior */
+.content-scroll{
+  padding-bottom: 52px; /* ajusta según el alto real de .totales */
+}
+
+/* Etiqueta "USUARIO:" */
+.usuario-label{
+  color: #1b5e20;
+  letter-spacing: 0.5px;
+}
+
+/* Valor "ADMIN" */
+.usuario-valor{
+  color: #1b5e20;
+}

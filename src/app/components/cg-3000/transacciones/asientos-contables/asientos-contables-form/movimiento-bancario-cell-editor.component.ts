@@ -80,6 +80,11 @@ export class MovimientoBancarioCellEditorComponent implements ICellEditorAngular
   agInit(params: ICellEditorParams & { movimientos?: MovimientoCombo[] }): void {
     this.params = params;
     this.movimientos = params.movimientos ?? [];
+     // ✅ garantizar orden por descripcion dentro del editor
+    this.movimientos = (params.movimientos ?? []).slice().sort((a, b) =>
+      (a.descripcion || '').localeCompare((b.descripcion || ''), 'es', { sensitivity: 'base' })
+    );
+
     this.filtered = [...this.movimientos];
 
     const currentValue = params.value ?? null;

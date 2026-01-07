@@ -10,6 +10,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialogModule } from '@angular/material/dialog';
+
 // Servicios propios
 import { PerfilesService } from 'src/app/services/perfil.service';
 import { DepartamentosService } from 'src/app/services/departamentos.service';
@@ -34,7 +35,7 @@ import {
   PaginationResponse,
 } from 'src/app/services/caja-usuario.service';
 
-import { forkJoin, Observable, of } from 'rxjs';
+import { Observable, of, forkJoin } from 'rxjs';
 
 export const MY_DATE_FORMATS = {
   parse: { dateInput: 'DD/MM/YYYY' },
@@ -48,11 +49,11 @@ export const MY_DATE_FORMATS = {
 
 type AutorizacionRow = {
   idAutorizacionUsuario: number;
-   idAutorizacionCaja: number;     
+  idAutorizacionCaja: number;
   establecimiento: string;
-  
+  tipoDocumentoDescripcion: string;
   caja: string;
-  estado: 'Activo' | 'Inactivo';
+  activa: boolean; // ✅ reemplaza "estado"
 };
 
 function mapDtoToRow(dto: AutorizacionCajaUsuarioDto): AutorizacionRow {
@@ -60,8 +61,9 @@ function mapDtoToRow(dto: AutorizacionCajaUsuarioDto): AutorizacionRow {
     idAutorizacionUsuario: dto.idAutorizacionUsuario,
     idAutorizacionCaja: dto.idAutorizacionCaja,
     establecimiento: dto.numEstablecimiento ?? '',
-    caja: dto.caja ?? '',
-    estado: dto.activa ? 'Activo' : 'Inactivo',
+    caja: (dto.caja ?? '') as any, // si tu DTO caja viene string, esto queda OK
+    tipoDocumentoDescripcion: dto.tipoDocumentoDescripcion ?? '',
+    activa: !!dto.activa, // ✅ boolean real
   };
 }
 
@@ -301,20 +303,25 @@ export class UsuarioCajaComponent implements OnInit {
         : '✅ Contraseña segura.';
   }
 
-  // Abrir catálogo (puede ir a un diálogo; aquí solo carga)
+  // Abrir catálogo
   nuevoAutorizacion(): void {
     this.cargarCatalogoAutorizaciones(1, 10);
   }
 
-  // Seleccionar una Autorización de Caja del catálogo:
-  // - crea relación activa=true
-  // - oculta el catálogo
-  // - desactiva otras activas del usuario
-  // - recarga la grilla
+  // ✅ Selecciona Autorización: crea y recarga (NO desactiva otras)
   seleccionarAutorizacion(aut: AutorizacionCajaDto): void {
     const idUsuario = this.esEdicion ? this.usuarioIdEditar! : this.usuarioActual?.id_usuario;
+
     if (!idUsuario) {
       this.toast.error('No hay usuario seleccionado.');
+      return;
+    }
+
+    // ✅ Evitar duplicado
+    const yaExiste = this.autorizaciones?.some(a => a.idAutorizacionCaja === aut.id_autorizacion_caja);
+    if (yaExiste) {
+      this.toast.mostrar(['Esta autorización ya está asignada al usuario.']);
+      this.catalogoAutorizaciones = [];
       return;
     }
 
@@ -325,32 +332,8 @@ export class UsuarioCajaComponent implements OnInit {
     }).subscribe({
       next: (resp: ApiResponse<AutorizacionCajaUsuarioDto>) => {
         if (resp.type === 'Success' && resp.data) {
-          const nuevoId = resp.data.idAutorizacionUsuario;
-
-          // Ocultar catálogo inmediatamente
           this.catalogoAutorizaciones = [];
-
-          // Desactivar otras si están activas
-          const updates = this.autorizaciones
-            .filter(a =>
-              a.idAutorizacionUsuario > 0 &&
-              a.idAutorizacionUsuario !== nuevoId &&
-              a.estado === 'Activo'
-            )
-            .map(a => this.cajaUsuarioService.update(a.idAutorizacionUsuario, {
-              idAutorizacionUsuario: a.idAutorizacionUsuario,
-              activa: false
-            }));
-
-          const fin$: Observable<any> = updates.length ? forkJoin(updates) : of(true);
-          fin$.subscribe({
-            next: () => this.cargarAutorizacionesCaja(idUsuario),
-            error: (err: any) => {
-              console.error(err);
-              this.toast.error(err?.error?.message || 'No se pudo actualizar el estado de otras autorizaciones.');
-              this.cargarAutorizacionesCaja(idUsuario); // asegurar consistencia
-            }
-          });
+          this.cargarAutorizacionesCaja(idUsuario);
         } else {
           this.toast.error(resp.message || 'No se pudo crear la asignación.');
         }
@@ -362,49 +345,29 @@ export class UsuarioCajaComponent implements OnInit {
     });
   }
 
-  /** Asegura que solo una fila quede “Activo” desde la grilla */
-  activar(index: number): void {
-    const seleccion = this.autorizaciones[index];
+  // ✅ Cambia estado individual (checkbox) sin afectar otros
+  cambiarEstado(index: number, event: Event): void {
+    const row = this.autorizaciones[index];
+    const checked = (event.target as HTMLInputElement).checked;
 
     // UI optimista
-    this.autorizaciones = this.autorizaciones.map((row, i) => ({
-      ...row,
-      estado: i === index ? 'Activo' : 'Inactivo'
-    }));
+    row.activa = checked;
 
-    // Llamadas al backend solo si están persistidas
-    const updates: Observable<any>[] = [];
+    if (row.idAutorizacionUsuario <= 0) return;
 
-    if (seleccion.idAutorizacionUsuario > 0) {
-      updates.push(this.cajaUsuarioService.update(seleccion.idAutorizacionUsuario, {
-        idAutorizacionUsuario: seleccion.idAutorizacionUsuario,
-        activa: true
-      }));
-    }
-
-    this.autorizaciones.forEach((row, i) => {
-      if (i !== index && row.idAutorizacionUsuario > 0) {
-        updates.push(this.cajaUsuarioService.update(row.idAutorizacionUsuario, {
-          idAutorizacionUsuario: row.idAutorizacionUsuario,
-          activa: false
-        }));
-      }
-    });
-
-    if (updates.length === 0) return;
-
-    forkJoin(updates).subscribe({
+    this.cajaUsuarioService.update(row.idAutorizacionUsuario, {
+      idAutorizacionUsuario: row.idAutorizacionUsuario,
+      activa: checked
+    }).subscribe({
       next: () => { /* ok */ },
       error: (err: any) => {
         console.error(err);
-        this.toast.error(err?.error?.message || 'No se pudo actualizar el estado de autorización.');
-        const idUsuario = this.esEdicion ? this.usuarioIdEditar! : this.usuarioActual?.id_usuario;
-        if (idUsuario) this.cargarAutorizacionesCaja(idUsuario);
+        this.toast.error(err?.error?.message || 'No se pudo actualizar el estado.');
+        // rollback
+        row.activa = !checked;
       }
     });
   }
-
-  /** Eliminar fila */
 
   // Carga la tabla de autorizaciones del usuario
   private cargarAutorizacionesCaja(idUsuario: number, soloActivas?: boolean): void {
@@ -428,96 +391,86 @@ export class UsuarioCajaComponent implements OnInit {
 
   // Carga catálogo de AutorizacionCaja (para seleccionar)
   private cargarCatalogoAutorizaciones(page: number = 1, pageSize: number = 10): void {
-  // Si estás editando, usa ese id; si no, el del usuario actual
-  const idUsuario = this.esEdicion ? this.usuarioIdEditar! : this.usuarioActual?.id_usuario;
+    const idUsuario = this.esEdicion ? this.usuarioIdEditar! : this.usuarioActual?.id_usuario;
 
-  this.cajaUsuarioService
-    .getAutorizacionesCajaDisponibles(page, pageSize, idUsuario)
-    .subscribe({
-      next: (resp: ApiResponse<PaginationResponse<AutorizacionCajaDto>>) => {
-        if (resp.type === 'Success' && resp.data) {
-          const d = resp.data;
+    this.cajaUsuarioService
+      .getAutorizacionesCajaDisponibles(page, pageSize, idUsuario)
+      .subscribe({
+        next: (resp: ApiResponse<PaginationResponse<AutorizacionCajaDto>>) => {
+          if (resp.type === 'Success' && resp.data) {
+            const d = resp.data;
 
-          // No mostrar cajas que ya estén listadas en la tabla del usuario actual
-          const yaAsignadas = new Set(this.autorizaciones.map(a => a.idAutorizacionCaja));
-          this.catalogoAutorizaciones = (d.items ?? []).filter(
-            x => !yaAsignadas.has(x.id_autorizacion_caja)
-          );
+            const yaAsignadas = new Set(this.autorizaciones.map(a => a.idAutorizacionCaja));
+            this.catalogoAutorizaciones = (d.items ?? []).filter(
+              x => !yaAsignadas.has(x.id_autorizacion_caja)
+            );
 
-          this.page       = d.page;
-          this.pageSize   = d.pageSize;
-          this.totalItems = d.totalItems;
-          this.totalPages = d.totalPages;
-        } else {
+            this.page = d.page;
+            this.pageSize = d.pageSize;
+            this.totalItems = d.totalItems;
+            this.totalPages = d.totalPages;
+          } else {
+            this.catalogoAutorizaciones = [];
+            this.toast.error(resp.message || 'No se pudo obtener cajas disponibles.');
+          }
+        },
+        error: (err: any) => {
+          console.error(err);
           this.catalogoAutorizaciones = [];
-          this.toast.error(resp.message || 'No se pudo obtener cajas disponibles.');
+          this.toast.error(err?.error?.message || 'Error consultando cajas disponibles.');
         }
-      },
-      error: (err: any) => {
-        console.error(err);
-        this.catalogoAutorizaciones = [];
-        this.toast.error(err?.error?.message || 'Error consultando cajas disponibles.');
-      }
-    });
-}
-
+      });
+  }
 
   // Para *ngFor trackBy
   trackById(index: number, row: { idAutorizacionUsuario: number }): number {
     return row?.idAutorizacionUsuario ?? index;
   }
-  // Oculta el catálogo de AutorizacionCaja
-ocultarCatalogo(): void {
-  this.catalogoAutorizaciones = [];
-}
-// Abre el diálogo de confirmación y, si el usuario acepta, ejecuta el borrado
-confirmarEliminar(index: number): void {
-  const row = this.autorizaciones[index];
 
-  this.dialog.open(CustomMessageBoxComponent, {
-    width: '400px',
-    data: {
-      title: '¿Desea confirmar?',
-      message: `¿Eliminar la autorización de la caja ${row.caja} (Establecimiento ${row.establecimiento})?`,
-      type: 'info',
-      confirmText: 'Sí, eliminar',
-      cancelText: 'Cancelar',
-      showCancel: true
-    }
-  })
-  .afterClosed()
-  .subscribe((confirmado: boolean) => {
-    if (confirmado) {
-      this.eliminarAutorizacion(index); // llama al borrado real
-    }
-  });
-}
-
-/** Borrado real (sin UI de confirmación) */
-private eliminarAutorizacion(index: number): void {
-  const row = this.autorizaciones[index];
-
-  // Si es fila local (no persistida)
-  if (row.idAutorizacionUsuario <= 0) {
-    this.autorizaciones = this.autorizaciones.filter((_, i) => i !== index);
-    return;
+  ocultarCatalogo(): void {
+    this.catalogoAutorizaciones = [];
   }
 
-  // Si está persistida en backend
-  this.cajaUsuarioService.delete(row.idAutorizacionUsuario).subscribe({
-    next: () => {
-      this.autorizaciones = this.autorizaciones.filter((_, i) => i !== index);
+  confirmarEliminar(index: number): void {
+    const row = this.autorizaciones[index];
 
-      // Si eliminaste la activa y quedan filas, marca la primera como Activo
-      if (!this.autorizaciones.some(r => r.estado === 'Activo') && this.autorizaciones.length > 0) {
-        this.activar(0);
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: '¿Desea confirmar?',
+        message: `¿Eliminar la autorización de la caja ${row.caja} (Establecimiento ${row.establecimiento})?`,
+        type: 'info',
+        confirmText: 'Sí, eliminar',
+        cancelText: 'Cancelar',
+        showCancel: true
       }
-    },
-    error: (err: any) => {
-      console.error(err);
-      this.toast.error(err?.error?.message || 'No se pudo eliminar la autorización.');
-    }
-  });
-}
+    })
+    .afterClosed()
+    .subscribe((confirmado: boolean) => {
+      if (confirmado) {
+        this.eliminarAutorizacion(index);
+      }
+    });
+  }
 
+  private eliminarAutorizacion(index: number): void {
+    const row = this.autorizaciones[index];
+
+    // fila local
+    if (row.idAutorizacionUsuario <= 0) {
+      this.autorizaciones = this.autorizaciones.filter((_, i) => i !== index);
+      return;
+    }
+
+    this.cajaUsuarioService.delete(row.idAutorizacionUsuario).subscribe({
+      next: () => {
+        this.autorizaciones = this.autorizaciones.filter((_, i) => i !== index);
+        // ✅ Ya NO forzamos activar(0) ni usamos "estado"
+      },
+      error: (err: any) => {
+        console.error(err);
+        this.toast.error(err?.error?.message || 'No se pudo eliminar la autorización.');
+      }
+    });
+  }
 }

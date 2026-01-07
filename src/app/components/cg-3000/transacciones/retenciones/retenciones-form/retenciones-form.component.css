@@ -1,0 +1,658 @@
+/* ===== Toolbar ===== */
+.toolbar.sticky-header{
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  background: #1d789f;
+  border-radius: 6px;
+}
+
+.title{
+  color: #fff;
+  font-weight: 700;
+  letter-spacing: .5px;
+  font-size: 16px;
+}
+
+.actions{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn-verde{
+  background: #7dbb42 !important;
+  color: #fff !important;
+  font-weight: 700;
+  border-radius: 8px;
+}
+
+.btn-cancelar{
+  background: #e9f5e1 !important;
+  color: #1b1b1b !important;
+  font-weight: 700;
+  border-radius: 8px;
+}
+
+/* ===== Layout ===== */
+.ret-content{
+  padding: 12px 8px;
+}
+
+.panel-cabecera{
+  background: #f5f7f9;
+  border: 1px solid #d6dde3;
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+/* ===== Header form grid (evita colisiones) ===== */
+.ret-grid{
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+/* Importante: permite que inputs no se “encojan” */
+.ret-grid > div { min-width: 0; }
+
+.ret-col-12{ grid-column: span 12; }
+.ret-col-6{ grid-column: span 6; }
+.ret-col-3{ grid-column: span 3; }
+.ret-col-2{ grid-column: span 2; }
+
+/* Fuerza a Material a tomar el ancho completo */
+.ret-w100{ width: 100%; display: block; }
+
+/* ===== Acciones header ===== */
+.header-actions{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.btn-sec{
+  border-radius: 8px;
+  font-weight: 700;
+}
+
+.hint{
+  font-size: 12px;
+  opacity: .8;
+}
+
+/* ===== Loading ===== */
+.loading-area{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+.loading-text{
+  font-weight: 600;
+}
+
+/* ===== Grid ===== */
+.panel-grid{
+  background: #f5f7f9;
+  border: 1px solid #d6dde3;
+  border-radius: 8px;
+  padding: 10px;
+}
+
+.grid-title{
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: #1b2a33;
+}
+
+.grid-retenciones{
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Botón eliminar */
+.accion-wrap{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+.btn-accion{
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid #c9d2d9;
+  background: #fff;
+  cursor: pointer;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.btn-accion:hover{
+  background: #ffecec;
+  border-color: #ffb6b6;
+}
+
+/* Responsive */
+@media (max-width: 1200px){
+  .ret-col-3{ grid-column: span 6; }
+  .ret-col-2{ grid-column: span 6; }
+}
+@media (max-width: 700px){
+  .toolbar.sticky-header{ flex-direction: column; align-items: stretch; }
+  .actions{ justify-content: flex-start; }
+  .ret-col-6, .ret-col-3, .ret-col-2, .ret-col-12{ grid-column: span 12; }
+}
+
+
+/* ====== Scroll + sticky toolbar (como tu pantalla) ====== */
+:host { display:block; max-height:85vh; }
+.content-scroll{
+  display:flex; flex-direction:column; gap:10px;
+  max-height: calc(85vh - 56px);
+  overflow-y:auto;
+  padding: 12px 8px;
+  padding-right: 6px;
+}
+
+/* Toolbar más baja */
+.toolbar.sticky-header{
+  min-height: 48px;
+  height: 48px;
+  padding: 6px 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.15);
+}
+
+/* Cabecera “tipo controles” */
+.header-form{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  border-radius:10px;
+  padding:12px;
+}
+
+/* Grid 4 columnas como tu pantalla */
+.header-form .grid{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(180px, 1fr));
+  gap: 12px 16px;
+}
+
+.form-group{ display:flex; flex-direction:column; gap:6px; min-width:0; }
+.form-group label{ font-size:12px; color:#334155; }
+
+.control{
+  width:100%;
+  height:36px;
+  padding:6px 12px;
+  font-size:14px;
+  color:#111827;
+  background:#f3f6fb;
+  border:1px solid #d1d5db;
+  border-radius:8px;
+  box-sizing:border-box;
+  outline:none;
+}
+
+.control:focus{
+  border-color:#2563eb;
+  box-shadow:0 0 0 3px rgba(37,99,235,.25);
+}
+
+.subtoolbar{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin-top:10px;
+}
+
+.btn{
+  padding:6px 12px;
+  border-radius:8px;
+  border:1px solid #d0d5dd;
+  background:#e1f9ca;
+  cursor:pointer;
+}
+.btn:hover{ background:#d5f7b3; }
+
+/* AG Grid look */
+.ag-theme-alpine.custom-grid{
+  --ag-header-background-color:#1d789f;
+  --ag-header-foreground-color:#ffffff;
+  --ag-row-hover-color:#eaf1c3;
+  --ag-border-color:#afb0ad;
+  --ag-odd-row-background-color:#f6f8f9;
+  --ag-even-row-background-color:#dde3ee;
+}
+
+/*TOTALES*/
+
+/* barra inferior tipo "Total Debe/Haber" */
+.totales-bar{
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+
+  display: flex;
+  justify-content: flex-end;
+  gap: 28px;
+
+  padding: 8px 14px;          /* compacto */
+  background: #e9f2c4;
+  border-top: 1px solid #c9d6a0;
+
+  font-size: 15px;
+}
+
+.tot{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.total-label{
+  font-weight: 600;
+  opacity: .85;
+}
+
+/* Si quieres bajar un poco el alto del header y controles */
+.header-compact .control{
+  height: 34px;
+  padding: 6px 10px;
+}
+.header-compact label{
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+/* LETRAS MAS PEQUEÑAS*/
+
+/* ===========================
+   TIPOGRAFÍA GLOBAL (COMPONENTE)
+   =========================== */
+:host{
+  font-size: 12px;           /* base para TODO el componente */
+}
+
+/* si tu layout usa contenedores, refuerza */
+.toolbar,
+.content-scroll,
+.header-form,
+.subtoolbar,
+.totales-bar{
+  font-size: 12px;
+}
+
+/* Labels y textos auxiliares */
+.header-form label,
+.hint{
+  font-size: 11px;
+}
+
+/* Inputs (altura + fuente) */
+.header-form .control{
+  font-size: 12px;
+  height: 32px;
+  padding: 5px 10px;
+}
+
+/* Botones (barra superior) */
+.toolbar .actions button{
+  font-size: 12px;
+  padding: 6px 12px;
+}
+
+/* ===========================
+   AG GRID (fuente en celdas y header)
+   =========================== */
+.ag-theme-alpine{
+  --ag-font-size: 12px;      /* celdas */
+  --ag-header-font-size: 12px; /* header */
+  --ag-row-height: 32px;     /* filas más compactas */
+  --ag-header-height: 34px;  /* header más compacto */
+}
+
+/* Si quieres aún más pequeño el header del grid */
+.ag-theme-alpine .ag-header-cell-text{
+  font-size: 12px;
+}
+
+/*AG GRID*/
+/* Fuente general del grid */
+
+/* Opcional: aún más fino en header y celdas */
+:host ::ng-deep .ag-theme-alpine .ag-header-cell-text{
+  font-size: 8px !important;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-cell{
+  font-size: 8px !important;
+}
+
+/**/
+:host ::ng-deep .ag-theme-alpine{
+  --ag-row-height: 25px;
+  --ag-header-height: 27px;
+}
+
+:host ::ng-deep .custom-grid .ag-root-wrapper {
+  font-size: 10px;
+}
+
+
+
+:host ::ng-deep .ag-header-cell-resize {
+  cursor: col-resize !important;
+  pointer-events: all !important;
+  width: 6px !important;
+}
+
+
+/* colores de ag-grid*/
+
+/* AG Grid */
+/*
+.ag-theme-alpine.grid {
+  --ag-foreground-color: #1f2937;
+  --ag-background-color: #ffffff;
+  --ag-header-background-color: #0d2a56;
+  --ag-header-foreground-color: #ffffff;
+  --ag-row-hover-color: #f3f4f6;
+}
+  */
+
+
+/* PARA EL SCROLL*/
+:host {
+  display: block;
+  max-height: 85vh; /* ajusta si tu modal es más bajo/alto */
+}
+
+/* Scroll SOLO del contenido; la toolbar queda fija arriba */
+.content-scroll {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: calc(85vh - 56px); /* 56px ≈ altura de la toolbar */
+  overflow-y: auto;              /* <- aquí aparece el scroll vertical */
+  padding-right: 6px;            /* evita que el scroll tape contenido */
+}
+
+/* Si usas Angular Material Dialog, asegúrate que la caja permita scroll */
+:host::ng-deep .mat-dialog-content {
+  max-height: 85vh !important;
+  overflow: hidden; /* el scroll lo maneja .content-scroll */
+  padding: 0 !important; /* ya tenemos padding en el contenido */
+}
+
+/* Si tu contenedor es <mat-dialog-content>, puedes usarlo directamente:
+mat-dialog-content { max-height: 85vh; overflow: hidden; padding: 0; }
+*/
+
+/* El grid con altura fija para que no “crezca” infinito */
+.ag-theme-alpine.grid {
+  min-height: 260px;
+  height: 320px;   /* mismo que en el style del HTML */
+}
+
+.ag-theme-alpine.custom-grid {
+  min-height: 260px;
+  height: 320px;
+}
+
+/*  nuevos controles*/
+
+* Botones */
+.btn {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #d0d5dd;
+  background:  #e1f9ca; /*#76afce;*/
+  cursor: pointer;
+}
+.btn:hover { background: #d5f7b3; }
+.btn.primary {
+  background: #1e88e5;
+  color: white;
+  border-color: #1e88e5;
+}
+.btn.primary:disabled { opacity: .6; cursor: not-allowed; }
+.btn-icon {
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid #d0d5dd;
+  background: #fff;
+  cursor: pointer;
+}
+.btn-icon.danger { border-color: #ef9a9a; }
+.btn-icon.danger:hover { background: #ffebee; }
+
+
+.btn-azul {
+  background: #093679; color: #fff; border: 1px solid #0d6efd;
+  padding: 8px 16px; border-radius: 8px; font-weight: 700; cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+.btn-azul:hover { background: #48b0ff; border-color: #48b0ff; }
+
+
+
+.btn-rojo {
+  background: #dc2626;
+  color: #fff;
+  border: 1px solid #dc2626;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+}
+.btn-rojo:hover { background: #ef4444; border-color: #ef4444; }
+
+
+/* Aplica solo a este grid */
+.custom-grid {
+  /* Fondo general del grid */
+  --ag-background-color: #fafcff;
+
+  /* Cabecera */
+  --ag-header-background-color: #0d47a1;   /* azul */
+  --ag-header-foreground-color:  #ffffff;  /* texto cabecera */
+  --ag-header-border-color:      #0b3c8a;
+
+  /* Bordes/celdas */
+  --ag-border-color: #d0d7de;
+
+  /* Filas */
+  --ag-odd-row-background-color:  #f7fbff;
+  --ag-even-row-background-color: #ffffff;
+  --ag-row-hover-color:           #e3f2fd;
+
+  /* Texto */
+  --ag-foreground-color: #111827; /* texto normal */
+  --ag-secondary-foreground-color: #8cb716;
+
+  /* Filtros/inputs */
+  --ag-control-panel-background-color: #0d47a1;
+  --ag-input-border-color: #b6c2ce;
+
+  /* Tamaño fuente (opcional) */
+  --ag-font-size: 13px;
+}
+
+/* (Opcional) icono filtro y sort en blanco para cabecera oscura */
+.custom-grid .ag-icon {
+  filter: invert(1) brightness(1.8);
+}
+
+/* (Opcional) Botón de acciones coherente */
+.custom-grid .ag-action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  padding: 0 6px;
+}
+.custom-grid .ag-action-btn svg,
+.custom-grid .ag-action-btn img {
+  width: 18px; height: 18px;
+}
+
+/*:host ::ng-deep .custom-grid { variables aquí  }*/
+
+.custom-grid {
+  --ag-header-height: 36px;
+  --ag-row-height: 32px;
+}
+
+.custom-grid {
+  --ag-background-color:#dde3ee; /*fondo*/
+  --ag-foreground-color:#080808; /*color de letra*/
+  
+  --ag-header-background-color:#1d789f;/*cabecera  :#243760; */
+  --ag-header-foreground-color:#e5e7eb;
+
+  --ag-odd-row-background-color:#f6f8f9; /*liea que resalta #98aee0;*/
+  --ag-even-row-background-color:#abc3f1;
+  
+  --ag-row-hover-color:#eaf1c3; /*#e2efc4;*/
+  --ag-border-color:#afb0ad; /*lineas de la cuadricula*/
+}
+
+
+.btn-verde {
+  background: #85c160;/* #96e863;*/
+  color: #fff;
+  border: 1px solid #81c8f2;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background .15s, border-color .15s, box-shadow .15s;
+  /*width: 200px;
+  height: 500px;*/
+}
+.btn-verde:hover { background: #32af4f; border-color: #6291e8; }
+
+/* BOTON ANULAR*/
+.btn-anular{
+  border: 2px solid #f39c12;   /* borde naranja */
+  color: #161615; /*#f39c12;*/
+  background: #f2b868;
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  cursor: pointer;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.btn-anular:hover{
+  filter: brightness(0.98);
+}
+
+.btn-anular:disabled{
+  opacity: .55;
+  cursor: not-allowed;
+}
+
+
+.totales-bar{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #e8f3c8; /* tono verde claro similar */
+  border: 1px solid rgba(0,0,0,.08);
+  border-radius: 6px;
+  margin-top: 10px;
+}
+
+.totales-right{
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.tot{
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  color: #2b2b2b;
+}
+
+.total-label{
+  opacity: .85;
+  font-weight: 600;
+}
+
+/*usuario*/
+
+.usr-grabador{
+  display: inline-block;
+  padding: 6px 14px;
+  border: 2px solid #f39c12;
+  border-radius: 4px;
+  color: #e67e22;
+  font-weight: 700;
+  background: transparent;
+  min-width: 240px;
+}
+
+
+.ret-footer{
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+}
+
+.usr-grabador{
+  border: 2px solid #2b5d95;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-weight: 600;
+  color: #2b5d95;
+  background: rgba(255, 152, 0, 0.08);
+}
+
+.totales{
+  margin-left: auto;
+  display: flex;
+  gap: 18px;
+  align-items: center;
+}
+
+/*RECUPERA USUARIO*/
+/* SOLO: cambiar a AZUL el borde del cuadro USR y su texto */
+.usr-box,
+#usrBox,
+.usr-retencion,
+.usuario-retencion,
+input[value^="USR:"],
+input[readonly][value^="USR:"],
+input[disabled][value^="USR:"]{
+  border: 2px solid #0d6efd !important; /* borde azul */
+  color: #0d6efd !important;            /* texto azul */
+}
+
+/* Si el USR es un input disabled, Chrome suele “apagar” el color: */
+input[disabled][value^="USR:"]{
+  -webkit-text-fill-color: #0d6efd !important;
+  opacity: 1 !important;
+}

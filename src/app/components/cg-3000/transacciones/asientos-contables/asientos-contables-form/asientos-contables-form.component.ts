@@ -79,6 +79,13 @@ import {
 
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 
+// ✅ PON ESTO FUERA DE LA CLASE (arriba del @Component)
+interface AuxiliarItem {
+  id: number;
+  label: string;      // lo que se muestra (solo nombre)
+  searchText: string; // para buscar (nombre + ruc)
+}
+
 ModuleRegistry.registerModules([AllCommunityModule]);
 
 @Component({
@@ -103,20 +110,37 @@ ModuleRegistry.registerModules([AllCommunityModule]);
 export class AsientosContablesFormComponent implements OnInit {
   @ViewChild(AgGridAngular) agGrid!: AgGridAngular;
 
-  modo = signal<'nuevo' | 'editar'>('nuevo');
+  // modo = signal<'nuevo' | 'editar'>('nuevo');
+  modo = signal<'nuevo' | 'editar' | 'plantilla'>('nuevo');
   loading = signal(false);
   saving = signal(false);
 
-  titulo = computed(() =>
-    this.modo() === 'nuevo'
-      ? 'Crear/Editar (Asiento Contable) — NUEVO'
-      : 'Crear/Editar (Asiento Contable) — EDITAR'
-  );
+  titulo = computed(() => {
+    const m = this.modo();
+    if (m === 'editar') {
+      return 'Crear/Editar (Asiento Contable) — EDITAR';
+    }
+    if (m === 'plantilla') {
+      return 'Duplicación de Asiento (Asiento estándar)';  // Plantilla
+    }
+    return 'Crear/Editar (Asiento Contable) — NUEVO';
+  });
 
   // USUARIO
   usuarioActual = this.usuarioService.getUsuarioActual();
   nombreusuario = this.usuarioActual?.nombre_usuario ?? '';
   numdocGenerado: string | null = null; // numero documento generado
+
+  ///validar hr para solo lectura en caso de editar
+  soloLectura = signal(false);
+  motivoSoloLectura = signal<string>('');
+  isViewOnly = computed(() => this.soloLectura() === true);
+  ////end
+
+  //RECUPERA USUARIO DEL ASIENTO: 
+  usuarioAsientoNombre = signal<string>('');
+  private usuarioAsientoIdCargado: number | null = null;
+  //END
 
   gridOptions = {
     rowHeight: 30,
@@ -166,7 +190,11 @@ export class AsientosContablesFormComponent implements OnInit {
 
   locales: { id: number; nombre: string }[] = [];
   cuentas: { id: number; label: string; codigo: string }[] = [];
-  auxiliares: { id: number; label: string }[] = [];
+
+  // cambio hr para filtrar los datos
+  auxiliares: AuxiliarItem[] = [];
+  //  auxiliares: { id: number; label: string }[] = [];
+  
   movimientosBancarios: {
     id: number;
     movimiento: string;
@@ -600,9 +628,14 @@ export class AsientosContablesFormComponent implements OnInit {
     private usuarioService: UsuarioService,
     public dialogRef: MatDialogRef<AsientosContablesFormComponent>,
     @Inject(MAT_DIALOG_DATA)
-    public data:
-      | { id?: number; IdCabMaestro?: number; modo?: 'nuevo' | 'editar' }
-      | null,
+    public data: {
+      id?: number;
+      IdCabMaestro?: number;
+      modo?: 'nuevo' | 'editar' | 'plantilla';
+      asientoPlantilla?: AsientoContableResponse;
+      soloLectura?: boolean; //cambio hr solo de lectura
+      motivoSoloLectura?: string; /// cambio hr solo de lectura
+    } | null,
     private tipoasientoservice: TipoAsientoService,
     private service: AsientosContablesService,
     private zonaService: ZonaService,
@@ -690,37 +723,92 @@ export class AsientosContablesFormComponent implements OnInit {
     const idFromDialog = Number(this.data?.id ?? this.data?.IdCabMaestro ?? 0);
     const idFromRoute = Number(this.route.snapshot.paramMap.get('id') ?? 0);
     const id = idFromDialog || idFromRoute;
+    // Verificar si viene modo 'plantilla' en data
+    const modoData = this.data?.modo;
+    const plantilla = this.data?.asientoPlantilla;
 
-    if (id > 0) {
-      this.idEdicion = id;
-      this.modo.set('editar');
-      this.bloquearCabecera();
-      this.cargarAsiento(id);
+    if (modoData === 'plantilla' && plantilla) {
+      // 🔹 MODO PLANTILLA: Cargar asiento pre-configurado
+      this.modo.set('plantilla');
+      this.cargarPlantilla(plantilla);
+      ///ID USUARIO RECUPERADO
+      this.usuarioAsientoNombre.set('');
+      this.usuarioAsientoIdCargado = null;
+      ////
+
     } else {
-      this.modo.set('nuevo');
+      // Lógica original para 'nuevo' o 'editar'
+      const idFromDialog = Number(this.data?.id ?? this.data?.IdCabMaestro ?? 0);
+      const idFromRoute = Number(this.route.snapshot.paramMap.get('id') ?? 0);
+      const id = idFromDialog || idFromRoute;
 
-      const empty = createEmptyAsientoContableResponse();
-      this.setFormFromHeader(empty);
-      this.rowData.set([]);
+      if (id > 0) {
+        this.idEdicion = id;
+        this.modo.set('editar');
+        this.bloquearCabecera();
+        this.cargarAsiento(id);
+        //modo edicion hr cambio solo de lectura
+        if (this.data?.soloLectura) {
+          this.soloLectura.set(true);
+          this.motivoSoloLectura.set(this.data?.motivoSoloLectura ?? '');
+        }
+        //
+      } else {
+        this.modo.set('nuevo');
 
-      this.syncUsuarioEmpresa();
+        const empty = createEmptyAsientoContableResponse();
+        this.setFormFromHeader(empty);
+        this.rowData.set([]);
 
-      const fechaTransCtrl = this.form.get('fechatransaccion')!;
-      this.form.patchValue(
-        { anio: getYearFromInput(fechaTransCtrl.value) },
-        { emitEvent: false }
-      );
+        this.syncUsuarioEmpresa();
 
-      fechaTransCtrl.valueChanges
-        .pipe(
-          startWith(fechaTransCtrl.value),
-          map(getYearFromInput),
-          distinctUntilChanged()
-        )
-        .subscribe((y) => {
-          this.form.patchValue({ anio: y }, { emitEvent: false });
-        });
+        const fechaTransCtrl = this.form.get('fechatransaccion')!;
+        this.form.patchValue(
+          { anio: getYearFromInput(fechaTransCtrl.value) },
+          { emitEvent: false }
+        );
+
+        fechaTransCtrl.valueChanges
+          .pipe(
+            startWith(fechaTransCtrl.value),
+            map(getYearFromInput),
+            distinctUntilChanged()
+          )
+          .subscribe((y) => {
+            this.form.patchValue({ anio: y }, { emitEvent: false });
+          });
+      }
     }
+    // if (id > 0) {
+    //   this.idEdicion = id;
+    //   this.modo.set('editar');
+    //   this.bloquearCabecera();
+    //   this.cargarAsiento(id);
+    // } else {
+    //   this.modo.set('nuevo');
+
+    //   const empty = createEmptyAsientoContableResponse();
+    //   this.setFormFromHeader(empty);
+    //   this.rowData.set([]);
+
+    //   this.syncUsuarioEmpresa();
+
+    //   const fechaTransCtrl = this.form.get('fechatransaccion')!;
+    //   this.form.patchValue(
+    //     { anio: getYearFromInput(fechaTransCtrl.value) },
+    //     { emitEvent: false }
+    //   );
+
+    //   fechaTransCtrl.valueChanges
+    //     .pipe(
+    //       startWith(fechaTransCtrl.value),
+    //       map(getYearFromInput),
+    //       distinctUntilChanged()
+    //     )
+    //     .subscribe((y) => {
+    //       this.form.patchValue({ anio: y }, { emitEvent: false });
+    //     });
+    // }
   }
 
   private buildForm(): void {
@@ -807,6 +895,13 @@ export class AsientosContablesFormComponent implements OnInit {
     this.service.getById(idCabMaestro).subscribe({
       next: (resp) => {
         this.setFormFromHeader(resp);
+        ///USUARIO RECUPERADO
+        //SOLO EDITAR: recuperar nombre del usuario del asiento (transacción)
+        const idUserAsiento =
+        Number((resp as any)?.idUsuario ?? (resp as any)?.IdUsuario ?? this.form.get('idUsuario')?.value ?? 0);
+        this.cargarUsuarioAsientoNombre(idUserAsiento);
+        /// END
+
         this.rowData.set(resp.detalles ?? []);
         this.refreshGrid(); // 🔹 fuerza refresco cuando ya hay detalle
         this.loading.set(false);
@@ -817,7 +912,31 @@ export class AsientosContablesFormComponent implements OnInit {
       },
     });
   }
+  /**
+   * Carga un asiento como plantilla para transacciones estándar
+   * Mantiene toda la estructura pero permite editar solo campos específicos
+  */
+  private cargarPlantilla(plantilla: AsientoContableResponse): void {
+    // Setear la cabecera (con beneficiario y observación vacíos)
+    this.setFormFromHeader(plantilla);
 
+    // Asegurar que modulo = 5
+    this.form.patchValue({ modulo: 5 }, { emitEvent: false });
+
+    this.form.get('idZona')?.disable();
+    this.form.get('idTipoAsiento')?.disable();
+
+    // Cargar las líneas del detalle
+    this.rowData.set(plantilla.detalles ?? []);
+
+    // Sincronizar usuario y empresa
+    this.syncUsuarioEmpresa();
+
+    // Forzar refresco del grid
+    this.refreshGrid();
+
+    console.log('✅ Plantilla cargada con modulo=5');
+  }
   private cargarLocales(): void {
     this.localesService.getAll().subscribe({
       next: (res) => {
@@ -836,6 +955,7 @@ export class AsientosContablesFormComponent implements OnInit {
     });
   }
 
+  /*
   private cargarPlanCuentas(): void {
     const empresaId = this.usuarioActual?.id_empresa ?? 0;
     this.planCuentasService
@@ -858,6 +978,46 @@ export class AsientosContablesFormComponent implements OnInit {
       });
   }
 
+  */
+
+  ////PLAN DE CUENTAS FILTRADAS
+  private cargarPlanCuentas(): void {
+    const empresaId = this.usuarioActual?.id_empresa ?? 0;
+
+    this.planCuentasService
+      .getAll({ idEmpresa: empresaId, estado: 'A' })
+      .subscribe({
+        next: (list: PlanCuenta[]) => {
+          const fuente = list || [];
+
+          // ✅ SOLO cuentas con esMovimiento = 1
+          const soloMovimiento = fuente.filter((c: any) => {
+            const v =
+              c?.EsMovimiento ??
+              c?.esMovimiento ??
+              c?.es_movimiento ??
+              c?.Movimiento ??
+              c?.movimiento;
+
+            return Number(v) === 1; // <- aquí está la regla exacta
+          });
+
+          this.cuentas = soloMovimiento.map((c: any) => ({
+            id: Number(c?.IdPlanCuentas ?? 0),
+            label: `${(c?.CuentaPresentacion ?? '').toString().trim()} - ${(c?.NombreCuenta ?? '').toString().trim()}`,
+            codigo: (c?.CuentaPresentacion ?? '').toString().trim(),
+          }));
+
+          this.refreshGrid(['idPlanCuentas']);
+        },
+        error: (err) => {
+          console.error('Error cargando plan de cuentas', err);
+        },
+      });
+  }
+
+  ///
+  /*
   private cargarCodigosContables(): void {
     const empresaId = this.usuarioActual?.id_empresa ?? 0;
 
@@ -877,6 +1037,43 @@ export class AsientosContablesFormComponent implements OnInit {
       },
     });
   }
+
+  */
+
+  private cargarCodigosContables(): void {
+    const empresaId = this.usuarioActual?.id_empresa ?? 0;
+
+    this.codigosContablesService.getAll({ idEmpresa: empresaId }).subscribe({
+      next: (res) => {
+        const data = (res.data ?? []) as CodigosContablesResponse[];
+
+        const mapped: AuxiliarItem[] = data.map((a) => {
+          const nombre = (a.Razonsocial ?? '').toString().trim();
+          const ruc = (a.Identificacionauxiliar ?? '').toString().trim();
+
+          return {
+            id: Number(a.IdCodContable ?? 0),
+            label: nombre, // ✅ SOLO NOMBRE (NO RUC)
+            // ✅ searchText permite buscar por nombre o por ruc, aunque no se muestre
+            searchText: `${nombre} ${ruc}`.toLowerCase(),
+          };
+        });
+
+        // ✅ Orden alfabético por nombre (sin distinguir mayúsc/minúsc/acentos)
+        mapped.sort((x, y) =>
+          (x.label || '').localeCompare((y.label || ''), 'es', { sensitivity: 'base' })
+        );
+
+        this.auxiliares = mapped;
+
+        this.refreshGrid(['idCodContable']);
+      },
+      error: (err) => {
+        console.error('Error cargando códigos contables', err);
+      },
+    });
+  }
+
 
   private cargarMovimientosBancarios(): void {
     this.movimientoBancarioService.getAll().subscribe({
@@ -972,6 +1169,19 @@ export class AsientosContablesFormComponent implements OnInit {
   }
 
   guardar(): void {
+    
+    ///validacion hr solo de lectura
+    if (this.isViewOnly()) {
+       const msg = this.motivoSoloLectura().trim() || 'Este asiento está en modo solo lectura.';
+        this.snack.open(msg, 'Cerrar', {
+          duration: 5000,
+          horizontalPosition: 'right',
+          verticalPosition: 'top',
+      });
+      return;
+    }
+    
+    
     if (this.saving() || this.loading()) return;
 
     if (this.form.invalid) {
@@ -988,17 +1198,21 @@ export class AsientosContablesFormComponent implements OnInit {
       return;
     }
 
-    const esNuevo = this.modo() === 'nuevo';
+    // const esNuevo = this.modo() === 'nuevo';
+
+    const esNuevo = this.modo() === 'nuevo' || this.modo() === 'plantilla';
 
     const ahora = new Date();
     const nowIso = formatLocalIso(ahora);
 
     const fechaTransControl = this.form.get('fechatransaccion')!.value;
-    const fechaTransaccionDateOnly = fechaTransControl
-      ? normalizeToDateOnly(fechaTransControl)
-      : normalizeToDateOnly(ahora);
+    const fechaTransaccionDateOnly = normalizeToDateOnly(fechaTransControl || ahora); //fechaTransControl
+      //? normalizeToDateOnly(fechaTransControl)
+      //: normalizeToDateOnly(ahora); estaba antes
 
     const anioTransaccion = getYearFromInput(fechaTransaccionDateOnly);
+    const fechaTransaccionBackend = dateOnlyToLocalMidnightIso(fechaTransaccionDateOnly);
+
 
     this.form.patchValue(
       {
@@ -1025,10 +1239,18 @@ export class AsientosContablesFormComponent implements OnInit {
             ? normalizeToLocalIso(d.fechaingreso)
             : nowIso;
 
+        /*
         const fechaTransDet =
           d.fechatransaccion && d.fechatransaccion !== ''
             ? normalizeToDateOnly(d.fechatransaccion)
             : fechaTransaccionDateOnly;
+        */
+        const fechaTransDetDateOnly =
+          d.fechatransaccion && d.fechatransaccion !== ''
+          ? normalizeToDateOnly(d.fechatransaccion)
+          : fechaTransaccionDateOnly;
+
+        const fechaTransDet = dateOnlyToLocalMidnightIso(fechaTransDetDateOnly);
 
         return {
           ...d,
@@ -1039,6 +1261,10 @@ export class AsientosContablesFormComponent implements OnInit {
           fechacierre: d.fechacierre || '',
           autorizacionRelacionado: '',
           fechaCadRelacionado: '',
+          // PORCENTAJE Siempre enviar null en estos campos al crear
+          idPorIva: null,
+          porcentaje: null,
+
         } as DetalleAsientoResponse;
       });
 
@@ -1049,16 +1275,32 @@ export class AsientosContablesFormComponent implements OnInit {
 
     const header: AsientoContableResponse = {
       ...rawForm,
-      modulo: rawForm.modulo ?? 0,
-      fechatransaccion: fechaTransaccionDateOnly,
+      modulo: this.modo() === 'plantilla' ? 5 : (rawForm.modulo ?? 0),
+      idZona: this.form.get('idZona')?.value ?? rawForm.idZona,
+      idTipoAsiento: this.form.get('idTipoAsiento')?.value ?? rawForm.idTipoAsiento,
+      tipdoc: this.form.get('tipdoc')?.value ?? rawForm.tipdoc,
+      fechatransaccion: fechaTransaccionBackend, //fechaTransaccionDateOnly, estaba antes
       fechaingreso: esNuevo ? nowIso : normalizeToLocalIso(rawForm.fechaingreso),
       fechacierre: esNuevo ? '' : rawForm.fechacierre,
       numdoc: esNuevo ? 0 : rawForm.numdoc ?? 0,
       totdebe: this.totDebe(),
       tothaber: this.totHaber(),
-      detalles: this.rowData(),
+      //detalles: this.rowData(), ESTABA ANTES AHORA ESTA CON PORCENTAJE NULL
+      detalles: (this.rowData() ?? []).map((d) => ({
+        ...d,
+        idPorIva: null,
+        porcentaje: null,
+      }) as DetalleAsientoResponse),
     };
-
+    console.log('🔍 Guardando asiento:', {
+      modo: this.modo(),
+      esNuevo,
+      modulo: header.modulo,
+      idZona: header.idZona,
+      idTipoAsiento: header.idTipoAsiento,
+      beneficiario: header.beneficiario,
+      observacion: header.observacion
+    });
     this.saving.set(true);
 
     let save$: import('rxjs').Observable<ApiResponse<number | boolean>>;
@@ -1237,6 +1479,30 @@ export class AsientosContablesFormComponent implements OnInit {
         });
       }
     }
+
+    ///BENEFICIARIO
+  if (evt.colDef.field === 'idCodContable') {
+    const id = Number(evt.newValue ?? 0);
+
+      if (!evt.data) return;
+
+      if (!id || id <= 0) {
+        evt.data.beneficiario = '';
+      } else {
+        const aux = this.auxiliares.find(a => a.id === id);
+        // aux.label = Razón Social (solo nombre) según tu cargarCodigosContables()
+        evt.data.beneficiario = aux ? aux.label : '';
+      }
+
+      // refresca la celda Beneficiario en esa misma fila
+      this.rowData.set([...this.rowData()]);
+      this.gridApi.refreshCells({
+        rowNodes: [evt.node],
+        columns: ['beneficiario'],
+        force: true,
+      });
+    }
+    //////
   }
 
   onCellClicked(evt: CellClickedEvent<DetalleAsientoResponse>): void {
@@ -1292,11 +1558,24 @@ export class AsientosContablesFormComponent implements OnInit {
   }
 
   agregarLinea(): void {
+   
+    ///cambio hr validacion solo de lectura
+    if (this.isViewOnly()) {
+      const msg = this.motivoSoloLectura().trim() || 'Este asiento está en modo solo lectura.';
+      this.snack.open(msg, 'Cerrar', { duration: 3500, horizontalPosition: 'right', verticalPosition: 'top' });
+      return;
+    }
+    
+    
     const idZonaCtrl = this.form.get('idZona');
     const idTipoAsientoCtrl = this.form.get('idTipoAsiento');
 
     const idZona = Number(idZonaCtrl?.value || 0);
     const idTipoAsiento = Number(idTipoAsientoCtrl?.value || 0);
+
+    const beneficiarioCtrl  = this.form.get('beneficiario');
+    const conceptoCtrl      = this.form.get('observacion'); //campo "Concepto" en el formulario
+
 
     const mensajes: string[] = [];
     if (idZona <= 0) {
@@ -1308,6 +1587,18 @@ export class AsientosContablesFormComponent implements OnInit {
       idTipoAsientoCtrl?.markAsTouched();
     }
 
+    // 🔹 NUEVO: validar Beneficiario
+    if (!beneficiarioCtrl?.value || beneficiarioCtrl.invalid) {
+      mensajes.push('Debe seleccionar el Beneficiario.');
+      beneficiarioCtrl?.markAsTouched();
+    }
+
+    // 🔹 NUEVO: validar Concepto (observacion)
+    if (!conceptoCtrl?.value || conceptoCtrl.invalid) {
+      mensajes.push('Debe ingresar el Concepto.');
+      conceptoCtrl?.markAsTouched();
+    }
+
     if (mensajes.length > 0) {
       this.snack.open(mensajes.join(' '), 'Cerrar', {
         duration: 4000,
@@ -1317,15 +1608,30 @@ export class AsientosContablesFormComponent implements OnInit {
       return;
     }
 
+    /// VALIDAR SI YA ESTA CON DATOS LAS LINEA
+      if (!this.validarAntesDeAgregarLinea()) {
+        return;
+      }
+
+    //
+
     const ahora = new Date();
     const nowIso = formatLocalIso(ahora);
 
     const items = this.rowData();
     const next = (items?.length ?? 0) + 1;
 
+    /*
     const fechaTransFormulario =
       this.form.value?.fechatransaccion || normalizeToDateOnly(ahora);
     const fechaTransaccionDetalle = normalizeToDateOnly(fechaTransFormulario);
+    */
+    const fechaTransFormulario =
+    this.form.value?.fechatransaccion || normalizeToDateOnly(ahora);
+
+    const fechaTransaccionDetalleDateOnly = normalizeToDateOnly(fechaTransFormulario);
+    const fechaTransaccionDetalle = dateOnlyToLocalMidnightIso(fechaTransaccionDetalleDateOnly);
+
     const anioTransaccion =
       this.form.value?.anio || getYearFromInput(fechaTransaccionDetalle);
 
@@ -1349,7 +1655,7 @@ export class AsientosContablesFormComponent implements OnInit {
       nocomprobante: '',
       docurelacionado: '',
       cheque: 0,
-      beneficiario: this.form.value?.beneficiario ?? '',
+      beneficiario: '', //this.form.value?.beneficiario ?? '',
       debe: 0,
       haber: 0,
       comentario: this.form.value?.observacion ?? '',
@@ -1374,6 +1680,8 @@ export class AsientosContablesFormComponent implements OnInit {
       estadoIngreso: true,
       autorizacionRelacionado: '',
       fechaCadRelacionado: '',
+      idPorIva: null,  //AÑADIDO PORCENTAJE IVA AQUI SIEMPRE VA NULL
+      porcentaje: null,
     };
 
     this.rowData.set([...(items ?? []), nueva]);
@@ -1659,6 +1967,96 @@ export class AsientosContablesFormComponent implements OnInit {
         },
       });
   }
+
+  //AÑADIR MAS EVENTOS QUI
+  private validarLineaDetalleMinima(
+    f: DetalleAsientoResponse,
+    idxBase1: number
+  ): string[] {
+    const errores: string[] = [];
+
+    const idLocal = Number(f.idLocal || 0);
+    const idPlanCuentas = Number(f.idPlanCuentas || 0);
+    const idAuxiliar = Number(f.idCodContable || 0);
+    const idMovBancario = Number(f.idMovBancario || 0);
+    const debe = Number(f.debe || 0);
+    const haber = Number(f.haber || 0);
+
+    if (idLocal <= 0) errores.push(`Línea ${idxBase1}: seleccione el Local.`);
+    if (idPlanCuentas <= 0) errores.push(`Línea ${idxBase1}: seleccione la Cuenta Contable.`);
+    if (idAuxiliar <= 0) errores.push(`Línea ${idxBase1}: seleccione el Auxiliar Contable.`);
+
+    if (debe <= 0 && haber <= 0) {
+      errores.push(`Línea ${idxBase1}: ingrese un valor en Debe o Haber.`);
+    }
+    if (debe > 0 && haber > 0) {
+      errores.push(`Línea ${idxBase1}: no puede tener Debe y Haber a la vez.`);
+    }
+
+    if (idMovBancario <= 0) {
+      errores.push(`Línea ${idxBase1}: seleccione un Tipo de Movimiento (distinto de NINGUNO).`);
+    }
+
+    return errores;
+  }
+
+  /** Si ya hay líneas, obliga a que la última esté completa antes de agregar otra */
+ private validarAntesDeAgregarLinea(): boolean {
+  const filas = this.rowData() ?? [];
+  if (filas.length === 0) return true;
+
+  for (let i = 0; i < filas.length; i++) {
+    const errores = this.validarLineaDetalleMinima(filas[i], i + 1);
+    if (errores.length > 0) {
+      this.snack.open(errores[0], 'Cerrar', {
+        duration: 4000,
+        horizontalPosition: 'right',
+        verticalPosition: 'top',
+      });
+      return false;
+    }
+  }
+  return true;
+}
+
+///
+private cargarUsuarioAsientoNombre(idUsuario: number): void {
+  const id = Number(idUsuario || 0);
+
+    // Solo en editar
+    if (this.modo() !== 'editar') {
+      this.usuarioAsientoNombre.set('');
+      this.usuarioAsientoIdCargado = null;
+      return;
+    }
+
+    if (id <= 0) {
+      this.usuarioAsientoNombre.set('');
+      this.usuarioAsientoIdCargado = null;
+      return;
+    }
+
+    // Evita llamar varias veces por el mismo usuario
+    if (this.usuarioAsientoIdCargado === id && this.usuarioAsientoNombre().trim()) return;
+
+    this.usuarioAsientoIdCargado = id;
+
+    this.usuarioService.getUsuarioById(id).pipe(
+      map((r: any) => r?.data),
+      catchError((err) => {
+        console.error('Error getUsuarioById (usuario asiento):', err);
+        return of(null);
+      })
+    ).subscribe((u: any) => {
+      // Ajusta estos campos según tu UsuariosResponse real:
+      const nombre =
+        (u?.nombre_usuario ?? u?.nombreUsuario ?? u?.username ?? u?.usuario ?? '').toString().trim();
+
+      this.usuarioAsientoNombre.set(nombre || '');
+    });
+  }
+
+  ///
 }
 
 /** Helpers de celdas */
@@ -1731,8 +2129,24 @@ function haberEditable(params: any) {
   return d <= 0;
 }
 
+/*
 function getYearFromInput(v: any): string {
   if (!v) return '';
+  const d = v instanceof Date ? v : new Date(v);
+  return isNaN(d.getTime()) ? '' : String(d.getFullYear());
+}
+*/
+
+function getYearFromInput(v: any): string {
+  if (!v) return '';
+
+  // yyyy-MM-dd => no usar new Date() (lo interpreta como UTC)
+  if (typeof v === 'string') {
+    const s = v.trim();
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s.substring(0, 4);
+    if (/^\d{4}-\d{2}-\d{2}[ T]/.test(s)) return s.substring(0, 4);
+  }
+
   const d = v instanceof Date ? v : new Date(v);
   return isNaN(d.getTime()) ? '' : String(d.getFullYear());
 }
@@ -1846,6 +2260,7 @@ function formatDateOnly(d: Date): string {
 }
 
 /** Normaliza cualquier entrada a SOLO fecha yyyy-MM-dd */
+/*
 function normalizeToDateOnly(v: any): string {
   if (!v) return '';
 
@@ -1862,4 +2277,58 @@ function normalizeToDateOnly(v: any): string {
     return String(v);
   }
   return formatDateOnly(d);
+}
+*/
+
+/** Normaliza cualquier entrada a SOLO fecha yyyy-MM-dd, sin sumar/restar días */
+function normalizeToDateOnly(v: any): string {
+  if (!v) return '';
+
+  // Si ya viene Date
+  if (v instanceof Date) {
+    if (isNaN(v.getTime())) return '';
+    return formatDateOnly(v); // usa año/mes/día LOCAL
+  }
+
+  // Si viene string
+  if (typeof v === 'string') {
+    const s0 = v.trim();
+    if (!s0) return '';
+
+    // Caso 1: date-only => devolver tal cual
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s0)) return s0;
+
+    // Caso 2: SQL/ISO sin zona => tomar solo la parte de fecha (no hay shift)
+    // 2025-12-29 00:00:00.000  | 2025-12-29T00:00:00
+    if (/^\d{4}-\d{2}-\d{2}[ T]/.test(s0) && !/[zZ]|[+-]\d{2}:\d{2}$/.test(s0)) {
+      return s0.substring(0, 10);
+    }
+
+    // Caso 3: ISO con zona (Z o +hh:mm) => convertir a LOCAL y sacar yyyy-MM-dd
+    // 2025-12-29T00:00:00.000Z -> local puede ser 2025-12-28
+    if (/^\d{4}-\d{2}-\d{2}T/.test(s0) && (/[zZ]$/.test(s0) || /[+-]\d{2}:\d{2}$/.test(s0))) {
+      const d = new Date(s0);
+      if (!isNaN(d.getTime())) return formatDateOnly(d);
+      return s0.substring(0, 10);
+    }
+
+    // Fallback: si empieza con yyyy-MM-dd, al menos respeta esos 10 chars
+    if (/^\d{4}-\d{2}-\d{2}/.test(s0)) return s0.substring(0, 10);
+
+    // Último fallback
+    const d = new Date(s0);
+    if (!isNaN(d.getTime())) return formatDateOnly(d);
+    return s0;
+  }
+
+  // Otros tipos
+  const d = new Date(v);
+  if (isNaN(d.getTime())) return String(v);
+  return formatDateOnly(d);
+}
+
+function dateOnlyToLocalMidnightIso(dateOnly: string): string {
+  const s = (dateOnly ?? '').trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  return `${s}T00:00:00`;
 }

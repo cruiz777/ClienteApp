@@ -14,6 +14,14 @@ export interface GenerarReversoDesdePagoRequest {
   idPago: number;
   idUsuario: number;
 }
+// 🔹 NUEVO: request para Nota de Crédito
+export interface GenerarReversoDesdeNotaCreditoRequest {
+  idNota: number;
+  idUsuario: number;
+  numeroNotaCredito: string;
+  numeroFactura: string;
+}
+
 
 export interface GenerarAsientoReversoResponse {
   idCabMaestroOriginal: number;
@@ -112,4 +120,42 @@ export class ReversarAsientoService {
       request
     );
   }
+  /**
+   * Genera un asiento de reverso a partir de una Nota de Crédito
+   * POST /api/Notas/generar-reverso-asiento-nota-credito
+   */
+  generarReversoDesdeNotaCredito(
+    idNota: number,
+    idUsuario: number,
+    numeroNotaCredito: string,
+    numeroFactura: string
+  ): Observable<ApiResponse<GenerarAsientoReversoResponse>> {
+
+    const body: GenerarReversoDesdeNotaCreditoRequest = {
+      idNota,
+      idUsuario,
+      numeroNotaCredito,
+      numeroFactura
+    };
+
+    return this.http.post<ApiResponse<GenerarAsientoReversoResponse>>(
+      `${this.baseUrl}/generar-reverso-asiento-nota-credito`,
+      body
+    );
+  }
+
+  /**
+   * Variante enviando el DTO ya armado (nota de crédito).
+   */
+  generarReversoDesdeNotaCreditoDto(
+    request: GenerarReversoDesdeNotaCreditoRequest
+  ): Observable<ApiResponse<GenerarAsientoReversoResponse>> {
+
+    return this.http.post<ApiResponse<GenerarAsientoReversoResponse>>(
+      `${this.baseUrl}/generar-reverso-asiento-nota-credito`,
+      request
+    );
+  }
+
+
 }

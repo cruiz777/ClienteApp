@@ -26,6 +26,7 @@ import { FacturasProveedorComponent } from './transacciones/facturas-proveedor/f
 import { AnticipoCgFormComponent } from './transacciones/anticipos-cg/anticipos-cg-form/anticipos-cg-form.component';
 import { BalanceComprobacionComponent } from './balance/balance/balance-comprobacion-list/balance-comprobacion-list.component'
 import { DiarioMoviminetoListComponent } from './balance/diario/diario-movimineto-list/diario-movimineto-list.component';
+import { RegistroPagosProveedorComponent } from './cuentas-por-pagar/pago-proveedores/registro-pagos-proveedor.component';
 import { MayorCuentasListComponent } from './balance/mayor/mayor-cuentas-list/mayor-cuentas-list.component';
 
 const routes: Routes = [
@@ -55,6 +56,7 @@ const routes: Routes = [
       { path: 'anticipos', component: AnticipoCgFormComponent },
       { path: 'diario', component: DiarioMoviminetoListComponent },
       { path: 'balance', component: BalanceComprobacionComponent },
+      { path: 'pago-proveedores', component: RegistroPagosProveedorComponent },
       { path: 'mayor', component: MayorCuentasListComponent },
       { path: '**', redirectTo: 'inicio-cg' },
     ],

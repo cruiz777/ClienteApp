@@ -4,6 +4,7 @@ export interface AsientoImpresionDetalle {
   codCuenta: string;
   nombreCuenta: string;
   auxiliar: string;
+  nombreAuxiliar: string; 
   numeroCheque: string;
   numeroComprobante: string;
   debe: number;
@@ -13,18 +14,15 @@ export interface AsientoImpresionDetalle {
 // Cabecera + detalles (equivale a AsientoImpresionResponse)
 export interface AsientoImpresion {
   idCabMaestro: number;
-
   tipdoc: string;
   numdoc: number;
   anio: string;
   fechatransaccion: string;
   fechaingreso: string;
-
   observacion?: string | null;
   totalDebe: number;
   totalHaber: number;
   beneficiario?: string | null;
-
   tipoAsientoDescripcion?: string | null;
   empresaNombre?: string | null;
   empresaRuc?: string | null;

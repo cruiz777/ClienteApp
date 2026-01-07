@@ -62,7 +62,7 @@ export class BloqueComponent implements OnInit {
   unidadesDisponibles: string[] = [];
   mapaUnidades: { [unidad: string]: string } = {};  // código → descripción
 
-  gcpBricksDisponibles: { codigo: string, descripcion: string }[] = [];
+  gcpBricksDisponibles: { codigo: string, descripcion: string, brick: string, id_grupo_producto: number }[] = [];
   clienteE!: ClienteIndividual;
   gruposProducto: GrupoProducto[] = [];
   id_grupo_producto: number = 0;
@@ -85,7 +85,7 @@ export class BloqueComponent implements OnInit {
 
 gridOptions: GridOptions = {
   suppressMovableColumns: true,
-  onCellValueChanged: this.onCellValueChanged.bind(this),
+  onCellValueChanged: this.onCellValueChanged.bind(this),  
 
   // 👇 forzamos event: any para evitar problemas de tipos con AG Grid
   onCellKeyDown: (event: any) => {
@@ -293,6 +293,14 @@ gridOptions: GridOptions = {
         cellEditor: 'gcpBrickAutocompleteEditor',
         cellEditorPopup: true, // ✅ Este es el más importante
         cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100, resizable: true,
+        valueFormatter: (params: any) => {
+          const codigo = params.value;
+          if (!codigo) return '';
+          
+          // Opcional: mostrar "codigo - descripcion" para mejor UX
+          const opcion = this.gcpBricksDisponibles.find(g => g.codigo === codigo);
+          return opcion ? `${opcion.codigo} - ${opcion.descripcion}` : codigo;
+        }
 
       },
       { field: 'marca', headerName: 'Marca', editable: true, cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100, resizable: true },
@@ -378,7 +386,37 @@ gridOptions: GridOptions = {
     });
   }
 
+@HostListener('copy', ['$event'])
+onCopyFromGrid(event: ClipboardEvent): void {
+  if (!this.gridApi) return;
 
+  const focus = this.gridApi.getFocusedCell();
+  if (!focus) return;
+
+  const rowIndex = focus.rowIndex ?? -1;
+  const field = focus.column.getColDef().field ?? null;
+
+  if (rowIndex < 0 || !field || rowIndex >= this.rowData.length) return;
+
+  const row = this.rowData[rowIndex];
+  const valorReal = row[field];
+
+  //Para categoria y contenidoUM, copiar el valor RAW del modelo
+  if (field === 'categoria' || field === 'contenidoUM') {
+    if (valorReal !== null && valorReal !== undefined) {
+      event.preventDefault();
+      
+      //Para categoria, asegurar que se copie SOLO el código
+      const valorACopiar = field === 'categoria' 
+        ? valorReal.toString().split(' - ')[0].trim()  // Extrae solo el código
+        : valorReal.toString();
+      
+      event.clipboardData?.setData('text/plain', valorACopiar);
+      console.log(`📋 Copiado valor real de ${field}:`, valorACopiar);
+    }
+  }
+}
+//
 @HostListener('paste', ['$event'])
 onPasteExcelToGrid(event: ClipboardEvent): void {
   // 1️⃣ Si no tenemos gridApi todavía, salimos
@@ -411,6 +449,7 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
   }
 
   event.preventDefault();
+  event.stopPropagation();
 
   const rows: string[] = text
     .split(/\r?\n/)
@@ -490,9 +529,9 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
       if (colIndex >= pasteableFields.length) {
         return;
       }
-
+      
       const field: string = pasteableFields[colIndex];
-      const raw = (cellValue ?? '').trim();
+      const raw = (cellValue ?? '').trim();      
 
       switch (field) {
         case 'contenidoNeto': {
@@ -514,18 +553,29 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
           break;
 
         case 'contenidoUM':
-          // Solo unidades que EXISTEN en el combo
+          // ✅ Solo unidades válidas
           if (unidadesValidas.includes(raw)) {
             row[field] = raw;
+            console.log(`✅ UM pegada en fila ${rowIndex + 1}: ${raw}`);
+          } else {
+            console.warn(`⚠️ UM "${raw}" no válida en fila ${rowIndex + 1}, ignorada`);
           }
           break;
 
-        case 'categoria':
-          // Solo categorías que EXISTEN en el combo (código)
-          if (categoriasValidas.includes(raw)) {
-            row[field] = raw;
+        case 'categoria': {
+          const codigoLimpio = raw.split(' - ')[0].trim();
+          
+          if (categoriasValidas.includes(codigoLimpio)) {
+            const rowNode = this.gridApi.getRowNode(rowIndex.toString());
+            if (rowNode) {
+              rowNode.setDataValue('categoria', codigoLimpio);
+            }
+            console.log(`✅ Categoría pegada en fila ${rowIndex + 1}: ${codigoLimpio}`);
+          } else {
+            console.warn(`⚠️ Categoría "${raw}" no válida en fila ${rowIndex + 1}, ignorada`);
           }
           break;
+        }
 
         default:
           // Otras columnas se pegan tal cual
@@ -538,7 +588,9 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
   this.rowData = updated;
   this.gridApi.refreshCells({ force: true });
   this.gridApi.redrawRows();
+  console.log('✅ Pegado completado');
 }
+//
 
 
   async generarFilas(): Promise<void> {
@@ -820,6 +872,7 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
     });
   }
   recupera13() {
+    debugger
     const soloCopiarGtin = this.tipoGtin === 'GTIN-13' && this.formUV.get('checkExiste')?.value;
     if (!soloCopiarGtin) return;
 
@@ -833,11 +886,12 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
 
       const obs$ = this.productoService.buscarPorCodbar(codbar).pipe(
         map((producto) => {
+          console.log('📦 Producto recibido del backend:', producto);
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto = fila.contenidoNeto?.toString().trim() || producto.contenido || '';
-            fila.contenidoUM = fila.contenidoUM?.trim() || producto.unidad || 'g';
+            fila.contenidoNeto =  producto.contenido || '';
+            fila.contenidoUM = producto.unidad || 'g';
             fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
             fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
@@ -882,10 +936,10 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
         !fila.descripcion || !fila.marca || !fila.contenidoNeto || !fila.categoria
       );
 
-      if (camposIncompletos) {
-        this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
-        return;
-      }
+      // if (camposIncompletos) {
+      //   this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
+      //   return;
+      // }
 
       const msg = this.modoEdicion ? 'actualizados' : 'generar';
 
@@ -1011,8 +1065,8 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto = fila.contenidoNeto?.toString().trim() || producto.contenido || '';
-            fila.contenidoUM = fila.contenidoUM?.trim() || producto.unidad || 'g';
+            fila.contenidoNeto =  producto.contenido || '';
+            fila.contenidoUM = producto.unidad || 'g';
             fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
             fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
@@ -1057,10 +1111,10 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
         !fila.descripcion || !fila.marca || !fila.contenidoNeto || !fila.categoria
       );
 
-      if (camposIncompletos) {
-        this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
-        return;
-      }
+      // if (camposIncompletos) {
+      //   this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
+      //   return;
+      // }
 
       const msg = this.modoEdicion ? 'actualizados' : 'generar';
 
@@ -1114,8 +1168,8 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto = fila.contenidoNeto?.toString().trim() || producto.contenido || '';
-            fila.contenidoUM = fila.contenidoUM?.trim() || producto.unidad || 'g';
+            fila.contenidoNeto =  producto.contenido || '';
+            fila.contenidoUM = producto.unidad || 'g';
             fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
             fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
@@ -1159,10 +1213,10 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
         !fila.descripcion || !fila.marca || !fila.contenidoNeto || !fila.categoria
       );
 
-      if (camposIncompletos) {
-        this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
-        return;
-      }
+      // if (camposIncompletos) {
+      //   this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
+      //   return;
+      // }
 
       const msg = this.modoEdicion ? 'actualizados' : 'generar';
 
@@ -1324,7 +1378,7 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
   }
 
   if (this.bandera === 2) {            // UPC-12 (sin 786)
-    if (len < 5 || len > 7) {
+    if (len < 5 || len > 8) {
       this.mostrarAlerta('⚠️ Para UPC el prefijo debe tener entre 5 y 7 dígitos.', 'Error');
       return of(false);
     }
@@ -1530,7 +1584,15 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
     if ((field === 'descripcion' || field === 'marca') && typeof newValue === 'string') {
       event.data[field] = newValue.toUpperCase();
     }
-
+    // ✅ Cuando cambia categoria, actualizar gcpBrick y grupo
+    if (field === 'categoria' && newValue) {
+      const opcion = this.gcpBricksDisponibles.find(g => g.codigo === newValue);
+      if (opcion) {
+        event.data.gcpBrick = opcion.brick;
+        event.data.grupo = opcion.id_grupo_producto;
+        this.gridApi?.refreshCells({ rowNodes: [event.node], columns: ['gcpBrick', 'grupo'], force: true });
+      }
+    }
     // ✅ Log especial para 'activo'
     if (field === 'activo') {
       console.log(`Checkbox cambiado en fila ${event.rowIndex}:`, newValue);
@@ -2103,25 +2165,33 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
 
 
   generarDescripcionCompuesta(): void {
-    this.gridApi.forEachNode((node) => {
-      const data = node.data;
-      if (data.activo !== true) return; // solo los marcados
+  this.gridApi.forEachNode((node) => {
+    const data = node.data;
+    if (data.activo !== true) return; // solo los marcados
 
-      const descripcion = (data.descripcion || '').trim();
-      const marca = (data.marca || '').trim();
-      const contenido = (data.contenidoNeto || '').toString().trim();
-      const unidad = (data.contenidoUM || '').trim();
-      const factor = (data.factor || '').toString().trim();
+    const descripcion = (data.descripcion ?? '').toString().trim();
+    const marca = (data.marca ?? '').toString().trim();
+    const contenido = (data.contenidoNeto ?? '').toString().trim();
+    const factor = (data.factor ?? '').toString().trim();
 
-      const t = this.formUV.get('t')?.value || '';
-      const u = this.formUV.get('u')?.value || '';
+    const t = (this.formUV.get('t')?.value ?? '').toString().trim();
+    const u = (this.formUV.get('u')?.value ?? '').toString().trim();
 
-      const texto = `${descripcion} ${marca} ${contenido} ${unidad} ${t} ${factor} ${u}`;
+    // Si marca y contenido están en blanco, unidad también debe ir en blanco
+    const unidad =
+      (marca === '' && contenido === '')
+        ? ''
+        : (data.contenidoUM ?? '').toString().trim();
 
-      node.setDataValue('descripciong', texto);
-      this.gridApi.refreshCells({ rowNodes: [node], columns: ['descripciong'], force: true });
-    });
-  }
+    const texto = `${descripcion} ${marca} ${contenido} ${unidad} ${t} ${factor} ${u}`
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    node.setDataValue('descripciong', texto);
+    this.gridApi.refreshCells({ rowNodes: [node], columns: ['descripciong'], force: true });
+  });
+}
+
 
   generarGtin14(): void {
     this.gridApi.forEachNode((node) => {
@@ -2460,8 +2530,8 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto = fila.contenidoNeto?.toString().trim() || producto.contenido || '';
-            fila.contenidoUM = fila.contenidoUM?.trim() || producto.unidad || 'g';
+            fila.contenidoNeto =  producto.contenido || '';
+            fila.contenidoUM = producto.unidad || 'g';
             fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
             fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
@@ -2506,10 +2576,10 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
         !fila.descripcion || !fila.marca || !fila.contenidoNeto || !fila.categoria
       );
 
-      if (camposIncompletos) {
-        this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
-        return;
-      }
+      // if (camposIncompletos) {
+      //   this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
+      //   return;
+      // }
 
       const msg = this.modoEdicion ? 'actualizados' : 'generar';
 

@@ -243,7 +243,8 @@ export class DialogClienteComponent implements OnInit {
         usuario: [{ value: '', disabled: true }],
         observacion1: [''],
         nprefijo: [false],
-        compra: [false]
+        compra: [false],
+        otros:[false]
       }),
 
       paso3: this.fb.group({
@@ -588,7 +589,7 @@ actualizarValidacionRuc(): void {
         const v = (control.value || '').trim();
         if (!v) return { required: true };
         // alfanumérico y -_/ solo de 6 a 20
-        const ok = /^[A-Za-z0-9\-_/]{6,20}$/.test(v);
+        const ok = /^[A-Za-z0-9\-_/]{1,20}$/.test(v);
         return ok ? null : { formatoPasaporte: true };
       }
     ]);
@@ -1768,6 +1769,7 @@ async verificarYAvanzar(form: FormGroup, stepper: MatStepper): Promise<void> {
       clientes_codigo: clientesCodigo,
       prefijo: paso2.nprefijo || false,
       guia: paso2.compra || false,
+      otros:paso2.otros || false,
       estado: true
     };
     debugger

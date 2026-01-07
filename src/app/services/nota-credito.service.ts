@@ -1,11 +1,13 @@
 // src/app/services/nota-credito.service.ts
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
-import { Observable, map } from 'rxjs';
+import { Observable, catchError, map, throwError } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import {  HttpResponse } from '@angular/common/http';
 import { FacturaValidacionResponse } from '../interfaces/responses/factura-validacion-response';
+import { NotaCreditoReporteResponse } from '../interfaces/responses/nota-credito-reporte-response';
+import { ReporteNotasCreditoResponse } from '../interfaces/responses/totales-ventas-response';
 
 export interface FacturaListResponse {
   idNota: number;
@@ -127,6 +129,7 @@ export interface NotaCreditoCrearReq {
   clienteCodigo: number;
   caja: string;               // "001"
   observaciones: string;
+  idAutorizacionCaja: number;
   idUsuarioResponsable: number;
   idEmpresa:number;
   ateCodigo: number;
@@ -268,6 +271,48 @@ getPdfNotaCreditoResponse(idNotaCredito: number): Observable<HttpResponse<Blob>>
       map(res => res.body as Blob)
     );
   }
+/**
+ * GET /NotaCreditoReporte?fechaInicio=...&fechaFin=...&page=1&pageSize=20
+ * Obtiene reporte de notas de crédito por rango de fechas CON TOTALES
+ */
+getReporteNotasCredito(
+  fechaInicio: Date | string,
+  fechaFin: Date | string,
+  page: number = 1,
+  pageSize: number = 20
+): Observable<ApiResponse<ReporteNotasCreditoResponse>> {
+  const url = `${this.baseUrl}/NotasCredito/reporte`;
+
+  let params = new HttpParams()
+    .set('fechaInicio', this.toIsoDateTime(fechaInicio, true))
+    .set('fechaFin', this.toIsoDateTime(fechaFin, false))
+    .set('page', String(page))
+    .set('pageSize', String(pageSize));
+
+  return this.http.get<ApiResponse<ReporteNotasCreditoResponse>>(url, { params })
+    .pipe(
+      map(resp => {
+        if (resp.type !== 'Success' && resp.type !== 'success') {
+          throw new Error(resp.message || 'Error al obtener reporte de notas de crédito');
+        }
+        return resp;
+      }),
+      catchError(err => {
+        console.error('[NotaCreditoService] getReporteNotasCredito error:', err);
+        return throwError(() => err);
+      })
+    );
+}
+
+/**
+ * Obtiene TODAS las notas de crédito sin paginar (para exportar a Excel)
+ */
+getReporteNotasCreditoCompleto(
+  fechaInicio: Date | string,
+  fechaFin: Date | string
+): Observable<ApiResponse<ReporteNotasCreditoResponse>> {
+  return this.getReporteNotasCredito(fechaInicio, fechaFin, 1, 10000);
+}
 
   /** Descarga el PDF en el navegador usando el nombre del header si viene. */
   // ✅ Igual que descargarPdfFactura: simple, sin headers
@@ -302,7 +347,16 @@ descargarPdfNotaCredito(idNotaCredito: number, nombre = `nota-credito-${idNotaCr
       return match[1].replace(/"/g, '');
     }
   }
-
+  // Helper privado para convertir fecha a ISO con hora
+  private toIsoDateTime(date: Date | string, startOfDay: boolean): string {
+    const d = typeof date === 'string' ? new Date(date) : date;
+    if (startOfDay) {
+      d.setHours(0, 0, 0, 0);
+    } else {
+      d.setHours(23, 59, 59, 999);
+    }
+    return d.toISOString();
+  }
 
 private downloadBlob(blob: Blob, fileName: string) {
   const url = URL.createObjectURL(blob);

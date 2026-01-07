@@ -1,12 +1,12 @@
 <div class="tabs">
   <button [class.active]="activeTab === 'Listado'" (click)="cambiarTab('Listado')">Listado Cupones</button>
-  
-  <button [class.active]="activeTab === 'Generar'" 
+
+  <button [class.active]="activeTab === 'Generar'"
           [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.generar-cupones'))"
           [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.generar-cupones')) ? 'Sin permisos' : ''"
           (click)="cambiarTab('Generar')">Generar Cupones</button>
-          
-  <button [class.active]="activeTab === 'Reportes'" 
+
+  <button [class.active]="activeTab === 'Reportes'"
           [disabled]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.reportes'))"
           [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.reportes')) ? 'Sin permisos' : ''"
           (click)="cambiarTab('Reportes')">Reportes</button>
@@ -31,7 +31,7 @@
           <mat-label>Buscar</mat-label>
           <input matInput [formControl]="buscarCuponControl" placeholder="Código de cupón">
         </mat-form-field>
-        
+
         <mat-form-field appearance="outline">
           <mat-label>Prefijo</mat-label>
           <mat-select [(ngModel)]="filtroPrefijo" [compareWith]="compararIds">
@@ -58,7 +58,7 @@
     <div class="acciones-filtros">
       <button mat-raised-button color="primary" class="boton-azul-oscuro" (click)="buscarConFiltros()" class="boton-azul-oscuro" [disabled]="!puedeBuscar">Buscar</button>
       <button mat-flat-button color="warn" (click)="eliminarSeleccionados()"
-      [disabled]="!tieneSeleccion ||!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.eliminar'))" 
+      [disabled]="!tieneSeleccion ||!((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.eliminar'))"
       >Eliminar</button>
       <button mat-stroked-button (click)="limpiarFiltros()">
       <mat-icon>clear</mat-icon> Limpiar Filtros </button>
@@ -75,7 +75,7 @@
     </ag-grid-angular>
 
     <div class="paginacion-resumen">
-      Mostrando {{ (pageIndex + 1) * pageSize > totalItems ? totalItems : (pageIndex + 1) * pageSize }} 
+      Mostrando {{ (pageIndex + 1) * pageSize > totalItems ? totalItems : (pageIndex + 1) * pageSize }}
       de {{ totalItems }} registros
     </div>
 
@@ -127,7 +127,7 @@
               <mat-option *ngFor="let p of prefijosDisponibles" [value]="p.id">{{ p.codpre }}</mat-option>
             </mat-select>
           </mat-form-field>
-          
+
           <mat-form-field appearance="outline">
             <mat-label>Grupo de producto</mat-label>
             <mat-select formControlName="idGrupoProducto">
@@ -145,7 +145,7 @@
             <input matInput type="number" formControlName="cantidad" min="1">
             <mat-error *ngIf="formCupon.get('cantidad')?.hasError('max')">
               La cantidad máxima permitida son 5000 códigos a generar.
-            </mat-error>          
+            </mat-error>
           </mat-form-field>
         </div>
 
@@ -157,7 +157,7 @@
 
           <mat-form-field appearance="outline">
             <mat-label>Fecha de Vigencia</mat-label>
-            <input matInput [matDatepicker]="dpInicio" formControlName="fechaInicio">
+            <input matInput [matDatepicker]="dpInicio" formControlName="fechaInicio" [min]="minDate">
             <mat-datepicker-toggle matSuffix [for]="dpInicio"></mat-datepicker-toggle>
             <mat-datepicker #dpInicio></mat-datepicker>
           </mat-form-field>
@@ -166,7 +166,7 @@
             <mat-label>Fecha de Caducidad*</mat-label>
             <input matInput [matDatepicker]="dpCaducidad"
                   formControlName="fechaCaducidad"
-                  [min]="formCupon.get('fechaInicio')?.value">
+                  [min]="formCupon.get('fechaInicio')?.value || minDate">
             <mat-datepicker-toggle matSuffix [for]="dpCaducidad"></mat-datepicker-toggle>
             <mat-datepicker #dpCaducidad></mat-datepicker>
             <mat-error *ngIf="formCupon.hasError('fechaInvalida')">
@@ -182,7 +182,7 @@
           <div class="checkbox-container">
             <mat-checkbox formControlName="serie">Serie</mat-checkbox>
           </div>
-          
+
           <mat-form-field appearance="outline">
             <mat-label>Secuencia inicio</mat-label>
             <input matInput type="number" formControlName="inicio" [disabled]="!formCupon.get('serie')?.value">
@@ -235,7 +235,7 @@
           <th mat-header-cell *matHeaderCellDef>Fecha</th>
           <td mat-cell *matCellDef="let row">{{ row.fecha | date: 'dd/MM/yyyy' }}</td>
         </ng-container>
-        
+
         <ng-container matColumnDef="duplicado">
           <th mat-header-cell *matHeaderCellDef>Duplicado</th>
           <td mat-cell *matCellDef="let row">
@@ -268,10 +268,18 @@
             </mat-select>
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
+          <!-- <mat-form-field appearance="outline">
             <mat-label>Estado</mat-label>
             <mat-select formControlName="estado">
               <mat-option *ngFor="let e of estados" [value]="e">{{ e }}</mat-option>
+            </mat-select>
+          </mat-form-field> -->
+          <mat-form-field appearance="outline">
+            <mat-label>Estado</mat-label>
+            <mat-select formControlName="estado">
+              <mat-option value="">Todos</mat-option>
+              <mat-option [value]="true">Activo</mat-option>
+              <mat-option [value]="false">Inactivo</mat-option>
             </mat-select>
           </mat-form-field>
         </div>
@@ -308,8 +316,8 @@
 
       <div class="botones">
         <button mat-stroked-button (click)="nuevo()" [disabled]="!tieneFiltrosReporte">Nuevo</button>
-        <button mat-stroked-button [matMenuTriggerFor]="menuExportar" color="accent" 
-        [disabled]="!puedeExportar || !((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.exportar'))" 
+        <button mat-stroked-button [matMenuTriggerFor]="menuExportar" color="accent"
+        [disabled]="!puedeExportar || !((permissions.permisos$ | async)?.includes('codbar.ficha-de-cliente.listado-clientes.cupones.exportar'))"
         >
           Exportar <mat-icon>arrow_drop_down</mat-icon>
         </button>

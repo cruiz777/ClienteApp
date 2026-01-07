@@ -7,6 +7,8 @@ import { environment } from 'src/environments/environment';
 import { ListadoAsientoContableResponse } from '../interfaces/responses/asientos-contables-response';
 import { AsientoContableResponse } from '../interfaces/responses/asiento-contable-response';
 import { AsientoImpresion } from '../interfaces/responses/asiento-impresion.model';
+import { ValidarAnulacionAsientoResponse } from '../interfaces/responses/MotivoNoAnulacionAsientoResponse ';{}
+
 
 /** ===== Respuesta estándar del API ===== */
 export interface ApiResponse<T> {
@@ -57,6 +59,9 @@ interface CreateDetalleRequest {
   estadoIngreso: boolean;
   autorizacionRelacionado: string | null;
   fechaCadRelacionado: string | null;
+  idPorIva?: number | null;
+  porcentaje?: number | null;
+
 }
 
 interface CreateAsientoRequest {
@@ -152,7 +157,7 @@ export class AsientosContablesService {
 
   */
 
-  
+
   /** ==== GET BY ID ==== */
   /*
   getById(idCabMaestro: number): Observable<AsientoContableResponse> {
@@ -260,6 +265,9 @@ export class AsientosContablesService {
       estadoIngreso: !!d.estadoIngreso,
       autorizacionRelacionado: this.toNull(d.autorizacionRelacionado, false),
       fechaCadRelacionado: this.dateOnly(d.fechaCadRelacionado),
+      idPorIva:this.toNull(d.idPorIva),
+      porcentaje: this.toNull(d.porcentaje),
+
     }));
 
     return {
@@ -283,7 +291,7 @@ export class AsientosContablesService {
       autorizado: this.toNull(h.autorizado, false),
       homCodigo: this.toNull(h.homCodigo),
       estado: !!h.estado,
-      modulo: 0,   
+      modulo: h.modulo ?? 0,
       detalles,
     };
   }
@@ -305,7 +313,7 @@ export class AsientosContablesService {
   // Swagger: PUT /api/AsientosContables/{id}
   actualizar(
     idCabMaestro: number,
-    formValue: AsientoContableResponse 
+    formValue: AsientoContableResponse
   ): Observable<ApiResponse<boolean>> {
     const body: CreateAsientoRequest = this.mapToCreateRequest(formValue);
     return this.http.put<ApiResponse<boolean>>(
@@ -325,11 +333,9 @@ export class AsientosContablesService {
   }
 
 
- // pendiente revisar delete el proceso y vericiar si el controlador: si el atributo es [HttpDelete("{id}")]
-  // deberías dejarlo así:
-  eliminar(idCabMaestro: number): Observable<ApiResponse<boolean>> {
+  eliminar(idCabMaestro: number, idEmpresa: number, idUsuario: number): Observable<ApiResponse<boolean>> {
     return this.http.delete<ApiResponse<boolean>>(
-      `${this.baseUrl}/${idCabMaestro}` //sin /Delete si no existe en la API
+      `${this.baseUrl}/${idCabMaestro}/empresa/${idEmpresa}/usuario/${idUsuario}`
     );
   }
 
@@ -351,5 +357,23 @@ export class AsientosContablesService {
       );
   }
 
+  //validacion asientos antes de anular
+   /** Validación previa a eliminar/modificar (backend) */
+  validarAnulacion(
+    idCabMaestro: number,
+    idEmpresa: number,
+    tipoDoc: string
+  ): Observable<ApiResponse<ValidarAnulacionAsientoResponse>> {
 
+    const params = new HttpParams()
+      .set('idCabMaestro', String(idCabMaestro))
+      .set('idEmpresa', String(idEmpresa))
+      .set('tipoDoc', (tipoDoc ?? '').trim().toUpperCase());
+
+    return this.http.get<ApiResponse<ValidarAnulacionAsientoResponse>>(
+      `${this.baseUrl}/validar-anulacion`,
+      { params }
+    );
+  }
+  //
 }

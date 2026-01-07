@@ -19,13 +19,11 @@ export class NavigationSicComponent implements OnInit{
   currentDateTime: string = '';
   isHandset: boolean = false;
   isExpanded: boolean = true;
-  urlReenvioDocumentos: string = '';
   isLoadingUrl: boolean = true;
 
   constructor(private breakpointObserver: BreakpointObserver
     , private router: Router,
-    private usuarioService:UsuarioService,
-    private parametrosService: ParametrosFacturaService
+    private usuarioService:UsuarioService
   ) {
     this.breakpointObserver.observe([Breakpoints.Handset])
       .subscribe(result => {
@@ -37,17 +35,6 @@ export class NavigationSicComponent implements OnInit{
   ngOnInit(): void {
     this.updateDateTime();
     setInterval(() => this.updateDateTime(), 1000);
-    // Cargar URL parametrizable
-    this.parametrosService.getByIdUrl(10005).subscribe({
-      next: (param) => {
-        this.urlReenvioDocumentos = param.texto || '';
-        this.isLoadingUrl = false;
-      },
-      error: (error) => {
-        console.error('Error al cargar URL de reenvío:', error);
-        this.isLoadingUrl = false;
-      }
-    });
   }
 
   updateDateTime(): void {

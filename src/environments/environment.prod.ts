@@ -12,7 +12,7 @@ export const environment = {
   validationUrl:'http://181.39.162.182:8000/validations/api',
 
   reportUrl: 'http://181.39.162.182:8000/reports/api',
-
+  balanceApiUrl: 'http://181.39.162.182:8000/balance/api',
   inventoryUrl: 'http://181.39.162.182:8000/inventories/api',
   transactionUrl: 'http://181.39.162.182:8000/transaction/api',
  maintenanceUrl: 'http://181.39.162.182:8000/maintenance-cg/api',
@@ -23,5 +23,5 @@ export const environment = {
     cedulaUrl:'http://pichincha.gapsystem.net:10048/api/services/cedula/',
 
       apiKey: 'ilGxoWJ9Arp0JdSNuO81aq9sX6ZW9gK9767867tgb',
-
+  
 };

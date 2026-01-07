@@ -488,7 +488,7 @@ export class NuevoProductoComponent implements OnInit {
 
   mostrarPrefijo(): boolean {
     const valor = this.formReporte.get('reporte')?.value;
-    return ['gtinVenta', 'logistica', 'membresia', 'carta', 'completo'].includes(valor);
+    return ['gtinVenta', 'logistica', 'membresia', 'carta', 'completo',  'general'].includes(valor);
   }
 
 
@@ -616,7 +616,8 @@ export class NuevoProductoComponent implements OnInit {
 
         const now = new Date();
         const fechaHora = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}`;
-        const nombreArchivo = `${producto.codbar}_${fechaHora}.pdf`;
+        const codigoProducto = producto.codbar || 'SinCodigo';
+        const nombreArchivo = `${this.generarNombreArchivo('Producto')}_${codigoProducto}_${fechaHora}.pdf`;
 
         doc.save(nombreArchivo);
         this.formReporte.get('codigo')?.reset();
@@ -686,6 +687,11 @@ export class NuevoProductoComponent implements OnInit {
  */
   async generarPdfLogistica(): Promise<void> {
     try {
+      if (!this.formReporte.get('gcp')?.value) {
+        this.mostrarAlerta('⚠️ Debe seleccionar un Prefijo', 'Advertencia');
+        return;
+      }
+      
       // ✅ Abrir diálogo de loading
       const loadingDialog = this.abrirDialogoProgreso(
         'Generando Reporte PDF',
@@ -743,7 +749,7 @@ export class NuevoProductoComponent implements OnInit {
 
       await this.gs1ExportService.exportarPDFGS1({
         data: datosParaExport,
-        filename: 'reporte_unidad_logistica_gs1',
+        filename: this.generarNombreArchivo('UnidadLogistica'),
         headerInfo: headerInfo
       });
 
@@ -826,7 +832,7 @@ export class NuevoProductoComponent implements OnInit {
 
       await this.gs1ExportService.exportarExcelGS1({
         data: datosParaExport,
-        filename: 'reporte_unidad_logistica_gs1',
+        filename: this.generarNombreArchivo('UnidadLogistica'),
         headerInfo: headerInfo
       });
 
@@ -1048,7 +1054,7 @@ export class NuevoProductoComponent implements OnInit {
 
       const exportOptions = {
         data: respuesta.productos, // Usar directamente ProductoResponse[]
-        filename: 'Reporte_GTIN_UV',
+        filename: this.generarNombreArchivo('GTIN_UV'),
         headerInfo: headerInfo
       };
 
@@ -1106,7 +1112,7 @@ export class NuevoProductoComponent implements OnInit {
         year: 'numeric'
       }),
       pagina: metadata.pagina?.toString() || '1',
-      codigoEmpresa: metadata.prefijo_gs1 || metadata.cliente_codigo?.toString() || '', // Usar prefijo_gs1 principal y clientecodigo como fallback
+      codigoEmpresa: metadata.prefijo_gs1 || '', // Usar prefijo_gs1 principal y clientecodigo como fallback
       nombreEmpresa: metadata.empresa_nombre || '',
       ruc: metadata.ruc || '',
       gln: metadata.gln || '', //GLN ya viene del backend
@@ -1262,7 +1268,7 @@ export class NuevoProductoComponent implements OnInit {
 
       await this.gs1ExportService.exportarPDFGS1({
         data: datosParaExport,
-        filename: 'reporte_productos_general_gs1',
+        filename: this.generarNombreArchivo('General'),
         headerInfo: headerInfo
       });
 
@@ -1366,7 +1372,7 @@ export class NuevoProductoComponent implements OnInit {
 
       await this.gs1ExportService.exportarExcelGS1({
         data: datosParaExport,
-        filename: 'reporte_productos_general_gs1',
+        filename: this.generarNombreArchivo('General'),
         headerInfo: headerInfo
       });
 
@@ -1391,11 +1397,20 @@ export class NuevoProductoComponent implements OnInit {
   /**
    * Prepara parámetros específicos para productos por cliente (NUEVO)
    */
-  private prepararParametrosProductosPorCliente(): any {
+    private prepararParametrosProductosPorCliente(): any {
     const formValues = this.formReporte.value;
     const params: any = {
       clienteCodigo: this.clienteSeleccionado?.clientes_codigo || 0
     };
+    
+    // Prefijo (si está seleccionado)
+    const idPrefijo = formValues.gcp;
+    if (idPrefijo) {
+      const prefijoObj = this.prefijos.find(p => p.id_prefijos === idPrefijo);
+      if (prefijoObj) {
+        params.prefijo = prefijoObj.codpre;
+      }
+    }
 
     // Código de producto
     if (formValues.codigo) {
@@ -1436,6 +1451,7 @@ export class NuevoProductoComponent implements OnInit {
 
     return params;
   }
+
 
   /**
    * Aplana datos para reporte general (NUEVO - diferente al de unidad logística)
@@ -1653,7 +1669,7 @@ export class NuevoProductoComponent implements OnInit {
 
       const exportOptions = {
         data: respuesta.productos, // Usar directamente ProductoResponse[]
-        filename: 'Reporte_GTIN_UV',
+        filename: this.generarNombreArchivo('GTIN_UV'),
         headerInfo: headerInfo
       };
 
@@ -1688,7 +1704,7 @@ export class NuevoProductoComponent implements OnInit {
   }
   async exportarExcelCompleto(productos: any[]): Promise<void> {
     const fechaActual = new Date();
-    const nombreArchivo = `ReporteCompleto-${this.clienteSeleccionado?.nomcli}-${format(fechaActual, 'yyyy-MM-dd-HH-mm')}.xlsx`;
+    const nombreArchivo = `${this.generarNombreArchivo('Completo')}_${format(fechaActual, 'yyyyMMdd_HHmm')}.xlsx`;
     this.cdRef.detectChanges();
 
     const idSeleccionado = this.formReporte.value.gcp;
@@ -1823,7 +1839,7 @@ export class NuevoProductoComponent implements OnInit {
         p.Despro,
         p.marca,
         p.contenido,
-        p.unidad,
+        (p.unidad ?? '').toString().toUpperCase(),
         p.codigoproducto,
         p.dbrick,
         p.brick,
@@ -1926,12 +1942,13 @@ export class NuevoProductoComponent implements OnInit {
       );
 
       // Preparar parámetros para el endpoint por prefijo
-      const params = {
-        prefijo: prefijo,
-        clienteCodigo: this.clienteSeleccionado?.clientes_codigo,
-        pageNumber: 1,
-        pageSize: 50
-      };
+      // const params = {
+      //   prefijo: prefijo,
+      //   clienteCodigo: this.clienteSeleccionado?.clientes_codigo,
+      //   pageNumber: 1,
+      //   pageSize: 50
+      // };
+      const params = this.prepararParametrosProductosPorPrefijo(prefijo);
 
       // PASO 1: Obtener metadata del backend (primera página)
       const response = await firstValueFrom(
@@ -1990,7 +2007,7 @@ export class NuevoProductoComponent implements OnInit {
 
       await this.gs1ExportService.exportarPDFGS1({
         data: datosParaExport,
-        filename: `membresia_productos_prefijo_${prefijo}`,
+        filename: this.generarNombreArchivo('Membresia'),
         headerInfo: headerInfo
       });
 
@@ -2008,7 +2025,57 @@ export class NuevoProductoComponent implements OnInit {
       });
     }
   }
+  /**
+   * Prepara parámetros para productos por prefijo INCLUYENDO filtros de fecha
+   */
+  private prepararParametrosProductosPorPrefijo(prefijo: string): any {
+    const formValues = this.formReporte.value;
+    const params: any = {
+      prefijo: prefijo,
+      clienteCodigo: this.clienteSeleccionado?.clientes_codigo,
+      pageNumber: 1,
+      pageSize: 50
+    };
+    
+    if (formValues.codigo) {
+      params.codigoProducto = formValues.codigo;
+    }
+    // Estado
+    if (formValues.estado !== null && formValues.estado !== undefined) {
+      params.estado = formValues.estado === '1' || formValues.estado === 1;
+    }
 
+    // Fechas según el operador seleccionado
+    const operadorFecha = formValues.operadorFecha;
+
+    if (operadorFecha === 'entre') {
+      if (formValues.desde) {
+        params.fechaDesde = this.formatearFechaParaApi(formValues.desde);
+        params.condicionFecha = 'ENTRE';
+      }
+      if (formValues.hasta) {
+        params.fechaHasta = this.formatearFechaParaApi(formValues.hasta);
+      }
+    } else if (formValues.fecha) {
+      params.fechaDesde = this.formatearFechaParaApi(formValues.fecha);
+
+      switch (operadorFecha) {
+        case 'igual':
+          params.condicionFecha = 'IGUAL';
+          break;
+        case 'menorIgual':
+          params.condicionFecha = 'MENOR_IGUAL';
+          break;
+        case 'mayor':
+          params.condicionFecha = 'MAYOR';
+          break;
+      }
+    }
+
+    console.log('📅 FECHA FORMATEADA QUE SE ENVÍA:', params.fechaDesde); // ✅ NUEVO
+    console.log('📅 CONDICIÓN:', params.condicionFecha); // ✅ NUEVO
+    return params;
+  }
   /**
    * Aplana los datos específicos para el reporte de membresía por prefijo
    */
@@ -2047,6 +2114,11 @@ export class NuevoProductoComponent implements OnInit {
   }
 
   generarPdfCompleto(): void {
+    if (!this.formReporte.get('gcp')?.value) {
+      this.mostrarAlerta('⚠️ Debe seleccionar un Prefijo', 'Advertencia');
+      return;
+    }
+    
     const codCliente = this.clienteSeleccionado?.clientes_codigo;
     const idPrefijo = this.formReporte.get('gcp')?.value;
     const estado = this.formReporte.get('estado')?.value === '1' ? 'Activo' : 'Inactivo';
@@ -2247,7 +2319,36 @@ export class NuevoProductoComponent implements OnInit {
     });
   }
   //HELPERS
-
+  /**
+   * Genera un nombre de archivo consistente para todos los reportes
+   * El timestamp lo agrega automáticamente GS1ExportService
+   */
+  private generarNombreArchivo(tipoReporte: string): string {
+    const nombreEmpresa = this.clienteSeleccionado?.nomcli || 'SinEmpresa';
+    
+    // Obtener prefijo seleccionado
+    const idPrefijo = this.formReporte.get('gcp')?.value;
+    let codigoPrefijo = '';
+    
+    if (idPrefijo) {
+      const prefijoObj = this.prefijos.find(p => p.id_prefijos === idPrefijo);
+      codigoPrefijo = prefijoObj?.codpre || '';
+    }
+    
+    // Limpiar nombre de empresa (quitar caracteres especiales)
+    const nombreLimpio = nombreEmpresa
+      .replace(/[^a-zA-Z0-9\s]/g, '')  // Quitar caracteres especiales
+      .replace(/\s+/g, '_')             // Espacios a guiones bajos
+      .substring(0, 50);                // Limitar longitud
+    
+    // Formato: TipoReporte_NombreEmpresa_Prefijo
+    // El servicio agregará automáticamente: _YYYYMMDD_HHmmss
+    if (codigoPrefijo) {
+      return `${nombreLimpio}_${codigoPrefijo}`;
+    } else {
+      return `${nombreLimpio}`;
+    }
+  }
   // Método para obtener productos por lotes con progreso
   private async obtenerProductosPorLotesDirecto(
     params: any,
