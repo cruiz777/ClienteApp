@@ -62,6 +62,11 @@ import { BalanceComprobacionResponse } from 'src/app/interfaces/responses/balanc
 import { LocalesResponse } from 'src/app/interfaces/responses/local-response'
 import { ZonaResponse } from 'src/app/interfaces/responses/zona-response'
 
+/* ==========================
+ * Messages
+ * ========================== */
+import { RequiredFieldsToastService } from 'src/app/components/utils/messages/required-fields-toast.service';
+
 /* ==========================================================
  * Tipos auxiliares (para reporte jerárquico y totales)
  * ========================================================== */
@@ -271,7 +276,8 @@ export class BalanceComprobacionComponent implements OnInit {
   constructor(
     private balanceService: BalanceService,
     private localService: LocalesService,
-    private zonaService: ZonaService
+    private zonaService: ZonaService,
+    private message: RequiredFieldsToastService
   ) { }
 
   // API de AG Grid (para operaciones: getFilterModel, forEachNodeAfterFilterAndSort, pinned rows, etc.)
@@ -328,6 +334,7 @@ export class BalanceComprobacionComponent implements OnInit {
     const d2 = (this.filtros.fechaHasta ?? '').trim();
 
     if (!d1 || !d2) {
+      this.message.mostrar(['Fecha Inicio', 'Fecha Final']);
       console.warn('Debe ingresar Fecha Inicio y Fecha Final');
       return;
     }
@@ -338,11 +345,13 @@ export class BalanceComprobacionComponent implements OnInit {
     const dateHasta = new Date(d2);
 
     if (isNaN(dateDesde.getTime()) || isNaN(dateHasta.getTime())) {
+      this.message.error('Formato de fecha inválido. Use YYYY-MM-DD.');
       console.warn('Formato de fecha inválido');
       return;
     }
 
     if (dateDesde > dateHasta) {
+      this.message.error('La Fecha Inicial no puede ser mayor a la Fecha Final');
       console.warn('La Fecha Inicial no puede ser mayor a la Fecha Final');
       return;
     }
@@ -357,6 +366,7 @@ export class BalanceComprobacionComponent implements OnInit {
 
       // Regla: si llena una, debe llenar la otra
       if (tieneDesde !== tieneHasta) {
+        this.message.mostrar(['Cuenta Inicio', 'Cuenta Final']);
         console.warn('Para filtrar por cuenta debe ingresar CUENTA A y CUENTA B');
         return;
       }
@@ -365,6 +375,7 @@ export class BalanceComprobacionComponent implements OnInit {
       if (tieneDesde && tieneHasta) {
         // Comparación simple (si tus cuentas son códigos comparables alfabéticamente)
         if (hasta.localeCompare(desde) < 0) {
+          this.message.error('Cuenta inicio no puede ser mayor que Cuenta final');
           console.warn('CUENTA B no puede ser menor que CUENTA A');
           return;
         }
@@ -883,6 +894,7 @@ export class BalanceComprobacionComponent implements OnInit {
       );
 
     } catch (e) {
+      this.message.error('No se pudo exportando Excel.');
       console.error('Error exportando Excel', e);
     }
   }
@@ -1053,6 +1065,7 @@ export class BalanceComprobacionComponent implements OnInit {
       doc.save(fileName);
 
     } catch (e) {
+      this.message.error('No se pudo exportando PDF.');
       console.error('Error exportando PDF', e);
     }
   }

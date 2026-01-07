@@ -47,7 +47,11 @@ import { BalanceComprobacionRequest } from 'src/app/interfaces/requests/balance-
 import { MayorCuentasResponse } from 'src/app/interfaces/responses/mayor-cuentas-response';
 import { LocalesResponse } from 'src/app/interfaces/responses/local-response'
 import { ZonaResponse } from 'src/app/interfaces/responses/zona-response'
-import { ApiResponse } from 'src/app/services/generacion-codigos.service';
+
+/* ==========================
+ * Messages
+ * ========================== */
+import { RequiredFieldsToastService } from 'src/app/components/utils/messages/required-fields-toast.service';
 
 type MayorCuentaRow = {
   tipo: string;
@@ -117,7 +121,8 @@ export class MayorCuentasListComponent implements OnInit {
   constructor(
     private balanceService: BalanceService,
     private localService: LocalesService,
-    private zonaService: ZonaService
+    private zonaService: ZonaService,
+    private message: RequiredFieldsToastService
   ) { }
 
   // trackBy (mejora performance en combos)
@@ -167,7 +172,9 @@ export class MayorCuentasListComponent implements OnInit {
     const d2 = (this.filtros.fechaHasta ?? '').trim();
 
     if (!d1 || !d2) {
+
       console.warn('Debe ingresar Fecha Inicio y Fecha Final');
+      this.message.mostrar(['Fecha Inicio', 'Fecha Final']);
       return;
     }
 
@@ -177,11 +184,13 @@ export class MayorCuentasListComponent implements OnInit {
     const dateHasta = new Date(d2);
 
     if (isNaN(dateDesde.getTime()) || isNaN(dateHasta.getTime())) {
+      this.message.error('Formato de fecha inválido. Use YYYY-MM-DD.');
       console.warn('Formato de fecha inválido');
       return;
     }
 
     if (dateDesde > dateHasta) {
+      this.message.error('La Fecha Inicial no puede ser mayor a la Fecha Final.');
       console.warn('La Fecha Inicial no puede ser mayor a la Fecha Final');
       return;
     }
@@ -196,6 +205,7 @@ export class MayorCuentasListComponent implements OnInit {
 
       // Regla: si llena una, debe llenar la otra
       if (tieneDesde !== tieneHasta) {
+        this.message.mostrar(['Cuenta A', 'Cuenta B']);
         console.warn('Para filtrar por cuenta debe ingresar CUENTA A y CUENTA B');
         return;
       }
@@ -204,6 +214,7 @@ export class MayorCuentasListComponent implements OnInit {
       if (tieneDesde && tieneHasta) {
         // Comparación simple (si tus cuentas son códigos comparables alfabéticamente)
         if (hasta.localeCompare(desde) < 0) {
+          this.message.error('Cuenta B no puede ser menor que Cuenta A.');
           console.warn('CUENTA B no puede ser menor que CUENTA A');
           return;
         }
@@ -222,10 +233,14 @@ export class MayorCuentasListComponent implements OnInit {
         const data = resp?.data ?? [];
         this.resultados = data;
         this.loading = false;
+        // Mostrar mensaje de éxito
+        this.message.exito('Consulta mayor de cuentas realizada correctamente.');
       },
       error: (err) => {
         console.error('ERROR BACK:', err);
         this.loading = false;
+        // Mostrar popup de error al usuario
+        this.message.error('No se pudo consultar el mayor de cuentas. Intente nuevamente.');
       }
     });
 
@@ -604,6 +619,7 @@ export class MayorCuentasListComponent implements OnInit {
       saveAs(new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }), fileName);
 
     } catch (e) {
+      this.message.error('No se pudo exportando Excel Mayor de Cuentas.');
       console.error('Error exportando Excel Mayor de Cuentas', e);
     }
   }
@@ -615,10 +631,12 @@ export class MayorCuentasListComponent implements OnInit {
 
       if (!d1 || !d2) {
         console.warn('Debe ingresar Fecha Inicio y Fecha Final');
+        this.message.mostrar(['Fecha Inicio', 'Fecha Final']);
         return;
       }
       if (d2 < d1) {
-        console.warn('La Fecha Final no puede ser menor a la Fecha Inicial');
+        this.message.error('La Fecha Inicial no puede ser mayor a la Fecha Final.');
+        console.warn('La Fecha Inicial no puede ser mayor a la Fecha Final.');
         return;
       }
 
@@ -778,6 +796,7 @@ export class MayorCuentasListComponent implements OnInit {
 
     } catch (e) {
       console.error('Error exportando PDF Mayor de Cuentas', e);
+      console.error('No de pudo exportando PDF Mayor de Cuentas');
     }
   }
 
