@@ -79,7 +79,11 @@
 </mat-dialog-content>
 
 <mat-dialog-actions align="center" class="prefijo-actions">
-  <button mat-button color="primary" (click)="guardarPrefijo()" class="btn-accion">
+  <button mat-button color="primary"
+        (click)="guardarPrefijo()"
+        class="btn-accion"
+        [disabled]="guardandoPrefijo">
+
     <img src="assets/icons/icon-grabar.png" width="18" height="18" style="margin-right: 6px;" />
     Guardar
   </button>

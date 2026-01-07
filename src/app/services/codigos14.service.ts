@@ -199,6 +199,13 @@ filtrarCodigos14(
       },
     });
   }
+  deletePorG14(g14: string): Observable<ApiResponse<boolean>> {
+  const url = `${this.baseUrl}/Codigos14/por-g14/${encodeURIComponent((g14 ?? '').trim())}`;
+  return this.http.delete<ApiResponse<boolean>>(url);
+}
+deletePorG14Ok(g14: string): Observable<boolean> {
+  return this.deletePorG14(g14).pipe(map(r => r.type !== 'ERROR' && !!r.data));
+}
 
 
 }
