@@ -62,7 +62,7 @@ export class BloqueComponent implements OnInit {
   unidadesDisponibles: string[] = [];
   mapaUnidades: { [unidad: string]: string } = {};  // código → descripción
 
-  gcpBricksDisponibles: { codigo: string, descripcion: string }[] = [];
+  gcpBricksDisponibles: { codigo: string, descripcion: string, brick: string, id_grupo_producto: number }[] = [];
   clienteE!: ClienteIndividual;
   gruposProducto: GrupoProducto[] = [];
   id_grupo_producto: number = 0;
@@ -85,7 +85,7 @@ export class BloqueComponent implements OnInit {
 
 gridOptions: GridOptions = {
   suppressMovableColumns: true,
-  onCellValueChanged: this.onCellValueChanged.bind(this),
+  onCellValueChanged: this.onCellValueChanged.bind(this),  
 
   // 👇 forzamos event: any para evitar problemas de tipos con AG Grid
   onCellKeyDown: (event: any) => {
@@ -293,6 +293,14 @@ gridOptions: GridOptions = {
         cellEditor: 'gcpBrickAutocompleteEditor',
         cellEditorPopup: true, // ✅ Este es el más importante
         cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100, resizable: true,
+        valueFormatter: (params: any) => {
+          const codigo = params.value;
+          if (!codigo) return '';
+          
+          // Opcional: mostrar "codigo - descripcion" para mejor UX
+          const opcion = this.gcpBricksDisponibles.find(g => g.codigo === codigo);
+          return opcion ? `${opcion.codigo} - ${opcion.descripcion}` : codigo;
+        }
 
       },
       { field: 'marca', headerName: 'Marca', editable: true, cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100, resizable: true },
@@ -378,7 +386,37 @@ gridOptions: GridOptions = {
     });
   }
 
+@HostListener('copy', ['$event'])
+onCopyFromGrid(event: ClipboardEvent): void {
+  if (!this.gridApi) return;
 
+  const focus = this.gridApi.getFocusedCell();
+  if (!focus) return;
+
+  const rowIndex = focus.rowIndex ?? -1;
+  const field = focus.column.getColDef().field ?? null;
+
+  if (rowIndex < 0 || !field || rowIndex >= this.rowData.length) return;
+
+  const row = this.rowData[rowIndex];
+  const valorReal = row[field];
+
+  //Para categoria y contenidoUM, copiar el valor RAW del modelo
+  if (field === 'categoria' || field === 'contenidoUM') {
+    if (valorReal !== null && valorReal !== undefined) {
+      event.preventDefault();
+      
+      //Para categoria, asegurar que se copie SOLO el código
+      const valorACopiar = field === 'categoria' 
+        ? valorReal.toString().split(' - ')[0].trim()  // Extrae solo el código
+        : valorReal.toString();
+      
+      event.clipboardData?.setData('text/plain', valorACopiar);
+      console.log(`📋 Copiado valor real de ${field}:`, valorACopiar);
+    }
+  }
+}
+//
 @HostListener('paste', ['$event'])
 onPasteExcelToGrid(event: ClipboardEvent): void {
   // 1️⃣ Si no tenemos gridApi todavía, salimos
@@ -411,6 +449,7 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
   }
 
   event.preventDefault();
+  event.stopPropagation();
 
   const rows: string[] = text
     .split(/\r?\n/)
@@ -490,9 +529,9 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
       if (colIndex >= pasteableFields.length) {
         return;
       }
-
+      
       const field: string = pasteableFields[colIndex];
-      const raw = (cellValue ?? '').trim();
+      const raw = (cellValue ?? '').trim();      
 
       switch (field) {
         case 'contenidoNeto': {
@@ -514,18 +553,29 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
           break;
 
         case 'contenidoUM':
-          // Solo unidades que EXISTEN en el combo
+          // ✅ Solo unidades válidas
           if (unidadesValidas.includes(raw)) {
             row[field] = raw;
+            console.log(`✅ UM pegada en fila ${rowIndex + 1}: ${raw}`);
+          } else {
+            console.warn(`⚠️ UM "${raw}" no válida en fila ${rowIndex + 1}, ignorada`);
           }
           break;
 
-        case 'categoria':
-          // Solo categorías que EXISTEN en el combo (código)
-          if (categoriasValidas.includes(raw)) {
-            row[field] = raw;
+        case 'categoria': {
+          const codigoLimpio = raw.split(' - ')[0].trim();
+          
+          if (categoriasValidas.includes(codigoLimpio)) {
+            const rowNode = this.gridApi.getRowNode(rowIndex.toString());
+            if (rowNode) {
+              rowNode.setDataValue('categoria', codigoLimpio);
+            }
+            console.log(`✅ Categoría pegada en fila ${rowIndex + 1}: ${codigoLimpio}`);
+          } else {
+            console.warn(`⚠️ Categoría "${raw}" no válida en fila ${rowIndex + 1}, ignorada`);
           }
           break;
+        }
 
         default:
           // Otras columnas se pegan tal cual
@@ -538,7 +588,9 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
   this.rowData = updated;
   this.gridApi.refreshCells({ force: true });
   this.gridApi.redrawRows();
+  console.log('✅ Pegado completado');
 }
+//
 
 
   async generarFilas(): Promise<void> {
@@ -1532,7 +1584,15 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
     if ((field === 'descripcion' || field === 'marca') && typeof newValue === 'string') {
       event.data[field] = newValue.toUpperCase();
     }
-
+    // ✅ Cuando cambia categoria, actualizar gcpBrick y grupo
+    if (field === 'categoria' && newValue) {
+      const opcion = this.gcpBricksDisponibles.find(g => g.codigo === newValue);
+      if (opcion) {
+        event.data.gcpBrick = opcion.brick;
+        event.data.grupo = opcion.id_grupo_producto;
+        this.gridApi?.refreshCells({ rowNodes: [event.node], columns: ['gcpBrick', 'grupo'], force: true });
+      }
+    }
     // ✅ Log especial para 'activo'
     if (field === 'activo') {
       console.log(`Checkbox cambiado en fila ${event.rowIndex}:`, newValue);

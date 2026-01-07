@@ -13,7 +13,8 @@ import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionad
 import { PrefijoService } from 'src/app/services/prefijo.service';
 import { GrupoProductoService, GrupoProducto } from 'src/app/services/grupo-producto.service';
 import { Observable, of } from 'rxjs';
-import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
+// import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
+import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
 import { startWith, map } from 'rxjs/operators';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
@@ -39,6 +40,9 @@ import { take } from 'rxjs/operators';
 import * as moment from 'moment';
 import { debounceTime } from 'rxjs/operators';
 import { themeAlpine } from 'ag-grid-community';
+import { forkJoin } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
+
 @Component({
   selector: 'app-ul',
   standalone: true,
@@ -111,6 +115,7 @@ export class UlComponent implements OnInit {
   id_grupo_producto: number = 0;
   usuarioActual = this.usuarioService.getUsuarioActual();
   idProducto: number = 0;
+  private loadingDialogRef?: MatDialogRef<CustomMessageBoxComponent>;
   constructor(
     private fb: FormBuilder,
     private clienteSeleccionadoService: ClienteSeleccionadoService,
@@ -140,6 +145,19 @@ export class UlComponent implements OnInit {
   ngOnInit(): void {
     const codbar = this.route.snapshot.paramMap.get('codbar');
     console.log('GTIN recibido:', codbar);
+    this.loadingDialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      disableClose: true,
+      data: {
+        title: 'Cargando',
+        message: 'Cargando datos necesarios...',
+        type: 'info',
+        isLoading: true,
+        loadingText: 'Por favor espere...',
+        showCancel: false 
+      }
+    });
+    
     this.formUV = this.fb.group({
       codigoCliente: [''],
       cliente: [''],
@@ -2048,12 +2066,17 @@ export class UlComponent implements OnInit {
 
   cargarProducto(): void {
     const codbar = this.route.snapshot.paramMap.get('codbar');
-    if (!codbar) return;
+    if (!codbar) {
+      this.loadingDialogRef?.close(); //Cerrar si no hay codbar
+      return;
+    }
+
 
     this.productoService.buscarPorCodbar(codbar).pipe(take(1)).subscribe({
       next: (producto) => {
         if (!producto) {
           console.warn('⚠️ Producto no encontrado');
+          this.loadingDialogRef?.close();
           return;
         }
         console.log(producto);
@@ -2120,20 +2143,24 @@ export class UlComponent implements OnInit {
                   }
                 });
                 this.botonGrabarDeshabilitado = true;
+                this.loadingDialogRef?.close();
 
               },
               error: (err) => {
                 console.error('❌ Error al cargar grupos de producto:', err);
+                this.loadingDialogRef?.close();
               }
             });
           },
           error: (err) => {
             console.error('❌ Error al cargar prefijos:', err);
+            this.loadingDialogRef?.close();
           }
         });
       },
       error: (err) => {
         console.error('❌ Error al cargar producto:', err);
+        this.loadingDialogRef?.close();
       }
     });
   }
