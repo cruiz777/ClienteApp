@@ -172,8 +172,8 @@ export class BalanceComprobacionComponent implements OnInit {
     {
       headerName: 'Cuenta',
       field: 'cuentaCodigo',
-      minWidth: 420,
-      flex: 1,
+      minWidth: 480,
+      flex: 2,
       sortable: false,
 
       // Filtro de texto con “startsWith” por defecto
@@ -217,11 +217,20 @@ export class BalanceComprobacionComponent implements OnInit {
       },
     },
 
-    { headerName: 'Saldo Anterior', field: 'saldoAnterior', type: 'numericColumn', valueFormatter: (p) => this.fmtNumber(p) },
-    { headerName: 'Debe', field: 'debe', type: 'numericColumn', valueFormatter: (p) => this.fmtNumber(p) },
-    { headerName: 'Haber', field: 'haber', type: 'numericColumn', valueFormatter: (p) => this.fmtNumber(p) },
-    { headerName: 'Neto', field: 'neto', type: 'numericColumn', valueFormatter: (p) => this.fmtNumber(p) },
-    { headerName: 'Total', field: 'total', type: 'numericColumn', valueFormatter: (p) => this.fmtNumber(p) },
+    {
+      headerName: 'Saldo Anterior',
+      field: 'saldoAnterior',
+      type: 'numericColumn',
+      valueFormatter: (p) => this.fmtNumber(p),
+
+      // NUEVO (para que el header se envuelva y suba de alto)
+      wrapHeaderText: true,
+      autoHeaderHeight: true,
+    },
+    { headerName: 'Debe', field: 'debe', type: 'numericColumn', minWidth: 80, flex: 1, valueFormatter: (p) => this.fmtNumber(p) },
+    { headerName: 'Haber', field: 'haber', type: 'numericColumn', minWidth: 80, flex: 1, valueFormatter: (p) => this.fmtNumber(p) },
+    { headerName: 'Neto', field: 'neto', type: 'numericColumn', minWidth: 80, flex: 1, valueFormatter: (p) => this.fmtNumber(p) },
+    { headerName: 'Total', field: 'total', type: 'numericColumn', minWidth: 80, flex: 1, valueFormatter: (p) => this.fmtNumber(p) },
   ];
 
   /**
@@ -370,7 +379,12 @@ export class BalanceComprobacionComponent implements OnInit {
         const data = resp?.data ?? [];
         this.resultados = data;
         this.rowData = this.buildReporteRows(data);
-        setTimeout(() => this.actualizarTotalesPinned(), 0);
+
+        setTimeout(() => {
+          this.actualizarTotalesPinned();
+          this.gridApi?.sizeColumnsToFit();   // ajuste tras pintar filas
+        }, 0);
+
         this.loading = false;
       },
       error: () => {
@@ -1215,11 +1229,11 @@ export class BalanceComprobacionComponent implements OnInit {
    * ========================================================== */
 
   onGridReady(e: any) {
-    // Guardamos api para poder operar sobre el grid
     this.gridApi = e.api;
-
-    // Totales iniciales al cargar
     this.actualizarTotalesPinned();
+
+    // Ajusta columnas al ancho visible
+    setTimeout(() => this.gridApi?.sizeColumnsToFit(), 0);
   }
 
   onFilterChanged() {

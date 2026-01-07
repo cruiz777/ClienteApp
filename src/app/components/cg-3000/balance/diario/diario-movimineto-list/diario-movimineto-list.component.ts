@@ -611,6 +611,8 @@ export class DiarioMoviminetoListComponent implements OnInit {
       .subscribe({
         next: (resp: ApiResponse<BalanceDiarioResponse[]>) => {
           this.rowData = resp?.data ?? [];
+          this.pageIndex = 0;
+          this.expandedId = null;
           this.loading = false;
         },
         error: (err: any) => {
@@ -633,7 +635,7 @@ export class DiarioMoviminetoListComponent implements OnInit {
   pageIndex = 0; // 0-based
 
   get totalRows(): number {
-    return this.rowData?.length ?? 0;
+    return this.filteredRowData.length;
   }
 
   get totalPages(): number {
@@ -654,7 +656,7 @@ export class DiarioMoviminetoListComponent implements OnInit {
   get pagedRowData() {
     const start = this.pageIndex * this.pageSize;
     const end = start + this.pageSize;
-    return (this.rowData ?? []).slice(start, end);
+    return this.filteredRowData.slice(start, end);
   }
 
   get canPrev(): boolean {
@@ -699,6 +701,104 @@ export class DiarioMoviminetoListComponent implements OnInit {
   }
 
   trackByDoc = (_: number, row: any) => String(row?.documento ?? '');
+
+  // ===========================
+  // FILTROS POR COLUMNA (tabla)
+  // ===========================
+  columnFilters = {
+    tipo: '',
+    documento: '',
+    fechaTransaccion: null as string | null,
+    fechaIngreso: null as string | null,
+    beneficiario: '',
+    observacion: '',
+    debe: '',
+    haber: '',
+    responsable: ''
+  };
+
+  onFilterInput(): void {
+    // Al filtrar: vuelve a la primera página y colapsa expansión
+    this.pageIndex = 0;
+    this.expandedId = null;
+  }
+
+  private normText(v: any): string {
+    return (v ?? '').toString().trim().toLowerCase();
+  }
+
+  private normNumberText(v: any): string {
+    // permite buscar aunque el número tenga comas/espacios
+    return (v ?? '').toString().replace(/[\s,]/g, '').trim().toLowerCase();
+  }
+
+  private toYmd(value: any): string | null {
+    if (!value) return null;
+
+    // ISO: 2026-01-06T...
+    const s = value.toString().trim();
+    if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+
+    // Date parse fallback
+    const d = new Date(value);
+    if (!isNaN(d.getTime())) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const dd = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${dd}`;
+    }
+
+    return null;
+  }
+
+  get filteredRowData(): BalanceDiarioResponse[] {
+    const data = this.rowData ?? [];
+    const f = this.columnFilters;
+
+    const ftipo = this.normText(f.tipo);
+    const fdoc = this.normText(f.documento);
+    const fben = this.normText(f.beneficiario);
+    const fobs = this.normText(f.observacion);
+    const fdebe = this.normNumberText(f.debe);
+    const fhab = this.normNumberText(f.haber);
+    const fresp = this.normText(f.responsable);
+
+    const trxDesde = f.fechaTransaccion;
+    const ingDesde = f.fechaIngreso;
+
+    return data.filter((r: any) => {
+      if (ftipo && !this.normText(r.tipo).includes(ftipo)) return false;
+      if (fdoc && !this.normText(r.documento).includes(fdoc)) return false;
+
+      if (fben && !this.normText(r.beneficiario).includes(fben)) return false;
+      if (fobs && !this.normText(r.observacion).includes(fobs)) return false;
+
+      if (fdebe && !this.normNumberText(r.debe).includes(fdebe)) return false;
+      if (fhab && !this.normNumberText(r.haber).includes(fhab)) return false;
+
+      if (fresp) {
+        const respTxt = this.normText(`${r.codResponsable ?? ''} - ${r.nomResponsable ?? ''}`);
+        if (!respTxt.includes(fresp)) return false;
+      }
+
+      // Rango fecha transacción
+      if (ingDesde) {
+        const trx = this.toYmd(r.fechaTransaccion);
+        if (!trx) return false;
+        if (trx !== trxDesde) return false;
+      }
+
+      // Rango fecha ingreso
+      if (ingDesde) {
+        const ing = this.toYmd(r.fechaIngreso);
+        if (!ing) return false;
+        if (ing !== ingDesde) return false;
+      }
+
+      return true;
+    });
+  }
+
 
   // ============================================================
   // HELPERS
