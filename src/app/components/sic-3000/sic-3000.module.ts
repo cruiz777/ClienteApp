@@ -49,6 +49,7 @@ import { DocElectronicosComponent } from './facturacion/doc-electronicos/doc-ele
 import { AccionesCellRendererComponent } from './facturacion/doc-electronicos/acciones-cell-renderer.component';
 import { ReporteVentasComponent } from './reporte-ventas/reporte-ventas.component';
 import { ReenvioFacComponent } from './facturacion/reenvio-fac/reenvio-fac.component';
+import { SharedModule } from 'src/app/shared/shared.module';
 
 @NgModule({
   declarations: [
@@ -70,6 +71,7 @@ import { ReenvioFacComponent } from './facturacion/reenvio-fac/reenvio-fac.compo
   ],
   imports: [
     CommonModule,
+    SharedModule,
     RouterModule,
     FormsModule,
     ReactiveFormsModule,

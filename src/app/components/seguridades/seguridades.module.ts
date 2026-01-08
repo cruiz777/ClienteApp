@@ -11,6 +11,7 @@ import { DireccionDialogComponent } from './dialogs/direccion/direccion-dialog.c
 import { UppercaseDirective } from 'src/app/directives/uppercase.directive';
 import { DepartamentoDialogComponent } from './dialogs/departamento/departamento-dialog.component';
 import { SeguridadesInicioComponent } from './inicio/inicio.component';
+import { SharedModule } from 'src/app/shared/shared.module';
 @NgModule({
   declarations: [
     NavigationComponent,
@@ -25,7 +26,8 @@ import { SeguridadesInicioComponent } from './inicio/inicio.component';
     CommonModule,
     RouterModule,
     ReusableModule,
-    SeguridadesRoutingModule
+    SeguridadesRoutingModule,
+    SharedModule
   ],
   exports: [
     NavigationComponent

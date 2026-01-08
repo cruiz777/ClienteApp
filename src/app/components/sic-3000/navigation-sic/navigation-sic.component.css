@@ -203,6 +203,23 @@ FOOTER FIJO Y ADAPTATIVO
   flex: 1;
   text-align: left;
 }
+/* Footer derecho con nombre + avatar */
+.footer-right {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px; /* ← REDUCIR de 12px a 10px */
+  padding-right: 10px; /* ← AGREGAR padding derecho */
+}
+
+/* Estilo del nombre de usuario en footer */
+.user-name-footer {
+  font-weight: 700;
+  font-size: clamp(14px, 1.1vw, 20px); /* ← REDUCIR tamaño máximo */
+  color: #333;
+  white-space: nowrap;
+}
 .footer-center {
   position: absolute;
   left: 50%;
