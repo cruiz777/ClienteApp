@@ -1119,24 +1119,25 @@ const id =
       return;
     }
 
-    // ✅ permitir repetidos solo para 1176
-    const esMantenimiento = (p.codpro ?? '').toString() === this.COD_MANT_MENSUAL;
-    let yaExiste = false;
+    // Permitir repetidos solo para 1176 
+    // PERMITE REPETIR PRODUCTOS A PETICION DEL USUARIO KENIA ANDRADE - ECOP
+    // const esMantenimiento = (p.codpro ?? '').toString() === this.COD_MANT_MENSUAL;
+    // let yaExiste = false;
 
-    if (!esMantenimiento) {
-      if (this.gridApi) {
-        this.gridApi.forEachNode(n => { if ((n.data?.codpro ?? '') === p.codpro) yaExiste = true; });
-      } else {
-        yaExiste = this.rowData.some(r => (r as any)?.codpro === p.codpro);
-      }
-    }
+    // if (!esMantenimiento) {
+    //   if (this.gridApi) {
+    //     this.gridApi.forEachNode(n => { if ((n.data?.codpro ?? '') === p.codpro) yaExiste = true; });
+    //   } else {
+    //     yaExiste = this.rowData.some(r => (r as any)?.codpro === p.codpro);
+    //   }
+    // }
 
-    if (yaExiste) {
-      this.mostrarAlerta(`El producto ${p.codpro} ya fue agregado.`, 'info');
-      ctrl.setValue('', { emitEvent: false });
-      setTimeout(() => { this.autoProductoTrigger?.closePanel(); this.productoInputRef?.nativeElement.blur(); }, 0);
-      return;
-    }
+    // if (yaExiste) {
+    //   this.mostrarAlerta(`El producto ${p.codpro} ya fue agregado.`, 'info');
+    //   ctrl.setValue('', { emitEvent: false });
+    //   setTimeout(() => { this.autoProductoTrigger?.closePanel(); this.productoInputRef?.nativeElement.blur(); }, 0);
+    //   return;
+    // }
 
     // ---- precio: si es 1174 usar vAsignacion, caso contrario el del producto ----
     const ivaPorc = this.getIvaPrincipal() ?? (this.ivaOptions.at(-1) ?? 0);
@@ -1530,7 +1531,35 @@ const id =
     const p = this.ivasCatalogo.find(x => x.principal);
     return p ? p.porcentaje : null;
   }
-
+  /**
+ * Obtiene la fecha/hora actual en zona horaria de Ecuador (America/Guayaquil)
+ * @returns Objeto con fecha ISO y hora en formato local Ecuador
+ */
+  private getFechaHoraEcuador(): { fechaIso: string; hora: string } {
+    // Usar la API Intl para obtener fecha en zona horaria de Ecuador
+    const ahora = new Date();
+    
+    // Formatear en zona horaria de Ecuador (America/Guayaquil = UTC-5)
+    const opciones: Intl.DateTimeFormatOptions = {
+      timeZone: 'America/Guayaquil',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    };
+    
+    const formatter = new Intl.DateTimeFormat('sv-SE', opciones); // sv-SE da formato ISO
+    const fechaHoraStr = formatter.format(ahora); // "2025-01-09 16:24:30"
+    
+    // Separar fecha y hora
+    const [fecha, hora] = fechaHoraStr.split(' ');
+    const fechaIso = `${fecha}T${hora}`; // "2025-01-09T16:24:30"
+    
+    return { fechaIso, hora };
+  }
   // Bloquea cualquier tecla que no sea 0–9
   soloNumeros(e: KeyboardEvent) {
     const k = e.key;
@@ -2286,15 +2315,18 @@ const id =
     idNota: number,
     facturaPayload: FacturaCrearRequest
   ): AsientoVentaRequest {
-    const hoy = new Date();
+    // const hoy = new Date();
 
-    // ISO con segundos: "2025-11-29T22:35:32"
-    const fechaIso = hoy.toISOString().substring(0, 19);
-    const hora = hoy.toTimeString().substring(0, 8); // "HH:mm:ss"
+    // // ISO con segundos: "2025-11-29T22:35:32"
+    // const fechaIso = hoy.toISOString().substring(0, 19);
+    // const hora = hoy.toTimeString().substring(0, 8); // "HH:mm:ss"
 
-    const yyyy = hoy.getFullYear().toString();
-    const anioStr = yyyy;
+    // const yyyy = hoy.getFullYear().toString();
+    // const anioStr = yyyy;
 
+    //Soluciona error de formato de fecha y hora de zona horaria incorrecta al generar el asiento
+    const { fechaIso, hora } = this.getFechaHoraEcuador();
+    const anioStr = fechaIso.substring(0, 4);
     // ❗Campos obligatorios (> 0)
     const idZona = 1; // ajusta según tu lógica
     const idUsuario = Number(this.usuarioActual?.id_usuario ?? 1);
