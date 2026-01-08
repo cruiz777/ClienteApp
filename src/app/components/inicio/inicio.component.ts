@@ -91,13 +91,12 @@ export class InicioComponent implements OnInit, OnDestroy {
   currentIndex = 0;
   intervalId: any;
   logoUrl: string = '';
-  usuario: LoginUsuarioResponse | null = null;
-  showPanel = false;
+  // usuario: LoginUsuarioResponse | null = null;
+  // showPanel = false;
   usuarioActual: any;
 
   ngOnInit() {
     this.startCarousel();
-    this.usuario = this.usuarioService.getUsuarioActual();
 
     // Verificar permisos para cada sistema
     this.verificarPermisos();
@@ -197,15 +196,6 @@ export class InicioComponent implements OnInit, OnDestroy {
     if (this.intervalId) {
       clearInterval(this.intervalId);
     }
-  }
-
-  logout(): void {
-    localStorage.removeItem('currentUser');
-    this.router.navigate(['/login'], { replaceUrl: true });
-  }
-
-  togglePanel(): void {
-    this.showPanel = !this.showPanel;
   }
 
   abrirModalAyuda(): void {

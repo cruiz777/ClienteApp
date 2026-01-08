@@ -49,6 +49,7 @@ import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-
 import { ProductosModule } from 'src/app/components/productos/productos.module';
 import { ExploradorClientesComponent } from '../pages/explorador-clientes/explorador-clientes.component';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { SharedModule } from 'src/app/shared/shared.module';
 
 @NgModule({
   declarations: [
@@ -90,7 +91,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     RouterModule,
     FormsModule,
     ReactiveFormsModule,
-    
+    SharedModule,
     // 🆕 ANGULAR MATERIAL
     MatSidenavModule,
     MatToolbarModule,

@@ -30,6 +30,7 @@ import { RegistroPagosProveedorComponent } from './cuentas-por-pagar/pago-provee
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PlanCuentaCellEditorComponent, PlanCuentaCellEditorParams } from './cuentas-por-pagar/pago-proveedores/plan-cuenta-cell-editor.component';
+import { SharedModule } from 'src/app/shared/shared.module';
 
 
 
@@ -42,6 +43,7 @@ import { PlanCuentaCellEditorComponent, PlanCuentaCellEditorParams } from './cue
   ],
   imports: [
     CommonModule,
+    SharedModule,
     RouterModule,
     FormsModule,
     ReactiveFormsModule,

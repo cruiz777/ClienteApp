@@ -37,21 +37,7 @@
   </div>
 
   <!-- Botón avatar fijo -->
-  <div class="user-avatar-toggle" *ngIf="usuario" (click)="togglePanel()">
-    {{ usuario.nombre_usuario[0] | uppercase }}
-  </div>
-
-  <!-- Panel desplegable de usuario -->
-  <div class="user-panel" *ngIf="showPanel && usuario">
-    <div class="user-header">
-      <div class="user-avatar-large">
-        {{ usuario.nombre_usuario[0] | uppercase }}
-      </div>
-      <div class="user-data">
-        <div class="user-name">{{ usuario.nombre_usuario }}</div>
-        <div class="user-info"><span>Perfil:</span> {{ usuario.perfil }}</div>
-      </div>
-    </div>
-    <button class="logout-button" (click)="logout()">Cerrar sesión</button>
+  <div class="avatar-wrapper">
+    <app-user-avatar position="fixed-top"></app-user-avatar>
   </div>
 </section>

@@ -137,117 +137,6 @@
 🎯 PANEL DE USUARIO MODERNO
 ============================= */
 
-/* Avatar fijo arriba a la derecha */
-.user-avatar-toggle {
-  position: absolute;
-  top: 40px;
-  right: 60px;
-  width: 42px;
-  height: 42px;
-  border-radius: 50%;
-  background-color: #001f4f;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  font-size: 16px;
-  cursor: pointer;
-  font-family: 'Poppins', sans-serif;
-  z-index: 200;
-}
-
-/* Panel flotante desplegable */
-.user-panel {
-  position: absolute;
-  top: 90px;
-  right: 40px;
-  width: 220px;
-  background: rgba(255, 255, 255, 0.85); /* Fondo translúcido */
-  backdrop-filter: blur(10px); /* Glass effect */
-  border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  padding: 24px 20px;
-  z-index: 199;
-  font-family: 'Poppins', sans-serif;
-}
-
-/* Contenedor superior: avatar + datos */
-.user-header {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  margin-bottom: 20px;
-}
-
-/* Avatar grande dentro del panel */
-.user-avatar-large {
-  width: 64px;
-  height: 64px;
-  aspect-ratio: 1 / 1;
-  background-color: #001f4f;
-  color: white;
-  font-size: 24px;
-  font-weight: bold;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Texto del usuario */
-.user-data {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.user-name {
-  font-size: 16px;
-  font-weight: 600;
-  color: #001f4f;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* .user-info {
-  font-size: 13px;
-  color: #444;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-} */
-.user-info {
-  font-size: 13px;
-  color: #444;
-  white-space: normal; /* ✅ CAMBIAR de nowrap a normal */
-  overflow: visible; /* ✅ CAMBIAR de hidden a visible */
-  text-overflow: clip; /* ✅ CAMBIAR de ellipsis a clip */
-  word-break: break-word; /* ✅ AGREGAR */
-}
-.user-info span {
-  font-weight: 500;
-  color: #001f4f;
-}
-
-/* Botón de cerrar sesión */
-.logout-button {
-  background-color: #cd3c0d;
-  color: white;
-  border: none;
-  width: 100%;
-  padding: 12px;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background-color 0.3s;
-}
-
-.logout-button:hover {
-  background-color: #a9280a;
-}
 /* Contenedor de sistemas */
 .sistema-container {
   position: relative;
@@ -398,21 +287,6 @@
     width: 220px;
     height: auto;
   }
-
-  .user-avatar-toggle {
-    top: 30px;
-    right: 30px;
-    width: 36px;
-    height: 36px;
-    font-size: 14px;
-  }
-
-  .user-panel {
-    top: 75px;
-    right: 20px;
-    width: 200px;
-    padding: 20px 16px;
-  }
 }
 .help-button-container {
   position: fixed;
@@ -420,7 +294,21 @@
   right: 120px; /* ✅ CAMBIAR de 100px a 120px */
   z-index: 1000;
 }
+/* Wrapper para controlar la posición del avatar */
+.avatar-wrapper {
+  position: fixed;
+  top: 40px;
+  right: 30px;  /* ← Ajusta a donde quieras */
+  z-index: 200;
+}
 
+/* Responsive */
+@media (max-width: 768px) {
+  .avatar-wrapper {
+    top: 30px;
+    right: 20px;
+  }
+}
 .btn-help {
   display: flex;
   align-items: center;
