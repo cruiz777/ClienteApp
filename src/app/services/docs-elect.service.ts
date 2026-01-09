@@ -61,7 +61,18 @@ export interface ApiResponse<T> {
   message?: string;
   count?: number;
 }
+export interface ReenviarEmailRequest {
+  clave_acceso: string;
+  correos_destino?: string; // Opcional: si no se envía, usa los del XML
+}
 
+export interface ReenviarEmailResponse {
+  clave_acceso: string;
+  correo_enviado_a: string;
+  fecha_envio: string;
+  tipo_documento: string;
+  numero_documento: string;
+}
 export type TipoDocumento = 'FACTURA' | 'NC' | 'ND' | 'RET';
 
 // ========================================
@@ -281,5 +292,38 @@ export class DocumentosService {
 
     console.error('Error en servicio:', mensaje);
     return throwError(() => new Error(mensaje));
+  }
+  /**
+   * Reenvía un documento electrónico por correo (XML + PDF)
+   * @param claveAcceso - Clave de acceso del documento
+   * @param correos - Correos separados por coma o punto y coma (opcional)
+   */
+  reenviarDocumento(
+    claveAcceso: string,
+    correos?: string
+  ): Observable<ApiResponse<ReenviarEmailResponse>> {
+    const body: ReenviarEmailRequest = {
+      clave_acceso: claveAcceso,
+      correos_destino: correos || undefined
+    };
+
+    return this.http.post<ApiResponse<ReenviarEmailResponse>>(
+      `${this.baseUrl}/reenviar-email`,
+      body
+    ).pipe(
+      tap((response) => {
+        if (response.type === 'success') {
+          console.log('✅ Correo enviado exitosamente:', response.data);
+        } else {
+          console.warn('⚠️ Advertencia al enviar:', response.message);
+        }
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('❌ Error al reenviar correo:', error);
+        return throwError(() => new Error(
+          error.error?.message || error.message || 'Error al reenviar el correo'
+        ));
+      })
+    );
   }
 }

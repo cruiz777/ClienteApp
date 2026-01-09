@@ -228,17 +228,46 @@ export class DocElectronicosComponent implements OnInit {
   private reenviarCorreo(id: number, claveAcceso: string): void {
     console.log('📧 Reenviar correo:', { id, claveAcceso });
 
-    const email = prompt('Ingrese el correo electrónico de destino:');
-    if (!email || !email.trim()) {
+    const email = prompt(
+      'Ingrese el correo electrónico de destino:\n(Deje en blanco para usar los correos de la factura)\n(Puede ingresar múltiples correos separados por ; o ,'
+    );
+
+    // Si presiona Cancelar, salir
+    if (email === null) {
       return;
     }
 
-    // TODO: Implementar cuando tengas el endpoint
-    this.snackBar.open(
-      'Función de reenvío de correo en desarrollo',
-      'Cerrar',
-      { duration: 3000 }
-    );
+    // Si deja en blanco, usar correos del XML
+    const correosDestino = email.trim() || undefined;
+
+    this.loading = true;
+    this.docService.reenviarDocumento(claveAcceso, correosDestino).subscribe({
+      next: (response) => {
+        this.loading = false;
+        if (response.type === 'success') {
+          this.snackBar.open(
+            `✅ Correo enviado exitosamente a: ${response.data?.correo_enviado_a}`,
+            'Cerrar',
+            { duration: 5000 }
+          );
+        } else {
+          this.snackBar.open(
+            response.message || 'Advertencia al enviar',
+            'Cerrar',
+            { duration: 4000 }
+          );
+        }
+      },
+      error: (error) => {
+        this.loading = false;
+        console.error('❌ Error al reenviar:', error);
+        this.snackBar.open(
+          `❌ Error: ${error.message}`,
+          'Cerrar',
+          { duration: 5000 }
+        );
+      },
+    });
   }
 
   private anularDocumento(id: number): void {
