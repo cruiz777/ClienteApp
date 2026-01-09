@@ -67,6 +67,12 @@ export interface UpdateCodigosClientePorFiltrosRequest {
   clientesCodigoNuevo: number;
   idPrefijosNuevo: number;
 }
+export interface GtinResumenResponseM {
+  gtinTipo: string;
+  cantidad: number;
+  anio: number;
+  mes: number;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -122,5 +128,10 @@ getResumenPorAnio(anio: number): Observable<ApiResponse<GtinResumenResponse[]>> 
     const url = `${this.apiBaseUrl}/ProductoDatosAdicionales/resumen-gtin-por-anio/${anio}`;
     return this.http.get<ApiResponse<GtinResumenResponse[]>>(url);
   }
+  getResumenPorMes(anio: number, mes: number): Observable<ApiResponse<GtinResumenResponseM[]>> {
+  const url = `${this.apiBaseUrl}/ProductoDatosAdicionales/resumen-gtin-por-mes/${anio}/${mes}`;
+  return this.http.get<ApiResponse<GtinResumenResponseM[]>>(url);
+}
+
 
 }

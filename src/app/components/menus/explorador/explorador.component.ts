@@ -47,22 +47,51 @@ export class ExploradorComponent implements OnInit {
     sortable: true,
     filter: true,
     resizable: true,
-    flex: 1
+    
   };
 
   columnDefs: ColDef[] = [
     { headerName: 'Código', field: 'clientes_codigo', width: 100 },
-    { headerName: 'Nombre', field: 'nomcli', width: 180 },
-    { headerName: 'Dirección', field: 'dircli', width: 180 },
-    { headerName: 'RUC', field: 'ruc', width: 120 },
+    { headerName: 'Nombre', field: 'nomcli', width: 280 },
+    { headerName: 'Dirección', field: 'dircli', width: 280 },
+    { headerName: 'RUC', field: 'ruc', width: 180 },
     { headerName: 'T.CLIENTE', field: 'tipoCliente', width: 120 },
     { headerName: 'G.EMPRESA', field: 'grupoEmpresa', width: 120 },
     {
-      headerName: 'F.Ingreso',
-      field: 'fecing',
-      width: 130,
-      valueFormatter: params => this.formatearFecha(params.value)
+  headerName: 'F.Ingreso',
+  field: 'fecing',
+  width: 130,
+  filter: 'agDateColumnFilter',
+
+  // ✅ El filtro trabajará con Date real
+  valueGetter: (p) => {
+    const v = p.data?.fecing;
+    if (!v || v === '0001-01-01T00:00:00') return null;
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? null : d;
+  },
+
+  // ✅ Solo visual (dd/MM/yyyy)
+  valueFormatter: (p) => this.formatearFecha(p.value),
+
+  // ✅ Asegura comparación por día (sin horas)
+  filterParams: {
+    comparator: (filterDate: Date, cellValue: any) => {
+      if (!cellValue) return -1;
+
+      const cellDate = cellValue instanceof Date ? cellValue : new Date(cellValue);
+      if (isNaN(cellDate.getTime())) return -1;
+
+      const cellMid = new Date(cellDate.getFullYear(), cellDate.getMonth(), cellDate.getDate());
+      const filterMid = new Date(filterDate.getFullYear(), filterDate.getMonth(), filterDate.getDate());
+
+      if (cellMid < filterMid) return -1;
+      if (cellMid > filterMid) return 1;
+      return 0;
     },
+    browserDatePicker: true
+  }
+},
     { headerName: 'Zona', field: 'zonaReferencia', width: 100 },
     { headerName: 'Estado', field: 'estadoNombre', width: 100 },
     { headerName: 'Prefijo', field: 'prefijo', width: 100 },
@@ -70,7 +99,7 @@ export class ExploradorComponent implements OnInit {
     {
       headerName: 'Teléfono',
       field: 'telefono',
-      width: 120,
+      width: 150,
       valueFormatter: params => (params.value ? `+593${params.value}` : '')
     }
   ];
