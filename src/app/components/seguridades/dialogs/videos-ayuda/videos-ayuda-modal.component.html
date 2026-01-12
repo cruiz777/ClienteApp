@@ -108,13 +108,15 @@
           </div>
 
           <!-- OPCIÓN B: Video Local -->
-          <div *ngIf="!isYouTubeVideo && videoStreamUrl" class="video-local-container mt-3">
+          <div *ngIf="!isYouTubeVideo && videoStreamUrl" class="ratio ratio-16x9 mt-3">
             <video
               [src]="videoStreamUrl"
               controls
-              controlsList="nodownload"
+              disablePictureInPicture
               class="video-local"
-              preload="metadata">
+              preload="metadata"
+              (contextmenu)="$event.preventDefault()"
+              #videoPlayer>
               Tu navegador no soporta el elemento de video.
             </video>
           </div>

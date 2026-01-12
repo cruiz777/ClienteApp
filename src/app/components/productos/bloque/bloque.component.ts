@@ -2056,7 +2056,7 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
           IdSector: 2,
           Contenido: (fila.contenidoNeto ?? '').toString(),
           Um: fila.contenidoUM || '',
-          Brick: fila.brick || '',
+          Brick: fila.gcpBrick || '',
           Pais: fila.pais || '',
           Url: '',
           Pum: '',
