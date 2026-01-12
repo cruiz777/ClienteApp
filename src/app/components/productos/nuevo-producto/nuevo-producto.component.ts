@@ -625,23 +625,48 @@ y += 10;
 
         doc.text('GTIN-14', 10, y);
         doc.text('Descripción', 45, y);
-        doc.text('Presentación', 170, y);
-        doc.text('Factor', 190, y); y += 5;
+        doc.text('Presentación', 160, y);  // ✅ Ajustado
+        doc.text('Factor', 185, y); y += 5;
 
         doc.setLineWidth(0.1).line(10, y, 200, y); y += 4;
         doc.setFont('helvetica', 'normal');
 
         for (const reg of ulRows) {
+          // ✅ GTIN-14 (columna 1)
           doc.text(String(reg.g14 || '---'), 10, y);
-          doc.text(String(reg.descripcion || '---'), 45, y);
-          doc.text(String(reg.presentacion ?? '-'), 180, y);
-          doc.text(String(reg.factor ?? '-'), 190, y);
 
-          y += 5;
+          // ✅ Descripción con ajuste automático (columna 2)
+          const maxWidth = 110; // Ancho máximo para la descripción
+          const descripcionTexto = String(reg.descripcion || '---');
+          const lineasDescripcion = doc.splitTextToSize(descripcionTexto, maxWidth);
+          
+          // Imprimir cada línea de la descripción
+          let yTemp = y;
+          lineasDescripcion.forEach((linea: string) => {
+            doc.text(linea, 45, yTemp);
+            yTemp += 4; // Espacio entre líneas
+          });
 
+          // ✅ Presentación y Factor alineados a la primera línea
+          doc.text(String(reg.presentacion ?? '-'), 165, y, { align: 'right' });
+          doc.text(String(reg.factor ?? '-'), 190, y, { align: 'right' });
+
+          // ✅ Incrementar Y según la cantidad de líneas de descripción
+          y += Math.max(5, lineasDescripcion.length * 4 + 1);
+
+          // Control de salto de página
           if (y > 270) {
             doc.addPage();
             y = 10;
+            
+            // Repetir encabezados en nueva página
+            doc.setFont('helvetica', 'bold');
+            doc.text('GTIN-14', 10, y);
+            doc.text('Descripción', 45, y);
+            doc.text('Presentación', 160, y);
+            doc.text('Factor', 185, y); y += 5;
+            doc.setLineWidth(0.1).line(10, y, 200, y); y += 4;
+            doc.setFont('helvetica', 'normal');
           }
         }
 
