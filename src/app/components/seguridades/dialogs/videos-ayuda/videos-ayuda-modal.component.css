@@ -447,3 +447,35 @@
   font-size: 12px;
   margin-right: 4px;
 }
+/* Video local - permitir pantalla completa */
+.video-local {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background-color: #000;
+}
+
+.video-local-container {
+  position: relative;
+  width: 100%;
+  background-color: #000;
+}
+
+/* Asegurar que el video pueda expandirse en pantalla completa */
+.video-local:fullscreen {
+  width: 100vw;
+  height: 100vh;
+  object-fit: contain;
+}
+
+.video-local:-webkit-full-screen {
+  width: 100vw;
+  height: 100vh;
+  object-fit: contain;
+}
+
+.video-local:-moz-full-screen {
+  width: 100vw;
+  height: 100vh;
+  object-fit: contain;
+}
