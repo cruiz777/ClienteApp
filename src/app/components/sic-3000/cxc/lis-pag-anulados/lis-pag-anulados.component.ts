@@ -13,6 +13,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule }   from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { PagoReportService } from 'src/app/services/pago-report.service';
 
 /** Fila renderizable en la grilla */
 export interface PagoRow {
@@ -44,7 +45,8 @@ export class LisPagAnuladosComponent implements OnInit {
     private cxc: CuentaCobrarService,
     private empresaService: EmpresaService,
     private exportService: ExportService,
-    private logoService: LogoService
+    private logoService: LogoService,
+    private pagoReportService: PagoReportService 
   ) {}
 
   @ViewChild(AgGridAngular) grid!: AgGridAngular;
@@ -105,9 +107,58 @@ export class LisPagAnuladosComponent implements OnInit {
         const m = params.data?.motivo;
         return m ? `${e} — ${m}` : e;
       }
+    },
+    {
+      headerName: 'Acciones',
+      field: 'acciones',
+      width: 100,
+      pinned: 'right',
+      cellRenderer: (params: any) => {
+        const container = document.createElement('div');
+        container.style.display = 'flex';
+        container.style.alignItems = 'center';
+        container.style.justifyContent = 'center';
+        container.style.height = '100%';
+
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.style.border = 'none';
+        btn.style.background = 'transparent';
+        btn.style.cursor = 'pointer';
+        btn.style.padding = '4px';
+        btn.title = 'Imprimir Ingreso de Caja';
+
+        const img = document.createElement('img');
+        img.src = 'assets/icons/icon-imprimir.png';  // ✅ CAMBIA ESTA RUTA
+        img.alt = 'Imprimir';
+        img.style.width = '24px';
+        img.style.height = '24px';
+
+        btn.appendChild(img);
+        btn.addEventListener('click', () => {
+          const numeroPago = params.data?.numeroPago;
+          if (numeroPago) {
+            this.imprimirPago(numeroPago);
+          }
+        });
+
+        container.appendChild(btn);
+        return container;
+      }
     }
   ];
-
+  //Método para imprimir
+  imprimirPago(numeroPago: string): void {
+    this.pagoReportService
+      .generarPdfDesdeApi(numeroPago, {
+        titulo: 'ASOCIACION ECUATORIANA DE CODIGO DE PRODUCTO ECOP',
+        logoUrl: this.logoUrl || 'assets/logo/GS1-logo.png'
+      })
+      .catch(err => {
+        console.error('Error al generar PDF:', err);
+        alert('Error al generar el comprobante de pago');
+      });
+  }
   // Datos
   pagedData: PagoRow[] = [];
 
