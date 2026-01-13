@@ -243,24 +243,43 @@ export class GeneracionCodigosService {
   }
 
 
-  generarCodigo14(pais: string, prefijo: string): string {
-    let codigoBase = pais+ prefijo.substring(0, 12); // Concatena país + prefijo (máx 12 dígitos)
-    let suma = 0;
+generarCodigo14(pais: string, prefijo: string): string {
+  const indicador = (pais ?? '').toString().trim();     // en tus ejemplos: "2" o "4"
+  const codigo = (prefijo ?? '').toString().trim();     // GTIN-12 o GTIN-13 (con DV)
 
-    for (let i = 0; i < codigoBase.length; i++) {
-      const digito = parseInt(codigoBase.charAt(i), 10);
-
-      if ((codigoBase.length % 2 === 0 && i % 2 === 0) || (codigoBase.length % 2 !== 0 && i % 2 !== 0)) {
-        suma += digito;
-      } else {
-        suma += digito * 3;
-      }
-    }
-
-    const checksum = (10 - (suma % 10)) % 10;
-    const codigoCompleto = codigoBase + checksum;
-
-    return codigoCompleto;
+  if (!/^\d$/.test(indicador)) {
+    throw new Error('Indicador inválido: debe ser 1 dígito numérico (ej: "2" o "4").');
   }
+  if (!/^\d+$/.test(codigo) || (codigo.length !== 12 && codigo.length !== 13)) {
+    throw new Error('Código inválido: debe tener 12 o 13 dígitos numéricos.');
+  }
+
+  // ✅ Construir base de 13 dígitos para GTIN-14 (sin DV-14)
+  let base13: string;
+
+  if (codigo.length === 13) {
+    // GTIN-13: indicador + (primeros 12, sin DV GTIN-13)
+    base13 = indicador + codigo.substring(0, 12);
+  } else {
+    // GTIN-12: indicador + "0" + (primeros 11, sin DV GTIN-12)
+    base13 = indicador + '0' + codigo.substring(0, 11);
+  }
+
+  if (base13.length !== 13) {
+    throw new Error(`Base inválida: se esperaba 13 dígitos y se obtuvo ${base13.length}. Base=${base13}`);
+  }
+
+  // ✅ DV GTIN correcto: pesos desde la derecha 3,1,3,1...
+  let suma = 0;
+  for (let i = base13.length - 1, pos = 1; i >= 0; i--, pos++) {
+    const digito = Number(base13.charAt(i));
+    const peso = (pos % 2 === 1) ? 3 : 1;
+    suma += digito * peso;
+  }
+
+  const dv14 = (10 - (suma % 10)) % 10;
+  return base13 + dv14.toString();
+}
+
 
 }
