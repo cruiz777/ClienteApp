@@ -944,7 +944,7 @@ async guardar(stepper: MatStepper): Promise<void> {
         referenciaInterna: prefijo,
         prefijosgs1: `${codigogs1}${prefijo}`,
         origenPrefijo: pais,
-        orden: 0,
+        orden: 1,
         clientesCodigo: codigoCliente
       };
 
@@ -1018,7 +1018,7 @@ async guardar(stepper: MatStepper): Promise<void> {
             referenciaInterna: prefijoAsignado,
             prefijosgs1: `${codigogs1}${prefijoAsignado}`,
             origenPrefijo: pais,
-            orden: 0,
+            orden: 1,
             clientesCodigo: codigoCliente
           };
 
