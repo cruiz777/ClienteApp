@@ -188,8 +188,15 @@
              [routerLink]="((menuPermisos$ | async)?.reportes?.gerencia) ? '/codbar/reportes/gerencia' : null"
              [class.disabled]="!((menuPermisos$ | async)?.reportes?.gerencia)"
              (click)="manejarClick('/codbar/reportes/gerencia', $event)">
-            <span *ngIf="isExpanded" class="menu-text">Reporte Gerencia Cliente</span>
+            <span *ngIf="isExpanded" class="menu-text">Reporte Gerencia Códigos</span>
             <mat-icon *ngIf="!((menuPermisos$ | async)?.reportes?.gerencia)" class="lock-icon">lock</mat-icon>
+          </a>
+          <a mat-list-item
+             [routerLink]="['/codbar/reportes/gerenciate']"
+
+             (click)="manejarClick('/codbar/reportes/gerenciate', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Reporte Gerencia Empresas</span>
+            
           </a>
 
           <a mat-list-item
