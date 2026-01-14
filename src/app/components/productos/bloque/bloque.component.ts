@@ -61,7 +61,7 @@ export class BloqueComponent implements OnInit {
 
   unidadesDisponibles: string[] = [];
   mapaUnidades: { [unidad: string]: string } = {};  // código → descripción
-
+  factoresValidando: Set<number> = new Set();
   gcpBricksDisponibles: { codigo: string, descripcion: string, brick: string, id_grupo_producto: number }[] = [];
   clienteE!: ClienteIndividual;
   gruposProducto: GrupoProducto[] = [];
@@ -344,7 +344,17 @@ gridOptions: GridOptions = {
         minWidth: 80,
         colId: 'factor',
         editable: true,
-        cellStyle: this.estiloDescripcionVacia,
+        cellStyle: (params: any) => {
+          // Error de factor duplicado
+          if (params.data?._errorFactor) {
+            return { backgroundColor: '#ffcccc', border: '2px solid red' };
+          }
+          // Campo vacío
+          if (!params.value || params.value.toString().trim() === '') {
+            return { backgroundColor: '#ffffcc' }; // amarillo claro
+          }
+          return { backgroundColor: '#ffffff' };
+        },
         cellEditor: 'agTextCellEditor',
         valueParser: (params: any) => {
           const val = params.newValue.trim();
@@ -403,15 +413,23 @@ onCopyFromGrid(event: ClipboardEvent): void {
   const row = this.rowData[rowIndex];
   const valorReal = row[field];
 
-  //Para categoria y contenidoUM, copiar el valor RAW del modelo
-  if (field === 'categoria' || field === 'contenidoUM') {
+  //CAMPOS que si permite hacer copy/paste
+  
+  const camposEspeciales = ['categoria', 'contenidoUM', 'factor', 'indicador'];
+  
+  if (camposEspeciales.includes(field)) {
     if (valorReal !== null && valorReal !== undefined) {
       event.preventDefault();
       
-      //Para categoria, asegurar que se copie SOLO el código
-      const valorACopiar = field === 'categoria' 
-        ? valorReal.toString().split(' - ')[0].trim()  // Extrae solo el código
-        : valorReal.toString();
+      let valorACopiar: string;
+      
+      if (field === 'categoria') {
+        // Para categoria, copiar solo el código
+        valorACopiar = valorReal.toString().split(' - ')[0].trim();
+      } else {
+        // Para factor, indicador, contenidoUM: copiar tal cual
+        valorACopiar = valorReal.toString();
+      }
       
       event.clipboardData?.setData('text/plain', valorACopiar);
       console.log(`📋 Copiado valor real de ${field}:`, valorACopiar);
@@ -500,7 +518,7 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
     'indicador'
   ];
   if (this.formUV.get('checkExiste')?.value) {
-    allowedPasteFields = ['gtinUv'];
+    allowedPasteFields = ['gtinUv', 'factor', 'indicador'];
   }
   const pasteableFields: string[] = this.columnDefs
     .filter(col => !!col.field && allowedPasteFields.includes(col.field as string))
@@ -614,6 +632,9 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
         this.botonGenerarDeshabilitado = false;
       }
     }, 100);
+        setTimeout(() => {
+      this.validarTodosLosFactoresPegados();
+    }, 300);
   }
 }
 //
@@ -1377,6 +1398,9 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
     this.rowData = [...this.rowData]; // Refrescar Ag-Grid
     this.gridApi.refreshCells({ force: true, columns: ['factor'] });
     this.textoPegadoF = '';
+    setTimeout(() => {
+      this.validarTodosLosFactoresPegados();
+    }, 300);
   }
 
 /** Lee el prefijo (codpre) según el id seleccionado en el form */
@@ -1651,7 +1675,22 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
     if (field === 'activo') {
       console.log(`Checkbox cambiado en fila ${event.rowIndex}:`, newValue);
     }
-
+    if (field === 'factor') {
+      const factor = (newValue ?? '').toString().trim();
+      
+      if (factor && /^\d+$/.test(factor)) {
+        // Validar después de 500ms (debounce manual)
+        clearTimeout((event.node as any)._factorTimeout);
+        (event.node as any)._factorTimeout = setTimeout(() => {
+          this.verificarFactorExistente(event.data, event.node);
+        }, 500);
+      } else if (!factor) {
+        // Si borró el factor, limpiar error
+        event.data._errorFactor = false;
+        this.verificarBloqueoGenerar14();
+        this.gridApi?.refreshCells({ rowNodes: [event.node], columns: ['factor'] });
+      }
+    }
     // ✅ Limpiar errores si se corrige
     if (event.data[`_error_${field}`]) {
       if (newValue !== null && newValue !== undefined && newValue.toString().trim() !== '') {
@@ -1836,7 +1875,11 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
       this.mostrarAlerta('⚠️ Debe seleccionar al menos un producto (checkbox).', 'Error');
       return;
     }
-
+    const hayErroresFactor = this.rowData.some(f => f.activo && f._errorFactor === true);
+    if (hayErroresFactor) {
+      this.mostrarAlerta('❌ Corrija los factores duplicados antes de continuar.', 'Error');
+      return;
+    }
     if (!this.verificarFactor()) return;
 
     const filasMarcadas = this.rowData.filter(f => f.activo);
@@ -2845,5 +2888,141 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
   this.gridApi.stopEditing();                 // guarda lo que está editando
   this.gridApi.refreshCells({ force: true }); // repinta estilos
 }
+  private verificarFactorExistente(fila: any, rowNode: any): void {
+    const factorStr = (fila.factor ?? '').toString().trim();
+    const factorNum = Number(factorStr);
+    const codbarUv = (fila.gtinUv ?? '').toString().trim();
 
+    // Validaciones previas
+    if (!factorStr || Number.isNaN(factorNum) || !codbarUv) {
+      fila._errorFactor = false;
+      this.verificarBloqueoGenerar14();
+      return;
+    }
+
+    const rowIndex = rowNode.rowIndex ?? -1;
+    if (rowIndex >= 0) {
+      this.factoresValidando.add(rowIndex);
+    }
+
+    // 🌐 Consultar al backend
+    this.codigos14Service.existePorCodbarUnidad(codbarUv, factorNum).subscribe({
+      next: (existe) => {
+        if (rowIndex >= 0) {
+          this.factoresValidando.delete(rowIndex);
+        }
+
+        if (existe) {
+        // ❌ YA EXISTE
+          fila._errorFactor = true;
+          // ✅ AGREGAR ESTA LÍNEA:
+          this.mostrarAlerta(`⚠️ El Factor ${factorNum} ya existe para el GTIN ${codbarUv}. Debe corregirlo.`, 'Error');
+        } else {
+          // ✅ NO EXISTE
+          fila._errorFactor = false;
+        }
+
+        // Refrescar celda y verificar bloqueo general
+        this.verificarBloqueoGenerar14();
+        this.gridApi?.refreshCells({ rowNodes: [rowNode], columns: ['factor'], force: true });
+      },
+      error: (err) => {
+        console.error('❌ Error verificando factor:', err);
+        if (rowIndex >= 0) {
+          this.factoresValidando.delete(rowIndex);
+        }
+        fila._errorFactor = false;
+        this.verificarBloqueoGenerar14();
+      }
+    });
+  }
+
+  private verificarBloqueoGenerar14(): void {
+    // Bloquear si:
+    // 1. Hay validaciones pendientes contra BD
+    // 2. Hay errores de factor duplicado
+    // 3. Faltan factores en filas activas
+
+    const hayValidacionesPendientes = this.factoresValidando.size > 0;
+    
+    const hayErroresFactor = this.rowData.some(f => 
+      f.activo && f._errorFactor === true
+    );
+
+    const faltanFactores = this.rowData
+      .filter(f => f.activo)
+      .some(f => !f.factor || f.factor.toString().trim() === '');
+
+    if (hayValidacionesPendientes || hayErroresFactor || faltanFactores) {
+      this.botonGenerar14Deshabilitado = true;
+    } else {
+      //Desbloquear si:
+      // - No hay validaciones pendientes
+      // - No hay errores
+      // - Todos los activos tienen factor
+      const algunoActivo = this.rowData.some(f => f.activo === true);
+      const todosConIdProducto = this.rowData.every(f => f.idProducto);
+      
+      if (algunoActivo && todosConIdProducto) {
+        this.botonGenerar14Deshabilitado = false;
+      }
+    }
+  }
+  
+  private validarTodosLosFactoresPegados(): void {
+    if (!this.formUV.get('checkExiste')?.value) {
+      return;
+    }
+
+    const filasConFactor = this.rowData.filter(f => 
+      f.activo === true && 
+      f.factor && 
+      f.factor.toString().trim() !== ''
+    );
+
+    if (filasConFactor.length === 0) {
+      console.log('⚠️ No hay factores para validar');
+      return;
+    }
+
+    console.log(`🔍 Validando ${filasConFactor.length} factores pegados...`);
+
+    // Validar todos en paralelo (máximo 5 a la vez)
+    const validaciones$ = filasConFactor.map(fila => {
+      const rowNode = this.gridApi.getRowNode(this.rowData.indexOf(fila).toString());
+      if (!rowNode) return of(null);
+
+      const factorNum = Number(fila.factor);
+      const codbarUv = (fila.gtinUv || '').toString().trim();
+
+      if (!codbarUv || Number.isNaN(factorNum)) return of(null);
+
+      return this.codigos14Service.existePorCodbarUnidad(codbarUv, factorNum).pipe(
+        map(existe => {
+          fila._errorFactor = existe;
+          return existe;
+        }),
+        catchError(err => {
+          console.error(`Error validando factor ${factorNum}:`, err);
+          fila._errorFactor = false;
+          return of(false);
+        })
+      );
+    });
+
+    from(validaciones$).pipe(
+      mergeMap(obs => obs, 5),
+      toArray()
+    ).subscribe({
+      complete: () => {
+        this.gridApi?.refreshCells({ force: true, columns: ['factor'] });
+        this.verificarBloqueoGenerar14();
+
+        const hayErrores = this.rowData.some(f => f.activo && f._errorFactor === true);
+        if (hayErrores) {
+          this.mostrarAlerta('❌ Algunos factores ya existen. Corrija antes de continuar.', 'Error');
+        }
+      }
+    });
+  }
 }
