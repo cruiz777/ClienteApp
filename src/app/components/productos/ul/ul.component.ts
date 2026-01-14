@@ -1851,41 +1851,34 @@ export class UlComponent implements OnInit {
     console.log('GTIN-14 generado:', codigoFinal);
     this.campoGtinU = true;
   }
-  generacion14iiver14(): void {
-    const gtinControl = this.formUL.get('gtinUl'); // Text21.text
-    const valor = (gtinControl?.value || '').toString().trim();
+generacion14iiver14(): void {
+  const ctrl = this.formUL.get('gtinUl');
+  const base13 = (ctrl?.value ?? '').toString().trim();
 
-    if (valor.length !== 13 || !/^\d+$/.test(valor)) {
-      alert('Ingrese solo 13 Números!!!');
-      gtinControl?.setValue('');
-      gtinControl?.markAsTouched();
-      gtinControl?.markAsDirty();
-      return;
-    }
-
-    const ean = valor;
-    let iSum = 0;
-
-    for (let i = 0; i < ean.length; i++) {
-      const iDigit = parseInt(ean.charAt(i), 10);
-      if (isNaN(iDigit)) continue;
-
-      const esPar = ean.length % 2 === 0;
-
-      if ((esPar && (i + 1) % 2 === 0) || (!esPar && (i + 1) % 2 !== 0)) {
-        iSum += iDigit;
-      } else {
-        iSum += iDigit * 3;
-      }
-    }
-
-    const iCheckSum = (10 - (iSum % 10)) % 10;
-    const codigoFinal = ean + iCheckSum.toString();
-
-    this.formUL.patchValue({ gtinUl: codigoFinal });
-    console.log('Código GTIN-14 generado:', codigoFinal);
-
+  if (base13.length !== 13 || !/^\d+$/.test(base13)) {
+    alert('Ingrese solo 13 Números!!!');
+    ctrl?.setValue('');
+    ctrl?.markAsTouched();
+    ctrl?.markAsDirty();
+    return;
   }
+
+  let sum = 0;
+
+  // Recorre desde la derecha (último dígito) hacia la izquierda
+  for (let i = base13.length - 1, pos = 1; i >= 0; i--, pos++) {
+    const digit = Number(base13.charAt(i));
+    const weight = (pos % 2 === 1) ? 3 : 1; // 1era desde la derecha = 3
+    sum += digit * weight;
+  }
+
+  const dv = (10 - (sum % 10)) % 10;
+  const gtin14 = base13 + dv.toString();
+
+  this.formUL.patchValue({ gtinUl: gtin14 });
+  console.log('GTIN-14 generado:', gtin14, 'Suma:', sum, 'DV:', dv);
+}
+
 
   generacion12iiver14(): void {
     const input = this.formUL.get('gtinUl')?.value;

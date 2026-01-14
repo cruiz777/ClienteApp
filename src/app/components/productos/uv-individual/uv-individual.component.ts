@@ -2336,41 +2336,49 @@ export class UvIndividualComponent implements OnInit {
     console.log('GTIN-14 generado:', codigoFinal);
     this.campoGtinU = true;
   }
-  generacion14iiver14(): void {
-    const gtinControl = this.formUL.get('gtinUl'); // Text21.text
-    const valor = (gtinControl?.value || '').toString().trim();
+generacion14iiver14(): void {
+  const gtinControl = this.formUL.get('gtinUl'); // Text21.text
+  const valor = (gtinControl?.value || '').toString().trim();
 
-    if (valor.length !== 13 || !/^\d+$/.test(valor)) {
-      alert('Ingrese solo 13 Números!!!');
-      gtinControl?.setValue('');
-      gtinControl?.markAsTouched();
-      gtinControl?.markAsDirty();
-      return;
-    }
-
-    const ean = valor;
-    let iSum = 0;
-
-    for (let i = 0; i < ean.length; i++) {
-      const iDigit = parseInt(ean.charAt(i), 10);
-      if (isNaN(iDigit)) continue;
-
-      const esPar = ean.length % 2 === 0;
-
-      if ((esPar && (i + 1) % 2 === 0) || (!esPar && (i + 1) % 2 !== 0)) {
-        iSum += iDigit;
-      } else {
-        iSum += iDigit * 3;
-      }
-    }
-
-    const iCheckSum = (10 - (iSum % 10)) % 10;
-    const codigoFinal = ean + iCheckSum.toString();
-
-    this.formUL.patchValue({ gtinUl: codigoFinal });
-    console.log('Código GTIN-14 generado:', codigoFinal);
-
+  if (valor.length !== 13 || !/^\d+$/.test(valor)) {
+    alert('Ingrese solo 13 Números!!!');
+    gtinControl?.setValue('');
+    gtinControl?.markAsTouched();
+    gtinControl?.markAsDirty();
+    return;
   }
+
+  const ean = valor;
+  let iSum = 0;
+
+  const esPar = ean.length % 2 === 0; // aquí será false (13)
+
+  for (let i = 0; i < ean.length; i++) {
+    const iDigit = parseInt(ean.charAt(i), 10);
+    if (isNaN(iDigit)) continue;
+
+    // ✅ Para GTIN/EAN, el patrón depende de la paridad:
+    // - Longitud impar (13): posiciones impares (1,3,5...) *3
+    // - Longitud par  (12): posiciones impares (1,3,5...) *1, pares *3 (según se mida desde la izquierda)
+    // Con tu forma de recorrer, esto queda así:
+    const pos = i + 1;
+
+    if (!esPar) {
+      // 13 dígitos: impares *3, pares *1
+      iSum += (pos % 2 !== 0) ? (iDigit * 3) : iDigit;
+    } else {
+      // 12/14/etc (si algún día lo usas): impares *1, pares *3
+      iSum += (pos % 2 !== 0) ? iDigit : (iDigit * 3);
+    }
+  }
+
+  const iCheckSum = (10 - (iSum % 10)) % 10;
+  const codigoFinal = ean + iCheckSum.toString();
+
+  this.formUL.patchValue({ gtinUl: codigoFinal });
+  console.log('Código GTIN-14 generado:', codigoFinal);
+}
+
 
   generacion12iiver14(): void {
     const input = this.formUL.get('gtinUl')?.value;

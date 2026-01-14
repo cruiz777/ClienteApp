@@ -1,20 +1,32 @@
 <div class="contenedor-gerencia mat-elevation-z4">
   <div class="encabezado">
-    <h2><mat-icon>insights</mat-icon> Resumen de GTIN por Año</h2>
+    <h2><mat-icon>insights</mat-icon> Resumen de GTIN</h2>
 
     <div class="filtros">
       <mat-form-field appearance="outline" class="campo-anio">
         <mat-label>Año</mat-label>
-        <input matInput type="number" [(ngModel)]="anio" (change)="cambiarAnio(anio)" min="2000" max="2100">
+        <input matInput type="number"
+               [(ngModel)]="anio"
+               (change)="onFiltroChange()"
+               min="2000" max="2100">
       </mat-form-field>
 
-      <button mat-raised-button color="primary" (click)="exportarPdf()"
-                        [disabled]="resumenGtin.length === 0 || !((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar'))"
-                        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? '1' : '0.3'"
-                        [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? 'auto' : 'none'"
-                        [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? 'Sin permisos' : ''"
-                        matInput
-      >
+      <mat-form-field appearance="outline" class="campo-mes">
+        <mat-label>Mes</mat-label>
+        <mat-select [(ngModel)]="mes" (selectionChange)="onFiltroChange()">
+          <mat-option *ngFor="let m of meses" [value]="m.value">
+            {{ m.label }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <button mat-raised-button color="primary"
+              (click)="exportarPdf()"
+              [disabled]="(resumenGtinAnio.length === 0 && resumenGtinMes.length === 0) ||
+                         !((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar'))"
+              [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? '1' : '0.3'"
+              [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? 'auto' : 'none'"
+              [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? 'Sin permisos' : ''">
         <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
       </button>
     </div>
@@ -22,25 +34,65 @@
 
   <mat-progress-bar *ngIf="cargando" mode="indeterminate"></mat-progress-bar>
 
-  <table class="tabla-gtin" *ngIf="!cargando && resumenGtin.length > 0">
-    <thead>
-      <tr>
-        <th>GTIN Tipo</th>
-        <th>Cantidad</th>
-        <th>Año</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let item of resumenGtin">
-        <td>{{ item.gtinTipo }}</td>
-        <td>{{ item.cantidad }}</td>
-        <td>{{ item.anio }}</td>
-      </tr>
-    </tbody>
-  </table>
+  <!-- Layout 2 columnas -->
+  <div class="panel-tablas" *ngIf="!cargando">
+    <!-- Izquierda: Acumulado Año -->
+    <div class="card-tabla">
+      <div class="titulo-tabla">
+        Resumen por Año (Acumulado) — {{ anio }}
+      </div>
 
-  <div *ngIf="!cargando && resumenGtin.length === 0" class="mensaje-vacio">
-    No hay datos disponibles para el año {{ anio }}.
+      <table class="tabla-gtin" *ngIf="resumenGtinAnio.length > 0">
+        <thead>
+          <tr>
+            <th>GTIN Tipo</th>
+            <th>Cantidad</th>
+            
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of resumenGtinAnio">
+            <td>{{ item.gtinTipo }}</td>
+            <td>{{ item.cantidad }}</td>
+            
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="resumenGtinAnio.length === 0" class="mensaje-vacio">
+        No hay datos disponibles para el año {{ anio }}.
+      </div>
+    </div>
+
+    <!-- Derecha: Mensual -->
+    <div class="card-tabla">
+      <div class="titulo-tabla">
+        Resumen por Mes — {{ mesLabel }} / {{ anio }}
+      </div>
+
+      <table class="tabla-gtin" *ngIf="resumenGtinMes.length > 0">
+        <thead>
+          <tr>
+            <th>GTIN Tipo</th>
+            <th>Cantidad</th>
+          
+           
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let item of resumenGtinMes">
+            <td>{{ item.gtinTipo }}</td>
+            <td>{{ item.cantidad }}</td>
+           
+           
+          </tr>
+        </tbody>
+      </table>
+
+      <div *ngIf="resumenGtinMes.length === 0" class="mensaje-vacio">
+        No hay datos disponibles para {{ mesLabel }} / {{ anio }}.
+      </div>
+    </div>
   </div>
 
   <div class="mensaje-estado">{{ mensaje }}</div>
