@@ -909,7 +909,7 @@ private selectedUlRow: any = null;
         IdSector: sectorId,
         Contenido: (datos.contenido ?? '').toString(),
         Um: datos.unidadMedida?.unidad || '',
-        Brick: datos.brick?.brick || '',
+        Brick: datos.brick || '',
         Pais: datos.pais?.nombre || '',
         Url: datos.urlFoto || '',
         Pum: '',
