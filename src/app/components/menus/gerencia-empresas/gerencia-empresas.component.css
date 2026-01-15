@@ -1,0 +1,41 @@
+.filtros {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.campo-anio { width: 140px; }
+.campo-mes  { width: 180px; }
+
+.card-tabla {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid #e6e6e6;
+  margin-top: 12px;
+}
+
+.titulo-tabla {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.tabla-gtin {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla-gtin th, .tabla-gtin td {
+  border-bottom: 1px solid #eee;
+  padding: 8px;
+}
+
+.tabla-gtin .num {
+  text-align: right;
+}
+
+.mensaje-vacio {
+  padding: 10px;
+  color: #666;
+}

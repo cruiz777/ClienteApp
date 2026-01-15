@@ -2,7 +2,7 @@
 
   <!-- Título -->
   <div class="page-title-row">
-    <h1 class="page-title-balance">Balance de Comprobación</h1>
+    <h1 class="page-title-balance">Mayor de Cuentas</h1>
   </div>
 
   <!-- Panel de filtros -->
@@ -93,6 +93,24 @@
     </div>
 
   </div>
+  <!-- RESULTADOS -->
+<div class="results-panel" *ngIf="!loading">
+
+  <ag-grid-angular
+    class="ag-theme-alpine mayor-grid"
+    [rowData]="resultados"
+    [columnDefs]="columnDefs"
+    [defaultColDef]="defaultColDef"
+    [animateRows]="true"
+    [rowSelection]="'single'">
+  </ag-grid-angular>
+
+</div>
+
+<!-- Estado vacío -->
+<div class="empty-state" *ngIf="!loading && (resultados?.length ?? 0) === 0">
+  Sin datos para el rango seleccionado.
+</div>
 
 
 </div>

@@ -295,6 +295,7 @@ export class BalanceComprobacionComponent implements OnInit {
    * ========================================================== */
   ngOnInit(): void {
     // Precarga combos
+    this.setRangoMesActual(); 
     this.cargarLocales();
     this.cargarZona();
   }
@@ -562,15 +563,17 @@ export class BalanceComprobacionComponent implements OnInit {
    * ========================================================== */
 
   // Formatea a 2 decimales para columnas numéricas
-  private fmtNumber(p: ValueFormatterParams): string {
-    const v = p.value as number | null | undefined;
-    if (v === null || v === undefined) return '';
-    if (!Number.isFinite(v)) return '';
-    return new Intl.NumberFormat('es-EC', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(v);
-  }
+ private fmtNumber(p: ValueFormatterParams): string {
+  const v = p.value as number | null | undefined;
+  if (v === null || v === undefined) return '';
+  if (!Number.isFinite(v)) return '';
+
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(v);
+}
+
 
   // Convierte a número seguro (si no es número, devuelve 0)
   private n(v: any): number {
@@ -1557,5 +1560,29 @@ export class BalanceComprobacionComponent implements OnInit {
       // else this.filtros.cuentaB = '';
     }
   }
+  private setRangoMesActual(): void {
+  const hoy = new Date();
+  this.setRangoMes(hoy);
+}
+
+private setRangoMes(fechaBase: Date): void {
+  const y = fechaBase.getFullYear();
+  const m = fechaBase.getMonth(); // 0-11
+
+  const inicio = new Date(y, m, 1);      // 1er día del mes
+  const fin = new Date(y, m + 1, 0);     // último día del mes (28/29/30/31)
+
+  // ✅ Guardar en formato ISO para backend y validaciones
+  this.filtros.fechaDesde = this.toISODate(inicio); // "YYYY-MM-DD"
+  this.filtros.fechaHasta = this.toISODate(fin);    // "YYYY-MM-DD"
+}
+
+private toISODate(d: Date): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 
 }
