@@ -52,8 +52,9 @@ export class DiarioMoviminetoListComponent implements OnInit {
   // ============================================================
   modoFiltro: 'fecha' | 'cuenta' = 'fecha';
 
-  fechaDesde: string = this.hoyISO();
-  fechaHasta: string = this.hoyISO();
+fechaDesde: string = '';
+fechaHasta: string = '';
+
 
   cuentaDesde: string = '';
   cuentaHasta: string = '';
@@ -71,6 +72,7 @@ export class DiarioMoviminetoListComponent implements OnInit {
   // LIFECYCLE
   // ============================================================
   ngOnInit(): void {
+     this.setRangoMesActual(); 
     this.cargarTipoAsiento();
   }
 
@@ -804,23 +806,55 @@ export class DiarioMoviminetoListComponent implements OnInit {
       }
 
       // Rango fecha transacción
-      if (ingDesde) {
-        const trx = this.toYmd(r.fechaTransaccion);
-        if (!trx) return false;
-        if (trx !== trxDesde) return false;
-      }
+      // Filtro exacto por fecha de transacción
+if (trxDesde) {
+  const filtroTrx = this.normalizeFilterDate(trxDesde);   // <- soporta dd/MM/yyyy o yyyy-mm-dd
+  const trx = this.toYmd(r.fechaTransaccion);             // <- convierte data a yyyy-mm-dd
+  if (!trx) return false;
+  if (trx !== filtroTrx) return false;
+}
 
-      // Rango fecha ingreso
-      if (ingDesde) {
-        const ing = this.toYmd(r.fechaIngreso);
-        if (!ing) return false;
-        if (ing !== ingDesde) return false;
-      }
+// Filtro exacto por fecha de ingreso
+if (ingDesde) {
+  const filtroIng = this.normalizeFilterDate(ingDesde);
+  const ing = this.toYmd(r.fechaIngreso);
+  if (!ing) return false;
+  if (ing !== filtroIng) return false;
+}
 
       return true;
     });
   }
 
+private normalizeFilterDate(value: any): string {
+  if (!value) return '';
+
+  const s = value.toString().trim();
+
+  // Caso 1: yyyy-mm-dd (input type="date" o ya normalizado)
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+
+  // Caso 2: dd/mm/yyyy (como en tu captura)
+  const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (m) {
+    const dd = m[1];
+    const mm = m[2];
+    const yyyy = m[3];
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  // Caso 3: intento parsear Date (fallback)
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const dd = String(d.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+  }
+
+  // Si no se puede interpretar, devuelve vacío (no filtra)
+  return '';
+}
 
   // ============================================================
   // HELPERS
@@ -846,4 +880,29 @@ export class DiarioMoviminetoListComponent implements OnInit {
     if (isNaN(d.getTime())) return String(iso);
     return this.formatDateDDMMYYYY(d);
   }
+
+
+  private setRangoMesActual(): void {
+  const hoy = new Date();
+  this.setRangoMes(hoy);
+}
+
+private setRangoMes(fechaBase: Date): void {
+  const y = fechaBase.getFullYear();
+  const m = fechaBase.getMonth(); // 0-11
+
+  const inicio = new Date(y, m, 1);      // 01 del mes actual
+  const fin = new Date(y, m + 1, 0);     // último día del mes actual (28/29/30/31)
+
+  this.fechaDesde = this.toISODate(inicio);
+  this.fechaHasta = this.toISODate(fin);
+}
+
+private toISODate(d: Date): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
+
 }

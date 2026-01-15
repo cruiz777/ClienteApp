@@ -4,10 +4,11 @@ import { ColDef, GridApi, GridReadyEvent } from 'ag-grid-community';
 import { AgGridAngular } from 'ag-grid-angular';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { ClienteService } from 'src/app/services/cliente.service';
-import { ExportService } from 'src/app/services/export.service';
+import { ExportOptionsG, ExportService } from 'src/app/services/export.service';
 import { PermissionsService } from 'src/app/services/permission.service';
 import { ExportOptions } from 'src/app/interfaces/export-options';
-
+import { MatDialog } from '@angular/material/dialog';
+import { DialogProcesoComponent } from '../dialog-proceso/dialog-proceso.component';
 interface Cliente {
   clientes_codigo: number;
   nomcli: string;
@@ -109,7 +110,8 @@ export class ExploradorComponent implements OnInit {
     private _snackBar: MatSnackBar,
     private clienteService: ClienteService,
     private exportService: ExportService,
-    public permissions: PermissionsService
+    public permissions: PermissionsService,
+     private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -136,7 +138,7 @@ export class ExploradorComponent implements OnInit {
 
     this.gridApi?.showLoadingOverlay();
 
-    this.clienteService.getClientesPaginados(1, 20000, filtros).subscribe({
+    this.clienteService.getClientesPaginados(1, 40000, filtros).subscribe({
       next: (res: any) => {
         this.rowData = res.data || [];
         this.totalRegistros = res.count ?? this.rowData.length;
@@ -211,42 +213,56 @@ export class ExploradorComponent implements OnInit {
     return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
   }
 
-  exportar(tipo: 'excel' | 'pdf'): void {
-    if (!this.agGrid?.api) return;
+async exportar(tipo: 'excel' | 'pdf'): Promise<void> {
+  if (!this.agGrid?.api) return;
 
-    const api = this.agGrid.api;
+  const dataAll = this.rowData || [];
+  if (dataAll.length === 0) return;
 
-    const page = api.paginationGetCurrentPage(); // 0-based
-    const pageSize = api.paginationGetPageSize();
-    const start = page * pageSize;
-    const end = Math.min(start + pageSize, api.getDisplayedRowCount());
+  // ✅ Modal tipo “procesando”
+  const titulo = tipo === 'excel'
+    ? 'Generando Reporte Excel Clientes'
+    : 'Generando Reporte PDF Clientes';
 
-    const filasPagina: any[] = [];
-    for (let i = start; i < end; i++) {
-      const node = api.getDisplayedRowAtIndex(i);
-      if (node?.data) filasPagina.push(node.data);
+  const ref = this.dialog.open(DialogProcesoComponent, {
+    disableClose: true,
+    autoFocus: false,
+    panelClass: 'dialog-proceso-panel',
+    data: {
+      titulo,
+      subtitulo: `Total registros: ${dataAll.length}`,
+      pasos: [
+        'Obteniendo clientes del servidor...',
+        'Procesando clientes...'
+      ]
     }
-    if (filasPagina.length === 0) return;
+  });
 
-    const headers = [
+  try {
+    // ✅ permite que Angular pinte el dialog antes de procesar
+    await new Promise<void>(r => setTimeout(() => r(), 0));
+
+    // =========================
+    // 1) EXCEL (COMPLETO)
+    // =========================
+    const headersExcel = [
       'Código', 'Nombre', 'Dirección', 'RUC', 'T.CLIENTE', 'G.EMPRESA',
       'F.Ingreso', 'Zona', 'Estado', 'Prefijo', 'Representante', 'Teléfono'
     ];
-    const columns = [
+
+    const columnsExcel = [
       'clientes_codigo', 'nomcli', 'dircli', 'ruc', 'tipoCliente', 'grupoEmpresa',
       'fecing', 'zonaReferencia', 'estadoNombre', 'prefijo', 'representante', 'telefono'
     ];
 
-    const data = filasPagina.map(r => ({
+    const dataExcel = dataAll.map(r => ({
       clientes_codigo: r.clientes_codigo ?? '',
       nomcli: r.nomcli ?? '',
       dircli: r.dircli ?? '',
       ruc: r.ruc ?? '',
       tipoCliente: r.tipoCliente ?? '',
       grupoEmpresa: r.grupoEmpresa ?? '',
-      fecing: r.fecing
-        ? new Date(r.fecing).toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' })
-        : '',
+      fecing: r.fecing ? new Date(r.fecing) : '',
       zonaReferencia: r.zonaReferencia ?? '',
       estadoNombre: r.estadoNombre ?? '',
       prefijo: r.prefijo ?? '',
@@ -254,16 +270,106 @@ export class ExploradorComponent implements OnInit {
       telefono: r.telefono ? `+593${r.telefono}` : ''
     }));
 
-    const options: ExportOptions = {
-      data,
-      columns,
-      headers,
-      filename: 'Clientes_pagina_actual',
-      title: 'Clientes – Página actual',
+    const optionsExcel: ExportOptions = {
+      data: dataExcel,
+      columns: columnsExcel,
+      headers: headersExcel,
+      filename: 'Clientes_TOTAL',
+      title: `Clientes – Total (${dataExcel.length})`,
       logoUrl: this.logoUrl
     };
 
-    if (tipo === 'excel') this.exportService.exportarExcel(options);
-    else this.exportService.exportarPDF(options);
+    // =========================
+    // 2) PDF (REDUCIDO)
+    // =========================
+    const headersPdf = ['Cód', 'Nombre', 'Dirección', 'RUC', 'T.Cliente', 'F.Ingr', 'Estado'];
+
+    const columnsPdf = [
+      'clientes_codigo',
+      'nomcli',
+      'dircli',
+      'ruc',
+      'tipoCliente',
+      'fecing',
+      'estadoNombre'
+    ];
+
+    const dataPdf = dataAll.map(r => ({
+      clientes_codigo: r.clientes_codigo ?? '',
+      nomcli: r.nomcli ?? '',
+      dircli: r.dircli ?? '',
+      ruc: r.ruc ?? '',
+      tipoCliente: r.tipoCliente ?? '',
+      fecing: r.fecing ? new Date(r.fecing) : '',
+      estadoNombre: r.estadoNombre ?? ''
+    }));
+
+    const pdfColumnStyles = {
+      0: { cellWidth: 10, halign: 'center' }, // #
+      1: { cellWidth: 18 },                   // Cód
+      2: { cellWidth: 55 },                   // Nombre
+      3: { cellWidth: 90 },                   // Dirección
+      4: { cellWidth: 30 },                   // RUC
+      5: { cellWidth: 22 },                   // T.Cliente
+      6: { cellWidth: 18, halign: 'center' }, // F.Ingr
+      7: { cellWidth: 22 }                    // Estado
+    };
+
+    const optionsPdf: ExportOptionsG = {
+      data: dataPdf,
+      columns: columnsPdf,
+      headers: headersPdf,
+      filename: 'Clientes_PDF',
+      title: `Clientes – Total (${dataPdf.length})`,
+      logoUrl: this.logoUrl,
+      pdfOverflow: 'hidden',
+      pdfFontSize: 8,
+      pdfColumnStyles
+    };
+
+    // =========================
+    // 3) EJECUTAR
+    // =========================
+    if (tipo === 'excel') {
+      await Promise.resolve(this.exportService.exportarExcel(optionsExcel));
+    } else {
+      await Promise.resolve(this.exportService.exportarPDFG(optionsPdf));
+    }
+
+  } catch (e) {
+    console.error(e);
+    this.mostrarAlerta('Error al exportar', 'Error');
+  } finally {
+    ref.close();
   }
+}
+
+
+  private mapExportRow(r: any) {
+  return {
+    clientes_codigo: r.clientes_codigo ?? '',
+    nomcli: r.nomcli ?? '',
+    dircli: r.dircli ?? '',
+    ruc: r.ruc ?? '',
+    tipoCliente: r.tipoCliente ?? '',
+    grupoEmpresa: r.grupoEmpresa ?? '',
+    fecing: r.fecing
+      ? new Date(r.fecing).toLocaleDateString('es-EC', { day: '2-digit', month: '2-digit', year: 'numeric' })
+      : '',
+    zonaReferencia: r.zonaReferencia ?? '',
+    estadoNombre: r.estadoNombre ?? '',
+    prefijo: r.prefijo ?? '',
+    representante: r.representante ?? '',
+    telefono: r.telefono ? `+593${r.telefono}` : ''
+  };
+}
+
+private anioMesActual(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}${m}${day}`;
+}
+
 }

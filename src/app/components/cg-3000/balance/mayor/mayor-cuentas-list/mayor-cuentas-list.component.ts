@@ -71,6 +71,7 @@ type MayorCuentaRow = {
   nombreHijo: string;
 };
 
+
 @Component({
   selector: 'app-mayor-cuentas-list',
   standalone: true,
@@ -85,6 +86,66 @@ type MayorCuentaRow = {
   styleUrl: './mayor-cuentas-list.component.css'
 })
 export class MayorCuentasListComponent implements OnInit {
+
+  defaultColDef: ColDef = {
+  sortable: true,
+  filter: true,
+  resizable: true,
+  floatingFilter: true,
+};
+
+columnDefs: ColDef[] = [
+  { headerName: 'Tipo', field: 'tipo', width: 70 },
+  { headerName: 'Asiento', field: 'asiento', width: 110, filter: 'agNumberColumnFilter' },
+  { headerName: 'Cheque', field: 'cheque', width: 90, filter: 'agNumberColumnFilter' },
+
+  {
+    headerName: 'F. Transacción',
+    field: 'fechaTransaccion',
+    width: 140,
+    valueFormatter: (p) => this.formatIsoDDMMYYYY(p.value),
+  },
+  {
+    headerName: 'F. Ingreso',
+    field: 'fechaIngreso',
+    width: 140,
+    valueFormatter: (p) => this.formatIsoDDMMYYYY(p.value),
+  },
+
+  { headerName: 'N. Comprobante', field: 'numeroComprobante', width: 180 },
+  { headerName: 'Mov', field: 'movimiento', width: 80 },
+  { headerName: 'Beneficiario', field: 'beneficiario', width: 260 },
+
+  {
+    headerName: 'Debe',
+    field: 'debe',
+    width: 130,
+    filter: 'agNumberColumnFilter',
+    valueFormatter: (p) => this.fmtMoney(p.value),
+    cellStyle: { textAlign: 'right' }
+  },
+  {
+    headerName: 'Haber',
+    field: 'haber',
+    width: 130,
+    filter: 'agNumberColumnFilter',
+    valueFormatter: (p) => this.fmtMoney(p.value),
+    cellStyle: { textAlign: 'right' }
+  },
+  {
+    headerName: 'Saldo',
+    field: 'saldo',
+    width: 130,
+    filter: 'agNumberColumnFilter',
+    valueFormatter: (p) => this.fmtMoney(p.value),
+    cellStyle: { textAlign: 'right' }
+  },
+
+  { headerName: 'Concepto', field: 'concepto', width: 420 },
+  { headerName: 'Cuenta', field: 'cuentaHijo', width: 120 },
+  { headerName: 'Nombre Cuenta', field: 'nombreHijo', width: 320 },
+];
+
 
   /* ==========================================================
    * 1) Estado / Filtros / Flags UI
@@ -134,6 +195,7 @@ export class MayorCuentasListComponent implements OnInit {
  * ========================================================== */
   ngOnInit(): void {
     // Precarga combos
+    this.setRangoMesActual(); 
     this.cargarLocales();
     this.cargarZona();
   }
@@ -1076,5 +1138,40 @@ export class MayorCuentasListComponent implements OnInit {
       // else this.filtros.cuentaB = '';
     }
   }
+  
+  private formatIsoDDMMYYYY(iso: any): string {
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return String(iso);
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
+private fmtMoney(v: any): string {
+  const n = Number(v ?? 0);
+  if (!Number.isFinite(n)) return '';
+  return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+}
+
+private setRangoMesActual(): void {
+  const hoy = new Date();
+  const y = hoy.getFullYear();
+  const m = hoy.getMonth(); // 0-11
+
+  const inicio = new Date(y, m, 1);    // 1er día del mes actual
+  const fin = new Date(y, m + 1, 0);   // último día del mes actual
+
+  this.filtros.fechaDesde = this.toISODate(inicio); // "YYYY-MM-DD"
+  this.filtros.fechaHasta = this.toISODate(fin);    // "YYYY-MM-DD"
+}
+
+private toISODate(d: Date): string {
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const dd = String(d.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+}
 
 }
