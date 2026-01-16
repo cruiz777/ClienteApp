@@ -41,9 +41,66 @@ export class BloqueComponent implements OnInit {
   @ViewChild('pasteCatcher') pasteCatcher!: ElementRef<HTMLTextAreaElement>;
 
 
+defaultColDef: ColDef = {
+  editable: true,
+  resizable: true,
+  sortable: false,
+  flex: 1,
+  headerClass: 'header-uv',
 
-  defaultColDef: ColDef = { editable: true, resizable: true, sortable: false, flex: 1 ,
-  headerClass: 'header-uv' };
+  suppressKeyboardEvent: (params) => {
+    const e = params.event as KeyboardEvent;
+    if (!e) return false;
+
+    // Solo aplicar cuando la celda está en edición
+    if (!params.editing) return false;
+
+    const key = e.key;
+    const isArrow =
+      key === 'ArrowLeft' || key === 'ArrowRight' || key === 'ArrowUp' || key === 'ArrowDown';
+
+    if (!isArrow) return false;
+
+    e.preventDefault();
+
+    const api = params.api;
+    const cols = api.getAllDisplayedColumns();
+    const currentCol = params.column;
+    const colIndex = cols.indexOf(currentCol);
+
+    let nextRow = params.node.rowIndex ?? 0;
+    let nextColIndex = colIndex;
+
+    switch (key) {
+      case 'ArrowLeft':
+        nextColIndex = Math.max(0, colIndex - 1);
+        break;
+      case 'ArrowRight':
+        nextColIndex = Math.min(cols.length - 1, colIndex + 1);
+        break;
+      case 'ArrowUp':
+        nextRow = Math.max(0, nextRow - 1);
+        break;
+      case 'ArrowDown':
+        nextRow = Math.min(api.getDisplayedRowCount() - 1, nextRow + 1);
+        break;
+    }
+
+    const nextCol = cols[nextColIndex];
+    if (!nextCol) return true;
+
+    // Guardar lo editado y moverse (sin entrar en edición en destino)
+    api.stopEditing();
+    api.setFocusedCell(nextRow, nextCol);
+    api.ensureIndexVisible(nextRow);
+
+    return true;
+  }
+};
+
+
+
+
   rowData: any[] = [];
   columnDefs: ColDef[] = [];
 

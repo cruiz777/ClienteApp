@@ -207,3 +207,35 @@
 }
 .btn-verde:hover { background: #32af4f; border-color: #6291e8; }
 
+.paginacion {
+  display: flex;
+  justify-content: flex-end;   /* ✅ todo a la derecha */
+  align-items: center;
+  gap: 16px;
+  padding: 10px 6px;
+  border-top: 1px solid #e5e5e5;
+  margin-top: 6px;
+}
+
+.paginacion-info,
+.paginacion-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ml { margin-left: 12px; }
+
+.btn-page {
+  min-width: 34px;
+  height: 30px;
+  border: 1px solid #d0d0d0;
+  background: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.btn-page:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
