@@ -15,6 +15,9 @@ import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { startOfMonth } from 'date-fns';
+import { Router } from '@angular/router';
+import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionado.service';
+
 
 @Component({
   selector: 'app-explorador-cxc-general',
@@ -43,7 +46,7 @@ export class ExploradorCxcGeneralComponent implements OnInit {
   errorMessage = '';
 
   formFiltros!: FormGroup;
-
+  logoUrl = 'assets/logo/GS1-logo.png';
   // ===== Grid AG-Grid =====
   private gridApi!: GridApi;
   
@@ -51,48 +54,65 @@ export class ExploradorCxcGeneralComponent implements OnInit {
     { 
       headerName: 'Código', 
       field: 'codigo', 
-      width: 100, 
+      width: 110, 
       pinned: 'left',
       type: 'rightAligned'
     },
     { 
       headerName: 'Cliente', 
       field: 'nombre', 
-      minWidth: 280,
+      minWidth: 300,
       flex: 1
+    },
+    {
+      headerName: 'Total Debe',
+      field: 'total_debe',
+      width: 130, 
+      type: 'centerAligned',
+      valueFormatter: p => this.usd(p.value),
+      cellClass: 'text-success'
+    },
+    {
+      headerName: 'Total Haber',
+      field: 'total_haber',
+      width: 130, 
+      type: 'centerAligned',
+      valueFormatter: p => this.usd(p.value),
+      cellClass: 'text-info'
     },
     {
       headerName: 'Saldo Total',
       field: 'saldo_total',
-      width: 140,
-      type: 'rightAligned',
+      width: 130, 
+      type: 'centerAligned',
       valueFormatter: p => this.usd(p.value),
       cellClass: 'fw-bold text-primary'
     },
     {
       headerName: 'Cant. Facturas',
       field: 'cantidad_facturas',
-      width: 130,
-      type: 'rightAligned'
+      width: 100,
+      type: 'centerAligned'
     },
     {
-      headerName: 'Días Promedio Venc.',
-      field: 'dias_promedio_vencimiento',
-      width: 160,
-      type: 'rightAligned',
-      cellClass: (params) => {
-        const dias = params.value || 0;
-        if (dias <= 0) return 'text-success';
-        if (dias <= 30) return 'text-warning';
-        if (dias <= 90) return 'text-danger';
-        return 'text-danger fw-bold';
+      colId: 'acciones',
+      headerName: '',
+      width: 60,
+      minWidth: 60,
+      maxWidth: 60,
+      suppressSizeToFit: true,
+      cellStyle: { display: 'flex', alignItems: 'center', justifyContent: 'center' },
+      cellRenderer: (params: any) => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'ag-btn-icon ag-btn-view';
+        btn.title = 'Ver detalle del cliente';
+        btn.innerHTML = '<span class="material-icons">visibility</span>';
+        btn.addEventListener('click', () => {
+          this.irACuentaIndividual(params.data);
+        });
+        return btn;
       }
-    },
-    {
-      headerName: 'Factura Más Antigua',
-      field: 'factura_mas_antigua',
-      width: 160,
-      valueFormatter: p => p.value ? this.formatFecha(p.value) : '—'
     }
   ];
 
@@ -123,7 +143,9 @@ export class ExploradorCxcGeneralComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private estadoCuentaService: EstadoCuentaService,
-    private _snackBar: MatSnackBar
+    private _snackBar: MatSnackBar,
+    private router: Router, 
+    private clienteSeleccionadoService: ClienteSeleccionadoService 
   ) {}
 
   ngOnInit(): void {
@@ -272,12 +294,12 @@ export class ExploradorCxcGeneralComponent implements OnInit {
     const ws = workbook.addWorksheet('CxC General');
 
     ws.columns = [
-      { header: 'Código', key: 'codigo', width: 12 },
-      { header: 'Cliente', key: 'nombre', width: 40 },
-      { header: 'Saldo Total', key: 'saldo_total', width: 16 },
-      { header: 'Cant. Facturas', key: 'cantidad_facturas', width: 14 },
-      { header: 'Días Prom. Venc.', key: 'dias_promedio_vencimiento', width: 16 },
-      { header: 'Factura Más Antigua', key: 'factura_mas_antigua', width: 18 }
+        { header: 'Código', key: 'codigo', width: 12 },
+        { header: 'Cliente', key: 'nombre', width: 40 },
+        { header: 'Total Debe', key: 'total_debe', width: 16 },
+        { header: 'Total Haber', key: 'total_haber', width: 16 },
+        { header: 'Saldo Total', key: 'saldo_total', width: 16 },
+        { header: 'Cant. Facturas', key: 'cantidad_facturas', width: 14 }
     ];
 
     const thinBorder: Partial<ExcelJS.Borders> = {
@@ -312,8 +334,7 @@ export class ExploradorCxcGeneralComponent implements OnInit {
 
     // CABECERA TABLA
     const headerRow = nextRow();
-    headerRow.values = ['Código', 'Cliente', 'Saldo Total', 'Cant. Facturas', 'Días Prom. Venc.', 'Factura Más Antigua'];
-    headerRow.height = 18;
+    headerRow.values = ['Código', 'Cliente', 'Total Debe', 'Total Haber', 'Saldo Total', 'Cant. Facturas'];    headerRow.height = 18;
     headerRow.eachCell(cell => {
       cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
       cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1D789F' } };
@@ -325,16 +346,16 @@ export class ExploradorCxcGeneralComponent implements OnInit {
 
     // DETALLE
     clientes.forEach(c => {
-      const row = nextRow();
-      row.values = [
+    const row = nextRow();
+    row.values = [
         c.codigo,
         c.nombre,
+        c.total_debe,
+        c.total_haber,
         c.saldo_total,
-        c.cantidad_facturas,
-        c.dias_promedio_vencimiento,
-        c.factura_mas_antigua ? this.formatFecha(c.factura_mas_antigua) : '—'
-      ];
-    });
+        c.cantidad_facturas
+    ];
+    });;
 
     const lastDetailRow = currentRow - 1;
 
@@ -347,13 +368,13 @@ export class ExploradorCxcGeneralComponent implements OnInit {
         const cell = row.getCell(col);
         cell.border = thinBorder;
         if (isEven) {
-          cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF7F9FC' } };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF7F9FC' } };
         }
-        if ([3, 4, 5].includes(col) && typeof cell.value === 'number') {
-          cell.numFmt = col === 3 ? '#,##0.00' : '0';
-          cell.alignment = { horizontal: 'right', vertical: 'middle' };
+        if ([3, 4, 5, 6].includes(col) && typeof cell.value === 'number') {
+            cell.numFmt = [3, 4, 5].includes(col) ? '#,##0.00' : '0';
+            cell.alignment = { horizontal: 'right', vertical: 'middle' };
         }
-      });
+        });
     }
 
     // RESUMEN
@@ -427,13 +448,36 @@ export class ExploradorCxcGeneralComponent implements OnInit {
       }
     });
   }
-
+  private async cargarLogoBase64(url: string): Promise<string | null> {
+    try {
+      const resp = await fetch(url);
+      if (!resp.ok) return null;
+      const blob = await resp.blob();
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = err => reject(err);
+        reader.readAsDataURL(blob);
+      });
+    } catch {
+      return null;
+    }
+  }
   private async generarPdf(clientes: ClienteConDeudaDto[], resumen: any): Promise<void> {
     const doc = new jsPDF('l', 'pt', 'a4');
     const pageWidth = doc.internal.pageSize.getWidth();
     const marginLeft = 40;
     let cursorY = 40;
+    try {
+      const logoDataUrl = await this.cargarLogoBase64(this.logoUrl);
+      if (logoDataUrl) {
+        doc.addImage(logoDataUrl, 'PNG', marginLeft, cursorY, 80, 40);
+      }
+    } catch (e) {
+      console.warn('No se pudo cargar el logo:', e);
+    }
 
+    cursorY += 50;
     // TÍTULO
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(18);
@@ -450,29 +494,29 @@ export class ExploradorCxcGeneralComponent implements OnInit {
 
     // TABLA
     const body = clientes.map(c => [
-      String(c.codigo),
-      c.nombre,
-      c.saldo_total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
-      String(c.cantidad_facturas),
-      String(c.dias_promedio_vencimiento),
-      c.factura_mas_antigua ? this.formatFecha(c.factura_mas_antigua) : '—'
+        String(c.codigo),
+        c.nombre,
+        c.total_debe.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        c.total_haber.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        c.saldo_total.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+        String(c.cantidad_facturas)
     ]);
 
     autoTable(doc, {
       startY: cursorY,
-      head: [['Código', 'Cliente', 'Saldo Total', 'Cant. Facturas', 'Días Prom. Venc.', 'Factura Más Antigua']],
+      head: [['Código', 'Cliente', 'Total Debe', 'Total Haber', 'Saldo Total', 'Cant. Facturas']],
       body,
       styles: { fontSize: 8, cellPadding: 3 },
       headStyles: { fillColor: [29, 120, 159], textColor: [255, 255, 255], halign: 'center' },
       alternateRowStyles: { fillColor: [247, 249, 252] },
       columnStyles: {
         0: { cellWidth: 60, halign: 'right' },
-        1: { cellWidth: 240 },
+        1: { cellWidth: 280 },
         2: { cellWidth: 90, halign: 'right' },
-        3: { cellWidth: 80, halign: 'right' },
-        4: { cellWidth: 80, halign: 'right' },
-        5: { cellWidth: 100 }
-      },
+        3: { cellWidth: 90, halign: 'right' },
+        4: { cellWidth: 90, halign: 'right' },
+        5: { cellWidth: 60, halign: 'right' }
+        },
       margin: { left: marginLeft, right: marginLeft }
     });
 
@@ -523,5 +567,16 @@ export class ExploradorCxcGeneralComponent implements OnInit {
       verticalPosition: 'top',
       panelClass: tipo === 'error' ? ['snack-error'] : tipo === 'ok' ? ['snack-ok'] : ['snack-info']
     });
+  }
+  irACuentaIndividual(cliente: ClienteConDeudaDto): void {
+    // Convertir a formato Cliente compatible
+    const clienteParaEnviar = {
+      clientes_codigo: cliente.codigo,
+      nomcli: cliente.nombre,
+      // Agregar otros campos si los tienes disponibles
+    };
+    
+    this.clienteSeleccionadoService.seleccionar(clienteParaEnviar as any);
+    this.router.navigate(['/sic-3000/exp-cuentaxcobrar']); // ← AJUSTA LA RUTA según tu routing
   }
 }

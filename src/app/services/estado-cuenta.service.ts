@@ -50,10 +50,10 @@ export interface SaldoFacturaDetalladoResponse {
 export interface ClienteConDeudaDto {
   codigo: number;
   nombre: string;
+  total_debe: number;
+  total_haber: number;
   saldo_total: number;
   cantidad_facturas: number;
-  dias_promedio_vencimiento: number;
-  factura_mas_antigua: string | null;
 }
 
 export interface ResumenDeudaResponse {

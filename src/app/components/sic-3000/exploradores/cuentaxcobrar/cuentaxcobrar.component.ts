@@ -493,7 +493,7 @@ export class CuentaxcobrarComponent implements OnInit {
     this.cargarCliente();
 
     // cliente que venga de otra pantalla
-    //this.cargarClienteInv();
+    this.cargarClienteInv();
 
     // Autocomplete de formas de pago
     const metodoCtrl = this.formPago.get('metodoPago') as FormControl;
