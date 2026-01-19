@@ -32,6 +32,7 @@ import { ReporteVentasComponent } from './reporte-ventas/reporte-ventas.componen
 import { ReenvioFacComponent } from './facturacion/reenvio-fac/reenvio-fac.component';
 import { AutorizacionCajaListComponent } from './autorizacion-caja-list/autorizacion-caja-list.component';
 import { TipoDocListComponent } from './tipo-doc-list/tipo-doc-list.component';
+import { ExploradorCxcGeneralComponent } from './exploradores/cxc-general/cxc-general.component';
 
 const routes: Routes = [
   {
@@ -159,8 +160,9 @@ const routes: Routes = [
       { path: 'reporte-anticipos', component: ReporteAnticiposComponent},
       { path: 'cierre-anticipos', component: CierreAnticiposComponent},
       { path: 'exp-estadocuenta', component: EstadocuentaclienteComponent},
-      { path: 'exp-cuentaxcobrar', component: CuentaxcobrarComponent}
-
+      { path: 'exp-cuentaxcobrar', component: CuentaxcobrarComponent},
+      { path: 'exp-cxc-general', component: ExploradorCxcGeneralComponent}
+      
     ]
   }
 ];

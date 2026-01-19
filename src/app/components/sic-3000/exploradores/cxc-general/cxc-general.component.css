@@ -1,0 +1,316 @@
+/* ========== CONTENEDOR PRINCIPAL ========== */
+.cuenta-liquidar {
+  padding: 20px;
+  background-color: #f5f7fa;
+  min-height: 100vh;
+  font-family: 'Roboto', 'Segoe UI', Tahoma, sans-serif;
+}
+
+/* ========== STEPPER (si lo usas) ========== */
+.steps {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.step {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #002c6c;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.step-badge {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #002c6c;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* ========== PANEL (FILTROS Y CONTENIDO) ========== */
+.panel {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.panel-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #002c6c;
+  margin-bottom: 16px;
+  border-bottom: 2px solid #f0f4f8;
+  padding-bottom: 8px;
+}
+
+.panel-subtitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #002c6c;
+  margin-bottom: 12px;
+}
+
+/* ========== GRID DE FILTROS ========== */
+.fi-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 200px 200px;
+  gap: 16px 24px;
+  align-items: end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #002c6c;
+  margin: 0;
+}
+
+.form-control {
+  height: 38px;
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #1f2937;
+  background: #fff;
+  transition: all 0.2s ease;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #002c6c;
+  box-shadow: 0 0 0 3px rgba(0, 44, 108, 0.1);
+}
+
+.form-control::placeholder {
+  color: #9ca3af;
+}
+
+/* ========== BOTONES ========== */
+.btn {
+  height: 38px;
+  padding: 0 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-primary {
+  background: #002c6c;
+  color: #fff;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #004080;
+  box-shadow: 0 2px 4px rgba(0, 44, 108, 0.2);
+}
+
+.btn-ghost {
+  background: #f3f4f6;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ========== SPINNER ========== */
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ========== TARJETAS DE RESUMEN ========== */
+.metric-card {
+  padding: 16px;
+  border-radius: 8px;
+  border-left: 4px solid;
+}
+
+.metric-card:nth-child(1) { 
+  background: #eff6ff; 
+  border-left-color: #3b82f6; 
+}
+
+.metric-card:nth-child(2) { 
+  background: #dcfce7; 
+  border-left-color: #22c55e; 
+}
+
+.metric-card:nth-child(3) { 
+  background: #fef3c7; 
+  border-left-color: #f59e0b; 
+}
+
+.metric-card:nth-child(4) { 
+  background: #fce7f3; 
+  border-left-color: #ec4899; 
+}
+
+.metric-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.metric-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+/* ========== TABLA AG-GRID ========== */
+.grid-wrap {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e5e7eb;
+}
+
+.ag-theme-alpine.compact-grid {
+  --ag-font-size: 13px;
+  --ag-row-height: 40px;
+  --ag-header-height: 44px;
+  --ag-border-color: #e5e7eb;
+  --ag-header-background-color: #002c6c;
+  --ag-header-foreground-color: #ffffff;
+  --ag-odd-row-background-color: #ffffff;
+  --ag-row-hover-color: #f9fafb;
+  --ag-selected-row-background-color: #dbeafe;
+}
+
+.grid-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  backdrop-filter: blur(2px);
+}
+
+/* ========== COLORES DE CELDAS ========== */
+.text-success { color: #22c55e !important; font-weight: 600; }
+.text-warning { color: #f59e0b !important; font-weight: 600; }
+.text-danger { color: #ef4444 !important; font-weight: 600; }
+.text-primary { color: #3b82f6 !important; font-weight: 600; }
+.fw-bold { font-weight: 700 !important; }
+
+/* ========== BOTONES PASTILLA (EXPORTAR) ========== */
+.buttons-row.buttons-bottom {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.pill-btn {
+  min-width: 140px;
+  height: 38px;
+  padding: 0 24px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+}
+
+.pill-btn-outline {
+  background: #fff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+.pill-btn-outline:hover:not(:disabled) {
+  background: #f9fafb;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.pill-btn-solid {
+  background: #f0f4f8;
+  color: #002c6c;
+  border: 1px solid #d1e0f0;
+}
+
+.pill-btn-solid:hover:not(:disabled) {
+  background: #e1e9f2;
+}
+
+.pill-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ========== RESPONSIVE ========== */
+@media (max-width: 1024px) {
+  .fi-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .cuenta-liquidar {
+    padding: 12px;
+  }
+
+  .fi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .buttons-row.buttons-bottom {
+    flex-direction: column;
+  }
+
+  .pill-btn {
+    width: 100%;
+  }
+}
