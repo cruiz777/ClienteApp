@@ -50,6 +50,7 @@ import { AccionesCellRendererComponent } from './facturacion/doc-electronicos/ac
 import { ReporteVentasComponent } from './reporte-ventas/reporte-ventas.component';
 import { ReenvioFacComponent } from './facturacion/reenvio-fac/reenvio-fac.component';
 import { SharedModule } from 'src/app/shared/shared.module';
+import { ExploradorCxcGeneralComponent } from './exploradores/cxc-general/cxc-general.component';
 
 @NgModule({
   declarations: [
@@ -86,6 +87,7 @@ import { SharedModule } from 'src/app/shared/shared.module';
     MotivoAnulacionDialogComponent,
     EstadocuentaclienteComponent, // ✅ standalone va en imports
     CuentaxcobrarComponent,
+    ExploradorCxcGeneralComponent,
     // Angular Material
     MatSidenavModule,
     MatListModule,
