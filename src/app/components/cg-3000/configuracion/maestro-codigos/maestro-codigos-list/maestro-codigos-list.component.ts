@@ -50,42 +50,52 @@ export class CodigosContablesComponent implements OnInit {
   }
 
   private cargarCodigos(): void {
-    this.loading = true;
-    this.error = null;
+  this.loading = true;
+  this.error = null;
 
-    this.codigosservice
-      .getAll({ idEmpresa: this.idEmpresaActual ?? undefined })
-      .subscribe({
-        next: (resp: any) => {
-          const list = resp?.data as CodigosContablesResponse[] ?? [];
-          this.codigos  = list;
-          this.filtered = [...this.codigos];
-          this.loading = false;
-        },
-        error: (err) => {
-          console.error('Error al obtener códigos contables:', err);
-          this.error = err?.message ?? 'Error al cargar';
-          this.loading = false;
-        }
-      });
-  }
+  this.codigosservice
+    .getAll({ idEmpresa: this.idEmpresaActual ?? undefined })
+    .subscribe({
+      next: (resp: any) => {
+        const list = (resp?.data as CodigosContablesResponse[]) ?? [];
+        this.codigos = list;
+        this.filtered = [...this.codigos];
+        this.page = 1; // ✅ reset
+        this.loading = false;
+      },
+      error: (err) => {
+        console.error('Error al obtener códigos contables:', err);
+        this.error = err?.message ?? 'Error al cargar';
+        this.loading = false;
+      }
+    });
+}
+
 
   buscar(): void {
-    const term = (this.searchTerm ?? '').trim().toLowerCase();
-    if (!term) {
-      this.filtered = [...this.codigos];
-      return;
-    }
-    this.filtered = this.codigos.filter(t =>
-      (t.Identificacionauxiliar ?? '').toLowerCase().includes(term) ||
-      (t.Nombreauxiliar ?? '').toLowerCase().includes(term)
-    );
+  const term = (this.searchTerm ?? '').trim().toLowerCase();
+
+  if (!term) {
+    this.filtered = [...this.codigos];
+    this.page = 1;
+    return;
   }
 
-  limpiarBusqueda(): void {
-    this.searchTerm = '';
-    this.filtered = [...this.codigos];
-  }
+  this.filtered = this.codigos.filter(t =>
+    (t.Identificacionauxiliar ?? '').toLowerCase().includes(term) ||
+    (t.Nombreauxiliar ?? '').toLowerCase().includes(term) ||
+    (t.Razonsocial ?? '').toLowerCase().includes(term)
+  );
+
+  this.page = 1; // ✅ reset
+}
+
+limpiarBusqueda(): void {
+  this.searchTerm = '';
+  this.filtered = [...this.codigos];
+  this.page = 1;
+}
+
 
   // 🔹 Ahora recibe el tipo de identificación
   abrirCrear(tipoIdentificacion?: 'CEDULA' | 'RUC' | 'PASAPORTE'): void {
@@ -120,4 +130,37 @@ export class CodigosContablesComponent implements OnInit {
 
   trackById = (_: number, it: CodigosContablesResponse) =>
     it?.IdCodContable ?? it?.Identificacionauxiliar ?? _;
+
+  page = 1;
+pageSize = 10;
+
+get total(): number {
+  return this.filtered.length;
+}
+
+get totalPages(): number {
+  return Math.max(1, Math.ceil(this.total / this.pageSize));
+}
+
+get pagedRows(): CodigosContablesResponse[] {
+  const start = (this.page - 1) * this.pageSize;
+  return this.filtered.slice(start, start + this.pageSize);
+}
+irPrimera(): void { this.page = 1; }
+
+irAnterior(): void {
+  if (this.page > 1) this.page--;
+}
+
+irSiguiente(): void {
+  if (this.page < this.totalPages) this.page++;
+}
+
+irUltima(): void { this.page = this.totalPages; }
+
+cambiarPageSize(n: number): void {
+  this.pageSize = Number(n) || 10;
+  this.page = 1;
+}
+
 }

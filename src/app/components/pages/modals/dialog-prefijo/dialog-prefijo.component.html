@@ -26,7 +26,7 @@
       <label class="field-label">Prefijo:</label>
       <div class="prefix-row">
         <mat-form-field appearance="outline" class="prefijo-select compacto-form-field">
-          <mat-select formControlName="prefix" placeholder="Prefijo">
+          <mat-select formControlName="prefix" placeholder="Prefijo"  (selectionChange)="actualizarValidacionPrefijo($event.value)">
             <mat-option value="5">5</mat-option>
             <mat-option value="6">6</mat-option>
             <mat-option value="8">8</mat-option>

@@ -16,7 +16,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
 import { ClienteIndividual, ClienteService } from 'src/app/services/cliente.service';
 import { finalize } from 'rxjs/operators';
-
+import { MatCheckboxChange } from '@angular/material/checkbox';
 import {
   FormBuilder,
   FormGroup,
@@ -104,48 +104,52 @@ prefijoExistente = false;
 
 
 
- onModificarSecuenciaChange(event: any): void {
-    this.modificarSecuencia = event.target.checked;
+onModificarSecuenciaChange(event: MatCheckboxChange): void {
+  this.modificarSecuencia = event.checked;
 
-    const prefijoControl = this.formPrefijo.get('prefijo');
-    const asignacionPrefix = this.formPrefijo.get('prefix')?.value;
+  const prefijoControl = this.formPrefijo.get('prefijo');
+  const asignacionPrefix = this.formPrefijo.get('prefix')?.value;
 
-    if (this.modificarSecuencia) {
-      prefijoControl?.enable();
+  if (this.modificarSecuencia) {
+    prefijoControl?.enable({ emitEvent: false });
 
-      // Configurar límites dinámicamente
-      if (asignacionPrefix === '5') {
-        this.longitudPrefijoMin = 5;
-        this.longitudPrefijoMax = 5;
-      } else if (asignacionPrefix === '6') {
-        this.longitudPrefijoMin = 6;
-        this.longitudPrefijoMax = 6;
-      } else if (asignacionPrefix === 'USA') {
-        this.longitudPrefijoMin = 6;
-        this.longitudPrefijoMax = 10;
-      } else if (asignacionPrefix === 'MSV') {
-        this.longitudPrefijoMin = 8;
-        this.longitudPrefijoMax = 8;
-      } else {
-        this.longitudPrefijoMin = 0;
-        this.longitudPrefijoMax = 0;
-      }
-
-      // 🔥 Aplicar validadores nuevos
-      prefijoControl?.setValidators([
-        Validators.required,
-        Validators.pattern(/^\d+$/),
-        this.prefijoValidator(this.longitudPrefijoMin, this.longitudPrefijoMax)
-      ]);
-
+    // Configurar límites dinámicamente
+    if (asignacionPrefix === '5') {
+      this.longitudPrefijoMin = 5; this.longitudPrefijoMax = 5;
+    } else if (asignacionPrefix === '6') {
+      this.longitudPrefijoMin = 6; this.longitudPrefijoMax = 6;
+    } else if (asignacionPrefix === '8') {
+      this.longitudPrefijoMin = 8; this.longitudPrefijoMax = 8;
+    } else if (asignacionPrefix === 'USA') {
+      this.longitudPrefijoMin = 6; this.longitudPrefijoMax = 10;
+    } else if (asignacionPrefix === 'MSV') {
+      this.longitudPrefijoMin = 8; this.longitudPrefijoMax = 8;
     } else {
-      prefijoControl?.disable();
-      prefijoControl?.clearValidators();
-      prefijoControl?.setValue('');
+      this.longitudPrefijoMin = 0; this.longitudPrefijoMax = 0;
     }
 
-    prefijoControl?.updateValueAndValidity();
+    prefijoControl?.setValidators([
+      Validators.required,
+      Validators.pattern(/^\d+$/),
+      this.prefijoValidator(this.longitudPrefijoMin, this.longitudPrefijoMax)
+    ]);
+
+    prefijoControl?.updateValueAndValidity({ emitEvent: false });
+
+    // (Opcional) foco inmediato para digitar
+    setTimeout(() => {
+      const input = document.querySelector('input[formcontrolname="prefijo"]') as HTMLInputElement;
+      input?.focus();
+    });
+
+  } else {
+    prefijoControl?.reset('', { emitEvent: false });
+    prefijoControl?.disable({ emitEvent: false });
+    prefijoControl?.clearValidators();
+    prefijoControl?.updateValueAndValidity({ emitEvent: false });
   }
+}
+
   actualizarValidacionPrefijo(prefix: string): void {
     const prefijoControl = this.formPrefijo.get('prefijo');
 
