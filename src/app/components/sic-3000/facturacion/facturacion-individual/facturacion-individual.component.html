@@ -115,9 +115,10 @@
             <mat-label>*Prefijo</mat-label>
             <mat-select formControlName="gcp" (selectionChange)="onPrefijoChange($event)">
               <mat-option value="">Seleccione…</mat-option>
-              <mat-option *ngFor="let prefijo of prefijos; trackBy: trackByPrefijoId" [value]="prefijo.id_prefijos">
-                {{ prefijo.codpre }}
-              </mat-option>
+              <mat-option *ngFor="let p of prefijos; trackBy: trackByPrefijoId" [value]="p.id_prefijos">
+  {{ p.codpre }} <span *ngIf="p.fechaVista">--- {{ p.fechaVista }}</span>
+</mat-option>
+
             </mat-select>
 
             <mat-error *ngIf="formCliente.get('gcp')?.hasError('required')">
