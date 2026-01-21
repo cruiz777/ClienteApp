@@ -696,36 +696,43 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
 }
 //
 
+async generarFilas(): Promise<void> {
 
-  async generarFilas(): Promise<void> {
+  if (!this.cantidadFilas || this.cantidadFilas <= 0) return;
 
-    if (!this.cantidadFilas || this.cantidadFilas <= 0) return;
-    // const cantidad = Number(this.formUV.get('cantidadFilas')?.value) || 0;
-     const idSeleccionado = this.formUV.value.gcp;
-    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
-    const prefijo = objeto?.codpre || '';
-    debugger
-  const ok = await firstValueFrom(this.validarCantidadPorPrefijo(prefijo, this.cantidadFilas));
-  if (!ok) return
-    const nuevasFilas = [];
-    for (let i = 0; i < this.cantidadFilas; i++) {
-      nuevasFilas.push({
-        gtinUv: '',
-        descripcion: '',
-        categoria: this.codigoGrupo,
-        marca: '',
-        contenidoNeto: '0',
-        contenidoUM: 'g',
-        gcpBrick: this.brick,
-        pais: 'ECUADOR',
-        activo: false,
-        grupo: this.id_grupo_producto,
-      });
-    }
+  const checkExiste = !!this.formUV.get('checkExiste')?.value;
 
-    this.rowData = nuevasFilas;
+  // Prefijo seleccionado
+  const idSeleccionado = this.formUV.value.gcp;
+  const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+  const prefijo = (objeto?.codpre || '').toString().trim();
+
+  // ✅ SOLO validar cuando el checkbox esté DESMARCADO
+  if (!checkExiste) {
+    const ok = await firstValueFrom(
+      this.validarCantidadPorPrefijo(prefijo, this.cantidadFilas)
+    );
+    if (!ok) return;
   }
 
+  const nuevasFilas = [];
+  for (let i = 0; i < this.cantidadFilas; i++) {
+    nuevasFilas.push({
+      gtinUv: '',
+      descripcion: '',
+      categoria: this.codigoGrupo,
+      marca: '',
+      contenidoNeto: '0',
+      contenidoUM: 'g',
+      gcpBrick: this.brick,
+      pais: 'ECUADOR',
+      activo: false,
+      grupo: this.id_grupo_producto,
+    });
+  }
+
+  this.rowData = nuevasFilas;
+}
 
   limpiarTabla(): void {
     this.rowData = [];

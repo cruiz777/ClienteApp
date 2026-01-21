@@ -98,13 +98,10 @@ interface LineaFactura {
   cuenta?: string;
   idcuenta?: number;
 }
-
+type PrefijoClienteUI = PrefijoClienteTResponse & { fechaVista?: string };
 
 // Tipos locales
-interface PrefijoCliente {
-  id_prefijos: number;
-  codpre: string;
-}
+
 interface PaymentDetail {
   id: number;
   method: string;
@@ -177,7 +174,7 @@ export class FacturacionIndividualComponent implements OnInit {
   generando = false;
 
   // ============= Prefijos (mat-select) =============
-  prefijos: PrefijoCliente[] = [];
+  prefijos: PrefijoClienteUI[] = [];
   descuentos: Descuento[] = [];
   filteredDescuentos$: Observable<Descuento[]> = of([]);
   descuentoSeleccionado: Descuento | null = null;
@@ -652,31 +649,59 @@ export class FacturacionIndividualComponent implements OnInit {
   }
 
   // ============= Prefijos =============
-  cargarPrefijos(codigoCliente: number): void {
-    this.prefijoService.obtenerPorClienteCodigo(codigoCliente).subscribe({
-      next: (data: PrefijoCliente[]) => {
-        this.prefijos = data ?? [];
-        if (this.prefijos.length === 1) {
-          const unico = this.prefijos[0];
-          this.formCliente.patchValue({ gcp: unico.id_prefijos, prefijo: unico.codpre }, { emitEvent: false });
-        } else {
-          this.formCliente.patchValue({ gcp: '', prefijo: '' }, { emitEvent: false });
-        }
-      },
-      error: (err) => {
-        console.error('Error al cargar prefijos:', err);
-        this.prefijos = [];
+cargarPrefijos(codigoCliente: number): void {
+  this.prefijoService.obtenerPorClienteCodigo(codigoCliente).subscribe({
+    next: (data: PrefijoClienteTResponse[]) => {
+      this.prefijos = (data ?? []).map((p) => ({
+        ...p, // ✅ mantienes TODAS las propiedades del backend
+        fechaVista: this.formatFechaVista((p as any).fecha),
+      }));
+
+      if (this.prefijos.length === 1) {
+        const unico = this.prefijos[0];
+        this.formCliente.patchValue(
+          { gcp: unico.id_prefijos, prefijo: unico.codpre },
+          { emitEvent: false }
+        );
+      } else {
         this.formCliente.patchValue({ gcp: '', prefijo: '' }, { emitEvent: false });
       }
-    });
+    },
+    error: (err) => {
+      console.error('Error al cargar prefijos:', err);
+      this.prefijos = [];
+      this.formCliente.patchValue({ gcp: '', prefijo: '' }, { emitEvent: false });
+    }
+  });
+}
+
+
+
+private formatFechaVista(value: any): string {
+  if (!value) return '';
+
+  // viene "1992-05-25"
+  const s = value.toString().trim();
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+
+  // fallback: intenta Date
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
   }
 
+  return s;
+}
   onPrefijoChange(event: MatSelectChange): void {
     const idSeleccionado = event.value as number;
     const encontrado = this.prefijos.find(p => p.id_prefijos === idSeleccionado) || null;
     this.formCliente.patchValue({ gcp: idSeleccionado ?? '', prefijo: encontrado?.codpre ?? '' });
   }
-  trackByPrefijoId = (_: number, p: PrefijoCliente) => p.id_prefijos;
+trackByPrefijoId = (_: number, p: PrefijoClienteUI) => p.id_prefijos;
 
   // ============= Autocomplete Cliente =============
   mostrarNombreCliente = (cliente: ClienteSummary | string | null): string =>
@@ -761,6 +786,7 @@ private cargarClienteDetalle(id: number): void {
                 this.vAsignacion = ge?.asignacion ?? 0;
                 this.vMantenimiento = ge?.mantenimiento ?? 0;
                 this.grupoCli = ge?.codigo;
+                this.setObservacionConGrupo();
               }),
               map((ge: any) => `${ge.codigo}   ${ge.nombre}`.trim()),
               catchError(() => {
@@ -1144,7 +1170,7 @@ const id =
 
     const pu = this.getPrecioEspecial(p.codpro) ?? this.to2(Number(p.prevensiniva || 0));
     const detalle = (p.codpro?.toString() === '1174')
-      ? 'INSCRIPCION PREFIJO'
+      ? 'ASIGNACION PREFIJO'
       : (p.despro ?? '').toUpperCase();
 
     const nuevaFila: LineaFactura = {
@@ -2651,5 +2677,23 @@ const id =
     );
   }
 
+private setObservacionConGrupo(): void {
+  const ctrl = this.formCaja?.get('observacion');
+  if (!ctrl) return;
+
+  const grupo = (this.grupoCli ?? '').toString().trim();
+  if (!grupo) return;
+
+  const actual = (ctrl.value ?? '').toString();
+
+  // Quita cualquier "Grupo: ..." anterior para evitar duplicados
+  const sinGrupo = actual.replace(/(^|\s)Grupo:\s*[^\n\r;|]+/gi, '').trim();
+
+  // Coloca el grupo al inicio
+  const nuevo = `Grupo: ${grupo}${sinGrupo ? ' | ' + sinGrupo : ''}`;
+
+  // No dispares valueChanges si no lo necesitas
+  ctrl.setValue(nuevo, { emitEvent: false });
+}
 
 }
