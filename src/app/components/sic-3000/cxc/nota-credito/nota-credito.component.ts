@@ -310,11 +310,63 @@ export class NotaCreditoComponent implements OnInit {
     {
       headerName: 'P.V.P.',
       field: 'pvp',
-      editable: false,
+      editable: true,
       width: 110,
       type: 'rightAligned',
       valueParser: this.numberParser,
       valueFormatter: this.currencyUSD,
+      valueSetter: (p) => {
+        const row = p.data as Detalle;
+        let nuevoPvp = this.asNumber(p.newValue);
+        
+        if (nuevoPvp < 0) nuevoPvp = 0;
+        
+        const cantidad = this.asNumber(row.cantidad) || 1;
+        const ivaPct = this.asNumber(row.ivaPct) || (this.esFacturaDeSaldo ? this.ivaPctSaldo : 15);
+        
+        // El PVP es la BASE (sin IVA)
+        // Calcular el total CON IVA
+        const nuevoTotal = nuevoPvp * cantidad;
+        const nuevoIva = +(nuevoTotal * (ivaPct / 100)).toFixed(2);
+        const nuevoTotalConIva = nuevoTotal + nuevoIva;
+        
+        // VALIDAR: el total CON IVA no puede superar el total de la factura
+        const totalFactura = this.totales.totalFacturaConIva || 0;
+        if (nuevoTotalConIva > totalFactura) {
+          // Recalcular el PVP máximo permitido
+          const maxBase = totalFactura / (1 + (ivaPct / 100));
+          nuevoPvp = +(maxBase / cantidad).toFixed(6);
+          this.mostrarAlerta(
+            `El P.V.P. ajustado para no superar el total de la factura ($${totalFactura.toFixed(2)})`,
+            'info'
+          );
+        }
+        
+        // Asignar el nuevo PVP (BASE sin IVA)
+        row.pvp = +nuevoPvp.toFixed(6);
+        
+        // Calcular IVA sobre la BASE
+        const baseTotal = row.pvp * cantidad;
+        row.iva = +(baseTotal * (ivaPct / 100)).toFixed(2);
+        
+        // Refrescar celdas afectadas
+        if (p.api) {
+          if (p.node) {
+            p.api.refreshCells({ 
+              rowNodes: [p.node], 
+              columns: ['pvp', 'total', 'iva', 'ivaDev'] 
+            });
+          } else {
+            p.api.refreshCells({ 
+              force: true, 
+              columns: ['pvp', 'total', 'iva', 'ivaDev'] 
+            });
+          }
+        }
+        
+        this.recalcular();
+        return true;
+      }
     },
     {
       headerName: 'Total',
