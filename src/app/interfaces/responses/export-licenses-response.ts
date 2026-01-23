@@ -28,19 +28,21 @@ export interface ExportLicenseItem {
   licenceStatus: string;
   licenseeName: string;
   licenseeGLN?: string;
+
   address: {
     streetAddress: { language: string; value: string };
     addressLocality: { language: string; value: string };
     countryCode: string;
     postalName: { language: string; value: string };
     streetAddressLine2: { language: string; value: string };
-    postOfficeBoxNumber: string;
+    postOfficeBoxNumber: string; // ✅ obligatorio (pero lo arreglamos antes de enviar)
     crossStreet: { language: string; value: string };
     addressSuburb: { language: string; value: string };
     addressRegion: { language: string; value: string };
     postalCode: string;
     countrySubdivisionCode: string;
   };
+
   contactPoint: Array<{
     email?: string;
     telephone?: string;

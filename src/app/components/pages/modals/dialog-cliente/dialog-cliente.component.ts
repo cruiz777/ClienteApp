@@ -2,9 +2,11 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Inject } from '@angular/core';
-import { JsonEmpresaService } from 'src/app/services/json-empresa.service';
+import { JsonEmpresaService,JsonEmpresaRequest  } from 'src/app/services/json-empresa.service';
 import { AsyncValidatorFn } from '@angular/forms';
 import { of, timer } from 'rxjs';
+import { finalize } from 'rxjs/operators';
+
 
 import { map, startWith, take, takeUntil, filter, switchMap, catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
@@ -1835,28 +1837,48 @@ async verificarYAvanzar(form: FormGroup, stepper: MatStepper): Promise<void> {
     });
   }
 
-  enviarEmpresaAJson(): void {
-    const ciudadObj = this.paso2Form.get('ciudad')?.value;
-    const data = {
-      status: 'ACTIVE',
-      licenceKey: this.paso1Form.get('prefijo')?.value || '',
-      licenseeName: this.paso2Form.get('razonSocial')?.value || '',
-      licenseeGLN: this.paso1Form.get('gln')?.value || '',
-      streetAddress: this.paso2Form.get('direccionPrincipal')?.value || '',
-      canton: ciudadObj.canton || '',
-      postalName: this.paso2Form.get('razonSocial')?.value || '',
-      ciudad: ciudadObj.ciudad || '',
-      provincia: ciudadObj.provincia || '',
-      postalCode: ciudadObj.codigo || '',
-      email: this.paso3Form.get('emailRepresentante')?.value || '',
-      telefono: '593' + (this.paso2Form.get('telefono2')?.value ?? ''),
-      website: this.paso2Form.get('sitioWeb')?.value || '',
-      dapi: this.api,  // reemplaza con tu endpoint real
-      capi: this.claveApi
-    };
-    console.log(data);
-    this.jsonEmpresaService.generarJsonEmpresa(data);
-  }
+ 
+// tu método:
+enviarEmpresaAJson(): void {
+  const ciudadObj = this.paso2Form.get('ciudad')?.value;
+
+  const data: JsonEmpresaRequest = {
+    status: 'ACTIVE',
+    licenceKey: (this.paso1Form.get('prefijo')?.value || '').toString(),
+    licenseeName: (this.paso2Form.get('razonSocial')?.value || '').toString(),
+    licenseeGLN: (this.paso1Form.get('gln')?.value || '').toString(),
+    streetAddress: (this.paso2Form.get('direccionPrincipal')?.value || '').toString(),
+    canton: (ciudadObj?.canton || '').toString(),
+    postalName: (this.paso2Form.get('razonSocial')?.value || '').toString(),
+    ciudad: (ciudadObj?.ciudad || '').toString(),
+    provincia: (ciudadObj?.provincia || '').toString(),
+
+    postalCode: (ciudadObj?.codigo || '').toString(),
+
+    // ✅ si NO tienes PO Box, NO lo pongas (deja undefined)
+    // postOfficeBoxNumber: '...',  // solo si existe
+
+    email: (this.paso3Form.get('emailRepresentante')?.value || '').toString(),
+    telefono: ('593' + (this.paso2Form.get('telefono2')?.value ?? '')).toString(),
+    website: (this.paso2Form.get('sitioWeb')?.value || '').toString(),
+    dapi: this.api,
+    capi: this.claveApi
+  };
+
+  const jsonData = this.jsonEmpresaService.buildJson(data);
+
+  this.jsonEmpresaService.generarJsonEmpresa(data)
+    .pipe(finalize(() => this.jsonEmpresaService.descargarArchivo(jsonData, data.licenceKey)))
+    .subscribe({
+      next: (response: unknown) => {
+        console.log('✅ Enviado correctamente:', response);
+      },
+      error: (error: unknown) => {
+        console.error('❌ Error al enviar JSON:', error);
+      }
+    });
+}
+
 
   cargarParametroFacturaPorId(id: number): void {
     this.parametrosFacturaService.getById(id).subscribe({
