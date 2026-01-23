@@ -21,6 +21,10 @@ import { CodigosEspecialesService, CodigoEspecialOpcion } from 'src/app/services
 import { CabeceraModeloService, CabeceraModeloOpcion } from 'src/app/services/cabeceramodelo.service';
 import { Observable, of } from 'rxjs';
 import { UsuarioService } from 'src/app/services/usuario.service';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 
 type PlanCuentaCreateRequest = {
   CuentaPrincipal: string;
@@ -390,7 +394,7 @@ export class PlanCuentasTreeComponent implements OnInit {
       this.form.markAllAsTouched();
       this.snack.open('Complete los campos obligatorios', 'OK', { duration: 2500, horizontalPosition: 'right', verticalPosition: 'top' });
       return;
-    }
+    }    
 
     const val = this.form.getRawValue();
     const isEdit = Number(val.IdPlanCuentas ?? 0) > 0;
@@ -632,5 +636,678 @@ export class PlanCuentasTreeComponent implements OnInit {
       const inval = v === null || v === undefined || v === '' || v === 0;
       return inval ? { requiredSelection: true } : null;
     };
+  }
+
+  /* IMPRESIÓN DE PLAN DE CUENTAS  */
+
+   /**
+   * Estructura de datos plana con toda la información
+   */
+  private generarDatosCompletos(): any[] {
+    const resultado: any[] = [];
+    
+    const procesarNodo = (node: TreeNode, nivelReal: number, padre: string = '') => {
+      const item = node.item;
+      
+      // Calcular indentación visual según nivel real
+      const indent = '  '.repeat(nivelReal);
+      
+      resultado.push({
+        // Datos originales
+        nivelBD: item.IdNivel || 1, // Nivel desde la BD
+        nivelReal: nivelReal + 1, // Nivel jerárquico real (empezando en 1)
+        cuenta: item.CuentaPresentacion || '',
+        nombreCuenta: item.NombreCuenta || '',
+        
+        // Datos adicionales
+        tipoCuenta: '', // Si tienes este campo, agrégalo aquí
+        marca: '', // Si tienes este campo, agrégalo aquí
+        porcentajeRI: item.PorcentajeRetencion || 0,
+        informacionGeneral: item.Descripcion || '',
+        
+        // Datos complementarios
+        cuentaPrincipal: item.CuentaPrincipal || '',
+        cuentaMayor: item.CuentaMayor || '',
+        cuentaSubcta: item.CuentaSubcta || '',
+        esMovimiento: item.EsMovimiento ? 'Sí' : 'No',
+        estado: item.Estado ? 'Activo' : 'Inactivo',
+        codigoEspecial: item.IdCodigoEspecial || '',
+        modelo: item.IdCabModelo || '',
+        orden: item.Orden || 0,
+        
+        // Para visualización jerárquica
+        indentacion: indent,
+        padre: padre
+      });
+
+      // Procesar hijos recursivamente
+      if (node.children && node.children.length > 0) {
+        node.children.forEach(hijo => {
+          procesarNodo(hijo, nivelReal + 1, item.CuentaPresentacion || '');
+        });
+      }
+    };
+
+    // Procesar todos los nodos raíz
+    this.treeRoots.forEach(root => procesarNodo(root, 0));
+    
+    return resultado;
+  }
+
+  /**
+   * Obtener color según nivel jerárquico - PALETA CORPORATIVA
+   */
+  private getColorPorNivel(nivel: number): { bg: string, text: string, rgb: number[] } {
+    const colores = {
+      1: { bg: '#002c6c', text: '#FFFFFF', rgb: [0, 44, 108] },     // Azul corporativo principal
+      2: { bg: '#004080', text: '#FFFFFF', rgb: [0, 64, 128] },     // Azul corporativo claro
+      3: { bg: '#e0e7ef', text: '#002c6c', rgb: [224, 231, 239] },  // Gris azulado claro
+      4: { bg: '#f0f4f8', text: '#1f2937', rgb: [240, 244, 248] },  // Gris muy claro
+      5: { bg: '#FFFFFF', text: '#1f2937', rgb: [255, 255, 255] }   // Blanco (nivel de detalle)
+    };
+    
+    return colores[nivel as keyof typeof colores] || colores[5];
+  }
+
+  /**
+   * Exportar a PDF mejorado con colores y diseño profesional
+   */
+  exportarPDF(): void {
+    this.loading.set(true);
+    
+    try {
+      const doc = new jsPDF('l', 'mm', 'a4'); // Orientación horizontal
+      const datos = this.generarDatosCompletos();
+      
+      // Configuración de fuente
+      doc.setFont('helvetica');
+      
+      // ==================== ENCABEZADO ====================
+      // Título principal (sin fondo azul)
+      doc.setFontSize(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
+      doc.text('LISTADO PLAN DE CUENTAS', 14, 12);
+
+      // Línea decorativa debajo del título
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.5);
+      doc.line(14, 15, doc.internal.pageSize.width - 14, 15);
+
+      // Fecha y empresa en la misma línea
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'normal');
+      const fecha = new Date().toLocaleDateString('es-EC', { 
+        day: 'numeric', 
+        month: 'long', 
+        year: 'numeric' 
+      });
+      doc.text(`${fecha}`, doc.internal.pageSize.width - 14, 12, { align: 'right' });
+
+      // Info adicional
+      doc.setFontSize(8);
+      doc.setTextColor(80, 80, 80);
+      doc.text(`Empresa: ${this.idEmpresaActual} | Total: ${datos.length} cuentas`, 14, 20);
+      
+      // ==================== LEYENDA DE COLORES ====================
+      const leyendaY = 25;
+      doc.setFontSize(7);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(0, 0, 0);
+      doc.text('Niveles:', 14, leyendaY);
+
+      let leyendaX = 28;
+      const niveles = [
+        { n: 1, label: 'Principal', color: this.getColorPorNivel(1) },
+        { n: 2, label: 'Grupo', color: this.getColorPorNivel(2) },
+        { n: 3, label: 'Subgrupo', color: this.getColorPorNivel(3) },
+        { n: 4, label: 'Detalle', color: this.getColorPorNivel(4) },
+        { n: 5, label: 'Movimiento', color: this.getColorPorNivel(5) }
+      ];
+
+      doc.setFont('helvetica', 'normal');
+      niveles.forEach(nv => {
+        const color = nv.color;
+        // Cuadro de color
+        doc.setFillColor(color.rgb[0], color.rgb[1], color.rgb[2]);
+        doc.rect(leyendaX, leyendaY - 2.5, 3, 3, 'F');
+        // Borde del cuadro
+        doc.setDrawColor(100, 100, 100); // 👈 Borde más oscuro
+        doc.setLineWidth(0.2); // 👈 Borde más grueso
+        doc.rect(leyendaX, leyendaY - 2.5, 3, 3, 'S');
+        // Texto
+        doc.setTextColor(0, 44, 108); // 👈 Color corporativo
+        doc.setFontSize(6.5);
+        doc.text(`${nv.n}-${nv.label}`, leyendaX + 4, leyendaY);
+        leyendaX += 24;
+      });
+
+      doc.setTextColor(0, 0, 0); // Resetear color
+      // ==================== TABLA DE DATOS ====================
+      // Preparar datos para la tabla
+      const rows = datos.map(item => {
+        // INDENTACIÓN SIMPLE CON ESPACIOS
+        const nivel = item.nivelReal;
+        const espacios = '  '.repeat(nivel - 1); // 2 espacios por nivel
+        
+        const nombreConIndent = espacios + item.nombreCuenta;
+        
+        return [
+          item.cuenta,
+          nombreConIndent,
+          item.tipoCuenta,
+          item.marca,
+          item.nivelReal.toString(),
+          item.porcentajeRI ? item.porcentajeRI.toFixed(2) : '0.00',
+          item.informacionGeneral || item.nombreCuenta
+        ];
+      });
+
+      // Generar tabla con formato mejorado
+      autoTable(doc, {
+        startY: 33,
+        head: [[
+          'CUENTA',
+          'NOMBRE CUENTA',
+          'TIPO CUENTA',
+          'MARCA',
+          'NIVEL',
+          '% R/I',
+          'INFORMACION GENERAL'
+        ]],
+        body: rows,
+        
+        // Estilos generales
+        styles: { 
+          fontSize: 7,
+          cellPadding: 2,
+          lineColor: [200, 200, 200],
+          lineWidth: 0.1,
+          overflow: 'linebreak',
+          cellWidth: 'wrap'
+        },
+        
+        // Estilos del encabezado
+        headStyles: {
+          fillColor: [0, 44, 108], // #002c6c - Azul corporativo
+          textColor: [255, 255, 255],
+          fontStyle: 'bold',
+          halign: 'center',
+          valign: 'middle',
+          lineWidth: 0.1,
+          lineColor: [0, 44, 108] // Mismo color corporativo
+        },
+        
+        // Anchos de columna
+        columnStyles: {
+          0: { cellWidth: 24, halign: 'left' },   // CUENTA (más ancho)
+          1: { cellWidth: 95, halign: 'left' },   // NOMBRE CUENTA (más ancho para indentación)
+          2: { cellWidth: 18, halign: 'center' }, // TIPO CUENTA
+          3: { cellWidth: 15, halign: 'center' }, // MARCA
+          4: { cellWidth: 12, halign: 'center' }, // NIVEL
+          5: { cellWidth: 15, halign: 'right' },  // % R/I
+          6: { cellWidth: 48, halign: 'left' }    // INFORMACION GENERAL (reducido)
+        },
+        
+        // Márgenes
+        margin: { top: 33, right: 14, bottom: 20, left: 14 },
+        
+        // Callback para aplicar colores por nivel
+        didParseCell: (data) => {
+          if (data.section === 'body') {
+            const rowIndex = data.row.index;
+            const nivel = datos[rowIndex]?.nivelReal || 5;
+            const color = this.getColorPorNivel(nivel);
+            
+            // Color de fondo según nivel
+            data.cell.styles.fillColor = color.rgb as [number, number, number];
+            
+            // Bordes más suaves
+            data.cell.styles.lineColor = [220, 220, 220];
+            data.cell.styles.lineWidth = 0.1;
+            
+            // Texto en negrita SOLO para niveles 1 y 2
+            if (nivel <= 2) {
+              data.cell.styles.fontStyle = 'bold';
+              data.cell.styles.fontSize = 8;
+            } else if (nivel === 3) {
+              data.cell.styles.fontStyle = 'bold';
+              data.cell.styles.fontSize = 7.5;
+            } else {
+              data.cell.styles.fontSize = 7;
+            }
+            
+            // Color de texto más oscuro para mejor contraste
+            const textColorRgb = color.text;
+            data.cell.styles.textColor = [
+              parseInt(textColorRgb.substring(1, 3), 16),
+              parseInt(textColorRgb.substring(3, 5), 16),
+              parseInt(textColorRgb.substring(5, 7), 16)
+            ];
+          }
+        },
+        
+        // Pie de página
+        didDrawPage: (data) => {
+          const pageHeight = doc.internal.pageSize.height;
+          
+          // Línea superior del pie
+          doc.setDrawColor(200, 200, 200);
+          doc.setLineWidth(0.3);
+          doc.line(14, pageHeight - 15, doc.internal.pageSize.width - 14, pageHeight - 15);
+          
+          // Información en el pie
+          doc.setFontSize(7);
+          doc.setFont('helvetica', 'normal');
+          doc.setTextColor(100, 100, 100);
+          
+          // Total de cuentas (izquierda)
+          doc.text(
+            `Total de cuentas: ${datos.length}`,
+            14,
+            pageHeight - 10
+          );
+          
+          // Número de página (derecha) - CORREGIDO
+          const pageNumber = data.pageNumber;
+          const totalPages = (doc as any).internal.pages.length - 1; // -1 porque pages incluye una página vacía al inicio
+          
+          doc.text(
+            `Página ${pageNumber}`,
+            doc.internal.pageSize.width - 14,
+            pageHeight - 10,
+            { align: 'right' }
+          );
+        }
+      });
+
+      // ==================== GUARDAR ARCHIVO ====================
+      const nombreArchivo = `plan-cuentas-${this.idEmpresaActual}-${new Date().getTime()}.pdf`;
+      doc.save(nombreArchivo);
+      
+      this.snack.open('✓ PDF generado exitosamente', 'OK', { 
+        duration: 2500, 
+        horizontalPosition: 'right', 
+        verticalPosition: 'top' 
+      });
+      
+    } catch (error) {
+      console.error('Error al generar PDF:', error);
+      this.snack.open('✗ Error al generar PDF', 'OK', { 
+        duration: 3000, 
+        horizontalPosition: 'right', 
+        verticalPosition: 'top' 
+      });
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  /**
+   * Exportar a Excel mejorado con formato profesional
+   */
+  async exportarExcel(): Promise<void> {
+    this.loading.set(true);
+    
+    try {
+      const datos = this.generarDatosCompletos();
+      
+      // Crear libro de trabajo
+      const workbook = new ExcelJS.Workbook();
+      workbook.creator = 'Sistema Contable';
+      workbook.created = new Date();
+      workbook.modified = new Date();
+      
+      // ==================== HOJA 1: PLAN DE CUENTAS ====================
+      const worksheet = workbook.addWorksheet('Plan de Cuentas', {
+        pageSetup: { 
+          paperSize: 9, // A4
+          orientation: 'landscape',
+          fitToPage: true,
+          fitToWidth: 1
+        },
+        views: [{ state: 'frozen', xSplit: 0, ySplit: 4 }] // Congelar encabezados
+      });
+
+      // ENCABEZADO PRINCIPAL
+      worksheet.mergeCells('A1:G1');
+      const titleCell = worksheet.getCell('A1');
+      titleCell.value = 'LISTADO PLAN DE CUENTAS';
+      titleCell.font = { size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+      titleCell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+          fgColor: { argb: 'FF002c6c' }
+      };
+      titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+      worksheet.getRow(1).height = 25;
+      
+      // INFORMACIÓN
+      worksheet.mergeCells('A2:G2');
+      const infoCell = worksheet.getCell('A2');
+      infoCell.value = `Fecha: ${new Date().toLocaleDateString('es-EC')} | Empresa ID: ${this.idEmpresaActual} | Total: ${datos.length} cuentas`;
+      infoCell.font = { size: 10 };
+      infoCell.alignment = { vertical: 'middle', horizontal: 'center' };
+      infoCell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FFe0e7ef' }
+      };
+      worksheet.getRow(2).height = 18;
+      
+      // LEYENDA DE NIVELES
+      worksheet.mergeCells('A3:G3');
+      const legendCell = worksheet.getCell('A3');
+      legendCell.value = 'NIVELES: Nivel 1 (Azul Oscuro) | Nivel 2 (Azul) | Nivel 3 (Azul Claro) | Nivel 4 (Verde) | Nivel 5 (Blanco)';
+      legendCell.font = { size: 9, italic: true };
+      legendCell.alignment = { vertical: 'middle', horizontal: 'center' };
+      worksheet.getRow(3).height = 16;
+
+      // ENCABEZADOS DE COLUMNAS (Fila 4)
+      const headerRow = worksheet.addRow([
+        'CUENTA',
+        'NOMBRE CUENTA',
+        'TIPO CUENTA',
+        'MARCA',
+        'NIVEL',
+        '% R/I',
+        'INFORMACION GENERAL'
+      ]);
+      
+      // Estilo de encabezados
+      headerRow.font = { bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
+      headerRow.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true };
+      headerRow.height = 22;
+      
+      headerRow.eachCell((cell) => {
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FF002c6c'  }
+        };
+        cell.border = {
+          top: { style: 'thin', color: { argb: 'FF000000' } },
+          left: { style: 'thin', color: { argb: 'FF000000' } },
+          bottom: { style: 'thin', color: { argb: 'FF000000' } },
+          right: { style: 'thin', color: { argb: 'FF000000' } }
+        };
+      });
+
+      // DATOS CON COLORES POR NIVEL
+      datos.forEach((item, index) => {
+        const nombreConIndent = item.indentacion + item.nombreCuenta;
+        
+        const row = worksheet.addRow([
+          item.cuenta,
+          nombreConIndent,
+          item.tipoCuenta,
+          item.marca,
+          item.nivelReal,
+          item.porcentajeRI,
+          item.informacionGeneral
+        ]);
+
+        // Altura de fila
+        row.height = 16;
+        row.alignment = { vertical: 'middle' };
+        
+        // Obtener color según nivel
+        const nivel = item.nivelReal;
+        const colorMap: { [key: number]: string } = {
+          1: 'FF002c6c', // Azul corporativo principal
+          2: 'FF004080', // Azul corporativo claro
+          3: 'FFe0e7ef', // Gris azulado claro
+          4: 'FFf0f4f8', // Gris muy claro
+          5: 'FFFFFFFF'  // Blanco
+        };
+
+        const textColorMap: { [key: number]: string } = {
+          1: 'FFFFFFFF', // Blanco para fondo oscuro
+          2: 'FFFFFFFF', // Blanco para fondo oscuro
+          3: 'FF002c6c', // Azul corporativo
+          4: 'FF1f2937', // Gris oscuro
+          5: 'FF1f2937'  // Gris oscuro
+        };
+        
+        // Aplicar estilo según nivel
+        row.eachCell((cell, colNumber) => {
+          // Color de fondo
+          cell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: colorMap[nivel] || 'FFFFFFFF' }
+          };
+          
+          // Fuente
+          cell.font = {
+            size: nivel <= 3 ? 10 : 9,
+            bold: nivel <= 3,
+            color: { argb: textColorMap[nivel] || 'FF424242' }
+          };
+          
+          // Bordes sutiles
+          cell.border = {
+            top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+            left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+            bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+            right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
+          };
+          
+          // Alineaciones específicas por columna
+          if (colNumber === 4 || colNumber === 5) { // MARCA y NIVEL
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+          } else if (colNumber === 6) { // % R/I
+            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+            cell.numFmt = '0.00';
+          } else {
+            cell.alignment = { horizontal: 'left', vertical: 'middle' };
+          }
+        });
+      });
+
+      // ANCHOS DE COLUMNA
+      worksheet.columns = [
+        { key: 'cuenta', width: 18 },
+        { key: 'nombre', width: 60 },
+        { key: 'tipo', width: 15 },
+        { key: 'marca', width: 12 },
+        { key: 'nivel', width: 10 },
+        { key: 'porcentaje', width: 12 },
+        { key: 'info', width: 40 }
+      ];
+
+      // Filtros automáticos
+      worksheet.autoFilter = {
+        from: 'A4',
+        to: 'G4'
+      };
+
+      // ==================== HOJA 2: RESUMEN ESTADÍSTICO ====================
+      const summarySheet = workbook.addWorksheet('Resumen');
+      
+      // Título
+      summarySheet.mergeCells('A1:B1');
+      const summaryTitle = summarySheet.getCell('A1');
+      summaryTitle.value = 'RESUMEN ESTADÍSTICO DEL PLAN DE CUENTAS';
+      summaryTitle.font = { size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+      summaryTitle.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF002c6c' }
+      };
+      summaryTitle.alignment = { vertical: 'middle', horizontal: 'center' };
+      summarySheet.getRow(1).height = 25;
+      
+      summarySheet.addRow([]);
+      
+      // Información general
+      const infoData = [
+        ['Empresa ID:', this.idEmpresaActual],
+        ['Fecha generación:', new Date().toLocaleDateString('es-EC', { 
+          day: 'numeric', 
+          month: 'long', 
+          year: 'numeric', 
+          hour: '2-digit', 
+          minute: '2-digit' 
+        })],
+        ['Usuario:', this.usuarioActual?.nombre_usuario || 'N/A'],
+        [],
+        ['ESTADÍSTICAS GENERALES', ''],
+        ['Total de cuentas:', datos.length],
+        ['Cuentas activas:', datos.filter(d => d.estado === 'Activo').length],
+        ['Cuentas inactivas:', datos.filter(d => d.estado === 'Inactivo').length],
+        ['Cuentas de movimiento:', datos.filter(d => d.esMovimiento === 'Sí').length],
+        [],
+        ['DISTRIBUCIÓN POR NIVEL', ''],
+      ];
+      
+      infoData.forEach(row => {
+      const excelRow = summarySheet.addRow(row);
+      // Validar que row[0] sea string antes de usar includes
+      if (row[0] && typeof row[0] === 'string' && 
+          (row[0].includes('ESTADÍSTICAS') || row[0].includes('DISTRIBUCIÓN'))) {
+        excelRow.font = { bold: true, size: 11 };
+        excelRow.getCell(1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: 'FFE3F2FD' }
+        };
+      }
+    });
+      
+      // Distribución por nivel
+      for (let i = 1; i <= 5; i++) {
+        const count = datos.filter(d => d.nivelReal === i).length;
+        const percentage = ((count / datos.length) * 100).toFixed(1);
+        const row = summarySheet.addRow([`  Nivel ${i}:`, `${count} (${percentage}%)`]);
+        
+        const colorMap: { [key: number]: string } = {
+          1: 'FF002c6c', // Actualizado
+          2: 'FF004080', // Actualizado
+          3: 'FFe0e7ef', // Actualizado
+          4: 'FFf0f4f8', // Actualizado
+          5: 'FFFFFFFF'
+        };
+        
+        row.getCell(1).fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: colorMap[i] }
+        };
+        
+        // Color de texto según fondo
+        if (i <= 2) {
+          row.getCell(1).font = { color: { argb: 'FFFFFFFF' } }; // Texto blanco
+        }
+      }
+
+      summarySheet.columns = [
+        { width: 35 },
+        { width: 20 }
+      ];
+
+      // ==================== HOJA 3: DETALLES COMPLETOS ====================
+      const detailSheet = workbook.addWorksheet('Detalles Completos');
+      
+      // Encabezado
+      const detailHeader = detailSheet.addRow([
+        'CUENTA',
+        'NOMBRE',
+        'NIVEL',
+        'PRINCIPAL',
+        'MAYOR',
+        'SUBCTA',
+        'CÓD. ESPECIAL',
+        'MODELO',
+        'MOVIMIENTO',
+        'ESTADO',
+        '% RETENCIÓN',
+        'ORDEN',
+        'DESCRIPCIÓN'
+      ]);
+      
+      detailHeader.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+      detailHeader.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: 'FF212121' }
+      };
+      detailHeader.alignment = { vertical: 'middle', horizontal: 'center' };
+      detailHeader.height = 20;
+
+      datos.forEach(item => {
+        detailSheet.addRow([
+          item.cuenta,
+          item.nombreCuenta,
+          item.nivelReal,
+          item.cuentaPrincipal,
+          item.cuentaMayor,
+          item.cuentaSubcta,
+          item.codigoEspecial,
+          item.modelo,
+          item.esMovimiento,
+          item.estado,
+          item.porcentajeRI,
+          item.orden,
+          item.informacionGeneral
+        ]);
+      });
+
+      detailSheet.columns = [
+        { width: 18 }, { width: 40 }, { width: 10 }, { width: 12 },
+        { width: 12 }, { width: 12 }, { width: 15 }, { width: 10 },
+        { width: 12 }, { width: 12 }, { width: 12 }, { width: 10 },
+        { width: 40 }
+      ];
+
+      // Aplicar bordes y formato
+      detailSheet.eachRow((row, rowNumber) => {
+        if (rowNumber > 1) {
+          row.eachCell((cell) => {
+            cell.border = {
+              top: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+              left: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+              bottom: { style: 'thin', color: { argb: 'FFE0E0E0' } },
+              right: { style: 'thin', color: { argb: 'FFE0E0E0' } }
+            };
+          });
+        }
+      });
+
+      // ==================== GUARDAR ARCHIVO ====================
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { 
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+      });
+      const nombreArchivo = `plan-cuentas-${this.idEmpresaActual}-${new Date().getTime()}.xlsx`;
+      saveAs(blob, nombreArchivo);
+      
+      this.snack.open('✓ Excel generado exitosamente', 'OK', { 
+        duration: 2500, 
+        horizontalPosition: 'right', 
+        verticalPosition: 'top' 
+      });
+      
+    } catch (error) {
+      console.error('Error al generar Excel:', error);
+      this.snack.open('✗ Error al generar Excel', 'OK', { 
+        duration: 3000, 
+        horizontalPosition: 'right', 
+        verticalPosition: 'top' 
+      });
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  // Variables para el menú de exportación
+  menuExportarAbierto = signal(false);
+  
+  toggleMenuExportar(): void {
+    this.menuExportarAbierto.update(v => !v);
+  }
+
+  cerrarMenuExportar(): void {
+    this.menuExportarAbierto.set(false);
   }
 }
