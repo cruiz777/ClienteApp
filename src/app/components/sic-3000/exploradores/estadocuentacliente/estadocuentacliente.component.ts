@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import {
   ColDef,
   GridApi,
@@ -78,7 +78,7 @@ interface EstadoCuentaRow {
     AgGridAngular
   ]
 })
-export class EstadocuentaclienteComponent implements OnInit {
+export class EstadocuentaclienteComponent implements OnInit,OnDestroy {
 
   hoy: Date = new Date();
   clienteE!: ClienteIndividual;
@@ -189,13 +189,118 @@ export class EstadocuentaclienteComponent implements OnInit {
     ).subscribe(clientes => {
       this.clientesOrigenFiltrados = clientes;
     });
+    // *** CARGAR CLIENTE QUE VENGA DE OTRA PANTALLA ***
+    this.cargarClienteInv();
+  }
+  // ===== Limpiar cliente al destruir componente =====
+  ngOnDestroy(): void {
+    // Limpiar el cliente seleccionado al salir del explorador general
+    this.clienteSeleccionadoService.limpiar();
   }
 
   cargarClienteInv(): void {
     const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
-    if (cliente) this.clienteSeleccionado = cliente;
-  }
+    console.log('[ClienteSeleccionadoService] actual →', cliente);
 
+    if (cliente) {
+      this.clienteSeleccionado = cliente;
+      this.applyClienteSeleccion(cliente);
+      
+      // *** LIMPIAR INMEDIATAMENTE DESPUÉS DE USARLO ***
+      // Esto evita que se vuelva a cargar si se refresca la pagina o se vuelve a entrar
+      this.clienteSeleccionadoService.limpiar();
+    }
+  }
+  private applyClienteSeleccion(c: any): void {
+  const codigo = this.getCodigoCliente(c);
+  const nombre = this.getNombreCliente(c);
+  if (!codigo) return;
+
+  this.codcliO = codigo;
+  this.clienteSeleccionado = c;
+
+  // Actualizar el autocomplete con el nombre del cliente
+  this.clienteOrigenControl.setValue(nombre || c, { emitEvent: false });
+
+  // Cargar el estado de cuenta del cliente
+  this.estadoCuentaService
+    .getSaldoFacturasPorCliente(codigo, true, 1, 50)
+    .pipe(finalize(() => (this.loading = false)))
+    .subscribe({
+      next: resp => {
+        if (resp.type !== 'success' || !resp.data) {
+          this.errorMessage = resp.message || 'Error al consultar el estado de cuenta.';
+          this.rowData = [];
+          return;
+        }
+
+        const data: SaldoFacturaDetalladoResponse = resp.data;
+        const cli = data.resumenPorCliente.items?.[0];
+
+        if (!cli) {
+          this.errorMessage = 'No se encontraron datos para el cliente.';
+          this.rowData = [];
+          this.mostrarAlerta('El cliente no tiene movimientos en el estado de cuenta', 'info');
+          return;
+        }
+
+        // Mapeo + normalización (tipo doc)
+        const rowsRaw: EstadoCuentaRow[] = (cli.detalle ?? []).map((item: SaldoFacturaItemResponse) => ({
+          factura: item.numeroFactura ?? '',
+          documento: item.numeroDocumento ?? '',
+          fecha: item.fecha ?? '',
+          tipoDocumento: this.normalizarTipoDoc(item),
+          valor: 0,
+          pago: 0,
+          debe: item.debe ?? 0,
+          haber: item.haber ?? 0,
+          saldo: item.saldoLinea ?? 0,
+          observacion: (item.observacion ?? '').trim(),
+          saldoFactura: null
+        }));
+
+        // Deduplicación robusta
+        const rowsSinDuplicados = this.dedupeRows(rowsRaw);
+
+        // saldoFactura por factura
+        this.rowData = this.calcularSaldoPorFactura(rowsSinDuplicados);
+
+        if (this.gridApi) {
+          this.gridApi.setGridOption('rowData', this.rowData);
+        }
+
+        if (this.rowData.length === 0) {
+          this.mostrarAlerta('El cliente no tiene movimientos en el estado de cuenta', 'info');
+        }
+      },
+      error: err => {
+        console.error(err);
+        this.errorMessage = 'No tiene información';
+        this.rowData = [];
+        this.mostrarAlerta('Error al cargar el estado de cuenta del cliente', 'error');
+      }
+    });
+}
+
+private getCodigoCliente(c: any): number {
+  return Number(
+    c?.clientes_codigo ??
+    c?.cliente_codigo ??
+    c?.codigoCliente ??
+    c?.id ??
+    0
+  );
+}
+
+private getNombreCliente(c: any): string {
+  return String(
+    c?.nomcli ??
+    c?.nombre ??
+    c?.cliente ??
+    c?.razon_social ??
+    ''
+  ).trim();
+}
   get clienteActual(): Cliente | null {
     return this.clientes.length > 0 ? this.clientes[0] : null;
   }
@@ -210,6 +315,11 @@ export class EstadocuentaclienteComponent implements OnInit {
 
   get totalSaldo(): number {
     return this.totalDebe - this.totalHaber;
+  }
+  
+  mostrarAlerta(mensaje: string, tipo: 'info' | 'error' | 'ok'): void {
+    // Puede ser un snackbar, toast, alert, etc.
+    console.log(`[${tipo.toUpperCase()}] ${mensaje}`);
   }
 
   /** ✅ Llamada al API */
@@ -436,7 +546,8 @@ private dedupeRows(rows: EstadoCuentaRow[]): EstadoCuentaRow[] {
     this.clienteOrigenControl.markAsUntouched();
 
     this.errorMessage = '';
-    this.opcionesImpresionVisibles = false;
+    this.opcionesImpresionVisibles = false;  
+    this.clienteSeleccionadoService.limpiar();
   }
 
   formatNumero(value: number): string {

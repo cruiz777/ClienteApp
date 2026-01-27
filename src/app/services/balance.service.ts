@@ -8,6 +8,9 @@ import { BalanceComprobacionRequest } from '../interfaces/requests/balance-compr
 import { BalanceDiarioResponse } from '../interfaces/responses/balance-diario-response';
 import { BalanceComprobacionResponse } from '../interfaces/responses/balance-comprobacion-response';
 import { MayorCuentasResponse } from '../interfaces/responses/mayor-cuentas-response';
+import { EstadoFinancieroRequest } from '../interfaces/requests/estado-financiero-request';
+import { EstadoFinancieroResponse } from '../interfaces/responses/estado-financiero-response';
+import { EstadoResultadosResponse } from '../interfaces/responses/estado-resultados-response';
 
 
 // Si quieres tipar la respuesta genérica como en producto.service.ts
@@ -61,5 +64,19 @@ export class BalanceService {
       request
     );
   }
-
+  
+  getEstadoFinanciero(
+    request: EstadoFinancieroRequest
+  ): Observable<ApiResponse<EstadoFinancieroResponse[]>> {
+    return this.http.post<ApiResponse<EstadoFinancieroResponse[]>>(
+      `${this.apiUrl}/estado-financiero`,
+      request
+    );
+  }
+  getEstadoResultados(request: EstadoFinancieroRequest): Observable<ApiResponse<EstadoResultadosResponse[]>> {
+  return this.http.post<ApiResponse<EstadoResultadosResponse[]>>(
+    `${this.apiUrl}/estado-resultados`,
+    request
+  );
+}
 }

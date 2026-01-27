@@ -31,6 +31,7 @@ import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PlanCuentaCellEditorComponent, PlanCuentaCellEditorParams } from './cuentas-por-pagar/pago-proveedores/plan-cuenta-cell-editor.component';
 import { SharedModule } from 'src/app/shared/shared.module';
+import { EstadoFinancieroComponent } from './balance/estado-financiero/estado-financiero.component';
 
 
 
@@ -39,6 +40,7 @@ import { SharedModule } from 'src/app/shared/shared.module';
   declarations: [
     InicioCgComponent,
     NavigationCgComponent,
+    EstadoFinancieroComponent,
     RegistroPagosProveedorComponent
   ],
   imports: [

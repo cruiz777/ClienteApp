@@ -74,7 +74,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
         '#', 'GTIN-13', 'GTIN-14', 'DESCRIPCIÓN', 'MARCA', 'CONTENIDO NETO', 'UNIDAD MEDIDA', 'FECHA'
       ]],
       body: tableRows,
-      styles: { fontSize: 7.5, cellPadding: 1.2 },
+      styles: { fontSize: 9, cellPadding: 1.5 },
       headStyles: {
         fillColor: [255, 255, 255],
         textColor: [0, 0, 0],
@@ -137,14 +137,21 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
         // Disclaimer - Posicionado justo después de empresa
         y += 6;
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7.5);
+        doc.setFontSize(8);
 
         // Calcular las líneas del disclaimer con ancho ajustado
-        const disclaimerLines = doc.splitTextToSize(disclaimer, pageWidth - 20);
+        const disclaimerMaxWidth = pageWidth - 20;
+        const disclaimerLines = doc.splitTextToSize(disclaimer, disclaimerMaxWidth);
 
-        // Renderizar el disclaimer línea por línea con espaciado compacto
+        // Renderizar el disclaimer línea por línea JUSTIFICADO
         disclaimerLines.forEach((line: string, index: number) => {
-          doc.text(line, 10, y + (index * 3));
+          // No justificar la última línea (estándar tipográfico)
+          if (index === disclaimerLines.length - 1) {
+            doc.text(line, 10, y + (index * 3));
+          } else {
+            // Justificar líneas intermedias
+            this.justifyText(doc, line, 10, y + (index * 3), disclaimerMaxWidth);
+          }
         });
         // El header termina aproximadamente en y + (disclaimerLines.length * 3) ≈ 65mm
 
@@ -337,7 +344,7 @@ fechaValueCell.numFmt = 'dd/mm/yyyy';
     };
 
     disclaimerCell.alignment = {
-      horizontal: 'center',
+      horizontal: 'justify',
       vertical: 'middle',
       wrapText: true
     };
@@ -539,7 +546,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
         '#', 'CÓDIGO', 'DESCRIPCIÓN', 'MARCA', 'CONTENIDO', 'UNIDAD', 'TIPO', 'FECHA'
       ]],
       body: tableRows,
-      styles: { fontSize: 7.5, cellPadding: 1.2 },
+      styles: { fontSize: 9, cellPadding: 1.5 },
       headStyles: {
         fillColor: [255, 255, 255],
         textColor: [0, 0, 0],
@@ -625,10 +632,20 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
         // Disclaimer
         y += 6;
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(7.5);
-        const disclaimerLines = doc.splitTextToSize(disclaimer, pageWidth - 20);
+        doc.setFontSize(8);
+        
+        const disclaimerMaxWidth = pageWidth - 20;
+        const disclaimerLines = doc.splitTextToSize(disclaimer, disclaimerMaxWidth);
+        
+        // Renderizar el disclaimer línea por línea JUSTIFICADO
         disclaimerLines.forEach((line: string, index: number) => {
-          doc.text(line, 10, y + (index * 3));
+          // No justificar la última línea (estándar tipográfico)
+          if (index === disclaimerLines.length - 1) {
+            doc.text(line, 10, y + (index * 3));
+          } else {
+            // Justificar líneas intermedias
+            this.justifyText(doc, line, 10, y + (index * 3), disclaimerMaxWidth);
+          }
         });
 
         // Firma centrada
@@ -778,7 +795,7 @@ entregarse para uso de cualquier otra empresa. Esta política de uso se aplica a
     };
 
     disclaimerCell.alignment = {
-      horizontal: 'center',
+      horizontal: 'justify',
       vertical: 'middle',
       wrapText: true
     };
@@ -955,5 +972,34 @@ private formatearFechaDDMMYYYY(fecha: string | Date): string {
   return `${day}/${month}/${year}`;
 }
 
+  /**
+   * Justifica una línea de texto en el PDF distribuyendo espacios uniformemente
+   */
+  private justifyText(doc: jsPDF, text: string, x: number, y: number, maxWidth: number): void {
+    const words = text.trim().split(/\s+/);
+    
+    if (words.length === 1) {
+      // Si solo hay una palabra, no justificar
+      doc.text(text, x, y);
+      return;
+    }
+
+    // Calcular el ancho total del texto sin espacios extra
+    const textWidthWithoutSpaces = words.reduce((total, word) => {
+      return total + doc.getTextWidth(word);
+    }, 0);
+
+    // Calcular el espacio total disponible para distribuir entre palabras
+    const totalSpaceWidth = maxWidth - textWidthWithoutSpaces;
+    const numberOfGaps = words.length - 1;
+    const spaceWidth = totalSpaceWidth / numberOfGaps;
+
+    // Renderizar cada palabra con el espacio calculado
+    let currentX = x;
+    words.forEach((word, index) => {
+      doc.text(word, currentX, y);
+      currentX += doc.getTextWidth(word) + spaceWidth;
+    });
+  }
 
 }

@@ -8,6 +8,7 @@ import { RetencionesResponse } from '../interfaces/responses/retenciones-respons
 import { RetencionesRequest } from '../interfaces/requests/retenciones-request';
 import { RetencionesImpresionResponse } from 'src/app/interfaces/responses/retenciones-impresion-response';
 import { GenerarXmlRetencionResponse } from '../interfaces/responses/generar-xml-retencion-response';
+import { ReporteRetencionesResponse } from '../interfaces/responses/reporte-retenciones-response';
 
 
 export interface ApiResponse<T> {
@@ -28,6 +29,8 @@ export interface CreateRetencionesResultResponse {
 @Injectable({ providedIn: 'root' })
 export class RetencionesService {
   private readonly baseUrl = `${environment.transactionUrl}/Retenciones`;
+  
+  private readonly retencionUrl = `${environment.invoices_sic}/Retenciones`;
 
   constructor(private http: HttpClient) {}
 
@@ -245,4 +248,77 @@ createLote(req: RetencionesRequest[]): Observable<CreateRetencionesResultRespons
         })
       );
   }
+  /**
+ * GET /Retenciones/reporte
+ * Obtiene reporte paginado de retenciones por rango de fechas
+ */
+getReporte(
+  fechaInicio: Date | string,
+  fechaFin: Date | string,
+  page: number = 1,
+  pageSize: number = 10
+): Observable<ReporteRetencionesResponse> {
+  const params = new HttpParams()
+    .set('fechaInicio', this.formatDate(fechaInicio))
+    .set('fechaFin', this.formatDate(fechaFin))
+    .set('page', String(page))
+    .set('pageSize', String(pageSize));
+
+  return this.http
+    .get<ApiResponse<ReporteRetencionesResponse>>(`${this.retencionUrl}/reporte`, { params })
+    .pipe(
+      map(resp => this.unwrapOrThrow(resp)),
+      catchError(err => {
+        const backendMsg =
+          err?.error?.message ||
+          err?.error?.Message ||
+          err?.message ||
+          'Error al obtener reporte de retenciones.';
+        return throwError(() => new Error(backendMsg));
+      })
+    );
+}
+
+/**
+ * GET /Retenciones/reporte/exportar
+ * Obtiene reporte completo (sin paginación) para exportar
+ */
+getReporteExportar(
+  fechaInicio: Date | string,
+  fechaFin: Date | string
+): Observable<ReporteRetencionesResponse> {
+  const params = new HttpParams()
+    .set('fechaInicio', this.formatDate(fechaInicio))
+    .set('fechaFin', this.formatDate(fechaFin));
+
+  return this.http
+    .get<ApiResponse<ReporteRetencionesResponse>>(`${this.retencionUrl}/reporte/exportar`, { params })
+    .pipe(
+      map(resp => this.unwrapOrThrow(resp)),
+      catchError(err => {
+        const backendMsg =
+          err?.error?.message ||
+          err?.error?.Message ||
+          err?.message ||
+          'Error al exportar reporte de retenciones.';
+        return throwError(() => new Error(backendMsg));
+      })
+    );
+}
+
+/**
+ * Formatea una fecha al formato ISO (YYYY-MM-DD) para enviar al backend
+ */
+private formatDate(date: Date | string): string {
+  if (typeof date === 'string') {
+    // Si ya es string, asumimos que está en formato correcto
+    return date;
+  }
+  
+  // Si es Date, convertimos a formato ISO (YYYY-MM-DD)
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
 }

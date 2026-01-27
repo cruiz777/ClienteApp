@@ -28,6 +28,7 @@ import { BalanceComprobacionComponent } from './balance/balance/balance-comproba
 import { DiarioMoviminetoListComponent } from './balance/diario/diario-movimineto-list/diario-movimineto-list.component';
 import { RegistroPagosProveedorComponent } from './cuentas-por-pagar/pago-proveedores/registro-pagos-proveedor.component';
 import { MayorCuentasListComponent } from './balance/mayor/mayor-cuentas-list/mayor-cuentas-list.component';
+import { EstadoFinancieroComponent } from './balance/estado-financiero/estado-financiero.component';
 
 const routes: Routes = [
   {
@@ -58,6 +59,7 @@ const routes: Routes = [
       { path: 'balance', component: BalanceComprobacionComponent },
       { path: 'pago-proveedores', component: RegistroPagosProveedorComponent },
       { path: 'mayor', component: MayorCuentasListComponent },
+      { path: 'estado-financiero', component: EstadoFinancieroComponent },
       { path: '**', redirectTo: 'inicio-cg' },
     ],
   },

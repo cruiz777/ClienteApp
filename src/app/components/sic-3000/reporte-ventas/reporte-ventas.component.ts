@@ -17,6 +17,8 @@ import { ReporteFacturasResponse, ReporteNotasCreditoResponse, TotalesReporteVen
 import { NotaCreditoReporteResponse } from 'src/app/interfaces/responses/nota-credito-reporte-response';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MAT_MOMENT_DATE_ADAPTER_OPTIONS, MomentDateAdapter } from '@angular/material-moment-adapter';
+import { RetencionesService } from 'src/app/services/retenciones.service';
+import { ReporteRetencionesResponse, RetencionReporteResponse, TotalesReporteRetenciones } from 'src/app/interfaces/responses/reporte-retenciones-response';
 
 type TipoTab = 'Facturas' | 'NotasCredito' | 'NotasDebito' | 'Retenciones';
 // Formato de fecha personalizado
@@ -66,7 +68,12 @@ export class ReporteVentasComponent implements OnInit {
   notasCreditoGridApi?: GridApi<NotaCreditoReporteResponse>;
   notasCreditoColumnDefs: ColDef<NotaCreditoReporteResponse>[] = [];
   notasCreditoFilaTotales: any[] = [];
-
+  // ========== DATOS DE RETENCIONES ==========
+  retencionesData: RetencionReporteResponse[] = [];
+  retencionesTotales: TotalesReporteRetenciones | null = null;
+  retencionesGridApi?: GridApi<RetencionReporteResponse>;
+  retencionesColumnDefs: ColDef<RetencionReporteResponse>[] = [];
+  retencionesFilaTotales: any[] = [];
   // ========== PAGINACIÓN ==========
   currentPageFacturas = 1;
   currentPageNotasCredito = 1;
@@ -75,6 +82,9 @@ export class ReporteVentasComponent implements OnInit {
   totalItemsNotasCredito = 0;
   totalPagesFacturas = 0;
   totalPagesNotasCredito = 0;
+  currentPageRetenciones = 1;
+  totalItemsRetenciones = 0;
+  totalPagesRetenciones = 0;
 
   // ========== HELPER PARA TEMPLATE ==========
   Math = Math;
@@ -90,6 +100,7 @@ export class ReporteVentasComponent implements OnInit {
     private fb: FormBuilder,
     private facturacionService: FacturacionService,
     private notaCreditoService: NotaCreditoService,
+    private retencionesService: RetencionesService,
     private snackBar: MatSnackBar
   ) {
     const hoy = new Date();
@@ -102,6 +113,8 @@ export class ReporteVentasComponent implements OnInit {
 
     this.inicializarColumnasFacturas();
     this.inicializarColumnasNotasCredito();
+    this.inicializarColumnasRetenciones();
+
   }
 
   ngOnInit(): void {
@@ -266,6 +279,86 @@ export class ReporteVentasComponent implements OnInit {
     ];
   }
 
+
+  //Inciializa las columnas de aggrid para retenciones asi como en factura y NC
+  private inicializarColumnasRetenciones(): void {
+    this.retencionesColumnDefs = [
+      {
+        headerName: '#',
+        width: 60,
+        cellRenderer: (params: any) => {
+          if (params.node.rowPinned) return '';
+          return (this.currentPageRetenciones - 1) * this.pageSize + params.node.rowIndex + 1;
+        },
+        sortable: false,
+        filter: false,
+      },
+      {
+        headerName: 'Fecha',
+        field: 'fecha',
+        width: 120,
+        valueFormatter: (p) => this.formatearFecha(p.value),
+      },
+      {
+        headerName: 'Contribuyente',
+        field: 'contribuyente',
+        minWidth: 200,
+        flex: 1,
+      },
+      {
+        headerName: 'RUC/CI',
+        field: 'rucCi',
+        width: 130,
+      },
+      {
+        headerName: 'No. Factura',
+        field: 'numeroFactura',
+        width: 150,
+      },
+      {
+        headerName: 'No. Retención',
+        field: 'numeroRetencion',
+        width: 150,
+      },
+      {
+        headerName: 'Tipo Comprobante',
+        field: 'tipoComprobante',
+        width: 150,
+      },
+      {
+        headerName: 'Base Imponible',
+        field: 'baseImponible',
+        width: 130,
+        valueFormatter: (p) => this.formatoMoneda(p),
+        type: 'rightAligned',
+      },
+      {
+        headerName: '% Retención',
+        field: 'porcentajeRetencion',
+        width: 110,
+        valueFormatter: (p) => p.value != null ? p.value.toFixed(2) + '%' : '',
+        type: 'rightAligned',
+      },
+      {
+        headerName: 'Valor Retenido',
+        field: 'valorRetenido',
+        width: 130,
+        valueFormatter: (p) => this.formatoMoneda(p),
+        type: 'rightAligned',
+      },
+      {
+        headerName: 'Concepto',
+        field: 'concepto',
+        minWidth: 200,
+      },
+      {
+        headerName: 'Código',
+        field: 'codigoRetencion',
+        width: 100,
+      },
+    ];
+  }
+
   // ========== GRID READY ==========
 
   onFacturasGridReady(event: GridReadyEvent<FacturaReporteResponse>): void {
@@ -274,6 +367,10 @@ export class ReporteVentasComponent implements OnInit {
 
   onNotasCreditoGridReady(event: GridReadyEvent<NotaCreditoReporteResponse>): void {
     this.notasCreditoGridApi = event.api;
+  }
+
+  onRetencionesGridReady(event: GridReadyEvent<RetencionReporteResponse>): void {
+    this.retencionesGridApi = event.api;
   }
 
   // ========== CAMBIO DE TAB ==========
@@ -294,7 +391,7 @@ export class ReporteVentasComponent implements OnInit {
 
     this.currentPageFacturas = 1;
     this.currentPageNotasCredito = 1;
-
+    this.currentPageRetenciones = 1; 
     const fechaDesde = this.convertirADate(this.filtrosForm.value.fechaDesde);
     const fechaHasta = this.convertirADate(this.filtrosForm.value.fechaHasta);
 
@@ -303,6 +400,7 @@ export class ReporteVentasComponent implements OnInit {
     Promise.all([
       this.cargarFacturas(fechaDesde, fechaHasta),
       this.cargarNotasCredito(fechaDesde, fechaHasta),
+      this.cargarRetenciones(fechaDesde, fechaHasta),
     ])
       .then(() => {
         this.snackBar.open('Reporte generado exitosamente', 'Cerrar', {
@@ -370,6 +468,28 @@ export class ReporteVentasComponent implements OnInit {
     });
   }
 
+  private cargarRetenciones(fechaDesde: Date, fechaHasta: Date): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.retencionesService
+        .getReporte(fechaDesde, fechaHasta, this.currentPageRetenciones, this.pageSize)
+        .subscribe({
+          next: (response) => {
+            this.retencionesData = response.paginacion.items;
+            this.retencionesTotales = response.totales;
+            this.totalItemsRetenciones = response.paginacion.totalItems;
+            this.totalPagesRetenciones = response.paginacion.totalPages;
+            this.actualizarTotalesRetenciones();
+            resolve();
+          },
+          error: (error) => {
+            console.error('Error al cargar retenciones:', error);
+            this.retencionesData = [];
+            this.retencionesTotales = null;
+            reject(error);
+          },
+        });
+    });
+  }
   // ========== RECARGAR DATOS (USADO POR PAGINADOR) ==========
 
 
@@ -402,7 +522,22 @@ export class ReporteVentasComponent implements OnInit {
       });
     }
   }
+  // Agregar después del método recargarNotasCredito() (línea ~283)
 
+  private recargarRetenciones(): void {
+    const fechaDesde = this.convertirADate(this.filtrosForm.value.fechaDesde);
+    const fechaHasta = this.convertirADate(this.filtrosForm.value.fechaHasta);
+
+    if (fechaDesde && fechaHasta) {
+      this.loading = true;
+      this.cargarRetenciones(fechaDesde, fechaHasta).finally(() => {
+        this.loading = false;
+        if (this.retencionesGridApi) {
+          this.retencionesGridApi.refreshCells({ force: true });
+        }
+      });
+    }
+  }
   // ========== TOTALES PINNED ==========
 
   private actualizarTotalesFacturas(): void {
@@ -449,6 +584,29 @@ export class ReporteVentasComponent implements OnInit {
     this.notasCreditoFilaTotales = [filaTotales];
   }
 
+  private actualizarTotalesRetenciones(): void {
+    if (!this.retencionesTotales) {
+      this.retencionesFilaTotales = [];
+      return;
+    }
+
+    const filaTotales: any = {
+      fecha: '',
+      contribuyente: 'TOTALES',
+      rucCi: '',
+      numeroFactura: '',
+      numeroRetencion: '',
+      tipoComprobante: '',
+      baseImponible: this.retencionesTotales.totalBaseImponible,
+      porcentajeRetencion: null,
+      valorRetenido: this.retencionesTotales.totalValorRetenido,
+      concepto: '',
+      codigoRetencion: '',
+    };
+
+    this.retencionesFilaTotales = [filaTotales];
+  }
+
   // ========== NAVEGACIÓN DE PÁGINAS ==========
 
   irPaginaFacturas(page: number): void {
@@ -471,6 +629,16 @@ export class ReporteVentasComponent implements OnInit {
     this.recargarNotasCredito();
   }
 
+  irPaginaRetenciones(page: number): void {
+    this.currentPageRetenciones = page;
+    this.recargarRetenciones();
+  }
+
+  cambiarTamanoPaginaRetenciones(): void {
+    this.currentPageRetenciones = 1;
+    this.recargarRetenciones();
+  }
+
   // ========== EXPORTAR A EXCEL ==========
 
   async exportarExcel(): Promise<void> {
@@ -487,9 +655,10 @@ export class ReporteVentasComponent implements OnInit {
     this.snackBar.open('Generando Excel...', 'Cerrar', { duration: 2000 });
 
     try {
-      const [facturasResponse, notasCreditoResponse] = await Promise.all([
+      const [facturasResponse, notasCreditoResponse, retencionesResponse] = await Promise.all([
         this.facturacionService.getReporteFacturasCompleto(fechaDesde, fechaHasta).toPromise(),
         this.notaCreditoService.getReporteNotasCreditoCompleto(fechaDesde, fechaHasta).toPromise(),
+        this.retencionesService.getReporteExportar(fechaDesde, fechaHasta).toPromise(),
       ]);
 
       const workbook = new Workbook();
@@ -505,8 +674,9 @@ export class ReporteVentasComponent implements OnInit {
       const wsDebito = workbook.addWorksheet('Notas de Débito');
       wsDebito.addRow(['En desarrollo']);
 
-      const wsRetenciones = workbook.addWorksheet('Retenciones');
-      wsRetenciones.addRow(['En desarrollo']);
+      if (retencionesResponse) {
+        this.crearHojaRetenciones(workbook, retencionesResponse);
+      }
 
       const buffer = await workbook.xlsx.writeBuffer();
       const blob = new Blob([buffer], {
@@ -616,6 +786,57 @@ export class ReporteVentasComponent implements OnInit {
       data.totales.baseIva,
       data.totales.iva,
       data.totales.total,
+      '',
+    ]);
+
+    this.aplicarEstilosExcel(ws);
+  }
+
+  private crearHojaRetenciones(workbook: Workbook, data: ReporteRetencionesResponse): void {
+    const ws = workbook.addWorksheet('Retenciones');
+
+    const headers = [
+      'Fecha',
+      'Contribuyente',
+      'RUC/CI',
+      'No. Factura',
+      'No. Retención',
+      'Tipo Comprobante',
+      'Base Imponible',
+      '% Retención',
+      'Valor Retenido',
+      'Concepto',
+      'Código',
+    ];
+    ws.addRow(headers);
+
+    data.paginacion.items.forEach((item) => {
+      ws.addRow([
+        this.formatearFecha(item.fecha),
+        item.contribuyente,
+        item.rucCi,
+        item.numeroFactura,
+        item.numeroRetencion,
+        item.tipoComprobante,
+        item.baseImponible,
+        item.porcentajeRetencion,
+        item.valorRetenido,
+        item.concepto,
+        item.codigoRetencion,
+      ]);
+    });
+
+    ws.addRow([
+      '',
+      '',
+      '',
+      '',
+      '',
+      '',
+      'TOTALES',
+      '',
+      data.totales.totalValorRetenido,
+      '',
       '',
     ]);
 
