@@ -51,6 +51,7 @@ import { ReporteVentasComponent } from './reporte-ventas/reporte-ventas.componen
 import { ReenvioFacComponent } from './facturacion/reenvio-fac/reenvio-fac.component';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { ExploradorCxcGeneralComponent } from './exploradores/cxc-general/cxc-general.component';
+import { EstadoCuentaGeneralComponent } from './exploradores/estado-cuenta-general/estado-cuenta-general.component';
 
 @NgModule({
   declarations: [
@@ -88,6 +89,7 @@ import { ExploradorCxcGeneralComponent } from './exploradores/cxc-general/cxc-ge
     EstadocuentaclienteComponent, // ✅ standalone va en imports
     CuentaxcobrarComponent,
     ExploradorCxcGeneralComponent,
+    EstadoCuentaGeneralComponent,
     // Angular Material
     MatSidenavModule,
     MatListModule,

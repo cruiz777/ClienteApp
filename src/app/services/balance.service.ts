@@ -10,6 +10,7 @@ import { BalanceComprobacionResponse } from '../interfaces/responses/balance-com
 import { MayorCuentasResponse } from '../interfaces/responses/mayor-cuentas-response';
 import { EstadoFinancieroRequest } from '../interfaces/requests/estado-financiero-request';
 import { EstadoFinancieroResponse } from '../interfaces/responses/estado-financiero-response';
+import { EstadoResultadosResponse } from '../interfaces/responses/estado-resultados-response';
 
 
 // Si quieres tipar la respuesta genérica como en producto.service.ts
@@ -72,4 +73,10 @@ export class BalanceService {
       request
     );
   }
+  getEstadoResultados(request: EstadoFinancieroRequest): Observable<ApiResponse<EstadoResultadosResponse[]>> {
+  return this.http.post<ApiResponse<EstadoResultadosResponse[]>>(
+    `${this.apiUrl}/estado-resultados`,
+    request
+  );
+}
 }

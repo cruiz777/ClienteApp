@@ -15,6 +15,8 @@ import { LocalesService } from 'src/app/services/locales.service';
 import { LogoService } from 'src/app/services/logo.service';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MomentDateAdapter, MAT_MOMENT_DATE_ADAPTER_OPTIONS } from '@angular/material-moment-adapter';
+import { EstadoResultadosResponse } from 'src/app/interfaces/responses/estado-resultados-response';
+import { ApiResponse } from 'src/app/interfaces/responses/api-response';
 
 // Definir formato personalizado CON TOKENS NATIVOS
 export const MY_DATE_FORMATS = {
@@ -62,7 +64,7 @@ export class EstadoFinancieroComponent implements OnInit {
   
   filtrosForm!: FormGroup;
   cargando = false;
-  datosReporte: EstadoFinancieroResponse[] = [];
+  datosReporte: EstadoFinancieroResponse[] | EstadoResultadosResponse[] = [];
   mostrarResultados = false;
 
 
@@ -73,7 +75,8 @@ export class EstadoFinancieroComponent implements OnInit {
 
   // Catálogos
   tiposReporte: TipoReporte[] = [
-    { id: 'situacion-financiera', nombre: 'Estado de Situación Financiera' }
+    { id: 'situacion-financiera', nombre: 'Estado de Situación Financiera' },
+    { id: 'estado-resultados', nombre: 'Estado de Resultados' } 
     // Agregar más tipos cuando los implementes
   ];
 
@@ -96,7 +99,7 @@ export class EstadoFinancieroComponent implements OnInit {
     //Obtener usuario actual
     this.usuarioActual = this.usuarioService.getUsuarioActual();
     if (this.usuarioActual) {
-        this.nombreUsuarioReporte = this.usuarioActual.nombreD || 'Usuario';
+        this.nombreUsuarioReporte = this.usuarioActual.nombre_usuario  || 'Usuario';
     }
     //CARGAR LOGO
     if (this.usuarioActual?.id_empresa) {
@@ -143,7 +146,7 @@ export class EstadoFinancieroComponent implements OnInit {
     const request: EstadoFinancieroRequest = {
         fechaDesde: this.formatearFechaISO(formValue.fechaDesde),
         fechaHasta: this.formatearFechaISO(formValue.fechaHasta),
-        idEmpresa: this.usuarioActual?.id_empresa || 1, // ✅ Usar empresa del usuario
+        idEmpresa: this.usuarioActual?.id_empresa || 1,
         idLocal: formValue.idLocal > 0 ? formValue.idLocal : null,
         idZona: formValue.idZona > 0 ? formValue.idZona : null,
         idCentroCosto: null,
@@ -151,47 +154,32 @@ export class EstadoFinancieroComponent implements OnInit {
         idSubproyecto: null
     };
 
-    this.balanceService.getEstadoFinanciero(request).subscribe({
-        next: (response) => {
-        this.cargando = false;
-        if (response.data && response.data.length > 0) {
-            this.datosReporte = response.data;
-            this.mostrarResultados = true;
-            
-            this.mostrarMensaje({
-            title: 'Datos cargados',
-            message: `Se encontraron ${response.data.length} registros`,
-            type: 'success',
-            confirmText: 'Aceptar',
-            showCancel: false
-            });
-        } else {
-            this.datosReporte = [];
-            this.mostrarResultados = false;
-            
-            this.mostrarMensaje({
-            title: 'Sin resultados',
-            message: 'No se encontraron datos para los filtros seleccionados',
-            type: 'info',
-            confirmText: 'Aceptar',
-            showCancel: false
-            });
-        }
+    // ✅ Determinar qué servicio llamar según tipo de reporte
+    const tipoReporte = formValue.tipoReporte;
+    
+    if (tipoReporte === 'estado-resultados') {
+        // Llamar servicio de Estado de Resultados
+        this.balanceService.getEstadoResultados(request).subscribe({
+        next: (response) => {  // ✅ Sin tipado explícito
+            this.handleSuccessResponse(response);
         },
-        error: (error) => {
-        this.cargando = false;
-        console.error('Error al consultar estado financiero:', error);
-        
-        this.mostrarMensaje({
-            title: 'Error',
-            message: 'Ocurrió un error al consultar los datos. Por favor intenta nuevamente.',
-            type: 'error',
-            confirmText: 'Aceptar',
-            showCancel: false
-        });
+        error: (error) => {  // ✅ Sin tipado explícito
+            this.handleErrorResponse(error);
         }
-    });
+        });
+    } else {
+        // Llamar servicio de Estado Financiero
+        this.balanceService.getEstadoFinanciero(request).subscribe({
+        next: (response) => {  // ✅ Sin tipado explícito
+            this.handleSuccessResponse(response);
+        },
+        error: (error) => {  // ✅ Sin tipado explícito
+            this.handleErrorResponse(error);
+        }
+        });
     }
+    }
+
 
   exportarPDF(): void {
     if (!this.datosReporte || this.datosReporte.length === 0) {
@@ -224,7 +212,8 @@ export class EstadoFinancieroComponent implements OnInit {
         // ========== ENCABEZADO ==========
         doc.setFontSize(18);
         doc.setFont('helvetica', 'bold');
-        doc.text('ESTADO DE SITUACIÓN FINANCIERA', doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });
+        const tituloReporte = this.esEstadoResultados() ? 'ESTADO DE RESULTADOS' : 'ESTADO DE SITUACIÓN FINANCIERA';
+        doc.text(tituloReporte, doc.internal.pageSize.getWidth() / 2, 15, { align: 'center' });        
         
         // Período
         doc.setFontSize(11);
@@ -257,61 +246,87 @@ export class EstadoFinancieroComponent implements OnInit {
         doc.setLineWidth(0.5);
         doc.line(14, 38, pageWidth - 14, 38);
 
-        // ========== PREPARAR DATOS ========== ENCABEZADOS NIVEL
-        const headers = mostrarCodigos 
-        ? [['CUENTA', 'NOMBRE DE LA CUENTA', '', '', '', '', '']]
-        : [['NOMBRE DE LA CUENTA', '', '', '', '', '']];
+        // ========== PREPARAR DATOS ========== ENCABEZADOS NIVEL     
+        const headers = this.esEstadoResultados()
+        ? (mostrarCodigos 
+            ? [['CUENTA', 'NOMBRE DE LA CUENTA', 'SALDO MENSUAL', 'SALDO ACUMULADO']]
+            : [['NOMBRE DE LA CUENTA', 'SALDO MENSUAL', 'SALDO ACUMULADO']])
+        : (mostrarCodigos 
+            ? [['CUENTA', 'NOMBRE DE LA CUENTA', '', '', '', '', '']]
+            : [['NOMBRE DE LA CUENTA', '', '', '', '', '']]);
 
         const body = this.datosReporte.map(item => {
-        // Indentación más visual con símbolos
+        const esTotal = item.esTotalGeneral || item.esUtilidad;
+        
         let prefijo = '';
-        if (item.nivel === 1) {
+        if (!esTotal) {
+            if (item.nivel === 1) {
             prefijo = '';
-        } else if (item.nivel === 2) {
+            } else if (item.nivel === 2) {
             prefijo = '  * ';
-        } else if (item.nivel === 3) {
+            } else if (item.nivel === 3) {
             prefijo = '    ** ';
-        } else if (item.nivel === 4) {
+            } else if (item.nivel === 4) {
             prefijo = '      *** ';
-        } else if (item.nivel === 5) {
+            } else if (item.nivel === 5) {
             prefijo = '        ***_ ';
+            }
         }
         
         const nombre = prefijo + item.nombreCuenta;
         
-        if (mostrarCodigos) {
+        // ✅ Verificar tipo de reporte
+        if (this.esEstadoResultados() && this.esEstadoResultadosData(this.datosReporte)) {
+            const itemResultados = item as EstadoResultadosResponse;
+            if (mostrarCodigos) {
             return [
-            item.cuenta,
-            nombre,
-            this.formatearNumero(item.sum1),
-            this.formatearNumero(item.sum2),
-            this.formatearNumero(item.sum3),
-            this.formatearNumero(item.sum4),
-            this.formatearNumero(item.sum5)
+                itemResultados.cuenta,
+                nombre,
+                itemResultados.saldoMensual || '',
+                itemResultados.saldoAcumulado || ''
             ];
+            } else {
+            return [
+                nombre,
+                itemResultados.saldoMensual || '',
+                itemResultados.saldoAcumulado || ''
+            ];
+            }
         } else {
+            const itemFinanciero = item as EstadoFinancieroResponse;
+            if (mostrarCodigos) {
             return [
-            nombre,
-            this.formatearNumero(item.sum1),
-            this.formatearNumero(item.sum2),
-            this.formatearNumero(item.sum3),
-            this.formatearNumero(item.sum4),
-            this.formatearNumero(item.sum5)
+                itemFinanciero.cuenta,
+                nombre,
+                itemFinanciero.sum1 || '',
+                itemFinanciero.sum2 || '',
+                itemFinanciero.sum3 || '',
+                itemFinanciero.sum4 || '',
+                itemFinanciero.sum5 || ''
             ];
+            } else {
+            return [
+                nombre,
+                itemFinanciero.sum1 || '',
+                itemFinanciero.sum2 || '',
+                itemFinanciero.sum3 || '',
+                itemFinanciero.sum4 || '',
+                itemFinanciero.sum5 || ''
+            ];
+            }
         }
         });
-
         // ========== GENERAR TABLA SIN BORDES ==========
         autoTable(doc, {
         head: headers,
         body: body,
         startY: 42,
-        theme: 'plain', // ✅ CAMBIO: 'plain' = sin bordes en celdas
+        theme: 'plain',
         styles: {
             fontSize: 8,
             cellPadding: { top: 3, right: 4, bottom: 3, left: 4 },
             overflow: 'linebreak',
-            lineColor: [255, 255, 255], // Bordes blancos = invisibles
+            lineColor: [255, 255, 255],
             lineWidth: 0
         },
         headStyles: {
@@ -342,8 +357,28 @@ export class EstadoFinancieroComponent implements OnInit {
         didParseCell: (data) => {
             const rowData = this.datosReporte[data.row.index];
             if (rowData) {
-            // Estilo según nivel
-            if (rowData.nivel === 1) {
+            // ESTILOS PARA TOTALES GENERALES
+            if (rowData.esTotalGeneral) {
+                data.cell.styles.fontStyle = 'bold';
+                data.cell.styles.fontSize = 10;
+                data.cell.styles.fillColor = [220, 230, 241]; // Azul claro
+                data.cell.styles.textColor = [0, 44, 108];
+                
+                data.cell.styles.cellPadding = { top: 6, right: 4, bottom: 3, left: 4 };
+            }
+            // ESTILOS PARA UTILIDAD
+            else if (rowData.esUtilidad) {
+                data.cell.styles.fontStyle = 'bold';
+                data.cell.styles.fontSize = 11;
+                data.cell.styles.fillColor = [242, 112, 70]; // Naranja corporativo
+                data.cell.styles.textColor = [255, 255, 255];
+                
+                // Líneas arriba y abajo
+                data.cell.styles.lineWidth = { top: 2, bottom: 2, left: 0, right: 0 };
+                data.cell.styles.cellPadding = { top: 8, right: 4, bottom: 8, left: 4 };
+            }
+            // Estilos para cuentas normales
+            else if (rowData.nivel === 1) {
                 data.cell.styles.fontStyle = 'bold';
                 data.cell.styles.fontSize = 10;
                 data.cell.styles.fillColor = [240, 244, 248];
@@ -363,8 +398,37 @@ export class EstadoFinancieroComponent implements OnInit {
             }
             }
         },
+        didDrawCell: (data) => {
+        const rowData = this.datosReporte[data.row.index];
+        if (rowData) {
+            // Línea superior para totales generales
+            if (rowData.esTotalGeneral && data.row.index > 0) {
+            const prevRow = this.datosReporte[data.row.index - 1];
+            if (!prevRow.esTotalGeneral) {
+                doc.setDrawColor(0, 44, 108);
+                doc.setLineWidth(1);
+                const y = data.cell.y;
+                doc.line(data.cell.x, y, data.cell.x + data.cell.width, y);
+            }
+            }
+            
+            // Líneas arriba y abajo para utilidad
+            if (rowData.esUtilidad) {
+            doc.setDrawColor(0, 44, 108);
+            doc.setLineWidth(2);
+            
+            // Línea superior
+            const yTop = data.cell.y;
+            doc.line(data.cell.x, yTop, data.cell.x + data.cell.width, yTop);
+            
+            // Línea inferior
+            const yBottom = data.cell.y + data.cell.height;
+            doc.line(data.cell.x, yBottom, data.cell.x + data.cell.width, yBottom);
+            }
+        }
+        },
         alternateRowStyles: {
-            fillColor: [255, 255, 255] // Quitar filas alternas
+            fillColor: [255, 255, 255]
         }
         });
 
@@ -431,7 +495,7 @@ export class EstadoFinancieroComponent implements OnInit {
         
         // ========== ENCABEZADOS DEL REPORTE ==========
         const infoReporte = [
-        ['ESTADO DE SITUACIÓN FINANCIERA'],
+        [this.esEstadoResultados() ? 'ESTADO DE RESULTADOS' : 'ESTADO DE SITUACIÓN FINANCIERA'],
         [`Período: ${fechaDesde} al ${fechaHasta}`],
         [''],
         [`Generado por: ${this.nombreUsuarioReporte}`, '', '', `Zona: ${zonaNombre}`],
@@ -439,14 +503,17 @@ export class EstadoFinancieroComponent implements OnInit {
         ['']
         ];
         
-        // ========== PREPARAR DATOS ==========
+        // ========== PREPARAR DATOS ==========       
         const datos = this.datosReporte.map(item => {
-        // Indentación con espacios
+        const esTotal = item.esTotalGeneral || item.esUtilidad;
+        
         let prefijo = '';
-        if (item.nivel === 2) prefijo = '  ';
-        else if (item.nivel === 3) prefijo = '    ';
-        else if (item.nivel === 4) prefijo = '      ';
-        else if (item.nivel === 5) prefijo = '        ';
+        if (!esTotal) {
+            if (item.nivel === 2) prefijo = '  ';
+            else if (item.nivel === 3) prefijo = '    ';
+            else if (item.nivel === 4) prefijo = '      ';
+            else if (item.nivel === 5) prefijo = '        ';
+        }
         
         const nombre = prefijo + item.nombreCuenta;
         
@@ -457,11 +524,20 @@ export class EstadoFinancieroComponent implements OnInit {
         }
         
         row['NOMBRE DE LA CUENTA'] = nombre;
-        row[''] = item.sum1 !== null ? item.sum1 : '';
-        row[''] = item.sum2 !== null ? item.sum2 : '';
-        row[''] = item.sum3 !== null ? item.sum3 : '';
-        row[''] = item.sum4 !== null ? item.sum4 : '';
-        row[''] = item.sum5 !== null ? item.sum5 : '';
+        
+        // Verificar tipo de reporte
+        if (this.esEstadoResultados() && this.esEstadoResultadosData(this.datosReporte)) {
+            const itemResultados = item as EstadoResultadosResponse;
+            row['SALDO MENSUAL'] = itemResultados.saldoMensual || '';
+            row['SALDO ACUMULADO'] = itemResultados.saldoAcumulado || '';
+        } else {
+            const itemFinanciero = item as EstadoFinancieroResponse;
+            row['NIVEL 1'] = itemFinanciero.sum1 || '';
+            row['NIVEL 2'] = itemFinanciero.sum2 || '';
+            row['NIVEL 3'] = itemFinanciero.sum3 || '';
+            row['NIVEL 4'] = itemFinanciero.sum4 || '';
+            row['NIVEL 5'] = itemFinanciero.sum5 || '';
+        }
         
         return row;
         });
@@ -572,15 +648,54 @@ export class EstadoFinancieroComponent implements OnInit {
             }
         });
     }
-  formatearNumero(valor: number | null): string {
-    if (valor === null || valor === undefined) {
-      return '';
+
+    private handleSuccessResponse(response: any): void {  // ✅ Usar 'any' para evitar conflictos
+    this.cargando = false;
+    if (response.data && response.data.length > 0) {
+        this.datosReporte = response.data;
+        this.mostrarResultados = true;
+        
+        this.mostrarMensaje({
+        title: 'Datos cargados',
+        message: `Se encontraron ${response.data.length} registros`,
+        type: 'success',
+        confirmText: 'Aceptar',
+        showCancel: false
+        });
+    } else {
+        this.datosReporte = [];
+        this.mostrarResultados = false;
+        
+        this.mostrarMensaje({
+        title: 'Sin resultados',
+        message: 'No se encontraron datos para los filtros seleccionados',
+        type: 'info',
+        confirmText: 'Aceptar',
+        showCancel: false
+        });
     }
-    return valor.toLocaleString('es-EC', { 
-      minimumFractionDigits: 2, 
-      maximumFractionDigits: 2 
+    }
+
+
+    // ✅ NUEVO: Método para manejar errores
+    private handleErrorResponse(error: any): void {
+    this.cargando = false;
+    console.error('Error al consultar estado financiero:', error);
+    
+    this.mostrarMensaje({
+        title: 'Error',
+        message: 'Ocurrió un error al consultar los datos. Por favor intenta nuevamente.',
+        type: 'error',
+        confirmText: 'Aceptar',
+        showCancel: false
     });
-  }
+    }
+
+    // Ya no se necesita formatear porque viene formateado del backend    
+    formatearNumero(valor: string | null): string {
+    if (!valor) return '';
+    return valor; // Ya viene formateado con paréntesis del backend
+    }
 
   limpiarFormulario(): void {
     this.filtrosForm.reset();
@@ -588,6 +703,13 @@ export class EstadoFinancieroComponent implements OnInit {
     this.datosReporte = [];
     this.mostrarResultados = false;
   }
+  esEstadoResultados(): boolean {
+    return this.filtrosForm.get('tipoReporte')?.value === 'estado-resultados';
+    }
+
+    esEstadoResultadosData(data: any[]): data is EstadoResultadosResponse[] {
+    return data.length > 0 && 'saldoMensual' in data[0];
+    }
   private mostrarMensaje(data: MessageBoxData): Promise<boolean> {
     const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
         data: data,

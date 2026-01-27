@@ -2,10 +2,12 @@ export interface EstadoFinancieroResponse {
   cuenta: string;
   nombreCuenta: string;
   nivel: number;
-  sum1: number | null;
-  sum2: number | null;
-  sum3: number | null;
-  sum4: number | null;
-  sum5: number | null;
+  sum1: string | null;  // de number a string
+  sum2: string | null;
+  sum3: string | null;
+  sum4: string | null;
+  sum5: string | null;
   orden: number;
+  esTotalGeneral?: boolean;
+  esUtilidad?: boolean; 
 }

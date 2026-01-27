@@ -81,6 +81,46 @@ export interface ClientesConDeudaCompletoResponse {
   filtros: FiltrosAplicadosDto;
 }
 
+// ===== INTERFACES PARA ESTADO DE CUENTA GENERAL =====
+
+export interface ClienteEstadoCuentaDto {
+  codigo: number;
+  nombre: string;
+  total_debe: number;
+  total_haber: number;
+  saldo_total: number;
+  cantidad_movimientos: number;
+}
+
+export interface ResumenEstadoCuentaResponse {
+  total_clientes: number;
+  total_debe: number;
+  total_haber: number;
+  saldo_total: number;
+  total_movimientos: number;
+  promedio_saldo_por_cliente: number;
+}
+
+export interface FiltrosEstadoCuentaDto {
+  fecha_desde: string | null;
+  fecha_hasta: string | null;
+  saldo_minimo: number | null;
+  incluye_todos_clientes: boolean;
+}
+
+export interface EstadoCuentaGeneralPaginadoResponse {
+  clientes: PaginationResponse<ClienteEstadoCuentaDto>;
+  resumen: ResumenEstadoCuentaResponse;
+}
+
+export interface EstadoCuentaGeneralCompletoResponse {
+  clientes: ClienteEstadoCuentaDto[];
+  resumen: ResumenEstadoCuentaResponse;
+  fecha_generacion: string;
+  filtros: FiltrosEstadoCuentaDto;
+}
+
+
 @Injectable({
   providedIn: 'root'
 })
@@ -175,5 +215,55 @@ export class EstadoCuentaService {
     
     // Retornar ISO
     return d.toISOString();
+  }
+
+  /**
+ * GET /EstadoCuenta/general?fechaDesde=...&fechaHasta=...&saldoMinimo=...&page=...&pageSize=...
+ * Obtiene el estado de cuenta general PAGINADO (todos los clientes con movimientos)
+ */
+  getEstadoCuentaGeneralPaginado(opts: {
+    fechaDesde?: string;
+    fechaHasta?: string;
+    saldoMinimo?: number | null;
+    page?: number;
+    pageSize?: number;
+  } = {}): Observable<ApiResponse<EstadoCuentaGeneralPaginadoResponse>> {
+    let params = new HttpParams()
+      .set('page', (opts.page ?? 1).toString())
+      .set('pageSize', (opts.pageSize ?? 20).toString());
+
+    if (opts.fechaDesde) params = params.set('fechaDesde', opts.fechaDesde);
+    if (opts.fechaHasta) params = params.set('fechaHasta', opts.fechaHasta);
+    if (opts.saldoMinimo !== undefined && opts.saldoMinimo !== null) {
+      params = params.set('saldoMinimo', opts.saldoMinimo.toString());
+    }
+
+    return this.http.get<ApiResponse<EstadoCuentaGeneralPaginadoResponse>>(
+      `${this.baseUrl}/general`, 
+      { params }
+    );
+  }
+
+  /**
+   * GET /EstadoCuenta/general/completo?fechaDesde=...&fechaHasta=...&saldoMinimo=...
+   * Obtiene el estado de cuenta general COMPLETO (para exportar, sin paginación)
+   */
+  getEstadoCuentaGeneralCompleto(opts: {
+    fechaDesde?: string;
+    fechaHasta?: string;
+    saldoMinimo?: number | null;
+  } = {}): Observable<ApiResponse<EstadoCuentaGeneralCompletoResponse>> {
+    let params = new HttpParams();
+
+    if (opts.fechaDesde) params = params.set('fechaDesde', opts.fechaDesde);
+    if (opts.fechaHasta) params = params.set('fechaHasta', opts.fechaHasta);
+    if (opts.saldoMinimo !== undefined && opts.saldoMinimo !== null) {
+      params = params.set('saldoMinimo', opts.saldoMinimo.toString());
+    }
+
+    return this.http.get<ApiResponse<EstadoCuentaGeneralCompletoResponse>>(
+      `${this.baseUrl}/general/completo`, 
+      { params }
+    );
   }
 }

@@ -1,0 +1,259 @@
+<div class="cuenta-liquidar">
+
+  <!-- Stepper -->
+  <div class="steps">
+    <div class="step active">
+      <div class="step-text">Explorador General de Estado de Cuenta</div>
+    </div>
+  </div>
+
+  <!-- ===== FILTROS ===== -->
+  <form [formGroup]="formFiltros" novalidate>
+    
+    <div class="panel" style="background-color: #ECECEC;">
+      <div class="panel-title">Filtros de Búsqueda</div>
+      
+      <!-- Grid de filtros -->
+      <div class="fi-grid" style="grid-template-columns: 1fr 1fr 200px 200px; gap: 16px 24px; align-items: end;">
+        
+        <!-- Fecha Desde -->
+        <div class="field">
+          <label>Fecha Desde:</label>
+          <input 
+            type="date" 
+            class="form-control" 
+            formControlName="fechaDesde" 
+            placeholder="Seleccionar" />
+        </div>
+
+        <!-- Fecha Hasta -->
+        <div class="field">
+          <label>Fecha Hasta:</label>
+          <input 
+            type="date" 
+            class="form-control" 
+            formControlName="fechaHasta" 
+            placeholder="Seleccionar" />
+        </div>
+
+        <!-- Saldo Mínimo (OPCIONAL - puede ser null) -->
+        <div class="field">
+          <label>Saldo Mínimo:</label>
+          <input 
+            type="number" 
+            class="form-control" 
+            formControlName="saldoMinimo" 
+            placeholder="Todos los clientes"
+            step="0.01" />
+          <small style="font-size: 10px; color: #64748b; margin-top: 2px; display: block;">
+            Dejar vacío para incluir todos los clientes
+          </small>
+        </div>
+
+        <!-- Botones de acción -->
+        <div class="field" style="display: flex; gap: 8px;">
+          <button 
+            type="button" 
+            class="btn btn-primary" 
+            (click)="aplicarFiltros()"
+            [disabled]="isLoading">
+            <span *ngIf="isLoading" class="spinner"></span>
+            Buscar
+          </button>
+          <button 
+            type="button" 
+            class="btn btn-ghost" 
+            (click)="limpiarFiltros()"
+            [disabled]="isLoading">
+            Limpiar
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== RESUMEN EXTENDIDO (6 MÉTRICAS) ===== -->
+    <div class="panel" *ngIf="rowData.length > 0">
+      <div class="panel-subtitle">Resumen General</div>
+      
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 12px;">
+        
+        <!-- Total Clientes -->
+        <div style="padding: 12px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #0ea5e9;">
+          <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">TOTAL CLIENTES</div>
+          <div style="font-size: 20px; font-weight: 700; color: #0c4a6e;">
+            {{ resumen.total_clientes }}
+          </div>
+        </div>
+
+        <!-- Total Debe -->
+        <div style="padding: 12px; background: #fef2f2; border-radius: 8px; border-left: 4px solid #ef4444;">
+          <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">TOTAL DEBE</div>
+          <div style="font-size: 20px; font-weight: 700; color: #991b1b;">
+            {{ usd(resumen.total_debe) }}
+          </div>
+        </div>
+
+        <!-- Total Haber -->
+        <div style="padding: 12px; background: #f0fdf4; border-radius: 8px; border-left: 4px solid #22c55e;">
+          <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">TOTAL HABER</div>
+          <div style="font-size: 20px; font-weight: 700; color: #15803d;">
+            {{ usd(resumen.total_haber) }}
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Segunda fila del resumen -->
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px;">
+        
+        <!-- Saldo Total -->
+        <div style="padding: 12px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+          <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">SALDO TOTAL</div>
+          <div style="font-size: 20px; font-weight: 700; color: #92400e;">
+            {{ usd(resumen.saldo_total) }}
+          </div>
+        </div>
+
+        <!-- Total Movimientos -->
+        <div style="padding: 12px; background: #f5f3ff; border-radius: 8px; border-left: 4px solid #8b5cf6;">
+          <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">TOTAL MOVIMIENTOS</div>
+          <div style="font-size: 20px; font-weight: 700; color: #5b21b6;">
+            {{ resumen.total_movimientos }}
+          </div>
+        </div>
+
+        <!-- Promedio por Cliente -->
+        <div style="padding: 12px; background: #fce7f3; border-radius: 8px; border-left: 4px solid #ec4899;">
+          <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">PROMEDIO SALDO / CLIENTE</div>
+          <div style="font-size: 20px; font-weight: 700; color: #9f1239;">
+            {{ usd(resumen.promedio_saldo_por_cliente) }}
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== TABLA DETALLE ===== -->
+    <div class="panel">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+        <div class="panel-subtitle">Estado de Cuenta por Cliente</div>
+        
+        <!-- Paginación -->
+        <div *ngIf="totalPages > 1" style="display: flex; align-items: center; gap: 12px; font-size: 12px;">
+          <button 
+            type="button" 
+            class="btn btn-ghost" 
+            style="height: 28px; padding: 0 10px;"
+            (click)="irPaginaAnterior()"
+            [disabled]="page === 1 || isLoading">
+            ‹
+          </button>
+          <span style="color: #64748b;">
+            Página {{ page }} de {{ totalPages }} 
+            <span style="margin-left: 8px;">({{ totalItems }} registros)</span>
+          </span>
+          <button 
+            type="button" 
+            class="btn btn-ghost" 
+            style="height: 28px; padding: 0 10px;"
+            (click)="irPaginaSiguiente()"
+            [disabled]="page === totalPages || isLoading">
+            ›
+          </button>
+        </div>
+      </div>
+
+      <!-- Grid con overlay de carga -->
+      <div class="grid-wrap" style="position: relative;">
+        
+        <!-- Overlay de carga -->
+        <div *ngIf="isLoading" class="grid-overlay">
+          <div>
+            <div class="spinner" style="width: 24px; height: 24px; margin: 0 auto 8px;"></div>
+            <div>Cargando estado de cuenta...</div>
+          </div>
+        </div>
+
+        <!-- Mensaje si no hay datos -->
+        <div 
+          *ngIf="!isLoading && rowData.length === 0" 
+          class="grid-overlay"
+          style="background: #f8fafc;">
+          <div style="text-align: center;">
+            <span class="material-icons" style="font-size: 48px; color: #cbd5e1; margin-bottom: 12px;">
+              receipt_long
+            </span>
+            <div style="font-size: 14px; color: #64748b; font-weight: 600;">
+              No se encontraron clientes con movimientos
+            </div>
+            <div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">
+              Intenta ajustar los filtros de búsqueda
+            </div>
+          </div>
+        </div>
+
+        <!-- AG Grid -->
+        <ag-grid-angular 
+          class="ag-theme-alpine compact-grid" 
+          style="width: 100%; height: 420px;" 
+          [rowData]="rowData"
+          [columnDefs]="columnDefs" 
+          [defaultColDef]="defaultColDef" 
+          [getRowId]="getRowId"
+          (gridReady)="onGridReady($event)"
+          [enableBrowserTooltips]="true"
+          [tooltipShowDelay]="300"
+          [tooltipHideDelay]="100"
+          [animateRows]="true"
+          [suppressCellFocus]="true">
+        </ag-grid-angular>
+      </div>
+    </div>
+
+    <!-- ===== BOTONES INFERIORES ===== -->
+    <div class="buttons-row buttons-bottom">
+      
+      <!-- Botón Exportar con menú -->
+      <button
+        mat-button
+        type="button"
+        class="pill-btn pill-btn-outline"
+        [matMenuTriggerFor]="menuExportar"
+        [disabled]="rowData.length === 0 || isLoading">
+        <span class="material-icons" style="font-size: 16px; margin-right: 4px;">
+          download
+        </span>
+        Exportar
+      </button>
+
+      <mat-menu #menuExportar="matMenu">
+        <button mat-menu-item (click)="exportarPdf()">
+          <span class="material-icons" style="font-size: 18px; margin-right: 8px; color: #ef4444;">
+            picture_as_pdf
+          </span>
+          Exportar a PDF
+        </button>
+        <button mat-menu-item (click)="exportarExcel()">
+          <span class="material-icons" style="font-size: 18px; margin-right: 8px; color: #10b981;">
+            grid_on
+          </span>
+          Exportar a Excel
+        </button>
+      </mat-menu>
+
+      <!-- Botón Cancelar -->
+      <button
+        mat-button
+        type="button"
+        class="pill-btn pill-btn-solid"
+        (click)="cancelar()"
+        [disabled]="isLoading">
+        Cancelar
+      </button>
+
+    </div>
+
+  </form>
+
+</div>
