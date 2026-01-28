@@ -33,12 +33,14 @@ export interface ClienteCodpreGrupoResponse {
   total: number;                // subtotal + iva
   referencia: string;           // zona / descripción
   pIva: number;                 // % IVA vigente (ej. 15)
+  idCodContable:number;
 }
 
 export interface FiltrosCodpreGrupo {
   busquedaGeneral?: string;
   prefijoBusqueda?: string;
   idZona?: number | string | null;
+    anioFactura?: number | null; 
 }
 
 /* ========= DTOs de creación de factura ========= */
@@ -107,32 +109,41 @@ export class FacturaGlobalService {
   constructor(private http: HttpClient) {}
 
   /** GET /clientes/codpre-grupo */
-  getClientesCodpreGrupo(
-    filtros: FiltrosCodpreGrupo = {}
-  ): Observable<ClienteCodpreGrupoResponse[]> {
-    let params = new HttpParams();
+getClientesCodpreGrupo(
+  filtros: FiltrosCodpreGrupo = {}
+): Observable<ClienteCodpreGrupoResponse[]> {
+  let params = new HttpParams();
 
-    if (filtros.busquedaGeneral?.trim()) {
-      params = params.set('BusquedaGeneral', filtros.busquedaGeneral.trim());
-    }
-    if (filtros.prefijoBusqueda?.trim()) {
-      params = params.set('PrefijoBusqueda', filtros.prefijoBusqueda.trim());
-    }
-    if (
-      filtros.idZona != null &&
-      String(filtros.idZona).trim() !== '' &&
-      Number(filtros.idZona) > 0
-    ) {
-      params = params.set('IdZona', String(filtros.idZona));
-    }
-
-    return this.http
-      .get<ApiResponse<ClienteCodpreGrupoResponse[]>>(
-        `${this.clientesUrl}/codpre-grupo`,
-        { params }
-      )
-      .pipe(map(res => res.data ?? []));
+  if (filtros.busquedaGeneral?.trim()) {
+    params = params.set('BusquedaGeneral', filtros.busquedaGeneral.trim());
   }
+  if (filtros.prefijoBusqueda?.trim()) {
+    params = params.set('PrefijoBusqueda', filtros.prefijoBusqueda.trim());
+  }
+  if (
+    filtros.idZona != null &&
+    String(filtros.idZona).trim() !== '' &&
+    Number(filtros.idZona) > 0
+  ) {
+    params = params.set('IdZona', String(filtros.idZona));
+  }
+
+  // ✅ NUEVO: AnioFactura
+  if (
+    filtros.anioFactura != null &&
+    String(filtros.anioFactura).trim() !== '' &&
+    Number(filtros.anioFactura) > 0
+  ) {
+    params = params.set('AnioFactura', String(filtros.anioFactura));
+  }
+
+  return this.http
+    .get<ApiResponse<ClienteCodpreGrupoResponse[]>>(
+      `${this.clientesUrl}/codpre-grupo`,
+      { params }
+    )
+    .pipe(map(res => res.data ?? []));
+}
 
   /**
    * POST /Facturacion/crear

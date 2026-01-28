@@ -8,6 +8,8 @@ import { MatButtonModule } from '@angular/material/button';
 import { AgGridAngular } from 'ag-grid-angular';
 import { MatIconModule } from '@angular/material/icon';
 import * as JSZip from 'jszip';
+import * as ExcelJS from 'exceljs';
+import {  WorkflowResult } from 'src/app/services/facturacion-workflow.service';
 
 
 import { saveAs } from 'file-saver';
@@ -17,6 +19,9 @@ import { UsuarioService } from 'src/app/services/usuario.service';
 import { ClienteService } from 'src/app/services/cliente.service';
 import { ClienteContactoService } from 'src/app/services/cliente-contacto.service';
 import { ZonaService, Zona } from 'src/app/services/zona.service';
+import { FacturacionWorkflowService } from 'src/app/services/facturacion-workflow.service';
+
+import { AsientoVentaRequest, DetalleAsientoVentaRequest } from 'src/app/services/asiento-venta.service';
 
 import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
@@ -89,7 +94,7 @@ export class FacturacionGlobalComponent implements OnInit {
   private readonly PAUSA_MS = 200;      // pausa entre facturas (evita colisiones secuencial)
 
   // ID del producto de mantenimiento (ajusta al real)
-  private readonly PRODUCTO_MANTENIMIENTO_ID = 60713;
+  private readonly PRODUCTO_MANTENIMIENTO_ID = 2878981;
 
   // getters
   get anioCtrl() { return this.formFactura.get('anio')!; }
@@ -149,7 +154,8 @@ Prefijo: ${d.prefijo ?? ''}`;
     },
     { headerName: 'Ciudad', field: 'ciudad', minWidth: 110 },
     { headerName: 'Email', field: 'email', hide: true },
-    { headerName: 'Piva', field: 'piva', hide: true }
+    { headerName: 'Piva', field: 'piva', hide: true },
+    { headerName: 'idCodContable', field: 'idcodcontable', hide: false }
   ];
 
   defaultColDef: ColDef = { sortable: true, filter: true, resizable: true };
@@ -221,7 +227,9 @@ Prefijo: ${d.prefijo ?? ''}`;
     private zonaService: ZonaService,
     private dialog: MatDialog,
     private notasObsService: NotasObsService,
-    private facturaService: FacturacionService
+    private facturaService: FacturacionService,
+    private workflow: FacturacionWorkflowService
+
   ) { }
 
   ngOnInit(): void {
@@ -380,9 +388,10 @@ Prefijo: ${d.prefijo ?? ''}`;
         showCancel: false
       }
     });
+    const anioFactura = Number(this.formFactura.get('anio')?.value ?? new Date().getFullYear());
 
     this.facturaGlobalService
-      .getClientesCodpreGrupo({ busquedaGeneral: termino, prefijoBusqueda: prefijo, idZona })
+      .getClientesCodpreGrupo({ busquedaGeneral: termino, prefijoBusqueda: prefijo, idZona, anioFactura })
       .pipe(
         map((rows: ClienteCodpreGrupoResponse[] = []) =>
           rows.map(r => ({
@@ -397,7 +406,8 @@ Prefijo: ${d.prefijo ?? ''}`;
             total: r.total ?? 0,
             ciudad: r.ciudad ?? '',
             zona: r.referencia ?? '',
-            piva: r.pIva ?? 15
+            piva: r.pIva ?? 15,
+            idcodcontable: (r as any).idCodContable ?? (r as any).idcodcontable ?? null
           }))
         ),
         switchMap(baseRows => {
@@ -570,67 +580,65 @@ Prefijo: ${d.prefijo ?? ''}`;
                 throw { status: 400, error: { message: 'Datos incompletos para la factura.' } };
               }
 
-              return this.facturaGlobalService.crear(payload).pipe(
-                retryWhen(err$ =>
-                  err$.pipe(
-                    scan((acc: number, _err) => {
-                      const attempt = acc + 1;
-                      if (attempt > this.MAX_RETRIES) throw _err;
-                      return attempt;
-                    }, 0),
-                    delayWhen((attempt: number) =>
-                      timer(this.RETRY_BASE_MS * Math.pow(2, Math.max(0, attempt - 1)))
-                    )
-                  )
-                ),
-                tap((resp: any) => {
-                  // éxito creación
-                  exitosas++;
-                  procesadas++;
-                  if (dlg.componentInstance) {
-                    dlg.componentInstance.data = {
-                      ...dlg.componentInstance.data,
-                      message: `Procesadas ${procesadas} / ${total} · OK: ${exitosas} · Error: ${fallidas}`
-                    };
+              
+             return this.workflow.procesarFacturaConAsientoObligatorio(
+  payload,
+  (idNota: number, numnota: string) =>
+    this.buildAsientoVentaRequestGlobal(idNota, numnota, row, payload)
+).pipe(
+  retryWhen(err$ =>
+    err$.pipe(
+      scan((acc: number, _err) => {
+        const attempt = acc + 1;
+        if (attempt > this.MAX_RETRIES) throw _err;
+        return attempt;
+      }, 0),
+      delayWhen((attempt: number) =>
+        timer(this.RETRY_BASE_MS * Math.pow(2, Math.max(0, attempt - 1)))
+      )
+    )
+  ),
 
-                  }
+  tap((res) => {
+    exitosas++;
+    procesadas++;
 
-                  // generar XML si tenemos idNota
-                  const idNota = this.extraerIdNota(resp);
-                  if (Number.isFinite(idNota) && idNota! > 0 && (this.facturaGlobalService as any)['generarXmlEnServidor']) {
-                    this.facturaGlobalService.generarXmlEnServidor(idNota!).pipe(take(1)).subscribe({
-                      error: e => console.warn('No se pudo generar XML para idNota', idNota, e)
-                    });
-                  }
-                }),
-                catchError(err => {
-                  // error en esta fila
-                  fallidas++;
-                  procesadas++;
+    row.idNotaGenerada = res.idNota;
+    row.asiento = res.numdocVT;
+    row.xml = res.xmlFileName;
 
-                  erroresBatch.push({
-                    codCliente: row.codCliente,
-                    cliente: row.cliente,
-                    prefijo: row.prefijo,
-                    total: row.total,
-                    mensaje: getErrMsg(err),
-                    status: err?.status
-                  });
+    if (dlg.componentInstance) {
+      dlg.componentInstance.data = {
+        ...dlg.componentInstance.data,
+        message: `Procesadas ${procesadas} / ${total} · OK: ${exitosas} · Error: ${fallidas}`
+      };
+    }
+  }),
 
-                  console.error('[Facturar] Error al crear factura:', {
-                    row, status: err?.status, error: err
-                  });
+  catchError(err => {
+    fallidas++;
+    procesadas++;
 
-                  if (dlg.componentInstance) {
-                    dlg.componentInstance.data = {
-                      ...dlg.componentInstance.data,
-                      message: `Procesadas ${procesadas} / ${total} · OK: ${exitosas} · Error: ${fallidas}`
-                    };
-                  }
-                  // continuar
-                  return of(null);
-                })
-              );
+    erroresBatch.push({
+      codCliente: row.codCliente,
+      cliente: row.cliente,
+      prefijo: row.prefijo,
+      total: row.total,
+      mensaje: getErrMsg(err),
+      status: err?.status
+    });
+
+    if (dlg.componentInstance) {
+      dlg.componentInstance.data = {
+        ...dlg.componentInstance.data,
+        message: `Procesadas ${procesadas} / ${total} · OK: ${exitosas} · Error: ${fallidas}`
+      };
+    }
+
+    return of(null);
+  })
+);
+
             })
           )
         ),
@@ -722,9 +730,9 @@ Prefijo: ${d.prefijo ?? ''}`;
 
   cajaAsignada = false;
   cargarAutorizacion(): void {
-const id =
-  this.usuarioActual?.cajas?.find(c => c.id_tipo_documento === 1)?.id_autorizacion_caja
-  ?? null;
+    const id =
+      this.usuarioActual?.cajas?.find(c => c.id_tipo_documento === 1)?.id_autorizacion_caja
+      ?? null;
 
 
 
@@ -920,6 +928,7 @@ const id =
     return payload;
   }
 
+
   // Intenta extraer el id de la nota/factura desde varias formas de respuesta
   private extraerIdNota(resp: any): number | null {
     const cands = [
@@ -1103,5 +1112,319 @@ const id =
       }
     });
   }
+  exportarExcelConsulta(): void {
+    if (!this.gridApi) return;
+
+    // ✅ 1) Si hay filas seleccionadas -> exporta solo esas
+    const selected = this.gridApi.getSelectedRows() ?? [];
+
+    // ✅ 2) Si NO hay seleccionadas -> exporta todo lo visible (filtrado + ordenado)
+    const rows: any[] = selected.length ? selected : [];
+    if (!selected.length) {
+      this.gridApi.forEachNodeAfterFilterAndSort(n => {
+        if (n?.data) rows.push(n.data);
+      });
+    }
+
+    if (!rows.length) {
+      this.dialog.open(CustomMessageBoxComponent, {
+        data: {
+          title: 'Sin datos',
+          message: 'No hay registros para exportar (verifique filtros).',
+          isLoading: false,
+          showCancel: false
+        }
+      });
+      return;
+    }
+
+    const anio = (this.formFactura.get('anio')?.value ?? '').toString().trim() || 'anio';
+    const zona = (this.formFactura.get('zona')?.value ?? '').toString().trim() || 'todas';
+
+    const fileName = `consulta_factura_global_${anio}_zona_${zona}_${new Date()
+      .toISOString()
+      .slice(0, 19)
+      .replace(/[:T]/g, '-')}.xlsx`;
+
+    const cols: Array<{ header: string; key: string }> = [
+      { header: 'Cod.Cliente', key: 'codCliente' },
+      { header: 'RUC', key: 'ruc' },
+      { header: 'Cliente', key: 'cliente' },
+      { header: 'Grupo', key: 'grupo' },
+      { header: 'Zona', key: 'zona' },
+      { header: 'Prefijo', key: 'prefijo' },
+      { header: 'Valor', key: 'valor' },
+      { header: 'Subtotal', key: 'subtotal' },
+      { header: 'IVA', key: 'iva' },
+      { header: 'Total', key: 'total' },
+      { header: 'Ciudad', key: 'ciudad' }
+    ];
+
+    const dlg = this.dialog.open(CustomMessageBoxComponent, {
+      disableClose: true,
+      data: {
+        title: 'Exportando Excel…',
+        message: selected.length
+          ? `Exportando ${rows.length} registro(s) seleccionados…`
+          : `Exportando ${rows.length} registro(s)…`,
+        isLoading: true,
+        showCancel: false
+      }
+    });
+
+    try {
+      // ExcelJS (asegúrate de tener: import * as ExcelJS from 'exceljs';)
+      const wb = new (ExcelJS as any).Workbook();
+      wb.creator = 'SIC3000';
+      wb.created = new Date();
+
+      const ws = wb.addWorksheet(`Consulta ${anio}`, {
+        views: [{ state: 'frozen', ySplit: 2 }]
+      });
+
+      // Título
+      ws.mergeCells(1, 1, 1, cols.length);
+      const titleCell = ws.getCell(1, 1);
+      titleCell.value = `Factura Global - Consulta ${anio} (Zona: ${zona})`;
+      titleCell.font = { bold: true, size: 14 };
+      titleCell.alignment = { vertical: 'middle', horizontal: 'left' };
+
+      // Cabeceras
+      ws.addRow(cols.map(c => c.header));
+      const headerRow = ws.getRow(2);
+      headerRow.font = { bold: true };
+      headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+      headerRow.height = 18;
+
+      headerRow.eachCell((cell: any) => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+
+      // Datos
+      for (const r of rows) {
+        const rowValues = cols.map(c => {
+          const v = r?.[c.key];
+          if (['valor', 'subtotal', 'iva', 'total'].includes(c.key)) return Number(v ?? 0);
+          return v ?? '';
+        });
+
+        const excelRow = ws.addRow(rowValues);
+        excelRow.alignment = { vertical: 'middle', horizontal: 'left' };
+
+        excelRow.eachCell((cell: any) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+      }
+
+      // Formatos numéricos
+      const headerIndex: Record<string, number> = {};
+      cols.forEach((c, i) => (headerIndex[c.header] = i + 1));
+
+      for (const h of ['Valor', 'Subtotal', 'IVA', 'Total']) {
+        const idx = headerIndex[h];
+        if (!idx) continue;
+        const col = ws.getColumn(idx);
+        col.numFmt = '#,##0.00';
+        col.alignment = { vertical: 'middle', horizontal: 'right' };
+      }
+
+      if (headerIndex['Prefijo']) {
+        ws.getColumn(headerIndex['Prefijo']).alignment = { vertical: 'middle', horizontal: 'right' };
+      }
+
+      // Auto-ancho seguro (sin col.eachCell)
+      for (let c = 1; c <= cols.length; c++) {
+        let max = 10;
+        for (let r = 1; r <= ws.rowCount; r++) {
+          const v = ws.getRow(r).getCell(c).value;
+          const len = v == null ? 0 : String(v).length;
+          if (len > max) max = len;
+        }
+        ws.getColumn(c).width = Math.min(Math.max(max + 2, 10), 45);
+      }
+
+      wb.xlsx.writeBuffer()
+        .then((buffer: ArrayBuffer) => {
+          const blob = new Blob([buffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          });
+          saveAs(blob, fileName);
+          dlg.close();
+        })
+        .catch((err: any) => {
+          console.error('[Excel] writeBuffer error:', err);
+          dlg.close();
+          this.dialog.open(CustomMessageBoxComponent, {
+            data: { title: 'Error', message: 'No se pudo generar el Excel.', isLoading: false }
+          });
+        });
+
+    } catch (err) {
+      console.error('[Excel] error:', err);
+      dlg.close();
+      this.dialog.open(CustomMessageBoxComponent, {
+        data: { title: 'Error', message: 'No se pudo exportar a Excel.', isLoading: false }
+      });
+    }
+  }
+
+
+  get canExportExcelConsulta(): boolean {
+    return !!this.gridApi && (this.rowData?.length ?? 0) > 0 && !this.cargando && !this.facturando;
+  }
+  private toIsoFromDdMmYyyy(fecha: string): string {
+  // "27/01/2026" -> "2026-01-27T00:00:00"
+  const s = (fecha ?? '').trim();
+  const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (!m) return new Date().toISOString(); // fallback
+  const dd = m[1], mm = m[2], yyyy = m[3];
+  return `${yyyy}-${mm}-${dd}T00:00:00`;
+}
+
+private buildAsientoVentaRequestGlobal(
+  idNota: number,
+  numnota: string,      // ✅ nuevo
+  row: any,
+  payload: FacturaCrearRequest
+): AsientoVentaRequest {
+
+  // ====== CONSTANTES (según tu ejemplo VT REAL) ======
+  const ID_TIPO_ASIENTO_VT = 3;
+  const MODULO_VENTAS = 2;
+
+  const ID_LOCAL = 1;
+  const ID_COD_CONTABLE = Number(row?.idcodcontable ?? 0) || 0;
+if (!ID_COD_CONTABLE) {
+  throw { status: 400, error: { message: `Cliente ${row?.codCliente}: no tiene idCodContable asignado.` } };
+}
+
+
+  const CTA_CXC = { idPlan: 19,  cod: '110205-001' }; // DEBE
+  const CTA_ING = { idPlan: 235, cod: '410101-003' }; // HABER SUBTOTAL
+  const CTA_IVA = { idPlan: 131, cod: '210602-001' }; // HABER IVA
+
+  // ====== FECHA ======
+  const fechaUI = String(this.formCaja.get('fechaFacturacion')?.value ?? '').trim(); // dd/MM/yyyy
+  const fechaIso = this.toIsoFromDdMmYyyy(fechaUI);
+  const hora = new Date().toTimeString().slice(0, 8);
+
+  const anio = Number(this.formFactura.get('anio')?.value ?? new Date().getFullYear());
+
+  // idZona: si estás en “Todas las zonas”, usa 1 (o la zona del usuario si tienes esa propiedad)
+  const z = this.formFactura.get('zona')?.value;
+  const idZona = (z === '' || z == null) ? 1 : Number(z);
+
+  const idEmpresa = Number((this.usuarioActual as any)?.id_empresa ?? 1) || 1;
+  const idUsuario = Number(this.usuarioActual?.id_usuario ?? 0) || 0;
+
+  const beneficiario = String(row?.cliente ?? '').trim();
+
+  const subtotal = Number(payload.subtotalCalculado ?? payload.subtotalSIva ?? 0);
+  const iva = Number(payload.ivaTotalCalculado ?? 0);
+  const total = Number(payload.totalCalculado ?? 0);
+
+  const cab: any = {
+    IdCabMaestro: 0,
+    id_zona: idZona,
+    id_usuario: idUsuario,
+    id_empresa: idEmpresa,
+    id_tipo_asiento: ID_TIPO_ASIENTO_VT,
+    tipdoc: 'VT',
+    numdoc: 0, // lo genera backend
+    anio,
+    fechatransaccion: fechaIso,
+    fechaingreso: fechaIso,
+    observacion: `ASIENTO POR VENTA FACTURA ${numnota}`,
+    totdebe: total,
+    tothaber: total,
+    beneficiario,
+    cierre: null,
+    fechacierre: null,
+    solicitado: null,
+    depto: null,
+    autorizado: null,
+    hom_codigo: 0,
+    estado: true,
+    modulo: MODULO_VENTAS,
+    detalles: []
+  };
+
+  const detBase = (numlinea: number) => ({
+    id_det_maestro: 0,
+    id_cab_maestro: 0,
+    numlinea,
+    anio,
+    fechatransaccion: fechaIso,
+    hora,
+    id_zona: idZona,
+    id_centro_costos: null,
+    id_local: ID_LOCAL,
+    id_plan_cuentas: 0,
+    codpre_pc: '',
+    id_cod_contable: ID_COD_CONTABLE,
+    nocomprobante: numnota,        // ✅ aquí queda EXACTO como tu DB
+    docurelacionado: null,
+    cheque: 0,
+    beneficiario: null,
+    debe: 0,
+    haber: 0,
+    comentario: '',
+    id_mov_bancario: 1,
+    movbancario: 0,
+    fechaingreso: fechaIso,
+    cierre: null,
+    fechacierre: null,
+    conciliado: null,
+    fechaconciliado: null,
+    id_sustento_trib: null,
+    id_tipo_comp_sri: null,
+    autorizacion: null,
+    fechacaduca: null,
+    id_tipo_retencion: null,
+    id_proyecto: null,
+    id_subproyecto: null,
+    transferido: 0,
+    fechatransferido: null,
+    fechavencimiento: null,
+    idConciliacion: null,
+    valorLetras: null,
+    estado_ingreso: 1,
+    autorizacion_relacionado: null,
+    fecha_cad_relacionado: null,
+    id_por_iva: null,
+    porcentaje: null
+  });
+
+  const d1 = detBase(1);
+  d1.id_plan_cuentas = CTA_CXC.idPlan;
+  d1.codpre_pc = CTA_CXC.cod;
+  d1.debe = total;
+  d1.comentario = `COBRO FACTURA ${numnota} - CREDITO`;
+
+  const d2 = detBase(2);
+  d2.id_plan_cuentas = CTA_ING.idPlan;
+  d2.codpre_pc = CTA_ING.cod;
+  d2.haber = subtotal;
+  d2.comentario = `INGRESO POR VENTA FACTURA ${numnota} - ${String(payload.detalles?.[0]?.nombreProductoPersonalizado ?? '').trim()}`;
+
+  const d3 = detBase(3);
+  d3.id_plan_cuentas = CTA_IVA.idPlan;
+  d3.codpre_pc = CTA_IVA.cod;
+  d3.haber = iva;
+  d3.comentario = `IVA RECAUDADO FACTURA ${numnota}`;
+
+  cab.detalles = [d1, d2, d3];
+  return cab as AsientoVentaRequest;
+}
 
 }

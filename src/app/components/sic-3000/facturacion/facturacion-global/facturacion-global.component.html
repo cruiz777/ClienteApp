@@ -78,6 +78,15 @@
      <button mat-stroked-button color="primary" type="submit"  [disabled]="deshabilitarBuscar || cargando || formFactura.invalid">
     Buscar
   </button>
+  <button
+  mat-stroked-button
+  color="accent"
+  type="button"
+  (click)="exportarExcelConsulta()"
+  [disabled]="!canExportExcelConsulta">
+  Exportar Excel
+</button>
+
     <button type="button" mat-stroked-button (click)="cancelar()">Cancelar</button>
     <button type="button"
         mat-stroked-button
