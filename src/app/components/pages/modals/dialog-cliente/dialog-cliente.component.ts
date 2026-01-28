@@ -834,24 +834,26 @@ async guardar(stepper: MatStepper): Promise<void> {
     // ---------- Envío al backend ----------
     // 1) Si tu servicio devuelve el cliente creado, úsalo directamente:
     try {
-      const respuestaGuardar: any = await firstValueFrom(this.clienteService.guardarCliente(jsonCliente));
-      // Si el backend devuelve el cliente creado:
-      if (respuestaGuardar && respuestaGuardar.clientes_codigo) {
-        this.paso1Form.patchValue({ codigoCliente: respuestaGuardar.clientes_codigo });
-      } else {
-        // Si no devuelve, intentamos obtener por RUC (tu flujo actual)
-        const cliente = await firstValueFrom(this.clienteService.getClientePorRuc(ruc));
-        if (cliente) {
-          this.paso1Form.patchValue({ codigoCliente: cliente.clientes_codigo });
-        }
-      }
+      const resp: any = await firstValueFrom(this.clienteService.guardarCliente(jsonCliente));
 
-      // continuar acciones
-      this.guardarPrefijo();
-      this.guardarTodasLasObservaciones();
-      this.guardarDatosAdicionales();
-      this.guardarContactosCliente();
-      stepper.selectedIndex = 0;
+// ✅ TU API ahora devuelve ApiResponse<long> => el ID viene en resp.data
+const clientesCodigo = resp?.data;
+
+if (!clientesCodigo || clientesCodigo <= 0) {
+  this.mostrarAlerta('No se pudo obtener clientes_codigo. Proceso detenido.', 'Error');
+  return;
+}
+
+// ✅ Guarda el ID en el formulario (paso1)
+this.paso1Form.patchValue({ codigoCliente: clientesCodigo });
+
+// ✅ recién aquí continúas con los procesos que dependen de clientesCodigo
+this.guardarPrefijo();
+this.guardarTodasLasObservaciones();
+this.guardarDatosAdicionales();
+this.guardarContactosCliente();
+stepper.selectedIndex = 0;
+
 
     } catch (err) {
       console.error('❌ Error al guardar el cliente:', err);

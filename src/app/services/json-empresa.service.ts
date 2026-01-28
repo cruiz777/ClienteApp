@@ -14,15 +14,15 @@ export interface JsonEmpresaRequest {
   provincia: string;
   ciudad: string;
 
-  postalCode: string;          // lo usas como postalCode (1..10)
-  postOfficeBoxNumber?: string; // si NO tienes, NO lo envíes
+  postalCode: string;           // 1..10 (si viene vacío => default)
+  // postOfficeBoxNumber?: string; // 👈 ya NO se usa; lo mandamos igual que postalCode
 
   email: string;
-  telefono: string;            // puede venir como 593..., o +593...
+  telefono: string;             // puede venir como 593..., o +593...
   website: string;
 
-  dapi: string;
-  capi: string;
+  dapi: string;                 // URL destino
+  capi: string;                 // API key
 
   countrySubdivisionCode?: string;
 }
@@ -78,9 +78,13 @@ export class JsonEmpresaService {
   private normalizarTelefonoE164(raw: string): string | null {
     let tel = (raw || '').trim().replace(/\s+/g, '').replace(/-/g, '');
     if (!tel) return null;
+
+    // si viene como \u002B593 en JSON, al parsear ya es "+593"
     if (tel.startsWith('+')) return tel;
     if (tel.startsWith('593')) return `+${tel}`;
-    return tel; // si ya viene con otro formato lo deja
+
+    // lo deja tal cual si no cumple (por si viene otro formato)
+    return tel;
   }
 
   private buildPayload(data: JsonEmpresaRequest): any[] {
@@ -93,11 +97,11 @@ export class JsonEmpresaService {
     if (!postalCode) postalCode = '000000';
     if (postalCode.length > 10) postalCode = postalCode.substring(0, 10);
 
-    // ✅ postOfficeBoxNumber: si es "" => NO enviar propiedad
-    let pob = (data.postOfficeBoxNumber || '').trim();
+    // ✅ postOfficeBoxNumber: MISMO valor que postalCode (como pediste)
+    let pob = postalCode;
     if (pob.length > 20) pob = pob.substring(0, 20);
 
-    // ✅ ISO subdivision
+    // ✅ ISO subdivision (si no viene explícito, se calcula con provincia)
     const subdivision =
       (data.countrySubdivisionCode || '').trim() ||
       this.getCodigoSubdivisionEC(data.provincia);
@@ -112,17 +116,15 @@ export class JsonEmpresaService {
       addressSuburb: { language: 'es', value: data.ciudad || '' },
       addressRegion: { language: 'es', value: data.provincia || '' },
       postalCode,
-      countrySubdivisionCode: subdivision
-    };
+      countrySubdivisionCode: subdivision,
 
-    // ✅ solo incluir si cumple longitud 1..20
-    if (pob.length >= 1) {
-      address.postOfficeBoxNumber = pob;
-    }
+      // ✅ siempre enviar y que sea igual a postalCode
+      postOfficeBoxNumber: pob
+    };
 
     const telE164 = this.normalizarTelefonoE164(data.telefono);
 
-    // ✅ contactPoint sin duplicados
+    // ✅ contactPoint sin duplicados y sin nulls
     const contact: any = {};
     if (data.email?.trim()) contact.email = data.email.trim();
     if (telE164) contact.telephone = telE164;
@@ -147,7 +149,6 @@ export class JsonEmpresaService {
       'APIKey': data.capi
     });
 
-    // Si quieres descargar siempre (éxito o error), hazlo desde el componente con finalize
     return this.http.post(data.dapi, jsonData, { headers });
   }
 
@@ -155,13 +156,16 @@ export class JsonEmpresaService {
     const blob = new Blob([JSON.stringify(jsonData, null, 2)], {
       type: 'application/json;charset=utf-8'
     });
+
     const fecha = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const nombreArchivo = `gs1_ec_${nombre}_${fecha}.json`;
+    const safeName = (nombre || 'empresa').trim().replace(/\s+/g, '_');
+    const nombreArchivo = `gs1_ec_${safeName}_${fecha}.json`;
 
     const link = document.createElement('a');
     link.href = window.URL.createObjectURL(blob);
     link.download = nombreArchivo;
     link.click();
+    window.URL.revokeObjectURL(link.href);
   }
 
   // Útil para que el componente descargue exactamente lo que se envió

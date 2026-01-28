@@ -1,37 +1,44 @@
 /* =========================================================
- * facturacion-workflow.service.ts
- * Workflow: crear factura -> crear asiento VT -> actualizar nota -> generar XML
+ * facturacion-workflow.service.ts  (CORREGIDO)
  * ========================================================= */
-
 import { Injectable } from '@angular/core';
-import { Observable, of, defer } from 'rxjs';
-import { catchError, concatMap, finalize, map, shareReplay, switchMap, tap } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of, defer, throwError } from 'rxjs';
+import {
+  catchError,
+  concatMap,
+  finalize,
+  map,
+  shareReplay,
+  tap,
+} from 'rxjs/operators';
 
-import { FacturacionService, FacturaCrearRequest } from 'src/app/services/facturacion.service';
-import { AsientoVentaService, AsientoVentaRequest } from 'src/app/services/asiento-venta.service';
+import { environment } from 'src/environments/environment';
+import {
+  FacturacionService,
+  FacturaCrearRequest,
+} from 'src/app/services/facturacion.service';
+import {
+  AsientoVentaService,
+  AsientoVentaRequest,
+} from 'src/app/services/asiento-venta.service';
 
-/** Ajusta si tu ApiResponse real difiere */
 export interface ApiResponse<T> {
   type?: string;
   code?: string;
   message?: string;
   data?: T;
   success?: boolean;
+  [k: string]: any;
 }
 
-/** Respuesta típica de crear factura (según tu screenshot) */
 export interface FacturaCrearResponseData {
   idNota?: number;
   id_nota?: number;
-
-  // en tu screenshot viene así:
-  numeroFactura?: string;         // "0019990000000090"
+  numeroFactura?: string;
   numero_factura?: string;
-
   claveAcceso?: string;
   clave_acceso?: string;
-
-  // otros campos no críticos
   [k: string]: any;
 }
 
@@ -44,228 +51,279 @@ export interface XmlResult {
 
 export interface WorkflowResult {
   ok: boolean;
-
   idNota: number;
-  numeroFactura: string;  // comprobante completo "001999..."
-  secuencial: string;     // últimos 9 dígitos
-  numdocVT: string;       // Numdoc del asiento (string numérica)
-
+  numeroFactura: string;
+  secuencial: string;
+  numdocVT: string;
   claveAcceso?: string;
-
-  // para log / auditoría
   mensajes: string[];
-
-  // si falló
+  xmlFileName?: string;
   error?: string;
 }
 
 @Injectable({ providedIn: 'root' })
 export class FacturacionWorkflowService {
-  /** Anti-duplicados: misma llave => misma ejecución compartida */
   private inFlight = new Map<string, Observable<WorkflowResult>>();
 
+  // ✅ MISMO endpoint que usas (NO lo cambiamos)
+  private readonly asientoUrl = `${environment.transactionUrl}/AsientosContables`;
+
   constructor(
+    private http: HttpClient,
     private facturacionService: FacturacionService,
-    private asientoVentaService: AsientoVentaService,
+    private asientoVentaService: AsientoVentaService
   ) {}
 
-  /**
-   * PROCESO COMPLETO
-   * - payload: el mismo FacturaCrearRequest que usas en facturación individual
-   * - buildAsiento: función que arma el AsientoVentaRequest con el idNota ya creado
-   *
-   * IMPORTANTE:
-   *  - Si tu UI llama esto 2, 3 o 4 veces para el mismo cliente/prefijo/total,
-   *    aquí se ejecuta 1 sola vez (shareReplay + inFlight).
-   */
+  /* =========================================================
+   * WORKFLOW COMPLETO:
+   * 1) crear factura
+   * 2) crear asiento
+   * 3) actualizar NOTA con VT-Numdoc
+   * 4) generar XML
+   * ========================================================= */
   procesarFacturaCompleta(
     payload: FacturaCrearRequest,
-    buildAsiento: (idNota: number) => AsientoVentaRequest,
-    options?: {
-      /** clave anti-duplicado personalizada (si no, se arma con cliente/prefijo/total) */
-      key?: string;
-      /** si true: NO bloquea duplicados (por defecto bloquea) */
-      allowDuplicates?: boolean;
-      /** prefijo para asiento: "VT-" por defecto */
-      asientoPrefix?: string;
-    }
+    buildAsiento: (idNota: number, numeroFactura?: string) => AsientoVentaRequest,
+    options?: { key?: string; allowDuplicates?: boolean; asientoPrefix?: string }
   ): Observable<WorkflowResult> {
-    const asientoPrefix = options?.asientoPrefix ?? 'VT-';
+    const key = options?.key ?? this.buildKeyFromPayload(payload);
 
-    const key =
-      options?.key ??
-      this.buildKeyFromPayload(payload);
-
-    if (!options?.allowDuplicates) {
-      const existing = this.inFlight.get(key);
-      if (existing) return existing;
-    }
+    if (this.inFlight.has(key)) return this.inFlight.get(key)!;
 
     const obs$ = defer(() => {
-      const mensajes: string[] = [];
-
+      // =========================================================
       // 1) CREAR FACTURA
+      // =========================================================
       return this.facturacionService.crear(payload).pipe(
-        map((resp: ApiResponse<FacturaCrearResponseData> | any) => {
-          const data = resp?.data ?? resp?.Data ?? resp;
-          const tipo = (resp?.type ?? resp?.Type ?? '').toString().toLowerCase();
+        concatMap((resp: any) => {
+          const data: any = resp?.data ?? resp ?? {};
+          const idNota = Number(data.idNota ?? data.id_nota ?? 0) || 0;
 
-          // No rompo si backend usa "success"/"warning"/"created"
-          if (tipo && tipo !== 'success' && tipo !== 'warning' && tipo !== 'created') {
-            const msg = resp?.message ?? 'No se pudo crear la factura.';
-            throw new Error(msg);
+          const numeroFactura = (data.numeroFactura ?? data.numero_factura ?? '')
+            .toString()
+            .trim();
+
+          const claveAcceso = (data.claveAcceso ?? data.clave_acceso ?? '')
+            .toString()
+            .trim();
+
+          if (!idNota || !numeroFactura) {
+            return throwError(() => ({
+              status: 500,
+              error: {
+                message:
+                  'No se obtuvo idNota o numeroFactura desde el backend.',
+              },
+            }));
           }
 
-          const idNota = Number(data?.idNota ?? data?.id_nota ?? 0);
-          const numeroFactura =
-            (data?.numeroFactura ?? data?.numero_factura ?? '').toString().trim();
-          const claveAcceso =
-            (data?.claveAcceso ?? data?.clave_acceso ?? '').toString().trim();
+          const reqAsiento = buildAsiento(idNota, numeroFactura);
 
-          if (!Number.isFinite(idNota) || idNota <= 0) {
-            throw new Error('No se recibió idNota válido en la respuesta de crear factura.');
-          }
+          // =========================================================
+          // 2) CREAR ASIENTO
+          // =========================================================
+          return this.crearAsientoConCompatibilidad(reqAsiento).pipe(
+            concatMap((asResp: any) => {
+              const msg = (
+                asResp?.message ??
+                asResp?.data?.message ??
+                ''
+              ).toString();
 
-          if (!numeroFactura) {
-            // si no viene, igual seguimos, pero luego fallará al armar secuencial si lo necesitas
-            mensajes.push('Factura creada pero no se recibió numeroFactura.');
-          } else {
-            mensajes.push(`Factura creada: ${numeroFactura}`);
-          }
-
-          const secuencial = this.extractSecuencial(numeroFactura); // últimos 9 dígitos
-
-          return { idNota, numeroFactura, secuencial, claveAcceso, mensajes };
-        }),
-
-        // 2) CREAR ASIENTO VT
-        concatMap(({ idNota, numeroFactura, secuencial, claveAcceso, mensajes }) => {
-          const asientoReq = buildAsiento(idNota);
-
-          return this.asientoVentaService.crearAsientoVenta(asientoReq).pipe(
-            map((asResp: any) => {
-              const msg = (asResp?.message ?? asResp?.Message ?? '').toString();
-              mensajes.push(msg || 'Asiento VT creado.');
-
-              // Busca Numdoc=12345 dentro del mensaje
-              const numdocVT = this.extractNumdocFromMessage(msg);
+              const numdoc = this.extractNumdocFromMessage(msg) || '';
+              const asientoPrefix = (options?.asientoPrefix ?? 'VT').toString();
+              const numdocVT = numdoc ? `${asientoPrefix}-${numdoc}` : '';
 
               if (!numdocVT) {
-                // No abortamos todavía, pero para tu caso necesitas ese número para actualizar la nota
-                throw new Error(
-                  `Asiento creado pero no se pudo obtener Numdoc del mensaje. Mensaje: ${msg || '(vacío)'}`
-                );
+                // Si NO hay Numdoc, no puedes actualizar nota ni generar xml confiable.
+                return throwError(() => ({
+                  status: 500,
+                  error: {
+                    message:
+                      'El backend no devolvió Numdoc del asiento. No se puede actualizar la nota.',
+                  },
+                }));
               }
 
-              return { idNota, numeroFactura, secuencial, claveAcceso, numdocVT, mensajes };
+              // =========================================================
+              // 3) ACTUALIZAR NOTA CON VT-Numdoc
+              //    (reusa tu service existente)
+              // =========================================================
+              return this.actualizarNotaConAsiento(idNota, numdocVT).pipe(
+                concatMap((okUpd) => {
+                  if (!okUpd) {
+                    return throwError(() => ({
+                      status: 500,
+                      error: {
+                        message:
+                          `No se pudo actualizar la NOTA (${idNota}) con el asiento ${numdocVT}.`,
+                      },
+                    }));
+                  }
+
+                  // =========================================================
+                  // 4) GENERAR XML
+                  // =========================================================
+                  return this.generarXmlPorNota(idNota).pipe(
+                    map((xml: any) => {
+                      const xmlFileName =
+                        (xml?.fileName ??
+                          xml?.data?.fileName ??
+                          xml?.xmlFileName ??
+                          xml?.data?.xmlFileName ??
+                          '').toString() || undefined;
+
+                      const mensajes: string[] = [];
+                      if (msg) mensajes.push(msg);
+                      mensajes.push(`NOTA actualizada con asiento: ${numdocVT}`);
+                      if (xml?.message) mensajes.push(xml.message);
+
+                      return {
+                        ok: true,
+                        idNota,
+                        numeroFactura,
+                        secuencial: this.extractSecuencial(numeroFactura),
+                        numdocVT,
+                        claveAcceso: claveAcceso || undefined,
+                        mensajes,
+                        xmlFileName,
+                      } as WorkflowResult;
+                    })
+                  );
+                })
+              );
             })
           );
         }),
-
-        // 3) ACTUALIZAR NOTA CON ASIENTO: "VT-Numdoc"
-        concatMap(({ idNota, numeroFactura, secuencial, claveAcceso, numdocVT, mensajes }) => {
-          const asientoFormateado = `${asientoPrefix}${numdocVT}`;
-
-          return this.facturacionService.actualizarAsientoContable(idNota, asientoFormateado).pipe(
-            tap((r: any) => {
-              const tipo = (r?.type ?? r?.Type ?? '').toString().toLowerCase();
-              if (tipo && tipo !== 'success' && tipo !== 'warning' && tipo !== 'created') {
-                mensajes.push(`⚠️ actualizarAsientoContable: ${(r?.message ?? 'falló').toString()}`);
-              } else {
-                mensajes.push(`Nota actualizada con asiento: ${asientoFormateado}`);
-              }
-            }),
-            map(() => ({ idNota, numeroFactura, secuencial, claveAcceso, numdocVT, mensajes }))
-          );
-        }),
-
-        // 4) GENERAR XML
-        concatMap(({ idNota, numeroFactura, secuencial, claveAcceso, numdocVT, mensajes }) => {
-          return this.facturacionService.generarXmlEnServidor(idNota).pipe(
-            tap((xml: XmlResult | any) => {
-              if (xml?.success) {
-                mensajes.push(`XML generado: ${xml?.fileName ?? ''}`.trim());
-              } else {
-                mensajes.push(`⚠️ XML no generado: ${(xml?.message ?? 'sin detalle').toString()}`);
-              }
-            }),
-            map((): WorkflowResult => ({
-              ok: true,
-              idNota,
-              numeroFactura,
-              secuencial,
-              numdocVT,
-              claveAcceso,
-              mensajes,
-            }))
-          );
-        }),
-
-        catchError((err: any) => {
-          const msg = err?.message ?? err?.error?.message ?? 'Error en workflow de facturación.';
-          const fail: WorkflowResult = {
+        catchError((err) => {
+          const m =
+            err?.error?.message ??
+            err?.message ??
+            'Error en workflow.';
+          return of({
             ok: false,
             idNota: 0,
             numeroFactura: '',
             secuencial: '',
             numdocVT: '',
             mensajes: [],
-            error: msg,
-          };
-          return of(fail);
-        }),
-
-        finalize(() => {
-          // libera la llave para que pueda ejecutarse nuevamente si el usuario lo intenta otra vez
-          if (!options?.allowDuplicates) this.inFlight.delete(key);
+            error: m,
+          } as WorkflowResult);
         })
       );
-    }).pipe(
-      // comparte ejecución ante múltiples subscribers (ej: UI + export + log)
-      shareReplay({ bufferSize: 1, refCount: false })
-    );
+    }).pipe(finalize(() => this.inFlight.delete(key)), shareReplay(1));
 
-    if (!options?.allowDuplicates) this.inFlight.set(key, obs$);
+    this.inFlight.set(key, obs$);
     return obs$;
   }
 
-  /* =========================================================
-   * Helpers
-   * ========================================================= */
+  // ✅ Alias (si tu componente llama esto)
+  procesarFacturaConAsientoObligatorio(
+    payload: FacturaCrearRequest,
+    buildAsiento: (idNota: number, numeroFactura?: string) => AsientoVentaRequest,
+    options?: { key?: string; allowDuplicates?: boolean; asientoPrefix?: string }
+  ): Observable<WorkflowResult> {
+    return this.procesarFacturaCompleta(payload, buildAsiento, options);
+  }
 
+  /* =========================================================
+   * PASO 3: actualizar NOTA con asiento (VT-Numdoc)
+   * ========================================================= */
+  private actualizarNotaConAsiento(
+    idNota: number,
+    numdocVT: string
+  ): Observable<boolean> {
+    return this.facturacionService.actualizarAsientoContable(idNota, numdocVT).pipe(
+      map((resp: any) => {
+        const tipo = (resp?.type ?? '').toString().toLowerCase();
+        // en tu sistema: success / warning suelen considerarse OK
+        return tipo === 'success' || tipo === 'warning' || resp?.success === true;
+      }),
+      catchError((err: any) => {
+        console.error('[workflow] error actualizarNotaConAsiento:', err);
+        return of(false);
+      })
+    );
+  }
+
+  /* =========================================================
+   * PASO 4: generar XML
+   *  - Ajusta SOLO si tu FacturacionService usa otro nombre de método.
+   * ========================================================= */
+  private generarXmlPorNota(idNota: number): Observable<XmlResult> {
+    // ✅ OPCIÓN A: si existe este método en tu service
+    const s: any = this.facturacionService as any;
+
+    if (typeof s.generarXmlEnServidor === 'function') {
+      return s.generarXmlEnServidor(idNota) as Observable<XmlResult>;
+    }
+
+    if (typeof s.generarXmlPorNota === 'function') {
+      return s.generarXmlPorNota(idNota) as Observable<XmlResult>;
+    }
+
+    if (typeof s.generarXml === 'function') {
+      return s.generarXml(idNota) as Observable<XmlResult>;
+    }
+
+    // ✅ OPCIÓN B: fallback por Http directo (si tu backend expone endpoint)
+    // Si NO quieres fallback, puedes eliminar este bloque.
+    // AJUSTA la ruta si tu endpoint es distinto.
+    const url = `${environment.invoices_sic}/facturacion/xml/${idNota}`;
+    return this.http.post<XmlResult>(url, {}).pipe(
+      catchError((err: any) => {
+        console.error('[workflow] error generarXmlPorNota:', err);
+        return of({ success: false, message: 'No se pudo generar XML.' });
+      })
+    );
+  }
+
+  /* =========================================================
+   * COMPAT: intenta normal, si backend exige { request: ... } reintenta
+   * ========================================================= */
+  private crearAsientoConCompatibilidad(req: AsientoVentaRequest): Observable<any> {
+    const normalized = this.normalizeAsientoForApi(req);
+
+    return this.asientoVentaService.crearAsientoVenta(normalized as any).pipe(
+      catchError((err: any) => {
+        const requiereWrapper =
+          err?.status === 400 &&
+          (err?.error?.errors?.request || err?.error?.errors?.Request);
+
+        if (!requiereWrapper) return throwError(() => err);
+
+        return this.http.post<any>(this.asientoUrl, { request: normalized });
+      })
+    );
+  }
+
+  private normalizeAsientoForApi(req: any): any {
+    return {
+      ...req,
+      Anio: req.Anio ?? req.anio ?? '',
+      Tipdoc: req.Tipdoc ?? req.tipdoc ?? '',
+      Detalles: req.Detalles ?? req.detalles ?? [],
+    };
+  }
+
+  /* =========================================================
+   * helpers
+   * ========================================================= */
   private buildKeyFromPayload(p: FacturaCrearRequest): string {
     const idCliente = Number((p as any)?.idCliente ?? 0);
     const prefijo = ((p as any)?.prefijo ?? '').toString().trim();
     const total = Number((p as any)?.totalCalculado ?? (p as any)?.total ?? 0);
     const anio = Number((p as any)?.anioFactura ?? 0);
-
-    // si en global repites exactamente lo mismo, esto lo considera el mismo “job”
     return `cli=${idCliente}|pref=${prefijo}|tot=${total.toFixed(2)}|anio=${anio}`;
   }
 
-  /** Extrae últimos 9 dígitos del comprobante */
   private extractSecuencial(numeroFactura: string): string {
     const s = (numeroFactura ?? '').toString().replace(/\D/g, '');
-    if (!s) return '';
-    return s.slice(-9).padStart(9, '0');
+    return s ? s.slice(-9).padStart(9, '0') : '';
   }
 
-  /** Extrae Numdoc=12345 desde el mensaje del backend */
   private extractNumdocFromMessage(msg: string): string {
     const m = (msg ?? '').match(/Numdoc\s*=\s*(\d+)/i);
     return m?.[1] ? m[1].toString() : '';
   }
-  // ✅ Alias compatible con tu componente (mantiene el nombre que ya estás usando)
-procesarFacturaConAsientoObligatorio(
-  payload: FacturaCrearRequest,
-  buildAsiento: (idNota: number) => AsientoVentaRequest,
-  options?: {
-    key?: string;
-    allowDuplicates?: boolean;
-    asientoPrefix?: string;
-  }
-): Observable<WorkflowResult> {
-  return this.procesarFacturaCompleta(payload, buildAsiento, options);
-}
-
 }
