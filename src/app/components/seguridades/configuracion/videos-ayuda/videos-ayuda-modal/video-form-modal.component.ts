@@ -25,7 +25,7 @@ export class VideoFormModalComponent implements OnInit {
   previewUrl: string | null = null;
   uploadProgress: number = 0;
   isUploading: boolean = false;
-
+  tipoVideoOriginal: 'youtube' | 'local' | null = null;
   constructor(
     private fb: FormBuilder,
     private dialogRef: MatDialogRef<VideoFormModalComponent>,
@@ -112,6 +112,7 @@ export class VideoFormModalComponent implements OnInit {
         if (response.data) {
           const video = response.data;
           this.videoForm.patchValue({
+            
             titulo: video.titulo,
             urlVideo: video.urlVideo,
             idSistema: video.idSistema,
@@ -119,6 +120,16 @@ export class VideoFormModalComponent implements OnInit {
             orden: video.orden,
             activo: video.activo
           });
+          // Detectar tipo de video
+          if (video.urlVideo.includes('youtube') || video.urlVideo.includes('youtu.be')) {
+            this.tipoVideo = 'youtube';
+            this.tipoVideoOriginal = 'youtube';
+          } else {
+            this.tipoVideo = 'local';
+            // Quitar validador de YouTube para videos locales
+            this.videoForm.get('urlVideo')?.clearValidators();
+            this.videoForm.get('urlVideo')?.updateValueAndValidity();
+          }
         }
         this.loading = false;
       },
@@ -208,6 +219,16 @@ export class VideoFormModalComponent implements OnInit {
       this.videoForm.get('urlVideo')?.clearValidators();
     }
     this.videoForm.get('urlVideo')?.updateValueAndValidity();
+    
+    
+    if (this.isEditMode && this.tipoVideoOriginal && tipo !== this.tipoVideoOriginal) {
+      this.mostrarMensaje({
+        title: 'Advertencia',
+        message: `Estás cambiando de ${this.tipoVideoOriginal === 'youtube' ? 'YouTube' : 'local'} a ${tipo}`,
+        type: 'warning',
+        showCancel: false
+      });
+    }
   }
   onSubmit(): void {
     // Validación según el tipo de video
@@ -249,13 +270,29 @@ export class VideoFormModalComponent implements OnInit {
         showCancel: false
       });
       return;
-    }
-
-    // Si es video local Y no es edición, primero subir el archivo
-    if (this.tipoVideo === 'local' && this.selectedFile && !this.isEditMode) {
-      this.uploadAndCreate(usuarioActual);
+    }    
+    // Si es video local
+    if (this.tipoVideo === 'local') {
+      // Si hay archivo nuevo seleccionado (crear o actualizar)
+      if (this.selectedFile) {
+        this.uploadAndCreate(usuarioActual);
+      } 
+      // Si es edición sin archivo nuevo, usar URL existente
+      else if (this.isEditMode) {
+        this.saveVideo(usuarioActual, this.videoForm.value.urlVideo);
+      }
+      // Si es creación sin archivo
+      else {
+        this.mostrarMensaje({
+          title: 'Error',
+          message: 'Debes seleccionar un archivo de video',
+          type: 'error',
+          showCancel: false
+        });
+        return;
+      }
     } else {
-      // YouTube o edición sin cambio de archivo
+      // YouTube - crear o actualizar con la URL del formulario
       this.saveVideo(usuarioActual, this.videoForm.value.urlVideo);
     }
   }
@@ -390,4 +427,18 @@ export class VideoFormModalComponent implements OnInit {
   get idSistema() { return this.videoForm.get('idSistema'); }
   get idCategoria() { return this.videoForm.get('idCategoria'); }
   get orden() { return this.videoForm.get('orden'); }
+
+  isFormInvalid(): boolean {
+    if (this.tipoVideo === 'youtube') {
+      // Para YouTube, validar todo el formulario
+      return this.videoForm.invalid;
+    } else {
+      // Para video local, validar solo los campos obligatorios (sin urlVideo)
+      const controls = this.videoForm.controls;
+      return !controls['titulo'].valid || 
+            !controls['idSistema'].valid || 
+            !controls['idCategoria'].valid || 
+            !controls['orden'].valid;
+    }
+  }
 }
