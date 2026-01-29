@@ -1073,6 +1073,10 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     if (!this.modoEdicion || !valor || isNaN(+valor)) return;
 
     const decimal = parseFloat(valor);
+    if (!isFinite(decimal) || Math.abs(decimal) > 999) {
+      console.warn('⚠️ Valor extremo detectado en latitud:', decimal);
+      return; // No convertir a GMS, pero permitir el valor
+    }
     const dms = this.convertDecimalToDMS(decimal, true);
 
     this.formGln.patchValue({
@@ -1087,6 +1091,10 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     if (!this.modoEdicion || !valor || isNaN(+valor)) return;
 
     const decimal = parseFloat(valor);
+    if (!isFinite(decimal) || Math.abs(decimal) > 999) {
+      console.warn('⚠️ Valor extremo detectado en longitud:', decimal);
+      return; // No convertir a GMS, pero permitir el valor
+    }
     const dms = this.convertDecimalToDMS(decimal, false);
 
     this.formGln.patchValue({
@@ -1431,5 +1439,136 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     this.formGln.get(controlName)?.setValue(numeroCompleto, { emitEvent: false });
     
     console.log('💾 Guardado en FormControl:', numeroCompleto);
+  }
+  /**
+   * Valida en tiempo real la latitud mientras se escribe
+   * Permite: números, punto, coma, signo negativo
+   * Bloquea: valores que excedan -90 a 90
+   */
+  validarLatitudKeyPress(event: KeyboardEvent): void {
+    const input = event.target as HTMLInputElement;
+    const key = event.key;
+    
+    // Permitir teclas de control
+    if (key === 'Backspace' || key === 'Delete' || key === 'Tab' || 
+        key === 'ArrowLeft' || key === 'ArrowRight' || key === 'Home' || key === 'End') {
+      return;
+    }
+
+    // Permitir solo números, punto, coma y signo negativo
+    if (!/^[-0-9.,]$/.test(key)) {
+      event.preventDefault();
+      return;
+    }
+
+    // Obtener el valor que resultaría después de presionar la tecla
+    const selectionStart = input.selectionStart || 0;
+    const selectionEnd = input.selectionEnd || 0;
+    const currentValue = input.value;
+    const newValue = currentValue.substring(0, selectionStart) + key + currentValue.substring(selectionEnd);
+
+    // Si contiene coma, permitir (para paste "lat,lng")
+    if (newValue.includes(',')) {
+      return;
+    }
+
+    // Validar múltiples puntos
+    const puntos = (newValue.match(/\./g) || []).length;
+    if (puntos > 1) {
+      event.preventDefault();
+      return;
+    }
+
+    // Validar múltiples signos negativos
+    const negativos = (newValue.match(/-/g) || []).length;
+    if (negativos > 1 || (negativos === 1 && newValue.indexOf('-') !== 0)) {
+      event.preventDefault();
+      return;
+    }
+
+    // ✅ VALIDACIÓN DE RANGO PARA LATITUD (-90 a 90)
+    // Solo validar si ya es un número válido
+    if (newValue !== '-' && newValue !== '.' && !newValue.endsWith('.')) {
+      const numero = parseFloat(newValue);
+      if (!isNaN(numero) && Math.abs(numero) > 90) {
+        event.preventDefault();
+        this.toastr.warning('La latitud debe estar entre -90 y 90', 'Valor fuera de rango', {
+          timeOut: 2000,
+          positionClass: 'toast-top-right'
+        });
+        return;
+      }
+    }
+  }
+
+  /**
+   * Valida en tiempo real la longitud mientras se escribe
+   * Permite: números, punto, coma, signo negativo
+   * Bloquea: valores que excedan -180 a 180
+   */
+  validarLongitudKeyPress(event: KeyboardEvent): void {
+    const input = event.target as HTMLInputElement;
+    const key = event.key;
+    
+    // Permitir teclas de control
+    if (key === 'Backspace' || key === 'Delete' || key === 'Tab' || 
+        key === 'ArrowLeft' || key === 'ArrowRight' || key === 'Home' || key === 'End') {
+      return;
+    }
+
+    // Permitir solo números, punto, coma y signo negativo
+    if (!/^[-0-9.,]$/.test(key)) {
+      event.preventDefault();
+      return;
+    }
+
+    // Obtener el valor que resultaría después de presionar la tecla
+    const selectionStart = input.selectionStart || 0;
+    const selectionEnd = input.selectionEnd || 0;
+    const currentValue = input.value;
+    const newValue = currentValue.substring(0, selectionStart) + key + currentValue.substring(selectionEnd);
+
+    // Si contiene coma, permitir (para paste "lat,lng")
+    if (newValue.includes(',')) {
+      return;
+    }
+
+    // Validar múltiples puntos
+    const puntos = (newValue.match(/\./g) || []).length;
+    if (puntos > 1) {
+      event.preventDefault();
+      return;
+    }
+
+    // Validar múltiples signos negativos
+    const negativos = (newValue.match(/-/g) || []).length;
+    if (negativos > 1 || (negativos === 1 && newValue.indexOf('-') !== 0)) {
+      event.preventDefault();
+      return;
+    }
+
+    // ✅ VALIDACIÓN DE RANGO PARA LONGITUD (-180 a 180)
+    // Solo validar si ya es un número válido
+    if (newValue !== '-' && newValue !== '.' && !newValue.endsWith('.')) {
+      const numero = parseFloat(newValue);
+      if (!isNaN(numero) && Math.abs(numero) > 180) {
+        event.preventDefault();
+        this.toastr.warning('La longitud debe estar entre -180 y 180', 'Valor fuera de rango', {
+          timeOut: 2000,
+          positionClass: 'toast-top-right'
+        });
+        return;
+      }
+    }
+  }
+
+  /**
+   * Permite el paste sin restricciones
+   * El valueChanges se encarga de procesar la coma si existe
+   */
+  permitirPaste(event: ClipboardEvent): void {
+    // No hacer nada, dejar que el paste funcione normalmente
+    // El valueChanges procesará la coma automáticamente
+    return;
   }
 }

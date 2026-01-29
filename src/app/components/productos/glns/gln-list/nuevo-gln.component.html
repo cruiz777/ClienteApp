@@ -149,14 +149,31 @@
         <div class="form-row">
           <div class="form-group">
             <label>Latitud (GPS):</label>
-            <input matInput formControlName="glnLatitud" (keypress)="CustomValidators.latLngKeyPress($event)">
-            <small *ngIf="modoEdicion && formGln.get('glnLatitud')?.valid">Latitud GMS: {{ formGln.get('latiG')?.value }}° {{ formGln.get('latiM')?.value }}' {{ formGln.get('latiS')?.value }}'' {{ formGln.get('latiE')?.value }}</small>
+            <input 
+              matInput 
+              formControlName="glnLatitud" 
+              (keypress)="validarLatitudKeyPress($event)"
+              (paste)="permitirPaste($event)"
+              placeholder="Ej: -0.193681"
+              maxlength="20">
+            <small *ngIf="modoEdicion && formGln.get('glnLatitud')?.valid">
+              Latitud GMS: {{ formGln.get('latiG')?.value }}° {{ formGln.get('latiM')?.value }}' {{ formGln.get('latiS')?.value }}'' {{ formGln.get('latiE')?.value }}
+            </small>
             <mat-error *ngIf="formGln.get('glnLatitud')?.hasError('required')">Campo obligatorio</mat-error>
           </div>
+          
           <div class="form-group">
             <label>Longitud (GPS):</label>
-            <input matInput formControlName="glnLongitud" (keypress)="CustomValidators.latLngKeyPress($event)">
-            <small *ngIf="modoEdicion && formGln.get('glnLongitud')?.valid">Longitud GMS: {{ formGln.get('longG')?.value }}° {{ formGln.get('longM')?.value }}' {{ formGln.get('longS')?.value }}'' {{ formGln.get('longE')?.value }}</small>
+            <input 
+              matInput 
+              formControlName="glnLongitud" 
+              (keypress)="validarLongitudKeyPress($event)"
+              (paste)="permitirPaste($event)"
+              placeholder="Ej: -78.524950"
+              maxlength="20">
+            <small *ngIf="modoEdicion && formGln.get('glnLongitud')?.valid">
+              Longitud GMS: {{ formGln.get('longG')?.value }}° {{ formGln.get('longM')?.value }}' {{ formGln.get('longS')?.value }}'' {{ formGln.get('longE')?.value }}
+            </small>
             <mat-error *ngIf="formGln.get('glnLongitud')?.hasError('required')">Campo obligatorio</mat-error>
           </div>
         </div>
