@@ -3476,7 +3476,7 @@ private cargarUsuarioAsientoNombre(idUsuario: number): void {
 
     // En NUEVO/PLANTILLA, además limpia (para que no se envíen valores indebidamente)
     if (this.modo() === 'nuevo' || this.modo() === 'plantilla') {
-      this.syncFechaTransaccionConIngreso();
+      //this.syncFechaTransaccionConIngreso();
       this.docRelacionadoCtrl.setValue('', { emitEvent: false });
       this.autorizacionRelacionadoCtrl.setValue('', { emitEvent: false });
       this.fechaCadRelacionadoCtrl.setValue(null, { emitEvent: false });
