@@ -1,11 +1,22 @@
+// src/app/components/pages/validacion/validador-licenses/validador-licenses.component.ts
+
 import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
+import { MatDialog } from '@angular/material/dialog';
+
+import { of, firstValueFrom } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
-import { of } from 'rxjs';
+
 import { ClienteLicenseResponse } from 'src/app/interfaces/responses/cliente-license-response';
 import { ClienteLicenseQuery, ValidacionService } from 'src/app/services/validacion.service';
-import { ExportLicenseBatch, ExportLicenseItem, ExportLicenseQuery, ExportLicenseResponse } from 'src/app/interfaces/responses/export-licenses-response';
-import { MatDialog } from '@angular/material/dialog';
+
+import {
+  ExportLicenseBatch,
+  ExportLicenseItem,
+  ExportLicenseQuery,
+  ExportLicenseResponse,
+} from 'src/app/interfaces/responses/export-licenses-response';
+
 import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
 import { RequiredFieldsToastService } from 'src/app/components/utils/messages/required-fields-toast.service';
 import { CustomValidators } from 'src/app/components/utils/validators/validator.util';
@@ -19,8 +30,8 @@ export interface SearchParams {
   fechaDesde?: string;
   fechaHasta?: string;
   fechaIgual?: string;
-  prefijoEstado?: string;
-  empresaEstado?: string;
+  prefijoEstado?: string; // 'active' | 'inactive'
+  empresaEstado?: string; // 'active' | 'inactive'
   nombreCliente?: string;
 }
 
@@ -43,18 +54,20 @@ export interface License {
 @Component({
   selector: 'app-validador-licenses',
   templateUrl: './validador-licenses.component.html',
-  styleUrls: ['./validador-licenses.component.css']
+  styleUrls: ['./validador-licenses.component.css'],
 })
 export class LicenseValidatorComponent implements OnInit {
-  
-   // ViewChild para referenciar el campo de búsqueda por nombre
-  @ViewChild('campoBuscarNombre', { static: false }) campoBuscarNombre!: ElementRef<HTMLInputElement>;
-  @ViewChild('searchInput', { static: false }) searchInput!: ElementRef<HTMLInputElement>;
+  // ViewChild para referenciar el campo de búsqueda por nombre
+  @ViewChild('campoBuscarNombre', { static: false })
+  campoBuscarNombre!: ElementRef<HTMLInputElement>;
+
+  @ViewChild('searchInput', { static: false })
+  searchInput!: ElementRef<HTMLInputElement>;
 
   // Variable para controlar el valor del campo de búsqueda
   terminoBusquedaNombre: string = '';
-  
-  //Parametro para saber si se envia al API VERIFIED o o
+
+  // Parametro para saber si se envia al API VERIFIED o no
   isSendingToApi = false;
 
   // Parámetros de búsqueda
@@ -62,50 +75,47 @@ export class LicenseValidatorComponent implements OnInit {
 
   // Datos de la tabla
   licencias: License[] = [];
-  
+
   // Datos originales del servicio (para mapear)
   licenciasOriginales: ClienteLicenseResponse[] = [];
-  
-  // Validadores 
+
+  // Validadores
   public CustomValidators = CustomValidators;
-  
+
   // Estados de carga y búsqueda
   isLoading = false;
   hasSearched = false;
   errorMessage = '';
   isExporting = false;
+
   // Paginación
   currentPage = 1;
   pageSize = 10;
   totalItems = 0;
   totalPages = 0;
 
-  constructor(private validacionService: ValidacionService,
+  constructor(
+    private validacionService: ValidacionService,
     private dialog: MatDialog,
     private requiredFieldsToast: RequiredFieldsToastService,
     public permissions: PermissionsService
   ) {}
 
   ngOnInit(): void {
-    // Establecer fecha actual por defecto
-    //this.searchParams.fechaIgual = new Date().toISOString().split('T')[0];
-    
-    // Cargar datos iniciales (OPCIONAL)-- Carga datos sin necesidad de aplicar los filtros. Manejar con cuidado porque puede confundir al usuario
-    //this.buscar();
+    // Defaults opcionales:
+    // this.searchParams.fechaIgual = new Date().toISOString().split('T')[0];
   }
-  // Getter para mostrar el número de registros dinámicamente
+
+  // ==========================
+  // GETTERS DE UI (INFO / PAGINACIÓN)
+  // ==========================
+
   get numeroRegistros(): string {
-    if (!this.hasSearched) {
-      return 'Sin registros';
-    }
-    
-    if (this.isLoading) {
-      return 'Buscando...';
-    }
-    
+    if (!this.hasSearched) return 'Sin registros';
+    if (this.isLoading) return 'Buscando...';
     return this.totalItems.toString();
   }
-  // Getters para la información de paginación
+
   get startItem(): number {
     return this.totalItems === 0 ? 0 : (this.currentPage - 1) * this.pageSize + 1;
   }
@@ -115,43 +125,92 @@ export class LicenseValidatorComponent implements OnInit {
     return end > this.totalItems ? this.totalItems : end;
   }
 
-  // Mapear parámetros de búsqueda a parámetros del servicio
+  /** True si ya buscaste y tienes resultados */
+  get hasResults(): boolean {
+    return this.hasSearched && this.licencias.length > 0;
+  }
+
+  /** True si ya buscaste, no hay resultados y ya terminó de cargar */
+  get noResults(): boolean {
+    return this.hasSearched && this.licencias.length === 0 && !this.isLoading;
+  }
+
+  /** Texto informativo (tooltip / panel) sobre la exportación */
+  get exportInfo(): string {
+    if (!this.hasSearched) return '';
+    if (this.totalItems <= 0) return 'No hay registros para exportar.';
+    if (this.totalItems <= 1000) return `Se exportará 1 archivo con ${this.totalItems} registros.`;
+    const archivos = Math.ceil(this.totalItems / 1000);
+    return `Se exportarán ${archivos} archivos con ${this.totalItems} registros totales (máx. 1000 por archivo).`;
+  }
+
+  /** Habilita el botón buscar si existe al menos un criterio */
+  get puedeRealizarBusqueda(): boolean {
+    const hasText = (v?: string) => !!v && v.trim().length > 0;
+
+    const tieneRuc = hasText(this.searchParams.ruc);
+    const tienePrefijo = hasText(this.searchParams.prefijo);
+    const tieneFechaIgual = hasText(this.searchParams.fechaIgual);
+    const tieneFechaDesde = hasText(this.searchParams.fechaDesde);
+    const tieneFechaHasta = hasText(this.searchParams.fechaHasta);
+    const tieneNombreCliente = hasText(this.searchParams.nombreCliente);
+
+    const tienePrefijoEstado = hasText(this.searchParams.prefijoEstado);
+    const tieneEmpresaEstado = hasText(this.searchParams.empresaEstado);
+
+    const tieneBusquedaGeneral = hasText(this.terminoBusquedaNombre);
+
+    return (
+      tieneRuc ||
+      tienePrefijo ||
+      tieneFechaIgual ||
+      tieneFechaDesde ||
+      tieneFechaHasta ||
+      tieneNombreCliente ||
+      tienePrefijoEstado ||
+      tieneEmpresaEstado ||
+      tieneBusquedaGeneral
+    );
+  }
+
+  get mensajeBotonBuscar(): string {
+    if (this.isLoading) return 'Buscando...';
+    if (!this.puedeRealizarBusqueda) return 'Ingrese al menos un criterio de búsqueda';
+    return 'Buscar';
+  }
+
+  get puedeExportarYEnviar(): boolean {
+    return this.hasSearched && !this.isExporting && !this.isSendingToApi;
+  }
+
+  get textoBotonExportarEnviar(): string {
+    if (this.isExporting && this.isSendingToApi) return 'Enviando a API...';
+    if (this.isExporting) return 'Exportando...';
+    if (this.isSendingToApi) return 'Enviando...';
+    return 'Exportar y Enviar';
+  }
+
+  // ==========================
+  // MAPEO DE PARÁMETROS / RESPUESTA
+  // ==========================
+
   private mapearParametrosBusqueda(): ClienteLicenseQuery {
     const query: ClienteLicenseQuery = {
       pageNumber: this.currentPage,
-      pageSize: this.pageSize
+      pageSize: this.pageSize,
     };
 
-    // Mapear campos del formulario a campos del servicio
-    if (this.searchParams.ruc) {
-      query.ruc = this.searchParams.ruc;
-    }
-    
-    if (this.searchParams.prefijo) {
-      query.codigoPrefijo = this.searchParams.prefijo;
-    }
-    
-    if (this.searchParams.fechaDesde) {
-      query.fechaDesde = this.searchParams.fechaDesde;
-    }
-    
-    if (this.searchParams.fechaHasta) {
-      query.fechaHasta = this.searchParams.fechaHasta;
-    }
-    
-    if (this.searchParams.fechaIgual) {
-      query.fechaIgual = this.searchParams.fechaIgual;
-    }
-    
-    if (this.searchParams.nombreCliente) {
-      query.nombreCliente = this.searchParams.nombreCliente;
-    }
-    
-    // Mapear estados
+    if (this.searchParams.ruc) query.ruc = this.searchParams.ruc;
+    if (this.searchParams.prefijo) query.codigoPrefijo = this.searchParams.prefijo;
+    if (this.searchParams.fechaDesde) query.fechaDesde = this.searchParams.fechaDesde;
+    if (this.searchParams.fechaHasta) query.fechaHasta = this.searchParams.fechaHasta;
+    if (this.searchParams.fechaIgual) query.fechaIgual = this.searchParams.fechaIgual;
+    if (this.searchParams.nombreCliente) query.nombreCliente = this.searchParams.nombreCliente;
+
     if (this.searchParams.prefijoEstado) {
       query.estadoPrefijo = this.searchParams.prefijoEstado === 'active';
     }
-    
+
     if (this.searchParams.empresaEstado) {
       query.estadoEmpresa = this.searchParams.empresaEstado === 'active' ? 1 : 2;
     }
@@ -159,7 +218,6 @@ export class LicenseValidatorComponent implements OnInit {
     return query;
   }
 
-  // Mapear respuesta del servicio a formato de la tabla
   private mapearRespuestaServicio(clienteLicenses: ClienteLicenseResponse[]): License[] {
     return clienteLicenses.map((cliente, index) => ({
       id: cliente.cliente_codigo || index,
@@ -174,23 +232,25 @@ export class LicenseValidatorComponent implements OnInit {
       addressRegion: cliente.address_region || 'N/A',
       telephone: cliente.telephone || 'N/A',
       email: cliente.email || 'N/A',
-      website: cliente.website || 'N/A'
+      website: cliente.website || 'N/A',
     }));
   }
 
-  // Método principal de búsqueda
+  // ==========================
+  // BÚSQUEDA
+  // ==========================
+
   buscar(): void {
-    console.log('Buscar llamado con parámetros:', this.searchParams);
-    
     this.isLoading = true;
     this.hasSearched = true;
     this.errorMessage = '';
-    
+
     const query = this.mapearParametrosBusqueda();
-    
-    this.validacionService.getClientesLicense(query)
+
+    this.validacionService
+      .getClientesLicense(query)
       .pipe(
-        catchError(error => {
+        catchError((error) => {
           console.error('Error al buscar licencias:', error);
           this.errorMessage = 'Error al cargar los datos. Por favor, intente nuevamente.';
           return of(null);
@@ -199,67 +259,44 @@ export class LicenseValidatorComponent implements OnInit {
           this.isLoading = false;
         })
       )
-      .subscribe(response => {
-        if (response && response.data) {
-          // Guardar datos originales desde la estructura correcta
-          this.licenciasOriginales = response.data.items || [];
-          
-          // Mapear a formato de la tabla
-          this.licencias = this.mapearRespuestaServicio(this.licenciasOriginales);
-          
-          // Actualizar información de paginación desde la nueva estructura
-          this.totalItems = response.data.totalItems || 0;
-          this.totalPages = response.data.totalPages || 0;
-          this.currentPage = response.data.page || 1;
-          
-          // MOSTRAR POPUP SI NO HAY RESULTADOS
-          if (this.totalItems === 0) {
-            this.mostrarInstruccionesPopup();
-          }
+      .subscribe((response) => {
+        const r: any = response as any;
 
-          console.log('Licencias cargadas:', this.licencias.length);
-          console.log('Total items:', this.totalItems);
+        if (r && r.data) {
+          const data = r.data;
+
+          this.licenciasOriginales = data.items || [];
+          this.licencias = this.mapearRespuestaServicio(this.licenciasOriginales);
+
+          this.totalItems = data.totalItems || 0;
+          this.totalPages = data.totalPages || 0;
+          this.currentPage = data.page || 1;
+
+          if (this.totalItems === 0) this.mostrarInstruccionesPopup();
         } else {
           this.licencias = [];
+          this.licenciasOriginales = [];
           this.totalItems = 0;
           this.totalPages = 0;
-          this.errorMessage = response?.message || 'No se encontraron datos';
+          this.errorMessage = r?.message || 'No se encontraron datos';
           this.mostrarInstruccionesPopup();
         }
       });
   }
 
-  // Manejo de cambio de página
   onPageChange(event: PageEvent): void {
     this.currentPage = event.pageIndex + 1;
     this.pageSize = event.pageSize;
-    console.log('Página cambiada a:', this.currentPage, 'Tamaño:', this.pageSize);
-    
-    // Realizar nueva búsqueda con la nueva página
     this.buscar();
   }
 
-  // Nueva búsqueda (resetear formulario)
   nuevaBusqueda(): void {
-    console.log('Nueva búsqueda - Limpiando todos los campos');
-    
-    // 1. Limpiar completamente searchParams
     this.searchParams = {};
-    
-    // 2. Limpiar variable de control del nombre
     this.terminoBusquedaNombre = '';
-    
-    // 3. Limpiar el campo de búsqueda general (#searchInput)
-    if (this.searchInput && this.searchInput.nativeElement) {
-      this.searchInput.nativeElement.value = '';
-    }
-    
-    // 4. Limpiar el campo de búsqueda por nombre (#campoBuscarNombre) si existe
-    if (this.campoBuscarNombre && this.campoBuscarNombre.nativeElement) {
-      this.campoBuscarNombre.nativeElement.value = '';
-    }
-    
-    // 5. Resetear todos los estados
+
+    if (this.searchInput?.nativeElement) this.searchInput.nativeElement.value = '';
+    if (this.campoBuscarNombre?.nativeElement) this.campoBuscarNombre.nativeElement.value = '';
+
     this.hasSearched = false;
     this.currentPage = 1;
     this.errorMessage = '';
@@ -267,25 +304,55 @@ export class LicenseValidatorComponent implements OnInit {
     this.licenciasOriginales = [];
     this.totalItems = 0;
     this.totalPages = 0;
-    
-    console.log('Todos los campos limpiados correctamente');
   }
 
-  // Limpiar formulario (mantener registro)
   limpiarForm(): void {
-    console.log('Limpiar formulario');
     this.searchParams = {
       registro: this.searchParams.registro,
-      fechaIgual: new Date().toISOString().split('T')[0]
+      fechaIgual: new Date().toISOString().split('T')[0],
     };
     this.currentPage = 1;
     this.errorMessage = '';
   }
 
-  // Exportar datos a JSON
+  // ==========================
+  // BÚSQUEDA GENERAL (HTML LA LLAMA)
+  // ==========================
+
+  onBusquedaGeneralChange(termino: string): void {
+    this.terminoBusquedaNombre = termino;
+
+    if (termino && termino.trim()) {
+      this.searchParams.nombreCliente = termino.trim();
+    } else {
+      this.searchParams.nombreCliente = undefined;
+    }
+  }
+
+  buscarGeneral(termino: string): void {
+    const t = (termino ?? '').toString().trim();
+    this.terminoBusquedaNombre = t;
+
+    if (!t) this.searchParams.nombreCliente = undefined;
+    else this.searchParams.nombreCliente = t;
+
+    this.currentPage = 1;
+    this.buscar();
+  }
+
+  buscarPorRangoFechas(fechaDesde: string, fechaHasta: string): void {
+    this.searchParams.fechaDesde = fechaDesde;
+    this.searchParams.fechaHasta = fechaHasta;
+    this.searchParams.fechaIgual = undefined;
+    this.currentPage = 1;
+    this.buscar();
+  }
+
+  // ==========================
+  // EXPORTAR JSON (DESCARGA)
+  // ==========================
+
   exportarJSON(): void {
-    console.log('Iniciando exportación JSON con filtros actuales');
-    
     if (!this.hasSearched) {
       alert('Primero debe realizar una búsqueda para exportar datos');
       return;
@@ -293,7 +360,6 @@ export class LicenseValidatorComponent implements OnInit {
 
     this.isExporting = true;
 
-    // Crear query de exportación reutilizando EXACTAMENTE los mismos filtros de búsqueda
     const exportQuery: ExportLicenseQuery = {
       nombreCliente: this.searchParams.nombreCliente,
       codigoPrefijo: this.searchParams.prefijo,
@@ -301,16 +367,25 @@ export class LicenseValidatorComponent implements OnInit {
       fechaHasta: this.searchParams.fechaHasta,
       fechaIgual: this.searchParams.fechaIgual,
       ruc: this.searchParams.ruc,
-      estadoPrefijo: this.searchParams.prefijoEstado === 'active' ? true : 
-                      this.searchParams.prefijoEstado === 'inactive' ? false : undefined,
-      estadoEmpresa: this.searchParams.empresaEstado === 'active' ? 1 : 
-                     this.searchParams.empresaEstado === 'inactive' ? 2 : undefined,
-      batchSize: 1000
+      estadoPrefijo:
+        this.searchParams.prefijoEstado === 'active'
+          ? true
+          : this.searchParams.prefijoEstado === 'inactive'
+          ? false
+          : undefined,
+      estadoEmpresa:
+        this.searchParams.empresaEstado === 'active'
+          ? 1
+          : this.searchParams.empresaEstado === 'inactive'
+          ? 2
+          : undefined,
+      batchSize: 1000,
     };
 
-    this.validacionService.exportClientesLicense(exportQuery)
+    this.validacionService
+      .exportClientesLicense(exportQuery)
       .pipe(
-        catchError(error => {
+        catchError((error) => {
           console.error('Error al exportar licencias:', error);
           this.errorMessage = 'Error al exportar los datos. Por favor, intente nuevamente.';
           return of(null);
@@ -319,18 +394,18 @@ export class LicenseValidatorComponent implements OnInit {
           this.isExporting = false;
         })
       )
-      .subscribe(response => {
-        if (response && response.data && response.type === 'Success') {
-          this.procesarExportacion(response.data);
+      .subscribe((response) => {
+        const r: any = response as any;
+        if (r && r.data && r.type === 'Success') {
+          this.procesarExportacion(r.data as ExportLicenseResponse);
         } else {
-          this.errorMessage = response?.message || 'Error al procesar la exportación';
+          this.errorMessage = r?.message || 'Error al procesar la exportación';
         }
       });
   }
+
   private procesarExportacion(exportData: ExportLicenseResponse): void {
     const { totalItems, totalBatches, batches } = exportData;
-
-    console.log(`Exportación completada: ${totalItems} registros en ${totalBatches} lotes`);
 
     if (totalBatches === 0) {
       alert('No hay datos para exportar con los filtros aplicados');
@@ -338,249 +413,103 @@ export class LicenseValidatorComponent implements OnInit {
     }
 
     if (totalBatches === 1) {
-      // Un solo archivo
       this.descargarArchivo(batches[0].items, 'licencias_verified');
       alert(`Archivo descargado exitosamente con ${totalItems} registros.`);
-    } else {
-      // Múltiples archivos
-      const confirmar = window.confirm(
-        `Se encontraron ${totalItems} registros.\n` +
+      return;
+    }
+
+    const confirmar = window.confirm(
+      `Se encontraron ${totalItems} registros.\n` +
         `Se generarán ${totalBatches} archivos JSON (máximo 1000 registros por archivo).\n\n` +
         `¿Desea continuar con la descarga?`
-      );
+    );
 
-      if (confirmar) {
-        this.descargarMultiplesArchivos(batches, totalItems);
-      }
-    }
+    if (confirmar) this.descargarMultiplesArchivos(batches, totalItems);
   }
-  private descargarArchivo(items: ExportLicenseItem[], nombreBase: string, sufijo?: string): void {
-    const fecha = new Date().toISOString().split('T')[0];
-    const nombreArchivo = sufijo 
-      ? `${nombreBase}_${sufijo}_${fecha}.json`
-      : `${nombreBase}_${fecha}.json`;
 
-    const dataStr = JSON.stringify(items, null, 2);
-    const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
-    
-    const linkElement = document.createElement('a');
-    linkElement.setAttribute('href', dataUri);
-    linkElement.setAttribute('download', nombreArchivo);
-    linkElement.click();
-  }
+ private descargarArchivo(items: ExportLicenseItem[], nombreBase: string, sufijo?: string): void {
+  const fecha = new Date().toISOString().split('T')[0];
+  const nombreArchivo = sufijo
+    ? `${nombreBase}_${sufijo}_${fecha}.json`
+    : `${nombreBase}_${fecha}.json`;
+
+  // ✅ SANITIZA SIEMPRE ANTES DE GENERAR EL JSON
+  const sanitized = this.sanitizeLicensesForVerified(items);
+
+  const dataStr = JSON.stringify(sanitized, null, 2);
+  const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+
+  const linkElement = document.createElement('a');
+  linkElement.setAttribute('href', dataUri);
+  linkElement.setAttribute('download', nombreArchivo);
+  linkElement.click();
+}
+
 
   private descargarMultiplesArchivos(batches: ExportLicenseBatch[], totalItems: number): void {
     let archivosDescargados = 0;
 
-    // Mostrar progreso al usuario
-    const progressMessage = `Iniciando descarga de ${batches.length} archivos...`;
-    console.log(progressMessage);
-
-    // Descargar cada lote con delay para evitar bloquear el navegador
     batches.forEach((batch, index) => {
       setTimeout(() => {
         const sufijo = `parte_${batch.batchNumber.toString().padStart(2, '0')}`;
         this.descargarArchivo(batch.items, 'licencias_verified', sufijo);
-        
+
         archivosDescargados++;
-        console.log(`Archivo ${archivosDescargados}/${batches.length} descargado`);
-        
-        // Notificar cuando se complete la descarga
+
         if (archivosDescargados === batches.length) {
           alert(`✅ Descarga completada: ${batches.length} archivos con ${totalItems} registros totales.`);
         }
-      }, index * 1500); // 1.5 segundos entre descargas
+      }, index * 1500);
     });
 
-    // Información inmediata al usuario
-    alert(`📥 Se descargarán ${batches.length} archivos JSON secuencialmente.\n\nPor favor, espere a que se completen todas las descargas (aproximadamente ${Math.ceil(batches.length * 1.5)} segundos).`);
-  }
-
-  // Método helper actualizado para mostrar información de exportación
-  get exportInfo(): string {
-    if (!this.hasSearched) return '';
-    
-    if (this.totalItems <= 1000) {
-      return `Se exportará 1 archivo con ${this.totalItems} registros.`;
-    } else {
-      const archivos = Math.ceil(this.totalItems / 1000);
-      return `Se exportarán ${archivos} archivos con ${this.totalItems} registros totales.`;
-    }
-  }
-
-  // Ver detalle de licencia
-  verDetalle(licencia: License): void {
-    console.log('Ver detalle de licencia:', licencia);
-    
-    // Buscar datos originales para mostrar más información
-    const licenciaOriginal = this.licenciasOriginales.find(l => 
-      l.cliente_codigo === licencia.id || 
-      l.license_name === licencia.licenseName
+    alert(
+      `📥 Se descargarán ${batches.length} archivos JSON secuencialmente.\n\n` +
+        `Por favor, espere a que se completen todas las descargas.`
     );
-    
+  }
+
+  // ==========================
+  // VER DETALLE (OPCIONAL)
+  // ==========================
+
+  verDetalle(licencia: License): void {
+    const licenciaOriginal = this.licenciasOriginales.find(
+      (l) => l.cliente_codigo === licencia.id || l.license_name === licencia.licenseName
+    );
+
     if (licenciaOriginal) {
       const detalle = `
-        Detalle de la licencia:
-        Clave de Licencia: ${licenciaOriginal.license_key || 'N/A'}
-        Nombre: ${licenciaOriginal.license_name || 'N/A'}
-        RUC: ${licenciaOriginal.ruc || 'N/A'}
-        GLN: ${licenciaOriginal.license_gln || 'N/A'}
-        Código Cliente: ${licenciaOriginal.cliente_codigo || 'N/A'}
-        Código Prefijo: ${licenciaOriginal.codigo_prefijo || 'N/A'}
-        Tipo de Licencia: ${licenciaOriginal.license_type || 'N/A'}
-        Estado de Licencia: ${licenciaOriginal.license_status || 'N/A'}
-        Clave de Licencia: ${licenciaOriginal.license_key || 'N/A'}
-        Dirección: ${licenciaOriginal.address || 'N/A'}
-        Suburbio: ${licenciaOriginal.address_suburb || 'N/A'}
-        Localidad: ${licenciaOriginal.address_locality || 'N/A'}
-        Región: ${licenciaOriginal.address_region || 'N/A'}
-        Teléfono: ${licenciaOriginal.telephone || 'N/A'}
-        Email: ${licenciaOriginal.email || 'N/A'}
-        Sitio Web: ${licenciaOriginal.website || 'N/A'}
-        Fecha de Ingreso: ${licenciaOriginal.fecha_ingreso || 'N/A'}
+Detalle de la licencia:
+Clave de Licencia: ${licenciaOriginal.license_key || 'N/A'}
+Nombre: ${licenciaOriginal.license_name || 'N/A'}
+RUC: ${licenciaOriginal.ruc || 'N/A'}
+GLN: ${licenciaOriginal.license_gln || 'N/A'}
+Código Cliente: ${licenciaOriginal.cliente_codigo || 'N/A'}
+Código Prefijo: ${licenciaOriginal.codigo_prefijo || 'N/A'}
+Tipo de Licencia: ${licenciaOriginal.license_type || 'N/A'}
+Estado de Licencia: ${licenciaOriginal.license_status || 'N/A'}
+Dirección: ${licenciaOriginal.address || 'N/A'}
+Suburbio: ${licenciaOriginal.address_suburb || 'N/A'}
+Localidad: ${licenciaOriginal.address_locality || 'N/A'}
+Región: ${licenciaOriginal.address_region || 'N/A'}
+Teléfono: ${licenciaOriginal.telephone || 'N/A'}
+Email: ${licenciaOriginal.email || 'N/A'}
+Sitio Web: ${licenciaOriginal.website || 'N/A'}
+Fecha de Ingreso: ${licenciaOriginal.fecha_ingreso || 'N/A'}
       `;
       alert(detalle);
     } else {
-      alert(`Detalle de la licencia:\nNombre: ${licencia.licenseName}\nTipo: ${licencia.licenseType}\nEstado: ${licencia.licenseStatus}`);
+      alert(
+        `Detalle de la licencia:\nNombre: ${licencia.licenseName}\nTipo: ${licencia.licenseType}\nEstado: ${licencia.licenseStatus}`
+      );
     }
   }
 
-  // Método para búsqueda general por nombre de cliente
-  buscarGeneral(termino: string): void {
-    // Actualizar la variable de control
-    this.terminoBusquedaNombre = termino;
+  // ==========================
+  // EXPORTAR + ENVIAR A API (SIN TOCAR BACKEND)
+  // ==========================
 
-    if (!termino.trim()) {
-      // Si no hay término, limpiar búsqueda general y buscar sin filtro de nombre
-      this.searchParams.nombreCliente = undefined;
-      this.buscar();
-      return;
-    }
-    
-    // Establecer término de búsqueda en nombreCliente
-    this.searchParams.nombreCliente = termino.trim();
-    this.currentPage = 1;
-    this.buscar();
-  }
-
-  // Método para búsqueda por rango de fechas
-  buscarPorRangoFechas(fechaDesde: string, fechaHasta: string): void {
-    this.searchParams.fechaDesde = fechaDesde;
-    this.searchParams.fechaHasta = fechaHasta;
-    this.searchParams.fechaIgual = undefined; // Limpiar fecha igual si se usa rango
-    this.currentPage = 1;
-    this.buscar();
-  }
-
-  // Método helper para formatear fechas
-  private formatearFecha(fecha: string): string {
-    if (!fecha) return '';
-    
-    try {
-      const date = new Date(fecha);
-      return date.toLocaleDateString('es-EC');
-    } catch (error) {
-      return fecha;
-    }
-  }
-
-  // Método helper para validar email
-  private esEmailValido(email: string): boolean {
-    if (!email || email === 'N/A') return false;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  }
-
-  // Método helper para validar URL
-  private esUrlValida(url: string): boolean {
-    if (!url || url === 'N/A') return false;
-    try {
-      new URL(url.startsWith('http') ? url : `https://${url}`);
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  // Método para obtener URL completa del sitio web
-  getWebsiteUrl(website: string): string {
-    if (!website || website === 'N/A') return '';
-    return website.startsWith('http') ? website : `https://${website}`;
-  }
-
-  // Método helper para verificar si hay resultados
-  get hasResults(): boolean {
-    return this.hasSearched && this.licencias.length > 0;
-  }
-
-  // Método helper para verificar si no hay resultados después de búsqueda
-  get noResults(): boolean {
-    return this.hasSearched && this.licencias.length === 0 && !this.isLoading;
-  }
-
-  /**
- * Método para detectar cuando se escribe en el campo de búsqueda general
- */
-  onBusquedaGeneralChange(termino: string): void {
-    this.terminoBusquedaNombre = termino;
-    
-    if (termino.trim()) {
-      this.searchParams.nombreCliente = termino.trim();
-    } else {
-      this.searchParams.nombreCliente = undefined;
-    }
-  }
-
-  /**
-   * Getter que determina si el botón buscar debe estar habilitado
-   * Se habilita cuando hay al menos un campo con datos
-   */
-  get puedeRealizarBusqueda(): boolean {
-    // Helper function para verificar strings válidos
-    const esStringValido = (valor: string | undefined): boolean => {
-      return valor !== undefined && valor !== null && valor.trim().length > 0;
-    };
-
-    // Verificar campos de texto
-    const tieneRuc = esStringValido(this.searchParams.ruc);
-    const tienePrefijo = esStringValido(this.searchParams.prefijo);
-    const tieneFechaIgual = esStringValido(this.searchParams.fechaIgual);
-    const tieneFechaDesde = esStringValido(this.searchParams.fechaDesde);
-    const tieneFechaHasta = esStringValido(this.searchParams.fechaHasta);
-    const tieneNombreCliente = esStringValido(this.searchParams.nombreCliente);
-    
-    // Verificar dropdowns (deben tener un valor diferente de vacío)
-    const tienePrefijoEstado = esStringValido(this.searchParams.prefijoEstado);
-    const tieneEmpresaEstado = esStringValido(this.searchParams.empresaEstado);
-    
-    // Verificar el campo de búsqueda general
-    const tieneBusquedaGeneral = esStringValido(this.terminoBusquedaNombre);
-    
-    // Retornar true si hay al menos un campo completado
-    return tieneRuc || tienePrefijo || tieneFechaIgual || tieneFechaDesde || 
-          tieneFechaHasta || tieneNombreCliente || tienePrefijoEstado || 
-          tieneEmpresaEstado || tieneBusquedaGeneral;
-  }
-
-  /**
-   * Getter para mostrar un mensaje helpful cuando el botón está deshabilitado
-   */
-  get mensajeBotonBuscar(): string {
-    if (this.isLoading) {
-      return 'Buscando...';
-    }
-    
-    if (!this.puedeRealizarBusqueda) {
-      return 'Ingrese al menos un criterio de búsqueda';
-    }
-    
-    return 'Buscar';
-  }
-
-  // MÉTODO PRINCIPAL: Exportar y Enviar con Confirmación
   async exportarYEnviarConConfirmacion(): Promise<void> {
-    console.log('Iniciando exportación con confirmación para envío a API');
-    
     if (!this.hasSearched) {
       this.showMessageBox('Error', 'Primero debe realizar una búsqueda para exportar datos', 'error');
       return;
@@ -589,37 +518,23 @@ export class LicenseValidatorComponent implements OnInit {
     this.isExporting = true;
 
     try {
-      // PASO 1: Exportar licencias
-      console.log('Paso 1: Exportando licencias...');
       const exportData = await this.exportarLicencias();
-      
+
       if (!exportData || exportData.totalItems === 0) {
         this.showMessageBox('Información', 'No hay licencias para exportar con los filtros aplicados', 'info');
         return;
       }
 
-      // PASO 2: Mostrar confirmación en secuencia
-      console.log('Paso 2: Mostrando confirmación...');
       const decision = await this.mostrarConfirmacionEnvio(exportData);
-      
-      switch (decision) {
-        case 'enviar':
-          console.log('Usuario eligió: Enviar a API');
-          await this.descargarYEnviarAApi(exportData);
-          break;
-          
-        case 'descargar':
-          console.log('Usuario eligió: Solo descargar');
-          this.descargarTodosLosArchivos(exportData);
-          this.showMessageBox('Éxito', 'Archivos JSON descargados correctamente', 'success');
-          break;
-          
-        case 'cancelar':
-          console.log('Usuario canceló la operación');
-          this.showMessageBox('Información', 'Operación cancelada por el usuario', 'info');
-          break;
-      }
 
+      if (decision === 'enviar') {
+        await this.descargarYEnviarAApi(exportData);
+      } else if (decision === 'descargar') {
+        this.descargarTodosLosArchivos(exportData);
+        this.showMessageBox('Éxito', 'Archivos JSON descargados correctamente', 'success');
+      } else {
+        this.showMessageBox('Información', 'Operación cancelada por el usuario', 'info');
+      }
     } catch (error) {
       console.error('Error en exportación:', error);
       this.showMessageBox('Error', 'Error al exportar licencias. Intente nuevamente.', 'error');
@@ -629,7 +544,7 @@ export class LicenseValidatorComponent implements OnInit {
     }
   }
 
-   private async exportarLicencias(): Promise<ExportLicenseResponse | null> {
+  private async exportarLicencias(): Promise<ExportLicenseResponse | null> {
     const exportQuery: ExportLicenseQuery = {
       nombreCliente: this.searchParams.nombreCliente,
       codigoPrefijo: this.searchParams.prefijo,
@@ -637,171 +552,149 @@ export class LicenseValidatorComponent implements OnInit {
       fechaHasta: this.searchParams.fechaHasta,
       fechaIgual: this.searchParams.fechaIgual,
       ruc: this.searchParams.ruc,
-      estadoPrefijo: this.searchParams.prefijoEstado === 'active' ? true : 
-                      this.searchParams.prefijoEstado === 'inactive' ? false : undefined,
-      estadoEmpresa: this.searchParams.empresaEstado === 'active' ? 1 : 
-                     this.searchParams.empresaEstado === 'inactive' ? 2 : undefined,
-      batchSize: 1000
+      estadoPrefijo:
+        this.searchParams.prefijoEstado === 'active'
+          ? true
+          : this.searchParams.prefijoEstado === 'inactive'
+          ? false
+          : undefined,
+      estadoEmpresa:
+        this.searchParams.empresaEstado === 'active'
+          ? 1
+          : this.searchParams.empresaEstado === 'inactive'
+          ? 2
+          : undefined,
+      batchSize: 1000,
     };
 
-    return new Promise((resolve, reject) => {
-      this.validacionService.exportClientesLicense(exportQuery)
-        .pipe(
-          catchError(error => {
-            console.error('Error al exportar licencias:', error);
-            reject(error);
-            return of(null);
-          })
-        )
-        .subscribe(response => {
-          if (response && response.data && response.type === 'Success') {
-            resolve(response.data);
-          } else {
-            reject(new Error(response?.message || 'Error al procesar la exportación'));
-          }
-        });
-    });
+    const resp = await firstValueFrom(
+      this.validacionService.exportClientesLicense(exportQuery).pipe(
+        catchError((err) => {
+          console.error('Error al exportar licencias:', err);
+          return of(null);
+        })
+      )
+    );
+
+    if (!resp) return null;
+
+    const r: any = resp as any;
+    if (r.data && r.type === 'Success') return r.data as ExportLicenseResponse;
+
+    throw new Error(r.message || 'Error al procesar la exportación');
   }
 
-  private async mostrarConfirmacionEnvio(exportData: ExportLicenseResponse): Promise<'enviar' | 'descargar' | 'cancelar'> {
-      const { totalItems, totalBatches } = exportData;
-      
-      // PRIMERA PREGUNTA: ¿Enviar a API?
-      const mensaje1 = `✅ Se exportaran ${totalItems} licencias en ${totalBatches} lote(s).
+  private async mostrarConfirmacionEnvio(
+    exportData: ExportLicenseResponse
+  ): Promise<'enviar' | 'descargar' | 'cancelar'> {
+    const { totalItems, totalBatches } = exportData;
 
-  ¿Desea enviar las licencias a la API VERIFIED además de descargar los archivos JSON?`;
+    const mensaje = `✅ Se exportarán ${totalItems} licencias en ${totalBatches} lote(s).
 
-      const enviarAApi = await this.showConfirmDialog(
-        'Confirmar Envío a API VERIFIED', 
-        mensaje1, 
-        'info',
-        'SÍ, Enviar a API',
-        'NO, Solo Descargar'
-      );
+¿Desea enviar las licencias a la API VERIFIED además de descargar los archivos JSON?`;
 
-      if (enviarAApi === true) {
-        return 'enviar';
-      } else if (enviarAApi === false) {
-        return 'descargar';
-      } else {
-        return 'cancelar';
-      }
-    }
+    const enviarAApi = await this.showConfirmDialog(
+      'Confirmar Envío a API VERIFIED',
+      mensaje,
+      'info',
+      'SÍ, Enviar a API',
+      'NO, Solo Descargar'
+    );
+
+    if (enviarAApi === true) return 'enviar';
+    if (enviarAApi === false) return 'descargar';
+    return 'cancelar';
+  }
 
   private async descargarYEnviarAApi(exportData: ExportLicenseResponse): Promise<void> {
     this.isSendingToApi = true;
+
     const { totalBatches, batches } = exportData;
-    
-    console.log(`Enviando ${totalBatches} lotes a API VERIFIED...`);
-    
-    // Primero descargar archivos
+
+    // Primero descargar archivos (opcional, pero lo dejas como estabas)
     this.descargarTodosLosArchivos(exportData);
-    
-    // Crear loading dialog
+
+    // Loading dialog
     const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
       data: {
         title: 'Enviando a API VERIFIED',
         message: `Procesando ${totalBatches} lotes...`,
         type: 'info',
         isLoading: true,
-        loadingText: 'Iniciando envío...'
+        loadingText: 'Iniciando envío...',
       },
       disableClose: true,
-      width: '400px'
+      width: '400px',
     });
 
     let lotesExitosos = 0;
     let lotesFallidos = 0;
     const errores: string[] = [];
 
-    // Enviar cada lote secuencialmente
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
-      
-      // Actualizar progreso en el loading dialog
-      const componentInstance = loadingDialog.componentRef?.instance as CustomMessageBoxComponent;
-      if (componentInstance) {
-        componentInstance.updateLoadingState(
-          true, 
-          `Enviando lote ${batch.batchNumber} de ${totalBatches}...`
-        );
-      }
-      
-      try {
-        console.log(`Enviando lote ${batch.batchNumber}/${totalBatches}...`);
-        
-        const request = {
-          apiType: 'licencias',
-          products: batch.items
-        };
 
-        const result = await this.enviarLoteAApi(batch.items);
-        
-        if (result.success) {
+      // Actualiza progreso (si tu componente lo soporta)
+      const componentInstance = loadingDialog.componentRef?.instance as any;
+      if (componentInstance?.updateLoadingState) {
+        componentInstance.updateLoadingState(true, `Enviando lote ${batch.batchNumber} de ${totalBatches}...`);
+      }
+
+      try {
+        // ✅ CORRECCIÓN CLAVE: sanitizar antes de enviar
+        const sanitizedItems = this.sanitizeLicensesForVerified(batch.items);
+
+        const result = await this.enviarLoteAApi(sanitizedItems);
+
+        if (result?.success) {
           lotesExitosos++;
-          console.log(`✅ Lote ${batch.batchNumber} enviado exitosamente`);
         } else {
           lotesFallidos++;
-          const error = `Lote ${batch.batchNumber}: ${result.message}`;
-          errores.push(error);
-          console.error(`❌ Error en lote ${batch.batchNumber}:`, result.message);
+          errores.push(`Lote ${batch.batchNumber}: ${result?.message || 'Error desconocido'}`);
         }
-        
-        // Pausa entre envíos
-        if (i < batches.length - 1) {
-          await this.delay(1000);
-        }
-        
-      } catch (error) {
+
+        if (i < batches.length - 1) await this.delay(1000);
+      } catch (err: any) {
         lotesFallidos++;
-        const errorMsg = `Lote ${batch.batchNumber}: ${error}`;
-        errores.push(errorMsg);
-        console.error(`❌ Error enviando lote ${batch.batchNumber}:`, error);
+        errores.push(`Lote ${batch.batchNumber}: ${err?.message || err?.toString?.() || 'Error'}`);
       }
     }
 
-    // Cerrar loading dialog
     loadingDialog.close();
-
-    // Mostrar resumen final
     this.mostrarResumenEnvio(lotesExitosos, lotesFallidos, errores, exportData.totalItems);
   }
 
   private async enviarLoteAApi(licencias: any[]): Promise<any> {
-    return new Promise((resolve, reject) => {
-      this.validacionService.sendLicenciasToApi(licencias) // Solo el array
-        .pipe(
-          catchError(error => {
-            reject(error);
-            return of(null);
-          })
-        )
-        .subscribe(response => {
-          if (response) {
-            resolve(response);
-          } else {
-            reject(new Error('No response from API'));
-          }
-        });
-    });
+    const resp = await firstValueFrom(
+      this.validacionService.sendLicenciasToApi(licencias).pipe(
+        catchError((err) => {
+          throw err;
+        })
+      )
+    );
+    return resp;
   }
 
   private descargarTodosLosArchivos(exportData: ExportLicenseResponse): void {
     const { totalBatches, batches } = exportData;
-    
+
     if (totalBatches === 1) {
       this.descargarArchivo(batches[0].items, 'licencias_verified');
-    } else {
-      batches.forEach((batch, index) => {
-        setTimeout(() => {
-          const sufijo = `parte_${batch.batchNumber.toString().padStart(2, '0')}`;
-          this.descargarArchivo(batch.items, 'licencias_verified', sufijo);
-        }, index * 1500);
-      });
+      return;
     }
+
+    batches.forEach((batch, index) => {
+      setTimeout(() => {
+        const sufijo = `parte_${batch.batchNumber.toString().padStart(2, '0')}`;
+        this.descargarArchivo(batch.items, 'licencias_verified', sufijo);
+      }, index * 1500);
+    });
   }
 
-  
+  // ==========================
+  // POPUP INSTRUCCIONES
+  // ==========================
+
   private mostrarInstruccionesPopup(): void {
     const instrucciones = [
       '<strong>Validador de Licencias</strong>',
@@ -812,94 +705,244 @@ export class LicenseValidatorComponent implements OnInit {
       '• <strong>Búsqueda rápida:</strong> Use el campo de búsqueda general por nombre',
       '• <strong>Filtros específicos:</strong> RUC, prefijo, estados',
       '• <strong>Filtros de fecha:</strong> Rango de fechas entre dos fechas',
-      '• <strong>Estados:</strong> Filtre por estado del prefijo o empresa (Activo/Inactivo)'
+      '• <strong>Estados:</strong> Filtre por estado del prefijo o empresa (Activo/Inactivo)',
     ];
 
-    const mensajeHTML = instrucciones.join('<br>');
-
-    // USAR EL MÉTODO PÚBLICO DEL SERVICIO
-    this.requiredFieldsToast.info(mensajeHTML, 'Instrucciones de Búsqueda');
+    this.requiredFieldsToast.info(instrucciones.join('<br>'), 'Instrucciones de Búsqueda');
   }
+
+  // ==========================
+  // MENSAJES / CONFIRMACIONES
+  // ==========================
 
   private mostrarResumenEnvio(exitosos: number, fallidos: number, errores: string[], totalLicencias: number): void {
     if (fallidos === 0) {
-      // Envío completamente exitoso
-      const mensaje = `ENVÍO COMPLETADO EXITOSAMENTE!\n
+      const mensaje = `ENVÍO COMPLETADO EXITOSAMENTE!
+
+✅ Lotes exitosos: ${exitosos}
+Total licencias: ${totalLicencias}
 
 Los archivos JSON también fueron descargados.`;
 
       this.showMessageBox('Éxito', mensaje, 'success');
-      this.nuevaBusqueda()
-    } else {
-      // Envío con errores
-      const primerosErrores = errores.slice(0, 3).join('\n• ');
-      const masErrores = errores.length > 3 ? `\n\n... y ${errores.length - 3} errores más` : '';
-      
-      const mensaje = `⚠️ ENVÍO COMPLETADO CON ERRORES
+      this.nuevaBusqueda();
+      return;
+    }
+
+    const mensaje = `⚠️ ENVÍO COMPLETADO CON ERRORES
 
 ✅ Exitosos: ${exitosos} lotes
-❌ Fallidos: ${fallidos} lotes  
+❌ Fallidos: ${fallidos} lotes
 Total licencias: ${totalLicencias}
-
 
 Revise la consola para más detalles.`;
 
-      this.showMessageBox('Advertencia', mensaje, 'warning');
-    }
+    console.error('Errores de envío:', errores);
+    this.showMessageBox('Advertencia', mensaje, 'warning');
   }
 
-  private showMessageBox(title: string, message: string, type: 'success' | 'error' | 'warning' | 'info'): void {
+  private showMessageBox(
+    title: string,
+    message: string,
+    type: 'success' | 'error' | 'warning' | 'info'
+  ): void {
     this.dialog.open(CustomMessageBoxComponent, {
       data: {
-        title: title,
-        message: message,
-        type: type,
+        title,
+        message,
+        type,
         confirmText: 'Aceptar',
-        showCancel: false
+        showCancel: false,
       },
-      width: '400px'
+      width: '400px',
     });
   }
-  private showConfirmDialog(
-    title: string, 
-    message: string, 
+
+  private async showConfirmDialog(
+    title: string,
+    message: string,
     type: 'success' | 'error' | 'warning' | 'info',
     confirmText: string = 'Sí',
     cancelText: string = 'No'
   ): Promise<boolean | null> {
     const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
       data: {
-        title: title,
-        message: message,
-        type: type,
-        confirmText: confirmText,
-        cancelText: cancelText,
-        showCancel: true
+        title,
+        message,
+        type,
+        confirmText,
+        cancelText,
+        showCancel: true,
       },
       width: '450px',
-      disableClose: false
+      disableClose: false,
     });
 
-    return dialogRef.afterClosed().toPromise();
+    return await firstValueFrom(dialogRef.afterClosed());
   }
 
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
-  get puedeExportarYEnviar(): boolean {
-    return this.hasSearched && !this.isExporting && !this.isSendingToApi;
+  // ==========================
+  // URL WEBSITE (HTML LA LLAMA)
+  // ==========================
+  getWebsiteUrl(website: string): string {
+    if (!website) return '';
+
+    const w = website.toString().trim();
+    if (!w || w.toUpperCase() === 'N/A') return '';
+    if (/^https?:\/\//i.test(w)) return w;
+    return `https://${w}`;
   }
 
-  get textoBotonExportarEnviar(): string {
-    if (this.isExporting && this.isSendingToApi) {
-      return 'Enviando a API...';
-    } else if (this.isExporting) {
-      return 'Exportando...';
-    } else if (this.isSendingToApi) {
-      return 'Enviando...';
-    } else {
-      return 'Exportar y Enviar';
-    }
+  // ==========================
+  // ✅ SANITIZACIÓN PARA VERIFIED (LA PARTE QUE TE FALTABA)
+  // ==========================
+
+  private readonly provinciasISO: Record<string, string> = {
+    'AZUAY': 'EC-A',
+    'BOLIVAR': 'EC-B',
+    'CANAR': 'EC-F',
+    'CARCHI': 'EC-C',
+    'CHIMBORAZO': 'EC-H',
+    'COTOPAXI': 'EC-X',
+    'EL ORO': 'EC-O',
+    'ESMERALDAS': 'EC-E',
+    'GALAPAGOS': 'EC-W',
+    'GUAYAS': 'EC-G',
+    'IMBABURA': 'EC-I',
+    'LOJA': 'EC-L',
+    'LOS RIOS': 'EC-R',
+    'MANABI': 'EC-M',
+    'MORONA SANTIAGO': 'EC-S',
+    'NAPO': 'EC-N',
+    'ORELLANA': 'EC-D',
+    'PASTAZA': 'EC-Y',
+    'PICHINCHA': 'EC-P',
+    'SANTA ELENA': 'EC-SE',
+    'SANTO DOMINGO DE LOS TSACHILAS': 'EC-SD',
+    'SUCUMBIOS': 'EC-U',
+    'TUNGURAHUA': 'EC-T',
+    'ZAMORA CHINCHIPE': 'EC-Z',
+  };
+
+  private normalizeText(s: string): string {
+    return (s || '')
+      .trim()
+      .toUpperCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // tildes
+      .replace(/Ñ/g, 'N')
+      .replace(/\s+/g, ' ');
   }
+
+  private getSubdivisionCode(provincia: string): string {
+    const key = this.normalizeText(provincia);
+    return this.provinciasISO[key] || '';
+  }
+
+  private onlyDigits(s: string): string {
+    return (s || '').replace(/\D+/g, '');
+  }
+
+  private normalizeWebsite(website?: string): string | undefined {
+    const w = (website ?? '').toString().trim();
+    if (!w || w.toUpperCase() === 'N/A') return undefined;
+    if (/^https?:\/\//i.test(w)) return w;
+    return `https://${w}`;
+  }
+
+ private sanitizeContactPoint(cp: any[] | undefined): Array<{ email?: string; telephone?: string; website?: string }> {
+  const list = Array.isArray(cp) ? cp : [];
+
+  const isBad = (v: any) => {
+    const s = (v ?? '').toString().trim();
+    if (!s) return true;
+    const u = s.toUpperCase();
+    return u === 'N/A' || u === 'NULL' || u === 'UNDEFINED';
+  };
+
+  let email: string | undefined;
+  let telephone: string | undefined;
+  let website: string | undefined;
+
+  for (const item of list) {
+    const e = item?.email;
+    const t = item?.telephone;
+    const w = item?.website;
+
+    if (!email && !isBad(e)) email = e.toString().trim();
+    if (!telephone && !isBad(t)) telephone = t.toString().trim();
+    if (!website && !isBad(w)) website = w.toString().trim();
+
+    if (email && telephone && website) break;
+  }
+
+  website = this.normalizeWebsite(website);
+
+  // ✅ Retorna SOLO 1 contactPoint (Verified suele aceptar arreglo, pero sin duplicados)
+  const single: any = {};
+  if (email) single.email = email;
+  if (telephone) single.telephone = telephone;
+  if (website) single.website = website;
+
+  return Object.keys(single).length ? [single] : [];
+}
+
+
+private sanitizeLicensesForVerified(items: ExportLicenseItem[]): ExportLicenseItem[] {
+  return (items ?? []).map((it) => {
+    const address: any = (it as any)?.address ?? {};
+
+    const isBad = (v: any) => {
+      const s = (v ?? '').toString().trim();
+      if (!s) return true;
+      const u = s.toUpperCase();
+      return u === 'N/A' || u === 'NULL' || u === 'UNDEFINED';
+    };
+
+    // 1) postalName.value obligatorio (no vacío)
+    const postalNameValue = (address?.postalName?.value ?? '').toString().trim();
+    const licenseeName = (it as any)?.licenseeName?.toString?.().trim?.() || '';
+    const fixedPostalNameValue = postalNameValue || licenseeName || 'N/A';
+
+    // 2) postalCode obligatorio (no vacío) -> solo dígitos (fallback)
+    const postalRaw = (address?.postalCode ?? '').toString().trim();
+    const postalDigits = this.onlyDigits(postalRaw);
+    const fixedPostalCode = postalDigits.length > 0 ? postalDigits : '000000';
+
+    // 3) countrySubdivisionCode (idealmente no vacío para EC) -> ISO por provincia
+    const region = (address?.addressRegion?.value ?? '').toString().trim();
+    const existingSubdiv = (address?.countrySubdivisionCode ?? '').toString().trim();
+    const fixedSubdiv = existingSubdiv || this.getSubdivisionCode(region) || '';
+
+    // 4) postOfficeBoxNumber: si VERIFIED lo exige, NO lo elimines, pon default
+    const pobRaw = (address?.postOfficeBoxNumber ?? '').toString().trim();
+    const fixedPob = !isBad(pobRaw) ? pobRaw : 'S/N';
+
+    // 5) contactPoint: 1 solo, sin nulls/duplicados
+    const fixedContactPoint = this.sanitizeContactPoint((it as any)?.contactPoint);
+
+    const newAddress: any = {
+      ...address,
+      postalName: {
+        language: (address?.postalName?.language ?? 'es').toString().trim() || 'es',
+        value: fixedPostalNameValue,
+      },
+      postalCode: fixedPostalCode,
+      countrySubdivisionCode: fixedSubdiv,
+      postOfficeBoxNumber: fixedPob, // <-- clave
+    };
+
+    return {
+      ...it,
+      address: newAddress,
+      contactPoint: fixedContactPoint,
+    } as ExportLicenseItem;
+  });
+}
+
+
 }

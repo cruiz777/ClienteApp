@@ -27,18 +27,20 @@ export interface ClienteCodpreGrupoResponse {
   ciudad: string;
   codpre: string;
   codigo_Grupo: string;
-  mantenimiento: number | null; // mensual
-  subtotal: number;             // mantenimiento * 12 (backend)
-  iva: number;                  // subtotal * 0.15
-  total: number;                // subtotal + iva
-  referencia: string;           // zona / descripción
-  pIva: number;                 // % IVA vigente (ej. 15)
+  mantenimiento: number | null;
+  subtotal: number;
+  iva: number;
+  total: number;
+  referencia: string;
+  pIva: number;
+  idCodContable?: number | null; // ✅ nullable (en UI a veces viene vacío)
 }
 
 export interface FiltrosCodpreGrupo {
   busquedaGeneral?: string;
   prefijoBusqueda?: string;
   idZona?: number | string | null;
+  anioFactura?: number | null;
 }
 
 /* ========= DTOs de creación de factura ========= */
@@ -49,13 +51,13 @@ export interface FacturaDetalleRequest {
   idDescuentoPredeterminado: number | null;
   porcentajeDescuentoManual: number | null;
   nombreProductoPersonalizado: string;
-  ivaCalculado: number;        // MONTO de IVA del detalle
-  subtotalCalculado: number;   // sin IVA
+  ivaCalculado: number;
+  subtotalCalculado: number;
   descuentoCalculado: number;
   totalCalculado: number;
   codigoPrefijo: string;
-  periodoDesde: string;        // yyyy-MM-dd
-  periodoHasta: string;        // yyyy-MM-dd
+  periodoDesde: string;
+  periodoHasta: string;
 }
 
 export interface FacturaFormaPagoRequest {
@@ -83,28 +85,27 @@ export interface FacturaCrearRequest {
   numeroGuiaRemision: string;
   prefijo: string;
   correo: string;
-  facBloque:number;
-  GrupoCliente:string;
-  subtotalSIva: number;          // subtotal SIN IVA (cabecera)
-  subtotalCalculado: number;     // igual al anterior si ya es sin IVA
+  facBloque: number;
+  GrupoCliente: string;
+
+  subtotalSIva: number;
+  subtotalCalculado: number;
   descuentoTotalCalculado: number;
-  ivaTotalCalculado: number;     // MONTO de IVA
+  ivaTotalCalculado: number;
   totalCalculado: number;
+
   detalles: FacturaDetalleRequest[];
   formasPago: FacturaFormaPagoRequest[];
 }
 
-/* ========= Servicio ========= */
 @Injectable({ providedIn: 'root' })
 export class FacturaGlobalService {
-  // Raíz del microservicio (asegúrate que environment.invoices_sic ya incluye el prefijo /api si aplica)
   private readonly apiRoot = environment.invoices_sic;
 
   private readonly clientesUrl = `${this.apiRoot}/clientes`;
-  private readonly facturacionUrl = `${this.apiRoot}/Facturacion`; // según tu controlador .NET
-  // si tu API usa /facturas en lugar de /Facturacion, cambia arriba a `${this.apiRoot}/facturas`
+  private readonly facturacionUrl = `${this.apiRoot}/Facturacion`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   /** GET /clientes/codpre-grupo */
   getClientesCodpreGrupo(
@@ -126,6 +127,14 @@ export class FacturaGlobalService {
       params = params.set('IdZona', String(filtros.idZona));
     }
 
+    if (
+      filtros.anioFactura != null &&
+      String(filtros.anioFactura).trim() !== '' &&
+      Number(filtros.anioFactura) > 0
+    ) {
+      params = params.set('AnioFactura', String(filtros.anioFactura));
+    }
+
     return this.http
       .get<ApiResponse<ClienteCodpreGrupoResponse[]>>(
         `${this.clientesUrl}/codpre-grupo`,
@@ -134,23 +143,12 @@ export class FacturaGlobalService {
       .pipe(map(res => res.data ?? []));
   }
 
-  /**
-   * POST /Facturacion/crear
-   * Crea la factura (cabecera + detalles + formas de pago)
-   * Devuelve algún objeto con el id de la factura/nota creada.
-   */
   crear(payload: FacturaCrearRequest): Observable<ApiResponse> {
     return this.http.post<ApiResponse>(`${this.facturacionUrl}/crear`, payload);
   }
 
-  /**
-   * POST /Facturacion/{idNota}/xml
-   * Genera el XML de la factura/nota creada en servidor.
-   * Si tu endpoint es /facturas/{id}/xml, cambia la URL.
-   */
   generarXmlEnServidor(idNota: number): Observable<GenerarXmlFacturaResponse> {
     const url = `${this.facturacionUrl}/${idNota}/xml`;
     return this.http.post<GenerarXmlFacturaResponse>(url, {});
   }
-  
 }
