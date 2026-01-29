@@ -12,4 +12,8 @@ export interface ListadoAsientoContableResponse {
   idEmpresa: number;
   estado: boolean;
   modulo: number;
+  // ✅ nuevos campos opcionales
+  idCabLiquidacion?: number | null;
+  enviado?: boolean | null;
+  documentoSri?: string | null;
 }

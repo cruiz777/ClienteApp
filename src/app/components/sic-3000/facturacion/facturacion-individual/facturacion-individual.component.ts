@@ -1049,7 +1049,7 @@ private cargarClienteDetalle(id: number): void {
     if (this.cargandoAutorizacion) return;
     this.cargandoAutorizacion = true;
 
-const id =
+  const id =
   this.usuarioActual?.cajas?.find(c => c.id_tipo_documento === 1)?.id_autorizacion_caja
   ?? null;
 
