@@ -23,52 +23,60 @@ export class JsonProductoService {
     let codigobar = '';
     let tipoG = '';
 
-    const len = data.gtin.length;
+    // ✅ 1) Normaliza el gtin (evita espacios y errores de longitud)
+    const gtinRaw = (data.gtin ?? '').toString().trim();
+
+    const len = gtinRaw.length;
     if (len === 13) {
-      codigobar = '0' + data.gtin;
+      codigobar = '0' + gtinRaw;
       tipoG = 'GCP';
     } else if (len === 12) {
-      codigobar = '00' + data.gtin;
-      tipoG = 'GCP';
+      codigobar = '00' + gtinRaw;
+      tipoG = 'GTIN'; // ✅ VB6: para 12 dígitos es GTIN, NO GCP
     } else if (len === 8) {
-      codigobar = '000000' + data.gtin;
+      codigobar = '000000' + gtinRaw;
       tipoG = 'GTIN';
+    } else {
+      // Por si ya viene 14 o viene con formato distinto
+      codigobar = gtinRaw;
+      // tipoG queda vacío si no se reconoce, o podrías decidir uno por defecto
     }
 
     const gpcCategoryCode = typeof data.brick === 'string'
-      ? data.brick
-      : data.brick?.brick ?? '';
+      ? (data.brick ?? '').toString().trim()
+      : (data.brick?.brick ?? '').toString().trim();
 
     const unitCode = typeof data.unidad === 'string'
-      ? data.unidad
-      : data.unidad?.net_content_uom ?? '';
+      ? (data.unidad ?? '').toString().trim()
+      : (data.unidad?.net_content_uom ?? '').toString().trim();
+
+    const prefijoRaw = (data.prefijo ?? '').toString().trim();
 
     const vjson = [{
       gtin: codigobar,
       gtinStatus: 'ACTIVE',
       gpcCategoryCode: gpcCategoryCode,
-      licenceKey: '786' + data.prefijo,
+      licenceKey: '786' + prefijoRaw, // ✅ sin espacios
       licenceType: tipoG,
       brandName: [{
         language: 'es',
-        value: data.marca
+        value: (data.marca ?? '').toString().trim()
       }],
       productDescription: [{
         language: 'es',
-        value: data.descripcion
+        value: (data.descripcion ?? '').toString().trim()
       }],
       productImageUrl: data.url ? [{
         language: 'es',
-        value: data.url
+        value: data.url.toString().trim()
       }] : [],
       netContent: [{
         unitCode: unitCode,
-        value: data.contenido
+        value: (data.contenido ?? '').toString().trim()
       }],
       countryOfSaleCode: ['EC']
     }];
 
-    // 🔒 Comentado para pruebas
     const headers = new HttpHeaders({
       'Content-Type': 'application/json',
       'APIKey': data.capiP
@@ -84,7 +92,6 @@ export class JsonProductoService {
       }
     });
 
-    // ✅ Solo generar y guardar archivo local (sin enviar)
     //this.guardarArchivo(vjson);
   }
 

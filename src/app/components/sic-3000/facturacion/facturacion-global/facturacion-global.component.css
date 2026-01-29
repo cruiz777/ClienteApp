@@ -1504,3 +1504,7 @@ mat-form-field { min-width: 160px; }
   .toolbar-row{ flex-wrap: wrap; }
   .total-heading{ order: 99; margin-left: 0; }
 }
+.grid-wrap{
+  height: calc(100vh - 260px); /* o el valor que ya usabas */
+  width: 100%;
+}

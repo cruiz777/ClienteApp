@@ -1,0 +1,117 @@
+<div class="page-wrapper-balance">
+
+  <!-- Título -->
+  <div class="page-title-row">
+    <h1 class="page-title-balance">Mayor de Cuentas</h1>
+  </div>
+
+  <!-- Panel de filtros -->
+  <div class="filters-panel">
+
+    <!-- Fila 1: Fechas + Acciones -->
+    <div class="filters-top">
+      <div class="filters-primary">
+        <div class="filters-title">
+          <div class="filters-title-main">Filtros</div>
+        </div>
+        <div class="primary-grid">
+          <div class="fg">
+            <label class="fg-label" for="fechaDesde">Fecha inicio</label>
+            <input id="fechaDesde" type="date" [(ngModel)]="filtros.fechaDesde" class="fg-control" />
+          </div>
+          <div class="fg">
+            <label class="fg-label" for="fechaHasta">Fecha final</label>
+            <input id="fechaHasta" type="date" [(ngModel)]="filtros.fechaHasta" class="fg-control" />
+          </div>
+          <div class="mode-chipset">
+            <button type="button" class="mode-chip" [class.active]="modoFiltro1 === 'cuenta'"
+              (click)="toggleModoCuenta()">Por cuentas</button>
+            <button type="button" class="mode-chip" [class.active]="modoFiltro2 === 'local' || modoFiltro3 === 'zona'"
+              (click)="toggleModoLocal()">Por local</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="filters-actions">
+        <button type="button" class="btn-icon" (click)="consultar()" title="Buscar">
+          <img src="assets/icons/buscar-down1.png" alt="Buscar" />
+        </button>
+        <button type="button" class="btn-icon" title="Exportar a Excel" (click)="exportExcel()">
+          <img src="assets/icons/xls.png" alt="Excel" />
+        </button>
+        <button type="button" class="btn-icon" title="Exportar a PDF" (click)="exportPdf()">
+          <img src="assets/icons/pdf-down.png" alt="PDF" />
+        </button>
+        <div class="status-pill" *ngIf="loading">Cargando…</div>
+      </div>
+    </div>
+
+    <!-- Fila 2: Modo cuentas -->
+    <div class="filters-bottom">
+      <div class="secondary-grid">
+        <div class="fg" *ngIf="modoFiltro1 === 'cuenta'">
+          <label class="fg-label" for="cuentaA">Cuenta inicial</label>
+          <input id="cuentaA" type="text" class="fg-control" [(ngModel)]="filtros.cuentaA"
+            (input)="onCuentaInput('A', $event)" (blur)="onCuentaBlur('A')" maxlength="10"
+            placeholder="Ej: 110101-001" />
+
+        </div>
+        <div class="fg" *ngIf="modoFiltro1 === 'cuenta'">
+          <label class="fg-label" for="cuentaB">Cuenta final</label>
+          <input id="cuentaB" type="text" class="fg-control" [(ngModel)]="filtros.cuentaB"
+            (input)="onCuentaInput('B', $event)" (blur)="onCuentaBlur('B')" maxlength="10"
+            placeholder="Ej: 110101-002" />
+        </div>
+      </div>
+    </div>
+
+    <!-- Fila 3: Local y Zona -->
+    <div class="filters-bottom">
+      <div class="secondary-grid">
+
+        <div class="fg" *ngIf="modoFiltro2 === 'local'">
+          <label class="fg-label">Local</label>
+          <select class="fg-control" [(ngModel)]="filtros.idLocal" [ngModelOptions]="{ standalone: true }">
+            <option [ngValue]="null">Seleccione</option>
+            <option *ngFor="let local of localesResponse; trackBy: trackById" [ngValue]="local.id">
+              {{ local.nombre }}
+            </option>
+          </select>
+        </div>
+
+        <div class="fg" *ngIf="modoFiltro3 === 'zona'">
+          <label class="fg-label">Zona</label>
+          <select class="fg-control" [(ngModel)]="filtros.idZona" [ngModelOptions]="{ standalone: true }">
+            <option [ngValue]="null">Seleccione</option>
+            <option *ngFor="let zona of zonaResponse; trackBy: trackByIdZona" [ngValue]="zona.idZona">
+              {{ zona.nombre }}
+            </option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+  <!-- RESULTADOS -->
+<div class="results-panel" *ngIf="!loading">
+
+  <ag-grid-angular
+    class="ag-theme-alpine mayor-grid"
+    [rowData]="resultados"
+    [columnDefs]="columnDefs"
+    [defaultColDef]="defaultColDef"
+    [animateRows]="true"
+    [rowSelection]="'single'">
+  </ag-grid-angular>
+
+</div>
+
+<!-- Estado vacío -->
+<div class="empty-state" *ngIf="!loading && (resultados?.length ?? 0) === 0">
+  Sin datos para el rango seleccionado.
+</div>
+
+
+</div>
+

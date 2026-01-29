@@ -13,6 +13,24 @@ declare module 'jspdf' {
   }
 }
 
+export interface ExportOptionsG {
+  data: any[];
+  columns: string[];
+  headers: string[];
+  filename: string;
+  title?: string;
+  logoUrl?: string;
+  headerInfo?: any;
+
+  // ✅ NUEVO (opcionales)
+  maxRowsPdf?: number; // ej: 3000, 5000, etc. Si no se manda, no limita.
+  pdfFontSize?: number; // override manual
+  pdfOverflow?: 'linebreak' | 'ellipsize' | 'hidden'; // default depende de tamaño
+  pdfColumnStyles?: { [colIndex: number]: any }; // estilos de autoTable por columna
+  pdfPageBreak?: 'auto' | 'avoid' | 'always'; // default auto
+}
+
+
 @Injectable({ providedIn: 'root' })
 export class ExportService {
   constructor(
@@ -813,4 +831,193 @@ export class ExportService {
     const filename = `GLN_${gln || 'informe'}_${moment().format('YYYYMMDD_HHmmss')}.pdf`;
     doc.save(filename);
   }
+  async exportarPDFG(options: ExportOptionsG): Promise<void> {
+  const { data, columns, headers, filename, title, logoUrl, headerInfo } = options;
+
+  const doc = new jsPDF({
+    orientation: 'landscape',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  let yPosition = 20;
+
+  // =========================
+  // 1) ENCABEZADO (sin cambios funcionales)
+  // =========================
+  if (headerInfo) {
+    if (logoUrl) {
+      try {
+        const base64Logo = await this.configuracionVisualService.getLogoActualBase64();
+        if (base64Logo) {
+          doc.addImage(base64Logo, 'PNG', 15, 15, 45, 20);
+        }
+      } catch (error) {
+        console.warn('Error al cargar logo, continuando sin logo:', error);
+      }
+    }
+
+    doc.setFontSize(18);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Sistema de Control de Códigos', doc.internal.pageSize.width / 2, 20, { align: 'center' });
+
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(title || 'Reporte', doc.internal.pageSize.width / 2, 28, { align: 'center' });
+
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    let leftY = 45;
+    if (headerInfo.codigoEmpresa) { doc.text(headerInfo.codigoEmpresa, 15, leftY); leftY += 6; }
+    if (headerInfo.nombreEmpresa) { doc.text(headerInfo.nombreEmpresa, 15, leftY); }
+
+    doc.setFontSize(10);
+    const rightX = doc.internal.pageSize.width - 15;
+    let rightY = 20;
+
+    if (headerInfo.emisor) {
+      doc.setFont('helvetica', 'bold'); doc.text('Emisor:', rightX - 60, rightY, { align: 'left' });
+      doc.setFont('helvetica', 'normal'); doc.text(headerInfo.emisor, rightX, rightY, { align: 'right' });
+      rightY += 5;
+    }
+
+    if (headerInfo.fechaEmision) {
+      doc.setFont('helvetica', 'bold'); doc.text('Fecha emisión:', rightX - 60, rightY, { align: 'left' });
+      doc.setFont('helvetica', 'normal'); doc.text(headerInfo.fechaEmision, rightX, rightY, { align: 'right' });
+      rightY += 5;
+    }
+
+    if (headerInfo.pagina) {
+      doc.setFont('helvetica', 'bold'); doc.text('Pág:', rightX - 60, rightY, { align: 'left' });
+      doc.setFont('helvetica', 'normal'); doc.text(headerInfo.pagina, rightX, rightY, { align: 'right' });
+      rightY += 5;
+    }
+
+    if (headerInfo.ruc) {
+      doc.setFont('helvetica', 'bold'); doc.text('RUC:', rightX - 60, rightY, { align: 'left' });
+      doc.setFont('helvetica', 'normal'); doc.text(headerInfo.ruc, rightX, rightY, { align: 'right' });
+      rightY += 5;
+    }
+
+    if (headerInfo.gln) {
+      doc.setFont('helvetica', 'bold'); doc.text('GLN:', rightX - 60, rightY, { align: 'left' });
+      doc.setFont('helvetica', 'normal'); doc.text(headerInfo.gln, rightX, rightY, { align: 'right' });
+    }
+
+    yPosition = 60;
+  } else {
+    if (logoUrl) {
+      try {
+        const base64Logo = await this.obtenerLogoBase64(logoUrl);
+        doc.addImage(base64Logo, 'PNG', 20, 10, 40, 16);
+      } catch (error) {
+        console.warn('Error al cargar logo, continuando sin logo:', error);
+      }
+    }
+
+    doc.setFontSize(16);
+    doc.setFont('helvetica', 'bold');
+    doc.text(title || 'Reporte', logoUrl ? 80 : 20, 20);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Exportado el: ${moment().format('YYYY-MM-DD HH:mm:ss')}`, logoUrl ? 80 : 20, 28);
+
+    yPosition = 40;
+  }
+
+  // =========================
+  // 2) CONTROL DE VOLUMEN (sin romper compatibilidad)
+  // =========================
+  const total = Array.isArray(data) ? data.length : 0;
+
+  // ✅ Si viene maxRowsPdf, limita. Si no viene, no limita.
+  const maxRowsPdf = options.maxRowsPdf ?? null;
+  const dataToPrint = maxRowsPdf ? data.slice(0, maxRowsPdf) : data;
+
+  // Si se limitó, coloca aviso visible en PDF
+  if (maxRowsPdf && total > maxRowsPdf) {
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text(
+      `Aviso: el PDF se generó con ${maxRowsPdf} de ${total} registros. Para el detalle completo use Excel.`,
+      15,
+      yPosition - 2
+    );
+    yPosition += 4;
+  }
+
+  // =========================
+  // 3) PREPARAR TABLA (más eficiente)
+  // =========================
+  const tableData = dataToPrint.map((item, index) => [
+    index + 1,
+    ...columns.map(key => {
+      const value = item[key];
+      return value instanceof Date
+        ? moment(value).format('DD/MM/YYYY')
+        : String(value ?? '');
+    })
+  ]);
+
+  // =========================
+  // 4) ESTILO DINÁMICO (PDF grande => ocultar overflow y compactar)
+  // =========================
+  const isHuge = total > 5000;
+
+  const fontSize = options.pdfFontSize ?? (isHuge ? 7 : 8);
+  const overflow = options.pdfOverflow ?? (isHuge ? 'hidden' : 'linebreak');
+
+  // =========================
+  // 5) COLUMN STYLES: defaults + overrides
+  // =========================
+  // Siempre fija la columna # (0)
+  const columnStyles: any = {
+    0: { halign: 'center', cellWidth: 10 },
+    ...(options.pdfColumnStyles || {}) // ✅ override opcional por reporte
+  };
+
+  // =========================
+  // 6) autoTable
+  // =========================
+  autoTable(doc, {
+    startY: yPosition,
+    head: [['#', ...headers]],
+    body: tableData,
+    theme: 'grid',
+    pageBreak: options.pdfPageBreak ?? 'auto',
+
+    styles: {
+      fontSize,
+      cellPadding: isHuge ? 1.2 : 2,
+      overflow,             // ✅ hidden para evitar "headers verticales feos"
+      halign: 'left',
+      valign: 'middle'
+    },
+    headStyles: {
+      fillColor: [240, 240, 240],
+      textColor: [0, 0, 0],
+      fontStyle: 'bold',
+      halign: 'center'
+    },
+    columnStyles,
+    margin: { top: 10, right: 10, bottom: 10, left: 10 },
+
+    didDrawPage: (hookData: any) => {
+      const pageNumber = hookData.pageNumber;
+      const totalPages = doc.getNumberOfPages();
+
+      doc.setFontSize(8);
+      doc.setFont('helvetica', 'normal');
+      doc.text(
+        `Página ${pageNumber} de ${totalPages}`,
+        doc.internal.pageSize.width - 35,
+        doc.internal.pageSize.height - 8
+      );
+    }
+  });
+
+  doc.save(`${filename}_${moment().format('YYYYMMDD_HHmmss')}.pdf`);
+}
+
 }

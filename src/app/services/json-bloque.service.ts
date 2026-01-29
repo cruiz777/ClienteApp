@@ -37,42 +37,51 @@ export class JsonBloqueService {
       let codigobar = '';
       let tipoG = '';
 
-      const len = data.gtinUv.length;
+      // ✅ NORMALIZA GTIN: string + trim (evita “faltó un cero” por espacios o tipos)
+      const gtinUv = (data.gtinUv ?? '').toString().trim();
+      const len = gtinUv.length;
+
       if (len === 13) {
-        codigobar = '0' + data.gtinUv;
+        codigobar = '0' + gtinUv;      // ✅ aquí sí va el cero
         tipoG = 'GCP';
       } else if (len === 12) {
-        codigobar = '00' + data.gtinUv;
+        codigobar = '00' + gtinUv;
         tipoG = 'GCP';
       } else if (len === 8) {
-        codigobar = '000000' + data.gtinUv;
+        codigobar = '000000' + gtinUv;
         tipoG = 'GTIN';
+      } else {
+        // Si llega 14 ya armado, o llega vacío/incorrecto, lo mandas tal cual o lo dejas vacío
+        codigobar = gtinUv;
       }
 
-      const gpcCategoryCode = data.gcpBrick || '';
-      const unidadDescripcion = this.mapaUnidades[data.contenidoUM] || data.contenidoUM || '';
+      const gpcCategoryCode = (data.gcpBrick ?? '').toString().trim();
+      const unidadKey = (data.contenidoUM ?? '').toString().trim();
+      const unidadDescripcion = this.mapaUnidades[unidadKey] || unidadKey || '';
 
       return {
         gtin: codigobar,
         gtinStatus: 'ACTIVE',
         gpcCategoryCode: gpcCategoryCode,
-        licenceKey: '786' + prefijo,
+        licenceKey: '786' + (prefijo ?? '').toString().trim(),
         licenceType: tipoG,
         brandName: [{
           language: 'es',
-          value: data.marca
+          value: (data.marca ?? '').toString().trim()
         }],
         productDescription: [{
           language: 'es',
-          value: data.descripcion
+          value: (data.descripcion ?? '').toString().trim()
         }],
-        productImageUrl: data.urlFoto ? [{
-          language: 'es',
-          value: data.urlFoto
-        }] : [],
+        productImageUrl: (data.urlFoto ?? '').toString().trim()
+          ? [{
+              language: 'es',
+              value: (data.urlFoto ?? '').toString().trim()
+            }]
+          : [],
         netContent: [{
           unitCode: unidadDescripcion,
-          value: data.contenidoNeto
+          value: (data.contenidoNeto ?? '').toString().trim()
         }],
         countryOfSaleCode: ['EC']
       };
@@ -86,7 +95,7 @@ export class JsonBloqueService {
     this.http.post(dapiP, vjson, { headers }).subscribe({
       next: (response: any) => {
         console.log('✅ Enviado lote a Verified:', response);
-        //this.guardarArchivo(vjson);
+        // this.guardarArchivo(vjson);
       },
       error: (error) => {
         console.error('❌ Error al enviar JSON de lote:', error);

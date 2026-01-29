@@ -25,10 +25,12 @@ import { FacturasProveedorFormComponent } from './transacciones/facturas-proveed
 import { FacturasProveedorComponent } from './transacciones/facturas-proveedor/facturas-proveedor-list/facturas-proveedor-list.component';
 import { AnticipoCgFormComponent } from './transacciones/anticipos-cg/anticipos-cg-form/anticipos-cg-form.component';
 import { BalanceComprobacionComponent } from './balance/balance/balance-comprobacion-list/balance-comprobacion-list.component'
-import { DiarioMoviminetoListComponent } from './balance/balance/diario-movimineto-list/diario-movimineto-list.component';
+import { DiarioMoviminetoListComponent } from './balance/diario/diario-movimineto-list/diario-movimineto-list.component';
 import { RegistroPagosProveedorComponent } from './cuentas-por-pagar/pago-proveedores/registro-pagos-proveedor.component';
 import { LiquidacionCompraFormComponent } from './transacciones/liquidacion-compra/liquidacion-compra-form/liquidacion-compra-form.component';
 import { LiquidacionCompraComponent } from './transacciones/liquidacion-compra/liquidacion-compra-list/liquidacion-compra-list.component';
+import { MayorCuentasListComponent } from './balance/mayor/mayor-cuentas-list/mayor-cuentas-list.component';
+import { EstadoFinancieroComponent } from './balance/estado-financiero/estado-financiero.component';
 
 const routes: Routes = [
   {
@@ -60,6 +62,8 @@ const routes: Routes = [
       { path: 'pago-proveedores', component: RegistroPagosProveedorComponent },
       { path: 'liquidacion-compra', component: LiquidacionCompraFormComponent },
       { path: 'liquidacion-compra-list', component: LiquidacionCompraComponent },
+      { path: 'mayor', component: MayorCuentasListComponent },
+      { path: 'estado-financiero', component: EstadoFinancieroComponent },
       { path: '**', redirectTo: 'inicio-cg' },
     ],
   },

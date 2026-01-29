@@ -14,6 +14,7 @@ import { saveAs } from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable, { UserOptions } from 'jspdf-autotable';
 
+import {GridOptions } from 'ag-grid-community';
 
 
 import {
@@ -187,67 +188,84 @@ export class EstadocuentaclienteComponent implements OnInit {
   }
 
   /** Llamada al API /EstadoCuenta/saldo-facturas/cliente/{clienteCodigo} */
-  private cargarEstadoCuenta(): void {
-    this.loading = true;
-    this.errorMessage = '';
+/** ✅ Llamada al API /EstadoCuenta/saldo-facturas/cliente/{clienteCodigo} */
+private cargarEstadoCuenta(): void {
+  this.loading = true;
+  this.errorMessage = '';
 
-    this.estadoCuentaService
-      .getSaldoFacturasPorCliente(this.clienteSeleccionado?.clientes_codigo ?? 0, true, 1, 50)
-      .pipe(finalize(() => (this.loading = false)))
-      .subscribe({
-        next: resp => {
-          if (resp.type !== 'success' || !resp.data) {
-            this.errorMessage = resp.message || 'Error al consultar el estado de cuenta.';
-            return;
-          }
+  const codigoCliente = this.clienteSeleccionado?.clientes_codigo ?? 0;
 
-          const data: SaldoFacturaDetalladoResponse = resp.data;
-
-          // Tomamos el primer cliente (el API viene paginado pero por cliente)
-          const cli = data.resumenPorCliente.items[0];
-
-          if (!cli) {
-            this.errorMessage = 'No se encontraron datos para el cliente.';
-            this.rowData = [];
-            return;
-          }
-
-          // llenar datos del cliente (dirección/teléfono no vienen en este API)
-          // this.clientes = [
-          //   {
-          //     id: Number(cli.clienteCodigo),
-          //     nombre: cli.cliente,
-          //     direccion: '',
-          //     telefono: '',
-          //     prefijo: cli.clienteCodigo
-          //   }
-          // ];
-
-          // mapear detalle -> filas del grid
-          const rows: EstadoCuentaRow[] = cli.detalle.map((item: SaldoFacturaItemResponse) => ({
-            factura: item.numeroFactura,
-            documento: item.numeroDocumento,
-            fecha: item.fecha,
-            tipoDocumento: item.tipDoc,
-            valor: 0, // no viene del API
-            pago: 0,  // no viene del API
-            debe: item.debe ?? 0,
-            haber: item.haber ?? 0,
-            saldo: item.saldoLinea,
-            observacion: item.observacion || '',
-            saldoFactura: null
-          }));
-
-          // calcular SALDO FACTURA (valor de la factura solo en la F)
-          this.rowData = this.calcularSaldoPorFactura(rows);
-        },
-        error: err => {
-          console.error(err);
-          this.errorMessage = 'No tiene información';
+  this.estadoCuentaService
+    .getSaldoFacturasPorCliente(codigoCliente, true, 1, 50)
+    .pipe(finalize(() => (this.loading = false)))
+    .subscribe({
+      next: resp => {
+        if (resp.type !== 'success' || !resp.data) {
+          this.errorMessage = resp.message || 'Error al consultar el estado de cuenta.';
           this.rowData = [];
+          return;
         }
-      });
-  }
+
+        const data: SaldoFacturaDetalladoResponse = resp.data;
+        const cli = data.resumenPorCliente.items?.[0];
+
+        if (!cli) {
+          this.errorMessage = 'No se encontraron datos para el cliente.';
+          this.rowData = [];
+          return;
+        }
+
+        // ========= 1) mapear detalle -> rowsRaw =========
+        const rowsRaw: EstadoCuentaRow[] = (cli.detalle ?? []).map((item: any) => ({
+          factura: item.numeroFactura ?? '',
+          documento: item.numeroDocumento ?? '',
+          fecha: item.fecha ?? '',
+          tipoDocumento: this.normalizarTipoDoc(item), // ✅ FACTURA/PAGO => F/P
+          valor: 0,
+          pago: 0,
+          debe: item.debe ?? 0,
+          haber: item.haber ?? 0,
+          saldo: item.saldoLinea ?? 0,
+          observacion: (item.observacion ?? '').trim(),
+          saldoFactura: null
+        }));
+
+        // ========= 2) dedupe robusto (ignorando saldo) =========
+        const rowsSinDuplicados = this.dedupeRows(rowsRaw);
+
+        // ========= 3) saldoFactura =========
+        this.rowData = this.calcularSaldoPorFactura(rowsSinDuplicados);
+
+        // ========= 4) forzar carga limpia en el grid (según versión AG Grid) =========
+        if (this.gridApi) {
+          const apiAny: any = this.gridApi as any;
+
+          if (typeof apiAny.setGridOption === 'function') {
+            // v32+
+            apiAny.setGridOption('rowData', this.rowData);
+          } else if (typeof apiAny.setRowData === 'function') {
+            // versiones anteriores
+            apiAny.setRowData(this.rowData);
+          } else {
+            // fallback suave
+            apiAny.refreshCells?.({ force: true });
+          }
+        }
+      },
+      error: err => {
+        console.error(err);
+        this.errorMessage = 'No tiene información';
+        this.rowData = [];
+
+        if (this.gridApi) {
+          const apiAny: any = this.gridApi as any;
+          if (typeof apiAny.setGridOption === 'function') apiAny.setGridOption('rowData', []);
+          else if (typeof apiAny.setRowData === 'function') apiAny.setRowData([]);
+          else apiAny.refreshCells?.({ force: true });
+        }
+      }
+    });
+}
 
   /**
    * Muestra en la columna "Saldo Factura" el VALOR DE LA FACTURA
@@ -795,6 +813,82 @@ export class EstadocuentaclienteComponent implements OnInit {
       return null;
     }
   }
+gridOptions: GridOptions = {
+  getRowId: (p) => this.buildRowKey(p.data as EstadoCuentaRow)
+};
 
+// ========= helpers dedupe =========
+
+private fechaKey(fecha: string): string {
+  if (!fecha) return '';
+
+  // ISO: 2026-01-07T...
+  if (fecha.length >= 10 && fecha[4] === '-' && fecha[7] === '-') {
+    return fecha.slice(0, 10);
+  }
+
+  // dd/MM/yyyy
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})/.exec(fecha);
+  if (m) return `${m[3]}-${m[2]}-${m[1]}`;
+
+  return String(fecha).trim();
+}
+
+private n2(v: any): string {
+  const num = Number(v ?? 0);
+  return (Math.round(num * 100) / 100).toFixed(2);
+}
+
+/** ✅ Llave SIN saldo (porque saldo puede variar y genera “duplicados”) */
+private buildRowKey(r: EstadoCuentaRow): string {
+  return [
+    r.factura ?? '',
+    r.documento ?? '',
+    this.fechaKey(r.fecha ?? ''),
+    (r.tipoDocumento ?? '').toUpperCase().trim(),
+    this.n2(r.debe),
+    this.n2(r.haber),
+    (r.observacion ?? '').trim()
+  ].join('|');
+}
+
+private pickBestDuplicate(a: EstadoCuentaRow, b: EstadoCuentaRow): EstadoCuentaRow {
+  // Preferir saldo más cercano a 0 (ej. 0 mejor que -173.60)
+  const absA = Math.abs(Number(a.saldo ?? 0));
+  const absB = Math.abs(Number(b.saldo ?? 0));
+  if (absA !== absB) return absA < absB ? a : b;
+
+  // si empatan, dejar el último
+  return b;
+}
+
+private dedupeRows(rows: EstadoCuentaRow[]): EstadoCuentaRow[] {
+  const map = new Map<string, EstadoCuentaRow>();
+  const order: string[] = [];
+
+  for (const r of (rows ?? [])) {
+    const key = this.buildRowKey(r);
+
+    if (!map.has(key)) {
+      map.set(key, r);
+      order.push(key);
+      continue;
+    }
+
+    map.set(key, this.pickBestDuplicate(map.get(key)!, r));
+  }
+
+  return order.map(k => map.get(k)!);
+}
+
+/** Normaliza FACTURA/PAGO a F/P (por si su API no usa tipDoc) */
+private normalizarTipoDoc(item: any): string {
+  const tipoApi = String(item?.tipoDocumento ?? '').toUpperCase().trim();
+  if (tipoApi.startsWith('FAC')) return 'F';
+  if (tipoApi.startsWith('PAG')) return 'P';
+
+  const tipDoc = String(item?.tipDoc ?? '').toUpperCase().trim();
+  return tipDoc;
+}
 
 }

@@ -98,13 +98,10 @@ interface LineaFactura {
   cuenta?: string;
   idcuenta?: number;
 }
-
+type PrefijoClienteUI = PrefijoClienteTResponse & { fechaVista?: string };
 
 // Tipos locales
-interface PrefijoCliente {
-  id_prefijos: number;
-  codpre: string;
-}
+
 interface PaymentDetail {
   id: number;
   method: string;
@@ -177,7 +174,7 @@ export class FacturacionIndividualComponent implements OnInit {
   generando = false;
 
   // ============= Prefijos (mat-select) =============
-  prefijos: PrefijoCliente[] = [];
+  prefijos: PrefijoClienteUI[] = [];
   descuentos: Descuento[] = [];
   filteredDescuentos$: Observable<Descuento[]> = of([]);
   descuentoSeleccionado: Descuento | null = null;
@@ -652,31 +649,59 @@ export class FacturacionIndividualComponent implements OnInit {
   }
 
   // ============= Prefijos =============
-  cargarPrefijos(codigoCliente: number): void {
-    this.prefijoService.obtenerPorClienteCodigo(codigoCliente).subscribe({
-      next: (data: PrefijoCliente[]) => {
-        this.prefijos = data ?? [];
-        if (this.prefijos.length === 1) {
-          const unico = this.prefijos[0];
-          this.formCliente.patchValue({ gcp: unico.id_prefijos, prefijo: unico.codpre }, { emitEvent: false });
-        } else {
-          this.formCliente.patchValue({ gcp: '', prefijo: '' }, { emitEvent: false });
-        }
-      },
-      error: (err) => {
-        console.error('Error al cargar prefijos:', err);
-        this.prefijos = [];
+cargarPrefijos(codigoCliente: number): void {
+  this.prefijoService.obtenerPorClienteCodigo(codigoCliente).subscribe({
+    next: (data: PrefijoClienteTResponse[]) => {
+      this.prefijos = (data ?? []).map((p) => ({
+        ...p, // ✅ mantienes TODAS las propiedades del backend
+        fechaVista: this.formatFechaVista((p as any).fecha),
+      }));
+
+      if (this.prefijos.length === 1) {
+        const unico = this.prefijos[0];
+        this.formCliente.patchValue(
+          { gcp: unico.id_prefijos, prefijo: unico.codpre },
+          { emitEvent: false }
+        );
+      } else {
         this.formCliente.patchValue({ gcp: '', prefijo: '' }, { emitEvent: false });
       }
-    });
+    },
+    error: (err) => {
+      console.error('Error al cargar prefijos:', err);
+      this.prefijos = [];
+      this.formCliente.patchValue({ gcp: '', prefijo: '' }, { emitEvent: false });
+    }
+  });
+}
+
+
+
+private formatFechaVista(value: any): string {
+  if (!value) return '';
+
+  // viene "1992-05-25"
+  const s = value.toString().trim();
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+
+  // fallback: intenta Date
+  const d = new Date(s);
+  if (!isNaN(d.getTime())) {
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
   }
 
+  return s;
+}
   onPrefijoChange(event: MatSelectChange): void {
     const idSeleccionado = event.value as number;
     const encontrado = this.prefijos.find(p => p.id_prefijos === idSeleccionado) || null;
     this.formCliente.patchValue({ gcp: idSeleccionado ?? '', prefijo: encontrado?.codpre ?? '' });
   }
-  trackByPrefijoId = (_: number, p: PrefijoCliente) => p.id_prefijos;
+trackByPrefijoId = (_: number, p: PrefijoClienteUI) => p.id_prefijos;
 
   // ============= Autocomplete Cliente =============
   mostrarNombreCliente = (cliente: ClienteSummary | string | null): string =>
@@ -761,6 +786,7 @@ private cargarClienteDetalle(id: number): void {
                 this.vAsignacion = ge?.asignacion ?? 0;
                 this.vMantenimiento = ge?.mantenimiento ?? 0;
                 this.grupoCli = ge?.codigo;
+                this.setObservacionConGrupo();
               }),
               map((ge: any) => `${ge.codigo}   ${ge.nombre}`.trim()),
               catchError(() => {
@@ -1119,31 +1145,32 @@ private cargarClienteDetalle(id: number): void {
       return;
     }
 
-    // ✅ permitir repetidos solo para 1176
-    const esMantenimiento = (p.codpro ?? '').toString() === this.COD_MANT_MENSUAL;
-    let yaExiste = false;
+    // Permitir repetidos solo para 1176 
+    // PERMITE REPETIR PRODUCTOS A PETICION DEL USUARIO KENIA ANDRADE - ECOP
+    // const esMantenimiento = (p.codpro ?? '').toString() === this.COD_MANT_MENSUAL;
+    // let yaExiste = false;
 
-    if (!esMantenimiento) {
-      if (this.gridApi) {
-        this.gridApi.forEachNode(n => { if ((n.data?.codpro ?? '') === p.codpro) yaExiste = true; });
-      } else {
-        yaExiste = this.rowData.some(r => (r as any)?.codpro === p.codpro);
-      }
-    }
+    // if (!esMantenimiento) {
+    //   if (this.gridApi) {
+    //     this.gridApi.forEachNode(n => { if ((n.data?.codpro ?? '') === p.codpro) yaExiste = true; });
+    //   } else {
+    //     yaExiste = this.rowData.some(r => (r as any)?.codpro === p.codpro);
+    //   }
+    // }
 
-    if (yaExiste) {
-      this.mostrarAlerta(`El producto ${p.codpro} ya fue agregado.`, 'info');
-      ctrl.setValue('', { emitEvent: false });
-      setTimeout(() => { this.autoProductoTrigger?.closePanel(); this.productoInputRef?.nativeElement.blur(); }, 0);
-      return;
-    }
+    // if (yaExiste) {
+    //   this.mostrarAlerta(`El producto ${p.codpro} ya fue agregado.`, 'info');
+    //   ctrl.setValue('', { emitEvent: false });
+    //   setTimeout(() => { this.autoProductoTrigger?.closePanel(); this.productoInputRef?.nativeElement.blur(); }, 0);
+    //   return;
+    // }
 
     // ---- precio: si es 1174 usar vAsignacion, caso contrario el del producto ----
     const ivaPorc = this.getIvaPrincipal() ?? (this.ivaOptions.at(-1) ?? 0);
 
     const pu = this.getPrecioEspecial(p.codpro) ?? this.to2(Number(p.prevensiniva || 0));
     const detalle = (p.codpro?.toString() === '1174')
-      ? 'INSCRIPCION PREFIJO'
+      ? 'ASIGNACION PREFIJO'
       : (p.despro ?? '').toUpperCase();
 
     const nuevaFila: LineaFactura = {
@@ -1530,7 +1557,35 @@ private cargarClienteDetalle(id: number): void {
     const p = this.ivasCatalogo.find(x => x.principal);
     return p ? p.porcentaje : null;
   }
-
+  /**
+ * Obtiene la fecha/hora actual en zona horaria de Ecuador (America/Guayaquil)
+ * @returns Objeto con fecha ISO y hora en formato local Ecuador
+ */
+  private getFechaHoraEcuador(): { fechaIso: string; hora: string } {
+    // Usar la API Intl para obtener fecha en zona horaria de Ecuador
+    const ahora = new Date();
+    
+    // Formatear en zona horaria de Ecuador (America/Guayaquil = UTC-5)
+    const opciones: Intl.DateTimeFormatOptions = {
+      timeZone: 'America/Guayaquil',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    };
+    
+    const formatter = new Intl.DateTimeFormat('sv-SE', opciones); // sv-SE da formato ISO
+    const fechaHoraStr = formatter.format(ahora); // "2025-01-09 16:24:30"
+    
+    // Separar fecha y hora
+    const [fecha, hora] = fechaHoraStr.split(' ');
+    const fechaIso = `${fecha}T${hora}`; // "2025-01-09T16:24:30"
+    
+    return { fechaIso, hora };
+  }
   // Bloquea cualquier tecla que no sea 0–9
   soloNumeros(e: KeyboardEvent) {
     const k = e.key;
@@ -2286,15 +2341,18 @@ private cargarClienteDetalle(id: number): void {
     idNota: number,
     facturaPayload: FacturaCrearRequest
   ): AsientoVentaRequest {
-    const hoy = new Date();
+    // const hoy = new Date();
 
-    // ISO con segundos: "2025-11-29T22:35:32"
-    const fechaIso = hoy.toISOString().substring(0, 19);
-    const hora = hoy.toTimeString().substring(0, 8); // "HH:mm:ss"
+    // // ISO con segundos: "2025-11-29T22:35:32"
+    // const fechaIso = hoy.toISOString().substring(0, 19);
+    // const hora = hoy.toTimeString().substring(0, 8); // "HH:mm:ss"
 
-    const yyyy = hoy.getFullYear().toString();
-    const anioStr = yyyy;
+    // const yyyy = hoy.getFullYear().toString();
+    // const anioStr = yyyy;
 
+    //Soluciona error de formato de fecha y hora de zona horaria incorrecta al generar el asiento
+    const { fechaIso, hora } = this.getFechaHoraEcuador();
+    const anioStr = fechaIso.substring(0, 4);
     // ❗Campos obligatorios (> 0)
     const idZona = 1; // ajusta según tu lógica
     const idUsuario = Number(this.usuarioActual?.id_usuario ?? 1);
@@ -2619,5 +2677,23 @@ private cargarClienteDetalle(id: number): void {
     );
   }
 
+private setObservacionConGrupo(): void {
+  const ctrl = this.formCaja?.get('observacion');
+  if (!ctrl) return;
+
+  const grupo = (this.grupoCli ?? '').toString().trim();
+  if (!grupo) return;
+
+  const actual = (ctrl.value ?? '').toString();
+
+  // Quita cualquier "Grupo: ..." anterior para evitar duplicados
+  const sinGrupo = actual.replace(/(^|\s)Grupo:\s*[^\n\r;|]+/gi, '').trim();
+
+  // Coloca el grupo al inicio
+  const nuevo = `Grupo: ${grupo}${sinGrupo ? ' | ' + sinGrupo : ''}`;
+
+  // No dispares valueChanges si no lo necesitas
+  ctrl.setValue(nuevo, { emitEvent: false });
+}
 
 }

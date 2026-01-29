@@ -72,10 +72,21 @@
 
       <!-- Grid -->
       <div class="grid-wrapper ag-theme-alpine" *ngIf="!loading && !errorMessage">
-        <ag-grid-angular class="ag-grid" [rowData]="rowData" [columnDefs]="columnDefs" [defaultColDef]="defaultColDef"
-          [pagination]="true" [paginationPageSize]="10" [domLayout]="'autoHeight'" (gridReady)="onGridReady($event)"
-          [enableBrowserTooltips]="true" [tooltipShowDelay]="300" [tooltipHideDelay]="100">
-        </ag-grid-angular>
+        <ag-grid-angular
+  class="ag-grid"
+  [gridOptions]="gridOptions"
+  [rowData]="rowData"
+  [columnDefs]="columnDefs"
+  [defaultColDef]="defaultColDef"
+  [pagination]="true"
+  [paginationPageSize]="10"
+  [domLayout]="'autoHeight'"
+  (gridReady)="onGridReady($event)"
+  [enableBrowserTooltips]="true"
+  [tooltipShowDelay]="300"
+  [tooltipHideDelay]="100">
+</ag-grid-angular>
+
       </div>
 
       <!-- Totales -->

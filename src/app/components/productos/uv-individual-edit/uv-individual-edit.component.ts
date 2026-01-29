@@ -43,6 +43,8 @@ import { registerLocaleData } from '@angular/common';
 import localeEs from '@angular/common/locales/es';
 import { LOCALE_ID } from '@angular/core';
 registerLocaleData(localeEs);
+import { HostListener } from '@angular/core';
+import { GridApi, GridReadyEvent } from 'ag-grid-community';
 
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core';
 import { MomentDateAdapter } from '@angular/material-moment-adapter';
@@ -142,6 +144,9 @@ export class UvIndividualEditComponent implements OnInit {
   gtin14UIEnable = false;
   gtin13UIEnable = false;
   gtin12UIEnable = false;
+  private gridApiGtin14!: GridApi;
+private selectedUlRow: any = null;
+
   longitudMaxima = 0;
   id_grupo_producto: number = 0;
   idProducto: number = 0;
@@ -904,7 +909,7 @@ export class UvIndividualEditComponent implements OnInit {
         IdSector: sectorId,
         Contenido: (datos.contenido ?? '').toString(),
         Um: datos.unidadMedida?.unidad || '',
-        Brick: datos.brick?.brick || '',
+        Brick: datos.brick || '',
         Pais: datos.pais?.nombre || '',
         Url: datos.urlFoto || '',
         Pum: '',
@@ -1526,6 +1531,78 @@ export class UvIndividualEditComponent implements OnInit {
   }
 
 
+onGridReadyGtin14(event: GridReadyEvent): void {
+  this.gridApiGtin14 = event.api;
+}
+
+onSelectionChangedGtin14(): void {
+  if (!this.gridApiGtin14) return;
+
+  const sel = this.gridApiGtin14.getSelectedRows();
+  this.selectedUlRow = (sel && sel.length > 0) ? sel[0] : null;
+}
+@HostListener('window:keydown', ['$event'])
+onWindowKeyDown(e: KeyboardEvent): void {
+  // En algunos teclados llega como "Delete", en otros como "Del"
+  if (e.key !== 'Delete' && e.key !== 'Del') return;
+
+  // Solo si hay un UL seleccionado en el grid
+  if (!this.selectedUlRow?.g14) {
+    this.mostrarAlerta('⚠️ Seleccione un registro UL para eliminar', 'Info');
+    return;
+  }
+
+  // Evitar que haga otras acciones por defecto
+  e.preventDefault();
+
+  this.eliminarUlPorG14(this.selectedUlRow.g14);
+}
+private eliminarUlPorG14(g14: string): void {
+  const g14Trim = (g14 ?? '').toString().trim();
+  if (!g14Trim) {
+    this.mostrarAlerta('⚠️ G14 inválido', 'Error');
+    return;
+  }
+
+  this.dialog.open(CustomMessageBoxComponent, {
+    width: '400px',
+    data: {
+      title: '¿Desea confirmar?',
+      message: `¿Quiere eliminar este GTIN: ${g14Trim}?`,
+      type: 'info',
+      confirmText: 'Sí, confirmar',
+      cancelText: 'Cancelar',
+      showCancel: true
+    }
+  }).afterClosed().subscribe(confirmado => {
+    if (!confirmado) return;
+
+    this.codigos14Service.deletePorG14(g14Trim).subscribe({
+      next: (res) => {
+        if (res?.type === 'ERROR' || res?.data !== true) {
+          this.mostrarAlerta(res?.message || '❌ No se pudo eliminar', 'Error');
+          return;
+        }
+
+        // Quitar de la grilla (sin recargar)
+        this.registrosGtin14 = this.registrosGtin14.filter(x => (x.g14 ?? '').trim() !== g14Trim);
+        this.selectedUlRow = null;
+
+        this.registrosGtin14 = this.registrosGtin14.filter(x => (x.g14 ?? '').trim() !== g14Trim);
+this.selectedUlRow = null;
+
+// opcional: refrescar render
+this.gridApiGtin14?.refreshCells({ force: true });
+
+        this.mostrarAlerta('✅ UL eliminado correctamente', '✔');
+      },
+      error: (err) => {
+        console.error('❌ Error al eliminar UL por G14:', err);
+        this.mostrarAlerta('❌ Error al eliminar UL', 'Error');
+      }
+    });
+  });
+}
 
 
 }

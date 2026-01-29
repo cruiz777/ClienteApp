@@ -14,11 +14,53 @@ import {
   TipoDocumento,
 } from 'src/app/services/docs-elect.service';
 import { AccionesCellRendererComponent } from './acciones-cell-renderer.component';
+import { MAT_DATE_LOCALE, MAT_DATE_FORMATS, NativeDateAdapter, DateAdapter } from '@angular/material/core';
 
+export class CustomDateAdapter extends NativeDateAdapter {
+  override parse(value: any): Date | null {
+    if (typeof value === 'string') {
+      const parts = value.split('/');
+      if (parts.length === 3) {
+        const day = Number(parts[0]);
+        const month = Number(parts[1]) - 1;
+        const year = Number(parts[2]);
+        return new Date(year, month, day);
+      }
+    }
+    return super.parse(value);
+  }
+
+  override format(date: Date, displayFormat: Object): string {
+    const day = date.getDate();
+    const month = date.getMonth() + 1;
+    const year = date.getFullYear();
+    return `${this.padZero(day)}/${this.padZero(month)}/${year}`;
+  }
+
+  private padZero(n: number): string {
+    return n < 10 ? '0' + n : '' + n;
+  }
+}
+export const MY_DATE_FORMATS = {
+  parse: {
+    dateInput: 'DD/MM/YYYY',
+  },
+  display: {
+    dateInput: 'DD/MM/YYYY',
+    monthYearLabel: 'MMM YYYY',
+    dateA11yLabel: 'LL',
+    monthYearA11yLabel: 'MMMM YYYY',
+  },
+};
 @Component({
   selector: 'app-doc-electronicos',
   templateUrl: './doc-electronicos.component.html',
   styleUrls: ['./doc-electronicos.component.css'],
+  providers: [
+    { provide: MAT_DATE_LOCALE, useValue: 'es-EC' },
+    { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS },
+    { provide: DateAdapter, useClass: CustomDateAdapter },
+  ], 
 })
 export class DocElectronicosComponent implements OnInit {
   tipoDocumentoActivo: TipoDocumento = 'FACTURA';
@@ -186,17 +228,46 @@ export class DocElectronicosComponent implements OnInit {
   private reenviarCorreo(id: number, claveAcceso: string): void {
     console.log('📧 Reenviar correo:', { id, claveAcceso });
 
-    const email = prompt('Ingrese el correo electrónico de destino:');
-    if (!email || !email.trim()) {
+    const email = prompt(
+      'Ingrese el correo electrónico de destino:\n(Deje en blanco para usar los correos de la factura)\n(Puede ingresar múltiples correos separados por ; o ,'
+    );
+
+    // Si presiona Cancelar, salir
+    if (email === null) {
       return;
     }
 
-    // TODO: Implementar cuando tengas el endpoint
-    this.snackBar.open(
-      'Función de reenvío de correo en desarrollo',
-      'Cerrar',
-      { duration: 3000 }
-    );
+    // Si deja en blanco, usar correos del XML
+    const correosDestino = email.trim() || undefined;
+
+    this.loading = true;
+    this.docService.reenviarDocumento(claveAcceso, correosDestino).subscribe({
+      next: (response) => {
+        this.loading = false;
+        if (response.type === 'success') {
+          this.snackBar.open(
+            `✅ Correo enviado exitosamente a: ${response.data?.correo_enviado_a}`,
+            'Cerrar',
+            { duration: 5000 }
+          );
+        } else {
+          this.snackBar.open(
+            response.message || 'Advertencia al enviar',
+            'Cerrar',
+            { duration: 4000 }
+          );
+        }
+      },
+      error: (error) => {
+        this.loading = false;
+        console.error('❌ Error al reenviar:', error);
+        this.snackBar.open(
+          `❌ Error: ${error.message}`,
+          'Cerrar',
+          { duration: 5000 }
+        );
+      },
+    });
   }
 
   private anularDocumento(id: number): void {

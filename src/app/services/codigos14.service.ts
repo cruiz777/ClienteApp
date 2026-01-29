@@ -169,5 +169,43 @@ filtrarCodigos14(
   );
 }
 
+  /**
+   * Devuelve TRUE/FALSE si existe un registro en codigos14 por codbar + unidad.
+   * GET: /api/Codigos14/existe-por-codbar-unidad?codbar=...&unidad=...
+   */
+  existePorCodbarUnidad(codbar: string, unidad: number): Observable<boolean> {
+    const url = `${this.baseUrl}/Codigos14/existe-por-codbar-unidad`;
+
+    return this.http
+      .get<ApiResponse<boolean>>(url, {
+        params: {
+          codbar: codbar?.trim() ?? '',
+          unidad: String(unidad),
+        },
+      })
+      .pipe(map(r => !!r.data));
+  }
+
+  /**
+   * (Opcional) Devuelve el ApiResponse completo (con message, type, etc.)
+   */
+  existePorCodbarUnidadRaw(codbar: string, unidad: number): Observable<ApiResponse<boolean>> {
+    const url = `${this.baseUrl}/Codigos14/existe-por-codbar-unidad`;
+
+    return this.http.get<ApiResponse<boolean>>(url, {
+      params: {
+        codbar: codbar?.trim() ?? '',
+        unidad: String(unidad),
+      },
+    });
+  }
+  deletePorG14(g14: string): Observable<ApiResponse<boolean>> {
+  const url = `${this.baseUrl}/Codigos14/por-g14/${encodeURIComponent((g14 ?? '').trim())}`;
+  return this.http.delete<ApiResponse<boolean>>(url);
+}
+deletePorG14Ok(g14: string): Observable<boolean> {
+  return this.deletePorG14(g14).pipe(map(r => r.type !== 'ERROR' && !!r.data));
+}
+
 
 }

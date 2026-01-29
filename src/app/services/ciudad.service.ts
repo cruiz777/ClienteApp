@@ -11,6 +11,7 @@ export interface Ciudad {
   canton: string;
   provincia: string;
   idzona:number;
+  codigo:string;
 }
 @Injectable({
   providedIn: 'root'
@@ -29,6 +30,7 @@ export class CiudadService {
           debugger
           return response.data.map((item: any) => ({
             id_ciudad: item.id_ciudad,
+            codigo: item.codigo, 
             ciudad: item.ciudad,
             canton: item.canton,
             provincia:item.provincia,
@@ -51,6 +53,7 @@ export class CiudadService {
       const data = response.data;
       return {
         id_ciudad: data.id_ciudad,
+        codigo: data.codigo,     
         ciudad: data.ciudad,
         canton: data.canton,
         provincia: data.provincia,

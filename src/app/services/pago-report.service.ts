@@ -95,23 +95,17 @@ export class PagoReportService {
 
     // ===== Cabecera =====
     const first = filas[0];
-
     const numeroPago = opts.numeroPago || first.numero_pago;
     const cliente = first.cliente_nombre;
-
-    // ✅ FECHA desde backend
     const fechaStr = this.formateaFecha(first.fecha);
-
-    // ✅ ASIENTO desde backend (si viene)
-    const asiento = (first.asientoContable?? '').toString();
-
+    const asiento = (first.asientoContable ?? '').toString();
     const tituloEmpresa = opts.titulo ?? 'GS1';
 
-    // ===== Conceptos por cada documento del lote =====
+    // ===== Conceptos =====
     const conceptos = filas
       .map(f => {
         const tipo = String(f.tipo || '').toUpperCase();
-        const etiqueta = tipo === 'A' ? 'ABONO' : (tipo === 'P' ? 'CANCELACION' : 'CANCELACION');
+        const etiqueta = tipo === 'A' ? 'ABONO' : 'CANCELACION';
         const montoNum = this.to2(f.pagado ?? 0);
         const monto = this.moneda(montoNum, true);
         const etq = (' ' + etiqueta).padEnd(13, ' ');
@@ -140,37 +134,39 @@ export class PagoReportService {
     const total = this.to2(formas.reduce((a, b) => a + (b.monto || 0), 0));
 
     // ===== jsPDF =====
-    const doc = new jsPDF({ unit: 'pt', format: 'A4' });
+    const doc = new jsPDF({ 
+      unit: 'pt', 
+      format: [595, 421]  // ✅ Media página A4
+    });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 36;
+    const margin = 20;  // ✅ Márgenes pequeños
 
     doc.setLineWidth(1);
-    doc.rect(margin / 2, margin / 2, pageWidth - margin, pageHeight - margin);
+    doc.rect(margin / 2, margin / 2, pageWidth - margin, (pageHeight / 2) - margin);
 
     // Logo
-    const logoData =
-      opts.logoDataUrl || (await this.loadLogoDataUrl(opts.logoUrl));
+    const logoData = opts.logoDataUrl || (await this.loadLogoDataUrl(opts.logoUrl));
     let yOffset = 0;
     if (logoData) {
-      const logoW = 120;
-      const logoH = 44;
-      doc.addImage(logoData, 'PNG', margin, 64 - logoH / 2, logoW, logoH);
-      yOffset = 8;
+      const logoW = 70;   // ✅ Logo pequeño
+      const logoH = 26;
+      doc.addImage(logoData, 'PNG', margin, 40 - logoH / 2, logoW, logoH);
+      yOffset = 4;
     }
 
     // Títulos
     doc.setFont('Times', 'Bold');
-    doc.setFontSize(14);
-    doc.text(tituloEmpresa, pageWidth / 2, 100 + yOffset, { align: 'center' });
-    doc.setFontSize(12);
-    doc.text('INGRESO DE CAJA', pageWidth / 2, 122 + yOffset, { align: 'center' });
+    doc.setFontSize(10);  // ✅ Fuente reducida
+    doc.text(tituloEmpresa, pageWidth / 2, 60 + yOffset, { align: 'center' });
+    doc.setFontSize(9);
+    doc.text('INGRESO DE CAJA', pageWidth / 2, 74 + yOffset, { align: 'center' });
 
     // Barra: Número Pago / Asiento
     autoTable(doc, {
-      startY: 150 + yOffset,
-      styles: { font: 'Times', fontSize: 11, textColor: [0, 0, 0] },
-      headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0] },
+      startY: 90 + yOffset,  // ✅ Posición alta
+      styles: { font: 'Times', fontSize: 8, textColor: [0, 0, 0] },  // ✅ Fuente 8
+      headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontSize: 8 },
       bodyStyles: { textColor: [0, 0, 0] },
       margin: { left: margin, right: margin },
       head: [[
@@ -182,29 +178,39 @@ export class PagoReportService {
       body: []
     });
 
-    let y = (doc as any).lastAutoTable.finalY + 12;
+    let y = (doc as any).lastAutoTable.finalY + 8;  // ✅ Espacio reducido
 
     // FECHA / CLIENTE / CONCEPTO
-    doc.setFont('Times', 'Bold'); doc.setFontSize(11); doc.text('FECHA:', margin, y);
-    doc.setFont('Times', 'Normal'); doc.text(fechaStr, margin + 60, y); y += 16;
-
-    doc.setFont('Times', 'Bold'); doc.text('CLIENTE :', margin, y);
-    doc.setFont('Times', 'Normal'); doc.text(cliente, margin + 60, y); y += 16;
-
-    doc.setFont('Times', 'Bold'); doc.text('CONCEPTO:  ', margin, y);
+    doc.setFont('Times', 'Bold');
+    doc.setFontSize(8);  // ✅ Fuente 8
+    doc.text('FECHA:', margin, y);
     doc.setFont('Times', 'Normal');
-    const conceptoLines = doc.splitTextToSize(conceptos, pageWidth - margin * 2 - 60);
-    doc.text(conceptoLines, margin + 60, y);
-    y += 18 * (Array.isArray(conceptoLines) ? conceptoLines.length : 1) + 8;
+    doc.text(fechaStr, margin + 50, y);  // ✅ Columna en 50
+    y += 12;  // ✅ Espacio 12
+
+    doc.setFont('Times', 'Bold');
+    doc.text('CLIENTE :', margin, y);
+    doc.setFont('Times', 'Normal');
+    doc.text(cliente, margin + 50, y);  // ✅ Columna en 50
+    y += 12;  // ✅ Espacio 12
+
+    doc.setFont('Times', 'Bold');
+    doc.text('CONCEPTO:', margin, y);
+    doc.setFont('Times', 'Normal');
+    const conceptoLines = doc.splitTextToSize(conceptos, pageWidth - margin * 2 - 50);  // ✅ Ancho ajustado
+    doc.text(conceptoLines, margin + 50, y);  // ✅ Columna en 50
+    y += 12 * (Array.isArray(conceptoLines) ? conceptoLines.length : 1) + 6;  // ✅ Espacio 12
 
     // FORMAS DE PAGO
-    doc.setFont('Times', 'Bold'); doc.text('FORMA DE PAGO:', margin, y); y += 6;
+    doc.setFont('Times', 'Bold');
+    doc.text('FORMA DE PAGO:', margin, y);
+    y += 4;  // ✅ Espacio 4
 
     autoTable(doc, {
-      startY: y + 6,
+      startY: y + 4,  // ✅ Espacio 4
       margin: { left: margin, right: margin },
-      styles: { font: 'Times', fontSize: 11, textColor: [0, 0, 0] },
-      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0] },
+      styles: { font: 'Times', fontSize: 8, textColor: [0, 0, 0] },  // ✅ Fuente 8
+      headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontSize: 8 },
       head: [['Descripción', 'Monto']],
       body: formas.map(f => [f.desc, this.moneda(f.monto, true)]),
       columnStyles: {
@@ -213,14 +219,14 @@ export class PagoReportService {
       }
     });
 
-    y = (doc as any).lastAutoTable.finalY + 10;
+    y = (doc as any).lastAutoTable.finalY + 6;  // ✅ Espacio 6
 
     // Observación + Total
     const obsText = `OBSERVACION : ${first.observaciones?.toUpperCase() || 'ESTE COMPROBANTE DE NINGUNA MANERA CONSTITUYE UNA FACTURA'}`;
     autoTable(doc, {
       startY: y,
       margin: { left: margin, right: margin },
-      styles: { font: 'Times', fontSize: 11, textColor: [0, 0, 0] },
+      styles: { font: 'Times', fontSize: 8, textColor: [0, 0, 0] },  // ✅ Fuente 8
       body: [[
         { content: obsText, styles: { halign: 'left' } },
         { content: `TOTAL : ${this.moneda(total, true)}`, styles: { halign: 'right' } }
@@ -228,20 +234,21 @@ export class PagoReportService {
       theme: 'plain'
     });
 
-    y = (doc as any).lastAutoTable.finalY + 50;
+    y = (doc as any).lastAutoTable.finalY + 30;  // ✅ Espacio 30
 
     // Firmas
-    const col1 = margin + 40;
-    const col2 = pageWidth - margin - 240;
-    doc.line(col1, y, col1 + 200, y);
-    doc.line(col2, y, col2 + 200, y);
+    const lineWidth = 100;  // Longitud de cada línea
+    const col1 = margin + 60;
+    const col2 = pageWidth - margin - lineWidth - 60;
+    doc.line(col1, y, col1 + lineWidth, y);
+    doc.line(col2, y, col2 + lineWidth, y);
     doc.setFont('Times', 'Normal');
-    doc.text('Elaborado por', col1 + 100, y + 16, { align: 'center' });
-    doc.text('Cliente', col2 + 100, y + 16, { align: 'center' });
+    doc.setFontSize(8);
+    doc.text('Elaborado por', col1 + (lineWidth / 2), y + 12, { align: 'center' });
+    doc.text('Cliente', col2 + (lineWidth / 2), y + 12, { align: 'center' });
 
     doc.save(`IngresoCaja_${numeroPago}.pdf`);
   }
-
   // ===== Helpers =====
   private formateaFecha(iso: string): string {
     const d = new Date(iso);

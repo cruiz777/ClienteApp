@@ -13,7 +13,8 @@ import { ClienteSeleccionadoService } from 'src/app/services/cliente-seleccionad
 import { PrefijoService } from 'src/app/services/prefijo.service';
 import { GrupoProductoService, GrupoProducto } from 'src/app/services/grupo-producto.service';
 import { Observable, of } from 'rxjs';
-import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
+// import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
+import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
 import { startWith, map } from 'rxjs/operators';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
@@ -38,6 +39,10 @@ import { ActivatedRoute } from '@angular/router';
 import { take } from 'rxjs/operators';
 import * as moment from 'moment';
 import { debounceTime } from 'rxjs/operators';
+import { themeAlpine } from 'ag-grid-community';
+import { forkJoin } from 'rxjs';
+import { catchError, finalize } from 'rxjs/operators';
+
 @Component({
   selector: 'app-ul',
   standalone: true,
@@ -110,6 +115,7 @@ export class UlComponent implements OnInit {
   id_grupo_producto: number = 0;
   usuarioActual = this.usuarioService.getUsuarioActual();
   idProducto: number = 0;
+  private loadingDialogRef?: MatDialogRef<CustomMessageBoxComponent>;
   constructor(
     private fb: FormBuilder,
     private clienteSeleccionadoService: ClienteSeleccionadoService,
@@ -139,6 +145,19 @@ export class UlComponent implements OnInit {
   ngOnInit(): void {
     const codbar = this.route.snapshot.paramMap.get('codbar');
     console.log('GTIN recibido:', codbar);
+    this.loadingDialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      disableClose: true,
+      data: {
+        title: 'Cargando',
+        message: 'Cargando datos necesarios...',
+        type: 'info',
+        isLoading: true,
+        loadingText: 'Por favor espere...',
+        showCancel: false 
+      }
+    });
+    
     this.formUV = this.fb.group({
       codigoCliente: [''],
       cliente: [''],
@@ -993,24 +1012,31 @@ export class UlComponent implements OnInit {
     console.log('⚫ Seleccionado GTIN-14 UL Internacional');
     // tu lógica aquí
   }
-  actualizarDescripcionUL(): void {
-    const descripcion = this.formUV.get('descripcion')?.value || '';
-    const marca = this.formUV.get('marca')?.value || '';
-    const contenido = this.formUV.get('contenido')?.value || '';
-   const unidadObj = this.formUV.getRawValue().unidadMedida?.unidad || '';
-    const unidadu = this.formUL.getRawValue().unidad || '';
-    const tipoEmpaque = this.formUL.getRawValue().tipoEmpaque || '';
+ actualizarDescripcionUL(): void {
+  const descripcion  = (this.formUV.get('descripcion')?.value ?? '').toString().trim();
+  const marca        = (this.formUV.get('marca')?.value ?? '').toString().trim();
+  const contenido    = (this.formUV.get('contenido')?.value ?? '').toString().trim();
 
+  const unidadObj    = (this.formUV.getRawValue()?.unidadMedida?.unidad ?? '').toString().trim();
+  const tipoEmpaque  = (this.formUL.getRawValue()?.tipoEmpaque ?? '').toString().trim();
 
-    const factor = this.formUL.get('factor')?.value || '';
-    const unidad = this.formUL.get('unidad')?.value || '';
+  const factor       = (this.formUL.get('factor')?.value ?? '').toString().trim();
+  const unidad       = (this.formUL.get('unidad')?.value ?? '').toString().trim();
 
-    const descripcionUL = `${descripcion} ${marca} ${contenido} ${unidadObj} ${tipoEmpaque} ${factor} ${unidad}`
+  const sinMarcaYContenido = marca === '' && contenido === '';
+
+  const descripcionUL = (
+    sinMarcaYContenido
+      ? `${descripcion} ${marca} ${contenido} ${tipoEmpaque} ${factor} ${unidad}`
+      : `${descripcion} ${marca} ${contenido} ${unidadObj} ${tipoEmpaque} ${factor} ${unidad}`
+  )
+    .replace(/\s+/g, ' ')
+    .trim()
     .toUpperCase();
 
-    
-    this.formUL.get('descripcionu')?.setValue(descripcionUL);
-  }
+  this.formUL.get('descripcionu')?.setValue(descripcionUL);
+}
+
   generarUL(): void {
     debugger
     const gtinPrincipal =
@@ -1825,41 +1851,34 @@ export class UlComponent implements OnInit {
     console.log('GTIN-14 generado:', codigoFinal);
     this.campoGtinU = true;
   }
-  generacion14iiver14(): void {
-    const gtinControl = this.formUL.get('gtinUl'); // Text21.text
-    const valor = (gtinControl?.value || '').toString().trim();
+generacion14iiver14(): void {
+  const ctrl = this.formUL.get('gtinUl');
+  const base13 = (ctrl?.value ?? '').toString().trim();
 
-    if (valor.length !== 13 || !/^\d+$/.test(valor)) {
-      alert('Ingrese solo 13 Números!!!');
-      gtinControl?.setValue('');
-      gtinControl?.markAsTouched();
-      gtinControl?.markAsDirty();
-      return;
-    }
-
-    const ean = valor;
-    let iSum = 0;
-
-    for (let i = 0; i < ean.length; i++) {
-      const iDigit = parseInt(ean.charAt(i), 10);
-      if (isNaN(iDigit)) continue;
-
-      const esPar = ean.length % 2 === 0;
-
-      if ((esPar && (i + 1) % 2 === 0) || (!esPar && (i + 1) % 2 !== 0)) {
-        iSum += iDigit;
-      } else {
-        iSum += iDigit * 3;
-      }
-    }
-
-    const iCheckSum = (10 - (iSum % 10)) % 10;
-    const codigoFinal = ean + iCheckSum.toString();
-
-    this.formUL.patchValue({ gtinUl: codigoFinal });
-    console.log('Código GTIN-14 generado:', codigoFinal);
-
+  if (base13.length !== 13 || !/^\d+$/.test(base13)) {
+    alert('Ingrese solo 13 Números!!!');
+    ctrl?.setValue('');
+    ctrl?.markAsTouched();
+    ctrl?.markAsDirty();
+    return;
   }
+
+  let sum = 0;
+
+  // Recorre desde la derecha (último dígito) hacia la izquierda
+  for (let i = base13.length - 1, pos = 1; i >= 0; i--, pos++) {
+    const digit = Number(base13.charAt(i));
+    const weight = (pos % 2 === 1) ? 3 : 1; // 1era desde la derecha = 3
+    sum += digit * weight;
+  }
+
+  const dv = (10 - (sum % 10)) % 10;
+  const gtin14 = base13 + dv.toString();
+
+  this.formUL.patchValue({ gtinUl: gtin14 });
+  console.log('GTIN-14 generado:', gtin14, 'Suma:', sum, 'DV:', dv);
+}
+
 
   generacion12iiver14(): void {
     const input = this.formUL.get('gtinUl')?.value;
@@ -2040,12 +2059,17 @@ export class UlComponent implements OnInit {
 
   cargarProducto(): void {
     const codbar = this.route.snapshot.paramMap.get('codbar');
-    if (!codbar) return;
+    if (!codbar) {
+      this.loadingDialogRef?.close(); //Cerrar si no hay codbar
+      return;
+    }
+
 
     this.productoService.buscarPorCodbar(codbar).pipe(take(1)).subscribe({
       next: (producto) => {
         if (!producto) {
           console.warn('⚠️ Producto no encontrado');
+          this.loadingDialogRef?.close();
           return;
         }
         console.log(producto);
@@ -2112,20 +2136,24 @@ export class UlComponent implements OnInit {
                   }
                 });
                 this.botonGrabarDeshabilitado = true;
+                this.loadingDialogRef?.close();
 
               },
               error: (err) => {
                 console.error('❌ Error al cargar grupos de producto:', err);
+                this.loadingDialogRef?.close();
               }
             });
           },
           error: (err) => {
             console.error('❌ Error al cargar prefijos:', err);
+            this.loadingDialogRef?.close();
           }
         });
       },
       error: (err) => {
         console.error('❌ Error al cargar producto:', err);
+        this.loadingDialogRef?.close();
       }
     });
   }
@@ -2428,6 +2456,64 @@ onIndicadorBlur(): void {
   });
 }
 
+onFactorBlur(): void {
+  // lo que ya hacías
+  this.actualizarDescripcionUL();
+
+  // nuevo: validar si ya existe
+  this.verificarFactorExistente();
+}
+generarULBloqueado = false;
+private verificarFactorExistente(): void {
+  const factorStr = (this.formUL.get('factor')?.value ?? '').toString().trim();
+  const factorNum = Number(factorStr);
+
+  // si está vacío o no es número, no validamos (ya tienes keypress numérico, pero por si pega texto)
+  if (!factorStr || Number.isNaN(factorNum)) return;
+
+  // codbar UV (tu tabla Codigos14 guarda codbar = GTIN UV)
+  const codbarUv =
+    (this.formUV.getRawValue().gtinUv ?? this.route.snapshot.paramMap.get('codbar') ?? '').toString().trim();
+
+  if (!codbarUv) return;
+
+ this.codigos14Service.existePorCodbarUnidad(codbarUv, factorNum).subscribe({
+  next: (existe) => {
+    const factorCtrl = this.formUL.get('factor');
+
+    if (existe) {
+      // error en control
+      factorCtrl?.setErrors({ ...(factorCtrl.errors ?? {}), factorExistente: true });
+      factorCtrl?.markAsTouched();
+      factorCtrl?.updateValueAndValidity({ emitEvent: false });
+
+      // bloquear generar
+      this.generarULBloqueado = true;
+
+      this.mostrarAlerta(
+        '⚠️ Ya existe una presentación con este Factor para este producto.',
+        'Advertencia'
+      );
+    } else {
+      // limpiar solo nuestro error
+      if (factorCtrl?.errors?.['factorExistente']) {
+        const { factorExistente, ...rest } = factorCtrl.errors;
+        factorCtrl.setErrors(Object.keys(rest).length ? rest : null);
+        factorCtrl.updateValueAndValidity({ emitEvent: false });
+      }
+
+      // desbloquear generar
+      this.generarULBloqueado = false;
+    }
+  },
+  error: () => {
+    // si falla la validación, por seguridad puedes bloquear generar
+    this.generarULBloqueado = true;
+    this.mostrarAlerta('❌ Error al verificar si el Factor ya existe.', 'Error');
+  }
+});
+
+}
 
 
 

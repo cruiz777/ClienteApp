@@ -1,0 +1,618 @@
+/* ============================================================
+   BASE
+============================================================ */
+:host {
+  display: block;
+}
+
+.page-wrapper-balance {
+  padding: 12px 18px;
+  background: #ffffff;
+  font-family: 'Inter', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: #1f2937;
+}
+
+/* ============================================================
+   TÍTULO
+============================================================ */
+.page-title-row {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 12px;
+}
+
+.page-title-balance {
+  font-size: 19px;
+  font-weight: 800;
+  margin: 0;
+  color: #0f2a57;
+}
+
+/* ============================================================
+   FILTROS / ACCIONES
+============================================================ */
+.filters-panel {
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 0 rgba(15, 23, 42, 0.03);
+}
+
+.filters-top {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.filters-primary {
+  flex: 1;
+  min-width: 0;
+}
+
+.filters-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 10px;
+}
+
+.filters-title-main {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.primary-grid {
+  display: grid;
+  grid-template-columns: 180px 180px minmax(220px, 320px);
+  gap: 12px 14px;
+  align-items: end;
+}
+
+.filters-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.btn-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform .05s ease, background-color .15s ease, border-color .15s ease;
+}
+
+.btn-icon img {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+}
+
+.btn-icon:hover {
+  background: #f3f6fb;
+  border-color: #9ca3af;
+  transform: translateY(-1px);
+}
+
+.btn-icon:active {
+  transform: translateY(0);
+}
+
+.status-pill {
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  background: #f3f6fb;
+  border: 1px solid #d1d5db;
+  color: #0f172a;
+}
+
+/* Campos */
+.fg {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fg-label {
+  font-size: 12.5px;
+  color: #374151;
+  font-weight: 600;
+}
+
+.fg-control {
+  height: 40px;
+  font-size: 13px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  border: 1px solid #c5ced8;
+  outline: none;
+  box-sizing: border-box;
+  background: #fff;
+}
+
+.fg-control:focus {
+  border-color: #1f4f9a;
+  box-shadow: 0 0 0 2px rgba(31, 79, 154, 0.18);
+}
+
+/* Secundarios */
+.filters-bottom {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed #d1d5db;
+}
+
+.secondary-grid {
+  display: grid;
+  grid-template-columns: 220px 260px 260px 1fr;
+  gap: 12px 14px;
+  align-items: end;
+}
+
+/* Modo */
+.mode-chipset {
+  display: flex;
+  gap: 8px;
+  height: 40px;
+  align-items: center;
+}
+
+.mode-chip {
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #0f172a;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color .15s ease, border-color .15s ease, transform .05s ease;
+}
+
+.mode-chip:hover {
+  background: #f3f6fb;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+.mode-chip:active {
+  transform: translateY(0);
+}
+
+.mode-chip.active {
+  background: #0f2a57;
+  color: #ffffff;
+  border-color: #0f2a57;
+}
+
+/* ============================================================
+   TABLA / CONTENEDOR
+============================================================ */
+.table-wrap {
+  border: 1px solid #d1d5db;
+  border-radius: 12px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.grid-wrapper,
+.table-container {
+  width: 100%;
+  overflow: auto;
+}
+
+/* Utilidades */
+.text-right {
+  text-align: right;
+}
+
+.mono {
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   TABLA PRINCIPAL (cuando ya no uses AG Grid)
+============================================================ */
+.tabla-balance {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 11px;
+}
+
+.tabla-balance thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f8fafc;
+  color: #0f172a;
+  font-weight: 800;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 6px 8px;
+  line-height: 1.1;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.tabla-balance tbody td {
+  border-bottom: 1px solid #eef2f7;
+  padding: 5px 8px;
+  line-height: 1.1;
+  vertical-align: middle;
+  background: #ffffff;
+}
+
+.tabla-balance tbody tr:nth-child(odd) td {
+  background: #fcfdff;
+}
+
+.tabla-balance tbody tr.row-main:hover td {
+  background: #f3f6fb;
+}
+
+.tabla-balance .col-exp {
+  width: 34px;
+  text-align: center;
+  padding-left: 4px;
+  padding-right: 4px;
+}
+
+.tabla-balance .col-doc {
+  width: 120px;
+}
+
+.tabla-balance .col-fecha {
+  width: 120px;
+}
+
+.tabla-balance .col-num {
+  width: 110px;
+}
+
+.tabla-balance .col-resp {
+  width: 220px;
+}
+
+/* Chevron */
+.chev {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #ffffff;
+  transition: transform .15s ease, background-color .15s ease, border-color .15s ease;
+  font-weight: 900;
+  color: #0f172a;
+}
+
+.row-main:hover .chev {
+  background: #ffffff;
+  border-color: #9ca3af;
+}
+
+.chev.open {
+  transform: rotate(90deg);
+}
+
+/* ============================================================
+   DETALLE EXPANDIDO
+============================================================ */
+.row-detail td {
+  padding: 0 !important;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.detail-card {
+  margin: 10px 10px 12px 10px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.detail-title {
+  padding: 10px 12px;
+  font-weight: 900;
+  color: #0f172a;
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.detail-table-wrap {
+  overflow: auto;
+  width: 100%;
+}
+
+/* Tabla detalle */
+.tabla-detalle {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 11.5px;
+}
+
+.tabla-detalle thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: #f9fafb;
+  color: #0f172a;
+  font-weight: 800;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 9px 10px;
+  white-space: nowrap;
+}
+
+.tabla-detalle tbody td {
+  border-bottom: 1px solid #f0f3f8;
+  padding: 8px 10px;
+  vertical-align: middle;
+  background: #ffffff;
+}
+
+.tabla-detalle tbody tr:nth-child(even) td {
+  background: #fcfdff;
+}
+
+.empty-state {
+  padding: 22px;
+  text-align: center;
+}
+
+.empty-title {
+  font-weight: 900;
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.empty-sub {
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.empty-inline {
+  padding: 12px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+.pager-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  background: #e9eef6;
+  border: 1px solid #cfd8e3;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.pager-left,
+.pager-mid,
+.pager-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pager-label {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.pager-select {
+  height: 28px;
+  border-radius: 8px;
+  border: 1px solid #c5ced8;
+  background: #fff;
+  padding: 0 8px;
+  font-weight: 700;
+}
+
+.pager-count,
+.pager-page {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.pager-btn {
+  width: 34px;
+  height: 30px;
+  border-radius: 999px;
+  border: 1px solid #cfd8e3;
+  background: #dbe6f8;
+  color: #0f172a;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.pager-btn:disabled {
+  opacity: .45;
+  cursor: not-allowed;
+}
+
+/* ===== Fila de filtros bajo el header (estilo AG Grid) ===== */
+
+/* Header (fila 1) */
+.tabla-balance thead tr:first-child th {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+}
+
+/* Filtros (fila 2) - debajo del header */
+.tabla-balance thead tr.filters-row th {
+  position: sticky;
+  top: 28px;
+  /* AJUSTE fino: si se encima o queda gap, sube/baja 2-4px */
+  z-index: 2;
+  background: #f8fafc;
+  border-bottom: 1px solid #e5e7eb;
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.filtro-input {
+  width: 100%;
+  height: 24px;
+  padding: 2px 6px;
+  font-size: 11px;
+  /* igual que la tabla */
+  border: 1px solid #c5ced8;
+  border-radius: 6px;
+  background: #fff;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.filtro-date-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.filtro-date {
+  width: 100%;
+  height: 24px;
+  padding: 2px 6px;
+  font-size: 11px;
+  border: 1px solid #c5ced8;
+  border-radius: 6px;
+  background: #fff;
+  outline: none;
+  box-sizing: border-box;
+}
+
+
+/* ============================================================
+   RESPONSIVE
+============================================================ */
+@media (max-width: 1100px) {
+  .primary-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .secondary-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .filters-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filters-actions {
+    justify-content: flex-end;
+  }
+}
+
+/* el tamaño de la tabla en la web*/
+/* Ocupa el alto visible y reparte espacio */
+.page-wrapper-balance {
+  height: 100dvh;
+  /* mejor que 100vh */
+  overflow: hidden;
+  /* evita scroll de la ventana */
+  display: flex;
+  flex-direction: column;
+}
+
+/* El bloque del grid + paginador ocupa el espacio restante */
+.table-wrap {
+  flex: 1;
+  min-height: 0;
+  /* CLAVE para que el hijo con overflow funcione */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Solo el grid scrollea */
+.grid-wrapper {
+  flex: 1;
+  min-height: 0;
+  /* CLAVE */
+  overflow: auto;
+}
+
+/* Paginación siempre visible */
+.pager-bar {
+  flex: 0 0 auto;
+  margin: 0;
+  /* si tenías margin-bottom, quítalo */
+  border-top: 1px solid #cfd8e3;
+  border-radius: 0 0 10px 10px;
+}
+
+@media (max-width: 680px) {
+
+  .primary-grid,
+  .secondary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Ocupa el alto visible y reparte espacio */
+  .page-wrapper-balance {
+    height: 100dvh;
+    /* mejor que 100vh */
+    overflow: hidden;
+    /* evita scroll de la ventana */
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* El bloque del grid + paginador ocupa el espacio restante */
+  .table-wrap {
+    flex: 1;
+    min-height: 0;
+    /* CLAVE para que el hijo con overflow funcione */
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Solo el grid scrollea */
+  .grid-wrapper {
+    flex: 1;
+    min-height: 0;
+    /* CLAVE */
+    overflow: auto;
+  }
+
+  /* Paginación siempre visible */
+  .pager-bar {
+    flex: 0 0 auto;
+    margin: 0;
+    /* si tenías margin-bottom, quítalo */
+    border-top: 1px solid #cfd8e3;
+    border-radius: 0 0 10px 10px;
+  }
+
+}

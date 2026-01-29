@@ -537,8 +537,12 @@ export class RegistroCobrosComponent implements OnInit {
     if (pago < 0) errors.push('Pago negativo.');
     if (!Number.isFinite(pago)) errors.push('Pago inválido.');
     if (pago > monto) errors.push('Pago supera el monto.');
-    if (Math.round(pago * 100) !== pago * 100) errors.push('Pago con más de 2 decimales.');
-    return errors;
+
+    const pagoRedondeado = Math.round(pago * 100) / 100;
+    if (Math.abs(pago - pagoRedondeado) > 0.001) {
+      errors.push('Pago con más de 2 decimales.');
+    }
+        return errors;
   }
 
   private validateGridFacturas(): { ok: boolean; errors: string[] } {
@@ -557,6 +561,12 @@ export class RegistroCobrosComponent implements OnInit {
 
     const valorAPagar = this.clamp2(this.getValorAPagarNumber());
     const sumaPagos = this.clamp2(this.sumPagos());
+    console.log('🔍 DEBUG VALIDACIÓN:', {
+      valorAPagar,
+      sumaPagos,
+      diferencia: Math.abs(sumaPagos - valorAPagar),
+      umbral: 0.005
+    });
     if (Math.abs(sumaPagos - valorAPagar) >= 0.005) {
       errors.push(`La suma de pagos (${this.usd(sumaPagos)}) debe ser exactamente ${this.usd(valorAPagar)}.`);
     }

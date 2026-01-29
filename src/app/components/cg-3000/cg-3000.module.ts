@@ -30,6 +30,8 @@ import { RegistroPagosProveedorComponent } from './cuentas-por-pagar/pago-provee
 import { MatAutocompleteModule } from '@angular/material/autocomplete';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PlanCuentaCellEditorComponent, PlanCuentaCellEditorParams } from './cuentas-por-pagar/pago-proveedores/plan-cuenta-cell-editor.component';
+import { SharedModule } from 'src/app/shared/shared.module';
+import { EstadoFinancieroComponent } from './balance/estado-financiero/estado-financiero.component';
 
 
 
@@ -38,10 +40,12 @@ import { PlanCuentaCellEditorComponent, PlanCuentaCellEditorParams } from './cue
   declarations: [
     InicioCgComponent,
     NavigationCgComponent,
+    EstadoFinancieroComponent,
     RegistroPagosProveedorComponent
   ],
   imports: [
     CommonModule,
+    SharedModule,
     RouterModule,
     FormsModule,
     ReactiveFormsModule,

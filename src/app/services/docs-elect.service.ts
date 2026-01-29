@@ -1,6 +1,6 @@
 // docs-elect.service.ts
 import { Injectable, inject } from '@angular/core';
-import { HttpClient, HttpParams, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpParams, HttpErrorResponse, HttpResponse } from '@angular/common/http';
 import { Observable, map, catchError, throwError, tap } from 'rxjs';
 import { environment } from '../../environments/environment';
 
@@ -61,7 +61,18 @@ export interface ApiResponse<T> {
   message?: string;
   count?: number;
 }
+export interface ReenviarEmailRequest {
+  clave_acceso: string;
+  correos_destino?: string; // Opcional: si no se envía, usa los del XML
+}
 
+export interface ReenviarEmailResponse {
+  clave_acceso: string;
+  correo_enviado_a: string;
+  fecha_envio: string;
+  tipo_documento: string;
+  numero_documento: string;
+}
 export type TipoDocumento = 'FACTURA' | 'NC' | 'ND' | 'RET';
 
 // ========================================
@@ -160,19 +171,23 @@ export class DocumentosService {
     );
   }
 
-  descargarPDF(claveAcceso: string): Observable<Blob> {
+  descargarPDF(claveAcceso: string): Observable<HttpResponse<Blob>> {
     const params = new HttpParams().set('tipoArchivo', 'PDF');
     return this.http.get(`${this.baseUrl}/descargar/${claveAcceso}`, {
       params,
       responseType: 'blob',
+      observe: 'response' //AGREGAR ESTO
     });
   }
 
-  descargarXML(claveAcceso: string): Observable<Blob> {
+
+  
+  descargarXML(claveAcceso: string): Observable<HttpResponse<Blob>> {
     const params = new HttpParams().set('tipoArchivo', 'XML');
     return this.http.get(`${this.baseUrl}/descargar/${claveAcceso}`, {
       params,
       responseType: 'blob',
+      observe: 'response'
     });
   }
 
@@ -183,12 +198,39 @@ export class DocumentosService {
   }
 
   abrirPDF(claveAcceso: string): void {
+    console.log('📄 Descargando/Abriendo PDF:', claveAcceso);
+    
     this.descargarPDF(claveAcceso).subscribe({
-      next: (blob) => {
-        const fileURL = URL.createObjectURL(blob);
-        window.open(fileURL, '_blank');
+      next: (response) => {
+        const blob = response.body;
+        if (!blob) return;
+
+        // Extraer nombre del archivo
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let nombreArchivo = `${claveAcceso}.pdf`;
+
+        if (contentDisposition) {
+          const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+          if (matches && matches[1]) {
+            nombreArchivo = matches[1].replace(/['"]/g, '');
+          }
+        }
+
+        // ✅ FORZAR DESCARGA (el navegador puede abrirlo automáticamente según configuración)
+        const blobWithType = new Blob([blob], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blobWithType);
+        
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = nombreArchivo; // ⬅️ Esto fuerza el nombre correcto
+        link.click();
+        
+        URL.revokeObjectURL(url);
+      
       },
-      error: (error) => console.error('Error al abrir PDF:', error),
+      error: (error) => {
+        console.error('Error al descargar PDF:', error);
+      }
     });
   }
 
@@ -196,11 +238,26 @@ export class DocumentosService {
     const descarga$ = tipo === 'PDF' ? this.descargarPDF(claveAcceso) : this.descargarXML(claveAcceso);
 
     descarga$.subscribe({
-      next: (blob) => {
+      next: (response) => {
+        const blob = response.body;
+        if (!blob) return;
+
+        // ✅ EXTRAER EL NOMBRE DESDE LOS HEADERS
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let nombreArchivo = `${claveAcceso}.${tipo.toLowerCase()}`; // Fallback
+
+        if (contentDisposition) {
+          const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+          if (matches && matches[1]) {
+            nombreArchivo = matches[1].replace(/['"]/g, '');
+          }
+        }
+
+        // Descargar con el nombre correcto
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
-        link.download = `${claveAcceso}.${tipo.toLowerCase()}`;
+        link.download = nombreArchivo; //USAR NOMBRE REAL DEL ARCHIVO
         link.click();
         URL.revokeObjectURL(url);
       },
@@ -235,5 +292,38 @@ export class DocumentosService {
 
     console.error('Error en servicio:', mensaje);
     return throwError(() => new Error(mensaje));
+  }
+  /**
+   * Reenvía un documento electrónico por correo (XML + PDF)
+   * @param claveAcceso - Clave de acceso del documento
+   * @param correos - Correos separados por coma o punto y coma (opcional)
+   */
+  reenviarDocumento(
+    claveAcceso: string,
+    correos?: string
+  ): Observable<ApiResponse<ReenviarEmailResponse>> {
+    const body: ReenviarEmailRequest = {
+      clave_acceso: claveAcceso,
+      correos_destino: correos || undefined
+    };
+
+    return this.http.post<ApiResponse<ReenviarEmailResponse>>(
+      `${this.baseUrl}/reenviar-email`,
+      body
+    ).pipe(
+      tap((response) => {
+        if (response.type === 'success') {
+          console.log('✅ Correo enviado exitosamente:', response.data);
+        } else {
+          console.warn('⚠️ Advertencia al enviar:', response.message);
+        }
+      }),
+      catchError((error: HttpErrorResponse) => {
+        console.error('❌ Error al reenviar correo:', error);
+        return throwError(() => new Error(
+          error.error?.message || error.message || 'Error al reenviar el correo'
+        ));
+      })
+    );
   }
 }

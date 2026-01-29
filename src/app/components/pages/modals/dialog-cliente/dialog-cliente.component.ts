@@ -2,9 +2,11 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { Inject } from '@angular/core';
-import { JsonEmpresaService } from 'src/app/services/json-empresa.service';
+import { JsonEmpresaService,JsonEmpresaRequest  } from 'src/app/services/json-empresa.service';
 import { AsyncValidatorFn } from '@angular/forms';
 import { of, timer } from 'rxjs';
+import { finalize } from 'rxjs/operators';
+
 
 import { map, startWith, take, takeUntil, filter, switchMap, catchError, debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
@@ -832,24 +834,26 @@ async guardar(stepper: MatStepper): Promise<void> {
     // ---------- Envío al backend ----------
     // 1) Si tu servicio devuelve el cliente creado, úsalo directamente:
     try {
-      const respuestaGuardar: any = await firstValueFrom(this.clienteService.guardarCliente(jsonCliente));
-      // Si el backend devuelve el cliente creado:
-      if (respuestaGuardar && respuestaGuardar.clientes_codigo) {
-        this.paso1Form.patchValue({ codigoCliente: respuestaGuardar.clientes_codigo });
-      } else {
-        // Si no devuelve, intentamos obtener por RUC (tu flujo actual)
-        const cliente = await firstValueFrom(this.clienteService.getClientePorRuc(ruc));
-        if (cliente) {
-          this.paso1Form.patchValue({ codigoCliente: cliente.clientes_codigo });
-        }
-      }
+      const resp: any = await firstValueFrom(this.clienteService.guardarCliente(jsonCliente));
 
-      // continuar acciones
-      this.guardarPrefijo();
-      this.guardarTodasLasObservaciones();
-      this.guardarDatosAdicionales();
-      this.guardarContactosCliente();
-      stepper.selectedIndex = 0;
+// ✅ TU API ahora devuelve ApiResponse<long> => el ID viene en resp.data
+const clientesCodigo = resp?.data;
+
+if (!clientesCodigo || clientesCodigo <= 0) {
+  this.mostrarAlerta('No se pudo obtener clientes_codigo. Proceso detenido.', 'Error');
+  return;
+}
+
+// ✅ Guarda el ID en el formulario (paso1)
+this.paso1Form.patchValue({ codigoCliente: clientesCodigo });
+
+// ✅ recién aquí continúas con los procesos que dependen de clientesCodigo
+this.guardarPrefijo();
+this.guardarTodasLasObservaciones();
+this.guardarDatosAdicionales();
+this.guardarContactosCliente();
+stepper.selectedIndex = 0;
+
 
     } catch (err) {
       console.error('❌ Error al guardar el cliente:', err);
@@ -944,7 +948,7 @@ async guardar(stepper: MatStepper): Promise<void> {
         referenciaInterna: prefijo,
         prefijosgs1: `${codigogs1}${prefijo}`,
         origenPrefijo: pais,
-        orden: 0,
+        orden: 1,
         clientesCodigo: codigoCliente
       };
 
@@ -1018,7 +1022,7 @@ async guardar(stepper: MatStepper): Promise<void> {
             referenciaInterna: prefijoAsignado,
             prefijosgs1: `${codigogs1}${prefijoAsignado}`,
             origenPrefijo: pais,
-            orden: 0,
+            orden: 1,
             clientesCodigo: codigoCliente
           };
 
@@ -1835,28 +1839,48 @@ async verificarYAvanzar(form: FormGroup, stepper: MatStepper): Promise<void> {
     });
   }
 
-  enviarEmpresaAJson(): void {
-    const ciudadObj = this.paso2Form.get('ciudad')?.value;
-    const data = {
-      status: 'ACTIVE',
-      licenceKey: this.paso1Form.get('prefijo')?.value || '',
-      licenseeName: this.paso2Form.get('razonSocial')?.value || '',
-      licenseeGLN: this.paso1Form.get('gln')?.value || '',
-      streetAddress: this.paso2Form.get('direccionPrincipal')?.value || '',
-      canton: ciudadObj.canton || '',
-      postalName: this.paso2Form.get('codigoPostal')?.value || '',
-      ciudad: ciudadObj.ciudad || '',
-      provincia: ciudadObj.provincia || '',
-      postalCode: this.paso2Form.get('codigoPostal')?.value || '',
-      email: this.paso3Form.get('emailRepresentante')?.value || '',
-      telefono: '593' + (this.paso2Form.get('telefono2')?.value ?? ''),
-      website: this.paso2Form.get('sitioWeb')?.value || '',
-      dapi: this.api,  // reemplaza con tu endpoint real
-      capi: this.claveApi
-    };
-    console.log(data);
-    this.jsonEmpresaService.generarJsonEmpresa(data);
-  }
+ 
+// tu método:
+enviarEmpresaAJson(): void {
+  const ciudadObj = this.paso2Form.get('ciudad')?.value;
+
+  const data: JsonEmpresaRequest = {
+    status: 'ACTIVE',
+    licenceKey: (this.paso1Form.get('prefijo')?.value || '').toString(),
+    licenseeName: (this.paso2Form.get('razonSocial')?.value || '').toString(),
+    licenseeGLN: (this.paso1Form.get('gln')?.value || '').toString(),
+    streetAddress: (this.paso2Form.get('direccionPrincipal')?.value || '').toString(),
+    canton: (ciudadObj?.canton || '').toString(),
+    postalName: (this.paso2Form.get('razonSocial')?.value || '').toString(),
+    ciudad: (ciudadObj?.ciudad || '').toString(),
+    provincia: (ciudadObj?.provincia || '').toString(),
+
+    postalCode: (ciudadObj?.codigo || '').toString(),
+
+    // ✅ si NO tienes PO Box, NO lo pongas (deja undefined)
+    // postOfficeBoxNumber: '...',  // solo si existe
+
+    email: (this.paso3Form.get('emailRepresentante')?.value || '').toString(),
+    telefono: ('593' + (this.paso2Form.get('telefono2')?.value ?? '')).toString(),
+    website: (this.paso2Form.get('sitioWeb')?.value || '').toString(),
+    dapi: this.api,
+    capi: this.claveApi
+  };
+
+  const jsonData = this.jsonEmpresaService.buildJson(data);
+
+  this.jsonEmpresaService.generarJsonEmpresa(data)
+    .pipe(finalize(() => this.jsonEmpresaService.descargarArchivo(jsonData, data.licenceKey)))
+    .subscribe({
+      next: (response: unknown) => {
+        console.log('✅ Enviado correctamente:', response);
+      },
+      error: (error: unknown) => {
+        console.error('❌ Error al enviar JSON:', error);
+      }
+    });
+}
+
 
   cargarParametroFacturaPorId(id: number): void {
     this.parametrosFacturaService.getById(id).subscribe({

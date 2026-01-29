@@ -29,6 +29,7 @@ import { ProductoDetalleComponent } from '../pages/validacion/validacion-verifie
 import { ExploradorComponent } from './explorador/explorador.component';
 import { GerenciaComponent } from './gerencia/gerencia.component';
 import { GrupoProductoListaComponent } from './grupo-producto-lista/grupo-producto-lista.component';
+import { GerenciaEmpresasComponent } from './gerencia-empresas/gerencia-empresas.component';
 
 const routes: Routes = [
   {
@@ -99,6 +100,10 @@ const routes: Routes = [
             path: 'gerencia', 
             component: GerenciaComponent,
             canActivate: [PermissionGuard]  // 🔒 GUARD APLICADO
+          },
+          { 
+            path: 'gerenciate', 
+            component: GerenciaEmpresasComponent
           }
         ]
       },

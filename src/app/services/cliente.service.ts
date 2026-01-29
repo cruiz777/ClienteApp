@@ -114,6 +114,18 @@ export interface ClienteFiltro {
   rucBusqueda?: string;
   prefijoBusqueda?: string;
 }
+export interface TipoClienteConteoResponse {
+  idTipoCliente: number | null;   // backend: long?
+  descripcion: string;
+  cantidad: number;
+}
+
+export interface ResumenTipoClienteAnioMesResponse {
+  anio: number;
+  mes: number;
+  acumuladoAnio: TipoClienteConteoResponse[];
+  acumuladoMes: TipoClienteConteoResponse[];
+}
 
 
 @Injectable({
@@ -214,5 +226,11 @@ getIdCodContableByPersona(idPersona: number): Observable<number> {
       })
     );
 }
+
+getResumenTipoClienteAnioMes(anio: number, mes: number): Observable<ApiResponse<ResumenTipoClienteAnioMesResponse>> {
+  const url = `${this.apiBaseUrl}/Clientes/resumen-tipo-cliente/${anio}/${mes}`;
+  return this.http.get<ApiResponse<ResumenTipoClienteAnioMesResponse>>(url);
+}
+
 
 }

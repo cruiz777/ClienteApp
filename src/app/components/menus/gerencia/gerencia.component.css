@@ -1,62 +1,48 @@
-.contenedor-gerencia {
-  max-width: 800px;
-  margin: 40px auto;
-  padding: 24px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-}
-
-.encabezado {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.encabezado h2 {
-  font-size: 22px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-}
-
 .filtros {
   display: flex;
-  gap: 16px;
+  gap: 12px;
   align-items: center;
   flex-wrap: wrap;
 }
 
-.campo-anio {
-  width: 150px;
+.campo-anio { width: 140px; }
+.campo-mes  { width: 180px; }
+
+.panel-tablas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.card-tabla {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid #e6e6e6;
+}
+
+.titulo-tabla {
+  font-weight: 600;
+  margin-bottom: 10px;
 }
 
 .tabla-gtin {
   width: 100%;
   border-collapse: collapse;
-  margin-top: 24px;
 }
 
-.tabla-gtin th,
-.tabla-gtin td {
-  border: 1px solid #ddd;
-  padding: 10px;
-  text-align: center;
-}
-
-.tabla-gtin th {
-  background-color: #f1f1f1;
-  font-weight: bold;
+.tabla-gtin th, .tabla-gtin td {
+  border-bottom: 1px solid #eee;
+  padding: 8px;
 }
 
 .mensaje-vacio {
-  color: #888;
-  margin-top: 24px;
-  font-style: italic;
+  padding: 10px;
+  color: #666;
 }
 
-.mensaje-estado {
-  margin-top: 16px;
-  color: #4caf50;
+/* Responsive: en móvil se apilan */
+@media (max-width: 900px) {
+  .panel-tablas { grid-template-columns: 1fr; }
 }

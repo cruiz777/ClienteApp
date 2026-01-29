@@ -31,13 +31,23 @@ CONTENEDOR GENERAL
   .content-collapsed {
   margin-left: 60px !important;
   }
+/* Footer derecho con nombre + avatar */
 .footer-right {
   flex: 1;
-  display: flex; /* ← necesario para que justify-content funcione */
+  display: flex;
   justify-content: flex-end;
-  text-align: right;
+  align-items: center;
+  gap: 10px; /* ← REDUCIR de 12px a 10px */
+  padding-right: 10px; /* ← AGREGAR padding derecho */
 }
 
+/* Estilo del nombre de usuario en footer */
+.user-name-footer {
+  font-weight: 700;
+  font-size: clamp(14px, 1.1vw, 20px); /* ← REDUCIR tamaño máximo */
+  color: #333;
+  white-space: nowrap;
+}
 /* Separadores opacos para los subítems del menú lateral */
 mat-expansion-panel a[mat-list-item] {
   border-bottom: 1px solid #e0e0e0;

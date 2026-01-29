@@ -80,6 +80,7 @@ export interface ProductoCompletoCompleteResponse {
 
 export interface ProductosPorClienteParams {
   clienteCodigo: number; // OBLIGATORIO
+  prefijo?: string;  
   codigoProducto?: string;
   fechaDesde?: string; // formato: YYYY-MM-DD
   fechaHasta?: string; // formato: YYYY-MM-DD

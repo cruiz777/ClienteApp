@@ -493,7 +493,7 @@ export class CuentaxcobrarComponent implements OnInit {
     this.cargarCliente();
 
     // cliente que venga de otra pantalla
-    //this.cargarClienteInv();
+    this.cargarClienteInv();
 
     // Autocomplete de formas de pago
     const metodoCtrl = this.formPago.get('metodoPago') as FormControl;
@@ -534,7 +534,11 @@ export class CuentaxcobrarComponent implements OnInit {
       })
     );
   }
-
+  
+  ngOnDestroy(): void {
+    // Limpiar el cliente del servicio y localStorage cuando se destruye el componente
+    this.clienteSeleccionadoService.limpiar();
+  }
   // ===== Utils =====
   usd(v: number) {
     if (v == null) return '';
@@ -641,6 +645,9 @@ export class CuentaxcobrarComponent implements OnInit {
     this.codcliO = 0;
     this.clientesOrigenFiltrados = [];
 
+    this.unlockCliente(); // Desbloquear el campo de cliente
+    this.clienteBloqueado = false;
+
     this.clienteOrigenControl.reset(null);
     this.clienteOrigenControl.markAsPristine();
     this.clienteOrigenControl.markAsUntouched();
@@ -653,9 +660,19 @@ export class CuentaxcobrarComponent implements OnInit {
       observacion: ''
     }, { emitEvent: false });
 
+    this.unlockValorAPagar(); // Por si acaso estaba bloqueado
+    this.valorAPagarBloqueado = false;
+
     // 3) Otros flags/mensajes
     this.errorMessage = '';
     this.opcionesImpresionVisibles = false;
+
+    this.pagosEditadosMap.clear();
+    this.invalidRows.clear();
+    this.gridTouched = false;
+    
+    //Limpiar el cliente seleccionado
+    this.clienteSeleccionadoService.limpiar();
   }
 
   onNext(): void {
@@ -1321,11 +1338,15 @@ export class CuentaxcobrarComponent implements OnInit {
     if (cliente) {
       this.clienteSeleccionado = cliente;
       this.applyClienteSeleccion(cliente);
+      
+      // *** LIMPIAR INMEDIATAMENTE DESPUÉS DE USARLO ***
+      // Esto evita que se vuelva a cargar si se refresca la pagina o se vuelve a entrar
+      this.clienteSeleccionadoService.limpiar();
     } else {
       this.unlockCliente();
     }
   }
-
+    
   private getCodigoCliente(c: any): number {
     return Number(
       c?.clientes_codigo ??

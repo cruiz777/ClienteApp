@@ -155,7 +155,7 @@
             <a mat-list-item [routerLink]="['/cg-3000', 'balance']">
               <span *ngIf="isExpanded" class="menu-text">Balance de comprobación</span>
             </a>
-            <a mat-list-item routerLink="/cg-3000/inicio-cg">
+            <a mat-list-item [routerLink]="['/cg-3000', 'mayor']">
               <span *ngIf="isExpanded" class="menu-text">Mayor de Cuentas</span>
             </a>
             <a mat-list-item routerLink="/cg-3000/inicio-cg">
@@ -177,7 +177,7 @@
             <a mat-list-item routerLink="/cg-3000/inicio-cg">
               <span *ngIf="isExpanded" class="menu-text">Reestructurar Modelos</span>
             </a>
-            <a mat-list-item routerLink="/cg-3000/inicio-cg">
+            <a mat-list-item routerLink="/cg-3000/estado-financiero">
               <span *ngIf="isExpanded" class="menu-text">Estado Financiero</span>
             </a>
           </mat-expansion-panel>
@@ -324,15 +324,9 @@
         <span class="footer-phone">Telf: 099 970 0288 / 022 464 951</span>
 
       </div>
-      <div style="
-    flex: 1;
-    display: flex;
-    justify-content: flex-end;
-    text-align: right;
-    font-weight: 700;
-    font-size: clamp(14px, 1.1vw, 24px);
-  ">
-        {{ usuarioActual?.nombre_usuario }}
+      <div class="footer-right">
+        <app-user-avatar position="footer" [showUserName]="false"></app-user-avatar>
+        <span class="user-name-footer">{{ usuarioActual?.nombre_usuario }}</span>      
       </div>
 
     </footer>

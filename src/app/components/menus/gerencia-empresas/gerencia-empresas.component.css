@@ -1,0 +1,62 @@
+.filtros {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.campo-anio { width: 140px; }
+.campo-mes  { width: 180px; }
+
+.card-tabla {
+  background: #fff;
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid #e6e6e6;
+  margin-top: 12px;
+}
+
+.titulo-tabla {
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.tabla-gtin {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.tabla-gtin th, .tabla-gtin td {
+  border-bottom: 1px solid #eee;
+  padding: 8px;
+}
+
+.tabla-gtin .num {
+  text-align: right;
+}
+
+.mensaje-vacio {
+  padding: 10px;
+  color: #666;
+}
+.tabla-gtin{
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed; /* clave para que respete anchos */
+}
+
+.col-id { width: 90px; }
+.col-desc { width: auto; }
+.col-num { width: 170px; } /* ajusta a tu gusto */
+
+.tabla-gtin th,
+.tabla-gtin td{
+  padding: 8px 10px;
+  vertical-align: middle;
+}
+
+.tabla-gtin th.num,
+.tabla-gtin td.num{
+  text-align: right;       /* que el título y valor “miren” igual */
+  white-space: nowrap;     /* evita saltos raros */
+}

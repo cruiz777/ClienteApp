@@ -18,7 +18,7 @@ import { ReenvioDocsService } from 'src/app/services/reenvio-docs.service';
 import { MessageBoxData } from 'src/app/util/messages/custom-message-box.component';
 
 
-type TipoDocumento = 'FACTURA' | 'NC' | 'ND' | 'RETENCION';
+type TipoDocumento = 'FACTURA' | 'NC' | 'ND';
 
 @Component({
   selector: 'app-reenvio-fac',
@@ -171,11 +171,13 @@ export class ReenvioFacComponent implements OnInit {
       this.loading = true;
       this.gridApi?.showLoadingOverlay();
 
+      const fechaDesde = `${desde} 00:00:00`;  // Inicio del día
+      const fechaHasta = `${hasta} 23:59:59`;
       const resp = await firstValueFrom(
         this.reenvioDocsService.getDocumentosElectronicos(
           tipo,
-          desde,
-          hasta,
+          fechaDesde,
+          fechaHasta,
           numeroCaja || null,
           1,
           1000
@@ -342,8 +344,8 @@ export class ReenvioFacComponent implements OnInit {
       case 'ND':
         throw new Error('Generación XML para ND no implementada');
 
-      case 'RETENCION':
-        throw new Error('Generación XML para Retenciones no implementada');
+      // case 'RETENCION':
+      //   throw new Error('Generación XML para Retenciones no implementada');
 
       default:
         throw new Error(`Tipo de documento '${tipoDocumento}' no válido`);

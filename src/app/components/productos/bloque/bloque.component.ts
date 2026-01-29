@@ -41,9 +41,66 @@ export class BloqueComponent implements OnInit {
   @ViewChild('pasteCatcher') pasteCatcher!: ElementRef<HTMLTextAreaElement>;
 
 
+defaultColDef: ColDef = {
+  editable: true,
+  resizable: true,
+  sortable: false,
+  flex: 1,
+  headerClass: 'header-uv',
 
-  defaultColDef: ColDef = { editable: true, resizable: true, sortable: false, flex: 1 ,
-  headerClass: 'header-uv' };
+  suppressKeyboardEvent: (params) => {
+    const e = params.event as KeyboardEvent;
+    if (!e) return false;
+
+    // Solo aplicar cuando la celda está en edición
+    if (!params.editing) return false;
+
+    const key = e.key;
+    const isArrow =
+      key === 'ArrowLeft' || key === 'ArrowRight' || key === 'ArrowUp' || key === 'ArrowDown';
+
+    if (!isArrow) return false;
+
+    e.preventDefault();
+
+    const api = params.api;
+    const cols = api.getAllDisplayedColumns();
+    const currentCol = params.column;
+    const colIndex = cols.indexOf(currentCol);
+
+    let nextRow = params.node.rowIndex ?? 0;
+    let nextColIndex = colIndex;
+
+    switch (key) {
+      case 'ArrowLeft':
+        nextColIndex = Math.max(0, colIndex - 1);
+        break;
+      case 'ArrowRight':
+        nextColIndex = Math.min(cols.length - 1, colIndex + 1);
+        break;
+      case 'ArrowUp':
+        nextRow = Math.max(0, nextRow - 1);
+        break;
+      case 'ArrowDown':
+        nextRow = Math.min(api.getDisplayedRowCount() - 1, nextRow + 1);
+        break;
+    }
+
+    const nextCol = cols[nextColIndex];
+    if (!nextCol) return true;
+
+    // Guardar lo editado y moverse (sin entrar en edición en destino)
+    api.stopEditing();
+    api.setFocusedCell(nextRow, nextCol);
+    api.ensureIndexVisible(nextRow);
+
+    return true;
+  }
+};
+
+
+
+
   rowData: any[] = [];
   columnDefs: ColDef[] = [];
 
@@ -61,8 +118,8 @@ export class BloqueComponent implements OnInit {
 
   unidadesDisponibles: string[] = [];
   mapaUnidades: { [unidad: string]: string } = {};  // código → descripción
-
-  gcpBricksDisponibles: { codigo: string, descripcion: string }[] = [];
+  factoresValidando: Set<number> = new Set();
+  gcpBricksDisponibles: { codigo: string, descripcion: string, brick: string, id_grupo_producto: number }[] = [];
   clienteE!: ClienteIndividual;
   gruposProducto: GrupoProducto[] = [];
   id_grupo_producto: number = 0;
@@ -85,7 +142,7 @@ export class BloqueComponent implements OnInit {
 
 gridOptions: GridOptions = {
   suppressMovableColumns: true,
-  onCellValueChanged: this.onCellValueChanged.bind(this),
+  onCellValueChanged: this.onCellValueChanged.bind(this),  
 
   // 👇 forzamos event: any para evitar problemas de tipos con AG Grid
   onCellKeyDown: (event: any) => {
@@ -186,6 +243,8 @@ gridOptions: GridOptions = {
 
   descripcionesRepetidas = new Set<string>();
   repetidosDetectados = false;
+  gtinsRepetidos = new Set<string>(); 
+  mensajeGtinsRepetidos: string = '';
   tipoGtin: string = 'GTIN-13';
   factorDeshabilitado: boolean = true; // o false, según tu lógica
   idsProductosCreados: number[] = [];
@@ -268,7 +327,7 @@ gridOptions: GridOptions = {
       {
         field: 'descripcion',
         headerName: 'Descripción',
-        editable: true,
+        editable: () => !this.formUV.get('checkExiste')?.value,
         width: 300,
         minWidth: 300,
         cellStyle: this.estiloDescripcionVacia,
@@ -293,14 +352,22 @@ gridOptions: GridOptions = {
         cellEditor: 'gcpBrickAutocompleteEditor',
         cellEditorPopup: true, // ✅ Este es el más importante
         cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100, resizable: true,
+        valueFormatter: (params: any) => {
+          const codigo = params.value;
+          if (!codigo) return '';
+          
+          // Opcional: mostrar "codigo - descripcion" para mejor UX
+          const opcion = this.gcpBricksDisponibles.find(g => g.codigo === codigo);
+          return opcion ? `${opcion.codigo} - ${opcion.descripcion}` : codigo;
+        }
 
       },
-      { field: 'marca', headerName: 'Marca', editable: true, cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100, resizable: true },
+      { field: 'marca', headerName: 'Marca', editable: () => !this.formUV.get('checkExiste')?.value, cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100, resizable: true },
       { field: 'contenidoNeto', headerName: 'C.Neto', editable: true, cellStyle: this.estiloDescripcionVacia, valueParser: this.validarNumeroConUnPunto, width: 90, minWidth: 90 },
       {
         field: 'contenidoUM',
         headerName: 'UM',
-        editable: true,
+        editable: () => !this.formUV.get('checkExiste')?.value,
         cellEditor: 'agSelectCellEditor',
         cellEditorParams: () => ({
           values: this.unidadesDisponibles
@@ -311,14 +378,14 @@ gridOptions: GridOptions = {
       {
         field: 'gcpBrick',
         headerName: 'GCP Brick',
-        editable: true,
+        editable: () => !this.formUV.get('checkExiste')?.value,
         cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100
 
       }
 
 
       ,
-      { field: 'pais', headerName: 'País', cellStyle: this.estiloDescripcionVacia, width: 70, minWidth: 70 },
+      { field: 'pais', headerName: 'País', editable: () => !this.formUV.get('checkExiste')?.value, cellStyle: this.estiloDescripcionVacia, width: 70, minWidth: 70 },
       {
         field: 'activo',
         headerName: 'GTIN 14',
@@ -334,7 +401,17 @@ gridOptions: GridOptions = {
         minWidth: 80,
         colId: 'factor',
         editable: true,
-        cellStyle: this.estiloDescripcionVacia,
+        cellStyle: (params: any) => {
+          // Error de factor duplicado
+          if (params.data?._errorFactor) {
+            return { backgroundColor: '#ffcccc', border: '2px solid red' };
+          }
+          // Campo vacío
+          if (!params.value || params.value.toString().trim() === '') {
+            return { backgroundColor: '#ffffcc' }; // amarillo claro
+          }
+          return { backgroundColor: '#ffffff' };
+        },
         cellEditor: 'agTextCellEditor',
         valueParser: (params: any) => {
           const val = params.newValue.trim();
@@ -378,7 +455,45 @@ gridOptions: GridOptions = {
     });
   }
 
+@HostListener('copy', ['$event'])
+onCopyFromGrid(event: ClipboardEvent): void {
+  if (!this.gridApi) return;
 
+  const focus = this.gridApi.getFocusedCell();
+  if (!focus) return;
+
+  const rowIndex = focus.rowIndex ?? -1;
+  const field = focus.column.getColDef().field ?? null;
+
+  if (rowIndex < 0 || !field || rowIndex >= this.rowData.length) return;
+
+  const row = this.rowData[rowIndex];
+  const valorReal = row[field];
+
+  //CAMPOS que si permite hacer copy/paste
+  
+  const camposEspeciales = ['categoria', 'contenidoUM', 'factor', 'indicador'];
+  
+  if (camposEspeciales.includes(field)) {
+    if (valorReal !== null && valorReal !== undefined) {
+      event.preventDefault();
+      
+      let valorACopiar: string;
+      
+      if (field === 'categoria') {
+        // Para categoria, copiar solo el código
+        valorACopiar = valorReal.toString().split(' - ')[0].trim();
+      } else {
+        // Para factor, indicador, contenidoUM: copiar tal cual
+        valorACopiar = valorReal.toString();
+      }
+      
+      event.clipboardData?.setData('text/plain', valorACopiar);
+      console.log(`📋 Copiado valor real de ${field}:`, valorACopiar);
+    }
+  }
+}
+//
 @HostListener('paste', ['$event'])
 onPasteExcelToGrid(event: ClipboardEvent): void {
   // 1️⃣ Si no tenemos gridApi todavía, salimos
@@ -411,6 +526,7 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
   }
 
   event.preventDefault();
+  event.stopPropagation();
 
   const rows: string[] = text
     .split(/\r?\n/)
@@ -447,7 +563,7 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
   }
 
   // 🔹 columnas que permiten pegado
-  const allowedPasteFields: string[] = [
+  let allowedPasteFields: string[] = [
     'gtinUv',
     'descripcion',
     'categoria',
@@ -458,7 +574,9 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
     'factor',
     'indicador'
   ];
-
+  if (this.formUV.get('checkExiste')?.value) {
+    allowedPasteFields = ['gtinUv', 'factor', 'indicador'];
+  }
   const pasteableFields: string[] = this.columnDefs
     .filter(col => !!col.field && allowedPasteFields.includes(col.field as string))
     .map(col => col.field!) as string[];
@@ -490,9 +608,9 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
       if (colIndex >= pasteableFields.length) {
         return;
       }
-
+      
       const field: string = pasteableFields[colIndex];
-      const raw = (cellValue ?? '').trim();
+      const raw = (cellValue ?? '').trim();      
 
       switch (field) {
         case 'contenidoNeto': {
@@ -514,18 +632,29 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
           break;
 
         case 'contenidoUM':
-          // Solo unidades que EXISTEN en el combo
+          // ✅ Solo unidades válidas
           if (unidadesValidas.includes(raw)) {
             row[field] = raw;
+            console.log(`✅ UM pegada en fila ${rowIndex + 1}: ${raw}`);
+          } else {
+            console.warn(`⚠️ UM "${raw}" no válida en fila ${rowIndex + 1}, ignorada`);
           }
           break;
 
-        case 'categoria':
-          // Solo categorías que EXISTEN en el combo (código)
-          if (categoriasValidas.includes(raw)) {
-            row[field] = raw;
+        case 'categoria': {
+          const codigoLimpio = raw.split(' - ')[0].trim();
+          
+          if (categoriasValidas.includes(codigoLimpio)) {
+            const rowNode = this.gridApi.getRowNode(rowIndex.toString());
+            if (rowNode) {
+              rowNode.setDataValue('categoria', codigoLimpio);
+            }
+            console.log(`✅ Categoría pegada en fila ${rowIndex + 1}: ${codigoLimpio}`);
+          } else {
+            console.warn(`⚠️ Categoría "${raw}" no válida en fila ${rowIndex + 1}, ignorada`);
           }
           break;
+        }
 
         default:
           // Otras columnas se pegan tal cual
@@ -538,38 +667,72 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
   this.rowData = updated;
   this.gridApi.refreshCells({ force: true });
   this.gridApi.redrawRows();
+  console.log('✅ Pegado completado');
+  // Validar GTINs repetidos si checkExiste está marcado
+  if (this.formUV.get('checkExiste')?.value) {
+    setTimeout(() => {  // ← pequeño delay para que se actualice el grid primero
+      const sinRepetidos = this.validarGtinUvRepetido();
+      
+      if (!sinRepetidos) {
+        this.botonGenerarDeshabilitado = true;
+        
+        this.dialog.open(CustomMessageBoxComponent, {
+          width: '500px',
+          data: {
+            title: '⚠️ GTINs Repetidos Detectados',
+            message: this.mensajeGtinsRepetidos,
+            type: 'error',
+            confirmText: 'Entendido'
+          }
+        });
+      } else {
+        this.botonGenerarDeshabilitado = false;
+      }
+    }, 100);
+        setTimeout(() => {
+      this.validarTodosLosFactoresPegados();
+    }, 300);
+  }
 }
+//
 
+async generarFilas(): Promise<void> {
 
-  async generarFilas(): Promise<void> {
+  if (!this.cantidadFilas || this.cantidadFilas <= 0) return;
 
-    if (!this.cantidadFilas || this.cantidadFilas <= 0) return;
-    // const cantidad = Number(this.formUV.get('cantidadFilas')?.value) || 0;
-     const idSeleccionado = this.formUV.value.gcp;
-    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
-    const prefijo = objeto?.codpre || '';
-    debugger
-  const ok = await firstValueFrom(this.validarCantidadPorPrefijo(prefijo, this.cantidadFilas));
-  if (!ok) return
-    const nuevasFilas = [];
-    for (let i = 0; i < this.cantidadFilas; i++) {
-      nuevasFilas.push({
-        gtinUv: '',
-        descripcion: '',
-        categoria: this.codigoGrupo,
-        marca: '',
-        contenidoNeto: '0',
-        contenidoUM: 'g',
-        gcpBrick: this.brick,
-        pais: 'ECUADOR',
-        activo: false,
-        grupo: this.id_grupo_producto,
-      });
-    }
+  const checkExiste = !!this.formUV.get('checkExiste')?.value;
 
-    this.rowData = nuevasFilas;
+  // Prefijo seleccionado
+  const idSeleccionado = this.formUV.value.gcp;
+  const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+  const prefijo = (objeto?.codpre || '').toString().trim();
+
+  // ✅ SOLO validar cuando el checkbox esté DESMARCADO
+  if (!checkExiste) {
+    const ok = await firstValueFrom(
+      this.validarCantidadPorPrefijo(prefijo, this.cantidadFilas)
+    );
+    if (!ok) return;
   }
 
+  const nuevasFilas = [];
+  for (let i = 0; i < this.cantidadFilas; i++) {
+    nuevasFilas.push({
+      gtinUv: '',
+      descripcion: '',
+      categoria: this.codigoGrupo,
+      marca: '',
+      contenidoNeto: '0',
+      contenidoUM: 'g',
+      gcpBrick: this.brick,
+      pais: 'ECUADOR',
+      activo: false,
+      grupo: this.id_grupo_producto,
+    });
+  }
+
+  this.rowData = nuevasFilas;
+}
 
   limpiarTabla(): void {
     this.rowData = [];
@@ -593,6 +756,8 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
     this.cargarUnidades();
     this.cargarGrupos();
     this.mensajeRepetidos = '';
+    this.gtinsRepetidos.clear();          // ⬅️ AGREGAR
+    this.mensajeGtinsRepetidos = '';
   }
 
 
@@ -820,6 +985,7 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
     });
   }
   recupera13() {
+    debugger
     const soloCopiarGtin = this.tipoGtin === 'GTIN-13' && this.formUV.get('checkExiste')?.value;
     if (!soloCopiarGtin) return;
 
@@ -833,12 +999,15 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
 
       const obs$ = this.productoService.buscarPorCodbar(codbar).pipe(
         map((producto) => {
+          console.log('📦 Producto recibido del backend:', producto);
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto = fila.contenidoNeto?.toString().trim() || producto.contenido || '';
-            fila.contenidoUM = fila.contenidoUM?.trim() || producto.unidad || 'g';
-            fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
+            fila.contenidoNeto =  producto.contenido || '';
+            fila.contenidoUM = producto.unidad || 'g';
+            fila.categoria = this.formUV.get('checkExiste')?.value 
+              ? (producto.codigoproducto || fila.categoria?.trim() || '')
+              : (fila.categoria?.trim() || producto.codigoproducto || '');
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
             fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
             fila.grupo = fila.grupo || (isNaN(Number(producto.idgrupoproducto)) ? 0 : Number(producto.idgrupoproducto));
@@ -882,10 +1051,10 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
         !fila.descripcion || !fila.marca || !fila.contenidoNeto || !fila.categoria
       );
 
-      if (camposIncompletos) {
-        this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
-        return;
-      }
+      // if (camposIncompletos) {
+      //   this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
+      //   return;
+      // }
 
       const msg = this.modoEdicion ? 'actualizados' : 'generar';
 
@@ -1011,9 +1180,11 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto = fila.contenidoNeto?.toString().trim() || producto.contenido || '';
-            fila.contenidoUM = fila.contenidoUM?.trim() || producto.unidad || 'g';
-            fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
+            fila.contenidoNeto =  producto.contenido || '';
+            fila.contenidoUM = producto.unidad || 'g';
+            fila.categoria = this.formUV.get('checkExiste')?.value 
+              ? (producto.codigoproducto || fila.categoria?.trim() || '')
+              : (fila.categoria?.trim() || producto.codigoproducto || '');
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
             fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
             fila.grupo = fila.grupo || (isNaN(Number(producto.idgrupoproducto)) ? 0 : Number(producto.idgrupoproducto));
@@ -1057,10 +1228,10 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
         !fila.descripcion || !fila.marca || !fila.contenidoNeto || !fila.categoria
       );
 
-      if (camposIncompletos) {
-        this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
-        return;
-      }
+      // if (camposIncompletos) {
+      //   this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
+      //   return;
+      // }
 
       const msg = this.modoEdicion ? 'actualizados' : 'generar';
 
@@ -1114,9 +1285,11 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto = fila.contenidoNeto?.toString().trim() || producto.contenido || '';
-            fila.contenidoUM = fila.contenidoUM?.trim() || producto.unidad || 'g';
-            fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
+            fila.contenidoNeto =  producto.contenido || '';
+            fila.contenidoUM = producto.unidad || 'g';
+            fila.categoria = this.formUV.get('checkExiste')?.value 
+                ? (producto.codigoproducto || fila.categoria?.trim() || '')
+                : (fila.categoria?.trim() || producto.codigoproducto || '');
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
             fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
             fila.grupo = fila.grupo || (isNaN(Number(producto.idgrupoproducto)) ? 0 : Number(producto.idgrupoproducto));
@@ -1159,10 +1332,10 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
         !fila.descripcion || !fila.marca || !fila.contenidoNeto || !fila.categoria
       );
 
-      if (camposIncompletos) {
-        this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
-        return;
-      }
+      // if (camposIncompletos) {
+      //   this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
+      //   return;
+      // }
 
       const msg = this.modoEdicion ? 'actualizados' : 'generar';
 
@@ -1245,6 +1418,26 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
 
     this.rowData = [...this.rowData]; // Refrescar AG-Grid
     this.textoPegado = '';
+    // Validar si checkExiste está marcado
+    if (this.formUV.get('checkExiste')?.value) {
+      const sinRepetidos = this.validarGtinUvRepetido();
+      
+      if (!sinRepetidos) {
+        this.botonGenerarDeshabilitado = true;
+        
+        this.dialog.open(CustomMessageBoxComponent, {
+          width: '500px',
+          data: {
+            title: '⚠️ GTINs Repetidos Detectados',
+            message: this.mensajeGtinsRepetidos,
+            type: 'error',
+            confirmText: 'Entendido'
+          }
+        });
+      } else {
+        this.botonGenerarDeshabilitado = false;
+      }
+    }
   }
 
 
@@ -1269,6 +1462,9 @@ onPasteExcelToGrid(event: ClipboardEvent): void {
     this.rowData = [...this.rowData]; // Refrescar Ag-Grid
     this.gridApi.refreshCells({ force: true, columns: ['factor'] });
     this.textoPegadoF = '';
+    setTimeout(() => {
+      this.validarTodosLosFactoresPegados();
+    }, 300);
   }
 
 /** Lee el prefijo (codpre) según el id seleccionado en el form */
@@ -1324,7 +1520,7 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
   }
 
   if (this.bandera === 2) {            // UPC-12 (sin 786)
-    if (len < 5 || len > 7) {
+    if (len < 5 || len > 8) {
       this.mostrarAlerta('⚠️ Para UPC el prefijo debe tener entre 5 y 7 dígitos.', 'Error');
       return of(false);
     }
@@ -1530,12 +1726,35 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
     if ((field === 'descripcion' || field === 'marca') && typeof newValue === 'string') {
       event.data[field] = newValue.toUpperCase();
     }
-
+    // ✅ Cuando cambia categoria, actualizar gcpBrick y grupo
+    if (field === 'categoria' && newValue) {
+      const opcion = this.gcpBricksDisponibles.find(g => g.codigo === newValue);
+      if (opcion) {
+        event.data.gcpBrick = opcion.brick;
+        event.data.grupo = opcion.id_grupo_producto;
+        this.gridApi?.refreshCells({ rowNodes: [event.node], columns: ['gcpBrick', 'grupo'], force: true });
+      }
+    }
     // ✅ Log especial para 'activo'
     if (field === 'activo') {
       console.log(`Checkbox cambiado en fila ${event.rowIndex}:`, newValue);
     }
-
+    if (field === 'factor') {
+      const factor = (newValue ?? '').toString().trim();
+      
+      if (factor && /^\d+$/.test(factor)) {
+        // Validar después de 500ms (debounce manual)
+        clearTimeout((event.node as any)._factorTimeout);
+        (event.node as any)._factorTimeout = setTimeout(() => {
+          this.verificarFactorExistente(event.data, event.node);
+        }, 500);
+      } else if (!factor) {
+        // Si borró el factor, limpiar error
+        event.data._errorFactor = false;
+        this.verificarBloqueoGenerar14();
+        this.gridApi?.refreshCells({ rowNodes: [event.node], columns: ['factor'] });
+      }
+    }
     // ✅ Limpiar errores si se corrige
     if (event.data[`_error_${field}`]) {
       if (newValue !== null && newValue !== undefined && newValue.toString().trim() !== '') {
@@ -1545,6 +1764,11 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
 
     // ✅ Refrescar celda visual
     this.gridApi?.refreshCells({ rowNodes: [event.node], columns: [field] });
+    // Si modificó gtinUv y checkExiste está marcado, validar repetidos
+    if (field === 'gtinUv' && this.formUV.get('checkExiste')?.value) {
+      const sinRepetidos = this.validarGtinUvRepetido();
+      this.botonGenerarDeshabilitado = !sinRepetidos;
+    }
   }
 
 
@@ -1715,7 +1939,11 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
       this.mostrarAlerta('⚠️ Debe seleccionar al menos un producto (checkbox).', 'Error');
       return;
     }
-
+    const hayErroresFactor = this.rowData.some(f => f.activo && f._errorFactor === true);
+    if (hayErroresFactor) {
+      this.mostrarAlerta('❌ Corrija los factores duplicados antes de continuar.', 'Error');
+      return;
+    }
     if (!this.verificarFactor()) return;
 
     const filasMarcadas = this.rowData.filter(f => f.activo);
@@ -1935,7 +2163,7 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
           IdSector: 2,
           Contenido: (fila.contenidoNeto ?? '').toString(),
           Um: fila.contenidoUM || '',
-          Brick: fila.brick || '',
+          Brick: fila.gcpBrick || '',
           Pais: fila.pais || '',
           Url: '',
           Pum: '',
@@ -2048,7 +2276,41 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
     return repetidas.size === 0;
   }
 
+  validarGtinUvRepetido(): boolean {
+    const contador: Record<string, number> = {};
+    const listaCodigos: string[] = [];
 
+    this.gridApi.forEachNode((node) => {
+      const gtin = (node.data?.gtinUv || '').toString().trim();
+      if (!gtin) return;
+
+      contador[gtin] = (contador[gtin] || 0) + 1;
+    });
+
+    const repetidos = new Set<string>();
+
+    Object.keys(contador).forEach(gtin => {
+      if (contador[gtin] > 1) {
+        repetidos.add(gtin);
+        listaCodigos.push(`${gtin} (${contador[gtin]} veces)`);
+      }
+    });
+
+    this.gtinsRepetidos = repetidos;
+    this.mensajeGtinsRepetidos = listaCodigos.length > 0 
+      ? `⚠️ GTINs repetidos:\n${listaCodigos.join('\n')}` 
+      : '';
+
+    // Marcar visualmente las filas repetidas
+    this.gridApi.forEachNode((node) => {
+      const gtin = (node.data?.gtinUv || '').toString().trim();
+      node.data._duplicadoGtinUv = repetidos.has(gtin);
+    });
+
+    this.gridApi.refreshCells({ force: true, columns: ['gtinUv'] });
+
+    return repetidos.size === 0;
+  }
 
   verificarFactor(): boolean {
     let todoBien = true;
@@ -2103,25 +2365,33 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
 
 
   generarDescripcionCompuesta(): void {
-    this.gridApi.forEachNode((node) => {
-      const data = node.data;
-      if (data.activo !== true) return; // solo los marcados
+  this.gridApi.forEachNode((node) => {
+    const data = node.data;
+    if (data.activo !== true) return; // solo los marcados
 
-      const descripcion = (data.descripcion || '').trim();
-      const marca = (data.marca || '').trim();
-      const contenido = (data.contenidoNeto || '').toString().trim();
-      const unidad = (data.contenidoUM || '').trim();
-      const factor = (data.factor || '').toString().trim();
+    const descripcion = (data.descripcion ?? '').toString().trim();
+    const marca = (data.marca ?? '').toString().trim();
+    const contenido = (data.contenidoNeto ?? '').toString().trim();
+    const factor = (data.factor ?? '').toString().trim();
 
-      const t = this.formUV.get('t')?.value || '';
-      const u = this.formUV.get('u')?.value || '';
+    const t = (this.formUV.get('t')?.value ?? '').toString().trim();
+    const u = (this.formUV.get('u')?.value ?? '').toString().trim();
 
-      const texto = `${descripcion} ${marca} ${contenido} ${unidad} ${t} ${factor} ${u}`;
+    // Si marca y contenido están en blanco, unidad también debe ir en blanco
+    const unidad =
+      (marca === '' && contenido === '')
+        ? ''
+        : (data.contenidoUM ?? '').toString().trim();
 
-      node.setDataValue('descripciong', texto);
-      this.gridApi.refreshCells({ rowNodes: [node], columns: ['descripciong'], force: true });
-    });
-  }
+    const texto = `${descripcion} ${marca} ${contenido} ${unidad} ${t} ${factor} ${u}`
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    node.setDataValue('descripciong', texto);
+    this.gridApi.refreshCells({ rowNodes: [node], columns: ['descripciong'], force: true });
+  });
+}
+
 
   generarGtin14(): void {
     this.gridApi.forEachNode((node) => {
@@ -2460,9 +2730,11 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto = fila.contenidoNeto?.toString().trim() || producto.contenido || '';
-            fila.contenidoUM = fila.contenidoUM?.trim() || producto.unidad || 'g';
-            fila.categoria = fila.categoria?.trim() || producto.codigoproducto || '';
+            fila.contenidoNeto =  producto.contenido || '';
+            fila.contenidoUM = producto.unidad || 'g';
+            fila.categoria = this.formUV.get('checkExiste')?.value 
+              ? (producto.codigoproducto || fila.categoria?.trim() || '')
+              : (fila.categoria?.trim() || producto.codigoproducto || '');
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
             fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
             fila.grupo = fila.grupo || (isNaN(Number(producto.idgrupoproducto)) ? 0 : Number(producto.idgrupoproducto));
@@ -2506,10 +2778,10 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
         !fila.descripcion || !fila.marca || !fila.contenidoNeto || !fila.categoria
       );
 
-      if (camposIncompletos) {
-        this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
-        return;
-      }
+      // if (camposIncompletos) {
+      //   this.mostrarAlerta('⚠️ Algunos productos tienen campos vacíos. Revise las filas antes de continuar.', 'Advertencia');
+      //   return;
+      // }
 
       const msg = this.modoEdicion ? 'actualizados' : 'generar';
 
@@ -2680,5 +2952,141 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
   this.gridApi.stopEditing();                 // guarda lo que está editando
   this.gridApi.refreshCells({ force: true }); // repinta estilos
 }
+  private verificarFactorExistente(fila: any, rowNode: any): void {
+    const factorStr = (fila.factor ?? '').toString().trim();
+    const factorNum = Number(factorStr);
+    const codbarUv = (fila.gtinUv ?? '').toString().trim();
 
+    // Validaciones previas
+    if (!factorStr || Number.isNaN(factorNum) || !codbarUv) {
+      fila._errorFactor = false;
+      this.verificarBloqueoGenerar14();
+      return;
+    }
+
+    const rowIndex = rowNode.rowIndex ?? -1;
+    if (rowIndex >= 0) {
+      this.factoresValidando.add(rowIndex);
+    }
+
+    // 🌐 Consultar al backend
+    this.codigos14Service.existePorCodbarUnidad(codbarUv, factorNum).subscribe({
+      next: (existe) => {
+        if (rowIndex >= 0) {
+          this.factoresValidando.delete(rowIndex);
+        }
+
+        if (existe) {
+        // ❌ YA EXISTE
+          fila._errorFactor = true;
+          // ✅ AGREGAR ESTA LÍNEA:
+          this.mostrarAlerta(`⚠️ El Factor ${factorNum} ya existe para el GTIN ${codbarUv}. Debe corregirlo.`, 'Error');
+        } else {
+          // ✅ NO EXISTE
+          fila._errorFactor = false;
+        }
+
+        // Refrescar celda y verificar bloqueo general
+        this.verificarBloqueoGenerar14();
+        this.gridApi?.refreshCells({ rowNodes: [rowNode], columns: ['factor'], force: true });
+      },
+      error: (err) => {
+        console.error('❌ Error verificando factor:', err);
+        if (rowIndex >= 0) {
+          this.factoresValidando.delete(rowIndex);
+        }
+        fila._errorFactor = false;
+        this.verificarBloqueoGenerar14();
+      }
+    });
+  }
+
+  private verificarBloqueoGenerar14(): void {
+    // Bloquear si:
+    // 1. Hay validaciones pendientes contra BD
+    // 2. Hay errores de factor duplicado
+    // 3. Faltan factores en filas activas
+
+    const hayValidacionesPendientes = this.factoresValidando.size > 0;
+    
+    const hayErroresFactor = this.rowData.some(f => 
+      f.activo && f._errorFactor === true
+    );
+
+    const faltanFactores = this.rowData
+      .filter(f => f.activo)
+      .some(f => !f.factor || f.factor.toString().trim() === '');
+
+    if (hayValidacionesPendientes || hayErroresFactor || faltanFactores) {
+      this.botonGenerar14Deshabilitado = true;
+    } else {
+      //Desbloquear si:
+      // - No hay validaciones pendientes
+      // - No hay errores
+      // - Todos los activos tienen factor
+      const algunoActivo = this.rowData.some(f => f.activo === true);
+      const todosConIdProducto = this.rowData.every(f => f.idProducto);
+      
+      if (algunoActivo && todosConIdProducto) {
+        this.botonGenerar14Deshabilitado = false;
+      }
+    }
+  }
+  
+  private validarTodosLosFactoresPegados(): void {
+    if (!this.formUV.get('checkExiste')?.value) {
+      return;
+    }
+
+    const filasConFactor = this.rowData.filter(f => 
+      f.activo === true && 
+      f.factor && 
+      f.factor.toString().trim() !== ''
+    );
+
+    if (filasConFactor.length === 0) {
+      console.log('⚠️ No hay factores para validar');
+      return;
+    }
+
+    console.log(`🔍 Validando ${filasConFactor.length} factores pegados...`);
+
+    // Validar todos en paralelo (máximo 5 a la vez)
+    const validaciones$ = filasConFactor.map(fila => {
+      const rowNode = this.gridApi.getRowNode(this.rowData.indexOf(fila).toString());
+      if (!rowNode) return of(null);
+
+      const factorNum = Number(fila.factor);
+      const codbarUv = (fila.gtinUv || '').toString().trim();
+
+      if (!codbarUv || Number.isNaN(factorNum)) return of(null);
+
+      return this.codigos14Service.existePorCodbarUnidad(codbarUv, factorNum).pipe(
+        map(existe => {
+          fila._errorFactor = existe;
+          return existe;
+        }),
+        catchError(err => {
+          console.error(`Error validando factor ${factorNum}:`, err);
+          fila._errorFactor = false;
+          return of(false);
+        })
+      );
+    });
+
+    from(validaciones$).pipe(
+      mergeMap(obs => obs, 5),
+      toArray()
+    ).subscribe({
+      complete: () => {
+        this.gridApi?.refreshCells({ force: true, columns: ['factor'] });
+        this.verificarBloqueoGenerar14();
+
+        const hayErrores = this.rowData.some(f => f.activo && f._errorFactor === true);
+        if (hayErrores) {
+          this.mostrarAlerta('❌ Algunos factores ya existen. Corrija antes de continuar.', 'Error');
+        }
+      }
+    });
+  }
 }
