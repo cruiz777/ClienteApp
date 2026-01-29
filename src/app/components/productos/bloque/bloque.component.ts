@@ -788,21 +788,48 @@ async generarFilas(): Promise<void> {
     this.rowData = [...this.rowData];
   }
 
-  cargarCliente(): void {
-    const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
-    console.log(cliente);
-    if (cliente) {
-      this.clienteSeleccionado = cliente;
-      this.formUV.patchValue({
-        codigoCliente: cliente.clientes_codigo || '',
-        cliente: cliente.nomcli || '',
-        ruc: cliente.ruc || '',
+cargarCliente(): void {
+  const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+  console.log(cliente);
 
-      });
-      this.cargarClientePorId(cliente.clientes_codigo);
-      this.cargarPrefijos(cliente.clientes_codigo);
-    }
+  if (!cliente) return;
+
+  // ✅ Validar estado DESAFILIADA (robusto: null/espacios/mayúsculas)
+  const estado = (cliente.estadoNombre ?? '').toString().trim().toUpperCase();
+
+  if (estado === 'DESAFILIADA') {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '450px',
+      data: {
+        title: 'Cliente DESAFILIADO',
+        message: '❌ No puede codificar productos porque el cliente está DESAFILIADO.',
+        type: 'error',
+        confirmText: 'Aceptar'
+      }
+    }).afterClosed().subscribe(() => {
+      // cerrar cualquier dialog abierto (incluye esta ventana)
+      this.dialog.closeAll();
+
+      // salir a otra pantalla
+      this.router.navigate(['/productos/nuevo-producto']);
+    });
+
+    return; // ⛔ detener flujo normal
   }
+
+  // ✅ Flujo normal si está afiliado
+  this.clienteSeleccionado = cliente;
+
+  this.formUV.patchValue({
+    codigoCliente: cliente.clientes_codigo || '',
+    cliente: cliente.nomcli || '',
+    ruc: cliente.ruc || ''
+  });
+
+  this.cargarClientePorId(cliente.clientes_codigo);
+  this.cargarPrefijos(cliente.clientes_codigo);
+}
+
 
   cargarPrefijos(codigoCliente: number): void {
     this.prefijoService.obtenerPorClienteCodigo(codigoCliente).subscribe({
@@ -2033,6 +2060,7 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
     const idPrefijo = this.formUV.value.gcp;
     const prefijo = this.prefijos.find(p => p.id_prefijos === idPrefijo);
     this.commitGridChanges(); 
+    const now = new Date();
     const nuevoProducto: ProductoRequest = {
       IdProducto: 0,
       Codpro: fila.gtinUv || '',
@@ -2046,7 +2074,7 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
       Codmar: 0,
       Despro2: '',
       Uniman: fila.contenidoUM || '',
-      Feccre: new Date().toISOString(),
+      Feccre: this.isoLocal(now),
       Colsab: '',
       Talla: '',
       Preven: 0,
@@ -3089,4 +3117,15 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
       }
     });
   }
+  // ✅ ISO local: "YYYY-MM-DDTHH:mm:ss"  (sin Z, sin UTC)
+private isoLocal(d: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+// ✅ SOLO fecha local: "YYYY-MM-DD"
+private fechaLocal(d: Date = new Date()): string {
+  return this.isoLocal(d).slice(0, 10);
+}
+
 }
