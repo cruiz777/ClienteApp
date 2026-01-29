@@ -394,7 +394,10 @@ export class ReporteVentasComponent implements OnInit {
     this.currentPageRetenciones = 1; 
     const fechaDesde = this.convertirADate(this.filtrosForm.value.fechaDesde);
     const fechaHasta = this.convertirADate(this.filtrosForm.value.fechaHasta);
-
+    
+    if (fechaHasta) {
+      fechaHasta.setHours(23, 59, 59, 999);
+    }
     this.loading = true;
 
     Promise.all([
@@ -649,6 +652,10 @@ export class ReporteVentasComponent implements OnInit {
         duration: 3000,
       });
       return;
+    }
+        
+    if (fechaHasta) {
+      fechaHasta.setHours(23, 59, 59, 999);
     }
 
     this.loading = true;
