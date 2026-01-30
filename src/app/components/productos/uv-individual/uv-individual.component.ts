@@ -396,19 +396,43 @@ export class UvIndividualComponent implements OnInit {
 
 
 
-  cargarCliente(): void {
-    const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
-    if (cliente) {
-      this.clienteSeleccionado = cliente;
-      this.formUV.patchValue({
-        codigoCliente: cliente.clientes_codigo || '',
-        cliente: cliente.nomcli || '',
-        ruc: cliente.ruc || '',
-      });
-      this.cargarClientePorId(cliente.clientes_codigo);
-      this.cargarPrefijos(cliente.clientes_codigo);
-    }
+ cargarCliente(): void {
+  const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+
+  if (!cliente) return;
+
+  // ✅ Validar DESAFILIADA
+  const estado = (cliente.estadoNombre ?? '').toString().trim().toUpperCase();
+  if (estado === 'DESAFILIADA') {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '450px',
+      data: {
+        title: 'Cliente DESAFILIADO',
+        message: '❌ No puede codificar productos porque el cliente está DESAFILIADO.',
+        type: 'error',
+        confirmText: 'Aceptar'
+      }
+    }).afterClosed().subscribe(() => {
+      this.dialog.closeAll();
+      this.router.navigate(['/productos/nuevo-producto']);
+    });
+
+    return; // ⛔ detener aquí
   }
+
+  // ✅ Flujo normal
+  this.clienteSeleccionado = cliente;
+
+  this.formUV.patchValue({
+    codigoCliente: cliente.clientes_codigo || '',
+    cliente: cliente.nomcli || '',
+    ruc: cliente.ruc || ''
+  });
+
+  this.cargarClientePorId(cliente.clientes_codigo);
+  this.cargarPrefijos(cliente.clientes_codigo);
+}
+
 
   cargarPrefijos(codigoCliente: number): void {
     this.prefijoService.obtenerPorClienteCodigo(codigoCliente).subscribe({
@@ -1182,7 +1206,7 @@ export class UvIndividualComponent implements OnInit {
 
     console.log(secto);
 
-
+    const now = new Date();
     const nuevoProducto: ProductoRequest = {
       IdProducto: 0,
       Codpro: datos.gtinUv || '',
@@ -1196,7 +1220,7 @@ export class UvIndividualComponent implements OnInit {
       Codmar: 0,
       Despro2: '',
       Uniman: datos.unidadMedida?.unidad || '',
-      Feccre: new Date().toISOString(),
+      Feccre: this.isoLocal(now),
       Colsab: '',
       Talla: '',
       Preven: 0,
@@ -2797,6 +2821,16 @@ private verificarFactorExistente(): void {
   }
 });
 
+}
+// ✅ ISO local: "YYYY-MM-DDTHH:mm:ss"  (sin Z, sin UTC)
+private isoLocal(d: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+// ✅ SOLO fecha local: "YYYY-MM-DD"
+private fechaLocal(d: Date = new Date()): string {
+  return this.isoLocal(d).slice(0, 10);
 }
 
 }

@@ -413,19 +413,42 @@ export class UlComponent implements OnInit {
 
 
 
-  cargarCliente(): void {
-    const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
-    if (cliente) {
-      this.clienteSeleccionado = cliente;
-      this.formUV.patchValue({
-        codigoCliente: cliente.clientes_codigo || '',
-        cliente: cliente.nomcli || '',
-        ruc: cliente.ruc || '',
-      });
-      this.cargarClientePorId(cliente.clientes_codigo);
-      this.cargarPrefijos(cliente.clientes_codigo);
-    }
+cargarCliente(): void {
+  const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+
+  if (!cliente) return;
+
+  // ✅ Validar DESAFILIADA
+  const estado = (cliente.estadoNombre ?? '').toString().trim().toUpperCase();
+  if (estado === 'DESAFILIADA') {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '450px',
+      data: {
+        title: 'Cliente DESAFILIADO',
+        message: '❌ No puede codificar productos porque el cliente está DESAFILIADO.',
+        type: 'error',
+        confirmText: 'Aceptar'
+      }
+    }).afterClosed().subscribe(() => {
+      this.dialog.closeAll();
+      this.router.navigate(['/productos/nuevo-producto']);
+    });
+
+    return; // ⛔ cortar flujo
   }
+
+  // ✅ Flujo normal
+  this.clienteSeleccionado = cliente;
+
+  this.formUV.patchValue({
+    codigoCliente: cliente.clientes_codigo || '',
+    cliente: cliente.nomcli || '',
+    ruc: cliente.ruc || ''
+  });
+
+  this.cargarClientePorId(cliente.clientes_codigo);
+  this.cargarPrefijos(cliente.clientes_codigo);
+}
 
   cargarPrefijos(codigoCliente: number): void {
   
