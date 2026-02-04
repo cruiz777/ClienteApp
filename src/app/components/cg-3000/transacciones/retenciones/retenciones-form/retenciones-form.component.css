@@ -656,3 +656,15 @@ input[disabled][value^="USR:"]{
   -webkit-text-fill-color: #0d6efd !important;
   opacity: 1 !important;
 }
+
+/*fecha validacion*/
+.alerta-fecha{
+  margin: 8px 0 10px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #ffe08a;
+  background: #fff6d6;
+  color: #7a5b00;
+  font-weight: 600;
+  font-size: 13px;
+}

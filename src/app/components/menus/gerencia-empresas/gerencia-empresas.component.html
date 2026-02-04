@@ -48,26 +48,33 @@
     <div class="titulo-tabla">
       Resumen por Año (Acumulado) — {{ anio }} | Mes: {{ mesLabel }}
     </div>
+<table class="tabla-gtin" *ngIf="resumenMix.length > 0">
+  <colgroup>
+    <col class="col-id" />
+    <col class="col-desc" />
+    <col class="col-num" />
+    <col class="col-num" />
+  </colgroup>
 
-    <table class="tabla-gtin" *ngIf="resumenMix.length > 0">
-      <thead>
-        <tr>
-          <th>Id Tipo</th>
-          <th>Descripción</th>
-          <th>Cantidad Anual</th>
-          <th>Cantidad Mensual</th>
-        </tr>
-      </thead>
+  <thead>
+    <tr>
+      <th>Id Tipo</th>
+      <th>Descripción</th>
+      <th class="num">Cantidad Anual</th>
+      <th class="num">Cantidad Mensual</th>
+    </tr>
+  </thead>
 
-      <tbody>
-        <tr *ngFor="let item of resumenMix">
-          <td>{{ item.idTipoCliente }}</td>
-          <td>{{ item.descripcion }}</td>
-          <td class="num">{{ item.cantidadAnual }}</td>
-          <td class="num">{{ item.cantidadMensual }}</td>
-        </tr>
-      </tbody>
-    </table>
+  <tbody>
+    <tr *ngFor="let item of resumenMix">
+      <td>{{ item.idTipoCliente }}</td>
+      <td>{{ item.descripcion }}</td>
+      <td class="num">{{ item.cantidadAnual }}</td>
+      <td class="num">{{ item.cantidadMensual }}</td>
+    </tr>
+  </tbody>
+</table>
+
 
     <div *ngIf="resumenMix.length === 0" class="mensaje-vacio">
       No hay datos disponibles para {{ anio }} / {{ mesLabel }}.

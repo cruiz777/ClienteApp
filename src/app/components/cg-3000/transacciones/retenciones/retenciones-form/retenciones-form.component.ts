@@ -43,6 +43,7 @@ import {
 type RetRow = RetencionesRequest & {
   _uiState?: 'NUEVO' | 'EDITADO' | 'GUARDADO' | 'ERROR';
   _uiMsg?: string;
+   fechaTransaccionUi?: any;//28012026
 };
 
 @Component({
@@ -72,6 +73,14 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
   idCabMaestro = 0;
   usuarioActual = this.usuarioService.getUsuarioActual();
   idUsuario = this.usuarioActual?.id_usuario ?? 0;
+
+  ///fecha para visulaizra fechatrans28012026
+  fechaTranView: string = ''; // formato yyyy-MM-dd
+  // ---- Warning fecha transacción (solo NUEVO) ----
+  fechaTransWarnVisible = false;
+  fechaTransWarnMsg = '';
+  fechaTransDiasDiff = 0;
+  ///end
 
   ///usuario retenciones
   usuarioGrabadorId = 0;
@@ -283,7 +292,7 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
         if (!row) return;
 
         row.autretencion = v.autretencion ?? null;
-        row.fecha = this.dateInputToIso(v.fecha);
+        //row.fecha = this.dateInputToIso(v.fecha); ///cambio hr26012026
 
         row.rucci = v.rucci ?? null;
         row.contribuyente = v.contribuyente ?? null;
@@ -301,11 +310,23 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
         row.tipomovimiento = v.tipomovimiento ?? row.tipomovimiento;
         row.estadoingreso = this.asBool(v.estadoingreso);
 
-        row._uiState = 'EDITADO';
+        //row._uiState = 'EDITADO';
         this.recalcTotals();
         this.gridApi?.refreshCells({ force: true });
       })
     );
+
+    ///fecha
+    this.sub.add(
+    this.headerForm.get('fecha')!.valueChanges.subscribe((val) => {
+      // ✅ aplica a toda la columna
+      this.aplicarFechaHeaderATodasLasFilas(val);
+
+      // ✅ warning
+      this.evaluarWarningFechaTransaccion();
+    })
+  );
+    ///
 
     await this.loadInitial();
   }
@@ -462,8 +483,15 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
       if ((lines ?? []).length > 0) {
         this.readOnly = true;
 
+        this.fechaTranView = '';
+        this.fechaTransWarnVisible = false;
+        this.fechaTransWarnMsg = '';
+        this.fechaTransDiasDiff = 0;
+ 
         const rows = (lines ?? []).map((x: RetencionesResponse) => ({
           ...x,
+          
+          // ✅ SOLO UI: se usa únicamente para pintar el control fechatran
           idusuario: Number((x as any).idusuario ?? 0), // ✅ nuevo campo
           enviado: this.asBool((x as any).enviado),
           estadoingreso: this.asBool((x as any).estadoingreso),
@@ -474,7 +502,11 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
 
         this.setGridData(rows);
 
+        ///fecha para visulaizra fechatrans28012026
         this.selectedIndex = 0;
+
+        this.setFechaTranView(rows[0] as any);
+
         if (this.rowData[0]) this.patchHeaderFromRow(this.rowData[0]);
 
         //usuario retenciones
@@ -503,6 +535,9 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
       if ((resumen ?? []).length > 0) {
         const mapped = (resumen ?? []).map((r, i) => this.mapResumenToRow(r as any, i + 1));
         this.setGridData(mapped);
+
+        ///fecha para visulaizra fechatrans28012026
+        this.setFechaTranView(mapped[0] as any);
 
         this.selectedIndex = 0;
         if (this.rowData[0]) this.patchHeaderFromRow(this.rowData[0]);
@@ -544,8 +579,19 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
   private mapResumenToRow(src: RetencionesResumenResponse, fallbackLinea: number): RetRow {
     const now = new Date();
 
-    const fechaIso = this.toIso((src as any).fechatransaccion);
-    const anio = String(new Date((src as any).fechatransaccion).getFullYear());
+    //const fechaIso = this.toIso((src as any).fechatransaccion);
+    //const anio = String(new Date((src as any).fechatransaccion).getFullYear());
+    const fechaTransRaw =
+    (src as any).fechaTransaccion ??
+    (src as any).fechatransaccion ??
+    (src as any).fecha_transaccion ??
+    (src as any).fechaTran ??
+    (src as any).fechatran ??
+    null;
+    // ✅ FECHA DOCUMENTO (Retención): SIEMPRE HOY (como FechaIng)
+    const fechaIso = now.toISOString();
+    // ✅ Año fiscal basado en hoy
+    const anio = String(now.getFullYear());
 
     const ln = Number((src as any).numlinea ?? 0);
     const numlinea = ln > 0 ? ln : fallbackLinea;
@@ -597,6 +643,9 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
       concepto: (src as any).concepto ?? null,
 
       fechaing: now.toISOString(),
+
+      // ✅ aquí queda disponible para el input de "Fecha Transacción" 28012026
+      fechaTransaccionUi: fechaTransRaw,
 
       _uiState: 'NUEVO',
       _uiMsg: 'Precargado desde resumen',
@@ -1414,6 +1463,126 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
       }
   }
 
+  ///fecha para visulaizra fechatrans28012026
+  private setFechaTranView(from: any): void {
+    const raw =
+      from?.fechaTransaccionUi ??            // ✅ primero: lo que cargamos desde resumen
+      from?.fechaTransaccion ??
+      from?.fechatransaccion ??
+      from?.fecha_transaccion ??
+      null;
 
+    this.fechaTranView = raw ? this.toDateInputValue(raw) : '';
+    this.evaluarWarningFechaTransaccion();
+  }
+
+  ///valida dias de emision
+  private parseAnyDate(val: any): Date | null {
+    if (!val) return null;
+
+    if (val instanceof Date) {
+      return isNaN(val.getTime()) ? null : val;
+    }
+
+    const s = String(val).trim();
+    if (!s) return null;
+
+    // dd/MM/yyyy
+    const m1 = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (m1) {
+      const dd = Number(m1[1]);
+      const mm = Number(m1[2]);
+      const yyyy = Number(m1[3]);
+      const d = new Date(yyyy, mm - 1, dd, 0, 0, 0, 0);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    // yyyy-MM-dd (date input)
+    const m2 = s.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m2) {
+      const yyyy = Number(m2[1]);
+      const mm = Number(m2[2]);
+      const dd = Number(m2[3]);
+      const d = new Date(yyyy, mm - 1, dd, 0, 0, 0, 0);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    // ISO / Date parse
+    const d2 = new Date(s);
+    return isNaN(d2.getTime()) ? null : d2;
+  }
+
+  private diffDaysFloor(a: Date, b: Date): number {
+    // a - b (días completos)
+    const msDay = 24 * 60 * 60 * 1000;
+    const utcA = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+    const utcB = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+    return Math.floor((utcA - utcB) / msDay);
+  }
+
+  private evaluarWarningFechaTransaccion(): void {
+    // Solo modo NUEVO (cuando se precarga desde resumen o vacío)
+    if (this.readOnly) {
+      this.fechaTransWarnVisible = false;
+      this.fechaTransWarnMsg = '';
+      this.fechaTransDiasDiff = 0;
+      return;
+    }
+
+    const fechaDocRaw = this.headerForm?.get('fecha')?.value; // yyyy-MM-dd
+    const fechaDoc = this.parseAnyDate(fechaDocRaw);
+
+    // fechaTranView es yyyy-MM-dd (porque tú la setéas con toDateInputValue)
+    const fechaTran = this.parseAnyDate(this.fechaTranView);
+
+    if (!fechaDoc || !fechaTran) {
+      this.fechaTransWarnVisible = false;
+      this.fechaTransWarnMsg = '';
+      this.fechaTransDiasDiff = 0;
+      return;
+    }
+
+    const dias = this.diffDaysFloor(fechaDoc, fechaTran);
+    this.fechaTransDiasDiff = dias;
+
+    // Reglas: fecha retención mayor a transacción y > 5 días
+    if (dias > 5) {
+      this.fechaTransWarnVisible = true;
+      this.fechaTransWarnMsg =
+        `La fecha de retención supera en ${dias} día(s) la Fecha Transacción. ` +
+        `El máximo permitido es 5 días.`;
+    } else {
+      this.fechaTransWarnVisible = false;
+      this.fechaTransWarnMsg = '';
+    }
+  }
+
+  private aplicarFechaHeaderATodasLasFilas(fechaInput: any): void {
+    if (this.readOnly) return;
+    if (this.suppressHeaderSync) return;
+
+    const iso = this.dateInputToIso(fechaInput);
+
+    // ✅ Cambiar TODA la columna Fecha
+    for (const r of (this.rowData ?? [])) {
+      r.fecha = iso;
+
+      // Marca editado (sin pisar ERROR si ya estaba con error)
+      //if (r._uiState !== 'ERROR') {
+      //  r._uiState = 'EDITADO';
+      //}
+    }
+
+    // ✅ refresca solo la columna Fecha (mejor performance)
+    this.gridApi?.refreshCells({
+      force: true,
+      columns: ['fecha'],
+    });
+
+    // si tu grid a veces no repinta, descomenta:
+    // this.gridApi?.redrawRows();
+  }
+
+  //aqui añadir mas codigo 
   /// rp
 }

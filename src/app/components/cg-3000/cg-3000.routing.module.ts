@@ -27,6 +27,8 @@ import { AnticipoCgFormComponent } from './transacciones/anticipos-cg/anticipos-
 import { BalanceComprobacionComponent } from './balance/balance/balance-comprobacion-list/balance-comprobacion-list.component'
 import { DiarioMoviminetoListComponent } from './balance/diario/diario-movimineto-list/diario-movimineto-list.component';
 import { RegistroPagosProveedorComponent } from './cuentas-por-pagar/pago-proveedores/registro-pagos-proveedor.component';
+import { LiquidacionCompraFormComponent } from './transacciones/liquidacion-compra/liquidacion-compra-form/liquidacion-compra-form.component';
+import { LiquidacionCompraComponent } from './transacciones/liquidacion-compra/liquidacion-compra-list/liquidacion-compra-list.component';
 import { MayorCuentasListComponent } from './balance/mayor/mayor-cuentas-list/mayor-cuentas-list.component';
 import { EstadoFinancieroComponent } from './balance/estado-financiero/estado-financiero.component';
 
@@ -58,6 +60,8 @@ const routes: Routes = [
       { path: 'diario', component: DiarioMoviminetoListComponent },
       { path: 'balance', component: BalanceComprobacionComponent },
       { path: 'pago-proveedores', component: RegistroPagosProveedorComponent },
+      { path: 'liquidacion-compra', component: LiquidacionCompraFormComponent },
+      { path: 'liquidacion-compra-list', component: LiquidacionCompraComponent },
       { path: 'mayor', component: MayorCuentasListComponent },
       { path: 'estado-financiero', component: EstadoFinancieroComponent },
       { path: '**', redirectTo: 'inicio-cg' },

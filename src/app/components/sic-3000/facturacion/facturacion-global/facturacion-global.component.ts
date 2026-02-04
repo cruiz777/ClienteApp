@@ -8,25 +8,37 @@ import { MatButtonModule } from '@angular/material/button';
 import { AgGridAngular } from 'ag-grid-angular';
 import { MatIconModule } from '@angular/material/icon';
 import * as JSZip from 'jszip';
+import * as ExcelJS from 'exceljs';
+import { AsientoVentaService } from 'src/app/services/asiento-venta.service';
 
 
 import { saveAs } from 'file-saver';
-import { FacturaGlobalService, ClienteCodpreGrupoResponse, FacturaCrearRequest } from 'src/app/services/factura-global.service';
+import {
+  FacturaGlobalService,
+  ClienteCodpreGrupoResponse,
+  FacturaCrearRequest
+} from 'src/app/services/factura-global.service';
+
 import { AutorizacionCajaService } from 'src/app/services/autorizacion-caja.service';
 import { UsuarioService } from 'src/app/services/usuario.service';
 import { ClienteService } from 'src/app/services/cliente.service';
 import { ClienteContactoService } from 'src/app/services/cliente-contacto.service';
 import { ZonaService, Zona } from 'src/app/services/zona.service';
+import { FacturacionWorkflowService, WorkflowResult } from 'src/app/services/facturacion-workflow.service';
+
+import { AsientoVentaRequest } from 'src/app/services/asiento-venta.service';
 
 import { MatSelectModule } from '@angular/material/select';
 import { MatOptionModule } from '@angular/material/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialogModule, MatDialog } from '@angular/material/dialog';
+
 import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
 import { NotasObsService, NotaObs } from 'src/app/services/nota.service';
-import { of, forkJoin, from, timer } from 'rxjs';
 import { FacturacionService } from 'src/app/services/facturacion.service';
+
+import { of, forkJoin, from, timer } from 'rxjs';
 import {
   take, map, switchMap, catchError, finalize,
   retryWhen, delayWhen, scan, tap, concatMap
@@ -35,8 +47,11 @@ import {
 import {
   ColDef, GridApi, GridReadyEvent, ModuleRegistry, IRowNode, AllCommunityModule, ValueFormatterParams
 } from 'ag-grid-community';
+
 ModuleRegistry.registerModules([AllCommunityModule]);
+
 type ZipProgress = { percent: number; currentFile?: string | null };
+
 @Component({
   selector: 'app-facturacion-global',
   standalone: true,
@@ -77,11 +92,11 @@ export class FacturacionGlobalComponent implements OnInit {
   private listadoGridApi!: GridApi;
   listadoSelectedCount = 0;
   imprimiendo = false;
+
   zonas: Zona[] = [];
   trackByZonaId = (_: number, z: Zona) => z.id;
   cargandoZonas = false;
-
-
+  
   // Configuración de procesamiento
   private readonly CONCURRENCY = 1;     // ← en serie
   private readonly MAX_RETRIES = 3;     // reintentos por cada paso
@@ -89,11 +104,18 @@ export class FacturacionGlobalComponent implements OnInit {
   private readonly PAUSA_MS = 200;      // pausa entre facturas (evita colisiones secuencial)
 
   // ID del producto de mantenimiento (ajusta al real)
-  private readonly PRODUCTO_MANTENIMIENTO_ID = 60713;
+  private readonly PRODUCTO_MANTENIMIENTO_ID = 2878981;
 
   // getters
   get anioCtrl() { return this.formFactura.get('anio')!; }
   get zonaCtrl() { return this.formFactura.get('zona')!; }
+gridOptions: any = {
+  rowSelection: 'multiple',
+  rowMultiSelectWithClick: true,   // clic agrega a selección
+  suppressRowDeselection: true,    // clic NO deselecciona lo ya seleccionado
+  suppressRowClickSelection: true, // ✅ selección SOLO por checkbox (recomendado en tu caso)
+  getRowId: (p: any) => String(p.data?.codCliente ?? ''),
+};
 
   @HostListener('window:resize')
   onResize() { this.gridApi?.sizeColumnsToFit(); }
@@ -149,17 +171,17 @@ Prefijo: ${d.prefijo ?? ''}`;
     },
     { headerName: 'Ciudad', field: 'ciudad', minWidth: 110 },
     { headerName: 'Email', field: 'email', hide: true },
-    { headerName: 'Piva', field: 'piva', hide: true }
+    { headerName: 'Piva', field: 'piva', hide: true },
+    { headerName: 'idCodContable', field: 'idcodcontable', hide: false }
   ];
 
   defaultColDef: ColDef = { sortable: true, filter: true, resizable: true };
   rowData: any[] = [];
-  // === Listado (Facturas Generadas) ===
+
   // === Listado (Facturas Generadas) ===
   listadoData: NotaObs[] = [];
 
   columnDefsListado: ColDef<NotaObs>[] = [
-    // checkbox de selección
     {
       headerName: '',
       colId: 'sel',
@@ -168,24 +190,19 @@ Prefijo: ${d.prefijo ?? ''}`;
       width: 48,
       pinned: 'left'
     },
-    // botón imprimir
     {
       headerName: '',
       colId: 'print',
       width: 70,
       pinned: 'left',
-      suppressHeaderMenuButton: true,   // ← en vez de suppressMenu
+      suppressHeaderMenuButton: true,
       sortable: false,
       filter: false,
-      cellRenderer: () => `
-    <button class="btn-icon" title="Imprimir">🖨️</button>
-  `,
-      onCellClicked: (e) => {           // ← evita el error de tipo
+      cellRenderer: () => `<button class="btn-icon" title="Imprimir">🖨️</button>`,
+      onCellClicked: (e) => {
         if (e?.data) this.imprimirNota(e.data as NotaObs);
       }
     },
-
-
     { headerName: '#', valueGetter: 'node.rowIndex + 1', width: 70, pinned: 'left' },
     { headerName: 'Id Nota', field: 'idNota', width: 120 },
     { headerName: 'N° Factura', field: 'numnota', minWidth: 160, pinned: 'left' },
@@ -209,8 +226,6 @@ Prefijo: ${d.prefijo ?? ''}`;
 
   defaultColDefListado: ColDef<NotaObs> = { sortable: true, filter: true, resizable: true };
 
-
-
   constructor(
     private fb: FormBuilder,
     private facturaGlobalService: FacturaGlobalService,
@@ -221,7 +236,9 @@ Prefijo: ${d.prefijo ?? ''}`;
     private zonaService: ZonaService,
     private dialog: MatDialog,
     private notasObsService: NotasObsService,
-    private facturaService: FacturacionService
+    private facturaService: FacturacionService,
+     private asientoVentaService: AsientoVentaService,
+    private workflow: FacturacionWorkflowService
   ) { }
 
   ngOnInit(): void {
@@ -250,14 +267,20 @@ Prefijo: ${d.prefijo ?? ''}`;
     });
   }
 
-  onGridReady(e: GridReadyEvent) {
-    this.gridApi = e.api;
-    this.gridApi.setGridOption('isExternalFilterPresent', this.isExternalFilterPresent);
-    this.gridApi.setGridOption('doesExternalFilterPass', this.doesExternalFilterPass);
+onGridReady(e: GridReadyEvent) {
+  this.gridApi = e.api;
 
-    if (this.pendingQuickFilter) this.gridApi.setGridOption('quickFilterText', this.pendingQuickFilter);
-    this.gridApi.sizeColumnsToFit();
-  }
+  this.gridApi.setGridOption('isExternalFilterPresent', this.isExternalFilterPresent);
+  this.gridApi.setGridOption('doesExternalFilterPass', this.doesExternalFilterPass);
+
+  // ✅ cuando el grid cambia modelo (filtros / sort / refresh), re-aplica selección
+ 
+
+  if (this.pendingQuickFilter) this.gridApi.setGridOption('quickFilterText', this.pendingQuickFilter);
+
+  this.gridApi.sizeColumnsToFit();
+}
+
 
   cambiarTab(tab: 'Factura' | 'Listado') {
     this.activeTab = tab;
@@ -272,7 +295,6 @@ Prefijo: ${d.prefijo ?? ''}`;
   cargarListado() {
     const anio = Number(this.formFactura?.get('anio')?.value ?? new Date().getFullYear());
 
-    // abre “espere…”
     const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
       disableClose: true,
       data: {
@@ -291,7 +313,7 @@ Prefijo: ${d.prefijo ?? ''}`;
       .pipe(
         finalize(() => {
           this.cargando = false;
-          loadingDialog.close(); // cierra siempre (éxito / error)
+          loadingDialog.close();
         })
       )
       .subscribe({
@@ -301,7 +323,6 @@ Prefijo: ${d.prefijo ?? ''}`;
         error: err => {
           console.error('[Listado] error:', err);
           this.listadoData = [];
-          // opcional: mostrar un aviso de error reutilizando el mismo componente
           this.dialog.open(CustomMessageBoxComponent, {
             data: {
               title: 'Error al cargar',
@@ -313,8 +334,6 @@ Prefijo: ${d.prefijo ?? ''}`;
         }
       });
   }
-
-
 
   money(v: number) {
     const n = Number(v ?? 0);
@@ -346,13 +365,18 @@ Prefijo: ${d.prefijo ?? ''}`;
     return isNaN(n) ? 0 : n;
   }
 
-  onSelectionChanged() {
-    if (!this.gridApi) return;
-    const rows = this.gridApi.getSelectedRows();
-    this.selectedCount = rows.length;
-    this.totalSeleccionado = rows.reduce((sum, r) => sum + this.parseNumber(r.total), 0);
-    if (this.showSoloSeleccionados) this.gridApi.onFilterChanged();
-  }
+ onSelectionChanged() {
+  if (!this.gridApi) return;
+
+  // ✅ guarda selección estable
+  this.saveSelection();
+
+  const rows = this.gridApi.getSelectedRows();
+  this.selectedCount = rows.length;
+  this.totalSeleccionado = rows.reduce((sum, r) => sum + this.parseNumber(r.total), 0);
+
+  if (this.showSoloSeleccionados) this.gridApi.onFilterChanged();
+}
 
   // Filtro externo (solo seleccionados)
   isExternalFilterPresent = (): boolean => this.showSoloSeleccionados;
@@ -381,8 +405,10 @@ Prefijo: ${d.prefijo ?? ''}`;
       }
     });
 
+    const anioFactura = Number(this.formFactura.get('anio')?.value ?? new Date().getFullYear());
+
     this.facturaGlobalService
-      .getClientesCodpreGrupo({ busquedaGeneral: termino, prefijoBusqueda: prefijo, idZona })
+      .getClientesCodpreGrupo({ busquedaGeneral: termino, prefijoBusqueda: prefijo, idZona, anioFactura })
       .pipe(
         map((rows: ClienteCodpreGrupoResponse[] = []) =>
           rows.map(r => ({
@@ -397,7 +423,8 @@ Prefijo: ${d.prefijo ?? ''}`;
             total: r.total ?? 0,
             ciudad: r.ciudad ?? '',
             zona: r.referencia ?? '',
-            piva: r.pIva ?? 15
+            piva: r.pIva ?? 15,
+            idcodcontable: (r as any).idCodContable ?? (r as any).idcodcontable ?? null
           }))
         ),
         switchMap(baseRows => {
@@ -434,11 +461,12 @@ Prefijo: ${d.prefijo ?? ''}`;
           if (this.gridApi) {
             this.gridApi.setGridOption('rowData', this.rowData);
             this.gridApi.sizeColumnsToFit();
-            this.gridApi.deselectAll();
+            //this.gridApi.deselectAll();
           }
           this.totalSeleccionado = 0;
           this.selectedCount = 0;
           this.habilitarFacturar = true;
+          this.deshabilitarBuscar = false;
         },
         error: (err) => {
           console.error('[FacturaGlobal] error al buscar:', err);
@@ -450,7 +478,6 @@ Prefijo: ${d.prefijo ?? ''}`;
 
   // ========= FACTURAR (CONFIRMAR + ENVÍA + GENERA XML) =========
   facturar() {
-
     if (!this.cajaAsignada) {
       this.dialog.open(CustomMessageBoxComponent, {
         data: {
@@ -471,7 +498,6 @@ Prefijo: ${d.prefijo ?? ''}`;
       return;
     }
 
-    // 1) Confirmación (proceso irreversible)
     const confirmRef = this.dialog.open(CustomMessageBoxComponent, {
       disableClose: true,
       data: {
@@ -480,16 +506,13 @@ Prefijo: ${d.prefijo ?? ''}`;
         showCancel: true,
         cancelText: 'No, cancelar',
         okText: 'Sí, facturar',
-        // sin HTML — usa \n\n y MAYÚSCULAS para resaltar
         message: `Este proceso es IRREVERSIBLE y generará documentos oficiales para ${seleccionadas.length} cliente(s).\n\n¿Desea continuar?`
       }
     });
 
-
     confirmRef.afterClosed().pipe(take(1)).subscribe((acepta: boolean) => {
       if (!acepta) return;
 
-      // ===== helpers =====
       const getErrMsg = (err: any): string => {
         const e = err?.error ?? err;
         if (typeof e === 'string') return e;
@@ -511,7 +534,7 @@ Prefijo: ${d.prefijo ?? ''}`;
           e.prefijo ?? '',
           e.total ?? '',
           e.status ?? '',
-          `"${String(e.mensaje ?? '').replace(/"/g, '""')}"`,
+          `"${String(e.mensaje ?? '').replace(/"/g, '""')}"`
         ].join(','));
         const csv = [head.join(','), ...body].join('\r\n');
         const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -521,9 +544,7 @@ Prefijo: ${d.prefijo ?? ''}`;
         a.click();
         URL.revokeObjectURL(a.href);
       };
-      // ====================
 
-      // 2) Estados de UI
       this.facturando = true;
       this.habilitarFacturar = false;
       this.deshabilitarBuscar = true;
@@ -533,7 +554,6 @@ Prefijo: ${d.prefijo ?? ''}`;
       let exitosas = 0;
       let fallidas = 0;
 
-      // errores por fila
       const erroresBatch: Array<{
         codCliente: any;
         cliente: string;
@@ -543,7 +563,6 @@ Prefijo: ${d.prefijo ?? ''}`;
         status?: number;
       }> = [];
 
-      // 3) Diálogo de progreso
       const dlg = this.dialog.open(CustomMessageBoxComponent, {
         disableClose: true,
         data: {
@@ -554,23 +573,27 @@ Prefijo: ${d.prefijo ?? ''}`;
         }
       });
 
-      // 4) Procesar EN SERIE (+ pausa) + reintentos
       from(seleccionadas.map((row, idx) => ({ row, idx }))).pipe(
         concatMap(({ row, idx }) =>
-          // pequeña pausa antes de cada envío para evitar secuenciales duplicados
           timer(idx === 0 ? 0 : this.PAUSA_MS).pipe(
             switchMap(() => {
               const payload = this.buildFacturaFromRow(row);
 
-              // validaciones mínimas
               const inval = !payload.caja || !payload.idUsuarioCajero ||
                 !payload.prefijo || payload.totalCalculado <= 0 ||
                 payload.detalles.length === 0;
+
               if (inval) {
                 throw { status: 400, error: { message: 'Datos incompletos para la factura.' } };
               }
 
-              return this.facturaGlobalService.crear(payload).pipe(
+              // ✅ ahora el workflow acepta buildAsiento(idNota, numeroFactura)
+              return this.workflow.procesarFacturaConAsientoObligatorio(
+                payload,
+                (idNota: number, numeroFactura?: string) =>
+  this.buildAsientoVentaRequestGlobal(idNota, numeroFactura ?? '', row, payload)
+
+              ).pipe(
                 retryWhen(err$ =>
                   err$.pipe(
                     scan((acc: number, _err) => {
@@ -583,28 +606,24 @@ Prefijo: ${d.prefijo ?? ''}`;
                     )
                   )
                 ),
-                tap((resp: any) => {
-                  // éxito creación
+
+                tap((res: WorkflowResult) => {
                   exitosas++;
                   procesadas++;
+
+                  row.idNotaGenerada = res.idNota;
+                  row.asiento = res.numdocVT;     // si quieres "VT-xxxxx", pon: `VT-${res.numdocVT}`
+                  row.xml = res.xmlFileName ?? ''; // ✅ ahora sí existe
+
                   if (dlg.componentInstance) {
                     dlg.componentInstance.data = {
                       ...dlg.componentInstance.data,
                       message: `Procesadas ${procesadas} / ${total} · OK: ${exitosas} · Error: ${fallidas}`
                     };
-
-                  }
-
-                  // generar XML si tenemos idNota
-                  const idNota = this.extraerIdNota(resp);
-                  if (Number.isFinite(idNota) && idNota! > 0 && (this.facturaGlobalService as any)['generarXmlEnServidor']) {
-                    this.facturaGlobalService.generarXmlEnServidor(idNota!).pipe(take(1)).subscribe({
-                      error: e => console.warn('No se pudo generar XML para idNota', idNota, e)
-                    });
                   }
                 }),
+
                 catchError(err => {
-                  // error en esta fila
                   fallidas++;
                   procesadas++;
 
@@ -617,29 +636,23 @@ Prefijo: ${d.prefijo ?? ''}`;
                     status: err?.status
                   });
 
-                  console.error('[Facturar] Error al crear factura:', {
-                    row, status: err?.status, error: err
-                  });
-
                   if (dlg.componentInstance) {
                     dlg.componentInstance.data = {
                       ...dlg.componentInstance.data,
                       message: `Procesadas ${procesadas} / ${total} · OK: ${exitosas} · Error: ${fallidas}`
                     };
                   }
-                  // continuar
+
                   return of(null);
                 })
               );
             })
           )
         ),
-
         finalize(() => {
           this.facturando = false;
-          if (dlg) dlg.close();
+          dlg?.close();
 
-          // No limpiamos aquí todavía —esperamos a que el usuario pulse "Aceptar"
           const resumenRef = this.dialog.open(CustomMessageBoxComponent, {
             disableClose: false,
             data: {
@@ -670,16 +683,13 @@ Prefijo: ${d.prefijo ?? ''}`;
 
               detRef.afterClosed().pipe(take(1)).subscribe((quiereCsv: boolean) => {
                 if (quiereCsv) exportCSV(erroresBatch);
-                // ✅ Ahora sí limpiamos luego de cerrar el detalle
                 this.cancelar();
               });
             } else {
-              // ✅ No hubo errores: limpiamos al pulsar "Aceptar"
               this.cancelar();
             }
           });
         })
-
       ).subscribe();
     });
   }
@@ -689,7 +699,8 @@ Prefijo: ${d.prefijo ?? ''}`;
     this.formFactura.reset({
       anio: anioPorDefecto,
       termino: '',
-      prefijo: ''
+      prefijo: '',
+      zona: ''
     });
     this.formFactura.markAsPristine();
     this.formFactura.markAsUntouched();
@@ -721,15 +732,12 @@ Prefijo: ${d.prefijo ?? ''}`;
   }
 
   cajaAsignada = false;
+
   cargarAutorizacion(): void {
-const id =
-  this.usuarioActual?.cajas?.find(c => c.id_tipo_documento === 1)?.id_autorizacion_caja
-  ?? null;
+    const id =
+      this.usuarioActual?.cajas?.find(c => c.id_tipo_documento === 1)?.id_autorizacion_caja
+      ?? null;
 
-
-
-
-    // Valor por defecto
     this.cajaAsignada = false;
 
     if (id == null) {
@@ -753,7 +761,6 @@ const id =
           puntoEmision: data.num_establecimiento ?? '',
         });
 
-        // Se considera “asignada” si al menos hay caja y número válido
         this.cajaAsignada = !!(data.caja && data.numero != null);
       },
       error: (err) => {
@@ -763,7 +770,6 @@ const id =
       },
     });
   }
-
 
   private padLeft(value: any, size: number): string {
     const s = (value ?? '').toString().replace(/\D/g, '');
@@ -846,28 +852,28 @@ const id =
     this.anioCtrl.setValue(String(new Date().getFullYear()));
   }
 
-  // ========== PAYLOAD BUILDER ==========
   private buildFacturaFromRow(row: any): FacturaCrearRequest {
     const anio = Number(this.formFactura.get('anio')?.value ?? new Date().getFullYear());
     const periodoDesde = `${anio}-01-01`;
     const periodoHasta = `${anio}-12-31`;
 
     const caja = String(this.formCaja.get('caja')?.value ?? '').trim();
-    const idUsuarioCajero: number = this.usuarioActual?.id_usuario ?? this.usuarioActual?.id_usuario ?? 0;
+    const idUsuarioCajero: number = Number(this.usuarioActual?.id_usuario ?? 0) || 0;
 
     const prefijo = String(row.prefijo ?? '').trim();
     const correo = String(row.email ?? '').trim();
     const GrupoCliente = String(row.grupo ?? '').trim();
     const facBloque = 1;
-    const valor = Number(row.valor ?? 0);                  // mensual
-    const subtotal = Number(row.subtotal ?? (valor * 12)); // anual
-    const iva = Number(row.iva ?? 0);                      // MONTO de IVA
+
+    const valor = Number(row.valor ?? 0);
+    const subtotal = Number(row.subtotal ?? (valor * 12));
+    const iva = Number(row.iva ?? 0);
     const total = Number(row.total ?? (subtotal + iva));
 
     const pref = String(row.prefijo ?? '').trim().toUpperCase();
     const nombreMant = `MANTENIMIENTO ANUAL PREFIJO: ${pref} ENERO ${anio} -- HASTA DICIEMBRE ${anio}`;
 
-    const payload: FacturaCrearRequest = {
+    return {
       idCliente: Number(row.codCliente ?? 0),
       caja,
       idUsuarioCajero,
@@ -881,7 +887,6 @@ const id =
       correo,
       facBloque,
       GrupoCliente,
-      // cabecera (ajusta a tu API)
       subtotalSIva: subtotal,
       subtotalCalculado: subtotal,
       descuentoTotalCalculado: 0,
@@ -894,7 +899,7 @@ const id =
         idDescuentoPredeterminado: null,
         porcentajeDescuentoManual: null,
         nombreProductoPersonalizado: nombreMant,
-        ivaCalculado: iva,          // MONTO de IVA (no el %)
+        ivaCalculado: iva,
         subtotalCalculado: subtotal,
         descuentoCalculado: 0,
         totalCalculado: total,
@@ -902,9 +907,8 @@ const id =
         periodoDesde,
         periodoHasta
       }],
-      // Ajusta según tu catálogo real:
       formasPago: [{
-        idFormaPago: 4,     // p.ej. 1=efectivo, 4=otros
+        idFormaPago: 4,
         valor: total,
         referencia: '',
         observaciones: '',
@@ -916,31 +920,15 @@ const id =
         autoriza: ''
       }]
     };
-
-    return payload;
   }
 
-  // Intenta extraer el id de la nota/factura desde varias formas de respuesta
-  private extraerIdNota(resp: any): number | null {
-    const cands = [
-      resp?.data?.idNota,
-      resp?.data?.idFactura,
-      resp?.idNota,
-      resp?.idFactura,
-      resp?.data?.id,
-      resp?.id
-    ];
-    const found = cands.find(v => v !== undefined && v !== null);
-    return found != null ? Number(found) : null;
-  }
   onAnioInput(evt: Event) {
     const val = (evt.target as HTMLInputElement).value ?? '';
-    // si quieres forzar 4 dígitos numéricos:
     const onlyDigits = val.replace(/\D/g, '').slice(0, 4);
     this.formFactura.get('anio')?.setValue(onlyDigits);
-    // si además quieres disparar la carga automáticamente:
     this.cargarListado();
   }
+
   imprimirNota(row: NotaObs) {
     if (!row?.idNota) { return; }
     const nombre = `factura-${row.numnota ?? row.idNota}.pdf`;
@@ -952,9 +940,6 @@ const id =
       });
   }
 
-  // --- estado para el grid de Listado ---
-
-
   onListadoGridReady(e: GridReadyEvent) {
     this.listadoGridApi = e.api;
     this.listadoGridApi.sizeColumnsToFit();
@@ -964,6 +949,7 @@ const id =
     if (!this.listadoGridApi) return;
     this.listadoSelectedCount = this.listadoGridApi.getSelectedRows().length;
   }
+
   imprimirSeleccionadas() {
     if (!this.listadoGridApi) return;
 
@@ -983,10 +969,9 @@ const id =
     this.imprimiendo = true;
     let procesadas = 0;
 
-    // procesa EN SERIE con pequeña pausa para evitar bloqueos de navegador
     from(seleccionadas).pipe(
       concatMap((row, i) =>
-        timer(i === 0 ? 0 : 200).pipe(                 // 200ms entre descargas
+        timer(i === 0 ? 0 : 200).pipe(
           switchMap(() => {
             const id = Number(row.idNota);
             const nombre = `factura-${row.numnota ?? id}.pdf`;
@@ -1003,7 +988,6 @@ const id =
           }),
           catchError(err => {
             console.error('[Imprimir seleccionadas] error:', err);
-            // continúa con la siguiente
             procesadas++;
             if (dlg?.componentInstance) {
               dlg.componentInstance.data = {
@@ -1021,6 +1005,7 @@ const id =
       })
     ).subscribe();
   }
+
   zipSeleccionadas() {
     if (!this.listadoGridApi) return;
 
@@ -1044,7 +1029,6 @@ const id =
 
     from(filas).pipe(
       concatMap((row, i) =>
-        // pequeña pausa, y descarga del PDF como blob
         timer(i === 0 ? 0 : 150).pipe(
           switchMap(() => this.facturaService.getPdfFacturaBlob(Number(row.idNota))),
           tap((blob: Blob) => {
@@ -1060,21 +1044,19 @@ const id =
           }),
           catchError(err => {
             console.error('[ZIP] fallo al obtener PDF', row, err);
-            // continúa con las demás
             descargadas++;
             return of(null);
           })
         )
       ),
-      // cuando termina la recolección, generamos el zip
       switchMap(() =>
         zip.generateAsync(
           {
             type: 'blob',
             compression: 'DEFLATE',
-            compressionOptions: { level: 6 }   // ✅ en lugar de compressionLevel
+            compressionOptions: { level: 6 }
           },
-          (meta: ZipProgress) => {              // ✅ tipo local en vez de JSZipNS.JSZipGeneratorMetadata
+          (meta: ZipProgress) => {
             if (dlg?.componentInstance) {
               dlg.componentInstance.data = {
                 ...dlg.componentInstance.data,
@@ -1084,8 +1066,6 @@ const id =
           }
         )
       ),
-
-
       finalize(() => {
         this.zipping = false;
         dlg?.close();
@@ -1103,5 +1083,363 @@ const id =
       }
     });
   }
+
+  exportarExcelConsulta(): void {
+    if (!this.gridApi) return;
+
+    const selected = this.gridApi.getSelectedRows() ?? [];
+    const rows: any[] = selected.length ? selected : [];
+
+    if (!selected.length) {
+      this.gridApi.forEachNodeAfterFilterAndSort(n => {
+        if (n?.data) rows.push(n.data);
+      });
+    }
+
+    if (!rows.length) {
+      this.dialog.open(CustomMessageBoxComponent, {
+        data: {
+          title: 'Sin datos',
+          message: 'No hay registros para exportar (verifique filtros).',
+          isLoading: false,
+          showCancel: false
+        }
+      });
+      return;
+    }
+
+    const anio = (this.formFactura.get('anio')?.value ?? '').toString().trim() || 'anio';
+    const zona = (this.formFactura.get('zona')?.value ?? '').toString().trim() || 'todas';
+
+    const fileName = `consulta_factura_global_${anio}_zona_${zona}_${new Date()
+      .toISOString()
+      .slice(0, 19)
+      .replace(/[:T]/g, '-')}.xlsx`;
+
+    const cols: Array<{ header: string; key: string }> = [
+      { header: 'Cod.Cliente', key: 'codCliente' },
+      { header: 'RUC', key: 'ruc' },
+      { header: 'Cliente', key: 'cliente' },
+      { header: 'Grupo', key: 'grupo' },
+      { header: 'Zona', key: 'zona' },
+      { header: 'Prefijo', key: 'prefijo' },
+      { header: 'Valor', key: 'valor' },
+      { header: 'Subtotal', key: 'subtotal' },
+      { header: 'IVA', key: 'iva' },
+      { header: 'Total', key: 'total' },
+      { header: 'Ciudad', key: 'ciudad' }
+    ];
+
+    const dlg = this.dialog.open(CustomMessageBoxComponent, {
+      disableClose: true,
+      data: {
+        title: 'Exportando Excel…',
+        message: selected.length
+          ? `Exportando ${rows.length} registro(s) seleccionados…`
+          : `Exportando ${rows.length} registro(s)…`,
+        isLoading: true,
+        showCancel: false
+      }
+    });
+
+    try {
+      const wb = new (ExcelJS as any).Workbook();
+      wb.creator = 'SIC3000';
+      wb.created = new Date();
+
+      const ws = wb.addWorksheet(`Consulta ${anio}`, {
+        views: [{ state: 'frozen', ySplit: 2 }]
+      });
+
+      ws.mergeCells(1, 1, 1, cols.length);
+      const titleCell = ws.getCell(1, 1);
+      titleCell.value = `Factura Global - Consulta ${anio} (Zona: ${zona})`;
+      titleCell.font = { bold: true, size: 14 };
+      titleCell.alignment = { vertical: 'middle', horizontal: 'left' };
+
+      ws.addRow(cols.map(c => c.header));
+      const headerRow = ws.getRow(2);
+      headerRow.font = { bold: true };
+      headerRow.alignment = { vertical: 'middle', horizontal: 'center' };
+      headerRow.height = 18;
+
+      headerRow.eachCell((cell: any) => {
+        cell.border = {
+          top: { style: 'thin' },
+          left: { style: 'thin' },
+          bottom: { style: 'thin' },
+          right: { style: 'thin' }
+        };
+      });
+
+      for (const r of rows) {
+        const rowValues = cols.map(c => {
+          const v = r?.[c.key];
+          if (['valor', 'subtotal', 'iva', 'total'].includes(c.key)) return Number(v ?? 0);
+          return v ?? '';
+        });
+
+        const excelRow = ws.addRow(rowValues);
+        excelRow.alignment = { vertical: 'middle', horizontal: 'left' };
+
+        excelRow.eachCell((cell: any) => {
+          cell.border = {
+            top: { style: 'thin' },
+            left: { style: 'thin' },
+            bottom: { style: 'thin' },
+            right: { style: 'thin' }
+          };
+        });
+      }
+
+      const headerIndex: Record<string, number> = {};
+      cols.forEach((c, i) => (headerIndex[c.header] = i + 1));
+
+      for (const h of ['Valor', 'Subtotal', 'IVA', 'Total']) {
+        const idx = headerIndex[h];
+        if (!idx) continue;
+        const col = ws.getColumn(idx);
+        col.numFmt = '#,##0.00';
+        col.alignment = { vertical: 'middle', horizontal: 'right' };
+      }
+
+      if (headerIndex['Prefijo']) {
+        ws.getColumn(headerIndex['Prefijo']).alignment = { vertical: 'middle', horizontal: 'right' };
+      }
+
+      for (let c = 1; c <= cols.length; c++) {
+        let max = 10;
+        for (let r = 1; r <= ws.rowCount; r++) {
+          const v = ws.getRow(r).getCell(c).value;
+          const len = v == null ? 0 : String(v).length;
+          if (len > max) max = len;
+        }
+        ws.getColumn(c).width = Math.min(Math.max(max + 2, 10), 45);
+      }
+
+      wb.xlsx.writeBuffer()
+        .then((buffer: ArrayBuffer) => {
+          const blob = new Blob([buffer], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+          });
+          saveAs(blob, fileName);
+          dlg.close();
+        })
+        .catch((err: any) => {
+          console.error('[Excel] writeBuffer error:', err);
+          dlg.close();
+          this.dialog.open(CustomMessageBoxComponent, {
+            data: { title: 'Error', message: 'No se pudo generar el Excel.', isLoading: false }
+          });
+        });
+
+    } catch (err) {
+      console.error('[Excel] error:', err);
+      dlg.close();
+      this.dialog.open(CustomMessageBoxComponent, {
+        data: { title: 'Error', message: 'No se pudo exportar a Excel.', isLoading: false }
+      });
+    }
+  }
+
+  get canExportExcelConsulta(): boolean {
+    return !!this.gridApi && (this.rowData?.length ?? 0) > 0 && !this.cargando && !this.facturando;
+  }
+
+  private toIsoFromDdMmYyyy(fecha: string): string {
+    const s = (fecha ?? '').trim();
+    const m = s.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+    if (!m) return new Date().toISOString();
+    const dd = m[1], mm = m[2], yyyy = m[3];
+    return `${yyyy}-${mm}-${dd}T00:00:00`;
+  }
+
+private buildAsientoVentaRequestGlobal(
+  idNota: number,
+  numnota: string,
+  row: any,
+  payload: FacturaCrearRequest
+): AsientoVentaRequest {
+
+  const ID_TIPO_ASIENTO_VT = 3;
+  const MODULO_VENTAS = 2;
+
+  const ID_LOCAL = 1;
+  const ID_COD_CONTABLE = Number(row?.idcodcontable ?? 0) || 0;
+
+  if (!ID_COD_CONTABLE) {
+    throw { status: 400, error: { message: `Cliente ${row?.codCliente}: no tiene idCodContable asignado.` } };
+  }
+
+  const CTA_CXC = { idPlan: 19, cod: '110205-001' };
+  const CTA_ING = { idPlan: 235, cod: '410101-003' };
+  const CTA_IVA = { idPlan: 131, cod: '210602-001' };
+
+  const fechaUI = String(this.formCaja.get('fechaFacturacion')?.value ?? '').trim();
+  const fechaIso = this.toIsoFromDdMmYyyy(fechaUI);
+
+  // OJO: en tu ejemplo el backend recibe datetime con hora (09:42:41).
+  // Si quieres igualarlo exacto:
+  const nowTime = new Date().toTimeString().slice(0, 8);
+  const fechaIsoConHora = fechaIso.replace('T00:00:00', `T${nowTime}`);
+
+  const anio = String(this.formFactura.get('anio')?.value ?? new Date().getFullYear()).trim();
+
+  const z = this.formFactura.get('zona')?.value;
+  const idZona = (z === '' || z == null) ? 1 : Number(z);
+
+  const idEmpresa = Number((this.usuarioActual as any)?.id_empresa ?? 1) || 1;
+  const idUsuario = Number(this.usuarioActual?.id_usuario ?? 0) || 0;
+
+  const beneficiario = String(row?.cliente ?? '').trim();
+
+  const subtotal = Number(payload.subtotalCalculado ?? payload.subtotalSIva ?? 0);
+  const iva = Number(payload.ivaTotalCalculado ?? 0);
+  const total = Number(payload.totalCalculado ?? 0);
+
+  const cab: any = {
+    IdCabMaestro: 0,
+    idZona:1,
+    idUsuario,
+    idEmpresa,
+    idTipoAsiento: ID_TIPO_ASIENTO_VT,
+    tipdoc: 'VT',
+    numdoc: 0,
+    anio,
+    fechatransaccion: fechaIsoConHora,
+    fechaingreso: fechaIsoConHora,
+    observacion: `ASIENTO POR VENTA FACTURA ${numnota}`,
+    totdebe: total,
+    tothaber: total,
+    beneficiario,
+    cierre: '',
+    fechacierre: null,
+    solicitado: '',
+    depto: '',
+    autorizado: '',
+    homCodigo: 0,
+    estado: true,
+    modulo: MODULO_VENTAS,
+    detalles: []
+  };
+
+  const detBase = (numlinea: number) => ({
+    IdDetMaestro: 0,
+    IdCabMaestro: 0,
+    numlinea,
+    anio,
+    fechatransaccion: fechaIsoConHora,
+    fechaingreso: fechaIsoConHora,
+    hora: nowTime,
+    idZona,
+    idCentroCostos: null,
+    idLocal: ID_LOCAL,
+    idPlanCuentas: 0,
+    codprePc: '',
+    idCodContable: ID_COD_CONTABLE,
+    nocomprobante: numnota,
+    docurelacionado: '',
+    cheque: 0,
+    beneficiario: '',
+    debe: 0,
+    haber: 0,
+    comentario: '',
+    idMovBancario: 1,
+    movbancario: '0',      // ✅ string (tu backend lo pidió así)
+    cierre: '',
+    fechacierre: null,
+    conciliado: '',
+    fechaconciliado: null,
+    idSustentoTrib: null,
+    idTipoCompSri: null,
+    autorizacion: '',
+    fechacaduca: null,
+    idTipoRetencion: null,
+    idProyecto: null,
+    idSubproyecto: null,
+    transferido: false,    // ✅ boolean
+    fechatransferido: null,
+    fechavencimiento: null,
+    idConciliacion: 0,
+    valorLetras: '',
+    estadoIngreso: true,
+    autorizacionRelacionado: '',
+    fechaCadRelacionado: null
+  });
+
+  const d1 = detBase(1);
+  d1.idPlanCuentas = CTA_CXC.idPlan;
+  d1.codprePc = CTA_CXC.cod;
+  d1.debe = total;
+  d1.comentario = `COBRO FACTURA ${numnota} - CREDITO`;
+
+  const d2 = detBase(2);
+  d2.idPlanCuentas = CTA_ING.idPlan;
+  d2.codprePc = CTA_ING.cod;
+  d2.haber = subtotal;
+  d2.comentario = `INGRESO POR VENTA FACTURA ${numnota} - ${String(payload.detalles?.[0]?.nombreProductoPersonalizado ?? '').trim()}`;
+
+  const d3 = detBase(3);
+  d3.idPlanCuentas = CTA_IVA.idPlan;
+  d3.codprePc = CTA_IVA.cod;
+  d3.haber = iva;
+  d3.comentario = `IVA RECAUDADO FACTURA ${numnota}`;
+
+  cab.detalles = [d1, d2, d3];
+  return cab as AsientoVentaRequest;
+}
+private actualizarNotaConAsiento(idNota: number, numdoc: string | null) {
+  if (!numdoc) return of(false);
+
+  const numeroAsientoConPrefijo = `VT-${numdoc}`;
+
+  return this.facturaService.actualizarAsientoContable(idNota, numeroAsientoConPrefijo).pipe(
+    tap((resp: any) => {
+      const tipo = (resp?.type || '').toString().toLowerCase();
+      if (tipo === 'success' || tipo === 'warning') {
+        console.log(`[nota] Asiento actualizado en nota ${idNota}: ${numeroAsientoConPrefijo}`);
+      } else {
+        console.warn('[nota] No actualizó asiento:', resp);
+      }
+    }),
+    map((resp: any) => {
+      const tipo = (resp?.type || '').toString().toLowerCase();
+      return (tipo === 'success' || tipo === 'warning');
+    }),
+    catchError((err: any) => {
+      console.error('[nota] Error actualizando asiento en nota:', err);
+      return of(false);
+    })
+  );
+}
+private selectedIds = new Set<string>();
+
+private saveSelection(): void {
+  if (!this.gridApi) return;
+  this.selectedIds.clear();
+  for (const r of (this.gridApi.getSelectedRows() ?? [])) {
+    const id = String(r?.codCliente ?? '');
+    if (id) this.selectedIds.add(id);
+  }
+}
+
+private restoreSelection(): void {
+  if (!this.gridApi || this.selectedIds.size === 0) return;
+
+  // evita eventos repetitivos mientras marcamos
+  this.gridApi.setGridOption('suppressRowClickSelection', true);
+
+  this.gridApi.forEachNode((node) => {
+    const id = String(node.data?.codCliente ?? '');
+    const shouldSelect = this.selectedIds.has(id);
+    if (node.isSelected() !== shouldSelect) {
+      node.setSelected(shouldSelect);
+    }
+  });
+
+  // recalcula totales
+  this.onSelectionChanged();
+}
+
 
 }
