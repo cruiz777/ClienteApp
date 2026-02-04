@@ -699,7 +699,11 @@ export class ExportService {
       }],
       
       // Detalles de localización
-      ['TIPO DE LOCALIZACIÓN/LOCATION TYPE:', tipoLoc?.descripcion || ''],
+      ['TIPO DE LOCALIZACIÓN/LOCATION TYPE:', 
+        formData.localizacion 
+          ? `${tipoLoc?.descripcion || ''} - ${formData.localizacion}` // Aumenta localizacion
+          : tipoLoc?.descripcion || '' 
+      ],      
       ['LATITUD / LATITUDE:', latGMS],
       ['LONGITUD / LENGTH:', longGMS],
       ['PAÍS / COUNTRY:', pais?.nombre || ''],
