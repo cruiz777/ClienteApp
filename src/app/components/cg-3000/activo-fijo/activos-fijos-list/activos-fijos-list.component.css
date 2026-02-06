@@ -1,0 +1,65 @@
+/* src/app/components/activos-fijos/activos-fijos-list.component.css */
+.afl-container {
+  background: #f5f5f5;
+  padding: 14px;
+  border-radius: 8px;
+}
+
+.afl-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.afl-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.afl-title h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.afl-total {
+  margin-left: 10px;
+  font-weight: 600;
+  color: #444;
+}
+
+.afl-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.afl-search {
+  width: 360px;
+}
+
+.afl-grid {
+  border: 1px solid #d0d0d0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* Botones dentro del cellRenderer */
+.grid-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+}
+
+.icon-btn {
+  border: 1px solid #cfcfcf;
+  background: #fff;
+  border-radius: 6px;
+  height: 28px;
+  width: 34px;
+  cursor: pointer;
+}

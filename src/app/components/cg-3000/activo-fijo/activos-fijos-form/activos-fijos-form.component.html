@@ -1,0 +1,590 @@
+<form class="af-container mat-elevation-z3" [formGroup]="form" (ngSubmit)="guardar()">
+  <!-- ================= HEADER ================= -->
+  <div class="af-header">
+    <div class="af-title">
+      <mat-icon>inventory_2</mat-icon>
+      <h2>{{ titulo() }}</h2>
+    </div>
+
+    <div class="af-actions">
+      <button mat-stroked-button type="button" (click)="cancelar()">
+        <mat-icon>close</mat-icon> Cancelar
+      </button>
+
+      <button mat-raised-button color="primary" type="submit" [disabled]="saving()">
+        <mat-icon>save</mat-icon> {{ idActivo ? 'Actualizar' : 'Grabar' }}
+      </button>
+    </div>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <mat-tab-group class="af-tabs">
+    <!-- ====================== TAB 1 ====================== -->
+    <mat-tab label="Datos Generales">
+      <div class="af-grid-2">
+        <!-- ===== Columna Izquierda ===== -->
+        <div class="af-col">
+          <!-- Código / Código barras -->
+          <div class="af-row-3">
+            <mat-form-field appearance="outline">
+              <mat-label>Código</mat-label>
+              <input matInput formControlName="codigo" readonly />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="span-2">
+              <mat-label>Código Barras</mat-label>
+              <input matInput formControlName="codigoBarras" maxlength="50" />
+            </mat-form-field>
+          </div>
+
+          <!-- Cuenta contable -->
+          <div class="af-row-3">
+            <mat-form-field appearance="outline">
+              <mat-label>Cuenta Contable</mat-label>
+
+              <input
+                matInput
+                formControlName="cuentaPresentacion"
+                [matAutocomplete]="autoCuenta"
+                (blur)="onCuentaBlur()"
+                placeholder="Ej: 120101-001"
+                autocomplete="off"
+              />
+
+              <mat-error *ngIf="form.get('idPlanCuentas')?.hasError('required')">
+                Debe seleccionar una cuenta válida
+              </mat-error>
+
+              <mat-autocomplete
+                #autoCuenta="matAutocomplete"
+                (optionSelected)="onCuentaSelected($event.option.value)"
+              >
+                <mat-option
+                  *ngFor="let c of (planMiniFiltered$ | async) || []"
+                  [value]="c.CuentaPresentacion"
+                >
+                  <div style="display:flex; flex-direction:column; line-height:1.2;">
+                    <b>{{ c.CuentaPresentacion }}</b>
+                    <small>{{ c.NombreCuenta }}</small>
+                  </div>
+                </mat-option>
+              </mat-autocomplete>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="span-2">
+              <mat-label>Nombre Cuenta</mat-label>
+              <input matInput formControlName="cuentaNombre" readonly />
+            </mat-form-field>
+          </div>
+
+          <!-- Descripción -->
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Descripción</mat-label>
+            <input matInput formControlName="descripcion" maxlength="300" />
+            <mat-error *ngIf="form.get('descripcion')?.hasError('required')">
+              La descripción es obligatoria
+            </mat-error>
+            <mat-error *ngIf="form.get('descripcion')?.hasError('maxlength')">
+              Máximo 300 caracteres
+            </mat-error>
+          </mat-form-field>
+
+          <!-- Serie / Marca texto -->
+          <div class="af-row-2">
+            <mat-form-field appearance="outline">
+              <mat-label>No. Serie / Placa</mat-label>
+              <input matInput formControlName="noSeriePlaca" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Marca (texto)</mat-label>
+              <input matInput formControlName="marcaTexto" />
+            </mat-form-field>
+          </div>
+
+          <!-- Modelo / Color / Estado -->
+          <div class="af-row-3">
+            <mat-form-field appearance="outline">
+              <mat-label>Modelo</mat-label>
+              <input matInput formControlName="modelo" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Color</mat-label>
+              <input matInput formControlName="color" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Estado</mat-label>
+
+              <input
+                matInput
+                formControlName="estadoNombre"
+                [matAutocomplete]="autoEstado"
+                (blur)="onEstadoBlur()"
+                placeholder="Ej: BUENO"
+                autocomplete="off"
+              />
+
+              <mat-error *ngIf="form.get('idMarca')?.hasError('required')">
+                Debe seleccionar un estado válido
+              </mat-error>
+
+              <mat-autocomplete
+                #autoEstado="matAutocomplete"
+                (optionSelected)="onEstadoSelected($event.option.value)"
+              >
+                <mat-option
+                  *ngFor="let m of (marcasFiltered$ | async) || []"
+                  [value]="m.Desmar"
+                >
+                  <div style="display:flex; flex-direction:column; line-height:1.2;">
+                    <b>{{ m.Desmar }}</b>
+                    <small>Tipo: {{ m.Tipmar }}</small>
+                  </div>
+                </mat-option>
+              </mat-autocomplete>
+            </mat-form-field>
+          </div>
+
+          <!-- Departamento / Ubicación -->
+          <div class="af-row-2">
+            <mat-form-field appearance="outline">
+              <mat-label>Departamento</mat-label>
+
+              <input
+                matInput
+                formControlName="departamentoNombre"
+                [matAutocomplete]="autoDepto"
+                (blur)="onDepartamentoBlur()"
+                placeholder="Ej: SISTEMAS"
+                autocomplete="off"
+              />
+
+              <mat-error *ngIf="form.get('IdDepartamento')?.hasError('required')">
+                Debe seleccionar un departamento válido
+              </mat-error>
+
+              <mat-autocomplete
+                #autoDepto="matAutocomplete"
+                (optionSelected)="onDepartamentoSelected($event.option.value)"
+              >
+                <mat-option
+                  *ngFor="let d of (departamentosFiltered$ | async) || []"
+                  [value]="d.Nombre"
+                >
+                  <div style="display:flex; flex-direction:column; line-height:1.2;">
+                    <b>{{ d.Nombre }}</b>
+                    <small>{{ d.Cuenta }}</small>
+                  </div>
+                </mat-option>
+              </mat-autocomplete>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Ubicación</mat-label>
+              <input matInput formControlName="ubicacion" placeholder="Quito / Bodega / Piso" />
+            </mat-form-field>
+          </div>
+
+          <!-- Custodio / Póliza -->
+          <div class="af-row-2">
+            <mat-form-field appearance="outline">
+              <mat-label>Custodio</mat-label>
+              <input matInput formControlName="custodio" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Número Póliza</mat-label>
+              <input matInput formControlName="numeroPoliza" />
+            </mat-form-field>
+          </div>
+
+          <!-- Intangible / Usuario -->
+          <div class="af-row-2 align-center">
+            <mat-checkbox formControlName="activoIntangible">Activo Intangible</mat-checkbox>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Usuario</mat-label>
+              <input matInput formControlName="usuario" readonly />
+            </mat-form-field>
+          </div>
+
+          <!-- Observaciones -->
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Observaciones</mat-label>
+            <textarea matInput rows="3" formControlName="observaciones"></textarea>
+          </mat-form-field>
+        </div>
+
+        <!-- ===== Columna Derecha (Imagen) ===== -->
+        <div class="af-col">
+          <div class="af-image-box">
+            <div class="af-image-preview" *ngIf="form.get('imagenBase64')?.value as b64; else noimg">
+              <img
+                [src]="'data:' + (form.get('imagenMimeType')?.value || 'image/jpeg') + ';base64,' + b64"
+                alt="imagen activo"
+              />
+            </div>
+
+            <ng-template #noimg>
+              <div class="af-image-empty">
+                <mat-icon>image</mat-icon>
+                <div>Seleccione una imagen</div>
+              </div>
+            </ng-template>
+
+            <input
+              #fileInput
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              hidden
+              (change)="onSeleccionarImagen($any($event.target).files?.[0] || null)"
+            />
+
+            <button mat-stroked-button class="af-btn-image" type="button" (click)="fileInput.click()">
+              <mat-icon>upload</mat-icon> Seleccionar Imagen
+            </button>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- ====================== TAB 2 ====================== -->
+    <mat-tab label="Datos de Compra">
+      <div class="af-grid-2">
+        <!-- ===== Columna Izquierda ===== -->
+        <div class="af-col">
+          <div class="af-row-2">
+            <mat-form-field appearance="outline">
+              <mat-label>Comprobante de Diario</mat-label>
+              <input matInput formControlName="comprobanteDiario" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha de Compra</mat-label>
+              <input
+                matInput
+                [matDatepicker]="dpCompra"
+                formControlName="fechaCompra"
+                placeholder="dd/mm/aaaa"
+              />
+              <mat-hint>dd/mm/aaaa</mat-hint>
+              <mat-datepicker-toggle matSuffix [for]="dpCompra"></mat-datepicker-toggle>
+              <mat-datepicker #dpCompra></mat-datepicker>
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="full">
+            <mat-label>Proveedor</mat-label>
+            <input matInput formControlName="proveedor" />
+          </mat-form-field>
+
+          <div class="af-row-2">
+            <mat-form-field appearance="outline">
+              <mat-label>No. Comprobante</mat-label>
+              <input matInput formControlName="noComprobante" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>No. Comprobante Ret</mat-label>
+              <input matInput formControlName="noComprobanteRet" />
+            </mat-form-field>
+          </div>
+
+          <div class="af-row-3">
+            <mat-form-field appearance="outline">
+              <mat-label>Valor de Compra</mat-label>
+              <input matInput type="number" formControlName="valorCompra" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Valor Residual</mat-label>
+              <input matInput type="number" formControlName="valorResidual" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Vida Útil (años)</mat-label>
+              <input matInput type="number" formControlName="vidaUtil" />
+            </mat-form-field>
+          </div>
+
+          <!-- Calculados -->
+          <div class="af-row-3">
+            <mat-form-field appearance="outline">
+              <mat-label>% Depreciación</mat-label>
+              <input matInput type="number" formControlName="PorcentajeDepresiacion" readonly />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Depreciación Anual</mat-label>
+              <input matInput type="number" formControlName="DepresiacionAnual" readonly />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Depreciación Mensual</mat-label>
+              <input matInput type="number" formControlName="DepresiacionMensual" readonly />
+            </mat-form-field>
+          </div>
+
+          <div class="af-row-3">
+            <mat-form-field appearance="outline">
+              <mat-label>Depre. Mensual (DepreMensual)</mat-label>
+              <input matInput type="number" formControlName="DepreMensual" readonly />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>% Depreciado</mat-label>
+              <input matInput type="number" formControlName="PorcentajeDepreciado" readonly />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Depre. Acumulada</mat-label>
+              <input matInput type="number" formControlName="DepreAcumulada" readonly />
+            </mat-form-field>
+          </div>
+
+          <!-- Tiempos -->
+          <div class="af-row-3">
+            <mat-form-field appearance="outline">
+              <mat-label>Tiempo Deprec. (años)</mat-label>
+              <input matInput type="number" formControlName="Tiempodeprec" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Tiempo Deprec. Mes</mat-label>
+              <input matInput type="number" formControlName="TiempodeprecMes" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Tiempo Deprec. Día</mat-label>
+              <input matInput type="number" formControlName="TiempodeprecDia" />
+            </mat-form-field>
+          </div>
+
+          <div class="af-row-2">
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha Depreciación</mat-label>
+              <input
+                matInput
+                [matDatepicker]="dpDep"
+                formControlName="FechaDepreciacion"
+                placeholder="dd/mm/aaaa"
+              />
+              <mat-hint>dd/mm/aaaa</mat-hint>
+              <mat-datepicker-toggle matSuffix [for]="dpDep"></mat-datepicker-toggle>
+              <mat-datepicker #dpDep></mat-datepicker>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Fecha Deprecia</mat-label>
+              <input
+                matInput
+                [matDatepicker]="dpDep2"
+                formControlName="FechaDeprecia"
+                placeholder="dd/mm/aaaa"
+              />
+              <mat-hint>dd/mm/aaaa</mat-hint>
+              <mat-datepicker-toggle matSuffix [for]="dpDep2"></mat-datepicker-toggle>
+              <mat-datepicker #dpDep2></mat-datepicker>
+            </mat-form-field>
+          </div>
+        </div>
+
+        <!-- ===== Columna Derecha (NIIF/SRI) ===== -->
+        <div class="af-col">
+          <div class="af-box">
+            <div class="af-box-title">NIIF / SRI / Ajustes</div>
+
+            <div class="af-row-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Valor Libros</mat-label>
+                <input matInput type="number" formControlName="ValorLibros" readonly />
+              </mat-form-field>
+
+              <!-- IMPORTANTE: este campo en tu form está como string.
+                   Aquí lo dejo como texto (como lo tenías), pero si lo quieres datepicker dime y lo cambiamos
+                   + se cambia en el form a [null] -->
+              <mat-form-field appearance="outline">
+                <mat-label>Fecha Ajuste NIIFS</mat-label>
+                <input matInput formControlName="FechaajusteNiifs" placeholder="dd/mm/aaaa" />
+                <mat-hint>dd/mm/aaaa</mat-hint>
+              </mat-form-field>
+            </div>
+
+            <div class="af-row-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Valor Razonable</mat-label>
+                <input matInput type="number" formControlName="ValorRazonable" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Ajuste Incremento</mat-label>
+                <input matInput type="number" formControlName="AjusteIncremento" readonly />
+              </mat-form-field>
+            </div>
+
+            <div class="af-row-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Vida Útil Total</mat-label>
+                <input matInput type="number" formControlName="VidaUtilTotal" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Saldo Vida Útil</mat-label>
+                <input matInput type="number" formControlName="SaldoVidaUtil" readonly />
+              </mat-form-field>
+            </div>
+
+            <div class="af-row-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Nueva Depreciación Anual</mat-label>
+                <input matInput type="number" formControlName="NvaDepresiacionAnual" readonly />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Dep. Deducible SRI</mat-label>
+                <input matInput type="number" formControlName="DepDeducibleSri" readonly />
+              </mat-form-field>
+            </div>
+
+            <div class="af-row-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Dep. No Deducible NIIFS</mat-label>
+                <input matInput type="number" formControlName="DepNoDeducibleNiifs" readonly />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Local</mat-label>
+                <input matInput type="number" formControlName="Local" />
+              </mat-form-field>
+            </div>
+
+            <div class="af-row-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Tipo Código</mat-label>
+                <input matInput type="number" formControlName="Tipcod" />
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Desc. Tipo Código</mat-label>
+                <input matInput formControlName="Destipcod" />
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- ====================== TAB 3 ====================== -->
+    <mat-tab label="Cuentas Contables">
+      <div style="padding: 16px;">
+        <!-- Cuentas contables 1..7 -->
+        <div class="af-row-3">
+          <mat-form-field appearance="outline">
+            <mat-label>Cta Contable 1</mat-label>
+            <input matInput formControlName="Ctacontable1" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cta Contable 2</mat-label>
+            <input matInput formControlName="Ctacontable2" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cta Contable 3</mat-label>
+            <input matInput formControlName="Ctacontable3" />
+          </mat-form-field>
+        </div>
+
+        <div class="af-row-3">
+          <mat-form-field appearance="outline">
+            <mat-label>Cta Contable 4</mat-label>
+            <input matInput formControlName="Ctacontable4" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cta Contable 5</mat-label>
+            <input matInput formControlName="Ctacontable5" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cta Contable 6</mat-label>
+            <input matInput formControlName="Ctacontable6" />
+          </mat-form-field>
+        </div>
+
+        <div class="af-row-2">
+          <mat-form-field appearance="outline">
+            <mat-label>Cta Contable 7</mat-label>
+            <input matInput formControlName="Ctacontable7" />
+          </mat-form-field>
+        </div>
+
+        <mat-divider style="margin:16px 0;"></mat-divider>
+
+        <!-- Debe/Haber -->
+        <div class="af-row-2">
+          <mat-form-field appearance="outline">
+            <mat-label>Debe Cuenta 1</mat-label>
+            <input matInput type="number" formControlName="DebeCuenta1" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Haber Cuenta 1</mat-label>
+            <input matInput type="number" formControlName="HaberCuenta1" />
+          </mat-form-field>
+        </div>
+
+        <div class="af-row-2">
+          <mat-form-field appearance="outline">
+            <mat-label>Debe Cuenta 2</mat-label>
+            <input matInput type="number" formControlName="DebeCuenta2" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Haber Cuenta 2</mat-label>
+            <input matInput type="number" formControlName="HaberCuenta2" />
+          </mat-form-field>
+        </div>
+
+        <div class="af-row-2">
+          <mat-form-field appearance="outline">
+            <mat-label>Debe Cuenta 3</mat-label>
+            <input matInput type="number" formControlName="DebeCuenta3" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Haber Cuenta 3</mat-label>
+            <input matInput type="number" formControlName="HaberCuenta3" />
+          </mat-form-field>
+        </div>
+
+        <div class="af-row-2">
+          <mat-form-field appearance="outline">
+            <mat-label>Debe Cuenta 4</mat-label>
+            <input matInput type="number" formControlName="Debecuenta4" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Haber Cuenta 4</mat-label>
+            <input matInput type="number" formControlName="Habercuenta4" />
+          </mat-form-field>
+        </div>
+
+        <div class="af-row-2">
+          <mat-form-field appearance="outline">
+            <mat-label>Debe Cuenta 5</mat-label>
+            <input matInput type="number" formControlName="Debecuenta5" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Haber Cuenta 5</mat-label>
+            <input matInput type="number" formControlName="Habercuenta5" />
+          </mat-form-field>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</form>
