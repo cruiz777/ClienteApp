@@ -31,6 +31,7 @@ import { LiquidacionCompraFormComponent } from './transacciones/liquidacion-comp
 import { LiquidacionCompraComponent } from './transacciones/liquidacion-compra/liquidacion-compra-list/liquidacion-compra-list.component';
 import { MayorCuentasListComponent } from './balance/mayor/mayor-cuentas-list/mayor-cuentas-list.component';
 import { EstadoFinancieroComponent } from './balance/estado-financiero/estado-financiero.component';
+import { ReporteComprasComponent } from './anexo-transaccional/reporte-compras/reporte-compras.component';
 
 const routes: Routes = [
   {
@@ -64,6 +65,7 @@ const routes: Routes = [
       { path: 'liquidacion-compra-list', component: LiquidacionCompraComponent },
       { path: 'mayor', component: MayorCuentasListComponent },
       { path: 'estado-financiero', component: EstadoFinancieroComponent },
+      { path: 'reporte-compras', component: ReporteComprasComponent },      
       { path: '**', redirectTo: 'inicio-cg' },
     ],
   },

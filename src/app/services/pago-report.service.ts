@@ -68,14 +68,15 @@ export class PagoReportService {
   /** Genera el PDF directamente desde el API */
   async generarPdfDesdeApi(
     numeroPago: string,
-    opts?: { titulo?: string; logoUrl?: string; logoDataUrl?: string }
+    opts?: { titulo?: string; logoUrl?: string; logoDataUrl?: string; esAnulado?: boolean }
   ): Promise<void> {
     const data = await this.fetchPago(numeroPago);
     await this.generarPdfIngresoCaja(data, {
       numeroPago,
       titulo: opts?.titulo,
       logoUrl: opts?.logoUrl,
-      logoDataUrl: opts?.logoDataUrl
+      logoDataUrl: opts?.logoDataUrl,
+      esAnulado: opts?.esAnulado
     });
   }
 
@@ -87,6 +88,7 @@ export class PagoReportService {
       titulo?: string;
       logoUrl?: string;
       logoDataUrl?: string;
+      esAnulado?: boolean;
     } = {}
   ): Promise<void> {
     if (!Array.isArray(filas) || filas.length === 0) {
@@ -246,7 +248,33 @@ export class PagoReportService {
     doc.setFontSize(8);
     doc.text('Elaborado por', col1 + (lineWidth / 2), y + 12, { align: 'center' });
     doc.text('Cliente', col2 + (lineWidth / 2), y + 12, { align: 'center' });
+    // ===== MARCA DE AGUA "ANULADO" =====
+    if (opts.esAnulado) {
+      doc.saveGraphicsState();
 
+      // Texto diagonal semi-transparente
+      const gState = (doc as any).GState;
+      if (gState) {
+        doc.setGState(new gState({ opacity: 0.15 }));
+      }
+
+      doc.setFont('Helvetica', 'Bold');
+      doc.setFontSize(80);
+      doc.setTextColor(255, 0, 0);
+
+      // Centrar y rotar -45 grados
+      const centerX = pageWidth / 2;
+      const centerY = pageHeight / 2;
+
+      doc.text('ANULADO', centerX, centerY, {
+        align: 'center',
+        angle: 45
+      });
+
+      doc.restoreGraphicsState();
+      // Restaurar color para que no afecte nada más
+      doc.setTextColor(0, 0, 0);
+    }
     doc.save(`IngresoCaja_${numeroPago}.pdf`);
   }
   // ===== Helpers =====
