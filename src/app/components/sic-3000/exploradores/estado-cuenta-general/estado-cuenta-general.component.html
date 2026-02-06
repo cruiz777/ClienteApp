@@ -78,11 +78,11 @@
       
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 12px;">
         
-        <!-- Total Clientes -->
-        <div style="padding: 12px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #0ea5e9;">
-          <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">TOTAL CLIENTES</div>
-          <div style="font-size: 20px; font-weight: 700; color: #0c4a6e;">
-            {{ resumen.total_clientes }}
+        <!-- Saldo Total (antes era Total Clientes) -->
+        <div style="padding: 12px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
+          <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">SALDO TOTAL</div>
+          <div style="font-size: 20px; font-weight: 700; color: #92400e;">
+            {{ usd(resumen.saldo_total) }}
           </div>
         </div>
 
@@ -107,11 +107,11 @@
       <!-- Segunda fila del resumen -->
       <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 16px;">
         
-        <!-- Saldo Total -->
-        <div style="padding: 12px; background: #fef3c7; border-radius: 8px; border-left: 4px solid #f59e0b;">
-          <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">SALDO TOTAL</div>
-          <div style="font-size: 20px; font-weight: 700; color: #92400e;">
-            {{ usd(resumen.saldo_total) }}
+        <!-- Total Clientes con Mov. (antes era Saldo Total) -->
+        <div style="padding: 12px; background: #f0f9ff; border-radius: 8px; border-left: 4px solid #0ea5e9;">
+          <div style="font-size: 11px; color: #64748b; margin-bottom: 4px;">TOTAL CLIENTES CON MOV.</div>
+          <div style="font-size: 20px; font-weight: 700; color: #0c4a6e;">
+            {{ resumen.total_clientes }}
           </div>
         </div>
 

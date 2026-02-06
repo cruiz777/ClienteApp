@@ -645,8 +645,8 @@ export class ReporteVentasComponent implements OnInit {
   // ========== EXPORTAR A EXCEL ==========
 
   async exportarExcel(): Promise<void> {
-    const { fechaDesde, fechaHasta } = this.filtrosForm.value;
-
+    const fechaDesde = this.convertirADate(this.filtrosForm.value.fechaDesde);
+    const fechaHasta = this.convertirADate(this.filtrosForm.value.fechaHasta);
     if (!fechaDesde || !fechaHasta) {
       this.snackBar.open('Seleccione las fechas primero', 'Cerrar', {
         duration: 3000,
