@@ -1,4 +1,4 @@
-<form class="af-container mat-elevation-z3" [formGroup]="form" (ngSubmit)="guardar()">
+<form class="af-container mat-elevation-z3" [formGroup]="form">
   <!-- ================= HEADER ================= -->
   <div class="af-header">
     <div class="af-title">
@@ -11,7 +11,13 @@
         <mat-icon>close</mat-icon> Cancelar
       </button>
 
-      <button mat-raised-button color="primary" type="submit" [disabled]="saving()">
+      <button
+        mat-raised-button
+        color="primary"
+        type="button"
+        (click)="guardar()"
+        [disabled]="saving()"
+      >
         <mat-icon>save</mat-icon> {{ idActivo ? 'Actualizar' : 'Grabar' }}
       </button>
     </div>
@@ -81,7 +87,12 @@
           <!-- Descripción -->
           <mat-form-field appearance="outline" class="full">
             <mat-label>Descripción</mat-label>
-            <input matInput formControlName="descripcion" maxlength="300" />
+            <input
+              matInput
+              formControlName="descripcion"
+              maxlength="300"
+              (blur)="convertirAMayusculas('descripcion')"
+            />
             <mat-error *ngIf="form.get('descripcion')?.hasError('required')">
               La descripción es obligatoria
             </mat-error>
@@ -94,12 +105,12 @@
           <div class="af-row-2">
             <mat-form-field appearance="outline">
               <mat-label>No. Serie / Placa</mat-label>
-              <input matInput formControlName="noSeriePlaca" />
+              <input matInput formControlName="noSeriePlaca" (blur)="convertirAMayusculas('noSeriePlaca')" />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Marca (texto)</mat-label>
-              <input matInput formControlName="marcaTexto" />
+              <input matInput formControlName="marcaTexto" (blur)="convertirAMayusculas('marcaTexto')" />
             </mat-form-field>
           </div>
 
@@ -107,12 +118,12 @@
           <div class="af-row-3">
             <mat-form-field appearance="outline">
               <mat-label>Modelo</mat-label>
-              <input matInput formControlName="modelo" />
+              <input matInput formControlName="modelo" (blur)="convertirAMayusculas('modelo')" />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Color</mat-label>
-              <input matInput formControlName="color" />
+              <input matInput formControlName="color" (blur)="convertirAMayusculas('color')" />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -184,7 +195,7 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Ubicación</mat-label>
-              <input matInput formControlName="ubicacion" placeholder="Quito / Bodega / Piso" />
+              <input matInput formControlName="ubicacion" placeholder="Quito / Bodega / Piso" (blur)="convertirAMayusculas('ubicacion')" />
             </mat-form-field>
           </div>
 
@@ -192,12 +203,12 @@
           <div class="af-row-2">
             <mat-form-field appearance="outline">
               <mat-label>Custodio</mat-label>
-              <input matInput formControlName="custodio" />
+              <input matInput formControlName="custodio" (blur)="convertirAMayusculas('custodio')" />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Número Póliza</mat-label>
-              <input matInput formControlName="numeroPoliza" />
+              <input matInput formControlName="numeroPoliza" (blur)="convertirAMayusculas('numeroPoliza')" />
             </mat-form-field>
           </div>
 
@@ -214,18 +225,42 @@
           <!-- Observaciones -->
           <mat-form-field appearance="outline" class="full">
             <mat-label>Observaciones</mat-label>
-            <textarea matInput rows="3" formControlName="observaciones"></textarea>
+            <textarea
+              matInput
+              rows="3"
+              formControlName="observaciones"
+              (blur)="convertirAMayusculas('observaciones')"
+            ></textarea>
           </mat-form-field>
         </div>
 
         <!-- ===== Columna Derecha (Imagen) ===== -->
         <div class="af-col">
           <div class="af-image-box">
-            <div class="af-image-preview" *ngIf="form.get('imagenBase64')?.value as b64; else noimg">
-              <img
-                [src]="'data:' + (form.get('imagenMimeType')?.value || 'image/jpeg') + ';base64,' + b64"
-                alt="imagen activo"
+            <!-- ✅ NUEVO: URL de Imagen -->
+            <mat-form-field appearance="outline" class="full">
+              <mat-label>URL de Imagen</mat-label>
+              <input
+                matInput
+                formControlName="PathImagenActivo"
+                placeholder="https://..."
+                autocomplete="off"
               />
+              <mat-hint>Si ingresa URL, se usará en lugar del archivo.</mat-hint>
+            </mat-form-field>
+
+            <button
+              mat-stroked-button
+              class="af-btn-image"
+              type="button"
+              (click)="usarImagenDesdeUrl()"
+            >
+              <mat-icon>link</mat-icon> Cargar desde URL
+            </button>
+
+            <!-- ✅ NUEVO: Preview unificado (URL o Base64) -->
+            <div class="af-image-preview" *ngIf="imagenPreview(); else noimg">
+              <img [src]="imagenPreview()" alt="imagen activo" />
             </div>
 
             <ng-template #noimg>
@@ -235,6 +270,7 @@
               </div>
             </ng-template>
 
+            <!-- Archivo -->
             <input
               #fileInput
               type="file"
@@ -243,9 +279,7 @@
               (change)="onSeleccionarImagen($any($event.target).files?.[0] || null)"
             />
 
-            <button mat-stroked-button class="af-btn-image" type="button" (click)="fileInput.click()">
-              <mat-icon>upload</mat-icon> Seleccionar Imagen
-            </button>
+            
           </div>
         </div>
       </div>
@@ -278,7 +312,7 @@
 
           <mat-form-field appearance="outline" class="full">
             <mat-label>Proveedor</mat-label>
-            <input matInput formControlName="proveedor" />
+            <input matInput formControlName="proveedor" (blur)="convertirAMayusculas('proveedor')" />
           </mat-form-field>
 
           <div class="af-row-2">
@@ -329,11 +363,6 @@
           </div>
 
           <div class="af-row-3">
-            <mat-form-field appearance="outline">
-              <mat-label>Depre. Mensual (DepreMensual)</mat-label>
-              <input matInput type="number" formControlName="DepreMensual" readonly />
-            </mat-form-field>
-
             <mat-form-field appearance="outline">
               <mat-label>% Depreciado</mat-label>
               <input matInput type="number" formControlName="PorcentajeDepreciado" readonly />
@@ -395,7 +424,7 @@
         <!-- ===== Columna Derecha (NIIF/SRI) ===== -->
         <div class="af-col">
           <div class="af-box">
-            <div class="af-box-title">NIIF / SRI / Ajustes</div>
+            <div class="af-box-title"></div>
 
             <div class="af-row-2">
               <mat-form-field appearance="outline">
@@ -403,9 +432,6 @@
                 <input matInput type="number" formControlName="ValorLibros" readonly />
               </mat-form-field>
 
-              <!-- IMPORTANTE: este campo en tu form está como string.
-                   Aquí lo dejo como texto (como lo tenías), pero si lo quieres datepicker dime y lo cambiamos
-                   + se cambia en el form a [null] -->
               <mat-form-field appearance="outline">
                 <mat-label>Fecha Ajuste NIIFS</mat-label>
                 <input matInput formControlName="FechaajusteNiifs" placeholder="dd/mm/aaaa" />
@@ -453,23 +479,6 @@
               <mat-form-field appearance="outline">
                 <mat-label>Dep. No Deducible NIIFS</mat-label>
                 <input matInput type="number" formControlName="DepNoDeducibleNiifs" readonly />
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Local</mat-label>
-                <input matInput type="number" formControlName="Local" />
-              </mat-form-field>
-            </div>
-
-            <div class="af-row-2">
-              <mat-form-field appearance="outline">
-                <mat-label>Tipo Código</mat-label>
-                <input matInput type="number" formControlName="Tipcod" />
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Desc. Tipo Código</mat-label>
-                <input matInput formControlName="Destipcod" />
               </mat-form-field>
             </div>
           </div>

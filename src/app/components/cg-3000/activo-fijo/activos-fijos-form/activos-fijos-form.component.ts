@@ -7,7 +7,7 @@ import { startWith, map } from 'rxjs/operators';
 import { Observable, of } from 'rxjs';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MatDateFormats } from '@angular/material/core';
-
+import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
 
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -30,6 +30,8 @@ import { merge } from 'rxjs';
 import { debounceTime} from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NativeDateAdapter } from '@angular/material/core';
+import { UppercaseDirective } from 'src/app/directives/uppercase.directive';
+import { MatDialog } from '@angular/material/dialog';
 
 export const MY_DATE_FORMATS: MatDateFormats = {
   parse: {
@@ -167,7 +169,8 @@ export class ActivosFijosFormComponent implements OnInit {
     private route: ActivatedRoute,
     private router: Router,
     private usuarioService: UsuarioService,
-    private dateAdapter: DateAdapter<Date>
+    private dateAdapter: DateAdapter<Date>,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -667,14 +670,39 @@ FechaIngreso: this.dateAdapter.parse(d.FechaIngreso, MY_DATE_FORMATS.parse.dateI
   // ==================================
   // Guardar
   // ==================================
-  guardar(): void {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      return;
+
+
+guardar(): void {
+  // 1) Validación de obligatorios + mensaje claro
+  if (this.form.invalid) {
+    this.form.markAllAsTouched();
+
+    const faltantes = this.getCamposObligatoriosFaltantes();
+    if (faltantes.length) {
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '460px',
+        data: {
+          title: 'Campos obligatorios',
+          message: `Faltan completar:\n• ${faltantes.join('\n• ')}`,
+          type: 'warning',
+          confirmText: 'Entendido',
+          showCancel: false
+        }
+      });
     }
 
-    const payloadApi = this.getPayloadApi();
+    return;
+  }
 
+  // 2) Determinar modo
+  const modo: 'create' | 'update' = this.idActivo ? 'update' : 'create';
+
+  // 3) Confirmación
+  this.confirmarGuardar(modo).subscribe((ok: boolean) => {
+    if (!ok) return;
+
+    // 4) Payload + request
+    const payloadApi = this.getPayloadApi();
     this.saving.set(true);
 
     const req$ = this.idActivo
@@ -684,12 +712,43 @@ FechaIngreso: this.dateAdapter.parse(d.FechaIngreso, MY_DATE_FORMATS.parse.dateI
     req$
       .pipe(finalize(() => this.saving.set(false)))
       .subscribe({
-        next: (ok: boolean) => {
-          if (ok) this.router.navigate(['/cg-3000/activo-fijo']);
+        next: (_resp: any) => {
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '420px',
+            data: {
+              title: 'Proceso exitoso',
+              message: this.idActivo ? 'Activo fijo actualizado.' : 'Activo fijo grabado.',
+              type: 'success',
+              confirmText: 'Aceptar',
+              showCancel: false
+            }
+          }).afterClosed().subscribe(() => {
+            this.router.navigate(['/cg-3000/activo-fijo']);
+          });
         },
-        error: (err: any) => console.error('Error guardando ActivoFijo:', err)
+        error: (err: any) => {
+          console.error('Error guardando ActivoFijo:', err);
+
+          const msg =
+            err?.error?.message ||
+            err?.message ||
+            'No se pudo guardar el activo fijo. Verifique la información e intente nuevamente.';
+
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '520px',
+            data: {
+              title: 'Error',
+              message: msg,
+              type: 'error',
+              confirmText: 'Entendido',
+              showCancel: false
+            }
+          });
+        }
       });
-  }
+  });
+}
+
 
   cancelar(): void {
     this.router.navigate(['/cg-3000/activo-fijo']);
@@ -776,9 +835,9 @@ FechaIngreso: this.dateAdapter.parse(d.FechaIngreso, MY_DATE_FORMATS.parse.dateI
 
       Intangible: v.activoIntangible ? 1 : 0,
 
-      FechaDepreciacion: v.FechaDepreciacion ?? null,
-      FechaDeprecia: v.FechaDeprecia ?? null,
-      FechaIngreso: v.FechaIngreso ?? null,
+      FechaDepreciacion:this.toDateOnly(v.FechaDepreciacion) ,
+      FechaDeprecia: this.toDateOnly(v.FechaDeprecia),
+      FechaIngreso: this.toDateOnly(v.FechaIngreso),
       HoraIngreso: v.HoraIngreso ?? null,
 
       // ✅ IDs
@@ -795,28 +854,7 @@ FechaIngreso: this.dateAdapter.parse(d.FechaIngreso, MY_DATE_FORMATS.parse.dateI
 
     return dto as ActivoFijoDto;
   }
-  onSeleccionarImagen(file: File | null): void {
-    if (!file) return;
-
-    const allowed = ['image/png', 'image/jpeg', 'image/webp'];
-    if (!allowed.includes(file.type)) return;
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = String(reader.result ?? '');
-      const base64 = result.includes(',') ? result.split(',')[1] : result;
-
-      this.form.patchValue(
-        {
-          imagenBase64: base64,
-          imagenMimeType: file.type
-        },
-        { emitEvent: false }
-      );
-    };
-
-    reader.readAsDataURL(file);
-  }
+ 
   private fromApiToLocalDate(v: any): Date | null {
   if (!v) return null;
 
@@ -1043,5 +1081,143 @@ private hookRecalculos(): void {
     )
     .subscribe(() => this.recalcularActivos());
 }
+
+convertirAMayusculas(controlName: string): void {
+    const control = this.form.get(controlName);
+    if (control) {
+      const valor = control.value || '';
+      control.setValue(valor.toUpperCase());
+    }
+  }
+    convertirAMayusculasUl(controlName: string): void {
+    const control = this.form.get(controlName);
+    if (control) {
+      const valor = control.value || '';
+      control.setValue(valor.toUpperCase());
+    }
+  }
+  
+  confirmarGuardar(modo: 'create' | 'update') {
+  const accion = modo === 'update' ? 'actualizar' : 'guardar';
+
+  return this.dialog.open(CustomMessageBoxComponent, {
+    width: '420px',
+    data: {
+      title: 'Confirmación',
+      message: `¿Está seguro de ${accion} este activo fijo?`,
+      type: 'info',
+      confirmText: 'Sí, confirmar',
+      cancelText: 'Cancelar',
+      showCancel: true
+    }
+  }).afterClosed(); // devuelve Observable<boolean | any>
+}
+// ✅ Preview unificado: primero URL, luego Base64
+imagenPreview(): string | null {
+  const url = String(this.form.get('PathImagenActivo')?.value ?? '').trim();
+  if (url) return url;
+
+  const b64 = this.form.get('imagenBase64')?.value;
+  if (b64) {
+    const mime = this.form.get('imagenMimeType')?.value || 'image/jpeg';
+    return `data:${mime};base64,${b64}`;
+  }
+
+  return null;
+}
+
+// ✅ Botón "Cargar desde URL"
+usarImagenDesdeUrl(): void {
+  const url = String(this.form.get('PathImagenActivo')?.value ?? '').trim();
+
+  if (!url) {
+    // opcional: mensaje
+    // this.dialog.open(CustomMessageBoxComponent, { ... });
+    return;
+  }
+
+  // valida formato básico
+  const ok = /^https?:\/\/.+/i.test(url);
+  if (!ok) {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '420px',
+      data: {
+        title: 'URL inválida',
+        message: 'Ingrese una URL válida que empiece con http:// o https://',
+        type: 'warning',
+        confirmText: 'Entendido',
+        showCancel: false
+      }
+    });
+    return;
+  }
+
+  // si voy a usar URL, limpio Base64 para evitar confusiones
+  this.form.patchValue(
+    {
+      imagenBase64: null,
+      imagenMimeType: null
+    },
+    { emitEvent: false }
+  );
+}
+
+// ✅ Selección de archivo (Base64)
+onSeleccionarImagen(file: File | null): void {
+  if (!file) return;
+
+  const allowed = ['image/png', 'image/jpeg', 'image/webp'];
+  if (!allowed.includes(file.type)) {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '420px',
+      data: {
+        title: 'Formato no permitido',
+        message: 'Solo se permite PNG, JPG/JPEG o WEBP.',
+        type: 'warning',
+        confirmText: 'Entendido',
+        showCancel: false
+      }
+    });
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    const result = String(reader.result ?? '');
+    const base64 = result.includes(',') ? result.split(',')[1] : result;
+
+    // si subo archivo, limpio URL para que no “gane”
+    this.form.patchValue(
+      {
+        PathImagenActivo: null,
+        imagenBase64: base64,
+        imagenMimeType: file.type
+      },
+      { emitEvent: false }
+    );
+  };
+
+  reader.readAsDataURL(file);
+}
+
+
+private getCamposObligatoriosFaltantes(): string[] {
+  const labels: Record<string, string> = {
+    idPlanCuentas: 'Cuenta Contable',
+    descripcion: 'Descripción',
+    idMarca: 'Estado',
+    IdDepartamento: 'Departamento',
+  };
+
+  const faltantes: string[] = [];
+
+  Object.keys(labels).forEach((key) => {
+    const ctrl = this.form.get(key);
+    if (ctrl?.hasError('required')) faltantes.push(labels[key]);
+  });
+
+  return faltantes;
+}
+
 
 }

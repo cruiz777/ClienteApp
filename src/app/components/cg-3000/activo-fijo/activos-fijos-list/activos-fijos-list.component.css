@@ -63,3 +63,28 @@
   width: 34px;
   cursor: pointer;
 }
+/* Botones de acciones dentro de la grilla */
+.afl-icon-btn{
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 2px 6px;
+  line-height: 1;
+}
+
+.afl-icon-btn .material-icons{
+  font-size: 20px;
+}
+
+.afl-icon-btn.edit .material-icons{
+  color: #1976d2; /* azul */
+}
+
+.afl-icon-btn.delete .material-icons{
+  color: #d32f2f; /* rojo */
+}
+
+.afl-icon-btn:hover{
+  background: rgba(0,0,0,0.06);
+  border-radius: 6px;
+}

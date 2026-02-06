@@ -1,24 +1,19 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-
 import { FormsModule } from '@angular/forms';
 
-// Angular Material (si tu HTML usa mat-form-field, matInput, botones, iconos)
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
-// AG Grid Community
 import { AgGridAngular } from 'ag-grid-angular';
 import { ColDef, GridOptions } from 'ag-grid-community';
 
-// ✅ Servicio y DTO reales (según tu archivo actuales-fijos.service.ts)
-import {
-  ActivoFijoApiService,
-  ActivoFijoDto
-} from 'src/app/services/activos-fijos.service';
+import { ActivoFijoApiService, ActivoFijoDto } from 'src/app/services/activos-fijos.service';
+import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
 
 @Component({
   selector: 'app-activos-fijos-list',
@@ -31,6 +26,7 @@ import {
     MatInputModule,
     MatButtonModule,
     MatIconModule,
+    MatDialogModule,
 
     AgGridAngular
   ],
@@ -38,25 +34,67 @@ import {
   styleUrls: ['./activos-fijos-list.component.css']
 })
 export class ActivosFijosListComponent implements OnInit {
-  // filtros
   q = '';
-
-  // data
   rowData: ActivoFijoDto[] = [];
-
-  // total (si tu HTML muestra total() con signal, cámbialo; aquí lo dejo simple)
   total = 0;
 
-  // columnas AG Grid
+  // ✅ columnas con acciones
   colDefs: ColDef<ActivoFijoDto>[] = [
-    { headerName: 'Código', field: 'CodigoAf', width: 120 },
-    { headerName: 'Descripción', field: 'Descripcion', flex: 1, minWidth: 240 },
-    { headerName: 'Marca', field: 'Marca', width: 160 },
-    { headerName: 'Estado', field: 'IdMarca', width: 120 },
-    { headerName: 'Custodio', field: 'Custodio', width: 200 },
-    { headerName: 'Ubicación', field: 'Ubicacion', width: 160 }
+    { headerName: 'Código', field: 'CodigoAf', width: 110 },
+    { headerName: 'Descripción', field: 'Descripcion', width: 380 },
+    { headerName: 'Marca', field: 'Marca', width: 150 },
+    { headerName: 'Estado', field: 'IdMarca', width: 110 },
+    { headerName: 'Custodio', field: 'Custodio', width: 180 },
+    { headerName: 'Ubicación', field: 'Ubicacion',flex:1, width: 140 },
+
+    // ✅ Editar (icono)
+    {
+      headerName: '',
+      width: 70,
+      pinned: 'right',
+      sortable: false,
+      filter: false,
+      resizable: false,
+      cellRenderer: (params: any) => {
+        const btn = document.createElement('button');
+        btn.className = 'afl-icon-btn edit';
+        btn.type = 'button';
+        btn.title = 'Editar';
+        btn.innerHTML = `<span class="material-icons">edit</span>`;
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = params.data?.CodigoAf;
+          if (id != null) this.editar(Number(id));
+        });
+        return btn;
+      }
+    },
+
+    // ✅ Eliminar (icono)
+    {
+      headerName: '',
+      width: 70,
+      pinned: 'right',
+      sortable: false,
+      filter: false,
+      resizable: false,
+      cellRenderer: (params: any) => {
+        const btn = document.createElement('button');
+        btn.className = 'afl-icon-btn delete';
+        btn.type = 'button';
+        btn.title = 'Eliminar';
+        btn.innerHTML = `<span class="material-icons">delete</span>`;
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const id = params.data?.CodigoAf;
+          if (id != null) this.confirmarEliminar(Number(id));
+        });
+        return btn;
+      }
+    }
   ];
 
+  // ✅ quitado el doble click
   gridOptions: GridOptions<ActivoFijoDto> = {
     defaultColDef: {
       sortable: true,
@@ -65,15 +103,16 @@ export class ActivosFijosListComponent implements OnInit {
     },
     rowSelection: 'single',
     animateRows: true,
-    onRowDoubleClicked: (ev) => {
-      const id = ev.data?.CodigoAf;
-      if (id != null) this.editar(Number(id));
-    }
+    rowHeight: 44,
+
+  // (opcional) mejora el header
+  headerHeight: 38
   };
 
   constructor(
     private api: ActivoFijoApiService,
-    private router: Router
+    private router: Router,
+    private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
@@ -81,7 +120,6 @@ export class ActivosFijosListComponent implements OnInit {
   }
 
   cargar(): void {
-    // ✅ si tienes endpoint paged aún no implementado, usa getAll()
     this.api.getAll().subscribe({
       next: (r: ActivoFijoDto[]) => {
         this.rowData = r ?? [];
@@ -102,8 +140,6 @@ export class ActivosFijosListComponent implements OnInit {
       return;
     }
 
-    // Filtrado client-side (porque tu getAll trae todo)
-    // Si implementas backend /paged, aquí reemplazas por api.getPaged(...)
     this.api.getAll().subscribe({
       next: (r: ActivoFijoDto[]) => {
         const all = r ?? [];
@@ -116,20 +152,41 @@ export class ActivosFijosListComponent implements OnInit {
         );
         this.total = this.rowData.length;
       },
-      error: (err: unknown) => {
-        console.error('Error buscando activos fijos', err);
-      }
+      error: (err: unknown) => console.error('Error buscando activos fijos', err)
     });
   }
 
   nuevo(): void {
-    // ✅ ajusta según tu routing real
-    // Si tu ruta es dentro de cg-3000: /cg-3000/activo-fijo/nuevo
-    // entonces cambia la línea
     this.router.navigate(['/cg-3000/activo-fijo/nuevo']);
   }
 
   editar(id: number): void {
     this.router.navigate(['/cg-3000/activo-fijo/editar', id]);
+  }
+
+  private confirmarEliminar(id: number): void {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '420px',
+      data: {
+        title: 'Confirmación',
+        message: `¿Está seguro de eliminar el activo fijo #${id}?`,
+        type: 'warning',
+        confirmText: 'Sí, eliminar',
+        cancelText: 'Cancelar',
+        showCancel: true
+      }
+    }).afterClosed().subscribe((ok: boolean) => {
+      if (!ok) return;
+      this.eliminar(id);
+    });
+  }
+
+  private eliminar(id: number): void {
+    // ✅ ajusta si tu método se llama distinto:
+    // this.api.delete(id) / this.api.remove(id) / this.api.eliminar(id)
+    this.api.delete(id).subscribe({
+      next: () => this.cargar(),
+      error: (err: any) => console.error('Error eliminando activo fijo', err)
+    });
   }
 }
