@@ -32,14 +32,17 @@ export interface ResumenTipoClienteAnioMesResponse {
   acumuladoMes: TipoClienteConteoResponse[];
 }
 
+
 type MixRow = {
   idTipoCliente: number | null;
   descripcion: string;
+  cantidadTotal: number;    // ✅ NUEVO
   cantidadAnual: number;
   cantidadMensual: number;
   anio: number;
   mes: number;
 };
+
 
 @Component({
   selector: 'app-gerencia-empresas',
@@ -66,6 +69,7 @@ export class GerenciaEmpresasComponent implements OnInit {
 
   anio: number = new Date().getFullYear();
   mes: number = new Date().getMonth() + 1;
+resumenTotalPorTipo: TipoClienteConteoResponse[] = [];
 
   cargando = false;
   mensaje = '';
@@ -104,87 +108,112 @@ export class GerenciaEmpresasComponent implements OnInit {
     this.cargarResumen();
   }
 
-  private cargarResumen(): void {
-    this.cargando = true;
-    this.mensaje = '';
+private cargarResumen(): void {
+  this.cargando = true;
+  this.mensaje = '';
 
-    this.clienteService.getResumenTipoClienteAnioMes(this.anio, this.mes)
-      .subscribe({
-        next: (resp: ApiResponse<ResumenTipoClienteAnioMesResponse>) => {
-          const data = resp.data;
+  forkJoin({
+    total: this.clienteService.getResumenTipoClienteTotal(),
+    anioMes: this.clienteService.getResumenTipoClienteAnioMes(this.anio, this.mes)
+  }).subscribe({
+    next: (resp) => {
+      // ✅ total
+      this.resumenTotalPorTipo = resp.total?.data?.totalPorTipo ?? [];
 
-          const anual = data?.acumuladoAnio ?? [];
-          const mensual = data?.acumuladoMes ?? [];
+      // ✅ anio/mes
+      const data = resp.anioMes?.data;
+      const anual = data?.acumuladoAnio ?? [];
+      const mensual = data?.acumuladoMes ?? [];
 
-          this.resumenMix = this.combinar(anual, mensual, this.anio, this.mes);
+      // ✅ mezcla final
+      this.resumenMix = this.combinar(anual, mensual, this.anio, this.mes);
 
-          this.mensaje = resp.message || 'OK';
-          this.cargando = false;
-        },
-        error: (err) => {
-          console.error('Error al cargar resumen tipo cliente', err);
-          this.mensaje = 'Error al cargar datos';
-          this.resumenMix = [];
-          this.cargando = false;
-        }
-      });
-  }
-
-  private combinar(
-    anual: TipoClienteConteoResponse[],
-    mensual: TipoClienteConteoResponse[],
-    anio: number,
-    mes: number
-  ): MixRow[] {
-
-    const mapAnual = new Map<string, { id: number | null, desc: string, cant: number }>();
-    for (const a of (anual || [])) {
-      const key = String(a.idTipoCliente ?? 'null');
-      mapAnual.set(key, {
-        id: a.idTipoCliente ?? null,
-        desc: (a.descripcion ?? 'SIN TIPO').trim(),
-        cant: Number(a.cantidad) || 0
-      });
+      this.mensaje = resp.anioMes?.message || resp.total?.message || 'OK';
+      this.cargando = false;
+    },
+    error: (err) => {
+      console.error('Error al cargar resumen tipo cliente', err);
+      this.mensaje = 'Error al cargar datos';
+      this.resumenTotalPorTipo = [];
+      this.resumenMix = [];
+      this.cargando = false;
     }
+  });
+}
 
-    const mapMensual = new Map<string, { id: number | null, desc: string, cant: number }>();
-    for (const m of (mensual || [])) {
-      const key = String(m.idTipoCliente ?? 'null');
-      mapMensual.set(key, {
-        id: m.idTipoCliente ?? null,
-        desc: (m.descripcion ?? 'SIN TIPO').trim(),
-        cant: Number(m.cantidad) || 0
-      });
-    }
 
-    const keys = Array.from(new Set([...mapAnual.keys(), ...mapMensual.keys()]));
+ private combinar(
+  anual: TipoClienteConteoResponse[],
+  mensual: TipoClienteConteoResponse[],
+  anio: number,
+  mes: number
+): MixRow[] {
 
-    // Orden: por id_tipo_cliente (null al final)
-    keys.sort((ka, kb) => {
-      const a = mapAnual.get(ka)?.id ?? mapMensual.get(ka)?.id;
-      const b = mapAnual.get(kb)?.id ?? mapMensual.get(kb)?.id;
-      if (a == null && b == null) return 0;
-      if (a == null) return 1;
-      if (b == null) return -1;
-      return a - b;
-    });
-
-    return keys.map(k => {
-      const a = mapAnual.get(k);
-      const m = mapMensual.get(k);
-      const id = a?.id ?? m?.id ?? null;
-      const desc = (a?.desc || m?.desc || 'SIN TIPO').trim();
-
-      return {
-        idTipoCliente: id,
-        descripcion: desc,
-        cantidadAnual: a?.cant ?? 0,
-        cantidadMensual: m?.cant ?? 0,
-        anio,
-        mes
-      };
+  const mapTotal = new Map<string, { id: number | null, desc: string, cant: number }>();
+  for (const t of (this.resumenTotalPorTipo || [])) {
+    const key = String(t.idTipoCliente ?? 'null');
+    mapTotal.set(key, {
+      id: t.idTipoCliente ?? null,
+      desc: (t.descripcion ?? 'SIN TIPO').trim(),
+      cant: Number(t.cantidad) || 0
     });
   }
+
+  const mapAnual = new Map<string, { id: number | null, desc: string, cant: number }>();
+  for (const a of (anual || [])) {
+    const key = String(a.idTipoCliente ?? 'null');
+    mapAnual.set(key, {
+      id: a.idTipoCliente ?? null,
+      desc: (a.descripcion ?? 'SIN TIPO').trim(),
+      cant: Number(a.cantidad) || 0
+    });
+  }
+
+  const mapMensual = new Map<string, { id: number | null, desc: string, cant: number }>();
+  for (const m of (mensual || [])) {
+    const key = String(m.idTipoCliente ?? 'null');
+    mapMensual.set(key, {
+      id: m.idTipoCliente ?? null,
+      desc: (m.descripcion ?? 'SIN TIPO').trim(),
+      cant: Number(m.cantidad) || 0
+    });
+  }
+
+  const keys = Array.from(new Set([
+    ...mapTotal.keys(),
+    ...mapAnual.keys(),
+    ...mapMensual.keys()
+  ]));
+
+  // Orden: por id_tipo_cliente (null al final)
+  keys.sort((ka, kb) => {
+    const a = mapTotal.get(ka)?.id ?? mapAnual.get(ka)?.id ?? mapMensual.get(ka)?.id;
+    const b = mapTotal.get(kb)?.id ?? mapAnual.get(kb)?.id ?? mapMensual.get(kb)?.id;
+    if (a == null && b == null) return 0;
+    if (a == null) return 1;
+    if (b == null) return -1;
+    return a - b;
+  });
+
+  return keys.map(k => {
+    const t = mapTotal.get(k);
+    const a = mapAnual.get(k);
+    const m = mapMensual.get(k);
+
+    const id = t?.id ?? a?.id ?? m?.id ?? null;
+    const desc = (t?.desc || a?.desc || m?.desc || 'SIN TIPO').trim();
+
+    return {
+      idTipoCliente: id,
+      descripcion: desc,
+      cantidadTotal: t?.cant ?? 0,      // ✅ ahora sí
+      cantidadAnual: a?.cant ?? 0,
+      cantidadMensual: m?.cant ?? 0,
+      anio,
+      mes
+    };
+  });
+}
 
   exportarPdf(): void {
     const doc = new jsPDF();
@@ -206,4 +235,78 @@ export class GerenciaEmpresasComponent implements OnInit {
 
     doc.save(`Resumen-TipoCliente-${this.anio}-${this.mes}.pdf`);
   }
+  private combinarTotalAnualMensual(
+  total: TipoClienteConteoResponse[],
+  anual: TipoClienteConteoResponse[],
+  mensual: TipoClienteConteoResponse[],
+  anio: number,
+  mes: number
+): MixRow[] {
+
+  const mapTotal = new Map<string, { id: number | null, desc: string, cant: number }>();
+  for (const t of (total || [])) {
+    const key = String(t.idTipoCliente ?? 'null');
+    mapTotal.set(key, {
+      id: t.idTipoCliente ?? null,
+      desc: (t.descripcion ?? 'SIN TIPO').trim(),
+      cant: Number(t.cantidad) || 0
+    });
+  }
+
+  const mapAnual = new Map<string, { id: number | null, desc: string, cant: number }>();
+  for (const a of (anual || [])) {
+    const key = String(a.idTipoCliente ?? 'null');
+    mapAnual.set(key, {
+      id: a.idTipoCliente ?? null,
+      desc: (a.descripcion ?? 'SIN TIPO').trim(),
+      cant: Number(a.cantidad) || 0
+    });
+  }
+
+  const mapMensual = new Map<string, { id: number | null, desc: string, cant: number }>();
+  for (const m of (mensual || [])) {
+    const key = String(m.idTipoCliente ?? 'null');
+    mapMensual.set(key, {
+      id: m.idTipoCliente ?? null,
+      desc: (m.descripcion ?? 'SIN TIPO').trim(),
+      cant: Number(m.cantidad) || 0
+    });
+  }
+
+  const keys = Array.from(new Set([
+    ...mapTotal.keys(),
+    ...mapAnual.keys(),
+    ...mapMensual.keys()
+  ]));
+
+  // Orden: por id_tipo_cliente (null al final)
+  keys.sort((ka, kb) => {
+    const a = mapTotal.get(ka)?.id ?? mapAnual.get(ka)?.id ?? mapMensual.get(ka)?.id;
+    const b = mapTotal.get(kb)?.id ?? mapAnual.get(kb)?.id ?? mapMensual.get(kb)?.id;
+    if (a == null && b == null) return 0;
+    if (a == null) return 1;
+    if (b == null) return -1;
+    return a - b;
+  });
+
+  return keys.map(k => {
+    const t = mapTotal.get(k);
+    const a = mapAnual.get(k);
+    const m = mapMensual.get(k);
+
+    const id = t?.id ?? a?.id ?? m?.id ?? null;
+    const desc = (t?.desc || a?.desc || m?.desc || 'SIN TIPO').trim();
+
+    return {
+      idTipoCliente: id,
+      descripcion: desc,
+      cantidadTotal: t?.cant ?? 0,
+      cantidadAnual: a?.cant ?? 0,
+      cantidadMensual: m?.cant ?? 0,
+      anio,
+      mes
+    };
+  });
+}
+
 }

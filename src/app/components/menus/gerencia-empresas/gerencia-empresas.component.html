@@ -1,10 +1,19 @@
-<div class="contenedor-gerencia mat-elevation-z4">
-  <div class="encabezado">
-    <h2><mat-icon>insights</mat-icon> Resumen Tipo Cliente</h2>
+<!-- gerencia-empresas.component.html  (dashboard) -->
+<div class="gerencia-wrap mat-elevation-z4">
 
-    <div class="filtros">
+  <!-- HEADER -->
+  <div class="gerencia-header">
+    <div class="title">
+      <mat-icon class="title-icon">insights</mat-icon>
+      <div class="title-text">
+        <h2>Resumen Tipo Cliente</h2>
+        <small>Total (sin filtros) • Año {{ anio }} • Mes {{ mesLabel }}</small>
+      </div>
+    </div>
+
+    <div class="filters">
       <!-- Año -->
-      <mat-form-field appearance="outline" class="campo-anio">
+      <mat-form-field appearance="outline" class="ff ff-year">
         <mat-label>Año</mat-label>
         <input
           matInput
@@ -17,7 +26,7 @@
       </mat-form-field>
 
       <!-- Mes -->
-      <mat-form-field appearance="outline" class="campo-mes">
+      <mat-form-field appearance="outline" class="ff ff-month">
         <mat-label>Mes</mat-label>
         <mat-select [(ngModel)]="mes" (selectionChange)="onFiltroChange()">
           <mat-option *ngFor="let m of meses" [value]="m.value">
@@ -28,58 +37,113 @@
 
       <!-- Exportar PDF -->
       <button
+        class="btn-export"
         mat-raised-button
         color="primary"
         (click)="exportarPdf()"
         [disabled]="resumenMix.length === 0 || !((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar'))"
-        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? '1' : '0.3'"
+        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? '1' : '0.35'"
         [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? 'auto' : 'none'"
         [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? 'Sin permisos' : ''"
       >
-        <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
+        <mat-icon>picture_as_pdf</mat-icon>
+        Exportar PDF
       </button>
     </div>
   </div>
 
+  <!-- LOADING -->
   <mat-progress-bar *ngIf="cargando" mode="indeterminate"></mat-progress-bar>
 
-  <!-- Tabla combinada -->
-  <div class="card-tabla" *ngIf="!cargando">
-    <div class="titulo-tabla">
-      Resumen por Año (Acumulado) — {{ anio }} | Mes: {{ mesLabel }}
+  <!-- KPI CARDS -->
+  <div class="kpi-grid" *ngIf="!cargando">
+    <ng-container *ngIf="resumenMix.length > 0; else noData">
+      <div
+        class="kpi-card"
+        *ngFor="let item of resumenMix; let i = index"
+        [ngClass]="{
+          'kpi-blue': i % 4 === 0,
+          'kpi-orange': i % 4 === 1,
+          'kpi-green': i % 4 === 2,
+          'kpi-red': i % 4 === 3
+        }"
+      >
+        <div class="kpi-title">
+          <div class="kpi-left">
+            <span class="kpi-name">{{ item.descripcion }}</span>
+            <span class="kpi-id">ID: {{ item.idTipoCliente }}</span>
+          </div>
+          <span class="kpi-chip">Clientes</span>
+        </div>
+
+        <!-- 3 métricas (Total / Año / Mes) -->
+        <div class="kpi-metrics">
+          <div class="kpi-metric">
+            <div class="kpi-label">Total</div>
+            <div class="kpi-value">{{ item.cantidadTotal }}</div>
+          </div>
+
+          <div class="kpi-metric">
+            <div class="kpi-label">Año {{ anio }}</div>
+            <div class="kpi-value">{{ item.cantidadAnual }}</div>
+          </div>
+
+          <div class="kpi-metric">
+            <div class="kpi-label">{{ mesLabel }}</div>
+            <div class="kpi-value">{{ item.cantidadMensual }}</div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-template #noData>
+      <div class="empty-state">
+        <mat-icon>info</mat-icon>
+        <div>
+          <div class="empty-title">Sin datos</div>
+          <div class="empty-text">No hay información para el rango seleccionado.</div>
+        </div>
+      </div>
+    </ng-template>
+  </div>
+
+  <!-- TABLE DETAIL (opcional, abajo) -->
+  <div class="table-card" *ngIf="!cargando" style="visibility:hidden ;">
+    <div class="table-header">
+      <div class="table-title">Detalle por tipo</div>
+      <div class="table-sub">Total • Año {{ anio }} • Mes {{ mesLabel }}</div>
     </div>
-<table class="tabla-gtin" *ngIf="resumenMix.length > 0">
-  <colgroup>
-    <col class="col-id" />
-    <col class="col-desc" />
-    <col class="col-num" />
-    <col class="col-num" />
-  </colgroup>
 
-  <thead>
-    <tr>
-      <th>Id Tipo</th>
-      <th>Descripción</th>
-      <th class="num">Cantidad Anual</th>
-      <th class="num">Cantidad Mensual</th>
-    </tr>
-  </thead>
+    <div class="table-scroll" *ngIf="resumenMix.length > 0">
+      <table class="dash-table">
+        <thead>
+          <tr>
+            <th class="col-id">Id Tipo</th>
+            <th>Descripción</th>
+            <th class="num">Total</th>
+            <th class="num">Cantidad Anual</th>
+            <th class="num">Cantidad Mensual</th>
+          </tr>
+        </thead>
 
-  <tbody>
-    <tr *ngFor="let item of resumenMix">
-      <td>{{ item.idTipoCliente }}</td>
-      <td>{{ item.descripcion }}</td>
-      <td class="num">{{ item.cantidadAnual }}</td>
-      <td class="num">{{ item.cantidadMensual }}</td>
-    </tr>
-  </tbody>
-</table>
+        <tbody>
+          <tr *ngFor="let item of resumenMix">
+            <td class="mono">{{ item.idTipoCliente }}</td>
+            <td>{{ item.descripcion }}</td>
+            <td class="num">{{ item.cantidadTotal }}</td>
+            <td class="num">{{ item.cantidadAnual }}</td>
+            <td class="num">{{ item.cantidadMensual }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
 
-
-    <div *ngIf="resumenMix.length === 0" class="mensaje-vacio">
-      No hay datos disponibles para {{ anio }} / {{ mesLabel }}.
+    <div class="table-empty" *ngIf="resumenMix.length === 0">
+      No hay datos disponibles.
     </div>
   </div>
 
-  <div class="mensaje-estado">{{ mensaje }}</div>
+  <!-- STATUS -->
+  <div class="status">{{ mensaje }}</div>
+
 </div>
