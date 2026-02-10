@@ -520,6 +520,7 @@ export class CuentaCobrarService {
     fechaHasta?: string;     // 'yyyy-MM-dd'
     numeroPago?: string;
     clienteCodigo?: number;  // opcional
+    estado?: string; 
   } = {}): Observable<ApiResponse<PaginationResponse<PagoItemRaw>>> {
     const url = `${this.baseUrl}/Pagos/todos`;
 
@@ -527,11 +528,13 @@ export class CuentaCobrarService {
       .set('incluirDetalle', String(!!opts.incluirDetalle))
       .set('page', String(opts.page ?? 1))
       .set('pageSize', String(opts.pageSize ?? 20));
-
+    
     if (opts.fechaDesde) params = params.set('fechaDesde', opts.fechaDesde);
     if (opts.fechaHasta) params = params.set('fechaHasta', opts.fechaHasta);
     if (opts.numeroPago) params = params.set('numeroPago', opts.numeroPago.trim());
     if (opts.clienteCodigo) params = params.set('clienteCodigo', String(opts.clienteCodigo));
+      params = params.set('estado', opts.estado || 'todos');
+
 
     return this.http.get<ApiResponse<PaginationResponse<PagoItemRaw>>>(url, { params });
   }
@@ -545,6 +548,7 @@ export class CuentaCobrarService {
     fechaHasta?: string;
     numeroPago?: string;
     clienteCodigo?: number;
+    estado?: string; 
   } = {}): Observable<PaginationResponse<PagoItem>> {
     return this.getPagosTodosRaw(opts).pipe(
       map(res => {

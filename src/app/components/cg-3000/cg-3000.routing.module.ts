@@ -31,8 +31,10 @@ import { LiquidacionCompraFormComponent } from './transacciones/liquidacion-comp
 import { LiquidacionCompraComponent } from './transacciones/liquidacion-compra/liquidacion-compra-list/liquidacion-compra-list.component';
 import { MayorCuentasListComponent } from './balance/mayor/mayor-cuentas-list/mayor-cuentas-list.component';
 import { EstadoFinancieroComponent } from './balance/estado-financiero/estado-financiero.component';
+import { ReporteComprasComponent } from './anexo-transaccional/reporte-compras/reporte-compras.component';
 import { ActivosFijosListComponent } from './activo-fijo/activos-fijos-list/activos-fijos-list.component';
 import { ActivosFijosFormComponent } from './activo-fijo/activos-fijos-form/activos-fijos-form.component';
+
 const routes: Routes = [
   {
     path: '',
@@ -65,9 +67,10 @@ const routes: Routes = [
       { path: 'liquidacion-compra-list', component: LiquidacionCompraComponent },
       { path: 'mayor', component: MayorCuentasListComponent },
       { path: 'estado-financiero', component: EstadoFinancieroComponent },
-      {path: 'activo-fijo',component:ActivosFijosListComponent},
+      { path: 'reporte-compras', component: ReporteComprasComponent },      
+      { path: 'activo-fijo',component:ActivosFijosListComponent},
       { path: 'activo-fijo/nuevo', component: ActivosFijosFormComponent },
-  { path: 'activo-fijo/editar/:id', component: ActivosFijosFormComponent },
+      { path: 'activo-fijo/editar/:id', component: ActivosFijosFormComponent },
       { path: '**', redirectTo: 'inicio-cg' },
     ],
   },

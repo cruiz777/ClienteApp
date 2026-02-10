@@ -1,0 +1,818 @@
+/* ========== CONTENEDOR PRINCIPAL ========== */
+.page-container {
+  padding: 0;
+  background-color: #ffffff;
+  min-height: 100vh;
+}
+
+.contenido-tablas {
+  background-color: white;
+  padding: 24px 32px;
+}
+
+/* ========== ENCABEZADO ========== */
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.title {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+
+.empresa-info {
+  font-size: 13px;
+  color: #4b5563;
+  padding: 4px 12px;
+  background-color: transparent;
+  border-radius: 0;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* ========== FILTROS ========== */
+.filters-row {
+  margin-bottom: 24px;
+  padding: 0;
+  background-color: transparent;
+  border-radius: 0;
+  border: none;
+}
+
+.filters-group {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.filter-field {
+  min-width: 180px;
+  flex: 0 1 auto;
+}
+
+.filter-field ::ng-deep .mat-mdc-text-field-wrapper {
+  background-color: #ffffff;
+}
+
+.filter-field ::ng-deep .mat-mdc-form-field-focus-overlay {
+  background-color: transparent;
+}
+
+.btn-buscar {
+  background-color: #3b82f6 !important;
+  color: white !important;
+  font-weight: 500;
+  height: 56px;
+  padding: 0 24px;
+  min-width: 130px;
+  border-radius: 4px;
+  text-transform: none;
+  letter-spacing: 0.3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-buscar:hover:not(:disabled) {
+  background-color: #2563eb !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.btn-buscar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-buscar mat-spinner {
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.btn-buscar mat-spinner ::ng-deep circle {
+  stroke: white !important;
+}
+
+.btn-exportar {
+  background-color: #6b7280 !important;
+  color: white !important;
+  font-weight: 500;
+  height: 56px;
+  padding: 0 24px;
+  min-width: 160px;
+  border-radius: 4px;
+  text-transform: none;
+  letter-spacing: 0.3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.btn-exportar:hover:not(:disabled) {
+  background-color: #4b5563 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.btn-exportar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ========== INFORMACIÓN DEL REPORTE ========== */
+.info-reporte {
+  display: flex;
+  gap: 24px;
+  padding: 12px 16px;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  border-left: 3px solid #3b82f6;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.info-item mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #3b82f6;
+}
+
+/* ========== GRID WRAPPER ========== */
+.grid-wrapper {
+  width: 100%;
+  margin-bottom: 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+/* ========== ESTILOS PERSONALIZADOS AG-GRID ========== */
+:host ::ng-deep .custom-grid {
+  --ag-header-background-color: #f9fafb;
+  --ag-header-foreground-color: #374151;
+  --ag-header-cell-hover-background-color: #f3f4f6;
+  --ag-row-hover-color: #f9fafb;
+  --ag-selected-row-background-color: #eff6ff;
+  --ag-odd-row-background-color: #ffffff;
+  --ag-even-row-background-color: #fafbfc;
+  --ag-border-color: #e5e7eb;
+  --ag-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --ag-font-size: 13px;
+  border-radius: 6px;
+}
+
+/* Headers principales */
+:host ::ng-deep .custom-grid .ag-header {
+  border-bottom: 2px solid #e5e7eb;
+}
+
+:host ::ng-deep .custom-grid .ag-header-cell {
+  padding: 12px 8px;
+  border-right: 1px solid #e5e7eb;
+}
+
+:host ::ng-deep .custom-grid .ag-header-cell-label {
+  font-weight: 600;
+  font-size: 11px;  /* ← CAMBIAR: reducir de 12px a 11px */
+  letter-spacing: 0.2px;  /* ← CAMBIAR: reducir spacing */
+  color: #374151;
+}
+
+:host ::ng-deep .custom-grid .ag-header-cell-text {
+  white-space: normal;
+  line-height: 1.3;
+  text-align: left;
+}
+
+/* Celdas */
+:host ::ng-deep .custom-grid .ag-cell {
+  display: flex;
+  align-items: center;
+  padding: 8px 10px;  /* ← CAMBIAR: reducir padding */
+  line-height: 1.4;
+  border-right: 1px solid #f3f4f6;
+  white-space: nowrap;  /* ← AGREGAR: evitar wrap */
+  overflow: hidden;     /* ← AGREGAR */
+  text-overflow: ellipsis;  /* ← AGREGAR: mostrar ... */
+}
+
+:host ::ng-deep .custom-grid .ag-right-aligned-cell {
+  justify-content: flex-end;
+}
+
+/* Fila de totales (pinned bottom) */
+:host ::ng-deep .custom-grid .ag-row-pinned {
+  background-color: #f3f4f6 !important;
+  color: #1f2937 !important;
+  font-weight: 700;
+  font-size: 13px;
+  border-top: 2px solid #3b82f6 !important;
+}
+
+:host ::ng-deep .custom-grid .ag-row-pinned .ag-cell {
+  border-top: none !important;
+  padding: 14px 12px;
+}
+
+
+
+/* Columnas pinned (RUC y Proveedor) */
+:host ::ng-deep .custom-grid .ag-pinned-left-header {
+  border-right: 2px solid #d1d5db !important;
+}
+
+:host ::ng-deep .custom-grid .ag-pinned-left-cols-container {
+  border-right: 2px solid #d1d5db !important;
+  background-color: #fafbfc;
+}
+
+/* Bordes entre grupos de columnas */
+:host ::ng-deep .custom-grid .ag-header-cell:nth-child(9) {
+  border-right: 2px solid #3b82f6 !important;
+}
+
+:host ::ng-deep .custom-grid .ag-header-cell:nth-child(17) {
+  border-right: 2px solid #10b981 !important;
+}
+
+:host ::ng-deep .custom-grid .ag-cell:nth-child(9) {
+  border-right: 2px solid #dbeafe !important;
+}
+
+:host ::ng-deep .custom-grid .ag-cell:nth-child(17) {
+  border-right: 2px solid #d1fae5 !important;
+}
+
+/* Hover en filas */
+:host ::ng-deep .custom-grid .ag-row:hover {
+  background-color: #f9fafb !important;
+}
+
+/* Scroll horizontal */
+:host ::ng-deep .custom-grid .ag-body-horizontal-scroll {
+  background-color: #f9fafb;
+}
+
+:host ::ng-deep .custom-grid .ag-body-horizontal-scroll-viewport {
+  background-color: #e5e7eb;
+}
+
+/* ========== FOOTER DEL GRID ========== */
+.grid-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.footer-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.footer-info mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  color: #3b82f6;
+}
+
+.footer-legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 2px;
+  border: 1px solid #d1d5db;
+}
+
+/* ========== MENSAJE SIN DATOS ========== */
+.sin-datos {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 40px;
+  text-align: center;
+}
+
+.sin-datos mat-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  color: #d1d5db;
+  margin-bottom: 16px;
+}
+
+.sin-datos h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 8px 0;
+}
+
+.sin-datos p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 4px 0;
+}
+
+.sin-datos .hint {
+  font-size: 13px;
+  color: #9ca3af;
+  font-style: italic;
+  margin-top: 12px;
+}
+
+/* ========== MENSAJE INICIAL ========== */
+.mensaje-inicial {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 40px;
+  text-align: center;
+  background-color: #f9fafb;
+  border-radius: 6px;
+  border: 2px dashed #d1d5db;
+}
+
+.mensaje-inicial mat-icon {
+  font-size: 64px;
+  width: 64px;
+  height: 64px;
+  color: #9ca3af;
+  margin-bottom: 16px;
+}
+
+.mensaje-inicial h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 12px 0;
+}
+
+.mensaje-inicial p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 4px 0;
+  max-width: 500px;
+  line-height: 1.6;
+}
+
+/* ========== OVERLAY DE CARGA ========== */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+  gap: 20px;
+}
+
+.overlay mat-spinner ::ng-deep circle {
+  stroke: white !important;
+}
+
+.overlay p {
+  margin: 0;
+  letter-spacing: 0.3px;
+}
+
+/* ========== RESPONSIVE ========== */
+@media screen and (max-width: 1024px) {
+  .filters-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .filter-field {
+    width: 100%;
+  }
+
+  .btn-buscar,
+  .btn-exportar {
+    width: 100%;
+  }
+
+  .header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .empresa-info {
+    width: 100%;
+  }
+
+  .info-reporte {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .grid-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .page-container {
+    padding: 0;
+  }
+
+  .contenido-tablas {
+    padding: 16px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .grid-wrapper {
+    overflow-x: auto;
+  }
+
+  .footer-legend {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+/* ========== MEJORAS ADICIONALES ========== */
+/* Selección de texto */
+:host ::ng-deep .custom-grid .ag-cell {
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+}
+
+/* Sin bordes innecesarios */
+:host ::ng-deep .custom-grid .ag-root-wrapper {
+  border: none;
+}
+:host ::ng-deep .custom-grid .ag-body-viewport {
+  overflow-x: auto !important;
+}
+
+:host ::ng-deep .custom-grid .ag-center-cols-viewport {
+  overflow-x: auto !important;
+}
+/* ========== INFORMACIÓN DEL REPORTE ========== */
+.info-reporte {
+  display: flex;
+  gap: 24px;
+  padding: 12px 16px;
+  background-color: #e6f2ff;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  border-left: 4px solid #002c6c;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #002c6c;
+  font-weight: 500;
+}
+
+.info-item mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  color: #F27046;
+}
+
+/* ========== EMPRESA INFO ========== */
+.empresa-info {
+  font-size: 14px;
+  color: #002c6c;
+  padding: 6px 12px;
+  background-color: #e6f2ff;
+  border-radius: 4px;
+  border-left: 4px solid #F27046;
+  font-weight: 600;
+}
+
+/* ========== FOOTER DEL GRID ========== */
+.grid-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  background-color: #f8f9fa;
+  border: 1px solid #d1d5db;
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.footer-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #002c6c;
+  font-weight: 600;
+}
+
+.footer-info mat-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+  color: #F27046;
+}
+
+.footer-legend {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 3px;
+  border: 1px solid #d1d5db;
+}
+
+/* ========== MENSAJE SIN DATOS ========== */
+.sin-datos {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 40px;
+  text-align: center;
+}
+
+.sin-datos mat-icon {
+  font-size: 80px;
+  width: 80px;
+  height: 80px;
+  color: #d1d5db;
+  margin-bottom: 16px;
+}
+
+.sin-datos h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 8px 0;
+}
+
+.sin-datos p {
+  font-size: 15px;
+  color: #6b7280;
+  margin: 4px 0;
+}
+
+.sin-datos .hint {
+  font-size: 13px;
+  color: #9ca3af;
+  font-style: italic;
+  margin-top: 12px;
+}
+
+/* ========== MENSAJE INICIAL ========== */
+.mensaje-inicial {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  padding: 40px;
+  text-align: center;
+  background: linear-gradient(135deg, #f0f4f8 0%, #e6f2ff 100%);
+  border-radius: 8px;
+  border: 2px dashed #cbd5e1;
+}
+
+.mensaje-inicial mat-icon {
+  font-size: 80px;
+  width: 80px;
+  height: 80px;
+  color: #002c6c;
+  margin-bottom: 16px;
+}
+
+.mensaje-inicial h3 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #002c6c;
+  margin: 0 0 12px 0;
+}
+
+.mensaje-inicial p {
+  font-size: 15px;
+  color: #4b5563;
+  margin: 4px 0;
+  max-width: 500px;
+}
+
+/* ========== SPINNER EN BOTÓN ========== */
+.btn-buscar mat-spinner {
+  display: inline-block;
+  margin-right: 4px;
+}
+
+.btn-buscar mat-spinner ::ng-deep circle {
+  stroke: white !important;
+}
+
+.overlay mat-spinner ::ng-deep circle {
+  stroke: white !important;
+}
+
+.overlay p {
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+/* ========== AJUSTES RESPONSIVE ========== */
+@media screen and (max-width: 1024px) {
+  .info-reporte {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .grid-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .empresa-info {
+    width: 100%;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .footer-legend {
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+/* ========== COLUMNAS PINNED ========== */
+:host ::ng-deep .custom-grid .ag-pinned-left-header {
+  border-right: 2px solid #F27046 !important;
+}
+
+:host ::ng-deep .custom-grid .ag-pinned-left-cols-container {
+  border-right: 2px solid #F27046 !important;
+  background-color: #fafbfc;
+}
+
+/* ========== BORDES ENTRE GRUPOS ========== */
+:host ::ng-deep .custom-grid .ag-header-cell:nth-child(9) {
+  border-right: 3px solid #F27046 !important;
+}
+
+:host ::ng-deep .custom-grid .ag-header-cell:nth-child(17) {
+  border-right: 3px solid #F27046 !important;
+}
+
+:host ::ng-deep .custom-grid .ag-cell:nth-child(9) {
+  border-right: 2px solid #e0e7ef !important;
+}
+
+:host ::ng-deep .custom-grid .ag-cell:nth-child(17) {
+  border-right: 2px solid #e0e7ef !important;
+}
+
+/* ========== AJUSTES PARA MEJOR VISUALIZACIÓN ========== */
+:host ::ng-deep .custom-grid .ag-header-cell {
+  padding: 12px 8px;
+}
+
+:host ::ng-deep .custom-grid .ag-header-cell-text {
+  white-space: normal;
+  line-height: 1.3;
+  text-align: center;
+}
+
+:host ::ng-deep .custom-grid .ag-cell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+:host ::ng-deep .custom-grid .ag-row:hover {
+  background-color: #f0f4f8 !important;
+  cursor: pointer;
+}
+
+/* Selección de texto */
+:host ::ng-deep .custom-grid .ag-cell {
+  user-select: text;
+  -webkit-user-select: text;
+  -moz-user-select: text;
+}
+
+/* Asegurar scroll horizontal funcional */
+:host ::ng-deep .custom-grid .ag-body-viewport {
+  overflow-x: auto !important;
+}
+
+:host ::ng-deep .custom-grid .ag-center-cols-viewport {
+  overflow-x: auto !important;
+}
+/* Mejorar contraste de headers */
+:host ::ng-deep .custom-grid .ag-header-cell {
+  padding: 10px 8px;
+}
+
+:host ::ng-deep .custom-grid .header-datos-factura .ag-header-cell-text,
+:host ::ng-deep .custom-grid .header-retenciones-iva .ag-header-cell-text,
+:host ::ng-deep .custom-grid .header-retenciones-fuente .ag-header-cell-text {
+  font-weight: 700 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+/* Color de fuente para headers - Datos Factura */
+:host ::ng-deep .custom-grid .header-datos-factura {
+ 
+  color: #ffffff !important;  /* ← BLANCO */
+  border-right: 1px solid #004080 !important;
+}
+
+/* Color de fuente para headers - Retenciones IVA */
+:host ::ng-deep .custom-grid .header-retenciones-iva {
+
+  color: #ffffff !important;  /* ← CAMBIAR de #7FFF7F a BLANCO */
+  border-right: 1px solid #2E5F8A !important;
+}
+
+/* Color de fuente para headers - Retenciones Fuente */
+:host ::ng-deep .custom-grid .header-retenciones-fuente {
+
+  color: #ffffff !important;  /* ← CAMBIAR de #7FFF7F a BLANCO */
+  border-right: 1px solid #1B3A5C !important;
+}

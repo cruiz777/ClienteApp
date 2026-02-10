@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Injectable, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
 
@@ -13,10 +13,41 @@ import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/components/ut
 import { ZonaService } from 'src/app/services/zona.service';
 import { LocalesService } from 'src/app/services/locales.service';
 import { LogoService } from 'src/app/services/logo.service';
-import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
+import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, NativeDateAdapter } from '@angular/material/core';
 import { MomentDateAdapter, MAT_MOMENT_DATE_ADAPTER_OPTIONS } from '@angular/material-moment-adapter';
 import { EstadoResultadosResponse } from 'src/app/interfaces/responses/estado-resultados-response';
 import { ApiResponse } from 'src/app/interfaces/responses/api-response';
+
+
+@Injectable()
+class CustomDateAdapter extends NativeDateAdapter {
+  override parse(value: any): Date | null {
+    if (typeof value === 'string' && value.length > 0) {
+      const parts = value.split('/');
+      if (parts.length === 3) {
+        const day = Number(parts[0]);
+        const month = Number(parts[1]) - 1;
+        const year = Number(parts[2]);
+        return new Date(year, month, day);
+      }
+    }
+    return super.parse(value);
+  }
+
+  override format(date: Date, displayFormat: Object): string {
+    if (displayFormat === 'input') {
+      const day = date.getDate();
+      const month = date.getMonth() + 1;
+      const year = date.getFullYear();
+      return `${this._to2digit(day)}/${this._to2digit(month)}/${year}`;
+    }
+    return date.toDateString();
+  }
+
+  private _to2digit(n: number): string {
+    return ('00' + n).slice(-2);
+  }
+}
 
 // Definir formato personalizado CON TOKENS NATIVOS
 export const MY_DATE_FORMATS = {
@@ -24,7 +55,7 @@ export const MY_DATE_FORMATS = {
     dateInput: 'DD/MM/YYYY',
   },
   display: {
-    dateInput: 'DD/MM/YYYY',
+    dateInput: 'input',
     monthYearLabel: 'MMM YYYY',
     dateA11yLabel: 'LL',
     monthYearA11yLabel: 'MMMM YYYY',
@@ -52,11 +83,7 @@ interface Local {
   styleUrls: ['./estado-financiero.component.css'],
   providers: [
     { provide: MAT_DATE_LOCALE, useValue: 'es-EC' },
-    { 
-      provide: DateAdapter, 
-      useClass: MomentDateAdapter, 
-      deps: [MAT_DATE_LOCALE, MAT_MOMENT_DATE_ADAPTER_OPTIONS] 
-    },
+    { provide: DateAdapter, useClass: CustomDateAdapter },
     { provide: MAT_DATE_FORMATS, useValue: MY_DATE_FORMATS }
   ]
 })
@@ -129,6 +156,7 @@ export class EstadoFinancieroComponent implements OnInit {
   }
 
   buscarDatos(): void {
+    
     if (this.filtrosForm.invalid) {
         this.mostrarMensaje({
         title: 'Formulario incompleto',
@@ -591,9 +619,17 @@ export class EstadoFinancieroComponent implements OnInit {
     }
 
   // Métodos auxiliares
-  formatearFechaISO(fecha: Date): string {
-    return fecha.toISOString();
-  }
+    formatearFechaISO(fecha: any): string {
+    // Asegurar que sea un objeto Date válido
+    const fechaObj = fecha instanceof Date ? fecha : new Date(fecha);
+    
+    // Formatear manualmente sin cambio de timezone
+    const year = fechaObj.getFullYear();
+    const month = String(fechaObj.getMonth() + 1).padStart(2, '0');
+    const day = String(fechaObj.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}T00:00:00`;
+    }
 
   formatearFechaLegible(fecha: Date): string {
     const dia = String(fecha.getDate()).padStart(2, '0');
@@ -653,6 +689,9 @@ export class EstadoFinancieroComponent implements OnInit {
     this.cargando = false;
     if (response.data && response.data.length > 0) {
         this.datosReporte = response.data;
+        if (!this.esEstadoResultados()) {
+            this.agregarTotalPasivoPatrimonio();
+        }
         this.mostrarResultados = true;
         
         this.mostrarMensaje({
@@ -676,6 +715,58 @@ export class EstadoFinancieroComponent implements OnInit {
     }
     }
 
+    private agregarTotalPasivoPatrimonio(): void {
+        const datos = this.datosReporte as EstadoFinancieroResponse[];
+
+        const totalPasivo = datos.find(d =>
+            d.esTotalGeneral && d.nombreCuenta.toUpperCase().includes('PASIVO')
+        );
+        const totalPatrimonio = datos.find(d =>
+            d.esTotalGeneral && d.nombreCuenta.toUpperCase().includes('PATRIMONIO')
+        );
+
+        // Si no existe ninguno de los dos, no hacer nada
+        if (!totalPasivo && !totalPatrimonio) return;
+
+        const sumar = (v1: string | null, v2: string | null): string => {
+            const parsear = (v: string | null): number => {
+            if (!v) return 0;
+            const esNeg = v.includes('(');
+            const num = parseFloat(v.replace(/[(),\s]/g, '')) || 0;
+            return esNeg ? -num : num;
+            };
+            const resultado = parsear(v1) + parsear(v2);
+            if (resultado < 0) {
+            return `(${Math.abs(resultado).toLocaleString('en-US', { minimumFractionDigits: 2 })})`;
+            }
+            return resultado.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        };
+
+        const fila: EstadoFinancieroResponse = {
+            cuenta: '',
+            nombreCuenta: 'PASIVO + PATRIMONIO',
+            nivel: 1,
+            orden: 9999, // ← Agregar esta línea
+            esTotalGeneral: true,
+            esUtilidad: false,
+            sum1: sumar(totalPasivo?.sum1 ?? null, totalPatrimonio?.sum1 ?? null),
+            sum2: sumar(totalPasivo?.sum2 ?? null, totalPatrimonio?.sum2 ?? null),
+            sum3: sumar(totalPasivo?.sum3 ?? null, totalPatrimonio?.sum3 ?? null),
+            sum4: sumar(totalPasivo?.sum4 ?? null, totalPatrimonio?.sum4 ?? null),
+            sum5: sumar(totalPasivo?.sum5 ?? null, totalPatrimonio?.sum5 ?? null),
+        };
+
+        // Insertar ANTES de la utilidad, o al final si no hay utilidad
+        const indexUtilidad = datos.findIndex(d => d.esUtilidad);
+        if (indexUtilidad >= 0) {
+            (this.datosReporte as EstadoFinancieroResponse[]).splice(indexUtilidad, 0, fila);
+        } else {
+            // Si no hay utilidad, insertar después del último total encontrado
+            const ultimoTotal = totalPatrimonio || totalPasivo;
+            const index = datos.indexOf(ultimoTotal!);
+            (this.datosReporte as EstadoFinancieroResponse[]).splice(index + 1, 0, fila);
+        }
+    }
 
     // ✅ NUEVO: Método para manejar errores
     private handleErrorResponse(error: any): void {
@@ -696,7 +787,7 @@ export class EstadoFinancieroComponent implements OnInit {
     if (!valor) return '';
     return valor; // Ya viene formateado con paréntesis del backend
     }
-
+    
   limpiarFormulario(): void {
     this.filtrosForm.reset();
     this.inicializarFormulario();

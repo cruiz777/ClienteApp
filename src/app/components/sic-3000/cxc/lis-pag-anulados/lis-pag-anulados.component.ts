@@ -137,8 +137,9 @@ export class LisPagAnuladosComponent implements OnInit {
         btn.appendChild(img);
         btn.addEventListener('click', () => {
           const numeroPago = params.data?.numeroPago;
+          const esAnulado = (params.data?.estado || '').toUpperCase() === 'ANULADO';
           if (numeroPago) {
-            this.imprimirPago(numeroPago);
+            this.imprimirPago(numeroPago, esAnulado);
           }
         });
 
@@ -148,11 +149,12 @@ export class LisPagAnuladosComponent implements OnInit {
     }
   ];
   //Método para imprimir
-  imprimirPago(numeroPago: string): void {
+  imprimirPago(numeroPago: string, esAnulado: boolean): void {
     this.pagoReportService
       .generarPdfDesdeApi(numeroPago, {
         titulo: 'ASOCIACION ECUATORIANA DE CODIGO DE PRODUCTO ECOP',
-        logoUrl: this.logoUrl || 'assets/logo/GS1-logo.png'
+        logoUrl: this.logoUrl || 'assets/logo/GS1-logo.png',
+        esAnulado: esAnulado
       })
       .catch(err => {
         console.error('Error al generar PDF:', err);
@@ -211,6 +213,10 @@ export class LisPagAnuladosComponent implements OnInit {
     const estado = (raw.estado || 'TODOS') as 'TODOS' | 'ACTIVO' | 'ANULADO';
     const clienteCodigo = raw.clienteCodigo ?? undefined;
 
+    const estadoBackend = estado === 'ACTIVO' ? 'activos'
+                       : estado === 'ANULADO' ? 'anulados'
+                       : 'todos';
+
     this.loading = true;
 
     this.cxc.getPagosTodos({
@@ -219,6 +225,7 @@ export class LisPagAnuladosComponent implements OnInit {
       fechaDesde: desde,
       fechaHasta: hasta,
       clienteCodigo,
+      estado: estadoBackend, 
       page: index + 1,       // API: 1-based
       pageSize: this.pageSize
     }).subscribe({
