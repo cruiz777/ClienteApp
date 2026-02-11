@@ -2,6 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import * as XLSX from 'xlsx';
+import * as FileSaver from 'file-saver';
 
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -10,7 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 
 import { AgGridAngular } from 'ag-grid-angular';
-import { ColDef, GridOptions } from 'ag-grid-community';
+import { ColDef, GridApi, GridOptions, GridReadyEvent } from 'ag-grid-community';
 
 import { ActivoFijoApiService, ActivoFijoDto } from 'src/app/services/activos-fijos.service';
 import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
@@ -38,14 +40,46 @@ export class ActivosFijosListComponent implements OnInit {
   rowData: ActivoFijoDto[] = [];
   total = 0;
 
+  private gridApi?: GridApi<ActivoFijoDto>;
+
   // ✅ columnas con acciones
   colDefs: ColDef<ActivoFijoDto>[] = [
     { headerName: 'Código', field: 'CodigoAf', width: 110 },
     { headerName: 'Descripción', field: 'Descripcion', width: 380 },
-    { headerName: 'Marca', field: 'Marca', width: 150 },
-    { headerName: 'Estado', field: 'IdMarca', width: 110 },
+    { headerName: 'Cuenta', field: 'Cuenta', width: 150 },
+    { headerName: 'Nombre', field: 'PlanCuentaNombre', width: 220 },
+    { headerName: 'Marca', field: 'Marca', width: 160 },
+    { headerName: 'Estado', field: 'MarcaDescripcion', width: 140 },
+
+    // ✅ Fecha dd/MM/yyyy
+    {
+      headerName: 'F.Compra',
+      field: 'Feccompra',
+      width: 140,
+      valueFormatter: (p) => this.formatFechaDMY(p.value),
+      comparator: (a, b) => this.compareFechaISO(a, b),
+      filter: 'agDateColumnFilter',
+      filterParams: {
+        // el filtro se basa en fecha real (ISO o Date)
+        comparator: (filterLocalDateAtMidnight: Date, cellValue: any) => {
+          const d = this.parseFecha(cellValue);
+          if (!d) return -1;
+          const cell = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+          const filter = new Date(
+            filterLocalDateAtMidnight.getFullYear(),
+            filterLocalDateAtMidnight.getMonth(),
+            filterLocalDateAtMidnight.getDate()
+          );
+          if (cell < filter) return -1;
+          if (cell > filter) return 1;
+          return 0;
+        }
+      }
+    },
+
     { headerName: 'Custodio', field: 'Custodio', width: 180 },
-    { headerName: 'Ubicación', field: 'Ubicacion',flex:1, width: 140 },
+    { headerName: 'Ubicación', field: 'Ubicacion', width: 160 },
+    { headerName: 'Proveedor', field: 'Proveedor', width: 160 },
 
     // ✅ Editar (icono)
     {
@@ -94,7 +128,6 @@ export class ActivosFijosListComponent implements OnInit {
     }
   ];
 
-  // ✅ quitado el doble click
   gridOptions: GridOptions<ActivoFijoDto> = {
     defaultColDef: {
       sortable: true,
@@ -104,9 +137,7 @@ export class ActivosFijosListComponent implements OnInit {
     rowSelection: 'single',
     animateRows: true,
     rowHeight: 44,
-
-  // (opcional) mejora el header
-  headerHeight: 38
+    headerHeight: 38
   };
 
   constructor(
@@ -117,6 +148,12 @@ export class ActivosFijosListComponent implements OnInit {
 
   ngOnInit(): void {
     this.cargar();
+  }
+
+  onGridReady(event: GridReadyEvent<ActivoFijoDto>) {
+    this.gridApi = event.api;
+    // opcional: ajusta columnas al tamaño
+    // this.gridApi.sizeColumnsToFit();
   }
 
   cargar(): void {
@@ -164,6 +201,77 @@ export class ActivosFijosListComponent implements OnInit {
     this.router.navigate(['/cg-3000/activo-fijo/editar', id]);
   }
 
+exportarExcel(): void {
+  if (!this.gridApi) return;
+
+  const fechaHora = this.hoyYMD();
+  const datos: any[] = [];
+
+  // ✅ Recorrer TODAS las filas cargadas en el grid (ignora paginación)
+  this.gridApi.forEachNode((node) => {
+    const row = node.data;
+    if (!row) return;
+
+    datos.push({
+      Codigo: row.CodigoAf ?? '',
+      Descripcion: row.Descripcion ?? '',
+      Cuenta: row.Cuenta ?? '',
+      Nombre: row.PlanCuentaNombre ?? '',
+      Marca: row.Marca ?? '',
+      Estado: row.MarcaDescripcion ?? '',
+      F_Compra: this.formatFechaDMY(row.Feccompra),
+      Custodio: row.Custodio ?? '',
+      Ubicacion: row.Ubicacion ?? '',
+      Proveedor: row.Proveedor ?? ''
+    });
+  });
+
+  if (datos.length === 0) return;
+
+  const sheetName = 'Activos Fijos';
+  const keys = Object.keys(datos[0]);
+  const titulo = `REPORTE DE ACTIVOS FIJOS (${datos.length})`;
+
+  // ====== Construcción con título ======
+  const aoa: any[][] = [];
+  aoa.push([titulo]);
+  aoa.push([]);
+  aoa.push(keys);
+  for (const r of datos) aoa.push(keys.map(k => r[k]));
+
+  const worksheet: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(aoa);
+
+  // Merge título A1..última columna
+  worksheet['!merges'] = worksheet['!merges'] || [];
+  worksheet['!merges'].push({
+    s: { r: 0, c: 0 },
+    e: { r: 0, c: keys.length - 1 }
+  });
+
+  // Auto ancho básico
+  worksheet['!cols'] = keys.map(k => {
+    const maxLen = Math.max(
+      k.length,
+      ...datos.map(r => String(r[k] ?? '').length)
+    );
+    return { wch: Math.min(Math.max(maxLen + 2, 10), 60) };
+  });
+
+  const workbook: XLSX.WorkBook = {
+    Sheets: { [sheetName]: worksheet },
+    SheetNames: [sheetName]
+  };
+
+  const excelBuffer: any = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+
+  const blob: Blob = new Blob([excelBuffer], {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'
+  });
+
+  FileSaver.saveAs(blob, `ActivosFijos_${fechaHora}.xlsx`);
+}
+
+
   private confirmarEliminar(id: number): void {
     this.dialog.open(CustomMessageBoxComponent, {
       width: '420px',
@@ -182,11 +290,58 @@ export class ActivosFijosListComponent implements OnInit {
   }
 
   private eliminar(id: number): void {
-    // ✅ ajusta si tu método se llama distinto:
-    // this.api.delete(id) / this.api.remove(id) / this.api.eliminar(id)
     this.api.delete(id).subscribe({
       next: () => this.cargar(),
       error: (err: any) => console.error('Error eliminando activo fijo', err)
     });
+  }
+
+  // ==========================
+  // Helpers FECHA dd/MM/yyyy
+  // ==========================
+  private parseFecha(value: any): Date | null {
+    if (!value) return null;
+
+    // DateOnly suele venir como "YYYY-MM-DD"
+    if (typeof value === 'string') {
+      const s = value.trim();
+      // si viene "YYYY-MM-DD"
+      if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+        const [y, m, d] = s.split('-').map(Number);
+        return new Date(y, m - 1, d);
+      }
+      // si viene ISO datetime
+      const dt = new Date(s);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+
+    if (value instanceof Date) return value;
+
+    return null;
+  }
+
+  private formatFechaDMY(value: any): string {
+    const d = this.parseFecha(value);
+    if (!d) return '';
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yyyy = d.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
+  private compareFechaISO(a: any, b: any): number {
+    const da = this.parseFecha(a);
+    const db = this.parseFecha(b);
+    const ta = da ? da.getTime() : 0;
+    const tb = db ? db.getTime() : 0;
+    return ta - tb;
+  }
+
+  private hoyYMD(): string {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}${m}${day}`;
   }
 }

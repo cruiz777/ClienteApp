@@ -36,13 +36,11 @@ export interface ActivoFijoDto {
   Custodio?: string | null;
   Tiempodeprec?: string | null;
 
-  Ctacontable1?: string | null;
-  Ctacontable2?: string | null;
-  Ctacontable3?: string | null;
-  Ctacontable4?: string | null;
-  Ctacontable5?: string | null;
-  Ctacontable6?: string | null;
-  Ctacontable7?: string | null;
+  IdPlanCuentas1?: number | null;
+  IdPlanCuentas2?: number | null;
+  IdPlanCuentas3?: number | null;
+  IdPlanCuentas4?: number | null;
+  IdPlanCuentas5?: number | null;
 
   ValorRazonable?: number | null;
   AjusteIncremento?: number | null;
@@ -94,6 +92,13 @@ export interface ActivoFijoDto {
   IdUsuario?: number | null;
   IdEmpresa?: number | null;
   IdDepartamento?: number | null;
+  DepartamentoNombre?: string | null;
+  PlanCuentaNombre?: string | null;
+  Cuenta?: string | null;
+  MarcaDescripcion?: string | null;
+
+
+
 }
 
 /** Respuesta opcional para paginación */

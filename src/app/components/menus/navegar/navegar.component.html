@@ -173,6 +173,13 @@
             <span *ngIf="isExpanded" class="menu-text">Validar Productos Verified</span>
             <mat-icon *ngIf="!((menuPermisos$ | async)?.validacion?.validacionProductos)" class="lock-icon">lock</mat-icon>
           </a>
+           <a mat-list-item
+             [routerLink]="((menuPermisos$ | async)?.validacion?.validacionProductos) ? '/codbar/reportes/datamatrix' : null"
+             
+             >
+            <span *ngIf="isExpanded" class="menu-text">Data Matrix</span>
+            
+          </a>
         </mat-expansion-panel>
 
         <!-- 📊 REPORTES - SIEMPRE VISIBLE -->

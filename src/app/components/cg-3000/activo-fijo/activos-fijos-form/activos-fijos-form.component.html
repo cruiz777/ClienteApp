@@ -1,3 +1,9 @@
+<!-- src/app/components/cg-3000/activo-fijo/activos-fijos-form/activos-fijos-form.component.html -->
+<div class="loading-overlay" *ngIf="busy()">
+  <mat-progress-spinner mode="indeterminate" diameter="54"></mat-progress-spinner>
+  <div class="loading-text">{{ busyText() }}</div>
+</div>
+
 <form class="af-container mat-elevation-z3" [formGroup]="form">
   <!-- ================= HEADER ================= -->
   <div class="af-header">
@@ -40,7 +46,7 @@
 
             <mat-form-field appearance="outline" class="span-2">
               <mat-label>Código Barras</mat-label>
-              <input matInput formControlName="codigoBarras" maxlength="50" />
+              <input matInput formControlName="codigoBarras" maxlength="45" />
             </mat-form-field>
           </div>
 
@@ -64,11 +70,13 @@
 
               <mat-autocomplete
                 #autoCuenta="matAutocomplete"
-                (optionSelected)="onCuentaSelected($event.option.value)"
+                [displayWith]="displayCuenta"
+                (optionSelected)="onCuentaSelectedRow($event.option.value)"
+                autoActiveFirstOption
               >
                 <mat-option
                   *ngFor="let c of (planMiniFiltered$ | async) || []"
-                  [value]="c.CuentaPresentacion"
+                  [value]="c"
                 >
                   <div style="display:flex; flex-direction:column; line-height:1.2;">
                     <b>{{ c.CuentaPresentacion }}</b>
@@ -105,12 +113,21 @@
           <div class="af-row-2">
             <mat-form-field appearance="outline">
               <mat-label>No. Serie / Placa</mat-label>
-              <input matInput formControlName="noSeriePlaca" (blur)="convertirAMayusculas('noSeriePlaca')" />
+              <input
+                matInput
+                formControlName="noSeriePlaca"
+                (blur)="convertirAMayusculas('noSeriePlaca')"
+                maxlength="28"
+              />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Marca (texto)</mat-label>
-              <input matInput formControlName="marcaTexto" (blur)="convertirAMayusculas('marcaTexto')" />
+              <input
+                matInput
+                formControlName="marcaTexto"
+                (blur)="convertirAMayusculas('marcaTexto')"
+              />
             </mat-form-field>
           </div>
 
@@ -118,12 +135,22 @@
           <div class="af-row-3">
             <mat-form-field appearance="outline">
               <mat-label>Modelo</mat-label>
-              <input matInput formControlName="modelo" (blur)="convertirAMayusculas('modelo')" />
+              <input
+                matInput
+                formControlName="modelo"
+                (blur)="convertirAMayusculas('modelo')"
+                maxlength="50"
+              />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Color</mat-label>
-              <input matInput formControlName="color" (blur)="convertirAMayusculas('color')" />
+              <input
+                matInput
+                formControlName="color"
+                (blur)="convertirAMayusculas('color')"
+                maxlength="130"
+              />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -145,6 +172,7 @@
               <mat-autocomplete
                 #autoEstado="matAutocomplete"
                 (optionSelected)="onEstadoSelected($event.option.value)"
+                autoActiveFirstOption
               >
                 <mat-option
                   *ngFor="let m of (marcasFiltered$ | async) || []"
@@ -180,6 +208,7 @@
               <mat-autocomplete
                 #autoDepto="matAutocomplete"
                 (optionSelected)="onDepartamentoSelected($event.option.value)"
+                autoActiveFirstOption
               >
                 <mat-option
                   *ngFor="let d of (departamentosFiltered$ | async) || []"
@@ -195,7 +224,13 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Ubicación</mat-label>
-              <input matInput formControlName="ubicacion" placeholder="Quito / Bodega / Piso" (blur)="convertirAMayusculas('ubicacion')" />
+              <input
+                matInput
+                formControlName="ubicacion"
+                placeholder="Quito / Bodega / Piso"
+                (blur)="convertirAMayusculas('ubicacion')"
+                maxlength="130"
+              />
             </mat-form-field>
           </div>
 
@@ -203,12 +238,22 @@
           <div class="af-row-2">
             <mat-form-field appearance="outline">
               <mat-label>Custodio</mat-label>
-              <input matInput formControlName="custodio" (blur)="convertirAMayusculas('custodio')" />
+              <input
+                matInput
+                formControlName="custodio"
+                (blur)="convertirAMayusculas('custodio')"
+                maxlength="150"
+              />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Número Póliza</mat-label>
-              <input matInput formControlName="numeroPoliza" (blur)="convertirAMayusculas('numeroPoliza')" />
+              <input
+                matInput
+                formControlName="numeroPoliza"
+                (blur)="convertirAMayusculas('numeroPoliza')"
+                maxlength="46"
+              />
             </mat-form-field>
           </div>
 
@@ -230,6 +275,7 @@
               rows="3"
               formControlName="observaciones"
               (blur)="convertirAMayusculas('observaciones')"
+              maxlength="200"
             ></textarea>
           </mat-form-field>
         </div>
@@ -237,7 +283,7 @@
         <!-- ===== Columna Derecha (Imagen) ===== -->
         <div class="af-col">
           <div class="af-image-box">
-            <!-- ✅ NUEVO: URL de Imagen -->
+            <!-- URL -->
             <mat-form-field appearance="outline" class="full">
               <mat-label>URL de Imagen</mat-label>
               <input
@@ -245,22 +291,34 @@
                 formControlName="PathImagenActivo"
                 placeholder="https://..."
                 autocomplete="off"
+                maxlength="250"
               />
               <mat-hint>Si ingresa URL, se usará en lugar del archivo.</mat-hint>
             </mat-form-field>
 
-            <button
-              mat-stroked-button
-              class="af-btn-image"
-              type="button"
-              (click)="usarImagenDesdeUrl()"
-            >
-              <mat-icon>link</mat-icon> Cargar desde URL
-            </button>
+            <div class="af-row-2">
+              <button
+                mat-stroked-button
+                class="af-btn-image"
+                type="button"
+                (click)="usarImagenDesdeUrl()"
+              >
+                <mat-icon>link</mat-icon> Cargar desde URL
+              </button>
 
-            <!-- ✅ NUEVO: Preview unificado (URL o Base64) -->
+              <button
+                mat-stroked-button
+                class="af-btn-image"
+                type="button"
+                (click)="fileInput.click()"
+              >
+                <mat-icon>upload</mat-icon> Subir archivo
+              </button>
+            </div>
+
+            <!-- Preview -->
             <div class="af-image-preview" *ngIf="imagenPreview(); else noimg">
-              <img [src]="imagenPreview()" alt="imagen activo" />
+              <img [src]="imagenPreview()!" alt="imagen activo" />
             </div>
 
             <ng-template #noimg>
@@ -278,8 +336,6 @@
               hidden
               (change)="onSeleccionarImagen($any($event.target).files?.[0] || null)"
             />
-
-            
           </div>
         </div>
       </div>
@@ -330,17 +386,40 @@
           <div class="af-row-3">
             <mat-form-field appearance="outline">
               <mat-label>Valor de Compra</mat-label>
-              <input matInput type="number" formControlName="valorCompra" />
+              <input
+                matInput
+                type="number"
+                formControlName="valorCompra"
+                min="0"
+                step="0.01"
+                (blur)="asegurarNoNegativo('valorCompra')"
+              />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Valor Residual</mat-label>
-              <input matInput type="number" formControlName="valorResidual" />
+              <input
+                matInput
+                type="number"
+                formControlName="valorResidual"
+                min="0"
+                step="0.01"
+                (blur)="asegurarNoNegativo('valorResidual')"
+              />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Vida Útil (años)</mat-label>
-              <input matInput type="number" formControlName="vidaUtil" />
+              <input
+                matInput
+                type="number"
+                formControlName="vidaUtil"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                (keydown)="bloquearNoEnterosNoNegativos($event)"
+                (blur)="normalizarEnteroNoNegativo('vidaUtil')"
+              />
             </mat-form-field>
           </div>
 
@@ -378,17 +457,44 @@
           <div class="af-row-3">
             <mat-form-field appearance="outline">
               <mat-label>Tiempo Deprec. (años)</mat-label>
-              <input matInput type="number" formControlName="Tiempodeprec" />
+              <input
+                matInput
+                type="number"
+                formControlName="Tiempodeprec"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                (keydown)="bloquearNoEnterosNoNegativos($event)"
+                (blur)="normalizarEnteroNoNegativo('Tiempodeprec')"
+              />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Tiempo Deprec. Mes</mat-label>
-              <input matInput type="number" formControlName="TiempodeprecMes" />
+              <input
+                matInput
+                type="number"
+                formControlName="TiempodeprecMes"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                (keydown)="bloquearNoEnterosNoNegativos($event)"
+                (blur)="normalizarEnteroNoNegativo('TiempodeprecMes')"
+              />
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Tiempo Deprec. Día</mat-label>
-              <input matInput type="number" formControlName="TiempodeprecDia" />
+              <input
+                matInput
+                type="number"
+                formControlName="TiempodeprecDia"
+                min="0"
+                step="1"
+                inputmode="numeric"
+                (keydown)="bloquearNoEnterosNoNegativos($event)"
+                (blur)="normalizarEnteroNoNegativo('TiempodeprecDia')"
+              />
             </mat-form-field>
           </div>
 
@@ -442,7 +548,14 @@
             <div class="af-row-2">
               <mat-form-field appearance="outline">
                 <mat-label>Valor Razonable</mat-label>
-                <input matInput type="number" formControlName="ValorRazonable" />
+                <input
+                  matInput
+                  type="number"
+                  formControlName="ValorRazonable"
+                  min="0"
+                  step="0.01"
+                  (blur)="asegurarNoNegativo('ValorRazonable')"
+                />
               </mat-form-field>
 
               <mat-form-field appearance="outline">
@@ -454,7 +567,14 @@
             <div class="af-row-2">
               <mat-form-field appearance="outline">
                 <mat-label>Vida Útil Total</mat-label>
-                <input matInput type="number" formControlName="VidaUtilTotal" />
+                <input
+                  matInput
+                  type="number"
+                  formControlName="VidaUtilTotal"
+                  min="0"
+                  step="0.01"
+                  (blur)="asegurarNoNegativo('VidaUtilTotal')"
+                />
               </mat-form-field>
 
               <mat-form-field appearance="outline">
@@ -488,109 +608,189 @@
 
     <!-- ====================== TAB 3 ====================== -->
     <mat-tab label="Cuentas Contables">
-      <div style="padding: 16px;">
-        <!-- Cuentas contables 1..7 -->
+      <div style="padding:16px;">
+        <!-- CTA 1 -->
         <div class="af-row-3">
           <mat-form-field appearance="outline">
             <mat-label>Cta Contable 1</mat-label>
-            <input matInput formControlName="Ctacontable1" />
+            <input
+              matInput
+              formControlName="Ctacontable1"
+              [matAutocomplete]="autoCta1"
+              (blur)="onExtraCuentaBlur(1)"
+              placeholder="Ej: 120105-001"
+              autocomplete="off"
+            />
+
+            <mat-autocomplete
+              #autoCta1="matAutocomplete"
+              [displayWith]="displayCuenta"
+              (optionSelected)="onExtraCuentaSelectedRow(1, $event.option.value)"
+              autoActiveFirstOption
+            >
+              <mat-option
+                *ngFor="let c of (extraFiltered[1] | async) || []"
+                [value]="c"
+              >
+                <div style="display:flex; flex-direction:column; line-height:1.2;">
+                  <b>{{ c.CuentaPresentacion }}</b>
+                  <small>{{ c.NombreCuenta }}</small>
+                </div>
+              </mat-option>
+            </mat-autocomplete>
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Cta Contable 2</mat-label>
-            <input matInput formControlName="Ctacontable2" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Cta Contable 3</mat-label>
-            <input matInput formControlName="Ctacontable3" />
+          <mat-form-field appearance="outline" class="span-2">
+            <mat-label>Nombre Cuenta</mat-label>
+            <input matInput formControlName="CtaNombre1" readonly />
           </mat-form-field>
         </div>
 
+        <!-- CTA 2 -->
+        <div class="af-row-3">
+          <mat-form-field appearance="outline">
+            <mat-label>Cta Contable 2</mat-label>
+            <input
+              matInput
+              formControlName="Ctacontable2"
+              [matAutocomplete]="autoCta2"
+              (blur)="onExtraCuentaBlur(2)"
+              placeholder="Ej: 120105-001"
+              autocomplete="off"
+            />
+
+            <mat-autocomplete
+              #autoCta2="matAutocomplete"
+              [displayWith]="displayCuenta"
+              (optionSelected)="onExtraCuentaSelectedRow(2, $event.option.value)"
+              autoActiveFirstOption
+            >
+              <mat-option
+                *ngFor="let c of (extraFiltered[2] | async) || []"
+                [value]="c"
+              >
+                <div style="display:flex; flex-direction:column; line-height:1.2;">
+                  <b>{{ c.CuentaPresentacion }}</b>
+                  <small>{{ c.NombreCuenta }}</small>
+                </div>
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="span-2">
+            <mat-label>Nombre Cuenta</mat-label>
+            <input matInput formControlName="CtaNombre2" readonly />
+          </mat-form-field>
+        </div>
+
+        <!-- CTA 3 -->
+        <div class="af-row-3">
+          <mat-form-field appearance="outline">
+            <mat-label>Cta Contable 3</mat-label>
+            <input
+              matInput
+              formControlName="Ctacontable3"
+              [matAutocomplete]="autoCta3"
+              (blur)="onExtraCuentaBlur(3)"
+              placeholder="Ej: 120105-001"
+              autocomplete="off"
+            />
+
+            <mat-autocomplete
+              #autoCta3="matAutocomplete"
+              [displayWith]="displayCuenta"
+              (optionSelected)="onExtraCuentaSelectedRow(3, $event.option.value)"
+              autoActiveFirstOption
+            >
+              <mat-option
+                *ngFor="let c of (extraFiltered[3] | async) || []"
+                [value]="c"
+              >
+                <div style="display:flex; flex-direction:column; line-height:1.2;">
+                  <b>{{ c.CuentaPresentacion }}</b>
+                  <small>{{ c.NombreCuenta }}</small>
+                </div>
+              </mat-option>
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="span-2">
+            <mat-label>Nombre Cuenta</mat-label>
+            <input matInput formControlName="CtaNombre3" readonly />
+          </mat-form-field>
+        </div>
+
+        <!-- CTA 4 -->
         <div class="af-row-3">
           <mat-form-field appearance="outline">
             <mat-label>Cta Contable 4</mat-label>
-            <input matInput formControlName="Ctacontable4" />
+            <input
+              matInput
+              formControlName="Ctacontable4"
+              [matAutocomplete]="autoCta4"
+              (blur)="onExtraCuentaBlur(4)"
+              placeholder="Ej: 120105-001"
+              autocomplete="off"
+            />
+
+            <mat-autocomplete
+              #autoCta4="matAutocomplete"
+              [displayWith]="displayCuenta"
+              (optionSelected)="onExtraCuentaSelectedRow(4, $event.option.value)"
+              autoActiveFirstOption
+            >
+              <mat-option
+                *ngFor="let c of (extraFiltered[4] | async) || []"
+                [value]="c"
+              >
+                <div style="display:flex; flex-direction:column; line-height:1.2;">
+                  <b>{{ c.CuentaPresentacion }}</b>
+                  <small>{{ c.NombreCuenta }}</small>
+                </div>
+              </mat-option>
+            </mat-autocomplete>
           </mat-form-field>
 
+          <mat-form-field appearance="outline" class="span-2">
+            <mat-label>Nombre Cuenta</mat-label>
+            <input matInput formControlName="CtaNombre4" readonly />
+          </mat-form-field>
+        </div>
+
+        <!-- CTA 5 -->
+        <div class="af-row-3">
           <mat-form-field appearance="outline">
             <mat-label>Cta Contable 5</mat-label>
-            <input matInput formControlName="Ctacontable5" />
+            <input
+              matInput
+              formControlName="Ctacontable5"
+              [matAutocomplete]="autoCta5"
+              (blur)="onExtraCuentaBlur(5)"
+              placeholder="Ej: 120105-001"
+              autocomplete="off"
+            />
+
+            <mat-autocomplete
+              #autoCta5="matAutocomplete"
+              [displayWith]="displayCuenta"
+              (optionSelected)="onExtraCuentaSelectedRow(5, $event.option.value)"
+              autoActiveFirstOption
+            >
+              <mat-option
+                *ngFor="let c of (extraFiltered[5] | async) || []"
+                [value]="c"
+              >
+                <div style="display:flex; flex-direction:column; line-height:1.2;">
+                  <b>{{ c.CuentaPresentacion }}</b>
+                  <small>{{ c.NombreCuenta }}</small>
+                </div>
+              </mat-option>
+            </mat-autocomplete>
           </mat-form-field>
 
-          <mat-form-field appearance="outline">
-            <mat-label>Cta Contable 6</mat-label>
-            <input matInput formControlName="Ctacontable6" />
-          </mat-form-field>
-        </div>
-
-        <div class="af-row-2">
-          <mat-form-field appearance="outline">
-            <mat-label>Cta Contable 7</mat-label>
-            <input matInput formControlName="Ctacontable7" />
-          </mat-form-field>
-        </div>
-
-        <mat-divider style="margin:16px 0;"></mat-divider>
-
-        <!-- Debe/Haber -->
-        <div class="af-row-2">
-          <mat-form-field appearance="outline">
-            <mat-label>Debe Cuenta 1</mat-label>
-            <input matInput type="number" formControlName="DebeCuenta1" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Haber Cuenta 1</mat-label>
-            <input matInput type="number" formControlName="HaberCuenta1" />
-          </mat-form-field>
-        </div>
-
-        <div class="af-row-2">
-          <mat-form-field appearance="outline">
-            <mat-label>Debe Cuenta 2</mat-label>
-            <input matInput type="number" formControlName="DebeCuenta2" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Haber Cuenta 2</mat-label>
-            <input matInput type="number" formControlName="HaberCuenta2" />
-          </mat-form-field>
-        </div>
-
-        <div class="af-row-2">
-          <mat-form-field appearance="outline">
-            <mat-label>Debe Cuenta 3</mat-label>
-            <input matInput type="number" formControlName="DebeCuenta3" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Haber Cuenta 3</mat-label>
-            <input matInput type="number" formControlName="HaberCuenta3" />
-          </mat-form-field>
-        </div>
-
-        <div class="af-row-2">
-          <mat-form-field appearance="outline">
-            <mat-label>Debe Cuenta 4</mat-label>
-            <input matInput type="number" formControlName="Debecuenta4" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Haber Cuenta 4</mat-label>
-            <input matInput type="number" formControlName="Habercuenta4" />
-          </mat-form-field>
-        </div>
-
-        <div class="af-row-2">
-          <mat-form-field appearance="outline">
-            <mat-label>Debe Cuenta 5</mat-label>
-            <input matInput type="number" formControlName="Debecuenta5" />
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Haber Cuenta 5</mat-label>
-            <input matInput type="number" formControlName="Habercuenta5" />
+          <mat-form-field appearance="outline" class="span-2">
+            <mat-label>Nombre Cuenta</mat-label>
+            <input matInput formControlName="CtaNombre5" readonly />
           </mat-form-field>
         </div>
       </div>
