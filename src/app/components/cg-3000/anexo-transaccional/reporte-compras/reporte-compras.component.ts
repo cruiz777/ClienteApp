@@ -131,6 +131,19 @@ export class ReporteComprasComponent implements OnInit {
         headerClass: 'header-datos-factura',
         },
         {
+            headerName: 'Cód. Comp.',
+            field: 'codigoTipoComp',
+            width: 110,
+            cellStyle: { textAlign: 'center' },
+            headerClass: 'header-datos-factura',
+        },
+        {
+            headerName: 'Tipo Documento',
+            field: 'tipoDocumento',
+            width: 160,
+            headerClass: 'header-datos-factura',
+        },
+        {
         headerName: 'Base 0%',
         field: 'baseCero',
         width: 120,
@@ -381,6 +394,8 @@ export class ReporteComprasComponent implements OnInit {
       noComprobante: '',
       autorizacion: '',
       fecha: '',
+      codigoTipoComp: '',
+      tipoDocumento: '',
       baseCero: this.comprasTotales.totalBaseCero,
       baseIva: this.comprasTotales.totalBaseIva,
       iva: this.comprasTotales.totalIva,
@@ -460,12 +475,12 @@ export class ReporteComprasComponent implements OnInit {
   }
 
   private formatoMonedaOpcional(params: ValueFormatterParams): string {
-    if (params.value == null || params.value === 0) return '';
+    if (params.value == null) return '';
     return '$' + Number(params.value).toFixed(2);
   }
 
   private formatoPorcentaje(params: ValueFormatterParams): string {
-    if (params.value == null || params.value === 0) return '';
+    if (params.value == null) return '';
     return Number(params.value).toFixed(2) + '%';
   }
 

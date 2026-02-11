@@ -155,6 +155,8 @@ export class EstadoCuentaService {
     fechaDesde?: string;
     fechaHasta?: string;
     saldoMinimo?: number;
+    ruc?: string;
+    nombre?: string;
     page?: number;
     pageSize?: number;
   } = {}): Observable<ApiResponse<ClientesConDeudaPaginadoResponse>> {
@@ -165,6 +167,8 @@ export class EstadoCuentaService {
     if (opts.fechaDesde) params = params.set('fechaDesde', opts.fechaDesde);
     if (opts.fechaHasta) params = params.set('fechaHasta', opts.fechaHasta);
     if (opts.saldoMinimo !== undefined) params = params.set('saldoMinimo', opts.saldoMinimo.toString());
+    if (opts.ruc) params = params.set('ruc', opts.ruc);
+    if (opts.nombre) params = params.set('nombre', opts.nombre);
 
     return this.http.get<ApiResponse<ClientesConDeudaPaginadoResponse>>(
       `${this.baseUrl}/clientes-con-cxc`, 
@@ -176,12 +180,16 @@ export class EstadoCuentaService {
     fechaDesde?: string;
     fechaHasta?: string;
     saldoMinimo?: number;
+    ruc?: string;
+    nombre?: string;
   } = {}): Observable<ApiResponse<ClientesConDeudaCompletoResponse>> {
     let params = new HttpParams();
 
     if (opts.fechaDesde) params = params.set('fechaDesde', opts.fechaDesde);
     if (opts.fechaHasta) params = params.set('fechaHasta', opts.fechaHasta);
     if (opts.saldoMinimo !== undefined) params = params.set('saldoMinimo', opts.saldoMinimo.toString());
+    if (opts.ruc) params = params.set('ruc', opts.ruc);
+    if (opts.nombre) params = params.set('nombre', opts.nombre);
 
     return this.http.get<ApiResponse<ClientesConDeudaCompletoResponse>>(
       `${this.baseUrl}/clientes-con-cxc/exportar`, 
@@ -225,6 +233,8 @@ export class EstadoCuentaService {
     fechaDesde?: string;
     fechaHasta?: string;
     saldoMinimo?: number | null;
+    ruc?: string;
+    nombre?: string;
     page?: number;
     pageSize?: number;
   } = {}): Observable<ApiResponse<EstadoCuentaGeneralPaginadoResponse>> {
@@ -237,7 +247,8 @@ export class EstadoCuentaService {
     if (opts.saldoMinimo !== undefined && opts.saldoMinimo !== null) {
       params = params.set('saldoMinimo', opts.saldoMinimo.toString());
     }
-
+    if (opts.ruc) params = params.set('ruc', opts.ruc);
+    if (opts.nombre) params = params.set('nombre', opts.nombre);
     return this.http.get<ApiResponse<EstadoCuentaGeneralPaginadoResponse>>(
       `${this.baseUrl}/general`, 
       { params }
@@ -252,6 +263,8 @@ export class EstadoCuentaService {
     fechaDesde?: string;
     fechaHasta?: string;
     saldoMinimo?: number | null;
+    ruc?: string;
+    nombre?: string;
   } = {}): Observable<ApiResponse<EstadoCuentaGeneralCompletoResponse>> {
     let params = new HttpParams();
 
@@ -260,7 +273,8 @@ export class EstadoCuentaService {
     if (opts.saldoMinimo !== undefined && opts.saldoMinimo !== null) {
       params = params.set('saldoMinimo', opts.saldoMinimo.toString());
     }
-
+    if (opts.ruc) params = params.set('ruc', opts.ruc);
+    if (opts.nombre) params = params.set('nombre', opts.nombre);
     return this.http.get<ApiResponse<EstadoCuentaGeneralCompletoResponse>>(
       `${this.baseUrl}/general/completo`, 
       { params }
