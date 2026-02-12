@@ -30,6 +30,7 @@ import { ExploradorComponent } from './explorador/explorador.component';
 import { GerenciaComponent } from './gerencia/gerencia.component';
 import { GrupoProductoListaComponent } from './grupo-producto-lista/grupo-producto-lista.component';
 import { GerenciaEmpresasComponent } from './gerencia-empresas/gerencia-empresas.component';
+import { Gs1ScannerComponent } from './gs1-scanner/gs1-scanner.component';
 
 const routes: Routes = [
   {
@@ -104,6 +105,11 @@ const routes: Routes = [
           { 
             path: 'gerenciate', 
             component: GerenciaEmpresasComponent
+          }
+          ,
+          { 
+            path: 'datamatrix', 
+            component: Gs1ScannerComponent
           }
         ]
       },

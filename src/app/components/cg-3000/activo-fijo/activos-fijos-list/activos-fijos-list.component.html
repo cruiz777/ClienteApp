@@ -15,6 +15,10 @@
       <button mat-stroked-button (click)="buscar()">
         <mat-icon>search</mat-icon> Buscar
       </button>
+<button mat-stroked-button type="button" (click)="exportarExcel()">
+  <mat-icon>grid_on</mat-icon>
+  Exportar Excel
+</button>
 
       <button mat-raised-button color="primary" (click)="nuevo()">
         <mat-icon>add</mat-icon> Nuevo
@@ -28,6 +32,7 @@
       [rowData]="rowData"
       [columnDefs]="colDefs"
       [gridOptions]="gridOptions"
+      (gridReady)="onGridReady($event)"
     ></ag-grid-angular>
   </div>
 </div>

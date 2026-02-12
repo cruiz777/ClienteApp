@@ -7,6 +7,10 @@ import { ReusableModule } from '../reusable/reusable.module';
 import { CodbarComponent } from './codbar/codbar.component';
 import { MenusRoutingModule } from './menus-routing.module';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatInputModule } from '@angular/material/input';
+import { MatButtonModule } from '@angular/material/button';
+
 
 // 🆕 IMPORTS DE ANGULAR MATERIAL (de pages)
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -50,6 +54,10 @@ import { ProductosModule } from 'src/app/components/productos/productos.module';
 import { ExploradorClientesComponent } from '../pages/explorador-clientes/explorador-clientes.component';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { SharedModule } from 'src/app/shared/shared.module';
+import { Gs1ScannerComponent } from './gs1-scanner/gs1-scanner.component';
+
+
+
 
 @NgModule({
   declarations: [
@@ -57,6 +65,7 @@ import { SharedModule } from 'src/app/shared/shared.module';
     MenusComponent,
     CodbarComponent,
     NavegarComponent,
+    Gs1ScannerComponent,
 
     // 🆕 COMPONENTES MIGRADOS DE PAGES
     DashboardComponent,
@@ -106,7 +115,11 @@ import { SharedModule } from 'src/app/shared/shared.module';
     ProductosModule,
     ReusableModule,
     MatCardModule,
-    AgGridModule
+    AgGridModule,
+    MatFormFieldModule,
+MatInputModule,
+MatButtonModule,
+
   ]
 })
 export class MenusModule { }

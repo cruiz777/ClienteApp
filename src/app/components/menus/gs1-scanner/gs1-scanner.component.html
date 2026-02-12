@@ -1,0 +1,125 @@
+<div class="wrap">
+  <mat-card class="card">
+    <h2>Lectura GS1 DataMatrix</h2>
+
+    <div class="actions">
+      <button mat-raised-button color="primary" (click)="startCamera()" [disabled]="scanning">
+        Iniciar cámara
+      </button>
+
+      <button mat-stroked-button color="warn" (click)="stopCamera()" [disabled]="!scanning">
+        Detener
+      </button>
+
+      <button mat-stroked-button (click)="clear()">Limpiar</button>
+    </div>
+
+    <!-- ✅ NUEVO LAYOUT: cam + info a la izquierda, preview grande a la derecha -->
+    <div class="scanGrid">
+      <!-- ===== CÁMARA (arriba izquierda) ===== -->
+      <div class="camArea">
+        <video #video playsinline muted class="video"></video>
+      </div>
+
+      <!-- ===== INFO PEGADO (abajo izquierda) ===== -->
+      <div class="infoArea">
+        <div class="pasteInfo">
+          <div class="pasteTitle">Pegar DataMatrix</div>
+
+          
+
+          <div class="pasteActions">
+            <button mat-stroked-button type="button" (click)="fileInput.click()">
+              Cargar imagen...
+            </button>
+            <input
+              #fileInput
+              type="file"
+              accept="image/*"
+              (change)="onFileSelected($event)"
+              hidden
+            />
+          </div>
+
+          <div class="pasteStatus" *ngIf="pasteStatus">{{ pasteStatus }}</div>
+        </div>
+      </div>
+
+      <!-- ===== CUADRO GRANDE (derecha ocupa 2 filas) ===== -->
+      <div class="pasteArea">
+        <div
+          #pasteTarget
+          class="pasteTarget pasteTargetBig"
+          tabindex="0"
+          (paste)="onPasteTarget($event)"
+          (click)="focusPasteTarget()"
+          aria-label="Área para pegar imagen o texto"
+        >
+          <ng-container *ngIf="pastedImageUrl; else placeholder">
+            <img class="pasteImg pasteImgBig" [src]="pastedImageUrl" alt="preview" />
+          </ng-container>
+
+          <ng-template #placeholder>
+            <div class="pastePlaceholder">
+              <div class="big">📋 Ctrl+V aquí</div>
+              <div class="small2">Click primero en el cuadro para enfocarlo</div>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+
+    <mat-form-field appearance="outline" class="w100">
+      <mat-label>Código</mat-label>
+      <input
+        matInput
+        [(ngModel)]="codigo"
+        (keyup.enter)="process()"
+        placeholder="Escanee / pegue texto / o use Ctrl+V con imagen"
+      />
+    </mat-form-field>
+
+    <button mat-raised-button color="accent" class="btnProcess" (click)="process()">
+      Procesar
+    </button>
+
+    <!-- ===== GTIN / Validación ===== -->
+    <div class="mt" *ngIf="parsed?.fields?.gtin">
+      <strong>GTIN:</strong> <h1>{{ parsed?.fields?.gtin }}</h1>
+      <span class="pill" [class.ok]="gtinOk" [class.bad]="gtinOk === false">
+        {{ gtinOk === true ? 'VÁLIDO' : (gtinOk === false ? 'INVÁLIDO' : '—') }}
+      </span>
+      <span class="pill type" *ngIf="gtinType">{{ gtinType }}</span>
+    </div>
+
+    <!-- ===== Resultados (2 columnas + valores grandes) ===== -->
+    <ng-container *ngIf="parsed as p">
+      <div class="resultGrid mt">
+        <div class="resultItem">
+          <div class="resultLabel">Lote</div>
+          <div class="resultValue">{{ p.fields.lote || '—' }}</div>
+        </div>
+
+        <div class="resultItem">
+          <div class="resultLabel">Serie</div>
+          <div class="resultValue">{{ p.fields.serie || '—' }}</div>
+        </div>
+
+        <div class="resultItem">
+          <div class="resultLabel">F. Producción</div>
+          <div class="resultValue">{{ p.fields.fechaProduccion || '—' }}</div>
+        </div>
+
+        <div class="resultItem">
+          <div class="resultLabel">F. Caducidad</div>
+          <div class="resultValue">{{ p.fields.fechaCaducidad || '—' }}</div>
+        </div>
+      </div>
+
+      <div class="mt">
+        <h3>Detalle AIs</h3>
+        <pre class="pre">{{ p.ais | json }}</pre>
+      </div>
+    </ng-container>
+  </mat-card>
+</div>
