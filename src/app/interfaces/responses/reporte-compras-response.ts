@@ -9,6 +9,8 @@ export interface PurchaseReportItemResponse {
   noComprobante: string;
   autorizacion: string;
   fecha: string;
+  codigoTipoComp: string;
+  tipoDocumento: string;
   baseCero: number;
   baseIva: number;
   iva: number;

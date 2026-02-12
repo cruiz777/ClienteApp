@@ -64,11 +64,23 @@
 /* ========== GRID DE FILTROS ========== */
 .fi-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr 200px 200px;
+  grid-template-columns: 1fr 1fr 180px 1fr auto;
   gap: 16px 24px;
   align-items: end;
 }
+.field-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.field small {
+  position: absolute;
+}
 
+.field {
+  position: relative;
+  padding-bottom: 18px;
+}
 .field {
   display: flex;
   flex-direction: column;

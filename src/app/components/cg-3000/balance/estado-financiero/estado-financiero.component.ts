@@ -719,13 +719,12 @@ export class EstadoFinancieroComponent implements OnInit {
         const datos = this.datosReporte as EstadoFinancieroResponse[];
 
         const totalPasivo = datos.find(d =>
-            d.esTotalGeneral && d.nombreCuenta.toUpperCase().includes('PASIVO')
+            d.nivel === 1 && d.nombreCuenta.toUpperCase().includes('PASIVO')
         );
         const totalPatrimonio = datos.find(d =>
-            d.esTotalGeneral && d.nombreCuenta.toUpperCase().includes('PATRIMONIO')
+            d.nivel === 1 && d.nombreCuenta.toUpperCase().includes('PATRIMONIO')
         );
 
-        // Si no existe ninguno de los dos, no hacer nada
         if (!totalPasivo && !totalPatrimonio) return;
 
         const sumar = (v1: string | null, v2: string | null): string => {
@@ -744,10 +743,10 @@ export class EstadoFinancieroComponent implements OnInit {
 
         const fila: EstadoFinancieroResponse = {
             cuenta: '',
-            nombreCuenta: 'PASIVO + PATRIMONIO',
+            nombreCuenta: 'TOTAL PASIVO + PATRIMONIO',
             nivel: 1,
-            orden: 9999, // ← Agregar esta línea
-            esTotalGeneral: true,
+            orden: 9999,
+            esTotalGeneral: true,  // ← true para que tome el estilo azul en PDF
             esUtilidad: false,
             sum1: sumar(totalPasivo?.sum1 ?? null, totalPatrimonio?.sum1 ?? null),
             sum2: sumar(totalPasivo?.sum2 ?? null, totalPatrimonio?.sum2 ?? null),
@@ -756,12 +755,10 @@ export class EstadoFinancieroComponent implements OnInit {
             sum5: sumar(totalPasivo?.sum5 ?? null, totalPatrimonio?.sum5 ?? null),
         };
 
-        // Insertar ANTES de la utilidad, o al final si no hay utilidad
         const indexUtilidad = datos.findIndex(d => d.esUtilidad);
         if (indexUtilidad >= 0) {
             (this.datosReporte as EstadoFinancieroResponse[]).splice(indexUtilidad, 0, fila);
         } else {
-            // Si no hay utilidad, insertar después del último total encontrado
             const ultimoTotal = totalPatrimonio || totalPasivo;
             const index = datos.indexOf(ultimoTotal!);
             (this.datosReporte as EstadoFinancieroResponse[]).splice(index + 1, 0, fila);
