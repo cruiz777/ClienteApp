@@ -731,7 +731,7 @@ export class UvIndividualComponent implements OnInit {
       this.mostrarAlerta('No se seleccionó Prefijo', 'Error');
       return;
     }
-
+    debugger
     const categoriaId = this.formUV.get('categoria')?.value;
     if (!categoriaId) {
       this.mostrarAlerta('No se seleccionó Categoría', 'Error');
@@ -751,7 +751,7 @@ export class UvIndividualComponent implements OnInit {
       console.error('❌ Prefijo no encontrado en la lista');
       return;
     }
-
+    debugger
     // 🚫 No permitir GTIN-13 con bandera 2
     if (gtinNacionalSeleccionado === 'GTIN-13' && this.bandera === 2) {
       this.mostrarAlerta('No se puede generar este tipo de código', 'Error');
@@ -798,23 +798,56 @@ export class UvIndividualComponent implements OnInit {
     }
 
     // ✅ UPC Nacional (GTIN-12)
-    if (gtinNacionalSeleccionado === 'UPC' && this.bandera === 2) {
-      this.npais = '';
-      this.generacionCodigosService.obtenerSecuenciaUpc(prefijo.codpre, this.npais).subscribe({
-        next: (resp) => {
-          this.secuencia = resp.data;
-          this.mensaje = resp.message;
-          const longitud = this.formUV.get('gtinUv')?.value?.length || 0;
-          const codigoGenerado12N = this.generacionCodigosService.generarCodigo12N(prefijo.codpre, this.secuencia, longitud);
-          this.formUV.get('gtinUv')?.setValue(codigoGenerado12N);
-          this.validarYHabilitarGTIN();
-        },
-        error: (err) => {
-          console.error('Error al obtener secuencia', err);
-          this.mensaje = 'Error al generar la secuencia';
+    // ✅ UPC Nacional (GTIN-12)  (bandera 2)
+if (gtinNacionalSeleccionado === 'UPC' && this.bandera === 2) {
+  this.npais = '';
+
+  const usarSerie = this.formUV.get('usarSerie')?.value === true;
+  const serieStr = (this.formUV.get('serie')?.value ?? '').toString().trim();
+  const serieNum = Number(serieStr);
+
+  // Si el usuario activó "Serie" y hay un valor válido, úsalo directo
+  if (usarSerie && serieStr !== '' && !Number.isNaN(serieNum)) {
+    this.secuencia = serieNum;
+    this.mensaje = 'Usando serie ingresada';
+
+    const codigoGenerado12N = this.generacionCodigosService.generarCodigo12N(
+      prefijo.codpre,
+      this.secuencia,
+      12
+    );
+
+    this.formUV.get('gtinUv')?.setValue(codigoGenerado12N);
+    this.validarYHabilitarGTIN();
+  } else {
+    // Caso normal: pedir secuencia al backend
+    this.generacionCodigosService.obtenerSecuenciaUpc(prefijo.codpre, this.npais).subscribe({
+      next: (resp) => {
+        this.secuencia = resp.data;
+        this.mensaje = resp.message;
+
+        // (Opcional) Si usarSerie está activo, también rellena el control serie con la secuencia obtenida
+        if (usarSerie) {
+          this.formUV.get('serie')?.setValue(resp.data);
         }
-      });
-    }
+
+        const codigoGenerado12N = this.generacionCodigosService.generarCodigo12N(
+          prefijo.codpre,
+          this.secuencia,
+          12
+        );
+
+        this.formUV.get('gtinUv')?.setValue(codigoGenerado12N);
+        this.validarYHabilitarGTIN();
+      },
+      error: (err) => {
+        console.error('Error al obtener secuencia', err);
+        this.mensaje = 'Error al generar la secuencia';
+      }
+    });
+  }
+}
+
 
     // ✅ GTIN-13 Internacional
     if (gtinInternacionalSeleccionado === 'GTIN-13I') {

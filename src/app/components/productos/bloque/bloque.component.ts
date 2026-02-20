@@ -2064,7 +2064,7 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
     const nuevoProducto: ProductoRequest = {
       IdProducto: 0,
       Codpro: fila.gtinUv || '',
-      Despro: fila.descripcion || '',
+      Despro: (fila.descripcion ?? '').toString().trimEnd(),
       Tippro: 'S',
       Codgru: 0,
       Codsec: 0,

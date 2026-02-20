@@ -2,6 +2,8 @@ import { Component, ElementRef, OnDestroy, ViewChild } from '@angular/core';
 import { BrowserMultiFormatReader, IScannerControls } from '@zxing/browser';
 import { BarcodeFormat, DecodeHintType } from '@zxing/library';
 
+import { MatSnackBar } from '@angular/material/snack-bar';
+
 import { Gs1ParserService, Gs1Parsed } from 'src/app/services/gs1/gs1-parser.service';
 import { isValidGtin, normalizeGtin } from 'src/app/util/gs1/gtin.util';
 
@@ -31,7 +33,15 @@ export class Gs1ScannerComponent implements OnDestroy {
 
   private lastText = '';
 
-  constructor(private gs1: Gs1ParserService) {
+  // ✅ NUEVO: control de caducidad
+  isExpired: boolean | null = null;
+  expiryDate: Date | null = null;
+  private lastExpiryAlertKey = '';
+
+  constructor(
+    private gs1: Gs1ParserService,
+    private snack: MatSnackBar
+  ) {
     const hintsVideo = new Map();
     hintsVideo.set(DecodeHintType.TRY_HARDER, true);
     hintsVideo.set(DecodeHintType.POSSIBLE_FORMATS, [
@@ -47,7 +57,6 @@ export class Gs1ScannerComponent implements OnDestroy {
 
     const hintsImg = new Map(hintsVideo);
     hintsImg.set(DecodeHintType.POSSIBLE_FORMATS, [BarcodeFormat.DATA_MATRIX]);
-    //hintsImg.set(DecodeHintType.PURE_BARCODE, true);
     hintsImg.set(DecodeHintType.ASSUME_GS1, true);
 
     this.imgReader = new BrowserMultiFormatReader(hintsImg, {
@@ -98,6 +107,11 @@ export class Gs1ScannerComponent implements OnDestroy {
       this.parsed = null;
       this.gtinOk = null;
       this.gtinType = null;
+
+      // ✅ reset caducidad
+      this.isExpired = null;
+      this.expiryDate = null;
+      this.lastExpiryAlertKey = '';
       return;
     }
 
@@ -108,6 +122,110 @@ export class Gs1ScannerComponent implements OnDestroy {
 
     this.gtinType = norm?.type ?? null;
     this.gtinOk = gtin ? isValidGtin(gtin) : null;
+
+    // ✅ VALIDAR CADUCIDAD
+    this.checkExpiryAndAlert();
+  }
+
+  // ✅ NUEVO: abre Verified by GS1 en otra pestaña
+  openVerifiedByGs1(): void {
+    const gtin = (this.parsed?.fields?.gtin ?? '').trim();
+    if (!gtin) {
+      this.snack.open('No hay GTIN para verificar.', 'OK', { duration: 2500 });
+      return;
+    }
+
+    const url = `https://www.gs1.org/services/verified-by-gs1/results?gtin=${encodeURIComponent(gtin)}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+
+  // ✅ NUEVO: detecta caducidad y muestra alerta si está vencido
+  private checkExpiryAndAlert(): void {
+    const expStr = (this.parsed?.fields?.fechaCaducidad ?? '').toString().trim();
+    const gtin = (this.parsed?.fields?.gtin ?? '').toString().trim();
+
+    if (!expStr) {
+      this.isExpired = null;
+      this.expiryDate = null;
+      this.lastExpiryAlertKey = '';
+      return;
+    }
+
+    const exp = this.parseGs1Date(expStr);
+    if (!exp) {
+      this.isExpired = null;
+      this.expiryDate = null;
+      this.lastExpiryAlertKey = '';
+      return;
+    }
+
+    // comparar solo por fecha (sin hora)
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    exp.setHours(0, 0, 0, 0);
+
+    this.expiryDate = exp;
+    this.isExpired = exp.getTime() < today.getTime();
+
+    if (this.isExpired) {
+      // evitar spam de alertas repetidas
+      const key = `${gtin}__${exp.toISOString().slice(0, 10)}`;
+      if (key !== this.lastExpiryAlertKey) {
+        this.lastExpiryAlertKey = key;
+
+       this.snack.open(
+  `⚠️ PRODUCTO CADUCADO: ${exp.toISOString().slice(0, 10)}`,
+  'OK',
+  {
+    duration: 10000,
+    horizontalPosition: 'center',
+    verticalPosition: 'top', // luego lo movemos a centro con CSS
+    panelClass: ['snack-expired-big-center']
+  }
+);
+
+
+      }
+    } else {
+      this.lastExpiryAlertKey = '';
+    }
+  }
+
+  // ✅ NUEVO: parser tolerante (YYYY-MM-DD | YYMMDD | YYYYMMDD)
+  private parseGs1Date(s: string): Date | null {
+    const v = (s ?? '').trim();
+
+    // YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) {
+      const d = new Date(`${v}T00:00:00`);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    // YYMMDD (AI 17 típico)
+    if (/^\d{6}$/.test(v)) {
+      const yy = parseInt(v.slice(0, 2), 10);
+      const mm = parseInt(v.slice(2, 4), 10);
+      const dd = parseInt(v.slice(4, 6), 10);
+
+      // pivot 50: 00-49 => 2000-2049, 50-99 => 1950-1999
+      const yyyy = yy < 50 ? 2000 + yy : 1900 + yy;
+
+      const d = new Date(yyyy, mm - 1, dd);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    // YYYYMMDD
+    if (/^\d{8}$/.test(v)) {
+      const yyyy = parseInt(v.slice(0, 4), 10);
+      const mm = parseInt(v.slice(4, 6), 10);
+      const dd = parseInt(v.slice(6, 8), 10);
+
+      const d = new Date(yyyy, mm - 1, dd);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    return null;
   }
 
   clear(): void {
@@ -120,6 +238,11 @@ export class Gs1ScannerComponent implements OnDestroy {
     this.pasteStatus = null;
     if (this.pastedImageUrl) URL.revokeObjectURL(this.pastedImageUrl);
     this.pastedImageUrl = null;
+
+    // ✅ reset caducidad
+    this.isExpired = null;
+    this.expiryDate = null;
+    this.lastExpiryAlertKey = '';
   }
 
   ngOnDestroy(): void {
