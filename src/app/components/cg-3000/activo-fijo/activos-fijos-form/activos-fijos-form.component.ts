@@ -1,8 +1,6 @@
-import { Component, OnInit, signal, DestroyRef, inject } from '@angular/core';
+import { Component, OnInit, signal, DestroyRef, inject, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {  computed } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-
 
 import {
   FormBuilder,
@@ -112,7 +110,6 @@ export class AppDateAdapter extends NativeDateAdapter {
     MatNativeDateModule,
     MatAutocompleteModule,
     MatProgressSpinnerModule
-
   ],
   templateUrl: './activos-fijos-form.component.html',
   styleUrls: ['./activos-fijos-form.component.css'],
@@ -129,27 +126,28 @@ export class ActivosFijosFormComponent implements OnInit {
   loading = signal(false);
   saving = signal(false);
   titulo = signal('Nuevo Activo Fijo');
-// ===== Overlay / Cargando catálogos =====
-catalogPending = signal(0);
 
-busy = computed(() =>
-  this.loading() || this.saving() || this.catalogPending() > 0
-);
+  // ===== Overlay / Cargando catálogos =====
+  catalogPending = signal(0);
 
-busyText = computed(() => {
-  if (this.saving()) return 'Guardando, por favor espere...';
-  if (this.loading()) return 'Cargando activo, por favor espere...';
-  if (this.catalogPending() > 0) return 'Cargando catálogos, por favor espere...';
-  return 'Procesando...';
-});
+  busy = computed(() =>
+    this.loading() || this.saving() || this.catalogPending() > 0
+  );
 
-private beginCatalog(): void {
-  this.catalogPending.update(v => v + 1);
-}
+  busyText = computed(() => {
+    if (this.saving()) return 'Guardando, por favor espere...';
+    if (this.loading()) return 'Cargando activo, por favor espere...';
+    if (this.catalogPending() > 0) return 'Cargando catálogos, por favor espere...';
+    return 'Procesando...';
+  });
 
-private endCatalog(): void {
-  this.catalogPending.update(v => Math.max(0, v - 1));
-}
+  private beginCatalog(): void {
+    this.catalogPending.update(v => v + 1);
+  }
+
+  private endCatalog(): void {
+    this.catalogPending.update(v => Math.max(0, v - 1));
+  }
 
   usuarioActual: any = null;
   private readonly destroyRef = inject(DestroyRef);
@@ -243,7 +241,7 @@ private endCatalog(): void {
       codigoBarras: [''],
 
       idPlanCuentas: [null, Validators.required],
-      cuentaPresentacion: [null],   // 👈 ahora puede ser OBJETO
+      cuentaPresentacion: [null],   // ahora puede ser OBJETO
       cuentaNombre: [''],
 
       descripcion: ['', [Validators.required, Validators.maxLength(300)]],
@@ -277,7 +275,9 @@ private endCatalog(): void {
 
       valorCompra: [0, [Validators.min(0)]],
       valorResidual: [0, [Validators.min(0)]],
-      vidaUtil: [0, [this.enteroNoNegativoValidator.bind(this)]],
+
+      // ✅ vidaUtil ahora admite decimales (ej: 3.03)
+      vidaUtil: [0, [Validators.min(0)]],
 
       Tipcod: [null],
       Destipcod: [''],
@@ -318,7 +318,10 @@ private endCatalog(): void {
       DepresiacionMensual: [null],
       DepreMensual: [null],
       ValorLibros: [null],
+
+      // ✅ Aquí tú ingresarás 0.33 (o 33)
       PorcentajeDepresiacion: [null],
+
       DepDeducibleSri: [null],
       DepNoDeducibleNiifs: [null],
       PorcentajeDepreciado: [null],
@@ -359,31 +362,31 @@ private endCatalog(): void {
   // ============================
   // CATALOGO PRINCIPAL (6 cuentas)
   // ============================
- private cargarCatalogoCuentas(): void {
-  this.beginCatalog();
+  private cargarCatalogoCuentas(): void {
+    this.beginCatalog();
 
-  this.planApi.getMiniByPresentacion(this.cuentasActivosFijos)
-    .pipe(finalize(() => this.endCatalog()))
-    .subscribe({
-      next: (rows: PlanCuentaMiniDto[]) => {
-        this.planMini = rows ?? [];
+    this.planApi.getMiniByPresentacion(this.cuentasActivosFijos)
+      .pipe(finalize(() => this.endCatalog()))
+      .subscribe({
+        next: (rows: PlanCuentaMiniDto[]) => {
+          this.planMini = rows ?? [];
 
-        const ctrl = this.form.get('cuentaPresentacion');
-        this.planMiniFiltered$ = (ctrl?.valueChanges ?? of('')).pipe(
-          startWith(ctrl?.value ?? ''),
-          map((val: any) => this.filtrarPlanMini(this.planMini, val))
-        );
+          const ctrl = this.form.get('cuentaPresentacion');
+          this.planMiniFiltered$ = (ctrl?.valueChanges ?? of('')).pipe(
+            startWith(ctrl?.value ?? ''),
+            map((val: any) => this.filtrarPlanMini(this.planMini, val))
+          );
 
-        if (this.pendingIdPlanCuentas != null) {
-          this.form.patchValue({ idPlanCuentas: this.pendingIdPlanCuentas }, { emitEvent: false });
-          this.pendingIdPlanCuentas = null;
-        }
+          if (this.pendingIdPlanCuentas != null) {
+            this.form.patchValue({ idPlanCuentas: this.pendingIdPlanCuentas }, { emitEvent: false });
+            this.pendingIdPlanCuentas = null;
+          }
 
-        this.syncCuentaDesdeIdPlan();
-      },
-      error: (err: any) => console.error('Error cargando PlanCuentas mini', err)
-    });
-}
+          this.syncCuentaDesdeIdPlan();
+        },
+        error: (err: any) => console.error('Error cargando PlanCuentas mini', err)
+      });
+  }
 
   private filtrarPlanMini(source: PlanCuentaMiniDto[], val: any): PlanCuentaMiniDto[] {
     const txt =
@@ -412,10 +415,10 @@ private endCatalog(): void {
   onCuentaBlur(): void {
     const val = this.form.get('cuentaPresentacion')?.value;
 
-    if (val && typeof val === 'object' && val.IdPlanCuentas) {
+    if (val && typeof val === 'object' && (val as any).IdPlanCuentas) {
       this.form.patchValue({
-        idPlanCuentas: val.IdPlanCuentas,
-        cuentaNombre: val.NombreCuenta
+        idPlanCuentas: (val as any).IdPlanCuentas,
+        cuentaNombre: (val as any).NombreCuenta
       }, { emitEvent: false });
       return;
     }
@@ -450,20 +453,19 @@ private endCatalog(): void {
   // NIVEL 5 (Ctacontable1..5)
   // ============================
   private cargarCatalogoCuentasNivel5(): void {
-  this.beginCatalog();
+    this.beginCatalog();
 
-  this.planApi.getMiniNivel5()
-    .pipe(finalize(() => this.endCatalog()))
-    .subscribe({
-      next: (rows: PlanCuentaMiniDto[]) => {
-        this.planMiniNivel5 = rows ?? [];
-        this.initExtraCuentasAutoNivel5();
-        this.syncExtraCuentasDesdeIdNivel5();
-      },
-      error: (err: any) => console.error('Error cargando PlanCuentas nivel 5', err)
-    });
-}
-
+    this.planApi.getMiniNivel5()
+      .pipe(finalize(() => this.endCatalog()))
+      .subscribe({
+        next: (rows: PlanCuentaMiniDto[]) => {
+          this.planMiniNivel5 = rows ?? [];
+          this.initExtraCuentasAutoNivel5();
+          this.syncExtraCuentasDesdeIdNivel5();
+        },
+        error: (err: any) => console.error('Error cargando PlanCuentas nivel 5', err)
+      });
+  }
 
   private initExtraCuentasAutoNivel5(): void {
     const mk = (idx: number) => {
@@ -489,10 +491,10 @@ private endCatalog(): void {
   onExtraCuentaBlur(idx: number): void {
     const val = this.form.get(`Ctacontable${idx}`)?.value;
 
-    if (val && typeof val === 'object' && val.IdPlanCuentas) {
+    if (val && typeof val === 'object' && (val as any).IdPlanCuentas) {
       this.form.patchValue({
-        [`IdPlanCuentas${idx}`]: val.IdPlanCuentas,
-        [`CtaNombre${idx}`]: val.NombreCuenta
+        [`IdPlanCuentas${idx}`]: (val as any).IdPlanCuentas,
+        [`CtaNombre${idx}`]: (val as any).NombreCuenta
       }, { emitEvent: false });
       return;
     }
@@ -535,31 +537,31 @@ private endCatalog(): void {
   // ============================
   // MARCAS
   // ============================
- private cargarCatalogoMarcas(): void {
-  this.beginCatalog();
+  private cargarCatalogoMarcas(): void {
+    this.beginCatalog();
 
-  this.marcaApi.getAll()
-    .pipe(finalize(() => this.endCatalog()))
-    .subscribe({
-      next: (rows: MarcaCgDto[]) => {
-        this.marcas = rows ?? [];
+    this.marcaApi.getAll()
+      .pipe(finalize(() => this.endCatalog()))
+      .subscribe({
+        next: (rows: MarcaCgDto[]) => {
+          this.marcas = rows ?? [];
 
-        const ctrl = this.form.get('estadoNombre');
-        this.marcasFiltered$ = (ctrl?.valueChanges ?? of('')).pipe(
-          startWith(ctrl?.value ?? ''),
-          map((txt: string) => this.filtrarMarcas(String(txt ?? '')))
-        );
+          const ctrl = this.form.get('estadoNombre');
+          this.marcasFiltered$ = (ctrl?.valueChanges ?? of('')).pipe(
+            startWith(ctrl?.value ?? ''),
+            map((txt: string) => this.filtrarMarcas(String(txt ?? '')))
+          );
 
-        if (this.pendingIdMarca != null) {
-          this.form.patchValue({ idMarca: this.pendingIdMarca }, { emitEvent: false });
-          this.pendingIdMarca = null;
-        }
+          if (this.pendingIdMarca != null) {
+            this.form.patchValue({ idMarca: this.pendingIdMarca }, { emitEvent: false });
+            this.pendingIdMarca = null;
+          }
 
-        this.syncEstadoDesdeIdMarca();
-      },
-      error: (err: any) => console.error('Error cargando MarcaCg', err)
-    });
-}
+          this.syncEstadoDesdeIdMarca();
+        },
+        error: (err: any) => console.error('Error cargando MarcaCg', err)
+      });
+  }
 
   private filtrarMarcas(txt: string): MarcaCgDto[] {
     const t = txt.trim().toLowerCase();
@@ -609,34 +611,34 @@ private endCatalog(): void {
   // ============================
   // DEPARTAMENTOS
   // ============================
- private cargarCatalogoDepartamentos(): void {
-  const idEmpresa = Number(this.usuarioActual?.id_empresa ?? 0);
-  if (!idEmpresa) return;
+  private cargarCatalogoDepartamentos(): void {
+    const idEmpresa = Number(this.usuarioActual?.id_empresa ?? 0);
+    if (!idEmpresa) return;
 
-  this.beginCatalog();
+    this.beginCatalog();
 
-  this.departamentosApi.getAll(idEmpresa)
-    .pipe(finalize(() => this.endCatalog()))
-    .subscribe({
-      next: (rows: DepartamentoDto[]) => {
-        this.departamentos = rows ?? [];
+    this.departamentosApi.getAll(idEmpresa)
+      .pipe(finalize(() => this.endCatalog()))
+      .subscribe({
+        next: (rows: DepartamentoDto[]) => {
+          this.departamentos = rows ?? [];
 
-        const ctrl = this.form.get('departamentoNombre');
-        this.departamentosFiltered$ = (ctrl?.valueChanges ?? of('')).pipe(
-          startWith(ctrl?.value ?? ''),
-          map((txt: string) => this.filtrarDepartamentos(String(txt ?? '')))
-        );
+          const ctrl = this.form.get('departamentoNombre');
+          this.departamentosFiltered$ = (ctrl?.valueChanges ?? of('')).pipe(
+            startWith(ctrl?.value ?? ''),
+            map((txt: string) => this.filtrarDepartamentos(String(txt ?? '')))
+          );
 
-        if (this.pendingIdDepartamento != null) {
-          this.form.patchValue({ IdDepartamento: this.pendingIdDepartamento }, { emitEvent: false });
-          this.pendingIdDepartamento = null;
-        }
+          if (this.pendingIdDepartamento != null) {
+            this.form.patchValue({ IdDepartamento: this.pendingIdDepartamento }, { emitEvent: false });
+            this.pendingIdDepartamento = null;
+          }
 
-        this.syncDepartamentoDesdeId();
-      },
-      error: (err: any) => console.error('Error cargando Departamentos', err)
-    });
-}
+          this.syncDepartamentoDesdeId();
+        },
+        error: (err: any) => console.error('Error cargando Departamentos', err)
+      });
+  }
 
   private filtrarDepartamentos(txt: string): DepartamentoDto[] {
     const t = txt.trim().toLowerCase();
@@ -731,6 +733,8 @@ private endCatalog(): void {
 
             valorCompra: d.Valorcompra ?? null,
             valorResidual: d.Valorresidual ?? 0,
+
+            // ✅ vidaUtil ahora decimal
             vidaUtil: d.Vidautil ?? null,
 
             fechaCompra: this.dateAdapter.parse(d.Feccompra, MY_DATE_FORMATS.parse.dateInput) ?? null,
@@ -767,7 +771,10 @@ private endCatalog(): void {
             DepresiacionMensual: d.DepresiacionMensual ?? null,
             DepreMensual: d.DepreMensual ?? null,
             ValorLibros: d.ValorLibros ?? null,
+
+            // ✅ tasa anual (0.33)
             PorcentajeDepresiacion: d.PorcentajeDepresiacion ?? null,
+
             DepDeducibleSri: d.DepDeducibleSri ?? null,
             DepNoDeducibleNiifs: d.DepNoDeducibleNiifs ?? null,
             PorcentajeDepreciado: d.PorcentajeDepreciado ?? null,
@@ -796,8 +803,7 @@ private endCatalog(): void {
           this.syncCuentaDesdeIdPlan();
           this.syncEstadoDesdeIdMarca();
           this.syncDepartamentoDesdeId();
-
-          // nivel5 se sincroniza cuando llega el catálogo en cargarCatalogoCuentasNivel5()
+          this.syncExtraCuentasDesdeIdNivel5();
           this.recalcularActivos();
         },
         error: () => this.router.navigate(['/cg-3000/activo-fijo'])
@@ -805,7 +811,7 @@ private endCatalog(): void {
   }
 
   // ============================
-  // GUARDAR (tu mismo)
+  // GUARDAR
   // ============================
   guardar(): void {
     if (this.form.invalid) {
@@ -884,7 +890,7 @@ private endCatalog(): void {
   }
 
   // ============================
-  // PAYLOAD (importante: cuentaPresentacion ahora es objeto)
+  // PAYLOAD
   // ============================
   private getPayloadApi(): ActivoFijoDto {
     const v = this.form.getRawValue();
@@ -933,6 +939,7 @@ private endCatalog(): void {
       DepresiacionAnual: v.DepresiacionAnual ?? null,
       ValorLibros: v.ValorLibros ?? null,
       PorcentajeDepresiacion: v.PorcentajeDepresiacion ?? null,
+
       DepDeducibleSri: v.DepDeducibleSri ?? null,
       DepNoDeducibleNiifs: v.DepNoDeducibleNiifs ?? null,
       PorcentajeDepreciado: v.PorcentajeDepreciado ?? null,
@@ -1002,15 +1009,18 @@ private endCatalog(): void {
     return Math.round((n + Number.EPSILON) * 100) / 100;
   }
 
+  // ============================
+  // ✅ RECALCULO (CORREGIDO)
+  // ============================
   private recalcularActivos(): void {
     const v = this.form.getRawValue();
 
     const valorCompra = this.n(v.valorCompra, 0);
-    const vidaUtil = this.n(v.vidaUtil, 0);
     const periodos = this.n(v.Tiempodeprec, 0);
     const perMes = this.n(v.TiempodeprecMes, 0);
     const perDia = this.n(v.TiempodeprecDia, 0);
 
+    // Residual (si manejas porcentaje residual)
     const porcentajeResidual = this.n((v as any).PorcentajeResidual, 0);
     let valorResidual = this.n(v.valorResidual, 0);
 
@@ -1019,20 +1029,41 @@ private endCatalog(): void {
     }
     valorResidual = this.fmt2(valorResidual);
 
-    let porcentajeDep = 0;
+    // ✅ TASA ANUAL: tú la ingresas en PorcentajeDepresiacion
+    let tasaAnual = this.n(v.PorcentajeDepresiacion, 0);
+
+    // permitir ingresar 33 en lugar de 0.33
+    if (tasaAnual > 1) tasaAnual = tasaAnual / 100;
+
+    // Vida útil (años) - ahora decimal
+    let vidaUtil = this.n(v.vidaUtil, 0);
+
+    // Regla:
+    // - Si hay tasaAnual > 0 => vidaUtil = 1/tasaAnual
+    // - Si no hay tasaAnual pero hay vidaUtil > 0 => tasaAnual = 1/vidaUtil
+    if (tasaAnual > 0) {
+      vidaUtil = 1 / tasaAnual;
+    } else if (vidaUtil > 0) {
+      tasaAnual = 1 / vidaUtil;
+    }
+
+    // Redondeos
+    tasaAnual = this.fmt2(tasaAnual); // ej 0.33
+    vidaUtil = this.fmt2(vidaUtil);   // ej 3.03
+
+    // Depreciación anual y mensual
     let depreAnual = 0;
     let depreMensual = 0;
 
-    if (valorCompra > 0 && vidaUtil > 0) {
-      porcentajeDep = 1 / vidaUtil;
-      depreAnual = (valorCompra - valorResidual) * porcentajeDep;
+    if (valorCompra > 0 && tasaAnual > 0) {
+      depreAnual = (valorCompra - valorResidual) * tasaAnual;
       depreMensual = depreAnual / 12;
     }
 
-    porcentajeDep = this.fmt2(porcentajeDep);
     depreAnual = this.fmt2(depreAnual);
     depreMensual = this.fmt2(depreMensual);
 
+    // % depreciado (con vidaUtil decimal)
     let porcentajeDepreciado = 0;
     if (vidaUtil > 0) {
       const totalDias = vidaUtil * 365;
@@ -1041,6 +1072,7 @@ private endCatalog(): void {
     }
     porcentajeDepreciado = this.fmt2(porcentajeDepreciado);
 
+    // acumulada y valor en libros
     const valorMes = perMes > 0 ? perMes * depreMensual : 0;
     const valorDias = perDia > 0 ? perDia * (depreMensual / 30) : 0;
     const valorAnio = periodos > 0 ? periodos * depreAnual : 0;
@@ -1048,6 +1080,7 @@ private endCatalog(): void {
     const depreAcumulada = this.fmt2(valorMes + valorDias + valorAnio);
     const valorLibros = this.fmt2(valorCompra - depreAcumulada);
 
+    // NIIF/SRI (igual que tenías)
     const vidaUtilTotal = this.n(v.VidaUtilTotal, 0);
     const valorRazonable = this.n(v.ValorRazonable, 0);
 
@@ -1084,15 +1117,22 @@ private endCatalog(): void {
     if (valorRazonable > 0) ajusteIncremento = valorRazonable - valorLibros;
     ajusteIncremento = this.fmt2(ajusteIncremento);
 
+    // ✅ patch final
     this.form.patchValue({
       valorResidual,
-      PorcentajeDepresiacion: porcentajeDep,
+
+      // Estos 2 quedan sincronizados
+      PorcentajeDepresiacion: tasaAnual,
+      vidaUtil: vidaUtil,
+
       DepresiacionAnual: depreAnual,
       DepresiacionMensual: depreMensual,
       DepreMensual: depreMensual,
+
       PorcentajeDepreciado: porcentajeDepreciado,
       DepreAcumulada: depreAcumulada,
       ValorLibros: valorLibros,
+
       SaldoVidaUtil: saldoVidaUtil,
       NvaDepresiacionAnual: nvaDeprAnual,
       DepDeducibleSri: depDeducibleSri,
@@ -1101,14 +1141,18 @@ private endCatalog(): void {
     }, { emitEvent: false });
   }
 
+  // ✅ Importante: agregar PorcentajeDepresiacion en el hook
   private hookRecalculos(): void {
     const controls = [
       'valorCompra',
-      'vidaUtil',
       'valorResidual',
+      'vidaUtil',
+      'PorcentajeDepresiacion', // 👈 agregado
+
       'Tiempodeprec',
       'TiempodeprecMes',
       'TiempodeprecDia',
+
       'ValorRazonable',
       'VidaUtilTotal',
       'FechaDeprecia',
@@ -1161,6 +1205,7 @@ private endCatalog(): void {
     return faltantes;
   }
 
+  // (se queda por si la usas en otros campos; ya no se usa en vidaUtil)
   private enteroNoNegativoValidator(control: AbstractControl): ValidationErrors | null {
     const v = control.value;
     if (v === null || v === undefined || v === '') return null;

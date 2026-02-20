@@ -258,3 +258,72 @@ h2{
   overflow: auto;
   border: 1px solid rgba(255,255,255,0.08);
 }
+.gtinRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+}
+
+.btnVerify{
+  min-width: 140px;
+}
+
+.resultItem.expired{
+  border: 2px solid #e53935;
+  border-radius: 12px;
+}
+
+.resultItem.expired .resultValue{
+  color:#e53935;
+  font-weight:700;
+}
+.snack-expired-big .mat-mdc-snack-bar-label{
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+}
+
+.snack-expired-big .mat-mdc-button.mat-mdc-snack-bar-action{
+  font-size: 18px !important;
+  font-weight: 700 !important;
+}
+
+.snack-expired-big{
+  padding-top: 14px !important;
+  padding-bottom: 14px !important;
+}
+/* ===== 1) Tamaño y estilo (MDC) ===== */
+.snack-expired-big-center.mat-mdc-snack-bar-container .mdc-snackbar__surface{
+  padding: 22px 28px !important;
+  border-radius: 14px !important;
+  min-width: min(720px, 92vw) !important;
+}
+
+.snack-expired-big-center.mat-mdc-snack-bar-container .mdc-snackbar__label{
+  font-size: 30px !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+}
+
+.snack-expired-big-center.mat-mdc-snack-bar-container .mat-mdc-button.mat-mdc-snack-bar-action{
+  font-size: 26px !important;
+  font-weight: 800 !important;
+}
+
+/* ===== 2) CENTRAR EN LA PANTALLA (vertical + horizontal) ===== */
+/* Chrome moderno soporta :has() */
+.cdk-overlay-pane:has(.snack-expired-big-center){
+  top: 50% !important;
+  bottom: auto !important;
+  transform: translateY(-50%) !important;
+}
+.scanGridNoCam{
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+.pasteAreaFull{
+  grid-column: 1 / -1;
+}

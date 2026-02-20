@@ -242,5 +242,18 @@ getResumenTipoClienteTotal(): Observable<ApiResponse<ResumenTipoClienteTotalResp
   return this.http.get<ApiResponse<ResumenTipoClienteTotalResponse>>(url);
 }
 
+getResumenTipoClienteAnioMesAfiliadas(
+  anio: number,
+  mes: number
+): Observable<ApiResponse<ResumenTipoClienteAnioMesResponse>> {
+  const url = `${this.apiBaseUrl}/Clientes/resumen-tipo-cliente-afiliadas/${anio}/${mes}`;
+  return this.http.get<ApiResponse<ResumenTipoClienteAnioMesResponse>>(url);
+}
+
+getResumenTipoClienteTotalAfiliadas(): Observable<ApiResponse<ResumenTipoClienteTotalResponse>> {
+  const url = `${this.apiBaseUrl}/Clientes/resumen-tipo-cliente-total-afiliadas`;
+  return this.http.get<ApiResponse<ResumenTipoClienteTotalResponse>>(url);
+}
+
 
 }

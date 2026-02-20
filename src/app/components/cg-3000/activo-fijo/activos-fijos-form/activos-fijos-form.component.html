@@ -1,4 +1,5 @@
 <!-- src/app/components/cg-3000/activo-fijo/activos-fijos-form/activos-fijos-form.component.html -->
+
 <div class="loading-overlay" *ngIf="busy()">
   <mat-progress-spinner mode="indeterminate" diameter="54"></mat-progress-spinner>
   <div class="loading-text">{{ busyText() }}</div>
@@ -383,6 +384,7 @@
             </mat-form-field>
           </div>
 
+          <!-- ================== VALORES BASE ================== -->
           <div class="af-row-3">
             <mat-form-field appearance="outline">
               <mat-label>Valor de Compra</mat-label>
@@ -408,6 +410,7 @@
               />
             </mat-form-field>
 
+            <!-- ✅ VIDA ÚTIL AHORA DECIMAL -->
             <mat-form-field appearance="outline">
               <mat-label>Vida Útil (años)</mat-label>
               <input
@@ -415,19 +418,27 @@
                 type="number"
                 formControlName="vidaUtil"
                 min="0"
-                step="1"
-                inputmode="numeric"
-                (keydown)="bloquearNoEnterosNoNegativos($event)"
-                (blur)="normalizarEnteroNoNegativo('vidaUtil')"
+                step="0.01"
+                (blur)="asegurarNoNegativo('vidaUtil')"
               />
+              
             </mat-form-field>
           </div>
 
-          <!-- Calculados -->
+          <!-- ================== CALCULOS ================== -->
           <div class="af-row-3">
+            <!-- ✅ % Depreciación editable -->
             <mat-form-field appearance="outline">
-              <mat-label>% Depreciación</mat-label>
-              <input matInput type="number" formControlName="PorcentajeDepresiacion" readonly />
+              <mat-label>% Depreciación (anual)</mat-label>
+              <input
+                matInput
+                type="number"
+                formControlName="PorcentajeDepresiacion"
+                min="0"
+                step="0.01"
+                (blur)="asegurarNoNegativo('PorcentajeDepresiacion')"
+              />
+              <mat-hint>Ingrese 0.33 (33%) o 33</mat-hint>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -453,7 +464,7 @@
             </mat-form-field>
           </div>
 
-          <!-- Tiempos -->
+          <!-- ================== TIEMPOS ================== -->
           <div class="af-row-3">
             <mat-form-field appearance="outline">
               <mat-label>Tiempo Deprec. (años)</mat-label>
@@ -612,7 +623,7 @@
         <!-- CTA 1 -->
         <div class="af-row-3">
           <mat-form-field appearance="outline">
-            <mat-label>Cta Contable 1</mat-label>
+            <mat-label>Gasto Depreciacion Deducible (SRI)</mat-label>
             <input
               matInput
               formControlName="Ctacontable1"
@@ -649,7 +660,7 @@
         <!-- CTA 2 -->
         <div class="af-row-3">
           <mat-form-field appearance="outline">
-            <mat-label>Cta Contable 2</mat-label>
+            <mat-label>Depreciacion Acumulada (Activo)</mat-label>
             <input
               matInput
               formControlName="Ctacontable2"
@@ -686,7 +697,7 @@
         <!-- CTA 3 -->
         <div class="af-row-3">
           <mat-form-field appearance="outline">
-            <mat-label>Cta Contable 3</mat-label>
+            <mat-label>Gasto Depreciacion No Deducible (NIIFS)</mat-label>
             <input
               matInput
               formControlName="Ctacontable3"
@@ -723,7 +734,7 @@
         <!-- CTA 4 -->
         <div class="af-row-3">
           <mat-form-field appearance="outline">
-            <mat-label>Cta Contable 4</mat-label>
+            <mat-label>Gasto Amortizacion Deducible (SRI)</mat-label>
             <input
               matInput
               formControlName="Ctacontable4"
@@ -760,7 +771,7 @@
         <!-- CTA 5 -->
         <div class="af-row-3">
           <mat-form-field appearance="outline">
-            <mat-label>Cta Contable 5</mat-label>
+            <mat-label>Amortizacion Acumulada (Activo)</mat-label>
             <input
               matInput
               formControlName="Ctacontable5"

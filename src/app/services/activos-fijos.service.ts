@@ -116,7 +116,7 @@ export class ActivoFijoApiService {
    * baseApi: maintenanceUrl (ej: http://localhost:500x)
    */
   private readonly baseApi = environment.maintenanceUrl ?? '';
-  private readonly baseUrl = `${this.baseApi}/ActivoFijo`;
+  private readonly baseUrl = `${this.baseApi}/activo-fijo`;
 
   constructor(private http: HttpClient) {}
 

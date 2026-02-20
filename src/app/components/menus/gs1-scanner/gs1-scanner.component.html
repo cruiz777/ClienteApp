@@ -2,7 +2,10 @@
   <mat-card class="card">
     <h2>Lectura GS1 DataMatrix</h2>
 
+    <!-- ✅ Acciones (cámara OCULTA por ahora) -->
     <div class="actions">
+      <!-- ❌ OCULTO: cámara -->
+      <!--
       <button mat-raised-button color="primary" (click)="startCamera()" [disabled]="scanning">
         Iniciar cámara
       </button>
@@ -10,23 +13,23 @@
       <button mat-stroked-button color="warn" (click)="stopCamera()" [disabled]="!scanning">
         Detener
       </button>
+      -->
 
       <button mat-stroked-button (click)="clear()">Limpiar</button>
     </div>
 
-    <!-- ✅ NUEVO LAYOUT: cam + info a la izquierda, preview grande a la derecha -->
-    <div class="scanGrid">
-      <!-- ===== CÁMARA (arriba izquierda) ===== -->
+    <!-- ✅ Grid SIN cámara -->
+    <div class="scanGrid scanGridNoCam">
+      <!-- ❌ OCULTO: video -->
+      <!--
       <div class="camArea">
         <video #video playsinline muted class="video"></video>
       </div>
+      -->
 
-      <!-- ===== INFO PEGADO (abajo izquierda) ===== -->
       <div class="infoArea">
         <div class="pasteInfo">
           <div class="pasteTitle">Pegar DataMatrix</div>
-
-          
 
           <div class="pasteActions">
             <button mat-stroked-button type="button" (click)="fileInput.click()">
@@ -45,8 +48,7 @@
         </div>
       </div>
 
-      <!-- ===== CUADRO GRANDE (derecha ocupa 2 filas) ===== -->
-      <div class="pasteArea">
+      <div class="pasteArea pasteAreaFull">
         <div
           #pasteTarget
           class="pasteTarget pasteTargetBig"
@@ -75,7 +77,7 @@
         matInput
         [(ngModel)]="codigo"
         (keyup.enter)="process()"
-        placeholder="Escanee / pegue texto / o use Ctrl+V con imagen"
+        placeholder="Pegue texto o use Ctrl+V con imagen"
       />
     </mat-form-field>
 
@@ -85,14 +87,33 @@
 
     <!-- ===== GTIN / Validación ===== -->
     <div class="mt" *ngIf="parsed?.fields?.gtin">
-      <strong>GTIN:</strong> <h1>{{ parsed?.fields?.gtin }}</h1>
-      <span class="pill" [class.ok]="gtinOk" [class.bad]="gtinOk === false">
-        {{ gtinOk === true ? 'VÁLIDO' : (gtinOk === false ? 'INVÁLIDO' : '—') }}
-      </span>
-      <span class="pill type" *ngIf="gtinType">{{ gtinType }}</span>
+      <div class="gtinRow">
+        <div class="gtinInfo">
+          <strong>GTIN:</strong> <h1>{{ parsed?.fields?.gtin }}</h1>
+
+          <span class="pill" [class.ok]="gtinOk" [class.bad]="gtinOk === false">
+            {{ gtinOk === true ? 'VÁLIDO' : (gtinOk === false ? 'INVÁLIDO' : '—') }}
+          </span>
+
+          <span class="pill type" *ngIf="gtinType">{{ gtinType }}</span>
+
+          <span class="pill bad" *ngIf="isExpired === true">CADUCADO</span>
+          <span class="pill ok" *ngIf="isExpired === false">VIGENTE</span>
+        </div>
+
+        <button
+          mat-stroked-button
+          color="primary"
+          class="btnVerify"
+          type="button"
+          (click)="openVerifiedByGs1()"
+          [disabled]="!parsed?.fields?.gtin"
+        >
+          VERIFICAR
+        </button>
+      </div>
     </div>
 
-    <!-- ===== Resultados (2 columnas + valores grandes) ===== -->
     <ng-container *ngIf="parsed as p">
       <div class="resultGrid mt">
         <div class="resultItem">
@@ -110,7 +131,7 @@
           <div class="resultValue">{{ p.fields.fechaProduccion || '—' }}</div>
         </div>
 
-        <div class="resultItem">
+        <div class="resultItem" [class.expired]="isExpired === true">
           <div class="resultLabel">F. Caducidad</div>
           <div class="resultValue">{{ p.fields.fechaCaducidad || '—' }}</div>
         </div>

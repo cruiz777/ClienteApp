@@ -1,6 +1,5 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import * as XLSX from 'xlsx';
 import * as FileSaver from 'file-saver';
@@ -10,7 +9,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
-
+import { Router } from '@angular/router';
 import { AgGridAngular } from 'ag-grid-angular';
 import { ColDef, GridApi, GridOptions, GridReadyEvent } from 'ag-grid-community';
 
@@ -48,6 +47,7 @@ export class ActivosFijosListComponent implements OnInit {
     { headerName: 'Descripción', field: 'Descripcion', width: 380 },
     { headerName: 'Cuenta', field: 'Cuenta', width: 150 },
     { headerName: 'Nombre', field: 'PlanCuentaNombre', width: 220 },
+    { headerName: 'V.Compra', field: 'Valorcompra', width: 160 },
     { headerName: 'Marca', field: 'Marca', width: 160 },
     { headerName: 'Estado', field: 'MarcaDescripcion', width: 140 },
 
@@ -344,4 +344,11 @@ exportarExcel(): void {
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}${m}${day}`;
   }
+  irReporteDepreciacion(): void {
+  // ✅ ruta del reporte (ajústala si tu ruta es otra)/cg-3000/activo-fijo/depreciacion-mensual
+  //this.router.navigateByUrl('/cg-3000/activo-fijo/reporte-depreciacion/reporte-depreciacion');
+  this.router.navigate(['/cg-3000/activo-fijo/depre']);
+
+}
+
 }

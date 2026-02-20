@@ -1,0 +1,85 @@
+<!-- src/app/components/cg-3000/activo-fijo/reporte-depreciacion/reporte-depreciacion.component.html -->
+<mat-card class="rep-card">
+  <mat-tab-group>
+    <mat-tab label="Reporte Depr. Mensual">
+
+      <div class="rep-body">
+
+        <form class="rep-form" [formGroup]="form">
+          <div class="row-inline">
+            <div class="field">
+              <div class="lbl">Año :</div>
+              <mat-form-field appearance="outline" class="w-140">
+                <input matInput type="number" formControlName="anio">
+              </mat-form-field>
+            </div>
+
+            <div class="field">
+              <div class="lbl">Mes :</div>
+              <mat-form-field appearance="outline" class="w-220">
+                <mat-select formControlName="mes">
+                  <mat-option *ngFor="let m of meses" [value]="m.value">{{ m.label }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+            </div>
+          </div>
+        </form>
+
+        <div class="rep-actions">
+          <button mat-raised-button color="primary" (click)="generar()" [disabled]="loading()">
+            <mat-icon>play_arrow</mat-icon> Generar
+          </button>
+
+          <button mat-raised-button color="accent"
+        (click)="generarAsiento()"
+        [disabled]="!puedeAsiento()">
+  <mat-icon>receipt_long</mat-icon> Asiento
+</button>
+
+
+          <button mat-stroked-button (click)="imprimirPdf()" [disabled]="rows().length === 0">
+            <mat-icon>print</mat-icon> Imprimir
+          </button>
+
+          <button mat-stroked-button color="warn" (click)="salir()">
+            <mat-icon>logout</mat-icon> Salir
+          </button>
+        </div>
+
+        <mat-divider class="mt-16"></mat-divider>
+
+        <div class="rep-status" *ngIf="loading()">
+          <mat-spinner diameter="28"></mat-spinner>
+          <span>{{ loadingText() || 'Procesando...' }}</span>
+        </div>
+
+        <div class="rep-error" *ngIf="errorMsg() as err">
+          {{ err }}
+        </div>
+
+        <div class="rep-summary" *ngIf="rows().length">
+          <div><b>Registros:</b> {{ rows().length }}</div>
+          <div><b>Total Dep. Mensual:</b> {{ totalDepMensual() | number:'1.2-2' }}</div>
+        </div>
+
+        <div class="rep-summary" *ngIf="asientoInfo() as a">
+          <div><b>Asiento generado:</b> {{ a.tipdoc }}-{{ a.numdoc }}</div>
+          <div><b>Debe:</b> {{ a.totalDebe | number:'1.2-2' }} / <b>Haber:</b> {{ a.totalHaber | number:'1.2-2' }}</div>
+        </div>
+
+        <div class="rep-table" *ngIf="rows().length">
+          <ag-grid-angular
+            class="ag-theme-quartz rep-grid"
+            [rowData]="rows()"
+            [columnDefs]="colDefs"
+            [gridOptions]="gridOptions"
+            [pinnedBottomRowData]="pinnedBottom()"
+            [animateRows]="true"
+            (gridReady)="onGridReady($event)">
+          </ag-grid-angular>
+        </div>
+
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</mat-card>
