@@ -33,6 +33,7 @@ import { PlanCuentaCellEditorComponent, PlanCuentaCellEditorParams } from './cue
 import { SharedModule } from 'src/app/shared/shared.module';
 import { EstadoFinancieroComponent } from './balance/estado-financiero/estado-financiero.component';
 import { ReporteComprasComponent } from './anexo-transaccional/reporte-compras/reporte-compras.component';
+import { GenerarAtsComponent } from './anexo-transaccional/generacion-anexo/generar-ats.component';
 
 
 
@@ -43,7 +44,8 @@ import { ReporteComprasComponent } from './anexo-transaccional/reporte-compras/r
     NavigationCgComponent,
     EstadoFinancieroComponent,
     RegistroPagosProveedorComponent,
-    ReporteComprasComponent
+    ReporteComprasComponent,
+    GenerarAtsComponent
   ],
   imports: [
     CommonModule,
