@@ -6,6 +6,7 @@ import { environment } from 'src/environments/environment';
 import { PurchaseReportRequest } from '../interfaces/requests/reporte-compras-request';
 import { ApiResponse } from '../interfaces/responses/api-response';
 import { PurchaseReportResponse } from '../interfaces/responses/reporte-compras-response';
+import { AtsXmlRequest } from '../interfaces/requests/ats-xml-request';
 
 @Injectable({
   providedIn: 'root'
@@ -75,6 +76,32 @@ export class PurchaseReportService {
       },
       error: (error) => {
         console.error('Error al descargar el Excel:', error);
+        throw error;
+      }
+    });
+  }
+
+  downloadAtsXml(request: AtsXmlRequest): Observable<Blob> {
+    return this.http.post(
+      `${environment.anexoTransaccionalUrl}/ReporteCompras/download`,
+      request,
+      {
+        responseType: 'blob',
+        observe: 'response'
+      }
+    ).pipe(
+      map(response => response.body as Blob)
+    );
+  }
+
+  downloadAndSaveAtsXml(request: AtsXmlRequest): void {
+    this.downloadAtsXml(request).subscribe({
+      next: (blob) => {
+        const fileName = `AT${String(request.mes).padStart(2, '0')}${request.anio}.xml`;
+        this.saveFile(blob, fileName);
+      },
+      error: (error) => {
+        console.error('Error al descargar ATS XML:', error);
         throw error;
       }
     });

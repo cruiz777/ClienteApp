@@ -1,0 +1,258 @@
+/* ========== CONTENEDOR PRINCIPAL ========== */
+.page-container {
+  padding: 24px;
+  background-color: #ffffff;
+  min-height: 100vh;
+}
+
+.contenido {
+  max-width: 640px;
+  margin: 0 auto;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 32px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border-top: 4px solid #002c6c;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ========== ENCABEZADO ========== */
+.header-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-icon {
+  font-size: 42px;
+  width: 42px;
+  height: 42px;
+  color: #F27046;
+}
+
+.title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #002c6c;
+  letter-spacing: -0.2px;
+}
+
+.subtitle {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #4b5563;
+  font-weight: 500;
+  letter-spacing: 0.3px;
+}
+
+/* ========== FORMULARIO ========== */
+.form-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-instrucciones {
+  margin: 0;
+  color: #4b5563;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.fields-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.field-mes {
+  flex: 1;
+  min-width: 180px;
+}
+
+.field-anio {
+  flex: 1;
+  min-width: 140px;
+}
+
+/* Override colores Angular Material con paleta corporativa */
+.field-mes ::ng-deep .mat-mdc-text-field-wrapper,
+.field-anio ::ng-deep .mat-mdc-text-field-wrapper {
+  background-color: #ffffff;
+}
+
+.field-mes ::ng-deep .mdc-notched-outline__leading,
+.field-mes ::ng-deep .mdc-notched-outline__notch,
+.field-mes ::ng-deep .mdc-notched-outline__trailing,
+.field-anio ::ng-deep .mdc-notched-outline__leading,
+.field-anio ::ng-deep .mdc-notched-outline__notch,
+.field-anio ::ng-deep .mdc-notched-outline__trailing {
+  border-color: #cbd5e1 !important;
+}
+
+.field-mes ::ng-deep .mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
+.field-mes ::ng-deep .mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
+.field-mes ::ng-deep .mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing,
+.field-anio ::ng-deep .mat-mdc-form-field.mat-focused .mdc-notched-outline__leading,
+.field-anio ::ng-deep .mat-mdc-form-field.mat-focused .mdc-notched-outline__notch,
+.field-anio ::ng-deep .mat-mdc-form-field.mat-focused .mdc-notched-outline__trailing {
+  border-color: #002c6c !important;
+}
+
+.field-mes ::ng-deep .mat-mdc-floating-label,
+.field-anio ::ng-deep .mat-mdc-floating-label {
+  color: #4b5563;
+}
+
+.field-mes ::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-floating-label,
+.field-anio ::ng-deep .mat-mdc-form-field.mat-focused .mat-mdc-floating-label {
+  color: #002c6c !important;
+}
+
+.field-mes ::ng-deep .mat-mdc-select-arrow,
+.field-mes ::ng-deep .mat-mdc-select-value {
+  color: #1f2937;
+}
+
+.field-anio ::ng-deep input {
+  color: #1f2937;
+}
+
+/* ========== VISTA PREVIA DEL PERÍODO ========== */
+.periodo-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background-color: #e6f2ff;
+  border: 1px solid #93c5fd;
+  border-left: 4px solid #20b91d;
+  border-radius: 4px;
+  padding: 10px 16px;
+  color: #002c6c;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.periodo-preview mat-icon {
+  color: #20b91d;
+}
+
+/* ========== BOTÓN PRINCIPAL ========== */
+.actions-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.btn-generar {
+  background-color: #002c6c !important;
+  color: white !important;
+  font-weight: 500;
+  height: 48px;
+  padding: 0 28px;
+  min-width: 200px;
+  border-radius: 4px !important;
+  text-transform: none;
+  letter-spacing: 0.3px;
+  font-size: 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-generar:hover:not(:disabled) {
+  background-color: #001a42 !important;
+  box-shadow: 0 3px 8px rgba(0, 44, 108, 0.3);
+}
+
+.btn-generar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.btn-generar mat-icon {
+  color: #F27046;
+}
+
+.spinner-btn {
+  display: inline-block;
+}
+
+.spinner-btn ::ng-deep circle {
+  stroke: #F27046 !important;
+}
+
+/* ========== NOTA INFORMATIVA ========== */
+.nota-info {
+  display: flex;
+  gap: 14px;
+  background-color: #e6f2ff;
+  border-left: 4px solid #F27046;
+  border-radius: 0 4px 4px 0;
+  padding: 16px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.nota-info mat-icon {
+  color: #F27046;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.nota-info strong {
+  color: #002c6c;
+  font-size: 14px;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.nota-info p {
+  margin: 0;
+  color: #4b5563;
+}
+
+/* ========== MAT DIVIDER ========== */
+mat-divider {
+  border-top-color: #e6f2ff !important;
+}
+
+/* ========== RESPONSIVE ========== */
+@media screen and (max-width: 768px) {
+  .page-container {
+    padding: 16px;
+  }
+
+  .contenido {
+    padding: 24px 16px;
+  }
+
+  .fields-row {
+    flex-direction: column;
+  }
+
+  .field-mes,
+  .field-anio {
+    width: 100%;
+  }
+
+  .btn-generar {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .header-section {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .header-icon {
+    font-size: 32px;
+    width: 32px;
+    height: 32px;
+  }
+}

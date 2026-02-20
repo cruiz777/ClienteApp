@@ -11,6 +11,7 @@ import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/materia
 import { MAT_MOMENT_DATE_ADAPTER_OPTIONS, MomentDateAdapter } from '@angular/material-moment-adapter';
 import { PurchaseReportItemResponse, PurchaseReportTotalsResponse } from 'src/app/interfaces/responses/reporte-compras-response';
 import { PurchaseReportService } from 'src/app/services/reporte-compras.service';
+import { AtsXmlRequest } from 'src/app/interfaces/requests/ats-xml-request';
 
 // Formato de fecha personalizado
 export const MY_DATE_FORMATS = {
@@ -466,7 +467,6 @@ export class ReporteComprasComponent implements OnInit {
       });
     }, 1500);
   }
-
   // ========== FORMATTERS ==========
 
   private formatoMoneda(params: ValueFormatterParams): string {
