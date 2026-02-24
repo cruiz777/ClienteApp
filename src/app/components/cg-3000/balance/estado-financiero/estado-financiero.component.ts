@@ -688,10 +688,23 @@ export class EstadoFinancieroComponent implements OnInit {
     private handleSuccessResponse(response: any): void {  // ✅ Usar 'any' para evitar conflictos
     this.cargando = false;
     if (response.data && response.data.length > 0) {
-        this.datosReporte = response.data;
+
+        this.datosReporte = response.data.filter((item: any) => {
+            if (item.esUtilidad && !this.esEstadoResultados()) {
+                //Solo filtrar utilidad vacía en Situación Financiera
+                const tieneValor = ['sum1','sum2','sum3','sum4','sum5']
+                    .some(k => item[k] && item[k].toString().trim() !== '');
+                return tieneValor;
+            }
+            return true; // Estado de Resultados y todo lo demás pasa siempre
+        });
         if (!this.esEstadoResultados()) {
             this.agregarTotalPasivoPatrimonio();
         }
+        else {
+            this.agregarTotalesResultados(); // NUEVO
+        }
+
         this.mostrarResultados = true;
         
         this.mostrarMensaje({
@@ -718,6 +731,9 @@ export class EstadoFinancieroComponent implements OnInit {
     private agregarTotalPasivoPatrimonio(): void {
         const datos = this.datosReporte as EstadoFinancieroResponse[];
 
+        const totalActivo = datos.find(d =>
+            d.nivel === 1 && d.nombreCuenta.toUpperCase().includes('ACTIVO')
+        );
         const totalPasivo = datos.find(d =>
             d.nivel === 1 && d.nombreCuenta.toUpperCase().includes('PASIVO')
         );
@@ -727,45 +743,164 @@ export class EstadoFinancieroComponent implements OnInit {
 
         if (!totalPasivo && !totalPatrimonio) return;
 
-        const sumar = (v1: string | null, v2: string | null): string => {
-            const parsear = (v: string | null): number => {
+        const filaUtilidad = datos.find(d => d.esUtilidad);
+
+        const parsear = (v: string | null | undefined): number => {
             if (!v) return 0;
             const esNeg = v.includes('(');
             const num = parseFloat(v.replace(/[(),\s]/g, '')) || 0;
             return esNeg ? -num : num;
-            };
-            const resultado = parsear(v1) + parsear(v2);
-            if (resultado < 0) {
-            return `(${Math.abs(resultado).toLocaleString('en-US', { minimumFractionDigits: 2 })})`;
-            }
-            return resultado.toLocaleString('en-US', { minimumFractionDigits: 2 });
         };
 
-        const fila: EstadoFinancieroResponse = {
+        const formatear = (n: number): string => {
+            if (n < 0) {
+                return `(${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2 })})`;
+            }
+            return n.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        };
+
+        const invertirSigno = (v: string | null | undefined): number => -parsear(v);
+        
+        // Verificar si el Patrimonio tiene ALGÚN valor real en cualquiera de sus sumas
+        const patrimonioTieneValores = !!(totalPatrimonio && [
+            totalPatrimonio.sum1,
+            totalPatrimonio.sum2,
+            totalPatrimonio.sum3,
+            totalPatrimonio.sum4,
+            totalPatrimonio.sum5
+        ].some(v => parsear(v) !== 0));
+
+        // Si patrimonio tiene valores → utilidad ya está incluida dentro → NO sumar de nuevo
+        // Si patrimonio está vacío  → utilidad no está en ningún lado → SÍ sumar
+        const utilidadYaIncluidaEnPatrimonio = patrimonioTieneValores;
+
+        const calcularTotal = (
+            pasivo: string | null | undefined,
+            patrimonio: string | null | undefined,
+            utilidad: string | null | undefined
+        ): string => {
+            //Pasivo y Patrimonio vienen negativos → Math.abs para mostrar positivo
+            const sumBase = Math.abs(parsear(pasivo)) + Math.abs(parsear(patrimonio));
+            
+            //Utilidad viene positiva del backend → sumar directo, NO invertir
+            const extra = utilidadYaIncluidaEnPatrimonio ? 0 : parsear(utilidad);
+            
+            const total = sumBase + extra;
+            return total.toLocaleString('en-US', { minimumFractionDigits: 2 }); // siempre positivo
+        };
+
+        const filaActivo: EstadoFinancieroResponse = {
+            cuenta: '',
+            nombreCuenta: 'TOTAL ACTIVOS',
+            nivel: 1,
+            orden: 9998,
+            esTotalGeneral: true,
+            esUtilidad: false,
+            sum1: totalActivo?.sum1 ?? '',
+            sum2: totalActivo?.sum2 ?? '',
+            sum3: totalActivo?.sum3 ?? '',
+            sum4: totalActivo?.sum4 ?? '',
+            sum5: totalActivo?.sum5 ?? '',
+        };
+
+        const filaTotal: EstadoFinancieroResponse = {
             cuenta: '',
             nombreCuenta: 'TOTAL PASIVO + PATRIMONIO',
             nivel: 1,
             orden: 9999,
-            esTotalGeneral: true,  // ← true para que tome el estilo azul en PDF
+            esTotalGeneral: true,
             esUtilidad: false,
-            sum1: sumar(totalPasivo?.sum1 ?? null, totalPatrimonio?.sum1 ?? null),
-            sum2: sumar(totalPasivo?.sum2 ?? null, totalPatrimonio?.sum2 ?? null),
-            sum3: sumar(totalPasivo?.sum3 ?? null, totalPatrimonio?.sum3 ?? null),
-            sum4: sumar(totalPasivo?.sum4 ?? null, totalPatrimonio?.sum4 ?? null),
-            sum5: sumar(totalPasivo?.sum5 ?? null, totalPatrimonio?.sum5 ?? null),
+            sum1: calcularTotal(totalPasivo?.sum1, totalPatrimonio?.sum1, filaUtilidad?.sum1),
+            sum2: calcularTotal(totalPasivo?.sum2, totalPatrimonio?.sum2, filaUtilidad?.sum2),
+            sum3: calcularTotal(totalPasivo?.sum3, totalPatrimonio?.sum3, filaUtilidad?.sum3),
+            sum4: calcularTotal(totalPasivo?.sum4, totalPatrimonio?.sum4, filaUtilidad?.sum4),
+            sum5: calcularTotal(totalPasivo?.sum5, totalPatrimonio?.sum5, filaUtilidad?.sum5),
         };
 
         const indexUtilidad = datos.findIndex(d => d.esUtilidad);
         if (indexUtilidad >= 0) {
-            (this.datosReporte as EstadoFinancieroResponse[]).splice(indexUtilidad, 0, fila);
+            (this.datosReporte as EstadoFinancieroResponse[]).splice(indexUtilidad + 1, 0, filaActivo, filaTotal);
         } else {
             const ultimoTotal = totalPatrimonio || totalPasivo;
             const index = datos.indexOf(ultimoTotal!);
-            (this.datosReporte as EstadoFinancieroResponse[]).splice(index + 1, 0, fila);
+            (this.datosReporte as EstadoFinancieroResponse[]).splice(index + 1, 0, filaActivo, filaTotal);
         }
     }
 
-    // ✅ NUEVO: Método para manejar errores
+    private agregarTotalesResultados(): void {
+        const datos = this.datosReporte as EstadoResultadosResponse[];
+
+        //Identificar cuentas nivel 1 por el primer carácter del código
+        const cuentasNivel1 = datos.filter(d => d.nivel === 1 && !d.esTotalGeneral && !d.esUtilidad);
+
+        const ingresos = cuentasNivel1.filter(d => d.cuenta?.startsWith('4'));
+        const gastos   = cuentasNivel1.filter(d => 
+            d.cuenta?.startsWith('5') || d.cuenta?.startsWith('6') || d.cuenta?.startsWith('7')
+        );
+
+        if (ingresos.length === 0 && gastos.length === 0) return;
+
+        // Parsear formato contable → número
+        const parsear = (v: string | null | undefined): number => {
+            if (!v) return 0;
+            const esNeg = v.includes('(');
+            const num = parseFloat(v.replace(/[(),\s]/g, '')) || 0;
+            return esNeg ? -num : num;
+        };
+
+        // Número → formato contable
+        const formatear = (n: number): string => {
+            if (n === 0) return '';
+            if (n < 0) return `(${Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2 })})`;
+            return n.toLocaleString('en-US', { minimumFractionDigits: 2 });
+        };
+
+        //Sumar mensual y acumulado de un grupo de filas
+        const sumarGrupo = (filas: EstadoResultadosResponse[]) => ({
+            mensual:   filas.reduce((acc, f) => acc + parsear(f.saldoMensual), 0),
+            acumulado: filas.reduce((acc, f) => acc + parsear(f.saldoAcumulado), 0),
+        });
+
+        const totalIngresos = sumarGrupo(ingresos);
+        const totalGastos   = sumarGrupo(gastos);
+
+        // Construir filas de totales
+        const filaTotalIngresos: EstadoResultadosResponse = {
+            cuenta: '',
+            nombreCuenta: 'TOTAL INGRESOS',
+            nivel: 1,
+            orden: 9997,
+            esTotalGeneral: true,
+            esUtilidad: false,
+            saldoMensual:   formatear(totalIngresos.mensual),
+            saldoAcumulado: formatear(totalIngresos.acumulado),
+        };
+
+        const filaTotalGastos: EstadoResultadosResponse = {
+            cuenta: '',
+            nombreCuenta: 'TOTAL GASTOS',
+            nivel: 1,
+            orden: 9998,
+            esTotalGeneral: true,
+            esUtilidad: false,
+            // Gastos vienen negativos → Math.abs para mostrar positivo
+            saldoMensual:   formatear(Math.abs(totalGastos.mensual)),
+            saldoAcumulado: formatear(Math.abs(totalGastos.acumulado)),
+        };
+
+        //Insertar DESPUÉS de la Utilidad (al final del todo)
+        const indexUtilidad = datos.findIndex(d => d.esUtilidad);
+        if (indexUtilidad >= 0) {
+            (this.datosReporte as EstadoResultadosResponse[]).splice(
+                indexUtilidad + 1, 0, filaTotalIngresos, filaTotalGastos
+            );
+        } else {
+            // Si no hay utilidad, agregar al final
+            (this.datosReporte as EstadoResultadosResponse[]).push(filaTotalIngresos, filaTotalGastos);
+        }
+    }
+
+    // NUEVO: Método para manejar errores
     private handleErrorResponse(error: any): void {
     this.cargando = false;
     console.error('Error al consultar estado financiero:', error);
