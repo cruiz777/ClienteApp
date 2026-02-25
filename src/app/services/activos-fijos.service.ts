@@ -96,7 +96,7 @@ export interface ActivoFijoDto {
   PlanCuentaNombre?: string | null;
   Cuenta?: string | null;
   MarcaDescripcion?: string | null;
-
+  FechaCompraReal?: string | null;
 
 
 }

@@ -269,6 +269,7 @@ export class ActivosFijosFormComponent implements OnInit {
 
       comprobanteDiario: [''],
       fechaCompra: [null],
+      fechaCompraReal:[null],
       proveedor: [''],
       noComprobante: [''],
       noComprobanteRet: [''],
@@ -741,7 +742,7 @@ export class ActivosFijosFormComponent implements OnInit {
             FechaDepreciacion: this.dateAdapter.parse(d.FechaDepreciacion, MY_DATE_FORMATS.parse.dateInput) ?? null,
             FechaDeprecia: this.dateAdapter.parse(d.FechaDeprecia, MY_DATE_FORMATS.parse.dateInput) ?? null,
             FechaIngreso: this.dateAdapter.parse(d.FechaIngreso, MY_DATE_FORMATS.parse.dateInput) ?? null,
-
+            fechaCompraReal: this.dateAdapter.parse(d.FechaCompraReal, MY_DATE_FORMATS.parse.dateInput) ?? null,
             observaciones: d.Observacion ?? '',
             activoIntangible: (d.Intangible ?? 0) === 1,
 
@@ -976,7 +977,8 @@ export class ActivosFijosFormComponent implements OnInit {
 
       IdUsuario: (v.IdUsuario != null ? Number(v.IdUsuario) : null),
       IdEmpresa: (v.IdEmpesa != null ? Number(v.IdEmpesa) : null),
-      IdDepartamento: (v.IdDepartamento != null ? Number(v.IdDepartamento) : null)
+      IdDepartamento: (v.IdDepartamento != null ? Number(v.IdDepartamento) : null),
+      FechaCompraReal: this.toDateOnly(v.fechaCompraReal),
     };
 
     dto.IdEmpesa = dto.IdEmpresa;
