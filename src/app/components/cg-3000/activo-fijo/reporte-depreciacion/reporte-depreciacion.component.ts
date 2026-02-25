@@ -94,9 +94,9 @@ export class ReporteDepreciacionComponent {
   };
 
 
-  private readonly ID_TIPO_ASIENTO = 3; // ✅ confirmado por ti
+  private readonly ID_TIPO_ASIENTO = 9; // ✅ confirmado por ti
   private readonly TIPDOC = 'AD';
-  private readonly ID_COD_CONTABLE = 28072; // según tu ejemplo
+  private readonly ID_COD_CONTABLE = 18005; // según tu ejemplo
 
   readonly meses: MesItem[] = [
     { value: 1, label: 'Enero' }, { value: 2, label: 'Febrero' }, { value: 3, label: 'Marzo' },
@@ -472,142 +472,158 @@ export class ReporteDepreciacionComponent {
   // ==========================
   // PDF (sin cambios)
   // ==========================
-  imprimirPdf(): void {
-    const data = this.rows();
-    if (!data.length) return;
+imprimirPdf(): void {
+  const data = this.rows();
+  if (!data.length) return;
 
-    const anio = this.form.value.anio!;
-    const mes = this.form.value.mes!;
-    const mesNombre = this.meses.find(m => m.value === mes)?.label ?? `${mes}`;
-    const fechaDep = new Date(anio, mes - 1, 1);
-    const fechaImp = new Date();
+  const anio = this.form.value.anio!;
+  const mes = this.form.value.mes!;
+  const mesNombre = this.meses.find(m => m.value === mes)?.label ?? `${mes}`;
+  const fechaDep = new Date(anio, mes - 1, 1);
+  const fechaImp = new Date();
 
-    const empresa = data[0]?.empresa ?? '';
-    const ruc = data[0]?.ruc ?? '';
-    const direccion = data[0]?.direccion ?? '';
+  const empresa = data[0]?.empresa ?? '';
+  const ruc = data[0]?.ruc ?? '';
+  const direccion = data[0]?.direccion ?? '';
 
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+  const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
 
-    // ✅ SI quieres punto decimal también en PDF:
-    const fmtMoney = (n: any) => {
-      const v = Number(n ?? 0) || 0;
-      return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
-    };
+  // ✅ punto decimal en PDF
+  const fmtMoney = (n: any) => {
+    const v = Number(n ?? 0) || 0;
+    return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v);
+  };
 
-    const fmtDate = (iso?: string | null) => {
-      if (!iso) return '';
-      const d = new Date(iso);
-      if (isNaN(d.getTime())) return '';
-      const dd = String(d.getDate()).padStart(2, '0');
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const yy = String(d.getFullYear());
-      return `${dd}/${mm}/${yy}`;
-    };
+  const fmtDate = (iso?: string | null) => {
+    if (!iso) return '';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '';
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yy = String(d.getFullYear());
+    return `${dd}/${mm}/${yy}`;
+  };
 
-    const fmtDatePlain = (d: Date) => {
-      const dd = String(d.getDate()).padStart(2, '0');
-      const mm = String(d.getMonth() + 1).padStart(2, '0');
-      const yy = String(d.getFullYear());
-      return `${dd}/${mm}/${yy}`;
-    };
+  const fmtDatePlain = (d: Date) => {
+    const dd = String(d.getDate()).padStart(2, '0');
+    const mm = String(d.getMonth() + 1).padStart(2, '0');
+    const yy = String(d.getFullYear());
+    return `${dd}/${mm}/${yy}`;
+  };
 
-    // ✅ Altura reservada para encabezado
-    const TOP = 42;
+  // ✅ Altura reservada para encabezado
+  const TOP = 42;
 
-    const drawHeader = (pageNumber: number) => {
-      doc.setFontSize(10);
-      doc.text(empresa, 105, 12, { align: 'center' });
-      if (ruc) doc.text(`RUC: ${ruc}`, 105, 17, { align: 'center' });
-      if (direccion) doc.text(direccion, 105, 22, { align: 'center' });
+  const drawHeader = (pageNumber: number) => {
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
 
-      doc.setFontSize(12);
-      doc.text(`${mesNombre} / ${anio}`, 105, 29, { align: 'center' });
+    doc.text(empresa, 105, 12, { align: 'center' });
+    if (ruc) doc.text(`RUC: ${ruc}`, 105, 17, { align: 'center' });
+    if (direccion) doc.text(direccion, 105, 22, { align: 'center' });
 
-      doc.setFontSize(9);
-      doc.text(`Fecha Depreciación : ${fmtDatePlain(fechaDep)}`, 14, 36);
-      doc.text(`Fecha Impresión : ${fmtDatePlain(fechaImp)}`, 110, 36);
-      doc.text(`Página : ${pageNumber}`, 190, 36, { align: 'right' });
-    };
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text(`${mesNombre} / ${anio}`, 105, 29, { align: 'center' });
 
-    // Agrupar por cuenta (como ya lo haces)
-    const groups = new Map<string, ReporteDepreciacionDto[]>();
-    for (const r of data) {
-      const k = r.cuentaMy ?? 'SIN_CUENTA';
-      if (!groups.has(k)) groups.set(k, []);
-      groups.get(k)!.push(r);
-    }
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text(`Fecha Depreciación : ${fmtDatePlain(fechaDep)}`, 14, 36);
+    doc.text(`Fecha Impresión : ${fmtDatePlain(fechaImp)}`, 110, 36);
+    doc.text(`Página : ${pageNumber}`, 190, 36, { align: 'right' });
+  };
 
-    let cursorY = TOP;
-
-    for (const [cuenta, items] of groups.entries()) {
-      cursorY = Math.max(cursorY, TOP);
-
-      if (cursorY > 270) {
-        doc.addPage();
-        cursorY = TOP;
-      }
-
-      // ✅ SUBTOTAL por cuenta (Dep. Mensual)
-      const subDepMensual = items.reduce((acc, it) => acc + (Number(it.depreMensual ?? 0) || 0), 0);
-
-      doc.setFontSize(10);
-      doc.text(cuenta, 14, cursorY);
-      cursorY += 4;
-
-      const bodyRows = items.map(it => ([
-        it.codigoAf ?? '',
-        fmtDate(it.feccompra),
-        it.descripcion ?? '',
-        it.comprobante ?? '',
-        fmtMoney(it.valorcompra),
-        fmtMoney(it.valorresidual),
-        String(it.vidautil ?? ''),
-        fmtMoney(it.depresiacionAnual),
-        fmtMoney(it.depreMensual),
-      ]));
-
-      autoTable(doc, {
-        startY: cursorY,
-        margin: { top: TOP, left: 14, right: 14 },
-
-        head: [[
-          'Código', 'Fecha Compra', 'Descripción', 'Comprobante',
-          'Val. Compra', 'Val. Residual', 'Vida Util', 'Dep. Anual', 'Dep. Mensual'
-        ]],
-
-        body: bodyRows,
-
-        // ✅ FOOTER con el total por cuenta (solo Dep. Mensual)
-        foot: [[
-          '', '', '', '', '', '', '', 'TOTAL:', fmtMoney(subDepMensual)
-        ]],
-        showFoot: 'lastPage',
-
-        styles: { fontSize: 8, cellPadding: 1.2 },
-        headStyles: { fontSize: 8 },
-        footStyles: { fontSize: 8, fontStyle: 'bold' },
-
-        // (opcional) alinear a la derecha columnas numéricas (incluye Dep. Mensual)
-        columnStyles: {
-          4: { halign: 'right' },
-          5: { halign: 'right' },
-          7: { halign: 'right' },
-          8: { halign: 'right' },
-        },
-
-        willDrawPage: (hookData) => drawHeader(hookData.pageNumber),
-      });
-
-      // @ts-ignore
-      const lastY = (doc as any).lastAutoTable?.finalY ?? cursorY;
-      cursorY = Math.max(lastY + 8, TOP);
-    }
-
-
-    doc.save(`Depreciacion_${mesNombre}_${anio}.pdf`);
+  // ✅ Agrupar por cuentaMy
+  const groups = new Map<string, ReporteDepreciacionDto[]>();
+  for (const r of data) {
+    const k = r.cuentaMy ?? 'SIN_CUENTA';
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k)!.push(r);
   }
 
+  let cursorY = TOP;
 
+  for (const [cuenta, items] of groups.entries()) {
+    cursorY = Math.max(cursorY, TOP);
+
+    // salto manual si ya no cabe el título
+    if (cursorY > 270) {
+      doc.addPage();
+      cursorY = TOP;
+    }
+
+    // ✅ nombre de cuenta (si no viene, cae al número)
+    const nombreCuenta = String(items[0]?.nombreCuenta ?? '').trim() || cuenta;
+
+    // ✅ subtotal por cuenta (Dep. Mensual)
+    const subDepMensual = items.reduce((acc, it) => acc + (Number(it.depreMensual ?? 0) || 0), 0);
+
+    // ✅ TÍTULO: Nombre izquierda
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text(nombreCuenta.toUpperCase(), 14, cursorY);
+
+    // ✅ NÚMERO DE CUENTA movido (derecha, debajo del título)
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    doc.text(`Cuenta: ${cuenta}`, 190, cursorY + 5, { align: 'right' });
+
+    // baja cursor para que la tabla no se pegue
+    cursorY += 10;
+
+    const bodyRows = items.map(it => ([
+      it.codigoAf ?? '',
+      fmtDate(it.feccompra),
+      it.descripcion ?? '',
+      it.comprobante ?? '',
+      fmtMoney(it.valorcompra),
+      fmtMoney(it.valorresidual),
+      String(it.vidautil ?? ''),
+      fmtMoney(it.depresiacionAnual),
+      fmtMoney(it.depreMensual),
+    ]));
+
+    autoTable(doc, {
+      startY: cursorY,
+      margin: { top: TOP, left: 14, right: 14 },
+
+      head: [[
+        'Código', 'Fecha Compra', 'Descripción', 'Comprobante',
+        'Val. Compra', 'Val. Residual', 'Vida Util', 'Dep. Anual', 'Dep. Mensual'
+      ]],
+
+      body: bodyRows,
+
+      // ✅ FOOTER: nombre centrado + total a la derecha
+     foot: [[
+  { content: `${cuenta}  -  ${nombreCuenta.toUpperCase()}`, colSpan: 7, styles: { halign: 'center', fontStyle: 'bold' } },
+  { content: 'TOTAL:', styles: { halign: 'right', fontStyle: 'bold' } },
+  { content: fmtMoney(subDepMensual), styles: { halign: 'right', fontStyle: 'bold' } },
+]],
+showFoot: 'lastPage',
+
+      styles: { fontSize: 8, cellPadding: 1.2 },
+      headStyles: { fontSize: 8 },
+      footStyles: { fontSize: 8, fontStyle: 'bold' },
+
+      columnStyles: {
+        4: { halign: 'right' },
+        5: { halign: 'right' },
+        7: { halign: 'right' },
+        8: { halign: 'right' },
+      },
+
+      // ✅ header antes de dibujar tabla en cada página
+      willDrawPage: (hookData) => drawHeader(hookData.pageNumber),
+    });
+
+    // @ts-ignore
+    const lastY = (doc as any).lastAutoTable?.finalY ?? cursorY;
+    cursorY = Math.max(lastY + 8, TOP);
+  }
+
+  doc.save(`Depreciacion_${mesNombre}_${anio}.pdf`);
+}
   salir(): void {
     this.router.navigateByUrl('/cg-3000/activo-fijo');
   }
