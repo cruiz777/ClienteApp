@@ -11,6 +11,7 @@ export interface PurchaseReportItemResponse {
   fecha: string;
   codigoTipoComp: string;
   tipoDocumento: string;
+  baseNoObjetoIva: number;
   baseCero: number;
   baseIva: number;
   iva: number;
@@ -42,6 +43,7 @@ export interface PurchaseReportItemResponse {
  * Totales del reporte - equivalente a ImprimeTotales() del VB6
  */
 export interface PurchaseReportTotalsResponse {
+  totalBaseNoObjetoIva: number;
   totalBaseCero: number;
   totalBaseIva: number;
   totalIva: number;

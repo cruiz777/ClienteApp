@@ -145,6 +145,14 @@ export class ReporteComprasComponent implements OnInit {
             headerClass: 'header-datos-factura',
         },
         {
+          headerName: 'Base No Obj. IVA',
+          field: 'baseNoObjetoIva',
+          width: 130,
+          valueFormatter: (p: ValueFormatterParams) => this.formatoMonedaOpcional(p),
+          type: 'rightAligned',
+          headerClass: 'header-datos-factura',
+        },
+        {
         headerName: 'Base 0%',
         field: 'baseCero',
         width: 120,
@@ -153,7 +161,7 @@ export class ReporteComprasComponent implements OnInit {
         headerClass: 'header-datos-factura',
         },
         {
-        headerName: 'Base 12%',
+        headerName: 'Base Obj. IVA',
         field: 'baseIva',
         width: 120,
         valueFormatter: (p: ValueFormatterParams) => this.formatoMonedaOpcional(p),
@@ -397,11 +405,11 @@ export class ReporteComprasComponent implements OnInit {
       fecha: '',
       codigoTipoComp: '',
       tipoDocumento: '',
+      baseNoObjetoIva: this.comprasTotales.totalBaseNoObjetoIva,
       baseCero: this.comprasTotales.totalBaseCero,
       baseIva: this.comprasTotales.totalBaseIva,
       iva: this.comprasTotales.totalIva,
-      total: this.comprasTotales.totalGeneral,
-
+      total: this.comprasTotales.totalGeneral,      
       // RETENCIONES IVA
       ivaBienes30: this.comprasTotales.totalIvaBienes30,
       codIvaBienes30: '',
