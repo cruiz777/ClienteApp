@@ -369,18 +369,18 @@ export class EstadoFinancieroComponent implements OnInit {
         columnStyles: mostrarCodigos ? {
             0: { cellWidth: 30, halign: 'left' },
             1: { cellWidth: 'auto', halign: 'left' },
-            2: { cellWidth: 28, halign: 'right', fontStyle: 'normal' },
-            3: { cellWidth: 28, halign: 'right', fontStyle: 'normal' },
-            4: { cellWidth: 28, halign: 'right', fontStyle: 'normal' },
-            5: { cellWidth: 28, halign: 'right', fontStyle: 'normal' },
-            6: { cellWidth: 28, halign: 'right', fontStyle: 'normal' }
+            2: { cellWidth: 34, halign: 'right', fontStyle: 'normal' },  // era 28
+            3: { cellWidth: 34, halign: 'right', fontStyle: 'normal' },  // era 28
+            4: { cellWidth: 34, halign: 'right', fontStyle: 'normal' },  // era 28
+            5: { cellWidth: 34, halign: 'right', fontStyle: 'normal' },  // era 28
+            6: { cellWidth: 34, halign: 'right', fontStyle: 'normal' }   // era 28
         } : {
             0: { cellWidth: 'auto', halign: 'left' },
-            1: { cellWidth: 30, halign: 'right', fontStyle: 'normal' },
-            2: { cellWidth: 30, halign: 'right', fontStyle: 'normal' },
-            3: { cellWidth: 30, halign: 'right', fontStyle: 'normal' },
-            4: { cellWidth: 30, halign: 'right', fontStyle: 'normal' },
-            5: { cellWidth: 30, halign: 'right', fontStyle: 'normal' }
+            1: { cellWidth: 34, halign: 'right', fontStyle: 'normal' },  // era 30
+            2: { cellWidth: 34, halign: 'right', fontStyle: 'normal' },  // era 30
+            3: { cellWidth: 34, halign: 'right', fontStyle: 'normal' },  // era 30
+            4: { cellWidth: 34, halign: 'right', fontStyle: 'normal' },  // era 30
+            5: { cellWidth: 34, halign: 'right', fontStyle: 'normal' }   // era 30
         },
         didParseCell: (data) => {
             const rowData = this.datosReporte[data.row.index];

@@ -60,10 +60,13 @@
           class="btn-exportar"
           (click)="exportarExcel()"
           [disabled]="loading || !comprasData.length"
+          matTooltip="Descarga un Excel con 2 hojas: Reporte de Compras y Reporte de Retenciones en la Fuente"
+          matTooltipPosition="above"
         >
           <mat-icon>download</mat-icon>
           Exportar Excel
-        </button>        
+          <span class="badge-hojas">2 hojas</span>
+        </button>       
       </div>
     </form>
 

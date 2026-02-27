@@ -11,6 +11,7 @@ export interface PurchaseReportItemResponse {
   fecha: string;
   codigoTipoComp: string;
   tipoDocumento: string;
+  sustentoTrib: string;
   baseNoObjetoIva: number;
   baseCero: number;
   baseIva: number;
@@ -26,7 +27,12 @@ export interface PurchaseReportItemResponse {
   codIvaBienes100: string;
   ivaServ100: number;
   codIvaServ100: string;
-
+  ivaBienes10: number;
+  codIvaBienes10: string;
+  ivaBienes20: number;
+  codIvaBienes20: string;
+  ivaServ50: number;
+  codIvaServ50: string;
   // ── RETENCIONES FUENTE (Columnas 18-27) ──
   codRetFuente: string;
   baseRetencion: number;
@@ -54,6 +60,9 @@ export interface PurchaseReportTotalsResponse {
   totalIvaServ100: number;
   totalBaseRetencion: number;
   totalMontoRetencion: number;
+  totalIvaBienes10: number;
+  totalIvaBienes20: number;
+  totalIvaServ50: number;
 }
 
 /**
