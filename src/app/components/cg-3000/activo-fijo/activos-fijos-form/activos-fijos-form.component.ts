@@ -40,7 +40,12 @@ import { PlanActivosService, PlanCuentaMiniDto } from 'src/app/services/plan-act
 import { MarcaCgService, MarcaCgDto } from 'src/app/services/marca-cg.service';
 import { UsuarioService } from 'src/app/services/usuario.service';
 import { DepartamentosActivosService, DepartamentoDto } from 'src/app/services/departamentos-activos.service';
+import { AgGridAngular } from 'ag-grid-angular';
+import { ColDef, GridApi, GridOptions, GridReadyEvent } from 'ag-grid-community';
 
+import {
+    DetalleActivoFijoDto
+} from 'src/app/services/activos-fijos.service';
 export const MY_DATE_FORMATS: MatDateFormats = {
   parse: { dateInput: 'dd/MM/yyyy' },
   display: {
@@ -109,7 +114,8 @@ export class AppDateAdapter extends NativeDateAdapter {
     MatDatepickerModule,
     MatNativeDateModule,
     MatAutocompleteModule,
-    MatProgressSpinnerModule
+    MatProgressSpinnerModule,
+    AgGridAngular
   ],
   templateUrl: './activos-fijos-form.component.html',
   styleUrls: ['./activos-fijos-form.component.css'],
@@ -188,6 +194,123 @@ export class ActivosFijosFormComponent implements OnInit {
   // ============================
   departamentos: DepartamentoDto[] = [];
   departamentosFiltered$: Observable<DepartamentoDto[]> = of([]);
+  // ============================
+// DETALLE DEPRECIACIÓN (cg_detalle_activo_fijo)
+// ============================
+detalleLoading = signal(false);
+detalleRows = signal<DetalleActivoFijoDto[]>([]);
+detalleError = signal<string | null>(null);
+
+private detalleGridApi?: GridApi<DetalleActivoFijoDto>;
+
+detalleGridOptions: GridOptions<DetalleActivoFijoDto> = {
+  defaultColDef: { sortable: true, filter: true, resizable: true },
+  animateRows: true,
+  suppressMovableColumns: true,
+  rowHeight: 40,
+  headerHeight: 36
+};
+
+detalleColDefs: ColDef<DetalleActivoFijoDto>[] = [
+  {
+    headerName: 'Fecha',
+    colId: 'fecha',
+    width: 110,
+    valueGetter: (p) => this.getFechaDetalle(p.data),
+    valueFormatter: (p) => this.formatMesAnio(p.value),
+    comparator: (a, b) => this.compareFechas(a, b),
+    filter: 'agTextColumnFilter'
+  },
+  {
+    headerName: 'Asiento',
+    field: 'asiento',
+    width: 140,
+    valueFormatter: (p) => String(p.value ?? '')
+  },
+  {
+    headerName: 'Depreciación Mensual',
+    field: 'depreMensual',
+    width: 170,
+    cellClass: 'ag-right-aligned-cell',
+    valueFormatter: (p) => this.formatMoney(p.value)
+  }
+];
+
+onDetalleGridReady(e: GridReadyEvent<DetalleActivoFijoDto>) {
+  this.detalleGridApi = e.api;
+}
+
+// ✅ Cargar detalle desde API
+private cargarDetalleActivoFijo(codigoAf: number): void {
+  if (!codigoAf) {
+    this.detalleRows.set([]);
+    return;
+  }
+
+  this.detalleError.set(null);
+  this.detalleLoading.set(true);
+
+  this.api.getDetalleActivoFijo(codigoAf)
+    .pipe(finalize(() => this.detalleLoading.set(false)))
+    .subscribe({
+      next: (rows) => {
+        this.detalleRows.set(rows ?? []);
+        this.detalleGridApi?.refreshCells({ force: true });
+      },
+      error: (err: any) => {
+        this.detalleRows.set([]);
+        this.detalleError.set(err?.message || 'Error cargando detalle de depreciación.');
+      }
+    });
+}
+
+// ============================
+// Helpers fecha y formato
+// ============================
+private getFechaDetalle(r?: DetalleActivoFijoDto | null): string {
+  // preferimos la fecha real del cierre del mes si viene (yyyy-mm-dd)
+  return String(r?.nuevaFechaConsulta ?? r?.fechaConsulta ?? '').trim();
+}
+
+private parseFechaDetalle(v: any): Date | null {
+  if (!v) return null;
+  const s = String(v).trim();
+
+  // yyyy-mm-dd
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) {
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  // dd/MM/yyyy
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(s)) {
+    const [dd, mm, yyyy] = s.split('/').map(Number);
+    return new Date(yyyy, mm - 1, dd);
+  }
+
+  const dt = new Date(s);
+  return isNaN(dt.getTime()) ? null : dt;
+}
+
+private formatMesAnio(v: any): string {
+  const d = this.parseFechaDetalle(v);
+  if (!d) return '';
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  return `${mm}/${yyyy}`;
+}
+
+private compareFechas(a: any, b: any): number {
+  const da = this.parseFechaDetalle(a)?.getTime() ?? 0;
+  const db = this.parseFechaDetalle(b)?.getTime() ?? 0;
+  return da - db;
+}
+
+private formatMoney(v: any): string {
+  const n = Number(v ?? 0);
+  if (!Number.isFinite(n)) return '0.00';
+  return new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n);
+}
   private pendingIdDepartamento: number | null = null;
 
   constructor(
@@ -806,6 +929,7 @@ export class ActivosFijosFormComponent implements OnInit {
           this.syncDepartamentoDesdeId();
           this.syncExtraCuentasDesdeIdNivel5();
           this.recalcularActivos();
+          this.cargarDetalleActivoFijo(Number(d.CodigoAf ?? id));
         },
         error: () => this.router.navigate(['/cg-3000/activo-fijo'])
       });
@@ -1011,6 +1135,10 @@ export class ActivosFijosFormComponent implements OnInit {
     return Math.round((n + Number.EPSILON) * 100) / 100;
   }
 
+   private fmt3(n: number): number {
+    return Math.round((n + Number.EPSILON) * 1000) / 1000;
+  }
+
   // ============================
   // ✅ RECALCULO (CORREGIDO)
   // ============================
@@ -1050,7 +1178,7 @@ export class ActivosFijosFormComponent implements OnInit {
     }
 
     // Redondeos
-    tasaAnual = this.fmt2(tasaAnual); // ej 0.33
+    tasaAnual = this.fmt3(tasaAnual); // ej 0.33
     vidaUtil = this.fmt2(vidaUtil);   // ej 3.03
 
     // Depreciación anual y mensual

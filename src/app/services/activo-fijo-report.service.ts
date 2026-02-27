@@ -10,6 +10,20 @@ export interface ReporteDepreciacionRequest {
   cuentaPrefix6?: string | null;
 }
 
+export interface MarcarAsientoDepreciacionRequest {
+  anio: number;
+  mes: number;
+  tipdoc: string;
+  numdoc: string;
+  asiento:string;
+}
+
+export interface MarcarAsientoDepreciacionResponse {
+  updated: number;
+  asiento: string;
+}
+
+
 export interface ReporteDepreciacionDto {
   expira: number;
   cuentaMy: string;
@@ -32,6 +46,7 @@ export interface ReporteDepreciacionDto {
   nombreCuenta?: string | null;
   dias?: number | null;
   estado?: number | null;
+  asiento?: string | null;
 }
 
 /** Guardar en cg.detalle_activo_fijo */
@@ -86,4 +101,10 @@ export class ActivoFijoReportService {
       catchError((err) => throwError(() => new Error(extractErr(err))))
     );
   }
+  marcarAsientoDepreciacion(req: MarcarAsientoDepreciacionRequest) {
+  return this.http.put<MarcarAsientoDepreciacionResponse>(
+    `${this.baseUrl}/marcar-asiento-depreciacion`,
+    req
+  );
+}
 }

@@ -6,6 +6,7 @@ import { environment } from '../../environments/environment';
 
 /** Respuesta estándar de tu API: { traceId, type, data, message } */
 export interface ApiResponse<T> {
+  id?: string; 
   traceId?: string;
   type?: string;
   data: T;
@@ -100,6 +101,21 @@ export interface ActivoFijoDto {
 
 
 }
+export interface DetalleActivoFijoDto {
+  idDetalleActivoFijo: number;
+  codigoAf: number;
+
+  fechaConsulta: string;            // "01/01/2026"
+  nuevaFechaConsulta?: string | null; // "2026-01-31"
+
+  depreMensual?: number | null;
+  valorcompra?: number | null;
+  valorResidual?: number | null;
+
+  asiento?: string | null;
+  estado?: number | null;
+}
+
 
 /** Respuesta opcional para paginación */
 export interface PagedResult<T> {
@@ -149,11 +165,22 @@ export class ActivoFijoApiService {
   }
 
   /** DELETE: /api/ActivoFijo/{id} -> ApiResponse<boolean> */
-  delete(id: number): Observable<boolean> {
-    return this.http.delete<ApiResponse<boolean>>(`${this.baseUrl}/${id}`).pipe(
-      map(r => !!r?.data)
-    );
-  }
+ /** DELETE: /api/ActivoFijo/{id} -> ApiResponse<boolean> */
+delete(id: number): Observable<boolean> {
+  return this.http.delete<ApiResponse<boolean>>(`${this.baseUrl}/${id}`).pipe(
+    map((r) => {
+      const type = String(r?.type ?? '').toUpperCase();
+      const ok = r?.data === true;
+
+      // ✅ si tu backend devuelve 200 pero type=ERROR o data=false, lo tratamos como ERROR real
+      if (type === 'ERROR' || !ok) {
+        throw new Error(r?.message || 'No se puede eliminar el activo fijo.');
+      }
+
+      return true;
+    })
+  );
+}
 
   /** Opcional si implementas /paged */
   getPaged(opts: { q?: string; page: number; pageSize: number }): Observable<PagedResult<ActivoFijoDto>> {
@@ -165,5 +192,21 @@ export class ActivoFijoApiService {
     return this.http.get<ApiResponse<PagedResult<ActivoFijoDto>>>(`${this.baseUrl}/paged`, { params }).pipe(
       map(r => r?.data ?? { items: [], total: 0, page: opts.page, pageSize: opts.pageSize })
     );
+  }
+  getDetalleActivoFijo(codigoAf: number): Observable<DetalleActivoFijoDto[]> {
+    return this.http
+      .get<ApiResponse<DetalleActivoFijoDto[]>>(`${this.baseUrl}/${codigoAf}/detalle`)
+      .pipe(
+        map((r) => {
+          const type = String(r?.type ?? '').toUpperCase();
+
+          // Si el backend responde 200 pero con ERROR, lo tratamos como error real
+          if (type === 'ERROR') {
+            throw new Error(r?.message || 'Error consultando detalle del activo fijo.');
+          }
+
+          return r?.data ?? [];
+        })
+      );
   }
 }
