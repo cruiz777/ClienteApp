@@ -816,3 +816,41 @@
   color: #ffffff !important;  /* ← CAMBIAR de #7FFF7F a BLANCO */
   border-right: 1px solid #1B3A5C !important;
 }
+/* ========== BADGE HOJAS EXCEL ========== */
+.btn-exportar {
+  background-color: #002c6c !important;
+  color: white !important;
+  font-weight: 500;
+  height: 56px;
+  padding: 0 20px;
+  min-width: 160px;
+  border-radius: 4px;
+  text-transform: none;
+  letter-spacing: 0.3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn-exportar:hover:not(:disabled) {
+  background-color: #001a42 !important;
+  box-shadow: 0 2px 6px rgba(0, 44, 108, 0.35);
+}
+
+.btn-exportar:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.badge-hojas {
+  background-color: #F27046;
+  border-radius: 10px;
+  font-size: 10px;
+  padding: 2px 8px;
+  margin-left: 4px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: white;
+  white-space: nowrap;
+}

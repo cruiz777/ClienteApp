@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { PurchaseReportService } from 'src/app/services/reporte-compras.service';
 import { AtsXmlRequest } from 'src/app/interfaces/requests/ats-xml-request';
+import { UsuarioService } from 'src/app/services/usuario.service';
 
 @Component({
   selector: 'app-generar-ats',
@@ -13,7 +14,7 @@ export class GenerarAtsComponent implements OnInit {
 
   atsForm: FormGroup;
   loading = false;
-  idEmpresa = 1; // TODO: Obtener de servicio de autenticación
+  idEmpresa: number = 0; // TODO: Obtener de servicio de autenticación
 
   anioMinimo = 2000;
   anioMaximo = new Date().getFullYear();
@@ -36,7 +37,8 @@ export class GenerarAtsComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private purchaseReportService: PurchaseReportService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private usuarioService: UsuarioService
   ) {
     const hoy = new Date();
 
@@ -54,7 +56,9 @@ export class GenerarAtsComponent implements OnInit {
     });
   }
 
-  ngOnInit(): void {}
+  ngOnInit(): void {
+    this.idEmpresa = this.usuarioService.getEmpresaId() ?? 0;
+  }
 
   // ========== GETTERS para acceso fácil en template ==========
 

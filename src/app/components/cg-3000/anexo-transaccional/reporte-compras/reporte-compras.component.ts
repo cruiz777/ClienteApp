@@ -12,6 +12,7 @@ import { MAT_MOMENT_DATE_ADAPTER_OPTIONS, MomentDateAdapter } from '@angular/mat
 import { PurchaseReportItemResponse, PurchaseReportTotalsResponse } from 'src/app/interfaces/responses/reporte-compras-response';
 import { PurchaseReportService } from 'src/app/services/reporte-compras.service';
 import { AtsXmlRequest } from 'src/app/interfaces/requests/ats-xml-request';
+import { UsuarioService } from 'src/app/services/usuario.service';
 
 // Formato de fecha personalizado
 export const MY_DATE_FORMATS = {
@@ -44,7 +45,7 @@ export class ReporteComprasComponent implements OnInit {
   // ========== FORMULARIO Y FILTROS ==========
   filtrosForm: FormGroup;
   loading = false;
-  idEmpresa = 1; // TODO: Obtener de servicio de autenticación/empresa
+  idEmpresa: number = 0; // TODO: Obtener de servicio de autenticación/empresa
 
   // ========== DATOS DEL REPORTE ==========
   comprasData: PurchaseReportItemResponse[] = [];
@@ -71,7 +72,8 @@ export class ReporteComprasComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private purchaseReportService: PurchaseReportService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private usuarioService: UsuarioService 
   ) {
     const hoy = new Date();
     const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
@@ -85,6 +87,7 @@ export class ReporteComprasComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.idEmpresa = this.usuarioService.getEmpresaId() ?? 0;
     console.log('🚀 Componente Reporte Compras iniciado');
   }
 
@@ -145,6 +148,20 @@ export class ReporteComprasComponent implements OnInit {
             headerClass: 'header-datos-factura',
         },
         {
+          headerName: 'Sustento Trib.',
+          field: 'sustentoTrib',
+          width: 180,
+          headerClass: 'header-datos-factura',
+        },
+        {
+          headerName: 'Base No Obj. IVA',
+          field: 'baseNoObjetoIva',
+          width: 130,
+          valueFormatter: (p: ValueFormatterParams) => this.formatoMonedaOpcional(p),
+          type: 'rightAligned',
+          headerClass: 'header-datos-factura',
+        },
+        {
         headerName: 'Base 0%',
         field: 'baseCero',
         width: 120,
@@ -153,7 +170,7 @@ export class ReporteComprasComponent implements OnInit {
         headerClass: 'header-datos-factura',
         },
         {
-        headerName: 'Base 12%',
+        headerName: 'Base Obj. IVA',
         field: 'baseIva',
         width: 120,
         valueFormatter: (p: ValueFormatterParams) => this.formatoMonedaOpcional(p),
@@ -179,66 +196,20 @@ export class ReporteComprasComponent implements OnInit {
         },
 
         // ========== RETENCIONES DE IVA (8 columnas) ==========
-        {
-        headerName: 'IVA 30% Bienes',
-        field: 'ivaBienes30',
-        width: 130,
-        valueFormatter: (p: ValueFormatterParams) => this.formatoMonedaOpcional(p),
-        type: 'rightAligned',
-        headerClass: 'header-retenciones-iva',
-        },
-        {
-        headerName: 'Cód. IVA 30%',
-        field: 'codIvaBienes30',
-        width: 130,
-        cellStyle: { textAlign: 'center' },
-        headerClass: 'header-retenciones-iva',
-        },
-        {
-        headerName: 'IVA 70% Servicios',
-        field: 'ivaServ70',
-        width: 150,
-        valueFormatter: (p: ValueFormatterParams) => this.formatoMonedaOpcional(p),
-        type: 'rightAligned',
-        headerClass: 'header-retenciones-iva',
-        },
-        {
-        headerName: 'Cód. IVA 70%',
-        field: 'codIvaServ70',
-        width: 130,
-        cellStyle: { textAlign: 'center' },
-        headerClass: 'header-retenciones-iva',
-        },
-        {
-        headerName: 'IVA 100% Bienes',
-        field: 'ivaBienes100',
-        width: 130,
-        valueFormatter: (p: ValueFormatterParams) => this.formatoMonedaOpcional(p),
-        type: 'rightAligned',
-        headerClass: 'header-retenciones-iva',
-        },
-        {
-        headerName: 'Cód. IVA 100%',
-        field: 'codIvaBienes100',
-        width: 130,
-        cellStyle: { textAlign: 'center' },
-        headerClass: 'header-retenciones-iva',
-        },
-        {
-        headerName: 'IVA 100% Servicios',
-        field: 'ivaServ100',
-        width: 150,
-        valueFormatter: (p: ValueFormatterParams) => this.formatoMonedaOpcional(p),
-        type: 'rightAligned',
-        headerClass: 'header-retenciones-iva',
-        },
-        {
-        headerName: 'Cód. IVA 100%',
-        field: 'codIvaServ100',
-        width: 130,
-        cellStyle: { textAlign: 'center' },
-        headerClass: 'header-retenciones-iva',
-        },
+        { headerName: 'IVA 10% Bienes',    field: 'ivaBienes10',    width: 130, valueFormatter: (p) => this.formatoMonedaOpcional(p), type: 'rightAligned', headerClass: 'header-retenciones-iva' },
+        { headerName: 'Cód. IVA 10%',      field: 'codIvaBienes10', width: 110, cellStyle: { textAlign: 'center' }, headerClass: 'header-retenciones-iva' },
+        { headerName: 'IVA 20% Bienes',    field: 'ivaBienes20',    width: 130, valueFormatter: (p) => this.formatoMonedaOpcional(p), type: 'rightAligned', headerClass: 'header-retenciones-iva' },
+        { headerName: 'Cód. IVA 20%',      field: 'codIvaBienes20', width: 110, cellStyle: { textAlign: 'center' }, headerClass: 'header-retenciones-iva' },
+        { headerName: 'IVA 30% Bienes',    field: 'ivaBienes30',    width: 130, valueFormatter: (p) => this.formatoMonedaOpcional(p), type: 'rightAligned', headerClass: 'header-retenciones-iva' },
+        { headerName: 'Cód. IVA 30%',      field: 'codIvaBienes30', width: 110, cellStyle: { textAlign: 'center' }, headerClass: 'header-retenciones-iva' },
+        { headerName: 'IVA 50% Servicios', field: 'ivaServ50',      width: 150, valueFormatter: (p) => this.formatoMonedaOpcional(p), type: 'rightAligned', headerClass: 'header-retenciones-iva' },
+        { headerName: 'Cód. IVA 50%',      field: 'codIvaServ50',   width: 110, cellStyle: { textAlign: 'center' }, headerClass: 'header-retenciones-iva' },
+        { headerName: 'IVA 70% Servicios', field: 'ivaServ70',      width: 150, valueFormatter: (p) => this.formatoMonedaOpcional(p), type: 'rightAligned', headerClass: 'header-retenciones-iva' },
+        { headerName: 'Cód. IVA 70%',      field: 'codIvaServ70',   width: 110, cellStyle: { textAlign: 'center' }, headerClass: 'header-retenciones-iva' },
+        { headerName: 'IVA 100% Bienes',   field: 'ivaBienes100',   width: 130, valueFormatter: (p) => this.formatoMonedaOpcional(p), type: 'rightAligned', headerClass: 'header-retenciones-iva' },
+        { headerName: 'Cód. IVA 100% B',   field: 'codIvaBienes100',width: 120, cellStyle: { textAlign: 'center' }, headerClass: 'header-retenciones-iva' },
+        { headerName: 'IVA 100% Servicios',field: 'ivaServ100',     width: 150, valueFormatter: (p) => this.formatoMonedaOpcional(p), type: 'rightAligned', headerClass: 'header-retenciones-iva' },
+        { headerName: 'Cód. IVA 100% S',   field: 'codIvaServ100',  width: 120, cellStyle: { textAlign: 'center' }, headerClass: 'header-retenciones-iva' },
 
         // ========== RETENCIONES FUENTE (10 columnas) ==========
         {
@@ -397,20 +368,27 @@ export class ReporteComprasComponent implements OnInit {
       fecha: '',
       codigoTipoComp: '',
       tipoDocumento: '',
+      sustentoTrib: '',
+      baseNoObjetoIva: this.comprasTotales.totalBaseNoObjetoIva,
       baseCero: this.comprasTotales.totalBaseCero,
       baseIva: this.comprasTotales.totalBaseIva,
       iva: this.comprasTotales.totalIva,
-      total: this.comprasTotales.totalGeneral,
-
+      total: this.comprasTotales.totalGeneral,      
       // RETENCIONES IVA
-      ivaBienes30: this.comprasTotales.totalIvaBienes30,
+      ivaBienes10:    this.comprasTotales.totalIvaBienes10,
+      codIvaBienes10: '',
+      ivaBienes20:    this.comprasTotales.totalIvaBienes20,
+      codIvaBienes20: '',
+      ivaBienes30:    this.comprasTotales.totalIvaBienes30,
       codIvaBienes30: '',
-      ivaServ70: this.comprasTotales.totalIvaServ70,
-      codIvaServ70: '',
-      ivaBienes100: this.comprasTotales.totalIvaBienes100,
-      codIvaBienes100: '',
-      ivaServ100: this.comprasTotales.totalIvaServ100,
-      codIvaServ100: '',
+      ivaServ50:      this.comprasTotales.totalIvaServ50,
+      codIvaServ50:   '',
+      ivaServ70:      this.comprasTotales.totalIvaServ70,
+      codIvaServ70:   '',
+      ivaBienes100:   this.comprasTotales.totalIvaBienes100,
+      codIvaBienes100:'',
+      ivaServ100:     this.comprasTotales.totalIvaServ100,
+      codIvaServ100:  '',
 
       // RETENCIONES FUENTE
       codRetFuente: '',
