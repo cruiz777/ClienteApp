@@ -35,6 +35,7 @@ import { ReporteComprasComponent } from './anexo-transaccional/reporte-compras/r
 import { ActivosFijosListComponent } from './activo-fijo/activos-fijos-list/activos-fijos-list.component';
 import { ActivosFijosFormComponent } from './activo-fijo/activos-fijos-form/activos-fijos-form.component';
 import { ReporteDepreciacionComponent } from './activo-fijo/reporte-depreciacion/reporte-depreciacion.component';
+import { ReporteGeneralComponent } from './activo-fijo/reporte-general/reporte-general.component';
 import { GenerarAtsComponent } from './anexo-transaccional/generacion-anexo/generar-ats.component';
 
 const routes: Routes = [
@@ -75,6 +76,7 @@ const routes: Routes = [
       { path: 'activo-fijo/nuevo', component: ActivosFijosFormComponent },
       { path: 'activo-fijo/editar/:id', component: ActivosFijosFormComponent },
        { path: 'activo-fijo/depre', component: ReporteDepreciacionComponent },
+        { path: 'activo-fijo/general', component: ReporteGeneralComponent },
       { path: '**', redirectTo: 'inicio-cg' },
     ],
   },

@@ -391,6 +391,13 @@ private eliminar(id: number): void {
     this.router.navigate(['/cg-3000/activo-fijo/depre']);
 
   }
+
+  irResumen(): void {
+    // ✅ ruta del reporte (ajústala si tu ruta es otra)/cg-3000/activo-fijo/depreciacion-mensual
+    //this.router.navigateByUrl('/cg-3000/activo-fijo/reporte-depreciacion/reporte-depreciacion');
+    this.router.navigate(['/cg-3000/activo-fijo/general']);
+
+  }
   private formatMoney(v: any): string {
     const n = Number(v ?? 0);
     if (!Number.isFinite(n)) return '0.00';
