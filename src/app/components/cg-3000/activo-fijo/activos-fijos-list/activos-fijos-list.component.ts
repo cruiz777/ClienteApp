@@ -43,11 +43,29 @@ export class ActivosFijosListComponent implements OnInit {
 
   // ✅ columnas con acciones
   colDefs: ColDef<ActivoFijoDto>[] = [
-    { headerName: 'Código', field: 'CodigoAf', width: 110 },
+    {
+      headerName: 'Código',
+      field: 'CodigoAf',
+      width: 110,
+      sort: 'asc',                 // opcional: arranca ordenado
+      comparator: (a, b) => {
+        const na = Number(a ?? 0);
+        const nb = Number(b ?? 0);
+        return na - nb;
+      },
+      valueFormatter: (p) => String(p.value ?? '')
+    },
     { headerName: 'Descripción', field: 'Descripcion', width: 380 },
     { headerName: 'Cuenta', field: 'Cuenta', width: 150 },
     { headerName: 'Nombre', field: 'PlanCuentaNombre', width: 220 },
-    { headerName: 'V.Compra', field: 'Valorcompra', width: 160 },
+    {
+      headerName: 'V.Compra',
+      field: 'Valorcompra',
+      width: 160,
+      filter: 'agNumberColumnFilter',
+      cellClass: 'ag-right-aligned-cell',
+      valueFormatter: (p) => this.formatMoney(p.value)
+    },
     { headerName: 'Marca', field: 'Marca', width: 160 },
     { headerName: 'Estado', field: 'MarcaDescripcion', width: 140 },
 
@@ -80,6 +98,7 @@ export class ActivosFijosListComponent implements OnInit {
     { headerName: 'Custodio', field: 'Custodio', width: 180 },
     { headerName: 'Ubicación', field: 'Ubicacion', width: 160 },
     { headerName: 'Proveedor', field: 'Proveedor', width: 160 },
+    { headerName: 'Observación', field: 'Observacion', width: 160 },
 
     // ✅ Editar (icono)
     {
@@ -144,7 +163,7 @@ export class ActivosFijosListComponent implements OnInit {
     private api: ActivoFijoApiService,
     private router: Router,
     private dialog: MatDialog
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     this.cargar();
@@ -201,75 +220,77 @@ export class ActivosFijosListComponent implements OnInit {
     this.router.navigate(['/cg-3000/activo-fijo/editar', id]);
   }
 
-exportarExcel(): void {
-  if (!this.gridApi) return;
+  exportarExcel(): void {
+    if (!this.gridApi) return;
 
-  const fechaHora = this.hoyYMD();
-  const datos: any[] = [];
+    const fechaHora = this.hoyYMD();
+    const datos: any[] = [];
 
-  // ✅ Recorrer TODAS las filas cargadas en el grid (ignora paginación)
-  this.gridApi.forEachNode((node) => {
-    const row = node.data;
-    if (!row) return;
+    // ✅ Recorrer TODAS las filas cargadas en el grid (ignora paginación)
+    this.gridApi.forEachNode((node) => {
+      const row = node.data;
+      if (!row) return;
 
-    datos.push({
-      Codigo: row.CodigoAf ?? '',
-      Descripcion: row.Descripcion ?? '',
-      Cuenta: row.Cuenta ?? '',
-      Nombre: row.PlanCuentaNombre ?? '',
-      Marca: row.Marca ?? '',
-      Estado: row.MarcaDescripcion ?? '',
-      F_Compra: this.formatFechaDMY(row.Feccompra),
-      Custodio: row.Custodio ?? '',
-      Ubicacion: row.Ubicacion ?? '',
-      Proveedor: row.Proveedor ?? ''
+      datos.push({
+        Codigo: row.CodigoAf ?? '',
+        Descripcion: row.Descripcion ?? '',
+        Cuenta: row.Cuenta ?? '',
+        Nombre: row.PlanCuentaNombre ?? '',
+        Marca: row.Marca ?? '',
+        V_Compra:row.Valorcompra ??'',
+        Estado: row.MarcaDescripcion ?? '',
+        F_Compra: this.formatFechaDMY(row.Feccompra),
+        Custodio: row.Custodio ?? '',
+        Ubicacion: row.Ubicacion ?? '',
+        Proveedor: row.Proveedor ?? '',
+        Observacion:row.Observacion ?? ''
+      });
     });
-  });
 
-  if (datos.length === 0) return;
+    if (datos.length === 0) return;
 
-  const sheetName = 'Activos Fijos';
-  const keys = Object.keys(datos[0]);
-  const titulo = `REPORTE DE ACTIVOS FIJOS (${datos.length})`;
+    const sheetName = 'Activos Fijos';
+    const keys = Object.keys(datos[0]);
+    const titulo = `REPORTE DE ACTIVOS FIJOS (${datos.length})`;
 
-  // ====== Construcción con título ======
-  const aoa: any[][] = [];
-  aoa.push([titulo]);
-  aoa.push([]);
-  aoa.push(keys);
-  for (const r of datos) aoa.push(keys.map(k => r[k]));
+    // ====== Construcción con título ======
+    const aoa: any[][] = [];
+    aoa.push([titulo]);
+    aoa.push([]);
+    aoa.push(keys);
+    for (const r of datos) aoa.push(keys.map(k => r[k]));
 
-  const worksheet: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(aoa);
+    const worksheet: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(aoa);
 
-  // Merge título A1..última columna
-  worksheet['!merges'] = worksheet['!merges'] || [];
-  worksheet['!merges'].push({
-    s: { r: 0, c: 0 },
-    e: { r: 0, c: keys.length - 1 }
-  });
+    // Merge título A1..última columna
+    worksheet['!merges'] = worksheet['!merges'] || [];
+    worksheet['!merges'].push({
+      s: { r: 0, c: 0 },
+      e: { r: 0, c: keys.length - 1 }
+    });
 
-  // Auto ancho básico
-  worksheet['!cols'] = keys.map(k => {
-    const maxLen = Math.max(
-      k.length,
-      ...datos.map(r => String(r[k] ?? '').length)
-    );
-    return { wch: Math.min(Math.max(maxLen + 2, 10), 60) };
-  });
+    // Auto ancho básico
+    worksheet['!cols'] = keys.map(k => {
+      const maxLen = Math.max(
+        k.length,
+        ...datos.map(r => String(r[k] ?? '').length)
+      );
+      return { wch: Math.min(Math.max(maxLen + 2, 10), 60) };
+    });
 
-  const workbook: XLSX.WorkBook = {
-    Sheets: { [sheetName]: worksheet },
-    SheetNames: [sheetName]
-  };
+    const workbook: XLSX.WorkBook = {
+      Sheets: { [sheetName]: worksheet },
+      SheetNames: [sheetName]
+    };
 
-  const excelBuffer: any = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    const excelBuffer: any = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
 
-  const blob: Blob = new Blob([excelBuffer], {
-    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'
-  });
+    const blob: Blob = new Blob([excelBuffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'
+    });
 
-  FileSaver.saveAs(blob, `ActivosFijos_${fechaHora}.xlsx`);
-}
+    FileSaver.saveAs(blob, `ActivosFijos_${fechaHora}.xlsx`);
+  }
 
 
   private confirmarEliminar(id: number): void {
@@ -289,13 +310,33 @@ exportarExcel(): void {
     });
   }
 
-  private eliminar(id: number): void {
-    this.api.delete(id).subscribe({
-      next: () => this.cargar(),
-      error: (err: any) => console.error('Error eliminando activo fijo', err)
-    });
-  }
+private eliminar(id: number): void {
+  this.api.delete(id).subscribe({
+    next: () => {
+      this.cargar();
+    },
+    error: (err: any) => {
+      console.error('Error eliminando activo fijo', err);
 
+      const msg =
+        err?.message ||
+        err?.error?.message ||
+        err?.error ||
+        'No se pudo eliminar el activo fijo.';
+
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '460px',
+        data: {
+          title: 'No se pudo eliminar',
+          message: msg,
+          type: 'error',
+          confirmText: 'Entendido',
+          showCancel: false
+        }
+      });
+    }
+  });
+}
   // ==========================
   // Helpers FECHA dd/MM/yyyy
   // ==========================
@@ -345,10 +386,18 @@ exportarExcel(): void {
     return `${y}${m}${day}`;
   }
   irReporteDepreciacion(): void {
-  // ✅ ruta del reporte (ajústala si tu ruta es otra)/cg-3000/activo-fijo/depreciacion-mensual
-  //this.router.navigateByUrl('/cg-3000/activo-fijo/reporte-depreciacion/reporte-depreciacion');
-  this.router.navigate(['/cg-3000/activo-fijo/depre']);
+    // ✅ ruta del reporte (ajústala si tu ruta es otra)/cg-3000/activo-fijo/depreciacion-mensual
+    //this.router.navigateByUrl('/cg-3000/activo-fijo/reporte-depreciacion/reporte-depreciacion');
+    this.router.navigate(['/cg-3000/activo-fijo/depre']);
 
-}
-
+  }
+  private formatMoney(v: any): string {
+    const n = Number(v ?? 0);
+    if (!Number.isFinite(n)) return '0.00';
+    // punto decimal y 2 decimales
+    return new Intl.NumberFormat('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(n);
+  }
 }
