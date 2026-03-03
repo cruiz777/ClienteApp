@@ -535,3 +535,16 @@
   border-top: 2px solid #0f172a !important;
   background: #fff7ed !important;
 }
+/* TOTAL RAÍZ - AG GRID */
+:host ::ng-deep .ag-row.row-totalraiz .ag-cell {
+  background: #0f2a57 !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  font-size: 12px !important;
+  border-top: 2px solid #1e3a6e !important;
+  border-bottom: 2px solid #1e3a6e !important;
+}
+
+:host ::ng-deep .ag-row.row-totalraiz:hover .ag-cell {
+  background: #1a3d70 !important;
+}

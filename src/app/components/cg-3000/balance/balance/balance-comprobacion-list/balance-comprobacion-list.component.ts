@@ -70,7 +70,7 @@ import { RequiredFieldsToastService } from 'src/app/components/utils/messages/re
 /* ==========================================================
  * Tipos auxiliares (para reporte jerárquico y totales)
  * ========================================================== */
-type RowTipo = 'raiz' | 'padre' | 'hijo' | 'subtotal';
+type RowTipo = 'raiz' | 'padre' | 'hijo' | 'subtotal' | 'totalraiz';
 
 type PinnedTipo = 'TOTAL_GENERAL' | 'TOTAL_FILTRADO';
 
@@ -215,7 +215,9 @@ export class BalanceComprobacionComponent implements OnInit {
           const nombre = r.cuentaNombre || '';
           return `${indent}<span class="mono">${label}</span> ${nombre}`;
         }
-
+        if (r.rowTipo === 'totalraiz') {
+          return `<b>TOTAL ${(r.cuentaNombre || '').toUpperCase()}</b>`;
+        }
         const codigo = r.cuentaCodigo || '';
         const nombre = r.cuentaNombre || '';
         return `${indent}<span class="mono">${codigo}</span> ${nombre}`;
@@ -265,6 +267,7 @@ export class BalanceComprobacionComponent implements OnInit {
       'row-padre': (p) => p.data?.rowTipo === 'padre' || p.data?.rowTipo === 'subtotal',
       'row-hijo': (p) => p.data?.rowTipo === 'hijo',
       'row-subtotal': (p) => p.data?.rowTipo === 'subtotal',
+      'row-totalraiz': (p) => p.data?.rowTipo === 'totalraiz'
     },
 
     suppressRowTransform: true,
@@ -459,7 +462,9 @@ export class BalanceComprobacionComponent implements OnInit {
       }));
 
       const padreKeys = Array.from(raizNode.padres.keys()).sort();
-
+      
+      let rSaldo = 0, rDebe = 0, rHaber = 0, rNeto = 0;
+      
       for (const padreKey of padreKeys) {
         const padreNode = raizNode.padres.get(padreKey)!;
 
@@ -540,10 +545,27 @@ export class BalanceComprobacionComponent implements OnInit {
         subtotalRow.__origDebe = subtotalRow.debe;
         subtotalRow.__origHaber = subtotalRow.haber;
         subtotalRow.__origNeto = subtotalRow.neto;
-        subtotalRow.__origTotal = subtotalRow.total;
-
+        subtotalRow.__origTotal = subtotalRow.total;        
+        rSaldo += sSaldo;
+        rDebe += sDebe;
+        rHaber += sHaber;
+        rNeto += sNeto;
         rows.push(subtotalRow);
       }
+      // Fila TOTAL RAÍZ
+      rows.push(this.makeRow({
+        rowTipo: 'totalraiz',
+        nivel: 0,
+        cuentaCodigo: '',
+        cuentaNombre: raizNode.nombreRaiz,
+        saldoAnterior: this.round2(rSaldo),
+        debe: this.round2(rDebe),
+        haber: this.round2(rHaber),
+        neto: this.round2(rNeto),
+        total: this.round2(rSaldo + rNeto),
+        cuentaRaiz: raizKey,
+        __keyPadre: raizKey,
+      }));
     }
 
     return rows;
@@ -885,7 +907,7 @@ export class BalanceComprobacionComponent implements OnInit {
 
       // deja una fila en blanco antes de totales
       rowIdx++;
-      addTotalRow('TOTAL FILTRADO', totalFiltrado);
+      // addTotalRow('TOTAL FILTRADO', totalFiltrado);
       addTotalRow('TOTAL GENERAL', totalGeneral);
 
       // 10) Descargar
@@ -1159,6 +1181,10 @@ export class BalanceComprobacionComponent implements OnInit {
       const indent = ' '.repeat((r.nivel ?? 0) * 2);
 
       let cuentaTxt = '';
+      if (r.rowTipo === 'totalraiz') {
+        return `<span class="mono"><b>TOTAL ${r.cuentaNombre}</b></span>`;
+      }
+
       if (r.rowTipo === 'subtotal') {
         cuentaTxt = `${indent}TOTAL ${((r.cuentaNombre ?? '').trim())}`.trim();
       } else if (r.rowTipo === 'hijo') {
@@ -1437,7 +1463,6 @@ export class BalanceComprobacionComponent implements OnInit {
 
     // Pinned rows (2 filas) en el fondo de la grilla
     (this.gridApi as any).setGridOption('pinnedBottomRowData', [
-      this.makePinnedRow('TOTAL FILTRADO', totalFiltrado),
       this.makePinnedRow('TOTAL GENERAL', totalGeneral),
     ]);
   }
