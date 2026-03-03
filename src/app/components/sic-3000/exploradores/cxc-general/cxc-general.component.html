@@ -14,7 +14,7 @@
       <div class="panel-title">Filtros de Búsqueda</div>
       
       <!-- Grid de filtros -->
-      <div class="fi-grid" style="grid-template-columns: 1fr 1fr 200px 200px; gap: 16px 24px; align-items: end;">
+      <div class="fi-grid" style="grid-template-columns: 1fr 1fr 1fr 200px 200px; gap: 16px 24px; align-items: end;">
         
         <!-- Fecha Desde -->
         <div class="field">
@@ -47,9 +47,18 @@
             min="0"
             step="0.01" />
         </div>
-
+        <!-- Buscar por RUC o Nombre -->
+        <div class="field">
+          <label>Buscar Cliente:</label>
+          <input 
+            type="text" 
+            class="form-control" 
+            formControlName="busqueda" 
+            placeholder="RUC o nombre del cliente"
+            (keydown.enter)="aplicarFiltros()" />        
+        </div>
         <!-- Botones de acción -->
-        <div class="field" style="display: flex; gap: 8px;">
+        <div class="field-buttons" style="display: flex; gap: 8px;">
           <button 
             type="button" 
             class="btn btn-primary" 

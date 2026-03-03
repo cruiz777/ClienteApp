@@ -1,85 +1,171 @@
-<div class="contenedor-gerencia mat-elevation-z4">
-  <div class="encabezado">
-    <h2><mat-icon>insights</mat-icon> Resumen Tipo Cliente</h2>
+<div class="dash-wrap">
 
-    <div class="filtros">
-      <!-- Año -->
-      <mat-form-field appearance="outline" class="campo-anio">
+  <!-- TOP BAR -->
+  <div class="dash-top mat-elevation-z2">
+    <div class="dash-title">
+      <mat-icon class="icon">insights</mat-icon>
+      <div>
+        <div class="h1">Resumen Tipo Cliente</div>
+        <div class="sub">Afiliadas vs Desafiliadas • Año {{ anio }} • Mes {{ mesLabel }}</div>
+      </div>
+    </div>
+
+    <div class="dash-filters">
+      <mat-form-field appearance="outline" class="ff ff-year">
         <mat-label>Año</mat-label>
-        <input
-          matInput
-          type="number"
-          [(ngModel)]="anio"
-          (change)="onFiltroChange()"
-          min="2000"
-          max="2100"
-        />
+        <input matInput type="number" [(ngModel)]="anio" (change)="onFiltroChange()" min="2000" max="2100" />
       </mat-form-field>
 
-      <!-- Mes -->
-      <mat-form-field appearance="outline" class="campo-mes">
+      <mat-form-field appearance="outline" class="ff ff-month">
         <mat-label>Mes</mat-label>
         <mat-select [(ngModel)]="mes" (selectionChange)="onFiltroChange()">
-          <mat-option *ngFor="let m of meses" [value]="m.value">
-            {{ m.label }}
-          </mat-option>
+          <mat-option *ngFor="let m of meses" [value]="m.value">{{ m.label }}</mat-option>
         </mat-select>
       </mat-form-field>
 
-      <!-- Exportar PDF -->
-      <button
-        mat-raised-button
-        color="primary"
-        (click)="exportarPdf()"
-        [disabled]="resumenMix.length === 0 || !((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar'))"
-        [style.opacity]="((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? '1' : '0.3'"
-        [style.pointer-events]="((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? 'auto' : 'none'"
-        [matTooltip]="!((permissions.permisos$ | async)?.includes('codbar.reportes.reporte-gerencia-clientes.exportar')) ? 'Sin permisos' : ''"
-      >
-        <mat-icon>picture_as_pdf</mat-icon> Exportar PDF
+      <!-- SIN CODBAR -->
+      <button class="btn-export" mat-raised-button color="primary" (click)="exportarPdf()" [disabled]="detalle.length === 0">
+        <mat-icon>picture_as_pdf</mat-icon>
+        Exportar PDF
       </button>
     </div>
   </div>
 
+  <!-- LOADING -->
   <mat-progress-bar *ngIf="cargando" mode="indeterminate"></mat-progress-bar>
 
-  <!-- Tabla combinada -->
-  <div class="card-tabla" *ngIf="!cargando">
-    <div class="titulo-tabla">
-      Resumen por Año (Acumulado) — {{ anio }} | Mes: {{ mesLabel }}
+  <!-- PANEL -->
+  <div class="panel" *ngIf="!cargando && detalle.length > 0">
+
+    <div class="panel-head">
+      <div>
+        <div class="panel-title">Dashboard</div>
+        <div class="panel-sub">Totales y distribución por tipo</div>
+      </div>
+
+      <div class="panel-kpis">
+        
+        <div class="miniKpi">
+          <div class="k">Año</div>
+          <div class="v">{{ anio }}</div>
+        </div>
+        <div class="miniKpi">
+          <div class="k">Mes</div>
+          <div class="v">{{ mesLabel }}</div>
+        </div>
+      </div>
     </div>
-<table class="tabla-gtin" *ngIf="resumenMix.length > 0">
-  <colgroup>
-    <col class="col-id" />
-    <col class="col-desc" />
-    <col class="col-num" />
-    <col class="col-num" />
-  </colgroup>
 
-  <thead>
-    <tr>
-      <th>Id Tipo</th>
-      <th>Descripción</th>
-      <th class="num">Cantidad Anual</th>
-      <th class="num">Cantidad Mensual</th>
-    </tr>
-  </thead>
+    <!-- TOTALES GENERALES -->
+    <div class="global-kpis">
+      <div class="gk gk-all">
+        <div class="k">Total Clientes</div>
+        <div class="v">{{ totales.totalClientes }}</div>
+      </div>
 
-  <tbody>
-    <tr *ngFor="let item of resumenMix">
-      <td>{{ item.idTipoCliente }}</td>
-      <td>{{ item.descripcion }}</td>
-      <td class="num">{{ item.cantidadAnual }}</td>
-      <td class="num">{{ item.cantidadMensual }}</td>
-    </tr>
-  </tbody>
-</table>
+      <div class="gk gk-ok">
+        <div class="k">Afiliadas</div>
+        <div class="v">{{ totales.afiliadasTotal }}</div>
+        
+      </div>
 
+      <div class="gk gk-bad">
+        <div class="k">Desafiliadas</div>
+        <div class="v">{{ totales.desafiliadasTotal }}</div>
+       
+      </div>
+    </div>
 
-    <div *ngIf="resumenMix.length === 0" class="mensaje-vacio">
-      No hay datos disponibles para {{ anio }} / {{ mesLabel }}.
+    <!-- Cards por tipo -->
+    <div class="detail-grid">
+      <div class="detail-card" *ngFor="let d of detalle">
+
+        <!-- Header -->
+        <div class="card-top">
+          <div class="left">
+            <div class="name">{{ d.tipo.descripcion }}</div>
+          </div>
+
+          <div class="right">
+            <div class="tlabel">Total</div>
+            <div class="tvalue">{{ d.tipo.cantidadTotal }}</div>
+          </div>
+        </div>
+
+        <!-- AFILIADAS -->
+        <div class="row">
+          <span class="chip chip-ok">Afiliadas</span>
+          <div class="nums">
+            <span class="n">{{ d.afiliadas.cantidadTotal }}</span>
+            <span class="p">{{ pct(d.afiliadas.cantidadTotal, d.tipo.cantidadTotal) }}%</span>
+          </div>
+        </div>
+        <mat-progress-bar class="bar bar-ok" mode="determinate"
+          [value]="pct(d.afiliadas.cantidadTotal, d.tipo.cantidadTotal)"></mat-progress-bar>
+
+        <!-- DESAFILIADAS -->
+        <div class="row mt">
+          <span class="chip chip-bad">Desafiliadas</span>
+          <div class="nums">
+            <span class="n">{{ d.desafiliadas.cantidadTotal }}</span>
+            <span class="p">{{ pct(d.desafiliadas.cantidadTotal, d.tipo.cantidadTotal) }}%</span>
+          </div>
+        </div>
+        <mat-progress-bar class="bar bar-bad" mode="determinate"
+          [value]="pct(d.desafiliadas.cantidadTotal, d.tipo.cantidadTotal)"></mat-progress-bar>
+
+        <!-- 4 KPI por tipo -->
+        <div class="quad-metrics">
+          <div class="qm">
+            <div class="k">Afiliadas Año</div>
+            <div class="v">{{ d.afiliadas.cantidadAnual }}</div>
+          </div>
+          <div class="qm">
+            <div class="k">Afiliadas Mes</div>
+            <div class="v">{{ d.afiliadas.cantidadMensual }}</div>
+          </div>
+          <div class="qm">
+            <div class="k">Desafiliadas Año</div>
+            <div class="v">{{ d.desafiliadas.cantidadAnual }}</div>
+          </div>
+          <div class="qm">
+            <div class="k">Desafiliadas Mes</div>
+            <div class="v">{{ d.desafiliadas.cantidadMensual }}</div>
+          </div>
+        </div>
+
+        <!-- ✅ AQUÍ LOS TOTALES QUE TE FALTABAN (Tipo Año y Tipo Mes) -->
+        <div class="type-totals">
+          <div class="tt">
+            <div class="k">Total Año (Tipo)</div>
+            <div class="v">
+              {{ d.tipo.cantidadAnual }}
+              <!-- Si quieres calcularlo por suma: {{ d.afiliadas.cantidadAnual + d.desafiliadas.cantidadAnual }} -->
+            </div>
+          </div>
+
+          <div class="tt">
+            <div class="k">Total Mes (Tipo)</div>
+            <div class="v">
+              {{ d.tipo.cantidadMensual }}
+              <!-- Si quieres calcularlo por suma: {{ d.afiliadas.cantidadMensual + d.desafiliadas.cantidadMensual }} -->
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- EMPTY -->
+  <div class="empty" *ngIf="!cargando && detalle.length === 0">
+    <mat-icon>info</mat-icon>
+    <div>
+      <div class="empty-t">Sin datos</div>
+      <div class="empty-s">No hay información para el rango seleccionado.</div>
     </div>
   </div>
 
-  <div class="mensaje-estado">{{ mensaje }}</div>
+  <div class="status">{{ mensaje }}</div>
 </div>

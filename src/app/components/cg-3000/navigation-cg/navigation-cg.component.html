@@ -209,11 +209,14 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item routerLink="/cg-3000/inicio-cg">
+          <a mat-list-item routerLink="/cg-3000/generar-ats">
             <span *ngIf="isExpanded" class="menu-text">Generación Anexo Transaccional</span>
           </a>
           <a mat-list-item routerLink="/cg-3000/inicio-cg">
             <span *ngIf="isExpanded" class="menu-text">VAL 3000</span>
+          </a>
+          <a mat-list-item routerLink="/cg-3000/reporte-compras">
+            <span *ngIf="isExpanded" class="menu-text">Reporte de Compras</span>
           </a>
 
         </mat-expansion-panel>
@@ -227,18 +230,17 @@
             </mat-panel-title>
           </mat-expansion-panel-header>
 
-          <a mat-list-item routerLink="/cg-3000/inicio-cg">
-            <span *ngIf="isExpanded" class="menu-text">Creación Activos</span>
-          </a>
-          <a mat-list-item routerLink="/cg-3000/inicio-cg">
-            <span *ngIf="isExpanded" class="menu-text">Depreciación de Activos</span>
-          </a>
-          <a mat-list-item routerLink="/cg-3000/inicio-cg">
+           <a mat-list-item routerLink="/cg-3000/activo-fijo">
             <span *ngIf="isExpanded" class="menu-text">Explorador de Activos</span>
           </a>
+
+          <!-- <a mat-list-item routerLink="/cg-3000/inicio-cg">
+            <span *ngIf="isExpanded" class="menu-text">Depreciación de Activos</span>
+          </a>
+         
           <a mat-list-item routerLink="/cg-3000/inicio-cg">
             <span *ngIf="isExpanded" class="menu-text">Parámetros de Cuentas de Activos</span>
-          </a>
+          </a> -->
 
         </mat-expansion-panel>
         <!-- Configuración-->

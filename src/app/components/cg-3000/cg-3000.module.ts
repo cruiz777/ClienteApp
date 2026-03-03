@@ -32,6 +32,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { PlanCuentaCellEditorComponent, PlanCuentaCellEditorParams } from './cuentas-por-pagar/pago-proveedores/plan-cuenta-cell-editor.component';
 import { SharedModule } from 'src/app/shared/shared.module';
 import { EstadoFinancieroComponent } from './balance/estado-financiero/estado-financiero.component';
+import { ReporteComprasComponent } from './anexo-transaccional/reporte-compras/reporte-compras.component';
+import { GenerarAtsComponent } from './anexo-transaccional/generacion-anexo/generar-ats.component';
 
 
 
@@ -41,7 +43,9 @@ import { EstadoFinancieroComponent } from './balance/estado-financiero/estado-fi
     InicioCgComponent,
     NavigationCgComponent,
     EstadoFinancieroComponent,
-    RegistroPagosProveedorComponent
+    RegistroPagosProveedorComponent,
+    ReporteComprasComponent,
+    GenerarAtsComponent
   ],
   imports: [
     CommonModule,
@@ -66,7 +70,7 @@ import { EstadoFinancieroComponent } from './balance/estado-financiero/estado-fi
     MatSelectModule,
     MatAutocompleteModule,
     MatProgressSpinnerModule,
-    PlanCuentaCellEditorComponent,
+    PlanCuentaCellEditorComponent,    
     // Ruteo del feature
     Cg3000RoutingModule,
     MatOptionModule,

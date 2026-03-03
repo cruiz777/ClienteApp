@@ -164,13 +164,26 @@ export class EstadoCuentaGeneralComponent implements OnInit {
     this.formFiltros = this.fb.group({
       fechaDesde: [null],
       fechaHasta: [null],
-      saldoMinimo: [null] // null = TODOS los clientes
+      saldoMinimo: [null], // null = TODOS los clientes
+      busqueda: [null] 
     });
 
     // Cargar datos iniciales
     this.cargarDatos();
   }
 
+  private parseBusqueda(): { ruc?: string; nombre?: string } {
+    const valor = (this.formFiltros.value.busqueda || '').trim();
+    if (!valor) return {};
+
+    // Si es solo números, es RUC/cédula
+    if (/^\d+$/.test(valor)) {
+      return { ruc: valor };
+    }
+
+    // Si no, es nombre
+    return { nombre: valor };
+  }
   // ===== Cargar datos del servicio =====
   cargarDatos(): void {
     this.isLoading = true;
@@ -184,10 +197,15 @@ export class EstadoCuentaGeneralComponent implements OnInit {
       ? this.estadoCuentaService.formatDateForApi(filtros.fechaHasta) 
       : undefined;
 
+    // Donde ya tienes la llamada al servicio, reemplazar por:
+    const busqueda = this.parseBusqueda();
+
     this.estadoCuentaService.getEstadoCuentaGeneralPaginado({
       fechaDesde,
       fechaHasta,
-      saldoMinimo: filtros.saldoMinimo, // puede ser null para traer TODOS
+      saldoMinimo: filtros.saldoMinimo,
+      ruc: busqueda.ruc,
+      nombre: busqueda.nombre,
       page: this.page,
       pageSize: this.pageSize
     }).subscribe({
@@ -236,7 +254,8 @@ export class EstadoCuentaGeneralComponent implements OnInit {
     this.formFiltros.reset({
       fechaDesde: null,
       fechaHasta: null,
-      saldoMinimo: null
+      saldoMinimo: null,
+      busqueda: null
     });
     this.page = 1;
     this.cargarDatos();
@@ -281,10 +300,14 @@ export class EstadoCuentaGeneralComponent implements OnInit {
       ? this.estadoCuentaService.formatDateForApi(filtros.fechaHasta) 
       : undefined;
 
+    const busqueda = this.parseBusqueda();
+
     this.estadoCuentaService.getEstadoCuentaGeneralCompleto({
       fechaDesde,
       fechaHasta,
-      saldoMinimo: filtros.saldoMinimo
+      saldoMinimo: filtros.saldoMinimo,
+      ruc: busqueda.ruc,
+      nombre: busqueda.nombre,
     }).subscribe({
       next: async (response) => {
         if (response.type === 'success' && response.data) {
@@ -471,10 +494,14 @@ export class EstadoCuentaGeneralComponent implements OnInit {
       ? this.estadoCuentaService.formatDateForApi(filtros.fechaHasta) 
       : undefined;
 
+    const busqueda = this.parseBusqueda();
+
     this.estadoCuentaService.getEstadoCuentaGeneralCompleto({
       fechaDesde,
       fechaHasta,
-      saldoMinimo: filtros.saldoMinimo
+      saldoMinimo: filtros.saldoMinimo,
+      ruc: busqueda.ruc,
+      nombre: busqueda.nombre,
     }).subscribe({
       next: async (response) => {
         if (response.type === 'success' && response.data) {

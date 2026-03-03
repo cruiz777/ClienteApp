@@ -394,7 +394,10 @@ export class ReporteVentasComponent implements OnInit {
     this.currentPageRetenciones = 1; 
     const fechaDesde = this.convertirADate(this.filtrosForm.value.fechaDesde);
     const fechaHasta = this.convertirADate(this.filtrosForm.value.fechaHasta);
-
+    
+    if (fechaHasta) {
+      fechaHasta.setHours(23, 59, 59, 999);
+    }
     this.loading = true;
 
     Promise.all([
@@ -642,13 +645,17 @@ export class ReporteVentasComponent implements OnInit {
   // ========== EXPORTAR A EXCEL ==========
 
   async exportarExcel(): Promise<void> {
-    const { fechaDesde, fechaHasta } = this.filtrosForm.value;
-
+    const fechaDesde = this.convertirADate(this.filtrosForm.value.fechaDesde);
+    const fechaHasta = this.convertirADate(this.filtrosForm.value.fechaHasta);
     if (!fechaDesde || !fechaHasta) {
       this.snackBar.open('Seleccione las fechas primero', 'Cerrar', {
         duration: 3000,
       });
       return;
+    }
+        
+    if (fechaHasta) {
+      fechaHasta.setHours(23, 59, 59, 999);
     }
 
     this.loading = true;

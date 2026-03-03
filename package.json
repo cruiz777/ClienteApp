@@ -24,6 +24,7 @@
     "@angular/router": "^18.2.13",
     "@handsontable/angular": "^15.3.0",
     "@popperjs/core": "^2.11.8",
+    "@zxing/browser": "^0.1.5",
     "ag-grid-angular": "^35.0.0",
     "ag-grid-community": "^35.0.0",
     "ag-grid-enterprise": "^35.0.0",

@@ -23,6 +23,11 @@ interface ClienteDetalleResponse {
   message: string;
   
 }
+export interface ResumenTipoClienteTotalResponse {
+  totalPorTipo: TipoClienteConteoResponse[];
+  diagnostico: { total: number };
+}
+
 interface CodContablePersonaDto {
   id_cod_contable: number;
   id_persona: number;
@@ -230,6 +235,24 @@ getIdCodContableByPersona(idPersona: number): Observable<number> {
 getResumenTipoClienteAnioMes(anio: number, mes: number): Observable<ApiResponse<ResumenTipoClienteAnioMesResponse>> {
   const url = `${this.apiBaseUrl}/Clientes/resumen-tipo-cliente/${anio}/${mes}`;
   return this.http.get<ApiResponse<ResumenTipoClienteAnioMesResponse>>(url);
+}
+
+getResumenTipoClienteTotal(): Observable<ApiResponse<ResumenTipoClienteTotalResponse>> {
+  const url = `${this.apiBaseUrl}/Clientes/resumen-tipo-cliente-total`;
+  return this.http.get<ApiResponse<ResumenTipoClienteTotalResponse>>(url);
+}
+
+getResumenTipoClienteAnioMesAfiliadas(
+  anio: number,
+  mes: number
+): Observable<ApiResponse<ResumenTipoClienteAnioMesResponse>> {
+  const url = `${this.apiBaseUrl}/Clientes/resumen-tipo-cliente-afiliadas/${anio}/${mes}`;
+  return this.http.get<ApiResponse<ResumenTipoClienteAnioMesResponse>>(url);
+}
+
+getResumenTipoClienteTotalAfiliadas(): Observable<ApiResponse<ResumenTipoClienteTotalResponse>> {
+  const url = `${this.apiBaseUrl}/Clientes/resumen-tipo-cliente-total-afiliadas`;
+  return this.http.get<ApiResponse<ResumenTipoClienteTotalResponse>>(url);
 }
 
 

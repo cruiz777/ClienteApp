@@ -396,19 +396,43 @@ export class UvIndividualComponent implements OnInit {
 
 
 
-  cargarCliente(): void {
-    const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
-    if (cliente) {
-      this.clienteSeleccionado = cliente;
-      this.formUV.patchValue({
-        codigoCliente: cliente.clientes_codigo || '',
-        cliente: cliente.nomcli || '',
-        ruc: cliente.ruc || '',
-      });
-      this.cargarClientePorId(cliente.clientes_codigo);
-      this.cargarPrefijos(cliente.clientes_codigo);
-    }
+ cargarCliente(): void {
+  const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+
+  if (!cliente) return;
+
+  // ✅ Validar DESAFILIADA
+  const estado = (cliente.estadoNombre ?? '').toString().trim().toUpperCase();
+  if (estado === 'DESAFILIADA') {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '450px',
+      data: {
+        title: 'Cliente DESAFILIADO',
+        message: '❌ No puede codificar productos porque el cliente está DESAFILIADO.',
+        type: 'error',
+        confirmText: 'Aceptar'
+      }
+    }).afterClosed().subscribe(() => {
+      this.dialog.closeAll();
+      this.router.navigate(['/productos/nuevo-producto']);
+    });
+
+    return; // ⛔ detener aquí
   }
+
+  // ✅ Flujo normal
+  this.clienteSeleccionado = cliente;
+
+  this.formUV.patchValue({
+    codigoCliente: cliente.clientes_codigo || '',
+    cliente: cliente.nomcli || '',
+    ruc: cliente.ruc || ''
+  });
+
+  this.cargarClientePorId(cliente.clientes_codigo);
+  this.cargarPrefijos(cliente.clientes_codigo);
+}
+
 
   cargarPrefijos(codigoCliente: number): void {
     this.prefijoService.obtenerPorClienteCodigo(codigoCliente).subscribe({
@@ -707,7 +731,7 @@ export class UvIndividualComponent implements OnInit {
       this.mostrarAlerta('No se seleccionó Prefijo', 'Error');
       return;
     }
-
+    debugger
     const categoriaId = this.formUV.get('categoria')?.value;
     if (!categoriaId) {
       this.mostrarAlerta('No se seleccionó Categoría', 'Error');
@@ -727,7 +751,7 @@ export class UvIndividualComponent implements OnInit {
       console.error('❌ Prefijo no encontrado en la lista');
       return;
     }
-
+    debugger
     // 🚫 No permitir GTIN-13 con bandera 2
     if (gtinNacionalSeleccionado === 'GTIN-13' && this.bandera === 2) {
       this.mostrarAlerta('No se puede generar este tipo de código', 'Error');
@@ -774,23 +798,56 @@ export class UvIndividualComponent implements OnInit {
     }
 
     // ✅ UPC Nacional (GTIN-12)
-    if (gtinNacionalSeleccionado === 'UPC' && this.bandera === 2) {
-      this.npais = '';
-      this.generacionCodigosService.obtenerSecuenciaUpc(prefijo.codpre, this.npais).subscribe({
-        next: (resp) => {
-          this.secuencia = resp.data;
-          this.mensaje = resp.message;
-          const longitud = this.formUV.get('gtinUv')?.value?.length || 0;
-          const codigoGenerado12N = this.generacionCodigosService.generarCodigo12N(prefijo.codpre, this.secuencia, longitud);
-          this.formUV.get('gtinUv')?.setValue(codigoGenerado12N);
-          this.validarYHabilitarGTIN();
-        },
-        error: (err) => {
-          console.error('Error al obtener secuencia', err);
-          this.mensaje = 'Error al generar la secuencia';
+    // ✅ UPC Nacional (GTIN-12)  (bandera 2)
+if (gtinNacionalSeleccionado === 'UPC' && this.bandera === 2) {
+  this.npais = '';
+
+  const usarSerie = this.formUV.get('usarSerie')?.value === true;
+  const serieStr = (this.formUV.get('serie')?.value ?? '').toString().trim();
+  const serieNum = Number(serieStr);
+
+  // Si el usuario activó "Serie" y hay un valor válido, úsalo directo
+  if (usarSerie && serieStr !== '' && !Number.isNaN(serieNum)) {
+    this.secuencia = serieNum;
+    this.mensaje = 'Usando serie ingresada';
+
+    const codigoGenerado12N = this.generacionCodigosService.generarCodigo12N(
+      prefijo.codpre,
+      this.secuencia,
+      12
+    );
+
+    this.formUV.get('gtinUv')?.setValue(codigoGenerado12N);
+    this.validarYHabilitarGTIN();
+  } else {
+    // Caso normal: pedir secuencia al backend
+    this.generacionCodigosService.obtenerSecuenciaUpc(prefijo.codpre, this.npais).subscribe({
+      next: (resp) => {
+        this.secuencia = resp.data;
+        this.mensaje = resp.message;
+
+        // (Opcional) Si usarSerie está activo, también rellena el control serie con la secuencia obtenida
+        if (usarSerie) {
+          this.formUV.get('serie')?.setValue(resp.data);
         }
-      });
-    }
+
+        const codigoGenerado12N = this.generacionCodigosService.generarCodigo12N(
+          prefijo.codpre,
+          this.secuencia,
+          12
+        );
+
+        this.formUV.get('gtinUv')?.setValue(codigoGenerado12N);
+        this.validarYHabilitarGTIN();
+      },
+      error: (err) => {
+        console.error('Error al obtener secuencia', err);
+        this.mensaje = 'Error al generar la secuencia';
+      }
+    });
+  }
+}
+
 
     // ✅ GTIN-13 Internacional
     if (gtinInternacionalSeleccionado === 'GTIN-13I') {
@@ -1182,7 +1239,7 @@ export class UvIndividualComponent implements OnInit {
 
     console.log(secto);
 
-
+    const now = new Date();
     const nuevoProducto: ProductoRequest = {
       IdProducto: 0,
       Codpro: datos.gtinUv || '',
@@ -1196,7 +1253,7 @@ export class UvIndividualComponent implements OnInit {
       Codmar: 0,
       Despro2: '',
       Uniman: datos.unidadMedida?.unidad || '',
-      Feccre: new Date().toISOString(),
+      Feccre: this.isoLocal(now),
       Colsab: '',
       Talla: '',
       Preven: 0,
@@ -2797,6 +2854,16 @@ private verificarFactorExistente(): void {
   }
 });
 
+}
+// ✅ ISO local: "YYYY-MM-DDTHH:mm:ss"  (sin Z, sin UTC)
+private isoLocal(d: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+// ✅ SOLO fecha local: "YYYY-MM-DD"
+private fechaLocal(d: Date = new Date()): string {
+  return this.isoLocal(d).slice(0, 10);
 }
 
 }

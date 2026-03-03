@@ -1,62 +1,228 @@
-.filtros {
-  display: flex;
+.dash-wrap{
+  padding: 16px;
+  background: #f6f8fb;
+  min-height: calc(100vh - 80px);
+}
+
+/* Top */
+.dash-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:16px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #e9eef7;
+}
+.dash-title{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.dash-title .icon{ font-size: 26px; width: 26px; height: 26px; }
+.dash-title .h1{ font-size: 18px; font-weight: 800; }
+.dash-title .sub{ font-size: 12px; color:#6b7280; margin-top: 2px; }
+
+.dash-filters{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.ff{ min-width: 140px; }
+.ff-year{ width: 120px; }
+.ff-month{ width: 160px; }
+.btn-export{
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-weight: 700;
+}
+
+/* Panel */
+.panel{
+  margin-top: 14px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #e9eef7;
+}
+.panel-head{
+  padding: 12px 14px;
+  border-bottom: 1px solid #eef2f8;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
   gap: 12px;
-  align-items: center;
+}
+.panel-title{ font-weight: 900; font-size: 13px; }
+.panel-sub{ font-size: 12px; color:#6b7280; margin-top: 2px; }
+
+.panel-kpis{
+  display:flex;
+  gap: 10px;
   flex-wrap: wrap;
 }
+.miniKpi{
+  background: #fbfdff;
+  border: 1px solid #eef2f8;
+  border-radius: 10px;
+  padding: 8px 10px;
+  min-width: 90px;
+  text-align:right;
+}
+.miniKpi .k{ font-size: 11px; color:#6b7280; }
+.miniKpi .v{ font-size: 14px; font-weight: 900; }
 
-.campo-anio { width: 140px; }
-.campo-mes  { width: 180px; }
+/* Totales generales */
+.global-kpis{
+  padding: 14px;
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+.gk{
+  border-radius: 12px;
+  border: 1px solid #eef2f8;
+  background: #ffffff;
+  padding: 12px 14px;
+}
+.gk .k{ font-size: 12px; color:#6b7280; font-weight: 800; }
+.gk .v{ font-size: 34px; font-weight: 900; margin-top: 2px; line-height: 1.05; }
+.gk .s{ font-size: 12px; color:#6b7280; margin-top: 6px; }
+.gk-ok{ border-left: 6px solid #2e7d32; }
+.gk-bad{ border-left: 6px solid #c62828; }
+.gk-all{ box-shadow: 0 8px 18px rgba(0,0,0,.05); }
 
-.card-tabla {
+/* Cards por tipo */
+.detail-grid{
+  padding: 0 14px 14px;
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 14px;
+}
+.detail-card{
+  border-radius: 12px;
   background: #fff;
-  border-radius: 8px;
-  padding: 10px;
-  border: 1px solid #e6e6e6;
-  margin-top: 12px;
+  border: 1px solid #eef2f8;
+  padding: 14px;
 }
 
-.titulo-tabla {
-  font-weight: 600;
+/* Header */
+.card-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap: 10px;
   margin-bottom: 10px;
 }
-
-.tabla-gtin {
-  width: 100%;
-  border-collapse: collapse;
+.name{ font-weight: 900; font-size: 13px; }
+.tlabel{ font-size: 11px; color:#6b7280; text-align:right; }
+.tvalue{
+  font-size: 30px;
+  font-weight: 900;
+  letter-spacing: .2px;
+  line-height: 1.05;
+  text-align:right;
 }
 
-.tabla-gtin th, .tabla-gtin td {
-  border-bottom: 1px solid #eee;
-  padding: 8px;
+/* Rows */
+.row{ display:flex; justify-content:space-between; align-items:center; gap: 10px; }
+.mt{ margin-top: 10px; }
+
+.chip{
+  font-size: 12px;
+  font-weight: 900;
+  padding: 5px 12px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+}
+.chip-ok{
+  color:#0f3d1e;
+  border-color: rgba(92,184,92,.35);
+  background: rgba(92,184,92,.12);
+}
+.chip-bad{
+  color:#5b1110;
+  border-color: rgba(217,83,79,.35);
+  background: rgba(217,83,79,.12);
 }
 
-.tabla-gtin .num {
-  text-align: right;
+.nums{ display:flex; gap: 10px; align-items:baseline; }
+.nums .n{ font-size: 20px; font-weight: 900; }
+.nums .p{ font-size: 13px; color:#6b7280; font-weight: 700; }
+
+/* Progress */
+.bar{ height: 8px; border-radius: 10px; margin-top: 6px; }
+.bar ::ng-deep .mdc-linear-progress__buffer-bar{ background-color: #e9eef7 !important; }
+.bar-ok ::ng-deep .mdc-linear-progress__bar-inner{ background-color: #2e7d32 !important; }
+.bar-bad ::ng-deep .mdc-linear-progress__bar-inner{ background-color: #c62828 !important; }
+
+/* 4 KPI */
+.quad-metrics{
+  margin-top: 12px;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.qm{
+  background: #fbfdff;
+  border: 1px solid #eef2f8;
+  border-radius: 10px;
+  padding: 12px 12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+}
+.qm .k{ font-size: 12px; color:#6b7280; font-weight: 800; }
+.qm .v{ font-size: 18px; font-weight: 900; color:#111827; }
+
+/* ✅ Totales faltantes (Tipo Año / Tipo Mes) */
+.type-totals{
+  margin-top: 10px;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.tt{
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  padding: 12px 12px;
+  display:flex;
+  justify-content:space-between;
+  align-items:baseline;
+}
+.tt .k{
+  font-size: 12px;
+  font-weight: 900;
+  color:#111827;
+}
+.tt .v{
+  font-size: 20px;
+  font-weight: 900;
+  color:#111827;
 }
 
-.mensaje-vacio {
-  padding: 10px;
-  color: #666;
+/* Empty + status */
+.empty{
+  display:flex;
+  gap: 10px;
+  align-items:flex-start;
+  padding: 14px 16px;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #eef2f8;
+  margin-top: 12px;
 }
-.tabla-gtin{
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed; /* clave para que respete anchos */
-}
+.empty-t{ font-weight: 800; }
+.empty-s{ color:#6b7280; font-size: 12px; }
+.status{ margin-top: 10px; font-size: 12px; color:#6b7280; }
 
-.col-id { width: 90px; }
-.col-desc { width: auto; }
-.col-num { width: 170px; } /* ajusta a tu gusto */
-
-.tabla-gtin th,
-.tabla-gtin td{
-  padding: 8px 10px;
-  vertical-align: middle;
-}
-
-.tabla-gtin th.num,
-.tabla-gtin td.num{
-  text-align: right;       /* que el título y valor “miren” igual */
-  white-space: nowrap;     /* evita saltos raros */
+/* Responsive */
+@media (max-width: 820px){
+  .dash-top{ flex-direction: column; align-items: stretch; }
+  .dash-filters{ flex-wrap: wrap; }
+  .ff{ width: 100%; min-width: unset; }
+  .panel-head{ flex-direction: column; }
+  .detail-grid{ grid-template-columns: 1fr; }
 }

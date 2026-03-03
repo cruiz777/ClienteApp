@@ -264,7 +264,7 @@ export class FacturasProveedorFormComponent implements OnInit {
     Validators.maxLength(15),
     Validators.pattern(/^\d{15}$/),
     //sriNoComprobanteValidator(), // 👈 custom
-    sriNoComprobanteValidator({ maxEstab: 99, maxPto: 99 }), // ✅ aquí defines el rango d 999 999
+    sriNoComprobanteValidator({ maxEstab: 999, maxPto: 999 }), // ✅ aquí defines el rango d 999 999
 
   ]);
 

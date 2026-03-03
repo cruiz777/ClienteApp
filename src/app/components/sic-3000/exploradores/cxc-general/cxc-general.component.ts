@@ -151,14 +151,22 @@ export class ExploradorCxcGeneralComponent implements OnInit {
   ngOnInit(): void {
     this.formFiltros = this.fb.group({
       fechaDesde: [null],
-      fechaHasta: [null],
-      saldoMinimo: [0.01]
+      fechaHasta: [null],      
+      saldoMinimo: [0.01],
+      busqueda: [null]
     });
 
     // Cargar datos iniciales
     this.cargarDatos();
   }
-
+  private parseBusqueda(): { ruc?: string; nombre?: string } {
+    const valor = (this.formFiltros.value.busqueda || '').trim();
+    if (!valor) return {};
+    if (/^\d+$/.test(valor)) {
+      return { ruc: valor };
+    }
+    return { nombre: valor };
+  }
   // ===== Cargar datos del servicio =====
   cargarDatos(): void {
     this.isLoading = true;
@@ -172,10 +180,14 @@ export class ExploradorCxcGeneralComponent implements OnInit {
       ? this.estadoCuentaService.formatDateForApi(filtros.fechaHasta) 
       : undefined;
 
+    const busqueda = this.parseBusqueda();
+
     this.estadoCuentaService.getClientesConDeudaPaginado({
       fechaDesde,
       fechaHasta,
       saldoMinimo: filtros.saldoMinimo || 0.01,
+      ruc: busqueda.ruc,
+      nombre: busqueda.nombre,
       page: this.page,
       pageSize: this.pageSize
     }).subscribe({
@@ -224,7 +236,8 @@ export class ExploradorCxcGeneralComponent implements OnInit {
     this.formFiltros.reset({
       fechaDesde: null,
       fechaHasta: null,
-      saldoMinimo: 0.01
+      saldoMinimo: 0.01,
+      busqueda: null
     });
     this.page = 1;
     this.cargarDatos();
@@ -269,10 +282,14 @@ export class ExploradorCxcGeneralComponent implements OnInit {
       ? this.estadoCuentaService.formatDateForApi(filtros.fechaHasta) 
       : undefined;
 
+    const busqueda = this.parseBusqueda();
+
     this.estadoCuentaService.getClientesConDeudaCompleto({
       fechaDesde,
       fechaHasta,
-      saldoMinimo: filtros.saldoMinimo || 0.01
+      saldoMinimo: filtros.saldoMinimo || 0.01,
+      ruc: busqueda.ruc,
+      nombre: busqueda.nombre,
     }).subscribe({
       next: async (response) => {
         if (response.type === 'success' && response.data) {
@@ -429,10 +446,14 @@ export class ExploradorCxcGeneralComponent implements OnInit {
       ? this.estadoCuentaService.formatDateForApi(filtros.fechaHasta) 
       : undefined;
 
+    const busqueda = this.parseBusqueda();
+
     this.estadoCuentaService.getClientesConDeudaCompleto({
       fechaDesde,
       fechaHasta,
-      saldoMinimo: filtros.saldoMinimo || 0.01
+      saldoMinimo: filtros.saldoMinimo || 0.01,
+      ruc: busqueda.ruc,
+      nombre: busqueda.nombre,
     }).subscribe({
       next: async (response) => {
         if (response.type === 'success' && response.data) {

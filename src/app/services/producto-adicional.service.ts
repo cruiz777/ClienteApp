@@ -14,7 +14,10 @@ export interface ApiResponse<T> {
   data: T;
   message: string;
 }
-
+export interface GtinResumenTotalResponse {
+  gtinTipo: string;
+  cantidad: number;
+}
 export interface UpdateCodigosClienteRequest {
   idPrefijos: number;
   codigosCliente: number;
@@ -133,5 +136,9 @@ getResumenPorAnio(anio: number): Observable<ApiResponse<GtinResumenResponse[]>> 
   return this.http.get<ApiResponse<GtinResumenResponseM[]>>(url);
 }
 
+getResumenTotal(): Observable<ApiResponse<GtinResumenTotalResponse[]>> {
+  const url = `${this.apiBaseUrl}/ProductoDatosAdicionales/resumen-gtin-total`;
+  return this.http.get<ApiResponse<GtinResumenTotalResponse[]>>(url);
+}
 
 }

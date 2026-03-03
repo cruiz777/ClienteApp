@@ -788,21 +788,48 @@ async generarFilas(): Promise<void> {
     this.rowData = [...this.rowData];
   }
 
-  cargarCliente(): void {
-    const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
-    console.log(cliente);
-    if (cliente) {
-      this.clienteSeleccionado = cliente;
-      this.formUV.patchValue({
-        codigoCliente: cliente.clientes_codigo || '',
-        cliente: cliente.nomcli || '',
-        ruc: cliente.ruc || '',
+cargarCliente(): void {
+  const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+  console.log(cliente);
 
-      });
-      this.cargarClientePorId(cliente.clientes_codigo);
-      this.cargarPrefijos(cliente.clientes_codigo);
-    }
+  if (!cliente) return;
+
+  // ✅ Validar estado DESAFILIADA (robusto: null/espacios/mayúsculas)
+  const estado = (cliente.estadoNombre ?? '').toString().trim().toUpperCase();
+
+  if (estado === 'DESAFILIADA') {
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '450px',
+      data: {
+        title: 'Cliente DESAFILIADO',
+        message: '❌ No puede codificar productos porque el cliente está DESAFILIADO.',
+        type: 'error',
+        confirmText: 'Aceptar'
+      }
+    }).afterClosed().subscribe(() => {
+      // cerrar cualquier dialog abierto (incluye esta ventana)
+      this.dialog.closeAll();
+
+      // salir a otra pantalla
+      this.router.navigate(['/productos/nuevo-producto']);
+    });
+
+    return; // ⛔ detener flujo normal
   }
+
+  // ✅ Flujo normal si está afiliado
+  this.clienteSeleccionado = cliente;
+
+  this.formUV.patchValue({
+    codigoCliente: cliente.clientes_codigo || '',
+    cliente: cliente.nomcli || '',
+    ruc: cliente.ruc || ''
+  });
+
+  this.cargarClientePorId(cliente.clientes_codigo);
+  this.cargarPrefijos(cliente.clientes_codigo);
+}
+
 
   cargarPrefijos(codigoCliente: number): void {
     this.prefijoService.obtenerPorClienteCodigo(codigoCliente).subscribe({
@@ -1801,34 +1828,39 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
   }
 
 
-  procesarGrabado(): void {
-    const filas = this.rowData;
-    if (filas.length === 0) return;
+procesarGrabado(): void {
+  // ✅ asegurar que lo que está editando en el grid se guarde
+  this.commitGridChanges();
 
-    this.totalAProcesar = filas.length;
-    this.procesadosExitosos = 0;
-    this.procesadosFallidos = 0;
-    this.loadingMasivo = true;
-    this.huboError = false;
-    this.idsProductosCreados = [];
+  const filas = [...this.rowData];
+  if (filas.length === 0) return;
 
-    const dialogRef = this.dialog.open(DialogProcesoComponent, {
-      disableClose: true,
-      width: '400px',
-      data: {
-        procesados: 0,
-        total: this.totalAProcesar
-      }
-    });
+  this.totalAProcesar = filas.length;
+  this.procesadosExitosos = 0;
+  this.procesadosFallidos = 0;
+  this.loadingMasivo = true;
+  this.huboError = false;
+  this.idsProductosCreados = [];
 
-    from(filas).pipe(
+  const dialogRef = this.dialog.open(DialogProcesoComponent, {
+    disableClose: true,
+    width: '400px',
+    data: { procesados: 0, total: this.totalAProcesar }
+  });
+
+  from(filas)
+    .pipe(
       mergeMap(fila => this.guardarProductoPromise(fila, dialogRef), 5), // hasta 5 en paralelo
       toArray()
-    ).subscribe({
+    )
+    .subscribe({
       next: () => {
         this.loadingMasivo = false;
         dialogRef.close();
 
+        // ==========================
+        // ❌ Si hubo error → rollback
+        // ==========================
         if (this.huboError) {
           const eliminaciones = this.idsProductosCreados.map(id =>
             this.productoService.eliminarProducto(id).toPromise()
@@ -1836,10 +1868,11 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
 
           Promise.allSettled(eliminaciones).then(() => {
             this.dialog.open(CustomMessageBoxComponent, {
-              width: '400px',
+              width: '420px',
               data: {
                 title: 'Error en procesamiento',
-                message: '❌ Se detectaron errores. Todos los productos creados han sido eliminados para mantener la integridad.',
+                message:
+                  '❌ Se detectaron errores. Todos los productos creados han sido eliminados para mantener la integridad.',
                 type: 'error',
                 confirmText: 'Aceptar'
               }
@@ -1853,7 +1886,9 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
           return;
         }
 
-        // ✅ Productos grabados exitosamente
+        // ==========================
+        // ✅ OK → habilitar flujo GTIN14
+        // ==========================
         this.botonGenerarDeshabilitado = true;
         this.botonGrabarDeshabilitado = true;
         this.botonGenerar14Deshabilitado = false;
@@ -1866,26 +1901,10 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
 
         this.mostrarAlerta('✅ Todos los productos fueron grabados correctamente.', 'Éxito');
 
-        // ❓ Preguntar si desea enviar a Verified
-        this.dialog.open(CustomMessageBoxComponent, {
-          width: '400px',
-          data: {
-            title: '¿Desea enviar a Verified?',
-            message: 'Todos los productos fueron grabados. ¿Desea generar y enviar el JSON a Verified ahora mismo?',
-            type: 'question',
-            confirmText: 'Sí, enviar',
-            cancelText: 'No, luego',
-            showCancel: true
-          }
-        }).afterClosed().subscribe(enviar => {
-          if (enviar && (this.tipoGtin === 'GTIN-13' || this.tipoGtin === 'UPC')) {
-            this.enviarAJsonVerified();
-          }
-
-
-          // ❓ Luego preguntar por GTIN-14
+        // ===== helper: preguntar GTIN-14 (siempre se ejecuta al final)
+        const preguntarGtin14 = () => {
           this.dialog.open(CustomMessageBoxComponent, {
-            width: '400px',
+            width: '420px',
             data: {
               title: '¿Desea continuar?',
               message: '¿Desea generar los códigos GTIN-14 ahora?',
@@ -1894,7 +1913,7 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
               cancelText: 'Cancelar',
               showCancel: true
             }
-          }).afterClosed().subscribe(generar14 => {
+          }).afterClosed().subscribe((generar14: boolean) => {
             if (generar14) {
               this.botonGenerar14Deshabilitado = false;
               this.botonGrabar14Deshabilitado = true;
@@ -1903,20 +1922,44 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
               this.mostrarAlerta('⚠️ Puede generar GTIN-14 luego desde el botón correspondiente.', 'Info');
             }
           });
-        });
+        };
+
+        // ==================================================
+        // ✅ SOLO GTIN-13 → preguntar envío a Verified
+        // ==================================================
+        if (this.tipoGtin === 'GTIN-13') {
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '420px',
+            data: {
+              title: '¿Desea enviar a Verified?',
+              message: 'Todos los productos fueron grabados. ¿Desea generar y enviar el JSON a Verified ahora mismo?',
+              type: 'question',
+              confirmText: 'Sí, enviar',
+              cancelText: 'No, luego',
+              showCancel: true
+            }
+          }).afterClosed().subscribe((enviar: boolean) => {
+            if (enviar) {
+              this.enviarAJsonVerified(); // ✅ SOLO GTIN-13
+            }
+            // luego continúa con GTIN-14
+            preguntarGtin14();
+          });
+
+        } else {
+          // ✅ para cualquier otro tipo, NO muestra Verified
+          preguntarGtin14();
+        }
       },
-      error: () => {
+
+      error: (err) => {
         this.loadingMasivo = false;
         dialogRef.close();
+        console.error('❌ Error general durante el guardado:', err);
         this.mostrarAlerta('❌ Error general durante el guardado.', 'Error');
       }
     });
-  }
-
-
-
-
-
+}
   guardarProductoPromise(fila: any, dialogRef: MatDialogRef<DialogProcesoComponent>): Promise<void> {
     return new Promise((resolve) => {
       this.guardarProducto(fila, () => {
@@ -2033,10 +2076,11 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
     const idPrefijo = this.formUV.value.gcp;
     const prefijo = this.prefijos.find(p => p.id_prefijos === idPrefijo);
     this.commitGridChanges(); 
+    const now = new Date();
     const nuevoProducto: ProductoRequest = {
       IdProducto: 0,
       Codpro: fila.gtinUv || '',
-      Despro: fila.descripcion || '',
+      Despro: (fila.descripcion ?? '').toString().trimEnd(),
       Tippro: 'S',
       Codgru: 0,
       Codsec: 0,
@@ -2046,7 +2090,7 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
       Codmar: 0,
       Despro2: '',
       Uniman: fila.contenidoUM || '',
-      Feccre: new Date().toISOString(),
+      Feccre: this.isoLocal(now),
       Colsab: '',
       Talla: '',
       Preven: 0,
@@ -2886,6 +2930,7 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
     });
   }
 
+
   enviarAJsonVerified(): void {
     const datos = this.rowData;
 
@@ -2911,7 +2956,6 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
 
     this.mostrarAlerta('📦 JSON generado y enviado en lote a Verified.', 'Información');
   }
-
   cargarParametroFacturaPorId(id: number): void {
     this.parametrosFacturaService.getById(id).subscribe({
       next: (parametro) => {
@@ -3089,4 +3133,15 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
       }
     });
   }
+  // ✅ ISO local: "YYYY-MM-DDTHH:mm:ss"  (sin Z, sin UTC)
+private isoLocal(d: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+// ✅ SOLO fecha local: "YYYY-MM-DD"
+private fechaLocal(d: Date = new Date()): string {
+  return this.isoLocal(d).slice(0, 10);
+}
+
 }
