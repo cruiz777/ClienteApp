@@ -83,3 +83,8 @@ body {
   height: 100%;
   border-radius: 0;
 }
+
+.snack-success { --mdc-snackbar-container-color: #0f766e; --mdc-snackbar-supporting-text-color: #fff; }
+.snack-error   { --mdc-snackbar-container-color: #b91c1c; --mdc-snackbar-supporting-text-color: #fff; }
+.snack-warn    { --mdc-snackbar-container-color: #a16207; --mdc-snackbar-supporting-text-color: #fff; }
+.snack-info    { --mdc-snackbar-container-color: #1f2937; --mdc-snackbar-supporting-text-color: #fff; }

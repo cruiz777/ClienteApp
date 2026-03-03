@@ -31,6 +31,7 @@ import { LiquidacionCompraFormComponent } from './transacciones/liquidacion-comp
 import { LiquidacionCompraComponent } from './transacciones/liquidacion-compra/liquidacion-compra-list/liquidacion-compra-list.component';
 import { MayorCuentasListComponent } from './balance/mayor/mayor-cuentas-list/mayor-cuentas-list.component';
 import { EstadoFinancieroComponent } from './balance/estado-financiero/estado-financiero.component';
+import { ConciliacionComponent } from './conciliaciones/conciliar/conciliar-form/conciliar-form.component';
 
 const routes: Routes = [
   {
@@ -62,6 +63,7 @@ const routes: Routes = [
       { path: 'pago-proveedores', component: RegistroPagosProveedorComponent },
       { path: 'liquidacion-compra', component: LiquidacionCompraFormComponent },
       { path: 'liquidacion-compra-list', component: LiquidacionCompraComponent },
+      { path: 'conciliacion', component: ConciliacionComponent},
       { path: 'mayor', component: MayorCuentasListComponent },
       { path: 'estado-financiero', component: EstadoFinancieroComponent },
       { path: '**', redirectTo: 'inicio-cg' },

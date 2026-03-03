@@ -1,0 +1,81 @@
+.wrap { padding: 14px; background: #f5f7fb; }
+.card { padding: 14px; border-radius: 14px; }
+
+.top-search {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 10px;
+  border-radius: 12px;
+  background: #eef3ff;
+  margin-bottom: 10px;
+}
+.concil-id { width: 260px; }
+.btn { height: 38px; }
+.btn-lite { height: 36px; }
+.spacer { flex: 1; }
+
+.sub-title { margin: 10px 2px; }
+.h1 { font-size: 22px; font-weight: 700; }
+.h2 { margin-top: 4px; opacity: 0.7; }
+
+.cabecera { margin-top: 10px; }
+
+.grid-3, .grid-6 { display: grid; gap: 12px; margin-top: 10px; }
+.grid-3 { grid-template-columns: repeat(3, minmax(180px, 1fr)); }
+.grid-6 { grid-template-columns: repeat(6, minmax(140px, 1fr)); }
+
+.section-title { margin-top: 14px; margin-bottom: 6px; font-weight: 700; opacity: 0.85; }
+
+.grid {
+  width: 100%;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e6eaf2;
+}
+
+.grid-small { height: 92px; }
+.grid-main  { height: 430px; }
+.grid-bottom{ height: 140px; }
+
+.search-bar {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  background: #eef3ff;
+}
+.search-title { font-weight: 700; margin-bottom: 10px; opacity: 0.85; }
+.search-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(5, minmax(150px, 1fr)) 130px;
+  align-items: center;
+}
+
+ag-grid-angular {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+:host ::ng-deep .mat-mdc-autocomplete-panel {
+  max-height: 320px !important;
+}
+
+
+/* Input conciliación más largo */
+.concil-wide {
+  flex: 1;            /* ocupa todo el espacio disponible */
+  min-width: 520px;   /* asegura que sea largo */
+}
+
+/* Para que el mat-form-field respete el ancho en flex */
+.top-search .mat-mdc-form-field {
+  width: auto;
+}
+
+/* Opcional: si quieres que los botones no se estiren */
+.top-search .btn {
+  flex: 0 0 auto;
+}
