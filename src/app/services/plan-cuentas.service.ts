@@ -5,6 +5,7 @@ import { Observable, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { environment } from 'src/environments/environment';
 import { ApiResponse } from '../interfaces/responses/api-response';
+import { PlanCuentasSearchResponse } from '../interfaces/responses/plan-cuentas-search.response';
 
 export interface PlanCuenta {
   CuentaPrincipal: string;
@@ -149,5 +150,30 @@ export class PlanCuentasService {
       }),
       catchError(() => of({ exists: false, message: '' }))
     );
+  }
+
+  /**
+   * Busca cuentas nivel 5 por nombre parcial
+   */
+  buscarPorNombre(
+    descripcion: string,
+    idEmpresa: number
+  ): Observable<PlanCuentasSearchResponse[]> {
+    const params = new HttpParams()
+      .set('descripcion', descripcion.trim())
+      .set('idEmpresa', String(idEmpresa));
+
+    return this.http
+      .get<ApiResponse<PlanCuentasSearchResponse[]>>(
+        `${this.baseUrl}/buscar-por-nombre-cuenta`,
+        { params }
+      )
+      .pipe(
+        map(res => res?.data ?? []),
+        catchError(err => {
+          console.error('PlanCuentasService.buscarPorNombre error:', err);
+          return of([] as PlanCuentasSearchResponse[]);
+        })
+      );
   }
 }

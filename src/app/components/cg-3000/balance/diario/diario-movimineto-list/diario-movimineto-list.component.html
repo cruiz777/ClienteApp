@@ -69,15 +69,45 @@
         <!-- Cuenta inicial -->
         <div class="fg" *ngIf="modoFiltro === 'cuenta'">
           <label class="fg-label" for="cuentaDesde">Cuenta inicial</label>
-          <input id="cuentaDesde" type="text" [(ngModel)]="cuentaDesde" class="fg-control"
-            placeholder="Ej: 110101-001" />
+          <div class="input-search-wrap">
+            <input id="cuentaDesde" type="text" class="fg-control"
+              [value]="cuentaDesde"
+              (input)="onBuscarCuenta('desde', $event)"
+              (blur)="cerrarDropdowns()"
+              placeholder="Código o nombre de cuenta..."
+              autocomplete="off" />
+            <span class="input-clear-icon" *ngIf="cuentaDesde"
+              (mousedown)="seleccionarCuenta('desde', {codigoPresentacion:'', nombreCuenta:''})">✕</span>
+            <ul class="search-dropdown" *ngIf="mostrarDropDesde">
+              <li class="search-dropdown-item" *ngFor="let c of sugerenciasDesde"
+                (mousedown)="seleccionarCuenta('desde', c)">
+                <span class="search-item-codigo">{{ c.codigoPresentacion }}</span>
+                <span class="search-item-nombre">{{ c.nombreCuenta }}</span>
+              </li>
+            </ul>
+          </div>
         </div>
 
         <!-- Cuenta final -->
         <div class="fg" *ngIf="modoFiltro === 'cuenta'">
           <label class="fg-label" for="cuentaHasta">Cuenta final</label>
-          <input id="cuentaHasta" type="text" [(ngModel)]="cuentaHasta" class="fg-control"
-            placeholder="Ej: 110101-001" />
+          <div class="input-search-wrap">
+            <input id="cuentaHasta" type="text" class="fg-control"
+              [value]="cuentaHasta"
+              (input)="onBuscarCuenta('hasta', $event)"
+              (blur)="cerrarDropdowns()"
+              placeholder="Código o nombre de cuenta..."
+              autocomplete="off" />
+            <span class="input-clear-icon" *ngIf="cuentaHasta"
+              (mousedown)="seleccionarCuenta('hasta', {codigoPresentacion:'', nombreCuenta:''})">✕</span>
+            <ul class="search-dropdown" *ngIf="mostrarDropHasta">
+              <li class="search-dropdown-item" *ngFor="let c of sugerenciasHasta"
+                (mousedown)="seleccionarCuenta('hasta', c)">
+                <span class="search-item-codigo">{{ c.codigoPresentacion }}</span>
+                <span class="search-item-nombre">{{ c.nombreCuenta }}</span>
+              </li>
+            </ul>
+          </div>
         </div>
 
         <div class="fg form-field" *ngIf="modoFiltro === 'cuenta'">

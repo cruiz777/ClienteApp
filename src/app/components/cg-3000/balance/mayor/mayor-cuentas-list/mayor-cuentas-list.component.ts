@@ -47,7 +47,10 @@ import { BalanceComprobacionRequest } from 'src/app/interfaces/requests/balance-
 import { MayorCuentasResponse } from 'src/app/interfaces/responses/mayor-cuentas-response';
 import { LocalesResponse } from 'src/app/interfaces/responses/local-response'
 import { ZonaResponse } from 'src/app/interfaces/responses/zona-response'
-
+import { PlanCuentasService } from 'src/app/services/plan-cuentas.service';
+import { UsuarioService } from 'src/app/services/usuario.service';
+import { PlanCuentasSearchResponse } from 'src/app/interfaces/responses/plan-cuentas-search.response';
+import { debounceTime, distinctUntilChanged, of, Subject, switchMap } from 'rxjs';
 /* ==========================
  * Messages
  * ========================== */
@@ -95,6 +98,8 @@ export class MayorCuentasListComponent implements OnInit {
 };
 
 columnDefs: ColDef[] = [
+  { headerName: 'Cuenta', field: 'cuentaHijo', width: 120 },
+  { headerName: 'Nombre Cuenta', field: 'nombreHijo', width: 320 },
   { headerName: 'Tipo', field: 'tipo', width: 70 },
   { headerName: 'Asiento', field: 'asiento', width: 110, filter: 'agNumberColumnFilter' },
   { headerName: 'Cheque', field: 'cheque', width: 90, filter: 'agNumberColumnFilter' },
@@ -141,9 +146,7 @@ columnDefs: ColDef[] = [
     cellStyle: { textAlign: 'right' }
   },
 
-  { headerName: 'Concepto', field: 'concepto', width: 420 },
-  { headerName: 'Cuenta', field: 'cuentaHijo', width: 120 },
-  { headerName: 'Nombre Cuenta', field: 'nombreHijo', width: 320 },
+  { headerName: 'Concepto', field: 'concepto', width: 420 }
 ];
 
 
@@ -161,6 +164,18 @@ columnDefs: ColDef[] = [
     idZona: undefined,
   };
 
+  //Filtros para busqueda por cuenta
+  sugerenciasA: PlanCuentasSearchResponse[] = [];
+  mostrarDropA = false;
+  private searchA$ = new Subject<string>();
+
+  sugerenciasB: PlanCuentasSearchResponse[] = [];
+  mostrarDropB = false;
+  private searchB$ = new Subject<string>();
+
+  get idEmpresa(): number {
+    return this.usuarioService.getEmpresaId() ?? 0;
+  }
   // Modos UI (activan/ocultan secciones en el HTML mediante *ngIf)
   modoFiltro1: 'cuenta' | null = null;
   modoFiltro2: 'local' | null = null;
@@ -183,7 +198,9 @@ columnDefs: ColDef[] = [
     private balanceService: BalanceService,
     private localService: LocalesService,
     private zonaService: ZonaService,
-    private message: RequiredFieldsToastService
+    private message: RequiredFieldsToastService,
+    private planCuentasService: PlanCuentasService,
+    private usuarioService: UsuarioService    
   ) { }
 
   // trackBy (mejora performance en combos)
@@ -198,6 +215,27 @@ columnDefs: ColDef[] = [
     this.setRangoMesActual(); 
     this.cargarLocales();
     this.cargarZona();
+    this.searchA$.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(texto => texto.length >= 2
+        ? this.planCuentasService.buscarPorNombre(texto, this.idEmpresa)
+        : of([]))
+    ).subscribe(res => {
+      this.sugerenciasA = res;
+      this.mostrarDropA = res.length > 0;
+    });
+
+    this.searchB$.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(texto => texto.length >= 2
+        ? this.planCuentasService.buscarPorNombre(texto, this.idEmpresa)
+        : of([]))
+    ).subscribe(res => {
+      this.sugerenciasB = res;
+      this.mostrarDropB = res.length > 0;
+    });
   }
 
   /* ==========================================================
@@ -1138,7 +1176,34 @@ columnDefs: ColDef[] = [
       // else this.filtros.cuentaB = '';
     }
   }
-  
+  onBuscarCuenta(tipo: 'A' | 'B', ev: Event): void {
+    const texto = (ev.target as HTMLInputElement).value ?? '';
+    if (/^\d/.test(texto)) {
+      this.onCuentaInput(tipo, ev); // lógica numérica existente
+    } else {
+      if (tipo === 'A') { this.filtros.cuentaA = texto; this.searchA$.next(texto); }
+      else              { this.filtros.cuentaB = texto; this.searchB$.next(texto); }
+    }
+  }
+
+  seleccionarCuenta(tipo: 'A' | 'B', cuenta: PlanCuentasSearchResponse): void {
+    if (tipo === 'A') {
+      this.filtros.cuentaA = cuenta.codigoPresentacion ?? '';
+      this.mostrarDropA = false;
+      this.sugerenciasA = [];
+    } else {
+      this.filtros.cuentaB = cuenta.codigoPresentacion ?? '';
+      this.mostrarDropB = false;
+      this.sugerenciasB = [];
+    }
+  }
+
+  cerrarDropdowns(): void {
+    setTimeout(() => {
+      this.mostrarDropA = false;
+      this.mostrarDropB = false;
+    }, 200);
+  }
   private formatIsoDDMMYYYY(iso: any): string {
   if (!iso) return '';
   const d = new Date(iso);

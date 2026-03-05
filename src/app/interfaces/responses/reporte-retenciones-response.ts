@@ -1,17 +1,12 @@
-// src/app/interfaces/responses/reporte-retenciones-response.ts
-
 export interface RetencionReporteResponse {
+  codigoRetencion: string;
+  descripcionRetencion: string;
+  numeroFactura: string;
   fecha: Date | string;
   contribuyente: string;
   rucCi: string;
-  numeroFactura: string;
-  numeroRetencion: string;
-  tipoComprobante: string;
   baseImponible: number;
-  porcentajeRetencion: number;
   valorRetenido: number;
-  concepto: string;
-  codigoRetencion: string;
 }
 
 export interface TotalesReporteRetenciones {

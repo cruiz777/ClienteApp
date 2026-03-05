@@ -18,7 +18,10 @@ import { TipoAsientoResponse } from 'src/app/interfaces/responses/tipo-asiento-r
  * Messages
  * ========================== */
 import { RequiredFieldsToastService } from 'src/app/components/utils/messages/required-fields-toast.service';
-
+import { PlanCuentasService } from 'src/app/services/plan-cuentas.service';
+import { UsuarioService } from 'src/app/services/usuario.service';
+import { PlanCuentasSearchResponse } from 'src/app/interfaces/responses/plan-cuentas-search.response';
+import { debounceTime, distinctUntilChanged, of, Subject, switchMap } from 'rxjs';
 @Component({
   selector: 'app-diario-movimineto-list',
   standalone: true,
@@ -36,7 +39,9 @@ export class DiarioMoviminetoListComponent implements OnInit {
   constructor(
     private balanceService: BalanceService,
     private tipoAsientoService: TipoAsientoService,
-    private message: RequiredFieldsToastService
+    private message: RequiredFieldsToastService,
+    private planCuentasService: PlanCuentasService,
+    private usuarioService: UsuarioService    
   ) { }
 
   // ============================================================
@@ -52,9 +57,21 @@ export class DiarioMoviminetoListComponent implements OnInit {
   // ============================================================
   modoFiltro: 'fecha' | 'cuenta' = 'fecha';
 
-fechaDesde: string = '';
-fechaHasta: string = '';
+  fechaDesde: string = '';
+  fechaHasta: string = '';
 
+  // Buscador cuentas
+  sugerenciasDesde: PlanCuentasSearchResponse[] = [];
+  mostrarDropDesde = false;
+  private searchDesde$ = new Subject<string>();
+
+  sugerenciasHasta: PlanCuentasSearchResponse[] = [];
+  mostrarDropHasta = false;
+  private searchHasta$ = new Subject<string>();
+
+  get idEmpresa(): number {
+    return this.usuarioService.getEmpresaId() ?? 0;
+  }
 
   cuentaDesde: string = '';
   cuentaHasta: string = '';
@@ -72,8 +89,31 @@ fechaHasta: string = '';
   // LIFECYCLE
   // ============================================================
   ngOnInit(): void {
-     this.setRangoMesActual(); 
+    this.setRangoMesActual(); 
     this.cargarTipoAsiento();
+    
+    //Búsqueda por nombre de cuenta
+    this.searchDesde$.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(texto => texto.length >= 2
+        ? this.planCuentasService.buscarPorNombre(texto, this.idEmpresa)
+        : of([]))
+    ).subscribe(res => {
+      this.sugerenciasDesde = res;
+      this.mostrarDropDesde = res.length > 0;
+    });
+
+    this.searchHasta$.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(texto => texto.length >= 2
+        ? this.planCuentasService.buscarPorNombre(texto, this.idEmpresa)
+        : of([]))
+    ).subscribe(res => {
+      this.sugerenciasHasta = res;
+      this.mostrarDropHasta = res.length > 0;
+    });
   }
 
   // ============================================================
@@ -159,7 +199,35 @@ fechaHasta: string = '';
       this.idTipoAsiento = null;
     }
   }
+  onBuscarCuenta(tipo: 'desde' | 'hasta', ev: Event): void {
+    const texto = (ev.target as HTMLInputElement).value ?? '';
+    if (tipo === 'desde') {
+      this.cuentaDesde = texto;
+      /^\d/.test(texto) ? null : this.searchDesde$.next(texto);
+    } else {
+      this.cuentaHasta = texto;
+      /^\d/.test(texto) ? null : this.searchHasta$.next(texto);
+    }
+  }
 
+  seleccionarCuenta(tipo: 'desde' | 'hasta', cuenta: PlanCuentasSearchResponse): void {
+    if (tipo === 'desde') {
+      this.cuentaDesde = cuenta.codigoPresentacion ?? '';
+      this.mostrarDropDesde = false;
+      this.sugerenciasDesde = [];
+    } else {
+      this.cuentaHasta = cuenta.codigoPresentacion ?? '';
+      this.mostrarDropHasta = false;
+      this.sugerenciasHasta = [];
+    }
+  }
+
+  cerrarDropdowns(): void {
+    setTimeout(() => {
+      this.mostrarDropDesde = false;
+      this.mostrarDropHasta = false;
+    }, 200);
+  }
   // ============================================================
   // EXPAND / COLLAPSE (tabla común)
   // ============================================================
