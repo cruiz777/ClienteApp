@@ -15,6 +15,8 @@ import {
 } from 'src/app/services/docs-elect.service';
 import { AccionesCellRendererComponent } from './acciones-cell-renderer.component';
 import { MAT_DATE_LOCALE, MAT_DATE_FORMATS, NativeDateAdapter, DateAdapter } from '@angular/material/core';
+import { PDFDocument } from 'pdf-lib';
+import { forkJoin } from 'rxjs';
 
 export class CustomDateAdapter extends NativeDateAdapter {
   override parse(value: any): Date | null {
@@ -97,6 +99,16 @@ export class DocElectronicosComponent implements OnInit {
     };
 
     this.columnDefs = [
+      {
+        headerCheckboxSelection: true,
+        checkboxSelection: true,
+        width: 48,
+        pinned: 'left',
+        suppressHeaderMenuButton: true,
+        sortable: false,
+        filter: false,
+        lockPosition: true,
+      },
       // Índice
       {
         headerName: '#',
@@ -186,31 +198,71 @@ export class DocElectronicosComponent implements OnInit {
     this.buscar();
   }
 
-  imprimirSeleccionadas(): void {
+  async imprimirSeleccionadas(): Promise<void> {
     if (!this.gridApi) return;
 
     const seleccionadas = this.gridApi.getSelectedRows() as DocumentoGrid[];
 
     if (!seleccionadas.length) {
-      this.snackBar.open(
-        'Debe seleccionar al menos un documento para imprimir.',
-        'Cerrar',
-        { duration: 3000 }
-      );
+      this.snackBar.open('Seleccione al menos un documento.', 'Cerrar', { duration: 3000 });
       return;
     }
 
-    seleccionadas.forEach((doc) => {
-      if (doc.puedeReimprimir) {
-        this.docService.abrirPDF(doc.claveAcceso);
-      } else {
+    const aptas = seleccionadas.filter(d => d.puedeReimprimir);
+
+    if (!aptas.length) {
+      this.snackBar.open('Ningún documento seleccionado está autorizado.', 'Cerrar', { duration: 3000 });
+      return;
+    }
+
+    this.loading = true;
+    this.snackBar.open(`Generando PDF con ${aptas.length} documento(s)...`, '', { duration: 2500 });
+
+    try {
+      // ⬅️ Descargar en lotes de 10 para no saturar el servidor
+      const LOTE = 10;
+      const buffers: ArrayBuffer[] = [];
+
+      for (let i = 0; i < aptas.length; i += LOTE) {
+        const lote = aptas.slice(i, i + LOTE);
+        const resultados = await forkJoin(
+          lote.map(doc => this.docService.obtenerPDFComoArrayBuffer(doc.claveAcceso))
+        ).toPromise() as ArrayBuffer[];
+        buffers.push(...resultados);
+
+        // Actualizar progreso
         this.snackBar.open(
-          `El documento ${doc.secuencial} no está autorizado.`,
-          'Cerrar',
-          { duration: 3000 }
+          `Descargando... ${Math.min(i + LOTE, aptas.length)} de ${aptas.length}`,
+          '',
+          { duration: 1500 }
         );
       }
-    });
+
+      // Fusionar todos los PDFs
+      const mergedPdf = await PDFDocument.create();
+
+      for (const buffer of buffers) {
+        const pdf = await PDFDocument.load(buffer);
+        const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        pages.forEach(p => mergedPdf.addPage(p));
+      }
+
+      const mergedBytes = await mergedPdf.save();
+      const blob = new Blob([mergedBytes.buffer as ArrayBuffer], { type: 'application/pdf' });
+      const url  = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href     = url;
+      link.download = `documentos_${new Date().toISOString().slice(0, 10)}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      this.snackBar.open(`✅ ${aptas.length} documento(s) descargados.`, 'Cerrar', { duration: 3000 });
+
+    } catch (err: any) {
+      this.snackBar.open(`❌ Error: ${err.message}`, 'Cerrar', { duration: 5000 });
+    } finally {
+      this.loading = false;
+    }
   }
 
   private verPDF(claveAcceso: string): void {

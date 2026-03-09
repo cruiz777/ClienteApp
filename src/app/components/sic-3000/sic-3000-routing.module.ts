@@ -34,6 +34,7 @@ import { AutorizacionCajaListComponent } from './autorizacion-caja-list/autoriza
 import { TipoDocListComponent } from './tipo-doc-list/tipo-doc-list.component';
 import { ExploradorCxcGeneralComponent } from './exploradores/cxc-general/cxc-general.component';
 import { EstadoCuentaGeneralComponent } from './exploradores/estado-cuenta-general/estado-cuenta-general.component';
+import { DocElecLocalesComponent } from './facturacion/doc-elec-locales/doc-elec-locales.component';
 
 const routes: Routes = [
   {
@@ -112,6 +113,8 @@ const routes: Routes = [
       },
       { path: 'doc-electronicos', component: DocElectronicosComponent},
 
+      { path: 'doc-locales', component: DocElecLocalesComponent},
+      
       { path: 'reporte-ventas', component: ReporteVentasComponent},
 
       // ✅ Ruta para EDITAR producto (con ID)

@@ -52,6 +52,7 @@ import { ReenvioFacComponent } from './facturacion/reenvio-fac/reenvio-fac.compo
 import { SharedModule } from 'src/app/shared/shared.module';
 import { ExploradorCxcGeneralComponent } from './exploradores/cxc-general/cxc-general.component';
 import { EstadoCuentaGeneralComponent } from './exploradores/estado-cuenta-general/estado-cuenta-general.component';
+import { DocElecLocalesComponent } from './facturacion/doc-elec-locales/doc-elec-locales.component';
 
 @NgModule({
   declarations: [
@@ -66,6 +67,7 @@ import { EstadoCuentaGeneralComponent } from './exploradores/estado-cuenta-gener
     FilePreviewComponent,
     LiquidarAnticipoComponent,
     DocElectronicosComponent,
+    DocElecLocalesComponent,
     ReporteVentasComponent,
     AccionesCellRendererComponent,
     ReenvioFacComponent

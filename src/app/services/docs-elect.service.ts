@@ -7,7 +7,42 @@ import { environment } from '../../environments/environment';
 // ========================================
 // INTERFACES (COPIA EXACTA DEL BACKEND)
 // ========================================
+// ========================================
+// INTERFACES - COMPARACIÓN ERP
+// ========================================
 
+export interface DocumentoErpResponse {
+  tipoDocumento: string;
+  numeroDocumento: string;
+  fecha: string;
+  rucCliente: string | null;
+  nombreCliente: string | null;
+  total: number;
+  claveAcceso: string | null;
+  establecimiento: string | null;
+  puntoEmision: string | null;
+  secuencial: string | null;
+  tieneClaveAcceso: boolean;
+  baseCero:          number;
+  baseIva:           number;
+  totalIva:          number;
+  descuento:         number;
+  numeroFacturaRef:  string | null;
+  fechaFacturaRef:   string | null;
+}
+
+export interface ComparacionDocumento {
+  // Datos del ERP
+  erp: DocumentoErpResponse;
+
+  // Resultado del cruce
+  estadoComparacion: 'AUTORIZADO' | 'NO_AUTORIZADO' | 'NO_ENCONTRADO';
+
+  // Datos del doc_electronicos si se encontró
+  docElectronico?: DocumentoEstadoResponse | null;
+}
+
+export type EstadoComparacion = 'AUTORIZADO' | 'NO_AUTORIZADO' | 'NO_ENCONTRADO';
 export interface DocumentoGrid {
   id: number;
   tipo: string;
@@ -73,7 +108,20 @@ export interface ReenviarEmailResponse {
   tipo_documento: string;
   numero_documento: string;
 }
-export type TipoDocumento = 'FACTURA' | 'NC' | 'ND' | 'RET';
+
+export interface ComparacionFila {
+  estadoComparacion: EstadoComparacion;
+  tipoDocumento: string;
+  numeroDocumento: string;
+  fecha: string;
+  rucCliente: string;
+  nombreCliente: string;
+  total: number;
+  claveAcceso: string;
+  observacion: string;
+  fechaAutorizacion: string | null;
+}
+export type TipoDocumento = 'FACTURA' | 'NC' | 'ND' | 'RET' | 'LIQUIDACION';
 
 // ========================================
 // SERVICIO
@@ -85,12 +133,21 @@ export type TipoDocumento = 'FACTURA' | 'NC' | 'ND' | 'RET';
 export class DocumentosService {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = `${environment.docs}/Documentos`;
+  private readonly baseUrlErp = `${environment.docsLocal}/Comparacion`; 
 
-    private readonly tipoDocumentoMap: Record<TipoDocumento, string> = {
-    FACTURA: 'FACTURA',
-    NC: 'NOTA DE CREDITO',    // Con espacios
-    ND: 'NOTA DE DEBITO',     // Con espacios
-    RET: 'RETENCION',
+  private readonly tipoDocumentoMapSri: Record<TipoDocumento, string> = {
+    FACTURA:     'FACTURA',
+    NC:          'NOTA DE CREDITO',
+    ND:          'NOTA DE DEBITO',
+    RET:         'RETENCION',
+    LIQUIDACION: 'LIQUIDACION DE COMPRA',
+  };
+  private readonly tipoDocumentoMapErp: Record<TipoDocumento, string> = {
+    FACTURA:     'FACTURA',
+    NC:          'NOTA_CREDITO',
+    ND:          'NOTA_DEBITO',
+    RET:         'RETENCION',
+    LIQUIDACION: 'LIQUIDACION',
   };
 
   listarDocumentos(
@@ -116,7 +173,7 @@ export class DocumentosService {
       .set('fechaEmisionDesde', this.formatearFecha(fechaDesdeDefault))
       .set('fechaEmisionHasta', this.formatearFecha(fechaHastaDefault));
 
-    const tipoBackend = this.tipoDocumentoMap[tipoDocumento];
+    const tipoBackend = this.tipoDocumentoMapSri[tipoDocumento];
     if (tipoBackend) {
       params = params.set('tipoDocumento', tipoBackend);
     }
@@ -180,6 +237,19 @@ export class DocumentosService {
     });
   }
 
+  //Obtiene los pdfs como buffers para poder concatenarlos 
+  obtenerPDFComoArrayBuffer(claveAcceso: string): Observable<ArrayBuffer> {
+    const params = new HttpParams().set('tipoArchivo', 'PDF');
+    return this.http.get(`${this.baseUrl}/descargar/${claveAcceso}`, {
+      params,
+      responseType: 'arraybuffer'
+    }).pipe(
+      catchError((error: HttpErrorResponse) => {
+        console.error(`❌ Error al obtener PDF como buffer [${claveAcceso}]:`, error);
+        return throwError(() => new Error(error.message || 'Error al descargar PDF'));
+      })
+    );
+  }
 
   
   descargarXML(claveAcceso: string): Observable<HttpResponse<Blob>> {
@@ -325,5 +395,123 @@ export class DocumentosService {
         ));
       })
     );
+  }
+
+  // ── NUEVO MÉTODO: Traer documentos emitidos desde el ERP ──────────────────
+  obtenerDocumentosErp(
+    fechaInicio: Date,
+    fechaFin: Date,
+    tipoDocumento?: string | null,
+    idEmpresa?: number | null,
+    page: number = 1,
+    pageSize: number = 9999  // Pedimos más porque vamos a cruzar en memoria
+  ): Observable<{ docs: DocumentoErpResponse[]; totalItems: number }> {
+    let params = new HttpParams()
+      .set('fechaInicio', this.formatearFecha(fechaInicio))
+      .set('fechaFin', this.formatearFecha(fechaFin))
+      .set('page', page)
+      .set('pageSize', pageSize);
+
+    if (tipoDocumento) {
+      const tipoMapeado = this.tipoDocumentoMapErp[tipoDocumento as TipoDocumento] ?? tipoDocumento;
+      params = params.set('tipoDocumento', tipoMapeado);
+    }
+
+    if (idEmpresa) {
+      params = params.set('idEmpresa', idEmpresa);
+    }
+
+    return this.http
+      .get<ApiResponse<PaginationResponse<DocumentoErpResponse>>>(
+        `${this.baseUrlErp}/documentos-erp`,
+        { params }
+      )
+      .pipe(
+        map((response) => {
+          if (!response?.data?.items) {
+            return { docs: [], totalItems: 0 };
+          }
+          return {
+            docs: response.data.items,
+            totalItems: response.data.totalItems,
+          };
+        }),
+        catchError((error: HttpErrorResponse) => {
+          console.error('💥 ERROR al obtener docs ERP:', error);
+          return throwError(() => new Error(error.message || 'Error desconocido'));
+        })
+      );
+  }
+
+  // ── NUEVO MÉTODO: Cruzar ERP vs doc_electronicos ──────────────────────────
+  cruzarDocumentos(
+    docsErp: DocumentoErpResponse[],
+    docsElectronicos: DocumentoEstadoResponse[]
+  ): ComparacionDocumento[] {
+    return docsErp.map((erp) => {
+      let docElectronico: DocumentoEstadoResponse | undefined;
+
+      if (erp.claveAcceso) {
+        //Match directo por ClaveAcceso
+        docElectronico = docsElectronicos.find(
+          (d) => d.clave_acceso === erp.claveAcceso
+        );
+      } else if (erp.establecimiento && erp.secuencial) {
+        //Fallback: usar establecimiento/puntoEmision/secuencial
+        // que el SRI YA extrae via DocumentoHelper
+        docElectronico = docsElectronicos.find((d) => {
+          return (
+            d.establecimiento === erp.establecimiento &&
+            d.punto_emision === erp.puntoEmision &&
+            d.secuencial === erp.secuencial
+          );
+        });
+      }
+
+      let estadoComparacion: EstadoComparacion;
+
+      if (!docElectronico) {
+        estadoComparacion = 'NO_ENCONTRADO';   // ❌ Rojo
+      } else if (docElectronico.observacion?.includes('AUTORIZADO')) {
+        estadoComparacion = 'AUTORIZADO';       // ⬜ Normal
+      } else {
+        estadoComparacion = 'NO_AUTORIZADO';   // 🟡 Amarillo
+      }
+
+      return { erp, estadoComparacion, docElectronico: docElectronico ?? null };
+    });
+  }
+
+  // Traer TODOS los tipos de doc_electronicos (sin filtro de tipo)
+  listarTodosDocumentosRaw(
+    fechaDesde: Date,
+    fechaHasta: Date,
+    page: number = 1,
+    pageSize: number = 500
+  ): Observable<{ docs: DocumentoEstadoResponse[]; totalItems: number }> {
+    const params = new HttpParams()
+      .set('idEmisor', environment.idEmisorPorDefecto)
+      .set('page', page)
+      .set('pageSize', pageSize)
+      .set('orderBy', 'fecha_emision')
+      .set('orderDirection', 'desc')
+      .set('fechaEmisionDesde', this.formatearFecha(fechaDesde))
+      .set('fechaEmisionHasta', this.formatearFecha(fechaHasta));
+
+    return this.http
+      .get<ApiResponse<PaginationResponse<DocumentoEstadoResponse>>>(this.baseUrl, { params })
+      .pipe(
+        map((response) => {
+          if (!response?.data?.items) return { docs: [], totalItems: 0 };
+          return {
+            docs: response.data.items,
+            totalItems: response.data.totalItems,
+          };
+        }),
+        catchError((error: HttpErrorResponse) => {
+          console.error('ERROR listarTodosDocumentosRaw:', error);
+          return throwError(() => new Error(error.message || 'Error desconocido'));
+        })
+      );
   }
 }
