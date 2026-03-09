@@ -1005,7 +1005,7 @@ toggleLetter(letter: string): void {
       correo,
       facBloque,
       GrupoCliente,
-      subtotalSIva: subtotal,
+      subtotalSIva: 0,
       subtotalCalculado: subtotal,
       descuentoTotalCalculado: 0,
       ivaTotalCalculado: iva,
