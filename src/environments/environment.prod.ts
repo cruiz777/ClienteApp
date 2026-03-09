@@ -21,7 +21,7 @@ export const environment = {
     idEmisorPorDefecto: 4,
     rucUlr:'http://pichincha.gapsystem.net:10048/api/services/ruc/',
     cedulaUrl:'http://pichincha.gapsystem.net:10048/api/services/cedula/',
-
+  docsLocal: 'http://localhost:8000/docs-local/api',
       apiKey: 'ilGxoWJ9Arp0JdSNuO81aq9sX6ZW9gK9767867tgb',
       anexoTransaccionalUrl: 'http://181.39.162.182:8000/anexo/api',
   
