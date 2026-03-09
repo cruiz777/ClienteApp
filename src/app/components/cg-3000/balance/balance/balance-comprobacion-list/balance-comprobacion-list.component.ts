@@ -66,6 +66,10 @@ import { ZonaResponse } from 'src/app/interfaces/responses/zona-response'
  * Messages
  * ========================== */
 import { RequiredFieldsToastService } from 'src/app/components/utils/messages/required-fields-toast.service';
+import { PlanCuentasService } from 'src/app/services/plan-cuentas.service';
+import { PlanCuentasSearchResponse } from 'src/app/interfaces/responses/plan-cuentas-search.response';
+import { debounceTime, distinctUntilChanged, of, Subject, switchMap } from 'rxjs';
+import { UsuarioService } from 'src/app/services/usuario.service';
 
 /* ==========================================================
  * Tipos auxiliares (para reporte jerárquico y totales)
@@ -146,6 +150,9 @@ export class BalanceComprobacionComponent implements OnInit {
     idZona: undefined,
   };
 
+  get idEmpresa(): number {
+    return this.usuarioService.getEmpresaId() ?? 1;
+  }
   // Modos UI (activan/ocultan secciones en el HTML mediante *ngIf)
   modoFiltro1: 'cuenta' | null = null;
   modoFiltro2: 'local' | null = null;
@@ -280,7 +287,9 @@ export class BalanceComprobacionComponent implements OnInit {
     private balanceService: BalanceService,
     private localService: LocalesService,
     private zonaService: ZonaService,
-    private message: RequiredFieldsToastService
+    private message: RequiredFieldsToastService,
+    private planCuentasService: PlanCuentasService,
+    private usuarioService: UsuarioService
   ) { }
 
   // API de AG Grid (para operaciones: getFilterModel, forEachNodeAfterFilterAndSort, pinned rows, etc.)
@@ -289,6 +298,15 @@ export class BalanceComprobacionComponent implements OnInit {
   // Flag interno: evita loops cuando reaplicas el filtro de forma programática
   private _reaplicandoFiltro = false;
 
+    // Buscador cuenta A
+  sugerenciasA: PlanCuentasSearchResponse[] = [];
+  mostrarDropA = false;
+  private searchA$ = new Subject<string>();
+
+  // Buscador cuenta B
+  sugerenciasB: PlanCuentasSearchResponse[] = [];
+  mostrarDropB = false;
+  private searchB$ = new Subject<string>();
   // trackBy (mejora performance en combos)
   trackById = (_: number, item: any) => item.id;
   trackByIdZona = (_: number, item: any) => item.idZona;
@@ -301,6 +319,28 @@ export class BalanceComprobacionComponent implements OnInit {
     this.setRangoMesActual(); 
     this.cargarLocales();
     this.cargarZona();
+      // ← AGREGAR: subscripciones para búsqueda con debounce
+    this.searchA$.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(texto => texto.length >= 2
+        ? this.planCuentasService.buscarPorNombre(texto, this.idEmpresa)
+        : of([]))
+    ).subscribe(res => {
+      this.sugerenciasA = res;
+      this.mostrarDropA = res.length > 0;
+    });
+
+    this.searchB$.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap(texto => texto.length >= 2
+        ? this.planCuentasService.buscarPorNombre(texto, this.idEmpresa)
+        : of([]))
+    ).subscribe(res => {
+      this.sugerenciasB = res;
+      this.mostrarDropB = res.length > 0;
+    });
   }
 
   /* ==========================================================
@@ -1609,5 +1649,37 @@ private toISODate(d: Date): string {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+  // Cuando el usuario escribe en el input de Cuenta A/B
+  onBuscarCuenta(tipo: 'A' | 'B', ev: Event): void {
+    const texto = (ev.target as HTMLInputElement).value ?? '';
+    // Si parece código numérico, usa tu lógica actual; si es texto, busca por nombre
+    if (/^\d/.test(texto)) {
+      this.onCuentaInput(tipo, ev); // lógica existente
+    } else {
+      if (tipo === 'A') this.searchA$.next(texto);
+      else this.searchB$.next(texto);
+    }
+  }
+
+  // Cuando selecciona una sugerencia
+  seleccionarCuenta(tipo: 'A' | 'B', cuenta: PlanCuentasSearchResponse): void {
+    const codigo = cuenta.codigoPresentacion ?? '';
+    if (tipo === 'A') {
+      this.filtros.cuentaA = codigo;
+      this.mostrarDropA = false;
+      this.sugerenciasA = [];
+    } else {
+      this.filtros.cuentaB = codigo;
+      this.mostrarDropB = false;
+      this.sugerenciasB = [];
+    }
+  }
+
+  cerrarDropdowns(): void {
+    setTimeout(() => {
+      this.mostrarDropA = false;
+      this.mostrarDropB = false;
+    }, 200);
+  }
 
 }

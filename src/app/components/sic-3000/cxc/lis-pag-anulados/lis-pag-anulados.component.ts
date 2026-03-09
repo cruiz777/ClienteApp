@@ -173,7 +173,8 @@ export class LisPagAnuladosComponent implements OnInit {
   visiblePages: number[] = [];
   rowHeight = 34;
   loading = false;
-
+  paginationPageSize = 20;
+  paginationPageSizeSelector = [10, 20, 50];
   ngOnInit(): void {
     this.logo();
     this.loadPage(0);
@@ -227,7 +228,7 @@ export class LisPagAnuladosComponent implements OnInit {
       clienteCodigo,
       estado: estadoBackend, 
       page: index + 1,       // API: 1-based
-      pageSize: this.pageSize
+      pageSize: 9999 
     }).subscribe({
       next: (page) => {
         // 1) Items recibidos del backend
@@ -240,24 +241,21 @@ export class LisPagAnuladosComponent implements OnInit {
         }
 
         // 3) Si hubo filtrado, paginamos localmente
-        const total = items.length;
+        const total = (page as any).totalItems ?? items.length;
         this.pageSize = page.pageSize ?? this.pageSize;
 
         // Ajusta pageIndex según la navegación pedida
         this.pageIndex = Math.max(0, index);
 
         // Cálculo de páginas y corte local
-        this.pageCount = Math.max(1, Math.ceil(total / this.pageSize));
+        this.pageCount = (page as any).totalPages ?? Math.max(1, Math.ceil(total / this.pageSize));
         const start = this.pageIndex * this.pageSize;
         const end = start + this.pageSize;
-        const pageSlice = items.slice(start, end);
-
-        // Mapear a filas
-        this.pagedData = pageSlice.map(i => this.mapRow(i as any));
+        this.pagedData = items.map(i => this.mapRow(i as any));
 
         // Etiqueta de rango
         const dispStart = total > 0 ? start + 1 : 0;
-        const dispEnd = Math.min(total, end);
+        const dispEnd = Math.min(total, start + items.length);
         this.rangeLabel = total > 0 ? `${dispStart} a ${dispEnd} de ${total} entradas` : '0 a 0 de 0 entradas';
 
         // Páginas visibles

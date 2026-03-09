@@ -58,7 +58,7 @@
   <div class="table-wrap">
     <ag-grid-angular
       class="ag-theme-alpine compact-grid full"
-      style="width: 100%; height: 420px;"
+      style="width: 100%; height: 620px;"
       [defaultColDef]="defaultColDef"
       [columnDefs]="columnDefs"
       [rowData]="pagedData"
@@ -66,11 +66,14 @@
       [rowHeight]="rowHeight"
       [getRowHeight]="getRowHeight"
       [tooltipShowDelay]="200"
-      (gridReady)="onGridReady($event)">
+      (gridReady)="onGridReady($event)"
+      [pagination]="true"
+      [paginationPageSize]="20"
+      [paginationPageSizeSelector]="[10, 20, 50]">
     </ag-grid-angular>
 
     <!-- Footer / paginación -->
-    <div class="footer">
+    <!-- <div class="footer">
       <div class="left">
         <span>No Páginas</span>
         <select class="in compact small" [value]="pageSize" (change)="changePageSize($any($event.target).value)">
@@ -93,6 +96,6 @@
         <button class="icon" (click)="next()" [disabled]="(pageIndex+1)>=pageCount" title="Siguiente">›</button>
         <button class="icon" (click)="goToLast()" [disabled]="(pageIndex+1)>=pageCount" title="Última">»</button>
       </div>
-    </div>
+    </div> -->
   </div>
 </div>

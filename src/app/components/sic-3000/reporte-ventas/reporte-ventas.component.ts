@@ -294,6 +294,22 @@ export class ReporteVentasComponent implements OnInit {
         filter: false,
       },
       {
+        headerName: 'Código',
+        field: 'codigoRetencion',
+        width: 100,
+      },
+      {
+        headerName: 'Descripción',
+        field: 'descripcionRetencion',
+        minWidth: 180,
+        flex: 1,
+      },
+      {
+        headerName: 'No. Factura',
+        field: 'numeroFactura',
+        width: 150,
+      },
+      {
         headerName: 'Fecha',
         field: 'fecha',
         width: 120,
@@ -311,32 +327,10 @@ export class ReporteVentasComponent implements OnInit {
         width: 130,
       },
       {
-        headerName: 'No. Factura',
-        field: 'numeroFactura',
-        width: 150,
-      },
-      {
-        headerName: 'No. Retención',
-        field: 'numeroRetencion',
-        width: 150,
-      },
-      {
-        headerName: 'Tipo Comprobante',
-        field: 'tipoComprobante',
-        width: 150,
-      },
-      {
         headerName: 'Base Imponible',
         field: 'baseImponible',
         width: 130,
         valueFormatter: (p) => this.formatoMoneda(p),
-        type: 'rightAligned',
-      },
-      {
-        headerName: '% Retención',
-        field: 'porcentajeRetencion',
-        width: 110,
-        valueFormatter: (p) => p.value != null ? p.value.toFixed(2) + '%' : '',
         type: 'rightAligned',
       },
       {
@@ -345,16 +339,6 @@ export class ReporteVentasComponent implements OnInit {
         width: 130,
         valueFormatter: (p) => this.formatoMoneda(p),
         type: 'rightAligned',
-      },
-      {
-        headerName: 'Concepto',
-        field: 'concepto',
-        minWidth: 200,
-      },
-      {
-        headerName: 'Código',
-        field: 'codigoRetencion',
-        width: 100,
       },
     ];
   }
@@ -594,17 +578,14 @@ export class ReporteVentasComponent implements OnInit {
     }
 
     const filaTotales: any = {
-      fecha: '',
-      contribuyente: 'TOTALES',
-      rucCi: '',
-      numeroFactura: '',
-      numeroRetencion: '',
-      tipoComprobante: '',
-      baseImponible: this.retencionesTotales.totalBaseImponible,
-      porcentajeRetencion: null,
-      valorRetenido: this.retencionesTotales.totalValorRetenido,
-      concepto: '',
       codigoRetencion: '',
+      descripcionRetencion: 'TOTALES',
+      numeroFactura: '',
+      fecha: '',
+      contribuyente: '',
+      rucCi: '',
+      baseImponible: this.retencionesTotales.totalBaseImponible,
+      valorRetenido: this.retencionesTotales.totalValorRetenido,
     };
 
     this.retencionesFilaTotales = [filaTotales];
@@ -800,51 +781,32 @@ export class ReporteVentasComponent implements OnInit {
   }
 
   private crearHojaRetenciones(workbook: Workbook, data: ReporteRetencionesResponse): void {
-    const ws = workbook.addWorksheet('Retenciones');
+    const ws = workbook.addWorksheet('Retenciones Venta');
 
     const headers = [
-      'Fecha',
-      'Contribuyente',
-      'RUC/CI',
-      'No. Factura',
-      'No. Retención',
-      'Tipo Comprobante',
-      'Base Imponible',
-      '% Retención',
-      'Valor Retenido',
-      'Concepto',
-      'Código',
+      'Código', 'Descripción', 'No. Factura',
+      'Fecha', 'Contribuyente', 'RUC/CI',
+      'Base Imponible', 'Valor Retenido',
     ];
     ws.addRow(headers);
 
     data.paginacion.items.forEach((item) => {
       ws.addRow([
+        item.codigoRetencion,
+        item.descripcionRetencion,
+        item.numeroFactura,
         this.formatearFecha(item.fecha),
         item.contribuyente,
         item.rucCi,
-        item.numeroFactura,
-        item.numeroRetencion,
-        item.tipoComprobante,
         item.baseImponible,
-        item.porcentajeRetencion,
         item.valorRetenido,
-        item.concepto,
-        item.codigoRetencion,
       ]);
     });
 
     ws.addRow([
-      '',
-      '',
-      '',
-      '',
-      '',
-      '',
-      'TOTALES',
-      '',
+      '', '', '', '', '', 'TOTALES',
+      data.totales.totalBaseImponible,
       data.totales.totalValorRetenido,
-      '',
-      '',
     ]);
 
     this.aplicarEstilosExcel(ws);
