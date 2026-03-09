@@ -24,5 +24,7 @@ export const environment = {
 
       apiKey: 'ilGxoWJ9Arp0JdSNuO81aq9sX6ZW9gK9767867tgb',
       anexoTransaccionalUrl: 'http://181.39.162.182:8000/anexo/api',
+
+      conciliacionUrl:'http://181.39.162.182:8000/conciliacion/api',
   
 };

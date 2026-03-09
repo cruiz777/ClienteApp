@@ -11,7 +11,6 @@ import * as JSZip from 'jszip';
 import * as ExcelJS from 'exceljs';
 import { AsientoVentaService } from 'src/app/services/asiento-venta.service';
 
-
 import { saveAs } from 'file-saver';
 import {
   FacturaGlobalService,
@@ -96,26 +95,30 @@ export class FacturacionGlobalComponent implements OnInit {
   zonas: Zona[] = [];
   trackByZonaId = (_: number, z: Zona) => z.id;
   cargandoZonas = false;
-  
-  // Configuración de procesamiento
-  private readonly CONCURRENCY = 1;     // ← en serie
-  private readonly MAX_RETRIES = 3;     // reintentos por cada paso
-  private readonly RETRY_BASE_MS = 800; // 800, 1600, 3200
-  private readonly PAUSA_MS = 200;      // pausa entre facturas (evita colisiones secuencial)
 
-  // ID del producto de mantenimiento (ajusta al real)
+  // ===== NUEVO: barra alfabética A-Z =====
+  alphabet: string[] = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  selectedLetters = new Set<string>();
+
+  // Configuración de procesamiento
+  private readonly CONCURRENCY = 1;
+  private readonly MAX_RETRIES = 3;
+  private readonly RETRY_BASE_MS = 800;
+  private readonly PAUSA_MS = 200;
+
+  // ID del producto de mantenimiento
   private readonly PRODUCTO_MANTENIMIENTO_ID = 2878981;
 
-  // getters
   get anioCtrl() { return this.formFactura.get('anio')!; }
   get zonaCtrl() { return this.formFactura.get('zona')!; }
-gridOptions: any = {
-  rowSelection: 'multiple',
-  rowMultiSelectWithClick: true,   // clic agrega a selección
-  suppressRowDeselection: true,    // clic NO deselecciona lo ya seleccionado
-  suppressRowClickSelection: true, // ✅ selección SOLO por checkbox (recomendado en tu caso)
-  getRowId: (p: any) => String(p.data?.codCliente ?? ''),
-};
+
+  gridOptions: any = {
+    rowSelection: 'multiple',
+    rowMultiSelectWithClick: true,
+    suppressRowDeselection: true,
+    suppressRowClickSelection: true,
+    getRowId: (p: any) => String(p.data?.codCliente ?? ''),
+  };
 
   @HostListener('window:resize')
   onResize() { this.gridApi?.sizeColumnsToFit(); }
@@ -237,7 +240,7 @@ Prefijo: ${d.prefijo ?? ''}`;
     private dialog: MatDialog,
     private notasObsService: NotasObsService,
     private facturaService: FacturacionService,
-     private asientoVentaService: AsientoVentaService,
+    private asientoVentaService: AsientoVentaService,
     private workflow: FacturacionWorkflowService
   ) { }
 
@@ -267,20 +270,23 @@ Prefijo: ${d.prefijo ?? ''}`;
     });
   }
 
-onGridReady(e: GridReadyEvent) {
-  this.gridApi = e.api;
+  onGridReady(e: GridReadyEvent) {
+    this.gridApi = e.api;
 
-  this.gridApi.setGridOption('isExternalFilterPresent', this.isExternalFilterPresent);
-  this.gridApi.setGridOption('doesExternalFilterPass', this.doesExternalFilterPass);
+    this.gridApi.setGridOption('isExternalFilterPresent', this.isExternalFilterPresent);
+    this.gridApi.setGridOption('doesExternalFilterPass', this.doesExternalFilterPass);
 
-  // ✅ cuando el grid cambia modelo (filtros / sort / refresh), re-aplica selección
- 
+    if (this.pendingQuickFilter) {
+      this.gridApi.setGridOption('quickFilterText', this.pendingQuickFilter);
+    }
 
-  if (this.pendingQuickFilter) this.gridApi.setGridOption('quickFilterText', this.pendingQuickFilter);
+    // importante para restaurar selección luego de filtros/sort
+    this.gridApi.addEventListener('modelUpdated', () => {
+      this.restoreSelection();
+    });
 
-  this.gridApi.sizeColumnsToFit();
-}
-
+    this.gridApi.sizeColumnsToFit();
+  }
 
   cambiarTab(tab: 'Factura' | 'Listado') {
     this.activeTab = tab;
@@ -365,24 +371,132 @@ onGridReady(e: GridReadyEvent) {
     return isNaN(n) ? 0 : n;
   }
 
- onSelectionChanged() {
-  if (!this.gridApi) return;
+  onSelectionChanged() {
+    if (!this.gridApi) return;
 
-  // ✅ guarda selección estable
+    this.saveSelection();
+
+    const rows = this.gridApi.getSelectedRows();
+    this.selectedCount = rows.length;
+    this.totalSeleccionado = rows.reduce((sum, r) => sum + this.parseNumber(r.total), 0);
+
+    if (this.showSoloSeleccionados) {
+      this.gridApi.onFilterChanged();
+    }
+  }
+
+  // ===== FILTRO EXTERNO: seleccionados + letras A-Z =====
+  isExternalFilterPresent = (): boolean => {
+    return this.showSoloSeleccionados || this.selectedLetters.size > 0;
+  };
+
+  doesExternalFilterPass = (node: IRowNode): boolean => {
+    const data = node.data ?? {};
+
+    // filtro por seleccionados
+    if (this.showSoloSeleccionados && !node.isSelected()) {
+      return false;
+    }
+
+    // filtro alfabético A-Z
+    if (this.selectedLetters.size > 0) {
+      const cliente = String(data.cliente ?? '').trim().toUpperCase();
+
+      if (!cliente) return false;
+
+      // obtiene la primera letra alfabética real
+      const match = cliente.match(/[A-ZÁÉÍÓÚÑ]/i);
+      const primeraLetra = match ? match[0].toUpperCase() : '';
+
+      if (!primeraLetra || !this.selectedLetters.has(primeraLetra.normalize('NFD').replace(/[\u0300-\u036f]/g, ''))) {
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  toggleSoloSeleccionados() {
+    this.showSoloSeleccionados = !this.showSoloSeleccionados;
+    this.gridApi?.onFilterChanged();
+  }
+
+  limpiarSeleccion() {
+    this.gridApi?.deselectAll();
+    this.onSelectionChanged();
+  }
+
+  // ===== NUEVO: Métodos filtro alfabético =====
+toggleLetter(letter: string): void {
+  const l = (letter || '').toUpperCase();
+  if (!l || !this.gridApi) return;
+
+  const wasActive = this.selectedLetters.has(l);
+
+  if (wasActive) {
+    this.selectedLetters.delete(l);
+  } else {
+    this.selectedLetters.add(l);
+  }
+
+  this.gridApi.forEachNode((node) => {
+    const cliente = String(node.data?.cliente ?? '').trim().toUpperCase();
+    if (!cliente) return;
+
+    // toma la primera letra alfabética real
+    const match = cliente.match(/[A-ZÁÉÍÓÚÑ]/i);
+    const primeraLetraRaw = match ? match[0].toUpperCase() : '';
+    const primeraLetra = primeraLetraRaw
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+
+    if (primeraLetra === l) {
+      if (wasActive) {
+        // si la letra estaba activa y ahora se quitó, deselecciona
+        node.setSelected(false);
+      } else {
+        // si la letra no estaba activa y ahora se activó, selecciona
+        node.setSelected(true);
+      }
+    }
+  });
+
   this.saveSelection();
-
-  const rows = this.gridApi.getSelectedRows();
-  this.selectedCount = rows.length;
-  this.totalSeleccionado = rows.reduce((sum, r) => sum + this.parseNumber(r.total), 0);
-
-  if (this.showSoloSeleccionados) this.gridApi.onFilterChanged();
+  this.onSelectionChanged();
+  this.gridApi.onFilterChanged();
 }
+  isLetterActive(letter: string): boolean {
+    return this.selectedLetters.has((letter || '').toUpperCase());
+  }
 
-  // Filtro externo (solo seleccionados)
-  isExternalFilterPresent = (): boolean => this.showSoloSeleccionados;
-  doesExternalFilterPass = (node: IRowNode): boolean => !!node.isSelected();
-  toggleSoloSeleccionados() { this.showSoloSeleccionados = !this.showSoloSeleccionados; this.gridApi?.onFilterChanged(); }
-  limpiarSeleccion() { this.gridApi?.deselectAll(); this.onSelectionChanged(); }
+  clearLetters(): void {
+  if (!this.gridApi) {
+    this.selectedLetters.clear();
+    return;
+  }
+
+  if (this.selectedLetters.size > 0) {
+    this.gridApi.forEachNode((node) => {
+      const cliente = String(node.data?.cliente ?? '').trim().toUpperCase();
+      if (!cliente) return;
+
+      const match = cliente.match(/[A-ZÁÉÍÓÚÑ]/i);
+      const primeraLetraRaw = match ? match[0].toUpperCase() : '';
+      const primeraLetra = primeraLetraRaw
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '');
+
+      if (this.selectedLetters.has(primeraLetra)) {
+        node.setSelected(false);
+      }
+    });
+  }
+
+  this.selectedLetters.clear();
+  this.saveSelection();
+  this.onSelectionChanged();
+  this.gridApi.onFilterChanged();
+}
 
   buscar() {
     if (this.formFactura.invalid) return;
@@ -458,13 +572,17 @@ onGridReady(e: GridReadyEvent) {
         next: ({ baseRows, emailMap }) => {
           this.rowData = baseRows.map(r => ({ ...r, email: emailMap[Number(r.codCliente)] ?? '' }));
 
+          // reset de selección al cargar nueva consulta
+          this.selectedIds.clear();
+          this.totalSeleccionado = 0;
+          this.selectedCount = 0;
+
           if (this.gridApi) {
             this.gridApi.setGridOption('rowData', this.rowData);
             this.gridApi.sizeColumnsToFit();
-            //this.gridApi.deselectAll();
+            this.gridApi.onFilterChanged(); // reaplica filtro externo A-Z si existiera
           }
-          this.totalSeleccionado = 0;
-          this.selectedCount = 0;
+
           this.habilitarFacturar = true;
           this.deshabilitarBuscar = false;
         },
@@ -476,7 +594,6 @@ onGridReady(e: GridReadyEvent) {
       });
   }
 
-  // ========= FACTURAR (CONFIRMAR + ENVÍA + GENERA XML) =========
   facturar() {
     if (!this.cajaAsignada) {
       this.dialog.open(CustomMessageBoxComponent, {
@@ -587,12 +704,10 @@ onGridReady(e: GridReadyEvent) {
                 throw { status: 400, error: { message: 'Datos incompletos para la factura.' } };
               }
 
-              // ✅ ahora el workflow acepta buildAsiento(idNota, numeroFactura)
               return this.workflow.procesarFacturaConAsientoObligatorio(
                 payload,
                 (idNota: number, numeroFactura?: string) =>
-  this.buildAsientoVentaRequestGlobal(idNota, numeroFactura ?? '', row, payload)
-
+                  this.buildAsientoVentaRequestGlobal(idNota, numeroFactura ?? '', row, payload)
               ).pipe(
                 retryWhen(err$ =>
                   err$.pipe(
@@ -612,8 +727,8 @@ onGridReady(e: GridReadyEvent) {
                   procesadas++;
 
                   row.idNotaGenerada = res.idNota;
-                  row.asiento = res.numdocVT;     // si quieres "VT-xxxxx", pon: `VT-${res.numdocVT}`
-                  row.xml = res.xmlFileName ?? ''; // ✅ ahora sí existe
+                  row.asiento = res.numdocVT;
+                  row.xml = res.xmlFileName ?? '';
 
                   if (dlg.componentInstance) {
                     dlg.componentInstance.data = {
@@ -707,6 +822,9 @@ onGridReady(e: GridReadyEvent) {
 
     this.hasQf = false;
     this.pendingQuickFilter = '';
+    this.selectedLetters.clear();
+    this.selectedIds.clear();
+
     if (this.qfInput) this.qfInput.nativeElement.value = '';
 
     this.rowData = [];
@@ -879,7 +997,7 @@ onGridReady(e: GridReadyEvent) {
       idUsuarioCajero,
       idDescuentoGlobal: null,
       porcentajeDescuentoGlobal: null,
-      observaciones: '.',
+      observaciones: `Grupo: ${GrupoCliente}`,
       anioFactura: anio,
       numeroOrdenCompra: '.',
       numeroGuiaRemision: '.',
@@ -1254,192 +1372,188 @@ onGridReady(e: GridReadyEvent) {
     return `${yyyy}-${mm}-${dd}T00:00:00`;
   }
 
-private buildAsientoVentaRequestGlobal(
-  idNota: number,
-  numnota: string,
-  row: any,
-  payload: FacturaCrearRequest
-): AsientoVentaRequest {
+  private buildAsientoVentaRequestGlobal(
+    idNota: number,
+    numnota: string,
+    row: any,
+    payload: FacturaCrearRequest
+  ): AsientoVentaRequest {
 
-  const ID_TIPO_ASIENTO_VT = 3;
-  const MODULO_VENTAS = 2;
+    const ID_TIPO_ASIENTO_VT = 3;
+    const MODULO_VENTAS = 2;
 
-  const ID_LOCAL = 1;
-  const ID_COD_CONTABLE = Number(row?.idcodcontable ?? 0) || 0;
+    const ID_LOCAL = 1;
+    const ID_COD_CONTABLE = Number(row?.idcodcontable ?? 0) || 0;
 
-  if (!ID_COD_CONTABLE) {
-    throw { status: 400, error: { message: `Cliente ${row?.codCliente}: no tiene idCodContable asignado.` } };
-  }
-
-  const CTA_CXC = { idPlan: 19, cod: '110205-001' };
-  const CTA_ING = { idPlan: 235, cod: '410101-003' };
-  const CTA_IVA = { idPlan: 131, cod: '210602-001' };
-
-  const fechaUI = String(this.formCaja.get('fechaFacturacion')?.value ?? '').trim();
-  const fechaIso = this.toIsoFromDdMmYyyy(fechaUI);
-
-  // OJO: en tu ejemplo el backend recibe datetime con hora (09:42:41).
-  // Si quieres igualarlo exacto:
-  const nowTime = new Date().toTimeString().slice(0, 8);
-  const fechaIsoConHora = fechaIso.replace('T00:00:00', `T${nowTime}`);
-
-  const anio = String(this.formFactura.get('anio')?.value ?? new Date().getFullYear()).trim();
-
-  const z = this.formFactura.get('zona')?.value;
-  const idZona = (z === '' || z == null) ? 1 : Number(z);
-
-  const idEmpresa = Number((this.usuarioActual as any)?.id_empresa ?? 1) || 1;
-  const idUsuario = Number(this.usuarioActual?.id_usuario ?? 0) || 0;
-
-  const beneficiario = String(row?.cliente ?? '').trim();
-
-  const subtotal = Number(payload.subtotalCalculado ?? payload.subtotalSIva ?? 0);
-  const iva = Number(payload.ivaTotalCalculado ?? 0);
-  const total = Number(payload.totalCalculado ?? 0);
-
-  const cab: any = {
-    IdCabMaestro: 0,
-    idZona:1,
-    idUsuario,
-    idEmpresa,
-    idTipoAsiento: ID_TIPO_ASIENTO_VT,
-    tipdoc: 'VT',
-    numdoc: 0,
-    anio,
-    fechatransaccion: fechaIsoConHora,
-    fechaingreso: fechaIsoConHora,
-    observacion: `ASIENTO POR VENTA FACTURA ${numnota}`,
-    totdebe: total,
-    tothaber: total,
-    beneficiario,
-    cierre: '',
-    fechacierre: null,
-    solicitado: '',
-    depto: '',
-    autorizado: '',
-    homCodigo: 0,
-    estado: true,
-    modulo: MODULO_VENTAS,
-    detalles: []
-  };
-
-  const detBase = (numlinea: number) => ({
-    IdDetMaestro: 0,
-    IdCabMaestro: 0,
-    numlinea,
-    anio,
-    fechatransaccion: fechaIsoConHora,
-    fechaingreso: fechaIsoConHora,
-    hora: nowTime,
-    idZona,
-    idCentroCostos: null,
-    idLocal: ID_LOCAL,
-    idPlanCuentas: 0,
-    codprePc: '',
-    idCodContable: ID_COD_CONTABLE,
-    nocomprobante: numnota,
-    docurelacionado: '',
-    cheque: 0,
-    beneficiario: '',
-    debe: 0,
-    haber: 0,
-    comentario: '',
-    idMovBancario: 1,
-    movbancario: '0',      // ✅ string (tu backend lo pidió así)
-    cierre: '',
-    fechacierre: null,
-    conciliado: '',
-    fechaconciliado: null,
-    idSustentoTrib: null,
-    idTipoCompSri: null,
-    autorizacion: '',
-    fechacaduca: null,
-    idTipoRetencion: null,
-    idProyecto: null,
-    idSubproyecto: null,
-    transferido: false,    // ✅ boolean
-    fechatransferido: null,
-    fechavencimiento: null,
-    idConciliacion: 0,
-    valorLetras: '',
-    estadoIngreso: true,
-    autorizacionRelacionado: '',
-    fechaCadRelacionado: null
-  });
-
-  const d1 = detBase(1);
-  d1.idPlanCuentas = CTA_CXC.idPlan;
-  d1.codprePc = CTA_CXC.cod;
-  d1.debe = total;
-  d1.comentario = `COBRO FACTURA ${numnota} - CREDITO`;
-
-  const d2 = detBase(2);
-  d2.idPlanCuentas = CTA_ING.idPlan;
-  d2.codprePc = CTA_ING.cod;
-  d2.haber = subtotal;
-  d2.comentario = `INGRESO POR VENTA FACTURA ${numnota} - ${String(payload.detalles?.[0]?.nombreProductoPersonalizado ?? '').trim()}`;
-
-  const d3 = detBase(3);
-  d3.idPlanCuentas = CTA_IVA.idPlan;
-  d3.codprePc = CTA_IVA.cod;
-  d3.haber = iva;
-  d3.comentario = `IVA RECAUDADO FACTURA ${numnota}`;
-
-  cab.detalles = [d1, d2, d3];
-  return cab as AsientoVentaRequest;
-}
-private actualizarNotaConAsiento(idNota: number, numdoc: string | null) {
-  if (!numdoc) return of(false);
-
-  const numeroAsientoConPrefijo = `VT-${numdoc}`;
-
-  return this.facturaService.actualizarAsientoContable(idNota, numeroAsientoConPrefijo).pipe(
-    tap((resp: any) => {
-      const tipo = (resp?.type || '').toString().toLowerCase();
-      if (tipo === 'success' || tipo === 'warning') {
-        console.log(`[nota] Asiento actualizado en nota ${idNota}: ${numeroAsientoConPrefijo}`);
-      } else {
-        console.warn('[nota] No actualizó asiento:', resp);
-      }
-    }),
-    map((resp: any) => {
-      const tipo = (resp?.type || '').toString().toLowerCase();
-      return (tipo === 'success' || tipo === 'warning');
-    }),
-    catchError((err: any) => {
-      console.error('[nota] Error actualizando asiento en nota:', err);
-      return of(false);
-    })
-  );
-}
-private selectedIds = new Set<string>();
-
-private saveSelection(): void {
-  if (!this.gridApi) return;
-  this.selectedIds.clear();
-  for (const r of (this.gridApi.getSelectedRows() ?? [])) {
-    const id = String(r?.codCliente ?? '');
-    if (id) this.selectedIds.add(id);
-  }
-}
-
-private restoreSelection(): void {
-  if (!this.gridApi || this.selectedIds.size === 0) return;
-
-  // evita eventos repetitivos mientras marcamos
-  this.gridApi.setGridOption('suppressRowClickSelection', true);
-
-  this.gridApi.forEachNode((node) => {
-    const id = String(node.data?.codCliente ?? '');
-    const shouldSelect = this.selectedIds.has(id);
-    if (node.isSelected() !== shouldSelect) {
-      node.setSelected(shouldSelect);
+    if (!ID_COD_CONTABLE) {
+      throw { status: 400, error: { message: `Cliente ${row?.codCliente}: no tiene idCodContable asignado.` } };
     }
-  });
 
-  // recalcula totales
-  this.onSelectionChanged();
-}
+    const CTA_CXC = { idPlan: 19, cod: '110205-001' };
+    const CTA_ING = { idPlan: 235, cod: '410101-003' };
+    const CTA_IVA = { idPlan: 131, cod: '210602-001' };
 
+    const fechaUI = String(this.formCaja.get('fechaFacturacion')?.value ?? '').trim();
+    const fechaIso = this.toIsoFromDdMmYyyy(fechaUI);
 
+    const nowTime = new Date().toTimeString().slice(0, 8);
+    const fechaIsoConHora = fechaIso.replace('T00:00:00', `T${nowTime}`);
+
+    const anio = String(this.formFactura.get('anio')?.value ?? new Date().getFullYear()).trim();
+
+    const z = this.formFactura.get('zona')?.value;
+    const idZona = (z === '' || z == null) ? 1 : Number(z);
+
+    const idEmpresa = Number((this.usuarioActual as any)?.id_empresa ?? 1) || 1;
+    const idUsuario = Number(this.usuarioActual?.id_usuario ?? 0) || 0;
+
+    const beneficiario = String(row?.cliente ?? '').trim();
+
+    const subtotal = Number(payload.subtotalCalculado ?? payload.subtotalSIva ?? 0);
+    const iva = Number(payload.ivaTotalCalculado ?? 0);
+    const total = Number(payload.totalCalculado ?? 0);
+
+    const cab: any = {
+      IdCabMaestro: 0,
+      idZona: 1,
+      idUsuario,
+      idEmpresa,
+      idTipoAsiento: ID_TIPO_ASIENTO_VT,
+      tipdoc: 'VT',
+      numdoc: 0,
+      anio,
+      fechatransaccion: fechaIsoConHora,
+      fechaingreso: fechaIsoConHora,
+      observacion: `ASIENTO POR VENTA FACTURA ${numnota}`,
+      totdebe: total,
+      tothaber: total,
+      beneficiario,
+      cierre: '',
+      fechacierre: null,
+      solicitado: '',
+      depto: '',
+      autorizado: '',
+      homCodigo: 0,
+      estado: true,
+      modulo: MODULO_VENTAS,
+      detalles: []
+    };
+
+    const detBase = (numlinea: number) => ({
+      IdDetMaestro: 0,
+      IdCabMaestro: 0,
+      numlinea,
+      anio,
+      fechatransaccion: fechaIsoConHora,
+      fechaingreso: fechaIsoConHora,
+      hora: nowTime,
+      idZona,
+      idCentroCostos: null,
+      idLocal: ID_LOCAL,
+      idPlanCuentas: 0,
+      codprePc: '',
+      idCodContable: ID_COD_CONTABLE,
+      nocomprobante: numnota,
+      docurelacionado: '',
+      cheque: 0,
+      beneficiario: '',
+      debe: 0,
+      haber: 0,
+      comentario: '',
+      idMovBancario: 1,
+      movbancario: '0',
+      cierre: '',
+      fechacierre: null,
+      conciliado: '',
+      fechaconciliado: null,
+      idSustentoTrib: null,
+      idTipoCompSri: null,
+      autorizacion: '',
+      fechacaduca: null,
+      idTipoRetencion: null,
+      idProyecto: null,
+      idSubproyecto: null,
+      transferido: false,
+      fechatransferido: null,
+      fechavencimiento: null,
+      idConciliacion: 0,
+      valorLetras: '',
+      estadoIngreso: true,
+      autorizacionRelacionado: '',
+      fechaCadRelacionado: null
+    });
+
+    const d1 = detBase(1);
+    d1.idPlanCuentas = CTA_CXC.idPlan;
+    d1.codprePc = CTA_CXC.cod;
+    d1.debe = total;
+    d1.comentario = `COBRO FACTURA ${numnota} - CREDITO`;
+
+    const d2 = detBase(2);
+    d2.idPlanCuentas = CTA_ING.idPlan;
+    d2.codprePc = CTA_ING.cod;
+    d2.haber = subtotal;
+    d2.comentario = `INGRESO POR VENTA FACTURA ${numnota} - ${String(payload.detalles?.[0]?.nombreProductoPersonalizado ?? '').trim()}`;
+
+    const d3 = detBase(3);
+    d3.idPlanCuentas = CTA_IVA.idPlan;
+    d3.codprePc = CTA_IVA.cod;
+    d3.haber = iva;
+    d3.comentario = `IVA RECAUDADO FACTURA ${numnota}`;
+
+    cab.detalles = [d1, d2, d3];
+    return cab as AsientoVentaRequest;
+  }
+
+  private actualizarNotaConAsiento(idNota: number, numdoc: string | null) {
+    if (!numdoc) return of(false);
+
+    const numeroAsientoConPrefijo = `VT-${numdoc}`;
+
+    return this.facturaService.actualizarAsientoContable(idNota, numeroAsientoConPrefijo).pipe(
+      tap((resp: any) => {
+        const tipo = (resp?.type || '').toString().toLowerCase();
+        if (tipo === 'success' || tipo === 'warning') {
+          console.log(`[nota] Asiento actualizado en nota ${idNota}: ${numeroAsientoConPrefijo}`);
+        } else {
+          console.warn('[nota] No actualizó asiento:', resp);
+        }
+      }),
+      map((resp: any) => {
+        const tipo = (resp?.type || '').toString().toLowerCase();
+        return (tipo === 'success' || tipo === 'warning');
+      }),
+      catchError((err: any) => {
+        console.error('[nota] Error actualizando asiento en nota:', err);
+        return of(false);
+      })
+    );
+  }
+
+  private selectedIds = new Set<string>();
+
+  private saveSelection(): void {
+    if (!this.gridApi) return;
+    this.selectedIds.clear();
+    for (const r of (this.gridApi.getSelectedRows() ?? [])) {
+      const id = String(r?.codCliente ?? '');
+      if (id) this.selectedIds.add(id);
+    }
+  }
+
+  private restoreSelection(): void {
+    if (!this.gridApi) return;
+
+    this.gridApi.forEachNode((node) => {
+      const id = String(node.data?.codCliente ?? '');
+      const shouldSelect = this.selectedIds.has(id);
+      if (node.isSelected() !== shouldSelect) {
+        node.setSelected(shouldSelect);
+      }
+    });
+
+    const rows = this.gridApi.getSelectedRows();
+    this.selectedCount = rows.length;
+    this.totalSeleccionado = rows.reduce((sum, r) => sum + this.parseNumber(r.total), 0);
+  }
 }

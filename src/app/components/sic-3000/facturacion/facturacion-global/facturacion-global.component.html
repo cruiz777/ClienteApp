@@ -10,7 +10,6 @@
   </button>
 </div>
 
-
 <div class="contenido-tabs">
   <!-- ===== Pestaña: Nueva Factura ===== -->
   <ng-container *ngIf="activeTab === 'Factura'">
@@ -29,82 +28,98 @@
           <label>Secuencial:</label>
           <input class="ti wide" formControlName="secuencial" readonly>
         </div>
-        <div class="fg fecha"> <!-- antes: class="fg" -->
+        <div class="fg fecha">
           <label>Fecha:</label>
           <input class="ti wide" formControlName="fechaFacturacion" readonly>
         </div>
+
         <div *ngIf="!cajaAsignada"
-       class="alert-warn"
-       style="grid-column: 1 / -1; margin:8px 0; padding:8px 12px; border-radius:8px;
-              background:#fff3cd; color:#664d03; border:1px solid #ffecb5;"
-       aria-live="polite">
-    Usuario no tiene asignado <strong>Caja</strong>. No podrás generar facturas hasta asignarla.
-  </div>
+          class="alert-warn"
+          style="grid-column: 1 / -1; margin:8px 0; padding:8px 12px; border-radius:8px;
+                 background:#fff3cd; color:#664d03; border:1px solid #ffecb5;"
+          aria-live="polite">
+          Usuario no tiene asignado <strong>Caja</strong>. No podrás generar facturas hasta asignarla.
+        </div>
       </div>
+
       <form class="toolbar-row" [formGroup]="formFactura" (ngSubmit)="buscar()">
-  <!-- Año -->
-  <mat-form-field appearance="outline" class="anio-field dense"  >
-    <input matInput inputmode="numeric" autocomplete="off"
-           formControlName="anio" (input)="limitAnio($event)" />
-    <button *ngIf="anioCtrl.value" mat-icon-button matSuffix type="button"
+        <!-- Año -->
+        <mat-form-field appearance="outline" class="anio-field dense">
+          <input matInput inputmode="numeric" autocomplete="off"
+            formControlName="anio" (input)="limitAnio($event)" />
+          <button *ngIf="anioCtrl.value" mat-icon-button matSuffix type="button"
             (click)="restoreAnio()" aria-label="Restaurar año" matTooltip="Restaurar año actual" style="width: 50px;">
-      <mat-icon>restore</mat-icon>
-    </button>
-  </mat-form-field>
+            <mat-icon>restore</mat-icon>
+          </button>
+        </mat-form-field>
 
-  <!-- Zona -->
-  <mat-form-field >
-    <mat-select formControlName="zona">
-      <mat-option [value]="''">Todas las zonas</mat-option>
-      <mat-option *ngFor="let z of zonas; trackBy: trackByZonaId" [value]="z.id">
-        {{ z.referencia }} - {{ z.nombre }}
-      </mat-option>
-    </mat-select>
-    <button *ngIf="zonaCtrl.value !== ''" mat-icon-button matSuffix type="button"
+        <!-- Zona -->
+        <mat-form-field>
+          <mat-select formControlName="zona">
+            <mat-option [value]="''">Todas las zonas</mat-option>
+            <mat-option *ngFor="let z of zonas; trackBy: trackByZonaId" [value]="z.id">
+              {{ z.referencia }} - {{ z.nombre }}
+            </mat-option>
+          </mat-select>
+          <button *ngIf="zonaCtrl.value !== ''" mat-icon-button matSuffix type="button"
             (click)="zonaCtrl.setValue('')" aria-label="Limpiar zona">
-      <mat-icon>close</mat-icon>
-    </button>
-  </mat-form-field>
+            <mat-icon>close</mat-icon>
+          </button>
+        </mat-form-field>
 
-  <!-- Buscar (igual tamaño que Facturar) -->
- 
+        <div class="total-heading">
+          <span class="total-label">TOTAL :</span>
+          <span class="fi-total-amount">{{ money(totalSeleccionado) }}</span>
+        </div>
 
-  <div class="total-heading">
-    <span class="total-label">TOTAL :</span>
-    <span class="fi-total-amount">{{ money(totalSeleccionado) }}</span>
-  </div>
+        <div class="acciones">
+          <button mat-stroked-button color="primary" type="submit"
+            [disabled]="deshabilitarBuscar || cargando || formFactura.invalid">
+            Buscar
+          </button>
 
-  <div class="acciones">
-     <button mat-stroked-button color="primary" type="submit"  [disabled]="deshabilitarBuscar || cargando || formFactura.invalid">
-    Buscar
-  </button>
-  <button
-  mat-stroked-button
-  color="accent"
-  type="button"
-  (click)="exportarExcelConsulta()"
-  [disabled]="!canExportExcelConsulta">
-  Exportar Excel
-</button>
+          <button
+            mat-stroked-button
+            color="accent"
+            type="button"
+            (click)="exportarExcelConsulta()"
+            [disabled]="!canExportExcelConsulta">
+            Exportar Excel
+          </button>
 
-    <button type="button" mat-stroked-button (click)="cancelar()">Cancelar</button>
-    <button type="button"
-        mat-stroked-button
-        color="warn"
-        class="btn-accion"
-        (click)="facturar()"
-        [disabled]="!habilitarFacturar || facturando || !cajaAsignada">
-  Facturar
-</button>
+          <button type="button" mat-stroked-button (click)="cancelar()">Cancelar</button>
 
-  </div>
-</form>
-
-
+          <button type="button"
+            mat-stroked-button
+            color="warn"
+            class="btn-accion"
+            (click)="facturar()"
+            [disabled]="!habilitarFacturar || facturando || !cajaAsignada">
+            Facturar
+          </button>
+        </div>
+      </form>
     </div>
 
-    <!-- TOTAL : valor -->
+    <!-- ===== NUEVO: FILTRO ALFABÉTICO A-Z ===== -->
+    <div class="row-alphabet">
+      <button
+        type="button"
+        class="alpha-btn alpha-all"
+        [class.active]="selectedLetters.size === 0"
+        (click)="clearLetters()">
+        Todas
+      </button>
 
+      <button
+        type="button"
+        class="alpha-btn"
+        *ngFor="let letter of alphabet"
+        [class.active]="isLetterActive(letter)"
+        (click)="toggleLetter(letter)">
+        {{ letter }}
+      </button>
+    </div>
 
     <!-- FILA 2: Filtrar -->
     <div class="row-2 filter-row">
@@ -117,10 +132,8 @@
           (click)="clearBusqueda(); qfInput.focus()" title="Limpiar búsqueda" aria-label="Limpiar">
           <mat-icon>close</mat-icon>
         </button>
-
       </mat-form-field>
     </div>
-
 
     <!-- FILA 3: Solo seleccionados -->
     <div class="row-3 actions-row">
@@ -136,55 +149,49 @@
 
     <!-- GRID -->
     <div class="ag-theme-alpine grid-wrap">
-     <ag-grid-angular
-  style="width:100%; height:100%; display:block"
-  class="ag-theme-alpine"
-  [gridOptions]="gridOptions"
-  [rowData]="rowData"
-  [columnDefs]="columnDefs"
-  [defaultColDef]="defaultColDef"
-  (gridReady)="onGridReady($event)"
-  (selectionChanged)="onSelectionChanged()"
-></ag-grid-angular>
-
-
+      <ag-grid-angular
+        style="width:100%; height:100%; display:block"
+        class="ag-theme-alpine"
+        [gridOptions]="gridOptions"
+        [rowData]="rowData"
+        [columnDefs]="columnDefs"
+        [defaultColDef]="defaultColDef"
+        (gridReady)="onGridReady($event)"
+        (selectionChanged)="onSelectionChanged()">
+      </ag-grid-angular>
     </div>
   </ng-container>
 
   <!-- ===== Pestaña: Listado ===== -->
-  <!-- ===== Pestaña: Listado ===== -->
-<ng-container *ngIf="activeTab === 'Listado'">
-  <!-- Encima del grid del Listado -->
-<div class="row-3 actions-row">
-  <button type="button" class="btn chip" (click)="cargarListado()">Refrescar</button>
-  <button type="button"
-          class="btn chip"
-          [disabled]="listadoSelectedCount === 0 || imprimiendo"
-          (click)="imprimirSeleccionadas()">
-    Imprimir seleccionadas ({{ listadoSelectedCount }})
-  </button>
-  <button type="button"
+  <ng-container *ngIf="activeTab === 'Listado'">
+    <div class="row-3 actions-row">
+      <button type="button" class="btn chip" (click)="cargarListado()">Refrescar</button>
+
+      <button type="button"
+        class="btn chip"
+        [disabled]="listadoSelectedCount === 0 || imprimiendo"
+        (click)="imprimirSeleccionadas()">
+        Imprimir seleccionadas ({{ listadoSelectedCount }})
+      </button>
+
+      <button type="button"
         class="btn chip"
         [disabled]="listadoSelectedCount === 0 || zipping"
         (click)="zipSeleccionadas()">
-  Descargar ZIP ({{ listadoSelectedCount }})
-</button>
+        Descargar ZIP ({{ listadoSelectedCount }})
+      </button>
+    </div>
 
-</div>
-
-<!-- GRID del Listado -->
-<div class="ag-theme-alpine grid-wrap">
-  <ag-grid-angular
-    style="width:100%; height:100%; display:block"
-    [columnDefs]="columnDefsListado"
-    [defaultColDef]="defaultColDefListado"
-    [rowData]="listadoData"
-    rowSelection="multiple"
-    (gridReady)="onListadoGridReady($event)"
-    (selectionChanged)="onListadoSelectionChanged()">
-  </ag-grid-angular>
-</div>
-
-</ng-container>
-
+    <div class="ag-theme-alpine grid-wrap">
+      <ag-grid-angular
+        style="width:100%; height:100%; display:block"
+        [columnDefs]="columnDefsListado"
+        [defaultColDef]="defaultColDefListado"
+        [rowData]="listadoData"
+        rowSelection="multiple"
+        (gridReady)="onListadoGridReady($event)"
+        (selectionChanged)="onListadoSelectionChanged()">
+      </ag-grid-angular>
+    </div>
+  </ng-container>
 </div>
