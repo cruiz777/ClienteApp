@@ -265,6 +265,10 @@ export class DocElectronicosComponent implements OnInit {
     }
   }
 
+  rowClassRules = {
+    'fila-anulada': (params: any) => params.data?.idEstado === 'ANULADO'
+  };
+  
   private verPDF(claveAcceso: string): void {
     console.log('📄 Abriendo PDF:', claveAcceso);
     this.docService.abrirPDF(claveAcceso);

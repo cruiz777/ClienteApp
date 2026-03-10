@@ -326,3 +326,8 @@
   transform: none;
   box-shadow: none;
 }
+
+::ng-deep .fila-anulada {
+  background-color: #ffcccc !important;
+  color: #b30000 !important;
+}
