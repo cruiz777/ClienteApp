@@ -79,3 +79,7 @@ ag-grid-angular {
 .top-search .btn {
   flex: 0 0 auto;
 }
+.row-out-of-range {
+  color: #d32f2f;
+  font-weight: 600;
+}

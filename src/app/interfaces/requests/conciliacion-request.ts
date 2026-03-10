@@ -65,3 +65,13 @@ export interface CreateConciliacionRequest {
 export interface UpdateConciliacionRequest extends CreateConciliacionRequest {
   idConciliacion?: number | null; // opcional (el id real va por ruta)
 }
+
+export interface GuardarConciliacionParcialDetalleRequest {
+  idDetMaestro: number;
+  concil: 'S' | 'N';
+}
+
+export interface GuardarConciliacionParcialRequest {
+  fechaconcil: IsoDateLike;
+  detalles: GuardarConciliacionParcialDetalleRequest[];
+}

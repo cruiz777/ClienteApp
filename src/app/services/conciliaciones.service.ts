@@ -1,7 +1,7 @@
 // src/app/services/conciliaciones.service.ts
 
 import { Injectable } from '@angular/core';
-import { HttpClient,HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { ConciliacionSelectorResponse } from '../interfaces/responses/conciliacion-selector-response';
 import { environment } from 'src/environments/environment';
@@ -10,7 +10,7 @@ import {
   CreateConciliacionRequest,
   UpdateConciliacionRequest,
   CreateConciliacionDetalleRequest,
-  IsoDateLike
+  IsoDateLike, GuardarConciliacionParcialDetalleRequest, GuardarConciliacionParcialRequest
 } from '../interfaces/requests/conciliacion-request';
 
 import { ConciliacionResponse } from '../interfaces/responses/conciliacion-response';
@@ -22,7 +22,9 @@ export interface ApiResponse<T> {
   data: T;
   message: string;
 }
-
+export interface SaldoContableInicialResponse {
+  saldoContableInicial: number;
+}
 @Injectable({
   providedIn: 'root',
 })
@@ -34,7 +36,7 @@ export class ConciliacionesService {
    */
   private readonly baseUrl = `${environment.conciliacionUrl}/Conciliaciones`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   // ==========================================================
   //  1) CREAR  (POST /Conciliaciones)
@@ -70,7 +72,7 @@ export class ConciliacionesService {
     return this.http.get<ApiResponse<ConciliacionSelectorResponse[]>>(url);
   }
 
-   // GET conciliacion/api/Conciliaciones/movimientos-maestro?idPlanCuentas=9&fechaInicio=2026-01-01&fechaFin=2026-01-31
+  // GET conciliacion/api/Conciliaciones/movimientos-maestro?idPlanCuentas=9&fechaInicio=2026-01-01&fechaFin=2026-01-31
   getMovimientosMaestro(
     idPlanCuentas: number,
     fechaInicio: Date | string,
@@ -182,5 +184,31 @@ export class ConciliacionesService {
     const mi = String(d.getMinutes()).padStart(2, '0');
     const ss = String(d.getSeconds()).padStart(2, '0');
     return `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}`;
+  }
+  guardarParcial(request: GuardarConciliacionParcialRequest): Observable<ApiResponse<number>> {
+    const payload = {
+      fechaconcil: this.toIsoLocalMidnight(request.fechaconcil),
+      detalles: (request.detalles ?? []).map(d => ({
+        idDetMaestro: d.idDetMaestro,
+        concil: d.concil
+      }))
+    };
+
+    return this.http.put<ApiResponse<number>>(`${this.baseUrl}/parcial`, payload);
+  }
+  // GET conciliacion/api/Conciliaciones/saldo-contable-inicial?codprePc=110102-002&fechaCorte=01/01/2026
+  getSaldoContableInicial(
+    codprePc: string,
+    fechaCorte: string // dd/MM/yyyy
+  ): Observable<ApiResponse<SaldoContableInicialResponse>> {
+
+    const params = new HttpParams()
+      .set('codprePc', String(codprePc ?? '').trim())
+      .set('fechaCorte', String(fechaCorte ?? '').trim()); // ejemplo: "01/01/2026"
+
+    return this.http.get<ApiResponse<SaldoContableInicialResponse>>(
+      `${this.baseUrl}/saldo-contable-inicial`,
+      { params }
+    );
   }
 }
