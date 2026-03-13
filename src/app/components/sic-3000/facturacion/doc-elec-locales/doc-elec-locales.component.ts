@@ -254,8 +254,21 @@ readonly tiposDocumento: { key: TipoDocumento; label: string }[] = [
       { headerName: 'Observación SRI',  field: 'observacion',       minWidth: 220 },
       { headerName: 'Clave de Acceso',  field: 'claveAcceso',       minWidth: 220 },
       { headerName: 'Número Doc.',       field: 'numeroDocumento',   width: 180    },
-      { headerName: 'Fecha',             field: 'fecha',             width: 110    },
-      { headerName: 'F. Autorización',   field: 'fechaAutorizacion', width: 160    },
+      { 
+        headerName: 'Fecha', field: 'fecha', width: 140,
+        cellStyle: (p) => p.data?.fechasCoinciden
+          ? { color: '#1b5e38', fontWeight: 'bold', background: '#d0ead9' }
+          : { color: '#c0392b', fontWeight: 'bold', background: '#fde8e6' }
+      },
+      { 
+        headerName: 'F. Autorización', field: 'fechaAutorizacion', width: 160,
+        cellStyle: (p) => {
+          if (!p.data?.fechaAutorizacion) return null;
+          return p.data?.fechasCoinciden
+            ? { color: '#1b5e38', fontWeight: 'bold', background: '#d0ead9' }
+            : { color: '#c0392b', fontWeight: 'bold', background: '#fde8e6' }
+        }
+      },
       { headerName: 'RUC',               field: 'rucCliente',        width: 140    },
       { headerName: 'Cliente',           field: 'nombreCliente',     minWidth: 200, flex: 1 },
       {
@@ -483,7 +496,9 @@ readonly tiposDocumento: { key: TipoDocumento; label: string }[] = [
           estadoComparacion:  c.estadoComparacion,
           tipoDocumento:      c.erp.tipoDocumento,
           numeroDocumento:    c.erp.numeroDocumento,
-          fecha:              c.erp.fecha?.split('T')[0] ?? '',
+          fecha: (c.erp.tipoDocumento === 'FACTURA' || c.erp.tipoDocumento === 'NOTA_CREDITO')
+            ? c.erp.fecha?.replace('T', ' ').substring(0, 16) ?? ''
+            : c.erp.fecha?.split('T')[0] ?? '',
           rucCliente:         c.erp.rucCliente ?? '',
           nombreCliente:      c.erp.nombreCliente ?? '',
           total:              c.erp.total,
@@ -492,6 +507,14 @@ readonly tiposDocumento: { key: TipoDocumento; label: string }[] = [
           secuencial:         c.erp.secuencial      ?? c.docElectronico?.secuencial      ?? '—',
           observacion:        c.docElectronico?.observacion     ?? '—',
           fechaAutorizacion:  c.docElectronico?.fecha_autorizacion ?? null,
+          fechasCoinciden: (() => {
+            if (!c.erp.fecha || !c.docElectronico?.fecha_autorizacion) return false;
+            const f1 = new Date(c.erp.fecha);
+            const f2 = new Date(c.docElectronico.fecha_autorizacion);
+            return f1.getFullYear() === f2.getFullYear()
+                && f1.getMonth()    === f2.getMonth()
+                && f1.getDate()     === f2.getDate();
+          })(),
           id:                 c.docElectronico?.id_estado_documento ?? 0,
           puedeReimprimir:    c.estadoComparacion === 'AUTORIZADO',
           claveAcceso:        c.docElectronico?.clave_acceso ?? '',  
