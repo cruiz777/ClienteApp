@@ -25,6 +25,11 @@ export interface ApiResponse<T> {
 export interface SaldoContableInicialResponse {
   saldoContableInicial: number;
 }
+export interface TotalesContablesHastaFechaResponse {
+  tDebe: number;
+  tHaber: number;
+  saldo: number;
+}
 @Injectable({
   providedIn: 'root',
 })
@@ -211,4 +216,18 @@ export class ConciliacionesService {
       { params }
     );
   }
+  getTotalesContablesHastaFecha(
+  codprePc: string,
+  fechaCorte: string // dd/MM/yyyy
+): Observable<ApiResponse<TotalesContablesHastaFechaResponse>> {
+
+  const params = new HttpParams()
+    .set('codprePc', String(codprePc ?? '').trim())
+    .set('fechaCorte', String(fechaCorte ?? '').trim());
+
+  return this.http.get<ApiResponse<TotalesContablesHastaFechaResponse>>(
+    `${this.baseUrl}/totales-contables-hasta-fecha`,
+    { params }
+  );
+}
 }

@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
-import { CheckboxRendererComponent } from 'src/app/components/productos/checkbox-renderer/checkbox-renderer.component';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, MatDateFormats, NativeDateAdapter } from '@angular/material/core';
 import { GridOptions } from 'ag-grid-community';
 import {
@@ -151,11 +150,7 @@ export class ConciliacionComponent implements OnInit {
   private planSvc = inject(PlanCuentasService);
   private snack = inject(MatSnackBar);
   private dialog = inject(MatDialog);
-  gridOptions: GridOptions = {
-  components: {
-    checkboxRenderer: CheckboxRendererComponent,
-  },
-};
+ 
   loading = false;
   loadingSelector = false;
   loadingPlan = false;
@@ -263,9 +258,7 @@ export class ConciliacionComponent implements OnInit {
     filter: true,
     minWidth: 80,
   };
-  public frameworkComponents = {
-    checkboxRenderer: CheckboxRendererComponent,
-  };
+
   colSaldos: ColDef[] = [
     { headerName: 'Saldo Inicial', field: 'salconini' },
     { headerName: 'Depósito', field: 'salcondep' },
@@ -288,7 +281,7 @@ export class ConciliacionComponent implements OnInit {
       filterValueGetter: (p) => this.formatDdMmYyyy(p.data?.fechatran),
     },
 
-    { headerName: 'IdMov', field: 'idMovBancario', width: 90, hide:true },
+    { headerName: 'IdMov', field: 'idMovBancario', width: 90, hide: true },
     { headerName: 'TipMov', field: 'movbancario', width: 90 },
     { headerName: 'N° Comp', field: 'nocomprobante', width: 120 },
 
@@ -296,34 +289,49 @@ export class ConciliacionComponent implements OnInit {
     { headerName: 'Débito', field: 'debito', width: 110 },
     { headerName: 'Crédito', field: 'credito', width: 110 },
 
+
     {
       headerName: 'Concil',
       field: 'concil',
       width: 90,
-      editable: () => !this.isLocked,
-      cellRenderer: 'checkboxRenderer',
+      editable: false,
+      sortable: false,
+      filter: false,
+      
+      cellStyle: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: this.isLocked ? 'default' : 'pointer',
+      },
+      cellRenderer: (params: any) => {
+        const checked = this.isChecked(params.data?.concil);
 
-      valueGetter: (p) => this.isChecked(p.data?.concil),
+        const wrapper = document.createElement('div');
+        wrapper.style.width = '100%';
+        wrapper.style.height = '100%';
+        wrapper.style.display = 'flex';
+        wrapper.style.alignItems = 'center';
+        wrapper.style.justifyContent = 'center';
 
-      valueSetter: (p) => {
-        if (!p.data) return false;
-        if (this.isLocked) return false;
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = checked;
+        input.disabled = false;
 
-        const checked = p.newValue === true; // viene boolean desde el renderer
-        const nuevo = checked ? 'C' : 'N';
-        const actual = String((p.data as any).concil ?? 'N').toUpperCase();
+        // importante: el click debe caer a la celda
+        input.style.pointerEvents = 'none';
+        input.style.width = '14px';
+        input.style.height = '14px';
+        input.style.margin = '0';
+        input.style.padding = '0';
+        input.style.accentColor = '#e91e63';
+        input.style.transform = 'none';
 
-        if (actual === nuevo) return false;
-
-        (p.data as any).concil = nuevo;
-        (p.data as any).fechaconcil = checked ? this.getFechaConcilDefaultIso() : null;
-
-        this.recalcularResumenes();
-        this.gridMovApi?.refreshCells({ force: true, columns: ['fechaconcil', 'concil'] });
-        return true;
+        wrapper.appendChild(input);
+        return wrapper;
       },
     },
-
     {
       headerName: 'Fecha Concil',
       field: 'fechaconcil',
@@ -648,27 +656,32 @@ export class ConciliacionComponent implements OnInit {
 
   // fallback por si doble click no dispara
   onMovCellClicked(e: any) {
-    const field = e?.colDef?.field ?? '';
-    if (field !== 'nocomprobante') return;
+  const field = e?.colDef?.field ?? '';
 
-    const key = `${e?.rowIndex ?? ''}:${field}`;
-    const now = Date.now();
-
-    if (this.lastClickKey === key && (now - this.lastClickTs) < 350) {
-      this.lastClickKey = '';
-      this.lastClickTs = 0;
-
-      const numcomp = String(e?.data?.nocomprobante ?? '').trim();
-      if (!numcomp) return;
-
-      this.abrirAgruparPorComprobante(numcomp);
-      return;
-    }
-
-    this.lastClickKey = key;
-    this.lastClickTs = now;
+  if (field === 'concil') {
+    this.toggleConcilRow(e?.data);
+    return;
   }
 
+  if (field !== 'nocomprobante') return;
+
+  const key = `${e?.rowIndex ?? ''}:${field}`;
+  const now = Date.now();
+
+  if (this.lastClickKey === key && (now - this.lastClickTs) < 350) {
+    this.lastClickKey = '';
+    this.lastClickTs = 0;
+
+    const numcomp = String(e?.data?.nocomprobante ?? '').trim();
+    if (!numcomp) return;
+
+    this.abrirAgruparPorComprobante(numcomp);
+    return;
+  }
+
+  this.lastClickKey = key;
+  this.lastClickTs = now;
+}
   private abrirAgruparPorComprobante(numcomp: string) {
     if (this.isLocked) return;
 
@@ -999,41 +1012,36 @@ export class ConciliacionComponent implements OnInit {
   }
 
   private setConcilMasivo(checked: boolean) {
-    const iso = checked ? this.getFechaConcilDefaultIso() : null;
+  if (this.isLocked || !this.gridMovApi) return;
 
-    if (!this.gridMovApi) {
-      this.movimientos = (this.movimientos ?? []).map((r: any) => ({
-        ...r,
-        concil: checked ? 'C' : 'N',
-        fechaconcil: iso,
-      }));
-      this.recalcularResumenes();
-      return;
-    }
+  const iso = checked ? this.getFechaConcilDefaultIso() : null;
 
-    this.gridMovApi.forEachNode((n) => {
-      if (!n.data) return;
-      (n.data as any).concil = checked ? 'C' : 'N';
-      (n.data as any).fechaconcil = iso;
-    });
+  this.gridMovApi.forEachNode((n) => {
+    if (!n.data) return;
+    (n.data as any).concil = checked ? 'C' : 'N';
+    (n.data as any).fechaconcil = iso;
+  });
 
-    this.gridMovApi.refreshCells({ force: true, columns: ['concil', 'fechaconcil'] });
-    this.recalcularResumenes();
-  }
+  this.gridMovApi.refreshCells({
+    force: true,
+    columns: ['concil', 'fechaconcil'],
+  });
 
+  this.recalcularResumenes();
+}
   // =======================
   // RECALCULOS
   // =======================
   private getMovimientosActuales(): MovimientoRow[] {
     if (!this.gridMovApi) return this.movimientos ?? [];
+
     const rows: MovimientoRow[] = [];
     this.gridMovApi.forEachNode((n) => {
       if (n.data) rows.push(n.data as MovimientoRow);
     });
-    this.movimientos = rows;
+
     return rows;
   }
-
   private recalcularResumenes() {
     const cab = this.form.getRawValue();
     const rows = this.getMovimientosActuales();
@@ -1067,22 +1075,23 @@ export class ConciliacionComponent implements OnInit {
 
     const rowConc: ResumenRow = {
       tipo: 'Conciliados',
-      saldoContable: this.r2(salconini),
+      saldoContable: 0,
       deposito: this.r2(sConc.deposito),
       cheques: this.r2(sConc.cheques),
       notasDebito: this.r2(sConc.notasDebito),
       notasCredito: this.r2(sConc.notasCredito),
-      saldoBancario: this.r2(salconbanc),
-      diferencia: this.r2(salcondif),
+      saldoBancario: 0,
+      diferencia: 0,
     };
 
     const saldoContNo = this.num(cab.saldcontfin);
     const saldoBancNo = this.num(cab.saldbancfin);
 
-    const difNo = this.r2(
-      (saldoContNo + sNo.deposito - sNo.cheques - sNo.notasDebito + sNo.notasCredito) - saldoBancNo
-    );
+    const totalContableNo =
+      saldoContNo
+      + (-sNo.deposito + sNo.cheques - sNo.notasDebito + sNo.notasCredito);
 
+    const difNo = this.r2(totalContableNo - saldoBancNo);
     const rowNo: ResumenRow = {
       tipo: 'No Conciliados',
       saldoContable: this.r2(saldoContNo),
@@ -1099,23 +1108,43 @@ export class ConciliacionComponent implements OnInit {
   }
 
   private sumPorTipo(rows: MovimientoRow[]) {
-    const tipo = (x: any) => String(x?.movbancario ?? '').toUpperCase().trim();
 
-    const deposito = rows
-      .filter((x) => ['DEP', 'DP'].includes(tipo(x)))
-      .reduce((a, x) => a + this.num((x as any).debito), 0);
+    let deposito = 0;
+    let cheques = 0;
+    let notasDebito = 0;
+    let notasCredito = 0;
 
-    const cheques = rows
-      .filter((x) => ['CH', 'CHE', 'CHK', 'TB'].includes(tipo(x)))
-      .reduce((a, x) => a + this.num((x as any).cheque), 0);
+    for (const r of rows) {
 
-    const notasDebito = rows
-      .filter((x) => ['ND'].includes(tipo(x)))
-      .reduce((a, x) => a + this.num((x as any).debito), 0);
+      const tipo = String((r as any)?.movbancario ?? '').toUpperCase().trim();
+      const debito = this.num((r as any)?.debito);
+      const credito = this.num((r as any)?.credito);
 
-    const notasCredito = rows
-      .filter((x) => ['NC'].includes(tipo(x)))
-      .reduce((a, x) => a + this.num((x as any).credito), 0);
+      // DP = depósito
+      if (tipo === 'DP') {
+        deposito += debito;
+        continue;
+      }
+
+      // CH o TB = cheque
+      if (tipo === 'CH' || tipo === 'TB') {
+        cheques += credito;
+        continue;
+      }
+
+      // ND
+      if (tipo === 'ND') {
+        if (credito !== 0) notasCredito += credito;
+        if (debito !== 0) notasDebito += debito;
+        continue;
+      }
+
+      // NC
+      if (tipo === 'NC') {
+        notasDebito += debito;
+        continue;
+      }
+    }
 
     return {
       deposito: this.r2(deposito),
@@ -1306,4 +1335,113 @@ export class ConciliacionComponent implements OnInit {
     const y = dt.getFullYear();
     return `${d}/${m}/${y}`;
   }
+  private formatearFechaDdMmYyyy(fecha: Date | null | undefined): string {
+    if (!fecha || !(fecha instanceof Date) || isNaN(fecha.getTime())) return '';
+    const dd = String(fecha.getDate()).padStart(2, '0');
+    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+    const yyyy = fecha.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
+  private puedeConsultarSaldosIniciales(): boolean {
+    const codprePc = String(this.form.get('codprePc')?.value ?? '').trim();
+    const fechaInicial = this.form.get('fechaInicial')?.value as Date | null;
+
+    return !!codprePc && !!fechaInicial && fechaInicial instanceof Date && !isNaN(fechaInicial.getTime());
+  }
+
+  private puedeConsultarSaldosFinales(): boolean {
+    const codprePc = String(this.form.get('codprePc')?.value ?? '').trim();
+    const fechaFinal = this.form.get('fechaFinal')?.value as Date | null;
+
+    return !!codprePc && !!fechaFinal && fechaFinal instanceof Date && !isNaN(fechaFinal.getTime());
+  }
+
+  onBlurDatosCabecera(): void {
+    if (this.isLocked) return;
+
+    this.cargarSaldoContableInicial();
+    this.cargarSaldoContableFinal();
+  }
+
+  private cargarSaldoContableInicial(): void {
+    if (!this.puedeConsultarSaldosIniciales()) return;
+
+    const codprePc = String(this.form.get('codprePc')?.value ?? '').trim();
+    const fechaInicial = this.form.get('fechaInicial')?.value as Date;
+    const fechaCorte = this.formatearFechaDdMmYyyy(fechaInicial);
+
+    this.svc.getSaldoContableInicial(codprePc, fechaCorte).subscribe({
+      next: (res) => {
+        if (res.type === 'success' && res.data) {
+          const saldo = Number(res.data.saldoContableInicial ?? 0);
+
+          this.form.patchValue(
+            { saldcontini: this.r2(saldo) },
+            { emitEvent: true }
+          );
+        } else {
+          this.form.patchValue(
+            { saldcontini: 0 },
+            { emitEvent: true }
+          );
+        }
+      },
+      error: () => {
+        this.form.patchValue(
+          { saldcontini: 0 },
+          { emitEvent: true }
+        );
+      }
+    });
+  }
+
+  private cargarSaldoContableFinal(): void {
+    if (!this.puedeConsultarSaldosFinales()) return;
+
+    const codprePc = String(this.form.get('codprePc')?.value ?? '').trim();
+    const fechaFinal = this.form.get('fechaFinal')?.value as Date;
+    const fechaCorte = this.formatearFechaDdMmYyyy(fechaFinal);
+
+    this.svc.getTotalesContablesHastaFecha(codprePc, fechaCorte).subscribe({
+      next: (res) => {
+        if (res.type === 'success' && res.data) {
+          // SOLO EL SALDO
+          const saldoFinal = Number(res.data.saldo ?? 0);
+
+          this.form.patchValue(
+            { saldcontfin: this.r2(saldoFinal) },
+            { emitEvent: true }
+          );
+        } else {
+          this.form.patchValue(
+            { saldcontfin: 0 },
+            { emitEvent: true }
+          );
+        }
+      },
+      error: () => {
+        this.form.patchValue(
+          { saldcontfin: 0 },
+          { emitEvent: true }
+        );
+      }
+    });
+  }
+private toggleConcilRow(row: any): void {
+  if (!row || this.isLocked) return;
+
+  const actual = String(row.concil ?? 'N').toUpperCase();
+  const nuevoEsCheck = actual !== 'C';
+
+  row.concil = nuevoEsCheck ? 'C' : 'N';
+  row.fechaconcil = nuevoEsCheck ? this.getFechaConcilDefaultIso() : null;
+
+  this.gridMovApi?.refreshCells({
+    force: true,
+    columns: ['concil', 'fechaconcil'],
+  });
+
+  this.recalcularResumenes();
+}
 }

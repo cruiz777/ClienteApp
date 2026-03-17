@@ -4,36 +4,7 @@
     <!-- TOP: selector conciliación -->
     <div class="top-search" [formGroup]="buscarForm">
 
-      <mat-form-field appearance="fill" class="ff compact concil-id concil-wide">
-        <mat-label>Conciliación</mat-label>
-
-        <input
-          matInput
-          type="text"
-          formControlName="idConciliacionBuscar"
-          [matAutocomplete]="autoConc"
-          placeholder="Buscar por #id, período, cuenta o banco..."
-        />
-
-        <mat-autocomplete
-          #autoConc="matAutocomplete"
-          [displayWith]="displayConciliacion"
-          (optionSelected)="onConciliacionSelected($event.option.value)"
-        >
-          <mat-option *ngIf="loadingSelector" disabled>Cargando...</mat-option>
-
-          <mat-option *ngFor="let c of selectorConciliacionesFiltradas" [value]="c">
-            <b>#{{ c.idConciliacion }}</b>
-            &nbsp;•&nbsp; {{ c.fecconcil }}
-            &nbsp;•&nbsp; {{ c.cuentaPresentacion }}
-            &nbsp;—&nbsp; {{ c.nombreCuenta }}
-          </mat-option>
-
-          <mat-option *ngIf="!loadingSelector && selectorConciliacionesFiltradas.length === 0" disabled>
-            Sin resultados
-          </mat-option>
-        </mat-autocomplete>
-      </mat-form-field>
+      
 
       <button mat-stroked-button class="btn" (click)="onNuevaConciliacion()" [disabled]="loading">
         <mat-icon>add</mat-icon>
@@ -41,13 +12,8 @@
       </button>
 
       <!-- Guardar (dropdown VB6) -->
-      <button
-        mat-raised-button
-        color="primary"
-        class="btn"
-        [matMenuTriggerFor]="menuGuardar"
-        [disabled]="!canAbrirMenuGuardar"
-      >
+      <button mat-raised-button color="primary" class="btn" [matMenuTriggerFor]="menuGuardar"
+        [disabled]="!canAbrirMenuGuardar">
         <mat-icon>save</mat-icon>
         Guardar
         <mat-icon>arrow_drop_down</mat-icon>
@@ -100,20 +66,11 @@
           <mat-form-field appearance="fill" class="ff compact">
             <mat-label>Plan de Cuenta</mat-label>
 
-            <input
-              matInput
-              type="text"
-              formControlName="planCuentaBuscar"
-              [matAutocomplete]="autoPlan"
-              [disabled]="isLocked"
-              placeholder="Buscar por id, cuenta o nombre..."
-            />
+            <input matInput type="text" formControlName="planCuentaBuscar" [matAutocomplete]="autoPlan"
+              [disabled]="isLocked" placeholder="Buscar por id, cuenta o nombre..." />
 
-            <mat-autocomplete
-              #autoPlan="matAutocomplete"
-              [displayWith]="displayPlanCuenta"
-              (optionSelected)="onPlanCuentaSelected($event.option.value)"
-            >
+            <mat-autocomplete #autoPlan="matAutocomplete" [displayWith]="displayPlanCuenta"
+              (optionSelected)="onPlanCuentaSelected($event.option.value)">
               <mat-option *ngIf="loadingPlan" disabled>Cargando...</mat-option>
 
               <mat-option *ngFor="let p of planCuentasFiltradas" [value]="p">
@@ -131,7 +88,8 @@
 
         <mat-form-field appearance="fill" class="ff compact">
           <mat-label>Cuenta Bancaria</mat-label>
-          <input matInput formControlName="codprePc" [disabled]="isLocked" placeholder="110102-001" />
+          <input matInput formControlName="codprePc" [disabled]="isLocked" placeholder="110102-001"
+            (blur)="onBlurDatosCabecera()" />
         </mat-form-field>
 
         <mat-form-field appearance="fill" class="ff compact">
@@ -143,30 +101,32 @@
       <div class="grid-3">
         <mat-form-field appearance="fill" class="ff compact">
           <mat-label>Fecha Inicial</mat-label>
-          <input matInput [matDatepicker]="dpIni" formControlName="fechaInicial" [disabled]="isLocked" />
+          <input matInput [matDatepicker]="dpIni" formControlName="fechaInicial" [disabled]="isLocked"
+            (dateChange)="onBlurDatosCabecera()" (blur)="onBlurDatosCabecera()" />
           <mat-datepicker-toggle matSuffix [for]="dpIni"></mat-datepicker-toggle>
           <mat-datepicker #dpIni></mat-datepicker>
         </mat-form-field>
 
         <mat-form-field appearance="fill" class="ff compact">
           <mat-label>Fecha Final</mat-label>
-          <input matInput [matDatepicker]="dpFin" formControlName="fechaFinal" [disabled]="isLocked" />
+          <input matInput [matDatepicker]="dpFin" formControlName="fechaFinal" [disabled]="isLocked"
+            (dateChange)="onBlurDatosCabecera()" (blur)="onBlurDatosCabecera()" />
           <mat-datepicker-toggle matSuffix [for]="dpFin"></mat-datepicker-toggle>
           <mat-datepicker #dpFin></mat-datepicker>
         </mat-form-field>
 
-        
+
       </div>
 
       <div class="grid-6">
         <mat-form-field appearance="fill" class="ff compact">
           <mat-label>Saldo Contable Inicial</mat-label>
-          <input matInput type="number" formControlName="saldcontini" [disabled]="isLocked" />
+          <input matInput type="number" formControlName="saldcontini" [readonly]="true" />
         </mat-form-field>
 
         <mat-form-field appearance="fill" class="ff compact">
           <mat-label>Saldo Contable Final</mat-label>
-          <input matInput type="number" formControlName="saldcontfin" [disabled]="isLocked" />
+          <input matInput type="number" formControlName="saldcontfin" [readonly]="true" />
         </mat-form-field>
 
         <mat-form-field appearance="fill" class="ff compact">
@@ -194,50 +154,16 @@
     <!-- Saldos Conciliados -->
     <div class="section-title">Saldos Conciliados</div>
     <div class="grid grid-small ag-theme-alpine">
-      <ag-grid-angular
-        [rowData]="[saldosConciliados]"
-        [columnDefs]="colSaldos"
-        [defaultColDef]="defaultColDef"
-        (gridReady)="onGridSaldosReady($event)"
-        [headerHeight]="32"
-        [rowHeight]="32"
-      ></ag-grid-angular>
+      <ag-grid-angular [rowData]="[saldosConciliados]" [columnDefs]="colSaldos" [defaultColDef]="defaultColDef"
+        (gridReady)="onGridSaldosReady($event)" [headerHeight]="32" [rowHeight]="32"></ag-grid-angular>
     </div>
 
     <!-- barra búsqueda grid -->
     <div class="search-bar">
-      <div class="search-title">Búsqueda</div>
+     
 
       <div class="search-grid">
-        <mat-form-field appearance="fill" class="compact">
-          <mat-label>Tipo Movimiento</mat-label>
-          <input matInput [(ngModel)]="filtroTipMov" [ngModelOptions]="{ standalone: true }" (ngModelChange)="aplicarFiltros()" [disabled]="isLocked" />
-        </mat-form-field>
-
-        <mat-form-field appearance="fill" class="compact">
-          <mat-label>Valor</mat-label>
-          <input matInput [(ngModel)]="filtroValor" [ngModelOptions]="{ standalone: true }" (ngModelChange)="aplicarFiltros()" [disabled]="isLocked" />
-        </mat-form-field>
-
-        <mat-form-field appearance="fill" class="compact">
-          <mat-label>N° Cheque</mat-label>
-          <input matInput [(ngModel)]="filtroCheque" [ngModelOptions]="{ standalone: true }" (ngModelChange)="aplicarFiltros()" [disabled]="isLocked" />
-        </mat-form-field>
-
-        <mat-form-field appearance="fill" class="compact">
-          <mat-label>N° Comprobante</mat-label>
-          <input matInput [(ngModel)]="filtroComprobante" [ngModelOptions]="{ standalone: true }" (ngModelChange)="aplicarFiltros()" [disabled]="isLocked" />
-        </mat-form-field>
-
-        <mat-form-field appearance="fill" class="compact">
-          <mat-label>N° Documento</mat-label>
-          <input matInput [(ngModel)]="filtroDocumento" [ngModelOptions]="{ standalone: true }" (ngModelChange)="aplicarFiltros()" [disabled]="isLocked" />
-        </mat-form-field>
-
-        <button mat-stroked-button class="btn btn-lite" (click)="limpiarFiltros()" [disabled]="isLocked">
-          <mat-icon>refresh</mat-icon>
-          Limpiar
-        </button>
+      
 
         <button mat-stroked-button class="btn btn-lite" (click)="marcarTodos()" [disabled]="isLocked">
           <mat-icon>done_all</mat-icon>
@@ -254,35 +180,19 @@
     <!-- DETALLE -->
     <div class="section-title">Movimientos</div>
     <div class="grid grid-main ag-theme-alpine">
-      <ag-grid-angular
-        [rowData]="movimientos"
-        [columnDefs]="colMov"
-        [defaultColDef]="defaultColDef"
-        [rowClassRules]="rowClassRules"
-        (gridReady)="onGridMovReady($event)"
-        (cellValueChanged)="onMovCellValueChanged($event)"
-        (cellDoubleClicked)="onMovCellDoubleClicked($event)"
-        (cellClicked)="onMovCellClicked($event)"
-        [singleClickEdit]="true"
-        [gridOptions]="gridOptions"
-        [stopEditingWhenCellsLoseFocus]="true"
-        [animateRows]="true"
-        [headerHeight]="34"
-        [rowHeight]="34"
-      ></ag-grid-angular>
+      <ag-grid-angular [rowData]="movimientos" [columnDefs]="colMov" [defaultColDef]="defaultColDef"
+        [rowClassRules]="rowClassRules" (gridReady)="onGridMovReady($event)"
+        (cellValueChanged)="onMovCellValueChanged($event)" (cellDoubleClicked)="onMovCellDoubleClicked($event)"
+        (cellClicked)="onMovCellClicked($event)" [singleClickEdit]="true" 
+        [stopEditingWhenCellsLoseFocus]="true" [animateRows]="true" [headerHeight]="34"
+        [rowHeight]="34"></ag-grid-angular>
     </div>
 
     <!-- RESUMEN -->
     <div class="section-title">Saldos por Conciliar</div>
     <div class="grid grid-bottom ag-theme-alpine">
-      <ag-grid-angular
-        [rowData]="resumenRows"
-        [columnDefs]="colResumen"
-        [defaultColDef]="defaultColDef"
-        (gridReady)="onGridResumenReady($event)"
-        [headerHeight]="32"
-        [rowHeight]="32"
-      ></ag-grid-angular>
+      <ag-grid-angular [rowData]="resumenRows" [columnDefs]="colResumen" [defaultColDef]="defaultColDef"
+        (gridReady)="onGridResumenReady($event)" [headerHeight]="32" [rowHeight]="32"></ag-grid-angular>
     </div>
 
   </mat-card>
