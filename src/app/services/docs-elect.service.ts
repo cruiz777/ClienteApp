@@ -51,6 +51,7 @@ export interface DocumentoGrid {
   ptoEmision: string;
   secuencial: string;
   razonSocial: string;
+  idEstado: string;
   total: number;
   estado: string;
   fechaAutorizada: string | null;
@@ -200,6 +201,7 @@ export class DocumentosService {
             razonSocial: doc.razon_social_comprador || '',
             total: doc.total_documento || 0,
             estado: doc.observacion || '',
+            idEstado: doc.estado || '', 
             fechaAutorizada: doc.fecha_autorizacion
               ? this.formatearFechaDisplay(doc.fecha_autorizacion)
               : null,

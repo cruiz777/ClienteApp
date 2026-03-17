@@ -33,6 +33,16 @@ export interface PurchaseReportItemResponse {
   codIvaBienes20: string;
   ivaServ50: number;
   codIvaServ50: string;
+  ivaBienes50: number;
+  codIvaBienes50: string;
+  ivaBienes70: number;
+  codIvaBienes70: string;
+  ivaServ10: number;
+  codIvaServ10: string;
+  ivaServ20: number;
+  codIvaServ20: string;
+  ivaServ30: number;
+  codIvaServ30: string;
   // ── RETENCIONES FUENTE (Columnas 18-27) ──
   codRetFuente: string;
   baseRetencion: number;
@@ -63,6 +73,11 @@ export interface PurchaseReportTotalsResponse {
   totalIvaBienes10: number;
   totalIvaBienes20: number;
   totalIvaServ50: number;
+  totalIvaBienes50: number;
+  totalIvaBienes70: number;
+  totalIvaServ10: number;
+  totalIvaServ20: number;
+  totalIvaServ30: number;
 }
 
 /**
