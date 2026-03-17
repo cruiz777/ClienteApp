@@ -96,7 +96,14 @@ export class MayorCuentasListComponent implements OnInit {
   resizable: true,
   floatingFilter: true,
 };
+pagination = true;
+paginationPageSize = 100;
+paginationPageSizeSelector = [50, 100, 200, 500];
+private gridApi!: GridApi;
 
+onGridReady(params: GridReadyEvent): void {
+  this.gridApi = params.api;
+}
 columnDefs: ColDef[] = [
   { headerName: 'Cuenta', field: 'cuentaHijo', width: 120 },
   { headerName: 'Nombre Cuenta', field: 'nombreHijo', width: 320 },

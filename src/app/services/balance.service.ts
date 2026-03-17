@@ -11,6 +11,7 @@ import { MayorCuentasResponse } from '../interfaces/responses/mayor-cuentas-resp
 import { EstadoFinancieroRequest } from '../interfaces/requests/estado-financiero-request';
 import { EstadoFinancieroResponse } from '../interfaces/responses/estado-financiero-response';
 import { EstadoResultadosResponse } from '../interfaces/responses/estado-resultados-response';
+import { MayorCodigosRequest } from '../interfaces/requests/mayor-codigos-request';
 
 
 // Si quieres tipar la respuesta genérica como en producto.service.ts
@@ -64,7 +65,9 @@ export class BalanceService {
       request
     );
   }
-  
+  getByCondicionMayorCodigos(request: MayorCodigosRequest): Observable<any> {
+    return this.http.post(`${this.apiUrl}/mayor-codigos`, request);
+  }
   getEstadoFinanciero(
     request: EstadoFinancieroRequest
   ): Observable<ApiResponse<EstadoFinancieroResponse[]>> {

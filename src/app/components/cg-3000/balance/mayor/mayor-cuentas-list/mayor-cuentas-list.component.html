@@ -136,7 +136,11 @@
     [columnDefs]="columnDefs"
     [defaultColDef]="defaultColDef"
     [animateRows]="true"
-    [rowSelection]="'single'">
+    [rowSelection]="'single'"
+    [pagination]="pagination"
+    [paginationPageSize]="paginationPageSize"
+    [paginationPageSizeSelector]="paginationPageSizeSelector"
+    (gridReady)="onGridReady($event)">
   </ag-grid-angular>
 
 </div>

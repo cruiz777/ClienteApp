@@ -1,0 +1,250 @@
+<div class="page-wrapper-balance">
+
+  <!-- Título -->
+  <div class="page-title-row">
+    <h1 class="page-title-balance">Mayor de Códigos</h1>
+  </div>
+
+  <!-- Panel de filtros -->
+  <div class="filters-panel">
+
+    <!-- Fila 1: Fechas + Acciones -->
+    <div class="filters-top">
+      <div class="filters-primary">
+        <div class="filters-title">
+          <div class="filters-title-main">Filtros</div>
+        </div>
+        <div class="primary-grid">
+          <div class="fg">
+            <label class="fg-label" for="fechaDesde">Fecha inicio</label>
+            <input id="fechaDesde" type="date" [(ngModel)]="filtros.fechaDesde" class="fg-control" />
+          </div>
+          <div class="fg">
+            <label class="fg-label" for="fechaHasta">Fecha final</label>
+            <input id="fechaHasta" type="date" [(ngModel)]="filtros.fechaHasta" class="fg-control" />
+          </div>
+          <div class="mode-chipset">
+            <button type="button" class="mode-chip"
+              [class.active]="modoFiltroCod === 'codigo'"
+              (click)="toggleModoCodigo()">
+              Por código
+            </button>
+            <button type="button" class="mode-chip"
+              [class.active]="modoFiltro1 === 'cuenta'"
+              (click)="toggleModoCuenta()">
+              Por cuentas
+            </button>
+            <button type="button" class="mode-chip"
+              [class.active]="modoFiltro2 === 'local' || modoFiltro3 === 'zona'"
+              (click)="toggleModoLocal()">
+              Por local
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="filters-actions">
+        <button type="button" class="btn-icon" (click)="consultar()" title="Buscar">
+          <img src="assets/icons/buscar-down1.png" alt="Buscar" />
+        </button>
+        <button type="button" class="btn-icon" title="Exportar a Excel" (click)="exportExcel()">
+          <img src="assets/icons/xls.png" alt="Excel" />
+        </button>
+        <button type="button" class="btn-icon" title="Exportar a PDF" (click)="exportPdf()">
+          <img src="assets/icons/pdf-down.png" alt="PDF" />
+        </button>
+        <div class="status-pill" *ngIf="loading">Cargando…</div>
+      </div>
+    </div>
+
+    <!-- Fila 2: Filtro por Código Contable -->
+    <div class="filters-bottom" *ngIf="modoFiltroCod === 'codigo'">
+      <div class="secondary-grid">
+
+        <!-- CÓDIGO DESDE -->
+        <div class="fg">
+          <label class="fg-label" for="codDesde">Código contable inicial</label>
+          <div class="input-search-wrap">
+            <input
+              id="codDesde"
+              type="text"
+              class="fg-control"
+              [value]="labelCodDesde"
+              (input)="onBuscarCodDesde($event)"
+              (blur)="cerrarDropdowns()"
+              placeholder="Buscar por nombre o identificación..."
+              autocomplete="off" />
+            <span class="input-clear-icon"
+                *ngIf="labelCodDesde"
+                (mousedown)="limpiarCodDesde()">
+                ✕
+            </span>
+            <ul class="search-dropdown" *ngIf="mostrarDropCodDesde">
+              <li class="search-dropdown-item"
+                *ngFor="let cod of sugerenciasCodDesde"
+                (mousedown)="seleccionarCodDesde(cod)">
+                <span class="search-item-codigo">{{ cod.Identificacionauxiliar }}</span>
+                <span class="search-item-nombre">{{ cod.Razonsocial || cod.Nombreauxiliar }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- CÓDIGO HASTA -->
+        <div class="fg">
+          <label class="fg-label" for="codHasta">Código contable final</label>
+          <div class="input-search-wrap">
+            <input
+              id="codHasta"
+              type="text"
+              class="fg-control"
+              [value]="labelCodHasta"
+              (input)="onBuscarCodHasta($event)"
+              (blur)="cerrarDropdowns()"
+              placeholder="Buscar por nombre o identificación..."
+              autocomplete="off" />
+            <span class="input-clear-icon"
+                *ngIf="labelCodHasta"
+                (mousedown)="limpiarCodHasta()">
+                ✕
+            </span>
+            <ul class="search-dropdown" *ngIf="mostrarDropCodHasta">
+              <li class="search-dropdown-item"
+                *ngFor="let cod of sugerenciasCodHasta"
+                (mousedown)="seleccionarCodHasta(cod)">
+                <span class="search-item-codigo">{{ cod.Identificacionauxiliar }}</span>
+                <span class="search-item-nombre">{{ cod.Razonsocial || cod.Nombreauxiliar }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Fila 3: Filtro por Cuenta -->
+    <div class="filters-bottom" *ngIf="modoFiltro1 === 'cuenta'">
+      <div class="secondary-grid">
+
+        <!-- CUENTA A -->
+        <div class="fg">
+          <label class="fg-label" for="cuentaA">Cuenta inicial</label>
+          <div class="input-search-wrap">
+            <input
+              id="cuentaA"
+              type="text"
+              class="fg-control"
+              [value]="filtros.cuentaA ?? ''"
+              (input)="onBuscarCuenta('A', $event)"
+              (blur)="cerrarDropdowns()"
+              maxlength="50"
+              placeholder="Código o nombre de cuenta..."
+              autocomplete="off" />
+            <span class="input-clear-icon"
+            *ngIf="filtros.cuentaA"
+            (mousedown)="limpiarCuentaA()">
+            ✕
+            </span>
+            <ul class="search-dropdown" *ngIf="mostrarDropA">
+              <li class="search-dropdown-item"
+                *ngFor="let c of sugerenciasA"
+                (mousedown)="seleccionarCuenta('A', c)">
+                <span class="search-item-codigo">{{ c.Identificacionauxiliar }}</span>
+                <span class="search-item-nombre">{{ c.Razonsocial || c.Nombreauxiliar }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- CUENTA B -->
+        <div class="fg">
+          <label class="fg-label" for="cuentaB">Cuenta final</label>
+          <div class="input-search-wrap">
+            <input
+              id="cuentaB"
+              type="text"
+              class="fg-control"
+              [value]="filtros.cuentaB ?? ''"
+              (input)="onBuscarCuenta('B', $event)"
+              (blur)="cerrarDropdowns()"
+              maxlength="50"
+              placeholder="Código o nombre de cuenta..."
+              autocomplete="off" />
+            <span class="input-clear-icon"
+            *ngIf="filtros.cuentaB"
+            (mousedown)="limpiarCuentaB()">
+            ✕
+            </span>
+            <ul class="search-dropdown" *ngIf="mostrarDropB">
+              <li class="search-dropdown-item"
+                *ngFor="let c of sugerenciasB"
+                (mousedown)="seleccionarCuenta('B', c)">
+                <span class="search-item-codigo">{{ c.Identificacionauxiliar }}</span>
+                <span class="search-item-nombre">{{ c.Razonsocial || c.Nombreauxiliar }}</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Fila 4: Local y Zona -->
+    <div class="filters-bottom"
+      *ngIf="modoFiltro2 === 'local' || modoFiltro3 === 'zona'">
+      <div class="secondary-grid">
+
+        <div class="fg" *ngIf="modoFiltro2 === 'local'">
+          <label class="fg-label">Local</label>
+          <select class="fg-control"
+            [(ngModel)]="filtros.idLocal"
+            [ngModelOptions]="{ standalone: true }">
+            <option [ngValue]="null">Seleccione</option>
+            <option *ngFor="let local of localesResponse; trackBy: trackById"
+              [ngValue]="local.id">
+              {{ local.nombre }}
+            </option>
+          </select>
+        </div>
+
+        <div class="fg" *ngIf="modoFiltro3 === 'zona'">
+          <label class="fg-label">Zona</label>
+          <select class="fg-control"
+            [(ngModel)]="filtros.idZona"
+            [ngModelOptions]="{ standalone: true }">
+            <option [ngValue]="null">Seleccione</option>
+            <option *ngFor="let zona of zonaResponse; trackBy: trackByIdZona"
+              [ngValue]="zona.idZona">
+              {{ zona.nombre }}
+            </option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RESULTADOS -->
+  <div class="results-panel" *ngIf="!loading">
+    <ag-grid-angular
+      class="ag-theme-alpine mayor-grid"
+      [rowData]="aplanarDatos()"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [animateRows]="true"
+      [rowSelection]="'single'"
+      [pagination]="pagination"
+      [paginationPageSize]="paginationPageSize"
+      [paginationPageSizeSelector]="paginationPageSizeSelector"
+      (gridReady)="onGridReady($event)">
+    </ag-grid-angular>
+  </div>
+
+  <!-- Estado vacío -->
+  <div class="empty-state"
+    *ngIf="!loading && !resultados?.codigosContables?.length">
+    Sin datos para el rango seleccionado.
+</div>
+
+</div>
