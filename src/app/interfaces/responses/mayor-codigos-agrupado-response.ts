@@ -32,6 +32,7 @@ export interface MovimientoDetalleResponse {
 }
 
 export interface TotalesResponse {
+  saldoAnterior: number;
   debe: number;
   haber: number;
   saldo: number;

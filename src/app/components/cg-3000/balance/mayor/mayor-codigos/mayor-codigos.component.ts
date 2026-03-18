@@ -777,12 +777,19 @@ export class MayorCodigosListComponent implements OnInit {
 
         // Fila de valores
         const rTotGen = ws.getRow(rowIdx);
-        ws.mergeCells(rowIdx, 1, rowIdx, 10);
+        ws.mergeCells(rowIdx, 1, rowIdx, 9);
         const cLabelGen = rTotGen.getCell(1);
         cLabelGen.value = 'TOTAL GENERAL';
         cLabelGen.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
         cLabelGen.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E78' } };
         cLabelGen.alignment = { horizontal: 'right', vertical: 'middle' };
+        
+        // Saldo Anterior
+        rTotGen.getCell(10).value = this.resultados.totalesGenerales.saldoAnterior;
+        rTotGen.getCell(10).numFmt = numFmt;
+        rTotGen.getCell(10).font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+        rTotGen.getCell(10).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F4E78' } };
+        rTotGen.getCell(10).alignment = { horizontal: 'right', vertical: 'middle' };
 
         rTotGen.getCell(11).value = this.resultados.totalesGenerales.debe;
         rTotGen.getCell(11).numFmt = numFmt;
@@ -1084,7 +1091,7 @@ export class MayorCodigosListComponent implements OnInit {
         const totalGen: any[] = [
         { 
             content: 'TOTAL GENERAL', 
-            colSpan: 10, 
+            colSpan: 9, 
             styles: { 
             halign: 'right', 
             fontStyle: 'bold', 
@@ -1094,12 +1101,21 @@ export class MayorCodigosListComponent implements OnInit {
             } 
         },
         { 
+            content: fmt(this.resultados.totalesGenerales.saldoAnterior),  
+            styles: { 
+                halign: 'right', 
+                fontStyle: 'bold', 
+                fillColor: [31, 78, 120], 
+                textColor: [255, 255, 255] 
+            } 
+        },
+        { 
             content: fmt(this.resultados.totalesGenerales.debe),  
             styles: { 
-            halign: 'right', 
-            fontStyle: 'bold', 
-            fillColor: [31, 78, 120], 
-            textColor: [255, 255, 255] 
+                halign: 'right', 
+                fontStyle: 'bold', 
+                fillColor: [31, 78, 120], 
+                textColor: [255, 255, 255] 
             } 
         },
         { 

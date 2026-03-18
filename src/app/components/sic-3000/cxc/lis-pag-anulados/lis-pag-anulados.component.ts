@@ -14,6 +14,11 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule }   from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PagoReportService } from 'src/app/services/pago-report.service';
+import { PDFDocument } from 'pdf-lib';
+import { forkJoin } from 'rxjs';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
+import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
 
 /** Fila renderizable en la grilla */
 export interface PagoRow {
@@ -33,7 +38,8 @@ export interface PagoRow {
   standalone: true,
   imports: [
     CommonModule, ReactiveFormsModule, AgGridAngular,
-    MatMenuModule, MatButtonModule, MatIconModule, MatTooltipModule
+    MatMenuModule, MatButtonModule, MatIconModule, MatTooltipModule,
+    MatSnackBarModule, MatDialogModule
   ],
   templateUrl: './lis-pag-anulados.component.html',
   styleUrls: ['./lis-pag-anulados.component.css']
@@ -46,9 +52,11 @@ export class LisPagAnuladosComponent implements OnInit {
     private empresaService: EmpresaService,
     private exportService: ExportService,
     private logoService: LogoService,
-    private pagoReportService: PagoReportService 
+    private pagoReportService: PagoReportService,
+    private snackbar: MatSnackBar,
+    private dialog: MatDialog 
   ) {}
-
+  
   @ViewChild(AgGridAngular) grid!: AgGridAngular;
 
   f = this.fb.group({
@@ -68,8 +76,18 @@ export class LisPagAnuladosComponent implements OnInit {
   };
 
   logoUrl: string = '';
-
+  
   columnDefs: ColDef[] = [
+    {
+      headerCheckboxSelection: true,
+      checkboxSelection: true,
+      width: 48,
+      pinned: 'left',
+      suppressHeaderMenuButton: true,
+      sortable: false,
+      filter: false,
+      lockPosition: true,
+    },
     { headerName: 'Nro. Pago', field: 'numeroPago', width: 130 },
     {
       headerName: 'Fecha',
@@ -355,6 +373,136 @@ export class LisPagAnuladosComponent implements OnInit {
 
     if (tipo === 'excel') this.exportService.exportarExcel(options);
     else this.exportService.exportarPDF(options);
+  }
+
+  async imprimirSeleccionadas(): Promise<void> {
+    if (!this.grid?.api) return;
+
+    const seleccionadas = this.grid.api.getSelectedRows() as PagoRow[];
+
+    if (!seleccionadas.length) {
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '360px',
+        data: {
+          title: 'Atención',
+          message: 'Seleccione al menos un pago.',
+          type: 'warning',
+          showCancel: false,
+          confirmText: 'Aceptar'
+        }
+      });
+      return;
+    }
+
+    // Filtrar solo pagos activos (opcional, ajusta según tu lógica)
+    const aptas = seleccionadas.filter(p => p.estado !== 'ANULADO');
+
+    if (!aptas.length) {
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '360px',
+        data: {
+          title: 'Atención',
+          message: 'Los pagos seleccionados están anulados.',
+          type: 'warning',
+          showCancel: false,
+          confirmText: 'Aceptar'
+        }
+      });
+      return;
+    }
+
+    const dialogRef = this.dialog.open<CustomMessageBoxComponent>(CustomMessageBoxComponent, {
+      disableClose: true,
+      width: '400px',
+      data: {
+        title: 'Generando PDF',
+        message: 'Descargando e integrando comprobantes de pago...',
+        type: 'info',
+        isLoading: true,
+        showProgress: true,
+        currentProgress: 0,
+        totalProgress: aptas.length,
+        loadingText: `Procesando: 0 de ${aptas.length} (0%)`,
+      }
+    });
+
+    try {
+      // Crear PDF maestro
+      const mergedPdf = await PDFDocument.create();
+      const LOTE = 10;
+      let procesados = 0;
+      const buffersTodos: ArrayBuffer[] = [];
+
+      // 1️⃣ Descargar todos los PDFs primero
+      for (let i = 0; i < aptas.length; i += LOTE) {
+        const lote = aptas.slice(i, i + LOTE);
+        
+        const resultados = await forkJoin(
+          lote.map(pago => this.pagoReportService.obtenerPDFComoArrayBuffer(
+            pago.numeroPago,
+            {
+              titulo: 'ASOCIACION ECUATORIANA DE CODIGO DE PRODUCTO ECOP',
+              logoUrl: this.logoUrl || 'assets/logo/GS1-logo.png',
+              esAnulado: false
+            }
+          ))
+        ).toPromise() as ArrayBuffer[];
+
+        buffersTodos.push(...resultados);
+        
+        procesados += resultados.length;
+        dialogRef.componentInstance!.updateProgress(procesados, aptas.length);
+      }
+
+      // 2️⃣ Agrupar de 2 en 2 y crear páginas A4
+      for (const buffer of buffersTodos) {
+        const pdf = await PDFDocument.load(buffer);
+        const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+        pages.forEach(p => mergedPdf.addPage(p));
+      }
+
+      // Generar archivo final
+      const mergedBytes = await mergedPdf.save();
+      const arrayBuffer = mergedBytes.buffer.slice(0) as ArrayBuffer;
+      const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `pagos_${new Date().toISOString().slice(0, 10)}.pdf`;
+      link.click();
+      URL.revokeObjectURL(url);
+
+      // Cerrar dialog de progreso
+      dialogRef.close();
+
+      // Mostrar mensaje de éxito
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '360px',
+        data: {
+          title: '¡Listo!',
+          message: `<b>${aptas.length}</b> pago(s) descargados correctamente.`,
+          type: 'success',
+          showCancel: false,
+          confirmText: 'Aceptar'
+        }
+      });
+
+    } catch (err: any) {
+      // Cerrar dialog de progreso en caso de error
+      dialogRef.close();
+
+      // Mostrar error
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '360px',
+        data: {
+          title: 'Error',
+          message: `No se pudo generar el PDF: <b>${err.message}</b>`,
+          type: 'error',
+          showCancel: false,
+          confirmText: 'Cerrar'
+        }
+      });
+    }
   }
 
   // Logo

@@ -20,6 +20,8 @@ import { AccionesCellRendererComponent } from '../doc-electronicos/acciones-cell
 import { forkJoin } from 'rxjs';
 import { UsuarioService } from 'src/app/services/usuario.service';
 import { PDFDocument } from 'pdf-lib';
+import { MatDialog } from '@angular/material/dialog';
+import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
 
 export class CustomDateAdapter extends NativeDateAdapter {
   override parse(value: any): Date | null {
@@ -97,7 +99,8 @@ readonly tiposDocumento: { key: TipoDocumento; label: string }[] = [
     private fb: FormBuilder,
     private docService: DocumentosService,
     private snackBar: MatSnackBar,
-    private usuarioService: UsuarioService
+    private usuarioService: UsuarioService,
+    private dialog: MatDialog 
   ) {
     // ⬅️ FECHAS POR DEFECTO: 1° del mes actual hasta hoy
     const hoy = new Date();
@@ -327,31 +330,57 @@ readonly tiposDocumento: { key: TipoDocumento; label: string }[] = [
     const seleccionadas = this.gridApi.getSelectedRows();
 
     if (!seleccionadas.length) {
-      this.snackBar.open('Seleccione al menos un documento.', 'Cerrar', { duration: 3000 });
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '360px',
+        data: { title: 'Atención', message: 'Seleccione al menos un documento.', type: 'warning', showCancel: false, confirmText: 'Aceptar' }
+      });
       return;
     }
 
     const aptas = seleccionadas.filter(d => d.puedeReimprimir);
 
     if (!aptas.length) {
-      this.snackBar.open('Ningún documento seleccionado está autorizado.', 'Cerrar', { duration: 3000 });
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '360px',
+        data: { title: 'Atención', message: 'Ningún documento seleccionado está autorizado.', type: 'warning', showCancel: false, confirmText: 'Aceptar' }
+      });
       return;
     }
 
-    this.loading = true;
-    this.snackBar.open(`Generando PDF con ${aptas.length} documento(s)...`, '', { duration: 2500 });
+    const dialogRef = this.dialog.open<CustomMessageBoxComponent>(CustomMessageBoxComponent, {
+      disableClose: true,
+      width: '400px',
+      data: {
+        title: 'Generando PDF',
+        message: 'Descargando e integrando documentos...',
+        type: 'info',
+        isLoading: true,
+        showProgress: true,
+        currentProgress: 0,
+        totalProgress: aptas.length,
+        loadingText: `Procesando: 0 de ${aptas.length} (0%)`,
+      }
+    });
 
     try {
-      const buffers = await forkJoin(
-        aptas.map(doc => this.docService.obtenerPDFComoArrayBuffer(doc.claveAcceso))
-      ).toPromise() as ArrayBuffer[];
-
       const mergedPdf = await PDFDocument.create();
+      const LOTE = 10;
+      let procesados = 0;
 
-      for (const buffer of buffers) {
-        const pdf = await PDFDocument.load(buffer);
-        const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-        pages.forEach(p => mergedPdf.addPage(p));
+      for (let i = 0; i < aptas.length; i += LOTE) {
+        const lote = aptas.slice(i, i + LOTE);
+        const resultados = await forkJoin(
+          lote.map(doc => this.docService.obtenerPDFComoArrayBuffer(doc.claveAcceso))
+        ).toPromise() as ArrayBuffer[];
+
+        for (const buffer of resultados) {
+          const pdf = await PDFDocument.load(buffer);
+          const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+          pages.forEach(p => mergedPdf.addPage(p));
+          
+          procesados++;
+          dialogRef.componentInstance!.updateProgress(procesados, aptas.length);
+        }
       }
 
       const mergedBytes = await mergedPdf.save();
@@ -363,12 +392,18 @@ readonly tiposDocumento: { key: TipoDocumento; label: string }[] = [
       link.click();
       URL.revokeObjectURL(url);
 
-      this.snackBar.open(`✅ ${aptas.length} documento(s) descargados correctamente.`, 'Cerrar', { duration: 3000 });
+      dialogRef.close();
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '360px',
+        data: { title: '¡Listo!', message: `<b>${aptas.length}</b> documento(s) descargados correctamente.`, type: 'success', showCancel: false, confirmText: 'Aceptar' }
+      });
 
     } catch (err: any) {
-      this.snackBar.open(`❌ Error al generar PDF: ${err.message}`, 'Cerrar', { duration: 5000 });
-    } finally {
-      this.loading = false;
+      dialogRef.close();
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '360px',
+        data: { title: 'Error', message: `No se pudo generar el PDF: <b>${err.message}</b>`, type: 'error', showCancel: false, confirmText: 'Cerrar' }
+      });
     }
   }
 
