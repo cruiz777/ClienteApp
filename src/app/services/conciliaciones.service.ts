@@ -217,17 +217,31 @@ export class ConciliacionesService {
     );
   }
   getTotalesContablesHastaFecha(
-  codprePc: string,
-  fechaCorte: string // dd/MM/yyyy
-): Observable<ApiResponse<TotalesContablesHastaFechaResponse>> {
+    codprePc: string,
+    fechaCorte: string // dd/MM/yyyy
+  ): Observable<ApiResponse<TotalesContablesHastaFechaResponse>> {
 
-  const params = new HttpParams()
-    .set('codprePc', String(codprePc ?? '').trim())
-    .set('fechaCorte', String(fechaCorte ?? '').trim());
+    const params = new HttpParams()
+      .set('codprePc', String(codprePc ?? '').trim())
+      .set('fechaCorte', String(fechaCorte ?? '').trim());
 
-  return this.http.get<ApiResponse<TotalesContablesHastaFechaResponse>>(
-    `${this.baseUrl}/totales-contables-hasta-fecha`,
-    { params }
-  );
-}
+    return this.http.get<ApiResponse<TotalesContablesHastaFechaResponse>>(
+      `${this.baseUrl}/totales-contables-hasta-fecha`,
+      { params }
+    );
+  }
+  getConciliacionByPeriodoCuenta(
+    codprePc: string,
+    fecconcil: string
+  ): Observable<ApiResponse<ConciliacionResponse>> {
+
+    const params = new HttpParams()
+      .set('codprePc', String(codprePc ?? '').trim())
+      .set('fecconcil', String(fecconcil ?? '').trim());
+
+    return this.http.get<ApiResponse<ConciliacionResponse>>(
+      `${this.baseUrl}/por-periodo-cuenta`,
+      { params }
+    );
+  }
 }

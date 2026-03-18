@@ -4,7 +4,7 @@
     <!-- TOP: selector conciliación -->
     <div class="top-search" [formGroup]="buscarForm">
 
-      
+
 
       <button mat-stroked-button class="btn" (click)="onNuevaConciliacion()" [disabled]="loading">
         <mat-icon>add</mat-icon>
@@ -13,19 +13,19 @@
 
       <!-- Guardar (dropdown VB6) -->
       <button mat-raised-button color="primary" class="btn" [matMenuTriggerFor]="menuGuardar"
-        [disabled]="!canAbrirMenuGuardar">
+        [disabled]="loading || isLocked || !canAbrirMenuGuardar">
         <mat-icon>save</mat-icon>
         Guardar
         <mat-icon>arrow_drop_down</mat-icon>
       </button>
 
       <mat-menu #menuGuardar="matMenu">
-        <button mat-menu-item (click)="onGuardarParcial()" [disabled]="!canGuardarParcial">
+        <button mat-menu-item (click)="onGuardarParcial()" [disabled]="loading || isLocked || !canGuardarParcial">
           <mat-icon>save_as</mat-icon>
           Conciliación parcial
         </button>
 
-        <button mat-menu-item (click)="onGuardarTotal()" [disabled]="!canGuardarTotal">
+        <button mat-menu-item (click)="onGuardarTotal()" [disabled]="loading || isLocked || !canGuardarTotal">
           <mat-icon>check_circle</mat-icon>
           Conciliación total
         </button>
@@ -160,10 +160,10 @@
 
     <!-- barra búsqueda grid -->
     <div class="search-bar">
-     
+
 
       <div class="search-grid">
-      
+
 
         <button mat-stroked-button class="btn btn-lite" (click)="marcarTodos()" [disabled]="isLocked">
           <mat-icon>done_all</mat-icon>
@@ -183,9 +183,8 @@
       <ag-grid-angular [rowData]="movimientos" [columnDefs]="colMov" [defaultColDef]="defaultColDef"
         [rowClassRules]="rowClassRules" (gridReady)="onGridMovReady($event)"
         (cellValueChanged)="onMovCellValueChanged($event)" (cellDoubleClicked)="onMovCellDoubleClicked($event)"
-        (cellClicked)="onMovCellClicked($event)" [singleClickEdit]="true" 
-        [stopEditingWhenCellsLoseFocus]="true" [animateRows]="true" [headerHeight]="34"
-        [rowHeight]="34"></ag-grid-angular>
+        (cellClicked)="onMovCellClicked($event)" [singleClickEdit]="true" [stopEditingWhenCellsLoseFocus]="true"
+        [animateRows]="true" [headerHeight]="34" [rowHeight]="34"></ag-grid-angular>
     </div>
 
     <!-- RESUMEN -->
