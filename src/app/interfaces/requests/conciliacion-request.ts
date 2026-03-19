@@ -3,8 +3,8 @@ export type IsoDateLike = string | Date;
 export interface CreateConciliacionDetalleRequest {
   idDetMaestro: number;
 
-  linea?: number | null;            // opcional
-  fechatran?: IsoDateLike | null;   // "2026-02-26T09:15:00"
+  linea?: number | null;
+  fechatran?: IsoDateLike | null;
   idMovBancario?: number | null;
   movbancario?: string | null;
   nocomprobante?: string | null;
@@ -13,8 +13,11 @@ export interface CreateConciliacionDetalleRequest {
   debito?: number | null;
   credito?: number | null;
 
-  concil?: string | null;           // "C", "S"/"N" (según tu regla)
-  fechaconcil?: IsoDateLike | null; // "2026-02-26T00:00:00"
+  // Mantén C/N porque tu UI trabaja así
+  concil?: string | null;
+
+  // Fecha REAL en que se concilia el movimiento
+  fechaconcil?: IsoDateLike | null;
 
   beneficiario?: string | null;
   numdoc?: string | null;
@@ -22,8 +25,13 @@ export interface CreateConciliacionDetalleRequest {
 }
 
 export interface CreateConciliacionRequest {
-  fechaconcil: IsoDateLike; // obligatorio
-  idPlanCuentas: number;    // obligatorio
+  // NUEVO: período conciliado, ej. "202601"
+  fecconcil: string;
+
+  // Fecha REAL en que se realizó la conciliación
+  fechaconcil: IsoDateLike;
+
+  idPlanCuentas: number;
 
   codprePc?: string | null;
   descripcion?: string | null;
@@ -56,14 +64,14 @@ export interface CreateConciliacionRequest {
 
   comentario?: string | null;
 
-  idEmpresa: number; // obligatorio
-  idUsuario: number; // obligatorio
+  idEmpresa: number;
+  idUsuario: number;
 
-  detalles: CreateConciliacionDetalleRequest[]; // obligatorio (>=1)
+  detalles: CreateConciliacionDetalleRequest[];
 }
 
 export interface UpdateConciliacionRequest extends CreateConciliacionRequest {
-  idConciliacion?: number | null; // opcional (el id real va por ruta)
+  idConciliacion?: number | null;
 }
 
 export interface GuardarConciliacionParcialDetalleRequest {
@@ -72,6 +80,7 @@ export interface GuardarConciliacionParcialDetalleRequest {
 }
 
 export interface GuardarConciliacionParcialRequest {
+  // fecha REAL de guardado parcial
   fechaconcil: IsoDateLike;
   detalles: GuardarConciliacionParcialDetalleRequest[];
 }
