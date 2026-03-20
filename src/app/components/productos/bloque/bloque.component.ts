@@ -1572,8 +1572,8 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
         );
         return false;
       }
-
-      if (cantidad > restantes && this.tipoGtin === 'GTIN-13') {
+      ///if (cantidad > restantes && this.tipoGtin === 'GTIN-13') { validacion Paola
+      if (cantidad > restantes) {
         this.mostrarAlerta(
           `⚠️ Solicitas ${cantidad} códigos pero solo puedes generar ${restantes} más con el prefijo ${pais ? pais : ''}${limpio} (máx ${maxTeorico}, existentes ${existentes}).`,
           'Error'

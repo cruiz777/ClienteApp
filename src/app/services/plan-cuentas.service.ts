@@ -114,6 +114,12 @@ export class PlanCuentasService {
     );
   }
 
+  getByCodigoEspecial4(opts?: { idEmpresa?: number; estado?: string }): Observable<PlanCuenta[]> {
+  return this.getAll(opts).pipe(
+    map(items => items.filter(x => x.IdCodigoEspecial === 4))
+  );
+}
+
   create(payload: Partial<PlanCuenta>): Observable<PlanCuenta> {
     return this.http.post<any>(this.baseUrl, payload).pipe(map(res => this.normalizeOne(res)));
   }

@@ -25,6 +25,11 @@ export interface ApiResponse<T> {
 export interface SaldoContableInicialResponse {
   saldoContableInicial: number;
 }
+export interface TotalesContablesHastaFechaResponse {
+  tDebe: number;
+  tHaber: number;
+  saldo: number;
+}
 @Injectable({
   providedIn: 'root',
 })
@@ -73,23 +78,24 @@ export class ConciliacionesService {
   }
 
   // GET conciliacion/api/Conciliaciones/movimientos-maestro?idPlanCuentas=9&fechaInicio=2026-01-01&fechaFin=2026-01-31
-  getMovimientosMaestro(
-    idPlanCuentas: number,
-    fechaInicio: Date | string,
-    fechaFin: Date | string
-  ): Observable<ApiResponse<MovimientoMaestroResponse[]>> {
-
-    const params = new HttpParams()
-      .set('idPlanCuentas', String(idPlanCuentas))
-      .set('fechaInicio', this.toDateOnly(fechaInicio))
-      .set('fechaFin', this.toDateOnly(fechaFin));
-
-    return this.http.get<ApiResponse<MovimientoMaestroResponse[]>>(
-      `${this.baseUrl}/movimientos-maestro`,
-      { params }
-    );
-  }
-
+ getMovimientosMaestro(
+  idPlanCuentas: number,
+  codprePc: string,
+  fechaInicio: string,
+  fechaFin: string
+) {
+  return this.http.get<ApiResponse<MovimientoMaestroResponse[]>>(
+    `${this.baseUrl}/movimientos-maestro`,
+    {
+      params: {
+        idPlanCuentas,
+        codprePc,
+        fechaInicio,
+        fechaFin
+      }
+    }
+  );
+}
   private toDateOnly(v: Date | string): string {
     if (v instanceof Date) {
       const yyyy = v.getFullYear();
@@ -211,4 +217,42 @@ export class ConciliacionesService {
       { params }
     );
   }
+  getTotalesContablesHastaFecha(
+    codprePc: string,
+    fechaCorte: string // dd/MM/yyyy
+  ): Observable<ApiResponse<TotalesContablesHastaFechaResponse>> {
+
+    const params = new HttpParams()
+      .set('codprePc', String(codprePc ?? '').trim())
+      .set('fechaCorte', String(fechaCorte ?? '').trim());
+
+    return this.http.get<ApiResponse<TotalesContablesHastaFechaResponse>>(
+      `${this.baseUrl}/totales-contables-hasta-fecha`,
+      { params }
+    );
+  }
+  getConciliacionByPeriodoCuenta(
+    codprePc: string,
+    fecconcil: string
+  ): Observable<ApiResponse<ConciliacionResponse>> {
+
+    const params = new HttpParams()
+      .set('codprePc', String(codprePc ?? '').trim())
+      .set('fecconcil', String(fecconcil ?? '').trim());
+
+    return this.http.get<ApiResponse<ConciliacionResponse>>(
+      `${this.baseUrl}/por-periodo-cuenta`,
+      { params }
+    );
+  }
+  reversarConciliacion(payload: {
+  codprePc: string;
+  anio: number;
+  mes: number;
+}): Observable<ApiResponse<boolean>> {
+  return this.http.post<ApiResponse<boolean>>(
+    `${this.baseUrl}/reversar`,
+    payload
+  );
+}
 }

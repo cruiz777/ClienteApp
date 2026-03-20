@@ -5,7 +5,7 @@ import { NavigationCgComponent } from './navigation-cg/navigation-cg.component';
 import { TipcuentaComponent } from './configuracion/tipcuenta/tipcuenta.component';
 import { InicioCgComponent } from './inicio-cg/inicio-cg.component';
 import { TipoRetencionComponent } from './configuracion/tipo-retenciones/tipo-retencion/tipo-retencion.component';
-
+import { ReversaConciliacionComponent } from './conciliaciones/reversa-conciliacion/reversa-conciliacion.component';
 // ⬇️ Usa la ruta REAL que tienes en disco: tipo-cuenta-form/tipo-cuente-form.component
 import { TipocuentaFormComponent } from './configuracion/tipo-cuenta-form/tipo-cuenta-form.component';
 import { TipoRetencionFormComponent } from './configuracion/tipo-retenciones/tipo-retencion-form/tipo-retencion-form.component';
@@ -71,6 +71,9 @@ const routes: Routes = [
       { path: 'liquidacion-compra', component: LiquidacionCompraFormComponent },
       { path: 'liquidacion-compra-list', component: LiquidacionCompraComponent },
       { path: 'conciliacion', component: ConciliacionComponent},
+      { path: 'reversa-conciliacion', component: ReversaConciliacionComponent
+        
+      },
       { path: 'mayor', component: MayorCuentasListComponent },
       { path: 'mayor-codigos', component: MayorCodigosListComponent },      
       { path: 'estado-financiero', component: EstadoFinancieroComponent },

@@ -3,103 +3,134 @@ import { Component, Inject } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
-import { MatDividerModule } from '@angular/material/divider';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTableModule } from '@angular/material/table';
 
-export interface AgruparItem {
+interface AgruparItem {
   idDetMaestro: number;
-  fechatran?: string | null;
-  movbancario?: string | null;
-  cheque?: number | null;
-  debito?: number | null;
-  credito?: number | null;
-  beneficiario?: string | null;
-  concil: 'S' | 'N';
-}
-
-export interface AgruparDialogData {
-  numcomp: string;
-  items: AgruparItem[];
+  linea: number;
+  fechatran: any;
+  movbancario: string | null;
+  nocomprobante: string | null;
+  cheque: number;
+  debito: number;
+  credito: number;
+  numdoc: string | null;
+  beneficiario: string | null;
+  tipdoc: string | null;
+  concil: 'C' | 'N';
 }
 
 @Component({
-  standalone: true,
   selector: 'app-conciliacion-agrupar-dialog',
-  imports: [CommonModule, MatDialogModule, MatButtonModule, MatCheckboxModule, MatDividerModule],
-  template: `
-    <h2 mat-dialog-title>Agrupar por comprobante: {{ data.numcomp }}</h2>
-
-    <div mat-dialog-content>
-      <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
-        <button mat-stroked-button (click)="marcarTodos()">Marcar todos</button>
-        <button mat-stroked-button (click)="desmarcarTodos()">Desmarcar todos</button>
-        <span style="flex:1 1 auto;"></span>
-        <b>Total Débito:</b> {{ totalDebito | number:'1.2-2' }}
-        <b>Total Crédito:</b> {{ totalCredito | number:'1.2-2' }}
-      </div>
-
-      <mat-divider></mat-divider>
-
-      <div style="max-height:55vh; overflow:auto; padding-top:10px;">
-        <div *ngFor="let it of items"
-             style="display:grid; grid-template-columns: 40px 140px 80px 110px 110px 1fr; gap:10px; align-items:center; padding:6px 0;">
-          <mat-checkbox [checked]="it.concil === 'S'" (change)="onToggle(it, $event.checked)"></mat-checkbox>
-          <div>{{ it.fechatran || '' }}</div>
-          <div>{{ it.movbancario || '' }}</div>
-          <div style="text-align:right;">{{ (it.debito ?? 0) | number:'1.2-2' }}</div>
-          <div style="text-align:right;">{{ (it.credito ?? 0) | number:'1.2-2' }}</div>
-          <div>{{ it.beneficiario || '' }}</div>
-        </div>
-      </div>
-    </div>
-
-    <div mat-dialog-actions align="end">
-      <button mat-stroked-button (click)="cancel()">Cancelar</button>
-      <button mat-raised-button color="primary" (click)="ok()">Aplicar</button>
-    </div>
-  `,
+  standalone: true,
+  imports: [
+    CommonModule,
+    MatDialogModule,
+    MatButtonModule,
+    MatCheckboxModule,
+    MatIconModule,
+    MatTableModule,
+  ],
+  templateUrl: './conciliacion-agrupar-dialog.component.html',
+  styleUrls: ['./conciliacion-agrupar-dialog.component.css'],
 })
 export class ConciliacionAgruparDialogComponent {
+  displayedColumns: string[] = [
+    'fechatran',
+    'movbancario',
+    'nocomprobante',
+    'cheque',
+    'debito',
+    'credito',
+    'check',
+    'numdoc',
+    'beneficiario',
+    'tipdoc',
+  ];
+
   items: AgruparItem[] = [];
-  totalDebito = 0;
-  totalCredito = 0;
+  numcomp = '';
+
+  totalDebitoMarcado = 0;
+  totalCreditoMarcado = 0;
 
   constructor(
-    @Inject(MAT_DIALOG_DATA) public data: AgruparDialogData,
-    private ref: MatDialogRef<ConciliacionAgruparDialogComponent>
+    private dialogRef: MatDialogRef<ConciliacionAgruparDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) public data: { numcomp: string; items: AgruparItem[] }
   ) {
+    this.numcomp = data?.numcomp ?? '';
     this.items = (data?.items ?? []).map(x => ({ ...x }));
-    this.recalc();
+    this.recalcularTotales();
   }
 
-  private n(v: any): number {
+  marcarTodo(): void {
+    this.items.forEach(x => x.concil = 'C');
+    this.recalcularTotales();
+  }
+
+  desmarcarTodo(): void {
+    this.items.forEach(x => x.concil = 'N');
+    this.recalcularTotales();
+  }
+
+  toggleItem(row: AgruparItem, checked: boolean): void {
+    row.concil = checked ? 'C' : 'N';
+    this.recalcularTotales();
+  }
+
+  aplicar(): void {
+    this.dialogRef.close({
+      updates: this.items.map(x => ({
+        idDetMaestro: x.idDetMaestro,
+        concil: x.concil,
+      })),
+    });
+  }
+
+  salir(): void {
+    this.dialogRef.close();
+  }
+
+  private recalcularTotales(): void {
+    this.totalDebitoMarcado = this.round2(
+      this.items
+        .filter(x => x.concil === 'C')
+        .reduce((acc, x) => acc + this.toNum(x.debito), 0)
+    );
+
+    this.totalCreditoMarcado = this.round2(
+      this.items
+        .filter(x => x.concil === 'C')
+        .reduce((acc, x) => acc + this.toNum(x.credito), 0)
+    );
+  }
+
+  formatFecha(value: any): string {
+    if (!value) return '';
+    const dt = new Date(value);
+    if (isNaN(dt.getTime())) return String(value);
+
+    const dd = String(dt.getDate()).padStart(2, '0');
+    const mm = String(dt.getMonth() + 1).padStart(2, '0');
+    const yyyy = dt.getFullYear();
+
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
+  formatNum(value: any): string {
+    return this.toNum(value).toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  private toNum(v: any): number {
     const n = Number(v ?? 0);
     return Number.isFinite(n) ? n : 0;
   }
 
-  private recalc() {
-    this.totalDebito = this.items.reduce((a, x) => a + this.n(x.debito), 0);
-    this.totalCredito = this.items.reduce((a, x) => a + this.n(x.credito), 0);
-  }
-
-  onToggle(it: AgruparItem, checked: boolean) {
-    it.concil = checked ? 'S' : 'N';
-  }
-
-  marcarTodos() {
-    for (const it of this.items) it.concil = 'S';
-  }
-
-  desmarcarTodos() {
-    for (const it of this.items) it.concil = 'N';
-  }
-
-  cancel() {
-    this.ref.close(null);
-  }
-
-  ok() {
-    this.ref.close({
-      updates: this.items.map(x => ({ idDetMaestro: x.idDetMaestro, concil: x.concil })),
-    });
+  private round2(v: number): number {
+    return Math.round((v + Number.EPSILON) * 100) / 100;
   }
 }

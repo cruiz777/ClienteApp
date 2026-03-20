@@ -1,8 +1,11 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit, inject } from '@angular/core';
-import { CheckboxRendererComponent } from 'src/app/components/productos/checkbox-renderer/checkbox-renderer.component';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, MatDateFormats, NativeDateAdapter } from '@angular/material/core';
 import { GridOptions } from 'ag-grid-community';
+import { UsuarioService } from 'src/app/services/usuario.service';
+import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 import {
   FormBuilder,
   FormGroup,
@@ -151,18 +154,18 @@ export class ConciliacionComponent implements OnInit {
   private planSvc = inject(PlanCuentasService);
   private snack = inject(MatSnackBar);
   private dialog = inject(MatDialog);
-  gridOptions: GridOptions = {
-  components: {
-    checkboxRenderer: CheckboxRendererComponent,
-  },
-};
+  private ultimaFilaClickeada: any = null;
+  usuarioActual: any = null;
   loading = false;
   loadingSelector = false;
   loadingPlan = false;
-
+  private ultimaBusquedaConciliacionKey = '';
+  private cargandoConciliacionExistente = false;
   // VB6: cuando ya está TOTAL => bloqueado
   isLocked = false;
+  constructor(private usuarioService: UsuarioService){
 
+  }
   // Solo para mostrar ID cuando se recupera una conciliación TOTAL
   idConciliacion: number | null = null;
 
@@ -216,8 +219,8 @@ export class ConciliacionComponent implements OnInit {
     saldbancfin: [0, [Validators.required]],
 
     comentario: [null],
-    idEmpresa: [1, [Validators.required]],
-    idUsuario: [2, [Validators.required]],
+    idEmpresa: [null, [Validators.required]],
+  idUsuario: [null, [Validators.required]],
   });
 
   // =======================
@@ -263,89 +266,184 @@ export class ConciliacionComponent implements OnInit {
     filter: true,
     minWidth: 80,
   };
-  public frameworkComponents = {
-    checkboxRenderer: CheckboxRendererComponent,
-  };
-  colSaldos: ColDef[] = [
-    { headerName: 'Saldo Inicial', field: 'salconini' },
-    { headerName: 'Depósito', field: 'salcondep' },
-    { headerName: 'Cheques', field: 'salconchq' },
-    { headerName: 'Notas/Crédito', field: 'salconnc' },
-    { headerName: 'Notas/Débito', field: 'salconnd' },
-    { headerName: 'Saldo Bancario', field: 'salconbanc' },
-    { headerName: 'Diferencia', field: 'salcondif' },
-  ];
+colSaldos: ColDef[] = [
+  {
+    headerName: 'Saldo Inicial',
+    field: 'salconini',
+    valueFormatter: (p) => this.formatNumber2(p.value),
+    cellStyle: (p) => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Depósito',
+    field: 'salcondep',
+    valueFormatter: (p) => this.formatNumber2(p.value),
+    cellStyle: (p) => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Cheques',
+    field: 'salconchq',
+    valueFormatter: (p) => this.formatNumber2(p.value),
+    cellStyle: (p) => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Notas/Crédito',
+    field: 'salconnc',
+    valueFormatter: (p) => this.formatNumber2(p.value),
+    cellStyle: (p) => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Notas/Débito',
+    field: 'salconnd',
+    valueFormatter: (p) => this.formatNumber2(p.value),
+    cellStyle: (p) => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Saldo Bancario',
+    field: 'salconbanc',
+    valueFormatter: (p) => this.formatNumber2(p.value),
+    cellStyle: (p) => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Diferencia',
+    field: 'salcondif',
+    valueFormatter: (p) => this.formatNumber2(p.value),
+    cellStyle: (p) => this.numberCellStyle(p),
+  },
+];
+ colMov: ColDef[] = [
+  { headerName: 'IdDetMaestro', field: 'idDetMaestro', width: 120, hide: true },
+  { headerName: 'Línea', field: 'linea', width: 80 },
 
-  colMov: ColDef[] = [
-    { headerName: 'IdDetMaestro', field: 'idDetMaestro', width: 120, hide: true },
-    { headerName: 'Línea', field: 'linea', width: 80 },
+  {
+    headerName: 'Fecha Transac',
+    field: 'fechatran',
+    width: 160,
+    valueFormatter: (p) => this.formatDdMmYyyy(p.value),
+    filterValueGetter: (p) => this.formatDdMmYyyy(p.data?.fechatran),
+  },
 
-    {
-      headerName: 'Fecha Transac',
-      field: 'fechatran',
-      width: 160,
-      valueFormatter: (p) => this.formatDdMmYyyy(p.value),
-      filterValueGetter: (p) => this.formatDdMmYyyy(p.data?.fechatran),
+  { headerName: 'IdMov', field: 'idMovBancario', width: 90, hide: true },
+  { headerName: 'TipMov', field: 'movbancario', width: 90 },
+  { headerName: 'N° Comp', field: 'nocomprobante', width: 120 },
+
+  {
+    headerName: 'Cheque',
+    field: 'cheque',
+    width: 100,
+    valueFormatter: (p) => this.formatNumber2(p.value),
+    cellStyle: (p) => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Débito',
+    field: 'debito',
+    width: 110,
+    valueFormatter: (p) => this.formatNumber2(p.value),
+    cellStyle: (p) => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Crédito',
+    field: 'credito',
+    width: 110,
+    valueFormatter: (p) => this.formatNumber2(p.value),
+    cellStyle: (p) => this.numberCellStyle(p),
+  },
+
+  {
+    headerName: 'Concil',
+    field: 'concil',
+    width: 90,
+    editable: false,
+    sortable: false,
+    filter: false,
+    cellStyle: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      cursor: this.isLocked ? 'default' : 'pointer',
     },
+    cellRenderer: (params: any) => {
+      const checked = this.isChecked(params.data?.concil);
 
-    { headerName: 'IdMov', field: 'idMovBancario', width: 90, hide:true },
-    { headerName: 'TipMov', field: 'movbancario', width: 90 },
-    { headerName: 'N° Comp', field: 'nocomprobante', width: 120 },
+      const wrapper = document.createElement('div');
+      wrapper.style.width = '100%';
+      wrapper.style.height = '100%';
+      wrapper.style.display = 'flex';
+      wrapper.style.alignItems = 'center';
+      wrapper.style.justifyContent = 'center';
 
-    { headerName: 'Cheque', field: 'cheque', width: 100 },
-    { headerName: 'Débito', field: 'debito', width: 110 },
-    { headerName: 'Crédito', field: 'credito', width: 110 },
+      const input = document.createElement('input');
+      input.type = 'checkbox';
+      input.checked = checked;
+      input.disabled = false;
+      input.style.pointerEvents = 'none';
+      input.style.width = '14px';
+      input.style.height = '14px';
+      input.style.margin = '0';
+      input.style.padding = '0';
+      input.style.accentColor = '#e91e63';
+      input.style.transform = 'none';
 
-    {
-      headerName: 'Concil',
-      field: 'concil',
-      width: 90,
-      editable: () => !this.isLocked,
-      cellRenderer: 'checkboxRenderer',
-
-      valueGetter: (p) => this.isChecked(p.data?.concil),
-
-      valueSetter: (p) => {
-        if (!p.data) return false;
-        if (this.isLocked) return false;
-
-        const checked = p.newValue === true; // viene boolean desde el renderer
-        const nuevo = checked ? 'C' : 'N';
-        const actual = String((p.data as any).concil ?? 'N').toUpperCase();
-
-        if (actual === nuevo) return false;
-
-        (p.data as any).concil = nuevo;
-        (p.data as any).fechaconcil = checked ? this.getFechaConcilDefaultIso() : null;
-
-        this.recalcularResumenes();
-        this.gridMovApi?.refreshCells({ force: true, columns: ['fechaconcil', 'concil'] });
-        return true;
-      },
+      wrapper.appendChild(input);
+      return wrapper;
     },
+  },
+  {
+    headerName: 'Fecha Concil',
+    field: 'fechaconcil',
+    width: 150,
+    valueFormatter: (p) => this.formatDdMmYyyy(p.value),
+    filterValueGetter: (p) => this.formatDdMmYyyy(p.data?.fechaconcil),
+  },
+  { headerName: 'Beneficiario', field: 'beneficiario', minWidth: 220, flex: 1 },
+  { headerName: 'Numdoc', field: 'numdoc', width: 140, valueFormatter: (p) => (p.value == null ? '' : String(p.value)) },
+  { headerName: 'Tipdoc', field: 'tipdoc', width: 90 },
+];
 
-    {
-      headerName: 'Fecha Concil',
-      field: 'fechaconcil',
-      width: 150,
-      valueFormatter: (p) => this.formatDdMmYyyy(p.value),
-      filterValueGetter: (p) => this.formatDdMmYyyy(p.data?.fechaconcil),
-    },
-    { headerName: 'Beneficiario', field: 'beneficiario', minWidth: 220, flex: 1 },
-    { headerName: 'Numdoc', field: 'numdoc', width: 140, valueFormatter: (p) => (p.value == null ? '' : String(p.value)) },
-    { headerName: 'Tipdoc', field: 'tipdoc', width: 90 },
-  ];
-
-  colResumen: ColDef[] = [
-    { headerName: 'Estado', field: 'tipo', width: 140 },
-    { headerName: 'Saldo Contable', field: 'saldoContable' },
-    { headerName: 'Depósito', field: 'deposito' },
-    { headerName: 'Cheques', field: 'cheques' },
-    { headerName: 'Notas/Débito', field: 'notasDebito' },
-    { headerName: 'Notas/Crédito', field: 'notasCredito' },
-    { headerName: 'Saldo Bancario', field: 'saldoBancario' },
-    { headerName: 'Diferencia', field: 'diferencia' },
-  ];
+ colResumen: ColDef[] = [
+  { headerName: 'Estado', field: 'tipo', width: 140 },
+  {
+    headerName: 'Saldo Contable',
+    field: 'saldoContable',
+    valueFormatter: (p) => this.formatNumber2(p.value),
+    cellStyle: (p) => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Depósito',
+    field: 'deposito',
+    valueFormatter: (p) => this.formatNumber2(p.value),
+    cellStyle: (p) => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Cheques',
+    field: 'cheques',
+    valueFormatter: (p) => this.formatNumber2(p.value),
+    cellStyle: (p) => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Notas/Débito',
+    field: 'notasDebito',
+    valueFormatter: (p) => this.formatNumber2(p.value),
+    cellStyle: (p) => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Notas/Crédito',
+    field: 'notasCredito',
+    valueFormatter: (p) => this.formatNumber2(p.value),
+    cellStyle: (p) => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Saldo Bancario',
+    field: 'saldoBancario',
+    valueFormatter: (p) => this.formatNumber2(p.value),
+    cellStyle: (p) => this.numberCellStyle(p),
+  },
+  {
+    headerName: 'Diferencia',
+    field: 'diferencia',
+    valueFormatter: (p) => this.formatNumber2(p.value),
+    cellStyle: (p) => this.numberCellStyle(p),
+  },
+];
 
   // filtros quick filter
   filtroTipMov = '';
@@ -364,32 +462,41 @@ export class ConciliacionComponent implements OnInit {
   get canCargar(): boolean {
     if (this.loading) return false;
     if (this.isLocked) return false;
+    if (this.cargandoConciliacionExistente) return false;
     return this.form.valid;
   }
 
   get canAbrirMenuGuardar(): boolean {
     if (this.loading) return false;
     if (this.isLocked) return false;
-    return this.form.valid && (this.movimientos?.length ?? 0) > 0;
+    if (this.cargandoConciliacionExistente) return false;
+    return this.form.valid && this.getMovimientosActuales().length > 0;
   }
 
-  // VB6: parcial se permite mientras NO exista cabecera (aquí: simplemente “no bloqueado”)
   get canGuardarParcial(): boolean {
     return this.canAbrirMenuGuardar && !this.isLocked;
   }
 
-  // VB6: total solo si NO hay diferencias
-  get canGuardarTotal(): boolean {
-    return this.canAbrirMenuGuardar && !this.isLocked && this.esConciliacionCuadrada();
-  }
+ get canGuardarTotal(): boolean {
+  return this.canAbrirMenuGuardar
+    && !this.isLocked
+    && this.esConciliacionCuadrada();
+}
 
   // =======================
   // INIT
   // =======================
   ngOnInit(): void {
+    this.usuarioActual = this.usuarioService.getUsuarioActual();
+    this.form.patchValue({
+    idEmpresa: this.getIdEmpresaActual(),
+    idUsuario: this.getIdUsuarioActual(),
+    fechaInicial: this.getPrimerDiaMesActual(),
+  fechaFinal: this.getUltimoDiaMesActual(),
+  }, { emitEvent: false });
     this.cargarSelectorConciliaciones();
     this.cargarPlanCuentas();
-
+    this.escucharCambiosParaBuscarConciliacion();
     this.planForm.get('planCuentaBuscar')?.valueChanges
       .pipe(startWith(''))
       .subscribe((val) => {
@@ -505,7 +612,7 @@ export class ConciliacionComponent implements OnInit {
 
     this.loadingPlan = true;
 
-    this.planSvc.getAll({ idEmpresa })
+    this.planSvc.getByCodigoEspecial4({ idEmpresa })
       .pipe(finalize(() => (this.loadingPlan = false)))
       .subscribe({
         next: (items: PlanCuenta[]) => {
@@ -542,17 +649,6 @@ export class ConciliacionComponent implements OnInit {
       .slice(0, 50);
   }
 
-  onPlanCuentaSelected(item: PlanCuenta) {
-    if (!item?.IdPlanCuentas) return;
-
-    this.planForm.patchValue({ planCuentaBuscar: item }, { emitEvent: false });
-
-    this.form.patchValue({
-      idPlanCuentas: Number(item.IdPlanCuentas),
-      codprePc: item.CuentaPresentacion ?? null,
-      descripcion: (item.NombreCuenta ?? item.Descripcion ?? null),
-    });
-  }
 
   private setPlanSeleccionadoPorId(idPlan: number) {
     if (!idPlan || !this.planCuentas?.length) return;
@@ -575,37 +671,47 @@ export class ConciliacionComponent implements OnInit {
     this.isLocked = false;
     this.idConciliacion = null;
 
+    this.buscarForm.enable({ emitEvent: false });
+    this.planForm.enable({ emitEvent: false });
+    this.form.enable({ emitEvent: false });
+
     this.buscarForm.reset({ idConciliacionBuscar: null });
 
     this.planForm.reset({ planCuentaBuscar: null }, { emitEvent: false });
     this.pendingPlanId = null;
 
-    this.form.reset({
-      idEmpresa: 1,
-      idUsuario: 2,
-      saldcontini: 0,
-      saldcontfin: 0,
-      saldbancini: 0,
-      saldbancfin: 0,
-      idPlanCuentas: null,
-      codprePc: null,
-      descripcion: null,
-      fechaInicial: null,
-      fechaFinal: null,
-      comentario: null,
-    });
+   this.form.reset({
+    idEmpresa: this.getIdEmpresaActual(),
+    idUsuario: this.getIdUsuarioActual(),
+    saldcontini: 0,
+    saldcontfin: 0,
+    saldbancini: 0,
+    saldbancfin: 0,
+    idPlanCuentas: null,
+    codprePc: null,
+    descripcion: null,
+    fechaInicial: this.getPrimerDiaMesActual(),
+  fechaFinal: this.getUltimoDiaMesActual(),
+    comentario: null,
+  });
+
+    this.form.get('saldcontini')?.disable({ emitEvent: false });
+    this.form.get('saldcontfin')?.disable({ emitEvent: false });
 
     this.movimientos = [];
     this.setRowDataCompat(this.gridMovApi, []);
     this.recalcularResumenes();
   }
-
   onCancelar() {
     this.onNuevaConciliacion();
   }
 
   onCargar() {
     this.cargarMovimientosDetalleDesdeMaestro();
+
+    setTimeout(() => {
+      console.log(this.debugGuardar);
+    }, 500);
   }
 
   // =======================
@@ -647,83 +753,101 @@ export class ConciliacionComponent implements OnInit {
   }
 
   // fallback por si doble click no dispara
-  onMovCellClicked(e: any) {
-    const field = e?.colDef?.field ?? '';
-    if (field !== 'nocomprobante') return;
+onMovCellClicked(e: any) {
+  this.ultimaFilaClickeada = e?.data ?? null;
 
-    const key = `${e?.rowIndex ?? ''}:${field}`;
-    const now = Date.now();
+  const field = e?.colDef?.field ?? '';
 
-    if (this.lastClickKey === key && (now - this.lastClickTs) < 350) {
-      this.lastClickKey = '';
-      this.lastClickTs = 0;
-
-      const numcomp = String(e?.data?.nocomprobante ?? '').trim();
-      if (!numcomp) return;
-
-      this.abrirAgruparPorComprobante(numcomp);
-      return;
-    }
-
-    this.lastClickKey = key;
-    this.lastClickTs = now;
+  if (field === 'concil') {
+    this.toggleConcilRow(e?.data);
+    return;
   }
 
-  private abrirAgruparPorComprobante(numcomp: string) {
+  if (field !== 'nocomprobante') return;
+
+  const key = `${e?.rowIndex ?? ''}:${field}`;
+  const now = Date.now();
+
+  if (this.lastClickKey === key && (now - this.lastClickTs) < 350) {
+    this.lastClickKey = '';
+    this.lastClickTs = 0;
+
+    const numcomp = String(e?.data?.nocomprobante ?? '').trim();
+    if (!numcomp) return;
+
+    this.abrirAgruparPorComprobante(numcomp);
+    return;
+  }
+
+  this.lastClickKey = key;
+  this.lastClickTs = now;
+}
+private abrirAgruparPorComprobante(numcomp: string) {
+  if (this.isLocked) return;
+
+  const rows = this.getMovimientosActuales()
+    .filter(r => String((r as any).nocomprobante ?? '').trim() === String(numcomp).trim());
+
+  if (rows.length === 0) {
+    this.notify(`No existe el comprobante ${numcomp}.`, 'warn');
+    return;
+  }
+
+  const ref = this.dialog.open(ConciliacionAgruparDialogComponent, {
+    width: '1100px',
+    maxWidth: '98vw',
+    disableClose: true,
+    data: {
+      numcomp,
+      items: rows.map((r: any) => ({
+        idDetMaestro: Number(r.idDetMaestro),
+        linea: Number(r.linea ?? 0),
+        fechatran: r.fechatran ?? null,
+        movbancario: r.movbancario ?? null,
+        nocomprobante: r.nocomprobante ?? null,
+        cheque: this.num(r.cheque),
+        debito: this.num(r.debito),
+        credito: this.num(r.credito),
+        numdoc: r.numdoc ?? null,
+        beneficiario: r.beneficiario ?? null,
+        tipdoc: r.tipdoc ?? null,
+        concil: this.isChecked(r.concil) ? 'C' : 'N',
+      })),
+    },
+  });
+
+  ref.afterClosed().subscribe((result: any) => {
     if (this.isLocked) return;
+    if (!result?.updates?.length) return;
 
-    const rows = this.getMovimientosActuales()
-      .filter(r => String((r as any).nocomprobante ?? '').trim() === numcomp);
-
-    if (rows.length <= 1) {
-      this.notify(`No hay más movimientos con el comprobante ${numcomp}.`, 'info');
-      return;
+    const map = new Map<number, 'C' | 'N'>();
+    for (const u of result.updates) {
+      map.set(Number(u.idDetMaestro), u.concil);
     }
 
-    const ref = this.dialog.open(ConciliacionAgruparDialogComponent, {
-      width: '900px',
-      maxWidth: '95vw',
-      data: {
-        numcomp,
-        items: rows.map((r: any) => ({
-          idDetMaestro: Number(r.idDetMaestro),
-          fechatran: r.fechatran ?? null,
-          movbancario: r.movbancario ?? null,
-          cheque: this.num(r.cheque),
-          debito: this.num(r.debito),
-          credito: this.num(r.credito),
-          beneficiario: r.beneficiario ?? null,
-          concil: this.isChecked(r.concil) ? 'C' : 'N',
-        })),
-      },
-    });
+    const isoS = this.getFechaConcilDefaultIso();
 
-    ref.afterClosed().subscribe((result: any) => {
-      if (this.isLocked) return;
-      if (!result?.updates?.length) return;
+    if (this.gridMovApi) {
+      this.gridMovApi.forEachNode((n) => {
+        if (!n.data) return;
 
-      const map = new Map<number, 'C' | 'N'>();
-      for (const u of result.updates) map.set(Number(u.idDetMaestro), u.concil);
+        const id = Number((n.data as any).idDetMaestro);
+        if (!map.has(id)) return;
 
-      const isoS = this.getFechaConcilDefaultIso();
+        const concil = map.get(id)!;
+        (n.data as any).concil = concil;
+        (n.data as any).fechaconcil = concil === 'C' ? isoS : null;
+      });
 
-      if (this.gridMovApi) {
-        this.gridMovApi.forEachNode((n) => {
-          if (!n.data) return;
-          const id = Number((n.data as any).idDetMaestro);
-          if (!map.has(id)) return;
+      this.gridMovApi.refreshCells({
+        force: true,
+        columns: ['concil', 'fechaconcil'],
+      });
 
-          const concil = map.get(id)!;
-          (n.data as any).concil = concil;
-          (n.data as any).fechaconcil = concil === 'C' ? isoS : null;
-        });
-
-        this.gridMovApi.refreshCells({ force: true, columns: ['concil', 'fechaconcil'] });
-        this.recalcularResumenes();
-      }
-    });
-  }
-
+      this.recalcularResumenes();
+    }
+  });
+}
   // =======================
   // CARGAR DESDE RESPONSE (TOTAL => bloqueado)
   // =======================
@@ -734,30 +858,34 @@ export class ConciliacionComponent implements OnInit {
       descripcion: c.descripcion ?? null,
       fechaInicial: this.isoToDate(c.fechaconcil),
       fechaFinal: this.isoToDate(c.fechaconcil),
-
       saldcontini: c.saldcontini ?? 0,
       saldcontfin: c.saldcontfin ?? 0,
       saldbancini: c.saldbancini ?? 0,
       saldbancfin: c.saldbancfin ?? 0,
-
       comentario: c.comentario ?? null,
       idEmpresa: c.idEmpresa,
       idUsuario: c.idUsuario,
-    });
+    }, { emitEvent: false });
 
     const idPlan = Number(c.idPlanCuentas ?? 0);
-    if (this.planCuentas?.length) this.setPlanSeleccionadoPorId(idPlan);
-    else this.pendingPlanId = idPlan;
+    if (this.planCuentas?.length) {
+      this.setPlanSeleccionadoPorId(idPlan);
+    } else {
+      this.pendingPlanId = idPlan;
+    }
 
-    const cabFechaconcilIso = c.fechaconcil ? this.normalizeIsoString(c.fechaconcil) : null;
+    const cabFechaconcilIso = c.fechaconcil
+      ? this.normalizeIsoString(c.fechaconcil)
+      : null;
 
     this.movimientos = (c.detalles ?? []).map((d: any) => {
       const concVal = String(d?.concil ?? 'N').toUpperCase();
       const concil = (concVal === 'S' || concVal === 'C') ? 'C' : 'N';
 
-      const fechaconcil = concil === 'C'
-        ? (d?.fechaconcil ? this.normalizeIsoString(d.fechaconcil) : cabFechaconcilIso)
-        : null;
+      const fechaconcil =
+        concil === 'C' && d?.fechaconcil
+          ? this.normalizeIsoString(d.fechaconcil)
+          : null;
 
       return {
         ...d,
@@ -766,13 +894,13 @@ export class ConciliacionComponent implements OnInit {
         fechaconcil,
         numdoc: d?.numdoc != null ? String(d.numdoc) : null,
       } as any;
-    }) as any;
+    });
 
     this.setRowDataCompat(this.gridMovApi, this.movimientos);
     this.gridMovApi?.refreshCells({ force: true, columns: ['fechaconcil', 'concil'] });
+
     this.recalcularResumenes();
   }
-
   // =======================
   // MOVIMIENTOS MAESTRO (EN PROCESO)
   // =======================
@@ -787,6 +915,7 @@ export class ConciliacionComponent implements OnInit {
       this.notify('Seleccione un Plan de Cuenta.', 'warn');
       return;
     }
+
     if (!fIni || !fFin) {
       this.notify('Ingrese Fecha Inicial y Fecha Final.', 'warn');
       return;
@@ -797,7 +926,14 @@ export class ConciliacionComponent implements OnInit {
 
     this.loading = true;
 
-    this.svc.getMovimientosMaestro(idPlan, fechaInicio, fechaFin)
+    const codprePc = String(this.form.get('codprePc')?.value ?? '').trim();
+
+this.svc.getMovimientosMaestro(
+  idPlan,
+  codprePc,
+  fechaInicio,
+  fechaFin
+)
       .pipe(finalize(() => (this.loading = false)))
       .subscribe({
         next: (res) => {
@@ -810,10 +946,8 @@ export class ConciliacionComponent implements OnInit {
           }
 
           this.movimientos = res.data.map((m: any, idx: number) => {
-            // ✅ 1) Estado conciliado (lo que viene de BD normalmente es 'P' para parcial)
-            // IMPORTANTE: para que esto funcione, el backend debe enviar "conciliado" (o similar)
             const estadoRaw =
-              m.conciliado ??            // <-- recomendado (backend)
+              m.conciliado ??
               m.conciliadoDb ??
               m.concil ??
               m.estado ??
@@ -822,13 +956,15 @@ export class ConciliacionComponent implements OnInit {
               null;
 
             const estado = String(estadoRaw ?? '').toUpperCase().trim();
+            const marcado =
+              estado === 'P' ||
+              estado === 'C' ||
+              estado === 'S' ||
+              estado === '1' ||
+              estado === 'TRUE';
 
-            // ✅ 2) Checkbox marcado si viene P (parcial) o C/S (conciliado)
-            const marcado = (estado === 'P' || estado === 'C' || estado === 'S' || estado === '1' || estado === 'TRUE');
-
-            // ✅ 3) Fecha conciliado (si viene del backend)
             const fechaConcRaw =
-              m.fechaConciliado ??       // <-- recomendado (backend)
+              m.fechaConciliado ??
               m.fechaconciliado ??
               m.fechaConcil ??
               m.fechaconcil ??
@@ -836,27 +972,20 @@ export class ConciliacionComponent implements OnInit {
 
             const fechaConcIso = fechaConcRaw
               ? this.normalizeIsoString(fechaConcRaw)
-              : (marcado ? this.getFechaConcilDefaultIso() : null);
+              : null;
 
             return {
               idDetMaestro: m.idDetMaestro,
               linea: idx + 1,
-
               fechatran: m.fechaTransaccion ? this.normalizeIsoString(m.fechaTransaccion) : null,
               idMovBancario: m.idMovBancario,
               movbancario: m.movBancario,
               nocomprobante: m.noComprobante,
-
               cheque: m.cheque ?? 0,
               debito: m.debe ?? 0,
               credito: m.haber ?? 0,
-
-              // 👇 UI: tu checkbox trabaja con 'C'/'N'
               concil: marcado ? 'C' : 'N',
-
-              // 👇 UI: campo de fecha para mostrar
               fechaconcil: marcado ? fechaConcIso : null,
-
               beneficiario: m.beneficiario,
               numdoc: m.numdoc != null ? String(m.numdoc) : null,
               tipdoc: m.tipdoc,
@@ -888,12 +1017,7 @@ export class ConciliacionComponent implements OnInit {
       return;
     }
 
-    const cab = this.form.getRawValue();
-    const fechaconcil = cab.fechaFinal ?? cab.fechaInicial;
-    if (!fechaconcil) {
-      this.notify('FechaFinal/FechaInicial no pueden ser null.', 'error');
-      return;
-    }
+    const fechaconcil = new Date();
 
     const payload: GuardarConciliacionParcialRequest = {
       fechaconcil,
@@ -911,7 +1035,6 @@ export class ConciliacionComponent implements OnInit {
         next: (res) => {
           if (res.type === 'success') {
             this.notify(res.message ?? 'Guardado parcial OK.', 'success', 4500);
-            // recarga para que se vea exactamente como quedó en DB
             this.cargarMovimientosDetalleDesdeMaestro();
           } else {
             this.notify(res.message ?? 'No se pudo guardar parcial.', 'error', 5000);
@@ -924,15 +1047,50 @@ export class ConciliacionComponent implements OnInit {
   // =======================
   // GUARDAR TOTAL (VB6: crea cabecera + detalle y bloquea)
   // =======================
-  onGuardarTotal() {
-    if (!this.canGuardarTotal) {
-      this.notify('No se puede grabar una conciliación TOTAL con diferencias.', 'warn', 4500);
-      return;
-    }
 
-    const rows = this.getMovimientosActuales();
-    if (!rows.length) {
-      this.notify('Debe existir al menos 1 detalle.', 'warn');
+onGuardarTotal() {
+  console.log(this.debugGuardar);
+
+  if (!this.canAbrirMenuGuardar || this.isLocked) {
+    this.notify('No se puede grabar la conciliación total.', 'warn');
+    return;
+  }
+
+  if (!this.esConciliacionCuadrada()) {
+    this.notify('No se puede grabar una conciliación total con diferencias.', 'warn');
+    return;
+  }
+
+  const rows = this.getMovimientosActuales();
+
+  if (!rows.length) {
+    this.notify('Debe existir al menos un movimiento.', 'warn');
+    return;
+  }
+
+  const cab = this.form.getRawValue();
+  const periodo = cab.fechaInicial ? this.getPeriodoDesdeFecha(cab.fechaInicial) : '';
+  const cuenta = String(cab.codprePc ?? '').trim();
+  const descripcion = String(cab.descripcion ?? '').trim();
+
+  this.dialog.open(CustomMessageBoxComponent, {
+    width: '420px',
+    data: {
+      title: 'Confirmar conciliación total',
+      message:
+        `Se grabará la conciliación total.\n\n` +
+        `Cuenta: ${cuenta || '(sin cuenta)'}\n` +
+        `Periodo: ${periodo || '(sin período)'}\n` +
+        `Descripción: ${descripcion || '(sin descripción)'}\n\n` +
+        `¿Está seguro de continuar?`,
+      type: 'info',
+      confirmText: 'Sí, grabar',
+      cancelText: 'Cancelar',
+      showCancel: true
+    }
+  }).afterClosed().subscribe(confirmado => {
+    if (!confirmado) {
+      console.log('❌ Conciliación total cancelada por el usuario');
       return;
     }
 
@@ -940,27 +1098,30 @@ export class ConciliacionComponent implements OnInit {
 
     this.loading = true;
 
-    // TOTAL = POST create
     this.svc.crearConciliacion(payload)
-      .pipe(finalize(() => (this.loading = false)))
+      .pipe(finalize(() => this.loading = false))
       .subscribe({
         next: (res) => {
-          if (res.type === 'success' && typeof res.data === 'number') {
-            this.idConciliacion = res.data;
-
-            // VB6: bloquea después del total
+          if (res.type === 'success') {
+            this.idConciliacion = Number(res.data);
             this.isLocked = true;
 
-            this.notify(`Conciliación TOTAL guardada • #${this.idConciliacion}`, 'success', 5000);
-            this.cargarSelectorConciliaciones();
+            this.gridMovApi?.refreshCells({ force: true });
+            this.gridMovApi?.redrawRows();
+
+            if (this.idConciliacion > 0) {
+              this.cargarConciliacionPorId(this.idConciliacion);
+            }
+
+            this.notify('Conciliación TOTAL guardada correctamente', 'success');
           } else {
-            this.notify(res.message ?? 'No se pudo guardar TOTAL.', 'error', 5000);
+            this.notify(res.message || 'Error al guardar', 'error');
           }
         },
-        error: () => this.notify('Error al guardar TOTAL.', 'error', 5000),
+        error: () => this.notify('Error al guardar conciliación', 'error')
       });
-  }
-
+  });
+}
   // =======================
   // FILTROS GRID
   // =======================
@@ -999,17 +1160,9 @@ export class ConciliacionComponent implements OnInit {
   }
 
   private setConcilMasivo(checked: boolean) {
-    const iso = checked ? this.getFechaConcilDefaultIso() : null;
+    if (this.isLocked || !this.gridMovApi) return;
 
-    if (!this.gridMovApi) {
-      this.movimientos = (this.movimientos ?? []).map((r: any) => ({
-        ...r,
-        concil: checked ? 'C' : 'N',
-        fechaconcil: iso,
-      }));
-      this.recalcularResumenes();
-      return;
-    }
+    const iso = checked ? this.getFechaConcilDefaultIso() : null;
 
     this.gridMovApi.forEachNode((n) => {
       if (!n.data) return;
@@ -1017,161 +1170,246 @@ export class ConciliacionComponent implements OnInit {
       (n.data as any).fechaconcil = iso;
     });
 
-    this.gridMovApi.refreshCells({ force: true, columns: ['concil', 'fechaconcil'] });
+    this.gridMovApi.refreshCells({
+      force: true,
+      columns: ['concil', 'fechaconcil'],
+    });
+
     this.recalcularResumenes();
   }
-
   // =======================
   // RECALCULOS
   // =======================
   private getMovimientosActuales(): MovimientoRow[] {
     if (!this.gridMovApi) return this.movimientos ?? [];
+
     const rows: MovimientoRow[] = [];
     this.gridMovApi.forEachNode((n) => {
       if (n.data) rows.push(n.data as MovimientoRow);
     });
-    this.movimientos = rows;
+
     return rows;
   }
+private recalcularResumenes() {
+  const cab = this.form.getRawValue();
+  const rows = this.getMovimientosActuales();
 
-  private recalcularResumenes() {
-    const cab = this.form.getRawValue();
-    const rows = this.getMovimientosActuales();
+  const fechaInicial: Date | null = this.form.get('fechaInicial')?.value ?? null;
+  const fechaFinal: Date | null = this.form.get('fechaFinal')?.value ?? null;
 
-    const conc = rows.filter((r) => this.isChecked((r as any).concil));
-    const no = rows.filter((r) => !this.isChecked((r as any).concil));
+  const inicio = fechaInicial instanceof Date && !isNaN(fechaInicial.getTime())
+    ? new Date(fechaInicial.getFullYear(), fechaInicial.getMonth(), fechaInicial.getDate())
+    : null;
 
-    const sConc = this.sumPorTipo(conc);
-    const sNo = this.sumPorTipo(no);
+  const fin = fechaFinal instanceof Date && !isNaN(fechaFinal.getTime())
+    ? new Date(fechaFinal.getFullYear(), fechaFinal.getMonth(), fechaFinal.getDate(), 23, 59, 59, 999)
+    : null;
 
-    const salconini = this.num(cab.saldcontini);
-    const salconbanc = this.num(cab.saldbancini);
+  const rowsDentroPeriodo = rows.filter(r => {
+    const f = this.toDateOrNull((r as any).fechatran);
+    if (!f || !inicio || !fin) return false;
+    return f >= inicio && f <= fin;
+  });
 
-    const salcondep = sConc.deposito;
-    const salconchq = -sConc.cheques;
-    const salconnd = -sConc.notasDebito;
-    const salconnc = sConc.notasCredito;
+  const conc = rowsDentroPeriodo.filter(r => this.isChecked((r as any).concil));
+  const no = rowsDentroPeriodo.filter(r => !this.isChecked((r as any).concil));
 
-    const salcondif = this.r2((salconini + salcondep + salconchq + salconnd + salconnc) - salconbanc);
+  const sConc = this.sumPorTipo(conc);
+  const sNo = this.sumPorTipo(no);
 
-    this.saldosConciliados = {
-      salconini: this.r2(salconini),
-      salcondep: this.r2(salcondep),
-      salconchq: this.r2(salconchq),
-      salconnc: this.r2(salconnc),
-      salconnd: this.r2(salconnd),
-      salconbanc: this.r2(salconbanc),
-      salcondif: this.r2(salcondif),
-    };
-    this.setRowDataCompat(this.gridSaldosApi, [this.saldosConciliados]);
+  // ============================
+  // GRILLA SUPERIOR
+  // ============================
+  const salconini = this.num(cab.saldcontini);
+  const salconbanc = this.num(cab.saldbancini);
 
-    const rowConc: ResumenRow = {
-      tipo: 'Conciliados',
-      saldoContable: this.r2(salconini),
-      deposito: this.r2(sConc.deposito),
-      cheques: this.r2(sConc.cheques),
-      notasDebito: this.r2(sConc.notasDebito),
-      notasCredito: this.r2(sConc.notasCredito),
-      saldoBancario: this.r2(salconbanc),
-      diferencia: this.r2(salcondif),
-    };
+  const salcondep = sConc.deposito;
+  const salconchq = sConc.cheques;
+  const salconnd = sConc.notasDebito;
+  const salconnc = sConc.notasCredito;
 
-    const saldoContNo = this.num(cab.saldcontfin);
-    const saldoBancNo = this.num(cab.saldbancfin);
+  const salcondif = this.r2(
+    salconini + salcondep - salconchq - salconnd + salconnc - salconbanc
+  );
 
-    const difNo = this.r2(
-      (saldoContNo + sNo.deposito - sNo.cheques - sNo.notasDebito + sNo.notasCredito) - saldoBancNo
-    );
+  this.saldosConciliados = {
+    salconini: this.r2(salconini),
+    salcondep: this.r2(salcondep),
+    salconchq: this.r2(salconchq),
+    salconnc: this.r2(salconnc),
+    salconnd: this.r2(salconnd),
+    salconbanc: this.r2(salconbanc),
+    salcondif: this.r2(salcondif),
+  };
 
-    const rowNo: ResumenRow = {
-      tipo: 'No Conciliados',
-      saldoContable: this.r2(saldoContNo),
-      deposito: this.r2(sNo.deposito),
-      cheques: this.r2(sNo.cheques),
-      notasDebito: this.r2(sNo.notasDebito),
-      notasCredito: this.r2(sNo.notasCredito),
-      saldoBancario: this.r2(saldoBancNo),
-      diferencia: this.r2(difNo),
-    };
+  this.setRowDataCompat(this.gridSaldosApi, [this.saldosConciliados]);
 
-    this.resumenRows = [rowConc, rowNo];
-    this.setRowDataCompat(this.gridResumenApi, this.resumenRows);
+  // ============================
+  // GRILLA INFERIOR
+  // ============================
+  const rowConc: ResumenRow = {
+    tipo: 'Conciliados',
+    saldoContable: 0,
+    deposito: this.r2(sConc.deposito),
+    cheques: this.r2(sConc.cheques),
+    notasDebito: this.r2(sConc.notasDebito),
+    notasCredito: this.r2(sConc.notasCredito),
+    saldoBancario: 0,
+    diferencia: 0,
+  };
+
+  const saldoContNo = this.num(cab.saldcontfin);
+  const saldoBancNo = this.num(cab.saldbancfin);
+
+  const totalContableNo = this.r2(
+    saldoContNo + (-sNo.deposito + sNo.cheques - sNo.notasDebito + sNo.notasCredito)
+  );
+
+  const rowNo: ResumenRow = {
+    tipo: 'No Conciliados',
+    saldoContable: this.r2(saldoContNo),
+    deposito: this.r2(sNo.deposito),
+    cheques: this.r2(sNo.cheques),
+    notasDebito: this.r2(sNo.notasDebito),
+    notasCredito: this.r2(sNo.notasCredito),
+    saldoBancario: this.r2(saldoBancNo),
+    diferencia: this.r2(totalContableNo - saldoBancNo),
+  };
+
+  this.resumenRows = [rowConc, rowNo];
+  this.setRowDataCompat(this.gridResumenApi, this.resumenRows);
+}
+
+ private sumPorTipo(rows: MovimientoRow[]) {
+  let deposito = 0;
+  let cheques = 0;
+  let notasDebito = 0;
+  let notasCredito = 0;
+
+  for (const r of rows) {
+    const tipo = String((r as any)?.movbancario ?? '').toUpperCase().trim();
+    const debito = this.num((r as any)?.debito);
+    const credito = this.num((r as any)?.credito);
+
+    // DP
+    if (tipo === 'DP') {
+      deposito += debito;
+      continue;
+    }
+
+    // CH / TB
+    if (tipo === 'CH' || tipo === 'TB') {
+      cheques += credito;
+      continue;
+    }
+
+    // ND
+    if (tipo === 'ND') {
+      if (credito !== 0) notasCredito += credito;
+      if (debito !== 0) notasDebito += debito;
+      continue;
+    }
+
+    // NC
+    if (tipo === 'NC') {
+      notasDebito += debito;
+      continue;
+    }
   }
 
-  private sumPorTipo(rows: MovimientoRow[]) {
-    const tipo = (x: any) => String(x?.movbancario ?? '').toUpperCase().trim();
-
-    const deposito = rows
-      .filter((x) => ['DEP', 'DP'].includes(tipo(x)))
-      .reduce((a, x) => a + this.num((x as any).debito), 0);
-
-    const cheques = rows
-      .filter((x) => ['CH', 'CHE', 'CHK', 'TB'].includes(tipo(x)))
-      .reduce((a, x) => a + this.num((x as any).cheque), 0);
-
-    const notasDebito = rows
-      .filter((x) => ['ND'].includes(tipo(x)))
-      .reduce((a, x) => a + this.num((x as any).debito), 0);
-
-    const notasCredito = rows
-      .filter((x) => ['NC'].includes(tipo(x)))
-      .reduce((a, x) => a + this.num((x as any).credito), 0);
-
-    return {
-      deposito: this.r2(deposito),
-      cheques: this.r2(cheques),
-      notasDebito: this.r2(notasDebito),
-      notasCredito: this.r2(notasCredito),
-    };
-  }
+  return {
+    deposito: this.r2(deposito),
+    cheques: this.r2(cheques),
+    notasDebito: this.r2(notasDebito),
+    notasCredito: this.r2(notasCredito),
+  };
+}
 
   // VB6: no permitir TOTAL si hay diferencias
-  private esConciliacionCuadrada(): boolean {
-    const conc = this.resumenRows.find(x => x.tipo === 'Conciliados');
-    const no = this.resumenRows.find(x => x.tipo === 'No Conciliados');
-    const d1 = this.r2(conc?.diferencia ?? 0);
-    const d2 = this.r2(no?.diferencia ?? 0);
-    return Math.abs(d1) === 0 && Math.abs(d2) === 0;
-  }
+private esConciliacionCuadrada(): boolean {
+  if (!this.resumenRows || this.resumenRows.length === 0) return false;
+
+  return this.resumenRows.every(row => Math.abs(this.num(row.diferencia)) < 0.01);
+}
 
   // =======================
   // REQUEST TOTAL
   // =======================
   private buildRequestFromUI(): UpdateConciliacionRequest {
     const cab = this.form.getRawValue();
-    const fechaconcilCab = cab.fechaFinal ?? cab.fechaInicial;
-    if (!fechaconcilCab) throw new Error('fechaFinal/fechaInicial no pueden ser null');
-
-    const fechaconcilCabIso = this.toIsoLocalStartOfDay(fechaconcilCab);
     const rows = this.getMovimientosActuales();
 
+    // =========================================================
+    // 1) PERIODO CONCILIADO => fecconcil (yyyyMM)
+    //    Debe salir de la fecha del período, NO de la fecha actual
+    // =========================================================
+    const fechaPeriodo: Date =
+      cab.fechaInicial instanceof Date && !isNaN(cab.fechaInicial.getTime())
+        ? cab.fechaInicial
+        : cab.fechaFinal instanceof Date && !isNaN(cab.fechaFinal.getTime())
+          ? cab.fechaFinal
+          : new Date();
+
+    const fecconcil = this.getPeriodoDesdeFecha(fechaPeriodo); // ej: 202601
+
+    // =========================================================
+    // 2) FECHA REAL DE CONCILIACION => fechaconcil
+    //    Debe ser la fecha en la que se está guardando la conciliación
+    // =========================================================
+    const fechaconcilReal = new Date();
+
+    // Si quieres mandar fecha sin hora:
+    // const fechaconcilReal = this.dateOnly(new Date());
+
+    // =========================================================
+    // 3) DETALLES
+    // =========================================================
     const detalles: CreateConciliacionDetalleRequest[] = rows.map((d, idx) => {
       const checked = this.isChecked((d as any).concil);
       const concil = checked ? 'C' : 'N';
 
       return {
-        idDetMaestro: (d as any).idDetMaestro,
-        linea: (d as any).linea ?? idx + 1,
-        fechatran: (d as any).fechatran ?? null,
+        idDetMaestro: Number((d as any).idDetMaestro),
+        linea: (d as any).linea ?? (idx + 1),
+
+        fechatran: this.toDateOrNull((d as any).fechatran),
         idMovBancario: (d as any).idMovBancario ?? null,
         movbancario: (d as any).movbancario ?? null,
         nocomprobante: (d as any).nocomprobante ?? null,
-        cheque: (d as any).cheque ?? 0,
-        debito: (d as any).debito ?? 0,
-        credito: (d as any).credito ?? 0,
+
+        cheque: this.num((d as any).cheque),
+        debito: this.num((d as any).debito),
+        credito: this.num((d as any).credito),
+
         concil,
-        fechaconcil: checked ? ((d as any).fechaconcil ?? fechaconcilCabIso) : null,
+
+        // IMPORTANTE:
+        // la fecha del detalle conciliado debe ser la fecha REAL de conciliación
+        // NO fechaInicial ni fechaFinal del período
+        fechaconcil: checked ? fechaconcilReal : null,
+
         beneficiario: (d as any).beneficiario ?? null,
         numdoc: (d as any).numdoc ?? null,
         tipdoc: (d as any).tipdoc ?? null,
       };
     });
 
+    // =========================================================
+    // 4) RESUMENES
+    // =========================================================
     const concRow = this.resumenRows.find((x) => x.tipo === 'Conciliados')!;
     const noRow = this.resumenRows.find((x) => x.tipo === 'No Conciliados')!;
 
+    // =========================================================
+    // 5) REQUEST FINAL
+    // =========================================================
     return {
-      fechaconcil: fechaconcilCab,
+      // NUEVO CAMPO QUE TU BACKEND YA VA A ESPERAR
+      fecconcil,                  // ej: "202601"
+
+      // FECHA REAL EN QUE SE HACE LA CONCILIACION
+      fechaconcil: fechaconcilReal,
+
       idPlanCuentas: Number(cab.idPlanCuentas),
       codprePc: cab.codprePc ?? null,
       descripcion: cab.descripcion ?? null,
@@ -1181,33 +1419,48 @@ export class ConciliacionComponent implements OnInit {
       saldbancini: this.num(cab.saldbancini),
       saldbancfin: this.num(cab.saldbancfin),
 
-      salconini: this.saldosConciliados.salconini,
-      salcondep: this.saldosConciliados.salcondep,
-      salconchq: this.saldosConciliados.salconchq,
-      salconnc: this.saldosConciliados.salconnc,
-      salconnd: this.saldosConciliados.salconnd,
-      salconbanc: this.saldosConciliados.salconbanc,
-      salcondif: this.saldosConciliados.salcondif,
+      salconini: this.num(this.saldosConciliados.salconini),
+      salcondep: this.num(this.saldosConciliados.salcondep),
+      salconchq: this.num(this.saldosConciliados.salconchq),
+      salconnc: this.num(this.saldosConciliados.salconnc),
+      salconnd: this.num(this.saldosConciliados.salconnd),
+      salconbanc: this.num(this.saldosConciliados.salconbanc),
+      salcondif: this.num(this.saldosConciliados.salcondif),
 
-      salconcidep: concRow.deposito,
-      salconcichq: concRow.cheques,
-      salconcinc: concRow.notasCredito,
-      salconcind: concRow.notasDebito,
+      salconcidep: this.num(concRow.deposito),
+      salconcichq: this.num(concRow.cheques),
+      salconcinc: this.num(concRow.notasCredito),
+      salconcind: this.num(concRow.notasDebito),
 
-      salconcini: noRow.saldoContable,
-      salconcdep: noRow.deposito,
-      salconcchq: noRow.cheques,
-      salconcnc: noRow.notasCredito,
-      salconcnd: noRow.notasDebito,
-      salconcbanc: noRow.saldoBancario,
-      salconcdif: noRow.diferencia,
+      salconcini: this.num(noRow.saldoContable),
+      salconcdep: this.num(noRow.deposito),
+      salconcchq: this.num(noRow.cheques),
+      salconcnc: this.num(noRow.notasCredito),
+      salconcnd: this.num(noRow.notasDebito),
+      salconcbanc: this.num(noRow.saldoBancario),
+      salconcdif: this.num(noRow.diferencia),
 
       comentario: cab.comentario ?? null,
       idEmpresa: Number(cab.idEmpresa),
       idUsuario: Number(cab.idUsuario),
 
       detalles,
-    };
+    } as UpdateConciliacionRequest;
+  }
+
+  private toDateOrNull(value: any): Date | null {
+    if (!value) return null;
+
+    if (value instanceof Date) {
+      return isNaN(value.getTime()) ? null : value;
+    }
+
+    const dt = new Date(value);
+    return isNaN(dt.getTime()) ? null : dt;
+  }
+
+  private dateOnly(value: Date): Date {
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate());
   }
 
   // =======================
@@ -1271,15 +1524,7 @@ export class ConciliacionComponent implements OnInit {
   }
 
   private getFechaConcilDefaultIso(): string {
-    const fFinal = this.form.get('fechaFinal')?.value;
-    const fIni = this.form.get('fechaInicial')?.value;
-
-    const f: Date =
-      (fFinal instanceof Date ? fFinal : null) ??
-      (fIni instanceof Date ? fIni : null) ??
-      new Date();
-
-    return this.toIsoLocalStartOfDay(f);
+    return this.toIsoLocalStartOfDay(new Date());
   }
   private pad2(n: number): string {
     return String(n).padStart(2, '0');
@@ -1306,4 +1551,478 @@ export class ConciliacionComponent implements OnInit {
     const y = dt.getFullYear();
     return `${d}/${m}/${y}`;
   }
+  private formatearFechaDdMmYyyy(fecha: Date | null | undefined): string {
+    if (!fecha || !(fecha instanceof Date) || isNaN(fecha.getTime())) return '';
+    const dd = String(fecha.getDate()).padStart(2, '0');
+    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+    const yyyy = fecha.getFullYear();
+    return `${dd}/${mm}/${yyyy}`;
+  }
+
+  private puedeConsultarSaldosIniciales(): boolean {
+    const codprePc = String(this.form.get('codprePc')?.value ?? '').trim();
+    const fechaInicial = this.form.get('fechaInicial')?.value as Date | null;
+
+    return !!codprePc && !!fechaInicial && fechaInicial instanceof Date && !isNaN(fechaInicial.getTime());
+  }
+
+  private puedeConsultarSaldosFinales(): boolean {
+    const codprePc = String(this.form.get('codprePc')?.value ?? '').trim();
+    const fechaFinal = this.form.get('fechaFinal')?.value as Date | null;
+
+    return !!codprePc && !!fechaFinal && fechaFinal instanceof Date && !isNaN(fechaFinal.getTime());
+  }
+
+  onBlurDatosCabecera(): void {
+    if (this.isLocked) return;
+
+    this.cargarSaldoContableInicial();
+    this.cargarSaldoContableFinal();
+    this.intentarBuscarConciliacionExistente();
+  }
+  private buscarConciliacionExistente(): void {
+    const codprePc = String(this.form.get('codprePc')?.value ?? '').trim();
+    const fechaInicial = this.form.get('fechaInicial')?.value as Date | null;
+
+    if (!codprePc || !fechaInicial || isNaN(fechaInicial.getTime())) {
+      return;
+    }
+
+    const fecconcil = this.getPeriodoDesdeFecha(fechaInicial);
+    const currentKey = `${codprePc}|${fecconcil}`;
+
+    this.ultimaBusquedaConciliacionKey = currentKey;
+    this.cargandoConciliacionExistente = true;
+
+    this.svc.getConciliacionByPeriodoCuenta(codprePc, fecconcil).subscribe({
+      next: (res) => {
+        if (this.ultimaBusquedaConciliacionKey !== currentKey) {
+          return;
+        }
+
+        this.cargandoConciliacionExistente = false;
+
+        if (res.type === 'success' && res.data) {
+          this.isLocked = true;
+          this.idConciliacion = res.data.idConciliacion;
+
+          this.cargarDesdeResponse(res.data);
+
+          this.form.disable({ emitEvent: false });
+          this.planForm.disable({ emitEvent: false });
+
+          this.form.get('saldcontini')?.disable({ emitEvent: false });
+          this.form.get('saldcontfin')?.disable({ emitEvent: false });
+
+          this.notify('La conciliación ya existe. Se cargó en modo consulta.', 'info');
+        } else {
+          this.isLocked = false;
+          this.idConciliacion = null;
+
+          this.form.enable({ emitEvent: false });
+          this.planForm.enable({ emitEvent: false });
+
+          this.form.get('saldcontini')?.disable({ emitEvent: false });
+          this.form.get('saldcontfin')?.disable({ emitEvent: false });
+        }
+      },
+      error: () => {
+        if (this.ultimaBusquedaConciliacionKey !== currentKey) {
+          return;
+        }
+
+        this.cargandoConciliacionExistente = false;
+        this.isLocked = false;
+        this.idConciliacion = null;
+
+        this.form.enable({ emitEvent: false });
+        this.planForm.enable({ emitEvent: false });
+
+        this.form.get('saldcontini')?.disable({ emitEvent: false });
+        this.form.get('saldcontfin')?.disable({ emitEvent: false });
+      }
+    });
+  }
+  private getPeriodoDesdeFecha(fecha: Date): string {
+    const yyyy = fecha.getFullYear();
+    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+    return `${yyyy}${mm}`;
+  }
+  private cargarSaldoContableInicial(): void {
+    if (!this.puedeConsultarSaldosIniciales()) return;
+
+    const codprePc = String(this.form.get('codprePc')?.value ?? '').trim();
+    const fechaInicial = this.form.get('fechaInicial')?.value as Date;
+    const fechaCorte = this.formatearFechaDdMmYyyy(fechaInicial);
+
+    this.svc.getSaldoContableInicial(codprePc, fechaCorte).subscribe({
+      next: (res) => {
+        if (res.type === 'success' && res.data) {
+          const saldo = Number(res.data.saldoContableInicial ?? 0);
+
+          this.form.patchValue(
+            { saldcontini: this.r2(saldo) },
+            { emitEvent: true }
+          );
+        } else {
+          this.form.patchValue(
+            { saldcontini: 0 },
+            { emitEvent: true }
+          );
+        }
+      },
+      error: () => {
+        this.form.patchValue(
+          { saldcontini: 0 },
+          { emitEvent: true }
+        );
+      }
+    });
+  }
+
+  private cargarSaldoContableFinal(): void {
+    if (!this.puedeConsultarSaldosFinales()) return;
+
+    const codprePc = String(this.form.get('codprePc')?.value ?? '').trim();
+    const fechaFinal = this.form.get('fechaFinal')?.value as Date;
+    const fechaCorte = this.formatearFechaDdMmYyyy(fechaFinal);
+
+    this.svc.getTotalesContablesHastaFecha(codprePc, fechaCorte).subscribe({
+      next: (res) => {
+        if (res.type === 'success' && res.data) {
+          // SOLO EL SALDO
+          const saldoFinal = Number(res.data.saldo ?? 0);
+
+          this.form.patchValue(
+            { saldcontfin: this.r2(saldoFinal) },
+            { emitEvent: true }
+          );
+        } else {
+          this.form.patchValue(
+            { saldcontfin: 0 },
+            { emitEvent: true }
+          );
+        }
+      },
+      error: () => {
+        this.form.patchValue(
+          { saldcontfin: 0 },
+          { emitEvent: true }
+        );
+      }
+    });
+  }
+  private toggleConcilRow(row: any): void {
+    if (!row || this.isLocked) return;
+
+    const actual = String(row.concil ?? 'N').toUpperCase();
+    const nuevoEsCheck = actual !== 'C';
+
+    row.concil = nuevoEsCheck ? 'C' : 'N';
+    row.fechaconcil = nuevoEsCheck ? this.getFechaConcilDefaultIso() : null;
+
+    this.gridMovApi?.refreshCells({
+      force: true,
+      columns: ['concil', 'fechaconcil'],
+    });
+
+    this.recalcularResumenes();
+  }
+
+  get debugGuardar(): any {
+    return {
+      loading: this.loading,
+      isLocked: this.isLocked,
+      formValid: this.form.valid,
+      invalidControls: Object.keys(this.form.controls).filter(k => this.form.get(k)?.invalid),
+      movimientos: this.getMovimientosActuales().length,
+      cuadrada: this.esConciliacionCuadrada(),
+      canAbrirMenuGuardar: this.canAbrirMenuGuardar,
+      canGuardarTotal: this.canGuardarTotal
+    };
+  }
+  private escucharCambiosParaBuscarConciliacion(): void {
+    this.form.get('codprePc')?.valueChanges.subscribe(() => {
+      this.intentarBuscarConciliacionExistente();
+    });
+
+    this.form.get('fechaInicial')?.valueChanges.subscribe(() => {
+      this.intentarBuscarConciliacionExistente();
+    });
+  }
+
+  private intentarBuscarConciliacionExistente(): void {
+    const codprePc = String(this.form.get('codprePc')?.value ?? '').trim();
+    const fechaInicial = this.form.get('fechaInicial')?.value as Date | null;
+
+    if (!codprePc) return;
+    if (!fechaInicial || isNaN(fechaInicial.getTime())) return;
+
+    this.buscarConciliacionExistente();
+  }
+  onPlanCuentaSelected(item: PlanCuenta) {
+    if (!item?.IdPlanCuentas) return;
+
+    this.planForm.patchValue(
+      { planCuentaBuscar: item },
+      { emitEvent: false }
+    );
+
+    this.form.patchValue(
+      {
+        idPlanCuentas: Number(item.IdPlanCuentas),
+        codprePc: item.CuentaPresentacion ?? null,
+        descripcion: item.NombreCuenta ?? item.Descripcion ?? null,
+      },
+      { emitEvent: true }
+    );
+
+    this.intentarBuscarConciliacionExistente();
+  }
+  onAgrupar(): void {
+  if (this.isLocked) return;
+
+  let numcomp = '';
+
+  // 1) Primero intenta con fila seleccionada del grid
+  const seleccionadas = this.gridMovApi?.getSelectedRows?.() ?? [];
+  if (seleccionadas.length > 0) {
+    numcomp = String(seleccionadas[0]?.nocomprobante ?? '').trim();
+  }
+
+  // 2) Si no hay fila seleccionada, usa la última fila clickeada
+  if (!numcomp && this.ultimaFilaClickeada) {
+    numcomp = String(this.ultimaFilaClickeada?.nocomprobante ?? '').trim();
+  }
+
+  // 3) Si todavía no hay comprobante, usa filtroComprobante si lo tienes cargado
+  if (!numcomp) {
+    numcomp = String(this.filtroComprobante ?? '').trim();
+  }
+
+  if (!numcomp) {
+    this.notify('Seleccione una fila o indique un N° Comprobante para agrupar.', 'warn');
+    return;
+  }
+
+  this.abrirAgruparPorComprobante(numcomp);
+}
+private getIdEmpresaActual(): number {
+  return Number(this.usuarioActual?.id_empresa ?? 1);
+}
+
+private getIdUsuarioActual(): number {
+  return Number(this.usuarioActual?.id_usuario ?? 2);
+}
+onImprimir(): void {
+  const rows = this.getMovimientosActuales();
+
+  if (!rows || rows.length === 0) {
+    this.notify('No hay información para descargar.', 'warn');
+    return;
+  }
+
+  const movimientosNoConciliados = rows.filter(r => !this.isChecked((r as any).concil));
+
+  if (movimientosNoConciliados.length === 0) {
+    this.notify('No existen movimientos no conciliados para descargar.', 'warn');
+    return;
+  }
+
+  try {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+
+    const cab = this.form.getRawValue();
+    const resumenNo = this.resumenRows.find(x => x.tipo === 'No Conciliados');
+
+    const cuenta = String(cab.codprePc ?? '');
+    const descripcion = String(cab.descripcion ?? '');
+    const fechaInicial = this.formatearFechaDdMmYyyy(cab.fechaInicial);
+    const fechaFinal = this.formatearFechaDdMmYyyy(cab.fechaFinal);
+
+    const saldoInicial = this.formatNumber2(cab.saldbancini ?? 0);
+    const depositosNoEfect = this.formatNumber2(resumenNo?.deposito ?? 0);
+    const chequesNoCobrados = this.formatNumber2(resumenNo?.cheques ?? 0);
+    const notasDebitoNoReg = this.formatNumber2(resumenNo?.notasDebito ?? 0);
+    const notasCreditoNoReg = this.formatNumber2(resumenNo?.notasCredito ?? 0);
+    const saldoEnLibros = this.formatNumber2(resumenNo?.saldoBancario ?? 0);
+    const diferencia = this.formatNumber2(resumenNo?.diferencia ?? 0);
+
+    let y = 12;
+
+    doc.setFont('times', 'bold');
+    doc.setFontSize(11);
+    doc.text('Cuenta Bancaria', 10, y);
+    doc.setFont('times', 'normal');
+    doc.text(cuenta, 42, y);
+    doc.text(descripcion, 72, y);
+
+    y += 6;
+    doc.setFont('times', 'bold');
+    doc.text('Saldo Inicial', 10, y);
+    doc.setFont('times', 'normal');
+    doc.text(saldoInicial, 190, y, { align: 'right' });
+
+    y += 6;
+    doc.setFont('times', 'bold');
+    doc.text('Fecha Inicial', 10, y);
+    doc.setFont('times', 'normal');
+    doc.text(fechaInicial, 42, y);
+
+    y += 6;
+    doc.setFont('times', 'bold');
+    doc.text('Fecha Final', 10, y);
+    doc.setFont('times', 'normal');
+    doc.text(fechaFinal, 42, y);
+
+    y += 4;
+    doc.line(10, y, 200, y);
+
+    y += 6;
+    doc.setFont('times', 'bold');
+    doc.text('DETALLE DE MOVIMIENTOS NO CONCILIADOS', 10, y);
+
+    const body = movimientosNoConciliados.map((r: any) => [
+      this.formatDdMmYyyy(r.fechatran),
+      String(r.nocomprobante ?? ''),
+      this.formatNumber2(r.cheque ?? 0),
+      this.formatNumber2(r.debito ?? 0),
+      this.formatNumber2(r.credito ?? 0),
+      String(r.numdoc ?? ''),
+      String(r.beneficiario ?? ''),
+      String(r.tipdoc ?? ''),
+    ]);
+
+    autoTable(doc, {
+      startY: y + 2,
+      theme: 'plain',
+      styles: {
+        font: 'times',
+        fontSize: 8,
+        cellPadding: 1.2,
+        textColor: 0,
+        lineColor: 0,
+      },
+      headStyles: {
+        fontStyle: 'bold',
+        textColor: 0,
+      },
+      columnStyles: {
+        2: { halign: 'right' },
+        3: { halign: 'right' },
+        4: { halign: 'right' },
+      },
+      head: [[
+        'fechatran',
+        'numcomp',
+        'cheque',
+        'debito',
+        'credito',
+        'numdoc',
+        'beneficiario',
+        'tipdoc'
+      ]],
+      body,
+      margin: { left: 10, right: 10 },
+    });
+
+    const finalY = (doc as any).lastAutoTable?.finalY ?? 120;
+
+    let summaryY = finalY + 8;
+    if (summaryY > 220) {
+      doc.addPage();
+      summaryY = 20;
+    }
+
+    doc.line(10, summaryY, 200, summaryY);
+    summaryY += 8;
+
+    doc.setFont('times', 'bold');
+    doc.setFontSize(12);
+
+    const summaryRows: Array<[string, string]> = [
+      ['Saldo Inicial', saldoInicial],
+      ['Depositos no Efectivisados', depositosNoEfect],
+      ['Cheques no Cobrados', chequesNoCobrados],
+      ['Notas de Debito no Registradas', notasDebitoNoReg],
+      ['Notas de Crédito no Registradas', notasCreditoNoReg],
+      ['Saldo en Libros', saldoEnLibros],
+      ['Diferencia', diferencia],
+    ];
+
+    for (const [label, value] of summaryRows) {
+      doc.text(label, 14, summaryY);
+      doc.setFont('times', 'normal');
+      doc.text(value, 110, summaryY, { align: 'right' });
+      doc.setFont('times', 'bold');
+      summaryY += 8;
+    }
+
+    summaryY += 24;
+
+    doc.line(55, summaryY, 105, summaryY);
+    doc.line(135, summaryY, 185, summaryY);
+
+    summaryY += 7;
+    doc.text('Realizado Por', 80, summaryY, { align: 'center' });
+    doc.text('Revisado Por', 160, summaryY, { align: 'center' });
+
+    const fecha = new Date();
+    const yyyy = fecha.getFullYear();
+    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dd = String(fecha.getDate()).padStart(2, '0');
+    const hh = String(fecha.getHours()).padStart(2, '0');
+    const mi = String(fecha.getMinutes()).padStart(2, '0');
+
+    const nombreArchivo = `Conciliacion_Bancaria_${yyyy}${mm}${dd}_${hh}${mi}.pdf`;
+
+    doc.save(nombreArchivo);
+    this.notify('Reporte PDF descargado correctamente.', 'success');
+
+  } catch (error) {
+    console.error(error);
+    this.notify('Ocurrió un error al generar el PDF.', 'error');
+  }
+}
+
+private formatNumber2(value: any): string {
+  const n = Number(value ?? 0);
+  if (!Number.isFinite(n)) return '0.00';
+
+  return n.toLocaleString('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+private escapeHtml(value: any): string {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+private numberCellStyle(_params: any) {
+  return {
+    textAlign: 'right',
+    justifyContent: 'flex-end',
+    fontVariantNumeric: 'tabular-nums',
+  };
+}
+private getPrimerDiaMesActual(): Date {
+  const hoy = new Date();
+  return new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+}
+
+private getUltimoDiaMesActual(): Date {
+  const hoy = new Date();
+  return new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
+}
+
 }
