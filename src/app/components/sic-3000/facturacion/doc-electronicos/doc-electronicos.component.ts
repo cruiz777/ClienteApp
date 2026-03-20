@@ -17,6 +17,8 @@ import { AccionesCellRendererComponent } from './acciones-cell-renderer.componen
 import { MAT_DATE_LOCALE, MAT_DATE_FORMATS, NativeDateAdapter, DateAdapter } from '@angular/material/core';
 import { PDFDocument } from 'pdf-lib';
 import { forkJoin } from 'rxjs';
+import { MatDialog } from '@angular/material/dialog';
+import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
 
 export class CustomDateAdapter extends NativeDateAdapter {
   override parse(value: any): Date | null {
@@ -80,7 +82,8 @@ export class DocElectronicosComponent implements OnInit {
   constructor(
     private fb: FormBuilder,
     private docService: DocumentosService,
-    private snackBar: MatSnackBar
+    private snackBar: MatSnackBar,
+    private dialog: MatDialog 
   ) {
     // ⬅️ FECHAS POR DEFECTO: 1° del mes actual hasta hoy
     const hoy = new Date();
@@ -204,47 +207,57 @@ export class DocElectronicosComponent implements OnInit {
     const seleccionadas = this.gridApi.getSelectedRows() as DocumentoGrid[];
 
     if (!seleccionadas.length) {
-      this.snackBar.open('Seleccione al menos un documento.', 'Cerrar', { duration: 3000 });
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '360px',
+        data: { title: 'Atención', message: 'Seleccione al menos un documento.', type: 'warning', showCancel: false, confirmText: 'Aceptar' }
+      });
       return;
     }
 
     const aptas = seleccionadas.filter(d => d.puedeReimprimir);
 
     if (!aptas.length) {
-      this.snackBar.open('Ningún documento seleccionado está autorizado.', 'Cerrar', { duration: 3000 });
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '360px',
+        data: { title: 'Atención', message: 'Ningún documento seleccionado está autorizado.', type: 'warning', showCancel: false, confirmText: 'Aceptar' }
+      });
       return;
     }
 
-    this.loading = true;
-    this.snackBar.open(`Generando PDF con ${aptas.length} documento(s)...`, '', { duration: 2500 });
+    const dialogRef = this.dialog.open<CustomMessageBoxComponent>(CustomMessageBoxComponent, {
+      disableClose: true,
+      width: '400px',
+      data: {
+        title: 'Generando PDF',
+        message: 'Descargando e integrando documentos...',
+        type: 'info',
+        isLoading: true,
+        showProgress: true,
+        currentProgress: 0,
+        totalProgress: aptas.length,
+        loadingText: `Procesando: 0 de ${aptas.length} (0%)`,
+      }
+    });
 
     try {
-      // ⬅️ Descargar en lotes de 10 para no saturar el servidor
+      const mergedPdf = await PDFDocument.create();
       const LOTE = 10;
-      const buffers: ArrayBuffer[] = [];
+      let procesados = 0;
 
       for (let i = 0; i < aptas.length; i += LOTE) {
         const lote = aptas.slice(i, i + LOTE);
         const resultados = await forkJoin(
           lote.map(doc => this.docService.obtenerPDFComoArrayBuffer(doc.claveAcceso))
         ).toPromise() as ArrayBuffer[];
-        buffers.push(...resultados);
 
-        // Actualizar progreso
-        this.snackBar.open(
-          `Descargando... ${Math.min(i + LOTE, aptas.length)} de ${aptas.length}`,
-          '',
-          { duration: 1500 }
-        );
-      }
-
-      // Fusionar todos los PDFs
-      const mergedPdf = await PDFDocument.create();
-
-      for (const buffer of buffers) {
-        const pdf = await PDFDocument.load(buffer);
-        const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
-        pages.forEach(p => mergedPdf.addPage(p));
+        for (const buffer of resultados) {
+          const pdf = await PDFDocument.load(buffer);
+          const pages = await mergedPdf.copyPages(pdf, pdf.getPageIndices());
+          pages.forEach(p => mergedPdf.addPage(p));
+          
+          procesados++;
+          dialogRef.componentInstance!.updateProgress(procesados, aptas.length);
+        }
       }
 
       const mergedBytes = await mergedPdf.save();
@@ -256,12 +269,18 @@ export class DocElectronicosComponent implements OnInit {
       link.click();
       URL.revokeObjectURL(url);
 
-      this.snackBar.open(`✅ ${aptas.length} documento(s) descargados.`, 'Cerrar', { duration: 3000 });
+      dialogRef.close();
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '360px',
+        data: { title: '¡Listo!', message: `<b>${aptas.length}</b> documento(s) descargados.`, type: 'success', showCancel: false, confirmText: 'Aceptar' }
+      });
 
     } catch (err: any) {
-      this.snackBar.open(`❌ Error: ${err.message}`, 'Cerrar', { duration: 5000 });
-    } finally {
-      this.loading = false;
+      dialogRef.close();
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '360px',
+        data: { title: 'Error', message: `❌ Error: <b>${err.message}</b>`, type: 'error', showCancel: false, confirmText: 'Cerrar' }
+      });
     }
   }
 

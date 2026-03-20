@@ -1,10 +1,11 @@
 // src/app/services/pago-report.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, Observable, from } from 'rxjs';
 import { jsPDF } from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { environment } from 'src/environments/environment';
+import { PDFDocument } from 'pdf-lib';
 
 /* ====== Tipos ====== */
 export interface ApiResponse<T> {
@@ -79,8 +80,40 @@ export class PagoReportService {
       esAnulado: opts?.esAnulado
     });
   }
+  /**
+   * Obtiene el PDF como ArrayBuffer (para concatenación)
+   * @param numeroPago - Número de pago a generar
+   * @param opts - Opciones de configuración
+   * @returns Observable<ArrayBuffer>
+   */
+  obtenerPDFComoArrayBuffer(
+    numeroPago: string,
+    opts?: { titulo?: string; logoUrl?: string; logoDataUrl?: string; esAnulado?: boolean }
+  ): Observable<ArrayBuffer> {
+    return from(this.generarPDFComoArrayBufferInterno(numeroPago, opts));
+  }
 
+  /**
+   * Método interno que genera el PDF y lo retorna como ArrayBuffer
+   */
+  private async generarPDFComoArrayBufferInterno(
+    numeroPago: string,
+    opts?: { titulo?: string; logoUrl?: string; logoDataUrl?: string; esAnulado?: boolean }
+  ): Promise<ArrayBuffer> {
+    const data = await this.fetchPago(numeroPago);
+    const pdfDoc = await this.generarPdfIngresoCajaInterno(data, {
+      numeroPago,
+      titulo: opts?.titulo,
+      logoUrl: opts?.logoUrl,
+      logoDataUrl: opts?.logoDataUrl,
+      esAnulado: opts?.esAnulado
+    });
+
+    // ⬅️ En lugar de descargar, retornar como ArrayBuffer
+    return pdfDoc.output('arraybuffer') as ArrayBuffer;
+  }
   /** Genera el PDF desde datos ya cargados */
+  
   async generarPdfIngresoCaja(
     filas: PagoResponse[],
     opts: {
@@ -91,11 +124,29 @@ export class PagoReportService {
       esAnulado?: boolean;
     } = {}
   ): Promise<void> {
+    const pdfDoc = await this.generarPdfIngresoCajaInterno(filas, opts);
+    const numeroPago = opts.numeroPago || filas[0]?.numero_pago;
+    pdfDoc.save(`IngresoCaja_${numeroPago}.pdf`);
+  }
+
+  /**
+   * Método interno que genera el jsPDF document (sin descargarlo)
+   * genera el PDF pero no lo descarga
+   */
+  private async generarPdfIngresoCajaInterno(
+    filas: PagoResponse[],
+    opts: {
+      numeroPago?: string;
+      titulo?: string;
+      logoUrl?: string;
+      logoDataUrl?: string;
+      esAnulado?: boolean;
+    } = {}
+  ): Promise<jsPDF> {
     if (!Array.isArray(filas) || filas.length === 0) {
       throw new Error('Sin datos para el PDF');
     }
 
-    // ===== Cabecera =====
     const first = filas[0];
     const numeroPago = opts.numeroPago || first.numero_pago;
     const cliente = first.cliente_nombre;
@@ -103,7 +154,6 @@ export class PagoReportService {
     const asiento = (first.asientoContable ?? '').toString();
     const tituloEmpresa = opts.titulo ?? 'GS1';
 
-    // ===== Conceptos =====
     const conceptos = filas
       .map(f => {
         const tipo = String(f.tipo || '').toUpperCase();
@@ -116,7 +166,6 @@ export class PagoReportService {
       })
       .join('\n');
 
-    // ===== Formas de pago (agrupadas) =====
     const detallesAll: DetallePagoResponse[] = (filas[0]?.detalles || []).slice();
     const map = new Map<string, { desc: string; monto: number }>();
 
@@ -135,39 +184,36 @@ export class PagoReportService {
     const formas = Array.from(map.values());
     const total = this.to2(formas.reduce((a, b) => a + (b.monto || 0), 0));
 
-    // ===== jsPDF =====
     const doc = new jsPDF({ 
       unit: 'pt', 
-      format: [595, 421]  // ✅ Media página A4
+      format: [595, 421]
     });
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
-    const margin = 20;  // ✅ Márgenes pequeños
+    const margin = 20;
 
     doc.setLineWidth(1);
     doc.rect(margin / 2, margin / 2, pageWidth - margin, (pageHeight / 2) - margin);
 
-    // Logo
     const logoData = opts.logoDataUrl || (await this.loadLogoDataUrl(opts.logoUrl));
     let yOffset = 0;
     if (logoData) {
-      const logoW = 70;   // ✅ Logo pequeño
+      const logoW = 70;
       const logoH = 26;
       doc.addImage(logoData, 'PNG', margin, 40 - logoH / 2, logoW, logoH);
       yOffset = 4;
     }
 
-    // Títulos
     doc.setFont('Times', 'Bold');
-    doc.setFontSize(10);  // ✅ Fuente reducida
+    doc.setFontSize(10);
     doc.text(tituloEmpresa, pageWidth / 2, 60 + yOffset, { align: 'center' });
     doc.setFontSize(9);
     doc.text('INGRESO DE CAJA', pageWidth / 2, 74 + yOffset, { align: 'center' });
 
     // Barra: Número Pago / Asiento
     autoTable(doc, {
-      startY: 90 + yOffset,  // ✅ Posición alta
-      styles: { font: 'Times', fontSize: 8, textColor: [0, 0, 0] },  // ✅ Fuente 8
+      startY: 90 + yOffset,
+      styles: { font: 'Times', fontSize: 8, textColor: [0, 0, 0] },
       headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontSize: 8 },
       bodyStyles: { textColor: [0, 0, 0] },
       margin: { left: margin, right: margin },
@@ -180,38 +226,36 @@ export class PagoReportService {
       body: []
     });
 
-    let y = (doc as any).lastAutoTable.finalY + 8;  // ✅ Espacio reducido
+    let y = (doc as any).lastAutoTable.finalY + 8;
 
-    // FECHA / CLIENTE / CONCEPTO
     doc.setFont('Times', 'Bold');
-    doc.setFontSize(8);  // ✅ Fuente 8
+    doc.setFontSize(8);
     doc.text('FECHA:', margin, y);
     doc.setFont('Times', 'Normal');
-    doc.text(fechaStr, margin + 50, y);  // ✅ Columna en 50
-    y += 12;  // ✅ Espacio 12
+    doc.text(fechaStr, margin + 50, y);
+    y += 12;
 
     doc.setFont('Times', 'Bold');
     doc.text('CLIENTE :', margin, y);
     doc.setFont('Times', 'Normal');
-    doc.text(cliente, margin + 50, y);  // ✅ Columna en 50
-    y += 12;  // ✅ Espacio 12
+    doc.text(cliente, margin + 50, y);
+    y += 12;
 
     doc.setFont('Times', 'Bold');
     doc.text('CONCEPTO:', margin, y);
     doc.setFont('Times', 'Normal');
-    const conceptoLines = doc.splitTextToSize(conceptos, pageWidth - margin * 2 - 50);  // ✅ Ancho ajustado
-    doc.text(conceptoLines, margin + 50, y);  // ✅ Columna en 50
-    y += 12 * (Array.isArray(conceptoLines) ? conceptoLines.length : 1) + 6;  // ✅ Espacio 12
+    const conceptoLines = doc.splitTextToSize(conceptos, pageWidth - margin * 2 - 50);
+    doc.text(conceptoLines, margin + 50, y);
+    y += 12 * (Array.isArray(conceptoLines) ? conceptoLines.length : 1) + 6;    
 
-    // FORMAS DE PAGO
     doc.setFont('Times', 'Bold');
     doc.text('FORMA DE PAGO:', margin, y);
-    y += 4;  // ✅ Espacio 4
+    y += 4;
 
     autoTable(doc, {
-      startY: y + 4,  // ✅ Espacio 4
+      startY: y + 4,
       margin: { left: margin, right: margin },
-      styles: { font: 'Times', fontSize: 8, textColor: [0, 0, 0] },  // ✅ Fuente 8
+      styles: { font: 'Times', fontSize: 8, textColor: [0, 0, 0] },
       headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontSize: 8 },
       head: [['Descripción', 'Monto']],
       body: formas.map(f => [f.desc, this.moneda(f.monto, true)]),
@@ -221,14 +265,13 @@ export class PagoReportService {
       }
     });
 
-    y = (doc as any).lastAutoTable.finalY + 6;  // ✅ Espacio 6
+    y = (doc as any).lastAutoTable.finalY + 6;
 
-    // Observación + Total
     const obsText = `OBSERVACION : ${first.observaciones?.toUpperCase() || 'ESTE COMPROBANTE DE NINGUNA MANERA CONSTITUYE UNA FACTURA'}`;
     autoTable(doc, {
       startY: y,
       margin: { left: margin, right: margin },
-      styles: { font: 'Times', fontSize: 8, textColor: [0, 0, 0] },  // ✅ Fuente 8
+      styles: { font: 'Times', fontSize: 8, textColor: [0, 0, 0] },
       body: [[
         { content: obsText, styles: { halign: 'left' } },
         { content: `TOTAL : ${this.moneda(total, true)}`, styles: { halign: 'right' } }
@@ -236,47 +279,114 @@ export class PagoReportService {
       theme: 'plain'
     });
 
-    y = (doc as any).lastAutoTable.finalY + 30;  // ✅ Espacio 30
+    const firmasY = (pageHeight / 2) - 25; // ⬅️ Posición fija a 180pt desde arriba
 
-    // Firmas
-    const lineWidth = 100;  // Longitud de cada línea
+    const lineWidth = 100;
     const col1 = margin + 60;
     const col2 = pageWidth - margin - lineWidth - 60;
-    doc.line(col1, y, col1 + lineWidth, y);
-    doc.line(col2, y, col2 + lineWidth, y);
+    doc.line(col1, firmasY, col1 + lineWidth, firmasY);
+    doc.line(col2, firmasY, col2 + lineWidth, firmasY);
     doc.setFont('Times', 'Normal');
     doc.setFontSize(8);
-    doc.text('Elaborado por', col1 + (lineWidth / 2), y + 12, { align: 'center' });
-    doc.text('Cliente', col2 + (lineWidth / 2), y + 12, { align: 'center' });
-    // ===== MARCA DE AGUA "ANULADO" =====
+    doc.text('Elaborado por', col1 + (lineWidth / 2), firmasY + 12, { align: 'center' });
+    doc.text('Cliente', col2 + (lineWidth / 2), firmasY + 12, { align: 'center' });
+
     if (opts.esAnulado) {
       doc.saveGraphicsState();
-
-      // Texto diagonal semi-transparente
       const gState = (doc as any).GState;
       if (gState) {
         doc.setGState(new gState({ opacity: 0.15 }));
       }
-
       doc.setFont('Helvetica', 'Bold');
       doc.setFontSize(80);
       doc.setTextColor(255, 0, 0);
-
-      // Centrar y rotar -45 grados
       const centerX = pageWidth / 2;
       const centerY = pageHeight / 2;
-
       doc.text('ANULADO', centerX, centerY, {
         align: 'center',
         angle: 45
       });
-
       doc.restoreGraphicsState();
-      // Restaurar color para que no afecte nada más
       doc.setTextColor(0, 0, 0);
     }
-    doc.save(`IngresoCaja_${numeroPago}.pdf`);
+
+    //EN LUGAR DE doc.save(), RETORNAR EL DOCUMENTO
+    return doc;
   }
+
+  /**
+   * Genera un PDF con 2 comprobantes por página A4
+   */
+  async generarPdfDosComprobantes(
+    numeroPago1: string,
+    numeroPago2: string | null,
+    opts: {
+      titulo?: string;
+      logoUrl?: string;
+      logoDataUrl?: string;
+    } = {}
+  ): Promise<Uint8Array> {
+    // Generar primer comprobante
+    const data1 = await this.fetchPago(numeroPago1);
+    const pdf1 = await this.generarPdfIngresoCajaInterno(data1, {
+      numeroPago: numeroPago1,
+      titulo: opts.titulo,
+      logoUrl: opts.logoUrl,
+      logoDataUrl: opts.logoDataUrl,
+      esAnulado: false
+    });
+
+    const bytes1 = pdf1.output('arraybuffer') as ArrayBuffer;
+    const doc1 = await PDFDocument.load(bytes1);
+
+    // Si hay segundo comprobante
+    let doc2: PDFDocument | null = null;
+    if (numeroPago2) {
+      const data2 = await this.fetchPago(numeroPago2);
+      const pdf2 = await this.generarPdfIngresoCajaInterno(data2, {
+        numeroPago: numeroPago2,
+        titulo: opts.titulo,
+        logoUrl: opts.logoUrl,
+        logoDataUrl: opts.logoDataUrl,
+        esAnulado: false
+      });
+      const bytes2 = pdf2.output('arraybuffer') as ArrayBuffer;
+      doc2 = await PDFDocument.load(bytes2);
+  }
+
+  // Crear PDF A4 final
+  const pdfFinal = await PDFDocument.create();
+  const paginaA4 = pdfFinal.addPage([595, 842]);
+
+  // Incrustar primer comprobante (mitad superior)
+  const [embeddedPage1] = await pdfFinal.embedPdf(doc1, [0]);
+  const { width: w1, height: h1 } = embeddedPage1.scale(1);
+  const escala1 = Math.min(595 / w1, 421 / h1);
+
+  paginaA4.drawPage(embeddedPage1, {
+    x: 0,
+    y: 421,
+    xScale: escala1,
+    yScale: escala1,
+  });
+
+  // Incrustar segundo comprobante si existe (mitad inferior)
+  if (doc2) {
+    const [embeddedPage2] = await pdfFinal.embedPdf(doc2, [0]);
+    const { width: w2, height: h2 } = embeddedPage2.scale(1);
+    const escala2 = Math.min(595 / w2, 421 / h2);
+
+    paginaA4.drawPage(embeddedPage2, {
+      x: 0,
+      y: 0,
+      xScale: escala2,
+      yScale: escala2,
+    });
+  }
+  return await pdfFinal.save(); 
+}
+
+  
   // ===== Helpers =====
   private formateaFecha(iso: string): string {
     const d = new Date(iso);

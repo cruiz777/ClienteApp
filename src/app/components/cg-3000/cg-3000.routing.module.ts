@@ -38,6 +38,7 @@ import { ActivosFijosFormComponent } from './activo-fijo/activos-fijos-form/acti
 import { ReporteDepreciacionComponent } from './activo-fijo/reporte-depreciacion/reporte-depreciacion.component';
 import { ReporteGeneralComponent } from './activo-fijo/reporte-general/reporte-general.component';
 import { GenerarAtsComponent } from './anexo-transaccional/generacion-anexo/generar-ats.component';
+import { MayorCodigosListComponent } from './balance/mayor/mayor-codigos/mayor-codigos.component';
 
 const routes: Routes = [
   {
@@ -71,6 +72,7 @@ const routes: Routes = [
       { path: 'liquidacion-compra-list', component: LiquidacionCompraComponent },
       { path: 'conciliacion', component: ConciliacionComponent},
       { path: 'mayor', component: MayorCuentasListComponent },
+      { path: 'mayor-codigos', component: MayorCodigosListComponent },      
       { path: 'estado-financiero', component: EstadoFinancieroComponent },
       { path: 'reporte-compras', component: ReporteComprasComponent },      
       { path: 'generar-ats', component: GenerarAtsComponent },

@@ -709,6 +709,12 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
       });
       return;
     }
+        if (this.fechaTransWarnVisible) {
+      this.mostrarMensajeAdvertencia(
+        'No puede grabar con errores de validación de fechas:\n\n' + this.fechaTransWarnMsg
+      );
+      return;
+    }
 
     try {
       this.loading = true;
@@ -1520,8 +1526,44 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
     return Math.floor((utcA - utcB) / msDay);
   }
 
+  // private evaluarWarningFechaTransaccion(): void {
+  //   // Solo modo NUEVO (cuando se precarga desde resumen o vacío)
+  //   if (this.readOnly) {
+  //     this.fechaTransWarnVisible = false;
+  //     this.fechaTransWarnMsg = '';
+  //     this.fechaTransDiasDiff = 0;
+  //     return;
+  //   }
+
+  //   const fechaDocRaw = this.headerForm?.get('fecha')?.value; // yyyy-MM-dd
+  //   const fechaDoc = this.parseAnyDate(fechaDocRaw);
+
+  //   // fechaTranView es yyyy-MM-dd (porque tú la setéas con toDateInputValue)
+  //   const fechaTran = this.parseAnyDate(this.fechaTranView);
+
+  //   if (!fechaDoc || !fechaTran) {
+  //     this.fechaTransWarnVisible = false;
+  //     this.fechaTransWarnMsg = '';
+  //     this.fechaTransDiasDiff = 0;
+  //     return;
+  //   }
+
+  //   const dias = this.diffDaysFloor(fechaDoc, fechaTran);
+  //   this.fechaTransDiasDiff = dias;
+
+  //   // Reglas: fecha retención mayor a transacción y > 5 días
+  //   if (dias > 5) {
+  //     this.fechaTransWarnVisible = true;
+  //     this.fechaTransWarnMsg =
+  //       `La fecha de retención supera en ${dias} día(s) la Fecha Transacción. ` +
+  //       `El máximo permitido es 5 días.`;
+  //   } else {
+  //     this.fechaTransWarnVisible = false;
+  //     this.fechaTransWarnMsg = '';
+  //   }
+  // }
+
   private evaluarWarningFechaTransaccion(): void {
-    // Solo modo NUEVO (cuando se precarga desde resumen o vacío)
     if (this.readOnly) {
       this.fechaTransWarnVisible = false;
       this.fechaTransWarnMsg = '';
@@ -1529,10 +1571,8 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
       return;
     }
 
-    const fechaDocRaw = this.headerForm?.get('fecha')?.value; // yyyy-MM-dd
+    const fechaDocRaw = this.headerForm?.get('fecha')?.value;
     const fechaDoc = this.parseAnyDate(fechaDocRaw);
-
-    // fechaTranView es yyyy-MM-dd (porque tú la setéas con toDateInputValue)
     const fechaTran = this.parseAnyDate(this.fechaTranView);
 
     if (!fechaDoc || !fechaTran) {
@@ -1545,16 +1585,41 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
     const dias = this.diffDaysFloor(fechaDoc, fechaTran);
     this.fechaTransDiasDiff = dias;
 
-    // Reglas: fecha retención mayor a transacción y > 5 días
+    // VALIDACIÓN 1: No anterior a fecha transacción
+    if (dias < 0) {
+      this.fechaTransWarnVisible = true;
+      this.fechaTransWarnMsg = 
+        `⚠️ ERROR: La Fecha Emisión (${this.formatIso(fechaDoc)}) NO puede ser anterior ` +
+        `a la Fecha Transacción (${this.formatIso(fechaTran)}). Diferencia: ${Math.abs(dias)} día(s) antes.`;
+      return;
+    }
+
+    // VALIDACIÓN 2: Máximo 5 días después
     if (dias > 5) {
       this.fechaTransWarnVisible = true;
       this.fechaTransWarnMsg =
-        `La fecha de retención supera en ${dias} día(s) la Fecha Transacción. ` +
-        `El máximo permitido es 5 días.`;
-    } else {
-      this.fechaTransWarnVisible = false;
-      this.fechaTransWarnMsg = '';
+        `⚠️ ERROR: La Fecha Emisión supera en ${dias} día(s) la Fecha Transacción. ` +
+        `Máximo permitido: 5 días.`;
+      return;
     }
+
+    // VALIDACIÓN 3: Mismo mes
+    const mesTran = fechaTran.getMonth();
+    const anioTran = fechaTran.getFullYear();
+    const mesDoc = fechaDoc.getMonth();
+    const anioDoc = fechaDoc.getFullYear();
+
+    if (anioDoc !== anioTran || mesDoc !== mesTran) {
+      this.fechaTransWarnVisible = true;
+      this.fechaTransWarnMsg =
+        `⚠️ ERROR: La Fecha Emisión (${this.formatIso(fechaDoc)}) debe estar en el mismo mes ` +
+        `que la Fecha Transacción (${this.formatIso(fechaTran)}). ` +
+        `Mes permitido: ${this.getNombreMes(mesTran)} ${anioTran}.`;
+      return;
+    }
+
+    this.fechaTransWarnVisible = false;
+    this.fechaTransWarnMsg = '';
   }
 
   private aplicarFechaHeaderATodasLasFilas(fechaInput: any): void {
@@ -1585,4 +1650,11 @@ export class RetencionesFormComponent implements OnInit, OnDestroy {
 
   //aqui añadir mas codigo 
   /// rp
+  private getNombreMes(mes: number): string {
+    const meses = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    return meses[mes] || '';
+  }
 }

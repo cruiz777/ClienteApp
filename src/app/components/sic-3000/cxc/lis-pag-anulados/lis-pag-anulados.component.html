@@ -45,7 +45,15 @@
           [disabled]="loading || pagedData.length===0">
           Exportar
         </button>
-
+        <button 
+          mat-raised-button 
+          color="primary"
+          (click)="imprimirSeleccionadas()"
+          [disabled]="loading"
+          matTooltip="Imprimir pagos seleccionados en un solo PDF">
+          <mat-icon>print</mat-icon>
+          Imprimir Seleccionados
+        </button>
         <mat-menu #menuExportar="matMenu" [overlapTrigger]="false" panelClass="export-menu">
           <button mat-menu-item (click)="exportar('pdf')">PDF</button>
           <button mat-menu-item (click)="exportar('excel')">Excel</button>
@@ -69,7 +77,9 @@
       (gridReady)="onGridReady($event)"
       [pagination]="true"
       [paginationPageSize]="20"
-      [paginationPageSizeSelector]="[10, 20, 50]">
+      [paginationPageSizeSelector]="[10, 20, 50]"
+      [rowSelection]="'multiple'"
+      [suppressRowClickSelection]="true">
     </ag-grid-angular>
 
     <!-- Footer / paginación -->
