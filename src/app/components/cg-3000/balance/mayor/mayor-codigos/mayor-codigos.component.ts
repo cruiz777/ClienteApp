@@ -105,7 +105,8 @@ export class MayorCodigosListComponent implements OnInit {
   pagination = true;
   paginationPageSize = 100;
   paginationPageSizeSelector = [50, 100, 200, 500];
-
+  pinnedBottomRowData: any[] = [];
+  rowData: MayorCodigoRow[] = []; 
   defaultColDef: ColDef = {
     sortable: true,
     filter: true,
@@ -135,7 +136,6 @@ export class MayorCodigosListComponent implements OnInit {
       valueFormatter: (p) => this.formatIsoDDMMYYYY(p.value),
     },
     { headerName: 'N. Comprobante', field: 'numeroComprobante', width: 180 },
-    { headerName: 'Mov', field: 'movimiento', width: 80 },
     { headerName: 'Beneficiario', field: 'beneficiario', width: 260 },
     {
       headerName: 'Debe', field: 'debe', width: 130,
@@ -240,7 +240,7 @@ export class MayorCodigosListComponent implements OnInit {
 
     // Autocomplete cuenta A
     this.searchCuentaA$.pipe(
-      debounceTime(300),
+      debounceTime(500),
       distinctUntilChanged(),
       switchMap(txt => txt.length >= 2
         ? this.codigosService.buscar(txt, { idEmpresa: this.idEmpresa })
@@ -470,6 +470,7 @@ export class MayorCodigosListComponent implements OnInit {
         next: (resp) => {
             this.resultados = resp?.data ?? null;
             this.codigosContables = this.resultados?.codigosContables ?? [];
+            this.calcularTotalesGrid();  
             this.loading = false;
             this.message.exito('Consulta mayor de códigos realizada correctamente.');
         },
@@ -1142,7 +1143,35 @@ export class MayorCodigosListComponent implements OnInit {
     }
     return body;
     }
+  
+  calcularTotalesGrid(): void {
+      // ✅ Actualizar rowData
+      this.rowData = this.aplanarDatos();
+      
+      // ✅ Calcular totales
+      if (!this.resultados?.totalesGenerales) {
+        this.pinnedBottomRowData = [];
+        return;
+      }
+      
+      this.pinnedBottomRowData = [{
+        nombreCodigo: 'TOTALES GENERALES',
+        debe: this.resultados.totalesGenerales.debe,
+        haber: this.resultados.totalesGenerales.haber,
+        saldo: this.resultados.totalesGenerales.saldo,
+      }];
+  }
 
+  getRowStyle(params: any): any {
+    if (params.node.rowPinned) {
+      return { 
+        fontWeight: 'bold', 
+        backgroundColor: '#1F4E78' ,
+        color: 'black',
+        fontSize: '14px'
+      };
+    }
+  } 
   //** METODO APLANAR PARA REPORTE */
    // REEMPLAZAR MÉTODO COMPLETO:
 public aplanarDatos(): MayorCodigoRow[] {

@@ -229,9 +229,11 @@
   <div class="results-panel" *ngIf="!loading">
     <ag-grid-angular
       class="ag-theme-alpine mayor-grid"
-      [rowData]="aplanarDatos()"
+      [rowData]="rowData"
       [columnDefs]="columnDefs"
       [defaultColDef]="defaultColDef"
+      [pinnedBottomRowData]="pinnedBottomRowData" 
+      [getRowStyle]="getRowStyle"               
       [animateRows]="true"
       [rowSelection]="'single'"
       [pagination]="pagination"
