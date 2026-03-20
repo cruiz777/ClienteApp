@@ -3,6 +3,7 @@ import { Component, OnInit, inject } from '@angular/core';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE, MatDateFormats, NativeDateAdapter } from '@angular/material/core';
 import { GridOptions } from 'ag-grid-community';
 import { UsuarioService } from 'src/app/services/usuario.service';
+import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import {
@@ -1067,32 +1068,59 @@ onGuardarTotal() {
     return;
   }
 
-  const payload = this.buildRequestFromUI();
+  const cab = this.form.getRawValue();
+  const periodo = cab.fechaInicial ? this.getPeriodoDesdeFecha(cab.fechaInicial) : '';
+  const cuenta = String(cab.codprePc ?? '').trim();
+  const descripcion = String(cab.descripcion ?? '').trim();
 
-  this.loading = true;
+  this.dialog.open(CustomMessageBoxComponent, {
+    width: '420px',
+    data: {
+      title: 'Confirmar conciliación total',
+      message:
+        `Se grabará la conciliación total.\n\n` +
+        `Cuenta: ${cuenta || '(sin cuenta)'}\n` +
+        `Periodo: ${periodo || '(sin período)'}\n` +
+        `Descripción: ${descripcion || '(sin descripción)'}\n\n` +
+        `¿Está seguro de continuar?`,
+      type: 'info',
+      confirmText: 'Sí, grabar',
+      cancelText: 'Cancelar',
+      showCancel: true
+    }
+  }).afterClosed().subscribe(confirmado => {
+    if (!confirmado) {
+      console.log('❌ Conciliación total cancelada por el usuario');
+      return;
+    }
 
-  this.svc.crearConciliacion(payload)
-    .pipe(finalize(() => this.loading = false))
-    .subscribe({
-      next: (res) => {
-        if (res.type === 'success') {
-          this.idConciliacion = Number(res.data);
-          this.isLocked = true;
+    const payload = this.buildRequestFromUI();
 
-          this.gridMovApi?.refreshCells({ force: true });
-          this.gridMovApi?.redrawRows();
+    this.loading = true;
 
-          if (this.idConciliacion > 0) {
-            this.cargarConciliacionPorId(this.idConciliacion);
+    this.svc.crearConciliacion(payload)
+      .pipe(finalize(() => this.loading = false))
+      .subscribe({
+        next: (res) => {
+          if (res.type === 'success') {
+            this.idConciliacion = Number(res.data);
+            this.isLocked = true;
+
+            this.gridMovApi?.refreshCells({ force: true });
+            this.gridMovApi?.redrawRows();
+
+            if (this.idConciliacion > 0) {
+              this.cargarConciliacionPorId(this.idConciliacion);
+            }
+
+            this.notify('Conciliación TOTAL guardada correctamente', 'success');
+          } else {
+            this.notify(res.message || 'Error al guardar', 'error');
           }
-
-          this.notify('Conciliación TOTAL guardada correctamente', 'success');
-        } else {
-          this.notify(res.message || 'Error al guardar', 'error');
-        }
-      },
-      error: () => this.notify('Error al guardar conciliación', 'error')
-    });
+        },
+        error: () => this.notify('Error al guardar conciliación', 'error')
+      });
+  });
 }
   // =======================
   // FILTROS GRID

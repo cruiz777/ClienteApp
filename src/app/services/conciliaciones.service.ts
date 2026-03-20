@@ -245,4 +245,14 @@ export class ConciliacionesService {
       { params }
     );
   }
+  reversarConciliacion(payload: {
+  codprePc: string;
+  anio: number;
+  mes: number;
+}): Observable<ApiResponse<boolean>> {
+  return this.http.post<ApiResponse<boolean>>(
+    `${this.baseUrl}/reversar`,
+    payload
+  );
+}
 }
