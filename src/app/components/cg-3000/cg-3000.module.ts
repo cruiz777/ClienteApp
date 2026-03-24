@@ -34,6 +34,8 @@ import { SharedModule } from 'src/app/shared/shared.module';
 import { EstadoFinancieroComponent } from './balance/estado-financiero/estado-financiero.component';
 import { ReporteComprasComponent } from './anexo-transaccional/reporte-compras/reporte-compras.component';
 import { GenerarAtsComponent } from './anexo-transaccional/generacion-anexo/generar-ats.component';
+import { PlanificacionPagosComponent } from './cuentas-por-pagar/planificacion-pagos/planificacion-pagos.component';
+import { MatCardModule } from '@angular/material/card';
 
 
 
@@ -45,6 +47,7 @@ import { GenerarAtsComponent } from './anexo-transaccional/generacion-anexo/gene
     EstadoFinancieroComponent,
     RegistroPagosProveedorComponent,
     ReporteComprasComponent,
+    PlanificacionPagosComponent,
     GenerarAtsComponent
   ],
   imports: [
@@ -57,6 +60,7 @@ import { GenerarAtsComponent } from './anexo-transaccional/generacion-anexo/gene
     MatTableModule,
     // Angular Material
     MatSidenavModule,
+    MatCardModule, 
     MatListModule,
     MatIconModule,
     MatExpansionModule,

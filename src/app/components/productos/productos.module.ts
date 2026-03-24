@@ -62,6 +62,7 @@ import { CuponesComponent } from './cupones/cupones.component';
 
 // Servicio
 import { EstadoCuentaService } from 'src/app/services/estado-cuenta.service';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 // 📌 Registrar locale español
 registerLocaleData(localeEs);
@@ -126,7 +127,7 @@ export const MY_DATE_FORMATS = {
     MatTooltipModule,
     MatDatepickerModule,
     MatNativeDateModule,
-
+    MatProgressSpinnerModule,
     // Ag-Grid y Handsontable
     AgGridModule,       // 👈 SOLO EL MÓDULO, NO AgGridAngular
     HotTableModule,

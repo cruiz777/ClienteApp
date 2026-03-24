@@ -681,7 +681,8 @@ export class ExportService {
       }],
       
       // Información básica
-      ['LOCALIZACIÓN / LOCATION:',clienteActual?.nomcli || ''],
+      // ['LOCALIZACIÓN / LOCATION:',clienteActual?.nomcli || ''], CAMBIO POR LESCALANTE PARA EVITAR CONFUSIÓN DEL CLIENTE 24/03/2026
+      ['LOCALIZACIÓN / LOCATION:', formData.localizacion || ''],
       ['RUC / IDENTIFICACIÓN NUMBER:', clienteActual?.ruc || ''],
       ['EMPRESA / COMPANY:', clienteActual?.nomcli || ''],
       ['REPRESENTANTE LEGAL / LEGAL REPRESENTATIVE:', clienteActual?.representante || ''],
@@ -699,11 +700,12 @@ export class ExportService {
       }],
       
       // Detalles de localización
-      ['TIPO DE LOCALIZACIÓN/LOCATION TYPE:', 
-        formData.localizacion 
-          ? `${tipoLoc?.descripcion || ''} - ${formData.localizacion}` // Aumenta localizacion
-          : tipoLoc?.descripcion || '' 
-      ],      
+      // ['TIPO DE LOCALIZACIÓN/LOCATION TYPE:', 
+      //   formData.localizacion 
+      //     ? `${tipoLoc?.descripcion || ''} - ${formData.localizacion}` // Aumenta localizacion
+      //     : tipoLoc?.descripcion || '' 
+      // ],      
+      ['TIPO DE LOCALIZACIÓN/LOCATION TYPE:', tipoLoc?.descripcion || ''], 
       ['LATITUD / LATITUDE:', latGMS],
       ['LONGITUD / LENGTH:', longGMS],
       ['PAÍS / COUNTRY:', pais?.nombre || ''],

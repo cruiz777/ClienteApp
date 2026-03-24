@@ -32,6 +32,7 @@ import { PermissionsService } from 'src/app/services/permission.service';
 export class GlnComponent implements OnInit {
   formGln!: FormGroup;
   pasoActual: number = 1;
+  guardando: boolean = false;
   public CustomValidators = CustomValidators;
   tiposLocalizacion: TipoLocalizacionResponse[] = [];
   prefijos: PrefijoClienteResponse[] = [];
@@ -869,11 +870,31 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
   }
 
   guardar(): void {
+    if (this.guardando) {
+      console.warn('⚠️ Ya hay un guardado en proceso');
+      return;
+    }
     if (this.formGln.invalid) {
       this.formGln.markAllAsTouched();
       alert('Por favor, completa todos los campos requeridos antes de guardar.');
       return;
     } 
+    //BLOQUEAR NUEVOS GUARDADOS
+    this.guardando = true;
+
+    //MOSTRAR LOADING DIALOG
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      disableClose: true, // ✅ NO SE PUEDE CERRAR
+      data: {
+        title: 'Guardando GLN',
+        message: 'Por favor espere...',
+        type: 'info',
+        isLoading: true,
+        loadingText: 'Guardando información del GLN...',
+        showCancel: false
+      }
+    });
     const ciudadCtrlValor = this.ciudadAutocompleteControl.value;
     if (ciudadCtrlValor && typeof ciudadCtrlValor === 'object' && 'id' in ciudadCtrlValor) {
       this.formGln.patchValue({ idCiudad: ciudadCtrlValor.id });
@@ -1000,6 +1021,8 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       // PUT
       this.glnService.actualizarGln(data.id_gln, data).subscribe({
         next: () => {
+          loadingDialog.close();
+          this.guardando = false; 
           this.mostrarMensajeBox('GLN actualizado', 'El GLN fue actualizado correctamente.', 'success');
           callback();
           this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
@@ -1007,6 +1030,8 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
           });
         },
         error: (err) => {
+          loadingDialog.close(); 
+          this.guardando = false;
           console.error('❌ Error al actualizar GLN', err);
           this.mostrarMensajeBox('Error', 'No se pudo actualizar el GLN.', 'error');
         }
@@ -1016,6 +1041,8 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       console.log('🚀 Enviando a /Gln:', { request: data });
       this.glnService.insertarGln({ request: data }).subscribe({
         next: () => {
+          loadingDialog.close();
+          this.guardando = false; 
           this.mostrarMensajeBox('GLN creado', 'El GLN fue creado correctamente.', 'success');
           callback();
           this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
@@ -1023,6 +1050,8 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
           });
         },
         error: (err) => {
+          loadingDialog.close(); 
+          this.guardando = false;
           console.error('❌ Error al crear GLN', err);
           this.mostrarMensajeBox('Error', 'Ocurrió un error al crear el GLN.', 'error');
         }

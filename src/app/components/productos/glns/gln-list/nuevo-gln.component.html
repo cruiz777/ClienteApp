@@ -351,8 +351,9 @@
         </div>
 
         <button type="button" *ngIf="pasoActual < 3" (click)="siguientePaso()">Siguiente</button>
-        <button type="button" *ngIf="pasoActual === 3" [disabled]="!modoEdicion" (click)="guardar()" class="btn-primary">
-          Grabar
+        <button type="button" *ngIf="pasoActual === 3" [disabled]="!modoEdicion || guardando" (click)="guardar()" class="btn-primary">
+          <mat-spinner *ngIf="guardando" diameter="20" style="display: inline-block; margin-right: 8px;"></mat-spinner>
+          {{ guardando ? 'Guardando...' : 'Grabar' }}
         </button>
       </div>
 
