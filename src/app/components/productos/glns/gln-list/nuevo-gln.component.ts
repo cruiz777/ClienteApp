@@ -9,7 +9,8 @@ import { TipoLocalizacionResponse } from 'src/app/interfaces/responses/tipo-loca
 import { PrefijoClienteResponse } from 'src/app/interfaces/responses/PrefijoClienteResponse';
 import { Cliente } from 'src/app/interfaces/cliente';
 import { CiudadResumen } from 'src/app/interfaces/responses/ciudad-response';
-import { combineLatest, distinctUntilChanged, startWith } from 'rxjs';
+import { combineLatest, distinctUntilChanged, startWith, Subject } from 'rxjs';
+import { debounceTime } from 'rxjs/operators';
 import { GlnRequest, GlnResponse, GlnService } from 'src/app/services/gln.service';
 import { PaisService, Pais } from 'src/app/services/pais.service';
 import { CustomValidators } from 'src/app/components/utils/validators/validator.util';
@@ -59,6 +60,14 @@ export class GlnComponent implements OnInit {
   glnsFiltrados: GlnResponse[] = [];
   glnsPorCliente: GlnResponse[] = [];
   logoUrl: string = '';
+
+  //Para la secuencia manual
+  usarSecuenciaManual: boolean = false;
+  secuenciaManual: number | null = null;
+  validandoSecuencia: boolean = false;
+  secuenciaValida: boolean = false;
+  mensajeSecuencia: string = '';
+  private secuenciaSubject = new Subject<number>();
   constructor(
     private fb: FormBuilder,
     private prefijoService: PrefijoService,
@@ -327,6 +336,15 @@ export class GlnComponent implements OnInit {
     }, 0);
     this.bloquearCamposPaso(2, true); // bloquear contactos
     this.bloquearCamposPaso(3, true); // bloquear certificados
+    // ✅ Validación en tiempo real con debounce para secuencia manual
+    this.secuenciaSubject.pipe(
+      debounceTime(500),
+      distinctUntilChanged()
+    ).subscribe(secuencia => {
+      if (secuencia > 0) {
+        this.validarSecuenciaEnTiempoReal(secuencia);
+      }
+    });
   }
 
   
@@ -683,6 +701,21 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     }
 
     if (this.pasoActual === 1) {
+      //Validar secuencia manual si está activa
+      if (this.usarSecuenciaManual) {
+        if (!this.secuenciaManual) {
+          this.toastCampos.mostrar(['Debe ingresar un número de secuencia']);
+          return;
+        }
+        if (this.validandoSecuencia) {
+          this.toastCampos.mostrar(['Espere mientras se valida la secuencia']);
+          return;
+        }
+        if (!this.secuenciaValida) {
+          this.toastCampos.mostrar(['La secuencia ingresada ya está en uso']);
+          return;
+        }
+      }
       // Validaciones paso 1
       if (!controles['localizacion'].value?.trim()) {
         camposFaltantes.push('Localización');
@@ -879,6 +912,21 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       alert('Por favor, completa todos los campos requeridos antes de guardar.');
       return;
     } 
+    //Validar secuencia manual antes de guardar
+    if (this.usarSecuenciaManual) {
+      if (!this.secuenciaManual) {
+        this.toastr.error('Debe ingresar un número de secuencia', 'Error de validación');
+        return;
+      }
+      if (this.validandoSecuencia) {
+        this.toastr.warning('Espere mientras se valida la secuencia', 'Validando');
+        return;
+      }
+      if (!this.secuenciaValida) {
+        this.toastr.error('La secuencia ingresada ya está en uso', 'Secuencia no disponible');
+        return;
+      }
+    }
     //BLOQUEAR NUEVOS GUARDADOS
     this.guardando = true;
 
@@ -1314,29 +1362,18 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     this.glnIndex = 0;
     this.ciudadAutocompleteControl.reset();
 
+    // ✅ NUEVO: Resetear estado del checkbox de serie
+    this.usarSecuenciaManual = false;
+    this.secuenciaManual = null;
+    this.validandoSecuencia = false;
+    this.secuenciaValida = false;
+    this.mensajeSecuencia = '';
+
     // Aqui arma el prefijo y verifica su longitud
     const prefijo = this.prefijos.find(p => p.id_prefijos === datosGenerales.idPrefijos);
     if (prefijo) {
-      const codigoPais = '786';
-      this.glnService.obtenerUltimaSecuenciaGln(codigoPais, prefijo.codpre).subscribe({
-        next: (secuencia: number) => {
-          const longitudSecuencia = 12 - (codigoPais.length + prefijo.codpre.length);
-          const maxSecuencia = Math.pow(10, longitudSecuencia) - 1;
-
-          if (secuencia >= maxSecuencia) {
-            this.alertaGln = `No se pueden generar más GLNs con el prefijo ${prefijo.codpre}. Límite alcanzado (${maxSecuencia}).`;
-            return;
-          }
-
-          const nuevaSecuencia = secuencia + 1;
-          const gln = this.generarGlnCompleto(prefijo.codpre, nuevaSecuencia);
-          this.formGln.patchValue({ gln1: gln });
-        },
-        error: (err) => {
-          console.error('❌ Error al obtener la secuencia de GLN', err);
-          this.alertaGln = 'No se pudo generar el GLN automáticamente.';
-        }
-      });
+      // ✅ Generar automáticamente (tu lógica original intacta)
+      this.generarGlnAutomatico(prefijo);
     } else {
       this.alertaGln = 'Debe seleccionar un prefijo válido antes de generar un nuevo GLN.';
     }
@@ -1599,5 +1636,140 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     // No hacer nada, dejar que el paste funcione normalmente
     // El valueChanges procesará la coma automáticamente
     return;
+  }
+  
+  generarGlnAutomatico(prefijo: any): void {
+    const codigoPais = '786';
+    this.glnService.obtenerUltimaSecuenciaGln(codigoPais, prefijo.codpre).subscribe({
+      next: (secuencia: number) => {
+        const longitudSecuencia = 12 - (codigoPais.length + prefijo.codpre.length);
+        const maxSecuencia = Math.pow(10, longitudSecuencia) - 1;
+
+        if (secuencia >= maxSecuencia) {
+          this.alertaGln = `No se pueden generar más GLNs con el prefijo ${prefijo.codpre}. Límite alcanzado (${maxSecuencia}).`;
+          return;
+        }
+
+        const nuevaSecuencia = secuencia + 1;
+        const gln = this.generarGlnCompleto(prefijo.codpre, nuevaSecuencia);
+        this.formGln.patchValue({ gln1: gln });
+      },
+      error: (err) => {
+        console.error('❌ Error al obtener la secuencia de GLN', err);
+        this.alertaGln = 'No se pudo generar el GLN automáticamente.';
+      }
+    });
+  }
+
+  //Maneja el cambio del checkbox SERIE
+  onCheckboxSerieChange(): void {
+    if (this.usarSecuenciaManual) {
+      // Cuando activa el checkbox, limpia el GLN para que ingrese la secuencia
+      this.formGln.patchValue({ gln1: '' });
+      this.secuenciaManual = null;
+    } else {
+      // Cuando desactiva, regenera automáticamente
+      const prefijo = this.prefijos.find(p => p.id_prefijos === this.formGln.get('idPrefijos')?.value);
+      if (prefijo) {
+        this.generarGlnAutomatico(prefijo);
+      }
+    }
+  }
+
+  //Valida y genera GLN con secuencia manual
+  validarYGenerarGlnManual(): void {
+      if (!this.secuenciaManual || this.secuenciaManual <= 0) {
+        this.toastr.error('Ingrese un número de secuencia válido', 'Error');
+        return;
+      }
+
+      const prefijo = this.prefijos.find(p => p.id_prefijos === this.formGln.get('idPrefijos')?.value);
+      if (!prefijo) {
+        this.toastr.error('Seleccione un prefijo válido', 'Error');
+        return;
+      }
+
+      const codigoPais = '786';
+      const longitudSecuencia = 12 - (codigoPais.length + prefijo.codpre.length);
+      const maxSecuencia = Math.pow(10, longitudSecuencia) - 1;
+
+      if (this.secuenciaManual > maxSecuencia) {
+        this.toastr.error(
+          `La secuencia no puede exceder ${maxSecuencia} para este prefijo`,
+          'Fuera de rango'
+        );
+        return;
+      }
+
+      this.validandoSecuencia = true;
+
+      this.glnService.validarSecuenciaDisponible(codigoPais, prefijo.codpre, this.secuenciaManual).subscribe({
+        next: (response) => {
+          this.validandoSecuencia = false;
+          
+          if (response.data) {
+            const gln = this.generarGlnCompleto(prefijo.codpre, this.secuenciaManual!);
+            this.formGln.patchValue({ gln1: gln });
+            this.toastr.success(response.message, 'Éxito');
+          } else {
+            this.toastr.error(response.message, 'Secuencia no disponible');
+            this.formGln.patchValue({ gln1: '' });
+          }
+        },
+        error: (err) => {
+          this.validandoSecuencia = false;
+          console.error('❌ Error al validar secuencia', err);
+          this.toastr.error('No se pudo validar la secuencia', 'Error');
+        }
+      });
+    }
+    onSecuenciaInput(): void {
+    this.mensajeSecuencia = '';
+    this.secuenciaValida = false;
+    
+    if (this.secuenciaManual && this.secuenciaManual > 0) {
+      this.secuenciaSubject.next(this.secuenciaManual);
+    }
+  }
+
+  validarSecuenciaEnTiempoReal(secuencia: number): void {
+    const prefijo = this.prefijos.find(p => p.id_prefijos === this.formGln.get('idPrefijos')?.value);
+    if (!prefijo) return;
+
+    const codigoPais = '786';
+    const longitudSecuencia = 12 - (codigoPais.length + prefijo.codpre.length);
+    const maxSecuencia = Math.pow(10, longitudSecuencia) - 1;
+
+    if (secuencia > maxSecuencia) {
+      this.mensajeSecuencia = `Máximo permitido: ${maxSecuencia}`;
+      this.secuenciaValida = false;
+      this.formGln.patchValue({ gln1: '' });
+      return;
+    }
+
+    this.validandoSecuencia = true;
+
+    this.glnService.validarSecuenciaDisponible(codigoPais, prefijo.codpre, secuencia).subscribe({
+      next: (response) => {
+        this.validandoSecuencia = false;
+        
+        if (response.data) {
+          const gln = this.generarGlnCompleto(prefijo.codpre, secuencia);
+          this.formGln.patchValue({ gln1: gln });
+          this.mensajeSecuencia = `Disponible`;
+          this.secuenciaValida = true;
+        } else {
+          this.formGln.patchValue({ gln1: '' });
+          this.mensajeSecuencia = 'Ya en uso';
+          this.secuenciaValida = false;
+        }
+      },
+      error: (err) => {
+        this.validandoSecuencia = false;
+        console.error('❌ Error al validar secuencia', err);
+        this.mensajeSecuencia = 'Error al validar';
+        this.secuenciaValida = false;
+      }
+    });
   }
 }
