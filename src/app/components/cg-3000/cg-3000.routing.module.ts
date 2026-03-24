@@ -39,6 +39,7 @@ import { ReporteDepreciacionComponent } from './activo-fijo/reporte-depreciacion
 import { ReporteGeneralComponent } from './activo-fijo/reporte-general/reporte-general.component';
 import { GenerarAtsComponent } from './anexo-transaccional/generacion-anexo/generar-ats.component';
 import { MayorCodigosListComponent } from './balance/mayor/mayor-codigos/mayor-codigos.component';
+import { PlanificacionPagosComponent } from './cuentas-por-pagar/planificacion-pagos/planificacion-pagos.component';
 
 const routes: Routes = [
   {
@@ -71,9 +72,7 @@ const routes: Routes = [
       { path: 'liquidacion-compra', component: LiquidacionCompraFormComponent },
       { path: 'liquidacion-compra-list', component: LiquidacionCompraComponent },
       { path: 'conciliacion', component: ConciliacionComponent},
-      { path: 'reversa-conciliacion', component: ReversaConciliacionComponent
-        
-      },
+      { path: 'reversa-conciliacion', component: ReversaConciliacionComponent},
       { path: 'mayor', component: MayorCuentasListComponent },
       { path: 'mayor-codigos', component: MayorCodigosListComponent },      
       { path: 'estado-financiero', component: EstadoFinancieroComponent },
@@ -82,8 +81,10 @@ const routes: Routes = [
       { path: 'activo-fijo',component:ActivosFijosListComponent},
       { path: 'activo-fijo/nuevo', component: ActivosFijosFormComponent },
       { path: 'activo-fijo/editar/:id', component: ActivosFijosFormComponent },
-       { path: 'activo-fijo/depre', component: ReporteDepreciacionComponent },
-        { path: 'activo-fijo/general', component: ReporteGeneralComponent },
+      { path: 'activo-fijo/depre', component: ReporteDepreciacionComponent },
+      { path: 'activo-fijo/general', component: ReporteGeneralComponent },
+      { path: 'planificacion-pagos', component: PlanificacionPagosComponent },
+         
       { path: '**', redirectTo: 'inicio-cg' },
     ],
   },

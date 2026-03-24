@@ -1,0 +1,318 @@
+<div class="cuenta-liquidar">
+  <!-- ===== ENCABEZADO COMPACTO ===== -->
+  <div class="header-section">
+    <h1 class="page-title">
+      <mat-icon>assignment</mat-icon>
+      Planificación de Pagos a Proveedores
+    </h1>
+    <button class="btn-icon" (click)="resetearFormulario()" [disabled]="guardando" matTooltip="Limpiar todo">
+      <mat-icon>refresh</mat-icon>
+    </button>
+  </div>
+
+  <!-- ===== FILTROS COMPACTOS EN UNA LÍNEA ===== -->
+  <div class="panel compact-panel">
+    <div class="filters-header">
+      <mat-icon>filter_list</mat-icon>
+      <span>Filtros de Búsqueda</span>
+    </div>
+    
+    <form [formGroup]="filtrosForm">
+      <div class="filters-grid">
+        <!-- Proveedor -->
+        <div class="filter-col filter-col-grow">
+          <label class="compact-label">
+            <mat-icon>business</mat-icon>
+            Proveedor
+          </label>
+          <input
+            type="text"
+            class="compact-input"
+            [formControl]="proveedorCtrl"
+            [matAutocomplete]="autoProveedor"
+            placeholder="Buscar...">
+          <mat-autocomplete 
+            #autoProveedor="matAutocomplete"
+            [displayWith]="displayProveedor"
+            (optionSelected)="onProveedorSeleccionado($event)">
+            <mat-option *ngFor="let p of proveedoresFiltrados$ | async" [value]="p">
+              <div class="compact-option">
+                <strong>{{ p.identificacion }}</strong>
+                <span>{{ p.nombre }}</span>
+              </div>
+            </mat-option>
+          </mat-autocomplete>
+        </div>
+
+        <!-- Fecha -->
+        <div class="filter-col">
+          <label class="compact-label">
+            <mat-icon>event</mat-icon>
+            Venc. Hasta
+          </label>
+          <input type="date" class="compact-input" formControlName="fechaVencimientoHasta">
+        </div>
+
+        <!-- Cuentas -->
+        <div class="filter-col filter-cuentas">
+          <label class="compact-label">
+            <mat-icon>account_balance</mat-icon>
+            Cuentas
+          </label>
+          <button
+            type="button"
+            class="compact-btn compact-dropdown"
+            (click)="toggleFiltroCuentas()"
+            [class.active]="cuentasSeleccionadas.length > 0">
+            <span>{{ cuentasSeleccionadas.length || 'Todas' }}</span>
+            <mat-icon>{{ mostrarFiltroCuentas ? 'expand_less' : 'expand_more' }}</mat-icon>
+          </button>
+
+          <!-- Dropdown -->
+          <div class="dropdown-compact" *ngIf="mostrarFiltroCuentas">
+            <div class="dropdown-compact-header">
+              <span>Seleccionar cuentas</span>
+              <button type="button" (click)="toggleFiltroCuentas()">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+            <div class="dropdown-compact-list">
+              <label *ngFor="let c of cuentasContablesDisponibles">
+                <input type="checkbox" [(ngModel)]="c.seleccionado" [ngModelOptions]="{standalone: true}">
+                <span class="code">{{ c.codigo }}</span>
+                <span class="name">{{ c.nombre }}</span>
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Buscar -->
+        <div class="filter-col">
+          <button
+            type="button"
+            class="compact-btn compact-btn-primary"
+            (click)="buscarDocumentos()"
+            [disabled]="cargandoDocumentos">
+            <mat-spinner *ngIf="cargandoDocumentos" diameter="16"></mat-spinner>
+            <mat-icon *ngIf="!cargandoDocumentos">search</mat-icon>
+            {{ cargandoDocumentos ? 'Buscando...' : 'Buscar' }}
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- ===== GRID COMPACTO ===== -->
+  <div class="panel compact-panel">
+    <div class="grid-header-compact">
+        <div class="grid-title">
+            <mat-icon>description</mat-icon>
+            <span>Documentos Pendientes</span>
+            <span class="badge">{{ documentosRows.length }}</span>
+        </div>
+        <button class="compact-btn" (click)="limpiarSeleccion()" [disabled]="!documentosRows.length">
+            <mat-icon>clear_all</mat-icon>
+            Limpiar
+        </button>
+        <button 
+            class="compact-btn" 
+            (click)="exportarSeleccionadosExcel()" 
+            [disabled]="!totalDocumentosSeleccionados">
+            <mat-icon>file_download</mat-icon>
+            Exportar Excel
+        </button>
+    </div>
+
+    <div class="grid-wrapper-compact">
+      <ag-grid-angular
+        #gridDocumentos
+        class="ag-theme-material grid-ultra-compact"
+        [rowData]="documentosRows"
+        [columnDefs]="columnDefsDocumentos"
+        [defaultColDef]="defaultColDef"
+        [rowSelection]="'multiple'"
+        [animateRows]="true"
+        [pagination]="true"
+        [paginationPageSize]="20"
+        [paginationPageSizeSelector]="[10, 20, 50]"
+        [domLayout]="'autoHeight'"
+        (gridReady)="onGridDocumentosReady($event)"
+        style="width: 100%; max-height: 400px;">
+      </ag-grid-angular>
+
+      <div class="loading-compact" *ngIf="cargandoDocumentos">
+        <mat-spinner diameter="36"></mat-spinner>
+        <span>Cargando...</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== DATOS Y RESUMEN ULTRA COMPACTO ===== -->
+  <div class="bottom-section">
+    <!-- Datos del Pago -->
+    <div class="panel compact-panel datos-pago-compact">
+      <div class="section-header-compact">
+        <mat-icon>payments</mat-icon>
+        <span>Datos del Pago</span>
+      </div>
+      
+      <form [formGroup]="datosPagoForm" class="form-compact">
+        <div class="form-row-compact">
+          <div class="form-field-compact">
+            <label class="compact-label required">
+              <mat-icon>event</mat-icon>
+              Fecha Pago
+            </label>
+            <input type="date" class="compact-input" formControlName="fechaPago">
+          </div>
+
+          <div class="form-field-compact">
+            <label class="compact-label">
+              <mat-icon>event_available</mat-icon>
+              Vencimiento
+            </label>
+            <input type="date" class="compact-input" formControlName="fechaVencimiento">
+          </div>
+
+          <div class="form-field-compact">
+            <label class="compact-label required">
+              <mat-icon>credit_card</mat-icon>
+              Forma Pago
+            </label>
+            <select class="compact-input" formControlName="idFormaPago">
+              <option value="">Seleccione...</option>
+              <option *ngFor="let f of formasPagoDisponibles$ | async" [value]="f.idFormaPagoCg">
+                {{ f.descripcion }}
+              </option>
+            </select>
+          </div>
+
+          <div class="form-field-compact">
+            <label class="compact-label required">
+              <mat-icon>account_balance</mat-icon>
+              Cuenta Banco
+            </label>
+            <select class="compact-input" formControlName="cuentaBanco">
+              <option value="">Seleccione...</option>
+              <option *ngFor="let c of cuentasBancoFormateadas" [value]="c.codigo">
+                {{ c.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-field-compact form-field-full">
+          <label class="compact-label">
+            <mat-icon>note</mat-icon>
+            Observación
+          </label>
+          <input 
+            type="text" 
+            class="compact-input" 
+            formControlName="observacion" 
+            placeholder="Ej: Pago quincenal proveedores"
+            (focus)="onInputFocus($event)">
+        </div>
+      </form>
+    </div>
+
+    <!-- Resumen Compacto -->
+    <div class="panel compact-panel resumen-compact">
+      <div class="section-header-compact">
+        <mat-icon>receipt_long</mat-icon>
+        <span>Resumen</span>
+      </div>
+
+      <div class="resumen-stats">
+        <!-- Documentos Seleccionados -->
+        <div class="stat-item">
+            <mat-icon>description</mat-icon>
+            <div class="stat-content">
+            <span class="stat-label">Documentos</span>
+            <span class="stat-value">{{ totalDocumentosSeleccionados }}</span>
+            </div>
+        </div>
+
+        <!-- Total Marcado (Saldo de docs seleccionados) -->
+        <div class="stat-item">
+            <mat-icon>check_box</mat-icon>
+            <div class="stat-content">
+            <span class="stat-label">Total Marcado</span>
+            <span class="stat-value">{{ totalMarcado | currency:'USD':'symbol':'1.2-2' }}</span>
+            </div>
+        </div>
+
+        <!-- Monto a Pagar -->
+        <div class="stat-item stat-highlight">
+            <mat-icon>payments</mat-icon>
+            <div class="stat-content">
+            <span class="stat-label">Monto a Pagar</span>
+            <span class="stat-value">{{ totalAPlanificar | currency:'USD':'symbol':'1.2-2' }}</span>
+            </div>
+        </div>
+
+        <!-- Pendiente de Pagar -->
+        <div class="stat-item stat-warning">
+            <mat-icon>pending</mat-icon>
+            <div class="stat-content">
+            <span class="stat-label">Pendiente Pagar</span>
+            <span class="stat-value">{{ totalPendiente | currency:'USD':'symbol':'1.2-2' }}</span>
+            </div>
+        </div>
+
+        <!-- Diferencia -->
+        <div class="stat-item" [class.stat-error]="diferencia < 0" [class.stat-success]="diferencia === 0">
+            <mat-icon>compare_arrows</mat-icon>
+            <div class="stat-content">
+            <span class="stat-label">Diferencia</span>
+            <span class="stat-value">{{ diferencia | currency:'USD':'symbol':'1.2-2' }}</span>
+            </div>
+        </div>
+
+        <!-- TOTAL POR PAGAR -->
+        <div class="stat-item stat-total">
+            <mat-icon>attach_money</mat-icon>
+            <div class="stat-content">
+            <span class="stat-label">Total por Pagar</span>
+            <span class="stat-value-big">{{ totalAPlanificar | currency:'USD':'symbol':'1.2-2' }}</span>
+            </div>
+        </div>
+        </div>
+
+      <div class="actions-compact">
+        <button
+          class="compact-btn compact-btn-primary btn-full"
+          (click)="planificarPago()"
+          [disabled]="guardando || !totalDocumentosSeleccionados || !datosPagoForm.valid">
+          <mat-spinner *ngIf="guardando" diameter="16"></mat-spinner>
+          <mat-icon *ngIf="!guardando">check_circle</mat-icon>
+          {{ guardando ? 'Procesando...' : 'Planificar Pago' }}
+        </button>
+        
+        <button
+          class="compact-btn btn-full"
+          (click)="resetearFormulario()"
+          [disabled]="guardando">
+          <mat-icon>restart_alt</mat-icon>
+          Reiniciar
+        </button>
+      </div>
+
+      <!-- Validaciones compactas -->
+      <div class="validation-compact" *ngIf="!datosPagoForm.valid || !totalDocumentosSeleccionados">
+        <div class="val-item" *ngIf="!datosPagoForm.get('fechaPago')?.valid">
+          <mat-icon>error_outline</mat-icon>Falta fecha de pago
+        </div>
+        <div class="val-item" *ngIf="!datosPagoForm.get('idFormaPago')?.valid">
+          <mat-icon>error_outline</mat-icon>Falta forma de pago
+        </div>
+        <div class="val-item" *ngIf="!datosPagoForm.get('cuentaBanco')?.valid">
+          <mat-icon>error_outline</mat-icon>Falta cuenta banco
+        </div>
+        <div class="val-item" *ngIf="!totalDocumentosSeleccionados">
+          <mat-icon>error_outline</mat-icon>Seleccione documentos
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
