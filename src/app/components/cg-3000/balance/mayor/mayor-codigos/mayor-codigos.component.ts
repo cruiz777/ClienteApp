@@ -59,6 +59,7 @@ import {
   CuentaHijaResponse,
   MayorCodigosAgrupadoResponse 
 } from 'src/app/interfaces/responses/mayor-codigos-agrupado-response';
+import { PlanCuentasService } from 'src/app/services/plan-cuentas.service';
 /* ==========================
  * Tipo local para las filas
  * ========================== */
@@ -170,8 +171,6 @@ export class MayorCodigosListComponent implements OnInit {
     fechaHasta: '',
     cuentaA: undefined,
     cuentaB: undefined,
-    idLocal: undefined,
-    idZona: undefined,
     codContableDesde: undefined,
     codContableHasta: undefined,
   };
@@ -179,10 +178,12 @@ export class MayorCodigosListComponent implements OnInit {
   // ── Búsqueda por CUENTA (igual que mayor cuentas) ──────────
   sugerenciasA: any[] = [];
   mostrarDropA = false;
+  labelCuentaA = '';  
   private searchCuentaA$ = new Subject<string>();
 
   sugerenciasB: any[] = [];
   mostrarDropB = false;
+  labelCuentaB = '';
   private searchCuentaB$ = new Subject<string>();
 
   // ── Búsqueda por CÓDIGO CONTABLE ───────────────────────────
@@ -200,8 +201,6 @@ export class MayorCodigosListComponent implements OnInit {
 
   // ── Modos filtro ───────────────────────────────────────────
   modoFiltro1: 'cuenta' | null = null;      // rango cuentas
-  modoFiltro2: 'local' | null = null;       // local
-  modoFiltro3: 'zona' | null = null;        // zona
   modoFiltroCod: 'codigo' | null = null;    // rango códigos contables
 
     loading = false;
@@ -220,10 +219,9 @@ export class MayorCodigosListComponent implements OnInit {
    * ========================================================== */
   constructor(
     private balanceService: BalanceService,
-    private localService: LocalesService,
-    private zonaService: ZonaService,
     private codigosService: CodigosContablesService,
     private usuarioService: UsuarioService,
+    private planCuentasService: PlanCuentasService,
     private message: RequiredFieldsToastService,
   ) {}
 
@@ -235,34 +233,44 @@ export class MayorCodigosListComponent implements OnInit {
    * ========================================================== */
   ngOnInit(): void {
     this.setRangoMesActual();
-    this.cargarLocales();
-    this.cargarZona();
 
-    // Autocomplete cuenta A
+    // ═══════════════════════════════════════════════════════════
+    // AUTOCOMPLETE CUENTA A - USAR PlanCuentasService
+    // ═══════════════════════════════════════════════════════════
     this.searchCuentaA$.pipe(
-      debounceTime(500),
+      debounceTime(300),
       distinctUntilChanged(),
       switchMap(txt => txt.length >= 2
-        ? this.codigosService.buscar(txt, { idEmpresa: this.idEmpresa })
-        : of(null))
+        ? this.planCuentasService.buscarPorNombre(txt, this.idEmpresa)
+        : of([]))
     ).subscribe(res => {
-      this.sugerenciasA = res?.data ?? [];
+      this.sugerenciasA = (res ?? []).map((x: any) => ({
+        codigoPresentacion: x.codigoPresentacion ?? x.CuentaPresentacion ?? '',
+        nombreCuenta: x.nombreCuenta ?? x.NombreCuenta ?? '',
+      }));
       this.mostrarDropA = this.sugerenciasA.length > 0;
     });
 
-    // Autocomplete cuenta B
+    // ═══════════════════════════════════════════════════════════
+    // AUTOCOMPLETE CUENTA B - USAR PlanCuentasService
+    // ═══════════════════════════════════════════════════════════
     this.searchCuentaB$.pipe(
       debounceTime(300),
       distinctUntilChanged(),
       switchMap(txt => txt.length >= 2
-        ? this.codigosService.buscar(txt, { idEmpresa: this.idEmpresa })
-        : of(null))
+        ? this.planCuentasService.buscarPorNombre(txt, this.idEmpresa)
+        : of([]))
     ).subscribe(res => {
-      this.sugerenciasB = res?.data ?? [];
+      this.sugerenciasB = (res ?? []).map((x: any) => ({
+        codigoPresentacion: x.codigoPresentacion ?? x.CuentaPresentacion ?? '',
+        nombreCuenta: x.nombreCuenta ?? x.NombreCuenta ?? '',
+      }));
       this.mostrarDropB = this.sugerenciasB.length > 0;
     });
 
-    // Autocomplete código contable DESDE
+    // ═══════════════════════════════════════════════════════════
+    // AUTOCOMPLETE CÓDIGO CONTABLE DESDE (sin cambios)
+    // ═══════════════════════════════════════════════════════════
     this.searchCodDesde$.pipe(
       debounceTime(300),
       distinctUntilChanged(),
@@ -274,7 +282,9 @@ export class MayorCodigosListComponent implements OnInit {
       this.mostrarDropCodDesde = this.sugerenciasCodDesde.length > 0;
     });
 
-    // Autocomplete código contable HASTA
+    // ═══════════════════════════════════════════════════════════
+    // AUTOCOMPLETE CÓDIGO CONTABLE HASTA (sin cambios)
+    // ═══════════════════════════════════════════════════════════
     this.searchCodHasta$.pipe(
       debounceTime(300),
       distinctUntilChanged(),
@@ -294,13 +304,8 @@ export class MayorCodigosListComponent implements OnInit {
     this.modoFiltro1 = this.modoFiltro1 === 'cuenta' ? null : 'cuenta';
     this.filtros.cuentaA = undefined;
     this.filtros.cuentaB = undefined;
-  }
-
-  toggleModoLocal(): void {
-    this.modoFiltro2 = this.modoFiltro2 === 'local' ? null : 'local';
-    this.modoFiltro3 = this.modoFiltro3 === 'zona' ? null : 'zona';
-    this.filtros.idLocal = undefined;
-    this.filtros.idZona = undefined;
+    this.labelCuentaA = ''; 
+    this.labelCuentaB = ''; 
   }
 
   toggleModoCodigo(): void {
@@ -317,26 +322,45 @@ export class MayorCodigosListComponent implements OnInit {
   onBuscarCodDesde(ev: Event): void {
     const txt = (ev.target as HTMLInputElement).value ?? '';
     this.labelCodDesde = txt;
-    // si borraron el texto, limpia el id guardado
+    
     if (!txt.trim()) {
       this.filtros.codContableDesde = undefined;
       this.sugerenciasCodDesde = [];
       this.mostrarDropCodDesde = false;
       return;
     }
-    this.searchCodDesde$.next(txt);
+
+    //PERMITIR ENTRADA DIRECTA: si es número, guardarlo
+    const num = parseInt(txt.trim(), 10);
+    if (!isNaN(num) && num > 0) {
+      this.filtros.codContableDesde = num;
+    }
+
+    // Buscar sugerencias
+    if (txt.length >= 2) {
+      this.searchCodDesde$.next(txt);
+    }
   }
 
   onBuscarCodHasta(ev: Event): void {
     const txt = (ev.target as HTMLInputElement).value ?? '';
     this.labelCodHasta = txt;
+    
     if (!txt.trim()) {
       this.filtros.codContableHasta = undefined;
       this.sugerenciasCodHasta = [];
       this.mostrarDropCodHasta = false;
       return;
     }
-    this.searchCodHasta$.next(txt);
+
+    const num = parseInt(txt.trim(), 10);
+    if (!isNaN(num) && num > 0) {
+      this.filtros.codContableHasta = num;
+    }
+
+    if (txt.length >= 2) {
+      this.searchCodHasta$.next(txt);
+    }
   }
 
   seleccionarCodDesde(cod: CodigosContablesResponse): void {
@@ -366,36 +390,63 @@ export class MayorCodigosListComponent implements OnInit {
   /* ==========================================================
    * Búsqueda por CUENTA (rango)
    * ========================================================== */
-  onBuscarCuenta(tipo: 'A' | 'B', ev: Event): void {
-    const texto = (ev.target as HTMLInputElement).value ?? '';
-    if (/^\d/.test(texto)) {
-      this.onCuentaInput(tipo, ev);
-    } else {
-      if (tipo === 'A') { this.filtros.cuentaA = texto; this.searchCuentaA$.next(texto); }
-      else              { this.filtros.cuentaB = texto; this.searchCuentaB$.next(texto); }
-    }
-  }
-
-  onCuentaInput(tipo: 'A' | 'B', ev: Event): void {
-    const input = ev.target as HTMLInputElement;
-    let v = (input.value ?? '').replace(/\D/g, '');
-    if (v.length > 9) v = v.slice(0, 9);
-    if (v.length > 6) v = `${v.slice(0, 6)}-${v.slice(6)}`;
-    input.value = v;
-    if (tipo === 'A') this.filtros.cuentaA = v;
-    else              this.filtros.cuentaB = v;
-  }
-
-  seleccionarCuenta(tipo: 'A' | 'B', cuenta: any): void {
-    if (tipo === 'A') {
-      this.filtros.cuentaA = cuenta.codigoPresentacion ?? '';
-      this.mostrarDropA = false;
+  // ═══════════════════════════════════════════════════════════
+  // CUENTA A
+  // ═══════════════════════════════════════════════════════════
+  onBuscarCuentaA(ev: Event): void {
+    const txt = (ev.target as HTMLInputElement).value ?? '';
+    this.labelCuentaA = txt;
+    
+    // Si borraron el texto, limpiar
+    if (!txt.trim()) {
+      this.filtros.cuentaA = undefined;
       this.sugerenciasA = [];
-    } else {
-      this.filtros.cuentaB = cuenta.codigoPresentacion ?? '';
-      this.mostrarDropB = false;
-      this.sugerenciasB = [];
+      this.mostrarDropA = false;
+      return;
     }
+
+    // ✅ PERMITIR ENTRADA DIRECTA: guardar el valor tal cual
+    this.filtros.cuentaA = txt.trim();
+
+    // Buscar sugerencias solo si escribe al menos 2 caracteres
+    if (txt.length >= 2) {
+      this.searchCuentaA$.next(txt);
+    }
+  }
+
+  seleccionarCuentaA(cuenta: any): void {
+    this.filtros.cuentaA = cuenta.codigoPresentacion ?? '';
+    this.labelCuentaA = `${cuenta.codigoPresentacion} - ${cuenta.nombreCuenta}`;
+    this.mostrarDropA = false;
+    this.sugerenciasA = [];
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // CUENTA B
+  // ═══════════════════════════════════════════════════════════
+  onBuscarCuentaB(ev: Event): void {
+    const txt = (ev.target as HTMLInputElement).value ?? '';
+    this.labelCuentaB = txt;
+    
+    if (!txt.trim()) {
+      this.filtros.cuentaB = undefined;
+      this.sugerenciasB = [];
+      this.mostrarDropB = false;
+      return;
+    }
+
+    this.filtros.cuentaB = txt.trim();
+
+    if (txt.length >= 2) {
+      this.searchCuentaB$.next(txt);
+    }
+  }
+
+  seleccionarCuentaB(cuenta: any): void {
+    this.filtros.cuentaB = cuenta.codigoPresentacion ?? '';
+    this.labelCuentaB = `${cuenta.codigoPresentacion} - ${cuenta.nombreCuenta}`;
+    this.mostrarDropB = false;
+    this.sugerenciasB = [];
   }
 
   /* ==========================================================
@@ -460,8 +511,6 @@ export class MayorCodigosListComponent implements OnInit {
       fechaHasta: this.filtros.fechaHasta,
       cuentaA:          this.modoFiltro1  === 'cuenta' ? this.filtros.cuentaA  : undefined,
       cuentaB:          this.modoFiltro1  === 'cuenta' ? this.filtros.cuentaB  : undefined,
-      idLocal:          this.modoFiltro2  === 'local'  ? this.filtros.idLocal  : undefined,
-      idZona:           this.modoFiltro3  === 'zona'   ? this.filtros.idZona   : undefined,
       codContableDesde: this.modoFiltroCod === 'codigo' ? this.filtros.codContableDesde : undefined,
       codContableHasta: this.modoFiltroCod === 'codigo' ? this.filtros.codContableHasta : undefined,
     };
@@ -485,22 +534,7 @@ export class MayorCodigosListComponent implements OnInit {
   /* ==========================================================
    * Combos
    * ========================================================== */
-  private cargarLocales(): void {
-    this.localService.getAll().subscribe({
-      next: (resp: any) => { this.localesResponse = resp?.data ?? []; },
-      error: () => { this.localesResponse = []; },
-    });
-  }
 
-  private cargarZona(): void {
-    this.zonaService.getAll().subscribe({
-      next: (resp: any) => {
-        const data = Array.isArray(resp) ? resp : (resp?.data ?? resp?.datos ?? []);
-        this.zonaResponse = Array.isArray(data) ? data : [];
-      },
-      error: () => { this.zonaResponse = []; },
-    });
-  }
 
   /* ==========================================================
    * Export Excel
@@ -519,13 +553,7 @@ export class MayorCodigosListComponent implements OnInit {
       const codDesdeLabel = this.labelCodDesde || 'TODOS';
       const codHastaLabel = this.labelCodHasta || 'TODOS';
       const cuentaIni     = (this.filtros.cuentaA ?? '').trim() || 'TODOS';
-      const cuentaFin     = (this.filtros.cuentaB ?? '').trim() || 'TODOS';
-      const localLabel    = this.filtros.idLocal
-        ? (this.localesResponse.find((x: any) => x.id === this.filtros.idLocal)?.nombre ?? 'TODOS')
-        : 'TODOS';
-      const zonaLabel     = this.filtros.idZona
-        ? (this.zonaResponse.find((z: any) => z.idZona === this.filtros.idZona)?.nombre ?? 'TODOS')
-        : 'TODOS';
+      const cuentaFin     = (this.filtros.cuentaB ?? '').trim() || 'TODOS';  
       const usuario         = 'ADMINISTRADOR';
       const fechaImpresion  = this.formatDateEC(new Date());
       const desde           = this.formatDateECFromIso(d1);
@@ -591,9 +619,7 @@ export class MayorCodigosListComponent implements OnInit {
       setLabel('A6', 'Cta. Hasta:',  true);  setLabel('B6', cuentaFin);     ws.mergeCells('B6:E6');
       setLabel('A7', 'Fecha Desde:', true);  setLabel('B7', desde);         ws.mergeCells('B7:E7');
       setLabel('A8', 'Fecha Hasta:', true);  setLabel('B8', hasta);         ws.mergeCells('B8:E8');
-
-      setLabel('J5', 'Zona:',          true); setLabel('K5', zonaLabel);        ws.mergeCells('K5:N5');
-      setLabel('J6', 'Local:',         true); setLabel('K6', localLabel);       ws.mergeCells('K6:N6');
+      
       setLabel('J7', 'Usuario:',       true); setLabel('K7', usuario);          ws.mergeCells('K7:N7');
       setLabel('J8', 'Fec. Impresion:',true); setLabel('K8', fechaImpresion);   ws.mergeCells('K8:N8');
 
@@ -850,13 +876,7 @@ export class MayorCodigosListComponent implements OnInit {
       const codDesdeLabel = this.labelCodDesde || 'TODOS';
       const codHastaLabel = this.labelCodHasta || 'TODOS';
       const cuentaIni     = (this.filtros.cuentaA ?? '').trim() || 'TODOS';
-      const cuentaFin     = (this.filtros.cuentaB ?? '').trim() || 'TODOS';
-      const localLabel    = this.filtros.idLocal
-        ? (this.localesResponse.find((x: any) => x.id === this.filtros.idLocal)?.nombre ?? 'TODOS')
-        : 'TODOS';
-      const zonaLabel     = this.filtros.idZona
-        ? (this.zonaResponse.find((z: any) => z.idZona === this.filtros.idZona)?.nombre ?? 'TODOS')
-        : 'TODOS';
+      const cuentaFin     = (this.filtros.cuentaB ?? '').trim() || 'TODOS';      
       const usuario        = 'ADMINISTRADOR';
       const fechaImpresion = this.formatDateEC(new Date());
       const desde          = this.formatDateECFromIso(d1);
@@ -915,7 +935,7 @@ export class MayorCodigosListComponent implements OnInit {
         didDrawPage: () => {
           this.drawPdfHeaderMayorCodigos(doc, pageWidth, HEADER_H, logo, {
             codDesdeLabel, codHastaLabel, cuentaIni, cuentaFin,
-            desde, hasta, usuario, fechaImpresion, localLabel, zonaLabel,
+            desde, hasta, usuario, fechaImpresion
           });
           const pageStr = `Página ${doc.getNumberOfPages()} de ${totalPagesExp}`;
           doc.setFontSize(8);
@@ -1222,7 +1242,6 @@ public aplanarDatos(): MayorCodigoRow[] {
       cuentaIni: string; cuentaFin: string;
       desde: string; hasta: string;
       usuario: string; fechaImpresion: string;
-      localLabel: string; zonaLabel: string;
     }
   ): void {
     doc.setFillColor(255, 255, 255);
@@ -1261,8 +1280,6 @@ public aplanarDatos(): MayorCodigoRow[] {
       doc.setFont('helvetica', 'normal'); doc.text(val, xR + 28, yR);
       yR += 5;
     };
-    lblR('Zona:',          info.zonaLabel);
-    lblR('Local:',         info.localLabel);
     lblR('Usuario:',       info.usuario);
     lblR('Fec. Impresión:', info.fechaImpresion);
   }
@@ -1337,12 +1354,14 @@ public aplanarDatos(): MayorCodigoRow[] {
     }
     limpiarCuentaA(): void {
     this.filtros.cuentaA = undefined;
+    this.labelCuentaA = ''; 
     this.sugerenciasA = [];
     this.mostrarDropA = false;
     }
 
     limpiarCuentaB(): void {
     this.filtros.cuentaB = undefined;
+    this.labelCuentaB = '';
     this.sugerenciasB = [];
     this.mostrarDropB = false;
     }

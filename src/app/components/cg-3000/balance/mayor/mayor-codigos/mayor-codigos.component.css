@@ -588,3 +588,10 @@
   color: #999;
   text-align: center;
 }
+.search-dropdown-empty {
+  padding: 10px 15px;
+  color: #999;
+  font-style: italic;
+  text-align: center;
+  cursor: default;
+}
