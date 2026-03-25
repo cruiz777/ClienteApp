@@ -74,7 +74,10 @@ export class GlnService {
     );
   }
 
-
+  validarSecuenciaDisponible(codigoPais: string, prefijo: string, secuencia: number): Observable<ApiResponse<boolean>> {
+    const url = `${this.apiBaseUrl}/Gln/validar-secuencia?codigoPais=${codigoPais}&prefijo=${prefijo}&secuencia=${secuencia}`;
+    return this.http.get<ApiResponse<boolean>>(url);
+  }
 }
 
 export { GlnRequest } from '../interfaces/requests/gln-request';

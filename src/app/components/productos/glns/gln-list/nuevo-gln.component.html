@@ -81,7 +81,47 @@
           </div>
           <div class="form-group">
             <label>GLN:</label>
-            <input matInput formControlName="gln1">
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <input matInput formControlName="gln1" [readonly]="true" style="flex: 1;">
+              
+              <mat-checkbox 
+                *ngIf="modoEdicion"
+                [(ngModel)]="usarSecuenciaManual" 
+                [ngModelOptions]="{standalone: true}"
+                (change)="onCheckboxSerieChange()"
+                style="white-space: nowrap;">
+                SERIE
+              </mat-checkbox>
+            </div>
+
+            <!-- Input de secuencia manual con Bootstrap -->
+            <div *ngIf="usarSecuenciaManual && modoEdicion" style="margin-top: 12px; display: flex; gap: 12px; align-items: start;">
+              <div style="flex: 0 0 200px;">
+                <label style="font-size: 12px; color: #666; margin-bottom: 4px; display: block;">Secuencia</label>
+                <input 
+                  type="number" 
+                  class="form-control"
+                  [(ngModel)]="secuenciaManual"
+                  [ngModelOptions]="{standalone: true}"
+                  placeholder="Ej: 101"
+                  min="1"
+                  [disabled]="validandoSecuencia"
+                  (input)="onSecuenciaInput()"
+                  style="height: 38px; font-size: 14px;">
+              </div>
+              
+              <div style="flex: 1; padding-top: 28px;">
+                <span *ngIf="validandoSecuencia" style="color: #666; font-size: 13px;">
+                  ⏳ Validando...
+                </span>
+                <span *ngIf="!validandoSecuencia && mensajeSecuencia && secuenciaValida" style="color: #4caf50; font-size: 13px; font-weight: 500;">
+                  ✓ {{ mensajeSecuencia }}
+                </span>
+                <span *ngIf="!validandoSecuencia && mensajeSecuencia && !secuenciaValida" style="color: #f44336; font-size: 13px; font-weight: 500;">
+                  {{ mensajeSecuencia }}
+                </span>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -351,7 +391,10 @@
         </div>
 
         <button type="button" *ngIf="pasoActual < 3" (click)="siguientePaso()">Siguiente</button>
-        <button type="button" *ngIf="pasoActual === 3" [disabled]="!modoEdicion || guardando" (click)="guardar()" class="btn-primary">
+        <button type="button" *ngIf="pasoActual === 3" 
+          [disabled]="!modoEdicion || guardando || (usarSecuenciaManual && !secuenciaValida)" 
+          (click)="guardar()" 
+          class="btn-primary">
           <mat-spinner *ngIf="guardando" diameter="20" style="display: inline-block; margin-right: 8px;"></mat-spinner>
           {{ guardando ? 'Guardando...' : 'Grabar' }}
         </button>
