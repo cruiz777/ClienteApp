@@ -1971,7 +1971,7 @@ procesarGrabado(): void {
 
 
 
-  generar14(): void {
+  async generar14():  Promise<void> {
     debugger
     this.commitGridChanges(); 
     this.rowData = [...this.rowData];
@@ -1982,11 +1982,16 @@ procesarGrabado(): void {
       this.mostrarAlerta('⚠️ Debe seleccionar al menos un producto (checkbox).', 'Error');
       return;
     }
+
+    await this.validarTodosLosFactoresActivos();
+    
+    // ✅ Ahora sí verificar errores (ya validados)
     const hayErroresFactor = this.rowData.some(f => f.activo && f._errorFactor === true);
     if (hayErroresFactor) {
       this.mostrarAlerta('❌ Corrija los factores duplicados antes de continuar.', 'Error');
       return;
     }
+    
     if (!this.verificarFactor()) return;
 
     const filasMarcadas = this.rowData.filter(f => f.activo);
@@ -3144,4 +3149,37 @@ private fechaLocal(d: Date = new Date()): string {
   return this.isoLocal(d).slice(0, 10);
 }
 
+private validarTodosLosFactoresActivos(): Promise<void> {
+  const filasActivas = this.rowData.filter(f => 
+    f.activo === true && 
+    f.factor && 
+    f.factor.toString().trim() !== ''
+  );
+
+  if (filasActivas.length === 0) {
+    return Promise.resolve();
+  }
+
+  const validaciones = filasActivas.map(fila => {
+    const factorNum = Number(fila.factor);
+    const codbarUv = (fila.gtinUv || '').toString().trim();
+
+    if (!codbarUv || Number.isNaN(factorNum)) {
+      return Promise.resolve();
+    }
+
+    return this.codigos14Service.existePorCodbarUnidad(codbarUv, factorNum)
+      .toPromise()
+      .then(existe => {
+        fila._errorFactor = existe;
+      })
+      .catch(() => {
+        fila._errorFactor = false;
+      });
+  });
+
+  return Promise.all(validaciones).then(() => {
+    this.gridApi?.refreshCells({ force: true, columns: ['factor'] });
+  });
+}
 }

@@ -34,11 +34,6 @@
               (click)="toggleModoCuenta()">
               Por cuentas
             </button>
-            <button type="button" class="mode-chip"
-              [class.active]="modoFiltro2 === 'local' || modoFiltro3 === 'zona'"
-              (click)="toggleModoLocal()">
-              Por local
-            </button>
           </div>
         </div>
       </div>
@@ -126,7 +121,9 @@
     <div class="filters-bottom" *ngIf="modoFiltro1 === 'cuenta'">
       <div class="secondary-grid">
 
-        <!-- CUENTA A -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- CUENTA A (DESDE) -->
+        <!-- ═══════════════════════════════════════════════════════ -->
         <div class="fg">
           <label class="fg-label" for="cuentaA">Cuenta inicial</label>
           <div class="input-search-wrap">
@@ -134,29 +131,33 @@
               id="cuentaA"
               type="text"
               class="fg-control"
-              [value]="filtros.cuentaA ?? ''"
-              (input)="onBuscarCuenta('A', $event)"
+              [value]="labelCuentaA"
+              (input)="onBuscarCuentaA($event)"
               (blur)="cerrarDropdowns()"
-              maxlength="50"
-              placeholder="Código o nombre de cuenta..."
+              placeholder="Ej: 110101-001 o buscar por nombre..."
               autocomplete="off" />
             <span class="input-clear-icon"
-            *ngIf="filtros.cuentaA"
-            (mousedown)="limpiarCuentaA()">
-            ✕
+              *ngIf="labelCuentaA"
+              (mousedown)="limpiarCuentaA()">
+              ✕
             </span>
             <ul class="search-dropdown" *ngIf="mostrarDropA">
               <li class="search-dropdown-item"
                 *ngFor="let c of sugerenciasA"
-                (mousedown)="seleccionarCuenta('A', c)">
-                <span class="search-item-codigo">{{ c.Identificacionauxiliar }}</span>
-                <span class="search-item-nombre">{{ c.Razonsocial || c.Nombreauxiliar }}</span>
+                (mousedown)="seleccionarCuentaA(c)">
+                <span class="search-item-codigo">{{ c.codigoPresentacion }}</span>
+                <span class="search-item-nombre">{{ c.nombreCuenta }}</span>
+              </li>
+              <li *ngIf="!sugerenciasA.length" class="search-dropdown-empty">
+                Sin resultados
               </li>
             </ul>
           </div>
         </div>
 
-        <!-- CUENTA B -->
+        <!-- ═══════════════════════════════════════════════════════ -->
+        <!-- CUENTA B (HASTA) -->
+        <!-- ═══════════════════════════════════════════════════════ -->
         <div class="fg">
           <label class="fg-label" for="cuentaB">Cuenta final</label>
           <div class="input-search-wrap">
@@ -164,23 +165,25 @@
               id="cuentaB"
               type="text"
               class="fg-control"
-              [value]="filtros.cuentaB ?? ''"
-              (input)="onBuscarCuenta('B', $event)"
+              [value]="labelCuentaB"
+              (input)="onBuscarCuentaB($event)"
               (blur)="cerrarDropdowns()"
-              maxlength="50"
-              placeholder="Código o nombre de cuenta..."
+              placeholder="Ej: 110199-999 o buscar por nombre..."
               autocomplete="off" />
             <span class="input-clear-icon"
-            *ngIf="filtros.cuentaB"
-            (mousedown)="limpiarCuentaB()">
-            ✕
+              *ngIf="labelCuentaB"
+              (mousedown)="limpiarCuentaB()">
+              ✕
             </span>
             <ul class="search-dropdown" *ngIf="mostrarDropB">
               <li class="search-dropdown-item"
                 *ngFor="let c of sugerenciasB"
-                (mousedown)="seleccionarCuenta('B', c)">
-                <span class="search-item-codigo">{{ c.Identificacionauxiliar }}</span>
-                <span class="search-item-nombre">{{ c.Razonsocial || c.Nombreauxiliar }}</span>
+                (mousedown)="seleccionarCuentaB(c)">
+                <span class="search-item-codigo">{{ c.codigoPresentacion }}</span>
+                <span class="search-item-nombre">{{ c.nombreCuenta }}</span>
+              </li>
+              <li *ngIf="!sugerenciasB.length" class="search-dropdown-empty">
+                Sin resultados
               </li>
             </ul>
           </div>
@@ -189,7 +192,7 @@
       </div>
     </div>
 
-    <!-- Fila 4: Local y Zona -->
+    <!-- Fila 4: Local y Zona
     <div class="filters-bottom"
       *ngIf="modoFiltro2 === 'local' || modoFiltro3 === 'zona'">
       <div class="secondary-grid">
@@ -221,7 +224,7 @@
         </div>
 
       </div>
-    </div>
+    </div> -->
 
   </div>
 
