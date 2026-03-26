@@ -1,12 +1,12 @@
 <div class="wrap">
   <div class="sub-title">
-      <div class="h1">Conciliación Bancaria</div>
+    <div class="h1">Conciliación Bancaria</div>
 
-      <div class="h2 h2-proceso" *ngIf="!isLocked">EN PROCESO</div>
-      <div class="h2 h2-ok" *ngIf="isLocked">
-        CONCILIADO <span *ngIf="idConciliacion"> • Id: {{ idConciliacion }}</span>
-      </div>
+    <div class="h2 h2-proceso" *ngIf="!isLocked">EN PROCESO</div>
+    <div class="h2 h2-ok" *ngIf="isLocked">
+      CONCILIADO <span *ngIf="idConciliacion"> • Id: {{ idConciliacion }}</span>
     </div>
+  </div>
   <mat-card class="card">
 
     <!-- BARRA SUPERIOR -->
@@ -17,8 +17,7 @@
           Nueva
         </button>
 
-        <button mat-raised-button color="primary" class="btn btn-save"
-          [matMenuTriggerFor]="menuGuardar"
+        <button mat-raised-button color="primary" class="btn btn-save" [matMenuTriggerFor]="menuGuardar"
           [disabled]="loading || isLocked || !canAbrirMenuGuardar">
           <mat-icon>save</mat-icon>
           Guardar
@@ -26,10 +25,18 @@
         </button>
 
 
-        <button mat-stroked-button class="btn btn-print" (click)="onImprimir()" [disabled]="loading || movimientos.length === 0">
+        <button mat-stroked-button class="btn btn-print" (click)="onImprimir()"
+          [disabled]="loading || movimientos.length === 0">
           <mat-icon>print</mat-icon>
           Imprimir
         </button>
+
+        <button mat-stroked-button class="btn btn-print" (click)="onImprimirMarcados()"
+          [disabled]="loading || movimientos.length === 0">
+          <mat-icon>fact_check</mat-icon>
+          Imprimir marcados
+        </button>
+
       </div>
 
       <div class="actions-right">
@@ -53,7 +60,7 @@
     </mat-menu>
 
     <!-- TÍTULO -->
-    
+
 
     <mat-divider></mat-divider>
 
@@ -105,7 +112,7 @@
             <mat-form-field appearance="fill" class="ff compact">
               <mat-label>Fecha Inicial</mat-label>
               <input matInput [matDatepicker]="dpIni" formControlName="fechaInicial" [disabled]="isLocked"
-                (dateChange)="onBlurDatosCabecera()" (blur)="onBlurDatosCabecera()" />
+                (dateChange)="onFechaChange()" (blur)="onBlurDatosCabecera()" />
               <mat-datepicker-toggle matSuffix [for]="dpIni"></mat-datepicker-toggle>
               <mat-datepicker #dpIni></mat-datepicker>
             </mat-form-field>
@@ -113,7 +120,7 @@
             <mat-form-field appearance="fill" class="ff compact">
               <mat-label>Fecha Final</mat-label>
               <input matInput [matDatepicker]="dpFin" formControlName="fechaFinal" [disabled]="isLocked"
-                (dateChange)="onBlurDatosCabecera()" (blur)="onBlurDatosCabecera()" />
+                (dateChange)="onFechaChange()" (blur)="onBlurDatosCabecera()" />
               <mat-datepicker-toggle matSuffix [for]="dpFin"></mat-datepicker-toggle>
               <mat-datepicker #dpFin></mat-datepicker>
             </mat-form-field>
@@ -144,15 +151,16 @@
         </div>
 
         <!-- PANEL DERECHO -->
-       
-                 
 
-          <button mat-stroked-button class="btn action-btn btn-main" (click)="onCargar()" [disabled]="!canCargar">
-            <mat-icon>download</mat-icon>
-            {{ labelCargar }}
-          </button>
 
-        
+
+        <button mat-stroked-button class="btn action-btn btn-main" (click)="onCargar()" [disabled]="!canCargar"
+          style="visibility: hidden;">
+          <mat-icon>download</mat-icon>
+          {{ labelCargar }}
+        </button>
+
+
       </div>
 
     </form>
@@ -160,13 +168,8 @@
     <!-- SALDOS CONCILIADOS -->
     <div class="section-title">Saldos Conciliados</div>
     <div class="grid grid-small ag-theme-alpine">
-      <ag-grid-angular
-        [rowData]="[saldosConciliados]"
-        [columnDefs]="colSaldos"
-        [defaultColDef]="defaultColDef"
-        (gridReady)="onGridSaldosReady($event)"
-        [headerHeight]="34"
-        [rowHeight]="34">
+      <ag-grid-angular [rowData]="[saldosConciliados]" [columnDefs]="colSaldos" [defaultColDef]="defaultColDef"
+        (gridReady)="onGridSaldosReady($event)" [headerHeight]="34" [rowHeight]="34">
       </ag-grid-angular>
     </div>
 
@@ -183,7 +186,8 @@
           Desmarcar
         </button>
 
-        <button mat-raised-button color="accent" class="btn btn-group" (click)="onAgrupar()" [disabled]="isLocked || loading">
+        <button mat-raised-button color="accent" class="btn btn-group" (click)="onAgrupar()"
+          [disabled]="isLocked || loading">
           <mat-icon>call_split</mat-icon>
           Agrupar
         </button>
@@ -193,34 +197,19 @@
     <!-- MOVIMIENTOS -->
     <div class="section-title">Movimientos</div>
     <div class="grid grid-main ag-theme-alpine">
-      <ag-grid-angular
-        [rowData]="movimientos"
-        [columnDefs]="colMov"
-        [defaultColDef]="defaultColDef"
-        [rowClassRules]="rowClassRules"
-        [rowSelection]="'single'"
-        (gridReady)="onGridMovReady($event)"
-        (cellValueChanged)="onMovCellValueChanged($event)"
-        (cellDoubleClicked)="onMovCellDoubleClicked($event)"
-        (cellClicked)="onMovCellClicked($event)"
-        [singleClickEdit]="true"
-        [stopEditingWhenCellsLoseFocus]="true"
-        [animateRows]="true"
-        [headerHeight]="34"
-        [rowHeight]="34">
+      <ag-grid-angular [rowData]="movimientos" [columnDefs]="colMov" [defaultColDef]="defaultColDef"
+        [rowClassRules]="rowClassRules" [rowSelection]="'single'" (gridReady)="onGridMovReady($event)"
+        (cellValueChanged)="onMovCellValueChanged($event)" (cellDoubleClicked)="onMovCellDoubleClicked($event)"
+        (cellClicked)="onMovCellClicked($event)" [singleClickEdit]="true" [stopEditingWhenCellsLoseFocus]="true"
+        [animateRows]="true" [headerHeight]="34" [rowHeight]="34">
       </ag-grid-angular>
     </div>
 
     <!-- RESUMEN -->
     <div class="section-title">Saldos por Conciliar</div>
     <div class="grid grid-bottom ag-theme-alpine">
-      <ag-grid-angular
-        [rowData]="resumenRows"
-        [columnDefs]="colResumen"
-        [defaultColDef]="defaultColDef"
-        (gridReady)="onGridResumenReady($event)"
-        [headerHeight]="34"
-        [rowHeight]="34">
+      <ag-grid-angular [rowData]="resumenRows" [columnDefs]="colResumen" [defaultColDef]="defaultColDef"
+        (gridReady)="onGridResumenReady($event)" [headerHeight]="34" [rowHeight]="34">
       </ag-grid-angular>
     </div>
 

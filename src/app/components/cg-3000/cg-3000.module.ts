@@ -36,7 +36,7 @@ import { ReporteComprasComponent } from './anexo-transaccional/reporte-compras/r
 import { GenerarAtsComponent } from './anexo-transaccional/generacion-anexo/generar-ats.component';
 import { PlanificacionPagosComponent } from './cuentas-por-pagar/planificacion-pagos/planificacion-pagos.component';
 import { MatCardModule } from '@angular/material/card';
-
+import { CierreContableComponent } from './configuracion/cierre-contable/cierre-contable.component';
 
 
 
@@ -48,7 +48,8 @@ import { MatCardModule } from '@angular/material/card';
     RegistroPagosProveedorComponent,
     ReporteComprasComponent,
     PlanificacionPagosComponent,
-    GenerarAtsComponent
+    GenerarAtsComponent,
+    CierreContableComponent
   ],
   imports: [
     CommonModule,

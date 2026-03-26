@@ -290,6 +290,21 @@
           </a>
 
         </mat-expansion-panel>
+        <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <img src="assets/icons/icon-cierre.png" class="menu-icon">
+                <span *ngIf="isExpanded" class="menu-text">Cierres</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <a mat-list-item [routerLink]="'/cg-3000/bancos'">
+              <span *ngIf="isExpanded" class="menu-text">Cierre Mensual</span>
+            </a>
+            <a mat-list-item [routerLink]="'/cg-3000/cierre-anual'">
+              <span *ngIf="isExpanded" class="menu-text">Cierre Anual</span>
+            </a>
+          </mat-expansion-panel>
 
       </mat-accordion>
 

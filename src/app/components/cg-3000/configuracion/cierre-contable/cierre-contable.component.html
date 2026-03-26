@@ -1,0 +1,312 @@
+<div class="contenedor-cierre">
+  <div class="page-header">
+    <div>
+      <h2>Cierre Contable</h2>
+      <p class="subtitulo">Gestión de cierre anual y reversión del ejercicio contable</p>
+    </div>
+  </div>
+
+  <div class="mensaje" *ngIf="mensaje" [ngClass]="tipoMensaje">
+    <span class="mensaje-icono">
+      <ng-container [ngSwitch]="tipoMensaje">
+        <span *ngSwitchCase="'success'">✓</span>
+        <span *ngSwitchCase="'error'">⚠</span>
+        <span *ngSwitchDefault>ℹ</span>
+      </ng-container>
+    </span>
+    <span>{{ mensaje }}</span>
+  </div>
+
+  <!-- BLOQUE CIERRE -->
+  <div class="bloque">
+    <div class="bloque-header">
+      <div>
+        <h3>Ejecutar Cierre</h3>
+        <p>Genera el asiento de cierre anual con validación previa</p>
+      </div>
+      <span class="badge badge-primary">Cierre</span>
+    </div>
+
+    <form [formGroup]="formCierre" class="form-grid">
+      <div class="campo">
+        <label>Año a cerrar</label>
+        <input type="number" formControlName="anioCerrar" />
+      </div>
+
+      <div class="campo">
+        <label>Fecha de cierre</label>
+        <input type="date" formControlName="fechaCierre" />
+      </div>
+
+      <div class="campo">
+        <label>Tipo documento</label>
+        <input type="text" formControlName="tipDoc" maxlength="2" readonly />
+      </div>
+
+      <div class="campo">
+        <label>Número documento</label>
+        <div class="grupo-inline">
+          <input type="number" formControlName="numDoc" />
+         <button
+  class="btn btn-soft"
+  type="button"
+  (click)="cargarNumDocAutomatico()"
+  [disabled]="loadingPreviewCierre || loadingEjecutarCierre || bloquearAccionesCierre">
+  Auto
+</button>
+        </div>
+      </div>
+
+      <div class="campo campo-full">
+        <label>Beneficiario</label>
+        <input type="text" formControlName="beneficiario" />
+      </div>
+
+      <div class="campo campo-full">
+        <label>Observación</label>
+        <input type="text" formControlName="observacion" />
+      </div>
+    </form>
+
+    <div class="acciones">
+     <button
+  class="btn btn-outline"
+  type="button"
+  (click)="previewCierre()"
+  [disabled]="loadingPreviewCierre || loadingEjecutarCierre || bloquearAccionesCierre">
+  {{ loadingPreviewCierre ? 'Procesando...' : 'Vista previa cierre' }}
+</button>
+
+      <button
+  class="btn btn-primary"
+  type="button"
+  (click)="confirmarEjecutarCierre()"
+  [disabled]="loadingPreviewCierre || loadingEjecutarCierre || bloquearAccionesCierre">
+  {{ loadingEjecutarCierre ? 'Ejecutando...' : 'Ejecutar cierre' }}
+</button>
+
+      <button
+  class="btn btn-soft"
+  type="button"
+  (click)="limpiarCierre()"
+  [disabled]="loadingPreviewCierre || loadingEjecutarCierre">
+  Cancelar
+</button>
+    </div>
+
+    <div class="resultado" *ngIf="resultadoPreviewCierre">
+      <div class="resultado-header">
+        <h4>Resultado vista previa</h4>
+        <span class="badge badge-info">{{ resultadoPreviewCierre?.estado }}</span>
+      </div>
+
+      <div class="resumen-grid">
+        <div class="resumen-card">
+          <span class="resumen-label">Año</span>
+          <strong>{{ resultadoPreviewCierre?.anioCerrado }}</strong>
+        </div>
+
+        <div class="resumen-card">
+          <span class="resumen-label">NumDoc</span>
+          <strong>{{ resultadoPreviewCierre?.numDoc }}</strong>
+        </div>
+
+        <div class="resumen-card">
+          <span class="resumen-label">Total Debe</span>
+          <strong>{{ resultadoPreviewCierre?.totalDebe | number:'1.2-2' }}</strong>
+        </div>
+
+        <div class="resumen-card">
+          <span class="resumen-label">Total Haber</span>
+          <strong>{{ resultadoPreviewCierre?.totalHaber | number:'1.2-2' }}</strong>
+        </div>
+
+        <div class="resumen-card destacado">
+          <span class="resumen-label">Diferencia Original</span>
+          <strong>{{ resultadoPreviewCierre?.diferenciaOriginal | number:'1.2-2' }}</strong>
+        </div>
+
+        <div class="resumen-card">
+          <span class="resumen-label">Fecha Cierre</span>
+          <strong>{{ resultadoPreviewCierre?.fechaCierre | date:'yyyy-MM-dd' }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="resultado ok" *ngIf="resultadoEjecutarCierre">
+      <div class="resultado-header">
+        <h4>Resultado ejecución</h4>
+        <span class="badge badge-success">{{ resultadoEjecutarCierre?.estado }}</span>
+      </div>
+
+      <div class="resumen-grid">
+        <div class="resumen-card">
+          <span class="resumen-label">Id Cabecera</span>
+          <strong>{{ resultadoEjecutarCierre?.idCabMaestro }}</strong>
+        </div>
+
+        <div class="resumen-card">
+          <span class="resumen-label">Año</span>
+          <strong>{{ resultadoEjecutarCierre?.anioCerrado }}</strong>
+        </div>
+
+        <div class="resumen-card">
+          <span class="resumen-label">NumDoc</span>
+          <strong>{{ resultadoEjecutarCierre?.numDoc }}</strong>
+        </div>
+
+        <div class="resumen-card">
+          <span class="resumen-label">Total Debe</span>
+          <strong>{{ resultadoEjecutarCierre?.totalDebe | number:'1.2-2' }}</strong>
+        </div>
+
+        <div class="resumen-card">
+          <span class="resumen-label">Total Haber</span>
+          <strong>{{ resultadoEjecutarCierre?.totalHaber | number:'1.2-2' }}</strong>
+        </div>
+
+        <div class="resumen-card destacado">
+          <span class="resumen-label">Diferencia Original</span>
+          <strong>{{ resultadoEjecutarCierre?.diferenciaOriginal | number:'1.2-2' }}</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLOQUE REVERSIÓN -->
+  <div class="bloque">
+    <div class="bloque-header">
+      <div>
+        <h3>Reversar Cierre</h3>
+        <p>Permite validar y revertir un cierre anual existente</p>
+      </div>
+      <span class="badge badge-warn">Reversión</span>
+    </div>
+
+    <form [formGroup]="formReversion" class="form-grid form-grid-reversion">
+      <div class="campo">
+        <label>Año a reversar</label>
+        <input type="number" formControlName="anioCerrar" />
+      </div>
+
+      <div class="campo">
+        <label>Tipo documento</label>
+        <input type="text" formControlName="tipDoc" maxlength="2" readonly />
+      </div>
+
+      <div class="campo">
+        <label>Número documento</label>
+        <input type="number" formControlName="numDoc" />
+      </div>
+    </form>
+
+    <div class="acciones">
+      <button
+  class="btn btn-outline"
+  type="button"
+  (click)="previewReversion()"
+  [disabled]="loadingPreviewReversion || loadingEjecutarReversion || bloquearAccionesReversion">
+  {{ loadingPreviewReversion ? 'Procesando...' : 'Vista previa reversión' }}
+</button>
+
+     <button
+  class="btn btn-danger"
+  type="button"
+  (click)="confirmarEjecutarReversion()"
+  [disabled]="loadingPreviewReversion || loadingEjecutarReversion || bloquearAccionesReversion">
+  {{ loadingEjecutarReversion ? 'Ejecutando...' : 'Ejecutar reversión' }}
+</button>
+
+      <button
+  class="btn btn-soft"
+  type="button"
+  (click)="limpiarReversion()"
+  [disabled]="loadingPreviewReversion || loadingEjecutarReversion">
+  Cancelar
+</button>
+    </div>
+
+    <div class="resultado" *ngIf="resultadoPreviewReversion">
+      <div class="resultado-header">
+        <h4>Resultado vista previa reversión</h4>
+        <span class="badge badge-info">{{ resultadoPreviewReversion?.estado }}</span>
+      </div>
+
+      <div class="resumen-grid">
+        <div class="resumen-card">
+          <span class="resumen-label">Id Cabecera</span>
+          <strong>{{ resultadoPreviewReversion?.idCabMaestroReversado }}</strong>
+        </div>
+
+        <div class="resumen-card">
+          <span class="resumen-label">Año</span>
+          <strong>{{ resultadoPreviewReversion?.anioReversado }}</strong>
+        </div>
+
+        <div class="resumen-card">
+          <span class="resumen-label">NumDoc</span>
+          <strong>{{ resultadoPreviewReversion?.numDoc }}</strong>
+        </div>
+
+        <div class="resumen-card">
+          <span class="resumen-label">Total líneas</span>
+          <strong>{{ resultadoPreviewReversion?.totalLineasEliminadas }}</strong>
+        </div>
+
+        <div class="resumen-card">
+          <span class="resumen-label">Total Debe</span>
+          <strong>{{ resultadoPreviewReversion?.totalDebeEliminado | number:'1.2-2' }}</strong>
+        </div>
+
+        <div class="resumen-card">
+          <span class="resumen-label">Total Haber</span>
+          <strong>{{ resultadoPreviewReversion?.totalHaberEliminado | number:'1.2-2' }}</strong>
+        </div>
+
+        <div class="resumen-card destacado">
+          <span class="resumen-label">Movimientos a reabrir</span>
+          <strong>{{ resultadoPreviewReversion?.movimientosAReabrir }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="resultado ok" *ngIf="resultadoEjecutarReversion">
+      <div class="resultado-header">
+        <h4>Resultado ejecución reversión</h4>
+        <span class="badge badge-success">{{ resultadoEjecutarReversion?.estado }}</span>
+      </div>
+
+      <div class="resumen-grid">
+        <div class="resumen-card">
+          <span class="resumen-label">Id Cabecera</span>
+          <strong>{{ resultadoEjecutarReversion?.idCabMaestroReversado }}</strong>
+        </div>
+
+        <div class="resumen-card">
+          <span class="resumen-label">Año</span>
+          <strong>{{ resultadoEjecutarReversion?.anioReversado }}</strong>
+        </div>
+
+        <div class="resumen-card">
+          <span class="resumen-label">NumDoc</span>
+          <strong>{{ resultadoEjecutarReversion?.numDoc }}</strong>
+        </div>
+
+        <div class="resumen-card">
+          <span class="resumen-label">Total líneas eliminadas</span>
+          <strong>{{ resultadoEjecutarReversion?.totalLineasEliminadas }}</strong>
+        </div>
+
+        <div class="resumen-card">
+          <span class="resumen-label">Total Debe eliminado</span>
+          <strong>{{ resultadoEjecutarReversion?.totalDebeEliminado | number:'1.2-2' }}</strong>
+        </div>
+
+        <div class="resumen-card">
+          <span class="resumen-label">Total Haber eliminado</span>
+          <strong>{{ resultadoEjecutarReversion?.totalHaberEliminado | number:'1.2-2' }}</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

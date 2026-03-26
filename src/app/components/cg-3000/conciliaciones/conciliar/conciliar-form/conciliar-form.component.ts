@@ -222,6 +222,15 @@ export class ConciliacionComponent implements OnInit {
     idEmpresa: [null, [Validators.required]],
   idUsuario: [null, [Validators.required]],
   });
+  saldosPorConciliar: SaldosConciliadosRow = {
+  salconini: 0,
+  salcondep: 0,
+  salconchq: 0,
+  salconnc: 0,
+  salconnd: 0,
+  salconbanc: 0,
+  salcondif: 0,
+};
 
   // =======================
   // GRIDS
@@ -477,12 +486,12 @@ colSaldos: ColDef[] = [
     return this.canAbrirMenuGuardar && !this.isLocked;
   }
 
- get canGuardarTotal(): boolean {
+get canGuardarTotal(): boolean {
   return this.canAbrirMenuGuardar
     && !this.isLocked
-    && this.esConciliacionCuadrada();
+    && this.esConciliacionCuadrada()
+    && this.validarRangoMensualCompleto().ok;
 }
-
   // =======================
   // INIT
   // =======================
@@ -851,56 +860,58 @@ private abrirAgruparPorComprobante(numcomp: string) {
   // =======================
   // CARGAR DESDE RESPONSE (TOTAL => bloqueado)
   // =======================
-  private cargarDesdeResponse(c: ConciliacionResponse) {
-    this.form.patchValue({
-      idPlanCuentas: c.idPlanCuentas,
-      codprePc: c.codprePc ?? null,
-      descripcion: c.descripcion ?? null,
-      fechaInicial: this.isoToDate(c.fechaconcil),
-      fechaFinal: this.isoToDate(c.fechaconcil),
-      saldcontini: c.saldcontini ?? 0,
-      saldcontfin: c.saldcontfin ?? 0,
-      saldbancini: c.saldbancini ?? 0,
-      saldbancfin: c.saldbancfin ?? 0,
-      comentario: c.comentario ?? null,
-      idEmpresa: c.idEmpresa,
-      idUsuario: c.idUsuario,
-    }, { emitEvent: false });
+private cargarDesdeResponse(c: ConciliacionResponse) {
+  const rango = this.obtenerRangoDesdeConciliacion(c);
 
-    const idPlan = Number(c.idPlanCuentas ?? 0);
-    if (this.planCuentas?.length) {
-      this.setPlanSeleccionadoPorId(idPlan);
-    } else {
-      this.pendingPlanId = idPlan;
-    }
+  this.form.patchValue({
+    idPlanCuentas: c.idPlanCuentas,
+    codprePc: c.codprePc ?? null,
+    descripcion: c.descripcion ?? null,
+    fechaInicial: rango.fechaInicial,
+    fechaFinal: rango.fechaFinal,
+    saldcontini: c.saldcontini ?? 0,
+    saldcontfin: c.saldcontfin ?? 0,
+    saldbancini: c.saldbancini ?? 0,
+    saldbancfin: c.saldbancfin ?? 0,
+    comentario: c.comentario ?? null,
+    idEmpresa: c.idEmpresa,
+    idUsuario: c.idUsuario,
+  }, { emitEvent: false });
 
-    const cabFechaconcilIso = c.fechaconcil
-      ? this.normalizeIsoString(c.fechaconcil)
-      : null;
-
-    this.movimientos = (c.detalles ?? []).map((d: any) => {
-      const concVal = String(d?.concil ?? 'N').toUpperCase();
-      const concil = (concVal === 'S' || concVal === 'C') ? 'C' : 'N';
-
-      const fechaconcil =
-        concil === 'C' && d?.fechaconcil
-          ? this.normalizeIsoString(d.fechaconcil)
-          : null;
-
-      return {
-        ...d,
-        concil,
-        fechatran: d?.fechatran ? this.normalizeIsoString(d.fechatran) : d?.fechatran,
-        fechaconcil,
-        numdoc: d?.numdoc != null ? String(d.numdoc) : null,
-      } as any;
-    });
-
-    this.setRowDataCompat(this.gridMovApi, this.movimientos);
-    this.gridMovApi?.refreshCells({ force: true, columns: ['fechaconcil', 'concil'] });
-
-    this.recalcularResumenes();
+  const idPlan = Number(c.idPlanCuentas ?? 0);
+  if (this.planCuentas?.length) {
+    this.setPlanSeleccionadoPorId(idPlan);
+  } else {
+    this.pendingPlanId = idPlan;
   }
+
+  const detallesNormalizados = (c.detalles ?? []).map((d: any) => {
+    const concVal = String(d?.concil ?? 'N').toUpperCase().trim();
+    const concil = (concVal === 'S' || concVal === 'C') ? 'C' : 'N';
+
+    const fechaconcil =
+      concil === 'C' && d?.fechaconcil
+        ? this.normalizeIsoString(d.fechaconcil)
+        : null;
+
+    return {
+      ...d,
+      concil,
+      fechatran: d?.fechatran ? this.normalizeIsoString(d.fechatran) : d?.fechatran,
+      fechaconcil,
+      numdoc: d?.numdoc != null ? String(d.numdoc) : null,
+    } as any;
+  });
+
+  this.movimientos = detallesNormalizados.filter((d: any) =>
+    this.estaDentroDelPeriodo(d?.fechatran, rango.fechaInicial, rango.fechaFinal)
+  );
+
+  this.setRowDataCompat(this.gridMovApi, this.movimientos);
+  this.gridMovApi?.refreshCells({ force: true, columns: ['fechaconcil', 'concil'] });
+
+  this.recalcularResumenes();
+}
   // =======================
   // MOVIMIENTOS MAESTRO (EN PROCESO)
   // =======================
@@ -1068,6 +1079,12 @@ onGuardarTotal() {
     return;
   }
 
+  const validacionMensual = this.validarRangoMensualCompleto();
+  if (!validacionMensual.ok) {
+    this.notify(validacionMensual.mensaje, 'warn', 5000);
+    return;
+  }
+
   const cab = this.form.getRawValue();
   const periodo = cab.fechaInicial ? this.getPeriodoDesdeFecha(cab.fechaInicial) : '';
   const cuenta = String(cab.codprePc ?? '').trim();
@@ -1190,26 +1207,20 @@ onGuardarTotal() {
 
     return rows;
   }
-private recalcularResumenes() {
+private recalcularResumenes(): void {
   const cab = this.form.getRawValue();
   const rows = this.getMovimientosActuales();
 
-  const fechaInicial: Date | null = this.form.get('fechaInicial')?.value ?? null;
-  const fechaFinal: Date | null = this.form.get('fechaFinal')?.value ?? null;
+  const fechaInicial = this.form.get('fechaInicial')?.value as Date | null;
+  const fechaFinal = this.form.get('fechaFinal')?.value as Date | null;
 
-  const inicio = fechaInicial instanceof Date && !isNaN(fechaInicial.getTime())
-    ? new Date(fechaInicial.getFullYear(), fechaInicial.getMonth(), fechaInicial.getDate())
-    : null;
-
-  const fin = fechaFinal instanceof Date && !isNaN(fechaFinal.getTime())
-    ? new Date(fechaFinal.getFullYear(), fechaFinal.getMonth(), fechaFinal.getDate(), 23, 59, 59, 999)
-    : null;
-
-  const rowsDentroPeriodo = rows.filter(r => {
-    const f = this.toDateOrNull((r as any).fechatran);
-    if (!f || !inicio || !fin) return false;
-    return f >= inicio && f <= fin;
-  });
+  const rowsDentroPeriodo = rows.filter(r =>
+    this.estaDentroDelPeriodo(
+      (r as any).fechatran,
+      fechaInicial,
+      fechaFinal
+    )
+  );
 
   const conc = rowsDentroPeriodo.filter(r => this.isChecked((r as any).concil));
   const no = rowsDentroPeriodo.filter(r => !this.isChecked((r as any).concil));
@@ -1218,7 +1229,7 @@ private recalcularResumenes() {
   const sNo = this.sumPorTipo(no);
 
   // ============================
-  // GRILLA SUPERIOR
+  // GRILLA SUPERIOR: SALDOS CONCILIADOS
   // ============================
   const salconini = this.num(cab.saldcontini);
   const salconbanc = this.num(cab.saldbancini);
@@ -1245,7 +1256,7 @@ private recalcularResumenes() {
   this.setRowDataCompat(this.gridSaldosApi, [this.saldosConciliados]);
 
   // ============================
-  // GRILLA INFERIOR
+  // GRILLA INFERIOR: SALDOS POR CONCILIAR
   // ============================
   const rowConc: ResumenRow = {
     tipo: 'Conciliados',
@@ -1278,8 +1289,11 @@ private recalcularResumenes() {
 
   this.resumenRows = [rowConc, rowNo];
   this.setRowDataCompat(this.gridResumenApi, this.resumenRows);
-}
 
+  this.gridMovApi?.refreshCells({ force: true });
+  this.gridSaldosApi?.refreshCells({ force: true });
+  this.gridResumenApi?.refreshCells({ force: true });
+}
  private sumPorTipo(rows: MovimientoRow[]) {
   let deposito = 0;
   let cheques = 0;
@@ -1448,16 +1462,9 @@ private esConciliacionCuadrada(): boolean {
     } as UpdateConciliacionRequest;
   }
 
-  private toDateOrNull(value: any): Date | null {
-    if (!value) return null;
-
-    if (value instanceof Date) {
-      return isNaN(value.getTime()) ? null : value;
-    }
-
-    const dt = new Date(value);
-    return isNaN(dt.getTime()) ? null : dt;
-  }
+private toDateOrNull(value: any): Date | null {
+  return this.parseFechaFlexible(value);
+}
 
   private dateOnly(value: Date): Date {
     return new Date(value.getFullYear(), value.getMonth(), value.getDate());
@@ -1481,9 +1488,9 @@ private esConciliacionCuadrada(): boolean {
     return Math.round((n + Number.EPSILON) * 100) / 100;
   }
 
-  private isoToDate(iso: string): Date {
-    return new Date(iso);
-  }
+private isoToDate(iso: string): Date | null {
+  return this.parseBackendDate(iso);
+}
 
   private setRowDataCompat(api: GridApi | undefined, rowData: any[]) {
     if (!api) return;
@@ -2024,5 +2031,439 @@ private getUltimoDiaMesActual(): Date {
   const hoy = new Date();
   return new Date(hoy.getFullYear(), hoy.getMonth() + 1, 0);
 }
+onImprimirMarcados(): void {
+  const rows = this.getMovimientosActuales();
 
+  if (!rows || rows.length === 0) {
+    this.notify('No hay información para descargar.', 'warn');
+    return;
+  }
+
+  const movimientosMarcados = rows.filter(r => this.isChecked((r as any).concil));
+
+  if (movimientosMarcados.length === 0) {
+    this.notify('No existen movimientos marcados para descargar.', 'warn');
+    return;
+  }
+
+  try {
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4',
+    });
+
+    const cab = this.form.getRawValue();
+    const resumenConc = this.resumenRows.find(x => x.tipo === 'Conciliados');
+
+    const cuenta = String(cab.codprePc ?? '');
+    const descripcion = String(cab.descripcion ?? '');
+    const fechaInicial = this.formatearFechaDdMmYyyy(cab.fechaInicial);
+    const fechaFinal = this.formatearFechaDdMmYyyy(cab.fechaFinal);
+
+    const saldoInicial = this.formatNumber2(cab.saldbancini ?? 0);
+    const depositos = this.formatNumber2(resumenConc?.deposito ?? 0);
+    const cheques = this.formatNumber2(resumenConc?.cheques ?? 0);
+    const notasDebito = this.formatNumber2(resumenConc?.notasDebito ?? 0);
+    const notasCredito = this.formatNumber2(resumenConc?.notasCredito ?? 0);
+    const saldoBancario = this.formatNumber2(this.saldosConciliados?.salconbanc ?? 0);
+    const diferencia = this.formatNumber2(this.saldosConciliados?.salcondif ?? 0);
+
+    let y = 12;
+
+    doc.setFont('times', 'bold');
+    doc.setFontSize(11);
+    doc.text('Cuenta Bancaria', 10, y);
+    doc.setFont('times', 'normal');
+    doc.text(cuenta, 42, y);
+    doc.text(descripcion, 72, y);
+
+    y += 6;
+    doc.setFont('times', 'bold');
+    doc.text('Saldo Inicial', 10, y);
+    doc.setFont('times', 'normal');
+    doc.text(saldoInicial, 190, y, { align: 'right' });
+
+    y += 6;
+    doc.setFont('times', 'bold');
+    doc.text('Fecha Inicial', 10, y);
+    doc.setFont('times', 'normal');
+    doc.text(fechaInicial, 42, y);
+
+    y += 6;
+    doc.setFont('times', 'bold');
+    doc.text('Fecha Final', 10, y);
+    doc.setFont('times', 'normal');
+    doc.text(fechaFinal, 42, y);
+
+    y += 4;
+    doc.line(10, y, 200, y);
+
+    y += 6;
+    doc.setFont('times', 'bold');
+    doc.text('DETALLE DE MOVIMIENTOS MARCADOS', 10, y);
+
+    const body = movimientosMarcados.map((r: any) => [
+      this.formatDdMmYyyy(r.fechatran),
+      String(r.nocomprobante ?? ''),
+      this.formatNumber2(r.cheque ?? 0),
+      this.formatNumber2(r.debito ?? 0),
+      this.formatNumber2(r.credito ?? 0),
+      String(r.numdoc ?? ''),
+      String(r.beneficiario ?? ''),
+      String(r.tipdoc ?? ''),
+    ]);
+
+    autoTable(doc, {
+      startY: y + 2,
+      theme: 'plain',
+      styles: {
+        font: 'times',
+        fontSize: 8,
+        cellPadding: 1.2,
+        textColor: 0,
+        lineColor: 0,
+      },
+      headStyles: {
+        fontStyle: 'bold',
+        textColor: 0,
+      },
+      columnStyles: {
+        2: { halign: 'right' },
+        3: { halign: 'right' },
+        4: { halign: 'right' },
+      },
+      head: [[
+        'fechatran',
+        'numcomp',
+        'cheque',
+        'debito',
+        'credito',
+        'numdoc',
+        'beneficiario',
+        'tipdoc'
+      ]],
+      body,
+      margin: { left: 10, right: 10 },
+    });
+
+    const finalY = (doc as any).lastAutoTable?.finalY ?? 120;
+
+    let summaryY = finalY + 8;
+    if (summaryY > 220) {
+      doc.addPage();
+      summaryY = 20;
+    }
+
+    doc.line(10, summaryY, 200, summaryY);
+    summaryY += 8;
+
+    doc.setFont('times', 'bold');
+    doc.setFontSize(12);
+
+    const summaryRows: Array<[string, string]> = [
+      ['Saldo Inicial', saldoInicial],
+      ['Depositos', depositos],
+      ['Cheques', cheques],
+      ['Notas de Debito', notasDebito],
+      ['Notas de Crédito', notasCredito],
+      ['Saldo Bancario', saldoBancario],
+      ['Diferencia', diferencia],
+    ];
+
+    for (const [label, value] of summaryRows) {
+      doc.text(label, 14, summaryY);
+      doc.setFont('times', 'normal');
+      doc.text(value, 110, summaryY, { align: 'right' });
+      doc.setFont('times', 'bold');
+      summaryY += 8;
+    }
+
+    summaryY += 24;
+
+    doc.line(55, summaryY, 105, summaryY);
+    doc.line(135, summaryY, 185, summaryY);
+
+    summaryY += 7;
+    doc.text('Realizado Por', 80, summaryY, { align: 'center' });
+    doc.text('Revisado Por', 160, summaryY, { align: 'center' });
+
+    const fecha = new Date();
+    const yyyy = fecha.getFullYear();
+    const mm = String(fecha.getMonth() + 1).padStart(2, '0');
+    const dd = String(fecha.getDate()).padStart(2, '0');
+    const hh = String(fecha.getHours()).padStart(2, '0');
+    const mi = String(fecha.getMinutes()).padStart(2, '0');
+
+    const nombreArchivo = `Conciliacion_Marcados_${yyyy}${mm}${dd}_${hh}${mi}.pdf`;
+
+    doc.save(nombreArchivo);
+    this.notify('Reporte PDF de marcados descargado correctamente.', 'success');
+
+  } catch (error) {
+    console.error(error);
+    this.notify('Ocurrió un error al generar el PDF de marcados.', 'error');
+  }
 }
+onFechaChange(): void {
+  const fechaInicial = this.form.get('fechaInicial')?.value as Date | null;
+  const fechaFinal = this.form.get('fechaFinal')?.value as Date | null;
+
+  if (this.isLocked) return;
+
+  if (!fechaInicial || !fechaFinal) return;
+  if (!(fechaInicial instanceof Date) || isNaN(fechaInicial.getTime())) return;
+  if (!(fechaFinal instanceof Date) || isNaN(fechaFinal.getTime())) return;
+
+  this.onBlurDatosCabecera();
+  this.onCargar();
+}
+private validarRangoMensualCompleto(): { ok: boolean; mensaje: string } {
+  const fechaInicial = this.form.get('fechaInicial')?.value as Date | null;
+  const fechaFinal = this.form.get('fechaFinal')?.value as Date | null;
+
+  if (!fechaInicial || !fechaFinal) {
+    return {
+      ok: false,
+      mensaje: 'Debe ingresar la fecha inicial y la fecha final.'
+    };
+  }
+
+  if (!(fechaInicial instanceof Date) || isNaN(fechaInicial.getTime())) {
+    return {
+      ok: false,
+      mensaje: 'La fecha inicial no es válida.'
+    };
+  }
+
+  if (!(fechaFinal instanceof Date) || isNaN(fechaFinal.getTime())) {
+    return {
+      ok: false,
+      mensaje: 'La fecha final no es válida.'
+    };
+  }
+
+  const mismoAnio = fechaInicial.getFullYear() === fechaFinal.getFullYear();
+  const mismoMes = fechaInicial.getMonth() === fechaFinal.getMonth();
+
+  if (!mismoAnio || !mismoMes) {
+    return {
+      ok: false,
+      mensaje: 'No se puede guardar la conciliación total porque la fecha inicial y la fecha final no pertenecen al mismo mes.'
+    };
+  }
+
+  const esPrimerDiaMes = fechaInicial.getDate() === 1;
+
+  if (!esPrimerDiaMes) {
+    return {
+      ok: false,
+      mensaje: 'No se puede guardar la conciliación total porque la fecha inicial debe ser el primer día del mes.'
+    };
+  }
+
+  const ultimoDiaDelMes = new Date(
+    fechaFinal.getFullYear(),
+    fechaFinal.getMonth() + 1,
+    0
+  ).getDate();
+
+  const esUltimoDiaMes = fechaFinal.getDate() === ultimoDiaDelMes;
+
+  if (!esUltimoDiaMes) {
+    return {
+      ok: false,
+      mensaje: 'No se puede guardar la conciliación total porque la fecha final debe ser el último día del mes.'
+    };
+  }
+
+  return {
+    ok: true,
+    mensaje: ''
+  };
+}
+private obtenerRangoDesdeConciliacion(c: any): { fechaInicial: Date | null; fechaFinal: Date | null } {
+  const fechaInicialBackend =
+    c?.fechaInicial ??
+    c?.fechainicial ??
+    c?.fecini ??
+    null;
+
+  const fechaFinalBackend =
+    c?.fechaFinal ??
+    c?.fechafinal ??
+    c?.fecfin ??
+    null;
+
+  const fechaInicialParseada = this.parseBackendDate(fechaInicialBackend);
+  const fechaFinalParseada = this.parseBackendDate(fechaFinalBackend);
+
+  if (fechaInicialParseada && fechaFinalParseada) {
+    return {
+      fechaInicial: fechaInicialParseada,
+      fechaFinal: fechaFinalParseada,
+    };
+  }
+
+  const periodoRaw = c?.fecconcil ?? c?.fechaconcil ?? null;
+  const periodo = this.parsePeriodoConciliacion(periodoRaw);
+
+  if (periodo) {
+    return {
+      fechaInicial: new Date(periodo.year, periodo.month - 1, 1),
+      fechaFinal: new Date(periodo.year, periodo.month, 0),
+    };
+  }
+
+  return {
+    fechaInicial: null,
+    fechaFinal: null,
+  };
+}
+
+private parsePeriodoConciliacion(value: any): { year: number; month: number } | null {
+  if (value == null) return null;
+
+  const raw = String(value).trim();
+
+  if (/^\d{6}$/.test(raw)) {
+    const year = Number(raw.substring(0, 4));
+    const month = Number(raw.substring(4, 6));
+
+    if (year > 1900 && month >= 1 && month <= 12) {
+      return { year, month };
+    }
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+    const soloFecha = raw.substring(0, 10);
+    const [y, m] = soloFecha.split('-');
+    const year = Number(y);
+    const month = Number(m);
+
+    if (year > 1900 && month >= 1 && month <= 12) {
+      return { year, month };
+    }
+  }
+
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+    const [, m, y] = raw.split('/');
+    const year = Number(y);
+    const month = Number(m);
+
+    if (year > 1900 && month >= 1 && month <= 12) {
+      return { year, month };
+    }
+  }
+
+  return null;
+}
+
+private parseBackendDate(value: any): Date | null {
+  if (value == null || value === '') return null;
+
+  if (value instanceof Date) {
+    return isNaN(value.getTime())
+      ? null
+      : new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  }
+
+  const raw = String(value).trim();
+
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+    const soloFecha = raw.substring(0, 10);
+    const [y, m, d] = soloFecha.split('-').map(Number);
+
+    if (!y || !m || !d) return null;
+
+    const fecha = new Date(y, m - 1, d);
+    return isNaN(fecha.getTime()) ? null : fecha;
+  }
+
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+    const [d, m, y] = raw.split('/').map(Number);
+
+    if (!y || !m || !d) return null;
+
+    const fecha = new Date(y, m - 1, d);
+    return isNaN(fecha.getTime()) ? null : fecha;
+  }
+
+  if (/^\d{6}$/.test(raw)) {
+    const year = Number(raw.substring(0, 4));
+    const month = Number(raw.substring(4, 6));
+
+    if (year > 1900 && month >= 1 && month <= 12) {
+      return new Date(year, month - 1, 1);
+    }
+  }
+
+  return null;
+}
+private estaDentroDelPeriodo(
+  fechaValue: any,
+  fechaInicial: Date | null,
+  fechaFinal: Date | null
+): boolean {
+  if (!fechaInicial || !fechaFinal) return false;
+
+  const fecha = this.parseFechaFlexible(fechaValue);
+  if (!fecha) return false;
+
+  const fi = new Date(
+    fechaInicial.getFullYear(),
+    fechaInicial.getMonth(),
+    fechaInicial.getDate()
+  );
+
+  const ff = new Date(
+    fechaFinal.getFullYear(),
+    fechaFinal.getMonth(),
+    fechaFinal.getDate()
+  );
+
+  const fx = new Date(
+    fecha.getFullYear(),
+    fecha.getMonth(),
+    fecha.getDate()
+  );
+
+  return fx >= fi && fx <= ff;
+}
+
+private parseFechaFlexible(value: any): Date | null {
+  if (value == null || value === '') return null;
+
+  if (value instanceof Date) {
+    return isNaN(value.getTime())
+      ? null
+      : new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  }
+
+  const raw = String(value).trim();
+
+  // yyyy-MM-dd o yyyy-MM-ddTHH:mm:ss
+  if (/^\d{4}-\d{2}-\d{2}/.test(raw)) {
+    const soloFecha = raw.substring(0, 10);
+    const [y, m, d] = soloFecha.split('-').map(Number);
+
+    if (!y || !m || !d) return null;
+
+    const fecha = new Date(y, m - 1, d);
+    return isNaN(fecha.getTime()) ? null : fecha;
+  }
+
+  // dd/MM/yyyy
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+    const [d, m, y] = raw.split('/').map(Number);
+
+    if (!y || !m || !d) return null;
+
+    const fecha = new Date(y, m - 1, d);
+    return isNaN(fecha.getTime()) ? null : fecha;
+  }
+
+  return null;
+}
+}
+
