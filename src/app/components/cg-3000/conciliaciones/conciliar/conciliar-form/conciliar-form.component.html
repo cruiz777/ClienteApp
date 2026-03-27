@@ -159,7 +159,11 @@
           <mat-icon>download</mat-icon>
           {{ labelCargar }}
         </button>
+        <button type="button" class="btn btn-primary" (click)="fileInput.click()">
+          Cargar Excel Banco
+        </button>
 
+        <input #fileInput type="file" accept=".xlsx,.xls" hidden (change)="onExcelSeleccionado($event)" />
 
       </div>
 

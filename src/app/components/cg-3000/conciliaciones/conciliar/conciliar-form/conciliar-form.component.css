@@ -416,3 +416,14 @@ ag-grid-angular {
 .h2-ok {
   color: #166534;
 }
+::ng-deep .ag-row.row-match-excel .ag-cell {
+  background-color: #dff3e2 !important;
+}
+
+::ng-deep .ag-row.row-match-excel.ag-row-selected .ag-cell {
+  background-color: #c6ebcc !important;
+}
+
+::ng-deep .ag-row.row-out-of-range .ag-cell {
+  background-color: #ffe3e3 !important;
+}

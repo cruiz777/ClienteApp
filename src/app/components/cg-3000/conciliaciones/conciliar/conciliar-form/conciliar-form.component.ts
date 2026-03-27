@@ -6,6 +6,7 @@ import { UsuarioService } from 'src/app/services/usuario.service';
 import { CustomMessageBoxComponent } from 'src/app/util/messages/custom-message-box.component';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 import {
   FormBuilder,
   FormGroup,
@@ -257,17 +258,20 @@ export class ConciliacionComponent implements OnInit {
   ];
 
   // fila roja si fechatran < fechaInicial
-  rowClassRules = {
-    'row-out-of-range': (p: any) => {
-      const ini: Date | null = this.form.get('fechaInicial')?.value ?? null;
-      if (!ini) return false;
-      const raw = (p.data as any)?.fechatran;
-      if (!raw) return false;
-      const dt = new Date(String(raw));
-      if (Number.isNaN(dt.getTime())) return false;
-      return dt < ini;
-    },
-  };
+ rowClassRules = {
+  'row-out-of-range': (p: any) => {
+    const ini: Date | null = this.form.get('fechaInicial')?.value ?? null;
+    if (!ini) return false;
+    const raw = (p.data as any)?.fechatran;
+    if (!raw) return false;
+    const dt = new Date(String(raw));
+    if (Number.isNaN(dt.getTime())) return false;
+    return dt < ini;
+  },
+  'row-match-excel': (p: any) => {
+    return !!p.data?.matchExcel;
+  },
+};
 
   defaultColDef: ColDef = {
     resizable: true,
@@ -335,13 +339,11 @@ colSaldos: ColDef[] = [
   { headerName: 'TipMov', field: 'movbancario', width: 90 },
   { headerName: 'N° Comp', field: 'nocomprobante', width: 120 },
 
- {
+{
   headerName: 'Cheque',
   field: 'cheque',
   width: 100,
   filter: 'agNumberColumnFilter',
-  valueFormatter: (p) => this.formatNumber2(p.value),
-  filterValueGetter: (p) => this.num(p.data?.cheque),
   cellStyle: (p) => this.numberCellStyle(p),
 },
 {
@@ -1182,24 +1184,32 @@ onGuardarTotal() {
     this.setConcilMasivo(false);
   }
 
-  private setConcilMasivo(checked: boolean) {
-    if (this.isLocked || !this.gridMovApi) return;
+ private setConcilMasivo(checked: boolean) {
+  if (this.isLocked || !this.gridMovApi) return;
 
-    const iso = checked ? this.getFechaConcilDefaultIso() : null;
+  const iso = checked ? this.getFechaConcilDefaultIso() : null;
 
-    this.gridMovApi.forEachNode((n) => {
-      if (!n.data) return;
-      (n.data as any).concil = checked ? 'C' : 'N';
-      (n.data as any).fechaconcil = iso;
-    });
+  this.gridMovApi.forEachNode((n) => {
+    if (!n.data) return;
 
-    this.gridMovApi.refreshCells({
-      force: true,
-      columns: ['concil', 'fechaconcil'],
-    });
+    (n.data as any).concil = checked ? 'C' : 'N';
+    (n.data as any).fechaconcil = iso;
 
-    this.recalcularResumenes();
-  }
+    // al desmarcar masivo, quitar color verde
+    if (!checked) {
+      (n.data as any).matchExcel = false;
+    }
+  });
+
+  this.gridMovApi.refreshCells({
+    force: true,
+    columns: ['concil', 'fechaconcil'],
+  });
+
+  this.gridMovApi.redrawRows();
+
+  this.recalcularResumenes();
+}
   // =======================
   // RECALCULOS
   // =======================
@@ -1725,23 +1735,29 @@ private isoToDate(iso: string): Date | null {
       }
     });
   }
-  private toggleConcilRow(row: any): void {
-    if (!row || this.isLocked) return;
+ private toggleConcilRow(row: any): void {
+  if (!row || this.isLocked) return;
 
-    const actual = String(row.concil ?? 'N').toUpperCase();
-    const nuevoEsCheck = actual !== 'C';
+  const actual = String(row.concil ?? 'N').toUpperCase();
+  const nuevoEsCheck = actual !== 'C';
 
-    row.concil = nuevoEsCheck ? 'C' : 'N';
-    row.fechaconcil = nuevoEsCheck ? this.getFechaConcilDefaultIso() : null;
+  row.concil = nuevoEsCheck ? 'C' : 'N';
+  row.fechaconcil = nuevoEsCheck ? this.getFechaConcilDefaultIso() : null;
 
-    this.gridMovApi?.refreshCells({
-      force: true,
-      columns: ['concil', 'fechaconcil'],
-    });
-
-    this.recalcularResumenes();
+  // si se desmarca, quitar verde
+  if (!nuevoEsCheck) {
+    row.matchExcel = false;
   }
 
+  this.gridMovApi?.refreshCells({
+    force: true,
+    columns: ['concil', 'fechaconcil'],
+  });
+
+  this.gridMovApi?.redrawRows();
+
+  this.recalcularResumenes();
+}
   get debugGuardar(): any {
     return {
       loading: this.loading,
@@ -2471,5 +2487,314 @@ private parseFechaFlexible(value: any): Date | null {
 
   return null;
 }
+
+nombreArchivoExcel = '';
+
+onExcelSeleccionado(event: Event): void {
+  const input = event.target as HTMLInputElement;
+
+  if (!input.files || input.files.length === 0) {
+    return;
+  }
+
+  const archivo = input.files[0];
+  this.nombreArchivoExcel = archivo.name;
+
+  const reader = new FileReader();
+
+  reader.onload = (e: any) => {
+    try {
+      const data = e.target.result;
+      const workbook = XLSX.read(data, { type: 'array' });
+
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+
+      const filas = XLSX.utils.sheet_to_json(worksheet, {
+        header: 1,
+        defval: '',
+        raw: true
+      });
+
+      if (!filas || filas.length === 0) {
+        this.notify('El archivo Excel está vacío.', 'warn');
+        return;
+      }
+
+      this.compararExcelBanco(filas as any[]);
+    } catch (error) {
+      console.error(error);
+      this.notify('No se pudo leer el archivo Excel.', 'error');
+    } finally {
+      input.value = '';
+    }
+  };
+
+  reader.readAsArrayBuffer(archivo);
+}
+private compararExcelBanco(filasExcel: any[]): void {
+  if (!this.gridMovApi) {
+    this.notify('El grid aún no está listo.', 'warn');
+    return;
+  }
+
+  const dataExcel = filasExcel
+    .filter((row: any) => row && Array.isArray(row) && row.length > 0)
+    .map((row: any[]) => ({
+      fecha: this.normalizarFechaExcel(row[0]),        // A
+      codigo: this.normalizarTexto(row[1]),            // B
+      concepto: this.normalizarTexto(row[2]),          // C
+      tipo: this.normalizarTexto(row[3]),              // D => C / D
+      documento: this.normalizarRegistro(row[4]),      // E => Documento
+      oficina: this.normalizarTexto(row[5]),           // F
+      monto: this.normalizarNumero(row[6]),            // G
+    }))
+    .filter((x: any) => x.documento && x.fecha && x.tipo && x.monto > 0);
+
+  console.log('=== EXCEL NORMALIZADO ===');
+  console.table(dataExcel);
+
+  if (!dataExcel.length) {
+    this.notify('No se encontraron registros válidos en el Excel.', 'warn');
+    return;
+  }
+
+  let totalMatches = 0;
+
+  // limpiar estado previo
+  this.gridMovApi.deselectAll();
+  this.gridMovApi.forEachNode((node: any) => {
+    if (!node.data) return;
+    node.data.matchExcel = false;
+  });
+
+  this.gridMovApi.forEachNode((node: any) => {
+    if (!node.data) return;
+
+    const row = node.data;
+
+    const chequeGrid = this.normalizarRegistro(row.cheque);
+    const fechaGrid = this.normalizarFechaGrid(
+      row.fechatran ?? row.fechaTransac ?? row.fechaTransaccion
+    );
+    const beneficiarioGrid = this.normalizarTexto(row.beneficiario);
+    const debitoGrid = this.normalizarNumero(row.debito);
+    const creditoGrid = this.normalizarNumero(row.credito);
+
+    console.log('----------------------------------------');
+    console.log('FILA GRID:', {
+      linea: row.linea,
+      nocomprobante: row.nocomprobante,
+      chequeGrid,
+      fechaGrid,
+      beneficiarioGrid,
+      debitoGrid,
+      creditoGrid
+    });
+
+    let excelEncontrado: any = null;
+
+    const match = dataExcel.some((excel: any) => {
+      const coincideCheque = excel.documento === chequeGrid;
+      if (!coincideCheque) return false;
+
+      const coincideFecha = excel.fecha === fechaGrid;
+      if (!coincideFecha) return false;
+
+      const coincideBeneficiario = this.esBeneficiarioSimilar(
+        beneficiarioGrid,
+        excel.concepto
+      );
+      if (!coincideBeneficiario) return false;
+
+      let coincideMonto = false;
+
+      if (excel.tipo === 'C') {
+        coincideMonto = Math.abs(excel.monto - debitoGrid) < 0.01;
+      } else if (excel.tipo === 'D') {
+        coincideMonto = Math.abs(excel.monto - creditoGrid) < 0.01;
+      }
+
+      console.log('COMPARANDO CONTRA EXCEL:', {
+        excel,
+        coincideCheque,
+        coincideFecha,
+        coincideBeneficiario,
+        coincideMonto
+      });
+
+      const ok = coincideMonto;
+
+      if (ok) {
+        excelEncontrado = excel;
+      }
+
+      return ok;
+    });
+
+    if (match) {
+      totalMatches++;
+
+      node.setSelected(true);
+
+      row.concil = 'C';
+      row.fechaconcil = this.getFechaConcilDefaultIso();
+      row.matchExcel = true;
+
+      console.log('✅ MATCH ENCONTRADO', {
+        filaGrid: row,
+        excelEncontrado
+      });
+    } else {
+      row.matchExcel = false;
+      console.log('❌ SIN MATCH');
+    }
+  });
+
+  this.gridMovApi.refreshCells({
+    force: true,
+    columns: ['concil', 'fechaconcil']
+  });
+
+  this.gridMovApi.redrawRows();
+
+  if (typeof this.recalcularResumenes === 'function') {
+    this.recalcularResumenes();
+  }
+
+  this.notify(
+    `Comparación finalizada. Coincidencias: ${totalMatches}`,
+    totalMatches > 0 ? 'success' : 'warn'
+  );
+}
+private esBeneficiarioSimilar(beneficiario: string, concepto: string): boolean {
+  if (!beneficiario || !concepto) return false;
+
+  if (concepto.includes(beneficiario)) {
+    return true;
+  }
+
+  const palabrasBeneficiario = beneficiario
+    .split(' ')
+    .map(x => x.trim())
+    .filter(x => x.length >= 3);
+
+  if (!palabrasBeneficiario.length) return false;
+
+  let coincidencias = 0;
+
+  for (const palabra of palabrasBeneficiario) {
+    if (concepto.includes(palabra)) {
+      coincidencias++;
+    }
+  }
+
+  const porcentaje = coincidencias / palabrasBeneficiario.length;
+  return porcentaje >= 0.6;
+}
+
+private normalizarTexto(value: any): string {
+  return String(value ?? '')
+    .trim()
+    .toUpperCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, ' ');
+}
+
+private normalizarRegistro(value: any): string {
+  return String(value ?? '')
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, '')
+    .replace(/[^A-Z0-9]/g, '');
+}
+
+private normalizarNumero(value: any): number {
+  if (value == null || value === '') return 0;
+
+  const s = String(value)
+    .trim()
+    .replace(/,/g, '');
+
+  const n = Number(s);
+  return Number.isFinite(n)
+    ? Math.round((n + Number.EPSILON) * 100) / 100
+    : 0;
+}
+
+private normalizarFechaExcel(value: any): string {
+  if (value == null || value === '') return '';
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    const parsed = XLSX.SSF.parse_date_code(value);
+    if (!parsed) return '';
+
+    const y = String(parsed.y);
+    const m = String(parsed.m).padStart(2, '0');
+    const d = String(parsed.d).padStart(2, '0');
+
+    return `${y}-${m}-${d}`;
+  }
+
+  const texto = String(value).trim();
+
+  const partes = texto.split('/');
+  if (partes.length === 3) {
+    const dia = partes[0].padStart(2, '0');
+    const mes = partes[1].padStart(2, '0');
+    const anio = partes[2];
+    return `${anio}-${mes}-${dia}`;
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) {
+    return texto;
+  }
+
+  const d = new Date(texto);
+  if (isNaN(d.getTime())) return '';
+
+  return this.formatearFechaIso(d);
+}
+
+private normalizarFechaGrid(value: any): string {
+  if (!value) return '';
+
+  const texto = String(value).trim();
+
+  const partes = texto.split('/');
+  if (partes.length === 3) {
+    const dia = partes[0].padStart(2, '0');
+    const mes = partes[1].padStart(2, '0');
+    const anio = partes[2];
+    return `${anio}-${mes}-${dia}`;
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}/.test(texto)) {
+    return texto.substring(0, 10);
+  }
+
+  const d = new Date(texto);
+  if (isNaN(d.getTime())) return '';
+
+  return this.formatearFechaIso(d);
+}
+
+private formatearFechaIso(fecha: Date): string {
+  const y = fecha.getFullYear();
+  const m = String(fecha.getMonth() + 1).padStart(2, '0');
+  const d = String(fecha.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+private fechaHoyTexto(): string {
+  const hoy = new Date();
+  const d = String(hoy.getDate()).padStart(2, '0');
+  const m = String(hoy.getMonth() + 1).padStart(2, '0');
+  const y = hoy.getFullYear();
+  return `${d}/${m}/${y}`;
+}
+
+
 }
 
