@@ -26,6 +26,7 @@ export interface AprobarPlanificacionRequest {
   id_usuario: number;
   id_zona: number;
   id_tipo_asiento: number;
+  documentos_a_aprobar?: number[];
 }
 export interface DocumentoPendienteRequest {
   id_empresa: number;

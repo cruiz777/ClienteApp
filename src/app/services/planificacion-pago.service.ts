@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { DocumentoPendienteResponse, PagoProcesadoResponse, PlanificacionCreadaResponse } from '../interfaces/responses/planificacion-pago-response';
+import { DocumentoPendienteResponse, PagoProcesadoResponse, PlanificacionCreadaResponse, PlanificacionPagoResponse } from '../interfaces/responses/planificacion-pago-response';
 import { ApiResponse } from '../interfaces/responses/api-response';
 import { AprobarPlanificacionRequest, DocumentoPendienteRequest, ProcesarPagoRequest } from '../interfaces/requests/planificacion-pago-response';
 
@@ -65,6 +65,40 @@ export class PlanificacionPagoService {
     return this.http.post<ApiResponse<PagoProcesadoResponse>>(
         `${this.baseUrl}/aprobar-pago`,
         request
+    );
+    }
+    /**
+ * Obtiene planificaciones pendientes de aprobación
+ */
+    getPlanificacionesPendientes(
+    idEmpresa: number,
+    idProveedor?: number,
+    fechaDesde?: string,
+    fechaHasta?: string,
+    estadoPlanificacion?: number
+    ): Observable<ApiResponse<PlanificacionPagoResponse[]>> {
+    let params = new HttpParams()
+        .set('idEmpresa', idEmpresa.toString());
+
+    if (idProveedor) {
+        params = params.set('idProveedor', idProveedor.toString());
+    }
+
+    if (fechaDesde) {
+        params = params.set('fechaDesde', fechaDesde);
+    }
+
+    if (fechaHasta) {
+        params = params.set('fechaHasta', fechaHasta);
+    }
+
+    if (estadoPlanificacion !== undefined) {
+        params = params.set('estadoPlanificacion', estadoPlanificacion.toString());
+    }
+
+    return this.http.get<ApiResponse<PlanificacionPagoResponse[]>>(
+        `${this.baseUrl}/planificaciones-pendientes`,
+        { params }
     );
     }
 }
