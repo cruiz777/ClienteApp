@@ -37,6 +37,10 @@ import { GenerarAtsComponent } from './anexo-transaccional/generacion-anexo/gene
 import { PlanificacionPagosComponent } from './cuentas-por-pagar/planificacion-pagos/planificacion-pagos.component';
 import { MatCardModule } from '@angular/material/card';
 import { CierreContableComponent } from './configuracion/cierre-contable/cierre-contable.component';
+import { AprobacionPlanificacionesComponent } from './cuentas-por-pagar/planificacion-pagos/aprobacion/aprobacion-planificaciones.component';
+import { DetalleTransaccionDialogComponent } from './cuentas-por-pagar/planificacion-pagos/aprobacion/detalle-transaccion-dialog.component';
+import { MatDialogModule } from '@angular/material/dialog';
+
 
 
 
@@ -49,7 +53,10 @@ import { CierreContableComponent } from './configuracion/cierre-contable/cierre-
     ReporteComprasComponent,
     PlanificacionPagosComponent,
     GenerarAtsComponent,
-    CierreContableComponent
+    CierreContableComponent,
+    AprobacionPlanificacionesComponent,
+    DetalleTransaccionDialogComponent,
+
   ],
   imports: [
     CommonModule,
@@ -75,6 +82,7 @@ import { CierreContableComponent } from './configuracion/cierre-contable/cierre-
     MatSelectModule,
     MatAutocompleteModule,
     MatProgressSpinnerModule,
+    MatDialogModule,
     PlanCuentaCellEditorComponent,    
     // Ruteo del feature
     Cg3000RoutingModule,

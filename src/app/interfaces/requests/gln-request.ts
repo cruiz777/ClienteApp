@@ -17,7 +17,7 @@ export interface GlnRequest {
   fda: string;
   europa: string;
   glnGlobal: string;
-  glnFecha: string;
+  glnFecha: string | null;
   idCiudad: number;
   glnCodigopostal: string;
   glnCelular: string;

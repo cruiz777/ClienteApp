@@ -903,37 +903,155 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
   }
 
   guardar(): void {
+    console.log('🚀 ========== INICIANDO GUARDADO ==========');
+    
     if (this.guardando) {
       console.warn('⚠️ Ya hay un guardado en proceso');
       return;
     }
-    if (this.formGln.invalid) {
-      this.formGln.markAllAsTouched();
-      alert('Por favor, completa todos los campos requeridos antes de guardar.');
+
+    // ✅ PRIMERO sincronizar autocomplete
+    console.log('🗺️ PASO 1: Sincronizar autocomplete');
+    const ciudadCtrlValor = this.ciudadAutocompleteControl.value;
+    console.log('   - Valor del autocomplete:', ciudadCtrlValor);
+    console.log('   - Tipo:', typeof ciudadCtrlValor);
+    
+    if (typeof ciudadCtrlValor === 'object' && ciudadCtrlValor?.id) {
+      console.log('   ✅ Sincronizando ciudad con ID:', ciudadCtrlValor.id);
+      this.formGln.patchValue({ idCiudad: ciudadCtrlValor.id });
+    } else if (typeof ciudadCtrlValor === 'string' && ciudadCtrlValor.trim()) {
+      console.log('   ❌ Usuario escribió pero no seleccionó del dropdown');
+      this.toastr.error('Debe seleccionar una ciudad de la lista desplegable', 'Ciudad no válida');
       return;
-    } 
-    //Validar secuencia manual antes de guardar
+    } else if (!this.formGln.get('idCiudad')?.value) {
+      console.log('   ❌ No hay ciudad seleccionada');
+      this.toastr.error('Debe seleccionar una ciudad', 'Campo requerido');
+      return;
+    }
+
+    console.log('   - idCiudad después de sincronizar:', this.formGln.get('idCiudad')?.value);
+
+    // ✅ DEBUG COMPLETO DEL FORMULARIO
+    console.log('\n📋 PASO 2: Validar formulario');
+    console.log('   - Estado general del formulario:');
+    console.log('     · Valid:', this.formGln.valid);
+    console.log('     · Invalid:', this.formGln.invalid);
+    console.log('     · Pristine:', this.formGln.pristine);
+    console.log('     · Dirty:', this.formGln.dirty);
+    console.log('     · Touched:', this.formGln.touched);
+    console.log('     · Errors:', this.formGln.errors);
+
+    // ✅ MOSTRAR VALORES RAW (incluye campos deshabilitados)
+    const raw = this.formGln.getRawValue();
+    console.log('\n   📦 Valores RAW del formulario:');
+    console.log('     · clientesCodigo:', raw.clientesCodigo);
+    console.log('     · idPrefijos:', raw.idPrefijos);
+    console.log('     · localizacion:', raw.localizacion);
+    console.log('     · idTipoLocalizacion:', raw.idTipoLocalizacion);
+    console.log('     · idCiudad:', raw.idCiudad);
+    console.log('     · glnLatitud:', raw.glnLatitud);
+    console.log('     · glnLongitud:', raw.glnLongitud);
+    console.log('     · gln1:', raw.gln1);
+
+    // ✅ ANALIZAR CADA CONTROL
+    console.log('\n   🔍 Análisis detallado de TODOS los controles:');
+    const camposInvalidos: string[] = [];
+    const camposDeshabilitados: string[] = [];
+    const camposRequeridos = [
+      'idTipoLocalizacion',
+      'glnLatitud',
+      'glnLongitud',
+      'idCiudad',
+      'localizacion'
+    ];
+
+    Object.keys(this.formGln.controls).forEach(key => {
+      const control = this.formGln.get(key);
+      
+      if (control?.disabled) {
+        camposDeshabilitados.push(key);
+      }
+
+      if (control?.invalid) {
+        camposInvalidos.push(key);
+        console.log(`   ❌ ${key}:`, {
+          valor: control.value,
+          errores: control.errors,
+          disabled: control.disabled,
+          touched: control.touched,
+          pristine: control.pristine,
+          requerido: camposRequeridos.includes(key)
+        });
+      } else if (camposRequeridos.includes(key)) {
+        console.log(`   ✅ ${key}:`, {
+          valor: control?.value,
+          disabled: control?.disabled
+        });
+      }
+    });
+
+    console.log('\n   📊 Resumen:');
+    console.log('     · Campos inválidos:', camposInvalidos.length, camposInvalidos);
+    console.log('     · Campos deshabilitados:', camposDeshabilitados.length, camposDeshabilitados);
+
+    if (this.formGln.invalid) {
+      console.error('   ❌ FORMULARIO INVÁLIDO - Deteniendo guardado');
+      console.log('\n   💡 Campos requeridos que faltan:');
+      
+      camposInvalidos.forEach(campo => {
+        const control = this.formGln.get(campo);
+        if (control?.errors?.['required']) {
+          console.log(`      - ${campo}: REQUERIDO pero está vacío`);
+        } else if (control?.errors) {
+          console.log(`      - ${campo}:`, control.errors);
+        }
+      });
+
+      this.formGln.markAllAsTouched();
+      this.toastr.error(
+        `Campos con errores: ${camposInvalidos.join(', ')}`, 
+        'Validación'
+      );
+      return;
+    }
+
+    console.log('   ✅ Formulario válido - Continuando...');
+
+    // ✅ Validar secuencia manual
+    console.log('\n🔢 PASO 3: Validar secuencia manual');
+    console.log('   - usarSecuenciaManual:', this.usarSecuenciaManual);
+    
     if (this.usarSecuenciaManual) {
+      console.log('   - secuenciaManual:', this.secuenciaManual);
+      console.log('   - validandoSecuencia:', this.validandoSecuencia);
+      console.log('   - secuenciaValida:', this.secuenciaValida);
+      
       if (!this.secuenciaManual) {
+        console.error('   ❌ Falta número de secuencia');
         this.toastr.error('Debe ingresar un número de secuencia', 'Error de validación');
         return;
       }
       if (this.validandoSecuencia) {
+        console.error('   ❌ Validación en proceso');
         this.toastr.warning('Espere mientras se valida la secuencia', 'Validando');
         return;
       }
       if (!this.secuenciaValida) {
+        console.error('   ❌ Secuencia no válida');
         this.toastr.error('La secuencia ingresada ya está en uso', 'Secuencia no disponible');
         return;
       }
     }
-    //BLOQUEAR NUEVOS GUARDADOS
+
+    console.log('   ✅ Secuencia válida o no requerida');
+
+    // ✅ BLOQUEAR NUEVOS GUARDADOS
+    console.log('\n💾 PASO 4: Preparar guardado');
     this.guardando = true;
 
-    //MOSTRAR LOADING DIALOG
     const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
       width: '400px',
-      disableClose: true, // ✅ NO SE PUEDE CERRAR
+      disableClose: true,
       data: {
         title: 'Guardando GLN',
         message: 'Por favor espere...',
@@ -943,11 +1061,8 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
         showCancel: false
       }
     });
-    const ciudadCtrlValor = this.ciudadAutocompleteControl.value;
-    if (ciudadCtrlValor && typeof ciudadCtrlValor === 'object' && 'id' in ciudadCtrlValor) {
-      this.formGln.patchValue({ idCiudad: ciudadCtrlValor.id });
-    }
-    const raw = this.formGln.getRawValue();
+
+    // ✅ Convertir fecha
     let fechaConvertida: string | null = null;
     if (raw.glnFecha) {
       const fecha = new Date(raw.glnFecha);
@@ -955,11 +1070,12 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
         const year = fecha.getFullYear();
         const month = (fecha.getMonth() + 1).toString().padStart(2, '0');
         const day = fecha.getDate().toString().padStart(2, '0');
-        fechaConvertida = `${year}-${month}-${day}`; // formato yyyy-MM-dd
+        fechaConvertida = `${year}-${month}-${day}`;
       }
     }
+
     const data: GlnRequest = {
-      id_gln: raw.idGln ?? 0,  //Enviar 0 en vez de null
+      id_gln: raw.idGln ?? 0,
       id_prefijos: raw.idPrefijos,
       clientesCodigo: raw.clientesCodigo,
       gln1: raw.gln1,
@@ -977,7 +1093,7 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       fda: raw.fda,
       europa: raw.europa,
       glnGlobal: raw.glnGlobal,
-      glnFecha: raw.fechaConvertida,
+      glnFecha: fechaConvertida, // Usar variable calculada sin el valor crudo que viene 
       idCiudad: raw.idCiudad,
       glnCodigopostal: raw.glnCodigopostal,
       glnCelular: raw.glnCelular,
@@ -1016,6 +1132,12 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
       latiE: raw.latiE,
       idUsuario: raw.idUsuario
     };
+
+    console.log('\n🛰️ PASO 5: Payload final');
+    console.log('   - Operación:', data.id_gln ? 'PUT (actualizar)' : 'POST (crear)');
+    console.log('   - id_gln:', data.id_gln);
+    console.log('   - Payload completo:', data);
+
     console.log('📞 Valores de teléfono al guardar:');
     console.log('glnCelular:', this.formGln.get('glnCelular')?.value);
     console.log('glnTel2:', this.formGln.get('glnTel2')?.value);
@@ -1105,7 +1227,234 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
         }
       });
     }
+    console.log('🚀 ========== ENVIANDO AL SERVIDOR ==========');
   }
+  // guardar(): void {
+  //   if (this.guardando) {
+  //     console.warn('⚠️ Ya hay un guardado en proceso');
+  //     return;
+  //   }
+  //   //PRIMERO sincronizar autocomplete
+  //   const ciudadCtrlValor = this.ciudadAutocompleteControl.value;
+  //   if (typeof ciudadCtrlValor === 'object' && ciudadCtrlValor?.id) {
+  //     this.formGln.patchValue({ idCiudad: ciudadCtrlValor.id });
+  //   } else if (typeof ciudadCtrlValor === 'string' && ciudadCtrlValor.trim()) {
+  //     // Usuario escribió pero no seleccionó del dropdown
+  //     this.toastr.error('Debe seleccionar una ciudad de la lista desplegable', 'Ciudad no válida');
+  //     return;
+  //   } else if (!this.formGln.get('idCiudad')?.value) {
+  //     this.toastr.error('Debe seleccionar una ciudad', 'Campo requerido');
+  //     return;
+  //   }
+
+  //   //AHORA sí validar con debugging
+  //   if (this.formGln.invalid) {
+  //     console.log('📋 Formulario inválido. Campos con error:');
+  //     Object.keys(this.formGln.controls).forEach(key => {
+  //       const control = this.formGln.get(key);
+  //       if (control?.invalid) {
+  //         console.log(`❌ ${key}:`, {
+  //           value: control.value,
+  //           errors: control.errors,
+  //           disabled: control.disabled
+  //         });
+  //       }
+  //     });
+      
+  //     this.formGln.markAllAsTouched();
+  //     this.toastr.error('Por favor, completa todos los campos requeridos', 'Validación');
+  //     return;
+  //   }
+  //   //Validar secuencia manual antes de guardar
+  //   if (this.usarSecuenciaManual) {
+  //     if (!this.secuenciaManual) {
+  //       this.toastr.error('Debe ingresar un número de secuencia', 'Error de validación');
+  //       return;
+  //     }
+  //     if (this.validandoSecuencia) {
+  //       this.toastr.warning('Espere mientras se valida la secuencia', 'Validando');
+  //       return;
+  //     }
+  //     if (!this.secuenciaValida) {
+  //       this.toastr.error('La secuencia ingresada ya está en uso', 'Secuencia no disponible');
+  //       return;
+  //     }
+  //   }
+  //   //BLOQUEAR NUEVOS GUARDADOS
+  //   this.guardando = true;
+
+  //   //MOSTRAR LOADING DIALOG
+  //   const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+  //     width: '400px',
+  //     disableClose: true, // ✅ NO SE PUEDE CERRAR
+  //     data: {
+  //       title: 'Guardando GLN',
+  //       message: 'Por favor espere...',
+  //       type: 'info',
+  //       isLoading: true,
+  //       loadingText: 'Guardando información del GLN...',
+  //       showCancel: false
+  //     }
+  //   });
+  //   const raw = this.formGln.getRawValue();
+  //   let fechaConvertida: string | null = null;
+  //   if (raw.glnFecha) {
+  //     const fecha = new Date(raw.glnFecha);
+  //     if (!isNaN(fecha.getTime())) {
+  //       const year = fecha.getFullYear();
+  //       const month = (fecha.getMonth() + 1).toString().padStart(2, '0');
+  //       const day = fecha.getDate().toString().padStart(2, '0');
+  //       fechaConvertida = `${year}-${month}-${day}`; // formato yyyy-MM-dd
+  //     }
+  //   }
+  //   const data: GlnRequest = {
+  //     id_gln: raw.idGln ?? 0,  //Enviar 0 en vez de null
+  //     id_prefijos: raw.idPrefijos,
+  //     clientesCodigo: raw.clientesCodigo,
+  //     gln1: raw.gln1,
+  //     idTipoLocalizacion: raw.idTipoLocalizacion,
+  //     glnLatitud: raw.glnLatitud,
+  //     glnLongitud: raw.glnLongitud,
+  //     idPais: raw.idPais,
+  //     direccion: raw.direccion,
+  //     telefono: raw.telefono,
+  //     fax: raw.fax,
+  //     contacto: raw.contacto,
+  //     contactoTel: raw.contactoTel,
+  //     email: raw.email,
+  //     web: raw.web,
+  //     fda: raw.fda,
+  //     europa: raw.europa,
+  //     glnGlobal: raw.glnGlobal,
+  //     glnFecha: raw.fechaConvertida,
+  //     idCiudad: raw.idCiudad,
+  //     glnCodigopostal: raw.glnCodigopostal,
+  //     glnCelular: raw.glnCelular,
+  //     glnContacto2: raw.glnContacto2,
+  //     glnEmail2: raw.glnEmail2,
+  //     glnTel2: raw.glnTel2,
+  //     glnContacto3: raw.glnContacto3,
+  //     glnEmail3: raw.glnEmail3,
+  //     glnTel3: raw.glnTel3,
+  //     glnFacturar: raw.glnFacturar,
+  //     glnCodpro: raw.glnCodpro,
+  //     glnNombre: raw.glnNombre,
+  //     glnOtro1: raw.glnOtro1,
+  //     glnOtro2: raw.glnOtro2,
+  //     glnObs1: raw.glnObs1,
+  //     glnObs2: raw.glnObs2,
+  //     glnOrigenprefijo: raw.glnOrigenprefijo,
+  //     glnPrefijogs1: raw.glnPrefijogs1,
+  //     glnGlnp: raw.glnGlnp,
+  //     glnGlne: raw.glnGlne,
+  //     nombreLocalizacion: raw.localizacion,
+  //     observ: raw.observ,
+  //     expprod: raw.expprod ?? 0,
+  //     gs1ec: raw.gs1ec ?? 0,
+  //     gs1latam: raw.gs1latam ?? 0,
+  //     gas1org: raw.gas1org ?? 0,
+  //     google: raw.google ?? 0,
+  //     gs1otros: raw.gs1otros,
+  //     longG: raw.longG,
+  //     longM: raw.longM,
+  //     longS: raw.longS,
+  //     longE: raw.longE,
+  //     latiG: raw.latiG,
+  //     latiM: raw.latiM,
+  //     latiS: raw.latiS,
+  //     latiE: raw.latiE,
+  //     idUsuario: raw.idUsuario
+  //   };
+  //   console.log('📞 Valores de teléfono al guardar:');
+  //   console.log('glnCelular:', this.formGln.get('glnCelular')?.value);
+  //   console.log('glnTel2:', this.formGln.get('glnTel2')?.value);
+  //   console.log('glnTel3:', this.formGln.get('glnTel3')?.value);
+  //   const callback = () => {
+  //      console.log('📥 Ejecutando callback de actualización...');
+  //     const idGln = this.formGln.get('idGln')?.value;
+
+  //     if (idGln && idGln > 0) {
+  //       this.glnService.obtenerGlnPorId(idGln).subscribe({
+  //         next: (glnActualizadoResponse) => {
+  //           console.log('🔄 GLN actualizado recibido del backend:', glnActualizadoResponse);
+
+  //           const glnData = glnActualizadoResponse.data;
+  //           this.cargarDatosDesdeGlnResponse(glnData); // ✅ ahora es del tipo correcto
+  //           this.modoEdicion = false;
+  //           this.pasoActual = 1;
+
+  //           // Opcional: recargar prefijos si también deseas que la navegación GLN se actualice
+  //           const clienteCodigo = this.formGln.value.clientesCodigo;
+  //           if (clienteCodigo) {
+  //             this.prefijoService.obtenerPrefijosGlnPorClienteCodigo(clienteCodigo).subscribe(prefijos => {
+  //               this.prefijos = prefijos;
+  //               const idPrefijo = this.formGln.value.idPrefijos;
+
+  //               this.cargarGlnDesdePrefijos(idPrefijo);
+
+  //               // Restaurar índice del GLN actualizado
+  //               const index = this.glnsPorPrefijo.findIndex(g => g.id_gln === idGln);
+  //               if (index !== -1) {
+  //                 this.glnIndex = index;
+  //                 this.cargarGlnActual();
+  //               }
+  //             });
+  //           }
+  //         },
+  //         error: (err) => {
+  //           console.error('❌ Error al recargar GLN después de guardar', err);
+  //           this.mostrarMensajeBox('Error', 'El GLN se guardó, pero no se pudo recargar los datos.', 'warning');
+  //         }
+  //       });
+  //     }
+  //   };
+
+  //   console.log('🛰️ Payload que se va a enviar:', data);
+  //   console.log('📌 idGln en el payload:', data.id_gln);
+  //   console.log('🧾 Teléfono con prefijo:', this.formGln.get('telefono')?.value);
+
+  //   // ✅ Diferenciar POST vs PUT correctamente
+  //   if (data.id_gln && data.id_gln !== 0) {
+  //     // PUT
+  //     this.glnService.actualizarGln(data.id_gln, data).subscribe({
+  //       next: () => {
+  //         loadingDialog.close();
+  //         this.guardando = false; 
+  //         this.mostrarMensajeBox('GLN actualizado', 'El GLN fue actualizado correctamente.', 'success');
+  //         callback();
+  //         this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+  //           this.router.navigate(['/productos/nuevo-gln']);
+  //         });
+  //       },
+  //       error: (err) => {
+  //         loadingDialog.close(); 
+  //         this.guardando = false;
+  //         console.error('❌ Error al actualizar GLN', err);
+  //         this.mostrarMensajeBox('Error', 'No se pudo actualizar el GLN.', 'error');
+  //       }
+  //     });
+  //   } else {
+  //     // POST
+  //     console.log('🚀 Enviando a /Gln:', { request: data });
+  //     this.glnService.insertarGln({ request: data }).subscribe({
+  //       next: () => {
+  //         loadingDialog.close();
+  //         this.guardando = false; 
+  //         this.mostrarMensajeBox('GLN creado', 'El GLN fue creado correctamente.', 'success');
+  //         callback();
+  //         this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+  //           this.router.navigate(['/productos/nuevo-gln']);
+  //         });
+  //       },
+  //       error: (err) => {
+  //         loadingDialog.close(); 
+  //         this.guardando = false;
+  //         console.error('❌ Error al crear GLN', err);
+  //         this.mostrarMensajeBox('Error', 'Ocurrió un error al crear el GLN.', 'error');
+  //       }
+  //     });
+  //   }
+  // }
   obtenerCodigoPrefijo(idPrefijo: number): string {
     const prefijo = this.prefijos.find(p => p.id_prefijos === idPrefijo);
     return prefijo?.codpre ?? 'N/A';

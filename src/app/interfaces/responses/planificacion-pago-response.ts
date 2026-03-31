@@ -81,3 +81,58 @@ export interface PlanificacionCreadaResponse {
   total_planificado: number;
   estado_planificacion: string;
 }
+export interface PlanificacionPagoResponse {
+  // IDENTIFICACIÓN
+  id_planificacion: number;
+  id_cuenta_por_pagar: number | null;
+  num_transaccion: number;
+
+  // PROVEEDOR
+  id_proveedor: number | null;
+  codigo_proveedor: number;
+  nombre_proveedor: string;
+  identificacion_proveedor: string | null;
+
+  // FECHAS
+  fecha: string | null;
+  fecha_vencimiento: string | null;
+  fecha_ingreso: string;
+  fecha_aprueba: string | null;
+
+  // FORMA DE PAGO
+  id_forma_pago: number | null;
+  descripcion_forma_pago: string | null;
+  cuenta_banco: string | null;
+
+  // MONTOS
+  valor_pago: number;
+  total: number;
+  total_pago_planilla: number;
+  comision: number;
+  aporte: number;
+  retencion: number | null;
+  retencion_iva: number;
+  egreso: number;
+
+  // ESTADOS
+  estado: string;
+  estado_pago: string | null;
+  estado_planificacion: number;
+  estado_aprueba: number | null;
+
+  // USUARIOS
+  usuario_ingreso: number;
+  nombre_usuario_ingreso: string | null;
+  usuario_aprueba: number | null;
+  nombre_usuario_aprueba: string | null;
+
+  // INFORMACIÓN ADICIONAL
+  comentario: string | null;
+  paciente: string | null;
+  observacion_asiento: string | null;
+  id_empresa: number | null;
+
+  // INFORMACIÓN DEL DOCUMENTO ORIGINAL
+  numero_documento: string | null;
+  tipo_comprobante: string | null;
+}
