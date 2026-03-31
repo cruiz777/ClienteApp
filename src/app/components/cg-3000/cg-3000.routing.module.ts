@@ -40,6 +40,7 @@ import { ReporteGeneralComponent } from './activo-fijo/reporte-general/reporte-g
 import { GenerarAtsComponent } from './anexo-transaccional/generacion-anexo/generar-ats.component';
 import { MayorCodigosListComponent } from './balance/mayor/mayor-codigos/mayor-codigos.component';
 import { PlanificacionPagosComponent } from './cuentas-por-pagar/planificacion-pagos/planificacion-pagos.component';
+import { CierreContableComponent } from './configuracion/cierre-contable/cierre-contable.component';
 
 const routes: Routes = [
   {
@@ -71,6 +72,7 @@ const routes: Routes = [
       { path: 'pago-proveedores', component: RegistroPagosProveedorComponent },
       { path: 'liquidacion-compra', component: LiquidacionCompraFormComponent },
       { path: 'liquidacion-compra-list', component: LiquidacionCompraComponent },
+      {path: 'cierre-anual',component:CierreContableComponent},
       { path: 'conciliacion', component: ConciliacionComponent},
       { path: 'reversa-conciliacion', component: ReversaConciliacionComponent},
       { path: 'mayor', component: MayorCuentasListComponent },

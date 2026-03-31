@@ -36,6 +36,7 @@ import { ReporteComprasComponent } from './anexo-transaccional/reporte-compras/r
 import { GenerarAtsComponent } from './anexo-transaccional/generacion-anexo/generar-ats.component';
 import { PlanificacionPagosComponent } from './cuentas-por-pagar/planificacion-pagos/planificacion-pagos.component';
 import { MatCardModule } from '@angular/material/card';
+import { CierreContableComponent } from './configuracion/cierre-contable/cierre-contable.component';
 import { AprobacionPlanificacionesComponent } from './cuentas-por-pagar/planificacion-pagos/aprobacion/aprobacion-planificaciones.component';
 import { DetalleTransaccionDialogComponent } from './cuentas-por-pagar/planificacion-pagos/aprobacion/detalle-transaccion-dialog.component';
 import { MatDialogModule } from '@angular/material/dialog';
@@ -51,9 +52,11 @@ import { MatDialogModule } from '@angular/material/dialog';
     RegistroPagosProveedorComponent,
     ReporteComprasComponent,
     PlanificacionPagosComponent,
+    GenerarAtsComponent,
+    CierreContableComponent,
     AprobacionPlanificacionesComponent,
     DetalleTransaccionDialogComponent,
-    GenerarAtsComponent
+
   ],
   imports: [
     CommonModule,
