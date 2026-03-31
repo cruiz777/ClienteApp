@@ -215,15 +215,15 @@ export class CustomValidators {
     if (valor == null || valor === '') return null;
 
     const stringValue = valor.toString().trim();
-    const regex = /^-?\d{1,3}([.,]\d{1,20})?$/;
+    
+    //Regex más simple: número con decimales opcionales
+    const regex = /^-?\d+([.,]\d+)?$/;
     if (!regex.test(stringValue)) {
       return { formatoInvalido: true };
     }
 
-    const normalizado = stringValue
-      .replace(/\.(?=\d{3}(?:[.,]|$))/g, '')
-      .replace(/,(?=\d{3}(?:[.,]|$))/g, '')
-      .replace(',', '.');
+    //Normalización simple: solo reemplazar coma por punto
+    const normalizado = stringValue.replace(',', '.');
 
     const numero = parseFloat(normalizado);
     if (isNaN(numero)) return { formatoInvalido: true };
@@ -268,15 +268,15 @@ export class CustomValidators {
     if (valor == null || valor === '') return null;
 
     const stringValue = valor.toString().trim();
-    const regex = /^-?\d{1,3}([.,]\d{1,15})?$/;
+    
+    // Regex simple 
+    const regex = /^-?\d+([.,]\d+)?$/;
     if (!regex.test(stringValue)) {
       return { formatoInvalido: true };
     }
 
-    const normalizado = stringValue
-      .replace(/\.(?=\d{3}(?:[.,]|$))/g, '')
-      .replace(/,(?=\d{3}(?:[.,]|$))/g, '')
-      .replace(',', '.');
+    //Normalización simple: solo reemplazar coma por punto
+    const normalizado = stringValue.replace(',', '.');
 
     const numero = parseFloat(normalizado);
     if (isNaN(numero)) return { formatoInvalido: true };

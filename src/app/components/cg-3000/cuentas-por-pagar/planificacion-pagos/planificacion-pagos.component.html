@@ -5,8 +5,21 @@
       <mat-icon>assignment</mat-icon>
       Planificación de Pagos a Proveedores
     </h1>
-    <button class="btn-icon" (click)="resetearFormulario()" [disabled]="guardando" matTooltip="Limpiar todo">
+    <button 
+      class="btn-header" 
+      (click)="resetearFormulario()" 
+      [disabled]="guardando" 
+      matTooltip="Limpiar formulario completo">
       <mat-icon>refresh</mat-icon>
+      <span>Limpiar</span>
+    </button>
+
+    <button 
+      class="btn-header btn-header-primary" 
+      (click)="abrirModalAprobacion()" 
+      matTooltip="Ver y aprobar planificaciones pendientes">
+      <mat-icon>approval</mat-icon>
+      <span>Aprobar Planificaciones</span>
     </button>
   </div>
 
@@ -64,7 +77,11 @@
             class="compact-btn compact-dropdown"
             (click)="toggleFiltroCuentas()"
             [class.active]="cuentasSeleccionadas.length > 0">
-            <span>{{ cuentasSeleccionadas.length || 'Todas' }}</span>
+            <span>
+              {{ cuentasSeleccionadas.length > 0 
+                ? cuentasSeleccionadas.length + ' cuenta(s)' 
+                : 'Todas las cuentas' }}
+            </span>
             <mat-icon>{{ mostrarFiltroCuentas ? 'expand_less' : 'expand_more' }}</mat-icon>
           </button>
 
@@ -102,42 +119,109 @@
     </form>
   </div>
 
+   
+  <!-- ===== PANEL DE DISTRIBUCIÓN DE MONTO ===== -->
+  <div class="panel compact-panel distribucion-panel" *ngIf="documentosRows.length > 0">
+    <div class="section-header-compact">
+      <mat-icon>attach_money</mat-icon>
+      <span>Distribución de Monto</span>
+    </div>
+  
+    <div class="distribucion-content">
+      <!-- Input de Monto -->
+      <div class="monto-input-group">
+        <label class="compact-label">
+          <mat-icon>payments</mat-icon>
+          Monto Total a Distribuir
+        </label>
+        <div class="input-with-currency">
+          <span class="currency-symbol">$</span>
+          <input 
+            type="number" 
+            class="compact-input input-monto"
+            [(ngModel)]="montoTotalADistribuir"
+            placeholder="0.00"
+            (focus)="onInputFocus($event)"
+            min="0"
+            step="0.01">
+        </div>
+        <small class="hint-text">
+          <mat-icon>info</mat-icon>
+          Ingrese el monto que desea distribuir entre las facturas seleccionadas
+        </small>
+      </div>
+      <div *ngIf="montoRestante > 0" style="color: #748a01; font-weight: bold; margin-top: 8px;">
+        Restante: ${{ montoRestante.toFixed(2) }}
+      </div>
+  
+      <!-- Botones de Acción -->
+      <div class="distribucion-actions">
+        <button 
+          class="compact-btn compact-btn-primary"
+          (click)="distribuirMonto()"
+          [disabled]="montoTotalADistribuir <= 0 || cargandoDocumentos">
+          <mat-icon>call_split</mat-icon>
+          Distribuir Monto
+        </button>
+  
+        <button 
+          class="compact-btn compact-btn-accent"
+          (click)="pagarTodoSeleccionado()"
+          [disabled]="cargandoDocumentos">
+          <mat-icon>done_all</mat-icon>
+          Pagar Todo Seleccionado
+        </button>
+      </div>
+    </div>
+  </div>
   <!-- ===== GRID COMPACTO ===== -->
   <div class="panel compact-panel">
     <div class="grid-header-compact">
-        <div class="grid-title">
-            <mat-icon>description</mat-icon>
-            <span>Documentos Pendientes</span>
-            <span class="badge">{{ documentosRows.length }}</span>
-        </div>
-        <button class="compact-btn" (click)="limpiarSeleccion()" [disabled]="!documentosRows.length">
-            <mat-icon>clear_all</mat-icon>
-            Limpiar
-        </button>
-        <button 
-            class="compact-btn" 
-            (click)="exportarSeleccionadosExcel()" 
-            [disabled]="!totalDocumentosSeleccionados">
-            <mat-icon>file_download</mat-icon>
-            Exportar Excel
-        </button>
+      <div class="grid-title">
+        <mat-icon>description</mat-icon>
+        <span>Documentos Pendientes</span>
+        <span class="badge">{{ totalDocumentosReales }}</span>
+      </div>
+      
+      <!--AGREGAR CHECKBOX PARA VISTA SIMPLIFICADA -->
+      <label class="compact-checkbox">
+        <input type="checkbox" [(ngModel)]="vistaSimplificada" (change)="toggleVistaSimplificada()">
+        <span>Vista simplificada</span>
+      </label>
+      
+      <button class="compact-btn" (click)="limpiarSeleccion()" [disabled]="!documentosRows.length">
+        <mat-icon>clear_all</mat-icon>
+        Limpiar valores
+      </button>
+      
+      <button 
+        class="compact-btn" 
+        (click)="exportarSeleccionadosExcel()" 
+        [disabled]="!totalDocumentosSeleccionados">
+        <mat-icon>file_download</mat-icon>
+        Exportar Excel
+      </button>
     </div>
-
-    <div class="grid-wrapper-compact">
+    <div class="grid-wrapper-compact" style="min-height: 400px; max-height: 450px;">
       <ag-grid-angular
         #gridDocumentos
         class="ag-theme-material grid-ultra-compact"
         [rowData]="documentosRows"
         [columnDefs]="columnDefsDocumentos"
         [defaultColDef]="defaultColDef"
+        [autoGroupColumnDef]="autoGroupColumnDef"
+        [gridOptions]="gridOptions"
+        [getRowStyle]="getRowStyle"
+        [getRowClass]="getRowClass"
         [rowSelection]="'multiple'"
+        [groupSelectsChildren]="true"
+        [groupSelectsFiltered]="true"
         [animateRows]="true"
         [pagination]="true"
         [paginationPageSize]="20"
         [paginationPageSizeSelector]="[10, 20, 50]"
-        [domLayout]="'autoHeight'"
         (gridReady)="onGridDocumentosReady($event)"
-        style="width: 100%; max-height: 400px;">
+        style="width: 100%; height: 450px;">
       </ag-grid-angular>
 
       <div class="loading-compact" *ngIf="cargandoDocumentos">
@@ -217,13 +301,21 @@
     </div>
 
     <!-- Resumen Compacto -->
-    <div class="panel compact-panel resumen-compact">
+    <div class="panel compact-panel resumen-compact" *ngIf="documentosRows.length > 0">
       <div class="section-header-compact">
         <mat-icon>receipt_long</mat-icon>
         <span>Resumen</span>
       </div>
-
+      
       <div class="resumen-stats">
+        <!--Saldo Total de TODOS los documentos cargados -->
+        <div class="stat-item">
+          <mat-icon>account_balance_wallet</mat-icon>
+          <div class="stat-content">
+            <span class="stat-label">Saldo Total Pendiente</span>
+            <span class="stat-value">{{ totalSaldoTotal | currency:'USD':'symbol':'1.2-2' }}</span>
+          </div>
+        </div>
         <!-- Documentos Seleccionados -->
         <div class="stat-item">
             <mat-icon>description</mat-icon>
@@ -294,7 +386,7 @@
           (click)="resetearFormulario()"
           [disabled]="guardando">
           <mat-icon>restart_alt</mat-icon>
-          Reiniciar
+          Nueva Planificación
         </button>
       </div>
 
