@@ -1,5 +1,5 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
+import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { AgGridAngular } from 'ag-grid-angular';
 import { ColDef, GridApi, GridReadyEvent } from 'ag-grid-community';
 
@@ -110,21 +110,22 @@ export class AprobacionPlanificacionesComponent implements OnInit {
       width: 180,
       cellRenderer: (params: any) => {
         const btn = document.createElement('button');
-        btn.className = 'btn-ver-detalle';
+        btn.className = 'btn-ver-detalle btn-cargar';
+        btn.style.cssText = 'background: #1976d2; color: white; font-weight: 600;';
         
-        //Crear imagen
+        // Crear imagen
         const img = document.createElement('img');
-        img.src = 'assets/icons/eye-open.png';  // Tu imagen
-        img.alt = 'Ver';
+        img.src = 'assets/icons/upload.png'; 
+        img.alt = 'Cargar';
         img.style.cssText = 'width: 18px; height: 18px; object-fit: contain;';
         
         // Texto
         const texto = document.createElement('span');
-        texto.textContent = 'Ver Detalle';
+        texto.textContent = 'CARGAR';
         
         btn.appendChild(img);
         btn.appendChild(texto);
-        btn.onclick = () => this.verDetalle(params.data);
+        btn.onclick = () => this.cargarPlanificacion(params.data);
         
         return btn;
       },
@@ -153,7 +154,8 @@ export class AprobacionPlanificacionesComponent implements OnInit {
   constructor(
     private planificacionService: PlanificacionPagoService,
     private usuarioService: UsuarioService,
-    private dialog: MatDialog
+    private dialog: MatDialog,
+    private dialogRef: MatDialogRef<AprobacionPlanificacionesComponent>
   ) {}
 
   ngOnInit(): void {
@@ -410,6 +412,16 @@ export class AprobacionPlanificacionesComponent implements OnInit {
         loadingDialog.close();
         this.showError('Error: ' + err.message);
       }
+    });
+  }
+  // ===== MÉTODO PARA CARGAR PLANIFICACIÓN =====
+  cargarPlanificacion(transaccion: TransaccionAgrupada): void {
+    console.log('🔄 Cargando planificación en grid principal:', transaccion);
+    
+    // Cerrar el modal y devolver los datos
+    this.dialogRef.close({
+      cargar: true,
+      transaccion: transaccion
     });
   }
 }

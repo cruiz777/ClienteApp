@@ -27,6 +27,13 @@ export interface AprobarPlanificacionRequest {
   id_zona: number;
   id_tipo_asiento: number;
   documentos_a_aprobar?: number[];
+  valores_modificados?: ValorModificadoDto[]
+}
+export interface ValorModificadoDto {
+  id_cuenta_por_pagar: number;
+  valor_pago: number;
+  tipo_pago?: string;
+  comentario?: string;
 }
 export interface DocumentoPendienteRequest {
   id_empresa: number;
