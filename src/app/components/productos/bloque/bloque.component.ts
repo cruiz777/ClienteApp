@@ -1,5 +1,5 @@
 import { Component, HostListener, OnInit, ViewChild, ElementRef } from '@angular/core';
-import { ColDef, GridApi, ModuleRegistry, GridOptions, GridReadyEvent } from 'ag-grid-community';
+import { ColDef, GridApi, ModuleRegistry, GridOptions, GridReadyEvent, themeAlpine } from 'ag-grid-community';
 import { Observable } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
 import { AllCommunityModule } from 'ag-grid-community';
@@ -952,65 +952,113 @@ cargarCliente(): void {
 
   }
 
-  generar13() {
-    const idSeleccionado = this.formUV.value.gcp;
-    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
-    const prefijo = objeto?.codpre || '';
-    const serie = this.formUV.get('serie')?.value || '';
-    this.npais = '786';
-    if (!this.validarCeldasObligatorias()) return;
-    const sinRepetidos = this.validarDescripcionRepetida();
-    if (!sinRepetidos) {
-      this.mostrarAlerta('⚠️ Descripciones Repetidas.', 'Error');
-      return; // Evita continuar
-    }
-    this.generacionCodigosService.obtenerSecuencia(prefijo, this.npais).subscribe({
-      next: (resp: SecuenciaResponse) => {
-        const longitudPrefijo = prefijo.length;
-        const longitudSecuencia = 12 - this.npais.length - longitudPrefijo;
+ generar13(): void {
+  const idSeleccionado = this.formUV.value.gcp;
+  const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+  const prefijo = objeto?.codpre || '';
+  const serie = this.formUV.get('serie')?.value || '';
 
-        if (longitudSecuencia <= 0) {
-          alert(`⚠️ Prefijo demasiado largo (${longitudPrefijo} dígitos). No se puede generar GTIN-13 válido.`);
-          return;
-        }
+  this.npais = '786';
 
-        const secuenciaInicial = serie !== '' ? parseInt(serie, 10) : resp.data;
+  if (!this.validarCeldasObligatorias()) return;
 
-        
-
-        const maxCodigos = Math.pow(10, longitudSecuencia);
-        if (this.rowData.length > maxCodigos) {
-          alert(`⚠️ Solo se pueden generar ${maxCodigos} códigos con prefijo de ${longitudPrefijo} dígitos. Se recortarán automáticamente.`);
-          this.rowData = this.rowData.slice(0, maxCodigos);
-        }
-
-        for (let i = 0; i < this.rowData.length; i++) {
-          const secuenciaActual = (secuenciaInicial + i).toString().padStart(longitudSecuencia, '0');
-          const gtin12 = this.npais + prefijo + secuenciaActual;
-          const dv = this.calcularDigitoVerificador(gtin12);
-          this.rowData[i].gtinUv = gtin12 + dv;
-        }
-
-        // Asignar el primer GTIN generado al formulario
-        const primerSecuencia = secuenciaInicial.toString().padStart(longitudSecuencia, '0');
-        const primerGtin = this.npais + prefijo + primerSecuencia;
-        const primerDv = this.calcularDigitoVerificador(primerGtin);
-        this.formUV.get('gtinUv')?.setValue(primerGtin + primerDv);
-
-        this.mensaje = resp.message;
-        this.secuencia = secuenciaInicial; // Guardar para referencia futura
-        this.rowData = [...this.rowData];
-
-        this.botonGenerarDeshabilitado = true;
-        this.botonGrabarDeshabilitado = false;
-
-      },
-      error: (err) => {
-        console.error('❌ Error al obtener secuencia', err);
-        this.mensaje = 'Error al generar la secuencia';
-      }
-    });
+  const sinRepetidos = this.validarDescripcionRepetida();
+  if (!sinRepetidos) {
+    this.mostrarAlerta('⚠️ Descripciones Repetidas.', 'Error');
+    return;
   }
+
+  this.generacionCodigosService.obtenerSecuencia(prefijo, this.npais).subscribe({
+    next: (resp: SecuenciaResponse) => {
+      const longitudPrefijo = prefijo.length;
+      const longitudSecuencia = 12 - this.npais.length - longitudPrefijo;
+
+      if (longitudSecuencia <= 0) {
+        this.mostrarAlerta(
+          `⚠️ Prefijo demasiado largo (${longitudPrefijo} dígitos). No se puede generar GTIN-13 válido.`,
+          'Error'
+        );
+        return;
+      }
+
+      const secuenciaInicial = serie !== '' ? parseInt(serie, 10) : resp.data;
+
+      // Validación específica por longitud de prefijo
+      let maxCodigosPermitidosPorPrefijo = 0;
+      debugger
+      if (longitudPrefijo === 5) {
+        maxCodigosPermitidosPorPrefijo = 9999;
+      } else if (longitudPrefijo === 6) {
+        maxCodigosPermitidosPorPrefijo = 999;
+      } else if (longitudPrefijo === 8) {
+        maxCodigosPermitidosPorPrefijo = 10;
+      }
+      
+      if (
+        maxCodigosPermitidosPorPrefijo > 0 &&
+        this.rowData.length > maxCodigosPermitidosPorPrefijo
+      ) {
+        this.mostrarAlerta(
+          `⚠️ No puede generar más de ${maxCodigosPermitidosPorPrefijo} códigos para un prefijo de ${longitudPrefijo} dígitos.`,
+          'Error'
+        );
+        return;
+      }
+
+      // Validación general matemática
+      const maxCodigos = Math.pow(10, longitudSecuencia);
+
+      if (this.rowData.length > maxCodigos) {
+        this.mostrarAlerta(
+          `⚠️ Solo se pueden generar ${maxCodigos} códigos con prefijo de ${longitudPrefijo} dígitos. Se recortarán automáticamente.`,
+          'Advertencia'
+        );
+
+        this.rowData = this.rowData.slice(0, maxCodigos);
+      }
+      if(maxCodigos>maxCodigosPermitidosPorPrefijo)
+      {
+          this.mostrarAlerta(
+          `⚠️ Solo se pueden generar ${maxCodigosPermitidosPorPrefijo} códigos con prefijo de ${longitudPrefijo} dígitos. Se recortarán automáticamente.`,
+          'Advertencia'
+        );
+        return;
+      }
+
+      for (let i = 0; i < this.rowData.length; i++) {
+        const secuenciaActual = (secuenciaInicial + i)
+          .toString()
+          .padStart(longitudSecuencia, '0');
+
+        const gtin12 = this.npais + prefijo + secuenciaActual;
+        const dv = this.calcularDigitoVerificador(gtin12);
+
+        this.rowData[i].gtinUv = gtin12 + dv;
+      }
+
+      // Asignar el primer GTIN generado al formulario
+      const primerSecuencia = secuenciaInicial
+        .toString()
+        .padStart(longitudSecuencia, '0');
+
+      const primerGtin = this.npais + prefijo + primerSecuencia;
+      const primerDv = this.calcularDigitoVerificador(primerGtin);
+
+      this.formUV.get('gtinUv')?.setValue(primerGtin + primerDv);
+
+      this.mensaje = resp.message;
+      this.secuencia = secuenciaInicial;
+      this.rowData = [...this.rowData];
+
+      this.botonGenerarDeshabilitado = true;
+      this.botonGrabarDeshabilitado = false;
+    },
+    error: (err) => {
+      console.error('❌ Error al obtener secuencia', err);
+      this.mensaje = 'Error al generar la secuencia';
+    }
+  });
+}
   recupera13() {
     debugger
     const soloCopiarGtin = this.tipoGtin === 'GTIN-13' && this.formUV.get('checkExiste')?.value;

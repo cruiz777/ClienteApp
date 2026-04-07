@@ -47,13 +47,13 @@
         <label>Número documento</label>
         <div class="grupo-inline">
           <input type="number" formControlName="numDoc" />
-         <button
-  class="btn btn-soft"
-  type="button"
-  (click)="cargarNumDocAutomatico()"
-  [disabled]="loadingPreviewCierre || loadingEjecutarCierre || bloquearAccionesCierre">
-  Auto
-</button>
+          <button
+            class="btn btn-soft"
+            type="button"
+            (click)="cargarNumDocAutomatico()"
+            [disabled]="loadingPreviewCierre || loadingEjecutarCierre || bloquearAccionesCierre">
+            Auto
+          </button>
         </div>
       </div>
 
@@ -69,66 +69,66 @@
     </form>
 
     <div class="acciones">
-     <button
-  class="btn btn-outline"
-  type="button"
-  (click)="previewCierre()"
-  [disabled]="loadingPreviewCierre || loadingEjecutarCierre || bloquearAccionesCierre">
-  {{ loadingPreviewCierre ? 'Procesando...' : 'Vista previa cierre' }}
-</button>
+      <button
+        class="btn btn-outline"
+        type="button"
+        (click)="previewCierre()"
+        [disabled]="loadingPreviewCierre || loadingEjecutarCierre || bloquearAccionesCierre">
+        {{ loadingPreviewCierre ? 'Procesando...' : 'Vista previa cierre' }}
+      </button>
 
       <button
-  class="btn btn-primary"
-  type="button"
-  (click)="confirmarEjecutarCierre()"
-  [disabled]="loadingPreviewCierre || loadingEjecutarCierre || bloquearAccionesCierre">
-  {{ loadingEjecutarCierre ? 'Ejecutando...' : 'Ejecutar cierre' }}
-</button>
+        class="btn btn-primary"
+        type="button"
+        (click)="confirmarEjecutarCierre()"
+        [disabled]="loadingPreviewCierre || loadingEjecutarCierre || bloquearAccionesCierre">
+        {{ loadingEjecutarCierre ? 'Ejecutando...' : 'Ejecutar cierre' }}
+      </button>
 
       <button
-  class="btn btn-soft"
-  type="button"
-  (click)="limpiarCierre()"
-  [disabled]="loadingPreviewCierre || loadingEjecutarCierre">
-  Cancelar
-</button>
+        class="btn btn-soft"
+        type="button"
+        (click)="limpiarCierre()"
+        [disabled]="loadingPreviewCierre || loadingEjecutarCierre">
+        Cancelar
+      </button>
     </div>
 
     <div class="resultado" *ngIf="resultadoPreviewCierre">
       <div class="resultado-header">
         <h4>Resultado vista previa</h4>
-        <span class="badge badge-info">{{ resultadoPreviewCierre?.estado }}</span>
+        <span class="badge badge-info">{{ resultadoPreviewCierre.estado }}</span>
       </div>
 
       <div class="resumen-grid">
         <div class="resumen-card">
           <span class="resumen-label">Año</span>
-          <strong>{{ resultadoPreviewCierre?.anioCerrado }}</strong>
+          <strong>{{ resultadoPreviewCierre.anioCerrado }}</strong>
         </div>
 
         <div class="resumen-card">
           <span class="resumen-label">NumDoc</span>
-          <strong>{{ resultadoPreviewCierre?.numDoc }}</strong>
+          <strong>{{ resultadoPreviewCierre.numDoc }}</strong>
         </div>
 
         <div class="resumen-card">
           <span class="resumen-label">Total Debe</span>
-          <strong>{{ resultadoPreviewCierre?.totalDebe | number:'1.2-2' }}</strong>
+          <strong>{{ resultadoPreviewCierre.totalDebe | number:'1.2-2' }}</strong>
         </div>
 
         <div class="resumen-card">
           <span class="resumen-label">Total Haber</span>
-          <strong>{{ resultadoPreviewCierre?.totalHaber | number:'1.2-2' }}</strong>
+          <strong>{{ resultadoPreviewCierre.totalHaber | number:'1.2-2' }}</strong>
         </div>
 
         <div class="resumen-card destacado">
           <span class="resumen-label">Diferencia Original</span>
-          <strong>{{ resultadoPreviewCierre?.diferenciaOriginal | number:'1.2-2' }}</strong>
+          <strong>{{ resultadoPreviewCierre.diferenciaOriginal | number:'1.2-2' }}</strong>
         </div>
 
         <div class="resumen-card">
           <span class="resumen-label">Fecha Cierre</span>
-          <strong>{{ resultadoPreviewCierre?.fechaCierre | date:'yyyy-MM-dd' }}</strong>
+          <strong>{{ resultadoPreviewCierre.fechaCierre | date:'yyyy-MM-dd' }}</strong>
         </div>
       </div>
     </div>
@@ -136,38 +136,38 @@
     <div class="resultado ok" *ngIf="resultadoEjecutarCierre">
       <div class="resultado-header">
         <h4>Resultado ejecución</h4>
-        <span class="badge badge-success">{{ resultadoEjecutarCierre?.estado }}</span>
+        <span class="badge badge-success">{{ resultadoEjecutarCierre.estado }}</span>
       </div>
 
       <div class="resumen-grid">
         <div class="resumen-card">
           <span class="resumen-label">Id Cabecera</span>
-          <strong>{{ resultadoEjecutarCierre?.idCabMaestro }}</strong>
+          <strong>{{ resultadoEjecutarCierre.idCabMaestro }}</strong>
         </div>
 
         <div class="resumen-card">
           <span class="resumen-label">Año</span>
-          <strong>{{ resultadoEjecutarCierre?.anioCerrado }}</strong>
+          <strong>{{ resultadoEjecutarCierre.anioCerrado }}</strong>
         </div>
 
         <div class="resumen-card">
           <span class="resumen-label">NumDoc</span>
-          <strong>{{ resultadoEjecutarCierre?.numDoc }}</strong>
+          <strong>{{ resultadoEjecutarCierre.numDoc }}</strong>
         </div>
 
         <div class="resumen-card">
           <span class="resumen-label">Total Debe</span>
-          <strong>{{ resultadoEjecutarCierre?.totalDebe | number:'1.2-2' }}</strong>
+          <strong>{{ resultadoEjecutarCierre.totalDebe | number:'1.2-2' }}</strong>
         </div>
 
         <div class="resumen-card">
           <span class="resumen-label">Total Haber</span>
-          <strong>{{ resultadoEjecutarCierre?.totalHaber | number:'1.2-2' }}</strong>
+          <strong>{{ resultadoEjecutarCierre.totalHaber | number:'1.2-2' }}</strong>
         </div>
 
         <div class="resumen-card destacado">
           <span class="resumen-label">Diferencia Original</span>
-          <strong>{{ resultadoEjecutarCierre?.diferenciaOriginal | number:'1.2-2' }}</strong>
+          <strong>{{ resultadoEjecutarCierre.diferenciaOriginal | number:'1.2-2' }}</strong>
         </div>
       </div>
     </div>
@@ -202,70 +202,70 @@
 
     <div class="acciones">
       <button
-  class="btn btn-outline"
-  type="button"
-  (click)="previewReversion()"
-  [disabled]="loadingPreviewReversion || loadingEjecutarReversion || bloquearAccionesReversion">
-  {{ loadingPreviewReversion ? 'Procesando...' : 'Vista previa reversión' }}
-</button>
-
-     <button
-  class="btn btn-danger"
-  type="button"
-  (click)="confirmarEjecutarReversion()"
-  [disabled]="loadingPreviewReversion || loadingEjecutarReversion || bloquearAccionesReversion">
-  {{ loadingEjecutarReversion ? 'Ejecutando...' : 'Ejecutar reversión' }}
-</button>
+        class="btn btn-outline"
+        type="button"
+        (click)="previewReversion()"
+        [disabled]="loadingPreviewReversion || loadingEjecutarReversion || bloquearAccionesReversion">
+        {{ loadingPreviewReversion ? 'Procesando...' : 'Vista previa reversión' }}
+      </button>
 
       <button
-  class="btn btn-soft"
-  type="button"
-  (click)="limpiarReversion()"
-  [disabled]="loadingPreviewReversion || loadingEjecutarReversion">
-  Cancelar
-</button>
+        class="btn btn-danger"
+        type="button"
+        (click)="confirmarEjecutarReversion()"
+        [disabled]="loadingPreviewReversion || loadingEjecutarReversion || bloquearAccionesReversion">
+        {{ loadingEjecutarReversion ? 'Ejecutando...' : 'Ejecutar reversión' }}
+      </button>
+
+      <button
+        class="btn btn-soft"
+        type="button"
+        (click)="limpiarReversion()"
+        [disabled]="loadingPreviewReversion || loadingEjecutarReversion">
+        Cancelar
+      </button>
     </div>
 
     <div class="resultado" *ngIf="resultadoPreviewReversion">
       <div class="resultado-header">
         <h4>Resultado vista previa reversión</h4>
-        <span class="badge badge-info">{{ resultadoPreviewReversion?.estado }}</span>
+        <span class="badge badge-info">{{ resultadoPreviewReversion.estado }}</span>
       </div>
 
       <div class="resumen-grid">
         <div class="resumen-card">
           <span class="resumen-label">Id Cabecera</span>
-          <strong>{{ resultadoPreviewReversion?.idCabMaestroReversado }}</strong>
+          <strong>{{ resultadoPreviewReversion.idCabMaestroReversado }}</strong>
         </div>
 
         <div class="resumen-card">
           <span class="resumen-label">Año</span>
-          <strong>{{ resultadoPreviewReversion?.anioReversado }}</strong>
+          <strong>{{ resultadoPreviewReversion.anioReversado }}</strong>
         </div>
 
         <div class="resumen-card">
           <span class="resumen-label">NumDoc</span>
-          <strong>{{ resultadoPreviewReversion?.numDoc }}</strong>
+          <strong>{{ resultadoPreviewReversion.numDoc }}</strong>
         </div>
 
         <div class="resumen-card">
           <span class="resumen-label">Total líneas</span>
-          <strong>{{ resultadoPreviewReversion?.totalLineasEliminadas }}</strong>
+          <strong>{{ resultadoPreviewReversion.totalLineasEliminadas }}</strong>
         </div>
 
         <div class="resumen-card">
           <span class="resumen-label">Total Debe</span>
-          <strong>{{ resultadoPreviewReversion?.totalDebeEliminado | number:'1.2-2' }}</strong>
+          <strong>{{ resultadoPreviewReversion.totalDebeEliminado | number:'1.2-2' }}</strong>
         </div>
 
         <div class="resumen-card">
           <span class="resumen-label">Total Haber</span>
-          <strong>{{ resultadoPreviewReversion?.totalHaberEliminado | number:'1.2-2' }}</strong>
+          <strong>{{ resultadoPreviewReversion.totalHaberEliminado | number:'1.2-2' }}</strong>
         </div>
 
         <div class="resumen-card destacado">
           <span class="resumen-label">Movimientos a reabrir</span>
-          <strong>{{ resultadoPreviewReversion?.movimientosAReabrir }}</strong>
+          <strong>{{ resultadoPreviewReversion.movimientosAReabrir }}</strong>
         </div>
       </div>
     </div>
@@ -273,38 +273,38 @@
     <div class="resultado ok" *ngIf="resultadoEjecutarReversion">
       <div class="resultado-header">
         <h4>Resultado ejecución reversión</h4>
-        <span class="badge badge-success">{{ resultadoEjecutarReversion?.estado }}</span>
+        <span class="badge badge-success">{{ resultadoEjecutarReversion.estado }}</span>
       </div>
 
       <div class="resumen-grid">
         <div class="resumen-card">
           <span class="resumen-label">Id Cabecera</span>
-          <strong>{{ resultadoEjecutarReversion?.idCabMaestroReversado }}</strong>
+          <strong>{{ resultadoEjecutarReversion.idCabMaestroReversado }}</strong>
         </div>
 
         <div class="resumen-card">
           <span class="resumen-label">Año</span>
-          <strong>{{ resultadoEjecutarReversion?.anioReversado }}</strong>
+          <strong>{{ resultadoEjecutarReversion.anioReversado }}</strong>
         </div>
 
         <div class="resumen-card">
           <span class="resumen-label">NumDoc</span>
-          <strong>{{ resultadoEjecutarReversion?.numDoc }}</strong>
+          <strong>{{ resultadoEjecutarReversion.numDoc }}</strong>
         </div>
 
         <div class="resumen-card">
           <span class="resumen-label">Total líneas eliminadas</span>
-          <strong>{{ resultadoEjecutarReversion?.totalLineasEliminadas }}</strong>
+          <strong>{{ resultadoEjecutarReversion.totalLineasEliminadas }}</strong>
         </div>
 
         <div class="resumen-card">
           <span class="resumen-label">Total Debe eliminado</span>
-          <strong>{{ resultadoEjecutarReversion?.totalDebeEliminado | number:'1.2-2' }}</strong>
+          <strong>{{ resultadoEjecutarReversion.totalDebeEliminado | number:'1.2-2' }}</strong>
         </div>
 
         <div class="resumen-card">
           <span class="resumen-label">Total Haber eliminado</span>
-          <strong>{{ resultadoEjecutarReversion?.totalHaberEliminado | number:'1.2-2' }}</strong>
+          <strong>{{ resultadoEjecutarReversion.totalHaberEliminado | number:'1.2-2' }}</strong>
         </div>
       </div>
     </div>
