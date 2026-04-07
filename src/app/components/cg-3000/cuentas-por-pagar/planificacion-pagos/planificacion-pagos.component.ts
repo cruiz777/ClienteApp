@@ -65,6 +65,7 @@ export class PlanificacionPagosComponent implements OnInit {
   // ===== GRID =====
   documentosRows: DocumentoPendienteResponse[] = [];
   private gridApiDocumentos!: GridApi;
+  mostrarDropdownExcel = false;
 
   // ===== COLUMNAS AG-GRID =====
   columnDefsDocumentos: ColDef[] = [
@@ -257,41 +258,14 @@ export class PlanificacionPagosComponent implements OnInit {
         return { fontWeight: 'bold', color: '#d32f2f' };
       }) as any,
       editable: false
-    },
+    },    
     {
       field: 'seleccionado',
-      pinned: 'left',
       headerName: '',
       width: 50,
       checkboxSelection: (params) => !params.data?.esSubtotal && !params.data?.esEspacio,
       headerCheckboxSelection: true,
-      editable: (params) => !params.data?.esSubtotal && !params.data?.esEspacio,
-      // ⭐ AGREGAR EVENTO DE SELECCIÓN
-      onCellClicked: (params) => {
-        if (params.data?.esSubtotal || params.data?.esEspacio) return;
-        
-        // Alternar selección
-        const isSelected = this.gridApiDocumentos.getSelectedRows().includes(params.data);
-        
-        if (isSelected) {
-          // ⭐ SELECCIONADO → Llenar con saldo completo
-          const saldoDoc = Math.abs(params.data.saldo || 0);
-          params.data.monto_a_pagar = saldoDoc;
-          params.data.tipo_pago_seleccionado = 'P';
-        } else {
-          // ⭐ DESELECCIONADO → Limpiar
-          params.data.monto_a_pagar = 0;
-          params.data.tipo_pago_seleccionado = null;
-        }
-        
-        this.gridApiDocumentos.refreshCells({
-          rowNodes: [params.node],
-          columns: ['monto_a_pagar', 'tipo_pago_seleccionado'],
-          force: true
-        });
-        
-        this.calcularTotales();
-      },
+      editable: false, 
       cellStyle: ((params: any) => {
         if (params.data?.esEspacio) {
           return { backgroundColor: '#fff', border: 'none' };
@@ -304,7 +278,7 @@ export class PlanificacionPagosComponent implements OnInit {
             fontSize: '14px'
           };
         }
-        return { backgroundColor: '#fff9c4', fontWeight: 'normal' };
+        return { backgroundColor: '#fff', textAlign: 'center' };
       }) as any,
     },
     {
@@ -513,6 +487,7 @@ export class PlanificacionPagosComponent implements OnInit {
     groupHideOpenParents: false,
     rowGroupPanelShow: 'never' as const,
     groupTotalRow: 'bottom' as const,
+    suppressRowClickSelection: true,
     isRowSelectable: (node: any) => {
       return !node.data?.esSubtotal && !node.data?.esEspacio;
     },
@@ -696,7 +671,41 @@ private calcularTotales(): void {
     
     // DIFERENCIA = Si pagaste de más o de menos vs lo marcado
     this.diferencia = this.totalAPlanificar - this.totalMarcado;
+      this.actualizarSubtotales(); 
   }
+
+  private actualizarSubtotales(): void {
+    let indexActual = 0;
+    
+    while (indexActual < this.documentosRows.length) {
+      const fila = this.documentosRows[indexActual] as any;  // ✅ Agregar 'as any'
+      
+      // Si es SUBTOTAL, recalcular
+      if (fila.esSubtotal) {
+        // Buscar hacia atrás los documentos de este proveedor
+        let subtotalMonto = 0;
+        
+        for (let i = indexActual - 1; i >= 0; i--) {
+          const docAnterior = this.documentosRows[i] as any;  // ✅ Agregar 'as any'
+          
+          // Si llegamos a otro subtotal o espacio, paramos
+          if (docAnterior.esSubtotal || docAnterior.esEspacio) break;
+          
+          // Sumar monto a pagar
+          subtotalMonto += (docAnterior.monto_a_pagar || 0);
+        }
+        
+        // Actualizar subtotal
+        fila.monto_a_pagar = subtotalMonto > 0 ? subtotalMonto : 0;  // ✅ Cambiar null a 0
+      }
+      
+      indexActual++;
+    }
+    
+    // Refrescar grid
+    this.gridApiDocumentos?.applyTransaction({ update: this.documentosRows });
+  }
+
   ngOnInit(): void {
     this.cargarDatosUsuario();
     this.initForms();
@@ -721,6 +730,8 @@ private calcularTotales(): void {
     );
   }
 
+
+  
 // ===== INICIALIZACIÓN =====
   private cargarDatosUsuario(): void {
     this.usuarioActual = this.usuarioService.getUsuarioActual();
@@ -901,7 +912,7 @@ private calcularTotales(): void {
     });
   }
 
-  private agruparPorProveedor(docs: DocumentoPendienteResponse[]): any[] {
+  private agruparPorProveedor(docs: DocumentoPendienteResponse[], preservarValores: boolean = false): any[] {
     const resultado: any[] = [];
     
     // Agrupar por proveedor
@@ -909,18 +920,24 @@ private calcularTotales(): void {
       const key = doc.id_proveedor || 'SIN_PROVEEDOR';
       if (!acc[key]) acc[key] = [];
       
-      // ⭐ SOLO preservar si monto_a_pagar > 0 (viene de planificación)
-      // ⭐ Si es 0 o undefined, inicializar en 0
-      const montoExistente = (doc.monto_a_pagar && doc.monto_a_pagar > 0) ? doc.monto_a_pagar : 0;
-      const tipoExistente = montoExistente > 0 ? doc.tipo_pago_seleccionado : null;
+      // ⭐ LÓGICA CONDICIONAL
+      let montoInicial = 0;
+      let tipoInicial = null;
+      
+      if (preservarValores) {
+        //CARGAR PLANIFICACIÓN: preservar valores
+        montoInicial = doc.monto_a_pagar || 0;
+        tipoInicial = doc.tipo_pago_seleccionado || null;
+      }
+      // Si NO preservarValores, quedan en 0 y null
       
       acc[key].push({
         ...doc,
         esSubtotal: false,
         esEspacio: false,
         seleccionado: false,
-        tipo_pago_seleccionado: tipoExistente,
-        monto_a_pagar: montoExistente,
+        tipo_pago_seleccionado: tipoInicial,
+        monto_a_pagar: montoInicial,
         exceso: null,
       });
       return acc;
@@ -936,7 +953,7 @@ private calcularTotales(): void {
       // 2. Calcular subtotal
       const subtotalSaldo = docsProveedor.reduce((sum, d) => sum + (d.saldo || 0), 0);
       const subtotalMonto = docsProveedor.reduce((sum, d) => sum + (d.monto_a_pagar || 0), 0);
-      
+
       // 3. Agregar fila de SUBTOTAL
       resultado.push({
         esSubtotal: true,
@@ -1264,8 +1281,38 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
       return;
     }
 
-    //Preparar datos para Excel
-    const datosExcel = seleccionados.map(d => ({
+    this.exportarDocumentosExcel(seleccionados, 'Seleccionados');
+  }
+
+  exportarNoSeleccionadosExcel(): void {
+    const noSeleccionados = this.documentosRows.filter((d: any) => 
+      !d.esSubtotal && !d.esEspacio && (!d.monto_a_pagar || d.monto_a_pagar === 0)
+    );
+
+    if (noSeleccionados.length === 0) {
+      this.showError('No hay documentos sin seleccionar para exportar');
+      return;
+    }
+
+    this.exportarDocumentosExcel(noSeleccionados, 'No_Seleccionados');
+  }
+
+  exportarTodosExcel(): void {
+    const todos = this.documentosRows.filter((d: any) => 
+      !d.esSubtotal && !d.esEspacio
+    );
+
+    if (todos.length === 0) {
+      this.showError('No hay documentos para exportar');
+      return;
+    }
+
+    this.exportarDocumentosExcel(todos, 'Todos');
+  }
+
+  // ===== MÉTODO COMÚN PARA EXPORTAR =====
+  private exportarDocumentosExcel(documentos: any[], tipo: string): void {
+    const datosExcel = documentos.map(d => ({
       'Cód. Proveedor': d.id_proveedor,
       'Proveedor': d.nombre_proveedor,
       'Tipo Movimiento': d.descripcion_tipo_movimiento,
@@ -1276,20 +1323,18 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
       'Saldo': d.saldo,
       'Tipo Pago': d.tipo_pago_seleccionado === 'P' ? 'PAGADO' : 
                   d.tipo_pago_seleccionado === 'A' ? 'ABONADO' : 'NINGUNO',
-      'Monto a Pagar': d.monto_a_pagar,
+      'Monto a Pagar': d.monto_a_pagar || 0,
       'Observaciones': d.observaciones || ''
     }));
 
-    //Crear libro Excel
     const ws = XLSX.utils.json_to_sheet(datosExcel);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'Documentos a Pagar');
+    XLSX.utils.book_append_sheet(wb, ws, 'Documentos');
 
-    //Descargar archivo
     const fecha = new Date().toISOString().split('T')[0];
-    XLSX.writeFile(wb, `Planificacion_Pago_${fecha}.xlsx`);
+    XLSX.writeFile(wb, `Planificacion_${tipo}_${fecha}.xlsx`);
 
-    this.showSuccess(`${seleccionados.length} documentos exportados a Excel`);
+    this.showSuccess(`${documentos.length} documentos exportados a Excel (${tipo})`);
   }
 
     // ===== MODAL APROBACIÓN =====
@@ -1310,7 +1355,80 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
       }
     });
   }
+  procesarExcelPagos(event: any): void {
+    const file = event.target.files[0];
+    if (!file) return;
 
+    const reader = new FileReader();
+    reader.onload = (e: any) => {
+      try {
+        // Leer Excel
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
+
+        // Buscar índices de columnas
+        const headers = jsonData[0] as string[];
+        const colComprobante = headers.findIndex(h => 
+          h && h.toString().toLowerCase().includes('comp')
+        );
+        const colTipoPago = headers.findIndex(h => 
+          h && h.toString().toLowerCase().includes('tipo') && h.toString().toLowerCase().includes('pago')
+        );
+
+        if (colComprobante === -1 || colTipoPago === -1) {
+          this.showError('El Excel debe contener columnas "No. Comprobante" y "Tipo Pago"');
+          return;
+        }
+
+        // Procesar filas (saltar header)
+        let marcados = 0;
+        for (let i = 1; i < jsonData.length; i++) {
+          const fila = jsonData[i];
+          const numComprobante = fila[colComprobante]?.toString().trim();
+          const tipoPago = fila[colTipoPago]?.toString().trim().toUpperCase();
+
+          // Solo procesar si tiene "P"
+          if (tipoPago === 'P' && numComprobante) {
+            // Buscar documento en grid
+            const doc = this.documentosRows.find((d: any) => 
+              !d.esSubtotal && 
+              !d.esEspacio && 
+              d.numero_comprobante?.toString().trim() === numComprobante
+            );
+
+            if (doc) {
+              const saldoDoc = Math.abs(doc.saldo || 0);
+              doc.monto_a_pagar = saldoDoc;
+              doc.tipo_pago_seleccionado = 'P';
+              marcados++;
+            }
+          }
+        }
+
+        // Actualizar grid
+        this.gridApiDocumentos?.applyTransaction({ update: this.documentosRows });
+        this.calcularTotales();
+
+        // Limpiar input
+        event.target.value = '';
+
+        // Mensaje de resultado
+        if (marcados > 0) {
+          this.showSuccess(`✅ ${marcados} documento(s) marcado(s) para pago desde Excel`);
+        } else {
+          this.showError('No se encontraron documentos con "P" en el Excel');
+        }
+
+      } catch (err) {
+        console.error('❌ Error procesando Excel:', err);
+        this.showError('Error al leer el archivo Excel');
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+  }
   cargarPlanificacionEnGrid(transaccion: any): void {
     console.log('📥 Cargando planificación:', transaccion);
     console.log('📥 Items recibidos:', transaccion._items);
@@ -1369,7 +1487,7 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
     console.log('📊 Primer doc - monto_a_pagar:', documentosFormateados[0]?.monto_a_pagar);
 
     // Agrupar por proveedor (con subtotales)
-    const documentosConSubtotales = this.agruparPorProveedor(documentosFormateados);
+    const documentosConSubtotales = this.agruparPorProveedor(documentosFormateados,true);
     
     console.log('📊 Con subtotales:', documentosConSubtotales);
     
@@ -1398,5 +1516,8 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
   }
   get totalDocumentosReales(): number {
     return this.documentosRows.filter((d: any) => !d.esSubtotal && !d.esEspacio).length;
+  }
+  toggleDropdownExcel(): void {
+    this.mostrarDropdownExcel = !this.mostrarDropdownExcel;
   }
 }

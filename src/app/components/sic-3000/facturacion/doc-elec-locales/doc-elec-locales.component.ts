@@ -72,6 +72,7 @@ export const MY_DATE_FORMATS = {
 export class DocElecLocalesComponent implements OnInit {
   
   tipoDocumentoActivo: TipoDocumento = 'FACTURA';
+  filtroAnulados: string = 'todos';
 // CAMBIAR los tipos de documentos disponibles para iterar en el HTML
 readonly tiposDocumento: { key: TipoDocumento; label: string }[] = [
   { key: 'FACTURA',     label: 'Facturas' },
@@ -84,6 +85,7 @@ readonly tiposDocumento: { key: TipoDocumento; label: string }[] = [
   rowClassRules = {
     'row-no-encontrado': (p: any) => p.data?.estadoComparacion === 'NO_ENCONTRADO',
     'row-no-autorizado': (p: any) => p.data?.estadoComparacion === 'NO_AUTORIZADO',
+    'fila-anulada': (p: any) => p.data?.estaAnuladoErp || p.data?.estaAnuladoSri
   };
   filtrosForm: FormGroup;
   columnDefs: ColDef[] = [];
@@ -231,6 +233,7 @@ readonly tiposDocumento: { key: TipoDocumento; label: string }[] = [
           onVerXML:   (ca: string)             => this.verXML(ca),
           onReenviar: (id: number, ca: string) => this.reenviarCorreo(id, ca),
           onAnular:   (id: number)             => this.anularDocumento(id),
+          isAnulado:  (data: any) => data.estaAnuladoErp || data.estaAnuladoSri
         },
         suppressMovable: true,
       },
@@ -244,11 +247,19 @@ readonly tiposDocumento: { key: TipoDocumento; label: string }[] = [
         field: 'estadoComparacion',
         width: 160,
         cellStyle: (p) => {
+          if (p.data?.estaAnuladoErp || p.data?.estaAnuladoSri) {
+            return { color: '#b91c1c', fontWeight: 'bold' };
+          }
+          // Lo demás igual
           if (p.value === 'NO_ENCONTRADO') return { color: '#b91c1c', fontWeight: 'bold' };
           if (p.value === 'NO_AUTORIZADO') return { color: '#92400e', fontWeight: 'bold' };
           return { color: '#166534', fontWeight: 'bold' };
         },
-        valueFormatter: (p) => {
+        valueFormatter: (p) => {        
+          if (p.data?.estaAnuladoErp || p.data?.estaAnuladoSri) {
+            return '🚫 Anulado';
+          }
+          // Lo demás igual
           if (p.value === 'NO_ENCONTRADO') return '❌ No enviado';
           if (p.value === 'NO_AUTORIZADO') return '⚠️ No autorizado';
           return '✅ Autorizado';
@@ -507,10 +518,20 @@ readonly tiposDocumento: { key: TipoDocumento; label: string }[] = [
   // CARGA DE DATOS
   // ========================================
 
-  private cargarDocumentos(): void {
+  cargarDocumentos(): void {
     const { fechaDesde, fechaHasta, textoBusqueda } = this.filtrosForm.value;
     this.loading = true;
 
+    //Consulta de anulados
+    let soloAnulados: boolean | null = null;
+    if (this.filtroAnulados === 'anulados') soloAnulados = false;
+    if (this.filtroAnulados === 'no_anulados') soloAnulados = true;
+    
+    console.log('🔍 VERIFICAR:', {
+      filtroAnulados: this.filtroAnulados,
+      soloAnulados: soloAnulados,
+      tipo: typeof soloAnulados
+    });
     forkJoin({
       erp: this.docService.obtenerDocumentosErp(
         fechaDesde, fechaHasta, this.tipoDocumentoActivo,
@@ -558,9 +579,16 @@ readonly tiposDocumento: { key: TipoDocumento; label: string }[] = [
           totalIva:           c.erp.totalIva    ?? 0,
           descuento:          c.erp.descuento   ?? 0,
           numeroFacturaRef:   c.erp.numeroFacturaRef  ?? null,
-          fechaFacturaRef:    c.erp.fechaFacturaRef?.split('T')[0] ?? null
+          fechaFacturaRef:    c.erp.fechaFacturaRef?.split('T')[0] ?? null,
+          estaAnuladoErp: c.erp.estaAnulado,
+          estaAnuladoSri: (c.docElectronico?.observacion ?? '').toUpperCase().includes('ANULA')
        }));
 
+       if (this.filtroAnulados === 'anulados') {
+        this.rowData = this.rowData.filter(d => d.estaAnuladoErp || d.estaAnuladoSri);
+      } else if (this.filtroAnulados === 'no_anulados') {
+        this.rowData = this.rowData.filter(d => !d.estaAnuladoErp && !d.estaAnuladoSri);
+      }
         this.totalItems = this.rowData.length;
         this.loading = false;
       },

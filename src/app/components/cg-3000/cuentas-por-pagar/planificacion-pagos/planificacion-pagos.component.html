@@ -350,14 +350,47 @@
         <mat-icon>clear_all</mat-icon>
         Limpiar valores
       </button>
-      
+
       <button 
-        class="compact-btn" 
-        (click)="exportarSeleccionadosExcel()" 
-        [disabled]="!totalDocumentosSeleccionados">
-        <mat-icon>file_download</mat-icon>
-        Exportar Excel
+        class="compact-btn compact-btn-accent" 
+        (click)="fileInput.click()" 
+        [disabled]="!totalDocumentosReales">
+        <mat-icon>upload_file</mat-icon>
+        Cargar Excel
       </button>
+      <input 
+        #fileInput 
+        type="file" 
+        accept=".xlsx,.xls" 
+        style="display: none" 
+        (change)="procesarExcelPagos($event)">
+        
+      <!-- DROPDOWN PARA EXPORTAR EXCEL -->
+      <div class="dropdown-excel">
+        <button 
+          class="compact-btn btn-excel"
+          (click)="toggleDropdownExcel()"
+          [disabled]="!totalDocumentosReales">
+          <mat-icon>file_download</mat-icon>
+          Exportar Excel
+          <mat-icon class="arrow">{{ mostrarDropdownExcel ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </button>
+        
+        <div class="dropdown-menu-excel" *ngIf="mostrarDropdownExcel">
+          <button (click)="exportarSeleccionadosExcel(); toggleDropdownExcel()">
+            <mat-icon>check_box</mat-icon>
+            <span>Seleccionados ({{ totalDocumentosSeleccionados }})</span>
+          </button>
+          <button (click)="exportarNoSeleccionadosExcel(); toggleDropdownExcel()">
+            <mat-icon>check_box_outline_blank</mat-icon>
+            <span>No Seleccionados ({{ totalDocumentosReales - totalDocumentosSeleccionados }})</span>
+          </button>
+          <button (click)="exportarTodosExcel(); toggleDropdownExcel()">
+            <mat-icon>select_all</mat-icon>
+            <span>Todos ({{ totalDocumentosReales }})</span>
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="grid-wrapper-compact" style="min-height: 300px; max-height: 350px;">

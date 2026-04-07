@@ -10,6 +10,7 @@ export interface AccionesCellParams extends ICellRendererParams {
   onVerXML: (claveAcceso: string) => void;
   onReenviar: (id: number, claveAcceso: string) => void;
   onAnular: (id: number) => void;
+  isAnulado?: (data: DocumentoGrid) => boolean; // 👈 AGREGAR
 }
 
 @Component({
@@ -18,7 +19,7 @@ export interface AccionesCellParams extends ICellRendererParams {
     <div class="acciones-container">
       <button
         class="action-btn"
-        [disabled]="!puedeReimprimir"
+        [disabled]="!puedeReimprimir || estaAnulado"
         (click)="onClickPDF()"
         title="Ver PDF"
       >
@@ -27,7 +28,7 @@ export interface AccionesCellParams extends ICellRendererParams {
 
       <button
         class="action-btn"
-        [disabled]="!puedeReimprimir"
+        [disabled]="!puedeReimprimir || estaAnulado"
         (click)="onClickXML()"
         title="Ver XML"
       >
@@ -36,7 +37,7 @@ export interface AccionesCellParams extends ICellRendererParams {
 
       <button
         class="action-btn"
-        [disabled]="!puedeReimprimir"
+        [disabled]="!puedeReimprimir || estaAnulado"
         (click)="onClickReenviar()"
         title="Reenviar correo"
       >
@@ -45,6 +46,7 @@ export interface AccionesCellParams extends ICellRendererParams {
 
       <button
         class="action-btn"
+        [disabled]="estaAnulado"
         (click)="onClickAnular()"
         title="Anular documento"
       >
@@ -120,38 +122,41 @@ export interface AccionesCellParams extends ICellRendererParams {
 export class AccionesCellRendererComponent implements ICellRendererAngularComp {
   params!: AccionesCellParams;
   puedeReimprimir = false;
+  estaAnulado = false; // 👈 AGREGAR
 
   agInit(params: AccionesCellParams): void {
     this.params = params;
     this.puedeReimprimir = params.data?.puedeReimprimir ?? false;
+    this.estaAnulado = params.isAnulado ? params.isAnulado(params.data) : false; // 👈 AGREGAR
   }
 
   refresh(params: AccionesCellParams): boolean {
     this.params = params;
     this.puedeReimprimir = params.data?.puedeReimprimir ?? false;
+    this.estaAnulado = params.isAnulado ? params.isAnulado(params.data) : false; // 👈 AGREGAR
     return true;
   }
 
   onClickPDF(): void {
-    if (this.puedeReimprimir && this.params.onVerPDF) {
+    if (this.puedeReimprimir && !this.estaAnulado && this.params.onVerPDF) {
       this.params.onVerPDF(this.params.data.claveAcceso);
     }
   }
 
   onClickXML(): void {
-    if (this.puedeReimprimir && this.params.onVerXML) {
+    if (this.puedeReimprimir && !this.estaAnulado && this.params.onVerXML) {
       this.params.onVerXML(this.params.data.claveAcceso);
     }
   }
 
   onClickReenviar(): void {
-    if (this.puedeReimprimir && this.params.onReenviar) {
+    if (this.puedeReimprimir && !this.estaAnulado && this.params.onReenviar) {
       this.params.onReenviar(this.params.data.id, this.params.data.claveAcceso);
     }
   }
 
   onClickAnular(): void {
-    if (this.params.onAnular) {
+    if (!this.estaAnulado && this.params.onAnular) {
       this.params.onAnular(this.params.data.id);
     }
   }

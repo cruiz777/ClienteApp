@@ -528,6 +528,12 @@ select.compact-input {
 .distribucion-panel {
   background: var(--accent-light);
   border-left: 4px solid var(--accent);
+  padding: 8px; // ✅ Reducido
+  
+  .section-header-compact {
+    margin-bottom: 6px;
+    font-size: 11px; // ✅ Más pequeño
+  }
 }
 
 .distribucion-content {
@@ -767,124 +773,87 @@ select.compact-input {
       box-shadow: 0 2px 8px rgba(0, 44, 108, 0.3);
     }
   }
-}/* ===== FILAS DE AGRUPACIÓN AG-GRID ===== */
-::ng-deep .ag-theme-material {
-  .subtotal-row {
-    background: #e3f2fd !important;
-    font-weight: 600 !important;
-    border-top: 2px solid #1976d2 !important;
-    border-bottom: 2px solid #1976d2 !important;
-  }
-
-  .grupo-row {
-    background: #f5f5f5 !important;
-    font-weight: 500 !important;
-  }
-
-  // Asegurar que la columna de agrupación se vea
-  .ag-group-expanded,
-  .ag-group-contracted {
-    .ag-icon {
-      color: var(--primary) !important;
-    }
-  }
-
-  // Estilo para la celda de subtotal
-  .ag-row-footer {
-    background: #e3f2fd !important;
-    font-weight: 600 !important;
-    border-top: 2px solid var(--primary) !important;
-    border-bottom: 2px solid var(--primary) !important;
-  }
 }
+
+/* ===== CHECKBOXES - VERSIÓN SIMPLIFICADA SIN ::after ===== */
 ::ng-deep .ag-theme-material {
-  .ag-row[row-index] {
-    &:has([col-id="nombre_proveedor"]:empty) {
-      height: 8px !important;
-      background: transparent !important;
-      border: none !important;
-      
-      .ag-cell {
-        border: none !important;
-        background: transparent !important;
-      }
-    }
-  }
-}
-/* ===== CHECKBOXES MÁS VISIBLES Y OBVIOS ===== */
-::ng-deep .ag-theme-material {
-  // Checkbox NO seleccionado - borde grueso
-  .ag-checkbox-input-wrapper {
-    width: 22px !important;
-    height: 22px !important;
-    
-    input[type="checkbox"] {
-      width: 22px !important;
-      height: 22px !important;
-      cursor: pointer !important;
-    }
-    
-    &::after {
-      width: 22px !important;
-      height: 22px !important;
-      border: 3px solid #757575 !important;
-      border-radius: 4px !important;
-    }
-  }
-  
-  // ✅ Checkbox SELECCIONADO - fondo azul con check blanco
-  .ag-checkbox-input-wrapper.ag-checked {
-    &::after {
-      background-color: var(--primary) !important;
-      border-color: var(--primary) !important;
-      color: white !important;
-      font-size: 18px !important;
-      font-weight: bold !important;
-      line-height: 22px !important;
-      text-align: center !important;
-    }
-  }
-  
-  // Checkbox en el header (select all)
-  .ag-header-select-all {
+  // ✅ Checkbox en celdas normales
+  .ag-selection-checkbox {
     .ag-checkbox-input-wrapper {
-      width: 24px !important;
-      height: 24px !important;
+      width: 20px !important;
+      height: 20px !important;
       
-      &::after {
-        width: 24px !important;
-        height: 24px !important;
-        border-width: 3px !important;
-      }
-      
-      &.ag-checked::after {
-        background-color: var(--accent) !important;
-        border-color: var(--accent) !important;
-        font-size: 20px !important;
+      input[type="checkbox"] {
+        appearance: none !important;
+        -webkit-appearance: none !important;
+        width: 20px !important;
+        height: 20px !important;
+        margin: 0 !important;
+        cursor: pointer !important;
+        border: 2px solid #757575 !important;
+        border-radius: 3px !important;
+        background: white !important;
+        position: relative !important;
+        
+        &:checked {
+          background-color: var(--primary) !important;
+          border-color: var(--primary) !important;
+          
+          &::before {
+            content: '✓' !important;
+            position: absolute !important;
+            color: white !important;
+            font-size: 14px !important;
+            font-weight: bold !important;
+            top: 0px !important;
+            left: 3px !important;
+          }
+        }
       }
     }
   }
   
-  // ✅ FILA SELECCIONADA - fondo azul clarito
+  // ✅ Checkbox en header
+  .ag-header-select-all {
+    .ag-checkbox-input-wrapper input[type="checkbox"]:checked {
+      background-color: var(--accent) !important;
+      border-color: var(--accent) !important;
+    }
+  }
+  
+  // ✅ Ocultar checkbox en filas de subtotal y espacio
+  .ag-row[row-index] {
+    &:has(.subtotal-row),
+    &:has(.grupo-row) {
+      .ag-selection-checkbox {
+        visibility: hidden !important;
+      }
+    }
+  }
+  
+  // ✅ Filas seleccionadas más vistosas
   .ag-row-selected {
-    background-color: #e3f2fd !important;
+    background-color: #90caf9 !important;
+    border-left: 4px solid var(--primary) !important;
+    font-weight: 500 !important;
     
     &:hover {
-      background-color: #bbdefb !important;
+      background-color: #64b5f6 !important;
     }
     
-    // Mantener el amarillo en monto_a_pagar
-    .ag-cell[col-id="monto_a_pagar"]:not([row-index*="subtotal"]) {
-      background-color: #fff59d !important;
+    .ag-cell[col-id="monto_a_pagar"] {
+      background-color: #fdd835 !important;
+      font-weight: 700 !important;
     }
   }
   
-  // Aumentar área clickable
+  // ✅ Área clickable del checkbox más grande
   .ag-cell[col-id="seleccionado"] {
-    padding: 10px !important;
+    padding: 8px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
+    cursor: pointer !important;
   }
 }
 /* ===== GRID 2 COLUMNAS: FILTROS + RESUMEN ===== */
@@ -1222,17 +1191,17 @@ select.compact-input {
 }
 // ===== DISTRIBUCIÓN COMPACTA =====
 .distribucion-content-compact {
-  padding: 12px;
+  padding: 8px; // ✅ Reducido de 12px
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 6px; // ✅ Reducido de 12px
 }
 
 .distribucion-row {
-  display: flex;
-  align-items: flex-end;
-  gap: 12px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 200px 100px 1fr; // ✅ Input | Distribuir | Planificar/Aprobar
+  gap: 8px;
+  align-items: center; // ✅ Centrado vertical
 }
 
 .monto-input-inline {
@@ -1240,17 +1209,15 @@ select.compact-input {
   min-width: 250px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 3px; 
 }
 
 .compact-label-inline {
-  font-size: 12px;
+  font-size: 10px; // ✅ Más pequeño
   font-weight: 600;
   color: #555;
-  display: flex;
-  align-items: center;
-  gap: 4px;
 }
+
 
 .input-with-currency-inline {
   display: flex;
@@ -1258,21 +1225,22 @@ select.compact-input {
   border: 1px solid #ddd;
   border-radius: 4px;
   background: white;
-  padding: 0 8px;
-  height: 38px;
+  padding: 0 6px; // ✅ Reducido
+  height: 32px; // ✅ Reducido de 38px
 
   .currency-symbol {
     font-weight: bold;
     color: #666;
     margin-right: 4px;
+    font-size: 12px;
   }
 
   .compact-input-small {
     border: none;
     outline: none;
     flex: 1;
-    font-size: 14px;
-    padding: 8px 4px;
+    font-size: 13px; // ✅ Reducido
+    padding: 6px 4px;
     
     &:focus {
       outline: none;
@@ -1285,26 +1253,25 @@ select.compact-input {
   background: #fff9c4;
   color: #748a01;
   font-weight: bold;
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 4px;
+  font-size: 10px; // ✅ Más pequeño
+  padding: 2px 6px; // ✅ Reducido
+  border-radius: 3px;
   border: 1px solid #f0e68c;
 }
 
 .btn-inline {
-  height: 38px;
-  min-width: 120px;
+  height: 32px; // ✅ Reducido de 38px
+  min-width: auto; // ✅ Eliminar ancho mínimo
   white-space: nowrap;
 }
 
 .distribucion-actions-compact {
   display: flex;
   gap: 8px;
-  padding-top: 8px;
-  border-top: 1px solid #eee;
   
   button {
     flex: 1;
+    height: 32px; // ✅ Mismo tamaño que otros botones
   }
 }
 
@@ -1341,23 +1308,277 @@ select.compact-input {
 .hint-text-info {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
   color: #666;
-  font-size: 11px;
-  padding: 6px 8px;
+  font-size: 9px; // ✅ Más pequeño
+  padding: 3px 6px; // ✅ Reducido
   background: #f0f7ff;
-  border-left: 3px solid #1976d2;
-  border-radius: 4px;
+  border-left: 2px solid #1976d2; // ✅ Más delgado
+  border-radius: 3px;
   
   mat-icon {
-    font-size: 14px;
-    width: 14px;
-    height: 14px;
+    font-size: 12px !important;
+    width: 12px !important;
+    height: 12px !important;
     color: #1976d2;
   }
 }
 
 .separador-compact {
-  border-top: 1px solid #e0e0e0;
-  margin: 8px 0;
+  display: none; //ELIMINAR separador para más compacto
+}
+// ===== DISTRIBUCIÓN - TODO EN UNA FILA =====
+.distribucion-content-compact {
+  display: grid;
+  grid-template-columns: 200px 100px 1fr; // Input | Distribuir | Planificar
+  grid-template-rows: auto auto; // Fila 1: controles | Fila 2: hint
+  gap: 8px;
+  align-items: start;
+  padding: 8px;
+}
+
+.distribucion-row {
+  display: contents; // ✅ Esto hace que sus hijos se comporten como si estuvieran en el grid padre
+}
+
+.monto-input-inline {
+  grid-column: 1; // Primera columna
+  grid-row: 1; // Primera fila
+}
+
+.btn-inline {
+  grid-column: 2; // Segunda columna
+  grid-row: 1; // Primera fila
+  height: 32px;
+  align-self: end; // Alineado al fondo para quedar con el input
+}
+
+.distribucion-actions-compact {
+  grid-column: 3; // ✅ Tercera columna
+  grid-row: 1; // ✅ Primera fila (misma que input y distribuir)
+  display: flex;
+  gap: 8px;
+  align-self: end; // Alineado al fondo
+  
+  button {
+    flex: 1;
+    height: 32px;
+  }
+}
+
+.hint-text-info {
+  grid-column: 1 / -1; // ✅ Ocupar TODAS las columnas
+  grid-row: 2; // ✅ Segunda fila
+  font-size: 9px;
+  padding: 3px 6px;
+  
+  mat-icon {
+    font-size: 12px !important;
+    width: 12px !important;
+    height: 12px !important;
+  }
+}
+
+.separador-compact {
+  display: none; // ✅ Eliminar
+}
+
+// Estilos del input
+.compact-label-inline {
+  font-size: 10px;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 3px;
+}
+
+.input-with-currency-inline {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  padding: 0 6px;
+  height: 32px;
+
+  .currency-symbol {
+    font-weight: bold;
+    color: #666;
+    margin-right: 4px;
+    font-size: 12px;
+  }
+
+  .compact-input-small {
+    border: none;
+    outline: none;
+    flex: 1;
+    font-size: 13px;
+    padding: 6px 4px;
+  }
+}
+
+.restante-badge {
+  font-size: 9px;
+  padding: 2px 6px;
+  margin-top: 2px;
+}
+// ===== DROPDOWN EXCEL =====
+.dropdown-excel {
+  position: relative;
+  display: inline-block;
+  
+  .btn-excel {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    
+    .arrow {
+      margin-left: 4px;
+      transition: transform 0.2s;
+    }
+  }
+  
+  .dropdown-menu-excel {
+    position: absolute;
+    top: calc(100% + 4px);
+    right: 0;
+    min-width: 220px;
+    background: white;
+    border: 1px solid var(--gray-200);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    overflow: hidden;
+    
+    button {
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: none;
+      background: white;
+      cursor: pointer;
+      transition: background 0.15s;
+      text-align: left;
+      
+      mat-icon {
+        font-size: 18px !important;
+        width: 18px !important;
+        height: 18px !important;
+        color: var(--primary) !important;
+      }
+      
+      span {
+        font-size: 13px;
+        color: var(--gray-800);
+        font-weight: 500;
+      }
+      
+      &:hover {
+        background: var(--primary-light);
+      }
+      
+      &:not(:last-child) {
+        border-bottom: 1px solid var(--gray-100);
+      }
+    }
+  }
+}
+/* ===== CHECKBOXES MÁS VISIBLES Y OBVIOS ===== */
+::ng-deep .ag-theme-material {
+  // Checkbox NO seleccionado
+  .ag-checkbox-input-wrapper {
+    width: 20px !important;
+    height: 20px !important;
+    position: relative !important;
+    
+    input[type="checkbox"] {
+      width: 20px !important;
+      height: 20px !important;
+      cursor: pointer !important;
+      opacity: 0 !important;
+      position: absolute !important;
+      z-index: 1 !important;
+    }
+    
+    &::after {
+      content: '' !important;
+      position: absolute !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 20px !important;
+      height: 20px !important;
+      border: 2px solid #757575 !important;
+      border-radius: 3px !important;
+      background: white !important;
+      box-sizing: border-box !important;
+    }
+  }
+  
+  // ✅ Checkbox SELECCIONADO
+  .ag-checkbox-input-wrapper.ag-checked {
+    &::after {
+      content: '✓' !important;
+      background-color: var(--primary) !important;
+      border-color: var(--primary) !important;
+      color: white !important;
+      font-size: 16px !important;
+      font-weight: bold !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+  }
+  
+  // Checkbox en header
+  .ag-header-select-all .ag-checkbox-input-wrapper {
+    &::after {
+      width: 20px !important;
+      height: 20px !important;
+    }
+    
+    &.ag-checked::after {
+      background-color: var(--accent) !important;
+      border-color: var(--accent) !important;
+    }
+  }
+  
+  // ✅ FILA SELECCIONADA - más visible
+  .ag-row-selected {
+    background-color: #bbdefb !important;
+    border-left: 3px solid var(--primary) !important;
+    
+    &:hover {
+      background-color: #90caf9 !important;
+    }
+    
+    .ag-cell[col-id="monto_a_pagar"]:not([row-index*="subtotal"]) {
+      background-color: #fff59d !important;
+      font-weight: 700 !important;
+    }
+  }
+  
+  // Área clickable del checkbox
+  .ag-cell[col-id="seleccionado"] {
+    padding: 8px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+}
+/* ===== BOTÓN CARGAR EXCEL ===== */
+.compact-btn-accent {
+  color: white !important;
+  background: var(--accent) !important;
+  border-color: var(--accent) !important;
+  font-weight: 600;
+  
+  mat-icon {
+    color: white !important;
+  }
+  
+  &:hover:not(:disabled) {
+    background: #e05b2d !important;
+    border-color: #e05b2d !important;
+  }
 }

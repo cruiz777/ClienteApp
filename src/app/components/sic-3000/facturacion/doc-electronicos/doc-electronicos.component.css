@@ -331,3 +331,15 @@
   background-color: #ffcccc !important;
   color: #b30000 !important;
 }
+::ng-deep .fila-anulada {
+  background-color: #ffe6e6 !important; /* Rojo pastel tenue */
+}
+
+::ng-deep .fila-anulada:hover {
+  background-color: #ffd4d4 !important; /* Rojo más oscuro al hover */
+}
+
+::ng-deep .btn-disabled {
+  opacity: 0.3;
+  cursor: not-allowed !important;
+}
