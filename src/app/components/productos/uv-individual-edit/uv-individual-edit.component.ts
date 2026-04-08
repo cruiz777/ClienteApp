@@ -1515,20 +1515,18 @@ private selectedUlRow: any = null;
   }
 
   cargarParametroFacturaPorId(id: number): void {
-    this.parametrosFacturaService.getById(id).subscribe({
-      next: (parametro) => {
-        // Aquí asignas el resultado a una variable del componente
-        this.api = parametro.texto ?? '';
-        this.claveApi = parametro.obs ?? ''; // si `valor` puede ser undefined
+  this.parametrosFacturaService.getByIdN(id).subscribe({
+    next: (parametro) => {
+      this.api = parametro?.texto ?? '';
+      this.claveApi = parametro?.obs ?? '';
 
-        console.log('✅ Parámetro cargado:', parametro);
-      },
-      error: (error) => {
-        console.error('❌ Error al obtener el parámetro:', error);
-        // Puedes mostrar un mensaje de error si deseas
-      }
-    });
-  }
+      console.log('? Parámetro cargado:', parametro);
+    },
+    error: (error) => {
+      console.error('? Error al obtener el parámetro:', error);
+    }
+  });
+}
 
 
 onGridReadyGtin14(event: GridReadyEvent): void {

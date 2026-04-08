@@ -1,5 +1,5 @@
 import { Component, HostListener, OnInit, ViewChild, ElementRef } from '@angular/core';
-import { ColDef, GridApi, ModuleRegistry, GridOptions, GridReadyEvent } from 'ag-grid-community';
+import { ColDef, GridApi, ModuleRegistry, GridOptions, GridReadyEvent, themeAlpine } from 'ag-grid-community';
 import { Observable } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
 import { AllCommunityModule } from 'ag-grid-community';
@@ -951,7 +951,6 @@ cargarCliente(): void {
 
 
   }
-
   generar13() {
     const idSeleccionado = this.formUV.value.gcp;
     const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
@@ -961,7 +960,7 @@ cargarCliente(): void {
     if (!this.validarCeldasObligatorias()) return;
     const sinRepetidos = this.validarDescripcionRepetida();
     if (!sinRepetidos) {
-      this.mostrarAlerta('⚠️ Descripciones Repetidas.', 'Error');
+      this.mostrarAlerta('?? Descripciones Repetidas.', 'Error');
       return; // Evita continuar
     }
     this.generacionCodigosService.obtenerSecuencia(prefijo, this.npais).subscribe({
@@ -970,7 +969,7 @@ cargarCliente(): void {
         const longitudSecuencia = 12 - this.npais.length - longitudPrefijo;
 
         if (longitudSecuencia <= 0) {
-          alert(`⚠️ Prefijo demasiado largo (${longitudPrefijo} dígitos). No se puede generar GTIN-13 válido.`);
+          alert(`?? Prefijo demasiado largo (${longitudPrefijo} dígitos). No se puede generar GTIN-13 válido.`);
           return;
         }
 
@@ -980,7 +979,7 @@ cargarCliente(): void {
 
         const maxCodigos = Math.pow(10, longitudSecuencia);
         if (this.rowData.length > maxCodigos) {
-          alert(`⚠️ Solo se pueden generar ${maxCodigos} códigos con prefijo de ${longitudPrefijo} dígitos. Se recortarán automáticamente.`);
+          alert(`?? Solo se pueden generar ${maxCodigos} códigos con prefijo de ${longitudPrefijo} dígitos. Se recortarán automáticamente.`);
           this.rowData = this.rowData.slice(0, maxCodigos);
         }
 
@@ -1006,11 +1005,12 @@ cargarCliente(): void {
 
       },
       error: (err) => {
-        console.error('❌ Error al obtener secuencia', err);
+        console.error('? Error al obtener secuencia', err);
         this.mensaje = 'Error al generar la secuencia';
       }
     });
   }
+
   recupera13() {
     debugger
     const soloCopiarGtin = this.tipoGtin === 'GTIN-13' && this.formUV.get('checkExiste')?.value;
@@ -2961,21 +2961,19 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
 
     this.mostrarAlerta('📦 JSON generado y enviado en lote a Verified.', 'Información');
   }
-  cargarParametroFacturaPorId(id: number): void {
-    this.parametrosFacturaService.getById(id).subscribe({
-      next: (parametro) => {
-        // Aquí asignas el resultado a una variable del componente
-        this.api = parametro.texto ?? '';
-        this.claveApi = parametro.obs ?? ''; // si `valor` puede ser undefined
+cargarParametroFacturaPorId(id: number): void {
+  this.parametrosFacturaService.getByIdN(id).subscribe({
+    next: (parametro) => {
+      this.api = parametro?.texto ?? '';
+      this.claveApi = parametro?.obs ?? '';
 
-        console.log('✅ Parámetro cargado:', parametro);
-      },
-      error: (error) => {
-        console.error('❌ Error al obtener el parámetro:', error);
-        // Puedes mostrar un mensaje de error si deseas
-      }
-    });
-  }
+      console.log('? Parámetro cargado:', parametro);
+    },
+    error: (error) => {
+      console.error('? Error al obtener el parámetro:', error);
+    }
+  });
+}
 
   tooltipRepetido = (params: any): string | null => {
     const descripcion = (params.data?.descripcion || '').trim().toUpperCase();
