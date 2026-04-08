@@ -4,6 +4,14 @@ import { Observable, map } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { ApiResponse } from '../interfaces/responses/api-response';
 
+export interface ApiResponseNuevo<T> { 
+  id: string;
+  type: string;
+  data: T;
+  message: string;
+  count: number | null;
+}
+
 export interface ParametrosFactura {
   id_parametrosFactura: number;
   codpar: string;
@@ -48,6 +56,19 @@ export class ParametrosFacturaService {
       }))
     );
   }
+
+
+getByIdN(id: number): Observable<ParametrosFactura> {
+  return this.http.get<ApiResponseNuevo<ParametrosFactura>>(`${this.baseUrl}/${id}`).pipe(
+    map(resp => ({
+      ...resp.data,
+      descripcion: resp.data.descripcion?.trim() ?? '',
+      texto: resp.data.texto?.trim() ?? '',
+      obs: resp.data.obs?.trim() ?? ''
+    }))
+  );
+}
+
   getByIdUrl(id: number): Observable<ParametrosFactura> {
     return this.http.get<ApiResponse<ParametrosFactura>>(`${this.baseUrl}/${id}`).pipe(
       map(response => {

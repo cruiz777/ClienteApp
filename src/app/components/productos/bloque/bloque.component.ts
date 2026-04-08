@@ -3009,21 +3009,19 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
 
     this.mostrarAlerta('📦 JSON generado y enviado en lote a Verified.', 'Información');
   }
-  cargarParametroFacturaPorId(id: number): void {
-    this.parametrosFacturaService.getById(id).subscribe({
-      next: (parametro) => {
-        // Aquí asignas el resultado a una variable del componente
-        this.api = parametro.texto ?? '';
-        this.claveApi = parametro.obs ?? ''; // si `valor` puede ser undefined
+cargarParametroFacturaPorId(id: number): void {
+  this.parametrosFacturaService.getByIdN(id).subscribe({
+    next: (parametro) => {
+      this.api = parametro?.texto ?? '';
+      this.claveApi = parametro?.obs ?? '';
 
-        console.log('✅ Parámetro cargado:', parametro);
-      },
-      error: (error) => {
-        console.error('❌ Error al obtener el parámetro:', error);
-        // Puedes mostrar un mensaje de error si deseas
-      }
-    });
-  }
+      console.log('? Parámetro cargado:', parametro);
+    },
+    error: (error) => {
+      console.error('? Error al obtener el parámetro:', error);
+    }
+  });
+}
 
   tooltipRepetido = (params: any): string | null => {
     const descripcion = (params.data?.descripcion || '').trim().toUpperCase();

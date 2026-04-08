@@ -251,7 +251,7 @@ colExcel: ColDef[] = [
     },
   },
 
-  { headerName: 'Fecha', field: 'fecha', width: 110 },
+  { headerName: 'Fecha', field: 'fecha', width: 125 },
   { headerName: 'Código', field: 'codigo', width: 110 },
   { headerName: 'Concepto', field: 'concepto', minWidth: 220, flex: 1, tooltipField: 'concepto' },
   { headerName: 'Tipo', field: 'tipo', width: 90 },
