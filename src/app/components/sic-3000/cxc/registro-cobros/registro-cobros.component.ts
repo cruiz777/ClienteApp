@@ -1,4 +1,3 @@
-// src/app/components/sic-3000/cxc/registro-cobros/registro-cobros.component.ts
 import { Component, OnInit, ViewChild, ElementRef, ViewEncapsulation } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatAutocompleteTrigger, MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
@@ -82,7 +81,6 @@ import { AsientoVentaRequest } from 'src/app/services/asiento-venta.service';
   ]
 })
 export class RegistroCobrosComponent implements OnInit {
-  // ===== ViewChilds =====
   @ViewChild(MatAutocompleteTrigger) autoClienteTrigger!: MatAutocompleteTrigger;
   @ViewChild('clienteInputRef') clienteInputRef!: ElementRef<HTMLInputElement>;
   @ViewChild('valorAPagarRef') valorAPagarRef!: ElementRef<HTMLInputElement>;
@@ -103,7 +101,6 @@ export class RegistroCobrosComponent implements OnInit {
   clienteOrigenControl = new FormControl<string | any | null>(null, Validators.required);
   clientesOrigenFiltrados: ClienteSummary[] = [];
 
-  // ===== GRID FACTURAS =====
   private gridApi!: GridApi;
   private pagosEditadosMap = new Map<string, { numero: string; pago: number; estado: string }>();
   private invalidRows = new Set<string>();
@@ -225,7 +222,6 @@ export class RegistroCobrosComponent implements OnInit {
   defaultColDef: ColDef = { resizable: true, sortable: true, filter: true };
   rowData: GridRow[] = [];
 
-  // ===== GRID PAGOS (plantillas) =====
   private pagoGridApi!: GridApi;
   filteredFormasPago$: Observable<FormaPagoResponse[]> = of([]);
   isLoadingFormas = false;
@@ -349,7 +345,6 @@ export class RegistroCobrosComponent implements OnInit {
         btn.addEventListener('click', () => {
           const removed = params.node.data;
           params.api.applyTransaction({ remove: [removed] });
-         
 
           this.pagoGridApi?.setGridOption('rowData', this.pagoRowData);
           this.recalcularTotal();
@@ -367,20 +362,16 @@ export class RegistroCobrosComponent implements OnInit {
   pagoRowData: any[] = [];
   totalPagos = 0;
 
-  // Datos cliente / contables
   codcliO = 0;
   idPersonaCliente: number | null = null;
   idCodContableCliente: number | null = null;
 
-  // Control de envío
   private ultimoNumeroPago: string | null = null;
   isSubmitting = false;
   registroCompletado = false;
 
-  // Saldo en pagadora
   saldoPagos = 0;
 
-  // Formas que requieren retención
   private readonly formasRequierenRetencion = new Set<number>([12, 13]);
 
   constructor(
@@ -396,9 +387,6 @@ export class RegistroCobrosComponent implements OnInit {
     private planCueService: PlanCueService
   ) { }
 
-  // =========================
-  //      ngOnInit
-  // =========================
   ngOnInit(): void {
     this.usuarioActual = this.usuarioService.getUsuarioActual();
 
@@ -453,12 +441,10 @@ export class RegistroCobrosComponent implements OnInit {
       metodoPago: ['']
     });
 
-    // Toggle edición del grid según valor a pagar válido
     this.formCliente.get('valorAPagar')!.valueChanges.subscribe(() => {
       this.gridApi?.setGridOption('suppressClickEdit', !this.canEditFacturas);
     });
 
-    // Autocomplete formas de pago
     const metodoCtrl = this.formPago.get('metodoPago') as FormControl;
 
     const formasActivas$ = this.formaPagoService.getPagedLite(1, 10).pipe(
@@ -500,9 +486,6 @@ export class RegistroCobrosComponent implements OnInit {
     this.activarPlantilla('transfer');
   }
 
-  // =========================
-  //      Utils / helpers
-  // =========================
   usd(v: number) {
     if (v == null) return '';
     return new Intl.NumberFormat('en-US', {
@@ -542,7 +525,7 @@ export class RegistroCobrosComponent implements OnInit {
     if (Math.abs(pago - pagoRedondeado) > 0.001) {
       errors.push('Pago con más de 2 decimales.');
     }
-        return errors;
+    return errors;
   }
 
   private validateGridFacturas(): { ok: boolean; errors: string[] } {
@@ -638,7 +621,6 @@ export class RegistroCobrosComponent implements OnInit {
     this.step = 2;
   }
 
-  // ===== Paso 2 (plantillas) =====
   onPlantillaChange() {
     const pl = this.formPago.get('plantilla')?.value as 'transfer' | 'cheque';
     this.activarPlantilla(pl);
@@ -673,75 +655,67 @@ export class RegistroCobrosComponent implements OnInit {
     this.saldoPendiente = Math.max(0, this.clamp2(this.getValorAPagarNumber() - this.totalPagos));
   }
 
-private validateGridPlantilla(): { ok: boolean; errors: string[] } {
-  this.pagoGridApi?.stopEditing();
+  private validateGridPlantilla(): { ok: boolean; errors: string[] } {
+    this.pagoGridApi?.stopEditing();
 
-  const errors: string[] = [];
-  const total = this.clamp2(
-    this.pagoRowData.reduce((s: number, r: any) => s + (Number(r.monto) || 0), 0)
-  );
-  const valorAPagar = this.clamp2(this.getValorAPagarNumber());
+    const errors: string[] = [];
+    const total = this.clamp2(
+      this.pagoRowData.reduce((s: number, r: any) => s + (Number(r.monto) || 0), 0)
+    );
+    const valorAPagar = this.clamp2(this.getValorAPagarNumber());
 
-  // 1) Total de pagos debe cuadrar con el valor a pagar
-  if (Math.abs(total - valorAPagar) >= 0.005) {
-    errors.push(`Total de formas de pago (${this.usd(total)}) debe ser ${this.usd(valorAPagar)}.`);
-  }
-
-  // 2) Validaciones por fila
-  this.pagoRowData.forEach((r: any, i: number) => {
-    const m = Number(r.monto) || 0;
-
-    if (!Number.isFinite(m)) errors.push(`Línea ${i + 1}: monto inválido.`);
-    if (m < 0) errors.push(`Línea ${i + 1}: monto negativo.`);
-
-    // Si la forma de pago requiere referencia, exigir No.CUENTA/TARJETA/FACTURA
-    if (this.requiereReferencia(r) && !String(r.numCuentaTarjetaFactura ?? '').trim()) {
-      const etiqueta = r.descripcion || r.codigo || `Línea ${i + 1}`;
-      errors.push(
-        `Línea ${i + 1} (${etiqueta}): ingrese el NÚMERO DE RETENCIÓN en "No.CUENTA/TARJETA/FACTURA".`
-      );
-    }
-  });
-
-  // 3) NUEVO: permitir repetir forma de pago, pero NO repetir la misma referencia
-  // Regla: si se repite el mismo "codigo", cada fila debe tener un "numCuentaTarjetaFactura" NO vacío y ÚNICO.
-  const refsPorCodigo = new Map<string, Set<string>>();
-
-  this.pagoRowData.forEach((r: any, i: number) => {
-    const codigo = String(r.codigo ?? '').trim();
-    if (!codigo) return;
-
-    const ref = String(r.numCuentaTarjetaFactura ?? '').trim().toUpperCase();
-    const etiqueta = r.descripcion || codigo || `Línea ${i + 1}`;
-
-    if (!refsPorCodigo.has(codigo)) refsPorCodigo.set(codigo, new Set<string>());
-    const setRefs = refsPorCodigo.get(codigo)!;
-
-    // Si ya existe el código en el mapa (es decir, es 2da/3ra vez que aparece),
-    // obligamos a que la referencia sea no vacía para poder diferenciar.
-    const esRepetida = setRefs.size > 0;
-
-    if (esRepetida && !ref) {
-      errors.push(
-        `Línea ${i + 1} (${etiqueta}): esta forma de pago está repetida; debe ingresar un No.CUENTA/TARJETA/FACTURA para diferenciarla.`
-      );
-      return;
+    if (Math.abs(total - valorAPagar) >= 0.005) {
+      errors.push(`Total de formas de pago (${this.usd(total)}) debe ser ${this.usd(valorAPagar)}.`);
     }
 
-    // Si hay referencia, no permitir duplicarla en el mismo código
-    if (ref) {
-      if (setRefs.has(ref)) {
+    this.pagoRowData.forEach((r: any, i: number) => {
+      const m = Number(r.monto) || 0;
+
+      if (!Number.isFinite(m)) errors.push(`Línea ${i + 1}: monto inválido.`);
+      if (m < 0) errors.push(`Línea ${i + 1}: monto negativo.`);
+
+      if (this.requiereReferencia(r) && !String(r.numCuentaTarjetaFactura ?? '').trim()) {
+        const etiqueta = r.descripcion || r.codigo || `Línea ${i + 1}`;
         errors.push(
-          `Línea ${i + 1} (${etiqueta}): No.CUENTA/TARJETA/FACTURA (${ref}) ya está usado en otra línea con la misma forma de pago.`
+          `Línea ${i + 1} (${etiqueta}): ingrese el NÚMERO DE RETENCIÓN en "No.CUENTA/TARJETA/FACTURA".`
         );
-      } else {
-        setRefs.add(ref);
       }
-    }
-  });
+    });
 
-  return { ok: errors.length === 0, errors };
-}
+    const refsPorCodigo = new Map<string, Set<string>>();
+
+    this.pagoRowData.forEach((r: any, i: number) => {
+      const codigo = String(r.codigo ?? '').trim();
+      if (!codigo) return;
+
+      const ref = String(r.numCuentaTarjetaFactura ?? '').trim().toUpperCase();
+      const etiqueta = r.descripcion || codigo || `Línea ${i + 1}`;
+
+      if (!refsPorCodigo.has(codigo)) refsPorCodigo.set(codigo, new Set<string>());
+      const setRefs = refsPorCodigo.get(codigo)!;
+
+      const esRepetida = setRefs.size > 0;
+
+      if (esRepetida && !ref) {
+        errors.push(
+          `Línea ${i + 1} (${etiqueta}): esta forma de pago está repetida; debe ingresar un No.CUENTA/TARJETA/FACTURA para diferenciarla.`
+        );
+        return;
+      }
+
+      if (ref) {
+        if (setRefs.has(ref)) {
+          errors.push(
+            `Línea ${i + 1} (${etiqueta}): No.CUENTA/TARJETA/FACTURA (${ref}) ya está usado en otra línea con la misma forma de pago.`
+          );
+        } else {
+          setRefs.add(ref);
+        }
+      }
+    });
+
+    return { ok: errors.length === 0, errors };
+  }
 
   aceptarPagos() {
     const p = this.validateGridPlantilla();
@@ -788,9 +762,6 @@ private validateGridPlantilla(): { ok: boolean; errors: string[] } {
     this.recalcularTotal();
   }
 
-  // =========================
-  //  REGISTRAR PAGO
-  // =========================
   registrarPago() {
     if (this.isSubmitting || this.registroCompletado) return;
 
@@ -815,7 +786,7 @@ private validateGridPlantilla(): { ok: boolean; errors: string[] } {
       return;
     }
 
-    const fechaPagoISO = this.getFechaPagoISO(); // yyyy-MM-dd
+    const fechaPagoISO = this.getFechaPagoISO();
 
     const req = {
       cliente_codigo: this.formCliente.value.clienteCodigo ?? this.codcliO ?? 0,
@@ -931,14 +902,12 @@ private validateGridPlantilla(): { ok: boolean; errors: string[] } {
     this.registroCompletado = false;
   }
 
-  // ===== Autocomplete clientes =====
   seleccionarClienteOrigen(cliente: ClienteSummary): void {
     if (!cliente?.clientes_codigo) return;
 
     this.codcliO = cliente.clientes_codigo;
     this.formCliente.patchValue({ clienteCodigo: this.codcliO });
 
-    // Cargar datos contables (idPersona + idCodContable)
     this.cargarDatosContablesCliente(this.codcliO);
 
     this.cuentaCobrarService.getFacturasPendientesGrid(String(this.codcliO))
@@ -1136,69 +1105,66 @@ private validateGridPlantilla(): { ok: boolean; errors: string[] } {
     e.preventDefault();
   }
 
-  // ===== Autocomplete de Formas de Pago (Paso 2) =====
   displayFormaPago = (fp: FormaPagoResponse | string | null): string =>
     (typeof fp === 'string') ? fp : (fp?.descripcionPago ?? '');
 
-onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
-  const item = event.option.value as FormaPagoResponse;
-  if (!item) return;
+  onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
+    const item = event.option.value as FormaPagoResponse;
+    if (!item) return;
 
-  const pl = this.formPago.get('plantilla')?.value as 'transfer' | 'cheque';
+    const pl = this.formPago.get('plantilla')?.value as 'transfer' | 'cheque';
 
-  const codigo = String(item.idFormaPago ?? '');
-  const descripcion = item.descripcionPago ?? '';
-  const idcuenta = item.id_plan ?? null;
-  const cuenta = item.codigo_cuenta ?? '';
+    const codigo = String(item.idFormaPago ?? '');
+    const descripcion = item.descripcionPago ?? '';
+    const idcuenta = item.id_plan ?? null;
+    const cuenta = item.codigo_cuenta ?? '';
 
-  if (!codigo && !descripcion) return;
+    if (!codigo && !descripcion) return;
 
-  const montoAuto = Math.max(0, this.getSaldo());
+    const montoAuto = Math.max(0, this.getSaldo());
 
-  // ✅ SIEMPRE PERMITE AGREGAR (aunque ya exista el mismo código)
-  if (pl === 'transfer') {
-    this.pagoRowData.push({
-      codigo,
-      descripcion,
-      idcuenta,
-      cuenta,
-      porcRet: null,
-      banco: '',
-      numCuentaTarjetaFactura: '', // <- aquí quedará distinto por cada línea
-      numCheque: '',
-      monto: montoAuto
-    });
-  } else {
-    this.pagoRowData.push({
-      codigo,
-      descripcion,
-      idcuenta,
-      cuenta,
-      numChequeFecha: '',
-      nombreDueno: '',
-      autorizacion: '',
-      monto: montoAuto
-    });
-  }
-
-  this.pagoGridApi?.setGridOption('rowData', this.pagoRowData);
-  this.recalcularTotal();
-
-  setTimeout(() => {
-    const metodoCtrl = this.formPago.get('metodoPago') as FormControl;
-    metodoCtrl.setValue(null);
-    metodoCtrl.markAsPristine();
-    metodoCtrl.markAsUntouched();
-
-    if (this.pagoInputRef?.nativeElement) {
-      this.pagoInputRef.nativeElement.value = '';
-      this.pagoInputRef.nativeElement.focus();
+    if (pl === 'transfer') {
+      this.pagoRowData.push({
+        codigo,
+        descripcion,
+        idcuenta,
+        cuenta,
+        porcRet: null,
+        banco: '',
+        numCuentaTarjetaFactura: '',
+        numCheque: '',
+        monto: montoAuto
+      });
+    } else {
+      this.pagoRowData.push({
+        codigo,
+        descripcion,
+        idcuenta,
+        cuenta,
+        numChequeFecha: '',
+        nombreDueno: '',
+        autorizacion: '',
+        monto: montoAuto
+      });
     }
 
-    this.autoPagoTrigger?.closePanel();
-  }, 0);
-}
+    this.pagoGridApi?.setGridOption('rowData', this.pagoRowData);
+    this.recalcularTotal();
 
+    setTimeout(() => {
+      const metodoCtrl = this.formPago.get('metodoPago') as FormControl;
+      metodoCtrl.setValue(null);
+      metodoCtrl.markAsPristine();
+      metodoCtrl.markAsUntouched();
+
+      if (this.pagoInputRef?.nativeElement) {
+        this.pagoInputRef.nativeElement.value = '';
+        this.pagoInputRef.nativeElement.focus();
+      }
+
+      this.autoPagoTrigger?.closePanel();
+    }, 0);
+  }
 
   onPagosRowsChanged(): void {
     this.recalcularTotal();
@@ -1214,12 +1180,10 @@ onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
     return false;
   }
 
-  // Total de deuda tomado del grid
   getMontoDeudaNumber(): number {
     return (this.rowData ?? []).reduce((acc, r) => acc + (Number(r.monto) || 0), 0);
   }
 
-  // Validador: valorAPagar <= monto deuda
   maxDeudaValidator = (ctrl: import('@angular/forms').AbstractControl) => {
     const raw = String(ctrl.value ?? '').replace(/[^0-9.]/g, '');
     const n = parseFloat(raw);
@@ -1271,7 +1235,6 @@ onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
     return this.clamp2(this.getValorAPagarNumber() - this.totalPagos);
   }
 
-  // ===== Helpers de normalizado =====
   private sanitizeUpperAlnum(raw: any, allowSpace = true): string {
     let s = String(raw ?? '').toUpperCase();
     const re = allowSpace ? /[^A-Z0-9 ]/g : /[^A-Z0-9]/g;
@@ -1311,7 +1274,6 @@ onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
     };
   }
 
-  // ===== Helpers de mapeo =====
   private buildFacturasAPagar(): Array<{
     numero_factura: string;
     tipo_documento: string;
@@ -1368,12 +1330,9 @@ onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
     return /RETENCI(Ó|O)N/.test(desc);
   }
 
-  // ======================================================
-  // ASIENTO CONTABLE POR COBRO DE CXC
-  // ======================================================
   private buildAsientoCobroRequest(numeroPago: string): any {
-    const fechaISO = this.getFechaPagoISO(); // yyyy-MM-dd
-    const fechaISO1 = this.getFechaPagoISO1(); // yyyy-MM-dd
+    const fechaISO = this.getFechaPagoISO();
+    const fechaISO1 = this.getFechaPagoISO1();
     const [yyyy, mm, dd] = fechaISO.split('-');
 
     const ahora = new Date();
@@ -1401,7 +1360,7 @@ onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
     const idUsuario = Number(this.usuarioActual?.id_usuario ?? 1);
     const idEmpresa = Number(this.usuarioActual?.id_empresa ?? 1);
 
-    const idTipoAsiento = 5; // Cobros CxC
+    const idTipoAsiento = 5;
     const tipdoc = 'IG';
     const numdoc = String(Number((numeroPago || '').replace(/\D/g, '')));
     const anio = yyyy;
@@ -1422,7 +1381,6 @@ onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
       observacion += ` - ${observacionAdic}`;
     }
 
-    // Beneficiario con nombre del cliente
     const nombreCliente = this.mostrarNombreCliente(this.clienteOrigenControl.value);
     const beneficiario = nombreCliente && nombreCliente.trim()
       ? `${nombreCliente.trim()}`
@@ -1454,7 +1412,6 @@ onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
     const detalles: any[] = [];
     let numlinea = 1;
 
-    // 1) DEBE: una línea por cada forma de pago
     for (const fp of formasPago) {
       const monto = this.clamp2(Number(fp.monto) || 0);
       if (monto <= 0) continue;
@@ -1484,7 +1441,7 @@ onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
         idCodContable: idCodContableForma,
         nocomprobante: numeroPago,
         docurelacionado: '',
-        cheque: 0,
+        cheque: Number(String(fp.numCheque ?? '').trim()) || 0,
         beneficiario: '',
         debe: monto,
         haber: 0,
@@ -1512,7 +1469,6 @@ onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
       });
     }
 
-    // 2) HABER: una sola línea por el TOTAL contra CLIENTES
     detalles.push({
       numlinea: numlinea++,
       anio,
@@ -1577,7 +1533,7 @@ onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
       autorizado: '',
       homCodigo: 0,
       estado: true,
-      modulo: 2,   
+      modulo: 2,
       detalles
     };
 
@@ -1634,9 +1590,6 @@ onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
     return '';
   }
 
-  // =========================
-  //   DATOS CONTABLES CLIENTE
-  // =========================
   private cargarDatosContablesCliente(idCliente: number): void {
     this.idPersonaCliente = null;
     this.idCodContableCliente = null;
@@ -1679,58 +1632,51 @@ onFormaPagoSelected(event: MatAutocompleteSelectedEvent): void {
         );
       });
   }
-private getFechaPagoISO1(): string {
-  const raw = this.formCliente.get('fechaPago')?.value;
 
-  if (!raw) return this.hoyISOConHora();
+  private getFechaPagoISO1(): string {
+    const raw = this.formCliente.get('fechaPago')?.value;
 
-  // STRING
-  if (typeof raw === 'string') {
+    if (!raw) return this.hoyISOConHora();
 
-    // yyyy-mm-dd
-    if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
-      return `${raw}T${this.horaActual()}`;
+    if (typeof raw === 'string') {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+        return `${raw}T${this.horaActual()}`;
+      }
+
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+        const [dd, mm, yyyy] = raw.split('/');
+        return `${yyyy}-${mm}-${dd}T${this.horaActual()}`;
+      }
+
+      if (/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}$/.test(raw)) {
+        return raw.replace(' ', 'T');
+      }
+
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(raw)) {
+        return raw;
+      }
     }
 
-    // dd/mm/yyyy
-    if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
-      const [dd, mm, yyyy] = raw.split('/');
-      return `${yyyy}-${mm}-${dd}T${this.horaActual()}`;
+    if (raw instanceof Date) {
+      const yyyy = raw.getFullYear();
+      const mm = String(raw.getMonth() + 1).padStart(2, '0');
+      const dd = String(raw.getDate()).padStart(2, '0');
+      const hh = String(raw.getHours()).padStart(2, '0');
+      const mi = String(raw.getMinutes()).padStart(2, '0');
+      const ss = String(raw.getSeconds()).padStart(2, '0');
+      return `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}`;
     }
 
-    // yyyy-mm-dd HH:mm:ss  → convertir a ISO
-    if (/^\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}$/.test(raw)) {
-      return raw.replace(' ', 'T');
-    }
-
-    // yyyy-mm-ddTHH:mm:ss (ya correcto)
-    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(raw)) {
-      return raw;
-    }
+    return this.hoyISOConHora();
   }
 
-  // DATE
-  if (raw instanceof Date) {
-    const yyyy = raw.getFullYear();
-    const mm = String(raw.getMonth() + 1).padStart(2, '0');
-    const dd = String(raw.getDate()).padStart(2, '0');
-    const hh = String(raw.getHours()).padStart(2, '0');
-    const mi = String(raw.getMinutes()).padStart(2, '0');
-    const ss = String(raw.getSeconds()).padStart(2, '0');
-    return `${yyyy}-${mm}-${dd}T${hh}:${mi}:${ss}`;
+  private hoyISOConHora(): string {
+    const now = new Date();
+    return now.toISOString().slice(0, 19);
   }
 
-  return this.hoyISOConHora();
-}
-private hoyISOConHora(): string {
-  const now = new Date();
-  return now.toISOString().slice(0, 19);
-}
-
-private horaActual(): string {
-  const now = new Date();
-  return now.toTimeString().slice(0, 8);
-}
-
-
+  private horaActual(): string {
+    const now = new Date();
+    return now.toTimeString().slice(0, 8);
+  }
 }
