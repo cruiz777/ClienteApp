@@ -107,27 +107,47 @@ export class AprobacionPlanificacionesComponent implements OnInit {
     {
       field: 'acciones',
       headerName: 'Acciones',
-      width: 180,
+      width: 120,
       cellRenderer: (params: any) => {
-        const btn = document.createElement('button');
-        btn.className = 'btn-ver-detalle btn-cargar';
-        btn.style.cssText = 'background: #1976d2; color: white; font-weight: 600;';
+        const container = document.createElement('div');
+        container.style.cssText = 'display: flex; gap: 12px; align-items: center; justify-content: center;';
         
-        // Crear imagen
-        const img = document.createElement('img');
-        img.src = 'assets/icons/upload.png'; 
-        img.alt = 'Cargar';
-        img.style.cssText = 'width: 18px; height: 18px; object-fit: contain;';
+        // ===== BOTÓN EDITAR (SOLO ÍCONO) =====
+        const btnEditar = document.createElement('button');
+        btnEditar.className = 'btn-icon-only';
+        btnEditar.style.cssText = 'background: transparent; border: none; cursor: pointer; padding: 4px; transition: transform 0.2s;';
+        btnEditar.onmouseover = () => btnEditar.style.transform = 'scale(1.1)';
+        btnEditar.onmouseout = () => btnEditar.style.transform = 'scale(1)';
         
-        // Texto
-        const texto = document.createElement('span');
-        texto.textContent = 'CARGAR';
+        const imgEditar = document.createElement('img');
+        imgEditar.src = 'assets/icons/icon-modificar.png'; 
+        imgEditar.alt = 'Editar';
+        imgEditar.style.cssText = 'width: 20px; height: 20px; object-fit: contain;';
         
-        btn.appendChild(img);
-        btn.appendChild(texto);
-        btn.onclick = () => this.cargarPlanificacion(params.data);
+        btnEditar.appendChild(imgEditar);
+        btnEditar.onclick = () => this.cargarPlanificacion(params.data);
+        btnEditar.title = 'Editar';
         
-        return btn;
+        // ===== BOTÓN ELIMINAR (SOLO ÍCONO) =====
+        const btnEliminar = document.createElement('button');
+        btnEliminar.className = 'btn-icon-only';
+        btnEliminar.style.cssText = 'background: transparent; border: none; cursor: pointer; padding: 4px; transition: transform 0.2s;';
+        btnEliminar.onmouseover = () => btnEliminar.style.transform = 'scale(1.1)';
+        btnEliminar.onmouseout = () => btnEliminar.style.transform = 'scale(1)';
+        
+        const imgEliminar = document.createElement('img');
+        imgEliminar.src = 'assets/icons/icon-basurero.png'; 
+        imgEliminar.alt = 'Eliminar';
+        imgEliminar.style.cssText = 'width: 20px; height: 20px; object-fit: contain;';
+        
+        btnEliminar.appendChild(imgEliminar);
+        btnEliminar.onclick = () => this.eliminarPlanificacion(params.data);
+        btnEliminar.title = 'Eliminar';
+        
+        container.appendChild(btnEditar);
+        container.appendChild(btnEliminar);
+        
+        return container;
       },
       pinned: 'right',
       sortable: false,
@@ -202,6 +222,84 @@ export class AprobacionPlanificacionesComponent implements OnInit {
     });
   }
 
+  // ===== MÉTODO PARA ELIMINAR PLANIFICACIÓN =====
+  eliminarPlanificacion(transaccion: TransaccionAgrupada): void {
+    // Confirmar eliminación
+    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      data: {
+        title: 'Confirmar Eliminación',
+        message: `¿Está seguro de eliminar la transacción ${transaccion.num_transaccion}?\n\n` +
+                `• Documentos: ${transaccion.cantidad_documentos}\n` +
+                `• Total: $${transaccion.total_planificado.toFixed(2)}\n\n` +
+                `Esta acción no se puede deshacer.`,
+        type: 'warning',
+        confirmText: 'Sí, eliminar',
+        cancelText: 'Cancelar',
+        showCancel: true
+      } as MessageBoxData
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.ejecutarEliminacion(transaccion);
+      }
+    });
+  }
+
+  private ejecutarEliminacion(transaccion: TransaccionAgrupada): void {
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      data: {
+        title: 'Eliminando Planificación',
+        message: 'Por favor espere...',
+        type: 'info',
+        isLoading: true,
+        loadingText: 'Procesando eliminación...'
+      } as MessageBoxData,
+      disableClose: true
+    });
+
+    this.planificacionService.eliminarPlanificacion({
+      numero_transaccion: transaccion.num_transaccion,
+      id_empresa: this.idEmpresa,
+      id_usuario: this.idUsuario,
+      motivo: `Eliminación de planificación ${transaccion.num_transaccion} desde interfaz de carga`
+    }).subscribe({
+      next: (response) => {
+        loadingDialog.close();
+
+        if (response.type === 'SUCCESS') {
+          this.dialog.open(CustomMessageBoxComponent, {
+            data: {
+              title: 'Eliminación Exitosa',
+              message: `✅ Transacción ${transaccion.num_transaccion} eliminada correctamente\n\n` +
+                      `Documentos eliminados: ${response.data?.cantidad_eliminada || transaccion.cantidad_documentos}`,
+              type: 'success',
+              confirmText: 'Aceptar',
+              showCancel: false
+            } as MessageBoxData
+          }).afterClosed().subscribe(() => {
+            this.cargarPlanificaciones();
+          });
+        } else {
+          this.showError(response.message || 'Error al eliminar la planificación');
+        }
+      },
+      error: (err) => {
+        loadingDialog.close();
+        console.error('❌ Error:', err);
+        
+        let mensajeError = 'Error de conexión al eliminar';
+        if (err.error?.message) {
+          mensajeError = err.error.message;
+        } else if (err.message) {
+          mensajeError = err.message;
+        }
+        
+        this.showError(mensajeError);
+      }
+    });
+  }
+  
   private agruparPorTransaccion(planificaciones: PlanificacionPagoResponse[]): TransaccionAgrupada[] {
     const grupos = new Map<number, PlanificacionPagoResponse[]>();
 
@@ -215,12 +313,26 @@ export class AprobacionPlanificacionesComponent implements OnInit {
     return Array.from(grupos.entries()).map(([numTrans, items]) => {
       const primera = items[0];
       
+      // ⭐ CALCULAR CORRECTAMENTE: Separar facturas de anticipos
+      const totalFacturas = items
+        .filter(i => i.valor_pago > 0)  // Facturas (positivas)
+        .reduce((sum, i) => sum + i.valor_pago, 0);
+      
+      const totalAnticipos = Math.abs(
+        items
+          .filter(i => i.valor_pago < 0)  // Anticipos (negativos)
+          .reduce((sum, i) => sum + i.valor_pago, 0)
+      );
+      
+      // Total neto = Facturas - Anticipos
+      const totalNeto = totalFacturas - totalAnticipos;
+      
       return {
         num_transaccion: numTrans,
         fecha: primera.fecha || '',
         observacion: primera.comentario || 'Sin observación',
         cantidad_documentos: items.length,
-        total_planificado: items.reduce((sum, i) => sum + i.valor_pago, 0),
+        total_planificado: Math.abs(totalNeto),  // ⭐ Valor absoluto para mostrar
         forma_pago: primera.descripcion_forma_pago || '',
         cuenta_banco: primera.cuenta_banco || '',
         usuario: primera.nombre_usuario_ingreso || '',

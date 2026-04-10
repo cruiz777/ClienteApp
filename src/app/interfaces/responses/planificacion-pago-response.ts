@@ -135,4 +135,38 @@ export interface PlanificacionPagoResponse {
   // INFORMACIÓN DEL DOCUMENTO ORIGINAL
   numero_documento: string | null;
   tipo_comprobante: string | null;
+
+  // MONTOS DEL DOCUMENTO ORIGINAL
+  total_documento: number;
+  debe_documento: number;
+  haber_documento: number;
+  saldo_documento: number;
+  retencion_fuente_documento: number;
+  retencion_iva_documento: number;
+}
+// ========== ACTUALIZAR PLANIFICACIÓN ==========
+
+export interface DocumentoPagoActualizadoDto {
+  id_cuenta_por_pagar: number;
+  tipo_pago: string;  // 'P' | 'A' | 'N'
+  valor_pago: number;
+  comentario?: string;
+}
+
+export interface ActualizarPlanificacionRequest {
+  numero_transaccion: number;
+  id_empresa: number;
+  id_usuario: number;
+  fecha_pago?: string;  // 'YYYY-MM-DD' - opcional
+  fecha_vencimiento?: string;  // 'YYYY-MM-DD' - opcional
+  id_forma_pago?: number;  // opcional
+  cuenta_banco?: string;  // opcional
+  observacion?: string;  // opcional
+  documentos: DocumentoPagoActualizadoDto[];
+}
+
+export interface PlanificacionActualizadaResponse {
+  numero_transaccion: number;
+  documentos_actualizados: number;
+  total_planificado: number;
 }

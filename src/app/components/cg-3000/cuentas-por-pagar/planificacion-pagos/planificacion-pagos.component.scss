@@ -524,66 +524,116 @@ select.compact-input {
   }
 }
 
-/* ===== DISTRIBUCIÓN ===== */
-.distribucion-panel {
-  background: var(--accent-light);
-  border-left: 4px solid var(--accent);
-  padding: 8px; // ✅ Reducido
+// ===== DISTRIBUCIÓN - LAYOUT CORREGIDO =====
+.distribucion-content-compact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+}
+
+.distribucion-row {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr; // Input | Distribuir | Planificar/Aprobar
+  gap: 8px;
+  align-items: end; // Alinear al fondo
+}
+
+.monto-input-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.compact-label-inline {
+  font-size: 10px;
+  font-weight: 600;
+  color: #555;
+}
+
+.input-with-currency-inline {
+  display: flex;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  padding: 0 8px;
+  height: 32px;
   
-  .section-header-compact {
-    margin-bottom: 6px;
-    font-size: 11px; // ✅ Más pequeño
+  .currency-symbol {
+    font-weight: bold;
+    color: #666;
+    font-size: 12px;
+    margin-right: 4px; // ✅ Espaciado entre $ e input
+  }
+  
+  .compact-input-small {
+    border: none;
+    outline: none;
+    flex: 1;
+    font-size: 13px;
+    padding: 0;
+    width: 100%; // ✅ Ocupar todo el espacio
+    
+    &:focus {
+      outline: none;
+    }
   }
 }
 
-.distribucion-content {
+.restante-badge {
+  font-size: 9px;
+  padding: 2px 6px;
+  background: #fff9c4;
+  color: #748a01;
+  border-radius: 3px;
+  border: 1px solid #f0e68c;
+  font-weight: bold;
+  display: inline-block;
+  margin-top: 2px;
+}
+
+.btn-inline {
+  height: 32px;
+  white-space: nowrap;
+  padding: 0 12px; // ✅ Padding horizontal
+}
+
+.distribucion-actions-compact {
+  grid-column: 3;
+  grid-row: 1;
   display: flex;
-  gap: 16px;
-  align-items: flex-end;
+  gap: 8px;
+  align-self: end;
+  
+  button {
+    height: 32px;
+    padding: 0 12px;  // ✅ AGREGA esto para controlar el ancho
+    white-space: nowrap;  // ✅ AGREGA esto para evitar saltos de línea
+  }
 }
 
-.monto-input-group {
-  flex: 1;
-  max-width: 350px;
-}
-
-.input-with-currency {
-  position: relative;
-}
-
-.currency-symbol {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-weight: 600;
-  color: var(--gray-600);
-}
-
-.input-monto {
-  padding-left: 32px !important;
-  font-weight: 600;
-}
-
-.hint-text {
+.hint-text-info {
   display: flex;
   align-items: center;
   gap: 4px;
-  font-size: 11px;
-  color: var(--gray-600);
-  margin-top: 4px;
+  color: #666;
+  font-size: 9px;
+  padding: 4px 8px;
+  background: #f0f7ff;
+  border-left: 2px solid #1976d2;
+  border-radius: 3px;
   
   mat-icon {
-    font-size: 14px;
-    width: 14px;
-    height: 14px;
-    color: var(--gray-600) !important;
+    font-size: 12px !important;
+    width: 12px !important;
+    height: 12px !important;
+    color: #1976d2;
   }
 }
 
-.distribucion-actions {
-  display: flex;
-  gap: 8px;
+.separador-compact {
+  display: none;
 }
 
 /* ===== BADGES ===== */
@@ -775,85 +825,23 @@ select.compact-input {
   }
 }
 
-/* ===== CHECKBOXES - VERSIÓN SIMPLIFICADA SIN ::after ===== */
+/* ===== CHECKBOXES - VERSIÓN SIMPLE ===== */
 ::ng-deep .ag-theme-material {
-  // ✅ Checkbox en celdas normales
-  .ag-selection-checkbox {
-    .ag-checkbox-input-wrapper {
-      width: 20px !important;
-      height: 20px !important;
-      
-      input[type="checkbox"] {
-        appearance: none !important;
-        -webkit-appearance: none !important;
-        width: 20px !important;
-        height: 20px !important;
-        margin: 0 !important;
-        cursor: pointer !important;
-        border: 2px solid #757575 !important;
-        border-radius: 3px !important;
-        background: white !important;
-        position: relative !important;
-        
-        &:checked {
-          background-color: var(--primary) !important;
-          border-color: var(--primary) !important;
-          
-          &::before {
-            content: '✓' !important;
-            position: absolute !important;
-            color: white !important;
-            font-size: 14px !important;
-            font-weight: bold !important;
-            top: 0px !important;
-            left: 3px !important;
-          }
-        }
-      }
-    }
+  .ag-checkbox-input-wrapper input[type="checkbox"] {
+    width: 18px !important;
+    height: 18px !important;
+    cursor: pointer !important;
+    accent-color: var(--primary) !important;
   }
   
-  // ✅ Checkbox en header
-  .ag-header-select-all {
-    .ag-checkbox-input-wrapper input[type="checkbox"]:checked {
-      background-color: var(--accent) !important;
-      border-color: var(--accent) !important;
-    }
-  }
-  
-  // ✅ Ocultar checkbox en filas de subtotal y espacio
-  .ag-row[row-index] {
-    &:has(.subtotal-row),
-    &:has(.grupo-row) {
-      .ag-selection-checkbox {
-        visibility: hidden !important;
-      }
-    }
-  }
-  
-  // ✅ Filas seleccionadas más vistosas
   .ag-row-selected {
-    background-color: #90caf9 !important;
-    border-left: 4px solid var(--primary) !important;
-    font-weight: 500 !important;
-    
-    &:hover {
-      background-color: #64b5f6 !important;
-    }
+    background-color: #bbdefb !important;
+    border-left: 3px solid var(--primary) !important;
     
     .ag-cell[col-id="monto_a_pagar"] {
-      background-color: #fdd835 !important;
+      background-color: #fff59d !important;
       font-weight: 700 !important;
     }
-  }
-  
-  // ✅ Área clickable del checkbox más grande
-  .ag-cell[col-id="seleccionado"] {
-    padding: 8px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
   }
 }
 /* ===== GRID 2 COLUMNAS: FILTROS + RESUMEN ===== */
@@ -1265,16 +1253,6 @@ select.compact-input {
   white-space: nowrap;
 }
 
-.distribucion-actions-compact {
-  display: flex;
-  gap: 8px;
-  
-  button {
-    flex: 1;
-    height: 32px; // ✅ Mismo tamaño que otros botones
-  }
-}
-
 // ===== ESTILOS PARA BOTONES =====
 .compact-btn-warning {
   background: #ff9800 !important;
@@ -1330,8 +1308,8 @@ select.compact-input {
 // ===== DISTRIBUCIÓN - TODO EN UNA FILA =====
 .distribucion-content-compact {
   display: grid;
-  grid-template-columns: 200px 100px 1fr; // Input | Distribuir | Planificar
-  grid-template-rows: auto auto; // Fila 1: controles | Fila 2: hint
+  grid-template-columns: 200px 100px auto; // ✅ Cambia 1fr por auto
+  grid-template-rows: auto auto;
   gap: 8px;
   align-items: start;
   padding: 8px;
@@ -1354,15 +1332,16 @@ select.compact-input {
 }
 
 .distribucion-actions-compact {
-  grid-column: 3; // ✅ Tercera columna
-  grid-row: 1; // ✅ Primera fila (misma que input y distribuir)
+  grid-column: 3;
+  grid-row: 1;
   display: flex;
   gap: 8px;
-  align-self: end; // Alineado al fondo
+  align-self: end;
   
   button {
-    flex: 1;
     height: 32px;
+    padding: 0 12px;  // ✅ AGREGA
+    white-space: nowrap;  // ✅ AGREGA
   }
 }
 
@@ -1501,7 +1480,7 @@ select.compact-input {
       z-index: 1 !important;
     }
     
-    &::after {
+    &::before {
       content: '' !important;
       position: absolute !important;
       top: 0 !important;
@@ -1512,6 +1491,7 @@ select.compact-input {
       border-radius: 3px !important;
       background: white !important;
       box-sizing: border-box !important;
+      pointer-events: none !important;
     }
   }
   
@@ -1566,6 +1546,29 @@ select.compact-input {
     justify-content: center !important;
   }
 }
+
+/* ===== CHECKBOX VISTA SIMPLIFICADA ===== */
+.compact-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  
+  input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+    accent-color: var(--primary);
+    // NO usar opacity: 0 ni position: absolute aquí
+  }
+  
+  span {
+    font-size: 13px;
+    color: var(--gray-800);
+  }
+}
+
 /* ===== BOTÓN CARGAR EXCEL ===== */
 .compact-btn-accent {
   color: white !important;

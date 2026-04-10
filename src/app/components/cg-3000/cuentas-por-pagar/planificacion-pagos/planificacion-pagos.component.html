@@ -226,15 +226,14 @@
 
           <!-- Botones de Acción -->
           <div class="distribucion-actions-compact">
-            <!-- PLANIFICAR (solo si NO hay planificación cargada) -->
+            <!-- ⭐ PLANIFICAR / ACTUALIZAR (botón dual) -->
             <button
-              *ngIf="!planificacionCargada"
               class="compact-btn compact-btn-success"
               (click)="planificarPago()"
               [disabled]="guardando || !totalDocumentosSeleccionados || !datosPagoForm.valid">
               <mat-spinner *ngIf="guardando" diameter="16"></mat-spinner>
-              <mat-icon *ngIf="!guardando">check_circle</mat-icon>
-              {{ guardando ? 'Procesando...' : 'Planificar Pago' }}
+              <mat-icon *ngIf="!guardando">{{ planificacionCargada ? 'edit' : 'save' }}</mat-icon>
+              {{ guardando ? 'Procesando...' : textoPlanificar }}
             </button>
 
             <!-- APROBAR (solo si HAY planificación cargada) -->
@@ -356,7 +355,7 @@
         (click)="fileInput.click()" 
         [disabled]="!totalDocumentosReales">
         <mat-icon>upload_file</mat-icon>
-        Cargar Excel
+        Conciliar Excel
       </button>
       <input 
         #fileInput 

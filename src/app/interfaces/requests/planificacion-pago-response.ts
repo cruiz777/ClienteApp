@@ -41,3 +41,11 @@ export interface DocumentoPendienteRequest {
   fecha_vencimiento_hasta?: string;
   cuentas_contables?: string[];
 }
+
+export interface EliminarPlanificacionRequest {
+  numero_transaccion: number;
+  id_empresa: number;
+  id_usuario: number;
+  motivo?: string;
+  documentos_a_eliminar?: number[];
+}
