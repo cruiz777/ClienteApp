@@ -1,0 +1,48 @@
+<div class="page-cierre">
+  <div class="header-cierre">
+    <h1>Cierre Mensual</h1>
+    <p>Actualización del estado mensual en fechas_control</p>
+  </div>
+
+  <div class="card-cierre">
+    <div class="fila-cierre">
+      <mat-form-field appearance="outline">
+        <mat-label>Mes</mat-label>
+        <mat-select [(ngModel)]="mesSeleccionado">
+          <mat-option *ngFor="let mes of meses" [value]="mes.valor">
+            {{ mes.nombre }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Año</mat-label>
+        <input
+          matInput
+          type="number"
+          [(ngModel)]="anioSeleccionado"
+          min="2000"
+          max="2100"
+        />
+      </mat-form-field>
+
+      <button
+        mat-raised-button
+        color="primary"
+        type="button"
+        class="btn-cierre"
+        [disabled]="loading"
+        (click)="confirmarCierre()"
+      >
+        {{ loading ? 'Procesando...' : 'Ejecutar cierre' }}
+      </button>
+    </div>
+
+    <div class="info-periodo">
+      <span class="chip-periodo">
+        Período:
+        <strong>{{ obtenerNombreMes() }} {{ anioSeleccionado }}</strong>
+      </span>
+    </div>
+  </div>
+</div>
