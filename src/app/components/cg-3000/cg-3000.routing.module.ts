@@ -41,6 +41,7 @@ import { GenerarAtsComponent } from './anexo-transaccional/generacion-anexo/gene
 import { MayorCodigosListComponent } from './balance/mayor/mayor-codigos/mayor-codigos.component';
 import { PlanificacionPagosComponent } from './cuentas-por-pagar/planificacion-pagos/planificacion-pagos.component';
 import { CierreContableComponent } from './configuracion/cierre-contable/cierre-contable.component';
+import { CierreMensualComponent } from './configuracion/cierre-mensual/cierre-mensual.component';
 
 const routes: Routes = [
   {
@@ -73,6 +74,7 @@ const routes: Routes = [
       { path: 'liquidacion-compra', component: LiquidacionCompraFormComponent },
       { path: 'liquidacion-compra-list', component: LiquidacionCompraComponent },
       {path: 'cierre-anual',component:CierreContableComponent},
+      {path: 'cierre-mensual',component:CierreMensualComponent},
       { path: 'conciliacion', component: ConciliacionComponent},
       { path: 'reversa-conciliacion', component: ReversaConciliacionComponent},
       { path: 'mayor', component: MayorCuentasListComponent },
