@@ -63,7 +63,7 @@
       <div class="row">
         <div class="col-md-4">
           <div class="field">
-            <label>Monto a Pagar</label>
+            <label>Monto a Pagar <small class="text-muted">(opcional)</small></label>
             <mat-form-field appearance="outline" class="w-100">
               <input
                 matInput
@@ -74,12 +74,7 @@
                 step="0.01"
                 placeholder="0.00">
               <span matPrefix>$&nbsp;</span>
-              <mat-error *ngIf="paso1Form.get('montoPagar')?.hasError('required')">
-                El monto es obligatorio
-              </mat-error>
-              <mat-error *ngIf="paso1Form.get('montoPagar')?.hasError('min')">
-                Debe ser mayor a 0
-              </mat-error>
+              <mat-hint>Deje en 0 para aplicar anticipos o seleccionar facturas manualmente</mat-hint>
             </mat-form-field>
           </div>
         </div>
@@ -159,26 +154,39 @@
           [rowSelection]="'multiple'"
           [animateRows]="true"
           [suppressRowClickSelection]="true"
-          (gridReady)="onGridFacturasReady($event)">
+          (gridReady)="onGridFacturasReady($event)"
+          (rowSelected)="onFacturaSeleccionada($event)">
         </ag-grid-angular>
+      </div>
+
+      <!-- Indicador de anticipos aplicados -->
+      <div *ngIf="tieneAnticiposAplicados" 
+          class="alert alert-success d-flex align-items-center mt-2 mb-2"
+          style="background-color: #d1f2eb; border-left: 4px solid #28a745;">
+        <mat-icon class="me-2" style="color: #28a745;">check_circle</mat-icon>
+        <div>
+          <strong>Anticipo aplicado:</strong>
+          ${{ totalAnticiposAplicados.toFixed(2) }}
+          cruzado automáticamente
+        </div>
       </div>
 
       <!-- RESUMEN PASO 1 -->
       <div class="resumen-totales">
         <div class="resumen-item">
-          <span class="resumen-label">TOTAL DEUDA:</span>
-          <span class="resumen-valor">${{ totalDeuda.toFixed(2) }}</span>
+          <span class="resumen-label">TOTAL HABER:</span>
+          <span class="resumen-valor texto-rojo">${{ totalHaber.toFixed(2) }}</span>
         </div>
         <div class="resumen-separador">-</div>
         <div class="resumen-item">
-          <span class="resumen-label">TOTAL A PAGAR:</span>
-          <span class="resumen-valor texto-azul">${{ montoPagar.toFixed(2) }}</span>
+          <span class="resumen-label">TOTAL DEBE:</span>
+          <span class="resumen-valor texto-verde">${{ totalDebe.toFixed(2) }}</span>
         </div>
         <div class="resumen-separador">=</div>
         <div class="resumen-item">
-          <span class="resumen-label">SALDO:</span>
-          <span class="resumen-valor" [class.texto-verde]="saldoDeuda >= 0" [class.texto-rojo]="saldoDeuda < 0">
-            ${{ saldoDeuda.toFixed(2) }}
+          <span class="resumen-label">SALDO A PAGAR:</span>
+          <span class="resumen-valor texto-azul fw-bold" style="font-size: 1.1em;">
+            ${{ saldoAPagar.toFixed(2) }}
           </span>
         </div>
       </div>

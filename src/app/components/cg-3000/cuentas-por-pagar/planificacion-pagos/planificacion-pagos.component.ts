@@ -80,7 +80,7 @@ export class PlanificacionPagosComponent implements OnInit {
     {
       field: 'nombre_proveedor',
       headerName: 'Proveedor',
-      width: 750,
+      width: 1000,
       editable: false,
       cellStyle: ((params: any) => {
         if (params.data?.esEspacio) {
@@ -108,21 +108,21 @@ export class PlanificacionPagosComponent implements OnInit {
     {
       field: 'descripcion_tipo_movimiento',
       headerName: 'Tip. Movim.',
-      width: 180,
+      width: 500,
       editable: false,
       hide: false  
     },
     {
       field: 'numero_comprobante',
       headerName: 'No. Comp.',
-      width: 180,
+      width: 550,
       editable: false,
       pinned: 'left'
     },
     {
       field: 'fecha_transaccion',
       headerName: 'Fec. Movim.',
-      width: 420,
+      width: 520,
       valueFormatter: params => this.formatDate(params.value),
       editable: false,
       hide: false
@@ -130,7 +130,7 @@ export class PlanificacionPagosComponent implements OnInit {
     {
       field: 'fecha_vencimiento',
       headerName: 'Fec. Venc.',
-      width: 420,
+      width: 520,
       valueFormatter: params => this.formatDate(params.value),
       cellStyle: params => {
         if (params.data?.esta_vencido) {
@@ -143,7 +143,7 @@ export class PlanificacionPagosComponent implements OnInit {
     {
       field: 'total_documento',
       headerName: 'Total Doc.',
-      width: 320,
+      width: 520,
       valueFormatter: params => {
         if (params.data?.esEspacio || params.data?.esSubtotal) return '';
         if (!params.value || params.value === 0) return '';
@@ -156,7 +156,7 @@ export class PlanificacionPagosComponent implements OnInit {
     {
       field: 'comision',
       headerName: 'Comisión',
-      width: 180,
+      width: 420,
       valueFormatter: params => {
         if (params.data?.esEspacio || params.data?.esSubtotal) return '';
         if (!params.value || params.value === 0) return '';
@@ -169,7 +169,7 @@ export class PlanificacionPagosComponent implements OnInit {
     {
       field: 'aporte',
       headerName: 'Aporte',
-      width: 180,
+      width: 420,
       valueFormatter: params => {
         if (params.data?.esEspacio || params.data?.esSubtotal) return '';
         if (!params.value || params.value === 0) return '';
@@ -182,7 +182,7 @@ export class PlanificacionPagosComponent implements OnInit {
     {
       field: 'retencion_fuente',
       headerName: 'Ret. Fuente',
-      width: 220,
+      width: 420,
       valueFormatter: params => {
         if (params.data?.esEspacio || params.data?.esSubtotal) return '';
         if (!params.value || params.value === 0) return '';
@@ -195,7 +195,7 @@ export class PlanificacionPagosComponent implements OnInit {
     {
       field: 'retencion_iva',
       headerName: 'Ret. IVA',
-      width: 220,
+      width: 420,
       valueFormatter: params => {
         if (params.data?.esEspacio || params.data?.esSubtotal) return '';
         if (!params.value || params.value === 0) return '';
@@ -208,7 +208,7 @@ export class PlanificacionPagosComponent implements OnInit {
     {
       field: 'debe',
       headerName: 'Debe',
-      width: 320,
+      width: 420,
       valueFormatter: params => {
         if (params.data?.esEspacio || params.data?.esSubtotal) return '';
         if (!params.value || params.value === 0) return '';
@@ -221,7 +221,7 @@ export class PlanificacionPagosComponent implements OnInit {
     {
       field: 'haber',
       headerName: 'Haber',
-      width: 320,
+      width: 420,
       valueFormatter: params => {
         if (params.data?.esEspacio || params.data?.esSubtotal) return '';
         if (!params.value || params.value === 0) return '';
@@ -234,7 +234,7 @@ export class PlanificacionPagosComponent implements OnInit {
     {
       field: 'saldo',
       headerName: 'Saldo',
-      width: 320,
+      width: 850,
       valueFormatter: params => {
         if (params.data?.esEspacio) return '';
         if (!params.value && params.value !== 0) return '';
@@ -370,7 +370,7 @@ export class PlanificacionPagosComponent implements OnInit {
     {
       field: 'monto_a_pagar',
       headerName: 'Valor',
-      width: 320,
+      width: 500,
       editable: (params) => !params.data?.esSubtotal && !params.data?.esEspacio,
       type: 'rightAligned',
       cellStyle: ((params: any) => {
@@ -444,7 +444,7 @@ export class PlanificacionPagosComponent implements OnInit {
     {
       field: 'exceso',
       headerName: 'Exceso',
-      width: 100,
+      width: 200,
       valueFormatter: params => {
         if (params.data?.esEspacio || params.data?.esSubtotal) return '';
         if (!params.value || params.value === 0) return '';
@@ -458,7 +458,7 @@ export class PlanificacionPagosComponent implements OnInit {
     {
       field: 'observaciones',
       headerName: 'Observaciones',
-      width: 200,
+      width: 700,
       editable: (params) => !params.data?.esSubtotal && !params.data?.esEspacio, 
       valueFormatter: params => {
         if (params.data?.esEspacio || params.data?.esSubtotal) return '';
@@ -516,7 +516,7 @@ export class PlanificacionPagosComponent implements OnInit {
       innerRenderer: (params: any) => {
         // Si es FILA DE SUBTOTAL (footer)
         if (params.node.footer) {
-          return '<strong style="color: #1976d2; font-weight: 600;">S U B T O T A L</strong>';
+          return '<strong style="color: #1976d2; font-weight: 300;">S U B T O T A L</strong>';
         }
         
         // Si es GRUPO (proveedor)
@@ -561,10 +561,31 @@ export class PlanificacionPagosComponent implements OnInit {
       const doc = event.node.data;
       
       if (isSelected) {
-        //SELECCIONADO → Llenar con saldo completo
-        const saldoDoc = Math.abs(doc.saldo || 0);
-        doc.monto_a_pagar = saldoDoc;
-        doc.tipo_pago_seleccionado = 'P';
+        // ⭐ SI HAY MONTO A DISTRIBUIR, usar distribución manual
+        if (this.montoTotalADistribuir > 0) {
+          const presupuestoDisponible = this.calcularPresupuestoDisponible();
+          const saldoDoc = Math.abs(doc.saldo || 0);
+          
+          if (presupuestoDisponible <= 0) {
+            // Sin presupuesto → deseleccionar automáticamente
+            event.node.setSelected(false);
+            this.showError('Presupuesto agotado. Aumente el monto a distribuir.');
+            return;
+          }
+          
+          // Asignar lo que alcance
+          const valorAsignar = Math.min(saldoDoc, presupuestoDisponible);
+          doc.monto_a_pagar = valorAsignar;
+          doc.tipo_pago_seleccionado = valorAsignar >= saldoDoc ? 'P' : 'A';
+          
+          // Actualizar restante
+          this.montoRestante = presupuestoDisponible - valorAsignar;
+        } else {
+          // SIN monto a distribuir → comportamiento normal (saldo completo)
+          const saldoDoc = Math.abs(doc.saldo || 0);
+          doc.monto_a_pagar = saldoDoc;
+          doc.tipo_pago_seleccionado = 'P';
+        }
       } else {
         // DESELECCIONADO → Limpiar
         doc.monto_a_pagar = 0;
@@ -637,7 +658,7 @@ distribuirMonto(): void {
  
   // ⭐ OBTENER TODAS las facturas (no solo seleccionadas)
   const todasLasFacturas = this.documentosRows
-    .filter((d: any) => !d.esSubtotal && !d.esEspacio);
+    .filter((d: any) => !d.esSubtotal && !d.esEspacio && (d.saldo || 0) <= 0);
     
   if (todasLasFacturas.length === 0) {
     this.showError('No hay documentos disponibles para distribuir el monto');
@@ -721,8 +742,8 @@ distribuirMonto(): void {
     // ⭐ SI ES PLANIFICACIÓN CARGADA, usar valor_pago para detectar anticipos
     if (this.planificacionCargada) {
       // Para planificaciones: valor negativo = anticipo aplicado
-      const facturas = documentosReales.filter(d => (d.monto_a_pagar || 0) >= 0);
-      const anticipos = documentosReales.filter(d => (d.monto_a_pagar || 0) < 0);
+        const facturas = documentosReales.filter(d => d.saldo <= 0);  
+        const anticipos = documentosReales.filter(d => d.saldo > 0); 
       
       this.totalSaldoTotal = Math.abs(
         facturas.reduce((sum, d) => sum + Math.abs(d.saldo || 0), 0)
@@ -742,12 +763,10 @@ distribuirMonto(): void {
       this.diferencia = 0;
     } else {
       // LÓGICA ORIGINAL para documentos pendientes
-      const facturas = documentosReales.filter(d => d.saldo >= 0);
-      const anticipos = documentosReales.filter(d => d.saldo < 0);
+      const facturas = documentosReales.filter(d => d.saldo <= 0);
+      const anticipos = documentosReales.filter(d => d.saldo > 0);
       
-      this.totalSaldoTotal = Math.abs(
-        facturas.reduce((sum, d) => sum + (d.saldo || 0), 0)
-      );
+      this.totalSaldoTotal = facturas.reduce((sum, d) => sum + Math.abs(d.saldo || 0), 0);
       
       const facturasConMonto = facturas.filter(d => d.monto_a_pagar && d.monto_a_pagar > 0);
       const anticiposConMonto = anticipos.filter(d => d.monto_a_pagar && d.monto_a_pagar > 0);
@@ -764,7 +783,12 @@ distribuirMonto(): void {
       this.totalPendiente = this.totalMarcado - totalFacturas;
       this.diferencia = totalFacturas - this.totalMarcado;
     }
-    
+    //CALCULAR MONTO RESTANTE (puede ser negativo si se pasó)
+    if (this.montoTotalADistribuir > 0) {
+      this.montoRestante = this.montoTotalADistribuir - this.totalAPlanificar;
+    } else {
+      this.montoRestante = 0;
+    }
     this.actualizarSubtotales();
   }
   
@@ -860,11 +884,12 @@ distribuirMonto(): void {
   private initForms(): void {
     this.filtrosForm = this.fb.group({
       proveedor: [''],
-      fechaVencimientoHasta: ['']
+      fechaPago: ['', Validators.required],  // ⭐ MOVIDO AQUÍ
+      fechaVencimientoHasta: ['', Validators.required]  // ⭐ AHORA OBLIGATORIO
     });
 
+
     this.datosPagoForm = this.fb.group({
-      fechaPago: ['', Validators.required],
       fechaVencimiento: [''],
       idFormaPago: ['', Validators.required],
       cuentaBanco: ['', Validators.required],
@@ -968,10 +993,32 @@ distribuirMonto(): void {
   // ===== CARGAR DOCUMENTOS =====
   buscarDocumentos(): void {
     this.planificacionCargada = null;
-    if (!this.datosPagoForm.get('fechaPago')?.value) {
-      this.showError('Debe ingresar la Fecha de Pago antes de buscar documentos');
+    const errores: string[] = [];
+  
+    if (!this.filtrosForm.get('fechaPago')?.value) {
+      errores.push('• Fecha de Registro');
+    }
+    if (!this.filtrosForm.get('fechaVencimientoHasta')?.value) {
+      errores.push('• Fecha de Vencimiento Hasta');
+    }    
+    if (!this.datosPagoForm.get('idFormaPago')?.value) {
+      errores.push('• Forma de Pago');
+    }
+    
+    if (!this.datosPagoForm.get('cuentaBanco')?.value) {
+      errores.push('• Cuenta Banco');
+    }
+    if (!this.datosPagoForm.get('observacion')?.value) {
+      errores.push('• Observacion');
+    }
+    if (errores.length > 0) {
+      this.showError(
+        'Complete los siguientes campos antes de buscar:\n\n' + 
+        errores.join('\n')
+      );
       return;
     }
+    
     this.cargandoDocumentos = true;
     this.montoTotalADistribuir = 0;
     this.montoRestante = 0;
@@ -1095,59 +1142,29 @@ distribuirMonto(): void {
 
     // Filtrar documentos
     const documentosReales = this.documentosRows.filter((d: any) => 
-      !d.esSubtotal && !d.esEspacio && d.monto_a_pagar && d.monto_a_pagar > 0 && d.tipo_pago_seleccionado
+      !d.esSubtotal && !d.esEspacio
     );
 
     if (documentosReales.length === 0) {
       this.showError('Seleccione al menos un documento con monto a pagar');
       return;
-    }
-
-    // Validar que solo se agarren documentos del mismo proveedor
-    const proveedoresUnicos = [...new Set(documentosReales.map(d => d.id_proveedor))];
-
-    if (proveedoresUnicos.length > 1) {
-      const nombresProveedores = proveedoresUnicos.map(idProv => {
-        const doc = documentosReales.find(d => d.id_proveedor === idProv);
-        return doc?.nombre_proveedor || 'N/A';
-      }).join(', ');
-
-      this.showError(
-        `❌ No puede planificar documentos de diferentes proveedores en una misma transacción.\n\n` +
-        `Proveedores seleccionados: ${nombresProveedores}\n\n` +
-        `💡 Solución: Planifique cada proveedor por separado.`
-      );
-      return;
-    }
-
-    // ⭐ SEPARAR FACTURAS Y ANTICIPOS
-    const facturas = documentosReales.filter(d => (d.saldo || 0) <= 0);
-    const anticipos = documentosReales.filter(d => (d.saldo || 0) > 0);
-
-    const totalFacturas = facturas.reduce((sum, d) => sum + (d.monto_a_pagar || 0), 0);
-    const totalAnticipos = anticipos.reduce((sum, d) => sum + (d.monto_a_pagar || 0), 0);
-    const netoAPagar = totalFacturas - totalAnticipos;
+    }  
 
     // ⭐ DETECTAR SI ES ACTUALIZACIÓN O CREACIÓN
     const esActualizacion = !!this.planificacionCargada;
     const accion = esActualizacion ? 'actualizar' : 'planificar';
     const titulo = esActualizacion ? 'Confirmar Actualización' : 'Confirmar Planificación';
 
-    // ⭐ MENSAJE MEJORADO
+    //MENSAJE MEJORADO
+   const total = documentosReales.reduce((sum, d) => sum + Math.abs(d.monto_a_pagar || 0), 0);
+
     let mensaje = `¿Desea ${accion} el pago de ${documentosReales.length} documento(s)?`;
-    
+
     if (esActualizacion) {
       mensaje += `\n\nTransacción: ${this.planificacionCargada.num_transaccion}`;
     }
-    
-    if (anticipos.length > 0) {
-      mensaje += `\n\n📊 Detalle:`;
-      mensaje += `\n• Facturas: $${totalFacturas.toFixed(2)}`;
-      mensaje += `\n• Anticipos aplicados: -$${totalAnticipos.toFixed(2)}`;
-      mensaje += `\n• NETO A PAGAR: $${netoAPagar.toFixed(2)}`;
-    } else {
-      mensaje += `\n\nTotal: $${totalFacturas.toFixed(2)}`;
-    }
+
+    mensaje += `\n\nTotal: $${total.toFixed(2)}`;
 
     const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
       data: {
@@ -1197,7 +1214,7 @@ distribuirMonto(): void {
       return {
         id_cuenta_por_pagar: Number(idCuentaPorPagar),
         tipo_pago: d.tipo_pago_seleccionado || 'P',
-        valor_pago: Math.abs(Number(d.monto_a_pagar)),
+        valor_pago: d.monto_a_pagar ? Math.abs(Number(d.monto_a_pagar)) : 0,
         comentario: d.observaciones || undefined
       };
     });
@@ -1277,27 +1294,27 @@ distribuirMonto(): void {
     });
 
     const documentosPago: DocumentoPagoRequest[] = documentos.map(d => ({
-    id_cuenta_por_pagar: Number(d.id_cuenta_por_pagar), // ✅ ASEGURAR NÚMERO
-    tipo_pago: d.tipo_pago_seleccionado || 'P',
-    valor_pago: Number(d.monto_a_pagar), // ✅ ASEGURAR NÚMERO
-    comentario: d.observaciones || undefined
+      id_cuenta_por_pagar: Number(d.id_cuenta_por_pagar),
+      tipo_pago: d.tipo_pago_seleccionado || 'N',  //'N' por defecto si no tiene monto
+      valor_pago: d.monto_a_pagar ? Math.abs(Number(d.monto_a_pagar)) : 0,  //Enviar 0 si no hay monto
+      comentario: d.observaciones || undefined
     }));
 
     // ✅ LOG PARA DEBUG
     console.log('📤 Documentos a enviar:', documentosPago);
     console.log('📤 Total documentos:', documentosPago.length);
     const request: ProcesarPagoRequest = {  // ← CAMBIAR TIPO
-        id_empresa: this.idEmpresa,
-        id_usuario: this.idUsuario,
-        fecha_pago: this.datosPagoForm.value.fechaPago,
-        fecha_vencimiento: this.datosPagoForm.value.fechaVencimiento || this.datosPagoForm.value.fechaPago,
-        id_forma_pago: Number(this.datosPagoForm.value.idFormaPago),
-        cuenta_banco: this.datosPagoForm.value.cuentaBanco,
-        observacion: this.datosPagoForm.value.observacion || undefined,
-        documentos: documentosPago,
-        id_zona: this.idZona,
-        id_tipo_asiento: 5
-        }; 
+      id_empresa: this.idEmpresa,
+      id_usuario: this.idUsuario,
+      fecha_pago: this.datosPagoForm.value.fechaPago,
+      fecha_vencimiento: this.filtrosForm.value.fechaVencimientoHasta,
+      id_forma_pago: Number(this.datosPagoForm.value.idFormaPago),
+      cuenta_banco: this.datosPagoForm.value.cuentaBanco,
+      observacion: this.datosPagoForm.value.observacion || undefined,
+      documentos: documentosPago,
+      id_zona: this.idZona,
+      id_tipo_asiento: 5
+    }; 
 
     this.guardando = true;
 
@@ -1719,9 +1736,6 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
     
     // Convertir items
     const documentosFormateados = transaccion._items.map((item: PlanificacionPagoResponse) => {
-      // ⭐ NO USAR Math.abs() - Dejar el valor tal cual se guardó
-      const valorPago = Math.abs(item.valor_pago || 0);
-      const eraAnticipo = (item.valor_pago || 0) < 0;
       // const saldoOriginal = item.saldo_documento !== undefined 
       //   ? item.saldo_documento 
       //   : (valorPago < 0 ? Math.abs(valorPago) : -Math.abs(valorPago));
@@ -1744,7 +1758,7 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
         total_documento: item.total_documento || item.total || 0,
         debe: item.debe_documento || 0,
         haber: item.haber_documento || 0,
-        saldo: item.saldo_documento || (eraAnticipo ? valorPago : -valorPago), //Usar valor original                                                                            
+        saldo: item.saldo_documento, //Usar valor original                                                                            
 
         // Retenciones del documento original
         retencion_fuente: item.retencion_fuente_documento || item.retencion || 0,
@@ -1756,7 +1770,7 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
         
         // ⭐ VALORES EDITABLES
         tipo_pago_seleccionado: item.estado_pago || 'P',
-        monto_a_pagar: valorPago,  // ⭐ SIN Math.abs()
+        monto_a_pagar: Math.abs(item.valor_pago || 0),
         observaciones: item.comentario || '',
         exceso: null,
         
@@ -1765,7 +1779,6 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
         _numTransaccion: item.num_transaccion,
         _idPlanificacion: item.id_planificacion,
         _idCuentaPorPagar: item.id_cuenta_por_pagar,
-         _eraAnticipo: eraAnticipo,
          
         // Flags de control
         esSubtotal: false,
@@ -1812,5 +1825,21 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
   }
   toggleDropdownExcel(): void {
     this.mostrarDropdownExcel = !this.mostrarDropdownExcel;
+  }
+  validarMontoMaximo(): void {
+    if (this.montoTotalADistribuir > this.totalSaldoTotal) {
+      this.montoTotalADistribuir = this.totalSaldoTotal;
+      this.showSuccess(`Monto ajustado al máximo disponible: $${this.totalSaldoTotal.toFixed(2)}`);
+    }
+  }
+  calcularPresupuestoDisponible(): number {
+    if (this.montoTotalADistribuir <= 0) return 0;
+    
+    // Calcular cuánto ya se asignó
+    const yaAsignado = this.documentosRows
+      .filter((d: any) => !d.esSubtotal && !d.esEspacio)
+      .reduce((sum, d) => sum + (d.monto_a_pagar || 0), 0);
+    
+    return this.montoTotalADistribuir - yaAsignado;
   }
 }

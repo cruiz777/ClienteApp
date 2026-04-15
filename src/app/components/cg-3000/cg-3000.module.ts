@@ -40,6 +40,7 @@ import { CierreContableComponent } from './configuracion/cierre-contable/cierre-
 import { AprobacionPlanificacionesComponent } from './cuentas-por-pagar/planificacion-pagos/aprobacion/aprobacion-planificaciones.component';
 import { DetalleTransaccionDialogComponent } from './cuentas-por-pagar/planificacion-pagos/aprobacion/detalle-transaccion-dialog.component';
 import { MatDialogModule } from '@angular/material/dialog';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 
 
@@ -83,6 +84,7 @@ import { MatDialogModule } from '@angular/material/dialog';
     MatAutocompleteModule,
     MatProgressSpinnerModule,
     MatDialogModule,
+    MatTooltipModule,
     PlanCuentaCellEditorComponent,    
     // Ruteo del feature
     Cg3000RoutingModule,

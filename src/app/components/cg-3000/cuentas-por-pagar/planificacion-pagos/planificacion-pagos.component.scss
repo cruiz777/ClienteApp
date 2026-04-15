@@ -42,16 +42,17 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 16px;
+  font-size: 14px !important; 
   font-weight: 600;
   color: var(--primary);
   margin: 0;
+  line-height: 1;
   
   mat-icon {
     color: var(--accent) !important;
-    font-size: 22px;
-    width: 22px;
-    height: 22px;
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
   }
 }
 
@@ -137,13 +138,17 @@
 }
 
 /* ===== FILTROS ===== */
-.filters-grid {
-  display: grid;
-  grid-template-columns: 1fr auto auto auto;
+.filters-grid-vertical {
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  align-items: end;
 }
 
+.filters-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);  /* ✅ 3 columnas iguales para fechas y cuentas */
+  gap: 12px;
+}
 .filter-col {
   &.filter-col-grow {
     min-width: 250px;
@@ -282,7 +287,7 @@ select.compact-input {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
-  min-width: 500px;
+  width: 550px;  /* ✅ Ancho fijo y grande */
   background: white;
   border: 1px solid var(--gray-200);
   border-radius: 8px;
@@ -330,12 +335,13 @@ select.compact-input {
     
     label {
       display: grid;
-      grid-template-columns: 30px 120px 1fr;
+      grid-template-columns: 40px 140px 1fr;  /* ✅ Checkbox | Código | Nombre */
       gap: 12px;
-      padding: 10px;
+      padding: 10px 12px;
       cursor: pointer;
       border-radius: 6px;
       transition: background 0.15s;
+      align-items: center;  /* ✅ AGREGAR */
       
       &:hover {
         background: var(--primary-light);
@@ -351,11 +357,14 @@ select.compact-input {
         font-weight: 600;
         color: var(--primary);
         font-family: monospace;
+        font-size: 13px;
       }
       
       .name {
         color: var(--gray-800);
         font-size: 13px;
+        white-space: normal;  /* ✅ AGREGAR: permite múltiples líneas */
+        line-height: 1.3;     /* ✅ AGREGAR: mejor espaciado */
       }
     }
   }
@@ -366,6 +375,8 @@ select.compact-input {
   border: 1px solid var(--gray-200);
   border-radius: 8px;
   overflow: hidden;
+  min-height: 500px;  /* AUMENTADO de 300px */
+  max-height: 600px;  /* AUMENTADO de 350px */
 }
 
 .grid-ultra-compact {
@@ -594,22 +605,25 @@ select.compact-input {
 }
 
 .btn-inline {
-  height: 32px;
+  height: 38px;
   white-space: nowrap;
-  padding: 0 12px; // ✅ Padding horizontal
+  padding: 0 16px;
+  font-size: 13px;
+  font-weight: 600;
+  flex-shrink: 0;  /* ✅ No se encoge */
 }
 
 .distribucion-actions-compact {
-  grid-column: 3;
-  grid-row: 1;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;  /* ✅ 2 botones en fila */
   gap: 8px;
-  align-self: end;
   
   button {
-    height: 32px;
-    padding: 0 12px;  // ✅ AGREGA esto para controlar el ancho
-    white-space: nowrap;  // ✅ AGREGA esto para evitar saltos de línea
+    height: 38px;  /* ✅ Botones más grandes */
+    padding: 0 16px;
+    white-space: nowrap;
+    font-size: 13px;
+    font-weight: 600;
   }
 }
 
@@ -847,11 +861,29 @@ select.compact-input {
 /* ===== GRID 2 COLUMNAS: FILTROS + RESUMEN ===== */
 .top-grid-two-columns {
   display: grid;
-  grid-template-columns: 1fr 320px; // ✅ Resumen más angosto (320px en vez de 400px)
-  gap: 10px;
-  margin-bottom: 10px;
+  grid-template-columns: 1fr 380px 340px;  /* ✅ 3 COLUMNAS: Filtros | Distribución | Resumen */
+  gap: 12px;
+  margin-bottom: 12px;
+  align-items: start;
 }
-
+.distribucion-panel {
+  background: var(--gray-50) !important;  /* ✅ Mismo fondo que otros paneles */
+  border: 1px solid var(--gray-200) !important;  /* ✅ Borde sutil */
+  box-shadow: none !important;
+  .section-header-compact {
+    margin-bottom: 12px;
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 14px;
+    
+    mat-icon {
+      color: var(--accent) !important;
+      font-size: 24px !important;
+      width: 24px !important;
+      height: 24px !important;
+    }
+  }
+}
 /* ===== RESUMEN COMPACTO ===== */
 .resumen-compact {
   .section-header-compact {
@@ -969,7 +1001,14 @@ select.compact-input {
     margin-bottom: 6px; // ✅ Reducir margen
   }
 }
-
+.datos-pago-compact {
+  .form-row-compact {
+    display: grid;
+    grid-template-columns: 1fr 2fr;  /* ✅ Forma Pago (1 parte) | Cuenta Banco (2 partes) */
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+}
 /* ===== HEADERS MÁS COMPACTOS ===== */
 .section-header-compact,
 .filters-header {
@@ -1033,7 +1072,7 @@ select.compact-input {
 }
 
 .page-title {
-  font-size: 14px; // ✅ Reducir
+  font-size: 11px; // ✅ Reducir
   gap: 6px;
   
   mat-icon {
@@ -1140,14 +1179,22 @@ select.compact-input {
     }
   }
 }
-
+/* ===== COLUMNA CENTRAL (Distribución) ===== */
+.middle-column {
+  display: flex;
+  flex-direction: column;
+  
+  .distribucion-panel {
+    height: 100%;
+  }
+}
 /* ===== AJUSTAR GRID 2 COLUMNAS ===== */
-.top-grid-two-columns {
+.top-grid-three-columns {
   display: grid;
-  grid-template-columns: 1fr 340px; // ✅ Resumen un poco más ancho (340px)
-  gap: 10px;
-  margin-bottom: 10px;
-  align-items: start; // ✅ Alinear al inicio
+  grid-template-columns: 1fr 360px 340px;  /* ✅ Filtros | Distribución | Resumen */
+  gap: 12px;
+  margin-bottom: 12px;
+  align-items: start;
 }
 /* ===== BOTÓN SUCCESS (verde para Planificar Pago) ===== */
 .compact-btn-success {
@@ -1193,13 +1240,11 @@ select.compact-input {
 }
 
 .monto-input-inline {
-  flex: 1;
-  min-width: 250px;
+  max-width: 180px;  /* ✅ Más pequeño */
   display: flex;
   flex-direction: column;
   gap: 3px; 
 }
-
 .compact-label-inline {
   font-size: 10px; // ✅ Más pequeño
   font-weight: 600;
@@ -1307,16 +1352,16 @@ select.compact-input {
 }
 // ===== DISTRIBUCIÓN - TODO EN UNA FILA =====
 .distribucion-content-compact {
-  display: grid;
-  grid-template-columns: 200px 100px auto; // ✅ Cambia 1fr por auto
-  grid-template-rows: auto auto;
-  gap: 8px;
-  align-items: start;
-  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
 }
 
 .distribucion-row {
-  display: contents; // ✅ Esto hace que sus hijos se comporten como si estuvieran en el grid padre
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;  /* ✅ Alinear al fondo */
 }
 
 .monto-input-inline {
@@ -1346,15 +1391,13 @@ select.compact-input {
 }
 
 .hint-text-info {
-  grid-column: 1 / -1; // ✅ Ocupar TODAS las columnas
-  grid-row: 2; // ✅ Segunda fila
-  font-size: 9px;
-  padding: 3px 6px;
+  font-size: 10px;
+  padding: 6px 8px;
   
   mat-icon {
-    font-size: 12px !important;
-    width: 12px !important;
-    height: 12px !important;
+    font-size: 14px !important;
+    width: 14px !important;
+    height: 14px !important;
   }
 }
 
@@ -1584,4 +1627,25 @@ select.compact-input {
     background: #e05b2d !important;
     border-color: #e05b2d !important;
   }
+}
+// Headers más grandes
+::ng-deep .ag-header-cell-text {
+  font-size: 12px !important;  // Aumentar tamaño de letra (default ~12px)
+  font-weight: 600 !important;  // Hacerlo más bold
+}
+
+::ng-deep .ag-header {
+  height: 50px !important;  // Altura del header
+  min-height: 50px !important;
+}
+
+::ng-deep .ag-header-cell {
+  padding: 8px 12px !important;  // Más padding
+}
+
+// Opcional: Centrar verticalmente el texto
+::ng-deep .ag-header-cell-label {
+  display: flex;
+  align-items: center;
+  height: 100%;
 }

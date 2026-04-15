@@ -332,12 +332,12 @@ export class AprobacionPlanificacionesComponent implements OnInit {
         fecha: primera.fecha || '',
         observacion: primera.comentario || 'Sin observación',
         cantidad_documentos: items.length,
-        total_planificado: Math.abs(totalNeto),  // ⭐ Valor absoluto para mostrar
+        total_planificado: totalNeto,  //SIN Math.abs()
         forma_pago: primera.descripcion_forma_pago || '',
         cuenta_banco: primera.cuenta_banco || '',
         usuario: primera.nombre_usuario_ingreso || '',
         proveedores: [...new Set(items.map(i => i.nombre_proveedor))].join(', '),
-        _items: items
+        _items: items 
       };
     });
   }
@@ -351,7 +351,7 @@ export class AprobacionPlanificacionesComponent implements OnInit {
     }
 
     const totalDocs = seleccionadas.reduce((sum, s) => sum + s.cantidad_documentos, 0);
-    const totalMonto = seleccionadas.reduce((sum, s) => sum + s.total_planificado, 0);
+    const totalMonto = Math.abs(seleccionadas.reduce((sum, s) => sum + s.total_planificado, 0));
 
     const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
       data: {

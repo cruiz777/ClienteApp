@@ -109,7 +109,23 @@ export class RegistroPagosProveedorComponent implements OnInit {
       width: 140,
       valueFormatter: params => this.formatCurrency(params.value),
       type: 'rightAligned',
-      cellStyle: { fontWeight: 'bold', color: '#d32f2f' }
+      cellStyle: ((params: any) => {
+        const saldo = params.value || 0;
+        if (saldo > 0) {
+          // ANTICIPO (verde)
+          return { 
+            fontWeight: 'bold', 
+            color: '#2e7d32', 
+            backgroundColor: '#c8e6c9' 
+          };
+        }
+        // FACTURA (rojo)
+        return { 
+          fontWeight: 'bold', 
+          color: '#d32f2f',
+          backgroundColor: 'transparent'  // ✅ AGREGAR esta propiedad
+        };
+      }) as any  // ✅ Cast para evitar errores de tipo
     },
     {
       field: 'pago',
@@ -120,9 +136,9 @@ export class RegistroPagosProveedorComponent implements OnInit {
       cellStyle: { backgroundColor: '#fff9c4' },
       valueFormatter: params => this.formatCurrency(params.value),
       valueSetter: params => {
-        const old = Number(params.data.pago) || 0;
         const saldoPendiente = Number(params.data.saldoPendiente) || 0;
-
+        const saldoAbsoluto = Math.abs(saldoPendiente);  //VALOR ABSOLUTO
+        
         let newValue = parseFloat(params.newValue) || 0;
         newValue = this.clamp2(newValue);
 
@@ -131,15 +147,16 @@ export class RegistroPagosProveedorComponent implements OnInit {
           return false;
         }
 
-        if (newValue > saldoPendiente) {
-          this.showError(`El valor no puede exceder el saldo pendiente ($${saldoPendiente.toFixed(2)})`);
+        //VALIDAR CONTRA VALOR ABSOLUTO
+        if (newValue > saldoAbsoluto) {
+          this.showError(`El valor no puede exceder $${saldoAbsoluto.toFixed(2)}`);
           return false;
         }
 
         // Actualizar pago Y estado
         params.data.pago = newValue;
-        params.data.estadopago = this.getEstado(newValue, saldoPendiente);
-
+        params.data.estadopago = this.getEstado(newValue, saldoAbsoluto);  //USAR ABSOLUTO
+        
         this.calcularTotales();
 
         // Refrescar AMBAS columnas
@@ -151,7 +168,7 @@ export class RegistroPagosProveedorComponent implements OnInit {
           });
         }
 
-        return old !== newValue;
+        return true;
       }
     },
     {
@@ -236,13 +253,36 @@ export class RegistroPagosProveedorComponent implements OnInit {
       cellStyle: { backgroundColor: '#fff9c4' },
       valueFormatter: params => this.formatCurrency(params.value),
       valueSetter: params => {
-        const newValue = parseFloat(params.newValue) || 0;
-        if (newValue < 0) {
-          this.showError('El monto no puede ser negativo');
-          return false;
+        let newValue = parseFloat(params.newValue) || 0;
+        
+        if (newValue < 0) newValue = 0;
+        
+        // ✅ CALCULAR MONTO DISPONIBLE
+        const montoActualFilas = this.formasPagoRows
+          .filter(f => f.id !== params.data.id)
+          .reduce((sum, f) => sum + (f.monto || 0), 0);
+        
+        const disponible = this.totalFacturas - montoActualFilas;
+        
+        // ✅ AUTO-AJUSTAR SI SE EXCEDE
+        if (newValue > disponible) {
+          newValue = disponible;
+          this.showSuccess(`Ajustado a $${disponible.toFixed(2)} (máximo disponible)`);
         }
-        params.data.monto = newValue;
+        
+        // ✅ ASIGNAR VALOR con clamp2
+        const valorFinal = this.clamp2(newValue);
+        params.data.monto = valorFinal;
+        
+        // ✅ ACTUALIZAR EN EL ARRAY PRINCIPAL (CRÍTICO)
+        const index = this.formasPagoRows.findIndex(f => f.id === params.data.id);
+        if (index !== -1) {
+          this.formasPagoRows[index] = { ...params.data };  // ✅ Clonar todo el objeto
+        }
+        
+        // ✅ RECALCULAR TOTALES (sin setTimeout)
         this.calcularTotales();
+        
         return true;
       }
     },
@@ -440,7 +480,7 @@ export class RegistroPagosProveedorComponent implements OnInit {
   private initForms(): void {
     this.paso1Form = this.fb.group({
       proveedor: ['', Validators.required],
-      montoPagar: [0, [Validators.required, Validators.min(0.01)]],
+      montoPagar: [0],
       beneficiario: ['', Validators.required],
       observaciones: ['']
     });
@@ -658,10 +698,30 @@ export class RegistroPagosProveedorComponent implements OnInit {
 
   // ===== CÁLCULOS =====
   private calcularTotales(): void {
-    this.totalFacturas = this.facturasRows.reduce((sum, f) => sum + (f.pago || 0), 0);
+    // Separar facturas y anticipos
+    const facturas = this.facturasRows.filter(f => f.saldoPendiente < 0);
+    const anticipos = this.facturasRows.filter(f => f.saldoPendiente > 0);
+    
+    // Sumar SOLO las facturas que tienen pago > 0
+    const totalFacturas = facturas
+      .filter(f => f.pago > 0)  // ✅ AGREGAR este filtro
+      .reduce((sum, f) => sum + f.pago, 0);
+    
+    // Sumar SOLO los anticipos que tienen pago > 0
+    const totalAnticipos = anticipos
+      .filter(a => a.pago > 0)  // ✅ AGREGAR este filtro
+      .reduce((sum, a) => sum + a.pago, 0);
+    
+    // ✅ NETO A PAGAR = Facturas - Anticipos
+    this.totalFacturas = totalFacturas - totalAnticipos;
+    
+    // Total formas de pago
     this.totalFormasPago = this.formasPagoRows.reduce((sum, f) => sum + (f.monto || 0), 0);
+    
+    // Diferencia
     this.diferencia = this.totalFacturas - this.totalFormasPago;
   }
+
   get totalDeuda(): number {
     return this.facturasRows.reduce((sum, f) => sum + f.saldoPendiente, 0);
   }
@@ -681,16 +741,32 @@ export class RegistroPagosProveedorComponent implements OnInit {
 
   // ===== NAVEGACIÓN STEPPER =====
   avanzarPaso2(): void {
+    // ✅ Validar que hay al menos una factura con monto
     if (this.totalFacturasConPago === 0) {
-      this.showError('Debe asignar un monto a pagar en al menos una factura');
+      this.showError('Debe asignar un monto a pagar en al menos una factura o seleccionar documentos con el checkbox');
       return;
     }
 
-    if (!this.paso1Form.valid) {
-      this.showError('Complete todos los campos obligatorios');
+    // ✅ Validar beneficiario
+    if (!this.paso1Form.get('beneficiario')?.value) {
+      this.showError('El beneficiario es obligatorio');
       return;
     }
 
+    // ✅ SOLO validar si HAY anticipos seleccionados
+    const hayAnticiposSeleccionados = this.facturasRows.some(
+      f => f.saldoPendiente > 0 && f.pago > 0
+    );
+
+    if (hayAnticiposSeleccionados && this.totalFacturas < 0) {
+      this.showError('Los anticipos no pueden exceder el total de facturas. Seleccione más facturas o reduzca el anticipo.');
+      return;
+    }
+
+    // ✅ RECALCULAR totales antes de avanzar
+    this.calcularTotales();
+    
+    // ✅ Si NO hay anticipos, permitir avanzar con cualquier total > 0
     this.stepper.next();
   }
 
@@ -725,16 +801,36 @@ export class RegistroPagosProveedorComponent implements OnInit {
       } as MessageBoxData,
       disableClose: true
     });
-    const facturas: FacturaPagoItem[] = this.facturasRows
-      .filter(f => f.pago > 0)
-      .map(f => ({
-        idCuentaPorPagar: f.idCuentaPorPagar,
-        nocomp: f.nocomp,
-        montoPagar: f.pago,
-        idPlanCuentasCxP: f.idPlanCuentas,
-        idCodContableCxP: f.codigoContable,
-        idTipComp: 1 // TODO: Obtener el tipo de comprobante correcto
-      }));
+
+    //SEPARAR FACTURAS Y ANTICIPOS
+    const facturasParaPagar = this.facturasRows
+      .filter(f => f.pago > 0 && f.saldoPendiente < 0);  // Solo facturas (saldo negativo)
+    
+    const anticiposAplicados = this.facturasRows
+      .filter(f => f.pago > 0 && f.saldoPendiente > 0);  // Solo anticipos (saldo positivo)
+
+    //MAPEAR FACTURAS
+    const facturas: FacturaPagoItem[] = facturasParaPagar.map(f => ({
+      idCuentaPorPagar: f.idCuentaPorPagar,
+      nocomp: f.nocomp,
+      montoPagar: f.pago,
+      idPlanCuentasCxP: f.idPlanCuentas,
+      idCodContableCxP: f.codigoContable,
+      idTipComp: 1
+    }));
+
+    //MAPEAR ANTICIPOS
+    const anticipos: FacturaPagoItem[] = anticiposAplicados.map(a => ({
+      idCuentaPorPagar: a.idCuentaPorPagar,
+      nocomp: a.nocomp,
+      montoPagar: a.pago,
+      idPlanCuentasCxP: a.idPlanCuentas,
+      idCodContableCxP: a.codigoContable,
+      idTipComp: 1
+    }));
+
+    //COMBINAR TODOS LOS DOCUMENTOS
+    const todosLosDocumentos = [...facturas, ...anticipos];
 
     const formasPago: FormaPagoItem[] = this.formasPagoRows.map(f => ({
       idFormaPago: f.idFormaPago || 1,
@@ -758,17 +854,16 @@ export class RegistroPagosProveedorComponent implements OnInit {
       fechatransaccion: new Date().toISOString(),
       observaciones: this.paso1Form.value.observaciones,
       idLocal: 1,
-      facturas: facturas,
+      facturas: todosLosDocumentos,  // ✅ Enviar facturas + anticipos
       formasPago: formasPago
     };
 
     this.guardando = true;
     this.pagoProveedorService.registrarPago(request).subscribe({
       next: (response) => {
-        loadingDialog.close(); // ✅ Cerrar loading
+        loadingDialog.close();
 
         if (response.type === 'CREATED') {
-          // ✅ Mostrar éxito
           const successDialog = this.dialog.open(CustomMessageBoxComponent, {
             data: {
               title: 'Pago Registrado',
@@ -785,10 +880,12 @@ export class RegistroPagosProveedorComponent implements OnInit {
         } else {
           this.showError(response.message || 'Error al registrar el pago');
         }
+        this.guardando = false;
       },
       error: (err) => {
-        loadingDialog.close(); // ✅ Cerrar loading
+        loadingDialog.close();
         this.showError('Error de conexión al guardar el pago');
+        this.guardando = false;
       }
     });
   }
@@ -856,6 +953,50 @@ export class RegistroPagosProveedorComponent implements OnInit {
       row.monto = parseFloat(event.newValue) || 0;
       this.calcularTotales();
     }
+  }
+
+  // Selecciona facturas
+
+  onFacturaSeleccionada(event: any): void {
+    if (!event.node.isSelected()) {
+      // Deseleccionado → limpiar valor
+      event.data.pago = 0;
+      event.data.estadopago = 'N';
+      this.gridApiFacturas.refreshCells({
+        rowNodes: [event.node],
+        columns: ['pago', 'estadopago'],
+        force: true
+      });
+      
+      // ✅ RE-CALCULAR CRUCES y luego totales
+      setTimeout(() => {
+        this.aplicarAnticiposAutomatico();
+        this.calcularTotales();  // ✅ MOVER AQUÍ
+      }, 50);
+      return;
+    }
+
+    // ✅ Seleccionado → SIEMPRE recalcular cruces y totales
+    setTimeout(() => {
+      this.aplicarAnticiposAutomatico();
+    }, 50);
+  }
+
+  private aplicarAnticiposAutomatico(): void {
+    const seleccionados = this.gridApiFacturas.getSelectedRows();
+    
+    // ✅ SIMPLEMENTE asignar el valor completo a cada documento seleccionado
+    seleccionados.forEach((doc: FacturaRow) => {
+      const saldoAbsoluto = Math.abs(doc.saldoPendiente);
+      doc.pago = saldoAbsoluto;  // ✅ Siempre el valor completo
+      doc.estadopago = 'P';       // ✅ Marcar como cancelado
+    });
+
+    // ✅ Actualizar grid
+    this.gridApiFacturas.applyTransaction({ update: seleccionados });
+    
+    // ✅ Recalcular totales (aquí SÍ se resta el anticipo)
+    this.calcularTotales();
   }
   // private showError(message: string): void {
   //   this.snackBar.open(message, 'Cerrar', {
@@ -925,5 +1066,34 @@ export class RegistroPagosProveedorComponent implements OnInit {
         this.montoPagar = 0;
       }
     });
+  }
+
+  get totalAnticiposAplicados(): number {
+    return this.facturasRows
+      .filter(f => f.saldoPendiente > 0 && f.pago > 0)
+      .reduce((sum, f) => sum + f.pago, 0);
+  }
+
+  get tieneAnticiposAplicados(): boolean {
+    return this.facturasRows.some(f => f.saldoPendiente > 0 && f.pago > 0);
+  }
+
+  // ✅ DEBE: Anticipos aplicados (sale del crédito a favor)
+  get totalDebe(): number {
+    return this.facturasRows
+      .filter(f => f.saldoPendiente > 0 && f.pago > 0)  // Anticipos aplicados
+      .reduce((sum, f) => sum + f.pago, 0);
+  }
+
+  // ✅ HABER: Facturas a pagar (deudas)
+  get totalHaber(): number {
+    return this.facturasRows
+      .filter(f => f.saldoPendiente < 0 && f.pago > 0)  // Facturas con pago
+      .reduce((sum, f) => sum + f.pago, 0);
+  }
+
+  // ✅ SALDO: Lo que realmente sale de caja (Haber - Debe)
+  get saldoAPagar(): number {
+    return this.totalHaber - this.totalDebe;
   }
 }
