@@ -27,6 +27,7 @@ import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/components/ut
 import { AprobarPlanificacionRequest, DocumentoPagoRequest, DocumentoPendienteRequest, ProcesarPagoRequest, ValorModificadoDto } from 'src/app/interfaces/requests/planificacion-pago-response';
 import { PlanificacionPagoResponse } from 'src/app/interfaces/responses/planificacion-pago-response';
 import { AprobacionPlanificacionesComponent } from './aprobacion/aprobacion-planificaciones.component';
+import { AgregarDocumentosDialogComponent } from './agregar-documentos/agregar-documentos-dialog.component';
 
 @Component({
   selector: 'app-planificacion-pagos',
@@ -68,8 +69,51 @@ export class PlanificacionPagosComponent implements OnInit {
   mostrarDropdownExcel = false;
 
   // ===== COLUMNAS AG-GRID =====
-  columnDefsDocumentos: ColDef[] = [
-    
+    columnDefsDocumentos: ColDef[] = [
+    {
+      field: 'acciones',
+      headerName: '',
+      width: 70,
+      pinned: 'left',
+      editable: false,
+      sortable: false,
+      filter: false,
+      resizable: false,
+      cellStyle: (params: any): any => {
+        if (params.data?.esSubtotal || params.data?.esEspacio) {
+          return {
+            backgroundColor: params.data?.esSubtotal ? '#F27046' : '#fff',
+            textAlign: 'center',
+            display: 'block',
+            alignItems: 'initial',
+            justifyContent: 'initial'
+          };
+        }
+
+        return {
+          backgroundColor: '#fff',
+          textAlign: 'center',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        };
+      },
+      cellRenderer: (params: any) => {
+        if (params.data?.esSubtotal || params.data?.esEspacio) {
+          return '';
+        }
+
+        return `
+          <button class="btn-grid-delete-img" title="Eliminar documento">
+            <img src="assets/icons/icon-basurero.png" alt="Eliminar" class="grid-action-icon" />
+          </button>
+        `;
+      },
+      onCellClicked: (params: any) => {
+        if (params.data?.esSubtotal || params.data?.esEspacio) return;
+        this.eliminarDocumentoFila(params.data);
+      }
+    },
     {
       field: 'id_proveedor',
       headerName: 'Cód. Prov',
@@ -964,7 +1008,7 @@ distribuirMonto(): void {
   onGridDocumentosReady(params: GridReadyEvent): void {
     this.gridApiDocumentos = params.api;
     console.log('🔧 Grid ready - aplicando agrupación...');
-
+    this.actualizarVisibilidadColumnaAcciones();
     console.log('✅ Agrupación aplicada');
     this.gridApiDocumentos.sizeColumnsToFit();
   }
@@ -1038,6 +1082,7 @@ distribuirMonto(): void {
           this.documentosRows = grouped;
           
           this.gridApiDocumentos?.setGridOption('rowData', this.documentosRows);
+          this.actualizarVisibilidadColumnaAcciones();
           this.calcularTotales();
         } else {
           this.showError(response.message || 'Error al cargar documentos');
@@ -1306,7 +1351,7 @@ distribuirMonto(): void {
     const request: ProcesarPagoRequest = {  // ← CAMBIAR TIPO
       id_empresa: this.idEmpresa,
       id_usuario: this.idUsuario,
-      fecha_pago: this.datosPagoForm.value.fechaPago,
+      fecha_pago: this.filtrosForm.value.fechaPago,
       fecha_vencimiento: this.filtrosForm.value.fechaVencimientoHasta,
       id_forma_pago: Number(this.datosPagoForm.value.idFormaPago),
       cuenta_banco: this.datosPagoForm.value.cuentaBanco,
@@ -1431,6 +1476,7 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
         }).afterClosed().subscribe(() => {
           this.resetearFormulario();
           this.planificacionCargada = null;
+          this.actualizarVisibilidadColumnaAcciones();
         });
       } else {
         this.showError(response.message || 'Error al aprobar');
@@ -1459,6 +1505,7 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
     this.planificacionCargada = null;
     this.montoTotalADistribuir = 0;
     this.montoRestante = 0;
+    this.actualizarVisibilidadColumnaAcciones();
   }
 
   limpiarSeleccion(): void {
@@ -1803,6 +1850,7 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
     // Recalcular totales
     this.calcularTotales();
     
+    this.actualizarVisibilidadColumnaAcciones();
     // Mensaje de éxito
     this.showSuccess(
       `✅ Planificación ${transaccion.num_transaccion} cargada: ${transaccion.cantidad_documentos} documentos`
@@ -1841,5 +1889,110 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
       .reduce((sum, d) => sum + (d.monto_a_pagar || 0), 0);
     
     return this.montoTotalADistribuir - yaAsignado;
+  }
+
+  abrirModalAgregarFacturas(): void {
+    const documentosActualesIds = this.documentosRows
+      .filter((d: any) => !d.esSubtotal && !d.esEspacio)
+      .map((d: any) => Number(d.id_cuenta_por_pagar));
+
+    const dialogRef = this.dialog.open(AgregarDocumentosDialogComponent, {
+      width: '1400px',
+      maxWidth: '95vw',
+      height: '85vh',
+      data: {
+        idEmpresa: this.idEmpresa,
+        idUsuario: this.idUsuario,
+        documentosActuales: documentosActualesIds
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (!result?.agregar || !result?.documentos?.length) {
+        return;
+      }
+
+      this.agregarDocumentosAlGrid(result.documentos);
+    });
+  }
+
+  // METODO que agrega documentos al grid
+  private agregarDocumentosAlGrid(documentosNuevos: DocumentoPendienteResponse[]): void {
+    const documentosActuales = this.documentosRows.filter((d: any) => !d.esSubtotal && !d.esEspacio);
+
+    const mapa = new Map<number, DocumentoPendienteResponse>();
+
+    for (const doc of documentosActuales) {
+      mapa.set(Number((doc as any).id_cuenta_por_pagar), doc);
+    }
+
+    for (const doc of documentosNuevos) {
+      const id = Number(doc.id_cuenta_por_pagar);
+      if (!mapa.has(id)) {
+        mapa.set(id, {
+          ...doc,
+          tipo_pago_seleccionado: null,
+          monto_a_pagar: 0,
+          observaciones: '',
+          exceso: null,
+          esSubtotal: false,
+          esEspacio: false,
+          seleccionado: false
+        } as any);
+      }
+    }
+
+    const documentosUnificados = Array.from(mapa.values());
+    this.documentosRows = this.agruparPorProveedor(documentosUnificados, true);
+
+    this.gridApiDocumentos?.setGridOption('rowData', this.documentosRows);
+    this.calcularTotales();
+
+    this.showSuccess(`${documentosNuevos.length} factura(s) agregada(s) a la planificación`);
+  }
+
+  eliminarDocumentoFila(documento: any): void {
+    const idDocumento = Number(documento._idCuentaPorPagar || documento.id_cuenta_por_pagar);
+
+    if (!idDocumento) {
+      this.showError('No se pudo identificar el documento a eliminar');
+      return;
+    }
+
+    const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
+      data: {
+        title: 'Eliminar documento',
+        message: `¿Desea eliminar el documento ${documento.numero_comprobante || ''} de la planificación?`,
+        type: 'warning',
+        confirmText: 'Sí, eliminar',
+        cancelText: 'Cancelar',
+        showCancel: true
+      } as MessageBoxData
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (!result) return;
+
+      const documentosRestantes = this.documentosRows.filter((d: any) => {
+        if (d.esSubtotal || d.esEspacio) return false;
+
+        const idActual = Number(d._idCuentaPorPagar || d.id_cuenta_por_pagar);
+        return idActual !== idDocumento;
+      });
+
+      this.documentosRows = this.agruparPorProveedor(documentosRestantes, true);
+      this.gridApiDocumentos?.setGridOption('rowData', this.documentosRows);
+      this.calcularTotales();
+
+      this.showSuccess('Documento eliminado del grid');
+    });
+  }
+  private actualizarVisibilidadColumnaAcciones(): void {
+    if (!this.gridApiDocumentos) return;
+
+    this.gridApiDocumentos.setColumnsVisible(
+      ['acciones'],
+      !!this.planificacionCargada
+    );
   }
 }

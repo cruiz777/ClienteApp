@@ -64,6 +64,12 @@
         <div class="col-md-4">
           <div class="field">
             <label>Monto a Pagar <small class="text-muted">(opcional)</small></label>
+            <small *ngIf="montoPagar > 0" style="color: #6b7890; font-size: 11px; margin-top: 4px; display: block;">
+              Disponible para distribuir: 
+              <span [style.color]="montoRestante > 0 ? '#2e7d32' : '#d32f2f'" style="font-weight: 700;">
+                ${{ montoRestante.toFixed(2) }}
+              </span>
+            </small>
             <mat-form-field appearance="outline" class="w-100">
               <input
                 matInput
@@ -78,7 +84,7 @@
             </mat-form-field>
           </div>
         </div>
-
+        
         <div class="col-md-4">
           <div class="field">
             <label>Beneficiario</label>
@@ -125,19 +131,35 @@
           <span class="badge bg-secondary ms-2">{{ facturasRows.length }}</span>
         </div>
 
-        <div class="btns">
+        <div class="actions-left" style="gap: 8px; align-items: center;">
           <button
             type="button"
             class="fi-btn fi-primary"
             (click)="distribuirPago()"
-            [disabled]="montoPagar <= 0">
-            Pagar Facturas
+            [disabled]="montoPagar <= 0"
+            style="display: flex; align-items: center; gap: 6px;">
+            <mat-icon style="font-size: 16px; width: 16px; height: 16px;">payments</mat-icon>
+            <span>Distribuir Pago</span>
           </button>
-          <button
+
+          <button      
+            type="button"
+            class="fi-btn fi-accent"
+            (click)="aplicarCruceAutomatico()"
+            [disabled]="cargandoFacturas"
+            matTooltip="Aplica automáticamente TODOS los anticipos disponibles y los distribuye entre las facturas"
+            style="display: flex; align-items: center; gap: 6px;">
+            <span>Cruce Automático</span>
+          </button>
+
+          <button 
             type="button"
             class="fi-btn"
-            (click)="limpiarPagos()">
-            Limpiar
+            (click)="limpiarPagos()"
+            [disabled]="cargandoFacturas"
+            style="display: flex; align-items: center; gap: 4px;">
+            <mat-icon style="font-size: 16px; width: 16px; height: 16px;">clear</mat-icon>
+            <span>Limpiar</span>
           </button>
         </div>
       </div>
@@ -171,23 +193,42 @@
         </div>
       </div>
 
-      <!-- RESUMEN PASO 1 -->
-      <div class="resumen-totales">
-        <div class="resumen-item">
-          <span class="resumen-label">TOTAL HABER:</span>
-          <span class="resumen-valor texto-rojo">${{ totalHaber.toFixed(2) }}</span>
+      <!-- RESUMEN PASO 1 -->    
+      <div class="totales-section">
+        <h3>Resumen</h3>
+        
+        <div class="total-row">
+          <span>Total DEBE:</span>
+          <strong>{{ totalDebe | currency:'USD':'symbol':'1.2-2' }}</strong>
         </div>
-        <div class="resumen-separador">-</div>
-        <div class="resumen-item">
-          <span class="resumen-label">TOTAL DEBE:</span>
-          <span class="resumen-valor texto-verde">${{ totalDebe.toFixed(2) }}</span>
+        
+        <div class="total-row">
+          <span>Total HABER:</span>
+          <strong>{{ totalHaber | currency:'USD':'symbol':'1.2-2' }}</strong>
         </div>
-        <div class="resumen-separador">=</div>
-        <div class="resumen-item">
-          <span class="resumen-label">SALDO A PAGAR:</span>
-          <span class="resumen-valor texto-azul fw-bold" style="font-size: 1.1em;">
-            ${{ saldoAPagar.toFixed(2) }}
-          </span>
+        
+        <div class="total-row highlight">
+          <span>SALDO A PAGAR:</span>
+          <strong class="text-primary">{{ totalSaldo | currency:'USD':'symbol':'1.2-2' }}</strong>
+        </div>
+        
+        <div class="total-row" *ngIf="anticipoDisponible > 0">
+          <span>Anticipo Disponible:</span>
+          <strong class="text-success">{{ anticipoDisponible | currency:'USD':'symbol':'1.2-2' }}</strong>
+        </div>
+        
+        <hr>
+        
+        <div class="total-row">
+          <span>Total Formas de Pago:</span>
+          <strong>{{ totalFormasPago | currency:'USD':'symbol':'1.2-2' }}</strong>
+        </div>
+        
+        <div class="total-row" [class.error]="Math.abs(diferencia) > 0.01">
+          <span>Diferencia:</span>
+          <strong [class.text-danger]="Math.abs(diferencia) > 0.01">
+            {{ diferencia | currency:'USD':'symbol':'1.2-2' }}
+          </strong>
         </div>
       </div>
     </div>
@@ -232,50 +273,23 @@
       <div class="field mb-3">
         <label>Seleccionar Forma de Pago</label>
         <mat-form-field appearance="outline" class="w-100">
-          <input
-            type="text"
-            matInput
-            [formControl]="formaPagoCtrl"
-            [matAutocomplete]="autoFormaPago"
-            placeholder="Buscar forma de pago..."
-            (focus)="onInputFocus($event)">
-          <mat-icon matSuffix>payment</mat-icon>
-          <mat-autocomplete
-            #autoFormaPago="matAutocomplete"
-            [displayWith]="displayFormaPago.bind(this)"
-            (optionSelected)="onFormaPagoSeleccionada($event)">
-
-            <!-- ✅ Opciones con indicador de estado -->
-            <mat-option
-              *ngFor="let forma of formasPagoDisponibles$ | async"
-              [value]="forma"
-              [disabled]="forma.activo === false">
+          <mat-label>Seleccionar Forma de Pago</mat-label>
+          <mat-select (selectionChange)="onFormaPagoSeleccionadaDropdown($event.value)">
+            <mat-option 
+              *ngFor="let forma of filtrarFormasPago(formasPagoDisponibles$ | async)" 
+              [value]="forma">
               <div class="d-flex justify-content-between align-items-center w-100">
-                <span [class.fw-bold]="forma.activo === true">
-                  {{ forma.descripcion }}
-                </span>
-                <span
-                  *ngIf="forma.activo === false"
-                  class="badge bg-secondary"
+                <span>{{ forma.descripcion }}</span>
+                <span 
+                  *ngIf="forma.activo === false" 
+                  class="badge bg-secondary ms-2" 
                   style="font-size: 10px;">
                   Inactiva
                 </span>
-                <span
-                  *ngIf="forma.activo === true"
-                  class="badge bg-success"
-                  style="font-size: 10px;">
-                  Activa
-                </span>
               </div>
             </mat-option>
-
-            <!-- ✅ Mensaje si no hay opciones -->
-            <mat-option
-              *ngIf="(formasPagoDisponibles$ | async)?.length === 0"
-              disabled>
-              <span class="text-muted">No hay formas de pago disponibles</span>
-            </mat-option>
-          </mat-autocomplete>
+          </mat-select>
+          <mat-icon matSuffix>payment</mat-icon>
         </mat-form-field>
 
         <!-- ✅ DEBUG: Mostrar cuántas hay cargadas -->
@@ -322,7 +336,7 @@
       <div class="resumen-totales">
         <div class="resumen-item">
           <span class="resumen-label">TOTAL A PAGAR:</span>
-          <span class="resumen-valor">${{ totalFacturas.toFixed(2) }}</span>
+          <span class="resumen-valor">${{ totalSaldo.toFixed(2) }}</span>
         </div>
         <div class="resumen-separador">-</div>
         <div class="resumen-item">

@@ -41,6 +41,7 @@ import { AprobacionPlanificacionesComponent } from './cuentas-por-pagar/planific
 import { DetalleTransaccionDialogComponent } from './cuentas-por-pagar/planificacion-pagos/aprobacion/detalle-transaccion-dialog.component';
 import { MatDialogModule } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { AgregarDocumentosDialogComponent } from './cuentas-por-pagar/planificacion-pagos/agregar-documentos/agregar-documentos-dialog.component';
 
 
 
@@ -56,6 +57,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     GenerarAtsComponent,
     CierreContableComponent,
     AprobacionPlanificacionesComponent,
+    AgregarDocumentosDialogComponent,
     DetalleTransaccionDialogComponent,
 
   ],

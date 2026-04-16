@@ -373,6 +373,15 @@
         <mat-icon>upload_file</mat-icon>
         Conciliar Excel
       </button>
+        <button 
+        *ngIf="planificacionCargada"
+        class="compact-btn compact-btn-primary" 
+        (click)="abrirModalAgregarFacturas()"
+        [disabled]="guardando">
+        <mat-icon>post_add</mat-icon>
+        Agregar Facturas
+      </button>
+
       <input 
         #fileInput 
         type="file" 
