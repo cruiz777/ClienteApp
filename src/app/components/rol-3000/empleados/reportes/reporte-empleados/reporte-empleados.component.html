@@ -1,0 +1,84 @@
+<div class="reporte-page">
+  <div class="form-card" [formGroup]="form">
+    <h2>Reporte de Empleados</h2>
+
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Área Inicial</mat-label>
+        <mat-select formControlName="areaInicial">
+          <mat-option *ngFor="let item of areas" [value]="item">
+            {{ item }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Cargo Inicial</mat-label>
+        <mat-select formControlName="cargoInicial">
+          <mat-option *ngFor="let item of cargos" [value]="item">
+            {{ item }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Área Final</mat-label>
+        <mat-select formControlName="areaFinal">
+          <mat-option *ngFor="let item of areas" [value]="item">
+            {{ item }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Cargo Final</mat-label>
+        <mat-select formControlName="cargoFinal">
+          <mat-option *ngFor="let item of cargos" [value]="item">
+            {{ item }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Agrupado por</mat-label>
+        <mat-select formControlName="agrupadoPor">
+          <mat-option value="Departamento">Departamento</mat-option>
+          <mat-option value="Cargo">Cargo</mat-option>
+          <mat-option value="Zona">Zona</mat-option>
+          <mat-option value="TipoEmpleado">Tipo de Empleado</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <div class="zona-box">
+        <label class="section-label">Zona:</label>
+        <div class="checks-inline">
+          <mat-checkbox formControlName="zonaQuito">Quito</mat-checkbox>
+          <mat-checkbox formControlName="zonaGuayaquil">Guayaquil</mat-checkbox>
+          <mat-checkbox formControlName="zonaCuenca">Cuenca</mat-checkbox>
+        </div>
+      </div>
+    </div>
+
+    <div class="tipos-section">
+      <label class="section-label">Tipo de Empleados:</label>
+
+      <div class="checks-grid">
+        <mat-checkbox formControlName="tipoExempleados">Exempleados</mat-checkbox>
+        <mat-checkbox formControlName="tipoHonorarios">Honorarios</mat-checkbox>
+        <mat-checkbox formControlName="tipoFijos">Fijos</mat-checkbox>
+        <mat-checkbox formControlName="tipoPorHoras">Por Horas</mat-checkbox>
+        <mat-checkbox formControlName="tipoTemporalBecario">Temporal / Becario</mat-checkbox>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button mat-flat-button color="primary" type="button" (click)="aceptar()">
+        Aceptar
+      </button>
+
+      <button mat-stroked-button type="button" (click)="cancelar()">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>

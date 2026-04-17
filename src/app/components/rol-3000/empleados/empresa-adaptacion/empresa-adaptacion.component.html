@@ -1,0 +1,154 @@
+<div class="empresa-page">
+  <div class="form-card" [formGroup]="form">
+    <h2>Empresa para Adaptación</h2>
+
+    <div class="form-grid">
+      <mat-form-field appearance="outline">
+        <mat-label>Código</mat-label>
+        <input matInput formControlName="codigo" />
+        <mat-error *ngIf="esCampoInvalido('codigo')">El código es obligatorio</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Número Patronal</mat-label>
+        <input matInput formControlName="numeroPatronal" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="span-2">
+        <mat-label>Razón Social</mat-label>
+        <input matInput formControlName="razonSocial" />
+        <mat-error *ngIf="esCampoInvalido('razonSocial')">La razón social es obligatoria</mat-error>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Número de RUC</mat-label>
+        <input matInput formControlName="numeroRuc" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Provincia</mat-label>
+        <mat-select formControlName="provincia">
+          <mat-option *ngFor="let item of provincias" [value]="item">{{ item }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Cantón</mat-label>
+        <mat-select formControlName="canton">
+          <mat-option *ngFor="let item of cantones" [value]="item">{{ item }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Parroquia</mat-label>
+        <mat-select formControlName="parroquia">
+          <mat-option *ngFor="let item of parroquias" [value]="item">{{ item }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="span-2">
+        <mat-label>Calle y Número</mat-label>
+        <input matInput formControlName="calleNumero" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Teléfono</mat-label>
+        <input matInput formControlName="telefono" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Cédula Representante Legal</mat-label>
+        <input matInput formControlName="cedulaRepresentanteLegal" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="span-2">
+        <mat-label>Representante Legal</mat-label>
+        <input matInput formControlName="representanteLegal" />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Tipo de Seguro</mat-label>
+        <mat-select formControlName="tipoSeguro">
+          <mat-option *ngFor="let item of tiposSeguro" [value]="item">{{ item }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Código de Registro</mat-label>
+        <input matInput formControlName="codigoRegistro" />
+      </mat-form-field>
+    </div>
+
+    <div class="actions">
+      <button mat-flat-button color="primary" type="button" (click)="nuevo()">Nuevo</button>
+      <button mat-flat-button color="primary" type="button" (click)="grabar()">Grabar</button>
+      <button mat-stroked-button color="warn" type="button" (click)="borrar()">Borrar</button>
+      <button mat-stroked-button type="button" (click)="cancelar()">Cancelar</button>
+    </div>
+  </div>
+
+  <div class="list-card">
+    <div class="list-header">
+      <h3>Listado de Empresas</h3>
+      <span>{{ empresas.length }} registro(s)</span>
+    </div>
+
+    <div class="table-container">
+      <table mat-table [dataSource]="empresas" class="custom-table">
+
+        <ng-container matColumnDef="codigo">
+          <th mat-header-cell *matHeaderCellDef>Código</th>
+          <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="razonSocial">
+          <th mat-header-cell *matHeaderCellDef>Razón Social</th>
+          <td mat-cell *matCellDef="let row">{{ row.razonSocial }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="numeroRuc">
+          <th mat-header-cell *matHeaderCellDef>RUC</th>
+          <td mat-cell *matCellDef="let row">{{ row.numeroRuc }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="provincia">
+          <th mat-header-cell *matHeaderCellDef>Provincia</th>
+          <td mat-cell *matCellDef="let row">{{ row.provincia }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="canton">
+          <th mat-header-cell *matHeaderCellDef>Cantón</th>
+          <td mat-cell *matCellDef="let row">{{ row.canton }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="telefono">
+          <th mat-header-cell *matHeaderCellDef>Teléfono</th>
+          <td mat-cell *matCellDef="let row">{{ row.telefono }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="representanteLegal">
+          <th mat-header-cell *matHeaderCellDef>Representante Legal</th>
+          <td mat-cell *matCellDef="let row">{{ row.representanteLegal }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="tipoSeguro">
+          <th mat-header-cell *matHeaderCellDef>Tipo Seguro</th>
+          <td mat-cell *matCellDef="let row">{{ row.tipoSeguro }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="codigoRegistro">
+          <th mat-header-cell *matHeaderCellDef>Cód. Registro</th>
+          <td mat-cell *matCellDef="let row">{{ row.codigoRegistro }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: displayedColumns"
+          (click)="seleccionarEmpresa(row)"
+          [class.row-selected]="empresaSeleccionadaId === row.id">
+        </tr>
+      </table>
+    </div>
+  </div>
+</div>

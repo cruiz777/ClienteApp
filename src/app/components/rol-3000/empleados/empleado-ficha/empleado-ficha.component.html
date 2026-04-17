@@ -1,0 +1,783 @@
+<div class="empleado-page" [formGroup]="form">
+  <mat-tab-group animationDuration="0ms" class="empleado-tabs">
+
+    <!-- DATOS GENERALES -->
+    <mat-tab label="Datos Generales">
+      <div class="tab-content" formGroupName="datosGenerales">
+        <h2>Datos Generales</h2>
+
+        <div class="grid-2">
+          <div class="card-section">
+            <h3>Datos Personales</h3>
+
+            <div class="form-grid-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Código de Empleado</mat-label>
+                <input matInput formControlName="codigoEmpleado">
+              </mat-form-field>
+
+              <div class="inline-radio">
+                <label>Tipo Documento:</label>
+                <mat-radio-group formControlName="tipoDocumento">
+                  <mat-radio-button value="cedula">Cédula</mat-radio-button>
+                  <mat-radio-button value="pasaporte">Pasaporte</mat-radio-button>
+                  <mat-radio-button value="idExterior">ID. Tributario del Exterior</mat-radio-button>
+                </mat-radio-group>
+              </div>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Cédula / Pasaporte</mat-label>
+                <input matInput formControlName="identificacion">
+              </mat-form-field>
+
+              <div class="inline-radio">
+                <label>Sexo:</label>
+                <mat-radio-group formControlName="sexo">
+                  <mat-radio-button value="M">Masculino</mat-radio-button>
+                  <mat-radio-button value="F">Femenino</mat-radio-button>
+                </mat-radio-group>
+              </div>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Nombres</mat-label>
+                <input matInput formControlName="nombres">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Apellidos</mat-label>
+                <input matInput formControlName="apellidos">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Estado Civil</mat-label>
+                <input matInput formControlName="estadoCivil">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Fecha de Nacimiento</mat-label>
+                <input matInput type="date" formControlName="fechaNacimiento">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Link de Foto</mat-label>
+                <input matInput formControlName="linkFoto">
+              </mat-form-field>
+
+              <div class="photo-box"></div>
+            </div>
+          </div>
+
+          <div class="card-section">
+            <h3>Domicilio</h3>
+
+            <div class="form-grid-2">
+              <mat-form-field appearance="outline">
+                <mat-label>País</mat-label>
+                <input matInput formControlName="pais">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Ciudad</mat-label>
+                <input matInput formControlName="ciudad">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Dirección</mat-label>
+                <input matInput formControlName="direccion">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Teléfono</mat-label>
+                <input matInput formControlName="telefono">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Celular</mat-label>
+                <input matInput formControlName="celular">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Nacionalidad</mat-label>
+                <input matInput formControlName="nacionalidad">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>E-mail</mat-label>
+                <input matInput formControlName="email">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Contacto de Referencia</mat-label>
+                <input matInput formControlName="contactoReferencia">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Teléfono de Referencia</mat-label>
+                <input matInput formControlName="telefonoReferencia">
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-section mt-16">
+          <h3>Datos Dentro de la Empresa</h3>
+
+          <div class="form-grid-4">
+            <mat-form-field appearance="outline">
+              <mat-label>Empresa Aportación</mat-label>
+              <input matInput formControlName="empresaAportacion">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Zona</mat-label>
+              <input matInput formControlName="zona">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Ciudad de Trabajo</mat-label>
+              <input matInput formControlName="ciudadTrabajo">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Local</mat-label>
+              <input matInput formControlName="local">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Departamento</mat-label>
+              <input matInput formControlName="departamento">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Cargo</mat-label>
+              <input matInput formControlName="cargo">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Tipo de Empleado</mat-label>
+              <input matInput formControlName="tipoEmpleado">
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Grupo Ocupación</mat-label>
+              <input matInput formControlName="grupoOcupacion">
+            </mat-form-field>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
+          <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
+          <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button>
+          <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- DATOS ADICIONALES -->
+    <mat-tab label="Datos Adicionales">
+      <div class="tab-content" formGroupName="datosAdicionales">
+        <h2>Datos Adicionales</h2>
+
+        <div class="grid-2">
+          <div>
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Empleado</mat-label>
+              <input matInput formControlName="empleado">
+            </mat-form-field>
+
+            <div class="card-section">
+              <h3>Cronología del Empleado</h3>
+              <div class="cronologia-grid">
+                <div class="cronologia-header">Fecha Ingreso</div>
+                <div class="cronologia-header">Fecha Salida</div>
+                <div class="cronologia-header">Terminación Contrato</div>
+                <div class="cronologia-header">Tipo de Contrato</div>
+                <div class="cronologia-header">N° Horas</div>
+
+                <div class="cronologia-cell" *ngFor="let i of [1,2,3,4,5]"></div>
+                <div class="cronologia-cell" *ngFor="let i of [1,2,3,4,5]"></div>
+                <div class="cronologia-cell" *ngFor="let i of [1,2,3,4,5]"></div>
+              </div>
+            </div>
+
+            <div class="card-section mt-16">
+              <h3>Provisiones y Fondos de Reserva</h3>
+
+              <div class="checks-grid">
+                <mat-checkbox formControlName="noRecibeProvisiones">No Recibe provisiones</mat-checkbox>
+                <mat-checkbox formControlName="pagoDecimoCuarto">Pago Décimo 4to</mat-checkbox>
+                <mat-checkbox formControlName="pagoDecimoTercero">Pago Décimo 3ro</mat-checkbox>
+                <mat-checkbox formControlName="pagoFondosReserva">Pago fondos de Reserva</mat-checkbox>
+                <mat-checkbox formControlName="terceraEdad">Tercera Edad</mat-checkbox>
+              </div>
+            </div>
+
+            <div class="form-grid-2 mt-16">
+              <mat-form-field appearance="outline">
+                <mat-label>Nivel de Instrucción</mat-label>
+                <input matInput formControlName="nivelInstruccion">
+              </mat-form-field>
+
+              <div class="date-range">
+                <mat-form-field appearance="outline">
+                  <mat-label>Inicio Pago Décimos</mat-label>
+                  <input matInput type="date" formControlName="fechaPagoDecimoInicio">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Fin Pago Décimos</mat-label>
+                  <input matInput type="date" formControlName="fechaPagoDecimoFin">
+                </mat-form-field>
+              </div>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Régimen</mat-label>
+                <input matInput formControlName="regimen">
+              </mat-form-field>
+
+              <div class="checks-column">
+                <label class="sub-label">Representante Legal</label>
+                <mat-checkbox formControlName="gerenteRepLegal">Gerente / Rep. Legal</mat-checkbox>
+                <mat-checkbox formControlName="noPagaImpuestoRenta">No paga impuesto a la renta</mat-checkbox>
+              </div>
+            </div>
+
+            <div class="card-section mt-16">
+              <h3>Información para utilidades</h3>
+              <div class="form-grid-2">
+                <div class="checks-column">
+                  <label class="sub-label">Carga cónyuge para utilidades</label>
+                  <mat-checkbox formControlName="cargaConyugeUtilidades">Sí</mat-checkbox>
+                </div>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Carga hijos para utilidades</mat-label>
+                  <input matInput formControlName="cargaHijosUtilidades">
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card-section">
+              <h3>Datos para el Banco / Empleado</h3>
+
+              <div class="form-grid-2">
+                <mat-form-field appearance="outline">
+                  <mat-label>Código Banco</mat-label>
+                  <input matInput formControlName="codigoBanco">
+                </mat-form-field>
+
+                <div></div>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Cta Contable Empleado</mat-label>
+                  <input matInput formControlName="ctaContableEmpleado">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Forma de Pago</mat-label>
+                  <input matInput formControlName="formaPago">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Tipo de Cuenta</mat-label>
+                  <input matInput formControlName="tipoCuenta">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>N° Cuenta</mat-label>
+                  <input matInput formControlName="numeroCuenta">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Código Banco Empleado</mat-label>
+                  <input matInput formControlName="codigoBancoEmpleado">
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div class="card-section mt-16">
+              <h3>Datos para el Banco / Empleado</h3>
+
+              <div class="form-grid-2">
+                <mat-form-field appearance="outline">
+                  <mat-label>Establecimiento</mat-label>
+                  <input matInput formControlName="establecimiento">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Código Sectorial del IESS</mat-label>
+                  <input matInput formControlName="codigoSectorialIess">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Grupo Sanguíneo</mat-label>
+                  <input matInput formControlName="grupoSanguineo">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>RUC Empresa Complementaria</mat-label>
+                  <input matInput formControlName="rucEmpresaComplementaria">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Libreta Militar</mat-label>
+                  <input matInput formControlName="libretaMilitar">
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
+          <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
+          <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button>
+          <button mat-stroked-button (click)="imprimir()">Imprimir</button>
+          <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button>
+          <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- DATOS SALARIALES -->
+    <mat-tab label="Datos Salariales">
+      <div class="tab-content" formGroupName="datosSalariales">
+        <h2>Datos Salariales</h2>
+
+        <mat-form-field appearance="outline" class="employee-box">
+          <mat-label>Empleado</mat-label>
+          <input matInput formControlName="empleado">
+        </mat-form-field>
+
+        <div class="grid-2">
+          <div class="card-section">
+            <h3>Datos Salariales</h3>
+            <div class="form-grid-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Fecha del Salario</mat-label>
+                <input matInput type="date" formControlName="fechaSalario">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Salario</mat-label>
+                <input matInput formControlName="salario">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Valor de la hora normal</mat-label>
+                <input matInput formControlName="valorHoraNormal">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Valor de la hora especial</mat-label>
+                <input matInput formControlName="valorHoraEspecial">
+              </mat-form-field>
+            </div>
+
+            <mat-checkbox formControlName="incluyeAportacion">Incluye aportación</mat-checkbox>
+          </div>
+
+          <div class="card-section">
+            <h3>Valores de Quincena</h3>
+            <div class="form-grid-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Anticipo I Quincenal %</mat-label>
+                <input matInput formControlName="anticipoQuincenal1">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Anticipo II Quincenal %</mat-label>
+                <input matInput formControlName="anticipoQuincenal2">
+              </mat-form-field>
+            </div>
+
+            <h3 class="mt-16">Retención Judicial</h3>
+            <div class="form-grid-2">
+              <mat-checkbox formControlName="retencionJudicial">Retención Judicial</mat-checkbox>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Valores</mat-label>
+                <input matInput formControlName="valoresRetencion">
+              </mat-form-field>
+            </div>
+          </div>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- CARGAS -->
+    <mat-tab label="Cargas">
+      <div class="tab-content">
+        <h2>Cargas</h2>
+
+        <mat-form-field appearance="outline" class="employee-box">
+          <mat-label>Empleado</mat-label>
+          <input matInput [value]="form.get('datosGenerales.nombres')?.value + ' ' + form.get('datosGenerales.apellidos')?.value">
+        </mat-form-field>
+
+        <div class="table-container">
+          <table mat-table [dataSource]="cargasData" class="mat-elevation-z1 custom-table">
+
+            <ng-container matColumnDef="codigo">
+              <th mat-header-cell *matHeaderCellDef>Código</th>
+              <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="nombres">
+              <th mat-header-cell *matHeaderCellDef>Nombres</th>
+              <td mat-cell *matCellDef="let row">{{ row.nombres }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="apellidos">
+              <th mat-header-cell *matHeaderCellDef>Apellidos</th>
+              <td mat-cell *matCellDef="let row">{{ row.apellidos }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="cedula">
+              <th mat-header-cell *matHeaderCellDef>Cédula</th>
+              <td mat-cell *matCellDef="let row">{{ row.cedula }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="direccion">
+              <th mat-header-cell *matHeaderCellDef>Dirección</th>
+              <td mat-cell *matCellDef="let row">{{ row.direccion }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="telefono">
+              <th mat-header-cell *matHeaderCellDef>Teléfono</th>
+              <td mat-cell *matCellDef="let row">{{ row.telefono }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="fechaNacimiento">
+              <th mat-header-cell *matHeaderCellDef>Fecha Nacim.</th>
+              <td mat-cell *matCellDef="let row">{{ row.fechaNacimiento }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="sexo">
+              <th mat-header-cell *matHeaderCellDef>Sexo</th>
+              <td mat-cell *matCellDef="let row">{{ row.sexo }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="parentesco">
+              <th mat-header-cell *matHeaderCellDef>Parentesco</th>
+              <td mat-cell *matCellDef="let row">{{ row.parentesco }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="discapacidad">
+              <th mat-header-cell *matHeaderCellDef>Discapacidad</th>
+              <td mat-cell *matCellDef="let row">{{ row.discapacidad }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="utilidad">
+              <th mat-header-cell *matHeaderCellDef>Utilidad</th>
+              <td mat-cell *matCellDef="let row">{{ row.utilidad }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="impRenta">
+              <th mat-header-cell *matHeaderCellDef>Imp. Rent.</th>
+              <td mat-cell *matCellDef="let row">{{ row.impRenta }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="cargasColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: cargasColumns"></tr>
+          </table>
+        </div>
+
+        <div class="center-action">
+          <button mat-stroked-button color="primary" (click)="actualizarCargas()">Actualizar Cargas</button>
+        </div>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
+          <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
+          <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button>
+          <button mat-stroked-button (click)="imprimir()">Imprimir</button>
+          <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button>
+          <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- GASTOS PERSONALES -->
+    <mat-tab label="Gastos Personales">
+      <div class="tab-content">
+        <h2>Gastos Personales</h2>
+
+        <mat-form-field appearance="outline" class="employee-box">
+          <mat-label>Empleado</mat-label>
+          <input matInput [value]="form.get('datosGenerales.nombres')?.value + ' ' + form.get('datosGenerales.apellidos')?.value">
+        </mat-form-field>
+
+        <div class="table-container">
+          <table mat-table [dataSource]="gastosData" class="mat-elevation-z1 custom-table">
+
+            <ng-container matColumnDef="codigo">
+              <th mat-header-cell *matHeaderCellDef>Código</th>
+              <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="tipoGasto">
+              <th mat-header-cell *matHeaderCellDef>Tipo de Gasto</th>
+              <td mat-cell *matCellDef="let row">{{ row.tipoGasto }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="montoMaximo">
+              <th mat-header-cell *matHeaderCellDef>Monto Máximo</th>
+              <td mat-cell *matCellDef="let row">{{ row.montoMaximo }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="valorProyectado">
+              <th mat-header-cell *matHeaderCellDef>Valor Proyectado</th>
+              <td mat-cell *matCellDef="let row">{{ row.valorProyectado }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="valorReal">
+              <th mat-header-cell *matHeaderCellDef>Valor Real</th>
+              <td mat-cell *matCellDef="let row">{{ row.valorReal }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="gastosColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: gastosColumns"></tr>
+          </table>
+        </div>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
+          <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
+          <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button>
+          <button mat-stroked-button (click)="imprimir()">Imprimir</button>
+          <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button>
+          <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- DATOS ACADÉMICOS -->
+    <mat-tab label="Datos Académicos">
+      <div class="tab-content" formGroupName="datosAcademicos">
+        <h2>Datos Académicos</h2>
+
+        <mat-form-field appearance="outline" class="employee-box">
+          <mat-label>Empleado</mat-label>
+          <input matInput formControlName="empleado">
+        </mat-form-field>
+
+        <div class="grid-2">
+          <mat-form-field appearance="outline">
+            <mat-label>Educación Primaria</mat-label>
+            <textarea matInput rows="5" formControlName="educacionPrimaria"></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Educación Superior</mat-label>
+            <textarea matInput rows="5" formControlName="educacionSuperior"></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Educación Secundaria</mat-label>
+            <textarea matInput rows="5" formControlName="educacionSecundaria"></textarea>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Cursos, Maestrías y Posgrados</mat-label>
+            <textarea matInput rows="5" formControlName="cursosMaestriasPosgrados"></textarea>
+          </mat-form-field>
+        </div>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
+          <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
+          <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button>
+          <button mat-stroked-button (click)="imprimir()">Imprimir</button>
+          <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button>
+          <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- OBSERVACIÓN -->
+    <mat-tab label="Observación">
+      <div class="tab-content">
+        <h2>Observación</h2>
+
+        <mat-form-field appearance="outline" class="employee-box">
+          <mat-label>Empleado</mat-label>
+          <input matInput [value]="form.get('datosGenerales.nombres')?.value + ' ' + form.get('datosGenerales.apellidos')?.value">
+        </mat-form-field>
+
+        <div class="table-container">
+          <table mat-table [dataSource]="observacionData" class="mat-elevation-z1 custom-table">
+
+            <ng-container matColumnDef="fecha">
+              <th mat-header-cell *matHeaderCellDef>Fecha</th>
+              <td mat-cell *matCellDef="let row">{{ row.fecha }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="usuario">
+              <th mat-header-cell *matHeaderCellDef>Usuario</th>
+              <td mat-cell *matCellDef="let row">{{ row.usuario }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="tipo">
+              <th mat-header-cell *matHeaderCellDef>Tipo</th>
+              <td mat-cell *matCellDef="let row">{{ row.tipo }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="observacion">
+              <th mat-header-cell *matHeaderCellDef>Observación</th>
+              <td mat-cell *matCellDef="let row">{{ row.observacion }}</td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="observacionColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: observacionColumns"></tr>
+          </table>
+        </div>
+
+        <div class="center-action dual-buttons">
+          <button mat-stroked-button color="primary" (click)="reporte()">Reporte</button>
+          <button mat-stroked-button color="accent" (click)="actualizarObservacion()">Actualizar</button>
+        </div>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
+          <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
+          <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button>
+          <button mat-stroked-button (click)="imprimir()">Imprimir</button>
+          <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button>
+          <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- DATOS ESPECIALES -->
+    <mat-tab label="Datos Especiales">
+      <div class="tab-content" formGroupName="datosEspeciales">
+        <h2>Datos Especiales</h2>
+
+        <mat-form-field appearance="outline" class="employee-box">
+          <mat-label>Empleado</mat-label>
+          <input matInput formControlName="empleado">
+        </mat-form-field>
+
+        <div class="grid-2">
+          <div>
+            <div class="form-grid-2">
+              <mat-form-field appearance="outline">
+                <mat-label>Residencial del Trabajador</mat-label>
+                <input matInput formControlName="residenciaTrabajador">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Aplica Convenio evitar doble imposición</mat-label>
+                <input matInput formControlName="aplicaConvenio">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>Sistema Salario Neto</mat-label>
+                <input matInput formControlName="sistemaSalarioNeto">
+              </mat-form-field>
+
+              <mat-form-field appearance="outline">
+                <mat-label>País de Residencia</mat-label>
+                <input matInput formControlName="paisResidencia">
+              </mat-form-field>
+            </div>
+
+            <mat-checkbox formControlName="beneficioGalapagos">Beneficio provincia de Galápagos</mat-checkbox>
+
+            <div class="card-section mt-16">
+              <h3>Datos otros empleadores / Salario Digno</h3>
+
+              <div class="form-grid-2">
+                <mat-form-field appearance="outline">
+                  <mat-label>Ingresos agraviados</mat-label>
+                  <input matInput formControlName="ingresosAgraviados">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Aporte personal del IESS</mat-label>
+                  <input matInput formControlName="aportePersonalIess">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Valor del impuesto retenido durante el periodo declarado</mat-label>
+                  <input matInput formControlName="valorImpuestoRetenido">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Compensación Económica Digna</mat-label>
+                  <input matInput formControlName="compensacionEconomicaDigna">
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="card-section">
+              <h3>Datos Personales con Capacidades Especiales</h3>
+
+              <div class="form-grid-2">
+                <mat-checkbox formControlName="discapacitado">Discapacitado</mat-checkbox>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Carnet Conadis</mat-label>
+                  <input matInput formControlName="carnetConadis">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Condición del Trabajador</mat-label>
+                  <input matInput formControlName="condicionTrabajador">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Tipo de Discapacidad</mat-label>
+                  <input matInput formControlName="tipoDiscapacidad">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Porcentaje de Discapacidad</mat-label>
+                  <input matInput formControlName="porcentajeDiscapacidad">
+                </mat-form-field>
+
+                <mat-checkbox formControlName="discapacitadoSustituto">Discapacitado</mat-checkbox>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Descripción de la Discapacidad</mat-label>
+                  <textarea matInput rows="3" formControlName="descripcionDiscapacidad"></textarea>
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Tipo de Identidad</mat-label>
+                  <input matInput formControlName="tipoIdentidad">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Cédula / Pasaporte / ID</mat-label>
+                  <input matInput formControlName="identificacion">
+                </mat-form-field>
+
+                <mat-form-field appearance="outline">
+                  <mat-label>Nombre de la Discapacidad</mat-label>
+                  <input matInput formControlName="nombreDiscapacidad">
+                </mat-form-field>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
+          <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
+          <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button>
+          <button mat-stroked-button (click)="imprimir()">Imprimir</button>
+          <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button>
+          <button mat-stroked-button (click)="cancelar()">Cancelar</button>
+        </div>
+      </div>
+    </mat-tab>
+
+  </mat-tab-group>
+</div>

@@ -1,0 +1,24 @@
+<div class="reporte-page">
+  <div class="form-card" [formGroup]="form">
+    <h2>Personas con Discapacidad</h2>
+
+    <div class="section-block">
+      <label class="section-label">Actividad:</label>
+
+      <div class="checks-row">
+        <mat-checkbox formControlName="activos">Activos</mat-checkbox>
+        <mat-checkbox formControlName="exempleados">Exempleados</mat-checkbox>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button mat-flat-button color="primary" type="button" (click)="aceptar()">
+        Aceptar
+      </button>
+
+      <button mat-stroked-button type="button" (click)="cancelar()">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>

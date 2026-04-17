@@ -1,0 +1,48 @@
+<div class="reporte-page">
+  <div class="form-card" [formGroup]="form">
+    <h2>Reporte de Permisos</h2>
+
+    <div class="checks-row">
+      <mat-checkbox formControlName="todos">Todos</mat-checkbox>
+      <mat-checkbox formControlName="aprobados">Aprobados</mat-checkbox>
+      <mat-checkbox formControlName="pendientes">Pendientes</mat-checkbox>
+      <mat-checkbox formControlName="rechazados">Rechazados</mat-checkbox>
+    </div>
+
+    <div class="section-block">
+      <h3>Periodo</h3>
+
+      <div class="form-grid">
+        <mat-form-field appearance="outline">
+          <mat-label>Mes</mat-label>
+          <mat-select formControlName="mes">
+            <mat-option *ngFor="let item of meses" [value]="item.id">
+              {{ item.nombre }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Año</mat-label>
+          <input matInput type="number" formControlName="anio" />
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button mat-flat-button color="primary" type="button" (click)="generar()">
+        Generar
+      </button>
+
+      <button mat-stroked-button type="button" (click)="cancelar()">
+        Cancelar
+      </button>
+    </div>
+
+    <div class="bottom-action">
+      <button mat-stroked-button type="button" (click)="grabar()">
+        Grabar
+      </button>
+    </div>
+  </div>
+</div>

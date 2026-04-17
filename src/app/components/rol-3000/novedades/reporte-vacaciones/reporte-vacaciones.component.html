@@ -1,0 +1,33 @@
+<div class="reporte-page">
+  <div class="form-card" [formGroup]="form">
+    <h2>Reporte de Vacaciones</h2>
+
+    <div class="content-grid">
+      <div class="left-block">
+        <mat-checkbox formControlName="pendientes">Pendientes</mat-checkbox>
+      </div>
+
+      <div class="right-block">
+        <mat-form-field appearance="outline" class="departamento-field">
+          <mat-label>Filtrar por departamento</mat-label>
+          <mat-select formControlName="departamento">
+            <mat-option value="">Todos</mat-option>
+            <mat-option *ngFor="let item of departamentos" [value]="item">
+              {{ item }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button mat-flat-button color="primary" type="button" (click)="generar()">
+        Generar
+      </button>
+
+      <button mat-stroked-button type="button" (click)="cancelar()">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>

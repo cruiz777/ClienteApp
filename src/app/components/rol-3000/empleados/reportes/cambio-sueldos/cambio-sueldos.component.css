@@ -1,0 +1,227 @@
+.cambio-sueldos-page {
+  padding: 24px;
+  background: #f3f4f7;
+  min-height: 100vh;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.window-card {
+  width: 680px;
+  max-width: 100%;
+  background: #ffffff;
+  border: 1px solid #9fb3c8;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  padding: 18px 20px 20px;
+}
+
+.window-card h2 {
+  margin: 0 0 18px 0;
+  color: #123b84;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.radio-row {
+  margin-bottom: 16px;
+}
+
+.radio-row mat-radio-group {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+}
+
+.field-block {
+  margin-bottom: 14px;
+}
+
+.field-label {
+  display: inline-block;
+  width: 95px;
+  font-weight: 700;
+  color: #000;
+  margin-bottom: 6px;
+}
+
+.empleado-wrapper {
+  position: relative;
+}
+
+.empleado-input {
+  width: 100%;
+}
+
+.empleado-sugerencias {
+  position: absolute;
+  z-index: 20;
+  top: 62px;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid #cdd7e3;
+  max-height: 220px;
+  overflow: auto;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.empleado-item {
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #eef2f7;
+  font-size: 13px;
+}
+
+.empleado-item:hover {
+  background: #f4f8ff;
+}
+
+.selector-row {
+  display: grid;
+  grid-template-columns: 100px 1fr 100px;
+  gap: 10px;
+  align-items: start;
+}
+
+.codigo-input,
+.descripcion-input {
+  width: 100%;
+}
+
+.group-box {
+  border: 1px solid #aeb8c5;
+  padding: 14px 12px 12px;
+  margin-top: 12px;
+}
+
+.group-box legend {
+  padding: 0 8px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.sueldo-row {
+  display: grid;
+  grid-template-columns: 1fr 160px;
+  gap: 10px;
+  align-items: center;
+}
+
+.tipo-cambio-group {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.valor-cambio-input {
+  width: 100%;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-card {
+  width: 760px;
+  max-width: calc(100vw - 40px);
+  max-height: calc(100vh - 40px);
+  background: white;
+  border: 1px solid #9ea9b8;
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid #dbe3f0;
+}
+
+.modal-header h3 {
+  margin: 0;
+  font-size: 20px;
+  color: #123b84;
+}
+
+.modal-body {
+  padding: 12px;
+  overflow: auto;
+}
+
+.modal-search {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.table-container {
+  border: 1px solid #dbe3f0;
+  overflow: auto;
+}
+
+.custom-table {
+  width: 100%;
+}
+
+.mat-mdc-header-row {
+  background: #eef3fa;
+}
+
+.mat-mdc-header-cell {
+  color: #27477d;
+  font-size: 12px;
+  font-weight: 700;
+  border-bottom: 1px solid #dbe3f0;
+}
+
+.mat-mdc-cell {
+  font-size: 12px;
+  color: #2f3a4d;
+  border-bottom: 1px solid #edf2f8;
+}
+
+.mat-mdc-row {
+  cursor: pointer;
+}
+
+.mat-mdc-row:hover {
+  background: #f7faff;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px;
+  border-top: 1px solid #dbe3f0;
+}
+
+::ng-deep .mdc-text-field--outlined {
+  --mdc-outlined-text-field-container-shape: 4px;
+}
+
+@media (max-width: 768px) {
+  .selector-row,
+  .sueldo-row {
+    grid-template-columns: 1fr;
+  }
+
+  .field-label {
+    width: auto;
+  }
+}

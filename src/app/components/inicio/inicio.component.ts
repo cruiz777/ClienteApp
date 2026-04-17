@@ -64,8 +64,8 @@ export class InicioComponent implements OnInit, OnDestroy {
       nombre: 'ROL 3000',
       imagenInactiva: '/assets/logo/ROL-3000-2.png',
       imagenActiva: '/assets/logo/ROL-3000.png', // Versión a color
-      ruta: '/rol-3000/inicio',
-      tienePermiso: false
+      ruta: '/rol-3000/inicio-rol',
+      tienePermiso: true
     },
     {
       id: 'seguridades',
@@ -161,7 +161,7 @@ export class InicioComponent implements OnInit, OnDestroy {
   private tieneAccesoSistema(nombreSistema: string, permisos: string[]): boolean {
     // Verificar si el usuario tiene acceso al sistema específico
     // Basado en tu JSON: permisos_flat: ["codbar", "codbar.ficha-de-cliente", ...]
-
+    debugger
     const tieneAcceso = permisos.includes(nombreSistema) ||
                        permisos.some(p => p.startsWith(`${nombreSistema}.`)) ||
                        this.usuarioActual?.perfil === 'ADMIN';
