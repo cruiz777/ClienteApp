@@ -427,3 +427,385 @@ ag-grid-angular {
 ::ng-deep .ag-row.row-out-of-range .ag-cell {
   background-color: #ffe3e3 !important;
 }
+.cabecera-row-2 {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.excel-box {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1px solid #d9d9d9;
+  border-radius: 10px;
+  padding: 10px;
+  background: #fff;
+  height: 100%;
+}
+
+.excel-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.excel-file-name {
+  font-size: 12px;
+  color: #555;
+  word-break: break-word;
+}
+
+.excel-grid {
+  width: 100%;
+  height: 260px;
+  min-height: 260px;
+}
+
+.excel-grid ag-grid-angular {
+  width: 100%;
+  height: 100%;
+}
+
+/* Excel match = verde */
+:host ::ng-deep .row-excel-match .ag-cell {
+  background-color: #dff6dd !important;
+}
+
+/* Excel sin match = amarillo */
+:host ::ng-deep .row-excel-no-match .ag-cell {
+  background-color: #fff7cc !important;
+}
+
+@media (max-width: 1100px) {
+  .cabecera-row-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .excel-grid {
+    height: 220px;
+    min-height: 220px;
+  }
+}
+.cabecera-row-2 {
+  display: flex;
+  gap: 12px;
+}
+
+/* IZQUIERDA */
+.cabecera-row-2 .fechas-box {
+  flex: 1;
+  transition: all 0.3s ease;
+}
+
+/* DERECHA */
+.cabecera-row-2 .excel-box {
+  width: 420px;
+  min-width: 380px;
+  max-width: 500px;
+  transition: all 0.3s ease;
+}
+
+/* CUANDO NO HAY EXCEL */
+.cabecera-row-2:not(.con-excel) .fechas-box {
+  flex: 1 1 100%;
+}
+
+/* OPCIONAL: animación */
+.excel-box {
+  border-left: 1px solid #e0e0e0;
+  padding-left: 10px;
+}
+.grid-movimientos-izq {
+  height: 290px;
+  min-height: 290px;
+}
+
+.grid-movimientos-izq ag-grid-angular {
+  width: 100%;
+  height: 100%;
+}
+
+.grid-movimientos-der {
+  height: 260px;
+  min-height: 260px;
+}
+
+.grid-movimientos-der ag-grid-angular {
+  width: 100%;
+  height: 100%;
+}
+.search-bar {
+  width: 100%;
+}
+
+.search-grid {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+.search-grid .btn {
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.movimientos-split {
+  display: block;
+  width: 100%;
+}
+
+.movimientos-split.con-excel {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.movimientos-panel {
+  min-width: 0;
+}
+
+.movimientos-panel.izquierdo {
+  flex: 1 1 auto;
+}
+
+.movimientos-panel.derecho {
+  flex: 0 0 360px;   /* ancho fijo del panel derecho */
+  width: 360px;
+}
+
+/* Grid izquierdo */
+.grid-movimientos-izq {
+  height: 280px !important;
+  min-height: 280px !important;
+}
+
+.grid-movimientos-izq ag-grid-angular {
+  width: 100%;
+  height: 100%;
+}
+
+/* Grid derecho */
+.grid-movimientos-der {
+  height: 230px !important;
+  min-height: 230px !important;
+}
+
+.grid-movimientos-der ag-grid-angular {
+  width: 100%;
+  height: 100%;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .movimientos-split.con-excel {
+    display: block;
+  }
+
+  .movimientos-panel.derecho {
+    width: 100%;
+    flex: 1 1 auto;
+    margin-top: 12px;
+  }
+}
+/* Grid izquierdo */
+.grid-movimientos-izq {
+  height: 280px !important;
+  min-height: 280px !important;
+}
+
+.grid-movimientos-izq ag-grid-angular {
+  width: 100%;
+  height: 100%;
+}
+
+/* Grid derecho */
+.grid-movimientos-der {
+  height: 280px !important;
+  min-height: 280px !important;
+}
+
+.grid-movimientos-der ag-grid-angular {
+  width: 100%;
+  height: 100%;
+}
+.movimientos-split {
+  display: block;
+  width: 100%;
+}
+
+.movimientos-split.con-excel {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  width: 100%;
+}
+
+.movimientos-panel {
+  min-width: 0;
+}
+
+.movimientos-panel.izquierdo {
+  flex: 0 0 auto;
+}
+
+.movimientos-panel.derecho {
+  flex: 0 0 auto;
+}
+
+/* Separador arrastrable */
+.splitter-vertical {
+  width: 8px;
+  min-width: 8px;
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+}
+
+.splitter-vertical::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: #c8d3e2;
+  border-radius: 2px;
+}
+
+.splitter-vertical:hover::before {
+  background: #7f9cc5;
+}
+
+/* Ambos grids mismo alto */
+.grid-movimientos-izq {
+  height: 280px !important;
+  min-height: 280px !important;
+}
+
+.grid-movimientos-izq ag-grid-angular {
+  width: 100%;
+  height: 100%;
+}
+
+.grid-movimientos-der {
+  height: 280px !important;
+  min-height: 280px !important;
+}
+
+.grid-movimientos-der ag-grid-angular {
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 1100px) {
+  .movimientos-split.con-excel {
+    display: block;
+  }
+
+  .splitter-vertical {
+    display: none;
+  }
+
+  .movimientos-panel.izquierdo,
+  .movimientos-panel.derecho {
+    width: 100% !important;
+    flex-basis: auto !important;
+  }
+
+  .movimientos-panel.derecho {
+    margin-top: 12px;
+  }
+}
+
+.movimientos-split {
+  display: block;
+  width: 100%;
+}
+
+.movimientos-split.con-excel {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  width: 100%;
+}
+
+.movimientos-panel {
+  min-width: 0;
+}
+
+.movimientos-panel.izquierdo {
+  flex: 1 1 auto;
+}
+
+.movimientos-panel.derecho {
+  flex: 0 0 auto;
+}
+
+/* Separador */
+.splitter-vertical {
+  width: 8px;
+  min-width: 8px;
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+}
+
+.splitter-vertical::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 3px;
+  width: 2px;
+  background: #c8d3e2;
+  border-radius: 2px;
+}
+
+.splitter-vertical:hover::before {
+  background: #7f9cc5;
+}
+
+/* Ambos grids mismo alto */
+.grid-movimientos-izq {
+  height: 280px !important;
+  min-height: 280px !important;
+}
+
+.grid-movimientos-izq ag-grid-angular {
+  width: 100%;
+  height: 100%;
+}
+
+.grid-movimientos-der {
+  height: 280px !important;
+  min-height: 280px !important;
+}
+
+.grid-movimientos-der ag-grid-angular {
+  width: 100%;
+  height: 100%;
+}
+
+@media (max-width: 1100px) {
+  .movimientos-split.con-excel {
+    display: block;
+  }
+
+  .splitter-vertical {
+    display: none;
+  }
+
+  .movimientos-panel.izquierdo,
+  .movimientos-panel.derecho {
+    width: 100% !important;
+    flex-basis: auto !important;
+  }
+
+  .movimientos-panel.derecho {
+    margin-top: 12px;
+  }
+}

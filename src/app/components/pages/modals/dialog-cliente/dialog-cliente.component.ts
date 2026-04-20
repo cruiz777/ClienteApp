@@ -1866,7 +1866,7 @@ enviarEmpresaAJson(): void {
     dapi: this.api,
     capi: this.claveApi
   };
-
+  debugger
   const jsonData = this.jsonEmpresaService.buildJson(data);
 
   this.jsonEmpresaService.generarJsonEmpresa(data)
@@ -1882,21 +1882,19 @@ enviarEmpresaAJson(): void {
 }
 
 
-  cargarParametroFacturaPorId(id: number): void {
-    this.parametrosFacturaService.getById(id).subscribe({
-      next: (parametro) => {
-        // Aquí asignas el resultado a una variable del componente
-        this.api = parametro.texto ?? '';
-        this.claveApi = parametro.obs ?? ''; // si `valor` puede ser undefined
+ cargarParametroFacturaPorId(id: number): void {
+  this.parametrosFacturaService.getByIdN(id).subscribe({
+    next: (parametro) => {
+      this.api = parametro?.texto ?? '';
+      this.claveApi = parametro?.obs ?? '';
 
-        console.log('✅ Parámetro cargado:', parametro);
-      },
-      error: (error) => {
-        console.error('❌ Error al obtener el parámetro:', error);
-        // Puedes mostrar un mensaje de error si deseas
-      }
-    });
-  }
+      console.log('✅ Parámetro cargado:', parametro);
+    },
+    error: (error) => {
+      console.error('❌ Error al obtener el parámetro:', error);
+    }
+  });
+}
 
   soloDigitos(ctrl: string, ev: Event, form: FormGroup) {
     const el = ev.target as HTMLInputElement;
