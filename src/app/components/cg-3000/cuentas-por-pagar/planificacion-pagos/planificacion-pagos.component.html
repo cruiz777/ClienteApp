@@ -239,7 +239,7 @@
               <button
                 class="compact-btn compact-btn-success"
                 (click)="planificarPago()"
-                [disabled]="guardando || !totalDocumentosSeleccionados || !datosPagoForm.valid">
+                [disabled]="guardando || !datosPagoForm.valid || !planificacionValida">
                 <mat-spinner *ngIf="guardando" diameter="16"></mat-spinner>
                 <mat-icon *ngIf="!guardando">{{ planificacionCargada ? 'edit' : 'save' }}</mat-icon>
                 {{ guardando ? 'Procesando...' : textoPlanificar }}
@@ -250,7 +250,7 @@
                 *ngIf="planificacionCargada"
                 class="compact-btn compact-btn-warning"
                 (click)="aprobarPlanificacionCargada()"
-                [disabled]="guardando || !totalDocumentosSeleccionados">
+                [disabled]="guardando || !totalDocumentosSeleccionados || !planificacionValida">
                 <mat-spinner *ngIf="guardando" diameter="16"></mat-spinner>
                 <mat-icon *ngIf="!guardando">verified</mat-icon>
                 {{ guardando ? 'Aprobando...' : 'Aprobar Pago' }}
@@ -327,7 +327,7 @@
         </div>        
 
         <!-- Validaciones compactas -->
-        <div class="validation-compact" *ngIf="!datosPagoForm.valid || !totalDocumentosSeleccionados">
+        <div class="validation-compact" *ngIf="!datosPagoForm.valid">
           <div class="val-item" *ngIf="!filtrosForm.get('fechaPago')?.valid">
             <mat-icon>error_outline</mat-icon>Falta fecha de registro
           </div>
@@ -336,9 +336,6 @@
           </div>
           <div class="val-item" *ngIf="!datosPagoForm.get('cuentaBanco')?.valid">
             <mat-icon>error_outline</mat-icon>Falta cuenta banco
-          </div>
-          <div class="val-item" *ngIf="!totalDocumentosSeleccionados">
-            <mat-icon>error_outline</mat-icon>Seleccione documentos
           </div>
         </div>
       </div>

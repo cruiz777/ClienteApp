@@ -182,14 +182,20 @@
       </div>
 
       <!-- Indicador de anticipos aplicados -->
-      <div *ngIf="tieneAnticiposAplicados" 
+      <div *ngIf="tieneCruceReal" 
           class="alert alert-success d-flex align-items-center mt-2 mb-2"
           style="background-color: #d1f2eb; border-left: 4px solid #28a745;">
         <mat-icon class="me-2" style="color: #28a745;">check_circle</mat-icon>
         <div>
-          <strong>Anticipo aplicado:</strong>
-          ${{ totalAnticiposAplicados.toFixed(2) }}
-          cruzado automáticamente
+          <strong>Cruce aplicado:</strong>
+          ${{ montoCruzadoEnFacturas.toFixed(2) }} distribuido entre 
+          {{ totalFacturasCruzadas }} factura(s)
+
+          <!-- ✅ Solo aparece si sobra anticipo -->
+          <span *ngIf="anticipoDisponible > 0"
+                style="margin-left: 8px; color: #e65100; font-weight: 600;">
+            — Anticipo restante sin cruzar: ${{ anticipoDisponible.toFixed(2) }}
+          </span>
         </div>
       </div>
 

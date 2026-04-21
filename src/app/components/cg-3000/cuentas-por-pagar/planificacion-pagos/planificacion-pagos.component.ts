@@ -67,6 +67,7 @@ export class PlanificacionPagosComponent implements OnInit {
   documentosRows: DocumentoPendienteResponse[] = [];
   private gridApiDocumentos!: GridApi;
   mostrarDropdownExcel = false;
+  private cargandoSeleccion = false;
 
   // ===== COLUMNAS AG-GRID =====
     columnDefsDocumentos: ColDef[] = [
@@ -599,6 +600,7 @@ export class PlanificacionPagosComponent implements OnInit {
     },
     //AGREGAR EVENTO DE SELECCIÓN
     onRowSelected: (event: any) => {
+      if (this.cargandoSeleccion) return;
       if (event.node.data?.esSubtotal || event.node.data?.esEspacio) return;
       
       const isSelected = event.node.isSelected();
@@ -804,7 +806,7 @@ distribuirMonto(): void {
       this.totalAPlanificar = totalFacturas - totalAnticipos;
       this.totalMarcado = totalFacturas;
       this.totalPendiente = 0;
-      this.diferencia = 0;
+      this.diferencia = this.totalAPlanificar - this.totalSaldoTotal;
     } else {
       // LÓGICA ORIGINAL para documentos pendientes
       const facturas = documentosReales.filter(d => d.saldo <= 0);
@@ -825,7 +827,7 @@ distribuirMonto(): void {
         facturasConMonto.reduce((sum, d) => sum + (d.saldo || 0), 0)
       );
       this.totalPendiente = this.totalMarcado - totalFacturas;
-      this.diferencia = totalFacturas - this.totalMarcado;
+      this.diferencia = this.totalAPlanificar - this.totalSaldoTotal;
     }
     //CALCULAR MONTO RESTANTE (puede ser negativo si se pasó)
     if (this.montoTotalADistribuir > 0) {
@@ -1082,6 +1084,7 @@ distribuirMonto(): void {
           this.documentosRows = grouped;
           
           this.gridApiDocumentos?.setGridOption('rowData', this.documentosRows);
+          this.preseleccionarFilas();
           this.actualizarVisibilidadColumnaAcciones();
           this.calcularTotales();
         } else {
@@ -1100,21 +1103,17 @@ distribuirMonto(): void {
   private agruparPorProveedor(docs: DocumentoPendienteResponse[], preservarValores: boolean = false): any[] {
     const resultado: any[] = [];
     
-    // Agrupar por proveedor
     const grupos = docs.reduce((acc, doc) => {
       const key = doc.id_proveedor || 'SIN_PROVEEDOR';
       if (!acc[key]) acc[key] = [];
       
-      // ⭐ LÓGICA CONDICIONAL
       let montoInicial = 0;
       let tipoInicial = null;
       
       if (preservarValores) {
-        //CARGAR PLANIFICACIÓN: preservar valores
         montoInicial = doc.monto_a_pagar || 0;
         tipoInicial = doc.tipo_pago_seleccionado || null;
       }
-      // Si NO preservarValores, quedan en 0 y null
       
       acc[key].push({
         ...doc,
@@ -1128,18 +1127,21 @@ distribuirMonto(): void {
       return acc;
     }, {} as Record<string, any[]>);
     
-    // Insertar filas de subtotal + espacio
     Object.keys(grupos).forEach(idProveedor => {
       const docsProveedor = grupos[idProveedor];
       
-      // 1. Agregar documentos
+      // ✅ Ordenar por fecha de vencimiento (más antigua primero)
+      docsProveedor.sort((a, b) => {
+        const fechaA = a.fecha_vencimiento ? new Date(a.fecha_vencimiento).getTime() : 0;
+        const fechaB = b.fecha_vencimiento ? new Date(b.fecha_vencimiento).getTime() : 0;
+        return fechaA - fechaB;
+      });
+
       resultado.push(...docsProveedor);
       
-      // 2. Calcular subtotal
       const subtotalSaldo = docsProveedor.reduce((sum, d) => sum + (d.saldo || 0), 0);
       const subtotalMonto = docsProveedor.reduce((sum, d) => sum + (d.monto_a_pagar || 0), 0);
 
-      // 3. Agregar fila de SUBTOTAL
       resultado.push({
         esSubtotal: true,
         esEspacio: false,
@@ -1151,7 +1153,6 @@ distribuirMonto(): void {
         editable: false
       });
       
-      // 4. Agregar fila de ESPACIO
       resultado.push({
         esSubtotal: false,
         esEspacio: true,
@@ -1191,9 +1192,9 @@ distribuirMonto(): void {
     );
 
     if (documentosReales.length === 0) {
-      this.showError('Seleccione al menos un documento con monto a pagar');
+      this.showError('No hay documentos cargados');
       return;
-    }  
+    }
 
     // ⭐ DETECTAR SI ES ACTUALIZACIÓN O CREACIÓN
     const esActualizacion = !!this.planificacionCargada;
@@ -1846,7 +1847,8 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
     // Cargar en grid
     this.documentosRows = documentosConSubtotales;
     this.gridApiDocumentos?.setGridOption('rowData', this.documentosRows);
-    
+    this.preseleccionarFilas();
+
     // Recalcular totales
     this.calcularTotales();
     
@@ -1994,5 +1996,23 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
       ['acciones'],
       !!this.planificacionCargada
     );
+  }
+  get planificacionValida(): boolean {
+    return this.documentosRows.some((d: any) => !d.esSubtotal && !d.esEspacio);
+  }
+  private preseleccionarFilas(): void {
+    this.cargandoSeleccion = true;
+    setTimeout(() => {
+      this.gridApiDocumentos?.forEachNode(node => {
+        if (!node.data?.esSubtotal && !node.data?.esEspacio) {
+          const debeSeleccionar = 
+            node.data?.tipo_pago_seleccionado === 'P' ||
+            node.data?.tipo_pago_seleccionado === 'A' ||
+            (node.data?.monto_a_pagar && node.data?.monto_a_pagar > 0);
+          node.setSelected(!!debeSeleccionar, false, 'api');
+        }
+      });
+      this.cargandoSeleccion = false;
+    }, 100);
   }
 }
