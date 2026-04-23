@@ -58,6 +58,7 @@ export interface FacturaPendienteResponse {
   comentario?: string;
   tipoMovimiento?: string;
   vencida: boolean;
+  esAnticipo?: boolean; 
 }
 
 // ===== RESPONSE DE AUTOCOMPLETE PROVEEDORES =====

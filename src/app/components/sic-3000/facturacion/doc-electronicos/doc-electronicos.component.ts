@@ -68,7 +68,7 @@ export const MY_DATE_FORMATS = {
 })
 export class DocElectronicosComponent implements OnInit {
   tipoDocumentoActivo: TipoDocumento = 'FACTURA';
-
+  filtroAnulados: string = 'todos';
   filtrosForm: FormGroup;
   columnDefs: ColDef<DocumentoGrid>[] = [];
   defaultColDef: ColDef;
@@ -167,6 +167,7 @@ export class DocElectronicosComponent implements OnInit {
           onVerXML: (claveAcceso: string) => this.verXML(claveAcceso),
           onReenviar: (id: number, claveAcceso: string) => this.reenviarCorreo(id, claveAcceso),
           onAnular: (id: number) => this.anularDocumento(id),
+          isAnulado: (data: DocumentoGrid) => data.estaAnulado
         },
 
         suppressMovable: true,
@@ -388,12 +389,23 @@ export class DocElectronicosComponent implements OnInit {
   // CARGA DE DATOS
   // ========================================
 
-  private cargarDocumentos(): void {
+  cargarDocumentos(): void {
     const { fechaDesde, fechaHasta, textoBusqueda } = this.filtrosForm.value;
 
     console.log('📥 Cargando documentos...');
     this.loading = true;
 
+    //Filtro para anulados
+    let soloAnulados: boolean | null = null;
+    if (this.filtroAnulados === 'anulados') soloAnulados = false;
+    if (this.filtroAnulados === 'no_anulados') soloAnulados = true;
+
+    console.log('🔍 VERIFICAR:', {
+      filtroAnulados: this.filtroAnulados,
+      soloAnulados: soloAnulados,
+      tipo: typeof soloAnulados
+    });
+    
     this.docService
       .listarDocumentos(
         this.tipoDocumentoActivo,
@@ -401,7 +413,8 @@ export class DocElectronicosComponent implements OnInit {
         fechaHasta,
         textoBusqueda,
         1,     // ⬅️ Siempre página 1 por ahora
-        1000   // ⬅️ Traer todos los registros
+        1000,   // ⬅️ Traer todos los registros
+        soloAnulados  
       )
       .subscribe({
         next: (response) => {

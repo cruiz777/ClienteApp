@@ -51,7 +51,17 @@
           ></mat-datepicker-toggle>
           <mat-datepicker #pickerHasta></mat-datepicker>
         </mat-form-field>
-
+        <mat-form-field appearance="outline">
+          <mat-label>Estado Anulación</mat-label>
+          <mat-select 
+            [(ngModel)]="filtroAnulados" 
+            [ngModelOptions]="{standalone: true}"
+            (selectionChange)="cargarDocumentos()">
+            <mat-option value="todos">Todos</mat-option>
+            <mat-option value="no_anulados">Solo Válidos</mat-option>
+            <mat-option value="anulados">Solo Anulados</mat-option>
+          </mat-select>
+        </mat-form-field>
         <button
           mat-raised-button
           color="primary"
@@ -70,7 +80,7 @@
         >
           <mat-icon>print</mat-icon>
           Imprimir
-        </button>
+        </button>        
       </div>
 
       <!-- Buscar texto -->

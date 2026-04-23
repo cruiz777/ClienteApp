@@ -29,6 +29,7 @@ export interface DocumentoErpResponse {
   descuento:         number;
   numeroFacturaRef:  string | null;
   fechaFacturaRef:   string | null;
+  estaAnulado: boolean; 
 }
 
 export interface ComparacionDocumento {
@@ -58,6 +59,7 @@ export interface DocumentoGrid {
   ruc: string;
   claveAcceso: string;
   puedeReimprimir: boolean;
+  estaAnulado: boolean;
 }
 
 export interface DocumentoEstadoResponse {
@@ -157,7 +159,8 @@ export class DocumentosService {
     fechaHasta?: Date | null,
     textoBusqueda?: string,
     page: number = 1,        // ⬅️ YA ESTÁ
-    pageSize: number = 20    // ⬅️ YA ESTÁ
+    pageSize: number = 20,    // ⬅️ YA ESTÁ
+    soloAnulados?: boolean | null  
   ): Observable<{ docs: DocumentoGrid[], totalItems: number }> { // ⬅️ CAMBIAR TIPO DE RETORNO
     const hoy = new Date();
     const primerDiaMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
@@ -182,7 +185,9 @@ export class DocumentosService {
     if (textoBusqueda && textoBusqueda.trim()) {
       params = params.set('razonSocialComprador', textoBusqueda.trim());
     }
-
+    if (soloAnulados !== null && soloAnulados !== undefined) {
+        params = params.set('soloAnulados', soloAnulados.toString());
+    }
     return this.http
       .get<ApiResponse<PaginationResponse<DocumentoEstadoResponse>>>(this.baseUrl, { params })
       .pipe(
@@ -208,6 +213,7 @@ export class DocumentosService {
             ruc: doc.identificacion_comprador || '',
             claveAcceso: doc.clave_acceso || '',
             puedeReimprimir: doc.puede_reimprimir || false,
+            estaAnulado: (doc.observacion || '').toUpperCase().includes('ANULA')
           }));
 
           return {
@@ -406,7 +412,8 @@ export class DocumentosService {
     tipoDocumento?: string | null,
     idEmpresa?: number | null,
     page: number = 1,
-    pageSize: number = 9999  // Pedimos más porque vamos a cruzar en memoria
+    pageSize: number = 9999,  // Pedimos más porque vamos a cruzar en memoria
+    soloAnulados?: boolean | null 
   ): Observable<{ docs: DocumentoErpResponse[]; totalItems: number }> {
     let params = new HttpParams()
       .set('fechaInicio', this.formatearFecha(fechaInicio))
@@ -422,7 +429,10 @@ export class DocumentosService {
     if (idEmpresa) {
       params = params.set('idEmpresa', idEmpresa);
     }
-
+    
+    if (soloAnulados !== null && soloAnulados !== undefined) {
+      params = params.set('soloAnulados', soloAnulados.toString());
+    }
     return this.http
       .get<ApiResponse<PaginationResponse<DocumentoErpResponse>>>(
         `${this.baseUrlErp}/documentos-erp`,

@@ -2,9 +2,9 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
-import { DocumentoPendienteResponse, PagoProcesadoResponse, PlanificacionCreadaResponse, PlanificacionPagoResponse } from '../interfaces/responses/planificacion-pago-response';
+import { ActualizarPlanificacionRequest, DocumentoPendienteResponse, PagoProcesadoResponse, PlanificacionActualizadaResponse, PlanificacionCreadaResponse, PlanificacionPagoResponse } from '../interfaces/responses/planificacion-pago-response';
 import { ApiResponse } from '../interfaces/responses/api-response';
-import { AprobarPlanificacionRequest, DocumentoPendienteRequest, ProcesarPagoRequest } from '../interfaces/requests/planificacion-pago-response';
+import { AprobarPlanificacionRequest, DocumentoPendienteRequest, EliminarPlanificacionRequest, ProcesarPagoRequest } from '../interfaces/requests/planificacion-pago-response';
 
 @Injectable({
   providedIn: 'root'
@@ -56,6 +56,18 @@ export class PlanificacionPagoService {
         );
     }
 
+
+    /**
+     Actualiza planificación pendiente
+     */
+    actualizarPlanificacion(
+        request: ActualizarPlanificacionRequest
+    ): Observable<ApiResponse<PlanificacionActualizadaResponse>> {
+        return this.http.put<ApiResponse<PlanificacionActualizadaResponse>>(
+        `${this.baseUrl}/actualizar`,
+        request
+        );
+    }
     /**
      * 3. Aprobar planificación (genera asientos)
      */
@@ -99,6 +111,17 @@ export class PlanificacionPagoService {
     return this.http.get<ApiResponse<PlanificacionPagoResponse[]>>(
         `${this.baseUrl}/planificaciones-pendientes`,
         { params }
+    );
+    }
+    /**
+     * Elimina una planificación pendiente (solo si NO está aprobada)
+     */
+    eliminarPlanificacion(
+    request: EliminarPlanificacionRequest
+    ): Observable<ApiResponse<{ num_transaccion: number; cantidad_eliminada: number }>> {
+    return this.http.delete<ApiResponse<{ num_transaccion: number; cantidad_eliminada: number }>>(
+        `${this.baseUrl}/eliminar-planificacion`,
+        { body: request }
     );
     }
 }

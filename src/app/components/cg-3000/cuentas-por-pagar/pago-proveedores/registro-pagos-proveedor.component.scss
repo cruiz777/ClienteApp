@@ -239,3 +239,42 @@
     height: 20px;
   }
 }
+/* ===== Botón accent para cruce ===== */
+.fi-btn.fi-accent {
+  background: linear-gradient(135deg, #ff7b00 0%, #ff9800 100%);
+  border-color: #ff7b00;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(255, 123, 0, 0.2);
+}
+.fi-btn.fi-accent:hover:not(:disabled) {
+  background: linear-gradient(135deg, #e66e00 0%, #f57c00 100%);
+  box-shadow: 0 2px 4px rgba(255, 123, 0, 0.3);
+}
+.fi-btn.fi-accent:disabled {
+  background: #e1e7f5;
+  border-color: #cfd9ea;
+  color: #8da1c2;
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+/* ===== Ajuste de botones con iconos ===== */
+.fi-btn mat-icon {
+  margin: 0;
+  vertical-align: middle;
+}
+.fi-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* ===== Mejorar hover en botones primarios ===== */
+.fi-btn.fi-primary:not(:disabled) {
+  box-shadow: 0 1px 3px rgba(28, 42, 94, 0.15);
+}
+.fi-btn.fi-primary:hover:not(:disabled) {
+  box-shadow: 0 2px 4px rgba(28, 42, 94, 0.25);
+  transform: translateY(-1px);
+  transition: all 0.15s ease;
+}
