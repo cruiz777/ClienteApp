@@ -1,0 +1,91 @@
+<div class="container" [formGroup]="form">
+
+  <h2>Fondo de Reserva</h2>
+
+  <!-- FILTROS -->
+  <div class="grid">
+
+    <div class="field">
+      <label>N° Patronal:</label>
+      <div class="inline">
+        <input formControlName="patronal">
+        <select formControlName="sucursal">
+          <option>1</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Empresa:</label>
+      <input formControlName="empresa">
+    </div>
+
+    <div class="field">
+      <label>Periodo:</label>
+      <input formControlName="periodo">
+    </div>
+
+    <div class="field">
+      <label>Tipo de Empleado:</label>
+      <input formControlName="tipoEmpleado">
+    </div>
+
+  </div>
+
+  <!-- TABLA -->
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th></th>
+          <th>Local</th>
+          <th>No. Afiliación</th>
+          <th>Cédula</th>
+          <th>Cod. Sectorial</th>
+          <th>Nombre</th>
+          <th>N° Días</th>
+          <th>Fondo Reserva</th>
+          <th>Fecha Ing</th>
+          <th>Fecha Sal</th>
+          <th>Observación</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let r of dataSource">
+          <td>{{r.posicion}}</td>
+          <td>{{r.local}}</td>
+          <td>{{r.noAfiliacion}}</td>
+          <td>{{r.cedula}}</td>
+          <td>{{r.codSectorial}}</td>
+          <td>{{r.nombre}}</td>
+          <td>{{r.numeroDias}}</td>
+          <td>{{r.fondoReserva}}</td>
+          <td>{{r.fechaIng}}</td>
+          <td>{{r.fechaSal}}</td>
+          <td>{{r.observacion}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- BOTONES + RESUMEN -->
+  <div class="bottom">
+
+    <div class="buttons">
+      <button (click)="calcular()">Calcular</button>
+      <button (click)="grabar()">Grabar</button>
+      <button (click)="exportar()">Exportar</button>
+      <button (click)="cancelar()">Cancelar</button>
+    </div>
+
+    <div class="resumen">
+      <div class="total">
+        <span>Total Aportaciones</span>
+        <b>$ {{money(resumen.total)}}</b>
+      </div>
+    </div>
+
+  </div>
+
+</div>

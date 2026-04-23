@@ -1,0 +1,54 @@
+.reporte-page {
+  padding: 24px;
+  background: #eef2f7;
+  min-height: 100vh;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.form-card {
+  background: #ffffff;
+  border: 1px solid #dbe3f0;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
+  max-width: 760px;
+}
+
+.form-card h2 {
+  margin: 0 0 22px 0;
+  color: #123b84;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.content-block {
+  min-height: 220px;
+}
+
+.periodo-field {
+  width: 280px;
+  max-width: 100%;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+
+::ng-deep .mdc-text-field--outlined {
+  --mdc-outlined-text-field-container-shape: 6px;
+}
+
+@media (max-width: 768px) {
+  .periodo-field {
+    width: 100%;
+  }
+
+  .content-block {
+    min-height: 120px;
+  }
+}

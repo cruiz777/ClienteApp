@@ -53,6 +53,30 @@ import { ReporteVacacionesComponent } from './novedades/reporte-vacaciones/repor
 import { DetalleVacacionesEmpleadoComponent } from './novedades/detalle-vacaciones-empleado/detalle-vacaciones-empleado.component';
 import { ProcesarVacacionesComponent } from './novedades/procesar-vacaciones/procesar-vacaciones.component';
 import { RolMensualComponent } from './nomina/rol-mensual/rol-mensual.component';
+import { RolQuincenalComponent } from './nomina/rol-quincenal/rol-quincenal.component';
+import { RubrosFijosComponent } from './nomina/rubros-fijos/rubros-fijos.component';
+import { AnulacionRolComponent } from './nomina/anulacion-rol/anulacion-rol.component';
+import { AnulacionRolqComponent } from './nomina/anulacion-rolq/anulacion-rolq.component';
+import { CierrePeriodoQuincenalComponent } from './nomina/cierre-periodo-quincenal/cierre-periodo-quincenal.component';
+
+import { CierrePeriodoMensualContableComponent } from './nomina/cierre-periodo-mensual-contable/cierre-periodo-mensual-contable.component';
+import { CierrePeriodoMensualComponent } from './nomina/cierre-periodo-mensual/cierre-periodo-mensual.component';
+import { GeneracionContabilidadComponent } from './nomina/generacion-contabilidad/generacion-contabilidad.component';
+import { ImpresionContabilidadComponent } from './nomina/impresion-contabilidad/impresion-contabilidad.component';
+import { ReporteRolNominaComponent } from './nomina/reportes/reporte-rol-nomina/reporte-rol-nomina.component';
+import { ReporteRolIndividualComponent } from './nomina/reportes/reporte-rol-individual/reporte-rol-individual.component';
+import { ReporteListadoGeneralComponent } from './nomina/reportes/reporte-listado-general/reporte-listado-general.component';
+import { ReporteListadoGeneralGastosComponent } from './nomina/reportes/reporte-listado-general-gastos/reporte-listado-general-gastos.component';
+import { ReporteProvisionesComponent } from './nomina/reportes/reporte-provisiones/reporte-provisiones.component';
+import { ReporteIngresoDescuentosEmpleadoComponent } from './nomina/reportes/reporte-ingreso-descuentos-empleado/reporte-ingreso-descuentos-empleado.component';
+import { EmpleadosExcluidosNominaActualComponent } from './nomina/reportes/empleados-excluidos-nomina-actual/empleados-excluidos-nomina-actual.component';
+import { ResumenInecComponent } from './nomina/reportes/resumen-inec/resumen-inec.component';
+import { PersonalOcupadoComponent } from './nomina/reportes/personal-ocupado/personal-ocupado.component';
+import { GeneracionAvisoNuevoSueldoIessComponent } from './nomina/generacion/generacion-aviso-nuevo-sueldo-iess/generacion-aviso-nuevo-sueldo-iess.component';
+import { DecimoCuartoComponent } from './especial/decimo-cuarto/decimo-cuarto.component';
+import { DecimoTerceroComponent } from './especial/decimo-tercero/decimo-tercero.component';
+import { FondoReservaComponent } from './especial/fondo-reserva/fondo-reserva.component';
+import { UtilidadesComponent } from './especial/utilidades/utilidades.component';
 
 @NgModule({
   declarations: [
@@ -78,7 +102,30 @@ import { RolMensualComponent } from './nomina/rol-mensual/rol-mensual.component'
     ReporteVacacionesComponent,
     DetalleVacacionesEmpleadoComponent,
     ProcesarVacacionesComponent,
-    RolMensualComponent
+    RolMensualComponent,
+    RolQuincenalComponent,
+    RubrosFijosComponent,
+   AnulacionRolComponent,
+   AnulacionRolqComponent,
+    CierrePeriodoQuincenalComponent,
+    CierrePeriodoMensualComponent,
+    CierrePeriodoMensualContableComponent,
+    GeneracionContabilidadComponent,
+    ImpresionContabilidadComponent,
+    ReporteRolNominaComponent,
+    ReporteRolIndividualComponent,
+    ReporteListadoGeneralComponent,
+    ReporteListadoGeneralGastosComponent,
+    ReporteProvisionesComponent,
+    ReporteIngresoDescuentosEmpleadoComponent,
+    EmpleadosExcluidosNominaActualComponent,
+    ResumenInecComponent,
+    PersonalOcupadoComponent,
+    GeneracionAvisoNuevoSueldoIessComponent,
+    DecimoCuartoComponent,
+    DecimoTerceroComponent,
+    FondoReservaComponent,
+    UtilidadesComponent
 
   ],
   imports: [

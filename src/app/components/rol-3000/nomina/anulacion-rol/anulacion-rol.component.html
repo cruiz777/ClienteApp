@@ -1,0 +1,26 @@
+<div class="anulacion-page">
+  <div class="form-card" [formGroup]="form">
+    <h2>Anulación de ROL Mensual</h2>
+
+    <div class="form-grid">
+      <mat-form-field appearance="outline" class="fecha-field">
+        <mat-label>Fecha de ROL</mat-label>
+        <input matInput type="date" formControlName="fechaRol" />
+
+        <mat-error *ngIf="form.get('fechaRol')?.hasError('required')">
+          La fecha es obligatoria
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="actions">
+      <button mat-flat-button color="primary" (click)="generar()">
+        Generar
+      </button>
+
+      <button mat-stroked-button (click)="cancelar()">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>

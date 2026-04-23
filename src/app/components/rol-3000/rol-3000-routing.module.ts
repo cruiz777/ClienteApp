@@ -24,6 +24,29 @@ import { ReporteVacacionesComponent } from './novedades/reporte-vacaciones/repor
 import { DetalleVacacionesEmpleadoComponent } from './novedades/detalle-vacaciones-empleado/detalle-vacaciones-empleado.component';
 import { ProcesarVacacionesComponent } from './novedades/procesar-vacaciones/procesar-vacaciones.component';
 import { RolMensualComponent } from './nomina/rol-mensual/rol-mensual.component';
+import { RolQuincenalComponent } from './nomina/rol-quincenal/rol-quincenal.component';
+import { RubrosFijosComponent } from './nomina/rubros-fijos/rubros-fijos.component';
+import { AnulacionRolComponent } from './nomina/anulacion-rol/anulacion-rol.component';
+import { AnulacionRolqComponent } from './nomina/anulacion-rolq/anulacion-rolq.component';
+import { CierrePeriodoQuincenalComponent } from './nomina/cierre-periodo-quincenal/cierre-periodo-quincenal.component';
+import { CierrePeriodoMensualContableComponent } from './nomina/cierre-periodo-mensual-contable/cierre-periodo-mensual-contable.component';
+import { CierrePeriodoMensualComponent } from './nomina/cierre-periodo-mensual/cierre-periodo-mensual.component';
+import { GeneracionContabilidadComponent } from './nomina/generacion-contabilidad/generacion-contabilidad.component';
+import { ImpresionContabilidadComponent } from './nomina/impresion-contabilidad/impresion-contabilidad.component';
+import { ReporteRolNominaComponent } from './nomina/reportes/reporte-rol-nomina/reporte-rol-nomina.component';
+import { ReporteRolIndividualComponent } from './nomina/reportes/reporte-rol-individual/reporte-rol-individual.component';
+import { ReporteListadoGeneralComponent } from './nomina/reportes/reporte-listado-general/reporte-listado-general.component';
+import { ReporteListadoGeneralGastosComponent } from './nomina/reportes/reporte-listado-general-gastos/reporte-listado-general-gastos.component';
+import { ReporteProvisionesComponent } from './nomina/reportes/reporte-provisiones/reporte-provisiones.component';
+import { ReporteIngresoDescuentosEmpleadoComponent } from './nomina/reportes/reporte-ingreso-descuentos-empleado/reporte-ingreso-descuentos-empleado.component';
+import { EmpleadosExcluidosNominaActualComponent } from './nomina/reportes/empleados-excluidos-nomina-actual/empleados-excluidos-nomina-actual.component';
+import { ResumenInecComponent } from './nomina/reportes/resumen-inec/resumen-inec.component';
+import { PersonalOcupadoComponent } from './nomina/reportes/personal-ocupado/personal-ocupado.component';
+import { GeneracionAvisoNuevoSueldoIessComponent } from './nomina/generacion/generacion-aviso-nuevo-sueldo-iess/generacion-aviso-nuevo-sueldo-iess.component';
+import { DecimoCuartoComponent } from './especial/decimo-cuarto/decimo-cuarto.component';
+import { DecimoTerceroComponent } from './especial/decimo-tercero/decimo-tercero.component';
+import { FondoReservaComponent } from './especial/fondo-reserva/fondo-reserva.component';
+import { UtilidadesComponent } from './especial/utilidades/utilidades.component';
 const routes: Routes = [
    {
       path: '',
@@ -53,6 +76,29 @@ const routes: Routes = [
         {path:'detalle-vacaciones-empleado',component:DetalleVacacionesEmpleadoComponent},
         {path:'procesar-vacaciones',component:ProcesarVacacionesComponent},
         {path:'rol-mensual',component:RolMensualComponent},
+        {path:'rol-quincenal',component:RolQuincenalComponent},
+        {path:'rubros-fijos',component:RubrosFijosComponent},
+        {path:'anulacion-rol',component:AnulacionRolComponent},
+        {path:'anulacion-rolq',component:AnulacionRolqComponent},
+        {path:'cierre-periodo-quincenal',component:CierrePeriodoQuincenalComponent},
+        {path:'cierre-periodo-mensual',component:CierrePeriodoMensualComponent},
+        {path:'cierre-periodo-mensual-contable',component:CierrePeriodoMensualContableComponent},
+        {path:'generacion-contabilidad',component:GeneracionContabilidadComponent},
+        {path:'impresion-contabilidad',component:ImpresionContabilidadComponent},
+        {path:'reporte-rol-nomina',component:ReporteRolNominaComponent},
+        {path:'reporte-rol-individual',component:ReporteRolIndividualComponent},
+        {path:'reporte-listado-general',component:ReporteListadoGeneralComponent},
+        {path:'reporte-listado-general-gastos',component:ReporteListadoGeneralGastosComponent},
+        {path: 'reporte-provisiones', component: ReporteProvisionesComponent},
+        {path: 'reporte-ingreso-descuentos-empleado', component: ReporteIngresoDescuentosEmpleadoComponent},
+        {path: 'empleados-excluidos-nomina-actual', component: EmpleadosExcluidosNominaActualComponent},
+        {path: 'resumen-inec', component: ResumenInecComponent},
+        {path: 'personal-ocupado', component: PersonalOcupadoComponent},
+        {path: 'generacion-aviso-nuevo-sueldo-iess', component: GeneracionAvisoNuevoSueldoIessComponent},
+        {path: 'decimo-cuarto', component: DecimoCuartoComponent},
+        {path: 'decimo-tercero', component: DecimoTerceroComponent},
+        {path: 'fondo-reserva', component: FondoReservaComponent},
+        {path:'utilidades', component: UtilidadesComponent},
         { path: '**', redirectTo: 'inicio-rol' },
       ],
     },

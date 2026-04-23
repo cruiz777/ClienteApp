@@ -190,28 +190,31 @@
             <a mat-list-item routerLink="/rol-3000/rol-mensual">
               <span *ngIf="isExpanded" class="menu-text">Rol Mensual</span>
             </a>
-            <a mat-list-item [routerLink]="['/cg-3000', 'balance']">
+            <a mat-list-item [routerLink]="['/rol-3000', 'rol-quincenal']">
               <span *ngIf="isExpanded" class="menu-text">Rol Quincena</span>
             </a>
-            <a mat-list-item [routerLink]="['/cg-3000', 'mayor']">
+            <a mat-list-item [routerLink]="['/rol-3000', 'rubros-fijos']">
               <span *ngIf="isExpanded" class="menu-text">Rubros Fijos</span>
             </a>
-            <a mat-list-item [routerLink]="['/cg-3000', 'mayor-codigos']">
+            <a mat-list-item [routerLink]="['/rol-3000', 'anulacion-rol']">
               <span *ngIf="isExpanded" class="menu-text">Anular Rol Mensual</span>
             </a>
-            <a mat-list-item [routerLink]="['/cg-3000', 'mayor-codigos']">
+            <a mat-list-item [routerLink]="['/rol-3000', 'anulacion-rolq']">
               <span *ngIf="isExpanded" class="menu-text">Anular Rol Quincena</span>
             </a>
-            <a mat-list-item [routerLink]="['/cg-3000', 'mayor-codigos']">
+            <a mat-list-item [routerLink]="['/rol-3000', 'cierre-periodo-quincenal']">
               <span *ngIf="isExpanded" class="menu-text">Cerrar P.Quincenal</span>
             </a>
-            <a mat-list-item [routerLink]="['/cg-3000', 'mayor-codigos']">
+            <a mat-list-item [routerLink]="['/rol-3000', 'cierre-periodo-mensual-contable']">
               <span *ngIf="isExpanded" class="menu-text">Cerrar P.Mesual Contable</span>
             </a>
-            <a mat-list-item [routerLink]="['/cg-3000', 'mayor-codigos']">
+            <a mat-list-item [routerLink]="['/rol-3000', 'cierre-periodo-mensual']">
               <span *ngIf="isExpanded" class="menu-text">Cerrar P.Mensual Nomina</span>
             </a>
-            <a mat-list-item [routerLink]="['/cg-3000', 'mayor-codigos']">
+            <a mat-list-item [routerLink]="['/rol-3000', 'generacion-contabilidad']">
+              <span *ngIf="isExpanded" class="menu-text">Generar Archivos de Asientos</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'impresion-contabilidad']">
               <span *ngIf="isExpanded" class="menu-text">Imprimir AD y Proviciones</span>
             </a>
           </mat-expansion-panel>
@@ -223,31 +226,31 @@
                 <span *ngIf="isExpanded" class="menu-text">Reportes</span>
               </mat-panel-title>
             </mat-expansion-panel-header>
-            <a mat-list-item routerLink="/cg-3000/estado-financiero">
+            <a mat-list-item [routerLink]="['/rol-3000', 'reporte-rol-nomina']">
               <span *ngIf="isExpanded" class="menu-text">Rol Mensual</span>
             </a>
-            <a mat-list-item routerLink="/cg-3000/estado-financiero">
+            <a mat-list-item [routerLink]="['/rol-3000', 'reporte-rol-individual']">
               <span *ngIf="isExpanded" class="menu-text">Rol Individual</span>
             </a>
-            <a mat-list-item routerLink="/cg-3000/estado-financiero">
+            <a mat-list-item [routerLink]="['/rol-3000', 'reporte-listado-general']">
               <span *ngIf="isExpanded" class="menu-text">Listado General</span>
             </a>
-            <a mat-list-item routerLink="/cg-3000/estado-financiero">
+            <a mat-list-item [routerLink]="['/rol-3000', 'reporte-listado-general-gastos']">
               <span *ngIf="isExpanded" class="menu-text">Listado General y Gastos</span>
             </a>
-            <a mat-list-item routerLink="/cg-3000/estado-financiero">
-              <span *ngIf="isExpanded" class="menu-text">Provición Mensual Nomina</span>
+            <a mat-list-item [routerLink]="['/rol-3000', 'reporte-provisiones']">
+              <span *ngIf="isExpanded" class="menu-text">Provición Mensual Nómina</span>
             </a>
-            <a mat-list-item routerLink="/cg-3000/estado-financiero">
+            <a mat-list-item [routerLink]="['/rol-3000', 'reporte-ingreso-descuentos-empleado']">
               <span *ngIf="isExpanded" class="menu-text">Empleado(Ing/Desto.)</span>
             </a>
-            <a mat-list-item routerLink="/cg-3000/estado-financiero">
+            <a mat-list-item [routerLink]="['/rol-3000', 'empleados-excluidos-nomina-actual']">
               <span *ngIf="isExpanded" class="menu-text">Empleados Excluidos</span>
             </a>
-            <a mat-list-item routerLink="/cg-3000/estado-financiero">
+            <a mat-list-item [routerLink]="['/rol-3000', 'resumen-inec']">
               <span *ngIf="isExpanded" class="menu-text">Resumen INEC</span>
             </a>
-            <a mat-list-item routerLink="/cg-3000/estado-financiero">
+            <a mat-list-item [routerLink]="['/rol-3000', 'personal-ocupado']">
               <span *ngIf="isExpanded" class="menu-text">Personal Ocupado INEC</span>
             </a>
           </mat-expansion-panel>
@@ -260,10 +263,10 @@
               </mat-panel-title>
             </mat-expansion-panel-header>
 
-            <a mat-list-item routerLink="/cg-3000/conciliacion">
+            <a mat-list-item [routerLink]="['/rol-3000', 'personal-ocupado']">
               <span *ngIf="isExpanded" class="menu-text">Aviso Nuevo Sueldo</span>
             </a>
-            <a mat-list-item routerLink="/cg-3000/reversa-conciliacion">
+            <a mat-list-item [routerLink]="['/rol-3000', 'generacion-aviso-nuevo-sueldo-iess']">
               <span *ngIf="isExpanded" class="menu-text">Aviso Valores Extras IESS</span>
             </a>
           </mat-expansion-panel>
@@ -285,16 +288,16 @@
                 <span *ngIf="isExpanded" class="menu-text">Archivo</span>
               </mat-panel-title>
             </mat-expansion-panel-header>
-            <a mat-list-item routerLink="/cg-3000/reporte-compras">
+            <a mat-list-item [routerLink]="['/rol-3000', 'decimo-cuarto']">
             <span *ngIf="isExpanded" class="menu-text">Décimo Cuarto</span>
           </a>
-          <a mat-list-item routerLink="/cg-3000/generar-ats">
+          <a mat-list-item [routerLink]="['/rol-3000', 'decimo-tercero']">
             <span *ngIf="isExpanded" class="menu-text">Décimo Tercero</span>
           </a>
-          <a mat-list-item routerLink="/cg-3000/generar-ats">
+          <a mat-list-item [routerLink]="['/rol-3000', 'fondo-reserva']">
             <span *ngIf="isExpanded" class="menu-text">Fondos de Reserva</span>
           </a>
-          <a mat-list-item routerLink="/cg-3000/generar-ats">
+          <a mat-list-item [routerLink]="['/rol-3000', 'utilidades']">
             <span *ngIf="isExpanded" class="menu-text">Utilidades</span>
           </a>
           <a mat-list-item routerLink="/cg-3000/generar-ats">

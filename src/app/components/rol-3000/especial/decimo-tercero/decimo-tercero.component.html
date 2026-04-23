@@ -1,0 +1,138 @@
+<div class="decimo-container" [formGroup]="form">
+  <div class="title">
+    <h2>Decimo Tercero</h2>
+  </div>
+
+  <div class="filters-grid">
+    <div class="field-group patronal-group">
+      <label>N° Patronal:</label>
+      <div class="dual-field">
+        <input class="input" formControlName="patronal" />
+
+        <select class="select small-select" formControlName="sucursal">
+          <option value="1">1</option>
+          <option value="2">2</option>
+          <option value="3">3</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="field-group">
+      <label>Empresa:</label>
+      <select class="select" formControlName="empresa">
+        <option *ngFor="let empresa of empresas" [value]="empresa">
+          {{ empresa }}
+        </option>
+      </select>
+    </div>
+
+    <div class="field-group">
+      <label>Periodo:</label>
+      <input class="input" formControlName="periodo" />
+    </div>
+
+    <div class="field-group">
+      <label>Tipo de Empleado:</label>
+      <select class="select" formControlName="tipoEmpleado">
+        <option *ngFor="let tipo of tiposEmpleado" [value]="tipo">
+          {{ tipo }}
+        </option>
+      </select>
+    </div>
+
+    <div class="field-group">
+      <label>Región:</label>
+      <select class="select" formControlName="region">
+        <option *ngFor="let region of regiones" [value]="region">
+          {{ region }}
+        </option>
+      </select>
+    </div>
+
+    <div class="range-title">
+      <span>Rango de Fechas</span>
+    </div>
+
+    <div class="field-group">
+      <label>Desde:</label>
+      <input class="input" formControlName="desde" />
+    </div>
+
+    <div class="field-group">
+      <label>Hasta:</label>
+      <input class="input" formControlName="hasta" />
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <table class="tabla-decimo">
+      <thead>
+        <tr>
+          <th class="col-index"></th>
+          <th>Local</th>
+          <th>No. Afiliación</th>
+          <th>Cédula</th>
+          <th>Cód. Sectorial</th>
+          <th>Nombre</th>
+          <th>N° Días</th>
+          <th>Decimo Tercero</th>
+          <th>Fecha Ing</th>
+          <th>Fecha Sal.</th>
+          <th>Observación</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let row of dataSource">
+          <td class="col-index">{{ row.posicion }}</td>
+          <td>{{ row.local }}</td>
+          <td>{{ row.noAfiliacion }}</td>
+          <td>{{ row.cedula }}</td>
+          <td>{{ row.codSectorial }}</td>
+          <td>{{ row.nombre }}</td>
+          <td>{{ row.numeroDias }}</td>
+          <td>{{ row.decimoTercero }}</td>
+          <td>{{ row.fechaIng }}</td>
+          <td>{{ row.fechaSal }}</td>
+          <td>{{ row.observacion }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="bottom-section">
+    <div class="actions">
+      <button type="button" (click)="calcular()">Calcular</button>
+      <button type="button" (click)="grabar()">Grabar</button>
+      <button type="button" (click)="exportar()">Exportar</button>
+      <button type="button" (click)="cancelar()">Cancelar</button>
+    </div>
+
+    <div class="summary-box">
+      <div class="summary-row">
+        <span>Total Decimo Tercero</span>
+        <strong>$ {{ formatearMoneda(resumen.totalDecimoTercero) }}</strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Descuento</span>
+        <strong>$ {{ formatearMoneda(resumen.descuento) }}</strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Decimo Pagado Nomina</span>
+        <strong>$ {{ formatearMoneda(resumen.decimoPagadoNomina) }}</strong>
+      </div>
+
+      <div class="summary-row">
+        <span>Retención Judicial</span>
+        <strong>$ {{ formatearMoneda(resumen.retencionJudicial) }}</strong>
+      </div>
+
+      <div class="summary-row total-row">
+        <span>Liquido a Recibir</span>
+        <strong>$ {{ formatearMoneda(resumen.liquidoRecibir) }}</strong>
+      </div>
+    </div>
+  </div>
+</div>
