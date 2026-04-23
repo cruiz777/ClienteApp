@@ -37,6 +37,7 @@ const routes: Routes = [
   { path: 'seguridades', loadChildren: () => import('./components/seguridades/seguridades.module').then(m => m.SeguridadesModule) },
   { path: 'sic-3000', loadChildren: () => import('./components/sic-3000/sic-3000.module').then(m => m.Sic3000Module) },
    { path: 'cg-3000', loadChildren: () => import('./components/cg-3000/cg-3000.module').then(m => m.Cg3000Module) },
+   {path: 'rol-3000',loadChildren:()=> import('./components/rol-3000/rol-3000.module').then(m=>m.Rol3000Module)},
   {
     path: 'productos',
     loadChildren: () => import('./components/productos/productos-routing.module').then(m => m.ProductosRoutingModule),

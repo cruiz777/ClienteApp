@@ -1,0 +1,36 @@
+<div class="cierre-page">
+  <div class="form-card">
+    <h2>Cierre de Periodo Mensual</h2>
+
+    <div class="content-layout">
+      <div class="list-box">
+        <div
+          class="periodo-item"
+          *ngFor="let item of periodos"
+          (click)="togglePeriodo(item)"
+        >
+          <input
+            type="checkbox"
+            [checked]="item.seleccionado"
+            (click)="$event.stopPropagation()"
+            (change)="togglePeriodo(item)"
+          />
+
+          <span class="dia">{{ item.dia }}</span>
+          <span class="mes">{{ item.mes }}</span>
+          <span class="anio">{{ item.anio }}</span>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button mat-flat-button color="primary" type="button" (click)="cierre()">
+          Cierre
+        </button>
+
+        <button mat-stroked-button type="button" (click)="cancelar()">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,46 @@
+.rol-page {
+  padding: 24px;
+  background: #eef2f7;
+  min-height: 100vh;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.rol-card {
+  background: #ffffff;
+  border: 1px solid #dbe3f0;
+  border-radius: 8px;
+  padding: 16px;
+  max-width: 900px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
+}
+
+.card-header h2 {
+  margin: 0 0 18px 0;
+  color: #123b84;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+::ng-deep .mdc-text-field--outlined {
+  --mdc-outlined-text-field-container-shape: 6px;
+}
+
+@media (max-width: 900px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

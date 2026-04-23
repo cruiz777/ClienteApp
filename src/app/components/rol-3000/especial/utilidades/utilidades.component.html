@@ -1,0 +1,100 @@
+<div class="container" [formGroup]="form">
+
+  <h2>Utilidades</h2>
+
+  <!-- FILTROS -->
+  <div class="grid">
+
+    <div class="field">
+      <label>Valores de Utilidades</label>
+      <input placeholder="textos">
+    </div>
+
+    <div class="field">
+      <label>Periodo:</label>
+      <input formControlName="periodo">
+    </div>
+
+    <div class="checkbox-group" formGroupName="tipoEmpleado">
+      <label>Tipo de Empleado</label>
+
+      <div class="checks">
+        <label><input type="checkbox" formControlName="temporal"> Temporal / Becarios</label>
+        <label><input type="checkbox" formControlName="exEmpleados"> Exempleados</label>
+        <label><input type="checkbox" formControlName="fijos"> Fijos</label>
+        <label><input type="checkbox" formControlName="horas"> Por Horas</label>
+        <label><input type="checkbox" formControlName="honorarios"> Honorarios</label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Empleados:</label>
+      <input formControlName="porcentajeEmpleado">
+    </div>
+
+    <div class="field">
+      <label>Cargas:</label>
+      <input formControlName="porcentajeCarga">
+    </div>
+
+  </div>
+
+  <!-- TABLA -->
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Local</th>
+          <th>N° Afiliación</th>
+          <th>Cód Sectorial</th>
+          <th>Cédula</th>
+          <th>Nombre</th>
+          <th>Cónyuge</th>
+          <th>Hijos</th>
+          <th>N° Días</th>
+          <th>Fecha Ingreso</th>
+          <th>Fecha Salida</th>
+          <th>Alicuota Empleado</th>
+          <th>Alicuota Carga</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let r of data">
+          <td>{{r.local}}</td>
+          <td>{{r.afiliacion}}</td>
+          <td>{{r.sector}}</td>
+          <td>{{r.cedula}}</td>
+          <td>{{r.nombre}}</td>
+          <td>{{r.conyuge}}</td>
+          <td>{{r.hijos}}</td>
+          <td>{{r.dias}}</td>
+          <td>{{r.fechaIngreso}}</td>
+          <td>{{r.fechaSalida}}</td>
+          <td>{{r.alicuotaEmpleado}}</td>
+          <td>{{r.alicuotaCarga}}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- BOTONES -->
+  <div class="bottom">
+
+    <div class="buttons">
+      <button (click)="calcular()">Calcular</button>
+      <button (click)="grabar()">Grabar</button>
+      <button (click)="exportar()">Exportar</button>
+      <button (click)="cancelar()">Cancelar</button>
+    </div>
+
+    <div class="resumen">
+      <div><span>Subtotal Empleado</span><b>{{money(resumen.subtotalEmpleado)}}</b></div>
+      <div><span>Subtotal Carga</span><b>{{money(resumen.subtotalCarga)}}</b></div>
+      <div><span>N° Cargas</span><b>{{resumen.numeroCargas}}</b></div>
+      <div><span>N° Días</span><b>{{resumen.numeroDias}}</b></div>
+    </div>
+
+  </div>
+
+</div>

@@ -1,0 +1,152 @@
+<div class="cambio-sueldos-page">
+  <div class="window-card" [formGroup]="form">
+    <h2>Cambio de Sueldos</h2>
+
+    <div class="radio-row">
+      <mat-radio-group formControlName="tipoFiltro">
+        <mat-radio-button value="local">Local</mat-radio-button>
+        <mat-radio-button value="departamento">Departamento</mat-radio-button>
+        <mat-radio-button value="cargo">Cargo</mat-radio-button>
+      </mat-radio-group>
+    </div>
+
+    <!-- NUEVO CAMPO EMPLEADO -->
+    <div class="field-block">
+      <label class="field-label">Empleado :</label>
+
+      <div class="empleado-wrapper">
+        <mat-form-field appearance="outline" class="empleado-input">
+          <input
+            matInput
+            formControlName="empleadoTexto"
+            placeholder="Buscar empleado por código o nombre"
+            autocomplete="off"
+          />
+        </mat-form-field>
+
+        <div class="empleado-sugerencias" *ngIf="empleadosFiltrados.length > 0 && form.get('empleadoTexto')?.value">
+          <div
+            class="empleado-item"
+            *ngFor="let emp of empleadosFiltrados"
+            (click)="seleccionarEmpleado(emp)"
+          >
+            <strong>{{ emp.codigo }}</strong> - {{ emp.nombre }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FILTRO -->
+    <div class="field-block">
+      <label class="field-label">
+        {{ tipoFiltro === 'local' ? 'Local :' : tipoFiltro === 'departamento' ? 'Departamento :' : 'Cargo :' }}
+      </label>
+
+      <div class="selector-row">
+        <mat-form-field appearance="outline" class="codigo-input">
+          <input
+            matInput
+            [value]="
+              tipoFiltro === 'local'
+                ? form.get('localCodigo')?.value
+                : tipoFiltro === 'departamento'
+                ? form.get('departamentoCodigo')?.value
+                : form.get('cargoCodigo')?.value
+            "
+            readonly
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="descripcion-input">
+          <input
+            matInput
+            [value]="
+              tipoFiltro === 'local'
+                ? form.get('localDescripcion')?.value
+                : tipoFiltro === 'departamento'
+                ? form.get('departamentoDescripcion')?.value
+                : form.get('cargoDescripcion')?.value
+            "
+            readonly
+          />
+        </mat-form-field>
+
+        <button mat-stroked-button type="button" (click)="abrirBusqueda()">
+          Buscar
+        </button>
+      </div>
+    </div>
+
+    <!-- SUELDO -->
+    <fieldset class="group-box">
+      <legend>Sueldo</legend>
+
+      <div class="sueldo-row">
+        <mat-radio-group formControlName="tipoCambio" class="tipo-cambio-group">
+          <mat-radio-button value="porcentaje">%Porcentaje</mat-radio-button>
+          <mat-radio-button value="valor">Valor</mat-radio-button>
+          
+        </mat-radio-group>
+
+        <mat-form-field appearance="outline" class="valor-cambio-input">
+          <input matInput formControlName="valorCambio" />
+        </mat-form-field>
+      </div>
+    </fieldset>
+
+    <div class="actions">
+      <button mat-stroked-button type="button" (click)="nuevo()">Nuevo</button>
+      <button mat-stroked-button color="primary" type="button" (click)="grabar()">Grabar</button>
+      <button mat-stroked-button type="button" (click)="cancelar()">Cancelar</button>
+      <button mat-stroked-button color="warn" type="button" (click)="salir()">Salir</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DE BÚSQUEDA -->
+<div class="modal-backdrop" *ngIf="mostrarModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3>{{ tituloModal }}</h3>
+      <button mat-icon-button type="button" (click)="cerrarModal()">
+        <mat-icon>close</mat-icon>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <mat-form-field appearance="outline" class="modal-search">
+        <mat-label>Buscar</mat-label>
+        <input matInput [(ngModel)]="textoBusqueda" (input)="filtrarItemsBusqueda()" />
+      </mat-form-field>
+
+      <div class="table-container">
+        <table mat-table [dataSource]="itemsBusquedaFiltrados" class="custom-table">
+
+          <ng-container matColumnDef="descripcion">
+            <th mat-header-cell *matHeaderCellDef>Descripción</th>
+            <td mat-cell *matCellDef="let row">{{ row.descripcion }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="codigo">
+            <th mat-header-cell *matHeaderCellDef>Código</th>
+            <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="['descripcion', 'codigo']"></tr>
+          <tr
+            mat-row
+            *matRowDef="let row; columns: ['descripcion', 'codigo']"
+            (dblclick)="seleccionarItemBusqueda(row)">
+          </tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button mat-stroked-button color="primary" type="button" [disabled]="itemsBusquedaFiltrados.length === 0">
+        Aceptar
+      </button>
+      <button mat-stroked-button type="button" (click)="cerrarModal()">Cancelar</button>
+    </div>
+  </div>
+</div>

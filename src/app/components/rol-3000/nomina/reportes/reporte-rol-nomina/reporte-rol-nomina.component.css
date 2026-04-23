@@ -1,0 +1,71 @@
+.rol-page {
+  padding: 24px;
+  background: #eef2f7;
+  min-height: 100vh;
+  box-sizing: border-box;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+.rol-card {
+  background: #ffffff;
+  border: 1px solid #dbe3f0;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(16, 24, 40, 0.08);
+}
+
+.card-header h2 {
+  margin: 0 0 16px 0;
+  color: #123b84;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.filters {
+  display: grid;
+  grid-template-columns: 240px 240px;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.table-container {
+  border: 1px solid #dbe3f0;
+  border-radius: 6px;
+  overflow: auto;
+}
+
+.custom-table {
+  width: 100%;
+  min-width: 1000px;
+}
+
+.mat-mdc-header-row {
+  background: #eef3fa;
+}
+
+.mat-mdc-header-cell {
+  font-size: 11px;
+  font-weight: 700;
+  color: #27477d;
+  text-align: center;
+  border-bottom: 1px solid #dbe3f0;
+}
+
+.mat-mdc-cell {
+  font-size: 11px;
+  text-align: center;
+  border-bottom: 1px solid #edf2f8;
+}
+
+.actions {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+@media (max-width: 900px) {
+  .filters {
+    grid-template-columns: 1fr;
+  }
+}

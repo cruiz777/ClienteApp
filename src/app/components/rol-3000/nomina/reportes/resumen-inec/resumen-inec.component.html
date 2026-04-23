@@ -1,0 +1,35 @@
+<div class="inec-page">
+  <div class="inec-card" [formGroup]="form">
+
+    <!-- HEADER -->
+    <div class="card-header">
+      <h2>Resumen INEC</h2>
+      <p class="subtitle">Ingrese el período a generar</p>
+    </div>
+
+    <!-- BODY -->
+    <div class="card-body">
+
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Período</mat-label>
+        <input matInput type="date" formControlName="periodo" />
+
+        <mat-error *ngIf="form.get('periodo')?.hasError('required')">
+          El período es obligatorio
+        </mat-error>
+      </mat-form-field>
+
+      <!-- ACTIONS -->
+      <div class="actions">
+        <button mat-flat-button color="primary" (click)="aceptar()">
+          Aceptar
+        </button>
+
+        <button mat-stroked-button (click)="cancelar()">
+          Cancelar
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>

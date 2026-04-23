@@ -122,7 +122,7 @@
       </div>
 
       <!-- FILA 2 -->
-      <div class="cabecera-row-2" [class.con-excel]="mostrarExcel && excelRows?.length">
+      <div class="cabecera-row-2" [class.con-excel]="mostrarExcel && excelRows.length">
         <!-- IZQUIERDA -->
         <div class="fechas-box">
           <div class="grid-2">
@@ -268,7 +268,7 @@
           mat-stroked-button
           class="btn btn-lite btn-secondary"
           (click)="toggleExcel()"
-          *ngIf="nombreArchivoExcel || excelRows?.length">
+          *ngIf="nombreArchivoExcel || excelRows.length">
           <mat-icon>{{ mostrarExcel ? 'unfold_less' : 'unfold_more' }}</mat-icon>
           {{ mostrarExcel ? 'Contraer' : 'Extender' }}
         </button>
@@ -276,11 +276,11 @@
     </div>
 
     <!-- CONTENEDOR DINAMICO DE GRIDS -->
-    <div class="movimientos-split" [class.con-excel]="mostrarExcel && excelRows?.length">
+    <div class="movimientos-split" [class.con-excel]="mostrarExcel && excelRows.length">
       <!-- GRID IZQUIERDO -->
-      <div class="movimientos-split" [class.con-excel]="mostrarExcel && excelRows?.length">
+      <div class="movimientos-split" [class.con-excel]="mostrarExcel && excelRows.length">
   <!-- GRID IZQUIERDO -->
-  <div class="movimientos-split" [class.con-excel]="mostrarExcel && excelRows?.length">
+  <div class="movimientos-split" [class.con-excel]="mostrarExcel && excelRows.length">
   <!-- GRID IZQUIERDO -->
   <div class="movimientos-panel izquierdo" [style.flexBasis.px]="panelIzquierdoAncho" [style.width.px]="panelIzquierdoAncho">
     <div class="section-title">Movimientos</div>
@@ -308,14 +308,14 @@
   <!-- SEPARADOR -->
   <div
     class="splitter-vertical"
-    *ngIf="mostrarExcel && excelRows?.length"
+    *ngIf="mostrarExcel && excelRows.length"
     (mousedown)="iniciarResize($event)">
   </div>
 
   <!-- GRID DERECHO -->
   <div
     class="movimientos-panel derecho"
-    *ngIf="mostrarExcel && excelRows?.length"
+    *ngIf="mostrarExcel && excelRows.length"
     [style.flexBasis.px]="panelDerechoAncho"
     [style.width.px]="panelDerechoAncho">
     <div class="section-title">Archivo Banco</div>

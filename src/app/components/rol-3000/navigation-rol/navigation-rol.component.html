@@ -1,0 +1,430 @@
+<mat-sidenav-container class="sidenav-container" [ngClass]="{
+  'collapsed': !isExpanded && !isHandset,
+  'mobile': isHandset
+}">
+  <!-- SIDEBAR -->
+  <mat-sidenav #drawer class="sidenav" [mode]="isHandset ? 'over' : 'side'" [opened]="!isHandset || isExpanded"
+    [class.collapsed]="!isExpanded && !isHandset" [fixedInViewport]="true" (backdropClick)="isExpanded = false">
+
+    <div class="logo-seguridad" *ngIf="isExpanded">
+      <img src="assets/logo/ROL-3000.png" alt="Logo">
+    </div>
+
+    <!-- Menú Principal -->
+    <mat-nav-list>
+
+      <!-- Toggle Sidebar -->
+      <mat-list-item (click)="toggleSidebar()" class="menu-toggle">
+        <mat-icon>menu</mat-icon>
+        <span *ngIf="isExpanded" class="menu-text">Menú</span>
+      </mat-list-item>
+
+      <!-- Acordeón -->
+      <mat-accordion [multi]="false">
+        <!-- Transacciones -->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-personas.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Empleados</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+           <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Archivo</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <a mat-list-item routerLink="/rol-3000/empleado-estructura">
+              <span *ngIf="isExpanded" class="menu-text">Estructura del Empleado</span>
+            </a>
+            <a mat-list-item routerLink="/rol-3000/empleado-ficha">
+              <span *ngIf="isExpanded" class="menu-text">Empleado</span>
+            </a>
+            <a mat-list-item routerLink="/rol-3000/banco-rol">
+              <span *ngIf="isExpanded" class="menu-text">Banco</span>
+            </a>
+            <!-- <a mat-list-item routerLink="/cg-3000/inicio-cg">
+              <span *ngIf="isExpanded" class="menu-text">Ciudad</span>
+            </a> -->
+            <a mat-list-item routerLink="/rol-3000/empleado-adaptacion">
+              <span *ngIf="isExpanded" class="menu-text">Empresa para Adaptaciones</span>
+            </a>
+            <!-- <a mat-list-item routerLink="/cg-3000/inicio-cg">
+              <span *ngIf="isExpanded" class="menu-text">Parroquias</span>
+            </a> -->
+          </mat-expansion-panel>
+          
+          <!-- Subgrupo: Reportes -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Reportes</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <a mat-list-item routerLink="/rol-3000/reporte-empleados">
+              <span *ngIf="isExpanded" class="menu-text">Empleados</span>
+            </a>
+            <a mat-list-item routerLink="/rol-3000/reporte-cumpleanios">
+              <span *ngIf="isExpanded" class="menu-text">Cumpleaños</span>
+            </a>
+            <a mat-list-item routerLink="/rol-3000/reporte-cargas">
+              <span *ngIf="isExpanded" class="menu-text">Cargas</span>
+            </a>
+            <a mat-list-item routerLink="/rol-3000/listado-fondos-reserva">
+              <span *ngIf="isExpanded" class="menu-text">Fondos de Reserva</span>
+            </a>
+            <a mat-list-item routerLink="/rol-3000/terminacion-contrato">
+              <span *ngIf="isExpanded" class="menu-text">R.Terminación del Contrato</span>
+            </a>
+            <a mat-list-item routerLink="/rol-3000/tipo-contrato">
+              <span *ngIf="isExpanded" class="menu-text">R.Tipo Contrato</span>
+            </a>
+            <a mat-list-item routerLink="/rol-3000/reporte-entrada-salidas">
+              <span *ngIf="isExpanded" class="menu-text">R.Entradas y Salidas</span>
+            </a>
+            <a mat-list-item routerLink="/rol-3000/terminacion-contrato">
+              <span *ngIf="isExpanded" class="menu-text">R.Termina Contrato</span>
+            </a>
+            <a mat-list-item routerLink="/rol-3000/personas-discapacidad">
+              <span *ngIf="isExpanded" class="menu-text">R.Personal con Discapacidad</span>
+            </a>
+          </mat-expansion-panel>
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Procesos</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <a mat-list-item routerLink="/rol-3000/cambio-sueldos">
+              <span *ngIf="isExpanded" class="menu-text">Cambio de Sueldos</span>
+            </a>
+            
+          </mat-expansion-panel>
+
+        </mat-expansion-panel>
+        <!-- Cuentas por Pagar-->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-novedades.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Novedades</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <!-- Subgrupo: Ingreso Documentos -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Generar</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <a mat-list-item [routerLink]="'/rol-3000/solicitud-permiso'">
+              <span *ngIf="isExpanded" class="menu-text">Solicitud de Permisos</span>
+            </a>
+            <a mat-list-item routerLink="/rol-3000/aprobacion">
+              <span *ngIf="isExpanded" class="menu-text">Aprobación</span>
+            </a>
+            <a mat-list-item routerLink="/rol-3000/registro-vacaciones">
+              <span *ngIf="isExpanded" class="menu-text">Registro de Vacaciones</span>
+            </a>
+          </mat-expansion-panel>
+
+          <!-- Subgrupo: Pagos a proveedores -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Reportes</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <a mat-list-item [routerLink]="'/rol-3000/reporte-permisos'">
+              <span *ngIf="isExpanded" class="menu-text">Permisos</span>
+            </a>
+            <a mat-list-item routerLink="/rol-3000/reporte-vacaciones">
+              <span *ngIf="isExpanded" class="menu-text">Vacaciones</span>
+            </a>
+            <a mat-list-item routerLink="/rol-3000/detalle-vacaciones-empleado">
+              <span *ngIf="isExpanded" class="menu-text">Vaca.Historial Empleados</span>
+            </a>
+           
+          </mat-expansion-panel>
+           <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Procesos</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <a mat-list-item [routerLink]="'/rol-3000/procesar-vacaciones'">
+              <span *ngIf="isExpanded" class="menu-text">Periodo de Vacaciones</span>
+            </a>
+           
+           
+          </mat-expansion-panel>
+          <!-- Subgrupo: Explorador de Cuentas por Pagar -->
+         
+
+        </mat-expansion-panel>
+
+        <!-- Balance-->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-nomina.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Nómina</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <!-- Subgrupo: Balance -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Archivo</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <a mat-list-item routerLink="/rol-3000/rol-mensual">
+              <span *ngIf="isExpanded" class="menu-text">Rol Mensual</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'rol-quincenal']">
+              <span *ngIf="isExpanded" class="menu-text">Rol Quincena</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'rubros-fijos']">
+              <span *ngIf="isExpanded" class="menu-text">Rubros Fijos</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'anulacion-rol']">
+              <span *ngIf="isExpanded" class="menu-text">Anular Rol Mensual</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'anulacion-rolq']">
+              <span *ngIf="isExpanded" class="menu-text">Anular Rol Quincena</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'cierre-periodo-quincenal']">
+              <span *ngIf="isExpanded" class="menu-text">Cerrar P.Quincenal</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'cierre-periodo-mensual-contable']">
+              <span *ngIf="isExpanded" class="menu-text">Cerrar P.Mesual Contable</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'cierre-periodo-mensual']">
+              <span *ngIf="isExpanded" class="menu-text">Cerrar P.Mensual Nomina</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'generacion-contabilidad']">
+              <span *ngIf="isExpanded" class="menu-text">Generar Archivos de Asientos</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'impresion-contabilidad']">
+              <span *ngIf="isExpanded" class="menu-text">Imprimir AD y Proviciones</span>
+            </a>
+          </mat-expansion-panel>
+
+          <!-- Subgrupo: Estados Financieros -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Reportes</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <a mat-list-item [routerLink]="['/rol-3000', 'reporte-rol-nomina']">
+              <span *ngIf="isExpanded" class="menu-text">Rol Mensual</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'reporte-rol-individual']">
+              <span *ngIf="isExpanded" class="menu-text">Rol Individual</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'reporte-listado-general']">
+              <span *ngIf="isExpanded" class="menu-text">Listado General</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'reporte-listado-general-gastos']">
+              <span *ngIf="isExpanded" class="menu-text">Listado General y Gastos</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'reporte-provisiones']">
+              <span *ngIf="isExpanded" class="menu-text">Provición Mensual Nómina</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'reporte-ingreso-descuentos-empleado']">
+              <span *ngIf="isExpanded" class="menu-text">Empleado(Ing/Desto.)</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'empleados-excluidos-nomina-actual']">
+              <span *ngIf="isExpanded" class="menu-text">Empleados Excluidos</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'resumen-inec']">
+              <span *ngIf="isExpanded" class="menu-text">Resumen INEC</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'personal-ocupado']">
+              <span *ngIf="isExpanded" class="menu-text">Personal Ocupado INEC</span>
+            </a>
+          </mat-expansion-panel>
+
+          <!-- Subgrupo: Conciliación -->
+          <mat-expansion-panel>
+             <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Generación Archivo</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <a mat-list-item [routerLink]="['/rol-3000', 'personal-ocupado']">
+              <span *ngIf="isExpanded" class="menu-text">Aviso Nuevo Sueldo</span>
+            </a>
+            <a mat-list-item [routerLink]="['/rol-3000', 'generacion-aviso-nuevo-sueldo-iess']">
+              <span *ngIf="isExpanded" class="menu-text">Aviso Valores Extras IESS</span>
+            </a>
+          </mat-expansion-panel>
+
+        </mat-expansion-panel>
+
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-nomina.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Nómina Especial</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <!-- Subgrupo: Balance -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Archivo</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <a mat-list-item [routerLink]="['/rol-3000', 'decimo-cuarto']">
+            <span *ngIf="isExpanded" class="menu-text">Décimo Cuarto</span>
+          </a>
+          <a mat-list-item [routerLink]="['/rol-3000', 'decimo-tercero']">
+            <span *ngIf="isExpanded" class="menu-text">Décimo Tercero</span>
+          </a>
+          <a mat-list-item [routerLink]="['/rol-3000', 'fondo-reserva']">
+            <span *ngIf="isExpanded" class="menu-text">Fondos de Reserva</span>
+          </a>
+          <a mat-list-item [routerLink]="['/rol-3000', 'utilidades']">
+            <span *ngIf="isExpanded" class="menu-text">Utilidades</span>
+          </a>
+          <a mat-list-item routerLink="/cg-3000/generar-ats">
+            <span *ngIf="isExpanded" class="menu-text">Impuesto a la Renta</span>
+          </a>
+          <a mat-list-item routerLink="/cg-3000/generar-ats">
+            <span *ngIf="isExpanded" class="menu-text">Jubilación Patronal</span>
+          </a>
+          <a mat-list-item routerLink="/cg-3000/generar-ats">
+            <span *ngIf="isExpanded" class="menu-text">Bono Empleado</span>
+          </a>
+          </mat-expansion-panel>
+
+          <!-- Subgrupo: Estados Financieros -->
+          <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span *ngIf="isExpanded" class="menu-text">Liquidación</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+            <a mat-list-item routerLink="/cg-3000/reporte-compras">
+            <span *ngIf="isExpanded" class="menu-text">Acta de Finiquito</span>
+          </a>
+          <a mat-list-item routerLink="/cg-3000/reporte-compras">
+            <span *ngIf="isExpanded" class="menu-text">Reversa de Liquidación</span>
+          </a>
+          <a mat-list-item routerLink="/cg-3000/reporte-compras">
+            <span *ngIf="isExpanded" class="menu-text">Reimpresión Liquidación</span>
+          </a>
+          <a mat-list-item routerLink="/cg-3000/reporte-compras">
+            <span *ngIf="isExpanded" class="menu-text">Vacaciones</span>
+          </a>
+          <a mat-list-item routerLink="/cg-3000/reporte-compras">
+            <span *ngIf="isExpanded" class="menu-text">Reimpresión de Vacaciones</span>
+          </a>
+          </mat-expansion-panel>
+
+        
+
+        </mat-expansion-panel>
+        <!-- Anexo Transaccional-->
+        
+
+        <!-- Activos Fijos-->
+       
+        <!-- Configuración-->
+        <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-mantenimiento.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Acumulados</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <!-- Subgrupo: Bancos -->
+          
+
+          <a mat-list-item [routerLink]="'/cg-3000/tipocomprobantesri'">
+            <span *ngIf="isExpanded" class="menu-text">Acumulados</span>
+          </a>
+
+         
+
+        </mat-expansion-panel>
+        <mat-expansion-panel>
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <img src="assets/icons/icon-mantenimiento.png" class="menu-icon">
+                <span *ngIf="isExpanded" class="menu-text">Configuración</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
+
+            <a mat-list-item [routerLink]="'/cg-3000/cierre-mensual'">
+              <span *ngIf="isExpanded" class="menu-text">Parámetros y Costos</span>
+            </a>
+            <a mat-list-item [routerLink]="'/cg-3000/cierre-anual'">
+              <span *ngIf="isExpanded" class="menu-text">Ingresos Descuentos</span>
+            </a>
+            <a mat-list-item [routerLink]="'/cg-3000/cierre-mensual'">
+              <span *ngIf="isExpanded" class="menu-text">Cargos</span>
+            </a>
+            <a mat-list-item [routerLink]="'/cg-3000/cierre-anual'">
+              <span *ngIf="isExpanded" class="menu-text">Departamentos</span>
+            </a>
+            <a mat-list-item [routerLink]="'/cg-3000/cierre-mensual'">
+              <span *ngIf="isExpanded" class="menu-text">Ingreso Estado Civil</span>
+            </a>
+            <a mat-list-item [routerLink]="'/cg-3000/cierre-anual'">
+              <span *ngIf="isExpanded" class="menu-text">TipoEmpleado</span>
+            </a>
+            <a mat-list-item [routerLink]="'/cg-3000/cierre-mensual'">
+              <span *ngIf="isExpanded" class="menu-text">Tabla Impuesto a la Renta</span>
+            </a>
+            <a mat-list-item [routerLink]="'/cg-3000/cierre-anual'">
+              <span *ngIf="isExpanded" class="menu-text">Tipo Gasto</span>
+            </a>
+          </mat-expansion-panel>
+
+      </mat-accordion>
+
+      <!-- Salir -->
+      <mat-list-item routerLink="/inicio" class="salir-item">
+        <div class="menu-item">
+          <img src="assets/icons/icon-salir.png" class="menu-icon">
+          <span *ngIf="isExpanded" class="menu-text salir-text">Salir</span>
+        </div>
+      </mat-list-item>
+
+    </mat-nav-list>
+
+  </mat-sidenav>
+
+  <!-- FOODER -->
+  <mat-sidenav-content [ngClass]="isExpanded ? 'content-default' : 'content-collapsed'">
+    <router-outlet></router-outlet>
+    <footer class="app-footer" [ngClass]="{ 'footer-collapsed': !isExpanded && !isHandset }">
+      <div class="footer-left">{{ currentDateTime }}</div>
+      <div class="footer-center">
+        <img src="assets/logo/logo-gap.png" alt="GAP System" class="footer-logo">
+        <span class="footer-phone">Telf: 099 970 0288 / 022 464 951</span>
+
+      </div>
+      <div class="footer-right">
+        <app-user-avatar position="footer" [showUserName]="false"></app-user-avatar>
+        <span class="user-name-footer">{{ usuarioActual?.nombre_usuario }}</span>      
+      </div>
+
+    </footer>
+  </mat-sidenav-content>
+

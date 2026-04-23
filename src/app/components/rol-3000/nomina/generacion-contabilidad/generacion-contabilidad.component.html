@@ -1,0 +1,37 @@
+<div class="generacion-page">
+  <div class="generacion-card" [formGroup]="form">
+    <div class="card-header">
+      <h2>Generación para Contabilidad</h2>
+      <p class="subtitle">Ingrese el período a generar</p>
+    </div>
+
+    <div class="card-body">
+      <div class="field-group">
+        <label for="periodo">Período</label>
+        <input
+          id="periodo"
+          type="date"
+          formControlName="periodo"
+          class="custom-input"
+        />
+
+        <div
+          class="error-text"
+          *ngIf="form.get('periodo')?.hasError('required') && form.get('periodo')?.touched"
+        >
+          La fecha es obligatoria
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn-primary" type="button" (click)="aceptar()">
+          Aceptar
+        </button>
+
+        <button class="btn-secondary" type="button" (click)="cancelar()">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

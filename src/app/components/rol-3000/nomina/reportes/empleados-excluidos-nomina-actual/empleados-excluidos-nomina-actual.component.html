@@ -1,0 +1,38 @@
+<div class="reporte-page">
+  <div class="form-card" [formGroup]="form">
+    <h2>Empleados Excluidos en la Nómina Actual</h2>
+
+    <div class="content-layout">
+      <div class="left-info">
+        <label class="section-label">Elegir el Tipo de Nómina:</label>
+
+        <div class="nomina-list">
+          <div class="nomina-item" *ngFor="let item of tiposNomina">
+            {{ item.id }}. {{ item.nombre }}
+          </div>
+        </div>
+      </div>
+
+      <div class="right-field">
+        <mat-form-field appearance="outline" class="nomina-field">
+          <mat-label>Tipo de Nómina</mat-label>
+          <mat-select formControlName="tipoNomina">
+            <mat-option *ngFor="let item of tiposNomina" [value]="item.id">
+              {{ item.nombre }}
+            </mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button mat-flat-button color="primary" type="button" (click)="aceptar()">
+        Aceptar
+      </button>
+
+      <button mat-stroked-button type="button" (click)="cancelar()">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>

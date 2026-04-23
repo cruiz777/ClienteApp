@@ -1,0 +1,86 @@
+.container {
+  padding: 15px;
+  background: #f5f6fa;
+  font-family: Arial;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px 20px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+}
+
+input {
+  border: none;
+  border-bottom: 1px solid #9aa7c1;
+  background: transparent;
+}
+
+.checkbox-group {
+  grid-column: span 2;
+}
+
+.checks {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.table-wrapper {
+  border: 1px solid #cfd6e6;
+  background: white;
+  height: 260px;
+  overflow: auto;
+  margin-top: 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+th, td {
+  border: 1px solid #e6ebf3;
+  padding: 4px;
+}
+
+th {
+  background: #eef2fa;
+}
+
+.bottom {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.buttons {
+  display: flex;
+  gap: 15px;
+}
+
+button {
+  padding: 6px 14px;
+  border: 1px solid #cfd6e6;
+  background: #f2f4f9;
+}
+
+.resumen {
+  width: 250px;
+  background: white;
+  border: 1px solid #cfd6e6;
+}
+
+.resumen div {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px;
+}

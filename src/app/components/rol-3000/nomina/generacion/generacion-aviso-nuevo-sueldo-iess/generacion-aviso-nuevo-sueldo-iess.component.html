@@ -1,0 +1,26 @@
+<div class="reporte-page">
+  <div class="form-card" [formGroup]="form">
+    <h2>Generación Aviso Nuevo Sueldo IESS</h2>
+
+    <div class="content-block">
+      <mat-form-field appearance="outline" class="periodo-field">
+        <mat-label>Ingrese Periodo a Generar</mat-label>
+        <input matInput type="date" formControlName="periodo" />
+
+        <mat-error *ngIf="form.get('periodo')?.hasError('required')">
+          El período es obligatorio
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="actions">
+      <button mat-flat-button color="primary" type="button" (click)="aceptar()">
+        Aceptar
+      </button>
+
+      <button mat-stroked-button type="button" (click)="cancelar()">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>

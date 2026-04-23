@@ -1,0 +1,84 @@
+<div class="reporte-page">
+  <div class="form-card" [formGroup]="form">
+    <h2>Periodo</h2>
+
+    <div class="filter-row">
+      <mat-form-field appearance="outline" class="periodo-field">
+        <mat-label>Periodo Inicial</mat-label>
+        <input matInput type="date" formControlName="periodoInicial" />
+      </mat-form-field>
+    </div>
+
+    <div class="table-container">
+      <table mat-table [dataSource]="dataSource" class="custom-table">
+
+        <ng-container matColumnDef="id">
+          <th mat-header-cell *matHeaderCellDef></th>
+          <td mat-cell *matCellDef="let row">{{ row.id }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="cedula">
+          <th mat-header-cell *matHeaderCellDef>Cédula</th>
+          <td mat-cell *matCellDef="let row">{{ row.cedula }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="nombres">
+          <th mat-header-cell *matHeaderCellDef>Nombres</th>
+          <td mat-cell *matCellDef="let row">{{ row.nombres }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="area">
+          <th mat-header-cell *matHeaderCellDef>Área</th>
+          <td mat-cell *matCellDef="let row">{{ row.area }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="dias">
+          <th mat-header-cell *matHeaderCellDef>Días</th>
+          <td mat-cell *matCellDef="let row">{{ row.dias ?? '' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="sueldo">
+          <th mat-header-cell *matHeaderCellDef>Sueldo</th>
+          <td mat-cell *matCellDef="let row">{{ row.sueldo ?? '' }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="fechaIngreso1">
+          <th mat-header-cell *matHeaderCellDef>Fecha Ingreso 1</th>
+          <td mat-cell *matCellDef="let row">{{ row.fechaIngreso1 }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="fechaSalida1">
+          <th mat-header-cell *matHeaderCellDef>Fecha Salida 1</th>
+          <td mat-cell *matCellDef="let row">{{ row.fechaSalida1 }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="fechaIngreso2">
+          <th mat-header-cell *matHeaderCellDef>Fecha Ingreso 2</th>
+          <td mat-cell *matCellDef="let row">{{ row.fechaIngreso2 }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="fechaSalida2">
+          <th mat-header-cell *matHeaderCellDef>Fecha Salida 2</th>
+          <td mat-cell *matCellDef="let row">{{ row.fechaSalida2 }}</td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+    </div>
+
+    <div class="actions">
+      <button mat-flat-button color="primary" type="button" (click)="aceptar()">
+        Aceptar
+      </button>
+
+      <button mat-stroked-button type="button" (click)="exportar()">
+        Exportar
+      </button>
+
+      <button mat-stroked-button type="button" (click)="cancelar()">
+        Cancelar
+      </button>
+    </div>
+  </div>
+</div>

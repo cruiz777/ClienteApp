@@ -1,0 +1,89 @@
+<div class="procesar-page">
+  <div class="form-card">
+    <h2>Procesar Vacaciones</h2>
+
+    <div class="tables-grid">
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="vacacionesPendientes" class="custom-table">
+
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let row">{{ row.id }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="codEm">
+            <th mat-header-cell *matHeaderCellDef>CodEm</th>
+            <td mat-cell *matCellDef="let row">{{ row.codEm }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="fechaIngreso">
+            <th mat-header-cell *matHeaderCellDef>Fecha Ingreso</th>
+            <td mat-cell *matCellDef="let row">{{ row.fechaIngreso }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="anios">
+            <th mat-header-cell *matHeaderCellDef>Años</th>
+            <td mat-cell *matCellDef="let row">{{ row.anios }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="meses">
+            <th mat-header-cell *matHeaderCellDef>Meses</th>
+            <td mat-cell *matCellDef="let row">{{ row.meses }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="dias">
+            <th mat-header-cell *matHeaderCellDef>Días</th>
+            <td mat-cell *matCellDef="let row">{{ row.dias }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumnsIzquierda"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumnsIzquierda"></tr>
+        </table>
+      </div>
+
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="vacacionesProcesadas" class="custom-table">
+
+          <ng-container matColumnDef="id">
+            <th mat-header-cell *matHeaderCellDef></th>
+            <td mat-cell *matCellDef="let row">{{ row.id }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="codEm">
+            <th mat-header-cell *matHeaderCellDef>CodEm</th>
+            <td mat-cell *matCellDef="let row">{{ row.codEm }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="fechaIngreso">
+            <th mat-header-cell *matHeaderCellDef>Fecha Ingreso</th>
+            <td mat-cell *matCellDef="let row">{{ row.fechaIngreso }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="periodo">
+            <th mat-header-cell *matHeaderCellDef>Periodo</th>
+            <td mat-cell *matCellDef="let row">{{ row.periodo }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="total">
+            <th mat-header-cell *matHeaderCellDef>Total</th>
+            <td mat-cell *matCellDef="let row">{{ row.total }}</td>
+          </ng-container>
+
+          <ng-container matColumnDef="nom">
+            <th mat-header-cell *matHeaderCellDef>Nom</th>
+            <td mat-cell *matCellDef="let row">{{ row.nom }}</td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumnsDerecha"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumnsDerecha"></tr>
+        </table>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button mat-flat-button color="primary" type="button" (click)="refrescarVacaciones()">
+        Refrescar Vacaciones
+      </button>
+    </div>
+  </div>
+</div>
