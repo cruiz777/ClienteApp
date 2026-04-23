@@ -339,13 +339,13 @@ export class PlanificacionPagosComponent implements OnInit {
         }
         if (params.data?.esSubtotal) {
           return { 
-            backgroundColor: '#1976d2', 
+            backgroundColor: '#eaf4ff', 
             color: 'white',
             fontWeight: 'bold',
             fontSize: '14px'
           };
         }
-        return { backgroundColor: '#fff', textAlign: 'center' };
+        return { backgroundColor: '#fff',  display: 'flex', textAlign: 'center' };
       }) as any,
     },
     {
@@ -627,10 +627,14 @@ export class PlanificacionPagosComponent implements OnInit {
           // Actualizar restante
           this.montoRestante = presupuestoDisponible - valorAsignar;
         } else {
-          // SIN monto a distribuir → comportamiento normal (saldo completo)
           const saldoDoc = Math.abs(doc.saldo || 0);
-          doc.monto_a_pagar = saldoDoc;
-          doc.tipo_pago_seleccionado = 'P';
+          
+          // Solo asignar saldo completo si NO tiene ya un valor cargado
+          if (!doc.monto_a_pagar || doc.monto_a_pagar === 0) {
+            doc.monto_a_pagar = saldoDoc;
+            doc.tipo_pago_seleccionado = 'P';
+          }
+          // Si ya tiene valor (planificación cargada), preservarlo
         }
       } else {
         // DESELECCIONADO → Limpiar

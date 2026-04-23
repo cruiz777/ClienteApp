@@ -882,26 +882,6 @@ select.compact-input {
     }
   }
 }
-
-/* ===== CHECKBOXES - VERSIÓN SIMPLE ===== */
-::ng-deep .ag-theme-material {
-  .ag-checkbox-input-wrapper input[type="checkbox"] {
-    width: 18px !important;
-    height: 18px !important;
-    cursor: pointer !important;
-    accent-color: var(--primary) !important;
-  }
-  
-  .ag-row-selected {
-    background-color: #bbdefb !important;
-    border-left: 3px solid var(--primary) !important;
-    
-    .ag-cell[col-id="monto_a_pagar"] {
-      background-color: #fff59d !important;
-      font-weight: 700 !important;
-    }
-  }
-}
 /* ===== GRID 2 COLUMNAS: FILTROS + RESUMEN ===== */
 .top-grid-two-columns {
   display: grid;
@@ -1548,111 +1528,6 @@ select.compact-input {
         border-bottom: 1px solid var(--gray-100);
       }
     }
-  }
-}
-/* ===== CHECKBOXES MÁS VISIBLES Y OBVIOS ===== */
-::ng-deep .ag-theme-material {
-  // Checkbox NO seleccionado
-  .ag-checkbox-input-wrapper {
-    width: 20px !important;
-    height: 20px !important;
-    position: relative !important;
-    
-    input[type="checkbox"] {
-      width: 20px !important;
-      height: 20px !important;
-      cursor: pointer !important;
-      opacity: 0 !important;
-      position: absolute !important;
-      z-index: 1 !important;
-    }
-    
-    &::before {
-      content: '' !important;
-      position: absolute !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 20px !important;
-      height: 20px !important;
-      border: 2px solid #757575 !important;
-      border-radius: 3px !important;
-      background: white !important;
-      box-sizing: border-box !important;
-      pointer-events: none !important;
-    }
-  }
-  
-  // ✅ Checkbox SELECCIONADO
-  .ag-checkbox-input-wrapper.ag-checked {
-    &::after {
-      content: '✓' !important;
-      background-color: var(--primary) !important;
-      border-color: var(--primary) !important;
-      color: white !important;
-      font-size: 16px !important;
-      font-weight: bold !important;
-      display: flex !important;
-      align-items: center !important;
-      justify-content: center !important;
-    }
-  }
-  
-  // Checkbox en header
-  .ag-header-select-all .ag-checkbox-input-wrapper {
-    &::after {
-      width: 20px !important;
-      height: 20px !important;
-    }
-    
-    &.ag-checked::after {
-      background-color: var(--accent) !important;
-      border-color: var(--accent) !important;
-    }
-  }
-  
-  // ✅ FILA SELECCIONADA - más visible
-  .ag-row-selected {
-    background-color: #bbdefb !important;
-    border-left: 3px solid var(--primary) !important;
-    
-    &:hover {
-      background-color: #90caf9 !important;
-    }
-    
-    .ag-cell[col-id="monto_a_pagar"]:not([row-index*="subtotal"]) {
-      background-color: #fff59d !important;
-      font-weight: 700 !important;
-    }
-  }
-  
-  // Área clickable del checkbox
-  .ag-cell[col-id="seleccionado"] {
-    padding: 8px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-  }
-}
-
-/* ===== CHECKBOX VISTA SIMPLIFICADA ===== */
-.compact-checkbox {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  user-select: none;
-  
-  input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-    accent-color: var(--primary);
-    // NO usar opacity: 0 ni position: absolute aquí
-  }
-  
-  span {
-    font-size: 13px;
-    color: var(--gray-800);
   }
 }
 
