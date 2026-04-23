@@ -15,6 +15,8 @@ import { LoginUsuarioResponse } from 'src/app/interfaces/responses/usuario-log-r
 // Components
 import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/components/utils/messages/custom-message-box.component';
 import { DetalleTransaccionDialogComponent } from './detalle-transaccion-dialog.component';
+import { ConfirmPasswordData, ConfirmPasswordDialogComponent, ConfirmPasswordResult } from 'src/app/components/utils/messages/confirm-password/confirm-password-dialog.component';
+import { DesaprobarPlanificacionRequest } from 'src/app/interfaces/requests/desaproba-planificacion-request';
 
 interface TransaccionAgrupada {
   num_transaccion: number;
@@ -27,6 +29,8 @@ interface TransaccionAgrupada {
   usuario: string;
   proveedores: string;
   _items: PlanificacionPagoResponse[];
+  es_editable: boolean; 
+  usuario_aprueba: string | null;
 }
 
 @Component({
@@ -99,6 +103,18 @@ export class AprobacionPlanificacionesComponent implements OnInit {
       width: 150
     },
     {
+      field: 'usuario_aprueba',
+      headerName: 'Aprobado por',
+      width: 150,
+      valueFormatter: params => params.value || '—',
+      cellStyle: ((params: any) => {
+        if (params.value) {
+          return { color: '#2e7d32', fontWeight: '600' };
+        }
+        return { color: '#9e9e9e', fontWeight: '400' };
+      }) as any,
+    },
+    {
       field: 'proveedores',
       headerName: 'Proveedores',
       width: 300,
@@ -107,46 +123,71 @@ export class AprobacionPlanificacionesComponent implements OnInit {
     {
       field: 'acciones',
       headerName: 'Acciones',
-      width: 120,
+      width: 220,
       cellRenderer: (params: any) => {
         const container = document.createElement('div');
         container.style.cssText = 'display: flex; gap: 12px; align-items: center; justify-content: center;';
-        
-        // ===== BOTÓN EDITAR (SOLO ÍCONO) =====
+
+        // ===== BOTÓN EDITAR =====
         const btnEditar = document.createElement('button');
         btnEditar.className = 'btn-icon-only';
         btnEditar.style.cssText = 'background: transparent; border: none; cursor: pointer; padding: 4px; transition: transform 0.2s;';
         btnEditar.onmouseover = () => btnEditar.style.transform = 'scale(1.1)';
         btnEditar.onmouseout = () => btnEditar.style.transform = 'scale(1)';
-        
+
         const imgEditar = document.createElement('img');
-        imgEditar.src = 'assets/icons/icon-modificar.png'; 
+        imgEditar.src = params.data.es_editable ? 'assets/icons/icon-modificar.png' : 'assets/icons/icon-clave.png';
         imgEditar.alt = 'Editar';
         imgEditar.style.cssText = 'width: 20px; height: 20px; object-fit: contain;';
-        
+        btnEditar.title = params.data.es_editable ? 'Editar' : 'Ver detalle';
         btnEditar.appendChild(imgEditar);
         btnEditar.onclick = () => this.cargarPlanificacion(params.data);
-        btnEditar.title = 'Editar';
-        
-        // ===== BOTÓN ELIMINAR (SOLO ÍCONO) =====
+
+        // ===== BOTÓN ELIMINAR =====
         const btnEliminar = document.createElement('button');
         btnEliminar.className = 'btn-icon-only';
         btnEliminar.style.cssText = 'background: transparent; border: none; cursor: pointer; padding: 4px; transition: transform 0.2s;';
         btnEliminar.onmouseover = () => btnEliminar.style.transform = 'scale(1.1)';
         btnEliminar.onmouseout = () => btnEliminar.style.transform = 'scale(1)';
-        
+
         const imgEliminar = document.createElement('img');
-        imgEliminar.src = 'assets/icons/icon-basurero.png'; 
+        imgEliminar.src = 'assets/icons/icon-basurero.png';
         imgEliminar.alt = 'Eliminar';
         imgEliminar.style.cssText = 'width: 20px; height: 20px; object-fit: contain;';
-        
         btnEliminar.appendChild(imgEliminar);
-        btnEliminar.onclick = () => this.eliminarPlanificacion(params.data);
         btnEliminar.title = 'Eliminar';
-        
+
+        // ← AHORA sí, btnEliminar ya existe
+        if (!params.data.es_editable) {
+          btnEliminar.style.opacity = '0.3';
+          btnEliminar.style.cursor = 'not-allowed';
+          btnEliminar.onclick = null;
+        } else {
+          btnEliminar.onclick = () => this.eliminarPlanificacion(params.data);
+        }
+
         container.appendChild(btnEditar);
+
+
+        //BOTÓN DESAPROBAR (solo si está aprobada)
+        if (!params.data.es_editable) {
+          const btnDesaprobar = document.createElement('button');
+          btnDesaprobar.className = 'btn-icon-only';
+          btnDesaprobar.style.cssText = 'background: transparent; border: none; cursor: pointer; padding: 4px; transition: transform 0.2s;';
+          btnDesaprobar.onmouseover = () => btnDesaprobar.style.transform = 'scale(1.1)';
+          btnDesaprobar.onmouseout = () => btnDesaprobar.style.transform = 'scale(1)';
+          btnDesaprobar.title = 'Desaprobar';
+
+          const imgDesaprobar = document.createElement('img');
+          imgDesaprobar.src = 'assets/icons/icon-cierre.png';
+          imgDesaprobar.alt = 'Desaprobar';
+          imgDesaprobar.style.cssText = 'width: 20px; height: 20px; object-fit: contain;';
+
+          btnDesaprobar.appendChild(imgDesaprobar);
+          btnDesaprobar.onclick = () => this.desaprobarPlanificacion(params.data);
+          container.appendChild(btnDesaprobar);
+        }
         container.appendChild(btnEliminar);
-        
         return container;
       },
       pinned: 'right',
@@ -161,6 +202,15 @@ export class AprobacionPlanificacionesComponent implements OnInit {
     resizable: true
   };
 
+  getRowStyle = (params: any): any => {
+    if (params.data?.es_editable === false) {
+      return { 
+        background: '#c8e6c9',        // verde pastel
+        borderLeft: '4px solid #43a047'  // borde verde oscuro
+      };
+    }
+    return null;
+  };
   // ===== ESTADO =====
   cargando = false;
   aprobando = false;
@@ -203,7 +253,7 @@ export class AprobacionPlanificacionesComponent implements OnInit {
       undefined,
       undefined,
       undefined,
-      0  // Solo pendientes
+      undefined // Solo pendientes
     ).subscribe({
       next: (response) => {
         if (response.type === 'LIST' && response.data) {
@@ -222,6 +272,81 @@ export class AprobacionPlanificacionesComponent implements OnInit {
     });
   }
 
+  desaprobarPlanificacion(transaccion: TransaccionAgrupada): void {
+    const dialogRef = this.dialog.open(ConfirmPasswordDialogComponent, {
+      data: {
+        title: 'Desaprobar Planificación',
+        message: `¿Está seguro de desaprobar la transacción ${transaccion.num_transaccion}?\n` +
+                `Documentos: ${transaccion.cantidad_documentos} | Total: $${transaccion.total_planificado.toFixed(2)}`,
+        motivoRequerido: true,
+        motivoLabel: 'Motivo de desaprobación',
+        confirmText: 'Sí, desaprobar',
+        cancelText: 'Cancelar'
+      } as ConfirmPasswordData
+    });
+
+    dialogRef.afterClosed().subscribe((result: ConfirmPasswordResult | null) => {
+      if (result) {
+        this.ejecutarDesaprobacion(transaccion, result.password, result.motivo!);
+      }
+    });
+  }
+
+  private ejecutarDesaprobacion(
+    transaccion: TransaccionAgrupada,
+    password: string,
+    motivo: string
+  ): void {
+    const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
+      data: {
+        title: 'Desaprobando Planificación',
+        message: 'Por favor espere...',
+        type: 'info',
+        isLoading: true,
+        loadingText: 'Procesando desaprobación...'
+      } as MessageBoxData,
+      disableClose: true
+    });
+
+    const request: DesaprobarPlanificacionRequest = {
+      numero_transaccion: transaccion.num_transaccion,
+      id_empresa: this.idEmpresa,
+      id_usuario: this.idUsuario,
+      password: password,
+      motivo: motivo
+    };
+
+    this.planificacionService.desaprobarPlanificacion(request).subscribe({
+      next: (response) => {
+        loadingDialog.close();
+
+        if (response.type === 'SUCCESS') {
+          this.dialog.open(CustomMessageBoxComponent, {
+            data: {
+              title: 'Desaprobación Exitosa',
+              message: `✅ Transacción ${transaccion.num_transaccion} desaprobada.\n` +
+                      `Documentos revertidos a pendiente: ${transaccion.cantidad_documentos}`,
+              type: 'success',
+              confirmText: 'Aceptar',
+              showCancel: false
+            } as MessageBoxData
+          }).afterClosed().subscribe(() => {
+            this.cargarPlanificaciones();
+          });
+
+        } else if (response.type === 'UNAUTHORIZED') {
+          this.showError('❌ Contraseña incorrecta. No se pudo desaprobar.');
+        } else {
+          this.showError(response.message || 'Error al desaprobar');
+        }
+      },
+      error: (err) => {
+        loadingDialog.close();
+        console.error('❌ Error:', err);
+        this.showError('Error de conexión al desaprobar');
+      }
+    });
+  }
   // ===== MÉTODO PARA ELIMINAR PLANIFICACIÓN =====
   eliminarPlanificacion(transaccion: TransaccionAgrupada): void {
     // Confirmar eliminación
@@ -337,7 +462,9 @@ export class AprobacionPlanificacionesComponent implements OnInit {
         cuenta_banco: primera.cuenta_banco || '',
         usuario: primera.nombre_usuario_ingreso || '',
         proveedores: [...new Set(items.map(i => i.nombre_proveedor))].join(', '),
-        _items: items 
+        _items: items,
+        es_editable: items.every(i => i.es_editable),
+        usuario_aprueba: primera.nombre_usuario_aprueba || null 
       };
     });
   }
@@ -527,13 +654,11 @@ export class AprobacionPlanificacionesComponent implements OnInit {
     });
   }
   // ===== MÉTODO PARA CARGAR PLANIFICACIÓN =====
-  cargarPlanificacion(transaccion: TransaccionAgrupada): void {
-    console.log('🔄 Cargando planificación en grid principal:', transaccion);
-    
-    // Cerrar el modal y devolver los datos
-    this.dialogRef.close({
-      cargar: true,
-      transaccion: transaccion
-    });
-  }
+    cargarPlanificacion(transaccion: TransaccionAgrupada): void {
+      this.dialogRef.close({
+        cargar: true,
+        transaccion: transaccion,
+        soloLectura: !transaccion.es_editable  // indica al componente padre si es editable
+      });
+    }
 }

@@ -235,19 +235,19 @@
 
             <!-- Botones de Acción -->
             <div class="distribucion-actions-compact">
-              <!-- ⭐ PLANIFICAR / ACTUALIZAR (botón dual) -->
+              <!-- PLANIFICAR / ACTUALIZAR -->
               <button
                 class="compact-btn compact-btn-success"
                 (click)="planificarPago()"
-                [disabled]="guardando || !datosPagoForm.valid || !planificacionValida">
+                [disabled]="guardando || !datosPagoForm.valid || !planificacionValida || soloLectura">
                 <mat-spinner *ngIf="guardando" diameter="16"></mat-spinner>
                 <mat-icon *ngIf="!guardando">{{ planificacionCargada ? 'edit' : 'save' }}</mat-icon>
                 {{ guardando ? 'Procesando...' : textoPlanificar }}
               </button>
 
-              <!-- APROBAR (solo si HAY planificación cargada) -->
+              <!-- APROBAR (solo si HAY planificación cargada Y no es solo lectura) -->
               <button
-                *ngIf="planificacionCargada"
+                *ngIf="planificacionCargada && !soloLectura"
                 class="compact-btn compact-btn-warning"
                 (click)="aprobarPlanificacionCargada()"
                 [disabled]="guardando || !totalDocumentosSeleccionados || !planificacionValida">
@@ -255,6 +255,12 @@
                 <mat-icon *ngIf="!guardando">verified</mat-icon>
                 {{ guardando ? 'Aprobando...' : 'Aprobar Pago' }}
               </button>
+
+              <!-- MENSAJE SOLO LECTURA (cuando está aprobada) -->
+              <div class="alert-solo-lectura" *ngIf="soloLectura">
+                <mat-icon>lock</mat-icon>
+                <span>Planificación aprobada. Desapruébela para modificar.</span>
+              </div>
             </div>
           </div>
         </div>
@@ -358,20 +364,24 @@
         <span>Vista simplificada</span>
       </label>
       
-      <button class="compact-btn" (click)="limpiarSeleccion()" [disabled]="!documentosRows.length">
+      <button 
+        *ngIf="!soloLectura"
+        class="compact-btn" (click)="limpiarSeleccion()" [disabled]="!documentosRows.length">
         <mat-icon>clear_all</mat-icon>
         Limpiar valores
       </button>
 
       <button 
+        *ngIf="!soloLectura"
         class="compact-btn compact-btn-accent" 
         (click)="fileInput.click()" 
         [disabled]="!totalDocumentosReales">
         <mat-icon>upload_file</mat-icon>
         Conciliar Excel
       </button>
-        <button 
-        *ngIf="planificacionCargada"
+    
+      <button 
+        *ngIf="planificacionCargada && !soloLectura"
         class="compact-btn compact-btn-primary" 
         (click)="abrirModalAgregarFacturas()"
         [disabled]="guardando">

@@ -45,6 +45,7 @@ import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { ApiKeyInterceptor } from './interceptors/api-key.interceptor';
 import { SecurityInterceptor } from './interceptors/security.interceptor';
 import { SinPermisosComponent } from './guards/sin-permisos.component';
+import { ConfirmPasswordDialogComponent } from './components/utils/messages/confirm-password/confirm-password-dialog.component';
 
 export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
 
@@ -55,6 +56,7 @@ export const options: Partial<null | IConfig> | (() => Partial<IConfig>) = null;
     NotFoundComponent,
     InicioComponent,
     CustomMessageBoxComponent,
+    ConfirmPasswordDialogComponent,
     ConfirmDialogComponent,
     ModalImpresionComponent,
     ResetPasswordComponent,

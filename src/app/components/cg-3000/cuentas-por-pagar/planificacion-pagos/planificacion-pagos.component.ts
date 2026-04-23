@@ -40,7 +40,7 @@ export class PlanificacionPagosComponent implements OnInit {
   
   Math = Math;
   planificacionCargada: any = null; // Almacena la planificación cargada para aprobar
-
+  soloLectura: boolean = false;
   montoTotalADistribuir: number = 0;
   vistaSimplificada: boolean = false;
 
@@ -102,6 +102,9 @@ export class PlanificacionPagosComponent implements OnInit {
       cellRenderer: (params: any) => {
         if (params.data?.esSubtotal || params.data?.esEspacio) {
           return '';
+        }
+        if (this.soloLectura) {
+          return '';  // ← ocultar en modo solo lectura
         }
 
         return `
@@ -330,9 +333,9 @@ export class PlanificacionPagosComponent implements OnInit {
       field: '',
       headerName: '',
       width: 50,
-      checkboxSelection: (params) => !params.data?.esSubtotal && !params.data?.esEspacio,
-      headerCheckboxSelection: true,
-      editable: false, 
+      checkboxSelection: (params) => !this.soloLectura && !params.data?.esSubtotal && !params.data?.esEspacio,
+      headerCheckboxSelection: () => !this.soloLectura,  //bloquea header checkbox
+      editable: false,
       cellStyle: ((params: any) => {
         if (params.data?.esEspacio) {
           return { backgroundColor: '#fff', border: 'none' };
@@ -416,8 +419,7 @@ export class PlanificacionPagosComponent implements OnInit {
       field: 'monto_a_pagar',
       headerName: 'Valor',
       width: 500,
-      editable: (params) => !params.data?.esSubtotal && !params.data?.esEspacio,
-      type: 'rightAligned',
+      editable: (params) => !this.soloLectura && !params.data?.esSubtotal && !params.data?.esEspacio,      type: 'rightAligned',
       cellStyle: ((params: any) => {
         if (params.data?.esEspacio) {
           return { backgroundColor: '#fff', border: 'none' };
@@ -654,7 +656,27 @@ export class PlanificacionPagosComponent implements OnInit {
   };
   
   getRowStyle = (params: any): any => {
-    // Estilo para fila de SUBTOTAL
+    // ✅ MODO SOLO LECTURA → todo gris opaco
+    if (this.soloLectura) {
+      if (params.data?.esSubtotal) {
+        return {
+          background: '#bdbdbd',
+          opacity: '0.85',
+          fontWeight: 'bold'
+        };
+      }
+      if (params.data?.esEspacio) {
+        return { background: '#fff' };
+      }
+      return {
+        background: '#cac8c866',   // gris claro
+        color: '#300d0d',        // texto gris
+        opacity: '0.85',
+        pointerEvents: 'none'    // bloquea clicks
+      };
+    }
+
+    // ✅ MODO NORMAL
     if (params.node.footer) {
       return {
         background: '#e3f2fd',
@@ -662,23 +684,22 @@ export class PlanificacionPagosComponent implements OnInit {
       };
     }
     
-    // Estilo para fila de GRUPO (cabecera de proveedor)
     if (params.node.group) {
       return {
         background: '#f5f5f5',
         fontWeight: '500'
       };
     }
-    //NO APLICAR VERDE SI ES PLANIFICACIÓN CARGADA
+
     if (params.data?._esPlanificacion) {
-      return null;  // Sin fondo verde
+      return null;
     }
-    //Saldo POSITIVO = Anticipo (verde)
+
     const saldo = params.data?.saldo || 0;
     
     if (saldo > 0 && !params.data?.esSubtotal && !params.data?.esEspacio) {
       return {
-        background: '#c8e6c9',  // Verde pastel muy suave
+        background: '#c8e6c9',
         fontWeight: '500'
       };
     }
@@ -1018,7 +1039,15 @@ distribuirMonto(): void {
     console.log('✅ Agrupación aplicada');
     this.gridApiDocumentos.sizeColumnsToFit();
   }
+  private actualizarEditabilidadGrid(): void {
+    if (!this.gridApiDocumentos) return;
 
+    // Refrescar todas las celdas para aplicar nuevo estado editable
+    this.gridApiDocumentos.refreshCells({ force: true });
+
+    // Bloquear/desbloquear selección de checkboxes
+    this.gridApiDocumentos.setGridOption('suppressRowClickSelection', this.soloLectura);
+  }
   // ===== AUTOCOMPLETE =====
   displayProveedor(proveedor: CodigoContableSummaryResponse | null): string {
     if (!proveedor) return '';
@@ -1329,7 +1358,21 @@ distribuirMonto(): void {
   }
 
   get textoPlanificar(): string {
-    return this.planificacionCargada ? 'Actualizar Planificación' : 'Guardar Planificación';
+    if (!this.planificacionCargada) return 'Guardar Planificación';
+    if (this.soloLectura) return 'Planificación Aprobada';
+    return 'Actualizar Planificación';
+  }
+
+  get puedeEditar(): boolean {
+    return !this.soloLectura;
+  }
+
+  get puedeAprobar(): boolean {
+    return !!this.planificacionCargada && !this.soloLectura;
+  }
+
+  get mensajeSoloLectura(): string {
+    return '🔒 Esta planificación está aprobada. Desapruébela primero para poder modificarla.';
   }
   private ejecutarPlanificacion(documentos: DocumentoPendienteResponse[]): void {
     const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
@@ -1404,19 +1447,32 @@ distribuirMonto(): void {
   }
 // ===== MÉTODOS NUEVOS - AGREGAR =====
 aprobarPlanificacionCargada(): void {
-  const documentosAprobar = this.documentosRows.filter((d: any) => 
+  // ✅ Documentos CON valor → se aprueban
+  const documentosConValor = this.documentosRows.filter((d: any) => 
     !d.esSubtotal && !d.esEspacio && d._esPlanificacion && d.monto_a_pagar && d.monto_a_pagar > 0
   );
 
-  if (documentosAprobar.length === 0) {
+  // ✅ Documentos SIN valor → se liberan (regresan al pool de pendientes)
+  const documentosSinValor = this.documentosRows.filter((d: any) => 
+    !d.esSubtotal && !d.esEspacio && d._esPlanificacion && (!d.monto_a_pagar || d.monto_a_pagar === 0)
+  );
+
+  if (documentosConValor.length === 0) {
     this.showError('Seleccione al menos un documento con monto a pagar');
     return;
+  }
+
+  // ✅ Mensaje informativo si hay documentos que se van a liberar
+  let mensajeConfirmacion = `¿Aprobar ${documentosConValor.length} documento(s) de la transacción ${this.planificacionCargada.num_transaccion} por $${this.totalAPlanificar.toFixed(2)}?`;
+  
+  if (documentosSinValor.length > 0) {
+    mensajeConfirmacion += `\n\n⚠️ ${documentosSinValor.length} documento(s) sin valor serán liberados y podrán volver a planificarse.`;
   }
 
   const dialogRef = this.dialog.open(CustomMessageBoxComponent, {
     data: {
       title: 'Confirmar Aprobación',
-      message: `¿Aprobar ${documentosAprobar.length} documento(s) de la transacción ${this.planificacionCargada.num_transaccion} por $${this.totalAPlanificar.toFixed(2)}?`,
+      message: mensajeConfirmacion,
       type: 'warning',
       confirmText: 'Sí, aprobar',
       cancelText: 'Cancelar',
@@ -1426,7 +1482,8 @@ aprobarPlanificacionCargada(): void {
 
   dialogRef.afterClosed().subscribe(result => {
     if (result) {
-      this.ejecutarAprobacionPlanificacion(documentosAprobar);
+      // ✅ Enviar TODOS: el backend aprueba los que tienen valor y libera los que tienen 0
+      this.ejecutarAprobacionPlanificacion([...documentosConValor, ...documentosSinValor]);
     }
   });
 }
@@ -1445,13 +1502,27 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
 
   this.guardando = true;
 
-  // ⭐ PREPARAR VALORES MODIFICADOS
-  const valoresModificados: ValorModificadoDto[] = documentos.map(d => ({
-    id_cuenta_por_pagar: d._idCuentaPorPagar,
-    valor_pago: d.monto_a_pagar,
-    tipo_pago: d.tipo_pago_seleccionado,
-    comentario: d.observaciones || undefined
-  }));
+  //OBTENER IDs válidos (evitar undefined/null/0)
+  const idsValidos = documentos
+    .map(d => Number(d._idCuentaPorPagar ?? d.id_cuenta_por_pagar))
+    .filter(id => id > 0);
+
+  if (idsValidos.length === 0) {
+    loadingDialog.close();
+    this.guardando = false;
+    this.showError('No se pudieron obtener los IDs de los documentos a aprobar');
+    return;
+  }
+
+  //VALORES MODIFICADOS solo con IDs válidos
+  const valoresModificados: ValorModificadoDto[] = documentos
+    .map(d => ({
+      id_cuenta_por_pagar: Number(d._idCuentaPorPagar ?? d.id_cuenta_por_pagar),
+      valor_pago: d.monto_a_pagar,
+      tipo_pago: d.tipo_pago_seleccionado,
+      comentario: d.observaciones || undefined
+    }))
+    .filter(v => v.id_cuenta_por_pagar > 0);
 
   const request: AprobarPlanificacionRequest = {
     numero_transaccion: this.planificacionCargada.num_transaccion,
@@ -1459,8 +1530,8 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
     id_usuario: this.idUsuario,
     id_zona: this.idZona,
     id_tipo_asiento: 6,
-    documentos_a_aprobar: documentos.map(d => d._idCuentaPorPagar),
-    valores_modificados: valoresModificados  // ⭐ ENVIAR VALORES MODIFICADOS
+    documentos_a_aprobar: idsValidos,        //Solo IDs válidos
+    valores_modificados: valoresModificados  //Solo registros válidos
   };
 
   console.log('📤 REQUEST DE APROBACIÓN:', JSON.stringify(request, null, 2));
@@ -1508,6 +1579,7 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
     this.cuentasContablesDisponibles.forEach(c => c.seleccionado = false);
     this.calcularTotales();
     this.planificacionCargada = null;
+    this.soloLectura = false; 
     this.montoTotalADistribuir = 0;
     this.montoRestante = 0;
     this.actualizarVisibilidadColumnaAcciones();
@@ -1656,10 +1728,10 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
       panelClass: 'custom-dialog-container'
     });
 
-    // ← CAMBIO: Escuchar el resultado del modal
     dialogRef.afterClosed().subscribe((resultado) => {
       if (resultado?.cargar && resultado?.transaccion) {
         console.log('🔄 Cargando planificación:', resultado.transaccion);
+        this.soloLectura = resultado.soloLectura ?? false;
         this.cargarPlanificacionEnGrid(resultado.transaccion);
       }
     });
@@ -1779,12 +1851,12 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
     reader.readAsArrayBuffer(file);
   }
 
-  cargarPlanificacionEnGrid(transaccion: any): void {
+  cargarPlanificacionEnGrid(transaccion: any, soloLectura: boolean = false): void {
     console.log('📥 Cargando planificación:', transaccion);
     console.log('📥 Items recibidos:', transaccion._items);
     
     // Guardar referencia
-    this.planificacionCargada = transaccion;
+    this.planificacionCargada = { ...transaccion, soloLectura };
     
     // Convertir items
     const documentosFormateados = transaccion._items.map((item: PlanificacionPagoResponse) => {
@@ -1821,7 +1893,7 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
         aporte: item.aporte || 0,
         
         // ⭐ VALORES EDITABLES
-        tipo_pago_seleccionado: item.estado_pago || 'P',
+        tipo_pago_seleccionado: item.estado_pago || (item.valor_pago && item.valor_pago !== 0 ? 'P' : 'N'),
         monto_a_pagar: Math.abs(item.valor_pago || 0),
         observaciones: item.comentario || '',
         exceso: null,
@@ -1872,6 +1944,11 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
         observacion: transaccion.observacion || primerItem.comentario || ''
       });
     }
+    this.actualizarEditabilidadGrid();
+    ///Actualiza el grid
+    setTimeout(() => {
+      this.gridApiDocumentos?.redrawRows();
+    }, 100);
   }
 
   get totalDocumentosReales(): number {
@@ -2010,9 +2087,9 @@ private ejecutarAprobacionPlanificacion(documentos: any[]): void {
       this.gridApiDocumentos?.forEachNode(node => {
         if (!node.data?.esSubtotal && !node.data?.esEspacio) {
           const debeSeleccionar = 
-            node.data?.tipo_pago_seleccionado === 'P' ||
-            node.data?.tipo_pago_seleccionado === 'A' ||
-            (node.data?.monto_a_pagar && node.data?.monto_a_pagar > 0);
+            (node.data?.tipo_pago_seleccionado === 'P' || node.data?.tipo_pago_seleccionado === 'A') 
+            && node.data?.monto_a_pagar 
+            && node.data?.monto_a_pagar > 0;
           node.setSelected(!!debeSeleccionar, false, 'api');
         }
       });

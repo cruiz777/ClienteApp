@@ -119,7 +119,7 @@ export interface PlanificacionPagoResponse {
   estado_pago: string | null;
   estado_planificacion: number;
   estado_aprueba: number | null;
-
+  es_editable: boolean;
   // USUARIOS
   usuario_ingreso: number;
   nombre_usuario_ingreso: string | null;
