@@ -236,6 +236,7 @@
         [columnDefs]="colSaldos"
         [defaultColDef]="defaultColDef"
         (gridReady)="onGridSaldosReady($event)"
+        [suppressMovableColumns]="true"
         [headerHeight]="34"
         [rowHeight]="34">
       </ag-grid-angular>
@@ -300,6 +301,7 @@
         [animateRows]="true"
         [headerHeight]="34"
         [rowHeight]="34"
+        [suppressMovableColumns]="true"
         [enableBrowserTooltips]="true">
       </ag-grid-angular>
     </div>
@@ -329,6 +331,7 @@
         [animateRows]="true"
         [headerHeight]="34"
         [rowHeight]="32"
+        [suppressMovableColumns]="true"
         [enableBrowserTooltips]="true">
       </ag-grid-angular>
     </div>
@@ -346,6 +349,7 @@
         [defaultColDef]="defaultColDef"
         (gridReady)="onGridResumenReady($event)"
         [headerHeight]="34"
+        [suppressMovableColumns]="true"
         [rowHeight]="34">
       </ag-grid-angular>
     </div>

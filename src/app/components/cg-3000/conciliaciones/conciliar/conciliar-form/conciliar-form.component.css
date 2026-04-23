@@ -613,8 +613,8 @@ ag-grid-angular {
 }
 /* Grid izquierdo */
 .grid-movimientos-izq {
-  height: 280px !important;
-  min-height: 280px !important;
+  height: 380px !important;
+  min-height: 380px !important;
 }
 
 .grid-movimientos-izq ag-grid-angular {
@@ -624,8 +624,8 @@ ag-grid-angular {
 
 /* Grid derecho */
 .grid-movimientos-der {
-  height: 280px !important;
-  min-height: 280px !important;
+  height: 380px !important;
+  min-height: 380px !important;
 }
 
 .grid-movimientos-der ag-grid-angular {
@@ -771,8 +771,8 @@ ag-grid-angular {
 
 /* Ambos grids mismo alto */
 .grid-movimientos-izq {
-  height: 280px !important;
-  min-height: 280px !important;
+  height: 600px !important;
+  min-height: 600px !important;
 }
 
 .grid-movimientos-izq ag-grid-angular {
@@ -781,8 +781,8 @@ ag-grid-angular {
 }
 
 .grid-movimientos-der {
-  height: 280px !important;
-  min-height: 280px !important;
+  height: 600px !important;
+  min-height: 600x !important;
 }
 
 .grid-movimientos-der ag-grid-angular {
