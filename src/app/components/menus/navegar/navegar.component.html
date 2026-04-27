@@ -205,6 +205,13 @@
             <span *ngIf="isExpanded" class="menu-text">Reporte Gerencia Empresas</span>
             
           </a>
+          <a mat-list-item
+             [routerLink]="['/codbar/reportes/gerenciafactuacion']"
+
+             (click)="manejarClick('/codbar/reportes/gerenciafactuacion', $event)">
+            <span *ngIf="isExpanded" class="menu-text">Reporte Facturación</span>
+            
+          </a>
 
           <a mat-list-item
              [routerLink]="((menuPermisos$ | async)?.reportes?.exploradorCliente) ? '/codbar/reportes/explorador-cliente' : null"

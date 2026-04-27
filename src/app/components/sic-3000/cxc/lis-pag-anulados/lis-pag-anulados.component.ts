@@ -31,6 +31,8 @@ export interface PagoRow {
   numeroDocumento: string;
   estado: string;          // “ACTIVO” | “ANULADO”
   motivo: string | null;   // motivo de anulación (si aplica)
+  asientoContable: string | null;
+  
 }
 
 @Component({
@@ -126,6 +128,11 @@ export class LisPagAnuladosComponent implements OnInit {
         return m ? `${e} — ${m}` : e;
       }
     },
+    { 
+  headerName: 'Asiento', 
+  field: 'asientoContable', 
+  width: 140 
+},
     {
       headerName: 'Acciones',
       field: 'acciones',
@@ -306,7 +313,8 @@ export class LisPagAnuladosComponent implements OnInit {
       total: i.totalPago,
       numeroDocumento: i.numeroDocumento,
       estado: (i.estado || (i.pagoAnulado ? 'ANULADO' : 'ACTIVO')).toUpperCase(),
-      motivo: i.motivoAnulacion ?? null
+      motivo: i.motivoAnulacion ?? null,
+      asientoContable: (i as any).asientoContable ?? null
     };
   }
 
@@ -343,11 +351,11 @@ export class LisPagAnuladosComponent implements OnInit {
   exportar(tipo: 'excel' | 'pdf'): void {
     const headers = [
       'Nro. Pago', 'Fecha', 'Cliente', 'Pagado', 'Total',
-      'Nro. Documento', 'Estado/Motivo'
+      'Nro. Documento', 'Estado/Motivo','Asiento'
     ];
     const columns = [
       'numeroPago', 'fecha', 'cliente', 'pagado', 'total',
-      'numeroDocumento', 'estado'
+      'numeroDocumento', 'estado', 'asientoContable'
     ];
 
     const data = this.pagedData.map((item: PagoRow) => ({
@@ -359,7 +367,8 @@ export class LisPagAnuladosComponent implements OnInit {
       pagado: this.formatMoney(item.pagado),
       total: this.formatMoney(item.total),
       numeroDocumento: item.numeroDocumento,
-      estado: item.motivo ? `${item.estado} — ${item.motivo}` : item.estado
+      estado: item.motivo ? `${item.estado} — ${item.motivo}` : item.estado,
+      asientoContable: item.asientoContable || ''
     }));
 
     const options = {
