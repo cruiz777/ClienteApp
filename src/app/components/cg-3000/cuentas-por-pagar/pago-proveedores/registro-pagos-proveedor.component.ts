@@ -883,35 +883,16 @@ export class RegistroPagosProveedorComponent implements OnInit {
       this.totalHaber = haberPagado;
       this.totalSaldo = haberPagado - debePagado;
     } else {
-      // Si NO hay documentos con pago → mostrar totales disponibles
-      this.totalDebe = totalDebeDisponible;
-      this.totalHaber = totalHaberDisponible;
-      this.totalSaldo = totalHaberDisponible - totalDebeDisponible;
+      // Si NO hay documentos con pago → mostrar debe/haber reales de los documentos
+      this.totalDebe = this.facturasRows.reduce((sum, f) => sum + (f.debe || 0), 0);
+      this.totalHaber = this.facturasRows.reduce((sum, f) => sum + (f.haber || 0), 0);
+      this.totalSaldo = this.totalHaber - this.totalDebe;
     }
     
-    // ✅ ACTUALIZAR MONTO DE CRUCE automáticamente
-    const formaCruce = this.formasPagoRows.find(f => 
-      f.descripcion.toLowerCase().includes('cruce') || 
-      f.descripcion.toLowerCase().includes('asiento')
-    );
-
-    if (formaCruce) {
-      const totalAnticipos = this.facturasRows
-        .filter(f => f.saldoPendiente > 0 && f.pago > 0)
-        .reduce((sum, a) => sum + a.pago, 0);
-      
-      // ✅ SIEMPRE sincronizar el cruce con los anticipos
-      formaCruce.monto = totalAnticipos;
-      
-      const index = this.formasPagoRows.findIndex(f => f.id === formaCruce.id);
-      if (index !== -1) {
-        this.formasPagoRows[index] = { ...formaCruce };
-        this.gridApiFormasPago?.applyTransaction({ update: [formaCruce] });
-      }
-    }
-    // ✅ Recalcular total DESPUÉS de actualizar cruce
     this.totalFormasPago = this.formasPagoRows.reduce((sum, f) => sum + (f.monto || 0), 0);
     
+    this.diferencia = this.totalSaldo - this.totalFormasPago;
+
     // Diferencia
     const hayCruce = this.formasPagoRows.some(f => 
       f.descripcion.toLowerCase().includes('cruce') || 
@@ -943,49 +924,9 @@ export class RegistroPagosProveedorComponent implements OnInit {
     });
   }
 
-  calcularCruceAutomatico(): void {
-    const formaCruce = this.formasPagoRows.find(f => 
-      f.descripcion.toLowerCase().includes('cruce') || 
-      f.descripcion.toLowerCase().includes('asiento')
-    );
-
-    if (!formaCruce) {
-      this.showError('Primero agregue "Cruce de Cuentas" como forma de pago');
-      return;
-    }
-
-    const totalAnticipos = this.facturasRows
-      .filter(f => f.saldoPendiente > 0 && f.pago > 0)
-      .reduce((sum, a) => sum + a.pago, 0);
-    
-    if (totalAnticipos === 0) {
-      this.showError('Debe seleccionar al menos un anticipo para calcular el cruce');
-      return;
-    }
-
-    formaCruce.monto = totalAnticipos;
-    
-    const index = this.formasPagoRows.findIndex(f => f.id === formaCruce.id);
-    if (index !== -1) {
-      this.formasPagoRows[index] = { ...formaCruce };
-      this.gridApiFormasPago?.applyTransaction({ update: [formaCruce] });
-    }
-
-    this.calcularTotales();
-    this.showSuccess(`Cruce calculado: $${totalAnticipos.toFixed(2)}`);
-  }
+  
   filtrarFormasPago(formas: FormaPagoCgResponse[] | null): FormaPagoCgResponse[] {
     if (!formas) return [];
-    
-    // Si hay anticipos aplicados, solo mostrar "Cruce de Cuentas"
-    if (this.tieneAnticiposAplicados) {
-      return formas.filter(f => 
-        f.descripcion.toLowerCase().includes('cruce') ||
-        f.descripcion.toLowerCase().includes('asiento')
-      );
-    }
-    
-    // Si NO hay anticipos, mostrar todo EXCEPTO cruce
     return formas.filter(f => 
       !f.descripcion.toLowerCase().includes('cruce') &&
       !f.descripcion.toLowerCase().includes('asiento')
@@ -1007,21 +948,10 @@ export class RegistroPagosProveedorComponent implements OnInit {
       .reduce((sum, f) => sum + f.pago, 0);
   }
   get pagoValido(): boolean {
-    // ✅ Detectar si hay cruce de cuentas
-    const hayCruceCuentas = this.formasPagoRows.some(f => 
-      f.descripcion.toLowerCase().includes('cruce') || 
-      f.descripcion.toLowerCase().includes('asiento')
-    );
-    
-    // ✅ Si es cruce puro, permitir saldo = 0
-    const saldoValido = hayCruceCuentas 
-      ? this.totalSaldo >= 0  // Cruce: puede ser 0 (100% cruzado) o > 0 (cruce parcial + efectivo)
-      : this.totalSaldo > 0;   // Normal: debe haber algo que pagar en efectivo
-    
     return Math.abs(this.diferencia) < 0.01 &&
-          saldoValido &&
-          this.formasPagoRows.length > 0 &&
-          this.anticipoDisponible === 0;
+          this.totalSaldo >= 0 &&
+          this.formasPagoRows.length > 0 ||
+          (this.tieneAnticiposAplicados && this.totalSaldo === 0);
   }
   // ===== NAVEGACIÓN STEPPER =====
   avanzarPaso2(): void {
@@ -1046,10 +976,6 @@ export class RegistroPagosProveedorComponent implements OnInit {
       f.descripcion.toLowerCase().includes('asiento')
     );
 
-    if (hayAnticipos && !hayCruce && this.anticipoDisponible > 0) {
-      this.showError(`Tiene $${this.anticipoDisponible.toFixed(2)} de anticipo sin aplicar. Agregue "Cruce de Cuentas" en formas de pago o ajuste los montos.`);
-      return;
-    }
 
     // ✅ Validar beneficiario
     if (!this.paso1Form.get('beneficiario')?.value) {
@@ -1078,37 +1004,10 @@ export class RegistroPagosProveedorComponent implements OnInit {
       this.showError('Debe seleccionar un proveedor');
       return;
     }
-    //DETECTAR SI HAY CRUCE DE CUENTAS
-    const tieneCruceCuentas = this.formasPagoRows.some(f => 
-      f.descripcion.toLowerCase().includes('cruce') || 
-      f.descripcion.toLowerCase().includes('con asiento')
-    );
-
     const hayAnticiposAplicados = this.facturasRows.some(f => 
       f.saldoPendiente > 0 && f.pago > 0
     );
 
-    //VALIDAR: Si hay cruce, DEBE haber anticipos
-    if (tieneCruceCuentas && !hayAnticiposAplicados) {
-      this.showError('Para usar "Cruce de Cuentas" debe seleccionar al menos un anticipo');
-      return;
-    }
-
-    //VALIDAR: El monto del cruce debe = anticipos aplicados
-    if (tieneCruceCuentas) {
-      const montoCruce = this.formasPagoRows
-        .filter(f => f.descripcion.toLowerCase().includes('cruce'))
-        .reduce((sum, f) => sum + f.monto, 0);
-
-      const totalAnticipos = this.facturasRows
-        .filter(f => f.saldoPendiente > 0 && f.pago > 0)
-        .reduce((sum, a) => sum + a.pago, 0);
-
-      if (Math.abs(montoCruce - totalAnticipos) > 0.01) {
-        this.showError(`El monto de "Cruce de Cuentas" ($${montoCruce}) debe ser igual al total de anticipos ($${totalAnticipos})`);
-        return;
-      }
-    }
     // Validar que todas las formas de pago tengan cuenta contable
     const formasSinCuenta = this.formasPagoRows.filter(f => {
       const esCruce = f.descripcion.toLowerCase().includes('cruce') || 
@@ -1388,29 +1287,34 @@ export class RegistroPagosProveedorComponent implements OnInit {
     // 5. Distribuir anticipos entre facturas
     let anticipoRestante = totalAnticipos;
     
+    // facturasSeleccionadas.forEach(factura => {
+    //   const saldoFactura = Math.abs(factura.saldoPendiente);
+      
+    //   if (anticipoRestante > 0) {
+    //     if (anticipoRestante >= saldoFactura) {
+    //       // El anticipo cubre toda la factura
+    //       factura.pago = saldoFactura;
+    //       factura.estadopago = 'P';
+    //       anticipoRestante -= saldoFactura;
+    //     } else {
+    //       // El anticipo cubre parcialmente
+    //       factura.pago = anticipoRestante;
+    //       factura.estadopago = 'A';
+    //       anticipoRestante = 0;
+    //     }
+    //   } else {
+    //     // Sin anticipo → no asignar nada (mantener lo que tenía)
+    //     // O si prefieres asignar el saldo completo, descomenta:
+    //     // factura.pago = saldoFactura;
+    //     // factura.estadopago = 'P';
+    //   }
+    // });
     facturasSeleccionadas.forEach(factura => {
       const saldoFactura = Math.abs(factura.saldoPendiente);
-      
-      if (anticipoRestante > 0) {
-        if (anticipoRestante >= saldoFactura) {
-          // El anticipo cubre toda la factura
-          factura.pago = saldoFactura;
-          factura.estadopago = 'P';
-          anticipoRestante -= saldoFactura;
-        } else {
-          // El anticipo cubre parcialmente
-          factura.pago = anticipoRestante;
-          factura.estadopago = 'A';
-          anticipoRestante = 0;
-        }
-      } else {
-        // Sin anticipo → no asignar nada (mantener lo que tenía)
-        // O si prefieres asignar el saldo completo, descomenta:
-        // factura.pago = saldoFactura;
-        // factura.estadopago = 'P';
-      }
+      // ✅ SIEMPRE el saldo completo, sin importar el anticipo
+      factura.pago = saldoFactura;
+      factura.estadopago = 'P';
     });
-    
     // 6. Actualizar grid
     this.gridApiFacturas.applyTransaction({ 
       update: [...anticiposConPago, ...facturasSeleccionadas] 
@@ -1526,131 +1430,5 @@ export class RegistroPagosProveedorComponent implements OnInit {
   get saldoAPagar(): number {
     return this.totalHaber - this.totalDebe;
   }
-  aplicarCruceAutomatico(): void {
-    // 1. Verificar anticipos y facturas disponibles
-    const anticipos = this.facturasRows.filter(f => f.saldoPendiente > 0);
-
-    if (anticipos.length === 0) {
-      this.showError('No hay anticipos disponibles para cruzar');
-      return;
-    }
-
-    const facturas = this.facturasRows.filter(f => f.saldoPendiente < 0);
-
-    if (facturas.length === 0) {
-      this.showError('No hay facturas pendientes para cruzar con los anticipos');
-      return;
-    }
-
-    // 2. Calcular total disponible de anticipos (sin asignar pago aún)
-    const totalAnticiposDisponible = anticipos.reduce(
-      (sum, a) => sum + Math.abs(a.saldoPendiente), 0
-    );
-
-    // 3. Distribuir entre facturas primero y calcular cuánto se usó realmente
-    let anticipoRestante = totalAnticiposDisponible;
-
-    facturas.forEach(factura => {
-      if (anticipoRestante <= 0) {
-        factura.pago = 0;
-        factura.estadopago = 'N';
-        return;
-      }
-
-      const saldoFactura = Math.abs(factura.saldoPendiente);
-
-      if (anticipoRestante >= saldoFactura) {
-        factura.pago = this.clamp2(saldoFactura);
-        factura.estadopago = 'P';
-        anticipoRestante -= saldoFactura;
-      } else {
-        factura.pago = this.clamp2(anticipoRestante);
-        factura.estadopago = 'A';
-        anticipoRestante = 0;
-      }
-    });
-
-    // ✅ 4. Cuánto se cruzó REALMENTE (puede ser menor al total del anticipo)
-    const totalReamenteCruzado = this.clamp2(totalAnticiposDisponible - anticipoRestante);
-
-    // ✅ 5. Asignar a anticipos SOLO lo que se usó, no su saldo completo
-    let porAsignar = totalReamenteCruzado;
-
-    anticipos.forEach(anticipo => {
-      if (porAsignar <= 0) {
-        anticipo.pago = 0;
-        anticipo.estadopago = 'N';
-        return;
-      }
-
-      const saldoAnticipo = Math.abs(anticipo.saldoPendiente);
-
-      if (porAsignar >= saldoAnticipo) {
-        // El anticipo se usa completo
-        anticipo.pago = this.clamp2(saldoAnticipo);
-        anticipo.estadopago = 'P';
-        porAsignar -= saldoAnticipo;
-      } else {
-        // El anticipo se usa parcialmente (ej: $99.50 de $100)
-        anticipo.pago = this.clamp2(porAsignar);
-        anticipo.estadopago = 'A';
-        porAsignar = 0;
-      }
-
-      this.anticiposSeleccionados.add(anticipo.idCuentaPorPagar);
-    });
-
-    // 6. Actualizar grid con anticipos Y facturas corregidos
-    this.gridApiFacturas.applyTransaction({ update: this.facturasRows });
-
-    // 7. Agregar "Cruce de Cuentas" con el monto REAL cruzado
-    const cruceExistente = this.formasPagoRows.find(f =>
-      f.descripcion.toLowerCase().includes('cruce') ||
-      f.descripcion.toLowerCase().includes('asiento')
-    );
-
-    if (!cruceExistente) {
-      this.formaPagoCgService.getAll({ idEmpresa: this.idEmpresa }).subscribe({
-        next: (formas) => {
-          const formaCruce = formas.find(f =>
-            f.activo &&
-            (f.descripcion.toLowerCase().includes('cruce') ||
-            f.descripcion.toLowerCase().includes('asiento'))
-          );
-
-          if (formaCruce) {
-            const nuevaForma: FormaPagoRow = {
-              id: Date.now(),
-              idFormaPago: formaCruce.idFormaPagoCg,
-              descripcion: formaCruce.descripcion,
-              monto: totalReamenteCruzado, // ✅ $99.50, no $100
-              idPlanCuentas: 0,
-              nombreCuenta: ''
-            };
-
-            this.formasPagoRows.push(nuevaForma);
-            this.gridApiFormasPago?.applyTransaction({ add: [nuevaForma] });
-            this.calcularTotales();
-
-            const facturasAfectadas = facturas.filter(f => f.pago > 0).length;
-            this.showSuccess(
-              `Cruce automático: ${anticipos.length} anticipo(s) ` +
-              `($${totalReamenteCruzado.toFixed(2)} de $${totalAnticiposDisponible.toFixed(2)} disponible) ` +
-              `distribuido entre ${facturasAfectadas} factura(s)`
-            );
-          }
-        }
-      });
-    } else {
-      // Actualizar el cruce existente con el nuevo monto real
-      cruceExistente.monto = totalReamenteCruzado; // ✅ Sincronizar si ya existía
-      const index = this.formasPagoRows.findIndex(f => f.id === cruceExistente.id);
-      if (index !== -1) {
-        this.formasPagoRows[index] = { ...cruceExistente };
-        this.gridApiFormasPago?.applyTransaction({ update: [this.formasPagoRows[index]] });
-      }
-      this.calcularTotales();
-      this.showSuccess(`Anticipos redistribuidos: $${totalReamenteCruzado.toFixed(2)}`);
-    }
-  }
+  
 }
