@@ -447,7 +447,7 @@ export class RegistroCobrosComponent implements OnInit {
 
     const metodoCtrl = this.formPago.get('metodoPago') as FormControl;
 
-    const formasActivas$ = this.formaPagoService.getPagedLite(1, 10).pipe(
+    const formasActivas$ = this.formaPagoService.getPagedLite(1, 20).pipe(
       map(resp => resp?.type === 'Success' ? (resp.data?.items ?? []) : []),
       tap(list => console.log('[FP] paged items:', list)),
       catchError(err => {
