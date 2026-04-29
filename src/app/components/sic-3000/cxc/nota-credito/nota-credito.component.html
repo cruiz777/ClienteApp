@@ -56,45 +56,37 @@
     </div>
   </div>
   <!-- AVISO: CAJA NO ASIGNADA -->
-<div *ngIf="!cajaAsignada"
-     class="alert-warn"
-     style="margin:8px 0; padding:8px 12px; border-radius:8px;
-            background:#fff3cd; color:#664d03; border:1px solid #ffecb5;"
-     aria-live="polite">
-  Usuario no tiene asignado <strong>Caja</strong>. No podrás generar notas de crédito hasta asignarla.
-</div>
-  
+  <div *ngIf="!cajaAsignada" class="alert-warn" style="margin:8px 0; padding:8px 12px; border-radius:8px;
+            background:#fff3cd; color:#664d03; border:1px solid #ffecb5;" aria-live="polite">
+    Usuario no tiene asignado <strong>Caja</strong>. No podrás generar notas de crédito hasta asignarla.
+  </div>
+
   <!-- Buscador de productos (solo si es factura de saldo) -->
   <section *ngIf="esFacturaDeSaldo" class="product-section" style="padding: 8px 0;">
     <mat-form-field style="width:100%;">
       <span matPrefix class="fi-prefix">Producto:&nbsp;</span>
-      <input 
-        matInput 
-        placeholder="Buscar producto para agregar"
-        [(ngModel)]="buscarProductoTexto"
-        (input)="filtrarProductos($event)"
-        (keyup.enter)="onProductoSelectedNC(productoSeleccionado)" />
+      <input matInput placeholder="Buscar producto para agregar" [(ngModel)]="buscarProductoTexto"
+        (input)="filtrarProductos($event)" (keyup.enter)="onProductoSelectedNC(productoSeleccionado)" />
     </mat-form-field>
-    
+
     <div *ngIf="isLoadingProductos" style="padding: 8px; text-align: center;">
       Cargando productos...
     </div>
-    
-    <div *ngIf="productosLoaded && productos.length > 0" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px;">
-      <div *ngFor="let p of productosFiltrados" 
-          (click)="onProductoSelectedNC(p.codpro)" 
-          style="padding: 8px; cursor: pointer; border-bottom: 1px solid #eee;"
-          [style.background-color]="productoSeleccionado === p.codpro ? '#f0f0f0' : 'white'">
+
+    <div *ngIf="productosLoaded && productos.length > 0"
+      style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px;">
+      <div *ngFor="let p of productosFiltrados" (click)="onProductoSelectedNC(p.codpro)"
+        style="padding: 8px; cursor: pointer; border-bottom: 1px solid #eee;"
+        [style.background-color]="productoSeleccionado === p.codpro ? '#f0f0f0' : 'white'">
         {{ p.codpro }} — {{ p.despro }}
       </div>
     </div>
   </section>
 
   <!-- Mensaje informativo -->
-  <div *ngIf="esFacturaDeSaldo" 
-      style="margin:8px 0; padding:8px 12px; border-radius:8px; 
+  <div *ngIf="esFacturaDeSaldo" style="margin:8px 0; padding:8px 12px; border-radius:8px; 
               background:#d1ecf1; color:#0c5460; border:1px solid #bee5eb;">
-    ℹ️ <strong>Factura de Saldo:</strong> Agrega productos manualmente. 
+    ℹ️ <strong>Factura de Saldo:</strong> Agrega productos manualmente.
     Saldo disponible: ${{ saldoFacturaPendiente | number:'1.2-2' }}
   </div>
 
@@ -118,18 +110,13 @@
         <section class="product-section" aria-labelledby="product-label" style="padding-top:0;">
           <mat-form-field style="width:100%;">
             <span matPrefix class="fi-prefix">Pago:&nbsp;</span>
-            <input
-  matInput
-  [formControl]="fcMetodoPago"
-  #autoPagoTrigger="matAutocompleteTrigger"
-  [matAutocomplete]="autoPago"
-  (focus)="autoPagoTrigger.openPanel()" />
+            <input matInput [formControl]="fcMetodoPago" #autoPagoTrigger="matAutocompleteTrigger"
+              [matAutocomplete]="autoPago" (focus)="autoPagoTrigger.openPanel()" />
 
           </mat-form-field>
 
-          <mat-autocomplete #autoPago="matAutocomplete"
-  [displayWith]="displayFormaPago"
-  (optionSelected)="onFormaPagoSelected($event)">
+          <mat-autocomplete #autoPago="matAutocomplete" [displayWith]="displayFormaPago"
+            (optionSelected)="onFormaPagoSelected($event)">
             <mat-option *ngFor="let fp of filteredFormasPago$ | async" [value]="fp">
               {{ fp.descripcionPago }}
             </mat-option>
@@ -141,12 +128,12 @@
 
         </section>
         <div class="spacer"></div>
-     <span class="total-pago" [ngClass]="{ 'text-red-600': !puedeGrabar, 'text-green-700': puedeGrabar }">
-  Total Pago: {{ totales.totalPago | number:'1.2-2' }}
-  <small *ngIf="!puedeGrabar">
-    (faltan {{ diferenciaPago | number:'1.2-2' }})
-  </small>
-</span>
+        <span class="total-pago" [ngClass]="{ 'text-red-600': !puedeGrabar, 'text-green-700': puedeGrabar }">
+          Total Pago: {{ totales.totalPago | number:'1.2-2' }}
+          <small *ngIf="!puedeGrabar">
+            (faltan {{ diferenciaPago | number:'1.2-2' }})
+          </small>
+        </span>
 
 
       </div>
@@ -160,7 +147,7 @@
     <div class="panel resumen">
       <div class="res-item">
         <span>Factura</span>
-        
+
       </div>
       <div class="res-item">
         <span>Sub Total</span>
@@ -186,9 +173,9 @@
       <hr>
 
       <!-- DEV: todas las filas como hermanas (no anidar) -->
-       <div class="res-item">
+      <div class="res-item">
         <span>Nota de Crédito</span>
-        
+
       </div>
       <div class="res-item">
         <span>Sub Total Dev.</span>
@@ -222,15 +209,11 @@
   <!-- Acciones -->
   <div class="acciones">
     <button class="btn btn-light" (click)="nuevo()">Nuevo</button>
-<button
-  type="button"
-  class="btn btn-primary"
-  (click)="onClickGrabar()"
-  [disabled]="guardando || guardado || !puedeGrabar"   
-  [class.btn-disabled]="guardando || guardado || !puedeGrabar"
-  title="El Total Pago debe ser igual al TOTAL DEV.">
-  Grabar
-</button>
+    <button type="button" class="btn btn-primary" (click)="onClickGrabar()"
+      [disabled]="guardando || guardado || !puedeGrabar" [class.btn-disabled]="guardando || guardado || !puedeGrabar"
+      title="El Total Pago debe ser igual al TOTAL DEV.">
+      Grabar
+    </button>
 
 
 
@@ -238,9 +221,6 @@
 
 
     <div class="spacer"></div>
-    <div class="exportar">
-      <button class="btn btn-light" (click)="exportar()">Exportar</button>
-      <span class="caret">▾</span>
-    </div>
+
   </div>
 </div>

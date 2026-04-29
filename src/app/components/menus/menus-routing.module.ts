@@ -31,6 +31,7 @@ import { GerenciaComponent } from './gerencia/gerencia.component';
 import { GrupoProductoListaComponent } from './grupo-producto-lista/grupo-producto-lista.component';
 import { GerenciaEmpresasComponent } from './gerencia-empresas/gerencia-empresas.component';
 import { Gs1ScannerComponent } from './gs1-scanner/gs1-scanner.component';
+import { DashboardFacturacionComponent } from './dashboard-facturacion/dashboard-facturacion.component';
 
 const routes: Routes = [
   {
@@ -110,6 +111,10 @@ const routes: Routes = [
           { 
             path: 'datamatrix', 
             component: Gs1ScannerComponent
+          },
+           { 
+            path: 'gerenciafactuacion', 
+            component: DashboardFacturacionComponent
           }
         ]
       },

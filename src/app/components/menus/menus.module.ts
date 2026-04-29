@@ -10,7 +10,7 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-
+import { DashboardFacturacionComponent } from './dashboard-facturacion/dashboard-facturacion.component';
 
 // 🆕 IMPORTS DE ANGULAR MATERIAL (de pages)
 import { MatSidenavModule } from '@angular/material/sidenav';
@@ -91,7 +91,8 @@ import { Gs1ScannerComponent } from './gs1-scanner/gs1-scanner.component';
     ExploradorComponent,
     GerenciaComponent,
     TipoPrefijoComponent,
-    ExploradorClientesComponent
+    ExploradorClientesComponent,
+    DashboardFacturacionComponent
     //TipoClienteListComponent
   ],
   imports: [

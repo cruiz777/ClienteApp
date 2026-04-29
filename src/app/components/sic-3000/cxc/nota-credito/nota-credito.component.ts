@@ -55,8 +55,8 @@ import {
 } from 'src/app/services/asiento-venta.service';
 type Detalle = {
   codigo?: string;
-  idcuenta?:number;
-  cuenta?:string;
+  idcuenta?: number;
+  cuenta?: string;
   descripcion?: string;
   cantidad?: number;   // cantidad original
   pvp?: number;        // precio original
@@ -78,6 +78,7 @@ type Pago = {
   saldo?: number;
   pago?: number;
   cuenta?: string;
+  idPlanCuentas?: number;
 };
 
 
@@ -114,9 +115,9 @@ type Totales = {
 
 export class NotaCreditoComponent implements OnInit {
   idPersona: number = 0;
-  idCodContableCliente: number = 0; 
+  idCodContableCliente: number = 0;
   esFacturaDeSaldo = false;
-   ivaPctSaldo: number = 15; // IVA por defecto para facturas de saldo
+  ivaPctSaldo: number = 15; // IVA por defecto para facturas de saldo
   datosFacturaValidada: any = null;
   productos: any[] = []; // Array de productos cargados
   productosLoaded = false;
@@ -144,16 +145,16 @@ export class NotaCreditoComponent implements OnInit {
     private facturacionService: FacturacionService,
     private clienteService: ClienteService,
     private asientoVentaService: AsientoVentaService,
-      private parametrosSicService: ParametrosSicService,
-        private planCueService: PlanCueService,
-        private parametrosSicService1: ParametrosSicService,
-        private planCueService1: PlanCueService
+    private parametrosSicService: ParametrosSicService,
+    private planCueService: PlanCueService,
+    private parametrosSicService1: ParametrosSicService,
+    private planCueService1: PlanCueService
 
   ) { }
 
   ngOnInit(): void {
     this.usuarioActual = this.usuarioService.getUsuarioActual();
-     this.parametrosSicService
+    this.parametrosSicService
       .getByEmpresa(this.usuarioActual?.id_empresa ?? 0) // devuelve ParametrosSic
       .pipe(
         switchMap(parametros => {
@@ -178,7 +179,7 @@ export class NotaCreditoComponent implements OnInit {
         }
       });
 
-       this.parametrosSicService1
+    this.parametrosSicService1
       .getByEmpresa(this.usuarioActual?.id_empresa ?? 0)
       .pipe(
         switchMap(parametros => {
@@ -204,7 +205,7 @@ export class NotaCreditoComponent implements OnInit {
 
 
     this.cargarAutorizacion();
-      this.cargarProductosParaNC();
+    this.cargarProductosParaNC();
     this.formasActivas$ = this.formaPagoService.getPagedLite(1, 10).pipe(
       map(resp => resp?.type === 'Success' ? (resp.data?.items ?? []) : []),
       catchError(() => of([] as FormaPagoResponse[])),
@@ -237,15 +238,15 @@ export class NotaCreditoComponent implements OnInit {
   filteredFormasPago$: Observable<FormaPagoResponse[]> = of([]);
   formasActivas$!: Observable<FormaPagoResponse[]>;
   isLoadingFormas = false;
-   clientesCodigo: number = 0;
+  clientesCodigo: number = 0;
   totalHaberFactura: number = 0;
   saldoFacturaPendiente: number = 0;
   totalFacturaOriginalSaldo: number = 0;
-  codCon:number=0;
+  codCon: number = 0;
   // 👉 NUEVAS PROPIEDADES
-  
+
   //idCodigoContable = 0;
-  
+
 
   encabezado = {
     sucursal: '',   // sucursal/caja de la NC
@@ -318,18 +319,18 @@ export class NotaCreditoComponent implements OnInit {
       valueSetter: (p) => {
         const row = p.data as Detalle;
         let nuevoPvp = this.asNumber(p.newValue);
-        
+
         if (nuevoPvp < 0) nuevoPvp = 0;
-        
+
         const cantidad = this.asNumber(row.cantidad) || 1;
         const ivaPct = this.asNumber(row.ivaPct) || (this.esFacturaDeSaldo ? this.ivaPctSaldo : 15);
-        
+
         // El PVP es la BASE (sin IVA)
         // Calcular el total CON IVA
         const nuevoTotal = nuevoPvp * cantidad;
         const nuevoIva = +(nuevoTotal * (ivaPct / 100)).toFixed(2);
         const nuevoTotalConIva = nuevoTotal + nuevoIva;
-        
+
         // VALIDAR: el total CON IVA no puede superar el total de la factura
         const totalFactura = this.totales.totalFacturaConIva || 0;
         if (nuevoTotalConIva > totalFactura) {
@@ -341,29 +342,29 @@ export class NotaCreditoComponent implements OnInit {
             'info'
           );
         }
-        
+
         // Asignar el nuevo PVP (BASE sin IVA)
         row.pvp = +nuevoPvp.toFixed(6);
-        
+
         // Calcular IVA sobre la BASE
         const baseTotal = row.pvp * cantidad;
         row.iva = +(baseTotal * (ivaPct / 100)).toFixed(2);
-        
+
         // Refrescar celdas afectadas
         if (p.api) {
           if (p.node) {
-            p.api.refreshCells({ 
-              rowNodes: [p.node], 
-              columns: ['pvp', 'total', 'iva', 'ivaDev'] 
+            p.api.refreshCells({
+              rowNodes: [p.node],
+              columns: ['pvp', 'total', 'iva', 'ivaDev']
             });
           } else {
-            p.api.refreshCells({ 
-              force: true, 
-              columns: ['pvp', 'total', 'iva', 'ivaDev'] 
+            p.api.refreshCells({
+              force: true,
+              columns: ['pvp', 'total', 'iva', 'ivaDev']
             });
           }
         }
-        
+
         this.recalcular();
         return true;
       }
@@ -385,55 +386,55 @@ export class NotaCreditoComponent implements OnInit {
       valueParser: this.numberParser,
     },
     {
-  headerName: 'IVA %',
-  field: 'ivaPct',
-  width: 100,
-  type: 'rightAligned',
-  editable: (p) => this.esFacturaDeSaldo, // SOLO para facturas de saldo (no dañas las normales)
-  valueParser: this.numberParser,
-  valueFormatter: (p: any) => this.numberDot2d(p),
-  valueSetter: (p) => {
-    const row = p.data as Detalle;
+      headerName: 'IVA %',
+      field: 'ivaPct',
+      width: 100,
+      type: 'rightAligned',
+      editable: (p) => this.esFacturaDeSaldo, // SOLO para facturas de saldo (no dañas las normales)
+      valueParser: this.numberParser,
+      valueFormatter: (p: any) => this.numberDot2d(p),
+      valueSetter: (p) => {
+        const row = p.data as Detalle;
 
-    // 1) Tomar el nuevo % (ej 12, 15)
-    let pct = this.asNumber(p.newValue);
-    if (pct < 0) pct = 0;
-    if (pct > 100) pct = 100;
+        // 1) Tomar el nuevo % (ej 12, 15)
+        let pct = this.asNumber(p.newValue);
+        if (pct < 0) pct = 0;
+        if (pct > 100) pct = 100;
 
-    row.ivaPct = +pct.toFixed(2);
+        row.ivaPct = +pct.toFixed(2);
 
-    // 2) Recalcular IVA $ de la línea ORIGINAL (según cantidad y pvp)
-    const totalLinea = this.asNumber(row.cantidad) * this.asNumber(row.pvp);
-    row.iva = +((totalLinea * row.ivaPct) / 100).toFixed(2);
+        // 2) Recalcular IVA $ de la línea ORIGINAL (según cantidad y pvp)
+        const totalLinea = this.asNumber(row.cantidad) * this.asNumber(row.pvp);
+        row.iva = +((totalLinea * row.ivaPct) / 100).toFixed(2);
 
-    // 3) Si está en modo porMonto (devolución por valor), recalcular ivaDev
-    if (row.porMonto) {
-      const baseDev = this.asNumber(row.valorDev);
-      row.ivaDev = +((baseDev * row.ivaPct) / 100).toFixed(2);
-    } else {
-      // Si es por cantidad, también podemos ajustar ivaDev proporcionalmente
-      const cantDev = this.asNumber(row.cantidadd);
-      const cantidad = Math.max(1, this.asNumber(row.cantidad));
-      const ivaUnit = this.asNumber(row.iva) / cantidad;
-      row.ivaDev = +(cantDev * ivaUnit).toFixed(2);
-    }
+        // 3) Si está en modo porMonto (devolución por valor), recalcular ivaDev
+        if (row.porMonto) {
+          const baseDev = this.asNumber(row.valorDev);
+          row.ivaDev = +((baseDev * row.ivaPct) / 100).toFixed(2);
+        } else {
+          // Si es por cantidad, también podemos ajustar ivaDev proporcionalmente
+          const cantDev = this.asNumber(row.cantidadd);
+          const cantidad = Math.max(1, this.asNumber(row.cantidad));
+          const ivaUnit = this.asNumber(row.iva) / cantidad;
+          row.ivaDev = +(cantDev * ivaUnit).toFixed(2);
+        }
 
-    // refrescar celdas afectadas
-    if (p.api) {
-      if (p.node) {
-        p.api.refreshCells({
-          rowNodes: [p.node],
-          columns: ['iva', 'ivaPct', 'ivaDev']
-        });
-      } else {
-        p.api.refreshCells({ force: true, columns: ['iva', 'ivaPct', 'ivaDev'] });
+        // refrescar celdas afectadas
+        if (p.api) {
+          if (p.node) {
+            p.api.refreshCells({
+              rowNodes: [p.node],
+              columns: ['iva', 'ivaPct', 'ivaDev']
+            });
+          } else {
+            p.api.refreshCells({ force: true, columns: ['iva', 'ivaPct', 'ivaDev'] });
+          }
+        }
+
+        this.recalcular();
+        return true;
       }
-    }
-
-    this.recalcular();
-    return true;
-  }
-},
+    },
 
 
     // Cant.Dev. (si editas aquí, sales del modo porMonto)
@@ -847,6 +848,9 @@ export class NotaCreditoComponent implements OnInit {
     this.esFacturaDeSaldo = false;
     this.totalFacturaOriginalSaldo = 0;
     this.asientoVentaInfo = null;
+    this.fcMetodoPago.setValue('', { emitEvent: true });
+    this.cargarForma();
+    this.cdr.detectChanges();
   }
 
   get diferenciaPago(): number {
@@ -864,277 +868,151 @@ export class NotaCreditoComponent implements OnInit {
   guardando = false;
   guardado = false;
 
-grabar(): void {
-  if (this.guardando || this.guardado) return;
+  grabar(): void {
+    if (this.guardando || this.guardado) return;
 
-  const tope = this.getTopePago();
-  if (!(tope > 0)) {
-    this.mostrarAlerta('No hay devolución calculada. Verifica el detalle.', 'info');
-    return;
-  }
-  //this.idCodContableCliente=1129;
-  if (!this.idCodContableCliente) {
-  this.mostrarAlerta('No Existe Código contable', 'info');
-  return;
-}
-  debugger
-  if (!this.puedeGrabar) {
-    this.mostrarAlerta(
-      `No puedes grabar. Total Pago: ${this.totales.totalPago.toFixed(2)} debe ser igual a ${tope.toFixed(2)}.`,
-      'error'
-    );
-    return;
-  }
+    const tope = this.getTopePago();
 
-  if (!this.encabezado?.factura) {
-    this.mostrarAlerta('Debes seleccionar/fijar una factura antes de grabar.', 'error');
-    return;
-  }
+    if (!(tope > 0)) {
+      this.mostrarAlerta('No hay devolución calculada. Verifica el detalle.', 'info');
+      return;
+    }
 
-  if (!this.pagoRows?.length) {
-    this.mostrarAlerta('Agrega al menos una forma de pago.', 'error');
-    return;
-  }
+    if (!this.idCodContableCliente) {
+      this.mostrarAlerta('No Existe Código contable', 'info');
+      return;
+    }
 
-  const payload = this.buildPayload();
+    if (!this.puedeGrabar) {
+      this.mostrarAlerta(
+        `No puedes grabar. Total Pago: ${this.totales.totalPago.toFixed(2)} debe ser igual a ${tope.toFixed(2)}.`,
+        'error'
+      );
+      return;
+    }
 
-  this.guardando = true;
-  console.log('%c[NC] ===== PAYLOAD CREAR NOTA CRÉDITO =====', 'color:#1976d2; font-weight:bold;');
-  console.log('[NC] payload OBJ →', payload);
-  console.log('[NC] payload JSON →', JSON.stringify(payload, null, 2));
+    if (!this.encabezado?.factura) {
+      this.mostrarAlerta('Debes seleccionar/fijar una factura antes de grabar.', 'error');
+      return;
+    }
 
-  this.svc.crearNotaCredito(payload).pipe(
-    switchMap(resp => {
-      console.log('%c[NC] ===== RESPUESTA crearNotaCredito =====', 'color:#388e3c; font-weight:bold;');
-      console.log('[NC] resp OBJ →', resp);
-      console.log('[NC] resp JSON →', JSON.stringify(resp, null, 2));
+    if (!this.pagoRows?.length) {
+      this.mostrarAlerta('Agrega al menos una forma de pago.', 'error');
+      return;
+    }
 
-      const tipo = (resp?.type || '').toLowerCase();
-      const dataNc: any = resp?.data || {};
-      const idNc = Number(dataNc.idNotaCredito ?? dataNc.idnota ?? 0);
+    const payload = this.buildPayload();
 
-      if (tipo !== 'success' || !Number.isFinite(idNc) || idNc <= 0) {
-        this.mostrarAlerta(resp?.message || 'No se pudo crear la nota de crédito.', 'error');
-        return of(null);
-      }
+    this.guardando = true;
 
-      this.mostrarAlerta(resp?.message || 'Nota de crédito creada correctamente.', 'ok');
+    console.log('%c[NC] ===== PAYLOAD CREAR NOTA CRÉDITO =====', 'color:#1976d2; font-weight:bold;');
+    console.log('[NC] payload OBJ →', payload);
+    console.log('[NC] payload JSON →', JSON.stringify(payload, null, 2));
 
-      // Guardamos info básica de la NC
-      const numeroNotaCredito: string =
-        dataNc.numeroNotaCredito ??
-        dataNc.numeroNota ??
-        this.encabezado.numero ??
-        '';
+    this.svc.crearNotaCredito(payload).pipe(
+      switchMap(resp => {
+        console.log('%c[NC] ===== RESPUESTA crearNotaCredito =====', 'color:#388e3c; font-weight:bold;');
+        console.log('[NC] resp OBJ →', resp);
+        console.log('[NC] resp JSON →', JSON.stringify(resp, null, 2));
 
-      const numeroFactura: string =
-        dataNc.numeroFactura ??
-        this.encabezado.factura ??
-        '';
+        const tipo = (resp?.type || '').toLowerCase();
+        const dataNc: any = resp?.data || {};
+        const idNc = Number(dataNc.idNotaCredito ?? dataNc.idnota ?? 0);
 
-      this.idNota = idNc;
-      this.guardado = true;
-      this.encabezado.numero = numeroNotaCredito;
-
-      // =============================
-      // 1) GENERAR ASIENTO CONTABLE NC (REVERSO)
-      // =============================
-
-      // Totales según los cálculos de la grilla
-      const totalBaseDevCalc = +(this.totales.totalDev || 0).toFixed(2);
-      const totalIvaDevCalc = +(this.totales.totalIvaDev || 0).toFixed(2);
-      const totalNc = +(totalBaseDevCalc + totalIvaDevCalc).toFixed(2);
-
-      if (totalNc <= 0) {
-        this.mostrarAlerta(
-          'Nota de crédito creada, pero el total es 0. No se generó asiento contable.',
-          'info'
-        );
-        return of(idNc);
-      }
-
-      const hoy = new Date();
-      const fechaIso = new Date(hoy.getTime() - hoy.getTimezoneOffset() * 60000)
-        .toISOString()
-        .substring(0, 19); // "YYYY-MM-DDTHH:mm:ss"
-      const hora = fechaIso.substring(11);
-      const anioStr = hoy.getFullYear().toString();
-
-      const idZona = 1;
-      const idUsuario = this.usuarioActual?.id_usuario ?? 1;
-      const idEmpresa = this.usuarioActual?.id_empresa ?? 1;
-      const idTipoAsiento = 3; // ajusta según tu catálogo
-      const tipdoc = 'VT';
-      const numdoc = 0;
-
-      const beneficiario =
-        (this.encabezado.cliente || '').toString().trim().toUpperCase() ||
-        `CLIENTE ID: ${this.encabezado.idCliente || this.clientesCodigo}`;
-
-      // Cuentas por defecto (solo para fallback)
-      const CTA_CLIENTES = 110101;
-      const CTA_VENTAS = 410101;
-      const CTA_IVA = 210602;
-      debugger
-      // id_cod_contable del cliente (si no hay, usar 1)
-     const idCodContableLinea =
-  Number(this.idCodContableCliente || 0);
-      console.log('[NC] idCodContable que se usará en asiento NC:', idCodContableLinea);
-      const detalles: any[] = [];
-      let numlinea = 1;
-
-      // =========================
-      // 1) DEBE → Reverso de ingresos (ventas) por cada línea del grid
-      // =========================
-      let totalBaseDev = 0;
-      let totalIvaDev = 0;
-
-      for (const row of this.detalleRows) {
-        const baseDev = this.asNumber(row.valorDev);   // base devuelta sin IVA
-        if (baseDev <= 0) continue;
-
-        // id de la cuenta CONTABLE desde el grid (idcuenta)
-        const idPlan = this.asNumber(row.idcuenta) || CTA_VENTAS;
-
-        // texto de cuenta desde el grid (ej. "410101-VENTAS")
-        let codprePc = (row.cuenta ?? '').toString().trim();
-        if (!codprePc) {
-          codprePc = `${idPlan}-001`;
+        if (tipo !== 'success' || !Number.isFinite(idNc) || idNc <= 0) {
+          this.mostrarAlerta(resp?.message || 'No se pudo crear la nota de crédito.', 'error');
+          return of(null);
         }
 
-        totalBaseDev += baseDev;
+        this.mostrarAlerta(resp?.message || 'Nota de crédito creada correctamente.', 'ok');
 
-        // IVA devuelto por esta línea
-        let ivaDevLinea = 0;
-        if (row.porMonto) {
-          // modo "por monto" → usamos ivaDev ya calculado
-          ivaDevLinea = this.asNumber(row.ivaDev);
-        } else {
-          // modo "por cantidad" → proporcional
-          const cantDev = this.asNumber(row.cantidadd);
-          const cantidad = this.asNumber(row.cantidad);
-          const ivaLinea = this.asNumber(row.iva);
-          if (cantidad > 0) {
-            const ivaUnit = ivaLinea / cantidad;
-            ivaDevLinea = cantDev * ivaUnit;
+        const numeroNotaCredito: string =
+          dataNc.numeroNotaCredito ??
+          dataNc.numeroNota ??
+          this.encabezado.numero ??
+          '';
+
+        const numeroFactura: string =
+          dataNc.numeroFactura ??
+          this.encabezado.factura ??
+          '';
+
+        this.idNota = idNc;
+        this.guardado = true;
+        this.encabezado.numero = numeroNotaCredito;
+
+        const totalBaseDevCalc = +(this.totales.totalDev || 0).toFixed(2);
+        const totalIvaDevCalc = +(this.totales.totalIvaDev || 0).toFixed(2);
+        const totalNc = +(totalBaseDevCalc + totalIvaDevCalc).toFixed(2);
+
+        if (totalNc <= 0) {
+          this.mostrarAlerta(
+            'Nota de crédito creada, pero el total es 0. No se generó asiento contable.',
+            'info'
+          );
+          return of(idNc);
+        }
+
+        const hoy = new Date();
+        const fechaIso = new Date(hoy.getTime() - hoy.getTimezoneOffset() * 60000)
+          .toISOString()
+          .substring(0, 19);
+
+        const hora = fechaIso.substring(11);
+        const anioStr = hoy.getFullYear().toString();
+
+        const idZona = 1;
+        const idUsuario = this.usuarioActual?.id_usuario ?? 1;
+        const idEmpresa = this.usuarioActual?.id_empresa ?? 1;
+        const idTipoAsiento = 3;
+        const tipdoc = 'VT';
+        const numdoc = 0;
+
+        const beneficiario =
+          (this.encabezado.cliente || '').toString().trim().toUpperCase() ||
+          `CLIENTE ID: ${this.encabezado.idCliente || this.clientesCodigo}`;
+
+        const CTA_CLIENTES = 110101;
+        const CTA_VENTAS = 410101;
+        const CTA_IVA = 210602;
+
+        const idCodContableLinea = Number(this.idCodContableCliente || 0);
+
+        console.log('[NC] idCodContable que se usará en asiento NC:', idCodContableLinea);
+
+        const detalles: any[] = [];
+        let numlinea = 1;
+
+        let totalBaseDev = 0;
+        let totalIvaDev = 0;
+
+        // 1) DEBE → producto devuelto
+        for (const row of this.detalleRows) {
+          const baseDev = this.asNumber(row.valorDev);
+          if (baseDev <= 0) continue;
+
+          const formaPagoSeleccionada = this.pagoRows.find(p => this.asNumber(p.pago) > 0);
+
+          const idPlan = this.asNumber(formaPagoSeleccionada?.idPlanCuentas) || this.planCuenta1?.id_plan || CTA_VENTAS;
+          const codprePc = (formaPagoSeleccionada?.cuenta ?? '').toString().trim() || this.parametros1?.codcuedesc || '410101-014';
+
+          totalBaseDev += baseDev;
+
+          let ivaDevLinea = 0;
+
+          if (row.porMonto) {
+            ivaDevLinea = this.asNumber(row.ivaDev);
+          } else {
+            const cantDev = this.asNumber(row.cantidadd);
+            const cantidad = this.asNumber(row.cantidad);
+            const ivaLinea = this.asNumber(row.iva);
+
+            if (cantidad > 0) {
+              ivaDevLinea = cantDev * (ivaLinea / cantidad);
+            }
           }
-        }
-        if (ivaDevLinea > 0) {
+
           totalIvaDev += ivaDevLinea;
-        }
-
-        detalles.push({
-          IdDetMaestro: 0,
-          IdCabMaestro: 0,
-          numlinea: numlinea++,
-          anio: anioStr,
-          fechatransaccion: fechaIso,
-          fechaingreso: fechaIso,
-          hora,
-          idZona,
-          idCentroCostos: null,
-          idLocal: 1,
-          idPlanCuentas: idPlan,          // 👈 SALE DEL GRID (idcuenta)
-          codprePc,                        // 👈 texto de la cuenta
-          idCodContable: idCodContableLinea,
-          nocomprobante: numeroNotaCredito,
-          docurelacionado: numeroFactura,
-          cheque: 0,
-          beneficiario,
-          debe: +baseDev.toFixed(2),
-          haber: 0,
-          comentario: `REVERSO VENTA FACTURA ${numeroFactura} / NC ${numeroNotaCredito} - ${(row.descripcion || '').toString().toUpperCase()}`,
-          idMovBancario: 1,
-          movbancario: '0',
-          cierre: '',
-          fechacierre: null,
-          conciliado: '',
-          fechaconciliado: null,
-          idSustentoTrib: null,
-          idTipoCompSri: null,
-          autorizacion: '',
-          fechacaduca: null,
-          idTipoRetencion: null,
-          idProyecto: null,
-          idSubproyecto: null,
-          transferido: false,
-          fechatransferido: null,
-          fechavencimiento: null,
-          idConciliacion: 0,
-          valorLetras: '',
-          estadoIngreso: true,
-          autorizacionRelacionado: '',
-          fechaCadRelacionado: null
-        });
-      }
-
-      totalBaseDev = +totalBaseDev.toFixed(2);
-      totalIvaDev = +totalIvaDev.toFixed(2);
-
-      // Línea DEBE para el IVA devuelto (agrupado)
-      if (totalIvaDev > 0) {
-        detalles.push({
-          IdDetMaestro: 0,
-          IdCabMaestro: 0,
-          numlinea: numlinea++,
-          anio: anioStr,
-          fechatransaccion: fechaIso,
-          fechaingreso: fechaIso,
-          hora,
-          idZona,
-          idCentroCostos: null,
-          idLocal: 1,
-          idPlanCuentas: this.planCuenta?.id_plan ?? CTA_IVA,
-          codprePc: this.parametros?.codcueretiva ?? `${CTA_IVA}-001`,
-          idCodContable: idCodContableLinea,
-          nocomprobante: numeroNotaCredito,
-          docurelacionado: numeroFactura,
-          cheque: 0,
-          beneficiario,
-          debe: totalIvaDev,
-          haber: 0,
-          comentario: `REVERSO IVA FACTURA ${numeroFactura} / NC ${numeroNotaCredito}`,
-          idMovBancario: 1,
-          movbancario: '0',
-          cierre: '',
-          fechacierre: null,
-          conciliado: '',
-          fechaconciliado: null,
-          idSustentoTrib: null,
-          idTipoCompSri: null,
-          autorizacion: '',
-          fechacaduca: null,
-          idTipoRetencion: null,
-          idProyecto: null,
-          idSubproyecto: null,
-          transferido: false,
-          fechatransferido: null,
-          fechavencimiento: null,
-          idConciliacion: 0,
-          valorLetras: '',
-          estadoIngreso: true,
-          autorizacionRelacionado: '',
-          fechaCadRelacionado: null
-        });
-      }
-
-      // =========================
-      // 2) HABER → Reverso de cobros / formas de pago
-      // =========================
-      const pagosConValor = (this.pagoRows || []).filter(p => (this.asNumber(p.pago) || 0) > 0);
-      let totalHaber = 0;
-
-      if (pagosConValor.length > 0) {
-        for (const pRow of pagosConValor) {
-          const valorPago = +(this.asNumber(pRow.pago) || 0).toFixed(2);
-          if (valorPago <= 0) continue;
-
-          const cuentaTxt = (pRow.cuenta ?? '').toString().trim();
-          const [ctaStr] = cuentaTxt.split('-');
-          const idPlan = Number(ctaStr) || CTA_CLIENTES;
-          const codprePc = cuentaTxt || `${idPlan}-001`;
-
-          totalHaber += valorPago;
 
           detalles.push({
             IdDetMaestro: 0,
@@ -1147,16 +1025,16 @@ grabar(): void {
             idZona,
             idCentroCostos: null,
             idLocal: 1,
-            idPlanCuentas: this.planCuenta1?.id_plan ?? CTA_IVA,
-             codprePc: this.parametros1?.codcuedesc ?? `${CTA_IVA}-001`,
+            idPlanCuentas: idPlan,
+            codprePc,
             idCodContable: idCodContableLinea,
             nocomprobante: numeroNotaCredito,
             docurelacionado: numeroFactura,
             cheque: 0,
             beneficiario,
-            debe: 0,
-            haber: valorPago,
-            comentario: `REVERSO COBRO FACTURA ${numeroFactura} / NC ${numeroNotaCredito}`,
+            debe: +baseDev.toFixed(2),
+            haber: 0,
+            comentario: `REVERSO VENTA FACTURA ${numeroFactura} / NC ${numeroNotaCredito} - ${(row.descripcion || '').toString().toUpperCase()}`,
             idMovBancario: 1,
             movbancario: '0',
             cierre: '',
@@ -1180,171 +1058,286 @@ grabar(): void {
             fechaCadRelacionado: null
           });
         }
-      } else {
-        // Sin formas de pago → todo contra Clientes
-        totalHaber = totalBaseDev + totalIvaDev;
 
-        detalles.push({
-          IdDetMaestro: 0,
+        totalBaseDev = +totalBaseDev.toFixed(2);
+        totalIvaDev = +totalIvaDev.toFixed(2);
+
+        // 2) DEBE → IVA devuelto
+        if (totalIvaDev > 0) {
+          detalles.push({
+            IdDetMaestro: 0,
+            IdCabMaestro: 0,
+            numlinea: numlinea++,
+            anio: anioStr,
+            fechatransaccion: fechaIso,
+            fechaingreso: fechaIso,
+            hora,
+            idZona,
+            idCentroCostos: null,
+            idLocal: 1,
+            idPlanCuentas: this.planCuenta?.id_plan ?? CTA_IVA,
+            codprePc: this.parametros?.codcueretiva ?? `${CTA_IVA}-001`,
+            idCodContable: idCodContableLinea,
+            nocomprobante: numeroNotaCredito,
+            docurelacionado: numeroFactura,
+            cheque: 0,
+            beneficiario,
+            debe: totalIvaDev,
+            haber: 0,
+            comentario: `REVERSO IVA FACTURA ${numeroFactura} / NC ${numeroNotaCredito}`,
+            idMovBancario: 1,
+            movbancario: '0',
+            cierre: '',
+            fechacierre: null,
+            conciliado: '',
+            fechaconciliado: null,
+            idSustentoTrib: null,
+            idTipoCompSri: null,
+            autorizacion: '',
+            fechacaduca: null,
+            idTipoRetencion: null,
+            idProyecto: null,
+            idSubproyecto: null,
+            transferido: false,
+            fechatransferido: null,
+            fechavencimiento: null,
+            idConciliacion: 0,
+            valorLetras: '',
+            estadoIngreso: true,
+            autorizacionRelacionado: '',
+            fechaCadRelacionado: null
+          });
+        }
+
+        // 3) HABER → forma de pago / cliente
+        const pagosConValor = (this.pagoRows || []).filter(p => this.asNumber(p.pago) > 0);
+        let totalHaber = 0;
+
+        if (pagosConValor.length > 0) {
+          for (const pRow of pagosConValor) {
+            const valorPago = +this.asNumber(pRow.pago).toFixed(2);
+            if (valorPago <= 0) continue;
+
+            const cuentaTxt = (pRow.cuenta ?? '').toString().trim();
+
+            const idPlan =
+              this.asNumber(pRow.idPlanCuentas) ||
+              this.planCuenta1?.id_plan ||
+              CTA_CLIENTES;
+
+            const codprePc =
+              cuentaTxt ||
+              this.parametros1?.codcuedesc ||
+              `${CTA_CLIENTES}-001`;
+
+            totalHaber += valorPago;
+
+            detalles.push({
+              IdDetMaestro: 0,
+              IdCabMaestro: 0,
+              numlinea: numlinea++,
+              anio: anioStr,
+              fechatransaccion: fechaIso,
+              fechaingreso: fechaIso,
+              hora,
+              idZona,
+              idCentroCostos: null,
+              idLocal: 1,
+              idPlanCuentas: idPlan,
+              codprePc,
+              idCodContable: idCodContableLinea,
+              nocomprobante: numeroNotaCredito,
+              docurelacionado: numeroFactura,
+              cheque: 0,
+              beneficiario,
+              debe: 0,
+              haber: valorPago,
+              comentario: `REVERSO COBRO FACTURA ${numeroFactura} / NC ${numeroNotaCredito}`,
+              idMovBancario: 1,
+              movbancario: '0',
+              cierre: '',
+              fechacierre: null,
+              conciliado: '',
+              fechaconciliado: null,
+              idSustentoTrib: null,
+              idTipoCompSri: null,
+              autorizacion: '',
+              fechacaduca: null,
+              idTipoRetencion: null,
+              idProyecto: null,
+              idSubproyecto: null,
+              transferido: false,
+              fechatransferido: null,
+              fechavencimiento: null,
+              idConciliacion: 0,
+              valorLetras: '',
+              estadoIngreso: true,
+              autorizacionRelacionado: '',
+              fechaCadRelacionado: null
+            });
+          }
+        } else {
+          totalHaber = +(totalBaseDev + totalIvaDev).toFixed(2);
+
+          detalles.push({
+            IdDetMaestro: 0,
+            IdCabMaestro: 0,
+            numlinea: numlinea++,
+            anio: anioStr,
+            fechatransaccion: fechaIso,
+            fechaingreso: fechaIso,
+            hora,
+            idZona,
+            idCentroCostos: null,
+            idLocal: 1,
+            idPlanCuentas: CTA_CLIENTES,
+            codprePc: `${CTA_CLIENTES}-001`,
+            idCodContable: idCodContableLinea,
+            nocomprobante: numeroNotaCredito,
+            docurelacionado: numeroFactura,
+            cheque: 0,
+            beneficiario,
+            debe: 0,
+            haber: totalHaber,
+            comentario: `REVERSO FACTURA ${numeroFactura} / NC ${numeroNotaCredito}`,
+            idMovBancario: 1,
+            movbancario: '0',
+            cierre: '',
+            fechacierre: null,
+            conciliado: '',
+            fechaconciliado: null,
+            idSustentoTrib: null,
+            idTipoCompSri: null,
+            autorizacion: '',
+            fechacaduca: null,
+            idTipoRetencion: null,
+            idProyecto: null,
+            idSubproyecto: null,
+            transferido: false,
+            fechatransferido: null,
+            fechavencimiento: null,
+            idConciliacion: 0,
+            valorLetras: '',
+            estadoIngreso: true,
+            autorizacionRelacionado: '',
+            fechaCadRelacionado: null
+          });
+        }
+
+        totalHaber = +totalHaber.toFixed(2);
+        const totalDebe = +(detalles.reduce((s, d) => s + (Number(d.debe) || 0), 0)).toFixed(2);
+
+        const asientoNc: any = {
           IdCabMaestro: 0,
-          numlinea: numlinea++,
+          idZona,
+          idUsuario,
+          idEmpresa,
+          idTipoAsiento,
+          tipdoc,
+          numdoc,
           anio: anioStr,
           fechatransaccion: fechaIso,
           fechaingreso: fechaIso,
-          hora,
-          idZona,
-          idCentroCostos: null,
-          idLocal: 1,
-          idPlanCuentas: CTA_CLIENTES,
-          codprePc: `${CTA_CLIENTES}-001`,
-          idCodContable: idCodContableLinea,
-          nocomprobante: numeroNotaCredito,
-          docurelacionado: numeroFactura,
-          cheque: 0,
+          observacion: `ASIENTO NOTA DE CRÉDITO ${numeroNotaCredito} (reverso factura ${numeroFactura})`,
+          totdebe: totalDebe,
+          tothaber: totalHaber,
           beneficiario,
-          debe: 0,
-          haber: totalHaber,
-          comentario: `REVERSO FACTURA ${numeroFactura} / NC ${numeroNotaCredito}`,
-          idMovBancario: 1,
-          movbancario: '0',
           cierre: '',
           fechacierre: null,
-          conciliado: '',
-          fechaconciliado: null,
-          idSustentoTrib: null,
-          idTipoCompSri: null,
-          autorizacion: '',
-          fechacaduca: null,
-          idTipoRetencion: null,
-          idProyecto: null,
-          idSubproyecto: null,
-          transferido: false,
-          fechatransferido: null,
-          fechavencimiento: null,
-          idConciliacion: 0,
-          valorLetras: '',
-          estadoIngreso: true,
-          autorizacionRelacionado: '',
-          fechaCadRelacionado: null
-        });
-      }
+          solicitado: '',
+          depto: '',
+          autorizado: '',
+          homCodigo: 0,
+          estado: true,
+          modulo: 2,
+          detalles
+        };
 
-      totalHaber = +totalHaber.toFixed(2);
-      const totalDebe = +(detalles.reduce((s, d) => s + (Number(d.debe) || 0), 0)).toFixed(2);
+        console.log('%c[NC] ===== ASIENTO NC A ENVIAR =====', 'color:#ff9800; font-weight:bold;');
+        console.log('[NC] Asiento NC OBJ →', asientoNc);
+        console.log('[NC] Asiento NC JSON →', JSON.stringify(asientoNc, null, 2));
 
-      const asientoNc: any = {
-        IdCabMaestro: 0,
-        idZona,
-        idUsuario,
-        idEmpresa,
-        idTipoAsiento,
-        tipdoc,
-        numdoc,
-        anio: anioStr,
-        fechatransaccion: fechaIso,
-        fechaingreso: fechaIso,
-        observacion: `ASIENTO NOTA DE CRÉDITO ${numeroNotaCredito} (reverso factura ${numeroFactura})`,
-        totdebe: totalDebe,
-        tothaber: totalHaber,
-        beneficiario,
-        cierre: '',
-        fechacierre: null,
-        solicitado: '',
-        depto: '',
-        autorizado: '',
-        homCodigo: 0,
-        estado: true,
-        modulo: 2,
-        detalles
-      };
+        return this.asientoVentaService.crearAsientoVenta(asientoNc).pipe(
+          tap(respAsiento => {
+            console.log('%c[NC] ===== RESPUESTA API CREAR ASIENTO NC =====', 'color:#d32f2f; font-weight:bold;');
+            console.log('[NC] Resp Asiento OBJ →', respAsiento);
+            console.log('[NC] Resp Asiento JSON →', JSON.stringify(respAsiento, null, 2));
 
-      console.log('%c[NC] ===== ASIENTO NC A ENVIAR =====', 'color:#ff9800; font-weight:bold;');
-      console.log('[NC] Asiento NC OBJ →', asientoNc);
-      console.log('[NC] Asiento NC JSON →', JSON.stringify(asientoNc, null, 2));
+            const tipoResp = (respAsiento?.type || '').toString().toUpperCase();
 
-      return this.asientoVentaService.crearAsientoVenta(asientoNc).pipe(
-        tap(respAsiento => {
-          console.log('%c[NC] ===== RESPUESTA API CREAR ASIENTO NC =====', 'color:#d32f2f; font-weight:bold;');
-          console.log('[NC] Resp Asiento OBJ →', respAsiento);
-          console.log('[NC] Resp Asiento JSON →', JSON.stringify(respAsiento, null, 2));
+            if (tipoResp !== 'SUCCESS' && tipoResp !== 'CREATED') {
+              const msgSrv = respAsiento?.message || 'Error al crear el asiento contable.';
+              console.error('[NC] Error crear asiento:', msgSrv);
+              this.mostrarAlerta(msgSrv, 'error');
+              throw new Error(msgSrv);
+            }
 
-          const tipoResp = (respAsiento?.type || '').toString().toUpperCase();
+            const msgAsiento: string = respAsiento?.message ?? '';
 
-          if (tipoResp !== 'SUCCESS') {
-            const msgSrv = respAsiento?.message || 'Error al crear el asiento contable.';
-            console.error('[NC] Error crear asiento (type!=Success):', msgSrv);
-            this.mostrarAlerta(msgSrv, 'error');
-            throw new Error(msgSrv);
-          }
+            this.mostrarAlerta(
+              msgAsiento || 'Asiento contable de la nota de crédito generado.',
+              'ok'
+            );
 
-          const msgAsiento: string = respAsiento?.message ?? '';
-          this.mostrarAlerta(
-            msgAsiento || 'Asiento contable de la nota de crédito generado.',
-            'ok'
-          );
-          this.asientoVentaInfo = respAsiento?.data ?? null;
-        }),
-        catchError(err => {
-          console.error('[NC] Error creando asiento de nota de crédito (catchError):', err);
-          this.mostrarAlerta(
-            'Nota de crédito creada, pero ocurrió un error al generar el asiento contable.',
-            'error'
-          );
-          return of(null);
-        }),
-        map(() => idNc)
-      );
-    }),
+            this.asientoVentaInfo = respAsiento?.data ?? null;
+          }),
+          catchError(err => {
+            console.error('[NC] Error creando asiento de nota de crédito (catchError):', err);
+            this.mostrarAlerta(
+              'Nota de crédito creada, pero ocurrió un error al generar el asiento contable.',
+              'error'
+            );
+            return of(null);
+          }),
+          map(() => idNc)
+        );
+      }),
 
-    // =============================
-    // 2) XML + PDF DE LA NOTA DE CRÉDITO
-    // =============================
-    switchMap((idNc: number | null) => {
-      if (!idNc || idNc <= 0) return of(void 0);
+      switchMap((idNc: number | null) => {
+        if (!idNc || idNc <= 0) return of(void 0);
 
-      return this.svc.generarXmlNotaCredito(idNc).pipe(
-        switchMap((r: any) => {
-          console.log('%c[NC] ===== RESPUESTA generarXmlNotaCredito =====', 'color:#6a1b9a; font-weight:bold;');
-          console.log('[NC] resp XML OBJ →', r);
-          console.log('[NC] resp XML JSON →', JSON.stringify(r, null, 2));
+        return this.svc.generarXmlNotaCredito(idNc).pipe(
+          switchMap((r: any) => {
+            console.log('%c[NC] ===== RESPUESTA generarXmlNotaCredito =====', 'color:#6a1b9a; font-weight:bold;');
+            console.log('[NC] resp XML OBJ →', r);
+            console.log('[NC] resp XML JSON →', JSON.stringify(r, null, 2));
 
-          const ok = (r?.success ?? r?.data?.success) === true;
-          const fileName = r?.fileName ?? r?.data?.fileName ?? '';
-          const msg = r?.message ?? r?.data?.message ?? '';
+            const ok = (r?.success ?? r?.data?.success) === true;
+            const fileName = r?.fileName ?? r?.data?.fileName ?? '';
+            const msg = r?.message ?? r?.data?.message ?? '';
 
-          if (!ok) {
-            this.mostrarAlerta(msg || 'No se generó el XML de la Nota de Crédito.', 'error');
+            if (!ok) {
+              this.mostrarAlerta(msg || 'No se generó el XML de la Nota de Crédito.', 'error');
+              return of(void 0);
+            }
+
+            this.mostrarAlerta(`XML generado en el servidor: ${fileName || 'OK'}`, 'ok');
+            return this.svc.descargarPdfNotaCredito(idNc);
+          }),
+          catchError(err => {
+            console.error('[NC] Error generando XML/PDF:', err);
+            this.mostrarAlerta('Error generando el XML/PDF de la Nota de Crédito.', 'error');
             return of(void 0);
-          }
+          })
+        );
+      }),
 
-          this.mostrarAlerta(`XML generado en el servidor: ${fileName || 'OK'}`, 'ok');
-          return this.svc.descargarPdfNotaCredito(idNc);
-        }),
-        catchError(err => {
-          console.error('[NC] Error generando XML/PDF:', err);
-          this.mostrarAlerta('Error generando el XML/PDF de la Nota de Crédito.', 'error');
-          return of(void 0);
-        })
-      );
-    }),
+      catchError(err => {
+        console.error('[crearNotaCredito] error general:', err);
+        this.mostrarAlerta('Error al crear la nota de crédito.', 'error');
+        return of(void 0);
+      }),
 
-    catchError(err => {
-      console.error('[crearNotaCredito] error general:', err);
-      this.mostrarAlerta('Error al crear la nota de crédito.', 'error');
-      return of(void 0);
-    }),
-    finalize(() => {
-      this.guardando = false;
-      this.cdr.detectChanges();
-    })
-  ).subscribe({
-    next: () => {
-      this.mostrarAlerta('PDF de la Nota de Crédito descargado.', 'ok');
-    }
-  });
-}
-
-
+      finalize(() => {
+        this.guardando = false;
+        this.cdr.detectChanges();
+      })
+    ).subscribe({
+      next: () => {
+        this.mostrarAlerta('PDF de la Nota de Crédito descargado.', 'ok');
+      }
+    });
+  }
   exportar(): void {
     alert('Exportar (CSV/PDF) – implementar según tu necesidad.');
   }
@@ -1360,118 +1353,118 @@ grabar(): void {
   editarFactura() { this.facturaFijada = false; }
 
   onEnterFactura(): void {
-  const entrada = (this.encabezado.factura ?? '').trim();
+    const entrada = (this.encabezado.factura ?? '').trim();
 
-  if (!this.cajaAsignada) {
-    this.mostrarAlerta('Usuario no tiene asignado Caja. No podrás generar notas de crédito hasta asignarla.', 'info');
-    return;
-  }
-
-  if (!entrada) return;
-
-  this.errorFactura = null;
-  this.buscandoFactura = true;
-
-  const msgNoEncontrada = 'Factura no encontrada';
-
-  // 1) Validar con el nuevo endpoint
-  this.svc.validarFacturaParaNC(entrada).subscribe({
-    next: (validacion) => {
-      if (!validacion.success || !validacion.data) {
-        // Si el backend no manda mensaje, forzamos el estándar
-        this.errorFactura = (validacion?.message?.trim() ? validacion.message : msgNoEncontrada);
-        this.buscandoFactura = false;
-
-        // opcional: alerta visual además del error en pantalla
-        this.mostrarAlerta(this.errorFactura, 'warning');
-        return;
-      }
-
-      // 2) Detectar si es factura de saldo
-      this.esFacturaDeSaldo = !validacion.data.existeEnNota;
-      this.datosFacturaValidada = validacion.data;
-
-      // 3) Si es factura de saldo, cargar manualmente
-      if (this.esFacturaDeSaldo) {
-        this.mostrarMensajeFacturaSaldo(validacion.data);
-        this.cargarFacturaSaldo(validacion.data);
-        return; // NO continuar con la búsqueda normal
-      }
-
-      // 4) Si NO es factura de saldo, usar la lógica original
-      this.svc.buscarPorNumeroLike(entrada, true, 1, 20).subscribe({
-        next: (resp: ApiResponse<PaginationResponse<FacturaListResponse>>) => {
-          this.buscandoFactura = false;
-
-          // Aquí es donde típicamente “no encuentra”
-          if (resp.type !== 'Success' || !resp.data?.items?.length) {
-            this.errorFactura = msgNoEncontrada;
-            this.mostrarAlerta(this.errorFactura, 'warning');
-            return;
-          }
-
-          const sufijo = this.extraerSufijo(entrada);
-          const candidatos = resp.data.items.filter(i => i.numeroFactura?.endsWith(sufijo));
-          const lista = (candidatos.length ? candidatos : resp.data.items)
-            .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
-
-          const best = lista[0];
-
-          // Seguridad adicional: si por alguna razón no hay best
-          if (!best) {
-            this.errorFactura = msgNoEncontrada;
-            this.mostrarAlerta(this.errorFactura, 'warning');
-            return;
-          }
-
-          this.idNota = best.idNota;
-          this.clientesCodigo = best.idCliente;
-
-          if (best.numeroFactura) this.fijarFactura(best.numeroFactura);
-          else this.facturaFijada = true;
-
-          this.encabezado.cliente = (best as any).cliente ?? this.encabezado.cliente;
-          this.encabezado.ruc = (best as any).rucCliente ?? this.encabezado.ruc;
-          this.encabezado.direccion = (best as any).dirCliente ?? this.encabezado.direccion;
-
-          if (best.numeroFactura) {
-            this.svc.getSaldoFactura(best.numeroFactura, {
-              excluirPagosAnulados: true,
-              excluirMovimientosAnulados: true,
-            }).subscribe({
-              next: (r) => {
-                if ((r?.type ?? '').toString().toLowerCase() === 'success' && r.data) {
-                  this.totalHaberFactura = Number(r.data.totalHaber ?? 0);
-                  this.saldoFacturaPendiente = Number(r.data.saldo ?? 0);
-                  this.syncPagoRowsConSaldo();
-                } else {
-                  console.warn('No se pudo obtener el saldo de la factura:', r?.message);
-                }
-              },
-              error: (e) => console.warn('Error consultando saldo de factura:', e?.message || e)
-            });
-          }
-
-          if (this.idNota && this.idNota > 0) this.cargarFacturaPorId(this.idNota);
-          else {
-            this.errorFactura = msgNoEncontrada;
-            this.mostrarAlerta(this.errorFactura, 'warning');
-          }
-        },
-        error: (e) => {
-          this.buscandoFactura = false;
-          this.errorFactura = msgNoEncontrada;
-          this.mostrarAlerta(this.errorFactura, 'warning');
-        }
-      });
-    },
-    error: (e) => {
-      this.buscandoFactura = false;
-      this.errorFactura = msgNoEncontrada;
-      this.mostrarAlerta(this.errorFactura, 'warning');
+    if (!this.cajaAsignada) {
+      this.mostrarAlerta('Usuario no tiene asignado Caja. No podrás generar notas de crédito hasta asignarla.', 'info');
+      return;
     }
-  });
-}
+
+    if (!entrada) return;
+
+    this.errorFactura = null;
+    this.buscandoFactura = true;
+
+    const msgNoEncontrada = 'Factura no encontrada';
+
+    // 1) Validar con el nuevo endpoint
+    this.svc.validarFacturaParaNC(entrada).subscribe({
+      next: (validacion) => {
+        if (!validacion.success || !validacion.data) {
+          // Si el backend no manda mensaje, forzamos el estándar
+          this.errorFactura = (validacion?.message?.trim() ? validacion.message : msgNoEncontrada);
+          this.buscandoFactura = false;
+
+          // opcional: alerta visual además del error en pantalla
+          this.mostrarAlerta(this.errorFactura, 'warning');
+          return;
+        }
+
+        // 2) Detectar si es factura de saldo
+        this.esFacturaDeSaldo = !validacion.data.existeEnNota;
+        this.datosFacturaValidada = validacion.data;
+
+        // 3) Si es factura de saldo, cargar manualmente
+        if (this.esFacturaDeSaldo) {
+          this.mostrarMensajeFacturaSaldo(validacion.data);
+          this.cargarFacturaSaldo(validacion.data);
+          return; // NO continuar con la búsqueda normal
+        }
+
+        // 4) Si NO es factura de saldo, usar la lógica original
+        this.svc.buscarPorNumeroLike(entrada, true, 1, 20).subscribe({
+          next: (resp: ApiResponse<PaginationResponse<FacturaListResponse>>) => {
+            this.buscandoFactura = false;
+
+            // Aquí es donde típicamente “no encuentra”
+            if (resp.type !== 'Success' || !resp.data?.items?.length) {
+              this.errorFactura = msgNoEncontrada;
+              this.mostrarAlerta(this.errorFactura, 'warning');
+              return;
+            }
+
+            const sufijo = this.extraerSufijo(entrada);
+            const candidatos = resp.data.items.filter(i => i.numeroFactura?.endsWith(sufijo));
+            const lista = (candidatos.length ? candidatos : resp.data.items)
+              .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime());
+
+            const best = lista[0];
+
+            // Seguridad adicional: si por alguna razón no hay best
+            if (!best) {
+              this.errorFactura = msgNoEncontrada;
+              this.mostrarAlerta(this.errorFactura, 'warning');
+              return;
+            }
+
+            this.idNota = best.idNota;
+            this.clientesCodigo = best.idCliente;
+
+            if (best.numeroFactura) this.fijarFactura(best.numeroFactura);
+            else this.facturaFijada = true;
+
+            this.encabezado.cliente = (best as any).cliente ?? this.encabezado.cliente;
+            this.encabezado.ruc = (best as any).rucCliente ?? this.encabezado.ruc;
+            this.encabezado.direccion = (best as any).dirCliente ?? this.encabezado.direccion;
+
+            if (best.numeroFactura) {
+              this.svc.getSaldoFactura(best.numeroFactura, {
+                excluirPagosAnulados: true,
+                excluirMovimientosAnulados: true,
+              }).subscribe({
+                next: (r) => {
+                  if ((r?.type ?? '').toString().toLowerCase() === 'success' && r.data) {
+                    this.totalHaberFactura = Number(r.data.totalHaber ?? 0);
+                    this.saldoFacturaPendiente = Number(r.data.saldo ?? 0);
+                    this.syncPagoRowsConSaldo();
+                  } else {
+                    console.warn('No se pudo obtener el saldo de la factura:', r?.message);
+                  }
+                },
+                error: (e) => console.warn('Error consultando saldo de factura:', e?.message || e)
+              });
+            }
+
+            if (this.idNota && this.idNota > 0) this.cargarFacturaPorId(this.idNota);
+            else {
+              this.errorFactura = msgNoEncontrada;
+              this.mostrarAlerta(this.errorFactura, 'warning');
+            }
+          },
+          error: (e) => {
+            this.buscandoFactura = false;
+            this.errorFactura = msgNoEncontrada;
+            this.mostrarAlerta(this.errorFactura, 'warning');
+          }
+        });
+      },
+      error: (e) => {
+        this.buscandoFactura = false;
+        this.errorFactura = msgNoEncontrada;
+        this.mostrarAlerta(this.errorFactura, 'warning');
+      }
+    });
+  }
 
   private mostrarMensajeFacturaSaldo(datos: any): void {
     this.dialog.open(CustomMessageBoxComponent, {
@@ -1500,7 +1493,7 @@ grabar(): void {
     this.clientesCodigo = datos.clienteCodigo;
     this.encabezado.cliente = datos.nombreCliente;
     this.encabezado.factura = datos.numeroFactura;
-    
+
     this.facturaFijada = true;
 
     this.totalHaberFactura = datos.totalPagado;
@@ -1536,120 +1529,120 @@ grabar(): void {
     this.recalcular();
   }
 
-private cargarDatosClienteCompleto(clienteCodigo: number): void {
-  this.clienteService.getClienteById(clienteCodigo).subscribe({
-    next: (cliente: any) => {
-      if (cliente) {
-        console.log('[NC] Cliente completo:', cliente);
+  private cargarDatosClienteCompleto(clienteCodigo: number): void {
+    this.clienteService.getClienteById(clienteCodigo).subscribe({
+      next: (cliente: any) => {
+        if (cliente) {
+          console.log('[NC] Cliente completo:', cliente);
 
-        this.encabezado.ruc = cliente.ruc || '';
-        this.encabezado.direccion = cliente.dircli || '';
+          this.encabezado.ruc = cliente.ruc || '';
+          this.encabezado.direccion = cliente.dircli || '';
 
-        // 🔹 Aquí pedimos el id_cod_contable
-        this.cargarIdCodContablePorCliente(cliente);
+          // 🔹 Aquí pedimos el id_cod_contable
+          this.cargarIdCodContablePorCliente(cliente);
+        }
+      },
+      error: (e) => {
+        console.warn('No se pudieron cargar datos del cliente:', e);
+        this.encabezado.ruc = '';
+        this.encabezado.direccion = '';
+        this.idCodContableCliente = 0;
       }
-    },
-    error: (e) => {
-      console.warn('No se pudieron cargar datos del cliente:', e);
-      this.encabezado.ruc = '';
-      this.encabezado.direccion = '';
-      this.idCodContableCliente = 0;
-    }
-  });
-}
+    });
+  }
 
 
-private cargarFacturaPorId(idNota: number): void {
-  this.svc.getFacturaPorIdNota(idNota).subscribe({
-    next: (resp) => {
-      if (resp.type === 'Success' && resp.data) {
-        const { factura, detalles } = resp.data;
+  private cargarFacturaPorId(idNota: number): void {
+    this.svc.getFacturaPorIdNota(idNota).subscribe({
+      next: (resp) => {
+        if (resp.type === 'Success' && resp.data) {
+          const { factura, detalles } = resp.data;
 
-        console.log('[NC] Factura desde backend:', factura);
-        console.log('[NC] Detalles factura desde backend:', detalles);
+          console.log('[NC] Factura desde backend:', factura);
+          console.log('[NC] Detalles factura desde backend:', detalles);
 
-        // === Encabezado ===
-        this.encabezado.cliente   = factura.cliente?.nombre    ?? this.encabezado.cliente;
-        this.encabezado.ruc       = factura.cliente?.ruc       ?? this.encabezado.ruc;
-        this.encabezado.direccion = factura.cliente?.direccion ?? this.encabezado.direccion;
-        this.encabezado.fecha     = this.toISO(new Date(factura.fecha));
+          // === Encabezado ===
+          this.encabezado.cliente = factura.cliente?.nombre ?? this.encabezado.cliente;
+          this.encabezado.ruc = factura.cliente?.ruc ?? this.encabezado.ruc;
+          this.encabezado.direccion = factura.cliente?.direccion ?? this.encabezado.direccion;
+          this.encabezado.fecha = this.toISO(new Date(factura.fecha));
 
-        // === Cargar idPersona / id_cod_contable del cliente ===
-        this.cargarIdCodContablePorCliente(factura.cliente);
+          // === Cargar idPersona / id_cod_contable del cliente ===
+          this.cargarIdCodContablePorCliente(factura.cliente);
 
-        // === Detalle (productos) ===
-        this.detalleRows = (detalles || []).map((d: any) => {
-          const baseOrig = (d.cantidad ?? 0) * (d.precio ?? 0);
-          const ivaVal   = d.iva ?? 0;
-          const ivaPct   = baseOrig > 0 ? +((ivaVal / baseOrig) * 100).toFixed(2) : 0;
+          // === Detalle (productos) ===
+          this.detalleRows = (detalles || []).map((d: any) => {
+            const baseOrig = (d.cantidad ?? 0) * (d.precio ?? 0);
+            const ivaVal = d.iva ?? 0;
+            const ivaPct = baseOrig > 0 ? +((ivaVal / baseOrig) * 100).toFixed(2) : 0;
 
-          // 1) intentar tomar cuenta directamente del detalle
-          const idCuentaDetalle = Number(
-            d.idcuenta ??
-            d.idCuenta ??
-            d.id_cuenta ??
-            d.cueCodigo ??
-            d.cue_codigo ??
-            0
-          );
+            // 1) intentar tomar cuenta directamente del detalle
+            const idCuentaDetalle = Number(
+              d.idcuenta ??
+              d.idCuenta ??
+              d.id_cuenta ??
+              d.cueCodigo ??
+              d.cue_codigo ??
+              0
+            );
 
-          const cuentaDetalle = String(
-            d.cuenta ??
-            d.cuentaContable ??
-            d.cuentacontable ??
-            d.codigoCuenta ??
-            d.codigo_cuenta ??
-            ''
-          );
+            const cuentaDetalle = String(
+              d.cuenta ??
+              d.cuentaContable ??
+              d.cuentacontable ??
+              d.codigoCuenta ??
+              d.codigo_cuenta ??
+              ''
+            );
 
-          // 2) intentar complementar desde la lista de productos
-          const desdeProducto = this.getCuentaPorProducto(d.codigoProducto);
-          const idCuentaProd  = desdeProducto.idcuenta ?? 0;
-          const cuentaProd    = desdeProducto.cuenta   ?? '';
+            // 2) intentar complementar desde la lista de productos
+            const desdeProducto = this.getCuentaPorProducto(d.codigoProducto);
+            const idCuentaProd = desdeProducto.idcuenta ?? 0;
+            const cuentaProd = desdeProducto.cuenta ?? '';
 
-          const idcuentaFinal =
-            idCuentaDetalle && idCuentaDetalle > 0
-              ? idCuentaDetalle
-              : (idCuentaProd > 0 ? idCuentaProd : undefined);
+            const idcuentaFinal =
+              idCuentaDetalle && idCuentaDetalle > 0
+                ? idCuentaDetalle
+                : (idCuentaProd > 0 ? idCuentaProd : undefined);
 
-          const cuentaFinal =
-            cuentaDetalle && cuentaDetalle.trim() !== ''
-              ? cuentaDetalle
-              : (cuentaProd && cuentaProd.trim() !== '' ? cuentaProd : undefined);
+            const cuentaFinal =
+              cuentaDetalle && cuentaDetalle.trim() !== ''
+                ? cuentaDetalle
+                : (cuentaProd && cuentaProd.trim() !== '' ? cuentaProd : undefined);
 
-          const row: Detalle = {
-            codigo: d.codigoProducto,
-            idcuenta: idcuentaFinal,
-            cuenta: cuentaFinal,
-            descripcion: d.obs2 || d.nombreProducto,
-            cantidad: d.cantidad,
-            pvp: d.precio,
-            iva: ivaVal,
-            ivaPct,
-            valorDev: 0,
-            cantidadd: 0,
-            ivaDev: 0,
-            total: (d.cantidad ?? 0) * (d.precio ?? 0),
-            porMonto: false
-          };
+            const row: Detalle = {
+              codigo: d.codigoProducto,
+              idcuenta: idcuentaFinal,
+              cuenta: cuentaFinal,
+              descripcion: d.obs2 || d.nombreProducto,
+              cantidad: d.cantidad,
+              pvp: d.precio,
+              iva: ivaVal,
+              ivaPct,
+              valorDev: 0,
+              cantidadd: 0,
+              ivaDev: 0,
+              total: (d.cantidad ?? 0) * (d.precio ?? 0),
+              porMonto: false
+            };
 
-          return row;
-        });
+            return row;
+          });
 
-        // Por si los productos se cargan después, rellena cuentas faltantes
-        this.rellenarCuentasEnDetalleDesdeProductos();
+          // Por si los productos se cargan después, rellena cuentas faltantes
+          this.rellenarCuentasEnDetalleDesdeProductos();
 
-        // Recalcular totales con el detalle ya cargado
-        this.recalcular();
-      } else {
-        this.errorFactura = resp.message || 'No se pudo obtener el detalle.';
+          // Recalcular totales con el detalle ya cargado
+          this.recalcular();
+        } else {
+          this.errorFactura = resp.message || 'No se pudo obtener el detalle.';
+        }
+      },
+      error: (e) => {
+        this.errorFactura = e?.message ?? 'Error consultando el detalle de la factura.';
       }
-    },
-    error: (e) => {
-      this.errorFactura = e?.message ?? 'Error consultando el detalle de la factura.';
-    }
-  });
-}
+    });
+  }
 
 
 
@@ -1712,7 +1705,7 @@ private cargarFacturaPorId(idNota: number): void {
   displayFormaPago = (v: string | FormaPagoResponse | null) =>
     typeof v === 'string' ? v : v?.descripcionPago ?? '';
 
-  private upsertPago(codigo: string, descripcion: string, cuenta: string) {
+  private upsertPago(codigo: string, descripcion: string, cuenta: string, idPlanCuentas?: number) {
     const codigoStr = String(codigo ?? '');
     const idx = this.pagoRows.findIndex(r => String(r.codigo ?? '') === codigoStr);
 
@@ -1726,13 +1719,13 @@ private cargarFacturaPorId(idNota: number): void {
       const actual = this.pagoRows[idx];
       const nuevoPago = Math.min(this.asNumber(actual.pago), this.getMaxPermitidoPago(actual));
       this.pagoRows = this.pagoRows.map((r, i) =>
-        i === idx ? { ...r, descripcion, cuenta, debe: debeVisual, haber: haberBack, saldo: saldoBack, pago: nuevoPago }
+        i === idx ? { ...r, descripcion, cuenta, idPlanCuentas, debe: debeVisual, haber: haberBack, saldo: saldoBack, pago: nuevoPago }
           : r
       );
     } else {
       this.pagoRows = [
         ...this.pagoRows,
-        { codigo: codigoStr, descripcion, cuenta, debe: debeVisual, haber: haberBack, saldo: saldoBack, pago: pagoSugerido }
+        { codigo: codigoStr, descripcion, cuenta, idPlanCuentas, debe: debeVisual, haber: haberBack, saldo: saldoBack, pago: pagoSugerido }
       ];
     }
     this.recalcular();
@@ -1747,10 +1740,21 @@ private cargarFacturaPorId(idNota: number): void {
     let cuenta = (fp as any).codigoCuenta ?? (fp as any).codigo_cuenta ?? '';
 
     if (cuenta) {
-      this.upsertPago(idStr, desc, cuenta);
-      this.fcMetodoPago.setValue('', { emitEvent: false });
-      this.recalcular();
+      const idEmpresa = this.usuarioActual?.id_empresa ?? 1;
+
+      this.planCueService.getByCuentaPresentacion(idEmpresa, cuenta).subscribe({
+        next: plan => {
+          this.upsertPago(idStr, desc, cuenta, plan?.id_plan);
+          this.fcMetodoPago.setValue('', { emitEvent: false });
+          this.recalcular();
+        },
+        error: () => {
+          this.mostrarAlerta(`No se encontró la cuenta contable ${cuenta}.`, 'error');
+        }
+      });
+
       return;
+
     }
 
     this.isLoadingFormas = true;
@@ -1839,103 +1843,104 @@ private cargarFacturaPorId(idNota: number): void {
   }
 
   // ======= Payload =======
-// ======= Payload =======
-private buildPayload(): NotaCreditoCrearReq {
-  // 🔹 Detalle de la Nota de Crédito
-  const detalles = this.detalleRows
-    // Solo líneas con devolución (por cantidad o por monto)
-    .filter(d => {
-      const cantDev = this.asNumber(d.cantidadd);
-      const valorDev = this.asNumber(d.valorDev);
-      return cantDev > 0 || (d.porMonto && valorDev > 0);
-    })
-    .map(d => {
-      const qtyOrig = this.asNumber(d.cantidad);
-      const pvp = this.asNumber(d.pvp);
-      const baseOrig = qtyOrig * pvp;
-      const ivaLinea = this.asNumber(d.iva);
+  // ======= Payload =======
+  private buildPayload(): NotaCreditoCrearReq {
+    // 🔹 Detalle de la Nota de Crédito
+    const detalles = this.detalleRows
+      // Solo líneas con devolución (por cantidad o por monto)
+      .filter(d => {
+        const cantDev = this.asNumber(d.cantidadd);
+        const valorDev = this.asNumber(d.valorDev);
+        //return cantDev > 0 || (d.porMonto && valorDev > 0);
+        return cantDev > 0 || valorDev > 0;
+      })
+      .map(d => {
+        const qtyOrig = this.asNumber(d.cantidad);
+        const pvp = this.asNumber(d.pvp);
+        const baseOrig = qtyOrig * pvp;
+        const ivaLinea = this.asNumber(d.iva);
 
-      // % IVA de la línea original
-      const ivaPct = d.ivaPct ?? (
-        baseOrig > 0
-          ? +((ivaLinea / baseOrig) * 100).toFixed(2)
-          : 0
-      );
+        // % IVA de la línea original
+        const ivaPct = d.ivaPct ?? (
+          baseOrig > 0
+            ? +((ivaLinea / baseOrig) * 100).toFixed(2)
+            : 0
+        );
 
-      // 🔹 Cuenta contable desde el producto; si no hay, default 110201
-      const cueCodigo = this.asNumber(d.idcuenta) || 110201;
+        // 🔹 Cuenta contable desde el producto; si no hay, default 110201
+        const cueCodigo = this.asNumber(d.idcuenta) || 110201;
 
-      // ===== Caso 1: por monto (usuario edita Valor Dev.) =====
-      if (d.porMonto) {
-        const montoBase = Math.max(0, this.asNumber(d.valorDev)); // base sin IVA
-        let qtyDev = this.asNumber(d.cantidadd);
-        if (!(qtyDev > 0)) {
-          // si no pusieron cantidad, asumimos 1 y prorrateamos
-          qtyDev = 1;
+        // ===== Caso 1: por monto (usuario edita Valor Dev.) =====
+        if (d.porMonto) {
+          const montoBase = Math.max(0, this.asNumber(d.valorDev)); // base sin IVA
+          let qtyDev = this.asNumber(d.cantidadd);
+          if (!(qtyDev > 0)) {
+            // si no pusieron cantidad, asumimos 1 y prorrateamos
+            qtyDev = 1;
+          }
+
+          const precioUnit = qtyDev > 0
+            ? +(montoBase / qtyDev).toFixed(6)
+            : 0;
+
+          return {
+            codpro: String(d.codigo ?? ''),
+            cantidad: +qtyDev.toFixed(6),   // cantidad devuelta
+            precio: precioUnit,            // base unitaria
+            costo: precioUnit,
+            iva: ivaPct,                   // porcentaje
+            descuento: 0,
+            tipoIva: ivaPct > 0 ? '1' : '0',
+            cueCodigo,                     // 🔹 cuenta contable del producto
+            descripcion: String(d.descripcion ?? '')
+          };
         }
 
-        const precioUnit = qtyDev > 0
-          ? +(montoBase / qtyDev).toFixed(6)
-          : 0;
+        // ===== Caso 2: devolución por cantidad =====
+        const qtyDev = +this.asNumber(d.cantidadd).toFixed(6);
 
         return {
           codpro: String(d.codigo ?? ''),
-          cantidad: +qtyDev.toFixed(6),   // cantidad devuelta
-          precio: precioUnit,            // base unitaria
-          costo: precioUnit,
-          iva: ivaPct,                   // porcentaje
+          cantidad: qtyDev,               // cantidad devuelta
+          precio: pvp,                    // mismo precio de la factura
+          costo: pvp,
+          iva: ivaPct,                    // porcentaje
           descuento: 0,
           tipoIva: ivaPct > 0 ? '1' : '0',
-          cueCodigo,                     // 🔹 cuenta contable del producto
+          cueCodigo,                      // 🔹 cuenta contable del producto
           descripcion: String(d.descripcion ?? '')
         };
-      }
+      });
 
-      // ===== Caso 2: devolución por cantidad =====
-      const qtyDev = +this.asNumber(d.cantidadd).toFixed(6);
+    // 🔹 Formas de pago (cómo se devuelve el dinero)
+    const formasPago = this.pagoRows.map((p, i) => ({
+      id: String(p.codigo ?? ''),
+      clientesCodigo: this.clientesCodigo,
+      numnota: null,
+      numdoc: (this.encabezado.factura ?? '').replace(/\D/g, ''), // solo dígitos
+      forpag: String(p.codigo ?? ''),
+      valor: Number(p.pago ?? 0),
+      cuentaContable: String(p.cuenta ?? ''), // cuenta de la forma de pago
+      estado: 'A',
+      fila: i + 1,
+      fecha: new Date().toISOString(),
+      idNotaCredito: 0
+    }));
 
-      return {
-        codpro: String(d.codigo ?? ''),
-        cantidad: qtyDev,               // cantidad devuelta
-        precio: pvp,                    // mismo precio de la factura
-        costo: pvp,
-        iva: ivaPct,                    // porcentaje
-        descuento: 0,
-        tipoIva: ivaPct > 0 ? '1' : '0',
-        cueCodigo,                      // 🔹 cuenta contable del producto
-        descripcion: String(d.descripcion ?? '')
-      };
-    });
-
-  // 🔹 Formas de pago (cómo se devuelve el dinero)
-  const formasPago = this.pagoRows.map((p, i) => ({
-    id: String(p.codigo ?? ''),
-    clientesCodigo: this.clientesCodigo,
-    numnota: null,
-    numdoc: (this.encabezado.factura ?? '').replace(/\D/g, ''), // solo dígitos
-    forpag: String(p.codigo ?? ''),
-    valor: Number(p.pago ?? 0),
-    cuentaContable: String(p.cuenta ?? ''), // cuenta de la forma de pago
-    estado: 'A',
-    fila: i + 1,
-    fecha: new Date().toISOString(),
-    idNotaCredito: 0
-  }));
-
-  // 🔹 Payload completo que espera el backend
-  return {
-    clienteCodigo: this.clientesCodigo,
-    caja: this.encabezado.caja || '001',
-    idAutorizacionCaja: this.idAutorizacionCajaNc ?? 0,
-    observaciones: this.encabezado.observacion || '',
-    idUsuarioResponsable: this.usuarioActual?.id_usuario ?? 1,
-    idEmpresa: this.usuarioActual?.id_empresa ?? 1,
-    ateCodigo: 0,
-    historiaClinica: '',
-    detalles,
-    formasPago
-  };
-}
+    // 🔹 Payload completo que espera el backend
+    return {
+      clienteCodigo: this.clientesCodigo,
+      caja: this.encabezado.caja || '001',
+      idAutorizacionCaja: this.idAutorizacionCajaNc ?? 0,
+      observaciones: this.encabezado.observacion || '',
+      idUsuarioResponsable: this.usuarioActual?.id_usuario ?? 1,
+      idEmpresa: this.usuarioActual?.id_empresa ?? 1,
+      ateCodigo: 0,
+      historiaClinica: '',
+      detalles,
+      formasPago
+    };
+  }
 
 
   private syncPagoRowsConSaldo(): void {
@@ -1977,10 +1982,10 @@ private buildPayload(): NotaCreditoCrearReq {
   cargarAutorizacion(): void {
 
     const id =
-  this.usuarioActual?.cajas?.find(c => c.id_tipo_documento === 2)?.id_autorizacion_caja
-  ?? null;
-  console.log('usuarioActual.cajas:', this.usuarioActual?.cajas);
-this.idAutorizacionCajaNc = (id != null ? Number(id) : null);
+      this.usuarioActual?.cajas?.find(c => c.id_tipo_documento === 2)?.id_autorizacion_caja
+      ?? null;
+    console.log('usuarioActual.cajas:', this.usuarioActual?.cajas);
+    this.idAutorizacionCajaNc = (id != null ? Number(id) : null);
     this.cajaAsignada = false;
 
     if (id == null) {
@@ -2022,46 +2027,46 @@ this.idAutorizacionCajaNc = (id != null ? Number(id) : null);
 
 
   onProductoSelectedNC(codpro: string): void {
-  const p = this.productos.find(x => (x.codpro ?? '').toString() === codpro);
-  if (!p) return;
+    const p = this.productos.find(x => (x.codpro ?? '').toString() === codpro);
+    if (!p) return;
 
-  const yaExiste = this.detalleRows.some(r => r.codigo === p.codpro);
-  if (yaExiste) {
-    this.mostrarAlerta(`El producto ${p.codpro} ya fue agregado.`, 'info');
-    return;
-  }
+    const yaExiste = this.detalleRows.some(r => r.codigo === p.codpro);
+    if (yaExiste) {
+      this.mostrarAlerta(`El producto ${p.codpro} ya fue agregado.`, 'info');
+      return;
+    }
 
-  const ivaPorc = this.esFacturaDeSaldo ? this.ivaPctSaldo : 15;
-const precio = Number(p.prevensiniva || p.pvp || 0);
+    const ivaPorc = this.esFacturaDeSaldo ? this.ivaPctSaldo : 15;
+    const precio = Number(p.prevensiniva || p.pvp || 0);
 
-  // 🔹 obtener cuenta desde la lista de productos
-  const { idcuenta, cuenta } = this.getCuentaPorProducto(p.codpro);
+    // 🔹 obtener cuenta desde la lista de productos
+    const { idcuenta, cuenta } = this.getCuentaPorProducto(p.codpro);
 
-  const nuevaFila: Detalle = {
-    codigo: p.codpro,
-    idcuenta,
-    cuenta,
-    descripcion: (p.despro ?? '').toUpperCase(),
-    cantidad: 1,
-    pvp: precio,
-     iva: +((precio * ivaPorc) / 100).toFixed(2),
-  ivaPct: ivaPorc,
-    cantidadd: 0,
-    valorDev: 0,
-    ivaDev: 0,
-    porMonto: false
-  };
+    const nuevaFila: Detalle = {
+      codigo: p.codpro,
+      idcuenta,
+      cuenta,
+      descripcion: (p.despro ?? '').toUpperCase(),
+      cantidad: 1,
+      pvp: precio,
+      iva: +((precio * ivaPorc) / 100).toFixed(2),
+      ivaPct: ivaPorc,
+      cantidadd: 0,
+      valorDev: 0,
+      ivaDev: 0,
+      porMonto: false
+    };
 
-  if (this.detalleRows.length === 1 &&
+    if (this.detalleRows.length === 1 &&
       !this.detalleRows[0].codigo &&
       !this.detalleRows[0].descripcion) {
-    this.detalleRows = [nuevaFila];
-  } else {
-    this.detalleRows = [...this.detalleRows, nuevaFila];
-  }
+      this.detalleRows = [nuevaFila];
+    } else {
+      this.detalleRows = [...this.detalleRows, nuevaFila];
+    }
 
-  this.recalcular();
-}
+    this.recalcular();
+  }
 
 
   filtrarProductos(event: any): void {
@@ -2071,541 +2076,541 @@ const precio = Number(p.prevensiniva || p.pvp || 0);
       (p.despro ?? '').toLowerCase().includes(texto)
     );
   }
-private cargarProductosParaNC(): void {
-  // Quita cualquier return prematuro por ahora para depurar
-  // if (this.productosLoaded) return;
+  private cargarProductosParaNC(): void {
+    // Quita cualquier return prematuro por ahora para depurar
+    // if (this.productosLoaded) return;
 
-  console.log('[NC] cargarProductosParaNC() – iniciando llamada a getProductosCodproFijos');
+    console.log('[NC] cargarProductosParaNC() – iniciando llamada a getProductosCodproFijos');
 
-  this.isLoadingProductos = true;
+    this.isLoadingProductos = true;
 
-  this.facturacionService.getProductosCodproFijos().pipe(
-    finalize(() => {
-      this.isLoadingProductos = false;
-    })
-  ).subscribe({
-    next: data => {
-      console.log('[NC] getProductosCodproFijos – data cruda:', data);
+    this.facturacionService.getProductosCodproFijos().pipe(
+      finalize(() => {
+        this.isLoadingProductos = false;
+      })
+    ).subscribe({
+      next: data => {
+        console.log('[NC] getProductosCodproFijos – data cruda:', data);
 
-      this.productos = data ?? [];
-      this.rellenarCuentasEnDetalleDesdeProductos();
-      this.productosLoaded = true;
+        this.productos = data ?? [];
+        this.rellenarCuentasEnDetalleDesdeProductos();
+        this.productosLoaded = true;
 
-      console.log('[NC] productos cargados:', this.productos.length);
+        console.log('[NC] productos cargados:', this.productos.length);
 
-      // Una vez cargados los productos, intento rellenar cuentas en el detalle
-      this.rellenarCuentasEnDetalleDesdeProductos();
-    },
-    error: (err) => {
-      console.error('[NC] Error al cargar productos para NC:', err);
-      this.mostrarAlerta('Error al cargar productos', 'error');
-      this.productos = [];
-      this.productosLoaded = false;
+        // Una vez cargados los productos, intento rellenar cuentas en el detalle
+        this.rellenarCuentasEnDetalleDesdeProductos();
+      },
+      error: (err) => {
+        console.error('[NC] Error al cargar productos para NC:', err);
+        this.mostrarAlerta('Error al cargar productos', 'error');
+        this.productos = [];
+        this.productosLoaded = false;
+      }
+    });
+  }
+
+
+
+  private getCuentaPorProducto(
+    codpro: string | number | null | undefined
+  ): { idcuenta?: number; cuenta?: string } {
+
+    if (!codpro) {
+      console.log('[NC] getCuentaPorProducto – codpro vacío:', codpro);
+      return {};
     }
-  });
-}
 
+    if (!this.productos || this.productos.length === 0) {
+      console.log('[NC] getCuentaPorProducto – productos aún no cargados. codpro=', codpro);
+      return {};
+    }
 
+    const codStr = String(codpro);
+    console.log('[NC] getCuentaPorProducto – buscando producto para codpro:', codStr);
 
-private getCuentaPorProducto(
-  codpro: string | number | null | undefined
-): { idcuenta?: number; cuenta?: string } {
+    // 1) Buscar producto por código
+    let producto = this.productos.find(x =>
+      String((x as any).codpro ?? (x as any).CODPRO ?? '') === codStr
+    );
 
-  if (!codpro) {
-    console.log('[NC] getCuentaPorProducto – codpro vacío:', codpro);
-    return {};
-  }
+    if (!producto) {
+      console.log('[NC] Producto NO encontrado para codpro:', codStr);
+      return {};
+    }
 
-  if (!this.productos || this.productos.length === 0) {
-    console.log('[NC] getCuentaPorProducto – productos aún no cargados. codpro=', codpro);
-    return {};
-  }
+    console.log('[NC] Producto encontrado para', codStr, producto);
 
-  const codStr = String(codpro);
-  console.log('[NC] getCuentaPorProducto – buscando producto para codpro:', codStr);
+    // ============================================
+    // 2) OBTENER idcuenta EQUIVALENTE
+    //    En tu screenshot viene como id_plan
+    // ============================================
+    let idcuenta = Number(
+      (producto as any).id_plan ??            // ← principal
+      (producto as any).idPlan ??            // variantes posibles
+      (producto as any).idcuenta ??
+      (producto as any).idCuenta ??
+      (producto as any).id_cuenta ??
+      (producto as any).cueCodigo ??
+      (producto as any).cue_codigo ??
+      0
+    );
 
-  // 1) Buscar producto por código
-  let producto = this.productos.find(x =>
-    String((x as any).codpro ?? (x as any).CODPRO ?? '') === codStr
-  );
+    // ============================================
+    // 3) OBTENER código de cuenta
+    //    En tu screenshot viene como codcuedeb
+    // ============================================
+    let cuenta = String(
+      (producto as any).codcueDeb ??         // camelCase posible
+      (producto as any).codcuedeb ??        // minúsculas (como en la imagen)
+      (producto as any).cod_cue_deb ??      // otras variantes típicas
+      (producto as any).cuenta ??
+      (producto as any).cuentaContable ??
+      (producto as any).codigoCuenta ??
+      (producto as any).codigo_cuenta ??
+      ''
+    );
 
-  if (!producto) {
-    console.log('[NC] Producto NO encontrado para codpro:', codStr);
-    return {};
-  }
+    // 4) Logs para verificar
+    console.log('[NC] idcuenta resuelta:', idcuenta, ' cuenta resuelta:', cuenta);
 
-  console.log('[NC] Producto encontrado para', codStr, producto);
+    if (!idcuenta || idcuenta <= 0) {
+      console.log('[NC] No se encontró idcuenta válido para codpro', codStr);
+      return {};
+    }
 
-  // ============================================
-  // 2) OBTENER idcuenta EQUIVALENTE
-  //    En tu screenshot viene como id_plan
-  // ============================================
-  let idcuenta = Number(
-    (producto as any).id_plan ??            // ← principal
-    (producto as any).idPlan ??            // variantes posibles
-    (producto as any).idcuenta ??
-    (producto as any).idCuenta ??
-    (producto as any).id_cuenta ??
-    (producto as any).cueCodigo ??
-    (producto as any).cue_codigo ??
-    0
-  );
-
-  // ============================================
-  // 3) OBTENER código de cuenta
-  //    En tu screenshot viene como codcuedeb
-  // ============================================
-  let cuenta = String(
-    (producto as any).codcueDeb ??         // camelCase posible
-    (producto as any).codcuedeb ??        // minúsculas (como en la imagen)
-    (producto as any).cod_cue_deb ??      // otras variantes típicas
-    (producto as any).cuenta ??
-    (producto as any).cuentaContable ??
-    (producto as any).codigoCuenta ??
-    (producto as any).codigo_cuenta ??
-    ''
-  );
-
-  // 4) Logs para verificar
-  console.log('[NC] idcuenta resuelta:', idcuenta, ' cuenta resuelta:', cuenta);
-
-  if (!idcuenta || idcuenta <= 0) {
-    console.log('[NC] No se encontró idcuenta válido para codpro', codStr);
-    return {};
-  }
-
-  // Si cuenta viene vacío, al menos devolvemos el id en texto
-  if (!cuenta || cuenta.trim() === '') {
-    cuenta = String(idcuenta);
-  }
-
-  return {
-    idcuenta,
-    cuenta
-  };
-}
-
-
-
-private rellenarCuentasEnDetalleDesdeProductos(): void {
-  if (!this.productos || this.productos.length === 0) {
-    console.log('[NC] rellenarCuentas... – sin productos aún, no hago nada');
-    return;
-  }
-
-  console.log('[NC] rellenarCuentas... – detalleRows:', this.detalleRows.length);
-
-  this.detalleRows = (this.detalleRows || []).map(r => {
-    if (!r.codigo) return r;
-
-    const { idcuenta, cuenta } = this.getCuentaPorProducto(r.codigo);
+    // Si cuenta viene vacío, al menos devolvemos el id en texto
+    if (!cuenta || cuenta.trim() === '') {
+      cuenta = String(idcuenta);
+    }
 
     return {
-      ...r,
-      idcuenta: idcuenta && idcuenta > 0 ? idcuenta : r.idcuenta,
-      cuenta: cuenta && cuenta.trim() !== '' ? cuenta : r.cuenta
+      idcuenta,
+      cuenta
     };
-  });
+  }
 
-  this.cdr.detectChanges();
-}
-/** Crea el asiento contable de la Nota de Crédito,
- *  invirtiendo la lógica de la factura:
- *  - DEBE: devolución de ingresos (cuentas de venta) + IVA devuelto
- *  - HABER: formas de pago (banco/caja/clientes) por el valor devuelto
- */
-private buildAsientoNotaCreditoRequest(idNotaCredito: number): AsientoVentaRequest {
-  const hoy = new Date();
 
-  const fechaIso = hoy.toISOString().substring(0, 19); // "YYYY-MM-DDTHH:mm:ss"
-  const hora = hoy.toTimeString().substring(0, 8);     // "HH:mm:ss"
-  const anioStr = hoy.getFullYear().toString();
 
-  const idZona = 1; // ajusta si manejas zonas
-  const idUsuario = Number(this.usuarioActual?.id_usuario ?? 1);
-  const idEmpresa = Number(this.usuarioActual?.id_empresa ?? 1);
+  private rellenarCuentasEnDetalleDesdeProductos(): void {
+    if (!this.productos || this.productos.length === 0) {
+      console.log('[NC] rellenarCuentas... – sin productos aún, no hago nada');
+      return;
+    }
 
-  // Puedes usar el mismo tipo de asiento que la venta o uno propio para NC.
-  const idTipoAsiento = 3; // por ejemplo: 4 = Nota de Crédito (ajusta según tu catálogo)
-  const tipdoc = 'VT';     // tipo de documento del asiento
+    console.log('[NC] rellenarCuentas... – detalleRows:', this.detalleRows.length);
 
-  // 0 para que el backend genere el numdoc definitivo
-  const numdoc = 0;
+    this.detalleRows = (this.detalleRows || []).map(r => {
+      if (!r.codigo) return r;
 
-  const beneficiario =
-    (this.encabezado.cliente || '').toString().trim()
+      const { idcuenta, cuenta } = this.getCuentaPorProducto(r.codigo);
+
+      return {
+        ...r,
+        idcuenta: idcuenta && idcuenta > 0 ? idcuenta : r.idcuenta,
+        cuenta: cuenta && cuenta.trim() !== '' ? cuenta : r.cuenta
+      };
+    });
+
+    this.cdr.detectChanges();
+  }
+  /** Crea el asiento contable de la Nota de Crédito,
+   *  invirtiendo la lógica de la factura:
+   *  - DEBE: devolución de ingresos (cuentas de venta) + IVA devuelto
+   *  - HABER: formas de pago (banco/caja/clientes) por el valor devuelto
+   */
+  private buildAsientoNotaCreditoRequest(idNotaCredito: number): AsientoVentaRequest {
+    const hoy = new Date();
+
+    const fechaIso = hoy.toISOString().substring(0, 19); // "YYYY-MM-DDTHH:mm:ss"
+    const hora = hoy.toTimeString().substring(0, 8);     // "HH:mm:ss"
+    const anioStr = hoy.getFullYear().toString();
+
+    const idZona = 1; // ajusta si manejas zonas
+    const idUsuario = Number(this.usuarioActual?.id_usuario ?? 1);
+    const idEmpresa = Number(this.usuarioActual?.id_empresa ?? 1);
+
+    // Puedes usar el mismo tipo de asiento que la venta o uno propio para NC.
+    const idTipoAsiento = 3; // por ejemplo: 4 = Nota de Crédito (ajusta según tu catálogo)
+    const tipdoc = 'VT';     // tipo de documento del asiento
+
+    // 0 para que el backend genere el numdoc definitivo
+    const numdoc = 0;
+
+    const beneficiario =
+      (this.encabezado.cliente || '').toString().trim()
       || `CLIENTE ID: ${this.encabezado.idCliente || this.clientesCodigo}`;
 
-  // Cuentas por defecto (ajusta si tienes parámetros en BD)
-  const CTA_CLIENTES = 110101;
-  const CTA_VENTAS_DEFAULT = 410101;
-  const CTA_IVA = 210602;
+    // Cuentas por defecto (ajusta si tienes parámetros en BD)
+    const CTA_CLIENTES = 110101;
+    const CTA_VENTAS_DEFAULT = 410101;
+    const CTA_IVA = 210602;
 
-  // Si no quieres complicarte con idCodContable, usa 1 como en la factura
-const idCodContableLinea =
-  this.idCodContableCliente && this.idCodContableCliente > 0
-    ? this.idCodContableCliente
-    : 1; // fallback
+    // Si no quieres complicarte con idCodContable, usa 1 como en la factura
+    const idCodContableLinea =
+      this.idCodContableCliente && this.idCodContableCliente > 0
+        ? this.idCodContableCliente
+        : 1; // fallback
 
 
 
-  // Número de comprobante de la NC: sucursal + caja + número
-  const suc = (this.encabezado.sucursal || '').toString().padStart(3, '0');
-  const caj = (this.encabezado.caja || '').toString().padStart(3, '0');
-  const sec = (this.encabezado.numero || '').toString().padStart(9, '0');
-  const nocomprobante = (suc + caj + sec) || idNotaCredito.toString();
+    // Número de comprobante de la NC: sucursal + caja + número
+    const suc = (this.encabezado.sucursal || '').toString().padStart(3, '0');
+    const caj = (this.encabezado.caja || '').toString().padStart(3, '0');
+    const sec = (this.encabezado.numero || '').toString().padStart(9, '0');
+    const nocomprobante = (suc + caj + sec) || idNotaCredito.toString();
 
-  const detalles: DetalleAsientoVentaRequest[] = [];
-  let numlinea = 1;
+    const detalles: DetalleAsientoVentaRequest[] = [];
+    let numlinea = 1;
 
-  // =========================
-  // 1) DEBE → Reverso de ingresos (ventas) y IVA
-  // =========================
+    // =========================
+    // 1) DEBE → Reverso de ingresos (ventas) y IVA
+    // =========================
 
-  let totalBaseDev = 0;
-  let totalIvaDev = 0;
+    let totalBaseDev = 0;
+    let totalIvaDev = 0;
 
-  for (const row of this.detalleRows) {
-    const baseDev = this.asNumber(row.valorDev);   // base devuelta (sin IVA)
-    if (baseDev <= 0) continue;
+    for (const row of this.detalleRows) {
+      const baseDev = this.asNumber(row.valorDev);   // base devuelta (sin IVA)
+      if (baseDev <= 0) continue;
 
-    const cuentaTexto = (row.cuenta || '').toString().trim();
-    const [ctaStr] = cuentaTexto.split('-');
-    const idPlan = Number(ctaStr) || CTA_VENTAS_DEFAULT;
-    const codprePc = cuentaTexto || `${idPlan}-001`;
+      const cuentaTexto = (row.cuenta || '').toString().trim();
+      const [ctaStr] = cuentaTexto.split('-');
+      const idPlan = Number(ctaStr) || CTA_VENTAS_DEFAULT;
+      const codprePc = cuentaTexto || `${idPlan}-001`;
 
-    totalBaseDev += baseDev;
+      totalBaseDev += baseDev;
 
-    // Línea DEBE a la cuenta de ingresos (reverso de la venta)
-    detalles.push({
-      IdDetMaestro: 0,
-      IdCabMaestro: 0,
-      numlinea: numlinea++,
-      anio: anioStr,
-      fechatransaccion: fechaIso,
-      fechaingreso: fechaIso,
-      hora,
-      idZona,
-      idCentroCostos: null,
-      idLocal: 1,
-      idPlanCuentas: idPlan,
-      codprePc,
-      idCodContable: idCodContableLinea,
-      nocomprobante,
-      docurelacionado: '',
-      cheque: 0,
-      beneficiario: '',
-      debe: +baseDev.toFixed(2),   // 👉 antes estaba en HABER en la factura
-      haber: 0,
-      comentario: `REVERSO VENTA NC ${nocomprobante} - ${(row.descripcion || '').toString().toUpperCase()}`,
-      idMovBancario: 1,
-      movbancario: '0',
-      cierre: '',
-      fechacierre: null,
-      conciliado: '',
-      fechaconciliado: null,
-      idSustentoTrib: null,
-      idTipoCompSri: null,
-      autorizacion: '',
-      fechacaduca: null,
-      idTipoRetencion: null,
-      idProyecto: null,
-      idSubproyecto: null,
-      transferido: false,
-      fechatransferido: null,
-      fechavencimiento: null,
-      idConciliacion: 0,
-      valorLetras: '',
-      estadoIngreso: true,
-      autorizacionRelacionado: '',
-      fechaCadRelacionado: null
-    });
+      // Línea DEBE a la cuenta de ingresos (reverso de la venta)
+      detalles.push({
+        IdDetMaestro: 0,
+        IdCabMaestro: 0,
+        numlinea: numlinea++,
+        anio: anioStr,
+        fechatransaccion: fechaIso,
+        fechaingreso: fechaIso,
+        hora,
+        idZona,
+        idCentroCostos: null,
+        idLocal: 1,
+        idPlanCuentas: idPlan,
+        codprePc,
+        idCodContable: idCodContableLinea,
+        nocomprobante,
+        docurelacionado: '',
+        cheque: 0,
+        beneficiario: '',
+        debe: +baseDev.toFixed(2),   // 👉 antes estaba en HABER en la factura
+        haber: 0,
+        comentario: `REVERSO VENTA NC ${nocomprobante} - ${(row.descripcion || '').toString().toUpperCase()}`,
+        idMovBancario: 1,
+        movbancario: '0',
+        cierre: '',
+        fechacierre: null,
+        conciliado: '',
+        fechaconciliado: null,
+        idSustentoTrib: null,
+        idTipoCompSri: null,
+        autorizacion: '',
+        fechacaduca: null,
+        idTipoRetencion: null,
+        idProyecto: null,
+        idSubproyecto: null,
+        transferido: false,
+        fechatransferido: null,
+        fechavencimiento: null,
+        idConciliacion: 0,
+        valorLetras: '',
+        estadoIngreso: true,
+        autorizacionRelacionado: '',
+        fechaCadRelacionado: null
+      });
 
-    // IVA devuelto por esta línea
-    let ivaDev = 0;
+      // IVA devuelto por esta línea
+      let ivaDev = 0;
 
-    if (row.porMonto) {
-      // modo "por monto" → usas ivaDev que ya calculaste en la grilla
-      ivaDev = this.asNumber(row.ivaDev);
-    } else {
-      // modo "por cantidad" → proporcional
-      const cantDev = this.asNumber(row.cantidadd);
-      const cantidad = this.asNumber(row.cantidad);
-      const ivaLinea = this.asNumber(row.iva);
-      if (cantidad > 0) {
-        const ivaUnit = ivaLinea / cantidad;
-        ivaDev = cantDev * ivaUnit;
-      }
-    }
-
-    if (ivaDev > 0) {
-      totalIvaDev += ivaDev;
-    }
-  }
-
-  totalBaseDev = +totalBaseDev.toFixed(2);
-  totalIvaDev = +totalIvaDev.toFixed(2);
-
-  // Línea DEBE para el IVA devuelto
-  if (totalIvaDev > 0) {
-    detalles.push({
-      IdDetMaestro: 0,
-      IdCabMaestro: 0,
-      numlinea: numlinea++,
-      anio: anioStr,
-      fechatransaccion: fechaIso,
-      fechaingreso: fechaIso,
-      hora,
-      idZona,
-      idCentroCostos: null,
-      idLocal: 1,
-      idPlanCuentas: CTA_IVA,
-      codprePc: `${CTA_IVA}-001`,
-      idCodContable: idCodContableLinea,
-      nocomprobante,
-      docurelacionado: '',
-      cheque: 0,
-      beneficiario: '',
-      debe: totalIvaDev,   // 👉 antes estaba en HABER en la factura
-      haber: 0,
-      comentario: `REVERSO IVA VENTA NC ${nocomprobante}`,
-      idMovBancario: 1,
-      movbancario: '0',
-      cierre: '',
-      fechacierre: null,
-      conciliado: '',
-      fechaconciliado: null,
-      idSustentoTrib: null,
-      idTipoCompSri: null,
-      autorizacion: '',
-      fechacaduca: null,
-      idTipoRetencion: null,
-      idProyecto: null,
-      idSubproyecto: null,
-      transferido: false,
-      fechatransferido: null,
-      fechavencimiento: null,
-      idConciliacion: 0,
-      valorLetras: '',
-      estadoIngreso: true,
-      autorizacionRelacionado: '',
-      fechaCadRelacionado: null
-    });
-  }
-
-  // =========================
-  // 2) HABER → Reverso de cobros / formas de pago
-  // =========================
-
-  let totalHaber = 0;
-
-  for (const pag of this.pagoRows) {
-    const pagoVal = this.asNumber(pag.pago);
-    if (pagoVal <= 0) continue;
-
-    const cuentaTexto = (pag.cuenta || '').toString().trim();
-    const [ctaStr] = cuentaTexto.split('-');
-    const idPlan = Number(ctaStr) || CTA_CLIENTES;
-    const codprePc = cuentaTexto || `${idPlan}-001`;
-
-    totalHaber += pagoVal;
-
-    detalles.push({
-      IdDetMaestro: 0,
-      IdCabMaestro: 0,
-      numlinea: numlinea++,
-      anio: anioStr,
-      fechatransaccion: fechaIso,
-      fechaingreso: fechaIso,
-      hora,
-      idZona,
-      idCentroCostos: null,
-      idLocal: 1,
-      idPlanCuentas: idPlan,
-      codprePc,
-      idCodContable: idCodContableLinea,
-      nocomprobante,
-      docurelacionado: '',
-      cheque: 0,
-      beneficiario: '',
-      debe: 0,
-      haber: +pagoVal.toFixed(2),  // 👉 antes estaba en DEBE en la factura
-      comentario: `REVERSO PAGO NC ${nocomprobante} - ${(pag.descripcion || '').toString().toUpperCase()}`,
-      idMovBancario: 1,
-      movbancario: '0',
-      cierre: '',
-      fechacierre: null,
-      conciliado: '',
-      fechaconciliado: null,
-      idSustentoTrib: null,
-      idTipoCompSri: null,
-      autorizacion: '',
-      fechacaduca: null,
-      idTipoRetencion: null,
-      idProyecto: null,
-      idSubproyecto: null,
-      transferido: false,
-      fechatransferido: null,
-      fechavencimiento: null,
-      idConciliacion: 0,
-      valorLetras: '',
-      estadoIngreso: true,
-      autorizacionRelacionado: '',
-      fechaCadRelacionado: null
-    });
-  }
-
-  totalHaber = +totalHaber.toFixed(2);
-
-  // Totales del asiento (DEBE/HABER deben cuadrar)
-  const totalDebe = +(detalles.reduce((s, d) => s + (Number(d.debe) || 0), 0)).toFixed(2);
-
-  const asiento: AsientoVentaRequest = {
-    IdCabMaestro: 0,
-    idZona,
-    idUsuario,
-    idEmpresa,
-    idTipoAsiento,
-    tipdoc,
-    numdoc,
-    anio: anioStr,
-    fechatransaccion: fechaIso,
-    fechaingreso: fechaIso,
-    observacion: `ASIENTO POR NOTA DE CRÉDITO ${nocomprobante} - FACTURA ${this.encabezado.factura}`,
-    totdebe: totalDebe,
-    tothaber: totalHaber,
-    beneficiario,
-    cierre: '',
-    fechacierre: null,
-    solicitado: '',
-    depto: '',
-    autorizado: '',
-    homCodigo: 0,
-    estado: true,
-    modulo: 2,   // igual que en la factura
-    detalles
-  };
-
-  console.log('ASIENTO NC OBJ →', asiento);
-  console.log('ASIENTO NC JSON →', JSON.stringify(asiento, null, 2));
-
-  return asiento;
-}
-private crearAsientoNotaCredito(idNotaCredito: number): Observable<string | null> {
-  const asientoReq = this.buildAsientoNotaCreditoRequest(idNotaCredito);
-
-  return this.asientoVentaService.crearAsientoVenta(asientoReq).pipe(
-    map((resp: any) => {
-      console.log('[crearAsientoNotaCredito] resp:', resp);
-
-      if (!resp) {
-        throw new Error('Respuesta vacía al crear asiento contable de la Nota de Crédito.');
-      }
-
-      const msg: string = resp.message ?? '';
-
-      // Ejemplo mensaje: "Asiento creado. Cabecera Id=7, Numdoc=25120005, detalles=3"
-      const match = msg.match(/Numdoc\s*=\s*(\d+)/i);
-      const numeroAsiento = match ? match[1] : null;
-
-      if (!numeroAsiento) {
-        console.warn('[crearAsientoNotaCredito] No se encontró "Numdoc=" en el mensaje:', msg);
+      if (row.porMonto) {
+        // modo "por monto" → usas ivaDev que ya calculaste en la grilla
+        ivaDev = this.asNumber(row.ivaDev);
       } else {
-        console.log('[crearAsientoNotaCredito] Número de asiento NC:', numeroAsiento);
+        // modo "por cantidad" → proporcional
+        const cantDev = this.asNumber(row.cantidadd);
+        const cantidad = this.asNumber(row.cantidad);
+        const ivaLinea = this.asNumber(row.iva);
+        if (cantidad > 0) {
+          const ivaUnit = ivaLinea / cantidad;
+          ivaDev = cantDev * ivaUnit;
+        }
       }
 
-      return numeroAsiento; // string | null
-    }),
-    catchError(err => {
-      console.error('[crearAsientoNotaCredito] error:', err);
-      this.mostrarAlerta('Error al crear el asiento contable de la Nota de Crédito.', 'error');
-      return of(null);
-    })
-  );
-}
-private cargarIdCodContablePorCliente(clienteMin: any): void {
-  console.log('[NC] Cliente desde factura:', clienteMin);
+      if (ivaDev > 0) {
+        totalIvaDev += ivaDev;
+      }
+    }
 
-  // 1) Sacar idCliente desde el objeto mínimo de la factura
-  const idCliente = Number(
-    clienteMin?.id ??
-    clienteMin?.clientesCodigo ??
-    clienteMin?.clientes_codigo ??
-    0
-  );
+    totalBaseDev = +totalBaseDev.toFixed(2);
+    totalIvaDev = +totalIvaDev.toFixed(2);
 
-  if (!idCliente) {
-    console.warn('[NC] Cliente sin idCliente válido, no se puede buscar id_cod_contable:', clienteMin);
-    this.idCodContableCliente = 0;
-    return;
+    // Línea DEBE para el IVA devuelto
+    if (totalIvaDev > 0) {
+      detalles.push({
+        IdDetMaestro: 0,
+        IdCabMaestro: 0,
+        numlinea: numlinea++,
+        anio: anioStr,
+        fechatransaccion: fechaIso,
+        fechaingreso: fechaIso,
+        hora,
+        idZona,
+        idCentroCostos: null,
+        idLocal: 1,
+        idPlanCuentas: CTA_IVA,
+        codprePc: `${CTA_IVA}-001`,
+        idCodContable: idCodContableLinea,
+        nocomprobante,
+        docurelacionado: '',
+        cheque: 0,
+        beneficiario: '',
+        debe: totalIvaDev,   // 👉 antes estaba en HABER en la factura
+        haber: 0,
+        comentario: `REVERSO IVA VENTA NC ${nocomprobante}`,
+        idMovBancario: 1,
+        movbancario: '0',
+        cierre: '',
+        fechacierre: null,
+        conciliado: '',
+        fechaconciliado: null,
+        idSustentoTrib: null,
+        idTipoCompSri: null,
+        autorizacion: '',
+        fechacaduca: null,
+        idTipoRetencion: null,
+        idProyecto: null,
+        idSubproyecto: null,
+        transferido: false,
+        fechatransferido: null,
+        fechavencimiento: null,
+        idConciliacion: 0,
+        valorLetras: '',
+        estadoIngreso: true,
+        autorizacionRelacionado: '',
+        fechaCadRelacionado: null
+      });
+    }
+
+    // =========================
+    // 2) HABER → Reverso de cobros / formas de pago
+    // =========================
+
+    let totalHaber = 0;
+
+    for (const pag of this.pagoRows) {
+      const pagoVal = this.asNumber(pag.pago);
+      if (pagoVal <= 0) continue;
+
+      const cuentaTexto = (pag.cuenta || '').toString().trim();
+      const [ctaStr] = cuentaTexto.split('-');
+      const idPlan = Number(ctaStr) || CTA_CLIENTES;
+      const codprePc = cuentaTexto || `${idPlan}-001`;
+
+      totalHaber += pagoVal;
+
+      detalles.push({
+        IdDetMaestro: 0,
+        IdCabMaestro: 0,
+        numlinea: numlinea++,
+        anio: anioStr,
+        fechatransaccion: fechaIso,
+        fechaingreso: fechaIso,
+        hora,
+        idZona,
+        idCentroCostos: null,
+        idLocal: 1,
+        idPlanCuentas: idPlan,
+        codprePc,
+        idCodContable: idCodContableLinea,
+        nocomprobante,
+        docurelacionado: '',
+        cheque: 0,
+        beneficiario: '',
+        debe: 0,
+        haber: +pagoVal.toFixed(2),  // 👉 antes estaba en DEBE en la factura
+        comentario: `REVERSO PAGO NC ${nocomprobante} - ${(pag.descripcion || '').toString().toUpperCase()}`,
+        idMovBancario: 1,
+        movbancario: '0',
+        cierre: '',
+        fechacierre: null,
+        conciliado: '',
+        fechaconciliado: null,
+        idSustentoTrib: null,
+        idTipoCompSri: null,
+        autorizacion: '',
+        fechacaduca: null,
+        idTipoRetencion: null,
+        idProyecto: null,
+        idSubproyecto: null,
+        transferido: false,
+        fechatransferido: null,
+        fechavencimiento: null,
+        idConciliacion: 0,
+        valorLetras: '',
+        estadoIngreso: true,
+        autorizacionRelacionado: '',
+        fechaCadRelacionado: null
+      });
+    }
+
+    totalHaber = +totalHaber.toFixed(2);
+
+    // Totales del asiento (DEBE/HABER deben cuadrar)
+    const totalDebe = +(detalles.reduce((s, d) => s + (Number(d.debe) || 0), 0)).toFixed(2);
+
+    const asiento: AsientoVentaRequest = {
+      IdCabMaestro: 0,
+      idZona,
+      idUsuario,
+      idEmpresa,
+      idTipoAsiento,
+      tipdoc,
+      numdoc,
+      anio: anioStr,
+      fechatransaccion: fechaIso,
+      fechaingreso: fechaIso,
+      observacion: `ASIENTO POR NOTA DE CRÉDITO ${nocomprobante} - FACTURA ${this.encabezado.factura}`,
+      totdebe: totalDebe,
+      tothaber: totalHaber,
+      beneficiario,
+      cierre: '',
+      fechacierre: null,
+      solicitado: '',
+      depto: '',
+      autorizado: '',
+      homCodigo: 0,
+      estado: true,
+      modulo: 2,   // igual que en la factura
+      detalles
+    };
+
+    console.log('ASIENTO NC OBJ →', asiento);
+    console.log('ASIENTO NC JSON →', JSON.stringify(asiento, null, 2));
+
+    return asiento;
   }
+  private crearAsientoNotaCredito(idNotaCredito: number): Observable<string | null> {
+    const asientoReq = this.buildAsientoNotaCreditoRequest(idNotaCredito);
 
-  // 2) Traer cliente completo para obtener idPersona
-  this.clienteService.getClienteById(idCliente).pipe(
-    switchMap((cli: any) => {
-      console.log('[NC] Cliente completo desde getClienteById:', cli);
+    return this.asientoVentaService.crearAsientoVenta(asientoReq).pipe(
+      map((resp: any) => {
+        console.log('[crearAsientoNotaCredito] resp:', resp);
 
-      const idPersona = cli?.idPersona ?? cli?.id_persona ?? 0;
+        if (!resp) {
+          throw new Error('Respuesta vacía al crear asiento contable de la Nota de Crédito.');
+        }
 
-      if (!idPersona) {
-        console.warn('[NC] Cliente sin idPersona válido, no se puede buscar id_cod_contable:', cli);
-        this.idCodContableCliente = 0;
+        const msg: string = resp.message ?? '';
+
+        // Ejemplo mensaje: "Asiento creado. Cabecera Id=7, Numdoc=25120005, detalles=3"
+        const match = msg.match(/Numdoc\s*=\s*(\d+)/i);
+        const numeroAsiento = match ? match[1] : null;
+
+        if (!numeroAsiento) {
+          console.warn('[crearAsientoNotaCredito] No se encontró "Numdoc=" en el mensaje:', msg);
+        } else {
+          console.log('[crearAsientoNotaCredito] Número de asiento NC:', numeroAsiento);
+        }
+
+        return numeroAsiento; // string | null
+      }),
+      catchError(err => {
+        console.error('[crearAsientoNotaCredito] error:', err);
+        this.mostrarAlerta('Error al crear el asiento contable de la Nota de Crédito.', 'error');
         return of(null);
-      }
+      })
+    );
+  }
+  private cargarIdCodContablePorCliente(clienteMin: any): void {
+    console.log('[NC] Cliente desde factura:', clienteMin);
 
-      // 3) Usar tu método que ya funciona en factura
-      return this.clienteService.getIdCodContableByPersona(idPersona).pipe(
-        tap(idCod => {
-          this.idCodContableCliente = idCod ?? 0;
-          console.log('[NC] idCodContableCliente obtenido =', this.idCodContableCliente);
-          debugger                                                        
-        }),
-        catchError(err => {
-          console.error('[NC] Error obteniendo idCodContable por persona:', err);
+    // 1) Sacar idCliente desde el objeto mínimo de la factura
+    const idCliente = Number(
+      clienteMin?.id ??
+      clienteMin?.clientesCodigo ??
+      clienteMin?.clientes_codigo ??
+      0
+    );
+
+    if (!idCliente) {
+      console.warn('[NC] Cliente sin idCliente válido, no se puede buscar id_cod_contable:', clienteMin);
+      this.idCodContableCliente = 0;
+      return;
+    }
+
+    // 2) Traer cliente completo para obtener idPersona
+    this.clienteService.getClienteById(idCliente).pipe(
+      switchMap((cli: any) => {
+        console.log('[NC] Cliente completo desde getClienteById:', cli);
+
+        const idPersona = cli?.idPersona ?? cli?.id_persona ?? 0;
+
+        if (!idPersona) {
+          console.warn('[NC] Cliente sin idPersona válido, no se puede buscar id_cod_contable:', cli);
           this.idCodContableCliente = 0;
           return of(null);
-        })
-      );
-    }),
-    catchError(err => {
-      console.error('[NC] Error cargando cliente completo para idCodContable:', err);
-      this.idCodContableCliente = 0;
-      return of(null);
-    })
-  ).subscribe();
-}
-private cargarClienteDesdeNotaCredito(clienteMin: any): void {
-  const idCliente = Number(clienteMin.id ?? 0);
-  if (!idCliente) {
-    this.idCodContableCliente = 0;
-    return;
-  }
+        }
 
-  this.clienteService.getClienteById(idCliente).pipe(
-    switchMap((cli: any) => {
-      // 1) Obtener idPersona del cliente completo
-      const idPersona = cli?.idPersona ?? cli?.id_persona ?? 0;
-
-      if (!idPersona) {
+        // 3) Usar tu método que ya funciona en factura
+        return this.clienteService.getIdCodContableByPersona(idPersona).pipe(
+          tap(idCod => {
+            this.idCodContableCliente = idCod ?? 0;
+            console.log('[NC] idCodContableCliente obtenido =', this.idCodContableCliente);
+            debugger
+          }),
+          catchError(err => {
+            console.error('[NC] Error obteniendo idCodContable por persona:', err);
+            this.idCodContableCliente = 0;
+            return of(null);
+          })
+        );
+      }),
+      catchError(err => {
+        console.error('[NC] Error cargando cliente completo para idCodContable:', err);
         this.idCodContableCliente = 0;
         return of(null);
-      }
+      })
+    ).subscribe();
+  }
+  private cargarClienteDesdeNotaCredito(clienteMin: any): void {
+    const idCliente = Number(clienteMin.id ?? 0);
+    if (!idCliente) {
+      this.idCodContableCliente = 0;
+      return;
+    }
 
-      // 2) Obtener IdCodContable usando el método que ya funciona
-      return this.clienteService.getIdCodContableByPersona(idPersona).pipe(
-        tap(idCod => {
-          this.idCodContableCliente = idCod ?? 0;
-          console.log('[NC] idCodContableCliente desde cargarClienteDesdeNotaCredito =', this.idCodContableCliente);
-        }),
-        catchError(err => {
-          console.error('Error obteniendo IdCodContable:', err);
+    this.clienteService.getClienteById(idCliente).pipe(
+      switchMap((cli: any) => {
+        // 1) Obtener idPersona del cliente completo
+        const idPersona = cli?.idPersona ?? cli?.id_persona ?? 0;
+
+        if (!idPersona) {
           this.idCodContableCliente = 0;
-          return of(null);     // para que NO reviente la suscripción ni el grid
-        })
-      );
-    })
-  ).subscribe();
-}
+          return of(null);
+        }
+
+        // 2) Obtener IdCodContable usando el método que ya funciona
+        return this.clienteService.getIdCodContableByPersona(idPersona).pipe(
+          tap(idCod => {
+            this.idCodContableCliente = idCod ?? 0;
+            console.log('[NC] idCodContableCliente desde cargarClienteDesdeNotaCredito =', this.idCodContableCliente);
+          }),
+          catchError(err => {
+            console.error('Error obteniendo IdCodContable:', err);
+            this.idCodContableCliente = 0;
+            return of(null);     // para que NO reviente la suscripción ni el grid
+          })
+        );
+      })
+    ).subscribe();
+  }
 
 
 }
