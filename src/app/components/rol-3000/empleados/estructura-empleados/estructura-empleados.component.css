@@ -42,11 +42,18 @@
   align-items: stretch;
 }
 
-.panel-izquierdo,
-.panel-derecho {
+.panel-izquierdo {
   background: #ffffff;
   border: 1px solid #d9dfeb;
   min-height: 520px;
+}
+
+.panel-derecho {
+  background: #ffffff;
+  border: 1px solid #d9dfeb;
+  height: 520px;
+  min-height: 520px;
+  overflow: hidden;
 }
 
 .panel-titulo {
@@ -114,53 +121,51 @@
   color: #d86b4b;
 }
 
-.toolbar-tabla {
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
-  padding: 10px 12px;
-  border-bottom: 1px solid #d9dfeb;
-  background: #fafbfd;
-}
-
-.btn-salir {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .tabla-wrapper {
+  position: relative;
+  height: 100%;
+  min-height: 520px;
   padding: 0;
-  overflow: auto;
-  max-height: 700px;
+  overflow: hidden;
 }
 
-.tabla-empleados {
+.tabla-ag-empleados {
   width: 100%;
-}
-
-.mat-mdc-header-row {
-  background: #eef3fa;
-}
-
-.mat-mdc-header-cell {
-  font-size: 12px;
-  font-weight: 700;
-  color: #344564;
-  border-bottom: 1px solid #d9dfeb;
-}
-
-.mat-mdc-cell {
-  font-size: 12px;
-  color: #2e3440;
-  border-bottom: 1px solid #edf1f7;
+  height: 520px;
 }
 
 .sin-datos {
+  position: absolute;
+  top: 50px;
+  left: 0;
+  right: 0;
   padding: 24px;
   text-align: center;
   color: #7c879d;
   font-size: 13px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Ajustes visuales AG Grid */
+:host ::ng-deep .ag-theme-alpine {
+  --ag-font-size: 12px;
+  --ag-header-height: 34px;
+  --ag-row-height: 32px;
+  --ag-border-color: #d9dfeb;
+  --ag-header-background-color: #eef3fa;
+  --ag-odd-row-background-color: #ffffff;
+  --ag-row-hover-color: #f3f6fb;
+  --ag-selected-row-background-color: #dbe7ff;
+}
+
+:host ::ng-deep .ag-header-cell-label {
+  font-weight: 700;
+  color: #344564;
+}
+
+:host ::ng-deep .ag-cell {
+  color: #2e3440;
 }
 
 @media (max-width: 1100px) {
@@ -168,8 +173,24 @@
     grid-template-columns: 1fr;
   }
 
-  .panel-izquierdo,
-  .panel-derecho {
-    min-height: auto;
+  .panel-izquierdo {
+    min-height: 260px;
   }
+
+  .panel-derecho {
+    height: 520px;
+    min-height: 520px;
+  }
+}
+.tabla-wrapper {
+  position: relative;
+  height: 520px;
+  min-height: 520px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.tabla-ag-empleados {
+  width: 100%;
+  height: 520px;
 }

@@ -157,7 +157,8 @@ import { UtilidadesComponent } from './especial/utilidades/utilidades.component'
         MatSlideToggleModule,
         MatDatepickerModule,
         MatNativeDateModule,
-    Rol3000RoutingModule
+    Rol3000RoutingModule,
+    
   ]
 })
 export class Rol3000Module { }
