@@ -77,6 +77,11 @@ import { DecimoCuartoComponent } from './especial/decimo-cuarto/decimo-cuarto.co
 import { DecimoTerceroComponent } from './especial/decimo-tercero/decimo-tercero.component';
 import { FondoReservaComponent } from './especial/fondo-reserva/fondo-reserva.component';
 import { UtilidadesComponent } from './especial/utilidades/utilidades.component';
+import { RpCargosComponent } from './configuracion/cargos/list/cargos.component';
+import { RpTipEmpComponent } from './configuracion/tipo-empleado/list/tipo-empleado.component';
+import { TipoGastoComponent } from './configuracion/tipo-gasto/list/tipo-gasto.component';
+import { RpNivelInstruccionComponent } from './configuracion/nivel-instruccion/list/nivel-instruccion.component';
+import { ParametrosCostosComponent } from './configuracion/parametros-costos/list/parametros-costos.component';
 
 @NgModule({
   declarations: [
@@ -126,7 +131,6 @@ import { UtilidadesComponent } from './especial/utilidades/utilidades.component'
     DecimoTerceroComponent,
     FondoReservaComponent,
     UtilidadesComponent
-
   ],
   imports: [
     CommonModule,
@@ -157,6 +161,11 @@ import { UtilidadesComponent } from './especial/utilidades/utilidades.component'
         MatSlideToggleModule,
         MatDatepickerModule,
         MatNativeDateModule,
+        RpCargosComponent,
+        RpTipEmpComponent,
+        TipoGastoComponent,
+        RpNivelInstruccionComponent,
+        ParametrosCostosComponent,
     Rol3000RoutingModule
   ]
 })

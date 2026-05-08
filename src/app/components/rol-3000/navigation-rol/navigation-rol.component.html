@@ -370,13 +370,13 @@
               </mat-panel-title>
             </mat-expansion-panel-header>
 
-            <a mat-list-item [routerLink]="'/cg-3000/cierre-mensual'">
+            <a mat-list-item [routerLink]="'/rol-3000/parametros-costos'">
               <span *ngIf="isExpanded" class="menu-text">Parámetros y Costos</span>
             </a>
             <a mat-list-item [routerLink]="'/cg-3000/cierre-anual'">
               <span *ngIf="isExpanded" class="menu-text">Ingresos Descuentos</span>
             </a>
-            <a mat-list-item [routerLink]="'/cg-3000/cierre-mensual'">
+            <a mat-list-item [routerLink]="'/rol-3000/cargos'">
               <span *ngIf="isExpanded" class="menu-text">Cargos</span>
             </a>
             <a mat-list-item [routerLink]="'/cg-3000/cierre-anual'">
@@ -385,13 +385,16 @@
             <a mat-list-item [routerLink]="'/cg-3000/cierre-mensual'">
               <span *ngIf="isExpanded" class="menu-text">Ingreso Estado Civil</span>
             </a>
-            <a mat-list-item [routerLink]="'/cg-3000/cierre-anual'">
-              <span *ngIf="isExpanded" class="menu-text">TipoEmpleado</span>
+            <a mat-list-item [routerLink]="'/rol-3000/tipo-emp'">
+              <span *ngIf="isExpanded" class="menu-text">Tipo Empleado</span>
             </a>
             <a mat-list-item [routerLink]="'/cg-3000/cierre-mensual'">
               <span *ngIf="isExpanded" class="menu-text">Tabla Impuesto a la Renta</span>
             </a>
-            <a mat-list-item [routerLink]="'/cg-3000/cierre-anual'">
+            <a mat-list-item [routerLink]="'/rol-3000/nivel-instruccion'">
+              <span *ngIf="isExpanded" class="menu-text">Nivel Instruccion</span>
+            </a>
+            <a mat-list-item [routerLink]="'/rol-3000/tipo-gasto'">
               <span *ngIf="isExpanded" class="menu-text">Tipo Gasto</span>
             </a>
           </mat-expansion-panel>

@@ -47,6 +47,11 @@ import { DecimoCuartoComponent } from './especial/decimo-cuarto/decimo-cuarto.co
 import { DecimoTerceroComponent } from './especial/decimo-tercero/decimo-tercero.component';
 import { FondoReservaComponent } from './especial/fondo-reserva/fondo-reserva.component';
 import { UtilidadesComponent } from './especial/utilidades/utilidades.component';
+import { RpCargosComponent } from './configuracion/cargos/list/cargos.component';
+import { RpTipEmpComponent } from './configuracion/tipo-empleado/list/tipo-empleado.component';
+import { TipoGastoComponent } from './configuracion/tipo-gasto/list/tipo-gasto.component';
+import { RpNivelInstruccionComponent } from './configuracion/nivel-instruccion/list/nivel-instruccion.component';
+import { ParametrosCostosComponent } from './configuracion/parametros-costos/list/parametros-costos.component';
 const routes: Routes = [
    {
       path: '',
@@ -99,6 +104,13 @@ const routes: Routes = [
         {path: 'decimo-tercero', component: DecimoTerceroComponent},
         {path: 'fondo-reserva', component: FondoReservaComponent},
         {path:'utilidades', component: UtilidadesComponent},
+        {path:'cargos', component: RpCargosComponent},
+        {path:'tipo-emp', component: RpTipEmpComponent},
+        {path:'tipo-gasto', component: TipoGastoComponent},
+        {path:'nivel-instruccion', component: RpNivelInstruccionComponent},
+        {path:'parametros-costos', component: ParametrosCostosComponent},
+        
+
         { path: '**', redirectTo: 'inicio-rol' },
       ],
     },
