@@ -5,6 +5,7 @@ import { environment } from 'src/environments/environment';
 import { ActualizarPlanificacionRequest, DocumentoPendienteResponse, PagoProcesadoResponse, PlanificacionActualizadaResponse, PlanificacionCreadaResponse, PlanificacionPagoResponse } from '../interfaces/responses/planificacion-pago-response';
 import { ApiResponse } from '../interfaces/responses/api-response';
 import { AprobarPlanificacionRequest, DocumentoPendienteRequest, EliminarPlanificacionRequest, ProcesarPagoRequest } from '../interfaces/requests/planificacion-pago-response';
+import { DesaprobarPlanificacionRequest } from '../interfaces/requests/desaproba-planificacion-request';
 
 @Injectable({
   providedIn: 'root'
@@ -122,6 +123,12 @@ export class PlanificacionPagoService {
     return this.http.delete<ApiResponse<{ num_transaccion: number; cantidad_eliminada: number }>>(
         `${this.baseUrl}/eliminar-planificacion`,
         { body: request }
+    );
+    }
+    desaprobarPlanificacion(request: DesaprobarPlanificacionRequest): Observable<ApiResponse<PagoProcesadoResponse>> {
+    return this.http.post<ApiResponse<PagoProcesadoResponse>>(
+        `${this.baseUrl}/desaprobar`,
+        request
     );
     }
 }

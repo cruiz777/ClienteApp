@@ -1568,3 +1568,21 @@ select.compact-input {
   align-items: center;
   height: 100%;
 }
+.alert-solo-lectura {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff3e0;
+  border-left: 4px solid #f57c00;
+  padding: 8px 12px;
+  border-radius: 4px;
+  color: #e65100;
+  font-size: 13px;
+  font-weight: 500;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}

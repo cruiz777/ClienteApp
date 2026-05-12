@@ -7,6 +7,7 @@ import { UsuariosEditRequest, UsuariosRequest } from '../interfaces/requests/usu
 import { LoginUsuarioResponse } from '../interfaces/responses/usuario-log-response';
 import { ApiResponse } from './producto.service';
 import { RecuperarClaveRequest, UpdateClaveRequest } from '../interfaces/requests/recuperar-clave-request';
+import { ValidarCredencialesRequest } from '../interfaces/requests/validar-credenciales-request';
 
 
 
@@ -175,4 +176,10 @@ login(nombreUsuario: string, contrasenia: string): Observable<LoginUsuarioRespon
     return this.http.post<ApiResponse<boolean>>(`${this.apiUrl}/cambiar-clave`, data);
   }
 
+  validarCredenciales(request: ValidarCredencialesRequest): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(
+      `${this.apiUrl}/validar-credenciales`, 
+      request
+    );
+  }
 }

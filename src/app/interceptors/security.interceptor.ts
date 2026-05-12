@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Injector } from '@angular/core';
 import { HttpInterceptor, HttpRequest, HttpHandler, HttpResponse, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { tap, filter, catchError } from 'rxjs/operators';
@@ -9,9 +9,13 @@ import { Router } from '@angular/router';
 export class SecurityInterceptor implements HttpInterceptor {
 
   constructor(
-    private permissions: PermissionsService,
+    private injector: Injector,  // ← lazy injection
     private router: Router
   ) {}
+
+  private get permissions(): PermissionsService {
+    return this.injector.get(PermissionsService);  // ← se resuelve tarde, sin ciclo
+  }
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<any> {
     return next.handle(req).pipe(
