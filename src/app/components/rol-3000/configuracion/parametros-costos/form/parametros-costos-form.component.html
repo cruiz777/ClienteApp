@@ -1,0 +1,81 @@
+<div class="form-container" [class.edit-mode]="isEditMode">
+  <h2>{{ isEditMode ? 'Editar Parámetro y Costo' : 'Nuevo Parámetro y Costo' }}</h2>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()">
+
+    <!-- NOMBRE -->
+    <div class="form-group">
+      <label for="nombre">Nombre <span class="required">*</span></label>
+      <input
+        id="nombre"
+        type="text"
+        formControlName="nombre"
+        placeholder="Ej: Costo Operativo"
+        maxlength="248"
+      />
+      <div class="error" *ngIf="form.get('nombre')?.touched && form.get('nombre')?.errors">
+        <span *ngIf="form.get('nombre')?.hasError('required')">Campo obligatorio.</span>
+        <span *ngIf="form.get('nombre')?.hasError('maxlength')">Máximo 248 caracteres.</span>
+      </div>
+    </div>
+
+    <!-- VALORES en grid -->
+    <div class="valores-grid">
+      <div class="form-group">
+        <label for="valorInicial">Valor Inicial</label>
+        <input
+          id="valorInicial"
+          type="text"
+          formControlName="valorInicial"
+          placeholder="Ej: 0.00"
+          maxlength="100"
+        />
+        <div class="error" *ngIf="form.get('valorInicial')?.touched && form.get('valorInicial')?.errors">
+          <span *ngIf="form.get('valorInicial')?.hasError('maxlength')">Máximo 100 caracteres.</span>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="valorFinal">Valor Final</label>
+        <input
+          id="valorFinal"
+          type="text"
+          formControlName="valorFinal"
+          placeholder="Ej: 100.00"
+          maxlength="100"
+        />
+        <div class="error" *ngIf="form.get('valorFinal')?.touched && form.get('valorFinal')?.errors">
+          <span *ngIf="form.get('valorFinal')?.hasError('maxlength')">Máximo 100 caracteres.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- DESCRIPCIÓN -->
+    <div class="form-group">
+      <label for="descripcion">Descripción</label>
+      <textarea
+        id="descripcion"
+        formControlName="descripcion"
+        placeholder="Ej: Parámetro usado para calcular costos fijos"
+        maxlength="500"
+        rows="3"
+      ></textarea>
+      <div class="error" *ngIf="form.get('descripcion')?.touched && form.get('descripcion')?.errors">
+        <span *ngIf="form.get('descripcion')?.hasError('maxlength')">Máximo 500 caracteres.</span>
+      </div>
+    </div>
+
+    <!-- ACCIONES -->
+    <div class="form-actions">
+      <button
+        type="submit"
+        [disabled]="form.invalid"
+        [ngClass]="isEditMode ? 'btn-rojo' : 'btn-azul'"
+      >
+        {{ isEditMode ? 'Actualizar' : 'Guardar' }}
+      </button>
+      <button type="button" class="cancel-button" (click)="cancelar()">Cancelar</button>
+    </div>
+
+  </form>
+</div>
