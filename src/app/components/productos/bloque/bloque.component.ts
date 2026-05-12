@@ -41,62 +41,62 @@ export class BloqueComponent implements OnInit {
   @ViewChild('pasteCatcher') pasteCatcher!: ElementRef<HTMLTextAreaElement>;
 
 
-defaultColDef: ColDef = {
-  editable: true,
-  resizable: true,
-  sortable: false,
-  flex: 1,
-  headerClass: 'header-uv',
+  defaultColDef: ColDef = {
+    editable: true,
+    resizable: true,
+    sortable: false,
+    flex: 1,
+    headerClass: 'header-uv',
 
-  suppressKeyboardEvent: (params) => {
-    const e = params.event as KeyboardEvent;
-    if (!e) return false;
+    suppressKeyboardEvent: (params) => {
+      const e = params.event as KeyboardEvent;
+      if (!e) return false;
 
-    // Solo aplicar cuando la celda está en edición
-    if (!params.editing) return false;
+      // Solo aplicar cuando la celda está en edición
+      if (!params.editing) return false;
 
-    const key = e.key;
-    const isArrow =
-      key === 'ArrowLeft' || key === 'ArrowRight' || key === 'ArrowUp' || key === 'ArrowDown';
+      const key = e.key;
+      const isArrow =
+        key === 'ArrowLeft' || key === 'ArrowRight' || key === 'ArrowUp' || key === 'ArrowDown';
 
-    if (!isArrow) return false;
+      if (!isArrow) return false;
 
-    e.preventDefault();
+      e.preventDefault();
 
-    const api = params.api;
-    const cols = api.getAllDisplayedColumns();
-    const currentCol = params.column;
-    const colIndex = cols.indexOf(currentCol);
+      const api = params.api;
+      const cols = api.getAllDisplayedColumns();
+      const currentCol = params.column;
+      const colIndex = cols.indexOf(currentCol);
 
-    let nextRow = params.node.rowIndex ?? 0;
-    let nextColIndex = colIndex;
+      let nextRow = params.node.rowIndex ?? 0;
+      let nextColIndex = colIndex;
 
-    switch (key) {
-      case 'ArrowLeft':
-        nextColIndex = Math.max(0, colIndex - 1);
-        break;
-      case 'ArrowRight':
-        nextColIndex = Math.min(cols.length - 1, colIndex + 1);
-        break;
-      case 'ArrowUp':
-        nextRow = Math.max(0, nextRow - 1);
-        break;
-      case 'ArrowDown':
-        nextRow = Math.min(api.getDisplayedRowCount() - 1, nextRow + 1);
-        break;
+      switch (key) {
+        case 'ArrowLeft':
+          nextColIndex = Math.max(0, colIndex - 1);
+          break;
+        case 'ArrowRight':
+          nextColIndex = Math.min(cols.length - 1, colIndex + 1);
+          break;
+        case 'ArrowUp':
+          nextRow = Math.max(0, nextRow - 1);
+          break;
+        case 'ArrowDown':
+          nextRow = Math.min(api.getDisplayedRowCount() - 1, nextRow + 1);
+          break;
+      }
+
+      const nextCol = cols[nextColIndex];
+      if (!nextCol) return true;
+
+      // Guardar lo editado y moverse (sin entrar en edición en destino)
+      api.stopEditing();
+      api.setFocusedCell(nextRow, nextCol);
+      api.ensureIndexVisible(nextRow);
+
+      return true;
     }
-
-    const nextCol = cols[nextColIndex];
-    if (!nextCol) return true;
-
-    // Guardar lo editado y moverse (sin entrar en edición en destino)
-    api.stopEditing();
-    api.setFocusedCell(nextRow, nextCol);
-    api.ensureIndexVisible(nextRow);
-
-    return true;
-  }
-};
+  };
 
 
 
@@ -140,85 +140,85 @@ defaultColDef: ColDef = {
 
   private gridApi!: GridApi;
 
-gridOptions: GridOptions = {
-  suppressMovableColumns: true,
-  onCellValueChanged: this.onCellValueChanged.bind(this),  
+  gridOptions: GridOptions = {
+    suppressMovableColumns: true,
+    onCellValueChanged: this.onCellValueChanged.bind(this),
 
-  // 👇 forzamos event: any para evitar problemas de tipos con AG Grid
-  onCellKeyDown: (event: any) => {
-    const kb = event.event as KeyboardEvent;
-    if (!kb) { return; }
+    // 👇 forzamos event: any para evitar problemas de tipos con AG Grid
+    onCellKeyDown: (event: any) => {
+      const kb = event.event as KeyboardEvent;
+      if (!kb) { return; }
 
-    // Sacamos el field de forma segura
-    const colDef = event.colDef || event.column?.getColDef?.();
-    const field: string | null = colDef?.field ?? null;
+      // Sacamos el field de forma segura
+      const colDef = event.colDef || event.column?.getColDef?.();
+      const field: string | null = colDef?.field ?? null;
 
-    if (!field) {
-      return; // nada que validar si no hay field
-    }
-
-    // ✅ Teclas de control que siempre se permiten
-    const allowedControlKeys = [
-      'Backspace', 'Tab', 'ArrowLeft', 'ArrowRight',
-      'ArrowUp', 'ArrowDown', 'Delete', 'Home', 'End', 'Enter'
-    ];
-
-    // Ctrl + C / V / X / A → permitir
-    if (kb.ctrlKey && ['c', 'v', 'x', 'a'].includes(kb.key.toLowerCase())) {
-      return;
-    }
-
-    // ==============================
-    // 🔹 C.Neto → solo número + 1 punto
-    // ==============================
-    if (field === 'contenidoNeto') {
-      const key = kb.key;
-
-      // dígitos → OK
-      if (/^\d$/.test(key)) { return; }
-
-      // permitir un solo punto
-      if (key === '.') {
-        const data = event.data || {};
-        const current = (data['contenidoNeto'] ?? '').toString();
-        if (!current.includes('.')) {
-          return; // aún no tiene punto → lo dejamos pasar
-        }
+      if (!field) {
+        return; // nada que validar si no hay field
       }
 
-      // teclas de control → OK
-      if (allowedControlKeys.includes(key)) { return; }
+      // ✅ Teclas de control que siempre se permiten
+      const allowedControlKeys = [
+        'Backspace', 'Tab', 'ArrowLeft', 'ArrowRight',
+        'ArrowUp', 'ArrowDown', 'Delete', 'Home', 'End', 'Enter'
+      ];
 
-      // todo lo demás (coma, letras, signos, etc.) se bloquea
-      kb.preventDefault();
-      return;
+      // Ctrl + C / V / X / A → permitir
+      if (kb.ctrlKey && ['c', 'v', 'x', 'a'].includes(kb.key.toLowerCase())) {
+        return;
+      }
+
+      // ==============================
+      // 🔹 C.Neto → solo número + 1 punto
+      // ==============================
+      if (field === 'contenidoNeto') {
+        const key = kb.key;
+
+        // dígitos → OK
+        if (/^\d$/.test(key)) { return; }
+
+        // permitir un solo punto
+        if (key === '.') {
+          const data = event.data || {};
+          const current = (data['contenidoNeto'] ?? '').toString();
+          if (!current.includes('.')) {
+            return; // aún no tiene punto → lo dejamos pasar
+          }
+        }
+
+        // teclas de control → OK
+        if (allowedControlKeys.includes(key)) { return; }
+
+        // todo lo demás (coma, letras, signos, etc.) se bloquea
+        kb.preventDefault();
+        return;
+      }
+
+      // ==============================
+      // 🔹 factor / indicador → solo enteros
+      // ==============================
+      if (field === 'factor' || field === 'indicador') {
+        const key = kb.key;
+
+        // dígitos 0–9 → OK
+        if (/^\d$/.test(key)) { return; }
+
+        // teclas de control → OK
+        if (allowedControlKeys.includes(key)) { return; }
+
+        // bloquear punto, coma, letras, etc.
+        kb.preventDefault();
+        return;
+      }
+
+      // otras columnas → sin restricciones
+    },
+
+    components: {
+      checkboxRenderer: CheckboxRendererComponent,
+      gcpBrickAutocompleteEditor: GcpBrickAutocompleteEditorComponent
     }
-
-    // ==============================
-    // 🔹 factor / indicador → solo enteros
-    // ==============================
-    if (field === 'factor' || field === 'indicador') {
-      const key = kb.key;
-
-      // dígitos 0–9 → OK
-      if (/^\d$/.test(key)) { return; }
-
-      // teclas de control → OK
-      if (allowedControlKeys.includes(key)) { return; }
-
-      // bloquear punto, coma, letras, etc.
-      kb.preventDefault();
-      return;
-    }
-
-    // otras columnas → sin restricciones
-  },
-
-  components: {
-    checkboxRenderer: CheckboxRendererComponent,
-    gcpBrickAutocompleteEditor: GcpBrickAutocompleteEditorComponent
-  }
-};
+  };
 
 
 
@@ -243,7 +243,7 @@ gridOptions: GridOptions = {
 
   descripcionesRepetidas = new Set<string>();
   repetidosDetectados = false;
-  gtinsRepetidos = new Set<string>(); 
+  gtinsRepetidos = new Set<string>();
   mensajeGtinsRepetidos: string = '';
   tipoGtin: string = 'GTIN-13';
   factorDeshabilitado: boolean = true; // o false, según tu lógica
@@ -355,7 +355,7 @@ gridOptions: GridOptions = {
         valueFormatter: (params: any) => {
           const codigo = params.value;
           if (!codigo) return '';
-          
+
           // Opcional: mostrar "codigo - descripcion" para mejor UX
           const opcion = this.gcpBricksDisponibles.find(g => g.codigo === codigo);
           return opcion ? `${opcion.codigo} - ${opcion.descripcion}` : codigo;
@@ -455,284 +455,284 @@ gridOptions: GridOptions = {
     });
   }
 
-@HostListener('copy', ['$event'])
-onCopyFromGrid(event: ClipboardEvent): void {
-  if (!this.gridApi) return;
+  @HostListener('copy', ['$event'])
+  onCopyFromGrid(event: ClipboardEvent): void {
+    if (!this.gridApi) return;
 
-  const focus = this.gridApi.getFocusedCell();
-  if (!focus) return;
+    const focus = this.gridApi.getFocusedCell();
+    if (!focus) return;
 
-  const rowIndex = focus.rowIndex ?? -1;
-  const field = focus.column.getColDef().field ?? null;
+    const rowIndex = focus.rowIndex ?? -1;
+    const field = focus.column.getColDef().field ?? null;
 
-  if (rowIndex < 0 || !field || rowIndex >= this.rowData.length) return;
+    if (rowIndex < 0 || !field || rowIndex >= this.rowData.length) return;
 
-  const row = this.rowData[rowIndex];
-  const valorReal = row[field];
+    const row = this.rowData[rowIndex];
+    const valorReal = row[field];
 
-  //CAMPOS que si permite hacer copy/paste
-  
-  const camposEspeciales = ['categoria', 'contenidoUM', 'factor', 'indicador'];
-  
-  if (camposEspeciales.includes(field)) {
-    if (valorReal !== null && valorReal !== undefined) {
-      event.preventDefault();
-      
-      let valorACopiar: string;
-      
-      if (field === 'categoria') {
-        // Para categoria, copiar solo el código
-        valorACopiar = valorReal.toString().split(' - ')[0].trim();
-      } else {
-        // Para factor, indicador, contenidoUM: copiar tal cual
-        valorACopiar = valorReal.toString();
+    //CAMPOS que si permite hacer copy/paste
+
+    const camposEspeciales = ['categoria', 'contenidoUM', 'factor', 'indicador'];
+
+    if (camposEspeciales.includes(field)) {
+      if (valorReal !== null && valorReal !== undefined) {
+        event.preventDefault();
+
+        let valorACopiar: string;
+
+        if (field === 'categoria') {
+          // Para categoria, copiar solo el código
+          valorACopiar = valorReal.toString().split(' - ')[0].trim();
+        } else {
+          // Para factor, indicador, contenidoUM: copiar tal cual
+          valorACopiar = valorReal.toString();
+        }
+
+        event.clipboardData?.setData('text/plain', valorACopiar);
+        console.log(`📋 Copiado valor real de ${field}:`, valorACopiar);
       }
-      
-      event.clipboardData?.setData('text/plain', valorACopiar);
-      console.log(`📋 Copiado valor real de ${field}:`, valorACopiar);
     }
   }
-}
-//
-@HostListener('paste', ['$event'])
-onPasteExcelToGrid(event: ClipboardEvent): void {
-  // 1️⃣ Si no tenemos gridApi todavía, salimos
-  if (!this.gridApi) {
-    return;
-  }
-
-  // 2️⃣ Detectar si el foco está dentro del grid
-  const activeElement = document.activeElement as HTMLElement | null;
-  const target = (event.target as HTMLElement | null) ?? activeElement;
-
-  const estaDentroDelGrid =
-    !!target &&
-    !!target.closest('.ag-root');
-
-  // 3️⃣ Si NO está dentro del grid y tampoco tenemos columna seleccionada,
-  //    no hacemos nada. Pero si hay selectedColKey, sí permitimos pegar.
-  if (!estaDentroDelGrid && !this.selectedColKey) {
-    return;
-  }
-
-  const clipboardData = event.clipboardData || (window as any).clipboardData;
-  if (!clipboardData) {
-    return;
-  }
-
-  const text: string = clipboardData.getData('text/plain');
-  if (!text) {
-    return;
-  }
-
-  event.preventDefault();
-  event.stopPropagation();
-
-  const rows: string[] = text
-    .split(/\r?\n/)
-    .filter((r: string) => r.trim() !== '');
-
-  if (!rows.length) {
-    return;
-  }
-
-  // 🔎 Si hay celda con foco, usamos esa.
-  //    Si no, usamos la columna seleccionada desde el encabezado.
-  const focus = this.gridApi.getFocusedCell();
-
-  let startRowIndex: number;
-  let startField: string | null;
-
-  if (focus) {
-    startRowIndex = focus.rowIndex ?? 0;
-    startField = focus.column.getColDef().field ?? null;
-  } else if (this.selectedColKey) {
-    startRowIndex = 0;
-    startField = this.selectedColKey;
-  } else {
-    this.mostrarAlerta(
-      '⚠️ Seleccione primero una celda o encabezado de columna en la grilla.',
-      'Info'
-    );
-    return;
-  }
-
-  if (!startField) {
-    this.mostrarAlerta('⚠️ La columna seleccionada no admite pegado.', 'Info');
-    return;
-  }
-
-  // 🔹 columnas que permiten pegado
-  let allowedPasteFields: string[] = [
-    'gtinUv',
-    'descripcion',
-    'categoria',
-    'gcpBrick',
-    'marca',
-    'contenidoNeto',
-    'contenidoUM',
-    'factor',
-    'indicador'
-  ];
-  if (this.formUV.get('checkExiste')?.value) {
-    allowedPasteFields = ['gtinUv', 'factor', 'indicador'];
-  }
-  const pasteableFields: string[] = this.columnDefs
-    .filter(col => !!col.field && allowedPasteFields.includes(col.field as string))
-    .map(col => col.field!) as string[];
-
-  const startColIndex: number = pasteableFields.indexOf(startField);
-  if (startColIndex === -1) {
-    this.mostrarAlerta('⚠️ La columna seleccionada no admite pegado.', 'Info');
-    return;
-  }
-
-  // 🔹 listas de valores válidos
-  const unidadesValidas = this.unidadesDisponibles; // UM
-  const categoriasValidas = this.gcpBricksDisponibles.map(g => g.codigo + ''); // Categoria (código)
-
-  const updated = [...this.rowData];
-
-  rows.forEach((rowText: string, rIdx: number) => {
-    const cells: string[] = rowText.split('\t');
-    const rowIndex: number = startRowIndex + rIdx;
-
-    if (rowIndex >= updated.length) {
+  //
+  @HostListener('paste', ['$event'])
+  onPasteExcelToGrid(event: ClipboardEvent): void {
+    // 1️⃣ Si no tenemos gridApi todavía, salimos
+    if (!this.gridApi) {
       return;
     }
 
-    const row: any = updated[rowIndex] ?? (updated[rowIndex] = {});
+    // 2️⃣ Detectar si el foco está dentro del grid
+    const activeElement = document.activeElement as HTMLElement | null;
+    const target = (event.target as HTMLElement | null) ?? activeElement;
 
-    cells.forEach((cellValue: string, cIdx: number) => {
-      const colIndex: number = startColIndex + cIdx;
-      if (colIndex >= pasteableFields.length) {
+    const estaDentroDelGrid =
+      !!target &&
+      !!target.closest('.ag-root');
+
+    // 3️⃣ Si NO está dentro del grid y tampoco tenemos columna seleccionada,
+    //    no hacemos nada. Pero si hay selectedColKey, sí permitimos pegar.
+    if (!estaDentroDelGrid && !this.selectedColKey) {
+      return;
+    }
+
+    const clipboardData = event.clipboardData || (window as any).clipboardData;
+    if (!clipboardData) {
+      return;
+    }
+
+    const text: string = clipboardData.getData('text/plain');
+    if (!text) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    const rows: string[] = text
+      .split(/\r?\n/)
+      .filter((r: string) => r.trim() !== '');
+
+    if (!rows.length) {
+      return;
+    }
+
+    // 🔎 Si hay celda con foco, usamos esa.
+    //    Si no, usamos la columna seleccionada desde el encabezado.
+    const focus = this.gridApi.getFocusedCell();
+
+    let startRowIndex: number;
+    let startField: string | null;
+
+    if (focus) {
+      startRowIndex = focus.rowIndex ?? 0;
+      startField = focus.column.getColDef().field ?? null;
+    } else if (this.selectedColKey) {
+      startRowIndex = 0;
+      startField = this.selectedColKey;
+    } else {
+      this.mostrarAlerta(
+        '⚠️ Seleccione primero una celda o encabezado de columna en la grilla.',
+        'Info'
+      );
+      return;
+    }
+
+    if (!startField) {
+      this.mostrarAlerta('⚠️ La columna seleccionada no admite pegado.', 'Info');
+      return;
+    }
+
+    // 🔹 columnas que permiten pegado
+    let allowedPasteFields: string[] = [
+      'gtinUv',
+      'descripcion',
+      'categoria',
+      'gcpBrick',
+      'marca',
+      'contenidoNeto',
+      'contenidoUM',
+      'factor',
+      'indicador'
+    ];
+    if (this.formUV.get('checkExiste')?.value) {
+      allowedPasteFields = ['gtinUv', 'factor', 'indicador'];
+    }
+    const pasteableFields: string[] = this.columnDefs
+      .filter(col => !!col.field && allowedPasteFields.includes(col.field as string))
+      .map(col => col.field!) as string[];
+
+    const startColIndex: number = pasteableFields.indexOf(startField);
+    if (startColIndex === -1) {
+      this.mostrarAlerta('⚠️ La columna seleccionada no admite pegado.', 'Info');
+      return;
+    }
+
+    // 🔹 listas de valores válidos
+    const unidadesValidas = this.unidadesDisponibles; // UM
+    const categoriasValidas = this.gcpBricksDisponibles.map(g => g.codigo + ''); // Categoria (código)
+
+    const updated = [...this.rowData];
+
+    rows.forEach((rowText: string, rIdx: number) => {
+      const cells: string[] = rowText.split('\t');
+      const rowIndex: number = startRowIndex + rIdx;
+
+      if (rowIndex >= updated.length) {
         return;
       }
-      
-      const field: string = pasteableFields[colIndex];
-      const raw = (cellValue ?? '').trim();      
 
-      switch (field) {
-        case 'contenidoNeto': {
-          // Solo números con punto: 12 o 12.3 (NO coma)
-          const regexNumero = /^\d+(\.\d+)?$/;
-          if (raw !== '' && regexNumero.test(raw)) {
-            row[field] = parseFloat(raw);
-          }
-          // Si no cumple, NO se asigna nada (mantiene lo que tenía)
-          break;
+      const row: any = updated[rowIndex] ?? (updated[rowIndex] = {});
+
+      cells.forEach((cellValue: string, cIdx: number) => {
+        const colIndex: number = startColIndex + cIdx;
+        if (colIndex >= pasteableFields.length) {
+          return;
         }
 
-        case 'factor':
-        case 'indicador':
-          // Solo enteros positivos
-          if (/^\d+$/.test(raw)) {
-            row[field] = parseInt(raw, 10);
-          }
-          break;
+        const field: string = pasteableFields[colIndex];
+        const raw = (cellValue ?? '').trim();
 
-        case 'contenidoUM':
-          // ✅ Solo unidades válidas
-          if (unidadesValidas.includes(raw)) {
-            row[field] = raw;
-            console.log(`✅ UM pegada en fila ${rowIndex + 1}: ${raw}`);
-          } else {
-            console.warn(`⚠️ UM "${raw}" no válida en fila ${rowIndex + 1}, ignorada`);
-          }
-          break;
-
-        case 'categoria': {
-          const codigoLimpio = raw.split(' - ')[0].trim();
-          
-          if (categoriasValidas.includes(codigoLimpio)) {
-            const rowNode = this.gridApi.getRowNode(rowIndex.toString());
-            if (rowNode) {
-              rowNode.setDataValue('categoria', codigoLimpio);
+        switch (field) {
+          case 'contenidoNeto': {
+            // Solo números con punto: 12 o 12.3 (NO coma)
+            const regexNumero = /^\d+(\.\d+)?$/;
+            if (raw !== '' && regexNumero.test(raw)) {
+              row[field] = parseFloat(raw);
             }
-            console.log(`✅ Categoría pegada en fila ${rowIndex + 1}: ${codigoLimpio}`);
-          } else {
-            console.warn(`⚠️ Categoría "${raw}" no válida en fila ${rowIndex + 1}, ignorada`);
+            // Si no cumple, NO se asigna nada (mantiene lo que tenía)
+            break;
           }
-          break;
+
+          case 'factor':
+          case 'indicador':
+            // Solo enteros positivos
+            if (/^\d+$/.test(raw)) {
+              row[field] = parseInt(raw, 10);
+            }
+            break;
+
+          case 'contenidoUM':
+            // ✅ Solo unidades válidas
+            if (unidadesValidas.includes(raw)) {
+              row[field] = raw;
+              console.log(`✅ UM pegada en fila ${rowIndex + 1}: ${raw}`);
+            } else {
+              console.warn(`⚠️ UM "${raw}" no válida en fila ${rowIndex + 1}, ignorada`);
+            }
+            break;
+
+          case 'categoria': {
+            const codigoLimpio = raw.split(' - ')[0].trim();
+
+            if (categoriasValidas.includes(codigoLimpio)) {
+              const rowNode = this.gridApi.getRowNode(rowIndex.toString());
+              if (rowNode) {
+                rowNode.setDataValue('categoria', codigoLimpio);
+              }
+              console.log(`✅ Categoría pegada en fila ${rowIndex + 1}: ${codigoLimpio}`);
+            } else {
+              console.warn(`⚠️ Categoría "${raw}" no válida en fila ${rowIndex + 1}, ignorada`);
+            }
+            break;
+          }
+
+          default:
+            // Otras columnas se pegan tal cual
+            row[field] = raw;
+            break;
         }
-
-        default:
-          // Otras columnas se pegan tal cual
-          row[field] = raw;
-          break;
-      }
+      });
     });
-  });
 
-  this.rowData = updated;
-  this.gridApi.refreshCells({ force: true });
-  this.gridApi.redrawRows();
-  console.log('✅ Pegado completado');
-  // Validar GTINs repetidos si checkExiste está marcado
-  if (this.formUV.get('checkExiste')?.value) {
-    setTimeout(() => {  // ← pequeño delay para que se actualice el grid primero
-      const sinRepetidos = this.validarGtinUvRepetido();
-      
-      if (!sinRepetidos) {
-        this.botonGenerarDeshabilitado = true;
-        
-        this.dialog.open(CustomMessageBoxComponent, {
-          width: '500px',
-          data: {
-            title: '⚠️ GTINs Repetidos Detectados',
-            message: this.mensajeGtinsRepetidos,
-            type: 'error',
-            confirmText: 'Entendido'
-          }
-        });
-      } else {
-        this.botonGenerarDeshabilitado = false;
-      }
-    }, 100);
-        setTimeout(() => {
-      this.validarTodosLosFactoresPegados();
-    }, 300);
+    this.rowData = updated;
+    this.gridApi.refreshCells({ force: true });
+    this.gridApi.redrawRows();
+    console.log('✅ Pegado completado');
+    // Validar GTINs repetidos si checkExiste está marcado
+    if (this.formUV.get('checkExiste')?.value) {
+      setTimeout(() => {  // ← pequeño delay para que se actualice el grid primero
+        const sinRepetidos = this.validarGtinUvRepetido();
+
+        if (!sinRepetidos) {
+          this.botonGenerarDeshabilitado = true;
+
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '500px',
+            data: {
+              title: '⚠️ GTINs Repetidos Detectados',
+              message: this.mensajeGtinsRepetidos,
+              type: 'error',
+              confirmText: 'Entendido'
+            }
+          });
+        } else {
+          this.botonGenerarDeshabilitado = false;
+        }
+      }, 100);
+      setTimeout(() => {
+        this.validarTodosLosFactoresPegados();
+      }, 300);
+    }
   }
-}
-//
+  //
 
-async generarFilas(): Promise<void> {
+  async generarFilas(): Promise<void> {
 
-  if (!this.cantidadFilas || this.cantidadFilas <= 0) return;
+    if (!this.cantidadFilas || this.cantidadFilas <= 0) return;
 
-  const checkExiste = !!this.formUV.get('checkExiste')?.value;
+    const checkExiste = !!this.formUV.get('checkExiste')?.value;
 
-  // Prefijo seleccionado
-  const idSeleccionado = this.formUV.value.gcp;
-  const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
-  const prefijo = (objeto?.codpre || '').toString().trim();
+    // Prefijo seleccionado
+    const idSeleccionado = this.formUV.value.gcp;
+    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+    const prefijo = (objeto?.codpre || '').toString().trim();
 
-  // ✅ SOLO validar cuando el checkbox esté DESMARCADO
-  if (!checkExiste) {
-    const ok = await firstValueFrom(
-      this.validarCantidadPorPrefijo(prefijo, this.cantidadFilas)
-    );
-    if (!ok) return;
+    // ✅ SOLO validar cuando el checkbox esté DESMARCADO
+    if (!checkExiste) {
+      const ok = await firstValueFrom(
+        this.validarCantidadPorPrefijo(prefijo, this.cantidadFilas)
+      );
+      if (!ok) return;
+    }
+
+    const nuevasFilas = [];
+    for (let i = 0; i < this.cantidadFilas; i++) {
+      nuevasFilas.push({
+        gtinUv: '',
+        descripcion: '',
+        categoria: this.codigoGrupo,
+        marca: '',
+        contenidoNeto: '0',
+        contenidoUM: 'g',
+        gcpBrick: this.brick,
+        pais: 'ECUADOR',
+        activo: false,
+        grupo: this.id_grupo_producto,
+      });
+    }
+
+    this.rowData = nuevasFilas;
   }
-
-  const nuevasFilas = [];
-  for (let i = 0; i < this.cantidadFilas; i++) {
-    nuevasFilas.push({
-      gtinUv: '',
-      descripcion: '',
-      categoria: this.codigoGrupo,
-      marca: '',
-      contenidoNeto: '0',
-      contenidoUM: 'g',
-      gcpBrick: this.brick,
-      pais: 'ECUADOR',
-      activo: false,
-      grupo: this.id_grupo_producto,
-    });
-  }
-
-  this.rowData = nuevasFilas;
-}
 
   limpiarTabla(): void {
     this.rowData = [];
@@ -788,47 +788,47 @@ async generarFilas(): Promise<void> {
     this.rowData = [...this.rowData];
   }
 
-cargarCliente(): void {
-  const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
-  console.log(cliente);
+  cargarCliente(): void {
+    const cliente = this.clienteSeleccionadoService.obtenerClienteActual();
+    console.log(cliente);
 
-  if (!cliente) return;
+    if (!cliente) return;
 
-  // ✅ Validar estado DESAFILIADA (robusto: null/espacios/mayúsculas)
-  const estado = (cliente.estadoNombre ?? '').toString().trim().toUpperCase();
+    // ✅ Validar estado DESAFILIADA (robusto: null/espacios/mayúsculas)
+    const estado = (cliente.estadoNombre ?? '').toString().trim().toUpperCase();
 
-  if (estado === 'DESAFILIADA') {
-    this.dialog.open(CustomMessageBoxComponent, {
-      width: '450px',
-      data: {
-        title: 'Cliente DESAFILIADO',
-        message: '❌ No puede codificar productos porque el cliente está DESAFILIADO.',
-        type: 'error',
-        confirmText: 'Aceptar'
-      }
-    }).afterClosed().subscribe(() => {
-      // cerrar cualquier dialog abierto (incluye esta ventana)
-      this.dialog.closeAll();
+    if (estado === 'DESAFILIADA') {
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '450px',
+        data: {
+          title: 'Cliente DESAFILIADO',
+          message: '❌ No puede codificar productos porque el cliente está DESAFILIADO.',
+          type: 'error',
+          confirmText: 'Aceptar'
+        }
+      }).afterClosed().subscribe(() => {
+        // cerrar cualquier dialog abierto (incluye esta ventana)
+        this.dialog.closeAll();
 
-      // salir a otra pantalla
-      this.router.navigate(['/productos/nuevo-producto']);
+        // salir a otra pantalla
+        this.router.navigate(['/productos/nuevo-producto']);
+      });
+
+      return; // ⛔ detener flujo normal
+    }
+
+    // ✅ Flujo normal si está afiliado
+    this.clienteSeleccionado = cliente;
+
+    this.formUV.patchValue({
+      codigoCliente: cliente.clientes_codigo || '',
+      cliente: cliente.nomcli || '',
+      ruc: cliente.ruc || ''
     });
 
-    return; // ⛔ detener flujo normal
+    this.cargarClientePorId(cliente.clientes_codigo);
+    this.cargarPrefijos(cliente.clientes_codigo);
   }
-
-  // ✅ Flujo normal si está afiliado
-  this.clienteSeleccionado = cliente;
-
-  this.formUV.patchValue({
-    codigoCliente: cliente.clientes_codigo || '',
-    cliente: cliente.nomcli || '',
-    ruc: cliente.ruc || ''
-  });
-
-  this.cargarClientePorId(cliente.clientes_codigo);
-  this.cargarPrefijos(cliente.clientes_codigo);
-}
 
 
   cargarPrefijos(codigoCliente: number): void {
@@ -851,54 +851,54 @@ cargarCliente(): void {
     }
   }
 
- habilitarSerie(): void {
-  const usarSerie = this.formUV.get('usarSerie')?.value;
-  const gtin = this.formUV.get('gtinNacionalSeleccionado')?.value; // GTIN-13 | GTIN-8 | UPC
-  const gcpId = this.formUV.get('gcp')?.value;
+  habilitarSerie(): void {
+    const usarSerie = this.formUV.get('usarSerie')?.value;
+    const gtin = this.formUV.get('gtinNacionalSeleccionado')?.value; // GTIN-13 | GTIN-8 | UPC
+    const gcpId = this.formUV.get('gcp')?.value;
 
-  const prefijo = this.prefijos.find(p => p.id_prefijos === gcpId);
-  if (!prefijo) return;
-  debugger
-  // Ecuador = 786 solo para GTIN-13
-  const pais = gtin === 'GTIN-13' ? '786' : '';
+    const prefijo = this.prefijos.find(p => p.id_prefijos === gcpId);
+    if (!prefijo) return;
+    debugger
+    // Ecuador = 786 solo para GTIN-13
+    const pais = gtin === 'GTIN-13' ? '786' : '';
 
-  // Si no usa serie → limpiar y salir
-  if (!usarSerie) {
+    // Si no usa serie → limpiar y salir
+    if (!usarSerie) {
+      this.formUV.get('serie')?.reset();
+      return;
+    }
+
+    // LÓGICA DE GTIN
+    if (gtin === 'UPC') {
+      // UPC = GTIN-12 → usar secuencia UPC
+      this.generacionCodigosService.obtenerSecuenciaUpc(prefijo.codpre, pais).subscribe({
+        next: (resp: SecuenciaResponse) => {
+          this.formUV.get('serie')?.setValue(resp.data);
+        },
+        error: (err) => console.error('Error secuencia UPC:', err)
+      });
+      return;
+    }
+
+    if (gtin === 'GTIN-13') {
+      // GTIN-13 nacional → secuencia normal
+      this.generacionCodigosService.obtenerSecuencia(prefijo.codpre, pais).subscribe({
+        next: (resp: SecuenciaResponse) => {
+          this.formUV.get('serie')?.setValue(resp.data);
+        },
+        error: (err) => console.error('Error secuencia GTIN-13:', err)
+      });
+      return;
+    }
+
+    // Otros GTIN → no generan serie
     this.formUV.get('serie')?.reset();
-    return;
   }
-
-  // LÓGICA DE GTIN
-  if (gtin === 'UPC') {
-    // UPC = GTIN-12 → usar secuencia UPC
-    this.generacionCodigosService.obtenerSecuenciaUpc(prefijo.codpre, pais).subscribe({
-      next: (resp: SecuenciaResponse) => {
-        this.formUV.get('serie')?.setValue(resp.data);
-      },
-      error: (err) => console.error('Error secuencia UPC:', err)
-    });
-    return;
-  }
-
-  if (gtin === 'GTIN-13') {
-    // GTIN-13 nacional → secuencia normal
-    this.generacionCodigosService.obtenerSecuencia(prefijo.codpre, pais).subscribe({
-      next: (resp: SecuenciaResponse) => {
-        this.formUV.get('serie')?.setValue(resp.data);
-      },
-      error: (err) => console.error('Error secuencia GTIN-13:', err)
-    });
-    return;
-  }
-
-  // Otros GTIN → no generan serie
-  this.formUV.get('serie')?.reset();
-}
 
 
   generar(): void {
     debugger
-    this.commitGridChanges(); 
+    this.commitGridChanges();
     this.rowData = [...this.rowData]; // Refrescar AG-Grid visualmente
     this.gridApi.setFocusedCell(0, 'gtinUv');
 
@@ -910,7 +910,7 @@ cargarCliente(): void {
       this.mostrarAlerta('⚠️ Seleccione Prefijo', 'Error');
       return;
     }
-   
+
 
     if (this.rowData.length === 0) {
       this.mostrarAlerta('⚠️ Productos a codificar en Cero', 'Error');
@@ -975,11 +975,20 @@ cargarCliente(): void {
 
         const secuenciaInicial = serie !== '' ? parseInt(serie, 10) : resp.data;
 
-        
-
         const maxCodigos = Math.pow(10, longitudSecuencia);
+        const maxValor = maxCodigos - 1;
+        const ultimoValor = secuenciaInicial + this.rowData.length - 1;
+
+        if (ultimoValor > maxValor) {
+          this.mostrarAlerta(
+            `⚠️ No se puede generar. La secuencia inicia en ${secuenciaInicial} y llegaría hasta ${ultimoValor}, pero el máximo permitido es ${maxValor}.`,
+            'Error'
+          );
+          return;
+        }
+
         if (this.rowData.length > maxCodigos) {
-          alert(`?? Solo se pueden generar ${maxCodigos} códigos con prefijo de ${longitudPrefijo} dígitos. Se recortarán automáticamente.`);
+          alert(`⚠️ Solo se pueden generar ${maxCodigos} códigos con prefijo de ${longitudPrefijo} dígitos.`);
           this.rowData = this.rowData.slice(0, maxCodigos);
         }
 
@@ -1030,9 +1039,9 @@ cargarCliente(): void {
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto =  producto.contenido || '';
+            fila.contenidoNeto = producto.contenido || '';
             fila.contenidoUM = producto.unidad || 'g';
-            fila.categoria = this.formUV.get('checkExiste')?.value 
+            fila.categoria = this.formUV.get('checkExiste')?.value
               ? (producto.codigoproducto || fila.categoria?.trim() || '')
               : (fila.categoria?.trim() || producto.codigoproducto || '');
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
@@ -1207,9 +1216,9 @@ cargarCliente(): void {
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto =  producto.contenido || '';
+            fila.contenidoNeto = producto.contenido || '';
             fila.contenidoUM = producto.unidad || 'g';
-            fila.categoria = this.formUV.get('checkExiste')?.value 
+            fila.categoria = this.formUV.get('checkExiste')?.value
               ? (producto.codigoproducto || fila.categoria?.trim() || '')
               : (fila.categoria?.trim() || producto.codigoproducto || '');
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
@@ -1312,11 +1321,11 @@ cargarCliente(): void {
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto =  producto.contenido || '';
+            fila.contenidoNeto = producto.contenido || '';
             fila.contenidoUM = producto.unidad || 'g';
-            fila.categoria = this.formUV.get('checkExiste')?.value 
-                ? (producto.codigoproducto || fila.categoria?.trim() || '')
-                : (fila.categoria?.trim() || producto.codigoproducto || '');
+            fila.categoria = this.formUV.get('checkExiste')?.value
+              ? (producto.codigoproducto || fila.categoria?.trim() || '')
+              : (fila.categoria?.trim() || producto.codigoproducto || '');
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
             fila.pais = fila.pais?.trim() || producto.pais || 'ECUADOR';
             fila.grupo = fila.grupo || (isNaN(Number(producto.idgrupoproducto)) ? 0 : Number(producto.idgrupoproducto));
@@ -1448,10 +1457,10 @@ cargarCliente(): void {
     // Validar si checkExiste está marcado
     if (this.formUV.get('checkExiste')?.value) {
       const sinRepetidos = this.validarGtinUvRepetido();
-      
+
       if (!sinRepetidos) {
         this.botonGenerarDeshabilitado = true;
-        
+
         this.dialog.open(CustomMessageBoxComponent, {
           width: '500px',
           data: {
@@ -1494,102 +1503,102 @@ cargarCliente(): void {
     }, 300);
   }
 
-/** Lee el prefijo (codpre) según el id seleccionado en el form */
-private getPrefijoSeleccionado(): string {
-  const idPrefijo = this.formUV.get('gcp')?.value;
-  const prefijo = this.prefijos.find(p => p.id_prefijos === idPrefijo);
-  return (prefijo?.codpre ?? '').toString().trim();
-}
-
-/** Valida que la cantidad de filas (this.rowData.length) no supere el máximo
- *  permitido según bandera y longitud del prefijo. Solo recibe el prefijo.
- *  - bandera === 0  (GTIN-13 con país 786):
- *      len 8 → máx 10, len 7 → 100, len 6 → 1000, len 5 → 10000
- *  - bandera === 2  (UPC-12 sin país):
- *      secLen = 11 - len  → máx = 10^secLen   (len permitido: 5..7)
- */
-/** Valida que 'cantidad' no supere el máximo permitido según bandera y longitud del prefijo.
- *  - bandera === 0  (GTIN-13 con país 786):
- *      len=8 → máx 10, len=7 → 100, len=6 → 1000, len=5 → 10000
- *  - bandera === 2  (UPC-12 sin país):
- *      secLen = 11 - len  → máx = 10^secLen   (len permitido: 5..7)
- */
-private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
-  const limpio = (prefijo ?? '').trim();
-  const len = limpio.length;
-
-  if (!limpio) {
-    this.mostrarAlerta('⚠️ Debe ingresar un prefijo.', 'Error');
-    return of(false);
-  }
-  if (!Number.isFinite(cantidad) || cantidad <= 0) {
-    this.mostrarAlerta('⚠️ Ingrese una cantidad válida de productos a codificar.', 'Error');
-    return of(false);
+  /** Lee el prefijo (codpre) según el id seleccionado en el form */
+  private getPrefijoSeleccionado(): string {
+    const idPrefijo = this.formUV.get('gcp')?.value;
+    const prefijo = this.prefijos.find(p => p.id_prefijos === idPrefijo);
+    return (prefijo?.codpre ?? '').toString().trim();
   }
 
-  // País según bandera
-  const pais = this.bandera === 0 ? '786' : (this.bandera === 2 ? '' : null);
-  if (pais === null) {
-    this.mostrarAlerta('⚠️ Bandera desconocida para validar cantidad.', 'Error');
-    return of(false);
-  }
+  /** Valida que la cantidad de filas (this.rowData.length) no supere el máximo
+   *  permitido según bandera y longitud del prefijo. Solo recibe el prefijo.
+   *  - bandera === 0  (GTIN-13 con país 786):
+   *      len 8 → máx 10, len 7 → 100, len 6 → 1000, len 5 → 10000
+   *  - bandera === 2  (UPC-12 sin país):
+   *      secLen = 11 - len  → máx = 10^secLen   (len permitido: 5..7)
+   */
+  /** Valida que 'cantidad' no supere el máximo permitido según bandera y longitud del prefijo.
+   *  - bandera === 0  (GTIN-13 con país 786):
+   *      len=8 → máx 10, len=7 → 100, len=6 → 1000, len=5 → 10000
+   *  - bandera === 2  (UPC-12 sin país):
+   *      secLen = 11 - len  → máx = 10^secLen   (len permitido: 5..7)
+   */
+  private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
+    const limpio = (prefijo ?? '').trim();
+    const len = limpio.length;
 
-  // Regla de longitudes y máximo teórico por prefijo
-  let maxTeorico = 0;
-  debugger
-  if (this.bandera === 0) {            // GTIN-13 (con 786)
-    if (len < 5 || len > 8) {
-      this.mostrarAlerta('⚠️ Para GTIN-13 el prefijo debe tener entre 5 y 8 dígitos.', 'Error');
+    if (!limpio) {
+      this.mostrarAlerta('⚠️ Debe ingresar un prefijo.', 'Error');
       return of(false);
     }
-    const maxPorLen: Record<number, number> = { 8: 10, 7: 100, 6: 1000, 5: 10000 };
-    maxTeorico = maxPorLen[len];
-  }
-
-  if (this.bandera === 2) {            // UPC-12 (sin 786)
-    if (len < 5 || len > 8) {
-      this.mostrarAlerta('⚠️ Para UPC el prefijo debe tener entre 5 y 7 dígitos.', 'Error');
+    if (!Number.isFinite(cantidad) || cantidad <= 0) {
+      this.mostrarAlerta('⚠️ Ingrese una cantidad válida de productos a codificar.', 'Error');
       return of(false);
     }
-    const secLen = 11 - len;           // 11 = dígitos útiles sin DV en UPC-A
-    if (secLen <= 0) {
-      this.mostrarAlerta('⚠️ Prefijo demasiado largo: no queda espacio para secuencia.', 'Error');
+
+    // País según bandera
+    const pais = this.bandera === 0 ? '786' : (this.bandera === 2 ? '' : null);
+    if (pais === null) {
+      this.mostrarAlerta('⚠️ Bandera desconocida para validar cantidad.', 'Error');
       return of(false);
     }
-    maxTeorico = Math.pow(10, secLen); // ej. len=7 → 10^4 = 10000
-  }
 
-  // 1) Consultar cuántos ya existen para ese prefijo (y país si aplica)
-  return this.productoService.getConteoPorPrefijo(limpio, pais).pipe(
-    map(existentes => {
-      const restantes = Math.max(0, maxTeorico - existentes);
-
-      // 👉 Ejemplo: si existen 1000 y pides 500000, aquí comparamos 500000 vs (maxTeorico-1000)
-      if (restantes === 0) {
-        this.mostrarAlerta(
-          `⚠️ Ya no hay cupos disponibles para el prefijo ${pais ? pais : ''}${limpio}. Máximo: ${maxTeorico}, existentes: ${existentes}.`,
-          'Error'
-        );
-        return false;
+    // Regla de longitudes y máximo teórico por prefijo
+    let maxTeorico = 0;
+    debugger
+    if (this.bandera === 0) {            // GTIN-13 (con 786)
+      if (len < 5 || len > 8) {
+        this.mostrarAlerta('⚠️ Para GTIN-13 el prefijo debe tener entre 5 y 8 dígitos.', 'Error');
+        return of(false);
       }
-      ///if (cantidad > restantes && this.tipoGtin === 'GTIN-13') { validacion Paola
-      if (cantidad > restantes) {
-        this.mostrarAlerta(
-          `⚠️ Solicitas ${cantidad} códigos pero solo puedes generar ${restantes} más con el prefijo ${pais ? pais : ''}${limpio} (máx ${maxTeorico}, existentes ${existentes}).`,
-          'Error'
-        );
-        return false;
-      }
+      const maxPorLen: Record<number, number> = { 8: 10, 7: 100, 6: 1000, 5: 10000 };
+      maxTeorico = maxPorLen[len];
+    }
 
-      return true;
-    }),
-    catchError(err => {
-      console.error('Error al obtener conteo por prefijo', err);
-      this.mostrarAlerta('❌ No se pudo validar el conteo actual del prefijo.', 'Error');
-      return of(false);
-    })
-  );
-}
+    if (this.bandera === 2) {            // UPC-12 (sin 786)
+      if (len < 5 || len > 8) {
+        this.mostrarAlerta('⚠️ Para UPC el prefijo debe tener entre 5 y 7 dígitos.', 'Error');
+        return of(false);
+      }
+      const secLen = 11 - len;           // 11 = dígitos útiles sin DV en UPC-A
+      if (secLen <= 0) {
+        this.mostrarAlerta('⚠️ Prefijo demasiado largo: no queda espacio para secuencia.', 'Error');
+        return of(false);
+      }
+      maxTeorico = Math.pow(10, secLen); // ej. len=7 → 10^4 = 10000
+    }
+
+    // 1) Consultar cuántos ya existen para ese prefijo (y país si aplica)
+    return this.productoService.getConteoPorPrefijo(limpio, pais).pipe(
+      map(existentes => {
+        const restantes = Math.max(0, maxTeorico - existentes);
+
+        // 👉 Ejemplo: si existen 1000 y pides 500000, aquí comparamos 500000 vs (maxTeorico-1000)
+        if (restantes === 0) {
+          this.mostrarAlerta(
+            `⚠️ Ya no hay cupos disponibles para el prefijo ${pais ? pais : ''}${limpio}. Máximo: ${maxTeorico}, existentes: ${existentes}.`,
+            'Error'
+          );
+          return false;
+        }
+        ///if (cantidad > restantes && this.tipoGtin === 'GTIN-13') { validacion Paola
+        if (cantidad > restantes) {
+          this.mostrarAlerta(
+            `⚠️ Solicitas ${cantidad} códigos pero solo puedes generar ${restantes} más con el prefijo ${pais ? pais : ''}${limpio} (máx ${maxTeorico}, existentes ${existentes}).`,
+            'Error'
+          );
+          return false;
+        }
+
+        return true;
+      }),
+      catchError(err => {
+        console.error('Error al obtener conteo por prefijo', err);
+        this.mostrarAlerta('❌ No se pudo validar el conteo actual del prefijo.', 'Error');
+        return of(false);
+      })
+    );
+  }
 
 
   onHeaderClicked(event: any): void {
@@ -1768,7 +1777,7 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
     }
     if (field === 'factor') {
       const factor = (newValue ?? '').toString().trim();
-      
+
       if (factor && /^\d+$/.test(factor)) {
         // Validar después de 500ms (debounce manual)
         clearTimeout((event.node as any)._factorTimeout);
@@ -1801,7 +1810,7 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
 
   grabar(): void {
     this.mensaje = ''; // Limpia mensaje
-    this.commitGridChanges(); 
+    this.commitGridChanges();
     const msg = this.modoEdicion ? 'actualizado' : 'creados';
 
     this.dialog.open(CustomMessageBoxComponent, {
@@ -1828,138 +1837,138 @@ private validarCantidadPorPrefijo(prefijo: string, cantidad: number) {
   }
 
 
-procesarGrabado(): void {
-  // ✅ asegurar que lo que está editando en el grid se guarde
-  this.commitGridChanges();
+  procesarGrabado(): void {
+    // ✅ asegurar que lo que está editando en el grid se guarde
+    this.commitGridChanges();
 
-  const filas = [...this.rowData];
-  if (filas.length === 0) return;
+    const filas = [...this.rowData];
+    if (filas.length === 0) return;
 
-  this.totalAProcesar = filas.length;
-  this.procesadosExitosos = 0;
-  this.procesadosFallidos = 0;
-  this.loadingMasivo = true;
-  this.huboError = false;
-  this.idsProductosCreados = [];
+    this.totalAProcesar = filas.length;
+    this.procesadosExitosos = 0;
+    this.procesadosFallidos = 0;
+    this.loadingMasivo = true;
+    this.huboError = false;
+    this.idsProductosCreados = [];
 
-  const dialogRef = this.dialog.open(DialogProcesoComponent, {
-    disableClose: true,
-    width: '400px',
-    data: { procesados: 0, total: this.totalAProcesar }
-  });
+    const dialogRef = this.dialog.open(DialogProcesoComponent, {
+      disableClose: true,
+      width: '400px',
+      data: { procesados: 0, total: this.totalAProcesar }
+    });
 
-  from(filas)
-    .pipe(
-      mergeMap(fila => this.guardarProductoPromise(fila, dialogRef), 5), // hasta 5 en paralelo
-      toArray()
-    )
-    .subscribe({
-      next: () => {
-        this.loadingMasivo = false;
-        dialogRef.close();
+    from(filas)
+      .pipe(
+        mergeMap(fila => this.guardarProductoPromise(fila, dialogRef), 5), // hasta 5 en paralelo
+        toArray()
+      )
+      .subscribe({
+        next: () => {
+          this.loadingMasivo = false;
+          dialogRef.close();
 
-        // ==========================
-        // ❌ Si hubo error → rollback
-        // ==========================
-        if (this.huboError) {
-          const eliminaciones = this.idsProductosCreados.map(id =>
-            this.productoService.eliminarProducto(id).toPromise()
-          );
+          // ==========================
+          // ❌ Si hubo error → rollback
+          // ==========================
+          if (this.huboError) {
+            const eliminaciones = this.idsProductosCreados.map(id =>
+              this.productoService.eliminarProducto(id).toPromise()
+            );
 
-          Promise.allSettled(eliminaciones).then(() => {
+            Promise.allSettled(eliminaciones).then(() => {
+              this.dialog.open(CustomMessageBoxComponent, {
+                width: '420px',
+                data: {
+                  title: 'Error en procesamiento',
+                  message:
+                    '❌ Se detectaron errores. Todos los productos creados han sido eliminados para mantener la integridad.',
+                  type: 'error',
+                  confirmText: 'Aceptar'
+                }
+              });
+
+              this.idsProductosCreados = [];
+              this.rowData = [];
+              this.formUV.reset();
+            });
+
+            return;
+          }
+
+          // ==========================
+          // ✅ OK → habilitar flujo GTIN14
+          // ==========================
+          this.botonGenerarDeshabilitado = true;
+          this.botonGrabarDeshabilitado = true;
+          this.botonGenerar14Deshabilitado = false;
+          this.botonGrabar14Deshabilitado = true;
+          this.checkboxMaestroDeshabilitado = false;
+          this.factorDeshabilitado = false;
+
+          this.gridApi.ensureIndexVisible(0);
+          this.gridApi.setFocusedCell(0, 'factor');
+
+          this.mostrarAlerta('✅ Todos los productos fueron grabados correctamente.', 'Éxito');
+
+          // ===== helper: preguntar GTIN-14 (siempre se ejecuta al final)
+          const preguntarGtin14 = () => {
             this.dialog.open(CustomMessageBoxComponent, {
               width: '420px',
               data: {
-                title: 'Error en procesamiento',
-                message:
-                  '❌ Se detectaron errores. Todos los productos creados han sido eliminados para mantener la integridad.',
-                type: 'error',
-                confirmText: 'Aceptar'
+                title: '¿Desea continuar?',
+                message: '¿Desea generar los códigos GTIN-14 ahora?',
+                type: 'info',
+                confirmText: 'Sí, generar',
+                cancelText: 'Cancelar',
+                showCancel: true
+              }
+            }).afterClosed().subscribe((generar14: boolean) => {
+              if (generar14) {
+                this.botonGenerar14Deshabilitado = false;
+                this.botonGrabar14Deshabilitado = true;
+                this.mostrarAlerta('✅ Puede continuar con GTIN-14.', 'Información');
+              } else {
+                this.mostrarAlerta('⚠️ Puede generar GTIN-14 luego desde el botón correspondiente.', 'Info');
               }
             });
+          };
 
-            this.idsProductosCreados = [];
-            this.rowData = [];
-            this.formUV.reset();
-          });
+          // ==================================================
+          // ✅ SOLO GTIN-13 → preguntar envío a Verified
+          // ==================================================
+          if (this.tipoGtin === 'GTIN-13') {
+            this.dialog.open(CustomMessageBoxComponent, {
+              width: '420px',
+              data: {
+                title: '¿Desea enviar a Verified?',
+                message: 'Todos los productos fueron grabados. ¿Desea generar y enviar el JSON a Verified ahora mismo?',
+                type: 'question',
+                confirmText: 'Sí, enviar',
+                cancelText: 'No, luego',
+                showCancel: true
+              }
+            }).afterClosed().subscribe((enviar: boolean) => {
+              if (enviar) {
+                this.enviarAJsonVerified(); // ✅ SOLO GTIN-13
+              }
+              // luego continúa con GTIN-14
+              preguntarGtin14();
+            });
 
-          return;
-        }
-
-        // ==========================
-        // ✅ OK → habilitar flujo GTIN14
-        // ==========================
-        this.botonGenerarDeshabilitado = true;
-        this.botonGrabarDeshabilitado = true;
-        this.botonGenerar14Deshabilitado = false;
-        this.botonGrabar14Deshabilitado = true;
-        this.checkboxMaestroDeshabilitado = false;
-        this.factorDeshabilitado = false;
-
-        this.gridApi.ensureIndexVisible(0);
-        this.gridApi.setFocusedCell(0, 'factor');
-
-        this.mostrarAlerta('✅ Todos los productos fueron grabados correctamente.', 'Éxito');
-
-        // ===== helper: preguntar GTIN-14 (siempre se ejecuta al final)
-        const preguntarGtin14 = () => {
-          this.dialog.open(CustomMessageBoxComponent, {
-            width: '420px',
-            data: {
-              title: '¿Desea continuar?',
-              message: '¿Desea generar los códigos GTIN-14 ahora?',
-              type: 'info',
-              confirmText: 'Sí, generar',
-              cancelText: 'Cancelar',
-              showCancel: true
-            }
-          }).afterClosed().subscribe((generar14: boolean) => {
-            if (generar14) {
-              this.botonGenerar14Deshabilitado = false;
-              this.botonGrabar14Deshabilitado = true;
-              this.mostrarAlerta('✅ Puede continuar con GTIN-14.', 'Información');
-            } else {
-              this.mostrarAlerta('⚠️ Puede generar GTIN-14 luego desde el botón correspondiente.', 'Info');
-            }
-          });
-        };
-
-        // ==================================================
-        // ✅ SOLO GTIN-13 → preguntar envío a Verified
-        // ==================================================
-        if (this.tipoGtin === 'GTIN-13') {
-          this.dialog.open(CustomMessageBoxComponent, {
-            width: '420px',
-            data: {
-              title: '¿Desea enviar a Verified?',
-              message: 'Todos los productos fueron grabados. ¿Desea generar y enviar el JSON a Verified ahora mismo?',
-              type: 'question',
-              confirmText: 'Sí, enviar',
-              cancelText: 'No, luego',
-              showCancel: true
-            }
-          }).afterClosed().subscribe((enviar: boolean) => {
-            if (enviar) {
-              this.enviarAJsonVerified(); // ✅ SOLO GTIN-13
-            }
-            // luego continúa con GTIN-14
+          } else {
+            // ✅ para cualquier otro tipo, NO muestra Verified
             preguntarGtin14();
-          });
+          }
+        },
 
-        } else {
-          // ✅ para cualquier otro tipo, NO muestra Verified
-          preguntarGtin14();
+        error: (err) => {
+          this.loadingMasivo = false;
+          dialogRef.close();
+          console.error('❌ Error general durante el guardado:', err);
+          this.mostrarAlerta('❌ Error general durante el guardado.', 'Error');
         }
-      },
-
-      error: (err) => {
-        this.loadingMasivo = false;
-        dialogRef.close();
-        console.error('❌ Error general durante el guardado:', err);
-        this.mostrarAlerta('❌ Error general durante el guardado.', 'Error');
-      }
-    });
-}
+      });
+  }
   guardarProductoPromise(fila: any, dialogRef: MatDialogRef<DialogProcesoComponent>): Promise<void> {
     return new Promise((resolve) => {
       this.guardarProducto(fila, () => {
@@ -1971,9 +1980,9 @@ procesarGrabado(): void {
 
 
 
-  async generar14():  Promise<void> {
+  async generar14(): Promise<void> {
     debugger
-    this.commitGridChanges(); 
+    this.commitGridChanges();
     this.rowData = [...this.rowData];
     this.gridApi.setFocusedCell(0, 'factor');
 
@@ -1984,14 +1993,14 @@ procesarGrabado(): void {
     }
 
     await this.validarTodosLosFactoresActivos();
-    
+
     // ✅ Ahora sí verificar errores (ya validados)
     const hayErroresFactor = this.rowData.some(f => f.activo && f._errorFactor === true);
     if (hayErroresFactor) {
       this.mostrarAlerta('❌ Corrija los factores duplicados antes de continuar.', 'Error');
       return;
     }
-    
+
     if (!this.verificarFactor()) return;
 
     const filasMarcadas = this.rowData.filter(f => f.activo);
@@ -2080,7 +2089,7 @@ procesarGrabado(): void {
     const cliente = this.clienteSeleccionado;
     const idPrefijo = this.formUV.value.gcp;
     const prefijo = this.prefijos.find(p => p.id_prefijos === idPrefijo);
-    this.commitGridChanges(); 
+    this.commitGridChanges();
     const now = new Date();
     const nuevoProducto: ProductoRequest = {
       IdProducto: 0,
@@ -2346,8 +2355,8 @@ procesarGrabado(): void {
     });
 
     this.gtinsRepetidos = repetidos;
-    this.mensajeGtinsRepetidos = listaCodigos.length > 0 
-      ? `⚠️ GTINs repetidos:\n${listaCodigos.join('\n')}` 
+    this.mensajeGtinsRepetidos = listaCodigos.length > 0
+      ? `⚠️ GTINs repetidos:\n${listaCodigos.join('\n')}`
       : '';
 
     // Marcar visualmente las filas repetidas
@@ -2414,32 +2423,32 @@ procesarGrabado(): void {
 
 
   generarDescripcionCompuesta(): void {
-  this.gridApi.forEachNode((node) => {
-    const data = node.data;
-    if (data.activo !== true) return; // solo los marcados
+    this.gridApi.forEachNode((node) => {
+      const data = node.data;
+      if (data.activo !== true) return; // solo los marcados
 
-    const descripcion = (data.descripcion ?? '').toString().trim();
-    const marca = (data.marca ?? '').toString().trim();
-    const contenido = (data.contenidoNeto ?? '').toString().trim();
-    const factor = (data.factor ?? '').toString().trim();
+      const descripcion = (data.descripcion ?? '').toString().trim();
+      const marca = (data.marca ?? '').toString().trim();
+      const contenido = (data.contenidoNeto ?? '').toString().trim();
+      const factor = (data.factor ?? '').toString().trim();
 
-    const t = (this.formUV.get('t')?.value ?? '').toString().trim();
-    const u = (this.formUV.get('u')?.value ?? '').toString().trim();
+      const t = (this.formUV.get('t')?.value ?? '').toString().trim();
+      const u = (this.formUV.get('u')?.value ?? '').toString().trim();
 
-    // Si marca y contenido están en blanco, unidad también debe ir en blanco
-    const unidad =
-      (marca === '' && contenido === '')
-        ? ''
-        : (data.contenidoUM ?? '').toString().trim();
+      // Si marca y contenido están en blanco, unidad también debe ir en blanco
+      const unidad =
+        (marca === '' && contenido === '')
+          ? ''
+          : (data.contenidoUM ?? '').toString().trim();
 
-    const texto = `${descripcion} ${marca} ${contenido} ${unidad} ${t} ${factor} ${u}`
-      .replace(/\s+/g, ' ')
-      .trim();
+      const texto = `${descripcion} ${marca} ${contenido} ${unidad} ${t} ${factor} ${u}`
+        .replace(/\s+/g, ' ')
+        .trim();
 
-    node.setDataValue('descripciong', texto);
-    this.gridApi.refreshCells({ rowNodes: [node], columns: ['descripciong'], force: true });
-  });
-}
+      node.setDataValue('descripciong', texto);
+      this.gridApi.refreshCells({ rowNodes: [node], columns: ['descripciong'], force: true });
+    });
+  }
 
 
   generarGtin14(): void {
@@ -2457,12 +2466,12 @@ procesarGrabado(): void {
       var ean13
       var base12
       if (gtinUv.length === 13) {
-         base12 = gtinUv.substring(0, 12);
-         ean13 = indicador + base12; // ⚠️ sin dígito verificador
+        base12 = gtinUv.substring(0, 12);
+        ean13 = indicador + base12; // ⚠️ sin dígito verificador
       }
 
       if (gtinUv.length === 12) {
-         base12 = gtinUv.substring(0, 11);
+        base12 = gtinUv.substring(0, 11);
         ean13 = indicador + '0' + base12; // ⚠️ sin dígito verificador
       }
 
@@ -2491,7 +2500,7 @@ procesarGrabado(): void {
 
   private crearGtin14(msg: string): void {
     const filas = this.rowData.filter(f => f.activo === true);
-    this.commitGridChanges(); 
+    this.commitGridChanges();
     if (filas.length === 0) {
       this.mostrarAlerta('⚠️ No hay filas marcadas con GTIN 14 para guardar.', 'Advertencia');
       return;
@@ -2563,78 +2572,78 @@ procesarGrabado(): void {
     }
   }
 
-private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoComponent>): Promise<void> {
-  return new Promise((resolve) => {
-    // Validaciones mínimas antes de armar payload
-    const presentacion = Number((fila.indicador ?? '').toString().trim());
-    const unidad = Number((fila.factor ?? '').toString().trim());
-    const g14 = (fila.gtin14 ?? '').toString().trim();
+  private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoComponent>): Promise<void> {
+    return new Promise((resolve) => {
+      // Validaciones mínimas antes de armar payload
+      const presentacion = Number((fila.indicador ?? '').toString().trim());
+      const unidad = Number((fila.factor ?? '').toString().trim());
+      const g14 = (fila.gtin14 ?? '').toString().trim();
 
-    if (!Number.isInteger(presentacion) || presentacion < 1 || presentacion > 8) {
-      console.error(`❌ Presentación/indicador inválido para ${fila.gtinUv}:`, fila.indicador);
-      this.procesadosFallidos++;
-      dialogRef.componentInstance.data.procesados = this.procesadosExitosos + this.procesadosFallidos;
-      return resolve();
-    }
-    if (!Number.isInteger(unidad) || unidad <= 0) {
-      console.error(`❌ Factor (unidad) inválido para ${fila.gtinUv}:`, fila.factor);
-      this.procesadosFallidos++;
-      dialogRef.componentInstance.data.procesados = this.procesadosExitosos + this.procesadosFallidos;
-      return resolve();
-    }
-    if (g14.length !== 14) {
-      console.error(`❌ GTIN-14 mal formado para ${fila.gtinUv}:`, g14);
-      this.procesadosFallidos++;
-      dialogRef.componentInstance.data.procesados = this.procesadosExitosos + this.procesadosFallidos;
-      return resolve();
-    }
-
-    const nuevoCodigo14: Codigos14Request = {
-      id_codigos14: 0,
-      codbar: (fila.gtinUv ?? '').toString().trim(),
-      id_prefijos: this.formUV.get('gcp')?.value || 0,
-      clientes_codigo: this.clienteSeleccionado?.clientes_codigo ?? 0,
-      presentacion,                    // ✅ numérico
-      unidad,                          // ✅ numérico (si tu API espera 'factor', cambia el nombre aquí)
-      descripcion: ((fila.descripciong ?? '') + '').toUpperCase(),  // ✅ a prueba de undefined
-      g14,
-      largo: 0,
-      ancho: 0,
-      profundidad: 0,
-      peso: 0,
-      fecha: new Date().toISOString().slice(0, 10),
-      foto: (fila.urlFoto ?? '').toString(),
-      activo: true,
-      id_usuario: this.usuarioActual?.id_usuario ?? 1,  // ✅ nunca 0
-      codpro: (fila.gtinUv ?? '').toString().trim(),
-      facturar: '',
-      nombre: 'PRESENTACION:',
-      gtin: 'GTIN14',
-      target: '',
-      marca: ((fila.marca ?? '') + '').toUpperCase(),
-      sector: 'Retail',
-      referencia: '',
-      abrevia: '',
-      id_producto: fila.idProducto || 0
-    };
-
-    this.codigos14Service.createCodigo14(nuevoCodigo14).subscribe({
-      next: (resp) => {
-        // Ideal: validar resp.type === 'OK' si tu API lo envía
-        this.procesadosExitosos++;
-        dialogRef.componentInstance.data.procesados = this.procesadosExitosos + this.procesadosFallidos;
-        resolve();
-      },
-      error: (err) => {
+      if (!Number.isInteger(presentacion) || presentacion < 1 || presentacion > 8) {
+        console.error(`❌ Presentación/indicador inválido para ${fila.gtinUv}:`, fila.indicador);
         this.procesadosFallidos++;
-        console.error(`❌ Error al guardar GTIN-14 para ${fila.gtinUv}:`, err);
-        console.warn('➡️ Payload enviado:', nuevoCodigo14);
         dialogRef.componentInstance.data.procesados = this.procesadosExitosos + this.procesadosFallidos;
-        resolve();
+        return resolve();
       }
+      if (!Number.isInteger(unidad) || unidad <= 0) {
+        console.error(`❌ Factor (unidad) inválido para ${fila.gtinUv}:`, fila.factor);
+        this.procesadosFallidos++;
+        dialogRef.componentInstance.data.procesados = this.procesadosExitosos + this.procesadosFallidos;
+        return resolve();
+      }
+      if (g14.length !== 14) {
+        console.error(`❌ GTIN-14 mal formado para ${fila.gtinUv}:`, g14);
+        this.procesadosFallidos++;
+        dialogRef.componentInstance.data.procesados = this.procesadosExitosos + this.procesadosFallidos;
+        return resolve();
+      }
+
+      const nuevoCodigo14: Codigos14Request = {
+        id_codigos14: 0,
+        codbar: (fila.gtinUv ?? '').toString().trim(),
+        id_prefijos: this.formUV.get('gcp')?.value || 0,
+        clientes_codigo: this.clienteSeleccionado?.clientes_codigo ?? 0,
+        presentacion,                    // ✅ numérico
+        unidad,                          // ✅ numérico (si tu API espera 'factor', cambia el nombre aquí)
+        descripcion: ((fila.descripciong ?? '') + '').toUpperCase(),  // ✅ a prueba de undefined
+        g14,
+        largo: 0,
+        ancho: 0,
+        profundidad: 0,
+        peso: 0,
+        fecha: new Date().toISOString().slice(0, 10),
+        foto: (fila.urlFoto ?? '').toString(),
+        activo: true,
+        id_usuario: this.usuarioActual?.id_usuario ?? 1,  // ✅ nunca 0
+        codpro: (fila.gtinUv ?? '').toString().trim(),
+        facturar: '',
+        nombre: 'PRESENTACION:',
+        gtin: 'GTIN14',
+        target: '',
+        marca: ((fila.marca ?? '') + '').toUpperCase(),
+        sector: 'Retail',
+        referencia: '',
+        abrevia: '',
+        id_producto: fila.idProducto || 0
+      };
+
+      this.codigos14Service.createCodigo14(nuevoCodigo14).subscribe({
+        next: (resp) => {
+          // Ideal: validar resp.type === 'OK' si tu API lo envía
+          this.procesadosExitosos++;
+          dialogRef.componentInstance.data.procesados = this.procesadosExitosos + this.procesadosFallidos;
+          resolve();
+        },
+        error: (err) => {
+          this.procesadosFallidos++;
+          console.error(`❌ Error al guardar GTIN-14 para ${fila.gtinUv}:`, err);
+          console.warn('➡️ Payload enviado:', nuevoCodigo14);
+          dialogRef.componentInstance.data.procesados = this.procesadosExitosos + this.procesadosFallidos;
+          resolve();
+        }
+      });
     });
-  });
-}
+  }
 
   generar12(): void {
     const idSeleccionado = this.formUV.value.gcp;
@@ -2663,7 +2672,7 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
         }
 
         const secuenciaInicial = serie !== '' ? parseInt(serie, 10) : resp.data;
-        
+
 
         const maxCodigos = Math.pow(10, longitudSecuencia);
         if (this.rowData.length > maxCodigos) {
@@ -2779,9 +2788,9 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
           if (producto) {
             fila.descripcion = fila.descripcion?.trim() || producto.Despro || '';
             fila.marca = fila.marca?.trim() || producto.marca || '';
-            fila.contenidoNeto =  producto.contenido || '';
+            fila.contenidoNeto = producto.contenido || '';
             fila.contenidoUM = producto.unidad || 'g';
-            fila.categoria = this.formUV.get('checkExiste')?.value 
+            fila.categoria = this.formUV.get('checkExiste')?.value
               ? (producto.codigoproducto || fila.categoria?.trim() || '')
               : (fila.categoria?.trim() || producto.codigoproducto || '');
             fila.gcpBrick = fila.gcpBrick?.trim() || producto.brick || '';
@@ -2961,19 +2970,19 @@ private guardarGtin14Promise(fila: any, dialogRef: MatDialogRef<DialogProcesoCom
 
     this.mostrarAlerta('📦 JSON generado y enviado en lote a Verified.', 'Información');
   }
-cargarParametroFacturaPorId(id: number): void {
-  this.parametrosFacturaService.getByIdN(id).subscribe({
-    next: (parametro) => {
-      this.api = parametro?.texto ?? '';
-      this.claveApi = parametro?.obs ?? '';
+  cargarParametroFacturaPorId(id: number): void {
+    this.parametrosFacturaService.getByIdN(id).subscribe({
+      next: (parametro) => {
+        this.api = parametro?.texto ?? '';
+        this.claveApi = parametro?.obs ?? '';
 
-      console.log('? Parámetro cargado:', parametro);
-    },
-    error: (error) => {
-      console.error('? Error al obtener el parámetro:', error);
-    }
-  });
-}
+        console.log('? Parámetro cargado:', parametro);
+      },
+      error: (error) => {
+        console.error('? Error al obtener el parámetro:', error);
+      }
+    });
+  }
 
   tooltipRepetido = (params: any): string | null => {
     const descripcion = (params.data?.descripcion || '').trim().toUpperCase();
@@ -2994,11 +3003,11 @@ cargarParametroFacturaPorId(id: number): void {
     this.formUV.get(controlName)?.setValue(valor);
   }
   private commitGridChanges(): void {
-  if (!this.gridApi) { return; }
+    if (!this.gridApi) { return; }
 
-  this.gridApi.stopEditing();                 // guarda lo que está editando
-  this.gridApi.refreshCells({ force: true }); // repinta estilos
-}
+    this.gridApi.stopEditing();                 // guarda lo que está editando
+    this.gridApi.refreshCells({ force: true }); // repinta estilos
+  }
   private verificarFactorExistente(fila: any, rowNode: any): void {
     const factorStr = (fila.factor ?? '').toString().trim();
     const factorNum = Number(factorStr);
@@ -3024,7 +3033,7 @@ cargarParametroFacturaPorId(id: number): void {
         }
 
         if (existe) {
-        // ❌ YA EXISTE
+          // ❌ YA EXISTE
           fila._errorFactor = true;
           // ✅ AGREGAR ESTA LÍNEA:
           this.mostrarAlerta(`⚠️ El Factor ${factorNum} ya existe para el GTIN ${codbarUv}. Debe corregirlo.`, 'Error');
@@ -3055,8 +3064,8 @@ cargarParametroFacturaPorId(id: number): void {
     // 3. Faltan factores en filas activas
 
     const hayValidacionesPendientes = this.factoresValidando.size > 0;
-    
-    const hayErroresFactor = this.rowData.some(f => 
+
+    const hayErroresFactor = this.rowData.some(f =>
       f.activo && f._errorFactor === true
     );
 
@@ -3073,21 +3082,21 @@ cargarParametroFacturaPorId(id: number): void {
       // - Todos los activos tienen factor
       const algunoActivo = this.rowData.some(f => f.activo === true);
       const todosConIdProducto = this.rowData.every(f => f.idProducto);
-      
+
       if (algunoActivo && todosConIdProducto) {
         this.botonGenerar14Deshabilitado = false;
       }
     }
   }
-  
+
   private validarTodosLosFactoresPegados(): void {
     if (!this.formUV.get('checkExiste')?.value) {
       return;
     }
 
-    const filasConFactor = this.rowData.filter(f => 
-      f.activo === true && 
-      f.factor && 
+    const filasConFactor = this.rowData.filter(f =>
+      f.activo === true &&
+      f.factor &&
       f.factor.toString().trim() !== ''
     );
 
@@ -3137,47 +3146,47 @@ cargarParametroFacturaPorId(id: number): void {
     });
   }
   // ✅ ISO local: "YYYY-MM-DDTHH:mm:ss"  (sin Z, sin UTC)
-private isoLocal(d: Date = new Date()): string {
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-}
-
-// ✅ SOLO fecha local: "YYYY-MM-DD"
-private fechaLocal(d: Date = new Date()): string {
-  return this.isoLocal(d).slice(0, 10);
-}
-
-private validarTodosLosFactoresActivos(): Promise<void> {
-  const filasActivas = this.rowData.filter(f => 
-    f.activo === true && 
-    f.factor && 
-    f.factor.toString().trim() !== ''
-  );
-
-  if (filasActivas.length === 0) {
-    return Promise.resolve();
+  private isoLocal(d: Date = new Date()): string {
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
   }
 
-  const validaciones = filasActivas.map(fila => {
-    const factorNum = Number(fila.factor);
-    const codbarUv = (fila.gtinUv || '').toString().trim();
+  // ✅ SOLO fecha local: "YYYY-MM-DD"
+  private fechaLocal(d: Date = new Date()): string {
+    return this.isoLocal(d).slice(0, 10);
+  }
 
-    if (!codbarUv || Number.isNaN(factorNum)) {
+  private validarTodosLosFactoresActivos(): Promise<void> {
+    const filasActivas = this.rowData.filter(f =>
+      f.activo === true &&
+      f.factor &&
+      f.factor.toString().trim() !== ''
+    );
+
+    if (filasActivas.length === 0) {
       return Promise.resolve();
     }
 
-    return this.codigos14Service.existePorCodbarUnidad(codbarUv, factorNum)
-      .toPromise()
-      .then(existe => {
-        fila._errorFactor = existe;
-      })
-      .catch(() => {
-        fila._errorFactor = false;
-      });
-  });
+    const validaciones = filasActivas.map(fila => {
+      const factorNum = Number(fila.factor);
+      const codbarUv = (fila.gtinUv || '').toString().trim();
 
-  return Promise.all(validaciones).then(() => {
-    this.gridApi?.refreshCells({ force: true, columns: ['factor'] });
-  });
-}
+      if (!codbarUv || Number.isNaN(factorNum)) {
+        return Promise.resolve();
+      }
+
+      return this.codigos14Service.existePorCodbarUnidad(codbarUv, factorNum)
+        .toPromise()
+        .then(existe => {
+          fila._errorFactor = existe;
+        })
+        .catch(() => {
+          fila._errorFactor = false;
+        });
+    });
+
+    return Promise.all(validaciones).then(() => {
+      this.gridApi?.refreshCells({ force: true, columns: ['factor'] });
+    });
+  }
 }

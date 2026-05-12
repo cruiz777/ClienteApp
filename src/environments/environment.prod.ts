@@ -26,5 +26,7 @@ export const environment = {
       anexoTransaccionalUrl: 'http://181.39.162.182:8000/anexo/api',
       cxpUrl:'http://181.39.162.182:8000/cxp/api',
       conciliacionUrl:'http://181.39.162.182:8000/conciliacion/api',
+      maintenanceRolUrl: 'http://181.39.162.182:8000/maintenance-rol/api',
+      employeesUrl: 'http://181.39.162.182:8000/employees/api',
   
 };

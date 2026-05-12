@@ -16,27 +16,30 @@
                 <input matInput formControlName="codigoEmpleado">
               </mat-form-field>
 
-              <div class="inline-radio">
-                <label>Tipo Documento:</label>
-                <mat-radio-group formControlName="tipoDocumento">
-                  <mat-radio-button value="cedula">Cédula</mat-radio-button>
-                  <mat-radio-button value="pasaporte">Pasaporte</mat-radio-button>
-                  <mat-radio-button value="idExterior">ID. Tributario del Exterior</mat-radio-button>
-                </mat-radio-group>
-              </div>
+              <mat-form-field appearance="outline">
+                <mat-label>Tipo Documento</mat-label>
+
+                <mat-select formControlName="tipoDocumento">
+                  <mat-option *ngFor="let tipo of tiposDocumento" [value]="tipo.idTipoDocumento">
+                    {{ tipo.descripcion }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>Cédula / Pasaporte</mat-label>
                 <input matInput formControlName="identificacion">
               </mat-form-field>
 
-              <div class="inline-radio">
-                <label>Sexo:</label>
-                <mat-radio-group formControlName="sexo">
-                  <mat-radio-button value="M">Masculino</mat-radio-button>
-                  <mat-radio-button value="F">Femenino</mat-radio-button>
-                </mat-radio-group>
-              </div>
+              <mat-form-field appearance="outline">
+                <mat-label>Sexo</mat-label>
+
+                <mat-select formControlName="sexo">
+                  <mat-option *ngFor="let genero of generos" [value]="genero.generoCodigo">
+                    {{ genero.generoDescripcion }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
 
               <mat-form-field appearance="outline">
                 <mat-label>Nombres</mat-label>
@@ -50,7 +53,12 @@
 
               <mat-form-field appearance="outline">
                 <mat-label>Estado Civil</mat-label>
-                <input matInput formControlName="estadoCivil">
+
+                <mat-select formControlName="estadoCivil">
+                  <mat-option *ngFor="let estado of estadosCivil" [value]="estado.estadoCivilCodigo">
+                    {{ estado.estadoCivilNombre }}
+                  </mat-option>
+                </mat-select>
               </mat-form-field>
 
               <mat-form-field appearance="outline">
@@ -71,14 +79,19 @@
             <h3>Domicilio</h3>
 
             <div class="form-grid-2">
-              <mat-form-field appearance="outline">
+              <!-- <mat-form-field appearance="outline">
                 <mat-label>País</mat-label>
                 <input matInput formControlName="pais">
-              </mat-form-field>
+              </mat-form-field> -->
 
               <mat-form-field appearance="outline">
                 <mat-label>Ciudad</mat-label>
-                <input matInput formControlName="ciudad">
+
+                <mat-select formControlName="ciudad">
+                  <mat-option *ngFor="let ciudad of ciudades" [value]="ciudad.id_ciudad">
+                    {{ ciudad.ciudad }}
+                  </mat-option>
+                </mat-select>
               </mat-form-field>
 
               <mat-form-field appearance="outline" class="full-width">
@@ -98,7 +111,12 @@
 
               <mat-form-field appearance="outline">
                 <mat-label>Nacionalidad</mat-label>
-                <input matInput formControlName="nacionalidad">
+
+                <mat-select formControlName="nacionalidad">
+                  <mat-option *ngFor="let nac of nacionalidades" [value]="nac.id_nacionalidad">
+                    {{ nac.descripcion }}
+                  </mat-option>
+                </mat-select>
               </mat-form-field>
 
               <mat-form-field appearance="outline">
@@ -130,32 +148,65 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Zona</mat-label>
-              <input matInput formControlName="zona">
+
+              <mat-select formControlName="zona">
+                <mat-option *ngFor="let zona of zonas" [value]="zona.id">
+                  {{ zona.nombre }}
+                </mat-option>
+              </mat-select>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Ciudad de Trabajo</mat-label>
-              <input matInput formControlName="ciudadTrabajo">
+
+              <mat-select formControlName="ciudadTrabajo">
+                <mat-option *ngFor="let ciudad of ciudades" [value]="ciudad.id_ciudad">
+                  {{ ciudad.ciudad }}
+                </mat-option>
+              </mat-select>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Local</mat-label>
-              <input matInput formControlName="local">
+
+              <mat-select formControlName="local">
+                <mat-option *ngFor="let local of locales" [value]="local.id">
+                  {{ local.nombre }}
+                </mat-option>
+              </mat-select>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Departamento</mat-label>
-              <input matInput formControlName="departamento">
+
+              <mat-select formControlName="departamento">
+
+                <mat-option *ngFor="let dep of departamentos" [value]="dep.id_departamento">
+
+                  {{ dep.nombre }}
+
+                </mat-option>
+
+              </mat-select>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Cargo</mat-label>
-              <input matInput formControlName="cargo">
+              <mat-select formControlName="cargo">
+                <mat-option *ngFor="let cargo of cargos" [value]="cargo.idCargo">
+                  {{ cargo.descargo }}
+                </mat-option>
+              </mat-select>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
               <mat-label>Tipo de Empleado</mat-label>
-              <input matInput formControlName="tipoEmpleado">
+
+              <mat-select formControlName="tipoEmpleado">
+                <mat-option *ngFor="let tipo of tiposEmpleado" [value]="tipo.idTipemp">
+                  {{ tipo.desTipemp }}
+                </mat-option>
+              </mat-select>
             </mat-form-field>
 
             <mat-form-field appearance="outline">
@@ -415,7 +466,8 @@
 
         <mat-form-field appearance="outline" class="employee-box">
           <mat-label>Empleado</mat-label>
-          <input matInput [value]="form.get('datosGenerales.nombres')?.value + ' ' + form.get('datosGenerales.apellidos')?.value">
+          <input matInput
+            [value]="form.get('datosGenerales.nombres')?.value + ' ' + form.get('datosGenerales.apellidos')?.value">
         </mat-form-field>
 
         <div class="table-container">
@@ -508,7 +560,8 @@
 
         <mat-form-field appearance="outline" class="employee-box">
           <mat-label>Empleado</mat-label>
-          <input matInput [value]="form.get('datosGenerales.nombres')?.value + ' ' + form.get('datosGenerales.apellidos')?.value">
+          <input matInput
+            [value]="form.get('datosGenerales.nombres')?.value + ' ' + form.get('datosGenerales.apellidos')?.value">
         </mat-form-field>
 
         <div class="table-container">
@@ -605,7 +658,8 @@
 
         <mat-form-field appearance="outline" class="employee-box">
           <mat-label>Empleado</mat-label>
-          <input matInput [value]="form.get('datosGenerales.nombres')?.value + ' ' + form.get('datosGenerales.apellidos')?.value">
+          <input matInput
+            [value]="form.get('datosGenerales.nombres')?.value + ' ' + form.get('datosGenerales.apellidos')?.value">
         </mat-form-field>
 
         <div class="table-container">

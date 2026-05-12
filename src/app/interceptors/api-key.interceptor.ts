@@ -33,7 +33,9 @@ export class ApiKeyInterceptor implements HttpInterceptor {
       environment.anexoTransaccionalUrl,
       environment.conciliacionUrl,
       environment.cxpUrl,
-      environment.maintenanceRol
+      environment.maintenanceRolUrl,
+      environment.employeesUrl
+
     ];
 
     // Verificar si es una petición a través del gateway
