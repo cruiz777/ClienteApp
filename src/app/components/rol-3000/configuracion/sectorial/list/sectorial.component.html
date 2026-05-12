@@ -1,6 +1,6 @@
 <div class="zona-container">
   <div class="zona-header">
-    <h2>Cargos</h2>
+    <h2>Sectorial</h2>
     <button mat-raised-button class="btn-azul" (click)="abrirCrear()">Nuevo</button>
   </div>
 
@@ -12,7 +12,7 @@
         type="text"
         [(ngModel)]="searchTerm"
         (input)="buscar()"
-        placeholder="Buscar por descripción o código"
+        placeholder="Buscar por descripción, estructura o código IESS"
       />
       <img src="assets/icons/icon-buscar.png" alt="Buscar" />
     </div>
@@ -22,46 +22,48 @@
     <table class="zona-tabla">
       <thead>
         <tr>
-          <th style="width: 80px;">Id Cargo</th>
+          <th style="width: 70px;">Id</th>
           <th>Descripción</th>
-          <th style="width: 100px;">Responsable</th>
-          <th style="width: 90px;">Hor. Enf.</th>
-          <th style="width: 90px;">Fr. Mensual</th>
+          <th style="width: 160px;">Estructura Ocupacional</th>
+          <th style="width: 110px;">Código IESS</th>
+          <th style="width: 110px;">Salario Mín.</th>
+          <th style="width: 110px;">Tarifa Mín.</th>
           <th style="width: 80px;">Estado</th>
           <th class="col-opcion">Acciones</th>
         </tr>
       </thead>
       <tbody>
 
-        <!-- ── SKELETON mientras carga ── -->
+        <!-- SKELETON mientras carga -->
         <ng-container *ngIf="loading">
           <tr *ngFor="let _ of skeletonRows" class="skeleton-row">
             <td><span class="skeleton-cell" style="width:40px"></span></td>
             <td><span class="skeleton-cell" style="width:180px"></span></td>
-            <td><span class="skeleton-cell" style="width:60px"></span></td>
-            <td><span class="skeleton-cell" style="width:50px"></span></td>
-            <td><span class="skeleton-cell" style="width:40px"></span></td>
-            <td><span class="skeleton-cell" style="width:40px"></span></td>
+            <td><span class="skeleton-cell" style="width:120px"></span></td>
+            <td><span class="skeleton-cell" style="width:80px"></span></td>
+            <td><span class="skeleton-cell" style="width:80px"></span></td>
+            <td><span class="skeleton-cell" style="width:80px"></span></td>
             <td><span class="skeleton-cell" style="width:55px; border-radius:12px"></span></td>
             <td><span class="skeleton-cell" style="width:28px; height:28px; border-radius:6px"></span></td>
           </tr>
         </ng-container>
 
-        <!-- ── DATOS cargados ── -->
+        <!-- DATOS cargados -->
         <ng-container *ngIf="!loading">
           <tr *ngFor="let it of filtered; trackBy: trackById">
-            <td>{{ it.idCargo }}</td>
-            <td>{{ it.descargo }}</td>
-            <td>{{ it.responsable ? 'Sí' : 'No' }}</td>
-            <td>{{ it.horEnf ? 'Sí' : 'No' }}</td>
-            <td>{{ it.frmensual ? 'Sí' : 'No' }}</td>
+            <td>{{ it.idSectorial }}</td>
+            <td>{{ it.desSectorial ?? '—' }}</td>
+            <td>{{ it.estructuraOcupacional ?? '—' }}</td>
+            <td>{{ it.codigoIess ?? '—' }}</td>
+            <td>{{ it.salarioMinimo != null ? (it.salarioMinimo | number:'1.2-2') : '—' }}</td>
+            <td>{{ it.tarifaMinima != null ? (it.tarifaMinima | number:'1.2-2') : '—' }}</td>
             <td>
               <span [class]="it.estado ? 'badge-activo' : 'badge-inactivo'">
                 {{ it.estado ? 'Activo' : 'Inactivo' }}
               </span>
             </td>
             <td class="acciones">
-              <button type="button" class="icon-btn" (click)="abrirEditar(it.idCargo)" title="Editar">
+              <button type="button" class="icon-btn" (click)="abrirEditar(it.idSectorial)" title="Editar">
                 <img src="assets/icons/icon-modificar-3.png" alt="Editar" />
               </button>
             </td>

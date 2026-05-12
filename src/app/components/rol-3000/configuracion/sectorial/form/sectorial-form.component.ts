@@ -4,54 +4,55 @@ import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angula
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatDialog } from '@angular/material/dialog';
 
-import { ParametrosCostosService } from 'src/app/services/parametros-costos.service';
-import { ParametrosCostosResponse } from 'src/app/interfaces/responses/parametros-costos.response';
+import { SectorialService } from 'src/app/services/sectorial.service';
 import { ApiResponse } from 'src/app/interfaces/responses/api-response';
 import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/util/messages/custom-message-box.component';
-import { CreateParametrosCostosRequest } from 'src/app/interfaces/requests/parametros-costos-request';
+import { SectorialResponse } from 'src/app/interfaces/responses/sectorial-response';
+import { CreateSectorialRequest } from 'src/app/interfaces/requests/sectorial-request';
 
 @Component({
-  selector: 'app-parametros-costos-form',
+  selector: 'app-sectorial-form',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, MatDialogModule],
-  templateUrl: './parametros-costos-form.component.html',
-  styleUrls: ['./parametros-costos-form.component.css']
+  templateUrl: './sectorial-form.component.html',
+  styleUrls: ['./sectorial-form.component.css']
 })
-export class ParametrosCostosFormComponent implements OnInit {
+export class SectorialFormComponent implements OnInit {
 
   form!: FormGroup;
   isEditMode = false;
 
   constructor(
     private fb: FormBuilder,
-    private parametrosCostosService: ParametrosCostosService,
+    private sectorialService: SectorialService,
     private dialog: MatDialog,
-    public dialogRef: MatDialogRef<ParametrosCostosFormComponent>,
+    public dialogRef: MatDialogRef<SectorialFormComponent>,
     @Inject(MAT_DIALOG_DATA) public data: { id?: number }
   ) {}
 
   ngOnInit(): void {
     this.form = this.fb.group({
-      idParCosto:   [0],
-      nombre:       ['', [Validators.required, Validators.maxLength(248)]],
-      valorInicial: ['', [Validators.maxLength(100)]],
-      valorFinal:   ['', [Validators.maxLength(100)]],
-      descripcion:  ['', [Validators.maxLength(500)]],
+      idSectorial:            [0],
+      desSectorial:           ['', [Validators.required, Validators.maxLength(248)]],
+      estructuraOcupacional:  ['', [Validators.maxLength(248)]],
+      codigoIess:             ['', [Validators.maxLength(50)]],
+      salarioMinimo:          [null],
+      tarifaMinima:           [null],
+      estado:                 [true],
+      idEmpresa:              [null, [Validators.required]],
     });
 
     this.isEditMode = !!this.data?.id;
 
     if (this.isEditMode && this.data.id) {
-      this.parametrosCostosService.getById(this.data.id).subscribe({
-        next: (resp: ApiResponse<ParametrosCostosResponse>) => {
-          console.log('🔍 RAW resp:', JSON.stringify(resp));
-          console.log('🔍 resp.data:', resp?.data);
+      this.sectorialService.getById(this.data.id).subscribe({
+        next: (resp: ApiResponse<SectorialResponse>) => {
           this.form.patchValue(resp.data);
         },
         error: () => this.mostrarMensaje({
           type: 'error',
           title: 'Error',
-          message: 'No se pudo cargar el parámetro de costo.',
+          message: 'No se pudo cargar el sectorial.',
           showCancel: false,
           confirmText: 'Aceptar'
         })
@@ -74,29 +75,32 @@ export class ParametrosCostosFormComponent implements OnInit {
 
     const raw = this.form.getRawValue();
 
-    const payload: CreateParametrosCostosRequest = {
-      nombre:       (raw.nombre ?? '').trim() || null,
-      valorInicial: raw.valorInicial?.trim() || null,
-      valorFinal:   raw.valorFinal?.trim() || null,
-      descripcion:  raw.descripcion?.trim() || null,
+    const payload: CreateSectorialRequest = {
+      desSectorial:          (raw.desSectorial ?? '').trim(),
+      estructuraOcupacional: raw.estructuraOcupacional?.trim() || null,
+      codigoIess:            raw.codigoIess?.trim() || null,
+      salarioMinimo:         raw.salarioMinimo != null ? Number(raw.salarioMinimo) : null,
+      tarifaMinima:          raw.tarifaMinima  != null ? Number(raw.tarifaMinima)  : null,
+      estado:                raw.estado,
+      idEmpresa:             raw.idEmpresa,
     };
 
     const req$ = this.isEditMode
-      ? this.parametrosCostosService.update(raw.idParCosto, payload)
-      : this.parametrosCostosService.create(payload);
+      ? this.sectorialService.update(raw.idSectorial, payload)
+      : this.sectorialService.create(payload);
 
     req$.subscribe({
       next: () =>
         this.mostrarMensaje({
           type: 'success',
           title: 'Éxito',
-          message: `Parámetro de costo ${this.isEditMode ? 'actualizado' : 'creado'} correctamente.`,
+          message: `Sectorial ${this.isEditMode ? 'actualizado' : 'creado'} correctamente.`,
           showCancel: false,
           confirmText: 'Aceptar'
         }).afterClosed().subscribe(() => this.dialogRef.close(true)),
       error: (err) => {
         const msg = err?.error?.message ?? err?.message
-          ?? `No se pudo ${this.isEditMode ? 'actualizar' : 'crear'} el parámetro de costo.`;
+          ?? `No se pudo ${this.isEditMode ? 'actualizar' : 'crear'} el sectorial.`;
         this.mostrarMensaje({
           type: 'error',
           title: 'Error',

@@ -5,6 +5,5 @@ export interface CreateRpCargosRequest {
   horEnf: boolean;
   frmensual: boolean;
   estado: boolean;
-  idSectorial?: number | null;
   idEmpresa: number;
 }

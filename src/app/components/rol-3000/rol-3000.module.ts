@@ -82,6 +82,9 @@ import { RpTipEmpComponent } from './configuracion/tipo-empleado/list/tipo-emple
 import { TipoGastoComponent } from './configuracion/tipo-gasto/list/tipo-gasto.component';
 import { RpNivelInstruccionComponent } from './configuracion/nivel-instruccion/list/nivel-instruccion.component';
 import { ParametrosCostosComponent } from './configuracion/parametros-costos/list/parametros-costos.component';
+import { IngresoDescuentosComponent } from './configuracion/ingreso-descuentos/list/ingreso-descuentos.component';
+import { ImpuestoRentaComponent } from './configuracion/impuestos-renta-rol/list/impuestos-renta.component';
+import { SectorialComponent } from './configuracion/sectorial/list/sectorial.component';
 
 @NgModule({
   declarations: [
@@ -166,6 +169,9 @@ import { ParametrosCostosComponent } from './configuracion/parametros-costos/lis
         TipoGastoComponent,
         RpNivelInstruccionComponent,
         ParametrosCostosComponent,
+        IngresoDescuentosComponent,
+        ImpuestoRentaComponent,
+        SectorialComponent,
     Rol3000RoutingModule
   ]
 })

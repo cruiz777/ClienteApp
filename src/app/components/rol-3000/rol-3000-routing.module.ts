@@ -52,6 +52,10 @@ import { RpTipEmpComponent } from './configuracion/tipo-empleado/list/tipo-emple
 import { TipoGastoComponent } from './configuracion/tipo-gasto/list/tipo-gasto.component';
 import { RpNivelInstruccionComponent } from './configuracion/nivel-instruccion/list/nivel-instruccion.component';
 import { ParametrosCostosComponent } from './configuracion/parametros-costos/list/parametros-costos.component';
+import { IngresoDescuentosComponent } from './configuracion/ingreso-descuentos/list/ingreso-descuentos.component';
+import { ImpuestoRentaService } from 'src/app/services/impuestos-renta-rol.service';
+import { ImpuestoRentaComponent } from './configuracion/impuestos-renta-rol/list/impuestos-renta.component';
+import { SectorialComponent } from './configuracion/sectorial/list/sectorial.component';
 const routes: Routes = [
    {
       path: '',
@@ -109,8 +113,10 @@ const routes: Routes = [
         {path:'tipo-gasto', component: TipoGastoComponent},
         {path:'nivel-instruccion', component: RpNivelInstruccionComponent},
         {path:'parametros-costos', component: ParametrosCostosComponent},
+        {path:'ingreso-descuentos', component: IngresoDescuentosComponent},
+        {path:'impuestos-renta', component: ImpuestoRentaComponent},
+        {path:'sectorial', component: SectorialComponent},
         
-
         { path: '**', redirectTo: 'inicio-rol' },
       ],
     },

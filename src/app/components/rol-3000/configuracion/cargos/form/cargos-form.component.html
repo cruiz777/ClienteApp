@@ -19,21 +19,6 @@
       </div>
     </div>
 
-    <!-- CÓDIGO SECTORIAL -->
-    <div class="form-group">
-      <label for="codsec">Código Sectorial</label>
-      <input
-        id="codsec"
-        type="text"
-        formControlName="codsec"
-        placeholder="Ej: SEC01"
-        maxlength="10"
-      />
-      <div class="error" *ngIf="form.get('codsec')?.touched && form.get('codsec')?.errors">
-        <span *ngIf="form.get('codsec')?.hasError('maxlength')">Máximo 10 caracteres.</span>
-      </div>
-    </div>
-
     <!-- ID EMPRESA -->
     <div class="form-group">
       <label for="idEmpresa">Id Empresa <span class="required">*</span></label>
@@ -47,18 +32,6 @@
       <div class="error" *ngIf="form.get('idEmpresa')?.touched && form.get('idEmpresa')?.errors">
         <span *ngIf="form.get('idEmpresa')?.hasError('required')">Campo obligatorio.</span>
       </div>
-    </div>
-
-    <!-- ID SECTORIAL -->
-    <div class="form-group">
-      <label for="idSectorial">Id Sectorial</label>
-      <input
-        id="idSectorial"
-        type="number"
-        formControlName="idSectorial"
-        placeholder="Ej: 2"
-        min="1"
-      />
     </div>
 
     <!-- CHECKBOXES -->

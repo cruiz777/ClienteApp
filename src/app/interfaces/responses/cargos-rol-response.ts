@@ -6,6 +6,5 @@ export interface RpCargosResponse {
   horEnf: boolean;
   frmensual: boolean;
   estado: boolean;
-  idSectorial?: number | null;
   idEmpresa: number;
 }
