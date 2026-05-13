@@ -11,7 +11,7 @@ import { CreateSectorialRequest } from '../interfaces/requests/sectorial-request
 })
 export class SectorialService {
 
-  private readonly baseUrl = `${environment.maintenanceRol}/Sectorial`;
+  private readonly baseUrl = `${environment.maintenanceRolUrl}/Sectorial`;
 
   constructor(private http: HttpClient) {}
 

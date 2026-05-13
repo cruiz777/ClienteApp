@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -8,11 +8,12 @@ import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/util/messages
 import { ImpuestoRentaResponse } from 'src/app/interfaces/responses/impuesto-renta-rol-request';
 import { ImpuestoRentaService } from 'src/app/services/impuestos-renta-rol.service';
 import { ImpuestoRentaFormComponent } from '../form/impuestos-renta-form.component';
+import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
 @Component({
   selector: 'app-impuesto-renta',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule,MatPaginatorModule],
   templateUrl: './impuestos-renta.component.html',
   styleUrls: ['./impuestos-renta.component.css']
 })
@@ -26,7 +27,13 @@ export class ImpuestoRentaComponent implements OnInit {
   searchTerm = '';
 
   readonly skeletonRows = Array(6).fill(0);
-
+  currentPage = 0;
+  pageSize = 10;
+  totalItems = 0;
+  paginated: ImpuestoRentaResponse[] = [];
+  pageSizeOptions = [10, 25, 50];
+  private reseteandoPagina = false;
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
   constructor(
     private impuestoRentaService: ImpuestoRentaService,
     private dialog: MatDialog
@@ -43,6 +50,8 @@ export class ImpuestoRentaComponent implements OnInit {
       next: (resp: ApiResponse<ImpuestoRentaResponse[]>) => {
         this.impuestosRenta = resp?.data ?? [];
         this.filtered = [...this.impuestosRenta];
+        this.currentPage = 0;
+        this.actualizarPaginacion();
         this.loading = false;
       },
       error: (err) => {
@@ -63,15 +72,32 @@ export class ImpuestoRentaComponent implements OnInit {
     const term = (this.searchTerm ?? '').trim().toLowerCase();
     if (!term) {
       this.filtered = [...this.impuestosRenta];
-      return;
+    } else {
+      this.filtered = this.impuestosRenta.filter(i =>
+        i.idImpRenta?.toString().includes(term) ||
+        i.frabas1Ir?.toString().includes(term) ||
+        i.frabas2Ir?.toString().includes(term)
+      );
     }
-    this.filtered = this.impuestosRenta.filter(i =>
-      i.idImpRenta?.toString().includes(term) ||
-      i.frabas1Ir?.toString().includes(term) ||
-      i.frabas2Ir?.toString().includes(term)
-    );
+    this.currentPage = 0;
+    this.actualizarPaginacion();
+
+    this.reseteandoPagina = true;
+    this.paginator?.firstPage();
+    this.reseteandoPagina = false;
+  }
+  private actualizarPaginacion(): void {
+    this.totalItems = this.filtered.length;
+    const start = this.currentPage * this.pageSize;
+    this.paginated = this.filtered.slice(start, start + this.pageSize);
   }
 
+  onPageChange(event: PageEvent): void {
+    if (this.reseteandoPagina) return;
+    this.currentPage = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.actualizarPaginacion();
+  }
   abrirCrear(): void {
     const dialogRef = this.dialog.open(ImpuestoRentaFormComponent, {
       width: '600px',

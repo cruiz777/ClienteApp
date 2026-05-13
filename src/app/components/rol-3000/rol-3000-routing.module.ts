@@ -56,6 +56,7 @@ import { IngresoDescuentosComponent } from './configuracion/ingreso-descuentos/l
 import { ImpuestoRentaService } from 'src/app/services/impuestos-renta-rol.service';
 import { ImpuestoRentaComponent } from './configuracion/impuestos-renta-rol/list/impuestos-renta.component';
 import { SectorialComponent } from './configuracion/sectorial/list/sectorial.component';
+import { RpFormaPagoRolComponent } from './configuracion/forma-pago/list/forma-pago-rol.component';
 const routes: Routes = [
    {
       path: '',
@@ -116,6 +117,7 @@ const routes: Routes = [
         {path:'ingreso-descuentos', component: IngresoDescuentosComponent},
         {path:'impuestos-renta', component: ImpuestoRentaComponent},
         {path:'sectorial', component: SectorialComponent},
+        {path:'forma-pago', component: RpFormaPagoRolComponent},
         
         { path: '**', redirectTo: 'inicio-rol' },
       ],

@@ -11,7 +11,7 @@ import { CreateImpuestoRentaRequest } from '../interfaces/requests/impuesto-rent
 })
 export class ImpuestoRentaService {
 
-  private readonly baseUrl = `${environment.maintenanceRol}/ImpuestoRenta`;
+  private readonly baseUrl = `${environment.maintenanceRolUrl}/ImpuestoRenta`;
 
   constructor(private http: HttpClient) {}
 

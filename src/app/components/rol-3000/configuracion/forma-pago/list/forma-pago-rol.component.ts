@@ -2,66 +2,67 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
-
-import { IngresoDescuentosService } from 'src/app/services/ingreso-descuentos.service';
+import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { ApiResponse } from 'src/app/interfaces/responses/api-response';
 import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/util/messages/custom-message-box.component';
-import { IngresoDescuentosResponse } from 'src/app/interfaces/responses/ingreso-descuentos-request';
-import { IngresoDescuentosFormComponent } from '../form/ingreso-descuentos-form.component';
-import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
+import { RpFormaPagoResponse } from 'src/app/interfaces/responses/forma-pago-rol-response';
+import { RpFormaPagoService } from 'src/app/services/rol/forma-pago-rol.service';
+import { RpFormaPagoRolFormComponent } from '../form/forma-pago-form-rol.component';
 
 @Component({
-  selector: 'app-ingreso-descuentos',
+  selector: 'app-forma-pago',
   standalone: true,
   imports: [CommonModule, FormsModule, MatPaginatorModule],
-  templateUrl: './ingreso-descuentos.component.html',
-  styleUrls: ['./ingreso-descuentos.component.css']
+  templateUrl: './forma-pago-rol.component.html',
+  styleUrls: ['./forma-pago-rol.component.css']
 })
-export class IngresoDescuentosComponent implements OnInit {
+export class RpFormaPagoRolComponent implements OnInit {
 
   loading = false;
 
-  ingresoDescuentos: IngresoDescuentosResponse[] = [];
-  filtered: IngresoDescuentosResponse[] = [];
+  formasPago: RpFormaPagoResponse[] = [];
+  filtered: RpFormaPagoResponse[] = [];
 
   searchTerm = '';
 
-  readonly skeletonRows = Array(6).fill(0);
   currentPage = 0;
   pageSize = 10;
   totalItems = 0;
-  paginated: IngresoDescuentosResponse[] = [];
+  paginated: RpFormaPagoResponse[] = [];
   pageSizeOptions = [10, 25, 50];
   private reseteandoPagina = false;
+
+  readonly skeletonRows = Array(6).fill(0);
+
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   constructor(
-    private ingresoDescuentosService: IngresoDescuentosService,
+    private rpFormaPagoService: RpFormaPagoService,
     private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
-    this.obtenerIngresoDescuentos();
+    this.obtenerFormasPago();
   }
 
-  obtenerIngresoDescuentos(): void {
+  obtenerFormasPago(): void {
     this.loading = true;
 
-    this.ingresoDescuentosService.getAll().subscribe({
-      next: (resp: ApiResponse<IngresoDescuentosResponse[]>) => {
-        this.ingresoDescuentos = resp?.data ?? [];
-        this.filtered = [...this.ingresoDescuentos];
+    this.rpFormaPagoService.getAll().subscribe({
+      next: (resp: ApiResponse<RpFormaPagoResponse[]>) => {
+        this.formasPago = resp?.data ?? [];
+        this.filtered = [...this.formasPago];
         this.currentPage = 0;
         this.actualizarPaginacion();
         this.loading = false;
       },
       error: (err) => {
-        console.error('Error al obtener ingresos/descuentos:', err);
+        console.error('Error al obtener formas de pago:', err);
         this.loading = false;
         this.mostrarMensaje({
           type: 'error',
           title: 'Error al cargar',
-          message: err?.error?.message ?? err?.message ?? 'No se pudo obtener la lista de ingresos/descuentos.',
+          message: err?.error?.message ?? err?.message ?? 'No se pudo obtener la lista de formas de pago.',
           showCancel: false,
           confirmText: 'Aceptar'
         });
@@ -72,12 +73,10 @@ export class IngresoDescuentosComponent implements OnInit {
   buscar(): void {
     const term = (this.searchTerm ?? '').trim().toLowerCase();
     if (!term) {
-      this.filtered = [...this.ingresoDescuentos];
+      this.filtered = [...this.formasPago];
     } else {
-      this.filtered = this.ingresoDescuentos.filter(i =>
-        (i.descripcion ?? '').toLowerCase().includes(term) ||
-        (i.codigo ?? '').toLowerCase().includes(term) ||
-        (i.tipoPago ?? '').toLowerCase().includes(term)
+      this.filtered = this.formasPago.filter(f =>
+        (f.descripcion ?? '').toLowerCase().includes(term)
       );
     }
     this.currentPage = 0;
@@ -87,6 +86,7 @@ export class IngresoDescuentosComponent implements OnInit {
     this.paginator?.firstPage();
     this.reseteandoPagina = false;
   }
+
   private actualizarPaginacion(): void {
     this.totalItems = this.filtered.length;
     const start = this.currentPage * this.pageSize;
@@ -99,29 +99,28 @@ export class IngresoDescuentosComponent implements OnInit {
     this.pageSize = event.pageSize;
     this.actualizarPaginacion();
   }
+
   abrirCrear(): void {
-    const dialogRef = this.dialog.open(IngresoDescuentosFormComponent, {
-      width: '800px',
-      maxHeight: '90vh',
+    const dialogRef = this.dialog.open(RpFormaPagoRolFormComponent, {
+      width: '600px',
       data: {}
     });
     dialogRef.afterClosed().subscribe(result => {
-      if (result) this.obtenerIngresoDescuentos();
+      if (result) this.obtenerFormasPago();
     });
   }
 
   abrirEditar(id: number): void {
-    const dialogRef = this.dialog.open(IngresoDescuentosFormComponent, {
-      width: '800px',
-      maxHeight: '90vh',
+    const dialogRef = this.dialog.open(RpFormaPagoRolFormComponent, {
+      width: '600px',
       data: { id }
     });
     dialogRef.afterClosed().subscribe(result => {
-      if (result) this.obtenerIngresoDescuentos();
+      if (result) this.obtenerFormasPago();
     });
   }
 
-  trackById = (_: number, it: IngresoDescuentosResponse) => it?.idIngDesc ?? _;
+  trackById = (_: number, it: RpFormaPagoResponse) => it?.idFormaPago ?? _;
 
   private mostrarMensaje(data: MessageBoxData) {
     return this.dialog.open(CustomMessageBoxComponent, {

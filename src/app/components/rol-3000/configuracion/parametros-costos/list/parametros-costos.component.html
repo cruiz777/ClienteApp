@@ -46,7 +46,7 @@
 
         <!-- DATOS cargados -->
         <ng-container *ngIf="!loading">
-          <tr *ngFor="let it of filtered; trackBy: trackById">
+          <tr *ngFor="let it of paginated; trackBy: trackById">
             <td>{{ it.idParCosto }}</td>
             <td>{{ it.nombre ?? '—' }}</td>
             <td>{{ it.valorInicial ?? '—' }}</td>
@@ -66,5 +66,14 @@
 
       </tbody>
     </table>
+    <mat-paginator
+      *ngIf="!loading && totalItems > 0"
+      [length]="totalItems"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="pageSizeOptions"
+      [pageIndex]="currentPage"
+      (page)="onPageChange($event)"
+      showFirstLastButtons>
+    </mat-paginator>
   </div>
 </div>

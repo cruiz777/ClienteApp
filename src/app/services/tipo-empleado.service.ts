@@ -11,7 +11,7 @@ import { CreateRpTipEmpRequest } from '../interfaces/requests/tipo-empleado.requ
 })
 export class RpTipEmpService {
 
-  private readonly baseUrl = `${environment.maintenanceRol}/RpTipEmp`;
+  private readonly baseUrl = `${environment.maintenanceRolUrl}/RpTipEmp`;
 
   constructor(private http: HttpClient) {}
 

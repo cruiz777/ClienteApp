@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -8,11 +8,12 @@ import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/util/messages
 import { RpCargosResponse } from 'src/app/interfaces/responses/cargos-rol-response';
 import { RpCargosService } from 'src/app/services/cargos.service';
 import { RpCargosFormComponent } from '../form/cargos-form.component';
+import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
 @Component({
   selector: 'app-rp-cargos',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatPaginatorModule],
   templateUrl: './cargos.component.html',
   styleUrls: ['./cargos.component.css']
 })
@@ -30,7 +31,13 @@ export class RpCargosComponent implements OnInit {
 
   // Skeleton: filas fantasma mientras carga
   readonly skeletonRows = Array(6).fill(0);
-
+  currentPage = 0;
+  pageSize = 10;
+  totalItems = 0;
+  paginated: RpCargosResponse[] = [];
+  pageSizeOptions = [10, 25, 50];
+  private reseteandoPagina = false;
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
   constructor(
     private rpCargosService: RpCargosService,
     private dialog: MatDialog
@@ -47,6 +54,8 @@ export class RpCargosComponent implements OnInit {
       next: (resp: ApiResponse<RpCargosResponse[]>) => {
         this.cargos = resp?.data ?? [];
         this.filtered = [...this.cargos];
+        this.currentPage = 0;
+        this.actualizarPaginacion();
         this.loading = false;
       },
       error: (err) => {
@@ -67,14 +76,31 @@ export class RpCargosComponent implements OnInit {
     const term = (this.searchTerm ?? '').trim().toLowerCase();
     if (!term) {
       this.filtered = [...this.cargos];
-      return;
+    } else {
+      this.filtered = this.cargos.filter(c =>
+        (c.descargo ?? '').toLowerCase().includes(term) ||
+        (c.codsec ?? '').toLowerCase().includes(term)
+      );
     }
-    this.filtered = this.cargos.filter(c =>
-      (c.descargo ?? '').toLowerCase().includes(term) ||
-      (c.codsec ?? '').toLowerCase().includes(term)
-    );
+    this.currentPage = 0;
+    this.actualizarPaginacion();
+
+    this.reseteandoPagina = true;
+    this.paginator?.firstPage();
+    this.reseteandoPagina = false;
+  }
+  private actualizarPaginacion(): void {
+    this.totalItems = this.filtered.length;
+    const start = this.currentPage * this.pageSize;
+    this.paginated = this.filtered.slice(start, start + this.pageSize);
   }
 
+  onPageChange(event: PageEvent): void {
+    if (this.reseteandoPagina) return;
+    this.currentPage = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.actualizarPaginacion();
+  }
   abrirCrear(): void {
     const dialogRef = this.dialog.open(RpCargosFormComponent, {
       width: '600px',
