@@ -12,6 +12,13 @@ import { LocalesService } from 'src/app/services/locales.service';
 import { ZonaService, Zona } from 'src/app/services/zona.service';
 import { CiudadService, Ciudad } from 'src/app/services/ciudad.service';
 import { NacionalidadService, NacionalidadResponse } from 'src/app/services/rol/nacionalidad.service.service';
+import { RpRegimenService } from 'src/app/services/rol/regimen.service';
+import { RpTipoSangreService } from 'src/app/services/rol/tipo-sangre.service';
+import { RpRegimenResponse } from 'src/app/interfaces/responses/regimen-response';
+import { RpTipoSangreResponse } from 'src/app/interfaces/responses/tipo-sangre-response';
+import { RpNivelInstruccionResponse } from 'src/app/interfaces/responses/nivel-instruccion.response';
+import { RpNivelInstruccionService } from 'src/app/services/nivel-instruccion.service';
+import { ColDef } from 'ag-grid-community';
 import {
   EmpleadoFichaService,
   EmpleadoFichaResponse
@@ -52,6 +59,302 @@ export class EmpleadoFichaComponent implements OnInit {
   ciudadesTrabajo: Ciudad[] = [];
   nacionalidades: NacionalidadResponse[] = [];
   gruposOcupacionales: RpGrupoOcupacional[] = [];
+  regimenes: RpRegimenResponse[] = [];
+  tiposSangre: RpTipoSangreResponse[] = [];
+
+  nivelesInstruccion: RpNivelInstruccionResponse[] = [];
+
+cronologiaRowData = [
+  {
+    fechaIngreso: '',
+    fechaSalida: '',
+    terminacionContrato: '',
+    tipoContrato: '',
+    numeroHoras: null
+  },
+  {
+    fechaIngreso: '',
+    fechaSalida: '',
+    terminacionContrato: '',
+    tipoContrato: '',
+    numeroHoras: null
+  },
+  {
+    fechaIngreso: '',
+    fechaSalida: '',
+    terminacionContrato: '',
+    tipoContrato: '',
+    numeroHoras: null
+  }
+];
+
+cronologiaColumnDefs: ColDef[] = [
+  {
+    headerName: 'Fecha Ingreso',
+    field: 'fechaIngreso',
+    editable: true,
+    cellEditor: 'agDateStringCellEditor'
+  },
+  {
+    headerName: 'Fecha Salida',
+    field: 'fechaSalida',
+    editable: true,
+    cellEditor: 'agDateStringCellEditor'
+  },
+  {
+    headerName: 'Terminación Contrato',
+    field: 'terminacionContrato',
+    editable: true
+  },
+  {
+    headerName: 'Tipo de Contrato',
+    field: 'tipoContrato',
+    editable: true
+  },
+  {
+    headerName: 'N° Horas',
+    field: 'numeroHoras',
+    editable: true,
+    type: 'numericColumn'
+  }
+];
+
+cronologiaDefaultColDef: ColDef = {
+  flex: 1,
+  minWidth: 120,
+  resizable: true,
+  sortable: false,
+  filter: false
+};
+
+referenciaRowData = [
+  {
+    contactoReferencia: '',
+    telefonoReferencia: ''
+  }
+];
+
+referenciaColumnDefs: ColDef[] = [
+  {
+    headerName: 'Contacto de Referencia',
+    field: 'contactoReferencia',
+    editable: true,
+    flex: 1
+  },
+  {
+    headerName: 'Teléfono de Referencia',
+    field: 'telefonoReferencia',
+    editable: true,
+    flex: 1
+  }
+];
+
+referenciaDefaultColDef: ColDef = {
+  resizable: true,
+  sortable: false,
+  filter: false
+};
+
+bancoRowData = [
+  {
+    codigoBanco: '',
+    ctaContableEmpleado: '',
+    formaPago: '',
+    tipoCuenta: '',
+    numeroCuenta: '',
+    codigoBancoEmpleado: ''
+  }
+];
+
+bancoColumnDefs: ColDef[] = [
+  {
+    headerName: 'Código Banco',
+    field: 'codigoBanco',
+    editable: true
+  },
+  {
+    headerName: 'Cta Contable Empleado',
+    field: 'ctaContableEmpleado',
+    editable: true
+  },
+  {
+    headerName: 'Forma de Pago',
+    field: 'formaPago',
+    editable: true
+  },
+  {
+    headerName: 'Tipo de Cuenta',
+    field: 'tipoCuenta',
+    editable: true
+  },
+  {
+    headerName: 'N° Cuenta',
+    field: 'numeroCuenta',
+    editable: true
+  },
+  {
+    headerName: 'Código Banco Empleado',
+    field: 'codigoBancoEmpleado',
+    editable: true
+  }
+];
+
+bancoDefaultColDef: ColDef = {
+  flex: 1,
+  minWidth: 150,
+  resizable: true,
+  sortable: false,
+  filter: false
+};
+cargasRowData: any[] = [];
+
+cargasColumnDefs: ColDef[] = [
+  { headerName: 'Código', field: 'codigo', width: 100 },
+  { headerName: 'Nombres', field: 'nombres', minWidth: 160 },
+  { headerName: 'Apellidos', field: 'apellidos', minWidth: 160 },
+  { headerName: 'Cédula', field: 'cedula', width: 130 },
+  { headerName: 'Dirección', field: 'direccion', minWidth: 220 },
+  { headerName: 'Teléfono', field: 'telefono', width: 130 },
+  { headerName: 'Fecha Nacim.', field: 'fechaNacimiento', width: 140 },
+  { headerName: 'Sexo', field: 'sexo', width: 100 },
+  { headerName: 'Parentesco', field: 'parentesco', width: 130 },
+  { headerName: 'Discapacidad', field: 'discapacidad', width: 140 },
+  { headerName: 'Utilidad', field: 'utilidad', width: 110 },
+  { headerName: 'Imp. Rent.', field: 'impRenta', width: 120 }
+];
+
+cargasDefaultColDef: ColDef = {
+  resizable: true,
+  sortable: true,
+  filter: true,
+  floatingFilter: false
+};
+  
+gastosRowData: any[] = [];
+
+gastosColumnDefs: ColDef[] = [
+  {
+    headerName: 'Código',
+    field: 'codigo',
+    width: 120
+  },
+  {
+    headerName: 'Tipo de Gasto',
+    field: 'tipoGasto',
+    minWidth: 220,
+    flex: 1
+  },
+  {
+    headerName: 'Monto Máximo',
+    field: 'montoMaximo',
+    width: 160,
+    type: 'numericColumn'
+  },
+  {
+    headerName: 'Valor Proyectado',
+    field: 'valorProyectado',
+    width: 170,
+    type: 'numericColumn',
+    editable: true
+  },
+  {
+    headerName: 'Valor Real',
+    field: 'valorReal',
+    width: 160,
+    type: 'numericColumn',
+    editable: true
+  }
+];
+
+gastosDefaultColDef: ColDef = {
+  resizable: true,
+  sortable: true,
+  filter: true,
+  floatingFilter: false
+};
+observacionRowData: any[] = [];
+
+observacionColumnDefs: ColDef[] = [
+  {
+    headerName: 'Fecha',
+    field: 'fecha',
+    width: 160
+  },
+  {
+    headerName: 'Usuario',
+    field: 'usuario',
+    width: 180
+  },
+  {
+    headerName: 'Tipo',
+    field: 'tipo',
+    width: 160
+  },
+  {
+    headerName: 'Observación',
+    field: 'observacion',
+    flex: 1,
+    minWidth: 300,
+    editable: true,
+    wrapText: true,
+    autoHeight: true
+  }
+];
+
+observacionDefaultColDef: ColDef = {
+  resizable: true,
+  sortable: true,
+  filter: true,
+  floatingFilter: false
+};
+academicosRowData = [
+  {
+    nivel: 'Educación Primaria',
+    detalle: ''
+  },
+  {
+    nivel: 'Educación Secundaria',
+    detalle: ''
+  },
+  {
+    nivel: 'Educación Superior',
+    detalle: ''
+  },
+  {
+    nivel: 'Cursos, Maestrías y Posgrados',
+    detalle: ''
+  }
+];
+
+academicosColumnDefs: ColDef[] = [
+  {
+    headerName: 'Nivel Académico',
+    field: 'nivel',
+    width: 260,
+    editable: false
+  },
+  {
+    headerName: 'Detalle',
+    field: 'detalle',
+    flex: 1,
+    editable: true,
+    wrapText: true,
+    autoHeight: true,
+    cellEditor: 'agLargeTextCellEditor',
+    cellEditorPopup: true,
+    cellEditorParams: {
+      maxLength: 1000,
+      rows: 6,
+      cols: 50
+    }
+  }
+];
+
+academicosDefaultColDef: ColDef = {
+  resizable: true,
+  sortable: false,
+  filter: false
+};
   cargasColumns: string[] = [
     'codigo',
     'nombres',
@@ -100,7 +403,10 @@ export class EmpleadoFichaComponent implements OnInit {
     private zonaService: ZonaService,
     private ciudadService: CiudadService,
     private nacionalidadService: NacionalidadService,
-    private grupoOcupacionalService: RpGrupoOcupacionalService
+    private grupoOcupacionalService: RpGrupoOcupacionalService,
+    private nivelInstruccionService: RpNivelInstruccionService,
+    private regimenService: RpRegimenService,
+    private tipoSangreService: RpTipoSangreService
   ) { }
 
   ngOnInit(): void {
@@ -226,11 +532,11 @@ export class EmpleadoFichaComponent implements OnInit {
     });
     const salarioCtrl = this.form.get('datosSalariales.salario');
 
-salarioCtrl?.valueChanges.subscribe(valor => {
-  this.aplicarReglaSueldoManual(valor);
-});
+    salarioCtrl?.valueChanges.subscribe(valor => {
+      this.aplicarReglaSueldoManual(valor);
+    });
   }
-  
+
 
   cargarCatalogos(): void {
     forkJoin({
@@ -245,9 +551,12 @@ salarioCtrl?.valueChanges.subscribe(valor => {
       ciudades: this.ciudadService.obtenerCiudad(),
       ciudadesTrabajo: this.ciudadService.obtenerCiudad(),
       nacionalidades: this.nacionalidadService.getAll(),
-      gruposOcupacionales: this.grupoOcupacionalService.getAll()
+      gruposOcupacionales: this.grupoOcupacionalService.getAll(),
+      regimenes: this.regimenService.getAll(),
+      tiposSangre: this.tipoSangreService.getAll(),
+
     }).subscribe({
-      next: ({ departamentos, cargos, tiposEmpleado, tiposDocumento, estadosCivil, generos, locales, zonas, ciudades, ciudadesTrabajo, nacionalidades, gruposOcupacionales }) => {
+      next: ({ departamentos, cargos, tiposEmpleado, tiposDocumento, estadosCivil, generos, locales, zonas, ciudades, ciudadesTrabajo, nacionalidades, gruposOcupacionales, regimenes, tiposSangre }) => {
         this.departamentos = departamentos.map(dep => ({
           ...dep,
           id_departamento: Number(dep.id_departamento)
@@ -300,6 +609,16 @@ salarioCtrl?.valueChanges.subscribe(valor => {
           ...g,
           id_grupo_ocupacional: Number(g.id_grupo_ocupacional)
         }));
+        this.regimenes = (regimenes.data ?? []).map(r => ({
+          ...r,
+          id_regimen: Number(r.id_regimen)
+        }));
+
+        this.tiposSangre = (tiposSangre.data ?? []).map(t => ({
+          ...t,
+          id_tipo_sangre: Number(t.idTipoSangre)
+        }));
+
 
         this.cargarFichaEmpleado();
       },
@@ -371,8 +690,12 @@ salarioCtrl?.valueChanges.subscribe(valor => {
             cargaConyugeUtilidades: emp.carcony === true,
             cargaHijosUtilidades: emp.carhijos ?? 0,
             gerenteRepLegal: emp.rep_legal === true,
-            fechaPagoDecimoInicio:emp.feinivac ?? '',
-            fechaPagoDecimoFin: emp.fefinvac ?? ''
+            fechaPagoDecimoInicio: emp.feinivac ?? '',
+            fechaPagoDecimoFin: emp.fefinvac ?? '',
+            regimen: emp.id_regimen ?? '',
+            grupoSanguineo: emp.id_tipo_sangre ?? '',
+            establecimiento: emp.establecimiento ?? '',
+            libretaMilitar: emp.lmilitar ?? ''
           },
 
           datosSalariales: {
@@ -480,19 +803,19 @@ salarioCtrl?.valueChanges.subscribe(valor => {
     }
   }
   aplicarReglaSueldoManual(valor: any): void {
-  const incluyeCtrl = this.form.get('datosSalariales.incluyeAportacion');
+    const incluyeCtrl = this.form.get('datosSalariales.incluyeAportacion');
 
-  const tieneSueldo =
-    valor !== null &&
-    valor !== undefined &&
-    valor !== '' &&
-    Number(valor) !== 0;
+    const tieneSueldo =
+      valor !== null &&
+      valor !== undefined &&
+      valor !== '' &&
+      Number(valor) !== 0;
 
-  if (tieneSueldo) {
-    incluyeCtrl?.setValue(false, { emitEvent: false });
-    incluyeCtrl?.disable({ emitEvent: false });
-  } else {
-    incluyeCtrl?.enable({ emitEvent: false });
+    if (tieneSueldo) {
+      incluyeCtrl?.setValue(false, { emitEvent: false });
+      incluyeCtrl?.disable({ emitEvent: false });
+    } else {
+      incluyeCtrl?.enable({ emitEvent: false });
+    }
   }
-}
 }
