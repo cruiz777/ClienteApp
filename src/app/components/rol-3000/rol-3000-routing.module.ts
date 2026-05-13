@@ -57,6 +57,8 @@ import { ImpuestoRentaService } from 'src/app/services/impuestos-renta-rol.servi
 import { ImpuestoRentaComponent } from './configuracion/impuestos-renta-rol/list/impuestos-renta.component';
 import { SectorialComponent } from './configuracion/sectorial/list/sectorial.component';
 import { RpFormaPagoRolComponent } from './configuracion/forma-pago/list/forma-pago-rol.component';
+import { RpTipoSangreComponent } from './configuracion/tipo-sangre/list/tipo-sangre.component';
+import { RpRegimenComponent } from './configuracion/regimen/list/regimen.component';
 const routes: Routes = [
    {
       path: '',
@@ -118,7 +120,9 @@ const routes: Routes = [
         {path:'impuestos-renta', component: ImpuestoRentaComponent},
         {path:'sectorial', component: SectorialComponent},
         {path:'forma-pago', component: RpFormaPagoRolComponent},
-        
+        {path:'tipo-sangre', component: RpTipoSangreComponent},
+        {path:'regimen', component: RpRegimenComponent},
+
         { path: '**', redirectTo: 'inicio-rol' },
       ],
     },
