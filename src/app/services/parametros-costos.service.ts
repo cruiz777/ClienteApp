@@ -11,7 +11,7 @@ import { CreateParametrosCostosRequest } from '../interfaces/requests/parametros
 })
 export class ParametrosCostosService {
 
-  private readonly baseUrl = `${environment.maintenanceRol}/ParametrosCostos`;
+  private readonly baseUrl = `${environment.maintenanceRolUrl}/ParametrosCostos`;
 
   constructor(private http: HttpClient) {}
 

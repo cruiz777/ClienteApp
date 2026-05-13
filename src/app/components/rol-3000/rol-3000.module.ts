@@ -85,6 +85,9 @@ import { ParametrosCostosComponent } from './configuracion/parametros-costos/lis
 import { IngresoDescuentosComponent } from './configuracion/ingreso-descuentos/list/ingreso-descuentos.component';
 import { ImpuestoRentaComponent } from './configuracion/impuestos-renta-rol/list/impuestos-renta.component';
 import { SectorialComponent } from './configuracion/sectorial/list/sectorial.component';
+import { RpFormaPagoRolComponent } from './configuracion/forma-pago/list/forma-pago-rol.component';
+import { RpTipoSangreComponent } from './configuracion/tipo-sangre/list/tipo-sangre.component';
+import { RpRegimenComponent } from './configuracion/regimen/list/regimen.component';
 
 @NgModule({
   declarations: [
@@ -172,6 +175,9 @@ import { SectorialComponent } from './configuracion/sectorial/list/sectorial.com
         IngresoDescuentosComponent,
         ImpuestoRentaComponent,
         SectorialComponent,
+        RpFormaPagoRolComponent,
+        RpTipoSangreComponent,
+        RpRegimenComponent,
     Rol3000RoutingModule
   ]
 })

@@ -2,66 +2,69 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
-
-import { IngresoDescuentosService } from 'src/app/services/ingreso-descuentos.service';
-import { ApiResponse } from 'src/app/interfaces/responses/api-response';
-import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/util/messages/custom-message-box.component';
-import { IngresoDescuentosResponse } from 'src/app/interfaces/responses/ingreso-descuentos-request';
-import { IngresoDescuentosFormComponent } from '../form/ingreso-descuentos-form.component';
 import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
+
+import { ApiResponse } from 'src/app/interfaces/responses/api-response';
+import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/util/messages/custom-message-box.component';
+import { RpRegimenResponse } from 'src/app/interfaces/responses/regimen-response';
+import { RpRegimenService } from 'src/app/services/rol/regimen.service';
+import { RpRegimenFormComponent } from '../form/regimen-form.component';
+
 @Component({
-  selector: 'app-ingreso-descuentos',
+  selector: 'app-regimen',
   standalone: true,
   imports: [CommonModule, FormsModule, MatPaginatorModule],
-  templateUrl: './ingreso-descuentos.component.html',
-  styleUrls: ['./ingreso-descuentos.component.css']
+  templateUrl: './regimen.component.html',
+  styleUrls: ['./regimen.component.css']
 })
-export class IngresoDescuentosComponent implements OnInit {
+export class RpRegimenComponent implements OnInit {
 
   loading = false;
 
-  ingresoDescuentos: IngresoDescuentosResponse[] = [];
-  filtered: IngresoDescuentosResponse[] = [];
+  regimenes: RpRegimenResponse[] = [];
+  filtered: RpRegimenResponse[] = [];
 
   searchTerm = '';
 
-  readonly skeletonRows = Array(6).fill(0);
   currentPage = 0;
   pageSize = 10;
   totalItems = 0;
-  paginated: IngresoDescuentosResponse[] = [];
+  paginated: RpRegimenResponse[] = [];
   pageSizeOptions = [10, 25, 50];
   private reseteandoPagina = false;
+
+  readonly skeletonRows = Array(6).fill(0);
+
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   constructor(
-    private ingresoDescuentosService: IngresoDescuentosService,
+    private rpRegimenService: RpRegimenService,
     private dialog: MatDialog
   ) {}
 
   ngOnInit(): void {
-    this.obtenerIngresoDescuentos();
+    this.obtenerRegimenes();
   }
 
-  obtenerIngresoDescuentos(): void {
+  obtenerRegimenes(): void {
     this.loading = true;
 
-    this.ingresoDescuentosService.getAll().subscribe({
-      next: (resp: ApiResponse<IngresoDescuentosResponse[]>) => {
-        this.ingresoDescuentos = resp?.data ?? [];
-        this.filtered = [...this.ingresoDescuentos];
+    this.rpRegimenService.getAll().subscribe({
+      next: (resp: ApiResponse<RpRegimenResponse[]>) => {
+        this.regimenes = resp?.data ?? [];
+        this.filtered = [...this.regimenes];
         this.currentPage = 0;
         this.actualizarPaginacion();
         this.loading = false;
       },
       error: (err) => {
-        console.error('Error al obtener ingresos/descuentos:', err);
+        console.error('Error al obtener regímenes:', err);
         this.loading = false;
         this.mostrarMensaje({
           type: 'error',
           title: 'Error al cargar',
-          message: err?.error?.message ?? err?.message ?? 'No se pudo obtener la lista de ingresos/descuentos.',
+          message: err?.error?.message ?? err?.message ?? 'No se pudo obtener la lista de regímenes.',
           showCancel: false,
           confirmText: 'Aceptar'
         });
@@ -72,12 +75,10 @@ export class IngresoDescuentosComponent implements OnInit {
   buscar(): void {
     const term = (this.searchTerm ?? '').trim().toLowerCase();
     if (!term) {
-      this.filtered = [...this.ingresoDescuentos];
+      this.filtered = [...this.regimenes];
     } else {
-      this.filtered = this.ingresoDescuentos.filter(i =>
-        (i.descripcion ?? '').toLowerCase().includes(term) ||
-        (i.codigo ?? '').toLowerCase().includes(term) ||
-        (i.tipoPago ?? '').toLowerCase().includes(term)
+      this.filtered = this.regimenes.filter(r =>
+        r.descripcion.toLowerCase().includes(term)
       );
     }
     this.currentPage = 0;
@@ -87,6 +88,7 @@ export class IngresoDescuentosComponent implements OnInit {
     this.paginator?.firstPage();
     this.reseteandoPagina = false;
   }
+
   private actualizarPaginacion(): void {
     this.totalItems = this.filtered.length;
     const start = this.currentPage * this.pageSize;
@@ -99,29 +101,28 @@ export class IngresoDescuentosComponent implements OnInit {
     this.pageSize = event.pageSize;
     this.actualizarPaginacion();
   }
+
   abrirCrear(): void {
-    const dialogRef = this.dialog.open(IngresoDescuentosFormComponent, {
-      width: '800px',
-      maxHeight: '90vh',
+    const dialogRef = this.dialog.open(RpRegimenFormComponent, {
+      width: '600px',
       data: {}
     });
     dialogRef.afterClosed().subscribe(result => {
-      if (result) this.obtenerIngresoDescuentos();
+      if (result) this.obtenerRegimenes();
     });
   }
 
   abrirEditar(id: number): void {
-    const dialogRef = this.dialog.open(IngresoDescuentosFormComponent, {
-      width: '800px',
-      maxHeight: '90vh',
+    const dialogRef = this.dialog.open(RpRegimenFormComponent, {
+      width: '600px',
       data: { id }
     });
     dialogRef.afterClosed().subscribe(result => {
-      if (result) this.obtenerIngresoDescuentos();
+      if (result) this.obtenerRegimenes();
     });
   }
 
-  trackById = (_: number, it: IngresoDescuentosResponse) => it?.idIngDesc ?? _;
+  trackById = (_: number, it: RpRegimenResponse) => it?.id_regimen ?? _;
 
   private mostrarMensaje(data: MessageBoxData) {
     return this.dialog.open(CustomMessageBoxComponent, {

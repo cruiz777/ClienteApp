@@ -145,3 +145,24 @@
   0%   { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+.zona-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 80px); /* ajusta el 80px según tu header */
+}
+
+.table-wrap {
+  flex: 1;
+  overflow-y: auto; /* solo la tabla scrollea */
+}
+
+.paginacion {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 12px 0;
+  background: white;
+  border-top: 1px solid #e0e0e0;
+}

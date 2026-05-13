@@ -11,7 +11,7 @@ import { CreateTipoGastoRequest } from '../interfaces/requests/tipo-gasto-resque
 })
 export class TipoGastoService {
 
-  private readonly baseUrl = `${environment.maintenanceRol}/TipoGasto`;
+  private readonly baseUrl = `${environment.maintenanceRolUrl}/TipoGasto`;
 
   constructor(private http: HttpClient) {}
 

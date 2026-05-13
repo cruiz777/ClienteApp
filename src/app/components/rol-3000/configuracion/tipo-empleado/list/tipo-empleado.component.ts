@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialog } from '@angular/material/dialog';
@@ -8,11 +8,12 @@ import { CustomMessageBoxComponent, MessageBoxData } from 'src/app/util/messages
 import { RpTipEmpResponse } from 'src/app/interfaces/responses/tipo-empleado-response';
 import { RpTipEmpService } from 'src/app/services/tipo-empleado.service';
 import { TipoEmpleadoFormComponent } from '../form/tipo-empleado-form.component';
+import { MatPaginator, MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 
 @Component({
   selector: 'app-rp-tipemp',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, MatPaginatorModule],
   templateUrl: './tipo-empleado.component.html',
   styleUrls: ['./tipo-empleado.component.css']
 })
@@ -30,6 +31,13 @@ export class RpTipEmpComponent implements OnInit {
 
   // Skeleton: filas fantasma mientras carga
   readonly skeletonRows = Array(6).fill(0);
+  currentPage = 0;
+  pageSize = 10;
+  totalItems = 0;
+  paginated: RpTipEmpResponse[] = [];
+  pageSizeOptions = [10, 25, 50];
+  private reseteandoPagina = false;
+  @ViewChild(MatPaginator) paginator!: MatPaginator;
 
   constructor(
     private rpTipEmpService: RpTipEmpService,
@@ -47,6 +55,8 @@ export class RpTipEmpComponent implements OnInit {
       next: (resp: ApiResponse<RpTipEmpResponse[]>) => {
         this.tipEmps = resp?.data ?? [];
         this.filtered = [...this.tipEmps];
+        this.currentPage = 0;
+        this.actualizarPaginacion();
         this.loading = false;
       },
       error: (err) => {
@@ -67,13 +77,30 @@ export class RpTipEmpComponent implements OnInit {
     const term = (this.searchTerm ?? '').trim().toLowerCase();
     if (!term) {
       this.filtered = [...this.tipEmps];
-      return;
+    } else {
+      this.filtered = this.tipEmps.filter(t =>
+        (t.desTipemp ?? '').toLowerCase().includes(term)
+      );
     }
-    this.filtered = this.tipEmps.filter(t =>
-      (t.desTipemp ?? '').toLowerCase().includes(term)
-    );
+    this.currentPage = 0;
+    this.actualizarPaginacion();
+
+    this.reseteandoPagina = true;
+    this.paginator?.firstPage();
+    this.reseteandoPagina = false;
+  }
+  private actualizarPaginacion(): void {
+    this.totalItems = this.filtered.length;
+    const start = this.currentPage * this.pageSize;
+    this.paginated = this.filtered.slice(start, start + this.pageSize);
   }
 
+  onPageChange(event: PageEvent): void {
+    if (this.reseteandoPagina) return;
+    this.currentPage = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.actualizarPaginacion();
+  }
   abrirCrear(): void {
     const dialogRef = this.dialog.open(TipoEmpleadoFormComponent, {
       width: '600px',

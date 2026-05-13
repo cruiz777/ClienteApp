@@ -11,7 +11,7 @@ import { CreateIngresoDescuentosRequest } from '../interfaces/requests/ingreso-d
 })
 export class IngresoDescuentosService {
 
-  private readonly baseUrl = `${environment.maintenanceRol}/IngresoDescuentos`;
+  private readonly baseUrl = `${environment.maintenanceRolUrl}/IngresoDescuentos`;
 
   constructor(private http: HttpClient) {}
 

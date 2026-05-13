@@ -12,7 +12,7 @@ import { CreateRpNivelInstruccionRequest, UpdateRpNivelInstruccionRequest } from
 })
 export class RpNivelInstruccionService {
 
-  private readonly baseUrl = `${environment.maintenanceRol}/RpNivelInstruccion`;
+  private readonly baseUrl = `${environment.maintenanceRolUrl}/RpNivelInstruccion`;
 
   constructor(private http: HttpClient) {}
 
