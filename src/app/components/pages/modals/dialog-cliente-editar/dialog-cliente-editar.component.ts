@@ -843,7 +843,7 @@ export class DialogClienteEditarComponent implements OnInit {
         }, 300);
 
 
-        const msg = this.modoEdicion ? 'actualizada' : 'creada';
+        const msg = this.modoEdicion ? 'actualizado' : 'creado';
 
         this.dialog.open(CustomMessageBoxComponent, {
           width: '400px',

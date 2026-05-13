@@ -11,7 +11,7 @@ import { ApiResponse } from '../interfaces/responses/api-response';
 })
 export class RpCargosService {
 
-  private readonly baseUrl = `${environment.maintenanceRol}/RpCargos`;
+  private readonly baseUrl = `${environment.maintenanceRolUrl}/RpCargos`;
 
   constructor(private http: HttpClient) {}
 

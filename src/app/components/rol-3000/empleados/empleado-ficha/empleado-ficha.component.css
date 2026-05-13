@@ -38,8 +38,9 @@
 
 .grid-2 {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1.25fr 0.85fr;
   gap: 16px;
+  align-items: start;
 }
 
 .form-grid-2 {
@@ -56,6 +57,41 @@
 
 .full-width {
   grid-column: 1 / -1;
+}
+
+.datos-personales-layout {
+  display: grid;
+  grid-template-columns: 190px 1fr;
+  gap: 18px;
+  align-items: start;
+}
+
+.photo-area {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.photo-box {
+  width: 180px;
+  height: 220px;
+  border: 1px solid #cfd8e3;
+  border-radius: 8px;
+  background: #f3f6fb;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.photo-box img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-area .mat-mdc-form-field {
+  width: 180px;
 }
 
 .inline-radio {
@@ -77,14 +113,6 @@
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
-}
-
-.photo-box {
-  width: 72px;
-  height: 72px;
-  border: 1px solid #cfd8e6;
-  border-radius: 6px;
-  background: #f7f9fc;
 }
 
 .mt-16 {
@@ -208,6 +236,10 @@
 }
 
 @media (max-width: 1200px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
   .form-grid-4 {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -220,7 +252,8 @@
 @media (max-width: 900px) {
   .grid-2,
   .form-grid-2,
-  .date-range {
+  .date-range,
+  .datos-personales-layout {
     grid-template-columns: 1fr;
   }
 
@@ -235,4 +268,36 @@
   .employee-box {
     width: 100%;
   }
+
+  .photo-box {
+    width: 160px;
+    height: 190px;
+  }
+
+  .photo-area .mat-mdc-form-field {
+    width: 100%;
+  }
+}
+.photo-box {
+  position: relative;
+}
+
+.btn-clear-photo {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: #d32f2f;
+  color: #fff;
+  font-size: 18px;
+  line-height: 22px;
+  cursor: pointer;
+  z-index: 2;
+}
+
+.btn-clear-photo:hover {
+  background: #b71c1c;
 }

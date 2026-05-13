@@ -32,7 +32,7 @@ export interface PagoRow {
   estado: string;          // “ACTIVO” | “ANULADO”
   motivo: string | null;   // motivo de anulación (si aplica)
   asientoContable: string | null;
-  
+  observaciones: string | null;
 }
 
 @Component({
@@ -131,6 +131,11 @@ export class LisPagAnuladosComponent implements OnInit {
     { 
   headerName: 'Asiento', 
   field: 'asientoContable', 
+  width: 140 
+},
+{ 
+  headerName: 'Observacion', 
+  field: 'observaciones', 
   width: 140 
 },
     {
@@ -314,7 +319,8 @@ export class LisPagAnuladosComponent implements OnInit {
       numeroDocumento: i.numeroDocumento,
       estado: (i.estado || (i.pagoAnulado ? 'ANULADO' : 'ACTIVO')).toUpperCase(),
       motivo: i.motivoAnulacion ?? null,
-      asientoContable: (i as any).asientoContable ?? null
+      asientoContable: (i as any).asientoContable ?? null,
+      observaciones: (i as any).observaciones ?? null
     };
   }
 
@@ -351,11 +357,11 @@ export class LisPagAnuladosComponent implements OnInit {
   exportar(tipo: 'excel' | 'pdf'): void {
     const headers = [
       'Nro. Pago', 'Fecha', 'Cliente', 'Pagado', 'Total',
-      'Nro. Documento', 'Estado/Motivo','Asiento'
+      'Nro. Documento', 'Estado/Motivo','Asiento','Observaciones'
     ];
     const columns = [
       'numeroPago', 'fecha', 'cliente', 'pagado', 'total',
-      'numeroDocumento', 'estado', 'asientoContable'
+      'numeroDocumento', 'estado', 'asientoContable','observaciones'
     ];
 
     const data = this.pagedData.map((item: PagoRow) => ({
@@ -368,7 +374,8 @@ export class LisPagAnuladosComponent implements OnInit {
       total: this.formatMoney(item.total),
       numeroDocumento: item.numeroDocumento,
       estado: item.motivo ? `${item.estado} — ${item.motivo}` : item.estado,
-      asientoContable: item.asientoContable || ''
+      asientoContable: item.asientoContable || '',
+      observaciones: item.observaciones || ''
     }));
 
     const options = {

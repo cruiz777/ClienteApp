@@ -186,6 +186,25 @@ filtrarCodigos14(
       .pipe(map(r => !!r.data));
   }
 
+existePorCodbarFactorYUnidadTexto(
+  codbar: string,
+  factor: number,
+  unidadTexto: string
+): Observable<boolean> {
+  const url = `${this.baseUrl}/Codigos14/existe-por-codbar-factor-unidad-texto`;
+
+  return this.http
+    .get<ApiResponse<boolean>>(url, {
+      params: {
+        codbar: codbar?.trim() ?? '',
+        factor: String(factor),
+        unidadTexto: unidadTexto?.trim().toUpperCase() ?? '',
+      },
+    })
+    .pipe(map(r => !!r.data));
+}
+
+
   /**
    * (Opcional) Devuelve el ApiResponse completo (con message, type, etc.)
    */

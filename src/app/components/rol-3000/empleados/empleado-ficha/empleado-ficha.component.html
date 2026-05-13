@@ -10,68 +10,77 @@
           <div class="card-section">
             <h3>Datos Personales</h3>
 
-            <div class="form-grid-2">
-              <mat-form-field appearance="outline">
-                <mat-label>Código de Empleado</mat-label>
-                <input matInput formControlName="codigoEmpleado">
-              </mat-form-field>
+            <div class="datos-personales-layout">
+              <div class="photo-area">
+                <div class="photo-box">
+                  <button *ngIf="form.get('datosGenerales.linkFoto')?.value" type="button" class="btn-clear-photo"
+                    (click)="limpiarFoto()">
+                    ×
+                  </button>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Tipo Documento</mat-label>
+                  <img *ngIf="form.get('datosGenerales.linkFoto')?.value"
+                    [src]="form.get('datosGenerales.linkFoto')?.value" alt="Foto empleado">
+                </div>
 
-                <mat-select formControlName="tipoDocumento">
-                  <mat-option *ngFor="let tipo of tiposDocumento" [value]="tipo.idTipoDocumento">
-                    {{ tipo.descripcion }}
-                  </mat-option>
-                </mat-select>
-              </mat-form-field>
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Link de Foto</mat-label>
+                  <input matInput formControlName="linkFoto">
+                </mat-form-field>
+              </div>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Cédula / Pasaporte</mat-label>
-                <input matInput formControlName="identificacion">
-              </mat-form-field>
+              <div class="form-grid-2">
+                <mat-form-field appearance="outline">
+                  <mat-label>Código de Empleado</mat-label>
+                  <input matInput formControlName="codigoEmpleado">
+                </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Sexo</mat-label>
+                <mat-form-field appearance="outline">
+                  <mat-label>Tipo Documento</mat-label>
+                  <mat-select formControlName="tipoDocumento">
+                    <mat-option *ngFor="let tipo of tiposDocumento" [value]="tipo.idTipoDocumento">
+                      {{ tipo.descripcion }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
 
-                <mat-select formControlName="sexo">
-                  <mat-option *ngFor="let genero of generos" [value]="genero.generoCodigo">
-                    {{ genero.generoDescripcion }}
-                  </mat-option>
-                </mat-select>
-              </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Cédula / Pasaporte</mat-label>
+                  <input matInput formControlName="identificacion">
+                </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Nombres</mat-label>
-                <input matInput formControlName="nombres">
-              </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Sexo</mat-label>
+                  <mat-select formControlName="sexo">
+                    <mat-option *ngFor="let genero of generos" [value]="genero.generoCodigo">
+                      {{ genero.generoDescripcion }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Apellidos</mat-label>
-                <input matInput formControlName="apellidos">
-              </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Nombres</mat-label>
+                  <input matInput formControlName="nombres">
+                </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Estado Civil</mat-label>
+                <mat-form-field appearance="outline">
+                  <mat-label>Apellidos</mat-label>
+                  <input matInput formControlName="apellidos">
+                </mat-form-field>
 
-                <mat-select formControlName="estadoCivil">
-                  <mat-option *ngFor="let estado of estadosCivil" [value]="estado.estadoCivilCodigo">
-                    {{ estado.estadoCivilNombre }}
-                  </mat-option>
-                </mat-select>
-              </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Estado Civil</mat-label>
+                  <mat-select formControlName="estadoCivil">
+                    <mat-option *ngFor="let estado of estadosCivil" [value]="estado.estadoCivilCodigo">
+                      {{ estado.estadoCivilNombre }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Fecha de Nacimiento</mat-label>
-                <input matInput type="date" formControlName="fechaNacimiento">
-              </mat-form-field>
-
-              <mat-form-field appearance="outline">
-                <mat-label>Link de Foto</mat-label>
-                <input matInput formControlName="linkFoto">
-              </mat-form-field>
-
-              <div class="photo-box"></div>
+                <mat-form-field appearance="outline">
+                  <mat-label>Fecha de Nacimiento</mat-label>
+                  <input matInput type="date" formControlName="fechaNacimiento">
+                </mat-form-field>
+              </div>
             </div>
           </div>
 
@@ -79,14 +88,8 @@
             <h3>Domicilio</h3>
 
             <div class="form-grid-2">
-              <!-- <mat-form-field appearance="outline">
-                <mat-label>País</mat-label>
-                <input matInput formControlName="pais">
-              </mat-form-field> -->
-
               <mat-form-field appearance="outline">
                 <mat-label>Ciudad</mat-label>
-
                 <mat-select formControlName="ciudad">
                   <mat-option *ngFor="let ciudad of ciudades" [value]="ciudad.id_ciudad">
                     {{ ciudad.ciudad }}
@@ -111,7 +114,6 @@
 
               <mat-form-field appearance="outline">
                 <mat-label>Nacionalidad</mat-label>
-
                 <mat-select formControlName="nacionalidad">
                   <mat-option *ngFor="let nac of nacionalidades" [value]="nac.id_nacionalidad">
                     {{ nac.descripcion }}
@@ -148,7 +150,6 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Zona</mat-label>
-
               <mat-select formControlName="zona">
                 <mat-option *ngFor="let zona of zonas" [value]="zona.id">
                   {{ zona.nombre }}
@@ -158,7 +159,6 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Ciudad de Trabajo</mat-label>
-
               <mat-select formControlName="ciudadTrabajo">
                 <mat-option *ngFor="let ciudad of ciudades" [value]="ciudad.id_ciudad">
                   {{ ciudad.ciudad }}
@@ -168,7 +168,6 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Local</mat-label>
-
               <mat-select formControlName="local">
                 <mat-option *ngFor="let local of locales" [value]="local.id">
                   {{ local.nombre }}
@@ -178,15 +177,10 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Departamento</mat-label>
-
               <mat-select formControlName="departamento">
-
                 <mat-option *ngFor="let dep of departamentos" [value]="dep.id_departamento">
-
                   {{ dep.nombre }}
-
                 </mat-option>
-
               </mat-select>
             </mat-form-field>
 
@@ -201,7 +195,6 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Tipo de Empleado</mat-label>
-
               <mat-select formControlName="tipoEmpleado">
                 <mat-option *ngFor="let tipo of tiposEmpleado" [value]="tipo.idTipemp">
                   {{ tipo.desTipemp }}
@@ -211,7 +204,11 @@
 
             <mat-form-field appearance="outline">
               <mat-label>Grupo Ocupación</mat-label>
-              <input matInput formControlName="grupoOcupacion">
+              <mat-select formControlName="grupoOcupacion">
+                <mat-option *ngFor="let item of gruposOcupacionales" [value]="item.id_grupo_ocupacional">
+                  {{ item.descripcion }}
+                </mat-option>
+              </mat-select>
             </mat-form-field>
           </div>
         </div>
@@ -224,7 +221,6 @@
         </div>
       </div>
     </mat-tab>
-
     <!-- DATOS ADICIONALES -->
     <mat-tab label="Datos Adicionales">
       <div class="tab-content" formGroupName="datosAdicionales">
