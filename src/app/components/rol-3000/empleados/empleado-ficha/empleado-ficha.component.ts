@@ -29,6 +29,7 @@ import {
 
 import { DepartamentoResponse } from 'src/app/interfaces/responses/departamentos-response';
 import { DepartamentosService } from 'src/app/services/departamentos.service';
+import { RpGrupoOcupacionalService, RpGrupoOcupacional } from 'src/app/services/rol/rp-grupo-ocupacional.service.service';
 
 @Component({
   selector: 'app-empleado-ficha',
@@ -50,6 +51,7 @@ export class EmpleadoFichaComponent implements OnInit {
   ciudades: Ciudad[] = [];
   ciudadesTrabajo: Ciudad[] = [];
   nacionalidades: NacionalidadResponse[] = [];
+  gruposOcupacionales: RpGrupoOcupacional[] = [];
   cargasColumns: string[] = [
     'codigo',
     'nombres',
@@ -97,7 +99,8 @@ export class EmpleadoFichaComponent implements OnInit {
     private localesService: LocalesService,
     private zonaService: ZonaService,
     private ciudadService: CiudadService,
-    private nacionalidadService: NacionalidadService
+    private nacionalidadService: NacionalidadService,
+    private grupoOcupacionalService: RpGrupoOcupacionalService
   ) { }
 
   ngOnInit(): void {
@@ -117,7 +120,7 @@ export class EmpleadoFichaComponent implements OnInit {
         apellidos: [''],
         estadoCivil: [null],
         fechaNacimiento: [''],
-        linkFoto: [''],
+        linkFoto: [null],
 
         pais: [''],
         ciudad: [null],
@@ -138,7 +141,7 @@ export class EmpleadoFichaComponent implements OnInit {
         cargo: [null],
         tipoEmpleado: [null],
 
-        grupoOcupacion: ['']
+        grupoOcupacion: [null]
       }),
 
       datosAdicionales: this.fb.group({
@@ -178,7 +181,7 @@ export class EmpleadoFichaComponent implements OnInit {
       datosSalariales: this.fb.group({
         empleado: [''],
         fechaSalario: [''],
-        salario: [''],
+        salario: [null],
         valorHoraNormal: [''],
         valorHoraEspecial: [''],
         incluyeAportacion: [false],
@@ -221,7 +224,13 @@ export class EmpleadoFichaComponent implements OnInit {
         nombreDiscapacidad: ['']
       })
     });
+    const salarioCtrl = this.form.get('datosSalariales.salario');
+
+salarioCtrl?.valueChanges.subscribe(valor => {
+  this.aplicarReglaSueldoManual(valor);
+});
   }
+  
 
   cargarCatalogos(): void {
     forkJoin({
@@ -235,10 +244,10 @@ export class EmpleadoFichaComponent implements OnInit {
       zonas: this.zonaService.obtenerZona(),
       ciudades: this.ciudadService.obtenerCiudad(),
       ciudadesTrabajo: this.ciudadService.obtenerCiudad(),
-      nacionalidades: this.nacionalidadService.getAll()
-
+      nacionalidades: this.nacionalidadService.getAll(),
+      gruposOcupacionales: this.grupoOcupacionalService.getAll()
     }).subscribe({
-      next: ({ departamentos, cargos, tiposEmpleado, tiposDocumento, estadosCivil, generos, locales, zonas, ciudades, ciudadesTrabajo, nacionalidades }) => {
+      next: ({ departamentos, cargos, tiposEmpleado, tiposDocumento, estadosCivil, generos, locales, zonas, ciudades, ciudadesTrabajo, nacionalidades, gruposOcupacionales }) => {
         this.departamentos = departamentos.map(dep => ({
           ...dep,
           id_departamento: Number(dep.id_departamento)
@@ -287,6 +296,11 @@ export class EmpleadoFichaComponent implements OnInit {
           ...n,
           id_nacionalidad: Number(n.id_nacionalidad)
         }));
+        this.gruposOcupacionales = gruposOcupacionales.data.map(g => ({
+          ...g,
+          id_grupo_ocupacional: Number(g.id_grupo_ocupacional)
+        }));
+
         this.cargarFichaEmpleado();
       },
       error: (err: any) => {
@@ -308,7 +322,13 @@ export class EmpleadoFichaComponent implements OnInit {
         const nombreCompleto =
           emp.nombre ||
           `${emp.apellidos ?? ''} ${emp.nombres ?? ''}`.trim();
-
+        const sueldoEmpleado =
+          emp.sueldo ??
+          (emp as any).Sueldo ??
+          (emp as any).salario ??
+          (emp as any).Salario ??
+          null;
+        const tieneSueldo = emp.sueldo !== null && emp.sueldo !== undefined && Number(emp.sueldo) !== 0;
         this.form.patchValue({
           datosGenerales: {
             codigoEmpleado: emp.idEmpleado,
@@ -327,21 +347,46 @@ export class EmpleadoFichaComponent implements OnInit {
             local: Number(emp.id),
             ciudad: Number(emp.idCiudad),
             ciudadTrabajo: Number(emp.idCiudadTrabajo),
-            direccion:emp.direccion ?? '',
+            direccion: emp.direccion ?? '',
             telefono: emp.telefono ?? '',
             email: emp.mail ?? '',
             nacionalidad: Number(emp.id_nacionalidad),
-            empresaAportacion: emp.empresa ?? ''
-            
+            empresaAportacion: emp.empresa ?? '',
+            grupoOcupacion: Number(emp.id_grupo_ocupacional),
+            linkFoto: emp.foto ?? null,
+
+
+
           },
 
           datosAdicionales: {
             empleado: nombreCompleto,
-            ctaContableEmpleado: emp.ctaCble ?? ''
+            ctaContableEmpleado: emp.ctaCble ?? '',
+            noRecibeProvisiones: emp.proviciones === true,
+            pagoDecimoCuarto: emp.decimos === true,
+            pagoDecimoTercero: emp.decimo3ro === true,
+            pagoFondosReserva: emp.freserva === true,
+            terceraEdad: emp.teredad === true,
+            noPagaImpuestoRenta: emp.imp_renta === true,
+            cargaConyugeUtilidades: emp.carcony === true,
+            cargaHijosUtilidades: emp.carhijos ?? 0,
+            gerenteRepLegal: emp.rep_legal === true,
+            fechaPagoDecimoInicio:emp.feinivac ?? '',
+            fechaPagoDecimoFin: emp.fefinvac ?? ''
           },
 
           datosSalariales: {
-            empleado: nombreCompleto
+            empleado: nombreCompleto,
+            fechaSalario: emp.fecha_sueldo ?? '',
+            salario: tieneSueldo ? sueldoEmpleado : '',
+            incluyeAportacion: false,
+            retencionJudicial: emp.ret_judicial === true,
+            anticipoQuincenal1: emp.quincena ?? 0,
+            anticipoQuincenal2: emp.quincenaIi ?? 0,
+            valoresRetencion: emp.valor_retencion_j ?? 0,
+            valorHoraNormal: emp.valor_hora ?? 0,
+            valorHoraEspecial: emp.valor_hora_espe ?? 0,
+
           },
 
           datosAcademicos: {
@@ -350,21 +395,17 @@ export class EmpleadoFichaComponent implements OnInit {
 
           datosEspeciales: {
             empleado: nombreCompleto,
-            identificacion: emp.documento ?? ''
+            identificacion: emp.documento ?? '',
+            discapacitado: emp.discap === true
           }
         });
-
-        console.log(
-          'Departamento seleccionado:',
-          this.form.get('datosGenerales.departamento')?.value
-        );
-
-        console.log('Departamentos catálogo:', this.departamentos);
+        this.aplicarReglaSueldo(sueldoEmpleado);
       },
       error: (err: any) => {
         console.error('Error al cargar ficha de empleado:', err);
       }
     });
+
   }
 
   nuevo(): void {
@@ -410,4 +451,48 @@ export class EmpleadoFichaComponent implements OnInit {
   reporte(): void {
     console.log('Reporte');
   }
+  limpiarFoto(): void {
+    this.form.get('datosGenerales.linkFoto')?.setValue('');
+  }
+  aplicarReglaSueldo(sueldo: any): void {
+
+    const salarioCtrl = this.form.get('datosSalariales.salario');
+    const incluyeCtrl = this.form.get('datosSalariales.incluyeAportacion');
+
+    const tieneSueldo =
+      sueldo !== null &&
+      sueldo !== undefined &&
+      Number(sueldo) !== 0;
+
+    if (tieneSueldo) {
+
+      salarioCtrl?.setValue(sueldo);
+
+      incluyeCtrl?.setValue(false);
+
+      incluyeCtrl?.disable();
+
+    } else {
+
+      salarioCtrl?.setValue('');
+
+      incluyeCtrl?.enable();
+    }
+  }
+  aplicarReglaSueldoManual(valor: any): void {
+  const incluyeCtrl = this.form.get('datosSalariales.incluyeAportacion');
+
+  const tieneSueldo =
+    valor !== null &&
+    valor !== undefined &&
+    valor !== '' &&
+    Number(valor) !== 0;
+
+  if (tieneSueldo) {
+    incluyeCtrl?.setValue(false, { emitEvent: false });
+    incluyeCtrl?.disable({ emitEvent: false });
+  } else {
+    incluyeCtrl?.enable({ emitEvent: false });
+  }
+}
 }

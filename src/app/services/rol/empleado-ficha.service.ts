@@ -40,6 +40,29 @@ export interface EmpleadoFichaResponse {
   id_nacionalidad?: number;
   idCiudadTrabajo?: number;
   empresa?: string;
+  id_grupo_ocupacional?: number;
+  foto?:string;
+  proviciones?:boolean;
+  decimos?:boolean;
+  decimo3ro?:boolean;
+  freserva?:boolean;
+  teredad?:boolean;
+  discap?:boolean;
+  ret_judicial?:boolean;
+  rep_legal?:boolean;
+  imp_renta?:boolean;
+  fecha_sueldo?:string;
+  sueldo?:number;
+  quincena?:number;
+  quincenaIi?:number;
+  valor_retencion_j?:number;
+  valor_hora?:number;
+  valor_hora_espe?:number;
+  carcony?:boolean;
+  carhijos?:number;
+  feinivac?:string;
+  fefinvac?:string;
+
 }
 
 @Injectable({
