@@ -158,6 +158,7 @@ export interface PagoRequest {
 export interface AnularPagoRequest {
   motivo_anulacion: string;
   id_usuario_responsable: number;
+  fecha_anulacion?: string; 
 }
 
 export interface AnularPagoResponse {
@@ -460,6 +461,7 @@ export class CuentaCobrarService {
     return this.http.post<ApiResponse<AnularPagoResponse | null>>(url, {
       motivo_anulacion: this.sanitizeString(req.motivo_anulacion),
       id_usuario_responsable: Number(req.id_usuario_responsable),
+      fecha_anulacion: req.fecha_anulacion ?? null
     }).pipe(
       map(res => {
         const t = (res?.type || '').toLowerCase();

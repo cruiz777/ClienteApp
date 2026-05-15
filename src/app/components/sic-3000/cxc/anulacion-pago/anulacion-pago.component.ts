@@ -52,7 +52,7 @@ export class AnulacionPagoComponent implements OnInit {
   reverting = false;
   canConsult = true;
   canRevert = false;
-
+  reversalDateIso = ''; 
   constructor(
     private cxc: CuentaCobrarService,
     private _snackBar: MatSnackBar,
@@ -141,7 +141,7 @@ export class AnulacionPagoComponent implements OnInit {
 
       // 1️⃣ Generar asiento de reverso en cg.cabecera_maestro/cg.detalle_maestro
       this.reversarAsientoService
-        .generarReversoDesdePago(this.idPago!, usuarioId)
+        .generarReversoDesdePago(this.idPago!, usuarioId,this.reversalDateIso)
         .subscribe({
           next: (resp: ApiResponse<GenerarAsientoReversoPagoResponse>) => {
             if (!resp || resp.type.toLowerCase() !== 'success' || !resp.data) {
@@ -159,7 +159,8 @@ export class AnulacionPagoComponent implements OnInit {
             // 2️⃣ Si el reverso contable fue OK, anulamos el pago en SIC
             this.cxc.anularPago(numero, {
               motivo_anulacion: motivo,
-              id_usuario_responsable: usuarioId
+              id_usuario_responsable: usuarioId,
+              fecha_anulacion: this.reversalDateIso
             }).subscribe({
               next: (msg: string) => {
                 this.reverting = false;
@@ -176,16 +177,15 @@ export class AnulacionPagoComponent implements OnInit {
               },
               error: (err) => {
                 this.reverting = false;
-                this.mostrarAlerta(err?.message || 'Error anulando el pago.', 'error');
+                const msg = err?.error?.message || err?.message || 'Error anulando el pago.';
+                this.mostrarAlerta(msg, 'error');  // ← cambiar
               }
             });
           },
           error: (err) => {
             this.reverting = false;
-            this.mostrarAlerta(
-              err?.message || 'Error generando el asiento contable de reverso.',
-              'error'
-            );
+            const msg = err?.error?.message || err?.message || 'Error generando el asiento contable de reverso.';
+            this.mostrarAlerta(msg, 'error');  // ← cambiar
           }
         });
     });
@@ -225,15 +225,17 @@ export class AnulacionPagoComponent implements OnInit {
       doc.text('Datos del Pago', left, y); y += 8;
       doc.setFont('helvetica', 'normal'); doc.setFontSize(11);
 
-      this.addLine(doc, 'No. Pago:', this.pago.numero_pago, left, y); y += 7;
-      this.addLine(doc, 'Fecha Pago:', this.paymentDate || '-', left, y); y += 7;
-      this.addLine(doc, 'Cliente:', this.clientName || '-', left, y); y += 7;
-      this.addLine(doc, 'Fecha Reversión:', this.reversalDate || hoy, left, y); y += 7;
-
+      this.addLine(doc, 'No. Pago:', this.pago.numero_pago, left, y); y += 8;
+      this.addLine(doc, 'Fecha Pago:', this.paymentDate || '-', left, y); y += 8;
+      this.addLine(doc, 'Cliente:', this.clientName || '-', left, y); y += 8;
+      const fechaPdf = this.reversalDateIso
+          ? this.reversalDateIso.split('-').reverse().join('/')  // yyyy-MM-dd → dd/MM/yyyy
+          : hoy;
+      this.addLine(doc, 'Fecha Reversión:', fechaPdf, left, y); y += 8;  
       const usuarioMostrar =
         (this.usuarioActual?.nombre_usuario ??
           String(this.getUsuarioId() || '-'));
-      this.addLine(doc, 'Usuario:', usuarioMostrar, left, y); y += 10;
+      this.addLine(doc, 'Usuario:', usuarioMostrar, left, y); y += 12;
 
       // Observación
       doc.setFont('helvetica', 'bold');
@@ -246,7 +248,7 @@ export class AnulacionPagoComponent implements OnInit {
 
       // Pie
       doc.setFont('helvetica', 'italic'); doc.setFontSize(9);
-      doc.text('Documento generado automáticamente por el sistema de CxC.', left, 285);
+      doc.text('Documento generado automáticamente por el sistema.', left, 285);
 
       const fileName = `ReversionPago_${this.pago.numero_pago}.pdf`;
       doc.save(fileName);
@@ -259,7 +261,7 @@ export class AnulacionPagoComponent implements OnInit {
     doc.setFont('helvetica', 'bold');
     doc.text(label, x, y);
     doc.setFont('helvetica', 'normal');
-    doc.text(String(value ?? '-'), x + 40, y);
+    doc.text(String(value ?? '-'), x + 55, y);
   }
 
   private getHoyDMY(): string {
@@ -278,7 +280,7 @@ export class AnulacionPagoComponent implements OnInit {
     this.paymentDate = '';
     this.clientName = '';
     this.observacion = '';
-    this.reversalDate = '';
+    this.reversalDateIso = '';
     this.pago = undefined;
     this.idPago = null;
 
@@ -326,7 +328,7 @@ export class AnulacionPagoComponent implements OnInit {
   private setReversalToday(): void {
     const d = new Date();
     const pad = (n: number) => n.toString().padStart(2, '0');
-    this.reversalDate = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()}`;
+    this.reversalDateIso = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
   }
 
   onObservacionChange(v: string) {

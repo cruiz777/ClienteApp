@@ -63,7 +63,11 @@ export class PagoReportService {
     if (!res?.data || res.type !== 'Success') {
       throw new Error(res?.message || 'No se pudo recuperar el pago');
     }
-    return res.data;
+    //Normaliza el campo asiento_contable para que no existan problemas de mapeo
+    return res.data.map(p => ({
+      ...p,
+      asientoContable: (p as any).asiento_contable ?? p.asientoContable ?? null
+    }));
   }
 
   /** Genera el PDF directamente desde el API */
