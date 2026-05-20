@@ -88,6 +88,9 @@ import { SectorialComponent } from './configuracion/sectorial/list/sectorial.com
 import { RpFormaPagoRolComponent } from './configuracion/forma-pago/list/forma-pago-rol.component';
 import { RpTipoSangreComponent } from './configuracion/tipo-sangre/list/tipo-sangre.component';
 import { RpRegimenComponent } from './configuracion/regimen/list/regimen.component';
+import { TipocuentaFormComponent } from '../cg-3000/configuracion/tipo-cuenta-form/tipo-cuenta-form.component';
+import { RpBanTerceroComponent } from './configuracion/bancos/bancos-terceros/list/bancos-terceros-rol.component';
+import { RpBancosComponent } from './configuracion/bancos/bancos/list/bancos-rol.component';
 
 @NgModule({
   declarations: [
@@ -178,6 +181,9 @@ import { RpRegimenComponent } from './configuracion/regimen/list/regimen.compone
         RpFormaPagoRolComponent,
         RpTipoSangreComponent,
         RpRegimenComponent,
+        TipocuentaFormComponent,
+        RpBanTerceroComponent,
+        RpBancosComponent,
     Rol3000RoutingModule
   ]
 })

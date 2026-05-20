@@ -362,38 +362,36 @@
          
 
         </mat-expansion-panel>
-        <mat-expansion-panel>
+       <mat-expansion-panel>
+          <mat-expansion-panel-header>
+            <mat-panel-title>
+              <img src="assets/icons/icon-mantenimiento.png" class="menu-icon">
+              <span *ngIf="isExpanded" class="menu-text">Configuración</span>
+            </mat-panel-title>
+          </mat-expansion-panel-header>
+
+          <!-- Subgrupo: BANCOS -->
+          <mat-expansion-panel class="sub-panel" *ngIf="isExpanded">
             <mat-expansion-panel-header>
               <mat-panel-title>
-                <img src="assets/icons/icon-mantenimiento.png" class="menu-icon">
-                <span *ngIf="isExpanded" class="menu-text">Configuración</span>
+                <span class="menu-text">Bancos</span>
               </mat-panel-title>
             </mat-expansion-panel-header>
+            <a mat-list-item [routerLink]="'/rol-3000/bancos-rol'">
+              <span *ngIf="isExpanded" class="menu-text">Bancos</span>
+            </a>
+            <a mat-list-item [routerLink]="'/rol-3000/bancos-terceros-rol'">
+              <span *ngIf="isExpanded" class="menu-text">Bancos Terceros</span>
+            </a>
+          </mat-expansion-panel>
 
-            <a mat-list-item [routerLink]="'/rol-3000/parametros-costos'">
-              <span *ngIf="isExpanded" class="menu-text">Parámetros y Costos</span>
-            </a>
-            <a mat-list-item [routerLink]="'/rol-3000/regimen'">
-              <span *ngIf="isExpanded" class="menu-text">Regimen</span>
-            </a>
-            <a mat-list-item [routerLink]="'/rol-3000/ingreso-descuentos'">
-              <span *ngIf="isExpanded" class="menu-text">Ingresos Descuentos</span>
-            </a>
-            <a mat-list-item [routerLink]="'/rol-3000/forma-pago'">
-              <span *ngIf="isExpanded" class="menu-text">Forma de Pago</span>
-            </a>
-            <a mat-list-item [routerLink]="'/rol-3000/cargos'">
-              <span *ngIf="isExpanded" class="menu-text">Cargos</span>
-            </a>
-            <a mat-list-item [routerLink]="'/rol-3000/sectorial'">
-              <span *ngIf="isExpanded" class="menu-text">Sectorial</span>
-            </a>
-            <a mat-list-item [routerLink]="'/rol-3000/impuestos-renta'">
-              <span *ngIf="isExpanded" class="menu-text">Tabla Impuesto a la Renta</span>
-            </a>
-            <a mat-list-item [routerLink]="'/rol-3000/nivel-instruccion'">
-              <span *ngIf="isExpanded" class="menu-text">Nivel Instruccion</span>
-            </a>
+          <!-- Subgrupo: TIPOS -->
+          <mat-expansion-panel class="sub-panel" *ngIf="isExpanded">
+            <mat-expansion-panel-header>
+              <mat-panel-title>
+                <span class="menu-text">Tipos</span>
+              </mat-panel-title>
+            </mat-expansion-panel-header>
             <a mat-list-item [routerLink]="'/rol-3000/tipo-gasto'">
               <span *ngIf="isExpanded" class="menu-text">Tipo Gasto</span>
             </a>
@@ -403,7 +401,38 @@
             <a mat-list-item [routerLink]="'/rol-3000/tipo-sangre'">
               <span *ngIf="isExpanded" class="menu-text">Tipo de Sangre</span>
             </a>
+            <a mat-list-item [routerLink]="'/rol-3000/tipo-cuenta'">
+              <span *ngIf="isExpanded" class="menu-text">Tipo de Cuenta</span>
+            </a>
           </mat-expansion-panel>
+
+          <!-- Generales -->
+          <a mat-list-item [routerLink]="'/rol-3000/parametros-costos'">
+            <span *ngIf="isExpanded" class="menu-text">Parámetros y Costos</span>
+          </a>
+          <a mat-list-item [routerLink]="'/rol-3000/regimen'">
+            <span *ngIf="isExpanded" class="menu-text">Regimen</span>
+          </a>
+          <a mat-list-item [routerLink]="'/rol-3000/ingreso-descuentos'">
+            <span *ngIf="isExpanded" class="menu-text">Ingresos Descuentos</span>
+          </a>
+          <a mat-list-item [routerLink]="'/rol-3000/forma-pago'">
+            <span *ngIf="isExpanded" class="menu-text">Forma de Pago</span>
+          </a>
+          <a mat-list-item [routerLink]="'/rol-3000/cargos'">
+            <span *ngIf="isExpanded" class="menu-text">Cargos</span>
+          </a>
+          <a mat-list-item [routerLink]="'/rol-3000/sectorial'">
+            <span *ngIf="isExpanded" class="menu-text">Sectorial</span>
+          </a>
+          <a mat-list-item [routerLink]="'/rol-3000/impuestos-renta'">
+            <span *ngIf="isExpanded" class="menu-text">Tabla Impuesto a la Renta</span>
+          </a>
+          <a mat-list-item [routerLink]="'/rol-3000/nivel-instruccion'">
+            <span *ngIf="isExpanded" class="menu-text">Nivel Instrucción</span>
+          </a>
+          
+        </mat-expansion-panel>
 
       </mat-accordion>
 
