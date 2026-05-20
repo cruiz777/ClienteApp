@@ -59,6 +59,10 @@ import { SectorialComponent } from './configuracion/sectorial/list/sectorial.com
 import { RpFormaPagoRolComponent } from './configuracion/forma-pago/list/forma-pago-rol.component';
 import { RpTipoSangreComponent } from './configuracion/tipo-sangre/list/tipo-sangre.component';
 import { RpRegimenComponent } from './configuracion/regimen/list/regimen.component';
+import { TipoCuentaBancoComponent } from './configuracion/tipo-cuenta/list/tipo-cuenta.component';
+import { RpBanTerceroComponent } from './configuracion/bancos/bancos-terceros/list/bancos-terceros-rol.component';
+import { RpBancosComponent } from './configuracion/bancos/bancos/list/bancos-rol.component';
+
 const routes: Routes = [
    {
       path: '',
@@ -122,6 +126,9 @@ const routes: Routes = [
         {path:'forma-pago', component: RpFormaPagoRolComponent},
         {path:'tipo-sangre', component: RpTipoSangreComponent},
         {path:'regimen', component: RpRegimenComponent},
+        {path:'tipo-cuenta', component: TipoCuentaBancoComponent},
+        {path:'bancos-terceros-rol', component: RpBanTerceroComponent},
+        {path:'bancos-rol', component: RpBancosComponent},
 
         { path: '**', redirectTo: 'inicio-rol' },
       ],
