@@ -405,3 +405,20 @@
 ::ng-deep .academicos-ag-grid .ag-cell {
   font-size: 12px;
 }
+
+.grid-toolbar {
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-grid-delete {
+  border: none;
+  background: #c62828;
+  color: white;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 28px;
+  height: 24px;
+}

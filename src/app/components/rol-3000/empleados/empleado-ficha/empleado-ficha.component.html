@@ -235,6 +235,12 @@
             <div class="card-section">
               <h3>Cronología del Empleado</h3>
 
+              <div class="grid-toolbar">
+                <button mat-stroked-button color="primary" type="button" (click)="agregarFilaCronologia()">
+                  Agregar fila
+                </button>
+              </div>
+
               <ag-grid-angular class="ag-theme-alpine cronologia-ag-grid" [rowData]="cronologiaRowData"
                 [columnDefs]="cronologiaColumnDefs" [defaultColDef]="cronologiaDefaultColDef"
                 [stopEditingWhenCellsLoseFocus]="true" [singleClickEdit]="true">
@@ -254,7 +260,7 @@
             </div>
 
             <div class="form-grid-2 mt-16">
-              
+
               <div class="date-range">
                 <mat-form-field appearance="outline">
                   <mat-label>Inicio Pago Décimos</mat-label>
@@ -305,6 +311,11 @@
           <div>
             <div class="card-section">
               <h3>Datos para el Banco / Empleado</h3>
+              <div class="grid-toolbar">
+                <button mat-stroked-button color="primary" type="button" (click)="agregarFilaBanco()">
+                  Agregar fila
+                </button>
+              </div>
 
               <ag-grid-angular class="ag-theme-alpine banco-ag-grid" [rowData]="bancoRowData"
                 [columnDefs]="bancoColumnDefs" [defaultColDef]="bancoDefaultColDef"
@@ -484,7 +495,7 @@
             [columnDefs]="academicosColumnDefs" [defaultColDef]="academicosDefaultColDef" [singleClickEdit]="true"
             [stopEditingWhenCellsLoseFocus]="true" [animateRows]="true">
           </ag-grid-angular>
-        </div>  
+        </div>
 
         <div class="actions">
           <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
