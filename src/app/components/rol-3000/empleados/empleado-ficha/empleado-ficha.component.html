@@ -126,15 +126,14 @@
                 <input matInput formControlName="email">
               </mat-form-field>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Contacto de Referencia</mat-label>
-                <input matInput formControlName="contactoReferencia">
-              </mat-form-field>
+              <div class="referencia-grid-wrapper full-width">
+                <label class="sub-label">Contactos de Referencia</label>
 
-              <mat-form-field appearance="outline">
-                <mat-label>Teléfono de Referencia</mat-label>
-                <input matInput formControlName="telefonoReferencia">
-              </mat-form-field>
+                <ag-grid-angular class="ag-theme-alpine referencia-ag-grid" [rowData]="referenciaRowData"
+                  [columnDefs]="referenciaColumnDefs" [defaultColDef]="referenciaDefaultColDef"
+                  [stopEditingWhenCellsLoseFocus]="true" [singleClickEdit]="true">
+                </ag-grid-angular>
+              </div>
             </div>
           </div>
         </div>
@@ -235,17 +234,17 @@
 
             <div class="card-section">
               <h3>Cronología del Empleado</h3>
-              <div class="cronologia-grid">
-                <div class="cronologia-header">Fecha Ingreso</div>
-                <div class="cronologia-header">Fecha Salida</div>
-                <div class="cronologia-header">Terminación Contrato</div>
-                <div class="cronologia-header">Tipo de Contrato</div>
-                <div class="cronologia-header">N° Horas</div>
 
-                <div class="cronologia-cell" *ngFor="let i of [1,2,3,4,5]"></div>
-                <div class="cronologia-cell" *ngFor="let i of [1,2,3,4,5]"></div>
-                <div class="cronologia-cell" *ngFor="let i of [1,2,3,4,5]"></div>
+              <div class="grid-toolbar">
+                <button mat-stroked-button color="primary" type="button" (click)="agregarFilaCronologia()">
+                  Agregar fila
+                </button>
               </div>
+
+              <ag-grid-angular class="ag-theme-alpine cronologia-ag-grid" [rowData]="cronologiaRowData"
+                [columnDefs]="cronologiaColumnDefs" [defaultColDef]="cronologiaDefaultColDef"
+                [stopEditingWhenCellsLoseFocus]="true" [singleClickEdit]="true">
+              </ag-grid-angular>
             </div>
 
             <div class="card-section mt-16">
@@ -261,10 +260,6 @@
             </div>
 
             <div class="form-grid-2 mt-16">
-              <mat-form-field appearance="outline">
-                <mat-label>Nivel de Instrucción</mat-label>
-                <input matInput formControlName="nivelInstruccion">
-              </mat-form-field>
 
               <div class="date-range">
                 <mat-form-field appearance="outline">
@@ -280,7 +275,14 @@
 
               <mat-form-field appearance="outline">
                 <mat-label>Régimen</mat-label>
-                <input matInput formControlName="regimen">
+
+                <mat-select formControlName="regimen">
+                  <mat-option *ngFor="let item of regimenes" [value]="item.id_regimen">
+
+                    {{ item.descripcion }}
+
+                  </mat-option>
+                </mat-select>
               </mat-form-field>
 
               <div class="checks-column">
@@ -309,40 +311,16 @@
           <div>
             <div class="card-section">
               <h3>Datos para el Banco / Empleado</h3>
-
-              <div class="form-grid-2">
-                <mat-form-field appearance="outline">
-                  <mat-label>Código Banco</mat-label>
-                  <input matInput formControlName="codigoBanco">
-                </mat-form-field>
-
-                <div></div>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Cta Contable Empleado</mat-label>
-                  <input matInput formControlName="ctaContableEmpleado">
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Forma de Pago</mat-label>
-                  <input matInput formControlName="formaPago">
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>Tipo de Cuenta</mat-label>
-                  <input matInput formControlName="tipoCuenta">
-                </mat-form-field>
-
-                <mat-form-field appearance="outline">
-                  <mat-label>N° Cuenta</mat-label>
-                  <input matInput formControlName="numeroCuenta">
-                </mat-form-field>
-
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Código Banco Empleado</mat-label>
-                  <input matInput formControlName="codigoBancoEmpleado">
-                </mat-form-field>
+              <div class="grid-toolbar">
+                <button mat-stroked-button color="primary" type="button" (click)="agregarFilaBanco()">
+                  Agregar fila
+                </button>
               </div>
+
+              <ag-grid-angular class="ag-theme-alpine banco-ag-grid" [rowData]="bancoRowData"
+                [columnDefs]="bancoColumnDefs" [defaultColDef]="bancoDefaultColDef"
+                [stopEditingWhenCellsLoseFocus]="true" [singleClickEdit]="true">
+              </ag-grid-angular>
             </div>
 
             <div class="card-section mt-16">
@@ -361,7 +339,14 @@
 
                 <mat-form-field appearance="outline">
                   <mat-label>Grupo Sanguíneo</mat-label>
-                  <input matInput formControlName="grupoSanguineo">
+
+                  <mat-select formControlName="grupoSanguineo">
+                    <mat-option *ngFor="let item of tiposSangre" [value]="item.idTipoSangre">
+
+                      {{ item.descripcion }}
+
+                    </mat-option>
+                  </mat-select>
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
@@ -467,71 +452,10 @@
         </mat-form-field>
 
         <div class="table-container">
-          <table mat-table [dataSource]="cargasData" class="mat-elevation-z1 custom-table">
-
-            <ng-container matColumnDef="codigo">
-              <th mat-header-cell *matHeaderCellDef>Código</th>
-              <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="nombres">
-              <th mat-header-cell *matHeaderCellDef>Nombres</th>
-              <td mat-cell *matCellDef="let row">{{ row.nombres }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="apellidos">
-              <th mat-header-cell *matHeaderCellDef>Apellidos</th>
-              <td mat-cell *matCellDef="let row">{{ row.apellidos }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="cedula">
-              <th mat-header-cell *matHeaderCellDef>Cédula</th>
-              <td mat-cell *matCellDef="let row">{{ row.cedula }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="direccion">
-              <th mat-header-cell *matHeaderCellDef>Dirección</th>
-              <td mat-cell *matCellDef="let row">{{ row.direccion }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="telefono">
-              <th mat-header-cell *matHeaderCellDef>Teléfono</th>
-              <td mat-cell *matCellDef="let row">{{ row.telefono }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="fechaNacimiento">
-              <th mat-header-cell *matHeaderCellDef>Fecha Nacim.</th>
-              <td mat-cell *matCellDef="let row">{{ row.fechaNacimiento }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="sexo">
-              <th mat-header-cell *matHeaderCellDef>Sexo</th>
-              <td mat-cell *matCellDef="let row">{{ row.sexo }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="parentesco">
-              <th mat-header-cell *matHeaderCellDef>Parentesco</th>
-              <td mat-cell *matCellDef="let row">{{ row.parentesco }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="discapacidad">
-              <th mat-header-cell *matHeaderCellDef>Discapacidad</th>
-              <td mat-cell *matCellDef="let row">{{ row.discapacidad }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="utilidad">
-              <th mat-header-cell *matHeaderCellDef>Utilidad</th>
-              <td mat-cell *matCellDef="let row">{{ row.utilidad }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="impRenta">
-              <th mat-header-cell *matHeaderCellDef>Imp. Rent.</th>
-              <td mat-cell *matCellDef="let row">{{ row.impRenta }}</td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="cargasColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: cargasColumns"></tr>
-          </table>
+          <ag-grid-angular class="ag-theme-alpine cargas-ag-grid" [rowData]="cargasRowData"
+            [columnDefs]="cargasColumnDefs" [defaultColDef]="cargasDefaultColDef" [pagination]="true"
+            [paginationPageSize]="10" [animateRows]="true">
+          </ag-grid-angular>
         </div>
 
         <div class="center-action">
@@ -550,59 +474,11 @@
     </mat-tab>
 
     <!-- GASTOS PERSONALES -->
-    <mat-tab label="Gastos Personales">
-      <div class="tab-content">
-        <h2>Gastos Personales</h2>
-
-        <mat-form-field appearance="outline" class="employee-box">
-          <mat-label>Empleado</mat-label>
-          <input matInput
-            [value]="form.get('datosGenerales.nombres')?.value + ' ' + form.get('datosGenerales.apellidos')?.value">
-        </mat-form-field>
-
-        <div class="table-container">
-          <table mat-table [dataSource]="gastosData" class="mat-elevation-z1 custom-table">
-
-            <ng-container matColumnDef="codigo">
-              <th mat-header-cell *matHeaderCellDef>Código</th>
-              <td mat-cell *matCellDef="let row">{{ row.codigo }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="tipoGasto">
-              <th mat-header-cell *matHeaderCellDef>Tipo de Gasto</th>
-              <td mat-cell *matCellDef="let row">{{ row.tipoGasto }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="montoMaximo">
-              <th mat-header-cell *matHeaderCellDef>Monto Máximo</th>
-              <td mat-cell *matCellDef="let row">{{ row.montoMaximo }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="valorProyectado">
-              <th mat-header-cell *matHeaderCellDef>Valor Proyectado</th>
-              <td mat-cell *matCellDef="let row">{{ row.valorProyectado }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="valorReal">
-              <th mat-header-cell *matHeaderCellDef>Valor Real</th>
-              <td mat-cell *matCellDef="let row">{{ row.valorReal }}</td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="gastosColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: gastosColumns"></tr>
-          </table>
-        </div>
-
-        <div class="actions">
-          <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
-          <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
-          <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button>
-          <button mat-stroked-button (click)="imprimir()">Imprimir</button>
-          <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button>
-          <button mat-stroked-button (click)="cancelar()">Cancelar</button>
-        </div>
-      </div>
-    </mat-tab>
+    <div class="table-container">
+      <ag-grid-angular class="ag-theme-alpine gastos-ag-grid" [rowData]="gastosRowData" [columnDefs]="gastosColumnDefs"
+        [defaultColDef]="gastosDefaultColDef" [pagination]="true" [paginationPageSize]="10" [animateRows]="true">
+      </ag-grid-angular>
+    </div>
 
     <!-- DATOS ACADÉMICOS -->
     <mat-tab label="Datos Académicos">
@@ -614,26 +490,11 @@
           <input matInput formControlName="empleado">
         </mat-form-field>
 
-        <div class="grid-2">
-          <mat-form-field appearance="outline">
-            <mat-label>Educación Primaria</mat-label>
-            <textarea matInput rows="5" formControlName="educacionPrimaria"></textarea>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Educación Superior</mat-label>
-            <textarea matInput rows="5" formControlName="educacionSuperior"></textarea>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Educación Secundaria</mat-label>
-            <textarea matInput rows="5" formControlName="educacionSecundaria"></textarea>
-          </mat-form-field>
-
-          <mat-form-field appearance="outline">
-            <mat-label>Cursos, Maestrías y Posgrados</mat-label>
-            <textarea matInput rows="5" formControlName="cursosMaestriasPosgrados"></textarea>
-          </mat-form-field>
+        <div class="table-container">
+          <ag-grid-angular class="ag-theme-alpine academicos-ag-grid" [rowData]="academicosRowData"
+            [columnDefs]="academicosColumnDefs" [defaultColDef]="academicosDefaultColDef" [singleClickEdit]="true"
+            [stopEditingWhenCellsLoseFocus]="true" [animateRows]="true">
+          </ag-grid-angular>
         </div>
 
         <div class="actions">
@@ -648,59 +509,12 @@
     </mat-tab>
 
     <!-- OBSERVACIÓN -->
-    <mat-tab label="Observación">
-      <div class="tab-content">
-        <h2>Observación</h2>
-
-        <mat-form-field appearance="outline" class="employee-box">
-          <mat-label>Empleado</mat-label>
-          <input matInput
-            [value]="form.get('datosGenerales.nombres')?.value + ' ' + form.get('datosGenerales.apellidos')?.value">
-        </mat-form-field>
-
-        <div class="table-container">
-          <table mat-table [dataSource]="observacionData" class="mat-elevation-z1 custom-table">
-
-            <ng-container matColumnDef="fecha">
-              <th mat-header-cell *matHeaderCellDef>Fecha</th>
-              <td mat-cell *matCellDef="let row">{{ row.fecha }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="usuario">
-              <th mat-header-cell *matHeaderCellDef>Usuario</th>
-              <td mat-cell *matCellDef="let row">{{ row.usuario }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="tipo">
-              <th mat-header-cell *matHeaderCellDef>Tipo</th>
-              <td mat-cell *matCellDef="let row">{{ row.tipo }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="observacion">
-              <th mat-header-cell *matHeaderCellDef>Observación</th>
-              <td mat-cell *matCellDef="let row">{{ row.observacion }}</td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="observacionColumns"></tr>
-            <tr mat-row *matRowDef="let row; columns: observacionColumns"></tr>
-          </table>
-        </div>
-
-        <div class="center-action dual-buttons">
-          <button mat-stroked-button color="primary" (click)="reporte()">Reporte</button>
-          <button mat-stroked-button color="accent" (click)="actualizarObservacion()">Actualizar</button>
-        </div>
-
-        <div class="actions">
-          <button mat-flat-button color="primary" (click)="nuevo()">Nuevo</button>
-          <button mat-flat-button color="primary" (click)="grabar()">Grabar</button>
-          <button mat-flat-button color="accent" (click)="agregarNomina()">Agregar Nómina</button>
-          <button mat-stroked-button (click)="imprimir()">Imprimir</button>
-          <button mat-stroked-button color="warn" (click)="borrar()">Borrar</button>
-          <button mat-stroked-button (click)="cancelar()">Cancelar</button>
-        </div>
-      </div>
-    </mat-tab>
+    <div class="table-container">
+      <ag-grid-angular class="ag-theme-alpine observacion-ag-grid" [rowData]="observacionRowData"
+        [columnDefs]="observacionColumnDefs" [defaultColDef]="observacionDefaultColDef" [pagination]="true"
+        [paginationPageSize]="10" [animateRows]="true">
+      </ag-grid-angular>
+    </div>
 
     <!-- DATOS ESPECIALES -->
     <mat-tab label="Datos Especiales">

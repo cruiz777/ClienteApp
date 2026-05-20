@@ -301,3 +301,124 @@
 .btn-clear-photo:hover {
   background: #b71c1c;
 }
+
+.cronologia-ag-grid {
+  width: 100%;
+  height: 145px;
+}
+
+::ng-deep .cronologia-ag-grid .ag-header-cell-label {
+  justify-content: center;
+  font-weight: 700;
+  color: #003b82;
+}
+
+::ng-deep .cronologia-ag-grid .ag-cell {
+  text-align: center;
+}
+
+.referencia-grid-wrapper {
+  grid-column: 1 / -1;
+}
+
+.referencia-ag-grid {
+  width: 100%;
+  height: 95px;
+}
+
+::ng-deep .referencia-ag-grid .ag-header-cell-label {
+  justify-content: center;
+  font-weight: 700;
+  color: #003b82;
+}
+
+::ng-deep .referencia-ag-grid .ag-cell {
+  text-align: center;
+}
+.banco-ag-grid {
+  width: 100%;
+  height: 130px;
+}
+
+::ng-deep .banco-ag-grid .ag-header-cell-label {
+  justify-content: center;
+  font-weight: 700;
+  color: #003b82;
+}
+
+::ng-deep .banco-ag-grid .ag-cell {
+  text-align: center;
+}
+.cargas-ag-grid {
+  width: 100%;
+  height: 320px;
+}
+
+::ng-deep .cargas-ag-grid .ag-header-cell-label {
+  justify-content: center;
+  font-weight: 700;
+  color: #003b82;
+}
+
+::ng-deep .cargas-ag-grid .ag-cell {
+  font-size: 12px;
+}
+.gastos-ag-grid {
+  width: 100%;
+  height: 300px;
+}
+
+::ng-deep .gastos-ag-grid .ag-header-cell-label {
+  justify-content: center;
+  font-weight: 700;
+  color: #003b82;
+}
+
+::ng-deep .gastos-ag-grid .ag-cell {
+  font-size: 12px;
+}
+.observacion-ag-grid {
+  width: 100%;
+  height: 300px;
+}
+
+::ng-deep .observacion-ag-grid .ag-header-cell-label {
+  justify-content: center;
+  font-weight: 700;
+  color: #003b82;
+}
+
+::ng-deep .observacion-ag-grid .ag-cell {
+  font-size: 12px;
+}
+.academicos-ag-grid {
+  width: 100%;
+  height: 300px;
+}
+
+::ng-deep .academicos-ag-grid .ag-header-cell-label {
+  justify-content: center;
+  font-weight: 700;
+  color: #003b82;
+}
+
+::ng-deep .academicos-ag-grid .ag-cell {
+  font-size: 12px;
+}
+
+.grid-toolbar {
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-grid-delete {
+  border: none;
+  background: #c62828;
+  color: white;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+  width: 28px;
+  height: 24px;
+}

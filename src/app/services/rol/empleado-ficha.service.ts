@@ -62,7 +62,10 @@ export interface EmpleadoFichaResponse {
   carhijos?:number;
   feinivac?:string;
   fefinvac?:string;
-
+  id_tipo_sangre?:number;
+  id_regimen?:number;
+  establecimiento?:string;
+  lmilitar?:string;
 }
 
 @Injectable({

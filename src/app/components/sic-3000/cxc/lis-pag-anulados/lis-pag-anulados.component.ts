@@ -114,10 +114,15 @@ export class LisPagAnuladosComponent implements OnInit {
       valueFormatter: p => this.formatMoney(p.value)
     },
     { headerName: 'Nro. Documento', field: 'numeroDocumento', width: 160 },
+    { 
+  headerName: 'Observacion', 
+  field: 'observaciones', 
+  width: 140 
+},
     {
       headerName: 'Estado / Motivo',
       field: 'estado',
-      minWidth: 260,
+      minWidth: 100,
       flex: 1.2,
       wrapText: true,
       autoHeight: true,
@@ -133,11 +138,7 @@ export class LisPagAnuladosComponent implements OnInit {
   field: 'asientoContable', 
   width: 140 
 },
-{ 
-  headerName: 'Observacion', 
-  field: 'observaciones', 
-  width: 140 
-},
+
     {
       headerName: 'Acciones',
       field: 'acciones',

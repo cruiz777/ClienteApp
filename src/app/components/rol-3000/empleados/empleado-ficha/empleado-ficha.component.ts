@@ -12,6 +12,25 @@ import { LocalesService } from 'src/app/services/locales.service';
 import { ZonaService, Zona } from 'src/app/services/zona.service';
 import { CiudadService, Ciudad } from 'src/app/services/ciudad.service';
 import { NacionalidadService, NacionalidadResponse } from 'src/app/services/rol/nacionalidad.service.service';
+import { RpRegimenService } from 'src/app/services/rol/regimen.service';
+import { RpTipoSangreService } from 'src/app/services/rol/tipo-sangre.service';
+import { RpRegimenResponse } from 'src/app/interfaces/responses/regimen-response';
+import { RpTipoSangreResponse } from 'src/app/interfaces/responses/tipo-sangre-response';
+import { RpNivelInstruccionResponse } from 'src/app/interfaces/responses/nivel-instruccion.response';
+import { RpNivelInstruccionService } from 'src/app/services/nivel-instruccion.service';
+import { ColDef } from 'ag-grid-community';
+import {
+  RpMaeEmpHistorialBancoService,
+  RpMaeEmpHistorialBancoResponse } from 'src/app/services/rol/rp-mae-emp-historial-banco.service.service';
+import {
+  RpTipoContratoService,
+  RpTipoContrato
+} from 'src/app/services/rol/rp-tipo-contrato.service.service';
+
+import {
+  RpMaeEmpCronologiaService,
+  RpMaeEmpCronologiaResponse
+} from 'src/app/services/rol/rp-mae-emp-cronologia.service.service';
 import {
   EmpleadoFichaService,
   EmpleadoFichaResponse
@@ -31,6 +50,50 @@ import { DepartamentoResponse } from 'src/app/interfaces/responses/departamentos
 import { DepartamentosService } from 'src/app/services/departamentos.service';
 import { RpGrupoOcupacionalService, RpGrupoOcupacional } from 'src/app/services/rol/rp-grupo-ocupacional.service.service';
 
+function formatFechaGrid(value: any): string {
+  if (!value) return '';
+
+  const texto = value.toString().substring(0, 10);
+
+  if (texto.includes('-')) {
+    const [year, month, day] = texto.split('-');
+    return `${day}/${month}/${year}`;
+  }
+
+  return texto;
+}
+
+function parseFechaGrid(value: any): string | null {
+  if (!value) return null;
+
+  const texto = value.toString().trim();
+
+  if (texto.includes('/')) {
+    const [day, month, year] = texto.split('/');
+    return `${year}-${month}-${day}`;
+  }
+
+  return texto;
+}
+function esFechaValidaDDMMYYYY(value: string): boolean {
+  const regex = /^(0[1-9]|[12][0-9]|3[01])\/(0[1-9]|1[0-2])\/\d{4}$/;
+
+  if (!regex.test(value)) return false;
+
+  const [day, month, year] = value.split('/').map(Number);
+  const fecha = new Date(year, month - 1, day);
+
+  return (
+    fecha.getFullYear() === year &&
+    fecha.getMonth() === month - 1 &&
+    fecha.getDate() === day
+  );
+}
+
+function convertirDDMMYYYYaISO(value: string): string {
+  const [day, month, year] = value.split('/');
+  return `${year}-${month}-${day}`;
+}
 @Component({
   selector: 'app-empleado-ficha',
   templateUrl: './empleado-ficha.component.html',
@@ -52,6 +115,395 @@ export class EmpleadoFichaComponent implements OnInit {
   ciudadesTrabajo: Ciudad[] = [];
   nacionalidades: NacionalidadResponse[] = [];
   gruposOcupacionales: RpGrupoOcupacional[] = [];
+  regimenes: RpRegimenResponse[] = [];
+  tiposSangre: RpTipoSangreResponse[] = [];
+  tiposContrato: RpTipoContrato[] = [];
+  cronologiaRowData: RpMaeEmpCronologiaResponse[] = [];
+  idEmpleadoActual: number | null = null;
+  nivelesInstruccion: RpNivelInstruccionResponse[] = [];
+  cronologiaEliminados: number[] = [];
+bancoRowData: (RpMaeEmpHistorialBancoResponse & { modificado?: boolean })[] = [];
+bancoEliminados: number[] = [];
+  cronologiaColumnDefs: ColDef[] = [
+  {
+  headerName: 'Fecha Ingreso',
+  field: 'fecIngreso',
+  editable: true,
+  width: 120,
+  minWidth: 120,
+  cellEditor: 'agDateStringCellEditor',
+  valueFormatter: (params) => formatFechaGrid(params.value),
+  onCellValueChanged: (params) => {
+    params.data.modificado = true;
+  }
+},
+{
+  headerName: 'Fecha Salida',
+  field: 'fecSalida',
+  editable: true,
+  width: 120,
+  minWidth: 120,
+ cellEditor: 'agDateStringCellEditor',
+  valueFormatter: (params) => formatFechaGrid(params.value),
+  onCellValueChanged: (params) => {
+    params.data.modificado = true;
+  }
+},
+{
+  headerName: 'Terminación Contrato',
+  field: 'fecTercont',
+  editable: true,
+  width: 150,
+  minWidth: 150,
+  cellEditor: 'agDateStringCellEditor',
+  valueFormatter: (params) => formatFechaGrid(params.value),
+  onCellValueChanged: (params) => {
+    params.data.modificado = true;
+  }
+},
+    {
+  headerName: 'Tipo de Contrato',
+  field: 'idTipoContrato',
+  editable: true,
+  cellEditor: 'agSelectCellEditor',
+  cellEditorParams: () => ({
+    values: this.tiposContrato.map(x => x.idTipoContrato)
+  }),
+  valueFormatter: (params) => {
+    const tipo = this.tiposContrato.find(
+      x => x.idTipoContrato === Number(params.value)
+    );
+
+    return tipo?.descripcion ?? '';
+  },
+  valueParser: (params) => Number(params.newValue),
+  onCellValueChanged: (params) => {
+    const idTipoContrato = Number(params.newValue);
+
+    const tipo = this.tiposContrato.find(
+      x => x.idTipoContrato === idTipoContrato
+    );
+
+    params.data.horasContrato = tipo?.valor ?? null;
+    params.data.modificado = true;
+
+    if (params.node) {
+      params.api.refreshCells({
+        rowNodes: [params.node],
+        columns: ['horasContrato'],
+        force: true
+      });
+    }
+  }
+},
+    {
+      headerName: 'N° Horas',
+      field: 'horasContrato',
+      editable: true,
+      type: 'numericColumn',
+      valueParser: (params) => {
+        const value = Number(params.newValue);
+        return isNaN(value) ? null : value;
+      }
+    },
+    {
+  headerName: '',
+  width: 80,
+  pinned: 'right',
+  cellRenderer: () => {
+    return `<button class="btn-grid-delete">X</button>`;
+  },
+  onCellClicked: (params) => {
+    this.eliminarFilaCronologia(params.data);
+  }
+}
+  ];
+
+  cronologiaDefaultColDef: ColDef = {
+    flex: 1,
+    minWidth: 120,
+    resizable: true,
+    sortable: false,
+    filter: false
+  };
+
+  referenciaRowData = [
+    {
+      contactoReferencia: '',
+      telefonoReferencia: ''
+    }
+  ];
+
+  referenciaColumnDefs: ColDef[] = [
+    {
+      headerName: 'Contacto de Referencia',
+      field: 'contactoReferencia',
+      editable: true,
+      flex: 1
+    },
+    {
+      headerName: 'Teléfono de Referencia',
+      field: 'telefonoReferencia',
+      editable: true,
+      flex: 1
+    }
+  ];
+
+  referenciaDefaultColDef: ColDef = {
+    resizable: true,
+    sortable: false,
+    filter: false
+  };
+
+ 
+
+ bancoColumnDefs: ColDef[] = [
+  {
+    headerName: 'Código Banco',
+    field: 'codban',
+    editable: true,
+    width: 140,
+    valueParser: (params) => {
+      const value = Number(params.newValue);
+      return isNaN(value) ? null : value;
+    },
+    onCellValueChanged: (params) => {
+      params.data.modificado = true;
+    }
+  },
+  {
+    headerName: 'Cta Contable Empleado',
+    field: 'codcuenta',
+    editable: true,
+    width: 190,
+    onCellValueChanged: (params) => {
+      params.data.modificado = true;
+    }
+  },
+  {
+    headerName: 'Forma de Pago',
+    field: 'idFormaPago',
+    editable: true,
+    width: 160,
+    valueParser: (params) => {
+      const value = Number(params.newValue);
+      return isNaN(value) ? null : value;
+    },
+    onCellValueChanged: (params) => {
+      params.data.modificado = true;
+    }
+  },
+  {
+    headerName: 'Tipo de Cuenta',
+    field: 'codBanTercero',
+    editable: true,
+    width: 160,
+    valueParser: (params) => {
+      const value = Number(params.newValue);
+      return isNaN(value) ? null : value;
+    },
+    onCellValueChanged: (params) => {
+      params.data.modificado = true;
+    }
+  },
+  {
+    headerName: 'N° Cuenta',
+    field: 'ctacte',
+    editable: true,
+    width: 170,
+    onCellValueChanged: (params) => {
+      params.data.modificado = true;
+    }
+  },
+  {
+    headerName: 'Fecha Desde',
+    field: 'fechaDesde',
+    editable: true,
+    width: 130,
+    cellEditor: 'agDateStringCellEditor',
+    valueFormatter: (params) => formatFechaGrid(params.value),
+    onCellValueChanged: (params) => {
+      params.data.modificado = true;
+    }
+  },
+  {
+    headerName: 'Fecha Hasta',
+    field: 'fechaHasta',
+    editable: true,
+    width: 130,
+    cellEditor: 'agDateStringCellEditor',
+    valueFormatter: (params) => formatFechaGrid(params.value),
+    onCellValueChanged: (params) => {
+      params.data.modificado = true;
+    }
+  },
+  {
+    headerName: '',
+    width: 80,
+    pinned: 'right',
+    cellRenderer: () => `<button class="btn-grid-delete">X</button>`,
+    onCellClicked: (params) => {
+      this.eliminarFilaBanco(params.data);
+    }
+  }
+];
+
+  bancoDefaultColDef: ColDef = {
+    flex: 1,
+    minWidth: 150,
+    resizable: true,
+    sortable: false,
+    filter: false
+  };
+  cargasRowData: any[] = [];
+
+  cargasColumnDefs: ColDef[] = [
+    { headerName: 'Código', field: 'codigo', width: 100 },
+    { headerName: 'Nombres', field: 'nombres', minWidth: 160 },
+    { headerName: 'Apellidos', field: 'apellidos', minWidth: 160 },
+    { headerName: 'Cédula', field: 'cedula', width: 130 },
+    { headerName: 'Dirección', field: 'direccion', minWidth: 220 },
+    { headerName: 'Teléfono', field: 'telefono', width: 130 },
+    { headerName: 'Fecha Nacim.', field: 'fechaNacimiento', width: 140 },
+    { headerName: 'Sexo', field: 'sexo', width: 100 },
+    { headerName: 'Parentesco', field: 'parentesco', width: 130 },
+    { headerName: 'Discapacidad', field: 'discapacidad', width: 140 },
+    { headerName: 'Utilidad', field: 'utilidad', width: 110 },
+    { headerName: 'Imp. Rent.', field: 'impRenta', width: 120 }
+  ];
+
+  cargasDefaultColDef: ColDef = {
+    resizable: true,
+    sortable: true,
+    filter: true,
+    floatingFilter: false
+  };
+
+  gastosRowData: any[] = [];
+
+  gastosColumnDefs: ColDef[] = [
+    {
+      headerName: 'Código',
+      field: 'codigo',
+      width: 120
+    },
+    {
+      headerName: 'Tipo de Gasto',
+      field: 'tipoGasto',
+      minWidth: 220,
+      flex: 1
+    },
+    {
+      headerName: 'Monto Máximo',
+      field: 'montoMaximo',
+      width: 160,
+      type: 'numericColumn'
+    },
+    {
+      headerName: 'Valor Proyectado',
+      field: 'valorProyectado',
+      width: 170,
+      type: 'numericColumn',
+      editable: true
+    },
+    {
+      headerName: 'Valor Real',
+      field: 'valorReal',
+      width: 160,
+      type: 'numericColumn',
+      editable: true
+    }
+  ];
+
+  gastosDefaultColDef: ColDef = {
+    resizable: true,
+    sortable: true,
+    filter: true,
+    floatingFilter: false
+  };
+  observacionRowData: any[] = [];
+
+  observacionColumnDefs: ColDef[] = [
+    {
+      headerName: 'Fecha',
+      field: 'fecha',
+      width: 160
+    },
+    {
+      headerName: 'Usuario',
+      field: 'usuario',
+      width: 180
+    },
+    {
+      headerName: 'Tipo',
+      field: 'tipo',
+      width: 160
+    },
+    {
+      headerName: 'Observación',
+      field: 'observacion',
+      flex: 1,
+      minWidth: 300,
+      editable: true,
+      wrapText: true,
+      autoHeight: true
+    }
+  ];
+
+  observacionDefaultColDef: ColDef = {
+    resizable: true,
+    sortable: true,
+    filter: true,
+    floatingFilter: false
+  };
+  academicosRowData = [
+    {
+      nivel: 'Educación Primaria',
+      detalle: ''
+    },
+    {
+      nivel: 'Educación Secundaria',
+      detalle: ''
+    },
+    {
+      nivel: 'Educación Superior',
+      detalle: ''
+    },
+    {
+      nivel: 'Cursos, Maestrías y Posgrados',
+      detalle: ''
+    }
+  ];
+
+  academicosColumnDefs: ColDef[] = [
+    {
+      headerName: 'Nivel Académico',
+      field: 'nivel',
+      width: 260,
+      editable: false
+    },
+    {
+      headerName: 'Detalle',
+      field: 'detalle',
+      flex: 1,
+      editable: true,
+      wrapText: true,
+      autoHeight: true,
+      cellEditor: 'agLargeTextCellEditor',
+      cellEditorPopup: true,
+      cellEditorParams: {
+        maxLength: 1000,
+        rows: 6,
+        cols: 50
+      }
+    }
+  ];
+
+  academicosDefaultColDef: ColDef = {
+    resizable: true,
+    sortable: false,
+    filter: false
+  };
   cargasColumns: string[] = [
     'codigo',
     'nombres',
@@ -100,7 +552,13 @@ export class EmpleadoFichaComponent implements OnInit {
     private zonaService: ZonaService,
     private ciudadService: CiudadService,
     private nacionalidadService: NacionalidadService,
-    private grupoOcupacionalService: RpGrupoOcupacionalService
+    private grupoOcupacionalService: RpGrupoOcupacionalService,
+    private nivelInstruccionService: RpNivelInstruccionService,
+    private regimenService: RpRegimenService,
+    private tipoSangreService: RpTipoSangreService,
+    private tipoContratoService: RpTipoContratoService,
+    private cronologiaService: RpMaeEmpCronologiaService,
+    private historialBancoService: RpMaeEmpHistorialBancoService,
   ) { }
 
   ngOnInit(): void {
@@ -226,11 +684,11 @@ export class EmpleadoFichaComponent implements OnInit {
     });
     const salarioCtrl = this.form.get('datosSalariales.salario');
 
-salarioCtrl?.valueChanges.subscribe(valor => {
-  this.aplicarReglaSueldoManual(valor);
-});
+    salarioCtrl?.valueChanges.subscribe(valor => {
+      this.aplicarReglaSueldoManual(valor);
+    });
   }
-  
+
 
   cargarCatalogos(): void {
     forkJoin({
@@ -245,9 +703,14 @@ salarioCtrl?.valueChanges.subscribe(valor => {
       ciudades: this.ciudadService.obtenerCiudad(),
       ciudadesTrabajo: this.ciudadService.obtenerCiudad(),
       nacionalidades: this.nacionalidadService.getAll(),
-      gruposOcupacionales: this.grupoOcupacionalService.getAll()
+      gruposOcupacionales: this.grupoOcupacionalService.getAll(),
+      regimenes: this.regimenService.getAll(),
+      tiposSangre: this.tipoSangreService.getAll(),
+      tiposContrato: this.tipoContratoService.getTiposContrato(),
+
+
     }).subscribe({
-      next: ({ departamentos, cargos, tiposEmpleado, tiposDocumento, estadosCivil, generos, locales, zonas, ciudades, ciudadesTrabajo, nacionalidades, gruposOcupacionales }) => {
+      next: ({ departamentos, cargos, tiposEmpleado, tiposDocumento, estadosCivil, generos, locales, zonas, ciudades, ciudadesTrabajo, nacionalidades, gruposOcupacionales, regimenes, tiposSangre, tiposContrato }) => {
         this.departamentos = departamentos.map(dep => ({
           ...dep,
           id_departamento: Number(dep.id_departamento)
@@ -300,6 +763,19 @@ salarioCtrl?.valueChanges.subscribe(valor => {
           ...g,
           id_grupo_ocupacional: Number(g.id_grupo_ocupacional)
         }));
+        this.regimenes = (regimenes.data ?? []).map(r => ({
+          ...r,
+          id_regimen: Number(r.id_regimen)
+        }));
+
+        this.tiposSangre = (tiposSangre.data ?? []).map(t => ({
+          ...t,
+          id_tipo_sangre: Number(t.idTipoSangre)
+        }));
+        this.tiposContrato = (tiposContrato.data ?? []).map(t => ({
+          ...t,
+          idTipoContrato: Number(t.idTipoContrato)
+        }));
 
         this.cargarFichaEmpleado();
       },
@@ -318,7 +794,9 @@ salarioCtrl?.valueChanges.subscribe(valor => {
         }
 
         const emp: EmpleadoFichaResponse = resp.data[0];
-
+        this.idEmpleadoActual = Number(emp.idEmpleado);
+        this.cargarCronologiaEmpleado(this.idEmpleadoActual);
+        this.cargarHistorialBancoEmpleado(this.idEmpleadoActual);
         const nombreCompleto =
           emp.nombre ||
           `${emp.apellidos ?? ''} ${emp.nombres ?? ''}`.trim();
@@ -371,8 +849,12 @@ salarioCtrl?.valueChanges.subscribe(valor => {
             cargaConyugeUtilidades: emp.carcony === true,
             cargaHijosUtilidades: emp.carhijos ?? 0,
             gerenteRepLegal: emp.rep_legal === true,
-            fechaPagoDecimoInicio:emp.feinivac ?? '',
-            fechaPagoDecimoFin: emp.fefinvac ?? ''
+            fechaPagoDecimoInicio: emp.feinivac ?? '',
+            fechaPagoDecimoFin: emp.fefinvac ?? '',
+            regimen: emp.id_regimen ?? '',
+            grupoSanguineo: emp.id_tipo_sangre ?? '',
+            establecimiento: emp.establecimiento ?? '',
+            libretaMilitar: emp.lmilitar ?? ''
           },
 
           datosSalariales: {
@@ -421,7 +903,8 @@ salarioCtrl?.valueChanges.subscribe(valor => {
   }
 
   grabar(): void {
-    console.log('Formulario:', this.form.value);
+    this.guardarCronologia();
+    this.guardarHistorialBanco();
   }
 
   borrar(): void {
@@ -480,19 +963,212 @@ salarioCtrl?.valueChanges.subscribe(valor => {
     }
   }
   aplicarReglaSueldoManual(valor: any): void {
-  const incluyeCtrl = this.form.get('datosSalariales.incluyeAportacion');
+    const incluyeCtrl = this.form.get('datosSalariales.incluyeAportacion');
 
-  const tieneSueldo =
-    valor !== null &&
-    valor !== undefined &&
-    valor !== '' &&
-    Number(valor) !== 0;
+    const tieneSueldo =
+      valor !== null &&
+      valor !== undefined &&
+      valor !== '' &&
+      Number(valor) !== 0;
 
-  if (tieneSueldo) {
-    incluyeCtrl?.setValue(false, { emitEvent: false });
-    incluyeCtrl?.disable({ emitEvent: false });
-  } else {
-    incluyeCtrl?.enable({ emitEvent: false });
+    if (tieneSueldo) {
+      incluyeCtrl?.setValue(false, { emitEvent: false });
+      incluyeCtrl?.disable({ emitEvent: false });
+    } else {
+      incluyeCtrl?.enable({ emitEvent: false });
+    }
   }
+  cargarCronologiaEmpleado(idEmpleado: number): void {
+    this.cronologiaService.getByEmpleado(idEmpleado).subscribe({
+      next: (resp) => {
+        this.cronologiaRowData = resp.data ?? [];
+      },
+      error: (err) => {
+        console.error('Error cargando cronología:', err);
+        this.cronologiaRowData = [];
+      }
+    });
+  }
+agregarFilaCronologia(): void {
+  if (!this.idEmpleadoActual) {
+    alert('Primero debe seleccionar un empleado.');
+    return;
+  }
+
+  const nuevaFila: RpMaeEmpCronologiaResponse & { modificado?: boolean } = {
+    idCronologia: 0,
+    idEmpleado: this.idEmpleadoActual,
+    nroContrato: this.cronologiaRowData.length + 1,
+    idTipoContrato: null,
+    tipoContrato: null,
+    fecIngreso: null,
+    fecSalida: null,
+    fecTercont: null,
+    numContrato: null,
+    horasContrato: null,
+    modificado: true
+  };
+
+  this.cronologiaRowData = [...this.cronologiaRowData, nuevaFila];
+}
+eliminarFilaCronologia(row: RpMaeEmpCronologiaResponse): void {
+  if (!row) return;
+
+  if (row.idCronologia && row.idCronologia > 0) {
+    this.cronologiaEliminados.push(row.idCronologia);
+  }
+
+  this.cronologiaRowData = this.cronologiaRowData.filter(x => x !== row);
+}
+guardarCronologia(): void {
+  if (!this.idEmpleadoActual) {
+    alert('Primero debe seleccionar un empleado.');
+    return;
+  }
+
+  const crear = this.cronologiaRowData
+    .filter(x => !x.idCronologia || x.idCronologia === 0)
+    .map((x, index) => ({
+      idEmpleado: this.idEmpleadoActual!,
+      nroContrato: x.nroContrato && x.nroContrato > 0 ? x.nroContrato : index + 1,
+      idTipoContrato: x.idTipoContrato,
+      fecIngreso: x.fecIngreso,
+      fecSalida: x.fecSalida,
+      fecTercont: x.fecTercont,
+      numContrato: x.numContrato,
+      horasContrato: x.horasContrato
+    }));
+
+  const actualizar = this.cronologiaRowData
+    .filter(x => x.idCronologia > 0 && (x as any).modificado === true)
+    .map(x => ({
+      idCronologia: x.idCronologia,
+      nroContrato: x.nroContrato,
+      idTipoContrato: x.idTipoContrato,
+      fecIngreso: x.fecIngreso,
+      fecSalida: x.fecSalida,
+      fecTercont: x.fecTercont,
+      numContrato: x.numContrato,
+      horasContrato: x.horasContrato
+    }));
+
+  const request = {
+    idEmpleado: this.idEmpleadoActual,
+    crear,
+    actualizar,
+    eliminar: this.cronologiaEliminados
+  };
+
+  this.cronologiaService.sync(request).subscribe({
+    next: (resp) => {
+      if (resp.type === 'Success') {
+        this.cronologiaEliminados = [];
+        this.cargarCronologiaEmpleado(this.idEmpleadoActual!);
+        alert('Cronología guardada correctamente.');
+      } else {
+        alert(resp.message ?? 'No se pudo guardar la cronología.');
+      }
+    },
+    error: (err) => {
+      console.error('Error guardando cronología:', err);
+      alert('Error guardando cronología.');
+    }
+  });
+}
+cargarHistorialBancoEmpleado(idEmpleado: number): void {
+  this.historialBancoService.getByEmpleado(idEmpleado).subscribe({
+    next: (resp) => {
+      this.bancoRowData = resp.data ?? [];
+    },
+    error: (err) => {
+      console.error('Error cargando historial banco:', err);
+      this.bancoRowData = [];
+    }
+  });
+}
+agregarFilaBanco(): void {
+  if (!this.idEmpleadoActual) {
+    alert('Primero debe seleccionar un empleado.');
+    return;
+  }
+
+  const nuevaFila: RpMaeEmpHistorialBancoResponse & { modificado?: boolean } = {
+    idHistorialBanco: 0,
+    idEmpleado: this.idEmpleadoActual,
+    codcuenta: null,
+    codban: null,
+    banco: null,
+    ctacte: null,
+    idFormaPago: null,
+    formaPago: null,
+    codBanTercero: null,
+    bancoTercero: null,
+    fechaDesde: new Date().toISOString().substring(0, 10),
+    fechaHasta: null,
+    modificado: true
+  };
+
+  this.bancoRowData = [...this.bancoRowData, nuevaFila];
+}
+eliminarFilaBanco(row: RpMaeEmpHistorialBancoResponse): void {
+  if (!row) return;
+
+  if (row.idHistorialBanco && row.idHistorialBanco > 0) {
+    this.bancoEliminados.push(row.idHistorialBanco);
+  }
+
+  this.bancoRowData = this.bancoRowData.filter(x => x !== row);
+}
+guardarHistorialBanco(): void {
+  if (!this.idEmpleadoActual) {
+    alert('Primero debe seleccionar un empleado.');
+    return;
+  }
+
+  const crear = this.bancoRowData
+    .filter(x => !x.idHistorialBanco || x.idHistorialBanco === 0)
+    .map(x => ({
+      idEmpleado: this.idEmpleadoActual!,
+      codcuenta: x.codcuenta,
+      codban: x.codban,
+      ctacte: x.ctacte,
+      idFormaPago: x.idFormaPago,
+      codBanTercero: x.codBanTercero,
+      fechaDesde: x.fechaDesde,
+      fechaHasta: x.fechaHasta
+    }));
+
+  const actualizar = this.bancoRowData
+    .filter(x => x.idHistorialBanco > 0 && x.modificado === true)
+    .map(x => ({
+      idHistorialBanco: x.idHistorialBanco,
+      codcuenta: x.codcuenta,
+      codban: x.codban,
+      ctacte: x.ctacte,
+      idFormaPago: x.idFormaPago,
+      codBanTercero: x.codBanTercero,
+      fechaDesde: x.fechaDesde,
+      fechaHasta: x.fechaHasta
+    }));
+
+  this.historialBancoService.sync({
+    idEmpleado: this.idEmpleadoActual,
+    crear,
+    actualizar,
+    eliminar: this.bancoEliminados
+  }).subscribe({
+    next: (resp) => {
+      if (resp.type === 'Success') {
+        this.bancoEliminados = [];
+        this.cargarHistorialBancoEmpleado(this.idEmpleadoActual!);
+      } else {
+        alert(resp.message ?? 'No se pudo guardar historial bancario.');
+      }
+    },
+    error: (err) => {
+      console.error('Error guardando historial banco:', err);
+      alert('Error guardando historial banco.');
+    }
+  });
 }
 }
