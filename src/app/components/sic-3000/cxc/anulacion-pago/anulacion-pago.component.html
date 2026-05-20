@@ -53,14 +53,10 @@
 
   <!-- usa 'reversal-date' en lugar de 'payment-date' -->
   <div class="input-group reversal-date">
-    <label class="field-label" for="reversalDate">Fecha Reversión:</label>
-    <div class="input-wrapper">
-      <div class="cursor-line">
-        <div class="cursor-indicator"></div>
-      </div>
-      <input type="text" id="reversalDate" class="text-input" [(ngModel)]="reversalDate" placeholder="dd/MM/yyyy"
-        aria-label="Fecha de reversión" />
-    </div>
+    <label class="field-label" > Fecha de reversión del pago:</label>
+    <input type="date" id="reversalDate" class="text-input"
+      [(ngModel)]="reversalDateIso"
+      aria-label="Fecha de reversión" />        
   </div>
 </section>
 

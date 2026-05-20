@@ -13,6 +13,7 @@ export interface GenerarReversoDesdeNotaRequest {
 export interface GenerarReversoDesdePagoRequest {
   idPago: number;
   idUsuario: number;
+  fechaReverso?: string;
 }
 // 🔹 NUEVO: request para Nota de Crédito
 export interface GenerarReversoDesdeNotaCreditoRequest {
@@ -95,12 +96,14 @@ export class ReversarAsientoService {
    */
   generarReversoDesdePago(
     idPago: number,
-    idUsuario: number
+    idUsuario: number,
+    fechaReverso?: string
   ): Observable<ApiResponse<GenerarAsientoReversoPagoResponse>> {
 
     const body: GenerarReversoDesdePagoRequest = {
       idPago,
-      idUsuario
+      idUsuario,
+      fechaReverso 
     };
 
     return this.http.post<ApiResponse<GenerarAsientoReversoPagoResponse>>(
