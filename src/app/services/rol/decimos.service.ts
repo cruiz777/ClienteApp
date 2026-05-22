@@ -34,4 +34,11 @@ export class DecimosService {
       `${this.baseUrl}/grabar`, request
     );
   }
+  recuperar(numPatronal: string, periodo: string, idTipoNomEsp: number): Observable<ApiResponse<DecimosEmpleadoResponse[]>> {
+    return this.http.get<ApiResponse<DecimosEmpleadoResponse[]>>(
+      `${this.baseUrl}/recuperar`, {
+        params: { numPatronal, periodo, idTipoNomEsp }
+      }
+    );
+  }
 }

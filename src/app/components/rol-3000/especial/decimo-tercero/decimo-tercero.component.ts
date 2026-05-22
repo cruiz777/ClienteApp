@@ -12,11 +12,30 @@ import { RpTipEmpService } from 'src/app/services/tipo-empleado.service';
 import { TipoNominaEspService } from 'src/app/services/rol/tipo-nomina-esp.service';
 import { DecimosService } from 'src/app/services/rol/decimos.service';
 import { RpTipEmpResponse } from 'src/app/interfaces/responses/tipo-empleado-response';
+import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
+import { MAT_MOMENT_DATE_ADAPTER_OPTIONS, MomentDateAdapter } from '@angular/material-moment-adapter';
 
 @Component({
   selector: 'app-decimo-tercero',
   templateUrl: './decimo-tercero.component.html',
-  styleUrls: ['./decimo-tercero.component.css']
+  styleUrls: ['./decimo-tercero.component.css'],
+  providers: [
+    { provide: MAT_DATE_LOCALE, useValue: 'es-EC' },
+    {
+      provide: DateAdapter,
+      useClass: MomentDateAdapter,
+      deps: [MAT_DATE_LOCALE, MAT_MOMENT_DATE_ADAPTER_OPTIONS]
+    },
+    { provide: MAT_DATE_FORMATS, useValue: {
+      parse: { dateInput: 'DD/MM/YYYY' },
+      display: {
+        dateInput: 'DD/MM/YYYY',
+        monthYearLabel: 'MMM YYYY',
+        dateA11yLabel: 'LL',
+        monthYearA11yLabel: 'MMMM YYYY'
+      }
+    }}
+  ]
 })
 export class DecimoTerceroComponent implements OnInit {
 
@@ -55,8 +74,18 @@ export class DecimoTerceroComponent implements OnInit {
       type: 'rightAligned',
       valueFormatter: (p: ValueFormatterParams) => this.formatMoneda(p.value)
     },
-    { headerName: 'Fec. Ingreso', field: 'fechaIngreso', width: 120 },
-    { headerName: 'Fec. Salida', field: 'fechaSalida', width: 120 },
+    { 
+      headerName: 'Fec. Ingreso', 
+      field: 'fechaIngreso', 
+      width: 120,
+      valueFormatter: (p: ValueFormatterParams) => this.formatFecha(p.value)
+    },
+    { 
+      headerName: 'Fec. Salida', 
+      field: 'fechaSalida', 
+      width: 120,
+      valueFormatter: (p: ValueFormatterParams) => this.formatFecha(p.value)
+    },
     { headerName: 'Observación', field: 'observaciones', width: 200 },
     {
       headerName: 'Descuento',
@@ -185,7 +214,7 @@ export class DecimoTerceroComponent implements OnInit {
     }
 
     if (!this.idTipoNomEsp) {
-      this.showError('No se encontró el tipo de nómina Décimo Tercero en el catálogo.');
+      this.showError('No se encontró el tipo de nómina en el catálogo.');
       return;
     }
 
@@ -198,14 +227,76 @@ export class DecimoTerceroComponent implements OnInit {
       return;
     }
 
-    const fechaHasta = this.form.value.fechaHasta as Date;
+  const fechaHastaRaw = this.form.value.fechaHasta;
+  const fechaHasta    = typeof fechaHastaRaw?.toDate === 'function'
+                        ? fechaHastaRaw.toDate()
+                        : new Date(fechaHastaRaw);
+  const periodo       = fechaHasta.getFullYear().toString();
 
-    const request = {
-      numPatronal:  empresaSeleccionada.numPatronal,
-      idTipEmp:     this.form.value.idTipEmp,
-      fechaHasta:   fechaHasta.toISOString().split('T')[0],
+    // 1. Verificar si ya existe
+    this.decimosService.existe(
+      empresaSeleccionada.numPatronal,
+      periodo,
+      this.idTipoNomEsp
+    ).subscribe({
+      next: (resp) => {
+        if (resp.data) {
+          // Ya existe — preguntar al usuario
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '450px',
+            data: {
+              title: 'Nómina Especial',
+              message: '¡Ya existe información generada del período solicitado! ¿Desea recuperar lo guardado o recalcular desde cero?',
+              type: 'warning',
+              confirmText: 'Recuperar',
+              cancelText: 'Recalcular',
+              showCancel: true
+            } as MessageBoxData
+          }).afterClosed().subscribe(recuperar => {
+            if (recuperar)
+              this.ejecutarRecuperar(empresaSeleccionada.numPatronal!, periodo);
+            else
+              this.ejecutarCalcular(empresaSeleccionada.numPatronal!, fechaHasta);
+          });
+        } else {
+          this.ejecutarCalcular(empresaSeleccionada.numPatronal!, fechaHasta);
+        }
+      },
+      error: () => this.showError('Error al verificar el período.')
+    });
+  }
+
+  private ejecutarRecuperar(numPatronal: string, periodo: string): void {
+    this.loading = true;
+    this.decimosService.recuperar(numPatronal, periodo, this.idTipoNomEsp).subscribe({
+      next: (resp) => {
+        if (resp.type === 'ERROR') {
+          this.showError(resp.message ?? 'Error al recuperar.');
+        } else {
+          this.rowData = resp.data ?? [];
+          this.gridApi?.setGridOption('rowData', this.rowData);
+          this.calcularSubtotales();
+        }
+        this.loading = false;
+      },
+      error: () => {
+        this.showError('Error de conexión al recuperar.');
+        this.loading = false;
+      }
+    });
+  }
+
+  private ejecutarCalcular(numPatronal: string, fechaHasta: Date): void {
+    const request: any = {
+      numPatronal,
+      idTipEmp: this.form.value.idTipEmp,
+      fechaHasta: fechaHasta.toISOString().split('T')[0].split('T')[0],
       idTipoNomEsp: this.idTipoNomEsp
     };
+
+    // Solo D14 envía idRegimen
+    if (this.form.value.idRegimen)
+      request.idRegimen = this.form.value.idRegimen;
 
     this.loading = true;
     this.decimosService.calcular(request).subscribe({
@@ -233,41 +324,61 @@ export class DecimoTerceroComponent implements OnInit {
       return;
     }
 
-    const empresaSeleccionada = this.empresas.find(
-      e => e.idEmpresa === this.form.value.idEmpresa
-    );
+    // Confirmación antes de grabar
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: 'Confirmar',
+        message: '¿Está seguro que desea grabar la información?',
+        type: 'warning',
+        confirmText: 'Sí, grabar',
+        cancelText: 'Cancelar',
+        showCancel: true
+      } as MessageBoxData
+    }).afterClosed().subscribe(confirmado => {
+      if (!confirmado) return;
 
-    const periodo = new Date(this.form.value.fechaHasta).getFullYear().toString();
+      const empresaSeleccionada = this.empresas.find(
+        e => e.idEmpresa === this.form.value.idEmpresa
+      );
 
-    // Verificar si ya existe
-    this.decimosService.existe(
-      empresaSeleccionada!.numPatronal!,
-      periodo,
-      this.idTipoNomEsp
-    ).subscribe({
-      next: (resp) => {
-        if (resp.data) {
-          // Ya existe — preguntar al usuario
-          this.dialog.open(CustomMessageBoxComponent, {
-            width: '450px',
-            data: {
-              title: 'Nómina Especial',
-              message: '¡Actualmente ya existe información generada del período solicitado! ¿Desea eliminar lo almacenado y generar nuevamente?',
-              type: 'warning',
-              confirmText: 'Sí, reemplazar',
-              cancelText: 'No',
-              showCancel: true
-            } as MessageBoxData
-          }).afterClosed().subscribe(confirmado => {
-            if (confirmado) this.ejecutarGrabado(empresaSeleccionada!.numPatronal!, periodo, true);
-          });
-        } else {
-          this.ejecutarGrabado(empresaSeleccionada!.numPatronal!, periodo, false);
+      const periodo = new Date(this.form.value.fechaHasta).getFullYear().toString();
+
+      this.decimosService.existe(
+        empresaSeleccionada!.numPatronal!,
+        periodo,
+        this.idTipoNomEsp
+      ).subscribe({
+        next: (resp) => {
+          if (resp.data) {
+            this.dialog.open(CustomMessageBoxComponent, {
+              width: '450px',
+              data: {
+                title: 'Nómina Especial',
+                message: '¡Ya existe información del período! ¿Desea eliminar lo almacenado y generar nuevamente?',
+                type: 'warning',
+                confirmText: 'Sí, reemplazar',
+                cancelText: 'No',
+                showCancel: true
+              } as MessageBoxData
+            }).afterClosed().subscribe(forzar => {
+              if (forzar)
+                this.ejecutarGrabado(empresaSeleccionada!.numPatronal!, periodo, true);
+            });
+          } else {
+            this.ejecutarGrabado(empresaSeleccionada!.numPatronal!, periodo, false);
+          }
         }
-      }
+      });
     });
   }
 
+  formatFecha(value: string | null): string {
+    if (!value) return '';
+    // Forzar parseo como fecha local sin conversión de timezone
+    const [anio, mes, dia] = value.split('T')[0].split('-');
+    return `${dia}/${mes}/${anio}`;
+  }
   private ejecutarGrabado(numPatronal: string, periodo: string, forzar: boolean): void {
     this.grabando = true;
     this.decimosService.grabar({
@@ -305,10 +416,13 @@ export class DecimoTerceroComponent implements OnInit {
     return (row.valorDecimo ?? 0) - (row.descuento ?? 0) - (row.retJudicial ?? 0);
   }
   cancelar(): void {
-    this.form.reset();
+    // Resetear solo los datos, no el formulario completo
     this.rowData = [];
     this.gridApi?.setGridOption('rowData', []);
     this.calcularSubtotales();
+
+    // Restaurar fecha actual y mantener los demás filtros
+    this.form.patchValue({ fechaHasta: new Date() });
   }
   // ===== HELPERS =====
   formatMoneda(value: number): string {
