@@ -304,9 +304,14 @@ export class DecimoTerceroComponent implements OnInit {
   private calcularLiquido(row: DecimosEmpleadoResponse): number {
     return (row.valorDecimo ?? 0) - (row.descuento ?? 0) - (row.retJudicial ?? 0);
   }
-
+  cancelar(): void {
+    this.form.reset();
+    this.rowData = [];
+    this.gridApi?.setGridOption('rowData', []);
+    this.calcularSubtotales();
+  }
   // ===== HELPERS =====
-  private formatMoneda(value: number): string {
+  formatMoneda(value: number): string {
     if (value == null) return '$0.00';
     return '$' + Number(value).toFixed(2);
   }
