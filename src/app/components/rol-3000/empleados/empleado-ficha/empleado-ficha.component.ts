@@ -21,7 +21,8 @@ import { RpNivelInstruccionService } from 'src/app/services/nivel-instruccion.se
 import { ColDef } from 'ag-grid-community';
 import {
   RpMaeEmpHistorialBancoService,
-  RpMaeEmpHistorialBancoResponse } from 'src/app/services/rol/rp-mae-emp-historial-banco.service.service';
+  RpMaeEmpHistorialBancoResponse
+} from 'src/app/services/rol/rp-mae-emp-historial-banco.service.service';
 import {
   RpTipoContratoService,
   RpTipoContrato
@@ -49,6 +50,11 @@ import {
 import { DepartamentoResponse } from 'src/app/interfaces/responses/departamentos-response';
 import { DepartamentosService } from 'src/app/services/departamentos.service';
 import { RpGrupoOcupacionalService, RpGrupoOcupacional } from 'src/app/services/rol/rp-grupo-ocupacional.service.service';
+import { RpBancosService } from 'src/app/services/rol/bancos-rol.service';
+import { RpFormaPagoService } from 'src/app/services/rol/forma-pago-rol.service';
+import { TipoCuentaBancoService } from 'src/app/services/rol/tipo-cuenta.service';
+import { RpBanTerceroService } from 'src/app/services/rol/bancos-terceros-rol.service';
+import { SectorialService } from 'src/app/services/sectorial.service';
 
 function formatFechaGrid(value: any): string {
   if (!value) return '';
@@ -122,80 +128,86 @@ export class EmpleadoFichaComponent implements OnInit {
   idEmpleadoActual: number | null = null;
   nivelesInstruccion: RpNivelInstruccionResponse[] = [];
   cronologiaEliminados: number[] = [];
-bancoRowData: (RpMaeEmpHistorialBancoResponse & { modificado?: boolean })[] = [];
-bancoEliminados: number[] = [];
+  bancos: any[] = [];
+  formasPago: any[] = [];
+  bancosTerceros: any[] = [];
+  tiposCuentaBanco: any[] = [];
+  bancoRowData: (RpMaeEmpHistorialBancoResponse & { modificado?: boolean })[] = [];
+  bancoEliminados: number[] = [];
+  sectoriales: any[] = [];
+
   cronologiaColumnDefs: ColDef[] = [
-  {
-  headerName: 'Fecha Ingreso',
-  field: 'fecIngreso',
-  editable: true,
-  width: 120,
-  minWidth: 120,
-  cellEditor: 'agDateStringCellEditor',
-  valueFormatter: (params) => formatFechaGrid(params.value),
-  onCellValueChanged: (params) => {
-    params.data.modificado = true;
-  }
-},
-{
-  headerName: 'Fecha Salida',
-  field: 'fecSalida',
-  editable: true,
-  width: 120,
-  minWidth: 120,
- cellEditor: 'agDateStringCellEditor',
-  valueFormatter: (params) => formatFechaGrid(params.value),
-  onCellValueChanged: (params) => {
-    params.data.modificado = true;
-  }
-},
-{
-  headerName: 'Terminación Contrato',
-  field: 'fecTercont',
-  editable: true,
-  width: 150,
-  minWidth: 150,
-  cellEditor: 'agDateStringCellEditor',
-  valueFormatter: (params) => formatFechaGrid(params.value),
-  onCellValueChanged: (params) => {
-    params.data.modificado = true;
-  }
-},
     {
-  headerName: 'Tipo de Contrato',
-  field: 'idTipoContrato',
-  editable: true,
-  cellEditor: 'agSelectCellEditor',
-  cellEditorParams: () => ({
-    values: this.tiposContrato.map(x => x.idTipoContrato)
-  }),
-  valueFormatter: (params) => {
-    const tipo = this.tiposContrato.find(
-      x => x.idTipoContrato === Number(params.value)
-    );
+      headerName: 'Fecha Ingreso',
+      field: 'fecIngreso',
+      editable: true,
+      width: 120,
+      minWidth: 120,
+      cellEditor: 'agDateStringCellEditor',
+      valueFormatter: (params) => formatFechaGrid(params.value),
+      onCellValueChanged: (params) => {
+        params.data.modificado = true;
+      }
+    },
+    {
+      headerName: 'Fecha Salida',
+      field: 'fecSalida',
+      editable: true,
+      width: 120,
+      minWidth: 120,
+      cellEditor: 'agDateStringCellEditor',
+      valueFormatter: (params) => formatFechaGrid(params.value),
+      onCellValueChanged: (params) => {
+        params.data.modificado = true;
+      }
+    },
+    {
+      headerName: 'Terminación Contrato',
+      field: 'fecTercont',
+      editable: true,
+      width: 150,
+      minWidth: 150,
+      cellEditor: 'agDateStringCellEditor',
+      valueFormatter: (params) => formatFechaGrid(params.value),
+      onCellValueChanged: (params) => {
+        params.data.modificado = true;
+      }
+    },
+    {
+      headerName: 'Tipo de Contrato',
+      field: 'idTipoContrato',
+      editable: true,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: () => ({
+        values: this.tiposContrato.map(x => x.idTipoContrato)
+      }),
+      valueFormatter: (params) => {
+        const tipo = this.tiposContrato.find(
+          x => x.idTipoContrato === Number(params.value)
+        );
 
-    return tipo?.descripcion ?? '';
-  },
-  valueParser: (params) => Number(params.newValue),
-  onCellValueChanged: (params) => {
-    const idTipoContrato = Number(params.newValue);
+        return tipo?.descripcion ?? '';
+      },
+      valueParser: (params) => Number(params.newValue),
+      onCellValueChanged: (params) => {
+        const idTipoContrato = Number(params.newValue);
 
-    const tipo = this.tiposContrato.find(
-      x => x.idTipoContrato === idTipoContrato
-    );
+        const tipo = this.tiposContrato.find(
+          x => x.idTipoContrato === idTipoContrato
+        );
 
-    params.data.horasContrato = tipo?.valor ?? null;
-    params.data.modificado = true;
+        params.data.horasContrato = tipo?.valor ?? null;
+        params.data.modificado = true;
 
-    if (params.node) {
-      params.api.refreshCells({
-        rowNodes: [params.node],
-        columns: ['horasContrato'],
-        force: true
-      });
-    }
-  }
-},
+        if (params.node) {
+          params.api.refreshCells({
+            rowNodes: [params.node],
+            columns: ['horasContrato'],
+            force: true
+          });
+        }
+      }
+    },
     {
       headerName: 'N° Horas',
       field: 'horasContrato',
@@ -207,16 +219,16 @@ bancoEliminados: number[] = [];
       }
     },
     {
-  headerName: '',
-  width: 80,
-  pinned: 'right',
-  cellRenderer: () => {
-    return `<button class="btn-grid-delete">X</button>`;
-  },
-  onCellClicked: (params) => {
-    this.eliminarFilaCronologia(params.data);
-  }
-}
+      headerName: '',
+      width: 80,
+      pinned: 'right',
+      cellRenderer: () => {
+        return `<button class="btn-grid-delete">X</button>`;
+      },
+      onCellClicked: (params) => {
+        this.eliminarFilaCronologia(params.data);
+      }
+    }
   ];
 
   cronologiaDefaultColDef: ColDef = {
@@ -255,102 +267,135 @@ bancoEliminados: number[] = [];
     filter: false
   };
 
- 
 
- bancoColumnDefs: ColDef[] = [
-  {
-    headerName: 'Código Banco',
-    field: 'codban',
-    editable: true,
-    width: 140,
-    valueParser: (params) => {
-      const value = Number(params.newValue);
-      return isNaN(value) ? null : value;
+
+  bancoColumnDefs: ColDef[] = [
+    {
+      headerName: 'Banco',
+      field: 'codban',
+      editable: true,
+      width: 160,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: () => ({
+        values: this.bancos.map(x => x.codban)
+      }),
+      valueFormatter: (params) => {
+        const item = this.bancos.find(x => Number(x.codban) === Number(params.value));
+        return item?.desban ?? '';
+      },
+      valueParser: (params) => Number(params.newValue),
+      onCellValueChanged: (params) => {
+        params.data.modificado = true;
+      }
     },
-    onCellValueChanged: (params) => {
-      params.data.modificado = true;
-    }
-  },
-  {
-    headerName: 'Cta Contable Empleado',
-    field: 'codcuenta',
-    editable: true,
-    width: 190,
-    onCellValueChanged: (params) => {
-      params.data.modificado = true;
-    }
-  },
-  {
-    headerName: 'Forma de Pago',
-    field: 'idFormaPago',
-    editable: true,
-    width: 160,
-    valueParser: (params) => {
-      const value = Number(params.newValue);
-      return isNaN(value) ? null : value;
+    {
+      headerName: 'Cta Contable Emp.',
+      field: 'codcuenta',
+      editable: true,
+      width: 160,
+      onCellValueChanged: (params) => {
+        params.data.modificado = true;
+      }
     },
-    onCellValueChanged: (params) => {
-      params.data.modificado = true;
-    }
-  },
-  {
-    headerName: 'Tipo de Cuenta',
-    field: 'codBanTercero',
-    editable: true,
-    width: 160,
-    valueParser: (params) => {
-      const value = Number(params.newValue);
-      return isNaN(value) ? null : value;
+    {
+      headerName: 'Forma de Pago',
+      field: 'idFormaPago',
+      editable: true,
+      width: 170,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: () => ({
+        values: this.formasPago.map(x => x.idFormaPago)
+      }),
+      valueFormatter: (params) => {
+        const item = this.formasPago.find(x => x.idFormaPago === Number(params.value));
+        return item?.descripcion ?? params.data?.formaPago ?? '';
+      },
+      valueParser: (params) => Number(params.newValue),
+      onCellValueChanged: (params) => {
+        params.data.modificado = true;
+      }
     },
-    onCellValueChanged: (params) => {
-      params.data.modificado = true;
+    {
+      headerName: 'Tipo de Cuenta',
+      field: 'idCuentaBanco',
+      editable: true,
+      width: 170,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: () => ({
+        values: this.tiposCuentaBanco.map(x => x.idCuentaBanco)
+      }),
+      valueFormatter: (params) => {
+        const item = this.tiposCuentaBanco.find(x => x.idCuentaBanco === Number(params.value));
+        return item?.descripcion ?? params.data?.tipoCuentaBanco ?? '';
+      },
+      valueParser: (params) => Number(params.newValue),
+      onCellValueChanged: (params) => {
+        params.data.modificado = true;
+      }
+    },
+    {
+      headerName: 'Banco Tercero',
+      field: 'codBanTercero',
+      editable: true,
+      width: 160,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: () => ({
+        values: this.bancosTerceros.map(x => x.codBanTercero)
+      }),
+      valueFormatter: (params) => {
+        const item = this.bancosTerceros.find(x => Number(x.codBanTercero) === Number(params.value));
+        return item?.descripcion ?? '';
+      },
+      valueParser: (params) => Number(params.newValue),
+      onCellValueChanged: (params) => {
+        params.data.modificado = true;
+      }
+    },
+    {
+      headerName: 'N° Cuenta',
+      field: 'ctacte',
+      editable: true,
+      width: 160,
+      onCellValueChanged: (params) => {
+        params.data.modificado = true;
+      }
+    },
+    {
+      headerName: 'Fecha Desde',
+      field: 'fechaDesde',
+      editable: true,
+      width: 130,
+      cellEditor: 'agDateStringCellEditor',
+      valueFormatter: (params) => formatFechaGrid(params.value),
+      onCellValueChanged: (params) => {
+        params.data.modificado = true;
+      }
+    },
+    {
+      headerName: 'Fecha Hasta',
+      field: 'fechaHasta',
+      editable: true,
+      width: 130,
+      cellEditor: 'agDateStringCellEditor',
+      valueFormatter: (params) => formatFechaGrid(params.value),
+      onCellValueChanged: (params) => {
+        params.data.modificado = true;
+      }
+    },
+    {
+      headerName: '',
+      width: 30,
+      pinned: 'right',
+      cellRenderer: () => `<button class="btn-grid-delete">X</button>`,
+      onCellClicked: (params) => {
+        this.eliminarFilaBanco(params.data);
+      }
     }
-  },
-  {
-    headerName: 'N° Cuenta',
-    field: 'ctacte',
-    editable: true,
-    width: 170,
-    onCellValueChanged: (params) => {
-      params.data.modificado = true;
-    }
-  },
-  {
-    headerName: 'Fecha Desde',
-    field: 'fechaDesde',
-    editable: true,
-    width: 130,
-    cellEditor: 'agDateStringCellEditor',
-    valueFormatter: (params) => formatFechaGrid(params.value),
-    onCellValueChanged: (params) => {
-      params.data.modificado = true;
-    }
-  },
-  {
-    headerName: 'Fecha Hasta',
-    field: 'fechaHasta',
-    editable: true,
-    width: 130,
-    cellEditor: 'agDateStringCellEditor',
-    valueFormatter: (params) => formatFechaGrid(params.value),
-    onCellValueChanged: (params) => {
-      params.data.modificado = true;
-    }
-  },
-  {
-    headerName: '',
-    width: 80,
-    pinned: 'right',
-    cellRenderer: () => `<button class="btn-grid-delete">X</button>`,
-    onCellClicked: (params) => {
-      this.eliminarFilaBanco(params.data);
-    }
-  }
-];
+  ];
 
   bancoDefaultColDef: ColDef = {
     flex: 1,
-    minWidth: 150,
+    minWidth: 180,
     resizable: true,
     sortable: false,
     filter: false
@@ -559,6 +604,11 @@ bancoEliminados: number[] = [];
     private tipoContratoService: RpTipoContratoService,
     private cronologiaService: RpMaeEmpCronologiaService,
     private historialBancoService: RpMaeEmpHistorialBancoService,
+    private bancosService: RpBancosService,
+    private formaPagoService: RpFormaPagoService,
+    private banTerceroService: RpBanTerceroService,
+    private tipoCuentaBancoService: TipoCuentaBancoService,
+    private sectorialService: SectorialService
   ) { }
 
   ngOnInit(): void {
@@ -622,12 +672,12 @@ bancoEliminados: number[] = [];
         cargaConyugeUtilidades: [false],
         cargaHijosUtilidades: [''],
 
-        codigoBanco: [''],
+        codigoBanco: [null],
         ctaContableEmpleado: [''],
-        formaPago: [''],
-        tipoCuenta: [''],
+        formaPago: [null],
+        tipoCuenta: [null],
         numeroCuenta: [''],
-        codigoBancoEmpleado: [''],
+        codigoBancoEmpleado: [null],
 
         establecimiento: [''],
         codigoSectorialIess: [''],
@@ -707,10 +757,14 @@ bancoEliminados: number[] = [];
       regimenes: this.regimenService.getAll(),
       tiposSangre: this.tipoSangreService.getAll(),
       tiposContrato: this.tipoContratoService.getTiposContrato(),
-
+      bancos: this.bancosService.getAll(),
+      formasPago: this.formaPagoService.getAll(),
+      bancosTerceros: this.banTerceroService.getAll(),
+      tiposCuentaBanco: this.tipoCuentaBancoService.getAll(),
+      sectoriales: this.sectorialService.getAll(),
 
     }).subscribe({
-      next: ({ departamentos, cargos, tiposEmpleado, tiposDocumento, estadosCivil, generos, locales, zonas, ciudades, ciudadesTrabajo, nacionalidades, gruposOcupacionales, regimenes, tiposSangre, tiposContrato }) => {
+      next: ({ departamentos, cargos, tiposEmpleado, tiposDocumento, estadosCivil, generos, locales, zonas, ciudades, ciudadesTrabajo, nacionalidades, gruposOcupacionales, regimenes, tiposSangre, tiposContrato, bancos, formasPago, bancosTerceros, tiposCuentaBanco, sectoriales }) => {
         this.departamentos = departamentos.map(dep => ({
           ...dep,
           id_departamento: Number(dep.id_departamento)
@@ -776,6 +830,34 @@ bancoEliminados: number[] = [];
           ...t,
           idTipoContrato: Number(t.idTipoContrato)
         }));
+        this.bancos = (bancos.data ?? []).map((x: any) => ({
+          ...x,
+          codban: Number(x.codban ?? x.codBan ?? x.Codban ?? x.CodBan),
+          desban: x.desban ?? x.desBan ?? x.Desban ?? x.DesBan ?? ''
+        }));
+
+        this.formasPago = (formasPago.data ?? []).map((x: any) => ({
+          ...x,
+          idFormaPago: Number(x.idFormaPago ?? x.id_forma_pago ?? x.IdFormaPago),
+          descripcion: x.descripcion ?? x.Descripcion ?? ''
+        }));
+
+        this.bancosTerceros = (bancosTerceros.data ?? []).map((x: any) => ({
+          ...x,
+          codBanTercero: Number(x.codBanTercero ?? x.cod_ban_tercero ?? x.CodBanTercero),
+          descripcion: x.descripcion ?? x.Descripcion ?? ''
+        }));
+
+        this.tiposCuentaBanco = (tiposCuentaBanco.data ?? []).map((x: any) => ({
+          ...x,
+          idCuentaBanco: Number(x.idCuentaBanco ?? x.id_cuenta_banco ?? x.IdCuentaBanco),
+          descripcion: x.descripcion ?? x.Descripcion ?? x.nombre ?? x.Nombre ?? ''
+        }));
+        this.sectoriales = (sectoriales.data ?? []).map((x: any) => ({
+          ...x,
+          idSectorial: Number(x.idSectorial ?? x.id_sectorial ?? x.IdSectorial),
+          descripcion: x.descripcion ?? x.Descripcion ?? ''
+        }));  
 
         this.cargarFichaEmpleado();
       },
@@ -795,8 +877,10 @@ bancoEliminados: number[] = [];
 
         const emp: EmpleadoFichaResponse = resp.data[0];
         this.idEmpleadoActual = Number(emp.idEmpleado);
-        this.cargarCronologiaEmpleado(this.idEmpleadoActual);
-        this.cargarHistorialBancoEmpleado(this.idEmpleadoActual);
+        if (this.idEmpleadoActual && !isNaN(this.idEmpleadoActual)) {
+          this.cargarCronologiaEmpleado(this.idEmpleadoActual);
+          this.cargarHistorialBancoEmpleado(this.idEmpleadoActual);
+        }
         const nombreCompleto =
           emp.nombre ||
           `${emp.apellidos ?? ''} ${emp.nombres ?? ''}`.trim();
@@ -854,7 +938,8 @@ bancoEliminados: number[] = [];
             regimen: emp.id_regimen ?? '',
             grupoSanguineo: emp.id_tipo_sangre ?? '',
             establecimiento: emp.establecimiento ?? '',
-            libretaMilitar: emp.lmilitar ?? ''
+            libretaMilitar: emp.lmilitar ?? '',
+            codigoSectorialIess: emp.idSectorial ?? '',
           },
 
           datosSalariales: {
@@ -989,186 +1074,191 @@ bancoEliminados: number[] = [];
       }
     });
   }
-agregarFilaCronologia(): void {
-  if (!this.idEmpleadoActual) {
-    alert('Primero debe seleccionar un empleado.');
-    return;
+  agregarFilaCronologia(): void {
+    if (!this.idEmpleadoActual) {
+      alert('Primero debe seleccionar un empleado.');
+      return;
+    }
+
+    const nuevaFila: RpMaeEmpCronologiaResponse & { modificado?: boolean } = {
+      idCronologia: 0,
+      idEmpleado: this.idEmpleadoActual,
+      nroContrato: this.cronologiaRowData.length + 1,
+      idTipoContrato: null,
+      tipoContrato: null,
+      fecIngreso: null,
+      fecSalida: null,
+      fecTercont: null,
+      numContrato: null,
+      horasContrato: null,
+      modificado: true
+    };
+
+    this.cronologiaRowData = [...this.cronologiaRowData, nuevaFila];
   }
+  eliminarFilaCronologia(row: RpMaeEmpCronologiaResponse): void {
+    if (!row) return;
 
-  const nuevaFila: RpMaeEmpCronologiaResponse & { modificado?: boolean } = {
-    idCronologia: 0,
-    idEmpleado: this.idEmpleadoActual,
-    nroContrato: this.cronologiaRowData.length + 1,
-    idTipoContrato: null,
-    tipoContrato: null,
-    fecIngreso: null,
-    fecSalida: null,
-    fecTercont: null,
-    numContrato: null,
-    horasContrato: null,
-    modificado: true
-  };
+    if (row.idCronologia && row.idCronologia > 0) {
+      this.cronologiaEliminados.push(row.idCronologia);
+    }
 
-  this.cronologiaRowData = [...this.cronologiaRowData, nuevaFila];
-}
-eliminarFilaCronologia(row: RpMaeEmpCronologiaResponse): void {
-  if (!row) return;
-
-  if (row.idCronologia && row.idCronologia > 0) {
-    this.cronologiaEliminados.push(row.idCronologia);
+    this.cronologiaRowData = this.cronologiaRowData.filter(x => x !== row);
   }
+  guardarCronologia(): void {
+    if (!this.idEmpleadoActual) {
+      alert('Primero debe seleccionar un empleado.');
+      return;
+    }
 
-  this.cronologiaRowData = this.cronologiaRowData.filter(x => x !== row);
-}
-guardarCronologia(): void {
-  if (!this.idEmpleadoActual) {
-    alert('Primero debe seleccionar un empleado.');
-    return;
-  }
+    const crear = this.cronologiaRowData
+      .filter(x => !x.idCronologia || x.idCronologia === 0)
+      .map((x, index) => ({
+        idEmpleado: this.idEmpleadoActual!,
+        nroContrato: x.nroContrato && x.nroContrato > 0 ? x.nroContrato : index + 1,
+        idTipoContrato: x.idTipoContrato,
+        fecIngreso: x.fecIngreso,
+        fecSalida: x.fecSalida,
+        fecTercont: x.fecTercont,
+        numContrato: x.numContrato,
+        horasContrato: x.horasContrato
+      }));
 
-  const crear = this.cronologiaRowData
-    .filter(x => !x.idCronologia || x.idCronologia === 0)
-    .map((x, index) => ({
-      idEmpleado: this.idEmpleadoActual!,
-      nroContrato: x.nroContrato && x.nroContrato > 0 ? x.nroContrato : index + 1,
-      idTipoContrato: x.idTipoContrato,
-      fecIngreso: x.fecIngreso,
-      fecSalida: x.fecSalida,
-      fecTercont: x.fecTercont,
-      numContrato: x.numContrato,
-      horasContrato: x.horasContrato
-    }));
+    const actualizar = this.cronologiaRowData
+      .filter(x => x.idCronologia > 0 && (x as any).modificado === true)
+      .map(x => ({
+        idCronologia: x.idCronologia,
+        nroContrato: x.nroContrato,
+        idTipoContrato: x.idTipoContrato,
+        fecIngreso: x.fecIngreso,
+        fecSalida: x.fecSalida,
+        fecTercont: x.fecTercont,
+        numContrato: x.numContrato,
+        horasContrato: x.horasContrato
+      }));
 
-  const actualizar = this.cronologiaRowData
-    .filter(x => x.idCronologia > 0 && (x as any).modificado === true)
-    .map(x => ({
-      idCronologia: x.idCronologia,
-      nroContrato: x.nroContrato,
-      idTipoContrato: x.idTipoContrato,
-      fecIngreso: x.fecIngreso,
-      fecSalida: x.fecSalida,
-      fecTercont: x.fecTercont,
-      numContrato: x.numContrato,
-      horasContrato: x.horasContrato
-    }));
+    const request = {
+      idEmpleado: this.idEmpleadoActual,
+      crear,
+      actualizar,
+      eliminar: this.cronologiaEliminados
+    };
 
-  const request = {
-    idEmpleado: this.idEmpleadoActual,
-    crear,
-    actualizar,
-    eliminar: this.cronologiaEliminados
-  };
-
-  this.cronologiaService.sync(request).subscribe({
-    next: (resp) => {
-      if (resp.type === 'Success') {
-        this.cronologiaEliminados = [];
-        this.cargarCronologiaEmpleado(this.idEmpleadoActual!);
-        alert('Cronología guardada correctamente.');
-      } else {
-        alert(resp.message ?? 'No se pudo guardar la cronología.');
+    this.cronologiaService.sync(request).subscribe({
+      next: (resp) => {
+        if (resp.type === 'Success') {
+          this.cronologiaEliminados = [];
+          this.cargarCronologiaEmpleado(this.idEmpleadoActual!);
+          alert('Cronología guardada correctamente.');
+        } else {
+          alert(resp.message ?? 'No se pudo guardar la cronología.');
+        }
+      },
+      error: (err) => {
+        console.error('Error guardando cronología:', err);
+        alert('Error guardando cronología.');
       }
-    },
-    error: (err) => {
-      console.error('Error guardando cronología:', err);
-      alert('Error guardando cronología.');
-    }
-  });
-}
-cargarHistorialBancoEmpleado(idEmpleado: number): void {
-  this.historialBancoService.getByEmpleado(idEmpleado).subscribe({
-    next: (resp) => {
-      this.bancoRowData = resp.data ?? [];
-    },
-    error: (err) => {
-      console.error('Error cargando historial banco:', err);
-      this.bancoRowData = [];
-    }
-  });
-}
-agregarFilaBanco(): void {
-  if (!this.idEmpleadoActual) {
-    alert('Primero debe seleccionar un empleado.');
-    return;
+    });
   }
-
-  const nuevaFila: RpMaeEmpHistorialBancoResponse & { modificado?: boolean } = {
-    idHistorialBanco: 0,
-    idEmpleado: this.idEmpleadoActual,
-    codcuenta: null,
-    codban: null,
-    banco: null,
-    ctacte: null,
-    idFormaPago: null,
-    formaPago: null,
-    codBanTercero: null,
-    bancoTercero: null,
-    fechaDesde: new Date().toISOString().substring(0, 10),
-    fechaHasta: null,
-    modificado: true
-  };
-
-  this.bancoRowData = [...this.bancoRowData, nuevaFila];
-}
-eliminarFilaBanco(row: RpMaeEmpHistorialBancoResponse): void {
-  if (!row) return;
-
-  if (row.idHistorialBanco && row.idHistorialBanco > 0) {
-    this.bancoEliminados.push(row.idHistorialBanco);
-  }
-
-  this.bancoRowData = this.bancoRowData.filter(x => x !== row);
-}
-guardarHistorialBanco(): void {
-  if (!this.idEmpleadoActual) {
-    alert('Primero debe seleccionar un empleado.');
-    return;
-  }
-
-  const crear = this.bancoRowData
-    .filter(x => !x.idHistorialBanco || x.idHistorialBanco === 0)
-    .map(x => ({
-      idEmpleado: this.idEmpleadoActual!,
-      codcuenta: x.codcuenta,
-      codban: x.codban,
-      ctacte: x.ctacte,
-      idFormaPago: x.idFormaPago,
-      codBanTercero: x.codBanTercero,
-      fechaDesde: x.fechaDesde,
-      fechaHasta: x.fechaHasta
-    }));
-
-  const actualizar = this.bancoRowData
-    .filter(x => x.idHistorialBanco > 0 && x.modificado === true)
-    .map(x => ({
-      idHistorialBanco: x.idHistorialBanco,
-      codcuenta: x.codcuenta,
-      codban: x.codban,
-      ctacte: x.ctacte,
-      idFormaPago: x.idFormaPago,
-      codBanTercero: x.codBanTercero,
-      fechaDesde: x.fechaDesde,
-      fechaHasta: x.fechaHasta
-    }));
-
-  this.historialBancoService.sync({
-    idEmpleado: this.idEmpleadoActual,
-    crear,
-    actualizar,
-    eliminar: this.bancoEliminados
-  }).subscribe({
-    next: (resp) => {
-      if (resp.type === 'Success') {
-        this.bancoEliminados = [];
-        this.cargarHistorialBancoEmpleado(this.idEmpleadoActual!);
-      } else {
-        alert(resp.message ?? 'No se pudo guardar historial bancario.');
+  cargarHistorialBancoEmpleado(idEmpleado: number): void {
+    this.historialBancoService.getByEmpleado(idEmpleado).subscribe({
+      next: (resp) => {
+        this.bancoRowData = resp.data ?? [];
+      },
+      error: (err) => {
+        console.error('Error cargando historial banco:', err);
+        this.bancoRowData = [];
       }
-    },
-    error: (err) => {
-      console.error('Error guardando historial banco:', err);
-      alert('Error guardando historial banco.');
+    });
+  }
+  agregarFilaBanco(): void {
+    if (!this.idEmpleadoActual) {
+      alert('Primero debe seleccionar un empleado.');
+      return;
     }
-  });
-}
+
+    const nuevaFila: RpMaeEmpHistorialBancoResponse & { modificado?: boolean } = {
+      idHistorialBanco: 0,
+      idEmpleado: this.idEmpleadoActual,
+      codcuenta: null,
+      codban: null,
+      banco: null,
+      ctacte: null,
+      idFormaPago: null,
+      formaPago: null,
+      codBanTercero: null,
+      bancoTercero: null,
+      fechaDesde: new Date().toISOString().substring(0, 10),
+      fechaHasta: null,
+      modificado: true,
+      idCuentaBanco: null,
+      tipoCuentaBanco: null,
+    };
+
+    this.bancoRowData = [...this.bancoRowData, nuevaFila];
+  }
+  eliminarFilaBanco(row: RpMaeEmpHistorialBancoResponse): void {
+    if (!row) return;
+
+    if (row.idHistorialBanco && row.idHistorialBanco > 0) {
+      this.bancoEliminados.push(row.idHistorialBanco);
+    }
+
+    this.bancoRowData = this.bancoRowData.filter(x => x !== row);
+  }
+  guardarHistorialBanco(): void {
+    if (!this.idEmpleadoActual) {
+      alert('Primero debe seleccionar un empleado.');
+      return;
+    }
+
+    const crear = this.bancoRowData
+      .filter(x => !x.idHistorialBanco || x.idHistorialBanco === 0)
+      .map(x => ({
+        idEmpleado: this.idEmpleadoActual!,
+        codcuenta: x.codcuenta,
+        codban: x.codban,
+        ctacte: x.ctacte,
+        idFormaPago: x.idFormaPago,
+        codBanTercero: x.codBanTercero,
+        idCuentaBanco: x.idCuentaBanco,
+        fechaDesde: x.fechaDesde,
+        fechaHasta: x.fechaHasta
+      }));
+
+    const actualizar = this.bancoRowData
+      .filter(x => x.idHistorialBanco > 0 && x.modificado === true)
+      .map(x => ({
+        idHistorialBanco: x.idHistorialBanco,
+        codcuenta: x.codcuenta,
+        codban: x.codban,
+        ctacte: x.ctacte,
+        idFormaPago: x.idFormaPago,
+        codBanTercero: x.codBanTercero,
+        idCuentaBanco: x.idCuentaBanco,
+        fechaDesde: x.fechaDesde,
+        fechaHasta: x.fechaHasta
+      }));
+
+    this.historialBancoService.sync({
+      idEmpleado: this.idEmpleadoActual,
+      crear,
+      actualizar,
+      eliminar: this.bancoEliminados
+    }).subscribe({
+      next: (resp) => {
+        if (resp.type === 'Success') {
+          this.bancoEliminados = [];
+          console.log('Historial banco:', resp.data);
+          this.cargarHistorialBancoEmpleado(this.idEmpleadoActual!);
+        } else {
+          alert(resp.message ?? 'No se pudo guardar historial bancario.');
+        }
+      },
+      error: (err) => {
+        console.error('Error guardando historial banco:', err);
+        alert('Error guardando historial banco.');
+      }
+    });
+  }
 }

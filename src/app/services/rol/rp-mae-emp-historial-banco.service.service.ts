@@ -28,6 +28,9 @@ export interface RpMaeEmpHistorialBancoResponse {
   codBanTercero: number | null;
   bancoTercero: string | null;
 
+  idCuentaBanco: number | null;
+  tipoCuentaBanco: string | null;
+
   fechaDesde: string;
   fechaHasta: string | null;
 }
@@ -39,6 +42,7 @@ export interface CreateRpMaeEmpHistorialBancoRequest {
   ctacte: string | null;
   idFormaPago: number | null;
   codBanTercero: number | null;
+  idCuentaBanco: number | null;
   fechaDesde: string;
   fechaHasta: string | null;
 }
@@ -50,6 +54,7 @@ export interface UpdateRpMaeEmpHistorialBancoRequest {
   ctacte: string | null;
   idFormaPago: number | null;
   codBanTercero: number | null;
+  idCuentaBanco: number | null;
   fechaDesde: string;
   fechaHasta: string | null;
 }

@@ -66,6 +66,7 @@ export interface EmpleadoFichaResponse {
   id_regimen?:number;
   establecimiento?:string;
   lmilitar?:string;
+  idSectorial?: number;
 }
 
 @Injectable({
