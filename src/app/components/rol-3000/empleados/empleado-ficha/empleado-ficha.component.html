@@ -332,10 +332,15 @@
                   <input matInput formControlName="establecimiento">
                 </mat-form-field>
 
-                <mat-form-field appearance="outline">
-                  <mat-label>Código Sectorial del IESS</mat-label>
-                  <input matInput formControlName="codigoSectorialIess">
-                </mat-form-field>
+              <mat-form-field appearance="outline">
+  <mat-label>Código Sectorial del IESS</mat-label>
+
+  <mat-select formControlName="codigoSectorialIess">
+    <mat-option *ngFor="let item of sectoriales" [value]="item.idSectorial">
+      {{ item.codigo }} - {{ item.desSectorial }}
+    </mat-option>
+  </mat-select>
+</mat-form-field>
 
                 <mat-form-field appearance="outline">
                   <mat-label>Grupo Sanguíneo</mat-label>
