@@ -12,11 +12,13 @@ import { RpTipEmpService } from 'src/app/services/tipo-empleado.service';
 import { TipoNominaEspService } from 'src/app/services/rol/tipo-nomina-esp.service';
 import { DecimosService } from 'src/app/services/rol/decimos.service';
 import { RpTipEmpResponse } from 'src/app/interfaces/responses/tipo-empleado-response';
+import { RpRegimenResponse } from 'src/app/interfaces/responses/regimen-response';
+import { RpRegimenService } from 'src/app/services/rol/regimen.service';
 
 @Component({
-  selector: 'app-decimo-tercero',
-  templateUrl: './decimo-tercero.component.html',
-  styleUrls: ['./decimo-tercero.component.css']
+  selector: 'app-decimo-cuarto',
+  templateUrl: './decimo-cuarto.component.html',
+  styleUrls: ['./decimo-cuarto.component.css']
 })
 export class DecimoCuartoComponent implements OnInit {
 
@@ -35,6 +37,7 @@ export class DecimoCuartoComponent implements OnInit {
   tiposEmpleado: RpTipEmpResponse[] = [];
   tiposNomina: TipoNominaEspResponse[] = [];
   idTipoNomEsp!: number; // se autodetecta por nombre
+  regimenes: RpRegimenResponse[] = [];
 
   // ===== AG GRID =====
   gridApi!: GridApi;
@@ -108,6 +111,7 @@ export class DecimoCuartoComponent implements OnInit {
     private dialog: MatDialog,
     private usuarioService: UsuarioService,
     private empresaService: EmpresaService,
+    private regimenService: RpRegimenService,
     private tipEmpService: RpTipEmpService,
     private tipoNominaService: TipoNominaEspService,
     private decimosService: DecimosService
@@ -164,6 +168,10 @@ export class DecimoCuartoComponent implements OnInit {
         if (d14) this.idTipoNomEsp = d14.idTipoNomEsp;
       }
     });
+    this.regimenService.getAll().subscribe({
+      next: (resp) => this.regimenes = resp.data ?? []
+    });
+
   }
 
   // ===== GRID =====
@@ -294,7 +302,12 @@ export class DecimoCuartoComponent implements OnInit {
       }
     });
   }
-
+  cancelar(): void {
+    this.form.reset();
+    this.rowData = [];
+    this.gridApi?.setGridOption('rowData', []);
+    this.calcularSubtotales();
+  }
   // ===== SUBTOTALES =====
   private calcularSubtotales(): void {
     this.totalValorDecimo = this.rowData.reduce((s, r) => s + (r.valorDecimo  ?? 0), 0);
@@ -308,7 +321,7 @@ export class DecimoCuartoComponent implements OnInit {
   }
 
   // ===== HELPERS =====
-  private formatMoneda(value: number): string {
+  formatMoneda(value: number): string {
     if (value == null) return '$0.00';
     return '$' + Number(value).toFixed(2);
   }

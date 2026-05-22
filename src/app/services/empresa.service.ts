@@ -20,6 +20,7 @@ export interface EmpresaComboResponse {
 export class EmpresaService {
   private apiUrl = `${environment.securityApiUrl}/Empresa`;
   private asignarUrl = `${environment.securityApiUrl}/GerenteContador`;
+  private comboUrl = `${environment.maintenanceRolUrl}/Empresa`;
 
   constructor(private http: HttpClient) {}
 
@@ -93,7 +94,7 @@ export class EmpresaService {
   }
   getCombo(): Observable<EmpresaComboResponse[]> {
     return this.http
-      .get<ApiListResponse<EmpresaComboResponse[]>>(`${this.apiUrl}/combo`)
+      .get<ApiListResponse<EmpresaComboResponse[]>>(`${this.comboUrl}/combo`)
       .pipe(map(response => response.data));
   }
 }

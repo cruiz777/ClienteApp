@@ -34,7 +34,8 @@ export class ApiKeyInterceptor implements HttpInterceptor {
       environment.conciliacionUrl,
       environment.cxpUrl,
       environment.maintenanceRolUrl,
-      environment.employeesUrl
+      environment.employeesUrl,
+      environment.nominaEspecialUrl
 
     ];
 
