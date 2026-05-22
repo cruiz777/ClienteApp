@@ -91,6 +91,8 @@ import { RpRegimenComponent } from './configuracion/regimen/list/regimen.compone
 import { TipocuentaFormComponent } from '../cg-3000/configuracion/tipo-cuenta-form/tipo-cuenta-form.component';
 import { RpBanTerceroComponent } from './configuracion/bancos/bancos-terceros/list/bancos-terceros-rol.component';
 import { RpBancosComponent } from './configuracion/bancos/bancos/list/bancos-rol.component';
+import { RpEmpresaComplementariaComponent } from './configuracion/empresa-complementaria/list/empresa-complementaria.component';
+import { TipoNominaEspComponent } from './configuracion/tipo-nomina-esp/list/tipo-nomina-esp.component';
 
 @NgModule({
   declarations: [
@@ -184,6 +186,8 @@ import { RpBancosComponent } from './configuracion/bancos/bancos/list/bancos-rol
         TipocuentaFormComponent,
         RpBanTerceroComponent,
         RpBancosComponent,
+        RpEmpresaComplementariaComponent,
+        TipoNominaEspComponent,
     Rol3000RoutingModule
   ]
 })

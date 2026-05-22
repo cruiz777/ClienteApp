@@ -8,10 +8,15 @@ import { EmpresaResponse } from '../interfaces/responses/empresa-response';
 import { AsignarGerenteContadorRequest } from '../interfaces/requests/asignar-gerente-contador';
 import { ApiListResponse } from '../interfaces/responses/ApiListResponse';
 import { LogoFirmaResponse } from '../interfaces/responses/logo-firma-response';
-
+export interface EmpresaComboResponse {
+  idEmpresa: number;
+  nombre: string;
+  numPatronal: string;
+}
 @Injectable({
   providedIn: 'root'
 })
+
 export class EmpresaService {
   private apiUrl = `${environment.securityApiUrl}/Empresa`;
   private asignarUrl = `${environment.securityApiUrl}/GerenteContador`;
@@ -84,6 +89,11 @@ export class EmpresaService {
   getLogoFirma(idEmpresa: number): Observable<LogoFirmaResponse> {
     return this.http
       .get<ApiListResponse<LogoFirmaResponse>>(`${this.apiUrl}/${idEmpresa}/logo-firma`)
+      .pipe(map(response => response.data));
+  }
+  getCombo(): Observable<EmpresaComboResponse[]> {
+    return this.http
+      .get<ApiListResponse<EmpresaComboResponse[]>>(`${this.apiUrl}/combo`)
       .pipe(map(response => response.data));
   }
 }

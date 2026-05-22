@@ -62,6 +62,8 @@ import { RpRegimenComponent } from './configuracion/regimen/list/regimen.compone
 import { TipoCuentaBancoComponent } from './configuracion/tipo-cuenta/list/tipo-cuenta.component';
 import { RpBanTerceroComponent } from './configuracion/bancos/bancos-terceros/list/bancos-terceros-rol.component';
 import { RpBancosComponent } from './configuracion/bancos/bancos/list/bancos-rol.component';
+import { RpEmpresaComplementariaComponent } from './configuracion/empresa-complementaria/list/empresa-complementaria.component';
+import { TipoNominaEspComponent } from './configuracion/tipo-nomina-esp/list/tipo-nomina-esp.component';
 
 const routes: Routes = [
    {
@@ -129,7 +131,9 @@ const routes: Routes = [
         {path:'tipo-cuenta', component: TipoCuentaBancoComponent},
         {path:'bancos-terceros-rol', component: RpBanTerceroComponent},
         {path:'bancos-rol', component: RpBancosComponent},
-
+        {path:'emp-comp', component: RpEmpresaComplementariaComponent},
+        {path:'tipo-nomina-esp', component: TipoNominaEspComponent},
+        
         { path: '**', redirectTo: 'inicio-rol' },
       ],
     },
