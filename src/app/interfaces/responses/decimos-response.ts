@@ -15,4 +15,6 @@ export interface DecimosEmpleadoResponse {
   pagoNomina: number;
   retJudicial: number;
   liquidoARecibir: number;
+  genero: string | null;
+  ocupacion: string | null;
 }

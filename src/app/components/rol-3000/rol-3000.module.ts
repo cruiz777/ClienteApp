@@ -93,6 +93,7 @@ import { RpBanTerceroComponent } from './configuracion/bancos/bancos-terceros/li
 import { RpBancosComponent } from './configuracion/bancos/bancos/list/bancos-rol.component';
 import { RpEmpresaComplementariaComponent } from './configuracion/empresa-complementaria/list/empresa-complementaria.component';
 import { TipoNominaEspComponent } from './configuracion/tipo-nomina-esp/list/tipo-nomina-esp.component';
+import { MatMenuModule } from '@angular/material/menu';
 
 @NgModule({
   declarations: [
@@ -172,6 +173,7 @@ import { TipoNominaEspComponent } from './configuracion/tipo-nomina-esp/list/tip
         MatSlideToggleModule,
         MatDatepickerModule,
         MatNativeDateModule,
+        MatMenuModule,
         RpCargosComponent,
         RpTipEmpComponent,
         TipoGastoComponent,

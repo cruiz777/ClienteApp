@@ -1,6 +1,10 @@
 <div class="decimo-tercero-container" [formGroup]="form">
+  <!-- Título con período -->
   <div class="title">
     <h2>Décimo Tercero</h2>
+    <span class="periodo-label" *ngIf="mostrarPeriodo">
+      Período: {{ periodoLabel }}
+    </span>
   </div>
 
   <div class="filters-grid">
@@ -27,7 +31,7 @@
     </div>
 
     <div class="field-group">
-      <label>Fecha Hasta:</label>
+      <label>Periodo:</label>
       <mat-form-field appearance="outline">
         <input matInput [matDatepicker]="picker" formControlName="fechaHasta" />
         <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
@@ -59,7 +63,18 @@
         <span *ngIf="!grabando">Grabar</span>
         <span *ngIf="grabando">Grabando...</span>
       </button>
-      <button mat-stroked-button type="button">Exportar</button>
+      <button mat-stroked-button [matMenuTriggerFor]="menuExportar">
+        Exportar ▾
+      </button>
+
+      <mat-menu #menuExportar="matMenu">
+        <button mat-menu-item (click)="exportar('pdf')">
+          PDF
+        </button>
+        <button mat-menu-item (click)="exportar('excel')">
+          Excel
+        </button>
+      </mat-menu>
       <button mat-stroked-button type="button" (click)="cancelar()">Cancelar</button>
     </div>
 

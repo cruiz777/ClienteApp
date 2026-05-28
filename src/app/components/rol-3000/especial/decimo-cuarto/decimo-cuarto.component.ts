@@ -16,6 +16,7 @@ import { RpRegimenResponse } from 'src/app/interfaces/responses/regimen-response
 import { RpRegimenService } from 'src/app/services/rol/regimen.service';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MAT_MOMENT_DATE_ADAPTER_OPTIONS, MomentDateAdapter } from '@angular/material-moment-adapter';
+import { DecimosExportConfig, DecimosExportService } from 'src/app/reports/decimos-export.service';
 
 @Component({
   selector: 'app-decimo-cuarto',
@@ -45,7 +46,8 @@ export class DecimoCuartoComponent implements OnInit {
   form!: FormGroup;
   loading = false;
   grabando = false;
-
+  periodoLabel = '';
+  mostrarPeriodo = false; 
   // ===== SESIÓN =====
   usuarioActual: LoginUsuarioResponse | null = null;
   idUsuario!: number;
@@ -143,7 +145,9 @@ export class DecimoCuartoComponent implements OnInit {
     private regimenService: RpRegimenService,
     private tipEmpService: RpTipEmpService,
     private tipoNominaService: TipoNominaEspService,
-    private decimosService: DecimosService
+    private decimosService: DecimosService,
+    private exportService: DecimosExportService
+
   ) {}
 
   ngOnInit(): void {
@@ -186,10 +190,16 @@ export class DecimoCuartoComponent implements OnInit {
         if (emp) this.form.patchValue({ idEmpresa: emp.idEmpresa });
       }
     });
-
-    // Tipos de empleado
+    
+    // Tipos de empleado solo escoge fijos 
     this.tipEmpService.getAll().subscribe({
-      next: (resp) => this.tiposEmpleado = resp.data ?? []
+      next: (resp) => {
+        this.tiposEmpleado = (resp.data ?? []).filter(t =>
+          t.desTipemp.toUpperCase().includes('FIJO')
+        );
+        if (this.tiposEmpleado.length > 0)
+          this.form.patchValue({ idTipEmp: this.tiposEmpleado[0].idTipemp });
+      }
     });
 
     // Tipo nómina — autodetectar D13 por descripción
@@ -240,7 +250,8 @@ export class DecimoCuartoComponent implements OnInit {
       this.showError('La empresa seleccionada no tiene número patronal.');
       return;
     }
-
+    this.calcularPeriodoLabel();
+    this.mostrarPeriodo = true;
     const fechaHastaRaw = this.form.value.fechaHasta;
     const fechaHasta    = typeof fechaHastaRaw?.toDate === 'function'
                           ? fechaHastaRaw.toDate()
@@ -410,9 +421,40 @@ export class DecimoCuartoComponent implements OnInit {
       }
     });
   }
+
+  exportar(formato: 'pdf' | 'excel'): void {
+    if (!this.rowData.length) {
+      this.showError('No hay datos para exportar. Calcule primero.');
+      return;
+    }
+
+    const empresaSeleccionada = this.empresas.find(
+      e => e.idEmpresa === this.form.value.idEmpresa
+    );
+
+    const config: DecimosExportConfig = {
+      tipoNomina:   'Décimo Tercero', // cambiar en D14
+      periodoDesde: this.periodoLabel.split('—')[0].trim(),
+      periodoHasta: this.periodoLabel.split('—')[1].trim(),
+      periodo:      new Date(this.form.value.fechaHasta).getFullYear().toString(),
+      empresa:      empresaSeleccionada?.nombre ?? '',
+      empleados:    this.rowData
+    };
+
+    if (formato === 'pdf') {
+      this.exportService.exportarPdfDetalle(config);
+      this.exportService.exportarPdfResumen(config);
+    } else {
+      this.exportService.exportarExcelDetalle(config);
+      this.exportService.exportarExcelResumen(config);
+    }
+  }
+
   cancelar(): void {
     // Resetear solo los datos, no el formulario completo
     this.rowData = [];
+    this.mostrarPeriodo = false;
+    this.periodoLabel   = '';
     this.gridApi?.setGridOption('rowData', []);
     this.calcularSubtotales();
 
@@ -447,5 +489,30 @@ export class DecimoCuartoComponent implements OnInit {
     this.dialog.open(CustomMessageBoxComponent, {
       data: { title: 'Éxito', message, type: 'success', confirmText: 'Aceptar', showCancel: false } as MessageBoxData
     });
+  }
+  
+  private calcularPeriodoLabel(): void {
+    const fechaRaw = this.form.value.fechaHasta;
+    if (!fechaRaw) return;
+
+    const fechaFin  = typeof fechaRaw?.toDate === 'function'
+      ? fechaRaw.toDate()
+      : new Date(fechaRaw);
+
+    const año       = fechaFin.getFullYear();
+    const regimenId = this.form.value.idRegimen;
+    const regimen   = this.regimenes.find(r => r.id_regimen === regimenId);
+    const esSierra  = regimen?.descripcion.toUpperCase().includes('SIERRA') ?? true;
+    const mesInicio = esSierra ? 8 : 3;
+    const añoInicio = fechaFin.getMonth() + 1 >= mesInicio ? año : año - 1;
+    const inicio    = new Date(añoInicio, mesInicio - 1, 1);
+
+    this.periodoLabel = `${this.formatFechaDate(inicio)} — ${this.formatFechaDate(fechaFin)}`;
+  }
+
+  private formatFechaDate(fecha: Date): string {
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    return `${dia}/${mes}/${fecha.getFullYear()}`;
   }
 }

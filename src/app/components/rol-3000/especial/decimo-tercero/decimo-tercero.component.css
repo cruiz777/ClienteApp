@@ -203,3 +203,17 @@
     grid-template-columns: 1fr;
   }
 }
+.title {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.periodo-label {
+  font-size: 14px;
+  color: #555;
+  background: #e8f4fd;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 500;
+}
