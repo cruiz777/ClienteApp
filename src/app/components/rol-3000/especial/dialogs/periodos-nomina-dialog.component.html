@@ -1,0 +1,62 @@
+<div class="dialog-container">
+  <h2 mat-dialog-title>Períodos Grabados</h2>
+
+  <mat-dialog-content>
+    <div *ngIf="cargando" class="loading">
+      <mat-spinner diameter="40"></mat-spinner>
+      <p>Cargando períodos...</p>
+    </div>
+
+    <div *ngIf="!cargando && periodos.length === 0" class="empty">
+      <mat-icon>inbox</mat-icon>
+      <p>No hay períodos grabados para esta empresa.</p>
+    </div>
+
+    <table *ngIf="!cargando && periodos.length > 0"
+           mat-table [dataSource]="periodos" class="tabla-periodos mat-elevation-z1">
+
+      <ng-container matColumnDef="periodo">
+        <th mat-header-cell *matHeaderCellDef>Período</th>
+        <td mat-cell *matCellDef="let p">{{ p.periodo }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="tipoNomina">
+        <th mat-header-cell *matHeaderCellDef>Tipo Nómina</th>
+        <td mat-cell *matCellDef="let p">{{ p.tipoNomina }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="regimen">
+        <th mat-header-cell *matHeaderCellDef>Régimen</th>
+        <td mat-cell *matCellDef="let p">{{ p.regimen ?? '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="cantidadEmpleados">
+        <th mat-header-cell *matHeaderCellDef>Empleados</th>
+        <td mat-cell *matCellDef="let p" class="center">{{ p.cantidadEmpleados }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="totalLiquido">
+        <th mat-header-cell *matHeaderCellDef>Total Líquido</th>
+        <td mat-cell *matCellDef="let p" class="right">
+          <strong>{{ formatMoneda(p.totalLiquido) }}</strong>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="acciones">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let p">
+          <button mat-flat-button color="primary" (click)="seleccionar(p)">
+            Cargar
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+    </table>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-stroked-button (click)="cancelar()">Cerrar</button>
+  </mat-dialog-actions>
+</div>

@@ -17,6 +17,7 @@ import { RpRegimenService } from 'src/app/services/rol/regimen.service';
 import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
 import { MAT_MOMENT_DATE_ADAPTER_OPTIONS, MomentDateAdapter } from '@angular/material-moment-adapter';
 import { DecimosExportConfig, DecimosExportService } from 'src/app/reports/decimos-export.service';
+import { PeriodosNominaDialogComponent, PeriodosNominaDialogData, PeriodosNominaDialogResult } from '../dialogs/periodos-nomina-dialog.component';
 
 @Component({
   selector: 'app-decimo-cuarto',
@@ -52,7 +53,7 @@ export class DecimoCuartoComponent implements OnInit {
   usuarioActual: LoginUsuarioResponse | null = null;
   idUsuario!: number;
   idEmpresa!: number;
-
+  datosDesdeDB = false;
   // ===== COMBOS =====
   empresas: EmpresaComboResponse[] = [];
   tiposEmpleado: RpTipEmpResponse[] = [];
@@ -257,7 +258,11 @@ export class DecimoCuartoComponent implements OnInit {
                           ? fechaHastaRaw.toDate()
                           : new Date(fechaHastaRaw);
     const periodo       = fechaHasta.getFullYear().toString();
-
+    // Si ya cargué desde DB, recalcula directo sin verificar
+    if (this.datosDesdeDB) {
+      this.ejecutarCalcular(empresaSeleccionada.numPatronal!, fechaHasta);
+      return;
+    }
     // 1. Verificar si ya existe
     this.decimosService.existe(
       empresaSeleccionada.numPatronal,
@@ -266,22 +271,15 @@ export class DecimoCuartoComponent implements OnInit {
     ).subscribe({
       next: (resp) => {
         if (resp.data) {
-          // Ya existe — preguntar al usuario
           this.dialog.open(CustomMessageBoxComponent, {
             width: '450px',
             data: {
-              title: 'Nómina Especial',
-              message: '¡Ya existe información generada del período solicitado! ¿Desea recuperar lo guardado o recalcular desde cero?',
-              type: 'warning',
-              confirmText: 'Recuperar',
-              cancelText: 'Recalcular',
-              showCancel: true
+              title: 'Período ya registrado',
+              message: `Ya existe información grabada del período ${periodo}. Use el botón "Cargar" para recuperar los datos guardados.`,
+              type: 'info',
+              confirmText: 'Entendido',
+              showCancel: false
             } as MessageBoxData
-          }).afterClosed().subscribe(recuperar => {
-            if (recuperar)
-              this.ejecutarRecuperar(empresaSeleccionada.numPatronal!, periodo);
-            else
-              this.ejecutarCalcular(empresaSeleccionada.numPatronal!, fechaHasta);
           });
         } else {
           this.ejecutarCalcular(empresaSeleccionada.numPatronal!, fechaHasta);
@@ -365,6 +363,10 @@ export class DecimoCuartoComponent implements OnInit {
       const empresaSeleccionada = this.empresas.find(
         e => e.idEmpresa === this.form.value.idEmpresa
       );
+      const fechaHastaRaw = this.form.value.fechaHasta;
+      const fechaHasta    = typeof fechaHastaRaw?.toDate === 'function'
+                            ? fechaHastaRaw.toDate()
+                            : new Date(fechaHastaRaw);
 
       const periodo = new Date(this.form.value.fechaHasta).getFullYear().toString();
 
@@ -387,17 +389,17 @@ export class DecimoCuartoComponent implements OnInit {
               } as MessageBoxData
             }).afterClosed().subscribe(forzar => {
               if (forzar)
-                this.ejecutarGrabado(empresaSeleccionada!.numPatronal!, periodo, true);
+                this.ejecutarGrabado(empresaSeleccionada!.numPatronal!, periodo, true, fechaHasta);
             });
           } else {
-            this.ejecutarGrabado(empresaSeleccionada!.numPatronal!, periodo, false);
+            this.ejecutarGrabado(empresaSeleccionada!.numPatronal!, periodo, true, fechaHasta);
           }
         }
       });
     });
   }
 
-  private ejecutarGrabado(numPatronal: string, periodo: string, forzar: boolean): void {
+  private ejecutarGrabado(numPatronal: string, periodo: string, forzar: boolean, fechaHasta: Date): void {
     this.grabando = true;
     this.decimosService.grabar({
       numPatronal,
@@ -405,12 +407,14 @@ export class DecimoCuartoComponent implements OnInit {
       idTipoNomEsp: this.idTipoNomEsp,
       forzar,
       idUsuario: this.idUsuario,
+      fechaHasta: fechaHasta.toISOString().split('T')[0], 
       empleados: this.rowData
     }).subscribe({
       next: (resp) => {
         if (resp.type === 'ERROR') {
           this.showError(resp.message ?? 'Error al grabar.');
         } else {
+          this.datosDesdeDB = true;
           this.showSuccess('Información grabada correctamente.');
         }
         this.grabando = false;
@@ -453,6 +457,7 @@ export class DecimoCuartoComponent implements OnInit {
   cancelar(): void {
     // Resetear solo los datos, no el formulario completo
     this.rowData = [];
+    this.datosDesdeDB = false;
     this.mostrarPeriodo = false;
     this.periodoLabel   = '';
     this.gridApi?.setGridOption('rowData', []);
@@ -515,4 +520,60 @@ export class DecimoCuartoComponent implements OnInit {
     const mes = String(fecha.getMonth() + 1).padStart(2, '0');
     return `${dia}/${mes}/${fecha.getFullYear()}`;
   }
+
+  cargar(): void {
+    const empresaSeleccionada = this.empresas.find(
+      e => e.idEmpresa === this.form.value.idEmpresa
+    );
+
+    if (!empresaSeleccionada?.numPatronal) {
+      this.showError('Seleccione una empresa primero.');
+      return;
+    }
+
+    if (!this.idTipoNomEsp) {
+      this.showError('No se encontró el tipo de nómina en el catálogo.');
+      return;
+    }
+
+    this.dialog.open(PeriodosNominaDialogComponent, {
+      width: '700px',
+      data: {
+        numPatronal:  empresaSeleccionada.numPatronal,
+        idTipoNomEsp: this.idTipoNomEsp
+      } as PeriodosNominaDialogData
+    }).afterClosed().subscribe((result: PeriodosNominaDialogResult | null) => {
+      if (!result?.seleccionado) return;
+
+      const p = result.seleccionado;
+      
+      this.decimosService.recuperar(
+        empresaSeleccionada.numPatronal!,
+        p.periodo,
+        p.idTipoNomEsp
+      ).subscribe({
+        next: (resp) => {
+          if (resp.type === 'ERROR') {
+            this.showError(resp.message ?? 'Error al cargar.');
+            return;
+          }
+
+          this.rowData     = resp.data ?? [];
+          this.datosDesdeDB = true;
+          this.mostrarPeriodo = true;
+
+          const esSierra = p.regimen?.toUpperCase().includes('SIERRA') ?? true;
+          this.periodoLabel = esSierra
+            ? `01/08/${parseInt(p.periodo) - 1} — 31/07/${p.periodo}`
+            : `01/03/${parseInt(p.periodo) - 1} — 28/02/${p.periodo}`;
+          // Para D14 Sierra: this.periodoLabel = `01/08/${parseInt(p.periodo) - 1} — 31/07/${p.periodo}`;
+
+          this.gridApi?.setGridOption('rowData', this.rowData);
+          this.calcularSubtotales();
+        },
+        error: () => this.showError('Error de conexión al cargar.')
+      });
+    });
+  }
+
 }

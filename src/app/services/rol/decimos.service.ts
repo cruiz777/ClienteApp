@@ -5,6 +5,8 @@ import { environment } from 'src/environments/environment';
 import { ApiResponse } from 'src/app/interfaces/responses/api-response';
 import { DecimosRequest, GrabarDecimosRequest } from 'src/app/interfaces/requests/decimos-request';
 import { DecimosEmpleadoResponse } from 'src/app/interfaces/responses/decimos-response';
+import { PeriodoNominaResponse } from '../../interfaces/responses/periodo-nomina-response';
+
 
 @Injectable({
   providedIn: 'root'
@@ -38,6 +40,13 @@ export class DecimosService {
     return this.http.get<ApiResponse<DecimosEmpleadoResponse[]>>(
       `${this.baseUrl}/recuperar`, {
         params: { numPatronal, periodo, idTipoNomEsp }
+      }
+    );
+  }
+  getPeriodos(numPatronal: string): Observable<ApiResponse<PeriodoNominaResponse[]>> {
+    return this.http.get<ApiResponse<PeriodoNominaResponse[]>>(
+      `${this.baseUrl}/periodos`, {
+        params: { numPatronal }
       }
     );
   }

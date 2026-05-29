@@ -94,6 +94,7 @@ import { RpBancosComponent } from './configuracion/bancos/bancos/list/bancos-rol
 import { RpEmpresaComplementariaComponent } from './configuracion/empresa-complementaria/list/empresa-complementaria.component';
 import { TipoNominaEspComponent } from './configuracion/tipo-nomina-esp/list/tipo-nomina-esp.component';
 import { MatMenuModule } from '@angular/material/menu';
+import { PeriodosNominaDialogComponent } from './especial/dialogs/periodos-nomina-dialog.component';
 
 @NgModule({
   declarations: [
@@ -142,7 +143,8 @@ import { MatMenuModule } from '@angular/material/menu';
     DecimoCuartoComponent,
     DecimoTerceroComponent,
     FondoReservaComponent,
-    UtilidadesComponent
+    UtilidadesComponent,
+    PeriodosNominaDialogComponent,
   ],
   imports: [
     CommonModule,
