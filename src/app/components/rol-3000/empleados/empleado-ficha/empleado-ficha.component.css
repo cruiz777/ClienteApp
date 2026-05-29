@@ -412,13 +412,90 @@
   justify-content: flex-end;
 }
 
-.btn-grid-delete {
-  border: none;
-  background: #c62828;
-  color: white;
-  font-weight: bold;
-  border-radius: 4px;
+.grid-check {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
   cursor: pointer;
-  width: 28px;
-  height: 24px;
+}
+
+.grid-check input {
+  display: none;
+}
+
+.grid-check span {
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid #0b3d91;
+  border-radius: 4px;
+  background: #fff;
+  position: relative;
+}
+
+.grid-check input:checked + span {
+  background: #0b3d91;
+  border-color: #0b3d91;
+}
+
+.grid-check input:checked + span::after {
+  content: '✓';
+  color: white;
+  font-size: 13px;
+  font-weight: bold;
+  position: absolute;
+  left: 3px;
+  top: -2px;
+}
+.custom-check {
+  width: 18px;
+  height: 18px;
+  margin: 3px auto;
+  border: 1.5px solid #174a9c;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: bold;
+  line-height: 17px;
+  text-align: center;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+.custom-check.checked {
+  background: #174a9c;
+  border-color: #174a9c;
+}
+.btn-grid-delete {
+  padding: 0 !important;
+  margin: 0 !important;
+  min-width: 20px !important;
+  width: 20px !important;
+  height: 20px !important;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-grid-delete .material-icons {
+  font-size: 16px !important;
+  line-height: 16px !important;
+  color: #000;
+}
+
+.btn-grid-delete:hover .material-icons {
+  color: #b71c1c;
+}
+.empleado-nombre-box {
+  width: 820px;
+  max-width: 100%;
+}
+
+.empleado-nombre-box input {
+  font-size: 14px;
+  font-weight: 500;
 }

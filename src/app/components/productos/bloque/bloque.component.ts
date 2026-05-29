@@ -142,6 +142,7 @@ export class BloqueComponent implements OnInit {
 
   gridOptions: GridOptions = {
     suppressMovableColumns: true,
+    popupParent: document.body,
     onCellValueChanged: this.onCellValueChanged.bind(this),
 
     // 👇 forzamos event: any para evitar problemas de tipos con AG Grid
@@ -350,17 +351,19 @@ export class BloqueComponent implements OnInit {
         headerName: 'Categoría',
         editable: true,
         cellEditor: 'gcpBrickAutocompleteEditor',
-        cellEditorPopup: true, // ✅ Este es el más importante
-        cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100, resizable: true,
+        cellEditorPopup: true,
+        cellEditorPopupPosition: 'over',
+        width: 140,
+        minWidth: 140,
+        resizable: true,
+        cellStyle: this.estiloDescripcionVacia,
         valueFormatter: (params: any) => {
           const codigo = params.value;
           if (!codigo) return '';
 
-          // Opcional: mostrar "codigo - descripcion" para mejor UX
           const opcion = this.gcpBricksDisponibles.find(g => g.codigo === codigo);
           return opcion ? `${opcion.codigo} - ${opcion.descripcion}` : codigo;
         }
-
       },
       { field: 'marca', headerName: 'Marca', editable: () => !this.formUV.get('checkExiste')?.value, cellStyle: this.estiloDescripcionVacia, width: 100, minWidth: 100, resizable: true },
       { field: 'contenidoNeto', headerName: 'C.Neto', editable: true, cellStyle: this.estiloDescripcionVacia, valueParser: this.validarNumeroConUnPunto, width: 90, minWidth: 90 },

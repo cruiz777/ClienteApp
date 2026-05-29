@@ -31,7 +31,8 @@
               <div class="form-grid-2">
                 <mat-form-field appearance="outline">
                   <mat-label>Código de Empleado</mat-label>
-                  <input matInput formControlName="codigoEmpleado">
+                  <input matInput formControlName="codigoEmpleado" (keyup.enter)="buscarEmpleadoPorCodigo()"
+                    (blur)="buscarEmpleadoPorCodigo()">
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
@@ -131,7 +132,7 @@
 
                 <ag-grid-angular class="ag-theme-alpine referencia-ag-grid" [rowData]="referenciaRowData"
                   [columnDefs]="referenciaColumnDefs" [defaultColDef]="referenciaDefaultColDef"
-                  [stopEditingWhenCellsLoseFocus]="true" [singleClickEdit]="true">
+                  [stopEditingWhenCellsLoseFocus]="true" [singleClickEdit]="true" [rowHeight]="32" [headerHeight]="30">
                 </ag-grid-angular>
               </div>
             </div>
@@ -227,7 +228,7 @@
 
         <div class="grid-2">
           <div>
-            <mat-form-field appearance="outline" class="full-width">
+            <mat-form-field appearance="outline" class="empleado-nombre-box">
               <mat-label>Empleado</mat-label>
               <input matInput formControlName="empleado">
             </mat-form-field>
@@ -243,7 +244,7 @@
 
               <ag-grid-angular class="ag-theme-alpine cronologia-ag-grid" [rowData]="cronologiaRowData"
                 [columnDefs]="cronologiaColumnDefs" [defaultColDef]="cronologiaDefaultColDef"
-                [stopEditingWhenCellsLoseFocus]="true" [singleClickEdit]="true">
+                [stopEditingWhenCellsLoseFocus]="true" [singleClickEdit]="true" [rowHeight]="32" [headerHeight]="30">
               </ag-grid-angular>
             </div>
 
@@ -319,7 +320,7 @@
 
               <ag-grid-angular class="ag-theme-alpine banco-ag-grid" [rowData]="bancoRowData"
                 [columnDefs]="bancoColumnDefs" [defaultColDef]="bancoDefaultColDef"
-                [stopEditingWhenCellsLoseFocus]="true" [singleClickEdit]="true">
+                [stopEditingWhenCellsLoseFocus]="true" [singleClickEdit]="true" [rowHeight]="32" [headerHeight]="30">
               </ag-grid-angular>
             </div>
 
@@ -332,15 +333,15 @@
                   <input matInput formControlName="establecimiento">
                 </mat-form-field>
 
-              <mat-form-field appearance="outline">
-  <mat-label>Código Sectorial del IESS</mat-label>
+                <mat-form-field appearance="outline">
+                  <mat-label>Código Sectorial del IESS</mat-label>
 
-  <mat-select formControlName="codigoSectorialIess">
-    <mat-option *ngFor="let item of sectoriales" [value]="item.idSectorial">
-      {{ item.codigo }} - {{ item.desSectorial }}
-    </mat-option>
-  </mat-select>
-</mat-form-field>
+                  <mat-select formControlName="codigoSectorialIess">
+                    <mat-option *ngFor="let item of sectoriales" [value]="item.idSectorial">
+                      {{ item.codigo }} - {{ item.desSectorial }}
+                    </mat-option>
+                  </mat-select>
+                </mat-form-field>
 
                 <mat-form-field appearance="outline">
                   <mat-label>Grupo Sanguíneo</mat-label>
@@ -384,7 +385,7 @@
       <div class="tab-content" formGroupName="datosSalariales">
         <h2>Datos Salariales</h2>
 
-        <mat-form-field appearance="outline" class="employee-box">
+        <mat-form-field appearance="outline" class="empleado-nombre-box">
           <mat-label>Empleado</mat-label>
           <input matInput formControlName="empleado">
         </mat-form-field>
@@ -450,16 +451,20 @@
       <div class="tab-content">
         <h2>Cargas</h2>
 
-        <mat-form-field appearance="outline" class="employee-box">
+        <mat-form-field appearance="outline" class="empleado-nombre-box">
           <mat-label>Empleado</mat-label>
           <input matInput
             [value]="form.get('datosGenerales.nombres')?.value + ' ' + form.get('datosGenerales.apellidos')?.value">
         </mat-form-field>
-
+        <div class="grid-toolbar">
+          <button mat-stroked-button color="primary" type="button" (click)="agregarFilaCarga()">
+            Agregar fila
+          </button>
+        </div>
         <div class="table-container">
           <ag-grid-angular class="ag-theme-alpine cargas-ag-grid" [rowData]="cargasRowData"
             [columnDefs]="cargasColumnDefs" [defaultColDef]="cargasDefaultColDef" [pagination]="true"
-            [paginationPageSize]="10" [animateRows]="true">
+            [paginationPageSize]="10" [animateRows]="true" [rowHeight]="32" [headerHeight]="30">
           </ag-grid-angular>
         </div>
 
@@ -489,16 +494,22 @@
     <mat-tab label="Datos Académicos">
       <div class="tab-content" formGroupName="datosAcademicos">
         <h2>Datos Académicos</h2>
+        <div class="grid-toolbar">
 
-        <mat-form-field appearance="outline" class="employee-box">
+        </div>
+        <mat-form-field appearance="outline" class="empleado-nombre-box">
           <mat-label>Empleado</mat-label>
           <input matInput formControlName="empleado">
         </mat-form-field>
-
+        <div class="grid-toolbar">
+          <button mat-stroked-button color="primary" type="button" (click)="agregarFilaAcademica()">
+            Agregar fila
+          </button>
+        </div>
         <div class="table-container">
           <ag-grid-angular class="ag-theme-alpine academicos-ag-grid" [rowData]="academicosRowData"
             [columnDefs]="academicosColumnDefs" [defaultColDef]="academicosDefaultColDef" [singleClickEdit]="true"
-            [stopEditingWhenCellsLoseFocus]="true" [animateRows]="true">
+            [stopEditingWhenCellsLoseFocus]="true" [animateRows]="true" [rowHeight]="32" [headerHeight]="30">
           </ag-grid-angular>
         </div>
 
@@ -517,7 +528,7 @@
     <div class="table-container">
       <ag-grid-angular class="ag-theme-alpine observacion-ag-grid" [rowData]="observacionRowData"
         [columnDefs]="observacionColumnDefs" [defaultColDef]="observacionDefaultColDef" [pagination]="true"
-        [paginationPageSize]="10" [animateRows]="true">
+        [paginationPageSize]="10" [animateRows]="true" [rowHeight]="32" [headerHeight]="30">
       </ag-grid-angular>
     </div>
 
@@ -526,7 +537,7 @@
       <div class="tab-content" formGroupName="datosEspeciales">
         <h2>Datos Especiales</h2>
 
-        <mat-form-field appearance="outline" class="employee-box">
+        <mat-form-field appearance="outline" class="empleado-nombre-box">
           <mat-label>Empleado</mat-label>
           <input matInput formControlName="empleado">
         </mat-form-field>

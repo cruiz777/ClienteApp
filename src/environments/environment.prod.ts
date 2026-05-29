@@ -28,5 +28,6 @@ export const environment = {
       conciliacionUrl:'http://181.39.162.182:8000/conciliacion/api',
       maintenanceRolUrl: 'http://181.39.162.182:8000/maintenance-rol/api',
       employeesUrl: 'http://181.39.162.182:8000/employees/api',
-    nominaEspecialUrl: 'http://181.39.162.182:8000/nomina-especial/api'
+    nominaEspecialUrl: 'http://181.39.162.182:8000/nomina-especial/api',
+
 };

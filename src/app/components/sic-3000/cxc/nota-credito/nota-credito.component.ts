@@ -1994,48 +1994,46 @@ grabar(): void {
 
 
 
-  onProductoSelectedNC(codpro: string): void {
-    const p = this.productos.find(x => (x.codpro ?? '').toString() === codpro);
-    if (!p) return;
+onProductoSelectedNC(codpro: string): void {
+  const p = this.productos.find(x => (x.codpro ?? '').toString() === codpro);
+  if (!p) return;
 
-    const yaExiste = this.detalleRows.some(r => r.codigo === p.codpro);
-    if (yaExiste) {
-      this.mostrarAlerta(`El producto ${p.codpro} ya fue agregado.`, 'info');
-      return;
-    }
+  const ivaPorc = this.esFacturaDeSaldo ? this.ivaPctSaldo : 15;
+  const precio = Number(p.prevensiniva || p.pvp || 0);
 
-    const ivaPorc = this.esFacturaDeSaldo ? this.ivaPctSaldo : 15;
-    const precio = Number(p.prevensiniva || p.pvp || 0);
+  const { idcuenta, cuenta } = this.getCuentaPorProducto(p.codpro);
 
-    // 🔹 obtener cuenta desde la lista de productos
-    const { idcuenta, cuenta } = this.getCuentaPorProducto(p.codpro);
+  const nuevaFila: Detalle = {
+    codigo: p.codpro,
+    idcuenta,
+    cuenta,
+    descripcion: (p.despro ?? '').toUpperCase(),
+    cantidad: 1,
+    pvp: precio,
+    iva: +((precio * ivaPorc) / 100).toFixed(2),
+    ivaPct: ivaPorc,
+    cantidadd: 0,
+    valorDev: 0,
+    ivaDev: 0,
+    porMonto: false
+  };
 
-    const nuevaFila: Detalle = {
-      codigo: p.codpro,
-      idcuenta,
-      cuenta,
-      descripcion: (p.despro ?? '').toUpperCase(),
-      cantidad: 1,
-      pvp: precio,
-      iva: +((precio * ivaPorc) / 100).toFixed(2),
-      ivaPct: ivaPorc,
-      cantidadd: 0,
-      valorDev: 0,
-      ivaDev: 0,
-      porMonto: false
-    };
-
-    if (this.detalleRows.length === 1 &&
-      !this.detalleRows[0].codigo &&
-      !this.detalleRows[0].descripcion) {
-      this.detalleRows = [nuevaFila];
-    } else {
-      this.detalleRows = [...this.detalleRows, nuevaFila];
-    }
-
-    this.recalcular();
+  if (
+    this.detalleRows.length === 1 &&
+    !this.detalleRows[0].codigo &&
+    !this.detalleRows[0].descripcion
+  ) {
+    this.detalleRows = [nuevaFila];
+  } else {
+    this.detalleRows = [...this.detalleRows, nuevaFila];
   }
 
+  this.buscarProductoTexto = '';
+  this.productoSeleccionado = '';
+  this.productosFiltrados = [];
+
+  this.recalcular();
+}
 
   filtrarProductos(event: any): void {
     const texto = (event.target.value || '').toLowerCase();
