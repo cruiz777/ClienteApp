@@ -544,3 +544,11 @@ mat-form-field textarea {
   font-weight: 600;
   font-size: 12px;
 }
+.ag-popup,
+.ag-popup-editor {
+  z-index: 99999 !important;
+}
+
+.ag-theme-alpine .ag-popup-editor {
+  min-width: 260px;
+}

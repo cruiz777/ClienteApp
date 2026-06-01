@@ -12,6 +12,13 @@ export interface ApiResponse<T> {
   count: number;
 }
 
+export interface EmpleadoBusquedaResponse {
+  idEmpleado: number;
+  documento: string;
+  nombres: string;
+  apellidos: string;
+  nombreCompleto: string;
+}
 export interface EmpleadoFichaResponse {
   idEmpleado: number;
   nombre: string;
@@ -87,4 +94,18 @@ export class EmpleadoFichaService {
 
     return this.http.get<ApiResponse<EmpleadoFichaResponse[]>>(this.apiUrl, { params });
   }
+
+  getBusqueda(texto?: string): Observable<ApiResponse<EmpleadoBusquedaResponse[]>> {
+  let params = new HttpParams();
+
+  if (texto && texto.trim() !== '') {
+    params = params.set('texto', texto.trim());
+  }
+
+  return this.http.get<ApiResponse<EmpleadoBusquedaResponse[]>>(
+    `${environment.employeesUrl}/Empleado/busqueda`,
+    { params }
+  );
+}
+
 }
