@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup } from '@angular/forms';
+
 import { forkJoin } from 'rxjs';
 import { TipoDocumentoService } from 'src/app/services/tipo-documento.service';
 import { TipoDocumento } from 'src/app/interfaces/catalogs/tipo-documento.interface';
@@ -20,6 +21,18 @@ import { RpNivelInstruccionResponse } from 'src/app/interfaces/responses/nivel-i
 import { RpNivelInstruccionService } from 'src/app/services/nivel-instruccion.service';
 import { RpTipoDiscapacidadService } from 'src/app/services/rol/rp-tipo-discapacidad.service';
 import { ColDef } from 'ag-grid-community';
+import { TipoObservacionService, TipoObservacion } from 'src/app/services/rol/tipo-observacion.service';
+import { ObservacionEmpleadoResponse, ObservacionesEmpleadoService } from 'src/app/services/rol/observaciones-empleado.service';
+import {
+  GastosSriEmpleadoService,
+  GastoSriEmpleadoResponse
+} from 'src/app/services/rol/gastos-sri-empleado.service';
+
+import { TipoGastoService } from 'src/app/services/tipo-gasto.service';
+import {
+  EmpleadoSyncService,
+  SyncEmpleadoRequest
+} from 'src/app/services/rol/empleado-sync.service';
 import {
   RpMaeEmpFormacionService,
   RpMaeEmpFormacionResponse
@@ -41,7 +54,7 @@ import {
 } from 'src/app/services/rol/rp-mae-emp-cronologia.service.service';
 import {
   EmpleadoFichaService,
-  EmpleadoFichaResponse
+  EmpleadoFichaResponse,EmpleadoBusquedaResponse
 } from 'src/app/services/rol/empleado-ficha.service';
 
 import {
@@ -134,6 +147,13 @@ export class EmpleadoFichaComponent implements OnInit {
   tiposContrato: RpTipoContrato[] = [];
   cronologiaRowData: RpMaeEmpCronologiaResponse[] = [];
   idEmpleadoActual: number | null = null;
+
+  tiposGasto: any[] = [];
+  gastosRowData: (GastoSriEmpleadoResponse & { modificado?: boolean })[] = [];
+  gastosEliminados: number[] = [];
+  empleadosBusqueda: any[] = [];
+  empleadosFiltrados: any[] = [];
+  esNuevoEmpleado = false;
   nivelesInstruccion: RpNivelInstruccionResponse[] = [];
   cronologiaEliminados: number[] = [];
   bancos: any[] = [];
@@ -148,7 +168,7 @@ export class EmpleadoFichaComponent implements OnInit {
   tiposDiscapacidad: any[] = [];
   academicosRowData: (RpMaeEmpFormacionResponse & { modificado?: boolean })[] = [];
   academicosEliminados: number[] = [];
-
+  idPersonaActual: number | null = null;
   cronologiaColumnDefs: ColDef[] = [
     {
       headerName: 'Fecha Ingreso',
@@ -609,39 +629,96 @@ export class EmpleadoFichaComponent implements OnInit {
     floatingFilter: false
   };
 
-  gastosRowData: any[] = [];
-
   gastosColumnDefs: ColDef[] = [
     {
       headerName: 'Código',
-      field: 'codigo',
-      width: 120
+      field: 'idGasSri',
+      width: 100,
+      editable: false
     },
     {
       headerName: 'Tipo de Gasto',
-      field: 'tipoGasto',
+      field: 'idTipoGasto',
+      editable: true,
       minWidth: 220,
-      flex: 1
+
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: () => ({
+        values: this.tiposGasto.map(x => Number(x.idTipoGasto))
+      }),
+      valueFormatter: (p: any) => {
+        const item = this.tiposGasto.find(x =>
+          Number(x.idTipoGasto) === Number(p.value)
+        );
+
+        return item?.descripcion ?? p.data?.tipoGasto ?? '';
+      },
+      valueParser: (p: any) => Number(p.newValue),
+      onCellValueChanged: (p: any) => {
+        const item = this.tiposGasto.find(x =>
+          Number(x.idTipoGasto) === Number(p.data.idTipoGasto)
+        );
+
+        p.data.tipoGasto = item?.descripcion ?? null;
+        p.data.montoMaximo = item?.monto ?? null;
+        p.data.modificado = true;
+
+        if (p.node) {
+          p.api.refreshCells({
+            rowNodes: [p.node],
+            columns: ['montoMaximo'],
+            force: true
+          });
+        }
+      }
     },
     {
       headerName: 'Monto Máximo',
       field: 'montoMaximo',
       width: 160,
-      type: 'numericColumn'
+      editable: false
     },
     {
       headerName: 'Valor Proyectado',
-      field: 'valorProyectado',
+      field: 'montoProyectado',
       width: 170,
       type: 'numericColumn',
-      editable: true
+      editable: true,
+      valueParser: (p: any) => {
+        const value = Number(p.newValue);
+        return isNaN(value) ? null : value;
+      },
+      onCellValueChanged: (p: any) => {
+        p.data.modificado = true;
+      }
     },
     {
       headerName: 'Valor Real',
-      field: 'valorReal',
-      width: 160,
+      field: 'montoReal',
+      width: 120,
       type: 'numericColumn',
-      editable: true
+      editable: true,
+      valueParser: (p: any) => {
+        const value = Number(p.newValue);
+        return isNaN(value) ? null : value;
+      },
+      onCellValueChanged: (p: any) => {
+        p.data.modificado = true;
+      }
+    },
+    {
+      headerName: '',
+      width: 50,
+      minWidth: 50,
+      maxWidth:50,
+      pinned: 'right',
+      suppressSizeToFit: true,
+      cellRenderer: () => `
+      <button class="btn-grid-delete" title="Eliminar">
+        <span class="material-icons">delete</span>
+      </button>
+    `,
+      onCellClicked: (p: any) => this.eliminarFilaGasto(p.data)
     }
   ];
 
@@ -651,32 +728,107 @@ export class EmpleadoFichaComponent implements OnInit {
     filter: true,
     floatingFilter: false
   };
-  observacionRowData: any[] = [];
+
 
   observacionColumnDefs: ColDef[] = [
     {
       headerName: 'Fecha',
       field: 'fecha',
-      width: 160
-    },
-    {
-      headerName: 'Usuario',
-      field: 'usuario',
-      width: 180
+      editable: true,
+      width: 140,
+      cellEditor: 'agDateStringCellEditor',
+      valueFormatter: p => formatFechaGrid(p.value),
+      onCellValueChanged: p => p.data.modificado = true
     },
     {
       headerName: 'Tipo',
-      field: 'tipo',
-      width: 160
+      field: 'idTipoObservacion',
+      editable: true,
+      width: 180,
+      cellEditor: 'agSelectCellEditor',
+      cellEditorParams: () => ({
+        values: this.tiposObservacion.map(x => Number(x.idTipoObservacion))
+      }),
+      valueFormatter: p => {
+        const item = this.tiposObservacion.find(x =>
+          Number(x.idTipoObservacion) === Number(p.value)
+        );
+
+        return item?.descripcion ?? p.data?.tipoObservacion ?? '';
+      },
+      valueParser: p => Number(p.newValue),
+      onCellValueChanged: p => {
+        const item = this.tiposObservacion.find(x =>
+          Number(x.idTipoObservacion) === Number(p.data.idTipoObservacion)
+        );
+
+        p.data.tipoObservacion = item?.descripcion ?? null;
+        p.data.modificado = true;
+      }
     },
     {
-      headerName: 'Observación',
-      field: 'observacion',
-      flex: 1,
-      minWidth: 300,
+      headerName: 'Detalle',
+      field: 'detalle',
       editable: true,
+      flex: 1,
+      minWidth: 280,
       wrapText: true,
-      autoHeight: true
+      autoHeight: true,
+      onCellValueChanged: p => p.data.modificado = true
+    },
+    {
+      headerName: 'Unidad Tiempo',
+      field: 'unidadTiempo',
+      editable: true,
+      width: 150,
+      onCellValueChanged: p => p.data.modificado = true
+    },
+    {
+      headerName: 'Tiempo',
+      field: 'tiempo',
+      editable: true,
+      width: 100,
+      onCellValueChanged: p => p.data.modificado = true
+    },
+    {
+      headerName: 'Incluir Nómina',
+      field: 'incluirNomina',
+      width: 140,
+      editable: false,
+      cellRenderer: (params: any) => {
+        const checked = params.data?.incluirNomina === true;
+
+        return `
+        <div class="custom-check ${checked ? 'checked' : ''}">
+          ${checked ? '✓' : ''}
+        </div>
+      `;
+      },
+      onCellClicked: p => {
+        p.data.incluirNomina = p.data.incluirNomina !== true;
+        p.data.modificado = true;
+        p.api.refreshCells({ rowNodes: [p.node], force: true });
+      }
+    },
+    {
+      headerName: '',
+      width: 34,
+      minWidth: 34,
+      maxWidth: 34,
+      pinned: 'right',
+      suppressSizeToFit: true,
+      cellStyle: {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '0'
+      },
+      cellRenderer: () => `
+      <button class="btn-grid-delete" title="Eliminar">
+        <span class="material-icons">delete</span>
+      </button>
+    `,
+      onCellClicked: p => this.eliminarFilaObservacion(p.data)
     }
   ];
 
@@ -808,7 +960,9 @@ export class EmpleadoFichaComponent implements OnInit {
     'tipo',
     'observacion'
   ];
-
+  tiposObservacion: TipoObservacion[] = [];
+  observacionRowData: (ObservacionEmpleadoResponse & { modificado?: boolean })[] = [];
+  observacionEliminados: number[] = [];
   cargasData: any[] = [];
   gastosData: any[] = [];
   observacionData: any[] = [];
@@ -842,16 +996,27 @@ export class EmpleadoFichaComponent implements OnInit {
     private cargasEmpleadoService: CargasEmpleadoService,
     private tipoDiscapacidadService: RpTipoDiscapacidadService,
     private formacionService: RpMaeEmpFormacionService,
+    private empleadoSyncService: EmpleadoSyncService,
+    private observacionesEmpleadoService: ObservacionesEmpleadoService,
+    private tipoObservacionService: TipoObservacionService,
+    private gastosSriEmpleadoService: GastosSriEmpleadoService,
+    private tipoGastoService: TipoGastoService,
   ) { }
 
-  ngOnInit(): void {
-    this.crearFormulario();
-    this.cargarCatalogos();
-  }
+ ngOnInit(): void {
+  this.crearFormulario();
+
+  this.form.get('datosGenerales.empleadoBusqueda')?.valueChanges.subscribe(valor => {
+    this.cargarEmpleadosBusqueda(valor ?? '');
+  });
+
+  this.cargarCatalogos();
+}
 
   crearFormulario(): void {
     this.form = this.fb.group({
       datosGenerales: this.fb.group({
+        empleadoBusqueda: [''],
         codigoEmpleado: [''],
         tipoDocumento: [null],
         identificacion: [''],
@@ -997,9 +1162,13 @@ export class EmpleadoFichaComponent implements OnInit {
       sectoriales: this.sectorialService.getAll(),
       tiposDiscapacidad: this.tipoDiscapacidadService.getAll(),
       nivelInstruccion: this.nivelInstruccionService.getAll(),
-
+      tiposObservacion: this.tipoObservacionService.getTiposObservacion(),
+      tiposGasto: this.tipoGastoService.getAll(),
+      empleados: this.empleadoFichaService.getFicha(),
     }).subscribe({
-      next: ({ departamentos, cargos, tiposEmpleado, tiposDocumento, estadosCivil, generos, locales, zonas, ciudades, ciudadesTrabajo, nacionalidades, gruposOcupacionales, regimenes, tiposSangre, tiposContrato, bancos, formasPago, bancosTerceros, tiposCuentaBanco, sectoriales, tiposDiscapacidad, nivelInstruccion }) => {
+      next: ({ departamentos, cargos, tiposEmpleado, tiposDocumento, estadosCivil, generos, locales, zonas, ciudades, ciudadesTrabajo, nacionalidades, gruposOcupacionales, regimenes, tiposSangre, tiposContrato, bancos, formasPago, bancosTerceros, tiposCuentaBanco, sectoriales, tiposDiscapacidad, nivelInstruccion, tiposObservacion, tiposGasto, empleados }) => {
+        this.empleadosBusqueda = empleados.data ?? [];
+        this.empleadosFiltrados = this.empleadosBusqueda;
         this.departamentos = departamentos.map(dep => ({
           ...dep,
           id_departamento: Number(dep.id_departamento)
@@ -1103,6 +1272,17 @@ export class EmpleadoFichaComponent implements OnInit {
           id_nivel_instruccion: Number(x.id_nivel_instruccion ?? x.idNivelInstruccion ?? x.IdNivelInstruccion),
           descripcion: x.descripcion ?? x.Descripcion ?? ''
         }));
+        this.tiposObservacion = (tiposObservacion ?? []).map(x => ({
+          idTipoObservacion: Number(x.idTipoObservacion),
+          descripcion: x.descripcion,
+          estado: x.estado
+        }));
+        this.tiposGasto = (tiposGasto.data ?? []).map((x: any) => ({
+          ...x,
+          idTipoGasto: Number(x.idTipoGasto ?? x.id_tipo_gasto),
+          descripcion: x.descripcion ?? '',
+          monto: x.monto ?? x.Monto ?? null
+        }));
         this.cargarFichaEmpleado();
       },
       error: (err: any) => {
@@ -1112,20 +1292,26 @@ export class EmpleadoFichaComponent implements OnInit {
   }
 
   cargarFichaEmpleado(idEmpleado?: number): void {
+
     this.empleadoFichaService.getFicha(idEmpleado).subscribe({
       next: (resp) => {
         if (resp.type !== 'LIST' || !resp.data || resp.data.length === 0) {
           console.warn(resp.message || 'No se encontró empleado');
           return;
         }
-
         const emp: EmpleadoFichaResponse = resp.data[0];
+
+        this.esNuevoEmpleado = false;
+        this.idEmpleadoActual = Number(emp.idEmpleado);
+        this.idPersonaActual = (emp as any).idPersona ?? null;
         this.idEmpleadoActual = Number(emp.idEmpleado);
         if (this.idEmpleadoActual && !isNaN(this.idEmpleadoActual)) {
           this.cargarCronologiaEmpleado(this.idEmpleadoActual);
           this.cargarHistorialBancoEmpleado(this.idEmpleadoActual);
           this.cargarCargasEmpleado(this.idEmpleadoActual);
           this.cargarFormacionEmpleado(this.idEmpleadoActual);
+          this.cargarObservacionesEmpleado(this.idEmpleadoActual);
+          this.cargarGastosSriEmpleado(this.idEmpleadoActual);
         }
         const nombreCompleto =
           emp.nombre ||
@@ -1220,24 +1406,121 @@ export class EmpleadoFichaComponent implements OnInit {
     });
 
   }
-
   nuevo(): void {
+    this.esNuevoEmpleado = true;
+    this.idEmpleadoActual = null;
+    this.idPersonaActual = null;
+    this.ultimoEmpleadoConsultado = null;
+
+    this.cronologiaRowData = [];
+    this.bancoRowData = [];
+    this.cargasRowData = [];
+    this.academicosRowData = [];
+    this.referenciaRowData = [];
+    this.gastosRowData = [];
+    this.observacionRowData = [];
+    this.observacionRowData = [];
+    this.observacionEliminados = [];
+
+    this.cronologiaEliminados = [];
+    this.bancoEliminados = [];
+    this.cargasEliminadas = [];
+    this.academicosEliminados = [];
+    this.gastosRowData = [];
+    this.gastosEliminados = [];
     this.form.reset({
       datosGenerales: {
+        empleadoBusqueda: '',
+        codigoEmpleado: '',
         tipoDocumento: null,
+        identificacion: '',
         sexo: null,
+        nombres: '',
+        apellidos: '',
+        estadoCivil: null,
+        fechaNacimiento: '',
+        ciudad: null,
+        direccion: '',
+        telefono: '',
+        celular: '',
+        nacionalidad: null,
+        email: '',
+        linkFoto: null,
+        zona: null,
+        ciudadTrabajo: null,
+        local: null,
         departamento: null,
         cargo: null,
-        tipoEmpleado: null
+        tipoEmpleado: null,
+        grupoOcupacion: null,
+        empresaAportacion: ''
+      },
+      datosAdicionales: {
+        empleado: '',
+        noRecibeProvisiones: false,
+        pagoDecimoCuarto: false,
+        pagoDecimoTercero: false,
+        pagoFondosReserva: false,
+        terceraEdad: false,
+        fechaPagoDecimoInicio: '',
+        fechaPagoDecimoFin: '',
+        regimen: null,
+        gerenteRepLegal: false,
+        noPagaImpuestoRenta: false,
+        cargaConyugeUtilidades: false,
+        cargaHijosUtilidades: '',
+        establecimiento: '',
+        codigoSectorialIess: null,
+        grupoSanguineo: null,
+        rucEmpresaComplementaria: '',
+        libretaMilitar: ''
+      },
+      datosSalariales: {
+        empleado: '',
+        fechaSalario: '',
+        salario: '',
+        valorHoraNormal: '',
+        valorHoraEspecial: '',
+        incluyeAportacion: false,
+        anticipoQuincenal1: '',
+        anticipoQuincenal2: '',
+        retencionJudicial: false,
+        valoresRetencion: ''
+      },
+      datosAcademicos: {
+        empleado: ''
+      },
+      datosEspeciales: {
+        empleado: '',
+        residenciaTrabajador: '',
+        aplicaConvenio: '',
+        sistemaSalarioNeto: '',
+        paisResidencia: '',
+        beneficioGalapagos: false,
+        ingresosAgraviados: '',
+        aportePersonalIess: '',
+        valorImpuestoRetenido: '',
+        compensacionEconomicaDigna: '',
+        discapacitado: false,
+        carnetConadis: '',
+        condicionTrabajador: '',
+        tipoDiscapacidad: '',
+        porcentajeDiscapacidad: '',
+        discapacitadoSustituto: false,
+        descripcionDiscapacidad: '',
+        tipoIdentidad: '',
+        identificacion: '',
+        nombreDiscapacidad: ''
       }
-    });
+    }, { emitEvent: false });
   }
 
   grabar(): void {
-    this.guardarCronologia();
-    this.guardarHistorialBanco();
-    this.guardarCargas();
-    this.guardarFormacion();
+    this.guardarEmpleadoPrincipal();
+    // this.guardarCronologia();
+    // this.guardarHistorialBanco();
+    // this.guardarCargas();
+    // this.guardarFormacion();
   }
 
   borrar(): void {
@@ -1245,7 +1528,8 @@ export class EmpleadoFichaComponent implements OnInit {
   }
 
   cancelar(): void {
-    console.log('Cancelar');
+    this.nuevo();
+  this.limpiarBusquedaEmpleado();
   }
 
   agregarNomina(): void {
@@ -1354,6 +1638,7 @@ export class EmpleadoFichaComponent implements OnInit {
     this.cronologiaRowData = this.cronologiaRowData.filter(x => x !== row);
   }
   guardarCronologia(): void {
+
     if (!this.idEmpleadoActual) {
       alert('Primero debe seleccionar un empleado.');
       return;
@@ -1397,7 +1682,7 @@ export class EmpleadoFichaComponent implements OnInit {
         if (resp.type === 'Success') {
           this.cronologiaEliminados = [];
           this.cargarCronologiaEmpleado(this.idEmpleadoActual!);
-          alert('Cronología guardada correctamente.');
+          //alert('Cronología guardada correctamente.');
         } else {
           alert(resp.message ?? 'No se pudo guardar la cronología.');
         }
@@ -1831,4 +2116,357 @@ export class EmpleadoFichaComponent implements OnInit {
       }
     }, { emitEvent: false });
   }
+  guardarEmpleadoPrincipal(): void {
+    const dg = this.form.get('datosGenerales')?.value;
+    const da = this.form.get('datosAdicionales')?.value;
+    const ds = this.form.get('datosSalariales')?.value;
+    const de = this.form.get('datosEspeciales')?.value;
+
+    const request: SyncEmpleadoRequest = {
+      idEmpleado: this.esNuevoEmpleado ? null : this.idEmpleadoActual,
+      idPersona: this.esNuevoEmpleado ? null : this.idPersonaActual,
+
+      documento: dg.identificacion ?? '',
+      nombre1: dg.nombres ?? '',
+      nombre2: null,
+      apellido1: dg.apellidos ?? '',
+      apellido2: null,
+      fechaNacimiento: dg.fechaNacimiento || null,
+      idEstadoCivil: Number(dg.estadoCivil ?? 1),
+      tipoPersona: 'N',
+      idTipoDocumento: Number(dg.tipoDocumento ?? 1),
+      idGenero: dg.sexo ? Number(dg.sexo) : null,
+      idCiudad: Number(dg.ciudad ?? 1),
+      direccion: dg.direccion ?? null,
+      telefono: dg.telefono ?? null,
+      email: dg.email ?? null,
+      status: true,
+
+      idEmpresa: 1,
+      idCargo: Number(dg.cargo ?? 1),
+      idTipemp: Number(dg.tipoEmpleado ?? 1),
+      idNacionalidad: Number(dg.nacionalidad ?? 1),
+
+      carcony: da.cargaConyugeUtilidades === true,
+      carhijos: da.cargaHijosUtilidades ? Number(da.cargaHijosUtilidades) : null,
+      numafil: null,
+      idSectorial: da.codigoSectorialIess ? Number(da.codigoSectorialIess) : null,
+      foto: dg.linkFoto ?? null,
+      idTipoSangre: da.grupoSanguineo ? Number(da.grupoSanguineo) : null,
+      codcentel: null,
+      ctaCble: null,
+
+      provisiones: da.noRecibeProvisiones === false,
+      decimos: da.pagoDecimoCuarto === true,
+      decimo3ro: da.pagoDecimoTercero === true,
+      freserva: da.pagoFondosReserva === true,
+
+      idRegimen: da.regimen ? Number(da.regimen) : null,
+      discap: de.discapacitado === true,
+      teredad: da.terceraEdad === true,
+      idEmpresaComplementaria: null,
+      galapagos: de.beneficioGalapagos === true,
+      enfcatastro: false,
+
+      retJudicial: ds.retencionJudicial === true,
+      valorRetencionJ: ds.valoresRetencion ? Number(ds.valoresRetencion) : null,
+      idGrupoOcupacional: dg.grupoOcupacion ? Number(dg.grupoOcupacion) : null,
+      repLegal: da.gerenteRepLegal === true,
+      impRenta: da.noPagaImpuestoRenta === false,
+      idObs: null,
+
+      fechaSueldo: ds.fechaSalario || null,
+      sueldo: ds.salario ? Number(ds.salario) : null,
+      valorHora: ds.valorHoraNormal ? Number(ds.valorHoraNormal) : null,
+      valorHoraEspe: ds.valorHoraEspecial ? Number(ds.valorHoraEspecial) : null,
+      valhorain: ds.incluyeAportacion === true,
+      quincena: ds.anticipoQuincenal1 ? Number(ds.anticipoQuincenal1) : null,
+      quincenaIi: ds.anticipoQuincenal2 ? Number(ds.anticipoQuincenal2) : null,
+
+      idZona: dg.zona ? Number(dg.zona) : null,
+      idLocal: dg.local ? Number(dg.local) : null,
+      idGasSri: null,
+      idDepartamento: dg.departamento ? Number(dg.departamento) : null,
+      fecNac: dg.fechaNacimiento || null,
+      idCiudadTrabajo: dg.ciudadTrabajo ? Number(dg.ciudadTrabajo) : null,
+      feinivac: da.fechaPagoDecimoInicio || null,
+      fefinvac: da.fechaPagoDecimoFin || null,
+      establecimiento: da.establecimiento ?? null,
+      lmilitar: da.libretaMilitar ?? null
+    };
+
+    console.log('SYNC EMPLEADO:', request);
+
+    this.empleadoSyncService.sync(request).subscribe({
+      next: (resp) => {
+        if (resp.type === 'Success') {
+          this.idEmpleadoActual = resp.data;
+          this.esNuevoEmpleado = false;
+          this.esNuevoEmpleado = false;
+          this.guardarCronologia();
+          this.guardarHistorialBanco();
+          this.guardarCargas();
+          this.guardarFormacion();
+          this.guardarObservaciones();
+          this.guardarGastosSri();
+
+          alert('Empleado guardado correctamente.');
+        } else {
+          alert(resp.message ?? 'No se pudo guardar el empleado.');
+        }
+      },
+      error: (err) => {
+        console.error('Error guardando empleado:', err);
+        alert('Error guardando empleado.');
+      }
+    });
+  }
+  agregarFilaObservacion(): void {
+    if (!this.idEmpleadoActual) {
+      alert('Primero debe guardar o seleccionar un empleado.');
+      return;
+    }
+
+    this.observacionRowData = [
+      ...this.observacionRowData,
+      {
+        idObs: 0,
+        idEmpresa: 1,
+        idEmpleado: this.idEmpleadoActual,
+        fecha: null,
+        detalle: null,
+        unidadTiempo: null,
+        tiempo: null,
+        incluirNomina: false,
+        idTipoObservacion: 0,
+        tipoObservacion: null,
+        idDoc: 0,
+        idTipoVacacion: 0,
+        estado: true,
+        modificado: true
+      }
+    ];
+  }
+  cargarObservacionesEmpleado(idEmpleado: number): void {
+    this.observacionesEmpleadoService.getByEmpleado(idEmpleado).subscribe({
+      next: resp => {
+        this.observacionRowData = resp.data ?? [];
+      },
+      error: err => {
+        console.error('Error cargando observaciones:', err);
+        this.observacionRowData = [];
+      }
+    });
+  }
+  guardarObservaciones(): void {
+    if (!this.idEmpleadoActual) return;
+
+    const crear = this.observacionRowData
+      .filter(x => !x.idObs || x.idObs === 0)
+      .map(x => ({
+        idEmpresa: x.idEmpresa ?? 1,
+        idEmpleado: this.idEmpleadoActual!,
+        fecha: x.fecha ?? null,
+        detalle: x.detalle ?? null,
+        unidadTiempo: x.unidadTiempo ?? null,
+        tiempo: x.tiempo ?? null,
+        incluirNomina: x.incluirNomina === true,
+        idTipoObservacion: Number(x.idTipoObservacion ?? 0),
+        idDoc: x.idDoc ?? 0,
+        idTipoVacacion: x.idTipoVacacion ?? 0,
+        estado: x.estado ?? true
+      }));
+
+    const actualizar = this.observacionRowData
+      .filter(x => x.idObs && x.idObs > 0 && x.modificado === true)
+      .map(x => ({
+        idObs: x.idObs,
+        idEmpresa: x.idEmpresa ?? 1,
+        idEmpleado: this.idEmpleadoActual!,
+        fecha: x.fecha ?? null,
+        detalle: x.detalle ?? null,
+        unidadTiempo: x.unidadTiempo ?? null,
+        tiempo: x.tiempo ?? null,
+        incluirNomina: x.incluirNomina === true,
+        idTipoObservacion: Number(x.idTipoObservacion ?? 0),
+        idDoc: x.idDoc ?? 0,
+        idTipoVacacion: x.idTipoVacacion ?? 0,
+        estado: x.estado ?? true
+      }));
+
+    const eliminar = this.observacionEliminados ?? [];
+
+    if (crear.length === 0 && actualizar.length === 0 && eliminar.length === 0) {
+      return;
+    }
+
+    this.observacionesEmpleadoService.sync({
+      crear,
+      actualizar,
+      eliminar
+    }).subscribe({
+      next: resp => {
+        if (resp.type === 'Success') {
+          this.observacionEliminados = [];
+          this.cargarObservacionesEmpleado(this.idEmpleadoActual!);
+        } else {
+          alert(resp.message ?? 'No se pudo guardar observaciones.');
+        }
+      },
+      error: err => {
+        console.error('Error guardando observaciones:', err);
+        alert('Error guardando observaciones.');
+      }
+    });
+  }
+  eliminarFilaObservacion(row: any): void {
+    if (!row) return;
+
+    if (row.idObs && row.idObs > 0) {
+      this.observacionEliminados.push(row.idObs);
+    }
+
+    this.observacionRowData = this.observacionRowData.filter(x => x !== row);
+  }
+  cargarGastosSriEmpleado(idEmpleado: number): void {
+    this.gastosSriEmpleadoService.getByEmpleado(idEmpleado).subscribe({
+      next: resp => {
+        this.gastosRowData = resp.data ?? [];
+      },
+      error: err => {
+        console.error('Error cargando gastos SRI:', err);
+        this.gastosRowData = [];
+      }
+    });
+  }
+  agregarFilaGasto(): void {
+    if (!this.idEmpleadoActual) {
+      alert('Primero debe guardar o seleccionar un empleado.');
+      return;
+    }
+
+    this.gastosRowData = [
+      ...this.gastosRowData,
+      {
+        idGasSri: 0,
+        idEmpresa: 1,
+        idEmpleado: this.idEmpleadoActual,
+        idTipoGasto: 0,
+        tipoGasto: null,
+        montoMaximo: null,
+        montoProyectado: null,
+        montoReal: null,
+        modificado: true
+      }
+    ];
+  }
+  eliminarFilaGasto(row: any): void {
+    if (!row) return;
+
+    if (row.idGasSri && row.idGasSri > 0) {
+      this.gastosEliminados.push(row.idGasSri);
+    }
+
+    this.gastosRowData = this.gastosRowData.filter(x => x !== row);
+  }
+
+  guardarGastosSri(): void {
+    if (!this.idEmpleadoActual) return;
+
+    const crear = this.gastosRowData
+      .filter(x => !x.idGasSri || x.idGasSri === 0)
+      .map(x => ({
+        idEmpresa: x.idEmpresa ?? 1,
+        idEmpleado: this.idEmpleadoActual!,
+        idTipoGasto: Number(x.idTipoGasto ?? 0),
+        montoProyectado: x.montoProyectado ? Number(x.montoProyectado) : null,
+        montoReal: x.montoReal ? Number(x.montoReal) : null
+      }));
+
+    const actualizar = this.gastosRowData
+      .filter(x => x.idGasSri && x.idGasSri > 0 && x.modificado === true)
+      .map(x => ({
+        idGasSri: x.idGasSri,
+        idEmpresa: x.idEmpresa ?? 1,
+        idEmpleado: this.idEmpleadoActual!,
+        idTipoGasto: Number(x.idTipoGasto ?? 0),
+        montoProyectado: x.montoProyectado ? Number(x.montoProyectado) : null,
+        montoReal: x.montoReal ? Number(x.montoReal) : null
+      }));
+
+    const eliminar = this.gastosEliminados ?? [];
+
+    if (crear.length === 0 && actualizar.length === 0 && eliminar.length === 0) {
+      return;
+    }
+
+    this.gastosSriEmpleadoService.sync({
+      crear,
+      actualizar,
+      eliminar
+    }).subscribe({
+      next: resp => {
+        if (resp.type === 'Success') {
+          this.gastosEliminados = [];
+          this.cargarGastosSriEmpleado(this.idEmpleadoActual!);
+        } else {
+          alert(resp.message ?? 'No se pudo guardar gastos SRI.');
+        }
+      },
+      error: err => {
+        console.error('Error guardando gastos SRI:', err);
+        alert('Error guardando gastos SRI.');
+      }
+    });
+  }
+filtrarEmpleadosBusqueda(): void {
+  const texto = (this.form.get('datosGenerales.empleadoBusqueda')?.value ?? '')
+    .toString()
+    .toLowerCase()
+    .trim();
+
+  this.empleadosFiltrados = this.empleadosBusqueda.filter(e =>
+    `${e.idEmpleado ?? ''} ${e.nombres ?? ''} ${e.apellidos ?? ''} ${e.documento ?? ''}`
+      .toLowerCase()
+      .includes(texto)
+  );
+}
+seleccionarEmpleadoBusqueda(emp: EmpleadoBusquedaResponse): void {
+  this.form.get('datosGenerales.empleadoBusqueda')?.setValue(
+    emp.nombreCompleto,
+    { emitEvent: false }
+  );
+
+  this.limpiarFichaEmpleado();
+  this.cargarFichaEmpleado(Number(emp.idEmpleado));
+}
+cargarEmpleadosBusqueda(texto: string = ''): void {
+  this.empleadoFichaService.getBusqueda(texto).subscribe({
+    next: resp => {
+      this.empleadosBusqueda = resp.data ?? [];
+      this.empleadosFiltrados = this.empleadosBusqueda;
+    },
+    error: err => {
+      console.error('Error cargando empleados:', err);
+      this.empleadosBusqueda = [];
+      this.empleadosFiltrados = [];
+    }
+  });
+}
+limpiarBusquedaEmpleado(): void {
+  this.form.get('datosGenerales.empleadoBusqueda')?.setValue('');
+  this.empleadosFiltrados = [];
+}
+mostrarMensajeExito(titulo: string, mensaje: string): void {
+  this.dialog.open(CustomMessageBoxComponent, {
+    width: '360px',
+    disableClose: true,
+    data: {
+      tipo: 'success',
+      titulo,
+      mensaje,
+      textoBoton: 'Continuar'
+    }
+  });
+}
 }
