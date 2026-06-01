@@ -2457,16 +2457,5 @@ limpiarBusquedaEmpleado(): void {
   this.form.get('datosGenerales.empleadoBusqueda')?.setValue('');
   this.empleadosFiltrados = [];
 }
-mostrarMensajeExito(titulo: string, mensaje: string): void {
-  this.dialog.open(CustomMessageBoxComponent, {
-    width: '360px',
-    disableClose: true,
-    data: {
-      tipo: 'success',
-      titulo,
-      mensaje,
-      textoBoton: 'Continuar'
-    }
-  });
-}
+
 }
