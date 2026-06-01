@@ -13,5 +13,6 @@ export interface GrabarDecimosRequest {
   idTipoNomEsp: number;
   forzar: boolean;
   idUsuario: number;
+  fechaHasta: string;
   empleados: DecimosEmpleadoResponse[];
 }

@@ -12,11 +12,33 @@ import { RpTipEmpService } from 'src/app/services/tipo-empleado.service';
 import { TipoNominaEspService } from 'src/app/services/rol/tipo-nomina-esp.service';
 import { DecimosService } from 'src/app/services/rol/decimos.service';
 import { RpTipEmpResponse } from 'src/app/interfaces/responses/tipo-empleado-response';
+import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/material/core';
+import { MAT_MOMENT_DATE_ADAPTER_OPTIONS, MomentDateAdapter } from '@angular/material-moment-adapter';
+import { DecimosExportConfig, DecimosExportService } from 'src/app/reports/decimos-export.service';
+import { PeriodosNominaDialogComponent, PeriodosNominaDialogData, PeriodosNominaDialogResult } from '../dialogs/periodos-nomina-dialog.component';
+import { GenerarArchivoPichinchaRequest } from 'src/app/interfaces/requests/generar-archivo-request';
 
 @Component({
   selector: 'app-decimo-tercero',
   templateUrl: './decimo-tercero.component.html',
-  styleUrls: ['./decimo-tercero.component.css']
+  styleUrls: ['./decimo-tercero.component.css'],
+  providers: [
+    { provide: MAT_DATE_LOCALE, useValue: 'es-EC' },
+    {
+      provide: DateAdapter,
+      useClass: MomentDateAdapter,
+      deps: [MAT_DATE_LOCALE, MAT_MOMENT_DATE_ADAPTER_OPTIONS]
+    },
+    { provide: MAT_DATE_FORMATS, useValue: {
+      parse: { dateInput: 'DD/MM/YYYY' },
+      display: {
+        dateInput: 'DD/MM/YYYY',
+        monthYearLabel: 'MMM YYYY',
+        dateA11yLabel: 'LL',
+        monthYearA11yLabel: 'MMMM YYYY'
+      }
+    }}
+  ]
 })
 export class DecimoTerceroComponent implements OnInit {
 
@@ -24,7 +46,7 @@ export class DecimoTerceroComponent implements OnInit {
   form!: FormGroup;
   loading = false;
   grabando = false;
-
+  datosDesdeDB = false;
   // ===== SESIÓN =====
   usuarioActual: LoginUsuarioResponse | null = null;
   idUsuario!: number;
@@ -35,6 +57,8 @@ export class DecimoTerceroComponent implements OnInit {
   tiposEmpleado: RpTipEmpResponse[] = [];
   tiposNomina: TipoNominaEspResponse[] = [];
   idTipoNomEsp!: number; // se autodetecta por nombre
+  periodoLabel = '';
+  mostrarPeriodo = false; 
 
   // ===== AG GRID =====
   gridApi!: GridApi;
@@ -55,8 +79,18 @@ export class DecimoTerceroComponent implements OnInit {
       type: 'rightAligned',
       valueFormatter: (p: ValueFormatterParams) => this.formatMoneda(p.value)
     },
-    { headerName: 'Fec. Ingreso', field: 'fechaIngreso', width: 120 },
-    { headerName: 'Fec. Salida', field: 'fechaSalida', width: 120 },
+    { 
+      headerName: 'Fec. Ingreso', 
+      field: 'fechaIngreso', 
+      width: 120,
+      valueFormatter: (p: ValueFormatterParams) => this.formatFecha(p.value)
+    },
+    { 
+      headerName: 'Fec. Salida', 
+      field: 'fechaSalida', 
+      width: 120,
+      valueFormatter: (p: ValueFormatterParams) => this.formatFecha(p.value)
+    },
     { headerName: 'Observación', field: 'observaciones', width: 200 },
     {
       headerName: 'Descuento',
@@ -110,7 +144,9 @@ export class DecimoTerceroComponent implements OnInit {
     private empresaService: EmpresaService,
     private tipEmpService: RpTipEmpService,
     private tipoNominaService: TipoNominaEspService,
-    private decimosService: DecimosService
+    private decimosService: DecimosService,
+    private exportService: DecimosExportService
+
   ) {}
 
   ngOnInit(): void {
@@ -150,7 +186,13 @@ export class DecimoTerceroComponent implements OnInit {
 
     // Tipos de empleado
     this.tipEmpService.getAll().subscribe({
-      next: (resp) => this.tiposEmpleado = resp.data ?? []
+      next: (resp) => {
+        this.tiposEmpleado = (resp.data ?? []).filter(t =>
+          t.desTipemp.toUpperCase().includes('FIJO')
+        );
+        if (this.tiposEmpleado.length > 0)
+          this.form.patchValue({ idTipEmp: this.tiposEmpleado[0].idTipemp });
+      }
     });
 
     // Tipo nómina — autodetectar D13 por descripción
@@ -176,7 +218,67 @@ export class DecimoTerceroComponent implements OnInit {
       this.calcularSubtotales();
     }
   }
+  generarArchivo(): void {
+    if (!this.datosDesdeDB || !this.rowData.length) {
+      this.showError('Debe cargar un período grabado primero.');
+      return;
+    }
 
+    const empresaSeleccionada = this.empresas.find(
+      e => e.idEmpresa === this.form.value.idEmpresa
+    );
+
+    const fechaHastaRaw = this.form.value.fechaHasta;
+    const fechaHasta    = typeof fechaHastaRaw?.toDate === 'function'
+                          ? fechaHastaRaw.toDate()
+                          : new Date(fechaHastaRaw);
+
+    const request: GenerarArchivoPichinchaRequest = {
+      numPatronal:  empresaSeleccionada!.numPatronal!,
+      periodo:      fechaHasta.getFullYear().toString(),
+      idTipoNomEsp: this.idTipoNomEsp
+    };
+
+    this.decimosService.generarArchivoPichincha(request).subscribe({
+      next: (blob) => {
+        const url      = window.URL.createObjectURL(blob);
+        const a        = document.createElement('a');
+        a.href         = url;
+        a.download     = `ARCHIVO_DECIMO_${request.periodo}_PICHINCHA.txt`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: () => this.showError('Error al generar el archivo.')
+    });
+  }
+  exportar(formato: 'pdf' | 'excel'): void {
+    console.log('Géneros:', this.rowData.map(e => ({ nombre: e.nombreEmpleado, genero: e.genero })));
+    if (!this.rowData.length) {
+      this.showError('No hay datos para exportar. Calcule primero.');
+      return;
+    }
+
+    const empresaSeleccionada = this.empresas.find(
+      e => e.idEmpresa === this.form.value.idEmpresa
+    );
+
+    const config: DecimosExportConfig = {
+      tipoNomina:   'Décimo Tercero', // cambiar en D14
+      periodoDesde: this.periodoLabel.split('—')[0].trim(),
+      periodoHasta: this.periodoLabel.split('—')[1].trim(),
+      periodo:      new Date(this.form.value.fechaHasta).getFullYear().toString(),
+      empresa:      empresaSeleccionada?.nombre ?? '',
+      empleados:    this.rowData
+    };
+
+    if (formato === 'pdf') {
+      this.exportService.exportarPdfDetalle(config);
+      this.exportService.exportarPdfResumen(config);
+    } else {
+      this.exportService.exportarExcelDetalle(config);
+      this.exportService.exportarExcelResumen(config);
+    }
+  }
   // ===== CALCULAR =====
   calcular(): void {
     if (this.form.invalid) {
@@ -185,7 +287,7 @@ export class DecimoTerceroComponent implements OnInit {
     }
 
     if (!this.idTipoNomEsp) {
-      this.showError('No se encontró el tipo de nómina Décimo Tercero en el catálogo.');
+      this.showError('No se encontró el tipo de nómina en el catálogo.');
       return;
     }
 
@@ -197,15 +299,77 @@ export class DecimoTerceroComponent implements OnInit {
       this.showError('La empresa seleccionada no tiene número patronal.');
       return;
     }
+    
+    this.calcularPeriodoLabel();
+    this.mostrarPeriodo = true;
 
-    const fechaHasta = this.form.value.fechaHasta as Date;
+    const fechaHastaRaw = this.form.value.fechaHasta;
+    const fechaHasta    = typeof fechaHastaRaw?.toDate === 'function'
+                          ? fechaHastaRaw.toDate()
+                          : new Date(fechaHastaRaw);
+    const periodo       = fechaHasta.getFullYear().toString();
+    // Si ya cargué desde DB, recalcula directo sin verificar
+    if (this.datosDesdeDB) {
+      this.ejecutarCalcular(empresaSeleccionada.numPatronal!, fechaHasta);
+      return;
+    }
+    // 1. Verificar si ya existe
+    this.decimosService.existe(
+      empresaSeleccionada.numPatronal,
+      periodo,
+      this.idTipoNomEsp
+    ).subscribe({
+      next: (resp) => {
+        if (resp.data) {
+          this.dialog.open(CustomMessageBoxComponent, {
+            width: '450px',
+            data: {
+              title: 'Período ya registrado',
+              message: `Ya existe información grabada del período ${periodo}. Use el botón "Cargar" para recuperar los datos guardados.`,
+              type: 'info',
+              confirmText: 'Entendido',
+              showCancel: false
+            } as MessageBoxData
+          });
+        } else {
+          this.ejecutarCalcular(empresaSeleccionada.numPatronal!, fechaHasta);
+        }
+      },
+      error: () => this.showError('Error al verificar el período.')
+    });
+  }
 
-    const request = {
-      numPatronal:  empresaSeleccionada.numPatronal,
-      idTipEmp:     this.form.value.idTipEmp,
-      fechaHasta:   fechaHasta.toISOString().split('T')[0],
+  private ejecutarRecuperar(numPatronal: string, periodo: string): void {
+    this.loading = true;
+    this.decimosService.recuperar(numPatronal, periodo, this.idTipoNomEsp).subscribe({
+      next: (resp) => {
+        if (resp.type === 'ERROR') {
+          this.showError(resp.message ?? 'Error al recuperar.');
+        } else {
+          this.rowData = resp.data ?? [];
+          this.gridApi?.setGridOption('rowData', this.rowData);
+          this.calcularSubtotales();
+        }
+        this.loading = false;
+      },
+      error: () => {
+        this.showError('Error de conexión al recuperar.');
+        this.loading = false;
+      }
+    });
+  }
+
+  private ejecutarCalcular(numPatronal: string, fechaHasta: Date): void {
+    const request: any = {
+      numPatronal,
+      idTipEmp: this.form.value.idTipEmp,
+      fechaHasta: fechaHasta.toISOString().split('T')[0].split('T')[0],
       idTipoNomEsp: this.idTipoNomEsp
     };
+
+    // Solo D14 envía idRegimen
+    if (this.form.value.idRegimen)
+      request.idRegimen = this.form.value.idRegimen;
 
     this.loading = true;
     this.decimosService.calcular(request).subscribe({
@@ -233,42 +397,66 @@ export class DecimoTerceroComponent implements OnInit {
       return;
     }
 
-    const empresaSeleccionada = this.empresas.find(
-      e => e.idEmpresa === this.form.value.idEmpresa
-    );
+    // Confirmación antes de grabar
+    this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      data: {
+        title: 'Confirmar',
+        message: '¿Está seguro que desea grabar la información?',
+        type: 'warning',
+        confirmText: 'Sí, grabar',
+        cancelText: 'Cancelar',
+        showCancel: true
+      } as MessageBoxData
+    }).afterClosed().subscribe(confirmado => {
+      if (!confirmado) return;
 
-    const periodo = new Date(this.form.value.fechaHasta).getFullYear().toString();
+      const empresaSeleccionada = this.empresas.find(
+        e => e.idEmpresa === this.form.value.idEmpresa
+      );
 
-    // Verificar si ya existe
-    this.decimosService.existe(
-      empresaSeleccionada!.numPatronal!,
-      periodo,
-      this.idTipoNomEsp
-    ).subscribe({
-      next: (resp) => {
-        if (resp.data) {
-          // Ya existe — preguntar al usuario
-          this.dialog.open(CustomMessageBoxComponent, {
-            width: '450px',
-            data: {
-              title: 'Nómina Especial',
-              message: '¡Actualmente ya existe información generada del período solicitado! ¿Desea eliminar lo almacenado y generar nuevamente?',
-              type: 'warning',
-              confirmText: 'Sí, reemplazar',
-              cancelText: 'No',
-              showCancel: true
-            } as MessageBoxData
-          }).afterClosed().subscribe(confirmado => {
-            if (confirmado) this.ejecutarGrabado(empresaSeleccionada!.numPatronal!, periodo, true);
-          });
-        } else {
-          this.ejecutarGrabado(empresaSeleccionada!.numPatronal!, periodo, false);
+      const periodo = new Date(this.form.value.fechaHasta).getFullYear().toString();
+
+      const fechaHastaRaw = this.form.value.fechaHasta;
+      const fechaHasta    = typeof fechaHastaRaw?.toDate === 'function'
+                            ? fechaHastaRaw.toDate()
+                            : new Date(fechaHastaRaw);
+      this.decimosService.existe(
+        empresaSeleccionada!.numPatronal!,
+        periodo,
+        this.idTipoNomEsp
+      ).subscribe({
+        next: (resp) => {
+          if (resp.data) {
+            this.dialog.open(CustomMessageBoxComponent, {
+              width: '450px',
+              data: {
+                title: 'Nómina Especial',
+                message: '¡Ya existe información del período! ¿Desea eliminar lo almacenado y generar nuevamente?',
+                type: 'warning',
+                confirmText: 'Sí, reemplazar',
+                cancelText: 'No',
+                showCancel: true
+              } as MessageBoxData
+            }).afterClosed().subscribe(forzar => {
+              if (forzar)
+                this.ejecutarGrabado(empresaSeleccionada!.numPatronal!, periodo, true, fechaHasta);
+            });
+          } else {
+            this.ejecutarGrabado(empresaSeleccionada!.numPatronal!, periodo, false, fechaHasta);
+          }
         }
-      }
+      });
     });
   }
 
-  private ejecutarGrabado(numPatronal: string, periodo: string, forzar: boolean): void {
+  formatFecha(value: string | null): string {
+    if (!value) return '';
+    // Forzar parseo como fecha local sin conversión de timezone
+    const [anio, mes, dia] = value.split('T')[0].split('-');
+    return `${dia}/${mes}/${anio}`;
+  }
+  private ejecutarGrabado(numPatronal: string, periodo: string, forzar: boolean, fechaHasta: Date): void {
     this.grabando = true;
     this.decimosService.grabar({
       numPatronal,
@@ -276,12 +464,14 @@ export class DecimoTerceroComponent implements OnInit {
       idTipoNomEsp: this.idTipoNomEsp,
       forzar,
       idUsuario: this.idUsuario,
+      fechaHasta: fechaHasta.toISOString().split('T')[0],
       empleados: this.rowData
     }).subscribe({
       next: (resp) => {
         if (resp.type === 'ERROR') {
           this.showError(resp.message ?? 'Error al grabar.');
         } else {
+          this.datosDesdeDB = true;
           this.showSuccess('Información grabada correctamente.');
         }
         this.grabando = false;
@@ -304,16 +494,100 @@ export class DecimoTerceroComponent implements OnInit {
   private calcularLiquido(row: DecimosEmpleadoResponse): number {
     return (row.valorDecimo ?? 0) - (row.descuento ?? 0) - (row.retJudicial ?? 0);
   }
+
+  cargar(): void {
+    const empresaSeleccionada = this.empresas.find(
+      e => e.idEmpresa === this.form.value.idEmpresa
+    );
+
+    if (!empresaSeleccionada?.numPatronal) {
+      this.showError('Seleccione una empresa primero.');
+      return;
+    }
+
+    if (!this.idTipoNomEsp) {
+      this.showError('No se encontró el tipo de nómina en el catálogo.');
+      return;
+    }
+
+    this.dialog.open(PeriodosNominaDialogComponent, {
+      width: '700px',
+      data: {
+        numPatronal:  empresaSeleccionada.numPatronal,
+        idTipoNomEsp: this.idTipoNomEsp
+      } as PeriodosNominaDialogData
+    }).afterClosed().subscribe((result: PeriodosNominaDialogResult | null) => {
+      if (!result?.seleccionado) return;
+
+      const p = result.seleccionado;
+
+      this.decimosService.recuperar(
+        empresaSeleccionada.numPatronal!,
+        p.periodo,
+        p.idTipoNomEsp
+      ).subscribe({
+        next: (resp) => {
+          if (resp.type === 'ERROR') {
+            this.showError(resp.message ?? 'Error al cargar.');
+            return;
+          }
+
+          this.rowData     = resp.data ?? [];
+          this.datosDesdeDB = true;
+          this.mostrarPeriodo = true;
+
+          // Reconstruir el periodoLabel desde el período cargado
+          this.periodoLabel = `01/12/${parseInt(p.periodo) - 1} — 30/11/${p.periodo}`;
+          // Para D14 Sierra: this.periodoLabel = `01/08/${parseInt(p.periodo) - 1} — 31/07/${p.periodo}`;
+
+          this.gridApi?.setGridOption('rowData', this.rowData);
+          this.calcularSubtotales();
+        },
+        error: () => this.showError('Error de conexión al cargar.')
+      });
+    });
+  }
+
   cancelar(): void {
-    this.form.reset();
+    // Resetear solo los datos, no el formulario completo
     this.rowData = [];
+    this.datosDesdeDB = false;
+    this.mostrarPeriodo = false;
+    this.periodoLabel   = '';
     this.gridApi?.setGridOption('rowData', []);
     this.calcularSubtotales();
+
+    // Restaurar fecha actual y mantener los demás filtros
+    this.form.patchValue({ fechaHasta: new Date() });
   }
   // ===== HELPERS =====
   formatMoneda(value: number): string {
     if (value == null) return '$0.00';
     return '$' + Number(value).toFixed(2);
+  }
+
+  // Llamar en ngOnInit y cuando cambie la fecha
+  private calcularPeriodoLabel(): void {
+    const fechaRaw = this.form.value.fechaHasta;
+    if (!fechaRaw) return;
+
+    const fechaFin = typeof fechaRaw?.toDate === 'function'
+      ? fechaRaw.toDate()
+      : new Date(fechaRaw);
+
+    const año       = fechaFin.getFullYear();
+    const mesInicio = 12;
+    const añoInicio = fechaFin.getMonth() + 1 >= mesInicio ? año : año - 1;
+    const inicio    = new Date(añoInicio, mesInicio - 1, 1);
+
+    this.periodoLabel = `${this.formatFechaDate(inicio)} — ${this.formatFechaDate(fechaFin)}`;
+  }
+
+
+  private formatFechaDate(fecha: Date): string {
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    return `${dia}/${mes}/${fecha.getFullYear()}`;
   }
 
   private showError(message: string): void {

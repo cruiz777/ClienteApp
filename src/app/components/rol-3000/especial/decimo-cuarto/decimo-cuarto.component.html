@@ -1,6 +1,10 @@
 <div class="decimo-cuarto-container" [formGroup]="form">
+  <!-- Título con período -->
   <div class="title">
     <h2>Décimo Cuarto</h2>
+    <span class="periodo-label" *ngIf="mostrarPeriodo">
+      Período: {{ periodoLabel }}
+    </span>
   </div>
 
   <div class="filters-grid">
@@ -39,7 +43,7 @@
     </div>
 
     <div class="field-group">
-      <label>Fecha Hasta:</label>
+      <label>Periodo:</label>
       <mat-form-field appearance="outline">
         <input matInput [matDatepicker]="picker" formControlName="fechaHasta" />
         <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
@@ -67,30 +71,60 @@
         <span *ngIf="!loading">Calcular</span>
         <span *ngIf="loading">Calculando...</span>
       </button>
+      
+      <button mat-stroked-button type="button" (click)="cargar()">
+        Cargar
+      </button>
+
       <button mat-stroked-button type="button" (click)="grabar()" [disabled]="grabando || !rowData.length">
         <span *ngIf="!grabando">Grabar</span>
         <span *ngIf="grabando">Grabando...</span>
       </button>
-      <button mat-stroked-button type="button">Exportar</button>
+      <button mat-stroked-button [matMenuTriggerFor]="menuExportar"
+              [disabled]="!datosDesdeDB || !rowData.length">
+        Exportar ▾
+      </button>
+
+      <mat-menu #menuExportar="matMenu">
+        <button mat-menu-item (click)="exportar('pdf')">
+          PDF
+        </button>
+        <button mat-menu-item (click)="exportar('excel')">
+          Excel
+        </button>
+      </mat-menu>
+      <button mat-stroked-button [matMenuTriggerFor]="menuBanco"
+        [disabled]="!datosDesdeDB || !rowData.length">
+        Banco ▾
+      </button>
+
+      <mat-menu #menuBanco="matMenu">
+        <button mat-menu-item (click)="generarArchivo()">
+          Generar Archivo Trans.
+        </button>
+        <button mat-menu-item disabled>
+          Listado
+        </button>
+      </mat-menu>
       <button mat-stroked-button type="button" (click)="cancelar()">Cancelar</button>
     </div>
 
     <div class="summary-box">
       <div class="summary-row">
         <span>Total Décimo Cuarto</span>
-        <strong>$ {{ formatMoneda(totalValorDecimo) }}</strong>
+        <strong>{{ formatMoneda(totalValorDecimo) }}</strong>
       </div>
       <div class="summary-row">
         <span>Descuento</span>
-        <strong>$ {{ formatMoneda(totalDescuento) }}</strong>
+        <strong>{{ formatMoneda(totalDescuento) }}</strong>
       </div>
       <div class="summary-row">
         <span>Retención Judicial</span>
-        <strong>$ {{ formatMoneda(totalRetJudicial) }}</strong>
+        <strong>{{ formatMoneda(totalRetJudicial) }}</strong>
       </div>
       <div class="summary-row total-row">
         <span>Líquido a Recibir</span>
-        <strong>$ {{ formatMoneda(totalLiquido) }}</strong>
+        <strong>{{ formatMoneda(totalLiquido) }}</strong>
       </div>
     </div>
   </div>

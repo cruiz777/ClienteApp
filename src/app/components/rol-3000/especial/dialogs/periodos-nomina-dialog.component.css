@@ -1,0 +1,33 @@
+.dialog-container {
+  min-width: 600px;
+
+  .loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px;
+    gap: 16px;
+    color: #666;
+  }
+
+  .empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 32px;
+    color: #999;
+
+    mat-icon {
+      font-size: 48px;
+      width: 48px;
+      height: 48px;
+    }
+  }
+
+  .tabla-periodos {
+    width: 100%;
+
+    .center { text-align: center; }
+    .right  { text-align: right; }
+  }
+}
