@@ -80,6 +80,19 @@
           Excel
         </button>
       </mat-menu>
+      <button mat-stroked-button [matMenuTriggerFor]="menuBanco"
+        [disabled]="!datosDesdeDB || !rowData.length">
+        Banco ▾
+      </button>
+
+      <mat-menu #menuBanco="matMenu">
+        <button mat-menu-item (click)="generarArchivo()">
+          Generar Archivo Trans.
+        </button>
+        <button mat-menu-item disabled>
+          Listado
+        </button>
+      </mat-menu>
       <button mat-stroked-button type="button" (click)="cancelar()">Cancelar</button>
     </div>
 

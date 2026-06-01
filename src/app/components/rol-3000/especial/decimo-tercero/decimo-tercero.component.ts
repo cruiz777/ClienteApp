@@ -16,6 +16,7 @@ import { DateAdapter, MAT_DATE_FORMATS, MAT_DATE_LOCALE } from '@angular/materia
 import { MAT_MOMENT_DATE_ADAPTER_OPTIONS, MomentDateAdapter } from '@angular/material-moment-adapter';
 import { DecimosExportConfig, DecimosExportService } from 'src/app/reports/decimos-export.service';
 import { PeriodosNominaDialogComponent, PeriodosNominaDialogData, PeriodosNominaDialogResult } from '../dialogs/periodos-nomina-dialog.component';
+import { GenerarArchivoPichinchaRequest } from 'src/app/interfaces/requests/generar-archivo-request';
 
 @Component({
   selector: 'app-decimo-tercero',
@@ -217,8 +218,41 @@ export class DecimoTerceroComponent implements OnInit {
       this.calcularSubtotales();
     }
   }
+  generarArchivo(): void {
+    if (!this.datosDesdeDB || !this.rowData.length) {
+      this.showError('Debe cargar un período grabado primero.');
+      return;
+    }
 
+    const empresaSeleccionada = this.empresas.find(
+      e => e.idEmpresa === this.form.value.idEmpresa
+    );
+
+    const fechaHastaRaw = this.form.value.fechaHasta;
+    const fechaHasta    = typeof fechaHastaRaw?.toDate === 'function'
+                          ? fechaHastaRaw.toDate()
+                          : new Date(fechaHastaRaw);
+
+    const request: GenerarArchivoPichinchaRequest = {
+      numPatronal:  empresaSeleccionada!.numPatronal!,
+      periodo:      fechaHasta.getFullYear().toString(),
+      idTipoNomEsp: this.idTipoNomEsp
+    };
+
+    this.decimosService.generarArchivoPichincha(request).subscribe({
+      next: (blob) => {
+        const url      = window.URL.createObjectURL(blob);
+        const a        = document.createElement('a');
+        a.href         = url;
+        a.download     = `ARCHIVO_DECIMO_${request.periodo}_PICHINCHA.txt`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+      },
+      error: () => this.showError('Error al generar el archivo.')
+    });
+  }
   exportar(formato: 'pdf' | 'excel'): void {
+    console.log('Géneros:', this.rowData.map(e => ({ nombre: e.nombreEmpleado, genero: e.genero })));
     if (!this.rowData.length) {
       this.showError('No hay datos para exportar. Calcule primero.');
       return;

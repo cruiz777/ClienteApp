@@ -6,6 +6,7 @@ import { ApiResponse } from 'src/app/interfaces/responses/api-response';
 import { DecimosRequest, GrabarDecimosRequest } from 'src/app/interfaces/requests/decimos-request';
 import { DecimosEmpleadoResponse } from 'src/app/interfaces/responses/decimos-response';
 import { PeriodoNominaResponse } from '../../interfaces/responses/periodo-nomina-response';
+import { GenerarArchivoPichinchaRequest } from 'src/app/interfaces/requests/generar-archivo-request';
 
 
 @Injectable({
@@ -48,6 +49,13 @@ export class DecimosService {
       `${this.baseUrl}/periodos`, {
         params: { numPatronal }
       }
+    );
+  }
+  generarArchivoPichincha(request: GenerarArchivoPichinchaRequest): Observable<Blob> {
+    return this.http.post(
+      `${this.baseUrl}/generar-archivo-pichincha`,
+      request,
+      { responseType: 'blob' }
     );
   }
 }
