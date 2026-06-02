@@ -255,5 +255,15 @@ getResumenTipoClienteTotalAfiliadas(): Observable<ApiResponse<ResumenTipoCliente
   return this.http.get<ApiResponse<ResumenTipoClienteTotalResponse>>(url);
 }
 
+getResumenTipoClienteTotalDesafiliadas() {
+  return this.http.get<ApiResponse<ResumenTipoClienteTotalResponse>>(
+    `${this.apiBaseUrl}/Clientes/resumen-tipo-cliente-total-desafiliadas`
+  );
+}
 
+getResumenTipoClienteAnioMesDesafiliadas(anio: number, mes: number) {
+  return this.http.get<ApiResponse<ResumenTipoClienteAnioMesResponse>>(
+    `${this.apiBaseUrl}/Clientes/resumen-tipo-cliente-desafiliadas/${anio}/${mes}`
+  );
+}
 }
