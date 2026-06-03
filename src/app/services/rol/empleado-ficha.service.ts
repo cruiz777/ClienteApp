@@ -74,6 +74,7 @@ export interface EmpleadoFichaResponse {
   establecimiento?:string;
   lmilitar?:string;
   idSectorial?: number;
+  idEmpresaComplementaria?: number;
 }
 
 @Injectable({

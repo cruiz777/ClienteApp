@@ -81,6 +81,7 @@ export interface SyncEmpleadoRequest {
   fefinvac?: string | null;
   establecimiento?: string | null;
   lmilitar?: string | null;
+
 }
 
 @Injectable({

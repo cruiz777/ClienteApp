@@ -16,7 +16,7 @@ export interface PeriodosNominaDialogResult {
 @Component({
   selector: 'app-periodos-nomina-dialog',
   templateUrl: './periodos-nomina-dialog.component.html',
-  styleUrls: ['./periodos-nomina-dialog.component.scss']
+  styleUrls: ['./periodos-nomina-dialog.component.css']
 })
 export class PeriodosNominaDialogComponent implements OnInit {
 

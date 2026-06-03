@@ -28,6 +28,8 @@ import {
   GastoSriEmpleadoResponse
 } from 'src/app/services/rol/gastos-sri-empleado.service';
 
+import { RpEmpresaComplementariaService, RpEmpresaComplementaria } from 'src/app/services/rol/rp-empresa-complementaria.service';
+
 import { TipoGastoService } from 'src/app/services/tipo-gasto.service';
 import {
   EmpleadoSyncService,
@@ -54,7 +56,7 @@ import {
 } from 'src/app/services/rol/rp-mae-emp-cronologia.service.service';
 import {
   EmpleadoFichaService,
-  EmpleadoFichaResponse,EmpleadoBusquedaResponse
+  EmpleadoFichaResponse, EmpleadoBusquedaResponse
 } from 'src/app/services/rol/empleado-ficha.service';
 
 import {
@@ -149,6 +151,7 @@ export class EmpleadoFichaComponent implements OnInit {
   idEmpleadoActual: number | null = null;
 
   tiposGasto: any[] = [];
+  empresaComplementaria: RpEmpresaComplementaria[] = [];
   gastosRowData: (GastoSriEmpleadoResponse & { modificado?: boolean })[] = [];
   gastosEliminados: number[] = [];
   empleadosBusqueda: any[] = [];
@@ -710,7 +713,7 @@ export class EmpleadoFichaComponent implements OnInit {
       headerName: '',
       width: 50,
       minWidth: 50,
-      maxWidth:50,
+      maxWidth: 50,
       pinned: 'right',
       suppressSizeToFit: true,
       cellRenderer: () => `
@@ -1001,17 +1004,18 @@ export class EmpleadoFichaComponent implements OnInit {
     private tipoObservacionService: TipoObservacionService,
     private gastosSriEmpleadoService: GastosSriEmpleadoService,
     private tipoGastoService: TipoGastoService,
+    private RpEmpresaComplementariaService: RpEmpresaComplementariaService
   ) { }
 
- ngOnInit(): void {
-  this.crearFormulario();
+  ngOnInit(): void {
+    this.crearFormulario();
 
-  this.form.get('datosGenerales.empleadoBusqueda')?.valueChanges.subscribe(valor => {
-    this.cargarEmpleadosBusqueda(valor ?? '');
-  });
+    this.form.get('datosGenerales.empleadoBusqueda')?.valueChanges.subscribe(valor => {
+      this.cargarEmpleadosBusqueda(valor ?? '');
+    });
 
-  this.cargarCatalogos();
-}
+    this.cargarCatalogos();
+  }
 
   crearFormulario(): void {
     this.form = this.fb.group({
@@ -1165,8 +1169,9 @@ export class EmpleadoFichaComponent implements OnInit {
       tiposObservacion: this.tipoObservacionService.getTiposObservacion(),
       tiposGasto: this.tipoGastoService.getAll(),
       empleados: this.empleadoFichaService.getFicha(),
+      empresasComplementarias: this.RpEmpresaComplementariaService.getAll()
     }).subscribe({
-      next: ({ departamentos, cargos, tiposEmpleado, tiposDocumento, estadosCivil, generos, locales, zonas, ciudades, ciudadesTrabajo, nacionalidades, gruposOcupacionales, regimenes, tiposSangre, tiposContrato, bancos, formasPago, bancosTerceros, tiposCuentaBanco, sectoriales, tiposDiscapacidad, nivelInstruccion, tiposObservacion, tiposGasto, empleados }) => {
+      next: ({ departamentos, cargos, tiposEmpleado, tiposDocumento, estadosCivil, generos, locales, zonas, ciudades, ciudadesTrabajo, nacionalidades, gruposOcupacionales, regimenes, tiposSangre, tiposContrato, bancos, formasPago, bancosTerceros, tiposCuentaBanco, sectoriales, tiposDiscapacidad, nivelInstruccion, tiposObservacion, tiposGasto, empleados, empresasComplementarias }) => {
         this.empleadosBusqueda = empleados.data ?? [];
         this.empleadosFiltrados = this.empleadosBusqueda;
         this.departamentos = departamentos.map(dep => ({
@@ -1283,6 +1288,13 @@ export class EmpleadoFichaComponent implements OnInit {
           descripcion: x.descripcion ?? '',
           monto: x.monto ?? x.Monto ?? null
         }));
+        this.empresaComplementaria = (empresasComplementarias ?? []).map((x: any) => ({
+          ...x,
+          idEmpresaComplementaria: Number(x.idEmpresaComplementaria),
+          empresa: x.empresa ?? '',
+          ruc: x.ruc ?? '',
+          estado: x.estado
+        }));
         this.cargarFichaEmpleado();
       },
       error: (err: any) => {
@@ -1372,6 +1384,7 @@ export class EmpleadoFichaComponent implements OnInit {
             establecimiento: emp.establecimiento ?? '',
             libretaMilitar: emp.lmilitar ?? '',
             codigoSectorialIess: emp.idSectorial ?? '',
+            rucEmpresaComplementaria: emp.idEmpresaComplementaria ?? ''
           },
 
           datosSalariales: {
@@ -1529,7 +1542,7 @@ export class EmpleadoFichaComponent implements OnInit {
 
   cancelar(): void {
     this.nuevo();
-  this.limpiarBusquedaEmpleado();
+    this.limpiarBusquedaEmpleado();
   }
 
   agregarNomina(): void {
@@ -2164,7 +2177,7 @@ export class EmpleadoFichaComponent implements OnInit {
       idRegimen: da.regimen ? Number(da.regimen) : null,
       discap: de.discapacitado === true,
       teredad: da.terceraEdad === true,
-      idEmpresaComplementaria: null,
+      
       galapagos: de.beneficioGalapagos === true,
       enfcatastro: false,
 
@@ -2192,7 +2205,8 @@ export class EmpleadoFichaComponent implements OnInit {
       feinivac: da.fechaPagoDecimoInicio || null,
       fefinvac: da.fechaPagoDecimoFin || null,
       establecimiento: da.establecimiento ?? null,
-      lmilitar: da.libretaMilitar ?? null
+      lmilitar: da.libretaMilitar ?? null,
+      idEmpresaComplementaria: da.rucEmpresaComplementaria  ? Number(da.rucEmpresaComplementaria) : null
     };
 
     console.log('SYNC EMPLEADO:', request);
@@ -2419,54 +2433,43 @@ export class EmpleadoFichaComponent implements OnInit {
       }
     });
   }
-filtrarEmpleadosBusqueda(): void {
-  const texto = (this.form.get('datosGenerales.empleadoBusqueda')?.value ?? '')
-    .toString()
-    .toLowerCase()
-    .trim();
-
-  this.empleadosFiltrados = this.empleadosBusqueda.filter(e =>
-    `${e.idEmpleado ?? ''} ${e.nombres ?? ''} ${e.apellidos ?? ''} ${e.documento ?? ''}`
+  filtrarEmpleadosBusqueda(): void {
+    const texto = (this.form.get('datosGenerales.empleadoBusqueda')?.value ?? '')
+      .toString()
       .toLowerCase()
-      .includes(texto)
-  );
-}
-seleccionarEmpleadoBusqueda(emp: EmpleadoBusquedaResponse): void {
-  this.form.get('datosGenerales.empleadoBusqueda')?.setValue(
-    emp.nombreCompleto,
-    { emitEvent: false }
-  );
+      .trim();
 
-  this.limpiarFichaEmpleado();
-  this.cargarFichaEmpleado(Number(emp.idEmpleado));
-}
-cargarEmpleadosBusqueda(texto: string = ''): void {
-  this.empleadoFichaService.getBusqueda(texto).subscribe({
-    next: resp => {
-      this.empleadosBusqueda = resp.data ?? [];
-      this.empleadosFiltrados = this.empleadosBusqueda;
-    },
-    error: err => {
-      console.error('Error cargando empleados:', err);
-      this.empleadosBusqueda = [];
-      this.empleadosFiltrados = [];
-    }
-  });
-}
-limpiarBusquedaEmpleado(): void {
-  this.form.get('datosGenerales.empleadoBusqueda')?.setValue('');
-  this.empleadosFiltrados = [];
-}
-mostrarMensajeExito(titulo: string, mensaje: string): void {
-  this.dialog.open(CustomMessageBoxComponent, {
-    width: '360px',
-    disableClose: true,
-    data: {
-      tipo: 'success',
-      titulo,
-      mensaje,
-      textoBoton: 'Continuar'
-    }
-  });
-}
+    this.empleadosFiltrados = this.empleadosBusqueda.filter(e =>
+      `${e.idEmpleado ?? ''} ${e.nombres ?? ''} ${e.apellidos ?? ''} ${e.documento ?? ''}`
+        .toLowerCase()
+        .includes(texto)
+    );
+  }
+  seleccionarEmpleadoBusqueda(emp: EmpleadoBusquedaResponse): void {
+    this.form.get('datosGenerales.empleadoBusqueda')?.setValue(
+      emp.nombreCompleto,
+      { emitEvent: false }
+    );
+
+    this.limpiarFichaEmpleado();
+    this.cargarFichaEmpleado(Number(emp.idEmpleado));
+  }
+  cargarEmpleadosBusqueda(texto: string = ''): void {
+    this.empleadoFichaService.getBusqueda(texto).subscribe({
+      next: resp => {
+        this.empleadosBusqueda = resp.data ?? [];
+        this.empleadosFiltrados = this.empleadosBusqueda;
+      },
+      error: err => {
+        console.error('Error cargando empleados:', err);
+        this.empleadosBusqueda = [];
+        this.empleadosFiltrados = [];
+      }
+    });
+  }
+  limpiarBusquedaEmpleado(): void {
+    this.form.get('datosGenerales.empleadoBusqueda')?.setValue('');
+    this.empleadosFiltrados = [];
+  }
+
 }
