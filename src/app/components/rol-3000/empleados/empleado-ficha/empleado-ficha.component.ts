@@ -23,6 +23,7 @@ import { RpTipoDiscapacidadService } from 'src/app/services/rol/rp-tipo-discapac
 import { ColDef } from 'ag-grid-community';
 import { TipoObservacionService, TipoObservacion } from 'src/app/services/rol/tipo-observacion.service';
 import { ObservacionEmpleadoResponse, ObservacionesEmpleadoService } from 'src/app/services/rol/observaciones-empleado.service';
+import { EmpleadoDiscapacidadService, EmpleadoDiscapacidadResponse } from 'src/app/services/rol/empleado-discapacidad.service';
 import {
   GastosSriEmpleadoService,
   GastoSriEmpleadoResponse
@@ -1004,7 +1005,8 @@ export class EmpleadoFichaComponent implements OnInit {
     private tipoObservacionService: TipoObservacionService,
     private gastosSriEmpleadoService: GastosSriEmpleadoService,
     private tipoGastoService: TipoGastoService,
-    private RpEmpresaComplementariaService: RpEmpresaComplementariaService
+    private RpEmpresaComplementariaService: RpEmpresaComplementariaService,
+    private empleadoDiscapacidadService: EmpleadoDiscapacidadService
   ) { }
 
   ngOnInit(): void {
@@ -1125,7 +1127,7 @@ export class EmpleadoFichaComponent implements OnInit {
         discapacitado: [false],
         carnetConadis: [''],
         condicionTrabajador: [''],
-        tipoDiscapacidad: [''],
+        idTipoDiscapacidad: [null],
         porcentajeDiscapacidad: [''],
         discapacitadoSustituto: [false],
         descripcionDiscapacidad: [''],
@@ -1324,6 +1326,7 @@ export class EmpleadoFichaComponent implements OnInit {
           this.cargarFormacionEmpleado(this.idEmpleadoActual);
           this.cargarObservacionesEmpleado(this.idEmpleadoActual);
           this.cargarGastosSriEmpleado(this.idEmpleadoActual);
+          this.cargarDiscapacidadEmpleado(this.idEmpleadoActual);
         }
         const nombreCompleto =
           emp.nombre ||
@@ -1360,7 +1363,7 @@ export class EmpleadoFichaComponent implements OnInit {
             empresaAportacion: emp.empresa ?? '',
             grupoOcupacion: Number(emp.id_grupo_ocupacional),
             linkFoto: emp.foto ?? null,
-
+            
 
 
           },
@@ -1408,7 +1411,8 @@ export class EmpleadoFichaComponent implements OnInit {
           datosEspeciales: {
             empleado: nombreCompleto,
             identificacion: emp.documento ?? '',
-            discapacitado: emp.discap === true
+            discapacitado: emp.discap === true,
+            beneficioGalapagos: emp.galapagos === true
           }
         });
         this.aplicarReglaSueldo(sueldoEmpleado);
@@ -1517,7 +1521,7 @@ export class EmpleadoFichaComponent implements OnInit {
         discapacitado: false,
         carnetConadis: '',
         condicionTrabajador: '',
-        tipoDiscapacidad: '',
+        idTipoDiscapacidad: null,
         porcentajeDiscapacidad: '',
         discapacitadoSustituto: false,
         descripcionDiscapacidad: '',
@@ -2125,7 +2129,8 @@ export class EmpleadoFichaComponent implements OnInit {
       datosEspeciales: {
         empleado: '',
         identificacion: '',
-        discapacitado: false
+        discapacitado: false,
+        beneficioGalapagos: false
       }
     }, { emitEvent: false });
   }
@@ -2177,7 +2182,7 @@ export class EmpleadoFichaComponent implements OnInit {
       idRegimen: da.regimen ? Number(da.regimen) : null,
       discap: de.discapacitado === true,
       teredad: da.terceraEdad === true,
-      
+
       galapagos: de.beneficioGalapagos === true,
       enfcatastro: false,
 
@@ -2206,7 +2211,7 @@ export class EmpleadoFichaComponent implements OnInit {
       fefinvac: da.fechaPagoDecimoFin || null,
       establecimiento: da.establecimiento ?? null,
       lmilitar: da.libretaMilitar ?? null,
-      idEmpresaComplementaria: da.rucEmpresaComplementaria  ? Number(da.rucEmpresaComplementaria) : null
+      idEmpresaComplementaria: da.rucEmpresaComplementaria ? Number(da.rucEmpresaComplementaria) : null
     };
 
     console.log('SYNC EMPLEADO:', request);
@@ -2223,6 +2228,7 @@ export class EmpleadoFichaComponent implements OnInit {
           this.guardarFormacion();
           this.guardarObservaciones();
           this.guardarGastosSri();
+          this.guardarDiscapacidadEmpleado();
 
           alert('Empleado guardado correctamente.');
         } else {
@@ -2470,6 +2476,105 @@ export class EmpleadoFichaComponent implements OnInit {
   limpiarBusquedaEmpleado(): void {
     this.form.get('datosGenerales.empleadoBusqueda')?.setValue('');
     this.empleadosFiltrados = [];
+  }
+  cargarDiscapacidadEmpleado(idEmpleado: number): void {
+    this.empleadoDiscapacidadService.getByEmpleado(idEmpleado).subscribe({
+      next: (resp) => {
+
+        if (!resp.data) {
+          return;
+        }
+
+        const dis = resp.data;
+
+        this.form.patchValue({
+          datosEspeciales: {
+            residenciaTrabajador: dis.recidenciaEmp ?? '',
+            aplicaConvenio: dis.convenioEmp ?? '',
+            sistemaSalarioNeto: dis.sisSalNetEmp ?? '',
+            paisResidencia: dis.pais ?? '',
+
+            carnetConadis: dis.carnetConadis ?? '',
+            condicionTrabajador: dis.codCondDiscap ?? '',
+            idTipoDiscapacidad: dis.idTipoDiscapacidad
+              ? Number(dis.idTipoDiscapacidad)
+              : null,
+            porcentajeDiscapacidad: dis.porcentajeDiscap ?? '',
+            descripcionDiscapacidad: dis.descripcionDiscap ?? '',
+
+            identificacion: dis.cedulaDis ?? '',
+            nombreDiscapacidad: dis.nombreDis ?? '',
+
+            discapacitado: !!dis.idTipoDiscapacidad,
+            ingresosAgraviados: dis.ingresosGravOtroEmp ? String(dis.ingresosGravOtroEmp) : '',
+            aportePersonalIess: dis.aporteIessOtroEmp ? String(dis.aporteIessOtroEmp) : '',
+            valorImpuestoRetenido: dis.impuestoRetOtroEmp ? String(dis.impuestoRetOtroEmp) : '',
+            compensacionEconomicaDigna: dis.compEconSalarioDigno ? String(dis.compEconSalarioDigno) : '',
+
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error cargando discapacidad', err);
+      }
+    });
+  }
+  private toNumberOrNull(value: any): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
+    }
+
+    const n = Number(value);
+    return isNaN(n) ? null : n;
+  }
+  guardarDiscapacidadEmpleado(): void {
+    if (!this.idEmpleadoActual) {
+      return;
+    }
+
+    const de = this.form.get('datosEspeciales')?.value;
+
+    const request = {
+      idEmpleado: this.idEmpleadoActual,
+
+      idTipoDiscapacidad: this.toNumberOrNull(de.idTipoDiscapacidad),
+
+      cedulaDis: de.identificacion ?? null,
+      nombreDis: de.nombreDiscapacidad ?? null,
+      recidenciaEmp: de.residenciaTrabajador ?? null,
+      idPais: this.toNumberOrNull(de.paisResidencia),
+
+      convenioEmp: de.aplicaConvenio ?? null,
+      sisSalNetEmp: de.sistemaSalarioNeto ?? null,
+      codCondDiscap: de.condicionTrabajador ?? null,
+
+      codTipoDiscap: de.idTipoDiscapacidad
+        ? String(de.idTipoDiscapacidad)
+        : null,
+
+      porcentajeDiscap: de.porcentajeDiscapacidad ?? null,
+      carnetConadis: de.carnetConadis ?? null,
+      descripcionDiscap: de.descripcionDiscapacidad ?? null,
+
+      ingresosGravOtroEmp: this.toNumberOrNull(de.ingresosAgraviados),
+      aporteIessOtroEmp: this.toNumberOrNull(de.aportePersonalIess),
+      impuestoRetOtroEmp: this.toNumberOrNull(de.valorImpuestoRetenido),
+      compEconSalarioDigno: this.toNumberOrNull(de.compensacionEconomicaDigna)
+    };
+
+    this.empleadoDiscapacidadService.sync(request).subscribe({
+      next: resp => {
+        if (resp.type === 'Success') {
+          this.cargarDiscapacidadEmpleado(this.idEmpleadoActual!);
+        } else {
+          alert(resp.message ?? 'No se pudo guardar discapacidad.');
+        }
+      },
+      error: err => {
+        console.error('Error guardando discapacidad:', err);
+        alert('Error guardando discapacidad.');
+      }
+    });
   }
 
 }

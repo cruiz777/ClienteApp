@@ -75,6 +75,7 @@ export interface EmpleadoFichaResponse {
   lmilitar?:string;
   idSectorial?: number;
   idEmpresaComplementaria?: number;
+  galapagos?: boolean;
 }
 
 @Injectable({
