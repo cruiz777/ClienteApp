@@ -354,9 +354,18 @@
                 </mat-form-field>
 
                 <mat-form-field appearance="outline">
-                  <mat-label>RUC Empresa Complementaria</mat-label>
-                  <input matInput formControlName="rucEmpresaComplementaria">
-                </mat-form-field>
+  <mat-label>Empresa Complementaria</mat-label>
+
+  <mat-select formControlName="rucEmpresaComplementaria">
+    <mat-option [value]="null">-- NINGUNA --</mat-option>
+
+    <mat-option
+      *ngFor="let emp of empresaComplementaria"
+      [value]="emp.idEmpresaComplementaria">
+      {{ emp.empresa }}
+    </mat-option>
+  </mat-select>
+</mat-form-field>
 
                 <mat-form-field appearance="outline">
                   <mat-label>Libreta Militar</mat-label>
