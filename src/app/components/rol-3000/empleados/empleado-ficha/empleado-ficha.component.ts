@@ -24,6 +24,8 @@ import { ColDef } from 'ag-grid-community';
 import { TipoObservacionService, TipoObservacion } from 'src/app/services/rol/tipo-observacion.service';
 import { ObservacionEmpleadoResponse, ObservacionesEmpleadoService } from 'src/app/services/rol/observaciones-empleado.service';
 import { EmpleadoDiscapacidadService, EmpleadoDiscapacidadResponse } from 'src/app/services/rol/empleado-discapacidad.service';
+import { MatDialog } from '@angular/material/dialog';
+import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
 import {
   GastosSriEmpleadoService,
   GastoSriEmpleadoResponse
@@ -1006,7 +1008,8 @@ export class EmpleadoFichaComponent implements OnInit {
     private gastosSriEmpleadoService: GastosSriEmpleadoService,
     private tipoGastoService: TipoGastoService,
     private RpEmpresaComplementariaService: RpEmpresaComplementariaService,
-    private empleadoDiscapacidadService: EmpleadoDiscapacidadService
+    private empleadoDiscapacidadService: EmpleadoDiscapacidadService,
+    private dialog: MatDialog
   ) { }
 
   ngOnInit(): void {
@@ -2230,7 +2233,7 @@ export class EmpleadoFichaComponent implements OnInit {
           this.guardarGastosSri();
           this.guardarDiscapacidadEmpleado();
 
-          alert('Empleado guardado correctamente.');
+          this.mostrarMensajeExito('Empleado guardado correctamente.');
         } else {
           alert(resp.message ?? 'No se pudo guardar el empleado.');
         }
@@ -2536,7 +2539,7 @@ export class EmpleadoFichaComponent implements OnInit {
 
     const request = {
       idEmpleado: this.idEmpleadoActual,
-
+      idEmpresa: 1,
       idTipoDiscapacidad: this.toNumberOrNull(de.idTipoDiscapacidad),
 
       cedulaDis: de.identificacion ?? null,
@@ -2576,5 +2579,31 @@ export class EmpleadoFichaComponent implements OnInit {
       }
     });
   }
+private mostrarMensajeExito(mensaje: string): void {
+  this.dialog.open(CustomMessageBoxComponent, {
+    width: '400px',
+    disableClose: true,
+    data: {
+      title: 'Proceso completado',
+      message: mensaje,
+      type: 'success',
+      confirmText: 'Continuar',
+      showCancel: false
+    }
+  });
+}
 
+private mostrarMensajeError(mensaje: string): void {
+  this.dialog.open(CustomMessageBoxComponent, {
+    width: '450px',
+    disableClose: true,
+    data: {
+      title: 'Error',
+      message: mensaje,
+      type: 'error',
+      confirmText: 'Aceptar',
+      showCancel: false
+    }
+  });
+}
 }
