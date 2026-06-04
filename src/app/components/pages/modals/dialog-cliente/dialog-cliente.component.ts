@@ -458,37 +458,39 @@ export class DialogClienteComponent implements OnInit {
       event.preventDefault(); // Bloquea letras o símbolos
     }
   }
+  
   buscarRuc(ruc: string): void {
-  this.rucService.obtenerDatosRuc(ruc).subscribe({
-    next: data => {
-      this.tipoIdentificacion = 'RUC';
+    this.rucService.obtenerDatosRuc(ruc).subscribe({
+      next: data => {
+        this.tipoIdentificacion = 'RUC';
 
-      const razonSocial = data.razonSocial || '';
-      const representante = data.nombre?.trim() || razonSocial;
+        const razonSocial = data.razonSocial || '';
+        const representante = data.nombre?.trim() || razonSocial;
 
-      this.razonSocial = razonSocial;
-      this.nombreRepresentante = representante;
-      this.estadoContribuyenteRuc = data.estadoContribuyenteRuc;
+        this.razonSocial = razonSocial;
+        this.nombreRepresentante = representante;
+        this.estadoContribuyenteRuc = data.estadoContribuyenteRuc;
 
-      this.paso2Form.patchValue({
-        razonSocial: razonSocial,
-        nombreRepresentante: representante
-      });
+        this.paso2Form.patchValue({
+          razonSocial: razonSocial,
+          nombreRepresentante: representante
+        });
 
-      this.paso3Form.patchValue({
-        nombreRepresentante: representante
-      });
+        this.paso3Form.patchValue({
+          nombreRepresentante: representante
+        });
 
-      this.error = undefined;
-      console.log('✅ Datos RUC:', data);
-    },
-    error: err => {
-      this.error = 'No se encontraron datos para el RUC ingresado.';
-      console.error('❌ Error buscando RUC:', err);
-      this.tipoIdentificacion = null;
-    }
-  });
-}
+        this.error = undefined;
+      },
+      error: err => {
+        // ✅ SRI caído: NO bloqueamos. El usuario puede ingresar los datos manualmente.
+        console.warn('⚠️ Servicio SRI no disponible, ingreso manual requerido:', err);
+        this.tipoIdentificacion = 'RUC'; // ← Mantener RUC, no null
+        this.error = '⚠️ Servicio SRI no disponible. Por favor ingresa la razón social manualmente.';
+        // No tocamos razonSocial ni nombreRepresentante para que el usuario los llene
+      }
+    });
+  }
 
 
 
