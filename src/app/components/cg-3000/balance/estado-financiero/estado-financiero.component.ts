@@ -753,16 +753,10 @@ export class EstadoFinancieroComponent implements OnInit {
         const parsear = (v: string | null | undefined): number => {
             if (!v) return 0;
             const esNeg = v.includes('(');
-            
-            // ✅ Formato EUROPEO: punto = miles, coma = decimal
-            // 1. Eliminar paréntesis y espacios
-            // 2. Eliminar puntos (separadores de miles)
-            // 3. Reemplazar coma por punto (decimal)
-            const limpio = v.replace(/[()]/g, '')     // Quita paréntesis
-                            .replace(/\s/g, '')       // Quita espacios
-                            .replace(/\./g, '')       // Quita puntos (miles)
-                            .replace(',', '.');       // Coma → punto (decimal)
-            
+            const limpio = v.replace(/[()]/g, '')
+                            .replace(/\s/g, '')
+                            .replace(/\./g, '')
+                            .replace(/,/g, '.');  // fix
             const num = parseFloat(limpio) || 0;
             return esNeg ? -num : num;
         };
@@ -775,161 +769,64 @@ export class EstadoFinancieroComponent implements OnInit {
 
         const filaUtilidad = datos.find(d => d.esUtilidad);
 
-        // ========== ✅ CREAR/INYECTAR CUENTAS COMODÍN 370xxx PARA UTILIDAD ==========
+        // Inyectar cuentas 370xxx para mostrar utilidad en patrimonio
         if (filaUtilidad) {
-            // ✅ Parsear utilidad UNA SOLA VEZ para mantener precisión (132.070,73)
             const utilidadValor = parsear(filaUtilidad.sum1);
-            
+
             if (utilidadValor !== 0) {
-                // Invertir signo: utilidad positiva → patrimonio negativo (lado CRÉDITO)
-                const utilidadParaPatrimonio = -Math.abs(utilidadValor);
-                const utilidadFormateada = formatear(utilidadParaPatrimonio);
-                
-                // Buscar o crear las cuentas comodín
+                const utilidadFormateada = formatear(-Math.abs(utilidadValor));
+
                 let cuenta370000000 = datos.find(d => d.cuenta === '370000-000');
                 let cuenta370100000 = datos.find(d => d.cuenta === '370100-000');
                 let cuenta370101000 = datos.find(d => d.cuenta === '370101-000');
                 let cuenta370101001 = datos.find(d => d.cuenta === '370101-001');
 
-                // ✅ CREAR cuentas si no existen (todas vacías inicialmente)
-                if (!cuenta370000000) {
-                    cuenta370000000 = {
-                        cuenta: '370000-000',
-                        nombreCuenta: 'RESULTADOS DEL EJERCICIO',
-                        nivel: 2,
-                        orden: 8000,
-                        esTotalGeneral: false,
-                        esUtilidad: false,
-                        sum1: '', sum2: '', sum3: '', sum4: '', sum5: ''
-                    };
-                }
+                if (!cuenta370000000) cuenta370000000 = { cuenta: '370000-000', nombreCuenta: 'RESULTADOS DEL EJERCICIO', nivel: 2, orden: 8000, esTotalGeneral: false, esUtilidad: false, sum1: '', sum2: '', sum3: '', sum4: '', sum5: '' };
+                if (!cuenta370100000) cuenta370100000 = { cuenta: '370100-000', nombreCuenta: 'GANANCIA NETA DEL PERIODO', nivel: 3, orden: 8001, esTotalGeneral: false, esUtilidad: false, sum1: '', sum2: '', sum3: '', sum4: '', sum5: '' };
+                if (!cuenta370101000) cuenta370101000 = { cuenta: '370101-000', nombreCuenta: 'GANANCIA NETA DEL PERIODO', nivel: 4, orden: 8002, esTotalGeneral: false, esUtilidad: false, sum1: '', sum2: '', sum3: '', sum4: '', sum5: '' };
+                if (!cuenta370101001) cuenta370101001 = { cuenta: '370101-001', nombreCuenta: 'GANANCIA DEL EJERCICIO', nivel: 5, orden: 8003, esTotalGeneral: false, esUtilidad: false, sum1: '', sum2: '', sum3: '', sum4: '', sum5: '' };
 
-                if (!cuenta370100000) {
-                    cuenta370100000 = {
-                        cuenta: '370100-000',
-                        nombreCuenta: 'GANANCIA NETA DEL PERIODO',
-                        nivel: 3,
-                        orden: 8001,
-                        esTotalGeneral: false,
-                        esUtilidad: false,
-                        sum1: '', sum2: '', sum3: '', sum4: '', sum5: ''
-                    };
-                }
+                cuenta370000000.sum2 = utilidadFormateada;
+                cuenta370100000.sum3 = utilidadFormateada;
+                cuenta370101000.sum4 = utilidadFormateada;
+                cuenta370101001.sum5 = utilidadFormateada;
 
-                if (!cuenta370101000) {
-                    cuenta370101000 = {
-                        cuenta: '370101-000',
-                        nombreCuenta: 'GANANCIA NETA DEL PERIODO',
-                        nivel: 4,
-                        orden: 8002,
-                        esTotalGeneral: false,
-                        esUtilidad: false,
-                        sum1: '', sum2: '', sum3: '', sum4: '', sum5: ''
-                    };
-                }
-
-                if (!cuenta370101001) {
-                    cuenta370101001 = {
-                        cuenta: '370101-001',
-                        nombreCuenta: 'GANANCIA DEL EJERCICIO',
-                        nivel: 5,
-                        orden: 8003,
-                        esTotalGeneral: false,
-                        esUtilidad: false,
-                        sum1: '', sum2: '', sum3: '', sum4: '', sum5: ''
-                    };
-                }
-
-                // ✅ INYECTAR utilidad SOLO en el nivel correspondiente de cada cuenta
-                cuenta370000000.sum2 = utilidadFormateada; // Nivel 2 → solo sum2
-                cuenta370100000.sum3 = utilidadFormateada; // Nivel 3 → solo sum3
-                cuenta370101000.sum4 = utilidadFormateada; // Nivel 4 → solo sum4
-                cuenta370101001.sum5 = utilidadFormateada; // Nivel 5 → solo sum5
-
-                // ✅ INSERTAR las cuentas 370xxx en el reporte (antes de la fila UTILIDAD)
                 const indexUtilidad = datos.findIndex(d => d.esUtilidad);
-                
                 if (indexUtilidad >= 0) {
-                    const cuentasNuevas = [
-                        cuenta370000000,
-                        cuenta370100000,
-                        cuenta370101000,
-                        cuenta370101001
-                    ].filter(c => !datos.includes(c));
-
+                    const cuentasNuevas = [cuenta370000000, cuenta370100000, cuenta370101000, cuenta370101001]
+                        .filter(c => !datos.includes(c));
                     if (cuentasNuevas.length > 0) {
-                        (this.datosReporte as EstadoFinancieroResponse[]).splice(
-                            indexUtilidad, 0, ...cuentasNuevas
-                        );
+                        (this.datosReporte as EstadoFinancieroResponse[]).splice(indexUtilidad, 0, ...cuentasNuevas);
                     }
                 }
 
-                // ========== ✅ RECALCULAR PATRIMONIO NETO SOLO EN SUM1 ==========
+                // ✅ Recalcular patrimonio sumando nivel 2 existentes + utilidad
+                // El backend ya trae 300000-000 correcto SIN utilidad del período
+                // Solo necesitamos sumar la utilidad al patrimonio existente
                 if (totalPatrimonio) {
-                    // Obtener TODAS las cuentas de nivel 2 de patrimonio (incluida la 370000-000)
-                    const cuentasPatrimonioNivel2 = datos.filter(d => 
-                        d.nivel === 2 && 
-                        d.cuenta?.startsWith('3') && // Cuentas de patrimonio (clase 3)
-                        !d.esTotalGeneral && 
-                        !d.esUtilidad
-                    );
-
-                    // ✅ SOLO recalcular sum1, sumando los valores que están en sum2 de cada cuenta nivel 2
-                    const totalNivel2 = cuentasPatrimonioNivel2.reduce((sum, cuenta) => {
-                        return sum + parsear(cuenta.sum2);
-                    }, 0);
-
-                    totalPatrimonio.sum1 = formatear(totalNivel2);
-                    // ✅ NO tocar sum2, sum3, sum4, sum5 (quedan como estaban o vacíos)
-                    
-                    console.log('📊 Patrimonio recalculado:', {
-                        cuentasNivel2: cuentasPatrimonioNivel2.map(c => ({
-                            cuenta: c.cuenta,
-                            nombre: c.nombreCuenta,
-                            sum2: c.sum2
-                        })),
-                        totalSum1: totalPatrimonio.sum1
-                    });
+                    const patrimonioSinUtilidad = parsear(totalPatrimonio.sum1);
+                    totalPatrimonio.sum1 = formatear(patrimonioSinUtilidad + (-Math.abs(utilidadValor)));
                 }
             }
         }
 
-        // ========== ✅ CALCULAR TOTAL PASIVO + PATRIMONIO SOLO EN SUM1 ==========
+        // Calcular TOTAL PASIVO + PATRIMONIO
         const pasivo = parsear(totalPasivo?.sum1) || 0;
         const patrimonio = parsear(totalPatrimonio?.sum1) || 0;
-        
-        // Mostrar como positivo (ambos vienen negativos del backend)
         const totalPasivoPatrimonio = Math.abs(pasivo) + Math.abs(patrimonio);
 
         const filaActivo: EstadoFinancieroResponse = {
-            cuenta: '', 
-            nombreCuenta: 'TOTAL ACTIVOS',
-            nivel: 1, 
-            orden: 9998, 
-            esTotalGeneral: true, 
-            esUtilidad: false,
-            sum1: totalActivo?.sum1 ?? '',
-            sum2: '', // ✅ Nivel 1 solo tiene sum1
-            sum3: '',
-            sum4: '',
-            sum5: '',
+            cuenta: '', nombreCuenta: 'TOTAL ACTIVOS', nivel: 1, orden: 9998,
+            esTotalGeneral: true, esUtilidad: false,
+            sum1: totalActivo?.sum1 ?? '', sum2: '', sum3: '', sum4: '', sum5: ''
         };
 
         const filaTotal: EstadoFinancieroResponse = {
-            cuenta: '', 
-            nombreCuenta: 'TOTAL PASIVO + PATRIMONIO',
-            nivel: 1, 
-            orden: 9999, 
-            esTotalGeneral: true, 
-            esUtilidad: false,
-            sum1: formatear(totalPasivoPatrimonio),
-            sum2: '', // ✅ Nivel 1 solo tiene sum1
-            sum3: '',
-            sum4: '',
-            sum5: '',
+            cuenta: '', nombreCuenta: 'TOTAL PASIVO + PATRIMONIO', nivel: 1, orden: 9999,
+            esTotalGeneral: true, esUtilidad: false,
+            sum1: formatear(totalPasivoPatrimonio), sum2: '', sum3: '', sum4: '', sum5: ''
         };
 
-        // Buscar índice actualizado (después de insertar 370xxx)
         const indexUtilidadFinal = datos.findIndex(d => d.esUtilidad);
         let filaUtilidadRemovida: EstadoFinancieroResponse | undefined;
 
@@ -938,20 +835,14 @@ export class EstadoFinancieroComponent implements OnInit {
             (this.datosReporte as EstadoFinancieroResponse[]).splice(indexUtilidadFinal, 1);
         }
 
-        // ✅ AGREGAR los totales donde estaba la utilidad
         if (indexUtilidadFinal >= 0) {
-            (this.datosReporte as EstadoFinancieroResponse[]).splice(
-                indexUtilidadFinal, 0, filaActivo, filaTotal
-            );
+            (this.datosReporte as EstadoFinancieroResponse[]).splice(indexUtilidadFinal, 0, filaActivo, filaTotal);
         } else {
             const ultimoTotal = totalPatrimonio || totalPasivo;
             const index = datos.indexOf(ultimoTotal!);
-            (this.datosReporte as EstadoFinancieroResponse[]).splice(
-                index + 1, 0, filaActivo, filaTotal
-            );
+            (this.datosReporte as EstadoFinancieroResponse[]).splice(index + 1, 0, filaActivo, filaTotal);
         }
 
-        //VOLVER A AGREGAR la utilidad AL FINAL
         if (filaUtilidadRemovida) {
             (this.datosReporte as EstadoFinancieroResponse[]).push(filaUtilidadRemovida);
         }
@@ -970,7 +861,7 @@ export class EstadoFinancieroComponent implements OnInit {
             const limpio = v.replace(/[()]/g, '')     // Quita paréntesis
                             .replace(/\s/g, '')       // Quita espacios
                             .replace(/\./g, '')       // Quita puntos (miles)
-                            .replace(',', '.');       // Coma → punto (decimal)
+                            .replace(/,/g, '.');      // Coma → punto (decimal)
             
             const num = parseFloat(limpio) || 0;
             return esNeg ? -num : num;
