@@ -250,3 +250,42 @@
     width: 100%;
   }
 }
+.tree-children {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-left: 18px;
+  margin-top: 4px;
+}
+
+.tree-item.child {
+  padding-left: 14px;
+  font-size: 13px;
+}
+
+.tree-item.child .tree-icon {
+  color: #2563eb;
+}
+
+.tree-item span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.snackbar-success {
+  --mdc-snackbar-container-color: #16a34a;
+  --mdc-snackbar-supporting-text-color: #ffffff;
+  --mat-snack-bar-button-color: #ffffff;
+}
+
+.snackbar-error {
+  --mdc-snackbar-container-color: #dc2626;
+  --mdc-snackbar-supporting-text-color: #ffffff;
+  --mat-snack-bar-button-color: #ffffff;
+}
+
+.snackbar-warning {
+  --mdc-snackbar-container-color: #f59e0b;
+  --mdc-snackbar-supporting-text-color: #111827;
+  --mat-snack-bar-button-color: #111827;
+}

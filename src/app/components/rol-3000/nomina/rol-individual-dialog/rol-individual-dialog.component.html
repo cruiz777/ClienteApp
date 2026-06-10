@@ -1,0 +1,135 @@
+<div class="rol-dialog">
+  <div class="dialog-topbar">
+    <div>
+      <h2>Rol Individual</h2>
+      <div class="periodo" *ngIf="dataRol">
+        Periodo: {{ fechaPeriodoTexto }}
+      </div>
+    </div>
+
+    <button class="btn-close" type="button" (click)="cerrar()">X</button>
+  </div>
+
+  <div *ngIf="cargando" class="loading-box">
+    Cargando información del rol individual...
+  </div>
+
+  <ng-container *ngIf="!cargando && dataRol as rol">
+    <div class="info-card">
+      <div class="info-item">
+        <label>Código</label>
+        <span>{{ rol.codigoEmpleado }}</span>
+      </div>
+
+      <div class="info-item wide">
+        <label>Empleado</label>
+        <span>{{ rol.nombreEmpleado }}</span>
+      </div>
+
+      <div class="info-item">
+        <label>Cédula</label>
+        <span>{{ rol.cedula || 'N/D' }}</span>
+      </div>
+
+      <div class="info-item">
+        <label>Tipo Emp.</label>
+        <span>{{ rol.tipoEmpleado }}</span>
+      </div>
+
+      <div class="info-item">
+        <label>Área / Local</label>
+        <span>{{ rol.local || 'N/D' }}</span>
+      </div>
+
+      <div class="info-item">
+        <label>Entrada</label>
+        <span>{{ fechaIngresoTexto }}</span>
+      </div>
+
+      <div class="info-item">
+        <label>Salida</label>
+        <span>{{ fechaSalidaTexto }}</span>
+      </div>
+
+      <div class="info-item wide">
+        <label>Email</label>
+        <span>{{ rol.email || 'N/D' }}</span>
+      </div>
+    </div>
+
+    <div class="grids-layout">
+      <div class="grid-panel">
+        <div class="grid-title ingresos">Ingresos</div>
+
+        <ag-grid-angular
+          class="ag-theme-alpine"
+          style="width: 100%; height: 360px;"
+          [rowData]="ingresos"
+          [columnDefs]="columnDefs"
+          [defaultColDef]="defaultColDef"
+          [animateRows]="true"
+          [singleClickEdit]="true"
+          [stopEditingWhenCellsLoseFocus]="true"
+          (cellValueChanged)="onCellValueChanged($event)">
+        </ag-grid-angular>
+
+        <div class="subtotal subtotal-ingresos">
+          <span>Total Ingresos</span>
+          <strong>{{ totalIngresos | number:'1.2-2' }}</strong>
+        </div>
+      </div>
+
+      <div class="grid-panel">
+        <div class="grid-title egresos">Egresos</div>
+
+        <ag-grid-angular
+          class="ag-theme-alpine"
+          style="width: 100%; height: 360px;"
+          [rowData]="egresos"
+          [columnDefs]="columnDefs"
+          [defaultColDef]="defaultColDef"
+          [animateRows]="true"
+          [singleClickEdit]="true"
+          [stopEditingWhenCellsLoseFocus]="true"
+          (cellValueChanged)="onCellValueChanged($event)">
+        </ag-grid-angular>
+
+        <div class="subtotal subtotal-egresos">
+          <span>Total Egresos</span>
+          <strong>{{ totalEgresos | number:'1.2-2' }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="liquido-box">
+      <span>Líquido a Recibir:</span>
+      <strong>$ {{ liquidoRecibir | number:'1.2-2' }}</strong>
+    </div>
+
+   <div class="acciones">
+  <button
+    type="button"
+    class="btn secondary"
+    (click)="calcular()"
+    [disabled]="guardando">
+    Calcular
+  </button>
+
+  <button
+    type="button"
+    class="btn primary"
+    (click)="grabar(false)"
+    [disabled]="guardando">
+    {{ guardando ? 'Grabando...' : 'Grabar' }}
+  </button>
+
+  <button
+    type="button"
+    class="btn light"
+    (click)="salir()"
+    [disabled]="guardando">
+    Salir
+  </button>
+</div>
+  </ng-container>
+</div>

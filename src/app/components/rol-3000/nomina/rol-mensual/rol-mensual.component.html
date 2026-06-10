@@ -13,13 +13,9 @@
 
     <div class="checks-grid">
       <mat-checkbox formControlName="verLocales">Ver Locales</mat-checkbox>
-      <mat-checkbox formControlName="areas">Áreas</mat-checkbox>
-      <mat-checkbox formControlName="totalizados">Totalizados</mat-checkbox>
+
       <mat-checkbox formControlName="todosLosRubros">Todos los Rubros</mat-checkbox>
 
-      <mat-checkbox formControlName="exEmpleados">Ex Empleados</mat-checkbox>
-      <mat-checkbox formControlName="departamentos">Departamentos</mat-checkbox>
-      <mat-checkbox formControlName="porRubros">Por Rubros</mat-checkbox>
       <mat-checkbox formControlName="totalizar">Totalizar</mat-checkbox>
     </div>
   </div>
@@ -34,12 +30,39 @@
       </div>
 
       <div class="left-panel-body">
-        <div *ngFor="let nodo of nodos" class="tree-item" [class.active]="nodoSeleccionado?.id === nodo.id"
-          (click)="seleccionarNodo(nodo)">
-          <mat-icon class="tree-icon">folder_open</mat-icon>
-          <span>{{ nodo.nombre }}</span>
-        </div>
+  <ng-container *ngFor="let nodo of nodos">
+
+    <!-- RAÍZ -->
+    <div
+      class="tree-item"
+      [class.active]="nodoSeleccionado?.tipo === nodo.tipo && nodoSeleccionado?.id === nodo.id"
+      (click)="seleccionarNodo(nodo)"
+    >
+      <mat-icon
+        class="tree-icon"
+        (click)="toggleNodo(nodo, $event)"
+      >
+        {{ nodo.expandido ? 'folder_open' : 'folder' }}
+      </mat-icon>
+
+      <span>{{ nodo.nombre }}</span>
+    </div>
+
+    <!-- HIJOS: LOCALES -->
+    <div class="tree-children" *ngIf="nodo.expandido">
+      <div
+        *ngFor="let hijo of nodo.hijos"
+        class="tree-item child"
+        [class.active]="nodoSeleccionado?.tipo === hijo.tipo && nodoSeleccionado?.id === hijo.id"
+        (click)="seleccionarNodo(hijo)"
+      >
+        <mat-icon class="tree-icon">business</mat-icon>
+        <span>{{ hijo.nombre }}</span>
       </div>
+    </div>
+
+  </ng-container>
+</div>
     </div>
 
     <!-- PANEL DERECHO -->
@@ -49,22 +72,12 @@
         <span>Detalle del Rol</span>
       </div>
 
-      <div class="grid-toolbar">
-        <div class="periodo-inline">
-          <label>Periodo</label>
-          <mat-form-field appearance="outline" class="fecha-field">
-            <mat-label>Fecha</mat-label>
-            <input matInput type="date" formControlName="fechaPeriodo" />
-          </mat-form-field>
-        </div>
-        <button mat-stroked-button color="primary" type="button" (click)="cargarRolMensual()">
-          Consultar
-        </button>
-      </div>
+      
 
       <div class="tabla-wrapper">
         <ag-grid-angular class="ag-theme-alpine tabla-ag-rol" [rowData]="detalleRol" [columnDefs]="columnDefs"
-          [defaultColDef]="defaultColDef" [animateRows]="true" [rowSelection]="'single'">
+          [defaultColDef]="defaultColDef" [animateRows]="true" [rowSelection]="'single'"
+          (rowDoubleClicked)="abrirRolIndividual($event)">
         </ag-grid-angular>
 
         <div class="sin-datos" *ngIf="!detalleRol || detalleRol.length === 0">
@@ -114,6 +127,28 @@
 
   <!-- BOTONES -->
   <div class="actions">
+    <div class="grid-toolbar">
+        <div class="periodo-inline">
+          <label>Periodo</label>
+          <mat-form-field appearance="outline" class="fecha-field">
+            <mat-label>Periodo</mat-label>
+
+            <input matInput [matDatepicker]="pickerPeriodo" formControlName="fechaPeriodo"
+              [matDatepickerFilter]="soloUltimoDiaMes" readonly />
+
+            <mat-datepicker-toggle matSuffix [for]="pickerPeriodo"></mat-datepicker-toggle>
+
+            <mat-datepicker #pickerPeriodo></mat-datepicker>
+
+            <mat-error *ngIf="form.get('fechaPeriodo')?.hasError('fechaInvalida')">
+              Solo puede seleccionar el último día del mes.
+            </mat-error>
+          </mat-form-field>
+        </div>
+        <button mat-stroked-button color="primary" type="button" (click)="cargarRolMensual()">
+          Consultar
+        </button>
+      </div>
     <button mat-flat-button color="primary" type="button" (click)="nuevo()">
       Nuevo
     </button>

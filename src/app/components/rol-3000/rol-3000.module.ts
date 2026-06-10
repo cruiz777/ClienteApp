@@ -95,7 +95,7 @@ import { RpEmpresaComplementariaComponent } from './configuracion/empresa-comple
 import { TipoNominaEspComponent } from './configuracion/tipo-nomina-esp/list/tipo-nomina-esp.component';
 import { MatMenuModule } from '@angular/material/menu';
 import { PeriodosNominaDialogComponent } from './especial/dialogs/periodos-nomina-dialog.component';
-
+import {RolIndividualDialogComponent} from './nomina/rol-individual-dialog/rol-individual-dialog.component';
 @NgModule({
   declarations: [
     NavigationRolComponent,
@@ -145,6 +145,7 @@ import { PeriodosNominaDialogComponent } from './especial/dialogs/periodos-nomin
     FondoReservaComponent,
     UtilidadesComponent,
     PeriodosNominaDialogComponent,
+    RolIndividualDialogComponent
   ],
   imports: [
     CommonModule,
