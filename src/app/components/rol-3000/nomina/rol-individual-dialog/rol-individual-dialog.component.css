@@ -180,3 +180,9 @@
   background: #e5e7eb;
   color: #111827;
 }
+.info-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 160px 320px 350px;
+  gap: 10px;
+}

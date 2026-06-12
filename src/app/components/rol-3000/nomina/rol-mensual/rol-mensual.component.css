@@ -289,3 +289,287 @@
   --mdc-snackbar-supporting-text-color: #111827;
   --mat-snack-bar-button-color: #111827;
 }
+.tabla-ag-rol {
+  width: 100%;
+  height: 520px;
+}
+/* ================================
+   AG GRID - GRUPOS DE CABECERA
+================================ */
+
+:host ::ng-deep .ag-theme-alpine .header-grupo-ingresos {
+  background: #dff7e8 !important;
+  color: #047837 !important;
+  font-weight: 800;
+  text-align: center;
+  border-bottom: 2px solid #22a65a !important;
+}
+
+:host ::ng-deep .ag-theme-alpine .header-grupo-descuentos {
+  background: #fde2e2 !important;
+  color: #b42318 !important;
+  font-weight: 800;
+  text-align: center;
+  border-bottom: 2px solid #e03131 !important;
+}
+
+/* ================================
+   AG GRID - CABECERAS RUBROS
+================================ */
+
+:host ::ng-deep .ag-theme-alpine .header-rubro-ingreso {
+  background: #ecfdf3 !important;
+  color: #067647 !important;
+  font-weight: 700;
+}
+
+:host ::ng-deep .ag-theme-alpine .header-rubro-descuento {
+  background: #fff1f1 !important;
+  color: #b42318 !important;
+  font-weight: 700;
+}
+
+/* ================================
+   AG GRID - CABECERAS TOTALES
+================================ */
+
+:host ::ng-deep .ag-theme-alpine .header-total-ingresos {
+  background: #e0f2fe !important;
+  color: #075985 !important;
+  font-weight: 800;
+}
+
+:host ::ng-deep .ag-theme-alpine .header-total-descuentos {
+  background: #fee2e2 !important;
+  color: #991b1b !important;
+  font-weight: 800;
+}
+
+:host ::ng-deep .ag-theme-alpine .header-total-liquido {
+  background: #ede9fe !important;
+  color: #5b21b6 !important;
+  font-weight: 800;
+}
+
+/* ================================
+   AG GRID - CELDAS
+================================ */
+
+:host ::ng-deep .ag-theme-alpine .cell-rubro-ingreso {
+  background: #f6fff9 !important;
+  color: #065f46;
+}
+
+:host ::ng-deep .ag-theme-alpine .cell-rubro-descuento {
+  background: #fff7f7 !important;
+  color: #991b1b;
+}
+
+:host ::ng-deep .ag-theme-alpine .cell-total-ingresos {
+  background: #f0f9ff !important;
+  color: #075985;
+  font-weight: 700;
+}
+
+:host ::ng-deep .ag-theme-alpine .cell-total-descuentos {
+  background: #fff1f2 !important;
+  color: #991b1b;
+  font-weight: 700;
+}
+
+:host ::ng-deep .ag-theme-alpine .cell-total-liquido {
+  background: #f5f3ff !important;
+  color: #5b21b6;
+  font-weight: 800;
+}
+
+/* ================================
+   FILA INFERIOR DE TOTALES
+================================ */
+
+:host ::ng-deep .ag-theme-alpine .ag-row-pinned {
+  background: #f8fafc !important;
+  border-top: 2px solid #334155 !important;
+  font-weight: 800;
+}
+
+:host ::ng-deep .ag-theme-alpine .cell-total-row {
+  font-weight: 800;
+  border-top: 2px solid #334155 !important;
+}
+
+:host ::ng-deep .ag-theme-alpine .cell-total-label {
+  background: #f1f5f9 !important;
+  color: #0f172a;
+  font-weight: 900;
+}
+/* ============================
+   GRUPOS DE CABECERA
+============================ */
+
+:host ::ng-deep .ag-theme-alpine .grupo-ingresos {
+  background: #d1fae5 !important;
+  color: #065f46 !important;
+  font-weight: 800;
+  text-align: center;
+  border-bottom: 2px solid #10b981 !important;
+}
+
+:host ::ng-deep .ag-theme-alpine .grupo-descuentos {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+  font-weight: 800;
+  text-align: center;
+  border-bottom: 2px solid #f59e0b !important;
+}
+
+/* ============================
+   CABECERA DE COLUMNAS
+============================ */
+
+:host ::ng-deep .ag-theme-alpine .header-ingreso {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  font-weight: 700;
+}
+
+:host ::ng-deep .ag-theme-alpine .header-descuento {
+  background: #fffbeb !important;
+  color: #92400e !important;
+  font-weight: 700;
+}
+
+/* ============================
+   CELDAS
+============================ */
+
+:host ::ng-deep .ag-theme-alpine .cell-ingreso {
+  background: #f0fdf4 !important;
+  color: #065f46;
+}
+
+:host ::ng-deep .ag-theme-alpine .cell-descuento {
+  background: #fefce8 !important;
+  color: #854d0e;
+}
+
+/* ============================
+   FILA DE TOTALES
+============================ */
+
+:host ::ng-deep .ag-theme-alpine .ag-row-pinned {
+  background: #f8fafc !important;
+  font-weight: 800;
+  border-top: 2px solid #334155 !important;
+}
+
+:host ::ng-deep .ag-theme-alpine .cell-total-row {
+  font-weight: 800;
+  border-top: 2px solid #334155 !important;
+}
+/* ============================
+   AG GRID - GRUPO INGRESOS
+============================ */
+
+:host ::ng-deep .ag-theme-alpine .ag-header-group-cell.grupo-ingresos {
+  background: #d1fae5 !important;
+  color: #065f46 !important;
+  font-weight: 900 !important;
+  text-align: center !important;
+  border-bottom: 2px solid #10b981 !important;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-header-group-cell.grupo-descuentos {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+  font-weight: 900 !important;
+  text-align: center !important;
+  border-bottom: 2px solid #f59e0b !important;
+}
+
+/* ============================
+   AG GRID - CABECERAS COLUMNAS
+============================ */
+
+:host ::ng-deep .ag-theme-alpine .ag-header-cell.header-ingreso {
+  background: #ecfdf5 !important;
+  color: #047857 !important;
+  font-weight: 800 !important;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-header-cell.header-descuento {
+  background: #fffbeb !important;
+  color: #92400e !important;
+  font-weight: 800 !important;
+}
+
+/* ============================
+   AG GRID - CELDAS INGRESOS/DESCUENTOS
+============================ */
+
+:host ::ng-deep .ag-theme-alpine .ag-cell.cell-ingreso {
+  background: #f0fdf4 !important;
+  color: #065f46 !important;
+  font-weight: 600;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-cell.cell-descuento {
+  background: #fefce8 !important;
+  color: #854d0e !important;
+  font-weight: 600;
+}
+
+/* ============================
+   AG GRID - TOTALES
+============================ */
+
+:host ::ng-deep .ag-theme-alpine .ag-header-cell.header-total-ingresos,
+:host ::ng-deep .ag-theme-alpine .ag-cell.cell-total-ingresos {
+  background: #dcfce7 !important;
+  color: #166534 !important;
+  font-weight: 900 !important;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-header-cell.header-total-descuentos,
+:host ::ng-deep .ag-theme-alpine .ag-cell.cell-total-descuentos {
+  background: #fef9c3 !important;
+  color: #854d0e !important;
+  font-weight: 900 !important;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-header-cell.header-total-liquido,
+:host ::ng-deep .ag-theme-alpine .ag-cell.cell-total-liquido {
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+  font-weight: 900 !important;
+}
+
+/* ============================
+   FILA INFERIOR DE TOTALES
+============================ */
+
+:host ::ng-deep .ag-theme-alpine .ag-row-pinned {
+  background: #f8fafc !important;
+  border-top: 2px solid #334155 !important;
+  font-weight: 900 !important;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-cell.cell-total-row {
+  font-weight: 900 !important;
+  border-top: 2px solid #334155 !important;
+}
+
+:host ::ng-deep .ag-theme-alpine .ag-cell.cell-total-label {
+  background: #f1f5f9 !important;
+  color: #0f172a !important;
+  font-weight: 900 !important;
+}
+.periodo-cerrado-banner {
+  margin: 8px 16px 0 16px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff7ed;
+  color: #9a3412;
+  border: 1px solid #fed7aa;
+  font-weight: 700;
+}

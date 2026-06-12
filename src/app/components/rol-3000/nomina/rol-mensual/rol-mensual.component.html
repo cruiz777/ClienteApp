@@ -8,61 +8,40 @@
   </div>
 
   <!-- FILTROS -->
-  <div class="card filtros-card">
-    <div class="card-title">Opciones de Consulta</div>
-
-    <div class="checks-grid">
-      <mat-checkbox formControlName="verLocales">Ver Locales</mat-checkbox>
-
-      <mat-checkbox formControlName="todosLosRubros">Todos los Rubros</mat-checkbox>
-
-      <mat-checkbox formControlName="totalizar">Totalizar</mat-checkbox>
-    </div>
-  </div>
+  
 
   <!-- CONTENIDO -->
   <div class="main-layout">
     <!-- PANEL IZQUIERDO -->
     <div class="card left-panel">
-      <div class="panel-header">
-        <mat-icon>account_tree</mat-icon>
-        <span>Emisión de Roles</span>
-      </div>
+     
 
       <div class="left-panel-body">
-  <ng-container *ngFor="let nodo of nodos">
+        <ng-container *ngFor="let nodo of nodos">
 
-    <!-- RAÍZ -->
-    <div
-      class="tree-item"
-      [class.active]="nodoSeleccionado?.tipo === nodo.tipo && nodoSeleccionado?.id === nodo.id"
-      (click)="seleccionarNodo(nodo)"
-    >
-      <mat-icon
-        class="tree-icon"
-        (click)="toggleNodo(nodo, $event)"
-      >
-        {{ nodo.expandido ? 'folder_open' : 'folder' }}
-      </mat-icon>
+          <!-- RAÍZ -->
+          <div class="tree-item"
+            [class.active]="nodoSeleccionado?.tipo === nodo.tipo && nodoSeleccionado?.id === nodo.id"
+            (click)="seleccionarNodo(nodo)">
+            <mat-icon class="tree-icon" (click)="toggleNodo(nodo, $event)">
+              {{ nodo.expandido ? 'folder_open' : 'folder' }}
+            </mat-icon>
 
-      <span>{{ nodo.nombre }}</span>
-    </div>
+            <span>{{ nodo.nombre }}</span>
+          </div>
 
-    <!-- HIJOS: LOCALES -->
-    <div class="tree-children" *ngIf="nodo.expandido">
-      <div
-        *ngFor="let hijo of nodo.hijos"
-        class="tree-item child"
-        [class.active]="nodoSeleccionado?.tipo === hijo.tipo && nodoSeleccionado?.id === hijo.id"
-        (click)="seleccionarNodo(hijo)"
-      >
-        <mat-icon class="tree-icon">business</mat-icon>
-        <span>{{ hijo.nombre }}</span>
+          <!-- HIJOS: LOCALES -->
+          <div class="tree-children" *ngIf="nodo.expandido">
+            <div *ngFor="let hijo of nodo.hijos" class="tree-item child"
+              [class.active]="nodoSeleccionado?.tipo === hijo.tipo && nodoSeleccionado?.id === hijo.id"
+              (click)="seleccionarNodo(hijo)">
+              <mat-icon class="tree-icon">business</mat-icon>
+              <span>{{ hijo.nombre }}</span>
+            </div>
+          </div>
+
+        </ng-container>
       </div>
-    </div>
-
-  </ng-container>
-</div>
     </div>
 
     <!-- PANEL DERECHO -->
@@ -72,12 +51,14 @@
         <span>Detalle del Rol</span>
       </div>
 
-      
 
+      <div class="periodo-cerrado-banner" *ngIf="periodoCerrado">
+  Periodo cerrado. La nómina se muestra solo en modo consulta.
+</div>
       <div class="tabla-wrapper">
         <ag-grid-angular class="ag-theme-alpine tabla-ag-rol" [rowData]="detalleRol" [columnDefs]="columnDefs"
-          [defaultColDef]="defaultColDef" [animateRows]="true" [rowSelection]="'single'"
-          (rowDoubleClicked)="abrirRolIndividual($event)">
+          [defaultColDef]="defaultColDef" [pinnedBottomRowData]="pinnedBottomRowData" [animateRows]="true"
+          [rowSelection]="'single'" (rowDoubleClicked)="abrirRolIndividual($event)">
         </ag-grid-angular>
 
         <div class="sin-datos" *ngIf="!detalleRol || detalleRol.length === 0">
@@ -86,85 +67,67 @@
       </div>
 
       <!-- TOTALES -->
-      <div class="totales-box">
-        <div class="total-item">
-          <span class="label">Días Trabajados</span>
-          <span class="value">{{ calcularTotal('diasTrabajados') }}</span>
-        </div>
 
-        <div class="total-item">
-          <span class="label">Sueldo</span>
-          <span class="value">{{ calcularTotal('sueldo') | number:'1.2-2' }}</span>
-        </div>
-
-        <div class="total-item">
-          <span class="label">Maternidad</span>
-          <span class="value">{{ calcularTotal('maternidad') | number:'1.2-2' }}</span>
-        </div>
-
-        <div class="total-item">
-          <span class="label">Recargo Nocturno</span>
-          <span class="value">{{ calcularTotal('recargoNocturno') | number:'1.2-2' }}</span>
-        </div>
-
-        <div class="total-item">
-          <span class="label">Horas 25%</span>
-          <span class="value">{{ calcularTotal('horasExtras25') | number:'1.2-2' }}</span>
-        </div>
-
-        <div class="total-item">
-          <span class="label">Horas 50%</span>
-          <span class="value">{{ calcularTotal('horasExtras50') | number:'1.2-2' }}</span>
-        </div>
-
-        <div class="total-item">
-          <span class="label">Horas 100%</span>
-          <span class="value">{{ calcularTotal('horasExtras100') | number:'1.2-2' }}</span>
-        </div>
-      </div>
     </div>
   </div>
 
   <!-- BOTONES -->
   <div class="actions">
     <div class="grid-toolbar">
-        <div class="periodo-inline">
-          <label>Periodo</label>
-          <mat-form-field appearance="outline" class="fecha-field">
-            <mat-label>Periodo</mat-label>
+      <div class="periodo-inline">
+        <label>Periodo</label>
+        <mat-form-field appearance="outline" class="fecha-field">
+          <mat-label>Periodo</mat-label>
 
-            <input matInput [matDatepicker]="pickerPeriodo" formControlName="fechaPeriodo"
-              [matDatepickerFilter]="soloUltimoDiaMes" readonly />
+          <input matInput [matDatepicker]="pickerPeriodo" formControlName="fechaPeriodo"
+            [matDatepickerFilter]="soloUltimoDiaMes" readonly />
 
-            <mat-datepicker-toggle matSuffix [for]="pickerPeriodo"></mat-datepicker-toggle>
+          <mat-datepicker-toggle matSuffix [for]="pickerPeriodo"></mat-datepicker-toggle>
 
-            <mat-datepicker #pickerPeriodo></mat-datepicker>
+          <mat-datepicker #pickerPeriodo></mat-datepicker>
 
-            <mat-error *ngIf="form.get('fechaPeriodo')?.hasError('fechaInvalida')">
-              Solo puede seleccionar el último día del mes.
-            </mat-error>
-          </mat-form-field>
-        </div>
-        <button mat-stroked-button color="primary" type="button" (click)="cargarRolMensual()">
-          Consultar
-        </button>
+          <mat-error *ngIf="form.get('fechaPeriodo')?.hasError('fechaInvalida')">
+            Solo puede seleccionar el último día del mes.
+          </mat-error>
+        </mat-form-field>
       </div>
-    <button mat-flat-button color="primary" type="button" (click)="nuevo()">
-      Nuevo
-    </button>
+      <!-- <button mat-stroked-button color="primary" type="button" (click)="cargarRolMensual()">
+        Consultar
+      </button> -->
+    </div>
+   <button
+  mat-flat-button
+  color="primary"
+  type="button"
+  [disabled]="generando || cargando || validandoCierre"
+  (click)="nuevo()">
+  Nuevo
+</button>
 
-    <button mat-stroked-button color="primary" type="button" (click)="actualizar()">
-      Actualizar
-    </button>
+<button
+  mat-stroked-button
+  color="primary"
+  type="button"
+  [disabled]="generando || cargando || periodoCerrado"
+  (click)="actualizar()">
+  Actualizar
+</button>
 
-    <button mat-stroked-button type="button" (click)="cargarHoras()">
-      Cargar Horas
-    </button>
+<button
+  mat-stroked-button
+  type="button"
+  [disabled]="periodoCerrado"
+  (click)="cargarHoras()">
+  Cargar Horas
+</button>
 
-    <button mat-stroked-button type="button" (click)="rubrosFijos()">
-      Rubros Fijos
-    </button>
-
+<button
+  mat-stroked-button
+  type="button"
+  [disabled]="periodoCerrado"
+  (click)="rubrosFijos()">
+  Rubros Fijos
+</button>
     <button mat-stroked-button color="warn" type="button" (click)="cancelar()">
       Cancelar
     </button>

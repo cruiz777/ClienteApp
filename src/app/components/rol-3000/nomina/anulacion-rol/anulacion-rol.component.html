@@ -4,21 +4,43 @@
 
     <div class="form-grid">
       <mat-form-field appearance="outline" class="fecha-field">
-        <mat-label>Fecha de ROL</mat-label>
-        <input matInput type="date" formControlName="fechaRol" />
+  <mat-label>Fecha de ROL</mat-label>
 
-        <mat-error *ngIf="form.get('fechaRol')?.hasError('required')">
-          La fecha es obligatoria
-        </mat-error>
-      </mat-form-field>
+ <input
+  matInput
+  [matDatepicker]="pickerRol"
+  formControlName="fechaRol"
+  [matDatepickerFilter]="soloUltimoDiaMes"
+  readonly />
+
+  <mat-datepicker-toggle matSuffix [for]="pickerRol"></mat-datepicker-toggle>
+  <mat-datepicker #pickerRol></mat-datepicker>
+
+  <mat-error *ngIf="form.get('fechaRol')?.hasError('required')">
+    La fecha es obligatoria
+  </mat-error>
+
+  <mat-error *ngIf="form.get('fechaRol')?.hasError('fechaInvalida')">
+    Solo puede seleccionar el último día del mes.
+  </mat-error>
+</mat-form-field>
     </div>
 
     <div class="actions">
-      <button mat-flat-button color="primary" (click)="generar()">
-        Generar
-      </button>
+      <button
+  mat-flat-button
+  color="primary"
+  type="button"
+  [disabled]="procesando"
+  (click)="generar()">
+  {{ procesando ? 'Anulando...' : 'Anular' }}
+</button>
 
-      <button mat-stroked-button (click)="cancelar()">
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="procesando"
+        (click)="cancelar()">
         Cancelar
       </button>
     </div>
