@@ -1,0 +1,188 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.rol-dialog {
+  width: 100%;
+  height: 100%;
+  padding: 16px;
+  box-sizing: border-box;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: auto;
+}
+
+.dialog-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dialog-topbar h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.periodo {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.btn-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #e5e7eb;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.info-card {
+  display: grid;
+  grid-template-columns: 120px 1fr 150px 150px;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-item.wide {
+  grid-column: span 2;
+}
+
+.info-item label {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.info-item span {
+  min-height: 32px;
+  padding: 7px 9px;
+  display: flex;
+  align-items: center;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #f8fafc;
+  font-size: 13px;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.grids-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.grid-panel {
+  border: 1px solid #dbe3ef;
+  border-radius: 10px;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.grid-title {
+  padding: 9px 12px;
+  font-weight: 700;
+  border-bottom: 1px solid #dbe3ef;
+}
+
+.grid-title.ingresos {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.grid-title.egresos {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.subtotal {
+  height: 42px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  border-top: 1px solid #dbe3ef;
+  font-weight: 700;
+}
+
+.subtotal-ingresos {
+  background: #f0fdf4;
+  color: #166534;
+}
+
+.subtotal-egresos {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.liquido-box {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  border: 1px solid #bfdbfe;
+  border-radius: 10px;
+  background: #eff6ff;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.liquido-box strong {
+  color: #1d4ed8;
+  font-size: 24px;
+}
+
+.acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.btn {
+  min-width: 90px;
+  height: 36px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn.primary {
+  background: #2563eb;
+  color: white;
+}
+
+.btn.secondary {
+  background: #334155;
+  color: white;
+}
+
+.btn.light {
+  background: #e5e7eb;
+  color: #111827;
+}
+.info-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 160px 320px 350px;
+  gap: 10px;
+}

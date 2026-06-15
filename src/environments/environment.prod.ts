@@ -29,5 +29,6 @@ export const environment = {
       maintenanceRolUrl: 'http://181.39.162.182:8000/maintenance-rol/api',
       employeesUrl: 'http://181.39.162.182:8000/employees/api',
     nominaEspecialUrl: 'http://181.39.162.182:8000/nomina-especial/api',
+    nominaUrl: 'http://181.39.162.182:8000/nomina/api'
 
 };
