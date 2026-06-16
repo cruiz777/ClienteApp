@@ -98,6 +98,13 @@ export interface RolIndividualResponse {
   totalIngresos: number;
   totalEgresos: number;
   liquidoRecibir: number;
+
+  porcentajeIessPersonal: number;
+  
+  porcentajeFondoReserva: number;
+tieneDerechoFondoReserva: boolean;
+fechaDerechoFondoReserva: string | null;
+
 }
 
 export interface RolIndividualRubroResponse {
@@ -115,6 +122,11 @@ export interface RolIndividualRubroResponse {
 
   esHoraExtra: boolean;
   factorHoraExtra: number;
+
+  aportaIess: boolean;
+  aplicaImpuestoRenta: boolean;
+  aplicaFondoReserva: boolean;
+  aplicaDecimoTercero: boolean;
 }
 export interface GuardarRolIndividualRequest {
   idEmpleado: number;
@@ -136,6 +148,11 @@ export interface GuardarRolIndividualRubroRequest {
 
   esHoraExtra: boolean;
   factorHoraExtra: number;
+
+  aportaIess: boolean;
+  aplicaImpuestoRenta: boolean;
+  aplicaFondoReserva: boolean;
+  aplicaDecimoTercero: boolean;
 }
 
 @Injectable({

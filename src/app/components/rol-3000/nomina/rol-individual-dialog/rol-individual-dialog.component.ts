@@ -6,7 +6,7 @@ import {
   RolIndividualResponse,
   RolIndividualRubroResponse,
   RolNominaService,
-   GuardarRolIndividualRequest,
+  GuardarRolIndividualRequest,
 
 } from 'src/app/services/rol/rol-nomina.service';
 
@@ -56,11 +56,15 @@ export class RolIndividualDialogComponent implements OnInit {
       editable: params => {
         const row = params.data as RolIndividualRubroResponse;
 
-        /*
-         * En horas extras el valor NO debe editarse manualmente.
-         * Se calcula desde cantidad * valorHoraBase * factor.
-         */
-        if (row?.esHoraExtra) {
+        if (!row) {
+          return false;
+        }
+
+        if (row.esHoraExtra) {
+          return false;
+        }
+
+        if (this.esRubroAporteIess(row)) {
           return false;
         }
 
@@ -102,24 +106,24 @@ export class RolIndividualDialogComponent implements OnInit {
       .getRolIndividual(this.data.idEmpleado, this.data.fechaPeriodo)
       .subscribe({
         next: (resp: ApiResponse<RolIndividualResponse>) => {
-          this.cargando = false;
+  this.cargando = false;
 
-          if (resp.type !== 'Success') {
-            alert(resp.message);
-            return;
-          }
+  if (resp.type !== 'Success') {
+    alert(resp.message);
+    return;
+  }
 
-          this.dataRol = resp.data;
+  this.dataRol = resp.data;
 
-          this.ingresos = [...(resp.data.ingresos ?? [])];
-          this.egresos = [...(resp.data.egresos ?? [])];
+  this.ingresos = [...(resp.data.ingresos ?? [])];
+  this.egresos = [...(resp.data.egresos ?? [])];
 
-          console.log('ROL INDIVIDUAL:', this.dataRol);
-          console.log('INGRESOS:', this.ingresos);
-          console.log('EGRESOS:', this.egresos);
+  console.log('ROL INDIVIDUAL:', this.dataRol);
+  console.log('INGRESOS:', this.ingresos);
+  console.log('EGRESOS:', this.egresos);
 
-          this.recalcularTotales();
-        },
+  this.calcularSinMarcarCambios();
+},
         error: (err: unknown) => {
           this.cargando = false;
           console.error(err);
@@ -147,7 +151,7 @@ export class RolIndividualDialogComponent implements OnInit {
     this.liquidoRecibir = this.totalIngresos - this.totalEgresos;
   }
 
-  
+
   cerrar(): void {
     this.dialogRef.close();
   }
@@ -193,33 +197,18 @@ export class RolIndividualDialogComponent implements OnInit {
 
     return `${dia}/${mes}/${anio}`;
   }
-  onCellValueChanged(event: CellValueChangedEvent<RolIndividualRubroResponse>): void {
-    const row = event.data;
+onCellValueChanged(event: CellValueChangedEvent<RolIndividualRubroResponse>): void {
+  const row = event.data;
 
-    if (!row) {
-      return;
-    }
-
-    row.cantidad = this.toNumber(row.cantidad);
-    row.valor = this.toNumber(row.valor);
-
-    /*
-     * Códigos controlados por backend:
-     * 07 = Recargo nocturno
-     * 08 = Horas extras 25%
-     * 09 = Horas extras 50%
-     * 10 = Horas extras 100%
-     */
-    if (row.esHoraExtra) {
-      row.valor = this.calcularValorHoraExtra(row);
-    }
-
-    this.ingresos = [...this.ingresos];
-    this.egresos = [...this.egresos];
-
-    this.recalcularTotales();
-      this.hayCambios = true;
+  if (!row) {
+    return;
   }
+
+  row.cantidad = this.toNumber(row.cantidad);
+  row.valor = this.toNumber(row.valor);
+
+  this.calcular();
+}
   private calcularValorHoraExtra(row: RolIndividualRubroResponse): number {
     const valorHoraBase = this.toNumber(this.dataRol?.valorHoraBase);
     const cantidad = this.toNumber(row.cantidad);
@@ -260,7 +249,7 @@ export class RolIndividualDialogComponent implements OnInit {
 
     return `${dia}/${mes}/${anio}`;
   }
-  calcular(): void {
+calcular(): void {
   this.ingresos.forEach(row => {
     row.cantidad = this.toNumber(row.cantidad);
     row.valor = this.toNumber(row.valor);
@@ -275,85 +264,232 @@ export class RolIndividualDialogComponent implements OnInit {
     row.valor = this.toNumber(row.valor);
   });
 
+  this.recalcularFondoReserva();
+  this.recalcularDecimoTercero();
+  this.recalcularAporteIess();
+
   this.ingresos = [...this.ingresos];
   this.egresos = [...this.egresos];
 
   this.recalcularTotales();
+  this.hayCambios = true;
 }
+  grabar(cerrarDespues: boolean = false): void {
+    if (!this.dataRol) {
+      alert('No existe información del rol individual.');
+      return;
+    }
 
-grabar(cerrarDespues: boolean = false): void {
-  if (!this.dataRol) {
-    alert('No existe información del rol individual.');
-    return;
+    this.calcular();
+
+    const payload: GuardarRolIndividualRequest = {
+      idEmpleado: this.dataRol.idEmpleado,
+      fechaPeriodo: this.dataRol.fechaPeriodo,
+      idUsuario: 1, // cámbialo por el usuario real cuando ya lo tengas
+      rubros: [
+  ...this.ingresos,
+  ...this.egresos
+].map(x => ({
+  idRolNomina: x.idRolNomina,
+  idIngDesc: x.idIngDesc,
+  tipoPago: x.tipoPago,
+  codigo: x.codigo,
+  descripcion: x.descripcion,
+  cantidad: this.toNumber(x.cantidad),
+  valor: this.toNumber(x.valor),
+  esHoraExtra: x.esHoraExtra,
+  factorHoraExtra: this.toNumber(x.factorHoraExtra),
+
+  aportaIess: x.aportaIess,
+  aplicaImpuestoRenta: x.aplicaImpuestoRenta,
+  aplicaFondoReserva: x.aplicaFondoReserva,
+  aplicaDecimoTercero: x.aplicaDecimoTercero
+}))
+    };
+
+    this.guardando = true;
+
+    this.rolNominaService.guardarRolIndividual(payload)
+      .subscribe({
+        next: resp => {
+          this.guardando = false;
+
+          if (resp.type !== 'Success') {
+            alert(resp.message);
+            return;
+          }
+
+          this.hayCambios = false;
+          alert(resp.message);
+
+          if (cerrarDespues) {
+            this.dialogRef.close(true);
+            return;
+          }
+
+          this.cargarRolIndividual();
+        },
+        error: err => {
+          this.guardando = false;
+          console.error(err);
+          alert('Error al guardar el rol individual.');
+        }
+      });
   }
 
-  this.calcular();
+  salir(): void {
+    if (!this.hayCambios) {
+      this.dialogRef.close(false);
+      return;
+    }
 
-  const payload: GuardarRolIndividualRequest = {
-    idEmpleado: this.dataRol.idEmpleado,
-    fechaPeriodo: this.dataRol.fechaPeriodo,
-    idUsuario: 1, // cámbialo por el usuario real cuando ya lo tengas
-    rubros: [
-      ...this.ingresos,
-      ...this.egresos
-    ].map(x => ({
-      idRolNomina: x.idRolNomina,
-      idIngDesc: x.idIngDesc,
-      tipoPago: x.tipoPago,
-      codigo: x.codigo,
-      descripcion: x.descripcion,
-      cantidad: this.toNumber(x.cantidad),
-      valor: this.toNumber(x.valor),
-      esHoraExtra: x.esHoraExtra,
-      factorHoraExtra: this.toNumber(x.factorHoraExtra)
-    }))
-  };
+    const guardarAntes = confirm(
+      'Existen cambios pendientes. ¿Desea guardar antes de salir?'
+    );
 
-  this.guardando = true;
+    if (guardarAntes) {
+      this.grabar(true);
+      return;
+    }
 
-  this.rolNominaService.guardarRolIndividual(payload)
-    .subscribe({
-      next: resp => {
-        this.guardando = false;
+    this.dialogRef.close(false);
+  }
+  private normalizarCodigo(codigo: string | null | undefined): string {
+    if (!codigo) {
+      return '';
+    }
 
-        if (resp.type !== 'Success') {
-          alert(resp.message);
-          return;
-        }
+    const texto = codigo.toString().trim();
+    const numero = Number(texto);
 
-        this.hayCambios = false;
-        alert(resp.message);
+    if (!isNaN(numero)) {
+      return numero.toString().padStart(2, '0');
+    }
 
-        if (cerrarDespues) {
-          this.dialogRef.close(true);
-          return;
-        }
+    return texto;
+  }
 
-        this.cargarRolIndividual();
-      },
-      error: err => {
-        this.guardando = false;
-        console.error(err);
-        alert('Error al guardar el rol individual.');
+  private esRubroAporteIess(row: RolIndividualRubroResponse): boolean {
+    return row.tipoPago === 'D' && this.normalizarCodigo(row.codigo) === '25';
+  }
+
+  private recalcularHorasExtras(): void {
+    this.ingresos.forEach(row => {
+      row.cantidad = this.toNumber(row.cantidad);
+      row.valor = this.toNumber(row.valor);
+
+      if (row.esHoraExtra) {
+        row.valor = this.calcularValorHoraExtra(row);
       }
     });
+  }
+
+  private recalcularAporteIess(): void {
+    const porcentajeIess = this.toNumber(this.dataRol?.porcentajeIessPersonal || 9.45);
+
+    const baseIess = this.ingresos
+      .filter(x => x.tipoPago === 'I')
+      .filter(x => x.aportaIess === true)
+      .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
+
+    const valorIess = this.redondear(baseIess * porcentajeIess / 100);
+
+    const rubroIess = this.egresos.find(x => this.esRubroAporteIess(x));
+
+    if (rubroIess) {
+      rubroIess.valor = valorIess;
+      rubroIess.cantidad = 0;
+    }
+  }
+  private esRubroFondoReserva(row: RolIndividualRubroResponse): boolean {
+  return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '18';
 }
 
-salir(): void {
-  if (!this.hayCambios) {
-    this.dialogRef.close(false);
-    return;
-  }
+private esRubroDecimoTercero(row: RolIndividualRubroResponse): boolean {
+  return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '46';
+}
 
-  const guardarAntes = confirm(
-    'Existen cambios pendientes. ¿Desea guardar antes de salir?'
+private recalcularFondoReserva(): void {
+  const rubroFondoReserva = this.ingresos.find(x =>
+    this.esRubroFondoReserva(x)
   );
 
-  if (guardarAntes) {
-    this.grabar(true);
+  if (!rubroFondoReserva) {
     return;
   }
 
-  this.dialogRef.close(false);
+  /*
+   * Regla laboral:
+   * No se calcula Fondo Reserva si el empleado aún no cumple el año.
+   */
+  if (!this.dataRol?.tieneDerechoFondoReserva) {
+    rubroFondoReserva.valor = 0;
+    rubroFondoReserva.cantidad = 0;
+    return;
+  }
+
+  const porcentajeFondoReserva = this.toNumber(
+    this.dataRol?.porcentajeFondoReserva || 8.33
+  );
+
+  const baseFondoReserva = this.ingresos
+    .filter(x => x.tipoPago === 'I')
+    .filter(x => x.aplicaFondoReserva === true)
+    .filter(x => !this.esRubroFondoReserva(x))
+    .filter(x => !this.esRubroDecimoTercero(x))
+    .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
+
+  rubroFondoReserva.valor = this.redondear(
+    baseFondoReserva * porcentajeFondoReserva / 100
+  );
+
+  rubroFondoReserva.cantidad = 0;
+}
+private recalcularDecimoTercero(): void {
+  const baseDecimoTercero = this.ingresos
+    .filter(x => x.tipoPago === 'I')
+    .filter(x => x.aplicaDecimoTercero === true)
+    .filter(x => !this.esRubroFondoReserva(x))
+    .filter(x => !this.esRubroDecimoTercero(x))
+    .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
+
+  const rubroDecimoTercero = this.ingresos.find(x =>
+    this.esRubroDecimoTercero(x)
+  );
+
+  if (rubroDecimoTercero) {
+    rubroDecimoTercero.valor = this.redondear(baseDecimoTercero / 12);
+    rubroDecimoTercero.cantidad = 0;
+  }
+}
+private calcularSinMarcarCambios(): void {
+  this.ingresos.forEach(row => {
+    row.cantidad = this.toNumber(row.cantidad);
+    row.valor = this.toNumber(row.valor);
+
+    if (row.esHoraExtra) {
+      row.valor = this.calcularValorHoraExtra(row);
+    }
+  });
+
+  this.egresos.forEach(row => {
+    row.cantidad = this.toNumber(row.cantidad);
+    row.valor = this.toNumber(row.valor);
+  });
+
+  this.recalcularFondoReserva();
+  this.recalcularDecimoTercero();
+  this.recalcularAporteIess();
+
+  this.ingresos = [...this.ingresos];
+  this.egresos = [...this.egresos];
+
+  this.recalcularTotales();
+
+  /*
+   * Importante:
+   * Al cargar no debe marcar cambios pendientes.
+   */
+  this.hayCambios = false;
 }
 }
