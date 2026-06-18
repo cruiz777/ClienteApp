@@ -64,7 +64,19 @@ export class RolIndividualDialogComponent implements OnInit {
           return false;
         }
 
+        if (this.esRubroPermisoMaternidad(row)) {
+          return false;
+        }
+
         if (this.esRubroAporteIess(row)) {
+          return false;
+        }
+
+        if (this.esRubroFondoReserva(row)) {
+          return false;
+        }
+
+        if (this.esRubroDecimoTercero(row)) {
           return false;
         }
 
@@ -106,24 +118,24 @@ export class RolIndividualDialogComponent implements OnInit {
       .getRolIndividual(this.data.idEmpleado, this.data.fechaPeriodo)
       .subscribe({
         next: (resp: ApiResponse<RolIndividualResponse>) => {
-  this.cargando = false;
+          this.cargando = false;
 
-  if (resp.type !== 'Success') {
-    alert(resp.message);
-    return;
-  }
+          if (resp.type !== 'Success') {
+            alert(resp.message);
+            return;
+          }
 
-  this.dataRol = resp.data;
+          this.dataRol = resp.data;
 
-  this.ingresos = [...(resp.data.ingresos ?? [])];
-  this.egresos = [...(resp.data.egresos ?? [])];
+          this.ingresos = [...(resp.data.ingresos ?? [])];
+          this.egresos = [...(resp.data.egresos ?? [])];
 
-  console.log('ROL INDIVIDUAL:', this.dataRol);
-  console.log('INGRESOS:', this.ingresos);
-  console.log('EGRESOS:', this.egresos);
+          console.log('ROL INDIVIDUAL:', this.dataRol);
+          console.log('INGRESOS:', this.ingresos);
+          console.log('EGRESOS:', this.egresos);
 
-  this.calcularSinMarcarCambios();
-},
+          this.calcularSinMarcarCambios();
+        },
         error: (err: unknown) => {
           this.cargando = false;
           console.error(err);
@@ -138,10 +150,9 @@ export class RolIndividualDialogComponent implements OnInit {
   }
 
   recalcularTotales(): void {
-    this.totalIngresos = this.ingresos.reduce(
-      (acc, item) => acc + this.toNumber(item.valor),
-      0
-    );
+    this.totalIngresos = this.ingresos
+      .filter(item => !this.esRubroSueldo(item))
+      .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
 
     this.totalEgresos = this.egresos.reduce(
       (acc, item) => acc + this.toNumber(item.valor),
@@ -150,7 +161,6 @@ export class RolIndividualDialogComponent implements OnInit {
 
     this.liquidoRecibir = this.totalIngresos - this.totalEgresos;
   }
-
 
   cerrar(): void {
     this.dialogRef.close();
@@ -197,18 +207,18 @@ export class RolIndividualDialogComponent implements OnInit {
 
     return `${dia}/${mes}/${anio}`;
   }
-onCellValueChanged(event: CellValueChangedEvent<RolIndividualRubroResponse>): void {
-  const row = event.data;
+  onCellValueChanged(event: CellValueChangedEvent<RolIndividualRubroResponse>): void {
+    const row = event.data;
 
-  if (!row) {
-    return;
+    if (!row) {
+      return;
+    }
+
+    row.cantidad = this.toNumber(row.cantidad);
+    row.valor = this.toNumber(row.valor);
+
+    this.calcular();
   }
-
-  row.cantidad = this.toNumber(row.cantidad);
-  row.valor = this.toNumber(row.valor);
-
-  this.calcular();
-}
   private calcularValorHoraExtra(row: RolIndividualRubroResponse): number {
     const valorHoraBase = this.toNumber(this.dataRol?.valorHoraBase);
     const cantidad = this.toNumber(row.cantidad);
@@ -249,31 +259,42 @@ onCellValueChanged(event: CellValueChangedEvent<RolIndividualRubroResponse>): vo
 
     return `${dia}/${mes}/${anio}`;
   }
-calcular(): void {
-  this.ingresos.forEach(row => {
-    row.cantidad = this.toNumber(row.cantidad);
-    row.valor = this.toNumber(row.valor);
+  calcular(): void {
+    this.ingresos.forEach(row => {
+      row.cantidad = this.toNumber(row.cantidad);
+      row.valor = this.toNumber(row.valor);
+    });
 
-    if (row.esHoraExtra) {
-      row.valor = this.calcularValorHoraExtra(row);
-    }
-  });
+    this.egresos.forEach(row => {
+      row.cantidad = this.toNumber(row.cantidad);
+      row.valor = this.toNumber(row.valor);
+    });
 
-  this.egresos.forEach(row => {
-    row.cantidad = this.toNumber(row.cantidad);
-    row.valor = this.toNumber(row.valor);
-  });
+    this.recalcularDiasTrabajadosPorAusencias();
 
-  this.recalcularFondoReserva();
-  this.recalcularDecimoTercero();
-  this.recalcularAporteIess();
+    this.ingresos.forEach(row => {
+      if (row.esHoraExtra) {
+        row.valor = this.calcularValorHoraExtra(row);
+      }
 
-  this.ingresos = [...this.ingresos];
-  this.egresos = [...this.egresos];
+      if (this.esRubroPermisoMaternidad(row)) {
+        row.valor = this.calcularPermisoMaternidad(row);
+      }
+      if (this.esRubroEnfermedad(row)) {
+        row.valor = this.calcularEnfermedad(row);
+      }
+    });
 
-  this.recalcularTotales();
-  this.hayCambios = true;
-}
+    this.recalcularFondoReserva();
+    this.recalcularDecimoTercero();
+    this.recalcularAporteIess();
+
+    this.ingresos = [...this.ingresos];
+    this.egresos = [...this.egresos];
+
+    this.recalcularTotales();
+    this.hayCambios = true;
+  }
   grabar(cerrarDespues: boolean = false): void {
     if (!this.dataRol) {
       alert('No existe información del rol individual.');
@@ -287,24 +308,24 @@ calcular(): void {
       fechaPeriodo: this.dataRol.fechaPeriodo,
       idUsuario: 1, // cámbialo por el usuario real cuando ya lo tengas
       rubros: [
-  ...this.ingresos,
-  ...this.egresos
-].map(x => ({
-  idRolNomina: x.idRolNomina,
-  idIngDesc: x.idIngDesc,
-  tipoPago: x.tipoPago,
-  codigo: x.codigo,
-  descripcion: x.descripcion,
-  cantidad: this.toNumber(x.cantidad),
-  valor: this.toNumber(x.valor),
-  esHoraExtra: x.esHoraExtra,
-  factorHoraExtra: this.toNumber(x.factorHoraExtra),
+        ...this.ingresos,
+        ...this.egresos
+      ].map(x => ({
+        idRolNomina: x.idRolNomina,
+        idIngDesc: x.idIngDesc,
+        tipoPago: x.tipoPago,
+        codigo: x.codigo,
+        descripcion: x.descripcion,
+        cantidad: this.toNumber(x.cantidad),
+        valor: this.toNumber(x.valor),
+        esHoraExtra: x.esHoraExtra,
+        factorHoraExtra: this.toNumber(x.factorHoraExtra),
 
-  aportaIess: x.aportaIess,
-  aplicaImpuestoRenta: x.aplicaImpuestoRenta,
-  aplicaFondoReserva: x.aplicaFondoReserva,
-  aplicaDecimoTercero: x.aplicaDecimoTercero
-}))
+        aportaIess: x.aportaIess,
+        aplicaImpuestoRenta: x.aplicaImpuestoRenta,
+        aplicaFondoReserva: x.aplicaFondoReserva,
+        aplicaDecimoTercero: x.aplicaDecimoTercero
+      }))
     };
 
     this.guardando = true;
@@ -385,11 +406,17 @@ calcular(): void {
   }
 
   private recalcularAporteIess(): void {
-    const porcentajeIess = this.toNumber(this.dataRol?.porcentajeIessPersonal || 9.45);
+    const porcentajeIess = this.toNumber(
+      this.dataRol?.porcentajeIessPersonal || 9.45
+    );
 
     const baseIess = this.ingresos
       .filter(x => x.tipoPago === 'I')
       .filter(x => x.aportaIess === true)
+      .filter(x => !this.esRubroDiasTrabajados(x))
+      .filter(x => !this.esRubroPermisoMaternidad(x))
+      .filter(x => !this.esRubroFondoReserva(x))
+      .filter(x => !this.esRubroDecimoTercero(x))
       .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
 
     const valorIess = this.redondear(baseIess * porcentajeIess / 100);
@@ -402,94 +429,203 @@ calcular(): void {
     }
   }
   private esRubroFondoReserva(row: RolIndividualRubroResponse): boolean {
-  return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '18';
-}
-
-private esRubroDecimoTercero(row: RolIndividualRubroResponse): boolean {
-  return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '46';
-}
-
-private recalcularFondoReserva(): void {
-  const rubroFondoReserva = this.ingresos.find(x =>
-    this.esRubroFondoReserva(x)
-  );
-
-  if (!rubroFondoReserva) {
-    return;
+    return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '18';
   }
 
-  /*
-   * Regla laboral:
-   * No se calcula Fondo Reserva si el empleado aún no cumple el año.
-   */
-  if (!this.dataRol?.tieneDerechoFondoReserva) {
-    rubroFondoReserva.valor = 0;
-    rubroFondoReserva.cantidad = 0;
-    return;
+  private esRubroDecimoTercero(row: RolIndividualRubroResponse): boolean {
+    return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '46';
   }
-
-  const porcentajeFondoReserva = this.toNumber(
-    this.dataRol?.porcentajeFondoReserva || 8.33
-  );
-
-  const baseFondoReserva = this.ingresos
-    .filter(x => x.tipoPago === 'I')
-    .filter(x => x.aplicaFondoReserva === true)
-    .filter(x => !this.esRubroFondoReserva(x))
-    .filter(x => !this.esRubroDecimoTercero(x))
-    .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
-
-  rubroFondoReserva.valor = this.redondear(
-    baseFondoReserva * porcentajeFondoReserva / 100
-  );
-
-  rubroFondoReserva.cantidad = 0;
-}
-private recalcularDecimoTercero(): void {
-  const baseDecimoTercero = this.ingresos
-    .filter(x => x.tipoPago === 'I')
-    .filter(x => x.aplicaDecimoTercero === true)
-    .filter(x => !this.esRubroFondoReserva(x))
-    .filter(x => !this.esRubroDecimoTercero(x))
-    .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
-
-  const rubroDecimoTercero = this.ingresos.find(x =>
-    this.esRubroDecimoTercero(x)
-  );
-
-  if (rubroDecimoTercero) {
-    rubroDecimoTercero.valor = this.redondear(baseDecimoTercero / 12);
-    rubroDecimoTercero.cantidad = 0;
+  private esRubroPermisoMaternidad(row: RolIndividualRubroResponse): boolean {
+    return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '05';
   }
-}
-private calcularSinMarcarCambios(): void {
-  this.ingresos.forEach(row => {
-    row.cantidad = this.toNumber(row.cantidad);
-    row.valor = this.toNumber(row.valor);
+  private calcularPermisoMaternidad(row: RolIndividualRubroResponse): number {
+    const sueldo = this.toNumber(this.dataRol?.sueldo);
+    const diasMaternidad = this.toNumber(row.cantidad);
 
-    if (row.esHoraExtra) {
-      row.valor = this.calcularValorHoraExtra(row);
+    if (sueldo <= 0 || diasMaternidad <= 0) {
+      return 0;
     }
-  });
 
-  this.egresos.forEach(row => {
-    row.cantidad = this.toNumber(row.cantidad);
-    row.valor = this.toNumber(row.valor);
-  });
+    return this.redondear((sueldo / 30) * 0.25 * diasMaternidad);
+  }
 
-  this.recalcularFondoReserva();
-  this.recalcularDecimoTercero();
-  this.recalcularAporteIess();
+  private recalcularFondoReserva(): void {
+    const rubroFondoReserva = this.ingresos.find(x =>
+      this.esRubroFondoReserva(x)
+    );
 
-  this.ingresos = [...this.ingresos];
-  this.egresos = [...this.egresos];
+    if (!rubroFondoReserva) {
+      return;
+    }
 
-  this.recalcularTotales();
+    if (!this.dataRol?.tieneDerechoFondoReserva) {
+      rubroFondoReserva.valor = 0;
+      rubroFondoReserva.cantidad = 0;
+      return;
+    }
 
-  /*
-   * Importante:
-   * Al cargar no debe marcar cambios pendientes.
-   */
-  this.hayCambios = false;
-}
+    const porcentajeFondoReserva = this.toNumber(
+      this.dataRol?.porcentajeFondoReserva || 8.33
+    );
+
+    const baseFondoReserva = this.ingresos
+      .filter(x => x.tipoPago === 'I')
+      .filter(x => x.aplicaFondoReserva === true)
+      .filter(x => !this.esRubroDiasTrabajados(x))
+      .filter(x => !this.esRubroPermisoMaternidad(x))
+      .filter(x => !this.esRubroFondoReserva(x))
+      .filter(x => !this.esRubroDecimoTercero(x))
+      .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
+
+    rubroFondoReserva.valor = this.redondear(
+      baseFondoReserva * porcentajeFondoReserva / 100
+    );
+
+    rubroFondoReserva.cantidad = 0;
+  }
+  private recalcularDecimoTercero(): void {
+    const baseDecimoTercero = this.ingresos
+      .filter(x => x.tipoPago === 'I')
+      .filter(x => x.aplicaDecimoTercero === true)
+      .filter(x => !this.esRubroDiasTrabajados(x))
+      .filter(x => !this.esRubroPermisoMaternidad(x))
+      .filter(x => !this.esRubroFondoReserva(x))
+      .filter(x => !this.esRubroDecimoTercero(x))
+      .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
+
+    const rubroDecimoTercero = this.ingresos.find(x =>
+      this.esRubroDecimoTercero(x)
+    );
+
+    if (rubroDecimoTercero) {
+      rubroDecimoTercero.valor = this.redondear(baseDecimoTercero / 12);
+      rubroDecimoTercero.cantidad = 0;
+    }
+  }
+  private calcularSinMarcarCambios(): void {
+    this.ingresos.forEach(row => {
+      row.cantidad = this.toNumber(row.cantidad);
+      row.valor = this.toNumber(row.valor);
+    });
+
+    this.egresos.forEach(row => {
+      row.cantidad = this.toNumber(row.cantidad);
+      row.valor = this.toNumber(row.valor);
+    });
+
+    this.recalcularDiasTrabajadosPorAusencias();
+
+    this.ingresos.forEach(row => {
+      if (row.esHoraExtra) {
+        row.valor = this.calcularValorHoraExtra(row);
+      }
+
+      if (this.esRubroPermisoMaternidad(row)) {
+        row.valor = this.calcularPermisoMaternidad(row);
+      }
+      
+    });
+
+    this.recalcularFondoReserva();
+    this.recalcularDecimoTercero();
+    this.recalcularAporteIess();
+
+    this.ingresos = [...this.ingresos];
+    this.egresos = [...this.egresos];
+
+    this.recalcularTotales();
+    this.hayCambios = false;
+  }
+  private esRubroSueldo(row: RolIndividualRubroResponse): boolean {
+    return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '03';
+  }
+
+  private esRubroDiasTrabajados(row: RolIndividualRubroResponse): boolean {
+    return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '02';
+  }
+  private obtenerDiasMaternidad(): number {
+    return this.ingresos
+      .filter(x => this.esRubroPermisoMaternidad(x))
+      .reduce((acc, item) => acc + this.toNumber(item.cantidad), 0);
+  }
+
+
+
+  private recalcularDiasTrabajadosPorAusencias(): void {
+    const sueldo = this.toNumber(this.dataRol?.sueldo);
+    const diasBase = 30;
+
+    const diasMaternidad = this.obtenerDiasMaternidad();
+    const diasEnfermedad = this.obtenerDiasEnfermedad();
+
+    const diasAusencia = diasMaternidad + diasEnfermedad;
+    const diasTrabajados = Math.max(diasBase - diasAusencia, 0);
+
+    const rubroDiasTrabajados = this.ingresos.find(x =>
+      this.esRubroDiasTrabajados(x)
+    );
+
+    if (rubroDiasTrabajados) {
+      rubroDiasTrabajados.cantidad = diasTrabajados;
+      rubroDiasTrabajados.valor = this.redondear(
+        (sueldo / diasBase) * diasTrabajados
+      );
+    }
+
+    /*
+     * SUELDO se mantiene como referencia.
+     * No se modifica aquí.
+     */
+  }
+  private esRubroEnfermedad(row: RolIndividualRubroResponse): boolean {
+    const codigo = this.normalizarCodigo(row.codigo);
+
+    return row.tipoPago === 'I' &&
+      (
+        codigo === '06' || // ENFERMEDAD 25%
+        codigo === '49' || // ENFERMEDAD 100%
+        codigo === '50' || // ENFERMEDAD 50%
+        codigo === '52'    // ENFERMEDAD 0%
+      );
+  }
+
+  private obtenerFactorEnfermedad(row: RolIndividualRubroResponse): number {
+    const codigo = this.normalizarCodigo(row.codigo);
+
+    switch (codigo) {
+      case '06':
+        return 0.25;
+
+      case '49':
+        return 1.00;
+
+      case '50':
+        return 0.50;
+
+      case '52':
+        return 0.00;
+
+      default:
+        return 0;
+    }
+  }
+
+  private calcularEnfermedad(row: RolIndividualRubroResponse): number {
+    const sueldo = this.toNumber(this.dataRol?.sueldo);
+    const dias = this.toNumber(row.cantidad);
+    const factor = this.obtenerFactorEnfermedad(row);
+
+    if (sueldo <= 0 || dias <= 0) {
+      return 0;
+    }
+
+    return this.redondear((sueldo / 30) * factor * dias);
+  }
+
+  private obtenerDiasEnfermedad(): number {
+    return this.ingresos
+      .filter(x => this.esRubroEnfermedad(x))
+      .reduce((acc, item) => acc + this.toNumber(item.cantidad), 0);
+  }
+
 }
