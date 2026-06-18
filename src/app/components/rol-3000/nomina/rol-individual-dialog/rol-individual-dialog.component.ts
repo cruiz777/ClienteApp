@@ -1,13 +1,13 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import { ColDef, GridReadyEvent, ValueFormatterParams, CellValueChangedEvent } from 'ag-grid-community';
+import { ColDef, GridReadyEvent, CellValueChangedEvent } from 'ag-grid-community';
+import { MatSnackBar } from '@angular/material/snack-bar';
 import {
   ApiResponse,
   RolIndividualResponse,
   RolIndividualRubroResponse,
   RolNominaService,
-  GuardarRolIndividualRequest,
-
+  GuardarRolIndividualRequest
 } from 'src/app/services/rol/rol-nomina.service';
 
 @Component({
@@ -26,8 +26,11 @@ export class RolIndividualDialogComponent implements OnInit {
   totalIngresos = 0;
   totalEgresos = 0;
   liquidoRecibir = 0;
+
   guardando = false;
   hayCambios = false;
+  rolActualizado = false;
+
   columnDefs: ColDef<RolIndividualRubroResponse>[] = [
     {
       field: 'descripcion',
@@ -46,7 +49,9 @@ export class RolIndividualDialogComponent implements OnInit {
       valueFormatter: params => this.formatearNumero(params.value),
       cellClass: params => {
         const row = params.data as RolIndividualRubroResponse;
-        return row?.esHoraExtra ? 'celda-editable-hora' : '';
+        return row?.esHoraExtra || this.esRubroAusencia(row)
+          ? 'celda-editable-hora'
+          : '';
       }
     },
     {
@@ -65,6 +70,14 @@ export class RolIndividualDialogComponent implements OnInit {
         }
 
         if (this.esRubroPermisoMaternidad(row)) {
+          return false;
+        }
+
+        if (this.esRubroEnfermedad(row)) {
+          return false;
+        }
+
+        if (this.esRubroAccidenteTrabajo(row)) {
           return false;
         }
 
@@ -87,10 +100,20 @@ export class RolIndividualDialogComponent implements OnInit {
       valueFormatter: params => this.formatearDecimal(params.value),
       cellClass: params => {
         const row = params.data as RolIndividualRubroResponse;
-        return row?.esHoraExtra ? 'celda-calculada' : '';
+
+        return row?.esHoraExtra ||
+          this.esRubroPermisoMaternidad(row) ||
+          this.esRubroEnfermedad(row) ||
+          this.esRubroAccidenteTrabajo(row) ||
+          this.esRubroAporteIess(row) ||
+          this.esRubroFondoReserva(row) ||
+          this.esRubroDecimoTercero(row)
+          ? 'celda-calculada'
+          : '';
       }
     }
   ];
+
   defaultColDef: ColDef = {
     sortable: false,
     filter: false,
@@ -100,6 +123,7 @@ export class RolIndividualDialogComponent implements OnInit {
   constructor(
     private rolNominaService: RolNominaService,
     private dialogRef: MatDialogRef<RolIndividualDialogComponent>,
+    private snackBar: MatSnackBar,
     @Inject(MAT_DIALOG_DATA)
     public data: {
       idEmpleado: number;
@@ -121,7 +145,7 @@ export class RolIndividualDialogComponent implements OnInit {
           this.cargando = false;
 
           if (resp.type !== 'Success') {
-            alert(resp.message);
+            this.mostrarMensajePorTipo(resp.type, resp.message);
             return;
           }
 
@@ -130,24 +154,49 @@ export class RolIndividualDialogComponent implements OnInit {
           this.ingresos = [...(resp.data.ingresos ?? [])];
           this.egresos = [...(resp.data.egresos ?? [])];
 
-          console.log('ROL INDIVIDUAL:', this.dataRol);
-          console.log('INGRESOS:', this.ingresos);
-          console.log('EGRESOS:', this.egresos);
-
           this.calcularSinMarcarCambios();
         },
-        error: (err: unknown) => {
+        error: err => {
           this.cargando = false;
           console.error(err);
-          alert('Error al cargar el rol individual.');
+          this.mostrarError('Error al cargar el rol individual.');
         }
       });
   }
 
-
   onGridReady(params: GridReadyEvent): void {
     params.api.sizeColumnsToFit();
   }
+
+onCellValueChanged(event: CellValueChangedEvent<RolIndividualRubroResponse>): void {
+  const row = event.data;
+
+  if (!row) {
+    return;
+  }
+
+  const campoEditado = event.colDef.field as keyof RolIndividualRubroResponse;
+  const valorAnterior = this.toNumber(event.oldValue);
+
+  row.cantidad = this.toNumber(row.cantidad);
+  row.valor = this.toNumber(row.valor);
+
+  if (!this.validarValorNoNegativo(row, campoEditado, valorAnterior)) {
+    this.ingresos = [...this.ingresos];
+    this.egresos = [...this.egresos];
+    this.calcularSinMarcarCambios();
+    return;
+  }
+
+  if (!this.validarDiasAusenciaEditada(row, valorAnterior)) {
+    this.ingresos = [...this.ingresos];
+    this.egresos = [...this.egresos];
+    this.calcularSinMarcarCambios();
+    return;
+  }
+
+  this.calcular();
+}
 
   recalcularTotales(): void {
     this.totalIngresos = this.ingresos
@@ -163,7 +212,25 @@ export class RolIndividualDialogComponent implements OnInit {
   }
 
   cerrar(): void {
-    this.dialogRef.close();
+    this.dialogRef.close(this.rolActualizado);
+  }
+
+  salir(): void {
+    if (!this.hayCambios) {
+      this.dialogRef.close(this.rolActualizado);
+      return;
+    }
+
+    const guardarAntes = confirm(
+      'Existen cambios pendientes. ¿Desea guardar antes de salir?'
+    );
+
+    if (guardarAntes) {
+      this.grabar(true);
+      return;
+    }
+
+    this.dialogRef.close(this.rolActualizado);
   }
 
   get fechaPeriodoTexto(): string {
@@ -178,97 +245,12 @@ export class RolIndividualDialogComponent implements OnInit {
     return this.formatearFechaDateOnly(this.dataRol?.fechaSalida);
   }
 
-  private toNumber(value: any): number {
-    if (value === null || value === undefined || value === '') {
-      return 0;
+  calcular(): boolean {
+    this.normalizarValores();
+
+    if (!this.validarAusenciasAntesDeCalcular(true)) {
+      return false;
     }
-
-    const n = Number(value);
-    return isNaN(n) ? 0 : n;
-  }
-
-  private formatearNumero(valor: any): string {
-    const n = this.toNumber(valor);
-    return n === 0 ? '' : n.toString();
-  }
-
-  private formatearDecimal(valor: any): string {
-    const n = this.toNumber(valor);
-    return n === 0 ? '' : n.toFixed(2);
-  }
-
-  private formatearFecha(valor: string): string {
-    const fecha = new Date(valor);
-    if (isNaN(fecha.getTime())) return valor;
-
-    const dia = String(fecha.getDate()).padStart(2, '0');
-    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
-    const anio = fecha.getFullYear();
-
-    return `${dia}/${mes}/${anio}`;
-  }
-  onCellValueChanged(event: CellValueChangedEvent<RolIndividualRubroResponse>): void {
-    const row = event.data;
-
-    if (!row) {
-      return;
-    }
-
-    row.cantidad = this.toNumber(row.cantidad);
-    row.valor = this.toNumber(row.valor);
-
-    this.calcular();
-  }
-  private calcularValorHoraExtra(row: RolIndividualRubroResponse): number {
-    const valorHoraBase = this.toNumber(this.dataRol?.valorHoraBase);
-    const cantidad = this.toNumber(row.cantidad);
-    const factor = this.toNumber(row.factorHoraExtra);
-
-    if (valorHoraBase <= 0 || cantidad <= 0 || factor <= 0) {
-      return 0;
-    }
-
-    return this.redondear(valorHoraBase * cantidad * factor);
-  }
-
-  private redondear(valor: number): number {
-    return Math.round((valor + Number.EPSILON) * 100) / 100;
-  }
-
-  private formatearFechaDateOnly(fecha: string | null | undefined): string {
-    if (!fecha) {
-      return 'N/D';
-    }
-
-    /*
-     * El backend DateOnly normalmente llega como:
-     * 2026-01-31
-     * No se debe usar new Date('2026-01-31')
-     * porque resta un día por zona horaria.
-     */
-    const soloFecha = fecha.substring(0, 10);
-    const partes = soloFecha.split('-');
-
-    if (partes.length !== 3) {
-      return fecha;
-    }
-
-    const anio = partes[0];
-    const mes = partes[1];
-    const dia = partes[2];
-
-    return `${dia}/${mes}/${anio}`;
-  }
-  calcular(): void {
-    this.ingresos.forEach(row => {
-      row.cantidad = this.toNumber(row.cantidad);
-      row.valor = this.toNumber(row.valor);
-    });
-
-    this.egresos.forEach(row => {
-      row.cantidad = this.toNumber(row.cantidad);
-      row.valor = this.toNumber(row.valor);
-    });
 
     this.recalcularDiasTrabajadosPorAusencias();
 
@@ -280,8 +262,13 @@ export class RolIndividualDialogComponent implements OnInit {
       if (this.esRubroPermisoMaternidad(row)) {
         row.valor = this.calcularPermisoMaternidad(row);
       }
+
       if (this.esRubroEnfermedad(row)) {
         row.valor = this.calcularEnfermedad(row);
+      }
+
+      if (this.esRubroAccidenteTrabajo(row)) {
+        row.valor = this.calcularAccidenteTrabajo(row);
       }
     });
 
@@ -294,19 +281,76 @@ export class RolIndividualDialogComponent implements OnInit {
 
     this.recalcularTotales();
     this.hayCambios = true;
+
+    return true;
   }
-  grabar(cerrarDespues: boolean = false): void {
-    if (!this.dataRol) {
-      alert('No existe información del rol individual.');
+
+  private calcularSinMarcarCambios(): void {
+    this.normalizarValores();
+
+    if (!this.validarAusenciasAntesDeCalcular(false)) {
+      this.recalcularTotales();
+      this.hayCambios = false;
       return;
     }
 
-    this.calcular();
+    this.recalcularDiasTrabajadosPorAusencias();
 
-    const payload: GuardarRolIndividualRequest = {
+    this.ingresos.forEach(row => {
+      if (row.esHoraExtra) {
+        row.valor = this.calcularValorHoraExtra(row);
+      }
+
+      if (this.esRubroPermisoMaternidad(row)) {
+        row.valor = this.calcularPermisoMaternidad(row);
+      }
+
+      if (this.esRubroEnfermedad(row)) {
+        row.valor = this.calcularEnfermedad(row);
+      }
+
+      if (this.esRubroAccidenteTrabajo(row)) {
+        row.valor = this.calcularAccidenteTrabajo(row);
+      }
+    });
+
+    this.recalcularFondoReserva();
+    this.recalcularDecimoTercero();
+    this.recalcularAporteIess();
+
+    this.ingresos = [...this.ingresos];
+    this.egresos = [...this.egresos];
+
+    this.recalcularTotales();
+    this.hayCambios = false;
+  }
+
+  grabar(cerrarDespues: boolean = false): void {
+  if (!this.dataRol) {
+    this.mostrarAdvertencia('No existe información del rol individual.');
+    return;
+  }
+
+  if (!this.validarRubrosNoNegativosAntesDeGuardar()) {
+  return;
+}
+
+if (!this.validarAusenciasAntesDeGuardar()) {
+  return;
+}
+
+if (!this.calcular()) {
+  return;
+}
+
+  if (!this.validarLiquidoRecibir()) {
+    return;
+  }
+
+  const payload: GuardarRolIndividualRequest = {
       idEmpleado: this.dataRol.idEmpleado,
       fechaPeriodo: this.dataRol.fechaPeriodo,
-      idUsuario: 1, // cámbialo por el usuario real cuando ya lo tengas
+      idUsuario: 1,
       rubros: [
         ...this.ingresos,
         ...this.egresos
@@ -336,12 +380,14 @@ export class RolIndividualDialogComponent implements OnInit {
           this.guardando = false;
 
           if (resp.type !== 'Success') {
-            alert(resp.message);
+            this.mostrarMensajePorTipo(resp.type, resp.message);
             return;
           }
 
           this.hayCambios = false;
-          alert(resp.message);
+          this.rolActualizado = true;
+
+          this.mostrarMensajePorTipo(resp.type, resp.message);
 
           if (cerrarDespues) {
             this.dialogRef.close(true);
@@ -353,56 +399,128 @@ export class RolIndividualDialogComponent implements OnInit {
         error: err => {
           this.guardando = false;
           console.error(err);
-          alert('Error al guardar el rol individual.');
+          this.mostrarError('Error al guardar el rol individual.');
         }
       });
   }
 
-  salir(): void {
-    if (!this.hayCambios) {
-      this.dialogRef.close(false);
-      return;
+ private normalizarValores(): void {
+  this.ingresos.forEach(row => {
+    row.cantidad = this.toNumber(row.cantidad);
+    row.valor = this.toNumber(row.valor);
+
+    if (row.cantidad < 0) {
+      row.cantidad = 0;
     }
 
-    const guardarAntes = confirm(
-      'Existen cambios pendientes. ¿Desea guardar antes de salir?'
+    if (row.valor < 0) {
+      row.valor = 0;
+    }
+  });
+
+  this.egresos.forEach(row => {
+    row.cantidad = this.toNumber(row.cantidad);
+    row.valor = this.toNumber(row.valor);
+
+    if (row.cantidad < 0) {
+      row.cantidad = 0;
+    }
+
+    if (row.valor < 0) {
+      row.valor = 0;
+    }
+  });
+}
+  private validarDiasAusenciaEditada(
+    row: RolIndividualRubroResponse,
+    valorAnterior: number
+  ): boolean {
+    if (!this.esRubroAusencia(row)) {
+      return true;
+    }
+
+    const dias = this.toNumber(row.cantidad);
+
+    if (dias < 0) {
+      row.cantidad = valorAnterior;
+      this.mostrarAdvertencia('Los días no pueden ser negativos.');
+      return false;
+    }
+
+    if (dias > 30) {
+      row.cantidad = valorAnterior;
+      this.mostrarAdvertencia('No puede ingresar más de 30 días en un rubro de ausencia.');
+      return false;
+    }
+
+    const totalDiasAusencia = this.obtenerDiasAusencias();
+
+    if (totalDiasAusencia > 30) {
+      row.cantidad = valorAnterior;
+      this.mostrarAdvertencia(
+        'La suma de días de maternidad, enfermedad y accidente de trabajo no puede superar 30 días.'
+      );
+      return false;
+    }
+
+    return true;
+  }
+
+  private validarAusenciasAntesDeCalcular(mostrarMensaje: boolean): boolean {
+    const rubroInvalido = this.ingresos.find(x =>
+      this.esRubroAusencia(x) &&
+      (
+        this.toNumber(x.cantidad) < 0 ||
+        this.toNumber(x.cantidad) > 30
+      )
     );
 
-    if (guardarAntes) {
-      this.grabar(true);
-      return;
-    }
-
-    this.dialogRef.close(false);
-  }
-  private normalizarCodigo(codigo: string | null | undefined): string {
-    if (!codigo) {
-      return '';
-    }
-
-    const texto = codigo.toString().trim();
-    const numero = Number(texto);
-
-    if (!isNaN(numero)) {
-      return numero.toString().padStart(2, '0');
-    }
-
-    return texto;
-  }
-
-  private esRubroAporteIess(row: RolIndividualRubroResponse): boolean {
-    return row.tipoPago === 'D' && this.normalizarCodigo(row.codigo) === '25';
-  }
-
-  private recalcularHorasExtras(): void {
-    this.ingresos.forEach(row => {
-      row.cantidad = this.toNumber(row.cantidad);
-      row.valor = this.toNumber(row.valor);
-
-      if (row.esHoraExtra) {
-        row.valor = this.calcularValorHoraExtra(row);
+    if (rubroInvalido) {
+      if (mostrarMensaje) {
+        this.mostrarAdvertencia(
+          `El rubro ${rubroInvalido.descripcion} no puede tener menos de 0 ni más de 30 días.`
+        );
       }
-    });
+
+      return false;
+    }
+
+    const totalDiasAusencia = this.obtenerDiasAusencias();
+
+    if (totalDiasAusencia > 30) {
+      if (mostrarMensaje) {
+        this.mostrarAdvertencia(
+          'La suma de días de maternidad, enfermedad y accidente de trabajo no puede superar 30 días.'
+        );
+      }
+
+      return false;
+    }
+
+    return true;
+  }
+
+  private validarAusenciasAntesDeGuardar(): boolean {
+    return this.validarAusenciasAntesDeCalcular(true);
+  }
+
+  private recalcularDiasTrabajadosPorAusencias(): void {
+    const sueldo = this.toNumber(this.dataRol?.sueldo);
+    const diasBase = 30;
+
+    const diasAusencia = this.obtenerDiasAusencias();
+    const diasTrabajados = Math.max(diasBase - diasAusencia, 0);
+
+    const rubroDiasTrabajados = this.ingresos.find(x =>
+      this.esRubroDiasTrabajados(x)
+    );
+
+    if (rubroDiasTrabajados) {
+      rubroDiasTrabajados.cantidad = diasTrabajados;
+      rubroDiasTrabajados.valor = this.redondear(
+        (sueldo / diasBase) * diasTrabajados
+      );
+    }
   }
 
   private recalcularAporteIess(): void {
@@ -410,43 +528,33 @@ export class RolIndividualDialogComponent implements OnInit {
       this.dataRol?.porcentajeIessPersonal || 9.45
     );
 
+    const usarBasePorAusencia =
+      this.hayEnfermedad() ||
+      this.hayAccidenteTrabajo();
+
     const baseIess = this.ingresos
       .filter(x => x.tipoPago === 'I')
       .filter(x => x.aportaIess === true)
-      .filter(x => !this.esRubroDiasTrabajados(x))
       .filter(x => !this.esRubroPermisoMaternidad(x))
       .filter(x => !this.esRubroFondoReserva(x))
       .filter(x => !this.esRubroDecimoTercero(x))
-      .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
+      .filter(x => !this.esRubroEnfermedad(x))
+      .filter(x => !this.esRubroAccidenteTrabajo(x))
+      .filter(x => {
+        if (usarBasePorAusencia) {
+          return !this.esRubroSueldo(x);
+        }
 
-    const valorIess = this.redondear(baseIess * porcentajeIess / 100);
+        return !this.esRubroDiasTrabajados(x);
+      })
+      .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
 
     const rubroIess = this.egresos.find(x => this.esRubroAporteIess(x));
 
     if (rubroIess) {
-      rubroIess.valor = valorIess;
+      rubroIess.valor = this.redondear(baseIess * porcentajeIess / 100);
       rubroIess.cantidad = 0;
     }
-  }
-  private esRubroFondoReserva(row: RolIndividualRubroResponse): boolean {
-    return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '18';
-  }
-
-  private esRubroDecimoTercero(row: RolIndividualRubroResponse): boolean {
-    return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '46';
-  }
-  private esRubroPermisoMaternidad(row: RolIndividualRubroResponse): boolean {
-    return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '05';
-  }
-  private calcularPermisoMaternidad(row: RolIndividualRubroResponse): number {
-    const sueldo = this.toNumber(this.dataRol?.sueldo);
-    const diasMaternidad = this.toNumber(row.cantidad);
-
-    if (sueldo <= 0 || diasMaternidad <= 0) {
-      return 0;
-    }
-
-    return this.redondear((sueldo / 30) * 0.25 * diasMaternidad);
   }
 
   private recalcularFondoReserva(): void {
@@ -468,13 +576,25 @@ export class RolIndividualDialogComponent implements OnInit {
       this.dataRol?.porcentajeFondoReserva || 8.33
     );
 
+    const usarBasePorAusencia =
+      this.hayEnfermedad() ||
+      this.hayAccidenteTrabajo();
+
     const baseFondoReserva = this.ingresos
       .filter(x => x.tipoPago === 'I')
       .filter(x => x.aplicaFondoReserva === true)
-      .filter(x => !this.esRubroDiasTrabajados(x))
       .filter(x => !this.esRubroPermisoMaternidad(x))
       .filter(x => !this.esRubroFondoReserva(x))
       .filter(x => !this.esRubroDecimoTercero(x))
+      .filter(x => !this.esRubroEnfermedad(x))
+      .filter(x => !this.esRubroAccidenteTrabajo(x))
+      .filter(x => {
+        if (usarBasePorAusencia) {
+          return !this.esRubroSueldo(x);
+        }
+
+        return !this.esRubroDiasTrabajados(x);
+      })
       .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
 
     rubroFondoReserva.valor = this.redondear(
@@ -483,14 +603,27 @@ export class RolIndividualDialogComponent implements OnInit {
 
     rubroFondoReserva.cantidad = 0;
   }
+
   private recalcularDecimoTercero(): void {
+    const usarBasePorAusencia =
+      this.hayEnfermedad() ||
+      this.hayAccidenteTrabajo();
+
     const baseDecimoTercero = this.ingresos
       .filter(x => x.tipoPago === 'I')
       .filter(x => x.aplicaDecimoTercero === true)
-      .filter(x => !this.esRubroDiasTrabajados(x))
       .filter(x => !this.esRubroPermisoMaternidad(x))
       .filter(x => !this.esRubroFondoReserva(x))
       .filter(x => !this.esRubroDecimoTercero(x))
+      .filter(x => !this.esRubroEnfermedad(x))
+      .filter(x => !this.esRubroAccidenteTrabajo(x))
+      .filter(x => {
+        if (usarBasePorAusencia) {
+          return !this.esRubroSueldo(x);
+        }
+
+        return !this.esRubroDiasTrabajados(x);
+      })
       .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
 
     const rubroDecimoTercero = this.ingresos.find(x =>
@@ -502,112 +635,28 @@ export class RolIndividualDialogComponent implements OnInit {
       rubroDecimoTercero.cantidad = 0;
     }
   }
-  private calcularSinMarcarCambios(): void {
-    this.ingresos.forEach(row => {
-      row.cantidad = this.toNumber(row.cantidad);
-      row.valor = this.toNumber(row.valor);
-    });
 
-    this.egresos.forEach(row => {
-      row.cantidad = this.toNumber(row.cantidad);
-      row.valor = this.toNumber(row.valor);
-    });
+  private calcularValorHoraExtra(row: RolIndividualRubroResponse): number {
+    const valorHoraBase = this.toNumber(this.dataRol?.valorHoraBase);
+    const cantidad = this.toNumber(row.cantidad);
+    const factor = this.toNumber(row.factorHoraExtra);
 
-    this.recalcularDiasTrabajadosPorAusencias();
+    if (valorHoraBase <= 0 || cantidad <= 0 || factor <= 0) {
+      return 0;
+    }
 
-    this.ingresos.forEach(row => {
-      if (row.esHoraExtra) {
-        row.valor = this.calcularValorHoraExtra(row);
-      }
-
-      if (this.esRubroPermisoMaternidad(row)) {
-        row.valor = this.calcularPermisoMaternidad(row);
-      }
-      
-    });
-
-    this.recalcularFondoReserva();
-    this.recalcularDecimoTercero();
-    this.recalcularAporteIess();
-
-    this.ingresos = [...this.ingresos];
-    this.egresos = [...this.egresos];
-
-    this.recalcularTotales();
-    this.hayCambios = false;
-  }
-  private esRubroSueldo(row: RolIndividualRubroResponse): boolean {
-    return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '03';
+    return this.redondear(valorHoraBase * cantidad * factor);
   }
 
-  private esRubroDiasTrabajados(row: RolIndividualRubroResponse): boolean {
-    return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '02';
-  }
-  private obtenerDiasMaternidad(): number {
-    return this.ingresos
-      .filter(x => this.esRubroPermisoMaternidad(x))
-      .reduce((acc, item) => acc + this.toNumber(item.cantidad), 0);
-  }
-
-
-
-  private recalcularDiasTrabajadosPorAusencias(): void {
+  private calcularPermisoMaternidad(row: RolIndividualRubroResponse): number {
     const sueldo = this.toNumber(this.dataRol?.sueldo);
-    const diasBase = 30;
+    const diasMaternidad = this.toNumber(row.cantidad);
 
-    const diasMaternidad = this.obtenerDiasMaternidad();
-    const diasEnfermedad = this.obtenerDiasEnfermedad();
-
-    const diasAusencia = diasMaternidad + diasEnfermedad;
-    const diasTrabajados = Math.max(diasBase - diasAusencia, 0);
-
-    const rubroDiasTrabajados = this.ingresos.find(x =>
-      this.esRubroDiasTrabajados(x)
-    );
-
-    if (rubroDiasTrabajados) {
-      rubroDiasTrabajados.cantidad = diasTrabajados;
-      rubroDiasTrabajados.valor = this.redondear(
-        (sueldo / diasBase) * diasTrabajados
-      );
+    if (sueldo <= 0 || diasMaternidad <= 0) {
+      return 0;
     }
 
-    /*
-     * SUELDO se mantiene como referencia.
-     * No se modifica aquí.
-     */
-  }
-  private esRubroEnfermedad(row: RolIndividualRubroResponse): boolean {
-    const codigo = this.normalizarCodigo(row.codigo);
-
-    return row.tipoPago === 'I' &&
-      (
-        codigo === '06' || // ENFERMEDAD 25%
-        codigo === '49' || // ENFERMEDAD 100%
-        codigo === '50' || // ENFERMEDAD 50%
-        codigo === '52'    // ENFERMEDAD 0%
-      );
-  }
-
-  private obtenerFactorEnfermedad(row: RolIndividualRubroResponse): number {
-    const codigo = this.normalizarCodigo(row.codigo);
-
-    switch (codigo) {
-      case '06':
-        return 0.25;
-
-      case '49':
-        return 1.00;
-
-      case '50':
-        return 0.50;
-
-      case '52':
-        return 0.00;
-
-      default:
-        return 0;
-    }
+    return this.redondear((sueldo / 30) * 0.25 * diasMaternidad);
   }
 
   private calcularEnfermedad(row: RolIndividualRubroResponse): number {
@@ -622,10 +671,279 @@ export class RolIndividualDialogComponent implements OnInit {
     return this.redondear((sueldo / 30) * factor * dias);
   }
 
+  private calcularAccidenteTrabajo(row: RolIndividualRubroResponse): number {
+    const sueldo = this.toNumber(this.dataRol?.sueldo);
+    const dias = this.toNumber(row.cantidad);
+    const factor = this.obtenerFactorAccidenteTrabajo(row);
+
+    if (sueldo <= 0 || dias <= 0) {
+      return 0;
+    }
+
+    return this.redondear((sueldo / 30) * factor * dias);
+  }
+
+  private obtenerFactorEnfermedad(row: RolIndividualRubroResponse): number {
+    const codigo = this.normalizarCodigo(row.codigo);
+
+    switch (codigo) {
+      case '06':
+        return 0.25;
+      case '49':
+        return 1.00;
+      case '50':
+        return 0.50;
+      case '52':
+        return 0.00;
+      default:
+        return 0;
+    }
+  }
+
+  private obtenerFactorAccidenteTrabajo(row: RolIndividualRubroResponse): number {
+    const codigo = this.normalizarCodigo(row.codigo);
+
+    switch (codigo) {
+      case '51':
+        return 1.00;
+      case '53':
+        return 0.00;
+      default:
+        return 0;
+    }
+  }
+
+  private obtenerDiasMaternidad(): number {
+    return this.ingresos
+      .filter(x => this.esRubroPermisoMaternidad(x))
+      .reduce((acc, item) => acc + this.toNumber(item.cantidad), 0);
+  }
+
   private obtenerDiasEnfermedad(): number {
     return this.ingresos
       .filter(x => this.esRubroEnfermedad(x))
       .reduce((acc, item) => acc + this.toNumber(item.cantidad), 0);
   }
 
+  private obtenerDiasAccidenteTrabajo(): number {
+    return this.ingresos
+      .filter(x => this.esRubroAccidenteTrabajo(x))
+      .reduce((acc, item) => acc + this.toNumber(item.cantidad), 0);
+  }
+
+  private obtenerDiasAusencias(): number {
+    return this.obtenerDiasMaternidad() +
+      this.obtenerDiasEnfermedad() +
+      this.obtenerDiasAccidenteTrabajo();
+  }
+
+  private hayEnfermedad(): boolean {
+    return this.ingresos.some(x =>
+      this.esRubroEnfermedad(x) && this.toNumber(x.cantidad) > 0
+    );
+  }
+
+  private hayAccidenteTrabajo(): boolean {
+    return this.ingresos.some(x =>
+      this.esRubroAccidenteTrabajo(x) && this.toNumber(x.cantidad) > 0
+    );
+  }
+
+  private esRubroAusencia(row: RolIndividualRubroResponse): boolean {
+    return this.esRubroPermisoMaternidad(row) ||
+      this.esRubroEnfermedad(row) ||
+      this.esRubroAccidenteTrabajo(row);
+  }
+
+  private esRubroSueldo(row: RolIndividualRubroResponse): boolean {
+    return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '03';
+  }
+
+  private esRubroDiasTrabajados(row: RolIndividualRubroResponse): boolean {
+    return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '02';
+  }
+
+  private esRubroPermisoMaternidad(row: RolIndividualRubroResponse): boolean {
+    return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '05';
+  }
+
+  private esRubroEnfermedad(row: RolIndividualRubroResponse): boolean {
+    const codigo = this.normalizarCodigo(row.codigo);
+
+    return row.tipoPago === 'I' &&
+      (
+        codigo === '06' ||
+        codigo === '49' ||
+        codigo === '50' ||
+        codigo === '52'
+      );
+  }
+
+  private esRubroAccidenteTrabajo(row: RolIndividualRubroResponse): boolean {
+    const codigo = this.normalizarCodigo(row.codigo);
+
+    return row.tipoPago === 'I' &&
+      (
+        codigo === '51' ||
+        codigo === '53'
+      );
+  }
+
+  private esRubroAporteIess(row: RolIndividualRubroResponse): boolean {
+    return row.tipoPago === 'D' && this.normalizarCodigo(row.codigo) === '25';
+  }
+
+  private esRubroFondoReserva(row: RolIndividualRubroResponse): boolean {
+    return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '18';
+  }
+
+  private esRubroDecimoTercero(row: RolIndividualRubroResponse): boolean {
+    return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '46';
+  }
+
+  private toNumber(value: any): number {
+    if (value === null || value === undefined || value === '') {
+      return 0;
+    }
+
+    const n = Number(value);
+    return isNaN(n) ? 0 : n;
+  }
+
+  private redondear(valor: number): number {
+    return Math.round((valor + Number.EPSILON) * 100) / 100;
+  }
+
+  private normalizarCodigo(codigo: string | null | undefined): string {
+    if (!codigo) {
+      return '';
+    }
+
+    const texto = codigo.toString().trim();
+    const numero = Number(texto);
+
+    if (!isNaN(numero)) {
+      return numero.toString().padStart(2, '0');
+    }
+
+    return texto;
+  }
+
+  private formatearNumero(valor: any): string {
+    const n = this.toNumber(valor);
+    return n === 0 ? '' : n.toString();
+  }
+
+  private formatearDecimal(valor: any): string {
+    const n = this.toNumber(valor);
+    return n === 0 ? '' : n.toFixed(2);
+  }
+
+  private formatearFechaDateOnly(fecha: string | null | undefined): string {
+    if (!fecha) {
+      return 'N/D';
+    }
+
+    const soloFecha = fecha.substring(0, 10);
+    const partes = soloFecha.split('-');
+
+    if (partes.length !== 3) {
+      return fecha;
+    }
+
+    const anio = partes[0];
+    const mes = partes[1];
+    const dia = partes[2];
+
+    return `${dia}/${mes}/${anio}`;
+  }
+
+  private mostrarExito(mensaje: string): void {
+    this.snackBar.open(mensaje, 'Cerrar', {
+      duration: 5000,
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
+      panelClass: ['snackbar-success']
+    });
+  }
+
+  private mostrarError(mensaje: string): void {
+    this.snackBar.open(mensaje, 'Cerrar', {
+      duration: 7000,
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
+      panelClass: ['snackbar-error']
+    });
+  }
+
+  private mostrarAdvertencia(mensaje: string): void {
+    this.snackBar.open(mensaje, 'Cerrar', {
+      duration: 6000,
+      horizontalPosition: 'end',
+      verticalPosition: 'top',
+      panelClass: ['snackbar-warning']
+    });
+  }
+
+  private mostrarMensajePorTipo(type: string, mensaje: string): void {
+    const tipo = (type || '').toLowerCase();
+
+    if (tipo === 'success') {
+      this.mostrarExito(mensaje);
+      return;
+    }
+
+    if (tipo === 'warning') {
+      this.mostrarAdvertencia(mensaje);
+      return;
+    }
+
+    this.mostrarError(mensaje);
+  }
+  private validarLiquidoRecibir(): boolean {
+  this.recalcularTotales();
+
+  if (this.liquidoRecibir < 0) {
+    this.mostrarAdvertencia(
+      'No se puede grabar el rol individual porque el líquido a recibir no puede ser negativo.'
+    );
+    return false;
+  }
+
+  return true;
+}
+private validarValorNoNegativo(
+  row: RolIndividualRubroResponse,
+  campoEditado: keyof RolIndividualRubroResponse,
+  valorAnterior: number
+): boolean {
+  if (campoEditado === 'cantidad' && this.toNumber(row.cantidad) < 0) {
+    row.cantidad = valorAnterior;
+    this.mostrarAdvertencia('No puede ingresar cantidades negativas.');
+    return false;
+  }
+
+  if (campoEditado === 'valor' && this.toNumber(row.valor) < 0) {
+    row.valor = valorAnterior;
+    this.mostrarAdvertencia('No puede ingresar valores negativos.');
+    return false;
+  }
+
+  return true;
+}
+
+private validarRubrosNoNegativosAntesDeGuardar(): boolean {
+  const rubroInvalido = [...this.ingresos, ...this.egresos].find(x =>
+    this.toNumber(x.cantidad) < 0 || this.toNumber(x.valor) < 0
+  );
+
+  if (rubroInvalido) {
+    this.mostrarAdvertencia(
+      `El rubro ${rubroInvalido.descripcion} no puede tener cantidad ni valor negativo.`
+    );
+    return false;
+  }
+
+  return true;
+}
 }
