@@ -417,8 +417,8 @@ export class BloqueComponent implements OnInit {
         },
         cellEditor: 'agTextCellEditor',
         valueParser: (params: any) => {
-          const val = params.newValue.trim();
-          return /^\d+$/.test(val) ? parseInt(val, 10) : null;
+          const val = (params.newValue ?? '').toString().trim();
+          return /^\d+$/.test(val) ? parseInt(val, 10) : null;  //CAMBIADO: toString() antes de trim()
         }
       },
       {
@@ -431,8 +431,8 @@ export class BloqueComponent implements OnInit {
         cellStyle: this.estiloDescripcionVacia,
         cellEditor: 'agTextCellEditor',
         valueParser: (params: any) => {
-          const val = params.newValue.trim();
-          return /^\d+$/.test(val) ? parseInt(val, 10) : null;
+          const val = (params.newValue ?? '').toString().trim();
+          return /^\d+$/.test(val) ? parseInt(val, 10) : null;  //CAMBIADO: toString() antes de trim()
         }
       },
 
@@ -577,6 +577,7 @@ export class BloqueComponent implements OnInit {
       'factor',
       'indicador'
     ];
+    //EXCEL GRID
     if (this.formUV.get('checkExiste')?.value) {
       allowedPasteFields = ['gtinUv', 'factor', 'indicador'];
     }
@@ -669,33 +670,49 @@ export class BloqueComponent implements OnInit {
 
     this.rowData = updated;
     this.gridApi.refreshCells({ force: true });
-    this.gridApi.redrawRows();
+    //this.gridApi.redrawRows();
     console.log('✅ Pegado completado');
     // Validar GTINs repetidos si checkExiste está marcado
     if (this.formUV.get('checkExiste')?.value) {
-      setTimeout(() => {  // ← pequeño delay para que se actualice el grid primero
-        const sinRepetidos = this.validarGtinUvRepetido();
+      if (startField === 'factor' || startField === 'indicador') {
+        // ✅ Solo validar factores, NO tocar botonGenerarDeshabilitado
+        setTimeout(() => {
+          this.validarTodosLosFactoresPegados();
+        }, 300);
+      } else {
+        // ✅ Solo validar GTINs repetidos cuando se pega en otras columnas
+        setTimeout(() => {
+          const sinRepetidos = this.validarGtinUvRepetido();
 
-        if (!sinRepetidos) {
-          this.botonGenerarDeshabilitado = true;
+          if (!sinRepetidos) {
+            this.botonGenerarDeshabilitado = true;
 
-          this.dialog.open(CustomMessageBoxComponent, {
-            width: '500px',
-            data: {
-              title: '⚠️ GTINs Repetidos Detectados',
-              message: this.mensajeGtinsRepetidos,
-              type: 'error',
-              confirmText: 'Entendido'
-            }
-          });
-        } else {
-          this.botonGenerarDeshabilitado = false;
-        }
-      }, 100);
+            this.dialog.open(CustomMessageBoxComponent, {
+              width: '500px',
+              data: {
+                title: '⚠️ GTINs Repetidos Detectados',
+                message: this.mensajeGtinsRepetidos,
+                type: 'error',
+                confirmText: 'Entendido'
+              }
+            });
+          } else {
+            this.botonGenerarDeshabilitado = false;
+          }
+        }, 100);
+        setTimeout(() => {
+          this.validarTodosLosFactoresPegados();
+        }, 300);
+      }
+    } else {
+    // ✅ AGREGADO: cuando checkExiste es false, igual re-evaluar el botón generar14
+    // porque el paste no dispara onCellValueChanged
+    if (startField === 'factor' || startField === 'indicador') {
       setTimeout(() => {
-        this.validarTodosLosFactoresPegados();
+        this.verificarBloqueoGenerar14();
       }, 300);
     }
+  }
   }
   //
 
@@ -1777,6 +1794,7 @@ export class BloqueComponent implements OnInit {
     // ✅ Log especial para 'activo'
     if (field === 'activo') {
       console.log(`Checkbox cambiado en fila ${event.rowIndex}:`, newValue);
+      this.verificarBloqueoGenerar14(); // ✅ AGREGADO: re-evaluar al cambiar checkbox
     }
     if (field === 'factor') {
       const factor = (newValue ?? '').toString().trim();
@@ -2378,7 +2396,7 @@ export class BloqueComponent implements OnInit {
 
     this.gridApi.forEachNode((node) => {
       const data = node.data;
-      const marcado = data.activo === true; // ← campo correcto
+      const marcado = !!data.activo; // ← campo correcto
       const factor = (data.factor || '').toString().trim();
 
       if (marcado && !factor) {
@@ -3069,22 +3087,36 @@ export class BloqueComponent implements OnInit {
     const hayValidacionesPendientes = this.factoresValidando.size > 0;
 
     const hayErroresFactor = this.rowData.some(f =>
-      f.activo && f._errorFactor === true
+      !!f.activo && f._errorFactor === true  //CAMBIADO: f.activo === true → !!f.activo (soporta string "true" y número 1)
     );
-
+    
     const faltanFactores = this.rowData
-      .filter(f => f.activo)
+      .filter(f => !!f.activo)  //CAMBIADO: f.activo === true → !!f.activo (soporta string "true" y número 1)
       .some(f => !f.factor || f.factor.toString().trim() === '');
-
+    console.table(this.rowData.map(f => ({
+      gtinUv: f.gtinUv,
+      activo: f.activo,
+      tipoActivo: typeof f.activo,
+      factor: f.factor,
+      _errorFactor: f._errorFactor,
+      idProducto: f.idProducto
+    })));
+    console.log('hayValidacionesPendientes:', hayValidacionesPendientes);
+    console.log('hayErroresFactor:', hayErroresFactor);
+    console.log('faltanFactores:', faltanFactores);
+    console.log('algunoActivo:', this.rowData.some(f => !!f.activo));
+    console.log('checkExiste:', !!this.formUV.get('checkExiste')?.value);
+    console.log('todosConIdProducto:', this.rowData.every(f => f.idProducto));
     if (hayValidacionesPendientes || hayErroresFactor || faltanFactores) {
       this.botonGenerar14Deshabilitado = true;
     } else {
-      //Desbloquear si:
+      // Desbloquear si:
       // - No hay validaciones pendientes
       // - No hay errores
       // - Todos los activos tienen factor
-      const algunoActivo = this.rowData.some(f => f.activo === true);
-      const todosConIdProducto = this.rowData.every(f => f.idProducto);
+      const algunoActivo = this.rowData.some(f => !!f.activo);  //CAMBIADO: f.activo === true → !!f.activo (soporta string "true" y número 1)
+      const checkExiste = !!this.formUV.get('checkExiste')?.value;
+      const todosConIdProducto = checkExiste ? true : this.rowData.every(f => f.idProducto);
 
       if (algunoActivo && todosConIdProducto) {
         this.botonGenerar14Deshabilitado = false;
@@ -3097,11 +3129,11 @@ export class BloqueComponent implements OnInit {
       return;
     }
 
-    const filasConFactor = this.rowData.filter(f =>
-      f.activo === true &&
-      f.factor &&
-      f.factor.toString().trim() !== ''
-    );
+  const filasConFactor = this.rowData.filter(f =>
+    f.factor &&
+    f.factor.toString().trim() !== '' &&
+    f.gtinUv && f.gtinUv.toString().trim() !== ''
+  );
 
     if (filasConFactor.length === 0) {
       console.log('⚠️ No hay factores para validar');
