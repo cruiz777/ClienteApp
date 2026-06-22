@@ -1670,7 +1670,57 @@ setUbicacionDesdeCiudadId(idCiudad: number): void {
     }
   }
 
+
   nuevo(): void {
+    // ✅ NUEVO: Validar capacidad del prefijo ANTES de hacer cualquier cosa
+    const idPrefijosActual = this.formGln.get('idPrefijos')?.value;
+    const prefijoActual = this.prefijos.find(p => p.id_prefijos === idPrefijosActual);
+
+    if (prefijoActual) {
+      try {
+        const { maxSecuencia, totalGlns } = this.getLimitesSecuencia(prefijoActual.codpre);
+        const codigoPais = '786';
+
+        this.glnService.obtenerUltimaSecuenciaGln(codigoPais, prefijoActual.codpre).subscribe({
+          next: (ultimaSecuencia: number) => {
+            if (ultimaSecuencia >= maxSecuencia) {
+              this.mostrarMensajeBox(
+                'Prefijo sin capacidad',
+                `El prefijo ${prefijoActual.codpre} ha alcanzado su límite máximo de ${totalGlns.toLocaleString()} GLNs. No es posible crear más localizaciones con este prefijo.`,
+                'warning'
+              );
+              return; // 🛑 Detener completamente, no continuar con el resto de nuevo()
+            }
+
+            // ✅ Solo si hay espacio, ejecutar el resto del método
+            this.ejecutarNuevo();
+          },
+          error: (err) => {
+            console.error('❌ Error al verificar capacidad del prefijo', err);
+            this.mostrarMensajeBox('Error', 'No se pudo verificar la disponibilidad del prefijo.', 'error');
+          }
+        });
+      } catch (e: any) {
+        this.mostrarMensajeBox('Error', e.message, 'error');
+      }
+      return; // Esperar respuesta del observable antes de continuar
+    }
+
+    // Si no hay prefijo encontrado, continuar normal
+    this.ejecutarNuevo();
+  }
+
+  private getLimitesSecuencia(prefijoCode: string): { longitudSecuencia: number; maxSecuencia: number; totalGlns: number } {
+    const longitudSecuencia = 9 - prefijoCode.length; // 13 dígitos GLN - 1 verificador - 3 país = 9
+    if (longitudSecuencia < 1) {
+      throw new Error(`Prefijo '${prefijoCode}' demasiado largo. Máximo 8 dígitos.`);
+    }
+    const maxSecuencia = Math.pow(10, longitudSecuencia) - 1;
+    const totalGlns = Math.pow(10, longitudSecuencia);
+    return { longitudSecuencia, maxSecuencia, totalGlns };
+  }
+
+  private ejecutarNuevo(): void {
     const datosGenerales = {
       clientesCodigo: this.formGln.get('clientesCodigo')?.value,
       documentoIdentidad: this.formGln.get('documentoIdentidad')?.value,
