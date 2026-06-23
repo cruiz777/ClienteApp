@@ -104,42 +104,41 @@
       </div>
 
       <button
-        mat-flat-button
-        color="primary"
-        type="button"
-        class="action-button"
-        [disabled]="generando || cargando || validandoCierre"
-        (click)="nuevo()">
-        Nuevo
-      </button>
-
+  mat-flat-button
+  color="primary"
+  type="button"
+  class="action-button"
+  [disabled]="generando || cargando || validandoCierre || (periodoExiste && periodoCerrado)"
+  (click)="accionPrincipalPeriodo()">
+  {{ periodoExiste ? 'Modificar' : 'Nuevo' }}
+</button>
       <button
-        mat-stroked-button
-        color="primary"
-        type="button"
-        class="action-button"
-        [disabled]="generando || cargando || periodoCerrado"
-        (click)="actualizar()">
-        Actualizar
-      </button>
+  mat-stroked-button
+  color="primary"
+  type="button"
+  class="action-button"
+  [disabled]="generando || cargando || !periodoExiste || periodoCerrado"
+  (click)="actualizar()">
+  Actualizar
+</button>
 
-      <button
-        mat-stroked-button
-        type="button"
-        class="action-button"
-        [disabled]="periodoCerrado"
-        (click)="cargarHoras()">
-        Cargar Horas
-      </button>
+<button
+  mat-stroked-button
+  type="button"
+  class="action-button"
+  [disabled]="!periodoExiste || periodoCerrado"
+  (click)="cargarHoras()">
+  Cargar Horas
+</button>
 
-      <button
-        mat-stroked-button
-        type="button"
-        class="action-button"
-        [disabled]="periodoCerrado"
-        (click)="rubrosFijos()">
-        Rubros Fijos
-      </button>
+<button
+  mat-stroked-button
+  type="button"
+  class="action-button"
+  [disabled]="!periodoExiste || periodoCerrado"
+  (click)="rubrosFijos()">
+  Rubros Fijos
+</button>
 
       <button
         mat-stroked-button

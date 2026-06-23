@@ -84,7 +84,9 @@ export class RolIndividualDialogComponent implements OnInit {
         if (this.esRubroAporteIess(row)) {
           return false;
         }
-
+        if (this.esRubroImpuestoRenta(row)) {
+  return false;
+}
         if (this.esRubroFondoReserva(row)) {
           return false;
         }
@@ -106,6 +108,7 @@ export class RolIndividualDialogComponent implements OnInit {
           this.esRubroEnfermedad(row) ||
           this.esRubroAccidenteTrabajo(row) ||
           this.esRubroAporteIess(row) ||
+          this.esRubroImpuestoRenta(row) ||
           this.esRubroFondoReserva(row) ||
           this.esRubroDecimoTercero(row)
           ? 'celda-calculada'
@@ -792,7 +795,9 @@ if (!this.calcular()) {
   private esRubroAporteIess(row: RolIndividualRubroResponse): boolean {
     return row.tipoPago === 'D' && this.normalizarCodigo(row.codigo) === '25';
   }
-
+private esRubroImpuestoRenta(row: RolIndividualRubroResponse): boolean {
+  return row.tipoPago === 'D' && this.normalizarCodigo(row.codigo) === '06';
+}
   private esRubroFondoReserva(row: RolIndividualRubroResponse): boolean {
     return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '18';
   }
