@@ -1,88 +1,130 @@
 <div class="container" [formGroup]="form">
 
-  <h2>Fondo de Reserva</h2>
+  <!-- TÍTULO + PERÍODO -->
+  <div class="title">
+    <h2>Fondo de Reserva</h2>
+    <span class="periodo-label" *ngIf="mostrarPeriodo">
+      Período: {{ periodoLabel }}
+    </span>
+  </div>
 
   <!-- FILTROS -->
-  <div class="grid">
+  <div class="filters-grid">
 
-    <div class="field">
-      <label>N° Patronal:</label>
-      <div class="inline">
-        <input formControlName="patronal">
-        <select formControlName="sucursal">
-          <option>1</option>
-        </select>
-      </div>
-    </div>
-
-    <div class="field">
+    <div class="field-group">
       <label>Empresa:</label>
-      <input formControlName="empresa">
+      <mat-form-field appearance="outline">
+        <mat-select formControlName="idEmpresa">
+          <mat-option *ngFor="let emp of empresas" [value]="emp.idEmpresa">
+            {{ emp.numPatronal }} - {{ emp.nombre }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
     </div>
 
-    <div class="field">
-      <label>Periodo:</label>
-      <input formControlName="periodo">
-    </div>
-
-    <div class="field">
+    <div class="field-group">
       <label>Tipo de Empleado:</label>
-      <input formControlName="tipoEmpleado">
+      <mat-form-field appearance="outline">
+        <mat-select formControlName="idTipEmp">
+          <mat-option *ngFor="let tipo of tiposEmpleado" [value]="tipo.idTipemp">
+            {{ tipo.desTipemp }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="field-group">
+      <label>Fecha Hasta:</label>
+      <mat-form-field appearance="outline">
+        <input matInput
+               [matDatepicker]="picker"
+               formControlName="fechaHasta"
+               placeholder="DD/MM/YYYY"/>
+        <mat-datepicker-toggle matSuffix [for]="picker"/>
+        <mat-datepicker #picker/>
+      </mat-form-field>
     </div>
 
   </div>
 
-  <!-- TABLA -->
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr>
-          <th></th>
-          <th>Local</th>
-          <th>No. Afiliación</th>
-          <th>Cédula</th>
-          <th>Cod. Sectorial</th>
-          <th>Nombre</th>
-          <th>N° Días</th>
-          <th>Fondo Reserva</th>
-          <th>Fecha Ing</th>
-          <th>Fecha Sal</th>
-          <th>Observación</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <tr *ngFor="let r of dataSource">
-          <td>{{r.posicion}}</td>
-          <td>{{r.local}}</td>
-          <td>{{r.noAfiliacion}}</td>
-          <td>{{r.cedula}}</td>
-          <td>{{r.codSectorial}}</td>
-          <td>{{r.nombre}}</td>
-          <td>{{r.numeroDias}}</td>
-          <td>{{r.fondoReserva}}</td>
-          <td>{{r.fechaIng}}</td>
-          <td>{{r.fechaSal}}</td>
-          <td>{{r.observacion}}</td>
-        </tr>
-      </tbody>
-    </table>
+  <!-- AG-GRID -->
+  <div class="grid-wrapper">
+    <ag-grid-angular
+      class="ag-theme-alpine"
+      style="width: 100%; height: 100%;"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [animateRows]="true"
+      (gridReady)="onGridReady($event)"
+      (cellValueChanged)="onCellValueChanged($event)">
+    </ag-grid-angular>
   </div>
 
   <!-- BOTONES + RESUMEN -->
-  <div class="bottom">
+  <div class="bottom-section">
 
-    <div class="buttons">
-      <button (click)="calcular()">Calcular</button>
-      <button (click)="grabar()">Grabar</button>
-      <button (click)="exportar()">Exportar</button>
-      <button (click)="cancelar()">Cancelar</button>
+    <div class="actions">
+      <button mat-stroked-button type="button"
+        (click)="calcular()"
+        [disabled]="loading || grabando">
+        <span *ngIf="!loading">Calcular</span>
+        <span *ngIf="loading">Calculando...</span>
+      </button>
+
+      <button mat-stroked-button type="button"
+        (click)="grabar()"
+        [disabled]="loading || grabando || !rowData.length">
+        <span *ngIf="!grabando">Grabar</span>
+        <span *ngIf="grabando">Grabando...</span>
+      </button>
+
+      <button mat-stroked-button type="button"
+        (click)="cargar()"
+        [disabled]="loading || grabando">
+        Cargar
+      </button>
+
+      <button mat-stroked-button [matMenuTriggerFor]="menuExportar"
+        [disabled]="!rowData.length">
+        Exportar ▾
+      </button>
+      <mat-menu #menuExportar="matMenu">
+        <button mat-menu-item (click)="exportar('pdf')">PDF</button>
+        <button mat-menu-item (click)="exportar('excel')">Excel</button>
+      </mat-menu>
+
+      <button mat-stroked-button type="button"
+        (click)="cancelar()"
+        [disabled]="loading || grabando">
+        Cancelar
+      </button>
     </div>
 
-    <div class="resumen">
-      <div class="total">
-        <span>Total Aportaciones</span>
-        <b>$ {{money(resumen.total)}}</b>
+    <div class="summary-box">
+      <div class="summary-row">
+        <span>Sueldo Acumulado</span>
+        <strong>{{ formatMoneda(totalSueldoAcumulado) }}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Total Fondo Reserva</span>
+        <strong>{{ formatMoneda(totalValorFR) }}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Pagado en Nómina</span>
+        <strong>{{ formatMoneda(totalPagadoNomina) }}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Descuentos</span>
+        <strong>{{ formatMoneda(totalDescuento) }}</strong>
+      </div>
+      <div class="summary-row">
+        <span>Ret. Judicial</span>
+        <strong>{{ formatMoneda(totalRetJudicial) }}</strong>
+      </div>
+      <div class="summary-row total-row">
+        <span>Líquido a Recibir</span>
+        <strong>{{ formatMoneda(totalLiquido) }}</strong>
       </div>
     </div>
 
