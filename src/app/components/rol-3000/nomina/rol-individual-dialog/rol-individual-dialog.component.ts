@@ -2,6 +2,8 @@ import { Component, Inject, OnInit } from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ColDef, GridReadyEvent, CellValueChangedEvent } from 'ag-grid-community';
 import { MatSnackBar } from '@angular/material/snack-bar';
+import { MatDialog } from '@angular/material/dialog';
+import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
 import {
   ApiResponse,
   RolIndividualResponse,
@@ -43,21 +45,6 @@ export class RolIndividualDialogComponent implements OnInit {
       field: 'cantidad',
       headerName: 'Cant/%',
       width: 100,
-      editable: true,
-      type: 'numericColumn',
-      valueParser: params => this.toNumber(params.newValue),
-      valueFormatter: params => this.formatearNumero(params.value),
-      cellClass: params => {
-        const row = params.data as RolIndividualRubroResponse;
-        return row?.esHoraExtra || this.esRubroAusencia(row)
-          ? 'celda-editable-hora'
-          : '';
-      }
-    },
-    {
-      field: 'valor',
-      headerName: 'Valor',
-      width: 120,
       editable: params => {
         const row = params.data as RolIndividualRubroResponse;
 
@@ -65,56 +52,106 @@ export class RolIndividualDialogComponent implements OnInit {
           return false;
         }
 
-        if (row.esHoraExtra) {
-          return false;
-        }
-
-        if (this.esRubroPermisoMaternidad(row)) {
-          return false;
-        }
-
-        if (this.esRubroEnfermedad(row)) {
-          return false;
-        }
-
-        if (this.esRubroAccidenteTrabajo(row)) {
-          return false;
-        }
-
         if (this.esRubroAporteIess(row)) {
           return false;
         }
-        if (this.esRubroImpuestoRenta(row)) {
-  return false;
-}
-        if (this.esRubroFondoReserva(row)) {
-          return false;
-        }
 
-        if (this.esRubroDecimoTercero(row)) {
-          return false;
+        /*
+         * IMP. RENTA:
+         * Permitimos editar Cant/% para poner 1.
+         * Cant/% = 1 significa valor manual.
+         */
+        if (this.esRubroImpuestoRenta(row)) {
+          return true;
         }
 
         return true;
       },
       type: 'numericColumn',
       valueParser: params => this.toNumber(params.newValue),
-      valueFormatter: params => this.formatearDecimal(params.value),
+      valueFormatter: params => this.formatearNumero(params.value),
       cellClass: params => {
         const row = params.data as RolIndividualRubroResponse;
 
         return row?.esHoraExtra ||
-          this.esRubroPermisoMaternidad(row) ||
-          this.esRubroEnfermedad(row) ||
-          this.esRubroAccidenteTrabajo(row) ||
-          this.esRubroAporteIess(row) ||
-          this.esRubroImpuestoRenta(row) ||
-          this.esRubroFondoReserva(row) ||
-          this.esRubroDecimoTercero(row)
-          ? 'celda-calculada'
+          this.esRubroAusencia(row) ||
+          this.esRubroImpuestoRenta(row)
+          ? 'celda-editable-hora'
           : '';
       }
+    },{
+  field: 'valor',
+  headerName: 'Valor',
+  width: 120,
+  editable: params => {
+    const row = params.data as RolIndividualRubroResponse;
+
+    if (!row) {
+      return false;
     }
+
+    if (row.esHoraExtra) {
+      return false;
+    }
+
+    if (this.esRubroPermisoMaternidad(row)) {
+      return false;
+    }
+
+    if (this.esRubroEnfermedad(row)) {
+      return false;
+    }
+
+    if (this.esRubroAccidenteTrabajo(row)) {
+      return false;
+    }
+
+    if (this.esRubroAporteIess(row)) {
+      return false;
+    }
+
+    /*
+     * IMP. RENTA:
+     * Solo permite editar valor si Cant/% = 1.
+     */
+    if (this.esRubroImpuestoRenta(row)) {
+      return this.esImpuestoRentaManual(row);
+    }
+
+    if (this.esRubroFondoReserva(row)) {
+      return false;
+    }
+
+    if (this.esRubroDecimoTercero(row)) {
+      return false;
+    }
+
+    return true;
+  },
+  type: 'numericColumn',
+  valueParser: params => this.toNumber(params.newValue),
+  valueFormatter: params => this.formatearDecimal(params.value),
+  cellClass: params => {
+    const row = params.data as RolIndividualRubroResponse;
+
+    if (this.esRubroImpuestoRenta(row)) {
+      return this.esImpuestoRentaManual(row)
+        ? 'celda-editable-hora'
+        : 'celda-calculada';
+    }
+
+    return row?.esHoraExtra ||
+      this.esRubroPermisoMaternidad(row) ||
+      this.esRubroEnfermedad(row) ||
+      this.esRubroAccidenteTrabajo(row) ||
+      this.esRubroAporteIess(row) ||
+      this.esRubroFondoReserva(row) ||
+      this.esRubroDecimoTercero(row)
+        ? 'celda-calculada'
+        : '';
+  }
+}
+    
   ];
 
   defaultColDef: ColDef = {
@@ -127,6 +164,7 @@ export class RolIndividualDialogComponent implements OnInit {
     private rolNominaService: RolNominaService,
     private dialogRef: MatDialogRef<RolIndividualDialogComponent>,
     private snackBar: MatSnackBar,
+    private dialog: MatDialog,
     @Inject(MAT_DIALOG_DATA)
     public data: {
       idEmpleado: number;
@@ -171,7 +209,7 @@ export class RolIndividualDialogComponent implements OnInit {
     params.api.sizeColumnsToFit();
   }
 
-onCellValueChanged(event: CellValueChangedEvent<RolIndividualRubroResponse>): void {
+ onCellValueChanged(event: CellValueChangedEvent<RolIndividualRubroResponse>): void {
   const row = event.data;
 
   if (!row) {
@@ -188,6 +226,40 @@ onCellValueChanged(event: CellValueChangedEvent<RolIndividualRubroResponse>): vo
     this.ingresos = [...this.ingresos];
     this.egresos = [...this.egresos];
     this.calcularSinMarcarCambios();
+    return;
+  }
+
+  /*
+   * IMP. RENTA manual:
+   * Si Cant/% = 1, NO recalculamos el rubro.
+   * Solo actualizamos totales y refrescamos.
+   */
+  if (this.esRubroImpuestoRenta(row)) {
+    if (this.esImpuestoRentaManual(row)) {
+      this.recalcularTotales();
+      this.hayCambios = true;
+
+      event.api.refreshCells({
+        force: true,
+        rowNodes: [event.node]
+      });
+
+      return;
+    }
+
+    /*
+     * Si no está manual, queda para cálculo automático del backend.
+     * Puedes limpiar el valor visual para que se note que no es manual.
+     */
+    row.valor = 0;
+    this.recalcularTotales();
+    this.hayCambios = true;
+
+    event.api.refreshCells({
+      force: true,
+      rowNodes: [event.node]
+    });
+
     return;
   }
 
@@ -219,22 +291,25 @@ onCellValueChanged(event: CellValueChangedEvent<RolIndividualRubroResponse>): vo
   }
 
   salir(): void {
-    if (!this.hayCambios) {
-      this.dialogRef.close(this.rolActualizado);
-      return;
-    }
+  if (!this.hayCambios) {
+    this.dialogRef.close(this.rolActualizado);
+    return;
+  }
 
-    const guardarAntes = confirm(
-      'Existen cambios pendientes. ¿Desea guardar antes de salir?'
-    );
-
-    if (guardarAntes) {
+  this.confirmarAccion(
+    'Cambios pendientes',
+    'Existen cambios pendientes. ¿Desea guardar antes de salir?',
+    'Sí, guardar',
+    'Salir sin guardar'
+  ).subscribe((confirmado: boolean) => {
+    if (confirmado === true) {
       this.grabar(true);
       return;
     }
 
     this.dialogRef.close(this.rolActualizado);
-  }
+  });
+}
 
   get fechaPeriodoTexto(): string {
     return this.formatearFechaDateOnly(this.dataRol?.fechaPeriodo);
@@ -328,112 +403,153 @@ onCellValueChanged(event: CellValueChangedEvent<RolIndividualRubroResponse>): vo
     this.hayCambios = false;
   }
 
-  grabar(cerrarDespues: boolean = false): void {
+grabar(cerrarDespues: boolean = false): void {
   if (!this.dataRol) {
     this.mostrarAdvertencia('No existe información del rol individual.');
     return;
   }
 
+  /*
+   * Guardamos el valor manual de IMP. RENTA antes de calcular,
+   * porque calcular() puede refrescar totales y otros rubros.
+   */
+  const impuestoRentaManualAntes = this.egresos.find(x =>
+    this.esRubroImpuestoRenta(x) &&
+    this.toNumber(x.cantidad) === 1
+  );
+
+  const valorImpuestoRentaManual = impuestoRentaManualAntes
+    ? this.toNumber(impuestoRentaManualAntes.valor)
+    : null;
+
+  const idIngDescImpuestoRentaManual = impuestoRentaManualAntes
+    ? impuestoRentaManualAntes.idIngDesc
+    : null;
+
   if (!this.validarRubrosNoNegativosAntesDeGuardar()) {
-  return;
-}
+    return;
+  }
 
-if (!this.validarAusenciasAntesDeGuardar()) {
-  return;
-}
+  if (!this.validarAusenciasAntesDeGuardar()) {
+    return;
+  }
 
-if (!this.calcular()) {
-  return;
-}
+  if (!this.calcular()) {
+    return;
+  }
+
+  /*
+   * Si IMP. RENTA estaba en modo manual, restauramos:
+   * Cant/% = 1
+   * Valor = valor digitado por el usuario
+   */
+  if (
+    idIngDescImpuestoRentaManual !== null &&
+    valorImpuestoRentaManual !== null
+  ) {
+    this.egresos = this.egresos.map(x => {
+      if (x.idIngDesc === idIngDescImpuestoRentaManual) {
+        return {
+          ...x,
+          cantidad: 1,
+          valor: valorImpuestoRentaManual
+        };
+      }
+
+      return x;
+    });
+
+    this.recalcularTotales();
+  }
 
   if (!this.validarLiquidoRecibir()) {
     return;
   }
 
   const payload: GuardarRolIndividualRequest = {
-      idEmpleado: this.dataRol.idEmpleado,
-      fechaPeriodo: this.dataRol.fechaPeriodo,
-      idUsuario: 1,
-      rubros: [
-        ...this.ingresos,
-        ...this.egresos
-      ].map(x => ({
-        idRolNomina: x.idRolNomina,
-        idIngDesc: x.idIngDesc,
-        tipoPago: x.tipoPago,
-        codigo: x.codigo,
-        descripcion: x.descripcion,
-        cantidad: this.toNumber(x.cantidad),
-        valor: this.toNumber(x.valor),
-        esHoraExtra: x.esHoraExtra,
-        factorHoraExtra: this.toNumber(x.factorHoraExtra),
+    idEmpleado: this.dataRol.idEmpleado,
+    fechaPeriodo: this.dataRol.fechaPeriodo,
+    idUsuario: 1,
+    rubros: [
+      ...this.ingresos,
+      ...this.egresos
+    ].map(x => ({
+      idRolNomina: x.idRolNomina,
+      idIngDesc: x.idIngDesc,
+      tipoPago: x.tipoPago,
+      codigo: x.codigo,
+      descripcion: x.descripcion,
+      cantidad: this.toNumber(x.cantidad),
+      valor: this.toNumber(x.valor),
+      esHoraExtra: x.esHoraExtra,
+      factorHoraExtra: this.toNumber(x.factorHoraExtra),
 
-        aportaIess: x.aportaIess,
-        aplicaImpuestoRenta: x.aplicaImpuestoRenta,
-        aplicaFondoReserva: x.aplicaFondoReserva,
-        aplicaDecimoTercero: x.aplicaDecimoTercero
-      }))
-    };
+      aportaIess: x.aportaIess,
+      aplicaImpuestoRenta: x.aplicaImpuestoRenta,
+      aplicaFondoReserva: x.aplicaFondoReserva,
+      aplicaDecimoTercero: x.aplicaDecimoTercero
+    }))
+  };
 
-    this.guardando = true;
+  this.guardando = true;
 
-    this.rolNominaService.guardarRolIndividual(payload)
-      .subscribe({
-        next: resp => {
-          this.guardando = false;
+  this.rolNominaService.guardarRolIndividual(payload)
+    .subscribe({
+      next: resp => {
+        this.guardando = false;
 
-          if (resp.type !== 'Success') {
-            this.mostrarMensajePorTipo(resp.type, resp.message);
-            return;
-          }
-
-          this.hayCambios = false;
-          this.rolActualizado = true;
-
+        if (resp.type !== 'Success') {
           this.mostrarMensajePorTipo(resp.type, resp.message);
-
-          if (cerrarDespues) {
-            this.dialogRef.close(true);
-            return;
-          }
-
-          this.cargarRolIndividual();
-        },
-        error: err => {
-          this.guardando = false;
-          console.error(err);
-          this.mostrarError('Error al guardar el rol individual.');
+          return;
         }
-      });
-  }
 
- private normalizarValores(): void {
-  this.ingresos.forEach(row => {
-    row.cantidad = this.toNumber(row.cantidad);
-    row.valor = this.toNumber(row.valor);
+        this.hayCambios = false;
+        this.rolActualizado = true;
 
-    if (row.cantidad < 0) {
-      row.cantidad = 0;
-    }
+        this.mostrarMensajePorTipo(resp.type, resp.message);
 
-    if (row.valor < 0) {
-      row.valor = 0;
-    }
-  });
+        if (cerrarDespues) {
+          this.dialogRef.close(true);
+          return;
+        }
 
-  this.egresos.forEach(row => {
-    row.cantidad = this.toNumber(row.cantidad);
-    row.valor = this.toNumber(row.valor);
-
-    if (row.cantidad < 0) {
-      row.cantidad = 0;
-    }
-
-    if (row.valor < 0) {
-      row.valor = 0;
-    }
-  });
+        this.cargarRolIndividual();
+      },
+      error: err => {
+        this.guardando = false;
+        console.error(err);
+        this.mostrarError('Error al guardar el rol individual.');
+      }
+    });
 }
+
+  private normalizarValores(): void {
+    this.ingresos.forEach(row => {
+      row.cantidad = this.toNumber(row.cantidad);
+      row.valor = this.toNumber(row.valor);
+
+      if (row.cantidad < 0) {
+        row.cantidad = 0;
+      }
+
+      if (row.valor < 0) {
+        row.valor = 0;
+      }
+    });
+
+    this.egresos.forEach(row => {
+      row.cantidad = this.toNumber(row.cantidad);
+      row.valor = this.toNumber(row.valor);
+
+      if (row.cantidad < 0) {
+        row.cantidad = 0;
+      }
+
+      if (row.valor < 0) {
+        row.valor = 0;
+      }
+    });
+  }
   private validarDiasAusenciaEditada(
     row: RolIndividualRubroResponse,
     valorAnterior: number
@@ -795,9 +911,9 @@ if (!this.calcular()) {
   private esRubroAporteIess(row: RolIndividualRubroResponse): boolean {
     return row.tipoPago === 'D' && this.normalizarCodigo(row.codigo) === '25';
   }
-private esRubroImpuestoRenta(row: RolIndividualRubroResponse): boolean {
-  return row.tipoPago === 'D' && this.normalizarCodigo(row.codigo) === '06';
-}
+  private esRubroImpuestoRenta(row: RolIndividualRubroResponse): boolean {
+    return row.tipoPago === 'D' && this.normalizarCodigo(row.codigo) === '06';
+  }
   private esRubroFondoReserva(row: RolIndividualRubroResponse): boolean {
     return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '18';
   }
@@ -906,49 +1022,195 @@ private esRubroImpuestoRenta(row: RolIndividualRubroResponse): boolean {
     this.mostrarError(mensaje);
   }
   private validarLiquidoRecibir(): boolean {
-  this.recalcularTotales();
+    this.recalcularTotales();
 
-  if (this.liquidoRecibir < 0) {
-    this.mostrarAdvertencia(
-      'No se puede grabar el rol individual porque el líquido a recibir no puede ser negativo.'
+    if (this.liquidoRecibir < 0) {
+      this.mostrarAdvertencia(
+        'No se puede grabar el rol individual porque el líquido a recibir no puede ser negativo.'
+      );
+      return false;
+    }
+
+    return true;
+  }
+  private validarValorNoNegativo(
+    row: RolIndividualRubroResponse,
+    campoEditado: keyof RolIndividualRubroResponse,
+    valorAnterior: number
+  ): boolean {
+    if (campoEditado === 'cantidad' && this.toNumber(row.cantidad) < 0) {
+      row.cantidad = valorAnterior;
+      this.mostrarAdvertencia('No puede ingresar cantidades negativas.');
+      return false;
+    }
+
+    if (campoEditado === 'valor' && this.toNumber(row.valor) < 0) {
+      row.valor = valorAnterior;
+      this.mostrarAdvertencia('No puede ingresar valores negativos.');
+      return false;
+    }
+
+    return true;
+  }
+
+  private validarRubrosNoNegativosAntesDeGuardar(): boolean {
+    const rubroInvalido = [...this.ingresos, ...this.egresos].find(x =>
+      this.toNumber(x.cantidad) < 0 || this.toNumber(x.valor) < 0
     );
-    return false;
-  }
 
-  return true;
+    if (rubroInvalido) {
+      this.mostrarAdvertencia(
+        `El rubro ${rubroInvalido.descripcion} no puede tener cantidad ni valor negativo.`
+      );
+      return false;
+    }
+
+    return true;
+  }
+  private esImpuestoRentaManual(row: RolIndividualRubroResponse): boolean {
+  return this.esRubroImpuestoRenta(row) && this.toNumber(row.cantidad) === 1;
 }
-private validarValorNoNegativo(
-  row: RolIndividualRubroResponse,
-  campoEditado: keyof RolIndividualRubroResponse,
-  valorAnterior: number
-): boolean {
-  if (campoEditado === 'cantidad' && this.toNumber(row.cantidad) < 0) {
-    row.cantidad = valorAnterior;
-    this.mostrarAdvertencia('No puede ingresar cantidades negativas.');
-    return false;
+calcularDesdeBackend(): void {
+  if (!this.dataRol) {
+    this.mostrarAdvertencia('No existe información del rol individual.');
+    return;
   }
 
-  if (campoEditado === 'valor' && this.toNumber(row.valor) < 0) {
-    row.valor = valorAnterior;
-    this.mostrarAdvertencia('No puede ingresar valores negativos.');
-    return false;
-  }
-
-  return true;
-}
-
-private validarRubrosNoNegativosAntesDeGuardar(): boolean {
-  const rubroInvalido = [...this.ingresos, ...this.egresos].find(x =>
-    this.toNumber(x.cantidad) < 0 || this.toNumber(x.valor) < 0
+  /*
+   * Si IMP. RENTA está manual:
+   * Cant/% = 1
+   * Valor = valor digitado
+   * Se conserva antes de enviar al backend.
+   */
+  const impuestoRentaManualAntes = this.egresos.find(x =>
+    this.esRubroImpuestoRenta(x) &&
+    this.toNumber(x.cantidad) === 1
   );
 
-  if (rubroInvalido) {
-    this.mostrarAdvertencia(
-      `El rubro ${rubroInvalido.descripcion} no puede tener cantidad ni valor negativo.`
-    );
-    return false;
+  const valorImpuestoRentaManual = impuestoRentaManualAntes
+    ? this.toNumber(impuestoRentaManualAntes.valor)
+    : null;
+
+  const idIngDescImpuestoRentaManual = impuestoRentaManualAntes
+    ? impuestoRentaManualAntes.idIngDesc
+    : null;
+
+  if (!this.validarRubrosNoNegativosAntesDeGuardar()) {
+    return;
   }
 
-  return true;
+  if (!this.validarAusenciasAntesDeGuardar()) {
+    return;
+  }
+
+  /*
+   * Aquí sí puedes hacer cálculos de front:
+   * horas extras, maternidad, enfermedad, accidente, IESS, fondos, décimos.
+   */
+  if (!this.calcular()) {
+    return;
+  }
+
+  /*
+   * Restaurar IMP. RENTA manual si aplica.
+   */
+  if (
+    idIngDescImpuestoRentaManual !== null &&
+    valorImpuestoRentaManual !== null
+  ) {
+    this.egresos = this.egresos.map(x => {
+      if (x.idIngDesc === idIngDescImpuestoRentaManual) {
+        return {
+          ...x,
+          cantidad: 1,
+          valor: valorImpuestoRentaManual
+        };
+      }
+
+      return x;
+    });
+
+    this.recalcularTotales();
+  }
+
+  if (!this.validarLiquidoRecibir()) {
+    return;
+  }
+
+  const payload: GuardarRolIndividualRequest = {
+    idEmpleado: this.dataRol.idEmpleado,
+    fechaPeriodo: this.dataRol.fechaPeriodo,
+    idUsuario: 1,
+    rubros: [
+      ...this.ingresos,
+      ...this.egresos
+    ].map(x => ({
+      idRolNomina: x.idRolNomina,
+      idIngDesc: x.idIngDesc,
+      tipoPago: x.tipoPago,
+      codigo: x.codigo,
+      descripcion: x.descripcion,
+      cantidad: this.toNumber(x.cantidad),
+      valor: this.toNumber(x.valor),
+      esHoraExtra: x.esHoraExtra,
+      factorHoraExtra: this.toNumber(x.factorHoraExtra),
+
+      aportaIess: x.aportaIess,
+      aplicaImpuestoRenta: x.aplicaImpuestoRenta,
+      aplicaFondoReserva: x.aplicaFondoReserva,
+      aplicaDecimoTercero: x.aplicaDecimoTercero
+    }))
+  };
+
+  this.guardando = true;
+
+  this.rolNominaService.guardarRolIndividual(payload)
+    .subscribe({
+      next: resp => {
+        this.guardando = false;
+
+        if (resp.type !== 'Success') {
+          this.mostrarMensajePorTipo(resp.type, resp.message);
+          return;
+        }
+
+        this.hayCambios = false;
+        this.rolActualizado = true;
+
+        this.mostrarMensajePorTipo(
+          resp.type,
+          'Cálculo actualizado correctamente.'
+        );
+
+        /*
+         * Recarga desde backend para mostrar IMP. RENTA recalculado.
+         */
+        this.cargarRolIndividual();
+      },
+      error: err => {
+        this.guardando = false;
+        console.error(err);
+        this.mostrarError('Error al calcular el rol individual.');
+      }
+    });
+}
+private confirmarAccion(
+  titulo: string,
+  mensaje: string,
+  textoConfirmar: string = 'Sí, confirmar',
+  textoCancelar: string = 'Cancelar'
+) {
+  return this.dialog.open(CustomMessageBoxComponent, {
+    width: '400px',
+    disableClose: true,
+    data: {
+      title: titulo,
+      message: mensaje,
+      type: 'info',
+      confirmText: textoConfirmar,
+      cancelText: textoCancelar,
+      showCancel: true
+    }
+  }).afterClosed();
 }
 }

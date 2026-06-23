@@ -102,16 +102,23 @@
           </mat-error>
         </mat-form-field>
       </div>
-
-      <button
+<button
   mat-flat-button
   color="primary"
   type="button"
   class="action-button"
-  [disabled]="generando || cargando || validandoCierre || (periodoExiste && periodoCerrado)"
+  [disabled]="
+    generando ||
+    cargando ||
+    validandoCierre ||
+    procesandoModificar ||
+    modificarBloqueado ||
+    (periodoExiste && periodoCerrado)
+  "
   (click)="accionPrincipalPeriodo()">
-  {{ periodoExiste ? 'Modificar' : 'Nuevo' }}
+  {{ procesandoModificar ? 'Procesando...' : (periodoExiste ? 'Modificar' : 'Nuevo') }}
 </button>
+      
       <button
   mat-stroked-button
   color="primary"

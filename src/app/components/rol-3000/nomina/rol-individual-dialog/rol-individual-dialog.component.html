@@ -7,7 +7,12 @@
       </div>
     </div>
 
-    <button class="btn-close" type="button" (click)="cerrar()">X</button>
+    <button
+  type="button"
+  class="close-button"
+  (click)="salir()">
+  x
+</button>
   </div>
 
   <div *ngIf="cargando" class="loading-box">
@@ -104,7 +109,7 @@
     </div>
 
     <div class="acciones">
-      <button type="button" class="btn secondary" (click)="calcular()" [disabled]="guardando">
+      <button mat-flat-button color="primary" type="button" [disabled]="guardando" (click)="calcularDesdeBackend()">
         Calcular
       </button>
 

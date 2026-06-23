@@ -2193,7 +2193,7 @@ export class EmpleadoFichaComponent implements OnInit {
       valorRetencionJ: ds.valoresRetencion ? Number(ds.valoresRetencion) : null,
       idGrupoOcupacional: dg.grupoOcupacion ? Number(dg.grupoOcupacion) : null,
       repLegal: da.gerenteRepLegal === true,
-      impRenta: da.noPagaImpuestoRenta === false,
+      impRenta: da.noPagaImpuestoRenta === true,
       idObs: null,
 
       fechaSueldo: ds.fechaSalario || null,
