@@ -120,7 +120,7 @@ export class UsuariosFormComponent implements OnInit {
       const controles = this.usuarioForm.controls;
 
       if (controles['usuario'].invalid) errores.push('Usuario es requerido');
-      if (controles['clave'].invalid) errores.push('Clave es requerida');
+       if (!this.esEdicion && controles['clave'].invalid) errores.push('Clave es requerida');
       if (controles['perfil'].invalid) errores.push('Perfil es requerido');
       if (controles['fechaCaducidad'].invalid) errores.push('Fecha de caducidad es requerida');
       if (controles['departamento'].invalid) errores.push('Departamento es requerido');
@@ -150,14 +150,17 @@ export class UsuariosFormComponent implements OnInit {
     if (this.esEdicion && this.usuarioIdEditar != null && this.usuarioIdEditar > 0) {
       const requestEdit: UsuariosEditRequest = {
         id: this.usuarioIdEditar,
-        id_persona: this.entidadSeleccionada?.personaCodigo || 0,
+        id_persona: this.data.usuario.id_persona,        //Del original, no de entidadSeleccionada
         nombre_usuario: formData.usuario,
         contrasena_hash: formData.clave || '',
         estado: formData.estado === 'activo',
         correo: formData.correo,
         fecha_creacion: undefined,
-        id_empresa: 1,
-        id_departamento: formData.departamento
+        id_empresa: this.data.usuario.id_empresa ?? 1,   //del original
+        id_departamento: formData.departamento,
+        fecha_caducidad: formData.fechaCaducidad
+          ? new Date(formData.fechaCaducidad).toISOString()
+          : undefined
       };
 
       this.usuarioservice.updateUsuario(formData.perfil, requestEdit).subscribe({
@@ -176,7 +179,10 @@ export class UsuariosFormComponent implements OnInit {
         correo: formData.correo,
         fecha_creacion: new Date().toISOString(),
         id_empresa: 1,
-        id_departamento: formData.departamento
+        id_departamento: formData.departamento,
+        fecha_bloqueo: formData.fechaCaducidad 
+          ? new Date(formData.fechaCaducidad).toISOString()
+          : undefined
       };
 
       this.usuarioservice.createUsuario(formData.perfil, request).subscribe({
@@ -243,7 +249,7 @@ export class UsuariosFormComponent implements OnInit {
       usuario: usuario.nombre_usuario,
       correo: usuario.correo,
       perfil: usuario.id_perfil,
-      fechaCaducidad: new Date(),
+      fechaCaducidad: usuario.fecha_caducidad ? new Date(usuario.fecha_caducidad) : null,
       estado: usuario.estado ? 'activo' : 'inactivo',
       departamento: usuario.id_departamento
     });

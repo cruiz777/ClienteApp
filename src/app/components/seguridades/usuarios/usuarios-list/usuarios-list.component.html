@@ -29,6 +29,8 @@
             <th>Correo</th>
             <th>Perfil</th>
             <th>Departamento</th>
+            <th class="col-reducida">Estado</th>
+            <th class="col-reducida">Fecha Caducidad</th>
             <th class="col-reducida">Caja</th>
             <th class="col-reducida">Acciones</th>
           </tr>
@@ -42,6 +44,12 @@
             <td>{{ usuario.correo }}</td>
             <td>{{ usuario.nombre_perfil || 'N/A' }}</td>
             <td>{{ usuario.nombre_departamento || 'N/A' }}</td>
+            <td>
+              <span [style.color]="!usuario.estado ? 'red' : 'green'">
+                {{ usuario.estado ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td>{{ usuario.fecha_caducidad ? (usuario.fecha_caducidad | date: 'yyyy-MM-dd') : '—' }}</td>
              <td>
               <button (click)="cajaUsuario(usuario); $event.stopPropagation()" title="Usuario Caja"
                         [disabled]="!((permissions.permisos$ | async)?.includes('seguridades.usuarios-perfiles.usuarios.editar'))"
