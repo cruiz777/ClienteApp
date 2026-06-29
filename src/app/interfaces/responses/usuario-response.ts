@@ -9,4 +9,7 @@ export interface UsuariosResponse {
   nombre_departamento?: string;
   nombre_perfil?: string;
   id_perfil?: number;
+  fecha_bloqueo?: string; 
+  esta_bloqueado?: boolean;
+  fecha_caducidad?: string;
 }

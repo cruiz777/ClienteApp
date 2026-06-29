@@ -7,6 +7,8 @@ export interface UsuariosRequest {
   fecha_creacion?: string;
   id_empresa: number;
   id_departamento: number;
+  fecha_bloqueo?: string;
+  fecha_caducidad?: string;
 }
 
 export interface UsuariosEditRequest extends UsuariosRequest {
