@@ -119,14 +119,13 @@
   {{ procesandoModificar ? 'Procesando...' : (periodoExiste ? 'Modificar' : 'Nuevo') }}
 </button>
       
-      <button
+    <button
   mat-stroked-button
-  color="primary"
   type="button"
   class="action-button"
-  [disabled]="generando || cargando || !periodoExiste || periodoCerrado"
-  (click)="actualizar()">
-  Actualizar
+  [disabled]="actualizando || cargando || generando || validandoCierre"
+  (click)="recalcularRolMensual()">
+  {{ actualizando ? 'Recalculando...' : 'Actualizar' }}
 </button>
 
 <button

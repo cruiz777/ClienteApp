@@ -1566,15 +1566,37 @@ export class BloqueComponent implements OnInit {
     // Regla de longitudes y máximo teórico por prefijo
     let maxTeorico = 0;
     debugger
+    // if (this.bandera === 0) {            // GTIN-13 (con 786)
+    //   if (len < 5 || len > 8) {
+    //     this.mostrarAlerta('⚠️ Para GTIN-13 el prefijo debe tener entre 5 y 8 dígitos.', 'Error');
+    //     return of(false);
+    //   }
+    //   const maxPorLen: Record<number, number> = { 8: 10, 7: 100, 6: 1000, 5: 10000 };
+    //   maxTeorico = maxPorLen[len];
+    // }
     if (this.bandera === 0) {            // GTIN-13 (con 786)
-      if (len < 5 || len > 8) {
-        this.mostrarAlerta('⚠️ Para GTIN-13 el prefijo debe tener entre 5 y 8 dígitos.', 'Error');
-        return of(false);
-      }
-      const maxPorLen: Record<number, number> = { 8: 10, 7: 100, 6: 1000, 5: 10000 };
-      maxTeorico = maxPorLen[len];
-    }
 
+  // Caso especial:
+  // Si el prefijo tiene longitud 8 y empieza por 89,
+  // se salta la validación de rango/máximo teórico.
+  if (len === 8 && limpio.startsWith('89')) {
+    return of(true);
+  }
+
+  if (len < 5 || len > 8) {
+    this.mostrarAlerta('⚠️ Para GTIN-13 el prefijo debe tener entre 5 y 8 dígitos.', 'Error');
+    return of(false);
+  }
+
+  const maxPorLen: Record<number, number> = {
+    8: 10,
+    7: 100,
+    6: 1000,
+    5: 10000
+  };
+
+  maxTeorico = maxPorLen[len];
+}
     if (this.bandera === 2) {            // UPC-12 (sin 786)
       if (len < 5 || len > 8) {
         this.mostrarAlerta('⚠️ Para UPC el prefijo debe tener entre 5 y 7 dígitos.', 'Error');

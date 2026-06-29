@@ -29,7 +29,7 @@ import {
   RolMensualRequest,
   RolMensualResponse,
   RubroColumnaResponse,
-  RolNominaService
+  RolNominaService, RecalcularRolMensualRequest
 } from 'src/app/services/rol/rol-nomina.service';
 
 interface NodoRol {
@@ -83,6 +83,7 @@ export class RolMensualComponent implements OnInit {
   nodoSeleccionado: NodoRol | null = null;
   procesandoModificar = false;
   modificarBloqueado = false;
+  actualizando = false;
   /*
    * Este arreglo alimenta el AG Grid.
    * Ahora es dinámico porque cada fila tiene:
@@ -224,68 +225,68 @@ export class RolMensualComponent implements OnInit {
     });
   }
 
- private generarSobrescribiendo(): void {
-  if (this.periodoCerrado) {
-    this.mostrarAdvertencia(
-      'El periodo está cerrado. No se puede sobrescribir la nómina.'
-    );
-    this.cargarRolMensual();
-    return;
-  }
+  private generarSobrescribiendo(): void {
+    if (this.periodoCerrado) {
+      this.mostrarAdvertencia(
+        'El periodo está cerrado. No se puede sobrescribir la nómina.'
+      );
+      this.cargarRolMensual();
+      return;
+    }
 
-  if (this.procesandoModificar || this.modificarBloqueado) {
-    return;
-  }
+    if (this.procesandoModificar || this.modificarBloqueado) {
+      return;
+    }
 
-  const request = this.construirRequestGenerar(true);
+    const request = this.construirRequestGenerar(true);
 
-  this.generando = true;
-  this.procesandoModificar = true;
+    this.generando = true;
+    this.procesandoModificar = true;
 
-  this.rolNominaService.generarRolMensual(request).subscribe({
-    next: (resp) => {
-      if (resp.type === 'Success') {
-        this.mostrarExito(resp.message ?? 'Nómina modificada correctamente.');
+    this.rolNominaService.generarRolMensual(request).subscribe({
+      next: (resp) => {
+        if (resp.type === 'Success') {
+          this.mostrarExito(resp.message ?? 'Nómina modificada correctamente.');
 
-        this.periodoExiste = true;
-        this.modoEdicionPeriodo = true;
+          this.periodoExiste = true;
+          this.modoEdicionPeriodo = true;
+
+          /*
+           * Aquí queda bloqueado después de terminar bien.
+           */
+          this.modificarBloqueado = true;
+
+          this.cargarRolMensual();
+          return;
+        }
 
         /*
-         * Aquí queda bloqueado después de terminar bien.
+         * Si no fue éxito, se vuelve a permitir modificar.
          */
-        this.modificarBloqueado = true;
+        this.modificarBloqueado = false;
 
-        this.cargarRolMensual();
-        return;
+        this.mostrarAdvertencia(resp.message ?? 'No se pudo modificar la nómina.');
+      },
+      error: (err) => {
+        console.error('Error al modificar nómina:', err);
+
+        /*
+         * Si falla, se vuelve a habilitar.
+         */
+        this.modificarBloqueado = false;
+
+        this.mostrarError('Error al modificar la nómina mensual.');
+      },
+      complete: () => {
+        /*
+         * Ya no debe mostrar Procesando...
+         * Pero si fue éxito, modificarBloqueado queda true.
+         */
+        this.generando = false;
+        this.procesandoModificar = false;
       }
-
-      /*
-       * Si no fue éxito, se vuelve a permitir modificar.
-       */
-      this.modificarBloqueado = false;
-
-      this.mostrarAdvertencia(resp.message ?? 'No se pudo modificar la nómina.');
-    },
-    error: (err) => {
-      console.error('Error al modificar nómina:', err);
-
-      /*
-       * Si falla, se vuelve a habilitar.
-       */
-      this.modificarBloqueado = false;
-
-      this.mostrarError('Error al modificar la nómina mensual.');
-    },
-    complete: () => {
-      /*
-       * Ya no debe mostrar Procesando...
-       * Pero si fue éxito, modificarBloqueado queda true.
-       */
-      this.generando = false;
-      this.procesandoModificar = false;
-    }
-  });
-}
+    });
+  }
   actualizar(): void {
     if (!this.form.value.fechaPeriodo) {
       this.mostrarAdvertencia('Debe ingresar el periodo.');
@@ -357,7 +358,7 @@ export class RolMensualComponent implements OnInit {
     this.generando = false;
     this.cargando = false;
     this.procesandoModificar = false;
-this.modificarBloqueado = false;
+    this.modificarBloqueado = false;
 
     this.mostrarAdvertencia('Operación cancelada.');
   }
@@ -1079,25 +1080,25 @@ this.modificarBloqueado = false;
     });
   }
 
- accionPrincipalPeriodo(): void {
-  if (
-    this.generando ||
-    this.cargando ||
-    this.validandoCierre ||
-    this.procesandoModificar ||
-    this.modificarBloqueado ||
-    (this.periodoExiste && this.periodoCerrado)
-  ) {
-    return;
-  }
+  accionPrincipalPeriodo(): void {
+    if (
+      this.generando ||
+      this.cargando ||
+      this.validandoCierre ||
+      this.procesandoModificar ||
+      this.modificarBloqueado ||
+      (this.periodoExiste && this.periodoCerrado)
+    ) {
+      return;
+    }
 
-  if (this.periodoExiste) {
-    this.modificarPeriodo();
-    return;
-  }
+    if (this.periodoExiste) {
+      this.modificarPeriodo();
+      return;
+    }
 
-  this.nuevo();
-}
+    this.nuevo();
+  }
 
   modificarPeriodo(): void {
     if (!this.periodoExiste) {
@@ -1194,5 +1195,74 @@ this.modificarBloqueado = false;
       .replace(/^_+|_+$/g, '')
       .toUpperCase();
   }
+  recalcularRolMensual(): void {
+    if (this.actualizando || this.cargando || this.generando || this.validandoCierre) {
+      return;
+    }
 
+    const fechaPeriodo = this.formatearFechaYYYYMMDD(
+      this.form.value.fechaPeriodo
+    );
+
+    if (!fechaPeriodo) {
+      this.mostrarAdvertencia('Debe seleccionar un periodo.');
+      return;
+    }
+
+    const tipoNodo = this.nodoSeleccionado?.tipo ?? 'GENERAL';
+
+    const request: RecalcularRolMensualRequest = {
+      fechaPeriodo,
+      idLocal: tipoNodo === 'LOCAL'
+        ? this.nodoSeleccionado!.id
+        : null,
+      idDepartamento: tipoNodo === 'DEPARTAMENTO'
+        ? this.nodoSeleccionado!.id
+        : null,
+      idUsuario: 1
+    };
+
+    this.confirmarAccion(
+      'Recalcular rol mensual',
+      'Se recalculará y grabará la nómina de los empleados del periodo seleccionado. ¿Desea continuar?',
+      'Sí, recalcular',
+      'Cancelar'
+    ).subscribe((confirmado: boolean) => {
+      if (confirmado !== true) {
+        return;
+      }
+
+      this.actualizando = true;
+
+      this.rolNominaService.recalcularRolMensual(request)
+        .subscribe({
+          next: resp => {
+            if (resp.type === 'Success') {
+              this.mostrarExito(resp.message ?? 'Rol mensual recalculado correctamente.');
+              this.cargarRolMensual();
+              return;
+            }
+
+            if (resp.type === 'Warning') {
+              this.mostrarAdvertencia(resp.message ?? 'No se pudo recalcular el rol mensual.');
+              return;
+            }
+
+            if (resp.type === 'Error') {
+              this.mostrarError(resp.message ?? 'Error al recalcular el rol mensual.');
+              return;
+            }
+
+            this.mostrarAdvertencia(resp.message ?? 'No se pudo recalcular el rol mensual.');
+          },
+          error: err => {
+            console.error(err);
+            this.mostrarError('Error al recalcular el rol mensual.');
+          },
+          complete: () => {
+            this.actualizando = false;
+          }
+        });
+    });
+  }
 }

@@ -21,7 +21,12 @@ export interface GenerarRolMensualRequest {
   idUsuario: number | null;
   sobrescribir: boolean;
 }
-
+export interface RecalcularRolMensualRequest {
+  fechaPeriodo: string;
+  idLocal?: number | null;
+  idDepartamento?: number | null;
+  idUsuario?: number | null;
+}
 export interface RolMensualRequest {
   fechaPeriodo: string;
   idLocal: number | null;
@@ -234,6 +239,12 @@ export class RolNominaService {
   calcularImpuestoRenta(request: CalcularImpuestoRentaRequest): Observable<ApiResponse<CalcularImpuestoRentaResponse>> {
   return this.http.post<ApiResponse<CalcularImpuestoRentaResponse>>(
     `${this.apiUrl}/RolNomina/calcular-impuesto-renta`,
+    request
+  );
+}
+recalcularRolMensual(request: RecalcularRolMensualRequest) {
+  return this.http.post<ApiResponse<boolean>>(
+    `${this.apiUrl}/recalcular-mensual`,
     request
   );
 }
