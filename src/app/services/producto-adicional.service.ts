@@ -2,6 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { UltimoGtinResponse } from '../interfaces/responses/ultimo-gtin.response';
 
 export interface GtinResumenResponse {
   gtinTipo: string;
@@ -140,5 +141,8 @@ getResumenTotal(): Observable<ApiResponse<GtinResumenTotalResponse[]>> {
   const url = `${this.apiBaseUrl}/ProductoDatosAdicionales/resumen-gtin-total`;
   return this.http.get<ApiResponse<GtinResumenTotalResponse[]>>(url);
 }
-
+getUltimoGtinByCliente(clientesCodigo: number): Observable<ApiResponse<UltimoGtinResponse>> {
+  const url = `${this.apiBaseUrl}/ProductoDatosAdicionales/ultimo-gtin/${clientesCodigo}`;
+  return this.http.get<ApiResponse<UltimoGtinResponse>>(url);
+}
 }

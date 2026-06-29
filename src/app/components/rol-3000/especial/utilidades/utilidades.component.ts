@@ -220,7 +220,14 @@ export class UtilidadesComponent implements OnInit {
       this.form.markAllAsTouched();
       return;
     }
+    // ===== VALIDACIÓN MONTOS =====
+    const monto10 = this.form.value.monto10;
+    const monto5  = this.form.value.monto5;
 
+    if (!monto10 || !monto5) {
+      this.showError('Debe ingresar el monto del 10% y el monto del 5% antes de calcular.');
+      return;
+    }
     // Si datos vienen de DB → preguntar antes de recalcular
     if (this.datosDesdeDB) {
       this.dialog.open(CustomMessageBoxComponent, {
