@@ -44,6 +44,7 @@ import { CustomMessageBoxComponent, MessageBoxData } from '../../utils/messages/
 import { ProductoRequests } from 'src/app/interfaces/requests/producto-filter-request';
 import { CellKeyDownEvent } from 'ag-grid-community';
 import { PermissionsService } from 'src/app/services/permission.service';
+import { ProductoAdicionalService } from 'src/app/services/producto-adicional.service';
 
 
 export const MY_DATE_FORMATS = {
@@ -99,7 +100,7 @@ export class NuevoProductoComponent implements OnInit {
     pagination: true,
     rowModelType: 'clientSide',
   };
-
+  private primeraVez: boolean = true;
   activeTab: string = 'Listado';
   clienteSeleccionado: Cliente | null = null;
   filtroPrefijo: string = '';
@@ -196,6 +197,7 @@ export class NuevoProductoComponent implements OnInit {
     private reporteService: ReporteUnidadLogisticaService,
     private exportService: ExportService,
     private glnService: GlnService,
+    private productoAdicionalService: ProductoAdicionalService,
     private gs1ExportService: GS1ExportService,
     private cdRef: ChangeDetectorRef,
     private ciudadService: CiudadService,
@@ -296,6 +298,9 @@ export class NuevoProductoComponent implements OnInit {
 
 
   cargarProductos(codigoCliente: number): void {
+    const mostrarResumen = this.primeraVez;
+    this.primeraVez = false;
+
     const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
       disableClose: true,
       data: {
@@ -313,8 +318,8 @@ export class NuevoProductoComponent implements OnInit {
       .subscribe({
         next: (paged: PagedResult<Producto>) => {
           this.totalRegistros = paged.totalRecords;
-          this.pageNumber = paged.pageNumber; // opcional
-          this.pageSize = paged.pageSize;     // opcional
+          this.pageNumber = paged.pageNumber;
+          this.pageSize = paged.pageSize;
 
           this.registros = paged.records.map(p => ({
             id: p.IdProducto,
@@ -335,6 +340,33 @@ export class NuevoProductoComponent implements OnInit {
           }));
 
           loadingDialog.close();
+
+          //DESPUÉS de cargar productos, consultar último GTIN y mostrar info
+          if (mostrarResumen) {
+            this.productoAdicionalService.getUltimoGtinByCliente(codigoCliente).subscribe({
+              next: (resp) => {
+                const data = resp.data;
+                this.dialog.open(CustomMessageBoxComponent, {
+                  disableClose: true,
+                  data: {
+                    title: 'Último GTIN Registrado',
+                    message: `
+                      <span style="color:#000"><strong>GTIN:</strong> ${data?.codbar ?? 'N/A'}</span><br>
+                      <span style="color:#000"><strong>Creado por:</strong> ${data?.nombreUsuario ?? 'N/A'}</span><br>
+                      <span style="color:#000"><strong>Fecha de creación:</strong> ${data?.fechaCreacion ? this.formatearFecha(data.fechaCreacion) : 'N/A'}</span>
+                    `,
+                    type: 'info',
+                    isLoading: false,
+                    showCancel: false,
+                    confirmText: 'Aceptar'
+                  }
+                });
+              },
+              error: (err) => {
+                console.error('Error al obtener último GTIN:', err);
+              }
+            });
+          }
         },
         error: err => {
           console.error('Error al cargar productos:', err);

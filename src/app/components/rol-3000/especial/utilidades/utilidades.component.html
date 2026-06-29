@@ -1,98 +1,126 @@
 <div class="container" [formGroup]="form">
 
-  <h2>Utilidades</h2>
+  <!-- TÍTULO -->
+  <div class="title">
+    <h2>Utilidades</h2>
+  </div>
 
   <!-- FILTROS -->
-  <div class="grid">
+  <div class="filters-grid">
 
-    <div class="field">
-      <label>Valores de Utilidades</label>
-      <input placeholder="textos">
+    <div class="field-group">
+      <label>Empresa:</label>
+      <mat-form-field appearance="outline">
+        <mat-select formControlName="idEmpresa">
+          <mat-option *ngFor="let emp of empresas" [value]="emp.idEmpresa">
+            {{ emp.numPatronal }} - {{ emp.nombre }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
     </div>
 
-    <div class="field">
-      <label>Periodo:</label>
-      <input formControlName="periodo">
+    <div class="field-group">
+      <label>Período:</label>
+      <mat-form-field appearance="outline">
+        <input matInput
+               type="number"
+               formControlName="periodo"
+               placeholder="2026"/>
+      </mat-form-field>
+    </div>
+    
+    <div class="field-group">
+      <label>Tipo de Empleado:</label>
+      <mat-form-field appearance="outline">
+        <mat-select formControlName="idTipEmp">
+          <mat-option *ngFor="let tipo of tiposEmpleado" [value]="tipo.id">
+            {{ tipo.descripcion }}
+          </mat-option>
+        </mat-select>
+      </mat-form-field>
     </div>
 
-    <div class="checkbox-group" formGroupName="tipoEmpleado">
-      <label>Tipo de Empleado</label>
+    <div class="field-group">
+      <label>Empleados (10%):</label>
+      <mat-form-field appearance="outline">
+        <input matInput
+               type="number"
+               formControlName="monto10"
+               placeholder="0.00"/>
+        <span matPrefix>$&nbsp;</span>
+      </mat-form-field>
+    </div>
 
-      <div class="checks">
-        <label><input type="checkbox" formControlName="temporal"> Temporal / Becarios</label>
-        <label><input type="checkbox" formControlName="exEmpleados"> Exempleados</label>
-        <label><input type="checkbox" formControlName="fijos"> Fijos</label>
-        <label><input type="checkbox" formControlName="horas"> Por Horas</label>
-        <label><input type="checkbox" formControlName="honorarios"> Honorarios</label>
+    <div class="field-group">
+      <label>Cargas (5%):</label>
+      <mat-form-field appearance="outline">
+        <input matInput
+               type="number"
+               formControlName="monto5"
+               placeholder="0.00"/>
+        <span matPrefix>$&nbsp;</span>
+      </mat-form-field>
+    </div>
+
+  </div>
+
+  <!-- AG-GRID -->
+  <div class="grid-wrapper">
+    <ag-grid-angular
+      class="ag-theme-alpine"
+      style="width: 100%; height: 100%;"
+      [rowData]="rowData"
+      [columnDefs]="columnDefs"
+      [defaultColDef]="defaultColDef"
+      [animateRows]="true"
+      (gridReady)="onGridReady($event)">
+    </ag-grid-angular>
+  </div>
+
+  <!-- BOTONES + RESUMEN -->
+  <div class="bottom-section">
+
+    <div class="actions">
+      <button mat-stroked-button type="button"
+        (click)="calcular()"
+        [disabled]="loading || grabando">
+        <span *ngIf="!loading">Calcular</span>
+        <span *ngIf="loading">Calculando...</span>
+      </button>
+
+      <button mat-stroked-button type="button"
+        (click)="grabar()"
+        [disabled]="loading || grabando || !rowData.length">
+        <span *ngIf="!grabando">Grabar</span>
+        <span *ngIf="grabando">Grabando...</span>
+      </button>
+
+      <button mat-stroked-button type="button"
+        (click)="cargar()"
+        [disabled]="loading || grabando">
+        Cargar
+      </button>
+
+      <button mat-stroked-button type="button"
+        (click)="cancelar()"
+        [disabled]="loading || grabando">
+        Cancelar
+      </button>
+    </div>
+
+    <div class="summary-box">
+      <div class="summary-row">
+        <span>Total Empleados (10%)</span>
+        <strong>{{ formatMoneda(totalValorEmpleado) }}</strong>
       </div>
-    </div>
-
-    <div class="field">
-      <label>Empleados:</label>
-      <input formControlName="porcentajeEmpleado">
-    </div>
-
-    <div class="field">
-      <label>Cargas:</label>
-      <input formControlName="porcentajeCarga">
-    </div>
-
-  </div>
-
-  <!-- TABLA -->
-  <div class="table-wrapper">
-    <table>
-      <thead>
-        <tr>
-          <th>Local</th>
-          <th>N° Afiliación</th>
-          <th>Cód Sectorial</th>
-          <th>Cédula</th>
-          <th>Nombre</th>
-          <th>Cónyuge</th>
-          <th>Hijos</th>
-          <th>N° Días</th>
-          <th>Fecha Ingreso</th>
-          <th>Fecha Salida</th>
-          <th>Alicuota Empleado</th>
-          <th>Alicuota Carga</th>
-        </tr>
-      </thead>
-
-      <tbody>
-        <tr *ngFor="let r of data">
-          <td>{{r.local}}</td>
-          <td>{{r.afiliacion}}</td>
-          <td>{{r.sector}}</td>
-          <td>{{r.cedula}}</td>
-          <td>{{r.nombre}}</td>
-          <td>{{r.conyuge}}</td>
-          <td>{{r.hijos}}</td>
-          <td>{{r.dias}}</td>
-          <td>{{r.fechaIngreso}}</td>
-          <td>{{r.fechaSalida}}</td>
-          <td>{{r.alicuotaEmpleado}}</td>
-          <td>{{r.alicuotaCarga}}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- BOTONES -->
-  <div class="bottom">
-
-    <div class="buttons">
-      <button (click)="calcular()">Calcular</button>
-      <button (click)="grabar()">Grabar</button>
-      <button (click)="exportar()">Exportar</button>
-      <button (click)="cancelar()">Cancelar</button>
-    </div>
-
-    <div class="resumen">
-      <div><span>Subtotal Empleado</span><b>{{money(resumen.subtotalEmpleado)}}</b></div>
-      <div><span>Subtotal Carga</span><b>{{money(resumen.subtotalCarga)}}</b></div>
-      <div><span>N° Cargas</span><b>{{resumen.numeroCargas}}</b></div>
-      <div><span>N° Días</span><b>{{resumen.numeroDias}}</b></div>
+      <div class="summary-row">
+        <span>Total Cargas (5%)</span>
+        <strong>{{ formatMoneda(totalValorCarga) }}</strong>
+      </div>
+      <div class="summary-row total-row">
+        <span>Total General</span>
+        <strong>{{ formatMoneda(totalGeneral) }}</strong>
+      </div>
     </div>
 
   </div>
