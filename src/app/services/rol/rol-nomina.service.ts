@@ -3,6 +3,7 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
+
 export interface ApiResponse<T> {
   id: string;
   type: string;
@@ -20,7 +21,12 @@ export interface GenerarRolMensualRequest {
   idUsuario: number | null;
   sobrescribir: boolean;
 }
-
+export interface RecalcularRolMensualRequest {
+  fechaPeriodo: string;
+  idLocal?: number | null;
+  idDepartamento?: number | null;
+  idUsuario?: number | null;
+}
 export interface RolMensualRequest {
   fechaPeriodo: string;
   idLocal: number | null;
@@ -100,10 +106,10 @@ export interface RolIndividualResponse {
   liquidoRecibir: number;
 
   porcentajeIessPersonal: number;
-  
+
   porcentajeFondoReserva: number;
-tieneDerechoFondoReserva: boolean;
-fechaDerechoFondoReserva: string | null;
+  tieneDerechoFondoReserva: boolean;
+  fechaDerechoFondoReserva: string | null;
 
 }
 
@@ -154,6 +160,21 @@ export interface GuardarRolIndividualRubroRequest {
   aplicaFondoReserva: boolean;
   aplicaDecimoTercero: boolean;
 }
+export interface CalcularImpuestoRentaRequest {
+  idEmpleado: number;
+  fechaPeriodo: string;
+  idLocal?: number | null;
+  idUsuario?: number | null;
+  respetarValorManual: boolean;
+}
+
+export interface CalcularImpuestoRentaResponse {
+  idEmpleado: number;
+  fechaPeriodo: string;
+  valorImpuestoRenta: number;
+  rubro: string;
+  calculado: boolean;
+}
 
 @Injectable({
   providedIn: 'root'
@@ -161,7 +182,7 @@ export interface GuardarRolIndividualRubroRequest {
 export class RolNominaService {
   private readonly apiUrl = `${environment.nominaUrl}/RolNomina`;
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   generarRolMensual(request: GenerarRolMensualRequest): Observable<ApiResponse<boolean>> {
     return this.http.post<ApiResponse<boolean>>(
@@ -191,10 +212,39 @@ export class RolNominaService {
     );
   }
   guardarRolIndividual(
-  request: GuardarRolIndividualRequest
-): Observable<ApiResponse<boolean>> {
+    request: GuardarRolIndividualRequest
+  ): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(
+      `${this.apiUrl}/individual/sync`,
+      request
+    );
+  }
+  descargarRolIndividualPdf(
+    idEmpleado: number,
+    fechaPeriodo: string
+  ): Observable<Blob> {
+    const params = new HttpParams()
+      .set('idEmpleado', idEmpleado.toString())
+      .set('fechaPeriodo', fechaPeriodo);
+
+    return this.http.get(
+      `${this.apiUrl}/individual/impresion`,
+      {
+        params,
+        responseType: 'blob'
+      }
+    );
+  }
+
+  calcularImpuestoRenta(request: CalcularImpuestoRentaRequest): Observable<ApiResponse<CalcularImpuestoRentaResponse>> {
+  return this.http.post<ApiResponse<CalcularImpuestoRentaResponse>>(
+    `${this.apiUrl}/RolNomina/calcular-impuesto-renta`,
+    request
+  );
+}
+recalcularRolMensual(request: RecalcularRolMensualRequest) {
   return this.http.post<ApiResponse<boolean>>(
-    `${this.apiUrl}/individual/sync`,
+    `${this.apiUrl}/recalcular-mensual`,
     request
   );
 }

@@ -1,36 +1,51 @@
 <div class="cierre-page">
-  <div class="form-card">
-    <h2>Cierre de Periodo Mensual Contable</h2>
+  <div class="form-card" [formGroup]="form">
+    <h2>Cierre de Periodo Mensual</h2>
 
-    <div class="content-layout">
-      <div class="list-box">
-        <div
-          class="periodo-item"
-          *ngFor="let item of periodos"
-          (click)="togglePeriodo(item)"
-        >
-          <input
-            type="checkbox"
-            [checked]="item.seleccionado"
-            (click)="$event.stopPropagation()"
-            (change)="togglePeriodo(item)"
-          />
+    <div class="form-grid">
+      <mat-form-field appearance="outline" class="fecha-field">
+        <mat-label>Fecha de Periodo</mat-label>
 
-          <span class="dia">{{ item.dia }}</span>
-          <span class="mes">{{ item.mes }}</span>
-          <span class="anio">{{ item.anio }}</span>
-        </div>
-      </div>
+        <input
+          matInput
+          [matDatepicker]="pickerPeriodo"
+          formControlName="fecha"
+          [matDatepickerFilter]="soloUltimoDiaMes"
+          readonly
+        />
 
-      <div class="actions">
-        <button mat-flat-button color="primary" type="button" (click)="cierre()">
-          Cierre
-        </button>
+        <mat-datepicker-toggle matSuffix [for]="pickerPeriodo"></mat-datepicker-toggle>
+        <mat-datepicker #pickerPeriodo></mat-datepicker>
 
-        <button mat-stroked-button type="button" (click)="cancelar()">
-          Cancelar
-        </button>
-      </div>
+        <mat-error *ngIf="form.get('fecha')?.hasError('required')">
+          La fecha es obligatoria
+        </mat-error>
+
+        <mat-error *ngIf="form.get('fecha')?.hasError('fechaInvalida')">
+          Solo puede seleccionar el último día del mes.
+        </mat-error>
+      </mat-form-field>
+    </div>
+
+    <div class="actions">
+      <button
+        mat-flat-button
+        color="primary"
+        type="button"
+        [disabled]="procesando"
+        (click)="cierre()"
+      >
+        {{ procesando ? 'Contabilizando...' : 'Cierre' }}
+      </button>
+
+      <button
+        mat-stroked-button
+        type="button"
+        [disabled]="procesando"
+        (click)="cancelar()"
+      >
+        Cancelar
+      </button>
     </div>
   </div>
 </div>

@@ -29,7 +29,7 @@ import {
   RolMensualRequest,
   RolMensualResponse,
   RubroColumnaResponse,
-  RolNominaService
+  RolNominaService, RecalcularRolMensualRequest
 } from 'src/app/services/rol/rol-nomina.service';
 
 interface NodoRol {
@@ -81,7 +81,9 @@ export class RolMensualComponent implements OnInit {
 
   nodos: NodoRol[] = [];
   nodoSeleccionado: NodoRol | null = null;
-
+  procesandoModificar = false;
+  modificarBloqueado = false;
+  actualizando = false;
   /*
    * Este arreglo alimenta el AG Grid.
    * Ahora es dinámico porque cada fila tiene:
@@ -99,11 +101,13 @@ export class RolMensualComponent implements OnInit {
   generando = false;
   cargando = false;
 
-columnDefs: Array<ColDef | ColGroupDef> = [];
+  columnDefs: Array<ColDef | ColGroupDef> = [];
 
-pinnedBottomRowData: any[] = [];
-periodoCerrado = false;
-validandoCierre = false;
+  pinnedBottomRowData: any[] = [];
+  periodoCerrado = false;
+  validandoCierre = false;
+  periodoExiste = false;
+  modoEdicionPeriodo = false;
 
   defaultColDef: ColDef = {
     sortable: true,
@@ -117,8 +121,8 @@ validandoCierre = false;
     private dialog: MatDialog,
     private localesService: LocalesService,
     private snackBar: MatSnackBar,
-     private cierrePeriodoService: CierrePeriodoService
-  ) {}
+    private cierrePeriodoService: CierrePeriodoService
+  ) { }
 
   ngOnInit(): void {
     this.form = this.fb.group({
@@ -146,353 +150,410 @@ validandoCierre = false;
     this.cargarInicial();
   }
 
-cargarInicial(): void {
-  this.nodos = [
-    {
-      id: null,
-      nombre: 'Emisión de Roles',
-      tipo: 'GENERAL',
-      expandido: false,
-      hijos: []
-    }
-  ];
-  
-  this.nodoSeleccionado = this.nodos[0];
-  this.detalleRol = [];
-  this.columnDefs = this.construirColumnasGrid([]);
+  cargarInicial(): void {
+    this.nodos = [
+      {
+        id: null,
+        nombre: 'Emisión de Roles',
+        tipo: 'GENERAL',
+        expandido: false,
+        hijos: []
+      }
+    ];
 
-  this.cargarLocalesArbol();
-
-  // NO cargar aquí el rol mensual.
-  // this.cargarRolMensual();
-}
-
-seleccionarNodo(nodo: NodoRol): void {
-  this.nodoSeleccionado = nodo;
-
-  if (nodo.tipo === 'GENERAL') {
+    this.nodoSeleccionado = this.nodos[0];
     this.detalleRol = [];
-    this.columnasRubros = [];
     this.columnDefs = this.construirColumnasGrid([]);
-    return;
+
+    this.cargarLocalesArbol();
+
+    // NO cargar aquí el rol mensual.
+    // this.cargarRolMensual();
   }
 
-  this.cargarRolMensual();
-}
+  seleccionarNodo(nodo: NodoRol): void {
+    this.nodoSeleccionado = nodo;
+    this.cargarRolMensual();
+  }
   toggleNodo(nodo: NodoRol, event: MouseEvent): void {
     event.stopPropagation();
     nodo.expandido = !nodo.expandido;
   }
 
-nuevo(): void {
-  if (!this.form.value.fechaPeriodo) {
-    this.mostrarAdvertencia('Debe ingresar el periodo.');
-    return;
-  }
-
-  const fechaPeriodo = this.formatearFechaYYYYMMDD(this.form.value.fechaPeriodo);
-
-  const requestCierre: ValidarCierrePeriodoRequest = {
-    fecha: fechaPeriodo
-  };
-
-  this.validandoCierre = true;
-
-  this.cierrePeriodoService.validar(requestCierre).subscribe({
-    next: (resp) => {
-      this.validandoCierre = false;
-
-      if (resp.type !== 'Success') {
-        this.mostrarError(resp.message ?? 'No se pudo validar el cierre del periodo.');
-        return;
-      }
-
-      if (resp.data?.existe === true) {
-        this.periodoCerrado = true;
-
-        this.mostrarAdvertencia(
-          'El periodo ya se encuentra cerrado. Solo se cargará la información, no se permite modificar la nómina.'
-        );
-
-        this.cargarRolMensual();
-        return;
-      }
-
-      this.periodoCerrado = false;
-      this.generarRolMensualNuevo();
-    },
-    error: (err) => {
-      this.validandoCierre = false;
-      console.error('Error validando cierre de periodo:', err);
-      this.mostrarError('Error al validar si el periodo está cerrado.');
-    }
-  });
-}
-
- private generarSobrescribiendo(): void {
-  if (this.periodoCerrado) {
-    this.mostrarAdvertencia(
-      'El periodo está cerrado. No se puede sobrescribir la nómina.'
-    );
-    this.cargarRolMensual();
-    return;
-  }
-
-  const request = this.construirRequestGenerar(true);
-
-  this.generando = true;
-
-  this.rolNominaService.generarRolMensual(request).subscribe({
-    next: (resp) => {
-      this.generando = false;
-
-      if (resp.type === 'Success') {
-        this.mostrarExito(resp.message ?? 'Nómina regenerada correctamente.');
-        this.cargarRolMensual();
-        return;
-      }
-
-      this.mostrarAdvertencia(resp.message ?? 'No se pudo sobrescribir la nómina.');
-    },
-    error: (err) => {
-      this.generando = false;
-      console.error('Error al sobrescribir nómina:', err);
-      this.mostrarError('Error al sobrescribir la nómina mensual.');
-    }
-  });
-}
-actualizar(): void {
-  if (!this.form.value.fechaPeriodo) {
-    this.mostrarAdvertencia('Debe ingresar el periodo.');
-    return;
-  }
-
-  if (this.periodoCerrado) {
-    this.mostrarAdvertencia(
-      'El periodo está cerrado. No se puede actualizar ni modificar la nómina.'
-    );
-    this.cargarRolMensual();
-    return;
-  }
-
-  this.confirmarAccion(
-    'Actualizar rol mensual',
-    'Se volverá a generar la nómina del periodo seleccionado y se sobrescribirá la información existente. ¿Desea continuar?',
-    'Sí, actualizar',
-    'Cancelar'
-  ).subscribe((confirmado: boolean) => {
-    if (confirmado !== true) {
+  nuevo(): void {
+    if (!this.form.value.fechaPeriodo) {
+      this.mostrarAdvertencia('Debe ingresar el periodo.');
       return;
     }
 
-    this.generarSobrescribiendo();
-  });
-}
+    const fechaPeriodo = this.formatearFechaYYYYMMDD(this.form.value.fechaPeriodo);
+
+    const requestCierre: ValidarCierrePeriodoRequest = {
+      fecha: fechaPeriodo
+    };
+
+    this.validandoCierre = true;
+
+    this.cierrePeriodoService.validar(requestCierre).subscribe({
+      next: (resp) => {
+        this.validandoCierre = false;
+
+        if (resp.type !== 'Success') {
+          this.mostrarError(resp.message ?? 'No se pudo validar el cierre del periodo.');
+          return;
+        }
+
+        if (resp.data?.existe === true) {
+          this.periodoCerrado = true;
+
+          this.mostrarAdvertencia(
+            'El periodo ya se encuentra cerrado. Solo se cargará la información, no se permite modificar la nómina.'
+          );
+
+          this.cargarRolMensual();
+          return;
+        }
+
+        this.periodoCerrado = false;
+        this.generarRolMensualNuevo();
+      },
+      error: (err) => {
+        this.validandoCierre = false;
+        console.error('Error validando cierre de periodo:', err);
+        this.mostrarError('Error al validar si el periodo está cerrado.');
+      }
+    });
+  }
+
+  private generarSobrescribiendo(): void {
+    if (this.periodoCerrado) {
+      this.mostrarAdvertencia(
+        'El periodo está cerrado. No se puede sobrescribir la nómina.'
+      );
+      this.cargarRolMensual();
+      return;
+    }
+
+    if (this.procesandoModificar || this.modificarBloqueado) {
+      return;
+    }
+
+    const request = this.construirRequestGenerar(true);
+
+    this.generando = true;
+    this.procesandoModificar = true;
+
+    this.rolNominaService.generarRolMensual(request).subscribe({
+      next: (resp) => {
+        if (resp.type === 'Success') {
+          this.mostrarExito(resp.message ?? 'Nómina modificada correctamente.');
+
+          this.periodoExiste = true;
+          this.modoEdicionPeriodo = true;
+
+          /*
+           * Aquí queda bloqueado después de terminar bien.
+           */
+          this.modificarBloqueado = true;
+
+          this.cargarRolMensual();
+          return;
+        }
+
+        /*
+         * Si no fue éxito, se vuelve a permitir modificar.
+         */
+        this.modificarBloqueado = false;
+
+        this.mostrarAdvertencia(resp.message ?? 'No se pudo modificar la nómina.');
+      },
+      error: (err) => {
+        console.error('Error al modificar nómina:', err);
+
+        /*
+         * Si falla, se vuelve a habilitar.
+         */
+        this.modificarBloqueado = false;
+
+        this.mostrarError('Error al modificar la nómina mensual.');
+      },
+      complete: () => {
+        /*
+         * Ya no debe mostrar Procesando...
+         * Pero si fue éxito, modificarBloqueado queda true.
+         */
+        this.generando = false;
+        this.procesandoModificar = false;
+      }
+    });
+  }
+  actualizar(): void {
+    if (!this.form.value.fechaPeriodo) {
+      this.mostrarAdvertencia('Debe ingresar el periodo.');
+      return;
+    }
+
+    if (this.periodoCerrado) {
+      this.mostrarAdvertencia(
+        'El periodo está cerrado. No se puede actualizar ni modificar la nómina.'
+      );
+      this.cargarRolMensual();
+      return;
+    }
+
+    this.confirmarAccion(
+      'Actualizar rol mensual',
+      'Se volverá a generar la nómina del periodo seleccionado y se sobrescribirá la información existente. ¿Desea continuar?',
+      'Sí, actualizar',
+      'Cancelar'
+    ).subscribe((confirmado: boolean) => {
+      if (confirmado !== true) {
+        return;
+      }
+
+      this.generarSobrescribiendo();
+    });
+  }
   cargarHoras(): void {
-    console.log('Cargar Horas');
-  }
+    if (this.periodoCerrado) {
+      this.mostrarAdvertencia('El periodo está cerrado. No puede cargar horas.');
+      return;
+    }
 
+    if (!this.periodoExiste) {
+      this.mostrarAdvertencia('Debe crear o consultar el periodo antes de cargar horas.');
+      return;
+    }
+
+    // lógica actual...
+  }
   rubrosFijos(): void {
-    console.log('Rubros Fijos');
+    if (this.periodoCerrado) {
+      this.mostrarAdvertencia('El periodo está cerrado. No puede modificar rubros fijos.');
+      return;
+    }
+
+    if (!this.periodoExiste) {
+      this.mostrarAdvertencia('Debe crear o consultar el periodo antes de cargar rubros fijos.');
+      return;
+    }
+
+    // lógica actual...
   }
 
-cancelar(): void {
-  this.form.reset({
-    verLocales: true,
-    areas: true,
-    exEmpleados: true,
-    departamentos: false,
-    fechaPeriodo: this.obtenerUltimoDiaMesActual(),
-    totalizados: false,
-    porRubros: false,
-    todosLosRubros: true,
-    totalizar: false
-  });
+  cancelar(): void {
+    this.detalleRol = [];
+    this.columnasRubros = [];
+    this.columnDefs = this.construirColumnasGrid([]);
+    this.pinnedBottomRowData = [];
 
-  this.detalleRol = [];
-  this.columnasRubros = [];
-  this.columnDefs = this.construirColumnasGrid([]);
-  this.pinnedBottomRowData = [];
+    this.nodos = [];
+    this.nodoSeleccionado = null;
 
-  if (this.nodos.length > 0) {
-    this.nodos[0].expandido = false;
-    this.nodoSeleccionado = this.nodos[0];
+    this.periodoCerrado = false;
+    this.periodoExiste = false;
+    this.modoEdicionPeriodo = false;
+    this.validandoCierre = false;
+
+    this.generando = false;
+    this.cargando = false;
+    this.procesandoModificar = false;
+    this.modificarBloqueado = false;
+
+    this.mostrarAdvertencia('Operación cancelada.');
   }
+  cargarRolMensual(): void {
+    if (!this.form.value.fechaPeriodo) {
+      this.mostrarAdvertencia('Debe ingresar el periodo.');
+      return;
+    }
 
-  this.generando = false;
-  this.cargando = false;
-}
+    this.validarEstadoCierrePeriodo();
 
-cargarRolMensual(): void {
-  if (!this.form.value.fechaPeriodo) {
-    this.mostrarAdvertencia('Debe ingresar el periodo.');
-    return;
-  }
+    const request = this.construirRequestConsulta();
 
-  this.validarEstadoCierrePeriodo();
+    this.cargando = true;
 
-  const request = this.construirRequestConsulta();
+    this.rolNominaService.getRolMensual(request).subscribe({
+      next: (resp) => {
+        this.cargando = false;
 
-  this.cargando = true;
+        if (resp.type !== 'Success') {
+          this.mostrarAdvertencia(resp.message ?? 'No se pudo cargar el rol mensual.');
 
-  this.rolNominaService.getRolMensual(request).subscribe({
-    next: (resp) => {
-      this.cargando = false;
+          this.detalleRol = [];
+          this.columnasRubros = [];
+          this.columnDefs = this.construirColumnasGrid([]);
+          this.pinnedBottomRowData = [];
 
-      if (resp.type !== 'Success') {
-        this.mostrarAdvertencia(resp.message ?? 'No se pudo cargar el rol mensual.');
+          /*
+           * Si no cargó datos correctamente, asumimos que no hay periodo válido cargado.
+           */
+          this.periodoExiste = false;
+          this.modoEdicionPeriodo = false;
+
+          return;
+        }
+
+        const data = resp.data as RolMensualResponse;
+
+        this.columnasRubros = data.columnasRubros ?? [];
+        this.columnDefs = this.construirColumnasGrid(this.columnasRubros);
+
+        this.detalleRol = (data.empleados ?? []).map(e => ({
+          idEmpleado: e.idEmpleado,
+          codigoEmpleado: e.codigoEmpleado,
+          nombreEmpleado: e.nombreEmpleado,
+          estado: e.estado ?? '',
+          idLocal: e.idLocal,
+          local: e.local,
+          diasTrabajados: e.diasTrabajados ?? 0,
+          rubros: e.rubros ?? {},
+          totalIngresos: e.totalIngresos ?? 0,
+          totalDescuentos: e.totalDescuentos ?? 0,
+          liquidoRecibir: e.liquidoRecibir ?? 0
+        }));
+
+        this.pinnedBottomRowData = this.detalleRol.length > 0
+          ? [this.construirFilaTotales()]
+          : [];
+
+        /*
+         * Estas dos líneas son las importantes.
+         *
+         * Si hay empleados en el grid, el periodo ya existe.
+         * Si existe y no está cerrado, queda habilitado para modificación.
+         */
+        this.periodoExiste = this.detalleRol.length > 0;
+        this.modoEdicionPeriodo = this.periodoExiste && !this.periodoCerrado;
+      },
+      error: (err) => {
+        this.cargando = false;
+        console.error('Error cargando rol mensual:', err);
+
+        this.mostrarError('Error al cargar el rol mensual.');
+
         this.detalleRol = [];
         this.columnasRubros = [];
         this.columnDefs = this.construirColumnasGrid([]);
         this.pinnedBottomRowData = [];
-        return;
+
+        this.periodoExiste = false;
+        this.modoEdicionPeriodo = false;
       }
+    });
+  }
 
-      const data = resp.data as RolMensualResponse;
-
-      this.columnasRubros = data.columnasRubros ?? [];
-      this.columnDefs = this.construirColumnasGrid(this.columnasRubros);
-
-      this.detalleRol = (data.empleados ?? []).map(e => ({
-        idEmpleado: e.idEmpleado,
-        codigoEmpleado: e.codigoEmpleado,
-        nombreEmpleado: e.nombreEmpleado,
-        estado: e.estado ?? '',
-        idLocal: e.idLocal,
-        local: e.local,
-        diasTrabajados: e.diasTrabajados ?? 0,
-        rubros: e.rubros ?? {},
-        totalIngresos: e.totalIngresos ?? 0,
-        totalDescuentos: e.totalDescuentos ?? 0,
-        liquidoRecibir: e.liquidoRecibir ?? 0
-      }));
-
-      this.pinnedBottomRowData = this.detalleRol.length > 0
-        ? [this.construirFilaTotales()]
-        : [];
-    },
-    error: (err) => {
-      this.cargando = false;
-      console.error('Error cargando rol mensual:', err);
-      this.mostrarError('Error al cargar el rol mensual.');
-      this.detalleRol = [];
-      this.columnasRubros = [];
-      this.columnDefs = this.construirColumnasGrid([]);
-      this.pinnedBottomRowData = [];
-    }
-  });
-}
-
-private construirColumnasGrid(columnasRubros: RubroColumnaResponse[]): Array<ColDef | ColGroupDef> {
-  const columnasBase: ColDef[] = [
-    {
-      field: 'codigoEmpleado',
-      headerName: 'Código',
-      width: 90,
-      pinned: 'left',
-      filter: true,
-      cellClass: params =>
-        params.node?.rowPinned ? 'cell-total-label' : ''
-    },
-    {
-      field: 'nombreEmpleado',
-      headerName: 'Nombre',
-      minWidth: 260,
-      flex: 1,
-      pinned: 'left',
-      filter: true,
-      cellClass: params =>
-        params.node?.rowPinned ? 'cell-total-label' : ''
-    }
-  ];
-
-  const columnasIngresos: ColDef[] = columnasRubros
-    .filter(x => x.tipoPago === 'I')
-    .map(col => this.construirColumnaRubro(col, 'INGRESO'));
-
-  const columnasDescuentos: ColDef[] = columnasRubros
-    .filter(x => x.tipoPago === 'D')
-    .map(col => this.construirColumnaRubro(col, 'DESCUENTO'));
-
-  const grupoIngresos: ColGroupDef = {
-    headerName: 'INGRESOS',
-    headerClass: 'grupo-ingresos',
-    children: columnasIngresos
-  };
-
-  const grupoDescuentos: ColGroupDef = {
-    headerName: 'DESCUENTOS',
-    headerClass: 'grupo-descuentos',
-    children: columnasDescuentos
-  };
-
-  const columnasTotales: ColDef[] = [
-    {
-      field: 'totalIngresos',
-      headerName: 'Total Ingresos',
-      width: 150,
-      type: 'numericColumn',
-      pinned: 'right',
-      headerClass: 'header-total-ingresos',
-      cellClass: params =>
-        params.node?.rowPinned
-          ? 'cell-total-row cell-total-ingresos'
-          : 'cell-total-ingresos',
-      cellStyle: {
-        backgroundColor: '#dcfce7',
-        color: '#166534',
-        fontWeight: '800'
+  private construirColumnasGrid(columnasRubros: RubroColumnaResponse[]): Array<ColDef | ColGroupDef> {
+    const columnasBase: ColDef[] = [
+      {
+        field: 'codigoEmpleado',
+        headerName: 'Código',
+        width: 90,
+        pinned: 'left',
+        filter: true,
+        cellClass: params =>
+          params.node?.rowPinned ? 'cell-total-label' : ''
       },
-      valueFormatter: (params: ValueFormatterParams) =>
-        this.formatearDecimalValor(params.value)
-    },
-    {
-      field: 'totalDescuentos',
-      headerName: 'Total Descuentos',
-      width: 165,
-      type: 'numericColumn',
-      pinned: 'right',
-      headerClass: 'header-total-descuentos',
-      cellClass: params =>
-        params.node?.rowPinned
-          ? 'cell-total-row cell-total-descuentos'
-          : 'cell-total-descuentos',
-      cellStyle: {
-        backgroundColor: '#fef9c3',
-        color: '#854d0e',
-        fontWeight: '800'
-      },
-      valueFormatter: (params: ValueFormatterParams) =>
-        this.formatearDecimalValor(params.value)
-    },
-    {
-      field: 'liquidoRecibir',
-      headerName: 'Líquido a Recibir',
-      width: 170,
-      type: 'numericColumn',
-      pinned: 'right',
-      headerClass: 'header-total-liquido',
-      cellClass: params =>
-        params.node?.rowPinned
-          ? 'cell-total-row cell-total-liquido'
-          : 'cell-total-liquido',
-      cellStyle: {
-        backgroundColor: '#dbeafe',
-        color: '#1d4ed8',
-        fontWeight: '900'
-      },
-      valueFormatter: (params: ValueFormatterParams) =>
-        this.formatearDecimalValor(params.value)
-    }
-  ];
+      {
+        field: 'nombreEmpleado',
+        headerName: 'Nombre',
+        minWidth: 260,
+        flex: 1,
+        pinned: 'left',
+        filter: true,
+        cellClass: params =>
+          params.node?.rowPinned ? 'cell-total-label' : ''
+      }
+    ];
 
-  return [
-    ...columnasBase,
-    grupoIngresos,
-    grupoDescuentos,
-    ...columnasTotales
-  ];
-}
+    const columnasIngresos: ColDef[] = columnasRubros
+      .filter(x => x.tipoPago === 'I')
+      .map(col => this.construirColumnaRubro(col, 'INGRESO'));
+
+    const columnasDescuentos: ColDef[] = columnasRubros
+      .filter(x => x.tipoPago === 'D')
+      .map(col => this.construirColumnaRubro(col, 'DESCUENTO'));
+
+    const grupoIngresos: ColGroupDef = {
+      headerName: 'INGRESOS',
+      headerClass: 'grupo-ingresos',
+      children: columnasIngresos
+    };
+
+    const grupoDescuentos: ColGroupDef = {
+      headerName: 'DESCUENTOS',
+      headerClass: 'grupo-descuentos',
+      children: columnasDescuentos
+    };
+
+    const columnasTotales: ColDef[] = [
+      {
+        field: 'totalIngresos',
+        headerName: 'Total Ingresos',
+        width: 150,
+        type: 'numericColumn',
+        pinned: 'right',
+        headerClass: 'header-total-ingresos',
+        cellClass: params =>
+          params.node?.rowPinned
+            ? 'cell-total-row cell-total-ingresos'
+            : 'cell-total-ingresos',
+        cellStyle: {
+          backgroundColor: '#dcfce7',
+          color: '#166534',
+          fontWeight: '800'
+        },
+        valueFormatter: (params: ValueFormatterParams) =>
+          this.formatearDecimalValor(params.value)
+      },
+      {
+        field: 'totalDescuentos',
+        headerName: 'Total Descuentos',
+        width: 165,
+        type: 'numericColumn',
+        pinned: 'right',
+        headerClass: 'header-total-descuentos',
+        cellClass: params =>
+          params.node?.rowPinned
+            ? 'cell-total-row cell-total-descuentos'
+            : 'cell-total-descuentos',
+        cellStyle: {
+          backgroundColor: '#fef9c3',
+          color: '#854d0e',
+          fontWeight: '800'
+        },
+        valueFormatter: (params: ValueFormatterParams) =>
+          this.formatearDecimalValor(params.value)
+      },
+      {
+        field: 'liquidoRecibir',
+        headerName: 'Líquido a Recibir',
+        width: 170,
+        type: 'numericColumn',
+        pinned: 'right',
+        headerClass: 'header-total-liquido',
+        cellClass: params =>
+          params.node?.rowPinned
+            ? 'cell-total-row cell-total-liquido'
+            : 'cell-total-liquido',
+        cellStyle: {
+          backgroundColor: '#dbeafe',
+          color: '#1d4ed8',
+          fontWeight: '900'
+        },
+        valueFormatter: (params: ValueFormatterParams) =>
+          this.formatearDecimalValor(params.value)
+      }
+    ];
+
+    return [
+      ...columnasBase,
+      grupoIngresos,
+      grupoDescuentos,
+      ...columnasTotales
+    ];
+  }
   private obtenerNombreColumnaRubro(col: RubroColumnaResponse): string {
     const descripcion = (col.descripcion ?? '').trim();
 
@@ -593,50 +654,54 @@ private construirColumnasGrid(columnasRubros: RubroColumnaResponse[]): Array<Col
       0
     );
   }
-abrirRolIndividual(event: any): void {
-  if (this.periodoCerrado) {
-    this.mostrarAdvertencia(
-      'El periodo está cerrado. No se permite modificar la nómina individual.'
-    );
-    return;
-  }
+  abrirRolIndividual(event: any): void {
+    const empleado = event?.data;
 
-  const row = event.data;
-
-  if (!row || !row.idEmpleado) {
-    this.mostrarAdvertencia('No se pudo identificar el empleado.');
-    return;
-  }
-
-  const fechaPeriodo = this.formatearFechaYYYYMMDD(
-    this.form.value.fechaPeriodo
-  );
-
-  if (!fechaPeriodo) {
-    this.mostrarAdvertencia('Debe seleccionar el periodo.');
-    return;
-  }
-
-  const dialogRef = this.dialog.open(RolIndividualDialogComponent, {
-    width: '1180px',
-    maxWidth: '98vw',
-    height: '90vh',
-    maxHeight: '95vh',
-    panelClass: 'rol-individual-dialog-panel',
-    data: {
-      idEmpleado: row.idEmpleado,
-      fechaPeriodo,
-      soloLectura: this.periodoCerrado
-    },
-    disableClose: false
-  });
-
-  dialogRef.afterClosed().subscribe(actualizo => {
-    if (actualizo === true && !this.periodoCerrado) {
-      this.cargarRolMensual();
+    if (!empleado) {
+      this.mostrarAdvertencia('No se encontró información del empleado.');
+      return;
     }
-  });
-}
+
+    if (!this.form.value.fechaPeriodo) {
+      this.mostrarAdvertencia('Debe seleccionar un periodo.');
+      return;
+    }
+
+    /*
+     * Si el periodo está cerrado:
+     * No se permite modificar.
+     * Se descarga la impresión del rol individual.
+     */
+    if (this.periodoCerrado) {
+      this.descargarImpresionRolIndividual(empleado);
+      return;
+    }
+
+    /*
+     * Si el periodo está abierto:
+     * Permite modificar únicamente si está habilitado el modo edición.
+     */
+    if (!this.modoEdicionPeriodo) {
+      this.mostrarAdvertencia('Debe habilitar el periodo en modo modificación.');
+      return;
+    }
+
+    const dialogRef = this.dialog.open(RolIndividualDialogComponent, {
+      width: '95vw',
+      maxWidth: '1400px',
+      disableClose: true,
+      data: {
+        idEmpleado: empleado.idEmpleado,
+        fechaPeriodo: this.formatearFechaYYYYMMDD(this.form.value.fechaPeriodo)
+      }
+    });
+
+    dialogRef.afterClosed().subscribe(actualizo => {
+      if (actualizo === true && !this.periodoCerrado) {
+        this.cargarRolMensual();
+      }
+    });
+  }
 
   private construirRequestGenerar(sobrescribir: boolean): GenerarRolMensualRequest {
     const tipoNodo = this.nodoSeleccionado?.tipo ?? 'GENERAL';
@@ -665,33 +730,37 @@ abrirRolIndividual(event: any): void {
       sobrescribir
     };
   }
+  private construirRequestConsulta(): RolMensualRequest {
+    const tipoNodo = this.nodoSeleccionado?.tipo ?? 'GENERAL';
 
-private construirRequestConsulta(): RolMensualRequest {
-  const tipoNodo = this.nodoSeleccionado?.tipo ?? 'GENERAL';
+    return {
+      fechaPeriodo: this.formatearFechaYYYYMMDD(this.form.value.fechaPeriodo),
 
-  return {
-    fechaPeriodo: this.formatearFechaYYYYMMDD(this.form.value.fechaPeriodo),
+      idLocal: tipoNodo === 'LOCAL'
+        ? this.nodoSeleccionado!.id
+        : null,
 
-    idLocal: tipoNodo === 'LOCAL'
-      ? this.nodoSeleccionado!.id
-      : null,
+      idDepartamento: tipoNodo === 'DEPARTAMENTO'
+        ? this.nodoSeleccionado!.id
+        : null,
 
-    idDepartamento: tipoNodo === 'DEPARTAMENTO'
-      ? this.nodoSeleccionado!.id
-      : null,
+      verLocales: tipoNodo === 'GENERAL',
+      areas: this.form.value.areas ?? true,
+      exEmpleados: this.form.value.exEmpleados ?? true,
 
-    verLocales: this.form.value.verLocales ?? true,
-    areas: this.form.value.areas ?? true,
-    exEmpleados: this.form.value.exEmpleados ?? true,
+      departamentos: this.form.value.departamentos ?? false,
 
-    departamentos: this.form.value.departamentos ?? false,
-    totalizados: this.form.value.totalizados ?? false,
-    porRubros: this.form.value.porRubros ?? false,
-    todosLosRubros: this.form.value.todosLosRubros ?? true,
-    totalizar: this.form.value.totalizar ?? false
-  };
-}
-
+      /*
+       * IMPORTANTE:
+       * Para que aparezca D-06 IMPUESTO A LA RENTA,
+       * la consulta debe traer los rubros.
+       */
+      totalizados: false,
+      porRubros: true,
+      todosLosRubros: true,
+      totalizar: true
+    };
+  }
   private cargarLocalesArbol(): void {
     this.localesService.getAll().subscribe({
       next: (response) => {
@@ -877,158 +946,323 @@ private construirRequestConsulta(): RolMensualRequest {
       }
     }).afterClosed();
   }
-private construirColumnaRubro(
-  col: RubroColumnaResponse,
-  tipo: 'INGRESO' | 'DESCUENTO'
-): ColDef {
-  const key = this.obtenerKeyRubro(col);
-  const esIngreso = tipo === 'INGRESO';
+  private construirColumnaRubro(
+    col: RubroColumnaResponse,
+    tipo: 'INGRESO' | 'DESCUENTO'
+  ): ColDef {
+    const key = this.obtenerKeyRubro(col);
+    const esIngreso = tipo === 'INGRESO';
 
-  return {
-    headerName: this.obtenerNombreColumnaRubro(col),
-    colId: key,
-    width: this.obtenerAnchoColumnaRubro(col),
-    type: 'numericColumn',
-    filter: true,
+    return {
+      headerName: this.obtenerNombreColumnaRubro(col),
+      colId: key,
+      width: this.obtenerAnchoColumnaRubro(col),
+      type: 'numericColumn',
+      filter: true,
 
-    headerClass: esIngreso
-      ? 'header-ingreso'
-      : 'header-descuento',
+      headerClass: esIngreso
+        ? 'header-ingreso'
+        : 'header-descuento',
 
-    cellClass: params => {
-      const claseBase = esIngreso
-        ? 'cell-ingreso'
-        : 'cell-descuento';
+      cellClass: params => {
+        const claseBase = esIngreso
+          ? 'cell-ingreso'
+          : 'cell-descuento';
 
-      return params.node?.rowPinned
-        ? `${claseBase} cell-total-row`
-        : claseBase;
-    },
+        return params.node?.rowPinned
+          ? `${claseBase} cell-total-row`
+          : claseBase;
+      },
 
-    cellStyle: esIngreso
-      ? {
+      cellStyle: esIngreso
+        ? {
           backgroundColor: '#f0fdf4',
           color: '#065f46',
           fontWeight: '600'
         }
-      : {
+        : {
           backgroundColor: '#fefce8',
           color: '#854d0e',
           fontWeight: '600'
         },
 
-    valueGetter: params => {
-      const rubros = params.data?.rubros ?? {};
-      return this.toNumber(rubros[key]);
-    },
+      valueGetter: params => {
+        const rubros = params.data?.rubros ?? {};
+        return this.toNumber(rubros[key]);
+      },
 
-    valueFormatter: (params: ValueFormatterParams) =>
-      this.formatearDecimalValor(params.value)
-  };
-}
-private construirFilaTotales(): any {
-  const rubrosTotales: Record<string, number> = {};
+      valueFormatter: (params: ValueFormatterParams) =>
+        this.formatearDecimalValor(params.value)
+    };
+  }
+  private construirFilaTotales(): any {
+    const rubrosTotales: Record<string, number> = {};
 
-  this.columnasRubros.forEach(col => {
-    const key = this.obtenerKeyRubro(col);
+    this.columnasRubros.forEach(col => {
+      const key = this.obtenerKeyRubro(col);
 
-    rubrosTotales[key] = this.detalleRol.reduce((acc, item) => {
-      const rubros = item.rubros ?? {};
-      return acc + this.toNumber(rubros[key]);
-    }, 0);
-  });
+      rubrosTotales[key] = this.detalleRol.reduce((acc, item) => {
+        const rubros = item.rubros ?? {};
+        return acc + this.toNumber(rubros[key]);
+      }, 0);
+    });
 
-  const totalIngresos = this.detalleRol.reduce(
-    (acc, item) => acc + this.toNumber(item.totalIngresos),
-    0
-  );
+    const totalIngresos = this.detalleRol.reduce(
+      (acc, item) => acc + this.toNumber(item.totalIngresos),
+      0
+    );
 
-  const totalDescuentos = this.detalleRol.reduce(
-    (acc, item) => acc + this.toNumber(item.totalDescuentos),
-    0
-  );
+    const totalDescuentos = this.detalleRol.reduce(
+      (acc, item) => acc + this.toNumber(item.totalDescuentos),
+      0
+    );
 
-  const liquidoRecibir = this.detalleRol.reduce(
-    (acc, item) => acc + this.toNumber(item.liquidoRecibir),
-    0
-  );
+    const liquidoRecibir = this.detalleRol.reduce(
+      (acc, item) => acc + this.toNumber(item.liquidoRecibir),
+      0
+    );
 
-  return {
-    idEmpleado: null,
-    codigoEmpleado: '',
-    nombreEmpleado: 'TOTALES',
-    estado: '',
-    idLocal: null,
-    local: '',
-    diasTrabajados: 0,
-    rubros: rubrosTotales,
-    totalIngresos,
-    totalDescuentos,
-    liquidoRecibir
-  };
-}
-private generarRolMensualNuevo(): void {
-  const request = this.construirRequestGenerar(false);
-
-  this.generando = true;
-
-  this.rolNominaService.generarRolMensual(request).subscribe({
-    next: (resp) => {
-      this.generando = false;
-
-      if (resp.type === 'Success') {
-        this.mostrarExito(resp.message ?? 'Nómina generada correctamente.');
-        this.cargarRolMensual();
-        return;
-      }
-
-      if (resp.type === 'Warning') {
-        this.confirmarAccion(
-          'Periodo ya generado',
-          `${resp.message}\n\n¿Desea sobrescribir el periodo?`,
-          'Sí, sobrescribir',
-          'Cancelar'
-        ).subscribe((confirmado: boolean) => {
-          if (confirmado === true) {
-            this.generarSobrescribiendo();
-            return;
-          }
-
-          this.cargarRolMensual();
-        });
-
-        return;
-      }
-
-      this.mostrarAdvertencia(resp.message ?? 'No se pudo generar la nómina.');
-    },
-    error: (err) => {
-      this.generando = false;
-      console.error('Error al generar nómina:', err);
-      this.mostrarError('Error al generar la nómina mensual.');
+    return {
+      idEmpleado: null,
+      codigoEmpleado: '',
+      nombreEmpleado: 'TOTALES',
+      estado: '',
+      idLocal: null,
+      local: '',
+      diasTrabajados: 0,
+      rubros: rubrosTotales,
+      totalIngresos,
+      totalDescuentos,
+      liquidoRecibir
+    };
+  }
+  private generarRolMensualNuevo(): void {
+    if (this.procesandoModificar) {
+      return;
     }
-  });
-}
-private validarEstadoCierrePeriodo(): void {
-  if (!this.form.value.fechaPeriodo) {
-    this.periodoCerrado = false;
-    return;
+
+    this.procesandoModificar = true;
+
+    const request = this.construirRequestGenerar(false);
+
+    this.generando = true;
+
+    this.rolNominaService.generarRolMensual(request).subscribe({
+      next: (resp) => {
+        this.generando = false;
+
+        if (resp.type === 'Success') {
+          this.mostrarExito(resp.message ?? 'Nómina generada correctamente.');
+          this.periodoExiste = true;
+          this.modoEdicionPeriodo = true;
+          this.cargarRolMensual();
+          return;
+        }
+
+        if (resp.type === 'Warning') {
+          this.mostrarAdvertencia(
+            resp.message ?? 'El periodo ya existe. Use Modificar para trabajar sobre la nómina existente.'
+          );
+
+          this.periodoExiste = true;
+          this.modoEdicionPeriodo = !this.periodoCerrado;
+          this.cargarRolMensual();
+          return;
+        }
+
+        this.mostrarAdvertencia(resp.message ?? 'No se pudo generar la nómina.');
+      },
+      error: (err) => {
+        this.generando = false;
+        console.error('Error al generar nómina:', err);
+        this.mostrarError('Error al generar la nómina mensual.');
+      }
+    });
   }
 
-  const request: ValidarCierrePeriodoRequest = {
-    fecha: this.formatearFechaYYYYMMDD(this.form.value.fechaPeriodo)
-  };
-
-  this.cierrePeriodoService.validar(request).subscribe({
-    next: (resp) => {
-      this.periodoCerrado =
-        resp.type === 'Success' &&
-        resp.data?.existe === true;
-    },
-    error: (err) => {
-      console.error('Error validando estado de cierre:', err);
-      this.periodoCerrado = false;
+  accionPrincipalPeriodo(): void {
+    if (
+      this.generando ||
+      this.cargando ||
+      this.validandoCierre ||
+      this.procesandoModificar ||
+      this.modificarBloqueado ||
+      (this.periodoExiste && this.periodoCerrado)
+    ) {
+      return;
     }
-  });
-} 
+
+    if (this.periodoExiste) {
+      this.modificarPeriodo();
+      return;
+    }
+
+    this.nuevo();
+  }
+
+  modificarPeriodo(): void {
+    if (!this.periodoExiste) {
+      this.mostrarAdvertencia('Primero debe crear o consultar el periodo.');
+      return;
+    }
+
+    if (this.periodoCerrado) {
+      this.mostrarAdvertencia(
+        'El periodo está cerrado. No se puede modificar la nómina.'
+      );
+      return;
+    }
+
+    this.modoEdicionPeriodo = true;
+    this.mostrarExito('Periodo habilitado para modificación.');
+  }
+
+  private validarEstadoCierrePeriodo(): void {
+    if (!this.form.value.fechaPeriodo) {
+      this.periodoCerrado = false;
+      return;
+    }
+
+    const request: ValidarCierrePeriodoRequest = {
+      fecha: this.formatearFechaYYYYMMDD(this.form.value.fechaPeriodo)
+    };
+
+    this.cierrePeriodoService.validar(request).subscribe({
+      next: (resp) => {
+        this.periodoCerrado =
+          resp.type === 'Success' &&
+          resp.data?.existe === true;
+      },
+      error: (err) => {
+        console.error('Error validando estado de cierre:', err);
+        this.periodoCerrado = false;
+      }
+    });
+  }
+
+
+  private descargarImpresionRolIndividual(empleado: any): void {
+    const fechaPeriodo = this.formatearFechaYYYYMMDD(this.form.value.fechaPeriodo);
+
+    this.cargando = true;
+
+    this.rolNominaService
+      .descargarRolIndividualPdf(empleado.idEmpleado, fechaPeriodo)
+      .subscribe({
+        next: (blob: Blob) => {
+          this.cargando = false;
+
+          const url = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+
+          const nombreEmpleado = this.normalizarNombreArchivo(
+            empleado.nombreEmpleado ||
+            empleado.empleado ||
+            empleado.nombre ||
+            `empleado_${empleado.idEmpleado}`
+          );
+
+          const periodoArchivo = fechaPeriodo.replace(/-/g, '');
+
+          const nombreArchivo = `${nombreEmpleado}_${periodoArchivo}.pdf`;
+
+          link.href = url;
+          link.download = nombreArchivo;
+          link.click();
+
+          window.URL.revokeObjectURL(url);
+
+          this.mostrarExito('Impresión de rol descargada correctamente.');
+        },
+        error: err => {
+          this.cargando = false;
+          console.error('Error descargando impresión de rol:', err);
+          this.mostrarError('No se pudo descargar la impresión del rol individual.');
+        }
+      });
+  }
+  private normalizarNombreArchivo(valor: string): string {
+    if (!valor) {
+      return 'rol_individual';
+    }
+
+    return valor
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/Ñ/g, 'N')
+      .replace(/ñ/g, 'n')
+      .replace(/[^a-zA-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .toUpperCase();
+  }
+  recalcularRolMensual(): void {
+    if (this.actualizando || this.cargando || this.generando || this.validandoCierre) {
+      return;
+    }
+
+    const fechaPeriodo = this.formatearFechaYYYYMMDD(
+      this.form.value.fechaPeriodo
+    );
+
+    if (!fechaPeriodo) {
+      this.mostrarAdvertencia('Debe seleccionar un periodo.');
+      return;
+    }
+
+    const tipoNodo = this.nodoSeleccionado?.tipo ?? 'GENERAL';
+
+    const request: RecalcularRolMensualRequest = {
+      fechaPeriodo,
+      idLocal: tipoNodo === 'LOCAL'
+        ? this.nodoSeleccionado!.id
+        : null,
+      idDepartamento: tipoNodo === 'DEPARTAMENTO'
+        ? this.nodoSeleccionado!.id
+        : null,
+      idUsuario: 1
+    };
+
+    this.confirmarAccion(
+      'Recalcular rol mensual',
+      'Se recalculará y grabará la nómina de los empleados del periodo seleccionado. ¿Desea continuar?',
+      'Sí, recalcular',
+      'Cancelar'
+    ).subscribe((confirmado: boolean) => {
+      if (confirmado !== true) {
+        return;
+      }
+
+      this.actualizando = true;
+
+      this.rolNominaService.recalcularRolMensual(request)
+        .subscribe({
+          next: resp => {
+            if (resp.type === 'Success') {
+              this.mostrarExito(resp.message ?? 'Rol mensual recalculado correctamente.');
+              this.cargarRolMensual();
+              return;
+            }
+
+            if (resp.type === 'Warning') {
+              this.mostrarAdvertencia(resp.message ?? 'No se pudo recalcular el rol mensual.');
+              return;
+            }
+
+            if (resp.type === 'Error') {
+              this.mostrarError(resp.message ?? 'Error al recalcular el rol mensual.');
+              return;
+            }
+
+            this.mostrarAdvertencia(resp.message ?? 'No se pudo recalcular el rol mensual.');
+          },
+          error: err => {
+            console.error(err);
+            this.mostrarError('Error al recalcular el rol mensual.');
+          },
+          complete: () => {
+            this.actualizando = false;
+          }
+        });
+    });
+  }
 }
