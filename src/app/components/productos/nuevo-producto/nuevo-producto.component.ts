@@ -355,6 +355,10 @@ export class NuevoProductoComponent implements OnInit {
             this.productoAdicionalService.getUltimoGtinByCliente(codigoCliente).subscribe({
               next: (resp) => {
                 const data = resp.data;
+                //Solo muestra el diálogo si realmente hay un GTIN registrado
+                if (!data || !data.codbar) {
+                  return;
+                }
                 this.dialog.open(CustomMessageBoxComponent, {
                   disableClose: true,
                   data: {
