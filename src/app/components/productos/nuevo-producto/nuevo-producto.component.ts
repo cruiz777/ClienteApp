@@ -32,8 +32,8 @@ import { ReporteUnidadLogisticaParams } from 'src/app/interfaces/responses/produ
 import { GlnService } from 'src/app/services/gln.service';
 import { GS1ExportService } from 'src/app/services/gs1-export.service';
 
-import { take } from 'rxjs/operators';
-import { firstValueFrom, Observable } from 'rxjs';
+import { take, takeUntil } from 'rxjs/operators';
+import { firstValueFrom, Observable, Subject } from 'rxjs';
 import * as FileSaver from 'file-saver';
 import { format } from 'date-fns';
 import { CiudadService } from 'src/app/services/ciudad.service';
@@ -90,6 +90,7 @@ export class NuevoProductoComponent implements OnInit {
   @ViewChild(CartaComponent) cartaComponent!: CartaComponent;
   @ViewChild(CartaOficialComponent) cartaOficialComponent!: CartaOficialComponent;
   formReporte!: FormGroup; // ✅ declara la propiedad correctamente
+  private destroy$ = new Subject<void>();
   gridOptions: GridOptions = {
     getRowId: (params: any) => params.data.codbar,
     enableRangeSelection: true,
@@ -100,7 +101,7 @@ export class NuevoProductoComponent implements OnInit {
     pagination: true,
     rowModelType: 'clientSide',
   };
-  private primeraVez: boolean = true;
+  private ultimoClienteResumenMostrado: number | null = null;
   activeTab: string = 'Listado';
   clienteSeleccionado: Cliente | null = null;
   filtroPrefijo: string = '';
@@ -206,7 +207,6 @@ export class NuevoProductoComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-
     this.formReporte = this.fb.group({
       reporte: ['gtinVenta'],
       certificado: [''],
@@ -222,38 +222,50 @@ export class NuevoProductoComponent implements OnInit {
       codigo: ['']
     });
 
-    // Suscripción al cambio de operadorFecha
-    this.formReporte.get('operadorFecha')?.valueChanges.subscribe(valor => {
-      const fechaCtrl = this.formReporte.get('fecha');
-      const desdeCtrl = this.formReporte.get('desde');
-      const hastaCtrl = this.formReporte.get('hasta');
+    // ✅ Suscripción al cambio de operadorFecha
+    this.formReporte.get('operadorFecha')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(valor => {
+        const fechaCtrl = this.formReporte.get('fecha');
+        const desdeCtrl = this.formReporte.get('desde');
+        const hastaCtrl = this.formReporte.get('hasta');
 
-      if (valor === 'entre') {
-        // Desactivar campo "fecha"
-        fechaCtrl?.disable();
+        if (valor === 'entre') {
+          fechaCtrl?.disable();
+          desdeCtrl?.enable();
+          hastaCtrl?.enable();
+        } else {
+          fechaCtrl?.enable();
+          desdeCtrl?.disable();
+          hastaCtrl?.disable();
+        }
+      });
 
-        // Activar campos "desde" y "hasta"
-        desdeCtrl?.enable();
-        hastaCtrl?.enable();
-      } else {
-        // Activar campo "fecha"
-        fechaCtrl?.enable();
+    // ✅ Suscripción al cambio de tipo de reporte
+    this.formReporte.get('reporte')?.valueChanges
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(() => {
+        this.actualizarVisibilidadFiltros();
+      });
 
-        // Desactivar campos "desde" y "hasta"
-        desdeCtrl?.disable();
-        hastaCtrl?.disable();
-      }
-    });
-    this.formReporte.get('reporte')?.valueChanges.subscribe(() => {
-      this.actualizarVisibilidadFiltros();
-    });
     this.cargarCliente();
-    this.clienteSeleccionadoService.clienteSeleccionado$.subscribe(cliente => {
-      this.clienteSeleccionado = cliente;
-      if (cliente?.clientes_codigo) {
-        this.cargarProductos(cliente.clientes_codigo);
-      }
-    });
+
+    // ✅ Suscripción al cliente seleccionado
+    this.clienteSeleccionadoService.clienteSeleccionado$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(cliente => {
+        this.clienteSeleccionado = cliente;
+
+        if (cliente?.clientes_codigo) {
+          const esClienteNuevo = this.clienteSeleccionadoService.debeMostrarResumenGtin(cliente.clientes_codigo);
+          this.cargarProductos(cliente.clientes_codigo, esClienteNuevo);
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   cambiarTab(tab: string) {
@@ -297,10 +309,7 @@ export class NuevoProductoComponent implements OnInit {
   }
 
 
-  cargarProductos(codigoCliente: number): void {
-    const mostrarResumen = this.primeraVez;
-    this.primeraVez = false;
-
+  cargarProductos(codigoCliente: number, mostrarResumen: boolean = false): void {
     const loadingDialog = this.dialog.open(CustomMessageBoxComponent, {
       disableClose: true,
       data: {
