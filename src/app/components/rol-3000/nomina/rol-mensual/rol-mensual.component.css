@@ -447,4 +447,9 @@
   .action-button {
     width: 100%;
   }
+  .cell-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 }

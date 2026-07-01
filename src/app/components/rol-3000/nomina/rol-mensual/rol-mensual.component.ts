@@ -1,5 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { ColDef, ColGroupDef, ValueFormatterParams } from 'ag-grid-community';
+import {
+  ColDef,
+  ColGroupDef,
+  ValueFormatterParams,
+  GridApi,
+  GridReadyEvent
+} from 'ag-grid-community';
 import { MatDialog } from '@angular/material/dialog';
 import { RolIndividualDialogComponent } from '../rol-individual-dialog/rol-individual-dialog.component';
 import { LocalesService } from 'src/app/services/locales.service';
@@ -91,7 +97,9 @@ export class RolMensualComponent implements OnInit {
    * - rubros: Record<string, number>
    */
   detalleRol: any[] = [];
-
+  empleadosSeleccionados = new Set<number>();
+  todosSeleccionados = false;
+  private gridApi!: GridApi;
   /*
    * Columnas dinámicas que vienen del backend:
    * rol.ingreso_descuentos where incluir = 1
@@ -445,7 +453,23 @@ export class RolMensualComponent implements OnInit {
   }
 
   private construirColumnasGrid(columnasRubros: RubroColumnaResponse[]): Array<ColDef | ColGroupDef> {
+    const columnaSeleccion: ColDef = {
+      headerName: '',
+      colId: 'seleccion',
+      width: 42,
+      minWidth: 42,
+      maxWidth: 42,
+      pinned: 'left',
+      lockPosition: true,
+      sortable: false,
+      filter: false,
+      resizable: false,
+      checkboxSelection: params => !params.node?.rowPinned,
+      headerCheckboxSelection: true,
+      cellClass: 'cell-check'
+    };
     const columnasBase: ColDef[] = [
+
       {
         field: 'codigoEmpleado',
         headerName: 'Código',
@@ -467,10 +491,10 @@ export class RolMensualComponent implements OnInit {
       }
     ];
 
-    const columnasIngresos: ColDef[] = columnasRubros
+    let columnasIngresos: ColDef[] = columnasRubros
       .filter(x => x.tipoPago === 'I')
       .map(col => this.construirColumnaRubro(col, 'INGRESO'));
-
+    columnasIngresos = this.ordenarColumnasIngresosConDias(columnasIngresos);
     const columnasDescuentos: ColDef[] = columnasRubros
       .filter(x => x.tipoPago === 'D')
       .map(col => this.construirColumnaRubro(col, 'DESCUENTO'));
@@ -548,6 +572,7 @@ export class RolMensualComponent implements OnInit {
     ];
 
     return [
+      columnaSeleccion,
       ...columnasBase,
       grupoIngresos,
       grupoDescuentos,
@@ -1029,7 +1054,10 @@ export class RolMensualComponent implements OnInit {
       estado: '',
       idLocal: null,
       local: '',
-      diasTrabajados: 0,
+      diasTrabajados: this.detalleRol.reduce(
+        (acc, item) => acc + this.toNumber(item.diasTrabajados),
+        0
+      ),
       rubros: rubrosTotales,
       totalIngresos,
       totalDescuentos,
@@ -1265,4 +1293,228 @@ export class RolMensualComponent implements OnInit {
         });
     });
   }
+  private reordenarColumnasIngresos(columnas: ColDef[]): ColDef[] {
+    const colSueldo = columnas.find(x =>
+      this.textoColumna(x).includes('SUELDO')
+    );
+
+    const colDiasTrabajados = columnas.find(x =>
+      this.textoColumna(x).includes('DIAS TRABAJADOS') ||
+      this.textoColumna(x).includes('DÍAS TRABAJADOS')
+    );
+
+    const otrasColumnas = columnas.filter(x =>
+      x !== colSueldo &&
+      x !== colDiasTrabajados
+    );
+
+    const columnasOrdenadas: ColDef[] = [];
+
+    if (colSueldo) {
+      columnasOrdenadas.push(colSueldo);
+    }
+
+    /*
+     * Nueva columna: VALOR DIAS TRABAJADOS.
+     * Toma el mismo valor monetario del sueldo.
+     */
+    if (colSueldo) {
+      columnasOrdenadas.push({
+        headerName: 'VALOR DIAS TRAB.',
+        colId: 'valorDiasTrabajados',
+        width: 155,
+        type: 'numericColumn',
+        filter: true,
+        headerClass: 'header-ingreso',
+        cellClass: params =>
+          params.node?.rowPinned
+            ? 'cell-ingreso cell-total-row'
+            : 'cell-ingreso',
+        cellStyle: {
+          backgroundColor: '#f0fdf4',
+          color: '#065f46',
+          fontWeight: '600'
+        },
+        valueGetter: params => {
+          const rubros = params.data?.rubros ?? {};
+
+          /*
+           * Intenta tomar el valor de SUELDO desde la columna dinámica.
+           */
+          const keySueldo = colSueldo.colId;
+
+          if (keySueldo && rubros[keySueldo]) {
+            return this.toNumber(rubros[keySueldo]);
+          }
+
+          return 0;
+        },
+        valueFormatter: (params: ValueFormatterParams) =>
+          this.formatearDecimalValor(params.value)
+      });
+    }
+
+    /*
+     * Luego va DIAS TRABAJADOS, que muestra 30.00
+     */
+    if (colDiasTrabajados) {
+      columnasOrdenadas.push({
+        ...colDiasTrabajados,
+        headerName: 'DIAS TRAB.',
+        width: 120,
+        valueFormatter: (params: ValueFormatterParams) =>
+          this.formatearDecimalValor(params.value)
+      });
+    }
+
+    columnasOrdenadas.push(...otrasColumnas);
+
+    return columnasOrdenadas;
+  }
+  private textoColumna(col: ColDef): string {
+    return (col.headerName ?? '').toString().trim().toUpperCase();
+  }
+  private ordenarColumnasIngresosConDias(columnas: ColDef[]): ColDef[] {
+    const colSueldo = columnas.find(x => x.colId === '3I');
+    const colValorDiasTrabajados = columnas.find(x => x.colId === '2I');
+
+    const otrasColumnas = columnas.filter(x =>
+      x.colId !== '3I' &&
+      x.colId !== '2I'
+    );
+
+    const resultado: ColDef[] = [];
+
+    // 1. SUELDO -> rubros["3I"]
+    if (colSueldo) {
+      resultado.push({
+        ...colSueldo,
+        headerName: 'SUELDO',
+        width: 110,
+        valueGetter: params => {
+          const rubros = params.data?.rubros ?? {};
+          return this.toNumber(rubros['3I']);
+        },
+        valueFormatter: params => this.formatearDecimalValor(params.value)
+      });
+    }
+
+    // 2. VALOR DIAS TRAB. -> rubros["2I"]
+    if (colValorDiasTrabajados) {
+      resultado.push({
+        ...colValorDiasTrabajados,
+        headerName: 'VALOR DIAS TRAB.',
+        width: 150,
+        valueGetter: params => {
+          const rubros = params.data?.rubros ?? {};
+          return this.toNumber(rubros['2I']);
+        },
+        valueFormatter: params => this.formatearDecimalValor(params.value)
+      });
+    }
+
+    // 3. DIAS TRAB. -> diasTrabajados
+    resultado.push({
+      headerName: 'DIAS TRAB.',
+      colId: 'diasTrabajadosCantidad',
+      width: 115,
+      type: 'numericColumn',
+      filter: true,
+      headerClass: 'header-ingreso',
+      cellClass: params =>
+        params.node?.rowPinned
+          ? 'cell-ingreso cell-total-row'
+          : 'cell-ingreso',
+      cellStyle: {
+        backgroundColor: '#f0fdf4',
+        color: '#065f46',
+        fontWeight: '600'
+      },
+      valueGetter: params => this.toNumber(params.data?.diasTrabajados),
+      valueFormatter: params => this.formatearDecimalValor(params.value)
+    });
+
+    resultado.push(...otrasColumnas);
+
+    return resultado;
+  }
+  toggleSeleccionEmpleado(item: any, checked: boolean): void {
+    const idEmpleado = Number(item?.idEmpleado);
+
+    if (!idEmpleado) {
+      return;
+    }
+
+    if (checked) {
+      this.empleadosSeleccionados.add(idEmpleado);
+    } else {
+      this.empleadosSeleccionados.delete(idEmpleado);
+    }
+
+    this.actualizarEstadoSeleccionGeneral();
+  }
+
+  toggleSeleccionTodos(checked: boolean): void {
+    this.todosSeleccionados = checked;
+    this.empleadosSeleccionados.clear();
+
+    if (checked) {
+      this.detalleRol.forEach((item: any) => {
+        const idEmpleado = Number(item?.idEmpleado);
+
+        if (idEmpleado) {
+          this.empleadosSeleccionados.add(idEmpleado);
+        }
+      });
+    }
+
+    this.gridApi?.refreshCells({ force: true });
+  }
+
+  estaSeleccionado(item: any): boolean {
+    const idEmpleado = Number(item?.idEmpleado);
+
+    if (!idEmpleado) {
+      return false;
+    }
+
+    return this.empleadosSeleccionados.has(idEmpleado);
+  }
+
+  private actualizarEstadoSeleccionGeneral(): void {
+    const totalEmpleados = this.detalleRol?.length ?? 0;
+
+    if (totalEmpleados === 0) {
+      this.todosSeleccionados = false;
+      return;
+    }
+
+    this.todosSeleccionados = this.empleadosSeleccionados.size === totalEmpleados;
+  }
+
+
+  onGridReady(params: GridReadyEvent): void {
+    this.gridApi = params.api;
+  }
+  obtenerEmpleadosSeleccionados(): any[] {
+  if (!this.gridApi) {
+    return [];
+  }
+
+  return this.gridApi.getSelectedRows() ?? [];
+}
+enviarPdfEmpleadosSeleccionados(): void {
+  const empleados = this.obtenerEmpleadosSeleccionados();
+
+  if (empleados.length === 0) {
+    this.mostrarAdvertencia('Debe seleccionar al menos un empleado.');
+    return;
+  }
+
+  const idsEmpleados = empleados.map(x => Number(x.idEmpleado));
+
+  console.log('Empleados seleccionados:', idsEmpleados);
+
+  // Aquí luego llamas al endpoint para enviar PDF por correo.
+}
 }
