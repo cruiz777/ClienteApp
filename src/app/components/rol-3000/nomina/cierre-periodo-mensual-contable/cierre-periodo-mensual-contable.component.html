@@ -46,6 +46,16 @@
       >
         Cancelar
       </button>
+
+      <button
+        mat-stroked-button
+        color="accent"
+        type="button"
+        [disabled]="procesando || !tieneReportes"
+        (click)="imprimir()"
+      >
+        Imprimir
+      </button>
     </div>
   </div>
 </div>

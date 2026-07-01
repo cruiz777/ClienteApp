@@ -4,6 +4,7 @@ import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 
 export interface ApiResponse<T> {
+  id?: string;
   type: string;
   message: string;
   data: T;
@@ -15,13 +16,13 @@ export interface ValidarCierrePeriodoRequest {
 
 export interface CrearCierrePeriodoRequest {
   fecha: string;      // yyyy-MM-dd
-  idUsuario: number;  // ID del usuario que realiza el cierre
-  tipo?: string;      // ROL_MENSUAL
+  idUsuario: number;
+  tipo?: string;
 }
 
 export interface EliminarCierrePeriodoRequest {
   fecha: string;      // yyyy-MM-dd
-  tipo?: string;      // ROL_MENSUAL
+  tipo?: string;
 }
 
 export interface ValidarCierrePeriodoResponse {
@@ -45,18 +46,28 @@ export interface ContabilizarMensualRequest {
 }
 
 /**
- * Response esperado para contabilización mensual.
- * Ajusta nombres si tu backend devuelve otros campos.
+ * Response de:
+ * POST /api/CierrePeriodo/contabilizar-mensual
  */
 export interface ContabilizarMensualResponse {
   procesado: boolean;
+
   numDocNomina?: string | null;
   numDocProvision?: string | null;
+
   totalDebeNomina?: number;
   totalHaberNomina?: number;
   totalDebeProvision?: number;
   totalHaberProvision?: number;
+
   mensaje?: string | null;
+
+  idCabMaestroNomina?: number | null;
+  idCabMaestroProvision?: number | null;
+
+  reporteProvision?: string | null;
+  reporteResumenMensual?: string | null;
+  reporteAsientoMensual?: string | null;
 }
 
 @Injectable({
@@ -68,21 +79,27 @@ export class CierrePeriodoService {
 
   constructor(private http: HttpClient) {}
 
-  validar(request: ValidarCierrePeriodoRequest): Observable<ApiResponse<ValidarCierrePeriodoResponse>> {
+  validar(
+    request: ValidarCierrePeriodoRequest
+  ): Observable<ApiResponse<ValidarCierrePeriodoResponse>> {
     return this.http.post<ApiResponse<ValidarCierrePeriodoResponse>>(
       `${this.apiUrl}/validar`,
       request
     );
   }
 
-  crear(request: CrearCierrePeriodoRequest): Observable<ApiResponse<boolean>> {
+  crear(
+    request: CrearCierrePeriodoRequest
+  ): Observable<ApiResponse<boolean>> {
     return this.http.post<ApiResponse<boolean>>(
       `${this.apiUrl}/crear`,
       request
     );
   }
 
-  eliminar(request: EliminarCierrePeriodoRequest): Observable<ApiResponse<boolean>> {
+  eliminar(
+    request: EliminarCierrePeriodoRequest
+  ): Observable<ApiResponse<boolean>> {
     return this.http.post<ApiResponse<boolean>>(
       `${this.apiUrl}/eliminar`,
       request
@@ -97,4 +114,9 @@ export class CierrePeriodoService {
       request
     );
   }
+  descargarReportePdf(url: string): Observable<Blob> {
+  return this.http.get(url, {
+    responseType: 'blob'
+  });
+}
 }
