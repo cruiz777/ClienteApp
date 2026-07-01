@@ -110,7 +110,10 @@ export class NavigationProductoComponent implements OnInit, OnDestroy {
         this.isExpanded = !this.isHandset;
       });
   }
-
+  salirCliente(): void {
+    this.clienteSeleccionadoService.resetResumenGtin();
+    // No hace falta router.navigate aquí porque el routerLink ya navega solo
+  }
   ngOnInit(): void {
     // Suscribirse al cliente seleccionado
     this.clienteSeleccionadoService.clienteSeleccionado$
@@ -157,7 +160,12 @@ export class NavigationProductoComponent implements OnInit, OnDestroy {
 
     // ✅ ACCESO PERMITIDO
     console.log(`✅ Acceso permitido a: ${ruta}`);
-    
+    // ✅ Si el usuario navega a una sección DISTINTA de "Nuevo Producto"
+    // (GLN, Cupones, SSCC), resetea el flag para que al volver a
+    // "Nuevo Producto" se vuelva a mostrar el resumen del último GTIN.
+    if (ruta !== '/productos/nuevo-producto') {
+      this.clienteSeleccionadoService.resetResumenGtin();
+    }
     // Permitir que el routerLink maneje la navegación naturalmente
   }
 

@@ -112,8 +112,9 @@
 
       <!-- Botón salir -->
       <a mat-list-item
-         [routerLink]="['/codbar/ficha-de-cliente/listado-clientes']"
-         class="salir-item">
+        [routerLink]="['/codbar/ficha-de-cliente/listado-clientes']"
+        (click)="salirCliente()"
+        class="salir-item">
         <div class="menu-item">
           <img src="assets/icons/icon-salir.png" class="menu-icon">
           <span *ngIf="isExpanded" class="menu-text salir-text">Salir</span>
