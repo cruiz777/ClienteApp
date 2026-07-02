@@ -28,6 +28,11 @@
     p {
       margin: 0 0 20px;
       font-size: 16px;
+      white-space: pre-line;   //respeta los \n como saltos de línea
+      text-align: left;         // opcional: para listas se lee mejor alineado a la izquierda que centrado
+      max-height: 300px;        // por si aún con el límite de 10 líneas se pasa de alto
+      overflow-y: auto;
+      padding-right: 4px;
     }
   
     .actions {
