@@ -296,7 +296,14 @@ export class BloqueComponent implements OnInit {
     this.formUV.get('gtinNacionalSeleccionado')?.valueChanges.subscribe(val => {
       if (val) this.tipoGtin = val;
     });
-
+    this.formUV.get('gcp')?.valueChanges.subscribe(() => {
+      if (this.formUV.get('checkExiste')?.value && this.rowData.length > 0) {
+        // Re-evaluar sin abrir diálogo, solo repintar y ajustar el botón
+        const erroresPrefijo = this.validarPrefijoTodosLosGtin(false);
+        const sinRepetidos = this.gtinsRepetidos.size === 0;
+        this.botonGenerarDeshabilitado = erroresPrefijo > 0 || !sinRepetidos;
+      }
+    });
     this.formUV.get('gtinInternacionalSeleccionado')?.valueChanges.subscribe(val => {
       if (val) this.tipoGtin = val;
     });
@@ -318,11 +325,16 @@ export class BloqueComponent implements OnInit {
         suppressSizeToFit: true
       },
       {
-        field: 'gtinUv', headerName: 'GTIN UV', editable: true, cellStyle: (params) => {
-          if (params.data?._duplicadoGtinUv) {
-            return { backgroundColor: '#ffcccc' }; // rojo claro
+        field: 'gtinUv', headerName: 'GTIN UV', editable: true, cellStyle: (params): any => {
+          const style: any = { backgroundColor: '#ffffff' };
+
+          if (params.data?._errorPrefijo) {
+            style.backgroundColor = '#ffcccc';
+            style.border = '2px solid red';
+          } else if (params.data?._duplicadoGtinUv) {
+            style.backgroundColor = '#ffcccc';
           }
-          return { backgroundColor: '#ffffff' }; // blanco normal
+          return style;
         }, width: 150, minWidth: 150
       },
       {
@@ -579,7 +591,42 @@ export class BloqueComponent implements OnInit {
     ];
     //EXCEL GRID
     if (this.formUV.get('checkExiste')?.value) {
-      allowedPasteFields = ['gtinUv', 'factor', 'indicador'];
+      if (startField === 'factor' || startField === 'indicador') {
+        setTimeout(() => {
+          this.validarTodosLosFactoresPegados();
+        }, 300);
+      } else {
+        setTimeout(() => {
+          const sinRepetidos = this.validarGtinUvRepetido();
+          const erroresPrefijo = this.validarPrefijoTodosLosGtin();
+
+          if (!sinRepetidos) {
+            this.botonGenerarDeshabilitado = true;
+            this.dialog.open(CustomMessageBoxComponent, {
+              width: '500px',
+              data: {
+                title: '⚠️ GTINs Repetidos Detectados',
+                message: this.mensajeGtinsRepetidos,
+                type: 'error',
+                confirmText: 'Entendido'
+              }
+            });
+          } else if (erroresPrefijo > 0) {
+            this.botonGenerarDeshabilitado = true; // el diálogo de prefijo ya se abrió dentro de validarPrefijoTodosLosGtin()
+          } else {
+            this.botonGenerarDeshabilitado = false;
+          }
+        }, 100);
+        setTimeout(() => {
+          this.validarTodosLosFactoresPegados();
+        }, 300);
+      }
+    } else {
+      if (startField === 'factor' || startField === 'indicador') {
+        setTimeout(() => {
+          this.verificarBloqueoGenerar14();
+        }, 300);
+      }
     }
     const pasteableFields: string[] = this.columnDefs
       .filter(col => !!col.field && allowedPasteFields.includes(col.field as string))
@@ -937,7 +984,15 @@ export class BloqueComponent implements OnInit {
       return;
     }
     const checkExiste = this.formUV.get('checkExiste')?.value;
-
+    
+    //Bloqueo duro: si hay GTIN con prefijo distinto al seleccionado, no se puede continuar
+    if (checkExiste) {
+      const erroresPrefijo = this.validarPrefijoTodosLosGtin();
+      if (erroresPrefijo > 0) {
+        this.botonGenerarDeshabilitado = true;
+        return; //Detiene el flujo, el diálogo ya se mostró dentro del método
+      }
+    }
     if (this.tipoGtin === 'GTIN-13' && checkExiste === false && this.bandera === 0) {
       console.log('➡️ GTIN-13 y checkExiste es falso');
       this.generar13();
@@ -1477,10 +1532,10 @@ export class BloqueComponent implements OnInit {
     // Validar si checkExiste está marcado
     if (this.formUV.get('checkExiste')?.value) {
       const sinRepetidos = this.validarGtinUvRepetido();
+      const erroresPrefijo = this.validarPrefijoTodosLosGtin();
 
       if (!sinRepetidos) {
         this.botonGenerarDeshabilitado = true;
-
         this.dialog.open(CustomMessageBoxComponent, {
           width: '500px',
           data: {
@@ -1490,6 +1545,8 @@ export class BloqueComponent implements OnInit {
             confirmText: 'Entendido'
           }
         });
+      } else if (erroresPrefijo > 0) {
+        this.botonGenerarDeshabilitado = true;
       } else {
         this.botonGenerarDeshabilitado = false;
       }
@@ -1824,7 +1881,9 @@ export class BloqueComponent implements OnInit {
     // Si modificó gtinUv y checkExiste está marcado, validar repetidos
     if (field === 'gtinUv' && this.formUV.get('checkExiste')?.value) {
       const sinRepetidos = this.validarGtinUvRepetido();
-      this.botonGenerarDeshabilitado = !sinRepetidos;
+      const prefijoOk = this.validarPrefijoFila(event.data, true);
+      this.gridApi?.refreshCells({ rowNodes: [event.node], columns: ['gtinUv'], force: true });
+      this.botonGenerarDeshabilitado = !sinRepetidos || !prefijoOk;
     }
   }
 
@@ -2013,6 +2072,22 @@ export class BloqueComponent implements OnInit {
       return;
     }
 
+    //Bloqueo duro: no permitir generar GTIN-14 si alguna fila ACTIVA tiene prefijo incorrecto
+    if (this.formUV.get('checkExiste')?.value) {
+      const filasActivasConErrorPrefijo = this.rowData.filter(f => f.activo && f._errorPrefijo === true);
+      if (filasActivasConErrorPrefijo.length > 0) {
+        this.dialog.open(CustomMessageBoxComponent, {
+          width: '500px',
+          data: {
+            title: '⚠️ GTIN con prefijo distinto',
+            message: `No se puede generar GTIN-14: hay ${filasActivasConErrorPrefijo.length} producto(s) marcado(s) con GTIN cuyo prefijo no corresponde al seleccionado. Corrija o desmarque esas filas antes de continuar.`,
+            type: 'error',
+            confirmText: 'Entendido'
+          }
+        });
+        return;
+      }
+    }
     await this.validarTodosLosFactoresActivos();
 
     // ✅ Ahora sí verificar errores (ya validados)
@@ -2411,6 +2486,88 @@ export class BloqueComponent implements OnInit {
     return todoBien;
   }
 
+  /** Obtiene el prefijo (codpre) seleccionado y el país esperado según bandera */
+  private obtenerPrefijoYPais(): { prefijo: string; npais: string } {
+    const idSeleccionado = this.formUV.value.gcp;
+    const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+    const prefijo = (objeto?.codpre || '').toString().trim();
+    const npais = this.bandera === 0 ? '786' : ''; // igual que generar13()/generar12()
+    return { prefijo, npais };
+  }
+
+  /** Compara el segmento de prefijo dentro del GTIN contra el prefijo seleccionado */
+  private gtinCoincideConPrefijo(gtin: string, prefijo: string, npais: string): boolean {
+    const valor = (gtin || '').toString().trim();
+    if (!valor || !prefijo) return true; // sin dato o sin prefijo seleccionado, no se evalúa aquí
+    const inicio = npais.length;
+    const segmento = valor.substring(inicio, inicio + prefijo.length);
+    return segmento === prefijo;
+  }
+
+  /** Valida una sola fila (usada en edición celda por celda) */
+  private validarPrefijoFila(fila: any, mostrarAlertaSiError: boolean = true): boolean {
+    const { prefijo, npais } = this.obtenerPrefijoYPais();
+    const gtin = (fila.gtinUv || '').toString().trim();
+
+    if (!gtin || !prefijo) {
+      fila._errorPrefijo = false;
+      return true;
+    }
+
+    const coincide = this.gtinCoincideConPrefijo(gtin, prefijo, npais);
+    fila._errorPrefijo = !coincide;
+
+    if (!coincide && mostrarAlertaSiError) {
+      this.mostrarAlerta(`⚠️ El GTIN ${gtin} no corresponde al prefijo seleccionado (${prefijo}).`, 'Error');
+    }
+
+    return coincide;
+  }
+
+  /** Valida todas las filas (usada al pegar) y muestra el message box con el conteo */
+  private validarPrefijoTodosLosGtin(mostrarDialogo: boolean = true): number {
+    const { prefijo, npais } = this.obtenerPrefijoYPais();
+    let errores = 0;
+    const filasConError: string[] = [];
+
+    this.rowData.forEach((fila, idx) => {
+      const gtin = (fila.gtinUv || '').toString().trim();
+      if (!gtin) {
+        fila._errorPrefijo = false;
+        return;
+      }
+      const coincide = this.gtinCoincideConPrefijo(gtin, prefijo, npais);
+      fila._errorPrefijo = !coincide;
+      if (!coincide) {
+        errores++;
+        filasConError.push(`Fila ${idx + 1}: ${gtin}`);
+      }
+    });
+
+    this.rowData = [...this.rowData];
+    this.gridApi?.refreshCells({ force: true, columns: ['gtinUv'] });
+
+    if (errores > 0 && mostrarDialogo) {
+      const LIMITE_VISIBLE = 15;
+      const listaVisible = filasConError.slice(0, LIMITE_VISIBLE).join('\n');
+      const restantes = errores - LIMITE_VISIBLE;
+      const sufijo = restantes > 0
+        ? `\n\n...y ${restantes} más. Revise las celdas en rojo en la grilla.`
+        : '\n\nRevise las celdas en rojo en la grilla.';
+
+      this.dialog.open(CustomMessageBoxComponent, {
+        width: '500px',
+        data: {
+          title: '⚠️ GTIN con prefijo distinto',
+          message: `Se encontraron ${errores} GTIN cuyo prefijo no coincide con el prefijo seleccionado (${prefijo}):\n\n${listaVisible}${sufijo}`,
+          type: 'error',
+          confirmText: 'Entendido'
+        }
+      });
+    }
+
+    return errores;
+  }
   verificarExistenciaCodbar(): Promise<void> {
     const filas = this.rowData.filter(f => f.activo && f.gtinUv?.trim().length >= 12);
 
