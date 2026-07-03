@@ -11,6 +11,7 @@ import { TipoNominaEspResponse } from 'src/app/interfaces/responses/tipo-nomina-
 import { UtilidadesService } from 'src/app/services/rol/utilidades.service';
 import { UtilidadEmpleadoResponse } from 'src/app/interfaces/responses/utilidades-response';
 import { UtilidadesRequest, GrabarUtilidadesRequest } from 'src/app/interfaces/requests/utilidades-request';
+import { UtilidadesExportConfig, UtilidadesExportService } from 'src/app/reports/utilidades-export.service';
 
 @Component({
   selector: 'app-utilidades',
@@ -82,7 +83,24 @@ export class UtilidadesComponent implements OnInit {
       headerName: 'Cónyuge',
       field: 'conyuge',
       width: 100,
-      valueFormatter: (p: ValueFormatterParams) => p.value ? 'Sí' : 'No'
+      cellRenderer: (p: any) => p.value
+        ? `<span style="
+            display:inline-block;
+            background:#1a5276;
+            color:#fff;
+            border-radius:4px;
+            padding:2px 10px;
+            font-size:11px;
+            font-weight:700;
+            letter-spacing:0.5px;">
+            ✓ Sí
+          </span>`
+        : `<span style="
+            display:inline-block;
+            color:#aab0bc;
+            font-size:11px;">
+            —
+          </span>`
     },
     {
       headerName: 'Hijos',
@@ -113,28 +131,34 @@ export class UtilidadesComponent implements OnInit {
       field: 'alicuotaEmpleado',
       width: 150,
       type: 'rightAligned',
-      valueFormatter: (p: ValueFormatterParams) => this.formatMoneda(p.value)
+      valueFormatter: (p: ValueFormatterParams) => this.formatAlicuota(p.value)  //Se formate como alicuota de round0,6
     },
     {
       headerName: 'Alícuota Carga',
       field: 'alicuotaCarga',
-      width: 130,
-      type: 'rightAligned',
-      valueFormatter: (p: ValueFormatterParams) => this.formatMoneda(p.value)
+      width: 230,
+      type: 'leftAlligned',
+      valueFormatter: (p: ValueFormatterParams) => this.formatAlicuota(p.value)  // round0,6
     },
     {
       headerName: 'Valor Empleado',
       field: 'valorEmpleado',
       width: 140,
       type: 'rightAligned',
-      valueFormatter: (p: ValueFormatterParams) => this.formatMoneda(p.value)
+      editable: true,
+      cellStyle: { backgroundColor: '#fffde7' },
+      valueFormatter: (p: ValueFormatterParams) => this.formatMoneda(p.value),
+      valueParser: (p: any) => Number(p.newValue)
     },
     {
       headerName: 'Valor Carga',
       field: 'valorCarga',
       width: 120,
       type: 'rightAligned',
-      valueFormatter: (p: ValueFormatterParams) => this.formatMoneda(p.value)
+      editable: true,
+      cellStyle: { backgroundColor: '#fffde7' },
+      valueFormatter: (p: ValueFormatterParams) => this.formatMoneda(p.value),
+      valueParser: (p: any) => Number(p.newValue)
     },
     {
       headerName: 'Observaciones',
@@ -160,7 +184,8 @@ export class UtilidadesComponent implements OnInit {
     private usuarioService:   UsuarioService,
     private empresaService:   EmpresaService,
     private tipoNominaService: TipoNominaEspService,
-    private utilidadesService: UtilidadesService
+    private utilidadesService: UtilidadesService,
+    private exportService: UtilidadesExportService
   ) {}
 
   ngOnInit(): void {
@@ -351,7 +376,8 @@ export class UtilidadesComponent implements OnInit {
       forzar,
       montoEmpleados: this.form.value.monto10,  // 10%
       montoCargas:    this.form.value.monto5,   // 5%
-      tiposEmpleado:  [this.ID_TIPO_EMP_FIJOS]
+      tiposEmpleado:  [this.ID_TIPO_EMP_FIJOS],
+      empleadosEditados: this.rowData
     };
 
     this.grabando = true;
@@ -436,6 +462,25 @@ export class UtilidadesComponent implements OnInit {
     });
   }
 
+  //==== EXPORTAR ====
+  exportar(tipo: 'pdf' | 'excel'): void {
+    const empresaSeleccionada = this.empresas.find(e => e.idEmpresa === this.form.value.idEmpresa);
+    const config: UtilidadesExportConfig = {
+      periodo:   this.form.value.periodo.toString(),
+      empresa:   empresaSeleccionada?.nombre ?? '',
+      empleados: this.rowData
+    };
+
+    if (tipo === 'pdf') {
+      this.exportService.exportarPdfDetalle(config);
+      this.exportService.exportarPdfResumen(config);
+    }
+
+    if (tipo === 'excel') {
+      this.exportService.exportarExcelDetalle(config);
+      this.exportService.exportarExcelResumen(config);
+    }
+  }
   // ===== CANCELAR =====
   cancelar(): void {
     this.rowData      = [];
@@ -466,7 +511,10 @@ export class UtilidadesComponent implements OnInit {
     if (value == null) return '$0.00';
     return '$' + Number(value).toFixed(2);
   }
-
+  formatAlicuota(value: number): string {
+    if (value == null) return '$0.000000';
+    return '$' + Number(value).toFixed(6);
+  }
   private showError(message: string): void {
     this.dialog.open(CustomMessageBoxComponent, {
       data: {
