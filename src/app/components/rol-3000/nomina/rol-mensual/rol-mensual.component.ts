@@ -1,4 +1,7 @@
 import { Component, OnInit } from '@angular/core';
+import { DialogProcesoComponent } from 'src/app/components/productos/dialog-proceso/dialog-proceso.component';
+import * as ExcelJS from 'exceljs';
+import { saveAs } from 'file-saver';
 import {
   ColDef,
   ColGroupDef,
@@ -35,7 +38,9 @@ import {
   RolMensualRequest,
   RolMensualResponse,
   RubroColumnaResponse,
-  RolNominaService, RecalcularRolMensualRequest
+  RolNominaService,
+  RecalcularRolMensualRequest,
+  EnviarRolesCorreoRequest
 } from 'src/app/services/rol/rol-nomina.service';
 
 interface NodoRol {
@@ -90,6 +95,7 @@ export class RolMensualComponent implements OnInit {
   procesandoModificar = false;
   modificarBloqueado = false;
   actualizando = false;
+  exportandoExcel = false;
   /*
    * Este arreglo alimenta el AG Grid.
    * Ahora es dinámico porque cada fila tiene:
@@ -349,27 +355,48 @@ export class RolMensualComponent implements OnInit {
     // lógica actual...
   }
 
-  cancelar(): void {
-    this.detalleRol = [];
-    this.columnasRubros = [];
-    this.columnDefs = this.construirColumnasGrid([]);
-    this.pinnedBottomRowData = [];
+ cancelar(): void {
+  this.detalleRol = [];
+  this.columnasRubros = [];
+  this.columnDefs = this.construirColumnasGrid([]);
+  this.pinnedBottomRowData = [];
 
-    this.nodos = [];
-    this.nodoSeleccionado = null;
+  /*
+   * IMPORTANTE:
+   * No limpiar nodos, porque eso quita "Emisión de Roles".
+   */
+  // this.nodos = [];
+  // this.nodoSeleccionado = null;
 
-    this.periodoCerrado = false;
-    this.periodoExiste = false;
-    this.modoEdicionPeriodo = false;
-    this.validandoCierre = false;
+  const nodoRaiz = this.nodos.find(x =>
+    x.nombre === 'Emisión de Roles' ||
+    x.tipo === 'GENERAL'
+  );
 
-    this.generando = false;
-    this.cargando = false;
-    this.procesandoModificar = false;
-    this.modificarBloqueado = false;
-
-    this.mostrarAdvertencia('Operación cancelada.');
+  if (nodoRaiz) {
+    nodoRaiz.expandido = true;
+    this.nodoSeleccionado = nodoRaiz;
   }
+
+  this.periodoCerrado = false;
+  this.periodoExiste = false;
+  this.modoEdicionPeriodo = false;
+  this.validandoCierre = false;
+
+  this.generando = false;
+  this.cargando = false;
+  this.actualizando = false;
+  this.procesandoModificar = false;
+  this.modificarBloqueado = false;
+  this.enviandoCorreos = false;
+
+  if (this.gridApi) {
+    this.gridApi.deselectAll();
+    this.gridApi.refreshCells({ force: true });
+  }
+
+  this.mostrarAdvertencia('Operación cancelada.');
+}
   cargarRolMensual(): void {
     if (!this.form.value.fechaPeriodo) {
       this.mostrarAdvertencia('Debe ingresar el periodo.');
@@ -453,43 +480,46 @@ export class RolMensualComponent implements OnInit {
   }
 
   private construirColumnasGrid(columnasRubros: RubroColumnaResponse[]): Array<ColDef | ColGroupDef> {
-    const columnaSeleccion: ColDef = {
-      headerName: '',
-      colId: 'seleccion',
-      width: 42,
-      minWidth: 42,
-      maxWidth: 42,
-      pinned: 'left',
-      lockPosition: true,
-      sortable: false,
-      filter: false,
-      resizable: false,
-      checkboxSelection: params => !params.node?.rowPinned,
-      headerCheckboxSelection: true,
-      cellClass: 'cell-check'
-    };
-    const columnasBase: ColDef[] = [
+const columnaSeleccion: ColDef = {
+  headerName: '',
+  colId: 'seleccion',
+  width: 46,
+  minWidth: 46,
+  maxWidth: 46,
+  pinned: 'left',
+  lockPinned: true,
+  lockPosition: true,
+  sortable: false,
+  filter: false,
+  resizable: false,
+  suppressSizeToFit: true,
+  checkboxSelection: params => !params.node?.rowPinned,
+  headerCheckboxSelection: true,
+  cellClass: 'cell-check-rol',
+  headerClass: 'header-check-rol'
+};
+    const columnaNombre: ColDef = {
+  headerName: 'Nombre',
+  field: 'nombreEmpleado',
+  width: 230,
+  minWidth: 230,
+  pinned: 'left',
+  lockPinned: true,
+  suppressSizeToFit: true,
+  filter: true
+};
 
-      {
-        field: 'codigoEmpleado',
-        headerName: 'Código',
-        width: 90,
-        pinned: 'left',
-        filter: true,
-        cellClass: params =>
-          params.node?.rowPinned ? 'cell-total-label' : ''
-      },
-      {
-        field: 'nombreEmpleado',
-        headerName: 'Nombre',
-        minWidth: 260,
-        flex: 1,
-        pinned: 'left',
-        filter: true,
-        cellClass: params =>
-          params.node?.rowPinned ? 'cell-total-label' : ''
-      }
-    ];
+const columnaCodigo: ColDef = {
+  headerName: 'Código',
+  field: 'codigoEmpleado',
+  width: 80,
+  minWidth: 80,
+  maxWidth: 90,
+  pinned: 'left',
+  lockPinned: true,
+  suppressSizeToFit: true,
+  filter: true
+};
 
     let columnasIngresos: ColDef[] = columnasRubros
       .filter(x => x.tipoPago === 'I')
@@ -511,73 +541,83 @@ export class RolMensualComponent implements OnInit {
       children: columnasDescuentos
     };
 
-    const columnasTotales: ColDef[] = [
-      {
-        field: 'totalIngresos',
-        headerName: 'Total Ingresos',
-        width: 150,
-        type: 'numericColumn',
-        pinned: 'right',
-        headerClass: 'header-total-ingresos',
-        cellClass: params =>
-          params.node?.rowPinned
-            ? 'cell-total-row cell-total-ingresos'
-            : 'cell-total-ingresos',
-        cellStyle: {
-          backgroundColor: '#dcfce7',
-          color: '#166534',
-          fontWeight: '800'
-        },
-        valueFormatter: (params: ValueFormatterParams) =>
-          this.formatearDecimalValor(params.value)
-      },
-      {
-        field: 'totalDescuentos',
-        headerName: 'Total Descuentos',
-        width: 165,
-        type: 'numericColumn',
-        pinned: 'right',
-        headerClass: 'header-total-descuentos',
-        cellClass: params =>
-          params.node?.rowPinned
-            ? 'cell-total-row cell-total-descuentos'
-            : 'cell-total-descuentos',
-        cellStyle: {
-          backgroundColor: '#fef9c3',
-          color: '#854d0e',
-          fontWeight: '800'
-        },
-        valueFormatter: (params: ValueFormatterParams) =>
-          this.formatearDecimalValor(params.value)
-      },
-      {
-        field: 'liquidoRecibir',
-        headerName: 'Líquido a Recibir',
-        width: 170,
-        type: 'numericColumn',
-        pinned: 'right',
-        headerClass: 'header-total-liquido',
-        cellClass: params =>
-          params.node?.rowPinned
-            ? 'cell-total-row cell-total-liquido'
-            : 'cell-total-liquido',
-        cellStyle: {
-          backgroundColor: '#dbeafe',
-          color: '#1d4ed8',
-          fontWeight: '900'
-        },
-        valueFormatter: (params: ValueFormatterParams) =>
-          this.formatearDecimalValor(params.value)
-      }
-    ];
+   const columnasTotales: ColDef[] = [
+  {
+    field: 'totalIngresos',
+    headerName: 'Total Ingresos',
+    width: 150,
+    type: 'numericColumn',
+    pinned: 'right',
+    headerClass: 'header-total-ingresos',
+    cellClass: params =>
+      params.node?.rowPinned
+        ? 'cell-total-row cell-total-ingresos'
+        : 'cell-total-ingresos',
+    cellStyle: {
+      backgroundColor: '#dcfce7',
+      color: '#166534',
+      fontWeight: '800'
+    },
+    valueFormatter: (params: ValueFormatterParams) =>
+      this.formatearDecimalValor(params.value)
+  },
+  {
+    field: 'totalDescuentos',
+    headerName: 'Total Descuentos',
+    width: 165,
+    type: 'numericColumn',
+    pinned: 'right',
+    headerClass: 'header-total-descuentos',
+    cellClass: params =>
+      params.node?.rowPinned
+        ? 'cell-total-row cell-total-descuentos'
+        : 'cell-total-descuentos',
+    cellStyle: {
+      backgroundColor: '#fef9c3',
+      color: '#854d0e',
+      fontWeight: '800'
+    },
+    valueFormatter: (params: ValueFormatterParams) =>
+      this.formatearDecimalValor(params.value)
+  },
+  {
+    field: 'liquidoRecibir',
+    headerName: 'Líquido a Recibir',
+    width: 170,
+    type: 'numericColumn',
+    pinned: 'right',
+    headerClass: 'header-total-liquido',
+    cellClass: params =>
+      params.node?.rowPinned
+        ? 'cell-total-row cell-total-liquido'
+        : 'cell-total-liquido',
+    cellStyle: {
+      backgroundColor: '#dbeafe',
+      color: '#1d4ed8',
+      fontWeight: '900'
+    },
+    valueFormatter: (params: ValueFormatterParams) =>
+      this.formatearDecimalValor(params.value)
+  }
+];
 
-    return [
-      columnaSeleccion,
-      ...columnasBase,
-      grupoIngresos,
-      grupoDescuentos,
-      ...columnasTotales
-    ];
+return [
+  columnaSeleccion,
+  columnaCodigo,
+  columnaNombre,
+  grupoIngresos,
+  grupoDescuentos,
+  ...columnasTotales
+];
+
+  return [
+  columnaSeleccion,
+  columnaCodigo,
+  columnaNombre,
+  grupoIngresos,
+  grupoDescuentos,
+  ...columnasTotales
+];
   }
   private obtenerNombreColumnaRubro(col: RubroColumnaResponse): string {
     const descripcion = (col.descripcion ?? '').trim();
@@ -1493,9 +1533,7 @@ export class RolMensualComponent implements OnInit {
   }
 
 
-  onGridReady(params: GridReadyEvent): void {
-    this.gridApi = params.api;
-  }
+ 
   obtenerEmpleadosSeleccionados(): any[] {
   if (!this.gridApi) {
     return [];
@@ -1503,6 +1541,12 @@ export class RolMensualComponent implements OnInit {
 
   return this.gridApi.getSelectedRows() ?? [];
 }
+enviandoCorreos = false;
+
+
+procesadosCorreos = 0;
+totalCorreos = 0;
+
 enviarPdfEmpleadosSeleccionados(): void {
   const empleados = this.obtenerEmpleadosSeleccionados();
 
@@ -1511,10 +1555,553 @@ enviarPdfEmpleadosSeleccionados(): void {
     return;
   }
 
-  const idsEmpleados = empleados.map(x => Number(x.idEmpleado));
+  const fechaPeriodo = this.form.value.fechaPeriodo;
 
-  console.log('Empleados seleccionados:', idsEmpleados);
+  if (!fechaPeriodo) {
+    this.mostrarAdvertencia('Debe seleccionar el periodo.');
+    return;
+  }
 
-  // Aquí luego llamas al endpoint para enviar PDF por correo.
+  const idsEmpleados = empleados
+    .map((x: any) => Number(x.idEmpleado))
+    .filter((x: number) => x > 0);
+
+  if (idsEmpleados.length === 0) {
+    this.mostrarAdvertencia('No se encontraron empleados válidos seleccionados.');
+    return;
+  }
+
+  const total = idsEmpleados.length;
+
+  this.dialog.open(CustomMessageBoxComponent, {
+    width: '420px',
+    disableClose: true,
+    data: {
+      type: 'warning',
+      title: 'Confirmar envío de roles',
+      message: `¿Está seguro de enviar los roles individuales por correo a ${total} empleado(s) seleccionado(s)?`,
+      confirmText: 'Sí, enviar',
+      cancelText: 'Cancelar',
+      showCancel: true
+    }
+  }).afterClosed().subscribe(confirmado => {
+    if (confirmado === true) {
+      this.ejecutarEnvioRolesCorreo(idsEmpleados);
+    }
+  });
+}
+
+private ejecutarEnvioRolesCorreo(idsEmpleados: number[]): void {
+  const request: EnviarRolesCorreoRequest = {
+    fechaPeriodo: this.formatearFechaYYYYMMDD(this.form.value.fechaPeriodo),
+    idUsuario: 1,
+    idsEmpleados
+  };
+
+  this.enviandoCorreos = true;
+  this.procesadosCorreos = 0;
+  this.totalCorreos = idsEmpleados.length;
+
+  const dialogProcesoRef = this.dialog.open<DialogProcesoComponent>(
+    DialogProcesoComponent,
+    {
+      disableClose: true,
+      width: '400px',
+      data: {
+        procesados: 0,
+        total: this.totalCorreos,
+        titulo: 'Enviando roles por correo',
+        mensaje: 'Generando PDFs y enviando correos...'
+      }
+    }
+  );
+
+  this.rolNominaService.enviarRolesPorCorreo(request).subscribe({
+    next: resp => {
+      this.enviandoCorreos = false;
+
+      const data = resp.data;
+
+      const totalProcesados =
+        (data?.totalEnviados ?? 0) +
+        (data?.totalSinCorreo ?? 0) +
+        (data?.errores?.length ?? 0);
+
+      dialogProcesoRef.componentInstance.data.procesados = totalProcesados;
+      dialogProcesoRef.componentInstance.data.total = this.totalCorreos;
+
+      setTimeout(() => {
+        dialogProcesoRef.close();
+
+        if (resp.type === 'Success' && data?.procesado) {
+          this.mostrarExito(
+            data.mensaje ??
+            `Roles enviados correctamente. Enviados: ${data.totalEnviados}.`
+          );
+
+          this.gridApi?.deselectAll();
+          return;
+        }
+
+        if (resp.type === 'Warning') {
+          this.mostrarAdvertencia(
+            data?.mensaje ??
+            resp.message ??
+            'El proceso terminó con advertencias.'
+          );
+
+          this.mostrarResumenEnvioRoles(data);
+          return;
+        }
+
+        this.mostrarError(
+          data?.mensaje ??
+          resp.message ??
+          'No se pudieron enviar los roles por correo.'
+        );
+      }, 400);
+    },
+    error: err => {
+      this.enviandoCorreos = false;
+      dialogProcesoRef.close();
+
+      console.error('Error enviando roles por correo:', err);
+
+      this.mostrarError(
+        err?.error?.message ??
+        err?.error?.data?.mensaje ??
+        'Error al enviar los roles por correo.'
+      );
+    }
+  });
+}
+private mostrarResumenEnvioRoles(data: any): void {
+  if (!data) {
+    return;
+  }
+
+  const errores = data.errores ?? [];
+  const sinCorreo = data.sinCorreo ?? [];
+
+  const erroresTexto = errores.length > 0
+    ? errores.slice(0, 5).join('\n')
+    : '';
+
+  const sinCorreoTexto = sinCorreo.length > 0
+    ? sinCorreo.slice(0, 5).join('\n')
+    : '';
+
+  let mensaje =
+    `Proceso finalizado.\n\n` +
+    `Total empleados: ${data.totalEmpleados ?? 0}\n` +
+    `Enviados: ${data.totalEnviados ?? 0}\n` +
+    `Sin correo: ${data.totalSinCorreo ?? 0}\n` +
+    `Errores: ${errores.length}\n`;
+
+  if (sinCorreo.length > 0) {
+    mensaje += `\nPrimeros empleados sin correo:\n${sinCorreoTexto}`;
+
+    if (sinCorreo.length > 5) {
+      mensaje += `\n... y ${sinCorreo.length - 5} más.`;
+    }
+  }
+
+  if (errores.length > 0) {
+    mensaje += `\n\nPrimeros errores:\n${erroresTexto}`;
+
+    if (errores.length > 5) {
+      mensaje += `\n... y ${errores.length - 5} más.`;
+    }
+  }
+
+  this.dialog.open(CustomMessageBoxComponent, {
+    width: '520px',
+    data: {
+      type: errores.length > 0 ? 'warning' : 'info',
+      title: 'Resumen de envío de roles',
+      message: mensaje,
+      confirmText: 'Aceptar'
+    }
+  });
+}
+
+
+onGridReady(params: GridReadyEvent): void {
+  this.gridApi = params.api;
+
+  setTimeout(() => {
+    this.ajustarGrid();
+  }, 100);
+}
+
+onGridSizeChanged(): void {
+  this.ajustarGrid();
+}
+
+onFirstDataRendered(): void {
+  this.ajustarGrid();
+}
+
+private ajustarGrid(): void {
+  if (!this.gridApi) {
+    return;
+  }
+
+  setTimeout(() => {
+    this.gridApi.refreshHeader();
+    this.gridApi.refreshCells({ force: true });
+  }, 50);
+}
+async exportarRolExcel(): Promise<void> {
+  if (!this.detalleRol || this.detalleRol.length === 0) {
+    this.mostrarAdvertencia('No existen datos para exportar.');
+    return;
+  }
+
+  this.exportandoExcel = true;
+
+  try {
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Rol Mensual');
+
+    const fechaPeriodo = this.form.value.fechaPeriodo
+      ? this.formatearFechaYYYYMMDD(this.form.value.fechaPeriodo)
+      : '';
+
+    const columnas = this.obtenerColumnasExcel();
+
+    if (columnas.length === 0) {
+      this.mostrarAdvertencia('No existen columnas para exportar.');
+      return;
+    }
+
+    const totalColumnas = columnas.length;
+
+    worksheet.mergeCells(1, 1, 1, totalColumnas);
+    const titulo = worksheet.getCell(1, 1);
+    titulo.value = 'GENERACIÓN DE ROLES MENSUALES';
+    titulo.font = { bold: true, size: 14 };
+    titulo.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    worksheet.mergeCells(2, 1, 2, totalColumnas);
+    const periodo = worksheet.getCell(2, 1);
+    periodo.value = fechaPeriodo ? `Periodo: ${fechaPeriodo}` : 'Periodo:';
+    periodo.font = { bold: true, size: 10 };
+    periodo.alignment = { horizontal: 'center', vertical: 'middle' };
+
+    worksheet.addRow([]);
+
+    const filaHeader = 4;
+
+    columnas.forEach((col, index) => {
+      const cell = worksheet.getCell(filaHeader, index + 1);
+      cell.value = col.headerName;
+      cell.font = { bold: true, size: 9 };
+      cell.alignment = {
+        horizontal: 'center',
+        vertical: 'middle',
+        wrapText: true
+      };
+      cell.border = this.bordeExcel();
+      cell.fill = {
+        type: 'pattern',
+        pattern: 'solid',
+        fgColor: { argb: this.obtenerColorHeaderExcel(col) }
+      };
+    });
+
+    this.detalleRol.forEach((item: any) => {
+      const valores = columnas.map(col =>
+        this.obtenerValorColumnaExcel(item, col)
+      );
+
+      const row = worksheet.addRow(valores);
+
+      row.eachCell((cell, colNumber) => {
+        const columna = columnas[colNumber - 1];
+
+        cell.border = this.bordeExcel();
+        cell.font = {
+          size: 9,
+          bold: this.esColumnaTotalExcel(columna),
+          color: { argb: this.obtenerColorTextoExcel(columna) }
+        };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: this.obtenerColorCeldaExcel(columna) }
+        };
+
+        cell.alignment = {
+          vertical: 'middle',
+          horizontal: this.esColumnaNumericaExcel(columna) ? 'right' : 'left'
+        };
+
+        if (this.esColumnaNumericaExcel(columna)) {
+          cell.numFmt = '#,##0.00';
+        }
+      });
+    });
+
+    if (this.pinnedBottomRowData && this.pinnedBottomRowData.length > 0) {
+      const totalData = this.pinnedBottomRowData[0];
+
+      const valoresTotales = columnas.map(col =>
+        this.obtenerValorColumnaExcel(totalData, col)
+      );
+
+      const totalRow = worksheet.addRow(valoresTotales);
+
+      totalRow.eachCell((cell, colNumber) => {
+        const columna = columnas[colNumber - 1];
+
+        cell.border = this.bordeExcel();
+        cell.font = {
+          bold: true,
+          size: 9,
+          color: { argb: this.obtenerColorTextoExcel(columna) }
+        };
+
+        cell.fill = {
+          type: 'pattern',
+          pattern: 'solid',
+          fgColor: { argb: this.obtenerColorTotalExcel(columna) }
+        };
+
+        cell.alignment = {
+          vertical: 'middle',
+          horizontal: this.esColumnaNumericaExcel(columna) ? 'right' : 'left'
+        };
+
+        if (this.esColumnaNumericaExcel(columna)) {
+          cell.numFmt = '#,##0.00';
+        }
+      });
+    }
+
+    columnas.forEach((col, index) => {
+      const excelCol = worksheet.getColumn(index + 1);
+
+      if (col.colId === 'codigoEmpleado') {
+        excelCol.width = 12;
+      } else if (col.colId === 'nombreEmpleado') {
+        excelCol.width = 36;
+      } else if (col.colId === 'diasTrabajadosCantidad') {
+        excelCol.width = 13;
+      } else if (this.esColumnaTotalExcel(col)) {
+        excelCol.width = 17;
+      } else {
+        excelCol.width = 15;
+      }
+    });
+
+    worksheet.views = [
+      {
+        state: 'frozen',
+        ySplit: filaHeader,
+        xSplit: 2
+      }
+    ];
+
+    worksheet.autoFilter = {
+      from: { row: filaHeader, column: 1 },
+      to: { row: filaHeader, column: totalColumnas }
+    };
+
+    const buffer = await workbook.xlsx.writeBuffer();
+
+    const nombreArchivo = fechaPeriodo
+      ? `Rol_Mensual_${fechaPeriodo}.xlsx`
+      : 'Rol_Mensual.xlsx';
+
+    saveAs(
+      new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      }),
+      nombreArchivo
+    );
+
+    this.mostrarExito('Archivo Excel generado correctamente.');
+  } catch (error) {
+    console.error('Error exportando Excel:', error);
+    this.mostrarError('No se pudo exportar el rol a Excel.');
+  } finally {
+    this.exportandoExcel = false;
+  }
+}
+private obtenerColumnasExcel(): any[] {
+  if (!this.gridApi) {
+    return [];
+  }
+
+  return this.gridApi
+    .getAllDisplayedColumns()
+    .map(col => {
+      const colDef = col.getColDef();
+
+      return {
+        colId: col.getColId(),
+        field: colDef.field,
+        headerName: colDef.headerName || col.getColId(),
+        colDef
+      };
+    })
+    .filter(col => col.colId !== 'seleccion');
+}
+
+private obtenerValorColumnaExcel(item: any, columna: any): any {
+  if (!item || !columna) {
+    return '';
+  }
+
+  const colId = columna.colId;
+  const field = columna.field;
+
+  if (colId === 'codigoEmpleado') {
+    return item.codigoEmpleado ?? '';
+  }
+
+  if (colId === 'nombreEmpleado') {
+    return item.nombreEmpleado ?? '';
+  }
+
+  if (colId === 'diasTrabajadosCantidad') {
+    return this.toNumber(item.diasTrabajados);
+  }
+
+  if (field && item[field] !== undefined) {
+    return item[field];
+  }
+
+  if (item.rubros && item.rubros[colId] !== undefined) {
+    return this.toNumber(item.rubros[colId]);
+  }
+
+  if (item[colId] !== undefined) {
+    return item[colId];
+  }
+
+  return '';
+}
+
+private esColumnaNumericaExcel(columna: any): boolean {
+  return ![
+    'codigoEmpleado',
+    'nombreEmpleado'
+  ].includes(columna.colId);
+}
+
+private esColumnaTotalExcel(columna: any): boolean {
+  return [
+    'totalIngresos',
+    'totalDescuentos',
+    'liquidoRecibir'
+  ].includes(columna.colId);
+}
+
+private obtenerColorHeaderExcel(columna: any): string {
+  const colId = columna.colId;
+
+  if (colId.endsWith('I') || colId === 'diasTrabajadosCantidad') {
+    return 'FFDCFCE7';
+  }
+
+  if (colId.endsWith('D')) {
+    return 'FFFEE2E2';
+  }
+
+  if (this.esColumnaTotalExcel(columna)) {
+    return 'FFDBEAFE';
+  }
+
+  return 'FFF1F5F9';
+}
+
+private obtenerColorCeldaExcel(columna: any): string {
+  const colId = columna.colId;
+
+  if (colId.endsWith('I') || colId === 'diasTrabajadosCantidad') {
+    return 'FFECFDF5';
+  }
+
+  if (colId.endsWith('D')) {
+    return 'FFFFF1F2';
+  }
+
+  if (colId === 'totalIngresos') {
+    return 'FFDCFCE7';
+  }
+
+  if (colId === 'totalDescuentos') {
+    return 'FFFEF9C3';
+  }
+
+  if (colId === 'liquidoRecibir') {
+    return 'FFDBEAFE';
+  }
+
+  return 'FFFFFFFF';
+}
+
+private obtenerColorTotalExcel(columna: any): string {
+  const colId = columna.colId;
+
+  if (colId.endsWith('I') || colId === 'diasTrabajadosCantidad') {
+    return 'FFD9F99D';
+  }
+
+  if (colId.endsWith('D')) {
+    return 'FFFECACA';
+  }
+
+  if (colId === 'totalIngresos') {
+    return 'FFBBF7D0';
+  }
+
+  if (colId === 'totalDescuentos') {
+    return 'FFFDE68A';
+  }
+
+  if (colId === 'liquidoRecibir') {
+    return 'FFBFDBFE';
+  }
+
+  return 'FFE2E8F0';
+}
+
+private obtenerColorTextoExcel(columna: any): string {
+  const colId = columna.colId;
+
+  if (colId.endsWith('I') || colId === 'diasTrabajadosCantidad') {
+    return 'FF047857';
+  }
+
+  if (colId.endsWith('D')) {
+    return 'FFB91C1C';
+  }
+
+  if (colId === 'totalIngresos') {
+    return 'FF166534';
+  }
+
+  if (colId === 'totalDescuentos') {
+    return 'FF854D0E';
+  }
+
+  if (colId === 'liquidoRecibir') {
+    return 'FF1D4ED8';
+  }
+
+  return 'FF111827';
+}
+
+private bordeExcel(): Partial<ExcelJS.Borders> {
+  return {
+    top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+    left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+    bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+    right: { style: 'thin', color: { argb: 'FFCBD5E1' } }
+  };
 }
 }

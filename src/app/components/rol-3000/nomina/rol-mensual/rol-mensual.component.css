@@ -453,3 +453,241 @@
   justify-content: center;
 }
 }
+.tabla-wrapper {
+  width: 100%;
+  height: calc(100vh - 230px);
+  min-height: 360px;
+  overflow: hidden;
+}
+
+.tabla-ag-rol {
+  width: 100%;
+  height: 100%;
+}
+
+.cell-check,
+.header-check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ag-header-cell,
+.ag-header-group-cell {
+  box-sizing: border-box;
+}
+
+/* Columna checkbox */
+::ng-deep .cell-check-rol {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  background-color: #f8fafc !important;
+  border-right: 1px solid #dbe3ef !important;
+}
+
+/* Header del checkbox */
+::ng-deep .header-check-rol {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  background-color: #f1f5f9 !important;
+  border-right: 1px solid #dbe3ef !important;
+}
+
+/* Checkbox nativo de AG Grid */
+::ng-deep .cell-check-rol input[type='checkbox'],
+::ng-deep .header-check-rol input[type='checkbox'] {
+  width: 15px !important;
+  height: 15px !important;
+  cursor: pointer;
+  accent-color: #2563eb;
+}
+
+/* Contenedor interno del checkbox AG Grid */
+::ng-deep .cell-check-rol .ag-selection-checkbox,
+::ng-deep .header-check-rol .ag-header-select-all {
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Centrar el icono del checkbox */
+::ng-deep .cell-check-rol .ag-checkbox,
+::ng-deep .header-check-rol .ag-checkbox {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Hover visual */
+::ng-deep .ag-row:hover .cell-check-rol {
+  background-color: #e0f2fe !important;
+}
+/* ============================
+   CHECKBOX ROL MENSUAL
+   ============================ */
+
+::ng-deep .cell-check-rol {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  background-color: #f8fafc !important;
+  border-right: 1px solid #cbd5e1 !important;
+}
+
+::ng-deep .header-check-rol {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 0 !important;
+  background-color: #eef4ff !important;
+  border-right: 1px solid #cbd5e1 !important;
+}
+
+/* Contenedor interno del checkbox */
+::ng-deep .cell-check-rol .ag-selection-checkbox,
+::ng-deep .header-check-rol .ag-header-select-all {
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Checkbox base */
+::ng-deep .cell-check-rol .ag-checkbox-input-wrapper,
+::ng-deep .header-check-rol .ag-checkbox-input-wrapper {
+  width: 16px !important;
+  height: 16px !important;
+  border: 2px solid #94a3b8 !important;
+  border-radius: 4px !important;
+  background-color: #ffffff !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  cursor: pointer !important;
+}
+
+/* Ocultar ícono default si se ve raro */
+::ng-deep .cell-check-rol .ag-checkbox-input-wrapper .ag-icon,
+::ng-deep .header-check-rol .ag-checkbox-input-wrapper .ag-icon {
+  display: none !important;
+}
+
+/* Checkbox marcado */
+::ng-deep .cell-check-rol .ag-checkbox-input-wrapper.ag-checked,
+::ng-deep .header-check-rol .ag-checkbox-input-wrapper.ag-checked {
+  background-color: #2563eb !important;
+  border-color: #2563eb !important;
+}
+
+/* Check blanco */
+::ng-deep .cell-check-rol .ag-checkbox-input-wrapper.ag-checked::after,
+::ng-deep .header-check-rol .ag-checkbox-input-wrapper.ag-checked::after {
+  content: '✓';
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* Checkbox indeterminado, cuando algunos están seleccionados */
+::ng-deep .header-check-rol .ag-checkbox-input-wrapper.ag-indeterminate {
+  background-color: #f59e0b !important;
+  border-color: #f59e0b !important;
+}
+
+::ng-deep .header-check-rol .ag-checkbox-input-wrapper.ag-indeterminate::after {
+  content: '–';
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* Fila seleccionada */
+::ng-deep .ag-theme-alpine .ag-row.ag-row-selected {
+  background-color: #dbeafe !important;
+}
+
+/* Celda check cuando la fila está seleccionada */
+::ng-deep .ag-theme-alpine .ag-row.ag-row-selected .cell-check-rol {
+  background-color: #bfdbfe !important;
+}
+
+/* Hover */
+::ng-deep .ag-theme-alpine .ag-row:hover .cell-check-rol {
+  background-color: #e0f2fe !important;
+}
+::ng-deep .ag-theme-alpine .cell-check-rol .ag-checkbox-input-wrapper {
+  margin-left: 0 !important;
+  transform: translateX(1px);
+}
+/* ============================
+   BOTONES ACCIONES ROL
+   ============================ */
+
+.actions-card .action-button {
+  height: 36px;
+  min-width: 104px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  transition: all 0.18s ease-in-out;
+}
+
+.actions-card .action-button mat-icon {
+  font-size: 18px;
+  width: 18px;
+  height: 18px;
+  line-height: 18px;
+}
+
+/* Botón Mail */
+.actions-card .action-mail {
+  border-color: #2563eb !important;
+  color: #1d4ed8 !important;
+  background: #eff6ff !important;
+}
+
+.actions-card .action-mail:hover:not(:disabled) {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Botón Excel */
+.actions-card .action-excel {
+  border-color: #16a34a !important;
+  color: #15803d !important;
+  background: #f0fdf4 !important;
+}
+
+.actions-card .action-excel:hover:not(:disabled) {
+  background: #16a34a !important;
+  color: #ffffff !important;
+  box-shadow: 0 4px 10px rgba(22, 163, 74, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Estado disabled */
+.actions-card .action-button:disabled {
+  opacity: 0.55;
+  background: #f1f5f9 !important;
+  color: #94a3b8 !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: none;
+  transform: none;
+}
