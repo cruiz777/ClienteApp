@@ -111,6 +111,24 @@ export interface RolIndividualResponse {
   tieneDerechoFondoReserva: boolean;
   fechaDerechoFondoReserva: string | null;
 
+  anticipoQuincenaEmpleado?: number;
+
+}
+export interface EnviarRolesCorreoRequest {
+  fechaPeriodo: string;      // yyyy-MM-dd
+  idUsuario: number;
+  idsEmpleados: number[];
+}
+
+export interface EnviarRolesCorreoResponse {
+  procesado: boolean;
+  totalEmpleados: number;
+  totalEnviados: number;
+  totalSinCorreo: number;
+  mensaje?: string | null;
+  enviados?: string[] | null;
+  sinCorreo?: string[] | null;
+  errores?: string[] | null;
 }
 
 export interface RolIndividualRubroResponse {
@@ -248,4 +266,13 @@ recalcularRolMensual(request: RecalcularRolMensualRequest) {
     request
   );
 }
+enviarRolesPorCorreo(
+  request: EnviarRolesCorreoRequest
+): Observable<ApiResponse<EnviarRolesCorreoResponse>> {
+  return this.http.post<ApiResponse<EnviarRolesCorreoResponse>>(
+    `${this.apiUrl}/enviar-roles-correo`,
+    request
+  );
+}
+
 }

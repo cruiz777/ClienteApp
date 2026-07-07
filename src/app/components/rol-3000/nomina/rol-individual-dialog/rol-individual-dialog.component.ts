@@ -24,7 +24,7 @@ export class RolIndividualDialogComponent implements OnInit {
 
   ingresos: RolIndividualRubroResponse[] = [];
   egresos: RolIndividualRubroResponse[] = [];
-
+  
   totalIngresos = 0;
   totalEgresos = 0;
   liquidoRecibir = 0;
@@ -32,7 +32,7 @@ export class RolIndividualDialogComponent implements OnInit {
   guardando = false;
   hayCambios = false;
   rolActualizado = false;
-
+  private valoresAutomaticosRubrosManuales = new Map<number, number>();
   columnDefs: ColDef<RolIndividualRubroResponse>[] = [
     {
       field: 'descripcion',
@@ -61,10 +61,9 @@ export class RolIndividualDialogComponent implements OnInit {
          * Permitimos editar Cant/% para poner 1.
          * Cant/% = 1 significa valor manual.
          */
-        if (this.esRubroImpuestoRenta(row)) {
+        if (this.esRubroManualEditable(row)) {
           return true;
         }
-
         return true;
       },
       type: 'numericColumn',
@@ -75,83 +74,82 @@ export class RolIndividualDialogComponent implements OnInit {
 
         return row?.esHoraExtra ||
           this.esRubroAusencia(row) ||
-          this.esRubroImpuestoRenta(row)
+          this.esRubroManualEditable(row)
           ? 'celda-editable-hora'
           : '';
       }
-    },{
-  field: 'valor',
-  headerName: 'Valor',
-  width: 120,
-  editable: params => {
-    const row = params.data as RolIndividualRubroResponse;
+    }, {
+      field: 'valor',
+      headerName: 'Valor',
+      width: 120,
+      editable: params => {
+        const row = params.data as RolIndividualRubroResponse;
 
-    if (!row) {
-      return false;
-    }
+        if (!row) {
+          return false;
+        }
 
-    if (row.esHoraExtra) {
-      return false;
-    }
+        if (row.esHoraExtra) {
+          return false;
+        }
 
-    if (this.esRubroPermisoMaternidad(row)) {
-      return false;
-    }
+        if (this.esRubroPermisoMaternidad(row)) {
+          return false;
+        }
 
-    if (this.esRubroEnfermedad(row)) {
-      return false;
-    }
+        if (this.esRubroEnfermedad(row)) {
+          return false;
+        }
 
-    if (this.esRubroAccidenteTrabajo(row)) {
-      return false;
-    }
+        if (this.esRubroAccidenteTrabajo(row)) {
+          return false;
+        }
 
-    if (this.esRubroAporteIess(row)) {
-      return false;
-    }
+        if (this.esRubroAporteIess(row)) {
+          return false;
+        }
 
-    /*
-     * IMP. RENTA:
-     * Solo permite editar valor si Cant/% = 1.
-     */
-    if (this.esRubroImpuestoRenta(row)) {
-      return this.esImpuestoRentaManual(row);
-    }
+        /*
+         * IMP. RENTA:
+         * Solo permite editar valor si Cant/% = 1.
+         */
+        if (this.esRubroManualEditable(row)) {
+          return this.esRubroManualActivo(row);
+        }
 
-    if (this.esRubroFondoReserva(row)) {
-      return false;
-    }
+        if (this.esRubroFondoReserva(row)) {
+          return false;
+        }
 
-    if (this.esRubroDecimoTercero(row)) {
-      return false;
-    }
+        if (this.esRubroDecimoTercero(row)) {
+          return false;
+        }
 
-    return true;
-  },
-  type: 'numericColumn',
-  valueParser: params => this.toNumber(params.newValue),
-  valueFormatter: params => this.formatearDecimal(params.value),
-  cellClass: params => {
-    const row = params.data as RolIndividualRubroResponse;
+        return true;
+      },
+      type: 'numericColumn',
+      valueParser: params => this.toNumber(params.newValue),
+      valueFormatter: params => this.formatearDecimal(params.value),
+      cellClass: params => {
+        const row = params.data as RolIndividualRubroResponse;
 
-    if (this.esRubroImpuestoRenta(row)) {
-      return this.esImpuestoRentaManual(row)
-        ? 'celda-editable-hora'
-        : 'celda-calculada';
-    }
-
-    return row?.esHoraExtra ||
-      this.esRubroPermisoMaternidad(row) ||
-      this.esRubroEnfermedad(row) ||
-      this.esRubroAccidenteTrabajo(row) ||
-      this.esRubroAporteIess(row) ||
-      this.esRubroFondoReserva(row) ||
-      this.esRubroDecimoTercero(row)
-        ? 'celda-calculada'
-        : '';
-  }
+       if (this.esRubroManualEditable(row)) {
+  return this.esRubroManualActivo(row)
+    ? 'celda-editable-hora'
+    : 'celda-calculada';
 }
-    
+        return row?.esHoraExtra ||
+          this.esRubroPermisoMaternidad(row) ||
+          this.esRubroEnfermedad(row) ||
+          this.esRubroAccidenteTrabajo(row) ||
+          this.esRubroAporteIess(row) ||
+          this.esRubroFondoReserva(row) ||
+          this.esRubroDecimoTercero(row)
+          ? 'celda-calculada'
+          : '';
+      }
+    }
+
   ];
 
   defaultColDef: ColDef = {
@@ -176,40 +174,50 @@ export class RolIndividualDialogComponent implements OnInit {
     this.cargarRolIndividual();
   }
 
-  cargarRolIndividual(): void {
-    this.cargando = true;
+cargarRolIndividual(): void {
+  this.cargando = true;
 
-    this.rolNominaService
-      .getRolIndividual(this.data.idEmpleado, this.data.fechaPeriodo)
-      .subscribe({
-        next: (resp: ApiResponse<RolIndividualResponse>) => {
-          this.cargando = false;
+  this.rolNominaService
+    .getRolIndividual(this.data.idEmpleado, this.data.fechaPeriodo)
+    .subscribe({
+      next: (resp: ApiResponse<RolIndividualResponse>) => {
+        this.cargando = false;
 
-          if (resp.type !== 'Success') {
-            this.mostrarMensajePorTipo(resp.type, resp.message);
-            return;
-          }
-
-          this.dataRol = resp.data;
-
-          this.ingresos = [...(resp.data.ingresos ?? [])];
-          this.egresos = [...(resp.data.egresos ?? [])];
-
-          this.calcularSinMarcarCambios();
-        },
-        error: err => {
-          this.cargando = false;
-          console.error(err);
-          this.mostrarError('Error al cargar el rol individual.');
+        if (resp.type !== 'Success') {
+          this.mostrarMensajePorTipo(resp.type, resp.message);
+          return;
         }
-      });
-  }
+
+        this.dataRol = resp.data;
+
+        this.ingresos = [...(resp.data.ingresos ?? [])];
+        this.egresos = [...(resp.data.egresos ?? [])];
+
+        /*
+         * IMPORTANTE:
+         * El backend devuelve anticipoQuincenaEmpleado = 480,
+         * pero el rubro ANTICIPO I QUINCENA puede venir con valor 0.
+         * Si Cant/% no es 1, se debe mostrar el valor fijo del empleado.
+         */
+        this.aplicarValorAutomaticoAnticipoQuincena();
+
+        this.guardarValoresAutomaticosRubrosManuales();
+
+        this.calcularSinMarcarCambios();
+      },
+      error: err => {
+        this.cargando = false;
+        console.error(err);
+        this.mostrarError('Error al cargar el rol individual.');
+      }
+    });
+}
 
   onGridReady(params: GridReadyEvent): void {
     params.api.sizeColumnsToFit();
   }
 
- onCellValueChanged(event: CellValueChangedEvent<RolIndividualRubroResponse>): void {
+  onCellValueChanged(event: CellValueChangedEvent<RolIndividualRubroResponse>): void {
   const row = event.data;
 
   if (!row) {
@@ -230,12 +238,51 @@ export class RolIndividualDialogComponent implements OnInit {
   }
 
   /*
-   * IMP. RENTA manual:
-   * Si Cant/% = 1, NO recalculamos el rubro.
-   * Solo actualizamos totales y refrescamos.
+   * RUBROS MANUALES:
+   *
+   * Aplica para:
+   * - IMP. RENTA
+   * - ANTICIPO I QUINCENA
+   *
+   * Regla:
+   *
+   * Cant/% = 1:
+   * - El valor queda manual.
+   * - El usuario puede cambiar Valor.
+   * - No se toma el valor automático.
+   *
+   * Cant/% != 1:
+   * - El valor vuelve al original que vino del backend.
+   * - Ejemplo: ANTICIPO I QUINCENA vuelve a 480.
    */
-  if (this.esRubroImpuestoRenta(row)) {
-    if (this.esImpuestoRentaManual(row)) {
+  if (this.esRubroManualEditable(row)) {
+    if (campoEditado === 'cantidad') {
+      row.cantidad = this.toNumber(row.cantidad);
+
+      if (this.esRubroManualActivo(row)) {
+        /*
+         * Cant/% = 1.
+         * No tocar row.valor.
+         * Si estaba 480, queda 480 para que el usuario lo cambie.
+         */
+        this.recalcularTotales();
+        this.hayCambios = true;
+
+        event.api.refreshCells({
+          force: true,
+          rowNodes: [event.node]
+        });
+
+        return;
+      }
+
+      /*
+       * Cant/% distinto de 1.
+       * Restaurar valor automático original del empleado.
+       * Ejemplo: ANTICIPO I QUINCENA = 480.
+       */
+      row.valor = this.obtenerValorAutomaticoRubroManual(row);
+
       this.recalcularTotales();
       this.hayCambios = true;
 
@@ -247,20 +294,40 @@ export class RolIndividualDialogComponent implements OnInit {
       return;
     }
 
-    /*
-     * Si no está manual, queda para cálculo automático del backend.
-     * Puedes limpiar el valor visual para que se note que no es manual.
-     */
-    row.valor = 0;
-    this.recalcularTotales();
-    this.hayCambios = true;
+    if (campoEditado === 'valor') {
+      if (this.esRubroManualActivo(row)) {
+        /*
+         * Valor digitado manualmente.
+         * No recalcular desde parámetro.
+         */
+        row.valor = this.toNumber(row.valor);
 
-    event.api.refreshCells({
-      force: true,
-      rowNodes: [event.node]
-    });
+        this.recalcularTotales();
+        this.hayCambios = true;
 
-    return;
+        event.api.refreshCells({
+          force: true,
+          rowNodes: [event.node]
+        });
+
+        return;
+      }
+
+      /*
+       * Si intenta editar valor sin Cant/% = 1,
+       * se restaura el valor automático.
+       */
+      row.valor = this.obtenerValorAutomaticoRubroManual(row);
+
+      this.recalcularTotales();
+
+      event.api.refreshCells({
+        force: true,
+        rowNodes: [event.node]
+      });
+
+      return;
+    }
   }
 
   if (!this.validarDiasAusenciaEditada(row, valorAnterior)) {
@@ -272,7 +339,6 @@ export class RolIndividualDialogComponent implements OnInit {
 
   this.calcular();
 }
-
   recalcularTotales(): void {
     this.totalIngresos = this.ingresos
       .filter(item => !this.esRubroSueldo(item))
@@ -291,25 +357,25 @@ export class RolIndividualDialogComponent implements OnInit {
   }
 
   salir(): void {
-  if (!this.hayCambios) {
-    this.dialogRef.close(this.rolActualizado);
-    return;
-  }
-
-  this.confirmarAccion(
-    'Cambios pendientes',
-    'Existen cambios pendientes. ¿Desea guardar antes de salir?',
-    'Sí, guardar',
-    'Salir sin guardar'
-  ).subscribe((confirmado: boolean) => {
-    if (confirmado === true) {
-      this.grabar(true);
+    if (!this.hayCambios) {
+      this.dialogRef.close(this.rolActualizado);
       return;
     }
 
-    this.dialogRef.close(this.rolActualizado);
-  });
-}
+    this.confirmarAccion(
+      'Cambios pendientes',
+      'Existen cambios pendientes. ¿Desea guardar antes de salir?',
+      'Sí, guardar',
+      'Salir sin guardar'
+    ).subscribe((confirmado: boolean) => {
+      if (confirmado === true) {
+        this.grabar(true);
+        return;
+      }
+
+      this.dialogRef.close(this.rolActualizado);
+    });
+  }
 
   get fechaPeriodoTexto(): string {
     return this.formatearFechaDateOnly(this.dataRol?.fechaPeriodo);
@@ -410,21 +476,20 @@ grabar(cerrarDespues: boolean = false): void {
   }
 
   /*
-   * Guardamos el valor manual de IMP. RENTA antes de calcular,
-   * porque calcular() puede refrescar totales y otros rubros.
+   * Guardamos los rubros manuales activos.
+   *
+   * Solo se consideran manuales cuando Cant/% = 1.
    */
-  const impuestoRentaManualAntes = this.egresos.find(x =>
-    this.esRubroImpuestoRenta(x) &&
-    this.toNumber(x.cantidad) === 1
-  );
-
-  const valorImpuestoRentaManual = impuestoRentaManualAntes
-    ? this.toNumber(impuestoRentaManualAntes.valor)
-    : null;
-
-  const idIngDescImpuestoRentaManual = impuestoRentaManualAntes
-    ? impuestoRentaManualAntes.idIngDesc
-    : null;
+  const rubrosManualesAntes = this.egresos
+    .filter(x =>
+      this.esRubroManualEditable(x) &&
+      this.toNumber(x.cantidad) === 1
+    )
+    .map(x => ({
+      idIngDesc: x.idIngDesc,
+      cantidad: 1,
+      valor: this.toNumber(x.valor)
+    }));
 
   if (!this.validarRubrosNoNegativosAntesDeGuardar()) {
     return;
@@ -439,28 +504,49 @@ grabar(cerrarDespues: boolean = false): void {
   }
 
   /*
-   * Si IMP. RENTA estaba en modo manual, restauramos:
-   * Cant/% = 1
-   * Valor = valor digitado por el usuario
+   * Restaurar rubros manuales activos.
+   *
+   * Si Cant/% = 1, se conserva el valor digitado.
    */
-  if (
-    idIngDescImpuestoRentaManual !== null &&
-    valorImpuestoRentaManual !== null
-  ) {
+  if (rubrosManualesAntes.length > 0) {
     this.egresos = this.egresos.map(x => {
-      if (x.idIngDesc === idIngDescImpuestoRentaManual) {
+      const manual = rubrosManualesAntes.find(m => m.idIngDesc === x.idIngDesc);
+
+      if (manual) {
         return {
           ...x,
-          cantidad: 1,
-          valor: valorImpuestoRentaManual
+          cantidad: manual.cantidad,
+          valor: manual.valor
         };
       }
 
       return x;
     });
-
-    this.recalcularTotales();
   }
+
+  /*
+   * Para rubros manuales NO activos:
+   * Cant/% != 1
+   * Se restaura el valor automático original del empleado.
+   *
+   * Ejemplo:
+   * ANTICIPO I QUINCENA = 480
+   */
+  this.egresos = this.egresos.map(x => {
+    if (
+      this.esRubroManualEditable(x) &&
+      this.toNumber(x.cantidad) !== 1
+    ) {
+      return {
+        ...x,
+        valor: this.obtenerValorAutomaticoRubroManual(x)
+      };
+    }
+
+    return x;
+  });
+
+  this.recalcularTotales();
 
   if (!this.validarLiquidoRecibir()) {
     return;
@@ -522,7 +608,6 @@ grabar(cerrarDespues: boolean = false): void {
       }
     });
 }
-
   private normalizarValores(): void {
     this.ingresos.forEach(row => {
       row.cantidad = this.toNumber(row.cantidad);
@@ -914,6 +999,26 @@ grabar(cerrarDespues: boolean = false): void {
   private esRubroImpuestoRenta(row: RolIndividualRubroResponse): boolean {
     return row.tipoPago === 'D' && this.normalizarCodigo(row.codigo) === '06';
   }
+ private esRubroAnticipoQuincena(row: RolIndividualRubroResponse): boolean {
+  const descripcion = (row.descripcion ?? '').toString().trim().toUpperCase();
+  const codigo = this.normalizarCodigo(row.codigo);
+
+  return row.tipoPago === 'D' &&
+    row.idIngDesc === 2 &&
+    codigo === '02' &&
+    descripcion.includes('ANTICIPO') &&
+    descripcion.includes('QUINCENA');
+}
+
+  private esRubroManualEditable(row: RolIndividualRubroResponse): boolean {
+    return this.esRubroImpuestoRenta(row) ||
+      this.esRubroAnticipoQuincena(row);
+  }
+
+  private esRubroManualActivo(row: RolIndividualRubroResponse): boolean {
+  return this.esRubroManualEditable(row) &&
+         this.toNumber(row.cantidad) === 1;
+}
   private esRubroFondoReserva(row: RolIndividualRubroResponse): boolean {
     return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '18';
   }
@@ -1067,8 +1172,9 @@ grabar(cerrarDespues: boolean = false): void {
 
     return true;
   }
-  private esImpuestoRentaManual(row: RolIndividualRubroResponse): boolean {
-  return this.esRubroImpuestoRenta(row) && this.toNumber(row.cantidad) === 1;
+ private esImpuestoRentaManual(row: RolIndividualRubroResponse): boolean {
+  return this.esRubroImpuestoRenta(row) &&
+         this.esRubroManualActivo(row);
 }
 calcularDesdeBackend(): void {
   if (!this.dataRol) {
@@ -1076,24 +1182,16 @@ calcularDesdeBackend(): void {
     return;
   }
 
-  /*
-   * Si IMP. RENTA está manual:
-   * Cant/% = 1
-   * Valor = valor digitado
-   * Se conserva antes de enviar al backend.
-   */
-  const impuestoRentaManualAntes = this.egresos.find(x =>
-    this.esRubroImpuestoRenta(x) &&
-    this.toNumber(x.cantidad) === 1
-  );
-
-  const valorImpuestoRentaManual = impuestoRentaManualAntes
-    ? this.toNumber(impuestoRentaManualAntes.valor)
-    : null;
-
-  const idIngDescImpuestoRentaManual = impuestoRentaManualAntes
-    ? impuestoRentaManualAntes.idIngDesc
-    : null;
+  const rubrosManualesAntes = this.egresos
+    .filter(x =>
+      this.esRubroManualEditable(x) &&
+      this.toNumber(x.cantidad) === 1
+    )
+    .map(x => ({
+      idIngDesc: x.idIngDesc,
+      cantidad: 1,
+      valor: this.toNumber(x.valor)
+    }));
 
   if (!this.validarRubrosNoNegativosAntesDeGuardar()) {
     return;
@@ -1103,27 +1201,19 @@ calcularDesdeBackend(): void {
     return;
   }
 
-  /*
-   * Aquí sí puedes hacer cálculos de front:
-   * horas extras, maternidad, enfermedad, accidente, IESS, fondos, décimos.
-   */
   if (!this.calcular()) {
     return;
   }
 
-  /*
-   * Restaurar IMP. RENTA manual si aplica.
-   */
-  if (
-    idIngDescImpuestoRentaManual !== null &&
-    valorImpuestoRentaManual !== null
-  ) {
+  if (rubrosManualesAntes.length > 0) {
     this.egresos = this.egresos.map(x => {
-      if (x.idIngDesc === idIngDescImpuestoRentaManual) {
+      const manual = rubrosManualesAntes.find(m => m.idIngDesc === x.idIngDesc);
+
+      if (manual) {
         return {
           ...x,
-          cantidad: 1,
-          valor: valorImpuestoRentaManual
+          cantidad: manual.cantidad,
+          valor: manual.valor
         };
       }
 
@@ -1182,9 +1272,6 @@ calcularDesdeBackend(): void {
           'Cálculo actualizado correctamente.'
         );
 
-        /*
-         * Recarga desde backend para mostrar IMP. RENTA recalculado.
-         */
         this.cargarRolIndividual();
       },
       error: err => {
@@ -1194,23 +1281,60 @@ calcularDesdeBackend(): void {
       }
     });
 }
-private confirmarAccion(
-  titulo: string,
-  mensaje: string,
-  textoConfirmar: string = 'Sí, confirmar',
-  textoCancelar: string = 'Cancelar'
-) {
-  return this.dialog.open(CustomMessageBoxComponent, {
-    width: '400px',
-    disableClose: true,
-    data: {
-      title: titulo,
-      message: mensaje,
-      type: 'info',
-      confirmText: textoConfirmar,
-      cancelText: textoCancelar,
-      showCancel: true
+  private confirmarAccion(
+    titulo: string,
+    mensaje: string,
+    textoConfirmar: string = 'Sí, confirmar',
+    textoCancelar: string = 'Cancelar'
+  ) {
+    return this.dialog.open(CustomMessageBoxComponent, {
+      width: '400px',
+      disableClose: true,
+      data: {
+        title: titulo,
+        message: mensaje,
+        type: 'info',
+        confirmText: textoConfirmar,
+        cancelText: textoCancelar,
+        showCancel: true
+      }
+    }).afterClosed();
+  }
+  private guardarValoresAutomaticosRubrosManuales(): void {
+  this.valoresAutomaticosRubrosManuales.clear();
+
+  this.egresos
+    .filter(x => this.esRubroManualEditable(x))
+    .forEach(x => {
+      this.valoresAutomaticosRubrosManuales.set(
+        x.idIngDesc,
+        this.toNumber(x.valor)
+      );
+    });
+}
+
+private obtenerValorAutomaticoRubroManual(row: RolIndividualRubroResponse): number {
+  if (this.esRubroAnticipoQuincena(row)) {
+    return this.toNumber(this.dataRol?.anticipoQuincenaEmpleado);
+  }
+
+  return this.valoresAutomaticosRubrosManuales.get(row.idIngDesc) ?? 0;
+}
+private aplicarValorAutomaticoAnticipoQuincena(): void {
+  const valorQuincena = this.toNumber(this.dataRol?.anticipoQuincenaEmpleado);
+
+  this.egresos = this.egresos.map(x => {
+    if (
+      this.esRubroAnticipoQuincena(x) &&
+      this.toNumber(x.cantidad) !== 1
+    ) {
+      return {
+        ...x,
+        valor: valorQuincena
+      };
     }
-  }).afterClosed();
+
+    return x;
+  });
 }
 }

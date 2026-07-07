@@ -1,5 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { from } from 'rxjs';
+import { concatMap, finalize } from 'rxjs/operators';
+
 import {
   DateAdapter,
   MAT_DATE_FORMATS,
@@ -11,10 +14,12 @@ import { MatSnackBar } from '@angular/material/snack-bar';
 
 import {
   CierrePeriodoService,
-  ContabilizarMensualRequest
+  ContabilizarMensualRequest,
+  ContabilizarMensualResponse
 } from 'src/app/services/rol/cierre-periodo.service';
 
 import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
+import { environment } from 'src/environments/environment';
 
 export const MY_DATE_FORMATS = {
   parse: {
@@ -80,6 +85,8 @@ export class CierrePeriodoMensualContableComponent implements OnInit {
   form!: FormGroup;
   procesando = false;
 
+  resultadoContabilizacion: ContabilizarMensualResponse | null = null;
+
   constructor(
     private fb: FormBuilder,
     private dialog: MatDialog,
@@ -91,6 +98,14 @@ export class CierrePeriodoMensualContableComponent implements OnInit {
     this.form = this.fb.group({
       fecha: [null, Validators.required]
     });
+  }
+
+  get tieneReportes(): boolean {
+    return !!(
+      this.resultadoContabilizacion?.reporteProvision ||
+      this.resultadoContabilizacion?.reporteResumenMensual ||
+      this.resultadoContabilizacion?.reporteAsientoMensual
+    );
   }
 
   soloUltimoDiaMes = (fecha: Date | null): boolean => {
@@ -154,12 +169,15 @@ export class CierrePeriodoMensualContableComponent implements OnInit {
     };
 
     this.procesando = true;
+    this.resultadoContabilizacion = null;
 
     this.cierrePeriodoService.contabilizarMensual(request).subscribe({
       next: resp => {
         this.procesando = false;
 
         if (resp.type === 'Success') {
+          this.resultadoContabilizacion = resp.data;
+
           const numDocNomina = resp.data?.numDocNomina;
           const numDocProvision = resp.data?.numDocProvision;
 
@@ -173,7 +191,6 @@ export class CierrePeriodoMensualContableComponent implements OnInit {
           }
 
           this.mostrarExito(mensaje);
-          this.cancelar();
           return;
         }
 
@@ -201,9 +218,103 @@ export class CierrePeriodoMensualContableComponent implements OnInit {
     });
   }
 
+imprimir(): void {
+  if (!this.resultadoContabilizacion) {
+    this.mostrarAdvertencia('Primero debe generar la contabilización.');
+    return;
+  }
+
+  const reportes = [
+    this.resultadoContabilizacion.reporteProvision,
+    this.resultadoContabilizacion.reporteResumenMensual,
+    this.resultadoContabilizacion.reporteAsientoMensual
+  ].filter((x): x is string => !!x && x.trim().length > 0);
+
+  if (reportes.length === 0) {
+    this.mostrarAdvertencia('No existen reportes para imprimir.');
+    return;
+  }
+
+  this.procesando = true;
+
+  from(reportes)
+    .pipe(
+      concatMap(ruta => {
+        const url = this.construirUrlReporte(ruta);
+
+        return this.cierrePeriodoService.descargarReportePdf(url).pipe(
+          concatMap(blob => {
+            this.descargarBlob(blob, this.obtenerNombreArchivo(ruta));
+            return from([true]);
+          })
+        );
+      }),
+      finalize(() => {
+        this.procesando = false;
+      })
+    )
+    .subscribe({
+      next: () => {},
+      error: err => {
+        console.error('Error descargando reportes:', err);
+        this.mostrarError('No se pudieron descargar los reportes.');
+      },
+      complete: () => {
+        this.mostrarExito('Reportes descargados correctamente.');
+      }
+    });
+}
+
+  private descargarPdf(ruta: string): void {
+    const url = this.construirUrlReporte(ruta);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.target = '_blank';
+    link.download = this.obtenerNombreArchivo(ruta);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  private construirUrlReporte(ruta: string): string {
+    if (ruta.startsWith('http://') || ruta.startsWith('https://')) {
+      return ruta;
+    }
+
+    const baseBackend = this.obtenerBaseBackend();
+
+    if (ruta.startsWith('/')) {
+      return `${baseBackend}${ruta}`;
+    }
+
+    return `${baseBackend}/${ruta}`;
+  }
+
+  private obtenerBaseBackend(): string {
+    // Ejemplo environment.nominaUrl:
+    // http://localhost:5093/nomina/api
+    // Debemos convertirlo a:
+    // http://localhost:5093
+
+    let base = environment.nominaUrl;
+
+    base = base.replace(/\/CierrePeriodo\/?$/i, '');
+    base = base.replace(/\/nomina\/api\/?$/i, '');
+    base = base.replace(/\/api\/?$/i, '');
+
+    return base.replace(/\/$/, '');
+  }
+
+  private obtenerNombreArchivo(ruta: string): string {
+    const partes = ruta.split('/');
+    return partes[partes.length - 1] || 'reporte.pdf';
+  }
+
   cancelar(): void {
     this.form.reset();
     this.procesando = false;
+    this.resultadoContabilizacion = null;
   }
 
   private mostrarExito(mensaje: string): void {
@@ -248,4 +359,21 @@ export class CierrePeriodoMensualContableComponent implements OnInit {
 
     return `${day}/${month}/${year}`;
   }
+  private descargarBlob(blob: Blob, nombreArchivo: string): void {
+  const urlBlob = window.URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = urlBlob;
+  link.download = nombreArchivo;
+
+  document.body.appendChild(link);
+  link.click();
+
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(urlBlob);
+}
+
+
+
+
 }
