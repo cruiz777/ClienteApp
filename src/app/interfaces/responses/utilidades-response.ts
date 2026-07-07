@@ -15,4 +15,5 @@ export interface UtilidadEmpleadoResponse {
   valorEmpleado: number;
   valorCarga: number;
   observaciones: string | null;
+  genero: string | null;
 }

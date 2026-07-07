@@ -1,3 +1,5 @@
+import { UtilidadEmpleadoResponse } from "../responses/utilidades-response";
+
 export interface UtilidadesRequest {
   periodo: number;
   montoEmpleados: number;
@@ -15,4 +17,5 @@ export interface GrabarUtilidadesRequest {
   montoEmpleados: number;
   montoCargas: number;
   tiposEmpleado: number[];
+  empleadosEditados: UtilidadEmpleadoResponse[]; 
 }
