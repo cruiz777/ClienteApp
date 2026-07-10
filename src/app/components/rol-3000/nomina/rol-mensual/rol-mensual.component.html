@@ -51,12 +51,20 @@
       </div>
 
       <div class="tabla-wrapper">
-        <ag-grid-angular class="ag-theme-alpine tabla-ag-rol" [rowData]="detalleRol" [columnDefs]="columnDefs"
-          [defaultColDef]="defaultColDef" [pinnedBottomRowData]="pinnedBottomRowData" [animateRows]="true"
-          [rowSelection]="'multiple'" [suppressRowClickSelection]="true" (gridReady)="onGridReady($event)"
-          (gridSizeChanged)="onGridSizeChanged()" (firstDataRendered)="onFirstDataRendered()"
-          (rowDoubleClicked)="abrirRolIndividual($event)">
-        </ag-grid-angular>
+        <ag-grid-angular
+  class="ag-theme-alpine rol-grid"
+  [rowData]="detalleRol"
+  [columnDefs]="columnDefs"
+  [defaultColDef]="defaultColDef"
+  [pinnedBottomRowData]="pinnedBottomRowData"
+  rowSelection="multiple"
+  [suppressRowClickSelection]="true"
+  (gridReady)="onGridReady($event)"
+  (cellValueChanged)="onCellValueChanged($event)"
+  (cellDoubleClicked)="onCellDoubleClicked($event)"
+  (gridSizeChanged)="onGridSizeChanged()"
+  (firstDataRendered)="onFirstDataRendered()">
+</ag-grid-angular>
 
         <div class="sin-datos" *ngIf="!detalleRol || detalleRol.length === 0">
           Genere o consulte un periodo para visualizar la nómina.
@@ -112,27 +120,19 @@
         (click)="rubrosFijos()">
         Rubros Fijos
       </button>
-      <button
-  mat-stroked-button
-  type="button"
-  class="action-button action-mail"
-  [disabled]="!periodoExiste || enviandoCorreos"
-  (click)="enviarPdfEmpleadosSeleccionados()">
+      <button mat-stroked-button type="button" class="action-button action-mail"
+        [disabled]="!periodoExiste || enviandoCorreos" (click)="enviarPdfEmpleadosSeleccionados()">
 
-  <mat-icon>mail</mat-icon>
-  <span>{{ enviandoCorreos ? 'Enviando...' : 'Mail' }}</span>
-</button>
+        <mat-icon>mail</mat-icon>
+        <span>{{ enviandoCorreos ? 'Enviando...' : 'Mail' }}</span>
+      </button>
 
-<button
-  mat-stroked-button
-  type="button"
-  class="action-button action-excel"
-  [disabled]="!detalleRol || detalleRol.length === 0 || exportandoExcel"
-  (click)="exportarRolExcel()">
+      <button mat-stroked-button type="button" class="action-button action-excel"
+        [disabled]="!detalleRol || detalleRol.length === 0 || exportandoExcel" (click)="exportarRolExcel()">
 
-  <mat-icon>description</mat-icon>
-  <span>{{ exportandoExcel ? 'Exportando...' : 'Excel' }}</span>
-</button>
+        <mat-icon>description</mat-icon>
+        <span>{{ exportandoExcel ? 'Exportando...' : 'Excel' }}</span>
+      </button>
       <button mat-stroked-button color="warn" type="button" class="action-button" (click)="cancelar()">
         Cancelar
       </button>

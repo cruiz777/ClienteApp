@@ -3,6 +3,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { ColDef, GridReadyEvent, CellValueChangedEvent } from 'ag-grid-community';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatDialog } from '@angular/material/dialog';
+import { UsuarioService } from 'src/app/services/usuario.service';
 import { CustomMessageBoxComponent } from 'src/app/components/utils/messages/custom-message-box.component';
 import {
   ApiResponse,
@@ -24,11 +25,13 @@ export class RolIndividualDialogComponent implements OnInit {
 
   ingresos: RolIndividualRubroResponse[] = [];
   egresos: RolIndividualRubroResponse[] = [];
-  
+
   totalIngresos = 0;
   totalEgresos = 0;
   liquidoRecibir = 0;
-
+  private diasTrabajadosBasePeriodo = 30;
+  private valorDiasTrabajadosBasePeriodo = 0;
+  usuarioActual = this.usuarioService.getUsuarioActual();
   guardando = false;
   hayCambios = false;
   rolActualizado = false;
@@ -133,11 +136,11 @@ export class RolIndividualDialogComponent implements OnInit {
       cellClass: params => {
         const row = params.data as RolIndividualRubroResponse;
 
-       if (this.esRubroManualEditable(row)) {
-  return this.esRubroManualActivo(row)
-    ? 'celda-editable-hora'
-    : 'celda-calculada';
-}
+        if (this.esRubroManualEditable(row)) {
+          return this.esRubroManualActivo(row)
+            ? 'celda-editable-hora'
+            : 'celda-calculada';
+        }
         return row?.esHoraExtra ||
           this.esRubroPermisoMaternidad(row) ||
           this.esRubroEnfermedad(row) ||
@@ -163,6 +166,7 @@ export class RolIndividualDialogComponent implements OnInit {
     private dialogRef: MatDialogRef<RolIndividualDialogComponent>,
     private snackBar: MatSnackBar,
     private dialog: MatDialog,
+    private usuarioService: UsuarioService,
     @Inject(MAT_DIALOG_DATA)
     public data: {
       idEmpleado: number;
@@ -174,133 +178,110 @@ export class RolIndividualDialogComponent implements OnInit {
     this.cargarRolIndividual();
   }
 
-cargarRolIndividual(): void {
-  this.cargando = true;
+  cargarRolIndividual(): void {
+    this.cargando = true;
 
-  this.rolNominaService
-    .getRolIndividual(this.data.idEmpleado, this.data.fechaPeriodo)
-    .subscribe({
-      next: (resp: ApiResponse<RolIndividualResponse>) => {
-        this.cargando = false;
+    this.rolNominaService
+      .getRolIndividual(this.data.idEmpleado, this.data.fechaPeriodo)
+      .subscribe({
+        next: (resp: ApiResponse<RolIndividualResponse>) => {
+          this.cargando = false;
 
-        if (resp.type !== 'Success') {
-          this.mostrarMensajePorTipo(resp.type, resp.message);
-          return;
+          if (resp.type !== 'Success') {
+            this.mostrarMensajePorTipo(resp.type, resp.message);
+            return;
+          }
+
+          this.dataRol = resp.data;
+
+          this.ingresos = [...(resp.data.ingresos ?? [])];
+          this.egresos = [...(resp.data.egresos ?? [])];
+
+          this.guardarDiasTrabajadosBasePeriodo();
+
+          this.aplicarValorAutomaticoAnticipoQuincena();
+
+          this.guardarValoresAutomaticosRubrosManuales();
+
+          this.calcularSinMarcarCambios();
+        },
+        error: err => {
+          this.cargando = false;
+          console.error(err);
+          this.mostrarError('Error al cargar el rol individual.');
         }
-
-        this.dataRol = resp.data;
-
-        this.ingresos = [...(resp.data.ingresos ?? [])];
-        this.egresos = [...(resp.data.egresos ?? [])];
-
-        /*
-         * IMPORTANTE:
-         * El backend devuelve anticipoQuincenaEmpleado = 480,
-         * pero el rubro ANTICIPO I QUINCENA puede venir con valor 0.
-         * Si Cant/% no es 1, se debe mostrar el valor fijo del empleado.
-         */
-        this.aplicarValorAutomaticoAnticipoQuincena();
-
-        this.guardarValoresAutomaticosRubrosManuales();
-
-        this.calcularSinMarcarCambios();
-      },
-      error: err => {
-        this.cargando = false;
-        console.error(err);
-        this.mostrarError('Error al cargar el rol individual.');
-      }
-    });
-}
+      });
+  }
 
   onGridReady(params: GridReadyEvent): void {
     params.api.sizeColumnsToFit();
   }
 
   onCellValueChanged(event: CellValueChangedEvent<RolIndividualRubroResponse>): void {
-  const row = event.data;
+    const row = event.data;
 
-  if (!row) {
-    return;
-  }
-
-  const campoEditado = event.colDef.field as keyof RolIndividualRubroResponse;
-  const valorAnterior = this.toNumber(event.oldValue);
-
-  row.cantidad = this.toNumber(row.cantidad);
-  row.valor = this.toNumber(row.valor);
-
-  if (!this.validarValorNoNegativo(row, campoEditado, valorAnterior)) {
-    this.ingresos = [...this.ingresos];
-    this.egresos = [...this.egresos];
-    this.calcularSinMarcarCambios();
-    return;
-  }
-
-  /*
-   * RUBROS MANUALES:
-   *
-   * Aplica para:
-   * - IMP. RENTA
-   * - ANTICIPO I QUINCENA
-   *
-   * Regla:
-   *
-   * Cant/% = 1:
-   * - El valor queda manual.
-   * - El usuario puede cambiar Valor.
-   * - No se toma el valor automático.
-   *
-   * Cant/% != 1:
-   * - El valor vuelve al original que vino del backend.
-   * - Ejemplo: ANTICIPO I QUINCENA vuelve a 480.
-   */
-  if (this.esRubroManualEditable(row)) {
-    if (campoEditado === 'cantidad') {
-      row.cantidad = this.toNumber(row.cantidad);
-
-      if (this.esRubroManualActivo(row)) {
-        /*
-         * Cant/% = 1.
-         * No tocar row.valor.
-         * Si estaba 480, queda 480 para que el usuario lo cambie.
-         */
-        this.recalcularTotales();
-        this.hayCambios = true;
-
-        event.api.refreshCells({
-          force: true,
-          rowNodes: [event.node]
-        });
-
-        return;
-      }
-
-      /*
-       * Cant/% distinto de 1.
-       * Restaurar valor automático original del empleado.
-       * Ejemplo: ANTICIPO I QUINCENA = 480.
-       */
-      row.valor = this.obtenerValorAutomaticoRubroManual(row);
-
-      this.recalcularTotales();
-      this.hayCambios = true;
-
-      event.api.refreshCells({
-        force: true,
-        rowNodes: [event.node]
-      });
-
+    if (!row) {
       return;
     }
 
-    if (campoEditado === 'valor') {
-      if (this.esRubroManualActivo(row)) {
+    const campoEditado = event.colDef.field as keyof RolIndividualRubroResponse;
+    const valorAnterior = this.toNumber(event.oldValue);
+
+    row.cantidad = this.toNumber(row.cantidad);
+    row.valor = this.toNumber(row.valor);
+
+    if (!this.validarValorNoNegativo(row, campoEditado, valorAnterior)) {
+      this.ingresos = [...this.ingresos];
+      this.egresos = [...this.egresos];
+      this.calcularSinMarcarCambios();
+      return;
+    }
+
+    /*
+     * RUBROS MANUALES:
+     *
+     * Aplica para:
+     * - IMP. RENTA
+     * - ANTICIPO I QUINCENA
+     *
+     * Regla:
+     *
+     * Cant/% = 1:
+     * - El valor queda manual.
+     * - El usuario puede cambiar Valor.
+     * - No se toma el valor automático.
+     *
+     * Cant/% != 1:
+     * - El valor vuelve al original que vino del backend.
+     * - Ejemplo: ANTICIPO I QUINCENA vuelve a 480.
+     */
+    if (this.esRubroManualEditable(row)) {
+      if (campoEditado === 'cantidad') {
+        row.cantidad = this.toNumber(row.cantidad);
+
+        if (this.esRubroManualActivo(row)) {
+          /*
+           * Cant/% = 1.
+           * No tocar row.valor.
+           * Si estaba 480, queda 480 para que el usuario lo cambie.
+           */
+          this.recalcularTotales();
+          this.hayCambios = true;
+
+          event.api.refreshCells({
+            force: true,
+            rowNodes: [event.node]
+          });
+
+          return;
+        }
+
         /*
-         * Valor digitado manualmente.
-         * No recalcular desde parámetro.
+         * Cant/% distinto de 1.
+         * Restaurar valor automático original del empleado.
+         * Ejemplo: ANTICIPO I QUINCENA = 480.
          */
-        row.valor = this.toNumber(row.valor);
+        row.valor = this.obtenerValorAutomaticoRubroManual(row);
 
         this.recalcularTotales();
         this.hayCambios = true;
@@ -313,32 +294,51 @@ cargarRolIndividual(): void {
         return;
       }
 
-      /*
-       * Si intenta editar valor sin Cant/% = 1,
-       * se restaura el valor automático.
-       */
-      row.valor = this.obtenerValorAutomaticoRubroManual(row);
+      if (campoEditado === 'valor') {
+        if (this.esRubroManualActivo(row)) {
+          /*
+           * Valor digitado manualmente.
+           * No recalcular desde parámetro.
+           */
+          row.valor = this.toNumber(row.valor);
 
-      this.recalcularTotales();
+          this.recalcularTotales();
+          this.hayCambios = true;
 
-      event.api.refreshCells({
-        force: true,
-        rowNodes: [event.node]
-      });
+          event.api.refreshCells({
+            force: true,
+            rowNodes: [event.node]
+          });
 
+          return;
+        }
+
+        /*
+         * Si intenta editar valor sin Cant/% = 1,
+         * se restaura el valor automático.
+         */
+        row.valor = this.obtenerValorAutomaticoRubroManual(row);
+
+        this.recalcularTotales();
+
+        event.api.refreshCells({
+          force: true,
+          rowNodes: [event.node]
+        });
+
+        return;
+      }
+    }
+
+    if (!this.validarDiasAusenciaEditada(row, valorAnterior)) {
+      this.ingresos = [...this.ingresos];
+      this.egresos = [...this.egresos];
+      this.calcularSinMarcarCambios();
       return;
     }
-  }
 
-  if (!this.validarDiasAusenciaEditada(row, valorAnterior)) {
-    this.ingresos = [...this.ingresos];
-    this.egresos = [...this.egresos];
-    this.calcularSinMarcarCambios();
-    return;
+    this.calcular();
   }
-
-  this.calcular();
-}
   recalcularTotales(): void {
     this.totalIngresos = this.ingresos
       .filter(item => !this.esRubroSueldo(item))
@@ -469,145 +469,145 @@ cargarRolIndividual(): void {
     this.hayCambios = false;
   }
 
-grabar(cerrarDespues: boolean = false): void {
-  if (!this.dataRol) {
-    this.mostrarAdvertencia('No existe información del rol individual.');
-    return;
-  }
+  grabar(cerrarDespues: boolean = false): void {
+    if (!this.dataRol) {
+      this.mostrarAdvertencia('No existe información del rol individual.');
+      return;
+    }
 
-  /*
-   * Guardamos los rubros manuales activos.
-   *
-   * Solo se consideran manuales cuando Cant/% = 1.
-   */
-  const rubrosManualesAntes = this.egresos
-    .filter(x =>
-      this.esRubroManualEditable(x) &&
-      this.toNumber(x.cantidad) === 1
-    )
-    .map(x => ({
-      idIngDesc: x.idIngDesc,
-      cantidad: 1,
-      valor: this.toNumber(x.valor)
-    }));
+    /*
+     * Guardamos los rubros manuales activos.
+     *
+     * Solo se consideran manuales cuando Cant/% = 1.
+     */
+    const rubrosManualesAntes = this.egresos
+      .filter(x =>
+        this.esRubroManualEditable(x) &&
+        this.toNumber(x.cantidad) === 1
+      )
+      .map(x => ({
+        idIngDesc: x.idIngDesc,
+        cantidad: 1,
+        valor: this.toNumber(x.valor)
+      }));
 
-  if (!this.validarRubrosNoNegativosAntesDeGuardar()) {
-    return;
-  }
+    if (!this.validarRubrosNoNegativosAntesDeGuardar()) {
+      return;
+    }
 
-  if (!this.validarAusenciasAntesDeGuardar()) {
-    return;
-  }
+    if (!this.validarAusenciasAntesDeGuardar()) {
+      return;
+    }
 
-  if (!this.calcular()) {
-    return;
-  }
+    if (!this.calcular()) {
+      return;
+    }
 
-  /*
-   * Restaurar rubros manuales activos.
-   *
-   * Si Cant/% = 1, se conserva el valor digitado.
-   */
-  if (rubrosManualesAntes.length > 0) {
+    /*
+     * Restaurar rubros manuales activos.
+     *
+     * Si Cant/% = 1, se conserva el valor digitado.
+     */
+    if (rubrosManualesAntes.length > 0) {
+      this.egresos = this.egresos.map(x => {
+        const manual = rubrosManualesAntes.find(m => m.idIngDesc === x.idIngDesc);
+
+        if (manual) {
+          return {
+            ...x,
+            cantidad: manual.cantidad,
+            valor: manual.valor
+          };
+        }
+
+        return x;
+      });
+    }
+
+    /*
+     * Para rubros manuales NO activos:
+     * Cant/% != 1
+     * Se restaura el valor automático original del empleado.
+     *
+     * Ejemplo:
+     * ANTICIPO I QUINCENA = 480
+     */
     this.egresos = this.egresos.map(x => {
-      const manual = rubrosManualesAntes.find(m => m.idIngDesc === x.idIngDesc);
-
-      if (manual) {
+      if (
+        this.esRubroManualEditable(x) &&
+        this.toNumber(x.cantidad) !== 1
+      ) {
         return {
           ...x,
-          cantidad: manual.cantidad,
-          valor: manual.valor
+          valor: this.obtenerValorAutomaticoRubroManual(x)
         };
       }
 
       return x;
     });
-  }
 
-  /*
-   * Para rubros manuales NO activos:
-   * Cant/% != 1
-   * Se restaura el valor automático original del empleado.
-   *
-   * Ejemplo:
-   * ANTICIPO I QUINCENA = 480
-   */
-  this.egresos = this.egresos.map(x => {
-    if (
-      this.esRubroManualEditable(x) &&
-      this.toNumber(x.cantidad) !== 1
-    ) {
-      return {
-        ...x,
-        valor: this.obtenerValorAutomaticoRubroManual(x)
-      };
+    this.recalcularTotales();
+
+    if (!this.validarLiquidoRecibir()) {
+      return;
     }
 
-    return x;
-  });
+    const payload: GuardarRolIndividualRequest = {
+      idEmpleado: this.dataRol.idEmpleado,
+      fechaPeriodo: this.dataRol.fechaPeriodo,
+      idUsuario: this.usuarioActual?.id_usuario ?? 1,
+      rubros: [
+        ...this.ingresos,
+        ...this.egresos
+      ].map(x => ({
+        idRolNomina: x.idRolNomina,
+        idIngDesc: x.idIngDesc,
+        tipoPago: x.tipoPago,
+        codigo: x.codigo,
+        descripcion: x.descripcion,
+        cantidad: this.toNumber(x.cantidad),
+        valor: this.toNumber(x.valor),
+        esHoraExtra: x.esHoraExtra,
+        factorHoraExtra: this.toNumber(x.factorHoraExtra),
 
-  this.recalcularTotales();
+        aportaIess: x.aportaIess,
+        aplicaImpuestoRenta: x.aplicaImpuestoRenta,
+        aplicaFondoReserva: x.aplicaFondoReserva,
+        aplicaDecimoTercero: x.aplicaDecimoTercero
+      }))
+    };
 
-  if (!this.validarLiquidoRecibir()) {
-    return;
-  }
+    this.guardando = true;
 
-  const payload: GuardarRolIndividualRequest = {
-    idEmpleado: this.dataRol.idEmpleado,
-    fechaPeriodo: this.dataRol.fechaPeriodo,
-    idUsuario: 1,
-    rubros: [
-      ...this.ingresos,
-      ...this.egresos
-    ].map(x => ({
-      idRolNomina: x.idRolNomina,
-      idIngDesc: x.idIngDesc,
-      tipoPago: x.tipoPago,
-      codigo: x.codigo,
-      descripcion: x.descripcion,
-      cantidad: this.toNumber(x.cantidad),
-      valor: this.toNumber(x.valor),
-      esHoraExtra: x.esHoraExtra,
-      factorHoraExtra: this.toNumber(x.factorHoraExtra),
+    this.rolNominaService.guardarRolIndividual(payload)
+      .subscribe({
+        next: resp => {
+          this.guardando = false;
 
-      aportaIess: x.aportaIess,
-      aplicaImpuestoRenta: x.aplicaImpuestoRenta,
-      aplicaFondoReserva: x.aplicaFondoReserva,
-      aplicaDecimoTercero: x.aplicaDecimoTercero
-    }))
-  };
+          if (resp.type !== 'Success') {
+            this.mostrarMensajePorTipo(resp.type, resp.message);
+            return;
+          }
 
-  this.guardando = true;
+          this.hayCambios = false;
+          this.rolActualizado = true;
 
-  this.rolNominaService.guardarRolIndividual(payload)
-    .subscribe({
-      next: resp => {
-        this.guardando = false;
-
-        if (resp.type !== 'Success') {
           this.mostrarMensajePorTipo(resp.type, resp.message);
-          return;
+
+          if (cerrarDespues) {
+            this.dialogRef.close(true);
+            return;
+          }
+
+          this.cargarRolIndividual();
+        },
+        error: err => {
+          this.guardando = false;
+          console.error(err);
+          this.mostrarError('Error al guardar el rol individual.');
         }
-
-        this.hayCambios = false;
-        this.rolActualizado = true;
-
-        this.mostrarMensajePorTipo(resp.type, resp.message);
-
-        if (cerrarDespues) {
-          this.dialogRef.close(true);
-          return;
-        }
-
-        this.cargarRolIndividual();
-      },
-      error: err => {
-        this.guardando = false;
-        console.error(err);
-        this.mostrarError('Error al guardar el rol individual.');
-      }
-    });
-}
+      });
+  }
   private normalizarValores(): void {
     this.ingresos.forEach(row => {
       row.cantidad = this.toNumber(row.cantidad);
@@ -708,138 +708,195 @@ grabar(cerrarDespues: boolean = false): void {
     return this.validarAusenciasAntesDeCalcular(true);
   }
 
-  private recalcularDiasTrabajadosPorAusencias(): void {
-    const sueldo = this.toNumber(this.dataRol?.sueldo);
-    const diasBase = 30;
+private recalcularDiasTrabajadosPorAusencias(): void {
+  const sueldo = this.toNumber(this.dataRol?.sueldo);
+  const diasBaseNomina = 30;
 
-    const diasAusencia = this.obtenerDiasAusencias();
-    const diasTrabajados = Math.max(diasBase - diasAusencia, 0);
+  const diasBasePeriodo = this.diasTrabajadosBasePeriodo > 0
+    ? this.diasTrabajadosBasePeriodo
+    : 30;
 
-    const rubroDiasTrabajados = this.ingresos.find(x =>
-      this.esRubroDiasTrabajados(x)
+  const diasAusencia = this.obtenerDiasAusencias();
+
+  const diasTrabajados = Math.max(
+    diasBasePeriodo - diasAusencia,
+    0
+  );
+
+  const rubroDiasTrabajados = this.ingresos.find(x =>
+    this.esRubroDiasTrabajados(x)
+  );
+
+  if (rubroDiasTrabajados) {
+    rubroDiasTrabajados.cantidad = diasTrabajados;
+    rubroDiasTrabajados.valor = this.redondear(
+      (sueldo / diasBaseNomina) * diasTrabajados
     );
-
-    if (rubroDiasTrabajados) {
-      rubroDiasTrabajados.cantidad = diasTrabajados;
-      rubroDiasTrabajados.valor = this.redondear(
-        (sueldo / diasBase) * diasTrabajados
-      );
-    }
   }
+}
+private guardarDiasTrabajadosBasePeriodo(): void {
+  /*
+   * La base del periodo debe salir de las fechas del empleado,
+   * usando mes comercial de 30 días.
+   *
+   * Si el empleado trabajó todo febrero:
+   * base = 30
+   *
+   * Si tuvo salida el 01/06:
+   * base = 1
+   *
+   * Si ingresó el 16/02:
+   * base = 15
+   */
+  this.diasTrabajadosBasePeriodo = this.calcularDiasBaseNominaEmpleado();
 
-  private recalcularAporteIess(): void {
-    const porcentajeIess = this.toNumber(
-      this.dataRol?.porcentajeIessPersonal || 9.45
-    );
+  const rubroDiasTrabajados = this.ingresos.find(x =>
+    this.esRubroDiasTrabajados(x)
+  );
 
-    const usarBasePorAusencia =
-      this.hayEnfermedad() ||
-      this.hayAccidenteTrabajo();
+  this.valorDiasTrabajadosBasePeriodo = rubroDiasTrabajados
+    ? this.toNumber(rubroDiasTrabajados.valor)
+    : this.toNumber(this.dataRol?.sueldo);
+}
+private recalcularAporteIess(): void {
+  const porcentajeIess = this.toNumber(
+    this.dataRol?.porcentajeIessPersonal || 9.45
+  );
 
-    const baseIess = this.ingresos
+  /*
+   * Regla:
+   *
+   * 1. Si hay PERMISO MATERNIDAD:
+   *    El IESS se calcula sobre el SUELDO completo.
+   *
+   *    Ejemplo:
+   *    Sueldo = 890.00
+   *    IESS = 890.00 * 9.45% = 84.11
+   *
+   * 2. Si NO hay maternidad:
+   *    El IESS se calcula sobre ingresos reales aportables,
+   *    excluyendo SUELDO porque es referencial.
+   */
+  const hayMaternidad = this.ingresos.some(x =>
+    this.esRubroPermisoMaternidad(x) &&
+    this.toNumber(x.cantidad) > 0
+  );
+
+  let baseIess = 0;
+
+  if (hayMaternidad) {
+    baseIess = this.toNumber(this.dataRol?.sueldo);
+
+    /*
+     * Si además tiene otros ingresos aportables reales,
+     * como horas extras, bono, retroactivo, etc.,
+     * se suman aparte.
+     *
+     * No se suma:
+     * - SUELDO, porque ya se tomó desde dataRol.sueldo.
+     * - DIAS TRABAJADOS, porque en maternidad puede estar 0.
+     * - PERMISO MATERNIDAD, porque no es la base del IESS en este caso.
+     * - Fondo reserva / décimos / enfermedad / accidente.
+     */
+    const otrosIngresosAportables = this.ingresos
       .filter(x => x.tipoPago === 'I')
       .filter(x => x.aportaIess === true)
+      .filter(x => !this.esRubroSueldo(x))
+      .filter(x => !this.esRubroDiasTrabajados(x))
       .filter(x => !this.esRubroPermisoMaternidad(x))
       .filter(x => !this.esRubroFondoReserva(x))
       .filter(x => !this.esRubroDecimoTercero(x))
       .filter(x => !this.esRubroEnfermedad(x))
       .filter(x => !this.esRubroAccidenteTrabajo(x))
-      .filter(x => {
-        if (usarBasePorAusencia) {
-          return !this.esRubroSueldo(x);
-        }
-
-        return !this.esRubroDiasTrabajados(x);
-      })
       .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
 
-    const rubroIess = this.egresos.find(x => this.esRubroAporteIess(x));
-
-    if (rubroIess) {
-      rubroIess.valor = this.redondear(baseIess * porcentajeIess / 100);
-      rubroIess.cantidad = 0;
-    }
+    baseIess += otrosIngresosAportables;
+  } else {
+    baseIess = this.ingresos
+      .filter(x => x.tipoPago === 'I')
+      .filter(x => x.aportaIess === true)
+      .filter(x => !this.esRubroSueldo(x))
+      .filter(x => !this.esRubroFondoReserva(x))
+      .filter(x => !this.esRubroDecimoTercero(x))
+      .filter(x => !this.esRubroEnfermedad(x))
+      .filter(x => !this.esRubroAccidenteTrabajo(x))
+      .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
   }
 
-  private recalcularFondoReserva(): void {
-    const rubroFondoReserva = this.ingresos.find(x =>
-      this.esRubroFondoReserva(x)
-    );
+  const rubroIess = this.egresos.find(x => this.esRubroAporteIess(x));
 
-    if (!rubroFondoReserva) {
-      return;
-    }
+  if (rubroIess) {
+    rubroIess.valor = this.redondear(baseIess * porcentajeIess / 100);
+    rubroIess.cantidad = 0;
+  }
+}
+private recalcularFondoReserva(): void {
+  const rubroFondoReserva = this.ingresos.find(x =>
+    this.esRubroFondoReserva(x)
+  );
 
-    if (!this.dataRol?.tieneDerechoFondoReserva) {
-      rubroFondoReserva.valor = 0;
-      rubroFondoReserva.cantidad = 0;
-      return;
-    }
+  if (!rubroFondoReserva) {
+    return;
+  }
 
-    const porcentajeFondoReserva = this.toNumber(
-      this.dataRol?.porcentajeFondoReserva || 8.33
-    );
-
-    const usarBasePorAusencia =
-      this.hayEnfermedad() ||
-      this.hayAccidenteTrabajo();
-
-    const baseFondoReserva = this.ingresos
-      .filter(x => x.tipoPago === 'I')
-      .filter(x => x.aplicaFondoReserva === true)
-      .filter(x => !this.esRubroPermisoMaternidad(x))
-      .filter(x => !this.esRubroFondoReserva(x))
-      .filter(x => !this.esRubroDecimoTercero(x))
-      .filter(x => !this.esRubroEnfermedad(x))
-      .filter(x => !this.esRubroAccidenteTrabajo(x))
-      .filter(x => {
-        if (usarBasePorAusencia) {
-          return !this.esRubroSueldo(x);
-        }
-
-        return !this.esRubroDiasTrabajados(x);
-      })
-      .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
-
-    rubroFondoReserva.valor = this.redondear(
-      baseFondoReserva * porcentajeFondoReserva / 100
-    );
-
+  if (!this.dataRol?.tieneDerechoFondoReserva) {
+    rubroFondoReserva.valor = 0;
     rubroFondoReserva.cantidad = 0;
+    return;
   }
 
-  private recalcularDecimoTercero(): void {
-    const usarBasePorAusencia =
-      this.hayEnfermedad() ||
-      this.hayAccidenteTrabajo();
+  const porcentajeFondoReserva = this.toNumber(
+    this.dataRol?.porcentajeFondoReserva || 8.33
+  );
 
-    const baseDecimoTercero = this.ingresos
-      .filter(x => x.tipoPago === 'I')
-      .filter(x => x.aplicaDecimoTercero === true)
-      .filter(x => !this.esRubroPermisoMaternidad(x))
-      .filter(x => !this.esRubroFondoReserva(x))
-      .filter(x => !this.esRubroDecimoTercero(x))
-      .filter(x => !this.esRubroEnfermedad(x))
-      .filter(x => !this.esRubroAccidenteTrabajo(x))
-      .filter(x => {
-        if (usarBasePorAusencia) {
-          return !this.esRubroSueldo(x);
-        }
+  /*
+   * Fondo de reserva debe tomar ingresos reales.
+   * SUELDO se excluye porque es referencial.
+   * DIAS TRABAJADOS queda como base real.
+   */
+  const baseFondoReserva = this.ingresos
+    .filter(x => x.tipoPago === 'I')
+    .filter(x => x.aplicaFondoReserva === true)
+    .filter(x => !this.esRubroSueldo(x))
+    .filter(x => !this.esRubroPermisoMaternidad(x))
+    .filter(x => !this.esRubroFondoReserva(x))
+    .filter(x => !this.esRubroDecimoTercero(x))
+    .filter(x => !this.esRubroEnfermedad(x))
+    .filter(x => !this.esRubroAccidenteTrabajo(x))
+    .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
 
-        return !this.esRubroDiasTrabajados(x);
-      })
-      .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
+  rubroFondoReserva.valor = this.redondear(
+    baseFondoReserva * porcentajeFondoReserva / 100
+  );
 
-    const rubroDecimoTercero = this.ingresos.find(x =>
-      this.esRubroDecimoTercero(x)
-    );
+  rubroFondoReserva.cantidad = 0;
+} 
+ private recalcularDecimoTercero(): void {
+  /*
+   * Décimo tercero debe tomar ingresos reales.
+   * SUELDO se excluye porque es referencial.
+   * DIAS TRABAJADOS queda como base real.
+   */
+  const baseDecimoTercero = this.ingresos
+    .filter(x => x.tipoPago === 'I')
+    .filter(x => x.aplicaDecimoTercero === true)
+    .filter(x => !this.esRubroSueldo(x))
+    .filter(x => !this.esRubroPermisoMaternidad(x))
+    .filter(x => !this.esRubroFondoReserva(x))
+    .filter(x => !this.esRubroDecimoTercero(x))
+    .filter(x => !this.esRubroEnfermedad(x))
+    .filter(x => !this.esRubroAccidenteTrabajo(x))
+    .reduce((acc, item) => acc + this.toNumber(item.valor), 0);
 
-    if (rubroDecimoTercero) {
-      rubroDecimoTercero.valor = this.redondear(baseDecimoTercero / 12);
-      rubroDecimoTercero.cantidad = 0;
-    }
+  const rubroDecimoTercero = this.ingresos.find(x =>
+    this.esRubroDecimoTercero(x)
+  );
+
+  if (rubroDecimoTercero) {
+    rubroDecimoTercero.valor = this.redondear(baseDecimoTercero / 12);
+    rubroDecimoTercero.cantidad = 0;
   }
-
+}
   private calcularValorHoraExtra(row: RolIndividualRubroResponse): number {
     const valorHoraBase = this.toNumber(this.dataRol?.valorHoraBase);
     const cantidad = this.toNumber(row.cantidad);
@@ -852,40 +909,42 @@ grabar(cerrarDespues: boolean = false): void {
     return this.redondear(valorHoraBase * cantidad * factor);
   }
 
-  private calcularPermisoMaternidad(row: RolIndividualRubroResponse): number {
-    const sueldo = this.toNumber(this.dataRol?.sueldo);
-    const diasMaternidad = this.toNumber(row.cantidad);
+private calcularPermisoMaternidad(row: RolIndividualRubroResponse): number {
+  const sueldo = this.toNumber(this.dataRol?.sueldo);
+  const diasMaternidad = this.toNumber(row.cantidad);
 
-    if (sueldo <= 0 || diasMaternidad <= 0) {
-      return 0;
-    }
-
-    return this.redondear((sueldo / 30) * 0.25 * diasMaternidad);
+  if (sueldo <= 0 || diasMaternidad <= 0) {
+    return 0;
   }
 
-  private calcularEnfermedad(row: RolIndividualRubroResponse): number {
-    const sueldo = this.toNumber(this.dataRol?.sueldo);
-    const dias = this.toNumber(row.cantidad);
-    const factor = this.obtenerFactorEnfermedad(row);
+  return this.redondear((sueldo / 30) * 0.25 * diasMaternidad);
+}
 
-    if (sueldo <= 0 || dias <= 0) {
-      return 0;
-    }
+private calcularEnfermedad(row: RolIndividualRubroResponse): number {
+  const sueldo = this.toNumber(this.dataRol?.sueldo);
+  const dias = this.toNumber(row.cantidad);
+  const factor = this.obtenerFactorEnfermedad(row);
 
-    return this.redondear((sueldo / 30) * factor * dias);
+  if (sueldo <= 0 || dias <= 0) {
+    return 0;
   }
 
-  private calcularAccidenteTrabajo(row: RolIndividualRubroResponse): number {
-    const sueldo = this.toNumber(this.dataRol?.sueldo);
-    const dias = this.toNumber(row.cantidad);
-    const factor = this.obtenerFactorAccidenteTrabajo(row);
+  return this.redondear((sueldo / 30) * factor * dias);
+}
 
-    if (sueldo <= 0 || dias <= 0) {
-      return 0;
-    }
+private calcularAccidenteTrabajo(row: RolIndividualRubroResponse): number {
+  const sueldo = this.toNumber(this.dataRol?.sueldo);
+  const dias = this.toNumber(row.cantidad);
+  const factor = this.obtenerFactorAccidenteTrabajo(row);
 
-    return this.redondear((sueldo / 30) * factor * dias);
+  if (sueldo <= 0 || dias <= 0) {
+    return 0;
   }
+
+  return this.redondear((sueldo / 30) * factor * dias);
+}
+
+
 
   private obtenerFactorEnfermedad(row: RolIndividualRubroResponse): number {
     const codigo = this.normalizarCodigo(row.codigo);
@@ -999,16 +1058,16 @@ grabar(cerrarDespues: boolean = false): void {
   private esRubroImpuestoRenta(row: RolIndividualRubroResponse): boolean {
     return row.tipoPago === 'D' && this.normalizarCodigo(row.codigo) === '06';
   }
- private esRubroAnticipoQuincena(row: RolIndividualRubroResponse): boolean {
-  const descripcion = (row.descripcion ?? '').toString().trim().toUpperCase();
-  const codigo = this.normalizarCodigo(row.codigo);
+  private esRubroAnticipoQuincena(row: RolIndividualRubroResponse): boolean {
+    const descripcion = (row.descripcion ?? '').toString().trim().toUpperCase();
+    const codigo = this.normalizarCodigo(row.codigo);
 
-  return row.tipoPago === 'D' &&
-    row.idIngDesc === 2 &&
-    codigo === '02' &&
-    descripcion.includes('ANTICIPO') &&
-    descripcion.includes('QUINCENA');
-}
+    return row.tipoPago === 'D' &&
+      row.idIngDesc === 2 &&
+      codigo === '02' &&
+      descripcion.includes('ANTICIPO') &&
+      descripcion.includes('QUINCENA');
+  }
 
   private esRubroManualEditable(row: RolIndividualRubroResponse): boolean {
     return this.esRubroImpuestoRenta(row) ||
@@ -1016,9 +1075,9 @@ grabar(cerrarDespues: boolean = false): void {
   }
 
   private esRubroManualActivo(row: RolIndividualRubroResponse): boolean {
-  return this.esRubroManualEditable(row) &&
-         this.toNumber(row.cantidad) === 1;
-}
+    return this.esRubroManualEditable(row) &&
+      this.toNumber(row.cantidad) === 1;
+  }
   private esRubroFondoReserva(row: RolIndividualRubroResponse): boolean {
     return row.tipoPago === 'I' && this.normalizarCodigo(row.codigo) === '18';
   }
@@ -1172,115 +1231,115 @@ grabar(cerrarDespues: boolean = false): void {
 
     return true;
   }
- private esImpuestoRentaManual(row: RolIndividualRubroResponse): boolean {
-  return this.esRubroImpuestoRenta(row) &&
-         this.esRubroManualActivo(row);
-}
-calcularDesdeBackend(): void {
-  if (!this.dataRol) {
-    this.mostrarAdvertencia('No existe información del rol individual.');
-    return;
+  private esImpuestoRentaManual(row: RolIndividualRubroResponse): boolean {
+    return this.esRubroImpuestoRenta(row) &&
+      this.esRubroManualActivo(row);
   }
+  calcularDesdeBackend(): void {
+    if (!this.dataRol) {
+      this.mostrarAdvertencia('No existe información del rol individual.');
+      return;
+    }
 
-  const rubrosManualesAntes = this.egresos
-    .filter(x =>
-      this.esRubroManualEditable(x) &&
-      this.toNumber(x.cantidad) === 1
-    )
-    .map(x => ({
-      idIngDesc: x.idIngDesc,
-      cantidad: 1,
-      valor: this.toNumber(x.valor)
-    }));
+    const rubrosManualesAntes = this.egresos
+      .filter(x =>
+        this.esRubroManualEditable(x) &&
+        this.toNumber(x.cantidad) === 1
+      )
+      .map(x => ({
+        idIngDesc: x.idIngDesc,
+        cantidad: 1,
+        valor: this.toNumber(x.valor)
+      }));
 
-  if (!this.validarRubrosNoNegativosAntesDeGuardar()) {
-    return;
-  }
+    if (!this.validarRubrosNoNegativosAntesDeGuardar()) {
+      return;
+    }
 
-  if (!this.validarAusenciasAntesDeGuardar()) {
-    return;
-  }
+    if (!this.validarAusenciasAntesDeGuardar()) {
+      return;
+    }
 
-  if (!this.calcular()) {
-    return;
-  }
+    if (!this.calcular()) {
+      return;
+    }
 
-  if (rubrosManualesAntes.length > 0) {
-    this.egresos = this.egresos.map(x => {
-      const manual = rubrosManualesAntes.find(m => m.idIngDesc === x.idIngDesc);
+    if (rubrosManualesAntes.length > 0) {
+      this.egresos = this.egresos.map(x => {
+        const manual = rubrosManualesAntes.find(m => m.idIngDesc === x.idIngDesc);
 
-      if (manual) {
-        return {
-          ...x,
-          cantidad: manual.cantidad,
-          valor: manual.valor
-        };
-      }
-
-      return x;
-    });
-
-    this.recalcularTotales();
-  }
-
-  if (!this.validarLiquidoRecibir()) {
-    return;
-  }
-
-  const payload: GuardarRolIndividualRequest = {
-    idEmpleado: this.dataRol.idEmpleado,
-    fechaPeriodo: this.dataRol.fechaPeriodo,
-    idUsuario: 1,
-    rubros: [
-      ...this.ingresos,
-      ...this.egresos
-    ].map(x => ({
-      idRolNomina: x.idRolNomina,
-      idIngDesc: x.idIngDesc,
-      tipoPago: x.tipoPago,
-      codigo: x.codigo,
-      descripcion: x.descripcion,
-      cantidad: this.toNumber(x.cantidad),
-      valor: this.toNumber(x.valor),
-      esHoraExtra: x.esHoraExtra,
-      factorHoraExtra: this.toNumber(x.factorHoraExtra),
-
-      aportaIess: x.aportaIess,
-      aplicaImpuestoRenta: x.aplicaImpuestoRenta,
-      aplicaFondoReserva: x.aplicaFondoReserva,
-      aplicaDecimoTercero: x.aplicaDecimoTercero
-    }))
-  };
-
-  this.guardando = true;
-
-  this.rolNominaService.guardarRolIndividual(payload)
-    .subscribe({
-      next: resp => {
-        this.guardando = false;
-
-        if (resp.type !== 'Success') {
-          this.mostrarMensajePorTipo(resp.type, resp.message);
-          return;
+        if (manual) {
+          return {
+            ...x,
+            cantidad: manual.cantidad,
+            valor: manual.valor
+          };
         }
 
-        this.hayCambios = false;
-        this.rolActualizado = true;
+        return x;
+      });
 
-        this.mostrarMensajePorTipo(
-          resp.type,
-          'Cálculo actualizado correctamente.'
-        );
+      this.recalcularTotales();
+    }
 
-        this.cargarRolIndividual();
-      },
-      error: err => {
-        this.guardando = false;
-        console.error(err);
-        this.mostrarError('Error al calcular el rol individual.');
-      }
-    });
-}
+    if (!this.validarLiquidoRecibir()) {
+      return;
+    }
+
+    const payload: GuardarRolIndividualRequest = {
+      idEmpleado: this.dataRol.idEmpleado,
+      fechaPeriodo: this.dataRol.fechaPeriodo,
+      idUsuario: 1,
+      rubros: [
+        ...this.ingresos,
+        ...this.egresos
+      ].map(x => ({
+        idRolNomina: x.idRolNomina,
+        idIngDesc: x.idIngDesc,
+        tipoPago: x.tipoPago,
+        codigo: x.codigo,
+        descripcion: x.descripcion,
+        cantidad: this.toNumber(x.cantidad),
+        valor: this.toNumber(x.valor),
+        esHoraExtra: x.esHoraExtra,
+        factorHoraExtra: this.toNumber(x.factorHoraExtra),
+
+        aportaIess: x.aportaIess,
+        aplicaImpuestoRenta: x.aplicaImpuestoRenta,
+        aplicaFondoReserva: x.aplicaFondoReserva,
+        aplicaDecimoTercero: x.aplicaDecimoTercero
+      }))
+    };
+
+    this.guardando = true;
+
+    this.rolNominaService.guardarRolIndividual(payload)
+      .subscribe({
+        next: resp => {
+          this.guardando = false;
+
+          if (resp.type !== 'Success') {
+            this.mostrarMensajePorTipo(resp.type, resp.message);
+            return;
+          }
+
+          this.hayCambios = false;
+          this.rolActualizado = true;
+
+          this.mostrarMensajePorTipo(
+            resp.type,
+            'Cálculo actualizado correctamente.'
+          );
+
+          this.cargarRolIndividual();
+        },
+        error: err => {
+          this.guardando = false;
+          console.error(err);
+          this.mostrarError('Error al calcular el rol individual.');
+        }
+      });
+  }
   private confirmarAccion(
     titulo: string,
     mensaje: string,
@@ -1301,40 +1360,166 @@ calcularDesdeBackend(): void {
     }).afterClosed();
   }
   private guardarValoresAutomaticosRubrosManuales(): void {
-  this.valoresAutomaticosRubrosManuales.clear();
+    this.valoresAutomaticosRubrosManuales.clear();
 
-  this.egresos
-    .filter(x => this.esRubroManualEditable(x))
-    .forEach(x => {
-      this.valoresAutomaticosRubrosManuales.set(
-        x.idIngDesc,
-        this.toNumber(x.valor)
-      );
-    });
-}
-
-private obtenerValorAutomaticoRubroManual(row: RolIndividualRubroResponse): number {
-  if (this.esRubroAnticipoQuincena(row)) {
-    return this.toNumber(this.dataRol?.anticipoQuincenaEmpleado);
+    this.egresos
+      .filter(x => this.esRubroManualEditable(x))
+      .forEach(x => {
+        this.valoresAutomaticosRubrosManuales.set(
+          x.idIngDesc,
+          this.toNumber(x.valor)
+        );
+      });
   }
 
-  return this.valoresAutomaticosRubrosManuales.get(row.idIngDesc) ?? 0;
-}
-private aplicarValorAutomaticoAnticipoQuincena(): void {
-  const valorQuincena = this.toNumber(this.dataRol?.anticipoQuincenaEmpleado);
-
-  this.egresos = this.egresos.map(x => {
-    if (
-      this.esRubroAnticipoQuincena(x) &&
-      this.toNumber(x.cantidad) !== 1
-    ) {
-      return {
-        ...x,
-        valor: valorQuincena
-      };
+  private obtenerValorAutomaticoRubroManual(row: RolIndividualRubroResponse): number {
+    if (this.esRubroAnticipoQuincena(row)) {
+      return this.toNumber(this.dataRol?.anticipoQuincenaEmpleado);
     }
 
-    return x;
-  });
+    return this.valoresAutomaticosRubrosManuales.get(row.idIngDesc) ?? 0;
+  }
+  private aplicarValorAutomaticoAnticipoQuincena(): void {
+    const valorQuincena = this.toNumber(this.dataRol?.anticipoQuincenaEmpleado);
+
+    this.egresos = this.egresos.map(x => {
+      if (
+        this.esRubroAnticipoQuincena(x) &&
+        this.toNumber(x.cantidad) !== 1
+      ) {
+        return {
+          ...x,
+          valor: valorQuincena
+        };
+      }
+
+      return x;
+    });
+  }
+private obtenerDiasBasePeriodo(): number {
+  /*
+   * La nómina trabaja con mes comercial.
+   * Todos los meses tienen base 30, incluido febrero.
+   */
+  return 30;
+}
+private calcularDiasBaseNominaEmpleado(): number {
+  const fechaPeriodoTexto =
+    (this.dataRol?.fechaPeriodo ?? this.data?.fechaPeriodo ?? '')
+      .toString()
+      .substring(0, 10);
+
+  if (!fechaPeriodoTexto) {
+    return 30;
+  }
+
+  const partesPeriodo = fechaPeriodoTexto.split('-');
+
+  if (partesPeriodo.length !== 3) {
+    return 30;
+  }
+
+  const anio = Number(partesPeriodo[0]);
+  const mes = Number(partesPeriodo[1]);
+
+  if (!anio || !mes) {
+    return 30;
+  }
+
+  const inicioPeriodo = new Date(anio, mes - 1, 1);
+  const ultimoDiaCalendario = new Date(anio, mes, 0).getDate();
+  const finPeriodo = new Date(anio, mes - 1, ultimoDiaCalendario);
+
+  const fechaIngreso = this.parsearFechaDateOnly(this.dataRol?.fechaIngreso);
+  const fechaSalida = this.parsearFechaDateOnly(this.dataRol?.fechaSalida);
+
+  if (fechaIngreso && fechaIngreso > finPeriodo) {
+    return 0;
+  }
+
+  if (fechaSalida && fechaSalida < inicioPeriodo) {
+    return 0;
+  }
+
+  let diaInicioNomina = 1;
+  let diaFinNomina = 30;
+
+  if (
+    fechaIngreso &&
+    fechaIngreso.getFullYear() === anio &&
+    fechaIngreso.getMonth() === mes - 1
+  ) {
+    diaInicioNomina = this.convertirDiaCalendarioADiaNomina(
+      fechaIngreso.getDate(),
+      ultimoDiaCalendario
+    );
+  }
+
+  if (
+    fechaSalida &&
+    fechaSalida.getFullYear() === anio &&
+    fechaSalida.getMonth() === mes - 1
+  ) {
+    diaFinNomina = this.convertirDiaCalendarioADiaNomina(
+      fechaSalida.getDate(),
+      ultimoDiaCalendario
+    );
+  }
+
+  const dias = diaFinNomina - diaInicioNomina + 1;
+
+  if (dias < 0) {
+    return 0;
+  }
+
+  if (dias > 30) {
+    return 30;
+  }
+
+  return dias;
+}
+
+private convertirDiaCalendarioADiaNomina(
+  diaCalendario: number,
+  ultimoDiaCalendario: number
+): number {
+  /*
+   * En febrero, el último día calendario equivale al día 30 de nómina.
+   * Ejemplo:
+   * 28/02 => día nómina 30
+   * 29/02 => día nómina 30
+   */
+  if (diaCalendario === ultimoDiaCalendario) {
+    return 30;
+  }
+
+  if (diaCalendario > 30) {
+    return 30;
+  }
+
+  return diaCalendario;
+}
+
+private parsearFechaDateOnly(fecha: string | null | undefined): Date | null {
+  if (!fecha || fecha === 'N/D') {
+    return null;
+  }
+
+  const texto = fecha.toString().substring(0, 10);
+  const partes = texto.split('-');
+
+  if (partes.length !== 3) {
+    return null;
+  }
+
+  const anio = Number(partes[0]);
+  const mes = Number(partes[1]);
+  const dia = Number(partes[2]);
+
+  if (!anio || !mes || !dia) {
+    return null;
+  }
+
+  return new Date(anio, mes - 1, dia);
 }
 }

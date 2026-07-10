@@ -114,6 +114,13 @@ export interface RolIndividualResponse {
   anticipoQuincenaEmpleado?: number;
 
 }
+export interface ActualizarCantidadRubroMensualRequest {
+  idEmpleado: number;
+  fechaPeriodo: string;
+  idIngDesc: number;
+  cantidad: number;
+  idUsuario: number;
+}
 export interface EnviarRolesCorreoRequest {
   fechaPeriodo: string;      // yyyy-MM-dd
   idUsuario: number;
@@ -271,6 +278,13 @@ enviarRolesPorCorreo(
 ): Observable<ApiResponse<EnviarRolesCorreoResponse>> {
   return this.http.post<ApiResponse<EnviarRolesCorreoResponse>>(
     `${this.apiUrl}/enviar-roles-correo`,
+    request
+  );
+}
+
+actualizarCantidadRubroMensual(request: ActualizarCantidadRubroMensualRequest) {
+  return this.http.post<ApiResponse<boolean>>(
+    `${this.apiUrl}/actualizar-cantidad-rubro-mensual`,
     request
   );
 }
