@@ -257,6 +257,26 @@ guardarPrefijo(): void {
   if (this.guardandoPrefijo) return;
   this.guardandoPrefijo = true;
   this.formPrefijo.disable({ emitEvent: false });
+  //Overlay bloqueante usando tu messagebox existente
+  const loadingRef = this.dialog.open(CustomMessageBoxComponent, {
+    width: '350px',
+    disableClose: true,
+    data: {
+      title: 'Guardando',
+      message: '',
+      type: 'info',
+      isLoading: true,
+      loadingText: 'Guardando prefijo, por favor espera...'
+    }
+  });
+
+  // Función centralizada de cierre (reemplaza todos los resets sueltos)
+  const cerrarTodo = () => {
+    this.guardandoPrefijo = false;
+    this.formPrefijo.enable({ emitEvent: false });
+    this.formPrefijo.get('prefijo')?.disable({ emitEvent: false });
+    loadingRef.close();
+  };
 
   const prefix = this.formPrefijo.get('prefix')?.value;
   let idControl: number;
@@ -278,8 +298,7 @@ guardarPrefijo(): void {
       idControl = 0; pais = 'US'; codigogs1 = ''; break;
     default:
       this.mostrarAlerta('Prefijo no válido seleccionado', 'Error');
-      this.guardandoPrefijo = false;
-      this.formPrefijo.enable({ emitEvent: false });
+      cerrarTodo();
       return;
   }
 
@@ -324,21 +343,16 @@ guardarPrefijo(): void {
     };
 
     this.prefijoService.guardarPrefijo(prefijoData)
-      .pipe(finalize(() => {
-        // ✅ siempre se ejecuta al final (ok o error)
-        this.guardandoPrefijo = false;
-        this.formPrefijo.enable({ emitEvent: false });
-        this.formPrefijo.get('prefijo')?.disable({ emitEvent: false });
-      }))
+      .pipe(finalize(() => cerrarTodo())) 
       .subscribe({
         next: () => {
-          const msg = this.modoEdicion ? 'Creado' : 'creado';
+          const msg = this.modoEdicion ? 'actualizado' : 'creado';
 
           this.dialog.open(CustomMessageBoxComponent, {
             width: '400px',
             data: {
               title: 'Éxito',
-              message: `El Cliente fue ${msg} correctamente.`,
+              message: `El prefijo fue ${msg} correctamente.`, 
               type: 'success',
               confirmText: '',
               showCancel: false
@@ -346,6 +360,7 @@ guardarPrefijo(): void {
           });
 
           this.guardarNuevoGln();
+          this.dialogRef.close('creado'); //Cierra el modal
         },
         error: (err) => {
           console.error('❌ Error al guardar prefijo:', err);
@@ -356,10 +371,6 @@ guardarPrefijo(): void {
   } else {
 
     this.ncontrolService.obtenerNumeroControlMinPorId(idControl)
-      .pipe(finalize(() => {
-        // ✅ si falla en obtener control, igual re-habilita
-        // (en success se vuelve a bloquear/soltar dentro del siguiente flujo)
-      }))
       .subscribe({
         next: (data) => {
           const siguienteNum = (parseInt(data.numcon, 10) + 1).toString().padStart(data.numcon.length, '0');
@@ -401,20 +412,16 @@ guardarPrefijo(): void {
           };
 
           this.prefijoService.guardarPrefijo(prefijoData)
-            .pipe(finalize(() => {
-              this.guardandoPrefijo = false;
-              this.formPrefijo.enable({ emitEvent: false });
-              this.formPrefijo.get('prefijo')?.disable({ emitEvent: false });
-            }))
+            .pipe(finalize(() => cerrarTodo())) // Se reemplaza las 3 lineas 
             .subscribe({
               next: () => {
-                const msg = this.modoEdicion ? 'Creado' : 'creado';
+                const msg = this.modoEdicion ? 'actualizado' : 'creado';
 
                 this.dialog.open(CustomMessageBoxComponent, {
                   width: '400px',
                   data: {
                     title: 'Éxito',
-                    message: `El Cliente fue ${msg} correctamente.`,
+                    message: `El prefijo fue ${msg} correctamente.`,
                     type: 'success',
                     confirmText: '',
                     showCancel: false
@@ -423,6 +430,7 @@ guardarPrefijo(): void {
 
                 this.guardarNuevoGln();
                 this.actualizarNumeroControl(idControl, siguienteNum, false);
+                this.dialogRef.close('creado'); 
               },
               error: () => {
                 this.mostrarAlerta('Error al guardar el prefijo', 'Error');
@@ -432,10 +440,7 @@ guardarPrefijo(): void {
         error: (err) => {
           console.error('❌ Error al obtener el número de control:', err);
           this.mostrarAlerta('Error al obtener el número de control', 'Error');
-
-          // ✅ liberar bloqueo si falla aquí
-          this.guardandoPrefijo = false;
-          this.formPrefijo.enable({ emitEvent: false });
+          cerrarTodo(); 
         }
       });
   }
