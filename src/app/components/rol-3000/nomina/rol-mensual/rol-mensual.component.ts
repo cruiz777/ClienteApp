@@ -377,7 +377,7 @@ export class RolMensualComponent implements OnInit {
     );
 
     if (nodoRaiz) {
-      nodoRaiz.expandido = true;
+      nodoRaiz.expandido = false;
       this.nodoSeleccionado = nodoRaiz;
     }
 
@@ -442,9 +442,15 @@ export class RolMensualComponent implements OnInit {
           idEmpleado: e.idEmpleado,
           codigoEmpleado: e.codigoEmpleado,
           nombreEmpleado: e.nombreEmpleado,
+
+          // SOLO PARA EXCEL
+          cedula: e.cedula ?? '',
+          cargo: e.cargo ?? '',
+
           estado: e.estado ?? '',
           idLocal: e.idLocal,
-          local: e.local,
+          local: e.local ?? '',
+
           diasTrabajados: e.diasTrabajados ?? 0,
           rubros: e.rubros ?? {},
           totalIngresos: e.totalIngresos ?? 0,
@@ -1948,43 +1954,89 @@ export class RolMensualComponent implements OnInit {
       this.exportandoExcel = false;
     }
   }
-  private obtenerColumnasExcel(): any[] {
-    if (!this.gridApi) {
-      return [];
-    }
-
-    return this.gridApi
-      .getAllDisplayedColumns()
-      .map(col => {
-        const colDef: any = col.getColDef();
-
-        const rubroHeaderName =
-          colDef.rubroHeaderName ??
-          colDef.headerTooltip ??
-          colDef.headerName ??
-          col.getColId();
-
-        const rubroSubHeaderName =
-          colDef.rubroSubHeaderName ??
-          '';
-
-        return {
-          colId: col.getColId(),
-          field: colDef.field,
-          headerName: colDef.headerName || col.getColId(),
-
-          /*
-           * Nuevos campos para encabezado Excel en dos niveles.
-           */
-          grupoHeaderName: rubroHeaderName,
-          subHeaderName: rubroSubHeaderName,
-
-          colDef
-        };
-      })
-      .filter(col => col.colId !== 'seleccion');
+ private obtenerColumnasExcel(): any[] {
+  if (!this.gridApi) {
+    return [];
   }
 
+  const columnas: any[] = this.gridApi
+    .getAllDisplayedColumns()
+    .map(col => {
+      const colDef: any = col.getColDef();
+
+      const rubroHeaderName =
+        colDef.rubroHeaderName ??
+        colDef.headerTooltip ??
+        colDef.headerName ??
+        col.getColId();
+
+      const rubroSubHeaderName =
+        colDef.rubroSubHeaderName ??
+        '';
+
+      return {
+        colId: col.getColId(),
+        field: colDef.field,
+        headerName: colDef.headerName || col.getColId(),
+
+        grupoHeaderName: rubroHeaderName,
+        subHeaderName: rubroSubHeaderName,
+
+        colDef
+      };
+    })
+    .filter(col => col.colId !== 'seleccion');
+
+  /*
+   * Columnas que NO se muestran en el grid,
+   * pero SÍ se exportan a Excel.
+   */
+  const columnasSoloExcel: any[] = [
+    {
+      colId: 'cedulaExcel',
+      field: 'cedula',
+      headerName: 'Cédula',
+      grupoHeaderName: 'Cédula',
+      subHeaderName: '',
+      soloExcel: true,
+      colDef: null
+    },
+    {
+      colId: 'cargoExcel',
+      field: 'cargo',
+      headerName: 'Cargo',
+      grupoHeaderName: 'Cargo',
+      subHeaderName: '',
+      soloExcel: true,
+      colDef: null
+    },
+    {
+      colId: 'localExcel',
+      field: 'local',
+      headerName: 'Local',
+      grupoHeaderName: 'Local',
+      subHeaderName: '',
+      soloExcel: true,
+      colDef: null
+    }
+  ];
+
+  /*
+   * Insertar después de Nombre.
+   */
+  const indiceNombre = columnas.findIndex(x =>
+    x.colId === 'nombreEmpleado' ||
+    x.field === 'nombreEmpleado'
+  );
+
+  if (indiceNombre >= 0) {
+    columnas.splice(indiceNombre + 1, 0, ...columnasSoloExcel);
+  } else {
+    columnas.unshift(...columnasSoloExcel);
+  }
+
+  return columnas;
+}
   private obtenerValorColumnaExcel(item: any, columna: any): any {
     if (!item || !columna) {
       return '';
@@ -2000,7 +2052,17 @@ export class RolMensualComponent implements OnInit {
     if (colId === 'nombreEmpleado') {
       return item.nombreEmpleado ?? '';
     }
+    if (colId === 'cedulaExcel') {
+      return item.cedula ?? '';
+    }
 
+    if (colId === 'cargoExcel') {
+      return item.cargo ?? '';
+    }
+
+    if (colId === 'localExcel') {
+      return item.local ?? '';
+    }
     if (colId === 'diasTrabajadosCantidad') {
       return this.toNumber(item.diasTrabajados);
     }
@@ -2020,12 +2082,15 @@ export class RolMensualComponent implements OnInit {
     return '';
   }
 
-  private esColumnaNumericaExcel(columna: any): boolean {
-    return ![
-      'codigoEmpleado',
-      'nombreEmpleado'
-    ].includes(columna.colId);
-  }
+private esColumnaNumericaExcel(columna: any): boolean {
+  return ![
+    'codigoEmpleado',
+    'nombreEmpleado',
+    'cedulaExcel',
+    'cargoExcel',
+    'localExcel'
+  ].includes(columna.colId);
+}
 
   private esColumnaTotalExcel(columna: any): boolean {
     return [
@@ -2285,58 +2350,58 @@ export class RolMensualComponent implements OnInit {
       };
 
     const columnaCantidad: ColDef = {
-  headerName: 'Cant.',
-  colId: keyCantidad,
-  width: 80,
-  minWidth: 70,
-  type: 'numericColumn',
-  filter: true,
+      headerName: 'Cant.',
+      colId: keyCantidad,
+      width: 80,
+      minWidth: 70,
+      type: 'numericColumn',
+      filter: true,
 
-  editable: params =>
-    !params.node?.rowPinned &&
-    this.modoEdicionPeriodo &&
-    !this.periodoCerrado,
+      editable: params =>
+        !params.node?.rowPinned &&
+        this.modoEdicionPeriodo &&
+        !this.periodoCerrado,
 
-  valueParser: params => this.toNumber(params.newValue),
+      valueParser: params => this.toNumber(params.newValue),
 
-  /*
-   * NECESARIO:
-   * Como usamos valueGetter y el dato está dentro de data.rubros,
-   * AG Grid necesita valueSetter para grabar el nuevo valor.
-   */
-  valueSetter: params => {
-    if (!params.data) {
-      return false;
-    }
+      /*
+       * NECESARIO:
+       * Como usamos valueGetter y el dato está dentro de data.rubros,
+       * AG Grid necesita valueSetter para grabar el nuevo valor.
+       */
+      valueSetter: params => {
+        if (!params.data) {
+          return false;
+        }
 
-    const nuevoValor = this.toNumber(params.newValue);
-    const valorAnterior = this.toNumber(params.oldValue);
+        const nuevoValor = this.toNumber(params.newValue);
+        const valorAnterior = this.toNumber(params.oldValue);
 
-    params.data.rubros = params.data.rubros ?? {};
-    params.data.rubros[keyCantidad] = nuevoValor;
+        params.data.rubros = params.data.rubros ?? {};
+        params.data.rubros[keyCantidad] = nuevoValor;
 
-    return nuevoValor !== valorAnterior;
-  },
+        return nuevoValor !== valorAnterior;
+      },
 
-  headerClass,
+      headerClass,
 
-  cellClass: params =>
-    params.node?.rowPinned
-      ? `${claseBase} cell-total-row`
-      : `${claseBase} celda-editable-cantidad`,
+      cellClass: params =>
+        params.node?.rowPinned
+          ? `${claseBase} cell-total-row`
+          : `${claseBase} celda-editable-cantidad`,
 
-  cellStyle,
+      cellStyle,
 
-  valueGetter: params => {
-    const rubros = params.data?.rubros ?? {};
-    return this.toNumber(rubros[keyCantidad]);
-  },
+      valueGetter: params => {
+        const rubros = params.data?.rubros ?? {};
+        return this.toNumber(rubros[keyCantidad]);
+      },
 
-  valueFormatter: params => {
-    const valor = this.toNumber(params.value);
-    return valor === 0 ? '' : valor.toString();
-  }
-};
+      valueFormatter: params => {
+        const valor = this.toNumber(params.value);
+        return valor === 0 ? '' : valor.toString();
+      }
+    };
 
     const columnaValor: ColDef = {
       headerName: 'Valor',
@@ -2378,141 +2443,141 @@ export class RolMensualComponent implements OnInit {
       ]
     };
   }
-onCellValueChanged(event: any): void {
-  const colId =
-    event?.colDef?.colId ??
-    event?.column?.getColId?.() ??
-    '';
+  onCellValueChanged(event: any): void {
+    const colId =
+      event?.colDef?.colId ??
+      event?.column?.getColId?.() ??
+      '';
 
-  if (!colId) {
-    return;
+    if (!colId) {
+      return;
+    }
+
+    if (!colId.endsWith('_CANT')) {
+      return;
+    }
+
+    const empleado = event.data;
+
+    if (!empleado || !empleado.idEmpleado) {
+      this.mostrarAdvertencia('No se encontró el empleado de la fila.');
+      return;
+    }
+
+    if (this.periodoCerrado) {
+      this.mostrarAdvertencia('El periodo está cerrado. No se puede modificar.');
+      event.node.setDataValue(colId, event.oldValue);
+      return;
+    }
+
+    if (!this.modoEdicionPeriodo) {
+      this.mostrarAdvertencia('Debe habilitar el periodo en modo modificación.');
+      event.node.setDataValue(colId, event.oldValue);
+      return;
+    }
+
+    /*
+     * Importante:
+     * Tomar la cantidad desde data.rubros[colId],
+     * porque ya fue escrita por valueSetter.
+     */
+    const cantidad = this.toNumber(
+      empleado?.rubros?.[colId] ?? event.newValue
+    );
+
+    if (cantidad < 0) {
+      this.mostrarAdvertencia('La cantidad no puede ser negativa.');
+      event.node.setDataValue(colId, event.oldValue);
+      return;
+    }
+
+    const keyValor = colId.replace('_CANT', '');
+
+    const rubro = this.columnasRubros.find(x =>
+      this.obtenerKeyRubro(x) === keyValor
+    );
+
+    if (!rubro) {
+      this.mostrarAdvertencia('No se encontró el rubro de la columna.');
+      event.node.setDataValue(colId, event.oldValue);
+      return;
+    }
+
+    /*
+     * Calcula en pantalla inmediatamente,
+     * igual que en rol individual.
+     */
+    if (!this.calcularFilaMensualPorCantidad(empleado, rubro, cantidad)) {
+      event.node.setDataValue(colId, event.oldValue);
+      return;
+    }
+
+    event.api.refreshCells({
+      force: true,
+      rowNodes: [event.node]
+    });
+
+    this.pinnedBottomRowData = this.detalleRol.length > 0
+      ? [this.construirFilaTotales()]
+      : [];
+
+    this.guardarCantidadRubroMensual(
+      empleado,
+      rubro,
+      cantidad,
+      event
+    );
   }
-
-  if (!colId.endsWith('_CANT')) {
-    return;
-  }
-
-  const empleado = event.data;
-
-  if (!empleado || !empleado.idEmpleado) {
-    this.mostrarAdvertencia('No se encontró el empleado de la fila.');
-    return;
-  }
-
-  if (this.periodoCerrado) {
-    this.mostrarAdvertencia('El periodo está cerrado. No se puede modificar.');
-    event.node.setDataValue(colId, event.oldValue);
-    return;
-  }
-
-  if (!this.modoEdicionPeriodo) {
-    this.mostrarAdvertencia('Debe habilitar el periodo en modo modificación.');
-    event.node.setDataValue(colId, event.oldValue);
-    return;
-  }
-
-  /*
-   * Importante:
-   * Tomar la cantidad desde data.rubros[colId],
-   * porque ya fue escrita por valueSetter.
-   */
-  const cantidad = this.toNumber(
-    empleado?.rubros?.[colId] ?? event.newValue
-  );
-
-  if (cantidad < 0) {
-    this.mostrarAdvertencia('La cantidad no puede ser negativa.');
-    event.node.setDataValue(colId, event.oldValue);
-    return;
-  }
-
-  const keyValor = colId.replace('_CANT', '');
-
-  const rubro = this.columnasRubros.find(x =>
-    this.obtenerKeyRubro(x) === keyValor
-  );
-
-  if (!rubro) {
-    this.mostrarAdvertencia('No se encontró el rubro de la columna.');
-    event.node.setDataValue(colId, event.oldValue);
-    return;
-  }
-
-  /*
-   * Calcula en pantalla inmediatamente,
-   * igual que en rol individual.
-   */
-  if (!this.calcularFilaMensualPorCantidad(empleado, rubro, cantidad)) {
-    event.node.setDataValue(colId, event.oldValue);
-    return;
-  }
-
-  event.api.refreshCells({
-    force: true,
-    rowNodes: [event.node]
-  });
-
-  this.pinnedBottomRowData = this.detalleRol.length > 0
-    ? [this.construirFilaTotales()]
-    : [];
-
-  this.guardarCantidadRubroMensual(
-    empleado,
-    rubro,
-    cantidad,
-    event
-  );
-}
   private guardarCantidadRubroMensual(
-  empleado: any,
-  rubro: RubroColumnaResponse,
-  cantidad: number,
-  event: any
-): void {
-  const fechaPeriodo = this.formatearFechaYYYYMMDD(
-    this.form.value.fechaPeriodo
-  );
+    empleado: any,
+    rubro: RubroColumnaResponse,
+    cantidad: number,
+    event: any
+  ): void {
+    const fechaPeriodo = this.formatearFechaYYYYMMDD(
+      this.form.value.fechaPeriodo
+    );
 
-  const request = {
-    idEmpleado: Number(empleado.idEmpleado),
-    fechaPeriodo,
-    idIngDesc: Number(rubro.idIngDesc),
-    cantidad,
-    idUsuario: this.usuarioActual?.id_usuario ?? 1
-  };
+    const request = {
+      idEmpleado: Number(empleado.idEmpleado),
+      fechaPeriodo,
+      idIngDesc: Number(rubro.idIngDesc),
+      cantidad,
+      idUsuario: this.usuarioActual?.id_usuario ?? 1
+    };
 
-  this.actualizando = true;
+    this.actualizando = true;
 
-  this.rolNominaService.actualizarCantidadRubroMensual(request)
-    .subscribe({
-      next: resp => {
-        this.actualizando = false;
+    this.rolNominaService.actualizarCantidadRubroMensual(request)
+      .subscribe({
+        next: resp => {
+          this.actualizando = false;
 
-        if (resp.type !== 'Success') {
-          this.mostrarAdvertencia(resp.message ?? 'No se pudo actualizar la cantidad.');
+          if (resp.type !== 'Success') {
+            this.mostrarAdvertencia(resp.message ?? 'No se pudo actualizar la cantidad.');
+            event.node.setDataValue(event.colDef.colId, event.oldValue);
+            this.cargarRolMensual();
+            return;
+          }
+
+          this.mostrarExito(resp.message ?? 'Cantidad actualizada correctamente.');
+
+          /*
+           * El backend guarda el dato definitivo.
+           * Se recarga para asegurar que el rol individual y mensual queden iguales.
+           */
+          this.cargarRolMensual();
+        },
+        error: err => {
+          this.actualizando = false;
+          console.error(err);
+
+          this.mostrarError('Error al actualizar la cantidad del rubro.');
           event.node.setDataValue(event.colDef.colId, event.oldValue);
           this.cargarRolMensual();
-          return;
         }
-
-        this.mostrarExito(resp.message ?? 'Cantidad actualizada correctamente.');
-
-        /*
-         * El backend guarda el dato definitivo.
-         * Se recarga para asegurar que el rol individual y mensual queden iguales.
-         */
-        this.cargarRolMensual();
-      },
-      error: err => {
-        this.actualizando = false;
-        console.error(err);
-
-        this.mostrarError('Error al actualizar la cantidad del rubro.');
-        event.node.setDataValue(event.colDef.colId, event.oldValue);
-        this.cargarRolMensual();
-      }
-    });
-}
+      });
+  }
   onCellDoubleClicked(event: any): void {
     const colId =
       event?.column?.getColId?.() ??
@@ -2546,402 +2611,402 @@ onCellValueChanged(event: any): void {
     this.abrirRolIndividual(event);
   }
   private calcularFilaMensualPorCantidad(
-  empleado: any,
-  rubro: RubroColumnaResponse,
-  cantidad: number
-): boolean {
-  const key = this.obtenerKeyRubro(rubro);
-  const keyCantidad = `${key}_CANT`;
+    empleado: any,
+    rubro: RubroColumnaResponse,
+    cantidad: number
+  ): boolean {
+    const key = this.obtenerKeyRubro(rubro);
+    const keyCantidad = `${key}_CANT`;
 
-  empleado.rubros = empleado.rubros ?? {};
-  empleado.rubros[keyCantidad] = cantidad;
+    empleado.rubros = empleado.rubros ?? {};
+    empleado.rubros[keyCantidad] = cantidad;
 
-  if (!this.validarCantidadMensual(empleado, rubro, cantidad)) {
-    return false;
-  }
-
-  const valor = this.calcularValorRubroMensual(
-    empleado,
-    rubro,
-    cantidad
-  );
-
-  empleado.rubros[key] = valor;
-
-  /*
-   * Si es ausencia, recalcula DIAS TRABAJADOS.
-   */
-  if (this.esRubroAusenciaMensual(rubro)) {
-    this.recalcularDiasTrabajadosFila(empleado);
-  }
-
-  /*
-   * Recalcular automáticos.
-   */
-  this.recalcularAporteIessFila(empleado);
-  this.recalcularFondoReservaFila(empleado);
-  this.recalcularDecimoTerceroFila(empleado);
-
-  this.recalcularTotalesFila(empleado);
-
-  return true;
-}
-private validarCantidadMensual(
-  empleado: any,
-  rubro: RubroColumnaResponse,
-  cantidad: number
-): boolean {
-  if (cantidad < 0) {
-    this.mostrarAdvertencia('No puede ingresar cantidades negativas.');
-    return false;
-  }
-
-  if (this.esRubroAusenciaMensual(rubro)) {
-    if (cantidad > 30) {
-      this.mostrarAdvertencia('No puede ingresar más de 30 días en un rubro de ausencia.');
+    if (!this.validarCantidadMensual(empleado, rubro, cantidad)) {
       return false;
     }
 
-    const totalAusencias = this.obtenerDiasAusenciasFila(empleado);
+    const valor = this.calcularValorRubroMensual(
+      empleado,
+      rubro,
+      cantidad
+    );
 
-    if (totalAusencias > 30) {
-      this.mostrarAdvertencia(
-        'La suma de maternidad, enfermedad y accidente de trabajo no puede superar 30 días.'
-      );
+    empleado.rubros[key] = valor;
+
+    /*
+     * Si es ausencia, recalcula DIAS TRABAJADOS.
+     */
+    if (this.esRubroAusenciaMensual(rubro)) {
+      this.recalcularDiasTrabajadosFila(empleado);
+    }
+
+    /*
+     * Recalcular automáticos.
+     */
+    this.recalcularAporteIessFila(empleado);
+    this.recalcularFondoReservaFila(empleado);
+    this.recalcularDecimoTerceroFila(empleado);
+
+    this.recalcularTotalesFila(empleado);
+
+    return true;
+  }
+  private validarCantidadMensual(
+    empleado: any,
+    rubro: RubroColumnaResponse,
+    cantidad: number
+  ): boolean {
+    if (cantidad < 0) {
+      this.mostrarAdvertencia('No puede ingresar cantidades negativas.');
       return false;
     }
+
+    if (this.esRubroAusenciaMensual(rubro)) {
+      if (cantidad > 30) {
+        this.mostrarAdvertencia('No puede ingresar más de 30 días en un rubro de ausencia.');
+        return false;
+      }
+
+      const totalAusencias = this.obtenerDiasAusenciasFila(empleado);
+
+      if (totalAusencias > 30) {
+        this.mostrarAdvertencia(
+          'La suma de maternidad, enfermedad y accidente de trabajo no puede superar 30 días.'
+        );
+        return false;
+      }
+    }
+
+    return true;
   }
+  private calcularValorRubroMensual(
+    empleado: any,
+    rubro: RubroColumnaResponse,
+    cantidad: number
+  ): number {
+    const sueldo = this.obtenerSueldoFila(empleado);
+    const codigo = this.normalizarCodigoColumna(rubro.codigo);
+    const descripcion = (rubro.descripcion ?? '').toString().trim().toUpperCase();
 
-  return true;
-}
-private calcularValorRubroMensual(
-  empleado: any,
-  rubro: RubroColumnaResponse,
-  cantidad: number
-): number {
-  const sueldo = this.obtenerSueldoFila(empleado);
-  const codigo = this.normalizarCodigoColumna(rubro.codigo);
-  const descripcion = (rubro.descripcion ?? '').toString().trim().toUpperCase();
+    if (sueldo <= 0 || cantidad <= 0) {
+      return 0;
+    }
 
-  if (sueldo <= 0 || cantidad <= 0) {
+    /*
+     * DIAS TRABAJADOS.
+     */
+    if (codigo === '02' || descripcion.includes('DIAS TRABAJADOS')) {
+      return this.redondear((sueldo / 30) * cantidad);
+    }
+
+    /*
+     * MATERNIDAD.
+     */
+    if (descripcion.includes('MATERNIDAD')) {
+      return this.redondear((sueldo / 30) * 0.25 * cantidad);
+    }
+
+    /*
+     * ENFERMEDAD.
+     */
+    if (descripcion.includes('ENFERMEDAD')) {
+      const factor = this.obtenerFactorEnfermedadMensual(codigo);
+      return this.redondear((sueldo / 30) * factor * cantidad);
+    }
+
+    /*
+     * ACCIDENTE TRABAJO.
+     */
+    if (descripcion.includes('ACCIDENTE')) {
+      const factor = this.obtenerFactorAccidenteMensual(codigo);
+      return this.redondear((sueldo / 30) * factor * cantidad);
+    }
+
+    /*
+     * HORAS EXTRAS.
+     */
+    if (
+      descripcion.includes('HORAS') ||
+      codigo === '07' ||
+      codigo === '08' ||
+      codigo === '09' ||
+      codigo === '10'
+    ) {
+      const valorHora = sueldo / 240;
+      const factor = this.obtenerFactorHoraExtraMensual(codigo);
+
+      return this.redondear(valorHora * factor * cantidad);
+    }
+
     return 0;
   }
-
-  /*
-   * DIAS TRABAJADOS.
-   */
-  if (codigo === '02' || descripcion.includes('DIAS TRABAJADOS')) {
-    return this.redondear((sueldo / 30) * cantidad);
+  private obtenerFactorHoraExtraMensual(codigo: string): number {
+    switch (codigo) {
+      case '07':
+        return 0.25;
+      case '08':
+        return 1.25;
+      case '09':
+        return 1.50;
+      case '10':
+        return 2.00;
+      default:
+        return 0;
+    }
   }
 
-  /*
-   * MATERNIDAD.
-   */
-  if (descripcion.includes('MATERNIDAD')) {
-    return this.redondear((sueldo / 30) * 0.25 * cantidad);
+  private obtenerFactorEnfermedadMensual(codigo: string): number {
+    switch (codigo) {
+      case '06':
+        return 0.25;
+      case '49':
+        return 1.00;
+      case '50':
+        return 0.50;
+      case '52':
+        return 0.00;
+      default:
+        return 0;
+    }
   }
 
-  /*
-   * ENFERMEDAD.
-   */
-  if (descripcion.includes('ENFERMEDAD')) {
-    const factor = this.obtenerFactorEnfermedadMensual(codigo);
-    return this.redondear((sueldo / 30) * factor * cantidad);
+  private obtenerFactorAccidenteMensual(codigo: string): number {
+    switch (codigo) {
+      case '51':
+        return 1.00;
+      case '53':
+        return 0.00;
+      default:
+        return 0;
+    }
   }
+  private recalcularDiasTrabajadosFila(empleado: any): void {
+    const sueldo = this.obtenerSueldoFila(empleado);
 
-  /*
-   * ACCIDENTE TRABAJO.
-   */
-  if (descripcion.includes('ACCIDENTE')) {
-    const factor = this.obtenerFactorAccidenteMensual(codigo);
-    return this.redondear((sueldo / 30) * factor * cantidad);
+    const keyDias = this.obtenerKeyPorCodigoTipo('02', 'I');
+    const keyDiasCant = `${keyDias}_CANT`;
+
+    if (!keyDias) {
+      return;
+    }
+
+    const diasActuales = this.toNumber(empleado.rubros?.[keyDiasCant]);
+    const ausencias = this.obtenerDiasAusenciasFila(empleado);
+
+    /*
+     * Base periodo = días trabajados actuales + ausencias actuales.
+     * Si está vacío, usamos 30.
+     */
+    let diasBasePeriodo = diasActuales + ausencias;
+
+    if (diasBasePeriodo <= 0 || diasBasePeriodo > 30) {
+      diasBasePeriodo = 30;
+    }
+
+    const diasTrabajados = Math.max(diasBasePeriodo - ausencias, 0);
+
+    empleado.rubros[keyDiasCant] = diasTrabajados;
+    empleado.rubros[keyDias] = this.redondear((sueldo / 30) * diasTrabajados);
+    empleado.diasTrabajados = diasTrabajados;
   }
+  private recalcularAporteIessFila(empleado: any): void {
+    const keyIess = this.obtenerKeyPorCodigoTipo('25', 'D');
 
-  /*
-   * HORAS EXTRAS.
-   */
-  if (
-    descripcion.includes('HORAS') ||
-    codigo === '07' ||
-    codigo === '08' ||
-    codigo === '09' ||
-    codigo === '10'
-  ) {
-    const valorHora = sueldo / 240;
-    const factor = this.obtenerFactorHoraExtraMensual(codigo);
+    if (!keyIess) {
+      return;
+    }
 
-    return this.redondear(valorHora * factor * cantidad);
+    const sueldo = this.obtenerSueldoFila(empleado);
+    const porcentajeIess = 9.45;
+
+    const hayMaternidad = this.columnasRubros.some(col =>
+      this.esRubroMaternidadMensual(col) &&
+      this.toNumber(empleado.rubros?.[`${this.obtenerKeyRubro(col)}_CANT`]) > 0
+    );
+
+    let baseIess = 0;
+
+    if (hayMaternidad) {
+      baseIess = sueldo;
+
+      baseIess += this.columnasRubros
+        .filter(col => col.tipoPago === 'I')
+        .filter(col => !this.esRubroSueldoMensual(col))
+        .filter(col => !this.esRubroDiasTrabajadosMensual(col))
+        .filter(col => !this.esRubroMaternidadMensual(col))
+        .filter(col => !this.esBeneficioNoAportableMensual(col))
+        .reduce((acc, col) => {
+          const key = this.obtenerKeyRubro(col);
+          return acc + this.toNumber(empleado.rubros?.[key]);
+        }, 0);
+    } else {
+      baseIess = this.columnasRubros
+        .filter(col => col.tipoPago === 'I')
+        .filter(col => !this.esRubroSueldoMensual(col))
+        .filter(col => !this.esBeneficioNoAportableMensual(col))
+        .reduce((acc, col) => {
+          const key = this.obtenerKeyRubro(col);
+          return acc + this.toNumber(empleado.rubros?.[key]);
+        }, 0);
+    }
+
+    empleado.rubros[keyIess] = this.redondear(baseIess * porcentajeIess / 100);
   }
+  private recalcularFondoReservaFila(empleado: any): void {
+    const keyFondo = this.obtenerKeyPorCodigoTipo('18', 'I');
 
-  return 0;
-}
-private obtenerFactorHoraExtraMensual(codigo: string): number {
-  switch (codigo) {
-    case '07':
-      return 0.25;
-    case '08':
-      return 1.25;
-    case '09':
-      return 1.50;
-    case '10':
-      return 2.00;
-    default:
-      return 0;
-  }
-}
+    if (!keyFondo) {
+      return;
+    }
 
-private obtenerFactorEnfermedadMensual(codigo: string): number {
-  switch (codigo) {
-    case '06':
-      return 0.25;
-    case '49':
-      return 1.00;
-    case '50':
-      return 0.50;
-    case '52':
-      return 0.00;
-    default:
-      return 0;
-  }
-}
+    const porcentajeFondo = 8.33;
 
-private obtenerFactorAccidenteMensual(codigo: string): number {
-  switch (codigo) {
-    case '51':
-      return 1.00;
-    case '53':
-      return 0.00;
-    default:
-      return 0;
-  }
-}
-private recalcularDiasTrabajadosFila(empleado: any): void {
-  const sueldo = this.obtenerSueldoFila(empleado);
-
-  const keyDias = this.obtenerKeyPorCodigoTipo('02', 'I');
-  const keyDiasCant = `${keyDias}_CANT`;
-
-  if (!keyDias) {
-    return;
-  }
-
-  const diasActuales = this.toNumber(empleado.rubros?.[keyDiasCant]);
-  const ausencias = this.obtenerDiasAusenciasFila(empleado);
-
-  /*
-   * Base periodo = días trabajados actuales + ausencias actuales.
-   * Si está vacío, usamos 30.
-   */
-  let diasBasePeriodo = diasActuales + ausencias;
-
-  if (diasBasePeriodo <= 0 || diasBasePeriodo > 30) {
-    diasBasePeriodo = 30;
-  }
-
-  const diasTrabajados = Math.max(diasBasePeriodo - ausencias, 0);
-
-  empleado.rubros[keyDiasCant] = diasTrabajados;
-  empleado.rubros[keyDias] = this.redondear((sueldo / 30) * diasTrabajados);
-  empleado.diasTrabajados = diasTrabajados;
-}
-private recalcularAporteIessFila(empleado: any): void {
-  const keyIess = this.obtenerKeyPorCodigoTipo('25', 'D');
-
-  if (!keyIess) {
-    return;
-  }
-
-  const sueldo = this.obtenerSueldoFila(empleado);
-  const porcentajeIess = 9.45;
-
-  const hayMaternidad = this.columnasRubros.some(col =>
-    this.esRubroMaternidadMensual(col) &&
-    this.toNumber(empleado.rubros?.[`${this.obtenerKeyRubro(col)}_CANT`]) > 0
-  );
-
-  let baseIess = 0;
-
-  if (hayMaternidad) {
-    baseIess = sueldo;
-
-    baseIess += this.columnasRubros
+    const baseFondo = this.columnasRubros
       .filter(col => col.tipoPago === 'I')
       .filter(col => !this.esRubroSueldoMensual(col))
-      .filter(col => !this.esRubroDiasTrabajadosMensual(col))
       .filter(col => !this.esRubroMaternidadMensual(col))
       .filter(col => !this.esBeneficioNoAportableMensual(col))
       .reduce((acc, col) => {
         const key = this.obtenerKeyRubro(col);
         return acc + this.toNumber(empleado.rubros?.[key]);
       }, 0);
-  } else {
-    baseIess = this.columnasRubros
+
+    empleado.rubros[keyFondo] = this.redondear(baseFondo * porcentajeFondo / 100);
+  }
+
+  private recalcularDecimoTerceroFila(empleado: any): void {
+    const keyDecimo = this.obtenerKeyPorCodigoTipo('46', 'I');
+
+    if (!keyDecimo) {
+      return;
+    }
+
+    const baseDecimo = this.columnasRubros
       .filter(col => col.tipoPago === 'I')
       .filter(col => !this.esRubroSueldoMensual(col))
+      .filter(col => !this.esRubroMaternidadMensual(col))
       .filter(col => !this.esBeneficioNoAportableMensual(col))
       .reduce((acc, col) => {
         const key = this.obtenerKeyRubro(col);
         return acc + this.toNumber(empleado.rubros?.[key]);
       }, 0);
+
+    empleado.rubros[keyDecimo] = this.redondear(baseDecimo / 12);
+  }
+  private recalcularTotalesFila(empleado: any): void {
+    empleado.totalIngresos = this.columnasRubros
+      .filter(col => col.tipoPago === 'I')
+      .filter(col => !this.esRubroSueldoMensual(col))
+      .reduce((acc, col) => {
+        const key = this.obtenerKeyRubro(col);
+        return acc + this.toNumber(empleado.rubros?.[key]);
+      }, 0);
+
+    empleado.totalDescuentos = this.columnasRubros
+      .filter(col => col.tipoPago === 'D')
+      .reduce((acc, col) => {
+        const key = this.obtenerKeyRubro(col);
+        return acc + this.toNumber(empleado.rubros?.[key]);
+      }, 0);
+
+    empleado.liquidoRecibir =
+      empleado.totalIngresos - empleado.totalDescuentos;
+  }
+  private obtenerSueldoFila(empleado: any): number {
+    const keySueldo = this.obtenerKeyPorCodigoTipo('03', 'I');
+
+    if (keySueldo) {
+      return this.toNumber(empleado.rubros?.[keySueldo]);
+    }
+
+    return 0;
   }
 
-  empleado.rubros[keyIess] = this.redondear(baseIess * porcentajeIess / 100);
-}
-private recalcularFondoReservaFila(empleado: any): void {
-  const keyFondo = this.obtenerKeyPorCodigoTipo('18', 'I');
+  private obtenerKeyPorCodigoTipo(codigo: string, tipoPago: string): string {
+    const codigoNorm = this.normalizarCodigoColumna(codigo);
+    const tipoNorm = (tipoPago ?? '').toString().trim().toUpperCase();
 
-  if (!keyFondo) {
-    return;
+    const col = this.columnasRubros.find(x =>
+      this.normalizarCodigoColumna(x.codigo) === codigoNorm &&
+      (x.tipoPago ?? '').toString().trim().toUpperCase() === tipoNorm
+    );
+
+    return col ? this.obtenerKeyRubro(col) : '';
   }
 
-  const porcentajeFondo = 8.33;
-
-  const baseFondo = this.columnasRubros
-    .filter(col => col.tipoPago === 'I')
-    .filter(col => !this.esRubroSueldoMensual(col))
-    .filter(col => !this.esRubroMaternidadMensual(col))
-    .filter(col => !this.esBeneficioNoAportableMensual(col))
-    .reduce((acc, col) => {
-      const key = this.obtenerKeyRubro(col);
-      return acc + this.toNumber(empleado.rubros?.[key]);
-    }, 0);
-
-  empleado.rubros[keyFondo] = this.redondear(baseFondo * porcentajeFondo / 100);
-}
-
-private recalcularDecimoTerceroFila(empleado: any): void {
-  const keyDecimo = this.obtenerKeyPorCodigoTipo('46', 'I');
-
-  if (!keyDecimo) {
-    return;
+  private obtenerDiasAusenciasFila(empleado: any): number {
+    return this.columnasRubros
+      .filter(col => this.esRubroAusenciaMensual(col))
+      .reduce((acc, col) => {
+        const key = `${this.obtenerKeyRubro(col)}_CANT`;
+        return acc + this.toNumber(empleado.rubros?.[key]);
+      }, 0);
   }
 
-  const baseDecimo = this.columnasRubros
-    .filter(col => col.tipoPago === 'I')
-    .filter(col => !this.esRubroSueldoMensual(col))
-    .filter(col => !this.esRubroMaternidadMensual(col))
-    .filter(col => !this.esBeneficioNoAportableMensual(col))
-    .reduce((acc, col) => {
-      const key = this.obtenerKeyRubro(col);
-      return acc + this.toNumber(empleado.rubros?.[key]);
-    }, 0);
-
-  empleado.rubros[keyDecimo] = this.redondear(baseDecimo / 12);
-}
-private recalcularTotalesFila(empleado: any): void {
-  empleado.totalIngresos = this.columnasRubros
-    .filter(col => col.tipoPago === 'I')
-    .filter(col => !this.esRubroSueldoMensual(col))
-    .reduce((acc, col) => {
-      const key = this.obtenerKeyRubro(col);
-      return acc + this.toNumber(empleado.rubros?.[key]);
-    }, 0);
-
-  empleado.totalDescuentos = this.columnasRubros
-    .filter(col => col.tipoPago === 'D')
-    .reduce((acc, col) => {
-      const key = this.obtenerKeyRubro(col);
-      return acc + this.toNumber(empleado.rubros?.[key]);
-    }, 0);
-
-  empleado.liquidoRecibir =
-    empleado.totalIngresos - empleado.totalDescuentos;
-}
-private obtenerSueldoFila(empleado: any): number {
-  const keySueldo = this.obtenerKeyPorCodigoTipo('03', 'I');
-
-  if (keySueldo) {
-    return this.toNumber(empleado.rubros?.[keySueldo]);
+  private esRubroAusenciaMensual(col: RubroColumnaResponse): boolean {
+    return this.esRubroMaternidadMensual(col) ||
+      this.esRubroEnfermedadMensual(col) ||
+      this.esRubroAccidenteMensual(col);
   }
 
-  return 0;
-}
+  private esRubroSueldoMensual(col: RubroColumnaResponse): boolean {
+    return col.tipoPago === 'I' &&
+      this.normalizarCodigoColumna(col.codigo) === '03';
+  }
 
-private obtenerKeyPorCodigoTipo(codigo: string, tipoPago: string): string {
-  const codigoNorm = this.normalizarCodigoColumna(codigo);
-  const tipoNorm = (tipoPago ?? '').toString().trim().toUpperCase();
+  private esRubroDiasTrabajadosMensual(col: RubroColumnaResponse): boolean {
+    return col.tipoPago === 'I' &&
+      this.normalizarCodigoColumna(col.codigo) === '02';
+  }
 
-  const col = this.columnasRubros.find(x =>
-    this.normalizarCodigoColumna(x.codigo) === codigoNorm &&
-    (x.tipoPago ?? '').toString().trim().toUpperCase() === tipoNorm
-  );
+  private esRubroMaternidadMensual(col: RubroColumnaResponse): boolean {
+    const desc = (col.descripcion ?? '').toString().trim().toUpperCase();
 
-  return col ? this.obtenerKeyRubro(col) : '';
-}
+    return col.tipoPago === 'I' &&
+      desc.includes('MATERNIDAD');
+  }
 
-private obtenerDiasAusenciasFila(empleado: any): number {
-  return this.columnasRubros
-    .filter(col => this.esRubroAusenciaMensual(col))
-    .reduce((acc, col) => {
-      const key = `${this.obtenerKeyRubro(col)}_CANT`;
-      return acc + this.toNumber(empleado.rubros?.[key]);
-    }, 0);
-}
+  private esRubroEnfermedadMensual(col: RubroColumnaResponse): boolean {
+    const codigo = this.normalizarCodigoColumna(col.codigo);
+    const desc = (col.descripcion ?? '').toString().trim().toUpperCase();
 
-private esRubroAusenciaMensual(col: RubroColumnaResponse): boolean {
-  return this.esRubroMaternidadMensual(col) ||
-    this.esRubroEnfermedadMensual(col) ||
-    this.esRubroAccidenteMensual(col);
-}
+    return col.tipoPago === 'I' &&
+      (
+        desc.includes('ENFERMEDAD') ||
+        codigo === '06' ||
+        codigo === '49' ||
+        codigo === '50' ||
+        codigo === '52'
+      );
+  }
 
-private esRubroSueldoMensual(col: RubroColumnaResponse): boolean {
-  return col.tipoPago === 'I' &&
-    this.normalizarCodigoColumna(col.codigo) === '03';
-}
+  private esRubroAccidenteMensual(col: RubroColumnaResponse): boolean {
+    const codigo = this.normalizarCodigoColumna(col.codigo);
+    const desc = (col.descripcion ?? '').toString().trim().toUpperCase();
 
-private esRubroDiasTrabajadosMensual(col: RubroColumnaResponse): boolean {
-  return col.tipoPago === 'I' &&
-    this.normalizarCodigoColumna(col.codigo) === '02';
-}
+    return col.tipoPago === 'I' &&
+      (
+        desc.includes('ACCIDENTE') ||
+        codigo === '51' ||
+        codigo === '53'
+      );
+  }
 
-private esRubroMaternidadMensual(col: RubroColumnaResponse): boolean {
-  const desc = (col.descripcion ?? '').toString().trim().toUpperCase();
+  private esBeneficioNoAportableMensual(col: RubroColumnaResponse): boolean {
+    const codigo = this.normalizarCodigoColumna(col.codigo);
+    const desc = (col.descripcion ?? '').toString().trim().toUpperCase();
 
-  return col.tipoPago === 'I' &&
-    desc.includes('MATERNIDAD');
-}
-
-private esRubroEnfermedadMensual(col: RubroColumnaResponse): boolean {
-  const codigo = this.normalizarCodigoColumna(col.codigo);
-  const desc = (col.descripcion ?? '').toString().trim().toUpperCase();
-
-  return col.tipoPago === 'I' &&
-    (
+    return codigo === '18' ||
+      codigo === '45' ||
+      codigo === '46' ||
+      desc.includes('FONDO') ||
+      desc.includes('DECIMO') ||
+      desc.includes('DÉCIMO') ||
       desc.includes('ENFERMEDAD') ||
-      codigo === '06' ||
-      codigo === '49' ||
-      codigo === '50' ||
-      codigo === '52'
-    );
-}
+      desc.includes('ACCIDENTE');
+  }
 
-private esRubroAccidenteMensual(col: RubroColumnaResponse): boolean {
-  const codigo = this.normalizarCodigoColumna(col.codigo);
-  const desc = (col.descripcion ?? '').toString().trim().toUpperCase();
-
-  return col.tipoPago === 'I' &&
-    (
-      desc.includes('ACCIDENTE') ||
-      codigo === '51' ||
-      codigo === '53'
-    );
-}
-
-private esBeneficioNoAportableMensual(col: RubroColumnaResponse): boolean {
-  const codigo = this.normalizarCodigoColumna(col.codigo);
-  const desc = (col.descripcion ?? '').toString().trim().toUpperCase();
-
-  return codigo === '18' ||
-    codigo === '45' ||
-    codigo === '46' ||
-    desc.includes('FONDO') ||
-    desc.includes('DECIMO') ||
-    desc.includes('DÉCIMO') ||
-    desc.includes('ENFERMEDAD') ||
-    desc.includes('ACCIDENTE');
-}
-
-private redondear(valor: number): number {
-  return Math.round((valor + Number.EPSILON) * 100) / 100;
-}
+  private redondear(valor: number): number {
+    return Math.round((valor + Number.EPSILON) * 100) / 100;
+  }
 }

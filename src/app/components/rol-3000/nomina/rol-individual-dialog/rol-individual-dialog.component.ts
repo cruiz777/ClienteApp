@@ -1095,9 +1095,19 @@ private calcularAccidenteTrabajo(row: RolIndividualRubroResponse): number {
     return isNaN(n) ? 0 : n;
   }
 
-  private redondear(valor: number): number {
-    return Math.round((valor + Number.EPSILON) * 100) / 100;
-  }
+private redondear(valor: number): number {
+  /*
+   * Redondeo financiero compatible con C#:
+   * Math.Round(valor, 2, MidpointRounding.AwayFromZero)
+   *
+   * Evita casos como:
+   * 288.225 => 288.22 por precisión decimal de JavaScript.
+   */
+  const signo = valor < 0 ? -1 : 1;
+  const absoluto = Math.abs(valor);
+
+  return signo * (Math.floor((absoluto * 100) + 0.5 + 0.0000001) / 100);
+}
 
   private normalizarCodigo(codigo: string | null | undefined): string {
     if (!codigo) {

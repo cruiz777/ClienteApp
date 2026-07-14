@@ -53,11 +53,18 @@ export interface RolMensualEmpleadoResponse {
   idEmpleado: number;
   codigoEmpleado: string;
   nombreEmpleado: string;
+
+  // SOLO PARA EXPORTAR A EXCEL
+  cedula?: string | null;
+  cargo?: string | null;
+
   estado: string;
   idLocal: number | null;
   local: string | null;
+
   diasTrabajados: number;
   rubros: Record<string, number>;
+
   totalIngresos: number;
   totalDescuentos: number;
   liquidoRecibir: number;
