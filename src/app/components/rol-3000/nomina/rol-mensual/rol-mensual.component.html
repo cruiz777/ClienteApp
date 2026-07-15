@@ -51,20 +51,12 @@
       </div>
 
       <div class="tabla-wrapper">
-        <ag-grid-angular
-  class="ag-theme-alpine rol-grid"
-  [rowData]="detalleRol"
-  [columnDefs]="columnDefs"
-  [defaultColDef]="defaultColDef"
-  [pinnedBottomRowData]="pinnedBottomRowData"
-  rowSelection="multiple"
-  [suppressRowClickSelection]="true"
-  (gridReady)="onGridReady($event)"
-  (cellValueChanged)="onCellValueChanged($event)"
-  (cellDoubleClicked)="onCellDoubleClicked($event)"
-  (gridSizeChanged)="onGridSizeChanged()"
-  (firstDataRendered)="onFirstDataRendered()">
-</ag-grid-angular>
+        <ag-grid-angular class="ag-theme-alpine rol-grid" [rowData]="detalleRol" [columnDefs]="columnDefs"
+          [defaultColDef]="defaultColDef" [pinnedBottomRowData]="pinnedBottomRowData" rowSelection="multiple"
+          [suppressRowClickSelection]="true" (gridReady)="onGridReady($event)"
+          (cellValueChanged)="onCellValueChanged($event)" (cellDoubleClicked)="onCellDoubleClicked($event)"
+          (gridSizeChanged)="onGridSizeChanged()" (firstDataRendered)="onFirstDataRendered()">
+        </ag-grid-angular>
 
         <div class="sin-datos" *ngIf="!detalleRol || detalleRol.length === 0">
           Genere o consulte un periodo para visualizar la nómina.
@@ -132,6 +124,10 @@
 
         <mat-icon>description</mat-icon>
         <span>{{ exportandoExcel ? 'Exportando...' : 'Excel' }}</span>
+      </button>
+      <button mat-stroked-button type="button" class="action-button"
+        [disabled]="!periodoExiste || cargando || generando" (click)="abrirModalBanco()">
+        Banco
       </button>
       <button mat-stroked-button color="warn" type="button" class="action-button" (click)="cancelar()">
         Cancelar

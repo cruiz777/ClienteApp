@@ -208,6 +208,43 @@ export interface CalcularImpuestoRentaResponse {
   calculado: boolean;
 }
 
+export interface GenerarArchivoBancoNominaRequest {
+  fechaPeriodo: string;
+  codBanco: number;
+  descripcionPago?: string | null;
+  idLocal?: number | null;
+  idUsuario?: number | null;
+}
+
+export interface GenerarArchivoBancoNominaResponse {
+  procesado: boolean;
+  nombreArchivo: string;
+  contenidoBase64: string;
+  contentType: string;
+  totalEmpleados: number;
+  total: number;
+  mensaje: string;
+}
+
+
+export interface GenerarArchivoBancoNominaResponse {
+  procesado: boolean;
+  nombreArchivo: string;
+  contenidoBase64: string;
+  contentType: string;
+  totalEmpleados: number;
+  total: number;
+  mensaje: string;
+}
+
+export interface ImprimirReporteFormaPagoRequest {
+  fechaPeriodo: string;
+  codBanco: number;
+  descripcionPago?: string | null;
+  idLocal?: number | null;
+  idUsuario?: number | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -295,5 +332,24 @@ actualizarCantidadRubroMensual(request: ActualizarCantidadRubroMensualRequest) {
     request
   );
 }
+generarArchivoBanco(
+  request: GenerarArchivoBancoNominaRequest
+): Observable<ApiResponse<GenerarArchivoBancoNominaResponse>> {
+  return this.http.post<ApiResponse<GenerarArchivoBancoNominaResponse>>(
+    `${this.apiUrl}/generar-archivo-banco`,
+    request
+  );
+}
 
+imprimirReporteFormaPago(
+  request: ImprimirReporteFormaPagoRequest
+): Observable<Blob> {
+  return this.http.post(
+    `${this.apiUrl}/reporte-forma-pago/pdf`,
+    request,
+    {
+      responseType: 'blob'
+    }
+  );
+}
 }

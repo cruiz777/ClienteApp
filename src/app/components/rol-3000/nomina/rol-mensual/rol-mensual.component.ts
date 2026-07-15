@@ -3,6 +3,7 @@ import { DialogProcesoComponent } from 'src/app/components/productos/dialog-proc
 import * as ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { UsuarioService } from 'src/app/services/usuario.service';
+import { DialogBancoNominaComponent, DialogBancoNominaData, DialogBancoNominaResult } from '../dialog-banco-nomina/dialog-banco-nomina.component';
 import {
   ColDef,
   ColGroupDef,
@@ -3009,4 +3010,130 @@ private esColumnaNumericaExcel(columna: any): boolean {
   private redondear(valor: number): number {
     return Math.round((valor + Number.EPSILON) * 100) / 100;
   }
+
+abrirModalBanco(): void {
+  const fechaPeriodo = this.formatearFechaYYYYMMDD(
+    this.form.value.fechaPeriodo
+  );
+
+  const dialogRef = this.dialog.open(DialogBancoNominaComponent, {
+    width: '470px',
+    disableClose: true,
+    data: {
+      fechaPeriodo,
+      idUsuario: this.usuarioActual?.id_usuario ?? 1
+    }
+  });
+
+  dialogRef.afterClosed().subscribe((result: DialogBancoNominaResult | null) => {
+    if (!result) {
+      return;
+    }
+
+    if (result.accion === 'ARCHIVO') {
+      this.generarArchivoBancoDesdeModal(result);
+      return;
+    }
+
+    if (result.accion === 'REPORTE') {
+      this.imprimirReporteFormaPagoDesdeModal(result);
+      return;
+    }
+  });
+}
+private generarArchivoBancoDesdeModal(result: DialogBancoNominaResult): void {
+  const request = {
+    fechaPeriodo: result.fechaPeriodo,
+    codBanco: result.codBanco,
+    descripcionPago: result.descripcionPago,
+    idLocal: this.nodoSeleccionado?.tipo === 'LOCAL'
+      ? this.nodoSeleccionado.id
+      : null,
+    idUsuario: result.idUsuario
+  };
+
+  this.actualizando = true;
+
+  this.rolNominaService.generarArchivoBanco(request).subscribe({
+    next: resp => {
+      this.actualizando = false;
+
+      if (resp.type !== 'Success' || !resp.data?.procesado) {
+        this.mostrarAdvertencia(resp.message ?? 'No se pudo generar el archivo banco.');
+        return;
+      }
+
+      this.descargarArchivoBancoBase64(
+        resp.data.contenidoBase64,
+        resp.data.nombreArchivo,
+        resp.data.contentType
+      );
+
+      this.mostrarExito(resp.data.mensaje ?? 'Archivo generado correctamente.');
+    },
+    error: err => {
+      this.actualizando = false;
+      console.error(err);
+      this.mostrarError('Error al generar el archivo banco.');
+    }
+  });
+}
+private imprimirReporteFormaPagoDesdeModal(result: DialogBancoNominaResult): void {
+  const request = {
+    fechaPeriodo: result.fechaPeriodo,
+    codBanco: result.codBanco,
+    descripcionPago: result.descripcionPago,
+    idLocal: this.nodoSeleccionado?.tipo === 'LOCAL'
+      ? this.nodoSeleccionado.id
+      : null,
+    idUsuario: result.idUsuario
+  };
+
+  this.actualizando = true;
+
+  this.rolNominaService.imprimirReporteFormaPago(request).subscribe({
+    next: blob => {
+      this.actualizando = false;
+
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+
+      setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 30000);
+    },
+    error: err => {
+      this.actualizando = false;
+      console.error(err);
+      this.mostrarError('Error al imprimir el reporte de forma de pago.');
+    }
+  });
+}
+private descargarArchivoBancoBase64(
+  contenidoBase64: string,
+  nombreArchivo: string,
+  contentType: string = 'text/plain'
+): void {
+  const byteCharacters = atob(contenidoBase64);
+  const byteNumbers = new Array(byteCharacters.length);
+
+  for (let i = 0; i < byteCharacters.length; i++) {
+    byteNumbers[i] = byteCharacters.charCodeAt(i);
+  }
+
+  const byteArray = new Uint8Array(byteNumbers);
+
+  const blob = new Blob([byteArray], {
+    type: contentType
+  });
+
+  const url = window.URL.createObjectURL(blob);
+
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = nombreArchivo;
+  link.click();
+
+  window.URL.revokeObjectURL(url);
+}
 }
