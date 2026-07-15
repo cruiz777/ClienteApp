@@ -53,11 +53,18 @@ export interface RolMensualEmpleadoResponse {
   idEmpleado: number;
   codigoEmpleado: string;
   nombreEmpleado: string;
+
+  // SOLO PARA EXPORTAR A EXCEL
+  cedula?: string | null;
+  cargo?: string | null;
+
   estado: string;
   idLocal: number | null;
   local: string | null;
+
   diasTrabajados: number;
   rubros: Record<string, number>;
+
   totalIngresos: number;
   totalDescuentos: number;
   liquidoRecibir: number;
@@ -113,6 +120,13 @@ export interface RolIndividualResponse {
 
   anticipoQuincenaEmpleado?: number;
 
+}
+export interface ActualizarCantidadRubroMensualRequest {
+  idEmpleado: number;
+  fechaPeriodo: string;
+  idIngDesc: number;
+  cantidad: number;
+  idUsuario: number;
 }
 export interface EnviarRolesCorreoRequest {
   fechaPeriodo: string;      // yyyy-MM-dd
@@ -192,6 +206,43 @@ export interface CalcularImpuestoRentaResponse {
   valorImpuestoRenta: number;
   rubro: string;
   calculado: boolean;
+}
+
+export interface GenerarArchivoBancoNominaRequest {
+  fechaPeriodo: string;
+  codBanco: number;
+  descripcionPago?: string | null;
+  idLocal?: number | null;
+  idUsuario?: number | null;
+}
+
+export interface GenerarArchivoBancoNominaResponse {
+  procesado: boolean;
+  nombreArchivo: string;
+  contenidoBase64: string;
+  contentType: string;
+  totalEmpleados: number;
+  total: number;
+  mensaje: string;
+}
+
+
+export interface GenerarArchivoBancoNominaResponse {
+  procesado: boolean;
+  nombreArchivo: string;
+  contenidoBase64: string;
+  contentType: string;
+  totalEmpleados: number;
+  total: number;
+  mensaje: string;
+}
+
+export interface ImprimirReporteFormaPagoRequest {
+  fechaPeriodo: string;
+  codBanco: number;
+  descripcionPago?: string | null;
+  idLocal?: number | null;
+  idUsuario?: number | null;
 }
 
 @Injectable({
@@ -275,4 +326,30 @@ enviarRolesPorCorreo(
   );
 }
 
+actualizarCantidadRubroMensual(request: ActualizarCantidadRubroMensualRequest) {
+  return this.http.post<ApiResponse<boolean>>(
+    `${this.apiUrl}/actualizar-cantidad-rubro-mensual`,
+    request
+  );
+}
+generarArchivoBanco(
+  request: GenerarArchivoBancoNominaRequest
+): Observable<ApiResponse<GenerarArchivoBancoNominaResponse>> {
+  return this.http.post<ApiResponse<GenerarArchivoBancoNominaResponse>>(
+    `${this.apiUrl}/generar-archivo-banco`,
+    request
+  );
+}
+
+imprimirReporteFormaPago(
+  request: ImprimirReporteFormaPagoRequest
+): Observable<Blob> {
+  return this.http.post(
+    `${this.apiUrl}/reporte-forma-pago/pdf`,
+    request,
+    {
+      responseType: 'blob'
+    }
+  );
+}
 }
