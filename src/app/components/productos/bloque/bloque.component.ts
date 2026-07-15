@@ -1026,6 +1026,74 @@ export class BloqueComponent implements OnInit {
 
 
   }
+  // generar13() {
+  //   const idSeleccionado = this.formUV.value.gcp;
+  //   const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
+  //   const prefijo = objeto?.codpre || '';
+  //   const serie = this.formUV.get('serie')?.value || '';
+  //   this.npais = '786';
+  //   if (!this.validarCeldasObligatorias()) return;
+  //   const sinRepetidos = this.validarDescripcionRepetida();
+  //   if (!sinRepetidos) {
+  //     this.mostrarAlerta('?? Descripciones Repetidas.', 'Error');
+  //     return; // Evita continuar
+  //   }
+  //   this.generacionCodigosService.obtenerSecuencia(prefijo, this.npais).subscribe({
+  //     next: (resp: SecuenciaResponse) => {
+  //       const longitudPrefijo = prefijo.length;
+  //       const longitudSecuencia = 12 - this.npais.length - longitudPrefijo;
+
+  //       if (longitudSecuencia <= 0) {
+  //         alert(`?? Prefijo demasiado largo (${longitudPrefijo} dígitos). No se puede generar GTIN-13 válido.`);
+  //         return;
+  //       }
+
+  //       const secuenciaInicial = serie !== '' ? parseInt(serie, 10) : resp.data;
+
+  //       const maxCodigos = Math.pow(10, longitudSecuencia);
+  //       const maxValor = maxCodigos - 1;
+  //       const ultimoValor = secuenciaInicial + this.rowData.length - 1;
+
+  //       if (ultimoValor > maxValor) {
+  //         this.mostrarAlerta(
+  //           `⚠️ No se puede generar. La secuencia inicia en ${secuenciaInicial} y llegaría hasta ${ultimoValor}, pero el máximo permitido es ${maxValor}.`,
+  //           'Error'
+  //         );
+  //         return;
+  //       }
+
+  //       if (this.rowData.length > maxCodigos) {
+  //         alert(`⚠️ Solo se pueden generar ${maxCodigos} códigos con prefijo de ${longitudPrefijo} dígitos.`);
+  //         this.rowData = this.rowData.slice(0, maxCodigos);
+  //       }
+
+  //       for (let i = 0; i < this.rowData.length; i++) {
+  //         const secuenciaActual = (secuenciaInicial + i).toString().padStart(longitudSecuencia, '0');
+  //         const gtin12 = this.npais + prefijo + secuenciaActual;
+  //         const dv = this.calcularDigitoVerificador(gtin12);
+  //         this.rowData[i].gtinUv = gtin12 + dv;
+  //       }
+
+  //       // Asignar el primer GTIN generado al formulario
+  //       const primerSecuencia = secuenciaInicial.toString().padStart(longitudSecuencia, '0');
+  //       const primerGtin = this.npais + prefijo + primerSecuencia;
+  //       const primerDv = this.calcularDigitoVerificador(primerGtin);
+  //       this.formUV.get('gtinUv')?.setValue(primerGtin + primerDv);
+
+  //       this.mensaje = resp.message;
+  //       this.secuencia = secuenciaInicial; // Guardar para referencia futura
+  //       this.rowData = [...this.rowData];
+
+  //       this.botonGenerarDeshabilitado = true;
+  //       this.botonGrabarDeshabilitado = false;
+
+  //     },
+  //     error: (err) => {
+  //       console.error('? Error al obtener secuencia', err);
+  //       this.mensaje = 'Error al generar la secuencia';
+  //     }
+  //   });
+  // }
   generar13() {
     const idSeleccionado = this.formUV.value.gcp;
     const objeto = this.prefijos.find(p => p.id_prefijos === idSeleccionado);
@@ -1067,26 +1135,84 @@ export class BloqueComponent implements OnInit {
           this.rowData = this.rowData.slice(0, maxCodigos);
         }
 
+        //1) Calculamos los GTIN candidatos SIN asignarlos todavía a rowData
+        const candidatos: { index: number; gtin: string }[] = [];
         for (let i = 0; i < this.rowData.length; i++) {
           const secuenciaActual = (secuenciaInicial + i).toString().padStart(longitudSecuencia, '0');
           const gtin12 = this.npais + prefijo + secuenciaActual;
           const dv = this.calcularDigitoVerificador(gtin12);
-          this.rowData[i].gtinUv = gtin12 + dv;
+          candidatos.push({ index: i, gtin: gtin12 + dv });
         }
 
-        // Asignar el primer GTIN generado al formulario
-        const primerSecuencia = secuenciaInicial.toString().padStart(longitudSecuencia, '0');
-        const primerGtin = this.npais + prefijo + primerSecuencia;
-        const primerDv = this.calcularDigitoVerificador(primerGtin);
-        this.formUV.get('gtinUv')?.setValue(primerGtin + primerDv);
+        //2) Mostrar diálogo de "verificando..." y comprobar contra la BD uno por uno
+        const dialogRef = this.dialog.open(DialogProcesoComponent, {
+          disableClose: true,
+          width: '400px',
+          data: { procesados: 0, total: candidatos.length }
+        });
 
-        this.mensaje = resp.message;
-        this.secuencia = secuenciaInicial; // Guardar para referencia futura
-        this.rowData = [...this.rowData];
+        let existeRepetido = false;
+        const repetidos: string[] = [];
 
-        this.botonGenerarDeshabilitado = true;
-        this.botonGrabarDeshabilitado = false;
+        from(candidatos).pipe(
+          concatMap((cand, i) =>
+            this.productoService.buscarPorCodbar(cand.gtin).pipe(
+              map(producto => {
+                if (producto) {
+                  existeRepetido = true;
+                  repetidos.push(cand.gtin);
+                }
+                dialogRef.componentInstance.data.procesados = i + 1;
+              }),
+              catchError(err => {
+                console.warn(`⚠️ Error verificando GTIN ${cand.gtin}`, err);
+                return of(null);
+              })
+            )
+          )
+        ).subscribe({
+          complete: () => {
+            dialogRef.close();
 
+            //3) Si algún código YA existe, bloqueamos y avisamos con el message box
+            if (existeRepetido) {
+              const lista = repetidos.map(r => `🔴 ${r}`).join('\n');
+              this.dialog.open(CustomMessageBoxComponent, {
+                width: '500px',
+                data: {
+                  title: '⚠️ Código ya generado',
+                  message: `No se puede generar. Los siguientes GTIN-13 ya existen en el sistema:\n\n${lista}`,
+                  type: 'error',
+                  confirmText: 'Entendido'
+                }
+              });
+              // Dejamos habilitado "Generar" para que corrijan (serie/cantidad) e intenten de nuevo
+              this.botonGenerarDeshabilitado = false;
+              this.botonGrabarDeshabilitado = true;
+              return;
+            }
+
+            //4) Si no hay duplicados, recién ahí asignamos los GTIN a las filas
+            candidatos.forEach(c => {
+              this.rowData[c.index].gtinUv = c.gtin;
+            });
+
+            const primerGtin = candidatos[0].gtin;
+            this.formUV.get('gtinUv')?.setValue(primerGtin);
+
+            this.mensaje = resp.message;
+            this.secuencia = secuenciaInicial;
+            this.rowData = [...this.rowData];
+
+            this.botonGenerarDeshabilitado = true;
+            this.botonGrabarDeshabilitado = false;
+          },
+          error: (err) => {
+            dialogRef.close();
+            console.error('❌ Error durante validación en base', err);
+            this.mostrarAlerta('Error al validar GTINs en la base de datos.', 'Error');
+          }
+        });
       },
       error: (err) => {
         console.error('? Error al obtener secuencia', err);
@@ -1094,7 +1220,6 @@ export class BloqueComponent implements OnInit {
       }
     });
   }
-
   recupera13() {
     debugger
     const soloCopiarGtin = this.tipoGtin === 'GTIN-13' && this.formUV.get('checkExiste')?.value;
