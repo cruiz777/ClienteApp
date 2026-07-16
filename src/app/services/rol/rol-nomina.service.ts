@@ -245,6 +245,51 @@ export interface ImprimirReporteFormaPagoRequest {
   idUsuario?: number | null;
 }
 
+export interface GenerarRolQuincenaRequest {
+  fechaPeriodo: string;
+  numeroQuincena: number;
+  idLocal?: number | null;
+  idDepartamento?: number | null;
+  idUsuario?: number | null;
+  sobrescribir: boolean;
+}
+
+export interface RolQuincenaRequest {
+  fechaPeriodo: string;
+  numeroQuincena: number;
+  idLocal?: number | null;
+  idDepartamento?: number | null;
+}
+
+export interface RolQuincenaEmpleadoResponse {
+  idEmpleado: number;
+  codigoEmpleado: string;
+  nombreEmpleado: string;
+  cedula?: string | null;
+  idLocal?: number | null;
+  local?: string | null;
+  formaPago?: string | null;
+  banco?: string | null;
+  cuenta?: string | null;
+  valorQuincena: number;
+}
+
+export interface RolQuincenaResponse {
+  empleados: RolQuincenaEmpleadoResponse[];
+  totalEmpleados: number;
+  totalValor: number;
+}
+
+export interface GenerarArchivoBancoQuincenaRequest {
+  fechaPeriodo: string;
+  numeroQuincena: number;
+  codBanco: number;
+  descripcionPago?: string | null;
+  idLocal?: number | null;
+  idDepartamento?: number | null;
+  idUsuario?: number | null;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -352,4 +397,44 @@ imprimirReporteFormaPago(
     }
   );
 }
+
+generarRolQuincena(
+  request: GenerarRolQuincenaRequest
+): Observable<ApiResponse<boolean>> {
+  return this.http.post<ApiResponse<boolean>>(
+    `${this.apiUrl}/generar-quincena`,
+    request
+  );
+}
+
+getRolQuincena(
+  request: RolQuincenaRequest
+): Observable<ApiResponse<RolQuincenaResponse>> {
+  return this.http.post<ApiResponse<RolQuincenaResponse>>(
+    `${this.apiUrl}/quincena`,
+    request
+  );
+}
+
+generarArchivoBancoQuincena(
+  request: GenerarArchivoBancoQuincenaRequest
+): Observable<ApiResponse<GenerarArchivoBancoNominaResponse>> {
+  return this.http.post<ApiResponse<GenerarArchivoBancoNominaResponse>>(
+    `${this.apiUrl}/generar-archivo-banco-quincena`,
+    request
+  );
+}
+
+imprimirReporteFormaPagoQuincena(
+  request: GenerarArchivoBancoQuincenaRequest
+): Observable<Blob> {
+  return this.http.post(
+    `${this.apiUrl}/reporte-quincena-forma-pago/pdf`,
+    request,
+    {
+      responseType: 'blob'
+    }
+  );
+}
+
 }

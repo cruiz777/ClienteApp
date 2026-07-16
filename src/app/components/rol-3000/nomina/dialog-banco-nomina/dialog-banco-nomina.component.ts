@@ -4,6 +4,11 @@ import {
   Inject,
   OnInit
 } from '@angular/core';
+
+import {
+    EventEmitter,
+   Output
+} from '@angular/core';
 import {
   FormBuilder,
   FormGroup,
@@ -55,7 +60,8 @@ interface Banco {
 })
 export class DialogBancoNominaComponent implements OnInit {
   form!: FormGroup;
-
+  @Output()
+readonly archivoSolicitado = new EventEmitter<DialogBancoNominaResult>();
   readonly bancos: Banco[] = [
     {
       codBanco: 1,
@@ -95,29 +101,37 @@ export class DialogBancoNominaComponent implements OnInit {
     });
   }
 
-  generarArchivo(): void {
-    if (!this.formularioValido()) {
-      return;
-    }
-
-    this.dialogRef.close(
-      this.construirResultado('ARCHIVO')
-    );
+generarArchivo(): void {
+  if (!this.formularioValido()) {
+    return;
   }
 
-  imprimirReporte(): void {
-    if (!this.formularioValido()) {
-      return;
-    }
+  const result = this.construirResultado('ARCHIVO');
 
-    this.dialogRef.close(
-      this.construirResultado('REPORTE')
-    );
+  /*
+   * IMPORTANTE:
+   * Aquí NO se cierra el modal.
+   * Solo se emite el resultado al componente padre.
+   */
+  this.archivoSolicitado.emit(result);
+}
+
+imprimirReporte(): void {
+  if (!this.formularioValido()) {
+    return;
   }
 
-  salir(): void {
-    this.dialogRef.close(null);
-  }
+  /*
+   * El reporte sí puede cerrar el modal.
+   */
+  this.dialogRef.close(
+    this.construirResultado('REPORTE')
+  );
+}
+
+salir(): void {
+  this.dialogRef.close(null);
+}
 
   private formularioValido(): boolean {
     if (!this.form) {

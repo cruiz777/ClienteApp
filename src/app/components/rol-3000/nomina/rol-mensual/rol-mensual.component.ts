@@ -3025,21 +3025,32 @@ abrirModalBanco(): void {
     }
   });
 
-  dialogRef.afterClosed().subscribe((result: DialogBancoNominaResult | null) => {
-    if (!result) {
-      return;
-    }
-
-    if (result.accion === 'ARCHIVO') {
+  /*
+   * Generar Archivo:
+   * Se ejecuta sin cerrar el modal.
+   */
+  dialogRef.componentInstance.archivoSolicitado.subscribe(
+    (result: DialogBancoNominaResult) => {
       this.generarArchivoBancoDesdeModal(result);
-      return;
     }
+  );
 
-    if (result.accion === 'REPORTE') {
-      this.imprimirReporteFormaPagoDesdeModal(result);
-      return;
+  /*
+   * Imprimir Reporte:
+   * Este sí viene por afterClosed porque el modal se cierra.
+   */
+  dialogRef.afterClosed().subscribe(
+    (result: DialogBancoNominaResult | null) => {
+      if (!result) {
+        return;
+      }
+
+      if (result.accion === 'REPORTE') {
+        this.imprimirReporteFormaPagoDesdeModal(result);
+        return;
+      }
     }
-  });
+  );
 }
 private generarArchivoBancoDesdeModal(result: DialogBancoNominaResult): void {
   const request = {
