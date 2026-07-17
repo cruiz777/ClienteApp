@@ -206,31 +206,39 @@ export class RolQuincenalComponent implements OnInit {
     this.nuevo();
   }
 
-  nuevo(): void {
-    if (!this.form.value.fechaPeriodo) {
-      this.mostrarAdvertencia('Debe ingresar el periodo.');
-      return;
-    }
-
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      this.mostrarAdvertencia('La fecha de quincena no es válida.');
-      return;
-    }
-
-    this.validarEstadoCierreQuincena(() => {
-      if (this.periodoCerrado) {
-        this.mostrarAdvertencia(
-          'La quincena ya se encuentra cerrada. Solo se cargará la información.'
-        );
-
-        this.cargarQuincena();
-        return;
-      }
-
-      this.generarQuincena(false);
-    });
+nuevo(): void {
+  if (!this.form.value.fechaPeriodo) {
+    this.mostrarAdvertencia('Debe ingresar el periodo.');
+    return;
   }
+
+  if (this.form.invalid) {
+    this.form.markAllAsTouched();
+    this.mostrarAdvertencia('La fecha de quincena no es válida.');
+    return;
+  }
+
+  this.periodoCerrado = false;
+  this.modificarBloqueado = false;
+  this.procesandoModificar = false;
+
+  this.validarEstadoCierreQuincena(() => {
+    if (this.periodoCerrado) {
+      this.mostrarAdvertencia(
+        'La quincena ya se encuentra cerrada. Solo se cargará la información.'
+      );
+
+      this.cargarQuincena();
+      return;
+    }
+
+    this.periodoExiste = false;
+    this.modoEdicionPeriodo = false;
+    this.modificarBloqueado = false;
+
+    this.generarQuincena(false);
+  });
+}
 
   modificarPeriodo(): void {
     if (!this.periodoExiste) {
@@ -249,22 +257,27 @@ export class RolQuincenalComponent implements OnInit {
     this.mostrarExito('Periodo habilitado para modificación.');
   }
 
-  actualizarQuincena(): void {
-    if (!this.form.value.fechaPeriodo) {
-      this.mostrarAdvertencia('Debe ingresar el periodo.');
-      return;
-    }
+actualizarQuincena(): void {
+  if (!this.form.value.fechaPeriodo) {
+    this.mostrarAdvertencia('Debe ingresar el periodo.');
+    return;
+  }
 
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      this.mostrarAdvertencia('La fecha de quincena no es válida.');
-      return;
-    }
+  if (this.form.invalid) {
+    this.form.markAllAsTouched();
+    this.mostrarAdvertencia('La fecha de quincena no es válida.');
+    return;
+  }
 
+  this.validarEstadoCierreQuincena(() => {
     if (this.periodoCerrado) {
+      this.modoEdicionPeriodo = false;
+      this.modificarBloqueado = true;
+
       this.mostrarAdvertencia(
         'La quincena está cerrada. No se puede actualizar.'
       );
+
       this.cargarQuincena();
       return;
     }
@@ -281,51 +294,68 @@ export class RolQuincenalComponent implements OnInit {
 
       this.generarQuincena(true);
     });
+  });
+}
+private generarQuincena(sobrescribir: boolean): void {
+  if (this.periodoCerrado) {
+    this.modoEdicionPeriodo = false;
+    this.modificarBloqueado = true;
+
+    this.mostrarAdvertencia(
+      'La quincena está cerrada. No se puede generar ni modificar.'
+    );
+
+    return;
   }
 
-  private generarQuincena(sobrescribir: boolean): void {
-    const request = this.construirRequestGenerar(sobrescribir);
+  const request = this.construirRequestGenerar(sobrescribir);
 
-    this.generando = true;
-    this.procesandoModificar = true;
+  this.generando = true;
+  this.procesandoModificar = true;
 
-    this.rolNominaService.generarRolQuincena(request).subscribe({
-      next: resp => {
-        this.generando = false;
-        this.procesandoModificar = false;
+  this.rolNominaService.generarRolQuincena(request).subscribe({
+    next: resp => {
+      this.generando = false;
+      this.procesandoModificar = false;
 
-        if (resp.type === 'Success') {
-          this.mostrarExito(resp.message ?? 'Quincena generada correctamente.');
-          this.periodoExiste = true;
-          this.modoEdicionPeriodo = true;
-          this.cargarQuincena();
-          return;
-        }
+      if (resp.type === 'Success') {
+        this.mostrarExito(resp.message ?? 'Quincena generada correctamente.');
 
-        if (resp.type === 'Warning') {
-          this.mostrarAdvertencia(
-            resp.message ?? 'La quincena ya existe. Use Modificar o Actualizar.'
-          );
+        this.periodoExiste = true;
+        this.periodoCerrado = false;
+        this.modificarBloqueado = false;
+        this.modoEdicionPeriodo = true;
 
-          this.periodoExiste = true;
-          this.modoEdicionPeriodo = !this.periodoCerrado;
-          this.cargarQuincena();
-          return;
-        }
-
-        this.mostrarError(resp.message ?? 'No se pudo generar la quincena.');
-      },
-      error: err => {
-        this.generando = false;
-        this.procesandoModificar = false;
-
-        console.error(err);
-        this.mostrarError('Error al generar la quincena.');
+        this.cargarQuincena();
+        return;
       }
-    });
-  }
 
-  cargarQuincena(): void {
+      if (resp.type === 'Warning') {
+        this.mostrarAdvertencia(
+          resp.message ?? 'La quincena ya existe. Use Modificar o Actualizar.'
+        );
+
+        this.periodoExiste = true;
+        this.modoEdicionPeriodo = !this.periodoCerrado;
+        this.modificarBloqueado = this.periodoCerrado;
+
+        this.cargarQuincena();
+        return;
+      }
+
+      this.mostrarError(resp.message ?? 'No se pudo generar la quincena.');
+    },
+    error: err => {
+      this.generando = false;
+      this.procesandoModificar = false;
+
+      console.error('Error generando quincena:', err);
+      this.mostrarError('Error al generar la quincena.');
+    }
+  });
+}
+
+cargarQuincena(): void {
   if (!this.form.value.fechaPeriodo) {
     this.mostrarAdvertencia('Debe ingresar el periodo.');
     return;
@@ -337,86 +367,10 @@ export class RolQuincenalComponent implements OnInit {
     return;
   }
 
-  this.validarEstadoCierreQuincena();
-
-  const request = this.construirRequestConsulta();
-
-  this.cargando = true;
-
-  this.rolNominaService.getRolQuincena(request).subscribe({
-    next: resp => {
-      this.cargando = false;
-
-      if (resp.type !== 'Success') {
-        this.detalleRol = [];
-        this.pinnedBottomRowData = [];
-        this.periodoExiste = false;
-        this.modoEdicionPeriodo = false;
-
-        this.mostrarAdvertencia(
-          resp.message ?? 'No se pudo cargar la quincena.'
-        );
-        return;
-      }
-
-      const data = resp.data as RolQuincenaResponse;
-
-      this.detalleRol = (data?.empleados ?? []).map((x: any) => {
-        const valorQuincena = this.toNumber(x.valorQuincena);
-
-        return {
-          idEmpleado: x.idEmpleado,
-          codigoEmpleado: x.codigoEmpleado,
-          nombreEmpleado: x.nombreEmpleado || `Empleado ${x.codigoEmpleado ?? x.idEmpleado}`,
-          cedula: x.cedula ?? '',
-          idLocal: x.idLocal,
-          local: x.local ?? '',
-          formaPago: x.formaPago ?? '',
-          banco: x.banco ?? '',
-          cuenta: x.cuenta ?? '',
-          estado: x.estado ?? '',
-
-          /*
-           * Para mostrarlo como rol:
-           * La quincena es un descuento D-02.
-           */
-          ingresoQuincena: 0,
-          descuentoQuincena: valorQuincena,
-          totalIngresos: 0,
-          totalDescuentos: valorQuincena,
-          liquidoRecibir: valorQuincena
-        };
-      });
-
-      this.columnDefs = this.construirColumnasGrid();
-
-      this.pinnedBottomRowData = this.detalleRol.length > 0
-        ? [this.construirFilaTotales()]
-        : [];
-
-      this.periodoExiste = this.detalleRol.length > 0;
-      this.modoEdicionPeriodo = this.periodoExiste && !this.periodoCerrado;
-
-      setTimeout(() => {
-        this.gridApi?.setGridOption?.('rowData', this.detalleRol);
-        this.gridApi?.refreshCells({ force: true });
-        this.gridApi?.refreshHeader();
-      }, 50);
-    },
-    error: err => {
-      this.cargando = false;
-
-      console.error(err);
-      this.mostrarError('Error al cargar la quincena.');
-
-      this.detalleRol = [];
-      this.pinnedBottomRowData = [];
-      this.periodoExiste = false;
-      this.modoEdicionPeriodo = false;
-    }
+  this.validarEstadoCierreQuincena(() => {
+    this.cargarQuincenaDespuesDeValidarCierre();
   });
 }
-
 private construirColumnasGrid(): ColDef[] {
   const columnaSeleccion: ColDef = {
     headerName: '',
@@ -476,24 +430,44 @@ private construirColumnasGrid(): ColDef[] {
       this.formatearDecimalValor(params.value)
   };
 
-  const columnaDescuentoQuincena: ColDef = {
-    headerName: 'Anticipo I Quincena',
-    field: 'descuentoQuincena',
-    width: 180,
-    type: 'numericColumn',
-    headerClass: 'header-descuento',
-    cellClass: params =>
-      params.node?.rowPinned
-        ? 'cell-descuento cell-total-row'
-        : 'cell-descuento',
-    cellStyle: {
-      backgroundColor: '#fefce8',
-      color: '#854d0e',
-      fontWeight: '600'
-    },
-    valueFormatter: (params: ValueFormatterParams) =>
-      this.formatearDecimalValor(params.value)
-  };
+ const columnaDescuentoQuincena: ColDef = {
+  headerName: 'Anticipo I Quincena',
+  field: 'descuentoQuincena',
+  colId: 'descuentoQuincena',
+  width: 180,
+  type: 'numericColumn',
+  editable: params =>
+    !params.node?.rowPinned &&
+    this.modoEdicionPeriodo &&
+    !this.periodoCerrado,
+  valueParser: params => this.toNumber(params.newValue),
+  valueSetter: params => {
+    if (!params.data) {
+      return false;
+    }
+
+    const nuevoValor = this.toNumber(params.newValue);
+    const valorAnterior = this.toNumber(params.oldValue);
+
+    params.data.descuentoQuincena = nuevoValor;
+    params.data.totalDescuentos = nuevoValor;
+    params.data.liquidoRecibir = nuevoValor;
+
+    return nuevoValor !== valorAnterior;
+  },
+  headerClass: 'header-descuento',
+  cellClass: params =>
+    params.node?.rowPinned
+      ? 'cell-descuento cell-total-row'
+      : 'cell-descuento celda-editable-quincena',
+  cellStyle: {
+    backgroundColor: '#fefce8',
+    color: '#854d0e',
+    fontWeight: '600'
+  },
+  valueFormatter: (params: ValueFormatterParams) =>
+    this.formatearDecimalValor(params.value)
+};
 
   const columnaTotalIngresos: ColDef = {
     headerName: 'Total Ingresos',
@@ -1024,59 +998,76 @@ private construirColumnasGrid(): ColDef[] {
       }
     });
   }
+private validarEstadoCierreQuincena(callback?: () => void): void {
+  if (!this.form.value.fechaPeriodo) {
+    this.periodoCerrado = false;
+    this.modificarBloqueado = false;
 
-  private validarEstadoCierreQuincena(callback?: () => void): void {
-    if (!this.form.value.fechaPeriodo) {
-      this.periodoCerrado = false;
+    if (callback) {
+      callback();
+    }
+
+    return;
+  }
+
+  const request: any = {
+    fecha: this.formatearFechaYYYYMMDD(this.form.value.fechaPeriodo),
+    tipo: 'Q'
+  };
+
+  this.validandoCierre = true;
+
+  this.cierrePeriodoService.validar(request).subscribe({
+    next: resp => {
+      this.validandoCierre = false;
+
+      this.periodoCerrado =
+        resp.type === 'Success' &&
+        resp.data?.existe === true;
+
+      this.modificarBloqueado = this.periodoCerrado;
+
+      if (!this.periodoCerrado) {
+        this.modificarBloqueado = false;
+      }
 
       if (callback) {
         callback();
       }
+    },
+    error: err => {
+      this.validandoCierre = false;
+      this.periodoCerrado = false;
+      this.modificarBloqueado = false;
 
-      return;
-    }
+      console.error(err);
 
-    const request: any = {
-      fecha: this.formatearFechaYYYYMMDD(this.form.value.fechaPeriodo),
-      tipo: 'Q'
-    };
-
-    this.validandoCierre = true;
-
-    this.cierrePeriodoService.validar(request).subscribe({
-      next: resp => {
-        this.validandoCierre = false;
-
-        this.periodoCerrado =
-          resp.type === 'Success' &&
-          resp.data?.existe === true;
-
-        if (callback) {
-          callback();
-        }
-      },
-      error: err => {
-        this.validandoCierre = false;
-        this.periodoCerrado = false;
-
-        console.error(err);
-
-        if (callback) {
-          callback();
-        }
+      if (callback) {
+        callback();
       }
-    });
-  }
+    }
+  });
+}
+private limpiarDatosPeriodo(): void {
+  this.detalleRol = [];
+  this.pinnedBottomRowData = [];
 
-  private limpiarDatosPeriodo(): void {
-    this.detalleRol = [];
-    this.pinnedBottomRowData = [];
-    this.periodoExiste = false;
-    this.modoEdicionPeriodo = false;
+  this.periodoExiste = false;
+  this.periodoCerrado = false;
+  this.validandoCierre = false;
+  this.modoEdicionPeriodo = false;
 
-    this.gridApi?.deselectAll();
-    this.gridApi?.refreshCells({ force: true });
-  }
+  this.procesandoModificar = false;
+  this.modificarBloqueado = false;
+
+  this.gridApi?.deselectAll();
+
+  this.gridApi?.setGridOption?.('rowData', []);
+  this.gridApi?.setGridOption?.('pinnedBottomRowData', []);
+
+  this.gridApi?.refreshCells({ force: true });
+  this.gridApi?.refreshHeader();
+}
 
   private ajustarGrid(): void {
     if (!this.gridApi) {
@@ -1315,4 +1306,224 @@ private construirColumnasGrid(): ColDef[] {
       panelClass: ['snackbar-warning']
     });
   }
+  onCellValueChanged(event: any): void {
+  const colId =
+    event?.column?.getColId?.() ??
+    event?.colDef?.colId ??
+    '';
+
+  if (colId !== 'descuentoQuincena') {
+    return;
+  }
+
+  if (event?.node?.rowPinned) {
+    return;
+  }
+
+  const empleado = event.data;
+
+  if (!empleado || !empleado.idEmpleado) {
+    this.mostrarAdvertencia('No se encontró el empleado de la fila.');
+    return;
+  }
+
+  if (this.periodoCerrado) {
+    this.mostrarAdvertencia('La quincena está cerrada. No se puede modificar.');
+    this.revertirValorQuincena(event);
+    return;
+  }
+
+  if (!this.modoEdicionPeriodo) {
+    this.mostrarAdvertencia('Debe habilitar el periodo en modo modificación.');
+    this.revertirValorQuincena(event);
+    return;
+  }
+
+  const valorQuincena = this.toNumber(empleado.descuentoQuincena);
+
+  if (valorQuincena < 0) {
+    this.mostrarAdvertencia('El valor de la quincena no puede ser negativo.');
+    this.revertirValorQuincena(event);
+    return;
+  }
+
+  this.recalcularFilaQuincena(empleado);
+  this.recalcularTotalesQuincena();
+
+  const request = {
+    fechaPeriodo: this.formatearFechaYYYYMMDD(this.form.value.fechaPeriodo),
+    numeroQuincena: this.toNumber(this.form.value.numeroQuincena) || 1,
+    idEmpleado: Number(empleado.idEmpleado),
+    valorQuincena,
+    idUsuario: this.usuarioActual?.id_usuario ?? 1
+  };
+
+  this.actualizando = true;
+
+  this.rolNominaService.actualizarValorQuincena(request).subscribe({
+    next: resp => {
+      this.actualizando = false;
+
+      if (resp.type !== 'Success') {
+        this.mostrarAdvertencia(
+          resp.message ?? 'No se pudo actualizar el valor de la quincena.'
+        );
+
+        this.revertirValorQuincena(event);
+        return;
+      }
+
+      this.mostrarExito(resp.message ?? 'Valor de quincena actualizado correctamente.');
+
+      event.api.refreshCells({
+        force: true,
+        rowNodes: [event.node]
+      });
+
+      this.recalcularTotalesQuincena();
+    },
+    error: err => {
+      this.actualizando = false;
+
+      console.error(err);
+      this.mostrarError('Error al actualizar el valor de la quincena.');
+
+      this.revertirValorQuincena(event);
+    }
+  });
+}
+private recalcularFilaQuincena(empleado: any): void {
+  const valorQuincena = this.toNumber(empleado.descuentoQuincena);
+
+  empleado.ingresoQuincena = 0;
+  empleado.descuentoQuincena = valorQuincena;
+  empleado.totalIngresos = 0;
+  empleado.totalDescuentos = valorQuincena;
+
+  /*
+   * En esta pantalla el líquido representa el valor a pagar de la quincena.
+   * Aunque contablemente luego se descuente en el mensual como D-02.
+   */
+  empleado.liquidoRecibir = valorQuincena;
+}
+
+private recalcularTotalesQuincena(): void {
+  this.pinnedBottomRowData = this.detalleRol.length > 0
+    ? [this.construirFilaTotales()]
+    : [];
+
+  this.gridApi?.refreshCells({
+    force: true
+  });
+}
+
+private revertirValorQuincena(event: any): void {
+  const empleado = event?.data;
+
+  if (!empleado) {
+    return;
+  }
+
+  const valorAnterior = this.toNumber(event.oldValue);
+
+  empleado.descuentoQuincena = valorAnterior;
+  empleado.totalDescuentos = valorAnterior;
+  empleado.liquidoRecibir = valorAnterior;
+
+  event.api.refreshCells({
+    force: true,
+    rowNodes: event.node ? [event.node] : undefined
+  });
+
+  this.recalcularTotalesQuincena();
+}
+private cargarQuincenaDespuesDeValidarCierre(): void {
+  const request = this.construirRequestConsulta();
+
+  this.cargando = true;
+
+  this.rolNominaService.getRolQuincena(request).subscribe({
+    next: resp => {
+      this.cargando = false;
+
+      if (resp.type !== 'Success') {
+        this.detalleRol = [];
+        this.pinnedBottomRowData = [];
+        this.periodoExiste = false;
+        this.modoEdicionPeriodo = false;
+        this.modificarBloqueado = false;
+
+        this.mostrarAdvertencia(
+          resp.message ?? 'No se pudo cargar la quincena.'
+        );
+        return;
+      }
+
+      const data = resp.data as RolQuincenaResponse;
+
+      this.detalleRol = (data?.empleados ?? []).map((x: any) => {
+        const valorQuincena = this.toNumber(x.valorQuincena);
+
+        return {
+          idEmpleado: x.idEmpleado,
+          codigoEmpleado: x.codigoEmpleado,
+          nombreEmpleado: x.nombreEmpleado || `Empleado ${x.codigoEmpleado ?? x.idEmpleado}`,
+          cedula: x.cedula ?? '',
+          idLocal: x.idLocal,
+          local: x.local ?? '',
+          formaPago: x.formaPago ?? '',
+          banco: x.banco ?? '',
+          cuenta: x.cuenta ?? '',
+          estado: x.estado ?? '',
+
+          ingresoQuincena: 0,
+          descuentoQuincena: valorQuincena,
+          totalIngresos: 0,
+          totalDescuentos: valorQuincena,
+          liquidoRecibir: valorQuincena
+        };
+      });
+
+      this.periodoExiste = this.detalleRol.length > 0;
+
+      /*
+       * Si existe cierre en rol.cierre_periodo con tipo Q,
+       * la quincena queda solo consulta.
+       */
+      this.modoEdicionPeriodo = this.periodoExiste && !this.periodoCerrado;
+      this.modificarBloqueado = this.periodoCerrado;
+
+      this.columnDefs = this.construirColumnasGrid();
+
+      this.pinnedBottomRowData = this.detalleRol.length > 0
+        ? [this.construirFilaTotales()]
+        : [];
+
+      if (this.periodoCerrado) {
+        this.mostrarAdvertencia(
+          'La quincena está cerrada. La información queda solo para consulta.'
+        );
+      }
+
+      setTimeout(() => {
+        this.gridApi?.setGridOption?.('rowData', this.detalleRol);
+        this.gridApi?.setGridOption?.('pinnedBottomRowData', this.pinnedBottomRowData);
+        this.gridApi?.refreshCells({ force: true });
+        this.gridApi?.refreshHeader();
+      }, 50);
+    },
+    error: err => {
+      this.cargando = false;
+
+      console.error(err);
+      this.mostrarError('Error al cargar la quincena.');
+
+      this.detalleRol = [];
+      this.pinnedBottomRowData = [];
+      this.periodoExiste = false;
+      this.modoEdicionPeriodo = false;
+      this.modificarBloqueado = false;
+    }
+  });
+}
 }

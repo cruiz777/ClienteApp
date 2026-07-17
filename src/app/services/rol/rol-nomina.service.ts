@@ -10,7 +10,13 @@ export interface ApiResponse<T> {
   data: T;
   message: string;
 }
-
+export interface ActualizarValorQuincenaRequest {
+  fechaPeriodo: string;
+  numeroQuincena: number;
+  idEmpleado: number;
+  valorQuincena: number;
+  idUsuario?: number | null;
+}
 export interface GenerarRolMensualRequest {
   fechaPeriodo: string;
   idLocal: number | null;
@@ -39,6 +45,13 @@ export interface RolMensualRequest {
   porRubros: boolean;
   todosLosRubros: boolean;
   totalizar: boolean;
+}
+export interface AnularRolQuincenaRequest {
+  fechaPeriodo: string; // yyyy-MM-dd
+  numeroQuincena: number;
+  idLocal?: number | null;
+  idDepartamento?: number | null;
+  idUsuario?: number | null;
 }
 
 export interface RubroColumnaResponse {
@@ -351,90 +364,105 @@ export class RolNominaService {
   }
 
   calcularImpuestoRenta(request: CalcularImpuestoRentaRequest): Observable<ApiResponse<CalcularImpuestoRentaResponse>> {
-  return this.http.post<ApiResponse<CalcularImpuestoRentaResponse>>(
-    `${this.apiUrl}/RolNomina/calcular-impuesto-renta`,
-    request
-  );
-}
-recalcularRolMensual(request: RecalcularRolMensualRequest) {
-  return this.http.post<ApiResponse<boolean>>(
-    `${this.apiUrl}/recalcular-mensual`,
-    request
-  );
-}
-enviarRolesPorCorreo(
-  request: EnviarRolesCorreoRequest
-): Observable<ApiResponse<EnviarRolesCorreoResponse>> {
-  return this.http.post<ApiResponse<EnviarRolesCorreoResponse>>(
-    `${this.apiUrl}/enviar-roles-correo`,
-    request
-  );
-}
+    return this.http.post<ApiResponse<CalcularImpuestoRentaResponse>>(
+      `${this.apiUrl}/RolNomina/calcular-impuesto-renta`,
+      request
+    );
+  }
+  recalcularRolMensual(request: RecalcularRolMensualRequest) {
+    return this.http.post<ApiResponse<boolean>>(
+      `${this.apiUrl}/recalcular-mensual`,
+      request
+    );
+  }
+  enviarRolesPorCorreo(
+    request: EnviarRolesCorreoRequest
+  ): Observable<ApiResponse<EnviarRolesCorreoResponse>> {
+    return this.http.post<ApiResponse<EnviarRolesCorreoResponse>>(
+      `${this.apiUrl}/enviar-roles-correo`,
+      request
+    );
+  }
 
-actualizarCantidadRubroMensual(request: ActualizarCantidadRubroMensualRequest) {
-  return this.http.post<ApiResponse<boolean>>(
-    `${this.apiUrl}/actualizar-cantidad-rubro-mensual`,
-    request
-  );
-}
-generarArchivoBanco(
-  request: GenerarArchivoBancoNominaRequest
-): Observable<ApiResponse<GenerarArchivoBancoNominaResponse>> {
-  return this.http.post<ApiResponse<GenerarArchivoBancoNominaResponse>>(
-    `${this.apiUrl}/generar-archivo-banco`,
-    request
-  );
-}
+  actualizarCantidadRubroMensual(request: ActualizarCantidadRubroMensualRequest) {
+    return this.http.post<ApiResponse<boolean>>(
+      `${this.apiUrl}/actualizar-cantidad-rubro-mensual`,
+      request
+    );
+  }
+  generarArchivoBanco(
+    request: GenerarArchivoBancoNominaRequest
+  ): Observable<ApiResponse<GenerarArchivoBancoNominaResponse>> {
+    return this.http.post<ApiResponse<GenerarArchivoBancoNominaResponse>>(
+      `${this.apiUrl}/generar-archivo-banco`,
+      request
+    );
+  }
 
-imprimirReporteFormaPago(
-  request: ImprimirReporteFormaPagoRequest
-): Observable<Blob> {
-  return this.http.post(
-    `${this.apiUrl}/reporte-forma-pago/pdf`,
-    request,
-    {
-      responseType: 'blob'
-    }
-  );
-}
+  imprimirReporteFormaPago(
+    request: ImprimirReporteFormaPagoRequest
+  ): Observable<Blob> {
+    return this.http.post(
+      `${this.apiUrl}/reporte-forma-pago/pdf`,
+      request,
+      {
+        responseType: 'blob'
+      }
+    );
+  }
 
-generarRolQuincena(
-  request: GenerarRolQuincenaRequest
+  generarRolQuincena(
+    request: GenerarRolQuincenaRequest
+  ): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(
+      `${this.apiUrl}/generar-quincena`,
+      request
+    );
+  }
+
+  getRolQuincena(
+    request: RolQuincenaRequest
+  ): Observable<ApiResponse<RolQuincenaResponse>> {
+    return this.http.post<ApiResponse<RolQuincenaResponse>>(
+      `${this.apiUrl}/quincena`,
+      request
+    );
+  }
+
+  generarArchivoBancoQuincena(
+    request: GenerarArchivoBancoQuincenaRequest
+  ): Observable<ApiResponse<GenerarArchivoBancoNominaResponse>> {
+    return this.http.post<ApiResponse<GenerarArchivoBancoNominaResponse>>(
+      `${this.apiUrl}/generar-archivo-banco-quincena`,
+      request
+    );
+  }
+
+  imprimirReporteFormaPagoQuincena(
+    request: GenerarArchivoBancoQuincenaRequest
+  ): Observable<Blob> {
+    return this.http.post(
+      `${this.apiUrl}/reporte-quincena-forma-pago/pdf`,
+      request,
+      {
+        responseType: 'blob'
+      }
+    );
+  }
+  actualizarValorQuincena(
+    request: ActualizarValorQuincenaRequest
+  ): Observable<ApiResponse<boolean>> {
+    return this.http.post<ApiResponse<boolean>>(
+      `${this.apiUrl}/quincena/actualizar-valor`,
+      request
+    );
+  }
+  anularRolQuincena(
+  request: AnularRolQuincenaRequest
 ): Observable<ApiResponse<boolean>> {
   return this.http.post<ApiResponse<boolean>>(
-    `${this.apiUrl}/generar-quincena`,
+    `${this.apiUrl}/anular-quincena`,
     request
   );
 }
-
-getRolQuincena(
-  request: RolQuincenaRequest
-): Observable<ApiResponse<RolQuincenaResponse>> {
-  return this.http.post<ApiResponse<RolQuincenaResponse>>(
-    `${this.apiUrl}/quincena`,
-    request
-  );
-}
-
-generarArchivoBancoQuincena(
-  request: GenerarArchivoBancoQuincenaRequest
-): Observable<ApiResponse<GenerarArchivoBancoNominaResponse>> {
-  return this.http.post<ApiResponse<GenerarArchivoBancoNominaResponse>>(
-    `${this.apiUrl}/generar-archivo-banco-quincena`,
-    request
-  );
-}
-
-imprimirReporteFormaPagoQuincena(
-  request: GenerarArchivoBancoQuincenaRequest
-): Observable<Blob> {
-  return this.http.post(
-    `${this.apiUrl}/reporte-quincena-forma-pago/pdf`,
-    request,
-    {
-      responseType: 'blob'
-    }
-  );
-}
-
 }

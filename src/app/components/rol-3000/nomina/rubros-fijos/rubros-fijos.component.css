@@ -1,149 +1,183 @@
 .rubros-page {
-  padding: 20px;
-  background: #f6f8fc;
-  min-height: 100vh;
+  width: 100%;
+  height: calc(100vh - 80px);
+  padding: 8px;
   box-sizing: border-box;
-  font-family: Arial, Helvetica, sans-serif;
+  background: #f1f5f9;
 }
 
 .form-card {
+  height: 100%;
   background: #ffffff;
-  border: 1px solid #dbe3f0;
-  border-radius: 8px;
-  padding: 14px;
+  border: 1px solid #cbd5e1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 .form-card h2 {
-  margin: 0 0 18px 0;
-  color: #123b84;
-  font-size: 22px;
+  margin: 8px 12px;
+  font-size: 18px;
   font-weight: 700;
+  color: #1e293b;
 }
 
 .top-section {
-  display: flex;
-  gap: 14px;
-  align-items: flex-start;
-  margin-bottom: 16px;
-}
-
-.small-card {
-  width: 260px;
-  min-height: 150px;
+  display: grid;
+  grid-template-columns: 260px 270px 300px;
+  gap: 8px;
+  padding: 8px;
+  border-bottom: 1px solid #cbd5e1;
+  background: #f8fafc;
 }
 
 .tree-card {
-  border: 1px solid #dbe3f0;
-  background: #fff;
+  border: 1px solid #94a3b8;
+  background: #ffffff;
+  height: 155px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .tree-header {
-  height: 22px;
-  background: #dfeaf4;
-  border-bottom: 1px solid #dbe3f0;
+  height: 24px;
+  line-height: 24px;
+  padding: 0 8px;
+  background: #e2e8f0;
+  border-bottom: 1px solid #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
 }
 
 .tree-body {
-  padding: 8px;
-}
-
-.tree-node {
+  flex: 1;
+  padding: 4px;
   font-size: 12px;
-  color: #2f3a4d;
+  overflow: auto;
 }
 
 .node-line {
   display: flex;
   align-items: center;
+  height: 23px;
   gap: 4px;
-  min-height: 22px;
+  cursor: default;
+  white-space: nowrap;
 }
 
 .toggle-btn {
   width: 18px;
   height: 18px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font-size: 12px;
-  color: #5a6780;
+  border: 1px solid #94a3b8;
+  background: #ffffff;
+  line-height: 14px;
   padding: 0;
+  font-size: 13px;
+  cursor: pointer;
 }
 
 .folder {
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .node-label {
-  font-size: 12px;
+  color: #111827;
 }
 
 .children {
-  padding-left: 18px;
+  margin-left: 16px;
 }
 
 .indent {
-  width: 12px;
   display: inline-block;
+  width: 12px;
 }
 
 .plus {
-  width: 12px;
-  display: inline-block;
-  color: #5a6780;
-}
-
-.table-wrapper {
-  border: 1px solid #dbe3f0;
-  background: #fff;
-  overflow: auto;
-}
-
-.custom-table {
-  width: 100%;
-  min-width: 900px;
-}
-
-.mat-mdc-header-row {
-  background: #eef3fa;
-}
-
-.mat-mdc-header-cell {
-  color: #27477d;
-  font-size: 11px;
+  color: #2563eb;
   font-weight: 700;
-  border-bottom: 1px solid #dbe3f0;
-  text-align: center;
+  width: 14px;
+  display: inline-block;
 }
 
-.mat-mdc-cell {
-  font-size: 11px;
-  color: #2f3a4d;
-  border-bottom: 1px solid #edf2f8;
-  text-align: center;
+.rubro-child {
+  cursor: pointer;
 }
 
-.middle-actions {
+.rubro-child:hover {
+  background: #e0f2fe;
+}
+
+.selected-rubro {
+  background: #bfdbfe;
+  font-weight: 700;
+}
+
+.actions-panel {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  align-content: start;
+}
+
+.actions-panel button {
+  height: 34px;
+  font-size: 12px;
+}
+
+.rubro-seleccionado {
+  padding: 5px 12px;
+  color: #0000ff;
+  font-size: 17px;
+  font-weight: 500;
+  border-bottom: 1px solid #cbd5e1;
+  background: #ffffff;
+}
+
+.grid-wrapper {
+  flex: 1;
+  width: 100%;
+  min-height: 360px;
+  border-top: 1px solid #cbd5e1;
+}
+
+.cell-number {
+  text-align: right;
+}
+
+.cell-editable {
+  background: #fffef2;
+}
+
+.cell-total-row {
+  font-weight: 800;
+  background: #fef9c3 !important;
+  color: #854d0e;
+}
+
+.totales {
+  height: 38px;
   display: flex;
-  justify-content: center;
-  gap: 22px;
-  margin-top: 20px;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-top: 1px solid #94a3b8;
+  background: #f8fafc;
+  font-weight: 700;
 }
 
-.bottom-actions {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-top: 16px;
-  flex-wrap: wrap;
+.totales input {
+  width: 110px;
+  text-align: right;
+  height: 24px;
+  border: 1px solid #94a3b8;
+  background: #ffffff;
+  font-weight: 700;
 }
 
-@media (max-width: 900px) {
-  .top-section {
-    flex-direction: column;
-  }
-
-  .small-card {
-    width: 100%;
-  }
+.total-info {
+  font-size: 12px;
+  color: #334155;
 }
